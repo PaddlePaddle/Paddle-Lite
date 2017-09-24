@@ -5,7 +5,7 @@ build_mac_fn() {
     MODE="Release"
     CXX_FLAGS="-std=c++11"
     BUILD_DIR=build/release/"${PLATFORM}"
-    mkdir -p "${BUILD_DIR}"
+    mkdir -p ${BUILD_DIR}/build
     cp -r test/model ${BUILD_DIR}/build
     cd "${BUILD_DIR}"
     CMAKE="cmake"
