@@ -1,0 +1,66 @@
+/* Copyright (c) 2016 Baidu, Inc. All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+==============================================================================*/
+#include "base/layer.h"
+#include "loader/loader.h"
+
+namespace mdl {
+    const string Layer::_CONCAT = "concat";
+    const string Layer::_CONVO = "convolution";
+    const string Layer::_FC = "fc";
+    const string Layer::_LRN = "lrn";
+    const string Layer::_POOL = "pooling";
+    const string Layer::_RELU = "relu";
+    const string Layer::_SPLIT = "split";
+    const string Layer::_SCALE = "scale";
+    const string Layer::_BN = "batch_normal";
+    const string Layer::_SM = "soft_max";
+
+    Layer::Layer(const Json &config) {
+        _name = config["name"].string_value();
+        string matrix_name = "";
+        for (int i = 0; i < config["input"].array_items().size(); ++i) {
+            matrix_name = config["input"][i].string_value();
+            auto matrix = Loader::shared_instance()->_matrices[matrix_name];
+            if (matrix) {
+                matrix->set_name(matrix_name);
+                _input.push_back(matrix);
+            }
+        }
+        for (int i = 0; i < config["output"].array_items().size(); ++i) {
+            matrix_name = config["output"][i].string_value();
+            auto matrix = Loader::shared_instance()->_matrices[matrix_name];
+            if (matrix) {
+                matrix->set_name(matrix_name);
+                _output.push_back(matrix);
+            }
+        }
+        for (int i = 0; i < config["weight"].array_items().size(); ++i) {
+            matrix_name = config["weight"][i].string_value();
+
+            auto matrix = Loader::shared_instance()->_matrices[matrix_name];
+
+            if (matrix) {
+                matrix->set_name(matrix_name);
+                _weight.push_back(matrix);
+            }
+        }
+    }
+};

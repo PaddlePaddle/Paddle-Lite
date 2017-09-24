@@ -1,0 +1,517 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		FC0709071F69567E00437979 /* soft_max_layer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FC0709061F69567E00437979 /* soft_max_layer.cpp */; };
+		FCE01B821F77ACF90066FB61 /* json11.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FCE01B811F77ABA90066FB61 /* json11.cpp */; };
+		FCF7A81D1F66741D00906055 /* MDLCPUCore.mm in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A81C1F66741D00906055 /* MDLCPUCore.mm */; };
+		FCF7A8531F66743600906055 /* layer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8391F66743600906055 /* layer.cpp */; };
+		FCF7A8541F66743600906055 /* matrix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A83A1F66743600906055 /* matrix.cpp */; };
+		FCF7A8551F66743600906055 /* commons.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A83C1F66743600906055 /* commons.cpp */; };
+		FCF7A8561F66743600906055 /* batch_normal_layer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A83E1F66743600906055 /* batch_normal_layer.cpp */; };
+		FCF7A8571F66743600906055 /* bias_layer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A83F1F66743600906055 /* bias_layer.cpp */; };
+		FCF7A8581F66743600906055 /* concat_layer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8401F66743600906055 /* concat_layer.cpp */; };
+		FCF7A8591F66743600906055 /* convolution_layer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8411F66743600906055 /* convolution_layer.cpp */; };
+		FCF7A85A1F66743600906055 /* fc_layer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8421F66743600906055 /* fc_layer.cpp */; };
+		FCF7A85B1F66743600906055 /* lrn_layer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8431F66743600906055 /* lrn_layer.cpp */; };
+		FCF7A85C1F66743600906055 /* pooling_layer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8441F66743600906055 /* pooling_layer.cpp */; };
+		FCF7A85D1F66743600906055 /* relu_layer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8451F66743600906055 /* relu_layer.cpp */; };
+		FCF7A85E1F66743600906055 /* scale_layer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8461F66743600906055 /* scale_layer.cpp */; };
+		FCF7A85F1F66743600906055 /* split_layer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8471F66743600906055 /* split_layer.cpp */; };
+		FCF7A8601F66743600906055 /* loader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8491F66743600906055 /* loader.cpp */; };
+		FCF7A8611F66743600906055 /* gemm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A84B1F66743600906055 /* gemm.cpp */; };
+		FCF7A8621F66743600906055 /* mdl_jni.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A84C1F66743600906055 /* mdl_jni.cpp */; };
+		FCF7A8631F66743600906055 /* net.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A84D1F66743600906055 /* net.cpp */; };
+		FCF7A8651F66744100906055 /* MDLCPUCore.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = FCF7A81B1F66741D00906055 /* MDLCPUCore.h */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		FCF7A80D1F6673F800906055 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "include/$(PRODUCT_NAME)";
+			dstSubfolderSpec = 16;
+			files = (
+				FCF7A8651F66744100906055 /* MDLCPUCore.h in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		FC0709061F69567E00437979 /* soft_max_layer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = soft_max_layer.cpp; sourceTree = "<group>"; };
+		FC0709081F69569600437979 /* soft_max_layer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = soft_max_layer.h; sourceTree = "<group>"; };
+		FCE01B801F77ABA90066FB61 /* json11.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = json11.h; sourceTree = "<group>"; };
+		FCE01B811F77ABA90066FB61 /* json11.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = json11.cpp; sourceTree = "<group>"; };
+		FCF7A80F1F6673F800906055 /* libMDLCPUCore.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libMDLCPUCore.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		FCF7A81B1F66741D00906055 /* MDLCPUCore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDLCPUCore.h; sourceTree = "<group>"; };
+		FCF7A81C1F66741D00906055 /* MDLCPUCore.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = MDLCPUCore.mm; sourceTree = "<group>"; };
+		FCF7A8201F66743600906055 /* layer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = layer.h; sourceTree = "<group>"; };
+		FCF7A8211F66743600906055 /* matrix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = matrix.h; sourceTree = "<group>"; };
+		FCF7A8231F66743600906055 /* commons.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = commons.h; sourceTree = "<group>"; };
+		FCF7A8241F66743600906055 /* exception.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = exception.h; sourceTree = "<group>"; };
+		FCF7A8261F66743600906055 /* batch_normal_layer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = batch_normal_layer.h; sourceTree = "<group>"; };
+		FCF7A8271F66743600906055 /* bias_layer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bias_layer.h; sourceTree = "<group>"; };
+		FCF7A8281F66743600906055 /* concat_layer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = concat_layer.h; sourceTree = "<group>"; };
+		FCF7A8291F66743600906055 /* convolution_layer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = convolution_layer.h; sourceTree = "<group>"; };
+		FCF7A82A1F66743600906055 /* fc_layer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fc_layer.h; sourceTree = "<group>"; };
+		FCF7A82B1F66743600906055 /* lrn_layer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lrn_layer.h; sourceTree = "<group>"; };
+		FCF7A82C1F66743600906055 /* pooling_layer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pooling_layer.h; sourceTree = "<group>"; };
+		FCF7A82D1F66743600906055 /* relu_layer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = relu_layer.h; sourceTree = "<group>"; };
+		FCF7A82E1F66743600906055 /* scale_layer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = scale_layer.h; sourceTree = "<group>"; };
+		FCF7A82F1F66743600906055 /* split_layer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = split_layer.h; sourceTree = "<group>"; };
+		FCF7A8311F66743600906055 /* loader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = loader.h; sourceTree = "<group>"; };
+		FCF7A8331F66743600906055 /* gemm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gemm.h; sourceTree = "<group>"; };
+		FCF7A8341F66743600906055 /* math.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = math.h; sourceTree = "<group>"; };
+		FCF7A8351F66743600906055 /* mdl_jni.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mdl_jni.h; sourceTree = "<group>"; };
+		FCF7A8361F66743600906055 /* net.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = net.h; sourceTree = "<group>"; };
+		FCF7A8391F66743600906055 /* layer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = layer.cpp; sourceTree = "<group>"; };
+		FCF7A83A1F66743600906055 /* matrix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = matrix.cpp; sourceTree = "<group>"; };
+		FCF7A83C1F66743600906055 /* commons.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = commons.cpp; sourceTree = "<group>"; };
+		FCF7A83E1F66743600906055 /* batch_normal_layer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = batch_normal_layer.cpp; sourceTree = "<group>"; };
+		FCF7A83F1F66743600906055 /* bias_layer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = bias_layer.cpp; sourceTree = "<group>"; };
+		FCF7A8401F66743600906055 /* concat_layer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = concat_layer.cpp; sourceTree = "<group>"; };
+		FCF7A8411F66743600906055 /* convolution_layer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = convolution_layer.cpp; sourceTree = "<group>"; };
+		FCF7A8421F66743600906055 /* fc_layer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fc_layer.cpp; sourceTree = "<group>"; };
+		FCF7A8431F66743600906055 /* lrn_layer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = lrn_layer.cpp; sourceTree = "<group>"; };
+		FCF7A8441F66743600906055 /* pooling_layer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pooling_layer.cpp; sourceTree = "<group>"; };
+		FCF7A8451F66743600906055 /* relu_layer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = relu_layer.cpp; sourceTree = "<group>"; };
+		FCF7A8461F66743600906055 /* scale_layer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = scale_layer.cpp; sourceTree = "<group>"; };
+		FCF7A8471F66743600906055 /* split_layer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = split_layer.cpp; sourceTree = "<group>"; };
+		FCF7A8491F66743600906055 /* loader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = loader.cpp; sourceTree = "<group>"; };
+		FCF7A84B1F66743600906055 /* gemm.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gemm.cpp; sourceTree = "<group>"; };
+		FCF7A84C1F66743600906055 /* mdl_jni.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = mdl_jni.cpp; sourceTree = "<group>"; };
+		FCF7A84D1F66743600906055 /* net.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = net.cpp; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		FCF7A80C1F6673F800906055 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		FCF7A8061F6673F800906055 = {
+			isa = PBXGroup;
+			children = (
+				FCF7A8111F6673F800906055 /* MDLCPUCore */,
+				FCF7A8101F6673F800906055 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		FCF7A8101F6673F800906055 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FCF7A80F1F6673F800906055 /* libMDLCPUCore.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FCF7A8111F6673F800906055 /* MDLCPUCore */ = {
+			isa = PBXGroup;
+			children = (
+				FCF7A81E1F66743600906055 /* include */,
+				FCF7A8371F66743600906055 /* src */,
+				FCF7A84E1F66743600906055 /* third-party */,
+				FCF7A81B1F66741D00906055 /* MDLCPUCore.h */,
+				FCF7A81C1F66741D00906055 /* MDLCPUCore.mm */,
+			);
+			path = MDLCPUCore;
+			sourceTree = "<group>";
+		};
+		FCF7A81E1F66743600906055 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				FCF7A81F1F66743600906055 /* base */,
+				FCF7A8221F66743600906055 /* commons */,
+				FCF7A8251F66743600906055 /* layer */,
+				FCF7A8301F66743600906055 /* loader */,
+				FCF7A8321F66743600906055 /* math */,
+				FCF7A8351F66743600906055 /* mdl_jni.h */,
+				FCF7A8361F66743600906055 /* net.h */,
+			);
+			name = include;
+			path = ../../../include;
+			sourceTree = "<group>";
+		};
+		FCF7A81F1F66743600906055 /* base */ = {
+			isa = PBXGroup;
+			children = (
+				FCF7A8201F66743600906055 /* layer.h */,
+				FCF7A8211F66743600906055 /* matrix.h */,
+			);
+			path = base;
+			sourceTree = "<group>";
+		};
+		FCF7A8221F66743600906055 /* commons */ = {
+			isa = PBXGroup;
+			children = (
+				FCF7A8231F66743600906055 /* commons.h */,
+				FCF7A8241F66743600906055 /* exception.h */,
+			);
+			path = commons;
+			sourceTree = "<group>";
+		};
+		FCF7A8251F66743600906055 /* layer */ = {
+			isa = PBXGroup;
+			children = (
+				FC0709081F69569600437979 /* soft_max_layer.h */,
+				FCF7A8261F66743600906055 /* batch_normal_layer.h */,
+				FCF7A8271F66743600906055 /* bias_layer.h */,
+				FCF7A8281F66743600906055 /* concat_layer.h */,
+				FCF7A8291F66743600906055 /* convolution_layer.h */,
+				FCF7A82A1F66743600906055 /* fc_layer.h */,
+				FCF7A82B1F66743600906055 /* lrn_layer.h */,
+				FCF7A82C1F66743600906055 /* pooling_layer.h */,
+				FCF7A82D1F66743600906055 /* relu_layer.h */,
+				FCF7A82E1F66743600906055 /* scale_layer.h */,
+				FCF7A82F1F66743600906055 /* split_layer.h */,
+			);
+			path = layer;
+			sourceTree = "<group>";
+		};
+		FCF7A8301F66743600906055 /* loader */ = {
+			isa = PBXGroup;
+			children = (
+				FCF7A8311F66743600906055 /* loader.h */,
+			);
+			path = loader;
+			sourceTree = "<group>";
+		};
+		FCF7A8321F66743600906055 /* math */ = {
+			isa = PBXGroup;
+			children = (
+				FCF7A8331F66743600906055 /* gemm.h */,
+				FCF7A8341F66743600906055 /* math.h */,
+			);
+			path = math;
+			sourceTree = "<group>";
+		};
+		FCF7A8371F66743600906055 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				FCF7A8381F66743600906055 /* base */,
+				FCF7A83B1F66743600906055 /* commons */,
+				FCF7A83D1F66743600906055 /* layer */,
+				FCF7A8481F66743600906055 /* loader */,
+				FCF7A84A1F66743600906055 /* math */,
+				FCF7A84C1F66743600906055 /* mdl_jni.cpp */,
+				FCF7A84D1F66743600906055 /* net.cpp */,
+			);
+			name = src;
+			path = ../../../src;
+			sourceTree = "<group>";
+		};
+		FCF7A8381F66743600906055 /* base */ = {
+			isa = PBXGroup;
+			children = (
+				FCF7A8391F66743600906055 /* layer.cpp */,
+				FCF7A83A1F66743600906055 /* matrix.cpp */,
+			);
+			path = base;
+			sourceTree = "<group>";
+		};
+		FCF7A83B1F66743600906055 /* commons */ = {
+			isa = PBXGroup;
+			children = (
+				FCF7A83C1F66743600906055 /* commons.cpp */,
+			);
+			path = commons;
+			sourceTree = "<group>";
+		};
+		FCF7A83D1F66743600906055 /* layer */ = {
+			isa = PBXGroup;
+			children = (
+				FC0709061F69567E00437979 /* soft_max_layer.cpp */,
+				FCF7A83E1F66743600906055 /* batch_normal_layer.cpp */,
+				FCF7A83F1F66743600906055 /* bias_layer.cpp */,
+				FCF7A8401F66743600906055 /* concat_layer.cpp */,
+				FCF7A8411F66743600906055 /* convolution_layer.cpp */,
+				FCF7A8421F66743600906055 /* fc_layer.cpp */,
+				FCF7A8431F66743600906055 /* lrn_layer.cpp */,
+				FCF7A8441F66743600906055 /* pooling_layer.cpp */,
+				FCF7A8451F66743600906055 /* relu_layer.cpp */,
+				FCF7A8461F66743600906055 /* scale_layer.cpp */,
+				FCF7A8471F66743600906055 /* split_layer.cpp */,
+			);
+			path = layer;
+			sourceTree = "<group>";
+		};
+		FCF7A8481F66743600906055 /* loader */ = {
+			isa = PBXGroup;
+			children = (
+				FCF7A8491F66743600906055 /* loader.cpp */,
+			);
+			path = loader;
+			sourceTree = "<group>";
+		};
+		FCF7A84A1F66743600906055 /* math */ = {
+			isa = PBXGroup;
+			children = (
+				FCF7A84B1F66743600906055 /* gemm.cpp */,
+			);
+			path = math;
+			sourceTree = "<group>";
+		};
+		FCF7A84E1F66743600906055 /* third-party */ = {
+			isa = PBXGroup;
+			children = (
+				FCF7A84F1F66743600906055 /* json */,
+			);
+			name = "third-party";
+			path = "../../../third-party";
+			sourceTree = "<group>";
+		};
+		FCF7A84F1F66743600906055 /* json */ = {
+			isa = PBXGroup;
+			children = (
+				FCE01B811F77ABA90066FB61 /* json11.cpp */,
+				FCE01B801F77ABA90066FB61 /* json11.h */,
+			);
+			path = json;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		FCF7A80E1F6673F800906055 /* MDLCPUCore */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FCF7A8181F6673F800906055 /* Build configuration list for PBXNativeTarget "MDLCPUCore" */;
+			buildPhases = (
+				FCF7A80B1F6673F800906055 /* Sources */,
+				FCF7A80C1F6673F800906055 /* Frameworks */,
+				FCF7A80D1F6673F800906055 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MDLCPUCore;
+			productName = MDLCPUCore;
+			productReference = FCF7A80F1F6673F800906055 /* libMDLCPUCore.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		FCF7A8071F6673F800906055 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0830;
+				ORGANIZATIONNAME = baidu;
+				TargetAttributes = {
+					FCF7A80E1F6673F800906055 = {
+						CreatedOnToolsVersion = 8.3.3;
+						DevelopmentTeam = Z5M2UUN5YV;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = FCF7A80A1F6673F800906055 /* Build configuration list for PBXProject "MDLCPUCore" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = FCF7A8061F6673F800906055;
+			productRefGroup = FCF7A8101F6673F800906055 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				FCF7A80E1F6673F800906055 /* MDLCPUCore */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		FCF7A80B1F6673F800906055 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FCE01B821F77ACF90066FB61 /* json11.cpp in Sources */,
+				FCF7A8551F66743600906055 /* commons.cpp in Sources */,
+				FCF7A85E1F66743600906055 /* scale_layer.cpp in Sources */,
+				FCF7A85A1F66743600906055 /* fc_layer.cpp in Sources */,
+				FCF7A8631F66743600906055 /* net.cpp in Sources */,
+				FCF7A81D1F66741D00906055 /* MDLCPUCore.mm in Sources */,
+				FCF7A85F1F66743600906055 /* split_layer.cpp in Sources */,
+				FCF7A85C1F66743600906055 /* pooling_layer.cpp in Sources */,
+				FCF7A8591F66743600906055 /* convolution_layer.cpp in Sources */,
+				FCF7A8531F66743600906055 /* layer.cpp in Sources */,
+				FCF7A8621F66743600906055 /* mdl_jni.cpp in Sources */,
+				FCF7A8541F66743600906055 /* matrix.cpp in Sources */,
+				FC0709071F69567E00437979 /* soft_max_layer.cpp in Sources */,
+				FCF7A8571F66743600906055 /* bias_layer.cpp in Sources */,
+				FCF7A8581F66743600906055 /* concat_layer.cpp in Sources */,
+				FCF7A85B1F66743600906055 /* lrn_layer.cpp in Sources */,
+				FCF7A8561F66743600906055 /* batch_normal_layer.cpp in Sources */,
+				FCF7A8601F66743600906055 /* loader.cpp in Sources */,
+				FCF7A85D1F66743600906055 /* relu_layer.cpp in Sources */,
+				FCF7A8611F66743600906055 /* gemm.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		FCF7A8161F6673F800906055 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		FCF7A8171F6673F800906055 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		FCF7A8191F6673F800906055 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEVELOPMENT_TEAM = Z5M2UUN5YV;
+				GCC_ENABLE_CPP_EXCEPTIONS = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				HEADER_SEARCH_PATHS = (
+					../../include,
+					"../../third-party",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		FCF7A81A1F6673F800906055 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEVELOPMENT_TEAM = Z5M2UUN5YV;
+				GCC_ENABLE_CPP_EXCEPTIONS = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				HEADER_SEARCH_PATHS = (
+					../../include,
+					"../../third-party",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		FCF7A80A1F6673F800906055 /* Build configuration list for PBXProject "MDLCPUCore" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FCF7A8161F6673F800906055 /* Debug */,
+				FCF7A8171F6673F800906055 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FCF7A8181F6673F800906055 /* Build configuration list for PBXNativeTarget "MDLCPUCore" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FCF7A8191F6673F800906055 /* Debug */,
+				FCF7A81A1F6673F800906055 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = FCF7A8071F6673F800906055 /* Project object */;
+}
