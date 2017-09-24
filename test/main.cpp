@@ -114,7 +114,7 @@ int run() {
         cout << num << " ";
     }
     cout <<endl;
-    cout << "the max prob index = "<<find_max(result)<<endl;
+    //cout << "the max prob index = "<<find_max(result)<<endl;
     cout << "Done!" << endl;
 //    cout << "it " << (is_correct_result(result) ? "is" : "isn't") << " a correct result." << endl;
     loader->clear();
