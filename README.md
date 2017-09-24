@@ -19,9 +19,9 @@ It supports calculation on iOS GPU, and is already adopted by Baidu APP.
 ## Getting Started
 #### Showcase
 
-![Baidu App](http://gss0.baidu.com/9rkZbzqaKgQUohGko9WTAnF6hhy/mms-res/graph/mobile-deep-learning/baidu_showcase.4fb87ba9.e05739e6.gif)
+![Baidu App](baidu_showcase.gif)
 
-![Android Demo](http://gss0.baidu.com/9rkZbzqaKgQUohGko9WTAnF6hhy/mms-res/graph/mobile-deep-learning/Android/android_showcase.e84363f3.gif)
+![Android Demo](android_showcase.gif)
 
 
 #### Be all eagerness to see it 
