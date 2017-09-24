@@ -21,8 +21,7 @@ It supports calculation on iOS GPU, and is already adopted by Baidu APP.
 
 ![Baidu App](baidu_showcase.gif)
 
-![Android Demo](android_showcase.gif)
-
+![拾相app](http://gss0.baidu.com/9rkZbzqaKgQUohGko9WTAnF6hhy/mms-res/graph/mobile-deep-learning/Android/15053535509411.c5cf42d5.jpg)
 
 #### Be all eagerness to see it 
 If you want to run the demo first, or just use it quickly, without understanding implementation details, you can just scan the QR code, install the compiled apk/ipa file.
