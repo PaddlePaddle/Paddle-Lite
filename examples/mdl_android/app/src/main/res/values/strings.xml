@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">mdl_android</string>
+    <string name="sdcard_not_available">sdcard not available</string>
+    <string name="time_cost">detection cost:</string>
+</resources>
