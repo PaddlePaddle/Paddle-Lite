@@ -133,7 +133,7 @@ cd ./build/release/x86/tools/build
 # after this command, model.min.json data.min.bin will be created in current 
 # some difference step you need to do if you convert caffe model to iOS GPU format
 # see this:
-open iOS/convert/iOSConvertReadme.md
+open iOS/convert/iOSConvertREADME.md
 
 ```
 
