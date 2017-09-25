@@ -123,7 +123,7 @@ copy ./build/release/ios/build/libmdl-static.a to your iOS project
 
 MDL needs compatible models to work with. To get a MDL compatible model, you can convert a model trained by other deep learning tools to MDL model using our scripts.
 
-We highly suggest using paddlepaddle [PaddlePaddle](https://github.com/PaddlePaddle/Paddle) model. 
+We highly suggest using [PaddlePaddle](https://github.com/PaddlePaddle/Paddle) model. 
 
 #### Converting PaddlePaddle model to mdl format
 
