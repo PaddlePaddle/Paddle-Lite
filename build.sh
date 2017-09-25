@@ -13,6 +13,14 @@ build_mac_fn() {
             return
         fi
     fi
+    if [ ! `which cmake` ]; then
+        echo "installing cmake."
+        brew install cmake
+        if [ ! $? ]; then
+            echo "cmake install failed."
+            return
+        fi
+    fi
     PLATFORM="x86"
     MODE="Release"
     CXX_FLAGS="-std=c++11"
