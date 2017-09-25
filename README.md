@@ -31,7 +31,7 @@ If you want to run the demo first, or just use it quickly, without understanding
 
 iOS-MobileNet:
 
-![iOS QR code](http://gss0.baidu.com/9rkZbzqaKgQUohGko9WTAnF6hhy/mms-res/graph/mobile-deep-learning/iOS/qrcode_ios.b3884de8.png)
+![iOS QR code](https://gss0.baidu.com/9rkZbzqaKgQUohGko9WTAnF6hhy/mms-res/graph/mobile-deep-learning/iOS/qrcode_ios.png)
 
 Android-Googlenet:
 
