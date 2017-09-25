@@ -121,21 +121,22 @@ copy ./build/release/ios/build/libmdl-static.a to your iOS project
 
 ## Model Conversion
 
-MDL support other model convert to MDL model on the mobile device.
+MDL needs compatible models to work with. To get a MDL compatible model, you can convert a model trained by other deep learning tools to MDL model using our scripts.
 
-We suggest use paddlepaddle [PaddlePaddle](https://github.com/PaddlePaddle/Paddle) model. 
+We highly suggest using paddlepaddle [PaddlePaddle](https://github.com/PaddlePaddle/Paddle) model. 
 
-#### Convert PaddlePaddle model to mdl format
+#### Converting PaddlePaddle model to mdl format
 
 Paddlepaddle model can be converted to MDL model
 
 ```
 # Environmental requirements 
 # paddlepaddle
+cd tools/python
 python paddle2mdl.py
 ```
 
-#### Convert caffemodel to mdl format
+#### Converting caffemodel to mdl format
 
 ```
 #Convert model.prototxt and model.caffemodel to model.min.json and data.min.bin that mdl use
