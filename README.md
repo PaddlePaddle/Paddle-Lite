@@ -33,7 +33,7 @@ iOS-MobileNet:
 
 ![iOS QR code](https://gss0.baidu.com/9rkZbzqaKgQUohGko9WTAnF6hhy/mms-res/graph/mobile-deep-learning/iOS/qrcode_ios.png)
 
-Android-Googlenet:
+[Android-Googlenet](http://gss0.baidu.com/9rkZbzqaKgQUohGko9WTAnF6hhy/mms-res/graph/mobile-deep-learning/Android/mdl_demo.4493eea5.apk):
 
 ![iOS QR code](http://gss0.baidu.com/9rkZbzqaKgQUohGko9WTAnF6hhy/mms-res/graph/mobile-deep-learning/Android/qrcode_android.33e91161.png)
 
