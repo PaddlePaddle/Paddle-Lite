@@ -6,12 +6,14 @@ build_mac_fn() {
         return
     fi
     if [ ! `which protoc` ]; then
-        echo "installing protobuf."
-        brew install protobuf
-        if [ ! $? ]; then
-            echo "protobuf install failed."
-            return
-        fi
+        echo "please install the latest protobuf using homebrew"
+        return
+        # echo "installing protobuf."
+        # brew install protobuf
+        # if [ ! $? ]; then
+        #     echo "protobuf install failed."
+        #     return
+        # fi
     fi
     if [ ! `which cmake` ]; then
         echo "installing cmake."
