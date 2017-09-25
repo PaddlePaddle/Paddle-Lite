@@ -33,7 +33,7 @@ public class MDL {
     public static native void setThreadNum(int num) throws MDLException;
 
     /**
-     * oject detection
+     * object detection
      *
      * @param buf
      * @return
