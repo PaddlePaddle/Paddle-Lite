@@ -94,7 +94,23 @@ class GPUNetViewController: UIViewController {
     
     func initializeNet(completion: @escaping () -> Void) {
         guard MPSSupportsMTLDevice(device) else {
-            fatalError("设备不支持")
+//            fatalError("设备不支持")
+            let maskView = UIView.init(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.size.width, height: UIScreen.main.bounds.size.height))
+            maskView.backgroundColor = UIColor.white
+            let maskLabelView = UILabel()
+            maskLabelView.text = "Your device does not support metal"
+            maskView.addSubview(maskLabelView)
+            maskLabelView.textColor = UIColor.black
+            maskLabelView.numberOfLines = 0
+            maskLabelView.textAlignment = .center
+            maskLabelView.translatesAutoresizingMaskIntoConstraints = false
+            let constraintWidth = NSLayoutConstraint(item: maskLabelView, attribute: .width, relatedBy: .equal, toItem: nil, attribute: .notAnAttribute, multiplier: 1, constant: 300)
+            let constraintHeight = NSLayoutConstraint(item: maskLabelView, attribute: .height, relatedBy: .equal, toItem: nil, attribute: .notAnAttribute, multiplier: 1, constant: 300)
+            let constraintCenterX = NSLayoutConstraint(item: maskLabelView, attribute: .centerX, relatedBy: .equal, toItem: maskView, attribute: .centerX, multiplier: 1.0, constant: 0.0);
+            let constraintCenterY = NSLayoutConstraint(item: maskLabelView, attribute: .centerY, relatedBy: .equal, toItem: maskView, attribute: .centerY, multiplier: 1.0, constant: 0.0);
+            maskView.addConstraints([constraintWidth, constraintHeight, constraintCenterX, constraintCenterY])
+            self.view.addSubview(maskView)
+            return
         }
         
         let modelPath: String
