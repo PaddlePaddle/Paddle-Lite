@@ -1,6 +1,18 @@
 #!/usr/bin/env sh
 
 build_mac_fn() {
+    if [ ! `which brew` ]; then
+        echo "building failed! homebrew not found, please install homebrew."
+        return
+    fi
+    if [ ! `which protoc` ]; then
+        echo "installing protobuf."
+        brew install protobuf
+        if [ ! $? ]; then
+            echo "protobuf install failed."
+            return
+        fi
+    fi
     PLATFORM="x86"
     MODE="Release"
     CXX_FLAGS="-std=c++11"
