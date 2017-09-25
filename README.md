@@ -53,6 +53,7 @@ If you want to know about the source code, please keep going. The source code is
 - Installing NDK for android. 
 - Installing Cmake. 
 - [Android NDK CMake Document](https://developer.android.google.cn/ndk/guides/cmake.html)
+- Installing Protocol Buffers. 
 
 ## How to use MDL lib
 
