@@ -18,6 +18,11 @@ endif(IS_IOS)
 file(GLOB_RECURSE MDL_CPP src/*.cpp third-party/*.cpp)
 file(GLOB_RECURSE MDL_H *.h)
 list(REMOVE_ITEM MDL_CPP main.cpp)
+if(ANDROID)
+else(ANDROID)
+    list(REMOVE_ITEM MDL_H ${CMAKE_CURRENT_SOURCE_DIR}/include/mdl_jni.h)
+    list(REMOVE_ITEM MDL_CPP ${CMAKE_CURRENT_SOURCE_DIR}/src/mdl_jni.cpp)
+endif(ANDROID)
 
 # include headers
 include_directories(include/)
