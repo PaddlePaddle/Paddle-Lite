@@ -119,19 +119,13 @@ copy ./build/release/ios/build/libmdl-static.a to your iOS project
 
 ```
 
-## PaddlePaddle(highly suggest)
+## Model Conversion
 
-https://github.com/PaddlePaddle/Paddle
+MDL support other model convert to MDL model on the mobile device.
 
-PaddlePaddle (PArallel Distributed Deep LEarning) is an easy-to-use,
-efficient, flexible and scalable deep learning platform, which is originally
-developed by Baidu scientists and engineers for the purpose of applying deep
-learning to many products at Baidu.
+We suggest use paddlepaddle [PaddlePaddle](https://github.com/PaddlePaddle/Paddle) model. 
 
-Our vision is to enable deep learning for everyone via PaddlePaddle.
-Please refer to our [release announcement](https://github.com/PaddlePaddle/Paddle/releases) to track the latest feature of PaddlePaddle.
-
-### PaddlePaddle model convert to mdl
+#### Convert PaddlePaddle model to mdl format
 
 Paddlepaddle model can be converted to MDL model
 
@@ -193,4 +187,13 @@ open iOS/convert/iOSConvertREADME.md
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
 
 MDL使用的是宽松的MIT开源协议。
+
+## PaddlePaddle
+
+https://github.com/PaddlePaddle/Paddle
+
+PaddlePaddle (PArallel Distributed Deep LEarning) is an easy-to-use,
+efficient, flexible and scalable deep learning platform, which is originally
+developed by Baidu scientists and engineers for the purpose of applying deep
+learning to many products at Baidu.
 
