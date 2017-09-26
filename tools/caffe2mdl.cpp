@@ -288,8 +288,9 @@ void calcu_layer_shape(map<string, vector<int> > &shape_map, const LayerParamete
 
 
             } else {
-                cout << layer.name() << endl;
-                throw "bottom shape is not ready!";
+                stringstream msg;
+                msg << layer.name() << "bottom shape is not ready! ";
+                throw msg.str();
             }
 
         } else {
@@ -341,8 +342,9 @@ void calcu_layer_shape(map<string, vector<int> > &shape_map, const LayerParamete
                 cout << "calcu shape for " << top_name << get_shape_string(top_shape) << endl;
 
             } else {
-                cout << layer.name() << endl;
-                throw "bottom shape is not ready!";
+                stringstream msg;
+                msg << layer.name() << "bottom shape is not ready! ";
+                throw msg.str();
             }
 
         } else {
@@ -369,7 +371,9 @@ void calcu_layer_shape(map<string, vector<int> > &shape_map, const LayerParamete
 
                 } else {
                     if (!pool_param.has_kernel_size()) {
-                        throw "pooling kernel_size should be configed!";
+                        stringstream msg;
+                        msg<<layer.name()<<"'s pooling kernel_size should be configed!";
+                        throw msg.str();
                     } else {
                         kernel_size = pool_param.kernel_size();
                     }
@@ -1136,7 +1140,11 @@ void setup_splits(NetParameter &param, NetParameter *param_split) {
                 stringstream msg;
                 msg << "Unknown bottom blob '" << blob_name << "' (layer '"
                     << layer_param.name() << "', bottom index " << j << ")";
-                throw "Unknown bottom blob";
+                if (blob_name == "data") {
+                    cout<< "please make sure the input is described as a layer in caffe.prototxt"<<endl;
+                }
+
+                throw msg.str();
 
 
             }
@@ -1248,7 +1256,7 @@ int main(int argc, char **args) {
         dump_without_quantification(mdl_data);
 #endif
 
-    } catch (const char *msg) {
+    } catch (const string &msg) {
         cout << msg << endl;
     }
 
