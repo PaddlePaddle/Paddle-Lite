@@ -191,7 +191,7 @@ open iOS/convert/iOSConvertREADME.md
 
 ## TODO
 * Android GPU implementation
-* Converting Tensoflow Model to MDL
+* Converting Tensorflow Model to MDL
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
