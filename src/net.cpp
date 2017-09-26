@@ -90,7 +90,7 @@ namespace mdl {
                 return;
             }
             int layer_pid = layers[i]->pid();
-            if ((layer_pid % inception_thread_num) != (pid % inception_thread_num)) {
+            if ((layer_pid % inception_thread_num + 1) != pid) {
                 continue;
             }
             layers[i]->forward();
