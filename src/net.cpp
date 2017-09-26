@@ -124,9 +124,10 @@ namespace mdl {
 #ifdef MULTI_THREAD
         bool threads_enable = false;
         bool in_threads = false;
+        int inception_count = 0;
         for (int i = start; i < end; i++) {
             auto type = _layers[i]->layer_type();
-            if (threads_enable) {
+            if (threads_enable && inception_count < MAX_INCEPTION_NUM) {
                 std::thread ths[_thread_num];
                 for (int j = 1; j <= _thread_num; j++) {
                     ths[j - 1] = std::thread(forward_from_to_async, j, _thread_num, i, end, _layers);
@@ -141,11 +142,12 @@ namespace mdl {
             if (type == Layer::_SPLIT) {
                 threads_enable = true;
             }
-            if (in_threads) {
+            if (in_threads && inception_count < MAX_INCEPTION_NUM) {
                 if (type != Layer::_CONCAT) {
                     continue;
                 } else {
                     in_threads = false;
+                    inception_count++;
                 }
             }
             int thread_num = _thread_num;

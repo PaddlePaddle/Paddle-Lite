@@ -32,6 +32,10 @@ SOFTWARE.
 
 // #define NEED_DUMP true
 #define MULTI_THREAD true
+/**
+ * This is an empirical value indicating how many inception layers could be accelerated by multi-thread.
+ */
+#define MAX_INCEPTION_NUM  9
 
 #ifdef ANDROID
 #include <android/log.h>
