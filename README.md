@@ -145,9 +145,17 @@ python paddle2mdl.py
 cd ./build/release/x86/tools/build
 
 # copy your model.prototxt and model.caffemodel to this path
-# also need the input data
+
+./caffe2mdl model.prototxt model.caffemodel
+
+# if you want to test the model produced by this script, provide color value array of an image as the third parameter ,like this:
 
 ./caffe2mdl model.prototxt model.caffemodel data
+
+# the color value should in order of rgb,and transformed according to the model.
+
+# then you will get a new data.min.bin with test data inside 
+
 
 # after this command, model.min.json data.min.bin will be created in current 
 # some difference step you need to do if you convert caffe model to iOS GPU format
