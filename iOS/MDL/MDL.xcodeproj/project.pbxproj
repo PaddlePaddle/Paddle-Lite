@@ -10,15 +10,14 @@
 		FC92975F1F667600001EBC95 /* MDLCPUCore.h in Headers */ = {isa = PBXBuildFile; fileRef = FC92975E1F667600001EBC95 /* MDLCPUCore.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		FC9297681F667630001EBC95 /* libMDLCPUCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FC9297651F66761C001EBC95 /* libMDLCPUCore.a */; };
 		FC92976B1F66768E001EBC95 /* libstdc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = FC92976A1F66768E001EBC95 /* libstdc++.tbd */; };
+		FCC52BCD1F7ABA64002B31B6 /* MetalManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCC52BCC1F7ABA64002B31B6 /* MetalManager.swift */; };
 		FCF7A8751F6674FB00906055 /* MDL.h in Headers */ = {isa = PBXBuildFile; fileRef = FCF7A8731F6674FB00906055 /* MDL.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		FCF7A8991F66751D00906055 /* Commons.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A87F1F66751D00906055 /* Commons.swift */; };
 		FCF7A89A1F66751D00906055 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8801F66751D00906055 /* Extensions.swift */; };
-		FCF7A89B1F66751D00906055 /* Float16.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8811F66751D00906055 /* Float16.swift */; };
-		FCF7A89C1F66751D00906055 /* Kernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8821F66751D00906055 /* Kernel.swift */; };
 		FCF7A89D1F66751D00906055 /* ActivationLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8841F66751D00906055 /* ActivationLayer.swift */; };
 		FCF7A89E1F66751D00906055 /* ConcatLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8851F66751D00906055 /* ConcatLayer.swift */; };
 		FCF7A89F1F66751D00906055 /* ConvolutionLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8861F66751D00906055 /* ConvolutionLayer.swift */; };
-		FCF7A8A01F66751D00906055 /* CustomLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8871F66751D00906055 /* CustomLayer.swift */; };
+		FCF7A8A01F66751D00906055 /* PreProcessLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8871F66751D00906055 /* PreProcessLayer.swift */; };
 		FCF7A8A11F66751D00906055 /* DepthwiseConvolution.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8881F66751D00906055 /* DepthwiseConvolution.metal */; };
 		FCF7A8A21F66751D00906055 /* FcLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8891F66751D00906055 /* FcLayer.swift */; };
 		FCF7A8A31F66751D00906055 /* Layer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A88A1F66751D00906055 /* Layer.swift */; };
@@ -28,7 +27,6 @@
 		FCF7A8AA1F66751D00906055 /* SplitLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8911F66751D00906055 /* SplitLayer.swift */; };
 		FCF7A8AB1F66751D00906055 /* Loader.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8921F66751D00906055 /* Loader.swift */; };
 		FCF7A8AC1F66751D00906055 /* Matrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8931F66751D00906055 /* Matrix.swift */; };
-		FCF7A8AD1F66751D00906055 /* MetalManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8941F66751D00906055 /* MetalManager.swift */; };
 		FCF7A8AE1F66751D00906055 /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8951F66751D00906055 /* Model.swift */; };
 		FCF7A8AF1F66751D00906055 /* Net.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8961F66751D00906055 /* Net.swift */; };
 		FCF7A8B01F66751D00906055 /* NetParameters.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8971F66751D00906055 /* NetParameters.swift */; };
@@ -56,17 +54,16 @@
 		FC92975E1F667600001EBC95 /* MDLCPUCore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MDLCPUCore.h; path = ../../../MDLCPUCore/MDLCPUCore/MDLCPUCore.h; sourceTree = "<group>"; };
 		FC9297601F66761C001EBC95 /* MDLCPUCore.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = MDLCPUCore.xcodeproj; path = ../../../MDLCPUCore/MDLCPUCore.xcodeproj; sourceTree = "<group>"; };
 		FC92976A1F66768E001EBC95 /* libstdc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libstdc++.tbd"; path = "usr/lib/libstdc++.tbd"; sourceTree = SDKROOT; };
+		FCC52BCC1F7ABA64002B31B6 /* MetalManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalManager.swift; sourceTree = "<group>"; };
 		FCF7A8701F6674FB00906055 /* MDL.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MDL.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		FCF7A8731F6674FB00906055 /* MDL.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDL.h; sourceTree = "<group>"; };
 		FCF7A8741F6674FB00906055 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		FCF7A87F1F66751D00906055 /* Commons.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Commons.swift; sourceTree = "<group>"; };
 		FCF7A8801F66751D00906055 /* Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
-		FCF7A8811F66751D00906055 /* Float16.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Float16.swift; sourceTree = "<group>"; };
-		FCF7A8821F66751D00906055 /* Kernel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Kernel.swift; sourceTree = "<group>"; };
 		FCF7A8841F66751D00906055 /* ActivationLayer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ActivationLayer.swift; sourceTree = "<group>"; };
 		FCF7A8851F66751D00906055 /* ConcatLayer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConcatLayer.swift; sourceTree = "<group>"; };
 		FCF7A8861F66751D00906055 /* ConvolutionLayer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConvolutionLayer.swift; sourceTree = "<group>"; wrapsLines = 0; };
-		FCF7A8871F66751D00906055 /* CustomLayer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CustomLayer.swift; sourceTree = "<group>"; };
+		FCF7A8871F66751D00906055 /* PreProcessLayer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PreProcessLayer.swift; sourceTree = "<group>"; };
 		FCF7A8881F66751D00906055 /* DepthwiseConvolution.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = DepthwiseConvolution.metal; sourceTree = "<group>"; };
 		FCF7A8891F66751D00906055 /* FcLayer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FcLayer.swift; sourceTree = "<group>"; };
 		FCF7A88A1F66751D00906055 /* Layer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Layer.swift; sourceTree = "<group>"; };
@@ -76,7 +73,6 @@
 		FCF7A8911F66751D00906055 /* SplitLayer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SplitLayer.swift; sourceTree = "<group>"; };
 		FCF7A8921F66751D00906055 /* Loader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Loader.swift; sourceTree = "<group>"; };
 		FCF7A8931F66751D00906055 /* Matrix.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Matrix.swift; sourceTree = "<group>"; };
-		FCF7A8941F66751D00906055 /* MetalManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalManager.swift; sourceTree = "<group>"; };
 		FCF7A8951F66751D00906055 /* Model.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Model.swift; sourceTree = "<group>"; };
 		FCF7A8961F66751D00906055 /* Net.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Net.swift; sourceTree = "<group>"; };
 		FCF7A8971F66751D00906055 /* NetParameters.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetParameters.swift; sourceTree = "<group>"; };
@@ -154,15 +150,13 @@
 			isa = PBXGroup;
 			children = (
 				FCF7A87E1F66751D00906055 /* Commons */,
-				FCF7A8811F66751D00906055 /* Float16.swift */,
-				FCF7A8821F66751D00906055 /* Kernel.swift */,
 				FCF7A8831F66751D00906055 /* Layers */,
 				FCF7A8921F66751D00906055 /* Loader.swift */,
 				FCF7A8931F66751D00906055 /* Matrix.swift */,
-				FCF7A8941F66751D00906055 /* MetalManager.swift */,
 				FCF7A8951F66751D00906055 /* Model.swift */,
 				FCF7A8961F66751D00906055 /* Net.swift */,
 				FCF7A8971F66751D00906055 /* NetParameters.swift */,
+				FCC52BCC1F7ABA64002B31B6 /* MetalManager.swift */,
 			);
 			path = GPU;
 			sourceTree = "<group>";
@@ -182,7 +176,7 @@
 				FCF7A8841F66751D00906055 /* ActivationLayer.swift */,
 				FCF7A8851F66751D00906055 /* ConcatLayer.swift */,
 				FCF7A8861F66751D00906055 /* ConvolutionLayer.swift */,
-				FCF7A8871F66751D00906055 /* CustomLayer.swift */,
+				FCF7A8871F66751D00906055 /* PreProcessLayer.swift */,
 				FCF7A8881F66751D00906055 /* DepthwiseConvolution.metal */,
 				FCF7A8891F66751D00906055 /* FcLayer.swift */,
 				FCF7A88A1F66751D00906055 /* Layer.swift */,
@@ -295,7 +289,6 @@
 			files = (
 				FCF7A8AA1F66751D00906055 /* SplitLayer.swift in Sources */,
 				FCF7A8B01F66751D00906055 /* NetParameters.swift in Sources */,
-				FCF7A89C1F66751D00906055 /* Kernel.swift in Sources */,
 				FCF7A89E1F66751D00906055 /* ConcatLayer.swift in Sources */,
 				FCF7A8A21F66751D00906055 /* FcLayer.swift in Sources */,
 				FCF7A8A31F66751D00906055 /* Layer.swift in Sources */,
@@ -303,15 +296,14 @@
 				FCF7A89F1F66751D00906055 /* ConvolutionLayer.swift in Sources */,
 				FCF7A8991F66751D00906055 /* Commons.swift in Sources */,
 				FCF7A8A11F66751D00906055 /* DepthwiseConvolution.metal in Sources */,
-				FCF7A8AD1F66751D00906055 /* MetalManager.swift in Sources */,
-				FCF7A8A01F66751D00906055 /* CustomLayer.swift in Sources */,
+				FCF7A8A01F66751D00906055 /* PreProcessLayer.swift in Sources */,
 				FCF7A8A81F66751D00906055 /* ResizeLayer.swift in Sources */,
+				FCC52BCD1F7ABA64002B31B6 /* MetalManager.swift in Sources */,
 				FCF7A8A61F66751D00906055 /* PoolingLayer.swift in Sources */,
 				FCF7A8B11F66751D00906055 /* MDLNet.swift in Sources */,
 				FCF7A89D1F66751D00906055 /* ActivationLayer.swift in Sources */,
 				FCF7A8AF1F66751D00906055 /* Net.swift in Sources */,
 				FCF7A8AC1F66751D00906055 /* Matrix.swift in Sources */,
-				FCF7A89B1F66751D00906055 /* Float16.swift in Sources */,
 				FCF7A8AE1F66751D00906055 /* Model.swift in Sources */,
 				FCF7A8A91F66751D00906055 /* SoftmaxLayer.swift in Sources */,
 				FCF7A89A1F66751D00906055 /* Extensions.swift in Sources */,

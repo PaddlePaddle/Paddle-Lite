@@ -26,7 +26,7 @@ enum ModelType {
     case GoogleNet, MobileNet
 }
 
-let modelType = ModelType.GoogleNet
+let modelType = ModelType.MobileNet
 
 class CPUNetViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     var imageView: RegionImageView?

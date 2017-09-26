@@ -23,9 +23,7 @@
 import Foundation
 import MetalPerformanceShaders
 
-
-
-class CustomLayer: Layer {
+class PreProcessLayer: Layer {
     let custom: CustomKernel
     init(_ custom: CustomKernel, device: MTLDevice, config: LayerModel) throws {
         self.custom = custom
@@ -50,3 +48,4 @@ class CustomLayer: Layer {
                       destinationImage: output.image!)
     }
 }
+

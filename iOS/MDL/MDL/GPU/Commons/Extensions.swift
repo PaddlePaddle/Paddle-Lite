@@ -83,3 +83,20 @@ extension String{
     }
 }
 
+
+extension MTLTexture {
+    func threadGrid(threadGroup: MTLSize) -> MTLSize {
+        return MTLSizeMake(max(Int((self.width + threadGroup.width - 1) / threadGroup.width), 1), max(Int((self.height + threadGroup.height - 1) / threadGroup.height), 1), self.arrayLength)
+    }
+}
+
+
+extension MTLDevice{
+    func makeLibrary(bundle: Bundle) -> MTLLibrary?{
+        guard let path = bundle.path(forResource: "default", ofType: "metallib") else {
+            return nil
+        }
+        return try? makeLibrary(filepath: path)
+    }
+}
+

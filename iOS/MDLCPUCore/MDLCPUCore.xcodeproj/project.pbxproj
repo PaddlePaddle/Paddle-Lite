@@ -462,6 +462,11 @@
 				DEVELOPMENT_TEAM = Z5M2UUN5YV;
 				GCC_ENABLE_CPP_EXCEPTIONS = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+					"MDL_iOS=1",
+				);
 				HEADER_SEARCH_PATHS = (
 					../../include,
 					"../../third-party",
@@ -479,6 +484,7 @@
 				DEVELOPMENT_TEAM = Z5M2UUN5YV;
 				GCC_ENABLE_CPP_EXCEPTIONS = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = "MDL_iOS=1";
 				HEADER_SEARCH_PATHS = (
 					../../include,
 					"../../third-party",

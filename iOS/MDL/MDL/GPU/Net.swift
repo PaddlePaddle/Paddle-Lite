@@ -39,7 +39,7 @@ class Net {
     var descriptorList: [Matrix : MPSImageDescriptor] = [:]
     var outputLayer: Layer?
     var images: [(String, MPSImage)] = []
-
+    
     init(device: MTLDevice = MTLCreateSystemDefaultDevice()!, model: Model, inflightBuffers: Int = 3, preProcessKernel: CustomKernel?, commandQueue: MTLCommandQueue) throws{
         guard model.layer.count > 0, model.matrix.count > 0 else {
             throw NetError.modelDataError(message: "the count of layer or matrix in model mustn't be 0")
@@ -55,7 +55,7 @@ class Net {
         }
         
         self.ensureFirstLayer(config: model)
-
+        
         var layer: Layer
         for layerConfig in model.layer {
             switch layerConfig.type {
@@ -91,7 +91,7 @@ class Net {
                 guard let inPreProcessKernel = preProcessKernel else{
                     throw NetError.netError(message: "need custom kernel")
                 }
-                try layer = CustomLayer(inPreProcessKernel, device: device, config: layerConfig)
+                try layer = PreProcessLayer(inPreProcessKernel, device: device, config: layerConfig)
             default:
                 throw NetError.modelDataError(message: "unknown layer type: " + layerConfig.type)
             }

@@ -52,31 +52,28 @@ public class NetParameterLoaderBundle: NetParameterData {
     private var hdr: UnsafeMutableRawPointer!
     private(set) public var pointer: UnsafeMutablePointer<Float>
     
-    public init?(name: String, count: Int, prefix: String = "", suffix: String = "", ext: String, bundle: Bundle = Bundle.main) {
+    public init?(name: String, count: Int, ext: String, bundle: Bundle = Bundle.main) {
         fileSize = count * MemoryLayout<Float>.stride
-        
-        let resourceName = prefix + name + suffix
-        
-        guard let path = bundle.path(forResource: resourceName, ofType: ext) else {
-            print("Error: resource \"\(resourceName)\" not found")
+        guard let path = bundle.path(forResource: name, ofType: ext) else {
+            print("Parameter Get Error: resource \"\(name)\" not found")
             return nil
         }
         
         fd = open(path, O_RDONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
         if fd == -1 {
-            print("Error: failed to open \"\(path)\", error = \(errno)")
+            print("Parameter Get Error: failed to open \"\(path)\", error = \(errno)")
             return nil
         }
         
         hdr = mmap(nil, fileSize, PROT_READ, MAP_FILE | MAP_SHARED, fd, 0)
         if hdr == nil {
-            print("Error: mmap failed, errno = \(errno)")
+            print("Parameter Get Error: mmap failed, errno = \(errno)")
             return nil
         }
         
         pointer = hdr.bindMemory(to: Float.self, capacity: count)
         if pointer == UnsafeMutablePointer<Float>(bitPattern: -1) {
-            print("Error: mmap failed, errno = \(errno)")
+            print("Parameter Get Error: mmap failed, errno = \(errno)")
             return nil
         }
     }
@@ -84,7 +81,7 @@ public class NetParameterLoaderBundle: NetParameterData {
     deinit {
         if let hdr = hdr {
             let result = munmap(hdr, Int(fileSize))
-            assert(result == 0, "Error: munmap failed, errno = \(errno)")
+            assert(result == 0, "Parameter Get Error: munmap failed, errno = \(errno)")
         }
         if let fd = fd {
             close(fd)

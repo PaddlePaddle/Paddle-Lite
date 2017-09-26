@@ -23,37 +23,15 @@
 import Foundation
 import MetalPerformanceShaders
 
-
-
-extension MPSCNNConvolution{
-    static func offsetForConvolution(padding: Int,
-                              sourceWidth: Int,
-                              sourceHeight: Int,
-                              destinationWidth: Int,
-                              destinationHeight: Int,
-                              kernelWidth: Int,
-                              kernelHeight: Int,
-                              strideInPixelsX: Int,
-                              strideInPixelsY: Int) -> MPSOffset {
-        if padding > 0 {
-            let padH = (destinationHeight - 1) * strideInPixelsY + kernelHeight - sourceHeight
-            let padW = (destinationWidth  - 1) * strideInPixelsX + kernelWidth  - sourceWidth
-            return MPSOffset(x: (kernelWidth - padW)/2, y: (kernelHeight - padH)/2, z: 0)
-        } else {
-            return MPSOffset(x: kernelWidth/2, y: kernelHeight/2, z: 0)
-        }
-    }
-}
-
 class ConvolutionLayer: MPSCNNLayer {
     let padding: Int
     var conv: MPSCNNConvolution?
     var activation: MPSCNNNeuron?
     var kernelSize: Int
     var stride: Int
-
+    
     public override init(device: MTLDevice,
-                config: LayerModel) throws {
+                         config: LayerModel) throws {
         guard config.weight.count > 0 else {
             throw NetError.modelDataError(message: "weight of \(config.name) has no elelment")
         }
@@ -70,7 +48,7 @@ class ConvolutionLayer: MPSCNNLayer {
     override var type: String{
         return LayerModel.convolutionType
     }
-        
+    
     override func initializeCompute(device: MTLDevice){
         guard weights.count > 0 && inputs.count > 0 && outputs.count > 0 else {
             fatalError("weights , inputs or outputs has no element")
@@ -87,10 +65,10 @@ class ConvolutionLayer: MPSCNNLayer {
         desc.strideInPixelsX = stride
         desc.strideInPixelsY = stride
         
-
+        
         var bias: Matrix?
         if useBias {
-             bias = weights[1]
+            bias = weights[1]
         }
         guard let wData = weight.data?.pointer else {
             fatalError("weight data is nil")
@@ -114,20 +92,18 @@ class ConvolutionLayer: MPSCNNLayer {
         let output = outputs[0]
         
         conv?.offset = MetalManager.offsetForConvolution(padding: self.padding,
-                                           sourceWidth: input.width,
-                                           sourceHeight: input.height,
-                                           destinationWidth: output.width,
-                                           destinationHeight: output.height,
-                                           kernelWidth: kernelSize,
-                                           kernelHeight: kernelSize,
-                                           strideInPixelsX: stride,
-                                           strideInPixelsY: stride)
+                                                         sourceWidth: input.width,
+                                                         sourceHeight: input.height,
+                                                         destinationWidth: output.width,
+                                                         destinationHeight: output.height,
+                                                         kernelWidth: kernelSize,
+                                                         kernelHeight: kernelSize,
+                                                         strideInPixelsX: stride,
+                                                         strideInPixelsY: stride)
         
         super.encode(commandBuffer: commandBuffer)
     }
 }
-
-
 
 class DepthwiseConvolution: Layer {
     let kernel: (Int, Int)
@@ -136,7 +112,7 @@ class DepthwiseConvolution: Layer {
     var compute: DepthwiseConvolutionKernel!
     var pad: Int
     override init(device: MTLDevice,
-         config: LayerModel) throws {
+                  config: LayerModel) throws {
         guard config.weight.count > 0 else {
             throw NetError.modelDataError(message: "weight of \(config.name) has no elelment")
         }
@@ -183,15 +159,15 @@ class DepthwiseConvolution: Layer {
         let input = inputs[0]
         let output = outputs[0]
         
-        compute.offset = MPSCNNConvolution.offsetForConvolution(padding: self.pad,
-                                              sourceWidth: input.width,
-                                              sourceHeight: input.height,
-                                              destinationWidth: output.width,
-                                              destinationHeight: output.height,
-                                              kernelWidth: kernel.0,
-                                              kernelHeight: kernel.1,
-                                              strideInPixelsX: stride.0,
-                                              strideInPixelsY: stride.1)
+        compute.offset = MetalManager.offsetForConvolution(padding: self.pad,
+                                                           sourceWidth: input.width,
+                                                           sourceHeight: input.height,
+                                                           destinationWidth: output.width,
+                                                           destinationHeight: output.height,
+                                                           kernelWidth: kernel.0,
+                                                           kernelHeight: kernel.1,
+                                                           strideInPixelsX: stride.0,
+                                                           strideInPixelsY: stride.1)
         
         compute.encode(commandBuffer: commandBuffer,
                        sourceImage: input.image!,
@@ -202,7 +178,7 @@ class DepthwiseConvolution: Layer {
 class ReluLayer: MPSCNNLayer {
     var activation: MPSCNNNeuronReLU?
     override init(device: MTLDevice,
-                config: LayerModel) throws {
+                  config: LayerModel) throws {
         try super.init(device: device, config: config)
     }
     
@@ -218,12 +194,12 @@ class ReluLayer: MPSCNNLayer {
 
 /// 这一层 其实就是卷积核为 1 * 1的 ConvolutionLayer
 class PointwiseConvolutionLayer: ConvolutionLayer {
-
+    
     override init(device: MTLDevice,
-         config: LayerModel) throws{
+                  config: LayerModel) throws{
         try super.init(device: device, config: config)
     }
-
+    
     override var type: String{
         return LayerModel.pointWiseType
     }
