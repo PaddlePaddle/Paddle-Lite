@@ -37,14 +37,14 @@ namespace mdl {
             buffer += MR;
         }
     }
-    
+
     void Gemmer::pack_A(int mc, int kc, const float *A, int incRowA, int incColA, float *buffer) {
         int mp = mc / MR;
         int _mr = mc % MR;
         int tmp1 = kc * MR;
         int tmp2 = MR * incRowA;
         int i, j;
-    
+
         for (i = 0; i < mp; ++i) {
             pack_MRxk(kc, A, incRowA, incColA, buffer);
             buffer += tmp1;
@@ -65,7 +65,7 @@ namespace mdl {
             }
         }
     }
-    
+
     void Gemmer::pack_kxNR(int k, const float *B, int incRowB, int incColB, float *buffer) {
         int i, j;
         for (i = 0; i < k; ++i) {
@@ -78,13 +78,13 @@ namespace mdl {
             buffer += NR;
         }
     }
-    
+
     void Gemmer::pack_B(int kc, int nc, const float *B, int incRowB, int incColB, float *buffer) {
         int np = nc / NR;
         int _nr = nc % NR;
         int tmp1 = kc * NR;
         int i, j;
-    
+
         for (j = 0; j < np; ++j) {
             pack_kxNR(kc, B, incRowB, incColB, buffer);
             B += NR;
@@ -103,9 +103,10 @@ namespace mdl {
             }
         }
     }
-    
-    void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float *B, float beta, float *C, int incRowC, int incColC) {
-#ifndef MDL_MAC
+#if defined(MDL_V7)
+
+    void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float *B, float beta, float *C, int incRowC,
+                               int incColC) {
         int i, j, l;
         float32x4_t abv0 = vdupq_n_f32(0);
         float32x4_t abv1 = vdupq_n_f32(0);
@@ -135,7 +136,139 @@ namespace mdl {
         vst1q_f32(AB_ + 4, abv1);
         vst1q_f32(AB_ + 8, abv2);
         vst1q_f32(AB_ + 12, abv3);
+
+        if (equal(beta, 0.0)) {
+            for (j = 0; j < NR; ++j) {
+                for (i = 0; i < MR; ++i) {
+                    C[i * incRowC + j * incColC] = 0.0;
+                }
+            }
+        } else if (!equal(beta, 1.0)) {
+            for (j = 0; j < NR; ++j) {
+                for (i = 0; i < MR; ++i) {
+                    C[i * incRowC + j * incColC] *= beta;
+                }
+            }
+        }
+
+        if (!equal(alpha, 1.0)) {
+            for (j = 0; j < NR; ++j) {
+                for (i = 0; i < MR; ++i) {
+                    C[i * incRowC + j * incColC] += alpha * AB_[i + j * MR];
+                }
+            }
+        } else {
+            for (j = 0; j < NR; ++j) {
+                for (i = 0; i < MR; ++i) {
+                    C[i * incRowC + j * incColC] += AB_[i + j * MR];
+                }
+            }
+        }
+    }
+#elif defined(MDL_V8)
+    void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float *B, float beta, float *C, int incRowC, int incColC) {
+            int i, j, l;
+
+            float32x4_t abv0 = vdupq_n_f32(0);
+            float32x4_t abv1 = vdupq_n_f32(0);
+            float32x4_t abv2 = vdupq_n_f32(0);
+            float32x4_t abv3 = vdupq_n_f32(0);
+
+            float32x4_t av;
+            float32x4_t bv;
+
+            int kc1 = kc / 4, kc2 = kc % 4;
+            asm volatile (
+            "subs %[kc1], %[kc1], #1\n\t"
+                    "blt end1\n\t"
+                    "loop1: \n\t"
+                    "ld1 {%[av].4S}, [%[A]], #16\n\t"
+                    "ld1 {%[bv].4S}, [%[B]], #16\n\t"
+                    "fmla %[abv0].4S, %[av].4S, %[bv].4S[0]\n\t"
+                    "fmla %[abv1].4S, %[av].4S, %[bv].4S[1]\n\t"
+                    "fmla %[abv2].4S, %[av].4S, %[bv].4S[2]\n\t"
+                    "fmla %[abv3].4S, %[av].4S, %[bv].4S[3]\n\t"
+                    // "add %[A], %[A], #16\n\t"
+                    // "add %[B], %[B], #16\n\t"
+                    "ld1 {%[av].4S}, [%[A]], #16\n\t"
+                    "ld1 {%[bv].4S}, [%[B]], #16\n\t"
+                    "fmla %[abv0].4S, %[av].4S, %[bv].4S[0]\n\t"
+                    "fmla %[abv1].4S, %[av].4S, %[bv].4S[1]\n\t"
+                    "fmla %[abv2].4S, %[av].4S, %[bv].4S[2]\n\t"
+                    "fmla %[abv3].4S, %[av].4S, %[bv].4S[3]\n\t"
+                    // "add %[A], %[A], #16\n\t"
+                    // "add %[B], %[B], #16\n\t"
+                    "ld1 {%[av].4S}, [%[A]], #16\n\t"
+                    "ld1 {%[bv].4S}, [%[B]], #16\n\t"
+                    "fmla %[abv0].4S, %[av].4S, %[bv].4S[0]\n\t"
+                    "fmla %[abv1].4S, %[av].4S, %[bv].4S[1]\n\t"
+                    "fmla %[abv2].4S, %[av].4S, %[bv].4S[2]\n\t"
+                    "fmla %[abv3].4S, %[av].4S, %[bv].4S[3]\n\t"
+                    // "add %[A], %[A], #16\n\t"
+                    // "add %[B], %[B], #16\n\t"
+                    "ld1 {%[av].4S}, [%[A]], #16\n\t"
+                    "ld1 {%[bv].4S}, [%[B]], #16\n\t"
+                    "fmla %[abv0].4S, %[av].4S, %[bv].4S[0]\n\t"
+                    "fmla %[abv1].4S, %[av].4S, %[bv].4S[1]\n\t"
+                    "fmla %[abv2].4S, %[av].4S, %[bv].4S[2]\n\t"
+                    "fmla %[abv3].4S, %[av].4S, %[bv].4S[3]\n\t"
+                    // "add %[A], %[A], #16\n\t"
+                    // "add %[B], %[B], #16\n\t"
+                    "subs %[kc1], %[kc1], #1\n\t"
+                    "bge loop1\n\t"
+                    "end1:\n\t"
+                    "subs %[kc2], %[kc2], #1\n\t"
+                    "blt end2\n\t"
+                    "loop2: \n\t"
+                    "ld1 {%[av].4S}, [%[A]]\n\t"
+                    "ld1 {%[bv].4S}, [%[B]]\n\t"
+                    "fmla %[abv0].4S, %[av].4S, %[bv].4S[0]\n\t"
+                    "fmla %[abv1].4S, %[av].4S, %[bv].4S[1]\n\t"
+                    "fmla %[abv2].4S, %[av].4S, %[bv].4S[2]\n\t"
+                    "fmla %[abv3].4S, %[av].4S, %[bv].4S[3]\n\t"
+                    "add %[A], %[A], #16\n\t"
+                    "add %[B], %[B], #16\n\t"
+                    "subs %[kc2], %[kc2], #1\n\t"
+                    "bge loop2\n\t"
+                    "end2:\n\t"
+            : [A]"=r"(A), [B]"=r"(B), [av]"=w"(av), [bv]"=w"(bv),
+            [abv0]"=w"(abv0), [abv1]"=w"(abv1), [abv2]"=w"(abv2), [abv3]"=w"(abv3),
+            [kc1]"=r"(kc1), [kc2]"=r"(kc2)
+            : "[A]"(A), "[B]"(B), "[av]"(av), "[bv]"(bv),
+                    "[abv0]"(abv0), "[abv1]"(abv1), "[abv2]"(abv2), "[abv3]"(abv3),
+                    "[kc1]"(kc1), "[kc2]"(kc2)
+            );
+
+            vst1q_f32(AB_ + 0, abv0);
+            vst1q_f32(AB_ + 4, abv1);
+            vst1q_f32(AB_ + 8, abv2);
+            vst1q_f32(AB_ + 12, abv3);
+
+            if (beta == 0.0) {
+                for (j = 0; j < NR; ++j) {
+                    for (i = 0; i < MR; ++i) {
+                        C[i * incRowC + j * incColC] = 0.0;
+                    }
+                }
+            } else if (beta != 1.0) {
+                for (j = 0; j < NR; ++j) {
+                    for (i = 0; i < MR; ++i) {
+                        C[i * incRowC + j * incColC] *= beta;
+                    }
+                }
+            }
+
+            for (j = 0; j < NR; ++j) {
+                for (i = 0; i < MR; ++i) {
+                    C[i * incRowC + j * incColC] += AB_[i + j * MR];
+                }
+            }
+        }
+
+
 #else
+    void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float *B, float beta, float *C, int incRowC,
+                               int incColC) {
         int i = 0;
         int j = 0;
         int l = 0;
@@ -151,21 +284,21 @@ namespace mdl {
             A += MR;
             B += NR;
         }
-#endif
-    if (equal(beta, 0.0)){
+
+        if (equal(beta, 0.0)) {
             for (j = 0; j < NR; ++j) {
                 for (i = 0; i < MR; ++i) {
                     C[i * incRowC + j * incColC] = 0.0;
                 }
             }
-        } else if (!equal(beta,1.0)) {
+        } else if (!equal(beta, 1.0)) {
             for (j = 0; j < NR; ++j) {
                 for (i = 0; i < MR; ++i) {
                     C[i * incRowC + j * incColC] *= beta;
                 }
             }
         }
-    
+
         if (!equal(alpha, 1.0)) {
             for (j = 0; j < NR; ++j) {
                 for (i = 0; i < MR; ++i) {
@@ -180,8 +313,11 @@ namespace mdl {
             }
         }
     }
-    
-    void Gemmer::dgeaxpy(int m, int n, float alpha, const float *X, int incRowX, int incColX, float *Y, int incRowY, int incColY) {
+#endif
+
+
+    void Gemmer::dgeaxpy(int m, int n, float alpha, const float *X, int incRowX, int incColX, float *Y, int incRowY,
+                         int incColY) {
         int i, j;
         if (!equal(alpha, 1.0)) {
             for (j = 0; j < n; ++j) {
@@ -197,7 +333,7 @@ namespace mdl {
             }
         }
     }
-    
+
     void Gemmer::dgescal(int m, int n, float alpha, float *X, int incRowX, int incColX) {
         int i, j;
         if (!equal(alpha, 0.0)) {
@@ -214,22 +350,22 @@ namespace mdl {
             }
         }
     }
-    
+
     void Gemmer::dgemm_macro_kernel(int mc, int nc, int kc, float alpha, float beta, float *C, int incRowC, int incColC) {
         int mp = (mc + MR - 1) / MR;
         int np = (nc + NR - 1) / NR;
-    
+
         int _mr = mc % MR;
         int _nr = nc % NR;
-    
+
         int i, j;
-    
+
         for (j = 0; j < np; ++j) {
             int nr = (j != np - 1 || _nr == 0) ? NR : _nr;
-    
+
             for (i = 0; i < mp; ++i) {
                 int mr = (i != mp - 1 || _mr == 0) ? MR : _mr;
-    
+
                 if (mr == MR && nr == NR) {
                     dgemm_micro_kernel(kc, alpha, &A_[i * kc * MR], &B_[j * kc * NR], beta, &C[i * MR * incRowC + j * NR], incRowC, incColC);
                 } else {
@@ -240,40 +376,40 @@ namespace mdl {
             }
         }
     }
-    
+
     void Gemmer::dgemm_nn(int m, int n, int k, float alpha, const float *A, int incRowA, int incColA, const float *B, int incRowB, int incColB, float beta, float *C, int incRowC, int incColC) {
         int mb = (m + MC - 1) / MC;
         int nb = (n + NC - 1) / NC;
         int kb = (k + KC - 1) / KC;
-    
+
         int _mc = m % MC;
         int _nc = n % NC;
         int _kc = k % KC;
-    
+
         int mc, nc, kc;
         int i, j, l;
-    
+
         float _beta;
-    
+
         if (equal(alpha, 0.0) ||  k == 0) {
             dgescal(m, n, beta, C, incRowC, incColC);
             return;
         }
-    
+
         for (j = 0; j < nb; ++j) {
             nc = (j != nb - 1 || _nc == 0) ? NC : _nc;
-    
+
             for (l = 0; l < kb; ++l) {
                 kc = (l != kb - 1 || _kc == 0) ? KC : _kc;
                 _beta = (l == 0) ? beta : 1.0;
-    
+
                 pack_B(kc, nc, &B[l * KC * incRowB + j * NC], incRowB, incColB, B_);
-    
+
                 for (i = 0; i < mb; ++i) {
                     mc = (i != mb - 1 || _mc == 0) ? MC : _mc;
-    
+
                     pack_A(mc, kc, &A[i * MC * incRowA + l * KC], incRowA, incColA, A_);
-    
+
                     dgemm_macro_kernel(mc, nc, kc, alpha, _beta, &C[i * MC * incRowC + j * NC], incRowC, incColC);
                 }
             }

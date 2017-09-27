@@ -44,8 +44,12 @@ endif(IS_IOS)
 
 if(IS_MAC)
     add_subdirectory(tools)
-    add_definitions( -DMDL_MAC="true")
-endif(IS_MAC)
+    add_definitions(-DMDL_MAC="true")
+elseif(V7)
+    add_definitions(-DMDL_V7="true")
+elseif(V8)
+    add_definitions(-DMDL_V8="true")
+endif(V8)
 
 
 

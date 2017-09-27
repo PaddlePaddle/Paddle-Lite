@@ -50,8 +50,10 @@ build_android_fn () {
     
     if [ "${PLATFORM}" = "arm-v7a" ]; then
         ABI="armeabi-v7a with NEON"
+        ARM_PLATFORM="V7"
     elif [ "${PLATFORM}" = "arm-v8a" ]; then
         ABI="arm64-v8a"
+        ARM_PLATFORM="V8"
     else
         echo "unknown platform!"
         exit -1
@@ -80,7 +82,8 @@ build_android_fn () {
         -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
         -DANDROID_PLATFORM="${ANDROID_PLATFORM_VERSION}" \
         -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
-        -DANDROID="true"
+        -DANDROID="true" \
+        -D"${ARM_PLATFORM}"="true"
     
     cp -r test/model build/release/${PLATFORM}/build
     cp scripts/deploy_android.sh build/release/${PLATFORM}/build
@@ -100,7 +103,8 @@ build_ios_fn () {
         -DCMAKE_BUILD_TYPE="${MODE}" \
         -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
         -DIOS_PLATFORM=OS \
-        -DIS_IOS=true
+        -DIS_IOS="true" \
+        -DV7="true"
     
     cd "${BUILD_DIR}"
     make -j 8
