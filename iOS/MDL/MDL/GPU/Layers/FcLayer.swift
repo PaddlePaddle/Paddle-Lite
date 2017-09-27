@@ -23,7 +23,6 @@
 import Foundation
 import MetalPerformanceShaders
 
-
 /// 全链接层 Full connect
 class FcLayer: MPSCNNLayer {
     let outputNum: Int

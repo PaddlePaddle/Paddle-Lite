@@ -32,13 +32,12 @@ class PreProcessLayer: Layer {
     }
     
     override var type: String {
-        return "Custom"
+        return LayerModel.preProcessType
     }
     
     override func initializeCompute(device: MTLDevice) {
         
     }
-    
     
     override func encode(commandBuffer: MTLCommandBuffer){
         let input = inputs[0]

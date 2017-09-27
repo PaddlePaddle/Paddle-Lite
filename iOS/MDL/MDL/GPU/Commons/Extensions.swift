@@ -21,19 +21,6 @@
 
 import Foundation
 
-//MARK: Array extension
-extension Array where Element: Comparable{
-    
-    /// 返回数组前 r 个元素, 并将元素处于原数组的位置作为元组的第一个元素返回
-    ///
-    /// - Parameter r: 前 r 个元素
-    /// - Returns: [(原有位置, 排好位置的元素)]
-    func top(r: Int) -> [(Int, Element)] {
-        precondition(r <= self.count)
-        return Array<(Int, Element)>(zip(0..<self.count, self).sorted{ $0.1 > $1.1 }.prefix(through: r - 1))
-    }
-}
-
 protocol CIntIndex {
     associatedtype T;
     subscript(index: CInt) -> T { get set};
@@ -75,6 +62,19 @@ extension UnsafeMutablePointer: CIntIndex{
         }
     }
     
+}
+
+//MARK: Array extension
+extension Array where Element: Comparable{
+    
+    /// 返回数组前 r 个元素, 并将元素处于原数组的位置作为元组的第一个元素返回
+    ///
+    /// - Parameter r: 前 r 个元素
+    /// - Returns: [(原有位置, 排好位置的元素)]
+    func top(r: Int) -> [(Int, Element)] {
+        precondition(r <= self.count)
+        return Array<(Int, Element)>(zip(0..<self.count, self).sorted{ $0.1 > $1.1 }.prefix(through: r - 1))
+    }
 }
 
 extension String{
