@@ -29,7 +29,6 @@
 		FCF7A8AC1F66751D00906055 /* Matrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8931F66751D00906055 /* Matrix.swift */; };
 		FCF7A8AE1F66751D00906055 /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8951F66751D00906055 /* Model.swift */; };
 		FCF7A8AF1F66751D00906055 /* Net.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8961F66751D00906055 /* Net.swift */; };
-		FCF7A8B01F66751D00906055 /* NetParameters.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8971F66751D00906055 /* NetParameters.swift */; };
 		FCF7A8B11F66751D00906055 /* MDLNet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8981F66751D00906055 /* MDLNet.swift */; };
 /* End PBXBuildFile section */
 
@@ -75,7 +74,6 @@
 		FCF7A8931F66751D00906055 /* Matrix.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Matrix.swift; sourceTree = "<group>"; };
 		FCF7A8951F66751D00906055 /* Model.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Model.swift; sourceTree = "<group>"; };
 		FCF7A8961F66751D00906055 /* Net.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Net.swift; sourceTree = "<group>"; };
-		FCF7A8971F66751D00906055 /* NetParameters.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetParameters.swift; sourceTree = "<group>"; };
 		FCF7A8981F66751D00906055 /* MDLNet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MDLNet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -155,7 +153,6 @@
 				FCF7A8931F66751D00906055 /* Matrix.swift */,
 				FCF7A8951F66751D00906055 /* Model.swift */,
 				FCF7A8961F66751D00906055 /* Net.swift */,
-				FCF7A8971F66751D00906055 /* NetParameters.swift */,
 				FCC52BCC1F7ABA64002B31B6 /* MetalManager.swift */,
 			);
 			path = GPU;
@@ -288,7 +285,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				FCF7A8AA1F66751D00906055 /* SplitLayer.swift in Sources */,
-				FCF7A8B01F66751D00906055 /* NetParameters.swift in Sources */,
 				FCF7A89E1F66751D00906055 /* ConcatLayer.swift in Sources */,
 				FCF7A8A21F66751D00906055 /* FcLayer.swift in Sources */,
 				FCF7A8A31F66751D00906055 /* Layer.swift in Sources */,

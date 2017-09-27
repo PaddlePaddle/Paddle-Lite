@@ -29,65 +29,55 @@ import MetalPerformanceShaders
 enum GPUModelType {
     case squeezeNet, mobileNet
 }
-var gpuModelType: GPUModelType = .squeezeNet
+var gpuModelType: GPUModelType = .mobileNet
 
-class GPUNetViewController: UIViewController {
+class GPUNetViewController: UIViewController, CaptureTextureDelegate {
     
     @IBOutlet weak var videoView: UIView!
     @IBOutlet weak var resultLabel: UILabel!
-    let labels = ImageNetLabels()
+    let labels = PreWords(fileName: "pre_words")
     let device = MTLCreateSystemDefaultDevice()!
     var textureLoader: MTKTextureLoader!
     var commandQueue: MTLCommandQueue!
     var net: MDLGPUNet?
     var isFirstIn = true
-    var videoCapture: VideoCapture!
-    var startupGroup = DispatchGroup()
+    var videoCapture: MDLVideoCapture!
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         commandQueue = device.makeCommandQueue()
         textureLoader = MTKTextureLoader(device: device)
-        
-        startupGroup.enter()
-        initializeVideoCapture {
-            self.startupGroup.leave()
-        }
-        
-        startupGroup.enter()
-        initializeNet {
-            self.startupGroup.leave()
-        }
-        
-       startupGroup.notify(queue: .main) {
-            self.videoCapture.start()
+        initCapture {
+            self.initializeNet {
+                self.videoCapture.startRecording()
+            }
         }
     }
     
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        videoCapture.stop()
+        videoCapture.stopRecording()
     }
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         if !isFirstIn {
-            videoCapture.start()
+            videoCapture.startRecording()
         }
         isFirstIn = false
     }
-
-    func initializeVideoCapture(completion: @escaping () -> Void){
-        videoCapture = VideoCapture(device: device)
+    
+    func initCapture(success: @escaping () -> Void) {
+        videoCapture = MDLVideoCapture.init(frame: self.videoView.bounds)
+        videoCapture.captureChangeStatusBlock = {(status) in
+            success()
+        }
+        videoCapture.fps = 15
         videoCapture.delegate = self
-        videoCapture.fps = 10
-        videoCapture.setUp { (success) in
-            if let previewLayer = self.videoCapture.previewLayer{
-                self.videoView.layer.insertSublayer(previewLayer, at: 0)
-                previewLayer.frame = self.videoView.bounds
-          }
-            completion()
+        videoCapture.registerRecording()
+        if let preView = videoCapture.previewView(){
+            self.videoView.insertSubview(preView, at: 0)
+            preView.frame = self.videoView.bounds
         }
     }
     
@@ -176,18 +166,15 @@ class GPUNetViewController: UIViewController {
         }
         resultLabel.text = s.joined(separator: "\n\n")
     }
-}
-
-extension GPUNetViewController: VideoCaptureDelegate{
-    func videoCapture(_ capture: VideoCapture, didCaptureVideoTexture texture: MTLTexture?, timestamp: CMTime) {
-        if let inTexture = texture {
-            predict(texture: inTexture)
+    
+    //CaptureTextureDelegate
+    func capture(_ texture: MTLTexture!) {
+        if let inTexutre = texture {
+            predict(texture: inTexutre)
         }
     }
-    
-    func videoCapture(_ capture: VideoCapture, didCapturePhotoTexture texture: MTLTexture?, previewImage: UIImage?) {
-    }
 }
+
 
 
 

@@ -1,4 +1,6 @@
 //
+//  MMRecordingPreviewView.m
+//  1.1_componentPushStreamCamera
 /* Copyright (c) 2017 Baidu, Inc. All Rights Reserved.
  
  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,27 +22,22 @@
  SOFTWARE.
  ==============================================================================*/
 
-import Foundation
+#import "MDLVideoCapturePreviewView.h"
 
+@implementation MDLVideoCapturePreviewView
 
-// 自定义 ?!  如果 ?! 前的返回值为一个可选值, 则进行隐式解包, 如果有值则返回这个值, 如果为nil 则fatalError 传入的信息
-precedencegroup ExecutedOrFatalError{
-    associativity: left
-    higherThan: AssignmentPrecedence
-}
-infix operator ?!: ExecutedOrFatalError
-func ?!<T>(option: T?, excuteOrError: @autoclosure () -> String) -> T{
-    if let inOpt = option {
-        return inOpt
-    }else{
-        fatalError(excuteOrError())
-    }
++ (Class)layerClass {
+    return [AVCaptureVideoPreviewLayer class];
 }
 
-extension Array where Element: Comparable{
-    func top(r: Int) -> [(Int, Element)] {
-        precondition(r <= self.count)
-        return Array<(Int, Element)>(zip(0..<self.count, self).sorted{ $0.1 > $1.1 }.prefix(through: r - 1))
-    }
+- (AVCaptureSession *)session {
+    AVCaptureVideoPreviewLayer *previewLayer = (AVCaptureVideoPreviewLayer *)self.layer;
+    return previewLayer.session;
 }
 
+- (void)setSession:(AVCaptureSession *)session {
+    AVCaptureVideoPreviewLayer *previewLayer = (AVCaptureVideoPreviewLayer *)self.layer;
+    previewLayer.session = session;
+}
+
+@end

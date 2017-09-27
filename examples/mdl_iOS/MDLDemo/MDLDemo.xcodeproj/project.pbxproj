@@ -13,7 +13,6 @@
 		FC3121BA1F729E270015AD00 /* m_model.min.json in Resources */ = {isa = PBXBuildFile; fileRef = FC3121B31F729DCA0015AD00 /* m_model.min.json */; };
 		FC34A5481F684B0700639FE0 /* MobileNetLabels.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC34A4701F6847A400639FE0 /* MobileNetLabels.swift */; };
 		FC34A5491F684B0700639FE0 /* RegionImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC34A4721F6847A400639FE0 /* RegionImageView.swift */; };
-		FC34A54A1F684B0700639FE0 /* VideoCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC34A4711F6847A400639FE0 /* VideoCapture.swift */; };
 		FC5843D21F69032C001A840B /* Common.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC5843D11F69032C001A840B /* Common.swift */; };
 		FC5843D61F69080F001A840B /* PreprocessShader.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC5843D51F69080F001A840B /* PreprocessShader.metal */; };
 		FC5843DF1F6909A6001A840B /* mobileNetModel.json in Resources */ = {isa = PBXBuildFile; fileRef = FC5843D81F690980001A840B /* mobileNetModel.json */; };
@@ -22,6 +21,8 @@
 		FC5B4A3E1F69612A00203335 /* MDL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FC5B4A3D1F69612A00203335 /* MDL.framework */; };
 		FC5B4A3F1F69612A00203335 /* MDL.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = FC5B4A3D1F69612A00203335 /* MDL.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		FC81F0421F7786E60033F0CA /* g_data.min.bin in Resources */ = {isa = PBXBuildFile; fileRef = FC81F03F1F7778950033F0CA /* g_data.min.bin */; };
+		FC8A42931F7ABEA300D08302 /* MDLVideoCapture.m in Sources */ = {isa = PBXBuildFile; fileRef = FC8A42901F7ABEA200D08302 /* MDLVideoCapture.m */; };
+		FC8A42941F7ABEA300D08302 /* MDLVideoCapturePreviewView.m in Sources */ = {isa = PBXBuildFile; fileRef = FC8A42911F7ABEA200D08302 /* MDLVideoCapturePreviewView.m */; };
 		FCE01B831F77AD560066FB61 /* MobileNetParameters.bundle in Resources */ = {isa = PBXBuildFile; fileRef = FCE01B7F1F77AB040066FB61 /* MobileNetParameters.bundle */; };
 		FCE01B881F77CFCC0066FB61 /* apple.jpg in Resources */ = {isa = PBXBuildFile; fileRef = FCE01B851F77CFC30066FB61 /* apple.jpg */; };
 		FCE01B891F77CFCC0066FB61 /* banana.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = FCE01B861F77CFC30066FB61 /* banana.jpeg */; };
@@ -56,7 +57,6 @@
 		FC3121B31F729DCA0015AD00 /* m_model.min.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = m_model.min.json; sourceTree = "<group>"; };
 		FC3121B41F729DD90015AD00 /* g_model.min.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = g_model.min.json; sourceTree = "<group>"; };
 		FC34A4701F6847A400639FE0 /* MobileNetLabels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileNetLabels.swift; sourceTree = "<group>"; };
-		FC34A4711F6847A400639FE0 /* VideoCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoCapture.swift; sourceTree = "<group>"; };
 		FC34A4721F6847A400639FE0 /* RegionImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionImageView.swift; sourceTree = "<group>"; };
 		FC5843D11F69032C001A840B /* Common.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Common.swift; sourceTree = "<group>"; };
 		FC5843D51F69080F001A840B /* PreprocessShader.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = PreprocessShader.metal; sourceTree = "<group>"; };
@@ -65,6 +65,11 @@
 		FC5843DC1F690980001A840B /* SqueezenetParameters.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = SqueezenetParameters.bundle; sourceTree = "<group>"; };
 		FC5B4A3D1F69612A00203335 /* MDL.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MDL.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		FC81F03F1F7778950033F0CA /* g_data.min.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = g_data.min.bin; sourceTree = "<group>"; };
+		FC8A428F1F7ABEA200D08302 /* MDLVideoCapture.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDLVideoCapture.h; sourceTree = "<group>"; };
+		FC8A42901F7ABEA200D08302 /* MDLVideoCapture.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MDLVideoCapture.m; sourceTree = "<group>"; };
+		FC8A42911F7ABEA200D08302 /* MDLVideoCapturePreviewView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MDLVideoCapturePreviewView.m; sourceTree = "<group>"; };
+		FC8A42921F7ABEA200D08302 /* MDLVideoCapturePreviewView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MDLVideoCapturePreviewView.h; sourceTree = "<group>"; };
+		FC8A42951F7ABF6C00D08302 /* MDLDemo-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MDLDemo-Bridging-Header.h"; sourceTree = "<group>"; };
 		FCE01B7F1F77AB040066FB61 /* MobileNetParameters.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = MobileNetParameters.bundle; sourceTree = "<group>"; };
 		FCE01B851F77CFC30066FB61 /* apple.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = apple.jpg; sourceTree = "<group>"; };
 		FCE01B861F77CFC30066FB61 /* banana.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = banana.jpeg; sourceTree = "<group>"; };
@@ -96,9 +101,13 @@
 		FC34A46E1F68476800639FE0 /* Common */ = {
 			isa = PBXGroup;
 			children = (
+				FC8A42951F7ABF6C00D08302 /* MDLDemo-Bridging-Header.h */,
+				FC8A428F1F7ABEA200D08302 /* MDLVideoCapture.h */,
+				FC8A42901F7ABEA200D08302 /* MDLVideoCapture.m */,
+				FC8A42921F7ABEA200D08302 /* MDLVideoCapturePreviewView.h */,
+				FC8A42911F7ABEA200D08302 /* MDLVideoCapturePreviewView.m */,
 				FC34A4701F6847A400639FE0 /* MobileNetLabels.swift */,
 				FC34A4721F6847A400639FE0 /* RegionImageView.swift */,
-				FC34A4711F6847A400639FE0 /* VideoCapture.swift */,
 				FC5843D11F69032C001A840B /* Common.swift */,
 			);
 			path = Common;
@@ -259,7 +268,7 @@
 					FCF7A8BA1F66754800906055 = {
 						CreatedOnToolsVersion = 8.3.3;
 						DevelopmentTeam = Z5M2UUN5YV;
-						LastSwiftMigration = 0830;
+						LastSwiftMigration = 0900;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -316,8 +325,9 @@
 				FC5843D61F69080F001A840B /* PreprocessShader.metal in Sources */,
 				FC34A5481F684B0700639FE0 /* MobileNetLabels.swift in Sources */,
 				FC34A5491F684B0700639FE0 /* RegionImageView.swift in Sources */,
-				FC34A54A1F684B0700639FE0 /* VideoCapture.swift in Sources */,
 				FC5843D21F69032C001A840B /* Common.swift in Sources */,
+				FC8A42931F7ABEA300D08302 /* MDLVideoCapture.m in Sources */,
+				FC8A42941F7ABEA300D08302 /* MDLVideoCapturePreviewView.m in Sources */,
 				FCF7A9191F66757900906055 /* AppDelegate.swift in Sources */,
 				FCF7A91A1F66757900906055 /* CPUNetViewController.swift in Sources */,
 				FCF7A91E1F66757900906055 /* Preprocessing.swift in Sources */,
@@ -458,6 +468,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "MDLDemo/Common/MDLDemo-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 3.0;
 			};
@@ -480,6 +491,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "MDLDemo/Common/MDLDemo-Bridging-Header.h";
 				SWIFT_VERSION = 3.0;
 			};
 			name = Release;

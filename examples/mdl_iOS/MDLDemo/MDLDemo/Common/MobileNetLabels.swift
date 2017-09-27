@@ -21,33 +21,43 @@
 
 import Foundation
 
-/**
- The list of MobileNet label names, loaded from pre_words.txt.
- */
-public class ImageNetLabels {
-    private var labels = [String](repeating: "", count: 1000)
-    
-    public init() {
-        if let path = Bundle.main.path(forResource: "pre_words", ofType: "txt") {
-            for (i, line) in lines(filename: path).enumerated() {
-                if i < 1000 {
-                    labels[i] = line.substring(from: line.index(line.startIndex, offsetBy: 10))
-                }
-            }
+class PreWords {
+    var contents: [String] = []
+    init(fileName: String, type: String = "txt", inBundle: Bundle = Bundle.main) {
+        if let filePath = inBundle.path(forResource: fileName, ofType: type) {
+            let string = try! String.init(contentsOfFile: filePath)
+            contents = string.components(separatedBy: CharacterSet.newlines).filter{$0.count > 10}.map{$0.substring(from: $0.index($0.startIndex, offsetBy: 10))}
+        }else{
+            fatalError("no file call \(fileName)")
         }
     }
-    
-    private func lines(filename: String) -> [String] {
-        do {
-            let text = try String(contentsOfFile: filename, encoding: .ascii)
-            let lines = text.components(separatedBy: NSCharacterSet.newlines)
-            return lines
-        } catch {
-            fatalError("Could not load file: \(filename)")
-        }
-    }
-    
-    public subscript(i: Int) -> String {
-        return labels[i]
+    subscript(index: Int) -> String{
+        return contents[index]
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,4 +1,3 @@
-//
 /* Copyright (c) 2017 Baidu, Inc. All Rights Reserved.
  
  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,27 +19,38 @@
  SOFTWARE.
  ==============================================================================*/
 
-import Foundation
+#import <UIKit/UIKit.h>
+#import <Metal/Metal.h>
+#import <Foundation/Foundation.h>
 
+typedef enum : NSUInteger {
+    CaptureStatusRegisterOK,
+    CaptureStatusStart,
+    CaptureStatusFinished,
+    CaptureStatusError
+} CaptureStatus;
 
-// 自定义 ?!  如果 ?! 前的返回值为一个可选值, 则进行隐式解包, 如果有值则返回这个值, 如果为nil 则fatalError 传入的信息
-precedencegroup ExecutedOrFatalError{
-    associativity: left
-    higherThan: AssignmentPrecedence
-}
-infix operator ?!: ExecutedOrFatalError
-func ?!<T>(option: T?, excuteOrError: @autoclosure () -> String) -> T{
-    if let inOpt = option {
-        return inOpt
-    }else{
-        fatalError(excuteOrError())
-    }
-}
+@protocol CaptureTextureDelegate<NSObject>
 
-extension Array where Element: Comparable{
-    func top(r: Int) -> [(Int, Element)] {
-        precondition(r <= self.count)
-        return Array<(Int, Element)>(zip(0..<self.count, self).sorted{ $0.1 > $1.1 }.prefix(through: r - 1))
-    }
-}
+-(void)captureTexture:(id<MTLTexture>)texture;
 
+@end
+
+// 视频录制管理器
+@interface MDLVideoCapture : NSObject
+
+@property (copy, nonatomic) void (^captureChangeStatusBlock)(CaptureStatus status, NSError *error); //录制状态切换block
+
+@property (weak, nonatomic) id<CaptureTextureDelegate> delegate;
+
+@property (assign, nonatomic) NSInteger fps;
+
+- (instancetype)initWithFrame:(CGRect)frame;
+
+- (UIView *)previewView; // 预览试图
+
+- (void)registerRecording;      // 注册录制
+- (void)startRecording;         // 开始
+- (void)stopRecording;          // 停止
+
+@end
