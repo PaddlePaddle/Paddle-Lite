@@ -139,11 +139,9 @@ mdl::Net *get_net_instance(Json &config) {
     }
     cpp_result = net->predict(dataPointer);
     count = cpp_result.size();
-    if (count == 4) {
-        result = [[NSMutableArray alloc] initWithCapacity:4];
-        for (int i = 0; i < 4; i++) {
-            [result addObject:[NSNumber numberWithFloat:cpp_result[i]]];
-        }
+    result = [[NSMutableArray alloc] init];
+    for (int i = 0; i < count; i++) {
+        [result addObject:[NSNumber numberWithFloat:cpp_result[i]]];
     }
     free(output);
     if ([UIDevice currentDevice].systemVersion.doubleValue < 11.0) {
