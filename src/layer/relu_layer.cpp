@@ -22,7 +22,8 @@ SOFTWARE.
 
 namespace mdl {
     ReluLayer::ReluLayer(const Json &config) : Layer(config) {
-        _layer_type = Layer::_RELU;
+        assure_memory();
+        _layer_type = LayerType::RELU;
         _pid = config["pid"].int_value();
     }
 

@@ -24,7 +24,7 @@ SOFTWARE.
 namespace mdl {
     SoftmaxLayer::SoftmaxLayer(const Json &config) : Layer(config) {
         assure_memory();
-        _layer_type = Layer::_SM;
+        _layer_type = LayerType::SOFTMAX;
         _softmax_dim = 1;
         vector<int> dimensions(1, _input[0]->dimension(1));
         _sum_matrix = new Matrix();

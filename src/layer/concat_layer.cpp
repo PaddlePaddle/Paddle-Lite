@@ -23,7 +23,7 @@ SOFTWARE.
 namespace mdl {
     ConcatLayer::ConcatLayer(const Json &config): Layer(config) {
         assure_memory();
-        _layer_type = Layer::_CONCAT;
+        _layer_type = LayerType::CONCAT;
     }
 
     void ConcatLayer::forward(int thread_num) {

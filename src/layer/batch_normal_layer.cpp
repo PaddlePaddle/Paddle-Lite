@@ -25,7 +25,8 @@ SOFTWARE.
 namespace mdl {
 
     BatchNormalLayer::BatchNormalLayer(const Json &config) : Layer(config) {
-        _layer_type = Layer::_BN;
+        assure_memory();
+        _layer_type = LayerType::BATCHNORMAL;
         _channels = _input[0]->dimension(1);
         vector<int> sz;
         sz.push_back(_channels);

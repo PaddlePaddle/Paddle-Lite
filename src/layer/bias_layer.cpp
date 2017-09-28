@@ -23,6 +23,8 @@ SOFTWARE.
 
 namespace mdl {
     BiasLayer::BiasLayer(const Json &config) : Layer(config) {
+        assure_memory();
+        _layer_type = LayerType::BIAS;
         int axis = 1;
         int num_axis = 1;
         auto begin = _input[0]->get_dimensions().begin();

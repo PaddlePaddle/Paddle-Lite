@@ -22,7 +22,8 @@ SOFTWARE.
 
 namespace mdl {
     ScaleLayer::ScaleLayer(const Json &config) : Layer(config) {
-        _layer_type = Layer::_SCALE;
+        assure_memory();
+        _layer_type = LayerType::SCALE;
         auto &param = config["param"];
         _bias_term = param["bias_term"].int_value();
         if (_bias_term > 0) {

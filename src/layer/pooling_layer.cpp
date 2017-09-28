@@ -23,7 +23,7 @@ SOFTWARE.
 namespace mdl {
     PoolingLayer::PoolingLayer(const Json &config): Layer(config) {
         auto &param = config["param"];
-        _layer_type = Layer::_POOL;
+        _layer_type = LayerType::POOL;
         _pid = config["pid"].int_value();
         _type = param["type"].string_value();
         _global_pooling = param["global_pooling"].bool_value();

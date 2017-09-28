@@ -22,13 +22,14 @@ SOFTWARE.
 
 namespace mdl {
     LrnLayer::LrnLayer(const Json &config): Layer(config) {
+        assure_memory();
         auto &param = config["param"];
-        _layer_type = Layer::_LRN;
+        _layer_type = LayerType::LRN;
         _alpha = param["alpha"].number_value();
         _beta = param["beta"].number_value();
         _local_size = param["local_size"].int_value();
 
-        assure_memory();
+
 
         _scale_buffer = new Matrix();
         _scale_buffer->resize(_input[0]->get_dimensions());

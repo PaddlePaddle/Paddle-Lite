@@ -24,12 +24,10 @@ SOFTWARE.
 
 namespace mdl {
     FCLayer::FCLayer(const Json &config): Layer(config) {
-        auto &param = config["param"];
-        _layer_type = Layer::_FC;
-        _output_num = param["output_num"].int_value();
-
         assure_memory();
-
+        auto &param = config["param"];
+        _layer_type = LayerType::FULLCONNECT;
+        _output_num = param["output_num"].int_value();
         _bias_buffer = new Matrix();
         _bias_buffer->resize({1, _input[0]->count(0, 1)});
         _bias_buffer->reallocate(1.0);

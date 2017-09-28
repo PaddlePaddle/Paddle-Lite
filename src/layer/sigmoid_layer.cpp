@@ -18,21 +18,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
+#include "layer/sigmoid_layer.h"
 
-#ifndef MOBILE_DEEP_LEARNING_SIGMOID_LAYER_H
-#define MOBILE_DEEP_LEARNING_SIGMOID_LAYER_H
-
-#include "commons/commons.h"
-#include "base/layer.h"
 namespace mdl {
-    class SigmoidLayer: public Layer {
-    public:
-        SigmoidLayer(const Json &config);
-        ~SigmoidLayer();
-        void forward(int thread_num);
+    SigmoidLayer::SigmoidLayer(const Json &config) : Layer(config) {
+        assure_memory();
+        _layer_type = LayerType::SIGMOID;
+
+    }
+
+    SigmoidLayer::~SigmoidLayer() {
+
+    }
+
+    inline float sigmoid(float x) {
+        return 1. / (1. + exp(-x));
+    }
 
 
-    };
+    void SigmoidLayer::forward(int thread_num) {
+        float *inputdata = _input[0]->get_data();
+        float *outputdata = _output[0]->get_data();
+        int count = _output[0]->count();
+
+        for (int i = 0; i < count; ++i) {
+            outputdata[i] = sigmoid(inputdata[i]);
+
+        }
+
+
+    }
 }
-
-#endif //MOBILE_DEEP_LEARNING_SIGMOID_LAYER_H

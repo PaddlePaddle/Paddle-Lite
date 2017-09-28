@@ -27,7 +27,7 @@ namespace mdl {
     ConvolutionLayer::ConvolutionLayer(const Json &config) : Layer(config), _col_buffer(nullptr),
                                                              _bias_buffer(nullptr) {
         assure_memory();
-        _layer_type = Layer::_CONVO;
+        _layer_type = LayerType::CONVOLUTION;
         _pid = config["pid"].int_value();
         auto &param = config["param"];
         _output_num = param["output_num"].int_value();

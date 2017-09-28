@@ -23,7 +23,7 @@ SOFTWARE.
 namespace mdl {
     SplitLayer::SplitLayer(const Json &config): Layer(config) {
         assure_memory();
-        _layer_type = Layer::_SPLIT;
+        _layer_type = LayerType::SPLIT;
     }
 
     void SplitLayer::forward(int thread_num) {

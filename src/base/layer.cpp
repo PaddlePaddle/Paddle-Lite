@@ -22,16 +22,16 @@ SOFTWARE.
 #include "loader/loader.h"
 
 namespace mdl {
-    const string Layer::_CONCAT = "concat";
-    const string Layer::_CONVO = "convolution";
-    const string Layer::_FC = "fc";
-    const string Layer::_LRN = "lrn";
-    const string Layer::_POOL = "pooling";
-    const string Layer::_RELU = "relu";
-    const string Layer::_SPLIT = "split";
-    const string Layer::_SCALE = "scale";
-    const string Layer::_BN = "batch_normal";
-    const string Layer::_SM = "soft_max";
+//    const string Layer::_CONCAT = "concat";
+//    const string Layer::_CONVO = "convolution";
+//    const string Layer::_FC = "fc";
+//    const string Layer::_LRN = "lrn";
+//    const string Layer::_POOL = "pooling";
+//    const string Layer::_RELU = "relu";
+//    const string Layer::_SPLIT = "split";
+//    const string Layer::_SCALE = "scale";
+//    const string Layer::_BN = "batch_normal";
+//    const string Layer::_SM = "soft_max";
 
     Layer::Layer(const Json &config) {
         _name = config["name"].string_value();

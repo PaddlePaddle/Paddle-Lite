@@ -33,6 +33,7 @@ SOFTWARE.
 #include "layer/batch_normal_layer.h"
 #include "layer/scale_layer.h"
 #include "layer/soft_max_layer.h"
+#include "layer/sigmoid_layer.h"
 
 #include <thread>
 
@@ -66,6 +67,8 @@ namespace mdl {
                 layer = new BatchNormalLayer(layer_config);
             } else if (type == "SoftmaxLayer") {
                 layer = new SoftmaxLayer(layer_config);
+            } else if (type == "SigmoidLayer") {
+                layer = new SigmoidLayer(layer_config);
             }
 
             if (layer) {
@@ -86,7 +89,7 @@ namespace mdl {
     void forward_from_to_async(int pid, int inception_thread_num, int start, int end, vector<Layer *> layers) {
         for (int i = start; i <= end; i++) {
             auto type = layers[i]->layer_type();
-            if (type == Layer::_CONCAT) {
+            if (type == LayerType::CONCAT) {
                 return;
             }
             int layer_pid = layers[i]->pid();
@@ -139,11 +142,11 @@ namespace mdl {
                 in_threads = true;
                 continue;
             }
-            if (type == Layer::_SPLIT) {
+            if (type == LayerType::SPLIT) {
                 threads_enable = true;
             }
             if (in_threads && inception_count < MAX_INCEPTION_NUM) {
-                if (type != Layer::_CONCAT) {
+                if (type != LayerType::CONCAT) {
                     continue;
                 } else {
                     in_threads = false;
