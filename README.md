@@ -199,12 +199,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 MDL使用的是宽松的MIT开源协议。
 
-## PaddlePaddle
-
-https://github.com/PaddlePaddle/Paddle
-
-PaddlePaddle (PArallel Distributed Deep LEarning) is an easy-to-use,
-efficient, flexible and scalable deep learning platform, which is originally
-developed by Baidu scientists and engineers for the purpose of applying deep
-learning to many products at Baidu.
-
