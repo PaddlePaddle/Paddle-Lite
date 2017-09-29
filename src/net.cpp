@@ -87,7 +87,7 @@ namespace mdl {
     }
 
     void forward_from_to_async(int pid, int inception_thread_num, int start, int end, vector<Layer *> layers) {
-        for (int i = start; i <= end; i++) {
+        for (int i = start; i < end; i++) {
             auto type = layers[i]->layer_type();
             if (type == LayerType::CONCAT) {
                 return;
