@@ -90,7 +90,7 @@ class Matrix{
     
     var data: NetParameterData?
     
-    func cout() -> Int {
+    func count() -> Int {
         return count(begin: 0, end: config.count)
     }
     
