@@ -148,7 +148,7 @@ cd ./build/release/x86/tools/build
 
 ./caffe2mdl model.prototxt model.caffemodel
 
-# if you want to test the model produced by this script, provide color value array of an image as the third parameter ,like this:
+# the third para is optional, if you want to test the model produced by this script, provide color value array of an image as the third parameter ,like this:
 
 ./caffe2mdl model.prototxt model.caffemodel data
 
@@ -180,9 +180,9 @@ open iOS/convert/iOSConvertREADME.md
 ## 特征
 * 一键部署，脚本参数就可以切换ios或者android
 * 支持iOS  gpu运行MobileNet、squeezenet模型
-* 已经测试过可以稳定运行MobileNet、GoogLeNet v1、squeezenet模型
+* 已经测试过可以稳定运行MobileNet、GoogLeNet v1、squeezenet、ResNet-50模型
 * 体积极小，无任何第三方依赖。纯手工打造。
-* 提供量化脚本，对32位float转8位uint直接支持，模型体积量化后4M上下
+* 提供量化函数，对32位float转8位uint直接支持，模型体积量化后4M上下
 * 与ARM相关算法团队线上线下多次沟通，针对ARM平台会持续优化
 * NEON使用涵盖了卷积、归一化、池化所有方面的操作
 * 汇编优化，针对寄存器汇编操作具体优化
