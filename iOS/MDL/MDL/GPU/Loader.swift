@@ -137,7 +137,7 @@ class Loader {
                 for weigth in layer.weight{
                     let matrix = try createMatrix(name: weigth)
                     matrices[weigth] = matrix
-                    matrix.data = para(matrix.name, matrix.cout())
+                    matrix.data = para(matrix.name, matrix.count())
                 }
             }
         }
@@ -193,7 +193,7 @@ class Loader {
                 throw NetError.loaderError(message: "can't find " + modelName + " in matrixs when load binary file")
             }
             
-            guard matrix.cout() == Int(modelSize) else {
+            guard matrix.count() == Int(modelSize) else {
                 throw NetError.loaderError(message: "matrix count does not match between json and binary file")
             }
             let minvalue = modelMins[i]
