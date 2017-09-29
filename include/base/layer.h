@@ -33,17 +33,6 @@ namespace mdl {
     class Layer {
     public:
 
-//        static const string _CONCAT;
-//        static const string _CONVO;
-//        static const string _FC;
-//        static const string _LRN;
-//        static const string _POOL;
-//        static const string _RELU;
-//        static const string _SPLIT;
-//        static const string _SCALE;
-//        static const string _BN;
-//        static const string _SM;
-
         /**
          * init layer with a json object which specifies the name & weight matix & shape of input & output matrix
          * @param config

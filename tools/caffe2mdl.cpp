@@ -1,6 +1,23 @@
-//
-// Created by Wang,Liu(MMS) on 2017/9/4.
-//
+/* Copyright (c) 2016 Baidu, Inc. All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+==============================================================================*/
 
 #include <stdio.h>
 #include <limits.h>
@@ -51,6 +68,8 @@ vector<LayerParameter> v_model_layers;
 
 vector<LayerParameter> v_net_layers;
 
+set<string>layer_types;
+
 float *test_data;
 
 // test data length
@@ -68,7 +87,8 @@ enum Convolution_sub_type
 };
 Convolution_sub_type g_conv_sub_type = CONVOLUTION;
 
-
+// macro to choose whether need quantification
+#define NEED_QUANTI
 
 /**
  replace all the input origin char with a new char
@@ -84,13 +104,13 @@ void replace_all(std::string &str, char origin, char to){
 }
 
 
-#define NEED_QUANTI true
+
 
 bool get_data_from_file(string path, float *data) {
     char tag = ' ';
     ifstream model_file(path);
     if (!model_file) {
-        throw "cant't read the data file";
+        throw string("cant't read the data file");
     }
     stringstream ss;
     ss << model_file.rdbuf();
@@ -107,7 +127,9 @@ bool get_data_from_file(string path, float *data) {
         }
     }
     if (vector_data.size() != input_data_count) {
-        throw "test data shape is not suitable for current network!";
+        stringstream msg;
+        msg << "input data length(" << vector_data.size()<<") != the size required by current network!";
+        throw msg.str();
     }
     for (int i = 0; i < vector_data.size(); i++) {
         data[i] = vector_data[i];
@@ -124,7 +146,8 @@ bool get_data_from_file(string path, float *data) {
 bool read_proto_from_text(const char *filepath, google::protobuf::Message *message) {
     std::ifstream fs(filepath, std::ifstream::in);
     if (!fs.is_open()) {
-        throw "proto text open failed! ";
+
+        throw string("proto text open failed! ");
     }
 
     google::protobuf::io::IstreamInputStream input(&fs);
@@ -144,7 +167,7 @@ bool read_proto_from_text(const char *filepath, google::protobuf::Message *messa
 bool read_proto_from_binary(const char *filepath, google::protobuf::Message *message) {
     std::ifstream fs(filepath, std::ifstream::in | std::ifstream::binary);
     if (!fs.is_open()) {
-        throw "proto binary open failed! ";
+        throw string("proto binary open failed! ");
     }
     google::protobuf::io::IstreamInputStream input(&fs);
     google::protobuf::io::CodedInputStream codedstr(&input);
@@ -214,6 +237,18 @@ bool is_key_contain(map<string, vector<int> > shape_map, string key) {
     }
     return false;
 }
+/**
+ * check set whether contains the key
+ * @param shape_map
+ * @param key
+ * @return
+ */
+bool is_key_contain(set<string> types, string key) {
+    if (types.find(key) != types.end()) {
+        return true;
+    }
+    return false;
+}
 
 /**
  * for layers who don't change the input shape
@@ -221,7 +256,7 @@ bool is_key_contain(map<string, vector<int> > shape_map, string key) {
  * @param layer
  */
 void copy_bottom_shape(map<string, vector<int> > &shape_map, const LayerParameter &layer) {
-    if (layer.bottom_size() == 1) {
+    if (layer.bottom_size() > 0) {
         string bottom_name = layer.bottom(0);
         for (int i = 0; i < layer.top_size(); ++i) {
             string top_name = layer.top(i);
@@ -233,17 +268,17 @@ void copy_bottom_shape(map<string, vector<int> > &shape_map, const LayerParamete
             if (is_key_contain(shape_map, bottom_name)) {
                 vector<int> bottom_shape = shape_map[bottom_name];
 
-                shape_map.insert(pair<string, vector<int> >(top_name, bottom_shape));
-                cout << "calcu shape for " << top_name << get_shape_string(shape_map[top_name]) << endl;
+                shape_map.insert(make_pair(top_name, bottom_shape));
+                cout << top_name << " shape = " << get_shape_string(shape_map[top_name]) << endl;
 
             } else {
-                throw "bottom shape is not ready!";
+                stringstream msg;
+                msg<<"layer " << bottom_name << "'shape is not ready";
+                throw msg.str();
             }
         }
 
 
-    } else {
-        throw "multiple inputs not supported yet!";
     }
 
 }
@@ -281,10 +316,12 @@ void calcu_layer_shape(map<string, vector<int> > &shape_map, const LayerParamete
                     top_shape.push_back(n);
                     top_shape.push_back(n);
                 } else {
-                    throw bottom_name + "'s width != height !";
+                    stringstream msg;
+                    msg << bottom_name << "'s width != height !";
+                    throw msg.str();
                 }
-                shape_map.insert(pair<string, vector<int> >(top_name, top_shape));
-                cout << "calcu shape for " << top_name << get_shape_string(top_shape) << endl;
+                shape_map.insert(make_pair(top_name, top_shape));
+                cout << top_name << " shape = " << get_shape_string(top_shape) << endl;
 
 
             } else {
@@ -294,7 +331,7 @@ void calcu_layer_shape(map<string, vector<int> > &shape_map, const LayerParamete
             }
 
         } else {
-            throw "multiple inputs not supported yet!";
+            throw string("multiple inputs not supported yet!");
         }
 
     } else if (type == "Concat") {
@@ -312,12 +349,8 @@ void calcu_layer_shape(map<string, vector<int> > &shape_map, const LayerParamete
             top_shape[concat_index] += shape_map[layer.bottom(i)][concat_index];
 
         }
-        shape_map.insert(pair<string, vector<int> >(top_name, top_shape));
-        cout << "calcu shape for " << top_name << get_shape_string(top_shape) << endl;
-    } else if (type == "BatchNorm" || type == "ReLU" || type == "Scale" || type == "LRN" || type == "Split" ||
-               type == "Softmax") {
-        copy_bottom_shape(shape_map, layer);
-
+        shape_map.insert(make_pair(top_name, top_shape));
+        cout << top_name << "shape =" << get_shape_string(top_shape) << endl;
     } else if (type == "InnerProduct") {
         // InnerProductLayer just change the output channel
         if (layer.bottom_size() == 1) {
@@ -338,8 +371,8 @@ void calcu_layer_shape(map<string, vector<int> > &shape_map, const LayerParamete
                 int index_chanels = 1;
                 top_shape[index_chanels] = num_output;
 
-                shape_map.insert(pair<string, vector<int> >(top_name, top_shape));
-                cout << "calcu shape for " << top_name << get_shape_string(top_shape) << endl;
+                shape_map.insert(make_pair(top_name, top_shape));
+                cout << top_name << " shape = " << get_shape_string(top_shape) << endl;
 
             } else {
                 stringstream msg;
@@ -348,11 +381,10 @@ void calcu_layer_shape(map<string, vector<int> > &shape_map, const LayerParamete
             }
 
         } else {
-            throw "multiple inputs not supported yet!";
+            throw string("multiple inputs not supported yet!");
         }
 
     } else if (type == "Pooling") {
-        cout << layer.name() << endl;
         if (layer.bottom_size() == 1) {
             string bottom_name = layer.bottom(0);
             string top_name = layer.top(0);
@@ -393,19 +425,26 @@ void calcu_layer_shape(map<string, vector<int> > &shape_map, const LayerParamete
                     top_shape.push_back(n);
                     top_shape.push_back(n);
                 } else {
-                    throw bottom_name + "width != height error";
+                    stringstream msg;
+                    msg << bottom_name << "width != height not supported yet";
+                    throw msg.str();
                 }
-                shape_map.insert(pair<string, vector<int> >(top_name, top_shape));
-                cout << "calcu shape for " << top_name << get_shape_string(top_shape) << endl;
+                shape_map.insert(make_pair(top_name, top_shape));
+                cout << top_name << " shape = "  << get_shape_string(top_shape) << endl;
 
             } else {
-                cout << layer.name() << endl;
-                throw "bottom shape is not ready!";
+                stringstream msg;
+                msg << bottom_name << " shape is not ready";
+                throw msg.str();
             }
 
         } else {
-            throw "multiple inputs not supported yet!";
+            throw string("multiple inputs not supported yet!");
         }
+
+    } else {
+
+        copy_bottom_shape(shape_map, layer);
 
     }
 }
@@ -424,7 +463,7 @@ void calcu_blobs_shape(map<string, vector<int> > &shape_map, const LayerParamete
             blob_name.erase(blob_name.end() - 3, blob_name.end());
             stringstream s_blob_name;
             s_blob_name << blob_name << "_" << "1";
-            shape_map.insert(pair<string, vector<int>>(s_blob_name.str(), blob_shape));
+            shape_map.insert(make_pair(s_blob_name.str(), blob_shape));
             return;
         }
     }else if (g_ios_gpu && layer.type() == "Scale"){
@@ -440,7 +479,7 @@ void calcu_blobs_shape(map<string, vector<int> > &shape_map, const LayerParamete
             std::iter_swap(blob_shape.begin(), blob_shape.begin() + 1);
         }
         
-        shape_map.insert(pair<string, vector<int> >(blob_name.str(), blob_shape));
+        shape_map.insert(make_pair(blob_name.str(), blob_shape));
     }
 }
 
@@ -464,7 +503,7 @@ void read_input_shape(map<string, vector<int> > *shape_map, caffe::NetParameter 
             shape_vec.push_back(shape.dim(i));
             input_data_count *= shape.dim(i);
         }
-        shape_map->insert(pair<string, vector<int> >(input_name, shape_vec));
+        shape_map->insert(make_pair(input_name, shape_vec));
         return;
     }
 
@@ -479,7 +518,7 @@ void read_input_shape(map<string, vector<int> > *shape_map, caffe::NetParameter 
         input_dimens.push_back(proto.input_dim(l));
         input_data_count *= proto.input_dim(l);
     }
-    shape_map->insert(pair<string, vector<int> >(proto.input(0), input_dimens));
+    shape_map->insert(make_pair(proto.input(0), input_dimens));
 }
 
 /**
@@ -578,6 +617,31 @@ string get_mdl_pooling_type(int pool) {
     }
     return type;
 }
+/**
+ * transform  eltwise operation type to mdl
+ * @param pool
+ * @return
+ */
+string get_mdl_eltwise_type(int op) {
+    string type;
+    switch (op) {
+        case 0:
+            type = "product";
+            break;
+        case 1:
+            type = "sum";
+
+            break;
+        case 2:
+            type = "max";
+            break;
+        default:
+            type = "sum";
+            break;
+
+    }
+    return type;
+}
 
 
 /**
@@ -592,7 +656,6 @@ void dump_json(string filename) {
 
     int index = 0;
     for (auto layer:v_net_layers) {
-        cout<<"遍历layer至: "<<layer.name()<<endl;
         string layer_name = layer.name();
         replace_all(layer_name, '/', '_');
 
@@ -673,7 +736,7 @@ void dump_json(string filename) {
         json_string_stream << "]," << endl;
         const char *type = layer.type().c_str();
         json_string_stream << "\"type\":\"" << get_mdl_layer_type(layer.type()) << "\"";
-        if (in_split && strcmp(type, "Concat") != 0) {
+        if (in_split && strcmp(type, "Concat") != 0 && is_key_contain(layer_types,"Concat")) {
             int pid = split_pid_map[layer.bottom(0)];
             split_pid_map[layer.top(0)] = pid;
             json_string_stream << "," << endl;
@@ -720,8 +783,28 @@ void dump_json(string filename) {
                 json_string_stream << "\"stride\":" << poolingParameter.stride() << endl;
 
             }
-
             json_string_stream << "}" << endl;
+        } else if (strcmp(type, "Eltwise") == 0) {
+            const caffe::EltwiseParameter &eltwiseParameter = layer.eltwise_param();
+            json_string_stream << "," <<endl;
+            json_string_stream << "\"param\":{" << endl;
+            json_string_stream << "\"type\":" << "\"" << get_mdl_eltwise_type(eltwiseParameter.operation()) << "\"" ;
+            if (strcmp(type, "sum") == 0 && eltwiseParameter.coeff_size()) {
+                json_string_stream << "," << endl;
+                json_string_stream << "\"coeffs\":[";
+                for (int i = 0; i < eltwiseParameter.coeff_size(); ++i) {
+                    json_string_stream << eltwiseParameter.coeff(i);
+                    if (i < eltwiseParameter.coeff_size() - 1) {
+                        json_string_stream << ",";
+
+                    }
+
+                }
+                json_string_stream << "]" <<endl;
+
+            }
+            json_string_stream << "}" << endl;
+
         } else if (strcmp(type, "LRN") == 0) {
             const caffe::LRNParameter &lrn_param = layer.lrn_param();
             json_string_stream << "," << endl;
@@ -800,7 +883,7 @@ void dump_json(string filename) {
     sign_json(json_string_stream);
     std::ofstream json_file(filename);
     if (!json_file.is_open()) {
-        throw "jsonFile open fail";
+        throw string("jsonFile open fail");
     }
     json_file << json_string_stream.str();
 
@@ -929,7 +1012,7 @@ void dump_without_quantification(string filename) {
         matrix_index++;
     }
     fclose(out_file);
-    cout << "finish dump the binary file for the model!" << endl;
+    cout << "finish dump the binary file without quantification for the model!" << endl;
 
 }
 
@@ -1214,15 +1297,14 @@ int main(int argc, char **args) {
 #else
         const char *mdl_data = "data.bin";
 #endif
-
         //g_proto  -- caffe::NetParameter 类型
         bool _success1 = read_proto_from_text(_caffe_proto, &g_proto);
         if (!_success1) {
-            throw "read_proto_from_text failed";
+            throw string("read_proto_from_text failed");
         }
         bool _success2 = read_proto_from_binary(_caffe_model, &_model);
         if (!_success2) {
-            throw "read proto from binary failed";
+            throw string("read proto from binary failed");
         }
         NetParameter para;
         if (g_ios_gpu){
@@ -1242,7 +1324,11 @@ int main(int argc, char **args) {
         for (int i = 0; i < g_layer_count; ++i) {
             const LayerParameter &layer = para.layer(i);
             v_net_layers.push_back(layer);
+            layer_types.insert(layer.type());
 
+        }
+        for (string type:layer_types) {
+            cout << type<< endl;
         }
 
         for (int j = 0; j < g_model_layers_count; j++) {

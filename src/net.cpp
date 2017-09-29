@@ -34,6 +34,7 @@ SOFTWARE.
 #include "layer/scale_layer.h"
 #include "layer/soft_max_layer.h"
 #include "layer/sigmoid_layer.h"
+#include "layer/elt_wise_layer.h"
 
 #include <thread>
 
@@ -69,6 +70,8 @@ namespace mdl {
                 layer = new SoftmaxLayer(layer_config);
             } else if (type == "SigmoidLayer") {
                 layer = new SigmoidLayer(layer_config);
+            } else if (type == "EltwiseLayer") {
+                layer = new EltWiseLayer(layer_config);
             }
 
             if (layer) {
@@ -157,11 +160,12 @@ namespace mdl {
             _layers[i]->forward(thread_num);
         }
 #else
-        map<string, double> time_diffs;
+        map<LayerType , double> time_diffs;
         for (int i = 0; i < end; i++) {
             auto t1 = mdl::time();
-            string name_output = name_input.str();
+//            cout << _layers[i]->name() << " input ="<< _layers[i]->input()[0]->descript()<<endl;
             _layers[i]->forward();
+//            cout << _layers[i]->name() << "  output = "<<_layers[i]->output()[0]->descript()<<endl;
             auto t2 = mdl::time();
             auto time_diff = mdl::time_diff(t1, t2);
             time_diffs[_layers[i]->layer_type()] += time_diff;
@@ -171,7 +175,7 @@ namespace mdl {
 #ifdef MULTI_THREAD
 #else
         for (auto pair: time_diffs) {
-            LOGI("time cost by %s is %lfms.", pair.first.c_str(), pair.second);
+            LOGI("time cost by %s is %lfms.", pair.first, pair.second);
         }
 #endif
 
