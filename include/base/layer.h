@@ -28,7 +28,9 @@ namespace mdl {
      * abstract layer type
      *
      */
-    enum class LayerType {CONCAT, CONVOLUTION, FULLCONNECT, LRN, POOL, RELU, SPLIT, SCALE, BATCHNORMAL, SOFTMAX, SIGMOID, BIAS};
+    enum class LayerType {CONCAT, CONVOLUTION, FULLCONNECT, LRN, POOL,
+        RELU, SPLIT, SCALE, BATCHNORMAL, SOFTMAX, SIGMOID, BIAS,
+    ELTWISE};
 
     class Layer {
     public:

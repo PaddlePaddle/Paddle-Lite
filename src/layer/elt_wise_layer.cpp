@@ -23,6 +23,8 @@ SOFTWARE.
 
 namespace mdl {
     EltWiseLayer::EltWiseLayer(const Json &config):Layer(config) {
+        assure_memory();
+        _layer_type = LayerType::ELTWISE;
         _coeffs = vector<float>(_input[0]->count(), 1);
         auto &param = config["param"];
         _type = param["type"].string_value();
