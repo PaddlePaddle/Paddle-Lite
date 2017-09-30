@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		FC0709071F69567E00437979 /* soft_max_layer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FC0709061F69567E00437979 /* soft_max_layer.cpp */; };
+		FC6528A51F7FCE0A0073C775 /* sigmoid_layer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FC6528A41F7FCE0A0073C775 /* sigmoid_layer.cpp */; };
+		FC6528A91F7FCE370073C775 /* elt_wise_layer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FC6528A81F7FCE370073C775 /* elt_wise_layer.cpp */; };
 		FCE01B821F77ACF90066FB61 /* json11.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FCE01B811F77ABA90066FB61 /* json11.cpp */; };
 		FCF7A81D1F66741D00906055 /* MDLCPUCore.mm in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A81C1F66741D00906055 /* MDLCPUCore.mm */; };
 		FCF7A8531F66743600906055 /* layer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8391F66743600906055 /* layer.cpp */; };
@@ -46,6 +48,10 @@
 /* Begin PBXFileReference section */
 		FC0709061F69567E00437979 /* soft_max_layer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = soft_max_layer.cpp; sourceTree = "<group>"; };
 		FC0709081F69569600437979 /* soft_max_layer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = soft_max_layer.h; sourceTree = "<group>"; };
+		FC6528A41F7FCE0A0073C775 /* sigmoid_layer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = sigmoid_layer.cpp; sourceTree = "<group>"; };
+		FC6528A61F7FCE210073C775 /* elt_wise_layer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = elt_wise_layer.h; sourceTree = "<group>"; };
+		FC6528A71F7FCE210073C775 /* sigmoid_layer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sigmoid_layer.h; sourceTree = "<group>"; };
+		FC6528A81F7FCE370073C775 /* elt_wise_layer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = elt_wise_layer.cpp; sourceTree = "<group>"; };
 		FCE01B801F77ABA90066FB61 /* json11.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = json11.h; sourceTree = "<group>"; };
 		FCE01B811F77ABA90066FB61 /* json11.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = json11.cpp; sourceTree = "<group>"; };
 		FCF7A80F1F6673F800906055 /* libMDLCPUCore.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libMDLCPUCore.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -164,6 +170,8 @@
 		FCF7A8251F66743600906055 /* layer */ = {
 			isa = PBXGroup;
 			children = (
+				FC6528A61F7FCE210073C775 /* elt_wise_layer.h */,
+				FC6528A71F7FCE210073C775 /* sigmoid_layer.h */,
 				FC0709081F69569600437979 /* soft_max_layer.h */,
 				FCF7A8261F66743600906055 /* batch_normal_layer.h */,
 				FCF7A8271F66743600906055 /* bias_layer.h */,
@@ -231,6 +239,8 @@
 		FCF7A83D1F66743600906055 /* layer */ = {
 			isa = PBXGroup;
 			children = (
+				FC6528A81F7FCE370073C775 /* elt_wise_layer.cpp */,
+				FC6528A41F7FCE0A0073C775 /* sigmoid_layer.cpp */,
 				FC0709061F69567E00437979 /* soft_max_layer.cpp */,
 				FCF7A83E1F66743600906055 /* batch_normal_layer.cpp */,
 				FCF7A83F1F66743600906055 /* bias_layer.cpp */,
@@ -339,7 +349,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				FCE01B821F77ACF90066FB61 /* json11.cpp in Sources */,
+				FC6528A91F7FCE370073C775 /* elt_wise_layer.cpp in Sources */,
 				FCF7A8551F66743600906055 /* commons.cpp in Sources */,
+				FC6528A51F7FCE0A0073C775 /* sigmoid_layer.cpp in Sources */,
 				FCF7A85E1F66743600906055 /* scale_layer.cpp in Sources */,
 				FCF7A85A1F66743600906055 /* fc_layer.cpp in Sources */,
 				FCF7A8631F66743600906055 /* net.cpp in Sources */,

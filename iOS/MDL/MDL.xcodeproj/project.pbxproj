@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		FC6528A31F7FCD9C0073C775 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC6528A21F7FCD9C0073C775 /* Math.swift */; };
 		FC92975F1F667600001EBC95 /* MDLCPUCore.h in Headers */ = {isa = PBXBuildFile; fileRef = FC92975E1F667600001EBC95 /* MDLCPUCore.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		FC9297681F667630001EBC95 /* libMDLCPUCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FC9297651F66761C001EBC95 /* libMDLCPUCore.a */; };
 		FC92976B1F66768E001EBC95 /* libstdc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = FC92976A1F66768E001EBC95 /* libstdc++.tbd */; };
@@ -50,6 +51,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		FC6528A21F7FCD9C0073C775 /* Math.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Math.swift; sourceTree = "<group>"; };
 		FC92975E1F667600001EBC95 /* MDLCPUCore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MDLCPUCore.h; path = ../../../MDLCPUCore/MDLCPUCore/MDLCPUCore.h; sourceTree = "<group>"; };
 		FC9297601F66761C001EBC95 /* MDLCPUCore.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = MDLCPUCore.xcodeproj; path = ../../../MDLCPUCore/MDLCPUCore.xcodeproj; sourceTree = "<group>"; };
 		FC92976A1F66768E001EBC95 /* libstdc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libstdc++.tbd"; path = "usr/lib/libstdc++.tbd"; sourceTree = SDKROOT; };
@@ -154,6 +156,7 @@
 				FCF7A8951F66751D00906055 /* Model.swift */,
 				FCF7A8961F66751D00906055 /* Net.swift */,
 				FCC52BCC1F7ABA64002B31B6 /* MetalManager.swift */,
+				FC6528A21F7FCD9C0073C775 /* Math.swift */,
 			);
 			path = GPU;
 			sourceTree = "<group>";
@@ -303,6 +306,7 @@
 				FCF7A8AE1F66751D00906055 /* Model.swift in Sources */,
 				FCF7A8A91F66751D00906055 /* SoftmaxLayer.swift in Sources */,
 				FCF7A89A1F66751D00906055 /* Extensions.swift in Sources */,
+				FC6528A31F7FCD9C0073C775 /* Math.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
