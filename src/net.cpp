@@ -145,7 +145,7 @@ namespace mdl {
                 in_threads = true;
                 continue;
             }
-            if (type == LayerType::SPLIT) {
+            if (type == LayerType::SPLIT && _thread_num > 1) {
                 threads_enable = true;
             }
             if (in_threads && inception_count < MAX_INCEPTION_NUM) {

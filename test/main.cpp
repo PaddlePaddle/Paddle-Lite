@@ -76,7 +76,7 @@ int find_max(vector<float> data) {
 }
 
 int run() {
-    // thread num should set 1 while using mobilenet
+    // thread num should set 1 while using mobilenet & resnet
     int thread_num = 3;
     if (mdl::Gemmer::gemmers.size() == 0) {
         for (int i = 0; i < max(thread_num, 3); i++) {
@@ -114,7 +114,8 @@ int run() {
         cout << num << " ";
     }
     cout <<endl;
-    cout << "the max prob index = "<<find_max(result)<<endl;
+    // uncomment while testing clacissification models
+//    cout << "the max prob index = "<<find_max(result)<<endl;
     cout << "Done!" << endl;
 //    cout << "it " << (is_correct_result(result) ? "is" : "isn't") << " a correct result." << endl;
     loader->clear();
