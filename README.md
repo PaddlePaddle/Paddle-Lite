@@ -59,6 +59,7 @@ If you want to know about the source code, please keep going. The source code is
 
 #### Runing test on the OSX or Linux
 
+MDL theoretically can run on Linux system，The MDL can only run on the MAC now, you need to do to fine tune can be run on Linux. Welcome to contribute code.
 ```
 # mac or linux:
 
