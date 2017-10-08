@@ -138,7 +138,7 @@ namespace mdl {
                             sum += input_data[h * width + w];
                         }
                     }
-                    sum /= pool_size;;
+                    sum /= pool_size;
                     output_data[ph * pool_width + pw] = sum;
                 }
             }
