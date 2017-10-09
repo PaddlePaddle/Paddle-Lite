@@ -117,7 +117,7 @@ namespace mdl {
 
 #ifdef MULTI_THREAD
         if (thread_num > 1) {
-            std::thread ths[thread_num];
+            std::thread *ths = new std::thread[thread_num];
             int m1 = m / thread_num;
             int m2 = m % thread_num;
             for (int i = 0; i < thread_num; i++) {
@@ -128,9 +128,11 @@ namespace mdl {
                 ths[i] = std::thread(run1, i, row_count, n, k, weight_data + i * m1 * k, col_data,
                                      output_data + i * m1 * n);
             }
-            for (auto &th: ths) {
-                th.join();
+            for (int j = 0; j < thread_num; ++j) {
+                ths[j].join();
+
             }
+            delete []ths;
             return;
         }
 
@@ -158,7 +160,7 @@ namespace mdl {
 
 #ifdef MULTI_THREAD
         if (thread_num > 1) {
-            std::thread ths[thread_num];
+            std::thread *ths = new std::thread[thread_num];
             int m1 = m / thread_num;
             int m2 = m % thread_num;
             for (int i = 0; i < thread_num; i++) {
@@ -169,9 +171,11 @@ namespace mdl {
                 ths[i] = std::thread(run2, i, row_count, n, k, bias_data + i * m1 * k, _bias_buffer->get_data(),
                                      output_data + i * m1 * n, 1.0, 1.0);
             }
-            for (auto &th: ths) {
-                th.join();
+            for (int j = 0; j < thread_num; ++j) {
+                ths[j].join();
+
             }
+            delete []ths;
             return;
         }
 
