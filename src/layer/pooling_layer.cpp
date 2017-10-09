@@ -127,6 +127,7 @@ namespace mdl {
                     int wstart = pw * _stride - _pad;
                     int hend = min(hstart + _kernel_size, height + _pad);
                     int wend = min(wstart + _kernel_size, width + _pad);
+                    int pool_size = (hend - hstart) * (wend - wstart);
                     hstart = max(hstart, 0);
                     wstart = max(wstart, 0);
                     hend = min(hend, height);
@@ -137,7 +138,7 @@ namespace mdl {
                             sum += input_data[h * width + w];
                         }
                     }
-                    sum /= ((hend - hstart) * (wend - wstart));
+                    sum /= pool_size;
                     output_data[ph * pool_width + pw] = sum;
                 }
             }
