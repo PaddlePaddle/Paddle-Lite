@@ -51,6 +51,7 @@ class  FuncConstant<T: Any>: FuncConstantBase, Equatable where T: Equatable{
     }
 }
 
+@available(iOS 10.0, *)
 final class MetalManager {
     static let shared: MetalManager = MetalManager()
     let device: MTLDevice

@@ -28,6 +28,7 @@ struct NetResult{
     var elapsedTime: TimeInterval = 0
 }
 
+@available(iOS 10.0, *)
 class Net {
     var inflightIndex = 0
     var inflightBuffers = 3

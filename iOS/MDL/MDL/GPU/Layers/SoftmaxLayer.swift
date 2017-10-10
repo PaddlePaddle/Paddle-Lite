@@ -23,8 +23,7 @@
 import Foundation
 import MetalPerformanceShaders
 
-
-
+@available(iOS 10.0, *)
 class SoftmaxLayer: MPSCNNLayer {
     override var type: String {
         return LayerModel.softmaxType

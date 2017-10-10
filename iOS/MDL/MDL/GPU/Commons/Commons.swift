@@ -63,6 +63,7 @@ func ?!<T>(option: T?, excuteOrError: @autoclosure () -> String) -> T{
     }
 }
 
+@available(iOS 10.0, *)
 class FileDataGetter <T>{
     let data: UnsafeMutablePointer<T>
     let dataSize: Int
@@ -84,6 +85,7 @@ class FileDataGetter <T>{
 }
 
 
+@available(iOS 10.0, *)
 extension MPSImage{
     private func convert<T>(initial: T) -> [T] {
         
@@ -145,6 +147,7 @@ extension MPSImage{
     }
 }
 
+@available(iOS 10.0, *)
 extension MTLComputeCommandEncoder{
     func dispatch(pipeline: MTLComputePipelineState, image: MPSImage) {
         dispatch(pipeline: pipeline,
@@ -207,11 +210,13 @@ func float32to16(input: UnsafeMutablePointer<Float>, output: UnsafeMutableRawPoi
     }
 }
 
-
+@available(iOS 10.0, *)
 public protocol CustomKernel {
     func encode(commandBuffer: MTLCommandBuffer, sourceImage: MPSImage, destinationImage: MPSImage)
 }
 
+
+@available(iOS 10.0, *)
 open class MPSKernel: CustomKernel {
     public let device: MTLDevice
     public let neuron: MPSCNNNeuron?
@@ -223,6 +228,7 @@ open class MPSKernel: CustomKernel {
     
     var params = KernelParams()
     
+    @available(iOS 10.0, *)
     public init(device: MTLDevice, neuron: MPSCNNNeuron?, params: KernelParams) {
         self.device = device
         self.neuron = neuron
@@ -235,6 +241,7 @@ open class MPSKernel: CustomKernel {
     }
 }
 
+@available(iOS 10.0, *)
 public class DepthwiseConvolutionKernel: MPSKernel {
     let pipeline: MTLComputePipelineState
     let weightsBuffer: MTLBuffer
@@ -309,6 +316,7 @@ public class DepthwiseConvolutionKernel: MPSKernel {
     }
 }
 
+@available(iOS 10.0, *)
 open class MetalKernel {
     let device: MTLDevice
     let pipeline: MTLComputePipelineState
@@ -336,9 +344,11 @@ open class MetalKernel {
     }
 }
 
+@available(iOS 10.0, *)
 extension MetalKernel: CustomKernel{
 }
 
+@available(iOS 10.0, *)
 func configureNeuronType(filter: MPSCNNNeuron?,
                          constants: MTLFunctionConstantValues,
                          params: inout KernelParams) {

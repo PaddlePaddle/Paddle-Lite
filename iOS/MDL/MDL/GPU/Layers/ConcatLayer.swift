@@ -24,6 +24,7 @@ import Foundation
 
 
 /// 这一层在c++版本的MDL 中是将一组输入合并到一个输出, 一般各个输入的 number  width height 是相同的, 这里在使用Conv时 使用 destinationChannelOffset 进行concat
+@available(iOS 10.0, *)
 class ConcatLayer: Layer {
     override func initializeCompute(device: MTLDevice) {
     }

@@ -25,6 +25,7 @@ import MetalPerformanceShaders
 
 
 /// 池化层
+@available(iOS 10.0, *)
 class PoolingLayer: MPSCNNLayer {
     let kernel: (Int, Int)
     let stride: (Int, Int)
@@ -132,8 +133,7 @@ class PoolingLayer: MPSCNNLayer {
     }
 }
 
-
-
+@available(iOS 10.0, *)
 class MaxPooling: PoolingLayer {
     override var type: String {
         return "MaxPool"
@@ -144,6 +144,7 @@ class MaxPooling: PoolingLayer {
     }
 }
 
+@available(iOS 10.0, *)
 class AveragePooling: PoolingLayer {
     override var type: String {
         return "AveragePooling"
@@ -153,6 +154,7 @@ class AveragePooling: PoolingLayer {
     }
 }
 
+@available(iOS 10.0, *)
 class GlobalAveragePooling: MPSCNNLayer {
     override var type: String {
         return LayerModel.globalAveragePoolingType

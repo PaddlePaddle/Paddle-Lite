@@ -22,6 +22,7 @@
 import Foundation
 import MetalPerformanceShaders
 
+@available(iOS 10.0, *)
 class Loader {
     static let share:Loader = Loader()
     private let stringSize: CInt = 30

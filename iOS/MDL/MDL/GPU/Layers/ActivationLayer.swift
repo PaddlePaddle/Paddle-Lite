@@ -22,6 +22,7 @@
 import Foundation
 import MetalPerformanceShaders
 
+@available(iOS 10.0, *)
 class ActivationLayer: MPSCNNLayer {
         
     override init(device: MTLDevice, config: LayerModel) throws {

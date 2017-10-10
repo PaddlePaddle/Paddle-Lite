@@ -23,6 +23,7 @@
 import Foundation
 import MetalPerformanceShaders
 
+@available(iOS 10.0, *)
 class Layer {
     var useBias: Bool{
         return self.weights.count > 1
@@ -113,6 +114,7 @@ class Layer {
     }
 }
 
+@available(iOS 10.0, *)
 class MPSCNNLayer: Layer {
     var destinationChannelOffset = 0
     var mpscnn: MPSCNNKernel!

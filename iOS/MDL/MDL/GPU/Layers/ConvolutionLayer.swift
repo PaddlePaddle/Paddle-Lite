@@ -23,6 +23,7 @@
 import Foundation
 import MetalPerformanceShaders
 
+@available(iOS 10.0, *)
 class ConvolutionLayer: MPSCNNLayer {
     let padding: Int
     var conv: MPSCNNConvolution?
@@ -105,6 +106,7 @@ class ConvolutionLayer: MPSCNNLayer {
     }
 }
 
+@available(iOS 10.0, *)
 class DepthwiseConvolution: Layer {
     let kernel: (Int, Int)
     let stride: (Int, Int)
@@ -175,6 +177,7 @@ class DepthwiseConvolution: Layer {
     }
 }
 
+@available(iOS 10.0, *)
 class ReluLayer: MPSCNNLayer {
     var activation: MPSCNNNeuronReLU?
     override init(device: MTLDevice,
@@ -193,6 +196,7 @@ class ReluLayer: MPSCNNLayer {
 }
 
 /// 这一层 其实就是卷积核为 1 * 1的 ConvolutionLayer
+@available(iOS 10.0, *)
 class PointwiseConvolutionLayer: ConvolutionLayer {
     
     override init(device: MTLDevice,

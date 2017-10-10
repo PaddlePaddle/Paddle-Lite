@@ -24,6 +24,7 @@ import Foundation
 import MetalPerformanceShaders
 
 /// 全链接层 Full connect
+@available(iOS 10.0, *)
 class FcLayer: MPSCNNLayer {
     let outputNum: Int
     var activation: MPSCNNNeuron?

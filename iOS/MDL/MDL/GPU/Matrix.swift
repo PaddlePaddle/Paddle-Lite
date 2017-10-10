@@ -28,7 +28,7 @@ enum MatrixType {
     case bias
 }
 
-
+@available(iOS 10.0, *)
 class Matrix{
     var matrixType: MatrixType?
     var number = 1
@@ -99,6 +99,7 @@ class Matrix{
     }
 }
 
+@available(iOS 10.0, *)
 extension Matrix: Hashable{
     static func ==(lhs: Matrix, rhs: Matrix) -> Bool {
         return lhs.width == rhs.width && lhs.height == lhs.height && lhs.channels == rhs.channels

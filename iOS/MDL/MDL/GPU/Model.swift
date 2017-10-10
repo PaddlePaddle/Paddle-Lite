@@ -50,6 +50,7 @@ class ParamModel {
     }
 }
 
+@available(iOS 10.0, *)
 class LayerModel {
     static let convolutionType = "ConvolutionLayer"
     static let concatType = "ConcatLayer"
@@ -122,6 +123,7 @@ class LayerModel {
     }
 }
 
+@available(iOS 10.0, *)
 class Model{
     internal(set) var layer: [LayerModel] = []
     internal(set) var matrix: [String : [Int]] = [:]

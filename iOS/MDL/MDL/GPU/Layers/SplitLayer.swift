@@ -22,7 +22,7 @@
 import Foundation
 import MetalPerformanceShaders
 
-
+@available(iOS 10.0, *)
 class SplitLayer: Layer {
     
     override var type: String{

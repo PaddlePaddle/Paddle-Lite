@@ -90,7 +90,7 @@ extension MTLTexture {
     }
 }
 
-
+@available(iOS 10.0, *)
 extension MTLDevice{
     func makeLibrary(bundle: Bundle) -> MTLLibrary?{
         guard let path = bundle.path(forResource: "default", ofType: "metallib") else {

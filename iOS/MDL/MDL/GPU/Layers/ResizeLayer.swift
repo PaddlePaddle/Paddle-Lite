@@ -23,7 +23,7 @@
 import Foundation
 import MetalPerformanceShaders
 
-
+@available(iOS 10.0, *)
 class ResizeLayer: Layer {
     var lanczos: MPSImageLanczosScale!
     override var type: String {

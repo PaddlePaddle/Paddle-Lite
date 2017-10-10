@@ -23,6 +23,7 @@
 import Foundation
 import MetalPerformanceShaders
 
+@available(iOS 10.0, *)
 class PreProcessLayer: Layer {
     let custom: CustomKernel
     init(_ custom: CustomKernel, device: MTLDevice, config: LayerModel) throws {
