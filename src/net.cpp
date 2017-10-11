@@ -160,22 +160,10 @@ namespace mdl {
             _layers[i]->forward(thread_num);
         }
 #else
-        map<LayerType , double> time_diffs;
         for (int i = 0; i < end; i++) {
-            auto t1 = mdl::time();
 //            cout << _layers[i]->name() << " input ="<< _layers[i]->input()[0]->descript()<<endl;
             _layers[i]->forward();
 //            cout << _layers[i]->name() << "  output = "<<_layers[i]->output()[0]->descript()<<endl;
-            auto t2 = mdl::time();
-            auto time_diff = mdl::time_diff(t1, t2);
-            time_diffs[_layers[i]->layer_type()] += time_diff;
-        }
-#endif
-
-#ifdef MULTI_THREAD
-#else
-        for (auto pair: time_diffs) {
-            LOGI("time cost by %s is %lfms.", pair.first, pair.second);
         }
 #endif
 
