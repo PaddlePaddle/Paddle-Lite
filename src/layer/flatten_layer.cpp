@@ -46,6 +46,7 @@ namespace mdl {
     FlattenLayer::~FlattenLayer() {}
 
     void FlattenLayer::forward(int thread_num) {
+        _output[0]->set_data(_input[0]->get_data());
 
     }
 }

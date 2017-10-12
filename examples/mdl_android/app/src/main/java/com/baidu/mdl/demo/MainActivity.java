@@ -50,6 +50,7 @@ import static android.graphics.Color.blue;
 import static android.graphics.Color.green;
 import static android.graphics.Color.red;
 import static com.baidu.mdl.demo.MainActivity.TYPE.googlenet;
+import static com.baidu.mdl.demo.MainActivity.TYPE.mb;
 import static com.baidu.mdl.demo.MainActivity.TYPE.mobilenet;
 import static com.baidu.mdl.demo.MainActivity.TYPE.squeezenet;
 
@@ -63,10 +64,11 @@ public class MainActivity extends Activity {
     enum TYPE {
         googlenet,
         mobilenet,
-        squeezenet
+        squeezenet,
+        mb
     }
 
-    private TYPE type = squeezenet;
+    private TYPE type = googlenet;
     private ImageView imageView;
     private TextView tvSpeed;
     private Button button;
@@ -136,9 +138,10 @@ public class MainActivity extends Activity {
             String jsonPath = sdcardPath + File.separator + type.name()
                     + File.separator + "model.min.json";
             String weightsPath = sdcardPath + File.separator + type.name()
-                    + File.separator + "data.min.bin";
+                    + File.separator + "data.bin";
+            Log.d("mdl","mdl load");
             mdlSolver.load(jsonPath, weightsPath);
-            if (type == mobilenet) {
+            if (type == mobilenet || type == mb) {
                 mdlSolver.setThreadNum(1);
             } else {
                 mdlSolver.setThreadNum(3);
@@ -248,7 +251,7 @@ public class MainActivity extends Activity {
             }
 
             canvas.drawRect(x1, y1, x2, y2, paint);
-        } else if (type == squeezenet) {
+        } else if (type == squeezenet || type == mb) {
             Log.d("mdl", "最匹配下标=" + getMaxIndex(predicted));
 
         }
@@ -306,6 +309,10 @@ public class MainActivity extends Activity {
                     dataBuf[rIndex] = (float) (red(color)) - 123;
                     dataBuf[gIndex] = (float) (green(color)) - 117;
                     dataBuf[bIndex] = (float) (blue(color)) - 104;
+                } else if (type == mb) {
+                    dataBuf[rIndex] = (float) ((red(color)/255 - 0.485) / 0.229);
+                    dataBuf[gIndex] = (float) ((green(color)/225 - 0.456) / 0.224);
+                    dataBuf[bIndex] = (float) ((blue(color)/225 - 0.406) / 0.225);
                 }
             }
         }
@@ -369,7 +376,7 @@ public class MainActivity extends Activity {
             opt.inSampleSize *= 2;
         }
         opt.inJustDecodeBounds = false;
-//        filePath = "/sdcard/easy_image/banana.jpeg";
+        filePath = "/sdcard/easy_image/2-8.jpg";
         Bitmap bmp = BitmapFactory.decodeFile(filePath, opt);
         return bmp;
     }
@@ -378,6 +385,7 @@ public class MainActivity extends Activity {
     public void onBackPressed() {
         super.onBackPressed();
         try {
+            Log.d("mdl","mdl clear");
             // clear mdl
             mdlSolver.clear();
         } catch (MDLException e) {
