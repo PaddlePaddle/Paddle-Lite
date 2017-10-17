@@ -352,8 +352,6 @@ void calcu_layer_shape(map<string, vector<int> > &shape_map, const LayerParamete
         shape_map.insert(make_pair(top_name, top_shape));
         cout << top_name << "shape =" << get_shape_string(top_shape) << endl;
     } else if (type == "InnerProduct") {
-        // InnerProductLayer just change the output channel
-        if (layer.bottom_size() == 1) {
             string bottom_name = layer.bottom(0);
             string top_name = layer.top(0);
             if (is_key_contain(shape_map, top_name)) {
@@ -363,13 +361,16 @@ void calcu_layer_shape(map<string, vector<int> > &shape_map, const LayerParamete
                 vector<int> bottom_shape = shape_map[bottom_name];
                 const caffe::InnerProductParameter &innerProductParameter = layer.inner_product_param();
 
+                int axis = innerProductParameter.axis();
+                if (axis < 0) {
+                    axis = bottom_shape.size() + axis;
+                }
                 int num_output = innerProductParameter.num_output();
 
-                vector<int> top_shape;
-                // InnerProductLayer  just change the channels
-                top_shape = bottom_shape;
-                int index_chanels = 1;
-                top_shape[index_chanels] = num_output;
+                vector<int> top_shape = bottom_shape;
+                top_shape.resize(axis + 1);
+                // InnerProductLayer   change the channels
+                top_shape[axis] = num_output;
 
                 shape_map.insert(make_pair(top_name, top_shape));
                 cout << top_name << " shape = " << get_shape_string(top_shape) << endl;
@@ -379,10 +380,6 @@ void calcu_layer_shape(map<string, vector<int> > &shape_map, const LayerParamete
                 msg << layer.name() << "bottom shape is not ready! ";
                 throw msg.str();
             }
-
-        } else {
-            throw string("multiple inputs not supported yet!");
-        }
 
     } else if (type == "Pooling") {
         if (layer.bottom_size() == 1) {
