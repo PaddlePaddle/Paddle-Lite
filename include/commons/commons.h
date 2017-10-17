@@ -97,6 +97,11 @@ license and copyright terms herein.
 #include "math/math.h"
 #include "commons/exception.h"
 
+#ifdef MDL_LINUX
+#include <string.h>
+#include <limits.h>
+#endif
+
 using std::min;
 using std::max;
 using std::map;
