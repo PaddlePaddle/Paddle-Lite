@@ -134,13 +134,15 @@ namespace mdl {
         for (int i = start; i < end; i++) {
             auto type = _layers[i]->layer_type();
             if (threads_enable && inception_count < MAX_INCEPTION_NUM) {
-                std::thread ths[_thread_num];
+                std::thread *ths = new std::thread[_thread_num];
                 for (int j = 1; j <= _thread_num; j++) {
                     ths[j - 1] = std::thread(forward_from_to_async, j, _thread_num, i, end, _layers);
                 }
-                for (auto &th: ths) {
-                    th.join();
+                for (int j = 0; j < _thread_num; ++j) {
+                    ths[j].join();
+
                 }
+                delete []ths;
                 threads_enable = false;
                 in_threads = true;
                 continue;
