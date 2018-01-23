@@ -153,7 +153,7 @@ error_fn () {
 
 if [ $# = 0 ]; then
     echo "error: target missing!"
-    echo "available targets: mac|ios|android"
+    echo "available targets: mac|linux|ios|android"
     echo "sample usage: ./build.sh mac"
 else
     if [ $1 = "mac" ]; then
