@@ -10,8 +10,8 @@ It supports calculation on iOS GPU, and is already adopted by Baidu APP.
 * Size: 340k+ (on arm v7)
 * Speed: 40ms (for iOS Metal GPU Mobilenet) or 30 ms (for Squeezenet)
 
-2018.01.24 arm v7a 加入了cpu缓存预充。gemm升级为纯汇编版本。
-2018.01.24 Arm v7a joined the CPU cache preload. Gemm upgraded to a assembly version.
+* 2018.01.24 arm v7a 加入了cpu缓存预充。gemm升级为纯汇编版本。
+* 2018.01.24 Arm v7a joined the CPU cache preload. Gemm upgraded to a assembly version.
 
 百度研发的移动端深度学习框架，致力于让卷积神经网络极度简单的部署在手机端。目前正在手机百度内运行。支持iOS gpu计算。体积小，速度快。
 
