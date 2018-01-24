@@ -82,8 +82,8 @@ build_android_fn () {
         exit -1
     fi
     
-#    PLATFORM="arm-v7a"
-     PLATFORM="arm-v8a"
+    PLATFORM="arm-v7a"
+#   PLATFORM="arm-v8a"
     
     if [ "${PLATFORM}" = "arm-v7a" ]; then
         ABI="armeabi-v7a with NEON"
