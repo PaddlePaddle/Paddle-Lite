@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 48;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -18,7 +18,7 @@
 		FC5843DF1F6909A6001A840B /* mobileNetModel.json in Resources */ = {isa = PBXBuildFile; fileRef = FC5843D81F690980001A840B /* mobileNetModel.json */; };
 		FC5843E11F6909A6001A840B /* squeezenet.json in Resources */ = {isa = PBXBuildFile; fileRef = FC5843DB1F690980001A840B /* squeezenet.json */; };
 		FC5843E21F6909A6001A840B /* SqueezenetParameters.bundle in Resources */ = {isa = PBXBuildFile; fileRef = FC5843DC1F690980001A840B /* SqueezenetParameters.bundle */; };
-		FC5B4A3E1F69612A00203335 /* MDL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FC5B4A3D1F69612A00203335 /* MDL.framework */; };
+		FC5B4A3E1F69612A00203335 /* MDL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FC5B4A3D1F69612A00203335 /* MDL.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		FC5B4A3F1F69612A00203335 /* MDL.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = FC5B4A3D1F69612A00203335 /* MDL.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		FC81F0421F7786E60033F0CA /* g_data.min.bin in Resources */ = {isa = PBXBuildFile; fileRef = FC81F03F1F7778950033F0CA /* g_data.min.bin */; };
 		FC8A42931F7ABEA300D08302 /* MDLVideoCapture.m in Sources */ = {isa = PBXBuildFile; fileRef = FC8A42901F7ABEA200D08302 /* MDLVideoCapture.m */; };
@@ -282,14 +282,13 @@
 				TargetAttributes = {
 					FCF7A8BA1F66754800906055 = {
 						CreatedOnToolsVersion = 8.3.3;
-						DevelopmentTeam = 84A6Z2YQ4T;
 						LastSwiftMigration = 0900;
 						ProvisioningStyle = Automatic;
 					};
 				};
 			};
 			buildConfigurationList = FCF7A8B61F66754800906055 /* Build configuration list for PBXProject "MDLDemo" */;
-			compatibilityVersion = "Xcode 3.2";
+			compatibilityVersion = "Xcode 8.0";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -472,16 +471,18 @@
 		FCF7A8CE1F66754800906055 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "iPhone Distribution: Beijing Baidu Netcom Science & Technology Co.,Ltd.";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 84A6Z2YQ4T;
+				DEVELOPMENT_TEAM = 4V8Z9QJV6A;
 				INFOPLIST_FILE = MDLDemo/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.codeworm.mdl;
+				MACH_O_TYPE = mh_execute;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tonytang.mdl;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -494,17 +495,19 @@
 		FCF7A8CF1F66754800906055 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "iPhone Distribution: Beijing Baidu Netcom Science & Technology Co.,Ltd.";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 84A6Z2YQ4T;
+				DEVELOPMENT_TEAM = 4V8Z9QJV6A;
 				GCC_OPTIMIZATION_LEVEL = 3;
 				INFOPLIST_FILE = MDLDemo/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.codeworm.mdl;
+				MACH_O_TYPE = mh_execute;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tonytang.mdl;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				PROVISIONING_PROFILE_SPECIFIER = "";

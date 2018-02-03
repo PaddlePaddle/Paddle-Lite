@@ -273,7 +273,8 @@ typedef NS_ENUM( NSInteger, MDLCaptureSetupResult ) {
 }
 
 + (void)setFlashMode:(AVCaptureFlashMode)flashMode forDevice:(AVCaptureDevice *)device {
-    if ( device.hasFlash && [device isFlashModeSupported:flashMode] ) {
+   // if ( device.hasFlash && [device isFlashModeSupported:flashMode] ) {
+    if ( device.hasFlash && [device isFlashModeSupported:flashMode] ){
         NSError *error = nil;
         if ( [device lockForConfiguration:&error] ) {
             device.flashMode = flashMode;
@@ -286,7 +287,10 @@ typedef NS_ENUM( NSInteger, MDLCaptureSetupResult ) {
 }
 
 + (AVCaptureDevice *)deviceWithMediaType:(NSString *)mediaType preferringPosition:(AVCaptureDevicePosition)position {
-    NSArray *devices = [AVCaptureDevice devicesWithMediaType:mediaType];
+    //NSArray *devices = [AVCaptureDevice devicesWithMediaType:mediaType];
+    AVCaptureDeviceDiscoverySession *devicesIOS10 = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInWideAngleCamera] mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionBack];
+    
+    NSArray *devices = devicesIOS10.devices;
     AVCaptureDevice *captureDevice = devices.firstObject;
     
     for (AVCaptureDevice *device in devices) {

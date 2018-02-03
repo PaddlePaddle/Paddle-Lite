@@ -82,8 +82,8 @@ build_android_fn () {
         exit -1
     fi
     
-    PLATFORM="arm-v7a"
-#   PLATFORM="arm-v8a"
+#    PLATFORM="arm-v7a"
+     PLATFORM="arm-v8a"
     
     if [ "${PLATFORM}" = "arm-v7a" ]; then
         ABI="armeabi-v7a with NEON"
@@ -153,7 +153,7 @@ error_fn () {
 
 if [ $# = 0 ]; then
     echo "error: target missing!"
-    echo "available targets: mac|linux|ios|android"
+    echo "available targets: mac|ios|android"
     echo "sample usage: ./build.sh mac"
 else
     if [ $1 = "mac" ]; then

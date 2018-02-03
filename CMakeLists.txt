@@ -50,4 +50,7 @@ elseif(V7)
     add_definitions(-DMDL_V7="true")
 elseif(V8)
     add_definitions(-DMDL_V8="true")
-endif(IS_MAC)
+endif(V8)
+
+
+
