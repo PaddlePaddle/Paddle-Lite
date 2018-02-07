@@ -23,13 +23,14 @@ import MDL
 import Metal
 import Foundation
 
-
+@available(iOS 10.0, *)
 public class MobileNetPreprocessing: MetalKernel {
     public init(device: MTLDevice) {
         super.init(device: device, functionName: "mobilenet_preprocess", bundle: Bundle.main)
     }
 }
 
+@available(iOS 10.0, *)
 class SqueezeNetPreprocess: MetalKernel {
     public init(device: MTLDevice) {
         super.init(device: device, functionName: "squeezenet_preprocess", bundle: Bundle.main)

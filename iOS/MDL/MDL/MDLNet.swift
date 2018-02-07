@@ -28,7 +28,7 @@ import Foundation
  - result: the result of the prediction
  - elapsedTime:
  */
-@available(iOS 10.0, *)
+@available(iOS 7.0, *)
 public struct MDLNetResult{
     public var result: [Float] = []
     public var elapsedTime: TimeInterval = 0
@@ -40,7 +40,7 @@ public struct MDLNetResult{
  - modelDataError: some error of the json model
  - loaderError     some error occur when loading model and parameter
  */
-@available(iOS 10.0, *)
+@available(iOS 7.0, *)
 public enum NetError: Error{
     case modelDataError(message: String)
     case loaderError(message: String)
@@ -50,7 +50,7 @@ public enum NetError: Error{
 /**
  the type of net
  */
-@available(iOS 10.0, *)
+@available(iOS 7.0, *)
 public enum NetType {
     case CPU, GPU
 }
@@ -58,7 +58,7 @@ public enum NetType {
 /**
  all the MDLNet confirm this protocol
  */
-@available(iOS 10.0, *)
+@available(iOS 7.0, *)
 public protocol MDLNet {
     associatedtype T
     /**
@@ -69,12 +69,17 @@ public protocol MDLNet {
      will be true when loaded success
      */
     var loaded: Bool{get set}
+    
+    /**
+     clear all data, ensure that it be called before load again
+     */
+    func clear();
 }
 
 /**
  the net which use CPU to compute
  */
-@available(iOS 10.0, *)
+@available(iOS 7.0, *)
 final public class MDLCPUNet: MDLNet {
     public var loaded: Bool  = false
     public typealias T  = MDLCPUNet
@@ -126,6 +131,7 @@ final public class MDLCPUNet: MDLNet {
         MDLCPUCore.sharedInstance().clear()
     }
 }
+
 /**
  the net which use GPU to compute
  */

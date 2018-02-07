@@ -40,11 +40,11 @@ class CPUNetViewController: UIViewController, UIImagePickerControllerDelegate, U
             var modelPath: String?
             var weightPath: String?
             if modelType == .GoogleNet{
-                MDLCPUCore.sharedInstance().setThreadNumber(3)
+                MDLCPUNet.share.setThreadNum(number: 3)
                 modelPath = Bundle.main.path(forResource: "g_model.min", ofType: "json")
                 weightPath = Bundle.main.path(forResource: "g_data.min", ofType: "bin")
             }else if modelType == .MobileNet{
-                MDLCPUCore.sharedInstance().setThreadNumber(1)
+                MDLCPUNet.share.setThreadNum(number: 1)
                 modelPath = Bundle.main.path(forResource: "m_model.min", ofType: "json")
                 weightPath = Bundle.main.path(forResource: "m_data.min", ofType: "bin")
             }

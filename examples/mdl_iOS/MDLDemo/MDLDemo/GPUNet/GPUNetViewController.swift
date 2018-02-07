@@ -31,6 +31,7 @@ enum GPUModelType {
 }
 var gpuModelType: GPUModelType = .mobileNet
 
+@available(iOS 10.0, *)
 class GPUNetViewController: UIViewController, CaptureTextureDelegate {
     
     @IBOutlet weak var videoView: UIView!
