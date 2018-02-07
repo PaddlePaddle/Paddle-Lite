@@ -477,7 +477,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
-					"MDL_V7=1",
+					"MDL_V7_iOS=1",
 				);
 				HEADER_SEARCH_PATHS = (
 					../../include,
@@ -496,7 +496,7 @@
 				DEVELOPMENT_TEAM = Z5M2UUN5YV;
 				GCC_ENABLE_CPP_EXCEPTIONS = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_PREPROCESSOR_DEFINITIONS = "MDL_V7=1";
+				GCC_PREPROCESSOR_DEFINITIONS = "MDL_V7_iOS=1";
 				HEADER_SEARCH_PATHS = (
 					../../include,
 					"../../third-party",

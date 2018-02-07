@@ -103,8 +103,69 @@ namespace mdl {
             }
         }
     }
-#if defined(MDL_V7)
-
+    
+#if defined(MDL_V7_iOS)
+    void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float *B, float beta, float *C, int incRowC,
+                                    int incColC) {
+        int i, j, l;
+        float32x4_t abv0 = vdupq_n_f32(0);
+        float32x4_t abv1 = vdupq_n_f32(0);
+        float32x4_t abv2 = vdupq_n_f32(0);
+        float32x4_t abv3 = vdupq_n_f32(0);
+        
+        float32x4_t av;
+        float32x4_t bv;
+        
+        float32x2_t bv01;
+        float32x2_t bv23;
+        
+        for (l = 0; l < kc; ++l) {
+            av = vld1q_f32(A);
+            bv = vld1q_f32(B);
+            bv01 = vget_low_f32(bv);
+            abv0 = vmlaq_lane_f32(abv0, av, bv01, 0);
+            abv1 = vmlaq_lane_f32(abv1, av, bv01, 1);
+            bv23 = vget_high_f32(bv);
+            abv2 = vmlaq_lane_f32(abv2, av, bv23, 0);
+            abv3 = vmlaq_lane_f32(abv3, av, bv23, 1);
+            A += MR;
+            B += NR;
+        }
+        
+        vst1q_f32(AB_ + 0, abv0);
+        vst1q_f32(AB_ + 4, abv1);
+        vst1q_f32(AB_ + 8, abv2);
+        vst1q_f32(AB_ + 12, abv3);
+        
+        if (equal(beta, 0.0)) {
+            for (j = 0; j < NR; ++j) {
+                for (i = 0; i < MR; ++i) {
+                    C[i * incRowC + j * incColC] = 0.0;
+                }
+            }
+        } else if (!equal(beta, 1.0)) {
+            for (j = 0; j < NR; ++j) {
+                for (i = 0; i < MR; ++i) {
+                    C[i * incRowC + j * incColC] *= beta;
+                }
+            }
+        }
+        
+        if (!equal(alpha, 1.0)) {
+            for (j = 0; j < NR; ++j) {
+                for (i = 0; i < MR; ++i) {
+                    C[i * incRowC + j * incColC] += alpha * AB_[i + j * MR];
+                }
+            }
+        } else {
+            for (j = 0; j < NR; ++j) {
+                for (i = 0; i < MR; ++i) {
+                    C[i * incRowC + j * incColC] += AB_[i + j * MR];
+                }
+            }
+        }
+    }
+#elif defined(MDL_V8)
     void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float *B, float beta, float *C, int incRowC,
                                int incColC) {
 
