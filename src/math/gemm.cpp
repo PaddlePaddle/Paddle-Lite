@@ -165,7 +165,7 @@ namespace mdl {
             }
         }
     }
-#elif defined(MDL_V8)
+#elif defined(MDL_V7)
     void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float *B, float beta, float *C, int incRowC,
                                int incColC) {
 
