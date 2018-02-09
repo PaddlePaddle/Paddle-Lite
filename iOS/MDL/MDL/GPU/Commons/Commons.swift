@@ -138,7 +138,7 @@ extension MPSImage{
     
     @nonobjc func toResultFloatArray() -> [Float]{
         var arr = toFloatArray()
-        let loc = toFloatArray().count/50
+        let loc = arr.count/50
         var result: [Float] = []
         for i in 0..<50 {
             result.append(arr[loc * i])
@@ -211,8 +211,17 @@ func float32to16(input: UnsafeMutablePointer<Float>, output: UnsafeMutableRawPoi
 }
 
 @available(iOS 10.0, *)
-public protocol CustomKernel {
+public protocol CustomKernel: Kernel{
     func encode(commandBuffer: MTLCommandBuffer, sourceImage: MPSImage, destinationImage: MPSImage)
+}
+
+@available(iOS 10.0, *)
+public protocol Kernel{
+    
+}
+
+@available(iOS 10.0, *)
+extension MPSCNNConvolution: Kernel{
 }
 
 
@@ -284,9 +293,9 @@ public class DepthwiseConvolutionKernel: MPSKernel {
         
         let functionName: String
         if featureChannels <= 4 {
-            functionName = "depthwiseConvolution3x3"
+            functionName = "depthwiseConv3x3"
         } else {
-            functionName = "depthwiseConvolution3x3Array"
+            functionName = "depthwiseConv3x3_array"
         }
         pipeline = MetalManager.makeFunction(device: device, name: functionName,
                                              constantValues: constants)

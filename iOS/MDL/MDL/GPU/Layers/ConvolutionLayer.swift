@@ -111,7 +111,7 @@ class DepthwiseConvolution: Layer {
     let kernel: (Int, Int)
     let stride: (Int, Int)
     var activation: MPSCNNNeuron?
-    var compute: DepthwiseConvolutionKernel!
+    var compute: Any!
     var pad: Int
     override init(device: MTLDevice,
                   config: LayerModel) throws {
@@ -138,30 +138,44 @@ class DepthwiseConvolution: Layer {
         guard let weightData = weights[0].data?.pointer else{
             fatalError("weight data is nil")
         }
-        
         let input = inputs[0]
         var biasTerms: UnsafeMutablePointer<Float>?
         if useBias {
             biasTerms = weights[1].data?.pointer
         }
         
-        compute = DepthwiseConvolutionKernel(device: device,
-                                             kernelWidth: kernel.0,
-                                             kernelHeight: kernel.1,
-                                             featureChannels: input.channels,
-                                             strideInPixelsX: stride.0,
-                                             strideInPixelsY: stride.1,
-                                             channelMultiplier: 1,
-                                             neuronFilter: activation,
-                                             kernelWeights: weightData,
-                                             biasTerms: biasTerms)
-    }
+//        if #available(iOS 11.0, *) {
+//            let desc = MPSCNNDepthWiseConvolutionDescriptor.init(kernelWidth: kernel.0, kernelHeight: kernel.1,
+//                                                                 inputFeatureChannels: input.channels,
+//                                                                 outputFeatureChannels: input.channels,
+//                                                                 neuronFilter: activation)
+//            desc.strideInPixelsX = stride.0
+//            desc.strideInPixelsY = stride.1
+//            compute = MPSCNNConvolution.init(device: device,
+//                                             convolutionDescriptor: desc,
+//                                             kernelWeights: weightData,
+//                                             biasTerms: biasTerms,
+//                                             flags: .none)
+//            (compute as! MPSCNNConvolution).edgeMode = .zero
+//
+//        }else{
+            compute = DepthwiseConvolutionKernel(device: device,
+                                                 kernelWidth: kernel.0,
+                                                 kernelHeight: kernel.1,
+                                                 featureChannels: input.channels,
+                                                 strideInPixelsX: stride.0,
+                                                 strideInPixelsY: stride.1,
+                                                 channelMultiplier: 1,
+                                                 neuronFilter: activation,
+                                                 kernelWeights: weightData,
+                                                 biasTerms: biasTerms)
+        }
+//    }
     
     override func encode(commandBuffer: MTLCommandBuffer) {
         let input = inputs[0]
         let output = outputs[0]
-        
-        compute.offset = MetalManager.offsetForConvolution(padding: self.pad,
+        let offset = MetalManager.offsetForConvolution(padding: self.pad,
                                                            sourceWidth: input.width,
                                                            sourceHeight: input.height,
                                                            destinationWidth: output.width,
@@ -171,9 +185,20 @@ class DepthwiseConvolution: Layer {
                                                            strideInPixelsX: stride.0,
                                                            strideInPixelsY: stride.1)
         
-        compute.encode(commandBuffer: commandBuffer,
-                       sourceImage: input.image!,
-                       destinationImage: output.image!)
+        if let inCompute = compute as? DepthwiseConvolutionKernel {
+            inCompute.offset = offset
+            inCompute.encode(commandBuffer: commandBuffer,
+                           sourceImage: input.image!,
+                           destinationImage: output.image!)
+        } else if let inCompute = compute as? MPSCNNConvolution {
+            inCompute.offset = offset
+            inCompute.encode(commandBuffer: commandBuffer,
+                             sourceImage: input.image!,
+                             destinationImage: output.image!)
+        }
+        
+        
+     
     }
 }
 
