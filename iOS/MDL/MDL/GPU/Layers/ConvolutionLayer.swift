@@ -144,21 +144,21 @@ class DepthwiseConvolution: Layer {
             biasTerms = weights[1].data?.pointer
         }
         
-//        if #available(iOS 11.0, *) {
-//            let desc = MPSCNNDepthWiseConvolutionDescriptor.init(kernelWidth: kernel.0, kernelHeight: kernel.1,
-//                                                                 inputFeatureChannels: input.channels,
-//                                                                 outputFeatureChannels: input.channels,
-//                                                                 neuronFilter: activation)
-//            desc.strideInPixelsX = stride.0
-//            desc.strideInPixelsY = stride.1
-//            compute = MPSCNNConvolution.init(device: device,
-//                                             convolutionDescriptor: desc,
-//                                             kernelWeights: weightData,
-//                                             biasTerms: biasTerms,
-//                                             flags: .none)
-//            (compute as! MPSCNNConvolution).edgeMode = .zero
-//
-//        }else{
+        if #available(iOS 11.0, *) {
+            let desc = MPSCNNDepthWiseConvolutionDescriptor.init(kernelWidth: kernel.0, kernelHeight: kernel.1,
+                                                                 inputFeatureChannels: input.channels,
+                                                                 outputFeatureChannels: input.channels,
+                                                                 neuronFilter: activation)
+            desc.strideInPixelsX = stride.0
+            desc.strideInPixelsY = stride.1
+            compute = MPSCNNConvolution.init(device: device,
+                                             convolutionDescriptor: desc,
+                                             kernelWeights: weightData,
+                                             biasTerms: biasTerms,
+                                             flags: .none)
+            (compute as! MPSCNNConvolution).edgeMode = .zero
+
+        }else{
             compute = DepthwiseConvolutionKernel(device: device,
                                                  kernelWidth: kernel.0,
                                                  kernelHeight: kernel.1,
@@ -170,7 +170,7 @@ class DepthwiseConvolution: Layer {
                                                  kernelWeights: weightData,
                                                  biasTerms: biasTerms)
         }
-//    }
+    }
     
     override func encode(commandBuffer: MTLCommandBuffer) {
         let input = inputs[0]
