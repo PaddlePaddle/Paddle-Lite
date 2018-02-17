@@ -21,7 +21,6 @@ SOFTWARE.
 
 #include <stdio.h>
 #include <limits.h>
-#include <limits>
 #include <fstream>
 #include <set>
 #include <iostream>

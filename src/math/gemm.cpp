@@ -168,56 +168,35 @@ namespace mdl {
 #elif defined(MDL_V7)
     void Gemmer::dgemm_micro_kernel(int kc, float alpha, const float *A, const float *B, float beta, float *C, int incRowC,
                                int incColC) {
+        int i, j, l;
+        float32x4_t abv0 = vdupq_n_f32(0);
+        float32x4_t abv1 = vdupq_n_f32(0);
+        float32x4_t abv2 = vdupq_n_f32(0);
+        float32x4_t abv3 = vdupq_n_f32(0);
 
-        int kc1 = kc / 2, kc2 = kc % 2;
+        float32x4_t av;
+        float32x4_t bv;
 
-        asm volatile(
-            "vmov.f32   q10,    #0.0        \n\t"
-            "vmov.f32   q11,    #0.0        \n\t"
-            "vmov.f32   q12,    #0.0        \n\t"
-            "vmov.f32   q13,    #0.0        \n\t"
-            "subs       %[kc1], %[kc1], #1  \n\t"
-            "blt        end_kc1_%=          \n\t"
-            "loop_kc1_%=:                   \n\t"
-            "pld        [%[B], #256]        \n\t"
-            "pld        [%[A], #256]        \n\t"
-            "vld1.32    {q0, q1}, [%[B]]!   \n\t"
-            "vld1.32    {q2, q3}, [%[A]]!   \n\t"
-            "vmla.f32   q10, q2, d0[0]      \n\t"
-            "vmla.f32   q11, q2, d0[1]      \n\t"
-            "vmla.f32   q12, q2, d1[0]      \n\t"
-            "vmla.f32   q13, q2, d1[1]      \n\t"
+        float32x2_t bv01;
+        float32x2_t bv23;
 
-            "vmla.f32   q10, q3, d2[0]      \n\t"
-            "vmla.f32   q11, q3, d2[1]      \n\t"
-            "vmla.f32   q12, q3, d3[0]      \n\t"
-            "vmla.f32   q13, q3, d3[1]      \n\t"
+        for (l = 0; l < kc; ++l) {
+            av = vld1q_f32(A);
+            bv = vld1q_f32(B);
+            bv01 = vget_low_f32(bv);
+            abv0 = vmlaq_lane_f32(abv0, av, bv01, 0);
+            abv1 = vmlaq_lane_f32(abv1, av, bv01, 1);
+            bv23 = vget_high_f32(bv);
+            abv2 = vmlaq_lane_f32(abv2, av, bv23, 0);
+            abv3 = vmlaq_lane_f32(abv3, av, bv23, 1);
+            A += MR;
+            B += NR;
+        }
 
-            "subs       %[kc1], %[kc1], #1  \n\t"
-            "bge        loop_kc1_%=         \n\t"
-            "end_kc1_%=:                    \n\t"
-
-            "subs       %[kc2], %[kc2], #1  \n\t"
-            "blt        end_kc2_%=          \n\t"
-            "loop_kc2_%=:                   \n\t"
-            "vld1.32    {q4}, [%[B]]!       \n\t"
-            "vld1.32    {q5}, [%[A]]!       \n\t"
-            "vmla.f32   q10, q5, d8[0]      \n\t"
-            "vmla.f32   q11, q5, d8[1]      \n\t"
-            "vmla.f32   q12, q5, d9[0]      \n\t"
-            "vmla.f32   q13, q5, d9[1]      \n\t"
-            "subs       %[kc2], %[kc2], #1  \n\t"
-            "bge        loop_kc2_%=         \n\t"
-            "end_kc2_%=:                    \n\t"
-
-            "vst1.32    {q10, q11}, [%[AB_]]!    \n\t"
-            "vst1.32    {q12, q13}, [%[AB_]]!    \n\t"
-            :
-            :[A]"r"(A), [B]"r"(B), [kc1]"r"(kc1), [kc2]"r"(kc2), [AB_]"r"(AB_)
-            :"memory", "q0", "q1", "q2", "q3", "q4", "q5", "q10", "q11", "q12", "q13"
-        );
-
-        int i, j;
+        vst1q_f32(AB_ + 0, abv0);
+        vst1q_f32(AB_ + 4, abv1);
+        vst1q_f32(AB_ + 8, abv2);
+        vst1q_f32(AB_ + 12, abv3);
 
         if (equal(beta, 0.0)) {
             for (j = 0; j < NR; ++j) {
