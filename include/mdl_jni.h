@@ -32,13 +32,13 @@ extern "C" {
 /**
  * load model & params of the net for android
  */
-JNIEXPORT jboolean JNICALL Java_com_baidu_graph_sdk_autoscanner_MDL_load(
+JNIEXPORT jboolean JNICALL Java_com_baidu_mdl_demo_MDL_load(
         JNIEnv *env, jclass thiz, jstring modelPath, jstring weightsPath);
 
 /**
  * object detection for anroid
  */
-JNIEXPORT jfloatArray JNICALL Java_com_baidu_graph_sdk_autoscanner_MDL_predictImage(
+JNIEXPORT jfloatArray JNICALL Java_com_baidu_mdl_demo_MDL_predictImage(
         JNIEnv *env, jclass thiz, jfloatArray buf);
 
 /**
@@ -50,12 +50,12 @@ JNIEXPORT void JNICALL Java_com_baidu_mdl_demo_MDL_setThreadNum(
 /**
  * clear data of the net when destroy for android
  */
-JNIEXPORT void JNICALL Java_com_baidu_graph_sdk_autoscanner_MDL_clear(
+JNIEXPORT void JNICALL Java_com_baidu_mdl_demo_MDL_clear(
         JNIEnv *env, jclass thiz);
 /**
  * validate wheather the device is fast enough for obj detection for android
  */
-JNIEXPORT jboolean JNICALL Java_com_baidu_graph_sdk_autoscanner_MDL_validate(
+JNIEXPORT jboolean JNICALL Java_com_baidu_mdl_demo_MDL_validate(
         JNIEnv *env, jclass thiz);
 
 #ifdef __cplusplus
