@@ -7,9 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		FC101A7F20568D8E00C6AC6F /* MDLCPUCore.h in Headers */ = {isa = PBXBuildFile; fileRef = FC101A7D20568D8E00C6AC6F /* MDLCPUCore.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		FC101A8020568D8E00C6AC6F /* libMDLCPUCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FC101A7E20568D8E00C6AC6F /* libMDLCPUCore.a */; };
 		FC6528A31F7FCD9C0073C775 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC6528A21F7FCD9C0073C775 /* Math.swift */; };
-		FC92975F1F667600001EBC95 /* MDLCPUCore.h in Headers */ = {isa = PBXBuildFile; fileRef = FC92975E1F667600001EBC95 /* MDLCPUCore.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		FC9297681F667630001EBC95 /* libMDLCPUCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FC9297651F66761C001EBC95 /* libMDLCPUCore.a */; };
 		FC92976B1F66768E001EBC95 /* libstdc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = FC92976A1F66768E001EBC95 /* libstdc++.tbd */; };
 		FCC52BCD1F7ABA64002B31B6 /* MetalManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCC52BCC1F7ABA64002B31B6 /* MetalManager.swift */; };
 		FCF7A8751F6674FB00906055 /* MDL.h in Headers */ = {isa = PBXBuildFile; fileRef = FCF7A8731F6674FB00906055 /* MDL.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -33,27 +33,10 @@
 		FCF7A8B11F66751D00906055 /* MDLNet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF7A8981F66751D00906055 /* MDLNet.swift */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-		FC9297641F66761C001EBC95 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = FC9297601F66761C001EBC95 /* MDLCPUCore.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = FCF7A80F1F6673F800906055;
-			remoteInfo = MDLCPUCore;
-		};
-		FC9297661F66762B001EBC95 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = FC9297601F66761C001EBC95 /* MDLCPUCore.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = FCF7A80E1F6673F800906055;
-			remoteInfo = MDLCPUCore;
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXFileReference section */
+		FC101A7D20568D8E00C6AC6F /* MDLCPUCore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDLCPUCore.h; sourceTree = "<group>"; };
+		FC101A7E20568D8E00C6AC6F /* libMDLCPUCore.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libMDLCPUCore.a; sourceTree = "<group>"; };
 		FC6528A21F7FCD9C0073C775 /* Math.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Math.swift; sourceTree = "<group>"; };
-		FC92975E1F667600001EBC95 /* MDLCPUCore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MDLCPUCore.h; path = ../../../MDLCPUCore/MDLCPUCore/MDLCPUCore.h; sourceTree = "<group>"; };
-		FC9297601F66761C001EBC95 /* MDLCPUCore.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = MDLCPUCore.xcodeproj; path = ../../../MDLCPUCore/MDLCPUCore.xcodeproj; sourceTree = "<group>"; };
 		FC92976A1F66768E001EBC95 /* libstdc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libstdc++.tbd"; path = "usr/lib/libstdc++.tbd"; sourceTree = SDKROOT; };
 		FCC52BCC1F7ABA64002B31B6 /* MetalManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalManager.swift; sourceTree = "<group>"; };
 		FCF7A8701F6674FB00906055 /* MDL.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MDL.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -85,19 +68,27 @@
 			buildActionMask = 2147483647;
 			files = (
 				FC92976B1F66768E001EBC95 /* libstdc++.tbd in Frameworks */,
-				FC9297681F667630001EBC95 /* libMDLCPUCore.a in Frameworks */,
+				FC101A8020568D8E00C6AC6F /* libMDLCPUCore.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		FC9297611F66761C001EBC95 /* Products */ = {
+		FC101A7B20568D8E00C6AC6F /* include */ = {
 			isa = PBXGroup;
 			children = (
-				FC9297651F66761C001EBC95 /* libMDLCPUCore.a */,
+				FC101A7C20568D8E00C6AC6F /* MDLCPUCore */,
 			);
-			name = Products;
+			path = include;
+			sourceTree = "<group>";
+		};
+		FC101A7C20568D8E00C6AC6F /* MDLCPUCore */ = {
+			isa = PBXGroup;
+			children = (
+				FC101A7D20568D8E00C6AC6F /* MDLCPUCore.h */,
+			);
+			path = MDLCPUCore;
 			sourceTree = "<group>";
 		};
 		FC9297691F66768E001EBC95 /* Frameworks */ = {
@@ -106,6 +97,15 @@
 				FC92976A1F66768E001EBC95 /* libstdc++.tbd */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		FCBF3F7A20568CE000417444 /* CPU */ = {
+			isa = PBXGroup;
+			children = (
+				FC101A7B20568D8E00C6AC6F /* include */,
+				FC101A7E20568D8E00C6AC6F /* libMDLCPUCore.a */,
+			);
+			path = CPU;
 			sourceTree = "<group>";
 		};
 		FCF7A8661F6674FB00906055 = {
@@ -128,22 +128,13 @@
 		FCF7A8721F6674FB00906055 /* MDL */ = {
 			isa = PBXGroup;
 			children = (
-				FCF7A87C1F66751D00906055 /* CPU */,
+				FCBF3F7A20568CE000417444 /* CPU */,
 				FCF7A87D1F66751D00906055 /* GPU */,
 				FCF7A8981F66751D00906055 /* MDLNet.swift */,
 				FCF7A8731F6674FB00906055 /* MDL.h */,
 				FCF7A8741F6674FB00906055 /* Info.plist */,
 			);
 			path = MDL;
-			sourceTree = "<group>";
-		};
-		FCF7A87C1F66751D00906055 /* CPU */ = {
-			isa = PBXGroup;
-			children = (
-				FC9297601F66761C001EBC95 /* MDLCPUCore.xcodeproj */,
-				FC92975E1F667600001EBC95 /* MDLCPUCore.h */,
-			);
-			path = CPU;
 			sourceTree = "<group>";
 		};
 		FCF7A87D1F66751D00906055 /* GPU */ = {
@@ -195,7 +186,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FC92975F1F667600001EBC95 /* MDLCPUCore.h in Headers */,
+				FC101A7F20568D8E00C6AC6F /* MDLCPUCore.h in Headers */,
 				FCF7A8751F6674FB00906055 /* MDL.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -215,7 +206,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				FC9297671F66762B001EBC95 /* PBXTargetDependency */,
 			);
 			name = MDL;
 			productName = MDL;
@@ -249,28 +239,12 @@
 			mainGroup = FCF7A8661F6674FB00906055;
 			productRefGroup = FCF7A8711F6674FB00906055 /* Products */;
 			projectDirPath = "";
-			projectReferences = (
-				{
-					ProductGroup = FC9297611F66761C001EBC95 /* Products */;
-					ProjectRef = FC9297601F66761C001EBC95 /* MDLCPUCore.xcodeproj */;
-				},
-			);
 			projectRoot = "";
 			targets = (
 				FCF7A86F1F6674FB00906055 /* MDL */,
 			);
 		};
 /* End PBXProject section */
-
-/* Begin PBXReferenceProxy section */
-		FC9297651F66761C001EBC95 /* libMDLCPUCore.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libMDLCPUCore.a;
-			remoteRef = FC9297641F66761C001EBC95 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		FCF7A86E1F6674FB00906055 /* Resources */ = {
@@ -311,14 +285,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		FC9297671F66762B001EBC95 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = MDLCPUCore;
-			targetProxy = FC9297661F66762B001EBC95 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		FCF7A8761F6674FB00906055 /* Debug */ = {
@@ -437,6 +403,10 @@
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/MDL/CPU",
+				);
 				MTL_LANGUAGE_REVISION = Metal12;
 				MTL_PREPROCESSOR_DEFINITIONS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.codeworm.MDL;
@@ -462,6 +432,10 @@
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/MDL/CPU",
+				);
 				MTL_LANGUAGE_REVISION = Metal12;
 				MTL_PREPROCESSOR_DEFINITIONS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.codeworm.MDL;
