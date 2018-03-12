@@ -7,17 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		FC101A7020568D6A00C6AC6F /* s_data.min.bin in Resources */ = {isa = PBXBuildFile; fileRef = FC101A6120568D6900C6AC6F /* s_data.min.bin */; };
-		FC101A7120568D6A00C6AC6F /* s_model.min.json in Resources */ = {isa = PBXBuildFile; fileRef = FC101A6220568D6900C6AC6F /* s_model.min.json */; };
-		FC101A7220568D6A00C6AC6F /* m_model_description in Resources */ = {isa = PBXBuildFile; fileRef = FC101A6420568D6900C6AC6F /* m_model_description */; };
-		FC101A7320568D6A00C6AC6F /* m_model.min.json in Resources */ = {isa = PBXBuildFile; fileRef = FC101A6520568D6900C6AC6F /* m_model.min.json */; };
-		FC101A7420568D6A00C6AC6F /* m_data.min.bin in Resources */ = {isa = PBXBuildFile; fileRef = FC101A6620568D6900C6AC6F /* m_data.min.bin */; };
-		FC101A7520568D6A00C6AC6F /* model.min.json in Resources */ = {isa = PBXBuildFile; fileRef = FC101A6820568D6900C6AC6F /* model.min.json */; };
-		FC101A7620568D6A00C6AC6F /* data.min.bin in Resources */ = {isa = PBXBuildFile; fileRef = FC101A6920568D6900C6AC6F /* data.min.bin */; };
-		FC101A7720568D6A00C6AC6F /* g_data.min.bin in Resources */ = {isa = PBXBuildFile; fileRef = FC101A6B20568D6900C6AC6F /* g_data.min.bin */; };
-		FC101A7820568D6A00C6AC6F /* g_model.min.json in Resources */ = {isa = PBXBuildFile; fileRef = FC101A6C20568D6900C6AC6F /* g_model.min.json */; };
-		FC101A7920568D6A00C6AC6F /* model.min.json in Resources */ = {isa = PBXBuildFile; fileRef = FC101A6E20568D6900C6AC6F /* model.min.json */; };
-		FC101A7A20568D6A00C6AC6F /* data.min.bin in Resources */ = {isa = PBXBuildFile; fileRef = FC101A6F20568D6900C6AC6F /* data.min.bin */; };
+		FC101AAE20568F4E00C6AC6F /* s_data.min.bin in Resources */ = {isa = PBXBuildFile; fileRef = FC101A9F20568F4D00C6AC6F /* s_data.min.bin */; };
+		FC101AAF20568F4E00C6AC6F /* s_model.min.json in Resources */ = {isa = PBXBuildFile; fileRef = FC101AA020568F4D00C6AC6F /* s_model.min.json */; };
+		FC101AB020568F4E00C6AC6F /* g_data.min.bin in Resources */ = {isa = PBXBuildFile; fileRef = FC101AA220568F4D00C6AC6F /* g_data.min.bin */; };
+		FC101AB120568F4E00C6AC6F /* g_model.min.json in Resources */ = {isa = PBXBuildFile; fileRef = FC101AA320568F4D00C6AC6F /* g_model.min.json */; };
+		FC101AB220568F4E00C6AC6F /* model.min.json in Resources */ = {isa = PBXBuildFile; fileRef = FC101AA520568F4D00C6AC6F /* model.min.json */; };
+		FC101AB320568F4E00C6AC6F /* data.min.bin in Resources */ = {isa = PBXBuildFile; fileRef = FC101AA620568F4D00C6AC6F /* data.min.bin */; };
+		FC101AB420568F4E00C6AC6F /* m_model_description in Resources */ = {isa = PBXBuildFile; fileRef = FC101AA820568F4D00C6AC6F /* m_model_description */; };
+		FC101AB520568F4E00C6AC6F /* m_model.min.json in Resources */ = {isa = PBXBuildFile; fileRef = FC101AA920568F4D00C6AC6F /* m_model.min.json */; };
+		FC101AB620568F4E00C6AC6F /* m_data.min.bin in Resources */ = {isa = PBXBuildFile; fileRef = FC101AAA20568F4D00C6AC6F /* m_data.min.bin */; };
+		FC101AB720568F4E00C6AC6F /* model.min.json in Resources */ = {isa = PBXBuildFile; fileRef = FC101AAC20568F4E00C6AC6F /* model.min.json */; };
+		FC101AB820568F4E00C6AC6F /* data.min.bin in Resources */ = {isa = PBXBuildFile; fileRef = FC101AAD20568F4E00C6AC6F /* data.min.bin */; };
 		FC34A5481F684B0700639FE0 /* MobileNetLabels.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC34A4701F6847A400639FE0 /* MobileNetLabels.swift */; };
 		FC34A5491F684B0700639FE0 /* RegionImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC34A4721F6847A400639FE0 /* RegionImageView.swift */; };
 		FC5843D21F69032C001A840B /* Common.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC5843D11F69032C001A840B /* Common.swift */; };
@@ -58,17 +58,17 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		FC101A6120568D6900C6AC6F /* s_data.min.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = s_data.min.bin; sourceTree = "<group>"; };
-		FC101A6220568D6900C6AC6F /* s_model.min.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = s_model.min.json; sourceTree = "<group>"; };
-		FC101A6420568D6900C6AC6F /* m_model_description */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = m_model_description; sourceTree = "<group>"; };
-		FC101A6520568D6900C6AC6F /* m_model.min.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = m_model.min.json; sourceTree = "<group>"; };
-		FC101A6620568D6900C6AC6F /* m_data.min.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = m_data.min.bin; sourceTree = "<group>"; };
-		FC101A6820568D6900C6AC6F /* model.min.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = model.min.json; sourceTree = "<group>"; };
-		FC101A6920568D6900C6AC6F /* data.min.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = data.min.bin; sourceTree = "<group>"; };
-		FC101A6B20568D6900C6AC6F /* g_data.min.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = g_data.min.bin; sourceTree = "<group>"; };
-		FC101A6C20568D6900C6AC6F /* g_model.min.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = g_model.min.json; sourceTree = "<group>"; };
-		FC101A6E20568D6900C6AC6F /* model.min.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = model.min.json; sourceTree = "<group>"; };
-		FC101A6F20568D6900C6AC6F /* data.min.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = data.min.bin; sourceTree = "<group>"; };
+		FC101A9F20568F4D00C6AC6F /* s_data.min.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = s_data.min.bin; sourceTree = "<group>"; };
+		FC101AA020568F4D00C6AC6F /* s_model.min.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = s_model.min.json; sourceTree = "<group>"; };
+		FC101AA220568F4D00C6AC6F /* g_data.min.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = g_data.min.bin; sourceTree = "<group>"; };
+		FC101AA320568F4D00C6AC6F /* g_model.min.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = g_model.min.json; sourceTree = "<group>"; };
+		FC101AA520568F4D00C6AC6F /* model.min.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = model.min.json; sourceTree = "<group>"; };
+		FC101AA620568F4D00C6AC6F /* data.min.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = data.min.bin; sourceTree = "<group>"; };
+		FC101AA820568F4D00C6AC6F /* m_model_description */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = m_model_description; sourceTree = "<group>"; };
+		FC101AA920568F4D00C6AC6F /* m_model.min.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = m_model.min.json; sourceTree = "<group>"; };
+		FC101AAA20568F4D00C6AC6F /* m_data.min.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = m_data.min.bin; sourceTree = "<group>"; };
+		FC101AAC20568F4E00C6AC6F /* model.min.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = model.min.json; sourceTree = "<group>"; };
+		FC101AAD20568F4E00C6AC6F /* data.min.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = data.min.bin; sourceTree = "<group>"; };
 		FC34A4701F6847A400639FE0 /* MobileNetLabels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileNetLabels.swift; sourceTree = "<group>"; };
 		FC34A4721F6847A400639FE0 /* RegionImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionImageView.swift; sourceTree = "<group>"; };
 		FC5843D11F69032C001A840B /* Common.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Common.swift; sourceTree = "<group>"; };
@@ -110,67 +110,62 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		FC101A5F20568D5200C6AC6F /* src */ = {
+		FC101A8220568F1A00C6AC6F /* src */ = {
 			isa = PBXGroup;
 			children = (
-				FC101A6A20568D6900C6AC6F /* googlenet */,
-				FC101A6320568D6900C6AC6F /* mobilenet */,
-				FC101A6720568D6900C6AC6F /* nsfw */,
-				FC101A6D20568D6900C6AC6F /* resnet_50 */,
-				FC101A6020568D6900C6AC6F /* squeezenet */,
+				FC101AA120568F4D00C6AC6F /* googlenet */,
+				FC101AA720568F4D00C6AC6F /* mobilenet */,
+				FC101AAB20568F4E00C6AC6F /* nsfw */,
+				FC101AA420568F4D00C6AC6F /* resnet_50 */,
+				FC101A9E20568F4D00C6AC6F /* squeezenet */,
 			);
 			path = src;
 			sourceTree = "<group>";
 		};
-		FC101A6020568D6900C6AC6F /* squeezenet */ = {
+		FC101A9E20568F4D00C6AC6F /* squeezenet */ = {
 			isa = PBXGroup;
 			children = (
-				FC101A6120568D6900C6AC6F /* s_data.min.bin */,
-				FC101A6220568D6900C6AC6F /* s_model.min.json */,
+				FC101A9F20568F4D00C6AC6F /* s_data.min.bin */,
+				FC101AA020568F4D00C6AC6F /* s_model.min.json */,
 			);
-			name = squeezenet;
-			path = ../../../../../../test/model/squeezenet;
+			path = squeezenet;
 			sourceTree = "<group>";
 		};
-		FC101A6320568D6900C6AC6F /* mobilenet */ = {
+		FC101AA120568F4D00C6AC6F /* googlenet */ = {
 			isa = PBXGroup;
 			children = (
-				FC101A6420568D6900C6AC6F /* m_model_description */,
-				FC101A6520568D6900C6AC6F /* m_model.min.json */,
-				FC101A6620568D6900C6AC6F /* m_data.min.bin */,
+				FC101AA220568F4D00C6AC6F /* g_data.min.bin */,
+				FC101AA320568F4D00C6AC6F /* g_model.min.json */,
 			);
-			name = mobilenet;
-			path = ../../../../../../test/model/mobilenet;
+			path = googlenet;
 			sourceTree = "<group>";
 		};
-		FC101A6720568D6900C6AC6F /* nsfw */ = {
+		FC101AA420568F4D00C6AC6F /* resnet_50 */ = {
 			isa = PBXGroup;
 			children = (
-				FC101A6820568D6900C6AC6F /* model.min.json */,
-				FC101A6920568D6900C6AC6F /* data.min.bin */,
+				FC101AA520568F4D00C6AC6F /* model.min.json */,
+				FC101AA620568F4D00C6AC6F /* data.min.bin */,
 			);
-			name = nsfw;
-			path = ../../../../../../test/model/nsfw;
+			path = resnet_50;
 			sourceTree = "<group>";
 		};
-		FC101A6A20568D6900C6AC6F /* googlenet */ = {
+		FC101AA720568F4D00C6AC6F /* mobilenet */ = {
 			isa = PBXGroup;
 			children = (
-				FC101A6B20568D6900C6AC6F /* g_data.min.bin */,
-				FC101A6C20568D6900C6AC6F /* g_model.min.json */,
+				FC101AA820568F4D00C6AC6F /* m_model_description */,
+				FC101AA920568F4D00C6AC6F /* m_model.min.json */,
+				FC101AAA20568F4D00C6AC6F /* m_data.min.bin */,
 			);
-			name = googlenet;
-			path = ../../../../../../test/model/googlenet;
+			path = mobilenet;
 			sourceTree = "<group>";
 		};
-		FC101A6D20568D6900C6AC6F /* resnet_50 */ = {
+		FC101AAB20568F4E00C6AC6F /* nsfw */ = {
 			isa = PBXGroup;
 			children = (
-				FC101A6E20568D6900C6AC6F /* model.min.json */,
-				FC101A6F20568D6900C6AC6F /* data.min.bin */,
+				FC101AAC20568F4E00C6AC6F /* model.min.json */,
+				FC101AAD20568F4E00C6AC6F /* data.min.bin */,
 			);
-			name = resnet_50;
-			path = ../../../../../../test/model/resnet_50;
+			path = nsfw;
 			sourceTree = "<group>";
 		};
 		FC34A46E1F68476800639FE0 /* Common */ = {
@@ -251,7 +246,7 @@
 		FCF7A8D11F66757900906055 /* CPUNet */ = {
 			isa = PBXGroup;
 			children = (
-				FC101A5F20568D5200C6AC6F /* src */,
+				FC101A8220568F1A00C6AC6F /* src */,
 				FCF7A8D21F66757900906055 /* CPUNetViewController.swift */,
 			);
 			path = CPUNet;
@@ -341,28 +336,28 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FC101A7120568D6A00C6AC6F /* s_model.min.json in Resources */,
+				FC101AAF20568F4E00C6AC6F /* s_model.min.json in Resources */,
+				FC101AB520568F4E00C6AC6F /* m_model.min.json in Resources */,
+				FC101AB420568F4E00C6AC6F /* m_model_description in Resources */,
 				FCE01B881F77CFCC0066FB61 /* apple.jpg in Resources */,
 				FCE01B891F77CFCC0066FB61 /* banana.jpeg in Resources */,
+				FC101AB620568F4E00C6AC6F /* m_data.min.bin in Resources */,
 				FCE01B8A1F77CFCC0066FB61 /* iphone.JPG in Resources */,
-				FC101A7320568D6A00C6AC6F /* m_model.min.json in Resources */,
-				FC101A7020568D6A00C6AC6F /* s_data.min.bin in Resources */,
-				FC101A7220568D6A00C6AC6F /* m_model_description in Resources */,
+				FC101AAE20568F4E00C6AC6F /* s_data.min.bin in Resources */,
 				FCE01B831F77AD560066FB61 /* MobileNetParameters.bundle in Resources */,
 				FC5843DF1F6909A6001A840B /* mobileNetModel.json in Resources */,
 				FC5843E11F6909A6001A840B /* squeezenet.json in Resources */,
 				FC5843E21F6909A6001A840B /* SqueezenetParameters.bundle in Resources */,
-				FC101A7620568D6A00C6AC6F /* data.min.bin in Resources */,
+				FC101AB220568F4E00C6AC6F /* model.min.json in Resources */,
 				FCF7A8C91F66754800906055 /* LaunchScreen.storyboard in Resources */,
 				FCF7A8C61F66754800906055 /* Assets.xcassets in Resources */,
-				FC101A7420568D6A00C6AC6F /* m_data.min.bin in Resources */,
-				FC101A7A20568D6A00C6AC6F /* data.min.bin in Resources */,
-				FC101A7920568D6A00C6AC6F /* model.min.json in Resources */,
+				FC101AB820568F4E00C6AC6F /* data.min.bin in Resources */,
+				FC101AB720568F4E00C6AC6F /* model.min.json in Resources */,
 				FCF7A9611F6675B100906055 /* Main.storyboard in Resources */,
-				FC101A7720568D6A00C6AC6F /* g_data.min.bin in Resources */,
-				FC101A7820568D6A00C6AC6F /* g_model.min.json in Resources */,
-				FC101A7520568D6A00C6AC6F /* model.min.json in Resources */,
+				FC101AB120568F4E00C6AC6F /* g_model.min.json in Resources */,
+				FC101AB320568F4E00C6AC6F /* data.min.bin in Resources */,
 				FCF7A95B1F66757900906055 /* pre_words.txt in Resources */,
+				FC101AB020568F4E00C6AC6F /* g_data.min.bin in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
