@@ -12,8 +12,11 @@ brew install protobuffer
 the caffe.pb.cc & caffe.pb.h in tools, are gernerated by proto3.4.0, if the version is incompatible with the protoc you just installed, you can regenerate the source code and replcace the caff.pb.cc and caffe.pb.h
 Generate source code with protoc:  
  
-`cd tools`  
-`protoc --proto_path=. --cpp_out=. caffe.proto`
+```bash
+cd tools
+
+protoc --proto_path=. --cpp_out=. caffe.proto
+```
 
 **NDK**  
 
