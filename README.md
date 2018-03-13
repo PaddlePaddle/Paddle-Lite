@@ -83,7 +83,7 @@ Copy so file to your project. According to the example of writing your code.
 The example code is your code.
 ```
 
-#### [Help for Mac.md](Help for Mac.md)
+#### [Help_for_Mac.md](Help for Mac.md)
 
 #### Enable multi-thread in MDL lib
 ```
