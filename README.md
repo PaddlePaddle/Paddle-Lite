@@ -168,7 +168,7 @@ cd ./build/release/x86/tools/build
 open iOS/convert/iOSConvertREADME.md
 
 ```
-
+[iOSConvertREADME](iOS/convert/iOSConvertREADME.md)
 
 ## Features
 * One-button deployment. You can switch it to iOS or android by change parameters.
