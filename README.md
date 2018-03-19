@@ -168,7 +168,7 @@ cd ./build/release/x86/tools/build
 open iOS/convert/iOSConvertREADME.md
 
 ```
-[iOSConvertREADME](iOS/convert/iOSConvertREADME.md)
+[iOSConvertREADME](https://github.com/baidu/mobile-deep-learning/blob/master/iOS/convert/iOSConvertReadme.md)
 
 ## Features
 * One-button deployment. You can switch it to iOS or android by change parameters.
