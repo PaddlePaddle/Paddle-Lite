@@ -92,6 +92,12 @@ namespace mdl {
     }
 
     void BatchNormalLayer::forward(int thread_num) {
+        
+        if(_output[0]->->get_data() != _input[0]->get_data())
+        {
+            _output[0]->set_data(_input[0]->get_data());
+        }       
+        
         float scale_factor = _weight[2]->get_data()[0] == 0 ? 0 : 1 / _weight[2]->get_data()[0];
 
         int num = _input[0]->dimension(0);
@@ -108,7 +114,7 @@ namespace mdl {
                       _weight[1]->get_data(),
                       _variance->get_data());
 
-        // replicate variance to input size
+        // replicate mean to input size
         Gemmer::gemmers[0]->sgemm(num, _channels, 1,
                                   _batch_sum_multiplier->get_data(),
                                   _mean->get_data(),
