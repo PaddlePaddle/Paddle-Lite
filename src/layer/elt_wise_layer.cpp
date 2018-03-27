@@ -86,6 +86,7 @@ namespace mdl {
     }
 
     void EltWiseLayer::forward_sum() {
+        _output[0]->set(0);
         float *output_data = _output[0]->get_data();
         int input_count = _input.size();
         int matrix_size = _input[0]->count();

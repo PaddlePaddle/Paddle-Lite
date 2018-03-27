@@ -93,11 +93,10 @@ namespace mdl {
 
     void BatchNormalLayer::forward(int thread_num) {
         
-        if(_output[0]->->get_data() != _input[0]->get_data())
+        if(_output[0]->get_data() != _input[0]->get_data())
         {
             _output[0]->set_data(_input[0]->get_data());
-        }       
-        
+        }
         float scale_factor = _weight[2]->get_data()[0] == 0 ? 0 : 1 / _weight[2]->get_data()[0];
 
         int num = _input[0]->dimension(0);
