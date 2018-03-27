@@ -114,6 +114,15 @@ namespace mdl {
             return _data[offset(indices)];
         }
 
+        inline void set(float value) {
+            int i = 0;
+            int size = count(0);
+            while (i < size) {
+                _data[i] = value;
+                i++;
+            }
+        }
+
         /**
          * caculate the offset
          * @param indices
