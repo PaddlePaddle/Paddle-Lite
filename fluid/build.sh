@@ -101,7 +101,7 @@ build_error() {
     echo "unknown argument"
 }
 
-if [ $# < 1]; then
+if [ $# -lt 1 ]; then
 	echo "error: target missing!"
     echo "available targets: mac|linux|ios|android"
     echo "sample usage: ./build.sh mac"
