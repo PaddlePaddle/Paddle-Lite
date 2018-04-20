@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.0)
+project(paddle_mobile)
+
+set(CMAKE_VERBOSE_MAKEFILE on)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY build)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY build)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
+
+file(GLOB_RECURSE PADDLE_MOBILE_CC paddle_mobile/*.cc paddle_mobile/*.cpp)
+file(GLOB_RECURSE PADDLE_MOBILE_H paddle_mobile/*.h)
+
+# gen so
+ADD_LIBRARY(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+
+# gen static
+ADD_LIBRARY(paddle-mobile-static STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
