@@ -9,8 +9,15 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp)
 file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
 
+# include headers
+include_directories(src/)
+
 # gen so
 ADD_LIBRARY(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 
 # gen static
 ADD_LIBRARY(paddle-mobile-static STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+
+# gen test
+ADD_EXECUTABLE(paddle_mobile_test test/main.cc)
+target_link_libraries(paddle_mobile_test paddle-mobile)
