@@ -19,5 +19,5 @@ ADD_LIBRARY(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 ADD_LIBRARY(paddle-mobile-static STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 
 # gen test
-ADD_EXECUTABLE(paddle_mobile_test test/main.cc)
-target_link_libraries(paddle_mobile_test paddle-mobile)
+ADD_EXECUTABLE(paddle-mobile-test test/main.cc)
+target_link_libraries(paddle-mobile-test paddle-mobile)
