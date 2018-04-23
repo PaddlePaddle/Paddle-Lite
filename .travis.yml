@@ -21,7 +21,7 @@ before_install:
   - sudo pip install -U virtualenv pre-commit pip
 
 script:
-  - if [[ "$JOB" == "pre_commit" ]]; then sudo ln -s /usr/bin/clang-format-3.8 /usr/bin/clang-format; fi
+  - if [[ "$JOB" == "check_style" ]]; then sudo ln -s /usr/bin/clang-format-3.8 /usr/bin/clang-format; fi
   - |
     function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
   - |

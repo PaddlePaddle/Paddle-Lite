@@ -13,7 +13,7 @@ export PATH=/usr/bin:$PATH
 pre-commit install
 clang-format --version
 
-if ! pre-commit run --files fluid/* ; then
+if ! pre-commit run -a ; then
   ls -lh
   git diff  --exit-code
   exit 1
