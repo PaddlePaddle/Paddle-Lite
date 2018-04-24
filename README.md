@@ -1,6 +1,6 @@
 # Paddle-Mobile
 
-The development of new version folder is zygote.
+The development of new version folder is fluid.
 
 MDL renamed the paddle-mobile and move to PaddlePaddle org. We will release a lite version of the paddle fluid for mobile device. 
 
