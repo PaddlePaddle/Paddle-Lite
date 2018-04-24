@@ -5,9 +5,9 @@
 
 namespace paddle_mobile {
 
-    Program Load(const std::string &dirname);
+    Program& Load(const std::string &dirname);
 
     class Executor{
-
     };
+    
 }

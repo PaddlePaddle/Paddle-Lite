@@ -1,5 +1,3 @@
+
 namespace paddle_mobile{
-    
-    
-    
 }
