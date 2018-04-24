@@ -168,21 +168,21 @@ namespace mdl {
 #define EXCEPTION_FOOTER } catch (const MDLException &exception) {                                                   \
                             const char *message = exception.what();                                                  \
                             LOGE(message);                                                                           \
-                            jclass exception_class = env->FindClass("com/baidu/mdl/demo/MDLException"); \
+                            jclass exception_class = env->FindClass("com/baidu/graph/sdk/autoscanner/MDLException"); \
                             if (exception_class != NULL) {                                                           \
                                 env->ThrowNew(exception_class, message);                                             \
                             }                                                                                        \
                          } catch (const std::exception &exception) {                                                 \
                             const char *message = (mdl::exception_prefix + exception.what()).c_str();                \
                             LOGE(message);                                                                           \
-                            jclass exception_class = env->FindClass("com/baidu/mdl/demo/MDLException"); \
+                            jclass exception_class = env->FindClass("com/baidu/graph/sdk/autoscanner/MDLException"); \
                             if (exception_class != NULL) {                                                           \
                                 env->ThrowNew(exception_class, message);                                             \
                             }                                                                                        \
                          } catch (...) {                                                                             \
                             const char *message = (mdl::exception_prefix + "Unknown Exception.").c_str();            \
                             LOGE(message);                                                                           \
-                            jclass exception_class = env->FindClass("com/baidu/mdl/demo/MDLException"); \
+                            jclass exception_class = env->FindClass("com/baidu/graph/sdk/autoscanner/MDLException"); \
                             if (exception_class != NULL) {                                                           \
                                 env->ThrowNew(exception_class, message);                                             \
                             }                                                                                        \
