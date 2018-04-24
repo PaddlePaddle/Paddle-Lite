@@ -1,4 +1,10 @@
-# Mobile-deep-learning（MDL）
+# Paddle-Mobile
+
+The development of new version folder is fluid.
+
+MDL renamed the paddle-mobile and move to PaddlePaddle org. We will release a lite version of the paddle fluid for mobile device. 
+
+# Mobile-deep-learning（MDL） 
 
 ![License](https://img.shields.io/github/license/simpeg/simpeg.svg) ![Travis](https://img.shields.io/travis/rust-lang/rust.svg)
 
@@ -30,10 +36,6 @@ If you want to run the demo first, or just use it quickly, without understanding
 
 #### 先睹为快
 如果你想先运行demo试试效果。或者你仅仅是想快速用起来，而不关心CNN细节实现。我们已经为您编译好了安装文件, 直接扫码安装即可。
-
-iOS-MobileNet:
-
-![iOS QR code](https://gss0.baidu.com/9rkZbzqaKgQUohGko9WTAnF6hhy/mms-res/graph/mobile-deep-learning/iOS/qrcode_ios.png)
 
 [Android-Googlenet](http://gss0.baidu.com/9rkZbzqaKgQUohGko9WTAnF6hhy/mms-res/graph/mobile-deep-learning/Android/mdl_demo.4493eea5.apk):
 
@@ -203,4 +205,5 @@ open iOS/convert/iOSConvertREADME.md
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
 
 MDL使用的是宽松的MIT开源协议。
+
 

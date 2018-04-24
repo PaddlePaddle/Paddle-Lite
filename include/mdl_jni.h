@@ -32,30 +32,45 @@ extern "C" {
 /**
  * load model & params of the net for android
  */
-JNIEXPORT jboolean JNICALL Java_com_baidu_mdl_demo_MDL_load(
+JNIEXPORT jboolean JNICALL Java_com_baidu_graph_sdk_autoscanner_MDL_load(
         JNIEnv *env, jclass thiz, jstring modelPath, jstring weightsPath);
 
 /**
- * object detection for anroid
+ * take preprocessed float array as input
  */
 JNIEXPORT jfloatArray JNICALL Java_com_baidu_mdl_demo_MDL_predictImage(
         JNIEnv *env, jclass thiz, jfloatArray buf);
 
+ /**
+     * take the original yuv data as input
+     * @param env
+     * @param thiz
+     * @param yuv the original yuv data
+     * @param imgWidth width of original image
+     * @param imgHeight height of original image
+     * @param targetWidth  width of the network input
+     * @param targetHeight height of the network input
+     * @param meanValues  meanvlue array of the params
+     * @return cordinates of rect
+     */
+JNIEXPORT jfloatArray JNICALL Java_com_baidu_graph_sdk_autoscanner_MDL_predictYuv(
+        JNIEnv *env, jclass thiz, jbyteArray yuv, int imgWidth, int imgHeight, int targetWidth, int targetHeight, jfloatArray meanValues);
+
 /**
  * set thread num
  */
-JNIEXPORT void JNICALL Java_com_baidu_mdl_demo_MDL_setThreadNum(
+JNIEXPORT void JNICALL Java_com_baidu_graph_sdk_autoscanner_MDL_setThreadNum(
         JNIEnv *env, jclass thiz, jint num);
 
 /**
  * clear data of the net when destroy for android
  */
-JNIEXPORT void JNICALL Java_com_baidu_mdl_demo_MDL_clear(
+JNIEXPORT void JNICALL Java_com_baidu_graph_sdk_autoscanner_MDL_clear(
         JNIEnv *env, jclass thiz);
 /**
  * validate wheather the device is fast enough for obj detection for android
  */
-JNIEXPORT jboolean JNICALL Java_com_baidu_mdl_demo_MDL_validate(
+JNIEXPORT jboolean JNICALL Java_com_baidu_graph_sdk_autoscanner_MDL_validate(
         JNIEnv *env, jclass thiz);
 
 #ifdef __cplusplus

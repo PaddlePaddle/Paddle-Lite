@@ -25,6 +25,7 @@ SOFTWARE.
 #include <zconf.h>
 #include <errno.h>
 #include <sys/mman.h>
+#include <math/gemm.h>
 
 #include "base/matrix.h"
 
@@ -355,6 +356,13 @@ namespace mdl {
             delete matrix;
         }
         _matrices.clear();
+        for (vector<Gemmer*>::iterator it = Gemmer::gemmers.begin(); it != Gemmer::gemmers.end(); it ++) {
+            if (NULL != *it){
+                delete *it;
+                *it = nullptr;
+            }
+        }
+        Gemmer::gemmers.clear();
         _cleared = true;
     }
 };
