@@ -1,0 +1,28 @@
+repos:
+-   repo: https://github.com/Lucas-C/pre-commit-hooks.git
+    sha: v1.0.1
+    hooks:
+    -   id: remove-crlf
+        files: (fluid).*\.(md|py|mm|swift|java|c|cc|cxx|cpp|cu|h|hpp|hxx)$
+    -   id: remove-tabs
+        files: (fluid).*\.(md|py|mm|swift|java|c|cc|cxx|cpp|cu|h|hpp|hxx)$
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    sha: 5bf6c09bfa1297d3692cadd621ef95f1284e33c0
+    hooks:
+    -   id: check-added-large-files
+    -   id: check-merge-conflict
+    -   id: check-symlinks
+    -   id: detect-private-key
+        files: (?!.*tar.gz)^.*$ 
+    -   id: end-of-file-fixer
+        files: (fluid).*\.(md|py|mm|swift|java|c|cc|cxx|cpp|cu|h|hpp|hxx)$
+    -   id: trailing-whitespace
+        files: (fluid).*\.(md|py|mm|swift|java|c|cc|cxx|cpp|cu|h|hpp|hxx)$
+-   repo: local
+    hooks:
+    -   id: clang-format-with-version-check
+        name: clang-format
+        description: Format files with ClangFormat.
+        entry: bash .clang_format.hook -i
+        language: system
+        files: (fluid).*\.(c|cc|cxx|cpp|h|hpp|hxx|proto)$
