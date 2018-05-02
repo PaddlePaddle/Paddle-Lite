@@ -18,7 +18,7 @@ SOFTWARE.
 
 #pragma once
 
-#include "framework/paddle_mobile_object.h"
+#include "../framework/paddle_mobile_object.h"
 
 namespace paddle_mobile{
 

@@ -1,3 +1,4 @@
+
 /* Copyright (c) 2016 Baidu, Inc. All Rights Reserved.
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -16,14 +17,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#include "program_desc.h"
+#pragma once
 
-namespace paddle_mobile{
+namespace paddle_mobile {
+    namespace framework {
+        class Tensor {
 
-namespace framework {
-    ProgramDesc::ProgramDesc(const proto::ProgramDesc &desc): desc_(desc) {
-
+        };
     }
 }
 
-}
+
+
+
