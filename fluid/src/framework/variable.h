@@ -17,6 +17,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 #pragma once
+
+#include "paddle_mobile_object.h"
 #include <memory>
 #include <string>
 #include <typeinfo>
