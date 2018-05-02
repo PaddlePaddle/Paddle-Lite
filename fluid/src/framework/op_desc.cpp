@@ -15,26 +15,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
+#include "op_desc.h"
 
-#pragma once
+namespace paddle_mobile{
 
-#include <string>
-#include "framework/program.h"
-#include "framework/paddle_mobile_object.h"
+namespace framework{
 
-namespace paddle_mobile {
-    enum PlatformType{
-        ARM
-    };
-    enum Precision{
-        FP32
-    };
+}
 
-//    template<PlatformType T=PlatformType::ARM, Precision P = Precision::FP32>
-    class Loader: PaddleMobileObject{
-    public:
-        const framework::Program Load(const std::string &dirname);
-    };
-
-    class Executor: PaddleMobileObject{};
 }

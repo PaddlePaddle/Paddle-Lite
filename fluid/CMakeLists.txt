@@ -17,7 +17,7 @@ include_directories(third-party/protobuf/include)
 link_directories(third-party/protobuf/lib)
 
 # gen so
-ADD_LIBRARY(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+ADD_LIBRARY(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H} src/framework/paddle_mobile_object.cpp src/framework/paddle_mobile_object.h src/framework/attribute.cpp src/framework/attribute.h src/common/macro.h src/framework/var_desc.cpp src/framework/var_desc.h)
 target_link_libraries(paddle-mobile protobuf-lite)
 
 # gen static
@@ -25,5 +25,5 @@ ADD_LIBRARY(paddle-mobile-static STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 target_link_libraries(paddle-mobile-static protobuf-lite)
 
 # gen test
-ADD_EXECUTABLE(paddle-mobile-test test/main.cc)
+ADD_EXECUTABLE(paddle-mobile-test test/main.cpp)
 target_link_libraries(paddle-mobile-test paddle-mobile)

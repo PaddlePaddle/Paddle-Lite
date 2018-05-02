@@ -16,25 +16,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#pragma once
+#include "io.h"
 
-#include <string>
-#include "framework/program.h"
-#include "framework/paddle_mobile_object.h"
-
-namespace paddle_mobile {
-    enum PlatformType{
-        ARM
-    };
-    enum Precision{
-        FP32
-    };
-
-//    template<PlatformType T=PlatformType::ARM, Precision P = Precision::FP32>
-    class Loader: PaddleMobileObject{
-    public:
-        const framework::Program Load(const std::string &dirname);
-    };
-
-    class Executor: PaddleMobileObject{};
+int main(){
+    paddle_mobile::Loader loader;
+    loader.Load(std::string("/Users/liuruilong/MyGithub/paddle-mobile/fluid/test/models/image_classification_resnet.inference.model"));
+    return 0;
 }
+

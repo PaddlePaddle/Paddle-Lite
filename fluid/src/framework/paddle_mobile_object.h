@@ -18,23 +18,19 @@ SOFTWARE.
 
 #pragma once
 
+#include "stdio.h"
 #include <string>
-#include "framework/program.h"
-#include "framework/paddle_mobile_object.h"
 
-namespace paddle_mobile {
-    enum PlatformType{
-        ARM
-    };
-    enum Precision{
-        FP32
-    };
+namespace paddle_mobile{
 
-//    template<PlatformType T=PlatformType::ARM, Precision P = Precision::FP32>
-    class Loader: PaddleMobileObject{
+    class PaddleMobileObject {
     public:
-        const framework::Program Load(const std::string &dirname);
-    };
+        virtual inline const std::string ToString(){
+            char address[128] = {0};
+            sprintf(address,"%p",this);
+            return std::string(address);
+        }
 
-    class Executor: PaddleMobileObject{};
+    private:
+    };
 }

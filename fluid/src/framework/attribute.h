@@ -18,23 +18,34 @@ SOFTWARE.
 
 #pragma once
 
-#include <string>
-#include "framework/program.h"
-#include "framework/paddle_mobile_object.h"
-
+#include "paddle_mobile_object.h"
 namespace paddle_mobile {
-    enum PlatformType{
-        ARM
-    };
-    enum Precision{
-        FP32
-    };
 
-//    template<PlatformType T=PlatformType::ARM, Precision P = Precision::FP32>
-    class Loader: PaddleMobileObject{
+namespace framework {
+
+    template<typename T>
+    class Attribute: PaddleMobileObject{
     public:
-        const framework::Program Load(const std::string &dirname);
+        Attribute(T attr):attr_(attr){
+        }
+
+        T value(){
+            return attr_;
+        }
+
+    private:
+        T attr_;
+
     };
 
-    class Executor: PaddleMobileObject{};
+
+    template <typename T>
+    Attribute<T> &AttributeWrapper(T attr){
+        Attribute<T> v(attr);
+        return v;
+    }
+
 }
+
+}
+

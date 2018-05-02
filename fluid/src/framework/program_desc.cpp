@@ -16,25 +16,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#pragma once
+#include "program_desc.h"
 
-#include <string>
-#include "framework/program.h"
-#include "framework/paddle_mobile_object.h"
+namespace paddle_mobile{
 
-namespace paddle_mobile {
-    enum PlatformType{
-        ARM
-    };
-    enum Precision{
-        FP32
-    };
+namespace framework {
+    ProgramDesc::ProgramDesc(const proto::ProgramDesc &desc): desc_(desc) {
 
-//    template<PlatformType T=PlatformType::ARM, Precision P = Precision::FP32>
-    class Loader: PaddleMobileObject{
-    public:
-        const framework::Program Load(const std::string &dirname);
-    };
+    }
+}
 
-    class Executor: PaddleMobileObject{};
 }
