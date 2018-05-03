@@ -77,6 +77,7 @@ namespace paddle_mobile{
             Scope const* parent_ = nullptr;
 
             mutable std::mutex mutex_;
+
         };
     }
 }

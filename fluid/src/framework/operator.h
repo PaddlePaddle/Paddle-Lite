@@ -24,6 +24,7 @@ SOFTWARE.
 #include "op_kernel_type.h"
 #include "../common/variant.h"
 #include "block_desc.h"
+#include "attribute.h"
 #include "variable.h"
 #include <map>
 

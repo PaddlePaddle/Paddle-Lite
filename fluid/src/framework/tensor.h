@@ -20,7 +20,7 @@ SOFTWARE.
 #pragma once
 
 #include "shape.h"
-#include "types.h"
+#include "common/types.h"
 #include "traits.h"
 #include "tensor_traits.h"
 #include "base_allocator.h"

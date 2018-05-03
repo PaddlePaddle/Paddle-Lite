@@ -7,6 +7,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY build)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY build)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 
+add_definitions(-std=c++11)
+
 file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp)
 file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
 
@@ -18,7 +20,7 @@ include_directories(third-party/protobuf/include)
 link_directories(third-party/protobuf/lib)
 
 # gen so
-ADD_LIBRARY(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H} )
+ADD_LIBRARY(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 target_link_libraries(paddle-mobile protobuf-lite)
 
 # gen static

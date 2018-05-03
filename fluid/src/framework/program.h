@@ -18,20 +18,19 @@ SOFTWARE.
 
 #pragma once
 
+#include "common/types.h"
 #include "program_desc.h"
 #include "paddle_mobile_object.h"
 
 namespace paddle_mobile {
 namespace framework{
 
+    template<typename Dtype, Precision P = Precision::FP32>
     class Program: PaddleMobileObject{
     public:
-//        Program(ProgramDesc origin, ProgramDesc optimize);
         const ProgramDesc &OriginProgram();
         const ProgramDesc &OptimizeProgram();
     private:
-//        ProgramDesc origin_program_;
-//        ProgramDesc optimize_program_;
     };
 }
 

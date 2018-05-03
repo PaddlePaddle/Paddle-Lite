@@ -26,11 +26,14 @@ SOFTWARE.
 namespace paddle_mobile {
 
 namespace framework {
-
     class BlockDesc: PaddleMobileObject{
     public:
-        int ID() const;
-        int Parent() const;
+        int ID() const{
+            return 0;
+        }
+        int Parent() const{
+            return 0;
+        }
 
         std::vector<VarDesc> Vars() const;
         std::vector<OpDesc> Ops() const;

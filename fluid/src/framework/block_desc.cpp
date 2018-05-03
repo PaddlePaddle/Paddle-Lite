@@ -16,25 +16,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#pragma once
+#include "block_desc.h"
 
-#include "attribute.h"
-#include "framework.pb.h"
-#include "paddle_mobile_object.h"
 
-namespace paddle_mobile{
+namespace paddle_mobile {
 
-namespace framework{
-
-    class OpDesc: PaddleMobileObject{
-        const std::vector<std::string> &Input(const std::string &name) const;
-        const std::vector<std::string> &Output(const std::string &name) const;
-        Attribute GetAttr(const std::string &name) const;
-        const std::unordered_map<std::string, Attribute> &GetAttrMap() const;
-    private:
-    };
+namespace framework {
 
 }
 
 }
-

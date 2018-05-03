@@ -19,7 +19,7 @@ SOFTWARE.
 
 #pragma once
 
-#include "types.h"
+#include "common/types.h"
 
 namespace paddle_mobile {
     namespace framework {

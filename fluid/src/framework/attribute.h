@@ -18,34 +18,16 @@ SOFTWARE.
 
 #pragma once
 
-#include "paddle_mobile_object.h"
+#include "common/variant.h"
+
 namespace paddle_mobile {
 
 namespace framework {
 
-    template<typename T>
-    class Attribute: PaddleMobileObject{
-    public:
-        Attribute(T attr):attr_(attr){
-        }
-
-        T value(){
-            return attr_;
-        }
-
-    private:
-        T attr_;
-
-    };
-
-
-    template <typename T>
-    Attribute<T> &AttributeWrapper(T attr){
-        Attribute<T> v(attr);
-        return v;
-    }
-
+    class BlockDesc;
+    using Attribute = Variant<int, float, std::string, std::vector<int>,
+            std::vector<float>, std::vector<std::string>, bool,
+            std::vector<bool>, BlockDesc*, int64_t>;
 }
-
 }
 

@@ -17,9 +17,10 @@ SOFTWARE.
 ==============================================================================*/
 
 #include "io.h"
+#include "common/types.h"
 
 int main(){
-    paddle_mobile::Loader loader;
+    paddle_mobile::Loader<paddle_mobile::ARM> loader;
     loader.Load(std::string("/Users/liuruilong/MyGithub/paddle-mobile/fluid/test/models/image_classification_resnet.inference.model"));
     return 0;
 }

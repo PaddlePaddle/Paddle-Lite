@@ -19,7 +19,9 @@ SOFTWARE.
 #pragma once
 
 #include <vector>
+
 #include "block_desc.h"
+#include "common/types.h"
 #include "paddle_mobile_object.h"
 
 namespace paddle_mobile{

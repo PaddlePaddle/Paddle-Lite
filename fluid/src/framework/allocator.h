@@ -1,4 +1,3 @@
-
 /* Copyright (c) 2016 Baidu, Inc. All Rights Reserved.
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,6 +18,7 @@ SOFTWARE.
 #pragma once
 
 #include "base_allocator.h"
+#include "paddle_mobile_object.h"
 
 namespace paddle_mobile{
     namespace framework{

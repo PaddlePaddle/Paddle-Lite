@@ -20,7 +20,7 @@ SOFTWARE.
 #pragma once
 
 #include "traits.h"
-#include "types.h"
+#include "common/types.h"
 
 namespace paddle_mobile {
     namespace framework {

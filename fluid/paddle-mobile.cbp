@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="paddle-mobile"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/Users/liuruilong/MyGithub/paddle-mobile/fluid"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/Users/liuruilong/MyGithub/paddle-mobile/fluid"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/Users/liuruilong/MyGithub/paddle-mobile/fluid"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="paddle-mobile-test">
+				<Option output="/Users/liuruilong/MyGithub/paddle-mobile/fluid/build/paddle-mobile-test" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="build"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src"/>
+					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/third-party/protobuf/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.1.0/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 paddle-mobile-test"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="paddle-mobile-test/fast">
+				<Option output="/Users/liuruilong/MyGithub/paddle-mobile/fluid/build/paddle-mobile-test" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="build"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src"/>
+					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/third-party/protobuf/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.1.0/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 paddle-mobile-test/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="paddle-mobile-static">
+				<Option output="/Users/liuruilong/MyGithub/paddle-mobile/fluid/build/libpaddle-mobile-static.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/liuruilong/MyGithub/paddle-mobile/fluid"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src"/>
+					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/third-party/protobuf/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.1.0/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 paddle-mobile-static"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="paddle-mobile-static/fast">
+				<Option output="/Users/liuruilong/MyGithub/paddle-mobile/fluid/build/libpaddle-mobile-static.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/liuruilong/MyGithub/paddle-mobile/fluid"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src"/>
+					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/third-party/protobuf/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.1.0/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 paddle-mobile-static/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="paddle-mobile">
+				<Option output="/Users/liuruilong/MyGithub/paddle-mobile/fluid/build/libpaddle-mobile.dylib" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/liuruilong/MyGithub/paddle-mobile/fluid"/>
+				<Option object_output="./"/>
+				<Option type="3"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src"/>
+					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/third-party/protobuf/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.1.0/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 paddle-mobile"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="paddle-mobile/fast">
+				<Option output="/Users/liuruilong/MyGithub/paddle-mobile/fluid/build/libpaddle-mobile.dylib" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/liuruilong/MyGithub/paddle-mobile/fluid"/>
+				<Option object_output="./"/>
+				<Option type="3"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src"/>
+					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/third-party/protobuf/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.1.0/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 paddle-mobile/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/common/macro.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/common/types.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/common/variant.cpp">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/common/variant.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/allocator.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/attribute.cpp">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/attribute.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/base_allocator.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/block_desc.cpp">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/block_desc.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/common.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/executor.cpp">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/executor.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/framework.pb.cpp">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/framework.pb.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/op_desc.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/op_kernel_type.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/op_proto_maker.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/op_registry.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/operator.cpp">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/operator.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/paddle_mobile_object.cpp">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/paddle_mobile_object.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/program.cpp">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/program.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/program_desc.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/scope.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/shape.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/tensor.cpp">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/tensor.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/tensor_traits.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/traits.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/types.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/var_desc.cpp">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/var_desc.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/variable.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/io.cpp">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/io.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/operators/conv_op.cpp">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/operators/conv_op.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/test/main.cpp">
+			<Option target="paddle-mobile-test"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

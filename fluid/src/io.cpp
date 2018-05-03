@@ -35,14 +35,15 @@ namespace paddle_mobile {
         fin.close();
     }
 
-    const framework::Program Loader::Load(const std::string &dirname){
+    template<typename Dtype, Precision P>
+    const framework::Program<Dtype, P> Loader<Dtype, P>::Load(const std::string &dirname){
+        printf("prediction: %d", P);
 
         std::string model_filename = dirname + "/__model__";
         std::string program_desc_str;
         ReadBinaryFile(model_filename, &program_desc_str);
         framework::proto::ProgramDesc program_desc_proto;
         program_desc_proto.ParseFromString(program_desc_str);
-
 
 #ifdef PADDLE_MOBILE_DEBUG
         for (int i = 0; i < program_desc_proto.blocks().size(); ++i) {
@@ -54,7 +55,7 @@ namespace paddle_mobile {
                 std::cout << " op: " << op.type() << std::endl;
                 for (int m = 0; m < op.inputs_size(); ++m) {
                     const framework::proto::OpDesc::Var &var = op.inputs(m);
-                    std::cout << "  input parameter: "<< var.parameter() << std::endl;
+                    std::cout << "  input parameter: " << var.parameter() << std::endl;
                     for (int n = 0; n < var.arguments().size(); ++n) {
                         std::cout << "   argument - " << var.arguments()[n] << std::endl;
                     }
@@ -111,17 +112,15 @@ namespace paddle_mobile {
             for (int k = 0; k < block.vars().size(); ++k) {
                 framework::proto::VarDesc var = block.vars()[k];
                 std::cout << " var : " << var.name() << std::endl;
-//                std::cout << " var : "<< var.type().GetTypeName() << std::endl;
-
             }
-
         }
 
 #endif
 
-        framework::Program p;
-
+        framework::Program<Dtype, P> p;
         return  p;
     }
+
+    template class Loader<ARM, Precision::FP32>;
 }
 
