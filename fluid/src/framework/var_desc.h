@@ -24,11 +24,8 @@ SOFTWARE.
 namespace paddle_mobile {
 
 namespace framework {
-
     class VarDesc{
     public:
-
-
     private:
     };
 

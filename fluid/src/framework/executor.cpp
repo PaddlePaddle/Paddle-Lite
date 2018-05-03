@@ -22,7 +22,6 @@ SOFTWARE.
 using std::cout;
 namespace paddle_mobile {
     namespace framework {
-
         namespace {
 // block id starts from 0. This id is used to represent the codeblock
 // wrapping the first block 0.
