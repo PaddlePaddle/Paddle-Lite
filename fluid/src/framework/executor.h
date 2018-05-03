@@ -1,4 +1,3 @@
-
 /* Copyright (c) 2016 Baidu, Inc. All Rights Reserved.
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -17,7 +16,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-
 #pragma once
 
 #include <map>
@@ -27,7 +25,7 @@ SOFTWARE.
 #include "scope.h"
 #include "variable.h"
 #include "tensor.h"
-#include "../operators/operator.h"
+#include "operator.h"
 #include "framework.pb.h"
 
 namespace paddle_mobile {

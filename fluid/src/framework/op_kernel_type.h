@@ -18,21 +18,10 @@ SOFTWARE.
 
 #pragma once
 
-#include "../framework/paddle_mobile_object.h"
+namespace paddle_mobile {
+namespace framework {
+    struct OpKernelType {
 
-namespace paddle_mobile{
-
-    class OperatorBase: PaddleMobileObject{
     };
-
-    class OperatorWithKernel : public OperatorBase{
-    };
-
-    class OpKernelBase: PaddleMobileObject{
-    };
-
-    class OpKernel : public OpKernelBase{
-    };
-
-}
-
+} // framework
+} // paddle_mobile
