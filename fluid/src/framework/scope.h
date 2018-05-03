@@ -74,7 +74,7 @@ namespace paddle_mobile{
 
             mutable std::unordered_map<std::string, Variable*> vars_;
             mutable std::list<Scope*> kids_;
-            Scope const* parent_{nullptr};
+            Scope const* parent_ = nullptr;
 
             mutable std::mutex mutex_;
         };

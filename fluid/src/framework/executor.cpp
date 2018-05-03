@@ -43,7 +43,7 @@ namespace paddle_mobile {
         }
 
         static void CheckTensorNANOrInf(const std::string &name,
-                                        const Tensor &tensor) {
+                                        const Tensor4f &tensor) {
 
         }
 

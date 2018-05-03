@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 project(paddle-mobile)
+add_definitions(-std=c++11)
 
 set(CMAKE_VERBOSE_MAKEFILE on)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY build)

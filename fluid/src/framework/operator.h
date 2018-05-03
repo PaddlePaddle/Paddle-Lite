@@ -32,7 +32,7 @@ namespace framework {
     /// If a variable is a empty variable, that name will be used.
     constexpr char kEmptyVarName[] = "@EMPTY@";
 
-    using VariableNameMap = std::map<std::string, std::vector<std::string>>;
+    using VariableNameMap = std::map<std::string, std::vector<std::string> >;
     using AttributeMap = std::string;
     class InferShapeContext;
     class ExecutionContext;
@@ -99,7 +99,7 @@ namespace framework {
     protected:
         virtual OpKernelType GetExpectedKernelType(const ExecutionContext& ctx) const;
         virtual OpKernelType GetKernelTypeForVar(
-                const std::string& var_name, const Tensor& tensor,
+                const std::string& var_name, const Tensor4f& tensor,
                 const OpKernelType& expected_kernel_type) const;
     private:
         void RunImpl(const Scope& scope) const final;

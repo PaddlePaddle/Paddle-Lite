@@ -20,7 +20,6 @@ SOFTWARE.
 
 #include <type_traits>
 #include "types.h"
-//#include "shape.h" // can remove if used in Tensor.h
 
 namespace paddle_mobile{
     namespace framework{
@@ -110,45 +109,7 @@ namespace paddle_mobile{
             typedef unsigned int dtype;
         };
 
-        //! TensorTraits
-        template<typename DeviceType, DataType datatype, typename LayeOutType>
-        class Tensor;
 
-        template <typename TensorT>
-        struct TensorTraits {
-            typedef typename TensorT::target_category target_category;
-            typedef typename TensorT::target_type target_type;
-            typedef typename TensorT::layout_category layout_category;
-            typedef typename TensorT::layout_type layout_type;
-            using layout_dims = std::integral_constant<int, 0>;
-        };
-
-        template<typename DeviceType, DataType datatype>
-        struct TensorTraits<Tensor<DeviceType, datatype, NCHW>>
-        {
-            //typedef typename Tensor<DeviceType, datatype, NCHW>::target_category  target_category;
-            //typedef typename Tensor<DeviceType, datatype, NCHW>::target_type target_type;
-            typedef typename DataTrait<datatype>::dtype Dtype;
-            typedef D4 layout_category;
-            typedef NCHW layout_type;
-            using layout_dims = std::integral_constant<int, 4>;
-            using num_idx = std::integral_constant<int, 0>;
-            using channel_idx = std::integral_constant<int, 1>;
-            using height_idx = std::integral_constant<int, 2>;
-            using width_idx = std::integral_constant<int, 3>;
-            static int num(const Shape& shape){
-                    return shape[0];
-            }
-            static int channel(const Shape& shape){
-                    return shape[1];
-            }
-            static int height(const Shape& shape){
-                    return shape[2];
-            }
-            static int width(const Shape& shape){
-                    return shape[3];
-            }
-        };
     }
 }
 

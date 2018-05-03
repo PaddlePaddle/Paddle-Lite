@@ -37,10 +37,14 @@ namespace paddle_mobile{
         typedef DeviceType<eCPU> CPU;
 
         //! data_layout type
-        struct NCHW{};
-        struct NHWC{};
         struct W{};
         struct HW{};
+        struct WH{};
+        struct NW{};
+        struct NHW{};
+        struct NCHW{};
+        struct NHWC{};
+        struct NCHW_C4{};
 
         //! dim type
         struct D5{};
@@ -67,6 +71,18 @@ namespace paddle_mobile{
             PM_SHAPE        =       12,
             PM_TENSOR       =       13
         };
+        //!
+        typedef enum {
+            PMSuccess         = -1,                             /*!< No errors */
+            PMNotInitialized  = 1,                              /*!< Data not initialized. */
+            PMInvalidValue    = (1 << 1) + PMNotInitialized, /*!< Incorrect variable value. */
+            PMMemAllocFailed  = (1 << 2) + PMInvalidValue,   /*!< Memory allocation error. */
+            PMUnKownError     = (1 << 3) + PMMemAllocFailed, /*!< Unknown error. */
+            PMOutOfAuthority  = (1 << 4) + PMUnKownError,    /*!< Try to modified data not your own*/
+            PMOutOfMem        = (1 << 5) + PMOutOfAuthority, /*!< OOM error*/
+            PMUnImplError     = (1 << 6) + PMOutOfMem,       /*!< Unimplement error. */
+            PMWrongDevice     = (1 << 7) + PMUnImplError     /*!< un-correct device. */
+        } PMStatus;
 
     }
 }
