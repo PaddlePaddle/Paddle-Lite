@@ -18,81 +18,81 @@ SOFTWARE.
 ==============================================================================*/
 #pragma once
 
+#include "paddle_mobile_object.h"
 #include <memory>
 #include <string>
-#include <typeindex>
 #include <typeinfo>
+#include <typeindex>
 
-namespace paddle_mobile {
-    namespace framework {
-
-        class Variable {
+namespace paddle_mobile{
+    namespace framework{
+        class Variable : public PaddleMobileObject{
         public:
+
+            Variable(){}
+            ~Variable(){}
+
             template <typename T>
-            const T& Get() const {
-                return *static_cast<const T*>(holder_->Ptr());
+            const T* Get() const {
+                return static_cast<const T*>(holder_->Ptr());
             }
 
-            bool IsInitialized() const { return holder_ != nullptr; }
+            bool IsInitialized() const {
+                return holder_ != nullptr;
+            }
+
+            const std::string* Name(){
+                return name_;
+            }
 
             template <typename T>
             T* GetMutable() {
-                if (!IsType<T>()) {
-                    holder_.reset(new PlaceholderImpl<T>(new T()));
+                if(!IsType<T>()){
+                    holder_.reset(new PlaceholderImp<T>(new T()));
                 }
                 return static_cast<T*>(holder_->Ptr());
             }
 
             template <typename T>
             bool IsType() const {
-                return holder_ != nullptr &&
-                       std::type_index(typeid(T)) == std::type_index(holder_->Type());
+                return holder_ != nullptr && typeid(T) == holder_->Type();
             }
 
-            void Clear() { holder_.reset(); }
+            void Clear(){ holder_.reset();}
 
             std::type_index Type() const {
                 return holder_->Type();
             }
 
+            void SetName(const std::string* name){
+                name_ = name;
+            }
+
         private:
-            struct Placeholder {
-                virtual ~Placeholder() {}
+            struct Placeholder{
+                Placeholder() = default;
+                virtual ~Placeholder() = default;
+
                 virtual const std::type_info& Type() const = 0;
                 virtual void* Ptr() const = 0;
             };
 
-            // Placeholder hides type T, so it doesn't appear as a template
-            // parameter of Variable.
             template <typename T>
-            struct PlaceholderImpl : public Placeholder {
-                explicit PlaceholderImpl(T* ptr) : ptr_(ptr), type_(typeid(T)) {}
+            struct PlaceholderImp: public Placeholder{
+                explicit PlaceholderImp(T* ptr):ptr_(ptr), type_(typeid(T)){}
 
-                virtual const std::type_info& Type() const { return type_; }
-                virtual void* Ptr() const { return static_cast<void*>(ptr_.get()); }
+                virtual const std::type_info& Type() const {return type_;}
+                virtual void* Ptr() const override {return static_cast<void*>(ptr_.get());}
 
                 std::unique_ptr<T> ptr_;
                 const std::type_info& type_;
             };
 
-            std::unique_ptr<Placeholder>
-                    holder_;  // pointers to a PlaceholderImpl object indeed.
-
-            // name_ is only meaningful with a Scope and accessible by it.
-            //
-            // NOTE: Please don't expose name_ by adding methods like
-            // Variable::Name or Scope::VarName!  A variable could have a human
-            // readable name or an auto-generated scope-unique name.  In the
-            // former case, the caller knows the name and doesn't need to access
-            // the name; in the latter case, the variable should be identified
-            // by its address but not the unreadable name.
+            std::unique_ptr<Placeholder> holder_;
             friend class Scope;
             const std::string* name_;
         };
-
-    }  // namespace framework
-}  // namespace paddle
-
-
+    }
+}
 
 
