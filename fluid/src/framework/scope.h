@@ -17,7 +17,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 #pragma once
-#include "paddle_mobile_object.h"
 
 #include <unordered_map> //std::unordered_map
 #include <list>  //std::list
@@ -26,13 +25,13 @@ SOFTWARE.
 
 namespace paddle_mobile{
     namespace framework{
-        class Scope : public PaddleMobileObject{
+        class Scope{
         public:
             Scope(){}
             ~Scope(){}
 
 
-            Scope& NewScope() const;
+            Scope& NewScope() const{}
 
             /// Create a variable with given name if it doesn't exist.
             Variable* Var(const std::string& name);
@@ -74,10 +73,9 @@ namespace paddle_mobile{
 
             mutable std::unordered_map<std::string, Variable*> vars_;
             mutable std::list<Scope*> kids_;
-            Scope const* parent_ = nullptr;
+            Scope const* parent_{nullptr};
 
             mutable std::mutex mutex_;
-
         };
     }
 }
