@@ -197,5 +197,10 @@ namespace paddle_mobile {
                 return shape[0];
             }
         };
+
+
+
+
+
     }
 }

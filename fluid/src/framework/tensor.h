@@ -75,38 +75,33 @@ namespace paddle_mobile {
              * \brief default constructor
              */
             Tensor() {
+                shape_ = Shape::Zero(TensorAPI::layout_dims::value);
+                valid_shape_ = Shape::Zero(TensorAPI::layout_dims::value);
+                offset_ = Shape::Zero(TensorAPI::layout_dims::value);
+                buf_ = std::make_shared<Allocator<DeviceType> >();
+                is_subbuf_ = false;
             }
 
             /**
              * \brief constructor with shape, memory is alloced according to shape
              */
             Tensor(Shape shape) {
-            }
-#if 0
-            /**
-     * \brief constructor with currently used shape, offset and entire memory shape,
-     * memory is alloced according to the shape
-     */
-    Tensor(Shape shape, Shape valid_shape, Shape offset) {
-    }
-#endif
-            /**
-             * \brief constructor with allocated data ptr and entire memory shape
-             */
-            template <typename DeviceType_t>
-            Tensor(Dtype* data_ptr, DeviceType_t target, int id, Shape shape) {
+                shape_ = shape;
+                valid_shape_ = shape;
+                offset_ = Shape::Zero(shape.Dims());
+                buf_ = std::make_shared<Allocator<DeviceType> >(shape.Count() * type_len_);
+                is_subbuf_ = false;
             }
 
             /**
              * \brief copy constructor, shallow copy
              */
             Tensor(const Tensor<DeviceType, datatype, LayOutType>& tensor){
-            }
-
-            /**
-             * \brief copy constructor without events control
-             */
-            Tensor(Tensor<DeviceType, datatype, LayOutType>& tensor){
+                shape_ = tensor.shape_;
+                valid_shape_ = tensor.valid_shape_;
+                offset_ = tensor.offset_;
+                buf_  = tensor.buf_;
+                is_subbuf_ = tensor. is_subbuf_;
             }
 
             /**
@@ -116,12 +111,50 @@ namespace paddle_mobile {
              * @param offset
              */
             PMStatus set_shape(Shape valid_shape, Shape shape = Shape(), Shape offset = Shape()) {
+
+                if (shape.Dims() != TensorAPI::layout_dims::value || \
+            valid_shape.Dims() != TensorAPI::layout_dims::value \
+            || offset.Dims() != TensorAPI::layout_dims::value || \
+            !(valid_shape > Shape::Zero(TensorAPI::layout_dims::value))) { \
+            return PMInvalidValue; \
+        }
+                valid_shape_ = valid_shape;
+
+                if (!is_subbuf_) {
+                    if (shape_.Count() <= valid_shape_.Count()) {
+                        shape_ = valid_shape_;
+                    }
+                    offset_ = Shape::Zero(TensorAPI::layout_dims::value);
+                } else {
+                    auto shape_zero = Shape::Zero(TensorAPI::layout_dims::value);
+                    if (shape_ == shape_zero) {
+                        shape_ = valid_shape;
+                    }
+                    if (!(valid_shape_ + offset_ <= shape_)) {
+                        \
+                return PMInvalidValue; \
+
+                    }
+                }
+                return PMSuccess;
             }
 
             /**
              * \brief free old buffer and alloc a new tensor buffer
              */
             PMStatus re_alloc(Shape shape){
+                if (!shape.Dims() == TensorAPI::layout_dims::value) {
+                     return PMInvalidValue;
+                }
+                if (is_subbuf_ || is_shared_) {
+                    return PMOutOfAuthority;
+                }
+
+                shape_ = shape;
+                valid_shape_ = shape_;
+                offset_ = Shape::Zero(shape_.Dims());
+                buf_->Alloc(shape_.Count() *type_len_);
+                return PMSuccess;
             }
 
             /**
@@ -130,6 +163,35 @@ namespace paddle_mobile {
              * @param shape
              */
             PMStatus reshape(Shape valid_shape, Shape shape = Shape(), Shape offset = Shape()) {
+                if (shape.Dims() != TensorAPI::layout_dims::value || \
+            valid_shape.Dims() != TensorAPI::layout_dims::value \
+            || offset.Dims() != TensorAPI::layout_dims::value || \
+            !(valid_shape > Shape::Zero(TensorAPI::layout_dims::value))) { \
+            return  PMInvalidValue; \
+        }
+                valid_shape_ = valid_shape;
+
+                if (! is_subbuf_) {
+                    if (shape_.Count() < valid_shape_.Count()) {
+                        shape_ = valid_shape_;
+                    }
+                    offset_ = Shape::Zero(TensorAPI::layout_dims::value);
+                } else {
+                    if (shape_ == Shape::Zero(TensorAPI::layout_dims::value)) {
+                        shape_ = valid_shape;
+                    }
+                    if (!(valid_shape_ + offset_ <= shape_)) { \
+                return  PMInvalidValue; \
+            }
+                }
+                bool exceed_flag = shape_.Count() * type_len_ > buf_->GetCapacity() \
+            && ( is_subbuf_ || is_shared_);
+                if (exceed_flag) {
+                    return  PMOutOfAuthority;
+                }
+//                CHECK_EQ(exceed_flag, false) << "shared tensor shape exceed origin data buffer size";
+                PM_CHECK(buf_->ReAlloc(shape_.Count() * type_len_));
+                return PaddleSuccess;
             }
 
             bool is_continue_mem() const {
