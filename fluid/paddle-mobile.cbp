@@ -11,30 +11,30 @@
 				<Option working_dir="/Users/liuruilong/MyGithub/paddle-mobile/fluid"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 all"/>
-					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="rebuild_cache">
 				<Option working_dir="/Users/liuruilong/MyGithub/paddle-mobile/fluid"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
-					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="edit_cache">
 				<Option working_dir="/Users/liuruilong/MyGithub/paddle-mobile/fluid"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 edit_cache"/>
-					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="paddle-mobile-test">
@@ -46,19 +46,19 @@
 				<Compiler>
 					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src"/>
 					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/third-party/protobuf/include"/>
-					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/include/c++/v1"/>
 					<Add directory="/usr/local/include"/>
-					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.1.0/include"/>
-					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/lib/clang/9.0.0/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/include"/>
 					<Add directory="/usr/include"/>
 					<Add directory="/System/Library/Frameworks"/>
 					<Add directory="/Library/Frameworks"/>
 				</Compiler>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 paddle-mobile-test"/>
-					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 paddle-mobile-test"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="paddle-mobile-test/fast">
@@ -70,19 +70,19 @@
 				<Compiler>
 					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src"/>
 					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/third-party/protobuf/include"/>
-					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/include/c++/v1"/>
 					<Add directory="/usr/local/include"/>
-					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.1.0/include"/>
-					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/lib/clang/9.0.0/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/include"/>
 					<Add directory="/usr/include"/>
 					<Add directory="/System/Library/Frameworks"/>
 					<Add directory="/Library/Frameworks"/>
 				</Compiler>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 paddle-mobile-test/fast"/>
-					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 paddle-mobile-test/fast"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="paddle-mobile-static">
@@ -94,19 +94,19 @@
 				<Compiler>
 					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src"/>
 					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/third-party/protobuf/include"/>
-					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/include/c++/v1"/>
 					<Add directory="/usr/local/include"/>
-					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.1.0/include"/>
-					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/lib/clang/9.0.0/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/include"/>
 					<Add directory="/usr/include"/>
 					<Add directory="/System/Library/Frameworks"/>
 					<Add directory="/Library/Frameworks"/>
 				</Compiler>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 paddle-mobile-static"/>
-					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 paddle-mobile-static"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="paddle-mobile-static/fast">
@@ -118,19 +118,19 @@
 				<Compiler>
 					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src"/>
 					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/third-party/protobuf/include"/>
-					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/include/c++/v1"/>
 					<Add directory="/usr/local/include"/>
-					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.1.0/include"/>
-					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/lib/clang/9.0.0/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/include"/>
 					<Add directory="/usr/include"/>
 					<Add directory="/System/Library/Frameworks"/>
 					<Add directory="/Library/Frameworks"/>
 				</Compiler>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 paddle-mobile-static/fast"/>
-					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 paddle-mobile-static/fast"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="paddle-mobile">
@@ -142,19 +142,19 @@
 				<Compiler>
 					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src"/>
 					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/third-party/protobuf/include"/>
-					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/include/c++/v1"/>
 					<Add directory="/usr/local/include"/>
-					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.1.0/include"/>
-					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/lib/clang/9.0.0/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/include"/>
 					<Add directory="/usr/include"/>
 					<Add directory="/System/Library/Frameworks"/>
 					<Add directory="/Library/Frameworks"/>
 				</Compiler>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 paddle-mobile"/>
-					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 paddle-mobile"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="paddle-mobile/fast">
@@ -166,19 +166,19 @@
 				<Compiler>
 					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src"/>
 					<Add directory="/Users/liuruilong/MyGithub/paddle-mobile/fluid/third-party/protobuf/include"/>
-					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/include/c++/v1"/>
 					<Add directory="/usr/local/include"/>
-					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/9.1.0/include"/>
-					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/lib/clang/9.0.0/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/usr/include"/>
 					<Add directory="/usr/include"/>
 					<Add directory="/System/Library/Frameworks"/>
 					<Add directory="/Library/Frameworks"/>
 				</Compiler>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 paddle-mobile/fast"/>
-					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 paddle-mobile/fast"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/Users/liuruilong/MyGithub/paddle-mobile/fluid/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 		</Build>
@@ -286,6 +286,10 @@
 			<Option target="paddle-mobile-static"/>
 			<Option target="paddle-mobile"/>
 		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/scope.cc">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
 		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/scope.h">
 			<Option target="paddle-mobile-static"/>
 			<Option target="paddle-mobile"/>
@@ -310,10 +314,6 @@
 			<Option target="paddle-mobile-static"/>
 			<Option target="paddle-mobile"/>
 		</Unit>
-		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/types.h">
-			<Option target="paddle-mobile-static"/>
-			<Option target="paddle-mobile"/>
-		</Unit>
 		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/framework/var_desc.cpp">
 			<Option target="paddle-mobile-static"/>
 			<Option target="paddle-mobile"/>
@@ -331,6 +331,30 @@
 			<Option target="paddle-mobile"/>
 		</Unit>
 		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/io.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/memory/t_buddy_allocator.cc">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/memory/t_buddy_allocator.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/memory/t_malloc.cc">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/memory/t_malloc.h">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/memory/t_memory_block.cc">
+			<Option target="paddle-mobile-static"/>
+			<Option target="paddle-mobile"/>
+		</Unit>
+		<Unit filename="/Users/liuruilong/MyGithub/paddle-mobile/fluid/src/memory/t_memory_block.h">
 			<Option target="paddle-mobile-static"/>
 			<Option target="paddle-mobile"/>
 		</Unit>
