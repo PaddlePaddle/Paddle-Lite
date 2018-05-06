@@ -174,22 +174,22 @@ namespace paddle_mobile {
                     switch (desc.data_type()){
                         case framework::proto::VarType::FP16:
                             std::cout << "FP16" << std::endl;
-                            type_size = 16;
+                            type_size = 2;
                             break;
                         case framework::proto::VarType::FP32:
-                            type_size = 32;
+                            type_size = 4;
                             std::cout << "FP32" << std::endl;
                             break;
                         case framework::proto::VarType::FP64:
-                            type_size = 64;
+                            type_size = 8;
                             std::cout << "FP64" << std::endl;
                             break;
                         case framework::proto::VarType::INT32:
-                            type_size = 32;
+                            type_size = 4;
                             std::cout << "INT32" << std::endl;
                             break;
                         case framework::proto::VarType::INT64:
-                            type_size = 64;
+                            type_size = 8;
                             std::cout << "INT64" << std::endl;
                             break;
                         case framework::proto::VarType::BOOL:
