@@ -1,0 +1,5 @@
+/Users/suiyang/Desktop/paddle-mobile/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/suiyang/Desktop/paddle-mobile/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/suiyang/Desktop/paddle-mobile/cmake-build-debug/CMakeFiles/mdlTest.dir
+/Users/suiyang/Desktop/paddle-mobile/cmake-build-debug/CMakeFiles/mdl-static.dir
+/Users/suiyang/Desktop/paddle-mobile/cmake-build-debug/CMakeFiles/mdl.dir
