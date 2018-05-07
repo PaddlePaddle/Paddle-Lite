@@ -21,6 +21,7 @@ SOFTWARE.
 
 #include "io.h"
 #include "common/macro.h"
+#include "framework/program_desc.h"
 #include "framework/framework.pb.h"
 
 namespace paddle_mobile {
@@ -44,6 +45,21 @@ namespace paddle_mobile {
         ReadBinaryFile(model_filename, &program_desc_str);
         framework::proto::ProgramDesc program_desc_proto;
         program_desc_proto.ParseFromString(program_desc_str);
+
+//        framework::ProgramDesc originProgramDesc(program_desc_proto);
+        std::shared_ptr<framework::ProgramDesc> originProgramDesc  = std::make_shared<framework::ProgramDesc>(program_desc_proto);
+
+        framework::Program<Dtype, P> program;
+        program.OriginProgram = originProgramDesc;
+
+        auto block = originProgramDesc->Block(0);
+        auto op = block->Ops()[1];
+        for(auto input_pair : op->inputs_){
+            std::cout << "test input" << input_pair.first << std::endl;
+        }
+
+
+
 
 #ifdef PADDLE_MOBILE_DEBUG
         for (int i = 0; i < program_desc_proto.blocks().size(); ++i) {
@@ -160,8 +176,6 @@ namespace paddle_mobile {
                     framework::proto::VarType::TensorDesc desc;
                     desc.ParseFromArray(buf.get(), size);
 
-
-
                     std::cout << "   desc dims size " << desc.dims().size() << std::endl;
                     int memory_size = 1;
                     for (int l = 0; l < desc.dims().size(); ++l) {
@@ -207,13 +221,6 @@ namespace paddle_mobile {
 
                     is.close();
 
-
-
-
-
-
-
-
                 } else{
                     std::cout << "  *not load "<< " var : " << var.name() << std::endl;
                 }
@@ -223,8 +230,8 @@ namespace paddle_mobile {
 
 #endif
 
-        framework::Program<Dtype, P> p;
-        return  p;
+
+        return  program;
     }
 
     template class Loader<ARM, Precision::FP32>;

@@ -28,8 +28,8 @@ namespace framework{
     template<typename Dtype, Precision P = Precision::FP32>
     class Program: PaddleMobileObject{
     public:
-        const ProgramDesc &OriginProgram();
-        const ProgramDesc &OptimizeProgram();
+        std::shared_ptr<ProgramDesc> OriginProgram;
+        std::shared_ptr<ProgramDesc> OptimizeProgram;
     private:
     };
 }

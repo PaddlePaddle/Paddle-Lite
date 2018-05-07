@@ -27,11 +27,17 @@ namespace paddle_mobile{
 namespace framework{
 
     class OpDesc: PaddleMobileObject{
+    public:
+        OpDesc(const proto::OpDesc &desc);
         const std::vector<std::string> &Input(const std::string &name) const;
         const std::vector<std::string> &Output(const std::string &name) const;
         Attribute GetAttr(const std::string &name) const;
         const std::unordered_map<std::string, Attribute> &GetAttrMap() const;
-    private:
+//    private:
+        proto::OpDesc desc_;
+        std::map<std::string, std::vector<std::string>> inputs_;
+        std::map<std::string, std::vector<std::string>> outputs_;
+        std::unordered_map<std::string, Attribute> attrs_;
     };
 
 }
