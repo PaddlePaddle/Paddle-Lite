@@ -20,6 +20,7 @@ SOFTWARE.
 #pragma once
 
 #include "common/types.h"
+using namespace std;
 
 namespace paddle_mobile {
     namespace framework {
@@ -28,7 +29,7 @@ namespace paddle_mobile {
     do { \
     PMStatus error = condition; \
     if(error == PMSuccess) { \
-std::cout << pm_get_error_string(error); \
+ cout<< pm_get_error_string(error); \
         break; } \
 } while (0)
 
