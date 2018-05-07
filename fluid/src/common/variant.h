@@ -22,6 +22,11 @@ SOFTWARE.
 
 
 namespace paddle_mobile{
+    template <int ID, typename  Type>
+    struct IDToType{
+        typedef Type type_t;
+    };
+
     template<typename F, typename... Ts>
     struct VariantHelper {
         static const size_t size = sizeof(F) > VariantHelper<Ts...>::size ? sizeof(F) : VariantHelper<Ts...>::size;
@@ -49,11 +54,21 @@ namespace paddle_mobile{
 
     template<size_t size>
     class RawData {
+    public:
         char data[size];
+        RawData(){}
+        RawData(const RawData & raw_data){
+            strcpy(data, raw_data.data);
+        }
     };
 
     template<typename... Ts>
     struct Variant {
+        Variant(const Variant &variant){
+            type_id = variant.type_id;
+            data = variant.data;
+        }
+
         Variant() : type_id(invalid_type()) {}
         ~Variant() { helper::Destroy(type_id, &data); }
         template<typename T, typename... Args>
@@ -79,6 +94,5 @@ namespace paddle_mobile{
         size_t type_id;
         RawData<helper::size> data;
     };
-
 }
 

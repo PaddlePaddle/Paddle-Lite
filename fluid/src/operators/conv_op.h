@@ -18,13 +18,20 @@ SOFTWARE.
 
 #pragma once
 
-#include "../framework/operator.h"
+#include "framework/operator.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-    class ConvKernel : public framework::OpKernel {
-        void Compute(const framework::ExecutionContext& context) const override {};
+
+    template <typename Dtype>
+    class ConvOp: public framework::OperatorWithKernel<Dtype> {
+    public:
+        void InferShape(framework::InferShapeContext* ctx) const override;
+    protected:
+        framework::OpKernelType GetExpectedKernelType(
+                const framework::ExecutionContext<Dtype>& ctx) const override;
     };
+
 } // operators
 } // paddle_mobile

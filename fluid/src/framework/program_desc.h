@@ -32,6 +32,9 @@ namespace framework{
     public:
         ProgramDesc(const proto::ProgramDesc &desc);
         std::shared_ptr<BlockDesc> Block(size_t idx);
+        const std::vector<std::shared_ptr<BlockDesc> > &Blocks(){
+            return blocks_;
+        };
     private:
         std::vector<std::shared_ptr<BlockDesc> > blocks_;
         proto::ProgramDesc desc_;

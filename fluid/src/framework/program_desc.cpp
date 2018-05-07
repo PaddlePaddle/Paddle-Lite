@@ -11,7 +11,8 @@ namespace paddle_mobile{
 namespace framework{
     ProgramDesc::ProgramDesc(const proto::ProgramDesc &desc): desc_(desc){
         for(auto &block_desc : *desc_.mutable_blocks()){
-            blocks_.emplace_back(new framework::BlockDesc(block_desc));
+            //new framework::BlockDesc(block_desc)
+            blocks_.emplace_back(std::make_shared<BlockDesc>(block_desc));
         }
     }
 

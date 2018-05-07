@@ -27,16 +27,18 @@ namespace paddle_mobile {
 // wrapping the first block 0.
             int kProgramId = -1;
         }  // namespace
-
-        ExecutorPrepareContext::ExecutorPrepareContext(
+        template <typename Dtype>
+        ExecutorPrepareContext<Dtype>::ExecutorPrepareContext(
                 const framework::ProgramDesc &prog, size_t block_id)
                 : prog_(prog), block_id_(block_id) {}
 
-        ExecutorPrepareContext::~ExecutorPrepareContext() {
+        template <typename Dtype>
+        ExecutorPrepareContext<Dtype>::~ExecutorPrepareContext() {
             cout << "destroy ExecutorPrepareContext";
         }
 
-        Executor::Executor() {}
+        template <typename Dtype>
+        Executor<Dtype>::Executor() {}
 
         void InitializeVariable(Variable *var, proto::VarType::Type var_type) {
 
@@ -47,26 +49,31 @@ namespace paddle_mobile {
 
         }
 
-        void Executor::CreateVariables(const ProgramDesc &pdesc, Scope *scope,
+        template <typename Dtype>
+        void Executor<Dtype>::CreateVariables(const ProgramDesc &pdesc, Scope *scope,
                                        int block_id) {
 
         }
 
-        void Executor::Run(const ProgramDesc &pdesc, Scope *scope, int block_id,
+        template <typename Dtype>
+        void Executor<Dtype>::Run(const ProgramDesc &pdesc, Scope *scope, int block_id,
                            bool create_local_scope, bool create_vars) {
 
         }
 
-        std::unique_ptr<ExecutorPrepareContext> Executor::Prepare(
+        template <typename Dtype>
+        std::unique_ptr<ExecutorPrepareContext<Dtype> > Executor<Dtype>::Prepare(
                 const ProgramDesc &program, int block_id) {
         }
 
-        std::vector<std::shared_ptr<ExecutorPrepareContext> > Executor::Prepare(
+        template <typename Dtype>
+        std::vector<std::shared_ptr<ExecutorPrepareContext<Dtype> > > Executor<Dtype>::Prepare(
                 const ProgramDesc &program, const std::vector<int> &block_ids) {
 
         }
 
-        void Executor::RunPreparedContext(ExecutorPrepareContext *ctx, Scope *scope,
+        template <typename Dtype>
+        void Executor<Dtype>::RunPreparedContext(ExecutorPrepareContext<Dtype> *ctx, Scope *scope,
                                           bool create_local_scope, bool create_vars) {
 
         }

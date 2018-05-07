@@ -26,15 +26,17 @@ namespace paddle_mobile{
     //! device type
     enum DeviceTypeEnum{
         eINVALID = -1,
-        eARM = 0,
-        eCPU = 1,
+        eARM   = 0,
+        eCPU   = 1,
+        eFPGA  = 2
     };
 
     template <DeviceTypeEnum T>
     struct DeviceType{};
 
-    typedef DeviceType<eARM> ARM;
-    typedef DeviceType<eCPU> CPU;
+    typedef DeviceType<eARM>    ARM;
+    typedef DeviceType<eCPU>    CPU;
+    typedef DeviceType<eFPGA>   FPGA;
 
     struct __invalid_type{};
 

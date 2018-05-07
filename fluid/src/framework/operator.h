@@ -18,15 +18,17 @@ SOFTWARE.
 
 #pragma once
 
-#include "paddle_mobile_object.h"
+#include <map>
+
 #include "scope.h"
 #include "tensor.h"
-#include "op_kernel_type.h"
-#include "../common/variant.h"
-#include "block_desc.h"
-#include "attribute.h"
 #include "variable.h"
-#include <map>
+#include "attribute.h"
+#include "block_desc.h"
+#include "common/types.h"
+#include "common/variant.h"
+#include "op_kernel_type.h"
+#include "paddle_mobile_object.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -36,8 +38,11 @@ namespace framework {
     using VariableNameMap = std::map<std::string, std::vector<std::string> >;
     using AttributeMap = std::string;
     class InferShapeContext;
+
+    template <typename Dtype>
     class ExecutionContext;
 
+    template <typename Dtype>
     class OperatorBase: PaddleMobileObject{
     public:
         OperatorBase(const std::string& type, const VariableNameMap& inputs,
@@ -88,17 +93,17 @@ namespace framework {
         virtual void RunImpl(const Scope& scope) const = 0;
     };
 
-
-    class OperatorWithKernel : public OperatorBase{
+    template <typename Dtype>
+    class OperatorWithKernel : public OperatorBase<Dtype>{
     public:
         OperatorWithKernel(const std::string& type, const VariableNameMap& inputs,
                            const VariableNameMap& outputs, const AttributeMap& attrs)
-                : OperatorBase(type, inputs, outputs, attrs) {}
+                : OperatorBase<Dtype>(type, inputs, outputs, attrs) {}
 
         virtual void InferShape(InferShapeContext* ctx) const {};
 
     protected:
-        virtual OpKernelType GetExpectedKernelType(const ExecutionContext& ctx) const;
+        virtual OpKernelType GetExpectedKernelType(const ExecutionContext<Dtype>& ctx) const;
         virtual OpKernelType GetKernelTypeForVar(
                 const std::string& var_name, const Tensor& tensor,
                 const OpKernelType& expected_kernel_type) const;
@@ -107,7 +112,7 @@ namespace framework {
     };
 
 
-
+    template <typename Dtype>
     class OpKernelBase: PaddleMobileObject{
     public:
         /**
@@ -116,39 +121,39 @@ namespace framework {
          * device resource such as CUDA stream, cublas handle, etc. from
          * ExecutionContext. User should construct it before run the Operator.
          */
-        virtual void Compute(const ExecutionContext& context) const = 0;
+        virtual void Compute(const ExecutionContext<Dtype>& context) const = 0;
 
         virtual ~OpKernelBase() = default;
     };
 
 
-    template <typename T>
-    class OpKernel : public OpKernelBase{
+    template <typename Dtype>
+    class OpKernel : public OpKernelBase<Dtype>{
     public:
-        using ELEMENT_TYPE = T;
+//        using ELEMENT_TYPE = T;
     };
 
-
+    template <typename Dtype>
     class ExecutionContext {
     public:
-        ExecutionContext(const OperatorBase& op, const Scope& scope)
+        ExecutionContext(const OperatorBase<Dtype>& op, const Scope& scope)
                 : op_(op), scope_(scope) {}
 
-        const OperatorBase& op() const { return op_; }
+        const OperatorBase<Dtype>& op() const { return op_; }
 
         const Scope& scope() const { return scope_; }
 
         template <typename T>
         inline const T& Attr(const std::string& name) const {
-            return op_.Attr<T>(name);
+            return op_.template Attr<T>(name);
         }
 
         size_t InputSize(const std::string& name) const {
-            return op_.Inputs(name).size();
+            return op_.template Inputs(name).size();
         }
 
         size_t OutputSize(const std::string& name) const {
-            return op_.Outputs(name).size();
+            return op_.template Outputs(name).size();
         }
 
         const Variable* InputVar(const std::string& name) const {}
@@ -182,7 +187,7 @@ namespace framework {
         }
 
     private:
-        const OperatorBase& op_;
+        const OperatorBase<Dtype>& op_;
         const Scope& scope_;
     };
 

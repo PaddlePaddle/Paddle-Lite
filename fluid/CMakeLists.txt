@@ -18,7 +18,7 @@ include_directories(third-party/protobuf/include)
 link_directories(third-party/protobuf/lib)
 
 # gen so
-ADD_LIBRARY(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H} src/framework/program_desc.cpp src/framework/op_desc.cpp)
+ADD_LIBRARY(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 target_link_libraries(paddle-mobile protobuf-lite)
 
 # gen static

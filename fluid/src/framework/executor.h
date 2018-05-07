@@ -32,6 +32,7 @@ namespace paddle_mobile {
     namespace framework {
         extern void InitializeVariable(Variable *var, proto::VarType::Type var_type);
 
+        template <typename Dtype>
         struct ExecutorPrepareContext {
             ExecutorPrepareContext(const framework::ProgramDesc &prog, size_t block_id);
 
@@ -39,9 +40,10 @@ namespace paddle_mobile {
 
             const framework::ProgramDesc &prog_;
             size_t block_id_;
-            std::vector<std::unique_ptr<OperatorBase> > ops_;
+            std::vector<std::unique_ptr<OperatorBase<Dtype>> > ops_;
         };
 
+        template <typename Dtype>
         class Executor {
         public:
             explicit Executor();
@@ -57,15 +59,15 @@ namespace paddle_mobile {
                      bool create_local_scope = true, bool create_vars = true);
 
 
-            static std::unique_ptr<ExecutorPrepareContext> Prepare(
+            static std::unique_ptr<ExecutorPrepareContext<Dtype>> Prepare(
                     const ProgramDesc &program, int block_id);
 
-            static std::vector<std::shared_ptr<ExecutorPrepareContext> > Prepare(
+            static std::vector<std::shared_ptr<ExecutorPrepareContext<Dtype> > > Prepare(
                     const ProgramDesc &program, const std::vector<int> &block_ids);
 
             void CreateVariables(const ProgramDesc &pdesc, Scope *scope, int block_id);
 
-            void RunPreparedContext(ExecutorPrepareContext *ctx, Scope *scope,
+            void RunPreparedContext(ExecutorPrepareContext<Dtype> *ctx, Scope *scope,
                                     bool create_local_scope = true,
                                     bool create_vars = true);
 

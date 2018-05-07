@@ -16,20 +16,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#pragma once
-
-#include "../framework/operator.h"
-#include "../framework/op_proto_maker.h"
+#include "operators/conv_op.h"
+#include "framework/operator.h"
+#include "framework/op_proto_maker.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-    class ConvOp : public framework::OperatorWithKernel {
-    public:
-        void InferShape(framework::InferShapeContext* ctx) const override {};
-    protected:
-        framework::OpKernelType GetExpectedKernelType(
-                const framework::ExecutionContext& ctx) const override {};
+    template <typename Dtype>
+    void ConvOp<Dtype>::InferShape(framework::InferShapeContext* ctx) const {}
+
+    template <typename Dtype>
+    framework::OpKernelType ConvOp<Dtype>::GetExpectedKernelType(
+            const framework::ExecutionContext<Dtype>& ctx) const {
+        return framework::OpKernelType();
     };
 
     class ConvOpMaker : public framework::OpProtoAndCheckerMaker {
