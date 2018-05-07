@@ -99,16 +99,16 @@ inline T* Tensor::data() {
 }
 
 template <typename T>
-inline T* Tensor::mutable_data(DDim dims, platform::Place place) {
+inline T* Tensor::mutable_data(DDim dims) {
   static_assert(std::is_pod<T>::value, "T must be POD");
   Resize(dims);
-  return mutable_data<T>(place);
+  return mutable_data<T>();
 }
 
 template <typename T>
-inline T* Tensor::mutable_data(platform::Place place) {
+inline T* Tensor::mutable_data() {
   static_assert(std::is_pod<T>::value, "T must be POD");
-  return reinterpret_cast<T*>(mutable_data(place, typeid(T)));
+  return reinterpret_cast<T*>(mutable_data(typeid(T)));
 }
 
 inline void* Tensor::mutable_data(std::type_index type) {
@@ -131,10 +131,10 @@ inline void* Tensor::mutable_data(std::type_index type) {
                                  offset_);
 }
 
-inline void* Tensor::mutable_data(platform::Place place) {
+inline void* Tensor::mutable_data() {
 //  PADDLE_ENFORCE(this->holder_ != nullptr,
 //                 "Cannot invoke mutable data if current hold nothing.");
-  return mutable_data(place, holder_->type());
+  return mutable_data(holder_->type());
 }
 
 inline Tensor& Tensor::ShareDataWith(const Tensor& src) {
