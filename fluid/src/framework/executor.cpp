@@ -1,3 +1,4 @@
+
 /* Copyright (c) 2016 Baidu, Inc. All Rights Reserved.
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +43,7 @@ namespace paddle_mobile {
         }
 
         static void CheckTensorNANOrInf(const std::string &name,
-                                        const Tensor4f &tensor) {
+                                        const Tensor &tensor) {
 
         }
 

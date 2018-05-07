@@ -64,9 +64,9 @@ namespace paddle_mobile{
         }
 
         template<typename T>
-        T& Get(){
+        T& Get() const {
             if (type_id == typeid(T).hash_code())
-                return *reinterpret_cast<T*>(&data);
+                return *const_cast<T*>(reinterpret_cast<const T*>(&data));
             else
                 throw std::bad_cast();
         }
