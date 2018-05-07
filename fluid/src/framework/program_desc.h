@@ -31,9 +31,9 @@ namespace framework{
     class ProgramDesc: PaddleMobileObject{
     public:
         ProgramDesc(const proto::ProgramDesc &desc);
-        const BlockDesc &Block(size_t idx) const;
+        std::shared_ptr<BlockDesc> Block(size_t idx);
     private:
-        std::vector<BlockDesc> blocks;
+        std::vector<std::shared_ptr<BlockDesc> > blocks_;
         proto::ProgramDesc desc_;
     };
 

@@ -16,6 +16,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 #pragma once
+
+#include <iostream>
 #include "t_buddy_allocator.h"
 namespace paddle_mobile {
     namespace memory {

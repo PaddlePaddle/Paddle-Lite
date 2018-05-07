@@ -19,7 +19,33 @@ SOFTWARE.
 #include "io.h"
 #include "common/types.h"
 
+//
+//template <typename T>
+//void SetupTensor(paddle::framework::LoDTensor* input,
+//                 paddle::framework::DDim dims, T lower, T upper) {
+//    static unsigned int seed = 100;
+//    std::mt19937 rng(seed++);
+//    std::uniform_real_distribution<double> uniform_dist(0, 1);
+//
+//    T* input_ptr = input->mutable_data<T>(dims, paddle::platform::CPUPlace());
+//    for (int i = 0; i < input->numel(); ++i) {
+//        input_ptr[i] = static_cast<T>(uniform_dist(rng) * (upper - lower) + lower);
+//    }
+//}
+
 int main(){
+    std::string data_set = "cifar10";
+//
+//    if (data_set == "cifar10") {
+//        SetupTensor<float>(&input, {FLAGS_batch_size, 3, 32, 32},
+//                           static_cast<float>(0), static_cast<float>(1));
+//    } else if (data_set == "imagenet") {
+//        SetupTensor<float>(&input, {FLAGS_batch_size, 3, 224, 224},
+//                           static_cast<float>(0), static_cast<float>(1));
+//    } else {
+//        LOG(FATAL) << "Only cifar10 or imagenet is supported.";
+//    }
+
     paddle_mobile::Loader<paddle_mobile::ARM> loader;
     loader.Load(std::string("/Users/liuruilong/MyGithub/paddle-mobile/fluid/test/models/image_classification_resnet.inference.model"));
     return 0;

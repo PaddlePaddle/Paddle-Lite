@@ -18,7 +18,7 @@ SOFTWARE.
 
 #include <iostream>
 
-#pragma once;
+#pragma once
 
 
 namespace paddle_mobile{
@@ -54,6 +54,8 @@ namespace paddle_mobile{
 
     template<typename... Ts>
     struct Variant {
+        Variant() : type_id(invalid_type()) {}
+        ~Variant() { helper::Destroy(type_id, &data); }
         template<typename T, typename... Args>
         void Set(Args&&... args){
             helper::Destroy(type_id, &data);
@@ -73,11 +75,9 @@ namespace paddle_mobile{
         static inline size_t invalid_type() {
             return typeid(void).hash_code();
         }
-        Variant() : type_id(invalid_type()) {}
         typedef VariantHelper<Ts...> helper;
         size_t type_id;
         RawData<helper::size> data;
-        ~Variant() { helper::Destroy(type_id, &data); }
     };
 
 }

@@ -31,7 +31,7 @@ namespace paddle_mobile{
             ~Scope(){}
 
 
-            Scope& NewScope() const{}
+            Scope& NewScope() const;
 
             /// Create a variable with given name if it doesn't exist.
             Variable* Var(const std::string& name);

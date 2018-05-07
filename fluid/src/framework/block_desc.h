@@ -28,16 +28,20 @@ namespace paddle_mobile {
 namespace framework {
     class BlockDesc: PaddleMobileObject{
     public:
+        BlockDesc(const proto::BlockDesc &desc);
         int ID() const{
-            return 0;
+            return desc_.idx();
         }
         int Parent() const{
-            return 0;
+            return desc_.parent_idx();
         }
 
-        std::vector<VarDesc> Vars() const;
-        std::vector<OpDesc> Ops() const;
+        std::vector<std::shared_ptr<VarDesc>> Vars() const;
+        std::vector<std::shared_ptr<OpDesc>> Ops() const;
     private:
+        proto::BlockDesc desc_;
+        std::vector<std::shared_ptr<OpDesc>> ops_;
+        std::unordered_map<std::string, std::shared_ptr<VarDesc>> vars_;
     };
 }
 
