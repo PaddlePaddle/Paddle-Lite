@@ -47,12 +47,10 @@ namespace framework {
     public:
         OperatorBase(const std::string& type, const VariableNameMap& inputs,
                      const VariableNameMap& outputs, const AttributeMap & attrs);
-
         virtual ~OperatorBase() {}
-
         /// Net will call this interface function to Run an op.
         //  The implementation should be written at RunImpl
-        void Run(const Scope& scope);
+        virtual void Run(const Scope& scope);
 
         template <typename T>
         inline const T& Attr(const std::string& name) const;
@@ -90,12 +88,12 @@ namespace framework {
         AttributeMap attrs_;
     private:
         void CheckAllInputOutputSet() const;
-        virtual void RunImpl(const Scope& scope) const = 0;
     };
 
     template <typename Dtype>
     class OperatorWithKernel : public OperatorBase<Dtype>{
     public:
+        virtual void Run(const Scope& scope){}
         OperatorWithKernel(const std::string& type, const VariableNameMap& inputs,
                            const VariableNameMap& outputs, const AttributeMap& attrs)
                 : OperatorBase<Dtype>(type, inputs, outputs, attrs) {}
@@ -108,7 +106,6 @@ namespace framework {
                 const std::string& var_name, const Tensor& tensor,
                 const OpKernelType& expected_kernel_type) const;
     private:
-        void RunImpl(const Scope& scope) const final;
     };
 
 
@@ -130,7 +127,7 @@ namespace framework {
     template <typename Dtype>
     class OpKernel : public OpKernelBase<Dtype>{
     public:
-//        using ELEMENT_TYPE = T;
+    //        using ELEMENT_TYPE = T;
     };
 
     template <typename Dtype>

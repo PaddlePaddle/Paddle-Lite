@@ -33,16 +33,6 @@ namespace paddle_mobile {
 
         class Tensor {
         public:
-            template <typename T, size_t D, int MajorType, typename IndexType>
-            friend struct EigenTensor;
-
-            template <typename T, int MajorType, typename IndexType>
-            friend struct EigenMatrix;
-
-            template <typename T, int MajorType, typename IndexType>
-            friend struct EigenVector;
-
-        public:
             Tensor() : offset_(0) {}
 
 
