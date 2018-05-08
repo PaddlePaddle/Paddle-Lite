@@ -32,5 +32,5 @@ ADD_LIBRARY(paddle-mobile-static STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 target_link_libraries(paddle-mobile-static protobuf-lite zlib)
 
 # gen test
-ADD_EXECUTABLE(paddle-mobile-test test/main.cpp)
+ADD_EXECUTABLE(paddle-mobile-test test/main.cpp test/test_helper.h)
 target_link_libraries(paddle-mobile-test paddle-mobile)
