@@ -30,6 +30,10 @@ namespace paddle_mobile {
             return a;
         }
 
+        void Copy( void* dst, const void* src, size_t num){
+            std::memcpy(dst, src, num);
+        };
+
 
         void* Alloc(size_t size) {
             //VLOG(10) << "Allocate " << size << " bytes on " << "place";

@@ -25,6 +25,8 @@ SOFTWARE.
 namespace paddle_mobile {
     namespace memory {
 
+        void Copy( void* dst, const void* src, size_t num);
+
         void* Alloc(size_t size);
         void Free(void* ptr);
         size_t Used();

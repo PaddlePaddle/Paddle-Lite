@@ -51,8 +51,7 @@ struct SizeOfTypeFunctor<HEAD, TAIL...> {
 };
 
 static inline size_t SizeOfType(std::type_index type) {
-  SizeOfTypeFunctor<int, float, double, int16_t, int64_t, bool, size_t,
-                    platform::float16>
+  SizeOfTypeFunctor<int, float, double, int16_t, int64_t, bool, size_t>
       functor;
   size_t size = functor(type);
 //  PADDLE_ENFORCE(size != 0UL, "Cannot get size of type %s", type.name());

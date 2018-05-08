@@ -77,10 +77,7 @@ namespace paddle_mobile {
                 /*! \brief Clean idle normal allocation */
                 void CleanIdleNormalAlloc();
 
-                template <typename DstPlace, typename SrcPlace>
-                void Copy(DstPlace, void* dst, SrcPlace, const void* src, size_t num){
-                        std::memcpy(dst, src, num);
-                };
+
 
             private:
                 size_t total_used_ = 0;  // the total size of used memory
