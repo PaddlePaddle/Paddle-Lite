@@ -29,6 +29,7 @@ SOFTWARE.
 #include "common/variant.h"
 #include "op_kernel_type.h"
 #include "paddle_mobile_object.h"
+#include "shape_inference.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -37,7 +38,6 @@ namespace framework {
 
     using VariableNameMap = std::map<std::string, std::vector<std::string> >;
     using AttributeMap = std::unordered_map<std::string, Attribute>;
-    class InferShapeContext;
 
     template <typename Dtype>
     class ExecutionContext;

@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "im2col.h"
+#include "common/types.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -24,7 +25,7 @@ namespace math {
  *   [input_channels, filter_height, filter_width, output_height, output_width]
  */
 template <class T>
-class Im2ColFunctor<ColFormat::kCFO, T> {
+class Im2ColFunctor<ColFormat::kCFO, ARM, T> {
  public:
   void operator()(const framework::Tensor& im, const std::vector<int>& dilation,
                   const std::vector<int>& stride,
@@ -86,7 +87,7 @@ class Im2ColFunctor<ColFormat::kCFO, T> {
  *   [input_channels, filter_height, filter_width, output_height, output_width]
  */
 template <class T>
-class Col2ImFunctor<ColFormat::kCFO, T> {
+class Col2ImFunctor<ColFormat::kCFO, ARM, T> {
  public:
   void operator()(const framework::Tensor& col,
                   const std::vector<int>& dilation,
@@ -141,10 +142,10 @@ class Col2ImFunctor<ColFormat::kCFO, T> {
   }
 };
 
-template class Im2ColFunctor<ColFormat::kCFO, float>;
-template class Im2ColFunctor<ColFormat::kCFO, double>;
-template class Col2ImFunctor<ColFormat::kCFO, float>;
-template class Col2ImFunctor<ColFormat::kCFO, double>;
+template class Im2ColFunctor<ColFormat::kCFO, ARM, float>;
+template class Im2ColFunctor<ColFormat::kCFO, ARM, double>;
+template class Col2ImFunctor<ColFormat::kCFO, ARM, float>;
+template class Col2ImFunctor<ColFormat::kCFO, ARM, double>;
 
 /*
  * im = [input_channels, input_height, input_width]
@@ -152,7 +153,7 @@ template class Col2ImFunctor<ColFormat::kCFO, double>;
  *   [output_height, output_width, input_channels, filter_height, filter_width]
  */
 template <class T>
-class Im2ColFunctor<ColFormat::kOCF, T> {
+class Im2ColFunctor<ColFormat::kOCF, ARM, T> {
  public:
   void operator()(const framework::Tensor& im, const std::vector<int>& dilation,
                   const std::vector<int>& stride,
@@ -222,7 +223,7 @@ class Im2ColFunctor<ColFormat::kOCF, T> {
  *   [output_height, output_width, input_channels, filter_height, filter_width]
  */
 template <class T>
-class Col2ImFunctor<ColFormat::kOCF, T> {
+class Col2ImFunctor<ColFormat::kOCF, ARM, T> {
  public:
   void operator()(const framework::Tensor& col,
                   const std::vector<int>& dilation,
@@ -287,10 +288,10 @@ class Col2ImFunctor<ColFormat::kOCF, T> {
   }
 };
 
-template class Im2ColFunctor<math::ColFormat::kOCF, float>;
-template class Im2ColFunctor<ColFormat::kOCF, double>;
-template class Col2ImFunctor<ColFormat::kOCF, float>;
-template class Col2ImFunctor<ColFormat::kOCF, double>;
+template class Im2ColFunctor<ColFormat::kOCF, ARM, float>;
+template class Im2ColFunctor<ColFormat::kOCF, ARM, double>;
+template class Col2ImFunctor<ColFormat::kOCF, ARM, float>;
+template class Col2ImFunctor<ColFormat::kOCF, ARM, double>;
 
 }  // namespace math
 }  // namespace operators

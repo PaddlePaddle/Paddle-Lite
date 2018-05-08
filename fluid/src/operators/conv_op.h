@@ -131,8 +131,8 @@ namespace operators {
             int in_step = static_cast<int>(input->dims()[1]) / groups;
             int out_step = static_cast<int>(output->dims()[1]) / groups;
 
-            math::Vol2ColFunctor<ARM, T> vol2col;
-            math::Im2ColFunctor<math::ColFormat::kCFO, T> im2col;
+            math::Vol2ColFunctor<DeviceType, T> vol2col;
+            math::Im2ColFunctor<math::ColFormat::kCFO, DeviceType, T> im2col;
 
 //            auto& dev_ctx = context.template device_context<DeviceContext>();
             for (int i = 0; i < batch_size; i++) {
