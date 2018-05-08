@@ -37,8 +37,8 @@ namespace operators {
 //    class ConvOpMaker : public framework::OpProtoAndCheckerMaker {
 //
 //    };
-
-void ConvOp::InferShape(framework::InferShapeContext* ctx) const {
+template <typename Dtype, typename T>
+void ConvOp<Dtype, T>::InferShape(framework::InferShapeContext* ctx) const {
 //    PADDLE_ENFORCE(ctx->HasInput("Input"),
 //                   "Input(Input) of ConvOp should not be null.");
 //    PADDLE_ENFORCE(ctx->HasInput("Filter"),

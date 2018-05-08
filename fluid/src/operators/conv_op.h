@@ -51,32 +51,33 @@ namespace operators {
         return !(filter_1 && strides_1 && padding_0 && dilation_1);
     }
 
-    class ConvOp : public framework::OperatorWithKernel {
+    template <typename DeviceType, typename T>
+    class ConvOp : public framework::OperatorWithKernel<DeviceType> {
     public:
-        using framework::OperatorWithKernel::OperatorWithKernel;
+        using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
         void InferShape(framework::InferShapeContext* ctx) const override;
 
     protected:
         framework::OpKernelType GetExpectedKernelType(
-                const framework::ExecutionContext& ctx) const override;
+                const framework::ExecutionContext<DeviceType>& ctx) const override;
     };
 
-    template <typename DeviceContext, typename T>
-    class GemmConvKernel : public framework::OpKernel<T> {
+    template <typename DeviceType, typename T>
+    class GemmConvKernel : public framework::OpKernel<DeviceType> {
     public:
-        void Compute(const framework::ExecutionContext& context) const override {
-            const Tensor* input = context.Input<Tensor>("Input");
+        void Compute(const framework::ExecutionContext<DeviceType>& context) const override {
+            const Tensor* input = context.template Input<Tensor>("Input");
             // The filter will be reshaped in the calculations,
             // so here use an assignment operation,
             // that avoids modifying the variable in the Scope.
-            Tensor filter = *context.Input<Tensor>("Filter");
-            Tensor* output = context.Output<Tensor>("Output");
+            Tensor filter = *context.template Input<Tensor>("Filter");
+            Tensor* output = context.template Output<Tensor>("Output");
 //            output->mutable_data<T>(context.GetPlace());
 
-            int groups = context.Attr<int>("groups");
-            std::vector<int> strides = context.Attr<std::vector<int>>("strides");
-            std::vector<int> paddings = context.Attr<std::vector<int>>("paddings");
-            std::vector<int> dilations = context.Attr<std::vector<int>>("dilations");
+            int groups = context.template Attr<int>("groups");
+            std::vector<int> strides = context.template Attr<std::vector<int>>("strides");
+            std::vector<int> paddings = context.template Attr<std::vector<int>>("paddings");
+            std::vector<int> dilations = context.template Attr<std::vector<int>>("dilations");
 
             const int batch_size = static_cast<int>(input->dims()[0]);
 
