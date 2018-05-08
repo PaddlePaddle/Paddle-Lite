@@ -36,7 +36,7 @@ namespace framework {
     constexpr char kEmptyVarName[] = "@EMPTY@";
 
     using VariableNameMap = std::map<std::string, std::vector<std::string> >;
-    using AttributeMap = std::string;
+    using AttributeMap = std::unordered_map<std::string, Attribute>;
     class InferShapeContext;
 
     template <typename Dtype>

@@ -107,6 +107,22 @@ namespace framework {
                 std::vector<bool>, BlockDesc*, int64_t> variant_;
     };
 
+    using AttributeMap = std::unordered_map<std::string, Attribute>;
+    class AttrReader {
+    public:
+        explicit AttrReader(const AttributeMap& attrs) : attrs_(attrs) {}
+
+        template <typename T>
+        inline const T& Get(const std::string& name) const {
+//            PADDLE_ENFORCE(attrs_.count(name) != 0, "%s should be in AttributeMap",
+//                           name);
+            return ((Attribute)attrs_.at(name)).Get<T>();
+        }
+
+    private:
+        const AttributeMap& attrs_;
+    };
+
 }
 
 }

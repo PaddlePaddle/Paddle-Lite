@@ -8,10 +8,11 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY build)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 
 file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp)
-file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
+file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h /System/Library/Frameworks/vecLib.framework/Headers/cblas.h)
 
 # include headers
 include_directories(src/)
+include_directories(/System/Library/Frameworks/vecLib.framework/Headers/)
 
 # link protobuf
 include_directories(third-party/protobuf/include)
