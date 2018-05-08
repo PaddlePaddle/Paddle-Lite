@@ -22,6 +22,7 @@ SOFTWARE.
 
 #include "common/types.h"
 #include "framework/program.h"
+#include "framework/lod_tensor.h"
 #include "framework/paddle_mobile_object.h"
 
 namespace paddle_mobile {
@@ -30,7 +31,7 @@ namespace paddle_mobile {
     class Loader: PaddleMobileObject{
     public:
         const framework::Program<Dtype, P> Load(const std::string &dirname);
+    private:
+        void LoadVar(framework::LoDTensor *tensor, const std::string &file_path);
     };
-
-    class Executor: PaddleMobileObject{};
 }

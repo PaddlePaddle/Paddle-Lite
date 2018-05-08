@@ -18,4 +18,4 @@ SOFTWARE.
 
 #pragma once
 
-#define PADDLE_MOBILE_DEBUG 1
+//#define PADDLE_MOBILE_DEBUG 1
