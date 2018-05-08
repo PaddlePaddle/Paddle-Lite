@@ -28,6 +28,7 @@ SOFTWARE.
 #include "framework/framework.pb.h"
 
 namespace paddle_mobile {
+
 void ReadBinaryFile(const std::string& filename, std::string* contents) {
     std::ifstream fin(filename, std::ios::in | std::ios::binary);
     fin.seekg(0, std::ios::end);
@@ -349,6 +350,8 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(const std::string &dir
 #endif
     return  program;
 }
+
 template class Loader<ARM, Precision::FP32>;
+
 }
 
