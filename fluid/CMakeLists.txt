@@ -14,8 +14,8 @@ file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
 include_directories(src/)
 
 
-include_directories(/usr/local/Cellar/openblas/0.2.20_1/include/)
-link_directories(/usr/local/Cellar/openblas/0.2.20_1/lib/)
+include_directories(/usr/local/Cellar/openblas/0.2.20_2/include/)
+link_directories(/usr/local/Cellar/openblas/0.2.20_2/lib/)
 
 
 # link protobuf

@@ -16,7 +16,6 @@ limitations under the License. */
 #include <vector>
 #include "tensor.h"
 #include "memory/t_malloc.h"
-#include "tensor_impl.h"
 #include "framework.pb.h"
 #include "tensor.h"
 #include "platform/data_type.h"

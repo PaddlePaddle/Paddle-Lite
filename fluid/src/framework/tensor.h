@@ -29,6 +29,46 @@ namespace paddle_mobile {
 
     namespace framework {
 
+        template <typename... T>
+        struct SizeOfTypeFunctor;
+
+        template <typename T>
+        struct SizeOfTypeFunctor<T> {
+            size_t operator()(std::type_index type) const {
+                if (typeid(T).hash_code() == type.hash_code()) {
+                    return sizeof(T);
+                } else {
+                    return 0UL;
+                }
+            }
+        };
+
+        template <>
+        struct SizeOfTypeFunctor<> {
+            size_t operator()(std::type_index type) const { return 0UL; }
+        };
+
+        template <typename HEAD, typename... TAIL>
+        struct SizeOfTypeFunctor<HEAD, TAIL...> {
+            size_t operator()(std::type_index type) const {
+                SizeOfTypeFunctor<HEAD> head;
+                size_t head_size = head(type);
+                if (head_size != 0) {
+                    return head_size;
+                }
+                SizeOfTypeFunctor<TAIL...> tail;
+                return tail(type);
+            }
+        };
+
+        static inline size_t SizeOfType(std::type_index type) {
+            SizeOfTypeFunctor<int, float, double, int16_t, int64_t, bool, size_t>
+                    functor;
+            size_t size = functor(type);
+//  PADDLE_ENFORCE(size != 0UL, "Cannot get size of type %s", type.name());
+            return size;
+        }
+
         class LoDTensor;
 
         class Tensor {
@@ -38,13 +78,32 @@ namespace paddle_mobile {
 
             /*! Return a pointer to mutable memory block. */
             template <typename T>
-            inline T* data();
+            inline T* data() {
+                check_memory_size();
+//  PADDLE_ENFORCE(std::is_same<T, void>::value ||
+//                     holder_->type().hash_code() == typeid(T).hash_code(),
+//                 "Tensor holds the wrong type, it holds %s",
+//                 this->holder_->type().name());
+                return reinterpret_cast<T*>(reinterpret_cast<uintptr_t>(holder_->ptr()) +
+                                            offset_);
+            }
 
             /*! Return a pointer to constant memory block. */
             template <typename T>
-            inline const T* data() const;
+            inline const T* data() const {
+                check_memory_size();
+//  PADDLE_ENFORCE(std::is_same<T, void>::value ||
+//                     holder_->type().hash_code() == typeid(T).hash_code(),
+//                 "Tensor holds the wrong type, it holds %s",
+//                 this->holder_->type().name());
 
-            inline bool IsInitialized() const;
+                return reinterpret_cast<const T*>(
+                        reinterpret_cast<uintptr_t>(holder_->ptr()) + offset_);
+            }
+
+            inline bool IsInitialized() const {
+                return holder_ != nullptr;
+            }
 
 
             /**
@@ -52,11 +111,37 @@ namespace paddle_mobile {
              * @note    If not exist, then allocation.
              */
             template <typename T>
-            inline T* mutable_data();
+            inline T* mutable_data() {
+                static_assert(std::is_pod<T>::value, "T must be POD");
+                return reinterpret_cast<T*>(mutable_data(typeid(T)));
+            }
 
-            inline void* mutable_data( std::type_index type);
+            inline void* mutable_data( std::type_index type) {
+                if (holder_ != nullptr) {
+                    holder_->set_type(type);
+                }
+//  PADDLE_ENFORCE_GE(numel(), 0,
+//                    "When calling this method, the Tensor's numel must be "
+//                    "equal or larger than zero. "
+//                    "Please check Tensor::Resize has been called first.");
+                int64_t size = numel() * SizeOfType(type);
+                /* some versions of boost::variant don't have operator!= */
+                if (holder_ == nullptr ||
+                    holder_->size() < size + offset_) {
+                    holder_.reset(new PlaceholderImpl( size, type));
 
-            inline void* mutable_data();
+                    offset_ = 0;
+                }
+                return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(holder_->ptr()) +
+                                               offset_);
+            }
+
+            inline void* mutable_data() {
+//  PADDLE_ENFORCE(this->holder_ != nullptr,
+//                 "Cannot invoke mutable data if current hold nothing.");
+                    return mutable_data(holder_->type());
+
+            }
 
             /**
              * @brief     Return a pointer to mutable memory block.
@@ -67,19 +152,37 @@ namespace paddle_mobile {
              * @note      If not exist, then allocation.
              */
             template <typename T>
-            inline T* mutable_data(DDim dims);
+            inline T* mutable_data(DDim dims) {
+                static_assert(std::is_pod<T>::value, "T must be POD");
+                Resize(dims);
+                return mutable_data<T>();
+
+            }
 
             /*! Return the dimensions of the memory block. */
-            inline const DDim& dims() const;
+            inline const DDim& dims() const {
+                return dims_;
+            }
 
             /*! Return the numel of the memory block. */
-            inline int64_t numel() const;
+            inline int64_t numel() const {
+                return product(dims_);
+            }
 
             /*! Resize the dimensions of the memory block. */
-            inline Tensor& Resize(const DDim& dims);
+            inline Tensor& Resize(const DDim& dims) {
+                dims_ = dims;
+                return *this;
+
+            }
 
             /*! The internal of two tensors share the same memory block. */
-            inline Tensor& ShareDataWith(const Tensor& src);
+            inline Tensor& ShareDataWith(const Tensor& src) {
+                src.check_memory_size();
+                *this = src;
+                return *this;
+            }
+
 
             /**
              * @brief  Return a sub-tensor of the given tensor.
@@ -89,7 +192,29 @@ namespace paddle_mobile {
              * @param[in] end_idx     The index of the end row(exclusive) to slice.
              *                        The index number begins from 0.
              */
-            inline Tensor Slice(int begin_idx, int end_idx) const;
+            inline Tensor Slice(int begin_idx, int end_idx) const {
+                check_memory_size();
+//  PADDLE_ENFORCE_GE(begin_idx, 0,
+//                    "The start row index must be greater than 0.");
+//  PADDLE_ENFORCE_LE(end_idx, dims_[0], "The end row index is out of bound.");
+//  PADDLE_ENFORCE_LT(
+//      begin_idx, end_idx,
+//      "The start row index must be lesser than the end row index.");
+
+                if (dims_[0] == 1) {
+                    return *this;
+                } else {
+                    size_t base = numel() / dims_[0];
+                    Tensor dst;
+                    dst.holder_ = holder_;
+                    dst.set_layout(layout_);
+                    DDim dst_dims = dims_;
+                    dst_dims[0] = end_idx - begin_idx;
+                    dst.Resize(dst_dims);
+                    dst.offset_ = offset_ + begin_idx * base * SizeOfType(type());
+                    return dst;
+                }
+            }
 
             std::type_index type() const {
 //                PADDLE_ENFORCE_NOT_NULL(
@@ -98,13 +223,31 @@ namespace paddle_mobile {
             }
 
             // memory size returns the holding memory size in byte.
-            size_t memory_size() const;
+            size_t memory_size() const {
+                return holder_ == nullptr ? 0UL : holder_->size() - offset_;
 
-            inline void check_memory_size() const;
+            }
+
+            inline void check_memory_size() const {
+//  PADDLE_ENFORCE_NOT_NULL(
+//      holder_, "Tensor holds no memory. Call Tensor::mutable_data first.");
+//  PADDLE_ENFORCE_LE(
+//      numel() * SizeOfType(type()), memory_size(),
+//      "Tensor's dims_ is out of bound. Call Tensor::mutable_data "
+//      "first to re-allocate memory.\n"
+//      "or maybe the required data-type mismatches the data already stored.");
+            }
 
             inline DataLayout layout() const { return layout_; }
 
             inline void set_layout(const DataLayout layout) { layout_ = layout; }
+
+            inline Tensor ReshapeToMatrix(const Tensor& src, int num_col_dims) {
+                Tensor res;
+                res.ShareDataWith(src);
+                res.Resize(flatten_to_2d(src.dims(), num_col_dims));
+                return res;
+            }
 
         private:
             /**
