@@ -17,8 +17,9 @@ SOFTWARE.
 ==============================================================================*/
 
 #include <random>
-#include "../src/framework/tensor.h"
-#include "../src/framework/ddim.h"
+#include "framework/tensor.h"
+#include "framework/ddim.h"
+
 template <typename T>
 void SetupTensor(paddle_mobile::framework::Tensor* input,
                  paddle_mobile::framework::DDim dims, T lower, T upper) {
