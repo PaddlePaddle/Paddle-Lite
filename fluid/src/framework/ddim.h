@@ -29,9 +29,38 @@ namespace framework {
  * The number of dimensions must be between [1, 9].
  */
 struct DDim {
-  typedef Variant<Dim<0>, Dim<1>, Dim<2>, Dim<3>, Dim<4>, Dim<5>, Dim<6>,Dim<7>, Dim<8>, Dim<9>> DDimVar;
-  DDimVar var;
+    typedef Variant<Dim<0>, Dim<1>, Dim<2>, Dim<3>, Dim<4>, Dim<5>, Dim<6>,Dim<7>, Dim<8>, Dim<9>> DDimVar;
+    DDimVar var;
 
+    template <typename Vistor>
+    static typename Vistor::type_t ApplyVistor(Vistor vistor, const DDim &d){
+      if (d.var.TypeId() == typeid(Dim<0>).hash_code()) {
+        return vistor(d.var.Get<Dim<0>>());
+      } else if (d.var.TypeId() == typeid(Dim<1>).hash_code()){
+        return vistor(d.var.Get<Dim<1>>());
+      } else if (d.var.TypeId() == typeid(Dim<2>).hash_code()){
+        return vistor(d.var.Get<Dim<2>>());
+      } else if (d.var.TypeId() == typeid(Dim<3>).hash_code()){
+        return vistor(d.var.Get<Dim<3>>());
+      } else if (d.var.TypeId() == typeid(Dim<4>).hash_code()){
+        return vistor(d.var.Get<Dim<4>>());
+      } else if (d.var.TypeId() == typeid(Dim<5>).hash_code()){
+        return vistor(d.var.Get<Dim<5>>());
+      } else if (d.var.TypeId() == typeid(Dim<6>).hash_code()){
+        return vistor(d.var.Get<Dim<6>>());
+      } else if (d.var.TypeId() == typeid(Dim<7>).hash_code()){
+        return vistor(d.var.Get<Dim<7>>());
+      } else if (d.var.TypeId() == typeid(Dim<8>).hash_code()){
+        return vistor(d.var.Get<Dim<8>>());
+      } else if (d.var.TypeId() == typeid(Dim<9>).hash_code()){
+        return vistor(d.var.Get<Dim<9>>());
+      } else {
+        printf(" dim not support \n");
+        throw std::bad_exception();
+//        return typename Vistor::type_t();
+
+      }
+    }
   DDim() {
     var.Set<Dim<1>>(Dim<1>());
   }

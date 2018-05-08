@@ -89,41 +89,40 @@ DDim make_ddim(const std::vector<int>& dims) {
 
 /// @cond HIDDEN
 // XXX For some reason, putting this in an anonymous namespace causes errors
-//class DynamicMutableIndexer : public boost::static_visitor<int64_t&> {
-// public:
-//  explicit DynamicMutableIndexer(int idx) : idx_(idx) {}
-//
-//  template <int D>
-//  int64_t& operator()(Dim<D>& dim) const {
-//    return dim[idx_];
-//  }
-//
-// private:
-//  int idx_;
-//};
-//
-//class DynamicConstIndexer : public boost::static_visitor<int64_t> {
-// public:
-//  explicit DynamicConstIndexer(int idx) : idx_(idx) {}
-//
-//  template <int D>
-//  int64_t operator()(const Dim<D>& dim) const {
-//    return dim[idx_];
-//  }
-//
-// private:
-//  int idx_;
-//};
+struct DynamicMutableIndexer : Vistor<int64_t&> {
+ public:
+  explicit DynamicMutableIndexer(int idx) : idx_(idx) {}
+
+  template <int D>
+  int64_t& operator()(Dim<D>& dim) const {
+    return dim[idx_];
+  }
+
+ private:
+  int idx_;
+};
+
+struct DynamicConstIndexer : public Vistor<int64_t> {
+ public:
+  explicit DynamicConstIndexer(int idx) : idx_(idx) {}
+
+  template <int D>
+  int64_t operator()(const Dim<D>& dim) const {
+    return dim[idx_];
+  }
+
+ private:
+  int idx_;
+};
 
 /// @endcond
 
 int64_t& DDim::operator[](int idx) {
-
-  return var.Get<Dim<4>>()[idx];
+  return DDim::ApplyVistor(DynamicMutableIndexer(idx), *this);
 }
 
 int64_t DDim::operator[](int idx) const {
-  return var.Get<Dim<4>>()[idx];
+  return DDim::ApplyVistor(DynamicConstIndexer(idx), *this);
 }
 
 int DDim::size() const { return arity(*this); }
@@ -182,7 +181,7 @@ int64_t get(const DDim& ddim, int idx) { return ddim[idx]; }
 void set(DDim& ddim, int idx, int value) { ddim[idx] = value; }
 
 /// @cond HIDDEN
-struct VectorizeVisitor {
+struct VectorizeVisitor : Vistor<void>{
   std::vector<int64_t>& vector;
 
   explicit VectorizeVisitor(std::vector<int64_t>& v) : vector(v) {}
@@ -200,8 +199,7 @@ struct VectorizeVisitor {
 std::vector<int64_t> vectorize(const DDim& ddim) {
   std::vector<int64_t> result;
   VectorizeVisitor visitor(result);
-  visitor(ddim.var.Get<Dim<4>>());
-
+  DDim::ApplyVistor(visitor, ddim);
   return result;
 }
 
@@ -213,7 +211,7 @@ std::vector<int> vectorize2int(const DDim& ddim) {
   return result;
 }
 
-struct ProductVisitor{
+struct ProductVisitor: Vistor<int64_t>{
   template <int D>
   int64_t operator()(const Dim<D>& dim) {
     return product(dim);
@@ -222,11 +220,10 @@ struct ProductVisitor{
 
 int64_t product(const DDim& ddim) {
   ProductVisitor visitor;
-  return visitor(ddim.var.Get<Dim<4>>());
-//  return boost::apply_visitor(visitor, ddim);
+  return DDim::ApplyVistor(visitor, ddim);
 }
 
-struct SliceVectorizeVisitor {
+struct SliceVectorizeVisitor: Vistor<void>{
   std::vector<int64_t>& vector;
   int begin;
   int end;
@@ -262,13 +259,14 @@ DDim slice_ddim(const DDim& ddim, int begin, int end) {
   vec.reserve(end - begin);
   SliceVectorizeVisitor visitor(vec, begin, end);
 //  boost::apply_visitor(visitor, dim);
-  visitor(ddim.var.Get<Dim<4>>());
+  DDim::ApplyVistor(visitor, ddim);
+//  visitor(ddim.var.Get<Dim<4>>());
   return make_ddim(vec);
 }
 
 /// \cond HIDDEN
 
-struct ArityVisitor {
+struct ArityVisitor : Vistor<int>{
   template <int D>
   int operator()(Dim<D>) const {
     return D;
@@ -279,7 +277,8 @@ struct ArityVisitor {
 
 int arity(const DDim& d) {
   ArityVisitor arityVisitor = ArityVisitor();
-  return arityVisitor(d.var.Get<Dim<4>>());
+  return DDim::ApplyVistor(arityVisitor, d);
+//  return arityVisitor(d.var.Get<Dim<4>>());
 //  return boost::apply_visitor(ArityVisitor(), d); }
   }
 /// \cond HIDDEN

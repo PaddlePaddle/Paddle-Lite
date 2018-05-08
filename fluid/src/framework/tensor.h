@@ -26,9 +26,7 @@ limitations under the License. */
 
 
 namespace paddle_mobile {
-
     namespace framework {
-
         template <typename... T>
         struct SizeOfTypeFunctor;
 
@@ -70,7 +68,6 @@ namespace paddle_mobile {
         }
 
         class LoDTensor;
-
         class Tensor {
         public:
             Tensor() : offset_(0) {}

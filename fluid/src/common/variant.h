@@ -80,12 +80,21 @@ namespace paddle_mobile{
 
         template<typename T>
         T& Get() const {
-            if (type_id == typeid(T).hash_code())
+            if (type_id == typeid(T).hash_code()){
                 return *const_cast<T*>(reinterpret_cast<const T*>(&data));
-            else
+            } else {
+                std::cout << " bad cast in variant " << std::endl;
                 throw std::bad_cast();
+            }
         }
 
+        size_t TypeId() const {
+            return type_id;
+        }
+
+        size_t TypeId() {
+            return type_id;
+        }
     private:
         static inline size_t invalid_type() {
             return typeid(void).hash_code();
@@ -94,5 +103,12 @@ namespace paddle_mobile{
         size_t type_id;
         RawData<helper::size> data;
     };
+
+    template <typename T>
+    struct Vistor{
+        typedef T type_t;
+    };
+
+
 }
 
