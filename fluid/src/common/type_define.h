@@ -15,46 +15,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
+#pragma once;
 
-#pragma once
+#include <map>
+#include <string>
 
-#include "framework.pb.h"
-#include "common/type_define.h"
-#include "paddle_mobile_object.h"
+#include "framework/attribute.h"
 
 namespace paddle_mobile{
 
-namespace framework{
+using VariableNameMap = std::map<std::string, std::vector<std::string> >;
 
-class OpDesc: PaddleMobileObject{
-public:
-  OpDesc(const proto::OpDesc &desc);
-  const std::vector<std::string> &Input(const std::string &name) const;
-  const std::vector<std::string> &Output(const std::string &name) const;
-  Attribute GetAttr(const std::string &name) const;
+//using AttributeMap = std::unordered_map<std::string, framework::Attribute>;
 
-  const VariableNameMap &GetInputs(){
-    return inputs_;
-  }
-
-  const VariableNameMap &GetOutputs(){
-    return outputs_;
-  }
-
-  const AttributeMap &GetAttrMap() const;
-
-  const std::string& Type(){
-    return desc_.type();
-  };
-
-private:
-  proto::OpDesc desc_;
-  VariableNameMap inputs_;
-  VariableNameMap outputs_;
-  AttributeMap attrs_;
 };
-
-}
-
-}
-

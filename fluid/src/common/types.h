@@ -19,75 +19,75 @@ SOFTWARE.
 #pragma once;
 
 namespace paddle_mobile{
-    enum class Precision : int{
-        FP32 = 0
-    };
+  enum class Precision : int{
+      FP32 = 0
+  };
 
-    //! device type
-    enum DeviceTypeEnum{
-        eINVALID = -1,
-        eARM   = 0,
-        eCPU   = 1,
-        eFPGA  = 2
-    };
+  //! device type
+  enum DeviceTypeEnum{
+      eINVALID = -1,
+      eARM   = 0,
+      eCPU   = 1,
+      eFPGA  = 2
+  };
 
-    template <DeviceTypeEnum T>
-    struct DeviceType{};
+  template <DeviceTypeEnum T>
+  struct DeviceType{};
 
-    typedef DeviceType<eARM>    ARM;
-    typedef DeviceType<eCPU>    CPU;
-    typedef DeviceType<eFPGA>   FPGA;
+  typedef DeviceType<eARM>    ARM;
+  typedef DeviceType<eCPU>    CPU;
+  typedef DeviceType<eFPGA>   FPGA;
 
-    struct __invalid_type{};
+  struct __invalid_type{};
 
 
-    //! data_layout type
-    struct W{};
-    struct HW{};
-    struct WH{};
-    struct NW{};
-    struct NHW{};
-    struct NCHW{};
-    struct NHWC{};
-    struct NCHW_C4{};
+  //! data_layout type
+  struct W{};
+  struct HW{};
+  struct WH{};
+  struct NW{};
+  struct NHW{};
+  struct NCHW{};
+  struct NHWC{};
+  struct NCHW_C4{};
 
-    //! dim type
-    struct D5{};
-    struct D4{};
-    struct D3{};
-    struct D2{};
-    struct D1{};
+  //! dim type
+  struct D5{};
+  struct D4{};
+  struct D3{};
+  struct D2{};
+  struct D1{};
 
-    //! data type
-    enum DataType {
-        PM_INVALID      =       -1,
-        PM_HALF         =       0,
-        PM_FLOAT        =       1,
-        PM_DOUBLE       =       2,
-        PM_INT8         =       3,
-        PM_INT16        =       4,
-        PM_INT32        =       5,
-        PM_INT64        =       6,
-        PM_UINT8        =       7,
-        PM_UINT16       =       8,
-        PM_UINT32       =       9,
-        PM_STRING       =       10,
-        PM_BOOL         =       11,
-        PM_SHAPE        =       12,
-        PM_TENSOR       =       13
-    };
-    //!
-    typedef enum {
-        PMSuccess         = -1,                             /*!< No errors */
-        PMNotInitialized  = 1,                              /*!< Data not initialized. */
-        PMInvalidValue    = (1 << 1) + PMNotInitialized, /*!< Incorrect variable value. */
-        PMMemAllocFailed  = (1 << 2) + PMInvalidValue,   /*!< Memory allocation error. */
-        PMUnKownError     = (1 << 3) + PMMemAllocFailed, /*!< Unknown error. */
-        PMOutOfAuthority  = (1 << 4) + PMUnKownError,    /*!< Try to modified data not your own*/
-        PMOutOfMem        = (1 << 5) + PMOutOfAuthority, /*!< OOM error*/
-        PMUnImplError     = (1 << 6) + PMOutOfMem,       /*!< Unimplement error. */
-        PMWrongDevice     = (1 << 7) + PMUnImplError     /*!< un-correct device. */
-    } PMStatus;
+  //! data type
+  enum DataType {
+      PM_INVALID      =       -1,
+      PM_HALF         =       0,
+      PM_FLOAT        =       1,
+      PM_DOUBLE       =       2,
+      PM_INT8         =       3,
+      PM_INT16        =       4,
+      PM_INT32        =       5,
+      PM_INT64        =       6,
+      PM_UINT8        =       7,
+      PM_UINT16       =       8,
+      PM_UINT32       =       9,
+      PM_STRING       =       10,
+      PM_BOOL         =       11,
+      PM_SHAPE        =       12,
+      PM_TENSOR       =       13
+  };
+  //!
+  typedef enum {
+      PMSuccess         = -1,                             /*!< No errors */
+      PMNotInitialized  = 1,                              /*!< Data not initialized. */
+      PMInvalidValue    = (1 << 1) + PMNotInitialized, /*!< Incorrect variable value. */
+      PMMemAllocFailed  = (1 << 2) + PMInvalidValue,   /*!< Memory allocation error. */
+      PMUnKownError     = (1 << 3) + PMMemAllocFailed, /*!< Unknown error. */
+      PMOutOfAuthority  = (1 << 4) + PMUnKownError,    /*!< Try to modified data not your own*/
+      PMOutOfMem        = (1 << 5) + PMOutOfAuthority, /*!< OOM error*/
+      PMUnImplError     = (1 << 6) + PMOutOfMem,       /*!< Unimplement error. */
+      PMWrongDevice     = (1 << 7) + PMUnImplError     /*!< un-correct device. */
+  } PMStatus;
 
 
 }

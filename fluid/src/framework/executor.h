@@ -21,59 +21,68 @@ SOFTWARE.
 #include <map>
 #include <string>
 #include <vector>
-#include "program_desc.h"
+
 #include "scope.h"
-#include "variable.h"
 #include "tensor.h"
+#include "program.h"
+#include "variable.h"
 #include "operator.h"
+#include "block_desc.h"
 #include "framework.pb.h"
+#include "program_desc.h"
 
 namespace paddle_mobile {
-    namespace framework {
-        extern void InitializeVariable(Variable *var, proto::VarType::Type var_type);
 
-        template <typename Dtype>
-        struct ExecutorPrepareContext {
-            ExecutorPrepareContext(const framework::ProgramDesc &prog, size_t block_id);
+namespace framework {
 
-            ~ExecutorPrepareContext();
+extern void InitializeVariable(Variable *var, proto::VarType::Type var_type);
 
-            const framework::ProgramDesc &prog_;
-            size_t block_id_;
-            std::vector<std::unique_ptr<OperatorBase<Dtype>> > ops_;
-        };
+template <typename Dtype>
+struct ExecutorPrepareContext {
+  ExecutorPrepareContext(const framework::ProgramDesc &prog, size_t block_id);
+  ~ExecutorPrepareContext();
+  const framework::ProgramDesc &prog_;
+  size_t block_id_;
+  std::vector<std::unique_ptr<OperatorBase<Dtype>> > ops_;
+};
 
-        template <typename Dtype>
-        class Executor {
-        public:
-            explicit Executor();
+template <typename Dtype>
+class Executor {
+public:
+  explicit Executor();
 
-            /* @Brief
-             * Runtime evaluation of the given ProgramDesc under certain Scope
-             *
-             * @param
-             *  ProgramDesc
-             *  Scope
-             */
-            void Run(const ProgramDesc &prog, Scope *scope, int block_id,
-                     bool create_local_scope = true, bool create_vars = true);
+  Executor(const Program<Dtype> p);
 
-
-            static std::unique_ptr<ExecutorPrepareContext<Dtype>> Prepare(
-                    const ProgramDesc &program, int block_id);
-
-            static std::vector<std::shared_ptr<ExecutorPrepareContext<Dtype> > > Prepare(
-                    const ProgramDesc &program, const std::vector<int> &block_ids);
-
-            void CreateVariables(const ProgramDesc &pdesc, Scope *scope, int block_id);
-
-            void RunPreparedContext(ExecutorPrepareContext<Dtype> *ctx, Scope *scope,
-                                    bool create_local_scope = true,
-                                    bool create_vars = true);
+  /* @Brief
+   * Runtime evaluation of the given ProgramDesc under certain Scope
+   *
+   * @param
+   *  ProgramDesc
+   *  Scope
+   */
+  void Run(const ProgramDesc &prog, Scope *scope, int block_id,
+           bool create_local_scope = true, bool create_vars = true);
 
 
-        };
-    } // namesapce framework
+  static std::unique_ptr<ExecutorPrepareContext<Dtype>> Prepare(
+          const ProgramDesc &program, int block_id);
 
+  static std::vector<std::shared_ptr<ExecutorPrepareContext<Dtype> > > Prepare(
+          const ProgramDesc &program, const std::vector<int> &block_ids);
+
+  void CreateVariables(const ProgramDesc &pdesc, Scope *scope, int block_id);
+
+  void RunPreparedContext(ExecutorPrepareContext<Dtype> *ctx, Scope *scope,
+                          bool create_local_scope = true,
+                          bool create_vars = true);
+
+private:
+  const framework::Program<Dtype> program_;
+//  std::map<framework::BlockDesc, std::shared_ptr<OperatorBase> > ops_;
+  bool use_optimize_ = false;
+
+};
+
+} // namesapce framework
 
 }  // namespace paddle_mobile

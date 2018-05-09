@@ -28,16 +28,14 @@ SOFTWARE.
 #include "common/types.h"
 #include "common/variant.h"
 #include "op_kernel_type.h"
-#include "paddle_mobile_object.h"
 #include "shape_inference.h"
+#include "common/type_define.h"
+#include "paddle_mobile_object.h"
 
 namespace paddle_mobile {
 namespace framework {
     /// If a variable is a empty variable, that name will be used.
     constexpr char kEmptyVarName[] = "@EMPTY@";
-
-    using VariableNameMap = std::map<std::string, std::vector<std::string> >;
-    using AttributeMap = std::unordered_map<std::string, Attribute>;
 
     template <typename Dtype>
     class ExecutionContext;
