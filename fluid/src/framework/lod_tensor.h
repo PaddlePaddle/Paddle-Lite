@@ -20,15 +20,9 @@ limitations under the License. */
 #include <vector>
 #include "tensor.h"
 #include "tensor_util.h"
-#include "recordio/scanner.h"
-#include "recordio/writer.h"
 
 namespace paddle_mobile {
 
-namespace recordio {
-class Writer;
-class Scanner;
-}
 
 namespace framework {
 
@@ -204,11 +198,11 @@ void AppendLoD(LoD* lod, const LoD& lod_length);
 void SerializeToStream(std::ostream& os, const LoDTensor& tensor);
 void DeserializeFromStream(std::istream& is, LoDTensor* tensor);
 
-extern void WriteToRecordIO(recordio::Writer* writer,
-                            const std::vector<LoDTensor>& tensor);
-
-extern std::vector<LoDTensor> ReadFromRecordIO(
-    recordio::Scanner* scanner);
+//extern void WriteToRecordIO(recordio::Writer* writer,
+//                            const std::vector<LoDTensor>& tensor);
+//
+//extern std::vector<LoDTensor> ReadFromRecordIO(
+//    recordio::Scanner* scanner);
 
 }  // namespace framework
 }  // namespace paddle

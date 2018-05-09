@@ -285,32 +285,6 @@ void DeserializeFromStream(std::istream &is, LoDTensor *tensor) {
   TensorFromStream(is, static_cast<Tensor *>(tensor));
 }
 
-void WriteToRecordIO(recordio::Writer *writer,
-                     const std::vector<LoDTensor> &tensor) {
-  std::stringstream buffer;
-  size_t sz = tensor.size();
-  buffer.write(reinterpret_cast<const char *>(&sz), sizeof(uint32_t));
-  for (auto &each : tensor) {
-    SerializeToStream(buffer, each);
-  }
-  writer->Write(buffer.str());
-}
-
-std::vector<LoDTensor> ReadFromRecordIO(
-    recordio::Scanner *scanner) {
-  std::vector<LoDTensor> result;
-  if (scanner->HasNext()) {
-    std::istringstream sin(scanner->Next());
-    uint32_t sz;
-    sin.read(reinterpret_cast<char *>(&sz), sizeof(uint32_t));
-    result.resize(sz);
-    for (uint32_t i = 0; i < sz; ++i) {
-      DeserializeFromStream(sin, &result[i]);
-    }
-  }
-  return result;
-}
-
 std::vector<LoDTensor> LoDTensor::SplitLoDTensor() const {
   check_memory_size();
   int batch_size =

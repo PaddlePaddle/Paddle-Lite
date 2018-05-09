@@ -22,18 +22,13 @@ link_directories(/usr/local/Cellar/openblas/0.2.20_2/lib/)
 include_directories(third-party/protobuf/include)
 link_directories(third-party/protobuf/lib)
 
-# link zlib
-include_directories(third-party/zlib/include)
-link_directories(third-party/zlib/lib)
-
-
 # gen so
 ADD_LIBRARY(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
-target_link_libraries(paddle-mobile protobuf-lite zlib openblasp-r0.2.20)
+target_link_libraries(paddle-mobile protobuf-lite openblasp-r0.2.20)
 
 # gen static
 ADD_LIBRARY(paddle-mobile-static STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
-target_link_libraries(paddle-mobile-static protobuf-lite zlib openblasp-r0.2.20)
+target_link_libraries(paddle-mobile-static protobuf-lite openblasp-r0.2.20)
 
 # gen test
 ADD_EXECUTABLE(paddle-mobile-test test/main.cpp test/test_helper.h)

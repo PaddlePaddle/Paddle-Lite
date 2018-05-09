@@ -256,9 +256,7 @@ namespace paddle_mobile {
                 virtual void* ptr() const = 0;
                 virtual size_t size() const = 0;
                 virtual std::type_index type() const = 0;
-//                virtual platform::Place place() const = 0;
                 virtual void set_type(std::type_index type) = 0;
-//                virtual void set_place(platform::Place place) = 0;
             };
 
             struct PlaceholderImpl : public Placeholder {
@@ -305,7 +303,7 @@ namespace paddle_mobile {
              *       used layout. They are
              *            NCHW, NHWC, CHWN.
              *       N,C,H,W for respectively the batch size, the number of
-             *       feature maps, the height.
+             *       feature maps, the height, the width.
              */
 
             DataLayout layout_ = DataLayout::kNHWC;
