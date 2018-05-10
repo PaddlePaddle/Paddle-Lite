@@ -31,34 +31,46 @@ SOFTWARE.
 #include "shape_inference.h"
 #include "common/type_define.h"
 #include "paddle_mobile_object.h"
+#include "op_info.h"
 
 namespace paddle_mobile {
 namespace framework {
     /// If a variable is a empty variable, that name will be used.
     constexpr char kEmptyVarName[] = "@EMPTY@";
 
+    /// If a variable is a temporary variable, that name will be set in Python,
+    /// but it will be convert to a unique name in scope after OpCreator.
+    constexpr char kTempVarName[] = "@TEMP@";
+
     template <typename Dtype>
     class ExecutionContext;
 
     template <typename Dtype>
-    class OperatorBase: PaddleMobileObject{
+    class OperatorBase: PaddleMobileObject {
     public:
         OperatorBase(const std::string& type, const VariableNameMap& inputs,
                      const VariableNameMap& outputs, const AttributeMap & attrs);
         virtual ~OperatorBase() {}
+
+        template <typename T>
+        inline const T& Attr(const std::string& name) const {
+//            PADDLE_ENFORCE(attrs_.count(name) != 0, "%s should be in AttributeMap",
+//                           name);
+            return ((Attribute)attrs_.at(name)).Get<T>();
+        }
+
         /// Net will call this interface function to Run an op.
         //  The implementation should be written at RunImpl
         virtual void Run(const Scope& scope);
 
-        template <typename T>
-        inline const T& Attr(const std::string& name) const;
-
         const VariableNameMap& Inputs() const { return inputs_; }
         const VariableNameMap& Outputs() const { return outputs_; }
+
         //! Get a input with argument's name described in `op_proto`
         std::string Input(const std::string& name) const;
         //! Get a input which has multiple variables.
         const std::vector<std::string>& Inputs(const std::string& name) const;
+
         std::vector<std::string> InputVars() const;
 
         //! Get a output with argument's name described in `op_proto`
@@ -66,11 +78,16 @@ namespace framework {
         //! Get an output which has multiple variables.
         //! TODO add a vector_view to prevent memory copy.
         const std::vector<std::string>& Outputs(const std::string& name) const;
+
         virtual std::vector<std::string> OutputVars(bool has_intermediate) const;
 
         const std::string& Type() const { return type_; }
         void SetType(const std::string& type) { type_ = type; }
         const AttributeMap& Attrs() const { return attrs_; }
+
+        // Return a new operator instance, which is as same as this.
+        // Use unique_ptr to prevent caller forget to delete this pointer.
+        virtual std::unique_ptr<OperatorBase> Clone() const = 0;
 
     protected:
         std::string type_;
@@ -85,18 +102,32 @@ namespace framework {
         VariableNameMap outputs_;
         AttributeMap attrs_;
     private:
+        void GenerateTemporaryNames();
         void CheckAllInputOutputSet() const;
+        virtual void RunImpl(const Scope& scope) const = 0;
     };
 
     template <typename Dtype>
     class OperatorWithKernel : public OperatorBase<Dtype>{
     public:
-        virtual void Run(const Scope& scope){}
+        class OpKernelBase;
+        using OpKernelMap =
+        std::unordered_map<OpKernelType, std::unique_ptr<OpKernelBase>,
+                OpKernelType::Hash>;
+
         OperatorWithKernel(const std::string& type, const VariableNameMap& inputs,
                            const VariableNameMap& outputs, const AttributeMap& attrs)
                 : OperatorBase<Dtype>(type, inputs, outputs, attrs) {}
 
-        virtual void InferShape(InferShapeContext* ctx) const {};
+        static std::unordered_map<std::string /* op_type */, OpKernelMap>&
+        AllOpKernels() {
+            static std::unordered_map<std::string, OpKernelMap> g_all_op_kernels;
+            return g_all_op_kernels;
+        }
+
+        virtual void InferShape(InferShapeContext* ctx) const {
+            OpInfoMap<Dtype>::Instance().Get(OperatorBase<Dtype>::Type()).infer_shape_(ctx);
+        }
 
     protected:
         virtual OpKernelType GetExpectedKernelType(const ExecutionContext<Dtype>& ctx) const;
@@ -104,6 +135,10 @@ namespace framework {
                 const std::string& var_name, const Tensor& tensor,
                 const OpKernelType& expected_kernel_type) const;
     private:
+        // indicate kernel DataType by input data. By default all input data must be
+        // same.
+        proto::VarType::Type IndicateDataType(const ExecutionContext<Dtype>& ctx) const;
+        void RunImpl(const Scope& scope) const final;
     };
 
 

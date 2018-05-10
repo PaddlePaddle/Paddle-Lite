@@ -15,34 +15,27 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
-#pragma once;
 
-#include <map>
-#include <string>
-#include "framework/attribute.h"
+#pragma once
+
+#include <functional>
+#include <utility>
+#include <vector>
+
+#include "op_kernel_type.h"
+#include "selected_rows.h"
+#include "tensor.h"
+#include "variable.h"
 
 namespace paddle_mobile {
 namespace framework {
-    template <typename Dtype>
-    class OperatorBase;
-    class OpDesc;
-    class BlockDesc;
-    class InferShapeContext;
-}
-    using VariableNameMap = std::map<std::string, std::vector<std::string> >;
 
-    template <typename Dtype>
-    using OpCreator = std::function<framework::OperatorBase<Dtype>*(
-            const std::string& /*type*/, const VariableNameMap& /*inputs*/,
-            const VariableNameMap& /*outputs*/, const framework::AttributeMap& /*attrs*/)>;
+    void DataTransform(const OpKernelType& expected_kernel_type,
+                       const OpKernelType& kernel_type_for_var,
+                       const Tensor& input_tensor, Tensor* out);
 
-    using GradOpMakerFN = std::function<std::vector<std::unique_ptr<framework::OpDesc>>(
-            const framework::OpDesc&, const std::unordered_set<std::string>& /*no_grad_set*/,
-            std::unordered_map<std::string, std::string>* /*grad_to_var*/,
-    const std::vector<framework::BlockDesc*>& grad_block)>;
+    void CopyVariableWithTensor(const Variable& in_var, const Tensor& tensor,
+                                Variable& out_var);
 
-    using InferVarTypeFN =
-    std::function<void(const framework::OpDesc& /*op_desc*/, framework::BlockDesc* /*block*/)>;
-
-    using InferShapeFN = std::function<void(framework::InferShapeContext*)>;
-};
+}  // namespace framework
+}  // namespace paddle

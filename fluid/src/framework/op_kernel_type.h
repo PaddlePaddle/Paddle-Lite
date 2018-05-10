@@ -49,5 +49,15 @@ namespace framework {
 
         bool operator!=(const OpKernelType& o) const { return !(*this == o); }
     };
+
+    inline bool NeedTransformLayout(const DataLayout& l, const DataLayout& r) {
+        return l != DataLayout::kAnyLayout && r != DataLayout::kAnyLayout && l != r;
+    }
+
+    inline bool TransFromNeeded(const OpKernelType& l, const OpKernelType& r) {
+        return (l.data_type_ != r.data_type_) ||
+               NeedTransformLayout(l.data_layout_, r.data_layout_);
+    }
+
 } // framework
 } // paddle_mobile

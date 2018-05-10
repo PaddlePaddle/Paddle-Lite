@@ -13,9 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "shape_inference.h"
-#include <algorithm>
-#include <string>
-#include <vector>
 #include "operator.h"
 
 namespace paddle_mobile {
