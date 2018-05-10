@@ -22,6 +22,7 @@ SOFTWARE.
 #include "framework/operator.h"
 #include "framework/op_proto_maker.h"
 #include "framework/shape_inference.h"
+#include "framework/data_type.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -83,37 +84,38 @@ void ConvOp<Dtype, T>::InferShape(framework::InferShapeContext* ctx) const {
     ctx->ShareLoD("Input", "Output");
 }
 
-//framework::OpKernelType ConvOp::GetExpectedKernelType(
-//        const framework::ExecutionContext& ctx) const {
-////#ifdef PADDLE_WITH_CUDA
-////    if (platform::CanCUDNNBeUsed(ctx)) {
-////library = framework::LibraryType::kCUDNN;
-////}
-////#endif
-////#ifdef PADDLE_WITH_MKLDNN
-////    if (library == framework::LibraryType::kPlain &&
-////platform::CanMKLDNNBeUsed(ctx)) {
-////library = framework::LibraryType::kMKLDNN;
-////}
-////#endif
-//
-//    auto input_data_type =
-//            framework::ToDataType(ctx.Input<Tensor>("Input")->type());
-//    auto filter_data_type =
-//            framework::ToDataType(ctx.Input<Tensor>("Filter")->type());
-////    PADDLE_ENFORCE_EQ(input_data_type, filter_data_type,
-////                      "input and filter data type should be consistent");
-//
-////    if (input_data_type == framework::proto::VarType::FP16) {
-////        PADDLE_ENFORCE_EQ(library, framework::LibraryType::kCUDNN,
-////                          "float16 can only be used when CUDNN is used");
-////    }
-//
-//    std::string data_format = ctx.Attr<std::string>("data_format");
-//    // TODO(pzelazko-intel): enable MKLDNN layout when it's ready
-//    framework::DataLayout layout = framework::StringToDataLayout(data_format);
-//    return framework::OpKernelType(input_data_type, layout);
+template <typename DType, typename T>
+framework::OpKernelType ConvOp<DType, T>::GetExpectedKernelType(
+        const framework::ExecutionContext<DType>& ctx) const {
+//#ifdef PADDLE_WITH_CUDA
+//    if (platform::CanCUDNNBeUsed(ctx)) {
+//library = framework::LibraryType::kCUDNN;
 //}
+//#endif
+//#ifdef PADDLE_WITH_MKLDNN
+//    if (library == framework::LibraryType::kPlain &&
+//platform::CanMKLDNNBeUsed(ctx)) {
+//library = framework::LibraryType::kMKLDNN;
+//}
+//#endif
+
+    auto input_data_type =
+            framework::ToDataType(ctx.template Input<Tensor>("Input")->type());
+    auto filter_data_type =
+            framework::ToDataType(ctx.template Input<Tensor>("Filter")->type());
+//    PADDLE_ENFORCE_EQ(input_data_type, filter_data_type,
+//                      "input and filter data type should be consistent");
+
+//    if (input_data_type == framework::proto::VarType::FP16) {
+//        PADDLE_ENFORCE_EQ(library, framework::LibraryType::kCUDNN,
+//                          "float16 can only be used when CUDNN is used");
+//    }
+
+    std::string data_format = ctx.template Attr<std::string>("data_format");
+    // TODO(pzelazko-intel): enable MKLDNN layout when it's ready
+    framework::DataLayout layout = framework::StringToDataLayout(data_format);
+    return framework::OpKernelType(input_data_type, layout);
+}
 
 } // operators
 } // paddle_mobile

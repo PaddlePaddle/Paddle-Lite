@@ -22,6 +22,7 @@ SOFTWARE.
 #include "op_info.h"
 #include "selected_rows.h"
 #include "data_transform.h"
+#include "var_type.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -291,6 +292,10 @@ namespace framework {
             }
         }
 
+        std::vector<DDim> GetRepeatedDims(const std::string& name) const override {
+//            PADDLE_THROW("Only compile time support this method");
+        }
+
         void SetDim(const std::string& name, const DDim& dim) override {
             Variable* var = scope_.FindVar(name);
             if (var->IsType<LoDTensor>()) {
@@ -301,6 +306,16 @@ namespace framework {
 //                PADDLE_THROW("Variable %s type_id %s, expect LoDTensor/SelectedRows.",
 //                             name, var->Type().name());
             }
+        }
+
+        void SetRepeatedDims(const std::string& name,
+                             const std::vector<DDim>& dims) override {
+//            PADDLE_THROW("Only compile time support this method");
+        }
+
+        proto::VarType::Type GetVarType(const std::string& name) const override {
+            auto* var = scope_.FindVar(name);
+            return ToVarType(var->Type());
         }
 
         InferShapeVarPtr GetVarPtr(const std::string& name) override {

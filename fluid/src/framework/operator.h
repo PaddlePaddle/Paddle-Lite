@@ -87,7 +87,7 @@ namespace framework {
 
         // Return a new operator instance, which is as same as this.
         // Use unique_ptr to prevent caller forget to delete this pointer.
-        virtual std::unique_ptr<OperatorBase> Clone() const = 0;
+//        virtual std::unique_ptr<OperatorBase> Clone() const = 0;
 
     protected:
         std::string type_;
