@@ -15,9 +15,8 @@ limitations under the License. */
 #pragma once
 
 #include <cctype>
-#include <ostream>
 #include <string>
-
+#include <iostream>
 
 namespace paddle_mobile {
 namespace framework {

@@ -43,7 +43,7 @@ Executor<Dtype>::Executor(const Program<Dtype> p): program_(p){
         std::shared_ptr<OpDesc> op = ops[j];
         if (op->Type() == "conv2d") {
           operators::ConvOp<Dtype, int> conv(op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap());
-//          ops_of_block_[*block_desc.get()].push_back(std::make_shared<ConvOp<Dtype> >(conv));
+          ops_of_block_[*block_desc.get()].push_back(std::make_shared<operators::ConvOp<Dtype, int> >(conv));
         }
       }
     }
@@ -75,13 +75,13 @@ std::shared_ptr<Tensor> Executor<Dtype>::predict(Tensor &t){
 
   if (use_optimize_) {
   }else{
-//    for (int i = 0; i < program_.originProgram->Blocks().size(); ++i) {
-//      auto block = program_.originProgram->Blocks()[i];
-//      for (int j = 0; j < ops_of_block_[*block.get()].size(); ++j) {
-//        auto op = ops_of_block_[*block.get()][j];
-//        op->Run(*(program_.scope.get()));
-//      }
-//    }
+    for (int i = 0; i < program_.originProgram->Blocks().size(); ++i) {
+      auto block = program_.originProgram->Blocks()[i];
+      for (int j = 0; j < ops_of_block_[*block.get()].size(); ++j) {
+        auto op = ops_of_block_[*block.get()][j];
+        op->Run(*(program_.scope.get()));
+      }
+    }
   }
 
   return out_tensor;

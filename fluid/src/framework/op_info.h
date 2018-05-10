@@ -19,6 +19,8 @@ SOFTWARE.
 #pragma once
 
 #include "framework.pb.h"
+#include "shape_inference.h"
+#include "common/type_define.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -64,10 +66,23 @@ namespace framework {
 //        const OpAttrChecker* Checker() const { return checker_; }
     };
 
+template <typename Dtype>
+class OpInfoMap;
+
+template <typename DType>
+static OpInfoMap<DType>* g_op_info_map = nullptr;
+
     template <typename Dtype>
     class OpInfoMap {
     public:
-        static OpInfoMap& Instance();
+
+
+      static OpInfoMap& Instance(){
+        if (g_op_info_map<Dtype> == nullptr) {
+            g_op_info_map<Dtype> = new OpInfoMap();
+          }
+          return *g_op_info_map<Dtype>;
+        }
 
         bool Has(const std::string& op_type) const {
             return map_.find(op_type) != map_.end();

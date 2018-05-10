@@ -23,14 +23,7 @@ SOFTWARE.
 namespace paddle_mobile {
 namespace framework {
 
-    static OpInfoMap* g_op_info_map = nullptr;
 
-    template <typename DType>
-    OpInfoMap<DType>& OpInfoMap<DType>::Instance() {
-        if (g_op_info_map == nullptr) {
-            g_op_info_map = new OpInfoMap<DType>();
-        }
-        return *g_op_info_map;
-    }
+
 }  // namespace framework
 }  // namespace paddle

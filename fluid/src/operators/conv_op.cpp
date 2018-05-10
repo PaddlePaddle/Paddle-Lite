@@ -117,5 +117,7 @@ framework::OpKernelType ConvOp<DType, T>::GetExpectedKernelType(
     return framework::OpKernelType(input_data_type, layout);
 }
 
+template class ConvOp<ARM, int>;
+
 } // operators
 } // paddle_mobile

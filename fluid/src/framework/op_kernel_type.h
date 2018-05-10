@@ -18,6 +18,7 @@ SOFTWARE.
 
 #pragma once
 
+#include "data_layout.h"
 #include "framework.pb.h"
 
 namespace paddle_mobile {

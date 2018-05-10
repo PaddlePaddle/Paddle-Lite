@@ -44,7 +44,7 @@ public:
   std::shared_ptr<Tensor> predict(Tensor &t);
 private:
   const framework::Program<Dtype> program_;
-//  std::map<framework::BlockDesc, std::vector<std::shared_ptr<OperatorBase<Dtype>>> > ops_of_block_;
+  std::map<framework::BlockDesc, std::vector<std::shared_ptr<OperatorBase<Dtype> > > > ops_of_block_;
   bool use_optimize_ = false;
 };
 
