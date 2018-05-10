@@ -17,8 +17,9 @@ SOFTWARE.
 ==============================================================================*/
 
 #include "io.h"
-#include "common/types.h"
 #include "test_helper.h"
+#include "framework/executor.h"
+
 //
 //template <typename T>
 //void SetupTensor(paddle::framework::LoDTensor* input,
@@ -34,7 +35,7 @@ SOFTWARE.
 //}
 
 int main(){
-    std::string data_set = "cifar10";
+  std::string data_set = "cifar10";
 //
 //    if (data_set == "cifar10") {
 //        SetupTensor<float>(&input, {FLAGS_batch_size, 3, 32, 32},
@@ -46,18 +47,26 @@ int main(){
 //        LOG(FATAL) << "Only cifar10 or imagenet is supported.";
 //    }
 
-    paddle_mobile::Loader<paddle_mobile::ARM> loader;
-    loader.Load(std::string("../test/models/image_classification_resnet.inference.model"));
-    paddle_mobile::framework::Tensor input;
-    SetupTensor<float>(&input, {1, 3, 32, 32},
-                       static_cast<float>(0), static_cast<float>(1));
-    float* input_ptr = input.data<float>();
-    for(int i = 0; i < input.numel(); ++i){
-        std::cout << input_ptr[i] << std::endl;
-    }
-    std::cout << input.memory_size() << std::endl;
-    std::cout << input.numel() << std::endl;
 
-    return 0;
+  paddle_mobile::Loader<paddle_mobile::ARM> loader;
+  auto program = loader.Load(std::string("../test/models/image_classification_resnet.inference.model"));
+
+  paddle_mobile::framework::Executor<paddle_mobile::ARM> executor(program);
+
+
+
+  paddle_mobile::framework::Tensor input;
+  SetupTensor<float>(&input, {1, 3, 32, 32},
+                     static_cast<float>(0), static_cast<float>(1));
+  float* input_ptr = input.data<float>();
+  for(int i = 0; i < input.numel(); ++i){
+      std::cout << input_ptr[i] << std::endl;
+  }
+  auto output = executor.predict(input);
+
+  std::cout << input.memory_size() << std::endl;
+  std::cout << input.numel() << std::endl;
+
+  return 0;
 }
 

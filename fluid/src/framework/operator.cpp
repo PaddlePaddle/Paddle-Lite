@@ -319,7 +319,9 @@ namespace framework {
         }
 
         InferShapeVarPtr GetVarPtr(const std::string& name) override {
-            return scope_.FindVar(name);
+          InferShapeVarPtr ptr;
+          ptr.Set<Variable*>(scope_.FindVar(name));
+            return ptr;
         }
 
     private:
@@ -420,11 +422,11 @@ namespace framework {
                 if (var != nullptr) {
                     const Tensor* t = nullptr;
                     if (var->template IsType<Tensor>()) {
-                        t = &var->template Get<Tensor>();
+                        t = var->template Get<Tensor>();
                     } else if (var->template IsType<LoDTensor>()) {
-                        t = &var->template Get<LoDTensor>();
+                        t = var->template Get<LoDTensor>();
                     } else if (var->template IsType<SelectedRows>()) {
-                        t = &(var->template Get<SelectedRows>().value());
+                        t = &(var->template Get<SelectedRows>()->value());
                     }
                     if (t != nullptr) {
                         int tmp = static_cast<int>(ToDataType(t->type()));
@@ -451,6 +453,11 @@ namespace framework {
             const OpKernelType& expected_kernel_type) const {
         return OpKernelType(expected_kernel_type.data_type_);
     }
+
+template class OpKernel<ARM>;
+template class OpKernelBase<ARM>;
+template class OperatorBase<ARM>;
+template class OperatorWithKernel<ARM>;
 
 } // framework
 } // paddle_mobile

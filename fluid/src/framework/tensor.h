@@ -14,11 +14,11 @@ limitations under the License. */
 
 #pragma once
 
-#include <cstdint>
-#include <cstring>
 #include <memory>
-#include <typeindex>
 #include <vector>
+#include <cstring>
+#include <cstdint>
+#include <typeindex>
 
 #include "ddim.h"
 #include "data_layout.h"

@@ -19,34 +19,20 @@ SOFTWARE.
 
 #include "executor.h"
 #include "variable.h"
+#include "lod_tensor.h"
 #include "operators/conv_op.h"
+
 
 using std::cout;
 namespace paddle_mobile {
 
 namespace framework {
 
-namespace {
-// block id starts from 0. This id is used to represent the codeblock
-// wrapping the first block 0.
-    int kProgramId = -1;
-}  // namespace
-template <typename Dtype>
-ExecutorPrepareContext<Dtype>::ExecutorPrepareContext(
-        const framework::ProgramDesc &prog, size_t block_id)
-        : prog_(prog), block_id_(block_id) {}
-
-template <typename Dtype>
-ExecutorPrepareContext<Dtype>::~ExecutorPrepareContext() {
-    cout << "destroy ExecutorPrepareContext";
-}
-
 template <typename Dtype>
 Executor<Dtype>::Executor() {}
 
 template <typename Dtype>
 Executor<Dtype>::Executor(const Program<Dtype> p): program_(p){
-
   if (use_optimize_) {
   } else {
     const std::vector<std::shared_ptr<BlockDesc> > blocks = program_.originProgram->Blocks();
@@ -56,52 +42,53 @@ Executor<Dtype>::Executor(const Program<Dtype> p): program_(p){
       for (int j = 0; j < ops.size(); ++j) {
         std::shared_ptr<OpDesc> op = ops[j];
         if (op->Type() == "conv2d") {
-//          operators::ConvOp<Dtype> conv(op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap());
-
+          operators::ConvOp<Dtype, int> conv(op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap());
+//          ops_of_block_[*block_desc.get()].push_back(std::make_shared<ConvOp<Dtype> >(conv));
         }
       }
     }
   }
 }
 
-
-void InitializeVariable(Variable *var, proto::VarType::Type var_type) {
-
-}
-
-static void CheckTensorNANOrInf(const std::string &name,
-                                const Tensor &tensor) {
-
-}
-
 template <typename Dtype>
-void Executor<Dtype>::CreateVariables(const ProgramDesc &pdesc, Scope *scope,
-                               int block_id) {
+std::shared_ptr<Tensor> Executor<Dtype>::predict(Tensor &t){
 
+  // feed
+  auto scope = program_.scope;
+  Variable* g_feed_value = scope->Var("pixel");
+  auto tensor = g_feed_value->GetMutable<LoDTensor>();
+//  tensor->ShareDataWith(t);
+
+  Variable *con_output = scope->Var("conv2d_0.tmp_0");
+
+
+  LoDTensor *output_tensor = con_output->GetMutable<LoDTensor>();
+
+  std::shared_ptr<Tensor> out_tensor = std::make_shared<LoDTensor>();
+  out_tensor.reset(output_tensor);
+
+
+  std::vector<int> ddims{1, 16, 32, 32};
+  DDim ddim = make_ddim(ddims);
+  output_tensor->mutable_data<float>(ddim);
+
+
+  if (use_optimize_) {
+  }else{
+//    for (int i = 0; i < program_.originProgram->Blocks().size(); ++i) {
+//      auto block = program_.originProgram->Blocks()[i];
+//      for (int j = 0; j < ops_of_block_[*block.get()].size(); ++j) {
+//        auto op = ops_of_block_[*block.get()][j];
+//        op->Run(*(program_.scope.get()));
+//      }
+//    }
+  }
+
+  return out_tensor;
 }
 
-template <typename Dtype>
-void Executor<Dtype>::Run(const ProgramDesc &pdesc, Scope *scope, int block_id,
-                   bool create_local_scope, bool create_vars) {
+template class Executor<ARM>;
 
-}
-
-template <typename Dtype>
-std::unique_ptr<ExecutorPrepareContext<Dtype> > Executor<Dtype>::Prepare(
-        const ProgramDesc &program, int block_id) {
-}
-
-template <typename Dtype>
-std::vector<std::shared_ptr<ExecutorPrepareContext<Dtype> > > Executor<Dtype>::Prepare(
-        const ProgramDesc &program, const std::vector<int> &block_ids) {
-
-}
-
-template <typename Dtype>
-void Executor<Dtype>::RunPreparedContext(ExecutorPrepareContext<Dtype> *ctx, Scope *scope,
-                                  bool create_local_scope, bool create_vars) {
-
-}
 
 }
 

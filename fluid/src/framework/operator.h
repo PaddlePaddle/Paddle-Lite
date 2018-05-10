@@ -107,12 +107,14 @@ namespace framework {
         virtual void RunImpl(const Scope& scope) const = 0;
     };
 
+template <typename Dtype>
+class OpKernelBase;
+
     template <typename Dtype>
     class OperatorWithKernel : public OperatorBase<Dtype>{
     public:
-        class OpKernelBase;
         using OpKernelMap =
-        std::unordered_map<OpKernelType, std::unique_ptr<OpKernelBase>,
+        std::unordered_map<OpKernelType, std::unique_ptr<OpKernelBase<Dtype> >,
                 OpKernelType::Hash>;
 
         OperatorWithKernel(const std::string& type, const VariableNameMap& inputs,

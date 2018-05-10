@@ -35,52 +35,17 @@ namespace paddle_mobile {
 
 namespace framework {
 
-extern void InitializeVariable(Variable *var, proto::VarType::Type var_type);
-
-template <typename Dtype>
-struct ExecutorPrepareContext {
-  ExecutorPrepareContext(const framework::ProgramDesc &prog, size_t block_id);
-  ~ExecutorPrepareContext();
-  const framework::ProgramDesc &prog_;
-  size_t block_id_;
-  std::vector<std::unique_ptr<OperatorBase<Dtype>> > ops_;
-};
-
 template <typename Dtype>
 class Executor {
 public:
   explicit Executor();
 
   Executor(const Program<Dtype> p);
-
-  /* @Brief
-   * Runtime evaluation of the given ProgramDesc under certain Scope
-   *
-   * @param
-   *  ProgramDesc
-   *  Scope
-   */
-  void Run(const ProgramDesc &prog, Scope *scope, int block_id,
-           bool create_local_scope = true, bool create_vars = true);
-
-
-  static std::unique_ptr<ExecutorPrepareContext<Dtype>> Prepare(
-          const ProgramDesc &program, int block_id);
-
-  static std::vector<std::shared_ptr<ExecutorPrepareContext<Dtype> > > Prepare(
-          const ProgramDesc &program, const std::vector<int> &block_ids);
-
-  void CreateVariables(const ProgramDesc &pdesc, Scope *scope, int block_id);
-
-  void RunPreparedContext(ExecutorPrepareContext<Dtype> *ctx, Scope *scope,
-                          bool create_local_scope = true,
-                          bool create_vars = true);
-
+  std::shared_ptr<Tensor> predict(Tensor &t);
 private:
   const framework::Program<Dtype> program_;
-//  std::map<framework::BlockDesc, std::shared_ptr<OperatorBase> > ops_;
+//  std::map<framework::BlockDesc, std::vector<std::shared_ptr<OperatorBase<Dtype>>> > ops_of_block_;
   bool use_optimize_ = false;
-
 };
 
 } // namesapce framework
