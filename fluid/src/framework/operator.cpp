@@ -16,13 +16,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#pragma once
 
-#include "operator.h"
 #include "op_info.h"
+#include "operator.h"
+#include "var_type.h"
 #include "selected_rows.h"
 #include "data_transform.h"
-#include "var_type.h"
+#include "operators/conv_op.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -348,9 +348,12 @@ namespace framework {
 //                    "There are no kernels which are registered in the %s operator.", type_);
 //        }
 
+
+
+
         ExecutionContext<Dtype> ctx(*this, scope);
 
-        OpKernelMap& kernels = kernels_iter->second;
+//        OpKernelMap& kernels = kernels_iter->second;
 
         // TODO(dzhwinter) : kernel fallback mechanism will be added when all the
         // transform functions are ready.
@@ -359,61 +362,76 @@ namespace framework {
         //   Do selection
         // }
 
-        auto expected_kernel_key = this->GetExpectedKernelType(ctx);
+
+//      const ExecutionContext<Dtype>& ctx1 = ctx;
+      std::cout << " in run impl GetExpectedKernelType " << std::endl;
+//      auto expected_kernel_key = this->GetExpectedKernelType(ctx);
+      std::cout << " out run impl GetExpectedKernelType " << std::endl;
+
+
+
+
 //        VLOG(3) << "expected_kernel_key:" << expected_kernel_key;
 
-        auto kernel_iter = kernels.find(expected_kernel_key);
+//      auto kernel_iter = kernels.find(expected_kernel_key);
+
+
+
+      operators::GemmConvKernel<Dtype, float> kernel;
+
+
 //        if (kernel_iter == kernels.end()) {
 //            PADDLE_THROW("op %s does not have kernel for %s", type_,
 //                         KernelTypeToString(expected_kernel_key));
 //        }
 
         // do data transform
-        Scope& new_scope = scope.NewScope();
+//        Scope& new_scope = scope.NewScope();
+//
+//        std::vector<std::string> inplace_vars;
+//        for (auto& var_name_item : this->Inputs()) {
+//            for (auto& var_name : var_name_item.second) {
+//                auto* var = scope.FindVar(var_name);
+//                if (var && VarIsTensor(var)) {
+//                    auto* tensor_in = GetTensorFromVar(var);
+//                    if (tensor_in->IsInitialized()) {
+//                        auto kernel_type_for_var = this->GetKernelTypeForVar(
+//                                var_name_item.first, *tensor_in, expected_kernel_key);
+//                        if (TransFromNeeded(kernel_type_for_var, expected_kernel_key)) {
+//                            auto out_var_names = OperatorBase<Dtype>::OutputVars(true);
+//                            if (std::find(out_var_names.begin(), out_var_names.end(),
+//                                          var_name) != out_var_names.end()) {
+//                                inplace_vars.push_back(var_name);
+//                            }
+////                            VLOG(3) << "Transform Variable " << var_name << " from "
+////                                    << kernel_type_for_var << " to " << expected_kernel_key;
+//                            auto* trans_var = new_scope.Var(var_name);
+//                            std::shared_ptr<Tensor> out(new Tensor);
+//                            DataTransform(expected_kernel_key, kernel_type_for_var, *tensor_in,
+//                                          out.get());
+//                            CopyVariableWithTensor(*var, *(out.get()), *trans_var);
+//                        }
+//                    }
+//                }
+//            }
+//        }
 
-        std::vector<std::string> inplace_vars;
-        for (auto& var_name_item : this->Inputs()) {
-            for (auto& var_name : var_name_item.second) {
-                auto* var = scope.FindVar(var_name);
-                if (var && VarIsTensor(var)) {
-                    auto* tensor_in = GetTensorFromVar(var);
-                    if (tensor_in->IsInitialized()) {
-                        auto kernel_type_for_var = this->GetKernelTypeForVar(
-                                var_name_item.first, *tensor_in, expected_kernel_key);
-                        if (TransFromNeeded(kernel_type_for_var, expected_kernel_key)) {
-                            auto out_var_names = OperatorBase<Dtype>::OutputVars(true);
-                            if (std::find(out_var_names.begin(), out_var_names.end(),
-                                          var_name) != out_var_names.end()) {
-                                inplace_vars.push_back(var_name);
-                            }
-//                            VLOG(3) << "Transform Variable " << var_name << " from "
-//                                    << kernel_type_for_var << " to " << expected_kernel_key;
-                            auto* trans_var = new_scope.Var(var_name);
-                            std::shared_ptr<Tensor> out(new Tensor);
-                            DataTransform(expected_kernel_key, kernel_type_for_var, *tensor_in,
-                                          out.get());
-                            CopyVariableWithTensor(*var, *(out.get()), *trans_var);
-                        }
-                    }
-                }
-            }
-        }
-
-        kernel_iter->second->Compute(
-                ExecutionContext<Dtype>(*this, new_scope));
-
-        for (auto& var_name : inplace_vars) {
-//            VLOG(3) << "share inplace var " + var_name + " back to it's original scope";
-            auto* original_tensor = GetMutableTensorFromVar(scope.FindVar(var_name));
-            auto* transformed_tensor = GetTensorFromVar(new_scope.FindVar(var_name));
-            original_tensor->ShareDataWith(*transformed_tensor);
-        }
+      kernel.Compute(
+                ExecutionContext<Dtype>(*this, scope));
+//
+//        for (auto& var_name : inplace_vars) {
+////            VLOG(3) << "share inplace var " + var_name + " back to it's original scope";
+//            auto* original_tensor = GetMutableTensorFromVar(scope.FindVar(var_name));
+//            auto* transformed_tensor = GetTensorFromVar(new_scope.FindVar(var_name));
+//            original_tensor->ShareDataWith(*transformed_tensor);
+//        }
 
     }
 
     template <typename Dtype>
     proto::VarType::Type OperatorWithKernel<Dtype>::IndicateDataType(
             const ExecutionContext<Dtype>& ctx) const {
+        std::cout << " begin IndicateDataType " << std::endl;
         auto& scope = ctx.scope();
         int data_type = -1;
         for (auto& input : this->inputs_) {
@@ -437,6 +455,7 @@ namespace framework {
                 }
             }
         }
+      std::cout << " end IndicateDataType " << std::endl;
 //        PADDLE_ENFORCE(data_type != -1, "DataType should be indicated by input");
         return static_cast<proto::VarType::Type>(data_type);
     }
@@ -444,7 +463,11 @@ namespace framework {
     template <typename Dtype>
     OpKernelType OperatorWithKernel<Dtype>::GetExpectedKernelType(
             const ExecutionContext<Dtype>& ctx) const {
-        return OpKernelType(IndicateDataType(ctx));
+//    std::cout << " in GetExpectedKernelType " << std::endl;
+//    printf("in GetExpectedKernelType");
+//    throw std::bad_exception();
+
+      return OpKernelType(IndicateDataType(ctx));
     }
 
     template <typename Dtype>

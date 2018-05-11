@@ -81,6 +81,7 @@ class Im2ColFunctor<ColFormat::kCFO, ARM, T> {
   }
 };
 
+
 /*
  * im = [input_channels, input_height, input_width]
  * col =
