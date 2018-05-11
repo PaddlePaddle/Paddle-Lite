@@ -53,10 +53,11 @@ namespace framework {
         virtual ~OperatorBase() {}
 
         template <typename T>
-        inline const T& Attr(const std::string& name) const {
+        inline  const T Attr(const std::string& name) const {
 //            PADDLE_ENFORCE(attrs_.count(name) != 0, "%s should be in AttributeMap",
 //                           name);
-            return ((Attribute)attrs_.at(name)).Get<T>();
+
+          return ((Attribute)attrs_.at(name)).Get<T>();
         }
 
         /// Net will call this interface function to Run an op.
@@ -176,7 +177,7 @@ class OpKernelBase;
         const Scope& scope() const { return scope_; }
 
         template <typename T>
-        inline const T& Attr(const std::string& name) const {
+        inline const T Attr(const std::string& name) const {
             return op_.template Attr<T>(name);
         }
 

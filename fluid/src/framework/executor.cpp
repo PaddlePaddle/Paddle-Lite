@@ -49,6 +49,14 @@ Executor<Dtype>::Executor(const Program<Dtype> p): program_(p){
           std::cout << " input size: "<<  op->GetInputs().size() << std::endl;
 
           std::cout << " output size: "<<  op->GetOutputs().size() << std::endl;
+//strides
+
+
+          Attribute strides_attr = op->GetAttrMap().at("strides");
+          std::vector<int> stride = strides_attr.Get<std::vector<int> >();
+          for (int k = 0; k < stride.size(); ++k) {
+            std::cout << " stride " << stride[k] << std::endl;
+          }
 
           std::shared_ptr<operators::ConvOp<Dtype, float> > conv = std::make_shared<operators::ConvOp<Dtype, float> >(op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap());
           ops_of_block_[*block_desc.get()].push_back(conv);

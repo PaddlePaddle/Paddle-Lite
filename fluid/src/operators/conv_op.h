@@ -79,9 +79,12 @@ namespace operators {
 //            output->mutable_data<T>(context.GetPlace());
 
             int groups = context.template Attr<int>("groups");
+
             std::vector<int> strides = context.template Attr<std::vector<int>>("strides");
             std::vector<int> paddings = context.template Attr<std::vector<int>>("paddings");
             std::vector<int> dilations = context.template Attr<std::vector<int>>("dilations");
+
+          std::cout << " compute end get Attrs " << strides[0] << std::endl;
 
             const int batch_size = static_cast<int>(input->dims()[0]);
 

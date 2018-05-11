@@ -63,7 +63,7 @@ void ConvOp<Dtype, T>::InferShape(framework::InferShapeContext* ctx) const {
   std::cout << " begin get Attrs " << std::endl;
 
   std::vector<int> strides = ctx->Attrs().Get<std::vector<int>>("strides");
-  std::cout << " end get Attrs " << std::endl;
+  std::cout << " end get Attrs " << strides[0] << std::endl;
 
   std::vector<int> paddings = ctx->Attrs().Get<std::vector<int>>("paddings");
     int groups = ctx->Attrs().Get<int>("groups");

@@ -69,7 +69,7 @@ namespace paddle_mobile{
   template<typename... Ts>
   struct Variant {
       Variant(const Variant &variant){
-        std::cout << " 赋值构造函数 " << std::endl;
+//        std::cout << " 赋值构造函数 " << std::endl;
           type_id = variant.type_id;
           data = variant.data;
       }

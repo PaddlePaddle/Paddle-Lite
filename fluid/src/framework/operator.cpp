@@ -39,7 +39,7 @@ namespace framework {
 
     template <typename Dtype>
     void OperatorBase<Dtype>::Run(const Scope& scope) {
-        RunImpl(scope);
+      RunImpl(scope);
     }
 
     template <typename Dtype>
@@ -421,6 +421,7 @@ namespace framework {
 //                }
 //            }
 //        }
+
 
       kernel.Compute(
                 ExecutionContext<Dtype>(*this, scope));
