@@ -95,8 +95,8 @@ void ConvOp<Dtype, T>::InferShape(framework::InferShapeContext* ctx) const {
                                               dilations[i], paddings[i],
                                               strides[i]));
     }
-    ctx->SetOutputDim("Output", framework::make_ddim(output_shape));
-    ctx->ShareLoD("Input", "Output");
+//    ctx->SetOutputDim("Output", framework::make_ddim(output_shape));
+//    ctx->ShareLoD("Input", "Output");
 }
 
 template <typename DType, typename T>

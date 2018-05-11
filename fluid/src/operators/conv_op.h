@@ -67,6 +67,10 @@ namespace operators {
     public:
         void Compute(const framework::ExecutionContext<DeviceType>& context) const override {
             const Tensor* input = context.template Input<Tensor>("Input");
+          if (!input){
+            std::cout << "is null" << std::endl;
+          }
+
             // The filter will be reshaped in the calculations,
             // so here use an assignment operation,
             // that avoids modifying the variable in the Scope.
@@ -122,6 +126,10 @@ namespace operators {
             framework::DDim filter_matrix_shape = {filter.dims()[0],
                                                    filter.numel() / filter.dims()[0]};
             filter.Resize(filter_matrix_shape);
+
+          std::cout << " input dim " << input->dims() << std::endl;
+
+          std::cout << " output dim " << output->dims() << std::endl;
 
             framework::DDim output_matrix_shape = {
                     output->dims()[1],

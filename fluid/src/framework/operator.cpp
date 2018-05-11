@@ -76,6 +76,9 @@ namespace framework {
 //        PADDLE_ENFORCE_LE(outs.size(), 1UL,
 //                          "Operator %s's output %s should contain only one variable.",
 //                          type_, name);
+      for(auto &output : outs){
+        std::cout << " out put: " << output << std::endl;
+      }
         return outs.empty() ? kEmptyVarName : outs[0];
     }
 
@@ -332,6 +335,9 @@ namespace framework {
 
     template <typename Dtype>
     void OperatorWithKernel<Dtype>::RunImpl(const Scope& scope) const {
+
+
+
         RuntimeInferShapeContext<Dtype> infer_shape_ctx(*this, scope);
         this->InferShape(&infer_shape_ctx);
 //        platform::DeviceContextPool& pool = platform::DeviceContextPool::Instance();

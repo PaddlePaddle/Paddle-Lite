@@ -45,9 +45,9 @@ namespace paddle_mobile{
       static const size_t size = sizeof(F);
       inline static void Destroy(size_t id, void * data){
           if (id == typeid(F).hash_code()){
-              reinterpret_cast<F*>(data)->~F();
+//              reinterpret_cast<F*>(data)->~F();
           }else{
-              std::cout << "未匹配到 " << std::endl;
+//              std::cout << "未匹配到 " << std::endl;
           }
       }
   };

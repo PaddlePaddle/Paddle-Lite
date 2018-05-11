@@ -232,6 +232,11 @@ class OpKernelBase;
         template <typename T>
         T* Output(const std::string& name) const {
             auto var = OutputVar(name);
+            if(var){
+              std::cout << var->Name() << std::endl;
+            }else{
+
+            }
             return var == nullptr ? nullptr : var->template GetMutable<T>();
         }
 

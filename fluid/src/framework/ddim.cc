@@ -287,9 +287,24 @@ int arity(const DDim& d) {
 
 /// \endcond
 
-std::ostream& operator<<(std::ostream& os, const DDim& ddim) {
 
-  os << ddim;
+struct OSVistor: Vistor<std::ostream&>{
+
+  OSVistor(std::ostream &os):os_(os){
+  }
+
+  template <int D>
+  std::ostream& operator()(Dim<D> dim) const {
+    return os_ << dim;
+  }
+
+private:
+  std::ostream& os_;
+};
+
+std::ostream& operator<<(std::ostream& os, const DDim& ddim) {
+  auto vistor = OSVistor(os);
+  DDim::ApplyVistor(vistor, ddim);
   return os;
 }
 

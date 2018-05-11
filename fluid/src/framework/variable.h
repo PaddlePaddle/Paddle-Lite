@@ -21,6 +21,7 @@ SOFTWARE.
 #include "paddle_mobile_object.h"
 #include <memory>
 #include <string>
+#include <iostream>
 #include <typeinfo>
 #include <typeindex>
 
@@ -47,15 +48,25 @@ namespace paddle_mobile{
 
             template <typename T>
             T* GetMutable() {
+
                 if(!IsType<T>()){
-                    holder_.reset(new PlaceholderImp<T>(new T()));
+                  if(*Name() == "conv2d_0.tmp_0"){
+                    std::cout << " reset " << *Name() << std::endl;
+                  }
+                  holder_.reset(new PlaceholderImp<T>(new T()));
                 }
                 return static_cast<T*>(holder_->Ptr());
             }
 
             template <typename T>
             bool IsType() const {
-                return holder_ != nullptr && typeid(T) == holder_->Type();
+              if (holder_){
+//                printf("not null \n");
+                printf(" holder type : %s, this type %s \n", holder_->Type().name(), typeid(T).name());
+              }
+
+//              std::cout << " " << holder_->Type() << " " <<  typeid(T) << std::endl;
+              return holder_ != nullptr && holder_->Type() == typeid(T);
             }
 
             void Clear(){ holder_.reset();}

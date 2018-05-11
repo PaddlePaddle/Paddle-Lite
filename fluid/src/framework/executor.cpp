@@ -46,6 +46,10 @@ Executor<Dtype>::Executor(const Program<Dtype> p): program_(p){
 //        std::cout << " input 0 " << op->Input("Input")[0] << std::endl;
         if (op->Type() == "conv2d" && op->Input("Input")[0] == "pixel") {
           std::cout << " conv2d attr size: "<<  op->GetAttrMap().size() << std::endl;
+          std::cout << " input size: "<<  op->GetInputs().size() << std::endl;
+
+          std::cout << " output size: "<<  op->GetOutputs().size() << std::endl;
+
           std::shared_ptr<operators::ConvOp<Dtype, float> > conv = std::make_shared<operators::ConvOp<Dtype, float> >(op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap());
           ops_of_block_[*block_desc.get()].push_back(conv);
         }
@@ -64,18 +68,22 @@ std::shared_ptr<Tensor> Executor<Dtype>::predict(Tensor &t){
   auto tensor = g_feed_value->GetMutable<LoDTensor>();
   tensor->ShareDataWith(t);
 
+
   Variable *con_output = scope->Var("conv2d_0.tmp_0");
+  Tensor *output_tensor = con_output->GetMutable<Tensor>();
+//  output_tensor->Resize({1, 16, 32, 32});
+  output_tensor->mutable_data<float>({1, 16, 32, 32});
+  std::cout << typeid(output_tensor).name() << std::endl;
+  std::cout << "output_tensor dims: " << output_tensor->dims() << std::endl;
 
-
-  LoDTensor *output_tensor = con_output->GetMutable<LoDTensor>();
 
   std::shared_ptr<Tensor> out_tensor = std::make_shared<LoDTensor>();
   out_tensor.reset(output_tensor);
 
 
-  std::vector<int> ddims{1, 16, 32, 32};
-  DDim ddim = make_ddim(ddims);
-  output_tensor->mutable_data<float>(ddim);
+//  std::vector<int> ddims{1, 16, 32, 32};
+//  DDim ddim = make_ddim(ddims);
+//  output_tensor->mutable_data<float>(ddim);
 
 
   if (use_optimize_) {
