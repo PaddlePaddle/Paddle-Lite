@@ -181,32 +181,99 @@ class OpKernelBase;
         }
 
         size_t InputSize(const std::string& name) const {
-            return op_.template Inputs(name).size();
+            return op_.Inputs(name).size();
         }
 
         size_t OutputSize(const std::string& name) const {
-            return op_.template Outputs(name).size();
+            return op_.Outputs(name).size();
         }
 
-        const Variable* InputVar(const std::string& name) const {}
+        const Variable* InputVar(const std::string& name) const {
+            auto ipt = op_.Input(name);
+            return ipt == kEmptyVarName ? nullptr : scope_.FindVar(ipt);
+        }
 
-        Variable* OutputVar(const std::string& name) const {}
+        Variable* OutputVar(const std::string& name) const {
+            auto opt = op_.Output(name);
+            return opt == kEmptyVarName ? nullptr : scope_.FindVar(opt);
+        }
 
-        const std::vector<const Variable*> MultiInputVar(const std::string& name) const {}
+        const std::vector<const Variable*> MultiInputVar(
+                const std::string& name) const {
+            auto names = op_.Inputs(name);
+            std::vector<const Variable*> res;
+            res.reserve(names.size());
+            std::transform(names.begin(), names.end(), std::back_inserter(res),
+                           [this](const std::string& name) {
+                               return name == kEmptyVarName ? nullptr
+                                                            : scope_.FindVar(name);
+                           });
+            return res;
+        }
 
-        std::vector<Variable*> MultiOutputVar(const std::string& name) const {}
+        std::vector<Variable*> MultiOutputVar(const std::string& name) const {
+            auto names = op_.Outputs(name);
+            std::vector<Variable*> res;
+            res.reserve(names.size());
+            std::transform(names.begin(), names.end(), std::back_inserter(res),
+                           [this](const std::string& name) {
+                               return name == kEmptyVarName ? nullptr
+                                                            : scope_.FindVar(name);
+                           });
+            return res;
+        }
 
         template <typename T>
-        const T* Input(const std::string& name) const {}
+        const T* Input(const std::string& name) const {
+            auto* var = InputVar(name);
+            return var == nullptr ? nullptr : var->template Get<T>();
+        }
 
         template <typename T>
-        T* Output(const std::string& name) const {}
+        T* Output(const std::string& name) const {
+            auto var = OutputVar(name);
+            return var == nullptr ? nullptr : var->template GetMutable<T>();
+        }
 
         template <typename T>
-        const std::vector<const T*> MultiInput(const std::string& name) const {}
+        const std::vector<const T*> MultiInput(const std::string& name) const {
+            auto names = op_.Inputs(name);
+            std::vector<const T*> res;
+            res.reserve(names.size());
+            std::transform(names.begin(), names.end(), std::back_inserter(res),
+                           [&](const std::string& sub_name) {
+                               auto var = scope_.FindVar(sub_name);
+                               return var == nullptr ? nullptr : var->template Get<T>();
+                           });
+            return res;
+        }
 
         template <typename T>
-        std::vector<T*> MultiOutput(const std::string& name) const {}
+        std::vector<T*> MultiOutput(const std::string& name) const {
+            auto names = op_.Outputs(name);
+            std::vector<T*> res;
+            res.reserve(names.size());
+            std::transform(names.begin(), names.end(), std::back_inserter(res),
+                           [&](const std::string& sub_name) {
+                               auto var = scope_.FindVar(sub_name);
+                               return var == nullptr ? nullptr : var->template GetMutable<T>();
+                           });
+            return res;
+        }
+
+        void ShareLoD(const std::string& in, const std::string& out, size_t i = 0,
+                      size_t j = 0) const {
+//            PADDLE_ENFORCE_LT(i, InputSize(in));
+//            PADDLE_ENFORCE_LT(j, OutputSize(out));
+            auto* in_var = MultiInputVar(in)[i];
+            auto* out_var = MultiOutputVar(out)[j];
+            if (!in_var->template IsType<LoDTensor>()) return;
+//            PADDLE_ENFORCE(out_var->IsType<LoDTensor>(),
+//                           "The %d-th output of Output(%s) must be LoDTensor.", j, out);
+            auto in_tensor = in_var->template Get<LoDTensor>();
+            auto* out_tensor = out_var->template GetMutable<LoDTensor>();
+            out_tensor->set_lod(in_tensor->lod());
+        }
 
         //! Get actual name vector for this input.
         const std::vector<std::string>& Inputs(const std::string& name) const {
