@@ -46,7 +46,7 @@ Executor<Dtype>::Executor(const Program<Dtype> p): program_(p){
 //        std::cout << " input 0 " << op->Input("Input")[0] << std::endl;
         if (op->Type() == "conv2d" && op->Input("Input")[0] == "pixel") {
           std::cout << " conv2d attr size: "<<  op->GetAttrMap().size() << std::endl;
-          std::shared_ptr<operators::ConvOp<Dtype, int> > conv = std::make_shared<operators::ConvOp<Dtype, int> >(op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap());
+          std::shared_ptr<operators::ConvOp<Dtype, float> > conv = std::make_shared<operators::ConvOp<Dtype, float> >(op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap());
           ops_of_block_[*block_desc.get()].push_back(conv);
         }
       }
@@ -94,7 +94,6 @@ std::shared_ptr<Tensor> Executor<Dtype>::predict(Tensor &t){
 }
 
 template class Executor<ARM>;
-
 
 }
 
