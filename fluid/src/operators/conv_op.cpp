@@ -47,10 +47,25 @@ void ConvOp<Dtype, T>::InferShape(framework::InferShapeContext* ctx) const {
 //    PADDLE_ENFORCE(ctx->HasOutput("Output"),
 //                   "Output(Output) of ConvOp should not be null.");
 
-    auto in_dims = ctx->GetInputDim("Input");
+  std::cout << " begin get dims: " << std::endl;
+
+  auto in_dims = ctx->GetInputDim("Input");
+
+  std::cout << " end get in dims: " << std::endl;
+
+//  std::cout << " in_dims: " << in_dims << std::endl;
+  std::cout << " end get Filter " << std::endl;
+
     auto filter_dims = ctx->GetInputDim("Filter");
-    std::vector<int> strides = ctx->Attrs().Get<std::vector<int>>("strides");
-    std::vector<int> paddings = ctx->Attrs().Get<std::vector<int>>("paddings");
+
+  std::cout << " end get Filter " << std::endl;
+
+  std::cout << " begin get Attrs " << std::endl;
+
+  std::vector<int> strides = ctx->Attrs().Get<std::vector<int>>("strides");
+  std::cout << " end get Attrs " << std::endl;
+
+  std::vector<int> paddings = ctx->Attrs().Get<std::vector<int>>("paddings");
     int groups = ctx->Attrs().Get<int>("groups");
     std::vector<int> dilations = ctx->Attrs().Get<std::vector<int>>("dilations");
 

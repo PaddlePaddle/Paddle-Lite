@@ -36,18 +36,23 @@ Executor<Dtype>::Executor(const Program<Dtype> p): program_(p){
   if (use_optimize_) {
   } else {
     const std::vector<std::shared_ptr<BlockDesc> > blocks = program_.originProgram->Blocks();
+    std::cout << " **block size " << blocks.size() << std::endl;
     for (int i = 0; i < blocks.size(); ++i) {
       std::shared_ptr<BlockDesc> block_desc = blocks[i];
       std::vector<std::shared_ptr<OpDesc> > ops = block_desc->Ops();
+      std::cout << " ops " << ops.size() << std::endl;
       for (int j = 0; j < ops.size(); ++j) {
         std::shared_ptr<OpDesc> op = ops[j];
-        if (op->Type() == "conv2d") {
-          operators::ConvOp<Dtype, int> conv(op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap());
-          ops_of_block_[*block_desc.get()].push_back(std::make_shared<operators::ConvOp<Dtype, int> >(conv));
+//        std::cout << " input 0 " << op->Input("Input")[0] << std::endl;
+        if (op->Type() == "conv2d" && op->Input("Input")[0] == "pixel") {
+          std::cout << " conv2d attr size: "<<  op->GetAttrMap().size() << std::endl;
+          std::shared_ptr<operators::ConvOp<Dtype, int> > conv = std::make_shared<operators::ConvOp<Dtype, int> >(op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap());
+          ops_of_block_[*block_desc.get()].push_back(conv);
         }
       }
     }
   }
+
 }
 
 template <typename Dtype>
@@ -57,7 +62,7 @@ std::shared_ptr<Tensor> Executor<Dtype>::predict(Tensor &t){
   auto scope = program_.scope;
   Variable* g_feed_value = scope->Var("pixel");
   auto tensor = g_feed_value->GetMutable<LoDTensor>();
-//  tensor->ShareDataWith(t);
+  tensor->ShareDataWith(t);
 
   Variable *con_output = scope->Var("conv2d_0.tmp_0");
 
@@ -79,6 +84,7 @@ std::shared_ptr<Tensor> Executor<Dtype>::predict(Tensor &t){
       auto block = program_.originProgram->Blocks()[i];
       for (int j = 0; j < ops_of_block_[*block.get()].size(); ++j) {
         auto op = ops_of_block_[*block.get()][j];
+        std::cout << "开始run" << std::endl;
         op->Run(*(program_.scope.get()));
       }
     }
