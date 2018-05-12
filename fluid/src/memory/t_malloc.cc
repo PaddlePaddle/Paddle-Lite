@@ -16,19 +16,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 #pragma once
+
+#include <cstring>
+#include <cstdlib>
 #include "t_malloc.h"
 
 namespace paddle_mobile {
     namespace memory {
-
-        BuddyAllocator* GetCPUBuddyAllocator() {
-            //static !!
-            static BuddyAllocator* a = nullptr;
-            if (a == nullptr) {
-                a = new BuddyAllocator;
-            }
-            return a;
-        }
+        const int MALLOC_ALIGN = 16;
 
         void Copy( void* dst, const void* src, size_t num){
             std::memcpy(dst, src, num);
@@ -36,27 +31,20 @@ namespace paddle_mobile {
 
 
         void* Alloc(size_t size) {
-            //VLOG(10) << "Allocate " << size << " bytes on " << "place";
-            //如果调用多次，因为static，所以共享pool_等属性。
-            void* p = GetCPUBuddyAllocator()->Alloc(size);
-            //VLOG(10) << "  pointer=" << p;
-            return p;
-        }
-        void Free(void* p) {
-            //VLOG(10) << "Free pointer=" << p << " on " << "platform::Place(place)";
-            GetCPUBuddyAllocator()->Free(p);
-        }
-
-        size_t Used() {
-            return GetCPUBuddyAllocator()->Used();
+            size_t offset = sizeof(void*) + MALLOC_ALIGN - 1;
+            char* p = static_cast<char*>(malloc(offset + size));
+            if (!p) {
+                return nullptr;
+            }
+            void* r = reinterpret_cast<void*>(reinterpret_cast<size_t>(p + offset) & (~(MALLOC_ALIGN - 1)));
+            static_cast<void**>(r)[-1] = p;
+            return r;
         }
 
-        size_t Usage::operator()() const {
-            return Used();
-        }
-
-        size_t memory_usage() {
-            return GetCPUBuddyAllocator()->Used();
+        void Free(void* ptr) {
+            if (ptr){
+                free(static_cast<void**>(ptr)[-1]);
+            }
         }
 
     }  // namespace memory

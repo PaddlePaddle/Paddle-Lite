@@ -17,8 +17,6 @@ SOFTWARE.
 ==============================================================================*/
 #pragma once
 
-#include "t_buddy_allocator.h"
-
 #include <cstddef>
 #include <type_traits>
 
@@ -28,14 +26,8 @@ namespace paddle_mobile {
         void Copy( void* dst, const void* src, size_t num);
 
         void* Alloc(size_t size);
+
         void Free(void* ptr);
-        size_t Used();
-
-        struct Usage {
-            size_t operator()() const;
-        };
-
-        size_t memory_usage();
 
 /**
  * \brief   Free memory block in one place.
