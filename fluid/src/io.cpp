@@ -143,7 +143,6 @@ void Loader<Dtype, P>::LoadVar(framework::LoDTensor *tensor, const std::string &
 template<typename Dtype, Precision P>
 const framework::Program<Dtype, P> Loader<Dtype, P>::Load(const std::string &dirname){
 
-
     std::string model_filename = dirname + "/__model__";
     std::string program_desc_str;
     ReadBinaryFile(model_filename, &program_desc_str);
