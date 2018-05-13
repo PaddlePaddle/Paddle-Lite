@@ -23,21 +23,21 @@ SOFTWARE.
 namespace paddle_mobile {
 namespace framework {
 
-    inline proto::VarType::Type ToDataType(std::type_index type) {
-        using namespace paddle_mobile::framework::proto;
-        if (typeid(float).hash_code() == type.hash_code()) {
-            return proto::VarType::FP32;
-        } else if (typeid(double).hash_code() == type.hash_code()) {
-            return proto::VarType::FP64;
-        } else if (typeid(int).hash_code() == type.hash_code()) {
-            return proto::VarType::INT32;
-        } else if (typeid(int64_t).hash_code() == type.hash_code()) {
-            return proto::VarType::INT64;
-        } else if (typeid(bool).hash_code() == type.hash_code()) {
-            return proto::VarType::BOOL;
-        } else {
-//            PADDLE_THROW("Not supported");
-        }
-    }
+//    inline proto::VarType::Type ToDataType(std::type_index type) {
+//        using namespace paddle_mobile::framework::proto;
+//        if (typeid(float).hash_code() == type.hash_code()) {
+//            return proto::VarType::FP32;
+//        } else if (typeid(double).hash_code() == type.hash_code()) {
+//            return proto::VarType::FP64;
+//        } else if (typeid(int).hash_code() == type.hash_code()) {
+//            return proto::VarType::INT32;
+//        } else if (typeid(int64_t).hash_code() == type.hash_code()) {
+//            return proto::VarType::INT64;
+//        } else if (typeid(bool).hash_code() == type.hash_code()) {
+//            return proto::VarType::BOOL;
+//        } else {
+////            PADDLE_THROW("Not supported");
+//        }
+//    }
 }
 }

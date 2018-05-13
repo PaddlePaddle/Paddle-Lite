@@ -19,7 +19,6 @@ SOFTWARE.
 #pragma once
 
 #include "framework.pb.h"
-#include "shape_inference.h"
 #include "common/type_define.h"
 
 namespace paddle_mobile {

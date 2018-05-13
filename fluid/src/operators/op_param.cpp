@@ -16,24 +16,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#include "operators/op_param.h"
-#include "framework/operator.h"
-#include "operators/math/im2col.h"
-#include "operators/math/vol2col.h"
-#include "operators/math/math_function.h"
-
-#pragma once;
+#include "op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-using namespace framework;
-
-template <typename DeviceType, typename T, typename P>
-class ConvKernel : public framework::OpKernelBase<DeviceType, ConvParam> {
-public:
-  void Compute(const ConvParam &param) const;
-};
+std::ostream& operator<<(std::ostream& os, const ConvParam& conv_param) {
+  os << "parameter of conv: " << std::endl;
+  os << "  stride: " << " (" << conv_param.Strides()[0] << conv_param.Strides()[1] << ") " << std::endl;
+  os << "  paddings: " << " (" << conv_param.Paddings()[0] << conv_param.Paddings()[1] << ") " << std::endl;
+  os << "  dilations: " << " (" << conv_param.Dilations()[0] << conv_param.Dilations()[1] << ") " << std::endl;
+  os << "  groups: " << conv_param.Groups() << std::endl;
+  os << "  input  dims: " << conv_param.Input()->dims() << std::endl;
+  os << "  filter dims: " << conv_param.Filter()->dims() << std::endl;
+  os << "  output dims: " << conv_param.Output()->dims() << std::endl;
+  return os;
+}
 
 }
 }

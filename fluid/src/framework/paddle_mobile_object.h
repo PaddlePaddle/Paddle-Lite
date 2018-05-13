@@ -25,7 +25,7 @@ namespace paddle_mobile{
 
     class PaddleMobileObject {
     public:
-        virtual inline const std::string ToString(){
+        virtual inline const std::string& ToString(){
             char address[128] = {0};
             sprintf(address,"%p",this);
             return std::string(address);

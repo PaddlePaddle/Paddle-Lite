@@ -55,7 +55,7 @@ struct DDim {
       } else if (d.var.TypeId() == typeid(Dim<9>).hash_code()){
         return vistor(d.var.Get<Dim<9>>());
       } else {
-        printf(" dim not support \n");
+        printf(" dim not support  \n");
         throw std::bad_exception();
 //        return typename Vistor::type_t();
 

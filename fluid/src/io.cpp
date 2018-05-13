@@ -143,6 +143,7 @@ void Loader<Dtype, P>::LoadVar(framework::LoDTensor *tensor, const std::string &
 template<typename Dtype, Precision P>
 const framework::Program<Dtype, P> Loader<Dtype, P>::Load(const std::string &dirname){
 
+
     std::string model_filename = dirname + "/__model__";
     std::string program_desc_str;
     ReadBinaryFile(model_filename, &program_desc_str);
@@ -167,10 +168,10 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(const std::string &dir
             std::shared_ptr<framework::VarDesc> var_desc = block->Vars()[i];
             auto var = scope->Var(var_desc->Name());
             if (var_desc->GetType() == framework::proto::VarType::LOD_TENSOR){
-                framework::LoDTensor *tensor = var->GetMutable<framework::LoDTensor>();
                 if (var_desc->Persistable()
                     && var_desc->GetType() != framework::proto::VarType::FEED_MINIBATCH
                     && var_desc->GetType() != framework::proto::VarType::FETCH_LIST){
+                    framework::LoDTensor *tensor = var->GetMutable<framework::LoDTensor>();
                     //to load
                     LoadVar(tensor, dirname + "/" + var_desc->Name());
                 }
@@ -247,9 +248,21 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(const std::string &dir
         for (int k = 0; k < block.vars().size(); ++k) {
             framework::proto::VarDesc var = block.vars()[k];
 
+          if (var.type().type() == framework::proto::VarType::LOD_TENSOR){
+            std::cout << " var name: " << var.name() << std::endl;
+            const framework::proto::VarType::TensorDesc &tensor_desc = var.type().lod_tensor().tensor();
+            std::cout << "  in var tensor desc dims size " << tensor_desc.dims().size() << std::endl;
+            int memory_size = 1;
+            for (int l = 0; l < tensor_desc.dims().size(); ++l) {
+              std::cout << " var tensor desc dim " << l << " value: " << tensor_desc.dims()[l] << std::endl;
+            }
+          }
+
             if (var.persistable()
                 && var.type().type() != framework::proto::VarType::FEED_MINIBATCH
                 && var.type().type() != framework::proto::VarType::FETCH_LIST){
+
+
 
                 std::cout << "  to load " << var.name() << std::endl;
 

@@ -23,12 +23,10 @@ SOFTWARE.
 namespace paddle_mobile {
 namespace operators {
 
-        template<>
-        class ConvKernel<FPGA> : public framework::OpKernel<FPGA> {
-            void Compute(const framework::ExecutionContext<FPGA> &context) const override{
-
-            }
-        };
+//template<>
+//void ConvKernel<FPGA, float>::Compute(const ConvParam &param) const {}
+//
+//template class ConvKernel<FPGA, float>;
 
 }
 }

@@ -50,7 +50,7 @@ namespace paddle_mobile{
             T* GetMutable() {
 
                 if(!IsType<T>()){
-                  if(*Name() == "conv2d_0.tmp_0"){
+                  if(*Name() == "pixel"){
                     std::cout << " reset " << *Name() << std::endl;
                   }
                   holder_.reset(new PlaceholderImp<T>(new T()));

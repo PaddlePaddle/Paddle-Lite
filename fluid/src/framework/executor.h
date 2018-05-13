@@ -38,12 +38,13 @@ namespace framework {
 template <typename Dtype>
 class Executor {
 public:
-  explicit Executor();
-
   Executor(const Program<Dtype> p);
   std::shared_ptr<Tensor> predict(Tensor &t);
+
 private:
   const framework::Program<Dtype> program_;
+  std::shared_ptr<ProgramDesc> to_predict_program_;
+  void predict(const Tensor &t, int block_id);
   std::map<framework::BlockDesc, std::vector<std::shared_ptr<OperatorBase<Dtype> > > > ops_of_block_;
   bool use_optimize_ = false;
 };
