@@ -99,9 +99,9 @@ namespace paddle_mobile{
           return type_id;
       }
 
-      size_t TypeId() {
-          return type_id;
-      }
+//      size_t TypeId() {
+//          return type_id;
+//      }
   private:
       static inline size_t invalid_type() {
           return typeid(void).hash_code();

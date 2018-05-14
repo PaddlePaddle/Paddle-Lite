@@ -133,11 +133,6 @@ public:
     return (lod_)[level].size() - 1;
   }
 
-  // Split LoDTensor and copy to each place specified in places.
-  std::vector<LoDTensor> SplitLoDTensor() const;
-
-  void MergeLoDTensor(const std::vector<const LoDTensor *> &lod_tensors);
-
 private:
   LoD lod_;
 };
@@ -202,11 +197,7 @@ void SerializeToStream(std::ostream &os, const LoDTensor &tensor);
 
 void DeserializeFromStream(std::istream &is, LoDTensor *tensor);
 
-//extern void WriteToRecordIO(recordio::Writer* writer,
-//                            const std::vector<LoDTensor>& tensor);
-//
-//extern std::vector<LoDTensor> ReadFromRecordIO(
-//    recordio::Scanner* scanner);
+
 
 }  // namespace framework
-}  // namespace paddle
+}  // namespace paddle_mobile

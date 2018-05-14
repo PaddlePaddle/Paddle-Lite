@@ -65,4 +65,4 @@ public:
 
 };
 }  // namespace memory
-}  // namespace paddle
+}  // namespace paddle_mobile

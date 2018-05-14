@@ -48,4 +48,4 @@ void Free(void *ptr) {
 }
 
 }  // namespace memory
-}  // namespace paddle
+}  // namespace paddle_mobile
