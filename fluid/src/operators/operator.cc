@@ -1,2 +1,0 @@
-
-namespace paddle_mobile {}

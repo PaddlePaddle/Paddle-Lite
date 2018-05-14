@@ -30,7 +30,7 @@ include_directories(include/)
 include_directories(third-party/)
 
 # gen so
-ADD_LIBRARY(mdl SHARED ${MDL_CPP} ${MDL_H})
+ADD_LIBRARY(mdl SHARED ${MDL_CPP} ${MDL_H} fluid/test/test_helper.h)
 
 # gen static
 ADD_LIBRARY(mdl-static STATIC ${MDL_CPP} ${MDL_H})

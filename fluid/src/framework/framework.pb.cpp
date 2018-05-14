@@ -14,7 +14,7 @@
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 // @@protoc_insertion_point(includes)
 
-namespace paddle {
+namespace paddle_mobile {
 namespace framework {
 namespace proto {
 class OpDesc_AttrDefaultTypeInternal {
@@ -165,24 +165,24 @@ void TableStruct::InitDefaultsImpl() {
   ::google::protobuf::internal::OnShutdownDestroyMessage(
       &_BlockDesc_default_instance_);_ProgramDesc_default_instance_._instance.DefaultConstruct();
   ::google::protobuf::internal::OnShutdownDestroyMessage(
-      &_ProgramDesc_default_instance_);_VarType_LoDTensorDesc_default_instance_._instance.get_mutable()->tensor_ = const_cast< ::paddle::framework::proto::VarType_TensorDesc*>(
-      ::paddle::framework::proto::VarType_TensorDesc::internal_default_instance());
-  _VarType_LoDTensorArrayDesc_default_instance_._instance.get_mutable()->tensor_ = const_cast< ::paddle::framework::proto::VarType_TensorDesc*>(
-      ::paddle::framework::proto::VarType_TensorDesc::internal_default_instance());
-  _VarType_default_instance_._instance.get_mutable()->selected_rows_ = const_cast< ::paddle::framework::proto::VarType_TensorDesc*>(
-      ::paddle::framework::proto::VarType_TensorDesc::internal_default_instance());
-  _VarType_default_instance_._instance.get_mutable()->lod_tensor_ = const_cast< ::paddle::framework::proto::VarType_LoDTensorDesc*>(
-      ::paddle::framework::proto::VarType_LoDTensorDesc::internal_default_instance());
-  _VarType_default_instance_._instance.get_mutable()->tensor_array_ = const_cast< ::paddle::framework::proto::VarType_LoDTensorArrayDesc*>(
-      ::paddle::framework::proto::VarType_LoDTensorArrayDesc::internal_default_instance());
-  _VarType_default_instance_._instance.get_mutable()->reader_ = const_cast< ::paddle::framework::proto::VarType_ReaderDesc*>(
-      ::paddle::framework::proto::VarType_ReaderDesc::internal_default_instance());
-  _VarType_default_instance_._instance.get_mutable()->channel_ = const_cast< ::paddle::framework::proto::VarType_ChannelDesc*>(
-      ::paddle::framework::proto::VarType_ChannelDesc::internal_default_instance());
-  _VarType_default_instance_._instance.get_mutable()->tuple_ = const_cast< ::paddle::framework::proto::VarType_Tuple*>(
-      ::paddle::framework::proto::VarType_Tuple::internal_default_instance());
-  _VarDesc_default_instance_._instance.get_mutable()->type_ = const_cast< ::paddle::framework::proto::VarType*>(
-      ::paddle::framework::proto::VarType::internal_default_instance());
+      &_ProgramDesc_default_instance_);_VarType_LoDTensorDesc_default_instance_._instance.get_mutable()->tensor_ = const_cast< ::paddle_mobile::framework::proto::VarType_TensorDesc*>(
+      ::paddle_mobile::framework::proto::VarType_TensorDesc::internal_default_instance());
+  _VarType_LoDTensorArrayDesc_default_instance_._instance.get_mutable()->tensor_ = const_cast< ::paddle_mobile::framework::proto::VarType_TensorDesc*>(
+      ::paddle_mobile::framework::proto::VarType_TensorDesc::internal_default_instance());
+  _VarType_default_instance_._instance.get_mutable()->selected_rows_ = const_cast< ::paddle_mobile::framework::proto::VarType_TensorDesc*>(
+      ::paddle_mobile::framework::proto::VarType_TensorDesc::internal_default_instance());
+  _VarType_default_instance_._instance.get_mutable()->lod_tensor_ = const_cast< ::paddle_mobile::framework::proto::VarType_LoDTensorDesc*>(
+      ::paddle_mobile::framework::proto::VarType_LoDTensorDesc::internal_default_instance());
+  _VarType_default_instance_._instance.get_mutable()->tensor_array_ = const_cast< ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc*>(
+      ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc::internal_default_instance());
+  _VarType_default_instance_._instance.get_mutable()->reader_ = const_cast< ::paddle_mobile::framework::proto::VarType_ReaderDesc*>(
+      ::paddle_mobile::framework::proto::VarType_ReaderDesc::internal_default_instance());
+  _VarType_default_instance_._instance.get_mutable()->channel_ = const_cast< ::paddle_mobile::framework::proto::VarType_ChannelDesc*>(
+      ::paddle_mobile::framework::proto::VarType_ChannelDesc::internal_default_instance());
+  _VarType_default_instance_._instance.get_mutable()->tuple_ = const_cast< ::paddle_mobile::framework::proto::VarType_Tuple*>(
+      ::paddle_mobile::framework::proto::VarType_Tuple::internal_default_instance());
+  _VarDesc_default_instance_._instance.get_mutable()->type_ = const_cast< ::paddle_mobile::framework::proto::VarType*>(
+      ::paddle_mobile::framework::proto::VarType::internal_default_instance());
 }
 
 void InitDefaults() {
@@ -295,7 +295,7 @@ OpDesc_Attr::OpDesc_Attr()
     protobuf_framework_2eproto::InitDefaults();
   }
   SharedCtor();
-  // @@protoc_insertion_point(constructor:paddle.framework.proto.OpDesc.Attr)
+  // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.OpDesc.Attr)
 }
 OpDesc_Attr::OpDesc_Attr(const OpDesc_Attr& from)
   : ::google::protobuf::MessageLite(),
@@ -318,7 +318,7 @@ OpDesc_Attr::OpDesc_Attr(const OpDesc_Attr& from)
   ::memcpy(&type_, &from.type_,
     static_cast<size_t>(reinterpret_cast<char*>(&block_idx_) -
     reinterpret_cast<char*>(&type_)) + sizeof(block_idx_));
-  // @@protoc_insertion_point(copy_constructor:paddle.framework.proto.OpDesc.Attr)
+  // @@protoc_insertion_point(copy_constructor:paddle_mobile.framework.proto.OpDesc.Attr)
 }
 
 void OpDesc_Attr::SharedCtor() {
@@ -331,7 +331,7 @@ void OpDesc_Attr::SharedCtor() {
 }
 
 OpDesc_Attr::~OpDesc_Attr() {
-  // @@protoc_insertion_point(destructor:paddle.framework.proto.OpDesc.Attr)
+  // @@protoc_insertion_point(destructor:paddle_mobile.framework.proto.OpDesc.Attr)
   SharedDtor();
 }
 
@@ -359,7 +359,7 @@ OpDesc_Attr* OpDesc_Attr::New(::google::protobuf::Arena* arena) const {
 }
 
 void OpDesc_Attr::Clear() {
-// @@protoc_insertion_point(message_clear_start:paddle.framework.proto.OpDesc.Attr)
+// @@protoc_insertion_point(message_clear_start:paddle_mobile.framework.proto.OpDesc.Attr)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -398,7 +398,7 @@ bool OpDesc_Attr::MergePartialFromCodedStream(
               mutable_unknown_fields));
   ::google::protobuf::io::CodedOutputStream unknown_fields_stream(
       &unknown_fields_string, false);
-  // @@protoc_insertion_point(parse_start:paddle.framework.proto.OpDesc.Attr)
+  // @@protoc_insertion_point(parse_start:paddle_mobile.framework.proto.OpDesc.Attr)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
@@ -416,7 +416,7 @@ bool OpDesc_Attr::MergePartialFromCodedStream(
         break;
       }
 
-      // required .paddle.framework.proto.AttrType type = 2;
+      // required .paddle_mobile.framework.proto.AttrType type = 2;
       case 2: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(16u /* 16 & 0xFF */)) {
@@ -424,8 +424,8 @@ bool OpDesc_Attr::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
                  input, &value)));
-          if (::paddle::framework::proto::AttrType_IsValid(value)) {
-            set_type(static_cast< ::paddle::framework::proto::AttrType >(value));
+          if (::paddle_mobile::framework::proto::AttrType_IsValid(value)) {
+            set_type(static_cast< ::paddle_mobile::framework::proto::AttrType >(value));
           } else {
             unknown_fields_stream.WriteVarint32(16u);
             unknown_fields_stream.WriteVarint32(
@@ -600,17 +600,17 @@ bool OpDesc_Attr::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:paddle.framework.proto.OpDesc.Attr)
+  // @@protoc_insertion_point(parse_success:paddle_mobile.framework.proto.OpDesc.Attr)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:paddle.framework.proto.OpDesc.Attr)
+  // @@protoc_insertion_point(parse_failure:paddle_mobile.framework.proto.OpDesc.Attr)
   return false;
 #undef DO_
 }
 
 void OpDesc_Attr::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:paddle.framework.proto.OpDesc.Attr)
+  // @@protoc_insertion_point(serialize_start:paddle_mobile.framework.proto.OpDesc.Attr)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -621,7 +621,7 @@ void OpDesc_Attr::SerializeWithCachedSizes(
       1, this->name(), output);
   }
 
-  // required .paddle.framework.proto.AttrType type = 2;
+  // required .paddle_mobile.framework.proto.AttrType type = 2;
   if (cached_has_bits & 0x00000004u) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       2, this->type(), output);
@@ -684,11 +684,11 @@ void OpDesc_Attr::SerializeWithCachedSizes(
 
   output->WriteRaw(_internal_metadata_.unknown_fields().data(),
                    static_cast<int>(_internal_metadata_.unknown_fields().size()));
-  // @@protoc_insertion_point(serialize_end:paddle.framework.proto.OpDesc.Attr)
+  // @@protoc_insertion_point(serialize_end:paddle_mobile.framework.proto.OpDesc.Attr)
 }
 
 size_t OpDesc_Attr::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:paddle.framework.proto.OpDesc.Attr)
+// @@protoc_insertion_point(required_fields_byte_size_fallback_start:paddle_mobile.framework.proto.OpDesc.Attr)
   size_t total_size = 0;
 
   if (has_name()) {
@@ -699,7 +699,7 @@ size_t OpDesc_Attr::RequiredFieldsByteSizeFallback() const {
   }
 
   if (has_type()) {
-    // required .paddle.framework.proto.AttrType type = 2;
+    // required .paddle_mobile.framework.proto.AttrType type = 2;
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::EnumSize(this->type());
   }
@@ -707,7 +707,7 @@ size_t OpDesc_Attr::RequiredFieldsByteSizeFallback() const {
   return total_size;
 }
 size_t OpDesc_Attr::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:paddle.framework.proto.OpDesc.Attr)
+// @@protoc_insertion_point(message_byte_size_start:paddle_mobile.framework.proto.OpDesc.Attr)
   size_t total_size = 0;
 
   total_size += _internal_metadata_.unknown_fields().size();
@@ -718,7 +718,7 @@ size_t OpDesc_Attr::ByteSizeLong() const {
       ::google::protobuf::internal::WireFormatLite::StringSize(
         this->name());
 
-    // required .paddle.framework.proto.AttrType type = 2;
+    // required .paddle_mobile.framework.proto.AttrType type = 2;
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::EnumSize(this->type());
 
@@ -813,7 +813,7 @@ void OpDesc_Attr::CheckTypeAndMergeFrom(
 }
 
 void OpDesc_Attr::MergeFrom(const OpDesc_Attr& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:paddle.framework.proto.OpDesc.Attr)
+// @@protoc_insertion_point(class_specific_merge_from_start:paddle_mobile.framework.proto.OpDesc.Attr)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
@@ -856,7 +856,7 @@ void OpDesc_Attr::MergeFrom(const OpDesc_Attr& from) {
 }
 
 void OpDesc_Attr::CopyFrom(const OpDesc_Attr& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:paddle.framework.proto.OpDesc.Attr)
+// @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.OpDesc.Attr)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -891,7 +891,7 @@ void OpDesc_Attr::InternalSwap(OpDesc_Attr* other) {
 }
 
 ::std::string OpDesc_Attr::GetTypeName() const {
-  return "paddle.framework.proto.OpDesc.Attr";
+  return "paddle_mobile.framework.proto.OpDesc.Attr";
 }
 
 #if PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -912,41 +912,41 @@ void OpDesc_Attr::clear_name() {
   clear_has_name();
 }
 const ::std::string& OpDesc_Attr::name() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpDesc.Attr.name)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.Attr.name)
   return name_.GetNoArena();
 }
 void OpDesc_Attr::set_name(const ::std::string& value) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpDesc.Attr.name)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Attr.name)
 }
 #if LANG_CXX11
 void OpDesc_Attr::set_name(::std::string&& value) {
   set_has_name();
   name_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:paddle.framework.proto.OpDesc.Attr.name)
+  // @@protoc_insertion_point(field_set_rvalue:paddle_mobile.framework.proto.OpDesc.Attr.name)
 }
 #endif
 void OpDesc_Attr::set_name(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:paddle.framework.proto.OpDesc.Attr.name)
+  // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpDesc.Attr.name)
 }
 void OpDesc_Attr::set_name(const char* value, size_t size) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:paddle.framework.proto.OpDesc.Attr.name)
+  // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpDesc.Attr.name)
 }
 ::std::string* OpDesc_Attr::mutable_name() {
   set_has_name();
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.OpDesc.Attr.name)
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpDesc.Attr.name)
   return name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 ::std::string* OpDesc_Attr::release_name() {
-  // @@protoc_insertion_point(field_release:paddle.framework.proto.OpDesc.Attr.name)
+  // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.OpDesc.Attr.name)
   clear_has_name();
   return name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -957,10 +957,10 @@ void OpDesc_Attr::set_allocated_name(::std::string* name) {
     clear_has_name();
   }
   name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), name);
-  // @@protoc_insertion_point(field_set_allocated:paddle.framework.proto.OpDesc.Attr.name)
+  // @@protoc_insertion_point(field_set_allocated:paddle_mobile.framework.proto.OpDesc.Attr.name)
 }
 
-// required .paddle.framework.proto.AttrType type = 2;
+// required .paddle_mobile.framework.proto.AttrType type = 2;
 bool OpDesc_Attr::has_type() const {
   return (_has_bits_[0] & 0x00000004u) != 0;
 }
@@ -974,15 +974,15 @@ void OpDesc_Attr::clear_type() {
   type_ = 0;
   clear_has_type();
 }
-::paddle::framework::proto::AttrType OpDesc_Attr::type() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpDesc.Attr.type)
-  return static_cast< ::paddle::framework::proto::AttrType >(type_);
+::paddle_mobile::framework::proto::AttrType OpDesc_Attr::type() const {
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.Attr.type)
+  return static_cast< ::paddle_mobile::framework::proto::AttrType >(type_);
 }
-void OpDesc_Attr::set_type(::paddle::framework::proto::AttrType value) {
-  assert(::paddle::framework::proto::AttrType_IsValid(value));
+void OpDesc_Attr::set_type(::paddle_mobile::framework::proto::AttrType value) {
+  assert(::paddle_mobile::framework::proto::AttrType_IsValid(value));
   set_has_type();
   type_ = value;
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpDesc.Attr.type)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Attr.type)
 }
 
 // optional int32 i = 3;
@@ -1000,13 +1000,13 @@ void OpDesc_Attr::clear_i() {
   clear_has_i();
 }
 ::google::protobuf::int32 OpDesc_Attr::i() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpDesc.Attr.i)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.Attr.i)
   return i_;
 }
 void OpDesc_Attr::set_i(::google::protobuf::int32 value) {
   set_has_i();
   i_ = value;
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpDesc.Attr.i)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Attr.i)
 }
 
 // optional float f = 4;
@@ -1024,13 +1024,13 @@ void OpDesc_Attr::clear_f() {
   clear_has_f();
 }
 float OpDesc_Attr::f() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpDesc.Attr.f)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.Attr.f)
   return f_;
 }
 void OpDesc_Attr::set_f(float value) {
   set_has_f();
   f_ = value;
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpDesc.Attr.f)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Attr.f)
 }
 
 // optional string s = 5;
@@ -1048,41 +1048,41 @@ void OpDesc_Attr::clear_s() {
   clear_has_s();
 }
 const ::std::string& OpDesc_Attr::s() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpDesc.Attr.s)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.Attr.s)
   return s_.GetNoArena();
 }
 void OpDesc_Attr::set_s(const ::std::string& value) {
   set_has_s();
   s_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpDesc.Attr.s)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Attr.s)
 }
 #if LANG_CXX11
 void OpDesc_Attr::set_s(::std::string&& value) {
   set_has_s();
   s_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:paddle.framework.proto.OpDesc.Attr.s)
+  // @@protoc_insertion_point(field_set_rvalue:paddle_mobile.framework.proto.OpDesc.Attr.s)
 }
 #endif
 void OpDesc_Attr::set_s(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_s();
   s_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:paddle.framework.proto.OpDesc.Attr.s)
+  // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpDesc.Attr.s)
 }
 void OpDesc_Attr::set_s(const char* value, size_t size) {
   set_has_s();
   s_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:paddle.framework.proto.OpDesc.Attr.s)
+  // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpDesc.Attr.s)
 }
 ::std::string* OpDesc_Attr::mutable_s() {
   set_has_s();
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.OpDesc.Attr.s)
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpDesc.Attr.s)
   return s_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 ::std::string* OpDesc_Attr::release_s() {
-  // @@protoc_insertion_point(field_release:paddle.framework.proto.OpDesc.Attr.s)
+  // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.OpDesc.Attr.s)
   clear_has_s();
   return s_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -1093,7 +1093,7 @@ void OpDesc_Attr::set_allocated_s(::std::string* s) {
     clear_has_s();
   }
   s_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), s);
-  // @@protoc_insertion_point(field_set_allocated:paddle.framework.proto.OpDesc.Attr.s)
+  // @@protoc_insertion_point(field_set_allocated:paddle_mobile.framework.proto.OpDesc.Attr.s)
 }
 
 // repeated int32 ints = 6;
@@ -1104,25 +1104,25 @@ void OpDesc_Attr::clear_ints() {
   ints_.Clear();
 }
 ::google::protobuf::int32 OpDesc_Attr::ints(int index) const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpDesc.Attr.ints)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.Attr.ints)
   return ints_.Get(index);
 }
 void OpDesc_Attr::set_ints(int index, ::google::protobuf::int32 value) {
   ints_.Set(index, value);
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpDesc.Attr.ints)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Attr.ints)
 }
 void OpDesc_Attr::add_ints(::google::protobuf::int32 value) {
   ints_.Add(value);
-  // @@protoc_insertion_point(field_add:paddle.framework.proto.OpDesc.Attr.ints)
+  // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpDesc.Attr.ints)
 }
 const ::google::protobuf::RepeatedField< ::google::protobuf::int32 >&
 OpDesc_Attr::ints() const {
-  // @@protoc_insertion_point(field_list:paddle.framework.proto.OpDesc.Attr.ints)
+  // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpDesc.Attr.ints)
   return ints_;
 }
 ::google::protobuf::RepeatedField< ::google::protobuf::int32 >*
 OpDesc_Attr::mutable_ints() {
-  // @@protoc_insertion_point(field_mutable_list:paddle.framework.proto.OpDesc.Attr.ints)
+  // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpDesc.Attr.ints)
   return &ints_;
 }
 
@@ -1134,25 +1134,25 @@ void OpDesc_Attr::clear_floats() {
   floats_.Clear();
 }
 float OpDesc_Attr::floats(int index) const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpDesc.Attr.floats)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.Attr.floats)
   return floats_.Get(index);
 }
 void OpDesc_Attr::set_floats(int index, float value) {
   floats_.Set(index, value);
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpDesc.Attr.floats)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Attr.floats)
 }
 void OpDesc_Attr::add_floats(float value) {
   floats_.Add(value);
-  // @@protoc_insertion_point(field_add:paddle.framework.proto.OpDesc.Attr.floats)
+  // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpDesc.Attr.floats)
 }
 const ::google::protobuf::RepeatedField< float >&
 OpDesc_Attr::floats() const {
-  // @@protoc_insertion_point(field_list:paddle.framework.proto.OpDesc.Attr.floats)
+  // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpDesc.Attr.floats)
   return floats_;
 }
 ::google::protobuf::RepeatedField< float >*
 OpDesc_Attr::mutable_floats() {
-  // @@protoc_insertion_point(field_mutable_list:paddle.framework.proto.OpDesc.Attr.floats)
+  // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpDesc.Attr.floats)
   return &floats_;
 }
 
@@ -1164,64 +1164,64 @@ void OpDesc_Attr::clear_strings() {
   strings_.Clear();
 }
 const ::std::string& OpDesc_Attr::strings(int index) const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpDesc.Attr.strings)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.Attr.strings)
   return strings_.Get(index);
 }
 ::std::string* OpDesc_Attr::mutable_strings(int index) {
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.OpDesc.Attr.strings)
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpDesc.Attr.strings)
   return strings_.Mutable(index);
 }
 void OpDesc_Attr::set_strings(int index, const ::std::string& value) {
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpDesc.Attr.strings)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Attr.strings)
   strings_.Mutable(index)->assign(value);
 }
 #if LANG_CXX11
 void OpDesc_Attr::set_strings(int index, ::std::string&& value) {
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpDesc.Attr.strings)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Attr.strings)
   strings_.Mutable(index)->assign(std::move(value));
 }
 #endif
 void OpDesc_Attr::set_strings(int index, const char* value) {
   GOOGLE_DCHECK(value != NULL);
   strings_.Mutable(index)->assign(value);
-  // @@protoc_insertion_point(field_set_char:paddle.framework.proto.OpDesc.Attr.strings)
+  // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpDesc.Attr.strings)
 }
 void OpDesc_Attr::set_strings(int index, const char* value, size_t size) {
   strings_.Mutable(index)->assign(
     reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:paddle.framework.proto.OpDesc.Attr.strings)
+  // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpDesc.Attr.strings)
 }
 ::std::string* OpDesc_Attr::add_strings() {
-  // @@protoc_insertion_point(field_add_mutable:paddle.framework.proto.OpDesc.Attr.strings)
+  // @@protoc_insertion_point(field_add_mutable:paddle_mobile.framework.proto.OpDesc.Attr.strings)
   return strings_.Add();
 }
 void OpDesc_Attr::add_strings(const ::std::string& value) {
   strings_.Add()->assign(value);
-  // @@protoc_insertion_point(field_add:paddle.framework.proto.OpDesc.Attr.strings)
+  // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpDesc.Attr.strings)
 }
 #if LANG_CXX11
 void OpDesc_Attr::add_strings(::std::string&& value) {
   strings_.Add(std::move(value));
-  // @@protoc_insertion_point(field_add:paddle.framework.proto.OpDesc.Attr.strings)
+  // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpDesc.Attr.strings)
 }
 #endif
 void OpDesc_Attr::add_strings(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   strings_.Add()->assign(value);
-  // @@protoc_insertion_point(field_add_char:paddle.framework.proto.OpDesc.Attr.strings)
+  // @@protoc_insertion_point(field_add_char:paddle_mobile.framework.proto.OpDesc.Attr.strings)
 }
 void OpDesc_Attr::add_strings(const char* value, size_t size) {
   strings_.Add()->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_add_pointer:paddle.framework.proto.OpDesc.Attr.strings)
+  // @@protoc_insertion_point(field_add_pointer:paddle_mobile.framework.proto.OpDesc.Attr.strings)
 }
 const ::google::protobuf::RepeatedPtrField< ::std::string>&
 OpDesc_Attr::strings() const {
-  // @@protoc_insertion_point(field_list:paddle.framework.proto.OpDesc.Attr.strings)
+  // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpDesc.Attr.strings)
   return strings_;
 }
 ::google::protobuf::RepeatedPtrField< ::std::string>*
 OpDesc_Attr::mutable_strings() {
-  // @@protoc_insertion_point(field_mutable_list:paddle.framework.proto.OpDesc.Attr.strings)
+  // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpDesc.Attr.strings)
   return &strings_;
 }
 
@@ -1240,13 +1240,13 @@ void OpDesc_Attr::clear_b() {
   clear_has_b();
 }
 bool OpDesc_Attr::b() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpDesc.Attr.b)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.Attr.b)
   return b_;
 }
 void OpDesc_Attr::set_b(bool value) {
   set_has_b();
   b_ = value;
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpDesc.Attr.b)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Attr.b)
 }
 
 // repeated bool bools = 11;
@@ -1257,25 +1257,25 @@ void OpDesc_Attr::clear_bools() {
   bools_.Clear();
 }
 bool OpDesc_Attr::bools(int index) const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpDesc.Attr.bools)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.Attr.bools)
   return bools_.Get(index);
 }
 void OpDesc_Attr::set_bools(int index, bool value) {
   bools_.Set(index, value);
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpDesc.Attr.bools)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Attr.bools)
 }
 void OpDesc_Attr::add_bools(bool value) {
   bools_.Add(value);
-  // @@protoc_insertion_point(field_add:paddle.framework.proto.OpDesc.Attr.bools)
+  // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpDesc.Attr.bools)
 }
 const ::google::protobuf::RepeatedField< bool >&
 OpDesc_Attr::bools() const {
-  // @@protoc_insertion_point(field_list:paddle.framework.proto.OpDesc.Attr.bools)
+  // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpDesc.Attr.bools)
   return bools_;
 }
 ::google::protobuf::RepeatedField< bool >*
 OpDesc_Attr::mutable_bools() {
-  // @@protoc_insertion_point(field_mutable_list:paddle.framework.proto.OpDesc.Attr.bools)
+  // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpDesc.Attr.bools)
   return &bools_;
 }
 
@@ -1294,13 +1294,13 @@ void OpDesc_Attr::clear_block_idx() {
   clear_has_block_idx();
 }
 ::google::protobuf::int32 OpDesc_Attr::block_idx() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpDesc.Attr.block_idx)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.Attr.block_idx)
   return block_idx_;
 }
 void OpDesc_Attr::set_block_idx(::google::protobuf::int32 value) {
   set_has_block_idx();
   block_idx_ = value;
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpDesc.Attr.block_idx)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Attr.block_idx)
 }
 
 // optional int64 l = 13;
@@ -1318,13 +1318,13 @@ void OpDesc_Attr::clear_l() {
   clear_has_l();
 }
 ::google::protobuf::int64 OpDesc_Attr::l() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpDesc.Attr.l)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.Attr.l)
   return l_;
 }
 void OpDesc_Attr::set_l(::google::protobuf::int64 value) {
   set_has_l();
   l_ = value;
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpDesc.Attr.l)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Attr.l)
 }
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -1342,7 +1342,7 @@ OpDesc_Var::OpDesc_Var()
     protobuf_framework_2eproto::InitDefaults();
   }
   SharedCtor();
-  // @@protoc_insertion_point(constructor:paddle.framework.proto.OpDesc.Var)
+  // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.OpDesc.Var)
 }
 OpDesc_Var::OpDesc_Var(const OpDesc_Var& from)
   : ::google::protobuf::MessageLite(),
@@ -1355,7 +1355,7 @@ OpDesc_Var::OpDesc_Var(const OpDesc_Var& from)
   if (from.has_parameter()) {
     parameter_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.parameter_);
   }
-  // @@protoc_insertion_point(copy_constructor:paddle.framework.proto.OpDesc.Var)
+  // @@protoc_insertion_point(copy_constructor:paddle_mobile.framework.proto.OpDesc.Var)
 }
 
 void OpDesc_Var::SharedCtor() {
@@ -1364,7 +1364,7 @@ void OpDesc_Var::SharedCtor() {
 }
 
 OpDesc_Var::~OpDesc_Var() {
-  // @@protoc_insertion_point(destructor:paddle.framework.proto.OpDesc.Var)
+  // @@protoc_insertion_point(destructor:paddle_mobile.framework.proto.OpDesc.Var)
   SharedDtor();
 }
 
@@ -1391,7 +1391,7 @@ OpDesc_Var* OpDesc_Var::New(::google::protobuf::Arena* arena) const {
 }
 
 void OpDesc_Var::Clear() {
-// @@protoc_insertion_point(message_clear_start:paddle.framework.proto.OpDesc.Var)
+// @@protoc_insertion_point(message_clear_start:paddle_mobile.framework.proto.OpDesc.Var)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -1415,7 +1415,7 @@ bool OpDesc_Var::MergePartialFromCodedStream(
               mutable_unknown_fields));
   ::google::protobuf::io::CodedOutputStream unknown_fields_stream(
       &unknown_fields_string, false);
-  // @@protoc_insertion_point(parse_start:paddle.framework.proto.OpDesc.Var)
+  // @@protoc_insertion_point(parse_start:paddle_mobile.framework.proto.OpDesc.Var)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
@@ -1457,17 +1457,17 @@ bool OpDesc_Var::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:paddle.framework.proto.OpDesc.Var)
+  // @@protoc_insertion_point(parse_success:paddle_mobile.framework.proto.OpDesc.Var)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:paddle.framework.proto.OpDesc.Var)
+  // @@protoc_insertion_point(parse_failure:paddle_mobile.framework.proto.OpDesc.Var)
   return false;
 #undef DO_
 }
 
 void OpDesc_Var::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:paddle.framework.proto.OpDesc.Var)
+  // @@protoc_insertion_point(serialize_start:paddle_mobile.framework.proto.OpDesc.Var)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -1486,11 +1486,11 @@ void OpDesc_Var::SerializeWithCachedSizes(
 
   output->WriteRaw(_internal_metadata_.unknown_fields().data(),
                    static_cast<int>(_internal_metadata_.unknown_fields().size()));
-  // @@protoc_insertion_point(serialize_end:paddle.framework.proto.OpDesc.Var)
+  // @@protoc_insertion_point(serialize_end:paddle_mobile.framework.proto.OpDesc.Var)
 }
 
 size_t OpDesc_Var::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:paddle.framework.proto.OpDesc.Var)
+// @@protoc_insertion_point(message_byte_size_start:paddle_mobile.framework.proto.OpDesc.Var)
   size_t total_size = 0;
 
   total_size += _internal_metadata_.unknown_fields().size();
@@ -1522,7 +1522,7 @@ void OpDesc_Var::CheckTypeAndMergeFrom(
 }
 
 void OpDesc_Var::MergeFrom(const OpDesc_Var& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:paddle.framework.proto.OpDesc.Var)
+// @@protoc_insertion_point(class_specific_merge_from_start:paddle_mobile.framework.proto.OpDesc.Var)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
@@ -1536,7 +1536,7 @@ void OpDesc_Var::MergeFrom(const OpDesc_Var& from) {
 }
 
 void OpDesc_Var::CopyFrom(const OpDesc_Var& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:paddle.framework.proto.OpDesc.Var)
+// @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.OpDesc.Var)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -1561,7 +1561,7 @@ void OpDesc_Var::InternalSwap(OpDesc_Var* other) {
 }
 
 ::std::string OpDesc_Var::GetTypeName() const {
-  return "paddle.framework.proto.OpDesc.Var";
+  return "paddle_mobile.framework.proto.OpDesc.Var";
 }
 
 #if PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -1582,41 +1582,41 @@ void OpDesc_Var::clear_parameter() {
   clear_has_parameter();
 }
 const ::std::string& OpDesc_Var::parameter() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpDesc.Var.parameter)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.Var.parameter)
   return parameter_.GetNoArena();
 }
 void OpDesc_Var::set_parameter(const ::std::string& value) {
   set_has_parameter();
   parameter_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpDesc.Var.parameter)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Var.parameter)
 }
 #if LANG_CXX11
 void OpDesc_Var::set_parameter(::std::string&& value) {
   set_has_parameter();
   parameter_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:paddle.framework.proto.OpDesc.Var.parameter)
+  // @@protoc_insertion_point(field_set_rvalue:paddle_mobile.framework.proto.OpDesc.Var.parameter)
 }
 #endif
 void OpDesc_Var::set_parameter(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_parameter();
   parameter_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:paddle.framework.proto.OpDesc.Var.parameter)
+  // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpDesc.Var.parameter)
 }
 void OpDesc_Var::set_parameter(const char* value, size_t size) {
   set_has_parameter();
   parameter_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:paddle.framework.proto.OpDesc.Var.parameter)
+  // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpDesc.Var.parameter)
 }
 ::std::string* OpDesc_Var::mutable_parameter() {
   set_has_parameter();
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.OpDesc.Var.parameter)
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpDesc.Var.parameter)
   return parameter_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 ::std::string* OpDesc_Var::release_parameter() {
-  // @@protoc_insertion_point(field_release:paddle.framework.proto.OpDesc.Var.parameter)
+  // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.OpDesc.Var.parameter)
   clear_has_parameter();
   return parameter_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -1627,7 +1627,7 @@ void OpDesc_Var::set_allocated_parameter(::std::string* parameter) {
     clear_has_parameter();
   }
   parameter_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), parameter);
-  // @@protoc_insertion_point(field_set_allocated:paddle.framework.proto.OpDesc.Var.parameter)
+  // @@protoc_insertion_point(field_set_allocated:paddle_mobile.framework.proto.OpDesc.Var.parameter)
 }
 
 // repeated string arguments = 2;
@@ -1638,64 +1638,64 @@ void OpDesc_Var::clear_arguments() {
   arguments_.Clear();
 }
 const ::std::string& OpDesc_Var::arguments(int index) const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpDesc.Var.arguments)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.Var.arguments)
   return arguments_.Get(index);
 }
 ::std::string* OpDesc_Var::mutable_arguments(int index) {
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.OpDesc.Var.arguments)
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpDesc.Var.arguments)
   return arguments_.Mutable(index);
 }
 void OpDesc_Var::set_arguments(int index, const ::std::string& value) {
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpDesc.Var.arguments)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Var.arguments)
   arguments_.Mutable(index)->assign(value);
 }
 #if LANG_CXX11
 void OpDesc_Var::set_arguments(int index, ::std::string&& value) {
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpDesc.Var.arguments)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Var.arguments)
   arguments_.Mutable(index)->assign(std::move(value));
 }
 #endif
 void OpDesc_Var::set_arguments(int index, const char* value) {
   GOOGLE_DCHECK(value != NULL);
   arguments_.Mutable(index)->assign(value);
-  // @@protoc_insertion_point(field_set_char:paddle.framework.proto.OpDesc.Var.arguments)
+  // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpDesc.Var.arguments)
 }
 void OpDesc_Var::set_arguments(int index, const char* value, size_t size) {
   arguments_.Mutable(index)->assign(
     reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:paddle.framework.proto.OpDesc.Var.arguments)
+  // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpDesc.Var.arguments)
 }
 ::std::string* OpDesc_Var::add_arguments() {
-  // @@protoc_insertion_point(field_add_mutable:paddle.framework.proto.OpDesc.Var.arguments)
+  // @@protoc_insertion_point(field_add_mutable:paddle_mobile.framework.proto.OpDesc.Var.arguments)
   return arguments_.Add();
 }
 void OpDesc_Var::add_arguments(const ::std::string& value) {
   arguments_.Add()->assign(value);
-  // @@protoc_insertion_point(field_add:paddle.framework.proto.OpDesc.Var.arguments)
+  // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpDesc.Var.arguments)
 }
 #if LANG_CXX11
 void OpDesc_Var::add_arguments(::std::string&& value) {
   arguments_.Add(std::move(value));
-  // @@protoc_insertion_point(field_add:paddle.framework.proto.OpDesc.Var.arguments)
+  // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpDesc.Var.arguments)
 }
 #endif
 void OpDesc_Var::add_arguments(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   arguments_.Add()->assign(value);
-  // @@protoc_insertion_point(field_add_char:paddle.framework.proto.OpDesc.Var.arguments)
+  // @@protoc_insertion_point(field_add_char:paddle_mobile.framework.proto.OpDesc.Var.arguments)
 }
 void OpDesc_Var::add_arguments(const char* value, size_t size) {
   arguments_.Add()->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_add_pointer:paddle.framework.proto.OpDesc.Var.arguments)
+  // @@protoc_insertion_point(field_add_pointer:paddle_mobile.framework.proto.OpDesc.Var.arguments)
 }
 const ::google::protobuf::RepeatedPtrField< ::std::string>&
 OpDesc_Var::arguments() const {
-  // @@protoc_insertion_point(field_list:paddle.framework.proto.OpDesc.Var.arguments)
+  // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpDesc.Var.arguments)
   return arguments_;
 }
 ::google::protobuf::RepeatedPtrField< ::std::string>*
 OpDesc_Var::mutable_arguments() {
-  // @@protoc_insertion_point(field_mutable_list:paddle.framework.proto.OpDesc.Var.arguments)
+  // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpDesc.Var.arguments)
   return &arguments_;
 }
 
@@ -1717,7 +1717,7 @@ OpDesc::OpDesc()
     protobuf_framework_2eproto::InitDefaults();
   }
   SharedCtor();
-  // @@protoc_insertion_point(constructor:paddle.framework.proto.OpDesc)
+  // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.OpDesc)
 }
 OpDesc::OpDesc(const OpDesc& from)
   : ::google::protobuf::MessageLite(),
@@ -1733,7 +1733,7 @@ OpDesc::OpDesc(const OpDesc& from)
     type_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.type_);
   }
   is_target_ = from.is_target_;
-  // @@protoc_insertion_point(copy_constructor:paddle.framework.proto.OpDesc)
+  // @@protoc_insertion_point(copy_constructor:paddle_mobile.framework.proto.OpDesc)
 }
 
 void OpDesc::SharedCtor() {
@@ -1743,7 +1743,7 @@ void OpDesc::SharedCtor() {
 }
 
 OpDesc::~OpDesc() {
-  // @@protoc_insertion_point(destructor:paddle.framework.proto.OpDesc)
+  // @@protoc_insertion_point(destructor:paddle_mobile.framework.proto.OpDesc)
   SharedDtor();
 }
 
@@ -1770,7 +1770,7 @@ OpDesc* OpDesc::New(::google::protobuf::Arena* arena) const {
 }
 
 void OpDesc::Clear() {
-// @@protoc_insertion_point(message_clear_start:paddle.framework.proto.OpDesc)
+// @@protoc_insertion_point(message_clear_start:paddle_mobile.framework.proto.OpDesc)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -1797,13 +1797,13 @@ bool OpDesc::MergePartialFromCodedStream(
               mutable_unknown_fields));
   ::google::protobuf::io::CodedOutputStream unknown_fields_stream(
       &unknown_fields_string, false);
-  // @@protoc_insertion_point(parse_start:paddle.framework.proto.OpDesc)
+  // @@protoc_insertion_point(parse_start:paddle_mobile.framework.proto.OpDesc)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
     if (!p.second) goto handle_unusual;
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // repeated .paddle.framework.proto.OpDesc.Var inputs = 1;
+      // repeated .paddle_mobile.framework.proto.OpDesc.Var inputs = 1;
       case 1: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
@@ -1815,7 +1815,7 @@ bool OpDesc::MergePartialFromCodedStream(
         break;
       }
 
-      // repeated .paddle.framework.proto.OpDesc.Var outputs = 2;
+      // repeated .paddle_mobile.framework.proto.OpDesc.Var outputs = 2;
       case 2: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(18u /* 18 & 0xFF */)) {
@@ -1839,7 +1839,7 @@ bool OpDesc::MergePartialFromCodedStream(
         break;
       }
 
-      // repeated .paddle.framework.proto.OpDesc.Attr attrs = 4;
+      // repeated .paddle_mobile.framework.proto.OpDesc.Attr attrs = 4;
       case 4: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(34u /* 34 & 0xFF */)) {
@@ -1877,28 +1877,28 @@ bool OpDesc::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:paddle.framework.proto.OpDesc)
+  // @@protoc_insertion_point(parse_success:paddle_mobile.framework.proto.OpDesc)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:paddle.framework.proto.OpDesc)
+  // @@protoc_insertion_point(parse_failure:paddle_mobile.framework.proto.OpDesc)
   return false;
 #undef DO_
 }
 
 void OpDesc::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:paddle.framework.proto.OpDesc)
+  // @@protoc_insertion_point(serialize_start:paddle_mobile.framework.proto.OpDesc)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // repeated .paddle.framework.proto.OpDesc.Var inputs = 1;
+  // repeated .paddle_mobile.framework.proto.OpDesc.Var inputs = 1;
   for (unsigned int i = 0,
       n = static_cast<unsigned int>(this->inputs_size()); i < n; i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
       1, this->inputs(static_cast<int>(i)), output);
   }
 
-  // repeated .paddle.framework.proto.OpDesc.Var outputs = 2;
+  // repeated .paddle_mobile.framework.proto.OpDesc.Var outputs = 2;
   for (unsigned int i = 0,
       n = static_cast<unsigned int>(this->outputs_size()); i < n; i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
@@ -1912,7 +1912,7 @@ void OpDesc::SerializeWithCachedSizes(
       3, this->type(), output);
   }
 
-  // repeated .paddle.framework.proto.OpDesc.Attr attrs = 4;
+  // repeated .paddle_mobile.framework.proto.OpDesc.Attr attrs = 4;
   for (unsigned int i = 0,
       n = static_cast<unsigned int>(this->attrs_size()); i < n; i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
@@ -1926,11 +1926,11 @@ void OpDesc::SerializeWithCachedSizes(
 
   output->WriteRaw(_internal_metadata_.unknown_fields().data(),
                    static_cast<int>(_internal_metadata_.unknown_fields().size()));
-  // @@protoc_insertion_point(serialize_end:paddle.framework.proto.OpDesc)
+  // @@protoc_insertion_point(serialize_end:paddle_mobile.framework.proto.OpDesc)
 }
 
 size_t OpDesc::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:paddle.framework.proto.OpDesc)
+// @@protoc_insertion_point(message_byte_size_start:paddle_mobile.framework.proto.OpDesc)
   size_t total_size = 0;
 
   total_size += _internal_metadata_.unknown_fields().size();
@@ -1941,7 +1941,7 @@ size_t OpDesc::ByteSizeLong() const {
       ::google::protobuf::internal::WireFormatLite::StringSize(
         this->type());
   }
-  // repeated .paddle.framework.proto.OpDesc.Var inputs = 1;
+  // repeated .paddle_mobile.framework.proto.OpDesc.Var inputs = 1;
   {
     unsigned int count = static_cast<unsigned int>(this->inputs_size());
     total_size += 1UL * count;
@@ -1952,7 +1952,7 @@ size_t OpDesc::ByteSizeLong() const {
     }
   }
 
-  // repeated .paddle.framework.proto.OpDesc.Var outputs = 2;
+  // repeated .paddle_mobile.framework.proto.OpDesc.Var outputs = 2;
   {
     unsigned int count = static_cast<unsigned int>(this->outputs_size());
     total_size += 1UL * count;
@@ -1963,7 +1963,7 @@ size_t OpDesc::ByteSizeLong() const {
     }
   }
 
-  // repeated .paddle.framework.proto.OpDesc.Attr attrs = 4;
+  // repeated .paddle_mobile.framework.proto.OpDesc.Attr attrs = 4;
   {
     unsigned int count = static_cast<unsigned int>(this->attrs_size());
     total_size += 1UL * count;
@@ -1992,7 +1992,7 @@ void OpDesc::CheckTypeAndMergeFrom(
 }
 
 void OpDesc::MergeFrom(const OpDesc& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:paddle.framework.proto.OpDesc)
+// @@protoc_insertion_point(class_specific_merge_from_start:paddle_mobile.framework.proto.OpDesc)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
@@ -2015,7 +2015,7 @@ void OpDesc::MergeFrom(const OpDesc& from) {
 }
 
 void OpDesc::CopyFrom(const OpDesc& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:paddle.framework.proto.OpDesc)
+// @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.OpDesc)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -2046,7 +2046,7 @@ void OpDesc::InternalSwap(OpDesc* other) {
 }
 
 ::std::string OpDesc::GetTypeName() const {
-  return "paddle.framework.proto.OpDesc";
+  return "paddle_mobile.framework.proto.OpDesc";
 }
 
 #if PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -2067,41 +2067,41 @@ void OpDesc::clear_type() {
   clear_has_type();
 }
 const ::std::string& OpDesc::type() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpDesc.type)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.type)
   return type_.GetNoArena();
 }
 void OpDesc::set_type(const ::std::string& value) {
   set_has_type();
   type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpDesc.type)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.type)
 }
 #if LANG_CXX11
 void OpDesc::set_type(::std::string&& value) {
   set_has_type();
   type_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:paddle.framework.proto.OpDesc.type)
+  // @@protoc_insertion_point(field_set_rvalue:paddle_mobile.framework.proto.OpDesc.type)
 }
 #endif
 void OpDesc::set_type(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_type();
   type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:paddle.framework.proto.OpDesc.type)
+  // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpDesc.type)
 }
 void OpDesc::set_type(const char* value, size_t size) {
   set_has_type();
   type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:paddle.framework.proto.OpDesc.type)
+  // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpDesc.type)
 }
 ::std::string* OpDesc::mutable_type() {
   set_has_type();
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.OpDesc.type)
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpDesc.type)
   return type_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 ::std::string* OpDesc::release_type() {
-  // @@protoc_insertion_point(field_release:paddle.framework.proto.OpDesc.type)
+  // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.OpDesc.type)
   clear_has_type();
   return type_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -2112,96 +2112,96 @@ void OpDesc::set_allocated_type(::std::string* type) {
     clear_has_type();
   }
   type_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), type);
-  // @@protoc_insertion_point(field_set_allocated:paddle.framework.proto.OpDesc.type)
+  // @@protoc_insertion_point(field_set_allocated:paddle_mobile.framework.proto.OpDesc.type)
 }
 
-// repeated .paddle.framework.proto.OpDesc.Var inputs = 1;
+// repeated .paddle_mobile.framework.proto.OpDesc.Var inputs = 1;
 int OpDesc::inputs_size() const {
   return inputs_.size();
 }
 void OpDesc::clear_inputs() {
   inputs_.Clear();
 }
-const ::paddle::framework::proto::OpDesc_Var& OpDesc::inputs(int index) const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpDesc.inputs)
+const ::paddle_mobile::framework::proto::OpDesc_Var& OpDesc::inputs(int index) const {
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.inputs)
   return inputs_.Get(index);
 }
-::paddle::framework::proto::OpDesc_Var* OpDesc::mutable_inputs(int index) {
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.OpDesc.inputs)
+::paddle_mobile::framework::proto::OpDesc_Var* OpDesc::mutable_inputs(int index) {
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpDesc.inputs)
   return inputs_.Mutable(index);
 }
-::paddle::framework::proto::OpDesc_Var* OpDesc::add_inputs() {
-  // @@protoc_insertion_point(field_add:paddle.framework.proto.OpDesc.inputs)
+::paddle_mobile::framework::proto::OpDesc_Var* OpDesc::add_inputs() {
+  // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpDesc.inputs)
   return inputs_.Add();
 }
-::google::protobuf::RepeatedPtrField< ::paddle::framework::proto::OpDesc_Var >*
+::google::protobuf::RepeatedPtrField< ::paddle_mobile::framework::proto::OpDesc_Var >*
 OpDesc::mutable_inputs() {
-  // @@protoc_insertion_point(field_mutable_list:paddle.framework.proto.OpDesc.inputs)
+  // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpDesc.inputs)
   return &inputs_;
 }
-const ::google::protobuf::RepeatedPtrField< ::paddle::framework::proto::OpDesc_Var >&
+const ::google::protobuf::RepeatedPtrField< ::paddle_mobile::framework::proto::OpDesc_Var >&
 OpDesc::inputs() const {
-  // @@protoc_insertion_point(field_list:paddle.framework.proto.OpDesc.inputs)
+  // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpDesc.inputs)
   return inputs_;
 }
 
-// repeated .paddle.framework.proto.OpDesc.Var outputs = 2;
+// repeated .paddle_mobile.framework.proto.OpDesc.Var outputs = 2;
 int OpDesc::outputs_size() const {
   return outputs_.size();
 }
 void OpDesc::clear_outputs() {
   outputs_.Clear();
 }
-const ::paddle::framework::proto::OpDesc_Var& OpDesc::outputs(int index) const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpDesc.outputs)
+const ::paddle_mobile::framework::proto::OpDesc_Var& OpDesc::outputs(int index) const {
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.outputs)
   return outputs_.Get(index);
 }
-::paddle::framework::proto::OpDesc_Var* OpDesc::mutable_outputs(int index) {
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.OpDesc.outputs)
+::paddle_mobile::framework::proto::OpDesc_Var* OpDesc::mutable_outputs(int index) {
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpDesc.outputs)
   return outputs_.Mutable(index);
 }
-::paddle::framework::proto::OpDesc_Var* OpDesc::add_outputs() {
-  // @@protoc_insertion_point(field_add:paddle.framework.proto.OpDesc.outputs)
+::paddle_mobile::framework::proto::OpDesc_Var* OpDesc::add_outputs() {
+  // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpDesc.outputs)
   return outputs_.Add();
 }
-::google::protobuf::RepeatedPtrField< ::paddle::framework::proto::OpDesc_Var >*
+::google::protobuf::RepeatedPtrField< ::paddle_mobile::framework::proto::OpDesc_Var >*
 OpDesc::mutable_outputs() {
-  // @@protoc_insertion_point(field_mutable_list:paddle.framework.proto.OpDesc.outputs)
+  // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpDesc.outputs)
   return &outputs_;
 }
-const ::google::protobuf::RepeatedPtrField< ::paddle::framework::proto::OpDesc_Var >&
+const ::google::protobuf::RepeatedPtrField< ::paddle_mobile::framework::proto::OpDesc_Var >&
 OpDesc::outputs() const {
-  // @@protoc_insertion_point(field_list:paddle.framework.proto.OpDesc.outputs)
+  // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpDesc.outputs)
   return outputs_;
 }
 
-// repeated .paddle.framework.proto.OpDesc.Attr attrs = 4;
+// repeated .paddle_mobile.framework.proto.OpDesc.Attr attrs = 4;
 int OpDesc::attrs_size() const {
   return attrs_.size();
 }
 void OpDesc::clear_attrs() {
   attrs_.Clear();
 }
-const ::paddle::framework::proto::OpDesc_Attr& OpDesc::attrs(int index) const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpDesc.attrs)
+const ::paddle_mobile::framework::proto::OpDesc_Attr& OpDesc::attrs(int index) const {
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.attrs)
   return attrs_.Get(index);
 }
-::paddle::framework::proto::OpDesc_Attr* OpDesc::mutable_attrs(int index) {
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.OpDesc.attrs)
+::paddle_mobile::framework::proto::OpDesc_Attr* OpDesc::mutable_attrs(int index) {
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpDesc.attrs)
   return attrs_.Mutable(index);
 }
-::paddle::framework::proto::OpDesc_Attr* OpDesc::add_attrs() {
-  // @@protoc_insertion_point(field_add:paddle.framework.proto.OpDesc.attrs)
+::paddle_mobile::framework::proto::OpDesc_Attr* OpDesc::add_attrs() {
+  // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpDesc.attrs)
   return attrs_.Add();
 }
-::google::protobuf::RepeatedPtrField< ::paddle::framework::proto::OpDesc_Attr >*
+::google::protobuf::RepeatedPtrField< ::paddle_mobile::framework::proto::OpDesc_Attr >*
 OpDesc::mutable_attrs() {
-  // @@protoc_insertion_point(field_mutable_list:paddle.framework.proto.OpDesc.attrs)
+  // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpDesc.attrs)
   return &attrs_;
 }
-const ::google::protobuf::RepeatedPtrField< ::paddle::framework::proto::OpDesc_Attr >&
+const ::google::protobuf::RepeatedPtrField< ::paddle_mobile::framework::proto::OpDesc_Attr >&
 OpDesc::attrs() const {
-  // @@protoc_insertion_point(field_list:paddle.framework.proto.OpDesc.attrs)
+  // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpDesc.attrs)
   return attrs_;
 }
 
@@ -2220,13 +2220,13 @@ void OpDesc::clear_is_target() {
   clear_has_is_target();
 }
 bool OpDesc::is_target() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpDesc.is_target)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.is_target)
   return is_target_;
 }
 void OpDesc::set_is_target(bool value) {
   set_has_is_target();
   is_target_ = value;
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpDesc.is_target)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.is_target)
 }
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -2247,7 +2247,7 @@ OpProto_Var::OpProto_Var()
     protobuf_framework_2eproto::InitDefaults();
   }
   SharedCtor();
-  // @@protoc_insertion_point(constructor:paddle.framework.proto.OpProto.Var)
+  // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.OpProto.Var)
 }
 OpProto_Var::OpProto_Var(const OpProto_Var& from)
   : ::google::protobuf::MessageLite(),
@@ -2266,7 +2266,7 @@ OpProto_Var::OpProto_Var(const OpProto_Var& from)
   ::memcpy(&duplicable_, &from.duplicable_,
     static_cast<size_t>(reinterpret_cast<char*>(&dispensable_) -
     reinterpret_cast<char*>(&duplicable_)) + sizeof(dispensable_));
-  // @@protoc_insertion_point(copy_constructor:paddle.framework.proto.OpProto.Var)
+  // @@protoc_insertion_point(copy_constructor:paddle_mobile.framework.proto.OpProto.Var)
 }
 
 void OpProto_Var::SharedCtor() {
@@ -2279,7 +2279,7 @@ void OpProto_Var::SharedCtor() {
 }
 
 OpProto_Var::~OpProto_Var() {
-  // @@protoc_insertion_point(destructor:paddle.framework.proto.OpProto.Var)
+  // @@protoc_insertion_point(destructor:paddle_mobile.framework.proto.OpProto.Var)
   SharedDtor();
 }
 
@@ -2307,7 +2307,7 @@ OpProto_Var* OpProto_Var::New(::google::protobuf::Arena* arena) const {
 }
 
 void OpProto_Var::Clear() {
-// @@protoc_insertion_point(message_clear_start:paddle.framework.proto.OpProto.Var)
+// @@protoc_insertion_point(message_clear_start:paddle_mobile.framework.proto.OpProto.Var)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -2342,7 +2342,7 @@ bool OpProto_Var::MergePartialFromCodedStream(
               mutable_unknown_fields));
   ::google::protobuf::io::CodedOutputStream unknown_fields_stream(
       &unknown_fields_string, false);
-  // @@protoc_insertion_point(parse_start:paddle.framework.proto.OpProto.Var)
+  // @@protoc_insertion_point(parse_start:paddle_mobile.framework.proto.OpProto.Var)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
@@ -2426,17 +2426,17 @@ bool OpProto_Var::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:paddle.framework.proto.OpProto.Var)
+  // @@protoc_insertion_point(parse_success:paddle_mobile.framework.proto.OpProto.Var)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:paddle.framework.proto.OpProto.Var)
+  // @@protoc_insertion_point(parse_failure:paddle_mobile.framework.proto.OpProto.Var)
   return false;
 #undef DO_
 }
 
 void OpProto_Var::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:paddle.framework.proto.OpProto.Var)
+  // @@protoc_insertion_point(serialize_start:paddle_mobile.framework.proto.OpProto.Var)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -2470,11 +2470,11 @@ void OpProto_Var::SerializeWithCachedSizes(
 
   output->WriteRaw(_internal_metadata_.unknown_fields().data(),
                    static_cast<int>(_internal_metadata_.unknown_fields().size()));
-  // @@protoc_insertion_point(serialize_end:paddle.framework.proto.OpProto.Var)
+  // @@protoc_insertion_point(serialize_end:paddle_mobile.framework.proto.OpProto.Var)
 }
 
 size_t OpProto_Var::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:paddle.framework.proto.OpProto.Var)
+// @@protoc_insertion_point(required_fields_byte_size_fallback_start:paddle_mobile.framework.proto.OpProto.Var)
   size_t total_size = 0;
 
   if (has_name()) {
@@ -2494,7 +2494,7 @@ size_t OpProto_Var::RequiredFieldsByteSizeFallback() const {
   return total_size;
 }
 size_t OpProto_Var::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:paddle.framework.proto.OpProto.Var)
+// @@protoc_insertion_point(message_byte_size_start:paddle_mobile.framework.proto.OpProto.Var)
   size_t total_size = 0;
 
   total_size += _internal_metadata_.unknown_fields().size();
@@ -2543,7 +2543,7 @@ void OpProto_Var::CheckTypeAndMergeFrom(
 }
 
 void OpProto_Var::MergeFrom(const OpProto_Var& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:paddle.framework.proto.OpProto.Var)
+// @@protoc_insertion_point(class_specific_merge_from_start:paddle_mobile.framework.proto.OpProto.Var)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
@@ -2573,7 +2573,7 @@ void OpProto_Var::MergeFrom(const OpProto_Var& from) {
 }
 
 void OpProto_Var::CopyFrom(const OpProto_Var& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:paddle.framework.proto.OpProto.Var)
+// @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.OpProto.Var)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -2601,7 +2601,7 @@ void OpProto_Var::InternalSwap(OpProto_Var* other) {
 }
 
 ::std::string OpProto_Var::GetTypeName() const {
-  return "paddle.framework.proto.OpProto.Var";
+  return "paddle_mobile.framework.proto.OpProto.Var";
 }
 
 #if PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -2622,41 +2622,41 @@ void OpProto_Var::clear_name() {
   clear_has_name();
 }
 const ::std::string& OpProto_Var::name() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpProto.Var.name)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.Var.name)
   return name_.GetNoArena();
 }
 void OpProto_Var::set_name(const ::std::string& value) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpProto.Var.name)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpProto.Var.name)
 }
 #if LANG_CXX11
 void OpProto_Var::set_name(::std::string&& value) {
   set_has_name();
   name_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:paddle.framework.proto.OpProto.Var.name)
+  // @@protoc_insertion_point(field_set_rvalue:paddle_mobile.framework.proto.OpProto.Var.name)
 }
 #endif
 void OpProto_Var::set_name(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:paddle.framework.proto.OpProto.Var.name)
+  // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpProto.Var.name)
 }
 void OpProto_Var::set_name(const char* value, size_t size) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:paddle.framework.proto.OpProto.Var.name)
+  // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpProto.Var.name)
 }
 ::std::string* OpProto_Var::mutable_name() {
   set_has_name();
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.OpProto.Var.name)
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpProto.Var.name)
   return name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 ::std::string* OpProto_Var::release_name() {
-  // @@protoc_insertion_point(field_release:paddle.framework.proto.OpProto.Var.name)
+  // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.OpProto.Var.name)
   clear_has_name();
   return name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -2667,7 +2667,7 @@ void OpProto_Var::set_allocated_name(::std::string* name) {
     clear_has_name();
   }
   name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), name);
-  // @@protoc_insertion_point(field_set_allocated:paddle.framework.proto.OpProto.Var.name)
+  // @@protoc_insertion_point(field_set_allocated:paddle_mobile.framework.proto.OpProto.Var.name)
 }
 
 // required string comment = 2;
@@ -2685,41 +2685,41 @@ void OpProto_Var::clear_comment() {
   clear_has_comment();
 }
 const ::std::string& OpProto_Var::comment() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpProto.Var.comment)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.Var.comment)
   return comment_.GetNoArena();
 }
 void OpProto_Var::set_comment(const ::std::string& value) {
   set_has_comment();
   comment_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpProto.Var.comment)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpProto.Var.comment)
 }
 #if LANG_CXX11
 void OpProto_Var::set_comment(::std::string&& value) {
   set_has_comment();
   comment_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:paddle.framework.proto.OpProto.Var.comment)
+  // @@protoc_insertion_point(field_set_rvalue:paddle_mobile.framework.proto.OpProto.Var.comment)
 }
 #endif
 void OpProto_Var::set_comment(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_comment();
   comment_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:paddle.framework.proto.OpProto.Var.comment)
+  // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpProto.Var.comment)
 }
 void OpProto_Var::set_comment(const char* value, size_t size) {
   set_has_comment();
   comment_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:paddle.framework.proto.OpProto.Var.comment)
+  // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpProto.Var.comment)
 }
 ::std::string* OpProto_Var::mutable_comment() {
   set_has_comment();
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.OpProto.Var.comment)
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpProto.Var.comment)
   return comment_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 ::std::string* OpProto_Var::release_comment() {
-  // @@protoc_insertion_point(field_release:paddle.framework.proto.OpProto.Var.comment)
+  // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.OpProto.Var.comment)
   clear_has_comment();
   return comment_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -2730,7 +2730,7 @@ void OpProto_Var::set_allocated_comment(::std::string* comment) {
     clear_has_comment();
   }
   comment_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), comment);
-  // @@protoc_insertion_point(field_set_allocated:paddle.framework.proto.OpProto.Var.comment)
+  // @@protoc_insertion_point(field_set_allocated:paddle_mobile.framework.proto.OpProto.Var.comment)
 }
 
 // optional bool duplicable = 3 [default = false];
@@ -2748,13 +2748,13 @@ void OpProto_Var::clear_duplicable() {
   clear_has_duplicable();
 }
 bool OpProto_Var::duplicable() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpProto.Var.duplicable)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.Var.duplicable)
   return duplicable_;
 }
 void OpProto_Var::set_duplicable(bool value) {
   set_has_duplicable();
   duplicable_ = value;
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpProto.Var.duplicable)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpProto.Var.duplicable)
 }
 
 // optional bool intermediate = 4 [default = false];
@@ -2772,13 +2772,13 @@ void OpProto_Var::clear_intermediate() {
   clear_has_intermediate();
 }
 bool OpProto_Var::intermediate() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpProto.Var.intermediate)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.Var.intermediate)
   return intermediate_;
 }
 void OpProto_Var::set_intermediate(bool value) {
   set_has_intermediate();
   intermediate_ = value;
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpProto.Var.intermediate)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpProto.Var.intermediate)
 }
 
 // optional bool dispensable = 5 [default = false];
@@ -2796,13 +2796,13 @@ void OpProto_Var::clear_dispensable() {
   clear_has_dispensable();
 }
 bool OpProto_Var::dispensable() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpProto.Var.dispensable)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.Var.dispensable)
   return dispensable_;
 }
 void OpProto_Var::set_dispensable(bool value) {
   set_has_dispensable();
   dispensable_ = value;
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpProto.Var.dispensable)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpProto.Var.dispensable)
 }
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -2822,7 +2822,7 @@ OpProto_Attr::OpProto_Attr()
     protobuf_framework_2eproto::InitDefaults();
   }
   SharedCtor();
-  // @@protoc_insertion_point(constructor:paddle.framework.proto.OpProto.Attr)
+  // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.OpProto.Attr)
 }
 OpProto_Attr::OpProto_Attr(const OpProto_Attr& from)
   : ::google::protobuf::MessageLite(),
@@ -2841,7 +2841,7 @@ OpProto_Attr::OpProto_Attr(const OpProto_Attr& from)
   ::memcpy(&type_, &from.type_,
     static_cast<size_t>(reinterpret_cast<char*>(&generated_) -
     reinterpret_cast<char*>(&type_)) + sizeof(generated_));
-  // @@protoc_insertion_point(copy_constructor:paddle.framework.proto.OpProto.Attr)
+  // @@protoc_insertion_point(copy_constructor:paddle_mobile.framework.proto.OpProto.Attr)
 }
 
 void OpProto_Attr::SharedCtor() {
@@ -2854,7 +2854,7 @@ void OpProto_Attr::SharedCtor() {
 }
 
 OpProto_Attr::~OpProto_Attr() {
-  // @@protoc_insertion_point(destructor:paddle.framework.proto.OpProto.Attr)
+  // @@protoc_insertion_point(destructor:paddle_mobile.framework.proto.OpProto.Attr)
   SharedDtor();
 }
 
@@ -2882,7 +2882,7 @@ OpProto_Attr* OpProto_Attr::New(::google::protobuf::Arena* arena) const {
 }
 
 void OpProto_Attr::Clear() {
-// @@protoc_insertion_point(message_clear_start:paddle.framework.proto.OpProto.Attr)
+// @@protoc_insertion_point(message_clear_start:paddle_mobile.framework.proto.OpProto.Attr)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -2917,7 +2917,7 @@ bool OpProto_Attr::MergePartialFromCodedStream(
               mutable_unknown_fields));
   ::google::protobuf::io::CodedOutputStream unknown_fields_stream(
       &unknown_fields_string, false);
-  // @@protoc_insertion_point(parse_start:paddle.framework.proto.OpProto.Attr)
+  // @@protoc_insertion_point(parse_start:paddle_mobile.framework.proto.OpProto.Attr)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
@@ -2935,7 +2935,7 @@ bool OpProto_Attr::MergePartialFromCodedStream(
         break;
       }
 
-      // required .paddle.framework.proto.AttrType type = 2;
+      // required .paddle_mobile.framework.proto.AttrType type = 2;
       case 2: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(16u /* 16 & 0xFF */)) {
@@ -2943,8 +2943,8 @@ bool OpProto_Attr::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
                  input, &value)));
-          if (::paddle::framework::proto::AttrType_IsValid(value)) {
-            set_type(static_cast< ::paddle::framework::proto::AttrType >(value));
+          if (::paddle_mobile::framework::proto::AttrType_IsValid(value)) {
+            set_type(static_cast< ::paddle_mobile::framework::proto::AttrType >(value));
           } else {
             unknown_fields_stream.WriteVarint32(16u);
             unknown_fields_stream.WriteVarint32(
@@ -2994,17 +2994,17 @@ bool OpProto_Attr::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:paddle.framework.proto.OpProto.Attr)
+  // @@protoc_insertion_point(parse_success:paddle_mobile.framework.proto.OpProto.Attr)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:paddle.framework.proto.OpProto.Attr)
+  // @@protoc_insertion_point(parse_failure:paddle_mobile.framework.proto.OpProto.Attr)
   return false;
 #undef DO_
 }
 
 void OpProto_Attr::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:paddle.framework.proto.OpProto.Attr)
+  // @@protoc_insertion_point(serialize_start:paddle_mobile.framework.proto.OpProto.Attr)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -3015,7 +3015,7 @@ void OpProto_Attr::SerializeWithCachedSizes(
       1, this->name(), output);
   }
 
-  // required .paddle.framework.proto.AttrType type = 2;
+  // required .paddle_mobile.framework.proto.AttrType type = 2;
   if (cached_has_bits & 0x00000004u) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       2, this->type(), output);
@@ -3034,11 +3034,11 @@ void OpProto_Attr::SerializeWithCachedSizes(
 
   output->WriteRaw(_internal_metadata_.unknown_fields().data(),
                    static_cast<int>(_internal_metadata_.unknown_fields().size()));
-  // @@protoc_insertion_point(serialize_end:paddle.framework.proto.OpProto.Attr)
+  // @@protoc_insertion_point(serialize_end:paddle_mobile.framework.proto.OpProto.Attr)
 }
 
 size_t OpProto_Attr::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:paddle.framework.proto.OpProto.Attr)
+// @@protoc_insertion_point(required_fields_byte_size_fallback_start:paddle_mobile.framework.proto.OpProto.Attr)
   size_t total_size = 0;
 
   if (has_name()) {
@@ -3056,7 +3056,7 @@ size_t OpProto_Attr::RequiredFieldsByteSizeFallback() const {
   }
 
   if (has_type()) {
-    // required .paddle.framework.proto.AttrType type = 2;
+    // required .paddle_mobile.framework.proto.AttrType type = 2;
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::EnumSize(this->type());
   }
@@ -3064,7 +3064,7 @@ size_t OpProto_Attr::RequiredFieldsByteSizeFallback() const {
   return total_size;
 }
 size_t OpProto_Attr::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:paddle.framework.proto.OpProto.Attr)
+// @@protoc_insertion_point(message_byte_size_start:paddle_mobile.framework.proto.OpProto.Attr)
   size_t total_size = 0;
 
   total_size += _internal_metadata_.unknown_fields().size();
@@ -3080,7 +3080,7 @@ size_t OpProto_Attr::ByteSizeLong() const {
       ::google::protobuf::internal::WireFormatLite::StringSize(
         this->comment());
 
-    // required .paddle.framework.proto.AttrType type = 2;
+    // required .paddle_mobile.framework.proto.AttrType type = 2;
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::EnumSize(this->type());
 
@@ -3105,7 +3105,7 @@ void OpProto_Attr::CheckTypeAndMergeFrom(
 }
 
 void OpProto_Attr::MergeFrom(const OpProto_Attr& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:paddle.framework.proto.OpProto.Attr)
+// @@protoc_insertion_point(class_specific_merge_from_start:paddle_mobile.framework.proto.OpProto.Attr)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
@@ -3132,7 +3132,7 @@ void OpProto_Attr::MergeFrom(const OpProto_Attr& from) {
 }
 
 void OpProto_Attr::CopyFrom(const OpProto_Attr& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:paddle.framework.proto.OpProto.Attr)
+// @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.OpProto.Attr)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -3159,7 +3159,7 @@ void OpProto_Attr::InternalSwap(OpProto_Attr* other) {
 }
 
 ::std::string OpProto_Attr::GetTypeName() const {
-  return "paddle.framework.proto.OpProto.Attr";
+  return "paddle_mobile.framework.proto.OpProto.Attr";
 }
 
 #if PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -3180,41 +3180,41 @@ void OpProto_Attr::clear_name() {
   clear_has_name();
 }
 const ::std::string& OpProto_Attr::name() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpProto.Attr.name)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.Attr.name)
   return name_.GetNoArena();
 }
 void OpProto_Attr::set_name(const ::std::string& value) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpProto.Attr.name)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpProto.Attr.name)
 }
 #if LANG_CXX11
 void OpProto_Attr::set_name(::std::string&& value) {
   set_has_name();
   name_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:paddle.framework.proto.OpProto.Attr.name)
+  // @@protoc_insertion_point(field_set_rvalue:paddle_mobile.framework.proto.OpProto.Attr.name)
 }
 #endif
 void OpProto_Attr::set_name(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:paddle.framework.proto.OpProto.Attr.name)
+  // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpProto.Attr.name)
 }
 void OpProto_Attr::set_name(const char* value, size_t size) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:paddle.framework.proto.OpProto.Attr.name)
+  // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpProto.Attr.name)
 }
 ::std::string* OpProto_Attr::mutable_name() {
   set_has_name();
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.OpProto.Attr.name)
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpProto.Attr.name)
   return name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 ::std::string* OpProto_Attr::release_name() {
-  // @@protoc_insertion_point(field_release:paddle.framework.proto.OpProto.Attr.name)
+  // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.OpProto.Attr.name)
   clear_has_name();
   return name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -3225,10 +3225,10 @@ void OpProto_Attr::set_allocated_name(::std::string* name) {
     clear_has_name();
   }
   name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), name);
-  // @@protoc_insertion_point(field_set_allocated:paddle.framework.proto.OpProto.Attr.name)
+  // @@protoc_insertion_point(field_set_allocated:paddle_mobile.framework.proto.OpProto.Attr.name)
 }
 
-// required .paddle.framework.proto.AttrType type = 2;
+// required .paddle_mobile.framework.proto.AttrType type = 2;
 bool OpProto_Attr::has_type() const {
   return (_has_bits_[0] & 0x00000004u) != 0;
 }
@@ -3242,15 +3242,15 @@ void OpProto_Attr::clear_type() {
   type_ = 0;
   clear_has_type();
 }
-::paddle::framework::proto::AttrType OpProto_Attr::type() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpProto.Attr.type)
-  return static_cast< ::paddle::framework::proto::AttrType >(type_);
+::paddle_mobile::framework::proto::AttrType OpProto_Attr::type() const {
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.Attr.type)
+  return static_cast< ::paddle_mobile::framework::proto::AttrType >(type_);
 }
-void OpProto_Attr::set_type(::paddle::framework::proto::AttrType value) {
-  assert(::paddle::framework::proto::AttrType_IsValid(value));
+void OpProto_Attr::set_type(::paddle_mobile::framework::proto::AttrType value) {
+  assert(::paddle_mobile::framework::proto::AttrType_IsValid(value));
   set_has_type();
   type_ = value;
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpProto.Attr.type)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpProto.Attr.type)
 }
 
 // required string comment = 3;
@@ -3268,41 +3268,41 @@ void OpProto_Attr::clear_comment() {
   clear_has_comment();
 }
 const ::std::string& OpProto_Attr::comment() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpProto.Attr.comment)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.Attr.comment)
   return comment_.GetNoArena();
 }
 void OpProto_Attr::set_comment(const ::std::string& value) {
   set_has_comment();
   comment_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpProto.Attr.comment)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpProto.Attr.comment)
 }
 #if LANG_CXX11
 void OpProto_Attr::set_comment(::std::string&& value) {
   set_has_comment();
   comment_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:paddle.framework.proto.OpProto.Attr.comment)
+  // @@protoc_insertion_point(field_set_rvalue:paddle_mobile.framework.proto.OpProto.Attr.comment)
 }
 #endif
 void OpProto_Attr::set_comment(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_comment();
   comment_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:paddle.framework.proto.OpProto.Attr.comment)
+  // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpProto.Attr.comment)
 }
 void OpProto_Attr::set_comment(const char* value, size_t size) {
   set_has_comment();
   comment_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:paddle.framework.proto.OpProto.Attr.comment)
+  // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpProto.Attr.comment)
 }
 ::std::string* OpProto_Attr::mutable_comment() {
   set_has_comment();
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.OpProto.Attr.comment)
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpProto.Attr.comment)
   return comment_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 ::std::string* OpProto_Attr::release_comment() {
-  // @@protoc_insertion_point(field_release:paddle.framework.proto.OpProto.Attr.comment)
+  // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.OpProto.Attr.comment)
   clear_has_comment();
   return comment_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -3313,7 +3313,7 @@ void OpProto_Attr::set_allocated_comment(::std::string* comment) {
     clear_has_comment();
   }
   comment_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), comment);
-  // @@protoc_insertion_point(field_set_allocated:paddle.framework.proto.OpProto.Attr.comment)
+  // @@protoc_insertion_point(field_set_allocated:paddle_mobile.framework.proto.OpProto.Attr.comment)
 }
 
 // optional bool generated = 4 [default = false];
@@ -3331,13 +3331,13 @@ void OpProto_Attr::clear_generated() {
   clear_has_generated();
 }
 bool OpProto_Attr::generated() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpProto.Attr.generated)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.Attr.generated)
   return generated_;
 }
 void OpProto_Attr::set_generated(bool value) {
   set_has_generated();
   generated_ = value;
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpProto.Attr.generated)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpProto.Attr.generated)
 }
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -3358,7 +3358,7 @@ OpProto::OpProto()
     protobuf_framework_2eproto::InitDefaults();
   }
   SharedCtor();
-  // @@protoc_insertion_point(constructor:paddle.framework.proto.OpProto)
+  // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.OpProto)
 }
 OpProto::OpProto(const OpProto& from)
   : ::google::protobuf::MessageLite(),
@@ -3377,7 +3377,7 @@ OpProto::OpProto(const OpProto& from)
   if (from.has_comment()) {
     comment_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.comment_);
   }
-  // @@protoc_insertion_point(copy_constructor:paddle.framework.proto.OpProto)
+  // @@protoc_insertion_point(copy_constructor:paddle_mobile.framework.proto.OpProto)
 }
 
 void OpProto::SharedCtor() {
@@ -3387,7 +3387,7 @@ void OpProto::SharedCtor() {
 }
 
 OpProto::~OpProto() {
-  // @@protoc_insertion_point(destructor:paddle.framework.proto.OpProto)
+  // @@protoc_insertion_point(destructor:paddle_mobile.framework.proto.OpProto)
   SharedDtor();
 }
 
@@ -3415,7 +3415,7 @@ OpProto* OpProto::New(::google::protobuf::Arena* arena) const {
 }
 
 void OpProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:paddle.framework.proto.OpProto)
+// @@protoc_insertion_point(message_clear_start:paddle_mobile.framework.proto.OpProto)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -3448,7 +3448,7 @@ bool OpProto::MergePartialFromCodedStream(
               mutable_unknown_fields));
   ::google::protobuf::io::CodedOutputStream unknown_fields_stream(
       &unknown_fields_string, false);
-  // @@protoc_insertion_point(parse_start:paddle.framework.proto.OpProto)
+  // @@protoc_insertion_point(parse_start:paddle_mobile.framework.proto.OpProto)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
@@ -3466,7 +3466,7 @@ bool OpProto::MergePartialFromCodedStream(
         break;
       }
 
-      // repeated .paddle.framework.proto.OpProto.Var inputs = 2;
+      // repeated .paddle_mobile.framework.proto.OpProto.Var inputs = 2;
       case 2: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(18u /* 18 & 0xFF */)) {
@@ -3478,7 +3478,7 @@ bool OpProto::MergePartialFromCodedStream(
         break;
       }
 
-      // repeated .paddle.framework.proto.OpProto.Var outputs = 3;
+      // repeated .paddle_mobile.framework.proto.OpProto.Var outputs = 3;
       case 3: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(26u /* 26 & 0xFF */)) {
@@ -3490,7 +3490,7 @@ bool OpProto::MergePartialFromCodedStream(
         break;
       }
 
-      // repeated .paddle.framework.proto.OpProto.Attr attrs = 4;
+      // repeated .paddle_mobile.framework.proto.OpProto.Attr attrs = 4;
       case 4: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(34u /* 34 & 0xFF */)) {
@@ -3526,17 +3526,17 @@ bool OpProto::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:paddle.framework.proto.OpProto)
+  // @@protoc_insertion_point(parse_success:paddle_mobile.framework.proto.OpProto)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:paddle.framework.proto.OpProto)
+  // @@protoc_insertion_point(parse_failure:paddle_mobile.framework.proto.OpProto)
   return false;
 #undef DO_
 }
 
 void OpProto::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:paddle.framework.proto.OpProto)
+  // @@protoc_insertion_point(serialize_start:paddle_mobile.framework.proto.OpProto)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -3547,21 +3547,21 @@ void OpProto::SerializeWithCachedSizes(
       1, this->type(), output);
   }
 
-  // repeated .paddle.framework.proto.OpProto.Var inputs = 2;
+  // repeated .paddle_mobile.framework.proto.OpProto.Var inputs = 2;
   for (unsigned int i = 0,
       n = static_cast<unsigned int>(this->inputs_size()); i < n; i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
       2, this->inputs(static_cast<int>(i)), output);
   }
 
-  // repeated .paddle.framework.proto.OpProto.Var outputs = 3;
+  // repeated .paddle_mobile.framework.proto.OpProto.Var outputs = 3;
   for (unsigned int i = 0,
       n = static_cast<unsigned int>(this->outputs_size()); i < n; i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
       3, this->outputs(static_cast<int>(i)), output);
   }
 
-  // repeated .paddle.framework.proto.OpProto.Attr attrs = 4;
+  // repeated .paddle_mobile.framework.proto.OpProto.Attr attrs = 4;
   for (unsigned int i = 0,
       n = static_cast<unsigned int>(this->attrs_size()); i < n; i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
@@ -3576,11 +3576,11 @@ void OpProto::SerializeWithCachedSizes(
 
   output->WriteRaw(_internal_metadata_.unknown_fields().data(),
                    static_cast<int>(_internal_metadata_.unknown_fields().size()));
-  // @@protoc_insertion_point(serialize_end:paddle.framework.proto.OpProto)
+  // @@protoc_insertion_point(serialize_end:paddle_mobile.framework.proto.OpProto)
 }
 
 size_t OpProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:paddle.framework.proto.OpProto)
+// @@protoc_insertion_point(required_fields_byte_size_fallback_start:paddle_mobile.framework.proto.OpProto)
   size_t total_size = 0;
 
   if (has_type()) {
@@ -3600,7 +3600,7 @@ size_t OpProto::RequiredFieldsByteSizeFallback() const {
   return total_size;
 }
 size_t OpProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:paddle.framework.proto.OpProto)
+// @@protoc_insertion_point(message_byte_size_start:paddle_mobile.framework.proto.OpProto)
   size_t total_size = 0;
 
   total_size += _internal_metadata_.unknown_fields().size();
@@ -3619,7 +3619,7 @@ size_t OpProto::ByteSizeLong() const {
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
-  // repeated .paddle.framework.proto.OpProto.Var inputs = 2;
+  // repeated .paddle_mobile.framework.proto.OpProto.Var inputs = 2;
   {
     unsigned int count = static_cast<unsigned int>(this->inputs_size());
     total_size += 1UL * count;
@@ -3630,7 +3630,7 @@ size_t OpProto::ByteSizeLong() const {
     }
   }
 
-  // repeated .paddle.framework.proto.OpProto.Var outputs = 3;
+  // repeated .paddle_mobile.framework.proto.OpProto.Var outputs = 3;
   {
     unsigned int count = static_cast<unsigned int>(this->outputs_size());
     total_size += 1UL * count;
@@ -3641,7 +3641,7 @@ size_t OpProto::ByteSizeLong() const {
     }
   }
 
-  // repeated .paddle.framework.proto.OpProto.Attr attrs = 4;
+  // repeated .paddle_mobile.framework.proto.OpProto.Attr attrs = 4;
   {
     unsigned int count = static_cast<unsigned int>(this->attrs_size());
     total_size += 1UL * count;
@@ -3665,7 +3665,7 @@ void OpProto::CheckTypeAndMergeFrom(
 }
 
 void OpProto::MergeFrom(const OpProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:paddle.framework.proto.OpProto)
+// @@protoc_insertion_point(class_specific_merge_from_start:paddle_mobile.framework.proto.OpProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
@@ -3688,7 +3688,7 @@ void OpProto::MergeFrom(const OpProto& from) {
 }
 
 void OpProto::CopyFrom(const OpProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:paddle.framework.proto.OpProto)
+// @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.OpProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -3719,7 +3719,7 @@ void OpProto::InternalSwap(OpProto* other) {
 }
 
 ::std::string OpProto::GetTypeName() const {
-  return "paddle.framework.proto.OpProto";
+  return "paddle_mobile.framework.proto.OpProto";
 }
 
 #if PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -3740,41 +3740,41 @@ void OpProto::clear_type() {
   clear_has_type();
 }
 const ::std::string& OpProto::type() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpProto.type)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.type)
   return type_.GetNoArena();
 }
 void OpProto::set_type(const ::std::string& value) {
   set_has_type();
   type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpProto.type)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpProto.type)
 }
 #if LANG_CXX11
 void OpProto::set_type(::std::string&& value) {
   set_has_type();
   type_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:paddle.framework.proto.OpProto.type)
+  // @@protoc_insertion_point(field_set_rvalue:paddle_mobile.framework.proto.OpProto.type)
 }
 #endif
 void OpProto::set_type(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_type();
   type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:paddle.framework.proto.OpProto.type)
+  // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpProto.type)
 }
 void OpProto::set_type(const char* value, size_t size) {
   set_has_type();
   type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:paddle.framework.proto.OpProto.type)
+  // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpProto.type)
 }
 ::std::string* OpProto::mutable_type() {
   set_has_type();
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.OpProto.type)
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpProto.type)
   return type_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 ::std::string* OpProto::release_type() {
-  // @@protoc_insertion_point(field_release:paddle.framework.proto.OpProto.type)
+  // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.OpProto.type)
   clear_has_type();
   return type_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -3785,96 +3785,96 @@ void OpProto::set_allocated_type(::std::string* type) {
     clear_has_type();
   }
   type_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), type);
-  // @@protoc_insertion_point(field_set_allocated:paddle.framework.proto.OpProto.type)
+  // @@protoc_insertion_point(field_set_allocated:paddle_mobile.framework.proto.OpProto.type)
 }
 
-// repeated .paddle.framework.proto.OpProto.Var inputs = 2;
+// repeated .paddle_mobile.framework.proto.OpProto.Var inputs = 2;
 int OpProto::inputs_size() const {
   return inputs_.size();
 }
 void OpProto::clear_inputs() {
   inputs_.Clear();
 }
-const ::paddle::framework::proto::OpProto_Var& OpProto::inputs(int index) const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpProto.inputs)
+const ::paddle_mobile::framework::proto::OpProto_Var& OpProto::inputs(int index) const {
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.inputs)
   return inputs_.Get(index);
 }
-::paddle::framework::proto::OpProto_Var* OpProto::mutable_inputs(int index) {
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.OpProto.inputs)
+::paddle_mobile::framework::proto::OpProto_Var* OpProto::mutable_inputs(int index) {
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpProto.inputs)
   return inputs_.Mutable(index);
 }
-::paddle::framework::proto::OpProto_Var* OpProto::add_inputs() {
-  // @@protoc_insertion_point(field_add:paddle.framework.proto.OpProto.inputs)
+::paddle_mobile::framework::proto::OpProto_Var* OpProto::add_inputs() {
+  // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpProto.inputs)
   return inputs_.Add();
 }
-::google::protobuf::RepeatedPtrField< ::paddle::framework::proto::OpProto_Var >*
+::google::protobuf::RepeatedPtrField< ::paddle_mobile::framework::proto::OpProto_Var >*
 OpProto::mutable_inputs() {
-  // @@protoc_insertion_point(field_mutable_list:paddle.framework.proto.OpProto.inputs)
+  // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpProto.inputs)
   return &inputs_;
 }
-const ::google::protobuf::RepeatedPtrField< ::paddle::framework::proto::OpProto_Var >&
+const ::google::protobuf::RepeatedPtrField< ::paddle_mobile::framework::proto::OpProto_Var >&
 OpProto::inputs() const {
-  // @@protoc_insertion_point(field_list:paddle.framework.proto.OpProto.inputs)
+  // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpProto.inputs)
   return inputs_;
 }
 
-// repeated .paddle.framework.proto.OpProto.Var outputs = 3;
+// repeated .paddle_mobile.framework.proto.OpProto.Var outputs = 3;
 int OpProto::outputs_size() const {
   return outputs_.size();
 }
 void OpProto::clear_outputs() {
   outputs_.Clear();
 }
-const ::paddle::framework::proto::OpProto_Var& OpProto::outputs(int index) const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpProto.outputs)
+const ::paddle_mobile::framework::proto::OpProto_Var& OpProto::outputs(int index) const {
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.outputs)
   return outputs_.Get(index);
 }
-::paddle::framework::proto::OpProto_Var* OpProto::mutable_outputs(int index) {
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.OpProto.outputs)
+::paddle_mobile::framework::proto::OpProto_Var* OpProto::mutable_outputs(int index) {
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpProto.outputs)
   return outputs_.Mutable(index);
 }
-::paddle::framework::proto::OpProto_Var* OpProto::add_outputs() {
-  // @@protoc_insertion_point(field_add:paddle.framework.proto.OpProto.outputs)
+::paddle_mobile::framework::proto::OpProto_Var* OpProto::add_outputs() {
+  // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpProto.outputs)
   return outputs_.Add();
 }
-::google::protobuf::RepeatedPtrField< ::paddle::framework::proto::OpProto_Var >*
+::google::protobuf::RepeatedPtrField< ::paddle_mobile::framework::proto::OpProto_Var >*
 OpProto::mutable_outputs() {
-  // @@protoc_insertion_point(field_mutable_list:paddle.framework.proto.OpProto.outputs)
+  // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpProto.outputs)
   return &outputs_;
 }
-const ::google::protobuf::RepeatedPtrField< ::paddle::framework::proto::OpProto_Var >&
+const ::google::protobuf::RepeatedPtrField< ::paddle_mobile::framework::proto::OpProto_Var >&
 OpProto::outputs() const {
-  // @@protoc_insertion_point(field_list:paddle.framework.proto.OpProto.outputs)
+  // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpProto.outputs)
   return outputs_;
 }
 
-// repeated .paddle.framework.proto.OpProto.Attr attrs = 4;
+// repeated .paddle_mobile.framework.proto.OpProto.Attr attrs = 4;
 int OpProto::attrs_size() const {
   return attrs_.size();
 }
 void OpProto::clear_attrs() {
   attrs_.Clear();
 }
-const ::paddle::framework::proto::OpProto_Attr& OpProto::attrs(int index) const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpProto.attrs)
+const ::paddle_mobile::framework::proto::OpProto_Attr& OpProto::attrs(int index) const {
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.attrs)
   return attrs_.Get(index);
 }
-::paddle::framework::proto::OpProto_Attr* OpProto::mutable_attrs(int index) {
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.OpProto.attrs)
+::paddle_mobile::framework::proto::OpProto_Attr* OpProto::mutable_attrs(int index) {
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpProto.attrs)
   return attrs_.Mutable(index);
 }
-::paddle::framework::proto::OpProto_Attr* OpProto::add_attrs() {
-  // @@protoc_insertion_point(field_add:paddle.framework.proto.OpProto.attrs)
+::paddle_mobile::framework::proto::OpProto_Attr* OpProto::add_attrs() {
+  // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpProto.attrs)
   return attrs_.Add();
 }
-::google::protobuf::RepeatedPtrField< ::paddle::framework::proto::OpProto_Attr >*
+::google::protobuf::RepeatedPtrField< ::paddle_mobile::framework::proto::OpProto_Attr >*
 OpProto::mutable_attrs() {
-  // @@protoc_insertion_point(field_mutable_list:paddle.framework.proto.OpProto.attrs)
+  // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpProto.attrs)
   return &attrs_;
 }
-const ::google::protobuf::RepeatedPtrField< ::paddle::framework::proto::OpProto_Attr >&
+const ::google::protobuf::RepeatedPtrField< ::paddle_mobile::framework::proto::OpProto_Attr >&
 OpProto::attrs() const {
-  // @@protoc_insertion_point(field_list:paddle.framework.proto.OpProto.attrs)
+  // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpProto.attrs)
   return attrs_;
 }
 
@@ -3893,41 +3893,41 @@ void OpProto::clear_comment() {
   clear_has_comment();
 }
 const ::std::string& OpProto::comment() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.OpProto.comment)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.comment)
   return comment_.GetNoArena();
 }
 void OpProto::set_comment(const ::std::string& value) {
   set_has_comment();
   comment_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.OpProto.comment)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpProto.comment)
 }
 #if LANG_CXX11
 void OpProto::set_comment(::std::string&& value) {
   set_has_comment();
   comment_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:paddle.framework.proto.OpProto.comment)
+  // @@protoc_insertion_point(field_set_rvalue:paddle_mobile.framework.proto.OpProto.comment)
 }
 #endif
 void OpProto::set_comment(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_comment();
   comment_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:paddle.framework.proto.OpProto.comment)
+  // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpProto.comment)
 }
 void OpProto::set_comment(const char* value, size_t size) {
   set_has_comment();
   comment_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:paddle.framework.proto.OpProto.comment)
+  // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpProto.comment)
 }
 ::std::string* OpProto::mutable_comment() {
   set_has_comment();
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.OpProto.comment)
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpProto.comment)
   return comment_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 ::std::string* OpProto::release_comment() {
-  // @@protoc_insertion_point(field_release:paddle.framework.proto.OpProto.comment)
+  // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.OpProto.comment)
   clear_has_comment();
   return comment_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -3938,7 +3938,7 @@ void OpProto::set_allocated_comment(::std::string* comment) {
     clear_has_comment();
   }
   comment_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), comment);
-  // @@protoc_insertion_point(field_set_allocated:paddle.framework.proto.OpProto.comment)
+  // @@protoc_insertion_point(field_set_allocated:paddle_mobile.framework.proto.OpProto.comment)
 }
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -3956,7 +3956,7 @@ VarType_TensorDesc::VarType_TensorDesc()
     protobuf_framework_2eproto::InitDefaults();
   }
   SharedCtor();
-  // @@protoc_insertion_point(constructor:paddle.framework.proto.VarType.TensorDesc)
+  // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.VarType.TensorDesc)
 }
 VarType_TensorDesc::VarType_TensorDesc(const VarType_TensorDesc& from)
   : ::google::protobuf::MessageLite(),
@@ -3966,7 +3966,7 @@ VarType_TensorDesc::VarType_TensorDesc(const VarType_TensorDesc& from)
       dims_(from.dims_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   data_type_ = from.data_type_;
-  // @@protoc_insertion_point(copy_constructor:paddle.framework.proto.VarType.TensorDesc)
+  // @@protoc_insertion_point(copy_constructor:paddle_mobile.framework.proto.VarType.TensorDesc)
 }
 
 void VarType_TensorDesc::SharedCtor() {
@@ -3975,7 +3975,7 @@ void VarType_TensorDesc::SharedCtor() {
 }
 
 VarType_TensorDesc::~VarType_TensorDesc() {
-  // @@protoc_insertion_point(destructor:paddle.framework.proto.VarType.TensorDesc)
+  // @@protoc_insertion_point(destructor:paddle_mobile.framework.proto.VarType.TensorDesc)
   SharedDtor();
 }
 
@@ -4001,7 +4001,7 @@ VarType_TensorDesc* VarType_TensorDesc::New(::google::protobuf::Arena* arena) co
 }
 
 void VarType_TensorDesc::Clear() {
-// @@protoc_insertion_point(message_clear_start:paddle.framework.proto.VarType.TensorDesc)
+// @@protoc_insertion_point(message_clear_start:paddle_mobile.framework.proto.VarType.TensorDesc)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -4022,13 +4022,13 @@ bool VarType_TensorDesc::MergePartialFromCodedStream(
               mutable_unknown_fields));
   ::google::protobuf::io::CodedOutputStream unknown_fields_stream(
       &unknown_fields_string, false);
-  // @@protoc_insertion_point(parse_start:paddle.framework.proto.VarType.TensorDesc)
+  // @@protoc_insertion_point(parse_start:paddle_mobile.framework.proto.VarType.TensorDesc)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
     if (!p.second) goto handle_unusual;
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // required .paddle.framework.proto.VarType.Type data_type = 1;
+      // required .paddle_mobile.framework.proto.VarType.Type data_type = 1;
       case 1: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(8u /* 8 & 0xFF */)) {
@@ -4036,8 +4036,8 @@ bool VarType_TensorDesc::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
                  input, &value)));
-          if (::paddle::framework::proto::VarType_Type_IsValid(value)) {
-            set_data_type(static_cast< ::paddle::framework::proto::VarType_Type >(value));
+          if (::paddle_mobile::framework::proto::VarType_Type_IsValid(value)) {
+            set_data_type(static_cast< ::paddle_mobile::framework::proto::VarType_Type >(value));
           } else {
             unknown_fields_stream.WriteVarint32(8u);
             unknown_fields_stream.WriteVarint32(
@@ -4080,22 +4080,22 @@ bool VarType_TensorDesc::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:paddle.framework.proto.VarType.TensorDesc)
+  // @@protoc_insertion_point(parse_success:paddle_mobile.framework.proto.VarType.TensorDesc)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:paddle.framework.proto.VarType.TensorDesc)
+  // @@protoc_insertion_point(parse_failure:paddle_mobile.framework.proto.VarType.TensorDesc)
   return false;
 #undef DO_
 }
 
 void VarType_TensorDesc::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:paddle.framework.proto.VarType.TensorDesc)
+  // @@protoc_insertion_point(serialize_start:paddle_mobile.framework.proto.VarType.TensorDesc)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
-  // required .paddle.framework.proto.VarType.Type data_type = 1;
+  // required .paddle_mobile.framework.proto.VarType.Type data_type = 1;
   if (cached_has_bits & 0x00000001u) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       1, this->data_type(), output);
@@ -4109,16 +4109,16 @@ void VarType_TensorDesc::SerializeWithCachedSizes(
 
   output->WriteRaw(_internal_metadata_.unknown_fields().data(),
                    static_cast<int>(_internal_metadata_.unknown_fields().size()));
-  // @@protoc_insertion_point(serialize_end:paddle.framework.proto.VarType.TensorDesc)
+  // @@protoc_insertion_point(serialize_end:paddle_mobile.framework.proto.VarType.TensorDesc)
 }
 
 size_t VarType_TensorDesc::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:paddle.framework.proto.VarType.TensorDesc)
+// @@protoc_insertion_point(message_byte_size_start:paddle_mobile.framework.proto.VarType.TensorDesc)
   size_t total_size = 0;
 
   total_size += _internal_metadata_.unknown_fields().size();
 
-  // required .paddle.framework.proto.VarType.Type data_type = 1;
+  // required .paddle_mobile.framework.proto.VarType.Type data_type = 1;
   if (has_data_type()) {
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::EnumSize(this->data_type());
@@ -4145,7 +4145,7 @@ void VarType_TensorDesc::CheckTypeAndMergeFrom(
 }
 
 void VarType_TensorDesc::MergeFrom(const VarType_TensorDesc& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:paddle.framework.proto.VarType.TensorDesc)
+// @@protoc_insertion_point(class_specific_merge_from_start:paddle_mobile.framework.proto.VarType.TensorDesc)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
@@ -4158,7 +4158,7 @@ void VarType_TensorDesc::MergeFrom(const VarType_TensorDesc& from) {
 }
 
 void VarType_TensorDesc::CopyFrom(const VarType_TensorDesc& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:paddle.framework.proto.VarType.TensorDesc)
+// @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.VarType.TensorDesc)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -4183,13 +4183,13 @@ void VarType_TensorDesc::InternalSwap(VarType_TensorDesc* other) {
 }
 
 ::std::string VarType_TensorDesc::GetTypeName() const {
-  return "paddle.framework.proto.VarType.TensorDesc";
+  return "paddle_mobile.framework.proto.VarType.TensorDesc";
 }
 
 #if PROTOBUF_INLINE_NOT_IN_HEADERS
 // VarType_TensorDesc
 
-// required .paddle.framework.proto.VarType.Type data_type = 1;
+// required .paddle_mobile.framework.proto.VarType.Type data_type = 1;
 bool VarType_TensorDesc::has_data_type() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
@@ -4203,15 +4203,15 @@ void VarType_TensorDesc::clear_data_type() {
   data_type_ = 0;
   clear_has_data_type();
 }
-::paddle::framework::proto::VarType_Type VarType_TensorDesc::data_type() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.VarType.TensorDesc.data_type)
-  return static_cast< ::paddle::framework::proto::VarType_Type >(data_type_);
+::paddle_mobile::framework::proto::VarType_Type VarType_TensorDesc::data_type() const {
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.TensorDesc.data_type)
+  return static_cast< ::paddle_mobile::framework::proto::VarType_Type >(data_type_);
 }
-void VarType_TensorDesc::set_data_type(::paddle::framework::proto::VarType_Type value) {
-  assert(::paddle::framework::proto::VarType_Type_IsValid(value));
+void VarType_TensorDesc::set_data_type(::paddle_mobile::framework::proto::VarType_Type value) {
+  assert(::paddle_mobile::framework::proto::VarType_Type_IsValid(value));
   set_has_data_type();
   data_type_ = value;
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.VarType.TensorDesc.data_type)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.VarType.TensorDesc.data_type)
 }
 
 // repeated int64 dims = 2;
@@ -4222,25 +4222,25 @@ void VarType_TensorDesc::clear_dims() {
   dims_.Clear();
 }
 ::google::protobuf::int64 VarType_TensorDesc::dims(int index) const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.VarType.TensorDesc.dims)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.TensorDesc.dims)
   return dims_.Get(index);
 }
 void VarType_TensorDesc::set_dims(int index, ::google::protobuf::int64 value) {
   dims_.Set(index, value);
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.VarType.TensorDesc.dims)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.VarType.TensorDesc.dims)
 }
 void VarType_TensorDesc::add_dims(::google::protobuf::int64 value) {
   dims_.Add(value);
-  // @@protoc_insertion_point(field_add:paddle.framework.proto.VarType.TensorDesc.dims)
+  // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.VarType.TensorDesc.dims)
 }
 const ::google::protobuf::RepeatedField< ::google::protobuf::int64 >&
 VarType_TensorDesc::dims() const {
-  // @@protoc_insertion_point(field_list:paddle.framework.proto.VarType.TensorDesc.dims)
+  // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.VarType.TensorDesc.dims)
   return dims_;
 }
 ::google::protobuf::RepeatedField< ::google::protobuf::int64 >*
 VarType_TensorDesc::mutable_dims() {
-  // @@protoc_insertion_point(field_mutable_list:paddle.framework.proto.VarType.TensorDesc.dims)
+  // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.VarType.TensorDesc.dims)
   return &dims_;
 }
 
@@ -4259,7 +4259,7 @@ VarType_LoDTensorDesc::VarType_LoDTensorDesc()
     protobuf_framework_2eproto::InitDefaults();
   }
   SharedCtor();
-  // @@protoc_insertion_point(constructor:paddle.framework.proto.VarType.LoDTensorDesc)
+  // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.VarType.LoDTensorDesc)
 }
 VarType_LoDTensorDesc::VarType_LoDTensorDesc(const VarType_LoDTensorDesc& from)
   : ::google::protobuf::MessageLite(),
@@ -4268,12 +4268,12 @@ VarType_LoDTensorDesc::VarType_LoDTensorDesc(const VarType_LoDTensorDesc& from)
       _cached_size_(0) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   if (from.has_tensor()) {
-    tensor_ = new ::paddle::framework::proto::VarType_TensorDesc(*from.tensor_);
+    tensor_ = new ::paddle_mobile::framework::proto::VarType_TensorDesc(*from.tensor_);
   } else {
     tensor_ = NULL;
   }
   lod_level_ = from.lod_level_;
-  // @@protoc_insertion_point(copy_constructor:paddle.framework.proto.VarType.LoDTensorDesc)
+  // @@protoc_insertion_point(copy_constructor:paddle_mobile.framework.proto.VarType.LoDTensorDesc)
 }
 
 void VarType_LoDTensorDesc::SharedCtor() {
@@ -4284,7 +4284,7 @@ void VarType_LoDTensorDesc::SharedCtor() {
 }
 
 VarType_LoDTensorDesc::~VarType_LoDTensorDesc() {
-  // @@protoc_insertion_point(destructor:paddle.framework.proto.VarType.LoDTensorDesc)
+  // @@protoc_insertion_point(destructor:paddle_mobile.framework.proto.VarType.LoDTensorDesc)
   SharedDtor();
 }
 
@@ -4311,14 +4311,14 @@ VarType_LoDTensorDesc* VarType_LoDTensorDesc::New(::google::protobuf::Arena* are
 }
 
 void VarType_LoDTensorDesc::Clear() {
-// @@protoc_insertion_point(message_clear_start:paddle.framework.proto.VarType.LoDTensorDesc)
+// @@protoc_insertion_point(message_clear_start:paddle_mobile.framework.proto.VarType.LoDTensorDesc)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
   if (has_tensor()) {
     GOOGLE_DCHECK(tensor_ != NULL);
-    tensor_->::paddle::framework::proto::VarType_TensorDesc::Clear();
+    tensor_->::paddle_mobile::framework::proto::VarType_TensorDesc::Clear();
   }
   lod_level_ = 0;
   _has_bits_.Clear();
@@ -4335,13 +4335,13 @@ bool VarType_LoDTensorDesc::MergePartialFromCodedStream(
               mutable_unknown_fields));
   ::google::protobuf::io::CodedOutputStream unknown_fields_stream(
       &unknown_fields_string, false);
-  // @@protoc_insertion_point(parse_start:paddle.framework.proto.VarType.LoDTensorDesc)
+  // @@protoc_insertion_point(parse_start:paddle_mobile.framework.proto.VarType.LoDTensorDesc)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
     if (!p.second) goto handle_unusual;
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // required .paddle.framework.proto.VarType.TensorDesc tensor = 1;
+      // required .paddle_mobile.framework.proto.VarType.TensorDesc tensor = 1;
       case 1: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
@@ -4379,22 +4379,22 @@ bool VarType_LoDTensorDesc::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:paddle.framework.proto.VarType.LoDTensorDesc)
+  // @@protoc_insertion_point(parse_success:paddle_mobile.framework.proto.VarType.LoDTensorDesc)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:paddle.framework.proto.VarType.LoDTensorDesc)
+  // @@protoc_insertion_point(parse_failure:paddle_mobile.framework.proto.VarType.LoDTensorDesc)
   return false;
 #undef DO_
 }
 
 void VarType_LoDTensorDesc::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:paddle.framework.proto.VarType.LoDTensorDesc)
+  // @@protoc_insertion_point(serialize_start:paddle_mobile.framework.proto.VarType.LoDTensorDesc)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
-  // required .paddle.framework.proto.VarType.TensorDesc tensor = 1;
+  // required .paddle_mobile.framework.proto.VarType.TensorDesc tensor = 1;
   if (cached_has_bits & 0x00000001u) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
       1, *this->tensor_, output);
@@ -4407,16 +4407,16 @@ void VarType_LoDTensorDesc::SerializeWithCachedSizes(
 
   output->WriteRaw(_internal_metadata_.unknown_fields().data(),
                    static_cast<int>(_internal_metadata_.unknown_fields().size()));
-  // @@protoc_insertion_point(serialize_end:paddle.framework.proto.VarType.LoDTensorDesc)
+  // @@protoc_insertion_point(serialize_end:paddle_mobile.framework.proto.VarType.LoDTensorDesc)
 }
 
 size_t VarType_LoDTensorDesc::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:paddle.framework.proto.VarType.LoDTensorDesc)
+// @@protoc_insertion_point(message_byte_size_start:paddle_mobile.framework.proto.VarType.LoDTensorDesc)
   size_t total_size = 0;
 
   total_size += _internal_metadata_.unknown_fields().size();
 
-  // required .paddle.framework.proto.VarType.TensorDesc tensor = 1;
+  // required .paddle_mobile.framework.proto.VarType.TensorDesc tensor = 1;
   if (has_tensor()) {
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
@@ -4442,7 +4442,7 @@ void VarType_LoDTensorDesc::CheckTypeAndMergeFrom(
 }
 
 void VarType_LoDTensorDesc::MergeFrom(const VarType_LoDTensorDesc& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:paddle.framework.proto.VarType.LoDTensorDesc)
+// @@protoc_insertion_point(class_specific_merge_from_start:paddle_mobile.framework.proto.VarType.LoDTensorDesc)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
@@ -4451,7 +4451,7 @@ void VarType_LoDTensorDesc::MergeFrom(const VarType_LoDTensorDesc& from) {
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 3u) {
     if (cached_has_bits & 0x00000001u) {
-      mutable_tensor()->::paddle::framework::proto::VarType_TensorDesc::MergeFrom(from.tensor());
+      mutable_tensor()->::paddle_mobile::framework::proto::VarType_TensorDesc::MergeFrom(from.tensor());
     }
     if (cached_has_bits & 0x00000002u) {
       lod_level_ = from.lod_level_;
@@ -4461,7 +4461,7 @@ void VarType_LoDTensorDesc::MergeFrom(const VarType_LoDTensorDesc& from) {
 }
 
 void VarType_LoDTensorDesc::CopyFrom(const VarType_LoDTensorDesc& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:paddle.framework.proto.VarType.LoDTensorDesc)
+// @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.VarType.LoDTensorDesc)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -4489,13 +4489,13 @@ void VarType_LoDTensorDesc::InternalSwap(VarType_LoDTensorDesc* other) {
 }
 
 ::std::string VarType_LoDTensorDesc::GetTypeName() const {
-  return "paddle.framework.proto.VarType.LoDTensorDesc";
+  return "paddle_mobile.framework.proto.VarType.LoDTensorDesc";
 }
 
 #if PROTOBUF_INLINE_NOT_IN_HEADERS
 // VarType_LoDTensorDesc
 
-// required .paddle.framework.proto.VarType.TensorDesc tensor = 1;
+// required .paddle_mobile.framework.proto.VarType.TensorDesc tensor = 1;
 bool VarType_LoDTensorDesc::has_tensor() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
@@ -4506,31 +4506,31 @@ void VarType_LoDTensorDesc::clear_has_tensor() {
   _has_bits_[0] &= ~0x00000001u;
 }
 void VarType_LoDTensorDesc::clear_tensor() {
-  if (tensor_ != NULL) tensor_->::paddle::framework::proto::VarType_TensorDesc::Clear();
+  if (tensor_ != NULL) tensor_->::paddle_mobile::framework::proto::VarType_TensorDesc::Clear();
   clear_has_tensor();
 }
-const ::paddle::framework::proto::VarType_TensorDesc& VarType_LoDTensorDesc::tensor() const {
-  const ::paddle::framework::proto::VarType_TensorDesc* p = tensor_;
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.VarType.LoDTensorDesc.tensor)
-  return p != NULL ? *p : *reinterpret_cast<const ::paddle::framework::proto::VarType_TensorDesc*>(
-      &::paddle::framework::proto::_VarType_TensorDesc_default_instance_);
+const ::paddle_mobile::framework::proto::VarType_TensorDesc& VarType_LoDTensorDesc::tensor() const {
+  const ::paddle_mobile::framework::proto::VarType_TensorDesc* p = tensor_;
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.LoDTensorDesc.tensor)
+  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::proto::VarType_TensorDesc*>(
+      &::paddle_mobile::framework::proto::_VarType_TensorDesc_default_instance_);
 }
-::paddle::framework::proto::VarType_TensorDesc* VarType_LoDTensorDesc::mutable_tensor() {
+::paddle_mobile::framework::proto::VarType_TensorDesc* VarType_LoDTensorDesc::mutable_tensor() {
   set_has_tensor();
   if (tensor_ == NULL) {
-    tensor_ = new ::paddle::framework::proto::VarType_TensorDesc;
+    tensor_ = new ::paddle_mobile::framework::proto::VarType_TensorDesc;
   }
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.VarType.LoDTensorDesc.tensor)
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.VarType.LoDTensorDesc.tensor)
   return tensor_;
 }
-::paddle::framework::proto::VarType_TensorDesc* VarType_LoDTensorDesc::release_tensor() {
-  // @@protoc_insertion_point(field_release:paddle.framework.proto.VarType.LoDTensorDesc.tensor)
+::paddle_mobile::framework::proto::VarType_TensorDesc* VarType_LoDTensorDesc::release_tensor() {
+  // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.VarType.LoDTensorDesc.tensor)
   clear_has_tensor();
-  ::paddle::framework::proto::VarType_TensorDesc* temp = tensor_;
+  ::paddle_mobile::framework::proto::VarType_TensorDesc* temp = tensor_;
   tensor_ = NULL;
   return temp;
 }
-void VarType_LoDTensorDesc::set_allocated_tensor(::paddle::framework::proto::VarType_TensorDesc* tensor) {
+void VarType_LoDTensorDesc::set_allocated_tensor(::paddle_mobile::framework::proto::VarType_TensorDesc* tensor) {
   delete tensor_;
   tensor_ = tensor;
   if (tensor) {
@@ -4538,7 +4538,7 @@ void VarType_LoDTensorDesc::set_allocated_tensor(::paddle::framework::proto::Var
   } else {
     clear_has_tensor();
   }
-  // @@protoc_insertion_point(field_set_allocated:paddle.framework.proto.VarType.LoDTensorDesc.tensor)
+  // @@protoc_insertion_point(field_set_allocated:paddle_mobile.framework.proto.VarType.LoDTensorDesc.tensor)
 }
 
 // optional int32 lod_level = 2 [default = 0];
@@ -4556,13 +4556,13 @@ void VarType_LoDTensorDesc::clear_lod_level() {
   clear_has_lod_level();
 }
 ::google::protobuf::int32 VarType_LoDTensorDesc::lod_level() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.VarType.LoDTensorDesc.lod_level)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.LoDTensorDesc.lod_level)
   return lod_level_;
 }
 void VarType_LoDTensorDesc::set_lod_level(::google::protobuf::int32 value) {
   set_has_lod_level();
   lod_level_ = value;
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.VarType.LoDTensorDesc.lod_level)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.VarType.LoDTensorDesc.lod_level)
 }
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -4580,7 +4580,7 @@ VarType_LoDTensorArrayDesc::VarType_LoDTensorArrayDesc()
     protobuf_framework_2eproto::InitDefaults();
   }
   SharedCtor();
-  // @@protoc_insertion_point(constructor:paddle.framework.proto.VarType.LoDTensorArrayDesc)
+  // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc)
 }
 VarType_LoDTensorArrayDesc::VarType_LoDTensorArrayDesc(const VarType_LoDTensorArrayDesc& from)
   : ::google::protobuf::MessageLite(),
@@ -4589,12 +4589,12 @@ VarType_LoDTensorArrayDesc::VarType_LoDTensorArrayDesc(const VarType_LoDTensorAr
       _cached_size_(0) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   if (from.has_tensor()) {
-    tensor_ = new ::paddle::framework::proto::VarType_TensorDesc(*from.tensor_);
+    tensor_ = new ::paddle_mobile::framework::proto::VarType_TensorDesc(*from.tensor_);
   } else {
     tensor_ = NULL;
   }
   lod_level_ = from.lod_level_;
-  // @@protoc_insertion_point(copy_constructor:paddle.framework.proto.VarType.LoDTensorArrayDesc)
+  // @@protoc_insertion_point(copy_constructor:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc)
 }
 
 void VarType_LoDTensorArrayDesc::SharedCtor() {
@@ -4605,7 +4605,7 @@ void VarType_LoDTensorArrayDesc::SharedCtor() {
 }
 
 VarType_LoDTensorArrayDesc::~VarType_LoDTensorArrayDesc() {
-  // @@protoc_insertion_point(destructor:paddle.framework.proto.VarType.LoDTensorArrayDesc)
+  // @@protoc_insertion_point(destructor:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc)
   SharedDtor();
 }
 
@@ -4632,14 +4632,14 @@ VarType_LoDTensorArrayDesc* VarType_LoDTensorArrayDesc::New(::google::protobuf::
 }
 
 void VarType_LoDTensorArrayDesc::Clear() {
-// @@protoc_insertion_point(message_clear_start:paddle.framework.proto.VarType.LoDTensorArrayDesc)
+// @@protoc_insertion_point(message_clear_start:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
   if (has_tensor()) {
     GOOGLE_DCHECK(tensor_ != NULL);
-    tensor_->::paddle::framework::proto::VarType_TensorDesc::Clear();
+    tensor_->::paddle_mobile::framework::proto::VarType_TensorDesc::Clear();
   }
   lod_level_ = 0;
   _has_bits_.Clear();
@@ -4656,13 +4656,13 @@ bool VarType_LoDTensorArrayDesc::MergePartialFromCodedStream(
               mutable_unknown_fields));
   ::google::protobuf::io::CodedOutputStream unknown_fields_stream(
       &unknown_fields_string, false);
-  // @@protoc_insertion_point(parse_start:paddle.framework.proto.VarType.LoDTensorArrayDesc)
+  // @@protoc_insertion_point(parse_start:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
     if (!p.second) goto handle_unusual;
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // required .paddle.framework.proto.VarType.TensorDesc tensor = 1;
+      // required .paddle_mobile.framework.proto.VarType.TensorDesc tensor = 1;
       case 1: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
@@ -4700,22 +4700,22 @@ bool VarType_LoDTensorArrayDesc::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:paddle.framework.proto.VarType.LoDTensorArrayDesc)
+  // @@protoc_insertion_point(parse_success:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:paddle.framework.proto.VarType.LoDTensorArrayDesc)
+  // @@protoc_insertion_point(parse_failure:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc)
   return false;
 #undef DO_
 }
 
 void VarType_LoDTensorArrayDesc::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:paddle.framework.proto.VarType.LoDTensorArrayDesc)
+  // @@protoc_insertion_point(serialize_start:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
-  // required .paddle.framework.proto.VarType.TensorDesc tensor = 1;
+  // required .paddle_mobile.framework.proto.VarType.TensorDesc tensor = 1;
   if (cached_has_bits & 0x00000001u) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
       1, *this->tensor_, output);
@@ -4728,16 +4728,16 @@ void VarType_LoDTensorArrayDesc::SerializeWithCachedSizes(
 
   output->WriteRaw(_internal_metadata_.unknown_fields().data(),
                    static_cast<int>(_internal_metadata_.unknown_fields().size()));
-  // @@protoc_insertion_point(serialize_end:paddle.framework.proto.VarType.LoDTensorArrayDesc)
+  // @@protoc_insertion_point(serialize_end:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc)
 }
 
 size_t VarType_LoDTensorArrayDesc::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:paddle.framework.proto.VarType.LoDTensorArrayDesc)
+// @@protoc_insertion_point(message_byte_size_start:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc)
   size_t total_size = 0;
 
   total_size += _internal_metadata_.unknown_fields().size();
 
-  // required .paddle.framework.proto.VarType.TensorDesc tensor = 1;
+  // required .paddle_mobile.framework.proto.VarType.TensorDesc tensor = 1;
   if (has_tensor()) {
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
@@ -4763,7 +4763,7 @@ void VarType_LoDTensorArrayDesc::CheckTypeAndMergeFrom(
 }
 
 void VarType_LoDTensorArrayDesc::MergeFrom(const VarType_LoDTensorArrayDesc& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:paddle.framework.proto.VarType.LoDTensorArrayDesc)
+// @@protoc_insertion_point(class_specific_merge_from_start:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
@@ -4772,7 +4772,7 @@ void VarType_LoDTensorArrayDesc::MergeFrom(const VarType_LoDTensorArrayDesc& fro
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 3u) {
     if (cached_has_bits & 0x00000001u) {
-      mutable_tensor()->::paddle::framework::proto::VarType_TensorDesc::MergeFrom(from.tensor());
+      mutable_tensor()->::paddle_mobile::framework::proto::VarType_TensorDesc::MergeFrom(from.tensor());
     }
     if (cached_has_bits & 0x00000002u) {
       lod_level_ = from.lod_level_;
@@ -4782,7 +4782,7 @@ void VarType_LoDTensorArrayDesc::MergeFrom(const VarType_LoDTensorArrayDesc& fro
 }
 
 void VarType_LoDTensorArrayDesc::CopyFrom(const VarType_LoDTensorArrayDesc& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:paddle.framework.proto.VarType.LoDTensorArrayDesc)
+// @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -4810,13 +4810,13 @@ void VarType_LoDTensorArrayDesc::InternalSwap(VarType_LoDTensorArrayDesc* other)
 }
 
 ::std::string VarType_LoDTensorArrayDesc::GetTypeName() const {
-  return "paddle.framework.proto.VarType.LoDTensorArrayDesc";
+  return "paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc";
 }
 
 #if PROTOBUF_INLINE_NOT_IN_HEADERS
 // VarType_LoDTensorArrayDesc
 
-// required .paddle.framework.proto.VarType.TensorDesc tensor = 1;
+// required .paddle_mobile.framework.proto.VarType.TensorDesc tensor = 1;
 bool VarType_LoDTensorArrayDesc::has_tensor() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
@@ -4827,31 +4827,31 @@ void VarType_LoDTensorArrayDesc::clear_has_tensor() {
   _has_bits_[0] &= ~0x00000001u;
 }
 void VarType_LoDTensorArrayDesc::clear_tensor() {
-  if (tensor_ != NULL) tensor_->::paddle::framework::proto::VarType_TensorDesc::Clear();
+  if (tensor_ != NULL) tensor_->::paddle_mobile::framework::proto::VarType_TensorDesc::Clear();
   clear_has_tensor();
 }
-const ::paddle::framework::proto::VarType_TensorDesc& VarType_LoDTensorArrayDesc::tensor() const {
-  const ::paddle::framework::proto::VarType_TensorDesc* p = tensor_;
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.VarType.LoDTensorArrayDesc.tensor)
-  return p != NULL ? *p : *reinterpret_cast<const ::paddle::framework::proto::VarType_TensorDesc*>(
-      &::paddle::framework::proto::_VarType_TensorDesc_default_instance_);
+const ::paddle_mobile::framework::proto::VarType_TensorDesc& VarType_LoDTensorArrayDesc::tensor() const {
+  const ::paddle_mobile::framework::proto::VarType_TensorDesc* p = tensor_;
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc.tensor)
+  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::proto::VarType_TensorDesc*>(
+      &::paddle_mobile::framework::proto::_VarType_TensorDesc_default_instance_);
 }
-::paddle::framework::proto::VarType_TensorDesc* VarType_LoDTensorArrayDesc::mutable_tensor() {
+::paddle_mobile::framework::proto::VarType_TensorDesc* VarType_LoDTensorArrayDesc::mutable_tensor() {
   set_has_tensor();
   if (tensor_ == NULL) {
-    tensor_ = new ::paddle::framework::proto::VarType_TensorDesc;
+    tensor_ = new ::paddle_mobile::framework::proto::VarType_TensorDesc;
   }
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.VarType.LoDTensorArrayDesc.tensor)
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc.tensor)
   return tensor_;
 }
-::paddle::framework::proto::VarType_TensorDesc* VarType_LoDTensorArrayDesc::release_tensor() {
-  // @@protoc_insertion_point(field_release:paddle.framework.proto.VarType.LoDTensorArrayDesc.tensor)
+::paddle_mobile::framework::proto::VarType_TensorDesc* VarType_LoDTensorArrayDesc::release_tensor() {
+  // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc.tensor)
   clear_has_tensor();
-  ::paddle::framework::proto::VarType_TensorDesc* temp = tensor_;
+  ::paddle_mobile::framework::proto::VarType_TensorDesc* temp = tensor_;
   tensor_ = NULL;
   return temp;
 }
-void VarType_LoDTensorArrayDesc::set_allocated_tensor(::paddle::framework::proto::VarType_TensorDesc* tensor) {
+void VarType_LoDTensorArrayDesc::set_allocated_tensor(::paddle_mobile::framework::proto::VarType_TensorDesc* tensor) {
   delete tensor_;
   tensor_ = tensor;
   if (tensor) {
@@ -4859,7 +4859,7 @@ void VarType_LoDTensorArrayDesc::set_allocated_tensor(::paddle::framework::proto
   } else {
     clear_has_tensor();
   }
-  // @@protoc_insertion_point(field_set_allocated:paddle.framework.proto.VarType.LoDTensorArrayDesc.tensor)
+  // @@protoc_insertion_point(field_set_allocated:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc.tensor)
 }
 
 // optional int32 lod_level = 2 [default = 0];
@@ -4877,13 +4877,13 @@ void VarType_LoDTensorArrayDesc::clear_lod_level() {
   clear_has_lod_level();
 }
 ::google::protobuf::int32 VarType_LoDTensorArrayDesc::lod_level() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.VarType.LoDTensorArrayDesc.lod_level)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc.lod_level)
   return lod_level_;
 }
 void VarType_LoDTensorArrayDesc::set_lod_level(::google::protobuf::int32 value) {
   set_has_lod_level();
   lod_level_ = value;
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.VarType.LoDTensorArrayDesc.lod_level)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc.lod_level)
 }
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -4900,7 +4900,7 @@ VarType_ReaderDesc::VarType_ReaderDesc()
     protobuf_framework_2eproto::InitDefaults();
   }
   SharedCtor();
-  // @@protoc_insertion_point(constructor:paddle.framework.proto.VarType.ReaderDesc)
+  // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.VarType.ReaderDesc)
 }
 VarType_ReaderDesc::VarType_ReaderDesc(const VarType_ReaderDesc& from)
   : ::google::protobuf::MessageLite(),
@@ -4909,7 +4909,7 @@ VarType_ReaderDesc::VarType_ReaderDesc(const VarType_ReaderDesc& from)
       _cached_size_(0),
       lod_tensor_(from.lod_tensor_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  // @@protoc_insertion_point(copy_constructor:paddle.framework.proto.VarType.ReaderDesc)
+  // @@protoc_insertion_point(copy_constructor:paddle_mobile.framework.proto.VarType.ReaderDesc)
 }
 
 void VarType_ReaderDesc::SharedCtor() {
@@ -4917,7 +4917,7 @@ void VarType_ReaderDesc::SharedCtor() {
 }
 
 VarType_ReaderDesc::~VarType_ReaderDesc() {
-  // @@protoc_insertion_point(destructor:paddle.framework.proto.VarType.ReaderDesc)
+  // @@protoc_insertion_point(destructor:paddle_mobile.framework.proto.VarType.ReaderDesc)
   SharedDtor();
 }
 
@@ -4943,7 +4943,7 @@ VarType_ReaderDesc* VarType_ReaderDesc::New(::google::protobuf::Arena* arena) co
 }
 
 void VarType_ReaderDesc::Clear() {
-// @@protoc_insertion_point(message_clear_start:paddle.framework.proto.VarType.ReaderDesc)
+// @@protoc_insertion_point(message_clear_start:paddle_mobile.framework.proto.VarType.ReaderDesc)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -4963,13 +4963,13 @@ bool VarType_ReaderDesc::MergePartialFromCodedStream(
               mutable_unknown_fields));
   ::google::protobuf::io::CodedOutputStream unknown_fields_stream(
       &unknown_fields_string, false);
-  // @@protoc_insertion_point(parse_start:paddle.framework.proto.VarType.ReaderDesc)
+  // @@protoc_insertion_point(parse_start:paddle_mobile.framework.proto.VarType.ReaderDesc)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
     if (!p.second) goto handle_unusual;
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // repeated .paddle.framework.proto.VarType.LoDTensorDesc lod_tensor = 1;
+      // repeated .paddle_mobile.framework.proto.VarType.LoDTensorDesc lod_tensor = 1;
       case 1: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
@@ -4993,21 +4993,21 @@ bool VarType_ReaderDesc::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:paddle.framework.proto.VarType.ReaderDesc)
+  // @@protoc_insertion_point(parse_success:paddle_mobile.framework.proto.VarType.ReaderDesc)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:paddle.framework.proto.VarType.ReaderDesc)
+  // @@protoc_insertion_point(parse_failure:paddle_mobile.framework.proto.VarType.ReaderDesc)
   return false;
 #undef DO_
 }
 
 void VarType_ReaderDesc::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:paddle.framework.proto.VarType.ReaderDesc)
+  // @@protoc_insertion_point(serialize_start:paddle_mobile.framework.proto.VarType.ReaderDesc)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // repeated .paddle.framework.proto.VarType.LoDTensorDesc lod_tensor = 1;
+  // repeated .paddle_mobile.framework.proto.VarType.LoDTensorDesc lod_tensor = 1;
   for (unsigned int i = 0,
       n = static_cast<unsigned int>(this->lod_tensor_size()); i < n; i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
@@ -5016,16 +5016,16 @@ void VarType_ReaderDesc::SerializeWithCachedSizes(
 
   output->WriteRaw(_internal_metadata_.unknown_fields().data(),
                    static_cast<int>(_internal_metadata_.unknown_fields().size()));
-  // @@protoc_insertion_point(serialize_end:paddle.framework.proto.VarType.ReaderDesc)
+  // @@protoc_insertion_point(serialize_end:paddle_mobile.framework.proto.VarType.ReaderDesc)
 }
 
 size_t VarType_ReaderDesc::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:paddle.framework.proto.VarType.ReaderDesc)
+// @@protoc_insertion_point(message_byte_size_start:paddle_mobile.framework.proto.VarType.ReaderDesc)
   size_t total_size = 0;
 
   total_size += _internal_metadata_.unknown_fields().size();
 
-  // repeated .paddle.framework.proto.VarType.LoDTensorDesc lod_tensor = 1;
+  // repeated .paddle_mobile.framework.proto.VarType.LoDTensorDesc lod_tensor = 1;
   {
     unsigned int count = static_cast<unsigned int>(this->lod_tensor_size());
     total_size += 1UL * count;
@@ -5049,7 +5049,7 @@ void VarType_ReaderDesc::CheckTypeAndMergeFrom(
 }
 
 void VarType_ReaderDesc::MergeFrom(const VarType_ReaderDesc& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:paddle.framework.proto.VarType.ReaderDesc)
+// @@protoc_insertion_point(class_specific_merge_from_start:paddle_mobile.framework.proto.VarType.ReaderDesc)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
@@ -5059,7 +5059,7 @@ void VarType_ReaderDesc::MergeFrom(const VarType_ReaderDesc& from) {
 }
 
 void VarType_ReaderDesc::CopyFrom(const VarType_ReaderDesc& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:paddle.framework.proto.VarType.ReaderDesc)
+// @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.VarType.ReaderDesc)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -5083,39 +5083,39 @@ void VarType_ReaderDesc::InternalSwap(VarType_ReaderDesc* other) {
 }
 
 ::std::string VarType_ReaderDesc::GetTypeName() const {
-  return "paddle.framework.proto.VarType.ReaderDesc";
+  return "paddle_mobile.framework.proto.VarType.ReaderDesc";
 }
 
 #if PROTOBUF_INLINE_NOT_IN_HEADERS
 // VarType_ReaderDesc
 
-// repeated .paddle.framework.proto.VarType.LoDTensorDesc lod_tensor = 1;
+// repeated .paddle_mobile.framework.proto.VarType.LoDTensorDesc lod_tensor = 1;
 int VarType_ReaderDesc::lod_tensor_size() const {
   return lod_tensor_.size();
 }
 void VarType_ReaderDesc::clear_lod_tensor() {
   lod_tensor_.Clear();
 }
-const ::paddle::framework::proto::VarType_LoDTensorDesc& VarType_ReaderDesc::lod_tensor(int index) const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.VarType.ReaderDesc.lod_tensor)
+const ::paddle_mobile::framework::proto::VarType_LoDTensorDesc& VarType_ReaderDesc::lod_tensor(int index) const {
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.ReaderDesc.lod_tensor)
   return lod_tensor_.Get(index);
 }
-::paddle::framework::proto::VarType_LoDTensorDesc* VarType_ReaderDesc::mutable_lod_tensor(int index) {
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.VarType.ReaderDesc.lod_tensor)
+::paddle_mobile::framework::proto::VarType_LoDTensorDesc* VarType_ReaderDesc::mutable_lod_tensor(int index) {
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.VarType.ReaderDesc.lod_tensor)
   return lod_tensor_.Mutable(index);
 }
-::paddle::framework::proto::VarType_LoDTensorDesc* VarType_ReaderDesc::add_lod_tensor() {
-  // @@protoc_insertion_point(field_add:paddle.framework.proto.VarType.ReaderDesc.lod_tensor)
+::paddle_mobile::framework::proto::VarType_LoDTensorDesc* VarType_ReaderDesc::add_lod_tensor() {
+  // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.VarType.ReaderDesc.lod_tensor)
   return lod_tensor_.Add();
 }
-::google::protobuf::RepeatedPtrField< ::paddle::framework::proto::VarType_LoDTensorDesc >*
+::google::protobuf::RepeatedPtrField< ::paddle_mobile::framework::proto::VarType_LoDTensorDesc >*
 VarType_ReaderDesc::mutable_lod_tensor() {
-  // @@protoc_insertion_point(field_mutable_list:paddle.framework.proto.VarType.ReaderDesc.lod_tensor)
+  // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.VarType.ReaderDesc.lod_tensor)
   return &lod_tensor_;
 }
-const ::google::protobuf::RepeatedPtrField< ::paddle::framework::proto::VarType_LoDTensorDesc >&
+const ::google::protobuf::RepeatedPtrField< ::paddle_mobile::framework::proto::VarType_LoDTensorDesc >&
 VarType_ReaderDesc::lod_tensor() const {
-  // @@protoc_insertion_point(field_list:paddle.framework.proto.VarType.ReaderDesc.lod_tensor)
+  // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.VarType.ReaderDesc.lod_tensor)
   return lod_tensor_;
 }
 
@@ -5134,7 +5134,7 @@ VarType_ChannelDesc::VarType_ChannelDesc()
     protobuf_framework_2eproto::InitDefaults();
   }
   SharedCtor();
-  // @@protoc_insertion_point(constructor:paddle.framework.proto.VarType.ChannelDesc)
+  // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.VarType.ChannelDesc)
 }
 VarType_ChannelDesc::VarType_ChannelDesc(const VarType_ChannelDesc& from)
   : ::google::protobuf::MessageLite(),
@@ -5145,7 +5145,7 @@ VarType_ChannelDesc::VarType_ChannelDesc(const VarType_ChannelDesc& from)
   ::memcpy(&capacity_, &from.capacity_,
     static_cast<size_t>(reinterpret_cast<char*>(&data_type_) -
     reinterpret_cast<char*>(&capacity_)) + sizeof(data_type_));
-  // @@protoc_insertion_point(copy_constructor:paddle.framework.proto.VarType.ChannelDesc)
+  // @@protoc_insertion_point(copy_constructor:paddle_mobile.framework.proto.VarType.ChannelDesc)
 }
 
 void VarType_ChannelDesc::SharedCtor() {
@@ -5156,7 +5156,7 @@ void VarType_ChannelDesc::SharedCtor() {
 }
 
 VarType_ChannelDesc::~VarType_ChannelDesc() {
-  // @@protoc_insertion_point(destructor:paddle.framework.proto.VarType.ChannelDesc)
+  // @@protoc_insertion_point(destructor:paddle_mobile.framework.proto.VarType.ChannelDesc)
   SharedDtor();
 }
 
@@ -5182,7 +5182,7 @@ VarType_ChannelDesc* VarType_ChannelDesc::New(::google::protobuf::Arena* arena) 
 }
 
 void VarType_ChannelDesc::Clear() {
-// @@protoc_insertion_point(message_clear_start:paddle.framework.proto.VarType.ChannelDesc)
+// @@protoc_insertion_point(message_clear_start:paddle_mobile.framework.proto.VarType.ChannelDesc)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -5207,13 +5207,13 @@ bool VarType_ChannelDesc::MergePartialFromCodedStream(
               mutable_unknown_fields));
   ::google::protobuf::io::CodedOutputStream unknown_fields_stream(
       &unknown_fields_string, false);
-  // @@protoc_insertion_point(parse_start:paddle.framework.proto.VarType.ChannelDesc)
+  // @@protoc_insertion_point(parse_start:paddle_mobile.framework.proto.VarType.ChannelDesc)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
     if (!p.second) goto handle_unusual;
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // required .paddle.framework.proto.VarType.Type data_type = 1;
+      // required .paddle_mobile.framework.proto.VarType.Type data_type = 1;
       case 1: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(8u /* 8 & 0xFF */)) {
@@ -5221,8 +5221,8 @@ bool VarType_ChannelDesc::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
                  input, &value)));
-          if (::paddle::framework::proto::VarType_Type_IsValid(value)) {
-            set_data_type(static_cast< ::paddle::framework::proto::VarType_Type >(value));
+          if (::paddle_mobile::framework::proto::VarType_Type_IsValid(value)) {
+            set_data_type(static_cast< ::paddle_mobile::framework::proto::VarType_Type >(value));
           } else {
             unknown_fields_stream.WriteVarint32(8u);
             unknown_fields_stream.WriteVarint32(
@@ -5260,22 +5260,22 @@ bool VarType_ChannelDesc::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:paddle.framework.proto.VarType.ChannelDesc)
+  // @@protoc_insertion_point(parse_success:paddle_mobile.framework.proto.VarType.ChannelDesc)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:paddle.framework.proto.VarType.ChannelDesc)
+  // @@protoc_insertion_point(parse_failure:paddle_mobile.framework.proto.VarType.ChannelDesc)
   return false;
 #undef DO_
 }
 
 void VarType_ChannelDesc::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:paddle.framework.proto.VarType.ChannelDesc)
+  // @@protoc_insertion_point(serialize_start:paddle_mobile.framework.proto.VarType.ChannelDesc)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
-  // required .paddle.framework.proto.VarType.Type data_type = 1;
+  // required .paddle_mobile.framework.proto.VarType.Type data_type = 1;
   if (cached_has_bits & 0x00000002u) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       1, this->data_type(), output);
@@ -5288,11 +5288,11 @@ void VarType_ChannelDesc::SerializeWithCachedSizes(
 
   output->WriteRaw(_internal_metadata_.unknown_fields().data(),
                    static_cast<int>(_internal_metadata_.unknown_fields().size()));
-  // @@protoc_insertion_point(serialize_end:paddle.framework.proto.VarType.ChannelDesc)
+  // @@protoc_insertion_point(serialize_end:paddle_mobile.framework.proto.VarType.ChannelDesc)
 }
 
 size_t VarType_ChannelDesc::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:paddle.framework.proto.VarType.ChannelDesc)
+// @@protoc_insertion_point(required_fields_byte_size_fallback_start:paddle_mobile.framework.proto.VarType.ChannelDesc)
   size_t total_size = 0;
 
   if (has_capacity()) {
@@ -5303,7 +5303,7 @@ size_t VarType_ChannelDesc::RequiredFieldsByteSizeFallback() const {
   }
 
   if (has_data_type()) {
-    // required .paddle.framework.proto.VarType.Type data_type = 1;
+    // required .paddle_mobile.framework.proto.VarType.Type data_type = 1;
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::EnumSize(this->data_type());
   }
@@ -5311,7 +5311,7 @@ size_t VarType_ChannelDesc::RequiredFieldsByteSizeFallback() const {
   return total_size;
 }
 size_t VarType_ChannelDesc::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:paddle.framework.proto.VarType.ChannelDesc)
+// @@protoc_insertion_point(message_byte_size_start:paddle_mobile.framework.proto.VarType.ChannelDesc)
   size_t total_size = 0;
 
   total_size += _internal_metadata_.unknown_fields().size();
@@ -5322,7 +5322,7 @@ size_t VarType_ChannelDesc::ByteSizeLong() const {
       ::google::protobuf::internal::WireFormatLite::Int64Size(
         this->capacity());
 
-    // required .paddle.framework.proto.VarType.Type data_type = 1;
+    // required .paddle_mobile.framework.proto.VarType.Type data_type = 1;
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::EnumSize(this->data_type());
 
@@ -5342,7 +5342,7 @@ void VarType_ChannelDesc::CheckTypeAndMergeFrom(
 }
 
 void VarType_ChannelDesc::MergeFrom(const VarType_ChannelDesc& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:paddle.framework.proto.VarType.ChannelDesc)
+// @@protoc_insertion_point(class_specific_merge_from_start:paddle_mobile.framework.proto.VarType.ChannelDesc)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
@@ -5361,7 +5361,7 @@ void VarType_ChannelDesc::MergeFrom(const VarType_ChannelDesc& from) {
 }
 
 void VarType_ChannelDesc::CopyFrom(const VarType_ChannelDesc& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:paddle.framework.proto.VarType.ChannelDesc)
+// @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.VarType.ChannelDesc)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -5386,13 +5386,13 @@ void VarType_ChannelDesc::InternalSwap(VarType_ChannelDesc* other) {
 }
 
 ::std::string VarType_ChannelDesc::GetTypeName() const {
-  return "paddle.framework.proto.VarType.ChannelDesc";
+  return "paddle_mobile.framework.proto.VarType.ChannelDesc";
 }
 
 #if PROTOBUF_INLINE_NOT_IN_HEADERS
 // VarType_ChannelDesc
 
-// required .paddle.framework.proto.VarType.Type data_type = 1;
+// required .paddle_mobile.framework.proto.VarType.Type data_type = 1;
 bool VarType_ChannelDesc::has_data_type() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
@@ -5406,15 +5406,15 @@ void VarType_ChannelDesc::clear_data_type() {
   data_type_ = 0;
   clear_has_data_type();
 }
-::paddle::framework::proto::VarType_Type VarType_ChannelDesc::data_type() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.VarType.ChannelDesc.data_type)
-  return static_cast< ::paddle::framework::proto::VarType_Type >(data_type_);
+::paddle_mobile::framework::proto::VarType_Type VarType_ChannelDesc::data_type() const {
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.ChannelDesc.data_type)
+  return static_cast< ::paddle_mobile::framework::proto::VarType_Type >(data_type_);
 }
-void VarType_ChannelDesc::set_data_type(::paddle::framework::proto::VarType_Type value) {
-  assert(::paddle::framework::proto::VarType_Type_IsValid(value));
+void VarType_ChannelDesc::set_data_type(::paddle_mobile::framework::proto::VarType_Type value) {
+  assert(::paddle_mobile::framework::proto::VarType_Type_IsValid(value));
   set_has_data_type();
   data_type_ = value;
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.VarType.ChannelDesc.data_type)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.VarType.ChannelDesc.data_type)
 }
 
 // required int64 capacity = 2;
@@ -5432,13 +5432,13 @@ void VarType_ChannelDesc::clear_capacity() {
   clear_has_capacity();
 }
 ::google::protobuf::int64 VarType_ChannelDesc::capacity() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.VarType.ChannelDesc.capacity)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.ChannelDesc.capacity)
   return capacity_;
 }
 void VarType_ChannelDesc::set_capacity(::google::protobuf::int64 value) {
   set_has_capacity();
   capacity_ = value;
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.VarType.ChannelDesc.capacity)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.VarType.ChannelDesc.capacity)
 }
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -5455,7 +5455,7 @@ VarType_Tuple::VarType_Tuple()
     protobuf_framework_2eproto::InitDefaults();
   }
   SharedCtor();
-  // @@protoc_insertion_point(constructor:paddle.framework.proto.VarType.Tuple)
+  // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.VarType.Tuple)
 }
 VarType_Tuple::VarType_Tuple(const VarType_Tuple& from)
   : ::google::protobuf::MessageLite(),
@@ -5464,7 +5464,7 @@ VarType_Tuple::VarType_Tuple(const VarType_Tuple& from)
       _cached_size_(0),
       element_type_(from.element_type_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  // @@protoc_insertion_point(copy_constructor:paddle.framework.proto.VarType.Tuple)
+  // @@protoc_insertion_point(copy_constructor:paddle_mobile.framework.proto.VarType.Tuple)
 }
 
 void VarType_Tuple::SharedCtor() {
@@ -5472,7 +5472,7 @@ void VarType_Tuple::SharedCtor() {
 }
 
 VarType_Tuple::~VarType_Tuple() {
-  // @@protoc_insertion_point(destructor:paddle.framework.proto.VarType.Tuple)
+  // @@protoc_insertion_point(destructor:paddle_mobile.framework.proto.VarType.Tuple)
   SharedDtor();
 }
 
@@ -5498,7 +5498,7 @@ VarType_Tuple* VarType_Tuple::New(::google::protobuf::Arena* arena) const {
 }
 
 void VarType_Tuple::Clear() {
-// @@protoc_insertion_point(message_clear_start:paddle.framework.proto.VarType.Tuple)
+// @@protoc_insertion_point(message_clear_start:paddle_mobile.framework.proto.VarType.Tuple)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -5518,13 +5518,13 @@ bool VarType_Tuple::MergePartialFromCodedStream(
               mutable_unknown_fields));
   ::google::protobuf::io::CodedOutputStream unknown_fields_stream(
       &unknown_fields_string, false);
-  // @@protoc_insertion_point(parse_start:paddle.framework.proto.VarType.Tuple)
+  // @@protoc_insertion_point(parse_start:paddle_mobile.framework.proto.VarType.Tuple)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
     if (!p.second) goto handle_unusual;
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // repeated .paddle.framework.proto.VarType.Type element_type = 1;
+      // repeated .paddle_mobile.framework.proto.VarType.Type element_type = 1;
       case 1: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(8u /* 8 & 0xFF */)) {
@@ -5532,8 +5532,8 @@ bool VarType_Tuple::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
                  input, &value)));
-          if (::paddle::framework::proto::VarType_Type_IsValid(value)) {
-            add_element_type(static_cast< ::paddle::framework::proto::VarType_Type >(value));
+          if (::paddle_mobile::framework::proto::VarType_Type_IsValid(value)) {
+            add_element_type(static_cast< ::paddle_mobile::framework::proto::VarType_Type >(value));
           } else {
             unknown_fields_stream.WriteVarint32(tag);
             unknown_fields_stream.WriteVarint32(
@@ -5545,7 +5545,7 @@ bool VarType_Tuple::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPackedEnumPreserveUnknowns(
                  input,
                  1,
-                 ::paddle::framework::proto::VarType_Type_IsValid,
+                 ::paddle_mobile::framework::proto::VarType_Type_IsValid,
                  &unknown_fields_stream,
                  this->mutable_element_type())));
         } else {
@@ -5566,21 +5566,21 @@ bool VarType_Tuple::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:paddle.framework.proto.VarType.Tuple)
+  // @@protoc_insertion_point(parse_success:paddle_mobile.framework.proto.VarType.Tuple)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:paddle.framework.proto.VarType.Tuple)
+  // @@protoc_insertion_point(parse_failure:paddle_mobile.framework.proto.VarType.Tuple)
   return false;
 #undef DO_
 }
 
 void VarType_Tuple::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:paddle.framework.proto.VarType.Tuple)
+  // @@protoc_insertion_point(serialize_start:paddle_mobile.framework.proto.VarType.Tuple)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // repeated .paddle.framework.proto.VarType.Type element_type = 1;
+  // repeated .paddle_mobile.framework.proto.VarType.Type element_type = 1;
   for (int i = 0, n = this->element_type_size(); i < n; i++) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       1, this->element_type(i), output);
@@ -5588,16 +5588,16 @@ void VarType_Tuple::SerializeWithCachedSizes(
 
   output->WriteRaw(_internal_metadata_.unknown_fields().data(),
                    static_cast<int>(_internal_metadata_.unknown_fields().size()));
-  // @@protoc_insertion_point(serialize_end:paddle.framework.proto.VarType.Tuple)
+  // @@protoc_insertion_point(serialize_end:paddle_mobile.framework.proto.VarType.Tuple)
 }
 
 size_t VarType_Tuple::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:paddle.framework.proto.VarType.Tuple)
+// @@protoc_insertion_point(message_byte_size_start:paddle_mobile.framework.proto.VarType.Tuple)
   size_t total_size = 0;
 
   total_size += _internal_metadata_.unknown_fields().size();
 
-  // repeated .paddle.framework.proto.VarType.Type element_type = 1;
+  // repeated .paddle_mobile.framework.proto.VarType.Type element_type = 1;
   {
     size_t data_size = 0;
     unsigned int count = static_cast<unsigned int>(this->element_type_size());for (unsigned int i = 0; i < count; i++) {
@@ -5620,7 +5620,7 @@ void VarType_Tuple::CheckTypeAndMergeFrom(
 }
 
 void VarType_Tuple::MergeFrom(const VarType_Tuple& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:paddle.framework.proto.VarType.Tuple)
+// @@protoc_insertion_point(class_specific_merge_from_start:paddle_mobile.framework.proto.VarType.Tuple)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
@@ -5630,7 +5630,7 @@ void VarType_Tuple::MergeFrom(const VarType_Tuple& from) {
 }
 
 void VarType_Tuple::CopyFrom(const VarType_Tuple& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:paddle.framework.proto.VarType.Tuple)
+// @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.VarType.Tuple)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -5653,41 +5653,41 @@ void VarType_Tuple::InternalSwap(VarType_Tuple* other) {
 }
 
 ::std::string VarType_Tuple::GetTypeName() const {
-  return "paddle.framework.proto.VarType.Tuple";
+  return "paddle_mobile.framework.proto.VarType.Tuple";
 }
 
 #if PROTOBUF_INLINE_NOT_IN_HEADERS
 // VarType_Tuple
 
-// repeated .paddle.framework.proto.VarType.Type element_type = 1;
+// repeated .paddle_mobile.framework.proto.VarType.Type element_type = 1;
 int VarType_Tuple::element_type_size() const {
   return element_type_.size();
 }
 void VarType_Tuple::clear_element_type() {
   element_type_.Clear();
 }
-::paddle::framework::proto::VarType_Type VarType_Tuple::element_type(int index) const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.VarType.Tuple.element_type)
-  return static_cast< ::paddle::framework::proto::VarType_Type >(element_type_.Get(index));
+::paddle_mobile::framework::proto::VarType_Type VarType_Tuple::element_type(int index) const {
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.Tuple.element_type)
+  return static_cast< ::paddle_mobile::framework::proto::VarType_Type >(element_type_.Get(index));
 }
-void VarType_Tuple::set_element_type(int index, ::paddle::framework::proto::VarType_Type value) {
-  assert(::paddle::framework::proto::VarType_Type_IsValid(value));
+void VarType_Tuple::set_element_type(int index, ::paddle_mobile::framework::proto::VarType_Type value) {
+  assert(::paddle_mobile::framework::proto::VarType_Type_IsValid(value));
   element_type_.Set(index, value);
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.VarType.Tuple.element_type)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.VarType.Tuple.element_type)
 }
-void VarType_Tuple::add_element_type(::paddle::framework::proto::VarType_Type value) {
-  assert(::paddle::framework::proto::VarType_Type_IsValid(value));
+void VarType_Tuple::add_element_type(::paddle_mobile::framework::proto::VarType_Type value) {
+  assert(::paddle_mobile::framework::proto::VarType_Type_IsValid(value));
   element_type_.Add(value);
-  // @@protoc_insertion_point(field_add:paddle.framework.proto.VarType.Tuple.element_type)
+  // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.VarType.Tuple.element_type)
 }
 const ::google::protobuf::RepeatedField<int>&
 VarType_Tuple::element_type() const {
-  // @@protoc_insertion_point(field_list:paddle.framework.proto.VarType.Tuple.element_type)
+  // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.VarType.Tuple.element_type)
   return element_type_;
 }
 ::google::protobuf::RepeatedField<int>*
 VarType_Tuple::mutable_element_type() {
-  // @@protoc_insertion_point(field_mutable_list:paddle.framework.proto.VarType.Tuple.element_type)
+  // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.VarType.Tuple.element_type)
   return &element_type_;
 }
 
@@ -5711,7 +5711,7 @@ VarType::VarType()
     protobuf_framework_2eproto::InitDefaults();
   }
   SharedCtor();
-  // @@protoc_insertion_point(constructor:paddle.framework.proto.VarType)
+  // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.VarType)
 }
 VarType::VarType(const VarType& from)
   : ::google::protobuf::MessageLite(),
@@ -5720,37 +5720,37 @@ VarType::VarType(const VarType& from)
       _cached_size_(0) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   if (from.has_selected_rows()) {
-    selected_rows_ = new ::paddle::framework::proto::VarType_TensorDesc(*from.selected_rows_);
+    selected_rows_ = new ::paddle_mobile::framework::proto::VarType_TensorDesc(*from.selected_rows_);
   } else {
     selected_rows_ = NULL;
   }
   if (from.has_lod_tensor()) {
-    lod_tensor_ = new ::paddle::framework::proto::VarType_LoDTensorDesc(*from.lod_tensor_);
+    lod_tensor_ = new ::paddle_mobile::framework::proto::VarType_LoDTensorDesc(*from.lod_tensor_);
   } else {
     lod_tensor_ = NULL;
   }
   if (from.has_tensor_array()) {
-    tensor_array_ = new ::paddle::framework::proto::VarType_LoDTensorArrayDesc(*from.tensor_array_);
+    tensor_array_ = new ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc(*from.tensor_array_);
   } else {
     tensor_array_ = NULL;
   }
   if (from.has_reader()) {
-    reader_ = new ::paddle::framework::proto::VarType_ReaderDesc(*from.reader_);
+    reader_ = new ::paddle_mobile::framework::proto::VarType_ReaderDesc(*from.reader_);
   } else {
     reader_ = NULL;
   }
   if (from.has_channel()) {
-    channel_ = new ::paddle::framework::proto::VarType_ChannelDesc(*from.channel_);
+    channel_ = new ::paddle_mobile::framework::proto::VarType_ChannelDesc(*from.channel_);
   } else {
     channel_ = NULL;
   }
   if (from.has_tuple()) {
-    tuple_ = new ::paddle::framework::proto::VarType_Tuple(*from.tuple_);
+    tuple_ = new ::paddle_mobile::framework::proto::VarType_Tuple(*from.tuple_);
   } else {
     tuple_ = NULL;
   }
   type_ = from.type_;
-  // @@protoc_insertion_point(copy_constructor:paddle.framework.proto.VarType)
+  // @@protoc_insertion_point(copy_constructor:paddle_mobile.framework.proto.VarType)
 }
 
 void VarType::SharedCtor() {
@@ -5761,7 +5761,7 @@ void VarType::SharedCtor() {
 }
 
 VarType::~VarType() {
-  // @@protoc_insertion_point(destructor:paddle.framework.proto.VarType)
+  // @@protoc_insertion_point(destructor:paddle_mobile.framework.proto.VarType)
   SharedDtor();
 }
 
@@ -5793,7 +5793,7 @@ VarType* VarType::New(::google::protobuf::Arena* arena) const {
 }
 
 void VarType::Clear() {
-// @@protoc_insertion_point(message_clear_start:paddle.framework.proto.VarType)
+// @@protoc_insertion_point(message_clear_start:paddle_mobile.framework.proto.VarType)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -5802,27 +5802,27 @@ void VarType::Clear() {
   if (cached_has_bits & 63u) {
     if (cached_has_bits & 0x00000001u) {
       GOOGLE_DCHECK(selected_rows_ != NULL);
-      selected_rows_->::paddle::framework::proto::VarType_TensorDesc::Clear();
+      selected_rows_->::paddle_mobile::framework::proto::VarType_TensorDesc::Clear();
     }
     if (cached_has_bits & 0x00000002u) {
       GOOGLE_DCHECK(lod_tensor_ != NULL);
-      lod_tensor_->::paddle::framework::proto::VarType_LoDTensorDesc::Clear();
+      lod_tensor_->::paddle_mobile::framework::proto::VarType_LoDTensorDesc::Clear();
     }
     if (cached_has_bits & 0x00000004u) {
       GOOGLE_DCHECK(tensor_array_ != NULL);
-      tensor_array_->::paddle::framework::proto::VarType_LoDTensorArrayDesc::Clear();
+      tensor_array_->::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc::Clear();
     }
     if (cached_has_bits & 0x00000008u) {
       GOOGLE_DCHECK(reader_ != NULL);
-      reader_->::paddle::framework::proto::VarType_ReaderDesc::Clear();
+      reader_->::paddle_mobile::framework::proto::VarType_ReaderDesc::Clear();
     }
     if (cached_has_bits & 0x00000010u) {
       GOOGLE_DCHECK(channel_ != NULL);
-      channel_->::paddle::framework::proto::VarType_ChannelDesc::Clear();
+      channel_->::paddle_mobile::framework::proto::VarType_ChannelDesc::Clear();
     }
     if (cached_has_bits & 0x00000020u) {
       GOOGLE_DCHECK(tuple_ != NULL);
-      tuple_->::paddle::framework::proto::VarType_Tuple::Clear();
+      tuple_->::paddle_mobile::framework::proto::VarType_Tuple::Clear();
     }
   }
   type_ = 0;
@@ -5840,13 +5840,13 @@ bool VarType::MergePartialFromCodedStream(
               mutable_unknown_fields));
   ::google::protobuf::io::CodedOutputStream unknown_fields_stream(
       &unknown_fields_string, false);
-  // @@protoc_insertion_point(parse_start:paddle.framework.proto.VarType)
+  // @@protoc_insertion_point(parse_start:paddle_mobile.framework.proto.VarType)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
     if (!p.second) goto handle_unusual;
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // required .paddle.framework.proto.VarType.Type type = 1;
+      // required .paddle_mobile.framework.proto.VarType.Type type = 1;
       case 1: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(8u /* 8 & 0xFF */)) {
@@ -5854,8 +5854,8 @@ bool VarType::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
                  input, &value)));
-          if (::paddle::framework::proto::VarType_Type_IsValid(value)) {
-            set_type(static_cast< ::paddle::framework::proto::VarType_Type >(value));
+          if (::paddle_mobile::framework::proto::VarType_Type_IsValid(value)) {
+            set_type(static_cast< ::paddle_mobile::framework::proto::VarType_Type >(value));
           } else {
             unknown_fields_stream.WriteVarint32(8u);
             unknown_fields_stream.WriteVarint32(
@@ -5867,7 +5867,7 @@ bool VarType::MergePartialFromCodedStream(
         break;
       }
 
-      // optional .paddle.framework.proto.VarType.TensorDesc selected_rows = 2;
+      // optional .paddle_mobile.framework.proto.VarType.TensorDesc selected_rows = 2;
       case 2: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(18u /* 18 & 0xFF */)) {
@@ -5879,7 +5879,7 @@ bool VarType::MergePartialFromCodedStream(
         break;
       }
 
-      // optional .paddle.framework.proto.VarType.LoDTensorDesc lod_tensor = 3;
+      // optional .paddle_mobile.framework.proto.VarType.LoDTensorDesc lod_tensor = 3;
       case 3: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(26u /* 26 & 0xFF */)) {
@@ -5891,7 +5891,7 @@ bool VarType::MergePartialFromCodedStream(
         break;
       }
 
-      // optional .paddle.framework.proto.VarType.LoDTensorArrayDesc tensor_array = 4;
+      // optional .paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc tensor_array = 4;
       case 4: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(34u /* 34 & 0xFF */)) {
@@ -5903,7 +5903,7 @@ bool VarType::MergePartialFromCodedStream(
         break;
       }
 
-      // optional .paddle.framework.proto.VarType.ReaderDesc reader = 5;
+      // optional .paddle_mobile.framework.proto.VarType.ReaderDesc reader = 5;
       case 5: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(42u /* 42 & 0xFF */)) {
@@ -5915,7 +5915,7 @@ bool VarType::MergePartialFromCodedStream(
         break;
       }
 
-      // optional .paddle.framework.proto.VarType.ChannelDesc channel = 6;
+      // optional .paddle_mobile.framework.proto.VarType.ChannelDesc channel = 6;
       case 6: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(50u /* 50 & 0xFF */)) {
@@ -5927,7 +5927,7 @@ bool VarType::MergePartialFromCodedStream(
         break;
       }
 
-      // optional .paddle.framework.proto.VarType.Tuple tuple = 7;
+      // optional .paddle_mobile.framework.proto.VarType.Tuple tuple = 7;
       case 7: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(58u /* 58 & 0xFF */)) {
@@ -5951,58 +5951,58 @@ bool VarType::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:paddle.framework.proto.VarType)
+  // @@protoc_insertion_point(parse_success:paddle_mobile.framework.proto.VarType)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:paddle.framework.proto.VarType)
+  // @@protoc_insertion_point(parse_failure:paddle_mobile.framework.proto.VarType)
   return false;
 #undef DO_
 }
 
 void VarType::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:paddle.framework.proto.VarType)
+  // @@protoc_insertion_point(serialize_start:paddle_mobile.framework.proto.VarType)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
-  // required .paddle.framework.proto.VarType.Type type = 1;
+  // required .paddle_mobile.framework.proto.VarType.Type type = 1;
   if (cached_has_bits & 0x00000040u) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       1, this->type(), output);
   }
 
-  // optional .paddle.framework.proto.VarType.TensorDesc selected_rows = 2;
+  // optional .paddle_mobile.framework.proto.VarType.TensorDesc selected_rows = 2;
   if (cached_has_bits & 0x00000001u) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
       2, *this->selected_rows_, output);
   }
 
-  // optional .paddle.framework.proto.VarType.LoDTensorDesc lod_tensor = 3;
+  // optional .paddle_mobile.framework.proto.VarType.LoDTensorDesc lod_tensor = 3;
   if (cached_has_bits & 0x00000002u) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
       3, *this->lod_tensor_, output);
   }
 
-  // optional .paddle.framework.proto.VarType.LoDTensorArrayDesc tensor_array = 4;
+  // optional .paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc tensor_array = 4;
   if (cached_has_bits & 0x00000004u) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
       4, *this->tensor_array_, output);
   }
 
-  // optional .paddle.framework.proto.VarType.ReaderDesc reader = 5;
+  // optional .paddle_mobile.framework.proto.VarType.ReaderDesc reader = 5;
   if (cached_has_bits & 0x00000008u) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
       5, *this->reader_, output);
   }
 
-  // optional .paddle.framework.proto.VarType.ChannelDesc channel = 6;
+  // optional .paddle_mobile.framework.proto.VarType.ChannelDesc channel = 6;
   if (cached_has_bits & 0x00000010u) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
       6, *this->channel_, output);
   }
 
-  // optional .paddle.framework.proto.VarType.Tuple tuple = 7;
+  // optional .paddle_mobile.framework.proto.VarType.Tuple tuple = 7;
   if (cached_has_bits & 0x00000020u) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
       7, *this->tuple_, output);
@@ -6010,57 +6010,57 @@ void VarType::SerializeWithCachedSizes(
 
   output->WriteRaw(_internal_metadata_.unknown_fields().data(),
                    static_cast<int>(_internal_metadata_.unknown_fields().size()));
-  // @@protoc_insertion_point(serialize_end:paddle.framework.proto.VarType)
+  // @@protoc_insertion_point(serialize_end:paddle_mobile.framework.proto.VarType)
 }
 
 size_t VarType::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:paddle.framework.proto.VarType)
+// @@protoc_insertion_point(message_byte_size_start:paddle_mobile.framework.proto.VarType)
   size_t total_size = 0;
 
   total_size += _internal_metadata_.unknown_fields().size();
 
-  // required .paddle.framework.proto.VarType.Type type = 1;
+  // required .paddle_mobile.framework.proto.VarType.Type type = 1;
   if (has_type()) {
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::EnumSize(this->type());
   }
   if (_has_bits_[0 / 32] & 63u) {
-    // optional .paddle.framework.proto.VarType.TensorDesc selected_rows = 2;
+    // optional .paddle_mobile.framework.proto.VarType.TensorDesc selected_rows = 2;
     if (has_selected_rows()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
           *this->selected_rows_);
     }
 
-    // optional .paddle.framework.proto.VarType.LoDTensorDesc lod_tensor = 3;
+    // optional .paddle_mobile.framework.proto.VarType.LoDTensorDesc lod_tensor = 3;
     if (has_lod_tensor()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
           *this->lod_tensor_);
     }
 
-    // optional .paddle.framework.proto.VarType.LoDTensorArrayDesc tensor_array = 4;
+    // optional .paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc tensor_array = 4;
     if (has_tensor_array()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
           *this->tensor_array_);
     }
 
-    // optional .paddle.framework.proto.VarType.ReaderDesc reader = 5;
+    // optional .paddle_mobile.framework.proto.VarType.ReaderDesc reader = 5;
     if (has_reader()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
           *this->reader_);
     }
 
-    // optional .paddle.framework.proto.VarType.ChannelDesc channel = 6;
+    // optional .paddle_mobile.framework.proto.VarType.ChannelDesc channel = 6;
     if (has_channel()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
           *this->channel_);
     }
 
-    // optional .paddle.framework.proto.VarType.Tuple tuple = 7;
+    // optional .paddle_mobile.framework.proto.VarType.Tuple tuple = 7;
     if (has_tuple()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
@@ -6081,7 +6081,7 @@ void VarType::CheckTypeAndMergeFrom(
 }
 
 void VarType::MergeFrom(const VarType& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:paddle.framework.proto.VarType)
+// @@protoc_insertion_point(class_specific_merge_from_start:paddle_mobile.framework.proto.VarType)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
@@ -6090,22 +6090,22 @@ void VarType::MergeFrom(const VarType& from) {
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 127u) {
     if (cached_has_bits & 0x00000001u) {
-      mutable_selected_rows()->::paddle::framework::proto::VarType_TensorDesc::MergeFrom(from.selected_rows());
+      mutable_selected_rows()->::paddle_mobile::framework::proto::VarType_TensorDesc::MergeFrom(from.selected_rows());
     }
     if (cached_has_bits & 0x00000002u) {
-      mutable_lod_tensor()->::paddle::framework::proto::VarType_LoDTensorDesc::MergeFrom(from.lod_tensor());
+      mutable_lod_tensor()->::paddle_mobile::framework::proto::VarType_LoDTensorDesc::MergeFrom(from.lod_tensor());
     }
     if (cached_has_bits & 0x00000004u) {
-      mutable_tensor_array()->::paddle::framework::proto::VarType_LoDTensorArrayDesc::MergeFrom(from.tensor_array());
+      mutable_tensor_array()->::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc::MergeFrom(from.tensor_array());
     }
     if (cached_has_bits & 0x00000008u) {
-      mutable_reader()->::paddle::framework::proto::VarType_ReaderDesc::MergeFrom(from.reader());
+      mutable_reader()->::paddle_mobile::framework::proto::VarType_ReaderDesc::MergeFrom(from.reader());
     }
     if (cached_has_bits & 0x00000010u) {
-      mutable_channel()->::paddle::framework::proto::VarType_ChannelDesc::MergeFrom(from.channel());
+      mutable_channel()->::paddle_mobile::framework::proto::VarType_ChannelDesc::MergeFrom(from.channel());
     }
     if (cached_has_bits & 0x00000020u) {
-      mutable_tuple()->::paddle::framework::proto::VarType_Tuple::MergeFrom(from.tuple());
+      mutable_tuple()->::paddle_mobile::framework::proto::VarType_Tuple::MergeFrom(from.tuple());
     }
     if (cached_has_bits & 0x00000040u) {
       type_ = from.type_;
@@ -6115,7 +6115,7 @@ void VarType::MergeFrom(const VarType& from) {
 }
 
 void VarType::CopyFrom(const VarType& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:paddle.framework.proto.VarType)
+// @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.VarType)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -6160,13 +6160,13 @@ void VarType::InternalSwap(VarType* other) {
 }
 
 ::std::string VarType::GetTypeName() const {
-  return "paddle.framework.proto.VarType";
+  return "paddle_mobile.framework.proto.VarType";
 }
 
 #if PROTOBUF_INLINE_NOT_IN_HEADERS
 // VarType
 
-// required .paddle.framework.proto.VarType.Type type = 1;
+// required .paddle_mobile.framework.proto.VarType.Type type = 1;
 bool VarType::has_type() const {
   return (_has_bits_[0] & 0x00000040u) != 0;
 }
@@ -6180,18 +6180,18 @@ void VarType::clear_type() {
   type_ = 0;
   clear_has_type();
 }
-::paddle::framework::proto::VarType_Type VarType::type() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.VarType.type)
-  return static_cast< ::paddle::framework::proto::VarType_Type >(type_);
+::paddle_mobile::framework::proto::VarType_Type VarType::type() const {
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.type)
+  return static_cast< ::paddle_mobile::framework::proto::VarType_Type >(type_);
 }
-void VarType::set_type(::paddle::framework::proto::VarType_Type value) {
-  assert(::paddle::framework::proto::VarType_Type_IsValid(value));
+void VarType::set_type(::paddle_mobile::framework::proto::VarType_Type value) {
+  assert(::paddle_mobile::framework::proto::VarType_Type_IsValid(value));
   set_has_type();
   type_ = value;
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.VarType.type)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.VarType.type)
 }
 
-// optional .paddle.framework.proto.VarType.TensorDesc selected_rows = 2;
+// optional .paddle_mobile.framework.proto.VarType.TensorDesc selected_rows = 2;
 bool VarType::has_selected_rows() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
@@ -6202,31 +6202,31 @@ void VarType::clear_has_selected_rows() {
   _has_bits_[0] &= ~0x00000001u;
 }
 void VarType::clear_selected_rows() {
-  if (selected_rows_ != NULL) selected_rows_->::paddle::framework::proto::VarType_TensorDesc::Clear();
+  if (selected_rows_ != NULL) selected_rows_->::paddle_mobile::framework::proto::VarType_TensorDesc::Clear();
   clear_has_selected_rows();
 }
-const ::paddle::framework::proto::VarType_TensorDesc& VarType::selected_rows() const {
-  const ::paddle::framework::proto::VarType_TensorDesc* p = selected_rows_;
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.VarType.selected_rows)
-  return p != NULL ? *p : *reinterpret_cast<const ::paddle::framework::proto::VarType_TensorDesc*>(
-      &::paddle::framework::proto::_VarType_TensorDesc_default_instance_);
+const ::paddle_mobile::framework::proto::VarType_TensorDesc& VarType::selected_rows() const {
+  const ::paddle_mobile::framework::proto::VarType_TensorDesc* p = selected_rows_;
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.selected_rows)
+  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::proto::VarType_TensorDesc*>(
+      &::paddle_mobile::framework::proto::_VarType_TensorDesc_default_instance_);
 }
-::paddle::framework::proto::VarType_TensorDesc* VarType::mutable_selected_rows() {
+::paddle_mobile::framework::proto::VarType_TensorDesc* VarType::mutable_selected_rows() {
   set_has_selected_rows();
   if (selected_rows_ == NULL) {
-    selected_rows_ = new ::paddle::framework::proto::VarType_TensorDesc;
+    selected_rows_ = new ::paddle_mobile::framework::proto::VarType_TensorDesc;
   }
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.VarType.selected_rows)
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.VarType.selected_rows)
   return selected_rows_;
 }
-::paddle::framework::proto::VarType_TensorDesc* VarType::release_selected_rows() {
-  // @@protoc_insertion_point(field_release:paddle.framework.proto.VarType.selected_rows)
+::paddle_mobile::framework::proto::VarType_TensorDesc* VarType::release_selected_rows() {
+  // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.VarType.selected_rows)
   clear_has_selected_rows();
-  ::paddle::framework::proto::VarType_TensorDesc* temp = selected_rows_;
+  ::paddle_mobile::framework::proto::VarType_TensorDesc* temp = selected_rows_;
   selected_rows_ = NULL;
   return temp;
 }
-void VarType::set_allocated_selected_rows(::paddle::framework::proto::VarType_TensorDesc* selected_rows) {
+void VarType::set_allocated_selected_rows(::paddle_mobile::framework::proto::VarType_TensorDesc* selected_rows) {
   delete selected_rows_;
   selected_rows_ = selected_rows;
   if (selected_rows) {
@@ -6234,10 +6234,10 @@ void VarType::set_allocated_selected_rows(::paddle::framework::proto::VarType_Te
   } else {
     clear_has_selected_rows();
   }
-  // @@protoc_insertion_point(field_set_allocated:paddle.framework.proto.VarType.selected_rows)
+  // @@protoc_insertion_point(field_set_allocated:paddle_mobile.framework.proto.VarType.selected_rows)
 }
 
-// optional .paddle.framework.proto.VarType.LoDTensorDesc lod_tensor = 3;
+// optional .paddle_mobile.framework.proto.VarType.LoDTensorDesc lod_tensor = 3;
 bool VarType::has_lod_tensor() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
@@ -6248,31 +6248,31 @@ void VarType::clear_has_lod_tensor() {
   _has_bits_[0] &= ~0x00000002u;
 }
 void VarType::clear_lod_tensor() {
-  if (lod_tensor_ != NULL) lod_tensor_->::paddle::framework::proto::VarType_LoDTensorDesc::Clear();
+  if (lod_tensor_ != NULL) lod_tensor_->::paddle_mobile::framework::proto::VarType_LoDTensorDesc::Clear();
   clear_has_lod_tensor();
 }
-const ::paddle::framework::proto::VarType_LoDTensorDesc& VarType::lod_tensor() const {
-  const ::paddle::framework::proto::VarType_LoDTensorDesc* p = lod_tensor_;
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.VarType.lod_tensor)
-  return p != NULL ? *p : *reinterpret_cast<const ::paddle::framework::proto::VarType_LoDTensorDesc*>(
-      &::paddle::framework::proto::_VarType_LoDTensorDesc_default_instance_);
+const ::paddle_mobile::framework::proto::VarType_LoDTensorDesc& VarType::lod_tensor() const {
+  const ::paddle_mobile::framework::proto::VarType_LoDTensorDesc* p = lod_tensor_;
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.lod_tensor)
+  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::proto::VarType_LoDTensorDesc*>(
+      &::paddle_mobile::framework::proto::_VarType_LoDTensorDesc_default_instance_);
 }
-::paddle::framework::proto::VarType_LoDTensorDesc* VarType::mutable_lod_tensor() {
+::paddle_mobile::framework::proto::VarType_LoDTensorDesc* VarType::mutable_lod_tensor() {
   set_has_lod_tensor();
   if (lod_tensor_ == NULL) {
-    lod_tensor_ = new ::paddle::framework::proto::VarType_LoDTensorDesc;
+    lod_tensor_ = new ::paddle_mobile::framework::proto::VarType_LoDTensorDesc;
   }
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.VarType.lod_tensor)
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.VarType.lod_tensor)
   return lod_tensor_;
 }
-::paddle::framework::proto::VarType_LoDTensorDesc* VarType::release_lod_tensor() {
-  // @@protoc_insertion_point(field_release:paddle.framework.proto.VarType.lod_tensor)
+::paddle_mobile::framework::proto::VarType_LoDTensorDesc* VarType::release_lod_tensor() {
+  // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.VarType.lod_tensor)
   clear_has_lod_tensor();
-  ::paddle::framework::proto::VarType_LoDTensorDesc* temp = lod_tensor_;
+  ::paddle_mobile::framework::proto::VarType_LoDTensorDesc* temp = lod_tensor_;
   lod_tensor_ = NULL;
   return temp;
 }
-void VarType::set_allocated_lod_tensor(::paddle::framework::proto::VarType_LoDTensorDesc* lod_tensor) {
+void VarType::set_allocated_lod_tensor(::paddle_mobile::framework::proto::VarType_LoDTensorDesc* lod_tensor) {
   delete lod_tensor_;
   lod_tensor_ = lod_tensor;
   if (lod_tensor) {
@@ -6280,10 +6280,10 @@ void VarType::set_allocated_lod_tensor(::paddle::framework::proto::VarType_LoDTe
   } else {
     clear_has_lod_tensor();
   }
-  // @@protoc_insertion_point(field_set_allocated:paddle.framework.proto.VarType.lod_tensor)
+  // @@protoc_insertion_point(field_set_allocated:paddle_mobile.framework.proto.VarType.lod_tensor)
 }
 
-// optional .paddle.framework.proto.VarType.LoDTensorArrayDesc tensor_array = 4;
+// optional .paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc tensor_array = 4;
 bool VarType::has_tensor_array() const {
   return (_has_bits_[0] & 0x00000004u) != 0;
 }
@@ -6294,31 +6294,31 @@ void VarType::clear_has_tensor_array() {
   _has_bits_[0] &= ~0x00000004u;
 }
 void VarType::clear_tensor_array() {
-  if (tensor_array_ != NULL) tensor_array_->::paddle::framework::proto::VarType_LoDTensorArrayDesc::Clear();
+  if (tensor_array_ != NULL) tensor_array_->::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc::Clear();
   clear_has_tensor_array();
 }
-const ::paddle::framework::proto::VarType_LoDTensorArrayDesc& VarType::tensor_array() const {
-  const ::paddle::framework::proto::VarType_LoDTensorArrayDesc* p = tensor_array_;
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.VarType.tensor_array)
-  return p != NULL ? *p : *reinterpret_cast<const ::paddle::framework::proto::VarType_LoDTensorArrayDesc*>(
-      &::paddle::framework::proto::_VarType_LoDTensorArrayDesc_default_instance_);
+const ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc& VarType::tensor_array() const {
+  const ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc* p = tensor_array_;
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.tensor_array)
+  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc*>(
+      &::paddle_mobile::framework::proto::_VarType_LoDTensorArrayDesc_default_instance_);
 }
-::paddle::framework::proto::VarType_LoDTensorArrayDesc* VarType::mutable_tensor_array() {
+::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc* VarType::mutable_tensor_array() {
   set_has_tensor_array();
   if (tensor_array_ == NULL) {
-    tensor_array_ = new ::paddle::framework::proto::VarType_LoDTensorArrayDesc;
+    tensor_array_ = new ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc;
   }
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.VarType.tensor_array)
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.VarType.tensor_array)
   return tensor_array_;
 }
-::paddle::framework::proto::VarType_LoDTensorArrayDesc* VarType::release_tensor_array() {
-  // @@protoc_insertion_point(field_release:paddle.framework.proto.VarType.tensor_array)
+::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc* VarType::release_tensor_array() {
+  // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.VarType.tensor_array)
   clear_has_tensor_array();
-  ::paddle::framework::proto::VarType_LoDTensorArrayDesc* temp = tensor_array_;
+  ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc* temp = tensor_array_;
   tensor_array_ = NULL;
   return temp;
 }
-void VarType::set_allocated_tensor_array(::paddle::framework::proto::VarType_LoDTensorArrayDesc* tensor_array) {
+void VarType::set_allocated_tensor_array(::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc* tensor_array) {
   delete tensor_array_;
   tensor_array_ = tensor_array;
   if (tensor_array) {
@@ -6326,10 +6326,10 @@ void VarType::set_allocated_tensor_array(::paddle::framework::proto::VarType_LoD
   } else {
     clear_has_tensor_array();
   }
-  // @@protoc_insertion_point(field_set_allocated:paddle.framework.proto.VarType.tensor_array)
+  // @@protoc_insertion_point(field_set_allocated:paddle_mobile.framework.proto.VarType.tensor_array)
 }
 
-// optional .paddle.framework.proto.VarType.ReaderDesc reader = 5;
+// optional .paddle_mobile.framework.proto.VarType.ReaderDesc reader = 5;
 bool VarType::has_reader() const {
   return (_has_bits_[0] & 0x00000008u) != 0;
 }
@@ -6340,31 +6340,31 @@ void VarType::clear_has_reader() {
   _has_bits_[0] &= ~0x00000008u;
 }
 void VarType::clear_reader() {
-  if (reader_ != NULL) reader_->::paddle::framework::proto::VarType_ReaderDesc::Clear();
+  if (reader_ != NULL) reader_->::paddle_mobile::framework::proto::VarType_ReaderDesc::Clear();
   clear_has_reader();
 }
-const ::paddle::framework::proto::VarType_ReaderDesc& VarType::reader() const {
-  const ::paddle::framework::proto::VarType_ReaderDesc* p = reader_;
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.VarType.reader)
-  return p != NULL ? *p : *reinterpret_cast<const ::paddle::framework::proto::VarType_ReaderDesc*>(
-      &::paddle::framework::proto::_VarType_ReaderDesc_default_instance_);
+const ::paddle_mobile::framework::proto::VarType_ReaderDesc& VarType::reader() const {
+  const ::paddle_mobile::framework::proto::VarType_ReaderDesc* p = reader_;
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.reader)
+  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::proto::VarType_ReaderDesc*>(
+      &::paddle_mobile::framework::proto::_VarType_ReaderDesc_default_instance_);
 }
-::paddle::framework::proto::VarType_ReaderDesc* VarType::mutable_reader() {
+::paddle_mobile::framework::proto::VarType_ReaderDesc* VarType::mutable_reader() {
   set_has_reader();
   if (reader_ == NULL) {
-    reader_ = new ::paddle::framework::proto::VarType_ReaderDesc;
+    reader_ = new ::paddle_mobile::framework::proto::VarType_ReaderDesc;
   }
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.VarType.reader)
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.VarType.reader)
   return reader_;
 }
-::paddle::framework::proto::VarType_ReaderDesc* VarType::release_reader() {
-  // @@protoc_insertion_point(field_release:paddle.framework.proto.VarType.reader)
+::paddle_mobile::framework::proto::VarType_ReaderDesc* VarType::release_reader() {
+  // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.VarType.reader)
   clear_has_reader();
-  ::paddle::framework::proto::VarType_ReaderDesc* temp = reader_;
+  ::paddle_mobile::framework::proto::VarType_ReaderDesc* temp = reader_;
   reader_ = NULL;
   return temp;
 }
-void VarType::set_allocated_reader(::paddle::framework::proto::VarType_ReaderDesc* reader) {
+void VarType::set_allocated_reader(::paddle_mobile::framework::proto::VarType_ReaderDesc* reader) {
   delete reader_;
   reader_ = reader;
   if (reader) {
@@ -6372,10 +6372,10 @@ void VarType::set_allocated_reader(::paddle::framework::proto::VarType_ReaderDes
   } else {
     clear_has_reader();
   }
-  // @@protoc_insertion_point(field_set_allocated:paddle.framework.proto.VarType.reader)
+  // @@protoc_insertion_point(field_set_allocated:paddle_mobile.framework.proto.VarType.reader)
 }
 
-// optional .paddle.framework.proto.VarType.ChannelDesc channel = 6;
+// optional .paddle_mobile.framework.proto.VarType.ChannelDesc channel = 6;
 bool VarType::has_channel() const {
   return (_has_bits_[0] & 0x00000010u) != 0;
 }
@@ -6386,31 +6386,31 @@ void VarType::clear_has_channel() {
   _has_bits_[0] &= ~0x00000010u;
 }
 void VarType::clear_channel() {
-  if (channel_ != NULL) channel_->::paddle::framework::proto::VarType_ChannelDesc::Clear();
+  if (channel_ != NULL) channel_->::paddle_mobile::framework::proto::VarType_ChannelDesc::Clear();
   clear_has_channel();
 }
-const ::paddle::framework::proto::VarType_ChannelDesc& VarType::channel() const {
-  const ::paddle::framework::proto::VarType_ChannelDesc* p = channel_;
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.VarType.channel)
-  return p != NULL ? *p : *reinterpret_cast<const ::paddle::framework::proto::VarType_ChannelDesc*>(
-      &::paddle::framework::proto::_VarType_ChannelDesc_default_instance_);
+const ::paddle_mobile::framework::proto::VarType_ChannelDesc& VarType::channel() const {
+  const ::paddle_mobile::framework::proto::VarType_ChannelDesc* p = channel_;
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.channel)
+  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::proto::VarType_ChannelDesc*>(
+      &::paddle_mobile::framework::proto::_VarType_ChannelDesc_default_instance_);
 }
-::paddle::framework::proto::VarType_ChannelDesc* VarType::mutable_channel() {
+::paddle_mobile::framework::proto::VarType_ChannelDesc* VarType::mutable_channel() {
   set_has_channel();
   if (channel_ == NULL) {
-    channel_ = new ::paddle::framework::proto::VarType_ChannelDesc;
+    channel_ = new ::paddle_mobile::framework::proto::VarType_ChannelDesc;
   }
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.VarType.channel)
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.VarType.channel)
   return channel_;
 }
-::paddle::framework::proto::VarType_ChannelDesc* VarType::release_channel() {
-  // @@protoc_insertion_point(field_release:paddle.framework.proto.VarType.channel)
+::paddle_mobile::framework::proto::VarType_ChannelDesc* VarType::release_channel() {
+  // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.VarType.channel)
   clear_has_channel();
-  ::paddle::framework::proto::VarType_ChannelDesc* temp = channel_;
+  ::paddle_mobile::framework::proto::VarType_ChannelDesc* temp = channel_;
   channel_ = NULL;
   return temp;
 }
-void VarType::set_allocated_channel(::paddle::framework::proto::VarType_ChannelDesc* channel) {
+void VarType::set_allocated_channel(::paddle_mobile::framework::proto::VarType_ChannelDesc* channel) {
   delete channel_;
   channel_ = channel;
   if (channel) {
@@ -6418,10 +6418,10 @@ void VarType::set_allocated_channel(::paddle::framework::proto::VarType_ChannelD
   } else {
     clear_has_channel();
   }
-  // @@protoc_insertion_point(field_set_allocated:paddle.framework.proto.VarType.channel)
+  // @@protoc_insertion_point(field_set_allocated:paddle_mobile.framework.proto.VarType.channel)
 }
 
-// optional .paddle.framework.proto.VarType.Tuple tuple = 7;
+// optional .paddle_mobile.framework.proto.VarType.Tuple tuple = 7;
 bool VarType::has_tuple() const {
   return (_has_bits_[0] & 0x00000020u) != 0;
 }
@@ -6432,31 +6432,31 @@ void VarType::clear_has_tuple() {
   _has_bits_[0] &= ~0x00000020u;
 }
 void VarType::clear_tuple() {
-  if (tuple_ != NULL) tuple_->::paddle::framework::proto::VarType_Tuple::Clear();
+  if (tuple_ != NULL) tuple_->::paddle_mobile::framework::proto::VarType_Tuple::Clear();
   clear_has_tuple();
 }
-const ::paddle::framework::proto::VarType_Tuple& VarType::tuple() const {
-  const ::paddle::framework::proto::VarType_Tuple* p = tuple_;
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.VarType.tuple)
-  return p != NULL ? *p : *reinterpret_cast<const ::paddle::framework::proto::VarType_Tuple*>(
-      &::paddle::framework::proto::_VarType_Tuple_default_instance_);
+const ::paddle_mobile::framework::proto::VarType_Tuple& VarType::tuple() const {
+  const ::paddle_mobile::framework::proto::VarType_Tuple* p = tuple_;
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.tuple)
+  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::proto::VarType_Tuple*>(
+      &::paddle_mobile::framework::proto::_VarType_Tuple_default_instance_);
 }
-::paddle::framework::proto::VarType_Tuple* VarType::mutable_tuple() {
+::paddle_mobile::framework::proto::VarType_Tuple* VarType::mutable_tuple() {
   set_has_tuple();
   if (tuple_ == NULL) {
-    tuple_ = new ::paddle::framework::proto::VarType_Tuple;
+    tuple_ = new ::paddle_mobile::framework::proto::VarType_Tuple;
   }
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.VarType.tuple)
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.VarType.tuple)
   return tuple_;
 }
-::paddle::framework::proto::VarType_Tuple* VarType::release_tuple() {
-  // @@protoc_insertion_point(field_release:paddle.framework.proto.VarType.tuple)
+::paddle_mobile::framework::proto::VarType_Tuple* VarType::release_tuple() {
+  // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.VarType.tuple)
   clear_has_tuple();
-  ::paddle::framework::proto::VarType_Tuple* temp = tuple_;
+  ::paddle_mobile::framework::proto::VarType_Tuple* temp = tuple_;
   tuple_ = NULL;
   return temp;
 }
-void VarType::set_allocated_tuple(::paddle::framework::proto::VarType_Tuple* tuple) {
+void VarType::set_allocated_tuple(::paddle_mobile::framework::proto::VarType_Tuple* tuple) {
   delete tuple_;
   tuple_ = tuple;
   if (tuple) {
@@ -6464,7 +6464,7 @@ void VarType::set_allocated_tuple(::paddle::framework::proto::VarType_Tuple* tup
   } else {
     clear_has_tuple();
   }
-  // @@protoc_insertion_point(field_set_allocated:paddle.framework.proto.VarType.tuple)
+  // @@protoc_insertion_point(field_set_allocated:paddle_mobile.framework.proto.VarType.tuple)
 }
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -6483,7 +6483,7 @@ VarDesc::VarDesc()
     protobuf_framework_2eproto::InitDefaults();
   }
   SharedCtor();
-  // @@protoc_insertion_point(constructor:paddle.framework.proto.VarDesc)
+  // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.VarDesc)
 }
 VarDesc::VarDesc(const VarDesc& from)
   : ::google::protobuf::MessageLite(),
@@ -6496,12 +6496,12 @@ VarDesc::VarDesc(const VarDesc& from)
     name_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.name_);
   }
   if (from.has_type()) {
-    type_ = new ::paddle::framework::proto::VarType(*from.type_);
+    type_ = new ::paddle_mobile::framework::proto::VarType(*from.type_);
   } else {
     type_ = NULL;
   }
   persistable_ = from.persistable_;
-  // @@protoc_insertion_point(copy_constructor:paddle.framework.proto.VarDesc)
+  // @@protoc_insertion_point(copy_constructor:paddle_mobile.framework.proto.VarDesc)
 }
 
 void VarDesc::SharedCtor() {
@@ -6513,7 +6513,7 @@ void VarDesc::SharedCtor() {
 }
 
 VarDesc::~VarDesc() {
-  // @@protoc_insertion_point(destructor:paddle.framework.proto.VarDesc)
+  // @@protoc_insertion_point(destructor:paddle_mobile.framework.proto.VarDesc)
   SharedDtor();
 }
 
@@ -6541,7 +6541,7 @@ VarDesc* VarDesc::New(::google::protobuf::Arena* arena) const {
 }
 
 void VarDesc::Clear() {
-// @@protoc_insertion_point(message_clear_start:paddle.framework.proto.VarDesc)
+// @@protoc_insertion_point(message_clear_start:paddle_mobile.framework.proto.VarDesc)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -6554,7 +6554,7 @@ void VarDesc::Clear() {
     }
     if (cached_has_bits & 0x00000002u) {
       GOOGLE_DCHECK(type_ != NULL);
-      type_->::paddle::framework::proto::VarType::Clear();
+      type_->::paddle_mobile::framework::proto::VarType::Clear();
     }
   }
   persistable_ = false;
@@ -6572,7 +6572,7 @@ bool VarDesc::MergePartialFromCodedStream(
               mutable_unknown_fields));
   ::google::protobuf::io::CodedOutputStream unknown_fields_stream(
       &unknown_fields_string, false);
-  // @@protoc_insertion_point(parse_start:paddle.framework.proto.VarDesc)
+  // @@protoc_insertion_point(parse_start:paddle_mobile.framework.proto.VarDesc)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
@@ -6590,7 +6590,7 @@ bool VarDesc::MergePartialFromCodedStream(
         break;
       }
 
-      // required .paddle.framework.proto.VarType type = 2;
+      // required .paddle_mobile.framework.proto.VarType type = 2;
       case 2: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(18u /* 18 & 0xFF */)) {
@@ -6628,17 +6628,17 @@ bool VarDesc::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:paddle.framework.proto.VarDesc)
+  // @@protoc_insertion_point(parse_success:paddle_mobile.framework.proto.VarDesc)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:paddle.framework.proto.VarDesc)
+  // @@protoc_insertion_point(parse_failure:paddle_mobile.framework.proto.VarDesc)
   return false;
 #undef DO_
 }
 
 void VarDesc::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:paddle.framework.proto.VarDesc)
+  // @@protoc_insertion_point(serialize_start:paddle_mobile.framework.proto.VarDesc)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -6649,7 +6649,7 @@ void VarDesc::SerializeWithCachedSizes(
       1, this->name(), output);
   }
 
-  // required .paddle.framework.proto.VarType type = 2;
+  // required .paddle_mobile.framework.proto.VarType type = 2;
   if (cached_has_bits & 0x00000002u) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
       2, *this->type_, output);
@@ -6662,11 +6662,11 @@ void VarDesc::SerializeWithCachedSizes(
 
   output->WriteRaw(_internal_metadata_.unknown_fields().data(),
                    static_cast<int>(_internal_metadata_.unknown_fields().size()));
-  // @@protoc_insertion_point(serialize_end:paddle.framework.proto.VarDesc)
+  // @@protoc_insertion_point(serialize_end:paddle_mobile.framework.proto.VarDesc)
 }
 
 size_t VarDesc::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:paddle.framework.proto.VarDesc)
+// @@protoc_insertion_point(required_fields_byte_size_fallback_start:paddle_mobile.framework.proto.VarDesc)
   size_t total_size = 0;
 
   if (has_name()) {
@@ -6677,7 +6677,7 @@ size_t VarDesc::RequiredFieldsByteSizeFallback() const {
   }
 
   if (has_type()) {
-    // required .paddle.framework.proto.VarType type = 2;
+    // required .paddle_mobile.framework.proto.VarType type = 2;
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
         *this->type_);
@@ -6686,7 +6686,7 @@ size_t VarDesc::RequiredFieldsByteSizeFallback() const {
   return total_size;
 }
 size_t VarDesc::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:paddle.framework.proto.VarDesc)
+// @@protoc_insertion_point(message_byte_size_start:paddle_mobile.framework.proto.VarDesc)
   size_t total_size = 0;
 
   total_size += _internal_metadata_.unknown_fields().size();
@@ -6697,7 +6697,7 @@ size_t VarDesc::ByteSizeLong() const {
       ::google::protobuf::internal::WireFormatLite::StringSize(
         this->name());
 
-    // required .paddle.framework.proto.VarType type = 2;
+    // required .paddle_mobile.framework.proto.VarType type = 2;
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
         *this->type_);
@@ -6723,7 +6723,7 @@ void VarDesc::CheckTypeAndMergeFrom(
 }
 
 void VarDesc::MergeFrom(const VarDesc& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:paddle.framework.proto.VarDesc)
+// @@protoc_insertion_point(class_specific_merge_from_start:paddle_mobile.framework.proto.VarDesc)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
@@ -6736,7 +6736,7 @@ void VarDesc::MergeFrom(const VarDesc& from) {
       name_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.name_);
     }
     if (cached_has_bits & 0x00000002u) {
-      mutable_type()->::paddle::framework::proto::VarType::MergeFrom(from.type());
+      mutable_type()->::paddle_mobile::framework::proto::VarType::MergeFrom(from.type());
     }
     if (cached_has_bits & 0x00000004u) {
       persistable_ = from.persistable_;
@@ -6746,7 +6746,7 @@ void VarDesc::MergeFrom(const VarDesc& from) {
 }
 
 void VarDesc::CopyFrom(const VarDesc& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:paddle.framework.proto.VarDesc)
+// @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.VarDesc)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -6775,7 +6775,7 @@ void VarDesc::InternalSwap(VarDesc* other) {
 }
 
 ::std::string VarDesc::GetTypeName() const {
-  return "paddle.framework.proto.VarDesc";
+  return "paddle_mobile.framework.proto.VarDesc";
 }
 
 #if PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -6796,41 +6796,41 @@ void VarDesc::clear_name() {
   clear_has_name();
 }
 const ::std::string& VarDesc::name() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.VarDesc.name)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarDesc.name)
   return name_.GetNoArena();
 }
 void VarDesc::set_name(const ::std::string& value) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.VarDesc.name)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.VarDesc.name)
 }
 #if LANG_CXX11
 void VarDesc::set_name(::std::string&& value) {
   set_has_name();
   name_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:paddle.framework.proto.VarDesc.name)
+  // @@protoc_insertion_point(field_set_rvalue:paddle_mobile.framework.proto.VarDesc.name)
 }
 #endif
 void VarDesc::set_name(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:paddle.framework.proto.VarDesc.name)
+  // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.VarDesc.name)
 }
 void VarDesc::set_name(const char* value, size_t size) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:paddle.framework.proto.VarDesc.name)
+  // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.VarDesc.name)
 }
 ::std::string* VarDesc::mutable_name() {
   set_has_name();
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.VarDesc.name)
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.VarDesc.name)
   return name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 ::std::string* VarDesc::release_name() {
-  // @@protoc_insertion_point(field_release:paddle.framework.proto.VarDesc.name)
+  // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.VarDesc.name)
   clear_has_name();
   return name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -6841,10 +6841,10 @@ void VarDesc::set_allocated_name(::std::string* name) {
     clear_has_name();
   }
   name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), name);
-  // @@protoc_insertion_point(field_set_allocated:paddle.framework.proto.VarDesc.name)
+  // @@protoc_insertion_point(field_set_allocated:paddle_mobile.framework.proto.VarDesc.name)
 }
 
-// required .paddle.framework.proto.VarType type = 2;
+// required .paddle_mobile.framework.proto.VarType type = 2;
 bool VarDesc::has_type() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
@@ -6855,31 +6855,31 @@ void VarDesc::clear_has_type() {
   _has_bits_[0] &= ~0x00000002u;
 }
 void VarDesc::clear_type() {
-  if (type_ != NULL) type_->::paddle::framework::proto::VarType::Clear();
+  if (type_ != NULL) type_->::paddle_mobile::framework::proto::VarType::Clear();
   clear_has_type();
 }
-const ::paddle::framework::proto::VarType& VarDesc::type() const {
-  const ::paddle::framework::proto::VarType* p = type_;
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.VarDesc.type)
-  return p != NULL ? *p : *reinterpret_cast<const ::paddle::framework::proto::VarType*>(
-      &::paddle::framework::proto::_VarType_default_instance_);
+const ::paddle_mobile::framework::proto::VarType& VarDesc::type() const {
+  const ::paddle_mobile::framework::proto::VarType* p = type_;
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarDesc.type)
+  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::proto::VarType*>(
+      &::paddle_mobile::framework::proto::_VarType_default_instance_);
 }
-::paddle::framework::proto::VarType* VarDesc::mutable_type() {
+::paddle_mobile::framework::proto::VarType* VarDesc::mutable_type() {
   set_has_type();
   if (type_ == NULL) {
-    type_ = new ::paddle::framework::proto::VarType;
+    type_ = new ::paddle_mobile::framework::proto::VarType;
   }
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.VarDesc.type)
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.VarDesc.type)
   return type_;
 }
-::paddle::framework::proto::VarType* VarDesc::release_type() {
-  // @@protoc_insertion_point(field_release:paddle.framework.proto.VarDesc.type)
+::paddle_mobile::framework::proto::VarType* VarDesc::release_type() {
+  // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.VarDesc.type)
   clear_has_type();
-  ::paddle::framework::proto::VarType* temp = type_;
+  ::paddle_mobile::framework::proto::VarType* temp = type_;
   type_ = NULL;
   return temp;
 }
-void VarDesc::set_allocated_type(::paddle::framework::proto::VarType* type) {
+void VarDesc::set_allocated_type(::paddle_mobile::framework::proto::VarType* type) {
   delete type_;
   type_ = type;
   if (type) {
@@ -6887,7 +6887,7 @@ void VarDesc::set_allocated_type(::paddle::framework::proto::VarType* type) {
   } else {
     clear_has_type();
   }
-  // @@protoc_insertion_point(field_set_allocated:paddle.framework.proto.VarDesc.type)
+  // @@protoc_insertion_point(field_set_allocated:paddle_mobile.framework.proto.VarDesc.type)
 }
 
 // optional bool persistable = 3 [default = false];
@@ -6905,13 +6905,13 @@ void VarDesc::clear_persistable() {
   clear_has_persistable();
 }
 bool VarDesc::persistable() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.VarDesc.persistable)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarDesc.persistable)
   return persistable_;
 }
 void VarDesc::set_persistable(bool value) {
   set_has_persistable();
   persistable_ = value;
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.VarDesc.persistable)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.VarDesc.persistable)
 }
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -6932,7 +6932,7 @@ BlockDesc::BlockDesc()
     protobuf_framework_2eproto::InitDefaults();
   }
   SharedCtor();
-  // @@protoc_insertion_point(constructor:paddle.framework.proto.BlockDesc)
+  // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.BlockDesc)
 }
 BlockDesc::BlockDesc(const BlockDesc& from)
   : ::google::protobuf::MessageLite(),
@@ -6945,7 +6945,7 @@ BlockDesc::BlockDesc(const BlockDesc& from)
   ::memcpy(&idx_, &from.idx_,
     static_cast<size_t>(reinterpret_cast<char*>(&forward_block_idx_) -
     reinterpret_cast<char*>(&idx_)) + sizeof(forward_block_idx_));
-  // @@protoc_insertion_point(copy_constructor:paddle.framework.proto.BlockDesc)
+  // @@protoc_insertion_point(copy_constructor:paddle_mobile.framework.proto.BlockDesc)
 }
 
 void BlockDesc::SharedCtor() {
@@ -6957,7 +6957,7 @@ void BlockDesc::SharedCtor() {
 }
 
 BlockDesc::~BlockDesc() {
-  // @@protoc_insertion_point(destructor:paddle.framework.proto.BlockDesc)
+  // @@protoc_insertion_point(destructor:paddle_mobile.framework.proto.BlockDesc)
   SharedDtor();
 }
 
@@ -6983,7 +6983,7 @@ BlockDesc* BlockDesc::New(::google::protobuf::Arena* arena) const {
 }
 
 void BlockDesc::Clear() {
-// @@protoc_insertion_point(message_clear_start:paddle.framework.proto.BlockDesc)
+// @@protoc_insertion_point(message_clear_start:paddle_mobile.framework.proto.BlockDesc)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -7011,7 +7011,7 @@ bool BlockDesc::MergePartialFromCodedStream(
               mutable_unknown_fields));
   ::google::protobuf::io::CodedOutputStream unknown_fields_stream(
       &unknown_fields_string, false);
-  // @@protoc_insertion_point(parse_start:paddle.framework.proto.BlockDesc)
+  // @@protoc_insertion_point(parse_start:paddle_mobile.framework.proto.BlockDesc)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
@@ -7045,7 +7045,7 @@ bool BlockDesc::MergePartialFromCodedStream(
         break;
       }
 
-      // repeated .paddle.framework.proto.VarDesc vars = 3;
+      // repeated .paddle_mobile.framework.proto.VarDesc vars = 3;
       case 3: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(26u /* 26 & 0xFF */)) {
@@ -7057,7 +7057,7 @@ bool BlockDesc::MergePartialFromCodedStream(
         break;
       }
 
-      // repeated .paddle.framework.proto.OpDesc ops = 4;
+      // repeated .paddle_mobile.framework.proto.OpDesc ops = 4;
       case 4: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(34u /* 34 & 0xFF */)) {
@@ -7095,17 +7095,17 @@ bool BlockDesc::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:paddle.framework.proto.BlockDesc)
+  // @@protoc_insertion_point(parse_success:paddle_mobile.framework.proto.BlockDesc)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:paddle.framework.proto.BlockDesc)
+  // @@protoc_insertion_point(parse_failure:paddle_mobile.framework.proto.BlockDesc)
   return false;
 #undef DO_
 }
 
 void BlockDesc::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:paddle.framework.proto.BlockDesc)
+  // @@protoc_insertion_point(serialize_start:paddle_mobile.framework.proto.BlockDesc)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -7120,14 +7120,14 @@ void BlockDesc::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteInt32(2, this->parent_idx(), output);
   }
 
-  // repeated .paddle.framework.proto.VarDesc vars = 3;
+  // repeated .paddle_mobile.framework.proto.VarDesc vars = 3;
   for (unsigned int i = 0,
       n = static_cast<unsigned int>(this->vars_size()); i < n; i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
       3, this->vars(static_cast<int>(i)), output);
   }
 
-  // repeated .paddle.framework.proto.OpDesc ops = 4;
+  // repeated .paddle_mobile.framework.proto.OpDesc ops = 4;
   for (unsigned int i = 0,
       n = static_cast<unsigned int>(this->ops_size()); i < n; i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
@@ -7141,11 +7141,11 @@ void BlockDesc::SerializeWithCachedSizes(
 
   output->WriteRaw(_internal_metadata_.unknown_fields().data(),
                    static_cast<int>(_internal_metadata_.unknown_fields().size()));
-  // @@protoc_insertion_point(serialize_end:paddle.framework.proto.BlockDesc)
+  // @@protoc_insertion_point(serialize_end:paddle_mobile.framework.proto.BlockDesc)
 }
 
 size_t BlockDesc::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:paddle.framework.proto.BlockDesc)
+// @@protoc_insertion_point(required_fields_byte_size_fallback_start:paddle_mobile.framework.proto.BlockDesc)
   size_t total_size = 0;
 
   if (has_idx()) {
@@ -7165,7 +7165,7 @@ size_t BlockDesc::RequiredFieldsByteSizeFallback() const {
   return total_size;
 }
 size_t BlockDesc::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:paddle.framework.proto.BlockDesc)
+// @@protoc_insertion_point(message_byte_size_start:paddle_mobile.framework.proto.BlockDesc)
   size_t total_size = 0;
 
   total_size += _internal_metadata_.unknown_fields().size();
@@ -7184,7 +7184,7 @@ size_t BlockDesc::ByteSizeLong() const {
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
-  // repeated .paddle.framework.proto.VarDesc vars = 3;
+  // repeated .paddle_mobile.framework.proto.VarDesc vars = 3;
   {
     unsigned int count = static_cast<unsigned int>(this->vars_size());
     total_size += 1UL * count;
@@ -7195,7 +7195,7 @@ size_t BlockDesc::ByteSizeLong() const {
     }
   }
 
-  // repeated .paddle.framework.proto.OpDesc ops = 4;
+  // repeated .paddle_mobile.framework.proto.OpDesc ops = 4;
   {
     unsigned int count = static_cast<unsigned int>(this->ops_size());
     total_size += 1UL * count;
@@ -7226,7 +7226,7 @@ void BlockDesc::CheckTypeAndMergeFrom(
 }
 
 void BlockDesc::MergeFrom(const BlockDesc& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:paddle.framework.proto.BlockDesc)
+// @@protoc_insertion_point(class_specific_merge_from_start:paddle_mobile.framework.proto.BlockDesc)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
@@ -7250,7 +7250,7 @@ void BlockDesc::MergeFrom(const BlockDesc& from) {
 }
 
 void BlockDesc::CopyFrom(const BlockDesc& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:paddle.framework.proto.BlockDesc)
+// @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.BlockDesc)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -7280,7 +7280,7 @@ void BlockDesc::InternalSwap(BlockDesc* other) {
 }
 
 ::std::string BlockDesc::GetTypeName() const {
-  return "paddle.framework.proto.BlockDesc";
+  return "paddle_mobile.framework.proto.BlockDesc";
 }
 
 #if PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -7301,13 +7301,13 @@ void BlockDesc::clear_idx() {
   clear_has_idx();
 }
 ::google::protobuf::int32 BlockDesc::idx() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.BlockDesc.idx)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.BlockDesc.idx)
   return idx_;
 }
 void BlockDesc::set_idx(::google::protobuf::int32 value) {
   set_has_idx();
   idx_ = value;
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.BlockDesc.idx)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.BlockDesc.idx)
 }
 
 // required int32 parent_idx = 2;
@@ -7325,72 +7325,72 @@ void BlockDesc::clear_parent_idx() {
   clear_has_parent_idx();
 }
 ::google::protobuf::int32 BlockDesc::parent_idx() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.BlockDesc.parent_idx)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.BlockDesc.parent_idx)
   return parent_idx_;
 }
 void BlockDesc::set_parent_idx(::google::protobuf::int32 value) {
   set_has_parent_idx();
   parent_idx_ = value;
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.BlockDesc.parent_idx)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.BlockDesc.parent_idx)
 }
 
-// repeated .paddle.framework.proto.VarDesc vars = 3;
+// repeated .paddle_mobile.framework.proto.VarDesc vars = 3;
 int BlockDesc::vars_size() const {
   return vars_.size();
 }
 void BlockDesc::clear_vars() {
   vars_.Clear();
 }
-const ::paddle::framework::proto::VarDesc& BlockDesc::vars(int index) const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.BlockDesc.vars)
+const ::paddle_mobile::framework::proto::VarDesc& BlockDesc::vars(int index) const {
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.BlockDesc.vars)
   return vars_.Get(index);
 }
-::paddle::framework::proto::VarDesc* BlockDesc::mutable_vars(int index) {
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.BlockDesc.vars)
+::paddle_mobile::framework::proto::VarDesc* BlockDesc::mutable_vars(int index) {
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.BlockDesc.vars)
   return vars_.Mutable(index);
 }
-::paddle::framework::proto::VarDesc* BlockDesc::add_vars() {
-  // @@protoc_insertion_point(field_add:paddle.framework.proto.BlockDesc.vars)
+::paddle_mobile::framework::proto::VarDesc* BlockDesc::add_vars() {
+  // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.BlockDesc.vars)
   return vars_.Add();
 }
-::google::protobuf::RepeatedPtrField< ::paddle::framework::proto::VarDesc >*
+::google::protobuf::RepeatedPtrField< ::paddle_mobile::framework::proto::VarDesc >*
 BlockDesc::mutable_vars() {
-  // @@protoc_insertion_point(field_mutable_list:paddle.framework.proto.BlockDesc.vars)
+  // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.BlockDesc.vars)
   return &vars_;
 }
-const ::google::protobuf::RepeatedPtrField< ::paddle::framework::proto::VarDesc >&
+const ::google::protobuf::RepeatedPtrField< ::paddle_mobile::framework::proto::VarDesc >&
 BlockDesc::vars() const {
-  // @@protoc_insertion_point(field_list:paddle.framework.proto.BlockDesc.vars)
+  // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.BlockDesc.vars)
   return vars_;
 }
 
-// repeated .paddle.framework.proto.OpDesc ops = 4;
+// repeated .paddle_mobile.framework.proto.OpDesc ops = 4;
 int BlockDesc::ops_size() const {
   return ops_.size();
 }
 void BlockDesc::clear_ops() {
   ops_.Clear();
 }
-const ::paddle::framework::proto::OpDesc& BlockDesc::ops(int index) const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.BlockDesc.ops)
+const ::paddle_mobile::framework::proto::OpDesc& BlockDesc::ops(int index) const {
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.BlockDesc.ops)
   return ops_.Get(index);
 }
-::paddle::framework::proto::OpDesc* BlockDesc::mutable_ops(int index) {
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.BlockDesc.ops)
+::paddle_mobile::framework::proto::OpDesc* BlockDesc::mutable_ops(int index) {
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.BlockDesc.ops)
   return ops_.Mutable(index);
 }
-::paddle::framework::proto::OpDesc* BlockDesc::add_ops() {
-  // @@protoc_insertion_point(field_add:paddle.framework.proto.BlockDesc.ops)
+::paddle_mobile::framework::proto::OpDesc* BlockDesc::add_ops() {
+  // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.BlockDesc.ops)
   return ops_.Add();
 }
-::google::protobuf::RepeatedPtrField< ::paddle::framework::proto::OpDesc >*
+::google::protobuf::RepeatedPtrField< ::paddle_mobile::framework::proto::OpDesc >*
 BlockDesc::mutable_ops() {
-  // @@protoc_insertion_point(field_mutable_list:paddle.framework.proto.BlockDesc.ops)
+  // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.BlockDesc.ops)
   return &ops_;
 }
-const ::google::protobuf::RepeatedPtrField< ::paddle::framework::proto::OpDesc >&
+const ::google::protobuf::RepeatedPtrField< ::paddle_mobile::framework::proto::OpDesc >&
 BlockDesc::ops() const {
-  // @@protoc_insertion_point(field_list:paddle.framework.proto.BlockDesc.ops)
+  // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.BlockDesc.ops)
   return ops_;
 }
 
@@ -7409,13 +7409,13 @@ void BlockDesc::clear_forward_block_idx() {
   clear_has_forward_block_idx();
 }
 ::google::protobuf::int32 BlockDesc::forward_block_idx() const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.BlockDesc.forward_block_idx)
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.BlockDesc.forward_block_idx)
   return forward_block_idx_;
 }
 void BlockDesc::set_forward_block_idx(::google::protobuf::int32 value) {
   set_has_forward_block_idx();
   forward_block_idx_ = value;
-  // @@protoc_insertion_point(field_set:paddle.framework.proto.BlockDesc.forward_block_idx)
+  // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.BlockDesc.forward_block_idx)
 }
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -7432,7 +7432,7 @@ ProgramDesc::ProgramDesc()
     protobuf_framework_2eproto::InitDefaults();
   }
   SharedCtor();
-  // @@protoc_insertion_point(constructor:paddle.framework.proto.ProgramDesc)
+  // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.ProgramDesc)
 }
 ProgramDesc::ProgramDesc(const ProgramDesc& from)
   : ::google::protobuf::MessageLite(),
@@ -7441,7 +7441,7 @@ ProgramDesc::ProgramDesc(const ProgramDesc& from)
       _cached_size_(0),
       blocks_(from.blocks_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  // @@protoc_insertion_point(copy_constructor:paddle.framework.proto.ProgramDesc)
+  // @@protoc_insertion_point(copy_constructor:paddle_mobile.framework.proto.ProgramDesc)
 }
 
 void ProgramDesc::SharedCtor() {
@@ -7449,7 +7449,7 @@ void ProgramDesc::SharedCtor() {
 }
 
 ProgramDesc::~ProgramDesc() {
-  // @@protoc_insertion_point(destructor:paddle.framework.proto.ProgramDesc)
+  // @@protoc_insertion_point(destructor:paddle_mobile.framework.proto.ProgramDesc)
   SharedDtor();
 }
 
@@ -7475,7 +7475,7 @@ ProgramDesc* ProgramDesc::New(::google::protobuf::Arena* arena) const {
 }
 
 void ProgramDesc::Clear() {
-// @@protoc_insertion_point(message_clear_start:paddle.framework.proto.ProgramDesc)
+// @@protoc_insertion_point(message_clear_start:paddle_mobile.framework.proto.ProgramDesc)
   ::google::protobuf::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -7495,13 +7495,13 @@ bool ProgramDesc::MergePartialFromCodedStream(
               mutable_unknown_fields));
   ::google::protobuf::io::CodedOutputStream unknown_fields_stream(
       &unknown_fields_string, false);
-  // @@protoc_insertion_point(parse_start:paddle.framework.proto.ProgramDesc)
+  // @@protoc_insertion_point(parse_start:paddle_mobile.framework.proto.ProgramDesc)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
     if (!p.second) goto handle_unusual;
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // repeated .paddle.framework.proto.BlockDesc blocks = 1;
+      // repeated .paddle_mobile.framework.proto.BlockDesc blocks = 1;
       case 1: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
             static_cast< ::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
@@ -7525,21 +7525,21 @@ bool ProgramDesc::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:paddle.framework.proto.ProgramDesc)
+  // @@protoc_insertion_point(parse_success:paddle_mobile.framework.proto.ProgramDesc)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:paddle.framework.proto.ProgramDesc)
+  // @@protoc_insertion_point(parse_failure:paddle_mobile.framework.proto.ProgramDesc)
   return false;
 #undef DO_
 }
 
 void ProgramDesc::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:paddle.framework.proto.ProgramDesc)
+  // @@protoc_insertion_point(serialize_start:paddle_mobile.framework.proto.ProgramDesc)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // repeated .paddle.framework.proto.BlockDesc blocks = 1;
+  // repeated .paddle_mobile.framework.proto.BlockDesc blocks = 1;
   for (unsigned int i = 0,
       n = static_cast<unsigned int>(this->blocks_size()); i < n; i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
@@ -7548,16 +7548,16 @@ void ProgramDesc::SerializeWithCachedSizes(
 
   output->WriteRaw(_internal_metadata_.unknown_fields().data(),
                    static_cast<int>(_internal_metadata_.unknown_fields().size()));
-  // @@protoc_insertion_point(serialize_end:paddle.framework.proto.ProgramDesc)
+  // @@protoc_insertion_point(serialize_end:paddle_mobile.framework.proto.ProgramDesc)
 }
 
 size_t ProgramDesc::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:paddle.framework.proto.ProgramDesc)
+// @@protoc_insertion_point(message_byte_size_start:paddle_mobile.framework.proto.ProgramDesc)
   size_t total_size = 0;
 
   total_size += _internal_metadata_.unknown_fields().size();
 
-  // repeated .paddle.framework.proto.BlockDesc blocks = 1;
+  // repeated .paddle_mobile.framework.proto.BlockDesc blocks = 1;
   {
     unsigned int count = static_cast<unsigned int>(this->blocks_size());
     total_size += 1UL * count;
@@ -7581,7 +7581,7 @@ void ProgramDesc::CheckTypeAndMergeFrom(
 }
 
 void ProgramDesc::MergeFrom(const ProgramDesc& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:paddle.framework.proto.ProgramDesc)
+// @@protoc_insertion_point(class_specific_merge_from_start:paddle_mobile.framework.proto.ProgramDesc)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::google::protobuf::uint32 cached_has_bits = 0;
@@ -7591,7 +7591,7 @@ void ProgramDesc::MergeFrom(const ProgramDesc& from) {
 }
 
 void ProgramDesc::CopyFrom(const ProgramDesc& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:paddle.framework.proto.ProgramDesc)
+// @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.ProgramDesc)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -7615,39 +7615,39 @@ void ProgramDesc::InternalSwap(ProgramDesc* other) {
 }
 
 ::std::string ProgramDesc::GetTypeName() const {
-  return "paddle.framework.proto.ProgramDesc";
+  return "paddle_mobile.framework.proto.ProgramDesc";
 }
 
 #if PROTOBUF_INLINE_NOT_IN_HEADERS
 // ProgramDesc
 
-// repeated .paddle.framework.proto.BlockDesc blocks = 1;
+// repeated .paddle_mobile.framework.proto.BlockDesc blocks = 1;
 int ProgramDesc::blocks_size() const {
   return blocks_.size();
 }
 void ProgramDesc::clear_blocks() {
   blocks_.Clear();
 }
-const ::paddle::framework::proto::BlockDesc& ProgramDesc::blocks(int index) const {
-  // @@protoc_insertion_point(field_get:paddle.framework.proto.ProgramDesc.blocks)
+const ::paddle_mobile::framework::proto::BlockDesc& ProgramDesc::blocks(int index) const {
+  // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.ProgramDesc.blocks)
   return blocks_.Get(index);
 }
-::paddle::framework::proto::BlockDesc* ProgramDesc::mutable_blocks(int index) {
-  // @@protoc_insertion_point(field_mutable:paddle.framework.proto.ProgramDesc.blocks)
+::paddle_mobile::framework::proto::BlockDesc* ProgramDesc::mutable_blocks(int index) {
+  // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.ProgramDesc.blocks)
   return blocks_.Mutable(index);
 }
-::paddle::framework::proto::BlockDesc* ProgramDesc::add_blocks() {
-  // @@protoc_insertion_point(field_add:paddle.framework.proto.ProgramDesc.blocks)
+::paddle_mobile::framework::proto::BlockDesc* ProgramDesc::add_blocks() {
+  // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.ProgramDesc.blocks)
   return blocks_.Add();
 }
-::google::protobuf::RepeatedPtrField< ::paddle::framework::proto::BlockDesc >*
+::google::protobuf::RepeatedPtrField< ::paddle_mobile::framework::proto::BlockDesc >*
 ProgramDesc::mutable_blocks() {
-  // @@protoc_insertion_point(field_mutable_list:paddle.framework.proto.ProgramDesc.blocks)
+  // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.ProgramDesc.blocks)
   return &blocks_;
 }
-const ::google::protobuf::RepeatedPtrField< ::paddle::framework::proto::BlockDesc >&
+const ::google::protobuf::RepeatedPtrField< ::paddle_mobile::framework::proto::BlockDesc >&
 ProgramDesc::blocks() const {
-  // @@protoc_insertion_point(field_list:paddle.framework.proto.ProgramDesc.blocks)
+  // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.ProgramDesc.blocks)
   return blocks_;
 }
 
@@ -7657,6 +7657,6 @@ ProgramDesc::blocks() const {
 
 }  // namespace proto
 }  // namespace framework
-}  // namespace paddle
+}  // namespace paddle_mobile
 
 // @@protoc_insertion_point(global_scope)
