@@ -25,4 +25,4 @@ repos:
         description: Format files with ClangFormat.
         entry: bash .clang_format.hook -i
         language: system
-        files: (fluid).*\.(c|cc|cxx|cpp|h|hpp|hxx)$
+        files: (flui/src).*\.(c|cc|cxx|cpp|h|hpp|hxx)$
