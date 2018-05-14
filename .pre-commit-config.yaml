@@ -18,11 +18,4 @@ repos:
         files: (fluid/src).*\.(md|py|mm|swift|java|c|cc|cxx|cpp|cu|h|hpp|hxx)$
     -   id: trailing-whitespace
         files: (fluid/src).*\.(md|py|mm|swift|java|c|cc|cxx|cpp|cu|h|hpp|hxx)$
--   repo: local
-    hooks:
-    -   id: clang-format-with-version-check
-        name: clang-format
-        description: Format files with ClangFormat.
-        entry: bash .clang_format.hook -i
-        language: system
-        files: (fluid).*\.(c|cc|cxx|cpp|h|hpp|hxx)$
+-
