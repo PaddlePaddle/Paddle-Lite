@@ -49,3 +49,6 @@ cmake_install.cmake
 *.cbp
 
 paddle-mobile.cbp
+
+.idea
+
