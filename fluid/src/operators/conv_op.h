@@ -32,17 +32,17 @@ public:
   ConvOp(const std::string& type, const VariableNameMap& inputs,
                      const VariableNameMap& outputs, const framework::AttributeMap& attrs, std::shared_ptr<framework::Scope> scope)
           : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs, scope), param_(inputs, outputs, attrs, *scope){
-
   }
 
+  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  void InferShape() const override;
+
+protected:
   void RunImpl() const{
     operators::ConvKernel<DeviceType, T, ConvParam> kernel;
     kernel.Compute(param_);
   }
 
-  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
-  void InferShape() const override;
-protected:
   ConvParam param_;
 };
 

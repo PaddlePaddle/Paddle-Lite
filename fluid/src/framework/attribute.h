@@ -22,7 +22,6 @@ SOFTWARE.
 #include "common/variant.h"
 
 namespace paddle_mobile {
-
 namespace framework {
 
 class BlockDesc;
@@ -93,17 +92,16 @@ public:
     return attr;
   }
 
-
   Attribute(){}
   template<typename T, typename... Args>
   Attribute& Set(Args&&... args){
-      variant_.Set<T>(args...);
-      return *this;
+    variant_.Set<T>(args...);
+    return *this;
   }
 
   template<typename T>
   T& Get() const {
-      return variant_.Get<T>();
+    return variant_.Get<T>();
   }
 
 private:
@@ -116,24 +114,19 @@ using AttributeMap = std::unordered_map<std::string, Attribute>;
 
 class AttrReader {
 public:
-    explicit AttrReader(const AttributeMap& attrs) : attrs_(attrs) {}
+  explicit AttrReader(const AttributeMap& attrs) : attrs_(attrs) {}
 
-    template <typename T>
-    inline T Get(const std::string& name) const {
+  template <typename T>
+  inline T Get(const std::string& name) const {
 //          PADDLE_ENFORCE(attrs_.count(name) != 0, "%s should be in AttributeMap",
 //                         name);
-        std::cout << " attr name: " << name << "  size " << attrs_.size() << std::endl;
-//      std::vector<int> stides = attrs_.at(name).Get<std::vector<int> >();
-
-//      std::cout << " size of attr_ " << stides.size() << std::endl;
-        return ((Attribute)attrs_.at(name)).Get<T>();
-    }
+    return ((Attribute)attrs_.at(name)).Get<T>();
+  }
 
 private:
-    const AttributeMap& attrs_;
+  const AttributeMap& attrs_;
 };
 
 }
-
 }
 

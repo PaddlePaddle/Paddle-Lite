@@ -19,10 +19,8 @@ SOFTWARE.
 #include "attribute.h"
 
 namespace paddle_mobile {
-
 namespace framework{
 
 }
-
 }
 
