@@ -15,26 +15,36 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
+#pragma once;
 
-#pragma once
-
-#include "common/types.h"
-#include "paddle_mobile_object.h"
-#include "program_desc.h"
-#include "scope.h"
+#include <map>
+#include <string>
+#include "framework/attribute.h"
 
 namespace paddle_mobile {
+
 namespace framework {
+template <typename Dtype>
+class OperatorBase;
+class OpDesc;
+class BlockDesc;
+class InferShapeContext;
+}
 
-template <typename Dtype, Precision P = Precision::FP32>
-class Program : PaddleMobileObject {
- public:
-  std::shared_ptr<ProgramDesc> originProgram;
-  std::shared_ptr<ProgramDesc> optimizeProgram;
-  std::shared_ptr<Scope> scope;
+using VariableNameMap = std::map<std::string, std::vector<std::string> >;
 
- private:
+template <typename Dtype>
+using OpCreator = std::function<framework::OperatorBase<Dtype>*(
+        const std::string& /*type*/, const VariableNameMap& /*inputs*/,
+        const VariableNameMap& /*outputs*/, const framework::AttributeMap& /*attrs*/)>;
+
+using GradOpMakerFN = std::function<std::vector<std::unique_ptr<framework::OpDesc>>(
+        const framework::OpDesc&, const std::unordered_set<std::string>& /*no_grad_set*/,
+        std::unordered_map<std::string, std::string>* /*grad_to_var*/,
+const std::vector<framework::BlockDesc*>& grad_block)>;
+
+using InferVarTypeFN =
+std::function<void(const framework::OpDesc& /*op_desc*/, framework::BlockDesc* /*block*/)>;
+
+using InferShapeFN = std::function<void(framework::InferShapeContext*)>;
 };
-
-}  // namespace framework
-}  // namespace paddle_mobile

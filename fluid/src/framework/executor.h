@@ -18,53 +18,37 @@ SOFTWARE.
 
 #pragma once
 
+#include <map>
+#include <string>
+#include <vector>
+
+#include "block_desc.h"
 #include "framework.pb.h"
-#include "op_desc.h"
-#include "paddle_mobile_object.h"
-#include "var_desc.h"
+#include "operator.h"
+#include "program.h"
+#include "program_desc.h"
+#include "scope.h"
+#include "tensor.h"
+#include "variable.h"
 
 namespace paddle_mobile {
 namespace framework {
 
-class BlockDesc : PaddleMobileObject {
+template <typename Dtype>
+class Executor {
  public:
-  BlockDesc(const proto::BlockDesc &desc);
-
-  const int &ID() const { return desc_.idx(); }
-
-  const int &Parent() const { return desc_.parent_idx(); }
-
-  bool operator==(const paddle_mobile::framework::BlockDesc &in_block) const {
-    return this->ID() == in_block.ID() && this->Parent() == in_block.Parent();
-  }
-
-  bool operator<(const paddle_mobile::framework::BlockDesc &in_block) const {
-    return this->ID() < in_block.ID() && this->Parent() < in_block.Parent();
-  }
-
-  std::vector<std::shared_ptr<VarDesc>> Vars() const;
-  std::vector<std::shared_ptr<OpDesc>> Ops() const;
+  Executor(const Program<Dtype> p);
+  std::shared_ptr<Tensor> predict(Tensor &t);
 
  private:
-  proto::BlockDesc desc_;
-  std::vector<std::shared_ptr<OpDesc>> ops_;
-  std::unordered_map<std::string, std::shared_ptr<VarDesc>> vars_;
+  const framework::Program<Dtype> program_;
+  std::shared_ptr<ProgramDesc> to_predict_program_;
+  void predict(const Tensor &t, int block_id);
+  std::map<framework::BlockDesc,
+           std::vector<std::shared_ptr<OperatorBase<Dtype>>>>
+      ops_of_block_;
+  bool use_optimize_ = false;
 };
 
 }  // namespace framework
 }  // namespace paddle_mobile
-
-namespace std {
-
-template <>
-struct hash<paddle_mobile::framework::BlockDesc> {
-  typedef paddle_mobile::framework::BlockDesc argument_type;
-  typedef std::size_t result_type;
-  result_type operator()(argument_type const &s) const noexcept {
-    result_type const h1(std::hash<int>{}(s.ID()));
-    result_type const h2(std::hash<int>{}(s.ID()));
-    return h1 ^ (h2 << 1);
-  }
-};
-
-}  // namespace std

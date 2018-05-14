@@ -16,25 +16,36 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#pragma once
-
-#include "common/types.h"
-#include "paddle_mobile_object.h"
-#include "program_desc.h"
-#include "scope.h"
+#include "operator.h"
+#include "op_info.h"
 
 namespace paddle_mobile {
 namespace framework {
 
-template <typename Dtype, Precision P = Precision::FP32>
-class Program : PaddleMobileObject {
- public:
-  std::shared_ptr<ProgramDesc> originProgram;
-  std::shared_ptr<ProgramDesc> optimizeProgram;
-  std::shared_ptr<Scope> scope;
+template <typename Dtype>
+OperatorBase<Dtype>::OperatorBase(const std::string& type,
+                                  const VariableNameMap& inputs,
+                                  const VariableNameMap& outputs,
+                                  const AttributeMap& attrs,
+                                  std::shared_ptr<Scope> scope)
+    : type_(type),
+      inputs_(inputs),
+      outputs_(outputs),
+      attrs_(attrs),
+      scope_(scope) {
+  CheckAllInputOutputSet();
+}
 
- private:
-};
+template <typename Dtype>
+void OperatorBase<Dtype>::Run() {
+  RunImpl();
+}
+
+template <typename Dtype>
+void OperatorBase<Dtype>::CheckAllInputOutputSet() const {}
+
+template class OperatorBase<ARM>;
+template class OperatorWithKernel<ARM>;
 
 }  // namespace framework
 }  // namespace paddle_mobile

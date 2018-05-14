@@ -18,23 +18,34 @@ SOFTWARE.
 
 #pragma once
 
-#include "common/types.h"
-#include "paddle_mobile_object.h"
-#include "program_desc.h"
-#include "scope.h"
+#include "framework/operator.h"
+#include "operators/kernel/conv_kernel.h"
 
 namespace paddle_mobile {
-namespace framework {
+namespace operators {
 
-template <typename Dtype, Precision P = Precision::FP32>
-class Program : PaddleMobileObject {
- public:
-  std::shared_ptr<ProgramDesc> originProgram;
-  std::shared_ptr<ProgramDesc> optimizeProgram;
-  std::shared_ptr<Scope> scope;
+using namespace framework;
 
- private:
+template <typename DeviceType, typename T>
+class ConvOp : public framework::OperatorWithKernel<DeviceType> {
+public:
+  ConvOp(const std::string& type, const VariableNameMap& inputs,
+                     const VariableNameMap& outputs, const framework::AttributeMap& attrs, std::shared_ptr<framework::Scope> scope)
+          : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs, scope), param_(inputs, outputs, attrs, *scope){
+  }
+
+  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  void InferShape() const override;
+
+protected:
+  void RunImpl() const{
+    operators::ConvKernel<DeviceType, T, ConvParam> kernel;
+    kernel.Compute(param_);
+  }
+
+  ConvParam param_;
 };
 
-}  // namespace framework
-}  // namespace paddle_mobile
+
+} // operators
+} // paddle_mobile

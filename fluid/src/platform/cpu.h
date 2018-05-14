@@ -1,3 +1,4 @@
+
 /* Copyright (c) 2016 Baidu, Inc. All Rights Reserved.
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -15,26 +16,56 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
-
 #pragma once
 
-#include "common/types.h"
-#include "paddle_mobile_object.h"
-#include "program_desc.h"
-#include "scope.h"
+#include <stdio.h>
+#include <unistd.h>
+#include <iostream>
+#include <vector>
 
-namespace paddle_mobile {
-namespace framework {
+#ifdef PLATFORM_ANDROID
+#include <pthread.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 
-template <typename Dtype, Precision P = Precision::FP32>
-class Program : PaddleMobileObject {
- public:
-  std::shared_ptr<ProgramDesc> originProgram;
-  std::shared_ptr<ProgramDesc> optimizeProgram;
-  std::shared_ptr<Scope> scope;
+//#define gettid() syscall(SYS_gettid)
 
- private:
-};
+#define __NCPUBITS__ (8 * sizeof(unsigned long))
 
-}  // namespace framework
-}  // namespace paddle_mobile
+#define __CPU_SET(cpu, cpusetp)                  \
+  ((cpusetp)->mask_bits[(cpu) / __NCPUBITS__] |= \
+   (1UL << ((cpu) % __NCPUBITS__)))
+
+#define __CPU_ZERO(cpusetp) memset((cpusetp), 0, sizeof(cpu_set_t))
+#endif
+
+#if __APPLE__
+
+#include "TargetConditionals.h"
+
+#if TARGET_OS_IPHONE
+#include <mach/machine.h>
+#include <sys/sysctl.h>
+#include <sys/types.h>
+#define __IOS__
+#endif
+#endif
+
+namespace padle_mobile {
+namespace platform {
+int getCpuCount();
+
+int getMemInfo();
+
+int getMaxFreq(int cpuId);
+
+int sortBigLittleByFreq(int cpuCount, std::vector<int> &cpuIds,
+                        std::vector<int> &cpuFreq,
+                        std::vector<int> &clusterIds);
+
+int setSchedAffinity(const std::vector<int> &cpuIds);
+
+int setCpuAffinity(const std::vector<int> &cpuIds);
+
+}  // namespace platform
+}  // namespace padle_mobile

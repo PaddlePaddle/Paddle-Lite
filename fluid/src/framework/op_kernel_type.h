@@ -18,53 +18,47 @@ SOFTWARE.
 
 #pragma once
 
+#include "data_layout.h"
 #include "framework.pb.h"
-#include "op_desc.h"
-#include "paddle_mobile_object.h"
-#include "var_desc.h"
 
 namespace paddle_mobile {
 namespace framework {
+struct OpKernelType {
+  struct Hash {
+    size_t operator()(const OpKernelType& key) const {
+      int data_type = static_cast<int>(key.data_type_) << LEFT_SHIFT;
+      int data_layout = static_cast<int>(key.data_layout_) << (LEFT_SHIFT * 2);
 
-class BlockDesc : PaddleMobileObject {
- public:
-  BlockDesc(const proto::BlockDesc &desc);
+      std::hash<int> hasher;
+      return hasher(data_type + data_layout);
+    }
+  };
 
-  const int &ID() const { return desc_.idx(); }
+  // place, data_type, library_type kinds less than 2^8
+  constexpr static int LEFT_SHIFT = 8;
 
-  const int &Parent() const { return desc_.parent_idx(); }
+  proto::VarType::Type data_type_;
+  DataLayout data_layout_;
 
-  bool operator==(const paddle_mobile::framework::BlockDesc &in_block) const {
-    return this->ID() == in_block.ID() && this->Parent() == in_block.Parent();
+  OpKernelType(proto::VarType::Type data_type,
+               DataLayout data_layout = DataLayout::kAnyLayout)
+      : data_type_(data_type), data_layout_(data_layout) {}
+
+  bool operator==(const OpKernelType& o) const {
+    return data_type_ == o.data_type_ && data_layout_ == o.data_layout_;
   }
 
-  bool operator<(const paddle_mobile::framework::BlockDesc &in_block) const {
-    return this->ID() < in_block.ID() && this->Parent() < in_block.Parent();
-  }
-
-  std::vector<std::shared_ptr<VarDesc>> Vars() const;
-  std::vector<std::shared_ptr<OpDesc>> Ops() const;
-
- private:
-  proto::BlockDesc desc_;
-  std::vector<std::shared_ptr<OpDesc>> ops_;
-  std::unordered_map<std::string, std::shared_ptr<VarDesc>> vars_;
+  bool operator!=(const OpKernelType& o) const { return !(*this == o); }
 };
+
+inline bool NeedTransformLayout(const DataLayout& l, const DataLayout& r) {
+  return l != DataLayout::kAnyLayout && r != DataLayout::kAnyLayout && l != r;
+}
+
+inline bool TransFromNeeded(const OpKernelType& l, const OpKernelType& r) {
+  return (l.data_type_ != r.data_type_) ||
+         NeedTransformLayout(l.data_layout_, r.data_layout_);
+}
 
 }  // namespace framework
 }  // namespace paddle_mobile
-
-namespace std {
-
-template <>
-struct hash<paddle_mobile::framework::BlockDesc> {
-  typedef paddle_mobile::framework::BlockDesc argument_type;
-  typedef std::size_t result_type;
-  result_type operator()(argument_type const &s) const noexcept {
-    result_type const h1(std::hash<int>{}(s.ID()));
-    result_type const h2(std::hash<int>{}(s.ID()));
-    return h1 ^ (h2 << 1);
-  }
-};
-
-}  // namespace std

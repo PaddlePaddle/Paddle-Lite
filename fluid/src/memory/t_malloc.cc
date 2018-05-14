@@ -15,26 +15,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
-
 #pragma once
 
-#include "common/types.h"
-#include "paddle_mobile_object.h"
-#include "program_desc.h"
-#include "scope.h"
+#include "t_malloc.h"
+#include <cstdlib>
+#include <cstring>
 
 namespace paddle_mobile {
-namespace framework {
+namespace memory {
+const int MALLOC_ALIGN = 16;
 
-template <typename Dtype, Precision P = Precision::FP32>
-class Program : PaddleMobileObject {
- public:
-  std::shared_ptr<ProgramDesc> originProgram;
-  std::shared_ptr<ProgramDesc> optimizeProgram;
-  std::shared_ptr<Scope> scope;
-
- private:
+void Copy(void *dst, const void *src, size_t num) {
+  std::memcpy(dst, src, num);
 };
 
-}  // namespace framework
+void *Alloc(size_t size) {
+  size_t offset = sizeof(void *) + MALLOC_ALIGN - 1;
+  char *p = static_cast<char *>(malloc(offset + size));
+  if (!p) {
+    return nullptr;
+  }
+  void *r = reinterpret_cast<void *>(reinterpret_cast<size_t>(p + offset) &
+                                     (~(MALLOC_ALIGN - 1)));
+  static_cast<void **>(r)[-1] = p;
+  return r;
+}
+
+void Free(void *ptr) {
+  if (ptr) {
+    free(static_cast<void **>(ptr)[-1]);
+  }
+}
+
+}  // namespace memory
 }  // namespace paddle_mobile

@@ -17,54 +17,22 @@ SOFTWARE.
 ==============================================================================*/
 
 #pragma once
-
 #include "framework.pb.h"
-#include "op_desc.h"
-#include "paddle_mobile_object.h"
-#include "var_desc.h"
+#include "lod_tensor.h"
+#include "selected_rows.h"
+#include "variable.h"
 
 namespace paddle_mobile {
 namespace framework {
-
-class BlockDesc : PaddleMobileObject {
- public:
-  BlockDesc(const proto::BlockDesc &desc);
-
-  const int &ID() const { return desc_.idx(); }
-
-  const int &Parent() const { return desc_.parent_idx(); }
-
-  bool operator==(const paddle_mobile::framework::BlockDesc &in_block) const {
-    return this->ID() == in_block.ID() && this->Parent() == in_block.Parent();
+inline proto::VarType::Type ToVarType(std::type_index type) {
+  if (type.hash_code() == typeid(LoDTensor).hash_code()) {
+    return proto::VarType_Type_LOD_TENSOR;
+  } else if (type.hash_code() == typeid(SelectedRows).hash_code()) {
+    return proto::VarType_Type_SELECTED_ROWS;
+  } else {
+    //    PADDLE_THROW("ToVarType:Unsupported type %s", type.name());
   }
-
-  bool operator<(const paddle_mobile::framework::BlockDesc &in_block) const {
-    return this->ID() < in_block.ID() && this->Parent() < in_block.Parent();
-  }
-
-  std::vector<std::shared_ptr<VarDesc>> Vars() const;
-  std::vector<std::shared_ptr<OpDesc>> Ops() const;
-
- private:
-  proto::BlockDesc desc_;
-  std::vector<std::shared_ptr<OpDesc>> ops_;
-  std::unordered_map<std::string, std::shared_ptr<VarDesc>> vars_;
-};
+}
 
 }  // namespace framework
 }  // namespace paddle_mobile
-
-namespace std {
-
-template <>
-struct hash<paddle_mobile::framework::BlockDesc> {
-  typedef paddle_mobile::framework::BlockDesc argument_type;
-  typedef std::size_t result_type;
-  result_type operator()(argument_type const &s) const noexcept {
-    result_type const h1(std::hash<int>{}(s.ID()));
-    result_type const h2(std::hash<int>{}(s.ID()));
-    return h1 ^ (h2 << 1);
-  }
-};
-
-}  // namespace std

@@ -16,25 +16,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#pragma once
+#include "operators/kernel/conv_kernel.h"
 
-#include "common/types.h"
-#include "paddle_mobile_object.h"
-#include "program_desc.h"
-#include "scope.h"
+
 
 namespace paddle_mobile {
-namespace framework {
+namespace operators {
 
-template <typename Dtype, Precision P = Precision::FP32>
-class Program : PaddleMobileObject {
- public:
-  std::shared_ptr<ProgramDesc> originProgram;
-  std::shared_ptr<ProgramDesc> optimizeProgram;
-  std::shared_ptr<Scope> scope;
+//template<>
+//void ConvKernel<FPGA, float>::Compute(const ConvParam &param) const {}
+//
+//template class ConvKernel<FPGA, float>;
 
- private:
-};
-
-}  // namespace framework
-}  // namespace paddle_mobile
+}
+}

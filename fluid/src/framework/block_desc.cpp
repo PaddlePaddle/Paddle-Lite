@@ -16,25 +16,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#pragma once
-
-#include "common/types.h"
-#include "paddle_mobile_object.h"
-#include "program_desc.h"
-#include "scope.h"
+#include "block_desc.h"
 
 namespace paddle_mobile {
 namespace framework {
 
-template <typename Dtype, Precision P = Precision::FP32>
-class Program : PaddleMobileObject {
- public:
-  std::shared_ptr<ProgramDesc> originProgram;
-  std::shared_ptr<ProgramDesc> optimizeProgram;
-  std::shared_ptr<Scope> scope;
+std::vector<std::shared_ptr<VarDesc>> BlockDesc::Vars() const {
+  std::vector<std::shared_ptr<VarDesc>> res;
+  for (const auto &p : vars_) {
+    res.push_back(p.second);
+  }
+  return res;
+}
 
- private:
-};
+std::vector<std::shared_ptr<OpDesc>> BlockDesc::Ops() const {
+  std::vector<std::shared_ptr<OpDesc>> res;
+  for (const auto &op : ops_) {
+    res.push_back(op);
+  }
+  return res;
+}
+
+BlockDesc::BlockDesc(const proto::BlockDesc &desc) : desc_(desc) {
+  for (const proto::VarDesc &var_desc : desc_.vars()) {
+    vars_[var_desc.name()].reset(new VarDesc(var_desc));
+  }
+  for (const proto::OpDesc &op_desc : desc_.ops()) {
+    ops_.emplace_back(new framework::OpDesc(op_desc));
+  }
+}
 
 }  // namespace framework
 }  // namespace paddle_mobile

@@ -16,25 +16,28 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#pragma once
-
-#include "common/types.h"
-#include "paddle_mobile_object.h"
-#include "program_desc.h"
-#include "scope.h"
+#include "op_param.h"
 
 namespace paddle_mobile {
-namespace framework {
+namespace operators {
 
-template <typename Dtype, Precision P = Precision::FP32>
-class Program : PaddleMobileObject {
- public:
-  std::shared_ptr<ProgramDesc> originProgram;
-  std::shared_ptr<ProgramDesc> optimizeProgram;
-  std::shared_ptr<Scope> scope;
+std::ostream& operator<<(std::ostream& os, const ConvParam& conv_param) {
+  os << "parameter of conv: " << std::endl;
+  os << "  stride: "
+     << " (" << conv_param.Strides()[0] << conv_param.Strides()[1] << ") "
+     << std::endl;
+  os << "  paddings: "
+     << " (" << conv_param.Paddings()[0] << conv_param.Paddings()[1] << ") "
+     << std::endl;
+  os << "  dilations: "
+     << " (" << conv_param.Dilations()[0] << conv_param.Dilations()[1] << ") "
+     << std::endl;
+  os << "  groups: " << conv_param.Groups() << std::endl;
+  os << "  input  dims: " << conv_param.Input()->dims() << std::endl;
+  os << "  filter dims: " << conv_param.Filter()->dims() << std::endl;
+  os << "  output dims: " << conv_param.Output()->dims() << std::endl;
+  return os;
+}
 
- private:
-};
-
-}  // namespace framework
+}  // namespace operators
 }  // namespace paddle_mobile

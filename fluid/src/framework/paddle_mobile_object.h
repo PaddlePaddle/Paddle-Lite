@@ -18,23 +18,19 @@ SOFTWARE.
 
 #pragma once
 
-#include "common/types.h"
-#include "paddle_mobile_object.h"
-#include "program_desc.h"
-#include "scope.h"
+#include <string>
+#include "stdio.h"
 
 namespace paddle_mobile {
-namespace framework {
 
-template <typename Dtype, Precision P = Precision::FP32>
-class Program : PaddleMobileObject {
+class PaddleMobileObject {
  public:
-  std::shared_ptr<ProgramDesc> originProgram;
-  std::shared_ptr<ProgramDesc> optimizeProgram;
-  std::shared_ptr<Scope> scope;
+  virtual inline const std::string& ToString() {
+    char address[128] = {0};
+    sprintf(address, "%p", this);
+    return std::string(address);
+  }
 
  private:
 };
-
-}  // namespace framework
 }  // namespace paddle_mobile

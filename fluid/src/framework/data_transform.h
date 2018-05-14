@@ -18,23 +18,24 @@ SOFTWARE.
 
 #pragma once
 
-#include "common/types.h"
-#include "paddle_mobile_object.h"
-#include "program_desc.h"
-#include "scope.h"
+#include <functional>
+#include <utility>
+#include <vector>
+
+#include "op_kernel_type.h"
+#include "selected_rows.h"
+#include "tensor.h"
+#include "variable.h"
 
 namespace paddle_mobile {
 namespace framework {
 
-template <typename Dtype, Precision P = Precision::FP32>
-class Program : PaddleMobileObject {
- public:
-  std::shared_ptr<ProgramDesc> originProgram;
-  std::shared_ptr<ProgramDesc> optimizeProgram;
-  std::shared_ptr<Scope> scope;
+void DataTransform(const OpKernelType& expected_kernel_type,
+                   const OpKernelType& kernel_type_for_var,
+                   const Tensor& input_tensor, Tensor* out);
 
- private:
-};
+void CopyVariableWithTensor(const Variable& in_var, const Tensor& tensor,
+                            Variable& out_var);
 
 }  // namespace framework
 }  // namespace paddle_mobile

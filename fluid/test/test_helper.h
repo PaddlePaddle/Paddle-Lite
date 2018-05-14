@@ -16,25 +16,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#pragma once
+#include <random>
+#include "framework/ddim.h"
+#include "framework/tensor.h"
 
-#include "common/types.h"
-#include "paddle_mobile_object.h"
-#include "program_desc.h"
-#include "scope.h"
+template <typename T>
+void SetupTensor(paddle_mobile::framework::Tensor* input,
+                 paddle_mobile::framework::DDim dims, T lower, T upper) {
+  static unsigned int seed = 100;
+  std::mt19937 rng(seed++);
+  std::uniform_real_distribution<double> uniform_dist(0, 1);
 
-namespace paddle_mobile {
-namespace framework {
-
-template <typename Dtype, Precision P = Precision::FP32>
-class Program : PaddleMobileObject {
- public:
-  std::shared_ptr<ProgramDesc> originProgram;
-  std::shared_ptr<ProgramDesc> optimizeProgram;
-  std::shared_ptr<Scope> scope;
-
- private:
-};
-
-}  // namespace framework
-}  // namespace paddle_mobile
+  T* input_ptr = input->mutable_data<T>(dims);
+  for (int i = 0; i < input->numel(); ++i) {
+    input_ptr[i] = static_cast<T>(uniform_dist(rng) * (upper - lower) + lower);
+  }
+}
