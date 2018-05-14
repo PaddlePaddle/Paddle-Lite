@@ -32,7 +32,6 @@ SOFTWARE.
 #include "program_desc.h"
 
 namespace paddle_mobile {
-
 namespace framework {
 
 template <typename Dtype>
@@ -50,5 +49,4 @@ private:
 };
 
 } // namesapce framework
-
 }  // namespace paddle_mobile

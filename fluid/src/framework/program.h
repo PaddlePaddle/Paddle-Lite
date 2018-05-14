@@ -26,14 +26,15 @@ SOFTWARE.
 namespace paddle_mobile {
 namespace framework{
 
-    template<typename Dtype, Precision P = Precision::FP32>
-    class Program: PaddleMobileObject{
-    public:
-        std::shared_ptr<ProgramDesc> originProgram;
-        std::shared_ptr<ProgramDesc> optimizeProgram;
-        std::shared_ptr<Scope> scope;
-    private:
-    };
-}
+template<typename Dtype, Precision P = Precision::FP32>
+class Program: PaddleMobileObject{
+public:
+  std::shared_ptr<ProgramDesc> originProgram;
+  std::shared_ptr<ProgramDesc> optimizeProgram;
+  std::shared_ptr<Scope> scope;
 
+private:
+};
+
+}
 }

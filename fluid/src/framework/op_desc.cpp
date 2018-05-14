@@ -5,7 +5,6 @@
 #include "op_desc.h"
 
 namespace paddle_mobile{
-
 namespace framework{
 
 OpDesc::OpDesc(const proto::OpDesc &desc): desc_(desc) {
@@ -56,5 +55,4 @@ const std::unordered_map<std::string, Attribute> &OpDesc::GetAttrMap() const{
 }
 
 }
-
 }

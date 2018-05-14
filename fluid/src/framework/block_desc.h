@@ -24,18 +24,19 @@ SOFTWARE.
 #include "paddle_mobile_object.h"
 
 namespace paddle_mobile {
-
 namespace framework {
 
 class BlockDesc: PaddleMobileObject{
 public:
-    BlockDesc(const proto::BlockDesc &desc);
-    const int &ID() const{
-        return desc_.idx();
-    }
-    const int &Parent() const{
-        return desc_.parent_idx();
-    }
+  BlockDesc(const proto::BlockDesc &desc);
+
+  const int &ID() const{
+    return desc_.idx();
+  }
+
+  const int &Parent() const{
+    return desc_.parent_idx();
+  }
 
   bool operator==(const paddle_mobile::framework::BlockDesc &in_block) const {
     return this->ID() == in_block.ID() && this->Parent() == in_block.Parent();
@@ -44,22 +45,21 @@ public:
   bool operator<(const paddle_mobile::framework::BlockDesc &in_block) const {
     return this->ID() < in_block.ID() && this->Parent() < in_block.Parent();
   }
-    std::vector<std::shared_ptr<VarDesc>> Vars() const;
-    std::vector<std::shared_ptr<OpDesc>> Ops() const;
+
+  std::vector<std::shared_ptr<VarDesc>> Vars() const;
+  std::vector<std::shared_ptr<OpDesc>> Ops() const;
 
 private:
-    proto::BlockDesc desc_;
-    std::vector<std::shared_ptr<OpDesc>> ops_;
-    std::unordered_map<std::string, std::shared_ptr<VarDesc>> vars_;
+  proto::BlockDesc desc_;
+  std::vector<std::shared_ptr<OpDesc>> ops_;
+  std::unordered_map<std::string, std::shared_ptr<VarDesc>> vars_;
 };
 
 }
-
 }
 
-
-
 namespace std {
+
 template<> struct hash<paddle_mobile::framework::BlockDesc>
 {
   typedef paddle_mobile::framework::BlockDesc argument_type;
@@ -71,4 +71,5 @@ template<> struct hash<paddle_mobile::framework::BlockDesc>
     return h1 ^ (h2 << 1);
   }
 };
+
 }

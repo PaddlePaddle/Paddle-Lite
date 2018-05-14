@@ -53,14 +53,12 @@ int main(){
 
   paddle_mobile::framework::Executor<paddle_mobile::ARM> executor(program);
 
-
-
   paddle_mobile::framework::Tensor input;
   SetupTensor<float>(&input, {1, 3, 32, 32},
                      static_cast<float>(0), static_cast<float>(1));
   float* input_ptr = input.data<float>();
   for(int i = 0; i < input.numel(); ++i){
-      std::cout << input_ptr[i] << std::endl;
+    std::cout << input_ptr[i] << std::endl;
   }
 
   std::cout << "input: " << input.memory_size() << std::endl;

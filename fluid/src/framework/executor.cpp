@@ -22,12 +22,8 @@ SOFTWARE.
 #include "lod_tensor.h"
 #include "operators/conv_op.h"
 
-
-using std::cout;
 namespace paddle_mobile {
-
 namespace framework {
-
 
 template <typename Dtype>
 Executor<Dtype>::Executor(const Program<Dtype> p): program_(p){
@@ -36,7 +32,6 @@ Executor<Dtype>::Executor(const Program<Dtype> p): program_(p){
   } else {
     to_predict_program_ = program_.originProgram;
   }
-
 
   const std::vector<std::shared_ptr<BlockDesc> > blocks = to_predict_program_->Blocks();
   std::cout << " **block size " << blocks.size() << std::endl;
@@ -92,7 +87,6 @@ std::shared_ptr<Tensor> Executor<Dtype>::predict(Tensor &t){
 template <typename Dtype>
 void Executor<Dtype>::predict(const Tensor &t, int block_id) {
   std::shared_ptr<BlockDesc> to_predict_block = to_predict_program_->Block(block_id);
-
   for (int j = 0; j < ops_of_block_[*to_predict_block.get()].size(); ++j) {
     auto op = ops_of_block_[*to_predict_block.get()][j];
     std::cout << "开始run" << std::endl;

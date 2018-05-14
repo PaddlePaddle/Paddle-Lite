@@ -18,9 +18,7 @@ SOFTWARE.
 
 
 namespace paddle_mobile {
-
 namespace framework{
 
 }
-
 }

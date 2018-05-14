@@ -23,7 +23,6 @@ SOFTWARE.
 #include "paddle_mobile_object.h"
 
 namespace paddle_mobile{
-
 namespace framework{
 
 class OpDesc: PaddleMobileObject{
@@ -55,6 +54,5 @@ private:
 };
 
 }
-
 }
 

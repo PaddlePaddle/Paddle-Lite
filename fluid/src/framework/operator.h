@@ -74,12 +74,6 @@ private:
 template <typename Dtype, typename P>
 class OpKernelBase: PaddleMobileObject{
 public:
-  /**
-   * ExecutionContext is the only parameter of Kernel Run function.
-   * Run will get input/output variables, state such as momentum and
-   * device resource such as CUDA stream, cublas handle, etc. from
-   * ExecutionContext. User should construct it before run the Operator.
-   */
   virtual void Compute(const P &para) const = 0;
 
   virtual ~OpKernelBase() = default;

@@ -72,8 +72,6 @@ public:
             const VariableNameMap& outputs, const framework::AttributeMap & attrs, const framework::Scope &scope){
     filter_ = FilterFrom<framework::LoDTensor>(inputs, scope);
     input_ = InputFrom<framework::Tensor>(inputs, scope);
-    std::cout << " in conv param init: " << input_->numel() << std::endl;
-
     output_ = OutputFrom<framework::Tensor>(outputs, scope);
     strides_ = GetAttr<std::vector<int> >("strides", attrs);
     paddings_ = GetAttr<std::vector<int> >("paddings", attrs);
