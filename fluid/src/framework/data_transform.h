@@ -30,12 +30,12 @@ SOFTWARE.
 namespace paddle_mobile {
 namespace framework {
 
-    void DataTransform(const OpKernelType& expected_kernel_type,
-                       const OpKernelType& kernel_type_for_var,
-                       const Tensor& input_tensor, Tensor* out);
+void DataTransform(const OpKernelType& expected_kernel_type,
+                   const OpKernelType& kernel_type_for_var,
+                   const Tensor& input_tensor,
+                   Tensor* out);
 
-    void CopyVariableWithTensor(const Variable& in_var, const Tensor& tensor,
-                                Variable& out_var);
+void CopyVariableWithTensor(const Variable& in_var, const Tensor& tensor, Variable& out_var);
 
 }  // namespace framework
 }  // namespace paddle

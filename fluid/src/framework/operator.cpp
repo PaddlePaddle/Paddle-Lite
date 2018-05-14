@@ -19,21 +19,18 @@ SOFTWARE.
 
 #include "op_info.h"
 #include "operator.h"
-#include "var_type.h"
-#include "selected_rows.h"
-#include "data_transform.h"
-#include "operators/conv_op.h"
 
 namespace paddle_mobile {
 namespace framework {
 
 template <typename Dtype>
 OperatorBase<Dtype>::OperatorBase(const std::string& type,
-                           const VariableNameMap& inputs,
-                           const VariableNameMap& outputs,
-                           const AttributeMap& attrs,  std::shared_ptr<Scope> scope)
+                                  const VariableNameMap& inputs,
+                                  const VariableNameMap& outputs,
+                                  const AttributeMap& attrs,
+                                  std::shared_ptr<Scope> scope)
         : type_(type), inputs_(inputs), outputs_(outputs), attrs_(attrs), scope_(scope){
-    CheckAllInputOutputSet();
+  CheckAllInputOutputSet();
 }
 
 template <typename Dtype>
