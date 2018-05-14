@@ -47,8 +47,8 @@ inline proto::VarType::Type ToDataType(std::type_index type) {
 
 inline std::type_index ToTypeIndex(proto::VarType::Type type) {
   switch (type) {
-      //    case proto::VarType::FP16:
-      //      return typeid(platform::float16);
+    //    case proto::VarType::FP16:
+    //      return typeid(platform::float16);
     case proto::VarType::FP32:
       return typeid(float);
     case proto::VarType::FP64:
@@ -68,9 +68,9 @@ inline std::type_index ToTypeIndex(proto::VarType::Type type) {
 template <typename Visitor>
 inline void VisitDataType(proto::VarType::Type type, Visitor visitor) {
   switch (type) {
-      //    case proto::VarType::FP16:
-      //      visitor.template operator()<platform::float16>();
-      //      break;
+    //    case proto::VarType::FP16:
+    //      visitor.template operator()<platform::float16>();
+    //      break;
     case proto::VarType::FP32:
       visitor.template operator()<float>();
       break;

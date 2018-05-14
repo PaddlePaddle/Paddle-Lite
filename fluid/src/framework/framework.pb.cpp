@@ -90,17 +90,17 @@ class ProgramDescDefaultTypeInternal {
 
 namespace protobuf_framework_2eproto {
 
-PROTOBUF_CONSTEXPR_VAR ::google::protobuf::internal::ParseTableField const
+PROTOBUF_CONSTEXPR_VAR::google::protobuf::internal::ParseTableField const
     TableStruct::entries[] GOOGLE_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, 0, 0, ::google::protobuf::internal::kInvalidMask, 0, 0},
 };
 
-PROTOBUF_CONSTEXPR_VAR ::google::protobuf::internal::
+PROTOBUF_CONSTEXPR_VAR::google::protobuf::internal::
     AuxillaryParseTableField const
         TableStruct::aux[] GOOGLE_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
             ::google::protobuf::internal::AuxillaryParseTableField(),
 };
-PROTOBUF_CONSTEXPR_VAR ::google::protobuf::internal::ParseTable const
+PROTOBUF_CONSTEXPR_VAR::google::protobuf::internal::ParseTable const
     TableStruct::schema[] GOOGLE_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {NULL, NULL, 0, -1, -1, -1, -1, NULL, false},
         {NULL, NULL, 0, -1, -1, -1, -1, NULL, false},
@@ -356,10 +356,9 @@ void OpDesc_Attr::SharedCtor() {
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
   s_.UnsafeSetDefault(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  ::memset(&type_, 0,
-           static_cast<size_t>(reinterpret_cast<char*>(&block_idx_) -
-                               reinterpret_cast<char*>(&type_)) +
-               sizeof(block_idx_));
+  ::memset(&type_, 0, static_cast<size_t>(reinterpret_cast<char*>(&block_idx_) -
+                                          reinterpret_cast<char*>(&type_)) +
+                          sizeof(block_idx_));
 }
 
 OpDesc_Attr::~OpDesc_Attr() {
@@ -2913,10 +2912,9 @@ void OpProto_Attr::SharedCtor() {
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
   comment_.UnsafeSetDefault(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  ::memset(&type_, 0,
-           static_cast<size_t>(reinterpret_cast<char*>(&generated_) -
-                               reinterpret_cast<char*>(&type_)) +
-               sizeof(generated_));
+  ::memset(&type_, 0, static_cast<size_t>(reinterpret_cast<char*>(&generated_) -
+                                          reinterpret_cast<char*>(&type_)) +
+                          sizeof(generated_));
 }
 
 OpProto_Attr::~OpProto_Attr() {
@@ -4636,11 +4634,10 @@ const ::paddle_mobile::framework::proto::VarType_TensorDesc&
 VarType_LoDTensorDesc::tensor() const {
   const ::paddle_mobile::framework::proto::VarType_TensorDesc* p = tensor_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.LoDTensorDesc.tensor)
-  return p != NULL ? *p
-                   : *reinterpret_cast<const ::paddle_mobile::framework::proto::
-                                           VarType_TensorDesc*>(
-                         &::paddle_mobile::framework::proto::
-                             _VarType_TensorDesc_default_instance_);
+  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::
+                                                proto::VarType_TensorDesc*>(
+                              &::paddle_mobile::framework::proto::
+                                  _VarType_TensorDesc_default_instance_);
 }
 ::paddle_mobile::framework::proto::VarType_TensorDesc*
 VarType_LoDTensorDesc::mutable_tensor() {
@@ -4982,11 +4979,10 @@ const ::paddle_mobile::framework::proto::VarType_TensorDesc&
 VarType_LoDTensorArrayDesc::tensor() const {
   const ::paddle_mobile::framework::proto::VarType_TensorDesc* p = tensor_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc.tensor)
-  return p != NULL ? *p
-                   : *reinterpret_cast<const ::paddle_mobile::framework::proto::
-                                           VarType_TensorDesc*>(
-                         &::paddle_mobile::framework::proto::
-                             _VarType_TensorDesc_default_instance_);
+  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::
+                                                proto::VarType_TensorDesc*>(
+                              &::paddle_mobile::framework::proto::
+                                  _VarType_TensorDesc_default_instance_);
 }
 ::paddle_mobile::framework::proto::VarType_TensorDesc*
 VarType_LoDTensorArrayDesc::mutable_tensor() {
@@ -6421,11 +6417,10 @@ VarType::selected_rows() const {
   const ::paddle_mobile::framework::proto::VarType_TensorDesc* p =
       selected_rows_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.selected_rows)
-  return p != NULL ? *p
-                   : *reinterpret_cast<const ::paddle_mobile::framework::proto::
-                                           VarType_TensorDesc*>(
-                         &::paddle_mobile::framework::proto::
-                             _VarType_TensorDesc_default_instance_);
+  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::
+                                                proto::VarType_TensorDesc*>(
+                              &::paddle_mobile::framework::proto::
+                                  _VarType_TensorDesc_default_instance_);
 }
 ::paddle_mobile::framework::proto::VarType_TensorDesc*
 VarType::mutable_selected_rows() {
@@ -6473,11 +6468,10 @@ VarType::lod_tensor() const {
   const ::paddle_mobile::framework::proto::VarType_LoDTensorDesc* p =
       lod_tensor_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.lod_tensor)
-  return p != NULL ? *p
-                   : *reinterpret_cast<const ::paddle_mobile::framework::proto::
-                                           VarType_LoDTensorDesc*>(
-                         &::paddle_mobile::framework::proto::
-                             _VarType_LoDTensorDesc_default_instance_);
+  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::
+                                                proto::VarType_LoDTensorDesc*>(
+                              &::paddle_mobile::framework::proto::
+                                  _VarType_LoDTensorDesc_default_instance_);
 }
 ::paddle_mobile::framework::proto::VarType_LoDTensorDesc*
 VarType::mutable_lod_tensor() {
@@ -6577,11 +6571,10 @@ const ::paddle_mobile::framework::proto::VarType_ReaderDesc& VarType::reader()
     const {
   const ::paddle_mobile::framework::proto::VarType_ReaderDesc* p = reader_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.reader)
-  return p != NULL ? *p
-                   : *reinterpret_cast<const ::paddle_mobile::framework::proto::
-                                           VarType_ReaderDesc*>(
-                         &::paddle_mobile::framework::proto::
-                             _VarType_ReaderDesc_default_instance_);
+  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::
+                                                proto::VarType_ReaderDesc*>(
+                              &::paddle_mobile::framework::proto::
+                                  _VarType_ReaderDesc_default_instance_);
 }
 ::paddle_mobile::framework::proto::VarType_ReaderDesc*
 VarType::mutable_reader() {
@@ -6625,11 +6618,10 @@ const ::paddle_mobile::framework::proto::VarType_ChannelDesc& VarType::channel()
     const {
   const ::paddle_mobile::framework::proto::VarType_ChannelDesc* p = channel_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.channel)
-  return p != NULL ? *p
-                   : *reinterpret_cast<const ::paddle_mobile::framework::proto::
-                                           VarType_ChannelDesc*>(
-                         &::paddle_mobile::framework::proto::
-                             _VarType_ChannelDesc_default_instance_);
+  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::
+                                                proto::VarType_ChannelDesc*>(
+                              &::paddle_mobile::framework::proto::
+                                  _VarType_ChannelDesc_default_instance_);
 }
 ::paddle_mobile::framework::proto::VarType_ChannelDesc*
 VarType::mutable_channel() {
@@ -7199,10 +7191,9 @@ BlockDesc::BlockDesc(const BlockDesc& from)
 
 void BlockDesc::SharedCtor() {
   _cached_size_ = 0;
-  ::memset(&idx_, 0,
-           static_cast<size_t>(reinterpret_cast<char*>(&parent_idx_) -
-                               reinterpret_cast<char*>(&idx_)) +
-               sizeof(parent_idx_));
+  ::memset(&idx_, 0, static_cast<size_t>(reinterpret_cast<char*>(&parent_idx_) -
+                                         reinterpret_cast<char*>(&idx_)) +
+                         sizeof(parent_idx_));
   forward_block_idx_ = -1;
 }
 

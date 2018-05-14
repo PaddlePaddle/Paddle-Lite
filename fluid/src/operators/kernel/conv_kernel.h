@@ -16,11 +16,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#include "operators/op_param.h"
 #include "framework/operator.h"
 #include "operators/math/im2col.h"
-#include "operators/math/vol2col.h"
 #include "operators/math/math_function.h"
+#include "operators/math/vol2col.h"
+#include "operators/op_param.h"
 
 #pragma once;
 
@@ -31,9 +31,8 @@ using namespace framework;
 
 template <typename DeviceType, typename T, typename P>
 class ConvKernel : public framework::OpKernelBase<DeviceType, ConvParam> {
-public:
+ public:
   void Compute(const ConvParam &param) const;
 };
-
 }
 }

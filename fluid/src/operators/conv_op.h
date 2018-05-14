@@ -28,17 +28,19 @@ using namespace framework;
 
 template <typename DeviceType, typename T>
 class ConvOp : public framework::OperatorWithKernel<DeviceType> {
-public:
+ public:
   ConvOp(const std::string& type, const VariableNameMap& inputs,
-                     const VariableNameMap& outputs, const framework::AttributeMap& attrs, std::shared_ptr<framework::Scope> scope)
-          : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs, scope), param_(inputs, outputs, attrs, *scope){
-  }
+         const VariableNameMap& outputs, const framework::AttributeMap& attrs,
+         std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
+                                                  scope),
+        param_(inputs, outputs, attrs, *scope) {}
 
   using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
   void InferShape() const override;
 
-protected:
-  void RunImpl() const{
+ protected:
+  void RunImpl() const {
     operators::ConvKernel<DeviceType, T, ConvParam> kernel;
     kernel.Compute(param_);
   }
@@ -46,6 +48,5 @@ protected:
   ConvParam param_;
 };
 
-
-} // operators
-} // paddle_mobile
+}  // operators
+}  // paddle_mobile

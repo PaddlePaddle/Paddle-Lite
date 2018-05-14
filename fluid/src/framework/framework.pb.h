@@ -155,8 +155,10 @@ const int AttrType_ARRAYSIZE = AttrType_MAX + 1;
 
 // ===================================================================
 
-class OpDesc_Attr : public ::google::protobuf::MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.OpDesc.Attr)
-                                                            */
+class OpDesc_Attr
+    : public ::google::protobuf::
+          MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.OpDesc.Attr)
+                       */
 {
  public:
   OpDesc_Attr();
@@ -404,8 +406,10 @@ class OpDesc_Attr : public ::google::protobuf::MessageLite /* @@protoc_insertion
 };
 // -------------------------------------------------------------------
 
-class OpDesc_Var : public ::google::protobuf::MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.OpDesc.Var)
-                                                           */
+class OpDesc_Var
+    : public ::google::protobuf::
+          MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.OpDesc.Var)
+                       */
 {
  public:
   OpDesc_Var();
@@ -537,8 +541,10 @@ class OpDesc_Var : public ::google::protobuf::MessageLite /* @@protoc_insertion_
 };
 // -------------------------------------------------------------------
 
-class OpDesc : public ::google::protobuf::MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.OpDesc)
-                                                       */
+class OpDesc
+    : public ::google::protobuf::
+          MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.OpDesc)
+                       */
 {
  public:
   OpDesc();
@@ -709,8 +715,10 @@ class OpDesc : public ::google::protobuf::MessageLite /* @@protoc_insertion_poin
 };
 // -------------------------------------------------------------------
 
-class OpProto_Var : public ::google::protobuf::MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.OpProto.Var)
-                                                            */
+class OpProto_Var
+    : public ::google::protobuf::
+          MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.OpProto.Var)
+                       */
 {
  public:
   OpProto_Var();
@@ -871,8 +879,10 @@ class OpProto_Var : public ::google::protobuf::MessageLite /* @@protoc_insertion
 };
 // -------------------------------------------------------------------
 
-class OpProto_Attr : public ::google::protobuf::MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.OpProto.Attr)
-                                                             */
+class OpProto_Attr
+    : public ::google::protobuf::
+          MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.OpProto.Attr)
+                       */
 {
  public:
   OpProto_Attr();
@@ -1023,8 +1033,10 @@ class OpProto_Attr : public ::google::protobuf::MessageLite /* @@protoc_insertio
 };
 // -------------------------------------------------------------------
 
-class OpProto : public ::google::protobuf::MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.OpProto)
-                                                        */
+class OpProto
+    : public ::google::protobuf::
+          MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.OpProto)
+                       */
 {
  public:
   OpProto();
@@ -1207,8 +1219,10 @@ class OpProto : public ::google::protobuf::MessageLite /* @@protoc_insertion_poi
 };
 // -------------------------------------------------------------------
 
-class VarType_TensorDesc : public ::google::protobuf::MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarType.TensorDesc)
-                                                                   */
+class VarType_TensorDesc
+    : public ::google::protobuf::
+          MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarType.TensorDesc)
+                       */
 {
  public:
   VarType_TensorDesc();
@@ -1324,8 +1338,10 @@ class VarType_TensorDesc : public ::google::protobuf::MessageLite /* @@protoc_in
 };
 // -------------------------------------------------------------------
 
-class VarType_LoDTensorDesc : public ::google::protobuf::MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarType.LoDTensorDesc)
-                                                                      */
+class VarType_LoDTensorDesc
+    : public ::google::protobuf::
+          MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarType.LoDTensorDesc)
+                       */
 {
  public:
   VarType_LoDTensorDesc();
@@ -1445,8 +1461,10 @@ class VarType_LoDTensorDesc : public ::google::protobuf::MessageLite /* @@protoc
 };
 // -------------------------------------------------------------------
 
-class VarType_LoDTensorArrayDesc : public ::google::protobuf::MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc)
-                                                                           */
+class VarType_LoDTensorArrayDesc
+    : public ::google::protobuf::
+          MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc)
+                       */
 {
  public:
   VarType_LoDTensorArrayDesc();
@@ -1570,8 +1588,10 @@ class VarType_LoDTensorArrayDesc : public ::google::protobuf::MessageLite /* @@p
 };
 // -------------------------------------------------------------------
 
-class VarType_ReaderDesc : public ::google::protobuf::MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarType.ReaderDesc)
-                                                                   */
+class VarType_ReaderDesc
+    : public ::google::protobuf::
+          MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarType.ReaderDesc)
+                       */
 {
  public:
   VarType_ReaderDesc();
@@ -1684,8 +1704,10 @@ class VarType_ReaderDesc : public ::google::protobuf::MessageLite /* @@protoc_in
 };
 // -------------------------------------------------------------------
 
-class VarType_ChannelDesc : public ::google::protobuf::MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarType.ChannelDesc)
-                                                                    */
+class VarType_ChannelDesc
+    : public ::google::protobuf::
+          MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarType.ChannelDesc)
+                       */
 {
  public:
   VarType_ChannelDesc();
@@ -1804,8 +1826,10 @@ class VarType_ChannelDesc : public ::google::protobuf::MessageLite /* @@protoc_i
 };
 // -------------------------------------------------------------------
 
-class VarType_Tuple : public ::google::protobuf::MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarType.Tuple)
-                                                              */
+class VarType_Tuple
+    : public ::google::protobuf::
+          MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarType.Tuple)
+                       */
 {
  public:
   VarType_Tuple();
@@ -1908,8 +1932,10 @@ class VarType_Tuple : public ::google::protobuf::MessageLite /* @@protoc_inserti
 };
 // -------------------------------------------------------------------
 
-class VarType : public ::google::protobuf::MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarType)
-                                                        */
+class VarType
+    : public ::google::protobuf::
+          MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarType)
+                       */
 {
  public:
   VarType();
@@ -2133,8 +2159,10 @@ class VarType : public ::google::protobuf::MessageLite /* @@protoc_insertion_poi
 };
 // -------------------------------------------------------------------
 
-class VarDesc : public ::google::protobuf::MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarDesc)
-                                                        */
+class VarDesc
+    : public ::google::protobuf::
+          MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarDesc)
+                       */
 {
  public:
   VarDesc();
@@ -2266,8 +2294,10 @@ class VarDesc : public ::google::protobuf::MessageLite /* @@protoc_insertion_poi
 };
 // -------------------------------------------------------------------
 
-class BlockDesc : public ::google::protobuf::MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.BlockDesc)
-                                                          */
+class BlockDesc
+    : public ::google::protobuf::
+          MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.BlockDesc)
+                       */
 {
  public:
   BlockDesc();
@@ -2425,8 +2455,10 @@ class BlockDesc : public ::google::protobuf::MessageLite /* @@protoc_insertion_p
 };
 // -------------------------------------------------------------------
 
-class ProgramDesc : public ::google::protobuf::MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.ProgramDesc)
-                                                            */
+class ProgramDesc
+    : public ::google::protobuf::
+          MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.ProgramDesc)
+                       */
 {
  public:
   ProgramDesc();
@@ -3949,11 +3981,10 @@ inline const ::paddle_mobile::framework::proto::VarType_TensorDesc&
 VarType_LoDTensorDesc::tensor() const {
   const ::paddle_mobile::framework::proto::VarType_TensorDesc* p = tensor_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.LoDTensorDesc.tensor)
-  return p != NULL ? *p
-                   : *reinterpret_cast<const ::paddle_mobile::framework::proto::
-                                           VarType_TensorDesc*>(
-                         &::paddle_mobile::framework::proto::
-                             _VarType_TensorDesc_default_instance_);
+  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::
+                                                proto::VarType_TensorDesc*>(
+                              &::paddle_mobile::framework::proto::
+                                  _VarType_TensorDesc_default_instance_);
 }
 inline ::paddle_mobile::framework::proto::VarType_TensorDesc*
 VarType_LoDTensorDesc::mutable_tensor() {
@@ -4032,11 +4063,10 @@ inline const ::paddle_mobile::framework::proto::VarType_TensorDesc&
 VarType_LoDTensorArrayDesc::tensor() const {
   const ::paddle_mobile::framework::proto::VarType_TensorDesc* p = tensor_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc.tensor)
-  return p != NULL ? *p
-                   : *reinterpret_cast<const ::paddle_mobile::framework::proto::
-                                           VarType_TensorDesc*>(
-                         &::paddle_mobile::framework::proto::
-                             _VarType_TensorDesc_default_instance_);
+  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::
+                                                proto::VarType_TensorDesc*>(
+                              &::paddle_mobile::framework::proto::
+                                  _VarType_TensorDesc_default_instance_);
 }
 inline ::paddle_mobile::framework::proto::VarType_TensorDesc*
 VarType_LoDTensorArrayDesc::mutable_tensor() {
@@ -4268,11 +4298,10 @@ VarType::selected_rows() const {
   const ::paddle_mobile::framework::proto::VarType_TensorDesc* p =
       selected_rows_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.selected_rows)
-  return p != NULL ? *p
-                   : *reinterpret_cast<const ::paddle_mobile::framework::proto::
-                                           VarType_TensorDesc*>(
-                         &::paddle_mobile::framework::proto::
-                             _VarType_TensorDesc_default_instance_);
+  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::
+                                                proto::VarType_TensorDesc*>(
+                              &::paddle_mobile::framework::proto::
+                                  _VarType_TensorDesc_default_instance_);
 }
 inline ::paddle_mobile::framework::proto::VarType_TensorDesc*
 VarType::mutable_selected_rows() {
@@ -4320,11 +4349,10 @@ VarType::lod_tensor() const {
   const ::paddle_mobile::framework::proto::VarType_LoDTensorDesc* p =
       lod_tensor_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.lod_tensor)
-  return p != NULL ? *p
-                   : *reinterpret_cast<const ::paddle_mobile::framework::proto::
-                                           VarType_LoDTensorDesc*>(
-                         &::paddle_mobile::framework::proto::
-                             _VarType_LoDTensorDesc_default_instance_);
+  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::
+                                                proto::VarType_LoDTensorDesc*>(
+                              &::paddle_mobile::framework::proto::
+                                  _VarType_LoDTensorDesc_default_instance_);
 }
 inline ::paddle_mobile::framework::proto::VarType_LoDTensorDesc*
 VarType::mutable_lod_tensor() {
@@ -4426,11 +4454,10 @@ inline const ::paddle_mobile::framework::proto::VarType_ReaderDesc&
 VarType::reader() const {
   const ::paddle_mobile::framework::proto::VarType_ReaderDesc* p = reader_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.reader)
-  return p != NULL ? *p
-                   : *reinterpret_cast<const ::paddle_mobile::framework::proto::
-                                           VarType_ReaderDesc*>(
-                         &::paddle_mobile::framework::proto::
-                             _VarType_ReaderDesc_default_instance_);
+  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::
+                                                proto::VarType_ReaderDesc*>(
+                              &::paddle_mobile::framework::proto::
+                                  _VarType_ReaderDesc_default_instance_);
 }
 inline ::paddle_mobile::framework::proto::VarType_ReaderDesc*
 VarType::mutable_reader() {
@@ -4476,11 +4503,10 @@ inline const ::paddle_mobile::framework::proto::VarType_ChannelDesc&
 VarType::channel() const {
   const ::paddle_mobile::framework::proto::VarType_ChannelDesc* p = channel_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.channel)
-  return p != NULL ? *p
-                   : *reinterpret_cast<const ::paddle_mobile::framework::proto::
-                                           VarType_ChannelDesc*>(
-                         &::paddle_mobile::framework::proto::
-                             _VarType_ChannelDesc_default_instance_);
+  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::
+                                                proto::VarType_ChannelDesc*>(
+                              &::paddle_mobile::framework::proto::
+                                  _VarType_ChannelDesc_default_instance_);
 }
 inline ::paddle_mobile::framework::proto::VarType_ChannelDesc*
 VarType::mutable_channel() {

@@ -188,9 +188,7 @@ int setSchedAffinity(const std::vector<int> &cpuIds) {
   // cpu_set_t definition
   // ref http://stackoverflow.com/questions/16319725/android-set-thread-affinity
 
-  typedef struct {
-    unsigned long mask_bits[1024 / __NCPUBITS__];
-  } cpu_set_t;
+  typedef struct { unsigned long mask_bits[1024 / __NCPUBITS__]; } cpu_set_t;
 
   // set affinity for thread
   pid_t pid = gettid();
