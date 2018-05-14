@@ -22,27 +22,29 @@ SOFTWARE.
 #include "framework/attribute.h"
 
 namespace paddle_mobile {
+
 namespace framework {
-    template <typename Dtype>
-    class OperatorBase;
-    class OpDesc;
-    class BlockDesc;
-    class InferShapeContext;
+template <typename Dtype>
+class OperatorBase;
+class OpDesc;
+class BlockDesc;
+class InferShapeContext;
 }
-    using VariableNameMap = std::map<std::string, std::vector<std::string> >;
 
-    template <typename Dtype>
-    using OpCreator = std::function<framework::OperatorBase<Dtype>*(
-            const std::string& /*type*/, const VariableNameMap& /*inputs*/,
-            const VariableNameMap& /*outputs*/, const framework::AttributeMap& /*attrs*/)>;
+using VariableNameMap = std::map<std::string, std::vector<std::string> >;
 
-    using GradOpMakerFN = std::function<std::vector<std::unique_ptr<framework::OpDesc>>(
-            const framework::OpDesc&, const std::unordered_set<std::string>& /*no_grad_set*/,
-            std::unordered_map<std::string, std::string>* /*grad_to_var*/,
-    const std::vector<framework::BlockDesc*>& grad_block)>;
+template <typename Dtype>
+using OpCreator = std::function<framework::OperatorBase<Dtype>*(
+        const std::string& /*type*/, const VariableNameMap& /*inputs*/,
+        const VariableNameMap& /*outputs*/, const framework::AttributeMap& /*attrs*/)>;
 
-    using InferVarTypeFN =
-    std::function<void(const framework::OpDesc& /*op_desc*/, framework::BlockDesc* /*block*/)>;
+using GradOpMakerFN = std::function<std::vector<std::unique_ptr<framework::OpDesc>>(
+        const framework::OpDesc&, const std::unordered_set<std::string>& /*no_grad_set*/,
+        std::unordered_map<std::string, std::string>* /*grad_to_var*/,
+const std::vector<framework::BlockDesc*>& grad_block)>;
 
-    using InferShapeFN = std::function<void(framework::InferShapeContext*)>;
+using InferVarTypeFN =
+std::function<void(const framework::OpDesc& /*op_desc*/, framework::BlockDesc* /*block*/)>;
+
+using InferShapeFN = std::function<void(framework::InferShapeContext*)>;
 };

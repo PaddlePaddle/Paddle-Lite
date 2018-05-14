@@ -23,42 +23,42 @@ SOFTWARE.
 
 namespace paddle_mobile {
 namespace framework {
-    struct OpKernelType {
-        struct Hash {
-            size_t operator()(const OpKernelType& key) const {
-                int data_type = static_cast<int>(key.data_type_) << LEFT_SHIFT;
-                int data_layout = static_cast<int>(key.data_layout_) << (LEFT_SHIFT * 2);
+struct OpKernelType {
+  struct Hash {
+    size_t operator()(const OpKernelType& key) const {
+      int data_type = static_cast<int>(key.data_type_) << LEFT_SHIFT;
+      int data_layout = static_cast<int>(key.data_layout_) << (LEFT_SHIFT * 2);
 
-                std::hash<int> hasher;
-                return hasher(data_type + data_layout);
-            }
-        };
-
-        // place, data_type, library_type kinds less than 2^8
-        constexpr static int LEFT_SHIFT = 8;
-
-        proto::VarType::Type data_type_;
-        DataLayout data_layout_;
-
-        OpKernelType(proto::VarType::Type data_type, DataLayout data_layout = DataLayout::kAnyLayout)
-                : data_type_(data_type),
-                  data_layout_(data_layout) {}
-
-        bool operator==(const OpKernelType& o) const {
-            return data_type_ == o.data_type_ && data_layout_ == o.data_layout_;
-        }
-
-        bool operator!=(const OpKernelType& o) const { return !(*this == o); }
-    };
-
-    inline bool NeedTransformLayout(const DataLayout& l, const DataLayout& r) {
-        return l != DataLayout::kAnyLayout && r != DataLayout::kAnyLayout && l != r;
+      std::hash<int> hasher;
+      return hasher(data_type + data_layout);
     }
+  };
 
-    inline bool TransFromNeeded(const OpKernelType& l, const OpKernelType& r) {
-        return (l.data_type_ != r.data_type_) ||
-               NeedTransformLayout(l.data_layout_, r.data_layout_);
-    }
+  // place, data_type, library_type kinds less than 2^8
+  constexpr static int LEFT_SHIFT = 8;
+
+  proto::VarType::Type data_type_;
+  DataLayout data_layout_;
+
+  OpKernelType(proto::VarType::Type data_type, DataLayout data_layout = DataLayout::kAnyLayout)
+          : data_type_(data_type),
+            data_layout_(data_layout) {}
+
+  bool operator==(const OpKernelType& o) const {
+    return data_type_ == o.data_type_ && data_layout_ == o.data_layout_;
+  }
+
+  bool operator!=(const OpKernelType& o) const { return !(*this == o); }
+};
+
+inline bool NeedTransformLayout(const DataLayout& l, const DataLayout& r) {
+  return l != DataLayout::kAnyLayout && r != DataLayout::kAnyLayout && l != r;
+}
+
+inline bool TransFromNeeded(const OpKernelType& l, const OpKernelType& r) {
+  return (l.data_type_ != r.data_type_) ||
+         NeedTransformLayout(l.data_layout_, r.data_layout_);
+}
 
 } // framework
 } // paddle_mobile

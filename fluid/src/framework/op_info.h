@@ -24,100 +24,67 @@ SOFTWARE.
 namespace paddle_mobile {
 namespace framework {
 
-    class InferShapeBase {
-    public:
-        virtual ~InferShapeBase() = default;
-        virtual void operator()(InferShapeContext*) const = 0;
-    };
-
-    template <typename Dtype>
-    struct OpInfo {
-        OpCreator<Dtype> creator_;
-        GradOpMakerFN grad_op_maker_;
-        proto::OpProto* proto_{nullptr};
-//        OpAttrChecker* checker_{nullptr};
-        InferVarTypeFN infer_var_type_;
-        InferShapeFN infer_shape_;
-
-//        bool HasOpProtoAndChecker() const {
-//            return proto_ != nullptr && checker_ != nullptr;
-//        }
-
-        const proto::OpProto& Proto() const {
-//            PADDLE_ENFORCE_NOT_NULL(proto_, "Operator Proto has not been registered");
-//            PADDLE_ENFORCE(proto_->IsInitialized(),
-//                           "Operator Proto must be initialized in op info");
-            return *proto_;
-        }
-
-        const OpCreator<Dtype>& Creator() const {
-//            PADDLE_ENFORCE_NOT_NULL(creator_,
-//                                    "Operator Creator has not been registered");
-            return creator_;
-        }
-
-        const GradOpMakerFN& GradOpMaker() const {
-//            PADDLE_ENFORCE_NOT_NULL(grad_op_maker_,
-//                                    "Operator GradOpMaker has not been registered.");
-            return grad_op_maker_;
-        }
-
-//        const OpAttrChecker* Checker() const { return checker_; }
-    };
+template <typename Dtype>
+struct OpInfo {
+  OpCreator<Dtype> creator_;
+  const OpCreator<Dtype>& Creator() const {
+//    PADDLE_ENFORCE_NOT_NULL(creator_,
+//                            "Operator Creator has not been registered");
+    return creator_;
+  }
+};
 
 template <typename Dtype>
 class OpInfoMap;
 
-template <typename DType>
-static OpInfoMap<DType>* g_op_info_map = nullptr;
+template <typename Dtype>
+static OpInfoMap<Dtype>* g_op_info_map = nullptr;
 
-    template <typename Dtype>
-    class OpInfoMap {
-    public:
+template <typename Dtype>
+class OpInfoMap {
+public:
+  static OpInfoMap& Instance() {
+    if (g_op_info_map<Dtype> == nullptr) {
+      g_op_info_map<Dtype> = new OpInfoMap();
+    }
+    return *g_op_info_map<Dtype>;
+  };
 
+  bool Has(const std::string& op_type) const {
+    return map_.find(op_type) != map_.end();
+  }
 
-      static OpInfoMap& Instance(){
-        if (g_op_info_map<Dtype> == nullptr) {
-            g_op_info_map<Dtype> = new OpInfoMap();
-          }
-          return *g_op_info_map<Dtype>;
-        }
+  void Insert(const std::string& type, const OpInfo<Dtype>& info) {
+//    PADDLE_ENFORCE(!Has(type), "Operator %s has been registered", type);
+    map_.insert({type, info});
+  }
 
-        bool Has(const std::string& op_type) const {
-            return map_.find(op_type) != map_.end();
-        }
+  const OpInfo<Dtype>& Get(const std::string& type) const {
+    auto op_info_ptr = GetNullable(type);
+//    PADDLE_ENFORCE_NOT_NULL(op_info_ptr, "Operator %s has not been registered",
+//                            type);
+    return *op_info_ptr;
+  }
 
-        void Insert(const std::string& type, const OpInfo<Dtype>& info) {
-//            PADDLE_ENFORCE(!Has(type), "Operator %s has been registered", type);
-            map_.insert({type, info});
-        }
+  const OpInfo<Dtype>* GetNullable(const std::string& type) const {
+    auto it = map_.find(type);
+    if (it == map_.end()) {
+        return nullptr;
+    } else {
+        return &it->second;
+    }
+  }
 
-        const OpInfo<Dtype>& Get(const std::string& type) const {
-            auto op_info_ptr = GetNullable(type);
-//            PADDLE_ENFORCE_NOT_NULL(op_info_ptr, "Operator %s has not been registered",
-//                                    type);
-            return *op_info_ptr;
-        }
+  const std::unordered_map<std::string, OpInfo<Dtype>>& map() const { return map_; }
 
-        const OpInfo<Dtype>* GetNullable(const std::string& type) const {
-            auto it = map_.find(type);
-            if (it == map_.end()) {
-                return nullptr;
-            } else {
-                return &it->second;
-            }
-        }
+  std::unordered_map<std::string, OpInfo<Dtype>>* mutable_map() { return &map_; }
 
-        const std::unordered_map<std::string, OpInfo<Dtype>>& map() const { return map_; }
+private:
+  OpInfoMap() = default;
+  std::unordered_map<std::string, OpInfo<Dtype>> map_;
 
-        std::unordered_map<std::string, OpInfo<Dtype>>* mutable_map() { return &map_; }
-
-    private:
-        OpInfoMap() = default;
-        std::unordered_map<std::string, OpInfo<Dtype>> map_;
-
-//        DISABLE_COPY_AND_ASSIGN(OpInfoMap);
-    };
+//  DISABLE_COPY_AND_ASSIGN(OpInfoMap);
+};
 
 } // framework
 } // paddle_mobile
