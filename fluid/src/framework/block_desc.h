@@ -7,3 +7,4 @@
 namespace paddle_mobile {
 class BlockDesc {};
 }  // namespace paddle_mobile
+
