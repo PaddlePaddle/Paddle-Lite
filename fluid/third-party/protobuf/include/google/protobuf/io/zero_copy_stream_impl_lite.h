@@ -48,13 +48,12 @@
 #ifndef _SHARED_PTR_H
 #include <google/protobuf/stubs/shared_ptr.h>
 #endif
-#include <string>
-#include <iosfwd>
 #include <google/protobuf/io/zero_copy_stream.h>
 #include <google/protobuf/stubs/callback.h>
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/stl_util.h>
-
+#include <iosfwd>
+#include <string>
 
 namespace google {
 namespace protobuf {
@@ -80,15 +79,14 @@ class LIBPROTOBUF_EXPORT ArrayInputStream : public ZeroCopyInputStream {
   bool Skip(int count);
   int64 ByteCount() const;
 
-
  private:
   const uint8* const data_;  // The byte array.
   const int size_;           // Total size of the array.
   const int block_size_;     // How many bytes to return at a time.
 
   int position_;
-  int last_returned_size_;   // How many bytes we returned last time Next()
-                             // was called (used for error checking only).
+  int last_returned_size_;  // How many bytes we returned last time Next()
+                            // was called (used for error checking only).
 
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ArrayInputStream);
 };
@@ -113,13 +111,13 @@ class LIBPROTOBUF_EXPORT ArrayOutputStream : public ZeroCopyOutputStream {
   int64 ByteCount() const;
 
  private:
-  uint8* const data_;        // The byte array.
-  const int size_;           // Total size of the array.
-  const int block_size_;     // How many bytes to return at a time.
+  uint8* const data_;     // The byte array.
+  const int size_;        // Total size of the array.
+  const int block_size_;  // How many bytes to return at a time.
 
   int position_;
-  int last_returned_size_;   // How many bytes we returned last time Next()
-                             // was called (used for error checking only).
+  int last_returned_size_;  // How many bytes we returned last time Next()
+                            // was called (used for error checking only).
 
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ArrayOutputStream);
 };
@@ -170,7 +168,7 @@ class LIBPROTOBUF_EXPORT LazyStringOutputStream : public StringOutputStream {
   int64 ByteCount() const;
 
  private:
-  const google::protobuf::scoped_ptr<ResultCallback<string*> > callback_;
+  const google::protobuf::scoped_ptr<ResultCallback<string*>> callback_;
   bool string_is_set_;
 
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(LazyStringOutputStream);
@@ -219,7 +217,8 @@ class LIBPROTOBUF_EXPORT CopyingInputStream {
 // If you want to read from file descriptors or C++ istreams, this is
 // already implemented for you:  use FileInputStream or IstreamInputStream
 // respectively.
-class LIBPROTOBUF_EXPORT CopyingInputStreamAdaptor : public ZeroCopyInputStream {
+class LIBPROTOBUF_EXPORT CopyingInputStreamAdaptor
+    : public ZeroCopyInputStream {
  public:
   // Creates a stream that reads from the given CopyingInputStream.
   // If a block_size is given, it specifies the number of bytes that
@@ -303,7 +302,8 @@ class LIBPROTOBUF_EXPORT CopyingOutputStream {
 // If you want to write to file descriptors or C++ ostreams, this is
 // already implemented for you:  use FileOutputStream or OstreamOutputStream
 // respectively.
-class LIBPROTOBUF_EXPORT CopyingOutputStreamAdaptor : public ZeroCopyOutputStream {
+class LIBPROTOBUF_EXPORT CopyingOutputStreamAdaptor
+    : public ZeroCopyOutputStream {
  public:
   // Creates a stream that writes to the given Unix file descriptor.
   // If a block_size is given, it specifies the size of the buffers
@@ -391,7 +391,7 @@ inline char* mutable_string_data(string* s) {
 // Sometimes it's faster: in some scenarios p cannot be NULL, and then the
 // code can avoid that check.
 inline std::pair<char*, bool> as_string_data(string* s) {
-  char *p = mutable_string_data(s);
+  char* p = mutable_string_data(s);
 #ifdef LANG_CXX11
   return std::make_pair(p, true);
 #else

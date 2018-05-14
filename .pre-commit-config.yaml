@@ -1,3 +1,5 @@
+exclude: 'third-party'
+
 repos:
 -   repo: https://github.com/Lucas-C/pre-commit-hooks.git
     sha: v1.0.1
@@ -25,4 +27,4 @@ repos:
         description: Format files with ClangFormat.
         entry: bash .clang_format.hook -i
         language: system
-        files: (fluid).*\.(c|cc|cxx|cpp|h|hpp|hxx|proto)$
+        files: (fluid).*\.(c|cc|cxx|cpp|h|hpp|hxx)$

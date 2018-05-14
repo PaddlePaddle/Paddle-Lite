@@ -37,16 +37,18 @@
 #ifndef GOOGLE_PROTOBUF_COMPILER_PARSER_H__
 #define GOOGLE_PROTOBUF_COMPILER_PARSER_H__
 
+#include <google/protobuf/descriptor.h>
+#include <google/protobuf/descriptor.pb.h>
+#include <google/protobuf/io/tokenizer.h>
+#include <google/protobuf/repeated_field.h>
 #include <map>
 #include <string>
 #include <utility>
-#include <google/protobuf/descriptor.h>
-#include <google/protobuf/descriptor.pb.h>
-#include <google/protobuf/repeated_field.h>
-#include <google/protobuf/io/tokenizer.h>
 
 namespace google {
-namespace protobuf { class Message; }
+namespace protobuf {
+class Message;
+}
 
 namespace protobuf {
 namespace compiler {
@@ -185,13 +187,13 @@ class LIBPROTOBUF_EXPORT Parser {
   //   have been passed around by const reference, for no particularly good
   //   reason.  We should probably go through and change them all to mutable
   //   pointer to make this more intuitive.
-  bool TryConsumeEndOfDeclaration(
-      const char* text, const LocationRecorder* location);
-  bool TryConsumeEndOfDeclarationFinishScope(
-      const char* text, const LocationRecorder* location);
+  bool TryConsumeEndOfDeclaration(const char* text,
+                                  const LocationRecorder* location);
+  bool TryConsumeEndOfDeclarationFinishScope(const char* text,
+                                             const LocationRecorder* location);
 
-  bool ConsumeEndOfDeclaration(
-      const char* text, const LocationRecorder* location);
+  bool ConsumeEndOfDeclaration(const char* text,
+                               const LocationRecorder* location);
 
   // -----------------------------------------------------------------
   // Error logging helpers
@@ -247,7 +249,8 @@ class LIBPROTOBUF_EXPORT Parser {
     // was passed to RecordSourceLocationsTo(), if any.  SourceLocationTable
     // is an older way of keeping track of source locations which is still
     // used in some places.
-    void RecordLegacyLocation(const Message* descriptor,
+    void RecordLegacyLocation(
+        const Message* descriptor,
         DescriptorPool::ErrorCollector::ErrorLocation location);
 
     // Attaches leading and trailing comments to the location.  The two strings
@@ -385,8 +388,7 @@ class LIBPROTOBUF_EXPORT Parser {
   // oneof_decl->label() since it will have had to parse the label before it
   // knew it was parsing a oneof.
   bool ParseOneof(OneofDescriptorProto* oneof_decl,
-                  DescriptorProto* containing_type,
-                  int oneof_index,
+                  DescriptorProto* containing_type, int oneof_index,
                   const LocationRecorder& oneof_location,
                   const LocationRecorder& containing_type_location,
                   const FileDescriptorProto* containing_file);
@@ -407,7 +409,6 @@ class LIBPROTOBUF_EXPORT Parser {
                           const LocationRecorder& method_location,
                           const FileDescriptorProto* containing_file);
 
-
   // Parse options of a single method or stream.
   bool ParseMethodOptions(const LocationRecorder& parent_location,
                           const FileDescriptorProto* containing_file,
@@ -421,8 +422,7 @@ class LIBPROTOBUF_EXPORT Parser {
 
   // Parse a type name and fill in "type" (if it is a primitive) or
   // "type_name" (if it is not) with the type parsed.
-  bool ParseType(FieldDescriptorProto::Type* type,
-                 string* type_name);
+  bool ParseType(FieldDescriptorProto::Type* type, string* type_name);
   // Parse a user-defined type and fill in "type_name" with the name.
   // If a primitive type is named, it is treated as an error.
   bool ParseUserDefinedType(string* type_name);
@@ -451,8 +451,7 @@ class LIBPROTOBUF_EXPORT Parser {
   // Parse a single option name/value pair, e.g. "ctype = CORD".  The name
   // identifies a field of the given Message, and the value of that field
   // is set to the parsed value.
-  bool ParseOption(Message* options,
-                   const LocationRecorder& options_location,
+  bool ParseOption(Message* options, const LocationRecorder& options_location,
                    const FileDescriptorProto* containing_file,
                    OptionStyle style);
 
@@ -496,7 +495,6 @@ class LIBPROTOBUF_EXPORT Parser {
   bool DefaultToOptionalFields() const {
     return syntax_identifier_ == "proto3";
   }
-
 
   bool ValidateEnum(const EnumDescriptorProto* proto);
 
@@ -544,21 +542,22 @@ class LIBPROTOBUF_EXPORT SourceLocationTable {
   // location" in the ErrorCollector interface).  Returns true if found, false
   // otherwise.
   bool Find(const Message* descriptor,
-            DescriptorPool::ErrorCollector::ErrorLocation location,
-            int* line, int* column) const;
+            DescriptorPool::ErrorCollector::ErrorLocation location, int* line,
+            int* column) const;
 
   // Adds a location to the table.
   void Add(const Message* descriptor,
-           DescriptorPool::ErrorCollector::ErrorLocation location,
-           int line, int column);
+           DescriptorPool::ErrorCollector::ErrorLocation location, int line,
+           int column);
 
   // Clears the contents of the table.
   void Clear();
 
  private:
   typedef std::map<
-    std::pair<const Message*, DescriptorPool::ErrorCollector::ErrorLocation>,
-    std::pair<int, int> > LocationMap;
+      std::pair<const Message*, DescriptorPool::ErrorCollector::ErrorLocation>,
+      std::pair<int, int>>
+      LocationMap;
   LocationMap location_map_;
 };
 

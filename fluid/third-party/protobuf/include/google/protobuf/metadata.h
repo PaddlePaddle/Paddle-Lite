@@ -32,8 +32,8 @@
 // metadata (Unknown-field set, Arena pointer, ...) and allows its
 // representation to be made more space-efficient via various optimizations.
 //
-// Note that this is distinct from google::protobuf::Metadata, which encapsulates
-// Descriptor and Reflection pointers.
+// Note that this is distinct from google::protobuf::Metadata, which
+// encapsulates Descriptor and Reflection pointers.
 
 #ifndef GOOGLE_PROTOBUF_METADATA_H__
 #define GOOGLE_PROTOBUF_METADATA_H__
@@ -52,19 +52,15 @@ class InternalMetadataWithArena
   InternalMetadataWithArena() {}
   explicit InternalMetadataWithArena(Arena* arena)
       : InternalMetadataWithArenaBase<UnknownFieldSet,
-                                           InternalMetadataWithArena>(arena) {}
+                                      InternalMetadataWithArena>(arena) {}
 
-  void DoSwap(UnknownFieldSet* other) {
-    mutable_unknown_fields()->Swap(other);
-  }
+  void DoSwap(UnknownFieldSet* other) { mutable_unknown_fields()->Swap(other); }
 
   void DoMergeFrom(const UnknownFieldSet& other) {
     mutable_unknown_fields()->MergeFrom(other);
   }
 
-  void DoClear() {
-    mutable_unknown_fields()->Clear();
-  }
+  void DoClear() { mutable_unknown_fields()->Clear(); }
 
   static const UnknownFieldSet& default_instance() {
     return *UnknownFieldSet::default_instance();

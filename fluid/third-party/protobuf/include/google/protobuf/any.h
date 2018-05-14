@@ -33,10 +33,10 @@
 
 #include <string>
 
-#include <google/protobuf/stubs/common.h>
+#include <google/protobuf/arenastring.h>
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/message.h>
-#include <google/protobuf/arenastring.h>
+#include <google/protobuf/stubs/common.h>
 
 namespace google {
 namespace protobuf {
@@ -46,6 +46,7 @@ namespace internal {
 class LIBPROTOBUF_EXPORT AnyMetadata {
   typedef ArenaStringPtr UrlType;
   typedef ArenaStringPtr ValueType;
+
  public:
   // AnyMetadata does not take ownership of "type_url" and "value".
   AnyMetadata(UrlType* type_url, ValueType* value);
@@ -70,7 +71,7 @@ class LIBPROTOBUF_EXPORT AnyMetadata {
   // Checks whether the type specified in the type URL matches the given type.
   // A type is consdiered matching if its full name matches the full name after
   // the last "/" in the type URL.
-  template<typename T>
+  template <typename T>
   bool Is() const {
     return InternalIs(T::default_instance().GetDescriptor());
   }

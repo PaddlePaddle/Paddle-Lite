@@ -88,7 +88,8 @@ string LIBPROTOC_EXPORT FileClassName(const FileDescriptor* file);
 // These return the fully-qualified class name corresponding to the given
 // descriptor.
 string LIBPROTOC_EXPORT ClassName(const Descriptor* descriptor);
-string LIBPROTOC_EXPORT ClassName(const Descriptor* descriptor, string* out_suffix_added);
+string LIBPROTOC_EXPORT ClassName(const Descriptor* descriptor,
+                                  string* out_suffix_added);
 string LIBPROTOC_EXPORT EnumName(const EnumDescriptor* descriptor);
 
 // Returns the fully-qualified name of the enum value corresponding to the
@@ -96,7 +97,8 @@ string LIBPROTOC_EXPORT EnumName(const EnumDescriptor* descriptor);
 string LIBPROTOC_EXPORT EnumValueName(const EnumValueDescriptor* descriptor);
 
 // Returns the name of the enum value corresponding to the descriptor.
-string LIBPROTOC_EXPORT EnumValueShortName(const EnumValueDescriptor* descriptor);
+string LIBPROTOC_EXPORT
+EnumValueShortName(const EnumValueDescriptor* descriptor);
 
 // Reverse what an enum does.
 string LIBPROTOC_EXPORT UnCamelCaseEnumShortName(const string& name);
@@ -127,7 +129,8 @@ inline bool IsMapEntryMessage(const Descriptor* descriptor) {
 }
 
 // Reverse of the above.
-string LIBPROTOC_EXPORT UnCamelCaseFieldName(const string& name, const FieldDescriptor* field);
+string LIBPROTOC_EXPORT UnCamelCaseFieldName(const string& name,
+                                             const FieldDescriptor* field);
 
 enum ObjectiveCType {
   OBJECTIVECTYPE_INT32,
@@ -149,11 +152,11 @@ enum FlagType {
   FLAGTYPE_FIELD
 };
 
-template<class TDescriptor>
-string GetOptionalDeprecatedAttribute(
-    const TDescriptor* descriptor,
-    const FileDescriptor* file = NULL,
-    bool preSpace = true, bool postNewline = false) {
+template <class TDescriptor>
+string GetOptionalDeprecatedAttribute(const TDescriptor* descriptor,
+                                      const FileDescriptor* file = NULL,
+                                      bool preSpace = true,
+                                      bool postNewline = false) {
   bool isDeprecated = descriptor->options().deprecated();
   // The file is only passed when checking Messages & Enums, so those types
   // get tagged. At the moment, it doesn't seem to make sense to tag every
@@ -177,7 +180,8 @@ string GetOptionalDeprecatedAttribute(
 
 string LIBPROTOC_EXPORT GetCapitalizedType(const FieldDescriptor* field);
 
-ObjectiveCType LIBPROTOC_EXPORT GetObjectiveCType(FieldDescriptor::Type field_type);
+ObjectiveCType LIBPROTOC_EXPORT
+GetObjectiveCType(FieldDescriptor::Type field_type);
 
 inline ObjectiveCType GetObjectiveCType(const FieldDescriptor* field) {
   return GetObjectiveCType(field->type());
@@ -190,29 +194,32 @@ string LIBPROTOC_EXPORT GPBGenericValueFieldName(const FieldDescriptor* field);
 string LIBPROTOC_EXPORT DefaultValue(const FieldDescriptor* field);
 bool LIBPROTOC_EXPORT HasNonZeroDefaultValue(const FieldDescriptor* field);
 
-string LIBPROTOC_EXPORT BuildFlagsString(const FlagType type, const vector<string>& strings);
+string LIBPROTOC_EXPORT BuildFlagsString(const FlagType type,
+                                         const vector<string>& strings);
 
 // Builds HeaderDoc/appledoc style comments out of the comments in the .proto
 // file.
 string LIBPROTOC_EXPORT BuildCommentsString(const SourceLocation& location,
-                           bool prefer_single_line);
+                                            bool prefer_single_line);
 
 // The name the commonly used by the library when built as a framework.
 // This lines up to the name used in the CocoaPod.
 extern LIBPROTOC_EXPORT const char* const ProtobufLibraryFrameworkName;
 // Returns the CPP symbol name to use as the gate for framework style imports
 // for the given framework name to use.
-string LIBPROTOC_EXPORT ProtobufFrameworkImportSymbol(const string& framework_name);
+string LIBPROTOC_EXPORT
+ProtobufFrameworkImportSymbol(const string& framework_name);
 
 // Checks if the file is one of the proto's bundled with the library.
-bool LIBPROTOC_EXPORT IsProtobufLibraryBundledProtoFile(const FileDescriptor* file);
+bool LIBPROTOC_EXPORT
+IsProtobufLibraryBundledProtoFile(const FileDescriptor* file);
 
 // Checks the prefix for the given files and outputs any warnings as needed. If
 // there are flat out errors, then out_error is filled in with the first error
 // and the result is false.
-bool LIBPROTOC_EXPORT ValidateObjCClassPrefixes(const vector<const FileDescriptor*>& files,
-                               const Options& generation_options,
-                               string* out_error);
+bool LIBPROTOC_EXPORT
+ValidateObjCClassPrefixes(const vector<const FileDescriptor*>& files,
+                          const Options& generation_options, string* out_error);
 
 // Generate decode data needed for ObjC's GPBDecodeTextFormatName() to transform
 // the input into the expected output.
@@ -244,9 +251,9 @@ class LIBPROTOC_EXPORT LineConsumer {
   virtual bool ConsumeLine(const StringPiece& line, string* out_error) = 0;
 };
 
-bool LIBPROTOC_EXPORT ParseSimpleFile(
-    const string& path, LineConsumer* line_consumer, string* out_error);
-
+bool LIBPROTOC_EXPORT ParseSimpleFile(const string& path,
+                                      LineConsumer* line_consumer,
+                                      string* out_error);
 
 // Helper class for parsing framework import mappings and generating
 // import statements.
@@ -257,12 +264,13 @@ class LIBPROTOC_EXPORT ImportWriter {
   ~ImportWriter();
 
   void AddFile(const FileDescriptor* file, const string& header_extension);
-  void Print(io::Printer *printer) const;
+  void Print(io::Printer* printer) const;
 
  private:
   class ProtoFrameworkCollector : public LineConsumer {
    public:
-    ProtoFrameworkCollector(std::map<string, string>* inout_proto_file_to_framework_name)
+    ProtoFrameworkCollector(
+        std::map<string, string>* inout_proto_file_to_framework_name)
         : map_(inout_proto_file_to_framework_name) {}
 
     virtual bool ConsumeLine(const StringPiece& line, string* out_error);

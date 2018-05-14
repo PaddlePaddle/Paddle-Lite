@@ -40,9 +40,8 @@ class SequenceNumber {
  public:
   SequenceNumber() : word_(0) {}
 
-  AtomicWord GetNext() {
-    return NoBarrier_AtomicIncrement(&word_, 1) - 1;
-  }
+  AtomicWord GetNext() { return NoBarrier_AtomicIncrement(&word_, 1) - 1; }
+
  private:
   AtomicWord word_;
 };

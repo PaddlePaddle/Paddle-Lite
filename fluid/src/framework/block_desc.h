@@ -5,7 +5,6 @@
 #pragma once
 
 namespace paddle_mobile {
-    class BlockDesc {
-    };
-}
+class BlockDesc {};
+}  // namespace paddle_mobile
 

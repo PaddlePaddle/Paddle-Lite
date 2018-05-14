@@ -5,6 +5,6 @@
 #pragma once
 
 namespace paddle_mobile {
-    class Scope {
-    };
-}
+    class Scope {};
+}   // namespace paddle_mobile
+

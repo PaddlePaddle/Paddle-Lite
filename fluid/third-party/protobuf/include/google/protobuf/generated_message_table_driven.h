@@ -140,14 +140,17 @@ union AuxillaryParseTableField {
 #if LANG_CXX11
   AuxillaryParseTableField() = default;
 #else
-  AuxillaryParseTableField() { }
+  AuxillaryParseTableField() {}
 #endif
   PROTOBUF_CONSTEXPR AuxillaryParseTableField(
-      AuxillaryParseTableField::enum_aux e) : enums(e) {}
+      AuxillaryParseTableField::enum_aux e)
+      : enums(e) {}
   PROTOBUF_CONSTEXPR AuxillaryParseTableField(
-      AuxillaryParseTableField::message_aux m) : messages(m) {}
+      AuxillaryParseTableField::message_aux m)
+      : messages(m) {}
   PROTOBUF_CONSTEXPR AuxillaryParseTableField(
-      AuxillaryParseTableField::string_aux s) : strings(s) {}
+      AuxillaryParseTableField::string_aux s)
+      : strings(s) {}
   PROTOBUF_CONSTEXPR AuxillaryParseTableField(
       AuxillaryParseTableField::map_aux m)
       : maps(m) {}
@@ -195,7 +198,7 @@ static_assert(std::is_pod<ParseTable>::value, "");
 bool MergePartialFromCodedStream(MessageLite* msg, const ParseTable& table,
                                  io::CodedInputStream* input);
 bool MergePartialFromCodedStreamLite(MessageLite* msg, const ParseTable& table,
-                                 io::CodedInputStream* input);
+                                     io::CodedInputStream* input);
 
 template <typename MEntry>
 struct MapEntryToMapField;
@@ -203,7 +206,7 @@ struct MapEntryToMapField;
 template <typename Key, typename Value, WireFormatLite::FieldType kKeyFieldType,
           WireFormatLite::FieldType kValueFieldType, int default_enum_value>
 struct MapEntryToMapField<MapEntryLite<Key, Value, kKeyFieldType,
-                                       kValueFieldType, default_enum_value> > {
+                                       kValueFieldType, default_enum_value>> {
   typedef MapFieldLite<MapEntryLite<Key, Value, kKeyFieldType, kValueFieldType,
                                     default_enum_value>,
                        Key, Value, kKeyFieldType, kValueFieldType,
@@ -215,13 +218,13 @@ template <typename Entry>
 bool ParseMap(io::CodedInputStream* input, void* map_field) {
   typedef typename MapEntryToMapField<Entry>::MapFieldType MapFieldType;
   typedef google::protobuf::Map<typename Entry::EntryKeyType,
-                      typename Entry::EntryValueType>
+                                typename Entry::EntryValueType>
       MapType;
   typedef typename Entry::template Parser<MapFieldType, MapType> ParserType;
 
   ParserType parser(static_cast<MapFieldType*>(map_field));
-  return ::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(input,
-                                                                  &parser);
+  return ::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
+      input, &parser);
 }
 
 }  // namespace internal

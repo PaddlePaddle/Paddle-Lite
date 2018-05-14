@@ -54,8 +54,8 @@ namespace google {
 namespace protobuf {
 
 // Defined in other files.
-class Descriptor;        // descriptor.h
-class DescriptorPool;    // descriptor.h
+class Descriptor;      // descriptor.h
+class DescriptorPool;  // descriptor.h
 
 // Constructs implementations of Message which can emulate types which are not
 // known at compile-time.
@@ -124,11 +124,12 @@ class LIBPROTOBUF_EXPORT DynamicMessageFactory : public MessageFactory {
   const DescriptorPool* pool_;
   bool delegate_to_generated_factory_;
 
-  // This struct just contains a hash_map.  We can't #include <google/protobuf/stubs/hash.h> from
-  // this header due to hacks needed for hash_map portability in the open source
-  // release.  Namely, stubs/hash.h, which defines hash_map portably, is not a
-  // public header (for good reason), but dynamic_message.h is, and public
-  // headers may only #include other public headers.
+  // This struct just contains a hash_map.  We can't #include
+  // <google/protobuf/stubs/hash.h> from this header due to hacks needed for
+  // hash_map portability in the open source release.  Namely, stubs/hash.h,
+  // which defines hash_map portably, is not a public header (for good reason),
+  // but dynamic_message.h is, and public headers may only #include other public
+  // headers.
   struct PrototypeMap;
   google::protobuf::scoped_ptr<PrototypeMap> prototypes_;
   mutable Mutex prototypes_mutex_;
@@ -152,8 +153,7 @@ class LIBPROTOBUF_EXPORT DynamicMessageFactory : public MessageFactory {
 // Helper for computing a sorted list of map entries via reflection.
 class LIBPROTOBUF_EXPORT DynamicMapSorter {
  public:
-  static std::vector<const Message*> Sort(const Message& message,
-                                          int map_size,
+  static std::vector<const Message*> Sort(const Message& message, int map_size,
                                           const Reflection* reflection,
                                           const FieldDescriptor* field) {
     std::vector<const Message*> result(static_cast<size_t>(map_size));
@@ -161,7 +161,8 @@ class LIBPROTOBUF_EXPORT DynamicMapSorter {
         reflection->GetRepeatedPtrField<Message>(message, field);
     size_t i = 0;
     for (RepeatedPtrField<Message>::const_pointer_iterator it =
-             map_field.pointer_begin(); it != map_field.pointer_end(); ) {
+             map_field.pointer_begin();
+         it != map_field.pointer_end();) {
       result[i++] = *it++;
     }
     GOOGLE_DCHECK_EQ(result.size(), i);
@@ -171,9 +172,9 @@ class LIBPROTOBUF_EXPORT DynamicMapSorter {
 #ifndef NDEBUG
     for (size_t j = 1; j < static_cast<size_t>(map_size); j++) {
       if (!comparator(result[j - 1], result[j])) {
-        GOOGLE_LOG(ERROR) << (comparator(result[j], result[j - 1]) ?
-                      "internal error in map key sorting" :
-                      "map keys are not unique");
+        GOOGLE_LOG(ERROR) << (comparator(result[j], result[j - 1])
+                                  ? "internal error in map key sorting"
+                                  : "map keys are not unique");
       }
     }
 #endif

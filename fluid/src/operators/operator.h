@@ -1,19 +1,14 @@
 
 #pragma once
 
-namespace paddle_mobile{
+namespace paddle_mobile {
 
-    class OperatorBase{
-    };
+class OperatorBase {};
 
-    class OperatorWithKernel : public OperatorBase{
-    };
+class OperatorWithKernel : public OperatorBase {};
 
-    class OpKernelBase{
-    };
+class OpKernelBase {};
 
-    class OpKernel : public OpKernelBase{
-    };
+class OpKernel : public OpKernelBase {};
 
-}
-
+}  // namespace paddle_mobile

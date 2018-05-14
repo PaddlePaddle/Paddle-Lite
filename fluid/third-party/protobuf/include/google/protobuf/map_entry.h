@@ -48,7 +48,7 @@ template <typename Derived, typename Key, typename Value,
           WireFormatLite::FieldType kValueFieldType, int default_enum_value>
 class MapField;
 }
-}
+}  // namespace protobuf
 
 namespace protobuf {
 namespace internal {
@@ -98,7 +98,8 @@ class MapEntry
         offsets_,
         has_bits_,
         GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(MapEntry, _has_bits_),
-        GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(MapEntry, _internal_metadata_),
+        GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(MapEntry,
+                                                       _internal_metadata_),
         -1,
         -1,
         sizeof(MapEntry),
@@ -153,18 +154,18 @@ template <typename Derived, typename Key, typename Value,
           WireFormatLite::FieldType kKeyFieldType,
           WireFormatLite::FieldType kValueFieldType, int default_enum_value>
 struct MapEntryHelper<MapEntry<Derived, Key, Value, kKeyFieldType,
-                               kValueFieldType, default_enum_value> >
+                               kValueFieldType, default_enum_value>>
     : MapEntryHelper<MapEntryLite<Key, Value, kKeyFieldType, kValueFieldType,
-                                  default_enum_value> > {
+                                  default_enum_value>> {
   explicit MapEntryHelper(const MapPair<Key, Value>& map_pair)
       : MapEntryHelper<MapEntryLite<Key, Value, kKeyFieldType, kValueFieldType,
-                                    default_enum_value> >(map_pair) {}
+                                    default_enum_value>>(map_pair) {}
 };
 
 template <typename Derived, typename K, typename V,
           WireFormatLite::FieldType key, WireFormatLite::FieldType value,
           int default_enum>
-struct DeconstructMapEntry<MapEntry<Derived, K, V, key, value, default_enum> > {
+struct DeconstructMapEntry<MapEntry<Derived, K, V, key, value, default_enum>> {
   typedef K Key;
   typedef V Value;
   static const WireFormatLite::FieldType kKeyFieldType = key;

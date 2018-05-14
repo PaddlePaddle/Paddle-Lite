@@ -37,18 +37,20 @@
 #ifndef GOOGLE_PROTOBUF_COMPILER_IMPORTER_H__
 #define GOOGLE_PROTOBUF_COMPILER_IMPORTER_H__
 
-#include <string>
-#include <vector>
-#include <set>
-#include <utility>
+#include <google/protobuf/compiler/parser.h>
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/descriptor_database.h>
-#include <google/protobuf/compiler/parser.h>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace google {
 namespace protobuf {
 
-namespace io { class ZeroCopyInputStream; }
+namespace io {
+class ZeroCopyInputStream;
+}
 
 namespace compiler {
 
@@ -73,7 +75,8 @@ class DiskSourceTree;
 //
 // Note:  This class does not implement FindFileContainingSymbol() or
 //   FindFileContainingExtension(); these will always return false.
-class LIBPROTOBUF_EXPORT SourceTreeDescriptorDatabase : public DescriptorDatabase {
+class LIBPROTOBUF_EXPORT SourceTreeDescriptorDatabase
+    : public DescriptorDatabase {
  public:
   SourceTreeDescriptorDatabase(SourceTree* source_tree);
   ~SourceTreeDescriptorDatabase();
@@ -109,22 +112,19 @@ class LIBPROTOBUF_EXPORT SourceTreeDescriptorDatabase : public DescriptorDatabas
   SourceTree* source_tree_;
   MultiFileErrorCollector* error_collector_;
 
-  class LIBPROTOBUF_EXPORT ValidationErrorCollector : public DescriptorPool::ErrorCollector {
+  class LIBPROTOBUF_EXPORT ValidationErrorCollector
+      : public DescriptorPool::ErrorCollector {
    public:
     ValidationErrorCollector(SourceTreeDescriptorDatabase* owner);
     ~ValidationErrorCollector();
 
     // implements ErrorCollector ---------------------------------------
-    void AddError(const string& filename,
-                  const string& element_name,
-                  const Message* descriptor,
-                  ErrorLocation location,
+    void AddError(const string& filename, const string& element_name,
+                  const Message* descriptor, ErrorLocation location,
                   const string& message);
 
-    virtual void AddWarning(const string& filename,
-                            const string& element_name,
-                            const Message* descriptor,
-                            ErrorLocation location,
+    virtual void AddWarning(const string& filename, const string& element_name,
+                            const Message* descriptor, ErrorLocation location,
                             const string& message);
 
    private:
@@ -147,8 +147,7 @@ class LIBPROTOBUF_EXPORT SourceTreeDescriptorDatabase : public DescriptorDatabas
 // TODO(kenton):  I feel like this class is not well-named.
 class LIBPROTOBUF_EXPORT Importer {
  public:
-  Importer(SourceTree* source_tree,
-           MultiFileErrorCollector* error_collector);
+  Importer(SourceTree* source_tree, MultiFileErrorCollector* error_collector);
   ~Importer();
 
   // Import the given file and build a FileDescriptor representing it.  If
@@ -168,13 +167,10 @@ class LIBPROTOBUF_EXPORT Importer {
 
   // The DescriptorPool in which all imported FileDescriptors and their
   // contents are stored.
-  inline const DescriptorPool* pool() const {
-    return &pool_;
-  }
+  inline const DescriptorPool* pool() const { return &pool_; }
 
   void AddUnusedImportTrackFile(const string& file_name);
   void ClearUnusedImportTrackFiles();
-
 
  private:
   SourceTreeDescriptorDatabase database_;
@@ -282,10 +278,9 @@ class LIBPROTOBUF_EXPORT DiskSourceTree : public SourceTree {
   //   it is not useful.
   // * NO_MAPPING: Indicates that no mapping was found which contains this
   //   file.
-  DiskFileToVirtualFileResult
-    DiskFileToVirtualFile(const string& disk_file,
-                          string* virtual_file,
-                          string* shadowing_disk_file);
+  DiskFileToVirtualFileResult DiskFileToVirtualFile(
+      const string& disk_file, string* virtual_file,
+      string* shadowing_disk_file);
 
   // Given a virtual path, find the path to the file on disk.
   // Return true and update disk_file with the on-disk path if the file exists.
@@ -304,7 +299,7 @@ class LIBPROTOBUF_EXPORT DiskSourceTree : public SourceTree {
 
     inline Mapping(const string& virtual_path_param,
                    const string& disk_path_param)
-      : virtual_path(virtual_path_param), disk_path(disk_path_param) {}
+        : virtual_path(virtual_path_param), disk_path(disk_path_param) {}
   };
   std::vector<Mapping> mappings_;
   string last_error_message_;

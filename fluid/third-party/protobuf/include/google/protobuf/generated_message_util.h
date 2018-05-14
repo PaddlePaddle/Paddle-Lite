@@ -43,12 +43,12 @@
 #include <string>
 #include <vector>
 
-#include <google/protobuf/stubs/logging.h>
-#include <google/protobuf/stubs/common.h>
-#include <google/protobuf/stubs/once.h>
 #include <google/protobuf/has_bits.h>
 #include <google/protobuf/map_entry_lite.h>
 #include <google/protobuf/message_lite.h>
+#include <google/protobuf/stubs/common.h>
+#include <google/protobuf/stubs/logging.h>
+#include <google/protobuf/stubs/once.h>
 #include <google/protobuf/wire_format_lite.h>
 
 namespace google {
@@ -57,10 +57,11 @@ namespace protobuf {
 
 class Arena;
 
-namespace io { class CodedInputStream; }
+namespace io {
+class CodedInputStream;
+}
 
 namespace internal {
-
 
 // Annotation for the compiler to emit a deprecation message if a field marked
 // with option 'deprecated=true' is used in the code, or for other things in
@@ -72,7 +73,6 @@ namespace internal {
 #define PROTOBUF_DEPRECATED
 
 #define GOOGLE_PROTOBUF_DEPRECATED_ATTR
-
 
 // Returns the offset of the given field within the given aggregate type.
 // This is equivalent to the ANSI C offsetof() macro.  However, according
@@ -86,20 +86,21 @@ namespace internal {
 // For Clang we use __builtin_offsetof() and suppress the warning,
 // to avoid Control Flow Integrity and UBSan vptr sanitizers from
 // crashing while trying to validate the invalid reinterpet_casts.
-#define GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TYPE, FIELD)  \
-  _Pragma("clang diagnostic push")                                   \
-  _Pragma("clang diagnostic ignored \"-Winvalid-offsetof\"")         \
-  __builtin_offsetof(TYPE, FIELD)                                    \
-  _Pragma("clang diagnostic pop")
+#define GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TYPE, FIELD) \
+  _Pragma("clang diagnostic push")                                  \
+      _Pragma(                                                      \
+          "clang diagnostic ignored "                               \
+          "\"-Winvalid-offsetof\"") __builtin_offsetof(TYPE, FIELD) \
+          _Pragma("clang diagnostic pop")
 #else
 // Note that we calculate relative to the pointer value 16 here since if we
 // just use zero, GCC complains about dereferencing a NULL pointer.  We
 // choose 16 rather than some other number just in case the compiler would
 // be confused by an unaligned pointer.
-#define GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TYPE, FIELD)  \
-  static_cast< ::google::protobuf::uint32>(                           \
-      reinterpret_cast<const char*>(                                 \
-          &reinterpret_cast<const TYPE*>(16)->FIELD) -               \
+#define GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TYPE, FIELD) \
+  static_cast<::google::protobuf::uint32>(                          \
+      reinterpret_cast<const char*>(                                \
+          &reinterpret_cast<const TYPE*>(16)->FIELD) -              \
       reinterpret_cast<const char*>(16))
 #endif
 
@@ -107,14 +108,14 @@ namespace internal {
 LIBPROTOBUF_EXPORT double Infinity();
 LIBPROTOBUF_EXPORT double NaN();
 
-
 // True if IsInitialized() is true for all elements of t.  Type is expected
 // to be a RepeatedPtrField<some message type>.  It's useful to have this
 // helper here to keep the protobuf compiler from ever having to emit loops in
 // IsInitialized() methods.  We want the C++ compiler to inline this or not
 // as it sees fit.
-template <class Type> bool AllAreInitialized(const Type& t) {
-  for (int i = t.size(); --i >= 0; ) {
+template <class Type>
+bool AllAreInitialized(const Type& t) {
+  for (int i = t.size(); --i >= 0;) {
     if (!t.Get(i).IsInitialized()) return false;
   }
   return true;
@@ -166,24 +167,25 @@ inline bool IsOneofPresent(const void* base, uint32 offset, uint32 tag) {
   return *oneof == tag >> 3;
 }
 
-typedef void (*SpecialSerializer)(const uint8* base, uint32 offset, uint32 tag,
-                                  uint32 has_offset,
-                                  ::google::protobuf::io::CodedOutputStream* output);
+typedef void (*SpecialSerializer)(
+    const uint8* base, uint32 offset, uint32 tag, uint32 has_offset,
+    ::google::protobuf::io::CodedOutputStream* output);
 
-LIBPROTOBUF_EXPORT void ExtensionSerializer(const uint8* base, uint32 offset, uint32 tag,
-                         uint32 has_offset,
-                         ::google::protobuf::io::CodedOutputStream* output);
-LIBPROTOBUF_EXPORT void UnknownFieldSerializerLite(const uint8* base, uint32 offset, uint32 tag,
-                                uint32 has_offset,
-                                ::google::protobuf::io::CodedOutputStream* output);
+LIBPROTOBUF_EXPORT void ExtensionSerializer(
+    const uint8* base, uint32 offset, uint32 tag, uint32 has_offset,
+    ::google::protobuf::io::CodedOutputStream* output);
+LIBPROTOBUF_EXPORT void UnknownFieldSerializerLite(
+    const uint8* base, uint32 offset, uint32 tag, uint32 has_offset,
+    ::google::protobuf::io::CodedOutputStream* output);
 
 struct SerializationTable {
   int num_fields;
   const FieldMetadata* field_table;
 };
 
-LIBPROTOBUF_EXPORT void SerializeInternal(const uint8* base, const FieldMetadata* table,
-                       int num_fields, ::google::protobuf::io::CodedOutputStream* output);
+LIBPROTOBUF_EXPORT void SerializeInternal(
+    const uint8* base, const FieldMetadata* table, int num_fields,
+    ::google::protobuf::io::CodedOutputStream* output);
 
 inline void TableSerialize(const ::google::protobuf::MessageLite& msg,
                            const SerializationTable* table,

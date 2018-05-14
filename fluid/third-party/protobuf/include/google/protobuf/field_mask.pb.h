@@ -19,22 +19,23 @@
 #error regenerate this file with a newer version of protoc.
 #endif
 
-#include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/arena.h>
 #include <google/protobuf/arenastring.h>
+#include <google/protobuf/extension_set.h>  // IWYU pragma: export
 #include <google/protobuf/generated_message_table_driven.h>
 #include <google/protobuf/generated_message_util.h>
-#include <google/protobuf/metadata.h>
+#include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/message.h>
+#include <google/protobuf/metadata.h>
 #include <google/protobuf/repeated_field.h>  // IWYU pragma: export
-#include <google/protobuf/extension_set.h>  // IWYU pragma: export
 #include <google/protobuf/unknown_field_set.h>
 // @@protoc_insertion_point(includes)
 namespace google {
 namespace protobuf {
 class FieldMask;
 class FieldMaskDefaultTypeInternal;
-LIBPROTOBUF_EXPORT extern FieldMaskDefaultTypeInternal _FieldMask_default_instance_;
+LIBPROTOBUF_EXPORT extern FieldMaskDefaultTypeInternal
+    _FieldMask_default_instance_;
 }  // namespace protobuf
 }  // namespace google
 
@@ -49,7 +50,8 @@ struct LIBPROTOBUF_EXPORT TableStruct {
   static const ::google::protobuf::internal::ParseTable schema[];
   static const ::google::protobuf::uint32 offsets[];
   static const ::google::protobuf::internal::FieldMetadata field_metadata[];
-  static const ::google::protobuf::internal::SerializationTable serialization_table[];
+  static const ::google::protobuf::internal::SerializationTable
+      serialization_table[];
   static void InitDefaultsImpl();
 };
 void LIBPROTOBUF_EXPORT AddDescriptors();
@@ -58,7 +60,9 @@ void LIBPROTOBUF_EXPORT InitDefaults();
 
 // ===================================================================
 
-class LIBPROTOBUF_EXPORT FieldMask : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:google.protobuf.FieldMask) */ {
+class LIBPROTOBUF_EXPORT FieldMask : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:google.protobuf.FieldMask)
+                                                                         */
+{
  public:
   FieldMask();
   virtual ~FieldMask();
@@ -69,9 +73,8 @@ class LIBPROTOBUF_EXPORT FieldMask : public ::google::protobuf::Message /* @@pro
     CopyFrom(from);
     return *this;
   }
-  #if LANG_CXX11
-  FieldMask(FieldMask&& from) noexcept
-    : FieldMask() {
+#if LANG_CXX11
+  FieldMask(FieldMask&& from) noexcept : FieldMask() {
     *this = ::std::move(from);
   }
 
@@ -83,21 +86,17 @@ class LIBPROTOBUF_EXPORT FieldMask : public ::google::protobuf::Message /* @@pro
     }
     return *this;
   }
-  #endif
+#endif
   static const ::google::protobuf::Descriptor* descriptor();
   static const FieldMask& default_instance();
 
   static inline const FieldMask* internal_default_instance() {
-    return reinterpret_cast<const FieldMask*>(
-               &_FieldMask_default_instance_);
+    return reinterpret_cast<const FieldMask*>(&_FieldMask_default_instance_);
   }
-  static PROTOBUF_CONSTEXPR int const kIndexInFileMessages =
-    0;
+  static PROTOBUF_CONSTEXPR int const kIndexInFileMessages = 0;
 
   void Swap(FieldMask* other);
-  friend void swap(FieldMask& a, FieldMask& b) {
-    a.Swap(&b);
-  }
+  friend void swap(FieldMask& a, FieldMask& b) { a.Swap(&b); }
 
   // implements Message ----------------------------------------------
 
@@ -117,22 +116,21 @@ class LIBPROTOBUF_EXPORT FieldMask : public ::google::protobuf::Message /* @@pro
   void SerializeWithCachedSizes(
       ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
   ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
-      bool deterministic, ::google::protobuf::uint8* target) const PROTOBUF_FINAL;
+      bool deterministic,
+      ::google::protobuf::uint8* target) const PROTOBUF_FINAL;
   int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
-  private:
+
+ private:
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const PROTOBUF_FINAL;
   void InternalSwap(FieldMask* other);
-  private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
-    return NULL;
-  }
-  inline void* MaybeArenaPtr() const {
-    return NULL;
-  }
-  public:
 
+ private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const { return NULL; }
+  inline void* MaybeArenaPtr() const { return NULL; }
+
+ public:
   ::google::protobuf::Metadata GetMetadata() const PROTOBUF_FINAL;
 
   // nested types ----------------------------------------------------
@@ -146,48 +144,42 @@ class LIBPROTOBUF_EXPORT FieldMask : public ::google::protobuf::Message /* @@pro
   const ::std::string& paths(int index) const;
   ::std::string* mutable_paths(int index);
   void set_paths(int index, const ::std::string& value);
-  #if LANG_CXX11
+#if LANG_CXX11
   void set_paths(int index, ::std::string&& value);
-  #endif
+#endif
   void set_paths(int index, const char* value);
   void set_paths(int index, const char* value, size_t size);
   ::std::string* add_paths();
   void add_paths(const ::std::string& value);
-  #if LANG_CXX11
+#if LANG_CXX11
   void add_paths(::std::string&& value);
-  #endif
+#endif
   void add_paths(const char* value);
   void add_paths(const char* value, size_t size);
-  const ::google::protobuf::RepeatedPtrField< ::std::string>& paths() const;
-  ::google::protobuf::RepeatedPtrField< ::std::string>* mutable_paths();
+  const ::google::protobuf::RepeatedPtrField<::std::string>& paths() const;
+  ::google::protobuf::RepeatedPtrField<::std::string>* mutable_paths();
 
   // @@protoc_insertion_point(class_scope:google.protobuf.FieldMask)
  private:
-
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::google::protobuf::RepeatedPtrField< ::std::string> paths_;
+  ::google::protobuf::RepeatedPtrField<::std::string> paths_;
   mutable int _cached_size_;
   friend struct protobuf_google_2fprotobuf_2ffield_5fmask_2eproto::TableStruct;
 };
 // ===================================================================
 
-
 // ===================================================================
 
 #if !PROTOBUF_INLINE_NOT_IN_HEADERS
 #ifdef __GNUC__
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif  // __GNUC__
 // FieldMask
 
 // repeated string paths = 1;
-inline int FieldMask::paths_size() const {
-  return paths_.size();
-}
-inline void FieldMask::clear_paths() {
-  paths_.Clear();
-}
+inline int FieldMask::paths_size() const { return paths_.size(); }
+inline void FieldMask::clear_paths() { paths_.Clear(); }
 inline const ::std::string& FieldMask::paths(int index) const {
   // @@protoc_insertion_point(field_get:google.protobuf.FieldMask.paths)
   return paths_.Get(index);
@@ -212,8 +204,7 @@ inline void FieldMask::set_paths(int index, const char* value) {
   // @@protoc_insertion_point(field_set_char:google.protobuf.FieldMask.paths)
 }
 inline void FieldMask::set_paths(int index, const char* value, size_t size) {
-  paths_.Mutable(index)->assign(
-    reinterpret_cast<const char*>(value), size);
+  paths_.Mutable(index)->assign(reinterpret_cast<const char*>(value), size);
   // @@protoc_insertion_point(field_set_pointer:google.protobuf.FieldMask.paths)
 }
 inline ::std::string* FieldMask::add_paths() {
@@ -239,24 +230,23 @@ inline void FieldMask::add_paths(const char* value, size_t size) {
   paths_.Add()->assign(reinterpret_cast<const char*>(value), size);
   // @@protoc_insertion_point(field_add_pointer:google.protobuf.FieldMask.paths)
 }
-inline const ::google::protobuf::RepeatedPtrField< ::std::string>&
+inline const ::google::protobuf::RepeatedPtrField<::std::string>&
 FieldMask::paths() const {
   // @@protoc_insertion_point(field_list:google.protobuf.FieldMask.paths)
   return paths_;
 }
-inline ::google::protobuf::RepeatedPtrField< ::std::string>*
+inline ::google::protobuf::RepeatedPtrField<::std::string>*
 FieldMask::mutable_paths() {
   // @@protoc_insertion_point(field_mutable_list:google.protobuf.FieldMask.paths)
   return &paths_;
 }
 
 #ifdef __GNUC__
-  #pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
 #endif  // __GNUC__
 #endif  // !PROTOBUF_INLINE_NOT_IN_HEADERS
 
 // @@protoc_insertion_point(namespace_scope)
-
 
 }  // namespace protobuf
 }  // namespace google
