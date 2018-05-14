@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma once
+
 #include <string>
 #include <typeindex>
 #include "framework/framework.pb.h"
@@ -59,11 +60,11 @@ inline std::type_index ToTypeIndex(proto::VarType::Type type) {
       return typeid(bool);
     default:
 //      PADDLE_THROW("Not support type %d", type);
-          printf("Not support type %d", type);
+      printf("Not support type %d", type);
   }
 }
 
-template <typename Visitor>
+template<typename Visitor>
 inline void VisitDataType(proto::VarType::Type type, Visitor visitor) {
   switch (type) {
 //    case proto::VarType::FP16:
@@ -86,7 +87,7 @@ inline void VisitDataType(proto::VarType::Type type, Visitor visitor) {
       break;
     default:
 //      PADDLE_THROW("Not supported");
-          printf("Not supported");
+      printf("Not supported");
   }
 }
 
@@ -108,12 +109,12 @@ inline std::string DataTypeToString(const proto::VarType::Type type) {
       return "bool";
     default:
 //      PADDLE_THROW("Not support type %d", type);
-          printf("Not support type %d", type);
+      printf("Not support type %d", type);
   }
 }
 
-inline std::ostream& operator<<(std::ostream& out,
-                                const proto::VarType::Type& type) {
+inline std::ostream &operator<<(std::ostream &out,
+                                const proto::VarType::Type &type) {
   out << DataTypeToString(type);
   return out;
 }

@@ -21,13 +21,13 @@ SOFTWARE.
 #include <type_traits>
 
 namespace paddle_mobile {
-    namespace memory {
+namespace memory {
 
-        void Copy( void* dst, const void* src, size_t num);
+void Copy(void *dst, const void *src, size_t num);
 
-        void* Alloc(size_t size);
+void *Alloc(size_t size);
 
-        void Free(void* ptr);
+void Free(void *ptr);
 
 /**
  * \brief   Free memory block in one place.
@@ -37,15 +37,16 @@ namespace paddle_mobile {
  *          std::unique_ptr<T> in tensor.h.
  *          static_cast
  */
-        template <typename T>
-        class PODDeleter {
-            static_assert(std::is_pod<T>::value, "T must be POD");
+template<typename T>
+class PODDeleter {
+  static_assert(std::is_pod<T>::value, "T must be POD");
 
-        public:
-            explicit PODDeleter(){};
-            void operator()(T* ptr) { Free(static_cast<void*>(ptr)); }
+public:
+  explicit PODDeleter() {};
 
-        };
+  void operator()(T *ptr) { Free(static_cast<void *>(ptr)); }
+
+};
 
 /**
  * \brief   Free memory block in one place does not meet POD
@@ -55,13 +56,13 @@ namespace paddle_mobile {
  *          std::unique_ptr<T> in tensor.h.
  *          reinterpret_cast
  */
-        template <typename T>
-        class PlainDeleter {
-        public:
-            explicit PlainDeleter() {};
+template<typename T>
+class PlainDeleter {
+public:
+  explicit PlainDeleter() {};
 
-            void operator()(T *ptr) { Free(reinterpret_cast<void *>(ptr)); }
+  void operator()(T *ptr) { Free(reinterpret_cast<void *>(ptr)); }
 
-        };
-    }  // namespace memory
+};
+}  // namespace memory
 }  // namespace paddle

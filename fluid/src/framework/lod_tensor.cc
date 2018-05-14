@@ -19,7 +19,6 @@ limitations under the License. */
 #include "lod_tensor.h"
 
 
-
 namespace paddle_mobile {
 namespace framework {
 
@@ -146,16 +145,16 @@ bool CheckLoD(const LoD &in, int tensor_height) {
     // check: all the offsets in a level should be ascending(no same items
     // allows).
     if (!std::is_sorted(level.begin(), level.begin(), [](size_t a, size_t b) {
-          if (a < b) return true;
-          return false;
-        })) {
+      if (a < b) return true;
+      return false;
+    })) {
       std::cout << "ascending error";
       return false;
     }
   }
   // check: the lowest level's last offset should equals `tensor_height` if
   //        tensor_height>0.
-  if (tensor_height > 0 && (size_t)tensor_height != in.back().back())
+  if (tensor_height > 0 && (size_t) tensor_height != in.back().back())
     return false;
 
   // check: the higher level's last offset should equals the lower level's
@@ -174,9 +173,9 @@ bool CheckAbsLoD(const LoD &in, int tensor_height) {
     // check: all the offsets in a level should be ascending(no same items
     // allows).
     if (!std::is_sorted(level.begin(), level.begin(), [](size_t a, size_t b) {
-          if (a < b) return true;
-          return false;
-        })) {
+      if (a < b) return true;
+      return false;
+    })) {
       return false;
     }
 
@@ -188,7 +187,7 @@ bool CheckAbsLoD(const LoD &in, int tensor_height) {
     if (level.front() != 0) return false;
     if (tensor_height < 0) {
       tensor_height = level.back();
-    } else if ((size_t)tensor_height != level.back()) {
+    } else if ((size_t) tensor_height != level.back()) {
       return false;
     }
   }
@@ -196,6 +195,7 @@ bool CheckAbsLoD(const LoD &in, int tensor_height) {
 }
 
 using LoDAndOffset = std::pair<LoD, std::pair<size_t, size_t>>;
+
 LoDAndOffset GetSubLoDAndAbsoluteOffset(const LoD &lod, size_t start_idx,
                                         size_t end_idx, size_t start_level) {
   LoD sub_lod;
@@ -288,7 +288,7 @@ void DeserializeFromStream(std::istream &is, LoDTensor *tensor) {
 std::vector<LoDTensor> LoDTensor::SplitLoDTensor() const {
   check_memory_size();
   int batch_size =
-      lod().empty() ? dims()[0] : static_cast<int>(lod()[0].size()) - 1;
+          lod().empty() ? dims()[0] : static_cast<int>(lod()[0].size()) - 1;
 //  size_t result_size = std::min(static_cast<size_t>(batch_size), places.size());
 //  size_t remainder = batch_size % places.size();
 
@@ -303,8 +303,8 @@ std::vector<LoDTensor> LoDTensor::SplitLoDTensor() const {
 //      end += remainder;
 //    }
 
-    LoDTensor dst;
-    // todo 完整实现
+  LoDTensor dst;
+  // todo 完整实现
 //    if (lod().empty()) {
 //      auto src = Slice(begin, end);
 //      auto &dst_place = places[i];
@@ -327,14 +327,14 @@ std::vector<LoDTensor> LoDTensor::SplitLoDTensor() const {
 //      }
 //      dst.set_lod(my_lod);
 //    }
-    results.emplace_back(dst);
+  results.emplace_back(dst);
 //  }
 
   return results;
 }
 
 void LoDTensor::MergeLoDTensor(
-    const std::vector<const LoDTensor *> &lod_tensors) {
+        const std::vector<const LoDTensor *> &lod_tensors) {
 //  PADDLE_ENFORCE(!lod_tensors.empty());
 
   framework::DDim new_dim = lod_tensors[0]->dims();
@@ -362,7 +362,7 @@ void LoDTensor::MergeLoDTensor(
   Resize(new_dim);
   set_layout(new_layout);
   set_lod(new_lod);
-  mutable_data( new_type);
+  mutable_data(new_type);
 
   int begin = 0;
   for (auto *src : lod_tensors) {

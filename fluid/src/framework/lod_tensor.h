@@ -43,19 +43,21 @@ namespace framework {
  */
 using LoD = std::vector<std::vector<size_t>>;
 
-std::ostream& operator<<(std::ostream& os, const LoD& lod);
-std::ostream& operator<<(std::ostream& os, const LoDTensor& t);
+std::ostream &operator<<(std::ostream &os, const LoD &lod);
 
-std::string LoDToString(const LoD& lod);
+std::ostream &operator<<(std::ostream &os, const LoDTensor &t);
 
-LoD SliceInLevel(const LoD& in, size_t level, size_t elem_begin,
+std::string LoDToString(const LoD &lod);
+
+LoD SliceInLevel(const LoD &in, size_t level, size_t elem_begin,
                  size_t elem_end);
+
 /*
  * Transform an LoD from relative offsets to absolute offsets.
  */
-LoD ToAbsOffset(const LoD& in);
+LoD ToAbsOffset(const LoD &in);
 
-bool operator==(const LoD& a, const LoD& b);
+bool operator==(const LoD &a, const LoD &b);
 
 /*
  * Check whether this lod's format is valid.
@@ -73,7 +75,8 @@ bool operator==(const LoD& a, const LoD& b);
  * tensor_height>0.
  */
 
-bool CheckLoD(const LoD& in, int tensor_height = -1);
+bool CheckLoD(const LoD &in, int tensor_height = -1);
+
 /*
  * Check whether this absolute lod's format is valid.
  *
@@ -87,25 +90,24 @@ bool CheckLoD(const LoD& in, int tensor_height = -1);
  *     same(the height of underlying tensor) or `tensor_height` if
  *     tensor_height>0.
  */
-bool CheckAbsLoD(const LoD& in, int tensor_height = -1);
+bool CheckAbsLoD(const LoD &in, int tensor_height = -1);
 
 /*
  * LoDTensor (Level of details Tensor)
  * see https://en.wikipedia.org/wiki/Level_of_details for reference.
  */
 class LoDTensor : public Tensor {
- public:
+public:
   LoDTensor() : Tensor() {}
 
 
+  explicit LoDTensor(const LoD &lod) : lod_(lod) {}
 
-  explicit LoDTensor(const LoD& lod) : lod_(lod) {}
+  void set_lod(const LoD &lod) { lod_ = lod; }
 
-  void set_lod(const LoD& lod) { lod_ = lod; }
+  const LoD &lod() const { return lod_; }
 
-  const LoD& lod() const { return lod_; }
-
-  LoD* mutable_lod() { return &lod_; }
+  LoD *mutable_lod() { return &lod_; }
 
   /*
    * Get the start offset and end offset of an  element from LoD.
@@ -121,6 +123,7 @@ class LoDTensor : public Tensor {
    * in the sentence's view, article, paragraph, sentence are 3 levels.
    */
   size_t NumLevels() const { return lod_.size(); }
+
   /*
    * Number of elements in a level.
    */
@@ -133,9 +136,9 @@ class LoDTensor : public Tensor {
   // Split LoDTensor and copy to each place specified in places.
   std::vector<LoDTensor> SplitLoDTensor() const;
 
-  void MergeLoDTensor(const std::vector<const LoDTensor*>& lod_tensors);
+  void MergeLoDTensor(const std::vector<const LoDTensor *> &lod_tensors);
 
- private:
+private:
   LoD lod_;
 };
 
@@ -149,10 +152,10 @@ class LoDTensor : public Tensor {
  * returns a new LoDTensor
  *  - [a0 a0 a0 a1 a1]
  */
-template <typename T>
-LoDTensor LodExpand(const LoDTensor& source, const LoD& lod, size_t level) {
+template<typename T>
+LoDTensor LodExpand(const LoDTensor &source, const LoD &lod, size_t level) {
   LoD abs_lod = ToAbsOffset(lod);
-  const auto& lod_level = lod[level];
+  const auto &lod_level = lod[level];
   size_t num_instances = source.dims()[0];
 
   // new tensor
@@ -186,17 +189,18 @@ LoDTensor LodExpand(const LoDTensor& source, const LoD& lod, size_t level) {
 //  LoD = [[1, 4], [2, 4, 2, 3, 2]]
 //  pair<size_t, size_t> = {11, 24}
 std::pair<LoD, std::pair<size_t, size_t>> GetSubLoDAndAbsoluteOffset(
-    const LoD& lod, size_t start_idx, size_t end_idx, size_t start_level);
+        const LoD &lod, size_t start_idx, size_t end_idx, size_t start_level);
 
-void AppendLoD(LoD* lod, const LoD& lod_length);
+void AppendLoD(LoD *lod, const LoD &lod_length);
 
 /*
  * Serialize/Desiralize LoDTensor to std::ostream
  * You can pass ofstream or ostringstream to serilize to file
  * or to a in memory string. GPU tensor will be copied to CPU.
  */
-void SerializeToStream(std::ostream& os, const LoDTensor& tensor);
-void DeserializeFromStream(std::istream& is, LoDTensor* tensor);
+void SerializeToStream(std::ostream &os, const LoDTensor &tensor);
+
+void DeserializeFromStream(std::istream &is, LoDTensor *tensor);
 
 //extern void WriteToRecordIO(recordio::Writer* writer,
 //                            const std::vector<LoDTensor>& tensor);

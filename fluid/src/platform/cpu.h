@@ -42,7 +42,9 @@ SOFTWARE.
 #endif
 
 #if __APPLE__
+
 #include "TargetConditionals.h"
+
 #if TARGET_OS_IPHONE
 #include <sys/types.h>
 #include <sys/sysctl.h>
@@ -53,17 +55,20 @@ SOFTWARE.
 
 
 namespace padle_mobile {
-    namespace platform {
-         int getCpuCount();
-         int getMemInfo();
-         int getMaxFreq(int cpuId);
-         int sortBigLittleByFreq(int cpuCount, std::vector<int>& cpuIds, \
-        std::vector<int>& cpuFreq, std::vector<int>& clusterIds );
+namespace platform {
+int getCpuCount();
 
-         int setSchedAffinity(const std::vector<int>& cpuIds);
-         int setCpuAffinity(const std::vector<int>& cpuIds);
+int getMemInfo();
+
+int getMaxFreq(int cpuId);
+
+int sortBigLittleByFreq(int cpuCount, std::vector<int> &cpuIds, \
+        std::vector<int> &cpuFreq, std::vector<int> &clusterIds);
+
+int setSchedAffinity(const std::vector<int> &cpuIds);
+
+int setCpuAffinity(const std::vector<int> &cpuIds);
 
 
-
-    }
+}
 }

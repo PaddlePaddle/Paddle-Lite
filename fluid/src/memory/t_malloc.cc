@@ -22,30 +22,30 @@ SOFTWARE.
 #include "t_malloc.h"
 
 namespace paddle_mobile {
-    namespace memory {
-        const int MALLOC_ALIGN = 16;
+namespace memory {
+const int MALLOC_ALIGN = 16;
 
-        void Copy( void* dst, const void* src, size_t num){
-            std::memcpy(dst, src, num);
-        };
+void Copy(void *dst, const void *src, size_t num) {
+  std::memcpy(dst, src, num);
+};
 
 
-        void* Alloc(size_t size) {
-            size_t offset = sizeof(void*) + MALLOC_ALIGN - 1;
-            char* p = static_cast<char*>(malloc(offset + size));
-            if (!p) {
-                return nullptr;
-            }
-            void* r = reinterpret_cast<void*>(reinterpret_cast<size_t>(p + offset) & (~(MALLOC_ALIGN - 1)));
-            static_cast<void**>(r)[-1] = p;
-            return r;
-        }
+void *Alloc(size_t size) {
+  size_t offset = sizeof(void *) + MALLOC_ALIGN - 1;
+  char *p = static_cast<char *>(malloc(offset + size));
+  if (!p) {
+    return nullptr;
+  }
+  void *r = reinterpret_cast<void *>(reinterpret_cast<size_t>(p + offset) & (~(MALLOC_ALIGN - 1)));
+  static_cast<void **>(r)[-1] = p;
+  return r;
+}
 
-        void Free(void* ptr) {
-            if (ptr){
-                free(static_cast<void**>(ptr)[-1]);
-            }
-        }
+void Free(void *ptr) {
+  if (ptr) {
+    free(static_cast<void **>(ptr)[-1]);
+  }
+}
 
-    }  // namespace memory
+}  // namespace memory
 }  // namespace paddle
