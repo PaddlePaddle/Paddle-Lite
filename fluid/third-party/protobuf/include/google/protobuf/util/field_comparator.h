@@ -83,8 +83,7 @@ class LIBPROTOBUF_EXPORT FieldComparator {
   virtual ComparisonResult Compare(
       const google::protobuf::Message& message_1,
       const google::protobuf::Message& message_2,
-      const google::protobuf::FieldDescriptor* field,
-      int index_1, int index_2,
+      const google::protobuf::FieldDescriptor* field, int index_1, int index_2,
       const google::protobuf::util::FieldContext* field_context) = 0;
 
  private:
@@ -97,12 +96,12 @@ class LIBPROTOBUF_EXPORT FieldComparator {
 class LIBPROTOBUF_EXPORT DefaultFieldComparator : public FieldComparator {
  public:
   enum FloatComparison {
-     EXACT,               // Floats and doubles are compared exactly.
-     APPROXIMATE,         // Floats and doubles are compared using the
-                          // MathUtil::AlmostEqual method or
-                          // MathUtil::WithinFractionOrMargin method.
-     // TODO(ksroka): Introduce third value to differenciate uses of AlmostEqual
-     //               and WithinFractionOrMargin.
+    EXACT,        // Floats and doubles are compared exactly.
+    APPROXIMATE,  // Floats and doubles are compared using the
+                  // MathUtil::AlmostEqual method or
+                  // MathUtil::WithinFractionOrMargin method.
+    // TODO(ksroka): Introduce third value to differenciate uses of AlmostEqual
+    //               and WithinFractionOrMargin.
   };
 
   // Creates new comparator with float comparison set to EXACT.
@@ -113,17 +112,14 @@ class LIBPROTOBUF_EXPORT DefaultFieldComparator : public FieldComparator {
   virtual ComparisonResult Compare(
       const google::protobuf::Message& message_1,
       const google::protobuf::Message& message_2,
-      const google::protobuf::FieldDescriptor* field,
-      int index_1, int index_2,
+      const google::protobuf::FieldDescriptor* field, int index_1, int index_2,
       const google::protobuf::util::FieldContext* field_context);
 
   void set_float_comparison(FloatComparison float_comparison) {
     float_comparison_ = float_comparison;
   }
 
-  FloatComparison float_comparison() const {
-    return float_comparison_;
-  }
+  FloatComparison float_comparison() const { return float_comparison_; }
 
   // Set whether the FieldComparator shall treat floats or doubles that are both
   // NaN as equal (treat_nan_as_equal = true) or as different
@@ -132,9 +128,7 @@ class LIBPROTOBUF_EXPORT DefaultFieldComparator : public FieldComparator {
     treat_nan_as_equal_ = treat_nan_as_equal;
   }
 
-  bool treat_nan_as_equal() const {
-    return treat_nan_as_equal_;
-  }
+  bool treat_nan_as_equal() const { return treat_nan_as_equal_; }
 
   // Sets the fraction and margin for the float comparison of a given field.
   // Uses MathUtil::WithinFractionOrMargin to compare the values.
@@ -158,12 +152,8 @@ class LIBPROTOBUF_EXPORT DefaultFieldComparator : public FieldComparator {
   struct Tolerance {
     double fraction;
     double margin;
-    Tolerance()
-        : fraction(0.0),
-          margin(0.0) {}
-    Tolerance(double f, double m)
-        : fraction(f),
-          margin(m) {}
+    Tolerance() : fraction(0.0), margin(0.0) {}
+    Tolerance(double f, double m) : fraction(f), margin(m) {}
   };
 
   // Defines the map to store the tolerances for floating point comparison.
@@ -173,8 +163,8 @@ class LIBPROTOBUF_EXPORT DefaultFieldComparator : public FieldComparator {
   // basic types (instead of submessages). They return true on success. One
   // can use ResultFromBoolean() to convert that boolean to a ComparisonResult
   // value.
-  bool CompareBool(const google::protobuf::FieldDescriptor& field,
-                   bool value_1, bool value_2) {
+  bool CompareBool(const google::protobuf::FieldDescriptor& field, bool value_1,
+                   bool value_2) {
     return value_1 == value_2;
   }
 
@@ -220,7 +210,7 @@ class LIBPROTOBUF_EXPORT DefaultFieldComparator : public FieldComparator {
   // This function is used by CompareDouble and CompareFloat to avoid code
   // duplication. There are no checks done against types of the values passed,
   // but it's likely to fail if passed non-numeric arguments.
-  template<typename T>
+  template <typename T>
   bool CompareDoubleOrFloat(const google::protobuf::FieldDescriptor& field,
                             T value_1, T value_2);
 

@@ -39,28 +39,28 @@
 #define GOOGLE_PROTOBUF_UNKNOWN_FIELD_SET_H__
 
 #include <assert.h>
-#include <string>
-#include <vector>
+#include <google/protobuf/generated_message_util.h>
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/logging.h>
-#include <google/protobuf/generated_message_util.h>
+#include <string>
+#include <vector>
 
 namespace google {
 namespace protobuf {
-  namespace io {
-    class CodedInputStream;         // coded_stream.h
-    class CodedOutputStream;        // coded_stream.h
-    class ZeroCopyInputStream;      // zero_copy_stream.h
-  }
-  namespace internal {
-    class InternalMetadataWithArena;  // metadata.h
-    class WireFormat;               // wire_format.h
-    class MessageSetFieldSkipperUsingCord;
-                                    // extension_set_heavy.cc
-  }
+namespace io {
+class CodedInputStream;     // coded_stream.h
+class CodedOutputStream;    // coded_stream.h
+class ZeroCopyInputStream;  // zero_copy_stream.h
+}  // namespace io
+namespace internal {
+class InternalMetadataWithArena;  // metadata.h
+class WireFormat;                 // wire_format.h
+class MessageSetFieldSkipperUsingCord;
+// extension_set_heavy.cc
+}  // namespace internal
 
-class Message;                      // message.h
-class UnknownField;                 // below
+class Message;       // message.h
+class UnknownField;  // below
 
 // An UnknownFieldSet contains fields that were encountered while parsing a
 // message but were not defined by its type.  Keeping track of these can be
@@ -116,9 +116,7 @@ class LIBPROTOBUF_EXPORT UnknownFieldSet {
   // Version of SpaceUsed() including sizeof(*this).
   size_t SpaceUsedLong() const;
 
-  int SpaceUsed() const {
-    return internal::ToIntSize(SpaceUsedLong());
-  }
+  int SpaceUsed() const { return internal::ToIntSize(SpaceUsedLong()); }
 
   // Returns the number of fields present in the UnknownFieldSet.
   inline int field_count() const;
@@ -163,6 +161,7 @@ class LIBPROTOBUF_EXPORT UnknownFieldSet {
   }
 
   static const UnknownFieldSet* default_instance();
+
  private:
   // For InternalMergeFrom
   friend class UnknownField;
@@ -222,7 +221,6 @@ class LIBPROTOBUF_EXPORT UnknownField {
   uint8* SerializeLengthDelimitedNoTagToArray(uint8* target) const;
 
   inline size_t GetLengthDelimitedSize() const;
-
 
   // If this UnknownField contains a pointer, delete it.
   void Delete();
@@ -288,13 +286,10 @@ inline UnknownField* UnknownFieldSet::mutable_field(int index) {
   return &(*fields_)[static_cast<size_t>(index)];
 }
 
-inline void UnknownFieldSet::AddLengthDelimited(
-    int number, const string& value) {
+inline void UnknownFieldSet::AddLengthDelimited(int number,
+                                                const string& value) {
   AddLengthDelimited(number)->assign(value);
 }
-
-
-
 
 inline int UnknownField::number() const { return static_cast<int>(number_); }
 inline UnknownField::Type UnknownField::type() const {
@@ -352,10 +347,7 @@ inline size_t UnknownField::GetLengthDelimitedSize() const {
   return data_.length_delimited_.string_value_->size();
 }
 
-inline void UnknownField::SetType(Type type) {
-  type_ = type;
-}
-
+inline void UnknownField::SetType(Type type) { type_ = type; }
 
 }  // namespace protobuf
 

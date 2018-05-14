@@ -4,7 +4,6 @@
 
 #pragma once
 
-namespace paddle_mobile{
-    class ProgramDesc {
-    };
-}
+namespace paddle_mobile {
+class ProgramDesc {};
+}  // namespace paddle_mobile

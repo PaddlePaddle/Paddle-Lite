@@ -73,10 +73,11 @@ class LIBPROTOBUF_EXPORT Mutex {
 // MutexLock(mu) acquires mu when constructed and releases it when destroyed.
 class LIBPROTOBUF_EXPORT MutexLock {
  public:
-  explicit MutexLock(Mutex *mu) : mu_(mu) { this->mu_->Lock(); }
+  explicit MutexLock(Mutex* mu) : mu_(mu) { this->mu_->Lock(); }
   ~MutexLock() { this->mu_->Unlock(); }
+
  private:
-  Mutex *const mu_;
+  Mutex* const mu_;
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(MutexLock);
 };
 
@@ -87,24 +88,30 @@ typedef MutexLock WriterMutexLock;
 // MutexLockMaybe is like MutexLock, but is a no-op when mu is NULL.
 class LIBPROTOBUF_EXPORT MutexLockMaybe {
  public:
-  explicit MutexLockMaybe(Mutex *mu) :
-    mu_(mu) { if (this->mu_ != NULL) { this->mu_->Lock(); } }
-  ~MutexLockMaybe() { if (this->mu_ != NULL) { this->mu_->Unlock(); } }
+  explicit MutexLockMaybe(Mutex* mu) : mu_(mu) {
+    if (this->mu_ != NULL) {
+      this->mu_->Lock();
+    }
+  }
+  ~MutexLockMaybe() {
+    if (this->mu_ != NULL) {
+      this->mu_->Unlock();
+    }
+  }
+
  private:
-  Mutex *const mu_;
+  Mutex* const mu_;
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(MutexLockMaybe);
 };
 
 #if defined(GOOGLE_PROTOBUF_NO_THREADLOCAL)
-template<typename T>
+template <typename T>
 class ThreadLocalStorage {
  public:
   ThreadLocalStorage() {
     pthread_key_create(&key_, &ThreadLocalStorage::Delete);
   }
-  ~ThreadLocalStorage() {
-    pthread_key_delete(key_);
-  }
+  ~ThreadLocalStorage() { pthread_key_delete(key_); }
   T* Get() {
     T* result = static_cast<T*>(pthread_getspecific(key_));
     if (result == NULL) {
@@ -113,10 +120,9 @@ class ThreadLocalStorage {
     }
     return result;
   }
+
  private:
-  static void Delete(void* value) {
-    delete static_cast<T*>(value);
-  }
+  static void Delete(void* value) { delete static_cast<T*>(value); }
   pthread_key_t key_;
 
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ThreadLocalStorage);
@@ -129,10 +135,9 @@ class ThreadLocalStorage {
 // but we don't want to stick "internal::" in front of them everywhere.
 using internal::Mutex;
 using internal::MutexLock;
+using internal::MutexLockMaybe;
 using internal::ReaderMutexLock;
 using internal::WriterMutexLock;
-using internal::MutexLockMaybe;
-
 
 }  // namespace protobuf
 }  // namespace google

@@ -4,5 +4,4 @@
 
 #pragma once
 
-class OpDesc {
-};
+class OpDesc {};

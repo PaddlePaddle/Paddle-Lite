@@ -42,10 +42,10 @@
 #include <set>
 #include <utility>
 
-#include <google/protobuf/stubs/common.h>
 #include <google/protobuf/arena.h>
 #include <google/protobuf/generated_enum_util.h>
 #include <google/protobuf/map_type_handler.h>
+#include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/hash.h>
 
 namespace google {
@@ -56,7 +56,8 @@ class Map;
 
 class MapIterator;
 
-template <typename Enum> struct is_proto_enum;
+template <typename Enum>
+struct is_proto_enum;
 
 namespace internal {
 template <typename Derived, typename Key, typename T,
@@ -77,9 +78,9 @@ class DynamicMapField;
 class GeneratedMessageReflection;
 }  // namespace internal
 
-// This is the class for google::protobuf::Map's internal value_type. Instead of using
-// std::pair as value_type, we use this class which provides us more control of
-// its process of construction and destruction.
+// This is the class for google::protobuf::Map's internal value_type. Instead of
+// using std::pair as value_type, we use this class which provides us more
+// control of its process of construction and destruction.
 template <typename Key, typename T>
 class MapPair {
  public:
@@ -89,8 +90,7 @@ class MapPair {
   MapPair(const Key& other_first, const T& other_second)
       : first(other_first), second(other_second) {}
   explicit MapPair(const Key& other_first) : first(other_first), second() {}
-  MapPair(const MapPair& other)
-      : first(other.first), second(other.second) {}
+  MapPair(const MapPair& other) : first(other.first), second(other.second) {}
 
   ~MapPair() {}
 
@@ -108,9 +108,9 @@ class MapPair {
   friend class Map<Key, T>;
 };
 
-// google::protobuf::Map is an associative container type used to store protobuf map
-// fields.  Each Map instance may or may not use a different hash function, a
-// different iteration order, and so on.  E.g., please don't examine
+// google::protobuf::Map is an associative container type used to store protobuf
+// map fields.  Each Map instance may or may not use a different hash function,
+// a different iteration order, and so on.  E.g., please don't examine
 // implementation details to decide if the following would work:
 //  Map<int, int> m0, m1;
 //  m0[0] = m1[0] = m0[1] = m1[1] = 0;
@@ -158,12 +158,13 @@ class Map {
 
  private:
   void Init() {
-    elements_ = Arena::Create<InnerMap>(arena_, 0u, hasher(), Allocator(arena_));
+    elements_ =
+        Arena::Create<InnerMap>(arena_, 0u, hasher(), Allocator(arena_));
   }
 
   // re-implement std::allocator to use arena allocator for memory allocation.
-  // Used for google::protobuf::Map implementation. Users should not use this class
-  // directly.
+  // Used for google::protobuf::Map implementation. Users should not use this
+  // class directly.
   template <typename U>
   class MapAllocator {
    public:
@@ -205,7 +206,7 @@ class Map {
 #if __cplusplus >= 201103L && !defined(GOOGLE_PROTOBUF_OS_APPLE) && \
     !defined(GOOGLE_PROTOBUF_OS_NACL) &&                            \
     !defined(GOOGLE_PROTOBUF_OS_EMSCRIPTEN)
-    template<class NodeType, class... Args>
+    template <class NodeType, class... Args>
     void construct(NodeType* p, Args&&... args) {
       // Clang 3.6 doesn't compile static casting to void* directly. (Issue
       // #1266) According C++ standard 5.2.9/1: "The static_cast operator shall
@@ -215,7 +216,7 @@ class Map {
           NodeType(std::forward<Args>(args)...);
     }
 
-    template<class NodeType>
+    template <class NodeType>
     void destroy(NodeType* p) {
       p->~NodeType();
     }
@@ -248,9 +249,7 @@ class Map {
 
     // To support gcc-4.4, which does not properly
     // support templated friend classes
-    Arena* arena() const {
-      return arena_;
-    }
+    Arena* arena() const { return arena_; }
 
    private:
     typedef void DestructorSkippable_;
@@ -395,7 +394,7 @@ class Map {
       // If nothing non-empty is found then leave node_ == NULL.
       void SearchFrom(size_type start_bucket) {
         GOOGLE_DCHECK(m_->index_of_first_non_null_ == m_->num_buckets_ ||
-               m_->table_[m_->index_of_first_non_null_] != NULL);
+                      m_->table_[m_->index_of_first_non_null_] != NULL);
         node_ = NULL;
         for (bucket_index_ = start_bucket; bucket_index_ < m_->num_buckets_;
              bucket_index_++) {
@@ -457,8 +456,7 @@ class Map {
         // Force bucket_index_ to be in range.
         bucket_index_ &= (m_->num_buckets_ - 1);
         // Common case: the bucket we think is relevant points to node_.
-        if (m_->table_[bucket_index_] == static_cast<void*>(node_))
-          return true;
+        if (m_->table_[bucket_index_] == static_cast<void*>(node_)) return true;
         // Less common: the bucket is a linked list with node_ somewhere in it,
         // but not at the head.
         if (m_->TableEntryIsNonEmptyList(bucket_index_)) {
@@ -649,7 +647,7 @@ class Map {
     // bucket.  num_elements_ is not modified.
     iterator InsertUnique(size_type b, Node* node) {
       GOOGLE_DCHECK(index_of_first_non_null_ == num_buckets_ ||
-             table_[index_of_first_non_null_] != NULL);
+                    table_[index_of_first_non_null_] != NULL);
       // In practice, the code that led to this point may have already
       // determined whether we are inserting into an empty list, a short list,
       // or whatever.  But it's probably cheap enough to recompute that here;
@@ -662,7 +660,8 @@ class Map {
         if (GOOGLE_PREDICT_FALSE(TableEntryIsTooLong(b))) {
           TreeConvert(b);
           result = InsertUniqueInTree(b, node);
-          GOOGLE_DCHECK_EQ(result.bucket_index_, b & ~static_cast<size_type>(1));
+          GOOGLE_DCHECK_EQ(result.bucket_index_,
+                           b & ~static_cast<size_type>(1));
         } else {
           // Insert into a pre-existing list.  This case cannot modify
           // index_of_first_non_null_, so we skip the code to update it.
@@ -693,10 +692,9 @@ class Map {
       GOOGLE_DCHECK_EQ(table_[b], table_[b ^ 1]);
       // Maintain the invariant that node->next is NULL for all Nodes in Trees.
       node->next = NULL;
-      return iterator(static_cast<Tree*>(table_[b])
-                      ->insert(KeyPtrFromNodePtr(node))
-                      .first,
-                      this, b & ~static_cast<size_t>(1));
+      return iterator(
+          static_cast<Tree*>(table_[b])->insert(KeyPtrFromNodePtr(node)).first,
+          this, b & ~static_cast<size_t>(1));
     }
 
     // Returns whether it did resize.  Currently this is only used when
@@ -720,7 +718,7 @@ class Map {
           return true;
         }
       } else if (GOOGLE_PREDICT_FALSE(new_size <= lo_cutoff &&
-                               num_buckets_ > kMinTableSize)) {
+                                      num_buckets_ > kMinTableSize)) {
         size_type lg2_of_size_reduction_factor = 1;
         // It's possible we want to shrink a lot here... size() could even be 0.
         // So, estimate how much to shrink by making sure we don't shrink so
@@ -807,7 +805,7 @@ class Map {
     }
     static bool TableEntryIsTree(void* const* table, size_type b) {
       return !TableEntryIsEmpty(table, b) &&
-          !TableEntryIsNonEmptyList(table, b);
+             !TableEntryIsNonEmptyList(table, b);
     }
     static bool TableEntryIsList(void* const* table, size_type b) {
       return !TableEntryIsTree(table, b);
@@ -915,7 +913,7 @@ class Map {
       size_type s = static_cast<size_type>(reinterpret_cast<uintptr_t>(this));
 #if defined(__x86_64__) && defined(__GNUC__)
       uint32 hi, lo;
-      asm("rdtsc" : "=a" (lo), "=d" (hi));
+      asm("rdtsc" : "=a"(lo), "=d"(hi));
       s += ((static_cast<uint64>(hi) << 32) | lo);
 #endif
       return s;
@@ -945,9 +943,7 @@ class Map {
     const_iterator() {}
     explicit const_iterator(const InnerIt& it) : it_(it) {}
 
-    const_reference operator*() const {
-      return *it_->value();
-    }
+    const_reference operator*() const { return *it_->value(); }
     const_pointer operator->() const { return &(operator*()); }
 
     const_iterator& operator++() {
@@ -1024,7 +1020,7 @@ class Map {
 
   // Element access
   T& operator[](const key_type& key) {
-    value_type** value =  &(*elements_)[key];
+    value_type** value = &(*elements_)[key];
     if (*value == NULL) {
       *value = CreateValueTypeInternal(key);
       internal::MapValueInitializer<google::protobuf::is_proto_enum<T>::value,
@@ -1141,9 +1137,7 @@ class Map {
 
   // Access to hasher.  Currently this returns a copy, but it may
   // be modified to return a const reference in the future.
-  hasher hash_function() const {
-    return elements_->hash_function();
-  }
+  hasher hash_function() const { return elements_->hash_function(); }
 
  private:
   // Set default enum value only for proto2 map field whose value is enum type.

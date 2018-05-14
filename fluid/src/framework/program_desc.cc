@@ -4,5 +4,4 @@
 
 #include "program_desc.h"
 
-namespace paddle_mobile{
-}
+namespace paddle_mobile {}

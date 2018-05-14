@@ -37,8 +37,8 @@ namespace google {
 namespace protobuf {
 
 #undef GOOGLE_DISALLOW_EVIL_CONSTRUCTORS
-#define GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(TypeName)    \
-  TypeName(const TypeName&);                           \
+#define GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(TypeName) \
+  TypeName(const TypeName&);                        \
   void operator=(const TypeName&)
 
 #undef GOOGLE_DISALLOW_IMPLICIT_CONSTRUCTORS
@@ -85,7 +85,7 @@ namespace protobuf {
 // Kudos to Jorg Brown for this simple and elegant implementation.
 
 #undef GOOGLE_ARRAYSIZE
-#define GOOGLE_ARRAYSIZE(a) \
+#define GOOGLE_ARRAYSIZE(a)     \
   ((sizeof(a) / sizeof(*(a))) / \
    static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))))
 
@@ -107,8 +107,7 @@ namespace protobuf {
 namespace internal {
 
 template <bool>
-struct CompileAssert {
-};
+struct CompileAssert {};
 
 }  // namespace internal
 
@@ -116,9 +115,9 @@ struct CompileAssert {
 #if __cplusplus >= 201103L
 #define GOOGLE_COMPILE_ASSERT(expr, msg) static_assert(expr, #msg)
 #else
-#define GOOGLE_COMPILE_ASSERT(expr, msg) \
+#define GOOGLE_COMPILE_ASSERT(expr, msg)                    \
   ::google::protobuf::internal::CompileAssert<(bool(expr))> \
-          msg[bool(expr) ? 1 : -1]; \
+      msg[bool(expr) ? 1 : -1];                             \
   (void)msg
 // Implementation details of COMPILE_ASSERT:
 //

@@ -33,12 +33,12 @@
 #ifndef GOOGLE_PROTOBUF_COMPILER_JS_GENERATOR_H__
 #define GOOGLE_PROTOBUF_COMPILER_JS_GENERATOR_H__
 
-#include <string>
 #include <set>
+#include <string>
 
-#include <google/protobuf/stubs/logging.h>
-#include <google/protobuf/stubs/common.h>
 #include <google/protobuf/compiler/code_generator.h>
+#include <google/protobuf/stubs/common.h>
+#include <google/protobuf/stubs/logging.h>
 
 namespace google {
 namespace protobuf {
@@ -49,7 +49,9 @@ class FieldDescriptor;
 class OneofDescriptor;
 class FileDescriptor;
 
-namespace io { class Printer; }
+namespace io {
+class Printer;
+}
 
 namespace compiler {
 namespace js {
@@ -81,9 +83,8 @@ struct GeneratorOptions {
         extension(".js"),
         one_output_file_per_input_file(false) {}
 
-  bool ParseFromOptions(
-      const std::vector< std::pair< string, string > >& options,
-      string* error);
+  bool ParseFromOptions(const std::vector<std::pair<string, string>>& options,
+                        string* error);
 
   // Returns the file name extension to use for generated code.
   string GetFileNameExtension() const {
@@ -129,10 +130,8 @@ class LIBPROTOC_EXPORT Generator : public CodeGenerator {
   Generator() {}
   virtual ~Generator() {}
 
-  virtual bool Generate(const FileDescriptor* file,
-                        const string& parameter,
-                        GeneratorContext* context,
-                        string* error) const {
+  virtual bool Generate(const FileDescriptor* file, const string& parameter,
+                        GeneratorContext* context, string* error) const {
     *error = "Unimplemented Generate() method. Call GenerateAll() instead.";
     return false;
   }
@@ -140,8 +139,7 @@ class LIBPROTOC_EXPORT Generator : public CodeGenerator {
   virtual bool HasGenerateAll() const { return true; }
 
   virtual bool GenerateAll(const std::vector<const FileDescriptor*>& files,
-                           const string& parameter,
-                           GeneratorContext* context,
+                           const string& parameter, GeneratorContext* context,
                            string* error) const;
 
  private:
@@ -149,21 +147,17 @@ class LIBPROTOC_EXPORT Generator : public CodeGenerator {
                       io::Printer* printer) const;
 
   // Generate goog.provides() calls.
-  void FindProvides(const GeneratorOptions& options,
-                    io::Printer* printer,
+  void FindProvides(const GeneratorOptions& options, io::Printer* printer,
                     const std::vector<const FileDescriptor*>& file,
                     std::set<string>* provided) const;
   void FindProvidesForFile(const GeneratorOptions& options,
-                           io::Printer* printer,
-                           const FileDescriptor* file,
+                           io::Printer* printer, const FileDescriptor* file,
                            std::set<string>* provided) const;
   void FindProvidesForMessage(const GeneratorOptions& options,
-                              io::Printer* printer,
-                              const Descriptor* desc,
+                              io::Printer* printer, const Descriptor* desc,
                               std::set<string>* provided) const;
   void FindProvidesForEnum(const GeneratorOptions& options,
-                           io::Printer* printer,
-                           const EnumDescriptor* enumdesc,
+                           io::Printer* printer, const EnumDescriptor* enumdesc,
                            std::set<string>* provided) const;
   // For extension fields at file scope.
   void FindProvidesForFields(const GeneratorOptions& options,
@@ -171,8 +165,7 @@ class LIBPROTOC_EXPORT Generator : public CodeGenerator {
                              const std::vector<const FieldDescriptor*>& fields,
                              std::set<string>* provided) const;
   // Print the goog.provides() found by the methods above.
-  void GenerateProvides(const GeneratorOptions& options,
-                        io::Printer* printer,
+  void GenerateProvides(const GeneratorOptions& options, io::Printer* printer,
                         std::set<string>* provided) const;
 
   // Generate goog.setTestOnly() if indicated.
@@ -185,9 +178,8 @@ class LIBPROTOC_EXPORT Generator : public CodeGenerator {
       const std::vector<const FileDescriptor*>& files,
       std::set<string>* provided) const;
   void GenerateRequiresForMessage(const GeneratorOptions& options,
-                        io::Printer* printer,
-                        const Descriptor* desc,
-                        std::set<string>* provided) const;
+                                  io::Printer* printer, const Descriptor* desc,
+                                  std::set<string>* provided) const;
   // For extension fields at file scope.
   void GenerateRequiresForExtensions(
       const GeneratorOptions& options, io::Printer* printer,
@@ -212,8 +204,7 @@ class LIBPROTOC_EXPORT Generator : public CodeGenerator {
                                 std::set<string>* required,
                                 std::set<string>* forwards) const;
 
-  void GenerateFile(const GeneratorOptions& options,
-                    io::Printer* printer,
+  void GenerateFile(const GeneratorOptions& options, io::Printer* printer,
                     const FileDescriptor* file) const;
 
   // Generate definitions for all message classes and enums in all files,
@@ -223,8 +214,7 @@ class LIBPROTOC_EXPORT Generator : public CodeGenerator {
       const std::vector<const FileDescriptor*>& file) const;
   // Helper for above.
   void GenerateFileAndDeps(const GeneratorOptions& options,
-                           io::Printer* printer,
-                           const FileDescriptor* root,
+                           io::Printer* printer, const FileDescriptor* root,
                            std::set<const FileDescriptor*>* all_files,
                            std::set<const FileDescriptor*>* generated) const;
 
@@ -239,8 +229,7 @@ class LIBPROTOC_EXPORT Generator : public CodeGenerator {
                                     bool use_default) const;
 
   // Generate definition for one class.
-  void GenerateClass(const GeneratorOptions& options,
-                     io::Printer* printer,
+  void GenerateClass(const GeneratorOptions& options, io::Printer* printer,
                      const Descriptor* desc) const;
   void GenerateClassConstructor(const GeneratorOptions& options,
                                 io::Printer* printer,
@@ -248,8 +237,7 @@ class LIBPROTOC_EXPORT Generator : public CodeGenerator {
   void GenerateClassFieldInfo(const GeneratorOptions& options,
                               io::Printer* printer,
                               const Descriptor* desc) const;
-  void GenerateClassXid(const GeneratorOptions& options,
-                        io::Printer* printer,
+  void GenerateClassXid(const GeneratorOptions& options, io::Printer* printer,
                         const Descriptor* desc) const;
   void GenerateOneofCaseDefinition(const GeneratorOptions& options,
                                    io::Printer* printer,
@@ -266,17 +254,14 @@ class LIBPROTOC_EXPORT Generator : public CodeGenerator {
   void GenerateClassFieldFromObject(const GeneratorOptions& options,
                                     io::Printer* printer,
                                     const FieldDescriptor* field) const;
-  void GenerateClassClone(const GeneratorOptions& options,
-                          io::Printer* printer,
+  void GenerateClassClone(const GeneratorOptions& options, io::Printer* printer,
                           const Descriptor* desc) const;
   void GenerateClassRegistration(const GeneratorOptions& options,
                                  io::Printer* printer,
                                  const Descriptor* desc) const;
   void GenerateClassFields(const GeneratorOptions& options,
-                           io::Printer* printer,
-                           const Descriptor* desc) const;
-  void GenerateClassField(const GeneratorOptions& options,
-                          io::Printer* printer,
+                           io::Printer* printer, const Descriptor* desc) const;
+  void GenerateClassField(const GeneratorOptions& options, io::Printer* printer,
                           const FieldDescriptor* desc) const;
   void GenerateClassExtensionFieldInfo(const GeneratorOptions& options,
                                        io::Printer* printer,
@@ -298,13 +283,11 @@ class LIBPROTOC_EXPORT Generator : public CodeGenerator {
                                          const FieldDescriptor* field) const;
 
   // Generate definition for one enum.
-  void GenerateEnum(const GeneratorOptions& options,
-                    io::Printer* printer,
+  void GenerateEnum(const GeneratorOptions& options, io::Printer* printer,
                     const EnumDescriptor* enumdesc) const;
 
   // Generate an extension definition.
-  void GenerateExtension(const GeneratorOptions& options,
-                         io::Printer* printer,
+  void GenerateExtension(const GeneratorOptions& options, io::Printer* printer,
                          const FieldDescriptor* field) const;
 
   // Generate addFoo() method for repeated primitive fields.

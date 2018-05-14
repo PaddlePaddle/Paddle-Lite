@@ -4,5 +4,4 @@
 
 #include "scope.h"
 
-namespace paddle_mobile {
-}
+namespace paddle_mobile {}

@@ -19,17 +19,17 @@
 #error regenerate this file with a newer version of protoc.
 #endif
 
-#include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/any.h>
 #include <google/protobuf/arena.h>
 #include <google/protobuf/arenastring.h>
+#include <google/protobuf/extension_set.h>  // IWYU pragma: export
 #include <google/protobuf/generated_message_table_driven.h>
 #include <google/protobuf/generated_message_util.h>
-#include <google/protobuf/metadata.h>
+#include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/message.h>
+#include <google/protobuf/metadata.h>
 #include <google/protobuf/repeated_field.h>  // IWYU pragma: export
-#include <google/protobuf/extension_set.h>  // IWYU pragma: export
 #include <google/protobuf/unknown_field_set.h>
-#include <google/protobuf/any.h>
 // @@protoc_insertion_point(includes)
 namespace google {
 namespace protobuf {
@@ -50,7 +50,8 @@ struct LIBPROTOBUF_EXPORT TableStruct {
   static const ::google::protobuf::internal::ParseTable schema[];
   static const ::google::protobuf::uint32 offsets[];
   static const ::google::protobuf::internal::FieldMetadata field_metadata[];
-  static const ::google::protobuf::internal::SerializationTable serialization_table[];
+  static const ::google::protobuf::internal::SerializationTable
+      serialization_table[];
   static void InitDefaultsImpl();
 };
 void LIBPROTOBUF_EXPORT AddDescriptors();
@@ -59,7 +60,9 @@ void LIBPROTOBUF_EXPORT InitDefaults();
 
 // ===================================================================
 
-class LIBPROTOBUF_EXPORT Any : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:google.protobuf.Any) */ {
+class LIBPROTOBUF_EXPORT Any : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:google.protobuf.Any)
+                                                                   */
+{
  public:
   Any();
   virtual ~Any();
@@ -74,11 +77,9 @@ class LIBPROTOBUF_EXPORT Any : public ::google::protobuf::Message /* @@protoc_in
   static const Any& default_instance();
 
   static inline const Any* internal_default_instance() {
-    return reinterpret_cast<const Any*>(
-               &_Any_default_instance_);
+    return reinterpret_cast<const Any*>(&_Any_default_instance_);
   }
-  static PROTOBUF_CONSTEXPR int const kIndexInFileMessages =
-    0;
+  static PROTOBUF_CONSTEXPR int const kIndexInFileMessages = 0;
 
   // implements Any -----------------------------------------------
 
@@ -86,14 +87,13 @@ class LIBPROTOBUF_EXPORT Any : public ::google::protobuf::Message /* @@protoc_in
   void PackFrom(const ::google::protobuf::Message& message,
                 const ::std::string& type_url_prefix);
   bool UnpackTo(::google::protobuf::Message* message) const;
-  template<typename T> bool Is() const {
+  template <typename T>
+  bool Is() const {
     return _any_metadata_.Is<T>();
   }
 
   void Swap(Any* other);
-  friend void swap(Any& a, Any& b) {
-    a.Swap(&b);
-  }
+  friend void swap(Any& a, Any& b) { a.Swap(&b); }
 
   // implements Message ----------------------------------------------
 
@@ -113,22 +113,21 @@ class LIBPROTOBUF_EXPORT Any : public ::google::protobuf::Message /* @@protoc_in
   void SerializeWithCachedSizes(
       ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
   ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
-      bool deterministic, ::google::protobuf::uint8* target) const PROTOBUF_FINAL;
+      bool deterministic,
+      ::google::protobuf::uint8* target) const PROTOBUF_FINAL;
   int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
-  private:
+
+ private:
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const PROTOBUF_FINAL;
   void InternalSwap(Any* other);
-  private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
-    return NULL;
-  }
-  inline void* MaybeArenaPtr() const {
-    return NULL;
-  }
-  public:
 
+ private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const { return NULL; }
+  inline void* MaybeArenaPtr() const { return NULL; }
+
+ public:
   ::google::protobuf::Metadata GetMetadata() const PROTOBUF_FINAL;
 
   // nested types ----------------------------------------------------
@@ -140,9 +139,9 @@ class LIBPROTOBUF_EXPORT Any : public ::google::protobuf::Message /* @@protoc_in
   static const int kTypeUrlFieldNumber = 1;
   const ::std::string& type_url() const;
   void set_type_url(const ::std::string& value);
-  #if LANG_CXX11
+#if LANG_CXX11
   void set_type_url(::std::string&& value);
-  #endif
+#endif
   void set_type_url(const char* value);
   void set_type_url(const char* value, size_t size);
   ::std::string* mutable_type_url();
@@ -154,9 +153,9 @@ class LIBPROTOBUF_EXPORT Any : public ::google::protobuf::Message /* @@protoc_in
   static const int kValueFieldNumber = 2;
   const ::std::string& value() const;
   void set_value(const ::std::string& value);
-  #if LANG_CXX11
+#if LANG_CXX11
   void set_value(::std::string&& value);
-  #endif
+#endif
   void set_value(const char* value);
   void set_value(const void* value, size_t size);
   ::std::string* mutable_value();
@@ -165,7 +164,6 @@ class LIBPROTOBUF_EXPORT Any : public ::google::protobuf::Message /* @@protoc_in
 
   // @@protoc_insertion_point(class_scope:google.protobuf.Any)
  private:
-
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   ::google::protobuf::internal::ArenaStringPtr type_url_;
   ::google::protobuf::internal::ArenaStringPtr value_;
@@ -175,129 +173,133 @@ class LIBPROTOBUF_EXPORT Any : public ::google::protobuf::Message /* @@protoc_in
 };
 // ===================================================================
 
-
 // ===================================================================
 
 #if !PROTOBUF_INLINE_NOT_IN_HEADERS
 #ifdef __GNUC__
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif  // __GNUC__
 // Any
 
 // string type_url = 1;
 inline void Any::clear_type_url() {
-  type_url_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  type_url_.ClearToEmptyNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline const ::std::string& Any::type_url() const {
   // @@protoc_insertion_point(field_get:google.protobuf.Any.type_url)
   return type_url_.GetNoArena();
 }
 inline void Any::set_type_url(const ::std::string& value) {
-  
-  type_url_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  type_url_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
   // @@protoc_insertion_point(field_set:google.protobuf.Any.type_url)
 }
 #if LANG_CXX11
 inline void Any::set_type_url(::std::string&& value) {
-  
   type_url_.SetNoArena(
-    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::move(value));
   // @@protoc_insertion_point(field_set_rvalue:google.protobuf.Any.type_url)
 }
 #endif
 inline void Any::set_type_url(const char* value) {
   GOOGLE_DCHECK(value != NULL);
-  
-  type_url_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+
+  type_url_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(value));
   // @@protoc_insertion_point(field_set_char:google.protobuf.Any.type_url)
 }
 inline void Any::set_type_url(const char* value, size_t size) {
-  
-  type_url_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+  type_url_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
   // @@protoc_insertion_point(field_set_pointer:google.protobuf.Any.type_url)
 }
 inline ::std::string* Any::mutable_type_url() {
-  
   // @@protoc_insertion_point(field_mutable:google.protobuf.Any.type_url)
-  return type_url_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  return type_url_.MutableNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* Any::release_type_url() {
   // @@protoc_insertion_point(field_release:google.protobuf.Any.type_url)
-  
-  return type_url_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+
+  return type_url_.ReleaseNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline void Any::set_allocated_type_url(::std::string* type_url) {
   if (type_url != NULL) {
-    
   } else {
-    
   }
-  type_url_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), type_url);
+  type_url_.SetAllocatedNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(), type_url);
   // @@protoc_insertion_point(field_set_allocated:google.protobuf.Any.type_url)
 }
 
 // bytes value = 2;
 inline void Any::clear_value() {
-  value_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  value_.ClearToEmptyNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline const ::std::string& Any::value() const {
   // @@protoc_insertion_point(field_get:google.protobuf.Any.value)
   return value_.GetNoArena();
 }
 inline void Any::set_value(const ::std::string& value) {
-  
-  value_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  value_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
   // @@protoc_insertion_point(field_set:google.protobuf.Any.value)
 }
 #if LANG_CXX11
 inline void Any::set_value(::std::string&& value) {
-  
   value_.SetNoArena(
-    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::move(value));
   // @@protoc_insertion_point(field_set_rvalue:google.protobuf.Any.value)
 }
 #endif
 inline void Any::set_value(const char* value) {
   GOOGLE_DCHECK(value != NULL);
-  
-  value_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+
+  value_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(value));
   // @@protoc_insertion_point(field_set_char:google.protobuf.Any.value)
 }
 inline void Any::set_value(const void* value, size_t size) {
-  
-  value_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+  value_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
   // @@protoc_insertion_point(field_set_pointer:google.protobuf.Any.value)
 }
 inline ::std::string* Any::mutable_value() {
-  
   // @@protoc_insertion_point(field_mutable:google.protobuf.Any.value)
-  return value_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  return value_.MutableNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* Any::release_value() {
   // @@protoc_insertion_point(field_release:google.protobuf.Any.value)
-  
-  return value_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+
+  return value_.ReleaseNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline void Any::set_allocated_value(::std::string* value) {
   if (value != NULL) {
-    
   } else {
-    
   }
-  value_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  value_.SetAllocatedNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
   // @@protoc_insertion_point(field_set_allocated:google.protobuf.Any.value)
 }
 
 #ifdef __GNUC__
-  #pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
 #endif  // __GNUC__
 #endif  // !PROTOBUF_INLINE_NOT_IN_HEADERS
 
 // @@protoc_insertion_point(namespace_scope)
-
 
 }  // namespace protobuf
 }  // namespace google
