@@ -339,4 +339,4 @@ DDim stride_numel(const framework::DDim& ddim) {
 }
 
 }  // namespace framework
-}  // namespace paddle
+}  // namespace paddle_mobile

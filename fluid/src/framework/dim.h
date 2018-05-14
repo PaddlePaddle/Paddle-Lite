@@ -429,4 +429,4 @@ HOSTDEVICE Dim<D> linear_to_dimension(int linear_index, Dim<D> extents) {
 }
 
 }  // namespace framework
-}  // namespace paddle
+}  // namespace paddle_mobile
