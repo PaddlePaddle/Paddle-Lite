@@ -105,9 +105,9 @@ public:
   }
 
 private:
-    Variant<int, float, std::string, std::vector<int>,
-            std::vector<float>, std::vector<std::string>, bool,
-            std::vector<bool>, BlockDesc*, int64_t> variant_;
+  Variant<int, float, std::string, std::vector<int>,
+          std::vector<float>, std::vector<std::string>, bool,
+          std::vector<bool>, BlockDesc*, int64_t> variant_;
 };
 
 using AttributeMap = std::unordered_map<std::string, Attribute>;
