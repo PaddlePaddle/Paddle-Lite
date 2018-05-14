@@ -23,6 +23,9 @@ build_for_mac() {
     BUILD_DIR=build/release/"${PLATFORM}"
     mkdir -p ${BUILD_DIR}/build
 
+    mkdir -p ${BUILD_DIR}/test
+    cp -r test/models ${BUILD_DIR}/test/models
+
     cmake . \
         -B"${BUILD_DIR}" \
     	-DCMAKE_BUILD_TYPE="${MODE}" \
