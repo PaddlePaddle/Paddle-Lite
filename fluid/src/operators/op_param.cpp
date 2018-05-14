@@ -41,3 +41,4 @@ std::ostream& operator<<(std::ostream& os, const ConvParam& conv_param) {
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
