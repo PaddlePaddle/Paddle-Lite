@@ -20,129 +20,130 @@ SOFTWARE.
 
 #include <vector>
 
-namespace paddle_mobile{
-    namespace framework{
-        class Shape: public std::vector<int> {
-        public:
-            Shape(): std::vector<int>(){}
+namespace paddle_mobile {
+namespace framework {
+class Shape : public std::vector<int> {
+public:
+  Shape() : std::vector<int>() {}
 
-            template <typename Head, typename ...Args>
-            Shape(Head head, Args... res){
-                InitDims(head, res...);
-            }
+  template<typename Head, typename ...Args>
+  Shape(Head head, Args... res) {
+    InitDims(head, res...);
+  }
 
-            Shape operator+(const Shape& shape) {
+  Shape operator+(const Shape &shape) {
 
-                Shape tmp_shape(*this);
-                int* p = data();
-                for (size_t i = 0; i < size(); i++) {
-                    tmp_shape[i] = p[i] + shape[i];
-                }
-                return tmp_shape;
-            }
-
-            Shape operator-(const Shape& shape) {
-
-                Shape tmp_shape(*this);
-                int* p = data();
-                for (size_t i = 0; i < size(); i++) {
-                    tmp_shape[i] = p[i] - shape[i];
-                }
-                return tmp_shape;
-            }
-
-            bool operator<(const Shape& shape) const {
-
-                bool flag = size() == shape.size();
-                if (!flag) {
-                    return false;
-                }
-
-                const int* p = data();
-                for (size_t i = 0; i < size(); i++) {
-                    flag &= (p[i] < shape[i]);
-                }
-                return flag;
-            }
-
-            bool operator<=(const Shape& shape) const{
-
-                bool flag = size() == shape.size();
-                if (!flag) {
-                    return false;
-                }
-                const int* p = data();
-                for (size_t i = 0; i < size(); i++) {
-                    flag &= (p[i] <= shape[i]);
-                }
-                return flag;
-            }
-
-            bool operator==(const Shape& shape) const{
-
-                bool flag = size() == shape.size();
-                if (!flag) {
-                    return false;
-                }
-                const int* p = data();
-                for (size_t i = 0; i < size(); i++) {
-                    flag &= (p[i] == shape[i]);
-                }
-                return flag;
-            }
-
-            int Count(int start = 0) const {
-                if (empty()) {
-                    return 0;
-                }
-                int sum = 1;
-                for (auto it = begin() + start; it != end(); ++it)
-                    sum *= (*it);
-                return sum;
-            }
-
-            int Dims() const {
-                return size();
-            }
-
-            bool IsContinue(const Shape &real_shape) const {
-                if (real_shape.size() != size()){
-                    return false;
-                }
-
-                const int* p = data();
-                for (int i = size() - 1; i >= 0; i--) {
-                    if (p[i] != real_shape[i]) {
-                        int size = Count() / Count(i);
-                        return size == 1;
-                    }
-                }
-                return true;
-            }
-
-            static Shape Zero(int dims){
-                Shape shape;
-                for (int i = 0; i < dims; ++i) {
-                    shape.push_back(0);
-                }
-                return shape;
-            }
-
-            static Shape Minusone(int dims){
-                Shape shape;
-                for (int i = 0; i < dims; ++i) {
-                    shape.push_back(-1);
-                }
-                return shape;
-            }
-
-        private:
-            template <typename Head, typename ...Args>
-            void InitDims(Head head, Args...args){
-                push_back(head);
-                InitDims(args...);
-            }
-            void InitDims(){};
-        };
+    Shape tmp_shape(*this);
+    int *p = data();
+    for (size_t i = 0; i < size(); i++) {
+      tmp_shape[i] = p[i] + shape[i];
     }
+    return tmp_shape;
+  }
+
+  Shape operator-(const Shape &shape) {
+
+    Shape tmp_shape(*this);
+    int *p = data();
+    for (size_t i = 0; i < size(); i++) {
+      tmp_shape[i] = p[i] - shape[i];
+    }
+    return tmp_shape;
+  }
+
+  bool operator<(const Shape &shape) const {
+
+    bool flag = size() == shape.size();
+    if (!flag) {
+      return false;
+    }
+
+    const int *p = data();
+    for (size_t i = 0; i < size(); i++) {
+      flag &= (p[i] < shape[i]);
+    }
+    return flag;
+  }
+
+  bool operator<=(const Shape &shape) const {
+
+    bool flag = size() == shape.size();
+    if (!flag) {
+      return false;
+    }
+    const int *p = data();
+    for (size_t i = 0; i < size(); i++) {
+      flag &= (p[i] <= shape[i]);
+    }
+    return flag;
+  }
+
+  bool operator==(const Shape &shape) const {
+
+    bool flag = size() == shape.size();
+    if (!flag) {
+      return false;
+    }
+    const int *p = data();
+    for (size_t i = 0; i < size(); i++) {
+      flag &= (p[i] == shape[i]);
+    }
+    return flag;
+  }
+
+  int Count(int start = 0) const {
+    if (empty()) {
+      return 0;
+    }
+    int sum = 1;
+    for (auto it = begin() + start; it != end(); ++it)
+      sum *= (*it);
+    return sum;
+  }
+
+  int Dims() const {
+    return size();
+  }
+
+  bool IsContinue(const Shape &real_shape) const {
+    if (real_shape.size() != size()) {
+      return false;
+    }
+
+    const int *p = data();
+    for (int i = size() - 1; i >= 0; i--) {
+      if (p[i] != real_shape[i]) {
+        int size = Count() / Count(i);
+        return size == 1;
+      }
+    }
+    return true;
+  }
+
+  static Shape Zero(int dims) {
+    Shape shape;
+    for (int i = 0; i < dims; ++i) {
+      shape.push_back(0);
+    }
+    return shape;
+  }
+
+  static Shape Minusone(int dims) {
+    Shape shape;
+    for (int i = 0; i < dims; ++i) {
+      shape.push_back(-1);
+    }
+    return shape;
+  }
+
+private:
+  template<typename Head, typename ...Args>
+  void InitDims(Head head, Args...args) {
+    push_back(head);
+    InitDims(args...);
+  }
+
+  void InitDims() {};
+};
+}
 }
