@@ -23,16 +23,15 @@ SOFTWARE.
 namespace paddle_mobile {
 namespace framework {
 class Shape : public std::vector<int> {
-public:
+ public:
   Shape() : std::vector<int>() {}
 
-  template<typename Head, typename ...Args>
+  template <typename Head, typename... Args>
   Shape(Head head, Args... res) {
     InitDims(head, res...);
   }
 
   Shape operator+(const Shape &shape) {
-
     Shape tmp_shape(*this);
     int *p = data();
     for (size_t i = 0; i < size(); i++) {
@@ -42,7 +41,6 @@ public:
   }
 
   Shape operator-(const Shape &shape) {
-
     Shape tmp_shape(*this);
     int *p = data();
     for (size_t i = 0; i < size(); i++) {
@@ -52,7 +50,6 @@ public:
   }
 
   bool operator<(const Shape &shape) const {
-
     bool flag = size() == shape.size();
     if (!flag) {
       return false;
@@ -66,7 +63,6 @@ public:
   }
 
   bool operator<=(const Shape &shape) const {
-
     bool flag = size() == shape.size();
     if (!flag) {
       return false;
@@ -79,7 +75,6 @@ public:
   }
 
   bool operator==(const Shape &shape) const {
-
     bool flag = size() == shape.size();
     if (!flag) {
       return false;
@@ -96,14 +91,11 @@ public:
       return 0;
     }
     int sum = 1;
-    for (auto it = begin() + start; it != end(); ++it)
-      sum *= (*it);
+    for (auto it = begin() + start; it != end(); ++it) sum *= (*it);
     return sum;
   }
 
-  int Dims() const {
-    return size();
-  }
+  int Dims() const { return size(); }
 
   bool IsContinue(const Shape &real_shape) const {
     if (real_shape.size() != size()) {
@@ -136,14 +128,14 @@ public:
     return shape;
   }
 
-private:
-  template<typename Head, typename ...Args>
-  void InitDims(Head head, Args...args) {
+ private:
+  template <typename Head, typename... Args>
+  void InitDims(Head head, Args... args) {
     push_back(head);
     InitDims(args...);
   }
 
-  void InitDims() {};
+  void InitDims(){};
 };
-}
-}
+}  // namespace framework
+}  // namespace paddle_mobile

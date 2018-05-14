@@ -18,19 +18,19 @@ SOFTWARE.
 
 #pragma once
 
-#include "stdio.h"
 #include <string>
+#include "stdio.h"
 
-namespace paddle_mobile{
+namespace paddle_mobile {
 
 class PaddleMobileObject {
-public:
-  virtual inline const std::string& ToString(){
+ public:
+  virtual inline const std::string& ToString() {
     char address[128] = {0};
-    sprintf(address,"%p",this);
+    sprintf(address, "%p", this);
     return std::string(address);
   }
 
-private:
+ private:
 };
-}
+}  // namespace paddle_mobile

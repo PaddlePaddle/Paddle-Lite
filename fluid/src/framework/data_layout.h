@@ -15,8 +15,8 @@ limitations under the License. */
 #pragma once
 
 #include <cctype>
-#include <string>
 #include <iostream>
+#include <string>
 
 namespace paddle_mobile {
 namespace framework {
@@ -40,7 +40,7 @@ inline DataLayout StringToDataLayout(const std::string& str) {
   } else if (s == "ANYLAYOUT") {
     return DataLayout::kAnyLayout;
   } else {
-    std::cout<<"Unknown storage order string: %s", s;
+    std::cout << "Unknown storage order string: %s", s;
   }
 }
 
@@ -53,7 +53,7 @@ inline std::string DataLayoutToString(const DataLayout& data_layout) {
     case DataLayout::kAnyLayout:
       return "ANY_LAYOUT";
     default:
-      std::cout<<"unknown DataLayou %d", data_layout;
+      std::cout << "unknown DataLayou %d", data_layout;
   }
 }
 
@@ -63,4 +63,4 @@ inline std::ostream& operator<<(std::ostream& out, const DataLayout& l) {
 }
 
 }  // namespace framework
-}  // namespace paddle
+}  // namespace paddle_mobile

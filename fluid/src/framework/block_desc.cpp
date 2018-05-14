@@ -21,7 +21,7 @@ SOFTWARE.
 namespace paddle_mobile {
 namespace framework {
 
-std::vector<std::shared_ptr<VarDesc>>  BlockDesc::Vars() const{
+std::vector<std::shared_ptr<VarDesc>> BlockDesc::Vars() const {
   std::vector<std::shared_ptr<VarDesc>> res;
   for (const auto &p : vars_) {
     res.push_back(p.second);
@@ -29,7 +29,7 @@ std::vector<std::shared_ptr<VarDesc>>  BlockDesc::Vars() const{
   return res;
 }
 
-std::vector<std::shared_ptr<OpDesc>> BlockDesc::Ops() const{
+std::vector<std::shared_ptr<OpDesc>> BlockDesc::Ops() const {
   std::vector<std::shared_ptr<OpDesc>> res;
   for (const auto &op : ops_) {
     res.push_back(op);
@@ -37,14 +37,14 @@ std::vector<std::shared_ptr<OpDesc>> BlockDesc::Ops() const{
   return res;
 }
 
-BlockDesc::BlockDesc(const proto::BlockDesc &desc): desc_(desc){
-  for(const proto::VarDesc &var_desc : desc_.vars()){
+BlockDesc::BlockDesc(const proto::BlockDesc &desc) : desc_(desc) {
+  for (const proto::VarDesc &var_desc : desc_.vars()) {
     vars_[var_desc.name()].reset(new VarDesc(var_desc));
   }
-  for(const proto::OpDesc &op_desc : desc_.ops()){
+  for (const proto::OpDesc &op_desc : desc_.ops()) {
     ops_.emplace_back(new framework::OpDesc(op_desc));
   }
 }
 
-}
-}
+}  // namespace framework
+}  // namespace paddle_mobile

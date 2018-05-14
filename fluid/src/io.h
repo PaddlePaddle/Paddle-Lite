@@ -21,19 +21,19 @@ SOFTWARE.
 #include <string>
 
 #include "common/types.h"
-#include "framework/program.h"
 #include "framework/lod_tensor.h"
 #include "framework/paddle_mobile_object.h"
+#include "framework/program.h"
 
 namespace paddle_mobile {
 
-template<typename Dtype, Precision P = Precision::FP32>
-class Loader: PaddleMobileObject{
-public:
+template <typename Dtype, Precision P = Precision::FP32>
+class Loader : PaddleMobileObject {
+ public:
   const framework::Program<Dtype, P> Load(const std::string &dirname);
 
-private:
+ private:
   void LoadVar(framework::LoDTensor *tensor, const std::string &file_path);
 };
 
-}
+}  // namespace paddle_mobile

@@ -67,23 +67,19 @@ using Tensor = paddle_mobile::framework::Tensor;
 template <typename DeviceType, typename T>
 class Vol2ColFunctor {
  public:
-  void operator()(const Tensor& vol,
-                  const std::vector<int>& dilations,
+  void operator()(const Tensor& vol, const std::vector<int>& dilations,
                   const std::vector<int>& strides,
-                  const std::vector<int>& paddings,
-                  Tensor* col) const;
+                  const std::vector<int>& paddings, Tensor* col) const;
 };
 
 template <typename DeviceType, typename T>
 class Col2VolFunctor {
  public:
-  void operator()(const Tensor& col,
-                  const std::vector<int>& dilations,
+  void operator()(const Tensor& col, const std::vector<int>& dilations,
                   const std::vector<int>& strides,
-                  const std::vector<int>& paddings,
-                  Tensor* vol) const;
+                  const std::vector<int>& paddings, Tensor* vol) const;
 };
 
 }  // namespace math
 }  // namespace operators
-}  // namespace paddle
+}  // namespace paddle_mobile

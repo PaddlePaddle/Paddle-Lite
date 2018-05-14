@@ -40,9 +40,9 @@ struct OpKernelType {
   proto::VarType::Type data_type_;
   DataLayout data_layout_;
 
-  OpKernelType(proto::VarType::Type data_type, DataLayout data_layout = DataLayout::kAnyLayout)
-          : data_type_(data_type),
-            data_layout_(data_layout) {}
+  OpKernelType(proto::VarType::Type data_type,
+               DataLayout data_layout = DataLayout::kAnyLayout)
+      : data_type_(data_type), data_layout_(data_layout) {}
 
   bool operator==(const OpKernelType& o) const {
     return data_type_ == o.data_type_ && data_layout_ == o.data_layout_;
@@ -60,5 +60,5 @@ inline bool TransFromNeeded(const OpKernelType& l, const OpKernelType& r) {
          NeedTransformLayout(l.data_layout_, r.data_layout_);
 }
 
-} // framework
-} // paddle_mobile
+}  // namespace framework
+}  // namespace paddle_mobile

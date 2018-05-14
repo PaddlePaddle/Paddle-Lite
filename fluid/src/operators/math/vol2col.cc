@@ -28,13 +28,11 @@ using Tensor = paddle_mobile::framework::Tensor;
 template <typename T>
 class Vol2ColFunctor<ARM, T> {
  public:
-  void operator()(const Tensor& vol,
-                  const std::vector<int>& dilations,
+  void operator()(const Tensor& vol, const std::vector<int>& dilations,
                   const std::vector<int>& strides,
-                  const std::vector<int>& paddings,
-                  Tensor* col) const {
-//    PADDLE_ENFORCE(vol.dims().size() == 4);
-//    PADDLE_ENFORCE(col->dims().size() == 7);
+                  const std::vector<int>& paddings, Tensor* col) const {
+    //    PADDLE_ENFORCE(vol.dims().size() == 4);
+    //    PADDLE_ENFORCE(col->dims().size() == 7);
 
     int input_channels = vol.dims()[0];
     int input_depth = vol.dims()[1];
@@ -49,27 +47,27 @@ class Vol2ColFunctor<ARM, T> {
     int channels_col =
         input_channels * filter_depth * filter_height * filter_width;
 
-//    PADDLE_ENFORCE_EQ((input_depth + 2 * paddings[0] -
-//                       ((dilations[0] * (filter_depth - 1) + 1))) /
-//                              strides[0] +
-//                          1,
-//                      output_depth,
-//                      "input_depth and output_depth are "
-//                      "mismatching.");
-//    PADDLE_ENFORCE_EQ((input_height + 2 * paddings[1] -
-//                       ((dilations[1] * (filter_height - 1) + 1))) /
-//                              strides[1] +
-//                          1,
-//                      output_height,
-//                      "input_height and output_height are "
-//                      "mismatching.");
-//    PADDLE_ENFORCE_EQ((input_width + 2 * paddings[2] -
-//                       ((dilations[2] * (filter_width - 1) + 1))) /
-//                              strides[2] +
-//                          1,
-//                      output_width,
-//                      "input_width and output_width are "
-//                      "mismatching.");
+    //    PADDLE_ENFORCE_EQ((input_depth + 2 * paddings[0] -
+    //                       ((dilations[0] * (filter_depth - 1) + 1))) /
+    //                              strides[0] +
+    //                          1,
+    //                      output_depth,
+    //                      "input_depth and output_depth are "
+    //                      "mismatching.");
+    //    PADDLE_ENFORCE_EQ((input_height + 2 * paddings[1] -
+    //                       ((dilations[1] * (filter_height - 1) + 1))) /
+    //                              strides[1] +
+    //                          1,
+    //                      output_height,
+    //                      "input_height and output_height are "
+    //                      "mismatching.");
+    //    PADDLE_ENFORCE_EQ((input_width + 2 * paddings[2] -
+    //                       ((dilations[2] * (filter_width - 1) + 1))) /
+    //                              strides[2] +
+    //                          1,
+    //                      output_width,
+    //                      "input_width and output_width are "
+    //                      "mismatching.");
 
     const T* vol_data = vol.data<T>();
     T* col_data = col->data<T>();
@@ -113,13 +111,11 @@ class Vol2ColFunctor<ARM, T> {
 template <typename T>
 class Col2VolFunctor<ARM, T> {
  public:
-  void operator()(const Tensor& col,
-                  const std::vector<int>& dilations,
+  void operator()(const Tensor& col, const std::vector<int>& dilations,
                   const std::vector<int>& strides,
-                  const std::vector<int>& paddings,
-                  Tensor* vol) const {
-//    PADDLE_ENFORCE(vol->dims().size() == 4);
-//    PADDLE_ENFORCE(col.dims().size() == 7);
+                  const std::vector<int>& paddings, Tensor* vol) const {
+    //    PADDLE_ENFORCE(vol->dims().size() == 4);
+    //    PADDLE_ENFORCE(col.dims().size() == 7);
 
     int input_channels = vol->dims()[0];
     int input_depth = vol->dims()[1];
@@ -134,27 +130,27 @@ class Col2VolFunctor<ARM, T> {
     int channels_col =
         input_channels * filter_depth * filter_height * filter_width;
 
-//    PADDLE_ENFORCE_EQ((input_depth + 2 * paddings[0] -
-//                       ((dilations[0] * (filter_depth - 1) + 1))) /
-//                              strides[0] +
-//                          1,
-//                      output_depth,
-//                      "input_depth and output_depth are "
-//                      "mismatching.");
-//    PADDLE_ENFORCE_EQ((input_height + 2 * paddings[1] -
-//                       ((dilations[1] * (filter_height - 1) + 1))) /
-//                              strides[1] +
-//                          1,
-//                      output_height,
-//                      "input_height and output_height are "
-//                      "mismatching.");
-//    PADDLE_ENFORCE_EQ((input_width + 2 * paddings[2] -
-//                       ((dilations[2] * (filter_width - 1) + 1))) /
-//                              strides[2] +
-//                          1,
-//                      output_width,
-//                      "input_width and output_width are "
-//                      "mismatching.");
+    //    PADDLE_ENFORCE_EQ((input_depth + 2 * paddings[0] -
+    //                       ((dilations[0] * (filter_depth - 1) + 1))) /
+    //                              strides[0] +
+    //                          1,
+    //                      output_depth,
+    //                      "input_depth and output_depth are "
+    //                      "mismatching.");
+    //    PADDLE_ENFORCE_EQ((input_height + 2 * paddings[1] -
+    //                       ((dilations[1] * (filter_height - 1) + 1))) /
+    //                              strides[1] +
+    //                          1,
+    //                      output_height,
+    //                      "input_height and output_height are "
+    //                      "mismatching.");
+    //    PADDLE_ENFORCE_EQ((input_width + 2 * paddings[2] -
+    //                       ((dilations[2] * (filter_width - 1) + 1))) /
+    //                              strides[2] +
+    //                          1,
+    //                      output_width,
+    //                      "input_width and output_width are "
+    //                      "mismatching.");
     T* vol_data = vol->data<T>();
     const T* col_data = col.data<T>();
 
@@ -196,4 +192,4 @@ template class Col2VolFunctor<ARM, double>;
 
 }  // namespace math
 }  // namespace operators
-}  // namespace paddle
+}  // namespace paddle_mobile

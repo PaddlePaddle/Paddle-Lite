@@ -24,7 +24,8 @@ namespace framework {
 inline proto::VarType::Type ToDataType(std::type_index type) {
   /*if (typeid(platform::float16).hash_code() == type.hash_code()) {
     return proto::VarType::FP16;
-  } else */if (typeid(const float).hash_code() == type.hash_code()) {
+  } else */
+  if (typeid(const float).hash_code() == type.hash_code()) {
     // CPPLint complains Using C-style cast.  Use static_cast<float>() instead
     // One fix to this is to replace float with const float because
     // typeid(T) == typeid(const T)
@@ -39,15 +40,15 @@ inline proto::VarType::Type ToDataType(std::type_index type) {
   } else if (typeid(const bool).hash_code() == type.hash_code()) {
     return proto::VarType::BOOL;
   } else {
-//    PADDLE_THROW("Not supported");
+    //    PADDLE_THROW("Not supported");
     std::cout << "Not supported";
   }
 }
 
 inline std::type_index ToTypeIndex(proto::VarType::Type type) {
   switch (type) {
-//    case proto::VarType::FP16:
-//      return typeid(platform::float16);
+      //    case proto::VarType::FP16:
+      //      return typeid(platform::float16);
     case proto::VarType::FP32:
       return typeid(float);
     case proto::VarType::FP64:
@@ -59,17 +60,17 @@ inline std::type_index ToTypeIndex(proto::VarType::Type type) {
     case proto::VarType::BOOL:
       return typeid(bool);
     default:
-//      PADDLE_THROW("Not support type %d", type);
+      //      PADDLE_THROW("Not support type %d", type);
       printf("Not support type %d", type);
   }
 }
 
-template<typename Visitor>
+template <typename Visitor>
 inline void VisitDataType(proto::VarType::Type type, Visitor visitor) {
   switch (type) {
-//    case proto::VarType::FP16:
-//      visitor.template operator()<platform::float16>();
-//      break;
+      //    case proto::VarType::FP16:
+      //      visitor.template operator()<platform::float16>();
+      //      break;
     case proto::VarType::FP32:
       visitor.template operator()<float>();
       break;
@@ -86,7 +87,7 @@ inline void VisitDataType(proto::VarType::Type type, Visitor visitor) {
       visitor.template operator()<bool>();
       break;
     default:
-//      PADDLE_THROW("Not supported");
+      //      PADDLE_THROW("Not supported");
       printf("Not supported");
   }
 }
@@ -108,7 +109,7 @@ inline std::string DataTypeToString(const proto::VarType::Type type) {
     case proto::VarType::BOOL:
       return "bool";
     default:
-//      PADDLE_THROW("Not support type %d", type);
+      //      PADDLE_THROW("Not support type %d", type);
       printf("Not support type %d", type);
   }
 }
@@ -120,4 +121,4 @@ inline std::ostream &operator<<(std::ostream &out,
 }
 
 }  // namespace framework
-}  // namespace paddle
+}  // namespace paddle_mobile

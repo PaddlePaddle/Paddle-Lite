@@ -27,9 +27,9 @@ namespace paddle_mobile {
 namespace framework {
 
 class SelectedRows {
-public:
+ public:
   SelectedRows(const std::vector<int64_t>& rows, const int64_t& height)
-          : rows_(rows), height_(height) {
+      : rows_(rows), height_(height) {
     value_.reset(new Tensor());
   }
 
@@ -57,7 +57,7 @@ public:
    */
   int64_t index(int64_t id) const {
     auto it = std::find(rows_.begin(), rows_.end(), id);
-//    PADDLE_ENFORCE(it != rows_.end(), "id should be in rows");
+    //    PADDLE_ENFORCE(it != rows_.end(), "id should be in rows");
     return static_cast<int64_t>(std::distance(rows_.begin(), it));
   }
 
@@ -67,7 +67,7 @@ public:
     return make_ddim(dims);
   }
 
-private:
+ private:
   // Notice: rows can be duplicate. We can have {0, 4, 7, 0, 5, 7, 9} here.
   // SelectedRows are simply concated when adding together. Until a
   // SelectedRows add a Tensor, will the duplicate rows be handled.
@@ -77,4 +77,4 @@ private:
 };
 
 }  // namespace framework
-}  // namespace paddle
+}  // namespace paddle_mobile

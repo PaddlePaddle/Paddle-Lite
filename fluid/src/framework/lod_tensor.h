@@ -23,7 +23,6 @@ limitations under the License. */
 
 namespace paddle_mobile {
 
-
 namespace framework {
 
 /*
@@ -97,9 +96,8 @@ bool CheckAbsLoD(const LoD &in, int tensor_height = -1);
  * see https://en.wikipedia.org/wiki/Level_of_details for reference.
  */
 class LoDTensor : public Tensor {
-public:
+ public:
   LoDTensor() : Tensor() {}
-
 
   explicit LoDTensor(const LoD &lod) : lod_(lod) {}
 
@@ -113,8 +111,8 @@ public:
    * Get the start offset and end offset of an  element from LoD.
    */
   std::pair<size_t, size_t> lod_element(size_t level, size_t elem) const {
-//    PADDLE_ENFORCE_LT(level, NumLevels());
-//    PADDLE_ENFORCE_LT(elem, NumElements(level));
+    //    PADDLE_ENFORCE_LT(level, NumLevels());
+    //    PADDLE_ENFORCE_LT(elem, NumElements(level));
     return std::make_pair((lod_)[level][elem], (lod_)[level][elem + 1]);
   }
 
@@ -128,12 +126,12 @@ public:
    * Number of elements in a level.
    */
   size_t NumElements(size_t level = 0) const {
-//    PADDLE_ENFORCE_LT(level, NumLevels());
+    //    PADDLE_ENFORCE_LT(level, NumLevels());
     // the last offset is the end of last element
     return (lod_)[level].size() - 1;
   }
 
-private:
+ private:
   LoD lod_;
 };
 
@@ -147,7 +145,7 @@ private:
  * returns a new LoDTensor
  *  - [a0 a0 a0 a1 a1]
  */
-template<typename T>
+template <typename T>
 LoDTensor LodExpand(const LoDTensor &source, const LoD &lod, size_t level) {
   LoD abs_lod = ToAbsOffset(lod);
   const auto &lod_level = lod[level];
@@ -161,7 +159,7 @@ LoDTensor LodExpand(const LoDTensor &source, const LoD &lod, size_t level) {
   tensor.Resize(dims);
   tensor.mutable_data<T>();
 
-//  PADDLE_ENFORCE_EQ(num_instances, lod_level.size() - 1);
+  //  PADDLE_ENFORCE_EQ(num_instances, lod_level.size() - 1);
   for (size_t ins = 0; ins < num_instances; ins++) {
     for (size_t elem = lod_level[ins]; elem < lod_level[ins + 1]; elem++) {
       auto slice = tensor.Slice(elem, elem + 1);
@@ -184,7 +182,7 @@ LoDTensor LodExpand(const LoDTensor &source, const LoD &lod, size_t level) {
 //  LoD = [[1, 4], [2, 4, 2, 3, 2]]
 //  pair<size_t, size_t> = {11, 24}
 std::pair<LoD, std::pair<size_t, size_t>> GetSubLoDAndAbsoluteOffset(
-        const LoD &lod, size_t start_idx, size_t end_idx, size_t start_level);
+    const LoD &lod, size_t start_idx, size_t end_idx, size_t start_level);
 
 void AppendLoD(LoD *lod, const LoD &lod_length);
 
@@ -196,8 +194,6 @@ void AppendLoD(LoD *lod, const LoD &lod_length);
 void SerializeToStream(std::ostream &os, const LoDTensor &tensor);
 
 void DeserializeFromStream(std::istream &is, LoDTensor *tensor);
-
-
 
 }  // namespace framework
 }  // namespace paddle_mobile

@@ -20,9 +20,7 @@ SOFTWARE.
 
 namespace paddle_mobile {
 namespace framework {
-  // this class not only make proto but also init attribute checkers.
-  class OpProtoAndCheckerMaker {
-
-  };
-} // framework
-} // paddle_mobile
+// this class not only make proto but also init attribute checkers.
+class OpProtoAndCheckerMaker {};
+}  // namespace framework
+}  // namespace paddle_mobile

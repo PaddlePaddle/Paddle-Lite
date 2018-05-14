@@ -18,20 +18,20 @@ SOFTWARE.
 
 #pragma once
 
-#include "framework.pb.h"
 #include "common/variant.h"
+#include "framework.pb.h"
 
 namespace paddle_mobile {
 namespace framework {
 
 class BlockDesc;
 
-class Attribute{
-public:
-  static Attribute GetAttrValue(const proto::OpDesc::Attr &attr_desc){
+class Attribute {
+ public:
+  static Attribute GetAttrValue(const proto::OpDesc::Attr& attr_desc) {
     std::cout << "begin get attr value" << std::endl;
     Attribute attr;
-    switch (attr_desc.type()){
+    switch (attr_desc.type()) {
       case proto::AttrType::BOOLEAN: {
         attr.Set<bool>(attr_desc.b());
         break;
@@ -92,41 +92,42 @@ public:
     return attr;
   }
 
-  Attribute(){}
-  template<typename T, typename... Args>
-  Attribute& Set(Args&&... args){
+  Attribute() {}
+  template <typename T, typename... Args>
+  Attribute& Set(Args&&... args) {
     variant_.Set<T>(args...);
     return *this;
   }
 
-  template<typename T>
+  template <typename T>
   T& Get() const {
     return variant_.Get<T>();
   }
 
-private:
-  Variant<int, float, std::string, std::vector<int>,
-          std::vector<float>, std::vector<std::string>, bool,
-          std::vector<bool>, BlockDesc*, int64_t> variant_;
+ private:
+  Variant<int, float, std::string, std::vector<int>, std::vector<float>,
+          std::vector<std::string>, bool, std::vector<bool>, BlockDesc*,
+          int64_t>
+      variant_;
 };
 
 using AttributeMap = std::unordered_map<std::string, Attribute>;
 
 class AttrReader {
-public:
+ public:
   explicit AttrReader(const AttributeMap& attrs) : attrs_(attrs) {}
 
   template <typename T>
   inline T Get(const std::string& name) const {
-//          PADDLE_ENFORCE(attrs_.count(name) != 0, "%s should be in AttributeMap",
-//                         name);
+    //          PADDLE_ENFORCE(attrs_.count(name) != 0, "%s should be in
+    //          AttributeMap",
+    //                         name);
     return ((Attribute)attrs_.at(name)).Get<T>();
   }
 
-private:
+ private:
   const AttributeMap& attrs_;
 };
 
-}
-}
-
+}  // namespace framework
+}  // namespace paddle_mobile

@@ -40,4 +40,4 @@ namespace framework {
 //        }
 //    }
 }
-}
+}  // namespace paddle_mobile

@@ -14,12 +14,12 @@ limitations under the License. */
 
 #pragma once
 
+#include <assert.h>
 #include <initializer_list>
 #include <stdexcept>
 #include <vector>
-#include "dim.h"
 #include "common/variant.h"
-#include <assert.h>
+#include "dim.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -30,10 +30,12 @@ namespace framework {
  * The number of dimensions must be between [1, 9].
  */
 struct DDim {
-  typedef Variant<Dim<0>, Dim<1>, Dim<2>, Dim<3>, Dim<4>, Dim<5>, Dim<6>, Dim<7>, Dim<8>, Dim<9>> DDimVar;
+  typedef Variant<Dim<0>, Dim<1>, Dim<2>, Dim<3>, Dim<4>, Dim<5>, Dim<6>,
+                  Dim<7>, Dim<8>, Dim<9>>
+      DDimVar;
   DDimVar var;
 
-  template<typename Vistor>
+  template <typename Vistor>
   static typename Vistor::type_t ApplyVistor(Vistor vistor, const DDim &d) {
     if (d.var.TypeId() == typeid(Dim<0>).hash_code()) {
       return vistor(d.var.Get<Dim<0>>());
@@ -58,23 +60,20 @@ struct DDim {
     } else {
       printf(" dim not support  \n");
       throw std::bad_exception();
-//        return typename Vistor::type_t();
-
+      //        return typename Vistor::type_t();
     }
   }
 
-  DDim() {
-    var.Set<Dim<1>>(Dim<1>());
-  }
+  DDim() { var.Set<Dim<1>>(Dim<1>()); }
 
-  template<int D>
+  template <int D>
   explicit DDim(const Dim<D> &in) {
     var.Set<Dim<D>>(in);
   }
 
   /*implicit*/ DDim(std::initializer_list<int64_t> init_list);
 
-  template<int D>
+  template <int D>
   DDim &operator=(const Dim<D> &in) {
     var.Set<Dim<D>>(in);
     return *this;
@@ -84,15 +83,15 @@ struct DDim {
 
   int64_t operator[](int idx) const;
 
-//  template <typename Visitor>
-//  typename Visitor::result_type apply_visitor(Visitor& visitor) {
-//    return var.apply_visitor(visitor);
-//  }
-//
-//  template <typename Visitor>
-//  typename Visitor::result_type apply_visitor(Visitor& visitor) const {
-//    return var.apply_visitor(visitor);
-//  }
+  //  template <typename Visitor>
+  //  typename Visitor::result_type apply_visitor(Visitor& visitor) {
+  //    return var.apply_visitor(visitor);
+  //  }
+  //
+  //  template <typename Visitor>
+  //  typename Visitor::result_type apply_visitor(Visitor& visitor) const {
+  //    return var.apply_visitor(visitor);
+  //  }
 
   DDimVar getVar() { return var; }
 
@@ -164,4 +163,3 @@ DDim stride(const DDim &ddim);
 DDim stride_numel(const DDim &ddim);
 }  // namespace framework
 }  // namespace paddle_mobile
-

@@ -18,15 +18,12 @@ SOFTWARE.
 
 #include "operators/kernel/conv_kernel.h"
 
-
-
 namespace paddle_mobile {
 namespace operators {
 
 bool IsExpand(const std::vector<int64_t>& filter_dim,
-                            const std::vector<int>& strides,
-                            const std::vector<int>& paddings,
-                            const std::vector<int>& dilations) {
+              const std::vector<int>& strides, const std::vector<int>& paddings,
+              const std::vector<int>& dilations) {
   bool filter_1 = true, strides_1 = true, padding_0 = true, dilation_1 = true;
   for (size_t j = 0; j < strides.size(); ++j) {
     filter_1 = filter_1 && (static_cast<int>(filter_dim[j + 2]) == 1);
@@ -38,7 +35,7 @@ bool IsExpand(const std::vector<int64_t>& filter_dim,
 }
 
 template <>
-void ConvKernel<ARM, float, ConvParam>::Compute(const ConvParam &param) const {
+void ConvKernel<ARM, float, ConvParam>::Compute(const ConvParam& param) const {
   const Tensor* input = param.Input();
 
   std::cout << " conv param " << param << std::endl;
@@ -81,7 +78,7 @@ void ConvKernel<ARM, float, ConvParam>::Compute(const ConvParam &param) const {
   // size: (i_c/g * k_h * k_w, o_h * o_w) or (i_c/g * k_d * k_h * k_w, o_d *
   // o_h * o_w)
   framework::DDim col_matrix_shape =
-          framework::flatten_to_2d(col_shape, data_dim + 1);
+      framework::flatten_to_2d(col_shape, data_dim + 1);
 
   bool is_expand = IsExpand(filter_shape_vec, strides, paddings, dilations);
   Tensor col;
@@ -96,7 +93,7 @@ void ConvKernel<ARM, float, ConvParam>::Compute(const ConvParam &param) const {
   }
 
   framework::DDim input_shape = framework::slice_ddim(
-          input->dims(), 1, static_cast<int>(input->dims().size()));
+      input->dims(), 1, static_cast<int>(input->dims().size()));
 
   framework::DDim filter_matrix_shape = {filter.dims()[0],
                                          filter.numel() / filter.dims()[0]};
@@ -107,8 +104,8 @@ void ConvKernel<ARM, float, ConvParam>::Compute(const ConvParam &param) const {
   std::cout << " output dim " << output->dims() << std::endl;
 
   framework::DDim output_matrix_shape = {
-          output->dims()[1],
-          output->numel() / (output->dims()[0] * output->dims()[1])};
+      output->dims()[1],
+      output->numel() / (output->dims()[0] * output->dims()[1])};
 
   // convolution operator: im2col(or vol2col) + gemm
   int in_step = static_cast<int>(input->dims()[1]) / groups;
@@ -117,7 +114,8 @@ void ConvKernel<ARM, float, ConvParam>::Compute(const ConvParam &param) const {
   math::Vol2ColFunctor<ARM, float> vol2col;
   math::Im2ColFunctor<math::ColFormat::kCFO, ARM, float> im2col;
 
-//            auto& dev_ctx = context.template device_context<DeviceContext>();
+  //            auto& dev_ctx = context.template
+  //            device_context<DeviceContext>();
   for (int i = 0; i < batch_size; i++) {
     Tensor in_batch = input->Slice(i, i + 1).Resize(input_shape);
     Tensor out_batch = output->Slice(i, i + 1).Resize(output_matrix_shape);
@@ -143,13 +141,13 @@ void ConvKernel<ARM, float, ConvParam>::Compute(const ConvParam &param) const {
       // gemm
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
-      math::matmul<float>(filter_slice, false, col_matrix,
-                      false, float(1.0), &out_slice, float(0.0));
+      math::matmul<float>(filter_slice, false, col_matrix, false, float(1.0),
+                          &out_slice, float(0.0));
     }
   }
 }
 
 template class ConvKernel<ARM, float, ConvParam>;
 
-}
-}
+}  // namespace operators
+}  // namespace paddle_mobile

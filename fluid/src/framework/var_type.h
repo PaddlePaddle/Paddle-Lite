@@ -30,9 +30,9 @@ inline proto::VarType::Type ToVarType(std::type_index type) {
   } else if (type.hash_code() == typeid(SelectedRows).hash_code()) {
     return proto::VarType_Type_SELECTED_ROWS;
   } else {
-//    PADDLE_THROW("ToVarType:Unsupported type %s", type.name());
+    //    PADDLE_THROW("ToVarType:Unsupported type %s", type.name());
   }
 }
 
 }  // namespace framework
-}  // namespace paddle
+}  // namespace paddle_mobile

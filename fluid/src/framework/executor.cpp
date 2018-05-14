@@ -18,56 +18,59 @@ SOFTWARE.
 ==============================================================================*/
 
 #include "executor.h"
-#include "variable.h"
 #include "lod_tensor.h"
 #include "operators/conv_op.h"
+#include "variable.h"
 
 namespace paddle_mobile {
 namespace framework {
 
 template <typename Dtype>
-Executor<Dtype>::Executor(const Program<Dtype> p): program_(p){
+Executor<Dtype>::Executor(const Program<Dtype> p) : program_(p) {
   if (use_optimize_) {
     to_predict_program_ = program_.optimizeProgram;
   } else {
     to_predict_program_ = program_.originProgram;
   }
 
-  const std::vector<std::shared_ptr<BlockDesc> > blocks = to_predict_program_->Blocks();
+  const std::vector<std::shared_ptr<BlockDesc>> blocks =
+      to_predict_program_->Blocks();
   std::cout << " **block size " << blocks.size() << std::endl;
   for (int i = 0; i < blocks.size(); ++i) {
     std::shared_ptr<BlockDesc> block_desc = blocks[i];
-    std::vector<std::shared_ptr<OpDesc> > ops = block_desc->Ops();
+    std::vector<std::shared_ptr<OpDesc>> ops = block_desc->Ops();
     std::cout << " ops " << ops.size() << std::endl;
     for (int j = 0; j < ops.size(); ++j) {
       std::shared_ptr<OpDesc> op = ops[j];
-//        std::cout << " input 0 " << op->Input("Input")[0] << std::endl;
+      //        std::cout << " input 0 " << op->Input("Input")[0] << std::endl;
       if (op->Type() == "conv2d" && op->Input("Input")[0] == "pixel") {
-        std::cout << " conv2d attr size: "<<  op->GetAttrMap().size() << std::endl;
-        std::cout << " input size: "<<  op->GetInputs().size() << std::endl;
+        std::cout << " conv2d attr size: " << op->GetAttrMap().size()
+                  << std::endl;
+        std::cout << " input size: " << op->GetInputs().size() << std::endl;
 
-        std::cout << " output size: "<<  op->GetOutputs().size() << std::endl;
+        std::cout << " output size: " << op->GetOutputs().size() << std::endl;
 
         Attribute strides_attr = op->GetAttrMap().at("strides");
-        std::vector<int> stride = strides_attr.Get<std::vector<int> >();
+        std::vector<int> stride = strides_attr.Get<std::vector<int>>();
         for (int k = 0; k < stride.size(); ++k) {
           std::cout << " stride " << stride[k] << std::endl;
         }
 
-        std::shared_ptr<operators::ConvOp<Dtype, float> > conv = std::make_shared<operators::ConvOp<Dtype, float> >(op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(), program_.scope);
+        std::shared_ptr<operators::ConvOp<Dtype, float>> conv =
+            std::make_shared<operators::ConvOp<Dtype, float>>(
+                op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(),
+                program_.scope);
         ops_of_block_[*block_desc.get()].push_back(conv);
       }
     }
   }
-
 }
 
 template <typename Dtype>
-std::shared_ptr<Tensor> Executor<Dtype>::predict(Tensor &t){
-
+std::shared_ptr<Tensor> Executor<Dtype>::predict(Tensor &t) {
   // feed
   auto scope = program_.scope;
-  Variable* g_feed_value = scope->Var("pixel");
+  Variable *g_feed_value = scope->Var("pixel");
   auto tensor = g_feed_value->GetMutable<Tensor>();
   tensor->ShareDataWith(t);
 
@@ -86,7 +89,8 @@ std::shared_ptr<Tensor> Executor<Dtype>::predict(Tensor &t){
 
 template <typename Dtype>
 void Executor<Dtype>::predict(const Tensor &t, int block_id) {
-  std::shared_ptr<BlockDesc> to_predict_block = to_predict_program_->Block(block_id);
+  std::shared_ptr<BlockDesc> to_predict_block =
+      to_predict_program_->Block(block_id);
   for (int j = 0; j < ops_of_block_[*to_predict_block.get()].size(); ++j) {
     auto op = ops_of_block_[*to_predict_block.get()][j];
     std::cout << "开始run" << std::endl;
@@ -96,8 +100,5 @@ void Executor<Dtype>::predict(const Tensor &t, int block_id) {
 
 template class Executor<ARM>;
 
-}
-}  // namespace paddle
-
-
-
+}  // namespace framework
+}  // namespace paddle_mobile

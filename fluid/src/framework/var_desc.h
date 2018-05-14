@@ -24,21 +24,15 @@ SOFTWARE.
 namespace paddle_mobile {
 namespace framework {
 
-class VarDesc{
-public:
+class VarDesc {
+ public:
   VarDesc(const proto::VarDesc &desc);
 
-  std::string Name() const {
-    return desc_.name();
-  }
+  std::string Name() const { return desc_.name(); }
 
-  proto::VarType::Type GetType() const {
-    return desc_.type().type();
-  }
+  proto::VarType::Type GetType() const { return desc_.type().type(); }
 
-  bool Persistable() const {
-    return desc_.persistable();
-  }
+  bool Persistable() const { return desc_.persistable(); }
 
   const proto::VarType::ChannelDesc &channel_desc() const {
     switch (desc_.type().type()) {
@@ -73,10 +67,12 @@ public:
   }
 
   template <typename T>
-  std::vector<T> RepeatedToVector(const google::protobuf::RepeatedField<T> &repeated_field) const {
+  std::vector<T> RepeatedToVector(
+      const google::protobuf::RepeatedField<T> &repeated_field) const {
     std::vector<T> ret;
     ret.reserve(repeated_field.size());
-    std::copy(repeated_field.begin(), repeated_field.end(), std::back_inserter(ret));
+    std::copy(repeated_field.begin(), repeated_field.end(),
+              std::back_inserter(ret));
     return ret;
   }
 
@@ -84,11 +80,9 @@ public:
     return this->RepeatedToVector(tensor_desc().dims());
   }
 
-private:
-    proto::VarDesc desc_;
+ private:
+  proto::VarDesc desc_;
 };
 
-}
-}
-
-
+}  // namespace framework
+}  // namespace paddle_mobile

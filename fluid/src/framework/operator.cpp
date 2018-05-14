@@ -16,9 +16,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-
-#include "op_info.h"
 #include "operator.h"
+#include "op_info.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -29,7 +28,11 @@ OperatorBase<Dtype>::OperatorBase(const std::string& type,
                                   const VariableNameMap& outputs,
                                   const AttributeMap& attrs,
                                   std::shared_ptr<Scope> scope)
-        : type_(type), inputs_(inputs), outputs_(outputs), attrs_(attrs), scope_(scope){
+    : type_(type),
+      inputs_(inputs),
+      outputs_(outputs),
+      attrs_(attrs),
+      scope_(scope) {
   CheckAllInputOutputSet();
 }
 
@@ -39,11 +42,10 @@ void OperatorBase<Dtype>::Run() {
 }
 
 template <typename Dtype>
-void OperatorBase<Dtype>::CheckAllInputOutputSet() const {
-}
+void OperatorBase<Dtype>::CheckAllInputOutputSet() const {}
 
 template class OperatorBase<ARM>;
 template class OperatorWithKernel<ARM>;
 
-} // framework
-} // paddle_mobile
+}  // namespace framework
+}  // namespace paddle_mobile

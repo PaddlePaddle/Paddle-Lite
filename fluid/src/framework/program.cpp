@@ -16,9 +16,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-
 namespace paddle_mobile {
-namespace framework{
-
-}
-}
+namespace framework {}
+}  // namespace paddle_mobile

@@ -17,15 +17,15 @@ SOFTWARE.
 ==============================================================================*/
 
 #include "conv_op.h"
-#include "framework/operator.h"
 #include "framework/data_type.h"
 #include "framework/op_proto_maker.h"
+#include "framework/operator.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-int ConvOutputSize(int input_size, int filter_size, int dilation,
-                          int padding, int stride) {
+int ConvOutputSize(int input_size, int filter_size, int dilation, int padding,
+                   int stride) {
   const int dkernel = dilation * (filter_size - 1) + 1;
   int output_size = (input_size + 2 * padding - dkernel) / stride + 1;
   return output_size;
@@ -33,14 +33,13 @@ int ConvOutputSize(int input_size, int filter_size, int dilation,
 
 template <typename Dtype, typename T>
 void ConvOp<Dtype, T>::InferShape() const {
-
   std::cout << " begin get dims: " << std::endl;
 
   auto in_dims = param_.Input()->dims();
 
   std::cout << " end get in dims: " << std::endl;
 
-//  std::cout << " in_dims: " << in_dims << std::endl;
+  //  std::cout << " in_dims: " << in_dims << std::endl;
 
   std::cout << " begin get Filter " << std::endl;
 
@@ -62,9 +61,9 @@ void ConvOp<Dtype, T>::InferShape() const {
 
   std::vector<int64_t> output_shape({in_dims[0], filter_dims[0]});
   for (size_t i = 0; i < strides.size(); ++i) {
-      output_shape.push_back(ConvOutputSize(in_dims[i + 2], filter_dims[i + 2],
-                                            dilations[i], paddings[i],
-                                            strides[i]));
+    output_shape.push_back(ConvOutputSize(in_dims[i + 2], filter_dims[i + 2],
+                                          dilations[i], paddings[i],
+                                          strides[i]));
   }
 
   framework::DDim ddim = framework::make_ddim(output_shape);
@@ -73,5 +72,5 @@ void ConvOp<Dtype, T>::InferShape() const {
 
 template class ConvOp<ARM, float>;
 
-} // operators
-} // paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile

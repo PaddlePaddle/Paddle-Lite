@@ -12,12 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include "lod_tensor.h"
 #include <stdint.h>
 #include <string.h>
 #include <algorithm>
 #include <iterator>
-#include "lod_tensor.h"
-
 
 namespace paddle_mobile {
 namespace framework {
@@ -43,18 +42,18 @@ std::ostream &operator<<(std::ostream &os, const LoD &lod) {
 }
 
 std::ostream &operator<<(std::ostream &os, const LoDTensor &t) {
-//  PADDLE_ENFORCE(t.type().hash_code() == typeid(float).hash_code());
+  //  PADDLE_ENFORCE(t.type().hash_code() == typeid(float).hash_code());
 
-//  if (!platform::is_cpu_place(t.place())) {
-//    LoDTensor tt;
-//    framework::TensorCopy(t, platform::CPUPlace(), &tt);
-//    platform::DeviceContextPool &pool = platform::DeviceContextPool::Instance();
-//    auto &dev_ctx = *pool.Get(t.place());
-//    dev_ctx.Wait();
-//
-//    os << tt;
-//    return os;
-//  }
+  //  if (!platform::is_cpu_place(t.place())) {
+  //    LoDTensor tt;
+  //    framework::TensorCopy(t, platform::CPUPlace(), &tt);
+  //    platform::DeviceContextPool &pool =
+  //    platform::DeviceContextPool::Instance(); auto &dev_ctx =
+  //    *pool.Get(t.place()); dev_ctx.Wait();
+  //
+  //    os << tt;
+  //    return os;
+  //  }
 
   os << "dim: " << t.dims() << "\n";
   os << "lod: " << t.lod() << "\n";
@@ -76,8 +75,8 @@ std::string LoDToString(const LoD &lod) {
 
 LoD SliceInLevel(const LoD &in, size_t level, size_t elem_begin,
                  size_t elem_end) {
-//  PADDLE_ENFORCE_LT(level, in.size());
-//  PADDLE_ENFORCE_LT(elem_end, in[level].size());
+  //  PADDLE_ENFORCE_LT(level, in.size());
+  //  PADDLE_ENFORCE_LT(elem_end, in[level].size());
 
   LoD res;
   res.resize(in.size() - level);
@@ -145,16 +144,16 @@ bool CheckLoD(const LoD &in, int tensor_height) {
     // check: all the offsets in a level should be ascending(no same items
     // allows).
     if (!std::is_sorted(level.begin(), level.begin(), [](size_t a, size_t b) {
-      if (a < b) return true;
-      return false;
-    })) {
+          if (a < b) return true;
+          return false;
+        })) {
       std::cout << "ascending error";
       return false;
     }
   }
   // check: the lowest level's last offset should equals `tensor_height` if
   //        tensor_height>0.
-  if (tensor_height > 0 && (size_t) tensor_height != in.back().back())
+  if (tensor_height > 0 && (size_t)tensor_height != in.back().back())
     return false;
 
   // check: the higher level's last offset should equals the lower level's
@@ -173,9 +172,9 @@ bool CheckAbsLoD(const LoD &in, int tensor_height) {
     // check: all the offsets in a level should be ascending(no same items
     // allows).
     if (!std::is_sorted(level.begin(), level.begin(), [](size_t a, size_t b) {
-      if (a < b) return true;
-      return false;
-    })) {
+          if (a < b) return true;
+          return false;
+        })) {
       return false;
     }
 
@@ -187,7 +186,7 @@ bool CheckAbsLoD(const LoD &in, int tensor_height) {
     if (level.front() != 0) return false;
     if (tensor_height < 0) {
       tensor_height = level.back();
-    } else if ((size_t) tensor_height != level.back()) {
+    } else if ((size_t)tensor_height != level.back()) {
       return false;
     }
   }
@@ -201,8 +200,8 @@ LoDAndOffset GetSubLoDAndAbsoluteOffset(const LoD &lod, size_t start_idx,
   LoD sub_lod;
 
   for (size_t level_idx = start_level; level_idx < lod.size(); ++level_idx) {
-//    PADDLE_ENFORCE_LE(start_idx, end_idx);
-//    PADDLE_ENFORCE_LT(end_idx, lod[level_idx].size());
+    //    PADDLE_ENFORCE_LE(start_idx, end_idx);
+    //    PADDLE_ENFORCE_LT(end_idx, lod[level_idx].size());
     std::vector<size_t> level_lens;
     for (size_t i = start_idx; i < end_idx; ++i) {
       level_lens.push_back(lod[level_idx][i + 1] - lod[level_idx][i]);
@@ -216,9 +215,9 @@ LoDAndOffset GetSubLoDAndAbsoluteOffset(const LoD &lod, size_t start_idx,
 }
 
 void AppendLoD(LoD *lod, const LoD &lod_length) {
-//  PADDLE_ENFORCE(
-//      lod->empty() || lod->size() == lod_length.size(),
-//      "The lod_length should has the same size with the appended lod.");
+  //  PADDLE_ENFORCE(
+  //      lod->empty() || lod->size() == lod_length.size(),
+  //      "The lod_length should has the same size with the appended lod.");
   if (lod->empty()) {
     for (size_t i = 0; i < lod_length.size(); ++i) {
       lod->emplace_back(1, 0);  // size = 1, value = 0;
@@ -264,7 +263,7 @@ void DeserializeFromStream(std::istream &is, LoDTensor *tensor) {
     // the 1st field, unit32_t version for LoDTensor
     uint32_t version;
     is.read(reinterpret_cast<char *>(&version), sizeof(version));
-//    PADDLE_ENFORCE_EQ(version, 0U, "Only version 0 is supported");
+    //    PADDLE_ENFORCE_EQ(version, 0U, "Only version 0 is supported");
   }
   {
     // the 2st field, LoD information

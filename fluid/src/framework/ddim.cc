@@ -62,7 +62,7 @@ void make_ddim(DDim& ddim, const int64_t* dims, int n) {
       ddim = make_dim<9>(dims);
       break;
     default:
-    std::cout<<"Dynamic dimensions must have between [1, 9] dimensions.";
+      std::cout << "Dynamic dimensions must have between [1, 9] dimensions.";
   }
 }
 
@@ -128,20 +128,20 @@ int64_t DDim::operator[](int idx) const {
 int DDim::size() const { return arity(*this); }
 
 bool DDim::operator==(DDim d) const {
-//  if (var.which() != d.getVar().which()) {
-//    return false;
-//  } else {
-    std::vector<int64_t> v1 = vectorize(*this);
-    std::vector<int64_t> v2 = vectorize(d);
+  //  if (var.which() != d.getVar().which()) {
+  //    return false;
+  //  } else {
+  std::vector<int64_t> v1 = vectorize(*this);
+  std::vector<int64_t> v2 = vectorize(d);
 
-    for (unsigned int i = 0; i < v1.size(); i++) {
-      if (v1[i] != v2[i]) {
-        return false;
-      }
+  for (unsigned int i = 0; i < v1.size(); i++) {
+    if (v1[i] != v2[i]) {
+      return false;
     }
+  }
 
-    return true;
-//  }
+  return true;
+  //  }
 }
 
 bool DDim::operator!=(DDim d) const { return !(*this == d); }
@@ -181,7 +181,7 @@ int64_t get(const DDim& ddim, int idx) { return ddim[idx]; }
 void set(DDim& ddim, int idx, int value) { ddim[idx] = value; }
 
 /// @cond HIDDEN
-struct VectorizeVisitor : Vistor<void>{
+struct VectorizeVisitor : Vistor<void> {
   std::vector<int64_t>& vector;
 
   explicit VectorizeVisitor(std::vector<int64_t>& v) : vector(v) {}
@@ -211,7 +211,7 @@ std::vector<int> vectorize2int(const DDim& ddim) {
   return result;
 }
 
-struct ProductVisitor: Vistor<int64_t>{
+struct ProductVisitor : Vistor<int64_t> {
   template <int D>
   int64_t operator()(const Dim<D>& dim) {
     return product(dim);
@@ -223,17 +223,18 @@ int64_t product(const DDim& ddim) {
   return DDim::ApplyVistor(visitor, ddim);
 }
 
-struct SliceVectorizeVisitor: Vistor<void>{
+struct SliceVectorizeVisitor : Vistor<void> {
   std::vector<int64_t>& vector;
   int begin;
   int end;
 
   SliceVectorizeVisitor(std::vector<int64_t>& v, int b, int e)
       : vector(v), begin(b), end(e) {
-//    PADDLE_ENFORCE(begin < end,
-//                   "Begin index must be less than end index in ddim slice.");
-//    PADDLE_ENFORCE(begin >= 0,
-//                   "Begin index can't be less than zero in ddim slice.");
+    //    PADDLE_ENFORCE(begin < end,
+    //                   "Begin index must be less than end index in ddim
+    //                   slice.");
+    //    PADDLE_ENFORCE(begin >= 0,
+    //                   "Begin index can't be less than zero in ddim slice.");
   }
 
   template <int S>
@@ -250,7 +251,7 @@ struct SliceVectorizeVisitor: Vistor<void>{
   }
 
   void operator()(const Dim<0>& dim) {
-//    PADDLE_ENFORCE(end == 0, "End index in ddim slice is out of bound.");
+    //    PADDLE_ENFORCE(end == 0, "End index in ddim slice is out of bound.");
   }
 };
 
@@ -258,15 +259,15 @@ DDim slice_ddim(const DDim& ddim, int begin, int end) {
   std::vector<int64_t> vec;
   vec.reserve(end - begin);
   SliceVectorizeVisitor visitor(vec, begin, end);
-//  boost::apply_visitor(visitor, dim);
+  //  boost::apply_visitor(visitor, dim);
   DDim::ApplyVistor(visitor, ddim);
-//  visitor(ddim.var.Get<Dim<4>>());
+  //  visitor(ddim.var.Get<Dim<4>>());
   return make_ddim(vec);
 }
 
 /// \cond HIDDEN
 
-struct ArityVisitor : Vistor<int>{
+struct ArityVisitor : Vistor<int> {
   template <int D>
   int operator()(Dim<D>) const {
     return D;
@@ -278,27 +279,22 @@ struct ArityVisitor : Vistor<int>{
 int arity(const DDim& d) {
   ArityVisitor arityVisitor = ArityVisitor();
   return DDim::ApplyVistor(arityVisitor, d);
-//  return arityVisitor(d.var.Get<Dim<4>>());
-//  return boost::apply_visitor(ArityVisitor(), d); }
-  }
+  //  return arityVisitor(d.var.Get<Dim<4>>());
+  //  return boost::apply_visitor(ArityVisitor(), d); }
+}
 /// \cond HIDDEN
-
-
 
 /// \endcond
 
-
-struct OSVistor: Vistor<std::ostream&>{
-
-  OSVistor(std::ostream &os):os_(os){
-  }
+struct OSVistor : Vistor<std::ostream&> {
+  OSVistor(std::ostream& os) : os_(os) {}
 
   template <int D>
   std::ostream& operator()(Dim<D> dim) const {
     return os_ << dim;
   }
 
-private:
+ private:
   std::ostream& os_;
 };
 

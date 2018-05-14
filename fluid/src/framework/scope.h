@@ -18,18 +18,17 @@ SOFTWARE.
 ==============================================================================*/
 #pragma once
 
-#include <unordered_map> //std::unordered_map
-#include <list>  //std::list
-#include <mutex> //std::mutex
+#include <list>           //std::list
+#include <mutex>          //std::mutex
+#include <unordered_map>  //std::unordered_map
 #include "variable.h"
 
-namespace paddle_mobile{
-namespace framework{
-class Scope{
+namespace paddle_mobile {
+namespace framework {
+class Scope {
  public:
-  Scope(){}
-  ~Scope(){}
-
+  Scope() {}
+  ~Scope() {}
 
   Scope& NewScope() const;
 
@@ -77,5 +76,5 @@ class Scope{
 
   mutable std::mutex mutex_;
 };
-}
-}
+}  // namespace framework
+}  // namespace paddle_mobile

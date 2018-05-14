@@ -17,8 +17,8 @@ SOFTWARE.
 ==============================================================================*/
 
 #include <random>
-#include "framework/tensor.h"
 #include "framework/ddim.h"
+#include "framework/tensor.h"
 
 template <typename T>
 void SetupTensor(paddle_mobile::framework::Tensor* input,
@@ -29,6 +29,6 @@ void SetupTensor(paddle_mobile::framework::Tensor* input,
 
   T* input_ptr = input->mutable_data<T>(dims);
   for (int i = 0; i < input->numel(); ++i) {
-      input_ptr[i] = static_cast<T>(uniform_dist(rng) * (upper - lower) + lower);
+    input_ptr[i] = static_cast<T>(uniform_dist(rng) * (upper - lower) + lower);
   }
 }

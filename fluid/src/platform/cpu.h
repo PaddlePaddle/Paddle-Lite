@@ -18,27 +18,25 @@ SOFTWARE.
 ==============================================================================*/
 #pragma once
 
-
 #include <stdio.h>
+#include <unistd.h>
 #include <iostream>
 #include <vector>
-#include <unistd.h>
-
 
 #ifdef PLATFORM_ANDROID
+#include <pthread.h>
 #include <sys/syscall.h>
 #include <unistd.h>
-#include <pthread.h>
 
 //#define gettid() syscall(SYS_gettid)
 
-#define __NCPUBITS__  (8 * sizeof (unsigned long))
+#define __NCPUBITS__ (8 * sizeof(unsigned long))
 
-#define __CPU_SET(cpu, cpusetp) \
-  ((cpusetp)->mask_bits[(cpu) / __NCPUBITS__] |= (1UL << ((cpu) % __NCPUBITS__)))
+#define __CPU_SET(cpu, cpusetp)                  \
+  ((cpusetp)->mask_bits[(cpu) / __NCPUBITS__] |= \
+   (1UL << ((cpu) % __NCPUBITS__)))
 
-#define __CPU_ZERO(cpusetp) \
-  memset((cpusetp), 0, sizeof(cpu_set_t))
+#define __CPU_ZERO(cpusetp) memset((cpusetp), 0, sizeof(cpu_set_t))
 #endif
 
 #if __APPLE__
@@ -46,13 +44,12 @@ SOFTWARE.
 #include "TargetConditionals.h"
 
 #if TARGET_OS_IPHONE
-#include <sys/types.h>
-#include <sys/sysctl.h>
 #include <mach/machine.h>
+#include <sys/sysctl.h>
+#include <sys/types.h>
 #define __IOS__
 #endif
 #endif
-
 
 namespace padle_mobile {
 namespace platform {
@@ -62,13 +59,13 @@ int getMemInfo();
 
 int getMaxFreq(int cpuId);
 
-int sortBigLittleByFreq(int cpuCount, std::vector<int> &cpuIds, \
-        std::vector<int> &cpuFreq, std::vector<int> &clusterIds);
+int sortBigLittleByFreq(int cpuCount, std::vector<int> &cpuIds,
+                        std::vector<int> &cpuFreq,
+                        std::vector<int> &clusterIds);
 
 int setSchedAffinity(const std::vector<int> &cpuIds);
 
 int setCpuAffinity(const std::vector<int> &cpuIds);
 
-
-}
-}
+}  // namespace platform
+}  // namespace padle_mobile

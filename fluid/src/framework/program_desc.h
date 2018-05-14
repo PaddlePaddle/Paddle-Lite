@@ -24,21 +24,19 @@ SOFTWARE.
 #include "common/types.h"
 #include "paddle_mobile_object.h"
 
-namespace paddle_mobile{
-namespace framework{
+namespace paddle_mobile {
+namespace framework {
 
-class ProgramDesc: PaddleMobileObject{
-public:
+class ProgramDesc : PaddleMobileObject {
+ public:
   ProgramDesc(const proto::ProgramDesc &desc);
   std::shared_ptr<BlockDesc> Block(size_t idx);
-  const std::vector<std::shared_ptr<BlockDesc> > &Blocks(){
-    return blocks_;
-  };
+  const std::vector<std::shared_ptr<BlockDesc>> &Blocks() { return blocks_; };
 
-private:
-  std::vector<std::shared_ptr<BlockDesc> > blocks_;
+ private:
+  std::vector<std::shared_ptr<BlockDesc>> blocks_;
   proto::ProgramDesc desc_;
 };
 
-}
-}
+}  // namespace framework
+}  // namespace paddle_mobile

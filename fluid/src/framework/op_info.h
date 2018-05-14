@@ -18,8 +18,8 @@ SOFTWARE.
 
 #pragma once
 
-#include "framework.pb.h"
 #include "common/type_define.h"
+#include "framework.pb.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -28,8 +28,8 @@ template <typename Dtype>
 struct OpInfo {
   OpCreator<Dtype> creator_;
   const OpCreator<Dtype>& Creator() const {
-//    PADDLE_ENFORCE_NOT_NULL(creator_,
-//                            "Operator Creator has not been registered");
+    //    PADDLE_ENFORCE_NOT_NULL(creator_,
+    //                            "Operator Creator has not been registered");
     return creator_;
   }
 };
@@ -42,7 +42,7 @@ static OpInfoMap<Dtype>* g_op_info_map = nullptr;
 
 template <typename Dtype>
 class OpInfoMap {
-public:
+ public:
   static OpInfoMap& Instance() {
     if (g_op_info_map<Dtype> == nullptr) {
       g_op_info_map<Dtype> = new OpInfoMap();
@@ -55,36 +55,41 @@ public:
   }
 
   void Insert(const std::string& type, const OpInfo<Dtype>& info) {
-//    PADDLE_ENFORCE(!Has(type), "Operator %s has been registered", type);
+    //    PADDLE_ENFORCE(!Has(type), "Operator %s has been registered", type);
     map_.insert({type, info});
   }
 
   const OpInfo<Dtype>& Get(const std::string& type) const {
     auto op_info_ptr = GetNullable(type);
-//    PADDLE_ENFORCE_NOT_NULL(op_info_ptr, "Operator %s has not been registered",
-//                            type);
+    //    PADDLE_ENFORCE_NOT_NULL(op_info_ptr, "Operator %s has not been
+    //    registered",
+    //                            type);
     return *op_info_ptr;
   }
 
   const OpInfo<Dtype>* GetNullable(const std::string& type) const {
     auto it = map_.find(type);
     if (it == map_.end()) {
-        return nullptr;
+      return nullptr;
     } else {
-        return &it->second;
+      return &it->second;
     }
   }
 
-  const std::unordered_map<std::string, OpInfo<Dtype>>& map() const { return map_; }
+  const std::unordered_map<std::string, OpInfo<Dtype>>& map() const {
+    return map_;
+  }
 
-  std::unordered_map<std::string, OpInfo<Dtype>>* mutable_map() { return &map_; }
+  std::unordered_map<std::string, OpInfo<Dtype>>* mutable_map() {
+    return &map_;
+  }
 
-private:
+ private:
   OpInfoMap() = default;
   std::unordered_map<std::string, OpInfo<Dtype>> map_;
 
-//  DISABLE_COPY_AND_ASSIGN(OpInfoMap);
+  //  DISABLE_COPY_AND_ASSIGN(OpInfoMap);
 };
 
-} // framework
-} // paddle_mobile
+}  // namespace framework
+}  // namespace paddle_mobile

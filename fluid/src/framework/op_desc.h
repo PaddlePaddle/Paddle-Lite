@@ -18,41 +18,34 @@ SOFTWARE.
 
 #pragma once
 
-#include "framework.pb.h"
 #include "common/type_define.h"
+#include "framework.pb.h"
 #include "paddle_mobile_object.h"
 
-namespace paddle_mobile{
-namespace framework{
+namespace paddle_mobile {
+namespace framework {
 
-class OpDesc: PaddleMobileObject{
-public:
+class OpDesc : PaddleMobileObject {
+ public:
   OpDesc(const proto::OpDesc &desc);
   const std::vector<std::string> &Input(const std::string &name) const;
   const std::vector<std::string> &Output(const std::string &name) const;
   Attribute GetAttr(const std::string &name) const;
 
-  const VariableNameMap &GetInputs(){
-    return inputs_;
-  }
+  const VariableNameMap &GetInputs() { return inputs_; }
 
-  const VariableNameMap &GetOutputs(){
-    return outputs_;
-  }
+  const VariableNameMap &GetOutputs() { return outputs_; }
 
   const AttributeMap &GetAttrMap() const;
 
-  const std::string& Type(){
-    return desc_.type();
-  };
+  const std::string &Type() { return desc_.type(); };
 
-private:
+ private:
   proto::OpDesc desc_;
   VariableNameMap inputs_;
   VariableNameMap outputs_;
   AttributeMap attrs_;
 };
 
-}
-}
-
+}  // namespace framework
+}  // namespace paddle_mobile

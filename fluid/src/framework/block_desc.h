@@ -18,25 +18,21 @@ SOFTWARE.
 
 #pragma once
 
-#include "op_desc.h"
-#include "var_desc.h"
 #include "framework.pb.h"
+#include "op_desc.h"
 #include "paddle_mobile_object.h"
+#include "var_desc.h"
 
 namespace paddle_mobile {
 namespace framework {
 
-class BlockDesc: PaddleMobileObject{
-public:
+class BlockDesc : PaddleMobileObject {
+ public:
   BlockDesc(const proto::BlockDesc &desc);
 
-  const int &ID() const{
-    return desc_.idx();
-  }
+  const int &ID() const { return desc_.idx(); }
 
-  const int &Parent() const{
-    return desc_.parent_idx();
-  }
+  const int &Parent() const { return desc_.parent_idx(); }
 
   bool operator==(const paddle_mobile::framework::BlockDesc &in_block) const {
     return this->ID() == in_block.ID() && this->Parent() == in_block.Parent();
@@ -49,27 +45,26 @@ public:
   std::vector<std::shared_ptr<VarDesc>> Vars() const;
   std::vector<std::shared_ptr<OpDesc>> Ops() const;
 
-private:
+ private:
   proto::BlockDesc desc_;
   std::vector<std::shared_ptr<OpDesc>> ops_;
   std::unordered_map<std::string, std::shared_ptr<VarDesc>> vars_;
 };
 
-}
-}
+}  // namespace framework
+}  // namespace paddle_mobile
 
 namespace std {
 
-template<> struct hash<paddle_mobile::framework::BlockDesc>
-{
+template <>
+struct hash<paddle_mobile::framework::BlockDesc> {
   typedef paddle_mobile::framework::BlockDesc argument_type;
   typedef std::size_t result_type;
-  result_type operator()(argument_type const& s) const noexcept
-  {
-    result_type const h1 ( std::hash<int>{}(s.ID()) );
-    result_type const h2 ( std::hash<int>{}(s.ID()) );
+  result_type operator()(argument_type const &s) const noexcept {
+    result_type const h1(std::hash<int>{}(s.ID()));
+    result_type const h2(std::hash<int>{}(s.ID()));
     return h1 ^ (h2 << 1);
   }
 };
 
-}
+}  // namespace std

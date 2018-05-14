@@ -21,8 +21,9 @@ namespace paddle_mobile {
 namespace framework {
 
 void TensorCopy(const Tensor& src, Tensor* dst) {
-//  VLOG(3) << "TensorCopy " << src.dims() << " from " << src.place() << " to "
-//          << dst_place;
+  //  VLOG(3) << "TensorCopy " << src.dims() << " from " << src.place() << " to
+  //  "
+  //          << dst_place;
   src.check_memory_size();
 
   dst->Resize(src.dims());
@@ -33,24 +34,20 @@ void TensorCopy(const Tensor& src, Tensor* dst) {
 
   auto size = src.numel() * SizeOfType(src.type());
 
-    memory::Copy(dst_ptr, src_ptr, size);
-
+  memory::Copy(dst_ptr, src_ptr, size);
 }
 
-void TensorCopySync(const Tensor& src,
-                    Tensor* dst) {
-//  VLOG(3) << "TensorCopySync " << src.dims() << " from " << src.place()
-//          << " to " << dst_place;
+void TensorCopySync(const Tensor& src, Tensor* dst) {
+  //  VLOG(3) << "TensorCopySync " << src.dims() << " from " << src.place()
+  //          << " to " << dst_place;
   src.check_memory_size();
   dst->Resize(src.dims());
   dst->set_layout(src.layout());
   auto src_ptr = src.data<void>();
   auto dst_ptr = dst->mutable_data(src.type());
   auto size = src.numel() * SizeOfType(src.type());
-    memory::Copy(dst_ptr, src_ptr, size);
-  }
-
-
+  memory::Copy(dst_ptr, src_ptr, size);
+}
 
 template <typename Predicate>
 struct AnyDTypeVisitor {
@@ -58,33 +55,32 @@ struct AnyDTypeVisitor {
   const Tensor& tensor_;
   Tensor* out_;
 
-  AnyDTypeVisitor(Predicate predicate, const Tensor& tensor,
-                  Tensor* out)
-      : predicate_(predicate), tensor_(tensor),  out_(out) {}
+  AnyDTypeVisitor(Predicate predicate, const Tensor& tensor, Tensor* out)
+      : predicate_(predicate), tensor_(tensor), out_(out) {}
 
   template <typename T>
   void operator()() const {
-//    auto t = EigenVector<T>::Flatten(tensor_);
-//    auto o = EigenScalar<bool>::From(*out_);
+    //    auto t = EigenVector<T>::Flatten(tensor_);
+    //    auto o = EigenScalar<bool>::From(*out_);
     // return any of predicate_(t) is true.
-//    o.device(*ctx_.eigen_device()) = predicate_(t).any();
+    //    o.device(*ctx_.eigen_device()) = predicate_(t).any();
   }
 };
 
 template <typename Predicate>
-inline void AnyImpl(Predicate predicate, const Tensor& tensor, framework::Tensor* out) {
-  VisitDataType(ToDataType(tensor.type()), AnyDTypeVisitor<Predicate>(
-                                               predicate, tensor, out));
+inline void AnyImpl(Predicate predicate, const Tensor& tensor,
+                    framework::Tensor* out) {
+  VisitDataType(ToDataType(tensor.type()),
+                AnyDTypeVisitor<Predicate>(predicate, tensor, out));
 }
 
 template <typename Predicate>
-struct AnyVisitor{
+struct AnyVisitor {
   const framework::Tensor& tensor_;
   Predicate predicate_;
 
   AnyVisitor(const framework::Tensor& tensor, Predicate predicate)
       : tensor_(tensor), predicate_(std::move(predicate)) {}
-
 
   bool operator()(void) const {
     framework::Tensor out;
@@ -102,7 +98,7 @@ struct AnyVisitor{
 template <typename Predicate>
 inline bool Any(const framework::Tensor& tensor, Predicate predicate) {
   AnyVisitor<Predicate> visitor(tensor, predicate);
-//  return platform::VisitPlace(visitor);
+  //  return platform::VisitPlace(visitor);
   return visitor();
 }
 
@@ -156,12 +152,11 @@ void TensorToStream(std::ostream& os, const Tensor& tensor) {
   {  // the 3rd field, tensor data
     uint64_t size = tensor.memory_size();
     auto* data_ptr = tensor.data<void>();
-//    PADDLE_ENFORCE(size < std::numeric_limits<std::streamsize>::max(),
-//                   "Index overflow when writing tensor");
+    //    PADDLE_ENFORCE(size < std::numeric_limits<std::streamsize>::max(),
+    //                   "Index overflow when writing tensor");
 
-      os.write(static_cast<const char*>(data_ptr),
-               static_cast<std::streamsize>(size));
-
+    os.write(static_cast<const char*>(data_ptr),
+             static_cast<std::streamsize>(size));
   }
 }
 
@@ -181,7 +176,7 @@ struct DeserializedDataFunctor {
 void TensorFromStream(std::istream& is, framework::Tensor* tensor) {
   uint32_t version;
   is.read(reinterpret_cast<char*>(&version), sizeof(version));
-//  PADDLE_ENFORCE_EQ(version, 0U, "Only version 0 is supported");
+  //  PADDLE_ENFORCE_EQ(version, 0U, "Only version 0 is supported");
   proto::VarType::TensorDesc desc;
   {  // int32_t size
      // proto buffer
@@ -189,8 +184,8 @@ void TensorFromStream(std::istream& is, framework::Tensor* tensor) {
     is.read(reinterpret_cast<char*>(&size), sizeof(size));
     std::unique_ptr<char[]> buf(new char[size]);
     is.read(reinterpret_cast<char*>(buf.get()), size);
-//    PADDLE_ENFORCE(desc.ParseFromArray(buf.get(), size),
-//                   "Cannot parse tensor desc");
+    //    PADDLE_ENFORCE(desc.ParseFromArray(buf.get(), size),
+    //                   "Cannot parse tensor desc");
   }
   {  // read tensor
     std::vector<int64_t> dims;
@@ -199,11 +194,9 @@ void TensorFromStream(std::istream& is, framework::Tensor* tensor) {
     tensor->Resize(framework::make_ddim(dims));
     void* buf;
 
-      framework::VisitDataType(
-          desc.data_type(),
-          DeserializedDataFunctor(&buf, tensor));
-      is.read(static_cast<char*>(buf), tensor->memory_size());
-
+    framework::VisitDataType(desc.data_type(),
+                             DeserializedDataFunctor(&buf, tensor));
+    is.read(static_cast<char*>(buf), tensor->memory_size());
   }
 }
 

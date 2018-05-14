@@ -23,9 +23,15 @@ namespace operators {
 
 std::ostream& operator<<(std::ostream& os, const ConvParam& conv_param) {
   os << "parameter of conv: " << std::endl;
-  os << "  stride: " << " (" << conv_param.Strides()[0] << conv_param.Strides()[1] << ") " << std::endl;
-  os << "  paddings: " << " (" << conv_param.Paddings()[0] << conv_param.Paddings()[1] << ") " << std::endl;
-  os << "  dilations: " << " (" << conv_param.Dilations()[0] << conv_param.Dilations()[1] << ") " << std::endl;
+  os << "  stride: "
+     << " (" << conv_param.Strides()[0] << conv_param.Strides()[1] << ") "
+     << std::endl;
+  os << "  paddings: "
+     << " (" << conv_param.Paddings()[0] << conv_param.Paddings()[1] << ") "
+     << std::endl;
+  os << "  dilations: "
+     << " (" << conv_param.Dilations()[0] << conv_param.Dilations()[1] << ") "
+     << std::endl;
   os << "  groups: " << conv_param.Groups() << std::endl;
   os << "  input  dims: " << conv_param.Input()->dims() << std::endl;
   os << "  filter dims: " << conv_param.Filter()->dims() << std::endl;
@@ -33,5 +39,5 @@ std::ostream& operator<<(std::ostream& os, const ConvParam& conv_param) {
   return os;
 }
 
-}
-}
+}  // namespace operators
+}  // namespace paddle_mobile

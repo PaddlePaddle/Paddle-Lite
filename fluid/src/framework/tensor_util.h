@@ -14,23 +14,19 @@ limitations under the License. */
 
 #pragma once
 #include <vector>
-#include "tensor.h"
-#include "memory/t_malloc.h"
 #include "framework.pb.h"
-#include "tensor.h"
+#include "memory/t_malloc.h"
 #include "platform/data_type.h"
-
+#include "tensor.h"
 
 namespace paddle_mobile {
 namespace framework {
 
 void TensorCopy(const Tensor& src, Tensor* dst);
-void TensorCopySync(const Tensor& src,
-                    Tensor* dst);
+void TensorCopySync(const Tensor& src, Tensor* dst);
 
 template <typename T>
 void TensorFromVector(const std::vector<T>& src, Tensor* dst);
-
 
 template <typename T>
 void TesnorToVector(const Tensor& src, std::vector<T>* dst);
@@ -52,23 +48,19 @@ void TensorFromVector(const std::vector<T>& src, Tensor* dst) {
   auto dst_ptr = static_cast<void*>(dst->mutable_data<T>());
   auto size = src.size() * sizeof(T);
 
-    memory::Copy(dst_ptr,
-                 src_ptr, size);
-
+  memory::Copy(dst_ptr, src_ptr, size);
 }
 
 template <typename T>
-void TensorToVector(const Tensor& src,
-                    std::vector<T>* dst) {
+void TensorToVector(const Tensor& src, std::vector<T>* dst) {
   auto src_ptr = static_cast<const void*>(src.data<T>());
   auto size = src.numel() * sizeof(T);
 
   dst->resize(src.numel());
   auto dst_ptr = static_cast<void*>(dst->data());
 
-    memory::Copy( dst_ptr, src_ptr, size);
-
+  memory::Copy(dst_ptr, src_ptr, size);
 }
 
 }  // namespace framework
-}  // namespace paddle
+}  // namespace paddle_mobile
