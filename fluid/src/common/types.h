@@ -19,13 +19,18 @@ SOFTWARE.
 #pragma once;
 
 namespace paddle_mobile {
-enum class Precision : int { FP32 = 0 };
+enum class Precision : int {
+  FP32 = 0
+};
 
 //! device type
-enum DeviceTypeEnum { kINVALID = -1, kCPU = 0, kFPGA = 1, kGPU_MALI = 2 };
+enum DeviceTypeEnum {
+  kINVALID = -1, kCPU = 0, kFPGA = 1, kGPU_MALI = 2
+};
 
-template <DeviceTypeEnum T>
-struct DeviceType {};
+template<DeviceTypeEnum T>
+struct DeviceType {
+};
 
 typedef DeviceType<kCPU> CPU;
 typedef DeviceType<kFPGA> FPGA;
@@ -50,7 +55,7 @@ enum DataType {
   PM_TENSOR = 13
 };
 //!
-enum PMStatus{
+enum PMStatus {
   PMSuccess = 0xFF,       /*!< No errors */
   PMNotInitialized = 0x01, /*!< Data not initialized. */
   PMInvalidValue = 0x02, /*!< Incorrect variable value. */
@@ -60,5 +65,5 @@ enum PMStatus{
   PMOutOfMem = 0x06, /*!< OOM error*/
   PMUnImplError = 0x07,    /*!< Unimplement error. */
   PMWrongDevice = 0x08  /*!< un-correct device. */
-} ;
+};
 }
