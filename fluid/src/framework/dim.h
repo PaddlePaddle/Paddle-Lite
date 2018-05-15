@@ -215,7 +215,7 @@ HOSTDEVICE int64_t& get(Dim<l>& d) {
 // Dynamic access to constant Dim
 template <int l>
 HOSTDEVICE int64_t Dim<l>::operator[](int i) const {
-  std::cout << "l: " << l << std::endl;
+//  std::cout << "l: " << l << std::endl;
   return indexer(*this, i);
 }
 

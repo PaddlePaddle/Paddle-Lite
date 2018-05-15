@@ -89,7 +89,7 @@ struct Variant {
     if (type_id == typeid(T).hash_code()) {
       return *const_cast<T *>(reinterpret_cast<const T *>(&data));
     } else {
-      std::cout << " bad cast in variant " << std::endl;
+//      std::cout << " bad cast in variant " << std::endl;
       throw std::bad_cast();
     }
   }
