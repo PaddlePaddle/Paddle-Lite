@@ -19,18 +19,13 @@ SOFTWARE.
 #pragma once;
 
 namespace paddle_mobile {
-enum class Precision : int {
-  FP32 = 0
-};
+enum class Precision : int { FP32 = 0 };
 
 //! device type
-enum DeviceTypeEnum {
-  kINVALID = -1, kCPU = 0, kFPGA = 1, kGPU_MALI = 2
-};
+enum DeviceTypeEnum { kINVALID = -1, kCPU = 0, kFPGA = 1, kGPU_MALI = 2 };
 
-template<DeviceTypeEnum T>
-struct DeviceType {
-};
+template <DeviceTypeEnum T>
+struct DeviceType {};
 
 typedef DeviceType<kCPU> CPU;
 typedef DeviceType<kFPGA> FPGA;
@@ -56,14 +51,14 @@ enum DataType {
 };
 //!
 enum PMStatus {
-  PMSuccess = 0xFF,       /*!< No errors */
+  PMSuccess = 0xFF,        /*!< No errors */
   PMNotInitialized = 0x01, /*!< Data not initialized. */
-  PMInvalidValue = 0x02, /*!< Incorrect variable value. */
+  PMInvalidValue = 0x02,   /*!< Incorrect variable value. */
   PMMemAllocFailed = 0x03, /*!< Memory allocation error. */
-  PMUnKownError = 0x04,  /*!< Unknown error. */
+  PMUnKownError = 0x04,    /*!< Unknown error. */
   PMOutOfAuthority = 0x05, /*!< Try to modified data not your own*/
-  PMOutOfMem = 0x06, /*!< OOM error*/
+  PMOutOfMem = 0x06,       /*!< OOM error*/
   PMUnImplError = 0x07,    /*!< Unimplement error. */
-  PMWrongDevice = 0x08  /*!< un-correct device. */
+  PMWrongDevice = 0x08     /*!< un-correct device. */
 };
 }
