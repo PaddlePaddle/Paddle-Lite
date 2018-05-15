@@ -1,3 +1,5 @@
+exclude: 'third-party'
+
 repos:
 -   repo: https://github.com/Lucas-C/pre-commit-hooks.git
     sha: v1.0.1

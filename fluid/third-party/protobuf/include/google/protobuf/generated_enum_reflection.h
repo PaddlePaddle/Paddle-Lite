@@ -41,12 +41,12 @@
 
 #include <string>
 
-#include <google/protobuf/stubs/template_util.h>
 #include <google/protobuf/generated_enum_util.h>
+#include <google/protobuf/stubs/template_util.h>
 
 namespace google {
 namespace protobuf {
-  class EnumDescriptor;
+class EnumDescriptor;
 }  // namespace protobuf
 
 namespace protobuf {
@@ -63,12 +63,10 @@ namespace internal {
 // enum name of the given type, returning true and filling in value on success,
 // or returning false and leaving value unchanged on failure.
 LIBPROTOBUF_EXPORT bool ParseNamedEnum(const EnumDescriptor* descriptor,
-                    const string& name,
-                    int* value);
+                                       const string& name, int* value);
 
-template<typename EnumType>
-bool ParseNamedEnum(const EnumDescriptor* descriptor,
-                    const string& name,
+template <typename EnumType>
+bool ParseNamedEnum(const EnumDescriptor* descriptor, const string& name,
                     EnumType* value) {
   int tmp;
   if (!ParseNamedEnum(descriptor, name, &tmp)) return false;
@@ -79,7 +77,8 @@ bool ParseNamedEnum(const EnumDescriptor* descriptor,
 // Just a wrapper around printing the name of a value. The main point of this
 // function is not to be inlined, so that you can do this without including
 // descriptor.h.
-LIBPROTOBUF_EXPORT const string& NameOfEnum(const EnumDescriptor* descriptor, int value);
+LIBPROTOBUF_EXPORT const string& NameOfEnum(const EnumDescriptor* descriptor,
+                                            int value);
 
 }  // namespace internal
 }  // namespace protobuf

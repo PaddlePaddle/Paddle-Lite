@@ -157,16 +157,17 @@ class LIBPROTOBUF_EXPORT TimeUtil {
 }  // namespace util
 }  // namespace protobuf
 
-
 namespace protobuf {
 // Overloaded operators for Duration.
 //
 // Assignment operators.
-LIBPROTOBUF_EXPORT Duration& operator+=(Duration& d1, const Duration& d2);  // NOLINT
-LIBPROTOBUF_EXPORT Duration& operator-=(Duration& d1, const Duration& d2);  // NOLINT
-LIBPROTOBUF_EXPORT Duration& operator*=(Duration& d, int64 r);  // NOLINT
+LIBPROTOBUF_EXPORT Duration& operator+=(Duration& d1,
+                                        const Duration& d2);  // NOLINT
+LIBPROTOBUF_EXPORT Duration& operator-=(Duration& d1,
+                                        const Duration& d2);     // NOLINT
+LIBPROTOBUF_EXPORT Duration& operator*=(Duration& d, int64 r);   // NOLINT
 LIBPROTOBUF_EXPORT Duration& operator*=(Duration& d, double r);  // NOLINT
-LIBPROTOBUF_EXPORT Duration& operator/=(Duration& d, int64 r);  // NOLINT
+LIBPROTOBUF_EXPORT Duration& operator/=(Duration& d, int64 r);   // NOLINT
 LIBPROTOBUF_EXPORT Duration& operator/=(Duration& d, double r);  // NOLINT
 // Overload for other integer types.
 template <typename T>
@@ -179,7 +180,8 @@ Duration& operator/=(Duration& d, T r) {  // NOLINT
   int64 x = r;
   return d /= x;
 }
-LIBPROTOBUF_EXPORT Duration& operator%=(Duration& d1, const Duration& d2);  // NOLINT
+LIBPROTOBUF_EXPORT Duration& operator%=(Duration& d1,
+                                        const Duration& d2);  // NOLINT
 // Relational operators.
 inline bool operator<(const Duration& d1, const Duration& d2) {
   if (d1.seconds() == d2.seconds()) {
@@ -218,15 +220,15 @@ inline Duration operator-(const Duration& d1, const Duration& d2) {
   return result -= d2;
 }
 // Multiplicative operators
-template<typename T>
+template <typename T>
 inline Duration operator*(Duration d, T r) {
   return d *= r;
 }
-template<typename T>
+template <typename T>
 inline Duration operator*(T r, Duration d) {
   return d *= r;
 }
-template<typename T>
+template <typename T>
 inline Duration operator/(Duration d, T r) {
   return d /= r;
 }
@@ -245,8 +247,10 @@ inline std::ostream& operator<<(std::ostream& out, const Duration& d) {
 // Overloaded operators for Timestamp
 //
 // Assignement operators.
-LIBPROTOBUF_EXPORT Timestamp& operator+=(Timestamp& t, const Duration& d);  // NOLINT
-LIBPROTOBUF_EXPORT Timestamp& operator-=(Timestamp& t, const Duration& d);  // NOLINT
+LIBPROTOBUF_EXPORT Timestamp& operator+=(Timestamp& t,
+                                         const Duration& d);  // NOLINT
+LIBPROTOBUF_EXPORT Timestamp& operator-=(Timestamp& t,
+                                         const Duration& d);  // NOLINT
 // Relational operators.
 inline bool operator<(const Timestamp& t1, const Timestamp& t2) {
   if (t1.seconds() == t2.seconds()) {
@@ -290,7 +294,6 @@ inline std::ostream& operator<<(std::ostream& out, const Timestamp& t) {
 }
 
 }  // namespace protobuf
-
 
 }  // namespace google
 #endif  // GOOGLE_PROTOBUF_UTIL_TIME_UTIL_H__

@@ -40,13 +40,15 @@
 
 #include <google/protobuf/stubs/common.h>
 #include <string>
-#include <vector>
 #include <utility>
+#include <vector>
 
 namespace google {
 namespace protobuf {
 
-namespace io { class ZeroCopyOutputStream; }
+namespace io {
+class ZeroCopyOutputStream;
+}
 class FileDescriptor;
 
 namespace compiler {
@@ -76,8 +78,7 @@ class LIBPROTOC_EXPORT CodeGenerator {
   //
   // Returns true if successful.  Otherwise, sets *error to a description of
   // the problem (e.g. "invalid parameter") and returns false.
-  virtual bool Generate(const FileDescriptor* file,
-                        const string& parameter,
+  virtual bool Generate(const FileDescriptor* file, const string& parameter,
                         GeneratorContext* generator_context,
                         string* error) const = 0;
 
@@ -113,8 +114,7 @@ class LIBPROTOC_EXPORT CodeGenerator {
 // runs.
 class LIBPROTOC_EXPORT GeneratorContext {
  public:
-  inline GeneratorContext() {
-  }
+  inline GeneratorContext() {}
   virtual ~GeneratorContext();
 
   // Opens the given file, truncating it if it exists, and returns a
@@ -150,7 +150,6 @@ class LIBPROTOC_EXPORT GeneratorContext {
   // this GeneratorContext.
   virtual void GetCompilerVersion(Version* version) const;
 
-
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(GeneratorContext);
 };
@@ -166,7 +165,7 @@ typedef GeneratorContext OutputDirectory;
 // parses to the pairs:
 //   ("foo", "bar"), ("baz", ""), ("qux", "corge")
 LIBPROTOC_EXPORT void ParseGeneratorParameter(
-    const string&, std::vector<std::pair<string, string> >*);
+    const string&, std::vector<std::pair<string, string>>*);
 
 }  // namespace compiler
 }  // namespace protobuf

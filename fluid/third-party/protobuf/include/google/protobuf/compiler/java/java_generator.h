@@ -37,8 +37,8 @@
 #ifndef GOOGLE_PROTOBUF_COMPILER_JAVA_GENERATOR_H__
 #define GOOGLE_PROTOBUF_COMPILER_JAVA_GENERATOR_H__
 
-#include <string>
 #include <google/protobuf/compiler/code_generator.h>
+#include <string>
 
 namespace google {
 namespace protobuf {
@@ -55,10 +55,8 @@ class LIBPROTOC_EXPORT JavaGenerator : public CodeGenerator {
   ~JavaGenerator();
 
   // implements CodeGenerator ----------------------------------------
-  bool Generate(const FileDescriptor* file,
-                const string& parameter,
-                GeneratorContext* context,
-                string* error) const;
+  bool Generate(const FileDescriptor* file, const string& parameter,
+                GeneratorContext* context, string* error) const;
 
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(JavaGenerator);

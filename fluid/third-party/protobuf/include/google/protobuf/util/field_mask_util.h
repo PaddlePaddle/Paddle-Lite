@@ -203,15 +203,12 @@ class LIBPROTOBUF_EXPORT FieldMaskUtil::MergeOptions {
 
 class LIBPROTOBUF_EXPORT FieldMaskUtil::TrimOptions {
  public:
-  TrimOptions()
-      : keep_required_fields_(false) {}
+  TrimOptions() : keep_required_fields_(false) {}
   // When trimming message fields, the default behavior is to trim required
   // fields of the present message if they are not specified in the field mask.
   // If you instead want to keep required fields of the present message even
   // they are not speicifed in the field mask, set this flag to true.
-  void set_keep_required_fields(bool value) {
-    keep_required_fields_ = value;
-  }
+  void set_keep_required_fields(bool value) { keep_required_fields_ = value; }
   bool keep_required_fields() const { return keep_required_fields_; }
 
  private:

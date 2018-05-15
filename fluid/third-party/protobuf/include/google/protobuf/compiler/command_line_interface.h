@@ -40,22 +40,23 @@
 
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/hash.h>
-#include <string>
-#include <vector>
 #include <map>
 #include <set>
+#include <string>
 #include <utility>
+#include <vector>
 
 namespace google {
 namespace protobuf {
 
-class Descriptor;            // descriptor.h
-class DescriptorPool;        // descriptor.h
-class FileDescriptor;        // descriptor.h
-class FileDescriptorSet;     // descriptor.h
-class FileDescriptorProto;   // descriptor.pb.h
-template<typename T> class RepeatedPtrField;  // repeated_field.h
-class SimpleDescriptorDatabase;               // descriptor_database.h
+class Descriptor;           // descriptor.h
+class DescriptorPool;       // descriptor.h
+class FileDescriptor;       // descriptor.h
+class FileDescriptorSet;    // descriptor.h
+class FileDescriptorProto;  // descriptor.pb.h
+template <typename T>
+class RepeatedPtrField;          // repeated_field.h
+class SimpleDescriptorDatabase;  // descriptor_database.h
 
 namespace compiler {
 
@@ -124,8 +125,7 @@ class LIBPROTOC_EXPORT CommandLineInterface {
   //   protoc --foo_out=enable_bar:outdir
   // The text before the colon is passed to CodeGenerator::Generate() as the
   // "parameter".
-  void RegisterGenerator(const string& flag_name,
-                         CodeGenerator* generator,
+  void RegisterGenerator(const string& flag_name, CodeGenerator* generator,
                          const string& help_text);
 
   // Register a code generator for a language.
@@ -138,8 +138,7 @@ class LIBPROTOC_EXPORT CommandLineInterface {
   // This will pass "enable_bar,enable_baz" as the parameter to the generator.
   void RegisterGenerator(const string& flag_name,
                          const string& option_flag_name,
-                         CodeGenerator* generator,
-                         const string& help_text);
+                         CodeGenerator* generator, const string& help_text);
 
   // Enables "plugins".  In this mode, if a command-line flag ends with "_out"
   // but does not match any registered generator, the compiler will attempt to
@@ -195,10 +194,7 @@ class LIBPROTOC_EXPORT CommandLineInterface {
   // Provides some text which will be printed when the --version flag is
   // used.  The version of libprotoc will also be printed on the next line
   // after this text.
-  void SetVersionInfo(const string& text) {
-    version_info_ = text;
-  }
-
+  void SetVersionInfo(const string& text) { version_info_ = text; }
 
  private:
   // -----------------------------------------------------------------
@@ -214,8 +210,7 @@ class LIBPROTOC_EXPORT CommandLineInterface {
   // Remaps each file in input_files_ so that it is relative to one of the
   // directories in proto_path_.  Returns false if an error occurred.  This
   // is only used if inputs_are_proto_path_relative_ is false.
-  bool MakeInputsBeProtoPathRelative(
-    DiskSourceTree* source_tree);
+  bool MakeInputsBeProtoPathRelative(DiskSourceTree* source_tree);
 
   // Return status for ParseArguments() and InterpretArgument().
   enum ParseArgumentStatus {
@@ -226,7 +221,6 @@ class LIBPROTOC_EXPORT CommandLineInterface {
 
   // Parse all command-line arguments.
   ParseArgumentStatus ParseArguments(int argc, const char* const argv[]);
-
 
   // Parses a command-line argument into a name/value pair.  Returns
   // true if the next argument in the argv should be used as the value,
@@ -291,8 +285,7 @@ class LIBPROTOC_EXPORT CommandLineInterface {
   // If include_json_name is true, populate the json_name field of
   // FieldDescriptorProto for all fields.
   static void GetTransitiveDependencies(
-      const FileDescriptor* file,
-      bool include_json_name,
+      const FileDescriptor* file, bool include_json_name,
       bool include_source_code_info,
       std::set<const FileDescriptor*>* already_seen,
       RepeatedPtrField<FileDescriptorProto>* output);
@@ -358,20 +351,20 @@ class LIBPROTOC_EXPORT CommandLineInterface {
   Mode mode_;
 
   enum PrintMode {
-    PRINT_NONE,               // Not in MODE_PRINT
-    PRINT_FREE_FIELDS,        // --print_free_fields
+    PRINT_NONE,         // Not in MODE_PRINT
+    PRINT_FREE_FIELDS,  // --print_free_fields
   };
 
   PrintMode print_mode_;
 
   enum ErrorFormat {
-    ERROR_FORMAT_GCC,   // GCC error output format (default).
-    ERROR_FORMAT_MSVS   // Visual Studio output (--error_format=msvs).
+    ERROR_FORMAT_GCC,  // GCC error output format (default).
+    ERROR_FORMAT_MSVS  // Visual Studio output (--error_format=msvs).
   };
 
   ErrorFormat error_format_;
 
-  std::vector<std::pair<string, string> >
+  std::vector<std::pair<string, string>>
       proto_path_;                   // Search path for proto files.
   std::vector<string> input_files_;  // Names of the input proto files.
 
@@ -387,8 +380,8 @@ class LIBPROTOC_EXPORT CommandLineInterface {
   // output_directives_ lists all the files we are supposed to output and what
   // generator to use for each.
   struct OutputDirective {
-    string name;                // E.g. "--foo_out"
-    CodeGenerator* generator;   // NULL for plugins
+    string name;               // E.g. "--foo_out"
+    CodeGenerator* generator;  // NULL for plugins
     string parameter;
     string output_location;
   };

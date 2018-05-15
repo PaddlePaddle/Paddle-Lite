@@ -38,7 +38,8 @@ namespace protobuf {
 
 // This type trait can be used to cause templates to only match proto2 enum
 // types.
-template <typename T> struct is_proto_enum : ::google::protobuf::internal::false_type {};
+template <typename T>
+struct is_proto_enum : ::google::protobuf::internal::false_type {};
 
 }  // namespace protobuf
 

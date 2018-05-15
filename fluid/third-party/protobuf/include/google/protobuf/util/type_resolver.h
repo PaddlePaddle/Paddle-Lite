@@ -38,13 +38,11 @@
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/status.h>
 
-
 namespace google {
 namespace protobuf {
 class Type;
 class Enum;
 }  // namespace protobuf
-
 
 namespace protobuf {
 class DescriptorPool;
@@ -64,7 +62,7 @@ class LIBPROTOBUF_EXPORT TypeResolver {
 
   // Resolves a type url for an enum type.
   virtual util::Status ResolveEnumType(const string& type_url,
-                                         google::protobuf::Enum* enum_type) = 0;
+                                       google::protobuf::Enum* enum_type) = 0;
 
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(TypeResolver);

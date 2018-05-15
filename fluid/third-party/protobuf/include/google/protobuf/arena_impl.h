@@ -70,12 +70,12 @@ class LIBPROTOBUF_EXPORT ArenaImpl {
 
     template <typename O>
     explicit Options(const O& options)
-      : start_block_size(options.start_block_size),
-        max_block_size(options.max_block_size),
-        initial_block(options.initial_block),
-        initial_block_size(options.initial_block_size),
-        block_alloc(options.block_alloc),
-        block_dealloc(options.block_dealloc) {}
+        : start_block_size(options.start_block_size),
+          max_block_size(options.max_block_size),
+          initial_block(options.initial_block),
+          initial_block_size(options.initial_block_size),
+          block_alloc(options.block_alloc),
+          block_dealloc(options.block_dealloc) {}
   };
 
   template <typename O>
@@ -150,9 +150,9 @@ class LIBPROTOBUF_EXPORT ArenaImpl {
 #endif
   static google::protobuf::internal::SequenceNumber lifecycle_id_generator_;
 #if defined(GOOGLE_PROTOBUF_NO_THREADLOCAL)
-  // Android ndk does not support GOOGLE_THREAD_LOCAL keyword so we use a custom thread
-  // local storage class we implemented.
-  // iOS also does not support the GOOGLE_THREAD_LOCAL keyword.
+  // Android ndk does not support GOOGLE_THREAD_LOCAL keyword so we use a custom
+  // thread local storage class we implemented. iOS also does not support the
+  // GOOGLE_THREAD_LOCAL keyword.
   static ThreadCache& thread_cache();
 #elif defined(PROTOBUF_USE_DLLS)
   // Thread local variables cannot be exposed through DLL interface but we can
@@ -178,11 +178,15 @@ class LIBPROTOBUF_EXPORT ArenaImpl {
   inline void CacheBlock(Block* block) {
     thread_cache().last_block_used_ = block;
     thread_cache().last_lifecycle_id_seen = lifecycle_id_;
-    google::protobuf::internal::Release_Store(&hint_, reinterpret_cast<google::protobuf::internal::AtomicWord>(block));
+    google::protobuf::internal::Release_Store(
+        &hint_,
+        reinterpret_cast<google::protobuf::internal::AtomicWord>(block));
   }
 
-  google::protobuf::internal::AtomicWord blocks_;       // Head of linked list of all allocated blocks
-  google::protobuf::internal::AtomicWord hint_;         // Fast thread-local block access
+  google::protobuf::internal::AtomicWord
+      blocks_;  // Head of linked list of all allocated blocks
+  google::protobuf::internal::AtomicWord
+      hint_;                // Fast thread-local block access
   uint64 space_allocated_;  // Sum of sizes of all allocated blocks.
 
   bool owns_first_block_;  // Indicates that arena owns the first block
