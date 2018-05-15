@@ -31,9 +31,9 @@
 #ifndef GOOGLE_PROTOBUF_METADATA_LITE_H__
 #define GOOGLE_PROTOBUF_METADATA_LITE_H__
 
-#include <google/protobuf/stubs/common.h>
 #include <google/protobuf/arena.h>
 #include <google/protobuf/generated_message_util.h>
+#include <google/protobuf/stubs/common.h>
 
 namespace google {
 namespace protobuf {
@@ -114,9 +114,7 @@ class InternalMetadataWithArenaBase {
     }
   }
 
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE void* raw_arena_ptr() const {
-    return ptr_;
-  }
+  GOOGLE_ATTRIBUTE_ALWAYS_INLINE void* raw_arena_ptr() const { return ptr_; }
 
  private:
   void* ptr_;
@@ -136,9 +134,10 @@ class InternalMetadataWithArenaBase {
     return reinterpret_cast<intptr_t>(ptr_) & kPtrTagMask;
   }
 
-  template<typename U> U* PtrValue() const {
-    return reinterpret_cast<U*>(
-        reinterpret_cast<intptr_t>(ptr_) & kPtrValueMask);
+  template <typename U>
+  U* PtrValue() const {
+    return reinterpret_cast<U*>(reinterpret_cast<intptr_t>(ptr_) &
+                                kPtrValueMask);
   }
 
   // If ptr_'s tag is kTagContainer, it points to an instance of this struct.
@@ -150,8 +149,8 @@ class InternalMetadataWithArenaBase {
   GOOGLE_ATTRIBUTE_NOINLINE T* mutable_unknown_fields_slow() {
     Arena* my_arena = arena();
     Container* container = Arena::Create<Container>(my_arena);
-    ptr_ = reinterpret_cast<void*>(
-        reinterpret_cast<intptr_t>(container) | kTagContainer);
+    ptr_ = reinterpret_cast<void*>(reinterpret_cast<intptr_t>(container) |
+                                   kTagContainer);
     container->arena = my_arena;
     return &(container->unknown_fields);
   }
@@ -167,20 +166,16 @@ class InternalMetadataWithArenaLite
   InternalMetadataWithArenaLite() {}
 
   explicit InternalMetadataWithArenaLite(Arena* arena)
-      : InternalMetadataWithArenaBase<string,
-                                      InternalMetadataWithArenaLite>(arena) {}
+      : InternalMetadataWithArenaBase<string, InternalMetadataWithArenaLite>(
+            arena) {}
 
-  void DoSwap(string* other) {
-    mutable_unknown_fields()->swap(*other);
-  }
+  void DoSwap(string* other) { mutable_unknown_fields()->swap(*other); }
 
   void DoMergeFrom(const string& other) {
     mutable_unknown_fields()->append(other);
   }
 
-  void DoClear() {
-    mutable_unknown_fields()->clear();
-  }
+  void DoClear() { mutable_unknown_fields()->clear(); }
 
   static const string& default_instance() {
     return GetEmptyStringAlreadyInited();

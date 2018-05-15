@@ -100,9 +100,9 @@
 #ifndef GOOGLE_PROTOBUF_SERVICE_H__
 #define GOOGLE_PROTOBUF_SERVICE_H__
 
-#include <string>
-#include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/callback.h>
+#include <google/protobuf/stubs/common.h>
+#include <string>
 
 namespace google {
 namespace protobuf {
@@ -113,10 +113,10 @@ class RpcController;
 class RpcChannel;
 
 // Defined in other files.
-class Descriptor;            // descriptor.h
-class ServiceDescriptor;     // descriptor.h
-class MethodDescriptor;      // descriptor.h
-class Message;               // message.h
+class Descriptor;         // descriptor.h
+class ServiceDescriptor;  // descriptor.h
+class MethodDescriptor;   // descriptor.h
+class Message;            // message.h
 
 // Abstract base interface for protocol-buffer-based RPC services.  Services
 // themselves are abstract interfaces (implemented either by servers or as
@@ -131,10 +131,7 @@ class LIBPROTOBUF_EXPORT Service {
   // When constructing a stub, you may pass STUB_OWNS_CHANNEL as the second
   // parameter to the constructor to tell it to delete its RpcChannel when
   // destroyed.
-  enum ChannelOwnership {
-    STUB_OWNS_CHANNEL,
-    STUB_DOESNT_OWN_CHANNEL
-  };
+  enum ChannelOwnership { STUB_OWNS_CHANNEL, STUB_DOESNT_OWN_CHANNEL };
 
   // Get the ServiceDescriptor describing this service and its methods.
   virtual const ServiceDescriptor* GetDescriptor() = 0;
@@ -165,10 +162,8 @@ class LIBPROTOBUF_EXPORT Service {
   //   RpcController can be queried to determine if an error occurred and
   //   possibly to get more information about the error.
   virtual void CallMethod(const MethodDescriptor* method,
-                          RpcController* controller,
-                          const Message* request,
-                          Message* response,
-                          Closure* done) = 0;
+                          RpcController* controller, const Message* request,
+                          Message* response, Closure* done) = 0;
 
   // CallMethod() requires that the request and response passed in are of a
   // particular subclass of Message.  GetRequestPrototype() and
@@ -184,9 +179,9 @@ class LIBPROTOBUF_EXPORT Service {
   //   request->ParseFromString(input);
   //   service->CallMethod(method, *request, response, callback);
   virtual const Message& GetRequestPrototype(
-    const MethodDescriptor* method) const = 0;
+      const MethodDescriptor* method) const = 0;
   virtual const Message& GetResponsePrototype(
-    const MethodDescriptor* method) const = 0;
+      const MethodDescriptor* method) const = 0;
 
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Service);
@@ -277,10 +272,8 @@ class LIBPROTOBUF_EXPORT RpcChannel {
   // need not be of any specific class as long as their descriptors are
   // method->input_type() and method->output_type().
   virtual void CallMethod(const MethodDescriptor* method,
-                          RpcController* controller,
-                          const Message* request,
-                          Message* response,
-                          Closure* done) = 0;
+                          RpcController* controller, const Message* request,
+                          Message* response, Closure* done) = 0;
 
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(RpcChannel);

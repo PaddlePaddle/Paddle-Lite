@@ -59,8 +59,8 @@
 #ifndef GOOGLE_PROTOBUF_TYPE_TRAITS_H_
 #define GOOGLE_PROTOBUF_TYPE_TRAITS_H_
 
-#include <cstddef>                  // for NULL
-#include <utility>                  // For pair
+#include <cstddef>  // for NULL
+#include <utility>  // For pair
 
 #include <google/protobuf/stubs/template_util.h>  // For true_type and false_type
 
@@ -68,13 +68,13 @@ namespace google {
 namespace protobuf {
 namespace internal {
 
-template<typename B, typename D>
+template <typename B, typename D>
 struct is_base_of {
   typedef char (&yes)[1];
   typedef char (&no)[2];
 
-  // BEGIN GOOGLE LOCAL MODIFICATION -- check is a #define on Mac.
-  #undef check
+// BEGIN GOOGLE LOCAL MODIFICATION -- check is a #define on Mac.
+#undef check
   // END GOOGLE LOCAL MODIFICATION
 
   static yes check(const B*);
@@ -85,30 +85,49 @@ struct is_base_of {
   };
 };
 
-template <bool cond, class T = void> struct enable_if;
-template <class T> struct is_integral;
-template <class T> struct is_floating_point;
-template <class T> struct is_pointer;
+template <bool cond, class T = void>
+struct enable_if;
+template <class T>
+struct is_integral;
+template <class T>
+struct is_floating_point;
+template <class T>
+struct is_pointer;
 // MSVC can't compile this correctly, and neither can gcc 3.3.5 (at least)
 #if !defined(_MSC_VER) && !(defined(__GNUC__) && __GNUC__ <= 3)
 // is_enum uses is_convertible, which is not available on MSVC.
-template <class T> struct is_enum;
+template <class T>
+struct is_enum;
 #endif
-template <class T> struct is_reference;
-template <class T> struct is_pod;
-template <class T> struct has_trivial_constructor;
-template <class T> struct has_trivial_copy;
-template <class T> struct has_trivial_assign;
-template <class T> struct has_trivial_destructor;
-template <class T> struct remove_const;
-template <class T> struct remove_volatile;
-template <class T> struct remove_cv;
-template <class T> struct remove_reference;
-template <class T> struct add_reference;
-template <class T> struct remove_pointer;
-template <class T, class U> struct is_same;
+template <class T>
+struct is_reference;
+template <class T>
+struct is_pod;
+template <class T>
+struct has_trivial_constructor;
+template <class T>
+struct has_trivial_copy;
+template <class T>
+struct has_trivial_assign;
+template <class T>
+struct has_trivial_destructor;
+template <class T>
+struct remove_const;
+template <class T>
+struct remove_volatile;
+template <class T>
+struct remove_cv;
+template <class T>
+struct remove_reference;
+template <class T>
+struct add_reference;
+template <class T>
+struct remove_pointer;
+template <class T, class U>
+struct is_same;
 #if !(defined(__GNUC__) && __GNUC__ <= 3)
-template <class From, class To> struct is_convertible;
+template <class From, class To>
+struct is_convertible;
 #endif
 
 // enable_if, equivalent semantics to c++11 std::enable_if, specifically:
@@ -116,75 +135,110 @@ template <class From, class To> struct is_convertible;
 //    shall be no member typedef type."
 // Specified by 20.9.7.6 [Other transformations]
 
-template<bool cond, class T> struct enable_if { typedef T type; };
-template<class T> struct enable_if<false, T> {};
+template <bool cond, class T>
+struct enable_if {
+  typedef T type;
+};
+template <class T>
+struct enable_if<false, T> {};
 // is_integral is false except for the built-in integer types. A
 // cv-qualified type is integral if and only if the underlying type is.
-template <class T> struct is_integral : false_type { };
-template<> struct is_integral<bool> : true_type { };
-template<> struct is_integral<char> : true_type { };
-template<> struct is_integral<unsigned char> : true_type { };
-template<> struct is_integral<signed char> : true_type { };
+template <class T>
+struct is_integral : false_type {};
+template <>
+struct is_integral<bool> : true_type {};
+template <>
+struct is_integral<char> : true_type {};
+template <>
+struct is_integral<unsigned char> : true_type {};
+template <>
+struct is_integral<signed char> : true_type {};
 #if defined(_MSC_VER)
 // wchar_t is not by default a distinct type from unsigned short in
 // Microsoft C.
 // See http://msdn2.microsoft.com/en-us/library/dh8che7s(VS.80).aspx
-template<> struct is_integral<__wchar_t> : true_type { };
+template <>
+struct is_integral<__wchar_t> : true_type {};
 #else
-template<> struct is_integral<wchar_t> : true_type { };
+template <>
+struct is_integral<wchar_t> : true_type {};
 #endif
-template<> struct is_integral<short> : true_type { };
-template<> struct is_integral<unsigned short> : true_type { };
-template<> struct is_integral<int> : true_type { };
-template<> struct is_integral<unsigned int> : true_type { };
-template<> struct is_integral<long> : true_type { };
-template<> struct is_integral<unsigned long> : true_type { };
+template <>
+struct is_integral<short> : true_type {};
+template <>
+struct is_integral<unsigned short> : true_type {};
+template <>
+struct is_integral<int> : true_type {};
+template <>
+struct is_integral<unsigned int> : true_type {};
+template <>
+struct is_integral<long> : true_type {};
+template <>
+struct is_integral<unsigned long> : true_type {};
 #if defined(HAVE_LONG_LONG) || defined(_MSC_VER)
-template<> struct is_integral<long long> : true_type { };
-template<> struct is_integral<unsigned long long> : true_type { };
+template <>
+struct is_integral<long long> : true_type {};
+template <>
+struct is_integral<unsigned long long> : true_type {};
 #endif
-template <class T> struct is_integral<const T> : is_integral<T> { };
-template <class T> struct is_integral<volatile T> : is_integral<T> { };
-template <class T> struct is_integral<const volatile T> : is_integral<T> { };
+template <class T>
+struct is_integral<const T> : is_integral<T> {};
+template <class T>
+struct is_integral<volatile T> : is_integral<T> {};
+template <class T>
+struct is_integral<const volatile T> : is_integral<T> {};
 
 // is_floating_point is false except for the built-in floating-point types.
 // A cv-qualified type is integral if and only if the underlying type is.
-template <class T> struct is_floating_point : false_type { };
-template<> struct is_floating_point<float> : true_type { };
-template<> struct is_floating_point<double> : true_type { };
-template<> struct is_floating_point<long double> : true_type { };
-template <class T> struct is_floating_point<const T>
-    : is_floating_point<T> { };
-template <class T> struct is_floating_point<volatile T>
-    : is_floating_point<T> { };
-template <class T> struct is_floating_point<const volatile T>
-    : is_floating_point<T> { };
+template <class T>
+struct is_floating_point : false_type {};
+template <>
+struct is_floating_point<float> : true_type {};
+template <>
+struct is_floating_point<double> : true_type {};
+template <>
+struct is_floating_point<long double> : true_type {};
+template <class T>
+struct is_floating_point<const T> : is_floating_point<T> {};
+template <class T>
+struct is_floating_point<volatile T> : is_floating_point<T> {};
+template <class T>
+struct is_floating_point<const volatile T> : is_floating_point<T> {};
 
 // is_pointer is false except for pointer types. A cv-qualified type (e.g.
 // "int* const", as opposed to "int const*") is cv-qualified if and only if
 // the underlying type is.
-template <class T> struct is_pointer : false_type { };
-template <class T> struct is_pointer<T*> : true_type { };
-template <class T> struct is_pointer<const T> : is_pointer<T> { };
-template <class T> struct is_pointer<volatile T> : is_pointer<T> { };
-template <class T> struct is_pointer<const volatile T> : is_pointer<T> { };
+template <class T>
+struct is_pointer : false_type {};
+template <class T>
+struct is_pointer<T*> : true_type {};
+template <class T>
+struct is_pointer<const T> : is_pointer<T> {};
+template <class T>
+struct is_pointer<volatile T> : is_pointer<T> {};
+template <class T>
+struct is_pointer<const volatile T> : is_pointer<T> {};
 
 #if !defined(_MSC_VER) && !(defined(__GNUC__) && __GNUC__ <= 3)
 
 namespace type_traits_internal {
 
-template <class T> struct is_class_or_union {
-  template <class U> static small_ tester(void (U::*)());
-  template <class U> static big_ tester(...);
+template <class T>
+struct is_class_or_union {
+  template <class U>
+  static small_ tester(void (U::*)());
+  template <class U>
+  static big_ tester(...);
   static const bool value = sizeof(tester<T>(0)) == sizeof(small_);
 };
 
 // is_convertible chokes if the first argument is an array. That's why
 // we use add_reference here.
-template <bool NotUnum, class T> struct is_enum_impl
-    : is_convertible<typename add_reference<T>::type, int> { };
+template <bool NotUnum, class T>
+struct is_enum_impl : is_convertible<typename add_reference<T>::type, int> {};
 
-template <class T> struct is_enum_impl<true, T> : false_type { };
+template <class T>
+struct is_enum_impl<true, T> : false_type {};
 
 }  // namespace type_traits_internal
 
@@ -203,127 +257,178 @@ template <class T> struct is_enum_impl<true, T> : false_type { };
 // Is-convertible-to-int check is done only if all other checks pass,
 // because it can't be used with some types (e.g. void or classes with
 // inaccessible conversion operators).
-template <class T> struct is_enum
+template <class T>
+struct is_enum
     : type_traits_internal::is_enum_impl<
-          is_same<T, void>::value ||
-              is_integral<T>::value ||
-              is_floating_point<T>::value ||
-              is_reference<T>::value ||
+          is_same<T, void>::value || is_integral<T>::value ||
+              is_floating_point<T>::value || is_reference<T>::value ||
               type_traits_internal::is_class_or_union<T>::value,
-          T> { };
+          T> {};
 
-template <class T> struct is_enum<const T> : is_enum<T> { };
-template <class T> struct is_enum<volatile T> : is_enum<T> { };
-template <class T> struct is_enum<const volatile T> : is_enum<T> { };
+template <class T>
+struct is_enum<const T> : is_enum<T> {};
+template <class T>
+struct is_enum<volatile T> : is_enum<T> {};
+template <class T>
+struct is_enum<const volatile T> : is_enum<T> {};
 
 #endif
 
 // is_reference is false except for reference types.
-template<typename T> struct is_reference : false_type {};
-template<typename T> struct is_reference<T&> : true_type {};
-
+template <typename T>
+struct is_reference : false_type {};
+template <typename T>
+struct is_reference<T&> : true_type {};
 
 // We can't get is_pod right without compiler help, so fail conservatively.
 // We will assume it's false except for arithmetic types, enumerations,
 // pointers and cv-qualified versions thereof. Note that std::pair<T,U>
 // is not a POD even if T and U are PODs.
-template <class T> struct is_pod
- : integral_constant<bool, (is_integral<T>::value ||
-                            is_floating_point<T>::value ||
+template <class T>
+struct is_pod : integral_constant<bool, (is_integral<T>::value ||
+                                         is_floating_point<T>::value ||
 #if !defined(_MSC_VER) && !(defined(__GNUC__) && __GNUC__ <= 3)
-                            // is_enum is not available on MSVC.
-                            is_enum<T>::value ||
+                                         // is_enum is not available on MSVC.
+                                         is_enum<T>::value ||
 #endif
-                            is_pointer<T>::value)> { };
-template <class T> struct is_pod<const T> : is_pod<T> { };
-template <class T> struct is_pod<volatile T> : is_pod<T> { };
-template <class T> struct is_pod<const volatile T> : is_pod<T> { };
-
+                                         is_pointer<T>::value)> {
+};
+template <class T>
+struct is_pod<const T> : is_pod<T> {};
+template <class T>
+struct is_pod<volatile T> : is_pod<T> {};
+template <class T>
+struct is_pod<const volatile T> : is_pod<T> {};
 
 // We can't get has_trivial_constructor right without compiler help, so
 // fail conservatively. We will assume it's false except for: (1) types
 // for which is_pod is true. (2) std::pair of types with trivial
 // constructors. (3) array of a type with a trivial constructor.
 // (4) const versions thereof.
-template <class T> struct has_trivial_constructor : is_pod<T> { };
-template <class T, class U> struct has_trivial_constructor<std::pair<T, U> >
-  : integral_constant<bool,
-                      (has_trivial_constructor<T>::value &&
-                       has_trivial_constructor<U>::value)> { };
-template <class A, int N> struct has_trivial_constructor<A[N]>
-  : has_trivial_constructor<A> { };
-template <class T> struct has_trivial_constructor<const T>
-  : has_trivial_constructor<T> { };
+template <class T>
+struct has_trivial_constructor : is_pod<T> {};
+template <class T, class U>
+struct has_trivial_constructor<std::pair<T, U>>
+    : integral_constant<bool, (has_trivial_constructor<T>::value &&
+                               has_trivial_constructor<U>::value)> {};
+template <class A, int N>
+struct has_trivial_constructor<A[N]> : has_trivial_constructor<A> {};
+template <class T>
+struct has_trivial_constructor<const T> : has_trivial_constructor<T> {};
 
 // We can't get has_trivial_copy right without compiler help, so fail
 // conservatively. We will assume it's false except for: (1) types
 // for which is_pod is true. (2) std::pair of types with trivial copy
 // constructors. (3) array of a type with a trivial copy constructor.
 // (4) const versions thereof.
-template <class T> struct has_trivial_copy : is_pod<T> { };
-template <class T, class U> struct has_trivial_copy<std::pair<T, U> >
-  : integral_constant<bool,
-                      (has_trivial_copy<T>::value &&
-                       has_trivial_copy<U>::value)> { };
-template <class A, int N> struct has_trivial_copy<A[N]>
-  : has_trivial_copy<A> { };
-template <class T> struct has_trivial_copy<const T> : has_trivial_copy<T> { };
+template <class T>
+struct has_trivial_copy : is_pod<T> {};
+template <class T, class U>
+struct has_trivial_copy<std::pair<T, U>>
+    : integral_constant<bool, (has_trivial_copy<T>::value &&
+                               has_trivial_copy<U>::value)> {};
+template <class A, int N>
+struct has_trivial_copy<A[N]> : has_trivial_copy<A> {};
+template <class T>
+struct has_trivial_copy<const T> : has_trivial_copy<T> {};
 
 // We can't get has_trivial_assign right without compiler help, so fail
 // conservatively. We will assume it's false except for: (1) types
 // for which is_pod is true. (2) std::pair of types with trivial copy
 // constructors. (3) array of a type with a trivial assign constructor.
-template <class T> struct has_trivial_assign : is_pod<T> { };
-template <class T, class U> struct has_trivial_assign<std::pair<T, U> >
-  : integral_constant<bool,
-                      (has_trivial_assign<T>::value &&
-                       has_trivial_assign<U>::value)> { };
-template <class A, int N> struct has_trivial_assign<A[N]>
-  : has_trivial_assign<A> { };
+template <class T>
+struct has_trivial_assign : is_pod<T> {};
+template <class T, class U>
+struct has_trivial_assign<std::pair<T, U>>
+    : integral_constant<bool, (has_trivial_assign<T>::value &&
+                               has_trivial_assign<U>::value)> {};
+template <class A, int N>
+struct has_trivial_assign<A[N]> : has_trivial_assign<A> {};
 
 // We can't get has_trivial_destructor right without compiler help, so
 // fail conservatively. We will assume it's false except for: (1) types
 // for which is_pod is true. (2) std::pair of types with trivial
 // destructors. (3) array of a type with a trivial destructor.
 // (4) const versions thereof.
-template <class T> struct has_trivial_destructor : is_pod<T> { };
-template <class T, class U> struct has_trivial_destructor<std::pair<T, U> >
-  : integral_constant<bool,
-                      (has_trivial_destructor<T>::value &&
-                       has_trivial_destructor<U>::value)> { };
-template <class A, int N> struct has_trivial_destructor<A[N]>
-  : has_trivial_destructor<A> { };
-template <class T> struct has_trivial_destructor<const T>
-  : has_trivial_destructor<T> { };
+template <class T>
+struct has_trivial_destructor : is_pod<T> {};
+template <class T, class U>
+struct has_trivial_destructor<std::pair<T, U>>
+    : integral_constant<bool, (has_trivial_destructor<T>::value &&
+                               has_trivial_destructor<U>::value)> {};
+template <class A, int N>
+struct has_trivial_destructor<A[N]> : has_trivial_destructor<A> {};
+template <class T>
+struct has_trivial_destructor<const T> : has_trivial_destructor<T> {};
 
 // Specified by TR1 [4.7.1]
-template<typename T> struct remove_const { typedef T type; };
-template<typename T> struct remove_const<T const> { typedef T type; };
-template<typename T> struct remove_volatile { typedef T type; };
-template<typename T> struct remove_volatile<T volatile> { typedef T type; };
-template<typename T> struct remove_cv {
+template <typename T>
+struct remove_const {
+  typedef T type;
+};
+template <typename T>
+struct remove_const<T const> {
+  typedef T type;
+};
+template <typename T>
+struct remove_volatile {
+  typedef T type;
+};
+template <typename T>
+struct remove_volatile<T volatile> {
+  typedef T type;
+};
+template <typename T>
+struct remove_cv {
   typedef typename remove_const<typename remove_volatile<T>::type>::type type;
 };
 
-
 // Specified by TR1 [4.7.2] Reference modifications.
-template<typename T> struct remove_reference { typedef T type; };
-template<typename T> struct remove_reference<T&> { typedef T type; };
+template <typename T>
+struct remove_reference {
+  typedef T type;
+};
+template <typename T>
+struct remove_reference<T&> {
+  typedef T type;
+};
 
-template <typename T> struct add_reference { typedef T& type; };
-template <typename T> struct add_reference<T&> { typedef T& type; };
+template <typename T>
+struct add_reference {
+  typedef T& type;
+};
+template <typename T>
+struct add_reference<T&> {
+  typedef T& type;
+};
 
 // Specified by TR1 [4.7.4] Pointer modifications.
-template<typename T> struct remove_pointer { typedef T type; };
-template<typename T> struct remove_pointer<T*> { typedef T type; };
-template<typename T> struct remove_pointer<T* const> { typedef T type; };
-template<typename T> struct remove_pointer<T* volatile> { typedef T type; };
-template<typename T> struct remove_pointer<T* const volatile> {
-  typedef T type; };
+template <typename T>
+struct remove_pointer {
+  typedef T type;
+};
+template <typename T>
+struct remove_pointer<T*> {
+  typedef T type;
+};
+template <typename T>
+struct remove_pointer<T* const> {
+  typedef T type;
+};
+template <typename T>
+struct remove_pointer<T* volatile> {
+  typedef T type;
+};
+template <typename T>
+struct remove_pointer<T* const volatile> {
+  typedef T type;
+};
 
 // Specified by TR1 [4.6] Relationships between types
-template<typename T, typename U> struct is_same : public false_type { };
-template<typename T> struct is_same<T, T> : public true_type { };
+template <typename T, typename U>
+struct is_same : public false_type {};
+template <typename T>
+struct is_same<T, T> : public true_type {};
 
 // Specified by TR1 [4.6] Relationships between types
 #if !(defined(__GNUC__) && __GNUC__ <= 3)
@@ -343,9 +448,7 @@ struct ConvertHelper {
   static small_ Test(To);
   static big_ Test(...);
   static From Create();
-  enum {
-    value = sizeof(Test(Create())) == sizeof(small_)
-  };
+  enum { value = sizeof(Test(Create())) == sizeof(small_) };
 };
 }  // namespace type_traits_internal
 

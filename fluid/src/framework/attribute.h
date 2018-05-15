@@ -29,7 +29,7 @@ class BlockDesc;
 class Attribute {
  public:
   static Attribute GetAttrValue(const proto::OpDesc::Attr& attr_desc) {
-    std::cout << "begin get attr value" << std::endl;
+    //    std::cout << "begin get attr value" << std::endl;
     Attribute attr;
     switch (attr_desc.type()) {
       case proto::AttrType::BOOLEAN: {
@@ -85,10 +85,10 @@ class Attribute {
         break;
       }
       default:
-        std::cout << " not support " << std::endl;
+        //        std::cout << " not support " << std::endl;
         break;
     }
-    std::cout << "end get attr value" << std::endl;
+    //    std::cout << "end get attr value" << std::endl;
     return attr;
   }
 

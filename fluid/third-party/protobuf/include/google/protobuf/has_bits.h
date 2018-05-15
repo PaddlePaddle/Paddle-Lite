@@ -37,7 +37,7 @@ namespace google {
 namespace protobuf {
 namespace internal {
 
-template<size_t doublewords>
+template <size_t doublewords>
 class HasBits {
  public:
   HasBits() GOOGLE_ATTRIBUTE_ALWAYS_INLINE { Clear(); }
@@ -46,11 +46,13 @@ class HasBits {
     memset(has_bits_, 0, sizeof(has_bits_));
   }
 
-  ::google::protobuf::uint32& operator[](int index) GOOGLE_ATTRIBUTE_ALWAYS_INLINE {
+  ::google::protobuf::uint32& operator[](int index)
+      GOOGLE_ATTRIBUTE_ALWAYS_INLINE {
     return has_bits_[index];
   }
 
-  const ::google::protobuf::uint32& operator[](int index) const GOOGLE_ATTRIBUTE_ALWAYS_INLINE {
+  const ::google::protobuf::uint32& operator[](int index) const
+      GOOGLE_ATTRIBUTE_ALWAYS_INLINE {
     return has_bits_[index];
   }
 

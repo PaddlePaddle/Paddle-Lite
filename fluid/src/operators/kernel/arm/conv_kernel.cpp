@@ -35,7 +35,7 @@ bool IsExpand(const std::vector<int64_t>& filter_dim,
 }
 
 template <>
-void ConvKernel<ARM, float, ConvParam>::Compute(const ConvParam& param) const {
+void ConvKernel<CPU, float, ConvParam>::Compute(const ConvParam& param) const {
   const Tensor* input = param.Input();
 
   std::cout << " conv param " << param << std::endl;
@@ -111,8 +111,8 @@ void ConvKernel<ARM, float, ConvParam>::Compute(const ConvParam& param) const {
   int in_step = static_cast<int>(input->dims()[1]) / groups;
   int out_step = static_cast<int>(output->dims()[1]) / groups;
 
-  math::Vol2ColFunctor<ARM, float> vol2col;
-  math::Im2ColFunctor<math::ColFormat::kCFO, ARM, float> im2col;
+  math::Vol2ColFunctor<CPU, float> vol2col;
+  math::Im2ColFunctor<math::ColFormat::kCFO, CPU, float> im2col;
 
   //            auto& dev_ctx = context.template
   //            device_context<DeviceContext>();
@@ -147,7 +147,7 @@ void ConvKernel<ARM, float, ConvParam>::Compute(const ConvParam& param) const {
   }
 }
 
-template class ConvKernel<ARM, float, ConvParam>;
+template class ConvKernel<CPU, float, ConvParam>;
 
 }  // namespace operators
 }  // namespace paddle_mobile

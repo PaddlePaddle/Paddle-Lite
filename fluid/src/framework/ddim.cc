@@ -62,7 +62,9 @@ void make_ddim(DDim& ddim, const int64_t* dims, int n) {
       ddim = make_dim<9>(dims);
       break;
     default:
-      std::cout << "Dynamic dimensions must have between [1, 9] dimensions.";
+      //      std::cout << "Dynamic dimensions must have between [1, 9]
+      //      dimensions.";
+      break;
   }
 }
 

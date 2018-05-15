@@ -273,7 +273,7 @@ class LIBPROTOBUF_EXPORT StringByteSink : public ByteSink {
 class LIBPROTOBUF_EXPORT NullByteSink : public ByteSink {
  public:
   NullByteSink() {}
-  virtual void Append(const char *data, size_t n) {}
+  virtual void Append(const char* data, size_t n) {}
 
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(NullByteSink);
@@ -301,7 +301,7 @@ class LIBPROTOBUF_EXPORT ArrayByteSource : public ByteSource {
   virtual void Skip(size_t n);
 
  private:
-  StringPiece   input_;
+  StringPiece input_;
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ArrayByteSource);
 };
 

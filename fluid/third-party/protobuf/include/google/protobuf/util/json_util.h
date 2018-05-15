@@ -34,8 +34,8 @@
 #define GOOGLE_PROTOBUF_UTIL_JSON_UTIL_H__
 
 #include <google/protobuf/message.h>
-#include <google/protobuf/util/type_resolver.h>
 #include <google/protobuf/stubs/bytestream.h>
+#include <google/protobuf/util/type_resolver.h>
 
 namespace google {
 namespace protobuf {
@@ -81,23 +81,21 @@ typedef JsonPrintOptions JsonOptions;
 // BinaryToJsonString(). It will use the DescriptorPool of the passed-in
 // message to resolve Any types.
 LIBPROTOBUF_EXPORT util::Status MessageToJsonString(const Message& message,
-                                   string* output,
-                                   const JsonOptions& options);
+                                                    string* output,
+                                                    const JsonOptions& options);
 
 inline util::Status MessageToJsonString(const Message& message,
-                                          string* output) {
+                                        string* output) {
   return MessageToJsonString(message, output, JsonOptions());
 }
 
 // Converts from JSON to protobuf message. This is a simple wrapper of
 // JsonStringToBinary(). It will use the DescriptorPool of the passed-in
 // message to resolve Any types.
-LIBPROTOBUF_EXPORT util::Status JsonStringToMessage(const string& input,
-                                   Message* message,
-                                   const JsonParseOptions& options);
+LIBPROTOBUF_EXPORT util::Status JsonStringToMessage(
+    const string& input, Message* message, const JsonParseOptions& options);
 
-inline util::Status JsonStringToMessage(const string& input,
-                                          Message* message) {
+inline util::Status JsonStringToMessage(const string& input, Message* message) {
   return JsonStringToMessage(input, message, JsonParseOptions());
 }
 
@@ -108,31 +106,26 @@ inline util::Status JsonStringToMessage(const string& input,
 //      information returned by TypeResolver.
 // Note that unknown fields will be discarded silently.
 LIBPROTOBUF_EXPORT util::Status BinaryToJsonStream(
-    TypeResolver* resolver,
-    const string& type_url,
-    io::ZeroCopyInputStream* binary_input,
-    io::ZeroCopyOutputStream* json_output,
-    const JsonPrintOptions& options);
-
-inline util::Status BinaryToJsonStream(
     TypeResolver* resolver, const string& type_url,
     io::ZeroCopyInputStream* binary_input,
-    io::ZeroCopyOutputStream* json_output) {
+    io::ZeroCopyOutputStream* json_output, const JsonPrintOptions& options);
+
+inline util::Status BinaryToJsonStream(TypeResolver* resolver,
+                                       const string& type_url,
+                                       io::ZeroCopyInputStream* binary_input,
+                                       io::ZeroCopyOutputStream* json_output) {
   return BinaryToJsonStream(resolver, type_url, binary_input, json_output,
                             JsonPrintOptions());
 }
 
 LIBPROTOBUF_EXPORT util::Status BinaryToJsonString(
-    TypeResolver* resolver,
-    const string& type_url,
-    const string& binary_input,
-    string* json_output,
-    const JsonPrintOptions& options);
+    TypeResolver* resolver, const string& type_url, const string& binary_input,
+    string* json_output, const JsonPrintOptions& options);
 
 inline util::Status BinaryToJsonString(TypeResolver* resolver,
-                                         const string& type_url,
-                                         const string& binary_input,
-                                         string* json_output) {
+                                       const string& type_url,
+                                       const string& binary_input,
+                                       string* json_output) {
   return BinaryToJsonString(resolver, type_url, binary_input, json_output,
                             JsonPrintOptions());
 }
@@ -143,15 +136,12 @@ inline util::Status BinaryToJsonString(TypeResolver* resolver,
 //   2. input is not valid JSON format, or conflicts with the type
 //      information returned by TypeResolver.
 LIBPROTOBUF_EXPORT util::Status JsonToBinaryStream(
-    TypeResolver* resolver,
-    const string& type_url,
+    TypeResolver* resolver, const string& type_url,
     io::ZeroCopyInputStream* json_input,
-    io::ZeroCopyOutputStream* binary_output,
-    const JsonParseOptions& options);
+    io::ZeroCopyOutputStream* binary_output, const JsonParseOptions& options);
 
 inline util::Status JsonToBinaryStream(
-    TypeResolver* resolver,
-    const string& type_url,
+    TypeResolver* resolver, const string& type_url,
     io::ZeroCopyInputStream* json_input,
     io::ZeroCopyOutputStream* binary_output) {
   return JsonToBinaryStream(resolver, type_url, json_input, binary_output,
@@ -159,17 +149,13 @@ inline util::Status JsonToBinaryStream(
 }
 
 LIBPROTOBUF_EXPORT util::Status JsonToBinaryString(
-    TypeResolver* resolver,
-    const string& type_url,
-    const string& json_input,
-    string* binary_output,
-    const JsonParseOptions& options);
+    TypeResolver* resolver, const string& type_url, const string& json_input,
+    string* binary_output, const JsonParseOptions& options);
 
-inline util::Status JsonToBinaryString(
-    TypeResolver* resolver,
-    const string& type_url,
-    const string& json_input,
-    string* binary_output) {
+inline util::Status JsonToBinaryString(TypeResolver* resolver,
+                                       const string& type_url,
+                                       const string& json_input,
+                                       string* binary_output) {
   return JsonToBinaryString(resolver, type_url, json_input, binary_output,
                             JsonParseOptions());
 }

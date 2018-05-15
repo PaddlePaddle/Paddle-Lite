@@ -45,7 +45,7 @@ class Variable : public PaddleMobileObject {
   T* GetMutable() {
     if (!IsType<T>()) {
       if (*Name() == "pixel") {
-        std::cout << " reset " << *Name() << std::endl;
+        //        std::cout << " reset " << *Name() << std::endl;
       }
       holder_.reset(new PlaceholderImp<T>(new T()));
     }

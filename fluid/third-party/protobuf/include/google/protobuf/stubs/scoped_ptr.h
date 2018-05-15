@@ -45,8 +45,10 @@ namespace internal {
 //  implementation of the scoped_ptr class, and its closely-related brethren,
 //  scoped_array, scoped_ptr_malloc, and make_scoped_ptr.
 
-template <class C> class scoped_ptr;
-template <class C> class scoped_array;
+template <class C>
+class scoped_ptr;
+template <class C>
+class scoped_array;
 
 // A scoped_ptr<T> is like a T*, except that the destructor of scoped_ptr<T>
 // automatically deletes the pointer it holds (if any).
@@ -58,14 +60,13 @@ template <class C> class scoped_array;
 template <class C>
 class scoped_ptr {
  public:
-
   // The element type
   typedef C element_type;
 
   // Constructor.  Defaults to initializing with NULL.
   // There is no way to create an uninitialized scoped_ptr.
   // The input parameter must be allocated with new.
-  explicit scoped_ptr(C* p = NULL) : ptr_(p) { }
+  explicit scoped_ptr(C* p = NULL) : ptr_(p) {}
 
   // Destructor.  If there is a C object, delete it.
   // We don't need to test ptr_ == NULL because C++ does that for us.
@@ -91,7 +92,7 @@ class scoped_ptr {
     assert(ptr_ != NULL);
     return *ptr_;
   }
-  C* operator->() const  {
+  C* operator->() const {
     assert(ptr_ != NULL);
     return ptr_;
   }
@@ -127,8 +128,10 @@ class scoped_ptr {
   // Forbid comparison of scoped_ptr types.  If C2 != C, it totally doesn't
   // make sense, and if C2 == C, it still doesn't make sense because you should
   // never have the same object owned by two different scoped_ptrs.
-  template <class C2> bool operator==(scoped_ptr<C2> const& p2) const;
-  template <class C2> bool operator!=(scoped_ptr<C2> const& p2) const;
+  template <class C2>
+  bool operator==(scoped_ptr<C2> const& p2) const;
+  template <class C2>
+  bool operator!=(scoped_ptr<C2> const& p2) const;
 
   // Disallow evil constructors
   scoped_ptr(const scoped_ptr&);
@@ -145,14 +148,13 @@ class scoped_ptr {
 template <class C>
 class scoped_array {
  public:
-
   // The element type
   typedef C element_type;
 
   // Constructor.  Defaults to initializing with NULL.
   // There is no way to create an uninitialized scoped_array.
   // The input parameter must be allocated with new [].
-  explicit scoped_array(C* p = NULL) : array_(p) { }
+  explicit scoped_array(C* p = NULL) : array_(p) {}
 
   // Destructor.  If there is a C object, delete it.
   // We don't need to test ptr_ == NULL because C++ does that for us.
@@ -182,9 +184,7 @@ class scoped_array {
 
   // Get a pointer to the zeroth element of the current object.
   // If there is no current object, return NULL.
-  C* get() const {
-    return array_;
-  }
+  C* get() const { return array_; }
 
   // Comparison operators.
   // These return whether two scoped_array refer to the same object, not just to
@@ -214,8 +214,10 @@ class scoped_array {
   C* array_;
 
   // Forbid comparison of different scoped_array types.
-  template <class C2> bool operator==(scoped_array<C2> const& p2) const;
-  template <class C2> bool operator!=(scoped_array<C2> const& p2) const;
+  template <class C2>
+  bool operator==(scoped_array<C2> const& p2) const;
+  template <class C2>
+  bool operator!=(scoped_array<C2> const& p2) const;
 
   // Disallow evil constructors
   scoped_array(const scoped_array&);
@@ -226,9 +228,8 @@ class scoped_array {
 
 // We made these internal so that they would show up as such in the docs,
 // but we don't want to stick "internal::" in front of them everywhere.
-using internal::scoped_ptr;
 using internal::scoped_array;
-
+using internal::scoped_ptr;
 
 }  // namespace protobuf
 }  // namespace google

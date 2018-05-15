@@ -19,22 +19,23 @@
 #error regenerate this file with a newer version of protoc.
 #endif
 
-#include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/arena.h>
 #include <google/protobuf/arenastring.h>
+#include <google/protobuf/extension_set.h>  // IWYU pragma: export
 #include <google/protobuf/generated_message_table_driven.h>
 #include <google/protobuf/generated_message_util.h>
-#include <google/protobuf/metadata.h>
+#include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/message.h>
+#include <google/protobuf/metadata.h>
 #include <google/protobuf/repeated_field.h>  // IWYU pragma: export
-#include <google/protobuf/extension_set.h>  // IWYU pragma: export
 #include <google/protobuf/unknown_field_set.h>
 // @@protoc_insertion_point(includes)
 namespace google {
 namespace protobuf {
 class Duration;
 class DurationDefaultTypeInternal;
-LIBPROTOBUF_EXPORT extern DurationDefaultTypeInternal _Duration_default_instance_;
+LIBPROTOBUF_EXPORT extern DurationDefaultTypeInternal
+    _Duration_default_instance_;
 }  // namespace protobuf
 }  // namespace google
 
@@ -49,7 +50,8 @@ struct LIBPROTOBUF_EXPORT TableStruct {
   static const ::google::protobuf::internal::ParseTable schema[];
   static const ::google::protobuf::uint32 offsets[];
   static const ::google::protobuf::internal::FieldMetadata field_metadata[];
-  static const ::google::protobuf::internal::SerializationTable serialization_table[];
+  static const ::google::protobuf::internal::SerializationTable
+      serialization_table[];
   static void InitDefaultsImpl();
 };
 void LIBPROTOBUF_EXPORT AddDescriptors();
@@ -58,7 +60,9 @@ void LIBPROTOBUF_EXPORT InitDefaults();
 
 // ===================================================================
 
-class LIBPROTOBUF_EXPORT Duration : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:google.protobuf.Duration) */ {
+class LIBPROTOBUF_EXPORT Duration : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:google.protobuf.Duration)
+                                                                        */
+{
  public:
   Duration();
   virtual ~Duration();
@@ -69,11 +73,8 @@ class LIBPROTOBUF_EXPORT Duration : public ::google::protobuf::Message /* @@prot
     CopyFrom(from);
     return *this;
   }
-  #if LANG_CXX11
-  Duration(Duration&& from) noexcept
-    : Duration() {
-    *this = ::std::move(from);
-  }
+#if LANG_CXX11
+  Duration(Duration&& from) noexcept : Duration() { *this = ::std::move(from); }
 
   inline Duration& operator=(Duration&& from) noexcept {
     if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
@@ -83,7 +84,7 @@ class LIBPROTOBUF_EXPORT Duration : public ::google::protobuf::Message /* @@prot
     }
     return *this;
   }
-  #endif
+#endif
   inline ::google::protobuf::Arena* GetArena() const PROTOBUF_FINAL {
     return GetArenaNoVirtual();
   }
@@ -94,17 +95,13 @@ class LIBPROTOBUF_EXPORT Duration : public ::google::protobuf::Message /* @@prot
   static const Duration& default_instance();
 
   static inline const Duration* internal_default_instance() {
-    return reinterpret_cast<const Duration*>(
-               &_Duration_default_instance_);
+    return reinterpret_cast<const Duration*>(&_Duration_default_instance_);
   }
-  static PROTOBUF_CONSTEXPR int const kIndexInFileMessages =
-    0;
+  static PROTOBUF_CONSTEXPR int const kIndexInFileMessages = 0;
 
   void UnsafeArenaSwap(Duration* other);
   void Swap(Duration* other);
-  friend void swap(Duration& a, Duration& b) {
-    a.Swap(&b);
-  }
+  friend void swap(Duration& a, Duration& b) { a.Swap(&b); }
 
   // implements Message ----------------------------------------------
 
@@ -124,27 +121,32 @@ class LIBPROTOBUF_EXPORT Duration : public ::google::protobuf::Message /* @@prot
   void SerializeWithCachedSizes(
       ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
   ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
-      bool deterministic, ::google::protobuf::uint8* target) const PROTOBUF_FINAL;
+      bool deterministic,
+      ::google::protobuf::uint8* target) const PROTOBUF_FINAL;
   int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
-  private:
+
+ private:
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const PROTOBUF_FINAL;
   void InternalSwap(Duration* other);
-  protected:
+
+ protected:
   explicit Duration(::google::protobuf::Arena* arena);
-  private:
+
+ private:
   static void ArenaDtor(void* object);
   inline void RegisterArenaDtor(::google::protobuf::Arena* arena);
-  private:
+
+ private:
   inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
     return _internal_metadata_.arena();
   }
   inline void* MaybeArenaPtr() const {
     return _internal_metadata_.raw_arena_ptr();
   }
-  public:
 
+ public:
   ::google::protobuf::Metadata GetMetadata() const PROTOBUF_FINAL;
 
   // nested types ----------------------------------------------------
@@ -165,9 +167,9 @@ class LIBPROTOBUF_EXPORT Duration : public ::google::protobuf::Message /* @@prot
 
   // @@protoc_insertion_point(class_scope:google.protobuf.Duration)
  private:
-
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  template <typename T> friend class ::google::protobuf::Arena::InternalHelper;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
   ::google::protobuf::int64 seconds_;
@@ -177,51 +179,43 @@ class LIBPROTOBUF_EXPORT Duration : public ::google::protobuf::Message /* @@prot
 };
 // ===================================================================
 
-
 // ===================================================================
 
 #if !PROTOBUF_INLINE_NOT_IN_HEADERS
 #ifdef __GNUC__
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif  // __GNUC__
 // Duration
 
 // int64 seconds = 1;
-inline void Duration::clear_seconds() {
-  seconds_ = GOOGLE_LONGLONG(0);
-}
+inline void Duration::clear_seconds() { seconds_ = GOOGLE_LONGLONG(0); }
 inline ::google::protobuf::int64 Duration::seconds() const {
   // @@protoc_insertion_point(field_get:google.protobuf.Duration.seconds)
   return seconds_;
 }
 inline void Duration::set_seconds(::google::protobuf::int64 value) {
-  
   seconds_ = value;
   // @@protoc_insertion_point(field_set:google.protobuf.Duration.seconds)
 }
 
 // int32 nanos = 2;
-inline void Duration::clear_nanos() {
-  nanos_ = 0;
-}
+inline void Duration::clear_nanos() { nanos_ = 0; }
 inline ::google::protobuf::int32 Duration::nanos() const {
   // @@protoc_insertion_point(field_get:google.protobuf.Duration.nanos)
   return nanos_;
 }
 inline void Duration::set_nanos(::google::protobuf::int32 value) {
-  
   nanos_ = value;
   // @@protoc_insertion_point(field_set:google.protobuf.Duration.nanos)
 }
 
 #ifdef __GNUC__
-  #pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
 #endif  // __GNUC__
 #endif  // !PROTOBUF_INLINE_NOT_IN_HEADERS
 
 // @@protoc_insertion_point(namespace_scope)
-
 
 }  // namespace protobuf
 }  // namespace google

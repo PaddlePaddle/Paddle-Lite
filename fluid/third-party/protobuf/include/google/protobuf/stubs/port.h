@@ -33,9 +33,9 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 #include <cstddef>
 #include <string>
-#include <string.h>
 #if defined(__osf__)
 // Tru64 lacks stdint.h, but has inttypes.h which defines a superset of
 // what stdint.h would define.
@@ -48,44 +48,44 @@
 
 #undef PROTOBUF_LITTLE_ENDIAN
 #ifdef _WIN32
-  // Assuming windows is always little-endian.
-  // TODO(xiaofeng): The PROTOBUF_LITTLE_ENDIAN is not only used for
-  // optimization but also for correctness. We should define an
-  // different macro to test the big-endian code path in coded_stream.
-  #if !defined(PROTOBUF_DISABLE_LITTLE_ENDIAN_OPT_FOR_TEST)
-    #define PROTOBUF_LITTLE_ENDIAN 1
-  #endif
-  #if _MSC_VER >= 1300 && !defined(__INTEL_COMPILER)
-    // If MSVC has "/RTCc" set, it will complain about truncating casts at
-    // runtime.  This file contains some intentional truncating casts.
-    #pragma runtime_checks("c", off)
-  #endif
+// Assuming windows is always little-endian.
+// TODO(xiaofeng): The PROTOBUF_LITTLE_ENDIAN is not only used for
+// optimization but also for correctness. We should define an
+// different macro to test the big-endian code path in coded_stream.
+#if !defined(PROTOBUF_DISABLE_LITTLE_ENDIAN_OPT_FOR_TEST)
+#define PROTOBUF_LITTLE_ENDIAN 1
+#endif
+#if _MSC_VER >= 1300 && !defined(__INTEL_COMPILER)
+// If MSVC has "/RTCc" set, it will complain about truncating casts at
+// runtime.  This file contains some intentional truncating casts.
+#pragma runtime_checks("c", off)
+#endif
 #else
-  #include <sys/param.h>   // __BYTE_ORDER
-  #if defined(__OpenBSD__)
-    #include <endian.h>
-  #endif
-  #if ((defined(__LITTLE_ENDIAN__) && !defined(__BIG_ENDIAN__)) || \
-         (defined(__BYTE_ORDER) && __BYTE_ORDER == __LITTLE_ENDIAN) || \
-         (defined(BYTE_ORDER) && BYTE_ORDER == LITTLE_ENDIAN)) && \
-      !defined(PROTOBUF_DISABLE_LITTLE_ENDIAN_OPT_FOR_TEST)
-    #define PROTOBUF_LITTLE_ENDIAN 1
-  #endif
+#include <sys/param.h>  // __BYTE_ORDER
+#if defined(__OpenBSD__)
+#include <endian.h>
+#endif
+#if ((defined(__LITTLE_ENDIAN__) && !defined(__BIG_ENDIAN__)) ||   \
+     (defined(__BYTE_ORDER) && __BYTE_ORDER == __LITTLE_ENDIAN) || \
+     (defined(BYTE_ORDER) && BYTE_ORDER == LITTLE_ENDIAN)) &&      \
+    !defined(PROTOBUF_DISABLE_LITTLE_ENDIAN_OPT_FOR_TEST)
+#define PROTOBUF_LITTLE_ENDIAN 1
+#endif
 #endif
 #if defined(_MSC_VER) && defined(PROTOBUF_USE_DLLS)
-  #ifdef LIBPROTOBUF_EXPORTS
-    #define LIBPROTOBUF_EXPORT __declspec(dllexport)
-  #else
-    #define LIBPROTOBUF_EXPORT __declspec(dllimport)
-  #endif
-  #ifdef LIBPROTOC_EXPORTS
-    #define LIBPROTOC_EXPORT   __declspec(dllexport)
-  #else
-    #define LIBPROTOC_EXPORT   __declspec(dllimport)
-  #endif
+#ifdef LIBPROTOBUF_EXPORTS
+#define LIBPROTOBUF_EXPORT __declspec(dllexport)
 #else
-  #define LIBPROTOBUF_EXPORT
-  #define LIBPROTOC_EXPORT
+#define LIBPROTOBUF_EXPORT __declspec(dllimport)
+#endif
+#ifdef LIBPROTOC_EXPORTS
+#define LIBPROTOC_EXPORT __declspec(dllexport)
+#else
+#define LIBPROTOC_EXPORT __declspec(dllimport)
+#endif
+#else
+#define LIBPROTOBUF_EXPORT
+#define LIBPROTOC_EXPORT
 #endif
 
 // These #includes are for the byte swap functions declared later on.
@@ -114,12 +114,12 @@ namespace protobuf {
 typedef unsigned int uint;
 
 #ifdef _MSC_VER
-typedef signed __int8  int8;
+typedef signed __int8 int8;
 typedef __int16 int16;
 typedef __int32 int32;
 typedef __int64 int64;
 
-typedef unsigned __int8  uint8;
+typedef unsigned __int8 uint8;
 typedef unsigned __int16 uint16;
 typedef unsigned __int32 uint32;
 typedef unsigned __int64 uint64;
@@ -167,10 +167,11 @@ static const uint64 kuint64max = GOOGLE_ULONGLONG(0xFFFFFFFFFFFFFFFF);
 //   is not right for you.
 
 #ifndef GOOGLE_ATTRIBUTE_ALWAYS_INLINE
-#if defined(__GNUC__) && (__GNUC__ > 3 ||(__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
+#if defined(__GNUC__) && \
+    (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
 // For functions we want to force inline.
 // Introduced in gcc 3.1.
-#define GOOGLE_ATTRIBUTE_ALWAYS_INLINE __attribute__ ((always_inline))
+#define GOOGLE_ATTRIBUTE_ALWAYS_INLINE __attribute__((always_inline))
 #else
 // Other compilers will have to figure it out for themselves.
 #define GOOGLE_ATTRIBUTE_ALWAYS_INLINE
@@ -178,10 +179,11 @@ static const uint64 kuint64max = GOOGLE_ULONGLONG(0xFFFFFFFFFFFFFFFF);
 #endif
 
 #ifndef GOOGLE_ATTRIBUTE_NOINLINE
-#if defined(__GNUC__) && (__GNUC__ > 3 ||(__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
+#if defined(__GNUC__) && \
+    (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
 // For functions we want to force not inline.
 // Introduced in gcc 3.1.
-#define GOOGLE_ATTRIBUTE_NOINLINE __attribute__ ((noinline))
+#define GOOGLE_ATTRIBUTE_NOINLINE __attribute__((noinline))
 #elif defined(_MSC_VER) && (_MSC_VER >= 1400)
 // Seems to have been around since at least Visual Studio 2005
 #define GOOGLE_ATTRIBUTE_NOINLINE __declspec(noinline)
@@ -237,27 +239,28 @@ static const uint64 kuint64max = GOOGLE_ULONGLONG(0xFFFFFFFFFFFFFFFF);
 #define GOOGLE_SAFE_CONCURRENT_WRITES_END()
 #endif
 
-#if defined(__clang__) && defined(__has_cpp_attribute) \
-    && !defined(GOOGLE_PROTOBUF_OS_APPLE)
-# if defined(GOOGLE_PROTOBUF_OS_NACL) || defined(EMSCRIPTEN) || \
-     __has_cpp_attribute(clang::fallthrough)
-#  define GOOGLE_FALLTHROUGH_INTENDED [[clang::fallthrough]]
-# endif
+#if defined(__clang__) && defined(__has_cpp_attribute) && \
+    !defined(GOOGLE_PROTOBUF_OS_APPLE)
+#if defined(GOOGLE_PROTOBUF_OS_NACL) || defined(EMSCRIPTEN) || \
+    __has_cpp_attribute(clang::fallthrough)
+#define GOOGLE_FALLTHROUGH_INTENDED [[clang::fallthrough]]
+#endif
 #endif
 
 #ifndef GOOGLE_FALLTHROUGH_INTENDED
-# define GOOGLE_FALLTHROUGH_INTENDED
+#define GOOGLE_FALLTHROUGH_INTENDED
 #endif
 
 #define GOOGLE_GUARDED_BY(x)
 #define GOOGLE_ATTRIBUTE_COLD
 
 #ifdef GOOGLE_PROTOBUF_DONT_USE_UNALIGNED
-# define GOOGLE_PROTOBUF_USE_UNALIGNED 0
+#define GOOGLE_PROTOBUF_USE_UNALIGNED 0
 #else
 // x86 and x86-64 can perform unaligned loads/stores directly.
-# define GOOGLE_PROTOBUF_USE_UNALIGNED defined(_M_X64) || \
-     defined(__x86_64__) || defined(_M_IX86) || defined(__i386__)
+#define GOOGLE_PROTOBUF_USE_UNALIGNED                           \
+  defined(_M_X64) || defined(__x86_64__) || defined(_M_IX86) || \
+      defined(__i386__)
 #endif
 
 #if GOOGLE_PROTOBUF_USE_UNALIGNED
@@ -266,9 +269,12 @@ static const uint64 kuint64max = GOOGLE_ULONGLONG(0xFFFFFFFFFFFFFFFF);
 #define GOOGLE_UNALIGNED_LOAD32(_p) (*reinterpret_cast<const uint32 *>(_p))
 #define GOOGLE_UNALIGNED_LOAD64(_p) (*reinterpret_cast<const uint64 *>(_p))
 
-#define GOOGLE_UNALIGNED_STORE16(_p, _val) (*reinterpret_cast<uint16 *>(_p) = (_val))
-#define GOOGLE_UNALIGNED_STORE32(_p, _val) (*reinterpret_cast<uint32 *>(_p) = (_val))
-#define GOOGLE_UNALIGNED_STORE64(_p, _val) (*reinterpret_cast<uint64 *>(_p) = (_val))
+#define GOOGLE_UNALIGNED_STORE16(_p, _val) \
+  (*reinterpret_cast<uint16 *>(_p) = (_val))
+#define GOOGLE_UNALIGNED_STORE32(_p, _val) \
+  (*reinterpret_cast<uint32 *>(_p) = (_val))
+#define GOOGLE_UNALIGNED_STORE64(_p, _val) \
+  (*reinterpret_cast<uint64 *>(_p) = (_val))
 
 #else
 inline uint16 GOOGLE_UNALIGNED_LOAD16(const void *p) {
@@ -327,9 +333,7 @@ static inline uint16 bswap_16(uint16 x) {
 }
 #define bswap_16(x) bswap_16(x)
 static inline uint32 bswap_32(uint32 x) {
-  return (((x & 0xFF) << 24) |
-          ((x & 0xFF00) << 8) |
-          ((x & 0xFF0000) >> 8) |
+  return (((x & 0xFF) << 24) | ((x & 0xFF00) << 8) | ((x & 0xFF0000) >> 8) |
           ((x & 0xFF000000) >> 24));
 }
 #define bswap_32(x) bswap_32(x)
@@ -354,15 +358,15 @@ class Bits {
  public:
   static uint32 Log2FloorNonZero(uint32 n) {
 #if defined(__GNUC__)
-  return 31 ^ static_cast<uint32>(__builtin_clz(n));
+    return 31 ^ static_cast<uint32>(__builtin_clz(n));
 #elif defined(COMPILER_MSVC) && defined(_M_IX86)
-  _asm {
+    _asm {
     bsr ebx, n
     mov n, ebx
-  }
-  return n;
+    }
+    return n;
 #else
-  return Log2FloorNonZero_Portable(n);
+    return Log2FloorNonZero_Portable(n);
 #endif
   }
 
@@ -373,15 +377,15 @@ class Bits {
     // To work around this, when we build for NaCl we use the portable
     // implementation instead.
 #if defined(__GNUC__) && !defined(GOOGLE_PROTOBUF_OS_NACL)
-  return 63 ^ static_cast<uint32>(__builtin_clzll(n));
+    return 63 ^ static_cast<uint32>(__builtin_clzll(n));
 #else
-  return Log2FloorNonZero64_Portable(n);
+    return Log2FloorNonZero64_Portable(n);
 #endif
   }
+
  private:
   static int Log2FloorNonZero_Portable(uint32 n) {
-    if (n == 0)
-      return -1;
+    if (n == 0) return -1;
     int log = 0;
     uint32 value = n;
     for (int i = 4; i >= 0; --i) {

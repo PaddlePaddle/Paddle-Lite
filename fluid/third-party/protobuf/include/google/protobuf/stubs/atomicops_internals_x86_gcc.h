@@ -57,8 +57,8 @@ inline Atomic32 NoBarrier_CompareAndSwap(volatile Atomic32* ptr,
                                          Atomic32 new_value) {
   Atomic32 prev;
   __asm__ __volatile__("lock; cmpxchgl %1,%2"
-                       : "=a" (prev)
-                       : "q" (new_value), "m" (*ptr), "0" (old_value)
+                       : "=a"(prev)
+                       : "q"(new_value), "m"(*ptr), "0"(old_value)
                        : "memory");
   return prev;
 }
@@ -66,8 +66,8 @@ inline Atomic32 NoBarrier_CompareAndSwap(volatile Atomic32* ptr,
 inline Atomic32 NoBarrier_AtomicExchange(volatile Atomic32* ptr,
                                          Atomic32 new_value) {
   __asm__ __volatile__("xchgl %1,%0"  // The lock prefix is implicit for xchg.
-                       : "=r" (new_value)
-                       : "m" (*ptr), "0" (new_value)
+                       : "=r"(new_value)
+                       : "m"(*ptr), "0"(new_value)
                        : "memory");
   return new_value;  // Now it's the previous value.
 }
@@ -76,8 +76,9 @@ inline Atomic32 NoBarrier_AtomicIncrement(volatile Atomic32* ptr,
                                           Atomic32 increment) {
   Atomic32 temp = increment;
   __asm__ __volatile__("lock; xaddl %0,%1"
-                       : "+r" (temp), "+m" (*ptr)
-                       : : "memory");
+                       : "+r"(temp), "+m"(*ptr)
+                       :
+                       : "memory");
   // temp now holds the old value of *ptr
   return temp + increment;
 }
@@ -86,8 +87,9 @@ inline Atomic32 Barrier_AtomicIncrement(volatile Atomic32* ptr,
                                         Atomic32 increment) {
   Atomic32 temp = increment;
   __asm__ __volatile__("lock; xaddl %0,%1"
-                       : "+r" (temp), "+m" (*ptr)
-                       : : "memory");
+                       : "+r"(temp), "+m"(*ptr)
+                       :
+                       : "memory");
   // temp now holds the old value of *ptr
   if (AtomicOps_Internalx86CPUFeatures.has_amd_lock_mb_bug) {
     __asm__ __volatile__("lfence" : : : "memory");
@@ -96,8 +98,7 @@ inline Atomic32 Barrier_AtomicIncrement(volatile Atomic32* ptr,
 }
 
 inline Atomic32 Acquire_CompareAndSwap(volatile Atomic32* ptr,
-                                       Atomic32 old_value,
-                                       Atomic32 new_value) {
+                                       Atomic32 old_value, Atomic32 new_value) {
   Atomic32 x = NoBarrier_CompareAndSwap(ptr, old_value, new_value);
   if (AtomicOps_Internalx86CPUFeatures.has_amd_lock_mb_bug) {
     __asm__ __volatile__("lfence" : : : "memory");
@@ -106,8 +107,7 @@ inline Atomic32 Acquire_CompareAndSwap(volatile Atomic32* ptr,
 }
 
 inline Atomic32 Release_CompareAndSwap(volatile Atomic32* ptr,
-                                       Atomic32 old_value,
-                                       Atomic32 new_value) {
+                                       Atomic32 old_value, Atomic32 new_value) {
   return NoBarrier_CompareAndSwap(ptr, old_value, new_value);
 }
 
@@ -145,7 +145,7 @@ inline void Acquire_Store(volatile Atomic32* ptr, Atomic32 value) {
     __asm__ __volatile__("mfence" : : : "memory");
   } else {
     NoBarrier_AtomicExchange(ptr, value);
-                          // acts as a barrier on PIII
+    // acts as a barrier on PIII
   }
 }
 #endif
@@ -156,9 +156,7 @@ inline void Release_Store(volatile Atomic32* ptr, Atomic32 value) {
   // See comments in Atomic64 version of Release_Store(), below.
 }
 
-inline Atomic32 NoBarrier_Load(volatile const Atomic32* ptr) {
-  return *ptr;
-}
+inline Atomic32 NoBarrier_Load(volatile const Atomic32* ptr) { return *ptr; }
 
 inline Atomic32 Acquire_Load(volatile const Atomic32* ptr) {
   Atomic32 value = *ptr;  // An x86 load acts as a acquire barrier.
@@ -181,8 +179,8 @@ inline Atomic64 NoBarrier_CompareAndSwap(volatile Atomic64* ptr,
                                          Atomic64 new_value) {
   Atomic64 prev;
   __asm__ __volatile__("lock; cmpxchgq %1,%2"
-                       : "=a" (prev)
-                       : "q" (new_value), "m" (*ptr), "0" (old_value)
+                       : "=a"(prev)
+                       : "q"(new_value), "m"(*ptr), "0"(old_value)
                        : "memory");
   return prev;
 }
@@ -190,8 +188,8 @@ inline Atomic64 NoBarrier_CompareAndSwap(volatile Atomic64* ptr,
 inline Atomic64 NoBarrier_AtomicExchange(volatile Atomic64* ptr,
                                          Atomic64 new_value) {
   __asm__ __volatile__("xchgq %1,%0"  // The lock prefix is implicit for xchg.
-                       : "=r" (new_value)
-                       : "m" (*ptr), "0" (new_value)
+                       : "=r"(new_value)
+                       : "m"(*ptr), "0"(new_value)
                        : "memory");
   return new_value;  // Now it's the previous value.
 }
@@ -200,8 +198,9 @@ inline Atomic64 NoBarrier_AtomicIncrement(volatile Atomic64* ptr,
                                           Atomic64 increment) {
   Atomic64 temp = increment;
   __asm__ __volatile__("lock; xaddq %0,%1"
-                       : "+r" (temp), "+m" (*ptr)
-                       : : "memory");
+                       : "+r"(temp), "+m"(*ptr)
+                       :
+                       : "memory");
   // temp now contains the previous value of *ptr
   return temp + increment;
 }
@@ -210,8 +209,9 @@ inline Atomic64 Barrier_AtomicIncrement(volatile Atomic64* ptr,
                                         Atomic64 increment) {
   Atomic64 temp = increment;
   __asm__ __volatile__("lock; xaddq %0,%1"
-                       : "+r" (temp), "+m" (*ptr)
-                       : : "memory");
+                       : "+r"(temp), "+m"(*ptr)
+                       :
+                       : "memory");
   // temp now contains the previous value of *ptr
   if (AtomicOps_Internalx86CPUFeatures.has_amd_lock_mb_bug) {
     __asm__ __volatile__("lfence" : : : "memory");
@@ -249,9 +249,7 @@ inline void Release_Store(volatile Atomic64* ptr, Atomic64 value) {
   // either flushing cache lines or non-temporal cache hints.
 }
 
-inline Atomic64 NoBarrier_Load(volatile const Atomic64* ptr) {
-  return *ptr;
-}
+inline Atomic64 NoBarrier_Load(volatile const Atomic64* ptr) { return *ptr; }
 
 inline Atomic64 Acquire_Load(volatile const Atomic64* ptr) {
   Atomic64 value = *ptr;  // An x86 load acts as a acquire barrier,
@@ -267,8 +265,7 @@ inline Atomic64 Release_Load(volatile const Atomic64* ptr) {
 }
 
 inline Atomic64 Acquire_CompareAndSwap(volatile Atomic64* ptr,
-                                       Atomic64 old_value,
-                                       Atomic64 new_value) {
+                                       Atomic64 old_value, Atomic64 new_value) {
   Atomic64 x = NoBarrier_CompareAndSwap(ptr, old_value, new_value);
   if (AtomicOps_Internalx86CPUFeatures.has_amd_lock_mb_bug) {
     __asm__ __volatile__("lfence" : : : "memory");
@@ -277,8 +274,7 @@ inline Atomic64 Acquire_CompareAndSwap(volatile Atomic64* ptr,
 }
 
 inline Atomic64 Release_CompareAndSwap(volatile Atomic64* ptr,
-                                       Atomic64 old_value,
-                                       Atomic64 new_value) {
+                                       Atomic64 old_value, Atomic64 new_value) {
   return NoBarrier_CompareAndSwap(ptr, old_value, new_value);
 }
 

@@ -37,16 +37,16 @@
 #ifndef GOOGLE_PROTOBUF_IO_PRINTER_H__
 #define GOOGLE_PROTOBUF_IO_PRINTER_H__
 
-#include <string>
-#include <map>
-#include <vector>
 #include <google/protobuf/stubs/common.h>
+#include <map>
+#include <string>
+#include <vector>
 
 namespace google {
 namespace protobuf {
 namespace io {
 
-class ZeroCopyOutputStream;     // zero_copy_stream.h
+class ZeroCopyOutputStream;  // zero_copy_stream.h
 
 // Records annotations about a Printer's output.
 class LIBPROTOBUF_EXPORT AnnotationCollector {
@@ -234,46 +234,39 @@ class LIBPROTOBUF_EXPORT Printer {
   void Print(const char* text, const char* variable, const string& value);
   // Like the first Print(), except the substitutions are given as parameters.
   void Print(const char* text, const char* variable1, const string& value1,
-                               const char* variable2, const string& value2);
+             const char* variable2, const string& value2);
   // Like the first Print(), except the substitutions are given as parameters.
   void Print(const char* text, const char* variable1, const string& value1,
-                               const char* variable2, const string& value2,
-                               const char* variable3, const string& value3);
+             const char* variable2, const string& value2, const char* variable3,
+             const string& value3);
   // Like the first Print(), except the substitutions are given as parameters.
   void Print(const char* text, const char* variable1, const string& value1,
-                               const char* variable2, const string& value2,
-                               const char* variable3, const string& value3,
-                               const char* variable4, const string& value4);
+             const char* variable2, const string& value2, const char* variable3,
+             const string& value3, const char* variable4, const string& value4);
   // Like the first Print(), except the substitutions are given as parameters.
   void Print(const char* text, const char* variable1, const string& value1,
-                               const char* variable2, const string& value2,
-                               const char* variable3, const string& value3,
-                               const char* variable4, const string& value4,
-                               const char* variable5, const string& value5);
+             const char* variable2, const string& value2, const char* variable3,
+             const string& value3, const char* variable4, const string& value4,
+             const char* variable5, const string& value5);
   // Like the first Print(), except the substitutions are given as parameters.
   void Print(const char* text, const char* variable1, const string& value1,
-                               const char* variable2, const string& value2,
-                               const char* variable3, const string& value3,
-                               const char* variable4, const string& value4,
-                               const char* variable5, const string& value5,
-                               const char* variable6, const string& value6);
+             const char* variable2, const string& value2, const char* variable3,
+             const string& value3, const char* variable4, const string& value4,
+             const char* variable5, const string& value5, const char* variable6,
+             const string& value6);
   // Like the first Print(), except the substitutions are given as parameters.
   void Print(const char* text, const char* variable1, const string& value1,
-                               const char* variable2, const string& value2,
-                               const char* variable3, const string& value3,
-                               const char* variable4, const string& value4,
-                               const char* variable5, const string& value5,
-                               const char* variable6, const string& value6,
-                               const char* variable7, const string& value7);
+             const char* variable2, const string& value2, const char* variable3,
+             const string& value3, const char* variable4, const string& value4,
+             const char* variable5, const string& value5, const char* variable6,
+             const string& value6, const char* variable7, const string& value7);
   // Like the first Print(), except the substitutions are given as parameters.
   void Print(const char* text, const char* variable1, const string& value1,
-                               const char* variable2, const string& value2,
-                               const char* variable3, const string& value3,
-                               const char* variable4, const string& value4,
-                               const char* variable5, const string& value5,
-                               const char* variable6, const string& value6,
-                               const char* variable7, const string& value7,
-                               const char* variable8, const string& value8);
+             const char* variable2, const string& value2, const char* variable3,
+             const string& value3, const char* variable4, const string& value4,
+             const char* variable5, const string& value5, const char* variable6,
+             const string& value6, const char* variable7, const string& value7,
+             const char* variable8, const string& value8);
 
   // Indent text by two spaces.  After calling Indent(), two spaces will be
   // inserted at the beginning of each line of text.  Indent() may be called
@@ -335,7 +328,7 @@ class LIBPROTOBUF_EXPORT Printer {
   // start offset is the beginning of the substitution; the end offset is the
   // last byte of the substitution plus one (such that (end - start) is the
   // length of the substituted string).
-  std::map<string, std::pair<size_t, size_t> > substitutions_;
+  std::map<string, std::pair<size_t, size_t>> substitutions_;
 
   // Keeps track of the keys in substitutions_ that need to be updated when
   // indents are inserted. These are keys that refer to the beginning of the
