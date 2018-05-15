@@ -41,7 +41,7 @@ inline proto::VarType::Type ToDataType(std::type_index type) {
     return proto::VarType::BOOL;
   } else {
     //    PADDLE_THROW("Not supported");
-//    std::cout << "Not supported";
+    //    std::cout << "Not supported";
   }
 }
 

@@ -59,21 +59,21 @@ int main() {
                      static_cast<float>(1));
   float* input_ptr = input.data<float>();
   for (int i = 0; i < input.numel(); ++i) {
-//    std::cout << input_ptr[i] << std::endl;
+    //    std::cout << input_ptr[i] << std::endl;
   }
 
-//  std::cout << "input: " << input.memory_size() << std::endl;
-//  std::cout << "input: " << input.numel() << std::endl;
+  //  std::cout << "input: " << input.memory_size() << std::endl;
+  //  std::cout << "input: " << input.numel() << std::endl;
 
   auto output = executor.predict(input);
 
-//  std::cout << "output: " << output->memory_size() << std::endl;
-//  std::cout << "output: " << output->numel() << std::endl;
+  //  std::cout << "output: " << output->memory_size() << std::endl;
+  //  std::cout << "output: " << output->numel() << std::endl;
 
-//  float* output_ptr = output->data<float>();
-//  for (int j = 0; j < output->numel(); ++j) {
-//    std::cout << " value of output: " << output_ptr[j] << std::endl;
-//  }
+  //  float* output_ptr = output->data<float>();
+  //  for (int j = 0; j < output->numel(); ++j) {
+  //    std::cout << " value of output: " << output_ptr[j] << std::endl;
+  //  }
 
   return 0;
 }

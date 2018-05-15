@@ -40,7 +40,7 @@ inline DataLayout StringToDataLayout(const std::string& str) {
   } else if (s == "ANYLAYOUT") {
     return DataLayout::kAnyLayout;
   } else {
-//    std::cout << "Unknown storage order string: %s", s;
+    //    std::cout << "Unknown storage order string: %s", s;
   }
 }
 
@@ -54,7 +54,7 @@ inline std::string DataLayoutToString(const DataLayout& data_layout) {
       return "ANY_LAYOUT";
     default:
       break;
-//      std::cout << "unknown DataLayou %d", data_layout;
+      //      std::cout << "unknown DataLayou %d", data_layout;
   }
 }
 
