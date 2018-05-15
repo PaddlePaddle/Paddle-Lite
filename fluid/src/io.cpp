@@ -364,6 +364,6 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
   return program;
 }
 
-template class Loader<ARM, Precision::FP32>;
+template class Loader<CPU, Precision::FP32>;
 
 }  // namespace paddle_mobile

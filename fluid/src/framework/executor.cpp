@@ -98,7 +98,7 @@ void Executor<Dtype>::predict(const Tensor &t, int block_id) {
   }
 }
 
-template class Executor<ARM>;
+template class Executor<CPU>;
 
 }  // namespace framework
 }  // namespace paddle_mobile

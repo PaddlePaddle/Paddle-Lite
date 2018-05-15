@@ -26,7 +26,7 @@ using Tensor = paddle_mobile::framework::Tensor;
  *                    output_depth, output_height, output_width]
  */
 template <typename T>
-class Vol2ColFunctor<ARM, T> {
+class Vol2ColFunctor<CPU, T> {
  public:
   void operator()(const Tensor& vol, const std::vector<int>& dilations,
                   const std::vector<int>& strides,
@@ -109,7 +109,7 @@ class Vol2ColFunctor<ARM, T> {
  *                    output_depth, output_height, output_width]
  */
 template <typename T>
-class Col2VolFunctor<ARM, T> {
+class Col2VolFunctor<CPU, T> {
  public:
   void operator()(const Tensor& col, const std::vector<int>& dilations,
                   const std::vector<int>& strides,
@@ -185,10 +185,10 @@ class Col2VolFunctor<ARM, T> {
   }
 };
 
-template class Vol2ColFunctor<ARM, float>;
-template class Vol2ColFunctor<ARM, double>;
-template class Col2VolFunctor<ARM, float>;
-template class Col2VolFunctor<ARM, double>;
+template class Vol2ColFunctor<CPU, float>;
+template class Vol2ColFunctor<CPU, double>;
+template class Col2VolFunctor<CPU, float>;
+template class Col2VolFunctor<CPU, double>;
 
 }  // namespace math
 }  // namespace operators

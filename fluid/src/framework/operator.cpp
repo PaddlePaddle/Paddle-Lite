@@ -44,8 +44,8 @@ void OperatorBase<Dtype>::Run() {
 template <typename Dtype>
 void OperatorBase<Dtype>::CheckAllInputOutputSet() const {}
 
-template class OperatorBase<ARM>;
-template class OperatorWithKernel<ARM>;
+template class OperatorBase<CPU>;
+template class OperatorWithKernel<CPU>;
 
 }  // namespace framework
 }  // namespace paddle_mobile

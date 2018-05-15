@@ -48,11 +48,11 @@ int main() {
   //        LOG(FATAL) << "Only cifar10 or imagenet is supported.";
   //    }
 
-  paddle_mobile::Loader<paddle_mobile::ARM> loader;
+  paddle_mobile::Loader<paddle_mobile::CPU> loader;
   auto program = loader.Load(std::string(
       "../test/models/image_classification_resnet.inference.model"));
 
-  paddle_mobile::framework::Executor<paddle_mobile::ARM> executor(program);
+  paddle_mobile::framework::Executor<paddle_mobile::CPU> executor(program);
 
   paddle_mobile::framework::Tensor input;
   SetupTensor<float>(&input, {1, 3, 32, 32}, static_cast<float>(0),

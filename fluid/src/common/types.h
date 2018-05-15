@@ -22,33 +22,14 @@ namespace paddle_mobile {
 enum class Precision : int { FP32 = 0 };
 
 //! device type
-enum DeviceTypeEnum { eINVALID = -1, eARM = 0, eCPU = 1, eFPGA = 2 };
+enum DeviceTypeEnum { kINVALID = -1, kCPU = 0, kFPGA = 1, kGPU_MALI = 2 };
 
 template <DeviceTypeEnum T>
 struct DeviceType {};
 
-typedef DeviceType<eARM> ARM;
-typedef DeviceType<eCPU> CPU;
-typedef DeviceType<eFPGA> FPGA;
-
-struct __invalid_type {};
-
-//! data_layout type
-struct W {};
-struct HW {};
-struct WH {};
-struct NW {};
-struct NHW {};
-struct NCHW {};
-struct NHWC {};
-struct NCHW_C4 {};
-
-//! dim type
-struct D5 {};
-struct D4 {};
-struct D3 {};
-struct D2 {};
-struct D1 {};
+typedef DeviceType<kCPU> CPU;
+typedef DeviceType<kFPGA> FPGA;
+typedef DeviceType<kGPU_MALI> GPU_MALI;
 
 //! data type
 enum DataType {
@@ -69,17 +50,15 @@ enum DataType {
   PM_TENSOR = 13
 };
 //!
-typedef enum {
-  PMSuccess = -1,       /*!< No errors */
-  PMNotInitialized = 1, /*!< Data not initialized. */
-  PMInvalidValue =
-      (1 << 1) + PMNotInitialized, /*!< Incorrect variable value. */
-  PMMemAllocFailed = (1 << 2) + PMInvalidValue, /*!< Memory allocation error. */
-  PMUnKownError = (1 << 3) + PMMemAllocFailed,  /*!< Unknown error. */
-  PMOutOfAuthority =
-      (1 << 4) + PMUnKownError, /*!< Try to modified data not your own*/
-  PMOutOfMem = (1 << 5) + PMOutOfAuthority, /*!< OOM error*/
-  PMUnImplError = (1 << 6) + PMOutOfMem,    /*!< Unimplement error. */
-  PMWrongDevice = (1 << 7) + PMUnImplError  /*!< un-correct device. */
-} PMStatus;
+enum PMStatus{
+  PMSuccess = 0xFF,       /*!< No errors */
+  PMNotInitialized = 0x01, /*!< Data not initialized. */
+  PMInvalidValue = 0x02, /*!< Incorrect variable value. */
+  PMMemAllocFailed = 0x03, /*!< Memory allocation error. */
+  PMUnKownError = 0x04,  /*!< Unknown error. */
+  PMOutOfAuthority = 0x05, /*!< Try to modified data not your own*/
+  PMOutOfMem = 0x06, /*!< OOM error*/
+  PMUnImplError = 0x07,    /*!< Unimplement error. */
+  PMWrongDevice = 0x08  /*!< un-correct device. */
+} ;
 }

@@ -25,7 +25,7 @@ namespace math {
  *   [input_channels, filter_height, filter_width, output_height, output_width]
  */
 template <class T>
-class Im2ColFunctor<ColFormat::kCFO, ARM, T> {
+class Im2ColFunctor<ColFormat::kCFO, CPU, T> {
  public:
   void operator()(const framework::Tensor& im, const std::vector<int>& dilation,
                   const std::vector<int>& stride,
@@ -87,7 +87,7 @@ class Im2ColFunctor<ColFormat::kCFO, ARM, T> {
  *   [input_channels, filter_height, filter_width, output_height, output_width]
  */
 template <class T>
-class Col2ImFunctor<ColFormat::kCFO, ARM, T> {
+class Col2ImFunctor<ColFormat::kCFO, CPU, T> {
  public:
   void operator()(const framework::Tensor& col,
                   const std::vector<int>& dilation,
@@ -142,10 +142,10 @@ class Col2ImFunctor<ColFormat::kCFO, ARM, T> {
   }
 };
 
-template class Im2ColFunctor<ColFormat::kCFO, ARM, float>;
-template class Im2ColFunctor<ColFormat::kCFO, ARM, double>;
-template class Col2ImFunctor<ColFormat::kCFO, ARM, float>;
-template class Col2ImFunctor<ColFormat::kCFO, ARM, double>;
+template class Im2ColFunctor<ColFormat::kCFO, CPU, float>;
+template class Im2ColFunctor<ColFormat::kCFO, CPU, double>;
+template class Col2ImFunctor<ColFormat::kCFO, CPU, float>;
+template class Col2ImFunctor<ColFormat::kCFO, CPU, double>;
 
 /*
  * im = [input_channels, input_height, input_width]
@@ -153,7 +153,7 @@ template class Col2ImFunctor<ColFormat::kCFO, ARM, double>;
  *   [output_height, output_width, input_channels, filter_height, filter_width]
  */
 template <class T>
-class Im2ColFunctor<ColFormat::kOCF, ARM, T> {
+class Im2ColFunctor<ColFormat::kOCF, CPU, T> {
  public:
   void operator()(const framework::Tensor& im, const std::vector<int>& dilation,
                   const std::vector<int>& stride,
@@ -221,7 +221,7 @@ class Im2ColFunctor<ColFormat::kOCF, ARM, T> {
  *   [output_height, output_width, input_channels, filter_height, filter_width]
  */
 template <class T>
-class Col2ImFunctor<ColFormat::kOCF, ARM, T> {
+class Col2ImFunctor<ColFormat::kOCF, CPU, T> {
  public:
   void operator()(const framework::Tensor& col,
                   const std::vector<int>& dilation,
@@ -284,10 +284,10 @@ class Col2ImFunctor<ColFormat::kOCF, ARM, T> {
   }
 };
 
-template class Im2ColFunctor<ColFormat::kOCF, ARM, float>;
-template class Im2ColFunctor<ColFormat::kOCF, ARM, double>;
-template class Col2ImFunctor<ColFormat::kOCF, ARM, float>;
-template class Col2ImFunctor<ColFormat::kOCF, ARM, double>;
+template class Im2ColFunctor<ColFormat::kOCF, CPU, float>;
+template class Im2ColFunctor<ColFormat::kOCF, CPU, double>;
+template class Col2ImFunctor<ColFormat::kOCF, CPU, float>;
+template class Col2ImFunctor<ColFormat::kOCF, CPU, double>;
 
 }  // namespace math
 }  // namespace operators
