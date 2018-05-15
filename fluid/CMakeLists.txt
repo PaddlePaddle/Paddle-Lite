@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(paddle-mobile)
 add_definitions(-std=c++11)
+add_definitions(-DPADDLE_MOBILE_DEBUG="true")
 
 
 set(CMAKE_BUILD_TYPE Debug)

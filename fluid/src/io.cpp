@@ -19,7 +19,6 @@ SOFTWARE.
 #include <fstream>
 #include <iostream>
 
-#include "common/macro.h"
 #include "framework/framework.pb.h"
 #include "framework/lod_tensor.h"
 #include "framework/program_desc.h"
