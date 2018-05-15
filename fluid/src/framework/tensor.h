@@ -227,13 +227,6 @@ class Tensor {
 
   inline void set_layout(const DataLayout layout) { layout_ = layout; }
 
-  inline Tensor ReshapeToMatrix(const Tensor &src, int num_col_dims) {
-    Tensor res;
-    res.ShareDataWith(src);
-    res.Resize(flatten_to_2d(src.dims(), num_col_dims));
-    return res;
-  }
-
  private:
   /**
    * @note    Placeholder hides type T, so it doesn't appear as a template
@@ -314,6 +307,13 @@ class Tensor {
    */
   size_t offset_;
 };
+
+inline Tensor ReshapeToMatrix(const Tensor &src, int num_col_dims) {
+  Tensor res;
+  res.ShareDataWith(src);
+  res.Resize(flatten_to_2d(src.dims(), num_col_dims));
+  return res;
+}
 
 }  // namespace framework
 }  // namespace paddle_mobile
