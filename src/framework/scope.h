@@ -18,38 +18,38 @@ SOFTWARE.
 ==============================================================================*/
 #pragma once
 
-#include <list>           //std::list
-#include <mutex>          //std::mutex
-#include <unordered_map>  //std::unordered_map
 #include "variable.h"
+#include <list>          //std::list
+#include <mutex>         //std::mutex
+#include <unordered_map> //std::unordered_map
 
 namespace paddle_mobile {
 namespace framework {
 class Scope {
- public:
+public:
   Scope() {}
   ~Scope() {}
 
-  Scope& NewScope() const;
+  Scope &NewScope() const;
 
   /// Create a variable with given name if it doesn't exist.
-  Variable* Var(const std::string& name);
+  Variable *Var(const std::string &name);
 
   /// Create a variable with a scope-unique name.
-  Variable* Var(std::string* name = nullptr);
+  Variable *Var(std::string *name = nullptr);
 
-  void EraseVars(const std::vector<std::string>& var_names);
+  void EraseVars(const std::vector<std::string> &var_names);
 
   /// Find a variable in the scope or any of its ancestors.  Returns
   /// nullptr if cannot find.
-  Variable* FindVar(const std::string& name) const;
+  Variable *FindVar(const std::string &name) const;
 
-  const Scope* parent() const { return parent_; }
+  const Scope *parent() const { return parent_; }
 
   /// Find the scope or an ancestor scope that contains the given variable.
-  const Scope* FindScope(const Variable* var) const;
+  const Scope *FindScope(const Variable *var) const;
 
-  void DeleteScope(Scope* scope) const;
+  void DeleteScope(Scope *scope) const;
 
   /// Drop all kids scopes belonged to this scope.
   void DropKids();
@@ -58,23 +58,23 @@ class Scope {
   std::vector<std::string> LocalVarNames() const;
 
   // Rename variable to a new name
-  void Rename(const std::string& origin_name,
-              const std::string& new_name) const;
+  void Rename(const std::string &origin_name,
+              const std::string &new_name) const;
 
   // Rename variable to a new name and return the new name
-  std::string Rename(const std::string& origin_name) const;
+  std::string Rename(const std::string &origin_name) const;
 
-  Variable* FindVarLocally(const std::string& name) const;
+  Variable *FindVarLocally(const std::string &name) const;
 
- private:
+private:
   // Call Scope::NewScope for a sub-scope.
-  explicit Scope(Scope const* parent) : parent_(parent) {}
+  explicit Scope(Scope const *parent) : parent_(parent) {}
 
-  mutable std::unordered_map<std::string, Variable*> vars_;
-  mutable std::list<Scope*> kids_;
-  Scope const* parent_{nullptr};
+  mutable std::unordered_map<std::string, Variable *> vars_;
+  mutable std::list<Scope *> kids_;
+  Scope const *parent_{nullptr};
 
   mutable std::mutex mutex_;
 };
-}  // namespace framework
-}  // namespace paddle_mobile
+} // namespace framework
+} // namespace paddle_mobile

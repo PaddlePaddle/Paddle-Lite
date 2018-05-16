@@ -34,5 +34,5 @@ inline proto::VarType::Type ToVarType(std::type_index type) {
   }
 }
 
-}  // namespace framework
-}  // namespace paddle_mobile
+} // namespace framework
+} // namespace paddle_mobile

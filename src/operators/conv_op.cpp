@@ -72,5 +72,5 @@ void ConvOp<Dtype, T>::InferShape() const {
 
 template class ConvOp<CPU, float>;
 
-}  // namespace operators
-}  // namespace paddle_mobile
+} // namespace operators
+} // namespace paddle_mobile

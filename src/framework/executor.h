@@ -34,13 +34,12 @@ SOFTWARE.
 namespace paddle_mobile {
 namespace framework {
 
-template <typename Dtype>
-class Executor {
- public:
+template <typename Dtype> class Executor {
+public:
   Executor(const Program<Dtype> p);
   std::shared_ptr<Tensor> predict(Tensor &t);
 
- private:
+private:
   const framework::Program<Dtype> program_;
   std::shared_ptr<ProgramDesc> to_predict_program_;
   void predict(const Tensor &t, int block_id);
@@ -50,5 +49,5 @@ class Executor {
   bool use_optimize_ = false;
 };
 
-}  // namespace framework
-}  // namespace paddle_mobile
+} // namespace framework
+} // namespace paddle_mobile
