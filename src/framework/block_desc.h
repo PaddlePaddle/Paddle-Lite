@@ -27,7 +27,7 @@ namespace paddle_mobile {
 namespace framework {
 
 class BlockDesc : PaddleMobileObject {
- public:
+public:
   BlockDesc(const proto::BlockDesc &desc);
 
   const int &ID() const { return desc_.idx(); }
@@ -45,19 +45,18 @@ class BlockDesc : PaddleMobileObject {
   std::vector<std::shared_ptr<VarDesc>> Vars() const;
   std::vector<std::shared_ptr<OpDesc>> Ops() const;
 
- private:
+private:
   proto::BlockDesc desc_;
   std::vector<std::shared_ptr<OpDesc>> ops_;
   std::unordered_map<std::string, std::shared_ptr<VarDesc>> vars_;
 };
 
-}  // namespace framework
-}  // namespace paddle_mobile
+} // namespace framework
+} // namespace paddle_mobile
 
 namespace std {
 
-template <>
-struct hash<paddle_mobile::framework::BlockDesc> {
+template <> struct hash<paddle_mobile::framework::BlockDesc> {
   typedef paddle_mobile::framework::BlockDesc argument_type;
   typedef std::size_t result_type;
   result_type operator()(argument_type const &s) const noexcept {
@@ -67,4 +66,4 @@ struct hash<paddle_mobile::framework::BlockDesc> {
   }
 };
 
-}  // namespace std
+} // namespace std

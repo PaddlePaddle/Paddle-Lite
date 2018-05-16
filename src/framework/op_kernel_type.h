@@ -25,7 +25,7 @@ namespace paddle_mobile {
 namespace framework {
 struct OpKernelType {
   struct Hash {
-    size_t operator()(const OpKernelType& key) const {
+    size_t operator()(const OpKernelType &key) const {
       int data_type = static_cast<int>(key.data_type_) << LEFT_SHIFT;
       int data_layout = static_cast<int>(key.data_layout_) << (LEFT_SHIFT * 2);
 
@@ -44,21 +44,21 @@ struct OpKernelType {
                DataLayout data_layout = DataLayout::kAnyLayout)
       : data_type_(data_type), data_layout_(data_layout) {}
 
-  bool operator==(const OpKernelType& o) const {
+  bool operator==(const OpKernelType &o) const {
     return data_type_ == o.data_type_ && data_layout_ == o.data_layout_;
   }
 
-  bool operator!=(const OpKernelType& o) const { return !(*this == o); }
+  bool operator!=(const OpKernelType &o) const { return !(*this == o); }
 };
 
-inline bool NeedTransformLayout(const DataLayout& l, const DataLayout& r) {
+inline bool NeedTransformLayout(const DataLayout &l, const DataLayout &r) {
   return l != DataLayout::kAnyLayout && r != DataLayout::kAnyLayout && l != r;
 }
 
-inline bool TransFromNeeded(const OpKernelType& l, const OpKernelType& r) {
+inline bool TransFromNeeded(const OpKernelType &l, const OpKernelType &r) {
   return (l.data_type_ != r.data_type_) ||
          NeedTransformLayout(l.data_layout_, r.data_layout_);
 }
 
-}  // namespace framework
-}  // namespace paddle_mobile
+} // namespace framework
+} // namespace paddle_mobile

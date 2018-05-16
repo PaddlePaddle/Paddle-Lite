@@ -112,5 +112,5 @@ Variable *Scope::FindVarLocally(const std::string &name) const {
   return nullptr;
 }
 
-}  // namespace framework
-}  // namespace paddle_mobile
+} // namespace framework
+} // namespace paddle_mobile
