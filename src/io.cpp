@@ -45,10 +45,10 @@ void Loader<Dtype, P>::LoadVar(framework::LoDTensor *tensor,
 
   std::ifstream is(file_path);
 
-  std::streampos pos = is.tellg();  //   save   current   position
+  std::streampos pos = is.tellg(); //   save   current   position
   is.seekg(0, std::ios::end);
   //  std::cout << "  file length = " << is.tellg() << std::endl;
-  is.seekg(pos);  //   restore   saved   position
+  is.seekg(pos); //   restore   saved   position
 
   // 1. version
   uint32_t version;
@@ -106,34 +106,34 @@ void Loader<Dtype, P>::LoadVar(framework::LoDTensor *tensor,
   int type_size = 0;
   //  std::cout << "    desc pre type: ";
   switch (desc.data_type()) {
-    case framework::proto::VarType::FP16:
-      //      std::cout << "FP16" << std::endl;
-      type_size = 2;
-      break;
-    case framework::proto::VarType::FP32:
-      type_size = 4;
-      memory = tensor->mutable_data<float>();
-      //      std::cout << "FP32" << std::endl;
-      break;
-    case framework::proto::VarType::FP64:
-      type_size = 8;
-      //      std::cout << "FP64" << std::endl;
-      break;
-    case framework::proto::VarType::INT32:
-      type_size = 4;
-      //      std::cout << "INT32" << std::endl;
-      break;
-    case framework::proto::VarType::INT64:
-      type_size = 8;
-      //      std::cout << "INT64" << std::endl;
-      break;
-    case framework::proto::VarType::BOOL:
-      type_size = 1;
-      //      std::cout << "BOOL" << std::endl;
-      break;
-    default:
-      break;
-      //      std::cout << "    not support" << std::endl;
+  case framework::proto::VarType::FP16:
+    //      std::cout << "FP16" << std::endl;
+    type_size = 2;
+    break;
+  case framework::proto::VarType::FP32:
+    type_size = 4;
+    memory = tensor->mutable_data<float>();
+    //      std::cout << "FP32" << std::endl;
+    break;
+  case framework::proto::VarType::FP64:
+    type_size = 8;
+    //      std::cout << "FP64" << std::endl;
+    break;
+  case framework::proto::VarType::INT32:
+    type_size = 4;
+    //      std::cout << "INT32" << std::endl;
+    break;
+  case framework::proto::VarType::INT64:
+    type_size = 8;
+    //      std::cout << "INT64" << std::endl;
+    break;
+  case framework::proto::VarType::BOOL:
+    type_size = 1;
+    //      std::cout << "BOOL" << std::endl;
+    break;
+  default:
+    break;
+    //      std::cout << "    not support" << std::endl;
   }
 
   //  std::cout << "    malloc size: " << memory_size * type_size << std::endl;
@@ -143,8 +143,8 @@ void Loader<Dtype, P>::LoadVar(framework::LoDTensor *tensor,
 };
 
 template <typename Dtype, Precision P>
-const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
-    const std::string &dirname) {
+const framework::Program<Dtype, P>
+Loader<Dtype, P>::Load(const std::string &dirname) {
   std::string model_filename = dirname + "/__model__";
   std::string program_desc_str;
   ReadBinaryFile(model_filename, &program_desc_str);
@@ -217,43 +217,43 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
         //        std::cout << "  attr type: " << attr.type() << std::endl;
 
         switch (attr.type()) {
-          case framework::proto::AttrType::BOOLEAN:
-            //            std::cout << "   boolen: " << attr.b() << std::endl;
-            break;
-          case framework::proto::AttrType::INT:
-            //            std::cout << "   int: " << attr.i() << std::endl;
-            break;
-          case framework::proto::AttrType::FLOAT:
-          //            std::cout << "   float: " << attr.f() << std::endl;
-          case framework::proto::AttrType::STRING:
-          //            std::cout << "   string: " << attr.s() << std::endl;
-          case framework::proto::AttrType::BOOLEANS:
-            //                            std::vector<bool>
-            //                            bools(attr.bools_size());
-            for (int y = 0; y < attr.bools_size(); ++y) {
-              //              std::cout << "   bool - " << attr.bools(y) <<
-              //              std::endl;
-            }
-          case framework::proto::AttrType::LONG:
-          //            std::cout << "   long: " << attr.l() << std::endl;
-          case framework::proto::AttrType::FLOATS:
-            for (int y = 0; y < attr.floats_size(); ++y) {
-              //              std::cout << "   float - " << y << ": " <<
-              //              attr.floats(y)
-              //                        << std::endl;
-            }
-          case framework::proto::AttrType::INTS:
-            for (int y = 0; y < attr.ints_size(); ++y) {
-              //              std::cout << "   int - " << y << ": " <<
-              //              attr.ints(y)
-              //                        << std::endl;
-            }
-          case framework::proto::AttrType::STRINGS:
-            for (int y = 0; y < attr.strings_size(); ++y) {
-              //              std::cout << "   string - " << y << ": " <<
-              //              attr.strings(y)
-              //                        << std::endl;
-            }
+        case framework::proto::AttrType::BOOLEAN:
+          //            std::cout << "   boolen: " << attr.b() << std::endl;
+          break;
+        case framework::proto::AttrType::INT:
+          //            std::cout << "   int: " << attr.i() << std::endl;
+          break;
+        case framework::proto::AttrType::FLOAT:
+        //            std::cout << "   float: " << attr.f() << std::endl;
+        case framework::proto::AttrType::STRING:
+        //            std::cout << "   string: " << attr.s() << std::endl;
+        case framework::proto::AttrType::BOOLEANS:
+          //                            std::vector<bool>
+          //                            bools(attr.bools_size());
+          for (int y = 0; y < attr.bools_size(); ++y) {
+            //              std::cout << "   bool - " << attr.bools(y) <<
+            //              std::endl;
+          }
+        case framework::proto::AttrType::LONG:
+        //            std::cout << "   long: " << attr.l() << std::endl;
+        case framework::proto::AttrType::FLOATS:
+          for (int y = 0; y < attr.floats_size(); ++y) {
+            //              std::cout << "   float - " << y << ": " <<
+            //              attr.floats(y)
+            //                        << std::endl;
+          }
+        case framework::proto::AttrType::INTS:
+          for (int y = 0; y < attr.ints_size(); ++y) {
+            //              std::cout << "   int - " << y << ": " <<
+            //              attr.ints(y)
+            //                        << std::endl;
+          }
+        case framework::proto::AttrType::STRINGS:
+          for (int y = 0; y < attr.strings_size(); ++y) {
+            //              std::cout << "   string - " << y << ": " <<
+            //              attr.strings(y)
+            //                        << std::endl;
+          }
         }
       }
     }
@@ -280,10 +280,10 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
         //        std::cout << "  to load " << var.name() << std::endl;
         std::string file_path = dirname + "/" + var.name();
         std::ifstream is(file_path);
-        std::streampos pos = is.tellg();  //   save   current   position
+        std::streampos pos = is.tellg(); //   save   current   position
         is.seekg(0, std::ios::end);
         //        std::cout << "  file length = " << is.tellg() << std::endl;
-        is.seekg(pos);  //   restore   saved   position
+        is.seekg(pos); //   restore   saved   position
 
         // 1. version
         uint32_t version;
@@ -333,33 +333,33 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
         int type_size = 0;
         //        std::cout << "    desc pre type: ";
         switch (desc.data_type()) {
-          case framework::proto::VarType::FP16:
-            //            std::cout << "FP16" << std::endl;
-            type_size = 2;
-            break;
-          case framework::proto::VarType::FP32:
-            type_size = 4;
-            //            std::cout << "FP32" << std::endl;
-            break;
-          case framework::proto::VarType::FP64:
-            type_size = 8;
-            //            std::cout << "FP64" << std::endl;
-            break;
-          case framework::proto::VarType::INT32:
-            type_size = 4;
-            //            std::cout << "INT32" << std::endl;
-            break;
-          case framework::proto::VarType::INT64:
-            type_size = 8;
-            //            std::cout << "INT64" << std::endl;
-            break;
-          case framework::proto::VarType::BOOL:
-            type_size = 1;
-            //            std::cout << "BOOL" << std::endl;
-            break;
-          default:
-            break;
-            //            std::cout << "    not support" << std::endl;
+        case framework::proto::VarType::FP16:
+          //            std::cout << "FP16" << std::endl;
+          type_size = 2;
+          break;
+        case framework::proto::VarType::FP32:
+          type_size = 4;
+          //            std::cout << "FP32" << std::endl;
+          break;
+        case framework::proto::VarType::FP64:
+          type_size = 8;
+          //            std::cout << "FP64" << std::endl;
+          break;
+        case framework::proto::VarType::INT32:
+          type_size = 4;
+          //            std::cout << "INT32" << std::endl;
+          break;
+        case framework::proto::VarType::INT64:
+          type_size = 8;
+          //            std::cout << "INT64" << std::endl;
+          break;
+        case framework::proto::VarType::BOOL:
+          type_size = 1;
+          //            std::cout << "BOOL" << std::endl;
+          break;
+        default:
+          break;
+          //            std::cout << "    not support" << std::endl;
         }
 
         //        std::cout << "    malloc size: " << memory_size * type_size
@@ -381,4 +381,4 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
 
 template class Loader<CPU, Precision::FP32>;
 
-}  // namespace paddle_mobile
+} // namespace paddle_mobile

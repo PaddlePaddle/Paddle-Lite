@@ -28,15 +28,15 @@ namespace paddle_mobile {
 namespace framework {
 
 class ProgramDesc : PaddleMobileObject {
- public:
+public:
   ProgramDesc(const proto::ProgramDesc &desc);
   std::shared_ptr<BlockDesc> Block(size_t idx);
   const std::vector<std::shared_ptr<BlockDesc>> &Blocks() { return blocks_; };
 
- private:
+private:
   std::vector<std::shared_ptr<BlockDesc>> blocks_;
   proto::ProgramDesc desc_;
 };
 
-}  // namespace framework
-}  // namespace paddle_mobile
+} // namespace framework
+} // namespace paddle_mobile

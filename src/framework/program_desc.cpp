@@ -18,5 +18,5 @@ std::shared_ptr<BlockDesc> ProgramDesc::Block(size_t idx) {
   return blocks_[idx];
 }
 
-}  // namespace framework
-}  // namespace paddle_mobile
+} // namespace framework
+} // namespace paddle_mobile
