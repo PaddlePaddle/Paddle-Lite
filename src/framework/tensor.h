@@ -26,11 +26,9 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace framework {
-template <typename... T>
-struct SizeOfTypeFunctor;
+template <typename... T> struct SizeOfTypeFunctor;
 
-template <typename T>
-struct SizeOfTypeFunctor<T> {
+template <typename T> struct SizeOfTypeFunctor<T> {
   size_t operator()(std::type_index type) const {
     if (typeid(T).hash_code() == type.hash_code()) {
       return sizeof(T);
@@ -40,8 +38,7 @@ struct SizeOfTypeFunctor<T> {
   }
 };
 
-template <>
-struct SizeOfTypeFunctor<> {
+template <> struct SizeOfTypeFunctor<> {
   size_t operator()(std::type_index type) const { return 0UL; }
 };
 
@@ -68,12 +65,11 @@ static inline size_t SizeOfType(std::type_index type) {
 class LoDTensor;
 
 class Tensor {
- public:
+public:
   Tensor() : offset_(0) {}
 
   /*! Return a pointer to mutable memory block. */
-  template <typename T>
-  inline T *data() {
+  template <typename T> inline T *data() {
     check_memory_size();
     //  PADDLE_ENFORCE(std::is_same<T, void>::value ||
     //                     holder_->type().hash_code() == typeid(T).hash_code(),
@@ -84,8 +80,7 @@ class Tensor {
   }
 
   /*! Return a pointer to constant memory block. */
-  template <typename T>
-  inline const T *data() const {
+  template <typename T> inline const T *data() const {
     check_memory_size();
     //  PADDLE_ENFORCE(std::is_same<T, void>::value ||
     //                     holder_->type().hash_code() == typeid(T).hash_code(),
@@ -102,8 +97,7 @@ class Tensor {
    * @brief   Return a pointer to mutable memory block.
    * @note    If not exist, then allocation.
    */
-  template <typename T>
-  inline T *mutable_data() {
+  template <typename T> inline T *mutable_data() {
     static_assert(std::is_pod<T>::value, "T must be POD");
     return reinterpret_cast<T *>(mutable_data(typeid(T)));
   }
@@ -141,8 +135,7 @@ class Tensor {
    *
    * @note      If not exist, then allocation.
    */
-  template <typename T>
-  inline T *mutable_data(DDim dims) {
+  template <typename T> inline T *mutable_data(DDim dims) {
     static_assert(std::is_pod<T>::value, "T must be POD");
     Resize(dims);
     return mutable_data<T>();
@@ -227,7 +220,7 @@ class Tensor {
 
   inline void set_layout(const DataLayout layout) { layout_ = layout; }
 
- private:
+private:
   /**
    * @note    Placeholder hides type T, so it doesn't appear as a template
    *          parameter of Variable.
@@ -248,8 +241,7 @@ class Tensor {
     PlaceholderImpl(size_t size, std::type_index type)
         : ptr_(static_cast<uint8_t *>(memory::Alloc(size)),
                memory::PODDeleter<uint8_t>()),
-          size_(size),
-          type_(type) {
+          size_(size), type_(type) {
       //                    PADDLE_ENFORCE_NOT_NULL(ptr_, "Insufficient %s
       //                    memory to allocation.",
       //                                            (is_cpu_place(place_) ?
@@ -315,5 +307,5 @@ inline Tensor ReshapeToMatrix(const Tensor &src, int num_col_dims) {
   return res;
 }
 
-}  // namespace framework
-}  // namespace paddle_mobile
+} // namespace framework
+} // namespace paddle_mobile

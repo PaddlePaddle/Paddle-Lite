@@ -24,8 +24,7 @@ enum class Precision : int { FP32 = 0 };
 //! device type
 enum DeviceTypeEnum { kINVALID = -1, kCPU = 0, kFPGA = 1, kGPU_MALI = 2 };
 
-template <DeviceTypeEnum T>
-struct DeviceType {};
+template <DeviceTypeEnum T> struct DeviceType {};
 
 typedef DeviceType<kCPU> CPU;
 typedef DeviceType<kFPGA> FPGA;
