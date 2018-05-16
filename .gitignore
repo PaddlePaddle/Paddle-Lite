@@ -23,7 +23,6 @@
 # Compiled Static libraries
 *.lai
 *.la
-*.a
 *.lib
 
 # Executables
@@ -51,4 +50,7 @@ cmake_install.cmake
 paddle-mobile.cbp
 
 .idea
+
+
+cmake-build-debug/
 
