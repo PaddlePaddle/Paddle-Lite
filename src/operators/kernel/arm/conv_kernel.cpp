@@ -21,9 +21,9 @@ SOFTWARE.
 namespace paddle_mobile {
 namespace operators {
 
-bool IsExpand(const std::vector<int64_t>& filter_dim,
-              const std::vector<int>& strides, const std::vector<int>& paddings,
-              const std::vector<int>& dilations) {
+bool IsExpand(const std::vector<int64_t> &filter_dim,
+              const std::vector<int> &strides, const std::vector<int> &paddings,
+              const std::vector<int> &dilations) {
   bool filter_1 = true, strides_1 = true, padding_0 = true, dilation_1 = true;
   for (size_t j = 0; j < strides.size(); ++j) {
     filter_1 = filter_1 && (static_cast<int>(filter_dim[j + 2]) == 1);
@@ -35,8 +35,8 @@ bool IsExpand(const std::vector<int64_t>& filter_dim,
 }
 
 template <>
-void ConvKernel<CPU, float, ConvParam>::Compute(const ConvParam& param) const {
-  const Tensor* input = param.Input();
+void ConvKernel<CPU, float, ConvParam>::Compute(const ConvParam &param) const {
+  const Tensor *input = param.Input();
 
   std::cout << " conv param " << param << std::endl;
 
@@ -45,7 +45,7 @@ void ConvKernel<CPU, float, ConvParam>::Compute(const ConvParam& param) const {
   // that avoids modifying the variable in the Scope.
   Tensor filter = *param.Filter();
 
-  Tensor* output = param.Output();
+  Tensor *output = param.Output();
   //            output->mutable_data<T>(context.GetPlace());
 
   int groups = param.Groups();
@@ -149,5 +149,5 @@ void ConvKernel<CPU, float, ConvParam>::Compute(const ConvParam& param) const {
 
 template class ConvKernel<CPU, float, ConvParam>;
 
-}  // namespace operators
-}  // namespace paddle_mobile
+} // namespace operators
+} // namespace paddle_mobile

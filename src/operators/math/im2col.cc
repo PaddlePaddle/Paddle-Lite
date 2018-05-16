@@ -24,12 +24,11 @@ namespace math {
  * col =
  *   [input_channels, filter_height, filter_width, output_height, output_width]
  */
-template <class T>
-class Im2ColFunctor<ColFormat::kCFO, CPU, T> {
- public:
-  void operator()(const framework::Tensor& im, const std::vector<int>& dilation,
-                  const std::vector<int>& stride,
-                  const std::vector<int>& padding, framework::Tensor* col) {
+template <class T> class Im2ColFunctor<ColFormat::kCFO, CPU, T> {
+public:
+  void operator()(const framework::Tensor &im, const std::vector<int> &dilation,
+                  const std::vector<int> &stride,
+                  const std::vector<int> &padding, framework::Tensor *col) {
     //    PADDLE_ENFORCE(im.dims().size() == 3);
     //    PADDLE_ENFORCE(col->dims().size() == 5);
 
@@ -58,8 +57,8 @@ class Im2ColFunctor<ColFormat::kCFO, CPU, T> {
 
     int channels_col = im_channels * filter_height * filter_width;
 
-    const T* im_data = im.data<T>();
-    T* col_data = col->data<T>();
+    const T *im_data = im.data<T>();
+    T *col_data = col->data<T>();
     for (int c = 0; c < channels_col; ++c) {
       int w_offset = c % filter_width;
       int h_offset = (c / filter_width) % filter_height;
@@ -86,13 +85,12 @@ class Im2ColFunctor<ColFormat::kCFO, CPU, T> {
  * col =
  *   [input_channels, filter_height, filter_width, output_height, output_width]
  */
-template <class T>
-class Col2ImFunctor<ColFormat::kCFO, CPU, T> {
- public:
-  void operator()(const framework::Tensor& col,
-                  const std::vector<int>& dilation,
-                  const std::vector<int>& stride,
-                  const std::vector<int>& padding, framework::Tensor* im) {
+template <class T> class Col2ImFunctor<ColFormat::kCFO, CPU, T> {
+public:
+  void operator()(const framework::Tensor &col,
+                  const std::vector<int> &dilation,
+                  const std::vector<int> &stride,
+                  const std::vector<int> &padding, framework::Tensor *im) {
     //    PADDLE_ENFORCE(im->dims().size() == 3);
     //    PADDLE_ENFORCE(col.dims().size() == 5);
     int im_channels = im->dims()[0];
@@ -120,8 +118,8 @@ class Col2ImFunctor<ColFormat::kCFO, CPU, T> {
 
     int channels_col = im_channels * filter_height * filter_width;
 
-    T* im_data = im->data<T>();
-    const T* col_data = col.data<T>();
+    T *im_data = im->data<T>();
+    const T *col_data = col.data<T>();
 
     for (int c = 0; c < channels_col; ++c) {
       int w_offset = c % filter_width;
@@ -152,12 +150,11 @@ template class Col2ImFunctor<ColFormat::kCFO, CPU, double>;
  * col =
  *   [output_height, output_width, input_channels, filter_height, filter_width]
  */
-template <class T>
-class Im2ColFunctor<ColFormat::kOCF, CPU, T> {
- public:
-  void operator()(const framework::Tensor& im, const std::vector<int>& dilation,
-                  const std::vector<int>& stride,
-                  const std::vector<int>& padding, framework::Tensor* col) {
+template <class T> class Im2ColFunctor<ColFormat::kOCF, CPU, T> {
+public:
+  void operator()(const framework::Tensor &im, const std::vector<int> &dilation,
+                  const std::vector<int> &stride,
+                  const std::vector<int> &padding, framework::Tensor *col) {
     //    PADDLE_ENFORCE(im.dims().size() == 3);
     //    PADDLE_ENFORCE(col->dims().size() == 5);
     int im_channels = im.dims()[0];
@@ -177,8 +174,8 @@ class Im2ColFunctor<ColFormat::kOCF, CPU, T> {
     //        1, col_width, "col_width and padding(padding_left, padding_right)
     //        are " "inconsistent.");
 
-    const T* im_data = im.data<T>();
-    T* col_data = col->data<T>();
+    const T *im_data = im.data<T>();
+    T *col_data = col->data<T>();
 
     for (int col_row_idx = 0; col_row_idx < col_height; ++col_row_idx) {
       for (int col_col_idx = 0; col_col_idx < col_width; ++col_col_idx) {
@@ -220,13 +217,12 @@ class Im2ColFunctor<ColFormat::kOCF, CPU, T> {
  * col =
  *   [output_height, output_width, input_channels, filter_height, filter_width]
  */
-template <class T>
-class Col2ImFunctor<ColFormat::kOCF, CPU, T> {
- public:
-  void operator()(const framework::Tensor& col,
-                  const std::vector<int>& dilation,
-                  const std::vector<int>& stride,
-                  const std::vector<int>& padding, framework::Tensor* im) {
+template <class T> class Col2ImFunctor<ColFormat::kOCF, CPU, T> {
+public:
+  void operator()(const framework::Tensor &col,
+                  const std::vector<int> &dilation,
+                  const std::vector<int> &stride,
+                  const std::vector<int> &padding, framework::Tensor *im) {
     //    PADDLE_ENFORCE(im->dims().size() == 3);
     //    PADDLE_ENFORCE(col.dims().size() == 5);
     int im_channels = im->dims()[0];
@@ -246,8 +242,8 @@ class Col2ImFunctor<ColFormat::kOCF, CPU, T> {
     //        1, col_width, "col_width and padding(padding_left, padding_right)
     //        are " "inconsistent.");
 
-    T* im_data = im->data<T>();
-    const T* col_data = col.data<T>();
+    T *im_data = im->data<T>();
+    const T *col_data = col.data<T>();
 
     for (int col_row_idx = 0; col_row_idx < col_height; ++col_row_idx) {
       for (int col_col_idx = 0; col_col_idx < col_width; ++col_col_idx) {
@@ -289,6 +285,6 @@ template class Im2ColFunctor<ColFormat::kOCF, CPU, double>;
 template class Col2ImFunctor<ColFormat::kOCF, CPU, float>;
 template class Col2ImFunctor<ColFormat::kOCF, CPU, double>;
 
-}  // namespace math
-}  // namespace operators
-}  // namespace paddle_mobile
+} // namespace math
+} // namespace operators
+} // namespace paddle_mobile

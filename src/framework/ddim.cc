@@ -19,52 +19,48 @@ namespace framework {
 
 /// @cond HIDDEN
 
-template <int i>
-Dim<i> make_dim(const int64_t* d) {
+template <int i> Dim<i> make_dim(const int64_t *d) {
   return Dim<i>(*d, make_dim<i - 1>(d + 1));
 }
 
-template <>
-Dim<0> make_dim<0>(const int64_t* d) {
-  return Dim<0>(*d);
-}
+template <> Dim<0> make_dim<0>(const int64_t *d) { return Dim<0>(*d); }
 
-void make_ddim(DDim& ddim, const int64_t* dims, int n) {
+void make_ddim(DDim &ddim, const int64_t *dims, int n) {
   switch (n) {
-    case 0:
-      ddim = make_dim<0>(dims);
-      break;
-    case 1:
-      ddim = make_dim<1>(dims);
-      break;
-    case 2:
-      ddim = make_dim<2>(dims);
-      break;
-    case 3:
-      ddim = make_dim<3>(dims);
-      break;
-    case 4:
-      ddim = make_dim<4>(dims);
-      break;
-    case 5:
-      ddim = make_dim<5>(dims);
-      break;
-    case 6:
-      ddim = make_dim<6>(dims);
-      break;
-    case 7:
-      ddim = make_dim<7>(dims);
-      break;
-    case 8:
-      ddim = make_dim<8>(dims);
-      break;
-    case 9:
-      ddim = make_dim<9>(dims);
-      break;
-    default:
-      //      std::cout << "Dynamic dimensions must have between [1, 9]
-      //      dimensions.";
-      break;
+  case 0:
+    ddim = make_dim<0>(dims);
+    break;
+  case 1:
+    ddim = make_dim<1>(dims);
+    break;
+  case 2:
+    ddim = make_dim<2>(dims);
+    break;
+  case 3:
+    ddim = make_dim<3>(dims);
+    break;
+  case 4:
+    ddim = make_dim<4>(dims);
+    break;
+  case 5:
+    ddim = make_dim<5>(dims);
+    break;
+  case 6:
+    ddim = make_dim<6>(dims);
+    break;
+  case 7:
+    ddim = make_dim<7>(dims);
+    break;
+  case 8:
+    ddim = make_dim<8>(dims);
+    break;
+  case 9:
+    ddim = make_dim<9>(dims);
+    break;
+  default:
+    //      std::cout << "Dynamic dimensions must have between [1, 9]
+    //      dimensions.";
+    break;
   }
 }
 
@@ -76,13 +72,13 @@ DDim make_ddim(std::initializer_list<int64_t> dims) {
   return result;
 }
 
-DDim make_ddim(const std::vector<int64_t>& dims) {
+DDim make_ddim(const std::vector<int64_t> &dims) {
   DDim result(make_dim(0));
   make_ddim(result, &dims[0], dims.size());
   return result;
 }
 
-DDim make_ddim(const std::vector<int>& dims) {
+DDim make_ddim(const std::vector<int> &dims) {
   std::vector<int64_t> res(dims.size());
   std::transform(dims.begin(), dims.end(), res.begin(),
                  [](int d) { return static_cast<int64_t>(d); });
@@ -91,35 +87,31 @@ DDim make_ddim(const std::vector<int>& dims) {
 
 /// @cond HIDDEN
 // XXX For some reason, putting this in an anonymous namespace causes errors
-struct DynamicMutableIndexer : Vistor<int64_t&> {
- public:
+struct DynamicMutableIndexer : Vistor<int64_t &> {
+public:
   explicit DynamicMutableIndexer(int idx) : idx_(idx) {}
 
-  template <int D>
-  int64_t& operator()(Dim<D>& dim) const {
-    return dim[idx_];
-  }
+  template <int D> int64_t &operator()(Dim<D> &dim) const { return dim[idx_]; }
 
- private:
+private:
   int idx_;
 };
 
 struct DynamicConstIndexer : public Vistor<int64_t> {
- public:
+public:
   explicit DynamicConstIndexer(int idx) : idx_(idx) {}
 
-  template <int D>
-  int64_t operator()(const Dim<D>& dim) const {
+  template <int D> int64_t operator()(const Dim<D> &dim) const {
     return dim[idx_];
   }
 
- private:
+private:
   int idx_;
 };
 
 /// @endcond
 
-int64_t& DDim::operator[](int idx) {
+int64_t &DDim::operator[](int idx) {
   return DDim::ApplyVistor(DynamicMutableIndexer(idx), *this);
 }
 
@@ -178,27 +170,26 @@ DDim DDim::operator*(DDim d) const {
   return make_ddim(v3);
 }
 
-int64_t get(const DDim& ddim, int idx) { return ddim[idx]; }
+int64_t get(const DDim &ddim, int idx) { return ddim[idx]; }
 
-void set(DDim& ddim, int idx, int value) { ddim[idx] = value; }
+void set(DDim &ddim, int idx, int value) { ddim[idx] = value; }
 
 /// @cond HIDDEN
 struct VectorizeVisitor : Vistor<void> {
-  std::vector<int64_t>& vector;
+  std::vector<int64_t> &vector;
 
-  explicit VectorizeVisitor(std::vector<int64_t>& v) : vector(v) {}
+  explicit VectorizeVisitor(std::vector<int64_t> &v) : vector(v) {}
 
-  template <typename T>
-  void operator()(const T& t) {
+  template <typename T> void operator()(const T &t) {
     vector.push_back(t.head);
     this->operator()(t.tail);
   }
 
-  void operator()(const Dim<0>& t) {}
+  void operator()(const Dim<0> &t) {}
 };
 /// @endcond
 
-std::vector<int64_t> vectorize(const DDim& ddim) {
+std::vector<int64_t> vectorize(const DDim &ddim) {
   std::vector<int64_t> result;
   VectorizeVisitor visitor(result);
   DDim::ApplyVistor(visitor, ddim);
@@ -207,30 +198,29 @@ std::vector<int64_t> vectorize(const DDim& ddim) {
 
 // NOTE: framework::vectorize converts to type int64_t
 //       which does not fit cudnn inputs.
-std::vector<int> vectorize2int(const DDim& ddim) {
+std::vector<int> vectorize2int(const DDim &ddim) {
   std::vector<int64_t> temp = vectorize(ddim);
   std::vector<int> result(temp.begin(), temp.end());
   return result;
 }
 
 struct ProductVisitor : Vistor<int64_t> {
-  template <int D>
-  int64_t operator()(const Dim<D>& dim) {
+  template <int D> int64_t operator()(const Dim<D> &dim) {
     return product(dim);
   }
 };
 
-int64_t product(const DDim& ddim) {
+int64_t product(const DDim &ddim) {
   ProductVisitor visitor;
   return DDim::ApplyVistor(visitor, ddim);
 }
 
 struct SliceVectorizeVisitor : Vistor<void> {
-  std::vector<int64_t>& vector;
+  std::vector<int64_t> &vector;
   int begin;
   int end;
 
-  SliceVectorizeVisitor(std::vector<int64_t>& v, int b, int e)
+  SliceVectorizeVisitor(std::vector<int64_t> &v, int b, int e)
       : vector(v), begin(b), end(e) {
     //    PADDLE_ENFORCE(begin < end,
     //                   "Begin index must be less than end index in ddim
@@ -239,8 +229,7 @@ struct SliceVectorizeVisitor : Vistor<void> {
     //                   "Begin index can't be less than zero in ddim slice.");
   }
 
-  template <int S>
-  void operator()(const Dim<S>& dim) {
+  template <int S> void operator()(const Dim<S> &dim) {
     if (begin == 0) {
       vector.push_back(dim.head);
     } else {
@@ -252,12 +241,12 @@ struct SliceVectorizeVisitor : Vistor<void> {
     }
   }
 
-  void operator()(const Dim<0>& dim) {
+  void operator()(const Dim<0> &dim) {
     //    PADDLE_ENFORCE(end == 0, "End index in ddim slice is out of bound.");
   }
 };
 
-DDim slice_ddim(const DDim& ddim, int begin, int end) {
+DDim slice_ddim(const DDim &ddim, int begin, int end) {
   std::vector<int64_t> vec;
   vec.reserve(end - begin);
   SliceVectorizeVisitor visitor(vec, begin, end);
@@ -270,15 +259,12 @@ DDim slice_ddim(const DDim& ddim, int begin, int end) {
 /// \cond HIDDEN
 
 struct ArityVisitor : Vistor<int> {
-  template <int D>
-  int operator()(Dim<D>) const {
-    return D;
-  }
+  template <int D> int operator()(Dim<D>) const { return D; }
 };
 
 /// \endcond
 
-int arity(const DDim& d) {
+int arity(const DDim &d) {
   ArityVisitor arityVisitor = ArityVisitor();
   return DDim::ApplyVistor(arityVisitor, d);
   //  return arityVisitor(d.var.Get<Dim<4>>());
@@ -288,19 +274,18 @@ int arity(const DDim& d) {
 
 /// \endcond
 
-struct OSVistor : Vistor<std::ostream&> {
-  OSVistor(std::ostream& os) : os_(os) {}
+struct OSVistor : Vistor<std::ostream &> {
+  OSVistor(std::ostream &os) : os_(os) {}
 
-  template <int D>
-  std::ostream& operator()(Dim<D> dim) const {
+  template <int D> std::ostream &operator()(Dim<D> dim) const {
     return os_ << dim;
   }
 
- private:
-  std::ostream& os_;
+private:
+  std::ostream &os_;
 };
 
-std::ostream& operator<<(std::ostream& os, const DDim& ddim) {
+std::ostream &operator<<(std::ostream &os, const DDim &ddim) {
   auto vistor = OSVistor(os);
   DDim::ApplyVistor(vistor, ddim);
   return os;
@@ -310,15 +295,15 @@ DDim::DDim(std::initializer_list<int64_t> init_list) {
   *this = make_ddim(init_list);
 }
 
-DDim flatten_to_2d(const DDim& src, int num_col_dims) {
+DDim flatten_to_2d(const DDim &src, int num_col_dims) {
   int rank = src.size();
   return make_ddim({product(slice_ddim(src, 0, num_col_dims)),
                     product(slice_ddim(src, num_col_dims, rank))});
 }
 
-DDim flatten_to_1d(const DDim& src) { return make_ddim({product(src)}); }
+DDim flatten_to_1d(const DDim &src) { return make_ddim({product(src)}); }
 
-DDim stride(const DDim& ddim) {
+DDim stride(const DDim &ddim) {
   std::vector<int64_t> strides(ddim.size());
   strides[ddim.size() - 1] = 1;
   for (int i = ddim.size() - 2; i >= 0; --i) {
@@ -327,7 +312,7 @@ DDim stride(const DDim& ddim) {
   return framework::make_ddim(strides);
 }
 
-DDim stride_numel(const framework::DDim& ddim) {
+DDim stride_numel(const framework::DDim &ddim) {
   std::vector<int64_t> strides(ddim.size());
   strides[ddim.size() - 1] = ddim[ddim.size() - 1];
   for (int i = ddim.size() - 2; i >= 0; --i) {
@@ -336,5 +321,5 @@ DDim stride_numel(const framework::DDim& ddim) {
   return framework::make_ddim(strides);
 }
 
-}  // namespace framework
-}  // namespace paddle_mobile
+} // namespace framework
+} // namespace paddle_mobile

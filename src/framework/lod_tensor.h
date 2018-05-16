@@ -14,12 +14,12 @@ limitations under the License. */
 
 #pragma once
 
+#include "tensor.h"
+#include "tensor_util.h"
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-#include "tensor.h"
-#include "tensor_util.h"
 
 namespace paddle_mobile {
 
@@ -96,7 +96,7 @@ bool CheckAbsLoD(const LoD &in, int tensor_height = -1);
  * see https://en.wikipedia.org/wiki/Level_of_details for reference.
  */
 class LoDTensor : public Tensor {
- public:
+public:
   LoDTensor() : Tensor() {}
 
   explicit LoDTensor(const LoD &lod) : lod_(lod) {}
@@ -131,7 +131,7 @@ class LoDTensor : public Tensor {
     return (lod_)[level].size() - 1;
   }
 
- private:
+private:
   LoD lod_;
 };
 
@@ -181,8 +181,9 @@ LoDTensor LodExpand(const LoDTensor &source, const LoD &lod, size_t level) {
 // Returns:
 //  LoD = [[1, 4], [2, 4, 2, 3, 2]]
 //  pair<size_t, size_t> = {11, 24}
-std::pair<LoD, std::pair<size_t, size_t>> GetSubLoDAndAbsoluteOffset(
-    const LoD &lod, size_t start_idx, size_t end_idx, size_t start_level);
+std::pair<LoD, std::pair<size_t, size_t>>
+GetSubLoDAndAbsoluteOffset(const LoD &lod, size_t start_idx, size_t end_idx,
+                           size_t start_level);
 
 void AppendLoD(LoD *lod, const LoD &lod_length);
 
@@ -195,5 +196,5 @@ void SerializeToStream(std::ostream &os, const LoDTensor &tensor);
 
 void DeserializeFromStream(std::istream &is, LoDTensor *tensor);
 
-}  // namespace framework
-}  // namespace paddle_mobile
+} // namespace framework
+} // namespace paddle_mobile

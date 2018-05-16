@@ -30,8 +30,8 @@ namespace operators {
 using namespace framework;
 
 class OpParam : PaddleMobileObject {
- public:
- protected:
+public:
+protected:
   template <typename T>
   static T *InputFrom(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue<T>("Input", inputs, scope);
@@ -67,7 +67,7 @@ class OpParam : PaddleMobileObject {
 };
 
 class ConvParam : OpParam {
- public:
+public:
   ConvParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
             const framework::AttributeMap &attrs,
             const framework::Scope &scope) {
@@ -94,7 +94,7 @@ class ConvParam : OpParam {
 
   const int &Groups() const { return groups; }
 
- private:
+private:
   Tensor *input_;
   Tensor *output_;
   LoDTensor *filter_;
@@ -106,5 +106,5 @@ class ConvParam : OpParam {
 
 std::ostream &operator<<(std::ostream &os, const ConvParam &conv_param);
 
-}  // namespace operators
-}  // namespace paddle_mobile
+} // namespace operators
+} // namespace paddle_mobile

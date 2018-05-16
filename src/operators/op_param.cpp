@@ -21,7 +21,7 @@ SOFTWARE.
 namespace paddle_mobile {
 namespace operators {
 
-std::ostream& operator<<(std::ostream& os, const ConvParam& conv_param) {
+std::ostream &operator<<(std::ostream &os, const ConvParam &conv_param) {
   os << "parameter of conv: " << std::endl;
   os << "  stride: "
      << " (" << conv_param.Strides()[0] << conv_param.Strides()[1] << ") "
@@ -39,5 +39,5 @@ std::ostream& operator<<(std::ostream& os, const ConvParam& conv_param) {
   return os;
 }
 
-}  // namespace operators
-}  // namespace paddle_mobile
+} // namespace operators
+} // namespace paddle_mobile

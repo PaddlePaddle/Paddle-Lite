@@ -27,7 +27,7 @@ enum class DataLayout {
   kAnyLayout = 2,
 };
 
-inline DataLayout StringToDataLayout(const std::string& str) {
+inline DataLayout StringToDataLayout(const std::string &str) {
   std::string s(str);
   for (size_t i = 0; i < s.size(); ++i) {
     s[i] = toupper(s[i]);
@@ -44,24 +44,24 @@ inline DataLayout StringToDataLayout(const std::string& str) {
   }
 }
 
-inline std::string DataLayoutToString(const DataLayout& data_layout) {
+inline std::string DataLayoutToString(const DataLayout &data_layout) {
   switch (data_layout) {
-    case DataLayout::kNHWC:
-      return "NHWC";
-    case DataLayout::kNCHW:
-      return "NCHW";
-    case DataLayout::kAnyLayout:
-      return "ANY_LAYOUT";
-    default:
-      break;
-      //      std::cout << "unknown DataLayou %d", data_layout;
+  case DataLayout::kNHWC:
+    return "NHWC";
+  case DataLayout::kNCHW:
+    return "NCHW";
+  case DataLayout::kAnyLayout:
+    return "ANY_LAYOUT";
+  default:
+    break;
+    //      std::cout << "unknown DataLayou %d", data_layout;
   }
 }
 
-inline std::ostream& operator<<(std::ostream& out, const DataLayout& l) {
+inline std::ostream &operator<<(std::ostream &out, const DataLayout &l) {
   out << DataLayoutToString(l);
   return out;
 }
 
-}  // namespace framework
-}  // namespace paddle_mobile
+} // namespace framework
+} // namespace paddle_mobile
