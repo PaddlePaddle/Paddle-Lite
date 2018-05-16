@@ -26,7 +26,7 @@ namespace paddle_mobile {
 namespace framework {
 
 class OpDesc : PaddleMobileObject {
- public:
+public:
   OpDesc(const proto::OpDesc &desc);
   const std::vector<std::string> &Input(const std::string &name) const;
   const std::vector<std::string> &Output(const std::string &name) const;
@@ -40,12 +40,12 @@ class OpDesc : PaddleMobileObject {
 
   const std::string &Type() { return desc_.type(); };
 
- private:
+private:
   proto::OpDesc desc_;
   VariableNameMap inputs_;
   VariableNameMap outputs_;
   AttributeMap attrs_;
 };
 
-}  // namespace framework
-}  // namespace paddle_mobile
+} // namespace framework
+} // namespace paddle_mobile

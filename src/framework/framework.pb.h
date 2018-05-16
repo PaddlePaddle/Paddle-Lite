@@ -21,14 +21,14 @@
 
 #include <google/protobuf/arena.h>
 #include <google/protobuf/arenastring.h>
-#include <google/protobuf/extension_set.h>  // IWYU pragma: export
+#include <google/protobuf/extension_set.h> // IWYU pragma: export
 #include <google/protobuf/generated_enum_util.h>
 #include <google/protobuf/generated_message_table_driven.h>
 #include <google/protobuf/generated_message_util.h>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/message_lite.h>
 #include <google/protobuf/metadata_lite.h>
-#include <google/protobuf/repeated_field.h>  // IWYU pragma: export
+#include <google/protobuf/repeated_field.h> // IWYU pragma: export
 // @@protoc_insertion_point(includes)
 namespace paddle_mobile {
 namespace framework {
@@ -86,9 +86,9 @@ extern VarType_TensorDescDefaultTypeInternal
 class VarType_Tuple;
 class VarType_TupleDefaultTypeInternal;
 extern VarType_TupleDefaultTypeInternal _VarType_Tuple_default_instance_;
-}  // namespace proto
-}  // namespace framework
-}  // namespace paddle_mobile
+} // namespace proto
+} // namespace framework
+} // namespace paddle_mobile
 
 namespace paddle_mobile {
 namespace framework {
@@ -108,7 +108,7 @@ struct TableStruct {
 };
 void AddDescriptors();
 void InitDefaults();
-}  // namespace protobuf_framework_2eproto
+} // namespace protobuf_framework_2eproto
 
 enum VarType_Type {
   VarType_Type_BOOL = 0,
@@ -160,79 +160,80 @@ class OpDesc_Attr
           MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.OpDesc.Attr)
                        */
 {
- public:
+public:
   OpDesc_Attr();
   virtual ~OpDesc_Attr();
 
-  OpDesc_Attr(const OpDesc_Attr& from);
+  OpDesc_Attr(const OpDesc_Attr &from);
 
-  inline OpDesc_Attr& operator=(const OpDesc_Attr& from) {
+  inline OpDesc_Attr &operator=(const OpDesc_Attr &from) {
     CopyFrom(from);
     return *this;
   }
 #if LANG_CXX11
-  OpDesc_Attr(OpDesc_Attr&& from) noexcept : OpDesc_Attr() {
+  OpDesc_Attr(OpDesc_Attr &&from) noexcept : OpDesc_Attr() {
     *this = ::std::move(from);
   }
 
-  inline OpDesc_Attr& operator=(OpDesc_Attr&& from) noexcept {
+  inline OpDesc_Attr &operator=(OpDesc_Attr &&from) noexcept {
     if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
-      if (this != &from) InternalSwap(&from);
+      if (this != &from)
+        InternalSwap(&from);
     } else {
       CopyFrom(from);
     }
     return *this;
   }
 #endif
-  inline const ::std::string& unknown_fields() const {
+  inline const ::std::string &unknown_fields() const {
     return _internal_metadata_.unknown_fields();
   }
-  inline ::std::string* mutable_unknown_fields() {
+  inline ::std::string *mutable_unknown_fields() {
     return _internal_metadata_.mutable_unknown_fields();
   }
 
-  static const OpDesc_Attr& default_instance();
+  static const OpDesc_Attr &default_instance();
 
-  static inline const OpDesc_Attr* internal_default_instance() {
-    return reinterpret_cast<const OpDesc_Attr*>(
+  static inline const OpDesc_Attr *internal_default_instance() {
+    return reinterpret_cast<const OpDesc_Attr *>(
         &_OpDesc_Attr_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages = 0;
 
-  void Swap(OpDesc_Attr* other);
-  friend void swap(OpDesc_Attr& a, OpDesc_Attr& b) { a.Swap(&b); }
+  void Swap(OpDesc_Attr *other);
+  friend void swap(OpDesc_Attr &a, OpDesc_Attr &b) { a.Swap(&b); }
 
   // implements Message ----------------------------------------------
 
-  inline OpDesc_Attr* New() const PROTOBUF_FINAL { return New(NULL); }
+  inline OpDesc_Attr *New() const PROTOBUF_FINAL { return New(NULL); }
 
-  OpDesc_Attr* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
-  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite& from)
+  OpDesc_Attr *New(::google::protobuf::Arena *arena) const PROTOBUF_FINAL;
+  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite &from)
       PROTOBUF_FINAL;
-  void CopyFrom(const OpDesc_Attr& from);
-  void MergeFrom(const OpDesc_Attr& from);
+  void CopyFrom(const OpDesc_Attr &from);
+  void MergeFrom(const OpDesc_Attr &from);
   void Clear() PROTOBUF_FINAL;
   bool IsInitialized() const PROTOBUF_FINAL;
 
   size_t ByteSizeLong() const PROTOBUF_FINAL;
   bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedInputStream *input) PROTOBUF_FINAL;
   void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedOutputStream *output) const PROTOBUF_FINAL;
   void DiscardUnknownFields();
   int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
 
- private:
+private:
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(OpDesc_Attr* other);
+  void InternalSwap(OpDesc_Attr *other);
 
- private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const { return NULL; }
-  inline void* MaybeArenaPtr() const { return NULL; }
+private:
+  inline ::google::protobuf::Arena *GetArenaNoVirtual() const { return NULL; }
+  inline void *MaybeArenaPtr() const { return NULL; }
 
- public:
+public:
   ::std::string GetTypeName() const PROTOBUF_FINAL;
 
   // nested types ----------------------------------------------------
@@ -246,9 +247,9 @@ class OpDesc_Attr
   ::google::protobuf::int32 ints(int index) const;
   void set_ints(int index, ::google::protobuf::int32 value);
   void add_ints(::google::protobuf::int32 value);
-  const ::google::protobuf::RepeatedField<::google::protobuf::int32>& ints()
-      const;
-  ::google::protobuf::RepeatedField<::google::protobuf::int32>* mutable_ints();
+  const ::google::protobuf::RepeatedField<::google::protobuf::int32> &
+  ints() const;
+  ::google::protobuf::RepeatedField<::google::protobuf::int32> *mutable_ints();
 
   // repeated float floats = 7;
   int floats_size() const;
@@ -257,30 +258,30 @@ class OpDesc_Attr
   float floats(int index) const;
   void set_floats(int index, float value);
   void add_floats(float value);
-  const ::google::protobuf::RepeatedField<float>& floats() const;
-  ::google::protobuf::RepeatedField<float>* mutable_floats();
+  const ::google::protobuf::RepeatedField<float> &floats() const;
+  ::google::protobuf::RepeatedField<float> *mutable_floats();
 
   // repeated string strings = 8;
   int strings_size() const;
   void clear_strings();
   static const int kStringsFieldNumber = 8;
-  const ::std::string& strings(int index) const;
-  ::std::string* mutable_strings(int index);
-  void set_strings(int index, const ::std::string& value);
+  const ::std::string &strings(int index) const;
+  ::std::string *mutable_strings(int index);
+  void set_strings(int index, const ::std::string &value);
 #if LANG_CXX11
-  void set_strings(int index, ::std::string&& value);
+  void set_strings(int index, ::std::string &&value);
 #endif
-  void set_strings(int index, const char* value);
-  void set_strings(int index, const char* value, size_t size);
-  ::std::string* add_strings();
-  void add_strings(const ::std::string& value);
+  void set_strings(int index, const char *value);
+  void set_strings(int index, const char *value, size_t size);
+  ::std::string *add_strings();
+  void add_strings(const ::std::string &value);
 #if LANG_CXX11
-  void add_strings(::std::string&& value);
+  void add_strings(::std::string &&value);
 #endif
-  void add_strings(const char* value);
-  void add_strings(const char* value, size_t size);
-  const ::google::protobuf::RepeatedPtrField<::std::string>& strings() const;
-  ::google::protobuf::RepeatedPtrField<::std::string>* mutable_strings();
+  void add_strings(const char *value);
+  void add_strings(const char *value, size_t size);
+  const ::google::protobuf::RepeatedPtrField<::std::string> &strings() const;
+  ::google::protobuf::RepeatedPtrField<::std::string> *mutable_strings();
 
   // repeated bool bools = 11;
   int bools_size() const;
@@ -289,38 +290,38 @@ class OpDesc_Attr
   bool bools(int index) const;
   void set_bools(int index, bool value);
   void add_bools(bool value);
-  const ::google::protobuf::RepeatedField<bool>& bools() const;
-  ::google::protobuf::RepeatedField<bool>* mutable_bools();
+  const ::google::protobuf::RepeatedField<bool> &bools() const;
+  ::google::protobuf::RepeatedField<bool> *mutable_bools();
 
   // required string name = 1;
   bool has_name() const;
   void clear_name();
   static const int kNameFieldNumber = 1;
-  const ::std::string& name() const;
-  void set_name(const ::std::string& value);
+  const ::std::string &name() const;
+  void set_name(const ::std::string &value);
 #if LANG_CXX11
-  void set_name(::std::string&& value);
+  void set_name(::std::string &&value);
 #endif
-  void set_name(const char* value);
-  void set_name(const char* value, size_t size);
-  ::std::string* mutable_name();
-  ::std::string* release_name();
-  void set_allocated_name(::std::string* name);
+  void set_name(const char *value);
+  void set_name(const char *value, size_t size);
+  ::std::string *mutable_name();
+  ::std::string *release_name();
+  void set_allocated_name(::std::string *name);
 
   // optional string s = 5;
   bool has_s() const;
   void clear_s();
   static const int kSFieldNumber = 5;
-  const ::std::string& s() const;
-  void set_s(const ::std::string& value);
+  const ::std::string &s() const;
+  void set_s(const ::std::string &value);
 #if LANG_CXX11
-  void set_s(::std::string&& value);
+  void set_s(::std::string &&value);
 #endif
-  void set_s(const char* value);
-  void set_s(const char* value, size_t size);
-  ::std::string* mutable_s();
-  ::std::string* release_s();
-  void set_allocated_s(::std::string* s);
+  void set_s(const char *value);
+  void set_s(const char *value, size_t size);
+  ::std::string *mutable_s();
+  ::std::string *release_s();
+  void set_allocated_s(::std::string *s);
 
   // required .paddle_mobile.framework.proto.AttrType type = 2;
   bool has_type() const;
@@ -365,7 +366,7 @@ class OpDesc_Attr
   void set_block_idx(::google::protobuf::int32 value);
 
   // @@protoc_insertion_point(class_scope:paddle_mobile.framework.proto.OpDesc.Attr)
- private:
+private:
   void set_has_name();
   void clear_has_name();
   void set_has_type();
@@ -411,78 +412,79 @@ class OpDesc_Var
           MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.OpDesc.Var)
                        */
 {
- public:
+public:
   OpDesc_Var();
   virtual ~OpDesc_Var();
 
-  OpDesc_Var(const OpDesc_Var& from);
+  OpDesc_Var(const OpDesc_Var &from);
 
-  inline OpDesc_Var& operator=(const OpDesc_Var& from) {
+  inline OpDesc_Var &operator=(const OpDesc_Var &from) {
     CopyFrom(from);
     return *this;
   }
 #if LANG_CXX11
-  OpDesc_Var(OpDesc_Var&& from) noexcept : OpDesc_Var() {
+  OpDesc_Var(OpDesc_Var &&from) noexcept : OpDesc_Var() {
     *this = ::std::move(from);
   }
 
-  inline OpDesc_Var& operator=(OpDesc_Var&& from) noexcept {
+  inline OpDesc_Var &operator=(OpDesc_Var &&from) noexcept {
     if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
-      if (this != &from) InternalSwap(&from);
+      if (this != &from)
+        InternalSwap(&from);
     } else {
       CopyFrom(from);
     }
     return *this;
   }
 #endif
-  inline const ::std::string& unknown_fields() const {
+  inline const ::std::string &unknown_fields() const {
     return _internal_metadata_.unknown_fields();
   }
-  inline ::std::string* mutable_unknown_fields() {
+  inline ::std::string *mutable_unknown_fields() {
     return _internal_metadata_.mutable_unknown_fields();
   }
 
-  static const OpDesc_Var& default_instance();
+  static const OpDesc_Var &default_instance();
 
-  static inline const OpDesc_Var* internal_default_instance() {
-    return reinterpret_cast<const OpDesc_Var*>(&_OpDesc_Var_default_instance_);
+  static inline const OpDesc_Var *internal_default_instance() {
+    return reinterpret_cast<const OpDesc_Var *>(&_OpDesc_Var_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages = 1;
 
-  void Swap(OpDesc_Var* other);
-  friend void swap(OpDesc_Var& a, OpDesc_Var& b) { a.Swap(&b); }
+  void Swap(OpDesc_Var *other);
+  friend void swap(OpDesc_Var &a, OpDesc_Var &b) { a.Swap(&b); }
 
   // implements Message ----------------------------------------------
 
-  inline OpDesc_Var* New() const PROTOBUF_FINAL { return New(NULL); }
+  inline OpDesc_Var *New() const PROTOBUF_FINAL { return New(NULL); }
 
-  OpDesc_Var* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
-  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite& from)
+  OpDesc_Var *New(::google::protobuf::Arena *arena) const PROTOBUF_FINAL;
+  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite &from)
       PROTOBUF_FINAL;
-  void CopyFrom(const OpDesc_Var& from);
-  void MergeFrom(const OpDesc_Var& from);
+  void CopyFrom(const OpDesc_Var &from);
+  void MergeFrom(const OpDesc_Var &from);
   void Clear() PROTOBUF_FINAL;
   bool IsInitialized() const PROTOBUF_FINAL;
 
   size_t ByteSizeLong() const PROTOBUF_FINAL;
   bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedInputStream *input) PROTOBUF_FINAL;
   void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedOutputStream *output) const PROTOBUF_FINAL;
   void DiscardUnknownFields();
   int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
 
- private:
+private:
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(OpDesc_Var* other);
+  void InternalSwap(OpDesc_Var *other);
 
- private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const { return NULL; }
-  inline void* MaybeArenaPtr() const { return NULL; }
+private:
+  inline ::google::protobuf::Arena *GetArenaNoVirtual() const { return NULL; }
+  inline void *MaybeArenaPtr() const { return NULL; }
 
- public:
+public:
   ::std::string GetTypeName() const PROTOBUF_FINAL;
 
   // nested types ----------------------------------------------------
@@ -493,41 +495,41 @@ class OpDesc_Var
   int arguments_size() const;
   void clear_arguments();
   static const int kArgumentsFieldNumber = 2;
-  const ::std::string& arguments(int index) const;
-  ::std::string* mutable_arguments(int index);
-  void set_arguments(int index, const ::std::string& value);
+  const ::std::string &arguments(int index) const;
+  ::std::string *mutable_arguments(int index);
+  void set_arguments(int index, const ::std::string &value);
 #if LANG_CXX11
-  void set_arguments(int index, ::std::string&& value);
+  void set_arguments(int index, ::std::string &&value);
 #endif
-  void set_arguments(int index, const char* value);
-  void set_arguments(int index, const char* value, size_t size);
-  ::std::string* add_arguments();
-  void add_arguments(const ::std::string& value);
+  void set_arguments(int index, const char *value);
+  void set_arguments(int index, const char *value, size_t size);
+  ::std::string *add_arguments();
+  void add_arguments(const ::std::string &value);
 #if LANG_CXX11
-  void add_arguments(::std::string&& value);
+  void add_arguments(::std::string &&value);
 #endif
-  void add_arguments(const char* value);
-  void add_arguments(const char* value, size_t size);
-  const ::google::protobuf::RepeatedPtrField<::std::string>& arguments() const;
-  ::google::protobuf::RepeatedPtrField<::std::string>* mutable_arguments();
+  void add_arguments(const char *value);
+  void add_arguments(const char *value, size_t size);
+  const ::google::protobuf::RepeatedPtrField<::std::string> &arguments() const;
+  ::google::protobuf::RepeatedPtrField<::std::string> *mutable_arguments();
 
   // required string parameter = 1;
   bool has_parameter() const;
   void clear_parameter();
   static const int kParameterFieldNumber = 1;
-  const ::std::string& parameter() const;
-  void set_parameter(const ::std::string& value);
+  const ::std::string &parameter() const;
+  void set_parameter(const ::std::string &value);
 #if LANG_CXX11
-  void set_parameter(::std::string&& value);
+  void set_parameter(::std::string &&value);
 #endif
-  void set_parameter(const char* value);
-  void set_parameter(const char* value, size_t size);
-  ::std::string* mutable_parameter();
-  ::std::string* release_parameter();
-  void set_allocated_parameter(::std::string* parameter);
+  void set_parameter(const char *value);
+  void set_parameter(const char *value, size_t size);
+  ::std::string *mutable_parameter();
+  ::std::string *release_parameter();
+  void set_allocated_parameter(::std::string *parameter);
 
   // @@protoc_insertion_point(class_scope:paddle_mobile.framework.proto.OpDesc.Var)
- private:
+private:
   void set_has_parameter();
   void clear_has_parameter();
 
@@ -546,76 +548,77 @@ class OpDesc
           MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.OpDesc)
                        */
 {
- public:
+public:
   OpDesc();
   virtual ~OpDesc();
 
-  OpDesc(const OpDesc& from);
+  OpDesc(const OpDesc &from);
 
-  inline OpDesc& operator=(const OpDesc& from) {
+  inline OpDesc &operator=(const OpDesc &from) {
     CopyFrom(from);
     return *this;
   }
 #if LANG_CXX11
-  OpDesc(OpDesc&& from) noexcept : OpDesc() { *this = ::std::move(from); }
+  OpDesc(OpDesc &&from) noexcept : OpDesc() { *this = ::std::move(from); }
 
-  inline OpDesc& operator=(OpDesc&& from) noexcept {
+  inline OpDesc &operator=(OpDesc &&from) noexcept {
     if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
-      if (this != &from) InternalSwap(&from);
+      if (this != &from)
+        InternalSwap(&from);
     } else {
       CopyFrom(from);
     }
     return *this;
   }
 #endif
-  inline const ::std::string& unknown_fields() const {
+  inline const ::std::string &unknown_fields() const {
     return _internal_metadata_.unknown_fields();
   }
-  inline ::std::string* mutable_unknown_fields() {
+  inline ::std::string *mutable_unknown_fields() {
     return _internal_metadata_.mutable_unknown_fields();
   }
 
-  static const OpDesc& default_instance();
+  static const OpDesc &default_instance();
 
-  static inline const OpDesc* internal_default_instance() {
-    return reinterpret_cast<const OpDesc*>(&_OpDesc_default_instance_);
+  static inline const OpDesc *internal_default_instance() {
+    return reinterpret_cast<const OpDesc *>(&_OpDesc_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages = 2;
 
-  void Swap(OpDesc* other);
-  friend void swap(OpDesc& a, OpDesc& b) { a.Swap(&b); }
+  void Swap(OpDesc *other);
+  friend void swap(OpDesc &a, OpDesc &b) { a.Swap(&b); }
 
   // implements Message ----------------------------------------------
 
-  inline OpDesc* New() const PROTOBUF_FINAL { return New(NULL); }
+  inline OpDesc *New() const PROTOBUF_FINAL { return New(NULL); }
 
-  OpDesc* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
-  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite& from)
+  OpDesc *New(::google::protobuf::Arena *arena) const PROTOBUF_FINAL;
+  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite &from)
       PROTOBUF_FINAL;
-  void CopyFrom(const OpDesc& from);
-  void MergeFrom(const OpDesc& from);
+  void CopyFrom(const OpDesc &from);
+  void MergeFrom(const OpDesc &from);
   void Clear() PROTOBUF_FINAL;
   bool IsInitialized() const PROTOBUF_FINAL;
 
   size_t ByteSizeLong() const PROTOBUF_FINAL;
   bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedInputStream *input) PROTOBUF_FINAL;
   void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedOutputStream *output) const PROTOBUF_FINAL;
   void DiscardUnknownFields();
   int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
 
- private:
+private:
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(OpDesc* other);
+  void InternalSwap(OpDesc *other);
 
- private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const { return NULL; }
-  inline void* MaybeArenaPtr() const { return NULL; }
+private:
+  inline ::google::protobuf::Arena *GetArenaNoVirtual() const { return NULL; }
+  inline void *MaybeArenaPtr() const { return NULL; }
 
- public:
+public:
   ::std::string GetTypeName() const PROTOBUF_FINAL;
 
   // nested types ----------------------------------------------------
@@ -629,58 +632,58 @@ class OpDesc
   int inputs_size() const;
   void clear_inputs();
   static const int kInputsFieldNumber = 1;
-  const ::paddle_mobile::framework::proto::OpDesc_Var& inputs(int index) const;
-  ::paddle_mobile::framework::proto::OpDesc_Var* mutable_inputs(int index);
-  ::paddle_mobile::framework::proto::OpDesc_Var* add_inputs();
+  const ::paddle_mobile::framework::proto::OpDesc_Var &inputs(int index) const;
+  ::paddle_mobile::framework::proto::OpDesc_Var *mutable_inputs(int index);
+  ::paddle_mobile::framework::proto::OpDesc_Var *add_inputs();
   ::google::protobuf::RepeatedPtrField<
-      ::paddle_mobile::framework::proto::OpDesc_Var>*
+      ::paddle_mobile::framework::proto::OpDesc_Var> *
   mutable_inputs();
   const ::google::protobuf::RepeatedPtrField<
-      ::paddle_mobile::framework::proto::OpDesc_Var>&
+      ::paddle_mobile::framework::proto::OpDesc_Var> &
   inputs() const;
 
   // repeated .paddle_mobile.framework.proto.OpDesc.Var outputs = 2;
   int outputs_size() const;
   void clear_outputs();
   static const int kOutputsFieldNumber = 2;
-  const ::paddle_mobile::framework::proto::OpDesc_Var& outputs(int index) const;
-  ::paddle_mobile::framework::proto::OpDesc_Var* mutable_outputs(int index);
-  ::paddle_mobile::framework::proto::OpDesc_Var* add_outputs();
+  const ::paddle_mobile::framework::proto::OpDesc_Var &outputs(int index) const;
+  ::paddle_mobile::framework::proto::OpDesc_Var *mutable_outputs(int index);
+  ::paddle_mobile::framework::proto::OpDesc_Var *add_outputs();
   ::google::protobuf::RepeatedPtrField<
-      ::paddle_mobile::framework::proto::OpDesc_Var>*
+      ::paddle_mobile::framework::proto::OpDesc_Var> *
   mutable_outputs();
   const ::google::protobuf::RepeatedPtrField<
-      ::paddle_mobile::framework::proto::OpDesc_Var>&
+      ::paddle_mobile::framework::proto::OpDesc_Var> &
   outputs() const;
 
   // repeated .paddle_mobile.framework.proto.OpDesc.Attr attrs = 4;
   int attrs_size() const;
   void clear_attrs();
   static const int kAttrsFieldNumber = 4;
-  const ::paddle_mobile::framework::proto::OpDesc_Attr& attrs(int index) const;
-  ::paddle_mobile::framework::proto::OpDesc_Attr* mutable_attrs(int index);
-  ::paddle_mobile::framework::proto::OpDesc_Attr* add_attrs();
+  const ::paddle_mobile::framework::proto::OpDesc_Attr &attrs(int index) const;
+  ::paddle_mobile::framework::proto::OpDesc_Attr *mutable_attrs(int index);
+  ::paddle_mobile::framework::proto::OpDesc_Attr *add_attrs();
   ::google::protobuf::RepeatedPtrField<
-      ::paddle_mobile::framework::proto::OpDesc_Attr>*
+      ::paddle_mobile::framework::proto::OpDesc_Attr> *
   mutable_attrs();
   const ::google::protobuf::RepeatedPtrField<
-      ::paddle_mobile::framework::proto::OpDesc_Attr>&
+      ::paddle_mobile::framework::proto::OpDesc_Attr> &
   attrs() const;
 
   // required string type = 3;
   bool has_type() const;
   void clear_type();
   static const int kTypeFieldNumber = 3;
-  const ::std::string& type() const;
-  void set_type(const ::std::string& value);
+  const ::std::string &type() const;
+  void set_type(const ::std::string &value);
 #if LANG_CXX11
-  void set_type(::std::string&& value);
+  void set_type(::std::string &&value);
 #endif
-  void set_type(const char* value);
-  void set_type(const char* value, size_t size);
-  ::std::string* mutable_type();
-  ::std::string* release_type();
-  void set_allocated_type(::std::string* type);
+  void set_type(const char *value);
+  void set_type(const char *value, size_t size);
+  ::std::string *mutable_type();
+  ::std::string *release_type();
+  void set_allocated_type(::std::string *type);
 
   // optional bool is_target = 5 [default = false];
   bool has_is_target() const;
@@ -690,7 +693,7 @@ class OpDesc
   void set_is_target(bool value);
 
   // @@protoc_insertion_point(class_scope:paddle_mobile.framework.proto.OpDesc)
- private:
+private:
   void set_has_type();
   void clear_has_type();
   void set_has_is_target();
@@ -720,79 +723,80 @@ class OpProto_Var
           MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.OpProto.Var)
                        */
 {
- public:
+public:
   OpProto_Var();
   virtual ~OpProto_Var();
 
-  OpProto_Var(const OpProto_Var& from);
+  OpProto_Var(const OpProto_Var &from);
 
-  inline OpProto_Var& operator=(const OpProto_Var& from) {
+  inline OpProto_Var &operator=(const OpProto_Var &from) {
     CopyFrom(from);
     return *this;
   }
 #if LANG_CXX11
-  OpProto_Var(OpProto_Var&& from) noexcept : OpProto_Var() {
+  OpProto_Var(OpProto_Var &&from) noexcept : OpProto_Var() {
     *this = ::std::move(from);
   }
 
-  inline OpProto_Var& operator=(OpProto_Var&& from) noexcept {
+  inline OpProto_Var &operator=(OpProto_Var &&from) noexcept {
     if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
-      if (this != &from) InternalSwap(&from);
+      if (this != &from)
+        InternalSwap(&from);
     } else {
       CopyFrom(from);
     }
     return *this;
   }
 #endif
-  inline const ::std::string& unknown_fields() const {
+  inline const ::std::string &unknown_fields() const {
     return _internal_metadata_.unknown_fields();
   }
-  inline ::std::string* mutable_unknown_fields() {
+  inline ::std::string *mutable_unknown_fields() {
     return _internal_metadata_.mutable_unknown_fields();
   }
 
-  static const OpProto_Var& default_instance();
+  static const OpProto_Var &default_instance();
 
-  static inline const OpProto_Var* internal_default_instance() {
-    return reinterpret_cast<const OpProto_Var*>(
+  static inline const OpProto_Var *internal_default_instance() {
+    return reinterpret_cast<const OpProto_Var *>(
         &_OpProto_Var_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages = 3;
 
-  void Swap(OpProto_Var* other);
-  friend void swap(OpProto_Var& a, OpProto_Var& b) { a.Swap(&b); }
+  void Swap(OpProto_Var *other);
+  friend void swap(OpProto_Var &a, OpProto_Var &b) { a.Swap(&b); }
 
   // implements Message ----------------------------------------------
 
-  inline OpProto_Var* New() const PROTOBUF_FINAL { return New(NULL); }
+  inline OpProto_Var *New() const PROTOBUF_FINAL { return New(NULL); }
 
-  OpProto_Var* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
-  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite& from)
+  OpProto_Var *New(::google::protobuf::Arena *arena) const PROTOBUF_FINAL;
+  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite &from)
       PROTOBUF_FINAL;
-  void CopyFrom(const OpProto_Var& from);
-  void MergeFrom(const OpProto_Var& from);
+  void CopyFrom(const OpProto_Var &from);
+  void MergeFrom(const OpProto_Var &from);
   void Clear() PROTOBUF_FINAL;
   bool IsInitialized() const PROTOBUF_FINAL;
 
   size_t ByteSizeLong() const PROTOBUF_FINAL;
   bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedInputStream *input) PROTOBUF_FINAL;
   void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedOutputStream *output) const PROTOBUF_FINAL;
   void DiscardUnknownFields();
   int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
 
- private:
+private:
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(OpProto_Var* other);
+  void InternalSwap(OpProto_Var *other);
 
- private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const { return NULL; }
-  inline void* MaybeArenaPtr() const { return NULL; }
+private:
+  inline ::google::protobuf::Arena *GetArenaNoVirtual() const { return NULL; }
+  inline void *MaybeArenaPtr() const { return NULL; }
 
- public:
+public:
   ::std::string GetTypeName() const PROTOBUF_FINAL;
 
   // nested types ----------------------------------------------------
@@ -803,31 +807,31 @@ class OpProto_Var
   bool has_name() const;
   void clear_name();
   static const int kNameFieldNumber = 1;
-  const ::std::string& name() const;
-  void set_name(const ::std::string& value);
+  const ::std::string &name() const;
+  void set_name(const ::std::string &value);
 #if LANG_CXX11
-  void set_name(::std::string&& value);
+  void set_name(::std::string &&value);
 #endif
-  void set_name(const char* value);
-  void set_name(const char* value, size_t size);
-  ::std::string* mutable_name();
-  ::std::string* release_name();
-  void set_allocated_name(::std::string* name);
+  void set_name(const char *value);
+  void set_name(const char *value, size_t size);
+  ::std::string *mutable_name();
+  ::std::string *release_name();
+  void set_allocated_name(::std::string *name);
 
   // required string comment = 2;
   bool has_comment() const;
   void clear_comment();
   static const int kCommentFieldNumber = 2;
-  const ::std::string& comment() const;
-  void set_comment(const ::std::string& value);
+  const ::std::string &comment() const;
+  void set_comment(const ::std::string &value);
 #if LANG_CXX11
-  void set_comment(::std::string&& value);
+  void set_comment(::std::string &&value);
 #endif
-  void set_comment(const char* value);
-  void set_comment(const char* value, size_t size);
-  ::std::string* mutable_comment();
-  ::std::string* release_comment();
-  void set_allocated_comment(::std::string* comment);
+  void set_comment(const char *value);
+  void set_comment(const char *value, size_t size);
+  ::std::string *mutable_comment();
+  ::std::string *release_comment();
+  void set_allocated_comment(::std::string *comment);
 
   // optional bool duplicable = 3 [default = false];
   bool has_duplicable() const;
@@ -851,7 +855,7 @@ class OpProto_Var
   void set_dispensable(bool value);
 
   // @@protoc_insertion_point(class_scope:paddle_mobile.framework.proto.OpProto.Var)
- private:
+private:
   void set_has_name();
   void clear_has_name();
   void set_has_comment();
@@ -884,79 +888,80 @@ class OpProto_Attr
           MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.OpProto.Attr)
                        */
 {
- public:
+public:
   OpProto_Attr();
   virtual ~OpProto_Attr();
 
-  OpProto_Attr(const OpProto_Attr& from);
+  OpProto_Attr(const OpProto_Attr &from);
 
-  inline OpProto_Attr& operator=(const OpProto_Attr& from) {
+  inline OpProto_Attr &operator=(const OpProto_Attr &from) {
     CopyFrom(from);
     return *this;
   }
 #if LANG_CXX11
-  OpProto_Attr(OpProto_Attr&& from) noexcept : OpProto_Attr() {
+  OpProto_Attr(OpProto_Attr &&from) noexcept : OpProto_Attr() {
     *this = ::std::move(from);
   }
 
-  inline OpProto_Attr& operator=(OpProto_Attr&& from) noexcept {
+  inline OpProto_Attr &operator=(OpProto_Attr &&from) noexcept {
     if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
-      if (this != &from) InternalSwap(&from);
+      if (this != &from)
+        InternalSwap(&from);
     } else {
       CopyFrom(from);
     }
     return *this;
   }
 #endif
-  inline const ::std::string& unknown_fields() const {
+  inline const ::std::string &unknown_fields() const {
     return _internal_metadata_.unknown_fields();
   }
-  inline ::std::string* mutable_unknown_fields() {
+  inline ::std::string *mutable_unknown_fields() {
     return _internal_metadata_.mutable_unknown_fields();
   }
 
-  static const OpProto_Attr& default_instance();
+  static const OpProto_Attr &default_instance();
 
-  static inline const OpProto_Attr* internal_default_instance() {
-    return reinterpret_cast<const OpProto_Attr*>(
+  static inline const OpProto_Attr *internal_default_instance() {
+    return reinterpret_cast<const OpProto_Attr *>(
         &_OpProto_Attr_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages = 4;
 
-  void Swap(OpProto_Attr* other);
-  friend void swap(OpProto_Attr& a, OpProto_Attr& b) { a.Swap(&b); }
+  void Swap(OpProto_Attr *other);
+  friend void swap(OpProto_Attr &a, OpProto_Attr &b) { a.Swap(&b); }
 
   // implements Message ----------------------------------------------
 
-  inline OpProto_Attr* New() const PROTOBUF_FINAL { return New(NULL); }
+  inline OpProto_Attr *New() const PROTOBUF_FINAL { return New(NULL); }
 
-  OpProto_Attr* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
-  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite& from)
+  OpProto_Attr *New(::google::protobuf::Arena *arena) const PROTOBUF_FINAL;
+  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite &from)
       PROTOBUF_FINAL;
-  void CopyFrom(const OpProto_Attr& from);
-  void MergeFrom(const OpProto_Attr& from);
+  void CopyFrom(const OpProto_Attr &from);
+  void MergeFrom(const OpProto_Attr &from);
   void Clear() PROTOBUF_FINAL;
   bool IsInitialized() const PROTOBUF_FINAL;
 
   size_t ByteSizeLong() const PROTOBUF_FINAL;
   bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedInputStream *input) PROTOBUF_FINAL;
   void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedOutputStream *output) const PROTOBUF_FINAL;
   void DiscardUnknownFields();
   int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
 
- private:
+private:
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(OpProto_Attr* other);
+  void InternalSwap(OpProto_Attr *other);
 
- private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const { return NULL; }
-  inline void* MaybeArenaPtr() const { return NULL; }
+private:
+  inline ::google::protobuf::Arena *GetArenaNoVirtual() const { return NULL; }
+  inline void *MaybeArenaPtr() const { return NULL; }
 
- public:
+public:
   ::std::string GetTypeName() const PROTOBUF_FINAL;
 
   // nested types ----------------------------------------------------
@@ -967,31 +972,31 @@ class OpProto_Attr
   bool has_name() const;
   void clear_name();
   static const int kNameFieldNumber = 1;
-  const ::std::string& name() const;
-  void set_name(const ::std::string& value);
+  const ::std::string &name() const;
+  void set_name(const ::std::string &value);
 #if LANG_CXX11
-  void set_name(::std::string&& value);
+  void set_name(::std::string &&value);
 #endif
-  void set_name(const char* value);
-  void set_name(const char* value, size_t size);
-  ::std::string* mutable_name();
-  ::std::string* release_name();
-  void set_allocated_name(::std::string* name);
+  void set_name(const char *value);
+  void set_name(const char *value, size_t size);
+  ::std::string *mutable_name();
+  ::std::string *release_name();
+  void set_allocated_name(::std::string *name);
 
   // required string comment = 3;
   bool has_comment() const;
   void clear_comment();
   static const int kCommentFieldNumber = 3;
-  const ::std::string& comment() const;
-  void set_comment(const ::std::string& value);
+  const ::std::string &comment() const;
+  void set_comment(const ::std::string &value);
 #if LANG_CXX11
-  void set_comment(::std::string&& value);
+  void set_comment(::std::string &&value);
 #endif
-  void set_comment(const char* value);
-  void set_comment(const char* value, size_t size);
-  ::std::string* mutable_comment();
-  ::std::string* release_comment();
-  void set_allocated_comment(::std::string* comment);
+  void set_comment(const char *value);
+  void set_comment(const char *value, size_t size);
+  ::std::string *mutable_comment();
+  ::std::string *release_comment();
+  void set_allocated_comment(::std::string *comment);
 
   // required .paddle_mobile.framework.proto.AttrType type = 2;
   bool has_type() const;
@@ -1008,7 +1013,7 @@ class OpProto_Attr
   void set_generated(bool value);
 
   // @@protoc_insertion_point(class_scope:paddle_mobile.framework.proto.OpProto.Attr)
- private:
+private:
   void set_has_name();
   void clear_has_name();
   void set_has_type();
@@ -1038,76 +1043,77 @@ class OpProto
           MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.OpProto)
                        */
 {
- public:
+public:
   OpProto();
   virtual ~OpProto();
 
-  OpProto(const OpProto& from);
+  OpProto(const OpProto &from);
 
-  inline OpProto& operator=(const OpProto& from) {
+  inline OpProto &operator=(const OpProto &from) {
     CopyFrom(from);
     return *this;
   }
 #if LANG_CXX11
-  OpProto(OpProto&& from) noexcept : OpProto() { *this = ::std::move(from); }
+  OpProto(OpProto &&from) noexcept : OpProto() { *this = ::std::move(from); }
 
-  inline OpProto& operator=(OpProto&& from) noexcept {
+  inline OpProto &operator=(OpProto &&from) noexcept {
     if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
-      if (this != &from) InternalSwap(&from);
+      if (this != &from)
+        InternalSwap(&from);
     } else {
       CopyFrom(from);
     }
     return *this;
   }
 #endif
-  inline const ::std::string& unknown_fields() const {
+  inline const ::std::string &unknown_fields() const {
     return _internal_metadata_.unknown_fields();
   }
-  inline ::std::string* mutable_unknown_fields() {
+  inline ::std::string *mutable_unknown_fields() {
     return _internal_metadata_.mutable_unknown_fields();
   }
 
-  static const OpProto& default_instance();
+  static const OpProto &default_instance();
 
-  static inline const OpProto* internal_default_instance() {
-    return reinterpret_cast<const OpProto*>(&_OpProto_default_instance_);
+  static inline const OpProto *internal_default_instance() {
+    return reinterpret_cast<const OpProto *>(&_OpProto_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages = 5;
 
-  void Swap(OpProto* other);
-  friend void swap(OpProto& a, OpProto& b) { a.Swap(&b); }
+  void Swap(OpProto *other);
+  friend void swap(OpProto &a, OpProto &b) { a.Swap(&b); }
 
   // implements Message ----------------------------------------------
 
-  inline OpProto* New() const PROTOBUF_FINAL { return New(NULL); }
+  inline OpProto *New() const PROTOBUF_FINAL { return New(NULL); }
 
-  OpProto* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
-  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite& from)
+  OpProto *New(::google::protobuf::Arena *arena) const PROTOBUF_FINAL;
+  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite &from)
       PROTOBUF_FINAL;
-  void CopyFrom(const OpProto& from);
-  void MergeFrom(const OpProto& from);
+  void CopyFrom(const OpProto &from);
+  void MergeFrom(const OpProto &from);
   void Clear() PROTOBUF_FINAL;
   bool IsInitialized() const PROTOBUF_FINAL;
 
   size_t ByteSizeLong() const PROTOBUF_FINAL;
   bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedInputStream *input) PROTOBUF_FINAL;
   void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedOutputStream *output) const PROTOBUF_FINAL;
   void DiscardUnknownFields();
   int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
 
- private:
+private:
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(OpProto* other);
+  void InternalSwap(OpProto *other);
 
- private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const { return NULL; }
-  inline void* MaybeArenaPtr() const { return NULL; }
+private:
+  inline ::google::protobuf::Arena *GetArenaNoVirtual() const { return NULL; }
+  inline void *MaybeArenaPtr() const { return NULL; }
 
- public:
+public:
   ::std::string GetTypeName() const PROTOBUF_FINAL;
 
   // nested types ----------------------------------------------------
@@ -1121,77 +1127,77 @@ class OpProto
   int inputs_size() const;
   void clear_inputs();
   static const int kInputsFieldNumber = 2;
-  const ::paddle_mobile::framework::proto::OpProto_Var& inputs(int index) const;
-  ::paddle_mobile::framework::proto::OpProto_Var* mutable_inputs(int index);
-  ::paddle_mobile::framework::proto::OpProto_Var* add_inputs();
+  const ::paddle_mobile::framework::proto::OpProto_Var &inputs(int index) const;
+  ::paddle_mobile::framework::proto::OpProto_Var *mutable_inputs(int index);
+  ::paddle_mobile::framework::proto::OpProto_Var *add_inputs();
   ::google::protobuf::RepeatedPtrField<
-      ::paddle_mobile::framework::proto::OpProto_Var>*
+      ::paddle_mobile::framework::proto::OpProto_Var> *
   mutable_inputs();
   const ::google::protobuf::RepeatedPtrField<
-      ::paddle_mobile::framework::proto::OpProto_Var>&
+      ::paddle_mobile::framework::proto::OpProto_Var> &
   inputs() const;
 
   // repeated .paddle_mobile.framework.proto.OpProto.Var outputs = 3;
   int outputs_size() const;
   void clear_outputs();
   static const int kOutputsFieldNumber = 3;
-  const ::paddle_mobile::framework::proto::OpProto_Var& outputs(
-      int index) const;
-  ::paddle_mobile::framework::proto::OpProto_Var* mutable_outputs(int index);
-  ::paddle_mobile::framework::proto::OpProto_Var* add_outputs();
+  const ::paddle_mobile::framework::proto::OpProto_Var &
+  outputs(int index) const;
+  ::paddle_mobile::framework::proto::OpProto_Var *mutable_outputs(int index);
+  ::paddle_mobile::framework::proto::OpProto_Var *add_outputs();
   ::google::protobuf::RepeatedPtrField<
-      ::paddle_mobile::framework::proto::OpProto_Var>*
+      ::paddle_mobile::framework::proto::OpProto_Var> *
   mutable_outputs();
   const ::google::protobuf::RepeatedPtrField<
-      ::paddle_mobile::framework::proto::OpProto_Var>&
+      ::paddle_mobile::framework::proto::OpProto_Var> &
   outputs() const;
 
   // repeated .paddle_mobile.framework.proto.OpProto.Attr attrs = 4;
   int attrs_size() const;
   void clear_attrs();
   static const int kAttrsFieldNumber = 4;
-  const ::paddle_mobile::framework::proto::OpProto_Attr& attrs(int index) const;
-  ::paddle_mobile::framework::proto::OpProto_Attr* mutable_attrs(int index);
-  ::paddle_mobile::framework::proto::OpProto_Attr* add_attrs();
+  const ::paddle_mobile::framework::proto::OpProto_Attr &attrs(int index) const;
+  ::paddle_mobile::framework::proto::OpProto_Attr *mutable_attrs(int index);
+  ::paddle_mobile::framework::proto::OpProto_Attr *add_attrs();
   ::google::protobuf::RepeatedPtrField<
-      ::paddle_mobile::framework::proto::OpProto_Attr>*
+      ::paddle_mobile::framework::proto::OpProto_Attr> *
   mutable_attrs();
   const ::google::protobuf::RepeatedPtrField<
-      ::paddle_mobile::framework::proto::OpProto_Attr>&
+      ::paddle_mobile::framework::proto::OpProto_Attr> &
   attrs() const;
 
   // required string type = 1;
   bool has_type() const;
   void clear_type();
   static const int kTypeFieldNumber = 1;
-  const ::std::string& type() const;
-  void set_type(const ::std::string& value);
+  const ::std::string &type() const;
+  void set_type(const ::std::string &value);
 #if LANG_CXX11
-  void set_type(::std::string&& value);
+  void set_type(::std::string &&value);
 #endif
-  void set_type(const char* value);
-  void set_type(const char* value, size_t size);
-  ::std::string* mutable_type();
-  ::std::string* release_type();
-  void set_allocated_type(::std::string* type);
+  void set_type(const char *value);
+  void set_type(const char *value, size_t size);
+  ::std::string *mutable_type();
+  ::std::string *release_type();
+  void set_allocated_type(::std::string *type);
 
   // required string comment = 5;
   bool has_comment() const;
   void clear_comment();
   static const int kCommentFieldNumber = 5;
-  const ::std::string& comment() const;
-  void set_comment(const ::std::string& value);
+  const ::std::string &comment() const;
+  void set_comment(const ::std::string &value);
 #if LANG_CXX11
-  void set_comment(::std::string&& value);
+  void set_comment(::std::string &&value);
 #endif
-  void set_comment(const char* value);
-  void set_comment(const char* value, size_t size);
-  ::std::string* mutable_comment();
-  ::std::string* release_comment();
-  void set_allocated_comment(::std::string* comment);
+  void set_comment(const char *value);
+  void set_comment(const char *value, size_t size);
+  ::std::string *mutable_comment();
+  ::std::string *release_comment();
+  void set_allocated_comment(::std::string *comment);
 
   // @@protoc_insertion_point(class_scope:paddle_mobile.framework.proto.OpProto)
- private:
+private:
   void set_has_type();
   void clear_has_type();
   void set_has_comment();
@@ -1224,81 +1230,82 @@ class VarType_TensorDesc
           MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarType.TensorDesc)
                        */
 {
- public:
+public:
   VarType_TensorDesc();
   virtual ~VarType_TensorDesc();
 
-  VarType_TensorDesc(const VarType_TensorDesc& from);
+  VarType_TensorDesc(const VarType_TensorDesc &from);
 
-  inline VarType_TensorDesc& operator=(const VarType_TensorDesc& from) {
+  inline VarType_TensorDesc &operator=(const VarType_TensorDesc &from) {
     CopyFrom(from);
     return *this;
   }
 #if LANG_CXX11
-  VarType_TensorDesc(VarType_TensorDesc&& from) noexcept
+  VarType_TensorDesc(VarType_TensorDesc &&from) noexcept
       : VarType_TensorDesc() {
     *this = ::std::move(from);
   }
 
-  inline VarType_TensorDesc& operator=(VarType_TensorDesc&& from) noexcept {
+  inline VarType_TensorDesc &operator=(VarType_TensorDesc &&from) noexcept {
     if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
-      if (this != &from) InternalSwap(&from);
+      if (this != &from)
+        InternalSwap(&from);
     } else {
       CopyFrom(from);
     }
     return *this;
   }
 #endif
-  inline const ::std::string& unknown_fields() const {
+  inline const ::std::string &unknown_fields() const {
     return _internal_metadata_.unknown_fields();
   }
-  inline ::std::string* mutable_unknown_fields() {
+  inline ::std::string *mutable_unknown_fields() {
     return _internal_metadata_.mutable_unknown_fields();
   }
 
-  static const VarType_TensorDesc& default_instance();
+  static const VarType_TensorDesc &default_instance();
 
-  static inline const VarType_TensorDesc* internal_default_instance() {
-    return reinterpret_cast<const VarType_TensorDesc*>(
+  static inline const VarType_TensorDesc *internal_default_instance() {
+    return reinterpret_cast<const VarType_TensorDesc *>(
         &_VarType_TensorDesc_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages = 6;
 
-  void Swap(VarType_TensorDesc* other);
-  friend void swap(VarType_TensorDesc& a, VarType_TensorDesc& b) { a.Swap(&b); }
+  void Swap(VarType_TensorDesc *other);
+  friend void swap(VarType_TensorDesc &a, VarType_TensorDesc &b) { a.Swap(&b); }
 
   // implements Message ----------------------------------------------
 
-  inline VarType_TensorDesc* New() const PROTOBUF_FINAL { return New(NULL); }
+  inline VarType_TensorDesc *New() const PROTOBUF_FINAL { return New(NULL); }
 
-  VarType_TensorDesc* New(::google::protobuf::Arena* arena) const
+  VarType_TensorDesc *
+  New(::google::protobuf::Arena *arena) const PROTOBUF_FINAL;
+  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite &from)
       PROTOBUF_FINAL;
-  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite& from)
-      PROTOBUF_FINAL;
-  void CopyFrom(const VarType_TensorDesc& from);
-  void MergeFrom(const VarType_TensorDesc& from);
+  void CopyFrom(const VarType_TensorDesc &from);
+  void MergeFrom(const VarType_TensorDesc &from);
   void Clear() PROTOBUF_FINAL;
   bool IsInitialized() const PROTOBUF_FINAL;
 
   size_t ByteSizeLong() const PROTOBUF_FINAL;
   bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedInputStream *input) PROTOBUF_FINAL;
   void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedOutputStream *output) const PROTOBUF_FINAL;
   void DiscardUnknownFields();
   int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
 
- private:
+private:
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(VarType_TensorDesc* other);
+  void InternalSwap(VarType_TensorDesc *other);
 
- private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const { return NULL; }
-  inline void* MaybeArenaPtr() const { return NULL; }
+private:
+  inline ::google::protobuf::Arena *GetArenaNoVirtual() const { return NULL; }
+  inline void *MaybeArenaPtr() const { return NULL; }
 
- public:
+public:
   ::std::string GetTypeName() const PROTOBUF_FINAL;
 
   // nested types ----------------------------------------------------
@@ -1312,9 +1319,9 @@ class VarType_TensorDesc
   ::google::protobuf::int64 dims(int index) const;
   void set_dims(int index, ::google::protobuf::int64 value);
   void add_dims(::google::protobuf::int64 value);
-  const ::google::protobuf::RepeatedField<::google::protobuf::int64>& dims()
-      const;
-  ::google::protobuf::RepeatedField<::google::protobuf::int64>* mutable_dims();
+  const ::google::protobuf::RepeatedField<::google::protobuf::int64> &
+  dims() const;
+  ::google::protobuf::RepeatedField<::google::protobuf::int64> *mutable_dims();
 
   // required .paddle_mobile.framework.proto.VarType.Type data_type = 1;
   bool has_data_type() const;
@@ -1324,7 +1331,7 @@ class VarType_TensorDesc
   void set_data_type(::paddle_mobile::framework::proto::VarType_Type value);
 
   // @@protoc_insertion_point(class_scope:paddle_mobile.framework.proto.VarType.TensorDesc)
- private:
+private:
   void set_has_data_type();
   void clear_has_data_type();
 
@@ -1343,84 +1350,85 @@ class VarType_LoDTensorDesc
           MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarType.LoDTensorDesc)
                        */
 {
- public:
+public:
   VarType_LoDTensorDesc();
   virtual ~VarType_LoDTensorDesc();
 
-  VarType_LoDTensorDesc(const VarType_LoDTensorDesc& from);
+  VarType_LoDTensorDesc(const VarType_LoDTensorDesc &from);
 
-  inline VarType_LoDTensorDesc& operator=(const VarType_LoDTensorDesc& from) {
+  inline VarType_LoDTensorDesc &operator=(const VarType_LoDTensorDesc &from) {
     CopyFrom(from);
     return *this;
   }
 #if LANG_CXX11
-  VarType_LoDTensorDesc(VarType_LoDTensorDesc&& from) noexcept
+  VarType_LoDTensorDesc(VarType_LoDTensorDesc &&from) noexcept
       : VarType_LoDTensorDesc() {
     *this = ::std::move(from);
   }
 
-  inline VarType_LoDTensorDesc& operator=(
-      VarType_LoDTensorDesc&& from) noexcept {
+  inline VarType_LoDTensorDesc &
+  operator=(VarType_LoDTensorDesc &&from) noexcept {
     if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
-      if (this != &from) InternalSwap(&from);
+      if (this != &from)
+        InternalSwap(&from);
     } else {
       CopyFrom(from);
     }
     return *this;
   }
 #endif
-  inline const ::std::string& unknown_fields() const {
+  inline const ::std::string &unknown_fields() const {
     return _internal_metadata_.unknown_fields();
   }
-  inline ::std::string* mutable_unknown_fields() {
+  inline ::std::string *mutable_unknown_fields() {
     return _internal_metadata_.mutable_unknown_fields();
   }
 
-  static const VarType_LoDTensorDesc& default_instance();
+  static const VarType_LoDTensorDesc &default_instance();
 
-  static inline const VarType_LoDTensorDesc* internal_default_instance() {
-    return reinterpret_cast<const VarType_LoDTensorDesc*>(
+  static inline const VarType_LoDTensorDesc *internal_default_instance() {
+    return reinterpret_cast<const VarType_LoDTensorDesc *>(
         &_VarType_LoDTensorDesc_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages = 7;
 
-  void Swap(VarType_LoDTensorDesc* other);
-  friend void swap(VarType_LoDTensorDesc& a, VarType_LoDTensorDesc& b) {
+  void Swap(VarType_LoDTensorDesc *other);
+  friend void swap(VarType_LoDTensorDesc &a, VarType_LoDTensorDesc &b) {
     a.Swap(&b);
   }
 
   // implements Message ----------------------------------------------
 
-  inline VarType_LoDTensorDesc* New() const PROTOBUF_FINAL { return New(NULL); }
+  inline VarType_LoDTensorDesc *New() const PROTOBUF_FINAL { return New(NULL); }
 
-  VarType_LoDTensorDesc* New(::google::protobuf::Arena* arena) const
+  VarType_LoDTensorDesc *
+  New(::google::protobuf::Arena *arena) const PROTOBUF_FINAL;
+  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite &from)
       PROTOBUF_FINAL;
-  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite& from)
-      PROTOBUF_FINAL;
-  void CopyFrom(const VarType_LoDTensorDesc& from);
-  void MergeFrom(const VarType_LoDTensorDesc& from);
+  void CopyFrom(const VarType_LoDTensorDesc &from);
+  void MergeFrom(const VarType_LoDTensorDesc &from);
   void Clear() PROTOBUF_FINAL;
   bool IsInitialized() const PROTOBUF_FINAL;
 
   size_t ByteSizeLong() const PROTOBUF_FINAL;
   bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedInputStream *input) PROTOBUF_FINAL;
   void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedOutputStream *output) const PROTOBUF_FINAL;
   void DiscardUnknownFields();
   int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
 
- private:
+private:
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(VarType_LoDTensorDesc* other);
+  void InternalSwap(VarType_LoDTensorDesc *other);
 
- private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const { return NULL; }
-  inline void* MaybeArenaPtr() const { return NULL; }
+private:
+  inline ::google::protobuf::Arena *GetArenaNoVirtual() const { return NULL; }
+  inline void *MaybeArenaPtr() const { return NULL; }
 
- public:
+public:
   ::std::string GetTypeName() const PROTOBUF_FINAL;
 
   // nested types ----------------------------------------------------
@@ -1431,11 +1439,11 @@ class VarType_LoDTensorDesc
   bool has_tensor() const;
   void clear_tensor();
   static const int kTensorFieldNumber = 1;
-  const ::paddle_mobile::framework::proto::VarType_TensorDesc& tensor() const;
-  ::paddle_mobile::framework::proto::VarType_TensorDesc* mutable_tensor();
-  ::paddle_mobile::framework::proto::VarType_TensorDesc* release_tensor();
+  const ::paddle_mobile::framework::proto::VarType_TensorDesc &tensor() const;
+  ::paddle_mobile::framework::proto::VarType_TensorDesc *mutable_tensor();
+  ::paddle_mobile::framework::proto::VarType_TensorDesc *release_tensor();
   void set_allocated_tensor(
-      ::paddle_mobile::framework::proto::VarType_TensorDesc* tensor);
+      ::paddle_mobile::framework::proto::VarType_TensorDesc *tensor);
 
   // optional int32 lod_level = 2 [default = 0];
   bool has_lod_level() const;
@@ -1445,7 +1453,7 @@ class VarType_LoDTensorDesc
   void set_lod_level(::google::protobuf::int32 value);
 
   // @@protoc_insertion_point(class_scope:paddle_mobile.framework.proto.VarType.LoDTensorDesc)
- private:
+private:
   void set_has_tensor();
   void clear_has_tensor();
   void set_has_lod_level();
@@ -1455,7 +1463,7 @@ class VarType_LoDTensorDesc
       _internal_metadata_;
   ::google::protobuf::internal::HasBits<1> _has_bits_;
   mutable int _cached_size_;
-  ::paddle_mobile::framework::proto::VarType_TensorDesc* tensor_;
+  ::paddle_mobile::framework::proto::VarType_TensorDesc *tensor_;
   ::google::protobuf::int32 lod_level_;
   friend struct protobuf_framework_2eproto::TableStruct;
 };
@@ -1466,88 +1474,89 @@ class VarType_LoDTensorArrayDesc
           MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc)
                        */
 {
- public:
+public:
   VarType_LoDTensorArrayDesc();
   virtual ~VarType_LoDTensorArrayDesc();
 
-  VarType_LoDTensorArrayDesc(const VarType_LoDTensorArrayDesc& from);
+  VarType_LoDTensorArrayDesc(const VarType_LoDTensorArrayDesc &from);
 
-  inline VarType_LoDTensorArrayDesc& operator=(
-      const VarType_LoDTensorArrayDesc& from) {
+  inline VarType_LoDTensorArrayDesc &
+  operator=(const VarType_LoDTensorArrayDesc &from) {
     CopyFrom(from);
     return *this;
   }
 #if LANG_CXX11
-  VarType_LoDTensorArrayDesc(VarType_LoDTensorArrayDesc&& from) noexcept
+  VarType_LoDTensorArrayDesc(VarType_LoDTensorArrayDesc &&from) noexcept
       : VarType_LoDTensorArrayDesc() {
     *this = ::std::move(from);
   }
 
-  inline VarType_LoDTensorArrayDesc& operator=(
-      VarType_LoDTensorArrayDesc&& from) noexcept {
+  inline VarType_LoDTensorArrayDesc &
+  operator=(VarType_LoDTensorArrayDesc &&from) noexcept {
     if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
-      if (this != &from) InternalSwap(&from);
+      if (this != &from)
+        InternalSwap(&from);
     } else {
       CopyFrom(from);
     }
     return *this;
   }
 #endif
-  inline const ::std::string& unknown_fields() const {
+  inline const ::std::string &unknown_fields() const {
     return _internal_metadata_.unknown_fields();
   }
-  inline ::std::string* mutable_unknown_fields() {
+  inline ::std::string *mutable_unknown_fields() {
     return _internal_metadata_.mutable_unknown_fields();
   }
 
-  static const VarType_LoDTensorArrayDesc& default_instance();
+  static const VarType_LoDTensorArrayDesc &default_instance();
 
-  static inline const VarType_LoDTensorArrayDesc* internal_default_instance() {
-    return reinterpret_cast<const VarType_LoDTensorArrayDesc*>(
+  static inline const VarType_LoDTensorArrayDesc *internal_default_instance() {
+    return reinterpret_cast<const VarType_LoDTensorArrayDesc *>(
         &_VarType_LoDTensorArrayDesc_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages = 8;
 
-  void Swap(VarType_LoDTensorArrayDesc* other);
-  friend void swap(VarType_LoDTensorArrayDesc& a,
-                   VarType_LoDTensorArrayDesc& b) {
+  void Swap(VarType_LoDTensorArrayDesc *other);
+  friend void swap(VarType_LoDTensorArrayDesc &a,
+                   VarType_LoDTensorArrayDesc &b) {
     a.Swap(&b);
   }
 
   // implements Message ----------------------------------------------
 
-  inline VarType_LoDTensorArrayDesc* New() const PROTOBUF_FINAL {
+  inline VarType_LoDTensorArrayDesc *New() const PROTOBUF_FINAL {
     return New(NULL);
   }
 
-  VarType_LoDTensorArrayDesc* New(::google::protobuf::Arena* arena) const
+  VarType_LoDTensorArrayDesc *
+  New(::google::protobuf::Arena *arena) const PROTOBUF_FINAL;
+  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite &from)
       PROTOBUF_FINAL;
-  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite& from)
-      PROTOBUF_FINAL;
-  void CopyFrom(const VarType_LoDTensorArrayDesc& from);
-  void MergeFrom(const VarType_LoDTensorArrayDesc& from);
+  void CopyFrom(const VarType_LoDTensorArrayDesc &from);
+  void MergeFrom(const VarType_LoDTensorArrayDesc &from);
   void Clear() PROTOBUF_FINAL;
   bool IsInitialized() const PROTOBUF_FINAL;
 
   size_t ByteSizeLong() const PROTOBUF_FINAL;
   bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedInputStream *input) PROTOBUF_FINAL;
   void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedOutputStream *output) const PROTOBUF_FINAL;
   void DiscardUnknownFields();
   int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
 
- private:
+private:
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(VarType_LoDTensorArrayDesc* other);
+  void InternalSwap(VarType_LoDTensorArrayDesc *other);
 
- private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const { return NULL; }
-  inline void* MaybeArenaPtr() const { return NULL; }
+private:
+  inline ::google::protobuf::Arena *GetArenaNoVirtual() const { return NULL; }
+  inline void *MaybeArenaPtr() const { return NULL; }
 
- public:
+public:
   ::std::string GetTypeName() const PROTOBUF_FINAL;
 
   // nested types ----------------------------------------------------
@@ -1558,11 +1567,11 @@ class VarType_LoDTensorArrayDesc
   bool has_tensor() const;
   void clear_tensor();
   static const int kTensorFieldNumber = 1;
-  const ::paddle_mobile::framework::proto::VarType_TensorDesc& tensor() const;
-  ::paddle_mobile::framework::proto::VarType_TensorDesc* mutable_tensor();
-  ::paddle_mobile::framework::proto::VarType_TensorDesc* release_tensor();
+  const ::paddle_mobile::framework::proto::VarType_TensorDesc &tensor() const;
+  ::paddle_mobile::framework::proto::VarType_TensorDesc *mutable_tensor();
+  ::paddle_mobile::framework::proto::VarType_TensorDesc *release_tensor();
   void set_allocated_tensor(
-      ::paddle_mobile::framework::proto::VarType_TensorDesc* tensor);
+      ::paddle_mobile::framework::proto::VarType_TensorDesc *tensor);
 
   // optional int32 lod_level = 2 [default = 0];
   bool has_lod_level() const;
@@ -1572,7 +1581,7 @@ class VarType_LoDTensorArrayDesc
   void set_lod_level(::google::protobuf::int32 value);
 
   // @@protoc_insertion_point(class_scope:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc)
- private:
+private:
   void set_has_tensor();
   void clear_has_tensor();
   void set_has_lod_level();
@@ -1582,7 +1591,7 @@ class VarType_LoDTensorArrayDesc
       _internal_metadata_;
   ::google::protobuf::internal::HasBits<1> _has_bits_;
   mutable int _cached_size_;
-  ::paddle_mobile::framework::proto::VarType_TensorDesc* tensor_;
+  ::paddle_mobile::framework::proto::VarType_TensorDesc *tensor_;
   ::google::protobuf::int32 lod_level_;
   friend struct protobuf_framework_2eproto::TableStruct;
 };
@@ -1593,81 +1602,82 @@ class VarType_ReaderDesc
           MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarType.ReaderDesc)
                        */
 {
- public:
+public:
   VarType_ReaderDesc();
   virtual ~VarType_ReaderDesc();
 
-  VarType_ReaderDesc(const VarType_ReaderDesc& from);
+  VarType_ReaderDesc(const VarType_ReaderDesc &from);
 
-  inline VarType_ReaderDesc& operator=(const VarType_ReaderDesc& from) {
+  inline VarType_ReaderDesc &operator=(const VarType_ReaderDesc &from) {
     CopyFrom(from);
     return *this;
   }
 #if LANG_CXX11
-  VarType_ReaderDesc(VarType_ReaderDesc&& from) noexcept
+  VarType_ReaderDesc(VarType_ReaderDesc &&from) noexcept
       : VarType_ReaderDesc() {
     *this = ::std::move(from);
   }
 
-  inline VarType_ReaderDesc& operator=(VarType_ReaderDesc&& from) noexcept {
+  inline VarType_ReaderDesc &operator=(VarType_ReaderDesc &&from) noexcept {
     if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
-      if (this != &from) InternalSwap(&from);
+      if (this != &from)
+        InternalSwap(&from);
     } else {
       CopyFrom(from);
     }
     return *this;
   }
 #endif
-  inline const ::std::string& unknown_fields() const {
+  inline const ::std::string &unknown_fields() const {
     return _internal_metadata_.unknown_fields();
   }
-  inline ::std::string* mutable_unknown_fields() {
+  inline ::std::string *mutable_unknown_fields() {
     return _internal_metadata_.mutable_unknown_fields();
   }
 
-  static const VarType_ReaderDesc& default_instance();
+  static const VarType_ReaderDesc &default_instance();
 
-  static inline const VarType_ReaderDesc* internal_default_instance() {
-    return reinterpret_cast<const VarType_ReaderDesc*>(
+  static inline const VarType_ReaderDesc *internal_default_instance() {
+    return reinterpret_cast<const VarType_ReaderDesc *>(
         &_VarType_ReaderDesc_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages = 9;
 
-  void Swap(VarType_ReaderDesc* other);
-  friend void swap(VarType_ReaderDesc& a, VarType_ReaderDesc& b) { a.Swap(&b); }
+  void Swap(VarType_ReaderDesc *other);
+  friend void swap(VarType_ReaderDesc &a, VarType_ReaderDesc &b) { a.Swap(&b); }
 
   // implements Message ----------------------------------------------
 
-  inline VarType_ReaderDesc* New() const PROTOBUF_FINAL { return New(NULL); }
+  inline VarType_ReaderDesc *New() const PROTOBUF_FINAL { return New(NULL); }
 
-  VarType_ReaderDesc* New(::google::protobuf::Arena* arena) const
+  VarType_ReaderDesc *
+  New(::google::protobuf::Arena *arena) const PROTOBUF_FINAL;
+  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite &from)
       PROTOBUF_FINAL;
-  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite& from)
-      PROTOBUF_FINAL;
-  void CopyFrom(const VarType_ReaderDesc& from);
-  void MergeFrom(const VarType_ReaderDesc& from);
+  void CopyFrom(const VarType_ReaderDesc &from);
+  void MergeFrom(const VarType_ReaderDesc &from);
   void Clear() PROTOBUF_FINAL;
   bool IsInitialized() const PROTOBUF_FINAL;
 
   size_t ByteSizeLong() const PROTOBUF_FINAL;
   bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedInputStream *input) PROTOBUF_FINAL;
   void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedOutputStream *output) const PROTOBUF_FINAL;
   void DiscardUnknownFields();
   int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
 
- private:
+private:
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(VarType_ReaderDesc* other);
+  void InternalSwap(VarType_ReaderDesc *other);
 
- private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const { return NULL; }
-  inline void* MaybeArenaPtr() const { return NULL; }
+private:
+  inline ::google::protobuf::Arena *GetArenaNoVirtual() const { return NULL; }
+  inline void *MaybeArenaPtr() const { return NULL; }
 
- public:
+public:
   ::std::string GetTypeName() const PROTOBUF_FINAL;
 
   // nested types ----------------------------------------------------
@@ -1679,20 +1689,20 @@ class VarType_ReaderDesc
   int lod_tensor_size() const;
   void clear_lod_tensor();
   static const int kLodTensorFieldNumber = 1;
-  const ::paddle_mobile::framework::proto::VarType_LoDTensorDesc& lod_tensor(
-      int index) const;
-  ::paddle_mobile::framework::proto::VarType_LoDTensorDesc* mutable_lod_tensor(
-      int index);
-  ::paddle_mobile::framework::proto::VarType_LoDTensorDesc* add_lod_tensor();
+  const ::paddle_mobile::framework::proto::VarType_LoDTensorDesc &
+  lod_tensor(int index) const;
+  ::paddle_mobile::framework::proto::VarType_LoDTensorDesc *
+  mutable_lod_tensor(int index);
+  ::paddle_mobile::framework::proto::VarType_LoDTensorDesc *add_lod_tensor();
   ::google::protobuf::RepeatedPtrField<
-      ::paddle_mobile::framework::proto::VarType_LoDTensorDesc>*
+      ::paddle_mobile::framework::proto::VarType_LoDTensorDesc> *
   mutable_lod_tensor();
   const ::google::protobuf::RepeatedPtrField<
-      ::paddle_mobile::framework::proto::VarType_LoDTensorDesc>&
+      ::paddle_mobile::framework::proto::VarType_LoDTensorDesc> &
   lod_tensor() const;
 
   // @@protoc_insertion_point(class_scope:paddle_mobile.framework.proto.VarType.ReaderDesc)
- private:
+private:
   ::google::protobuf::internal::InternalMetadataWithArenaLite
       _internal_metadata_;
   ::google::protobuf::internal::HasBits<1> _has_bits_;
@@ -1709,83 +1719,84 @@ class VarType_ChannelDesc
           MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarType.ChannelDesc)
                        */
 {
- public:
+public:
   VarType_ChannelDesc();
   virtual ~VarType_ChannelDesc();
 
-  VarType_ChannelDesc(const VarType_ChannelDesc& from);
+  VarType_ChannelDesc(const VarType_ChannelDesc &from);
 
-  inline VarType_ChannelDesc& operator=(const VarType_ChannelDesc& from) {
+  inline VarType_ChannelDesc &operator=(const VarType_ChannelDesc &from) {
     CopyFrom(from);
     return *this;
   }
 #if LANG_CXX11
-  VarType_ChannelDesc(VarType_ChannelDesc&& from) noexcept
+  VarType_ChannelDesc(VarType_ChannelDesc &&from) noexcept
       : VarType_ChannelDesc() {
     *this = ::std::move(from);
   }
 
-  inline VarType_ChannelDesc& operator=(VarType_ChannelDesc&& from) noexcept {
+  inline VarType_ChannelDesc &operator=(VarType_ChannelDesc &&from) noexcept {
     if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
-      if (this != &from) InternalSwap(&from);
+      if (this != &from)
+        InternalSwap(&from);
     } else {
       CopyFrom(from);
     }
     return *this;
   }
 #endif
-  inline const ::std::string& unknown_fields() const {
+  inline const ::std::string &unknown_fields() const {
     return _internal_metadata_.unknown_fields();
   }
-  inline ::std::string* mutable_unknown_fields() {
+  inline ::std::string *mutable_unknown_fields() {
     return _internal_metadata_.mutable_unknown_fields();
   }
 
-  static const VarType_ChannelDesc& default_instance();
+  static const VarType_ChannelDesc &default_instance();
 
-  static inline const VarType_ChannelDesc* internal_default_instance() {
-    return reinterpret_cast<const VarType_ChannelDesc*>(
+  static inline const VarType_ChannelDesc *internal_default_instance() {
+    return reinterpret_cast<const VarType_ChannelDesc *>(
         &_VarType_ChannelDesc_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages = 10;
 
-  void Swap(VarType_ChannelDesc* other);
-  friend void swap(VarType_ChannelDesc& a, VarType_ChannelDesc& b) {
+  void Swap(VarType_ChannelDesc *other);
+  friend void swap(VarType_ChannelDesc &a, VarType_ChannelDesc &b) {
     a.Swap(&b);
   }
 
   // implements Message ----------------------------------------------
 
-  inline VarType_ChannelDesc* New() const PROTOBUF_FINAL { return New(NULL); }
+  inline VarType_ChannelDesc *New() const PROTOBUF_FINAL { return New(NULL); }
 
-  VarType_ChannelDesc* New(::google::protobuf::Arena* arena) const
+  VarType_ChannelDesc *
+  New(::google::protobuf::Arena *arena) const PROTOBUF_FINAL;
+  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite &from)
       PROTOBUF_FINAL;
-  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite& from)
-      PROTOBUF_FINAL;
-  void CopyFrom(const VarType_ChannelDesc& from);
-  void MergeFrom(const VarType_ChannelDesc& from);
+  void CopyFrom(const VarType_ChannelDesc &from);
+  void MergeFrom(const VarType_ChannelDesc &from);
   void Clear() PROTOBUF_FINAL;
   bool IsInitialized() const PROTOBUF_FINAL;
 
   size_t ByteSizeLong() const PROTOBUF_FINAL;
   bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedInputStream *input) PROTOBUF_FINAL;
   void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedOutputStream *output) const PROTOBUF_FINAL;
   void DiscardUnknownFields();
   int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
 
- private:
+private:
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(VarType_ChannelDesc* other);
+  void InternalSwap(VarType_ChannelDesc *other);
 
- private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const { return NULL; }
-  inline void* MaybeArenaPtr() const { return NULL; }
+private:
+  inline ::google::protobuf::Arena *GetArenaNoVirtual() const { return NULL; }
+  inline void *MaybeArenaPtr() const { return NULL; }
 
- public:
+public:
   ::std::string GetTypeName() const PROTOBUF_FINAL;
 
   // nested types ----------------------------------------------------
@@ -1807,7 +1818,7 @@ class VarType_ChannelDesc
   void set_data_type(::paddle_mobile::framework::proto::VarType_Type value);
 
   // @@protoc_insertion_point(class_scope:paddle_mobile.framework.proto.VarType.ChannelDesc)
- private:
+private:
   void set_has_data_type();
   void clear_has_data_type();
   void set_has_capacity();
@@ -1831,79 +1842,80 @@ class VarType_Tuple
           MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarType.Tuple)
                        */
 {
- public:
+public:
   VarType_Tuple();
   virtual ~VarType_Tuple();
 
-  VarType_Tuple(const VarType_Tuple& from);
+  VarType_Tuple(const VarType_Tuple &from);
 
-  inline VarType_Tuple& operator=(const VarType_Tuple& from) {
+  inline VarType_Tuple &operator=(const VarType_Tuple &from) {
     CopyFrom(from);
     return *this;
   }
 #if LANG_CXX11
-  VarType_Tuple(VarType_Tuple&& from) noexcept : VarType_Tuple() {
+  VarType_Tuple(VarType_Tuple &&from) noexcept : VarType_Tuple() {
     *this = ::std::move(from);
   }
 
-  inline VarType_Tuple& operator=(VarType_Tuple&& from) noexcept {
+  inline VarType_Tuple &operator=(VarType_Tuple &&from) noexcept {
     if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
-      if (this != &from) InternalSwap(&from);
+      if (this != &from)
+        InternalSwap(&from);
     } else {
       CopyFrom(from);
     }
     return *this;
   }
 #endif
-  inline const ::std::string& unknown_fields() const {
+  inline const ::std::string &unknown_fields() const {
     return _internal_metadata_.unknown_fields();
   }
-  inline ::std::string* mutable_unknown_fields() {
+  inline ::std::string *mutable_unknown_fields() {
     return _internal_metadata_.mutable_unknown_fields();
   }
 
-  static const VarType_Tuple& default_instance();
+  static const VarType_Tuple &default_instance();
 
-  static inline const VarType_Tuple* internal_default_instance() {
-    return reinterpret_cast<const VarType_Tuple*>(
+  static inline const VarType_Tuple *internal_default_instance() {
+    return reinterpret_cast<const VarType_Tuple *>(
         &_VarType_Tuple_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages = 11;
 
-  void Swap(VarType_Tuple* other);
-  friend void swap(VarType_Tuple& a, VarType_Tuple& b) { a.Swap(&b); }
+  void Swap(VarType_Tuple *other);
+  friend void swap(VarType_Tuple &a, VarType_Tuple &b) { a.Swap(&b); }
 
   // implements Message ----------------------------------------------
 
-  inline VarType_Tuple* New() const PROTOBUF_FINAL { return New(NULL); }
+  inline VarType_Tuple *New() const PROTOBUF_FINAL { return New(NULL); }
 
-  VarType_Tuple* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
-  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite& from)
+  VarType_Tuple *New(::google::protobuf::Arena *arena) const PROTOBUF_FINAL;
+  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite &from)
       PROTOBUF_FINAL;
-  void CopyFrom(const VarType_Tuple& from);
-  void MergeFrom(const VarType_Tuple& from);
+  void CopyFrom(const VarType_Tuple &from);
+  void MergeFrom(const VarType_Tuple &from);
   void Clear() PROTOBUF_FINAL;
   bool IsInitialized() const PROTOBUF_FINAL;
 
   size_t ByteSizeLong() const PROTOBUF_FINAL;
   bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedInputStream *input) PROTOBUF_FINAL;
   void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedOutputStream *output) const PROTOBUF_FINAL;
   void DiscardUnknownFields();
   int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
 
- private:
+private:
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(VarType_Tuple* other);
+  void InternalSwap(VarType_Tuple *other);
 
- private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const { return NULL; }
-  inline void* MaybeArenaPtr() const { return NULL; }
+private:
+  inline ::google::protobuf::Arena *GetArenaNoVirtual() const { return NULL; }
+  inline void *MaybeArenaPtr() const { return NULL; }
 
- public:
+public:
   ::std::string GetTypeName() const PROTOBUF_FINAL;
 
   // nested types ----------------------------------------------------
@@ -1918,11 +1930,11 @@ class VarType_Tuple
   void set_element_type(int index,
                         ::paddle_mobile::framework::proto::VarType_Type value);
   void add_element_type(::paddle_mobile::framework::proto::VarType_Type value);
-  const ::google::protobuf::RepeatedField<int>& element_type() const;
-  ::google::protobuf::RepeatedField<int>* mutable_element_type();
+  const ::google::protobuf::RepeatedField<int> &element_type() const;
+  ::google::protobuf::RepeatedField<int> *mutable_element_type();
 
   // @@protoc_insertion_point(class_scope:paddle_mobile.framework.proto.VarType.Tuple)
- private:
+private:
   ::google::protobuf::internal::InternalMetadataWithArenaLite
       _internal_metadata_;
   ::google::protobuf::internal::HasBits<1> _has_bits_;
@@ -1937,76 +1949,77 @@ class VarType
           MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarType)
                        */
 {
- public:
+public:
   VarType();
   virtual ~VarType();
 
-  VarType(const VarType& from);
+  VarType(const VarType &from);
 
-  inline VarType& operator=(const VarType& from) {
+  inline VarType &operator=(const VarType &from) {
     CopyFrom(from);
     return *this;
   }
 #if LANG_CXX11
-  VarType(VarType&& from) noexcept : VarType() { *this = ::std::move(from); }
+  VarType(VarType &&from) noexcept : VarType() { *this = ::std::move(from); }
 
-  inline VarType& operator=(VarType&& from) noexcept {
+  inline VarType &operator=(VarType &&from) noexcept {
     if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
-      if (this != &from) InternalSwap(&from);
+      if (this != &from)
+        InternalSwap(&from);
     } else {
       CopyFrom(from);
     }
     return *this;
   }
 #endif
-  inline const ::std::string& unknown_fields() const {
+  inline const ::std::string &unknown_fields() const {
     return _internal_metadata_.unknown_fields();
   }
-  inline ::std::string* mutable_unknown_fields() {
+  inline ::std::string *mutable_unknown_fields() {
     return _internal_metadata_.mutable_unknown_fields();
   }
 
-  static const VarType& default_instance();
+  static const VarType &default_instance();
 
-  static inline const VarType* internal_default_instance() {
-    return reinterpret_cast<const VarType*>(&_VarType_default_instance_);
+  static inline const VarType *internal_default_instance() {
+    return reinterpret_cast<const VarType *>(&_VarType_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages = 12;
 
-  void Swap(VarType* other);
-  friend void swap(VarType& a, VarType& b) { a.Swap(&b); }
+  void Swap(VarType *other);
+  friend void swap(VarType &a, VarType &b) { a.Swap(&b); }
 
   // implements Message ----------------------------------------------
 
-  inline VarType* New() const PROTOBUF_FINAL { return New(NULL); }
+  inline VarType *New() const PROTOBUF_FINAL { return New(NULL); }
 
-  VarType* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
-  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite& from)
+  VarType *New(::google::protobuf::Arena *arena) const PROTOBUF_FINAL;
+  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite &from)
       PROTOBUF_FINAL;
-  void CopyFrom(const VarType& from);
-  void MergeFrom(const VarType& from);
+  void CopyFrom(const VarType &from);
+  void MergeFrom(const VarType &from);
   void Clear() PROTOBUF_FINAL;
   bool IsInitialized() const PROTOBUF_FINAL;
 
   size_t ByteSizeLong() const PROTOBUF_FINAL;
   bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedInputStream *input) PROTOBUF_FINAL;
   void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedOutputStream *output) const PROTOBUF_FINAL;
   void DiscardUnknownFields();
   int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
 
- private:
+private:
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(VarType* other);
+  void InternalSwap(VarType *other);
 
- private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const { return NULL; }
-  inline void* MaybeArenaPtr() const { return NULL; }
+private:
+  inline ::google::protobuf::Arena *GetArenaNoVirtual() const { return NULL; }
+  inline void *MaybeArenaPtr() const { return NULL; }
 
- public:
+public:
   ::std::string GetTypeName() const PROTOBUF_FINAL;
 
   // nested types ----------------------------------------------------
@@ -2052,73 +2065,73 @@ class VarType
   bool has_selected_rows() const;
   void clear_selected_rows();
   static const int kSelectedRowsFieldNumber = 2;
-  const ::paddle_mobile::framework::proto::VarType_TensorDesc& selected_rows()
-      const;
-  ::paddle_mobile::framework::proto::VarType_TensorDesc*
+  const ::paddle_mobile::framework::proto::VarType_TensorDesc &
+  selected_rows() const;
+  ::paddle_mobile::framework::proto::VarType_TensorDesc *
   mutable_selected_rows();
-  ::paddle_mobile::framework::proto::VarType_TensorDesc*
+  ::paddle_mobile::framework::proto::VarType_TensorDesc *
   release_selected_rows();
   void set_allocated_selected_rows(
-      ::paddle_mobile::framework::proto::VarType_TensorDesc* selected_rows);
+      ::paddle_mobile::framework::proto::VarType_TensorDesc *selected_rows);
 
   // optional .paddle_mobile.framework.proto.VarType.LoDTensorDesc lod_tensor =
   // 3;
   bool has_lod_tensor() const;
   void clear_lod_tensor();
   static const int kLodTensorFieldNumber = 3;
-  const ::paddle_mobile::framework::proto::VarType_LoDTensorDesc& lod_tensor()
-      const;
-  ::paddle_mobile::framework::proto::VarType_LoDTensorDesc*
+  const ::paddle_mobile::framework::proto::VarType_LoDTensorDesc &
+  lod_tensor() const;
+  ::paddle_mobile::framework::proto::VarType_LoDTensorDesc *
   mutable_lod_tensor();
-  ::paddle_mobile::framework::proto::VarType_LoDTensorDesc*
+  ::paddle_mobile::framework::proto::VarType_LoDTensorDesc *
   release_lod_tensor();
   void set_allocated_lod_tensor(
-      ::paddle_mobile::framework::proto::VarType_LoDTensorDesc* lod_tensor);
+      ::paddle_mobile::framework::proto::VarType_LoDTensorDesc *lod_tensor);
 
   // optional .paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc
   // tensor_array = 4;
   bool has_tensor_array() const;
   void clear_tensor_array();
   static const int kTensorArrayFieldNumber = 4;
-  const ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc&
+  const ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc &
   tensor_array() const;
-  ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc*
+  ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc *
   mutable_tensor_array();
-  ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc*
+  ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc *
   release_tensor_array();
   void set_allocated_tensor_array(
-      ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc*
-          tensor_array);
+      ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc
+          *tensor_array);
 
   // optional .paddle_mobile.framework.proto.VarType.ReaderDesc reader = 5;
   bool has_reader() const;
   void clear_reader();
   static const int kReaderFieldNumber = 5;
-  const ::paddle_mobile::framework::proto::VarType_ReaderDesc& reader() const;
-  ::paddle_mobile::framework::proto::VarType_ReaderDesc* mutable_reader();
-  ::paddle_mobile::framework::proto::VarType_ReaderDesc* release_reader();
+  const ::paddle_mobile::framework::proto::VarType_ReaderDesc &reader() const;
+  ::paddle_mobile::framework::proto::VarType_ReaderDesc *mutable_reader();
+  ::paddle_mobile::framework::proto::VarType_ReaderDesc *release_reader();
   void set_allocated_reader(
-      ::paddle_mobile::framework::proto::VarType_ReaderDesc* reader);
+      ::paddle_mobile::framework::proto::VarType_ReaderDesc *reader);
 
   // optional .paddle_mobile.framework.proto.VarType.ChannelDesc channel = 6;
   bool has_channel() const;
   void clear_channel();
   static const int kChannelFieldNumber = 6;
-  const ::paddle_mobile::framework::proto::VarType_ChannelDesc& channel() const;
-  ::paddle_mobile::framework::proto::VarType_ChannelDesc* mutable_channel();
-  ::paddle_mobile::framework::proto::VarType_ChannelDesc* release_channel();
+  const ::paddle_mobile::framework::proto::VarType_ChannelDesc &channel() const;
+  ::paddle_mobile::framework::proto::VarType_ChannelDesc *mutable_channel();
+  ::paddle_mobile::framework::proto::VarType_ChannelDesc *release_channel();
   void set_allocated_channel(
-      ::paddle_mobile::framework::proto::VarType_ChannelDesc* channel);
+      ::paddle_mobile::framework::proto::VarType_ChannelDesc *channel);
 
   // optional .paddle_mobile.framework.proto.VarType.Tuple tuple = 7;
   bool has_tuple() const;
   void clear_tuple();
   static const int kTupleFieldNumber = 7;
-  const ::paddle_mobile::framework::proto::VarType_Tuple& tuple() const;
-  ::paddle_mobile::framework::proto::VarType_Tuple* mutable_tuple();
-  ::paddle_mobile::framework::proto::VarType_Tuple* release_tuple();
-  void set_allocated_tuple(
-      ::paddle_mobile::framework::proto::VarType_Tuple* tuple);
+  const ::paddle_mobile::framework::proto::VarType_Tuple &tuple() const;
+  ::paddle_mobile::framework::proto::VarType_Tuple *mutable_tuple();
+  ::paddle_mobile::framework::proto::VarType_Tuple *release_tuple();
+  void
+  set_allocated_tuple(::paddle_mobile::framework::proto::VarType_Tuple *tuple);
 
   // required .paddle_mobile.framework.proto.VarType.Type type = 1;
   bool has_type() const;
@@ -2128,7 +2141,7 @@ class VarType
   void set_type(::paddle_mobile::framework::proto::VarType_Type value);
 
   // @@protoc_insertion_point(class_scope:paddle_mobile.framework.proto.VarType)
- private:
+private:
   void set_has_type();
   void clear_has_type();
   void set_has_selected_rows();
@@ -2148,12 +2161,12 @@ class VarType
       _internal_metadata_;
   ::google::protobuf::internal::HasBits<1> _has_bits_;
   mutable int _cached_size_;
-  ::paddle_mobile::framework::proto::VarType_TensorDesc* selected_rows_;
-  ::paddle_mobile::framework::proto::VarType_LoDTensorDesc* lod_tensor_;
-  ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc* tensor_array_;
-  ::paddle_mobile::framework::proto::VarType_ReaderDesc* reader_;
-  ::paddle_mobile::framework::proto::VarType_ChannelDesc* channel_;
-  ::paddle_mobile::framework::proto::VarType_Tuple* tuple_;
+  ::paddle_mobile::framework::proto::VarType_TensorDesc *selected_rows_;
+  ::paddle_mobile::framework::proto::VarType_LoDTensorDesc *lod_tensor_;
+  ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc *tensor_array_;
+  ::paddle_mobile::framework::proto::VarType_ReaderDesc *reader_;
+  ::paddle_mobile::framework::proto::VarType_ChannelDesc *channel_;
+  ::paddle_mobile::framework::proto::VarType_Tuple *tuple_;
   int type_;
   friend struct protobuf_framework_2eproto::TableStruct;
 };
@@ -2164,76 +2177,77 @@ class VarDesc
           MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.VarDesc)
                        */
 {
- public:
+public:
   VarDesc();
   virtual ~VarDesc();
 
-  VarDesc(const VarDesc& from);
+  VarDesc(const VarDesc &from);
 
-  inline VarDesc& operator=(const VarDesc& from) {
+  inline VarDesc &operator=(const VarDesc &from) {
     CopyFrom(from);
     return *this;
   }
 #if LANG_CXX11
-  VarDesc(VarDesc&& from) noexcept : VarDesc() { *this = ::std::move(from); }
+  VarDesc(VarDesc &&from) noexcept : VarDesc() { *this = ::std::move(from); }
 
-  inline VarDesc& operator=(VarDesc&& from) noexcept {
+  inline VarDesc &operator=(VarDesc &&from) noexcept {
     if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
-      if (this != &from) InternalSwap(&from);
+      if (this != &from)
+        InternalSwap(&from);
     } else {
       CopyFrom(from);
     }
     return *this;
   }
 #endif
-  inline const ::std::string& unknown_fields() const {
+  inline const ::std::string &unknown_fields() const {
     return _internal_metadata_.unknown_fields();
   }
-  inline ::std::string* mutable_unknown_fields() {
+  inline ::std::string *mutable_unknown_fields() {
     return _internal_metadata_.mutable_unknown_fields();
   }
 
-  static const VarDesc& default_instance();
+  static const VarDesc &default_instance();
 
-  static inline const VarDesc* internal_default_instance() {
-    return reinterpret_cast<const VarDesc*>(&_VarDesc_default_instance_);
+  static inline const VarDesc *internal_default_instance() {
+    return reinterpret_cast<const VarDesc *>(&_VarDesc_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages = 13;
 
-  void Swap(VarDesc* other);
-  friend void swap(VarDesc& a, VarDesc& b) { a.Swap(&b); }
+  void Swap(VarDesc *other);
+  friend void swap(VarDesc &a, VarDesc &b) { a.Swap(&b); }
 
   // implements Message ----------------------------------------------
 
-  inline VarDesc* New() const PROTOBUF_FINAL { return New(NULL); }
+  inline VarDesc *New() const PROTOBUF_FINAL { return New(NULL); }
 
-  VarDesc* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
-  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite& from)
+  VarDesc *New(::google::protobuf::Arena *arena) const PROTOBUF_FINAL;
+  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite &from)
       PROTOBUF_FINAL;
-  void CopyFrom(const VarDesc& from);
-  void MergeFrom(const VarDesc& from);
+  void CopyFrom(const VarDesc &from);
+  void MergeFrom(const VarDesc &from);
   void Clear() PROTOBUF_FINAL;
   bool IsInitialized() const PROTOBUF_FINAL;
 
   size_t ByteSizeLong() const PROTOBUF_FINAL;
   bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedInputStream *input) PROTOBUF_FINAL;
   void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedOutputStream *output) const PROTOBUF_FINAL;
   void DiscardUnknownFields();
   int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
 
- private:
+private:
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(VarDesc* other);
+  void InternalSwap(VarDesc *other);
 
- private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const { return NULL; }
-  inline void* MaybeArenaPtr() const { return NULL; }
+private:
+  inline ::google::protobuf::Arena *GetArenaNoVirtual() const { return NULL; }
+  inline void *MaybeArenaPtr() const { return NULL; }
 
- public:
+public:
   ::std::string GetTypeName() const PROTOBUF_FINAL;
 
   // nested types ----------------------------------------------------
@@ -2244,25 +2258,25 @@ class VarDesc
   bool has_name() const;
   void clear_name();
   static const int kNameFieldNumber = 1;
-  const ::std::string& name() const;
-  void set_name(const ::std::string& value);
+  const ::std::string &name() const;
+  void set_name(const ::std::string &value);
 #if LANG_CXX11
-  void set_name(::std::string&& value);
+  void set_name(::std::string &&value);
 #endif
-  void set_name(const char* value);
-  void set_name(const char* value, size_t size);
-  ::std::string* mutable_name();
-  ::std::string* release_name();
-  void set_allocated_name(::std::string* name);
+  void set_name(const char *value);
+  void set_name(const char *value, size_t size);
+  ::std::string *mutable_name();
+  ::std::string *release_name();
+  void set_allocated_name(::std::string *name);
 
   // required .paddle_mobile.framework.proto.VarType type = 2;
   bool has_type() const;
   void clear_type();
   static const int kTypeFieldNumber = 2;
-  const ::paddle_mobile::framework::proto::VarType& type() const;
-  ::paddle_mobile::framework::proto::VarType* mutable_type();
-  ::paddle_mobile::framework::proto::VarType* release_type();
-  void set_allocated_type(::paddle_mobile::framework::proto::VarType* type);
+  const ::paddle_mobile::framework::proto::VarType &type() const;
+  ::paddle_mobile::framework::proto::VarType *mutable_type();
+  ::paddle_mobile::framework::proto::VarType *release_type();
+  void set_allocated_type(::paddle_mobile::framework::proto::VarType *type);
 
   // optional bool persistable = 3 [default = false];
   bool has_persistable() const;
@@ -2272,7 +2286,7 @@ class VarDesc
   void set_persistable(bool value);
 
   // @@protoc_insertion_point(class_scope:paddle_mobile.framework.proto.VarDesc)
- private:
+private:
   void set_has_name();
   void clear_has_name();
   void set_has_type();
@@ -2288,7 +2302,7 @@ class VarDesc
   ::google::protobuf::internal::HasBits<1> _has_bits_;
   mutable int _cached_size_;
   ::google::protobuf::internal::ArenaStringPtr name_;
-  ::paddle_mobile::framework::proto::VarType* type_;
+  ::paddle_mobile::framework::proto::VarType *type_;
   bool persistable_;
   friend struct protobuf_framework_2eproto::TableStruct;
 };
@@ -2299,78 +2313,79 @@ class BlockDesc
           MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.BlockDesc)
                        */
 {
- public:
+public:
   BlockDesc();
   virtual ~BlockDesc();
 
-  BlockDesc(const BlockDesc& from);
+  BlockDesc(const BlockDesc &from);
 
-  inline BlockDesc& operator=(const BlockDesc& from) {
+  inline BlockDesc &operator=(const BlockDesc &from) {
     CopyFrom(from);
     return *this;
   }
 #if LANG_CXX11
-  BlockDesc(BlockDesc&& from) noexcept : BlockDesc() {
+  BlockDesc(BlockDesc &&from) noexcept : BlockDesc() {
     *this = ::std::move(from);
   }
 
-  inline BlockDesc& operator=(BlockDesc&& from) noexcept {
+  inline BlockDesc &operator=(BlockDesc &&from) noexcept {
     if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
-      if (this != &from) InternalSwap(&from);
+      if (this != &from)
+        InternalSwap(&from);
     } else {
       CopyFrom(from);
     }
     return *this;
   }
 #endif
-  inline const ::std::string& unknown_fields() const {
+  inline const ::std::string &unknown_fields() const {
     return _internal_metadata_.unknown_fields();
   }
-  inline ::std::string* mutable_unknown_fields() {
+  inline ::std::string *mutable_unknown_fields() {
     return _internal_metadata_.mutable_unknown_fields();
   }
 
-  static const BlockDesc& default_instance();
+  static const BlockDesc &default_instance();
 
-  static inline const BlockDesc* internal_default_instance() {
-    return reinterpret_cast<const BlockDesc*>(&_BlockDesc_default_instance_);
+  static inline const BlockDesc *internal_default_instance() {
+    return reinterpret_cast<const BlockDesc *>(&_BlockDesc_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages = 14;
 
-  void Swap(BlockDesc* other);
-  friend void swap(BlockDesc& a, BlockDesc& b) { a.Swap(&b); }
+  void Swap(BlockDesc *other);
+  friend void swap(BlockDesc &a, BlockDesc &b) { a.Swap(&b); }
 
   // implements Message ----------------------------------------------
 
-  inline BlockDesc* New() const PROTOBUF_FINAL { return New(NULL); }
+  inline BlockDesc *New() const PROTOBUF_FINAL { return New(NULL); }
 
-  BlockDesc* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
-  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite& from)
+  BlockDesc *New(::google::protobuf::Arena *arena) const PROTOBUF_FINAL;
+  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite &from)
       PROTOBUF_FINAL;
-  void CopyFrom(const BlockDesc& from);
-  void MergeFrom(const BlockDesc& from);
+  void CopyFrom(const BlockDesc &from);
+  void MergeFrom(const BlockDesc &from);
   void Clear() PROTOBUF_FINAL;
   bool IsInitialized() const PROTOBUF_FINAL;
 
   size_t ByteSizeLong() const PROTOBUF_FINAL;
   bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedInputStream *input) PROTOBUF_FINAL;
   void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedOutputStream *output) const PROTOBUF_FINAL;
   void DiscardUnknownFields();
   int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
 
- private:
+private:
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(BlockDesc* other);
+  void InternalSwap(BlockDesc *other);
 
- private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const { return NULL; }
-  inline void* MaybeArenaPtr() const { return NULL; }
+private:
+  inline ::google::protobuf::Arena *GetArenaNoVirtual() const { return NULL; }
+  inline void *MaybeArenaPtr() const { return NULL; }
 
- public:
+public:
   ::std::string GetTypeName() const PROTOBUF_FINAL;
 
   // nested types ----------------------------------------------------
@@ -2381,28 +2396,28 @@ class BlockDesc
   int vars_size() const;
   void clear_vars();
   static const int kVarsFieldNumber = 3;
-  const ::paddle_mobile::framework::proto::VarDesc& vars(int index) const;
-  ::paddle_mobile::framework::proto::VarDesc* mutable_vars(int index);
-  ::paddle_mobile::framework::proto::VarDesc* add_vars();
+  const ::paddle_mobile::framework::proto::VarDesc &vars(int index) const;
+  ::paddle_mobile::framework::proto::VarDesc *mutable_vars(int index);
+  ::paddle_mobile::framework::proto::VarDesc *add_vars();
   ::google::protobuf::RepeatedPtrField<
-      ::paddle_mobile::framework::proto::VarDesc>*
+      ::paddle_mobile::framework::proto::VarDesc> *
   mutable_vars();
   const ::google::protobuf::RepeatedPtrField<
-      ::paddle_mobile::framework::proto::VarDesc>&
+      ::paddle_mobile::framework::proto::VarDesc> &
   vars() const;
 
   // repeated .paddle_mobile.framework.proto.OpDesc ops = 4;
   int ops_size() const;
   void clear_ops();
   static const int kOpsFieldNumber = 4;
-  const ::paddle_mobile::framework::proto::OpDesc& ops(int index) const;
-  ::paddle_mobile::framework::proto::OpDesc* mutable_ops(int index);
-  ::paddle_mobile::framework::proto::OpDesc* add_ops();
+  const ::paddle_mobile::framework::proto::OpDesc &ops(int index) const;
+  ::paddle_mobile::framework::proto::OpDesc *mutable_ops(int index);
+  ::paddle_mobile::framework::proto::OpDesc *add_ops();
   ::google::protobuf::RepeatedPtrField<
-      ::paddle_mobile::framework::proto::OpDesc>*
+      ::paddle_mobile::framework::proto::OpDesc> *
   mutable_ops();
   const ::google::protobuf::RepeatedPtrField<
-      ::paddle_mobile::framework::proto::OpDesc>&
+      ::paddle_mobile::framework::proto::OpDesc> &
   ops() const;
 
   // required int32 idx = 1;
@@ -2427,7 +2442,7 @@ class BlockDesc
   void set_forward_block_idx(::google::protobuf::int32 value);
 
   // @@protoc_insertion_point(class_scope:paddle_mobile.framework.proto.BlockDesc)
- private:
+private:
   void set_has_idx();
   void clear_has_idx();
   void set_has_parent_idx();
@@ -2460,79 +2475,80 @@ class ProgramDesc
           MessageLite /* @@protoc_insertion_point(class_definition:paddle_mobile.framework.proto.ProgramDesc)
                        */
 {
- public:
+public:
   ProgramDesc();
   virtual ~ProgramDesc();
 
-  ProgramDesc(const ProgramDesc& from);
+  ProgramDesc(const ProgramDesc &from);
 
-  inline ProgramDesc& operator=(const ProgramDesc& from) {
+  inline ProgramDesc &operator=(const ProgramDesc &from) {
     CopyFrom(from);
     return *this;
   }
 #if LANG_CXX11
-  ProgramDesc(ProgramDesc&& from) noexcept : ProgramDesc() {
+  ProgramDesc(ProgramDesc &&from) noexcept : ProgramDesc() {
     *this = ::std::move(from);
   }
 
-  inline ProgramDesc& operator=(ProgramDesc&& from) noexcept {
+  inline ProgramDesc &operator=(ProgramDesc &&from) noexcept {
     if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
-      if (this != &from) InternalSwap(&from);
+      if (this != &from)
+        InternalSwap(&from);
     } else {
       CopyFrom(from);
     }
     return *this;
   }
 #endif
-  inline const ::std::string& unknown_fields() const {
+  inline const ::std::string &unknown_fields() const {
     return _internal_metadata_.unknown_fields();
   }
-  inline ::std::string* mutable_unknown_fields() {
+  inline ::std::string *mutable_unknown_fields() {
     return _internal_metadata_.mutable_unknown_fields();
   }
 
-  static const ProgramDesc& default_instance();
+  static const ProgramDesc &default_instance();
 
-  static inline const ProgramDesc* internal_default_instance() {
-    return reinterpret_cast<const ProgramDesc*>(
+  static inline const ProgramDesc *internal_default_instance() {
+    return reinterpret_cast<const ProgramDesc *>(
         &_ProgramDesc_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages = 15;
 
-  void Swap(ProgramDesc* other);
-  friend void swap(ProgramDesc& a, ProgramDesc& b) { a.Swap(&b); }
+  void Swap(ProgramDesc *other);
+  friend void swap(ProgramDesc &a, ProgramDesc &b) { a.Swap(&b); }
 
   // implements Message ----------------------------------------------
 
-  inline ProgramDesc* New() const PROTOBUF_FINAL { return New(NULL); }
+  inline ProgramDesc *New() const PROTOBUF_FINAL { return New(NULL); }
 
-  ProgramDesc* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
-  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite& from)
+  ProgramDesc *New(::google::protobuf::Arena *arena) const PROTOBUF_FINAL;
+  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite &from)
       PROTOBUF_FINAL;
-  void CopyFrom(const ProgramDesc& from);
-  void MergeFrom(const ProgramDesc& from);
+  void CopyFrom(const ProgramDesc &from);
+  void MergeFrom(const ProgramDesc &from);
   void Clear() PROTOBUF_FINAL;
   bool IsInitialized() const PROTOBUF_FINAL;
 
   size_t ByteSizeLong() const PROTOBUF_FINAL;
   bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedInputStream *input) PROTOBUF_FINAL;
   void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
+      ::google::protobuf::io::CodedOutputStream *output) const PROTOBUF_FINAL;
   void DiscardUnknownFields();
   int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
 
- private:
+private:
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(ProgramDesc* other);
+  void InternalSwap(ProgramDesc *other);
 
- private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const { return NULL; }
-  inline void* MaybeArenaPtr() const { return NULL; }
+private:
+  inline ::google::protobuf::Arena *GetArenaNoVirtual() const { return NULL; }
+  inline void *MaybeArenaPtr() const { return NULL; }
 
- public:
+public:
   ::std::string GetTypeName() const PROTOBUF_FINAL;
 
   // nested types ----------------------------------------------------
@@ -2543,18 +2559,18 @@ class ProgramDesc
   int blocks_size() const;
   void clear_blocks();
   static const int kBlocksFieldNumber = 1;
-  const ::paddle_mobile::framework::proto::BlockDesc& blocks(int index) const;
-  ::paddle_mobile::framework::proto::BlockDesc* mutable_blocks(int index);
-  ::paddle_mobile::framework::proto::BlockDesc* add_blocks();
+  const ::paddle_mobile::framework::proto::BlockDesc &blocks(int index) const;
+  ::paddle_mobile::framework::proto::BlockDesc *mutable_blocks(int index);
+  ::paddle_mobile::framework::proto::BlockDesc *add_blocks();
   ::google::protobuf::RepeatedPtrField<
-      ::paddle_mobile::framework::proto::BlockDesc>*
+      ::paddle_mobile::framework::proto::BlockDesc> *
   mutable_blocks();
   const ::google::protobuf::RepeatedPtrField<
-      ::paddle_mobile::framework::proto::BlockDesc>&
+      ::paddle_mobile::framework::proto::BlockDesc> &
   blocks() const;
 
   // @@protoc_insertion_point(class_scope:paddle_mobile.framework.proto.ProgramDesc)
- private:
+private:
   ::google::protobuf::internal::InternalMetadataWithArenaLite
       _internal_metadata_;
   ::google::protobuf::internal::HasBits<1> _has_bits_;
@@ -2572,7 +2588,7 @@ class ProgramDesc
 #ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
-#endif  // __GNUC__
+#endif // __GNUC__
 // OpDesc_Attr
 
 // required string name = 1;
@@ -2586,50 +2602,50 @@ inline void OpDesc_Attr::clear_name() {
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
   clear_has_name();
 }
-inline const ::std::string& OpDesc_Attr::name() const {
+inline const ::std::string &OpDesc_Attr::name() const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.Attr.name)
   return name_.GetNoArena();
 }
-inline void OpDesc_Attr::set_name(const ::std::string& value) {
+inline void OpDesc_Attr::set_name(const ::std::string &value) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
                    value);
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Attr.name)
 }
 #if LANG_CXX11
-inline void OpDesc_Attr::set_name(::std::string&& value) {
+inline void OpDesc_Attr::set_name(::std::string &&value) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
                    ::std::move(value));
   // @@protoc_insertion_point(field_set_rvalue:paddle_mobile.framework.proto.OpDesc.Attr.name)
 }
 #endif
-inline void OpDesc_Attr::set_name(const char* value) {
+inline void OpDesc_Attr::set_name(const char *value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
                    ::std::string(value));
   // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpDesc.Attr.name)
 }
-inline void OpDesc_Attr::set_name(const char* value, size_t size) {
+inline void OpDesc_Attr::set_name(const char *value, size_t size) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                   ::std::string(reinterpret_cast<const char*>(value), size));
+                   ::std::string(reinterpret_cast<const char *>(value), size));
   // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpDesc.Attr.name)
 }
-inline ::std::string* OpDesc_Attr::mutable_name() {
+inline ::std::string *OpDesc_Attr::mutable_name() {
   set_has_name();
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpDesc.Attr.name)
   return name_.MutableNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* OpDesc_Attr::release_name() {
+inline ::std::string *OpDesc_Attr::release_name() {
   // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.OpDesc.Attr.name)
   clear_has_name();
   return name_.ReleaseNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void OpDesc_Attr::set_allocated_name(::std::string* name) {
+inline void OpDesc_Attr::set_allocated_name(::std::string *name) {
   if (name != NULL) {
     set_has_name();
   } else {
@@ -2654,8 +2670,8 @@ inline ::paddle_mobile::framework::proto::AttrType OpDesc_Attr::type() const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.Attr.type)
   return static_cast<::paddle_mobile::framework::proto::AttrType>(type_);
 }
-inline void OpDesc_Attr::set_type(
-    ::paddle_mobile::framework::proto::AttrType value) {
+inline void
+OpDesc_Attr::set_type(::paddle_mobile::framework::proto::AttrType value) {
   assert(::paddle_mobile::framework::proto::AttrType_IsValid(value));
   set_has_type();
   type_ = value;
@@ -2713,50 +2729,50 @@ inline void OpDesc_Attr::clear_s() {
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
   clear_has_s();
 }
-inline const ::std::string& OpDesc_Attr::s() const {
+inline const ::std::string &OpDesc_Attr::s() const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.Attr.s)
   return s_.GetNoArena();
 }
-inline void OpDesc_Attr::set_s(const ::std::string& value) {
+inline void OpDesc_Attr::set_s(const ::std::string &value) {
   set_has_s();
   s_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
                 value);
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Attr.s)
 }
 #if LANG_CXX11
-inline void OpDesc_Attr::set_s(::std::string&& value) {
+inline void OpDesc_Attr::set_s(::std::string &&value) {
   set_has_s();
   s_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
                 ::std::move(value));
   // @@protoc_insertion_point(field_set_rvalue:paddle_mobile.framework.proto.OpDesc.Attr.s)
 }
 #endif
-inline void OpDesc_Attr::set_s(const char* value) {
+inline void OpDesc_Attr::set_s(const char *value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_s();
   s_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
                 ::std::string(value));
   // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpDesc.Attr.s)
 }
-inline void OpDesc_Attr::set_s(const char* value, size_t size) {
+inline void OpDesc_Attr::set_s(const char *value, size_t size) {
   set_has_s();
   s_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                ::std::string(reinterpret_cast<const char*>(value), size));
+                ::std::string(reinterpret_cast<const char *>(value), size));
   // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpDesc.Attr.s)
 }
-inline ::std::string* OpDesc_Attr::mutable_s() {
+inline ::std::string *OpDesc_Attr::mutable_s() {
   set_has_s();
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpDesc.Attr.s)
   return s_.MutableNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* OpDesc_Attr::release_s() {
+inline ::std::string *OpDesc_Attr::release_s() {
   // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.OpDesc.Attr.s)
   clear_has_s();
   return s_.ReleaseNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void OpDesc_Attr::set_allocated_s(::std::string* s) {
+inline void OpDesc_Attr::set_allocated_s(::std::string *s) {
   if (s != NULL) {
     set_has_s();
   } else {
@@ -2782,12 +2798,12 @@ inline void OpDesc_Attr::add_ints(::google::protobuf::int32 value) {
   ints_.Add(value);
   // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpDesc.Attr.ints)
 }
-inline const ::google::protobuf::RepeatedField<::google::protobuf::int32>&
+inline const ::google::protobuf::RepeatedField<::google::protobuf::int32> &
 OpDesc_Attr::ints() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpDesc.Attr.ints)
   return ints_;
 }
-inline ::google::protobuf::RepeatedField<::google::protobuf::int32>*
+inline ::google::protobuf::RepeatedField<::google::protobuf::int32> *
 OpDesc_Attr::mutable_ints() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpDesc.Attr.ints)
   return &ints_;
@@ -2808,12 +2824,12 @@ inline void OpDesc_Attr::add_floats(float value) {
   floats_.Add(value);
   // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpDesc.Attr.floats)
 }
-inline const ::google::protobuf::RepeatedField<float>& OpDesc_Attr::floats()
-    const {
+inline const ::google::protobuf::RepeatedField<float> &
+OpDesc_Attr::floats() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpDesc.Attr.floats)
   return floats_;
 }
-inline ::google::protobuf::RepeatedField<float>* OpDesc_Attr::mutable_floats() {
+inline ::google::protobuf::RepeatedField<float> *OpDesc_Attr::mutable_floats() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpDesc.Attr.floats)
   return &floats_;
 }
@@ -2821,63 +2837,63 @@ inline ::google::protobuf::RepeatedField<float>* OpDesc_Attr::mutable_floats() {
 // repeated string strings = 8;
 inline int OpDesc_Attr::strings_size() const { return strings_.size(); }
 inline void OpDesc_Attr::clear_strings() { strings_.Clear(); }
-inline const ::std::string& OpDesc_Attr::strings(int index) const {
+inline const ::std::string &OpDesc_Attr::strings(int index) const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.Attr.strings)
   return strings_.Get(index);
 }
-inline ::std::string* OpDesc_Attr::mutable_strings(int index) {
+inline ::std::string *OpDesc_Attr::mutable_strings(int index) {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpDesc.Attr.strings)
   return strings_.Mutable(index);
 }
-inline void OpDesc_Attr::set_strings(int index, const ::std::string& value) {
+inline void OpDesc_Attr::set_strings(int index, const ::std::string &value) {
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Attr.strings)
   strings_.Mutable(index)->assign(value);
 }
 #if LANG_CXX11
-inline void OpDesc_Attr::set_strings(int index, ::std::string&& value) {
+inline void OpDesc_Attr::set_strings(int index, ::std::string &&value) {
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Attr.strings)
   strings_.Mutable(index)->assign(std::move(value));
 }
 #endif
-inline void OpDesc_Attr::set_strings(int index, const char* value) {
+inline void OpDesc_Attr::set_strings(int index, const char *value) {
   GOOGLE_DCHECK(value != NULL);
   strings_.Mutable(index)->assign(value);
   // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpDesc.Attr.strings)
 }
-inline void OpDesc_Attr::set_strings(int index, const char* value,
+inline void OpDesc_Attr::set_strings(int index, const char *value,
                                      size_t size) {
-  strings_.Mutable(index)->assign(reinterpret_cast<const char*>(value), size);
+  strings_.Mutable(index)->assign(reinterpret_cast<const char *>(value), size);
   // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpDesc.Attr.strings)
 }
-inline ::std::string* OpDesc_Attr::add_strings() {
+inline ::std::string *OpDesc_Attr::add_strings() {
   // @@protoc_insertion_point(field_add_mutable:paddle_mobile.framework.proto.OpDesc.Attr.strings)
   return strings_.Add();
 }
-inline void OpDesc_Attr::add_strings(const ::std::string& value) {
+inline void OpDesc_Attr::add_strings(const ::std::string &value) {
   strings_.Add()->assign(value);
   // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpDesc.Attr.strings)
 }
 #if LANG_CXX11
-inline void OpDesc_Attr::add_strings(::std::string&& value) {
+inline void OpDesc_Attr::add_strings(::std::string &&value) {
   strings_.Add(std::move(value));
   // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpDesc.Attr.strings)
 }
 #endif
-inline void OpDesc_Attr::add_strings(const char* value) {
+inline void OpDesc_Attr::add_strings(const char *value) {
   GOOGLE_DCHECK(value != NULL);
   strings_.Add()->assign(value);
   // @@protoc_insertion_point(field_add_char:paddle_mobile.framework.proto.OpDesc.Attr.strings)
 }
-inline void OpDesc_Attr::add_strings(const char* value, size_t size) {
-  strings_.Add()->assign(reinterpret_cast<const char*>(value), size);
+inline void OpDesc_Attr::add_strings(const char *value, size_t size) {
+  strings_.Add()->assign(reinterpret_cast<const char *>(value), size);
   // @@protoc_insertion_point(field_add_pointer:paddle_mobile.framework.proto.OpDesc.Attr.strings)
 }
-inline const ::google::protobuf::RepeatedPtrField<::std::string>&
+inline const ::google::protobuf::RepeatedPtrField<::std::string> &
 OpDesc_Attr::strings() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpDesc.Attr.strings)
   return strings_;
 }
-inline ::google::protobuf::RepeatedPtrField<::std::string>*
+inline ::google::protobuf::RepeatedPtrField<::std::string> *
 OpDesc_Attr::mutable_strings() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpDesc.Attr.strings)
   return &strings_;
@@ -2918,12 +2934,12 @@ inline void OpDesc_Attr::add_bools(bool value) {
   bools_.Add(value);
   // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpDesc.Attr.bools)
 }
-inline const ::google::protobuf::RepeatedField<bool>& OpDesc_Attr::bools()
-    const {
+inline const ::google::protobuf::RepeatedField<bool> &
+OpDesc_Attr::bools() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpDesc.Attr.bools)
   return bools_;
 }
-inline ::google::protobuf::RepeatedField<bool>* OpDesc_Attr::mutable_bools() {
+inline ::google::protobuf::RepeatedField<bool> *OpDesc_Attr::mutable_bools() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpDesc.Attr.bools)
   return &bools_;
 }
@@ -2985,18 +3001,18 @@ inline void OpDesc_Var::clear_parameter() {
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
   clear_has_parameter();
 }
-inline const ::std::string& OpDesc_Var::parameter() const {
+inline const ::std::string &OpDesc_Var::parameter() const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.Var.parameter)
   return parameter_.GetNoArena();
 }
-inline void OpDesc_Var::set_parameter(const ::std::string& value) {
+inline void OpDesc_Var::set_parameter(const ::std::string &value) {
   set_has_parameter();
   parameter_.SetNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Var.parameter)
 }
 #if LANG_CXX11
-inline void OpDesc_Var::set_parameter(::std::string&& value) {
+inline void OpDesc_Var::set_parameter(::std::string &&value) {
   set_has_parameter();
   parameter_.SetNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
@@ -3004,7 +3020,7 @@ inline void OpDesc_Var::set_parameter(::std::string&& value) {
   // @@protoc_insertion_point(field_set_rvalue:paddle_mobile.framework.proto.OpDesc.Var.parameter)
 }
 #endif
-inline void OpDesc_Var::set_parameter(const char* value) {
+inline void OpDesc_Var::set_parameter(const char *value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_parameter();
   parameter_.SetNoArena(
@@ -3012,26 +3028,26 @@ inline void OpDesc_Var::set_parameter(const char* value) {
       ::std::string(value));
   // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpDesc.Var.parameter)
 }
-inline void OpDesc_Var::set_parameter(const char* value, size_t size) {
+inline void OpDesc_Var::set_parameter(const char *value, size_t size) {
   set_has_parameter();
   parameter_.SetNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(reinterpret_cast<const char*>(value), size));
+      ::std::string(reinterpret_cast<const char *>(value), size));
   // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpDesc.Var.parameter)
 }
-inline ::std::string* OpDesc_Var::mutable_parameter() {
+inline ::std::string *OpDesc_Var::mutable_parameter() {
   set_has_parameter();
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpDesc.Var.parameter)
   return parameter_.MutableNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* OpDesc_Var::release_parameter() {
+inline ::std::string *OpDesc_Var::release_parameter() {
   // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.OpDesc.Var.parameter)
   clear_has_parameter();
   return parameter_.ReleaseNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void OpDesc_Var::set_allocated_parameter(::std::string* parameter) {
+inline void OpDesc_Var::set_allocated_parameter(::std::string *parameter) {
   if (parameter != NULL) {
     set_has_parameter();
   } else {
@@ -3045,63 +3061,64 @@ inline void OpDesc_Var::set_allocated_parameter(::std::string* parameter) {
 // repeated string arguments = 2;
 inline int OpDesc_Var::arguments_size() const { return arguments_.size(); }
 inline void OpDesc_Var::clear_arguments() { arguments_.Clear(); }
-inline const ::std::string& OpDesc_Var::arguments(int index) const {
+inline const ::std::string &OpDesc_Var::arguments(int index) const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.Var.arguments)
   return arguments_.Get(index);
 }
-inline ::std::string* OpDesc_Var::mutable_arguments(int index) {
+inline ::std::string *OpDesc_Var::mutable_arguments(int index) {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpDesc.Var.arguments)
   return arguments_.Mutable(index);
 }
-inline void OpDesc_Var::set_arguments(int index, const ::std::string& value) {
+inline void OpDesc_Var::set_arguments(int index, const ::std::string &value) {
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Var.arguments)
   arguments_.Mutable(index)->assign(value);
 }
 #if LANG_CXX11
-inline void OpDesc_Var::set_arguments(int index, ::std::string&& value) {
+inline void OpDesc_Var::set_arguments(int index, ::std::string &&value) {
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Var.arguments)
   arguments_.Mutable(index)->assign(std::move(value));
 }
 #endif
-inline void OpDesc_Var::set_arguments(int index, const char* value) {
+inline void OpDesc_Var::set_arguments(int index, const char *value) {
   GOOGLE_DCHECK(value != NULL);
   arguments_.Mutable(index)->assign(value);
   // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpDesc.Var.arguments)
 }
-inline void OpDesc_Var::set_arguments(int index, const char* value,
+inline void OpDesc_Var::set_arguments(int index, const char *value,
                                       size_t size) {
-  arguments_.Mutable(index)->assign(reinterpret_cast<const char*>(value), size);
+  arguments_.Mutable(index)->assign(reinterpret_cast<const char *>(value),
+                                    size);
   // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpDesc.Var.arguments)
 }
-inline ::std::string* OpDesc_Var::add_arguments() {
+inline ::std::string *OpDesc_Var::add_arguments() {
   // @@protoc_insertion_point(field_add_mutable:paddle_mobile.framework.proto.OpDesc.Var.arguments)
   return arguments_.Add();
 }
-inline void OpDesc_Var::add_arguments(const ::std::string& value) {
+inline void OpDesc_Var::add_arguments(const ::std::string &value) {
   arguments_.Add()->assign(value);
   // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpDesc.Var.arguments)
 }
 #if LANG_CXX11
-inline void OpDesc_Var::add_arguments(::std::string&& value) {
+inline void OpDesc_Var::add_arguments(::std::string &&value) {
   arguments_.Add(std::move(value));
   // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpDesc.Var.arguments)
 }
 #endif
-inline void OpDesc_Var::add_arguments(const char* value) {
+inline void OpDesc_Var::add_arguments(const char *value) {
   GOOGLE_DCHECK(value != NULL);
   arguments_.Add()->assign(value);
   // @@protoc_insertion_point(field_add_char:paddle_mobile.framework.proto.OpDesc.Var.arguments)
 }
-inline void OpDesc_Var::add_arguments(const char* value, size_t size) {
-  arguments_.Add()->assign(reinterpret_cast<const char*>(value), size);
+inline void OpDesc_Var::add_arguments(const char *value, size_t size) {
+  arguments_.Add()->assign(reinterpret_cast<const char *>(value), size);
   // @@protoc_insertion_point(field_add_pointer:paddle_mobile.framework.proto.OpDesc.Var.arguments)
 }
-inline const ::google::protobuf::RepeatedPtrField<::std::string>&
+inline const ::google::protobuf::RepeatedPtrField<::std::string> &
 OpDesc_Var::arguments() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpDesc.Var.arguments)
   return arguments_;
 }
-inline ::google::protobuf::RepeatedPtrField<::std::string>*
+inline ::google::protobuf::RepeatedPtrField<::std::string> *
 OpDesc_Var::mutable_arguments() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpDesc.Var.arguments)
   return &arguments_;
@@ -3122,50 +3139,50 @@ inline void OpDesc::clear_type() {
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
   clear_has_type();
 }
-inline const ::std::string& OpDesc::type() const {
+inline const ::std::string &OpDesc::type() const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.type)
   return type_.GetNoArena();
 }
-inline void OpDesc::set_type(const ::std::string& value) {
+inline void OpDesc::set_type(const ::std::string &value) {
   set_has_type();
   type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
                    value);
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.type)
 }
 #if LANG_CXX11
-inline void OpDesc::set_type(::std::string&& value) {
+inline void OpDesc::set_type(::std::string &&value) {
   set_has_type();
   type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
                    ::std::move(value));
   // @@protoc_insertion_point(field_set_rvalue:paddle_mobile.framework.proto.OpDesc.type)
 }
 #endif
-inline void OpDesc::set_type(const char* value) {
+inline void OpDesc::set_type(const char *value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_type();
   type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
                    ::std::string(value));
   // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpDesc.type)
 }
-inline void OpDesc::set_type(const char* value, size_t size) {
+inline void OpDesc::set_type(const char *value, size_t size) {
   set_has_type();
   type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                   ::std::string(reinterpret_cast<const char*>(value), size));
+                   ::std::string(reinterpret_cast<const char *>(value), size));
   // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpDesc.type)
 }
-inline ::std::string* OpDesc::mutable_type() {
+inline ::std::string *OpDesc::mutable_type() {
   set_has_type();
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpDesc.type)
   return type_.MutableNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* OpDesc::release_type() {
+inline ::std::string *OpDesc::release_type() {
   // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.OpDesc.type)
   clear_has_type();
   return type_.ReleaseNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void OpDesc::set_allocated_type(::std::string* type) {
+inline void OpDesc::set_allocated_type(::std::string *type) {
   if (type != NULL) {
     set_has_type();
   } else {
@@ -3179,28 +3196,28 @@ inline void OpDesc::set_allocated_type(::std::string* type) {
 // repeated .paddle_mobile.framework.proto.OpDesc.Var inputs = 1;
 inline int OpDesc::inputs_size() const { return inputs_.size(); }
 inline void OpDesc::clear_inputs() { inputs_.Clear(); }
-inline const ::paddle_mobile::framework::proto::OpDesc_Var& OpDesc::inputs(
-    int index) const {
+inline const ::paddle_mobile::framework::proto::OpDesc_Var &
+OpDesc::inputs(int index) const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.inputs)
   return inputs_.Get(index);
 }
-inline ::paddle_mobile::framework::proto::OpDesc_Var* OpDesc::mutable_inputs(
-    int index) {
+inline ::paddle_mobile::framework::proto::OpDesc_Var *
+OpDesc::mutable_inputs(int index) {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpDesc.inputs)
   return inputs_.Mutable(index);
 }
-inline ::paddle_mobile::framework::proto::OpDesc_Var* OpDesc::add_inputs() {
+inline ::paddle_mobile::framework::proto::OpDesc_Var *OpDesc::add_inputs() {
   // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpDesc.inputs)
   return inputs_.Add();
 }
 inline ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpDesc_Var>*
+    ::paddle_mobile::framework::proto::OpDesc_Var> *
 OpDesc::mutable_inputs() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpDesc.inputs)
   return &inputs_;
 }
 inline const ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpDesc_Var>&
+    ::paddle_mobile::framework::proto::OpDesc_Var> &
 OpDesc::inputs() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpDesc.inputs)
   return inputs_;
@@ -3209,28 +3226,28 @@ OpDesc::inputs() const {
 // repeated .paddle_mobile.framework.proto.OpDesc.Var outputs = 2;
 inline int OpDesc::outputs_size() const { return outputs_.size(); }
 inline void OpDesc::clear_outputs() { outputs_.Clear(); }
-inline const ::paddle_mobile::framework::proto::OpDesc_Var& OpDesc::outputs(
-    int index) const {
+inline const ::paddle_mobile::framework::proto::OpDesc_Var &
+OpDesc::outputs(int index) const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.outputs)
   return outputs_.Get(index);
 }
-inline ::paddle_mobile::framework::proto::OpDesc_Var* OpDesc::mutable_outputs(
-    int index) {
+inline ::paddle_mobile::framework::proto::OpDesc_Var *
+OpDesc::mutable_outputs(int index) {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpDesc.outputs)
   return outputs_.Mutable(index);
 }
-inline ::paddle_mobile::framework::proto::OpDesc_Var* OpDesc::add_outputs() {
+inline ::paddle_mobile::framework::proto::OpDesc_Var *OpDesc::add_outputs() {
   // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpDesc.outputs)
   return outputs_.Add();
 }
 inline ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpDesc_Var>*
+    ::paddle_mobile::framework::proto::OpDesc_Var> *
 OpDesc::mutable_outputs() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpDesc.outputs)
   return &outputs_;
 }
 inline const ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpDesc_Var>&
+    ::paddle_mobile::framework::proto::OpDesc_Var> &
 OpDesc::outputs() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpDesc.outputs)
   return outputs_;
@@ -3239,28 +3256,28 @@ OpDesc::outputs() const {
 // repeated .paddle_mobile.framework.proto.OpDesc.Attr attrs = 4;
 inline int OpDesc::attrs_size() const { return attrs_.size(); }
 inline void OpDesc::clear_attrs() { attrs_.Clear(); }
-inline const ::paddle_mobile::framework::proto::OpDesc_Attr& OpDesc::attrs(
-    int index) const {
+inline const ::paddle_mobile::framework::proto::OpDesc_Attr &
+OpDesc::attrs(int index) const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.attrs)
   return attrs_.Get(index);
 }
-inline ::paddle_mobile::framework::proto::OpDesc_Attr* OpDesc::mutable_attrs(
-    int index) {
+inline ::paddle_mobile::framework::proto::OpDesc_Attr *
+OpDesc::mutable_attrs(int index) {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpDesc.attrs)
   return attrs_.Mutable(index);
 }
-inline ::paddle_mobile::framework::proto::OpDesc_Attr* OpDesc::add_attrs() {
+inline ::paddle_mobile::framework::proto::OpDesc_Attr *OpDesc::add_attrs() {
   // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpDesc.attrs)
   return attrs_.Add();
 }
 inline ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpDesc_Attr>*
+    ::paddle_mobile::framework::proto::OpDesc_Attr> *
 OpDesc::mutable_attrs() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpDesc.attrs)
   return &attrs_;
 }
 inline const ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpDesc_Attr>&
+    ::paddle_mobile::framework::proto::OpDesc_Attr> &
 OpDesc::attrs() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpDesc.attrs)
   return attrs_;
@@ -3301,50 +3318,50 @@ inline void OpProto_Var::clear_name() {
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
   clear_has_name();
 }
-inline const ::std::string& OpProto_Var::name() const {
+inline const ::std::string &OpProto_Var::name() const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.Var.name)
   return name_.GetNoArena();
 }
-inline void OpProto_Var::set_name(const ::std::string& value) {
+inline void OpProto_Var::set_name(const ::std::string &value) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
                    value);
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpProto.Var.name)
 }
 #if LANG_CXX11
-inline void OpProto_Var::set_name(::std::string&& value) {
+inline void OpProto_Var::set_name(::std::string &&value) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
                    ::std::move(value));
   // @@protoc_insertion_point(field_set_rvalue:paddle_mobile.framework.proto.OpProto.Var.name)
 }
 #endif
-inline void OpProto_Var::set_name(const char* value) {
+inline void OpProto_Var::set_name(const char *value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
                    ::std::string(value));
   // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpProto.Var.name)
 }
-inline void OpProto_Var::set_name(const char* value, size_t size) {
+inline void OpProto_Var::set_name(const char *value, size_t size) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                   ::std::string(reinterpret_cast<const char*>(value), size));
+                   ::std::string(reinterpret_cast<const char *>(value), size));
   // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpProto.Var.name)
 }
-inline ::std::string* OpProto_Var::mutable_name() {
+inline ::std::string *OpProto_Var::mutable_name() {
   set_has_name();
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpProto.Var.name)
   return name_.MutableNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* OpProto_Var::release_name() {
+inline ::std::string *OpProto_Var::release_name() {
   // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.OpProto.Var.name)
   clear_has_name();
   return name_.ReleaseNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void OpProto_Var::set_allocated_name(::std::string* name) {
+inline void OpProto_Var::set_allocated_name(::std::string *name) {
   if (name != NULL) {
     set_has_name();
   } else {
@@ -3366,18 +3383,18 @@ inline void OpProto_Var::clear_comment() {
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
   clear_has_comment();
 }
-inline const ::std::string& OpProto_Var::comment() const {
+inline const ::std::string &OpProto_Var::comment() const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.Var.comment)
   return comment_.GetNoArena();
 }
-inline void OpProto_Var::set_comment(const ::std::string& value) {
+inline void OpProto_Var::set_comment(const ::std::string &value) {
   set_has_comment();
   comment_.SetNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpProto.Var.comment)
 }
 #if LANG_CXX11
-inline void OpProto_Var::set_comment(::std::string&& value) {
+inline void OpProto_Var::set_comment(::std::string &&value) {
   set_has_comment();
   comment_.SetNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
@@ -3385,7 +3402,7 @@ inline void OpProto_Var::set_comment(::std::string&& value) {
   // @@protoc_insertion_point(field_set_rvalue:paddle_mobile.framework.proto.OpProto.Var.comment)
 }
 #endif
-inline void OpProto_Var::set_comment(const char* value) {
+inline void OpProto_Var::set_comment(const char *value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_comment();
   comment_.SetNoArena(
@@ -3393,26 +3410,26 @@ inline void OpProto_Var::set_comment(const char* value) {
       ::std::string(value));
   // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpProto.Var.comment)
 }
-inline void OpProto_Var::set_comment(const char* value, size_t size) {
+inline void OpProto_Var::set_comment(const char *value, size_t size) {
   set_has_comment();
   comment_.SetNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(reinterpret_cast<const char*>(value), size));
+      ::std::string(reinterpret_cast<const char *>(value), size));
   // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpProto.Var.comment)
 }
-inline ::std::string* OpProto_Var::mutable_comment() {
+inline ::std::string *OpProto_Var::mutable_comment() {
   set_has_comment();
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpProto.Var.comment)
   return comment_.MutableNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* OpProto_Var::release_comment() {
+inline ::std::string *OpProto_Var::release_comment() {
   // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.OpProto.Var.comment)
   clear_has_comment();
   return comment_.ReleaseNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void OpProto_Var::set_allocated_comment(::std::string* comment) {
+inline void OpProto_Var::set_allocated_comment(::std::string *comment) {
   if (comment != NULL) {
     set_has_comment();
   } else {
@@ -3506,50 +3523,50 @@ inline void OpProto_Attr::clear_name() {
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
   clear_has_name();
 }
-inline const ::std::string& OpProto_Attr::name() const {
+inline const ::std::string &OpProto_Attr::name() const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.Attr.name)
   return name_.GetNoArena();
 }
-inline void OpProto_Attr::set_name(const ::std::string& value) {
+inline void OpProto_Attr::set_name(const ::std::string &value) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
                    value);
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpProto.Attr.name)
 }
 #if LANG_CXX11
-inline void OpProto_Attr::set_name(::std::string&& value) {
+inline void OpProto_Attr::set_name(::std::string &&value) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
                    ::std::move(value));
   // @@protoc_insertion_point(field_set_rvalue:paddle_mobile.framework.proto.OpProto.Attr.name)
 }
 #endif
-inline void OpProto_Attr::set_name(const char* value) {
+inline void OpProto_Attr::set_name(const char *value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
                    ::std::string(value));
   // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpProto.Attr.name)
 }
-inline void OpProto_Attr::set_name(const char* value, size_t size) {
+inline void OpProto_Attr::set_name(const char *value, size_t size) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                   ::std::string(reinterpret_cast<const char*>(value), size));
+                   ::std::string(reinterpret_cast<const char *>(value), size));
   // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpProto.Attr.name)
 }
-inline ::std::string* OpProto_Attr::mutable_name() {
+inline ::std::string *OpProto_Attr::mutable_name() {
   set_has_name();
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpProto.Attr.name)
   return name_.MutableNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* OpProto_Attr::release_name() {
+inline ::std::string *OpProto_Attr::release_name() {
   // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.OpProto.Attr.name)
   clear_has_name();
   return name_.ReleaseNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void OpProto_Attr::set_allocated_name(::std::string* name) {
+inline void OpProto_Attr::set_allocated_name(::std::string *name) {
   if (name != NULL) {
     set_has_name();
   } else {
@@ -3574,8 +3591,8 @@ inline ::paddle_mobile::framework::proto::AttrType OpProto_Attr::type() const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.Attr.type)
   return static_cast<::paddle_mobile::framework::proto::AttrType>(type_);
 }
-inline void OpProto_Attr::set_type(
-    ::paddle_mobile::framework::proto::AttrType value) {
+inline void
+OpProto_Attr::set_type(::paddle_mobile::framework::proto::AttrType value) {
   assert(::paddle_mobile::framework::proto::AttrType_IsValid(value));
   set_has_type();
   type_ = value;
@@ -3593,18 +3610,18 @@ inline void OpProto_Attr::clear_comment() {
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
   clear_has_comment();
 }
-inline const ::std::string& OpProto_Attr::comment() const {
+inline const ::std::string &OpProto_Attr::comment() const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.Attr.comment)
   return comment_.GetNoArena();
 }
-inline void OpProto_Attr::set_comment(const ::std::string& value) {
+inline void OpProto_Attr::set_comment(const ::std::string &value) {
   set_has_comment();
   comment_.SetNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpProto.Attr.comment)
 }
 #if LANG_CXX11
-inline void OpProto_Attr::set_comment(::std::string&& value) {
+inline void OpProto_Attr::set_comment(::std::string &&value) {
   set_has_comment();
   comment_.SetNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
@@ -3612,7 +3629,7 @@ inline void OpProto_Attr::set_comment(::std::string&& value) {
   // @@protoc_insertion_point(field_set_rvalue:paddle_mobile.framework.proto.OpProto.Attr.comment)
 }
 #endif
-inline void OpProto_Attr::set_comment(const char* value) {
+inline void OpProto_Attr::set_comment(const char *value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_comment();
   comment_.SetNoArena(
@@ -3620,26 +3637,26 @@ inline void OpProto_Attr::set_comment(const char* value) {
       ::std::string(value));
   // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpProto.Attr.comment)
 }
-inline void OpProto_Attr::set_comment(const char* value, size_t size) {
+inline void OpProto_Attr::set_comment(const char *value, size_t size) {
   set_has_comment();
   comment_.SetNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(reinterpret_cast<const char*>(value), size));
+      ::std::string(reinterpret_cast<const char *>(value), size));
   // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpProto.Attr.comment)
 }
-inline ::std::string* OpProto_Attr::mutable_comment() {
+inline ::std::string *OpProto_Attr::mutable_comment() {
   set_has_comment();
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpProto.Attr.comment)
   return comment_.MutableNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* OpProto_Attr::release_comment() {
+inline ::std::string *OpProto_Attr::release_comment() {
   // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.OpProto.Attr.comment)
   clear_has_comment();
   return comment_.ReleaseNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void OpProto_Attr::set_allocated_comment(::std::string* comment) {
+inline void OpProto_Attr::set_allocated_comment(::std::string *comment) {
   if (comment != NULL) {
     set_has_comment();
   } else {
@@ -3687,50 +3704,50 @@ inline void OpProto::clear_type() {
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
   clear_has_type();
 }
-inline const ::std::string& OpProto::type() const {
+inline const ::std::string &OpProto::type() const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.type)
   return type_.GetNoArena();
 }
-inline void OpProto::set_type(const ::std::string& value) {
+inline void OpProto::set_type(const ::std::string &value) {
   set_has_type();
   type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
                    value);
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpProto.type)
 }
 #if LANG_CXX11
-inline void OpProto::set_type(::std::string&& value) {
+inline void OpProto::set_type(::std::string &&value) {
   set_has_type();
   type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
                    ::std::move(value));
   // @@protoc_insertion_point(field_set_rvalue:paddle_mobile.framework.proto.OpProto.type)
 }
 #endif
-inline void OpProto::set_type(const char* value) {
+inline void OpProto::set_type(const char *value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_type();
   type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
                    ::std::string(value));
   // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpProto.type)
 }
-inline void OpProto::set_type(const char* value, size_t size) {
+inline void OpProto::set_type(const char *value, size_t size) {
   set_has_type();
   type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                   ::std::string(reinterpret_cast<const char*>(value), size));
+                   ::std::string(reinterpret_cast<const char *>(value), size));
   // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpProto.type)
 }
-inline ::std::string* OpProto::mutable_type() {
+inline ::std::string *OpProto::mutable_type() {
   set_has_type();
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpProto.type)
   return type_.MutableNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* OpProto::release_type() {
+inline ::std::string *OpProto::release_type() {
   // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.OpProto.type)
   clear_has_type();
   return type_.ReleaseNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void OpProto::set_allocated_type(::std::string* type) {
+inline void OpProto::set_allocated_type(::std::string *type) {
   if (type != NULL) {
     set_has_type();
   } else {
@@ -3744,28 +3761,28 @@ inline void OpProto::set_allocated_type(::std::string* type) {
 // repeated .paddle_mobile.framework.proto.OpProto.Var inputs = 2;
 inline int OpProto::inputs_size() const { return inputs_.size(); }
 inline void OpProto::clear_inputs() { inputs_.Clear(); }
-inline const ::paddle_mobile::framework::proto::OpProto_Var& OpProto::inputs(
-    int index) const {
+inline const ::paddle_mobile::framework::proto::OpProto_Var &
+OpProto::inputs(int index) const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.inputs)
   return inputs_.Get(index);
 }
-inline ::paddle_mobile::framework::proto::OpProto_Var* OpProto::mutable_inputs(
-    int index) {
+inline ::paddle_mobile::framework::proto::OpProto_Var *
+OpProto::mutable_inputs(int index) {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpProto.inputs)
   return inputs_.Mutable(index);
 }
-inline ::paddle_mobile::framework::proto::OpProto_Var* OpProto::add_inputs() {
+inline ::paddle_mobile::framework::proto::OpProto_Var *OpProto::add_inputs() {
   // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpProto.inputs)
   return inputs_.Add();
 }
 inline ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpProto_Var>*
+    ::paddle_mobile::framework::proto::OpProto_Var> *
 OpProto::mutable_inputs() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpProto.inputs)
   return &inputs_;
 }
 inline const ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpProto_Var>&
+    ::paddle_mobile::framework::proto::OpProto_Var> &
 OpProto::inputs() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpProto.inputs)
   return inputs_;
@@ -3774,28 +3791,28 @@ OpProto::inputs() const {
 // repeated .paddle_mobile.framework.proto.OpProto.Var outputs = 3;
 inline int OpProto::outputs_size() const { return outputs_.size(); }
 inline void OpProto::clear_outputs() { outputs_.Clear(); }
-inline const ::paddle_mobile::framework::proto::OpProto_Var& OpProto::outputs(
-    int index) const {
+inline const ::paddle_mobile::framework::proto::OpProto_Var &
+OpProto::outputs(int index) const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.outputs)
   return outputs_.Get(index);
 }
-inline ::paddle_mobile::framework::proto::OpProto_Var* OpProto::mutable_outputs(
-    int index) {
+inline ::paddle_mobile::framework::proto::OpProto_Var *
+OpProto::mutable_outputs(int index) {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpProto.outputs)
   return outputs_.Mutable(index);
 }
-inline ::paddle_mobile::framework::proto::OpProto_Var* OpProto::add_outputs() {
+inline ::paddle_mobile::framework::proto::OpProto_Var *OpProto::add_outputs() {
   // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpProto.outputs)
   return outputs_.Add();
 }
 inline ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpProto_Var>*
+    ::paddle_mobile::framework::proto::OpProto_Var> *
 OpProto::mutable_outputs() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpProto.outputs)
   return &outputs_;
 }
 inline const ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpProto_Var>&
+    ::paddle_mobile::framework::proto::OpProto_Var> &
 OpProto::outputs() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpProto.outputs)
   return outputs_;
@@ -3804,28 +3821,28 @@ OpProto::outputs() const {
 // repeated .paddle_mobile.framework.proto.OpProto.Attr attrs = 4;
 inline int OpProto::attrs_size() const { return attrs_.size(); }
 inline void OpProto::clear_attrs() { attrs_.Clear(); }
-inline const ::paddle_mobile::framework::proto::OpProto_Attr& OpProto::attrs(
-    int index) const {
+inline const ::paddle_mobile::framework::proto::OpProto_Attr &
+OpProto::attrs(int index) const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.attrs)
   return attrs_.Get(index);
 }
-inline ::paddle_mobile::framework::proto::OpProto_Attr* OpProto::mutable_attrs(
-    int index) {
+inline ::paddle_mobile::framework::proto::OpProto_Attr *
+OpProto::mutable_attrs(int index) {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpProto.attrs)
   return attrs_.Mutable(index);
 }
-inline ::paddle_mobile::framework::proto::OpProto_Attr* OpProto::add_attrs() {
+inline ::paddle_mobile::framework::proto::OpProto_Attr *OpProto::add_attrs() {
   // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpProto.attrs)
   return attrs_.Add();
 }
 inline ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpProto_Attr>*
+    ::paddle_mobile::framework::proto::OpProto_Attr> *
 OpProto::mutable_attrs() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpProto.attrs)
   return &attrs_;
 }
 inline const ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpProto_Attr>&
+    ::paddle_mobile::framework::proto::OpProto_Attr> &
 OpProto::attrs() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpProto.attrs)
   return attrs_;
@@ -3842,18 +3859,18 @@ inline void OpProto::clear_comment() {
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
   clear_has_comment();
 }
-inline const ::std::string& OpProto::comment() const {
+inline const ::std::string &OpProto::comment() const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.comment)
   return comment_.GetNoArena();
 }
-inline void OpProto::set_comment(const ::std::string& value) {
+inline void OpProto::set_comment(const ::std::string &value) {
   set_has_comment();
   comment_.SetNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpProto.comment)
 }
 #if LANG_CXX11
-inline void OpProto::set_comment(::std::string&& value) {
+inline void OpProto::set_comment(::std::string &&value) {
   set_has_comment();
   comment_.SetNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
@@ -3861,7 +3878,7 @@ inline void OpProto::set_comment(::std::string&& value) {
   // @@protoc_insertion_point(field_set_rvalue:paddle_mobile.framework.proto.OpProto.comment)
 }
 #endif
-inline void OpProto::set_comment(const char* value) {
+inline void OpProto::set_comment(const char *value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_comment();
   comment_.SetNoArena(
@@ -3869,26 +3886,26 @@ inline void OpProto::set_comment(const char* value) {
       ::std::string(value));
   // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.OpProto.comment)
 }
-inline void OpProto::set_comment(const char* value, size_t size) {
+inline void OpProto::set_comment(const char *value, size_t size) {
   set_has_comment();
   comment_.SetNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(reinterpret_cast<const char*>(value), size));
+      ::std::string(reinterpret_cast<const char *>(value), size));
   // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.OpProto.comment)
 }
-inline ::std::string* OpProto::mutable_comment() {
+inline ::std::string *OpProto::mutable_comment() {
   set_has_comment();
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpProto.comment)
   return comment_.MutableNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* OpProto::release_comment() {
+inline ::std::string *OpProto::release_comment() {
   // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.OpProto.comment)
   clear_has_comment();
   return comment_.ReleaseNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void OpProto::set_allocated_comment(::std::string* comment) {
+inline void OpProto::set_allocated_comment(::std::string *comment) {
   if (comment != NULL) {
     set_has_comment();
   } else {
@@ -3947,12 +3964,12 @@ inline void VarType_TensorDesc::add_dims(::google::protobuf::int64 value) {
   dims_.Add(value);
   // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.VarType.TensorDesc.dims)
 }
-inline const ::google::protobuf::RepeatedField<::google::protobuf::int64>&
+inline const ::google::protobuf::RepeatedField<::google::protobuf::int64> &
 VarType_TensorDesc::dims() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.VarType.TensorDesc.dims)
   return dims_;
 }
-inline ::google::protobuf::RepeatedField<::google::protobuf::int64>*
+inline ::google::protobuf::RepeatedField<::google::protobuf::int64> *
 VarType_TensorDesc::mutable_dims() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.VarType.TensorDesc.dims)
   return &dims_;
@@ -3977,16 +3994,18 @@ inline void VarType_LoDTensorDesc::clear_tensor() {
     tensor_->::paddle_mobile::framework::proto::VarType_TensorDesc::Clear();
   clear_has_tensor();
 }
-inline const ::paddle_mobile::framework::proto::VarType_TensorDesc&
+inline const ::paddle_mobile::framework::proto::VarType_TensorDesc &
 VarType_LoDTensorDesc::tensor() const {
-  const ::paddle_mobile::framework::proto::VarType_TensorDesc* p = tensor_;
+  const ::paddle_mobile::framework::proto::VarType_TensorDesc *p = tensor_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.LoDTensorDesc.tensor)
-  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::
-                                                proto::VarType_TensorDesc*>(
-                              &::paddle_mobile::framework::proto::
-                                  _VarType_TensorDesc_default_instance_);
+  return p != NULL
+             ? *p
+             : *reinterpret_cast<
+                   const ::paddle_mobile::framework::proto::VarType_TensorDesc
+                       *>(&::paddle_mobile::framework::proto::
+                              _VarType_TensorDesc_default_instance_);
 }
-inline ::paddle_mobile::framework::proto::VarType_TensorDesc*
+inline ::paddle_mobile::framework::proto::VarType_TensorDesc *
 VarType_LoDTensorDesc::mutable_tensor() {
   set_has_tensor();
   if (tensor_ == NULL) {
@@ -3995,16 +4014,16 @@ VarType_LoDTensorDesc::mutable_tensor() {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.VarType.LoDTensorDesc.tensor)
   return tensor_;
 }
-inline ::paddle_mobile::framework::proto::VarType_TensorDesc*
+inline ::paddle_mobile::framework::proto::VarType_TensorDesc *
 VarType_LoDTensorDesc::release_tensor() {
   // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.VarType.LoDTensorDesc.tensor)
   clear_has_tensor();
-  ::paddle_mobile::framework::proto::VarType_TensorDesc* temp = tensor_;
+  ::paddle_mobile::framework::proto::VarType_TensorDesc *temp = tensor_;
   tensor_ = NULL;
   return temp;
 }
 inline void VarType_LoDTensorDesc::set_allocated_tensor(
-    ::paddle_mobile::framework::proto::VarType_TensorDesc* tensor) {
+    ::paddle_mobile::framework::proto::VarType_TensorDesc *tensor) {
   delete tensor_;
   tensor_ = tensor;
   if (tensor) {
@@ -4033,8 +4052,8 @@ inline ::google::protobuf::int32 VarType_LoDTensorDesc::lod_level() const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.LoDTensorDesc.lod_level)
   return lod_level_;
 }
-inline void VarType_LoDTensorDesc::set_lod_level(
-    ::google::protobuf::int32 value) {
+inline void
+VarType_LoDTensorDesc::set_lod_level(::google::protobuf::int32 value) {
   set_has_lod_level();
   lod_level_ = value;
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.VarType.LoDTensorDesc.lod_level)
@@ -4059,16 +4078,18 @@ inline void VarType_LoDTensorArrayDesc::clear_tensor() {
     tensor_->::paddle_mobile::framework::proto::VarType_TensorDesc::Clear();
   clear_has_tensor();
 }
-inline const ::paddle_mobile::framework::proto::VarType_TensorDesc&
+inline const ::paddle_mobile::framework::proto::VarType_TensorDesc &
 VarType_LoDTensorArrayDesc::tensor() const {
-  const ::paddle_mobile::framework::proto::VarType_TensorDesc* p = tensor_;
+  const ::paddle_mobile::framework::proto::VarType_TensorDesc *p = tensor_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc.tensor)
-  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::
-                                                proto::VarType_TensorDesc*>(
-                              &::paddle_mobile::framework::proto::
-                                  _VarType_TensorDesc_default_instance_);
+  return p != NULL
+             ? *p
+             : *reinterpret_cast<
+                   const ::paddle_mobile::framework::proto::VarType_TensorDesc
+                       *>(&::paddle_mobile::framework::proto::
+                              _VarType_TensorDesc_default_instance_);
 }
-inline ::paddle_mobile::framework::proto::VarType_TensorDesc*
+inline ::paddle_mobile::framework::proto::VarType_TensorDesc *
 VarType_LoDTensorArrayDesc::mutable_tensor() {
   set_has_tensor();
   if (tensor_ == NULL) {
@@ -4077,16 +4098,16 @@ VarType_LoDTensorArrayDesc::mutable_tensor() {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc.tensor)
   return tensor_;
 }
-inline ::paddle_mobile::framework::proto::VarType_TensorDesc*
+inline ::paddle_mobile::framework::proto::VarType_TensorDesc *
 VarType_LoDTensorArrayDesc::release_tensor() {
   // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc.tensor)
   clear_has_tensor();
-  ::paddle_mobile::framework::proto::VarType_TensorDesc* temp = tensor_;
+  ::paddle_mobile::framework::proto::VarType_TensorDesc *temp = tensor_;
   tensor_ = NULL;
   return temp;
 }
 inline void VarType_LoDTensorArrayDesc::set_allocated_tensor(
-    ::paddle_mobile::framework::proto::VarType_TensorDesc* tensor) {
+    ::paddle_mobile::framework::proto::VarType_TensorDesc *tensor) {
   delete tensor_;
   tensor_ = tensor;
   if (tensor) {
@@ -4115,8 +4136,8 @@ inline ::google::protobuf::int32 VarType_LoDTensorArrayDesc::lod_level() const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc.lod_level)
   return lod_level_;
 }
-inline void VarType_LoDTensorArrayDesc::set_lod_level(
-    ::google::protobuf::int32 value) {
+inline void
+VarType_LoDTensorArrayDesc::set_lod_level(::google::protobuf::int32 value) {
   set_has_lod_level();
   lod_level_ = value;
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc.lod_level)
@@ -4131,29 +4152,29 @@ inline int VarType_ReaderDesc::lod_tensor_size() const {
   return lod_tensor_.size();
 }
 inline void VarType_ReaderDesc::clear_lod_tensor() { lod_tensor_.Clear(); }
-inline const ::paddle_mobile::framework::proto::VarType_LoDTensorDesc&
+inline const ::paddle_mobile::framework::proto::VarType_LoDTensorDesc &
 VarType_ReaderDesc::lod_tensor(int index) const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.ReaderDesc.lod_tensor)
   return lod_tensor_.Get(index);
 }
-inline ::paddle_mobile::framework::proto::VarType_LoDTensorDesc*
+inline ::paddle_mobile::framework::proto::VarType_LoDTensorDesc *
 VarType_ReaderDesc::mutable_lod_tensor(int index) {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.VarType.ReaderDesc.lod_tensor)
   return lod_tensor_.Mutable(index);
 }
-inline ::paddle_mobile::framework::proto::VarType_LoDTensorDesc*
+inline ::paddle_mobile::framework::proto::VarType_LoDTensorDesc *
 VarType_ReaderDesc::add_lod_tensor() {
   // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.VarType.ReaderDesc.lod_tensor)
   return lod_tensor_.Add();
 }
 inline ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::VarType_LoDTensorDesc>*
+    ::paddle_mobile::framework::proto::VarType_LoDTensorDesc> *
 VarType_ReaderDesc::mutable_lod_tensor() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.VarType.ReaderDesc.lod_tensor)
   return &lod_tensor_;
 }
 inline const ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::VarType_LoDTensorDesc>&
+    ::paddle_mobile::framework::proto::VarType_LoDTensorDesc> &
 VarType_ReaderDesc::lod_tensor() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.VarType.ReaderDesc.lod_tensor)
   return lod_tensor_;
@@ -4242,12 +4263,12 @@ inline void VarType_Tuple::add_element_type(
   element_type_.Add(value);
   // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.VarType.Tuple.element_type)
 }
-inline const ::google::protobuf::RepeatedField<int>&
+inline const ::google::protobuf::RepeatedField<int> &
 VarType_Tuple::element_type() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.VarType.Tuple.element_type)
   return element_type_;
 }
-inline ::google::protobuf::RepeatedField<int>*
+inline ::google::protobuf::RepeatedField<int> *
 VarType_Tuple::mutable_element_type() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.VarType.Tuple.element_type)
   return &element_type_;
@@ -4271,8 +4292,8 @@ inline ::paddle_mobile::framework::proto::VarType_Type VarType::type() const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.type)
   return static_cast<::paddle_mobile::framework::proto::VarType_Type>(type_);
 }
-inline void VarType::set_type(
-    ::paddle_mobile::framework::proto::VarType_Type value) {
+inline void
+VarType::set_type(::paddle_mobile::framework::proto::VarType_Type value) {
   assert(::paddle_mobile::framework::proto::VarType_Type_IsValid(value));
   set_has_type();
   type_ = value;
@@ -4293,17 +4314,19 @@ inline void VarType::clear_selected_rows() {
         ->::paddle_mobile::framework::proto::VarType_TensorDesc::Clear();
   clear_has_selected_rows();
 }
-inline const ::paddle_mobile::framework::proto::VarType_TensorDesc&
+inline const ::paddle_mobile::framework::proto::VarType_TensorDesc &
 VarType::selected_rows() const {
-  const ::paddle_mobile::framework::proto::VarType_TensorDesc* p =
+  const ::paddle_mobile::framework::proto::VarType_TensorDesc *p =
       selected_rows_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.selected_rows)
-  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::
-                                                proto::VarType_TensorDesc*>(
-                              &::paddle_mobile::framework::proto::
-                                  _VarType_TensorDesc_default_instance_);
+  return p != NULL
+             ? *p
+             : *reinterpret_cast<
+                   const ::paddle_mobile::framework::proto::VarType_TensorDesc
+                       *>(&::paddle_mobile::framework::proto::
+                              _VarType_TensorDesc_default_instance_);
 }
-inline ::paddle_mobile::framework::proto::VarType_TensorDesc*
+inline ::paddle_mobile::framework::proto::VarType_TensorDesc *
 VarType::mutable_selected_rows() {
   set_has_selected_rows();
   if (selected_rows_ == NULL) {
@@ -4312,16 +4335,16 @@ VarType::mutable_selected_rows() {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.VarType.selected_rows)
   return selected_rows_;
 }
-inline ::paddle_mobile::framework::proto::VarType_TensorDesc*
+inline ::paddle_mobile::framework::proto::VarType_TensorDesc *
 VarType::release_selected_rows() {
   // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.VarType.selected_rows)
   clear_has_selected_rows();
-  ::paddle_mobile::framework::proto::VarType_TensorDesc* temp = selected_rows_;
+  ::paddle_mobile::framework::proto::VarType_TensorDesc *temp = selected_rows_;
   selected_rows_ = NULL;
   return temp;
 }
 inline void VarType::set_allocated_selected_rows(
-    ::paddle_mobile::framework::proto::VarType_TensorDesc* selected_rows) {
+    ::paddle_mobile::framework::proto::VarType_TensorDesc *selected_rows) {
   delete selected_rows_;
   selected_rows_ = selected_rows;
   if (selected_rows) {
@@ -4344,17 +4367,17 @@ inline void VarType::clear_lod_tensor() {
         ->::paddle_mobile::framework::proto::VarType_LoDTensorDesc::Clear();
   clear_has_lod_tensor();
 }
-inline const ::paddle_mobile::framework::proto::VarType_LoDTensorDesc&
+inline const ::paddle_mobile::framework::proto::VarType_LoDTensorDesc &
 VarType::lod_tensor() const {
-  const ::paddle_mobile::framework::proto::VarType_LoDTensorDesc* p =
+  const ::paddle_mobile::framework::proto::VarType_LoDTensorDesc *p =
       lod_tensor_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.lod_tensor)
   return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::
-                                                proto::VarType_LoDTensorDesc*>(
+                                                proto::VarType_LoDTensorDesc *>(
                               &::paddle_mobile::framework::proto::
                                   _VarType_LoDTensorDesc_default_instance_);
 }
-inline ::paddle_mobile::framework::proto::VarType_LoDTensorDesc*
+inline ::paddle_mobile::framework::proto::VarType_LoDTensorDesc *
 VarType::mutable_lod_tensor() {
   set_has_lod_tensor();
   if (lod_tensor_ == NULL) {
@@ -4363,16 +4386,16 @@ VarType::mutable_lod_tensor() {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.VarType.lod_tensor)
   return lod_tensor_;
 }
-inline ::paddle_mobile::framework::proto::VarType_LoDTensorDesc*
+inline ::paddle_mobile::framework::proto::VarType_LoDTensorDesc *
 VarType::release_lod_tensor() {
   // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.VarType.lod_tensor)
   clear_has_lod_tensor();
-  ::paddle_mobile::framework::proto::VarType_LoDTensorDesc* temp = lod_tensor_;
+  ::paddle_mobile::framework::proto::VarType_LoDTensorDesc *temp = lod_tensor_;
   lod_tensor_ = NULL;
   return temp;
 }
 inline void VarType::set_allocated_lod_tensor(
-    ::paddle_mobile::framework::proto::VarType_LoDTensorDesc* lod_tensor) {
+    ::paddle_mobile::framework::proto::VarType_LoDTensorDesc *lod_tensor) {
   delete lod_tensor_;
   lod_tensor_ = lod_tensor;
   if (lod_tensor) {
@@ -4396,18 +4419,18 @@ inline void VarType::clear_tensor_array() {
         VarType_LoDTensorArrayDesc::Clear();
   clear_has_tensor_array();
 }
-inline const ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc&
+inline const ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc &
 VarType::tensor_array() const {
-  const ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc* p =
+  const ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc *p =
       tensor_array_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.tensor_array)
   return p != NULL ? *p
                    : *reinterpret_cast<const ::paddle_mobile::framework::proto::
-                                           VarType_LoDTensorArrayDesc*>(
+                                           VarType_LoDTensorArrayDesc *>(
                          &::paddle_mobile::framework::proto::
                              _VarType_LoDTensorArrayDesc_default_instance_);
 }
-inline ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc*
+inline ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc *
 VarType::mutable_tensor_array() {
   set_has_tensor_array();
   if (tensor_array_ == NULL) {
@@ -4417,18 +4440,18 @@ VarType::mutable_tensor_array() {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.VarType.tensor_array)
   return tensor_array_;
 }
-inline ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc*
+inline ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc *
 VarType::release_tensor_array() {
   // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.VarType.tensor_array)
   clear_has_tensor_array();
-  ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc* temp =
+  ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc *temp =
       tensor_array_;
   tensor_array_ = NULL;
   return temp;
 }
 inline void VarType::set_allocated_tensor_array(
-    ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc*
-        tensor_array) {
+    ::paddle_mobile::framework::proto::VarType_LoDTensorArrayDesc
+        *tensor_array) {
   delete tensor_array_;
   tensor_array_ = tensor_array;
   if (tensor_array) {
@@ -4450,16 +4473,18 @@ inline void VarType::clear_reader() {
     reader_->::paddle_mobile::framework::proto::VarType_ReaderDesc::Clear();
   clear_has_reader();
 }
-inline const ::paddle_mobile::framework::proto::VarType_ReaderDesc&
+inline const ::paddle_mobile::framework::proto::VarType_ReaderDesc &
 VarType::reader() const {
-  const ::paddle_mobile::framework::proto::VarType_ReaderDesc* p = reader_;
+  const ::paddle_mobile::framework::proto::VarType_ReaderDesc *p = reader_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.reader)
-  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::
-                                                proto::VarType_ReaderDesc*>(
-                              &::paddle_mobile::framework::proto::
-                                  _VarType_ReaderDesc_default_instance_);
+  return p != NULL
+             ? *p
+             : *reinterpret_cast<
+                   const ::paddle_mobile::framework::proto::VarType_ReaderDesc
+                       *>(&::paddle_mobile::framework::proto::
+                              _VarType_ReaderDesc_default_instance_);
 }
-inline ::paddle_mobile::framework::proto::VarType_ReaderDesc*
+inline ::paddle_mobile::framework::proto::VarType_ReaderDesc *
 VarType::mutable_reader() {
   set_has_reader();
   if (reader_ == NULL) {
@@ -4468,16 +4493,16 @@ VarType::mutable_reader() {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.VarType.reader)
   return reader_;
 }
-inline ::paddle_mobile::framework::proto::VarType_ReaderDesc*
+inline ::paddle_mobile::framework::proto::VarType_ReaderDesc *
 VarType::release_reader() {
   // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.VarType.reader)
   clear_has_reader();
-  ::paddle_mobile::framework::proto::VarType_ReaderDesc* temp = reader_;
+  ::paddle_mobile::framework::proto::VarType_ReaderDesc *temp = reader_;
   reader_ = NULL;
   return temp;
 }
 inline void VarType::set_allocated_reader(
-    ::paddle_mobile::framework::proto::VarType_ReaderDesc* reader) {
+    ::paddle_mobile::framework::proto::VarType_ReaderDesc *reader) {
   delete reader_;
   reader_ = reader;
   if (reader) {
@@ -4499,16 +4524,18 @@ inline void VarType::clear_channel() {
     channel_->::paddle_mobile::framework::proto::VarType_ChannelDesc::Clear();
   clear_has_channel();
 }
-inline const ::paddle_mobile::framework::proto::VarType_ChannelDesc&
+inline const ::paddle_mobile::framework::proto::VarType_ChannelDesc &
 VarType::channel() const {
-  const ::paddle_mobile::framework::proto::VarType_ChannelDesc* p = channel_;
+  const ::paddle_mobile::framework::proto::VarType_ChannelDesc *p = channel_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.channel)
-  return p != NULL ? *p : *reinterpret_cast<const ::paddle_mobile::framework::
-                                                proto::VarType_ChannelDesc*>(
-                              &::paddle_mobile::framework::proto::
-                                  _VarType_ChannelDesc_default_instance_);
+  return p != NULL
+             ? *p
+             : *reinterpret_cast<
+                   const ::paddle_mobile::framework::proto::VarType_ChannelDesc
+                       *>(&::paddle_mobile::framework::proto::
+                              _VarType_ChannelDesc_default_instance_);
 }
-inline ::paddle_mobile::framework::proto::VarType_ChannelDesc*
+inline ::paddle_mobile::framework::proto::VarType_ChannelDesc *
 VarType::mutable_channel() {
   set_has_channel();
   if (channel_ == NULL) {
@@ -4517,16 +4544,16 @@ VarType::mutable_channel() {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.VarType.channel)
   return channel_;
 }
-inline ::paddle_mobile::framework::proto::VarType_ChannelDesc*
+inline ::paddle_mobile::framework::proto::VarType_ChannelDesc *
 VarType::release_channel() {
   // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.VarType.channel)
   clear_has_channel();
-  ::paddle_mobile::framework::proto::VarType_ChannelDesc* temp = channel_;
+  ::paddle_mobile::framework::proto::VarType_ChannelDesc *temp = channel_;
   channel_ = NULL;
   return temp;
 }
 inline void VarType::set_allocated_channel(
-    ::paddle_mobile::framework::proto::VarType_ChannelDesc* channel) {
+    ::paddle_mobile::framework::proto::VarType_ChannelDesc *channel) {
   delete channel_;
   channel_ = channel;
   if (channel) {
@@ -4548,18 +4575,18 @@ inline void VarType::clear_tuple() {
     tuple_->::paddle_mobile::framework::proto::VarType_Tuple::Clear();
   clear_has_tuple();
 }
-inline const ::paddle_mobile::framework::proto::VarType_Tuple& VarType::tuple()
-    const {
-  const ::paddle_mobile::framework::proto::VarType_Tuple* p = tuple_;
+inline const ::paddle_mobile::framework::proto::VarType_Tuple &
+VarType::tuple() const {
+  const ::paddle_mobile::framework::proto::VarType_Tuple *p = tuple_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.tuple)
   return p != NULL
              ? *p
              : *reinterpret_cast<
-                   const ::paddle_mobile::framework::proto::VarType_Tuple*>(
+                   const ::paddle_mobile::framework::proto::VarType_Tuple *>(
                    &::paddle_mobile::framework::proto::
                        _VarType_Tuple_default_instance_);
 }
-inline ::paddle_mobile::framework::proto::VarType_Tuple*
+inline ::paddle_mobile::framework::proto::VarType_Tuple *
 VarType::mutable_tuple() {
   set_has_tuple();
   if (tuple_ == NULL) {
@@ -4568,16 +4595,16 @@ VarType::mutable_tuple() {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.VarType.tuple)
   return tuple_;
 }
-inline ::paddle_mobile::framework::proto::VarType_Tuple*
+inline ::paddle_mobile::framework::proto::VarType_Tuple *
 VarType::release_tuple() {
   // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.VarType.tuple)
   clear_has_tuple();
-  ::paddle_mobile::framework::proto::VarType_Tuple* temp = tuple_;
+  ::paddle_mobile::framework::proto::VarType_Tuple *temp = tuple_;
   tuple_ = NULL;
   return temp;
 }
 inline void VarType::set_allocated_tuple(
-    ::paddle_mobile::framework::proto::VarType_Tuple* tuple) {
+    ::paddle_mobile::framework::proto::VarType_Tuple *tuple) {
   delete tuple_;
   tuple_ = tuple;
   if (tuple) {
@@ -4603,50 +4630,50 @@ inline void VarDesc::clear_name() {
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
   clear_has_name();
 }
-inline const ::std::string& VarDesc::name() const {
+inline const ::std::string &VarDesc::name() const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarDesc.name)
   return name_.GetNoArena();
 }
-inline void VarDesc::set_name(const ::std::string& value) {
+inline void VarDesc::set_name(const ::std::string &value) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
                    value);
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.VarDesc.name)
 }
 #if LANG_CXX11
-inline void VarDesc::set_name(::std::string&& value) {
+inline void VarDesc::set_name(::std::string &&value) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
                    ::std::move(value));
   // @@protoc_insertion_point(field_set_rvalue:paddle_mobile.framework.proto.VarDesc.name)
 }
 #endif
-inline void VarDesc::set_name(const char* value) {
+inline void VarDesc::set_name(const char *value) {
   GOOGLE_DCHECK(value != NULL);
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
                    ::std::string(value));
   // @@protoc_insertion_point(field_set_char:paddle_mobile.framework.proto.VarDesc.name)
 }
-inline void VarDesc::set_name(const char* value, size_t size) {
+inline void VarDesc::set_name(const char *value, size_t size) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                   ::std::string(reinterpret_cast<const char*>(value), size));
+                   ::std::string(reinterpret_cast<const char *>(value), size));
   // @@protoc_insertion_point(field_set_pointer:paddle_mobile.framework.proto.VarDesc.name)
 }
-inline ::std::string* VarDesc::mutable_name() {
+inline ::std::string *VarDesc::mutable_name() {
   set_has_name();
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.VarDesc.name)
   return name_.MutableNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* VarDesc::release_name() {
+inline ::std::string *VarDesc::release_name() {
   // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.VarDesc.name)
   clear_has_name();
   return name_.ReleaseNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void VarDesc::set_allocated_name(::std::string* name) {
+inline void VarDesc::set_allocated_name(::std::string *name) {
   if (name != NULL) {
     set_has_name();
   } else {
@@ -4664,19 +4691,20 @@ inline bool VarDesc::has_type() const {
 inline void VarDesc::set_has_type() { _has_bits_[0] |= 0x00000002u; }
 inline void VarDesc::clear_has_type() { _has_bits_[0] &= ~0x00000002u; }
 inline void VarDesc::clear_type() {
-  if (type_ != NULL) type_->::paddle_mobile::framework::proto::VarType::Clear();
+  if (type_ != NULL)
+    type_->::paddle_mobile::framework::proto::VarType::Clear();
   clear_has_type();
 }
-inline const ::paddle_mobile::framework::proto::VarType& VarDesc::type() const {
-  const ::paddle_mobile::framework::proto::VarType* p = type_;
+inline const ::paddle_mobile::framework::proto::VarType &VarDesc::type() const {
+  const ::paddle_mobile::framework::proto::VarType *p = type_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarDesc.type)
   return p != NULL ? *p
                    : *reinterpret_cast<
-                         const ::paddle_mobile::framework::proto::VarType*>(
+                         const ::paddle_mobile::framework::proto::VarType *>(
                          &::paddle_mobile::framework::proto::
                              _VarType_default_instance_);
 }
-inline ::paddle_mobile::framework::proto::VarType* VarDesc::mutable_type() {
+inline ::paddle_mobile::framework::proto::VarType *VarDesc::mutable_type() {
   set_has_type();
   if (type_ == NULL) {
     type_ = new ::paddle_mobile::framework::proto::VarType;
@@ -4684,15 +4712,15 @@ inline ::paddle_mobile::framework::proto::VarType* VarDesc::mutable_type() {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.VarDesc.type)
   return type_;
 }
-inline ::paddle_mobile::framework::proto::VarType* VarDesc::release_type() {
+inline ::paddle_mobile::framework::proto::VarType *VarDesc::release_type() {
   // @@protoc_insertion_point(field_release:paddle_mobile.framework.proto.VarDesc.type)
   clear_has_type();
-  ::paddle_mobile::framework::proto::VarType* temp = type_;
+  ::paddle_mobile::framework::proto::VarType *temp = type_;
   type_ = NULL;
   return temp;
 }
-inline void VarDesc::set_allocated_type(
-    ::paddle_mobile::framework::proto::VarType* type) {
+inline void
+VarDesc::set_allocated_type(::paddle_mobile::framework::proto::VarType *type) {
   delete type_;
   type_ = type;
   if (type) {
@@ -4770,28 +4798,28 @@ inline void BlockDesc::set_parent_idx(::google::protobuf::int32 value) {
 // repeated .paddle_mobile.framework.proto.VarDesc vars = 3;
 inline int BlockDesc::vars_size() const { return vars_.size(); }
 inline void BlockDesc::clear_vars() { vars_.Clear(); }
-inline const ::paddle_mobile::framework::proto::VarDesc& BlockDesc::vars(
-    int index) const {
+inline const ::paddle_mobile::framework::proto::VarDesc &
+BlockDesc::vars(int index) const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.BlockDesc.vars)
   return vars_.Get(index);
 }
-inline ::paddle_mobile::framework::proto::VarDesc* BlockDesc::mutable_vars(
-    int index) {
+inline ::paddle_mobile::framework::proto::VarDesc *
+BlockDesc::mutable_vars(int index) {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.BlockDesc.vars)
   return vars_.Mutable(index);
 }
-inline ::paddle_mobile::framework::proto::VarDesc* BlockDesc::add_vars() {
+inline ::paddle_mobile::framework::proto::VarDesc *BlockDesc::add_vars() {
   // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.BlockDesc.vars)
   return vars_.Add();
 }
 inline ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::VarDesc>*
+    ::paddle_mobile::framework::proto::VarDesc> *
 BlockDesc::mutable_vars() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.BlockDesc.vars)
   return &vars_;
 }
 inline const ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::VarDesc>&
+    ::paddle_mobile::framework::proto::VarDesc> &
 BlockDesc::vars() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.BlockDesc.vars)
   return vars_;
@@ -4800,28 +4828,28 @@ BlockDesc::vars() const {
 // repeated .paddle_mobile.framework.proto.OpDesc ops = 4;
 inline int BlockDesc::ops_size() const { return ops_.size(); }
 inline void BlockDesc::clear_ops() { ops_.Clear(); }
-inline const ::paddle_mobile::framework::proto::OpDesc& BlockDesc::ops(
-    int index) const {
+inline const ::paddle_mobile::framework::proto::OpDesc &
+BlockDesc::ops(int index) const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.BlockDesc.ops)
   return ops_.Get(index);
 }
-inline ::paddle_mobile::framework::proto::OpDesc* BlockDesc::mutable_ops(
-    int index) {
+inline ::paddle_mobile::framework::proto::OpDesc *
+BlockDesc::mutable_ops(int index) {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.BlockDesc.ops)
   return ops_.Mutable(index);
 }
-inline ::paddle_mobile::framework::proto::OpDesc* BlockDesc::add_ops() {
+inline ::paddle_mobile::framework::proto::OpDesc *BlockDesc::add_ops() {
   // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.BlockDesc.ops)
   return ops_.Add();
 }
 inline ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpDesc>*
+    ::paddle_mobile::framework::proto::OpDesc> *
 BlockDesc::mutable_ops() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.BlockDesc.ops)
   return &ops_;
 }
 inline const ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpDesc>&
+    ::paddle_mobile::framework::proto::OpDesc> &
 BlockDesc::ops() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.BlockDesc.ops)
   return ops_;
@@ -4858,28 +4886,28 @@ inline void BlockDesc::set_forward_block_idx(::google::protobuf::int32 value) {
 // repeated .paddle_mobile.framework.proto.BlockDesc blocks = 1;
 inline int ProgramDesc::blocks_size() const { return blocks_.size(); }
 inline void ProgramDesc::clear_blocks() { blocks_.Clear(); }
-inline const ::paddle_mobile::framework::proto::BlockDesc& ProgramDesc::blocks(
-    int index) const {
+inline const ::paddle_mobile::framework::proto::BlockDesc &
+ProgramDesc::blocks(int index) const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.ProgramDesc.blocks)
   return blocks_.Get(index);
 }
-inline ::paddle_mobile::framework::proto::BlockDesc*
+inline ::paddle_mobile::framework::proto::BlockDesc *
 ProgramDesc::mutable_blocks(int index) {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.ProgramDesc.blocks)
   return blocks_.Mutable(index);
 }
-inline ::paddle_mobile::framework::proto::BlockDesc* ProgramDesc::add_blocks() {
+inline ::paddle_mobile::framework::proto::BlockDesc *ProgramDesc::add_blocks() {
   // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.ProgramDesc.blocks)
   return blocks_.Add();
 }
 inline ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::BlockDesc>*
+    ::paddle_mobile::framework::proto::BlockDesc> *
 ProgramDesc::mutable_blocks() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.ProgramDesc.blocks)
   return &blocks_;
 }
 inline const ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::BlockDesc>&
+    ::paddle_mobile::framework::proto::BlockDesc> &
 ProgramDesc::blocks() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.ProgramDesc.blocks)
   return blocks_;
@@ -4887,8 +4915,8 @@ ProgramDesc::blocks() const {
 
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
-#endif  // __GNUC__
-#endif  // !PROTOBUF_INLINE_NOT_IN_HEADERS
+#endif // __GNUC__
+#endif // !PROTOBUF_INLINE_NOT_IN_HEADERS
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------
@@ -4921,9 +4949,9 @@ ProgramDesc::blocks() const {
 
 // @@protoc_insertion_point(namespace_scope)
 
-}  // namespace proto
-}  // namespace framework
-}  // namespace paddle_mobile
+} // namespace proto
+} // namespace framework
+} // namespace paddle_mobile
 
 namespace google {
 namespace protobuf {
@@ -4935,9 +4963,9 @@ template <>
 struct is_proto_enum<::paddle_mobile::framework::proto::AttrType>
     : ::google::protobuf::internal::true_type {};
 
-}  // namespace protobuf
-}  // namespace google
+} // namespace protobuf
+} // namespace google
 
 // @@protoc_insertion_point(global_scope)
 
-#endif  // PROTOBUF_framework_2eproto__INCLUDED
+#endif // PROTOBUF_framework_2eproto__INCLUDED

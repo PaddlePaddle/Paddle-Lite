@@ -21,7 +21,7 @@ namespace math {
 template <>
 void gemm<float>(const CBLAS_TRANSPOSE transA, const CBLAS_TRANSPOSE transB,
                  const int M, const int N, const int K, const float alpha,
-                 const float* A, const float* B, const float beta, float* C) {
+                 const float *A, const float *B, const float beta, float *C) {
   int lda = (transA == CblasNoTrans) ? K : M;
   int ldb = (transB == CblasNoTrans) ? N : K;
   int ldc = N;
@@ -32,8 +32,8 @@ void gemm<float>(const CBLAS_TRANSPOSE transA, const CBLAS_TRANSPOSE transB,
 template <>
 void gemm<double>(const CBLAS_TRANSPOSE transA, const CBLAS_TRANSPOSE transB,
                   const int M, const int N, const int K, const double alpha,
-                  const double* A, const double* B, const double beta,
-                  double* C) {
+                  const double *A, const double *B, const double beta,
+                  double *C) {
   int lda = (transA == CblasNoTrans) ? K : M;
   int ldb = (transB == CblasNoTrans) ? N : K;
   int ldc = N;
@@ -43,8 +43,8 @@ void gemm<double>(const CBLAS_TRANSPOSE transA, const CBLAS_TRANSPOSE transB,
 
 template <>
 void gemm<float>(const bool transA, const bool transB, const int M, const int N,
-                 const int K, const float alpha, const float* A, const int lda,
-                 const float* B, const int ldb, const float beta, float* C,
+                 const int K, const float alpha, const float *A, const int lda,
+                 const float *B, const int ldb, const float beta, float *C,
                  const int ldc) {
   cblas_sgemm(CblasRowMajor, transA == false ? CblasNoTrans : CblasTrans,
               transB == false ? CblasNoTrans : CblasTrans, M, N, K, alpha, A,
@@ -53,18 +53,18 @@ void gemm<float>(const bool transA, const bool transB, const int M, const int N,
 
 template <>
 void gemm<double>(const bool transA, const bool transB, const int M,
-                  const int N, const int K, const double alpha, const double* A,
-                  const int lda, const double* B, const int ldb,
-                  const double beta, double* C, const int ldc) {
+                  const int N, const int K, const double alpha, const double *A,
+                  const int lda, const double *B, const int ldb,
+                  const double beta, double *C, const int ldc) {
   cblas_dgemm(CblasRowMajor, transA == false ? CblasNoTrans : CblasTrans,
               transB == false ? CblasNoTrans : CblasTrans, M, N, K, alpha, A,
               lda, B, ldb, beta, C, ldc);
 }
 
 template <>
-void matmul<float>(const framework::Tensor& matrix_a, bool trans_a,
-                   const framework::Tensor& matrix_b, bool trans_b, float alpha,
-                   framework::Tensor* matrix_out, float beta) {
+void matmul<float>(const framework::Tensor &matrix_a, bool trans_a,
+                   const framework::Tensor &matrix_b, bool trans_b, float alpha,
+                   framework::Tensor *matrix_out, float beta) {
   auto dim_a = matrix_a.dims();
   auto dim_b = matrix_b.dims();
   auto dim_out = matrix_out->dims();
@@ -89,9 +89,9 @@ void matmul<float>(const framework::Tensor& matrix_a, bool trans_a,
 }
 
 template <>
-void matmul<double>(const framework::Tensor& matrix_a, bool trans_a,
-                    const framework::Tensor& matrix_b, bool trans_b,
-                    double alpha, framework::Tensor* matrix_out, double beta) {
+void matmul<double>(const framework::Tensor &matrix_a, bool trans_a,
+                    const framework::Tensor &matrix_b, bool trans_b,
+                    double alpha, framework::Tensor *matrix_out, double beta) {
   auto dim_a = matrix_a.dims();
   auto dim_b = matrix_b.dims();
   auto dim_out = matrix_out->dims();
@@ -115,6 +115,6 @@ void matmul<double>(const framework::Tensor& matrix_a, bool trans_a,
                matrix_b.data<double>(), beta, matrix_out->data<double>());
 }
 
-}  // namespace math
-}  // namespace operators
-}  // namespace paddle_mobile
+} // namespace math
+} // namespace operators
+} // namespace paddle_mobile

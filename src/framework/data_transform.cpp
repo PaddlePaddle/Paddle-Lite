@@ -23,14 +23,14 @@ SOFTWARE.
 namespace paddle_mobile {
 namespace framework {
 
-static void PassTensorData(Tensor* from, Tensor* to) {
+static void PassTensorData(Tensor *from, Tensor *to) {
   to->ShareDataWith(*from);
   *from = Tensor();
 }
 
-void DataTransform(const OpKernelType& expected_kernel_type,
-                   const OpKernelType& kernel_type_for_var,
-                   const Tensor& input_tensor, Tensor* output_tensor) {
+void DataTransform(const OpKernelType &expected_kernel_type,
+                   const OpKernelType &kernel_type_for_var,
+                   const Tensor &input_tensor, Tensor *output_tensor) {
   bool transformed = false;
   Tensor in;
   in.ShareDataWith(input_tensor);
@@ -64,8 +64,8 @@ void DataTransform(const OpKernelType& expected_kernel_type,
   output_tensor->ShareDataWith(in);
 }
 
-void CopyVariableWithTensor(const Variable& in_var, const Tensor& tensor,
-                            Variable& out_var) {
+void CopyVariableWithTensor(const Variable &in_var, const Tensor &tensor,
+                            Variable &out_var) {
   //  if (in_var.IsType<LoDTensor>()) {
   //    auto& in_lod_tensor = in_var.Get<LoDTensor>();
   //    auto* tran_lod_tensor = out_var.GetMutable<LoDTensor>();
@@ -83,5 +83,5 @@ void CopyVariableWithTensor(const Variable& in_var, const Tensor& tensor,
   //  }
 }
 
-}  // namespace framework
-}  // namespace paddle_mobile
+} // namespace framework
+} // namespace paddle_mobile
