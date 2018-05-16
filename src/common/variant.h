@@ -21,13 +21,9 @@ SOFTWARE.
 #pragma once
 
 namespace paddle_mobile {
-template <int ID, typename Type>
-struct IDToType {
-  typedef Type type_t;
-};
+template <int ID, typename Type> struct IDToType { typedef Type type_t; };
 
-template <typename F, typename... Ts>
-struct VariantHelper {
+template <typename F, typename... Ts> struct VariantHelper {
   static const size_t size = sizeof(F) > VariantHelper<Ts...>::size
                                  ? sizeof(F)
                                  : VariantHelper<Ts...>::size;
@@ -41,8 +37,7 @@ struct VariantHelper {
   }
 };
 
-template <typename F>
-struct VariantHelper<F> {
+template <typename F> struct VariantHelper<F> {
   static const size_t size = sizeof(F);
   inline static void Destroy(size_t id, void *data) {
     if (id == typeid(F).hash_code()) {
@@ -53,9 +48,8 @@ struct VariantHelper<F> {
   }
 };
 
-template <size_t size>
-class RawData {
- public:
+template <size_t size> class RawData {
+public:
   char data[size];
   RawData() {}
   RawData(const RawData &raw_data) { strcpy(data, raw_data.data); }
@@ -64,8 +58,7 @@ class RawData {
   //      }
 };
 
-template <typename... Ts>
-struct Variant {
+template <typename... Ts> struct Variant {
   Variant(const Variant &variant) {
     //        std::cout << " 赋值构造函数 " << std::endl;
     type_id = variant.type_id;
@@ -77,15 +70,13 @@ struct Variant {
     //        helper::Destroy(type_id, &data);
   }
 
-  template <typename T, typename... Args>
-  void Set(Args &&... args) {
+  template <typename T, typename... Args> void Set(Args &&... args) {
     helper::Destroy(type_id, &data);
     new (&data) T(std::forward<Args>(args)...);
     type_id = typeid(T).hash_code();
   }
 
-  template <typename T>
-  T &Get() const {
+  template <typename T> T &Get() const {
     if (type_id == typeid(T).hash_code()) {
       return *const_cast<T *>(reinterpret_cast<const T *>(&data));
     } else {
@@ -96,16 +87,13 @@ struct Variant {
 
   size_t TypeId() const { return type_id; }
 
- private:
+private:
   static inline size_t invalid_type() { return typeid(void).hash_code(); }
   typedef VariantHelper<Ts...> helper;
   size_t type_id;
   RawData<helper::size> data;
 };
 
-template <typename T>
-struct Vistor {
-  typedef T type_t;
-};
+template <typename T> struct Vistor { typedef T type_t; };
 
-}  // namespace paddle_mobile
+} // namespace paddle_mobile

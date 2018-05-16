@@ -47,5 +47,5 @@ void Free(void *ptr) {
   }
 }
 
-}  // namespace memory
-}  // namespace paddle_mobile
+} // namespace memory
+} // namespace paddle_mobile

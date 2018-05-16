@@ -13,54 +13,54 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma once
-#include <vector>
 #include "framework.pb.h"
 #include "memory/t_malloc.h"
 #include "platform/data_type.h"
 #include "tensor.h"
+#include <vector>
 
 namespace paddle_mobile {
 namespace framework {
 
-void TensorCopy(const Tensor& src, Tensor* dst);
-void TensorCopySync(const Tensor& src, Tensor* dst);
+void TensorCopy(const Tensor &src, Tensor *dst);
+void TensorCopySync(const Tensor &src, Tensor *dst);
 
 template <typename T>
-void TensorFromVector(const std::vector<T>& src, Tensor* dst);
+void TensorFromVector(const std::vector<T> &src, Tensor *dst);
 
 template <typename T>
-void TesnorToVector(const Tensor& src, std::vector<T>* dst);
+void TesnorToVector(const Tensor &src, std::vector<T> *dst);
 
-bool TensorContainsNAN(const framework::Tensor& tensor);
-bool TensorContainsInf(const framework::Tensor& tensor);
+bool TensorContainsNAN(const framework::Tensor &tensor);
+bool TensorContainsInf(const framework::Tensor &tensor);
 
-void TensorToStream(std::ostream& os, const Tensor& tensor);
-void TensorFromStream(std::istream& is, Tensor* tensor);
+void TensorToStream(std::ostream &os, const Tensor &tensor);
+void TensorFromStream(std::istream &is, Tensor *tensor);
 
 //
 // The implementation of template functions.
 //
 
 template <typename T>
-void TensorFromVector(const std::vector<T>& src, Tensor* dst) {
-  auto src_ptr = static_cast<const void*>(src.data());
+void TensorFromVector(const std::vector<T> &src, Tensor *dst) {
+  auto src_ptr = static_cast<const void *>(src.data());
   dst->Resize({static_cast<int64_t>(src.size())});
-  auto dst_ptr = static_cast<void*>(dst->mutable_data<T>());
+  auto dst_ptr = static_cast<void *>(dst->mutable_data<T>());
   auto size = src.size() * sizeof(T);
 
   memory::Copy(dst_ptr, src_ptr, size);
 }
 
 template <typename T>
-void TensorToVector(const Tensor& src, std::vector<T>* dst) {
-  auto src_ptr = static_cast<const void*>(src.data<T>());
+void TensorToVector(const Tensor &src, std::vector<T> *dst) {
+  auto src_ptr = static_cast<const void *>(src.data<T>());
   auto size = src.numel() * sizeof(T);
 
   dst->resize(src.numel());
-  auto dst_ptr = static_cast<void*>(dst->data());
+  auto dst_ptr = static_cast<void *>(dst->data());
 
   memory::Copy(dst_ptr, src_ptr, size);
 }
 
-}  // namespace framework
-}  // namespace paddle_mobile
+} // namespace framework
+} // namespace paddle_mobile

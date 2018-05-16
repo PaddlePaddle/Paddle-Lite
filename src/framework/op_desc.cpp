@@ -55,5 +55,5 @@ const std::unordered_map<std::string, Attribute> &OpDesc::GetAttrMap() const {
   return attrs_;
 }
 
-}  // namespace framework
-}  // namespace paddle_mobile
+} // namespace framework
+} // namespace paddle_mobile

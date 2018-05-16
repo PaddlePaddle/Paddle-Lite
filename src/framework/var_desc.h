@@ -25,7 +25,7 @@ namespace paddle_mobile {
 namespace framework {
 
 class VarDesc {
- public:
+public:
   VarDesc(const proto::VarDesc &desc);
 
   std::string Name() const { return desc_.name(); }
@@ -36,33 +36,33 @@ class VarDesc {
 
   const proto::VarType::ChannelDesc &channel_desc() const {
     switch (desc_.type().type()) {
-      case proto::VarType::CHANNEL:
-        return desc_.type().channel();
-      default:
-        break;
+    case proto::VarType::CHANNEL:
+      return desc_.type().channel();
+    default:
+      break;
     }
   }
 
   const proto::VarType::TensorDesc &tensor_desc() const {
     switch (desc_.type().type()) {
-      case proto::VarType::SELECTED_ROWS:
-        return desc_.type().selected_rows();
-      case proto::VarType::LOD_TENSOR:
-        return desc_.type().lod_tensor().tensor();
-      case proto::VarType::LOD_TENSOR_ARRAY:
-        return desc_.type().tensor_array().tensor();
-      default:
-        break;
+    case proto::VarType::SELECTED_ROWS:
+      return desc_.type().selected_rows();
+    case proto::VarType::LOD_TENSOR:
+      return desc_.type().lod_tensor().tensor();
+    case proto::VarType::LOD_TENSOR_ARRAY:
+      return desc_.type().tensor_array().tensor();
+    default:
+      break;
     }
   }
 
   proto::VarType::Type GetDataType() const {
     switch (desc_.type().type()) {
-      case proto::VarType::CHANNEL:
-        return channel_desc().data_type();
-        break;
-      default:
-        return tensor_desc().data_type();
+    case proto::VarType::CHANNEL:
+      return channel_desc().data_type();
+      break;
+    default:
+      return tensor_desc().data_type();
     }
   }
 
@@ -80,9 +80,9 @@ class VarDesc {
     return this->RepeatedToVector(tensor_desc().dims());
   }
 
- private:
+private:
   proto::VarDesc desc_;
 };
 
-}  // namespace framework
-}  // namespace paddle_mobile
+} // namespace framework
+} // namespace paddle_mobile

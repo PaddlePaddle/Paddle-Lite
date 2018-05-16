@@ -46,5 +46,5 @@ BlockDesc::BlockDesc(const proto::BlockDesc &desc) : desc_(desc) {
   }
 }
 
-}  // namespace framework
-}  // namespace paddle_mobile
+} // namespace framework
+} // namespace paddle_mobile

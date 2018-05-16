@@ -27,8 +27,8 @@ namespace paddle_mobile {
 namespace framework {
 
 class SelectedRows {
- public:
-  SelectedRows(const std::vector<int64_t>& rows, const int64_t& height)
+public:
+  SelectedRows(const std::vector<int64_t> &rows, const int64_t &height)
       : rows_(rows), height_(height) {
     value_.reset(new Tensor());
   }
@@ -38,19 +38,19 @@ class SelectedRows {
     value_.reset(new Tensor());
   }
 
-  const Tensor& value() const { return *value_; }
+  const Tensor &value() const { return *value_; }
 
-  Tensor* mutable_value() { return value_.get(); }
+  Tensor *mutable_value() { return value_.get(); }
 
   int64_t height() const { return height_; }
 
   void set_height(int64_t height) { height_ = height; }
 
-  const std::vector<int64_t>& rows() const { return rows_; }
+  const std::vector<int64_t> &rows() const { return rows_; }
 
-  std::vector<int64_t>* mutable_rows() { return &rows_; }
+  std::vector<int64_t> *mutable_rows() { return &rows_; }
 
-  void set_rows(const std::vector<int64_t>& rows) { rows_ = rows; }
+  void set_rows(const std::vector<int64_t> &rows) { rows_ = rows; }
 
   /**
    * get the index of id in rows
@@ -67,7 +67,7 @@ class SelectedRows {
     return make_ddim(dims);
   }
 
- private:
+private:
   // Notice: rows can be duplicate. We can have {0, 4, 7, 0, 5, 7, 9} here.
   // SelectedRows are simply concated when adding together. Until a
   // SelectedRows add a Tensor, will the duplicate rows be handled.
@@ -76,5 +76,5 @@ class SelectedRows {
   int64_t height_;
 };
 
-}  // namespace framework
-}  // namespace paddle_mobile
+} // namespace framework
+} // namespace paddle_mobile
