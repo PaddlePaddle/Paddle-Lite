@@ -31,7 +31,7 @@ using namespace framework;
 
 template <typename DeviceType, typename T, typename P>
 class ConvKernel : public framework::OpKernelBase<DeviceType, ConvParam> {
- public:
+public:
   void Compute(const ConvParam &param) const;
 };
 }

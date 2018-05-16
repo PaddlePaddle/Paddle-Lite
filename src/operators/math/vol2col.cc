@@ -25,12 +25,11 @@ using Tensor = paddle_mobile::framework::Tensor;
  *   [input_channels, filter_depth, filter_height, filter_width,
  *                    output_depth, output_height, output_width]
  */
-template <typename T>
-class Vol2ColFunctor<CPU, T> {
- public:
-  void operator()(const Tensor& vol, const std::vector<int>& dilations,
-                  const std::vector<int>& strides,
-                  const std::vector<int>& paddings, Tensor* col) const {
+template <typename T> class Vol2ColFunctor<CPU, T> {
+public:
+  void operator()(const Tensor &vol, const std::vector<int> &dilations,
+                  const std::vector<int> &strides,
+                  const std::vector<int> &paddings, Tensor *col) const {
     //    PADDLE_ENFORCE(vol.dims().size() == 4);
     //    PADDLE_ENFORCE(col->dims().size() == 7);
 
@@ -69,8 +68,8 @@ class Vol2ColFunctor<CPU, T> {
     //                      "input_width and output_width are "
     //                      "mismatching.");
 
-    const T* vol_data = vol.data<T>();
-    T* col_data = col->data<T>();
+    const T *vol_data = vol.data<T>();
+    T *col_data = col->data<T>();
 
     for (int c = 0; c < channels_col; ++c) {
       int w_offset = c % filter_width;
@@ -108,12 +107,11 @@ class Vol2ColFunctor<CPU, T> {
  *   [input_channels, filter_depth, filter_height, filter_width,
  *                    output_depth, output_height, output_width]
  */
-template <typename T>
-class Col2VolFunctor<CPU, T> {
- public:
-  void operator()(const Tensor& col, const std::vector<int>& dilations,
-                  const std::vector<int>& strides,
-                  const std::vector<int>& paddings, Tensor* vol) const {
+template <typename T> class Col2VolFunctor<CPU, T> {
+public:
+  void operator()(const Tensor &col, const std::vector<int> &dilations,
+                  const std::vector<int> &strides,
+                  const std::vector<int> &paddings, Tensor *vol) const {
     //    PADDLE_ENFORCE(vol->dims().size() == 4);
     //    PADDLE_ENFORCE(col.dims().size() == 7);
 
@@ -151,8 +149,8 @@ class Col2VolFunctor<CPU, T> {
     //                      output_width,
     //                      "input_width and output_width are "
     //                      "mismatching.");
-    T* vol_data = vol->data<T>();
-    const T* col_data = col.data<T>();
+    T *vol_data = vol->data<T>();
+    const T *col_data = col.data<T>();
 
     for (int c = 0; c < channels_col; ++c) {
       int w_offset = c % filter_width;
@@ -190,6 +188,6 @@ template class Vol2ColFunctor<CPU, double>;
 template class Col2VolFunctor<CPU, float>;
 template class Col2VolFunctor<CPU, double>;
 
-}  // namespace math
-}  // namespace operators
-}  // namespace paddle_mobile
+} // namespace math
+} // namespace operators
+} // namespace paddle_mobile

@@ -14,12 +14,12 @@ limitations under the License. */
 
 #pragma once
 
+#include "common/variant.h"
+#include "dim.h"
 #include <assert.h>
 #include <initializer_list>
 #include <stdexcept>
 #include <vector>
-#include "common/variant.h"
-#include "dim.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -66,15 +66,11 @@ struct DDim {
 
   DDim() { var.Set<Dim<1>>(Dim<1>()); }
 
-  template <int D>
-  explicit DDim(const Dim<D> &in) {
-    var.Set<Dim<D>>(in);
-  }
+  template <int D> explicit DDim(const Dim<D> &in) { var.Set<Dim<D>>(in); }
 
   /*implicit*/ DDim(std::initializer_list<int64_t> init_list);
 
-  template <int D>
-  DDim &operator=(const Dim<D> &in) {
+  template <int D> DDim &operator=(const Dim<D> &in) {
     var.Set<Dim<D>>(in);
     return *this;
   }
@@ -161,5 +157,5 @@ DDim flatten_to_1d(const DDim &src);
 DDim stride(const DDim &ddim);
 
 DDim stride_numel(const DDim &ddim);
-}  // namespace framework
-}  // namespace paddle_mobile
+} // namespace framework
+} // namespace paddle_mobile
