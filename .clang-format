@@ -3,5 +3,4 @@ Language:        Cpp
 BasedOnStyle:  LLVM
 Standard:  Cpp11 
 IndentWidth: 4
-NamespaceIndentation: All
 ...

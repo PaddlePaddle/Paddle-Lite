@@ -6,24 +6,45 @@ dist: trusty
 os:
   - linux
 env:
-  - JOB=check_style
-
+  global:
+    # CMake
+    - CMAKE_URL=https://cmake.org/files/v3.11/cmake-3.11.1-Linux-x86_64.tar.gz
 addons:
   apt:
+    sources:
+      - llvm-toolchain-trusty-6.0
+      - ubuntu-toolchain-r-test
     packages:
       - git
       - python
       - python-pip
       - python2.7-dev
-      - clang-format-3.8
+      - clang-6.0
+      - libc6-i386
+      - curl
 
+compiler:
+  - clang
+        
 before_install:
   - sudo pip install -U virtualenv pre-commit pip
+  # Download and install recent cmake
+  - |
+    if [[ ${TRAVIS_OS_NAME} == "linux" ]]; then
+      CMAKE_URL=${CMAKE_URL}
+      mkdir -p ${DEPS_DIR}/cmake
+      travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C ${DEPS_DIR}/cmake
+      export PATH=${DEPS_DIR}/cmake/bin:${PATH}
+    fi
+
+install:
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
+  - if [ "$CXX" = "clang++" ]; then export CXX="clang++-6.0" CC="clang-6.0"; fi
 
 script:
-  - if [[ "$JOB" == "check_style" ]]; then sudo ln -s /usr/bin/clang-format-3.8 /usr/bin/clang-format; fi
   - |
     function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+    echo "==============="
   - |
     timeout 600 .travis/${JOB}.sh # 10min timeout
     RESULT=$?; if [ $RESULT -eq 0 ] || [ $RESULT -eq 142 ]; then true; else exit 1; fi;
