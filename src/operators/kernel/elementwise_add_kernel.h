@@ -15,20 +15,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
-#pragma once
-#include "framework/ddim.h"
-#include "framework/tensor.h"
-#include <random>
+#pragma once;
 
-template <typename T>
-void SetupTensor(paddle_mobile::framework::Tensor *input,
-                 paddle_mobile::framework::DDim dims, T lower, T upper) {
-  static unsigned int seed = 100;
-  std::mt19937 rng(seed++);
-  std::uniform_real_distribution<double> uniform_dist(0, 1);
+#include "framework/operator.h"
+#include "operators/math/elementwise_op_function.h"
+#include "operators/op_param.h"
 
-  T *input_ptr = input->mutable_data<T>(dims);
-  for (int i = 0; i < input->numel(); ++i) {
-    input_ptr[i] = static_cast<T>(uniform_dist(rng) * (upper - lower) + lower);
-  }
+namespace paddle_mobile {
+namespace operators {
+
+using namespace framework;
+
+template <typename DeviceType, typename T, typename P>
+class ElementwiseAddKernel
+    : public framework::OpKernelBase<DeviceType, ElementwiseAddParam> {
+public:
+  void Compute(const ElementwiseAddParam &param) const;
+};
+}
 }
