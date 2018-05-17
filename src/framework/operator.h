@@ -18,71 +18,36 @@ SOFTWARE.
 
 #pragma once
 
-#include <map>
-
-#include "attribute.h"
-#include "block_desc.h"
-#include "common/type_define.h"
-#include "common/types.h"
-#include "common/variant.h"
-#include "op_info.h"
-#include "op_kernel_type.h"
-#include "paddle_mobile_object.h"
-#include "scope.h"
-#include "tensor.h"
-#include "variable.h"
+#include "framework/operator.h"
+#include "operators/kernel/pool_kernel.h"
 
 namespace paddle_mobile {
-namespace framework {
+namespace operators {
 
-template <typename Dtype> class OperatorBase : PaddleMobileObject {
+using namespace framework;
+
+template <typename DeviceType, typename T>
+class ConvOp : public framework::OperatorWithKernel<DeviceType> {
 public:
-  OperatorBase(const std::string &type, const VariableNameMap &inputs,
-               const VariableNameMap &outputs, const AttributeMap &attrs,
-               std::shared_ptr<Scope> scope);
-  virtual ~OperatorBase() {}
-  virtual void Run() const = 0;
+  ConvOp(const std::string &type, const VariableNameMap &inputs,
+         const VariableNameMap &outputs, const framework::AttributeMap &attrs,
+         std::shared_ptr<framework::Scope> scope)
+          : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
+                                                      scope),
+            param_(inputs, outputs, attrs, *scope) {}
 
-  const VariableNameMap &Inputs() const { return inputs_; }
-  const VariableNameMap &Outputs() const { return outputs_; }
-  const std::string &Type() const { return type_; }
-  const AttributeMap &Attrs() const { return attrs_; }
-  void ClearVariables() const {
-    if (this->scope_) {
-      this->scope_->EraseVars(this->inputs_.at("Filter"));
-      this->scope_->EraseVars(this->inputs_.at("Input"));
-    }
+  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  void InferShape() const override;
+
+  void Run() const {
+    operators::ConvKernel<DeviceType, T, ConvParam> kernel;
+    kernel.Compute(param_);
+    this->ClearVariables();
   }
 
-protected:
-  std::shared_ptr<Scope> scope_;
-  std::string type_;
-  VariableNameMap inputs_;
-  VariableNameMap outputs_;
-  AttributeMap attrs_;
-
 private:
-  void CheckAllInputOutputSet() const;
+  ConvParam param_;
 };
 
-template <typename Dtype>
-class OperatorWithKernel : public OperatorBase<Dtype> {
-public:
-  OperatorWithKernel(const std::string &type, const VariableNameMap &inputs,
-                     const VariableNameMap &outputs, const AttributeMap &attrs,
-                     std::shared_ptr<Scope> scope)
-      : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope) {}
-  virtual void InferShape() const = 0;
-
-  virtual void Run() const = 0;
-};
-
-template <typename Dtype, typename P> class OpKernelBase : PaddleMobileObject {
-public:
-  virtual void Compute(const P &para) const = 0;
-
-  virtual ~OpKernelBase() = default;
-};
-
-} // namespace framework
-} // namespace paddle_mobile
+} // operators
+} // paddle_mobile

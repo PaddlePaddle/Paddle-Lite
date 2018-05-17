@@ -20,8 +20,8 @@ SOFTWARE.
 #include "op_info.h"
 
 namespace paddle_mobile {
-namespace framework {
-
+    namespace framework {
+      
 template <typename Dtype>
 OperatorBase<Dtype>::OperatorBase(const std::string &type,
                                   const VariableNameMap &inputs,
@@ -38,5 +38,5 @@ void OperatorBase<Dtype>::CheckAllInputOutputSet() const {}
 template class OperatorBase<CPU>;
 template class OperatorWithKernel<CPU>;
 
-} // namespace framework
+    } // namespace framework
 } // namespace paddle_mobile
