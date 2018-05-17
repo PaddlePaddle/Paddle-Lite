@@ -49,6 +49,7 @@ int main() {
   //    }
 
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  //../../test/models/image_classification_resnet.inference.model
   auto program = loader.Load(std::string(
       "../../test/models/image_classification_resnet.inference.model"));
 
