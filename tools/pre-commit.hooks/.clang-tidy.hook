@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+echo "clang-tidy formating init"
+clang-tidy -checks="-*,misc-unused-using-decls" -fix src/framework/data_type.h --
+
 TOTAL_ERRORS=0
 
 # The trick to remove deleted files: https://stackoverflow.com/a/2413151
