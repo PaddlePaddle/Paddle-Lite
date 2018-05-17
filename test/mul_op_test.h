@@ -17,15 +17,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 #pragma once
-#include "operators/elementwise_add_op.h"
+#include "operators/mul_op.h"
 #include "test_include.h"
 
 namespace paddle_mobile {
     namespace framework {
 
-        template <typename Dtype> class TestElementwiseAddOp {
+        template <typename Dtype> class TestMulOp {
           public:
-            TestElementwiseAddOp(const Program<Dtype> p) : program_(p) {
+            TestMulOp(const Program<Dtype> p) : program_(p) {
                 if (use_optimize_) {
                     to_predict_program_ = program_.optimizeProgram;
                 } else {
@@ -42,23 +42,26 @@ namespace paddle_mobile {
                     //    std::cout << " ops " << ops.size() << std::endl;
                     for (int j = 0; j < ops.size(); ++j) {
                         std::shared_ptr<OpDesc> op = ops[j];
-                        //                        if (op->Type() ==
-                        //                        "elementwise_add") {
-                        //                            if
-                        //                            (op->GetAttrMap().at("axis").Get<int>()
-                        //                            != -1) {
-                        //                                std::cout
-                        //                                    << "attr: axis = "
-                        //                                    <<
-                        //                                    op->GetAttrMap().at("axis").Get<int>()
-                        //                                    << std::endl;
-                        //                            }
-                        //                        }
+                        if (op->Type() == "mul") {
+                            std::cout << "x_num_col_dims : "
+                                      << op->GetAttrMap()
+                                             .at("x_num_col_dims")
+                                             .Get<int>()
+                                      << std::endl;
+                            std::cout << "y_num_col_dims : "
+                                      << op->GetAttrMap()
+                                             .at("y_num_col_dims")
+                                             .Get<int>()
+                                      << std::endl;
+                            std::cout << " Input X is : " << op->Input("X")[0]
+                                      << std::endl;
+                        }
                         // std::cout << "op:" << op->Type() << std::endl;
-                        if (op->Type() == "elementwise_add" &&
-                            op->Input("X")[0] == "batch_norm_2.tmp_2") {
-                            std::cout << " elementwise_add attr size: "
-                                      << op->GetAttrMap().size() << std::endl;
+                        if (op->Type() == "mul" &&
+                            op->Input("X")[0] == "pool2d_0.tmp_0") {
+                            std::cout
+                                << " mul attr size: " << op->GetAttrMap().size()
+                                << std::endl;
                             std::cout
                                 << " inputs size: " << op->GetInputs().size()
                                 << std::endl;
@@ -72,15 +75,20 @@ namespace paddle_mobile {
                             std::cout
                                 << " Output Out is : " << op->Output("Out")[0]
                                 << std::endl;
-                            Attribute axis_attr = op->GetAttrMap().at("axis");
-                            int axis = axis_attr.Get<int>();
-                            std::cout << " Attr axis is : " << axis
+                            std::cout << "x_num_col_dims : "
+                                      << op->GetAttrMap()
+                                             .at("x_num_col_dims")
+                                             .Get<int>()
+                                      << std::endl;
+                            std::cout << "y_num_col_dims : "
+                                      << op->GetAttrMap()
+                                             .at("y_num_col_dims")
+                                             .Get<int>()
                                       << std::endl;
 
-                            std::shared_ptr<
-                                operators::ElementwiseAddOp<Dtype, float>>
+                            std::shared_ptr<operators::MulOp<Dtype, float>>
                                 add = std::make_shared<
-                                    operators::ElementwiseAddOp<Dtype, float>>(
+                                    operators::MulOp<Dtype, float>>(
                                     op->Type(), op->GetInputs(),
                                     op->GetOutputs(), op->GetAttrMap(),
                                     program_.scope);
@@ -93,21 +101,20 @@ namespace paddle_mobile {
             std::shared_ptr<Tensor> predict_add(Tensor &t1, Tensor &t2) {
                 // feed
                 auto scope = program_.scope;
-                Variable *x_feed_value = scope->Var("batch_norm_2.tmp_2");
+                Variable *x_feed_value = scope->Var("pool2d_0.tmp_0");
                 auto tensor_x = x_feed_value->GetMutable<Tensor>();
                 tensor_x->ShareDataWith(t1);
 
-                Variable *y_feed_value = scope->Var("batch_norm_0.tmp_3");
+                Variable *y_feed_value = scope->Var("fc_0.w_0");
                 auto tensor_y = y_feed_value->GetMutable<Tensor>();
                 tensor_y->ShareDataWith(t2);
 
-                Variable *con_output = scope->Var("elementwise_add_0.tmp_0");
+                Variable *con_output = scope->Var("fc_0.tmp_0");
                 Tensor *output_tensor = con_output->GetMutable<Tensor>();
-                output_tensor->mutable_data<float>({1, 3, 224, 224});
+                output_tensor->mutable_data<float>({3, 3});
                 //  std::cout << typeid(output_tensor).name() << std::endl;
                 //  std::cout << "output_tensor dims: " << output_tensor->dims()
-                //  <<
-                //  std::endl;
+                //  << std::endl;
 
                 std::shared_ptr<Tensor> out_tensor =
                     std::make_shared<LoDTensor>();
@@ -137,46 +144,71 @@ namespace paddle_mobile {
             }
         };
 
-        template class TestElementwiseAddOp<CPU>;
+        template class TestMulOp<CPU>;
     } // namespace framework
 
     namespace test {
-        void testElementwiseAdd() {
+        void testMul() {
             std::cout << "----------**********----------" << std::endl;
-            std::cout << "begin to run ElementAddOp Test" << std::endl;
+            std::cout << "begin to run MulOp Test" << std::endl;
             paddle_mobile::Loader<paddle_mobile::CPU> loader;
             auto program = loader.Load(
                 std::string("../../test/models/"
                             "image_classification_resnet.inference.model"));
 
-            /// input x (1,3,224,224)
+            /// input x (3,2,1,1)
             paddle_mobile::framework::Tensor inputx;
-            SetupTensor<float>(&inputx, {1, 3, 224, 224}, static_cast<float>(0),
+            SetupTensor<float>(&inputx, {3, 2, 1, 1}, static_cast<float>(0),
                                static_cast<float>(1));
             float *inputx_ptr = inputx.data<float>();
-            /// input y (224,)
+
+            /// input y (2,3)
             paddle_mobile::framework::Tensor inputy;
-            SetupTensor<float>(&inputy, {224}, static_cast<float>(0),
+            SetupTensor<float>(&inputy, {2, 3}, static_cast<float>(0),
                                static_cast<float>(1));
             float *inputy_ptr = inputy.data<float>();
 
-            paddle_mobile::framework::TestElementwiseAddOp<paddle_mobile::CPU>
-                testElementwiseAddOp(program);
+            paddle_mobile::framework::TestMulOp<paddle_mobile::CPU> testMulOp(
+                program);
 
-            auto output_add = testElementwiseAddOp.predict_add(inputx, inputy);
-            float *output_add_ptr = output_add->data<float>();
-            for (int j = 0; j < output_add->numel(); ++j) {
-                // std::cout << "value of output: " << output_add_ptr[j] <<
-                // std::endl;
+            auto output_mul = testMulOp.predict_add(inputx, inputy);
+            float *output_mul_ptr = output_mul->data<float>();
+
+            auto dimx_1 = inputx.numel() / inputx.dims()[0];
+            std::cout << "inputx : " << std::endl;
+            for (int i = 0; i < inputx.dims()[0]; ++i) {
+                for (int j = 0; j < dimx_1; ++j) {
+                    std::cout << inputx_ptr[i * dimx_1 + j] << " ";
+                }
+                std::cout << std::endl;
             }
 
-            /// output (1,3,224,224)
-            std::cout << "output memory size : " << output_add->memory_size()
-                      << std::endl;
-            std::cout << "output numel : " << output_add->numel() << std::endl;
+            auto dimy_1 = inputy.numel() / inputy.dims()[0];
+            std::cout << "inputy : " << std::endl;
+            for (int i = 0; i < inputy.dims()[0]; ++i) {
+                for (int j = 0; j < dimy_1; ++j) {
+                    std::cout << inputy_ptr[i * dimy_1 + j] << " ";
+                }
+                std::cout << std::endl;
+            }
 
-            std::cout << inputx_ptr[226] << " + " << inputy_ptr[2] << " = "
-                      << output_add_ptr[226] << std::endl;
+            auto dim_output_1 = output_mul->numel() / output_mul->dims()[0];
+            std::cout << "output : " << std::endl;
+            for (int i = 0; i < output_mul->dims()[0]; ++i) {
+                for (int j = 0; j < dim_output_1; ++j) {
+                    std::cout << output_mul_ptr[i * dimy_1 + j] << " ";
+                }
+                std::cout << std::endl;
+            }
+
+            /// output (3,3)
+            std::cout << "output memory size : " << output_mul->memory_size()
+                      << std::endl;
+            std::cout << "output numel : " << output_mul->numel() << std::endl;
+
+            std::cout << inputx_ptr[0] << " x " << inputy_ptr[0] << " + "
+                      << inputx_ptr[1] << " x " << inputy_ptr[0 + 3] << " = "
+                      << output_mul_ptr[0] << std::endl;
         }
     } // namespace test
 } // namespace paddle_mobile
