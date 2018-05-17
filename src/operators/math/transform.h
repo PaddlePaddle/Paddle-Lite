@@ -17,37 +17,41 @@ limitations under the License. */
 #include <algorithm>
 
 namespace paddle_mobile {
-namespace operators {
-namespace math {
+    namespace operators {
+        namespace math {
 
-// Transform applys a unary or a binary functor on each element in a
-// range defined by a pair of iterators.
-//
-// - The specialization for CPU calls std::transform.
-// - The specialization for CUDA calls thrust::tranform.
-//
-// NOTE: We need to define InputIter and OutputIter defined as
-//       different types, because the InputIter points op's inputs and
-//       OutputIter pints to op's outputs.
-//
-// NOTE: We don't assume that InputIter to be const InputType* and
-//       OutputIter to be OutputType*, because we might use a iterator
-//       class, paddle::fluid::operators::RowwiseTRansformIterator.
+            // Transform applys a unary or a binary functor on each element in a
+            // range defined by a pair of iterators.
+            //
+            // - The specialization for CPU calls std::transform.
+            // - The specialization for CUDA calls thrust::tranform.
+            //
+            // NOTE: We need to define InputIter and OutputIter defined as
+            //       different types, because the InputIter points op's inputs
+            //       and
+            //       OutputIter pints to op's outputs.
+            //
+            // NOTE: We don't assume that InputIter to be const InputType* and
+            //       OutputIter to be OutputType*, because we might use a
+            //       iterator
+            //       class, paddle::fluid::operators::RowwiseTRansformIterator.
 
-struct Transform {
-  template <typename InputIter, typename OutputIter, typename UnaryOperation>
-  void operator()(InputIter first, InputIter last, OutputIter result,
-                  UnaryOperation op) {
-    std::transform(first, last, result, op);
-  }
+            struct Transform {
+                template <typename InputIter, typename OutputIter,
+                          typename UnaryOperation>
+                void operator()(InputIter first, InputIter last,
+                                OutputIter result, UnaryOperation op) {
+                    std::transform(first, last, result, op);
+                }
 
-  template <typename InputIter1, typename InputIter2, typename OutputIter,
-            typename BinaryOperation>
-  void operator()(InputIter1 first1, InputIter1 last1, InputIter2 first2,
-                  OutputIter result, BinaryOperation op) {
-    std::transform(first1, last1, first2, result, op);
-  }
-};
-}
-} // namespace platform
+                template <typename InputIter1, typename InputIter2,
+                          typename OutputIter, typename BinaryOperation>
+                void operator()(InputIter1 first1, InputIter1 last1,
+                                InputIter2 first2, OutputIter result,
+                                BinaryOperation op) {
+                    std::transform(first1, last1, first2, result, op);
+                }
+            };
+        }
+    } // namespace platform
 } // namespace paddle
