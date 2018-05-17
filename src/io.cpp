@@ -19,6 +19,7 @@ SOFTWARE.
 #include <fstream>
 #include <iostream>
 
+#include "common/log.h"
 #include "framework/framework.pb.h"
 #include "framework/lod_tensor.h"
 #include "framework/program_desc.h"
@@ -41,25 +42,27 @@ namespace paddle_mobile {
     template <typename Dtype, Precision P>
     void Loader<Dtype, P>::LoadVar(framework::LoDTensor *tensor,
                                    const std::string &file_path) {
-        //  std::cout << "  to load " << file_path << std::endl;
+
+        LOG(kLOG_DEBUG) << "  to load " << file_path;
+        //  Log(kLOG_DEBUG) << "123";
 
         std::ifstream is(file_path);
 
         std::streampos pos = is.tellg(); //   save   current   position
         is.seekg(0, std::ios::end);
-        //  std::cout << "  file length = " << is.tellg() << std::endl;
+        LOG(kLOG_DEBUG) << "  file length = " << is.tellg();
         is.seekg(pos); //   restore   saved   position
 
         // 1. version
         uint32_t version;
         is.read(reinterpret_cast<char *>(&version), sizeof(version));
-        //  std::cout << "   version: " << version << std::endl;
+        LOG(kLOG_INFO) << "   version: " << version;
 
         // 2 Lod information
         uint64_t lod_level;
         is.read(reinterpret_cast<char *>(&lod_level), sizeof(lod_level));
-        //  std::cout << "   load level: " << lod_level << std::endl;
-        //  std::cout << "   lod info: " << std::endl;
+        LOG(kLOG_DEBUG) << "   load level: " << lod_level;
+        LOG(kLOG_DEBUG) << "   lod info: ";
         auto &lod = *tensor->mutable_lod();
         lod.resize(lod_level);
         for (uint64_t i = 0; i < lod_level; ++i) {
@@ -69,7 +72,7 @@ namespace paddle_mobile {
             is.read(reinterpret_cast<char *>(tmp.data()),
                     static_cast<std::streamsize>(size));
             for (int j = 0; j < tmp.size(); ++j) {
-                //      std::cout << "    lod - " << tmp[j] << std::endl;
+                LOG(kLOG_DEBUG1) << "    lod - " << tmp[j];
             }
             lod[i] = tmp;
         }

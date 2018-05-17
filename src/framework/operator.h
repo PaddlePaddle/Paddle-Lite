@@ -75,7 +75,6 @@ namespace paddle_mobile {
                                std::shared_ptr<Scope> scope)
                 : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope) {}
             virtual void InferShape() const = 0;
-
             virtual void Run() const = 0;
         };
 
