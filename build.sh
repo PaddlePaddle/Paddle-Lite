@@ -60,7 +60,7 @@ build_for_android() {
 
     MODE="Release"
     ANDROID_PLATFORM_VERSION="android-15"
-    TOOLCHAIN_FILE="./android-cmake/android.toolchain.cmake"
+    TOOLCHAIN_FILE="./tools/android-cmake/android.toolchain.cmake"
     ANDROID_ARM_MODE="arm"
 
     cmake . \
@@ -82,7 +82,7 @@ build_for_ios() {
     PLATFORM="ios"
     MODE="Release"
     BUILD_DIR=build/release/"${PLATFORM}"
-    TOOLCHAIN_FILE="./ios-cmake/ios.toolchain.cmake"
+    TOOLCHAIN_FILE="./tools/ios-cmake/ios.toolchain.cmake"
     C_FLAGS="-fobjc-abi-version=2 -fobjc-arc -isysroot ${CMAKE_OSX_SYSROOT}"
     CXX_FLAGS="-fobjc-abi-version=2 -fobjc-arc -std=gnu++11 -stdlib=libc++ -isysroot ${CMAKE_OSX_SYSROOT}"
     mkdir -p "${BUILD_DIR}"
