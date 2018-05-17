@@ -38,7 +38,7 @@ namespace paddle_mobile {
                       type, inputs, outputs, attrs, scope),
                   param_(inputs, outputs, attrs, *scope) {}
 
-            void RunImpl() const {
+            void Run() const {
                 operators::ElementwiseAddKernel<DeviceType, T,
                                                 ElementwiseAddParam>
                     kernel;
