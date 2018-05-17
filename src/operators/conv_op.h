@@ -40,12 +40,13 @@ namespace paddle_mobile {
             using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
             void InferShape() const override;
 
-          protected:
-            void RunImpl() const {
+            void Run() const {
                 operators::ConvKernel<DeviceType, T, ConvParam> kernel;
                 kernel.Compute(param_);
+                this->ClearVariables();
             }
 
+          private:
             ConvParam param_;
         };
 
