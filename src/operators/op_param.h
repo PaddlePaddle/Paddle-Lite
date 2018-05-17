@@ -18,6 +18,7 @@ SOFTWARE.
 
 #pragma once;
 
+#include "common/log.h"
 #include "common/type_define.h"
 #include "framework/lod_tensor.h"
 #include "framework/scope.h"
@@ -148,7 +149,7 @@ namespace paddle_mobile {
             int groups;
         };
 
-        std::ostream &operator<<(std::ostream &os, const ConvParam &conv_param);
+        Print &operator<<(Print &printer, const ConvParam &conv_param);
 
         class ElementwiseAddParam : OpParam {
           public:
