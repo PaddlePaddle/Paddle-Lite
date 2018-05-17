@@ -22,14 +22,14 @@ SOFTWARE.
 #pragma once;
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        using namespace framework;
+using namespace framework;
 
-        template <typename DeviceType, typename T, typename P>
-        class MulKernel : public framework::OpKernelBase<DeviceType, MulParam> {
-          public:
-            void Compute(const MulParam &param) const;
-        };
-    }
+template<typename DeviceType, typename T, typename P>
+class MulKernel : public framework::OpKernelBase<DeviceType, MulParam> {
+public:
+  void Compute(const MulParam &param) const;
+};
+}
 }

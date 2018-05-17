@@ -20,14 +20,14 @@ repos:
     -   id: trailing-whitespace
         files: (src).*\.(md|py|mm|swift|java|c|cc|cxx|cpp|cu|h|hpp|hxx)$
 
-#-   repo: local
-#    hooks:
-#    -   id: clang-format-with-version-check
-#        name: clang-format
-#        description: Format files with ClangFormat.
-#        entry: bash ./tools/pre-commit.hooks/.clang_format.hook -i
-#        language: system
-#        files: (src).*\.(c|cc|cxx|cpp|h|hpp|hxx)$
+-   repo: local
+    hooks:
+    -   id: clang-tidy
+        name: clang-tidy
+        description: Format files with tidy.
+        entry: bash ./tools/pre-commit.hooks/.clang-tidy.hook -i
+        language: system
+        files: (src).*\.(c|cc|cxx|cpp|h|hpp|hxx)$
 #
 #-   repo: local
 #    hooks:
