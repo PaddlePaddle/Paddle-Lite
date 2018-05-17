@@ -48,3 +48,7 @@ add_dependencies(paddle-mobile openblas_proj)
 # gen test
 ADD_EXECUTABLE(paddle-mobile-test test/main.cpp test/test_helper.h)
 target_link_libraries(paddle-mobile-test paddle-mobile)
+
+# gen test log
+ADD_EXECUTABLE(test-log test/unit-test/test_log.cpp)
+target_link_libraries(test-log paddle-mobile)

@@ -68,6 +68,13 @@ public:
       : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope) {}
   virtual void InferShape() const = 0;
 
+  void ClearVariables() const {
+    if (this->scope_) {
+      this->scope_->EraseVars(this->inputs_.at("Filter"));
+      this->scope_->EraseVars(this->inputs_.at("Input"));
+    }
+  }
+
 protected:
   virtual void RunImpl() const = 0;
 

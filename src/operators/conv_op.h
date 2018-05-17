@@ -43,6 +43,7 @@ protected:
   void RunImpl() const {
     operators::ConvKernel<DeviceType, T, ConvParam> kernel;
     kernel.Compute(param_);
+    this->ClearVariables();
   }
 
   ConvParam param_;
