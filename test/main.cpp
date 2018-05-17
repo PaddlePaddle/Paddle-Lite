@@ -17,6 +17,7 @@ SOFTWARE.
 ==============================================================================*/
 
 #include "elementwise_add_op_test.h"
+#include "mul_op_test.h"
 #include "framework/executor.h"
 #include "io.h"
 #include "test_helper.h"
@@ -76,5 +77,6 @@ int main() {
     //    std::cout << " value of output: " << output_ptr[j] << std::endl;
     //
     paddle_mobile::test::testElementwiseAdd();
+    paddle_mobile::test::testMul();
     return 0;
 }
