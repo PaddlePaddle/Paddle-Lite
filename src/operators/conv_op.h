@@ -22,32 +22,33 @@ SOFTWARE.
 #include "operators/kernel/conv_kernel.h"
 
 namespace paddle_mobile {
-namespace operators {
+    namespace operators {
 
-using namespace framework;
+        using namespace framework;
 
-template <typename DeviceType, typename T>
-class ConvOp : public framework::OperatorWithKernel<DeviceType> {
-public:
-  ConvOp(const std::string &type, const VariableNameMap &inputs,
-         const VariableNameMap &outputs, const framework::AttributeMap &attrs,
-         std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
-                                                  scope),
-        param_(inputs, outputs, attrs, *scope) {}
+        template <typename DeviceType, typename T>
+        class ConvOp : public framework::OperatorWithKernel<DeviceType> {
+          public:
+            ConvOp(const std::string &type, const VariableNameMap &inputs,
+                   const VariableNameMap &outputs,
+                   const framework::AttributeMap &attrs,
+                   std::shared_ptr<framework::Scope> scope)
+                : framework::OperatorWithKernel<DeviceType>(
+                      type, inputs, outputs, attrs, scope),
+                  param_(inputs, outputs, attrs, *scope) {}
 
-  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
-  void InferShape() const override;
+            using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+            void InferShape() const override;
 
-  void Run() const {
-    operators::ConvKernel<DeviceType, T, ConvParam> kernel;
-    kernel.Compute(param_);
-    this->ClearVariables();
-  }
+            void Run() const {
+                operators::ConvKernel<DeviceType, T, ConvParam> kernel;
+                kernel.Compute(param_);
+                this->ClearVariables();
+            }
 
-private:
-  ConvParam param_;
-};
+          private:
+            ConvParam param_;
+        };
 
-} // operators
+    } // operators
 } // paddle_mobile
