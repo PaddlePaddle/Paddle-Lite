@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "clang-tidy formating init"
+echo "allonli clang-tidy formating init"
 clang-tidy -checks="-*,misc-unused-using-decls" -fix src/framework/data_type.h --
 
 TOTAL_ERRORS=0
