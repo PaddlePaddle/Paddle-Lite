@@ -22,15 +22,15 @@ SOFTWARE.
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
-namespace operators {
+    namespace operators {
 
-using namespace framework;
+        using namespace framework;
 
-template <typename DeviceType, typename T, typename P>
-class ElementwiseAddKernel
-    : public framework::OpKernelBase<DeviceType, ElementwiseAddParam> {
-public:
-  void Compute(const ElementwiseAddParam &param) const;
-};
-}
+        template <typename DeviceType, typename T, typename P>
+        class ElementwiseAddKernel
+            : public framework::OpKernelBase<DeviceType, ElementwiseAddParam> {
+          public:
+            void Compute(const ElementwiseAddParam &param) const;
+        };
+    }
 }

@@ -6,6 +6,7 @@ repos:
         files: (src).*\.(md|py|mm|swift|java|c|cc|cxx|cpp|cu|h|hpp|hxx)$
     -   id: remove-tabs
         files: (src).*\.(md|py|mm|swift|java|c|cc|cxx|cpp|cu|h|hpp|hxx)$
+
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     sha: 5bf6c09bfa1297d3692cadd621ef95f1284e33c0
     hooks:
@@ -18,11 +19,21 @@ repos:
         files: (src).*\.(md|py|mm|swift|java|c|cc|cxx|cpp|cu|h|hpp|hxx)$
     -   id: trailing-whitespace
         files: (src).*\.(md|py|mm|swift|java|c|cc|cxx|cpp|cu|h|hpp|hxx)$
+
 -   repo: local
     hooks:
     -   id: clang-format-with-version-check
         name: clang-format
         description: Format files with ClangFormat.
-        entry: bash .clang_format.hook -i
+        entry: bash ./tools/pre-commit.hooks/.clang_format.hook -i
         language: system
         files: (src).*\.(c|cc|cxx|cpp|h|hpp|hxx)$
+
+#-   repo: local
+#    hooks:
+#    -   id: copyright_checker
+#        name: copyright_checker
+#        entry: python ./tools/pre-commit.hooks/.copyright.hook
+#        language: system
+#        files: (src).*\.(c|cc|cxx|cpp|cu|h|hpp|hxx|proto|py)$
+#        exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$

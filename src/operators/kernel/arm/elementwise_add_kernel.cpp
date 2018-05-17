@@ -17,25 +17,25 @@ limitations under the License. */
 #include "operators/kernel/elementwise_add_kernel.h"
 
 namespace paddle_mobile {
-namespace operators {
+    namespace operators {
 
-template <typename T> struct AddFunctor {
-  inline T operator()(T a, T b) const { return a + b; }
-};
+        template <typename T> struct AddFunctor {
+            inline T operator()(T a, T b) const { return a + b; }
+        };
 
-template <>
-void ElementwiseAddKernel<CPU, float, ElementwiseAddParam>::Compute(
-    const ElementwiseAddParam &param) const {
-  const Tensor *input_x = param.InputX();
-  const Tensor *input_y = param.InputY();
-  Tensor *Out = param.Out();
-  Out->mutable_data<float>();
-  const int axis = param.Axis();
-  ElementwiseComputeEx<AddFunctor<float>, float>(input_x, input_y, axis,
-                                                 AddFunctor<float>(), Out);
-}
+        template <>
+        void ElementwiseAddKernel<CPU, float, ElementwiseAddParam>::Compute(
+            const ElementwiseAddParam &param) const {
+            const Tensor *input_x = param.InputX();
+            const Tensor *input_y = param.InputY();
+            Tensor *Out = param.Out();
+            Out->mutable_data<float>();
+            const int axis = param.Axis();
+            ElementwiseComputeEx<AddFunctor<float>, float>(
+                input_x, input_y, axis, AddFunctor<float>(), Out);
+        }
 
-template class ElementwiseAddKernel<CPU, float, ElementwiseAddParam>;
+        template class ElementwiseAddKernel<CPU, float, ElementwiseAddParam>;
 
-} // namespace operators
+    } // namespace operators
 } // namespace paddle
