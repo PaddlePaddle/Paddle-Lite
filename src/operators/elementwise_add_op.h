@@ -53,4 +53,3 @@ namespace paddle_mobile {
         };
     }
 }
-
