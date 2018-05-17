@@ -32,9 +32,6 @@ OperatorBase<Dtype>::OperatorBase(const std::string &type,
       scope_(scope) {
   CheckAllInputOutputSet();
 }
-
-template <typename Dtype> void OperatorBase<Dtype>::Run() { RunImpl(); }
-
 template <typename Dtype>
 void OperatorBase<Dtype>::CheckAllInputOutputSet() const {}
 

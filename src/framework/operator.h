@@ -41,11 +41,18 @@ public:
                const VariableNameMap &outputs, const AttributeMap &attrs,
                std::shared_ptr<Scope> scope);
   virtual ~OperatorBase() {}
-  virtual void Run();
+  virtual void Run() const = 0;
+
   const VariableNameMap &Inputs() const { return inputs_; }
   const VariableNameMap &Outputs() const { return outputs_; }
   const std::string &Type() const { return type_; }
   const AttributeMap &Attrs() const { return attrs_; }
+  void ClearVariables() const {
+    if (this->scope_) {
+      this->scope_->EraseVars(this->inputs_.at("Filter"));
+      this->scope_->EraseVars(this->inputs_.at("Input"));
+    }
+  }
 
 protected:
   std::shared_ptr<Scope> scope_;
@@ -56,7 +63,6 @@ protected:
 
 private:
   void CheckAllInputOutputSet() const;
-  virtual void RunImpl() const = 0;
 };
 
 template <typename Dtype>
@@ -68,10 +74,7 @@ public:
       : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope) {}
   virtual void InferShape() const = 0;
 
-protected:
-  virtual void RunImpl() const = 0;
-
-private:
+  virtual void Run() const = 0;
 };
 
 template <typename Dtype, typename P> class OpKernelBase : PaddleMobileObject {
