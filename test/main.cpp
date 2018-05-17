@@ -16,6 +16,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
+#include "elementwise_add_op_test.h"
 #include "framework/executor.h"
 #include "io.h"
 #include "test_helper.h"
@@ -73,7 +74,7 @@ int main() {
   //  float* output_ptr = output->data<float>();
   //  for (int j = 0; j < output->numel(); ++j) {
   //    std::cout << " value of output: " << output_ptr[j] << std::endl;
-  //  }
-
+  //
+  paddle_mobile::test::testElementwiseAdd();
   return 0;
 }
