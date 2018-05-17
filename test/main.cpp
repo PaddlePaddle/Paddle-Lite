@@ -37,44 +37,44 @@ SOFTWARE.
 //}
 
 int main() {
-  std::string data_set = "cifar10";
-  //
-  //    if (data_set == "cifar10") {
-  //        SetupTensor<float>(&input, {FLAGS_batch_size, 3, 32, 32},
-  //                           static_cast<float>(0), static_cast<float>(1));
-  //    } else if (data_set == "imagenet") {
-  //        SetupTensor<float>(&input, {FLAGS_batch_size, 3, 224, 224},
-  //                           static_cast<float>(0), static_cast<float>(1));
-  //    } else {
-  //        LOG(FATAL) << "Only cifar10 or imagenet is supported.";
-  //    }
+    std::string data_set = "cifar10";
+    //
+    //    if (data_set == "cifar10") {
+    //        SetupTensor<float>(&input, {FLAGS_batch_size, 3, 32, 32},
+    //                           static_cast<float>(0), static_cast<float>(1));
+    //    } else if (data_set == "imagenet") {
+    //        SetupTensor<float>(&input, {FLAGS_batch_size, 3, 224, 224},
+    //                           static_cast<float>(0), static_cast<float>(1));
+    //    } else {
+    //        LOG(FATAL) << "Only cifar10 or imagenet is supported.";
+    //    }
 
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
-  auto program = loader.Load(std::string(
-      "../../test/models/image_classification_resnet.inference.model"));
+    paddle_mobile::Loader<paddle_mobile::CPU> loader;
+    auto program = loader.Load(std::string(
+        "../../test/models/image_classification_resnet.inference.model"));
 
-  paddle_mobile::framework::Executor<paddle_mobile::CPU> executor(program);
+    paddle_mobile::framework::Executor<paddle_mobile::CPU> executor(program);
 
-  paddle_mobile::framework::Tensor input;
-  SetupTensor<float>(&input, {1, 3, 32, 32}, static_cast<float>(0),
-                     static_cast<float>(1));
-  float *input_ptr = input.data<float>();
-  for (int i = 0; i < input.numel(); ++i) {
-    //    std::cout << input_ptr[i] << std::endl;
-  }
+    paddle_mobile::framework::Tensor input;
+    SetupTensor<float>(&input, {1, 3, 32, 32}, static_cast<float>(0),
+                       static_cast<float>(1));
+    float *input_ptr = input.data<float>();
+    for (int i = 0; i < input.numel(); ++i) {
+        //    std::cout << input_ptr[i] << std::endl;
+    }
 
-  //  std::cout << "input: " << input.memory_size() << std::endl;
-  //  std::cout << "input: " << input.numel() << std::endl;
+    //  std::cout << "input: " << input.memory_size() << std::endl;
+    //  std::cout << "input: " << input.numel() << std::endl;
 
-  auto output = executor.predict(input);
+    auto output = executor.predict(input);
 
-  //  std::cout << "output: " << output->memory_size() << std::endl;
-  //  std::cout << "output: " << output->numel() << std::endl;
+    //  std::cout << "output: " << output->memory_size() << std::endl;
+    //  std::cout << "output: " << output->numel() << std::endl;
 
-  //  float* output_ptr = output->data<float>();
-  //  for (int j = 0; j < output->numel(); ++j) {
-  //    std::cout << " value of output: " << output_ptr[j] << std::endl;
-  //
-  paddle_mobile::test::testElementwiseAdd();
-  return 0;
+    //  float* output_ptr = output->data<float>();
+    //  for (int j = 0; j < output->numel(); ++j) {
+    //    std::cout << " value of output: " << output_ptr[j] << std::endl;
+    //
+    paddle_mobile::test::testElementwiseAdd();
+    return 0;
 }

@@ -17,9 +17,9 @@ limitations under the License. */
 // Disable the copy and assignment operator for a class.
 #ifndef DISABLE_COPY_AND_ASSIGN
 #define DISABLE_COPY_AND_ASSIGN(classname)                                     \
-private:                                                                       \
-  classname(const classname &) = delete;                                       \
-  classname(classname &&) = delete;                                            \
-  classname &operator=(const classname &) = delete;                            \
-  classname &operator=(classname &&) = delete
+  private:                                                                     \
+    classname(const classname &) = delete;                                     \
+    classname(classname &&) = delete;                                          \
+    classname &operator=(const classname &) = delete;                          \
+    classname &operator=(classname &&) = delete
 #endif
