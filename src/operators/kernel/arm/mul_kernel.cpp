@@ -21,36 +21,36 @@ SOFTWARE.
 #include "operators/kernel/mul_kernel.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        template <>
-        void
-        MulKernel<CPU, float, MulParam>::Compute(const MulParam &param) const {
-            const Tensor *input_x = param.InputX();
-            const Tensor *input_y = param.InputY();
-            Tensor *out = param.Out();
-            out->mutable_data<float>();
-            const Tensor x_matrix =
-                input_x->dims().size() > 2
-                    ? framework::ReshapeToMatrix(*input_x, param.XNumColDims())
-                    : *input_x;
-            const Tensor y_matrix =
-                input_y->dims().size() > 2
-                    ? framework::ReshapeToMatrix(*input_y, param.YNumColDims())
-                    : *input_y;
-            auto out_dim = out->dims();
-            if (out_dim.size() != 2) {
-                out->Resize({x_matrix.dims()[0], y_matrix.dims()[1]});
-            }
-            math::matmul<float>(x_matrix, false, y_matrix, false,
-                                static_cast<float>(1), out,
-                                static_cast<float>(0));
-            if (out_dim.size() != 2) {
-                out->Resize(out_dim);
-            }
-        }
+template<>
+void
+MulKernel<CPU, float, MulParam>::Compute(const MulParam &param) const {
+  const Tensor *input_x = param.InputX();
+  const Tensor *input_y = param.InputY();
+  Tensor *out = param.Out();
+  out->mutable_data<float>();
+  const Tensor x_matrix =
+      input_x->dims().size() > 2
+      ? framework::ReshapeToMatrix(*input_x, param.XNumColDims())
+      : *input_x;
+  const Tensor y_matrix =
+      input_y->dims().size() > 2
+      ? framework::ReshapeToMatrix(*input_y, param.YNumColDims())
+      : *input_y;
+  auto out_dim = out->dims();
+  if (out_dim.size() != 2) {
+    out->Resize({x_matrix.dims()[0], y_matrix.dims()[1]});
+  }
+  math::matmul<float>(x_matrix, false, y_matrix, false,
+                      static_cast<float>(1), out,
+                      static_cast<float>(0));
+  if (out_dim.size() != 2) {
+    out->Resize(out_dim);
+  }
+}
 
-        template class MulKernel<CPU, float, MulParam>;
+template class MulKernel<CPU, float, MulParam>;
 
-    } // namespace operators
+} // namespace operators
 } // namespace paddle
