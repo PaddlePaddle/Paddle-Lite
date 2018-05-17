@@ -15,9 +15,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
+#pragma once;
 
-#include "attribute.h"
+#include "framework/operator.h"
+#include "operators/math/elementwise_op_function.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
-    namespace framework {}
-} // namespace paddle_mobile
+    namespace operators {
+
+        using namespace framework;
+
+        template <typename DeviceType, typename T, typename P>
+        class ElementwiseAddKernel
+            : public framework::OpKernelBase<DeviceType, ElementwiseAddParam> {
+          public:
+            void Compute(const ElementwiseAddParam &param) const;
+        };
+    }
+}

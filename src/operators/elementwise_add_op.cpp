@@ -16,8 +16,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#include "attribute.h"
+#include "elementwise_add_op.h"
 
 namespace paddle_mobile {
-    namespace framework {}
-} // namespace paddle_mobile
+    namespace operators {
+
+        template <typename Dtype, typename T>
+        void ElementwiseAddOp<Dtype, T>::InferShape() const {
+            auto x_dim = param_.InputX()->dims();
+            param_.Out()->Resize(x_dim);
+        }
+        template class ElementwiseAddOp<CPU, float>;
+    }
+}
