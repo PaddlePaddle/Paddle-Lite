@@ -35,27 +35,15 @@ Executor<Dtype>::Executor(const Program<Dtype> p) : program_(p) {
 
   const std::vector<std::shared_ptr<BlockDesc>> blocks =
       to_predict_program_->Blocks();
-  //  std::cout << " **block size " << blocks.size() << std::endl;
   for (int i = 0; i < blocks.size(); ++i) {
     std::shared_ptr<BlockDesc> block_desc = blocks[i];
     std::vector<std::shared_ptr<OpDesc>> ops = block_desc->Ops();
-    //    std::cout << " ops " << ops.size() << std::endl;
     for (int j = 0; j < ops.size(); ++j) {
       std::shared_ptr<OpDesc> op = ops[j];
-      //        std::cout << " input 0 " << op->Input("Input")[0] << std::endl;
       if (op->Type() == "conv2d" && op->Input("Input")[0] == "pixel") {
-        //        std::cout << " conv2d attr size: " << op->GetAttrMap().size()
-        //                  << std::endl;
-        //        std::cout << " input size: " << op->GetInputs().size() <<
-        //        std::endl;
-
-        //        std::cout << " output size: " << op->GetOutputs().size() <<
-        //        std::endl;
-
         Attribute strides_attr = op->GetAttrMap().at("strides");
         std::vector<int> stride = strides_attr.Get<std::vector<int>>();
         for (int k = 0; k < stride.size(); ++k) {
-          //          std::cout << " stride " << stride[k] << std::endl;
         }
 
         std::shared_ptr<operators::ConvOp<Dtype, float>> conv =
