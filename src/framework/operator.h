@@ -19,7 +19,6 @@ SOFTWARE.
 #pragma once
 
 #include <map>
-
 #include "attribute.h"
 #include "block_desc.h"
 #include "common/type_define.h"
