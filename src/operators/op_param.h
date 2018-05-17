@@ -38,8 +38,29 @@ protected:
   }
 
   template <typename T>
+  static T *InputXFrom(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("X", inputs, scope);
+  }
+
+  template <typename T>
+  static T *InputYFrom(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("Y", inputs, scope);
+  }
+
+  template <typename T>
+  static std::vector<T *> InputMultiFrom(const VariableNameMap &inputs,
+                                         const Scope &scope) {
+    return GetMultiVarValue<T>("Input", inputs, scope);
+  }
+
+  template <typename T>
   static T *OutputFrom(const VariableNameMap &outputs, const Scope &scope) {
     return GetVarValue<T>("Output", outputs, scope);
+  }
+
+  template <typename T>
+  static T *OutFrom(const VariableNameMap &outputs, const Scope &scope) {
+    return GetVarValue<T>("Out", outputs, scope);
   }
 
   template <typename T>
@@ -63,6 +84,20 @@ protected:
     } else {
       return nullptr;
     }
+  }
+
+  template <typename T>
+  static std::vector<T *> GetMultiVarValue(std::string key,
+                                           const VariableNameMap &var_map,
+                                           const Scope &scope) {
+    auto var_vecs = var_map.at(key);
+    assert(var_vecs.size() > 1);
+    std::vector<T *> var_res;
+    for (auto &var_vec : var_vecs) {
+      auto var = scope.FindVar(var_vec);
+      var_res.push_back(var->GetMutable<T>());
+    }
+    return var_res;
   }
 };
 
@@ -105,6 +140,85 @@ private:
 };
 
 std::ostream &operator<<(std::ostream &os, const ConvParam &conv_param);
+
+class ElementwiseAddParam : OpParam {
+public:
+  ElementwiseAddParam(const VariableNameMap &inputs,
+                      const VariableNameMap &outputs,
+                      const framework::AttributeMap &attrs,
+                      const framework::Scope &scope) {
+    input_x_ = InputXFrom<framework::Tensor>(inputs, scope);
+    input_y_ = InputYFrom<framework::Tensor>(inputs, scope);
+    out_ = OutFrom<framework::Tensor>(outputs, scope);
+    axis_ = GetAttr<int>("axis", attrs);
+  }
+
+  const Tensor *InputX() const { return input_x_; }
+
+  const Tensor *InputY() const { return input_y_; }
+
+  Tensor *Out() const { return out_; }
+
+  const int &Axis() const { return axis_; }
+
+private:
+  Tensor *input_x_;
+  Tensor *input_y_;
+  Tensor *out_;
+  int axis_;
+};
+
+class MulParam : OpParam {
+public:
+  MulParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+           const framework::AttributeMap &attrs,
+           const framework::Scope &scope) {
+    input_x_ = InputXFrom<framework::Tensor>(inputs, scope);
+    input_y_ = InputYFrom<framework::Tensor>(inputs, scope);
+    out_ = OutFrom<framework::Tensor>(outputs, scope);
+    x_num_col_dims_ = GetAttr<int>("x_num_col_dims", attrs);
+    y_num_col_dims_ = GetAttr<int>("y_num_col_dims", attrs);
+  }
+
+  const Tensor *InputX() const { return input_x_; }
+
+  const Tensor *InputY() const { return input_y_; }
+
+  Tensor *Out() const { return out_; }
+
+  const int &XNumColDims() const { return x_num_col_dims_; }
+
+  const int &YNumColDims() const { return y_num_col_dims_; }
+
+private:
+  Tensor *input_x_;
+  Tensor *input_y_;
+  Tensor *out_;
+  int x_num_col_dims_;
+  int y_num_col_dims_;
+};
+
+class ConcatParam : public OpParam {
+public:
+  ConcatParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+              const framework::AttributeMap &attrs,
+              const framework::Scope &scope) {
+    inputs_ = InputMultiFrom<framework::Tensor>(inputs, scope);
+    out_ = OutFrom<framework::Tensor>(outputs, scope);
+    axis_ = GetAttr<int>("axis", attrs);
+  }
+
+  std::vector<Tensor *> Inputs() const { return inputs_; }
+
+  Tensor *Out() const { return out_; }
+
+  const int &Axis() const { return axis_; }
+
+private:
+  std::vector<Tensor *> inputs_;
+  Tensor *out_;
+  int axis_;
+};
 
 } // namespace operators
 } // namespace paddle_mobile
