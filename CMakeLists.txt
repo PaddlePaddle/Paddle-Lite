@@ -46,7 +46,8 @@ target_link_libraries(paddle-mobile-static protobuf-lite openblas)
 add_dependencies(paddle-mobile openblas_proj)
 
 # gen test
-ADD_EXECUTABLE(paddle-mobile-test test/main.cpp test/test_helper.h)
+ADD_EXECUTABLE(paddle-mobile-test test/main.cpp test/test_helper.h
+        test/elementwise_add_op_test.h test/test_include.h)
 target_link_libraries(paddle-mobile-test paddle-mobile)
 
 # gen test log

@@ -17,23 +17,39 @@ SOFTWARE.
 ==============================================================================*/
 
 #include "framework/operator.h"
-#include "operators/math/im2col.h"
-#include "operators/math/math_function.h"
-#include "operators/math/vol2col.h"
-#include "operators/op_param.h"
-
-#pragma once;
+#include "kernel/elementwise_add_kernel.h"
+#include "op_param.h"
 
 namespace paddle_mobile {
     namespace operators {
 
         using namespace framework;
 
-        template <typename DeviceType, typename T, typename P>
-        class ConvKernel
-            : public framework::OpKernelBase<DeviceType, ConvParam> {
+        template <typename DeviceType, typename T>
+        class ElementwiseAddOp
+            : public framework::OperatorWithKernel<DeviceType> {
           public:
-            void Compute(const ConvParam &param) const;
+            ElementwiseAddOp(const std::string &type,
+                             const VariableNameMap &inputs,
+                             const VariableNameMap &outputs,
+                             const framework::AttributeMap attrs,
+                             std::shared_ptr<framework::Scope> scope)
+                : framework::OperatorWithKernel<DeviceType>(
+                      type, inputs, outputs, attrs, scope),
+                  param_(inputs, outputs, attrs, *scope) {}
+
+            void Run() const {
+                operators::ElementwiseAddKernel<DeviceType, T,
+                                                ElementwiseAddParam>
+                    kernel;
+                kernel.Compute(param_);
+            }
+
+            using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+            void InferShape() const override;
+
+          protected:
+            ElementwiseAddParam param_;
         };
     }
 }
