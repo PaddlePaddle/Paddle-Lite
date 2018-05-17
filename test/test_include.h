@@ -1,0 +1,15 @@
+#include "framework/block_desc.h"
+#include "framework/framework.pb.h"
+#include "framework/lod_tensor.h"
+#include "framework/operator.h"
+#include "framework/program.h"
+#include "framework/program_desc.h"
+#include "framework/scope.h"
+#include "framework/tensor.h"
+#include "framework/variable.h"
+#include "framework/variable.h"
+#include "io.h"
+#include "test_helper.h"
+#include <map>
+#include <string>
+#include <vector>
