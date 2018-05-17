@@ -18,7 +18,6 @@ SOFTWARE.
 
 #pragma once
 
-#include <map>
 #include "attribute.h"
 #include "block_desc.h"
 #include "common/type_define.h"
@@ -30,6 +29,7 @@ SOFTWARE.
 #include "scope.h"
 #include "tensor.h"
 #include "variable.h"
+#include <map>
 
 namespace paddle_mobile {
     namespace framework {
@@ -89,3 +89,4 @@ namespace paddle_mobile {
 
     } // namespace framework
 } // namespace paddle_mobile
+
