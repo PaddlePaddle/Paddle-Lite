@@ -29,9 +29,6 @@ namespace paddle_mobile {
 namespace framework {
 class Variable : public PaddleMobileObject {
 public:
-  Variable() {}
-  ~Variable() {}
-
   template <typename T> const T *Get() const {
     return static_cast<const T *>(holder_->Ptr());
   }
