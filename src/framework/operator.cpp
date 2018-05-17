@@ -32,9 +32,6 @@ namespace paddle_mobile {
               scope_(scope) {
             CheckAllInputOutputSet();
         }
-
-        template <typename Dtype> void OperatorBase<Dtype>::Run() { RunImpl(); }
-
         template <typename Dtype>
         void OperatorBase<Dtype>::CheckAllInputOutputSet() const {}
 
