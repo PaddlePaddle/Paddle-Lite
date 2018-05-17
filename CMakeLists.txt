@@ -47,5 +47,6 @@ target_link_libraries(paddle-mobile-static protobuf-lite openblas)
 
 # gen test
 ADD_EXECUTABLE(paddle-mobile-test test/main.cpp test/test_helper.h
-        test/elementwise_add_op_test.h test/test_include.h)
+        test/elementwise_add_op_test.h test/test_include.h
+        test/mul_op_test.h)
 target_link_libraries(paddle-mobile-test paddle-mobile)
