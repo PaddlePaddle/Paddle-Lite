@@ -16,31 +16,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#include "op_param.h"
+#include "common/log.h"
 
-namespace paddle_mobile {
-namespace operators {
-
-Print &operator<<(Print &printer, const ConvParam &conv_param) {
-  printer << "parameter of conv: "
-          << "\n";
-  printer << "  stride: "
-          << " (" << conv_param.Strides()[0] << conv_param.Strides()[1] << ") "
-          << "\n";
-  printer << "  paddings: "
-          << " (" << conv_param.Paddings()[0] << conv_param.Paddings()[1]
-          << ") "
-          << "\n";
-  printer << "  dilations: "
-          << " (" << conv_param.Dilations()[0] << conv_param.Dilations()[1]
-          << ") "
-          << "\n";
-  printer << "  groups: " << conv_param.Groups() << "\n";
-  printer << "  input  dims: " << conv_param.Input()->dims() << "\n";
-  printer << "  filter dims: " << conv_param.Filter()->dims() << "\n";
-  printer << "  output dims: " << conv_param.Output()->dims();
-  return printer;
+int main() {
+  LOG(paddle_mobile::kLOG_DEBUG) << "test debug"
+                                 << " next log";
+  LOG(paddle_mobile::kLOG_DEBUG1) << "test debug1"
+                                  << " next log";
+  LOG(paddle_mobile::kLOG_DEBUG2) << "test debug2"
+                                  << " next log";
+  DLOG << "test DLOG";
+  LOG(paddle_mobile::kLOG_ERROR) << " error occur !";
+  return 0;
 }
-
-} // namespace operators
-} // namespace paddle_mobile
