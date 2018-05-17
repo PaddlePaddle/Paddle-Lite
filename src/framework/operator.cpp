@@ -21,22 +21,22 @@ SOFTWARE.
 
 namespace paddle_mobile {
     namespace framework {
-      
-template <typename Dtype>
-OperatorBase<Dtype>::OperatorBase(const std::string &type,
-                                  const VariableNameMap &inputs,
-                                  const VariableNameMap &outputs,
-                                  const AttributeMap &attrs,
-                                  std::shared_ptr<Scope> scope)
-    : type_(type), inputs_(inputs), outputs_(outputs), attrs_(attrs),
-      scope_(scope) {
-  CheckAllInputOutputSet();
-}
-template <typename Dtype>
-void OperatorBase<Dtype>::CheckAllInputOutputSet() const {}
 
-template class OperatorBase<CPU>;
-template class OperatorWithKernel<CPU>;
+        template <typename Dtype>
+        OperatorBase<Dtype>::OperatorBase(const std::string &type,
+                                          const VariableNameMap &inputs,
+                                          const VariableNameMap &outputs,
+                                          const AttributeMap &attrs,
+                                          std::shared_ptr<Scope> scope)
+            : type_(type), inputs_(inputs), outputs_(outputs), attrs_(attrs),
+              scope_(scope) {
+            CheckAllInputOutputSet();
+        }
+        template <typename Dtype>
+        void OperatorBase<Dtype>::CheckAllInputOutputSet() const {}
+
+        template class OperatorBase<CPU>;
+        template class OperatorWithKernel<CPU>;
 
     } // namespace framework
 } // namespace paddle_mobile
