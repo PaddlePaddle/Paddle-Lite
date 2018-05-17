@@ -7,7 +7,7 @@ os:
   - linux
 env:
   global:
-    # CMake
+    - JOB=check_style
     - CMAKE_URL=https://cmake.org/files/v3.11/cmake-3.11.1-Linux-x86_64.tar.gz
 addons:
   apt:
@@ -43,8 +43,9 @@ install:
 
 script:
   - |
+    
     function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
-    echo "==============="
+    echo "========allonli======="
   - |
     timeout 600 .travis/${JOB}.sh # 10min timeout
     RESULT=$?; if [ $RESULT -eq 0 ] || [ $RESULT -eq 142 ]; then true; else exit 1; fi;
