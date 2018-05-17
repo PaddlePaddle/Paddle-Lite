@@ -42,15 +42,19 @@ namespace paddle_mobile {
                     //    std::cout << " ops " << ops.size() << std::endl;
                     for (int j = 0; j < ops.size(); ++j) {
                         std::shared_ptr<OpDesc> op = ops[j];
-                        if (op->Type() == "elementwise_add") {
-                            if (op->GetAttrMap().at("axis").Get<int>() != -1) {
-                                std::cout
-                                    << "attr: axis = "
-                                    << op->GetAttrMap().at("axis").Get<int>()
-                                    << std::endl;
-                            }
-                        }
-                        std::cout << "op:" << op->Type() << std::endl;
+                        //                        if (op->Type() ==
+                        //                        "elementwise_add") {
+                        //                            if
+                        //                            (op->GetAttrMap().at("axis").Get<int>()
+                        //                            != -1) {
+                        //                                std::cout
+                        //                                    << "attr: axis = "
+                        //                                    <<
+                        //                                    op->GetAttrMap().at("axis").Get<int>()
+                        //                                    << std::endl;
+                        //                            }
+                        //                        }
+                        // std::cout << "op:" << op->Type() << std::endl;
                         if (op->Type() == "elementwise_add" &&
                             op->Input("X")[0] == "batch_norm_2.tmp_2") {
                             std::cout << " elementwise_add attr size: "
@@ -138,6 +142,8 @@ namespace paddle_mobile {
 
     namespace test {
         void testElementwiseAdd() {
+            std::cout << "----------**********----------" << std::endl;
+            std::cout << "begin to run ElementAddOp Test" << std::endl;
             paddle_mobile::Loader<paddle_mobile::CPU> loader;
             auto program = loader.Load(
                 std::string("../../test/models/"
