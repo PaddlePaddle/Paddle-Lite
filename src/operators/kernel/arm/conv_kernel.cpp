@@ -40,9 +40,9 @@ namespace paddle_mobile {
         template <>
         void ConvKernel<CPU, float, ConvParam>::Compute(
             const ConvParam &param) const {
-            const Tensor *input = param.Input();
+            LOG(kLOG_DEBUG) << param;
 
-            std::cout << " conv param " << param << std::endl;
+            const Tensor *input = param.Input();
 
             // The filter will be reshaped in the calculations,
             // so here use an assignment operation,
@@ -57,7 +57,7 @@ namespace paddle_mobile {
             std::vector<int> paddings = param.Paddings();
             std::vector<int> dilations = param.Dilations();
 
-            std::cout << " compute end get Attrs " << strides[0] << std::endl;
+            DLOG << " compute end get Attrs " << strides[0];
 
             const int batch_size = static_cast<int>(input->dims()[0]);
 
@@ -109,10 +109,6 @@ namespace paddle_mobile {
             framework::DDim filter_matrix_shape = {
                 filter.dims()[0], filter.numel() / filter.dims()[0]};
             filter.Resize(filter_matrix_shape);
-
-            std::cout << " input dim " << input->dims() << std::endl;
-
-            std::cout << " output dim " << output->dims() << std::endl;
 
             framework::DDim output_matrix_shape = {
                 output->dims()[1],
