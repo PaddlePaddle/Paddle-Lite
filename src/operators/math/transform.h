@@ -37,21 +37,19 @@ namespace math {
 //       class, paddle::fluid::operators::RowwiseTRansformIterator.
 
 struct Transform {
-  template<typename InputIter, typename OutputIter,
-      typename UnaryOperation>
-  void operator()(InputIter first, InputIter last,
-                  OutputIter result, UnaryOperation op) {
-    std::transform(first, last, result, op);
-  }
+    template <typename InputIter, typename OutputIter, typename UnaryOperation>
+    void operator()(InputIter first, InputIter last, OutputIter result,
+                    UnaryOperation op) {
+        std::transform(first, last, result, op);
+    }
 
-  template<typename InputIter1, typename InputIter2,
-      typename OutputIter, typename BinaryOperation>
-  void operator()(InputIter1 first1, InputIter1 last1,
-                  InputIter2 first2, OutputIter result,
-                  BinaryOperation op) {
-    std::transform(first1, last1, first2, result, op);
-  }
+    template <typename InputIter1, typename InputIter2, typename OutputIter,
+              typename BinaryOperation>
+    void operator()(InputIter1 first1, InputIter1 last1, InputIter2 first2,
+                    OutputIter result, BinaryOperation op) {
+        std::transform(first1, last1, first2, result, op);
+    }
 };
-}
-} // namespace platform
-} // namespace paddle
+} // namespace math
+} // namespace operators
+} // namespace paddle_mobile

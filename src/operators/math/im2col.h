@@ -87,26 +87,24 @@ enum class ColFormat { kCFO = 0, kOCF = 1 };
  * equal to
  *       colShape.inputChannels.
  */
-template<ColFormat Format, typename DeviceType, typename T>
+template <ColFormat Format, typename DeviceType, typename T>
 class Im2ColFunctor {
-public:
-  void operator()(const framework::Tensor &im,
-                  const std::vector<int> &dilation,
-                  const std::vector<int> &stride,
-                  const std::vector<int> &padding,
-                  framework::Tensor *col);
+  public:
+    void operator()(const framework::Tensor &im,
+                    const std::vector<int> &dilation,
+                    const std::vector<int> &stride,
+                    const std::vector<int> &padding, framework::Tensor *col);
 };
 
-template<ColFormat Format, typename DeviceType, typename T>
+template <ColFormat Format, typename DeviceType, typename T>
 class Col2ImFunctor {
-public:
-  void operator()(const framework::Tensor &col,
-                  const std::vector<int> &dilation,
-                  const std::vector<int> &stride,
-                  const std::vector<int> &padding,
-                  framework::Tensor *im);
+  public:
+    void operator()(const framework::Tensor &col,
+                    const std::vector<int> &dilation,
+                    const std::vector<int> &stride,
+                    const std::vector<int> &padding, framework::Tensor *im);
 };
 
 } // namespace math
-}     // namespace operators
+} // namespace operators
 } // namespace paddle_mobile

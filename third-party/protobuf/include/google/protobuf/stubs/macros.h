@@ -37,15 +37,15 @@ namespace google {
 namespace protobuf {
 
 #undef GOOGLE_DISALLOW_EVIL_CONSTRUCTORS
-#define GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(TypeName) \
-  TypeName(const TypeName&);                        \
-  void operator=(const TypeName&)
+#define GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(TypeName)                            \
+    TypeName(const TypeName &);                                                \
+    void operator=(const TypeName &)
 
 #undef GOOGLE_DISALLOW_IMPLICIT_CONSTRUCTORS
-#define GOOGLE_DISALLOW_IMPLICIT_CONSTRUCTORS(TypeName) \
-  TypeName();                                           \
-  TypeName(const TypeName&);                            \
-  void operator=(const TypeName&)
+#define GOOGLE_DISALLOW_IMPLICIT_CONSTRUCTORS(TypeName)                        \
+    TypeName();                                                                \
+    TypeName(const TypeName &);                                                \
+    void operator=(const TypeName &)
 
 // ===================================================================
 // from google3/base/basictypes.h
@@ -85,9 +85,9 @@ namespace protobuf {
 // Kudos to Jorg Brown for this simple and elegant implementation.
 
 #undef GOOGLE_ARRAYSIZE
-#define GOOGLE_ARRAYSIZE(a)     \
-  ((sizeof(a) / sizeof(*(a))) / \
-   static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))))
+#define GOOGLE_ARRAYSIZE(a)                                                    \
+    ((sizeof(a) / sizeof(*(a))) /                                              \
+     static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))))
 
 // The COMPILE_ASSERT macro can be used to verify that a compile time
 // expression is true. For example, you could use it to verify the
@@ -106,19 +106,18 @@ namespace protobuf {
 
 namespace internal {
 
-template <bool>
-struct CompileAssert {};
+template <bool> struct CompileAssert {};
 
-}  // namespace internal
+} // namespace internal
 
 #undef GOOGLE_COMPILE_ASSERT
 #if __cplusplus >= 201103L
 #define GOOGLE_COMPILE_ASSERT(expr, msg) static_assert(expr, #msg)
 #else
-#define GOOGLE_COMPILE_ASSERT(expr, msg)                    \
-  ::google::protobuf::internal::CompileAssert<(bool(expr))> \
-      msg[bool(expr) ? 1 : -1];                             \
-  (void)msg
+#define GOOGLE_COMPILE_ASSERT(expr, msg)                                       \
+    ::google::protobuf::internal::CompileAssert<(bool(expr))>                  \
+        msg[bool(expr) ? 1 : -1];                                              \
+    (void)msg
 // Implementation details of COMPILE_ASSERT:
 //
 // - COMPILE_ASSERT works by defining an array type that has -1
@@ -159,9 +158,9 @@ struct CompileAssert {};
 //
 //   This is to avoid running into a bug in MS VC 7.1, which
 //   causes ((0.0) ? 1 : -1) to incorrectly evaluate to 1.
-#endif  // __cplusplus >= 201103L
+#endif // __cplusplus >= 201103L
 
-}  // namespace protobuf
-}  // namespace google
+} // namespace protobuf
+} // namespace google
 
-#endif  // GOOGLE_PROTOBUF_MACROS_H__
+#endif // GOOGLE_PROTOBUF_MACROS_H__

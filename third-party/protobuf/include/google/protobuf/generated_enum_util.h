@@ -41,7 +41,7 @@ namespace protobuf {
 template <typename T>
 struct is_proto_enum : ::google::protobuf::internal::false_type {};
 
-}  // namespace protobuf
+} // namespace protobuf
 
-}  // namespace google
-#endif  // GOOGLE_PROTOBUF_GENERATED_ENUM_UTIL_H__
+} // namespace google
+#endif // GOOGLE_PROTOBUF_GENERATED_ENUM_UTIL_H__

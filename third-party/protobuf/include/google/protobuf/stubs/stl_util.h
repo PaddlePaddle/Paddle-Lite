@@ -50,11 +50,11 @@ namespace protobuf {
 // stale pointer.
 template <class ForwardIterator>
 void STLDeleteContainerPointers(ForwardIterator begin, ForwardIterator end) {
-  while (begin != end) {
-    ForwardIterator temp = begin;
-    ++begin;
-    delete *temp;
-  }
+    while (begin != end) {
+        ForwardIterator temp = begin;
+        ++begin;
+        delete *temp;
+    }
 }
 
 // Inside Google, this function implements a horrible, disgusting hack in which
@@ -63,8 +63,8 @@ void STLDeleteContainerPointers(ForwardIterator begin, ForwardIterator end) {
 // improve performance.  However, since it's totally non-portable it has no
 // place in open source code.  Feel free to fill this function in with your
 // own disgusting hack if you want the perf boost.
-inline void STLStringResizeUninitialized(string* s, size_t new_size) {
-  s->resize(new_size);
+inline void STLStringResizeUninitialized(string *s, size_t new_size) {
+    s->resize(new_size);
 }
 
 // Return a mutable char* pointing to a string's internal buffer,
@@ -79,9 +79,9 @@ inline void STLStringResizeUninitialized(string* s, size_t new_size) {
 // (http://www.open-std.org/JTC1/SC22/WG21/docs/lwg-active.html#530)
 // proposes this as the method. According to Matt Austern, this should
 // already work on all current implementations.
-inline char* string_as_array(string* str) {
-  // DO NOT USE const_cast<char*>(str->data())! See the unittest for why.
-  return str->empty() ? NULL : &*str->begin();
+inline char *string_as_array(string *str) {
+    // DO NOT USE const_cast<char*>(str->data())! See the unittest for why.
+    return str->empty() ? NULL : &*str->begin();
 }
 
 // STLDeleteElements() deletes all the elements in an STL container and clears
@@ -94,27 +94,27 @@ inline char* string_as_array(string* str) {
 // As an alternative to calling STLDeleteElements() directly, consider
 // ElementDeleter (defined below), which ensures that your container's elements
 // are deleted when the ElementDeleter goes out of scope.
-template <class T>
-void STLDeleteElements(T* container) {
-  if (!container) return;
-  STLDeleteContainerPointers(container->begin(), container->end());
-  container->clear();
+template <class T> void STLDeleteElements(T *container) {
+    if (!container)
+        return;
+    STLDeleteContainerPointers(container->begin(), container->end());
+    container->clear();
 }
 
 // Given an STL container consisting of (key, value) pairs, STLDeleteValues
 // deletes all the "value" components and clears the container.  Does nothing
 // in the case it's given a NULL pointer.
 
-template <class T>
-void STLDeleteValues(T* v) {
-  if (!v) return;
-  for (typename T::iterator i = v->begin(); i != v->end(); ++i) {
-    delete i->second;
-  }
-  v->clear();
+template <class T> void STLDeleteValues(T *v) {
+    if (!v)
+        return;
+    for (typename T::iterator i = v->begin(); i != v->end(); ++i) {
+        delete i->second;
+    }
+    v->clear();
 }
 
-}  // namespace protobuf
-}  // namespace google
+} // namespace protobuf
+} // namespace google
 
-#endif  // GOOGLE_PROTOBUF_STUBS_STL_UTIL_H__
+#endif // GOOGLE_PROTOBUF_STUBS_STL_UTIL_H__

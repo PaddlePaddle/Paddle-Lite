@@ -25,28 +25,27 @@ namespace operators {
 
 using namespace framework;
 
-template<typename DeviceType, typename T>
+template <typename DeviceType, typename T>
 class MulOp : public framework::OperatorWithKernel<DeviceType> {
-public:
-  MulOp(const std::string &type, const VariableNameMap &inputs,
-        const VariableNameMap &outputs,
-        const framework::AttributeMap attrs,
-        std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType>(
-      type, inputs, outputs, attrs, scope),
-        param_(inputs, outputs, attrs, *scope) {}
+  public:
+    MulOp(const std::string &type, const VariableNameMap &inputs,
+          const VariableNameMap &outputs, const framework::AttributeMap attrs,
+          std::shared_ptr<framework::Scope> scope)
+        : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs,
+                                                    attrs, scope),
+          param_(inputs, outputs, attrs, *scope) {}
 
-  void Run() const {
-    operators::MulKernel<DeviceType, T, MulParam> kernel;
-    kernel.Compute(param_);
-  }
+    void Run() const {
+        operators::MulKernel<DeviceType, T, MulParam> kernel;
+        kernel.Compute(param_);
+    }
 
-  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
-  void InferShape() const override;
+    using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+    void InferShape() const override;
 
-protected:
-  MulParam param_;
+  protected:
+    MulParam param_;
 };
 
 } // namespace operators
-} // namespace paddle
+} // namespace paddle_mobile
