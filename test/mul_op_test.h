@@ -34,57 +34,47 @@ namespace paddle_mobile {
 
                 const std::vector<std::shared_ptr<BlockDesc>> blocks =
                     to_predict_program_->Blocks();
-                //  std::cout << " **block size " << blocks.size() << std::endl;
+                //  DLOG << " **block size " << blocks.size();
                 for (int i = 0; i < blocks.size(); ++i) {
                     std::shared_ptr<BlockDesc> block_desc = blocks[i];
                     std::vector<std::shared_ptr<OpDesc>> ops =
                         block_desc->Ops();
-                    //    std::cout << " ops " << ops.size() << std::endl;
+                    //    DLOG << " ops " << ops.size();
                     for (int j = 0; j < ops.size(); ++j) {
                         std::shared_ptr<OpDesc> op = ops[j];
-                        if (op->Type() == "mul") {
-                            std::cout << "x_num_col_dims : "
-                                      << op->GetAttrMap()
-                                             .at("x_num_col_dims")
-                                             .Get<int>()
-                                      << std::endl;
-                            std::cout << "y_num_col_dims : "
-                                      << op->GetAttrMap()
-                                             .at("y_num_col_dims")
-                                             .Get<int>()
-                                      << std::endl;
-                            std::cout << " Input X is : " << op->Input("X")[0]
-                                      << std::endl;
-                        }
-                        // std::cout << "op:" << op->Type() << std::endl;
+                        //                        if (op->Type() == "mul") {
+                        //                            DLOG << "x_num_col_dims :
+                        //                            "
+                        //                                 << op->GetAttrMap()
+                        //                                        .at("x_num_col_dims")
+                        //                                        .Get<int>();
+                        //                            DLOG << "y_num_col_dims :
+                        //                            "
+                        //                                 << op->GetAttrMap()
+                        //                                        .at("y_num_col_dims")
+                        //                                        .Get<int>();
+                        //                            DLOG << " Input X is : "
+                        //                            << op->Input("X")[0];
+                        //                        }
+                        //                        DLOG << "op:" << op->Type();
                         if (op->Type() == "mul" &&
                             op->Input("X")[0] == "pool2d_0.tmp_0") {
-                            std::cout
-                                << " mul attr size: " << op->GetAttrMap().size()
-                                << std::endl;
-                            std::cout
-                                << " inputs size: " << op->GetInputs().size()
-                                << std::endl;
-                            std::cout
-                                << " outputs size: " << op->GetOutputs().size()
-                                << std::endl;
-                            std::cout << " Input X is : " << op->Input("X")[0]
-                                      << std::endl;
-                            std::cout << " Input Y is : " << op->Input("Y")[0]
-                                      << std::endl;
-                            std::cout
-                                << " Output Out is : " << op->Output("Out")[0]
-                                << std::endl;
-                            std::cout << "x_num_col_dims : "
-                                      << op->GetAttrMap()
-                                             .at("x_num_col_dims")
-                                             .Get<int>()
-                                      << std::endl;
-                            std::cout << "y_num_col_dims : "
-                                      << op->GetAttrMap()
-                                             .at("y_num_col_dims")
-                                             .Get<int>()
-                                      << std::endl;
+                            DLOG << " mul attr size: "
+                                 << op->GetAttrMap().size();
+                            DLOG << " inputs size: " << op->GetInputs().size();
+                            DLOG << " outputs size: "
+                                 << op->GetOutputs().size();
+                            DLOG << " Input X is : " << op->Input("X")[0];
+                            DLOG << " Input Y is : " << op->Input("Y")[0];
+                            DLOG << " Output Out is : " << op->Output("Out")[0];
+                            DLOG << "x_num_col_dims : "
+                                 << op->GetAttrMap()
+                                        .at("x_num_col_dims")
+                                        .Get<int>();
+                            DLOG << "y_num_col_dims : "
+                                 << op->GetAttrMap()
+                                        .at("y_num_col_dims")
+                                        .Get<int>();
 
                             std::shared_ptr<operators::MulOp<Dtype, float>>
                                 add = std::make_shared<
@@ -112,9 +102,8 @@ namespace paddle_mobile {
                 Variable *con_output = scope->Var("fc_0.tmp_0");
                 Tensor *output_tensor = con_output->GetMutable<Tensor>();
                 output_tensor->mutable_data<float>({3, 3});
-                //  std::cout << typeid(output_tensor).name() << std::endl;
-                //  std::cout << "output_tensor dims: " << output_tensor->dims()
-                //  << std::endl;
+                //  DLOG << typeid(output_tensor).name();
+                //  DLOG << "output_tensor dims: " << output_tensor->dims();
 
                 std::shared_ptr<Tensor> out_tensor =
                     std::make_shared<LoDTensor>();
@@ -138,7 +127,7 @@ namespace paddle_mobile {
                 for (int j = 0;
                      j < ops_of_block_[*to_predict_block.get()].size(); ++j) {
                     auto op = ops_of_block_[*to_predict_block.get()][j];
-                    std::cout << "op -> run()" << std::endl;
+                    DLOG << "op -> run()";
                     op->Run();
                 }
             }
@@ -149,8 +138,8 @@ namespace paddle_mobile {
 
     namespace test {
         void testMul() {
-            std::cout << "----------**********----------" << std::endl;
-            std::cout << "begin to run MulOp Test" << std::endl;
+            DLOG << "----------**********----------";
+            DLOG << "begin to run MulOp Test";
             paddle_mobile::Loader<paddle_mobile::CPU> loader;
             auto program = loader.Load(
                 std::string("../../test/models/"
@@ -175,40 +164,39 @@ namespace paddle_mobile {
             float *output_mul_ptr = output_mul->data<float>();
 
             auto dimx_1 = inputx.numel() / inputx.dims()[0];
-            std::cout << "inputx : " << std::endl;
+            DLOG << " inputx : ";
             for (int i = 0; i < inputx.dims()[0]; ++i) {
                 for (int j = 0; j < dimx_1; ++j) {
-                    std::cout << inputx_ptr[i * dimx_1 + j] << " ";
+                    DLOGF("%f ", inputx_ptr[i * dimx_1 + j]);
                 }
-                std::cout << std::endl;
+                DLOGF("\n");
             }
 
             auto dimy_1 = inputy.numel() / inputy.dims()[0];
-            std::cout << "inputy : " << std::endl;
+            DLOG << " inputy : ";
             for (int i = 0; i < inputy.dims()[0]; ++i) {
                 for (int j = 0; j < dimy_1; ++j) {
-                    std::cout << inputy_ptr[i * dimy_1 + j] << " ";
+                    DLOGF("%f ", inputy_ptr[i * dimx_1 + j]);
                 }
-                std::cout << std::endl;
+                DLOGF("\n");
             }
 
             auto dim_output_1 = output_mul->numel() / output_mul->dims()[0];
-            std::cout << "output : " << std::endl;
+            DLOG << " output : ";
             for (int i = 0; i < output_mul->dims()[0]; ++i) {
                 for (int j = 0; j < dim_output_1; ++j) {
-                    std::cout << output_mul_ptr[i * dimy_1 + j] << " ";
+                    DLOGF("%f ", output_mul_ptr[i * dimy_1 + j]);
                 }
-                std::cout << std::endl;
+                DLOGF("\n");
             }
 
             /// output (3,3)
-            std::cout << "output memory size : " << output_mul->memory_size()
-                      << std::endl;
-            std::cout << "output numel : " << output_mul->numel() << std::endl;
+            DLOG << "output memory size : " << output_mul->memory_size();
+            DLOG << "output numel : " << output_mul->numel();
 
-            std::cout << inputx_ptr[0] << " x " << inputy_ptr[0] << " + "
-                      << inputx_ptr[1] << " x " << inputy_ptr[0 + 3] << " = "
-                      << output_mul_ptr[0] << std::endl;
+            DLOG << inputx_ptr[0] << " x " << inputy_ptr[0] << " + "
+                 << inputx_ptr[1] << " x " << inputy_ptr[0 + 3] << " = "
+                 << output_mul_ptr[0];
         }
     } // namespace test
 } // namespace paddle_mobile
