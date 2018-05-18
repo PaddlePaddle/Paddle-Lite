@@ -17,7 +17,6 @@ SOFTWARE.
 ==============================================================================*/
 
 #include <fstream>
-#include <iostream>
 
 #include "common/log.h"
 #include "framework/framework.pb.h"
@@ -42,27 +41,26 @@ namespace paddle_mobile {
     template <typename Dtype, Precision P>
     void Loader<Dtype, P>::LoadVar(framework::LoDTensor *tensor,
                                    const std::string &file_path) {
-
-        LOG(kLOG_DEBUG) << "  to load " << file_path;
+        //        LOG(kLOG_DEBUG) << "  to load " << file_path;
         //  Log(kLOG_DEBUG) << "123";
 
         std::ifstream is(file_path);
 
         std::streampos pos = is.tellg(); //   save   current   position
         is.seekg(0, std::ios::end);
-        LOG(kLOG_DEBUG) << "  file length = " << is.tellg();
+        //        LOG(kLOG_DEBUG) << "  file length = " << is.tellg();
         is.seekg(pos); //   restore   saved   position
 
         // 1. version
         uint32_t version;
         is.read(reinterpret_cast<char *>(&version), sizeof(version));
-        LOG(kLOG_INFO) << "   version: " << version;
+        //        LOG(kLOG_INFO) << "   version: " << version;
 
         // 2 Lod information
         uint64_t lod_level;
         is.read(reinterpret_cast<char *>(&lod_level), sizeof(lod_level));
-        LOG(kLOG_DEBUG) << "   load level: " << lod_level;
-        LOG(kLOG_DEBUG) << "   lod info: ";
+        //        LOG(kLOG_DEBUG) << "   load level: " << lod_level;
+        //        LOG(kLOG_DEBUG) << "   lod info: ";
         auto &lod = *tensor->mutable_lod();
         lod.resize(lod_level);
         for (uint64_t i = 0; i < lod_level; ++i) {
@@ -197,32 +195,26 @@ namespace paddle_mobile {
 #ifdef PADDLE_MOBILE_DEBUG
         for (int i = 0; i < program_desc_proto.blocks().size(); ++i) {
             framework::proto::BlockDesc block = program_desc_proto.blocks()[i];
-            //    std::cout << "block: " << block.idx() << std::endl;
+            LOG(kLOG_DEBUG) << "block: " << block.idx();
             for (int j = 0; j < block.ops().size(); ++j) {
                 framework::proto::OpDesc op = block.ops()[j];
-
-                //      std::cout << " op: " << op.type() << std::endl;
+                LOG(kLOG_DEBUG1) << " op: " << op.type();
                 for (int m = 0; m < op.inputs_size(); ++m) {
                     const framework::proto::OpDesc::Var &var = op.inputs(m);
-                    //        std::cout << "  input parameter: " <<
-                    //        var.parameter() <<
-                    //        std::endl;
+                    LOG(kLOG_DEBUG2) << "  input parameter: "
+                                     << var.parameter();
                     for (int n = 0; n < var.arguments().size(); ++n) {
-                        //          std::cout << "   argument - " <<
-                        //          var.arguments()[n] <<
-                        //          std::endl;
+                        LOG(kLOG_DEBUG3) << "   argument - "
+                                         << var.arguments()[n];
                     }
                 }
 
                 for (int y = 0; y < op.outputs_size(); ++y) {
                     const framework::proto::OpDesc::Var &var = op.outputs(y);
-                    //        std::cout << "  output parameter: " <<
-                    //        var.parameter() <<
-                    //        std::endl;
+                    LOG(kLOG_DEBUG2) << "  out parameter: " << var.parameter();
                     for (int z = 0; z < var.arguments().size(); ++z) {
-                        //          std::cout << "   argument - " <<
-                        //          var.arguments()[z] <<
-                        //          std::endl;
+                        LOG(kLOG_DEBUG3) << "   argument - "
+                                         << var.arguments()[z];
                     }
                 }
 
