@@ -18,19 +18,18 @@ SOFTWARE.
 
 #pragma once
 
-#include "stdio.h"
-#include <string>
+#include "framework/program_desc.h"
 
 namespace paddle_mobile {
-
-class PaddleMobileObject {
+namespace framework {
+class ProgramOptimize {
   public:
-    virtual std::string ToString() {
-        char address[128] = {0};
-        sprintf(address, "%p", this);
-        return std::string(address);
-    }
+    ProgramOptimize(std::shared_ptr<ProgramDesc> ori_desc)
+        : ori_desc_(ori_desc) {}
+    std::shared_ptr<ProgramDesc> Optimize();
 
   private:
+    std::shared_ptr<ProgramDesc> ori_desc_;
 };
+} // namespace framework
 } // namespace paddle_mobile
