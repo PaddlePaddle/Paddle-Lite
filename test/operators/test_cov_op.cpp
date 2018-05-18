@@ -16,26 +16,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#include "elementwise_add_op_test.h"
+#include "../test_helper.h"
 #include "framework/executor.h"
 #include "io.h"
-#include "mul_op_test.h"
-#include "test_helper.h"
-
-//
-// template <typename T>
-// void SetupTensor(paddle::framework::LoDTensor* input,
-//                 paddle::framework::DDim dims, T lower, T upper) {
-//    static unsigned int seed = 100;
-//    std::mt19937 rng(seed++);
-//    std::uniform_real_distribution<double> uniform_dist(0, 1);
-//
-//    T* input_ptr = input->mutable_data<T>(dims, paddle::platform::CPUPlace());
-//    for (int i = 0; i < input->numel(); ++i) {
-//        input_ptr[i] = static_cast<T>(uniform_dist(rng) * (upper - lower) +
-//        lower);
-//    }
-//}
 
 int main() {
 
@@ -52,8 +35,7 @@ int main() {
     //    }
 
     paddle_mobile::Loader<paddle_mobile::CPU> loader;
-    auto program = loader.Load(std::string(
-        "../../test/models/image_classification_resnet.inference.model"));
+    auto program = loader.Load(std::string("../../../test/models/googlenet"));
 
     paddle_mobile::framework::Executor<paddle_mobile::CPU> executor(program);
 
@@ -77,7 +59,6 @@ int main() {
     //  for (int j = 0; j < output->numel(); ++j) {
     //    std::cout << " value of output: " << output_ptr[j] << std::endl;
     //
-    paddle_mobile::test::testElementwiseAdd();
-    paddle_mobile::test::testMul();
+
     return 0;
 }
