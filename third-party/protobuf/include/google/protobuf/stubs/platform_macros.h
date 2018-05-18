@@ -31,8 +31,8 @@
 #ifndef GOOGLE_PROTOBUF_PLATFORM_MACROS_H_
 #define GOOGLE_PROTOBUF_PLATFORM_MACROS_H_
 
-#define GOOGLE_PROTOBUF_PLATFORM_ERROR \
-#error "Host platform was not detected as supported by protobuf"
+#define GOOGLE_PROTOBUF_PLATFORM_ERROR                                         \
+    #error "Host platform was not detected as supported by protobuf"
 
 // Processor architecture detection.  For more info on what's defined, see:
 //   http://msdn.microsoft.com/en-us/library/b0084kay.aspx
@@ -114,7 +114,7 @@ GOOGLE_PROTOBUF_PLATFORM_ERROR
 
 #undef GOOGLE_PROTOBUF_PLATFORM_ERROR
 
-#if defined(GOOGLE_PROTOBUF_OS_ANDROID) || \
+#if defined(GOOGLE_PROTOBUF_OS_ANDROID) ||                                     \
     defined(GOOGLE_PROTOBUF_OS_IPHONE) || defined(__OpenBSD__)
 // Android ndk does not support the __thread keyword very well yet. Here
 // we use pthread_key_create()/pthread_getspecific()/... methods for
@@ -123,4 +123,4 @@ GOOGLE_PROTOBUF_PLATFORM_ERROR
 #define GOOGLE_PROTOBUF_NO_THREADLOCAL
 #endif
 
-#endif  // GOOGLE_PROTOBUF_PLATFORM_MACROS_H_
+#endif // GOOGLE_PROTOBUF_PLATFORM_MACROS_H_

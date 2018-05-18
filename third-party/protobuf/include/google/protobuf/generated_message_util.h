@@ -86,22 +86,21 @@ namespace internal {
 // For Clang we use __builtin_offsetof() and suppress the warning,
 // to avoid Control Flow Integrity and UBSan vptr sanitizers from
 // crashing while trying to validate the invalid reinterpet_casts.
-#define GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TYPE, FIELD) \
-  _Pragma("clang diagnostic push")                                  \
-      _Pragma(                                                      \
-          "clang diagnostic ignored "                               \
-          "\"-Winvalid-offsetof\"") __builtin_offsetof(TYPE, FIELD) \
-          _Pragma("clang diagnostic pop")
+#define GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TYPE, FIELD)            \
+    _Pragma("clang diagnostic push")                                           \
+        _Pragma("clang diagnostic ignored "                                    \
+                "\"-Winvalid-offsetof\"") __builtin_offsetof(TYPE, FIELD)      \
+            _Pragma("clang diagnostic pop")
 #else
 // Note that we calculate relative to the pointer value 16 here since if we
 // just use zero, GCC complains about dereferencing a NULL pointer.  We
 // choose 16 rather than some other number just in case the compiler would
 // be confused by an unaligned pointer.
-#define GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TYPE, FIELD) \
-  static_cast<::google::protobuf::uint32>(                          \
-      reinterpret_cast<const char*>(                                \
-          &reinterpret_cast<const TYPE*>(16)->FIELD) -              \
-      reinterpret_cast<const char*>(16))
+#define GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TYPE, FIELD)            \
+    static_cast<::google::protobuf::uint32>(                                   \
+        reinterpret_cast<const char *>(                                        \
+            &reinterpret_cast<const TYPE *>(16)->FIELD) -                      \
+        reinterpret_cast<const char *>(16))
 #endif
 
 // Constants for special floating point values.
@@ -113,171 +112,170 @@ LIBPROTOBUF_EXPORT double NaN();
 // helper here to keep the protobuf compiler from ever having to emit loops in
 // IsInitialized() methods.  We want the C++ compiler to inline this or not
 // as it sees fit.
-template <class Type>
-bool AllAreInitialized(const Type& t) {
-  for (int i = t.size(); --i >= 0;) {
-    if (!t.Get(i).IsInitialized()) return false;
-  }
-  return true;
+template <class Type> bool AllAreInitialized(const Type &t) {
+    for (int i = t.size(); --i >= 0;) {
+        if (!t.Get(i).IsInitialized())
+            return false;
+    }
+    return true;
 }
 
 LIBPROTOBUF_EXPORT void InitProtobufDefaults();
 
 struct LIBPROTOBUF_EXPORT FieldMetadata {
-  uint32 offset;  // offset of this field in the struct
-  uint32 tag;     // field * 8 + wire_type
-  // byte offset * 8 + bit_offset;
-  // if the high bit is set then this is the byte offset of the oneof_case
-  // for this field.
-  uint32 has_offset;
-  uint32 type;      // the type of this field.
-  const void* ptr;  // auxiliary data
+    uint32 offset; // offset of this field in the struct
+    uint32 tag;    // field * 8 + wire_type
+    // byte offset * 8 + bit_offset;
+    // if the high bit is set then this is the byte offset of the oneof_case
+    // for this field.
+    uint32 has_offset;
+    uint32 type;     // the type of this field.
+    const void *ptr; // auxiliary data
 
-  // From the serializer point of view each fundamental type can occur in
-  // 4 different ways. For simplicity we treat all combinations as a cartesion
-  // product although not all combinations are allowed.
-  enum FieldTypeClass {
-    kPresence,
-    kNoPresence,
-    kRepeated,
-    kPacked,
-    kOneOf,
-    kNumTypeClasses  // must be last enum
-  };
-  // C++ protobuf has 20 fundamental types, were we added Cord and StringPiece
-  // and also distinquish the same types if they have different wire format.
-  enum {
-    kCordType = 19,
-    kStringPieceType = 20,
-    kNumTypes = 20,
-    kSpecial = kNumTypes * kNumTypeClasses,
-  };
+    // From the serializer point of view each fundamental type can occur in
+    // 4 different ways. For simplicity we treat all combinations as a cartesion
+    // product although not all combinations are allowed.
+    enum FieldTypeClass {
+        kPresence,
+        kNoPresence,
+        kRepeated,
+        kPacked,
+        kOneOf,
+        kNumTypeClasses // must be last enum
+    };
+    // C++ protobuf has 20 fundamental types, were we added Cord and StringPiece
+    // and also distinquish the same types if they have different wire format.
+    enum {
+        kCordType = 19,
+        kStringPieceType = 20,
+        kNumTypes = 20,
+        kSpecial = kNumTypes * kNumTypeClasses,
+    };
 
-  static int CalculateType(int fundamental_type, FieldTypeClass type_class);
+    static int CalculateType(int fundamental_type, FieldTypeClass type_class);
 };
 
-inline bool IsPresent(const void* base, uint32 hasbit) {
-  const uint32* has_bits_array = static_cast<const uint32*>(base);
-  return has_bits_array[hasbit / 32] & (1u << (hasbit & 31));
+inline bool IsPresent(const void *base, uint32 hasbit) {
+    const uint32 *has_bits_array = static_cast<const uint32 *>(base);
+    return has_bits_array[hasbit / 32] & (1u << (hasbit & 31));
 }
 
-inline bool IsOneofPresent(const void* base, uint32 offset, uint32 tag) {
-  const uint32* oneof =
-      reinterpret_cast<const uint32*>(static_cast<const uint8*>(base) + offset);
-  return *oneof == tag >> 3;
+inline bool IsOneofPresent(const void *base, uint32 offset, uint32 tag) {
+    const uint32 *oneof = reinterpret_cast<const uint32 *>(
+        static_cast<const uint8 *>(base) + offset);
+    return *oneof == tag >> 3;
 }
 
 typedef void (*SpecialSerializer)(
-    const uint8* base, uint32 offset, uint32 tag, uint32 has_offset,
-    ::google::protobuf::io::CodedOutputStream* output);
+    const uint8 *base, uint32 offset, uint32 tag, uint32 has_offset,
+    ::google::protobuf::io::CodedOutputStream *output);
 
-LIBPROTOBUF_EXPORT void ExtensionSerializer(
-    const uint8* base, uint32 offset, uint32 tag, uint32 has_offset,
-    ::google::protobuf::io::CodedOutputStream* output);
-LIBPROTOBUF_EXPORT void UnknownFieldSerializerLite(
-    const uint8* base, uint32 offset, uint32 tag, uint32 has_offset,
-    ::google::protobuf::io::CodedOutputStream* output);
+LIBPROTOBUF_EXPORT void
+ExtensionSerializer(const uint8 *base, uint32 offset, uint32 tag,
+                    uint32 has_offset,
+                    ::google::protobuf::io::CodedOutputStream *output);
+LIBPROTOBUF_EXPORT void
+UnknownFieldSerializerLite(const uint8 *base, uint32 offset, uint32 tag,
+                           uint32 has_offset,
+                           ::google::protobuf::io::CodedOutputStream *output);
 
 struct SerializationTable {
-  int num_fields;
-  const FieldMetadata* field_table;
+    int num_fields;
+    const FieldMetadata *field_table;
 };
 
-LIBPROTOBUF_EXPORT void SerializeInternal(
-    const uint8* base, const FieldMetadata* table, int num_fields,
-    ::google::protobuf::io::CodedOutputStream* output);
+LIBPROTOBUF_EXPORT void
+SerializeInternal(const uint8 *base, const FieldMetadata *table, int num_fields,
+                  ::google::protobuf::io::CodedOutputStream *output);
 
-inline void TableSerialize(const ::google::protobuf::MessageLite& msg,
-                           const SerializationTable* table,
-                           ::google::protobuf::io::CodedOutputStream* output) {
-  const FieldMetadata* field_table = table->field_table;
-  int num_fields = table->num_fields - 1;
-  const uint8* base = reinterpret_cast<const uint8*>(&msg);
-  // TODO(gerbens) This skips the first test if we could use the fast
-  // array serialization path, we should make this
-  // int cached_size =
-  //    *reinterpret_cast<const int32*>(base + field_table->offset);
-  // SerializeWithCachedSize(msg, field_table + 1, num_fields, cached_size, ...)
-  // But we keep conformance with the old way for now.
-  SerializeInternal(base, field_table + 1, num_fields, output);
+inline void TableSerialize(const ::google::protobuf::MessageLite &msg,
+                           const SerializationTable *table,
+                           ::google::protobuf::io::CodedOutputStream *output) {
+    const FieldMetadata *field_table = table->field_table;
+    int num_fields = table->num_fields - 1;
+    const uint8 *base = reinterpret_cast<const uint8 *>(&msg);
+    // TODO(gerbens) This skips the first test if we could use the fast
+    // array serialization path, we should make this
+    // int cached_size =
+    //    *reinterpret_cast<const int32*>(base + field_table->offset);
+    // SerializeWithCachedSize(msg, field_table + 1, num_fields, cached_size,
+    // ...) But we keep conformance with the old way for now.
+    SerializeInternal(base, field_table + 1, num_fields, output);
 }
 
-uint8* SerializeInternalToArray(const uint8* base, const FieldMetadata* table,
+uint8 *SerializeInternalToArray(const uint8 *base, const FieldMetadata *table,
                                 int num_fields, bool is_deterministic,
-                                uint8* buffer);
+                                uint8 *buffer);
 
-inline uint8* TableSerializeToArray(const ::google::protobuf::MessageLite& msg,
-                                    const SerializationTable* table,
-                                    bool is_deterministic, uint8* buffer) {
-  const uint8* base = reinterpret_cast<const uint8*>(&msg);
-  const FieldMetadata* field_table = table->field_table + 1;
-  int num_fields = table->num_fields - 1;
-  return SerializeInternalToArray(base, field_table, num_fields,
-                                  is_deterministic, buffer);
+inline uint8 *TableSerializeToArray(const ::google::protobuf::MessageLite &msg,
+                                    const SerializationTable *table,
+                                    bool is_deterministic, uint8 *buffer) {
+    const uint8 *base = reinterpret_cast<const uint8 *>(&msg);
+    const FieldMetadata *field_table = table->field_table + 1;
+    int num_fields = table->num_fields - 1;
+    return SerializeInternalToArray(base, field_table, num_fields,
+                                    is_deterministic, buffer);
 }
 
-template <typename T>
-struct CompareHelper {
-  bool operator()(const T& a, const T& b) { return a < b; }
+template <typename T> struct CompareHelper {
+    bool operator()(const T &a, const T &b) { return a < b; }
 };
 
-template <>
-struct CompareHelper<ArenaStringPtr> {
-  bool operator()(const ArenaStringPtr& a, const ArenaStringPtr& b) {
-    return a.Get() < b.Get();
-  }
+template <> struct CompareHelper<ArenaStringPtr> {
+    bool operator()(const ArenaStringPtr &a, const ArenaStringPtr &b) {
+        return a.Get() < b.Get();
+    }
 };
 
 struct CompareMapKey {
-  template <typename T>
-  bool operator()(const MapEntryHelper<T>& a, const MapEntryHelper<T>& b) {
-    return Compare(a.key_, b.key_);
-  }
-  template <typename T>
-  bool Compare(const T& a, const T& b) {
-    return CompareHelper<T>()(a, b);
-  }
+    template <typename T>
+    bool operator()(const MapEntryHelper<T> &a, const MapEntryHelper<T> &b) {
+        return Compare(a.key_, b.key_);
+    }
+    template <typename T> bool Compare(const T &a, const T &b) {
+        return CompareHelper<T>()(a, b);
+    }
 };
 
-template <typename MapFieldType, const SerializationTable* table>
-void MapFieldSerializer(const uint8* base, uint32 offset, uint32 tag,
+template <typename MapFieldType, const SerializationTable *table>
+void MapFieldSerializer(const uint8 *base, uint32 offset, uint32 tag,
                         uint32 has_offset,
-                        ::google::protobuf::io::CodedOutputStream* output) {
-  typedef MapEntryHelper<typename MapFieldType::EntryTypeTrait> Entry;
-  typedef typename MapFieldType::MapType::const_iterator Iter;
+                        ::google::protobuf::io::CodedOutputStream *output) {
+    typedef MapEntryHelper<typename MapFieldType::EntryTypeTrait> Entry;
+    typedef typename MapFieldType::MapType::const_iterator Iter;
 
-  const MapFieldType& map_field =
-      *reinterpret_cast<const MapFieldType*>(base + offset);
-  const SerializationTable* t =
-      table +
-      has_offset;  // has_offset is overloaded for maps to mean table offset
-  if (!output->IsSerializationDeterministic()) {
-    for (Iter it = map_field.GetMap().begin(); it != map_field.GetMap().end();
-         ++it) {
-      Entry map_entry(*it);
-      output->WriteVarint32(tag);
-      output->WriteVarint32(map_entry._cached_size_);
-      SerializeInternal(reinterpret_cast<const uint8*>(&map_entry),
-                        t->field_table, t->num_fields, output);
+    const MapFieldType &map_field =
+        *reinterpret_cast<const MapFieldType *>(base + offset);
+    const SerializationTable *t =
+        table +
+        has_offset; // has_offset is overloaded for maps to mean table offset
+    if (!output->IsSerializationDeterministic()) {
+        for (Iter it = map_field.GetMap().begin();
+             it != map_field.GetMap().end(); ++it) {
+            Entry map_entry(*it);
+            output->WriteVarint32(tag);
+            output->WriteVarint32(map_entry._cached_size_);
+            SerializeInternal(reinterpret_cast<const uint8 *>(&map_entry),
+                              t->field_table, t->num_fields, output);
+        }
+    } else {
+        std::vector<Entry> v;
+        for (Iter it = map_field.GetMap().begin();
+             it != map_field.GetMap().end(); ++it) {
+            v.push_back(Entry(*it));
+        }
+        std::sort(v.begin(), v.end(), CompareMapKey());
+        for (int i = 0; i < v.size(); i++) {
+            output->WriteVarint32(tag);
+            output->WriteVarint32(v[i]._cached_size_);
+            SerializeInternal(reinterpret_cast<const uint8 *>(&v[i]),
+                              t->field_table, t->num_fields, output);
+        }
     }
-  } else {
-    std::vector<Entry> v;
-    for (Iter it = map_field.GetMap().begin(); it != map_field.GetMap().end();
-         ++it) {
-      v.push_back(Entry(*it));
-    }
-    std::sort(v.begin(), v.end(), CompareMapKey());
-    for (int i = 0; i < v.size(); i++) {
-      output->WriteVarint32(tag);
-      output->WriteVarint32(v[i]._cached_size_);
-      SerializeInternal(reinterpret_cast<const uint8*>(&v[i]), t->field_table,
-                        t->num_fields, output);
-    }
-  }
 }
 
-}  // namespace internal
-}  // namespace protobuf
+} // namespace internal
+} // namespace protobuf
 
-}  // namespace google
-#endif  // GOOGLE_PROTOBUF_GENERATED_MESSAGE_UTIL_H__
+} // namespace google
+#endif // GOOGLE_PROTOBUF_GENERATED_MESSAGE_UTIL_H__

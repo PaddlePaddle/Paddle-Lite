@@ -56,32 +56,32 @@ namespace java {
 //
 // Returns:
 //   The fully-qualified Java class name.
-string ClassName(const Descriptor* descriptor);
+string ClassName(const Descriptor *descriptor);
 
 // Requires:
 //   descriptor != NULL
 //
 // Returns:
 //   The fully-qualified Java class name.
-string ClassName(const EnumDescriptor* descriptor);
+string ClassName(const EnumDescriptor *descriptor);
 
 // Requires:
 //   descriptor != NULL
 //
 // Returns:
 //   The fully-qualified Java class name.
-string ClassName(const FileDescriptor* descriptor);
+string ClassName(const FileDescriptor *descriptor);
 
 // Requires:
 //   descriptor != NULL
 //
 // Returns:
 //   The fully-qualified Java class name.
-string ClassName(const ServiceDescriptor* descriptor);
+string ClassName(const ServiceDescriptor *descriptor);
 
-}  // namespace java
-}  // namespace compiler
-}  // namespace protobuf
-}  // namespace google
+} // namespace java
+} // namespace compiler
+} // namespace protobuf
+} // namespace google
 
-#endif  // GOOGLE_PROTOBUF_COMPILER_JAVA_NAMES_H__
+#endif // GOOGLE_PROTOBUF_COMPILER_JAVA_NAMES_H__

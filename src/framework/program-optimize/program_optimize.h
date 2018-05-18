@@ -21,15 +21,15 @@ SOFTWARE.
 #include "framework/program_desc.h"
 
 namespace paddle_mobile {
-    namespace framework {
-        class ProgramOptimize {
-          public:
-            ProgramOptimize(std::shared_ptr<ProgramDesc> ori_desc)
-                : ori_desc_(ori_desc) {}
-            std::shared_ptr<ProgramDesc> Optimize();
+namespace framework {
+class ProgramOptimize {
+  public:
+    ProgramOptimize(std::shared_ptr<ProgramDesc> ori_desc)
+        : ori_desc_(ori_desc) {}
+    std::shared_ptr<ProgramDesc> Optimize();
 
-          private:
-            std::shared_ptr<ProgramDesc> ori_desc_;
-        };
-    }
+  private:
+    std::shared_ptr<ProgramDesc> ori_desc_;
+};
+} // namespace framework
 } // namespace paddle_mobile
