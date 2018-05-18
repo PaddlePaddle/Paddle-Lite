@@ -25,22 +25,22 @@ SOFTWARE.
 #include "framework/paddle_mobile_object.h"
 
 namespace paddle_mobile {
-    namespace framework {
+namespace framework {
 
-        class Node : PaddleMobileObject {
-          public:
-            Node(const std::string &type) : type_(type) {}
+class Node : PaddleMobileObject {
+  public:
+    Node(const std::string &type) : type_(type) {}
 
-            Node &operator>(const Node &out);
-            bool operator==(const Node &in);
-            std::string ToString() const;
+    Node &operator>(const Node &out);
+    bool operator==(const Node &in);
+    std::string ToString() const;
 
-          private:
-            std::string ToString(std::string blank) const;
-            std::vector<std::shared_ptr<Node>> outputs_;
-            std::string type_;
-        };
+  private:
+    std::string ToString(std::string blank) const;
+    std::vector<std::shared_ptr<Node>> outputs_;
+    std::string type_;
+};
 
-        Print &operator<<(Print &printer, const Node &node);
-    }
-}
+Print &operator<<(Print &printer, const Node &node);
+} // namespace framework
+} // namespace paddle_mobile
