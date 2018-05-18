@@ -23,6 +23,6 @@ int main() {
 
     //../../../test/models/googlenet
     //../../../test/models/mobilenet
-    auto program = loader.Load(std::string("../../../test/models/mobilenet"));
+    auto program = loader.Load(std::string("../../../test/models/googlenet"));
     return 0;
 }

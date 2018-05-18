@@ -16,21 +16,49 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#pragma once
+#include <sstream>
 
-#include "stdio.h"
-#include <string>
+#include "node.h"
 
 namespace paddle_mobile {
+namespace framework {
+Node &Node::operator>(const Node &out) {
+    std::shared_ptr<Node> node = std::make_shared<Node>(Node(out));
+    outputs_.push_back(node);
+    return *node;
+}
 
-class PaddleMobileObject {
-  public:
-    virtual std::string ToString() {
-        char address[128] = {0};
-        sprintf(address, "%p", this);
-        return std::string(address);
+bool Node::operator==(const Node &in) {
+    if (in.type_ == this->type_) {
+        if (this->outputs_.size() == in.outputs_.size()) {
+            for (int i = 0; i < outputs_.size(); ++i) {
+                if (!(*outputs_[i] == *in.outputs_[i])) {
+                    return false;
+                }
+            }
+        } else {
+            return false;
+        }
+    } else {
+        return false;
     }
+    return true;
+}
 
-  private:
-};
+std::string Node::ToString(std::string blank) const {
+    std::stringstream ss;
+    ss << type_ << ": \n";
+    for (int i = 0; i < outputs_.size(); ++i) {
+        ss << blank << outputs_[i]->ToString(blank + "    ") << "";
+    }
+    return ss.str();
+}
+
+std::string Node::ToString() const { return this->ToString("    "); }
+
+Print &operator<<(Print &printer, const Node &node) {
+    printer << node.ToString();
+    return printer;
+}
+} // namespace framework
 } // namespace paddle_mobile
