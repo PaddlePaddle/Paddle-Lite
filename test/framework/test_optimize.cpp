@@ -17,21 +17,33 @@ SOFTWARE.
 ==============================================================================*/
 
 #include "framework/program-optimize/node.h"
-#include <iostream>
+#include "framework/program-optimize/program_optimize.h"
+#include "io.h"
 
+using namespace paddle_mobile;
 using namespace paddle_mobile::framework;
 
 int main() {
+
+    Loader<paddle_mobile::CPU> loader;
+    //    "../../../test/models/googlenet"
+
+    auto program = loader.Load("../../../test/models/googlenet");
+    ProgramOptimize optimize;
+
+    optimize.FushionOptimize(program.originProgram);
+
     Node node("conv");
-    node > Node("add") > Node("relu");
 
-    Node node1("conv");
-    node1 > Node("add") > Node("relu");
+    node > std::make_shared<Node>("add") > std::make_shared<Node>("relu") >
+        std::make_shared<Node>("lrn");
+    node > std::make_shared<Node>("batch normal");
 
-    if (node == node1) {
-        DLOG << "equal";
-    }
+    DLOG << "depath of node " << node.depth();
 
-    DLOG << "\n" << node1;
-    //    DLOG << node;
+    //    Node node1("conv");
+    //    node1 > Node("add") > Node("relu");
+
+    Node node2 = node.To(4);
+    DLOG << "\n" << node2;
 }
