@@ -45,12 +45,4 @@ ADD_LIBRARY(paddle-mobile-static STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 target_link_libraries(paddle-mobile-static protobuf-lite openblas)
 #add_dependencies(paddle-mobile openblas_proj)
 
-# gen test
-ADD_EXECUTABLE(paddle-mobile-test test/main.cpp test/test_helper.h
-        test/elementwise_add_op_test.h test/test_include.h
-        test/mul_op_test.h)
-target_link_libraries(paddle-mobile-test paddle-mobile)
-
-# gen test log
-ADD_EXECUTABLE(test-log test/unit-test/test_log.cpp)
-target_link_libraries(test-log paddle-mobile)
+add_subdirectory(test)
