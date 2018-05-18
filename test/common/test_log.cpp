@@ -22,9 +22,10 @@ int main() {
 
     DLOGF("DASJFDAFJ%d -- %f", 12345, 344.234);
 
-    LOGF( paddle_mobile::kLOG_DEBUG, "DASJFDAFJ%d -- %f", 12345, 344.234);
+    LOGF(paddle_mobile::kLOG_DEBUG, "DASJFDAFJ%d -- %f", 12345, 344.234);
 
-    LOG(paddle_mobile::kLOG_DEBUG) << "test debug" << " next log";
+    LOG(paddle_mobile::kLOG_DEBUG) << "test debug"
+                                   << " next log";
 
     LOG(paddle_mobile::kLOG_DEBUG1) << "test debug1"
                                     << " next log";
