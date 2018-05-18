@@ -7,7 +7,6 @@ os:
   - linux
 env:
   global:
-    - JOB=check_style
     - CMAKE_URL=https://cmake.org/files/v3.11/cmake-3.11.1-Linux-x86_64.tar.gz
 addons:
   apt:
@@ -19,8 +18,11 @@ addons:
       - python
       - python-pip
       - python2.7-dev
-      - clang-6.0
       - libc6-i386
+      - clang-6.0
+      - libclang-6.0
+      - llvm-6.0
+      - llvm-6.0-dev
       - curl
 
 compiler:
@@ -37,16 +39,21 @@ before_install:
       export PATH=${DEPS_DIR}/cmake/bin:${PATH}
     fi
 
-install:
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
-  - if [ "$CXX" = "clang++" ]; then export CXX="clang++-6.0" CC="clang-6.0"; fi
+#install:
+#  - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
+#  - if [ "$CXX" = "clang++" ]; then export CXX="clang++-6.0" CC="clang-6.0"; fi
 
-script:
+before_script:
   - |
-    
+    echo "cmake generate compile_commands.json for clang-tidy"
+    ls -l -a
+    clang-tidy -version 
+    clang-format -version
+script:
+  - | 
     function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
   - |
-    timeout 600 .travis/${JOB}.sh # 10min timeout
+    timeout 600 .travis/pre-commit-job.sh # 10min timeout
     RESULT=$?; if [ $RESULT -eq 0 ] || [ $RESULT -eq 142 ]; then true; else exit 1; fi;
 
 notifications:
