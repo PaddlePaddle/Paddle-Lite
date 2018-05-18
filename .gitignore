@@ -54,3 +54,5 @@ paddle-mobile.cbp
 
 cmake-build-debug/
 
+
+test/models/

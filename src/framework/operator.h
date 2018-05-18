@@ -18,6 +18,8 @@ SOFTWARE.
 
 #pragma once
 
+#include <map>
+
 #include "attribute.h"
 #include "block_desc.h"
 #include "common/type_define.h"
@@ -29,10 +31,18 @@ SOFTWARE.
 #include "scope.h"
 #include "tensor.h"
 #include "variable.h"
-#include <map>
 
 namespace paddle_mobile {
     namespace framework {
+        static std::unordered_map<std::string, std::vector<std::string>>
+            op_input_output_key = {
+                {"conv2d", {"Input", "Output"}},   {"relu", {"X", "Out"}},
+                {"softmax", {"X", "Out"}},         {"mul", {"X", "Out"}},
+                {"elementwise_add", {"X", "Out"}}, {"pool2d", {"X", "Out"}},
+                {"batch_norm", {"X", "Y"}},        {"lrn", {"X", "Out"}},
+                {"concat", {"X", "Out"}},
+
+        };
 
         template <typename Dtype> class OperatorBase : PaddleMobileObject {
           public:
