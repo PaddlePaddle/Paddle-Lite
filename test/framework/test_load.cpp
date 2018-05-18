@@ -16,22 +16,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#include "common/log.h"
+#include "io.h"
 
 int main() {
-    DLOGF("DASJFDAFJ%d -- %f", 12345, 344.234);
-    LOG(paddle_mobile::kLOG_DEBUG) << "test debug" << " next log";
+    paddle_mobile::Loader<paddle_mobile::CPU> loader;
 
-    LOG(paddle_mobile::kLOG_DEBUG1) << "test debug1"
-                                    << " next log";
-
-    LOG(paddle_mobile::kLOG_DEBUG2) << "test debug2"
-                                    << " next log";
-
-    DLOG << "test DLOG";
-
-
-    LOG(paddle_mobile::kLOG_ERROR) << " error occur !";
-
+    //../../../test/models/googlenet
+    //../../../test/models/mobilenet
+    auto program = loader.Load(std::string("../../../test/models/mobilenet"));
     return 0;
 }
