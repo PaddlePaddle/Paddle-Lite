@@ -22,13 +22,22 @@ repos:
 
 -   repo: local
     hooks:
-    -   id: clang-format-with-version-check
+    -   id: clang-format
         name: clang-format
         description: Format files with ClangFormat.
-        entry: bash ./tools/pre-commit.hooks/.clang_format.hook -i
+        entry: bash ./tools/pre-commit.hooks/.clang-format.hook -i
+        language: system
+        files: \.(c|cc|cxx|cpp|h|hpp|hxx)$
+
+-   repo: local
+    hooks:
+    -   id: clang-tidy
+        name: clang-tidy
+        description: Check C++ code style using clang-tidy.
+        entry: bash ./tools/pre-commit.hooks/.clang-tidy.hook -i
         language: system
         files: (src).*\.(c|cc|cxx|cpp|h|hpp|hxx)$
-
+#
 #-   repo: local
 #    hooks:
 #    -   id: copyright_checker

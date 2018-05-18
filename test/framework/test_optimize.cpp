@@ -16,24 +16,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-
-#include <iostream>
 #include "framework/program-optimize/node.h"
+#include <iostream>
 
 using namespace paddle_mobile::framework;
 
-int main(){
+int main() {
     Node node("conv");
     node > Node("add") > Node("relu");
-
 
     Node node1("conv");
     node1 > Node("add") > Node("relu");
 
-    if (node == node1){
+    if (node == node1) {
         DLOG << "equal";
     }
 
     DLOG << "\n" << node1;
-//    DLOG << node;
+    //    DLOG << node;
 }

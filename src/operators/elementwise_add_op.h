@@ -21,35 +21,32 @@ SOFTWARE.
 #include "op_param.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        using namespace framework;
+using namespace framework;
 
-        template <typename DeviceType, typename T>
-        class ElementwiseAddOp
-            : public framework::OperatorWithKernel<DeviceType> {
-          public:
-            ElementwiseAddOp(const std::string &type,
-                             const VariableNameMap &inputs,
-                             const VariableNameMap &outputs,
-                             const framework::AttributeMap attrs,
-                             std::shared_ptr<framework::Scope> scope)
-                : framework::OperatorWithKernel<DeviceType>(
-                      type, inputs, outputs, attrs, scope),
-                  param_(inputs, outputs, attrs, *scope) {}
+template <typename DeviceType, typename T>
+class ElementwiseAddOp : public framework::OperatorWithKernel<DeviceType> {
+  public:
+    ElementwiseAddOp(const std::string &type, const VariableNameMap &inputs,
+                     const VariableNameMap &outputs,
+                     const framework::AttributeMap attrs,
+                     std::shared_ptr<framework::Scope> scope)
+        : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs,
+                                                    attrs, scope),
+          param_(inputs, outputs, attrs, *scope) {}
 
-            void Run() const {
-                operators::ElementwiseAddKernel<DeviceType, T,
-                                                ElementwiseAddParam>
-                    kernel;
-                kernel.Compute(param_);
-            }
-
-            using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
-            void InferShape() const override;
-
-          protected:
-            ElementwiseAddParam param_;
-        };
+    void Run() const {
+        operators::ElementwiseAddKernel<DeviceType, T, ElementwiseAddParam>
+            kernel;
+        kernel.Compute(param_);
     }
-}
+
+    using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+    void InferShape() const override;
+
+  protected:
+    ElementwiseAddParam param_;
+};
+} // namespace operators
+} // namespace paddle_mobile
