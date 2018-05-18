@@ -297,7 +297,7 @@ bool AttrType_IsValid(int value) {
     }
 }
 
-// ===================================================================
+    // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int OpDesc_Attr::kNameFieldNumber;
@@ -1366,7 +1366,7 @@ void OpDesc_Attr::set_l(::google::protobuf::int64 value) {
 
 #endif // PROTOBUF_INLINE_NOT_IN_HEADERS
 
-// ===================================================================
+    // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int OpDesc_Var::kParameterFieldNumber;
@@ -1756,7 +1756,7 @@ OpDesc_Var::mutable_arguments() {
 
 #endif // PROTOBUF_INLINE_NOT_IN_HEADERS
 
-// ===================================================================
+    // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int OpDesc::kTypeFieldNumber;
@@ -2311,7 +2311,7 @@ void OpDesc::set_is_target(bool value) {
 
 #endif // PROTOBUF_INLINE_NOT_IN_HEADERS
 
-// ===================================================================
+    // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int OpProto_Var::kNameFieldNumber;
@@ -2918,7 +2918,7 @@ void OpProto_Var::set_dispensable(bool value) {
 
 #endif // PROTOBUF_INLINE_NOT_IN_HEADERS
 
-// ===================================================================
+    // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int OpProto_Attr::kNameFieldNumber;
@@ -3494,7 +3494,7 @@ void OpProto_Attr::set_generated(bool value) {
 
 #endif // PROTOBUF_INLINE_NOT_IN_HEADERS
 
-// ===================================================================
+    // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int OpProto::kTypeFieldNumber;
@@ -4134,7 +4134,7 @@ void OpProto::set_allocated_comment(::std::string *comment) {
 
 #endif // PROTOBUF_INLINE_NOT_IN_HEADERS
 
-// ===================================================================
+    // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int VarType_TensorDesc::kDataTypeFieldNumber;
@@ -4457,7 +4457,7 @@ VarType_TensorDesc::mutable_dims() {
 
 #endif // PROTOBUF_INLINE_NOT_IN_HEADERS
 
-// ===================================================================
+    // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int VarType_LoDTensorDesc::kTensorFieldNumber;
@@ -4809,7 +4809,7 @@ void VarType_LoDTensorDesc::set_lod_level(::google::protobuf::int32 value) {
 
 #endif // PROTOBUF_INLINE_NOT_IN_HEADERS
 
-// ===================================================================
+    // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int VarType_LoDTensorArrayDesc::kTensorFieldNumber;
@@ -5171,7 +5171,7 @@ void VarType_LoDTensorArrayDesc::set_lod_level(
 
 #endif // PROTOBUF_INLINE_NOT_IN_HEADERS
 
-// ===================================================================
+    // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int VarType_ReaderDesc::kLodTensorFieldNumber;
@@ -5419,7 +5419,7 @@ VarType_ReaderDesc::lod_tensor() const {
 
 #endif // PROTOBUF_INLINE_NOT_IN_HEADERS
 
-// ===================================================================
+    // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int VarType_ChannelDesc::kDataTypeFieldNumber;
@@ -5768,7 +5768,7 @@ void VarType_ChannelDesc::set_capacity(::google::protobuf::int64 value) {
 
 #endif // PROTOBUF_INLINE_NOT_IN_HEADERS
 
-// ===================================================================
+    // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int VarType_Tuple::kElementTypeFieldNumber;
@@ -6031,7 +6031,7 @@ VarType_Tuple::element_type() const {
 
 #endif // PROTOBUF_INLINE_NOT_IN_HEADERS
 
-// ===================================================================
+    // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int VarType::kTypeFieldNumber;
@@ -6916,7 +6916,7 @@ void VarType::set_allocated_tuple(
 
 #endif // PROTOBUF_INLINE_NOT_IN_HEADERS
 
-// ===================================================================
+    // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int VarDesc::kNameFieldNumber;
@@ -7387,7 +7387,7 @@ void VarDesc::set_persistable(bool value) {
 
 #endif // PROTOBUF_INLINE_NOT_IN_HEADERS
 
-// ===================================================================
+    // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int BlockDesc::kIdxFieldNumber;
@@ -7892,7 +7892,7 @@ void BlockDesc::set_forward_block_idx(::google::protobuf::int32 value) {
 
 #endif // PROTOBUF_INLINE_NOT_IN_HEADERS
 
-// ===================================================================
+    // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int ProgramDesc::kBlocksFieldNumber;
