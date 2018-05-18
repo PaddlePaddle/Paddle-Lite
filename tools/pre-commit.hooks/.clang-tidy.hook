@@ -1,16 +1,18 @@
 #!/bin/bash
-set -e
 
 echo "allonli clang-tidy formating init"
-clang-tidy -checks="-*,misc-unused-using-decls" -fix src/framework/data_type.h --
 
-TOTAL_ERRORS=0
+cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+clang-foramt -version
+clang-tidy -version
+python ./tools/pre-commit.hooks/run-clang-tidy.py
+#TOTAL_ERRORS=0
 
 # The trick to remove deleted files: https://stackoverflow.com/a/2413151
-for file in $(git diff --cached --name-status | awk '$1 != "D" {print $2}' | grep "src" | grep -v ".pb."); do
-    echo "clang-tidy formating $file" 
-    clang-tidy $file 
-    TOTAL_ERRORS=$(expr $TOTAL_ERRORS + $?);
-done
-
-exit $TOTAL_ERRORS
+#for file in $(git diff --cached --name-status | awk '$1 != "D" {print $2}' | grep "src" | grep -v ".pb."); do
+#    echo "clang-tidy formating $file" 
+#    clang-tidy $file 
+#    TOTAL_ERRORS=$(expr $TOTAL_ERRORS + $?);
+#done
+#
+#exit $TOTAL_ERRORS
