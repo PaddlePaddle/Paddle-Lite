@@ -21,9 +21,10 @@ SOFTWARE.
 #include "node.h"
 
 namespace paddle_mobile {
+
 namespace framework {
-Node &Node::operator>(const Node &out) {
-    std::shared_ptr<Node> node = std::make_shared<Node>(Node(out));
+
+Node &Node::operator>(std::shared_ptr<Node> node) {
     outputs_.push_back(node);
     return *node;
 }
@@ -47,7 +48,7 @@ bool Node::operator==(const Node &in) {
 
 std::string Node::ToString(std::string blank) const {
     std::stringstream ss;
-    ss << type_ << ": \n";
+    ss << type_ << "-> \n";
     for (int i = 0; i < outputs_.size(); ++i) {
         ss << blank << outputs_[i]->ToString(blank + "    ") << "";
     }
@@ -56,9 +57,31 @@ std::string Node::ToString(std::string blank) const {
 
 std::string Node::ToString() const { return this->ToString("    "); }
 
+Node &Node::To(int index) {
+    if (index == 0) {
+        this->outputs_.clear();
+    }
+
+    for (int j = 0; j < this->outputs_.size(); ++j) {
+        outputs_[j]->To(index - 1);
+    }
+    return *this;
+}
+
+uint Node::depth(uint begin) {
+    uint depth = 0;
+    begin++;
+    for (int i = 0; i < outputs_.size(); ++i) {
+        uint output_depth = outputs_[i]->depth(begin);
+        depth = output_depth > depth ? output_depth : depth;
+    }
+    return begin > depth ? begin : depth;
+}
+
 Print &operator<<(Print &printer, const Node &node) {
     printer << node.ToString();
     return printer;
 }
+
 } // namespace framework
 } // namespace paddle_mobile
