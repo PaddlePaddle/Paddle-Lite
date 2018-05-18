@@ -45,7 +45,6 @@ script:
   - |
     
     function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
-    echo "========allonli======="
   - |
     timeout 600 .travis/${JOB}.sh # 10min timeout
     RESULT=$?; if [ $RESULT -eq 0 ] || [ $RESULT -eq 142 ]; then true; else exit 1; fi;
