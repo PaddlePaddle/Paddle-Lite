@@ -22,23 +22,21 @@ namespace paddle_mobile {
 namespace operators {
 namespace math {
 
-template<typename T>
-void gemm(const CBLAS_TRANSPOSE transA,
-          const CBLAS_TRANSPOSE transB, const int M, const int N,
-          const int K, const T alpha, const T *A, const T *B,
-          const T beta, T *C);
+template <typename T>
+void gemm(const CBLAS_TRANSPOSE transA, const CBLAS_TRANSPOSE transB,
+          const int M, const int N, const int K, const T alpha, const T *A,
+          const T *B, const T beta, T *C);
 
-template<typename T>
-void gemm(const bool transA, const bool transB, const int M,
-          const int N, const int K, const T alpha, const T *A,
-          const int lda, const T *B, const int ldb, const T beta,
-          T *C, const int ldc);
+template <typename T>
+void gemm(const bool transA, const bool transB, const int M, const int N,
+          const int K, const T alpha, const T *A, const int lda, const T *B,
+          const int ldb, const T beta, T *C, const int ldc);
 
 // matrix multiply with continuous memory
-template<typename T>
+template <typename T>
 void matmul(const framework::Tensor &matrix_a, bool trans_a,
-            const framework::Tensor &matrix_b, bool trans_b,
-            T alpha, framework::Tensor *matrix_out, T beta);
+            const framework::Tensor &matrix_b, bool trans_b, T alpha,
+            framework::Tensor *matrix_out, T beta);
 } // namespace math
-}     // namespace operators
+} // namespace operators
 } // namespace paddle_mobile

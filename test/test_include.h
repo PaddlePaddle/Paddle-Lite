@@ -7,7 +7,6 @@
 #include "framework/scope.h"
 #include "framework/tensor.h"
 #include "framework/variable.h"
-#include "framework/variable.h"
 #include "io.h"
 #include "test_helper.h"
 #include <map>

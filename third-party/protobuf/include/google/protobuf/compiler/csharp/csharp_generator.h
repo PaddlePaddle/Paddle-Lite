@@ -48,15 +48,15 @@ namespace csharp {
 // CodeGenerator with the CommandLineInterface in your main() function.
 class LIBPROTOC_EXPORT Generator
     : public google::protobuf::compiler::CodeGenerator {
- public:
-  virtual bool Generate(const FileDescriptor* file, const string& parameter,
-                        GeneratorContext* generator_context,
-                        string* error) const;
+  public:
+    virtual bool Generate(const FileDescriptor *file, const string &parameter,
+                          GeneratorContext *generator_context,
+                          string *error) const;
 };
 
-}  // namespace csharp
-}  // namespace compiler
-}  // namespace protobuf
-}  // namespace google
+} // namespace csharp
+} // namespace compiler
+} // namespace protobuf
+} // namespace google
 
-#endif  // GOOGLE_PROTOBUF_COMPILER_CSHARP_GENERATOR_H__
+#endif // GOOGLE_PROTOBUF_COMPILER_CSHARP_GENERATOR_H__

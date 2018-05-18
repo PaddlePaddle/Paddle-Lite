@@ -19,23 +19,23 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-template<typename T> struct AddFunctor {
-  inline T operator()(T a, T b) const { return a + b; }
+template <typename T> struct AddFunctor {
+    inline T operator()(T a, T b) const { return a + b; }
 };
 
-template<>
+template <>
 void ElementwiseAddKernel<CPU, float, ElementwiseAddParam>::Compute(
     const ElementwiseAddParam &param) const {
-  const Tensor *input_x = param.InputX();
-  const Tensor *input_y = param.InputY();
-  Tensor *Out = param.Out();
-  Out->mutable_data<float>();
-  const int axis = param.Axis();
-  ElementwiseComputeEx<AddFunctor<float>, float>(
-      input_x, input_y, axis, AddFunctor<float>(), Out);
+    const Tensor *input_x = param.InputX();
+    const Tensor *input_y = param.InputY();
+    Tensor *Out = param.Out();
+    Out->mutable_data<float>();
+    const int axis = param.Axis();
+    ElementwiseComputeEx<AddFunctor<float>, float>(input_x, input_y, axis,
+                                                   AddFunctor<float>(), Out);
 }
 
 template class ElementwiseAddKernel<CPU, float, ElementwiseAddParam>;
 
 } // namespace operators
-} // namespace paddle
+} // namespace paddle_mobile
