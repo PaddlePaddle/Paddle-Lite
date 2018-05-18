@@ -1,0 +1,312 @@
+[
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/framework/ddim.cc.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/ddim.cc",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/ddim.cc"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/framework/lod_tensor.cc.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/lod_tensor.cc",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/lod_tensor.cc"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/framework/scope.cc.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/scope.cc",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/scope.cc"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/framework/tensor_util.cc.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/tensor_util.cc",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/tensor_util.cc"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/memory/t_malloc.cc.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/memory/t_malloc.cc",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/memory/t_malloc.cc"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/operators/math/im2col.cc.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/operators/math/im2col.cc",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/operators/math/im2col.cc"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/operators/math/math_function.cc.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/operators/math/math_function.cc",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/operators/math/math_function.cc"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/operators/math/vol2col.cc.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/operators/math/vol2col.cc",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/operators/math/vol2col.cc"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/common/variant.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/common/variant.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/common/variant.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/framework/attribute.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/attribute.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/attribute.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/framework/block_desc.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/block_desc.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/block_desc.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/framework/data_transform.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/data_transform.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/data_transform.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/framework/executor.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/executor.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/executor.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/framework/framework.pb.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/framework.pb.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/framework.pb.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/framework/op_desc.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/op_desc.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/op_desc.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/framework/operator.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/operator.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/operator.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/framework/paddle_mobile_object.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/paddle_mobile_object.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/paddle_mobile_object.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/framework/program.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/program.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/program.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/framework/program_desc.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/program_desc.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/program_desc.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/framework/var_desc.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/var_desc.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/var_desc.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/io.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/io.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/io.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/operators/conv_op.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/operators/conv_op.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/operators/conv_op.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/operators/elementwise_add_op.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/operators/elementwise_add_op.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/operators/elementwise_add_op.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/operators/kernel/arm/conv_kernel.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/operators/kernel/arm/conv_kernel.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/operators/kernel/arm/conv_kernel.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/operators/kernel/arm/elementwise_add_kernel.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/operators/kernel/arm/elementwise_add_kernel.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/operators/kernel/arm/elementwise_add_kernel.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/operators/kernel/arm/mul_kernel.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/operators/kernel/arm/mul_kernel.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/operators/kernel/arm/mul_kernel.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/operators/kernel/fpga/conv_kernel.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/operators/kernel/fpga/conv_kernel.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/operators/kernel/fpga/conv_kernel.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/operators/mul_op.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/operators/mul_op.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/operators/mul_op.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-static.dir/src/operators/op_param.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/operators/op_param.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/operators/op_param.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/framework/ddim.cc.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/ddim.cc",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/ddim.cc"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/framework/lod_tensor.cc.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/lod_tensor.cc",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/lod_tensor.cc"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/framework/scope.cc.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/scope.cc",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/scope.cc"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/framework/tensor_util.cc.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/tensor_util.cc",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/tensor_util.cc"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/memory/t_malloc.cc.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/memory/t_malloc.cc",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/memory/t_malloc.cc"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/operators/math/im2col.cc.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/operators/math/im2col.cc",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/operators/math/im2col.cc"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/operators/math/math_function.cc.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/operators/math/math_function.cc",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/operators/math/math_function.cc"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/operators/math/vol2col.cc.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/operators/math/vol2col.cc",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/operators/math/vol2col.cc"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/common/variant.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/common/variant.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/common/variant.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/framework/attribute.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/attribute.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/attribute.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/framework/block_desc.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/block_desc.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/block_desc.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/framework/data_transform.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/data_transform.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/data_transform.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/framework/executor.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/executor.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/executor.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/framework/framework.pb.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/framework.pb.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/framework.pb.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/framework/op_desc.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/op_desc.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/op_desc.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/framework/operator.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/operator.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/operator.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/framework/paddle_mobile_object.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/paddle_mobile_object.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/paddle_mobile_object.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/framework/program.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/program.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/program.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/framework/program_desc.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/program_desc.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/program_desc.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/framework/var_desc.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/framework/var_desc.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/framework/var_desc.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/io.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/io.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/io.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/operators/conv_op.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/operators/conv_op.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/operators/conv_op.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/operators/elementwise_add_op.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/operators/elementwise_add_op.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/operators/elementwise_add_op.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/operators/kernel/arm/conv_kernel.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/operators/kernel/arm/conv_kernel.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/operators/kernel/arm/conv_kernel.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/operators/kernel/arm/elementwise_add_kernel.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/operators/kernel/arm/elementwise_add_kernel.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/operators/kernel/arm/elementwise_add_kernel.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/operators/kernel/arm/mul_kernel.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/operators/kernel/arm/mul_kernel.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/operators/kernel/arm/mul_kernel.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/operators/kernel/fpga/conv_kernel.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/operators/kernel/fpga/conv_kernel.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/operators/kernel/fpga/conv_kernel.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/operators/mul_op.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/operators/mul_op.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/operators/mul_op.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -Dpaddle_mobile_EXPORTS -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG -fPIC   -std=c++11 -o CMakeFiles/paddle-mobile.dir/src/operators/op_param.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/src/operators/op_param.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/src/operators/op_param.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile/test",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/test-log.dir/common/test_log.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/test/common/test_log.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/test/common/test_log.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile/test",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/test-conv-op.dir/operators/test_cov_op.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/test/operators/test_cov_op.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/test/operators/test_cov_op.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile/test",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/test-load.dir/framework/test_load.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/test/framework/test_load.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/test/framework/test_load.cpp"
+},
+{
+  "directory": "/Users/allonli/Documents/workspace/paddle-mobile/test",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -DPADDLE_MOBILE_DEBUG=\\\"true\\\" -I/Users/allonli/Documents/workspace/paddle-mobile/src -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/openblas/include -I/Users/allonli/Documents/workspace/paddle-mobile/third-party/protobuf/include  -O2 -g -DNDEBUG   -std=c++11 -o CMakeFiles/paddle-mobile-test.dir/main.cpp.o -c /Users/allonli/Documents/workspace/paddle-mobile/test/main.cpp",
+  "file": "/Users/allonli/Documents/workspace/paddle-mobile/test/main.cpp"
+}
+]
