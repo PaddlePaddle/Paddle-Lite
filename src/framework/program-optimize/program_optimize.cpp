@@ -19,7 +19,7 @@ SOFTWARE.
 #include "program_optimize.h"
 
 namespace paddle_mobile {
-    namespace framework {
-        std::shared_ptr<ProgramDesc> ProgramOptimize::Optimize() {}
-    }
-}
+namespace framework {
+std::shared_ptr<ProgramDesc> ProgramOptimize::Optimize() {}
+} // namespace framework
+} // namespace paddle_mobile

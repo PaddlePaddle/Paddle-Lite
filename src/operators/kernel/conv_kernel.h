@@ -25,15 +25,14 @@ SOFTWARE.
 #pragma once;
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        using namespace framework;
+using namespace framework;
 
-        template <typename DeviceType, typename T, typename P>
-        class ConvKernel
-            : public framework::OpKernelBase<DeviceType, ConvParam> {
-          public:
-            void Compute(const ConvParam &param) const;
-        };
-    }
-}
+template <typename DeviceType, typename T, typename P>
+class ConvKernel : public framework::OpKernelBase<DeviceType, ConvParam> {
+  public:
+    void Compute(const ConvParam &param) const;
+};
+} // namespace operators
+} // namespace paddle_mobile
