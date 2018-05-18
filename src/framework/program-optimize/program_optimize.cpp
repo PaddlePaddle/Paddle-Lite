@@ -16,21 +16,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#pragma once
-
-#include "stdio.h"
-#include <string>
+#include "program_optimize.h"
 
 namespace paddle_mobile {
-
-class PaddleMobileObject {
-  public:
-    virtual std::string ToString() {
-        char address[128] = {0};
-        sprintf(address, "%p", this);
-        return std::string(address);
-    }
-
-  private:
-};
+namespace framework {
+std::shared_ptr<ProgramDesc> ProgramOptimize::Optimize() {}
+} // namespace framework
 } // namespace paddle_mobile
