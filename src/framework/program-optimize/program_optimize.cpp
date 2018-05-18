@@ -19,7 +19,31 @@ SOFTWARE.
 #include "program_optimize.h"
 
 namespace paddle_mobile {
+
 namespace framework {
 std::shared_ptr<ProgramDesc> ProgramOptimize::Optimize() {}
-} // namespace framework
-} // namespace paddle_mobile
+
+std::shared_ptr<ProgramDesc>
+ProgramOptimize::FushionOptimize(std::shared_ptr<ProgramDesc> ori_des) {
+    for (int i = 0; i < ori_des->Blocks().size(); ++i) {
+        std::unordered_map<std::string, std::shared_ptr<Node>> output_nodes;
+        auto block = ori_des->Block(i);
+        for (int j = 0; j < block->Ops().size(); ++j) {
+            auto op = block->Ops()[j];
+            std::shared_ptr<Node> node = std::make_shared<Node>(op);
+            auto op_outputs = op->Output(op_input_output_key.at(op->Type())[1]);
+            for (int k = 0; k < op_outputs.size(); ++k) {
+                output_nodes[op_outputs[k]] = node;
+            }
+            auto op_iutputs = op->Output(op_input_output_key.at(op->Type())[0]);
+            for (int l = 0; l < op_iutputs.size(); ++l) {
+                auto input_node = output_nodes[op_iutputs[l]];
+                *input_node > node;
+            }
+        }
+
+        DLOG << output_nodes["feed"];
+    }
+}
+}
+}
