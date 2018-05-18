@@ -6,20 +6,9 @@ TOTAL_ERRORS=0
 
 # The trick to remove deleted files: https://stackoverflow.com/a/2413151
 for file in $(git diff --cached --name-status | awk '$1 != "D" {print $2}' | grep -v "third-party/" | grep -v ".pb."); do
-    python ./tools/pre-commit.hooks/run-clang-tidy.py $file -header-filter=third-party/;
+    python ./tools/pre-commit.hooks/run-clang-tidy.py $file;
     TOTAL_ERRORS=$(expr $TOTAL_ERRORS + $?);
 done
 
 exit $TOTAL_ERRORS
 
-#python ./tools/pre-commit.hooks/run-clang-tidy.py -header-filter=third-party/
-#TOTAL_ERRORS=0
-
-# The trick to remove deleted files: https://stackoverflow.com/a/2413151
-#for file in $(git diff --cached --name-status | awk '$1 != "D" {print $2}' | grep "src" | grep -v ".pb."); do
-#    echo "clang-tidy formating $file" 
-#    clang-tidy $file 
-#    TOTAL_ERRORS=$(expr $TOTAL_ERRORS + $?);
-#done
-#
-#exit $TOTAL_ERRORS
