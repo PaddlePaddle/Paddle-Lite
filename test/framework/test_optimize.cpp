@@ -16,21 +16,24 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#pragma once
 
-#include "stdio.h"
-#include <string>
+#include <iostream>
+#include "framework/program-optimize/node.h"
 
-namespace paddle_mobile {
+using namespace paddle_mobile::framework;
 
-    class PaddleMobileObject {
-      public:
-        virtual std::string ToString() {
-            char address[128] = {0};
-            sprintf(address, "%p", this);
-            return std::string(address);
-        }
+int main(){
+    Node node("conv");
+    node > Node("add") > Node("relu");
 
-      private:
-    };
-} // namespace paddle_mobile
+
+    Node node1("conv");
+    node1 > Node("add") > Node("relu");
+
+    if (node == node1){
+        DLOG << "equal";
+    }
+
+    DLOG << "\n" << node1;
+//    DLOG << node;
+}
