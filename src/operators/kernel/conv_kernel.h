@@ -29,11 +29,10 @@ namespace operators {
 
 using namespace framework;
 
-template<typename DeviceType, typename T, typename P>
-class ConvKernel
-    : public framework::OpKernelBase<DeviceType, ConvParam> {
-public:
-  void Compute(const ConvParam &param) const;
+template <typename DeviceType, typename T, typename P>
+class ConvKernel : public framework::OpKernelBase<DeviceType, ConvParam> {
+  public:
+    void Compute(const ConvParam &param) const;
 };
-}
-}
+} // namespace operators
+} // namespace paddle_mobile

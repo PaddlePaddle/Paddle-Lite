@@ -101,18 +101,18 @@ typedef intptr_t AtomicWord;
 // Always return the old value of "*ptr"
 //
 // This routine implies no memory barriers.
-Atomic32 NoBarrier_CompareAndSwap(volatile Atomic32* ptr, Atomic32 old_value,
+Atomic32 NoBarrier_CompareAndSwap(volatile Atomic32 *ptr, Atomic32 old_value,
                                   Atomic32 new_value);
 
 // Atomically store new_value into *ptr, returning the previous value held in
 // *ptr.  This routine implies no memory barriers.
-Atomic32 NoBarrier_AtomicExchange(volatile Atomic32* ptr, Atomic32 new_value);
+Atomic32 NoBarrier_AtomicExchange(volatile Atomic32 *ptr, Atomic32 new_value);
 
 // Atomically increment *ptr by "increment".  Returns the new value of
 // *ptr with the increment applied.  This routine implies no memory barriers.
-Atomic32 NoBarrier_AtomicIncrement(volatile Atomic32* ptr, Atomic32 increment);
+Atomic32 NoBarrier_AtomicIncrement(volatile Atomic32 *ptr, Atomic32 increment);
 
-Atomic32 Barrier_AtomicIncrement(volatile Atomic32* ptr, Atomic32 increment);
+Atomic32 Barrier_AtomicIncrement(volatile Atomic32 *ptr, Atomic32 increment);
 
 // These following lower-level operations are typically useful only to people
 // implementing higher-level synchronization operations like spinlocks,
@@ -123,50 +123,50 @@ Atomic32 Barrier_AtomicIncrement(volatile Atomic32* ptr, Atomic32 increment);
 // after the operation.  "Barrier" operations have both "Acquire" and "Release"
 // semantics.   A MemoryBarrierInternal() has "Barrier" semantics, but does no
 // memory access.
-Atomic32 Acquire_CompareAndSwap(volatile Atomic32* ptr, Atomic32 old_value,
+Atomic32 Acquire_CompareAndSwap(volatile Atomic32 *ptr, Atomic32 old_value,
                                 Atomic32 new_value);
-Atomic32 Release_CompareAndSwap(volatile Atomic32* ptr, Atomic32 old_value,
+Atomic32 Release_CompareAndSwap(volatile Atomic32 *ptr, Atomic32 old_value,
                                 Atomic32 new_value);
 
 // This function was renamed from MemoryBarrier to MemoryBarrierInternal
 // because MemoryBarrier is a define in Windows ARM builds and we do not
 // undefine it because we call it from this function.
 void MemoryBarrierInternal();
-void NoBarrier_Store(volatile Atomic32* ptr, Atomic32 value);
-void Acquire_Store(volatile Atomic32* ptr, Atomic32 value);
-void Release_Store(volatile Atomic32* ptr, Atomic32 value);
+void NoBarrier_Store(volatile Atomic32 *ptr, Atomic32 value);
+void Acquire_Store(volatile Atomic32 *ptr, Atomic32 value);
+void Release_Store(volatile Atomic32 *ptr, Atomic32 value);
 
-Atomic32 NoBarrier_Load(volatile const Atomic32* ptr);
-Atomic32 Acquire_Load(volatile const Atomic32* ptr);
-Atomic32 Release_Load(volatile const Atomic32* ptr);
+Atomic32 NoBarrier_Load(volatile const Atomic32 *ptr);
+Atomic32 Acquire_Load(volatile const Atomic32 *ptr);
+Atomic32 Release_Load(volatile const Atomic32 *ptr);
 
 // 64-bit atomic operations (only available on 64-bit processors).
 #ifdef GOOGLE_PROTOBUF_ARCH_64_BIT
-Atomic64 NoBarrier_CompareAndSwap(volatile Atomic64* ptr, Atomic64 old_value,
+Atomic64 NoBarrier_CompareAndSwap(volatile Atomic64 *ptr, Atomic64 old_value,
                                   Atomic64 new_value);
-Atomic64 NoBarrier_AtomicExchange(volatile Atomic64* ptr, Atomic64 new_value);
-Atomic64 NoBarrier_AtomicIncrement(volatile Atomic64* ptr, Atomic64 increment);
-Atomic64 Barrier_AtomicIncrement(volatile Atomic64* ptr, Atomic64 increment);
+Atomic64 NoBarrier_AtomicExchange(volatile Atomic64 *ptr, Atomic64 new_value);
+Atomic64 NoBarrier_AtomicIncrement(volatile Atomic64 *ptr, Atomic64 increment);
+Atomic64 Barrier_AtomicIncrement(volatile Atomic64 *ptr, Atomic64 increment);
 
-Atomic64 Acquire_CompareAndSwap(volatile Atomic64* ptr, Atomic64 old_value,
+Atomic64 Acquire_CompareAndSwap(volatile Atomic64 *ptr, Atomic64 old_value,
                                 Atomic64 new_value);
-Atomic64 Release_CompareAndSwap(volatile Atomic64* ptr, Atomic64 old_value,
+Atomic64 Release_CompareAndSwap(volatile Atomic64 *ptr, Atomic64 old_value,
                                 Atomic64 new_value);
-void NoBarrier_Store(volatile Atomic64* ptr, Atomic64 value);
-void Acquire_Store(volatile Atomic64* ptr, Atomic64 value);
-void Release_Store(volatile Atomic64* ptr, Atomic64 value);
-Atomic64 NoBarrier_Load(volatile const Atomic64* ptr);
-Atomic64 Acquire_Load(volatile const Atomic64* ptr);
-Atomic64 Release_Load(volatile const Atomic64* ptr);
-#endif  // GOOGLE_PROTOBUF_ARCH_64_BIT
+void NoBarrier_Store(volatile Atomic64 *ptr, Atomic64 value);
+void Acquire_Store(volatile Atomic64 *ptr, Atomic64 value);
+void Release_Store(volatile Atomic64 *ptr, Atomic64 value);
+Atomic64 NoBarrier_Load(volatile const Atomic64 *ptr);
+Atomic64 Acquire_Load(volatile const Atomic64 *ptr);
+Atomic64 Release_Load(volatile const Atomic64 *ptr);
+#endif // GOOGLE_PROTOBUF_ARCH_64_BIT
 
-}  // namespace internal
-}  // namespace protobuf
-}  // namespace google
+} // namespace internal
+} // namespace protobuf
+} // namespace google
 
 // Include our platform specific implementation.
-#define GOOGLE_PROTOBUF_ATOMICOPS_ERROR \
-  "Atomic operations are not supported on your platform"
+#define GOOGLE_PROTOBUF_ATOMICOPS_ERROR                                        \
+    "Atomic operations are not supported on your platform"
 
 // ThreadSanitizer, http://clang.llvm.org/docs/ThreadSanitizer.html.
 #if defined(THREAD_SANITIZER)
@@ -238,6 +238,6 @@ Atomic64 Release_Load(volatile const Atomic64* ptr);
 
 #undef GOOGLE_PROTOBUF_ATOMICOPS_ERROR
 
-#endif  // GOOGLE_PROTOBUF_NO_THREAD_SAFETY
+#endif // GOOGLE_PROTOBUF_NO_THREAD_SAFETY
 
-#endif  // GOOGLE_PROTOBUF_ATOMICOPS_H_
+#endif // GOOGLE_PROTOBUF_ATOMICOPS_H_

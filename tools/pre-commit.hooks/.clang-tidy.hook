@@ -1,11 +1,7 @@
 #!/bin/bash
 
-echo "allonli clang-tidy formating init"
-
 cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-clang-foramt -version
-clang-tidy -version
-python ./tools/pre-commit.hooks/run-clang-tidy.py
+python ./tools/pre-commit.hooks/run-clang-tidy.py -header-filter=third-party/
 #TOTAL_ERRORS=0
 
 # The trick to remove deleted files: https://stackoverflow.com/a/2413151
