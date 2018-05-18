@@ -18,19 +18,29 @@ SOFTWARE.
 
 #pragma once
 
-#include "stdio.h"
 #include <string>
+#include <vector>
+
+#include "common/log.h"
+#include "framework/paddle_mobile_object.h"
 
 namespace paddle_mobile {
+    namespace framework {
 
-    class PaddleMobileObject {
-      public:
-        virtual std::string ToString() {
-            char address[128] = {0};
-            sprintf(address, "%p", this);
-            return std::string(address);
-        }
+        class Node : PaddleMobileObject {
+          public:
+            Node(const std::string &type) : type_(type) {}
 
-      private:
-    };
-} // namespace paddle_mobile
+            Node &operator>(const Node &out);
+            bool operator==(const Node &in);
+            std::string ToString() const;
+
+          private:
+            std::string ToString(std::string blank) const;
+            std::vector<std::shared_ptr<Node>> outputs_;
+            std::string type_;
+        };
+
+        Print &operator<<(Print &printer, const Node &node);
+    }
+}

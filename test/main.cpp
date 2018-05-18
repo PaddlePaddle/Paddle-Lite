@@ -53,7 +53,7 @@ int main() {
 
     paddle_mobile::Loader<paddle_mobile::CPU> loader;
     auto program = loader.Load(std::string(
-        "../../test/models/image_classification_resnet.inference.model"));
+        "../../../test/models/image_classification_resnet.inference.model"));
 
     paddle_mobile::framework::Executor<paddle_mobile::CPU> executor(program);
 
