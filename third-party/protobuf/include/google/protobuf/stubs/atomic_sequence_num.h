@@ -37,17 +37,17 @@ namespace protobuf {
 namespace internal {
 
 class SequenceNumber {
- public:
-  SequenceNumber() : word_(0) {}
+  public:
+    SequenceNumber() : word_(0) {}
 
-  AtomicWord GetNext() { return NoBarrier_AtomicIncrement(&word_, 1) - 1; }
+    AtomicWord GetNext() { return NoBarrier_AtomicIncrement(&word_, 1) - 1; }
 
- private:
-  AtomicWord word_;
+  private:
+    AtomicWord word_;
 };
 
-}  // namespace internal
-}  // namespace protobuf
-}  // namespace google
+} // namespace internal
+} // namespace protobuf
+} // namespace google
 
-#endif  // GOOGLE_PROTOBUF_ATOMIC_SEQUENCE_NUM_H_
+#endif // GOOGLE_PROTOBUF_ATOMIC_SEQUENCE_NUM_H_

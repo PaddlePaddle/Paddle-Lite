@@ -1,0 +1,17 @@
+#!/bin/bash
+
+bash -c "cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+
+TOTAL_ERRORS=0
+
+# The trick to remove deleted files: https://stackoverflow.com/a/2413151
+for file in $(git diff --cached --name-status | awk '$1 != "D" {print $2}' | grep -v "third-party/" | grep -v ".pb."); do
+    python ./tools/pre-commit.hooks/run-clang-tidy.py $file;
+    echo "python ./tools/pre-commit.hooks/run-clang-tidy.py $file"
+    TOTAL_ERRORS=$(expr $TOTAL_ERRORS + $?);
+done
+
+rm -f compile_commands.json 
+
+exit $TOTAL_ERRORS
+
