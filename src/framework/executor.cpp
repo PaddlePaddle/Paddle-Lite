@@ -20,7 +20,6 @@ SOFTWARE.
 #include "executor.h"
 #include "lod_tensor.h"
 #include "operators/conv_op.h"
-#include "variable.h"
 
 namespace paddle_mobile {
 namespace framework {
