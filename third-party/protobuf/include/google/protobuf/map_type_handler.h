@@ -548,7 +548,7 @@ MapTypeHandler<WireFormatLite::TYPE_MESSAGE, Type>::IsInitialized(Type *value) {
     return value->IsInitialized();
 }
 
-// Definition for string/bytes handler
+    // Definition for string/bytes handler
 
 #define STRING_OR_BYTES_HANDLER_FUNCTIONS(FieldType)                           \
     template <typename Type>                                                   \
