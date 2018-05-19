@@ -15,32 +15,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
+#pragma once
 
-#include "../framework/executor_for_test.h"
-#include "../test_helper.h"
-#include "io.h"
+#include "framework/operator.h"
+#include "operators/math/pooling.h"
+#include "operators/op_param.h"
 
-int main() {
-    paddle_mobile::Loader<paddle_mobile::CPU> loader;
-    auto program = loader.Load(std::string("../models/googlenet"));
-    if (program.originProgram == nullptr) {
-        DLOG << "program file read fail";
-    }
+namespace paddle_mobile {
+namespace operators {
 
-    Executor4Test<paddle_mobile::CPU,
-                  paddle_mobile::operators::ConvOp<paddle_mobile::CPU, float>>
-        executor(program, "conv2d");
+using namespace framework;
 
-    paddle_mobile::framework::Tensor input;
-    SetupTensor<float>(&input, {1, 3, 32, 32}, static_cast<float>(0),
-                       static_cast<float>(1));
-
-    auto output =
-        executor.predict(input, "data", "conv2d_0.tmp_0", {1, 64, 56, 56});
-
-    float *output_ptr = output->data<float>();
-    for (int j = 0; j < output->numel(); ++j) {
-        DLOG << " value of output: " << output_ptr[j];
-    }
-    return 0;
-}
+template <typename DeviceType, typename T>
+class PoolKernel : public framework::OpKernelBase<DeviceType, PoolParam> {
+  public:
+    void Compute(const PoolParam &param) const;
+};
+} // namespace operators
+} // namespace paddle_mobile
