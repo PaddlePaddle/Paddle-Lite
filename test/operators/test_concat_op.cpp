@@ -41,21 +41,6 @@ template <typename Dtype> class TestConcatOp {
             //    DLOG << " ops " << ops.size();
             for (int j = 0; j < ops.size(); ++j) {
                 std::shared_ptr<OpDesc> op = ops[j];
-                //                        if (op->Type() == "mul") {
-                //                            DLOG << "x_num_col_dims :
-                //                            "
-                //                                 << op->GetAttrMap()
-                //                                        .at("x_num_col_dims")
-                //                                        .Get<int>();
-                //                            DLOG << "y_num_col_dims :
-                //                            "
-                //                                 << op->GetAttrMap()
-                //                                        .at("y_num_col_dims")
-                //                                        .Get<int>();
-                //                            DLOG << " Input X is : "
-                //                            << op->Input("X")[0];
-                //                        }
-                //                        DLOG << "op:" << op->Type();
                 if (op->Type() == "concat" &&
                     op->Input("X")[0] == "conv2d_3.tmp_1") {
                     DLOG << " mul attr size: " << op->GetAttrMap().size();

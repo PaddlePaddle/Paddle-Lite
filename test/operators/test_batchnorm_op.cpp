@@ -18,14 +18,14 @@ SOFTWARE.
 ==============================================================================*/
 #pragma once
 #include "../test_include.h"
-#include "operators/lrn_op.h"
+#include "operators/batchnorm_op.h"
 
 namespace paddle_mobile {
 namespace framework {
 
-template <typename Dtype> class TestLrnOp {
+template <typename Dtype> class TestBatchNormOp {
   public:
-    explicit TestLrnOp(const Program<Dtype> p) : program_(p) {
+    explicit TestBatchNormOp(const Program<Dtype> p) : program_(p) {
         if (use_optimize_) {
             to_predict_program_ = program_.optimizeProgram;
         } else {
@@ -41,21 +41,21 @@ template <typename Dtype> class TestLrnOp {
             //    DLOG << " ops " << ops.size();
             for (int j = 0; j < ops.size(); ++j) {
                 std::shared_ptr<OpDesc> op = ops[j];
-                if (op->Type() == "lrn" &&
-                    op->Input("X")[0] == "pool2d_0.tmp_0") {
+                if (op->Type() == "batch_norm" &&
+                    op->Input("X")[0] == "conv2d_0.tmp_0") {
                     DLOG << " mul attr size: " << op->GetAttrMap().size();
                     DLOG << " inputs size: " << op->GetInputs().size();
                     DLOG << " outputs size: " << op->GetOutputs().size();
                     DLOG << " Input X is : " << op->Input("X")[0];
-                    DLOG << " Output Out is : " << op->Output("Out")[0];
-                    DLOG << " n : " << op->GetAttrMap().at("n").Get<int>();
-                    DLOG << " alpha : "
-                         << op->GetAttrMap().at("alpha").Get<float>();
-                    DLOG << " beta : "
-                         << op->GetAttrMap().at("beta").Get<float>();
-                    DLOG << " k : " << op->GetAttrMap().at("k").Get<float>();
-                    std::shared_ptr<operators::LrnOp<Dtype, float>> lrn =
-                        std::make_shared<operators::LrnOp<Dtype, float>>(
+                    DLOG << " Input Mean is : " << op->Input("Mean")[0];
+                    DLOG << " Input Variance is : " << op->Input("Variance")[0];
+                    DLOG << " Input Scale is : " << op->Input("Scale")[0];
+                    DLOG << " Input Bias is : " << op->Input("Bias")[0];
+                    DLOG << " Output Y is : " << op->Output("Y")[0];
+                    DLOG << " epsilon : "
+                         << op->GetAttrMap().at("epsilon").Get<float>();
+                    std::shared_ptr<operators::BatchNormOp<Dtype, float>> lrn =
+                        std::make_shared<operators::BatchNormOp<Dtype, float>>(
                             op->Type(), op->GetInputs(), op->GetOutputs(),
                             op->GetAttrMap(), program_.scope);
                     ops_of_block_[*block_desc.get()].push_back(lrn);
@@ -64,23 +64,40 @@ template <typename Dtype> class TestLrnOp {
         }
     }
 
-    std::shared_ptr<Tensor> predict_lrn(Tensor &t1) {
+    std::shared_ptr<Tensor> predict_bn(Tensor &t1, Tensor &t2, Tensor &t3,
+                                       Tensor &t4, Tensor &t5) {
         // feed
         auto scope = program_.scope;
-        Variable *x1_feed_value = scope->Var("pool2d_0.tmp_0");
+        Variable *x1_feed_value = scope->Var("conv2d_0.tmp_0");
         auto tensor_x1 = x1_feed_value->GetMutable<Tensor>();
         tensor_x1->ShareDataWith(t1);
 
-        Variable *con_output = scope->Var("pool1_norm1.tmp_1");
-        auto *output_tensor = con_output->GetMutable<Tensor>();
-        output_tensor->mutable_data<float>({3, 4, 2, 2});
+        Variable *mean_feed_value = scope->Var("batch_norm_0.w_1");
+        auto tensor_mean = mean_feed_value->GetMutable<Tensor>();
+        tensor_mean->ShareDataWith(t2);
+
+        Variable *scale_feed_value = scope->Var("batch_norm_0.w_0");
+        auto tensor_scale = scale_feed_value->GetMutable<Tensor>();
+        tensor_scale->ShareDataWith(t3);
+
+        Variable *variance_feed_value = scope->Var("batch_norm_0.w_2");
+        auto tensor_variance = variance_feed_value->GetMutable<Tensor>();
+        tensor_variance->ShareDataWith(t4);
+
+        Variable *bias_feed_value = scope->Var("batch_norm_0.b_0");
+        auto tensor_bias = bias_feed_value->GetMutable<Tensor>();
+        tensor_bias->ShareDataWith(t5);
+
+        Variable *output = scope->Var("batch_norm_0.tmp_2");
+        auto *output_tensor = output->GetMutable<Tensor>();
+        output_tensor->mutable_data<float>({4, 10, 2, 2});
         //  DLOG << typeid(output_tensor).name();
         //  DLOG << "output_tensor dims: " << output_tensor->dims();
 
         std::shared_ptr<Tensor> out_tensor = std::make_shared<LoDTensor>();
         out_tensor.reset(output_tensor);
 
-        predict_lrn(t1, 0);
+        predict_bn(t1, t2, t3, t4, t5, 0);
         return out_tensor;
     }
 
@@ -92,7 +109,8 @@ template <typename Dtype> class TestLrnOp {
         ops_of_block_;
     bool use_optimize_ = false;
 
-    void predict_lrn(const Tensor &t1, int block_id) {
+    void predict_bn(const Tensor &t1, const Tensor &t2, const Tensor &t3,
+                    const Tensor &t4, const Tensor &t5, int block_id) {
         std::shared_ptr<BlockDesc> to_predict_block =
             to_predict_program_->Block(block_id);
         for (int j = 0; j < ops_of_block_[*to_predict_block.get()].size();
@@ -104,56 +122,55 @@ template <typename Dtype> class TestLrnOp {
     }
 };
 
-template class TestLrnOp<CPU>;
+template class TestBatchNormOp<CPU>;
 } // namespace framework
 } // namespace paddle_mobile
 
 int main() {
     DLOG << "----------**********----------";
-    DLOG << "begin to run LrnOp Test";
+    DLOG << "begin to run BatchNormOp Test";
     paddle_mobile::Loader<paddle_mobile::CPU> loader;
-    auto program = loader.Load(std::string("../../test/models/googlenet"));
+    auto program = loader.Load(std::string(
+        "../../test/models/image_classification_resnet.inference.model"));
 
-    /// input x (3,4,2,2)
+    /// input x (4,10,2,2)
     paddle_mobile::framework::Tensor inputx1;
-    SetupTensor<float>(&inputx1, {3, 4, 2, 2}, static_cast<float>(0),
+    SetupTensor<float>(&inputx1, {4, 10, 2, 2}, static_cast<float>(0),
                        static_cast<float>(1));
     auto *inputx1_ptr = inputx1.data<float>();
 
-    paddle_mobile::framework::TestLrnOp<paddle_mobile::CPU> testLrnOp(program);
+    paddle_mobile::framework::Tensor mean;
+    SetupTensor<float>(&mean, {10}, static_cast<float>(0),
+                       static_cast<float>(1));
+    auto *mean_ptr = mean.data<float>();
 
-    auto output_lrn = testLrnOp.predict_lrn(inputx1);
-    auto *output_lrn_ptr = output_lrn->data<float>();
+    paddle_mobile::framework::Tensor scale;
+    SetupTensor<float>(&scale, {10}, static_cast<float>(0),
+                       static_cast<float>(1));
+    auto *scale_ptr = scale.data<float>();
 
-    DLOG << " LrnOp input: ";
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 4; j++) {
-            for (int c = 0; c < 2; c++) {
-                for (int d = 0; d < 2; d++) {
-                    DLOGF("%f ", inputx1_ptr[i * 16 + j * 4 + c * 2 + d]);
-                }
-                DLOGF("\n");
-            }
-            DLOGF("\n");
-        }
-        DLOGF("\n");
-    }
-    DLOG << " LrnOp output: ";
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 4; j++) {
-            for (int c = 0; c < 2; c++) {
-                for (int d = 0; d < 2; d++) {
-                    DLOGF("%f ", output_lrn_ptr[i * 16 + j * 4 + c * 2 + d]);
-                }
-                DLOGF("\n");
-            }
-            DLOGF("\n");
-        }
-        DLOGF("\n");
-    }
-    DLOG << inputx1_ptr[0] << " / ((1 + 0.00002 * ( " << inputx1_ptr[0]
-         << "^2 + " << inputx1_ptr[4] << "^2 + " << inputx1_ptr[8]
-         << "^2 ))^0.75) = ";
-    DLOG << output_lrn_ptr[0];
+    paddle_mobile::framework::Tensor variance;
+    SetupTensor<float>(&variance, {10}, static_cast<float>(0),
+                       static_cast<float>(1));
+    auto *variance_ptr = variance.data<float>();
+
+    paddle_mobile::framework::Tensor bias;
+    SetupTensor<float>(&bias, {10}, static_cast<float>(0),
+                       static_cast<float>(1));
+    auto *bias_ptr = bias.data<float>();
+
+    paddle_mobile::framework::TestBatchNormOp<paddle_mobile::CPU>
+        testBatchNormOp(program);
+
+    auto output_bn =
+        testBatchNormOp.predict_bn(inputx1, mean, scale, variance, bias);
+    auto *output_bn_ptr = output_bn->data<float>();
+
+    /// [2, 5, 1, 0]
+    DLOG << " (" << inputx1_ptr[102] << " - " << mean_ptr[5] << ")/(("
+         << variance_ptr[5] << " + 0.00001"
+         << ")^0.5)* " << scale_ptr[5] << " + " << bias_ptr[5] << " = ";
+    DLOG << output_bn_ptr[102];
+
     return 0;
 }
