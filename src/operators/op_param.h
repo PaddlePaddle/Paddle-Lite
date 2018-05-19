@@ -65,6 +65,11 @@ class OpParam : PaddleMobileObject {
     }
 
     template <typename T>
+    static T *MidOutFrom(const VariableNameMap &outputs, const Scope &scope) {
+        return GetVarValue<T>("MidOut", outputs, scope);
+    }
+
+    template <typename T>
     static T *FilterFrom(const VariableNameMap &inputs, const Scope &scope) {
         return GetVarValue<T>("Filter", inputs, scope);
     }
@@ -220,6 +225,48 @@ class ConcatParam : public OpParam {
     std::vector<Tensor *> inputs_;
     Tensor *out_;
     int axis_;
+};
+
+class LrnParam : public OpParam {
+  public:
+    LrnParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+             const framework::AttributeMap &attrs,
+             const framework::Scope &scope) {
+        input_x_ = InputXFrom<framework::Tensor>(inputs, scope);
+        out_ = OutFrom<framework::Tensor>(outputs, scope);
+        mid_out_ = MidOutFrom<framework::Tensor>(outputs, scope);
+        n_ = GetAttr<int>("n", attrs);
+        alpha_ = GetAttr<float>("alpha", attrs);
+        beta_ = GetAttr<float>("beta", attrs);
+        k_ = GetAttr<float>("k", attrs);
+        data_format_ = GetAttr<std::string>("data_format", attrs);
+    }
+
+    const Tensor *InputX() const { return input_x_; }
+
+    Tensor *Out() const { return out_; }
+
+    Tensor *MidOut() const { return mid_out_; }
+
+    const int &N() const { return n_; }
+
+    const float &Alpha() const { return alpha_; }
+
+    const float &Beta() const { return beta_; }
+
+    const float &K() const { return k_; }
+
+    const std::string &DataFormat() const { return data_format_; }
+
+  private:
+    Tensor *input_x_;
+    Tensor *out_;
+    Tensor *mid_out_;
+    int n_;
+    float alpha_;
+    float beta_;
+    float k_;
+    std::string data_format_;
 };
 
 } // namespace operators

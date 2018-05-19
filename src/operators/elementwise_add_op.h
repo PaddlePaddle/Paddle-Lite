@@ -37,8 +37,7 @@ class ElementwiseAddOp : public framework::OperatorWithKernel<DeviceType> {
           param_(inputs, outputs, attrs, *scope) {}
 
     void Run() const {
-        operators::ElementwiseAddKernel<DeviceType, T, ElementwiseAddParam>
-            kernel;
+        operators::ElementwiseAddKernel<DeviceType, T> kernel;
         kernel.Compute(param_);
     }
 
