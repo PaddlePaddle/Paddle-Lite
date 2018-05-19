@@ -22,6 +22,7 @@ SOFTWARE.
 #include <vector>
 
 #include "common/log.h"
+#include "framework/op_desc.h"
 #include "framework/paddle_mobile_object.h"
 
 namespace paddle_mobile {
@@ -30,14 +31,19 @@ namespace framework {
 class Node : PaddleMobileObject {
   public:
     Node(const std::string &type) : type_(type) {}
-
-    Node &operator>(const Node &out);
+    Node(std::shared_ptr<OpDesc> op_desc)
+        : op_desc_(op_desc), type_(op_desc->Type()){};
+    Node &operator>(std::shared_ptr<Node> node);
     bool operator==(const Node &in);
     std::string ToString() const;
+    Node &To(int index);
+    uint depth(uint begin = 0);
 
   private:
-    std::string ToString(std::string blank) const;
+    std::shared_ptr<OpDesc> op_desc_;
+    std::string ToString(std::string blank, const Node *node) const;
     std::vector<std::shared_ptr<Node>> outputs_;
+    std::vector<Node *> inputs_;
     std::string type_;
 };
 

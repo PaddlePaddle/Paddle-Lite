@@ -34,15 +34,19 @@ SOFTWARE.
 
 namespace paddle_mobile {
 namespace framework {
-static std::unordered_map<std::string, std::vector<std::string>>
-    op_input_output_key = {
-        {"conv2d", {"Input", "Output"}},   {"relu", {"X", "Out"}},
-        {"softmax", {"X", "Out"}},         {"mul", {"X", "Out"}},
-        {"elementwise_add", {"X", "Out"}}, {"pool2d", {"X", "Out"}},
-        {"batch_norm", {"X", "Y"}},        {"lrn", {"X", "Out"}},
-        {"concat", {"X", "Out"}},
-
-};
+static std::unordered_map<
+    std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
+    op_input_output_key = {{"conv2d", {{"Input"}, {"Output"}}},
+                           {"relu", {{"X"}, {"Out"}}},
+                           {"softmax", {{"X"}, {"Out"}}},
+                           {"mul", {{"X"}, {"Out"}}},
+                           {"elementwise_add", {{"X", "Y"}, {"Out"}}},
+                           {"pool2d", {{"X"}, {"Out"}}},
+                           {"batch_norm", {{"X"}, {"Y"}}},
+                           {"lrn", {{"X"}, {"Out"}}},
+                           {"concat", {{"X"}, {"Out"}}},
+                           {"feed", {{"X"}, {"Out"}}},
+                           {"fetch", {{"X"}, {"Out"}}}};
 
 template <typename Dtype> class OperatorBase : PaddleMobileObject {
   public:
