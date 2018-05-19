@@ -60,10 +60,9 @@ template <typename Dtype> class OperatorBase : PaddleMobileObject {
     const VariableNameMap &Outputs() const { return outputs_; }
     const std::string &Type() const { return type_; }
     const AttributeMap &Attrs() const { return attrs_; }
-    void ClearVariables() const {
+    void ClearVariables(const std::vector<std::string> &var_names) const {
         if (this->scope_) {
-            this->scope_->EraseVars(this->inputs_.at("Filter"));
-            this->scope_->EraseVars(this->inputs_.at("Input"));
+            this->scope_->EraseVars(var_names);
         }
     }
 
