@@ -239,9 +239,9 @@ class LIBPROTOBUF_EXPORT ExtensionSet {
     const MessageLite &GetMessage(int number, const Descriptor *message_type,
                                   MessageFactory *factory) const;
 
-    // |descriptor| may be NULL so long as it is known that the descriptor for
-    // the extension lives in the same pool as the descriptor for the containing
-    // type.
+// |descriptor| may be NULL so long as it is known that the descriptor for
+// the extension lives in the same pool as the descriptor for the containing
+// type.
 #define desc const FieldDescriptor *descriptor // avoid line wrapping
     void SetInt32(int number, FieldType type, int32 value, desc);
     void SetInt64(int number, FieldType type, int64 value, desc);

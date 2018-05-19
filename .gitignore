@@ -51,8 +51,8 @@ paddle-mobile.cbp
 
 .idea
 
+compile_commands.json
 
 cmake-build-debug/
-
 
 test/models/
