@@ -15,22 +15,33 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
-#pragma once;
 
-#include "framework/operator.h"
-#include "operators/math/elementwise_op_function.h"
-#include "operators/op_param.h"
+#pragma once
+
+#include "operators/kernel/lrn_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-using namespace framework;
+template <> void LrnKernel<CPU, float>::Compute(const LrnParam &param) const {
+    const Tensor *input_x = param.InputX();
+    auto x_dims = input_x->dims();
+    /// data_format = NCHW
+    const int N = x_dims[0];
+    const int C = x_dims[1];
+    const int H = x_dims[2];
+    const int W = x_dims[3];
+    Tensor *out = param.Out();
+    out->mutable_data<float>();
+    const int n = param.N();
+    const float alpha = param.Alpha();
+    const float beta = param.Beta();
+    const float k = param.K();
+    LRNFunctor<float> lrnFunctor;
+    lrnFunctor(*input_x, out, N, C, H, W, n, k, alpha, beta);
+}
 
-template <typename DeviceType, typename T>
-class ElementwiseAddKernel
-    : public framework::OpKernelBase<DeviceType, ElementwiseAddParam> {
-  public:
-    void Compute(const ElementwiseAddParam &param) const;
-};
+template class LrnKernel<CPU, float>;
+
 } // namespace operators
 } // namespace paddle_mobile
