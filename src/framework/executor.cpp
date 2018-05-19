@@ -32,26 +32,28 @@ Executor<Dtype>::Executor(const Program<Dtype> p) : program_(p) {
         to_predict_program_ = program_.originProgram;
     }
 
-    const std::vector<std::shared_ptr<BlockDesc>> blocks =
-        to_predict_program_->Blocks();
-    for (int i = 0; i < blocks.size(); ++i) {
-        std::shared_ptr<BlockDesc> block_desc = blocks[i];
-        std::vector<std::shared_ptr<OpDesc>> ops = block_desc->Ops();
-        for (int j = 0; j < ops.size(); ++j) {
-            std::shared_ptr<OpDesc> op = ops[j];
-            if (op->Type() == "conv2d" && op->Input("Input")[0] == "pixel") {
-                Attribute strides_attr = op->GetAttrMap().at("strides");
-                std::vector<int> stride = strides_attr.Get<std::vector<int>>();
-                for (int k = 0; k < stride.size(); ++k) {
-                }
-                std::shared_ptr<operators::ConvOp<Dtype, float>> conv =
-                    std::make_shared<operators::ConvOp<Dtype, float>>(
-                        op->Type(), op->GetInputs(), op->GetOutputs(),
-                        op->GetAttrMap(), program_.scope);
-                ops_of_block_[*block_desc.get()].push_back(conv);
-            }
-        }
-    }
+    //    const std::vector<std::shared_ptr<BlockDesc>> blocks =
+    to_predict_program_->Blocks();
+    //    for (int i = 0; i < blocks.size(); ++i) {
+    //        std::shared_ptr<BlockDesc> block_desc = blocks[i];
+    //        std::vector<std::shared_ptr<OpDesc>> ops = block_desc->Ops();
+    //        for (int j = 0; j < ops.size(); ++j) {
+    //            std::shared_ptr<OpDesc> op = ops[j];
+    //            if (op->Type() == "conv2d" && op->Input("Input")[0] ==
+    //            "pixel") {
+    //                Attribute strides_attr = op->GetAttrMap().at("strides");
+    //                std::vector<int> stride =
+    //                strides_attr.Get<std::vector<int>>(); for (int k = 0; k <
+    //                stride.size(); ++k) {
+    //                }
+    //                std::shared_ptr<operators::ConvOp<Dtype, float>> conv =
+    //                    std::make_shared<operators::ConvOp<Dtype, float>>(
+    //                        op->Type(), op->GetInputs(), op->GetOutputs(),
+    //                        op->GetAttrMap(), program_.scope);
+    //                ops_of_block_[*block_desc.get()].push_back(conv);
+    //            }
+    //        }
+    //    }
 }
 
 template <typename Dtype>
@@ -82,7 +84,6 @@ void Executor<Dtype>::predict(const Tensor &t, int block_id) {
         to_predict_program_->Block(block_id);
     for (int j = 0; j < ops_of_block_[*to_predict_block.get()].size(); ++j) {
         auto op = ops_of_block_[*to_predict_block.get()][j];
-        //    std::cout << "开始run" << std::endl;
         op->Run();
     }
 }
