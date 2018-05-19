@@ -18,14 +18,14 @@ SOFTWARE.
 ==============================================================================*/
 #pragma once
 #include "../test_include.h"
-#include "operators/mul_op.h"
+#include "operators/concat_op.h"
 
 namespace paddle_mobile {
 namespace framework {
 
-template <typename Dtype> class TestMulOp {
+template <typename Dtype> class TestConcatOp {
   public:
-    explicit TestMulOp(const Program<Dtype> p) : program_(p) {
+    explicit TestConcatOp(const Program<Dtype> p) : program_(p) {
         if (use_optimize_) {
             to_predict_program_ = program_.optimizeProgram;
         } else {
@@ -56,50 +56,56 @@ template <typename Dtype> class TestMulOp {
                 //                            << op->Input("X")[0];
                 //                        }
                 //                        DLOG << "op:" << op->Type();
-                if (op->Type() == "mul" &&
-                    op->Input("X")[0] == "pool2d_0.tmp_0") {
+                if (op->Type() == "concat" &&
+                    op->Input("X")[0] == "conv2d_3.tmp_1") {
                     DLOG << " mul attr size: " << op->GetAttrMap().size();
                     DLOG << " inputs size: " << op->GetInputs().size();
                     DLOG << " outputs size: " << op->GetOutputs().size();
                     DLOG << " Input X is : " << op->Input("X")[0];
-                    DLOG << " Input Y is : " << op->Input("Y")[0];
                     DLOG << " Output Out is : " << op->Output("Out")[0];
-                    DLOG << "x_num_col_dims : "
-                         << op->GetAttrMap().at("x_num_col_dims").Get<int>();
-                    DLOG << "y_num_col_dims : "
-                         << op->GetAttrMap().at("y_num_col_dims").Get<int>();
+                    DLOG << " axis : "
+                         << op->GetAttrMap().at("axis").Get<int>();
 
-                    std::shared_ptr<operators::MulOp<Dtype, float>> mul =
-                        std::make_shared<operators::MulOp<Dtype, float>>(
+                    std::shared_ptr<operators::ConcatOp<Dtype, float>> concat =
+                        std::make_shared<operators::ConcatOp<Dtype, float>>(
                             op->Type(), op->GetInputs(), op->GetOutputs(),
                             op->GetAttrMap(), program_.scope);
-                    ops_of_block_[*block_desc.get()].push_back(mul);
+                    ops_of_block_[*block_desc.get()].push_back(concat);
                 }
             }
         }
     }
 
-    std::shared_ptr<Tensor> predict_mul(Tensor &t1, Tensor &t2) {
+    std::shared_ptr<Tensor> predict_concat(Tensor &t1, Tensor &t2, Tensor &t3,
+                                           Tensor &t4) {
         // feed
         auto scope = program_.scope;
-        Variable *x_feed_value = scope->Var("pool2d_0.tmp_0");
-        auto tensor_x = x_feed_value->GetMutable<Tensor>();
-        tensor_x->ShareDataWith(t1);
+        Variable *x1_feed_value = scope->Var("conv2d_3.tmp_1");
+        auto tensor_x1 = x1_feed_value->GetMutable<Tensor>();
+        tensor_x1->ShareDataWith(t1);
 
-        Variable *y_feed_value = scope->Var("fc_0.w_0");
-        auto tensor_y = y_feed_value->GetMutable<Tensor>();
-        tensor_y->ShareDataWith(t2);
+        Variable *x2_feed_value = scope->Var("conv2d_5.tmp_1");
+        auto tensor_x2 = x2_feed_value->GetMutable<Tensor>();
+        tensor_x2->ShareDataWith(t2);
 
-        Variable *con_output = scope->Var("fc_0.tmp_0");
+        Variable *x3_feed_value = scope->Var("conv2d_7.tmp_1");
+        auto tensor_x3 = x3_feed_value->GetMutable<Tensor>();
+        tensor_x3->ShareDataWith(t3);
+
+        Variable *x4_feed_value = scope->Var("conv2d_8.tmp_1");
+        auto tensor_x4 = x4_feed_value->GetMutable<Tensor>();
+        tensor_x4->ShareDataWith(t4);
+
+        Variable *con_output = scope->Var("concat_0.tmp_0");
         auto *output_tensor = con_output->GetMutable<Tensor>();
-        output_tensor->mutable_data<float>({3, 3});
+        output_tensor->mutable_data<float>({4, 100, 2, 2});
         //  DLOG << typeid(output_tensor).name();
         //  DLOG << "output_tensor dims: " << output_tensor->dims();
 
         std::shared_ptr<Tensor> out_tensor = std::make_shared<LoDTensor>();
         out_tensor.reset(output_tensor);
 
-        predict_mul(t1, t2, 0);
+        predict_concat(t1, t2, t3, t4, 0);
         return out_tensor;
     }
 
@@ -111,7 +117,8 @@ template <typename Dtype> class TestMulOp {
         ops_of_block_;
     bool use_optimize_ = false;
 
-    void predict_mul(const Tensor &t1, const Tensor &t2, int block_id) {
+    void predict_concat(const Tensor &t1, const Tensor &t2, const Tensor &t3,
+                        const Tensor &t4, int block_id) {
         std::shared_ptr<BlockDesc> to_predict_block =
             to_predict_program_->Block(block_id);
         for (int j = 0; j < ops_of_block_[*to_predict_block.get()].size();
@@ -123,7 +130,7 @@ template <typename Dtype> class TestMulOp {
     }
 };
 
-template class TestMulOp<CPU>;
+template class TestConcatOp<CPU>;
 } // namespace framework
 } // namespace paddle_mobile
 
@@ -131,59 +138,59 @@ int main() {
     DLOG << "----------**********----------";
     DLOG << "begin to run MulOp Test";
     paddle_mobile::Loader<paddle_mobile::CPU> loader;
-    auto program =
-        loader.Load(std::string("../../test/models/"
-                                "image_classification_resnet.inference.model"));
+    auto program = loader.Load(std::string("../../test/models/googlenet"));
 
     /// input x (3,2,1,1)
-    paddle_mobile::framework::Tensor inputx;
-    SetupTensor<float>(&inputx, {3, 2, 1, 1}, static_cast<float>(0),
+    paddle_mobile::framework::Tensor inputx1;
+    SetupTensor<float>(&inputx1, {4, 10, 2, 2}, static_cast<float>(0),
                        static_cast<float>(1));
-    auto *inputx_ptr = inputx.data<float>();
-
-    /// input y (2,3)
-    paddle_mobile::framework::Tensor inputy;
-    SetupTensor<float>(&inputy, {2, 3}, static_cast<float>(0),
+    auto *inputx1_ptr = inputx1.data<float>();
+    /// input x (3,2,1,1)
+    paddle_mobile::framework::Tensor inputx2;
+    SetupTensor<float>(&inputx2, {4, 20, 2, 2}, static_cast<float>(0),
                        static_cast<float>(1));
-    auto *inputy_ptr = inputy.data<float>();
+    auto *inputx2_ptr = inputx2.data<float>();
+    /// input x (3,2,1,1)
 
-    paddle_mobile::framework::TestMulOp<paddle_mobile::CPU> testMulOp(program);
+    paddle_mobile::framework::Tensor inputx3;
+    SetupTensor<float>(&inputx3, {4, 30, 2, 2}, static_cast<float>(0),
+                       static_cast<float>(1));
+    auto *inputx3_ptr = inputx3.data<float>();
 
-    auto output_mul = testMulOp.predict_mul(inputx, inputy);
-    auto *output_mul_ptr = output_mul->data<float>();
+    /// input x (3,2,1,1)
+    paddle_mobile::framework::Tensor inputx4;
+    SetupTensor<float>(&inputx4, {4, 40, 2, 2}, static_cast<float>(0),
+                       static_cast<float>(1));
+    auto *inputx4_ptr = inputx4.data<float>();
 
-    auto dimx_1 = inputx.numel() / inputx.dims()[0];
-    DLOG << " inputx : ";
-    for (int i = 0; i < inputx.dims()[0]; ++i) {
-        for (int j = 0; j < dimx_1; ++j) {
-            DLOGF("%f ", inputx_ptr[i * dimx_1 + j]);
-        }
-        DLOGF("\n");
-    }
+    paddle_mobile::framework::TestConcatOp<paddle_mobile::CPU> testConcatOp(
+        program);
 
-    auto dimy_1 = inputy.numel() / inputy.dims()[0];
-    DLOG << " inputy : ";
-    for (int i = 0; i < inputy.dims()[0]; ++i) {
-        for (int j = 0; j < dimy_1; ++j) {
-            DLOGF("%f ", inputy_ptr[i * dimx_1 + j]);
-        }
-        DLOGF("\n");
-    }
+    auto output_concat =
+        testConcatOp.predict_concat(inputx1, inputx2, inputx3, inputx4);
+    auto *output_concat_ptr = output_concat->data<float>();
 
-    auto dim_output_1 = output_mul->numel() / output_mul->dims()[0];
-    DLOG << " output : ";
-    for (int i = 0; i < output_mul->dims()[0]; ++i) {
-        for (int j = 0; j < dim_output_1; ++j) {
-            DLOGF("%f ", output_mul_ptr[i * dimy_1 + j]);
-        }
-        DLOGF("\n");
-    }
+    int input_n = 1;
+    int input_c = 2;
+    int input_h = 0;
+    int input_w = 1;
+    int stride0 = inputx3.numel() / inputx3.dims()[0];
+    int stride1 = inputx3.numel() / inputx3.dims()[0] / inputx3.dims()[1];
+    int stride2 = inputx3.dims()[3];
+    /// inputx1 (4,10,2,2),
+    /// inputx2 (4,20,2,2),
+    /// inputx3 (4,30,2,2),
+    /// inputx4 (4,40,2,2),
+    /// axis = 1
+    /// output (4,100,2,2)
+    int input_index =
+        input_n * stride0 + input_c * stride1 + input_h * stride2 + input_w;
+    int output_index =
+        input_n * 100 * 2 * 2 +
+        (input_c + inputx1.dims()[1] + inputx2.dims()[1]) * 2 * 2 +
+        input_h * 2 + input_w;
 
-    /// output (3,3)
-    DLOG << "output memory size : " << output_mul->memory_size();
-    DLOG << "output numel : " << output_mul->numel();
-
-    DLOG << inputx_ptr[0] << " x " << inputy_ptr[0] << " + " << inputx_ptr[1]
-         << " x " << inputy_ptr[0 + 3] << " = " << output_mul_ptr[0];
+    DLOG << " inputx3[1,2,0,1] = " << inputx3_ptr[input_index];
+    DLOG << " output[1,12,0,1] = " << output_concat_ptr[output_index];
     return 0;
 }
