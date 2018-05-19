@@ -25,7 +25,7 @@ namespace framework {
 
 template <typename Dtype> class TestElementwiseAddOp {
   public:
-    TestElementwiseAddOp(const Program<Dtype> p) : program_(p) {
+    explicit TestElementwiseAddOp(const Program<Dtype> p) : program_(p) {
         if (use_optimize_) {
             to_predict_program_ = program_.optimizeProgram;
         } else {
@@ -89,7 +89,7 @@ template <typename Dtype> class TestElementwiseAddOp {
         tensor_y->ShareDataWith(t2);
 
         Variable *con_output = scope->Var("elementwise_add_0.tmp_0");
-        Tensor *output_tensor = con_output->GetMutable<Tensor>();
+        auto *output_tensor = con_output->GetMutable<Tensor>();
         output_tensor->mutable_data<float>({1, 3, 224, 224});
         //  DLOG << typeid(output_tensor).name();
         //  DLOG << "output_tensor dims: " << output_tensor->dims();
@@ -129,25 +129,25 @@ int main() {
     DLOG << "begin to run ElementAddOp Test";
     paddle_mobile::Loader<paddle_mobile::CPU> loader;
     auto program =
-        loader.Load(std::string("../../../test/models/"
+        loader.Load(std::string("../../test/models/"
                                 "image_classification_resnet.inference.model"));
 
     /// input x (1,3,224,224)
     paddle_mobile::framework::Tensor inputx;
     SetupTensor<float>(&inputx, {1, 3, 224, 224}, static_cast<float>(0),
                        static_cast<float>(1));
-    float *inputx_ptr = inputx.data<float>();
+    auto *inputx_ptr = inputx.data<float>();
     /// input y (224,)
     paddle_mobile::framework::Tensor inputy;
     SetupTensor<float>(&inputy, {224}, static_cast<float>(0),
                        static_cast<float>(1));
-    float *inputy_ptr = inputy.data<float>();
+    auto *inputy_ptr = inputy.data<float>();
 
     paddle_mobile::framework::TestElementwiseAddOp<paddle_mobile::CPU>
         testElementwiseAddOp(program);
 
     auto output_add = testElementwiseAddOp.predict_add(inputx, inputy);
-    float *output_add_ptr = output_add->data<float>();
+    auto *output_add_ptr = output_add->data<float>();
     //            for (int j = 0; j < output_add->numel(); ++j) {
     //                DLOG << "value of output: " << output_add_ptr[j];
     //            }

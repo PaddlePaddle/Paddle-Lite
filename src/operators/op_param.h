@@ -51,7 +51,7 @@ class OpParam : PaddleMobileObject {
     template <typename T>
     static std::vector<T *> InputMultiFrom(const VariableNameMap &inputs,
                                            const Scope &scope) {
-        return GetMultiVarValue<T>("Input", inputs, scope);
+        return GetMultiVarValue<T>("X", inputs, scope);
     }
 
     template <typename T>
@@ -70,15 +70,15 @@ class OpParam : PaddleMobileObject {
     }
 
     template <typename T>
-    static const T GetAttr(std::string key, const AttributeMap &map) {
+    static const T GetAttr(const std::string &key, const AttributeMap &map) {
         return ((Attribute)map.at(key)).Get<T>();
     }
 
     template <typename T>
-    static T *GetVarValue(std::string key, const VariableNameMap &var_map,
-                          const Scope &scope) {
+    static T *GetVarValue(const std::string &key,
+                          const VariableNameMap &var_map, const Scope &scope) {
         auto var_vec = var_map.at(key);
-        if (var_vec.size()) {
+        if (!var_vec.empty()) {
             //      std::cout << " get var value -- " << var_vec[0] <<
             //      std::endl;
             auto var = scope.FindVar(var_vec[0]);
@@ -89,7 +89,7 @@ class OpParam : PaddleMobileObject {
     }
 
     template <typename T>
-    static std::vector<T *> GetMultiVarValue(std::string key,
+    static std::vector<T *> GetMultiVarValue(const std::string &key,
                                              const VariableNameMap &var_map,
                                              const Scope &scope) {
         auto var_vecs = var_map.at(key);
