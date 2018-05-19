@@ -1,11 +1,27 @@
 
 # gen test
-ADD_EXECUTABLE(paddle-mobile-test main.cpp test_helper.h elementwise_add_op_test.h test_include.h mul_op_test.h)
-target_link_libraries(paddle-mobile-test paddle-mobile)
-
-# gen test
 ADD_EXECUTABLE(test-conv-op  operators/test_cov_op.cpp test_helper.h  test_include.h)
 target_link_libraries(test-conv-op paddle-mobile)
+
+# gen test
+ADD_EXECUTABLE(test-mul-op  operators/test_mul_op.cpp test_helper.h  test_include.h)
+target_link_libraries(test-mul-op paddle-mobile)
+
+# gen test
+ADD_EXECUTABLE(test-elementwiseadd-op  operators/test_elementwise_add_op.cpp test_helper.h  test_include.h)
+target_link_libraries(test-elementwiseadd-op paddle-mobile)
+
+# gen test
+ADD_EXECUTABLE(test-concat-op  operators/test_concat_op.cpp test_helper.h  test_include.h)
+target_link_libraries(test-concat-op paddle-mobile)
+
+# gen test
+ADD_EXECUTABLE(test-lrn-op  operators/test_lrn_op.cpp test_helper.h  test_include.h)
+target_link_libraries(test-lrn-op paddle-mobile)
+
+# gen test
+ADD_EXECUTABLE(test-batchnorm-op  operators/test_batchnorm_op.cpp test_helper.h  test_include.h)
+target_link_libraries(test-batchnorm-op paddle-mobile)
 
 # gen test log
 ADD_EXECUTABLE(test-log common/test_log.cpp)

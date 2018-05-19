@@ -15,22 +15,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
-#pragma once;
 
-#include "framework/operator.h"
-#include "operators/math/elementwise_op_function.h"
-#include "operators/op_param.h"
+#include "batchnorm_op.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-using namespace framework;
-
-template <typename DeviceType, typename T>
-class ElementwiseAddKernel
-    : public framework::OpKernelBase<DeviceType, ElementwiseAddParam> {
-  public:
-    void Compute(const ElementwiseAddParam &param) const;
-};
+template <typename Dtype, typename T>
+void BatchNormOp<Dtype, T>::InferShape() const {
+    auto x_dims = param_.InputX()->dims();
+    param_.OutputY()->Resize(x_dims);
+}
+template class BatchNormOp<CPU, float>;
 } // namespace operators
 } // namespace paddle_mobile

@@ -15,22 +15,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
-#pragma once;
-
+#pragma once
 #include "framework/operator.h"
-#include "operators/math/elementwise_op_function.h"
+#include "operators/kernel/concat_kernel.h"
 #include "operators/op_param.h"
-
 namespace paddle_mobile {
 namespace operators {
 
 using namespace framework;
 
 template <typename DeviceType, typename T>
-class ElementwiseAddKernel
-    : public framework::OpKernelBase<DeviceType, ElementwiseAddParam> {
+class ConcatOp : public framework::OperatorWithKernel<DeviceType> {
   public:
-    void Compute(const ElementwiseAddParam &param) const;
+    ConcatOp(const std::string &type, const VariableNameMap &inputs,
+             const VariableNameMap &outputs,
+             const framework::AttributeMap attrs,
+             std::shared_ptr<framework::Scope> scope)
+        : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs,
+                                                    attrs, scope),
+          param_(inputs, outputs, attrs, *scope) {}
+
+    void Run() const {
+        operators::ConcatKernel<DeviceType, T> kernel;
+        kernel.Compute(param_);
+    }
+
+    using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+    void InferShape() const override;
+
+  protected:
+    ConcatParam param_;
 };
+
 } // namespace operators
 } // namespace paddle_mobile
