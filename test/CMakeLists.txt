@@ -15,6 +15,10 @@ target_link_libraries(test-elementwiseadd-op paddle-mobile)
 ADD_EXECUTABLE(test-concat-op  operators/test_concat_op.cpp test_helper.h  test_include.h)
 target_link_libraries(test-concat-op paddle-mobile)
 
+# gen test
+ADD_EXECUTABLE(test-lrn-op  operators/test_lrn_op.cpp test_helper.h  test_include.h)
+target_link_libraries(test-lrn-op paddle-mobile)
+
 # gen test log
 ADD_EXECUTABLE(test-log common/test_log.cpp)
 target_link_libraries(test-log paddle-mobile)
