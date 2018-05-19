@@ -24,19 +24,19 @@ int main() {
     paddle_mobile::Loader<paddle_mobile::CPU> loader;
     auto program = loader.Load(std::string("../models/googlenet"));
     if (program.originProgram == nullptr) {
-        DLOG << "program file read fail";
+        DLOG << "program read file";
     }
 
     Executor4Test<paddle_mobile::CPU,
-                  paddle_mobile::operators::ConvOp<paddle_mobile::CPU, float>>
-        executor(program, "conv2d");
+                  paddle_mobile::operators::PoolOp<paddle_mobile::CPU, float>>
+        executor(program, "pool2d");
 
     paddle_mobile::framework::Tensor input;
-    SetupTensor<float>(&input, {1, 3, 32, 32}, static_cast<float>(0),
+    SetupTensor<float>(&input, {1, 64, 112, 112}, static_cast<float>(0),
                        static_cast<float>(1));
 
-    auto output =
-        executor.predict(input, "data", "conv2d_0.tmp_0", {1, 64, 56, 56});
+    auto output = executor.predict(input, "conv2d_0.tmp_1", "pool2d_0.tmp_0",
+                                   {1, 64, 56, 56});
 
     float *output_ptr = output->data<float>();
     for (int j = 0; j < output->numel(); ++j) {

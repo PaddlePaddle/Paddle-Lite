@@ -29,7 +29,7 @@ namespace operators {
 
 using namespace framework;
 
-template <typename DeviceType, typename T, typename P>
+template <typename DeviceType, typename T>
 class ConvKernel : public framework::OpKernelBase<DeviceType, ConvParam> {
   public:
     void Compute(const ConvParam &param) const;
