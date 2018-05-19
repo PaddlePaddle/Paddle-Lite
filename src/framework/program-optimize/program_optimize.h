@@ -33,9 +33,9 @@ class ProgramOptimize {
     FushionOptimize(std::shared_ptr<ProgramDesc> ori_des);
 
   private:
-    //            std::shared_ptr<ProgramDesc> ori_desc_;
+    //                std::shared_ptr<ProgramDesc> ori_desc_;
     std::vector<std::unordered_map<std::string, std::shared_ptr<Node>>>
         outputs_nodes_;
 };
-}
+} // namespace framework
 } // namespace paddle_mobile

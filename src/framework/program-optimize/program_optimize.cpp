@@ -21,29 +21,54 @@ SOFTWARE.
 namespace paddle_mobile {
 
 namespace framework {
+
 std::shared_ptr<ProgramDesc> ProgramOptimize::Optimize() {}
 
 std::shared_ptr<ProgramDesc>
 ProgramOptimize::FushionOptimize(std::shared_ptr<ProgramDesc> ori_des) {
     for (int i = 0; i < ori_des->Blocks().size(); ++i) {
         std::unordered_map<std::string, std::shared_ptr<Node>> output_nodes;
+        std::shared_ptr<Node> begin_node;
         auto block = ori_des->Block(i);
+        //        DLOG << " ops size: " << block->Ops().size();
         for (int j = 0; j < block->Ops().size(); ++j) {
             auto op = block->Ops()[j];
-            std::shared_ptr<Node> node = std::make_shared<Node>(op);
-            auto op_outputs = op->Output(op_input_output_key.at(op->Type())[1]);
-            for (int k = 0; k < op_outputs.size(); ++k) {
-                output_nodes[op_outputs[k]] = node;
+            auto op_type = op->Type();
+            //            DLOG << "op type: " << op_type << " index: " << j;
+            if (op_input_output_key.find(op->Type()) ==
+                op_input_output_key.end()) {
+                return NULL;
             }
-            auto op_iutputs = op->Output(op_input_output_key.at(op->Type())[0]);
-            for (int l = 0; l < op_iutputs.size(); ++l) {
-                auto input_node = output_nodes[op_iutputs[l]];
-                *input_node > node;
+
+            std::shared_ptr<Node> node = std::make_shared<Node>(op);
+            if (j == 0) {
+                begin_node = node;
+            }
+
+            auto input_keys = op_input_output_key.at(op->Type()).first;
+            for (auto input_key : input_keys) {
+                auto op_inputs = op->Input(input_key);
+                for (int l = 0; l < op_inputs.size(); ++l) {
+                    std::string input_key = op_inputs[l];
+                    if (output_nodes.find(input_key) != output_nodes.end()) {
+                        auto input_node = output_nodes[input_key];
+                        *input_node > node;
+                    }
+                }
+            }
+
+            auto output_keys = op_input_output_key.at(op_type).second;
+            for (auto output_key : output_keys) {
+                auto op_outputs = op->Output(output_key);
+                for (int k = 0; k < op_outputs.size(); ++k) {
+                    output_nodes[op_outputs[k]] = node;
+                }
             }
         }
 
-        DLOG << output_nodes["feed"];
+        DLOG << "node: \n" << *begin_node;
     }
+    return ori_des;
 }
-}
-}
+} // namespace framework
+} // namespace paddle_mobile

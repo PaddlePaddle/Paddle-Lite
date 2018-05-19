@@ -180,17 +180,16 @@ inline Atomic32 NoBarrier_Load(volatile const Atomic32 *ptr) { return *ptr; }
 inline Atomic32 Acquire_Load(volatile const Atomic32 *ptr) {
     Atomic32 result;
 
-    asm volatile(
-        "1:     lwz %[res], %[obj]              \n\t"
-        "       cmpw %[res], %[res]             \n\t" // create data
-                                                      // dependency for
-                                                      // load/load ordering
-        "       bne- 1b                         \n\t" // never taken
+    asm volatile("1:     lwz %[res], %[obj]              \n\t"
+                 "       cmpw %[res], %[res]             \n\t" // create data
+                                                               // dependency for
+                 // load/load ordering
+                 "       bne- 1b                         \n\t" // never taken
 
-        "       isync                           \n\t"
-        : [res] "=b"(result)
-        : [obj] "m"(*ptr), [zero] "i"(0)
-        : "cr0", "ctr");
+                 "       isync                           \n\t"
+                 : [res] "=b"(result)
+                 : [obj] "m"(*ptr), [zero] "i"(0)
+                 : "cr0", "ctr");
 
     return result;
 }
@@ -198,17 +197,16 @@ inline Atomic32 Acquire_Load(volatile const Atomic32 *ptr) {
 inline Atomic32 Release_Load(volatile const Atomic32 *ptr) {
     Atomic32 result;
 
-    asm volatile(
-        "       lwsync                          \n\t"
+    asm volatile("       lwsync                          \n\t"
 
-        "1:     lwz %[res], %[obj]              \n\t"
-        "       cmpw %[res], %[res]             \n\t" // create data
-                                                      // dependency for
-                                                      // load/load ordering
-        "       bne- 1b                         \n\t" // never taken
-        : [res] "=b"(result)
-        : [obj] "m"(*ptr), [zero] "i"(0)
-        : "cr0", "ctr");
+                 "1:     lwz %[res], %[obj]              \n\t"
+                 "       cmpw %[res], %[res]             \n\t" // create data
+                                                               // dependency for
+                 // load/load ordering
+                 "       bne- 1b                         \n\t" // never taken
+                 : [res] "=b"(result)
+                 : [obj] "m"(*ptr), [zero] "i"(0)
+                 : "cr0", "ctr");
 
     return result;
 }
