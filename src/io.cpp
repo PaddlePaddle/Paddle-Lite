@@ -195,76 +195,55 @@ Loader<Dtype, P>::Load(const std::string &dirname) {
         LOG(kLOG_DEBUG) << "block: " << block.idx();
         for (int j = 0; j < block.ops().size(); ++j) {
             framework::proto::OpDesc op = block.ops()[j];
-            LOG(kLOG_DEBUG1) << " op: " << op.type();
+            LOG(kLOG_DEBUG1) << "op: " << op.type();
             for (int m = 0; m < op.inputs_size(); ++m) {
                 const framework::proto::OpDesc::Var &var = op.inputs(m);
-                LOG(kLOG_DEBUG2) << "  input parameter: " << var.parameter();
+                LOG(kLOG_DEBUG2) << "input parameter: " << var.parameter();
                 for (int n = 0; n < var.arguments().size(); ++n) {
-                    LOG(kLOG_DEBUG3) << "   argument - " << var.arguments()[n];
+                    LOG(kLOG_DEBUG3) << "argument - " << var.arguments()[n];
                 }
             }
 
             for (int y = 0; y < op.outputs_size(); ++y) {
                 const framework::proto::OpDesc::Var &var = op.outputs(y);
-                LOG(kLOG_DEBUG2) << "  out parameter: " << var.parameter();
+                LOG(kLOG_DEBUG2) << "out parameter: " << var.parameter();
                 for (int z = 0; z < var.arguments().size(); ++z) {
-                    LOG(kLOG_DEBUG3) << "   argument - " << var.arguments()[z];
+                    LOG(kLOG_DEBUG3) << "argument - " << var.arguments()[z];
                 }
             }
 
             for (int x = 0; x < op.attrs().size(); ++x) {
                 const framework::proto::OpDesc_Attr attr = op.attrs()[x];
-                //        std::cout << "  attr name: " << attr.name() <<
-                //        std::endl;
-                //        std::cout << "  attr type: " << attr.type() <<
-                //        std::endl;
+                LOG(kLOG_DEBUG2) << "attr name: " << attr.name();
 
                 switch (attr.type()) {
                 case framework::proto::AttrType::BOOLEAN:
-                    //            std::cout << "   boolen: " << attr.b() <<
-                    //            std::endl;
+                    LOG(kLOG_DEBUG3) << "boolen: " << attr.b();
                     break;
                 case framework::proto::AttrType::INT:
-                    //            std::cout << "   int: " << attr.i() <<
-                    //            std::endl;
+                    LOG(kLOG_DEBUG3) << "int: " << attr.i();
                     break;
                 case framework::proto::AttrType::FLOAT:
-                //            std::cout << "   float: " << attr.f() <<
-                //            std::endl;
+                    LOG(kLOG_DEBUG3) << "float: " << attr.f();
                 case framework::proto::AttrType::STRING:
-                //            std::cout << "   string: " << attr.s() <<
-                //            std::endl;
+                    LOG(kLOG_DEBUG3) << "string: " << attr.s();
                 case framework::proto::AttrType::BOOLEANS:
-                    //                            std::vector<bool>
-                    //                            bools(attr.bools_size());
                     for (int y = 0; y < attr.bools_size(); ++y) {
-                        //              std::cout << "   bool - " <<
-                        //              attr.bools(y) <<
-                        //              std::endl;
+                        LOG(kLOG_DEBUG3) << "bools: " << attr.bools(y);
                     }
                 case framework::proto::AttrType::LONG:
-                //            std::cout << "   long: " << attr.l() <<
-                //            std::endl;
+                    LOG(kLOG_DEBUG3) << "long: " << attr.l();
                 case framework::proto::AttrType::FLOATS:
                     for (int y = 0; y < attr.floats_size(); ++y) {
-                        //              std::cout << "   float - " << y <<
-                        //              ": " <<
-                        //              attr.floats(y)
-                        //                        << std::endl;
+                        LOG(kLOG_DEBUG3) << "floats: " << attr.floats(y);
                     }
                 case framework::proto::AttrType::INTS:
                     for (int y = 0; y < attr.ints_size(); ++y) {
-                        //              std::cout << "   int - " << y << ":
-                        //              " <<
-                        //              attr.ints(y)
-                        //                        << std::endl;
+                        LOG(kLOG_DEBUG3) << "ints: " << attr.ints(y);
                     }
                 case framework::proto::AttrType::STRINGS:
                     for (int y = 0; y < attr.strings_size(); ++y) {
-                        //              std::cout << "   string - " << y <<
-                        //              ": " <<
-                        //              attr.strings(y)
-                        //                        << std::endl;
+                        LOG(kLOG_DEBUG3) << "strings: " << attr.strings(y);
                     }
                 }
             }
@@ -273,19 +252,15 @@ Loader<Dtype, P>::Load(const std::string &dirname) {
         for (int k = 0; k < block.vars().size(); ++k) {
             framework::proto::VarDesc var = block.vars()[k];
             if (var.type().type() == framework::proto::VarType::LOD_TENSOR) {
-                //        std::cout << " var name: " << var.name() <<
-                //        std::endl;
+                LOG(kLOG_DEBUG1) << "var name: " << var.name();
                 const framework::proto::VarType::TensorDesc &tensor_desc =
                     var.type().lod_tensor().tensor();
-                //        std::cout << "  in var tensor desc dims size "
-                //                  << tensor_desc.dims().size() <<
-                //                  std::endl;
+                LOG(kLOG_DEBUG2) << "in var tensor desc dims size: "
+                                 << tensor_desc.dims().size();
                 int memory_size = 1;
                 for (int l = 0; l < tensor_desc.dims().size(); ++l) {
-                    //          std::cout << " var tensor desc dim " << l
-                    //                    << " value: " <<
-                    //                    tensor_desc.dims()[l] <<
-                    //                    std::endl;
+                    LOG(kLOG_DEBUG3) << "var tensor desc dim " << l
+                                     << " value: " << tensor_desc.dims()[l];
                 }
             }
 

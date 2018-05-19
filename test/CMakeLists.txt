@@ -15,7 +15,6 @@ target_link_libraries(test-log paddle-mobile)
 ADD_EXECUTABLE(test-load framework/test_load.cpp)
 target_link_libraries(test-load paddle-mobile)
 
-
 # gen test log
 ADD_EXECUTABLE(test-optimize framework/test_optimize.cpp)
 target_link_libraries(test-optimize paddle-mobile)

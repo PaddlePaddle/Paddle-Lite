@@ -41,8 +41,9 @@ class Node : PaddleMobileObject {
 
   private:
     std::shared_ptr<OpDesc> op_desc_;
-    std::string ToString(std::string blank) const;
+    std::string ToString(std::string blank, const Node *node) const;
     std::vector<std::shared_ptr<Node>> outputs_;
+    std::vector<Node *> inputs_;
     std::string type_;
 };
 
