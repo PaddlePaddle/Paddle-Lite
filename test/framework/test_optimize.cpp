@@ -17,21 +17,24 @@ SOFTWARE.
 ==============================================================================*/
 
 #include "framework/program-optimize/node.h"
-#include <iostream>
+#include "framework/program-optimize/program_optimize.h"
+#include "io.h"
 
+using namespace paddle_mobile;
 using namespace paddle_mobile::framework;
 
 int main() {
-    Node node("conv");
-    node > Node("add") > Node("relu");
 
-    Node node1("conv");
-    node1 > Node("add") > Node("relu");
+    Loader<paddle_mobile::CPU> loader;
+    //    "../../../test/models/googlenet"
+    auto program = loader.Load("../models/googlenet");
 
-    if (node == node1) {
-        DLOG << "equal";
+    ProgramOptimize optimize;
+
+    auto optimize_program = optimize.FushionOptimize(program.originProgram);
+    if (optimize_program) {
+
+    } else {
+        DLOG << "optimize_program is null";
     }
-
-    DLOG << "\n" << node1;
-    //    DLOG << node;
 }
