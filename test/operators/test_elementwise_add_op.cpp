@@ -41,18 +41,6 @@ template <typename Dtype> class TestElementwiseAddOp {
             //    DLOG << " ops " << ops.size();
             for (int j = 0; j < ops.size(); ++j) {
                 std::shared_ptr<OpDesc> op = ops[j];
-                //                        if (op->Type() ==
-                //                        "elementwise_add") {
-                //                            if
-                //                            (op->GetAttrMap().at("axis").Get<int>()
-                //                            != -1) {
-                //                                DLOG << "attr: axis =
-                //                                "
-                //                                     <<
-                //                                     op->GetAttrMap().at("axis").Get<int>();
-                //                            }
-                //                        }
-                //                        DLOG << "op:" << op->Type();
                 if (op->Type() == "elementwise_add" &&
                     op->Input("X")[0] == "batch_norm_2.tmp_2") {
                     DLOG << " elementwise_add attr size: "
