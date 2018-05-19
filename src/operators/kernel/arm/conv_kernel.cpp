@@ -34,8 +34,7 @@ bool IsExpand(const std::vector<int64_t> &filter_dim,
     return !(filter_1 && strides_1 && padding_0 && dilation_1);
 }
 
-template <>
-void ConvKernel<CPU, float, ConvParam>::Compute(const ConvParam &param) const {
+template <> void ConvKernel<CPU, float>::Compute(const ConvParam &param) const {
     LOG(kLOG_DEBUG) << param;
 
     const Tensor *input = param.Input();
@@ -149,7 +148,7 @@ void ConvKernel<CPU, float, ConvParam>::Compute(const ConvParam &param) const {
     }
 }
 
-template class ConvKernel<CPU, float, ConvParam>;
+template class ConvKernel<CPU, float>;
 
 } // namespace operators
 } // namespace paddle_mobile
