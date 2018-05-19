@@ -15,11 +15,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
-#pragma once;
 
 #include "framework/operator.h"
-#include "operators/math/elementwise_op_function.h"
 #include "operators/op_param.h"
+#pragma once;
 
 namespace paddle_mobile {
 namespace operators {
@@ -27,10 +26,11 @@ namespace operators {
 using namespace framework;
 
 template <typename DeviceType, typename T>
-class ElementwiseAddKernel
-    : public framework::OpKernelBase<DeviceType, ElementwiseAddParam> {
+class BatchNormKernel
+    : public framework::OpKernelBase<DeviceType, BatchNormParam> {
   public:
-    void Compute(const ElementwiseAddParam &param) const;
+    void Compute(const BatchNormParam &param) const;
 };
+
 } // namespace operators
 } // namespace paddle_mobile
