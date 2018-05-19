@@ -24,7 +24,7 @@ template <typename T> struct AddFunctor {
 };
 
 template <>
-void ElementwiseAddKernel<CPU, float, ElementwiseAddParam>::Compute(
+void ElementwiseAddKernel<CPU, float>::Compute(
     const ElementwiseAddParam &param) const {
     const Tensor *input_x = param.InputX();
     const Tensor *input_y = param.InputY();
@@ -35,7 +35,7 @@ void ElementwiseAddKernel<CPU, float, ElementwiseAddParam>::Compute(
                                                    AddFunctor<float>(), Out);
 }
 
-template class ElementwiseAddKernel<CPU, float, ElementwiseAddParam>;
+template class ElementwiseAddKernel<CPU, float>;
 
 } // namespace operators
 } // namespace paddle_mobile

@@ -36,7 +36,7 @@ class MulOp : public framework::OperatorWithKernel<DeviceType> {
           param_(inputs, outputs, attrs, *scope) {}
 
     void Run() const {
-        operators::MulKernel<DeviceType, T, MulParam> kernel;
+        operators::MulKernel<DeviceType, T> kernel;
         kernel.Compute(param_);
     }
 
