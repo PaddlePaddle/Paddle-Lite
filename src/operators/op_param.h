@@ -49,6 +49,25 @@ class OpParam : PaddleMobileObject {
     }
 
     template <typename T>
+    static T *InputBiasFrom(const VariableNameMap &inputs, const Scope &scope) {
+        return GetVarValue<T>("Bias", inputs, scope);
+    }
+    template <typename T>
+    static T *InputVarianceFrom(const VariableNameMap &inputs,
+                                const Scope &scope) {
+        return GetVarValue<T>("Variance", inputs, scope);
+    }
+    template <typename T>
+    static T *InputMeanFrom(const VariableNameMap &inputs, const Scope &scope) {
+        return GetVarValue<T>("Mean", inputs, scope);
+    }
+    template <typename T>
+    static T *InputScaleFrom(const VariableNameMap &inputs,
+                             const Scope &scope) {
+        return GetVarValue<T>("Scale", inputs, scope);
+    }
+
+    template <typename T>
     static std::vector<T *> InputMultiFrom(const VariableNameMap &inputs,
                                            const Scope &scope) {
         return GetMultiVarValue<T>("X", inputs, scope);
@@ -62,6 +81,11 @@ class OpParam : PaddleMobileObject {
     template <typename T>
     static T *OutFrom(const VariableNameMap &outputs, const Scope &scope) {
         return GetVarValue<T>("Out", outputs, scope);
+    }
+
+    template <typename T>
+    static T *OutputYFrom(const VariableNameMap &outputs, const Scope &scope) {
+        return GetVarValue<T>("Y", outputs, scope);
     }
 
     template <typename T>
@@ -268,6 +292,54 @@ class LrnParam : public OpParam {
     float k_;
     std::string data_format_;
 };
+class BatchNormParam : OpParam {
+  public:
+    BatchNormParam(const VariableNameMap &inputs,
+                   const VariableNameMap &outputs,
+                   const framework::AttributeMap &attrs,
+                   const framework::Scope &scope) {
+        input_x_ = InputXFrom<framework::Tensor>(inputs, scope);
+        output_y_ = OutputYFrom<framework::Tensor>(outputs, scope);
+        input_bias_ = InputBiasFrom<framework::Tensor>(inputs, scope);
+        input_mean_ = InputMeanFrom<framework::Tensor>(inputs, scope);
+        input_scale_ = InputScaleFrom<framework::Tensor>(inputs, scope);
+        input_variance_ = InputVarianceFrom<framework::Tensor>(inputs, scope);
+        epsilon_ = GetAttr<float>("epsilon", attrs);
+        momentum_ = GetAttr<float>("momentum", attrs);
+        is_test_ = GetAttr<bool>("is_test", attrs);
+    }
 
+    const Tensor *InputX() const { return input_x_; }
+
+    Tensor *OutputY() const { return output_y_; }
+
+    const Tensor *InputBias() const { return input_bias_; }
+
+    const Tensor *InputMean() const { return input_mean_; }
+
+    const Tensor *InputScale() const { return input_scale_; }
+
+    const Tensor *InputVariance() const { return input_variance_; }
+
+    const float &Epsilon() const { return epsilon_; }
+
+    const float &Momentum() const { return momentum_; }
+
+    const bool &IsTest() const { return is_test_; }
+
+    const std::string &DataFormat() const { return data_format_; }
+
+  private:
+    Tensor *input_x_;
+    Tensor *output_y_;
+    Tensor *input_bias_;
+    Tensor *input_mean_;
+    Tensor *input_scale_;
+    Tensor *input_variance_;
+    float epsilon_;
+    float momentum_;
+    bool is_test_;
+    std::string data_format_;
+};
 } // namespace operators
 } // namespace paddle_mobile
