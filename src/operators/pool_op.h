@@ -16,31 +16,37 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#include "../framework/executor_for_test.h"
-#include "../test_helper.h"
-#include "io.h"
+#pragma once
 
-int main() {
-    paddle_mobile::Loader<paddle_mobile::CPU> loader;
-    auto program = loader.Load(std::string("../models/googlenet"));
-    if (program.originProgram == nullptr) {
-        DLOG << "program file read fail";
+#include <framework/operator.h>
+#include <operators/kernel/pool_kernel.h>
+#include <operators/op_param.h>
+
+namespace paddle_mobile {
+namespace operators {
+using namespace framework;
+
+template <typename DeviceType, typename T>
+class PoolOp : public framework::OperatorWithKernel<DeviceType> {
+  public:
+    PoolOp(const std::string &type, const VariableNameMap &inputs,
+           const VariableNameMap &outputs, const framework::AttributeMap &attrs,
+           std::shared_ptr<framework::Scope> scope)
+        : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs,
+                                                    attrs, scope),
+          param_(inputs, outputs, attrs, *scope) {}
+    using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+    void InferShape() const override;
+
+    void Run() const {
+        //        InferShape();
+        operators::PoolKernel<DeviceType, T> kernel;
+        kernel.Compute(param_);
+        this->ClearVariables({"X"});
     }
 
-    Executor4Test<paddle_mobile::CPU,
-                  paddle_mobile::operators::ConvOp<paddle_mobile::CPU, float>>
-        executor(program, "conv2d");
-
-    paddle_mobile::framework::Tensor input;
-    SetupTensor<float>(&input, {1, 3, 32, 32}, static_cast<float>(0),
-                       static_cast<float>(1));
-
-    auto output =
-        executor.predict(input, "data", "conv2d_0.tmp_0", {1, 64, 56, 56});
-
-    float *output_ptr = output->data<float>();
-    for (int j = 0; j < output->numel(); ++j) {
-        DLOG << " value of output: " << output_ptr[j];
-    }
-    return 0;
-}
+  private:
+    PoolParam param_;
+};
+} // namespace operators
+} // namespace paddle_mobile

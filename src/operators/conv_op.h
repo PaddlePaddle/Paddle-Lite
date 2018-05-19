@@ -40,9 +40,9 @@ class ConvOp : public framework::OperatorWithKernel<DeviceType> {
     void InferShape() const override;
 
     void Run() const {
-        operators::ConvKernel<DeviceType, T, ConvParam> kernel;
+        operators::ConvKernel<DeviceType, T> kernel;
         kernel.Compute(param_);
-        this->ClearVariables();
+        this->ClearVariables({"Filter", "Input"});
     }
 
   private:
