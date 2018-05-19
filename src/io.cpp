@@ -194,6 +194,9 @@ Loader<Dtype, P>::Load(const std::string &dirname) {
         framework::proto::BlockDesc block = program_desc_proto.blocks()[i];
         LOG(kLOG_DEBUG) << "block: " << block.idx();
         for (int j = 0; j < block.ops().size(); ++j) {
+            if (j == 2) {
+                break;
+            }
             framework::proto::OpDesc op = block.ops()[j];
             LOG(kLOG_DEBUG1) << "op: " << op.type();
             for (int m = 0; m < op.inputs_size(); ++m) {

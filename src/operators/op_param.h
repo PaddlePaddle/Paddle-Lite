@@ -16,7 +16,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#pragma once;
+#pragma once
 
 #include "common/log.h"
 #include "common/type_define.h"
@@ -341,5 +341,48 @@ class BatchNormParam : OpParam {
     bool is_test_;
     std::string data_format_;
 };
+class PoolParam : public OpParam {
+  public:
+    PoolParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+              const framework::AttributeMap &attrs,
+              const framework::Scope &scope) {
+        input_ = InputXFrom<framework::Tensor>(inputs, scope);
+
+        output_ = OutFrom<framework::Tensor>(outputs, scope);
+        pooling_type_ = GetAttr<std::string>("pooling_type", attrs);
+        ksize_ = GetAttr<std::vector<int>>("ksize", attrs);
+        strides_ = GetAttr<std::vector<int>>("strides", attrs);
+        paddings_ = GetAttr<std::vector<int>>("paddings", attrs);
+        ceil_mode_ = GetAttr<bool>("ceil_mode", attrs);
+        gloabal_pooling_ = GetAttr<bool>("global_pooling", attrs);
+    }
+
+    const Tensor *Input() const { return input_; }
+
+    Tensor *Output() const { return output_; }
+
+    const std::string &PoolingType() const { return pooling_type_; }
+
+    const std::vector<int> &Ksize() const { return ksize_; }
+
+    const std::vector<int> &Strides() const { return strides_; }
+
+    const std::vector<int> &Paddings() const { return paddings_; }
+
+    bool isCeilMode() const { return ceil_mode_; }
+
+    bool isGlobalPooling() const { return gloabal_pooling_; }
+
+  private:
+    Tensor *input_;
+    Tensor *output_;
+    std::string pooling_type_;
+    std::vector<int> ksize_;
+    std::vector<int> strides_;
+    std::vector<int> paddings_;
+    bool ceil_mode_;
+    bool gloabal_pooling_ = false;
+};
+
 } // namespace operators
 } // namespace paddle_mobile

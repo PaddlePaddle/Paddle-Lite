@@ -1,6 +1,6 @@
 
 # gen test
-ADD_EXECUTABLE(test-conv-op  operators/test_cov_op.cpp test_helper.h  test_include.h)
+ADD_EXECUTABLE(test-conv-op  operators/test_cov_op.cpp test_helper.h  test_include.h framework/executor_for_test.h framework/executor_for_test.cpp)
 target_link_libraries(test-conv-op paddle-mobile)
 
 # gen test
@@ -32,5 +32,11 @@ ADD_EXECUTABLE(test-load framework/test_load.cpp)
 target_link_libraries(test-load paddle-mobile)
 
 # gen test log
+# gen test
 ADD_EXECUTABLE(test-optimize framework/test_optimize.cpp)
 target_link_libraries(test-optimize paddle-mobile)
+
+
+#gen test
+ADD_EXECUTABLE(test-pool operators/test_pool_op.cpp test_helper.h test_include.h framework/executor_for_test.h framework/executor_for_test.cpp)
+target_link_libraries(test-pool paddle-mobile)
