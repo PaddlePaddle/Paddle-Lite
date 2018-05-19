@@ -23,8 +23,7 @@ SOFTWARE.
 namespace paddle_mobile {
 namespace operators {
 
-template <>
-void MulKernel<CPU, float, MulParam>::Compute(const MulParam &param) const {
+template <> void MulKernel<CPU, float>::Compute(const MulParam &param) const {
     const Tensor *input_x = param.InputX();
     const Tensor *input_y = param.InputY();
     Tensor *out = param.Out();
@@ -48,7 +47,7 @@ void MulKernel<CPU, float, MulParam>::Compute(const MulParam &param) const {
     }
 }
 
-template class MulKernel<CPU, float, MulParam>;
+template class MulKernel<CPU, float>;
 
 } // namespace operators
 } // namespace paddle_mobile
