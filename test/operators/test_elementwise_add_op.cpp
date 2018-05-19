@@ -17,8 +17,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 #pragma once
+#include "../test_include.h"
 #include "operators/elementwise_add_op.h"
-#include "test_include.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -123,14 +123,13 @@ template <typename Dtype> class TestElementwiseAddOp {
 
 template class TestElementwiseAddOp<CPU>;
 } // namespace framework
-
-namespace test {
-void testElementwiseAdd() {
+} // namespace paddle_mobile
+int main() {
     DLOG << "----------**********----------";
     DLOG << "begin to run ElementAddOp Test";
     paddle_mobile::Loader<paddle_mobile::CPU> loader;
     auto program =
-        loader.Load(std::string("../../test/models/"
+        loader.Load(std::string("../../../test/models/"
                                 "image_classification_resnet.inference.model"));
 
     /// input x (1,3,224,224)
@@ -159,6 +158,5 @@ void testElementwiseAdd() {
 
     DLOG << inputx_ptr[226] << " + " << inputy_ptr[2] << " = "
          << output_add_ptr[226];
+    return 0;
 }
-} // namespace test
-} // namespace paddle_mobile

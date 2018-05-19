@@ -17,8 +17,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 #pragma once
+#include "../test_include.h"
 #include "operators/mul_op.h"
-#include "test_include.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -125,14 +125,14 @@ template <typename Dtype> class TestMulOp {
 
 template class TestMulOp<CPU>;
 } // namespace framework
+} // namespace paddle_mobile
 
-namespace test {
-void testMul() {
+int main() {
     DLOG << "----------**********----------";
     DLOG << "begin to run MulOp Test";
     paddle_mobile::Loader<paddle_mobile::CPU> loader;
     auto program =
-        loader.Load(std::string("../../test/models/"
+        loader.Load(std::string("../../../test/models/"
                                 "image_classification_resnet.inference.model"));
 
     /// input x (3,2,1,1)
@@ -185,6 +185,5 @@ void testMul() {
 
     DLOG << inputx_ptr[0] << " x " << inputy_ptr[0] << " + " << inputx_ptr[1]
          << " x " << inputy_ptr[0 + 3] << " = " << output_mul_ptr[0];
+    return 0;
 }
-} // namespace test
-} // namespace paddle_mobile
