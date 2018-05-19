@@ -16,6 +16,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 #pragma once
+#include "common/log.h"
 #include "framework/ddim.h"
 #include "framework/tensor.h"
 #include <random>
