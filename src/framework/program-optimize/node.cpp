@@ -26,6 +26,8 @@ namespace framework {
 
 Node &Node::operator>(std::shared_ptr<Node> node) {
     outputs_.push_back(node);
+    std::shared_ptr<Node> this_node;
+    node->inputs_.push_back(this);
     return *node;
 }
 
@@ -46,16 +48,23 @@ bool Node::operator==(const Node &in) {
     return true;
 }
 
-std::string Node::ToString(std::string blank) const {
+std::string Node::ToString(std::string blank, const Node *node) const {
     std::stringstream ss;
     ss << type_ << "-> \n";
+
+    if (inputs_.size() > 1 && node != inputs_.back()) {
+        return ss.str();
+    } else if (inputs_.size() > 1 && node == inputs_.back()) {
+        ss << "\n" << blank << type_ << "\n";
+    }
+
     for (int i = 0; i < outputs_.size(); ++i) {
-        ss << blank << outputs_[i]->ToString(blank + "    ") << "";
+        ss << blank << outputs_[i]->ToString(blank + " ", this) << "";
     }
     return ss.str();
 }
 
-std::string Node::ToString() const { return this->ToString("    "); }
+std::string Node::ToString() const { return this->ToString(" ", this); }
 
 Node &Node::To(int index) {
     if (index == 0) {

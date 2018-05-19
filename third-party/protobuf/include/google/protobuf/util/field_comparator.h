@@ -65,9 +65,9 @@ class LIBPROTOBUF_EXPORT FieldComparator {
                    // submessages, user should not recursively compare their
                    // contents.
         RECURSE,   // Compared submessages need to be compared recursively.
-                 // FieldComparator does not specify the semantics of recursive
-                 // comparison. This value should not be returned for simple
-                 // values.
+        // FieldComparator does not specify the semantics of recursive
+        // comparison. This value should not be returned for simple
+        // values.
     };
 
     // Compares the values of a field in two protocol buffer messages.

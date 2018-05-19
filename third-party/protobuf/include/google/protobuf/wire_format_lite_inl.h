@@ -359,7 +359,7 @@ WireFormatLite::ReadPackedFixedSizePrimitive(io::CodedInputStream *input,
                                  static_cast<int64>(input->BytesUntilLimit()));
     }
     if (bytes_limit >= new_bytes) {
-    // Fast-path that pre-allocates *values to the final size.
+// Fast-path that pre-allocates *values to the final size.
 #if defined(PROTOBUF_LITTLE_ENDIAN)
         values->Resize(old_entries + new_entries, 0);
         // values->mutable_data() may change after Resize(), so do this after:

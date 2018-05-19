@@ -309,22 +309,22 @@ class LIBPROTOBUF_EXPORT Arena {
         }
     }
 
-        // API to create any objects on the arena. Note that only the object
-        // will be created on the arena; the underlying ptrs (in case of a
-        // proto2 message) will be still heap allocated. Proto messages should
-        // usually be allocated with CreateMessage<T>() instead.
-        //
-        // Note that even if T satisfies the arena message construction protocol
-        // (InternalArenaConstructable_ trait and optional DestructorSkippable_
-        // trait), as described above, this function does not follow the
-        // protocol; instead, it treats T as a black-box type, just as if it did
-        // not have these traits. Specifically, T's constructor arguments will
-        // always be only those passed to Create<T>() -- no additional arena
-        // pointer is implicitly added. Furthermore, the destructor will always
-        // be called at arena destruction time (unless the destructor is
-        // trivial). Hence, from T's point of view, it is as if the object were
-        // allocated on the heap (except that the underlying memory is obtained
-        // from the arena).
+// API to create any objects on the arena. Note that only the object
+// will be created on the arena; the underlying ptrs (in case of a
+// proto2 message) will be still heap allocated. Proto messages should
+// usually be allocated with CreateMessage<T>() instead.
+//
+// Note that even if T satisfies the arena message construction protocol
+// (InternalArenaConstructable_ trait and optional DestructorSkippable_
+// trait), as described above, this function does not follow the
+// protocol; instead, it treats T as a black-box type, just as if it did
+// not have these traits. Specifically, T's constructor arguments will
+// always be only those passed to Create<T>() -- no additional arena
+// pointer is implicitly added. Furthermore, the destructor will always
+// be called at arena destruction time (unless the destructor is
+// trivial). Hence, from T's point of view, it is as if the object were
+// allocated on the heap (except that the underlying memory is obtained
+// from the arena).
 #if LANG_CXX11
     template <typename T, typename... Args>
     GOOGLE_ATTRIBUTE_ALWAYS_INLINE static T *

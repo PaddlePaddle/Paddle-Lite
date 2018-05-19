@@ -170,7 +170,7 @@ class LIBPROTOBUF_EXPORT DynamicMapSorter {
         GOOGLE_DCHECK_EQ(result.size(), i);
         MapEntryMessageComparator comparator(field->message_type());
         std::stable_sort(result.begin(), result.end(), comparator);
-        // Complain if the keys aren't in ascending order.
+// Complain if the keys aren't in ascending order.
 #ifndef NDEBUG
         for (size_t j = 1; j < static_cast<size_t>(map_size); j++) {
             if (!comparator(result[j - 1], result[j])) {

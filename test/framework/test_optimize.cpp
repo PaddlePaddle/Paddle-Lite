@@ -27,23 +27,14 @@ int main() {
 
     Loader<paddle_mobile::CPU> loader;
     //    "../../../test/models/googlenet"
+    auto program = loader.Load("../models/googlenet");
 
-    auto program = loader.Load("../../../test/models/googlenet");
     ProgramOptimize optimize;
 
-    optimize.FushionOptimize(program.originProgram);
+    auto optimize_program = optimize.FushionOptimize(program.originProgram);
+    if (optimize_program) {
 
-    Node node("conv");
-
-    node > std::make_shared<Node>("add") > std::make_shared<Node>("relu") >
-        std::make_shared<Node>("lrn");
-    node > std::make_shared<Node>("batch normal");
-
-    DLOG << "depath of node " << node.depth();
-
-    //    Node node1("conv");
-    //    node1 > Node("add") > Node("relu");
-
-    Node node2 = node.To(4);
-    DLOG << "\n" << node2;
+    } else {
+        DLOG << "optimize_program is null";
+    }
 }
