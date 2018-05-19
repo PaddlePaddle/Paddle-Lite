@@ -49,9 +49,28 @@ class OpParam : PaddleMobileObject {
     }
 
     template <typename T>
+    static T *InputBiasFrom(const VariableNameMap &inputs, const Scope &scope) {
+        return GetVarValue<T>("Bias", inputs, scope);
+    }
+    template <typename T>
+    static T *InputVarianceFrom(const VariableNameMap &inputs,
+                                const Scope &scope) {
+        return GetVarValue<T>("Variance", inputs, scope);
+    }
+    template <typename T>
+    static T *InputMeanFrom(const VariableNameMap &inputs, const Scope &scope) {
+        return GetVarValue<T>("Mean", inputs, scope);
+    }
+    template <typename T>
+    static T *InputScaleFrom(const VariableNameMap &inputs,
+                             const Scope &scope) {
+        return GetVarValue<T>("Scale", inputs, scope);
+    }
+
+    template <typename T>
     static std::vector<T *> InputMultiFrom(const VariableNameMap &inputs,
                                            const Scope &scope) {
-        return GetMultiVarValue<T>("Input", inputs, scope);
+        return GetMultiVarValue<T>("X", inputs, scope);
     }
 
     template <typename T>
@@ -65,20 +84,30 @@ class OpParam : PaddleMobileObject {
     }
 
     template <typename T>
+    static T *OutputYFrom(const VariableNameMap &outputs, const Scope &scope) {
+        return GetVarValue<T>("Y", outputs, scope);
+    }
+
+    template <typename T>
+    static T *MidOutFrom(const VariableNameMap &outputs, const Scope &scope) {
+        return GetVarValue<T>("MidOut", outputs, scope);
+    }
+
+    template <typename T>
     static T *FilterFrom(const VariableNameMap &inputs, const Scope &scope) {
         return GetVarValue<T>("Filter", inputs, scope);
     }
 
     template <typename T>
-    static const T GetAttr(std::string key, const AttributeMap &map) {
+    static const T GetAttr(const std::string &key, const AttributeMap &map) {
         return ((Attribute)map.at(key)).Get<T>();
     }
 
     template <typename T>
-    static T *GetVarValue(std::string key, const VariableNameMap &var_map,
-                          const Scope &scope) {
+    static T *GetVarValue(const std::string &key,
+                          const VariableNameMap &var_map, const Scope &scope) {
         auto var_vec = var_map.at(key);
-        if (var_vec.size()) {
+        if (!var_vec.empty()) {
             //      std::cout << " get var value -- " << var_vec[0] <<
             //      std::endl;
             auto var = scope.FindVar(var_vec[0]);
@@ -89,7 +118,7 @@ class OpParam : PaddleMobileObject {
     }
 
     template <typename T>
-    static std::vector<T *> GetMultiVarValue(std::string key,
+    static std::vector<T *> GetMultiVarValue(const std::string &key,
                                              const VariableNameMap &var_map,
                                              const Scope &scope) {
         auto var_vecs = var_map.at(key);
@@ -222,5 +251,95 @@ class ConcatParam : public OpParam {
     int axis_;
 };
 
+class LrnParam : public OpParam {
+  public:
+    LrnParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+             const framework::AttributeMap &attrs,
+             const framework::Scope &scope) {
+        input_x_ = InputXFrom<framework::Tensor>(inputs, scope);
+        out_ = OutFrom<framework::Tensor>(outputs, scope);
+        mid_out_ = MidOutFrom<framework::Tensor>(outputs, scope);
+        n_ = GetAttr<int>("n", attrs);
+        alpha_ = GetAttr<float>("alpha", attrs);
+        beta_ = GetAttr<float>("beta", attrs);
+        k_ = GetAttr<float>("k", attrs);
+        data_format_ = GetAttr<std::string>("data_format", attrs);
+    }
+
+    const Tensor *InputX() const { return input_x_; }
+
+    Tensor *Out() const { return out_; }
+
+    Tensor *MidOut() const { return mid_out_; }
+
+    const int &N() const { return n_; }
+
+    const float &Alpha() const { return alpha_; }
+
+    const float &Beta() const { return beta_; }
+
+    const float &K() const { return k_; }
+
+    const std::string &DataFormat() const { return data_format_; }
+
+  private:
+    Tensor *input_x_;
+    Tensor *out_;
+    Tensor *mid_out_;
+    int n_;
+    float alpha_;
+    float beta_;
+    float k_;
+    std::string data_format_;
+};
+class BatchNormParam : OpParam {
+  public:
+    BatchNormParam(const VariableNameMap &inputs,
+                   const VariableNameMap &outputs,
+                   const framework::AttributeMap &attrs,
+                   const framework::Scope &scope) {
+        input_x_ = InputXFrom<framework::Tensor>(inputs, scope);
+        output_y_ = OutputYFrom<framework::Tensor>(outputs, scope);
+        input_bias_ = InputBiasFrom<framework::Tensor>(inputs, scope);
+        input_mean_ = InputMeanFrom<framework::Tensor>(inputs, scope);
+        input_scale_ = InputScaleFrom<framework::Tensor>(inputs, scope);
+        input_variance_ = InputVarianceFrom<framework::Tensor>(inputs, scope);
+        epsilon_ = GetAttr<float>("epsilon", attrs);
+        momentum_ = GetAttr<float>("momentum", attrs);
+        is_test_ = GetAttr<bool>("is_test", attrs);
+    }
+
+    const Tensor *InputX() const { return input_x_; }
+
+    Tensor *OutputY() const { return output_y_; }
+
+    const Tensor *InputBias() const { return input_bias_; }
+
+    const Tensor *InputMean() const { return input_mean_; }
+
+    const Tensor *InputScale() const { return input_scale_; }
+
+    const Tensor *InputVariance() const { return input_variance_; }
+
+    const float &Epsilon() const { return epsilon_; }
+
+    const float &Momentum() const { return momentum_; }
+
+    const bool &IsTest() const { return is_test_; }
+
+    const std::string &DataFormat() const { return data_format_; }
+
+  private:
+    Tensor *input_x_;
+    Tensor *output_y_;
+    Tensor *input_bias_;
+    Tensor *input_mean_;
+    Tensor *input_scale_;
+    Tensor *input_variance_;
+    float epsilon_;
+    float momentum_;
+    bool is_test_;
+    std::string data_format_;
+};
 } // namespace operators
 } // namespace paddle_mobile
