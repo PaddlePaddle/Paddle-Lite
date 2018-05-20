@@ -22,9 +22,9 @@ SOFTWARE.
 #endif // __ARM_NEON
 
 static void Pool3x3Max() {
-    // todo impl with neon
+  // todo impl with neon
 }
 
 static void Pool3x3Avg() {
-    // todo impl with neon
+  // todo impl with neon
 }
