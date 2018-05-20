@@ -24,7 +24,8 @@ enum class Precision : int { FP32 = 0 };
 //! device type
 enum DeviceTypeEnum { kINVALID = -1, kCPU = 0, kFPGA = 1, kGPU_MALI = 2 };
 
-template <DeviceTypeEnum T> struct DeviceType {};
+template <DeviceTypeEnum T>
+struct DeviceType {};
 
 typedef DeviceType<kCPU> CPU;
 typedef DeviceType<kFPGA> FPGA;
@@ -60,4 +61,4 @@ enum PMStatus {
   PMUnImplError = 0x07,    /*!< Unimplement error. */
   PMWrongDevice = 0x08     /*!< un-correct device. */
 };
-} // namespace paddle_mobile
+}  // namespace paddle_mobile

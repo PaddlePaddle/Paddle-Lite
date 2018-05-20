@@ -18,15 +18,15 @@ SOFTWARE.
 ==============================================================================*/
 #pragma once
 
+#include <list>           //std::list
+#include <mutex>          //std::mutex
+#include <unordered_map>  //std::unordered_map
 #include "variable.h"
-#include <list>          //std::list
-#include <mutex>         //std::mutex
-#include <unordered_map> //std::unordered_map
 
 namespace paddle_mobile {
 namespace framework {
 class Scope {
-public:
+ public:
   Scope() {}
   ~Scope() {}
 
@@ -67,7 +67,7 @@ public:
 
   Variable *FindVarLocally(const std::string &name) const;
 
-private:
+ private:
   // Call Scope::NewScope for a sub-scope.
   explicit Scope(Scope const *parent) : parent_(parent) {}
 
@@ -77,5 +77,5 @@ private:
 
   mutable std::mutex mutex_;
 };
-} // namespace framework
-} // namespace paddle_mobile
+}  // namespace framework
+}  // namespace paddle_mobile

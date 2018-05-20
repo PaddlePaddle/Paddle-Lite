@@ -60,5 +60,5 @@ void ConcatOp<Dtype, T>::InferShape() const {
 }
 template class ConcatOp<CPU, float>;
 
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile

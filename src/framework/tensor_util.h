@@ -13,11 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma once
+#include <vector>
 #include "framework.pb.h"
 #include "memory/t_malloc.h"
 #include "platform/data_type.h"
 #include "tensor.h"
-#include <vector>
 
 namespace paddle_mobile {
 namespace framework {
@@ -62,5 +62,5 @@ void TensorToVector(const Tensor &src, std::vector<T> *dst) {
   memory::Copy(dst_ptr, src_ptr, size);
 }
 
-} // namespace framework
-} // namespace paddle_mobile
+}  // namespace framework
+}  // namespace paddle_mobile

@@ -28,9 +28,9 @@ using namespace framework;
 template <typename DeviceType, typename T>
 class BatchNormKernel
     : public framework::OpKernelBase<DeviceType, BatchNormParam> {
-public:
+ public:
   void Compute(const BatchNormParam &param) const;
 };
 
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile

@@ -17,18 +17,19 @@ SOFTWARE.
 ==============================================================================*/
 #pragma once;
 
-#include "framework/attribute.h"
 #include <map>
 #include <string>
+#include "framework/attribute.h"
 
 namespace paddle_mobile {
 
 namespace framework {
-template <typename Dtype> class OperatorBase;
+template <typename Dtype>
+class OperatorBase;
 class OpDesc;
 class BlockDesc;
 class InferShapeContext;
-} // namespace framework
+}  // namespace framework
 
 using VariableNameMap = std::map<std::string, std::vector<std::string>>;
 
@@ -49,4 +50,4 @@ using InferVarTypeFN = std::function<void(const framework::OpDesc & /*op_desc*/,
                                           framework::BlockDesc * /*block*/)>;
 
 using InferShapeFN = std::function<void(framework::InferShapeContext *)>;
-}; // namespace paddle_mobile
+};  // namespace paddle_mobile

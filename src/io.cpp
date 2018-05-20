@@ -18,13 +18,13 @@ SOFTWARE.
 
 #include <fstream>
 
+#include "../src/io.h"
 #include "common/log.h"
 #include "framework/framework.pb.h"
 #include "framework/lod_tensor.h"
 #include "framework/program_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
-#include "io.h"
 
 namespace paddle_mobile {
 
@@ -41,26 +41,20 @@ void ReadBinaryFile(const std::string &filename, std::string *contents) {
 template <typename Dtype, Precision P>
 void Loader<Dtype, P>::LoadVar(framework::LoDTensor *tensor,
                                const std::string &file_path) {
-  //        LOG(kLOG_DEBUG) << "  to load " << file_path;
-  //  Log(kLOG_DEBUG) << "123";
-
   std::ifstream is(file_path);
 
-  std::streampos pos = is.tellg(); //   save   current   position
+  std::fpos<mbstate_t> pos;
+  pos = is.tellg();  // save   current   position
   is.seekg(0, std::ios::end);
-  //        LOG(kLOG_DEBUG) << "  file length = " << is.tellg();
-  is.seekg(pos); //   restore   saved   position
+  is.seekg(pos);  // restore   saved   position
 
   // 1. version
   uint32_t version;
   is.read(reinterpret_cast<char *>(&version), sizeof(version));
-  //        LOG(kLOG_INFO) << "   version: " << version;
 
   // 2 Lod information
   uint64_t lod_level;
   is.read(reinterpret_cast<char *>(&lod_level), sizeof(lod_level));
-  //        LOG(kLOG_DEBUG) << "   load level: " << lod_level;
-  //        LOG(kLOG_DEBUG) << "   lod info: ";
   auto &lod = *tensor->mutable_lod();
   lod.resize(lod_level);
   for (uint64_t i = 0; i < lod_level; ++i) {
@@ -69,8 +63,8 @@ void Loader<Dtype, P>::LoadVar(framework::LoDTensor *tensor,
     std::vector<size_t> tmp(size / sizeof(size_t));
     is.read(reinterpret_cast<char *>(tmp.data()),
             static_cast<std::streamsize>(size));
-    for (int j = 0; j < tmp.size(); ++j) {
-      LOG(kLOG_DEBUG1) << "    lod - " << tmp[j];
+    for (auto j : tmp) {
+      LOG(kLOG_DEBUG1) << "    lod - " << j;
     }
     lod[i] = tmp;
   }
@@ -78,26 +72,19 @@ void Loader<Dtype, P>::LoadVar(framework::LoDTensor *tensor,
   // 3. tensor version
   uint32_t tensor_version;
   is.read(reinterpret_cast<char *>(&tensor_version), sizeof(tensor_version));
-  //  std::cout << "   tensor_version: " << tensor_version << std::endl;
 
   // 4. tensor desc
   int32_t size;
   is.read(reinterpret_cast<char *>(&size), sizeof(size));
-  //  std::cout << "   tensor desc size: " << size << std::endl;
   std::unique_ptr<char[]> buf(new char[size]);
   is.read(reinterpret_cast<char *>(buf.get()), size);
 
   framework::proto::VarType::TensorDesc desc;
   desc.ParseFromArray(buf.get(), size);
 
-  //  std::cout << "   desc dims size " << desc.dims().size() <<
-  //  std::endl;
   int memory_size = 1;
-  for (int l = 0; l < desc.dims().size(); ++l) {
-    //    std::cout << "    dim " << l << " value: " << desc.dims()[l]
-    //    <<
-    //    std::endl;
-    memory_size *= desc.dims()[l];
+  for (auto l : desc.dims()) {
+    memory_size *= l;
   }
 
   std::vector<int64_t> dims;
@@ -105,50 +92,39 @@ void Loader<Dtype, P>::LoadVar(framework::LoDTensor *tensor,
   std::copy(desc.dims().begin(), desc.dims().end(), std::back_inserter(dims));
   tensor->Resize(framework::make_ddim(dims));
 
-  void *memory;
+  void *memory = tensor;
   int type_size = 0;
-  //  std::cout << "    desc pre type: ";
   switch (desc.data_type()) {
-  case framework::proto::VarType::FP16:
-    //      std::cout << "FP16" << std::endl;
-    type_size = 2;
-    break;
-  case framework::proto::VarType::FP32:
-    type_size = 4;
-    memory = tensor->mutable_data<float>();
-    //      std::cout << "FP32" << std::endl;
-    break;
-  case framework::proto::VarType::FP64:
-    type_size = 8;
-    //      std::cout << "FP64" << std::endl;
-    break;
-  case framework::proto::VarType::INT32:
-    type_size = 4;
-    //      std::cout << "INT32" << std::endl;
-    break;
-  case framework::proto::VarType::INT64:
-    type_size = 8;
-    //      std::cout << "INT64" << std::endl;
-    break;
-  case framework::proto::VarType::BOOL:
-    type_size = 1;
-    //      std::cout << "BOOL" << std::endl;
-    break;
-  default:
-    break;
-    //      std::cout << "    not support" << std::endl;
+    case framework::proto::VarType::FP16:
+      type_size = 2;
+      break;
+    case framework::proto::VarType::FP32:
+      type_size = 4;
+      memory = tensor->mutable_data<float>();
+      break;
+    case framework::proto::VarType::FP64:
+      type_size = 8;
+      break;
+    case framework::proto::VarType::INT32:
+      type_size = 4;
+      break;
+    case framework::proto::VarType::INT64:
+      type_size = 8;
+      break;
+    case framework::proto::VarType::BOOL:
+      type_size = 1;
+      break;
+    default:
+      break;
   }
 
-  //  std::cout << "    malloc size: " << memory_size * type_size <<
-  //  std::endl;
   is.read(static_cast<char *>(memory), memory_size * type_size);
-  //  std::cout << "    memory: " << memory << std::endl;
   is.close();
-};
+}
 
 template <typename Dtype, Precision P>
-const framework::Program<Dtype, P>
-Loader<Dtype, P>::Load(const std::string &dirname) {
+const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
+    const std::string &dirname) {
   std::string model_filename = dirname + "/__model__";
   std::string program_desc_str;
   ReadBinaryFile(model_filename, &program_desc_str);
@@ -165,10 +141,9 @@ Loader<Dtype, P>::Load(const std::string &dirname) {
       std::make_shared<framework::Scope>();
   program.scope = scope;
 
-  auto block = originProgramDesc->Block(0);
+  originProgramDesc->Block(0);
 
-  for (auto block : originProgramDesc->Blocks()) {
-    //    std::cout << "for block" << std::endl;
+  for (const auto &block : originProgramDesc->Blocks()) {
     for (int i = 0; i < block->Vars().size(); ++i) {
       std::shared_ptr<framework::VarDesc> var_desc = block->Vars()[i];
       auto var = scope->Var(var_desc->Name());
@@ -176,20 +151,18 @@ Loader<Dtype, P>::Load(const std::string &dirname) {
         if (var_desc->Persistable() &&
             var_desc->GetType() != framework::proto::VarType::FEED_MINIBATCH &&
             var_desc->GetType() != framework::proto::VarType::FETCH_LIST) {
-          framework::LoDTensor *tensor =
-              var->GetMutable<framework::LoDTensor>();
+          auto tensor = var->GetMutable<framework::LoDTensor>();
           // to load
           LoadVar(tensor, dirname + "/" + var_desc->Name());
         }
       } else {
-        //        std::cout << "非 lod" << std::endl;
+        //  TODO by someone
       }
     }
   }
 
 #ifdef PADDLE_MOBILE_DEBUG
-  for (int i = 0; i < program_desc_proto.blocks().size(); ++i) {
-    framework::proto::BlockDesc block = program_desc_proto.blocks()[i];
+  for (const auto &block : program_desc_proto.blocks()) {
     LOG(kLOG_DEBUG) << "block: " << block.idx();
     for (int j = 0; j < block.ops().size(); ++j) {
       if (j == 2) {
@@ -200,65 +173,64 @@ Loader<Dtype, P>::Load(const std::string &dirname) {
       for (int m = 0; m < op.inputs_size(); ++m) {
         const framework::proto::OpDesc::Var &var = op.inputs(m);
         LOG(kLOG_DEBUG2) << "input parameter: " << var.parameter();
-        for (int n = 0; n < var.arguments().size(); ++n) {
-          LOG(kLOG_DEBUG3) << "argument - " << var.arguments()[n];
+        for (const auto &n : var.arguments()) {
+          LOG(kLOG_DEBUG3) << "argument - " << n;
         }
       }
 
       for (int y = 0; y < op.outputs_size(); ++y) {
         const framework::proto::OpDesc::Var &var = op.outputs(y);
         LOG(kLOG_DEBUG2) << "out parameter: " << var.parameter();
-        for (int z = 0; z < var.arguments().size(); ++z) {
-          LOG(kLOG_DEBUG3) << "argument - " << var.arguments()[z];
+        for (const auto &z : var.arguments()) {
+          LOG(kLOG_DEBUG3) << "argument - " << z;
         }
       }
 
-      for (int x = 0; x < op.attrs().size(); ++x) {
-        const framework::proto::OpDesc_Attr attr = op.attrs()[x];
+      for (const auto &attr : op.attrs()) {
         LOG(kLOG_DEBUG2) << "attr name: " << attr.name();
 
         switch (attr.type()) {
-        case framework::proto::AttrType::BOOLEAN:
-          LOG(kLOG_DEBUG3) << "boolen: " << attr.b();
-          break;
-        case framework::proto::AttrType::INT:
-          LOG(kLOG_DEBUG3) << "int: " << attr.i();
-          break;
-        case framework::proto::AttrType::FLOAT:
-          LOG(kLOG_DEBUG3) << "float: " << attr.f();
-        case framework::proto::AttrType::STRING:
-          LOG(kLOG_DEBUG3) << "string: " << attr.s();
-        case framework::proto::AttrType::BOOLEANS:
-          for (int y = 0; y < attr.bools_size(); ++y) {
-            LOG(kLOG_DEBUG3) << "bools: " << attr.bools(y);
-          }
-        case framework::proto::AttrType::LONG:
-          LOG(kLOG_DEBUG3) << "long: " << attr.l();
-        case framework::proto::AttrType::FLOATS:
-          for (int y = 0; y < attr.floats_size(); ++y) {
-            LOG(kLOG_DEBUG3) << "floats: " << attr.floats(y);
-          }
-        case framework::proto::AttrType::INTS:
-          for (int y = 0; y < attr.ints_size(); ++y) {
-            LOG(kLOG_DEBUG3) << "ints: " << attr.ints(y);
-          }
-        case framework::proto::AttrType::STRINGS:
-          for (int y = 0; y < attr.strings_size(); ++y) {
-            LOG(kLOG_DEBUG3) << "strings: " << attr.strings(y);
-          }
+          case framework::proto::AttrType::BOOLEAN:
+            LOG(kLOG_DEBUG3) << "boolen: " << attr.b();
+            break;
+          case framework::proto::AttrType::INT:
+            LOG(kLOG_DEBUG3) << "int: " << attr.i();
+            break;
+          case framework::proto::AttrType::FLOAT:
+            LOG(kLOG_DEBUG3) << "float: " << attr.f();
+          case framework::proto::AttrType::STRING:
+            LOG(kLOG_DEBUG3) << "string: " << attr.s();
+          case framework::proto::AttrType::BOOLEANS:
+            for (int y = 0; y < attr.bools_size(); ++y) {
+              LOG(kLOG_DEBUG3) << "bools: " << attr.bools(y);
+            }
+          case framework::proto::AttrType::LONG:
+            LOG(kLOG_DEBUG3) << "long: " << attr.l();
+          case framework::proto::AttrType::FLOATS:
+            for (int y = 0; y < attr.floats_size(); ++y) {
+              LOG(kLOG_DEBUG3) << "floats: " << attr.floats(y);
+            }
+          case framework::proto::AttrType::INTS:
+            for (int y = 0; y < attr.ints_size(); ++y) {
+              LOG(kLOG_DEBUG3) << "ints: " << attr.ints(y);
+            }
+          case framework::proto::AttrType::STRINGS:
+            for (int y = 0; y < attr.strings_size(); ++y) {
+              LOG(kLOG_DEBUG3) << "strings: " << attr.strings(y);
+            }
+          case framework::proto::BLOCK:
+            break;
         }
       }
     }
 
-    for (int k = 0; k < block.vars().size(); ++k) {
-      framework::proto::VarDesc var = block.vars()[k];
+    for (const auto &var : block.vars()) {
       if (var.type().type() == framework::proto::VarType::LOD_TENSOR) {
         LOG(kLOG_DEBUG1) << "var name: " << var.name();
         const framework::proto::VarType::TensorDesc &tensor_desc =
             var.type().lod_tensor().tensor();
         LOG(kLOG_DEBUG2) << "in var tensor desc dims size: "
                          << tensor_desc.dims().size();
-        int memory_size = 1;
         for (int l = 0; l < tensor_desc.dims().size(); ++l) {
           LOG(kLOG_DEBUG3) << "var tensor desc dim " << l
                            << " value: " << tensor_desc.dims()[l];
@@ -268,28 +240,20 @@ Loader<Dtype, P>::Load(const std::string &dirname) {
       if (var.persistable() &&
           var.type().type() != framework::proto::VarType::FEED_MINIBATCH &&
           var.type().type() != framework::proto::VarType::FETCH_LIST) {
-        //        std::cout << "  to load " << var.name() <<
-        //        std::endl;
         std::string file_path = dirname + "/" + var.name();
         std::ifstream is(file_path);
-        std::streampos pos = is.tellg(); //   save   current   position
+        std::fpos<mbstate_t> pos;
+        pos = is.tellg();  // save   current   position
         is.seekg(0, std::ios::end);
-        //        std::cout << "  file length = " << is.tellg() <<
-        //        std::endl;
-        is.seekg(pos); //   restore   saved   position
+        is.seekg(pos);  // restore   saved   position
 
         // 1. version
         uint32_t version;
         is.read(reinterpret_cast<char *>(&version), sizeof(version));
-        //        std::cout << "   version: " << version <<
-        //        std::endl;
 
         // 2 Lod information
         uint64_t lod_level;
         is.read(reinterpret_cast<char *>(&lod_level), sizeof(lod_level));
-        //        std::cout << "   load level: " << lod_level <<
-        //        std::endl;
-        //        std::cout << "   lod info: " << std::endl;
         for (uint64_t i = 0; i < lod_level; ++i) {
           uint64_t size;
           is.read(reinterpret_cast<char *>(&size), sizeof(size));
@@ -297,83 +261,53 @@ Loader<Dtype, P>::Load(const std::string &dirname) {
           is.read(reinterpret_cast<char *>(tmp.data()),
                   static_cast<std::streamsize>(size));
           for (int j = 0; j < tmp.size(); ++j) {
-            //            std::cout << "    lod - " << tmp[j] <<
-            //            std::endl;
           }
         }
 
-        uint32_t tensor_version;
         is.read(reinterpret_cast<char *>(&version), sizeof(version));
-        //        std::cout << "   tensor_version: " <<
-        //        tensor_version <<
-        //        std::endl;
 
         int32_t size;
         is.read(reinterpret_cast<char *>(&size), sizeof(size));
-        //        std::cout << "   tensor desc size: " << size <<
-        //        std::endl;
         std::unique_ptr<char[]> buf(new char[size]);
         is.read(reinterpret_cast<char *>(buf.get()), size);
 
         framework::proto::VarType::TensorDesc desc;
         desc.ParseFromArray(buf.get(), size);
 
-        //        std::cout << "   desc dims size " <<
-        //        desc.dims().size() <<
-        //        std::endl;
         int memory_size = 1;
-        for (int l = 0; l < desc.dims().size(); ++l) {
-          //          std::cout << "    dim " << l << " value: "
-          //          <<
-          //          desc.dims()[l]
-          //                    << std::endl;
-          memory_size *= desc.dims()[l];
+        for (long long l : desc.dims()) {
+          memory_size *= l;
         }
 
         int type_size = 0;
-        //        std::cout << "    desc pre type: ";
         switch (desc.data_type()) {
-        case framework::proto::VarType::FP16:
-          //            std::cout << "FP16" << std::endl;
-          type_size = 2;
-          break;
-        case framework::proto::VarType::FP32:
-          type_size = 4;
-          //            std::cout << "FP32" << std::endl;
-          break;
-        case framework::proto::VarType::FP64:
-          type_size = 8;
-          //            std::cout << "FP64" << std::endl;
-          break;
-        case framework::proto::VarType::INT32:
-          type_size = 4;
-          //            std::cout << "INT32" << std::endl;
-          break;
-        case framework::proto::VarType::INT64:
-          type_size = 8;
-          //            std::cout << "INT64" << std::endl;
-          break;
-        case framework::proto::VarType::BOOL:
-          type_size = 1;
-          //            std::cout << "BOOL" << std::endl;
-          break;
-        default:
-          break;
-          //            std::cout << "    not support" <<
-          //            std::endl;
+          case framework::proto::VarType::FP16:
+            type_size = 2;
+            break;
+          case framework::proto::VarType::FP32:
+            type_size = 4;
+            break;
+          case framework::proto::VarType::FP64:
+            type_size = 8;
+            break;
+          case framework::proto::VarType::INT32:
+            type_size = 4;
+            break;
+          case framework::proto::VarType::INT64:
+            type_size = 8;
+            break;
+          case framework::proto::VarType::BOOL:
+            type_size = 1;
+            break;
+          default:
+            break;
         }
 
-        //        std::cout << "    malloc size: " << memory_size *
-        //        type_size
-        //                  << std::endl;
         void *memory = malloc(memory_size * type_size);
         is.read(static_cast<char *>(memory), memory_size * type_size);
-        //        std::cout << "    memory: " << memory <<
-        //        std::endl;
         is.close();
       } else {
-        //        std::cout << "  *not load "
-        //                  << " var : " << var.name() << std::endl;
+        //  TODO
       }
     }
   }
@@ -384,4 +318,4 @@ Loader<Dtype, P>::Load(const std::string &dirname) {
 
 template class Loader<CPU, Precision::FP32>;
 
-} // namespace paddle_mobile
+}  // namespace paddle_mobile

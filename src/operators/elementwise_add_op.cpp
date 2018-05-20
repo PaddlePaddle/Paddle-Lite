@@ -27,5 +27,5 @@ void ElementwiseAddOp<Dtype, T>::InferShape() const {
   param_.Out()->Resize(x_dim);
 }
 template class ElementwiseAddOp<CPU, float>;
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile
