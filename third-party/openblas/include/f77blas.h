@@ -60,15 +60,15 @@ xdouble BLASFUNC(qdot)(blasint *, xdouble *, blasint *, xdouble *, blasint *);
 
 #ifdef RETURN_BY_STRUCT
 typedef struct {
-    float r, i;
+  float r, i;
 } myccomplex_t;
 
 typedef struct {
-    double r, i;
+  double r, i;
 } myzcomplex_t;
 
 typedef struct {
-    xdouble r, i;
+  xdouble r, i;
 } myxcomplex_t;
 
 myccomplex_t BLASFUNC(cdotu)(blasint *, float *, blasint *, float *, blasint *);
