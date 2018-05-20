@@ -48,9 +48,9 @@ namespace ruby {
 // CodeGenerator with the CommandLineInterface in your main() function.
 class LIBPROTOC_EXPORT Generator
     : public google::protobuf::compiler::CodeGenerator {
-    virtual bool Generate(const FileDescriptor *file, const string &parameter,
-                          GeneratorContext *generator_context,
-                          string *error) const;
+  virtual bool Generate(const FileDescriptor *file, const string &parameter,
+                        GeneratorContext *generator_context,
+                        string *error) const;
 };
 
 } // namespace ruby
