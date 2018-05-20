@@ -29,22 +29,22 @@ namespace paddle_mobile {
 namespace framework {
 
 class Node : PaddleMobileObject {
-  public:
-    Node(const std::string &type) : type_(type) {}
-    Node(std::shared_ptr<OpDesc> op_desc)
-        : op_desc_(op_desc), type_(op_desc->Type()){};
-    Node &operator>(std::shared_ptr<Node> node);
-    bool operator==(const Node &in);
-    std::string ToString() const;
-    Node &To(int index);
-    uint depth(uint begin = 0);
+public:
+  Node(const std::string &type) : type_(type) {}
+  Node(std::shared_ptr<OpDesc> op_desc)
+      : op_desc_(op_desc), type_(op_desc->Type()){};
+  Node &operator>(std::shared_ptr<Node> node);
+  bool operator==(const Node &in);
+  std::string ToString() const;
+  Node &To(int index);
+  uint depth(uint begin = 0);
 
-  private:
-    std::shared_ptr<OpDesc> op_desc_;
-    std::string ToString(std::string blank, const Node *node) const;
-    std::vector<std::shared_ptr<Node>> outputs_;
-    std::vector<Node *> inputs_;
-    std::string type_;
+private:
+  std::shared_ptr<OpDesc> op_desc_;
+  std::string ToString(std::string blank, const Node *node) const;
+  std::vector<std::shared_ptr<Node>> outputs_;
+  std::vector<Node *> inputs_;
+  std::string type_;
 };
 
 Print &operator<<(Print &printer, const Node &node);

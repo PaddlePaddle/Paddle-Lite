@@ -67,11 +67,11 @@ LIBPROTOBUF_EXPORT bool ParseNamedEnum(const EnumDescriptor *descriptor,
 template <typename EnumType>
 bool ParseNamedEnum(const EnumDescriptor *descriptor, const string &name,
                     EnumType *value) {
-    int tmp;
-    if (!ParseNamedEnum(descriptor, name, &tmp))
-        return false;
-    *value = static_cast<EnumType>(tmp);
-    return true;
+  int tmp;
+  if (!ParseNamedEnum(descriptor, name, &tmp))
+    return false;
+  *value = static_cast<EnumType>(tmp);
+  return true;
 }
 
 // Just a wrapper around printing the name of a value. The main point of this

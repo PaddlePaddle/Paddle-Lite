@@ -157,11 +157,11 @@
 #endif
 
 #define GOOGLE_PROTOBUF_HASH_NAMESPACE_DECLARATION_START                       \
-    namespace google {                                                         \
-    namespace protobuf {
+  namespace google {                                                           \
+  namespace protobuf {
 #define GOOGLE_PROTOBUF_HASH_NAMESPACE_DECLARATION_END                         \
-    }                                                                          \
-    }
+  }                                                                            \
+  }
 
 #undef GOOGLE_PROTOBUF_HAS_CXX11_HASH
 #undef GOOGLE_PROTOBUF_HAS_TR1
@@ -187,49 +187,49 @@ namespace protobuf {
 // hash functions are defined in the protobuf code, they are also defined such
 // that they can be used as "less" functions, which is required by MSVC anyway.
 template <typename Key> struct hash {
-    // Dummy, just to make derivative hash functions compile.
-    int operator()(const Key &key) {
-        GOOGLE_LOG(FATAL) << "Should never be called.";
-        return 0;
-    }
+  // Dummy, just to make derivative hash functions compile.
+  int operator()(const Key &key) {
+    GOOGLE_LOG(FATAL) << "Should never be called.";
+    return 0;
+  }
 
-    inline bool operator()(const Key &a, const Key &b) const { return a < b; }
+  inline bool operator()(const Key &a, const Key &b) const { return a < b; }
 };
 
 // Make sure char* is compared by value.
 template <> struct hash<const char *> {
-    // Dummy, just to make derivative hash functions compile.
-    int operator()(const char *key) {
-        GOOGLE_LOG(FATAL) << "Should never be called.";
-        return 0;
-    }
+  // Dummy, just to make derivative hash functions compile.
+  int operator()(const char *key) {
+    GOOGLE_LOG(FATAL) << "Should never be called.";
+    return 0;
+  }
 
-    inline bool operator()(const char *a, const char *b) const {
-        return strcmp(a, b) < 0;
-    }
+  inline bool operator()(const char *a, const char *b) const {
+    return strcmp(a, b) < 0;
+  }
 };
 
 template <typename Key, typename Data, typename HashFcn = hash<Key>,
           typename EqualKey = std::equal_to<Key>,
           typename Alloc = std::allocator<std::pair<const Key, Data>>>
 class hash_map : public std::map<Key, Data, HashFcn, Alloc> {
-    typedef std::map<Key, Data, HashFcn, Alloc> BaseClass;
+  typedef std::map<Key, Data, HashFcn, Alloc> BaseClass;
 
-  public:
-    hash_map(int a = 0, const HashFcn &b = HashFcn(),
-             const EqualKey &c = EqualKey(), const Alloc &d = Alloc())
-        : BaseClass(b, d) {}
+public:
+  hash_map(int a = 0, const HashFcn &b = HashFcn(),
+           const EqualKey &c = EqualKey(), const Alloc &d = Alloc())
+      : BaseClass(b, d) {}
 
-    HashFcn hash_function() const { return HashFcn(); }
+  HashFcn hash_function() const { return HashFcn(); }
 };
 
 template <typename Key, typename HashFcn = hash<Key>,
           typename EqualKey = std::equal_to<Key>>
 class hash_set : public std::set<Key, HashFcn> {
-  public:
-    hash_set(int = 0) {}
+public:
+  hash_set(int = 0) {}
 
-    HashFcn hash_function() const { return HashFcn(); }
+  HashFcn hash_function() const { return HashFcn(); }
 };
 
 #elif defined(_MSC_VER) && !defined(_STLPORT_VERSION)
@@ -240,10 +240,10 @@ struct hash : public GOOGLE_PROTOBUF_HASH_COMPARE<Key> {};
 // MSVC's hash_compare<const char*> hashes based on the string contents but
 // compares based on the string pointer.  WTF?
 class CstringLess {
-  public:
-    inline bool operator()(const char *a, const char *b) const {
-        return strcmp(a, b) < 0;
-    }
+public:
+  inline bool operator()(const char *a, const char *b) const {
+    return strcmp(a, b) < 0;
+  }
 };
 
 template <>
@@ -254,15 +254,15 @@ struct hash<const char *>
 
 template <typename Key, typename HashFcn, typename EqualKey>
 struct InternalHashCompare : public GOOGLE_PROTOBUF_HASH_COMPARE<Key> {
-    InternalHashCompare() {}
-    InternalHashCompare(HashFcn hashfcn, EqualKey equalkey)
-        : hashfcn_(hashfcn), equalkey_(equalkey) {}
-    size_t operator()(const Key &key) const { return hashfcn_(key); }
-    bool operator()(const Key &key1, const Key &key2) const {
-        return !equalkey_(key1, key2);
-    }
-    HashFcn hashfcn_;
-    EqualKey equalkey_;
+  InternalHashCompare() {}
+  InternalHashCompare(HashFcn hashfcn, EqualKey equalkey)
+      : hashfcn_(hashfcn), equalkey_(equalkey) {}
+  size_t operator()(const Key &key) const { return hashfcn_(key); }
+  bool operator()(const Key &key1, const Key &key2) const {
+    return !equalkey_(key1, key2);
+  }
+  HashFcn hashfcn_;
+  EqualKey equalkey_;
 };
 
 template <typename Key, typename Data, typename HashFcn = hash<Key>,
@@ -271,16 +271,16 @@ template <typename Key, typename Data, typename HashFcn = hash<Key>,
 class hash_map
     : public GOOGLE_PROTOBUF_HASH_NAMESPACE::GOOGLE_PROTOBUF_HASH_MAP_CLASS<
           Key, Data, InternalHashCompare<Key, HashFcn, EqualKey>, Alloc> {
-    typedef GOOGLE_PROTOBUF_HASH_NAMESPACE::GOOGLE_PROTOBUF_HASH_MAP_CLASS<
-        Key, Data, InternalHashCompare<Key, HashFcn, EqualKey>, Alloc>
-        BaseClass;
+  typedef GOOGLE_PROTOBUF_HASH_NAMESPACE::GOOGLE_PROTOBUF_HASH_MAP_CLASS<
+      Key, Data, InternalHashCompare<Key, HashFcn, EqualKey>, Alloc>
+      BaseClass;
 
-  public:
-    hash_map(int a = 0, const HashFcn &b = HashFcn(),
-             const EqualKey &c = EqualKey(), const Alloc &d = Alloc())
-        : BaseClass(InternalHashCompare<Key, HashFcn, EqualKey>(b, c), d) {}
+public:
+  hash_map(int a = 0, const HashFcn &b = HashFcn(),
+           const EqualKey &c = EqualKey(), const Alloc &d = Alloc())
+      : BaseClass(InternalHashCompare<Key, HashFcn, EqualKey>(b, c), d) {}
 
-    HashFcn hash_function() const { return HashFcn(); }
+  HashFcn hash_function() const { return HashFcn(); }
 };
 
 template <typename Key, typename HashFcn = hash<Key>,
@@ -288,10 +288,10 @@ template <typename Key, typename HashFcn = hash<Key>,
 class hash_set
     : public GOOGLE_PROTOBUF_HASH_NAMESPACE::GOOGLE_PROTOBUF_HASH_SET_CLASS<
           Key, InternalHashCompare<Key, HashFcn, EqualKey>> {
-  public:
-    hash_set(int = 0) {}
+public:
+  hash_set(int = 0) {}
 
-    HashFcn hash_function() const { return HashFcn(); }
+  HashFcn hash_function() const { return HashFcn(); }
 };
 
 #else  // GOOGLE_PROTOBUF_CONTAINERS_NEED_HASH_COMPARE
@@ -302,16 +302,16 @@ template <typename Key, typename Data, typename HashFcn = hash<Key>,
 class hash_map
     : public GOOGLE_PROTOBUF_HASH_NAMESPACE::GOOGLE_PROTOBUF_HASH_MAP_CLASS<
           Key, Data, HashFcn, EqualKey, Alloc> {
-    typedef GOOGLE_PROTOBUF_HASH_NAMESPACE::GOOGLE_PROTOBUF_HASH_MAP_CLASS<
-        Key, Data, HashFcn, EqualKey, Alloc>
-        BaseClass;
+  typedef GOOGLE_PROTOBUF_HASH_NAMESPACE::GOOGLE_PROTOBUF_HASH_MAP_CLASS<
+      Key, Data, HashFcn, EqualKey, Alloc>
+      BaseClass;
 
-  public:
-    hash_map(int a = 0, const HashFcn &b = HashFcn(),
-             const EqualKey &c = EqualKey(), const Alloc &d = Alloc())
-        : BaseClass(a, b, c, d) {}
+public:
+  hash_map(int a = 0, const HashFcn &b = HashFcn(),
+           const EqualKey &c = EqualKey(), const Alloc &d = Alloc())
+      : BaseClass(a, b, c, d) {}
 
-    HashFcn hash_function() const { return HashFcn(); }
+  HashFcn hash_function() const { return HashFcn(); }
 };
 
 template <typename Key, typename HashFcn = hash<Key>,
@@ -319,10 +319,10 @@ template <typename Key, typename HashFcn = hash<Key>,
 class hash_set
     : public GOOGLE_PROTOBUF_HASH_NAMESPACE::GOOGLE_PROTOBUF_HASH_SET_CLASS<
           Key, HashFcn, EqualKey> {
-  public:
-    hash_set(int = 0) {}
+public:
+  hash_set(int = 0) {}
 
-    HashFcn hash_function() const { return HashFcn(); }
+  HashFcn hash_function() const { return HashFcn(); }
 };
 #endif // GOOGLE_PROTOBUF_CONTAINERS_NEED_HASH_COMPARE
 
@@ -332,25 +332,25 @@ template <typename Key>
 struct hash : public GOOGLE_PROTOBUF_HASH_NAMESPACE::hash<Key> {};
 
 template <typename Key> struct hash<const Key *> {
-    inline size_t operator()(const Key *key) const {
-        return reinterpret_cast<size_t>(key);
-    }
+  inline size_t operator()(const Key *key) const {
+    return reinterpret_cast<size_t>(key);
+  }
 };
 
 // Unlike the old SGI version, the TR1 "hash" does not special-case char*.  So,
 // we go ahead and provide our own implementation.
 template <> struct hash<const char *> {
-    inline size_t operator()(const char *str) const {
-        size_t result = 0;
-        for (; *str != '\0'; str++) {
-            result = 5 * result + static_cast<size_t>(*str);
-        }
-        return result;
+  inline size_t operator()(const char *str) const {
+    size_t result = 0;
+    for (; *str != '\0'; str++) {
+      result = 5 * result + static_cast<size_t>(*str);
     }
+    return result;
+  }
 };
 
 template <> struct hash<bool> {
-    size_t operator()(bool x) const { return static_cast<size_t>(x); }
+  size_t operator()(bool x) const { return static_cast<size_t>(x); }
 };
 
 template <typename Key, typename Data, typename HashFcn = hash<Key>,
@@ -359,16 +359,16 @@ template <typename Key, typename Data, typename HashFcn = hash<Key>,
 class hash_map
     : public GOOGLE_PROTOBUF_HASH_NAMESPACE::GOOGLE_PROTOBUF_HASH_MAP_CLASS<
           Key, Data, HashFcn, EqualKey, Alloc> {
-    typedef GOOGLE_PROTOBUF_HASH_NAMESPACE::GOOGLE_PROTOBUF_HASH_MAP_CLASS<
-        Key, Data, HashFcn, EqualKey, Alloc>
-        BaseClass;
+  typedef GOOGLE_PROTOBUF_HASH_NAMESPACE::GOOGLE_PROTOBUF_HASH_MAP_CLASS<
+      Key, Data, HashFcn, EqualKey, Alloc>
+      BaseClass;
 
-  public:
-    hash_map(int a = 0, const HashFcn &b = HashFcn(),
-             const EqualKey &c = EqualKey(), const Alloc &d = Alloc())
-        : BaseClass(a, b, c, d) {}
+public:
+  hash_map(int a = 0, const HashFcn &b = HashFcn(),
+           const EqualKey &c = EqualKey(), const Alloc &d = Alloc())
+      : BaseClass(a, b, c, d) {}
 
-    HashFcn hash_function() const { return HashFcn(); }
+  HashFcn hash_function() const { return HashFcn(); }
 };
 
 template <typename Key, typename HashFcn = hash<Key>,
@@ -376,50 +376,50 @@ template <typename Key, typename HashFcn = hash<Key>,
 class hash_set
     : public GOOGLE_PROTOBUF_HASH_NAMESPACE::GOOGLE_PROTOBUF_HASH_SET_CLASS<
           Key, HashFcn, EqualKey> {
-  public:
-    hash_set(int = 0) {}
+public:
+  hash_set(int = 0) {}
 
-    HashFcn hash_function() const { return HashFcn(); }
+  HashFcn hash_function() const { return HashFcn(); }
 };
 
 #endif // !GOOGLE_PROTOBUF_MISSING_HASH
 
 template <> struct hash<string> {
-    inline size_t operator()(const string &key) const {
-        return hash<const char *>()(key.c_str());
-    }
+  inline size_t operator()(const string &key) const {
+    return hash<const char *>()(key.c_str());
+  }
 
-    static const size_t bucket_size = 4;
-    static const size_t min_buckets = 8;
-    inline bool operator()(const string &a, const string &b) const {
-        return a < b;
-    }
+  static const size_t bucket_size = 4;
+  static const size_t min_buckets = 8;
+  inline bool operator()(const string &a, const string &b) const {
+    return a < b;
+  }
 };
 
 template <typename First, typename Second> struct hash<pair<First, Second>> {
-    inline size_t operator()(const pair<First, Second> &key) const {
-        size_t first_hash = hash<First>()(key.first);
-        size_t second_hash = hash<Second>()(key.second);
+  inline size_t operator()(const pair<First, Second> &key) const {
+    size_t first_hash = hash<First>()(key.first);
+    size_t second_hash = hash<Second>()(key.second);
 
-        // FIXME(kenton):  What is the best way to compute this hash?  I have
-        // no idea!  This seems a bit better than an XOR.
-        return first_hash * ((1 << 16) - 1) + second_hash;
-    }
+    // FIXME(kenton):  What is the best way to compute this hash?  I have
+    // no idea!  This seems a bit better than an XOR.
+    return first_hash * ((1 << 16) - 1) + second_hash;
+  }
 
-    static const size_t bucket_size = 4;
-    static const size_t min_buckets = 8;
-    inline bool operator()(const pair<First, Second> &a,
-                           const pair<First, Second> &b) const {
-        return a < b;
-    }
+  static const size_t bucket_size = 4;
+  static const size_t min_buckets = 8;
+  inline bool operator()(const pair<First, Second> &a,
+                         const pair<First, Second> &b) const {
+    return a < b;
+  }
 };
 
 // Used by GCC/SGI STL only.  (Why isn't this provided by the standard
 // library?  :( )
 struct streq {
-    inline bool operator()(const char *a, const char *b) const {
-        return strcmp(a, b) == 0;
-    }
+  inline bool operator()(const char *a, const char *b) const {
+    return strcmp(a, b) == 0;
+  }
 };
 
 } // namespace protobuf
