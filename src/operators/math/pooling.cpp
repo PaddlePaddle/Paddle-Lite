@@ -30,12 +30,11 @@ namespace math {
  */
 template <typename PoolProcess, typename T>
 class PoolFunctor<CPU, PoolProcess, T> {
-public:
+ public:
   void operator()(const framework::Tensor &input, const std::vector<int> &ksize,
                   const std::vector<int> &strides,
                   const std::vector<int> &paddings, PoolProcess pool_process,
                   framework::Tensor *output) {
-
     const int batch_size = input.dims()[0];
 
     const int input_height = input.dims()[2];
@@ -93,6 +92,6 @@ public:
 
 template class PoolFunctor<CPU, math::AvgPool<float>, float>;
 template class PoolFunctor<CPU, math::MaxPool<float>, float>;
-} // namespace math
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace math
+}  // namespace operators
+}  // namespace paddle_mobile

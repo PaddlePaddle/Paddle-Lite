@@ -88,5 +88,5 @@ void CopyVariableWithTensor(const Variable &in_var, const Tensor &tensor,
   //  }
 }
 
-} // namespace framework
-} // namespace paddle_mobile
+}  // namespace framework
+}  // namespace paddle_mobile

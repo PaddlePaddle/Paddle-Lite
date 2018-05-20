@@ -1,5 +1,5 @@
 ---
 Language:        Cpp
-BasedOnStyle:  LLVM
+BasedOnStyle: Google 
 Standard:  Cpp11 
 ...

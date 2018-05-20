@@ -60,5 +60,5 @@ inline bool TransFromNeeded(const OpKernelType &l, const OpKernelType &r) {
          NeedTransformLayout(l.data_layout_, r.data_layout_);
 }
 
-} // namespace framework
-} // namespace paddle_mobile
+}  // namespace framework
+}  // namespace paddle_mobile

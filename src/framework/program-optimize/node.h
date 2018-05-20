@@ -29,7 +29,7 @@ namespace paddle_mobile {
 namespace framework {
 
 class Node : PaddleMobileObject {
-public:
+ public:
   Node(const std::string &type) : type_(type) {}
   Node(std::shared_ptr<OpDesc> op_desc)
       : op_desc_(op_desc), type_(op_desc->Type()){};
@@ -39,7 +39,7 @@ public:
   Node &To(int index);
   uint depth(uint begin = 0);
 
-private:
+ private:
   std::shared_ptr<OpDesc> op_desc_;
   std::string ToString(std::string blank, const Node *node) const;
   std::vector<std::shared_ptr<Node>> outputs_;
@@ -48,5 +48,5 @@ private:
 };
 
 Print &operator<<(Print &printer, const Node &node);
-} // namespace framework
-} // namespace paddle_mobile
+}  // namespace framework
+}  // namespace paddle_mobile

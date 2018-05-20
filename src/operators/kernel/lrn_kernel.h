@@ -25,7 +25,8 @@ namespace operators {
 
 using namespace framework;
 
-template <typename T> struct LRNFunctor {
+template <typename T>
+struct LRNFunctor {
   void operator()(const framework::Tensor &input, framework::Tensor *out, int N,
                   int C, int H, int W, int n, T k, T alpha, T beta) {
     auto input_ptr = input.data<T>();
@@ -67,8 +68,8 @@ template <typename T> struct LRNFunctor {
 
 template <typename DeviceType, typename T>
 class LrnKernel : public framework::OpKernelBase<DeviceType, LrnParam> {
-public:
+ public:
   void Compute(const LrnParam &param) const;
 };
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile

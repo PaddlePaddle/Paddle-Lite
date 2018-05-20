@@ -92,5 +92,5 @@ Print &operator<<(Print &printer, const Node &node) {
   return printer;
 }
 
-} // namespace framework
-} // namespace paddle_mobile
+}  // namespace framework
+}  // namespace paddle_mobile

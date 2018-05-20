@@ -14,9 +14,9 @@ limitations under the License. */
 
 #pragma once
 
-#include "framework/tensor.h"
 #include <cblas.h>
 #include <cmath>
+#include "framework/tensor.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -37,6 +37,6 @@ template <typename T>
 void matmul(const framework::Tensor &matrix_a, bool trans_a,
             const framework::Tensor &matrix_b, bool trans_b, T alpha,
             framework::Tensor *matrix_out, T beta);
-} // namespace math
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace math
+}  // namespace operators
+}  // namespace paddle_mobile

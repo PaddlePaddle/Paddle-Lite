@@ -25,8 +25,9 @@ namespace math {
  *   [input_channels, filter_height, filter_width, output_height,
  * output_width]
  */
-template <class T> class Im2ColFunctor<ColFormat::kCFO, CPU, T> {
-public:
+template <class T>
+class Im2ColFunctor<ColFormat::kCFO, CPU, T> {
+ public:
   void operator()(const framework::Tensor &im, const std::vector<int> &dilation,
                   const std::vector<int> &stride,
                   const std::vector<int> &padding, framework::Tensor *col) {
@@ -93,8 +94,9 @@ public:
  *   [input_channels, filter_height, filter_width, output_height,
  * output_width]
  */
-template <class T> class Col2ImFunctor<ColFormat::kCFO, CPU, T> {
-public:
+template <class T>
+class Col2ImFunctor<ColFormat::kCFO, CPU, T> {
+ public:
   void operator()(const framework::Tensor &col,
                   const std::vector<int> &dilation,
                   const std::vector<int> &stride,
@@ -165,8 +167,9 @@ template class Col2ImFunctor<ColFormat::kCFO, CPU, double>;
  *   [output_height, output_width, input_channels, filter_height,
  * filter_width]
  */
-template <class T> class Im2ColFunctor<ColFormat::kOCF, CPU, T> {
-public:
+template <class T>
+class Im2ColFunctor<ColFormat::kOCF, CPU, T> {
+ public:
   void operator()(const framework::Tensor &im, const std::vector<int> &dilation,
                   const std::vector<int> &stride,
                   const std::vector<int> &padding, framework::Tensor *col) {
@@ -237,8 +240,9 @@ public:
  *   [output_height, output_width, input_channels, filter_height,
  * filter_width]
  */
-template <class T> class Col2ImFunctor<ColFormat::kOCF, CPU, T> {
-public:
+template <class T>
+class Col2ImFunctor<ColFormat::kOCF, CPU, T> {
+ public:
   void operator()(const framework::Tensor &col,
                   const std::vector<int> &dilation,
                   const std::vector<int> &stride,
@@ -309,6 +313,6 @@ template class Im2ColFunctor<ColFormat::kOCF, CPU, double>;
 template class Col2ImFunctor<ColFormat::kOCF, CPU, float>;
 template class Col2ImFunctor<ColFormat::kOCF, CPU, double>;
 
-} // namespace math
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace math
+}  // namespace operators
+}  // namespace paddle_mobile
