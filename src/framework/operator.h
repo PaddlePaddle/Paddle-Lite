@@ -49,50 +49,50 @@ static std::unordered_map<
                            {"fetch", {{"X"}, {"Out"}}}};
 
 template <typename Dtype> class OperatorBase : PaddleMobileObject {
-  public:
-    OperatorBase(const std::string &type, const VariableNameMap &inputs,
-                 const VariableNameMap &outputs, const AttributeMap &attrs,
-                 std::shared_ptr<Scope> scope);
-    virtual ~OperatorBase() {}
-    virtual void Run() const = 0;
+public:
+  OperatorBase(const std::string &type, const VariableNameMap &inputs,
+               const VariableNameMap &outputs, const AttributeMap &attrs,
+               std::shared_ptr<Scope> scope);
+  virtual ~OperatorBase() {}
+  virtual void Run() const = 0;
 
-    const VariableNameMap &Inputs() const { return inputs_; }
-    const VariableNameMap &Outputs() const { return outputs_; }
-    const std::string &Type() const { return type_; }
-    const AttributeMap &Attrs() const { return attrs_; }
-    void ClearVariables(const std::vector<std::string> &var_names) const {
-        if (this->scope_) {
-            this->scope_->EraseVars(var_names);
-        }
+  const VariableNameMap &Inputs() const { return inputs_; }
+  const VariableNameMap &Outputs() const { return outputs_; }
+  const std::string &Type() const { return type_; }
+  const AttributeMap &Attrs() const { return attrs_; }
+  void ClearVariables(const std::vector<std::string> &var_names) const {
+    if (this->scope_) {
+      this->scope_->EraseVars(var_names);
     }
+  }
 
-  protected:
-    std::shared_ptr<Scope> scope_;
-    std::string type_;
-    VariableNameMap inputs_;
-    VariableNameMap outputs_;
-    AttributeMap attrs_;
+protected:
+  std::shared_ptr<Scope> scope_;
+  std::string type_;
+  VariableNameMap inputs_;
+  VariableNameMap outputs_;
+  AttributeMap attrs_;
 
-  private:
-    void CheckAllInputOutputSet() const;
+private:
+  void CheckAllInputOutputSet() const;
 };
 
 template <typename Dtype>
 class OperatorWithKernel : public OperatorBase<Dtype> {
-  public:
-    OperatorWithKernel(const std::string &type, const VariableNameMap &inputs,
-                       const VariableNameMap &outputs,
-                       const AttributeMap &attrs, std::shared_ptr<Scope> scope)
-        : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope) {}
-    virtual void InferShape() const = 0;
-    virtual void Run() const = 0;
+public:
+  OperatorWithKernel(const std::string &type, const VariableNameMap &inputs,
+                     const VariableNameMap &outputs, const AttributeMap &attrs,
+                     std::shared_ptr<Scope> scope)
+      : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope) {}
+  virtual void InferShape() const = 0;
+  virtual void Run() const = 0;
 };
 
 template <typename Dtype, typename P> class OpKernelBase : PaddleMobileObject {
-  public:
-    virtual void Compute(const P &para) const = 0;
+public:
+  virtual void Compute(const P &para) const = 0;
 
-    virtual ~OpKernelBase() = default;
+  virtual ~OpKernelBase() = default;
 };
 
 } // namespace framework

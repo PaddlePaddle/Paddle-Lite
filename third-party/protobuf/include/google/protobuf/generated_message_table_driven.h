@@ -70,11 +70,11 @@ static PROTOBUF_CONSTEXPR const unsigned char kNotPackedMask = 0x10;
 static PROTOBUF_CONSTEXPR const unsigned char kInvalidMask = 0x20;
 
 enum ProcessingTypes {
-    TYPE_STRING_CORD = 19,
-    TYPE_STRING_STRING_PIECE = 20,
-    TYPE_BYTES_CORD = 21,
-    TYPE_BYTES_STRING_PIECE = 22,
-    TYPE_MAP = 23,
+  TYPE_STRING_CORD = 19,
+  TYPE_STRING_STRING_PIECE = 20,
+  TYPE_BYTES_CORD = 21,
+  TYPE_BYTES_STRING_PIECE = 22,
+  TYPE_MAP = 23,
 };
 
 #if LANG_CXX11
@@ -89,92 +89,92 @@ static_assert(TYPE_MAP < kRepeatedMask, "Invalid enum");
 // Additional data, needed for some types, is stored in
 // AuxillaryParseTableField.
 struct ParseTableField {
-    uint32 offset;
-    // The presence_index ordinarily represents a has_bit index, but for fields
-    // inside a oneof it represents the index in _oneof_case_.
-    uint32 presence_index;
-    unsigned char normal_wiretype;
-    unsigned char packed_wiretype;
+  uint32 offset;
+  // The presence_index ordinarily represents a has_bit index, but for fields
+  // inside a oneof it represents the index in _oneof_case_.
+  uint32 presence_index;
+  unsigned char normal_wiretype;
+  unsigned char packed_wiretype;
 
-    // processing_type is given by:
-    //   (FieldDescriptor->type() << 1) | FieldDescriptor->is_packed()
-    unsigned char processing_type;
+  // processing_type is given by:
+  //   (FieldDescriptor->type() << 1) | FieldDescriptor->is_packed()
+  unsigned char processing_type;
 
-    unsigned char tag_size;
+  unsigned char tag_size;
 };
 
 struct ParseTable;
 
 union AuxillaryParseTableField {
-    typedef bool (*EnumValidator)(int);
+  typedef bool (*EnumValidator)(int);
 
-    // Enums
-    struct enum_aux {
-        EnumValidator validator;
-    };
-    enum_aux enums;
-    // Group, messages
-    struct message_aux {
-        // ExplicitlyInitialized<T> -> T requires a reinterpret_cast, which
-        // prevents the tables from being constructed as a constexpr.  We use
-        // void to avoid the cast.
-        const void *default_message_void;
-        const MessageLite *default_message() const {
-            return static_cast<const MessageLite *>(default_message_void);
-        }
-        const ParseTable *parse_table;
-    };
-    message_aux messages;
-    // Strings
-    struct string_aux {
-        const void *default_ptr;
-        const char *field_name;
-    };
-    string_aux strings;
+  // Enums
+  struct enum_aux {
+    EnumValidator validator;
+  };
+  enum_aux enums;
+  // Group, messages
+  struct message_aux {
+    // ExplicitlyInitialized<T> -> T requires a reinterpret_cast, which
+    // prevents the tables from being constructed as a constexpr.  We use
+    // void to avoid the cast.
+    const void *default_message_void;
+    const MessageLite *default_message() const {
+      return static_cast<const MessageLite *>(default_message_void);
+    }
+    const ParseTable *parse_table;
+  };
+  message_aux messages;
+  // Strings
+  struct string_aux {
+    const void *default_ptr;
+    const char *field_name;
+  };
+  string_aux strings;
 
-    struct map_aux {
-        bool (*parse_map)(io::CodedInputStream *, void *);
-    };
-    map_aux maps;
+  struct map_aux {
+    bool (*parse_map)(io::CodedInputStream *, void *);
+  };
+  map_aux maps;
 
 #if LANG_CXX11
-    AuxillaryParseTableField() = default;
+  AuxillaryParseTableField() = default;
 #else
-    AuxillaryParseTableField() {}
+  AuxillaryParseTableField() {}
 #endif
-    PROTOBUF_CONSTEXPR
-    AuxillaryParseTableField(AuxillaryParseTableField::enum_aux e) : enums(e) {}
-    PROTOBUF_CONSTEXPR
-    AuxillaryParseTableField(AuxillaryParseTableField::message_aux m)
-        : messages(m) {}
-    PROTOBUF_CONSTEXPR
-    AuxillaryParseTableField(AuxillaryParseTableField::string_aux s)
-        : strings(s) {}
-    PROTOBUF_CONSTEXPR
-    AuxillaryParseTableField(AuxillaryParseTableField::map_aux m) : maps(m) {}
+  PROTOBUF_CONSTEXPR
+  AuxillaryParseTableField(AuxillaryParseTableField::enum_aux e) : enums(e) {}
+  PROTOBUF_CONSTEXPR
+  AuxillaryParseTableField(AuxillaryParseTableField::message_aux m)
+      : messages(m) {}
+  PROTOBUF_CONSTEXPR
+  AuxillaryParseTableField(AuxillaryParseTableField::string_aux s)
+      : strings(s) {}
+  PROTOBUF_CONSTEXPR
+  AuxillaryParseTableField(AuxillaryParseTableField::map_aux m) : maps(m) {}
 };
 
 struct ParseTable {
-    const ParseTableField *fields;
-    const AuxillaryParseTableField *aux;
-    int max_field_number;
-    // TODO(ckennelly): Do something with this padding.
+  const ParseTableField *fields;
+  const AuxillaryParseTableField *aux;
+  int max_field_number;
+  // TODO(ckennelly): Do something with this padding.
 
-    // TODO(ckennelly): Vet these for sign extension.
-    int64 has_bits_offset;
-    int64 oneof_case_offset;
-    int64 extension_offset;
-    int64 arena_offset;
+  // TODO(ckennelly): Vet these for sign extension.
+  int64 has_bits_offset;
+  int64 oneof_case_offset;
+  int64 extension_offset;
+  int64 arena_offset;
 
-    // ExplicitlyInitialized<T> -> T requires a reinterpret_cast, which prevents
-    // the tables from being constructed as a constexpr.  We use void to avoid
-    // the cast.
-    const void *default_instance_void;
-    const MessageLite *default_instance() const {
-        return static_cast<const MessageLite *>(default_instance_void);
-    }
+  // ExplicitlyInitialized<T> -> T requires a reinterpret_cast, which prevents
+  // the tables from being constructed as a constexpr.  We use void to avoid
+  // the cast.
+  const void *default_instance_void;
+  const MessageLite *default_instance() const {
+    return static_cast<const MessageLite *>(default_instance_void);
+  }
 
-    bool unknown_field_set;
+  bool unknown_field_set;
 };
 
 // TODO(jhen): Remove the __NVCC__ check when we get a version of nvcc that
@@ -204,24 +204,24 @@ template <typename Key, typename Value, WireFormatLite::FieldType kKeyFieldType,
           WireFormatLite::FieldType kValueFieldType, int default_enum_value>
 struct MapEntryToMapField<MapEntryLite<Key, Value, kKeyFieldType,
                                        kValueFieldType, default_enum_value>> {
-    typedef MapFieldLite<MapEntryLite<Key, Value, kKeyFieldType,
-                                      kValueFieldType, default_enum_value>,
-                         Key, Value, kKeyFieldType, kValueFieldType,
-                         default_enum_value>
-        MapFieldType;
+  typedef MapFieldLite<MapEntryLite<Key, Value, kKeyFieldType, kValueFieldType,
+                                    default_enum_value>,
+                       Key, Value, kKeyFieldType, kValueFieldType,
+                       default_enum_value>
+      MapFieldType;
 };
 
 template <typename Entry>
 bool ParseMap(io::CodedInputStream *input, void *map_field) {
-    typedef typename MapEntryToMapField<Entry>::MapFieldType MapFieldType;
-    typedef google::protobuf::Map<typename Entry::EntryKeyType,
-                                  typename Entry::EntryValueType>
-        MapType;
-    typedef typename Entry::template Parser<MapFieldType, MapType> ParserType;
+  typedef typename MapEntryToMapField<Entry>::MapFieldType MapFieldType;
+  typedef google::protobuf::Map<typename Entry::EntryKeyType,
+                                typename Entry::EntryValueType>
+      MapType;
+  typedef typename Entry::template Parser<MapFieldType, MapType> ParserType;
 
-    ParserType parser(static_cast<MapFieldType *>(map_field));
-    return ::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-        input, &parser);
+  ParserType parser(static_cast<MapFieldType *>(map_field));
+  return ::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
+      input, &parser);
 }
 
 } // namespace internal

@@ -60,10 +60,10 @@ extern "C" {
 #if defined(LAPACK_COMPLEX_STRUCTURE)
 
 typedef struct {
-    float real, imag;
+  float real, imag;
 } _lapack_complex_float;
 typedef struct {
-    double real, imag;
+  double real, imag;
 } _lapack_complex_double;
 #define lapack_complex_float _lapack_complex_float
 #define lapack_complex_double _lapack_complex_double

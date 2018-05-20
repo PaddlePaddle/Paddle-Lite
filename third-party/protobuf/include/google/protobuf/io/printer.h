@@ -50,15 +50,15 @@ class ZeroCopyOutputStream; // zero_copy_stream.h
 
 // Records annotations about a Printer's output.
 class LIBPROTOBUF_EXPORT AnnotationCollector {
-  public:
-    // Records that the bytes in file_path beginning with begin_offset and
-    // ending before end_offset are associated with the SourceCodeInfo-style
-    // path.
-    virtual void AddAnnotation(size_t begin_offset, size_t end_offset,
-                               const string &file_path,
-                               const std::vector<int> &path) = 0;
+public:
+  // Records that the bytes in file_path beginning with begin_offset and
+  // ending before end_offset are associated with the SourceCodeInfo-style
+  // path.
+  virtual void AddAnnotation(size_t begin_offset, size_t end_offset,
+                             const string &file_path,
+                             const std::vector<int> &path) = 0;
 
-    virtual ~AnnotationCollector() {}
+  virtual ~AnnotationCollector() {}
 };
 
 // Records annotations about a Printer's output to the given protocol buffer,
@@ -66,29 +66,29 @@ class LIBPROTOBUF_EXPORT AnnotationCollector {
 // source_file, begin and end fields.
 template <typename AnnotationProto>
 class AnnotationProtoCollector : public AnnotationCollector {
-  public:
-    // annotation_proto is the protocol buffer to which new Annotations should
-    // be added. It is not owned by the AnnotationProtoCollector.
-    explicit AnnotationProtoCollector(AnnotationProto *annotation_proto)
-        : annotation_proto_(annotation_proto) {}
+public:
+  // annotation_proto is the protocol buffer to which new Annotations should
+  // be added. It is not owned by the AnnotationProtoCollector.
+  explicit AnnotationProtoCollector(AnnotationProto *annotation_proto)
+      : annotation_proto_(annotation_proto) {}
 
-    // Override for AnnotationCollector::AddAnnotation.
-    virtual void AddAnnotation(size_t begin_offset, size_t end_offset,
-                               const string &file_path,
-                               const std::vector<int> &path) {
-        typename AnnotationProto::Annotation *annotation =
-            annotation_proto_->add_annotation();
-        for (int i = 0; i < path.size(); ++i) {
-            annotation->add_path(path[i]);
-        }
-        annotation->set_source_file(file_path);
-        annotation->set_begin(begin_offset);
-        annotation->set_end(end_offset);
+  // Override for AnnotationCollector::AddAnnotation.
+  virtual void AddAnnotation(size_t begin_offset, size_t end_offset,
+                             const string &file_path,
+                             const std::vector<int> &path) {
+    typename AnnotationProto::Annotation *annotation =
+        annotation_proto_->add_annotation();
+    for (int i = 0; i < path.size(); ++i) {
+      annotation->add_path(path[i]);
     }
+    annotation->set_source_file(file_path);
+    annotation->set_begin(begin_offset);
+    annotation->set_end(end_offset);
+  }
 
-  private:
-    // The protocol buffer to which new annotations should be added.
-    AnnotationProto *const annotation_proto_;
+private:
+  // The protocol buffer to which new annotations should be added.
+  AnnotationProto *const annotation_proto_;
 };
 
 // This simple utility class assists in code generation.  It basically
@@ -164,197 +164,190 @@ class AnnotationProtoCollector : public AnnotationCollector {
 // call_ descriptor.
 
 class LIBPROTOBUF_EXPORT Printer {
-  public:
-    // Create a printer that writes text to the given output stream.  Use the
-    // given character as the delimiter for variables.
-    Printer(ZeroCopyOutputStream *output, char variable_delimiter);
+public:
+  // Create a printer that writes text to the given output stream.  Use the
+  // given character as the delimiter for variables.
+  Printer(ZeroCopyOutputStream *output, char variable_delimiter);
 
-    // Create a printer that writes text to the given output stream.  Use the
-    // given character as the delimiter for variables.  If annotation_collector
-    // is not null, Printer will provide it with annotations about code written
-    // to the stream.  annotation_collector is not owned by Printer.
-    Printer(ZeroCopyOutputStream *output, char variable_delimiter,
-            AnnotationCollector *annotation_collector);
+  // Create a printer that writes text to the given output stream.  Use the
+  // given character as the delimiter for variables.  If annotation_collector
+  // is not null, Printer will provide it with annotations about code written
+  // to the stream.  annotation_collector is not owned by Printer.
+  Printer(ZeroCopyOutputStream *output, char variable_delimiter,
+          AnnotationCollector *annotation_collector);
 
-    ~Printer();
+  ~Printer();
 
-    // Link a subsitution variable emitted by the last call to Print to the
-    // object described by descriptor.
-    template <typename SomeDescriptor>
-    void Annotate(const char *varname, const SomeDescriptor *descriptor) {
-        Annotate(varname, varname, descriptor);
+  // Link a subsitution variable emitted by the last call to Print to the
+  // object described by descriptor.
+  template <typename SomeDescriptor>
+  void Annotate(const char *varname, const SomeDescriptor *descriptor) {
+    Annotate(varname, varname, descriptor);
+  }
+
+  // Link the output range defined by the substitution variables as emitted by
+  // the last call to Print to the object described by descriptor. The range
+  // begins at begin_varname's value and ends after the last character of the
+  // value substituted for end_varname.
+  template <typename SomeDescriptor>
+  void Annotate(const char *begin_varname, const char *end_varname,
+                const SomeDescriptor *descriptor) {
+    if (annotation_collector_ == NULL) {
+      // Annotations aren't turned on for this Printer, so don't pay the
+      // cost of building the location path.
+      return;
     }
+    std::vector<int> path;
+    descriptor->GetLocationPath(&path);
+    Annotate(begin_varname, end_varname, descriptor->file()->name(), path);
+  }
 
-    // Link the output range defined by the substitution variables as emitted by
-    // the last call to Print to the object described by descriptor. The range
-    // begins at begin_varname's value and ends after the last character of the
-    // value substituted for end_varname.
-    template <typename SomeDescriptor>
-    void Annotate(const char *begin_varname, const char *end_varname,
-                  const SomeDescriptor *descriptor) {
-        if (annotation_collector_ == NULL) {
-            // Annotations aren't turned on for this Printer, so don't pay the
-            // cost of building the location path.
-            return;
-        }
-        std::vector<int> path;
-        descriptor->GetLocationPath(&path);
-        Annotate(begin_varname, end_varname, descriptor->file()->name(), path);
+  // Link a subsitution variable emitted by the last call to Print to the file
+  // with path file_name.
+  void Annotate(const char *varname, const string &file_name) {
+    Annotate(varname, varname, file_name);
+  }
+
+  // Link the output range defined by the substitution variables as emitted by
+  // the last call to Print to the file with path file_name. The range begins
+  // at begin_varname's value and ends after the last character of the value
+  // substituted for end_varname.
+  void Annotate(const char *begin_varname, const char *end_varname,
+                const string &file_name) {
+    if (annotation_collector_ == NULL) {
+      // Annotations aren't turned on for this Printer.
+      return;
     }
+    std::vector<int> empty_path;
+    Annotate(begin_varname, end_varname, file_name, empty_path);
+  }
 
-    // Link a subsitution variable emitted by the last call to Print to the file
-    // with path file_name.
-    void Annotate(const char *varname, const string &file_name) {
-        Annotate(varname, varname, file_name);
-    }
+  // Print some text after applying variable substitutions.  If a particular
+  // variable in the text is not defined, this will crash.  Variables to be
+  // substituted are identified by their names surrounded by delimiter
+  // characters (as given to the constructor).  The variable bindings are
+  // defined by the given map.
+  void Print(const std::map<string, string> &variables, const char *text);
 
-    // Link the output range defined by the substitution variables as emitted by
-    // the last call to Print to the file with path file_name. The range begins
-    // at begin_varname's value and ends after the last character of the value
-    // substituted for end_varname.
-    void Annotate(const char *begin_varname, const char *end_varname,
-                  const string &file_name) {
-        if (annotation_collector_ == NULL) {
-            // Annotations aren't turned on for this Printer.
-            return;
-        }
-        std::vector<int> empty_path;
-        Annotate(begin_varname, end_varname, file_name, empty_path);
-    }
+  // Like the first Print(), except the substitutions are given as parameters.
+  void Print(const char *text);
+  // Like the first Print(), except the substitutions are given as parameters.
+  void Print(const char *text, const char *variable, const string &value);
+  // Like the first Print(), except the substitutions are given as parameters.
+  void Print(const char *text, const char *variable1, const string &value1,
+             const char *variable2, const string &value2);
+  // Like the first Print(), except the substitutions are given as parameters.
+  void Print(const char *text, const char *variable1, const string &value1,
+             const char *variable2, const string &value2, const char *variable3,
+             const string &value3);
+  // Like the first Print(), except the substitutions are given as parameters.
+  void Print(const char *text, const char *variable1, const string &value1,
+             const char *variable2, const string &value2, const char *variable3,
+             const string &value3, const char *variable4, const string &value4);
+  // Like the first Print(), except the substitutions are given as parameters.
+  void Print(const char *text, const char *variable1, const string &value1,
+             const char *variable2, const string &value2, const char *variable3,
+             const string &value3, const char *variable4, const string &value4,
+             const char *variable5, const string &value5);
+  // Like the first Print(), except the substitutions are given as parameters.
+  void Print(const char *text, const char *variable1, const string &value1,
+             const char *variable2, const string &value2, const char *variable3,
+             const string &value3, const char *variable4, const string &value4,
+             const char *variable5, const string &value5, const char *variable6,
+             const string &value6);
+  // Like the first Print(), except the substitutions are given as parameters.
+  void Print(const char *text, const char *variable1, const string &value1,
+             const char *variable2, const string &value2, const char *variable3,
+             const string &value3, const char *variable4, const string &value4,
+             const char *variable5, const string &value5, const char *variable6,
+             const string &value6, const char *variable7, const string &value7);
+  // Like the first Print(), except the substitutions are given as parameters.
+  void Print(const char *text, const char *variable1, const string &value1,
+             const char *variable2, const string &value2, const char *variable3,
+             const string &value3, const char *variable4, const string &value4,
+             const char *variable5, const string &value5, const char *variable6,
+             const string &value6, const char *variable7, const string &value7,
+             const char *variable8, const string &value8);
 
-    // Print some text after applying variable substitutions.  If a particular
-    // variable in the text is not defined, this will crash.  Variables to be
-    // substituted are identified by their names surrounded by delimiter
-    // characters (as given to the constructor).  The variable bindings are
-    // defined by the given map.
-    void Print(const std::map<string, string> &variables, const char *text);
+  // Indent text by two spaces.  After calling Indent(), two spaces will be
+  // inserted at the beginning of each line of text.  Indent() may be called
+  // multiple times to produce deeper indents.
+  void Indent();
 
-    // Like the first Print(), except the substitutions are given as parameters.
-    void Print(const char *text);
-    // Like the first Print(), except the substitutions are given as parameters.
-    void Print(const char *text, const char *variable, const string &value);
-    // Like the first Print(), except the substitutions are given as parameters.
-    void Print(const char *text, const char *variable1, const string &value1,
-               const char *variable2, const string &value2);
-    // Like the first Print(), except the substitutions are given as parameters.
-    void Print(const char *text, const char *variable1, const string &value1,
-               const char *variable2, const string &value2,
-               const char *variable3, const string &value3);
-    // Like the first Print(), except the substitutions are given as parameters.
-    void Print(const char *text, const char *variable1, const string &value1,
-               const char *variable2, const string &value2,
-               const char *variable3, const string &value3,
-               const char *variable4, const string &value4);
-    // Like the first Print(), except the substitutions are given as parameters.
-    void Print(const char *text, const char *variable1, const string &value1,
-               const char *variable2, const string &value2,
-               const char *variable3, const string &value3,
-               const char *variable4, const string &value4,
-               const char *variable5, const string &value5);
-    // Like the first Print(), except the substitutions are given as parameters.
-    void Print(const char *text, const char *variable1, const string &value1,
-               const char *variable2, const string &value2,
-               const char *variable3, const string &value3,
-               const char *variable4, const string &value4,
-               const char *variable5, const string &value5,
-               const char *variable6, const string &value6);
-    // Like the first Print(), except the substitutions are given as parameters.
-    void Print(const char *text, const char *variable1, const string &value1,
-               const char *variable2, const string &value2,
-               const char *variable3, const string &value3,
-               const char *variable4, const string &value4,
-               const char *variable5, const string &value5,
-               const char *variable6, const string &value6,
-               const char *variable7, const string &value7);
-    // Like the first Print(), except the substitutions are given as parameters.
-    void Print(const char *text, const char *variable1, const string &value1,
-               const char *variable2, const string &value2,
-               const char *variable3, const string &value3,
-               const char *variable4, const string &value4,
-               const char *variable5, const string &value5,
-               const char *variable6, const string &value6,
-               const char *variable7, const string &value7,
-               const char *variable8, const string &value8);
+  // Reduces the current indent level by two spaces, or crashes if the indent
+  // level is zero.
+  void Outdent();
 
-    // Indent text by two spaces.  After calling Indent(), two spaces will be
-    // inserted at the beginning of each line of text.  Indent() may be called
-    // multiple times to produce deeper indents.
-    void Indent();
+  // Write a string to the output buffer.
+  // This method does not look for newlines to add indentation.
+  void PrintRaw(const string &data);
 
-    // Reduces the current indent level by two spaces, or crashes if the indent
-    // level is zero.
-    void Outdent();
+  // Write a zero-delimited string to output buffer.
+  // This method does not look for newlines to add indentation.
+  void PrintRaw(const char *data);
 
-    // Write a string to the output buffer.
-    // This method does not look for newlines to add indentation.
-    void PrintRaw(const string &data);
+  // Write some bytes to the output buffer.
+  // This method does not look for newlines to add indentation.
+  void WriteRaw(const char *data, int size);
 
-    // Write a zero-delimited string to output buffer.
-    // This method does not look for newlines to add indentation.
-    void PrintRaw(const char *data);
+  // True if any write to the underlying stream failed.  (We don't just
+  // crash in this case because this is an I/O failure, not a programming
+  // error.)
+  bool failed() const { return failed_; }
 
-    // Write some bytes to the output buffer.
-    // This method does not look for newlines to add indentation.
-    void WriteRaw(const char *data, int size);
+private:
+  // Link the output range defined by the substitution variables as emitted by
+  // the last call to Print to the object found at the SourceCodeInfo-style
+  // path in a file with path file_path. The range begins at the start of
+  // begin_varname's value and ends after the last character of the value
+  // substituted for end_varname. Note that begin_varname and end_varname
+  // may refer to the same variable.
+  void Annotate(const char *begin_varname, const char *end_varname,
+                const string &file_path, const std::vector<int> &path);
 
-    // True if any write to the underlying stream failed.  (We don't just
-    // crash in this case because this is an I/O failure, not a programming
-    // error.)
-    bool failed() const { return failed_; }
+  // Copy size worth of bytes from data to buffer_.
+  void CopyToBuffer(const char *data, int size);
 
-  private:
-    // Link the output range defined by the substitution variables as emitted by
-    // the last call to Print to the object found at the SourceCodeInfo-style
-    // path in a file with path file_path. The range begins at the start of
-    // begin_varname's value and ends after the last character of the value
-    // substituted for end_varname. Note that begin_varname and end_varname
-    // may refer to the same variable.
-    void Annotate(const char *begin_varname, const char *end_varname,
-                  const string &file_path, const std::vector<int> &path);
+  const char variable_delimiter_;
 
-    // Copy size worth of bytes from data to buffer_.
-    void CopyToBuffer(const char *data, int size);
+  ZeroCopyOutputStream *const output_;
+  char *buffer_;
+  int buffer_size_;
+  // The current position, in bytes, in the output stream.  This is equivalent
+  // to the total number of bytes that have been written so far.  This value
+  // is used to calculate annotation ranges in the substitutions_ map below.
+  size_t offset_;
 
-    const char variable_delimiter_;
+  string indent_;
+  bool at_start_of_line_;
+  bool failed_;
 
-    ZeroCopyOutputStream *const output_;
-    char *buffer_;
-    int buffer_size_;
-    // The current position, in bytes, in the output stream.  This is equivalent
-    // to the total number of bytes that have been written so far.  This value
-    // is used to calculate annotation ranges in the substitutions_ map below.
-    size_t offset_;
+  // A map from variable name to [start, end) offsets in the output buffer.
+  // These refer to the offsets used for a variable after the last call to
+  // Print.  If a variable was used more than once, the entry used in
+  // this map is set to a negative-length span.  For singly-used variables,
+  // the start offset is the beginning of the substitution; the end offset is
+  // the last byte of the substitution plus one (such that (end - start) is
+  // the length of the substituted string).
+  std::map<string, std::pair<size_t, size_t>> substitutions_;
 
-    string indent_;
-    bool at_start_of_line_;
-    bool failed_;
+  // Keeps track of the keys in substitutions_ that need to be updated when
+  // indents are inserted. These are keys that refer to the beginning of the
+  // current line.
+  std::vector<string> line_start_variables_;
 
-    // A map from variable name to [start, end) offsets in the output buffer.
-    // These refer to the offsets used for a variable after the last call to
-    // Print.  If a variable was used more than once, the entry used in
-    // this map is set to a negative-length span.  For singly-used variables,
-    // the start offset is the beginning of the substitution; the end offset is
-    // the last byte of the substitution plus one (such that (end - start) is
-    // the length of the substituted string).
-    std::map<string, std::pair<size_t, size_t>> substitutions_;
+  // Returns true and sets range to the substitution range in the output for
+  // varname if varname was used once in the last call to Print. If varname
+  // was not used, or if it was used multiple times, returns false (and
+  // fails a debug assertion).
+  bool GetSubstitutionRange(const char *varname,
+                            std::pair<size_t, size_t> *range);
 
-    // Keeps track of the keys in substitutions_ that need to be updated when
-    // indents are inserted. These are keys that refer to the beginning of the
-    // current line.
-    std::vector<string> line_start_variables_;
+  // If non-null, annotation_collector_ is used to store annotations about
+  // generated code.
+  AnnotationCollector *const annotation_collector_;
 
-    // Returns true and sets range to the substitution range in the output for
-    // varname if varname was used once in the last call to Print. If varname
-    // was not used, or if it was used multiple times, returns false (and
-    // fails a debug assertion).
-    bool GetSubstitutionRange(const char *varname,
-                              std::pair<size_t, size_t> *range);
-
-    // If non-null, annotation_collector_ is used to store annotations about
-    // generated code.
-    AnnotationCollector *const annotation_collector_;
-
-    GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Printer);
+  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Printer);
 };
 
 } // namespace io

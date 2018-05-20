@@ -25,16 +25,16 @@ using namespace paddle_mobile::framework;
 
 int main() {
 
-    Loader<paddle_mobile::CPU> loader;
-    //    "../../../test/models/googlenet"
-    auto program = loader.Load("../models/googlenet");
+  Loader<paddle_mobile::CPU> loader;
+  //    "../../../test/models/googlenet"
+  auto program = loader.Load("../models/googlenet");
 
-    ProgramOptimize optimize;
+  ProgramOptimize optimize;
 
-    auto optimize_program = optimize.FushionOptimize(program.originProgram);
-    if (optimize_program) {
+  auto optimize_program = optimize.FushionOptimize(program.originProgram);
+  if (optimize_program) {
 
-    } else {
-        DLOG << "optimize_program is null";
-    }
+  } else {
+    DLOG << "optimize_program is null";
+  }
 }

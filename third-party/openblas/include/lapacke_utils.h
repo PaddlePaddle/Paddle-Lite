@@ -59,9 +59,9 @@ extern "C" {
 #define IS_S_NONZERO(x) ((x) < 0 || (x) > 0)
 #define IS_D_NONZERO(x) ((x) < 0 || (x) > 0)
 #define IS_C_NONZERO(x)                                                        \
-    (IS_S_NONZERO(*((float *)&x)) || IS_S_NONZERO(*(((float *)&x) + 1)))
+  (IS_S_NONZERO(*((float *)&x)) || IS_S_NONZERO(*(((float *)&x) + 1)))
 #define IS_Z_NONZERO(x)                                                        \
-    (IS_D_NONZERO(*((double *)&x)) || IS_D_NONZERO(*(((double *)&x) + 1)))
+  (IS_D_NONZERO(*((double *)&x)) || IS_D_NONZERO(*(((double *)&x) + 1)))
 
 /* Error handler */
 void LAPACKE_xerbla(const char *name, lapack_int info);
@@ -266,9 +266,9 @@ void LAPACKE_ztr_trans(int matrix_layout, char uplo, char diag, lapack_int n,
 #define LAPACK_SISNAN(x) (x != x)
 #define LAPACK_DISNAN(x) (x != x)
 #define LAPACK_CISNAN(x)                                                       \
-    (LAPACK_SISNAN(*((float *)&x)) || LAPACK_SISNAN(*(((float *)&x) + 1)))
+  (LAPACK_SISNAN(*((float *)&x)) || LAPACK_SISNAN(*(((float *)&x) + 1)))
 #define LAPACK_ZISNAN(x)                                                       \
-    (LAPACK_DISNAN(*((double *)&x)) || LAPACK_DISNAN(*(((double *)&x) + 1)))
+  (LAPACK_DISNAN(*((double *)&x)) || LAPACK_DISNAN(*(((double *)&x) + 1)))
 
 /* NaN checkers for vectors */
 lapack_logical LAPACKE_c_nancheck(lapack_int n, const lapack_complex_float *x,

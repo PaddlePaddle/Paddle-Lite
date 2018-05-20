@@ -28,25 +28,25 @@ using namespace framework;
 
 template <typename DeviceType, typename T>
 class ConvOp : public framework::OperatorWithKernel<DeviceType> {
-  public:
-    ConvOp(const std::string &type, const VariableNameMap &inputs,
-           const VariableNameMap &outputs, const framework::AttributeMap &attrs,
-           std::shared_ptr<framework::Scope> scope)
-        : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs,
-                                                    attrs, scope),
-          param_(inputs, outputs, attrs, *scope) {}
+public:
+  ConvOp(const std::string &type, const VariableNameMap &inputs,
+         const VariableNameMap &outputs, const framework::AttributeMap &attrs,
+         std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
+                                                  scope),
+        param_(inputs, outputs, attrs, *scope) {}
 
-    using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
-    void InferShape() const override;
+  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  void InferShape() const override;
 
-    void Run() const {
-        operators::ConvKernel<DeviceType, T> kernel;
-        kernel.Compute(param_);
-        this->ClearVariables({"Filter", "Input"});
-    }
+  void Run() const {
+    operators::ConvKernel<DeviceType, T> kernel;
+    kernel.Compute(param_);
+    this->ClearVariables({"Filter", "Input"});
+  }
 
-  private:
-    ConvParam param_;
+private:
+  ConvParam param_;
 };
 
 } // namespace operators
