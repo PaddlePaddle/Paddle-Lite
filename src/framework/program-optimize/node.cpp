@@ -25,71 +25,71 @@ namespace paddle_mobile {
 namespace framework {
 
 Node &Node::operator>(std::shared_ptr<Node> node) {
-    outputs_.push_back(node);
-    std::shared_ptr<Node> this_node;
-    node->inputs_.push_back(this);
-    return *node;
+  outputs_.push_back(node);
+  std::shared_ptr<Node> this_node;
+  node->inputs_.push_back(this);
+  return *node;
 }
 
 bool Node::operator==(const Node &in) {
-    if (in.type_ == this->type_) {
-        if (this->outputs_.size() == in.outputs_.size()) {
-            for (int i = 0; i < outputs_.size(); ++i) {
-                if (!(*outputs_[i] == *in.outputs_[i])) {
-                    return false;
-                }
-            }
-        } else {
-            return false;
+  if (in.type_ == this->type_) {
+    if (this->outputs_.size() == in.outputs_.size()) {
+      for (int i = 0; i < outputs_.size(); ++i) {
+        if (!(*outputs_[i] == *in.outputs_[i])) {
+          return false;
         }
+      }
     } else {
-        return false;
+      return false;
     }
-    return true;
+  } else {
+    return false;
+  }
+  return true;
 }
 
 std::string Node::ToString(std::string blank, const Node *node) const {
-    std::stringstream ss;
-    ss << type_ << "-> \n";
+  std::stringstream ss;
+  ss << type_ << "-> \n";
 
-    if (inputs_.size() > 1 && node != inputs_.back()) {
-        return ss.str();
-    } else if (inputs_.size() > 1 && node == inputs_.back()) {
-        ss << "\n" << blank << type_ << "\n";
-    }
-
-    for (int i = 0; i < outputs_.size(); ++i) {
-        ss << blank << outputs_[i]->ToString(blank + " ", this) << "";
-    }
+  if (inputs_.size() > 1 && node != inputs_.back()) {
     return ss.str();
+  } else if (inputs_.size() > 1 && node == inputs_.back()) {
+    ss << "\n" << blank << type_ << "\n";
+  }
+
+  for (int i = 0; i < outputs_.size(); ++i) {
+    ss << blank << outputs_[i]->ToString(blank + " ", this) << "";
+  }
+  return ss.str();
 }
 
 std::string Node::ToString() const { return this->ToString(" ", this); }
 
 Node &Node::To(int index) {
-    if (index == 0) {
-        this->outputs_.clear();
-    }
+  if (index == 0) {
+    this->outputs_.clear();
+  }
 
-    for (int j = 0; j < this->outputs_.size(); ++j) {
-        outputs_[j]->To(index - 1);
-    }
-    return *this;
+  for (int j = 0; j < this->outputs_.size(); ++j) {
+    outputs_[j]->To(index - 1);
+  }
+  return *this;
 }
 
 uint Node::depth(uint begin) {
-    uint depth = 0;
-    begin++;
-    for (int i = 0; i < outputs_.size(); ++i) {
-        uint output_depth = outputs_[i]->depth(begin);
-        depth = output_depth > depth ? output_depth : depth;
-    }
-    return begin > depth ? begin : depth;
+  uint depth = 0;
+  begin++;
+  for (int i = 0; i < outputs_.size(); ++i) {
+    uint output_depth = outputs_[i]->depth(begin);
+    depth = output_depth > depth ? output_depth : depth;
+  }
+  return begin > depth ? begin : depth;
 }
 
 Print &operator<<(Print &printer, const Node &node) {
-    printer << node.ToString();
-    return printer;
+  printer << node.ToString();
+  return printer;
 }
 
 } // namespace framework

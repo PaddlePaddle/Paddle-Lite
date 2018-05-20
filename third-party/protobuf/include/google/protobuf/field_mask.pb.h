@@ -45,14 +45,14 @@ namespace protobuf {
 namespace protobuf_google_2fprotobuf_2ffield_5fmask_2eproto {
 // Internal implementation detail -- do not call these.
 struct LIBPROTOBUF_EXPORT TableStruct {
-    static const ::google::protobuf::internal::ParseTableField entries[];
-    static const ::google::protobuf::internal::AuxillaryParseTableField aux[];
-    static const ::google::protobuf::internal::ParseTable schema[];
-    static const ::google::protobuf::uint32 offsets[];
-    static const ::google::protobuf::internal::FieldMetadata field_metadata[];
-    static const ::google::protobuf::internal::SerializationTable
-        serialization_table[];
-    static void InitDefaultsImpl();
+  static const ::google::protobuf::internal::ParseTableField entries[];
+  static const ::google::protobuf::internal::AuxillaryParseTableField aux[];
+  static const ::google::protobuf::internal::ParseTable schema[];
+  static const ::google::protobuf::uint32 offsets[];
+  static const ::google::protobuf::internal::FieldMetadata field_metadata[];
+  static const ::google::protobuf::internal::SerializationTable
+      serialization_table[];
+  static void InitDefaultsImpl();
 };
 void LIBPROTOBUF_EXPORT AddDescriptors();
 void LIBPROTOBUF_EXPORT InitDefaults();
@@ -65,111 +65,109 @@ class LIBPROTOBUF_EXPORT FieldMask
           Message /* @@protoc_insertion_point(class_definition:google.protobuf.FieldMask)
                    */
 {
-  public:
-    FieldMask();
-    virtual ~FieldMask();
+public:
+  FieldMask();
+  virtual ~FieldMask();
 
-    FieldMask(const FieldMask &from);
+  FieldMask(const FieldMask &from);
 
-    inline FieldMask &operator=(const FieldMask &from) {
-        CopyFrom(from);
-        return *this;
-    }
+  inline FieldMask &operator=(const FieldMask &from) {
+    CopyFrom(from);
+    return *this;
+  }
 #if LANG_CXX11
-    FieldMask(FieldMask &&from) noexcept : FieldMask() {
-        *this = ::std::move(from);
-    }
+  FieldMask(FieldMask &&from) noexcept : FieldMask() {
+    *this = ::std::move(from);
+  }
 
-    inline FieldMask &operator=(FieldMask &&from) noexcept {
-        if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
-            if (this != &from)
-                InternalSwap(&from);
-        } else {
-            CopyFrom(from);
-        }
-        return *this;
+  inline FieldMask &operator=(FieldMask &&from) noexcept {
+    if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
+      if (this != &from)
+        InternalSwap(&from);
+    } else {
+      CopyFrom(from);
     }
+    return *this;
+  }
 #endif
-    static const ::google::protobuf::Descriptor *descriptor();
-    static const FieldMask &default_instance();
+  static const ::google::protobuf::Descriptor *descriptor();
+  static const FieldMask &default_instance();
 
-    static inline const FieldMask *internal_default_instance() {
-        return reinterpret_cast<const FieldMask *>(
-            &_FieldMask_default_instance_);
-    }
-    static PROTOBUF_CONSTEXPR int const kIndexInFileMessages = 0;
+  static inline const FieldMask *internal_default_instance() {
+    return reinterpret_cast<const FieldMask *>(&_FieldMask_default_instance_);
+  }
+  static PROTOBUF_CONSTEXPR int const kIndexInFileMessages = 0;
 
-    void Swap(FieldMask *other);
-    friend void swap(FieldMask &a, FieldMask &b) { a.Swap(&b); }
+  void Swap(FieldMask *other);
+  friend void swap(FieldMask &a, FieldMask &b) { a.Swap(&b); }
 
-    // implements Message ----------------------------------------------
+  // implements Message ----------------------------------------------
 
-    inline FieldMask *New() const PROTOBUF_FINAL { return New(NULL); }
+  inline FieldMask *New() const PROTOBUF_FINAL { return New(NULL); }
 
-    FieldMask *New(::google::protobuf::Arena *arena) const PROTOBUF_FINAL;
-    void CopyFrom(const ::google::protobuf::Message &from) PROTOBUF_FINAL;
-    void MergeFrom(const ::google::protobuf::Message &from) PROTOBUF_FINAL;
-    void CopyFrom(const FieldMask &from);
-    void MergeFrom(const FieldMask &from);
-    void Clear() PROTOBUF_FINAL;
-    bool IsInitialized() const PROTOBUF_FINAL;
+  FieldMask *New(::google::protobuf::Arena *arena) const PROTOBUF_FINAL;
+  void CopyFrom(const ::google::protobuf::Message &from) PROTOBUF_FINAL;
+  void MergeFrom(const ::google::protobuf::Message &from) PROTOBUF_FINAL;
+  void CopyFrom(const FieldMask &from);
+  void MergeFrom(const FieldMask &from);
+  void Clear() PROTOBUF_FINAL;
+  bool IsInitialized() const PROTOBUF_FINAL;
 
-    size_t ByteSizeLong() const PROTOBUF_FINAL;
-    bool MergePartialFromCodedStream(
-        ::google::protobuf::io::CodedInputStream *input) PROTOBUF_FINAL;
-    void SerializeWithCachedSizes(
-        ::google::protobuf::io::CodedOutputStream *output) const PROTOBUF_FINAL;
-    ::google::protobuf::uint8 *InternalSerializeWithCachedSizesToArray(
-        bool deterministic,
-        ::google::protobuf::uint8 *target) const PROTOBUF_FINAL;
-    int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
+  size_t ByteSizeLong() const PROTOBUF_FINAL;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream *input) PROTOBUF_FINAL;
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream *output) const PROTOBUF_FINAL;
+  ::google::protobuf::uint8 *InternalSerializeWithCachedSizesToArray(
+      bool deterministic,
+      ::google::protobuf::uint8 *target) const PROTOBUF_FINAL;
+  int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
 
-  private:
-    void SharedCtor();
-    void SharedDtor();
-    void SetCachedSize(int size) const PROTOBUF_FINAL;
-    void InternalSwap(FieldMask *other);
+private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const PROTOBUF_FINAL;
+  void InternalSwap(FieldMask *other);
 
-  private:
-    inline ::google::protobuf::Arena *GetArenaNoVirtual() const { return NULL; }
-    inline void *MaybeArenaPtr() const { return NULL; }
+private:
+  inline ::google::protobuf::Arena *GetArenaNoVirtual() const { return NULL; }
+  inline void *MaybeArenaPtr() const { return NULL; }
 
-  public:
-    ::google::protobuf::Metadata GetMetadata() const PROTOBUF_FINAL;
+public:
+  ::google::protobuf::Metadata GetMetadata() const PROTOBUF_FINAL;
 
-    // nested types ----------------------------------------------------
+  // nested types ----------------------------------------------------
 
-    // accessors -------------------------------------------------------
+  // accessors -------------------------------------------------------
 
-    // repeated string paths = 1;
-    int paths_size() const;
-    void clear_paths();
-    static const int kPathsFieldNumber = 1;
-    const ::std::string &paths(int index) const;
-    ::std::string *mutable_paths(int index);
-    void set_paths(int index, const ::std::string &value);
+  // repeated string paths = 1;
+  int paths_size() const;
+  void clear_paths();
+  static const int kPathsFieldNumber = 1;
+  const ::std::string &paths(int index) const;
+  ::std::string *mutable_paths(int index);
+  void set_paths(int index, const ::std::string &value);
 #if LANG_CXX11
-    void set_paths(int index, ::std::string &&value);
+  void set_paths(int index, ::std::string &&value);
 #endif
-    void set_paths(int index, const char *value);
-    void set_paths(int index, const char *value, size_t size);
-    ::std::string *add_paths();
-    void add_paths(const ::std::string &value);
+  void set_paths(int index, const char *value);
+  void set_paths(int index, const char *value, size_t size);
+  ::std::string *add_paths();
+  void add_paths(const ::std::string &value);
 #if LANG_CXX11
-    void add_paths(::std::string &&value);
+  void add_paths(::std::string &&value);
 #endif
-    void add_paths(const char *value);
-    void add_paths(const char *value, size_t size);
-    const ::google::protobuf::RepeatedPtrField<::std::string> &paths() const;
-    ::google::protobuf::RepeatedPtrField<::std::string> *mutable_paths();
+  void add_paths(const char *value);
+  void add_paths(const char *value, size_t size);
+  const ::google::protobuf::RepeatedPtrField<::std::string> &paths() const;
+  ::google::protobuf::RepeatedPtrField<::std::string> *mutable_paths();
 
-    // @@protoc_insertion_point(class_scope:google.protobuf.FieldMask)
-  private:
-    ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-    ::google::protobuf::RepeatedPtrField<::std::string> paths_;
-    mutable int _cached_size_;
-    friend struct protobuf_google_2fprotobuf_2ffield_5fmask_2eproto::
-        TableStruct;
+  // @@protoc_insertion_point(class_scope:google.protobuf.FieldMask)
+private:
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  ::google::protobuf::RepeatedPtrField<::std::string> paths_;
+  mutable int _cached_size_;
+  friend struct protobuf_google_2fprotobuf_2ffield_5fmask_2eproto::TableStruct;
 };
 // ===================================================================
 
@@ -186,64 +184,64 @@ class LIBPROTOBUF_EXPORT FieldMask
 inline int FieldMask::paths_size() const { return paths_.size(); }
 inline void FieldMask::clear_paths() { paths_.Clear(); }
 inline const ::std::string &FieldMask::paths(int index) const {
-    // @@protoc_insertion_point(field_get:google.protobuf.FieldMask.paths)
-    return paths_.Get(index);
+  // @@protoc_insertion_point(field_get:google.protobuf.FieldMask.paths)
+  return paths_.Get(index);
 }
 inline ::std::string *FieldMask::mutable_paths(int index) {
-    // @@protoc_insertion_point(field_mutable:google.protobuf.FieldMask.paths)
-    return paths_.Mutable(index);
+  // @@protoc_insertion_point(field_mutable:google.protobuf.FieldMask.paths)
+  return paths_.Mutable(index);
 }
 inline void FieldMask::set_paths(int index, const ::std::string &value) {
-    // @@protoc_insertion_point(field_set:google.protobuf.FieldMask.paths)
-    paths_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set:google.protobuf.FieldMask.paths)
+  paths_.Mutable(index)->assign(value);
 }
 #if LANG_CXX11
 inline void FieldMask::set_paths(int index, ::std::string &&value) {
-    // @@protoc_insertion_point(field_set:google.protobuf.FieldMask.paths)
-    paths_.Mutable(index)->assign(std::move(value));
+  // @@protoc_insertion_point(field_set:google.protobuf.FieldMask.paths)
+  paths_.Mutable(index)->assign(std::move(value));
 }
 #endif
 inline void FieldMask::set_paths(int index, const char *value) {
-    GOOGLE_DCHECK(value != NULL);
-    paths_.Mutable(index)->assign(value);
-    // @@protoc_insertion_point(field_set_char:google.protobuf.FieldMask.paths)
+  GOOGLE_DCHECK(value != NULL);
+  paths_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set_char:google.protobuf.FieldMask.paths)
 }
 inline void FieldMask::set_paths(int index, const char *value, size_t size) {
-    paths_.Mutable(index)->assign(reinterpret_cast<const char *>(value), size);
-    // @@protoc_insertion_point(field_set_pointer:google.protobuf.FieldMask.paths)
+  paths_.Mutable(index)->assign(reinterpret_cast<const char *>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:google.protobuf.FieldMask.paths)
 }
 inline ::std::string *FieldMask::add_paths() {
-    // @@protoc_insertion_point(field_add_mutable:google.protobuf.FieldMask.paths)
-    return paths_.Add();
+  // @@protoc_insertion_point(field_add_mutable:google.protobuf.FieldMask.paths)
+  return paths_.Add();
 }
 inline void FieldMask::add_paths(const ::std::string &value) {
-    paths_.Add()->assign(value);
-    // @@protoc_insertion_point(field_add:google.protobuf.FieldMask.paths)
+  paths_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add:google.protobuf.FieldMask.paths)
 }
 #if LANG_CXX11
 inline void FieldMask::add_paths(::std::string &&value) {
-    paths_.Add(std::move(value));
-    // @@protoc_insertion_point(field_add:google.protobuf.FieldMask.paths)
+  paths_.Add(std::move(value));
+  // @@protoc_insertion_point(field_add:google.protobuf.FieldMask.paths)
 }
 #endif
 inline void FieldMask::add_paths(const char *value) {
-    GOOGLE_DCHECK(value != NULL);
-    paths_.Add()->assign(value);
-    // @@protoc_insertion_point(field_add_char:google.protobuf.FieldMask.paths)
+  GOOGLE_DCHECK(value != NULL);
+  paths_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add_char:google.protobuf.FieldMask.paths)
 }
 inline void FieldMask::add_paths(const char *value, size_t size) {
-    paths_.Add()->assign(reinterpret_cast<const char *>(value), size);
-    // @@protoc_insertion_point(field_add_pointer:google.protobuf.FieldMask.paths)
+  paths_.Add()->assign(reinterpret_cast<const char *>(value), size);
+  // @@protoc_insertion_point(field_add_pointer:google.protobuf.FieldMask.paths)
 }
 inline const ::google::protobuf::RepeatedPtrField<::std::string> &
 FieldMask::paths() const {
-    // @@protoc_insertion_point(field_list:google.protobuf.FieldMask.paths)
-    return paths_;
+  // @@protoc_insertion_point(field_list:google.protobuf.FieldMask.paths)
+  return paths_;
 }
 inline ::google::protobuf::RepeatedPtrField<::std::string> *
 FieldMask::mutable_paths() {
-    // @@protoc_insertion_point(field_mutable_list:google.protobuf.FieldMask.paths)
-    return &paths_;
+  // @@protoc_insertion_point(field_mutable_list:google.protobuf.FieldMask.paths)
+  return &paths_;
 }
 
 #ifdef __GNUC__
