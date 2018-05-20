@@ -28,8 +28,8 @@ using namespace framework;
 template <typename DeviceType, typename T>
 class BatchNormKernel
     : public framework::OpKernelBase<DeviceType, BatchNormParam> {
-  public:
-    void Compute(const BatchNormParam &param) const;
+public:
+  void Compute(const BatchNormParam &param) const;
 };
 
 } // namespace operators

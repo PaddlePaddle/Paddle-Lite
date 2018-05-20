@@ -19,10 +19,10 @@ SOFTWARE.
 #include "io.h"
 
 int main() {
-    paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::Loader<paddle_mobile::CPU> loader;
 
-    //../../../test/models/googlenet
-    //../../../test/models/mobilenet
-    auto program = loader.Load(std::string("../models/googlenet"));
-    return 0;
+  //../../../test/models/googlenet
+  //../../../test/models/mobilenet
+  auto program = loader.Load(std::string("../models/googlenet"));
+  return 0;
 }
