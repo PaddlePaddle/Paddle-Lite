@@ -25,4 +25,4 @@ namespace operators {
 //
 // template class ConvKernel<FPGA, float>;
 }
-} // namespace paddle_mobile
+}  // namespace paddle_mobile

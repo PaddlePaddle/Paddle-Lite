@@ -37,8 +37,9 @@ namespace math {
  * in pool pooling, and finally takes the average.
  *        MaxPoolGrad and AvgPoolGrad are gradient operations respectively.
  */
-template <class T> class MaxPool {
-public:
+template <class T>
+class MaxPool {
+ public:
   inline T initial() { return static_cast<T>(-FLT_MAX); }
 
   inline void compute(const T &x, T *y) { *y = *y > x ? *y : x; }
@@ -46,8 +47,9 @@ public:
   inline void finalize(const T &pool_field, T *y) {}
 };
 
-template <class T> class AvgPool {
-public:
+template <class T>
+class AvgPool {
+ public:
   inline T initial() { return static_cast<T>(0); }
 
   inline void compute(const T &x, T *y) { *y += x; }
@@ -57,12 +59,12 @@ public:
 
 template <typename DeviceType, typename PoolProcess, typename T>
 class PoolFunctor {
-public:
+ public:
   void operator()(const framework::Tensor &input, const std::vector<int> &ksize,
                   const std::vector<int> &strides,
                   const std::vector<int> &paddings, PoolProcess pool_compute,
                   framework::Tensor *output);
 };
 }
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile

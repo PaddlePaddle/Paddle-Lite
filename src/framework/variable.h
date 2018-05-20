@@ -18,18 +18,19 @@ SOFTWARE.
 ==============================================================================*/
 #pragma once
 
-#include "paddle_mobile_object.h"
 #include <iostream>
 #include <memory>
 #include <string>
 #include <typeindex>
 #include <typeinfo>
+#include "paddle_mobile_object.h"
 
 namespace paddle_mobile {
 namespace framework {
 class Variable : public PaddleMobileObject {
-public:
-  template <typename T> const T *Get() const {
+ public:
+  template <typename T>
+  const T *Get() const {
     return static_cast<const T *>(holder_->Ptr());
   }
 
@@ -37,7 +38,8 @@ public:
 
   const std::string *Name() { return name_; }
 
-  template <typename T> T *GetMutable() {
+  template <typename T>
+  T *GetMutable() {
     if (!IsType<T>()) {
       if (*Name() == "pixel") {
         //        std::cout << " reset " << *Name() <<
@@ -48,7 +50,8 @@ public:
     return static_cast<T *>(holder_->Ptr());
   }
 
-  template <typename T> bool IsType() const {
+  template <typename T>
+  bool IsType() const {
     if (holder_) {
       //                printf("not null \n");
       printf(" holder type : %s, this type %s \n", holder_->Type().name(),
@@ -67,7 +70,7 @@ public:
 
   void SetName(const std::string *name) { name_ = name; }
 
-private:
+ private:
   struct Placeholder {
     Placeholder() = default;
     virtual ~Placeholder() = default;
@@ -76,7 +79,8 @@ private:
     virtual void *Ptr() const = 0;
   };
 
-  template <typename T> struct PlaceholderImp : public Placeholder {
+  template <typename T>
+  struct PlaceholderImp : public Placeholder {
     explicit PlaceholderImp(T *ptr) : ptr_(ptr), type_(typeid(T)) {}
 
     virtual const std::type_info &Type() const { return type_; }
@@ -92,5 +96,5 @@ private:
   friend class Scope;
   const std::string *name_;
 };
-} // namespace framework
-} // namespace paddle_mobile
+}  // namespace framework
+}  // namespace paddle_mobile

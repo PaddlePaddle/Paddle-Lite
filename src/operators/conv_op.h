@@ -28,7 +28,7 @@ using namespace framework;
 
 template <typename DeviceType, typename T>
 class ConvOp : public framework::OperatorWithKernel<DeviceType> {
-public:
+ public:
   ConvOp(const std::string &type, const VariableNameMap &inputs,
          const VariableNameMap &outputs, const framework::AttributeMap &attrs,
          std::shared_ptr<framework::Scope> scope)
@@ -45,9 +45,9 @@ public:
     this->ClearVariables({"Filter", "Input"});
   }
 
-private:
+ private:
   ConvParam param_;
 };
 
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile

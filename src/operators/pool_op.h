@@ -28,7 +28,7 @@ using namespace framework;
 
 template <typename DeviceType, typename T>
 class PoolOp : public framework::OperatorWithKernel<DeviceType> {
-public:
+ public:
   PoolOp(const std::string &type, const VariableNameMap &inputs,
          const VariableNameMap &outputs, const framework::AttributeMap &attrs,
          std::shared_ptr<framework::Scope> scope)
@@ -45,8 +45,8 @@ public:
     this->ClearVariables({"X"});
   }
 
-private:
+ private:
   PoolParam param_;
 };
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile

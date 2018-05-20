@@ -58,8 +58,7 @@ inline void trim_trailing_singular_dims(framework::DDim *dims) {
   // Remove trailing dimensions of size 1 for y
   auto actual_dims_size = dims->size();
   for (; actual_dims_size != 0; --actual_dims_size) {
-    if ((*dims)[actual_dims_size - 1] != 1)
-      break;
+    if ((*dims)[actual_dims_size - 1] != 1) break;
   }
   if (actual_dims_size != dims->size()) {
     auto actual_dims = framework::vectorize(*dims);
@@ -68,8 +67,9 @@ inline void trim_trailing_singular_dims(framework::DDim *dims) {
   }
 }
 
-template <typename T> class RowwiseTransformIterator {
-public:
+template <typename T>
+class RowwiseTransformIterator {
+ public:
   RowwiseTransformIterator(const T *ptr, int n) : ptr_(ptr), i_(0), n_(n) {}
 
   RowwiseTransformIterator<T> &operator++() {
@@ -90,7 +90,7 @@ public:
 
   const T &operator*() { return ptr_[i_]; }
 
-private:
+ private:
   const T *ptr_;
   int i_;
   int64_t n_;
@@ -100,8 +100,9 @@ private:
 /// dimension
 /// in (4,20,2) is 2 ,
 /// (20,1) move 1 stride , to fill(add) 2 element with the same number.
-template <typename T> class MidWiseTransformIterator {
-public:
+template <typename T>
+class MidWiseTransformIterator {
+ public:
   MidWiseTransformIterator(const T *ptr, int n, int post)
       : ptr_(ptr), i_(0), j_(0), n_(n), post_(post) {}
 
@@ -127,7 +128,7 @@ public:
 
   const T &operator*() { return ptr_[i_]; }
 
-private:
+ private:
   const T *ptr_;
   int64_t i_;
   int64_t j_;
@@ -137,11 +138,14 @@ private:
 
 template <typename Functor, typename T, typename OutType = T>
 class TransformFunctor {
-public:
+ public:
   TransformFunctor(const framework::Tensor *x, const framework::Tensor *y,
                    framework::Tensor *z, Functor func)
-      : x_(x->data<T>()), y_(y->data<T>()), z_(z->mutable_data<OutType>()),
-        nx_(x->numel()), func_(func) {}
+      : x_(x->data<T>()),
+        y_(y->data<T>()),
+        z_(z->mutable_data<OutType>()),
+        nx_(x->numel()),
+        func_(func) {}
 
   inline void Run() const {
     math::Transform trans;
@@ -159,7 +163,7 @@ public:
     trans(x_, x_ + nx_, MidWiseTransformIterator<T>(y_, n, post), z_, func_);
   }
 
-private:
+ private:
   const T *x_;
   const T *y_;
   OutType *z_;
@@ -202,5 +206,5 @@ void ElementwiseComputeEx(const framework::Tensor *x,
   }
 }
 
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile

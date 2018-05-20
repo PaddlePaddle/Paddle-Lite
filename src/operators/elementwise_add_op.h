@@ -27,7 +27,7 @@ using namespace framework;
 
 template <typename DeviceType, typename T>
 class ElementwiseAddOp : public framework::OperatorWithKernel<DeviceType> {
-public:
+ public:
   ElementwiseAddOp(const std::string &type, const VariableNameMap &inputs,
                    const VariableNameMap &outputs,
                    const framework::AttributeMap attrs,
@@ -44,8 +44,8 @@ public:
   using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
   void InferShape() const override;
 
-protected:
+ protected:
   ElementwiseAddParam param_;
 };
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile

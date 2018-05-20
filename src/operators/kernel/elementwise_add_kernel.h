@@ -29,8 +29,8 @@ using namespace framework;
 template <typename DeviceType, typename T>
 class ElementwiseAddKernel
     : public framework::OpKernelBase<DeviceType, ElementwiseAddParam> {
-public:
+ public:
   void Compute(const ElementwiseAddParam &param) const;
 };
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile

@@ -48,8 +48,9 @@ static std::unordered_map<
                            {"feed", {{"X"}, {"Out"}}},
                            {"fetch", {{"X"}, {"Out"}}}};
 
-template <typename Dtype> class OperatorBase : PaddleMobileObject {
-public:
+template <typename Dtype>
+class OperatorBase : PaddleMobileObject {
+ public:
   OperatorBase(const std::string &type, const VariableNameMap &inputs,
                const VariableNameMap &outputs, const AttributeMap &attrs,
                std::shared_ptr<Scope> scope);
@@ -66,20 +67,20 @@ public:
     }
   }
 
-protected:
+ protected:
   std::shared_ptr<Scope> scope_;
   std::string type_;
   VariableNameMap inputs_;
   VariableNameMap outputs_;
   AttributeMap attrs_;
 
-private:
+ private:
   void CheckAllInputOutputSet() const;
 };
 
 template <typename Dtype>
 class OperatorWithKernel : public OperatorBase<Dtype> {
-public:
+ public:
   OperatorWithKernel(const std::string &type, const VariableNameMap &inputs,
                      const VariableNameMap &outputs, const AttributeMap &attrs,
                      std::shared_ptr<Scope> scope)
@@ -88,12 +89,13 @@ public:
   virtual void Run() const = 0;
 };
 
-template <typename Dtype, typename P> class OpKernelBase : PaddleMobileObject {
-public:
+template <typename Dtype, typename P>
+class OpKernelBase : PaddleMobileObject {
+ public:
   virtual void Compute(const P &para) const = 0;
 
   virtual ~OpKernelBase() = default;
 };
 
-} // namespace framework
-} // namespace paddle_mobile
+}  // namespace framework
+}  // namespace paddle_mobile
