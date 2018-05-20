@@ -5,7 +5,7 @@ dist: trusty
 
 os:
   - linux
-env:
+
 addons:
   apt:
     packages:
