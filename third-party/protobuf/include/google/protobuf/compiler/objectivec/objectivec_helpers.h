@@ -46,10 +46,10 @@ namespace objectivec {
 
 // Generator options (see objectivec_generator.cc for a description of each):
 struct Options {
-    Options();
-    string expected_prefixes_path;
-    string generate_for_named_framework;
-    string named_framework_to_proto_path_mappings_path;
+  Options();
+  string expected_prefixes_path;
+  string generate_for_named_framework;
+  string named_framework_to_proto_path_mappings_path;
 };
 
 // Escape C++ trigraphs by escaping question marks to "\?".
@@ -117,15 +117,15 @@ string LIBPROTOC_EXPORT OneofName(const OneofDescriptor *descriptor);
 string LIBPROTOC_EXPORT OneofNameCapitalized(const OneofDescriptor *descriptor);
 
 inline bool HasFieldPresence(const FileDescriptor *file) {
-    return file->syntax() != FileDescriptor::SYNTAX_PROTO3;
+  return file->syntax() != FileDescriptor::SYNTAX_PROTO3;
 }
 
 inline bool HasPreservingUnknownEnumSemantics(const FileDescriptor *file) {
-    return file->syntax() == FileDescriptor::SYNTAX_PROTO3;
+  return file->syntax() == FileDescriptor::SYNTAX_PROTO3;
 }
 
 inline bool IsMapEntryMessage(const Descriptor *descriptor) {
-    return descriptor->options().map_entry();
+  return descriptor->options().map_entry();
 }
 
 // Reverse of the above.
@@ -133,23 +133,23 @@ string LIBPROTOC_EXPORT UnCamelCaseFieldName(const string &name,
                                              const FieldDescriptor *field);
 
 enum ObjectiveCType {
-    OBJECTIVECTYPE_INT32,
-    OBJECTIVECTYPE_UINT32,
-    OBJECTIVECTYPE_INT64,
-    OBJECTIVECTYPE_UINT64,
-    OBJECTIVECTYPE_FLOAT,
-    OBJECTIVECTYPE_DOUBLE,
-    OBJECTIVECTYPE_BOOLEAN,
-    OBJECTIVECTYPE_STRING,
-    OBJECTIVECTYPE_DATA,
-    OBJECTIVECTYPE_ENUM,
-    OBJECTIVECTYPE_MESSAGE
+  OBJECTIVECTYPE_INT32,
+  OBJECTIVECTYPE_UINT32,
+  OBJECTIVECTYPE_INT64,
+  OBJECTIVECTYPE_UINT64,
+  OBJECTIVECTYPE_FLOAT,
+  OBJECTIVECTYPE_DOUBLE,
+  OBJECTIVECTYPE_BOOLEAN,
+  OBJECTIVECTYPE_STRING,
+  OBJECTIVECTYPE_DATA,
+  OBJECTIVECTYPE_ENUM,
+  OBJECTIVECTYPE_MESSAGE
 };
 
 enum FlagType {
-    FLAGTYPE_DESCRIPTOR_INITIALIZATION,
-    FLAGTYPE_EXTENSION,
-    FLAGTYPE_FIELD
+  FLAGTYPE_DESCRIPTOR_INITIALIZATION,
+  FLAGTYPE_EXTENSION,
+  FLAGTYPE_FIELD
 };
 
 template <class TDescriptor>
@@ -157,25 +157,25 @@ string GetOptionalDeprecatedAttribute(const TDescriptor *descriptor,
                                       const FileDescriptor *file = NULL,
                                       bool preSpace = true,
                                       bool postNewline = false) {
-    bool isDeprecated = descriptor->options().deprecated();
-    // The file is only passed when checking Messages & Enums, so those types
-    // get tagged. At the moment, it doesn't seem to make sense to tag every
-    // field or enum value with when the file is deprecated.
-    if (!isDeprecated && file) {
-        isDeprecated = file->options().deprecated();
+  bool isDeprecated = descriptor->options().deprecated();
+  // The file is only passed when checking Messages & Enums, so those types
+  // get tagged. At the moment, it doesn't seem to make sense to tag every
+  // field or enum value with when the file is deprecated.
+  if (!isDeprecated && file) {
+    isDeprecated = file->options().deprecated();
+  }
+  if (isDeprecated) {
+    string result = "DEPRECATED_ATTRIBUTE";
+    if (preSpace) {
+      result.insert(0, " ");
     }
-    if (isDeprecated) {
-        string result = "DEPRECATED_ATTRIBUTE";
-        if (preSpace) {
-            result.insert(0, " ");
-        }
-        if (postNewline) {
-            result.append("\n");
-        }
-        return result;
-    } else {
-        return "";
+    if (postNewline) {
+      result.append("\n");
     }
+    return result;
+  } else {
+    return "";
+  }
 }
 
 string LIBPROTOC_EXPORT GetCapitalizedType(const FieldDescriptor *field);
@@ -184,7 +184,7 @@ ObjectiveCType LIBPROTOC_EXPORT
 GetObjectiveCType(FieldDescriptor::Type field_type);
 
 inline ObjectiveCType GetObjectiveCType(const FieldDescriptor *field) {
-    return GetObjectiveCType(field->type());
+  return GetObjectiveCType(field->type());
 }
 
 bool LIBPROTOC_EXPORT IsPrimitiveType(const FieldDescriptor *field);
@@ -224,31 +224,31 @@ ValidateObjCClassPrefixes(const vector<const FileDescriptor *> &files,
 // Generate decode data needed for ObjC's GPBDecodeTextFormatName() to transform
 // the input into the expected output.
 class LIBPROTOC_EXPORT TextFormatDecodeData {
-  public:
-    TextFormatDecodeData();
-    ~TextFormatDecodeData();
+public:
+  TextFormatDecodeData();
+  ~TextFormatDecodeData();
 
-    void AddString(int32 key, const string &input_for_decode,
-                   const string &desired_output);
-    size_t num_entries() const { return entries_.size(); }
-    string Data() const;
+  void AddString(int32 key, const string &input_for_decode,
+                 const string &desired_output);
+  size_t num_entries() const { return entries_.size(); }
+  string Data() const;
 
-    static string DecodeDataForString(const string &input_for_decode,
-                                      const string &desired_output);
+  static string DecodeDataForString(const string &input_for_decode,
+                                    const string &desired_output);
 
-  private:
-    GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(TextFormatDecodeData);
+private:
+  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(TextFormatDecodeData);
 
-    typedef std::pair<int32, string> DataEntry;
-    vector<DataEntry> entries_;
+  typedef std::pair<int32, string> DataEntry;
+  vector<DataEntry> entries_;
 };
 
 // Helper for parsing simple files.
 class LIBPROTOC_EXPORT LineConsumer {
-  public:
-    LineConsumer();
-    virtual ~LineConsumer();
-    virtual bool ConsumeLine(const StringPiece &line, string *out_error) = 0;
+public:
+  LineConsumer();
+  virtual ~LineConsumer();
+  virtual bool ConsumeLine(const StringPiece &line, string *out_error) = 0;
 };
 
 bool LIBPROTOC_EXPORT ParseSimpleFile(const string &path,
@@ -258,38 +258,38 @@ bool LIBPROTOC_EXPORT ParseSimpleFile(const string &path,
 // Helper class for parsing framework import mappings and generating
 // import statements.
 class LIBPROTOC_EXPORT ImportWriter {
-  public:
-    ImportWriter(const string &generate_for_named_framework,
-                 const string &named_framework_to_proto_path_mappings_path);
-    ~ImportWriter();
+public:
+  ImportWriter(const string &generate_for_named_framework,
+               const string &named_framework_to_proto_path_mappings_path);
+  ~ImportWriter();
 
-    void AddFile(const FileDescriptor *file, const string &header_extension);
-    void Print(io::Printer *printer) const;
+  void AddFile(const FileDescriptor *file, const string &header_extension);
+  void Print(io::Printer *printer) const;
+
+private:
+  class ProtoFrameworkCollector : public LineConsumer {
+  public:
+    ProtoFrameworkCollector(
+        std::map<string, string> *inout_proto_file_to_framework_name)
+        : map_(inout_proto_file_to_framework_name) {}
+
+    virtual bool ConsumeLine(const StringPiece &line, string *out_error);
 
   private:
-    class ProtoFrameworkCollector : public LineConsumer {
-      public:
-        ProtoFrameworkCollector(
-            std::map<string, string> *inout_proto_file_to_framework_name)
-            : map_(inout_proto_file_to_framework_name) {}
+    std::map<string, string> *map_;
+  };
 
-        virtual bool ConsumeLine(const StringPiece &line, string *out_error);
+  void ParseFrameworkMappings();
 
-      private:
-        std::map<string, string> *map_;
-    };
+  const string generate_for_named_framework_;
+  const string named_framework_to_proto_path_mappings_path_;
+  std::map<string, string> proto_file_to_framework_name_;
+  bool need_to_parse_mapping_file_;
 
-    void ParseFrameworkMappings();
-
-    const string generate_for_named_framework_;
-    const string named_framework_to_proto_path_mappings_path_;
-    std::map<string, string> proto_file_to_framework_name_;
-    bool need_to_parse_mapping_file_;
-
-    vector<string> protobuf_framework_imports_;
-    vector<string> protobuf_non_framework_imports_;
-    vector<string> other_framework_imports_;
-    vector<string> other_imports_;
+  vector<string> protobuf_framework_imports_;
+  vector<string> protobuf_non_framework_imports_;
+  vector<string> other_framework_imports_;
+  vector<string> other_imports_;
 };
 
 } // namespace objectivec

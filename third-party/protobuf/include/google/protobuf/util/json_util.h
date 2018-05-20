@@ -46,32 +46,31 @@ class ZeroCopyOutputStream;
 namespace util {
 
 struct JsonParseOptions {
-    // Whether to ignore unknown JSON fields during parsing
-    bool ignore_unknown_fields;
+  // Whether to ignore unknown JSON fields during parsing
+  bool ignore_unknown_fields;
 
-    JsonParseOptions() : ignore_unknown_fields(false) {}
+  JsonParseOptions() : ignore_unknown_fields(false) {}
 };
 
 struct JsonPrintOptions {
-    // Whether to add spaces, line breaks and indentation to make the JSON
-    // output easy to read.
-    bool add_whitespace;
-    // Whether to always print primitive fields. By default primitive fields
-    // with default values will be omitted in JSON joutput. For example, an
-    // int32 field set to 0 will be omitted. Set this flag to true will override
-    // the default behavior and print primitive fields regardless of their
-    // values.
-    bool always_print_primitive_fields;
-    // Whether to always print enums as ints. By default they are rendered as
-    // strings.
-    bool always_print_enums_as_ints;
-    // Whether to preserve proto field names
-    bool preserve_proto_field_names;
+  // Whether to add spaces, line breaks and indentation to make the JSON
+  // output easy to read.
+  bool add_whitespace;
+  // Whether to always print primitive fields. By default primitive fields
+  // with default values will be omitted in JSON joutput. For example, an
+  // int32 field set to 0 will be omitted. Set this flag to true will override
+  // the default behavior and print primitive fields regardless of their
+  // values.
+  bool always_print_primitive_fields;
+  // Whether to always print enums as ints. By default they are rendered as
+  // strings.
+  bool always_print_enums_as_ints;
+  // Whether to preserve proto field names
+  bool preserve_proto_field_names;
 
-    JsonPrintOptions()
-        : add_whitespace(false), always_print_primitive_fields(false),
-          always_print_enums_as_ints(false), preserve_proto_field_names(false) {
-    }
+  JsonPrintOptions()
+      : add_whitespace(false), always_print_primitive_fields(false),
+        always_print_enums_as_ints(false), preserve_proto_field_names(false) {}
 };
 
 // DEPRECATED. Use JsonPrintOptions instead.
@@ -86,7 +85,7 @@ LIBPROTOBUF_EXPORT util::Status MessageToJsonString(const Message &message,
 
 inline util::Status MessageToJsonString(const Message &message,
                                         string *output) {
-    return MessageToJsonString(message, output, JsonOptions());
+  return MessageToJsonString(message, output, JsonOptions());
 }
 
 // Converts from JSON to protobuf message. This is a simple wrapper of
@@ -97,7 +96,7 @@ JsonStringToMessage(const string &input, Message *message,
                     const JsonParseOptions &options);
 
 inline util::Status JsonStringToMessage(const string &input, Message *message) {
-    return JsonStringToMessage(input, message, JsonParseOptions());
+  return JsonStringToMessage(input, message, JsonParseOptions());
 }
 
 // Converts protobuf binary data to JSON.
@@ -116,8 +115,8 @@ inline util::Status BinaryToJsonStream(TypeResolver *resolver,
                                        const string &type_url,
                                        io::ZeroCopyInputStream *binary_input,
                                        io::ZeroCopyOutputStream *json_output) {
-    return BinaryToJsonStream(resolver, type_url, binary_input, json_output,
-                              JsonPrintOptions());
+  return BinaryToJsonStream(resolver, type_url, binary_input, json_output,
+                            JsonPrintOptions());
 }
 
 LIBPROTOBUF_EXPORT util::Status
@@ -129,8 +128,8 @@ inline util::Status BinaryToJsonString(TypeResolver *resolver,
                                        const string &type_url,
                                        const string &binary_input,
                                        string *json_output) {
-    return BinaryToJsonString(resolver, type_url, binary_input, json_output,
-                              JsonPrintOptions());
+  return BinaryToJsonString(resolver, type_url, binary_input, json_output,
+                            JsonPrintOptions());
 }
 
 // Converts JSON data to protobuf binary format.
@@ -148,8 +147,8 @@ inline util::Status
 JsonToBinaryStream(TypeResolver *resolver, const string &type_url,
                    io::ZeroCopyInputStream *json_input,
                    io::ZeroCopyOutputStream *binary_output) {
-    return JsonToBinaryStream(resolver, type_url, json_input, binary_output,
-                              JsonParseOptions());
+  return JsonToBinaryStream(resolver, type_url, json_input, binary_output,
+                            JsonParseOptions());
 }
 
 LIBPROTOBUF_EXPORT util::Status
@@ -161,26 +160,26 @@ inline util::Status JsonToBinaryString(TypeResolver *resolver,
                                        const string &type_url,
                                        const string &json_input,
                                        string *binary_output) {
-    return JsonToBinaryString(resolver, type_url, json_input, binary_output,
-                              JsonParseOptions());
+  return JsonToBinaryString(resolver, type_url, json_input, binary_output,
+                            JsonParseOptions());
 }
 
 namespace internal {
 // Internal helper class. Put in the header so we can write unit-tests for it.
 class LIBPROTOBUF_EXPORT ZeroCopyStreamByteSink : public strings::ByteSink {
-  public:
-    explicit ZeroCopyStreamByteSink(io::ZeroCopyOutputStream *stream)
-        : stream_(stream), buffer_size_(0) {}
-    ~ZeroCopyStreamByteSink();
+public:
+  explicit ZeroCopyStreamByteSink(io::ZeroCopyOutputStream *stream)
+      : stream_(stream), buffer_size_(0) {}
+  ~ZeroCopyStreamByteSink();
 
-    virtual void Append(const char *bytes, size_t len);
+  virtual void Append(const char *bytes, size_t len);
 
-  private:
-    io::ZeroCopyOutputStream *stream_;
-    void *buffer_;
-    int buffer_size_;
+private:
+  io::ZeroCopyOutputStream *stream_;
+  void *buffer_;
+  int buffer_size_;
 
-    GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ZeroCopyStreamByteSink);
+  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ZeroCopyStreamByteSink);
 };
 } // namespace internal
 

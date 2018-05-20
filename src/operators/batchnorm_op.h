@@ -27,25 +27,25 @@ using namespace framework;
 
 template <typename DeviceType, typename T>
 class BatchNormOp : public framework::OperatorWithKernel<DeviceType> {
-  public:
-    BatchNormOp(const std::string &type, const VariableNameMap &inputs,
-                const VariableNameMap &outputs,
-                const framework::AttributeMap attrs,
-                std::shared_ptr<framework::Scope> scope)
-        : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs,
-                                                    attrs, scope),
-          param_(inputs, outputs, attrs, *scope) {}
+public:
+  BatchNormOp(const std::string &type, const VariableNameMap &inputs,
+              const VariableNameMap &outputs,
+              const framework::AttributeMap attrs,
+              std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
+                                                  scope),
+        param_(inputs, outputs, attrs, *scope) {}
 
-    void Run() const {
-        operators::BatchNormKernel<DeviceType, T> kernel;
-        kernel.Compute(param_);
-    }
+  void Run() const {
+    operators::BatchNormKernel<DeviceType, T> kernel;
+    kernel.Compute(param_);
+  }
 
-    using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
-    void InferShape() const override;
+  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  void InferShape() const override;
 
-  protected:
-    BatchNormParam param_;
+protected:
+  BatchNormParam param_;
 };
 
 } // namespace operators

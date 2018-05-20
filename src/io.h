@@ -29,11 +29,11 @@ namespace paddle_mobile {
 
 template <typename Dtype, Precision P = Precision::FP32>
 class Loader : PaddleMobileObject {
-  public:
-    const framework::Program<Dtype, P> Load(const std::string &dirname);
+public:
+  const framework::Program<Dtype, P> Load(const std::string &dirname);
 
-  private:
-    void LoadVar(framework::LoDTensor *tensor, const std::string &file_path);
+private:
+  void LoadVar(framework::LoDTensor *tensor, const std::string &file_path);
 };
 
 } // namespace paddle_mobile

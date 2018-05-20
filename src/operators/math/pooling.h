@@ -38,31 +38,30 @@ namespace math {
  *        MaxPoolGrad and AvgPoolGrad are gradient operations respectively.
  */
 template <class T> class MaxPool {
-  public:
-    inline T initial() { return static_cast<T>(-FLT_MAX); }
+public:
+  inline T initial() { return static_cast<T>(-FLT_MAX); }
 
-    inline void compute(const T &x, T *y) { *y = *y > x ? *y : x; }
+  inline void compute(const T &x, T *y) { *y = *y > x ? *y : x; }
 
-    inline void finalize(const T &pool_field, T *y) {}
+  inline void finalize(const T &pool_field, T *y) {}
 };
 
 template <class T> class AvgPool {
-  public:
-    inline T initial() { return static_cast<T>(0); }
+public:
+  inline T initial() { return static_cast<T>(0); }
 
-    inline void compute(const T &x, T *y) { *y += x; }
+  inline void compute(const T &x, T *y) { *y += x; }
 
-    inline void finalize(const T &pool_field, T *y) { *y /= pool_field; }
+  inline void finalize(const T &pool_field, T *y) { *y /= pool_field; }
 };
 
 template <typename DeviceType, typename PoolProcess, typename T>
 class PoolFunctor {
-  public:
-    void operator()(const framework::Tensor &input,
-                    const std::vector<int> &ksize,
-                    const std::vector<int> &strides,
-                    const std::vector<int> &paddings, PoolProcess pool_compute,
-                    framework::Tensor *output);
+public:
+  void operator()(const framework::Tensor &input, const std::vector<int> &ksize,
+                  const std::vector<int> &strides,
+                  const std::vector<int> &paddings, PoolProcess pool_compute,
+                  framework::Tensor *output);
 };
 }
 } // namespace operators
