@@ -88,5 +88,5 @@ void BatchNormKernel<CPU, float>::Compute(const BatchNormParam &param) const {
   DLOG << "new_bias_ptr : " << new_bias_ptr[5];
   DLOG << "out_ptr : " << out_ptr[102];
 }
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile

@@ -27,5 +27,5 @@ void BatchNormOp<Dtype, T>::InferShape() const {
   param_.OutputY()->Resize(x_dims);
 }
 template class BatchNormOp<CPU, float>;
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile

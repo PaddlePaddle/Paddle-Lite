@@ -25,8 +25,9 @@ using Tensor = paddle_mobile::framework::Tensor;
  *   [input_channels, filter_depth, filter_height, filter_width,
  *                    output_depth, output_height, output_width]
  */
-template <typename T> class Vol2ColFunctor<CPU, T> {
-public:
+template <typename T>
+class Vol2ColFunctor<CPU, T> {
+ public:
   void operator()(const Tensor &vol, const std::vector<int> &dilations,
                   const std::vector<int> &strides,
                   const std::vector<int> &paddings, Tensor *col) const {
@@ -111,8 +112,9 @@ public:
  *   [input_channels, filter_depth, filter_height, filter_width,
  *                    output_depth, output_height, output_width]
  */
-template <typename T> class Col2VolFunctor<CPU, T> {
-public:
+template <typename T>
+class Col2VolFunctor<CPU, T> {
+ public:
   void operator()(const Tensor &col, const std::vector<int> &dilations,
                   const std::vector<int> &strides,
                   const std::vector<int> &paddings, Tensor *vol) const {
@@ -196,6 +198,6 @@ template class Vol2ColFunctor<CPU, double>;
 template class Col2VolFunctor<CPU, float>;
 template class Col2VolFunctor<CPU, double>;
 
-} // namespace math
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace math
+}  // namespace operators
+}  // namespace paddle_mobile

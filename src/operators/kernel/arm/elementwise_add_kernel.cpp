@@ -19,7 +19,8 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-template <typename T> struct AddFunctor {
+template <typename T>
+struct AddFunctor {
   inline T operator()(T a, T b) const { return a + b; }
 };
 
@@ -37,5 +38,5 @@ void ElementwiseAddKernel<CPU, float>::Compute(
 
 template class ElementwiseAddKernel<CPU, float>;
 
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile
