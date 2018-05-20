@@ -37,10 +37,11 @@ void Free(void *ptr);
  *          std::unique_ptr<T> in tensor.h.
  *          static_cast
  */
-template <typename T> class PODDeleter {
+template <typename T>
+class PODDeleter {
   static_assert(std::is_pod<T>::value, "T must be POD");
 
-public:
+ public:
   explicit PODDeleter(){};
 
   void operator()(T *ptr) { Free(static_cast<void *>(ptr)); }
@@ -54,11 +55,12 @@ public:
  *          std::unique_ptr<T> in tensor.h.
  *          reinterpret_cast
  */
-template <typename T> class PlainDeleter {
-public:
+template <typename T>
+class PlainDeleter {
+ public:
   explicit PlainDeleter(){};
 
   void operator()(T *ptr) { Free(reinterpret_cast<void *>(ptr)); }
 };
-} // namespace memory
-} // namespace paddle_mobile
+}  // namespace memory
+}  // namespace paddle_mobile

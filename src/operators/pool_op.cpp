@@ -56,5 +56,5 @@ void PoolOp<DeviceType, T>::InferShape() const {
   DLOG << "infer shape out size =" << param_.Output()->numel();
 }
 template class PoolOp<CPU, float>;
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile

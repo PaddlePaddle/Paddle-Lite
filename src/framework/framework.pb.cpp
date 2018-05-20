@@ -18,73 +18,73 @@ namespace paddle_mobile {
 namespace framework {
 namespace proto {
 class OpDesc_AttrDefaultTypeInternal {
-public:
+ public:
   ::google::protobuf::internal::ExplicitlyConstructed<OpDesc_Attr> _instance;
 } _OpDesc_Attr_default_instance_;
 class OpDesc_VarDefaultTypeInternal {
-public:
+ public:
   ::google::protobuf::internal::ExplicitlyConstructed<OpDesc_Var> _instance;
 } _OpDesc_Var_default_instance_;
 class OpDescDefaultTypeInternal {
-public:
+ public:
   ::google::protobuf::internal::ExplicitlyConstructed<OpDesc> _instance;
 } _OpDesc_default_instance_;
 class OpProto_VarDefaultTypeInternal {
-public:
+ public:
   ::google::protobuf::internal::ExplicitlyConstructed<OpProto_Var> _instance;
 } _OpProto_Var_default_instance_;
 class OpProto_AttrDefaultTypeInternal {
-public:
+ public:
   ::google::protobuf::internal::ExplicitlyConstructed<OpProto_Attr> _instance;
 } _OpProto_Attr_default_instance_;
 class OpProtoDefaultTypeInternal {
-public:
+ public:
   ::google::protobuf::internal::ExplicitlyConstructed<OpProto> _instance;
 } _OpProto_default_instance_;
 class VarType_TensorDescDefaultTypeInternal {
-public:
+ public:
   ::google::protobuf::internal::ExplicitlyConstructed<VarType_TensorDesc>
       _instance;
 } _VarType_TensorDesc_default_instance_;
 class VarType_LoDTensorDescDefaultTypeInternal {
-public:
+ public:
   ::google::protobuf::internal::ExplicitlyConstructed<VarType_LoDTensorDesc>
       _instance;
 } _VarType_LoDTensorDesc_default_instance_;
 class VarType_LoDTensorArrayDescDefaultTypeInternal {
-public:
+ public:
   ::google::protobuf::internal::ExplicitlyConstructed<
       VarType_LoDTensorArrayDesc>
       _instance;
 } _VarType_LoDTensorArrayDesc_default_instance_;
 class VarType_ReaderDescDefaultTypeInternal {
-public:
+ public:
   ::google::protobuf::internal::ExplicitlyConstructed<VarType_ReaderDesc>
       _instance;
 } _VarType_ReaderDesc_default_instance_;
 class VarType_ChannelDescDefaultTypeInternal {
-public:
+ public:
   ::google::protobuf::internal::ExplicitlyConstructed<VarType_ChannelDesc>
       _instance;
 } _VarType_ChannelDesc_default_instance_;
 class VarType_TupleDefaultTypeInternal {
-public:
+ public:
   ::google::protobuf::internal::ExplicitlyConstructed<VarType_Tuple> _instance;
 } _VarType_Tuple_default_instance_;
 class VarTypeDefaultTypeInternal {
-public:
+ public:
   ::google::protobuf::internal::ExplicitlyConstructed<VarType> _instance;
 } _VarType_default_instance_;
 class VarDescDefaultTypeInternal {
-public:
+ public:
   ::google::protobuf::internal::ExplicitlyConstructed<VarDesc> _instance;
 } _VarDesc_default_instance_;
 class BlockDescDefaultTypeInternal {
-public:
+ public:
   ::google::protobuf::internal::ExplicitlyConstructed<BlockDesc> _instance;
 } _BlockDesc_default_instance_;
 class ProgramDescDefaultTypeInternal {
-public:
+ public:
   ::google::protobuf::internal::ExplicitlyConstructed<ProgramDesc> _instance;
 } _ProgramDesc_default_instance_;
 
@@ -217,39 +217,39 @@ void InitDefaults() {
 }
 namespace {
 void AddDescriptorsImpl() { InitDefaults(); }
-} // anonymous namespace
+}  // anonymous namespace
 
 void AddDescriptors() {
   static GOOGLE_PROTOBUF_DECLARE_ONCE(once);
   ::google::protobuf::GoogleOnceInit(&once, &AddDescriptorsImpl);
 }
 
-} // namespace protobuf_framework_2eproto
+}  // namespace protobuf_framework_2eproto
 
 bool VarType_Type_IsValid(int value) {
   switch (value) {
-  case 0:
-  case 1:
-  case 2:
-  case 3:
-  case 4:
-  case 5:
-  case 6:
-  case 7:
-  case 8:
-  case 9:
-  case 10:
-  case 11:
-  case 12:
-  case 13:
-  case 14:
-  case 15:
-  case 16:
-  case 17:
-  case 18:
-    return true;
-  default:
-    return false;
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+    case 9:
+    case 10:
+    case 11:
+    case 12:
+    case 13:
+    case 14:
+    case 15:
+    case 16:
+    case 17:
+    case 18:
+      return true;
+    default:
+      return false;
   }
 }
 
@@ -276,22 +276,22 @@ const VarType_Type VarType::TUPLE;
 const VarType_Type VarType::Type_MIN;
 const VarType_Type VarType::Type_MAX;
 const int VarType::Type_ARRAYSIZE;
-#endif // !defined(_MSC_VER) || _MSC_VER >= 1900
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 bool AttrType_IsValid(int value) {
   switch (value) {
-  case 0:
-  case 1:
-  case 2:
-  case 3:
-  case 4:
-  case 5:
-  case 6:
-  case 7:
-  case 8:
-  case 9:
-    return true;
-  default:
-    return false;
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+    case 9:
+      return true;
+    default:
+      return false;
   }
 }
 
@@ -310,7 +310,7 @@ const int OpDesc_Attr::kBFieldNumber;
 const int OpDesc_Attr::kBoolsFieldNumber;
 const int OpDesc_Attr::kBlockIdxFieldNumber;
 const int OpDesc_Attr::kLFieldNumber;
-#endif // !defined(_MSC_VER) || _MSC_VER >= 1900
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 OpDesc_Attr::OpDesc_Attr()
     : ::google::protobuf::MessageLite(), _internal_metadata_(NULL) {
@@ -321,9 +321,14 @@ OpDesc_Attr::OpDesc_Attr()
   // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.OpDesc.Attr)
 }
 OpDesc_Attr::OpDesc_Attr(const OpDesc_Attr &from)
-    : ::google::protobuf::MessageLite(), _internal_metadata_(NULL),
-      _has_bits_(from._has_bits_), _cached_size_(0), ints_(from.ints_),
-      floats_(from.floats_), strings_(from.strings_), bools_(from.bools_) {
+    : ::google::protobuf::MessageLite(),
+      _internal_metadata_(NULL),
+      _has_bits_(from._has_bits_),
+      _cached_size_(0),
+      ints_(from.ints_),
+      floats_(from.floats_),
+      strings_(from.strings_),
+      bools_(from.bools_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   name_.UnsafeSetDefault(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -422,9 +427,8 @@ void OpDesc_Attr::Clear() {
 
 bool OpDesc_Attr::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream *input) {
-#define DO_(EXPRESSION)                                                        \
-  if (!GOOGLE_PREDICT_TRUE(EXPRESSION))                                        \
-  goto failure
+#define DO_(EXPRESSION) \
+  if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   ::google::protobuf::io::LazyStringOutputStream unknown_fields_string(
       ::google::protobuf::NewPermanentCallback(
@@ -438,216 +442,223 @@ bool OpDesc_Attr::MergePartialFromCodedStream(
     ::std::pair<::google::protobuf::uint32, bool> p =
         input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
-    if (!p.second)
-      goto handle_unusual;
+    if (!p.second) goto handle_unusual;
     switch (
         ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-    // required string name = 1;
-    case 1: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-            input, this->mutable_name()));
-      } else {
-        goto handle_unusual;
-      }
-      break;
-    }
-
-    // required .paddle_mobile.framework.proto.AttrType type =
-    // 2;
-    case 2: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(16u /* 16 & 0xFF */)) {
-        int value;
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
-            input, &value)));
-        if (::paddle_mobile::framework::proto::AttrType_IsValid(value)) {
-          set_type(
-              static_cast<::paddle_mobile::framework::proto::AttrType>(value));
+      // required string name = 1;
+      case 1: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+              input, this->mutable_name()));
         } else {
-          unknown_fields_stream.WriteVarint32(16u);
-          unknown_fields_stream.WriteVarint32(
-              static_cast<::google::protobuf::uint32>(value));
+          goto handle_unusual;
         }
-      } else {
-        goto handle_unusual;
+        break;
       }
-      break;
-    }
 
-    // optional int32 i = 3;
-    case 3: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(24u /* 24 & 0xFF */)) {
-        set_has_i();
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             ::google::protobuf::int32,
-             ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(input,
-                                                                       &i_)));
-      } else {
-        goto handle_unusual;
+      // required .paddle_mobile.framework.proto.AttrType type =
+      // 2;
+      case 2: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(16u /* 16 & 0xFF */)) {
+          int value;
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
+              input, &value)));
+          if (::paddle_mobile::framework::proto::AttrType_IsValid(value)) {
+            set_type(static_cast<::paddle_mobile::framework::proto::AttrType>(
+                value));
+          } else {
+            unknown_fields_stream.WriteVarint32(16u);
+            unknown_fields_stream.WriteVarint32(
+                static_cast<::google::protobuf::uint32>(value));
+          }
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // optional float f = 4;
-    case 4: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(37u /* 37 & 0xFF */)) {
-        set_has_f();
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             float, ::google::protobuf::internal::WireFormatLite::TYPE_FLOAT>(
-            input, &f_)));
-      } else {
-        goto handle_unusual;
+      // optional int32 i = 3;
+      case 3: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(24u /* 24 & 0xFF */)) {
+          set_has_i();
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               ::google::protobuf::int32,
+               ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(input,
+                                                                         &i_)));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // optional string s = 5;
-    case 5: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(42u /* 42 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-            input, this->mutable_s()));
-      } else {
-        goto handle_unusual;
+      // optional float f = 4;
+      case 4: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(37u /* 37 & 0xFF */)) {
+          set_has_f();
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               float, ::google::protobuf::internal::WireFormatLite::TYPE_FLOAT>(
+              input, &f_)));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // repeated int32 ints = 6;
-    case 6: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(48u /* 48 & 0xFF */)) {
-        DO_((
-            ::google::protobuf::internal::WireFormatLite::ReadRepeatedPrimitive<
-                ::google::protobuf::int32,
-                ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
-                1, 48u, input, this->mutable_ints())));
-      } else if (static_cast<::google::protobuf::uint8>(tag) ==
-                 static_cast<::google::protobuf::uint8>(50u /* 50 & 0xFF */)) {
-        DO_((::google::protobuf::internal::WireFormatLite::
-                 ReadPackedPrimitiveNoInline<
-                     ::google::protobuf::int32,
-                     ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
-                     input, this->mutable_ints())));
-      } else {
-        goto handle_unusual;
+      // optional string s = 5;
+      case 5: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(42u /* 42 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+              input, this->mutable_s()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // repeated float floats = 7;
-    case 7: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(61u /* 61 & 0xFF */)) {
-        DO_((
-            ::google::protobuf::internal::WireFormatLite::ReadRepeatedPrimitive<
-                float,
-                ::google::protobuf::internal::WireFormatLite::TYPE_FLOAT>(
-                1, 61u, input, this->mutable_floats())));
-      } else if (static_cast<::google::protobuf::uint8>(tag) ==
-                 static_cast<::google::protobuf::uint8>(58u /* 58 & 0xFF */)) {
-        DO_((::google::protobuf::internal::WireFormatLite::
-                 ReadPackedPrimitiveNoInline<
-                     float,
-                     ::google::protobuf::internal::WireFormatLite::TYPE_FLOAT>(
-                     input, this->mutable_floats())));
-      } else {
-        goto handle_unusual;
+      // repeated int32 ints = 6;
+      case 6: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(48u /* 48 & 0xFF */)) {
+          DO_((
+              ::google::protobuf::internal::WireFormatLite::
+                  ReadRepeatedPrimitive<
+                      ::google::protobuf::int32,
+                      ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+                      1, 48u, input, this->mutable_ints())));
+        } else if (static_cast<::google::protobuf::uint8>(tag) ==
+                   static_cast<::google::protobuf::uint8>(
+                       50u /* 50 & 0xFF */)) {
+          DO_((
+              ::google::protobuf::internal::WireFormatLite::
+                  ReadPackedPrimitiveNoInline<
+                      ::google::protobuf::int32,
+                      ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+                      input, this->mutable_ints())));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // repeated string strings = 8;
-    case 8: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(66u /* 66 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-            input, this->add_strings()));
-      } else {
-        goto handle_unusual;
+      // repeated float floats = 7;
+      case 7: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(61u /* 61 & 0xFF */)) {
+          DO_((
+              ::google::protobuf::internal::WireFormatLite::
+                  ReadRepeatedPrimitive<
+                      float,
+                      ::google::protobuf::internal::WireFormatLite::TYPE_FLOAT>(
+                      1, 61u, input, this->mutable_floats())));
+        } else if (static_cast<::google::protobuf::uint8>(tag) ==
+                   static_cast<::google::protobuf::uint8>(
+                       58u /* 58 & 0xFF */)) {
+          DO_((
+              ::google::protobuf::internal::WireFormatLite::
+                  ReadPackedPrimitiveNoInline<
+                      float,
+                      ::google::protobuf::internal::WireFormatLite::TYPE_FLOAT>(
+                      input, this->mutable_floats())));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // optional bool b = 10;
-    case 10: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(80u /* 80 & 0xFF */)) {
-        set_has_b();
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
-            input, &b_)));
-      } else {
-        goto handle_unusual;
+      // repeated string strings = 8;
+      case 8: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(66u /* 66 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+              input, this->add_strings()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // repeated bool bools = 11;
-    case 11: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(88u /* 88 & 0xFF */)) {
-        DO_((
-            ::google::protobuf::internal::WireFormatLite::ReadRepeatedPrimitive<
-                bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
-                1, 88u, input, this->mutable_bools())));
-      } else if (static_cast<::google::protobuf::uint8>(tag) ==
-                 static_cast<::google::protobuf::uint8>(90u /* 90 & 0xFF */)) {
-        DO_((::google::protobuf::internal::WireFormatLite::
-                 ReadPackedPrimitiveNoInline<
-                     bool,
-                     ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
-                     input, this->mutable_bools())));
-      } else {
-        goto handle_unusual;
+      // optional bool b = 10;
+      case 10: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(80u /* 80 & 0xFF */)) {
+          set_has_b();
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
+              input, &b_)));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // optional int32 block_idx = 12;
-    case 12: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(96u /* 96 & 0xFF */)) {
-        set_has_block_idx();
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             ::google::protobuf::int32,
-             ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
-            input, &block_idx_)));
-      } else {
-        goto handle_unusual;
+      // repeated bool bools = 11;
+      case 11: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(88u /* 88 & 0xFF */)) {
+          DO_((::google::protobuf::internal::WireFormatLite::
+                   ReadRepeatedPrimitive<
+                       bool,
+                       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
+                       1, 88u, input, this->mutable_bools())));
+        } else if (static_cast<::google::protobuf::uint8>(tag) ==
+                   static_cast<::google::protobuf::uint8>(
+                       90u /* 90 & 0xFF */)) {
+          DO_((::google::protobuf::internal::WireFormatLite::
+                   ReadPackedPrimitiveNoInline<
+                       bool,
+                       ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
+                       input, this->mutable_bools())));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // optional int64 l = 13;
-    case 13: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(104u /* 104 & 0xFF */)) {
-        set_has_l();
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             ::google::protobuf::int64,
-             ::google::protobuf::internal::WireFormatLite::TYPE_INT64>(input,
-                                                                       &l_)));
-      } else {
-        goto handle_unusual;
+      // optional int32 block_idx = 12;
+      case 12: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(96u /* 96 & 0xFF */)) {
+          set_has_block_idx();
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               ::google::protobuf::int32,
+               ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+              input, &block_idx_)));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    default: {
-    handle_unusual:
-      if (tag == 0) {
-        goto success;
+      // optional int64 l = 13;
+      case 13: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(104u /* 104 & 0xFF */)) {
+          set_has_l();
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               ::google::protobuf::int64,
+               ::google::protobuf::internal::WireFormatLite::TYPE_INT64>(input,
+                                                                         &l_)));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      DO_(::google::protobuf::internal::WireFormatLite::SkipField(
-          input, tag, &unknown_fields_stream));
-      break;
-    }
+
+      default: {
+      handle_unusual:
+        if (tag == 0) {
+          goto success;
+        }
+        DO_(::google::protobuf::internal::WireFormatLite::SkipField(
+            input, tag, &unknown_fields_stream));
+        break;
+      }
     }
   }
 success:
@@ -770,7 +781,7 @@ size_t OpDesc_Attr::ByteSizeLong() const {
   total_size += _internal_metadata_.unknown_fields().size();
 
   if (((_has_bits_[0] & 0x00000005) ^ 0x00000005) ==
-      0) { // All required fields are present.
+      0) {  // All required fields are present.
     // required string name = 1;
     total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                           this->name());
@@ -914,21 +925,18 @@ void OpDesc_Attr::MergeFrom(const OpDesc_Attr &from) {
 
 void OpDesc_Attr::CopyFrom(const OpDesc_Attr &from) {
   // @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.OpDesc.Attr)
-  if (&from == this)
-    return;
+  if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 bool OpDesc_Attr::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000005) != 0x00000005)
-    return false;
+  if ((_has_bits_[0] & 0x00000005) != 0x00000005) return false;
   return true;
 }
 
 void OpDesc_Attr::Swap(OpDesc_Attr *other) {
-  if (other == this)
-    return;
+  if (other == this) return;
   InternalSwap(other);
 }
 void OpDesc_Attr::InternalSwap(OpDesc_Attr *other) {
@@ -1157,13 +1165,13 @@ void OpDesc_Attr::add_ints(::google::protobuf::int32 value) {
   ints_.Add(value);
   // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.OpDesc.Attr.ints)
 }
-const ::google::protobuf::RepeatedField<::google::protobuf::int32> &
-OpDesc_Attr::ints() const {
+const ::google::protobuf::RepeatedField<::google::protobuf::int32>
+    &OpDesc_Attr::ints() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpDesc.Attr.ints)
   return ints_;
 }
-::google::protobuf::RepeatedField<::google::protobuf::int32> *
-OpDesc_Attr::mutable_ints() {
+::google::protobuf::RepeatedField<::google::protobuf::int32>
+    *OpDesc_Attr::mutable_ints() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpDesc.Attr.ints)
   return &ints_;
 }
@@ -1245,13 +1253,13 @@ void OpDesc_Attr::add_strings(const char *value, size_t size) {
   strings_.Add()->assign(reinterpret_cast<const char *>(value), size);
   // @@protoc_insertion_point(field_add_pointer:paddle_mobile.framework.proto.OpDesc.Attr.strings)
 }
-const ::google::protobuf::RepeatedPtrField<::std::string> &
-OpDesc_Attr::strings() const {
+const ::google::protobuf::RepeatedPtrField<::std::string>
+    &OpDesc_Attr::strings() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpDesc.Attr.strings)
   return strings_;
 }
-::google::protobuf::RepeatedPtrField<::std::string> *
-OpDesc_Attr::mutable_strings() {
+::google::protobuf::RepeatedPtrField<::std::string>
+    *OpDesc_Attr::mutable_strings() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpDesc.Attr.strings)
   return &strings_;
 }
@@ -1336,14 +1344,14 @@ void OpDesc_Attr::set_l(::google::protobuf::int64 value) {
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.Attr.l)
 }
 
-#endif // PROTOBUF_INLINE_NOT_IN_HEADERS
+#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
 
   // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int OpDesc_Var::kParameterFieldNumber;
 const int OpDesc_Var::kArgumentsFieldNumber;
-#endif // !defined(_MSC_VER) || _MSC_VER >= 1900
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 OpDesc_Var::OpDesc_Var()
     : ::google::protobuf::MessageLite(), _internal_metadata_(NULL) {
@@ -1354,8 +1362,10 @@ OpDesc_Var::OpDesc_Var()
   // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.OpDesc.Var)
 }
 OpDesc_Var::OpDesc_Var(const OpDesc_Var &from)
-    : ::google::protobuf::MessageLite(), _internal_metadata_(NULL),
-      _has_bits_(from._has_bits_), _cached_size_(0),
+    : ::google::protobuf::MessageLite(),
+      _internal_metadata_(NULL),
+      _has_bits_(from._has_bits_),
+      _cached_size_(0),
       arguments_(from.arguments_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   parameter_.UnsafeSetDefault(
@@ -1420,9 +1430,8 @@ void OpDesc_Var::Clear() {
 
 bool OpDesc_Var::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream *input) {
-#define DO_(EXPRESSION)                                                        \
-  if (!GOOGLE_PREDICT_TRUE(EXPRESSION))                                        \
-  goto failure
+#define DO_(EXPRESSION) \
+  if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   ::google::protobuf::io::LazyStringOutputStream unknown_fields_string(
       ::google::protobuf::NewPermanentCallback(
@@ -1436,43 +1445,42 @@ bool OpDesc_Var::MergePartialFromCodedStream(
     ::std::pair<::google::protobuf::uint32, bool> p =
         input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
-    if (!p.second)
-      goto handle_unusual;
+    if (!p.second) goto handle_unusual;
     switch (
         ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-    // required string parameter = 1;
-    case 1: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-            input, this->mutable_parameter()));
-      } else {
-        goto handle_unusual;
+      // required string parameter = 1;
+      case 1: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+              input, this->mutable_parameter()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // repeated string arguments = 2;
-    case 2: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(18u /* 18 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-            input, this->add_arguments()));
-      } else {
-        goto handle_unusual;
+      // repeated string arguments = 2;
+      case 2: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(18u /* 18 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+              input, this->add_arguments()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    default: {
-    handle_unusual:
-      if (tag == 0) {
-        goto success;
+      default: {
+      handle_unusual:
+        if (tag == 0) {
+          goto success;
+        }
+        DO_(::google::protobuf::internal::WireFormatLite::SkipField(
+            input, tag, &unknown_fields_stream));
+        break;
       }
-      DO_(::google::protobuf::internal::WireFormatLite::SkipField(
-          input, tag, &unknown_fields_stream));
-      break;
-    }
     }
   }
 success:
@@ -1558,21 +1566,18 @@ void OpDesc_Var::MergeFrom(const OpDesc_Var &from) {
 
 void OpDesc_Var::CopyFrom(const OpDesc_Var &from) {
   // @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.OpDesc.Var)
-  if (&from == this)
-    return;
+  if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 bool OpDesc_Var::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000001) != 0x00000001)
-    return false;
+  if ((_has_bits_[0] & 0x00000001) != 0x00000001) return false;
   return true;
 }
 
 void OpDesc_Var::Swap(OpDesc_Var *other) {
-  if (other == this)
-    return;
+  if (other == this) return;
   InternalSwap(other);
 }
 void OpDesc_Var::InternalSwap(OpDesc_Var *other) {
@@ -1713,18 +1718,18 @@ void OpDesc_Var::add_arguments(const char *value, size_t size) {
   arguments_.Add()->assign(reinterpret_cast<const char *>(value), size);
   // @@protoc_insertion_point(field_add_pointer:paddle_mobile.framework.proto.OpDesc.Var.arguments)
 }
-const ::google::protobuf::RepeatedPtrField<::std::string> &
-OpDesc_Var::arguments() const {
+const ::google::protobuf::RepeatedPtrField<::std::string>
+    &OpDesc_Var::arguments() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpDesc.Var.arguments)
   return arguments_;
 }
-::google::protobuf::RepeatedPtrField<::std::string> *
-OpDesc_Var::mutable_arguments() {
+::google::protobuf::RepeatedPtrField<::std::string>
+    *OpDesc_Var::mutable_arguments() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpDesc.Var.arguments)
   return &arguments_;
 }
 
-#endif // PROTOBUF_INLINE_NOT_IN_HEADERS
+#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
 
   // ===================================================================
 
@@ -1734,7 +1739,7 @@ const int OpDesc::kInputsFieldNumber;
 const int OpDesc::kOutputsFieldNumber;
 const int OpDesc::kAttrsFieldNumber;
 const int OpDesc::kIsTargetFieldNumber;
-#endif // !defined(_MSC_VER) || _MSC_VER >= 1900
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 OpDesc::OpDesc()
     : ::google::protobuf::MessageLite(), _internal_metadata_(NULL) {
@@ -1745,9 +1750,13 @@ OpDesc::OpDesc()
   // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.OpDesc)
 }
 OpDesc::OpDesc(const OpDesc &from)
-    : ::google::protobuf::MessageLite(), _internal_metadata_(NULL),
-      _has_bits_(from._has_bits_), _cached_size_(0), inputs_(from.inputs_),
-      outputs_(from.outputs_), attrs_(from.attrs_) {
+    : ::google::protobuf::MessageLite(),
+      _internal_metadata_(NULL),
+      _has_bits_(from._has_bits_),
+      _cached_size_(0),
+      inputs_(from.inputs_),
+      outputs_(from.outputs_),
+      attrs_(from.attrs_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   type_.UnsafeSetDefault(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -1816,9 +1825,8 @@ void OpDesc::Clear() {
 
 bool OpDesc::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream *input) {
-#define DO_(EXPRESSION)                                                        \
-  if (!GOOGLE_PREDICT_TRUE(EXPRESSION))                                        \
-  goto failure
+#define DO_(EXPRESSION) \
+  if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   ::google::protobuf::io::LazyStringOutputStream unknown_fields_string(
       ::google::protobuf::NewPermanentCallback(
@@ -1832,84 +1840,83 @@ bool OpDesc::MergePartialFromCodedStream(
     ::std::pair<::google::protobuf::uint32, bool> p =
         input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
-    if (!p.second)
-      goto handle_unusual;
+    if (!p.second) goto handle_unusual;
     switch (
         ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-    // repeated .paddle_mobile.framework.proto.OpDesc.Var inputs
-    // = 1;
-    case 1: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-            input, add_inputs()));
-      } else {
-        goto handle_unusual;
+      // repeated .paddle_mobile.framework.proto.OpDesc.Var inputs
+      // = 1;
+      case 1: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::
+                  ReadMessageNoVirtual(input, add_inputs()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // repeated .paddle_mobile.framework.proto.OpDesc.Var
-    // outputs = 2;
-    case 2: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(18u /* 18 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-            input, add_outputs()));
-      } else {
-        goto handle_unusual;
+      // repeated .paddle_mobile.framework.proto.OpDesc.Var
+      // outputs = 2;
+      case 2: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(18u /* 18 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::
+                  ReadMessageNoVirtual(input, add_outputs()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // required string type = 3;
-    case 3: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(26u /* 26 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-            input, this->mutable_type()));
-      } else {
-        goto handle_unusual;
+      // required string type = 3;
+      case 3: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(26u /* 26 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+              input, this->mutable_type()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // repeated .paddle_mobile.framework.proto.OpDesc.Attr attrs
-    // = 4;
-    case 4: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(34u /* 34 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-            input, add_attrs()));
-      } else {
-        goto handle_unusual;
+      // repeated .paddle_mobile.framework.proto.OpDesc.Attr attrs
+      // = 4;
+      case 4: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(34u /* 34 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::
+                  ReadMessageNoVirtual(input, add_attrs()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // optional bool is_target = 5 [default = false];
-    case 5: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(40u /* 40 & 0xFF */)) {
-        set_has_is_target();
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
-            input, &is_target_)));
-      } else {
-        goto handle_unusual;
+      // optional bool is_target = 5 [default = false];
+      case 5: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(40u /* 40 & 0xFF */)) {
+          set_has_is_target();
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
+              input, &is_target_)));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    default: {
-    handle_unusual:
-      if (tag == 0) {
-        goto success;
+      default: {
+      handle_unusual:
+        if (tag == 0) {
+          goto success;
+        }
+        DO_(::google::protobuf::internal::WireFormatLite::SkipField(
+            input, tag, &unknown_fields_stream));
+        break;
       }
-      DO_(::google::protobuf::internal::WireFormatLite::SkipField(
-          input, tag, &unknown_fields_stream));
-      break;
-    }
     }
   }
 success:
@@ -2061,15 +2068,13 @@ void OpDesc::MergeFrom(const OpDesc &from) {
 
 void OpDesc::CopyFrom(const OpDesc &from) {
   // @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.OpDesc)
-  if (&from == this)
-    return;
+  if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 bool OpDesc::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000001) != 0x00000001)
-    return false;
+  if ((_has_bits_[0] & 0x00000001) != 0x00000001) return false;
   if (!::google::protobuf::internal::AllAreInitialized(this->inputs()))
     return false;
   if (!::google::protobuf::internal::AllAreInitialized(this->outputs()))
@@ -2080,8 +2085,7 @@ bool OpDesc::IsInitialized() const {
 }
 
 void OpDesc::Swap(OpDesc *other) {
-  if (other == this)
-    return;
+  if (other == this) return;
   InternalSwap(other);
 }
 void OpDesc::InternalSwap(OpDesc *other) {
@@ -2169,13 +2173,13 @@ void OpDesc::set_allocated_type(::std::string *type) {
 // repeated .paddle_mobile.framework.proto.OpDesc.Var inputs = 1;
 int OpDesc::inputs_size() const { return inputs_.size(); }
 void OpDesc::clear_inputs() { inputs_.Clear(); }
-const ::paddle_mobile::framework::proto::OpDesc_Var &
-OpDesc::inputs(int index) const {
+const ::paddle_mobile::framework::proto::OpDesc_Var &OpDesc::inputs(
+    int index) const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.inputs)
   return inputs_.Get(index);
 }
-::paddle_mobile::framework::proto::OpDesc_Var *
-OpDesc::mutable_inputs(int index) {
+::paddle_mobile::framework::proto::OpDesc_Var *OpDesc::mutable_inputs(
+    int index) {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpDesc.inputs)
   return inputs_.Mutable(index);
 }
@@ -2184,14 +2188,14 @@ OpDesc::mutable_inputs(int index) {
   return inputs_.Add();
 }
 ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpDesc_Var> *
-OpDesc::mutable_inputs() {
+    ::paddle_mobile::framework::proto::OpDesc_Var>
+    *OpDesc::mutable_inputs() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpDesc.inputs)
   return &inputs_;
 }
 const ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpDesc_Var> &
-OpDesc::inputs() const {
+    ::paddle_mobile::framework::proto::OpDesc_Var>
+    &OpDesc::inputs() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpDesc.inputs)
   return inputs_;
 }
@@ -2199,13 +2203,13 @@ OpDesc::inputs() const {
 // repeated .paddle_mobile.framework.proto.OpDesc.Var outputs = 2;
 int OpDesc::outputs_size() const { return outputs_.size(); }
 void OpDesc::clear_outputs() { outputs_.Clear(); }
-const ::paddle_mobile::framework::proto::OpDesc_Var &
-OpDesc::outputs(int index) const {
+const ::paddle_mobile::framework::proto::OpDesc_Var &OpDesc::outputs(
+    int index) const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.outputs)
   return outputs_.Get(index);
 }
-::paddle_mobile::framework::proto::OpDesc_Var *
-OpDesc::mutable_outputs(int index) {
+::paddle_mobile::framework::proto::OpDesc_Var *OpDesc::mutable_outputs(
+    int index) {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpDesc.outputs)
   return outputs_.Mutable(index);
 }
@@ -2214,14 +2218,14 @@ OpDesc::mutable_outputs(int index) {
   return outputs_.Add();
 }
 ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpDesc_Var> *
-OpDesc::mutable_outputs() {
+    ::paddle_mobile::framework::proto::OpDesc_Var>
+    *OpDesc::mutable_outputs() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpDesc.outputs)
   return &outputs_;
 }
 const ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpDesc_Var> &
-OpDesc::outputs() const {
+    ::paddle_mobile::framework::proto::OpDesc_Var>
+    &OpDesc::outputs() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpDesc.outputs)
   return outputs_;
 }
@@ -2229,13 +2233,13 @@ OpDesc::outputs() const {
 // repeated .paddle_mobile.framework.proto.OpDesc.Attr attrs = 4;
 int OpDesc::attrs_size() const { return attrs_.size(); }
 void OpDesc::clear_attrs() { attrs_.Clear(); }
-const ::paddle_mobile::framework::proto::OpDesc_Attr &
-OpDesc::attrs(int index) const {
+const ::paddle_mobile::framework::proto::OpDesc_Attr &OpDesc::attrs(
+    int index) const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpDesc.attrs)
   return attrs_.Get(index);
 }
-::paddle_mobile::framework::proto::OpDesc_Attr *
-OpDesc::mutable_attrs(int index) {
+::paddle_mobile::framework::proto::OpDesc_Attr *OpDesc::mutable_attrs(
+    int index) {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpDesc.attrs)
   return attrs_.Mutable(index);
 }
@@ -2244,14 +2248,14 @@ OpDesc::mutable_attrs(int index) {
   return attrs_.Add();
 }
 ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpDesc_Attr> *
-OpDesc::mutable_attrs() {
+    ::paddle_mobile::framework::proto::OpDesc_Attr>
+    *OpDesc::mutable_attrs() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpDesc.attrs)
   return &attrs_;
 }
 const ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpDesc_Attr> &
-OpDesc::attrs() const {
+    ::paddle_mobile::framework::proto::OpDesc_Attr>
+    &OpDesc::attrs() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpDesc.attrs)
   return attrs_;
 }
@@ -2276,7 +2280,7 @@ void OpDesc::set_is_target(bool value) {
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpDesc.is_target)
 }
 
-#endif // PROTOBUF_INLINE_NOT_IN_HEADERS
+#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
 
   // ===================================================================
 
@@ -2286,7 +2290,7 @@ const int OpProto_Var::kCommentFieldNumber;
 const int OpProto_Var::kDuplicableFieldNumber;
 const int OpProto_Var::kIntermediateFieldNumber;
 const int OpProto_Var::kDispensableFieldNumber;
-#endif // !defined(_MSC_VER) || _MSC_VER >= 1900
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 OpProto_Var::OpProto_Var()
     : ::google::protobuf::MessageLite(), _internal_metadata_(NULL) {
@@ -2297,8 +2301,10 @@ OpProto_Var::OpProto_Var()
   // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.OpProto.Var)
 }
 OpProto_Var::OpProto_Var(const OpProto_Var &from)
-    : ::google::protobuf::MessageLite(), _internal_metadata_(NULL),
-      _has_bits_(from._has_bits_), _cached_size_(0) {
+    : ::google::protobuf::MessageLite(),
+      _internal_metadata_(NULL),
+      _has_bits_(from._has_bits_),
+      _cached_size_(0) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   name_.UnsafeSetDefault(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -2394,9 +2400,8 @@ void OpProto_Var::Clear() {
 
 bool OpProto_Var::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream *input) {
-#define DO_(EXPRESSION)                                                        \
-  if (!GOOGLE_PREDICT_TRUE(EXPRESSION))                                        \
-  goto failure
+#define DO_(EXPRESSION) \
+  if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   ::google::protobuf::io::LazyStringOutputStream unknown_fields_string(
       ::google::protobuf::NewPermanentCallback(
@@ -2410,85 +2415,84 @@ bool OpProto_Var::MergePartialFromCodedStream(
     ::std::pair<::google::protobuf::uint32, bool> p =
         input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
-    if (!p.second)
-      goto handle_unusual;
+    if (!p.second) goto handle_unusual;
     switch (
         ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-    // required string name = 1;
-    case 1: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-            input, this->mutable_name()));
-      } else {
-        goto handle_unusual;
+      // required string name = 1;
+      case 1: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+              input, this->mutable_name()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // required string comment = 2;
-    case 2: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(18u /* 18 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-            input, this->mutable_comment()));
-      } else {
-        goto handle_unusual;
+      // required string comment = 2;
+      case 2: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(18u /* 18 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+              input, this->mutable_comment()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // optional bool duplicable = 3 [default = false];
-    case 3: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(24u /* 24 & 0xFF */)) {
-        set_has_duplicable();
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
-            input, &duplicable_)));
-      } else {
-        goto handle_unusual;
+      // optional bool duplicable = 3 [default = false];
+      case 3: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(24u /* 24 & 0xFF */)) {
+          set_has_duplicable();
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
+              input, &duplicable_)));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // optional bool intermediate = 4 [default = false];
-    case 4: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(32u /* 32 & 0xFF */)) {
-        set_has_intermediate();
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
-            input, &intermediate_)));
-      } else {
-        goto handle_unusual;
+      // optional bool intermediate = 4 [default = false];
+      case 4: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(32u /* 32 & 0xFF */)) {
+          set_has_intermediate();
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
+              input, &intermediate_)));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // optional bool dispensable = 5 [default = false];
-    case 5: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(40u /* 40 & 0xFF */)) {
-        set_has_dispensable();
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
-            input, &dispensable_)));
-      } else {
-        goto handle_unusual;
+      // optional bool dispensable = 5 [default = false];
+      case 5: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(40u /* 40 & 0xFF */)) {
+          set_has_dispensable();
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
+              input, &dispensable_)));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    default: {
-    handle_unusual:
-      if (tag == 0) {
-        goto success;
+      default: {
+      handle_unusual:
+        if (tag == 0) {
+          goto success;
+        }
+        DO_(::google::protobuf::internal::WireFormatLite::SkipField(
+            input, tag, &unknown_fields_stream));
+        break;
       }
-      DO_(::google::protobuf::internal::WireFormatLite::SkipField(
-          input, tag, &unknown_fields_stream));
-      break;
-    }
     }
   }
 success:
@@ -2568,7 +2572,7 @@ size_t OpProto_Var::ByteSizeLong() const {
   total_size += _internal_metadata_.unknown_fields().size();
 
   if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) ==
-      0) { // All required fields are present.
+      0) {  // All required fields are present.
     // required string name = 1;
     total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                           this->name());
@@ -2644,21 +2648,18 @@ void OpProto_Var::MergeFrom(const OpProto_Var &from) {
 
 void OpProto_Var::CopyFrom(const OpProto_Var &from) {
   // @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.OpProto.Var)
-  if (&from == this)
-    return;
+  if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 bool OpProto_Var::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000003) != 0x00000003)
-    return false;
+  if ((_has_bits_[0] & 0x00000003) != 0x00000003) return false;
   return true;
 }
 
 void OpProto_Var::Swap(OpProto_Var *other) {
-  if (other == this)
-    return;
+  if (other == this) return;
   InternalSwap(other);
 }
 void OpProto_Var::InternalSwap(OpProto_Var *other) {
@@ -2873,7 +2874,7 @@ void OpProto_Var::set_dispensable(bool value) {
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpProto.Var.dispensable)
 }
 
-#endif // PROTOBUF_INLINE_NOT_IN_HEADERS
+#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
 
   // ===================================================================
 
@@ -2882,7 +2883,7 @@ const int OpProto_Attr::kNameFieldNumber;
 const int OpProto_Attr::kTypeFieldNumber;
 const int OpProto_Attr::kCommentFieldNumber;
 const int OpProto_Attr::kGeneratedFieldNumber;
-#endif // !defined(_MSC_VER) || _MSC_VER >= 1900
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 OpProto_Attr::OpProto_Attr()
     : ::google::protobuf::MessageLite(), _internal_metadata_(NULL) {
@@ -2893,8 +2894,10 @@ OpProto_Attr::OpProto_Attr()
   // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.OpProto.Attr)
 }
 OpProto_Attr::OpProto_Attr(const OpProto_Attr &from)
-    : ::google::protobuf::MessageLite(), _internal_metadata_(NULL),
-      _has_bits_(from._has_bits_), _cached_size_(0) {
+    : ::google::protobuf::MessageLite(),
+      _internal_metadata_(NULL),
+      _has_bits_(from._has_bits_),
+      _cached_size_(0) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   name_.UnsafeSetDefault(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -2990,9 +2993,8 @@ void OpProto_Attr::Clear() {
 
 bool OpProto_Attr::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream *input) {
-#define DO_(EXPRESSION)                                                        \
-  if (!GOOGLE_PREDICT_TRUE(EXPRESSION))                                        \
-  goto failure
+#define DO_(EXPRESSION) \
+  if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   ::google::protobuf::io::LazyStringOutputStream unknown_fields_string(
       ::google::protobuf::NewPermanentCallback(
@@ -3006,80 +3008,79 @@ bool OpProto_Attr::MergePartialFromCodedStream(
     ::std::pair<::google::protobuf::uint32, bool> p =
         input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
-    if (!p.second)
-      goto handle_unusual;
+    if (!p.second) goto handle_unusual;
     switch (
         ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-    // required string name = 1;
-    case 1: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-            input, this->mutable_name()));
-      } else {
-        goto handle_unusual;
-      }
-      break;
-    }
-
-    // required .paddle_mobile.framework.proto.AttrType type =
-    // 2;
-    case 2: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(16u /* 16 & 0xFF */)) {
-        int value;
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
-            input, &value)));
-        if (::paddle_mobile::framework::proto::AttrType_IsValid(value)) {
-          set_type(
-              static_cast<::paddle_mobile::framework::proto::AttrType>(value));
+      // required string name = 1;
+      case 1: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+              input, this->mutable_name()));
         } else {
-          unknown_fields_stream.WriteVarint32(16u);
-          unknown_fields_stream.WriteVarint32(
-              static_cast<::google::protobuf::uint32>(value));
+          goto handle_unusual;
         }
-      } else {
-        goto handle_unusual;
+        break;
       }
-      break;
-    }
 
-    // required string comment = 3;
-    case 3: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(26u /* 26 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-            input, this->mutable_comment()));
-      } else {
-        goto handle_unusual;
+      // required .paddle_mobile.framework.proto.AttrType type =
+      // 2;
+      case 2: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(16u /* 16 & 0xFF */)) {
+          int value;
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
+              input, &value)));
+          if (::paddle_mobile::framework::proto::AttrType_IsValid(value)) {
+            set_type(static_cast<::paddle_mobile::framework::proto::AttrType>(
+                value));
+          } else {
+            unknown_fields_stream.WriteVarint32(16u);
+            unknown_fields_stream.WriteVarint32(
+                static_cast<::google::protobuf::uint32>(value));
+          }
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // optional bool generated = 4 [default = false];
-    case 4: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(32u /* 32 & 0xFF */)) {
-        set_has_generated();
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
-            input, &generated_)));
-      } else {
-        goto handle_unusual;
+      // required string comment = 3;
+      case 3: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(26u /* 26 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+              input, this->mutable_comment()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    default: {
-    handle_unusual:
-      if (tag == 0) {
-        goto success;
+      // optional bool generated = 4 [default = false];
+      case 4: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(32u /* 32 & 0xFF */)) {
+          set_has_generated();
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
+              input, &generated_)));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      DO_(::google::protobuf::internal::WireFormatLite::SkipField(
-          input, tag, &unknown_fields_stream));
-      break;
-    }
+
+      default: {
+      handle_unusual:
+        if (tag == 0) {
+          goto success;
+        }
+        DO_(::google::protobuf::internal::WireFormatLite::SkipField(
+            input, tag, &unknown_fields_stream));
+        break;
+      }
     }
   }
 success:
@@ -3160,7 +3161,7 @@ size_t OpProto_Attr::ByteSizeLong() const {
   total_size += _internal_metadata_.unknown_fields().size();
 
   if (((_has_bits_[0] & 0x00000007) ^ 0x00000007) ==
-      0) { // All required fields are present.
+      0) {  // All required fields are present.
     // required string name = 1;
     total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                           this->name());
@@ -3227,21 +3228,18 @@ void OpProto_Attr::MergeFrom(const OpProto_Attr &from) {
 
 void OpProto_Attr::CopyFrom(const OpProto_Attr &from) {
   // @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.OpProto.Attr)
-  if (&from == this)
-    return;
+  if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 bool OpProto_Attr::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000007) != 0x00000007)
-    return false;
+  if ((_has_bits_[0] & 0x00000007) != 0x00000007) return false;
   return true;
 }
 
 void OpProto_Attr::Swap(OpProto_Attr *other) {
-  if (other == this)
-    return;
+  if (other == this) return;
   InternalSwap(other);
 }
 void OpProto_Attr::InternalSwap(OpProto_Attr *other) {
@@ -3436,7 +3434,7 @@ void OpProto_Attr::set_generated(bool value) {
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.OpProto.Attr.generated)
 }
 
-#endif // PROTOBUF_INLINE_NOT_IN_HEADERS
+#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
 
   // ===================================================================
 
@@ -3446,7 +3444,7 @@ const int OpProto::kInputsFieldNumber;
 const int OpProto::kOutputsFieldNumber;
 const int OpProto::kAttrsFieldNumber;
 const int OpProto::kCommentFieldNumber;
-#endif // !defined(_MSC_VER) || _MSC_VER >= 1900
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 OpProto::OpProto()
     : ::google::protobuf::MessageLite(), _internal_metadata_(NULL) {
@@ -3457,9 +3455,13 @@ OpProto::OpProto()
   // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.OpProto)
 }
 OpProto::OpProto(const OpProto &from)
-    : ::google::protobuf::MessageLite(), _internal_metadata_(NULL),
-      _has_bits_(from._has_bits_), _cached_size_(0), inputs_(from.inputs_),
-      outputs_(from.outputs_), attrs_(from.attrs_) {
+    : ::google::protobuf::MessageLite(),
+      _internal_metadata_(NULL),
+      _has_bits_(from._has_bits_),
+      _cached_size_(0),
+      inputs_(from.inputs_),
+      outputs_(from.outputs_),
+      attrs_(from.attrs_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   type_.UnsafeSetDefault(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -3544,9 +3546,8 @@ void OpProto::Clear() {
 
 bool OpProto::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream *input) {
-#define DO_(EXPRESSION)                                                        \
-  if (!GOOGLE_PREDICT_TRUE(EXPRESSION))                                        \
-  goto failure
+#define DO_(EXPRESSION) \
+  if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   ::google::protobuf::io::LazyStringOutputStream unknown_fields_string(
       ::google::protobuf::NewPermanentCallback(
@@ -3560,82 +3561,81 @@ bool OpProto::MergePartialFromCodedStream(
     ::std::pair<::google::protobuf::uint32, bool> p =
         input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
-    if (!p.second)
-      goto handle_unusual;
+    if (!p.second) goto handle_unusual;
     switch (
         ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-    // required string type = 1;
-    case 1: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-            input, this->mutable_type()));
-      } else {
-        goto handle_unusual;
+      // required string type = 1;
+      case 1: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+              input, this->mutable_type()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // repeated .paddle_mobile.framework.proto.OpProto.Var
-    // inputs = 2;
-    case 2: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(18u /* 18 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-            input, add_inputs()));
-      } else {
-        goto handle_unusual;
+      // repeated .paddle_mobile.framework.proto.OpProto.Var
+      // inputs = 2;
+      case 2: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(18u /* 18 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::
+                  ReadMessageNoVirtual(input, add_inputs()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // repeated .paddle_mobile.framework.proto.OpProto.Var
-    // outputs = 3;
-    case 3: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(26u /* 26 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-            input, add_outputs()));
-      } else {
-        goto handle_unusual;
+      // repeated .paddle_mobile.framework.proto.OpProto.Var
+      // outputs = 3;
+      case 3: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(26u /* 26 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::
+                  ReadMessageNoVirtual(input, add_outputs()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // repeated .paddle_mobile.framework.proto.OpProto.Attr
-    // attrs = 4;
-    case 4: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(34u /* 34 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-            input, add_attrs()));
-      } else {
-        goto handle_unusual;
+      // repeated .paddle_mobile.framework.proto.OpProto.Attr
+      // attrs = 4;
+      case 4: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(34u /* 34 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::
+                  ReadMessageNoVirtual(input, add_attrs()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // required string comment = 5;
-    case 5: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(42u /* 42 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-            input, this->mutable_comment()));
-      } else {
-        goto handle_unusual;
+      // required string comment = 5;
+      case 5: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(42u /* 42 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+              input, this->mutable_comment()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    default: {
-    handle_unusual:
-      if (tag == 0) {
-        goto success;
+      default: {
+      handle_unusual:
+        if (tag == 0) {
+          goto success;
+        }
+        DO_(::google::protobuf::internal::WireFormatLite::SkipField(
+            input, tag, &unknown_fields_stream));
+        break;
       }
-      DO_(::google::protobuf::internal::WireFormatLite::SkipField(
-          input, tag, &unknown_fields_stream));
-      break;
-    }
     }
   }
 success:
@@ -3721,7 +3721,7 @@ size_t OpProto::ByteSizeLong() const {
   total_size += _internal_metadata_.unknown_fields().size();
 
   if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) ==
-      0) { // All required fields are present.
+      0) {  // All required fields are present.
     // required string type = 1;
     total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                           this->type());
@@ -3810,15 +3810,13 @@ void OpProto::MergeFrom(const OpProto &from) {
 
 void OpProto::CopyFrom(const OpProto &from) {
   // @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.OpProto)
-  if (&from == this)
-    return;
+  if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 bool OpProto::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000003) != 0x00000003)
-    return false;
+  if ((_has_bits_[0] & 0x00000003) != 0x00000003) return false;
   if (!::google::protobuf::internal::AllAreInitialized(this->inputs()))
     return false;
   if (!::google::protobuf::internal::AllAreInitialized(this->outputs()))
@@ -3829,8 +3827,7 @@ bool OpProto::IsInitialized() const {
 }
 
 void OpProto::Swap(OpProto *other) {
-  if (other == this)
-    return;
+  if (other == this) return;
   InternalSwap(other);
 }
 void OpProto::InternalSwap(OpProto *other) {
@@ -3918,13 +3915,13 @@ void OpProto::set_allocated_type(::std::string *type) {
 // repeated .paddle_mobile.framework.proto.OpProto.Var inputs = 2;
 int OpProto::inputs_size() const { return inputs_.size(); }
 void OpProto::clear_inputs() { inputs_.Clear(); }
-const ::paddle_mobile::framework::proto::OpProto_Var &
-OpProto::inputs(int index) const {
+const ::paddle_mobile::framework::proto::OpProto_Var &OpProto::inputs(
+    int index) const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.inputs)
   return inputs_.Get(index);
 }
-::paddle_mobile::framework::proto::OpProto_Var *
-OpProto::mutable_inputs(int index) {
+::paddle_mobile::framework::proto::OpProto_Var *OpProto::mutable_inputs(
+    int index) {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpProto.inputs)
   return inputs_.Mutable(index);
 }
@@ -3933,14 +3930,14 @@ OpProto::mutable_inputs(int index) {
   return inputs_.Add();
 }
 ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpProto_Var> *
-OpProto::mutable_inputs() {
+    ::paddle_mobile::framework::proto::OpProto_Var>
+    *OpProto::mutable_inputs() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpProto.inputs)
   return &inputs_;
 }
 const ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpProto_Var> &
-OpProto::inputs() const {
+    ::paddle_mobile::framework::proto::OpProto_Var>
+    &OpProto::inputs() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpProto.inputs)
   return inputs_;
 }
@@ -3948,13 +3945,13 @@ OpProto::inputs() const {
 // repeated .paddle_mobile.framework.proto.OpProto.Var outputs = 3;
 int OpProto::outputs_size() const { return outputs_.size(); }
 void OpProto::clear_outputs() { outputs_.Clear(); }
-const ::paddle_mobile::framework::proto::OpProto_Var &
-OpProto::outputs(int index) const {
+const ::paddle_mobile::framework::proto::OpProto_Var &OpProto::outputs(
+    int index) const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.outputs)
   return outputs_.Get(index);
 }
-::paddle_mobile::framework::proto::OpProto_Var *
-OpProto::mutable_outputs(int index) {
+::paddle_mobile::framework::proto::OpProto_Var *OpProto::mutable_outputs(
+    int index) {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpProto.outputs)
   return outputs_.Mutable(index);
 }
@@ -3963,14 +3960,14 @@ OpProto::mutable_outputs(int index) {
   return outputs_.Add();
 }
 ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpProto_Var> *
-OpProto::mutable_outputs() {
+    ::paddle_mobile::framework::proto::OpProto_Var>
+    *OpProto::mutable_outputs() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpProto.outputs)
   return &outputs_;
 }
 const ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpProto_Var> &
-OpProto::outputs() const {
+    ::paddle_mobile::framework::proto::OpProto_Var>
+    &OpProto::outputs() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpProto.outputs)
   return outputs_;
 }
@@ -3978,13 +3975,13 @@ OpProto::outputs() const {
 // repeated .paddle_mobile.framework.proto.OpProto.Attr attrs = 4;
 int OpProto::attrs_size() const { return attrs_.size(); }
 void OpProto::clear_attrs() { attrs_.Clear(); }
-const ::paddle_mobile::framework::proto::OpProto_Attr &
-OpProto::attrs(int index) const {
+const ::paddle_mobile::framework::proto::OpProto_Attr &OpProto::attrs(
+    int index) const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.OpProto.attrs)
   return attrs_.Get(index);
 }
-::paddle_mobile::framework::proto::OpProto_Attr *
-OpProto::mutable_attrs(int index) {
+::paddle_mobile::framework::proto::OpProto_Attr *OpProto::mutable_attrs(
+    int index) {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.OpProto.attrs)
   return attrs_.Mutable(index);
 }
@@ -3993,14 +3990,14 @@ OpProto::mutable_attrs(int index) {
   return attrs_.Add();
 }
 ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpProto_Attr> *
-OpProto::mutable_attrs() {
+    ::paddle_mobile::framework::proto::OpProto_Attr>
+    *OpProto::mutable_attrs() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.OpProto.attrs)
   return &attrs_;
 }
 const ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpProto_Attr> &
-OpProto::attrs() const {
+    ::paddle_mobile::framework::proto::OpProto_Attr>
+    &OpProto::attrs() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.OpProto.attrs)
   return attrs_;
 }
@@ -4071,14 +4068,14 @@ void OpProto::set_allocated_comment(::std::string *comment) {
   // @@protoc_insertion_point(field_set_allocated:paddle_mobile.framework.proto.OpProto.comment)
 }
 
-#endif // PROTOBUF_INLINE_NOT_IN_HEADERS
+#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
 
   // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int VarType_TensorDesc::kDataTypeFieldNumber;
 const int VarType_TensorDesc::kDimsFieldNumber;
-#endif // !defined(_MSC_VER) || _MSC_VER >= 1900
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 VarType_TensorDesc::VarType_TensorDesc()
     : ::google::protobuf::MessageLite(), _internal_metadata_(NULL) {
@@ -4089,8 +4086,11 @@ VarType_TensorDesc::VarType_TensorDesc()
   // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.VarType.TensorDesc)
 }
 VarType_TensorDesc::VarType_TensorDesc(const VarType_TensorDesc &from)
-    : ::google::protobuf::MessageLite(), _internal_metadata_(NULL),
-      _has_bits_(from._has_bits_), _cached_size_(0), dims_(from.dims_) {
+    : ::google::protobuf::MessageLite(),
+      _internal_metadata_(NULL),
+      _has_bits_(from._has_bits_),
+      _cached_size_(0),
+      dims_(from.dims_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   data_type_ = from.data_type_;
   // @@protoc_insertion_point(copy_constructor:paddle_mobile.framework.proto.VarType.TensorDesc)
@@ -4118,8 +4118,8 @@ const VarType_TensorDesc &VarType_TensorDesc::default_instance() {
   return *internal_default_instance();
 }
 
-VarType_TensorDesc *
-VarType_TensorDesc::New(::google::protobuf::Arena *arena) const {
+VarType_TensorDesc *VarType_TensorDesc::New(
+    ::google::protobuf::Arena *arena) const {
   VarType_TensorDesc *n = new VarType_TensorDesc;
   if (arena != NULL) {
     arena->Own(n);
@@ -4141,9 +4141,8 @@ void VarType_TensorDesc::Clear() {
 
 bool VarType_TensorDesc::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream *input) {
-#define DO_(EXPRESSION)                                                        \
-  if (!GOOGLE_PREDICT_TRUE(EXPRESSION))                                        \
-  goto failure
+#define DO_(EXPRESSION) \
+  if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   ::google::protobuf::io::LazyStringOutputStream unknown_fields_string(
       ::google::protobuf::NewPermanentCallback(
@@ -4157,65 +4156,67 @@ bool VarType_TensorDesc::MergePartialFromCodedStream(
     ::std::pair<::google::protobuf::uint32, bool> p =
         input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
-    if (!p.second)
-      goto handle_unusual;
+    if (!p.second) goto handle_unusual;
     switch (
         ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-    // required .paddle_mobile.framework.proto.VarType.Type
-    // data_type = 1;
-    case 1: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(8u /* 8 & 0xFF */)) {
-        int value;
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
-            input, &value)));
-        if (::paddle_mobile::framework::proto::VarType_Type_IsValid(value)) {
-          set_data_type(
-              static_cast<::paddle_mobile::framework::proto::VarType_Type>(
-                  value));
+      // required .paddle_mobile.framework.proto.VarType.Type
+      // data_type = 1;
+      case 1: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(8u /* 8 & 0xFF */)) {
+          int value;
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
+              input, &value)));
+          if (::paddle_mobile::framework::proto::VarType_Type_IsValid(value)) {
+            set_data_type(
+                static_cast<::paddle_mobile::framework::proto::VarType_Type>(
+                    value));
+          } else {
+            unknown_fields_stream.WriteVarint32(8u);
+            unknown_fields_stream.WriteVarint32(
+                static_cast<::google::protobuf::uint32>(value));
+          }
         } else {
-          unknown_fields_stream.WriteVarint32(8u);
-          unknown_fields_stream.WriteVarint32(
-              static_cast<::google::protobuf::uint32>(value));
+          goto handle_unusual;
         }
-      } else {
-        goto handle_unusual;
+        break;
       }
-      break;
-    }
 
-    // repeated int64 dims = 2;
-    case 2: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(16u /* 16 & 0xFF */)) {
-        DO_((
-            ::google::protobuf::internal::WireFormatLite::ReadRepeatedPrimitive<
-                ::google::protobuf::int64,
-                ::google::protobuf::internal::WireFormatLite::TYPE_INT64>(
-                1, 16u, input, this->mutable_dims())));
-      } else if (static_cast<::google::protobuf::uint8>(tag) ==
-                 static_cast<::google::protobuf::uint8>(18u /* 18 & 0xFF */)) {
-        DO_((::google::protobuf::internal::WireFormatLite::
-                 ReadPackedPrimitiveNoInline<
-                     ::google::protobuf::int64,
-                     ::google::protobuf::internal::WireFormatLite::TYPE_INT64>(
-                     input, this->mutable_dims())));
-      } else {
-        goto handle_unusual;
+      // repeated int64 dims = 2;
+      case 2: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(16u /* 16 & 0xFF */)) {
+          DO_((
+              ::google::protobuf::internal::WireFormatLite::
+                  ReadRepeatedPrimitive<
+                      ::google::protobuf::int64,
+                      ::google::protobuf::internal::WireFormatLite::TYPE_INT64>(
+                      1, 16u, input, this->mutable_dims())));
+        } else if (static_cast<::google::protobuf::uint8>(tag) ==
+                   static_cast<::google::protobuf::uint8>(
+                       18u /* 18 & 0xFF */)) {
+          DO_((
+              ::google::protobuf::internal::WireFormatLite::
+                  ReadPackedPrimitiveNoInline<
+                      ::google::protobuf::int64,
+                      ::google::protobuf::internal::WireFormatLite::TYPE_INT64>(
+                      input, this->mutable_dims())));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    default: {
-    handle_unusual:
-      if (tag == 0) {
-        goto success;
+      default: {
+      handle_unusual:
+        if (tag == 0) {
+          goto success;
+        }
+        DO_(::google::protobuf::internal::WireFormatLite::SkipField(
+            input, tag, &unknown_fields_stream));
+        break;
       }
-      DO_(::google::protobuf::internal::WireFormatLite::SkipField(
-          input, tag, &unknown_fields_stream));
-      break;
-    }
     }
   }
 success:
@@ -4301,21 +4302,18 @@ void VarType_TensorDesc::MergeFrom(const VarType_TensorDesc &from) {
 
 void VarType_TensorDesc::CopyFrom(const VarType_TensorDesc &from) {
   // @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.VarType.TensorDesc)
-  if (&from == this)
-    return;
+  if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 bool VarType_TensorDesc::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000001) != 0x00000001)
-    return false;
+  if ((_has_bits_[0] & 0x00000001) != 0x00000001) return false;
   return true;
 }
 
 void VarType_TensorDesc::Swap(VarType_TensorDesc *other) {
-  if (other == this)
-    return;
+  if (other == this) return;
   InternalSwap(other);
 }
 void VarType_TensorDesc::InternalSwap(VarType_TensorDesc *other) {
@@ -4347,8 +4345,8 @@ void VarType_TensorDesc::clear_data_type() {
   data_type_ = 0;
   clear_has_data_type();
 }
-::paddle_mobile::framework::proto::VarType_Type
-VarType_TensorDesc::data_type() const {
+::paddle_mobile::framework::proto::VarType_Type VarType_TensorDesc::data_type()
+    const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.TensorDesc.data_type)
   return static_cast<::paddle_mobile::framework::proto::VarType_Type>(
       data_type_);
@@ -4376,25 +4374,25 @@ void VarType_TensorDesc::add_dims(::google::protobuf::int64 value) {
   dims_.Add(value);
   // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.VarType.TensorDesc.dims)
 }
-const ::google::protobuf::RepeatedField<::google::protobuf::int64> &
-VarType_TensorDesc::dims() const {
+const ::google::protobuf::RepeatedField<::google::protobuf::int64>
+    &VarType_TensorDesc::dims() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.VarType.TensorDesc.dims)
   return dims_;
 }
-::google::protobuf::RepeatedField<::google::protobuf::int64> *
-VarType_TensorDesc::mutable_dims() {
+::google::protobuf::RepeatedField<::google::protobuf::int64>
+    *VarType_TensorDesc::mutable_dims() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.VarType.TensorDesc.dims)
   return &dims_;
 }
 
-#endif // PROTOBUF_INLINE_NOT_IN_HEADERS
+#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
 
   // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int VarType_LoDTensorDesc::kTensorFieldNumber;
 const int VarType_LoDTensorDesc::kLodLevelFieldNumber;
-#endif // !defined(_MSC_VER) || _MSC_VER >= 1900
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 VarType_LoDTensorDesc::VarType_LoDTensorDesc()
     : ::google::protobuf::MessageLite(), _internal_metadata_(NULL) {
@@ -4405,8 +4403,10 @@ VarType_LoDTensorDesc::VarType_LoDTensorDesc()
   // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.VarType.LoDTensorDesc)
 }
 VarType_LoDTensorDesc::VarType_LoDTensorDesc(const VarType_LoDTensorDesc &from)
-    : ::google::protobuf::MessageLite(), _internal_metadata_(NULL),
-      _has_bits_(from._has_bits_), _cached_size_(0) {
+    : ::google::protobuf::MessageLite(),
+      _internal_metadata_(NULL),
+      _has_bits_(from._has_bits_),
+      _cached_size_(0) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   if (from.has_tensor()) {
     tensor_ = new ::paddle_mobile::framework::proto::VarType_TensorDesc(
@@ -4432,8 +4432,7 @@ VarType_LoDTensorDesc::~VarType_LoDTensorDesc() {
 }
 
 void VarType_LoDTensorDesc::SharedDtor() {
-  if (this != internal_default_instance())
-    delete tensor_;
+  if (this != internal_default_instance()) delete tensor_;
 }
 
 void VarType_LoDTensorDesc::SetCachedSize(int size) const {
@@ -4446,8 +4445,8 @@ const VarType_LoDTensorDesc &VarType_LoDTensorDesc::default_instance() {
   return *internal_default_instance();
 }
 
-VarType_LoDTensorDesc *
-VarType_LoDTensorDesc::New(::google::protobuf::Arena *arena) const {
+VarType_LoDTensorDesc *VarType_LoDTensorDesc::New(
+    ::google::protobuf::Arena *arena) const {
   VarType_LoDTensorDesc *n = new VarType_LoDTensorDesc;
   if (arena != NULL) {
     arena->Own(n);
@@ -4472,9 +4471,8 @@ void VarType_LoDTensorDesc::Clear() {
 
 bool VarType_LoDTensorDesc::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream *input) {
-#define DO_(EXPRESSION)                                                        \
-  if (!GOOGLE_PREDICT_TRUE(EXPRESSION))                                        \
-  goto failure
+#define DO_(EXPRESSION) \
+  if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   ::google::protobuf::io::LazyStringOutputStream unknown_fields_string(
       ::google::protobuf::NewPermanentCallback(
@@ -4488,48 +4486,47 @@ bool VarType_LoDTensorDesc::MergePartialFromCodedStream(
     ::std::pair<::google::protobuf::uint32, bool> p =
         input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
-    if (!p.second)
-      goto handle_unusual;
+    if (!p.second) goto handle_unusual;
     switch (
         ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-    // required
-    // .paddle_mobile.framework.proto.VarType.TensorDesc tensor
-    // = 1;
-    case 1: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-            input, mutable_tensor()));
-      } else {
-        goto handle_unusual;
+      // required
+      // .paddle_mobile.framework.proto.VarType.TensorDesc tensor
+      // = 1;
+      case 1: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::
+                  ReadMessageNoVirtual(input, mutable_tensor()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // optional int32 lod_level = 2 [default = 0];
-    case 2: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(16u /* 16 & 0xFF */)) {
-        set_has_lod_level();
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             ::google::protobuf::int32,
-             ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
-            input, &lod_level_)));
-      } else {
-        goto handle_unusual;
+      // optional int32 lod_level = 2 [default = 0];
+      case 2: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(16u /* 16 & 0xFF */)) {
+          set_has_lod_level();
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               ::google::protobuf::int32,
+               ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+              input, &lod_level_)));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    default: {
-    handle_unusual:
-      if (tag == 0) {
-        goto success;
+      default: {
+      handle_unusual:
+        if (tag == 0) {
+          goto success;
+        }
+        DO_(::google::protobuf::internal::WireFormatLite::SkipField(
+            input, tag, &unknown_fields_stream));
+        break;
       }
-      DO_(::google::protobuf::internal::WireFormatLite::SkipField(
-          input, tag, &unknown_fields_stream));
-      break;
-    }
     }
   }
 success:
@@ -4622,25 +4619,21 @@ void VarType_LoDTensorDesc::MergeFrom(const VarType_LoDTensorDesc &from) {
 
 void VarType_LoDTensorDesc::CopyFrom(const VarType_LoDTensorDesc &from) {
   // @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.VarType.LoDTensorDesc)
-  if (&from == this)
-    return;
+  if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 bool VarType_LoDTensorDesc::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000001) != 0x00000001)
-    return false;
+  if ((_has_bits_[0] & 0x00000001) != 0x00000001) return false;
   if (has_tensor()) {
-    if (!this->tensor_->IsInitialized())
-      return false;
+    if (!this->tensor_->IsInitialized()) return false;
   }
   return true;
 }
 
 void VarType_LoDTensorDesc::Swap(VarType_LoDTensorDesc *other) {
-  if (other == this)
-    return;
+  if (other == this) return;
   InternalSwap(other);
 }
 void VarType_LoDTensorDesc::InternalSwap(VarType_LoDTensorDesc *other) {
@@ -4737,14 +4730,14 @@ void VarType_LoDTensorDesc::set_lod_level(::google::protobuf::int32 value) {
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.VarType.LoDTensorDesc.lod_level)
 }
 
-#endif // PROTOBUF_INLINE_NOT_IN_HEADERS
+#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
 
   // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int VarType_LoDTensorArrayDesc::kTensorFieldNumber;
 const int VarType_LoDTensorArrayDesc::kLodLevelFieldNumber;
-#endif // !defined(_MSC_VER) || _MSC_VER >= 1900
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 VarType_LoDTensorArrayDesc::VarType_LoDTensorArrayDesc()
     : ::google::protobuf::MessageLite(), _internal_metadata_(NULL) {
@@ -4756,8 +4749,10 @@ VarType_LoDTensorArrayDesc::VarType_LoDTensorArrayDesc()
 }
 VarType_LoDTensorArrayDesc::VarType_LoDTensorArrayDesc(
     const VarType_LoDTensorArrayDesc &from)
-    : ::google::protobuf::MessageLite(), _internal_metadata_(NULL),
-      _has_bits_(from._has_bits_), _cached_size_(0) {
+    : ::google::protobuf::MessageLite(),
+      _internal_metadata_(NULL),
+      _has_bits_(from._has_bits_),
+      _cached_size_(0) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   if (from.has_tensor()) {
     tensor_ = new ::paddle_mobile::framework::proto::VarType_TensorDesc(
@@ -4783,8 +4778,7 @@ VarType_LoDTensorArrayDesc::~VarType_LoDTensorArrayDesc() {
 }
 
 void VarType_LoDTensorArrayDesc::SharedDtor() {
-  if (this != internal_default_instance())
-    delete tensor_;
+  if (this != internal_default_instance()) delete tensor_;
 }
 
 void VarType_LoDTensorArrayDesc::SetCachedSize(int size) const {
@@ -4798,8 +4792,8 @@ VarType_LoDTensorArrayDesc::default_instance() {
   return *internal_default_instance();
 }
 
-VarType_LoDTensorArrayDesc *
-VarType_LoDTensorArrayDesc::New(::google::protobuf::Arena *arena) const {
+VarType_LoDTensorArrayDesc *VarType_LoDTensorArrayDesc::New(
+    ::google::protobuf::Arena *arena) const {
   VarType_LoDTensorArrayDesc *n = new VarType_LoDTensorArrayDesc;
   if (arena != NULL) {
     arena->Own(n);
@@ -4824,9 +4818,8 @@ void VarType_LoDTensorArrayDesc::Clear() {
 
 bool VarType_LoDTensorArrayDesc::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream *input) {
-#define DO_(EXPRESSION)                                                        \
-  if (!GOOGLE_PREDICT_TRUE(EXPRESSION))                                        \
-  goto failure
+#define DO_(EXPRESSION) \
+  if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   ::google::protobuf::io::LazyStringOutputStream unknown_fields_string(
       ::google::protobuf::NewPermanentCallback(
@@ -4840,48 +4833,47 @@ bool VarType_LoDTensorArrayDesc::MergePartialFromCodedStream(
     ::std::pair<::google::protobuf::uint32, bool> p =
         input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
-    if (!p.second)
-      goto handle_unusual;
+    if (!p.second) goto handle_unusual;
     switch (
         ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-    // required
-    // .paddle_mobile.framework.proto.VarType.TensorDesc tensor
-    // = 1;
-    case 1: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-            input, mutable_tensor()));
-      } else {
-        goto handle_unusual;
+      // required
+      // .paddle_mobile.framework.proto.VarType.TensorDesc tensor
+      // = 1;
+      case 1: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::
+                  ReadMessageNoVirtual(input, mutable_tensor()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // optional int32 lod_level = 2 [default = 0];
-    case 2: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(16u /* 16 & 0xFF */)) {
-        set_has_lod_level();
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             ::google::protobuf::int32,
-             ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
-            input, &lod_level_)));
-      } else {
-        goto handle_unusual;
+      // optional int32 lod_level = 2 [default = 0];
+      case 2: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(16u /* 16 & 0xFF */)) {
+          set_has_lod_level();
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               ::google::protobuf::int32,
+               ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+              input, &lod_level_)));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    default: {
-    handle_unusual:
-      if (tag == 0) {
-        goto success;
+      default: {
+      handle_unusual:
+        if (tag == 0) {
+          goto success;
+        }
+        DO_(::google::protobuf::internal::WireFormatLite::SkipField(
+            input, tag, &unknown_fields_stream));
+        break;
       }
-      DO_(::google::protobuf::internal::WireFormatLite::SkipField(
-          input, tag, &unknown_fields_stream));
-      break;
-    }
     }
   }
 success:
@@ -4976,25 +4968,21 @@ void VarType_LoDTensorArrayDesc::MergeFrom(
 void VarType_LoDTensorArrayDesc::CopyFrom(
     const VarType_LoDTensorArrayDesc &from) {
   // @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc)
-  if (&from == this)
-    return;
+  if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 bool VarType_LoDTensorArrayDesc::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000001) != 0x00000001)
-    return false;
+  if ((_has_bits_[0] & 0x00000001) != 0x00000001) return false;
   if (has_tensor()) {
-    if (!this->tensor_->IsInitialized())
-      return false;
+    if (!this->tensor_->IsInitialized()) return false;
   }
   return true;
 }
 
 void VarType_LoDTensorArrayDesc::Swap(VarType_LoDTensorArrayDesc *other) {
-  if (other == this)
-    return;
+  if (other == this) return;
   InternalSwap(other);
 }
 void VarType_LoDTensorArrayDesc::InternalSwap(
@@ -5096,13 +5084,13 @@ void VarType_LoDTensorArrayDesc::set_lod_level(
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc.lod_level)
 }
 
-#endif // PROTOBUF_INLINE_NOT_IN_HEADERS
+#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
 
   // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int VarType_ReaderDesc::kLodTensorFieldNumber;
-#endif // !defined(_MSC_VER) || _MSC_VER >= 1900
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 VarType_ReaderDesc::VarType_ReaderDesc()
     : ::google::protobuf::MessageLite(), _internal_metadata_(NULL) {
@@ -5113,8 +5101,10 @@ VarType_ReaderDesc::VarType_ReaderDesc()
   // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.VarType.ReaderDesc)
 }
 VarType_ReaderDesc::VarType_ReaderDesc(const VarType_ReaderDesc &from)
-    : ::google::protobuf::MessageLite(), _internal_metadata_(NULL),
-      _has_bits_(from._has_bits_), _cached_size_(0),
+    : ::google::protobuf::MessageLite(),
+      _internal_metadata_(NULL),
+      _has_bits_(from._has_bits_),
+      _cached_size_(0),
       lod_tensor_(from.lod_tensor_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   // @@protoc_insertion_point(copy_constructor:paddle_mobile.framework.proto.VarType.ReaderDesc)
@@ -5139,8 +5129,8 @@ const VarType_ReaderDesc &VarType_ReaderDesc::default_instance() {
   return *internal_default_instance();
 }
 
-VarType_ReaderDesc *
-VarType_ReaderDesc::New(::google::protobuf::Arena *arena) const {
+VarType_ReaderDesc *VarType_ReaderDesc::New(
+    ::google::protobuf::Arena *arena) const {
   VarType_ReaderDesc *n = new VarType_ReaderDesc;
   if (arena != NULL) {
     arena->Own(n);
@@ -5161,9 +5151,8 @@ void VarType_ReaderDesc::Clear() {
 
 bool VarType_ReaderDesc::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream *input) {
-#define DO_(EXPRESSION)                                                        \
-  if (!GOOGLE_PREDICT_TRUE(EXPRESSION))                                        \
-  goto failure
+#define DO_(EXPRESSION) \
+  if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   ::google::protobuf::io::LazyStringOutputStream unknown_fields_string(
       ::google::protobuf::NewPermanentCallback(
@@ -5177,33 +5166,32 @@ bool VarType_ReaderDesc::MergePartialFromCodedStream(
     ::std::pair<::google::protobuf::uint32, bool> p =
         input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
-    if (!p.second)
-      goto handle_unusual;
+    if (!p.second) goto handle_unusual;
     switch (
         ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-    // repeated
-    // .paddle_mobile.framework.proto.VarType.LoDTensorDesc
-    // lod_tensor = 1;
-    case 1: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-            input, add_lod_tensor()));
-      } else {
-        goto handle_unusual;
+      // repeated
+      // .paddle_mobile.framework.proto.VarType.LoDTensorDesc
+      // lod_tensor = 1;
+      case 1: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::
+                  ReadMessageNoVirtual(input, add_lod_tensor()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    default: {
-    handle_unusual:
-      if (tag == 0) {
-        goto success;
+      default: {
+      handle_unusual:
+        if (tag == 0) {
+          goto success;
+        }
+        DO_(::google::protobuf::internal::WireFormatLite::SkipField(
+            input, tag, &unknown_fields_stream));
+        break;
       }
-      DO_(::google::protobuf::internal::WireFormatLite::SkipField(
-          input, tag, &unknown_fields_stream));
-      break;
-    }
     }
   }
 success:
@@ -5280,8 +5268,7 @@ void VarType_ReaderDesc::MergeFrom(const VarType_ReaderDesc &from) {
 
 void VarType_ReaderDesc::CopyFrom(const VarType_ReaderDesc &from) {
   // @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.VarType.ReaderDesc)
-  if (&from == this)
-    return;
+  if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
@@ -5293,8 +5280,7 @@ bool VarType_ReaderDesc::IsInitialized() const {
 }
 
 void VarType_ReaderDesc::Swap(VarType_ReaderDesc *other) {
-  if (other == this)
-    return;
+  if (other == this) return;
   InternalSwap(other);
 }
 void VarType_ReaderDesc::InternalSwap(VarType_ReaderDesc *other) {
@@ -5332,26 +5318,26 @@ VarType_ReaderDesc::add_lod_tensor() {
   return lod_tensor_.Add();
 }
 ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::VarType_LoDTensorDesc> *
-VarType_ReaderDesc::mutable_lod_tensor() {
+    ::paddle_mobile::framework::proto::VarType_LoDTensorDesc>
+    *VarType_ReaderDesc::mutable_lod_tensor() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.VarType.ReaderDesc.lod_tensor)
   return &lod_tensor_;
 }
 const ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::VarType_LoDTensorDesc> &
-VarType_ReaderDesc::lod_tensor() const {
+    ::paddle_mobile::framework::proto::VarType_LoDTensorDesc>
+    &VarType_ReaderDesc::lod_tensor() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.VarType.ReaderDesc.lod_tensor)
   return lod_tensor_;
 }
 
-#endif // PROTOBUF_INLINE_NOT_IN_HEADERS
+#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
 
   // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int VarType_ChannelDesc::kDataTypeFieldNumber;
 const int VarType_ChannelDesc::kCapacityFieldNumber;
-#endif // !defined(_MSC_VER) || _MSC_VER >= 1900
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 VarType_ChannelDesc::VarType_ChannelDesc()
     : ::google::protobuf::MessageLite(), _internal_metadata_(NULL) {
@@ -5362,8 +5348,10 @@ VarType_ChannelDesc::VarType_ChannelDesc()
   // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.VarType.ChannelDesc)
 }
 VarType_ChannelDesc::VarType_ChannelDesc(const VarType_ChannelDesc &from)
-    : ::google::protobuf::MessageLite(), _internal_metadata_(NULL),
-      _has_bits_(from._has_bits_), _cached_size_(0) {
+    : ::google::protobuf::MessageLite(),
+      _internal_metadata_(NULL),
+      _has_bits_(from._has_bits_),
+      _cached_size_(0) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::memcpy(&capacity_, &from.capacity_,
            static_cast<size_t>(reinterpret_cast<char *>(&data_type_) -
@@ -5397,8 +5385,8 @@ const VarType_ChannelDesc &VarType_ChannelDesc::default_instance() {
   return *internal_default_instance();
 }
 
-VarType_ChannelDesc *
-VarType_ChannelDesc::New(::google::protobuf::Arena *arena) const {
+VarType_ChannelDesc *VarType_ChannelDesc::New(
+    ::google::protobuf::Arena *arena) const {
   VarType_ChannelDesc *n = new VarType_ChannelDesc;
   if (arena != NULL) {
     arena->Own(n);
@@ -5425,9 +5413,8 @@ void VarType_ChannelDesc::Clear() {
 
 bool VarType_ChannelDesc::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream *input) {
-#define DO_(EXPRESSION)                                                        \
-  if (!GOOGLE_PREDICT_TRUE(EXPRESSION))                                        \
-  goto failure
+#define DO_(EXPRESSION) \
+  if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   ::google::protobuf::io::LazyStringOutputStream unknown_fields_string(
       ::google::protobuf::NewPermanentCallback(
@@ -5441,58 +5428,57 @@ bool VarType_ChannelDesc::MergePartialFromCodedStream(
     ::std::pair<::google::protobuf::uint32, bool> p =
         input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
-    if (!p.second)
-      goto handle_unusual;
+    if (!p.second) goto handle_unusual;
     switch (
         ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-    // required .paddle_mobile.framework.proto.VarType.Type
-    // data_type = 1;
-    case 1: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(8u /* 8 & 0xFF */)) {
-        int value;
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
-            input, &value)));
-        if (::paddle_mobile::framework::proto::VarType_Type_IsValid(value)) {
-          set_data_type(
-              static_cast<::paddle_mobile::framework::proto::VarType_Type>(
-                  value));
+      // required .paddle_mobile.framework.proto.VarType.Type
+      // data_type = 1;
+      case 1: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(8u /* 8 & 0xFF */)) {
+          int value;
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
+              input, &value)));
+          if (::paddle_mobile::framework::proto::VarType_Type_IsValid(value)) {
+            set_data_type(
+                static_cast<::paddle_mobile::framework::proto::VarType_Type>(
+                    value));
+          } else {
+            unknown_fields_stream.WriteVarint32(8u);
+            unknown_fields_stream.WriteVarint32(
+                static_cast<::google::protobuf::uint32>(value));
+          }
         } else {
-          unknown_fields_stream.WriteVarint32(8u);
-          unknown_fields_stream.WriteVarint32(
-              static_cast<::google::protobuf::uint32>(value));
+          goto handle_unusual;
         }
-      } else {
-        goto handle_unusual;
+        break;
       }
-      break;
-    }
 
-    // required int64 capacity = 2;
-    case 2: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(16u /* 16 & 0xFF */)) {
-        set_has_capacity();
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             ::google::protobuf::int64,
-             ::google::protobuf::internal::WireFormatLite::TYPE_INT64>(
-            input, &capacity_)));
-      } else {
-        goto handle_unusual;
+      // required int64 capacity = 2;
+      case 2: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(16u /* 16 & 0xFF */)) {
+          set_has_capacity();
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               ::google::protobuf::int64,
+               ::google::protobuf::internal::WireFormatLite::TYPE_INT64>(
+              input, &capacity_)));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    default: {
-    handle_unusual:
-      if (tag == 0) {
-        goto success;
+      default: {
+      handle_unusual:
+        if (tag == 0) {
+          goto success;
+        }
+        DO_(::google::protobuf::internal::WireFormatLite::SkipField(
+            input, tag, &unknown_fields_stream));
+        break;
       }
-      DO_(::google::protobuf::internal::WireFormatLite::SkipField(
-          input, tag, &unknown_fields_stream));
-      break;
-    }
     }
   }
 success:
@@ -5556,7 +5542,7 @@ size_t VarType_ChannelDesc::ByteSizeLong() const {
   total_size += _internal_metadata_.unknown_fields().size();
 
   if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) ==
-      0) { // All required fields are present.
+      0) {  // All required fields are present.
     // required int64 capacity = 2;
     total_size += 1 + ::google::protobuf::internal::WireFormatLite::Int64Size(
                           this->capacity());
@@ -5602,21 +5588,18 @@ void VarType_ChannelDesc::MergeFrom(const VarType_ChannelDesc &from) {
 
 void VarType_ChannelDesc::CopyFrom(const VarType_ChannelDesc &from) {
   // @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.VarType.ChannelDesc)
-  if (&from == this)
-    return;
+  if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 bool VarType_ChannelDesc::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000003) != 0x00000003)
-    return false;
+  if ((_has_bits_[0] & 0x00000003) != 0x00000003) return false;
   return true;
 }
 
 void VarType_ChannelDesc::Swap(VarType_ChannelDesc *other) {
-  if (other == this)
-    return;
+  if (other == this) return;
   InternalSwap(other);
 }
 void VarType_ChannelDesc::InternalSwap(VarType_ChannelDesc *other) {
@@ -5648,8 +5631,8 @@ void VarType_ChannelDesc::clear_data_type() {
   data_type_ = 0;
   clear_has_data_type();
 }
-::paddle_mobile::framework::proto::VarType_Type
-VarType_ChannelDesc::data_type() const {
+::paddle_mobile::framework::proto::VarType_Type VarType_ChannelDesc::data_type()
+    const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.ChannelDesc.data_type)
   return static_cast<::paddle_mobile::framework::proto::VarType_Type>(
       data_type_);
@@ -5684,13 +5667,13 @@ void VarType_ChannelDesc::set_capacity(::google::protobuf::int64 value) {
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.VarType.ChannelDesc.capacity)
 }
 
-#endif // PROTOBUF_INLINE_NOT_IN_HEADERS
+#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
 
   // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int VarType_Tuple::kElementTypeFieldNumber;
-#endif // !defined(_MSC_VER) || _MSC_VER >= 1900
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 VarType_Tuple::VarType_Tuple()
     : ::google::protobuf::MessageLite(), _internal_metadata_(NULL) {
@@ -5701,8 +5684,10 @@ VarType_Tuple::VarType_Tuple()
   // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.VarType.Tuple)
 }
 VarType_Tuple::VarType_Tuple(const VarType_Tuple &from)
-    : ::google::protobuf::MessageLite(), _internal_metadata_(NULL),
-      _has_bits_(from._has_bits_), _cached_size_(0),
+    : ::google::protobuf::MessageLite(),
+      _internal_metadata_(NULL),
+      _has_bits_(from._has_bits_),
+      _cached_size_(0),
       element_type_(from.element_type_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   // @@protoc_insertion_point(copy_constructor:paddle_mobile.framework.proto.VarType.Tuple)
@@ -5748,9 +5733,8 @@ void VarType_Tuple::Clear() {
 
 bool VarType_Tuple::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream *input) {
-#define DO_(EXPRESSION)                                                        \
-  if (!GOOGLE_PREDICT_TRUE(EXPRESSION))                                        \
-  goto failure
+#define DO_(EXPRESSION) \
+  if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   ::google::protobuf::io::LazyStringOutputStream unknown_fields_string(
       ::google::protobuf::NewPermanentCallback(
@@ -5764,50 +5748,50 @@ bool VarType_Tuple::MergePartialFromCodedStream(
     ::std::pair<::google::protobuf::uint32, bool> p =
         input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
-    if (!p.second)
-      goto handle_unusual;
+    if (!p.second) goto handle_unusual;
     switch (
         ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-    // repeated .paddle_mobile.framework.proto.VarType.Type
-    // element_type = 1;
-    case 1: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(8u /* 8 & 0xFF */)) {
-        int value;
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
-            input, &value)));
-        if (::paddle_mobile::framework::proto::VarType_Type_IsValid(value)) {
-          add_element_type(
-              static_cast<::paddle_mobile::framework::proto::VarType_Type>(
-                  value));
+      // repeated .paddle_mobile.framework.proto.VarType.Type
+      // element_type = 1;
+      case 1: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(8u /* 8 & 0xFF */)) {
+          int value;
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
+              input, &value)));
+          if (::paddle_mobile::framework::proto::VarType_Type_IsValid(value)) {
+            add_element_type(
+                static_cast<::paddle_mobile::framework::proto::VarType_Type>(
+                    value));
+          } else {
+            unknown_fields_stream.WriteVarint32(tag);
+            unknown_fields_stream.WriteVarint32(
+                static_cast<::google::protobuf::uint32>(value));
+          }
+        } else if (static_cast<::google::protobuf::uint8>(tag) ==
+                   static_cast<::google::protobuf::uint8>(
+                       10u /* 10 & 0xFF */)) {
+          DO_((::google::protobuf::internal::WireFormatLite::
+                   ReadPackedEnumPreserveUnknowns(
+                       input, 1,
+                       ::paddle_mobile::framework::proto::VarType_Type_IsValid,
+                       &unknown_fields_stream, this->mutable_element_type())));
         } else {
-          unknown_fields_stream.WriteVarint32(tag);
-          unknown_fields_stream.WriteVarint32(
-              static_cast<::google::protobuf::uint32>(value));
+          goto handle_unusual;
         }
-      } else if (static_cast<::google::protobuf::uint8>(tag) ==
-                 static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
-        DO_((::google::protobuf::internal::WireFormatLite::
-                 ReadPackedEnumPreserveUnknowns(
-                     input, 1,
-                     ::paddle_mobile::framework::proto::VarType_Type_IsValid,
-                     &unknown_fields_stream, this->mutable_element_type())));
-      } else {
-        goto handle_unusual;
+        break;
       }
-      break;
-    }
 
-    default: {
-    handle_unusual:
-      if (tag == 0) {
-        goto success;
+      default: {
+      handle_unusual:
+        if (tag == 0) {
+          goto success;
+        }
+        DO_(::google::protobuf::internal::WireFormatLite::SkipField(
+            input, tag, &unknown_fields_stream));
+        break;
       }
-      DO_(::google::protobuf::internal::WireFormatLite::SkipField(
-          input, tag, &unknown_fields_stream));
-      break;
-    }
     }
   }
 success:
@@ -5880,8 +5864,7 @@ void VarType_Tuple::MergeFrom(const VarType_Tuple &from) {
 
 void VarType_Tuple::CopyFrom(const VarType_Tuple &from) {
   // @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.VarType.Tuple)
-  if (&from == this)
-    return;
+  if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
@@ -5889,8 +5872,7 @@ void VarType_Tuple::CopyFrom(const VarType_Tuple &from) {
 bool VarType_Tuple::IsInitialized() const { return true; }
 
 void VarType_Tuple::Swap(VarType_Tuple *other) {
-  if (other == this)
-    return;
+  if (other == this) return;
   InternalSwap(other);
 }
 void VarType_Tuple::InternalSwap(VarType_Tuple *other) {
@@ -5912,8 +5894,8 @@ void VarType_Tuple::InternalSwap(VarType_Tuple *other) {
 // = 1;
 int VarType_Tuple::element_type_size() const { return element_type_.size(); }
 void VarType_Tuple::clear_element_type() { element_type_.Clear(); }
-::paddle_mobile::framework::proto::VarType_Type
-VarType_Tuple::element_type(int index) const {
+::paddle_mobile::framework::proto::VarType_Type VarType_Tuple::element_type(
+    int index) const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.Tuple.element_type)
   return static_cast<::paddle_mobile::framework::proto::VarType_Type>(
       element_type_.Get(index));
@@ -5930,8 +5912,8 @@ void VarType_Tuple::add_element_type(
   element_type_.Add(value);
   // @@protoc_insertion_point(field_add:paddle_mobile.framework.proto.VarType.Tuple.element_type)
 }
-const ::google::protobuf::RepeatedField<int> &
-VarType_Tuple::element_type() const {
+const ::google::protobuf::RepeatedField<int> &VarType_Tuple::element_type()
+    const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.VarType.Tuple.element_type)
   return element_type_;
 }
@@ -5940,7 +5922,7 @@ VarType_Tuple::element_type() const {
   return &element_type_;
 }
 
-#endif // PROTOBUF_INLINE_NOT_IN_HEADERS
+#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
 
   // ===================================================================
 
@@ -5952,7 +5934,7 @@ const int VarType::kTensorArrayFieldNumber;
 const int VarType::kReaderFieldNumber;
 const int VarType::kChannelFieldNumber;
 const int VarType::kTupleFieldNumber;
-#endif // !defined(_MSC_VER) || _MSC_VER >= 1900
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 VarType::VarType()
     : ::google::protobuf::MessageLite(), _internal_metadata_(NULL) {
@@ -5963,8 +5945,10 @@ VarType::VarType()
   // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.VarType)
 }
 VarType::VarType(const VarType &from)
-    : ::google::protobuf::MessageLite(), _internal_metadata_(NULL),
-      _has_bits_(from._has_bits_), _cached_size_(0) {
+    : ::google::protobuf::MessageLite(),
+      _internal_metadata_(NULL),
+      _has_bits_(from._has_bits_),
+      _cached_size_(0) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   if (from.has_selected_rows()) {
     selected_rows_ = new ::paddle_mobile::framework::proto::VarType_TensorDesc(
@@ -6020,18 +6004,12 @@ VarType::~VarType() {
 }
 
 void VarType::SharedDtor() {
-  if (this != internal_default_instance())
-    delete selected_rows_;
-  if (this != internal_default_instance())
-    delete lod_tensor_;
-  if (this != internal_default_instance())
-    delete tensor_array_;
-  if (this != internal_default_instance())
-    delete reader_;
-  if (this != internal_default_instance())
-    delete channel_;
-  if (this != internal_default_instance())
-    delete tuple_;
+  if (this != internal_default_instance()) delete selected_rows_;
+  if (this != internal_default_instance()) delete lod_tensor_;
+  if (this != internal_default_instance()) delete tensor_array_;
+  if (this != internal_default_instance()) delete reader_;
+  if (this != internal_default_instance()) delete channel_;
+  if (this != internal_default_instance()) delete tuple_;
 }
 
 void VarType::SetCachedSize(int size) const {
@@ -6095,9 +6073,8 @@ void VarType::Clear() {
 
 bool VarType::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream *input) {
-#define DO_(EXPRESSION)                                                        \
-  if (!GOOGLE_PREDICT_TRUE(EXPRESSION))                                        \
-  goto failure
+#define DO_(EXPRESSION) \
+  if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   ::google::protobuf::io::LazyStringOutputStream unknown_fields_string(
       ::google::protobuf::NewPermanentCallback(
@@ -6111,126 +6088,126 @@ bool VarType::MergePartialFromCodedStream(
     ::std::pair<::google::protobuf::uint32, bool> p =
         input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
-    if (!p.second)
-      goto handle_unusual;
+    if (!p.second) goto handle_unusual;
     switch (
         ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-    // required .paddle_mobile.framework.proto.VarType.Type type
-    // = 1;
-    case 1: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(8u /* 8 & 0xFF */)) {
-        int value;
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
-            input, &value)));
-        if (::paddle_mobile::framework::proto::VarType_Type_IsValid(value)) {
-          set_type(static_cast<::paddle_mobile::framework::proto::VarType_Type>(
-              value));
+      // required .paddle_mobile.framework.proto.VarType.Type type
+      // = 1;
+      case 1: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(8u /* 8 & 0xFF */)) {
+          int value;
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
+              input, &value)));
+          if (::paddle_mobile::framework::proto::VarType_Type_IsValid(value)) {
+            set_type(
+                static_cast<::paddle_mobile::framework::proto::VarType_Type>(
+                    value));
+          } else {
+            unknown_fields_stream.WriteVarint32(8u);
+            unknown_fields_stream.WriteVarint32(
+                static_cast<::google::protobuf::uint32>(value));
+          }
         } else {
-          unknown_fields_stream.WriteVarint32(8u);
-          unknown_fields_stream.WriteVarint32(
-              static_cast<::google::protobuf::uint32>(value));
+          goto handle_unusual;
         }
-      } else {
-        goto handle_unusual;
+        break;
       }
-      break;
-    }
 
-    // optional
-    // .paddle_mobile.framework.proto.VarType.TensorDesc
-    // selected_rows = 2;
-    case 2: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(18u /* 18 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-            input, mutable_selected_rows()));
-      } else {
-        goto handle_unusual;
+      // optional
+      // .paddle_mobile.framework.proto.VarType.TensorDesc
+      // selected_rows = 2;
+      case 2: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(18u /* 18 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::
+                  ReadMessageNoVirtual(input, mutable_selected_rows()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // optional
-    // .paddle_mobile.framework.proto.VarType.LoDTensorDesc
-    // lod_tensor = 3;
-    case 3: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(26u /* 26 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-            input, mutable_lod_tensor()));
-      } else {
-        goto handle_unusual;
+      // optional
+      // .paddle_mobile.framework.proto.VarType.LoDTensorDesc
+      // lod_tensor = 3;
+      case 3: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(26u /* 26 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::
+                  ReadMessageNoVirtual(input, mutable_lod_tensor()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // optional
-    // .paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc
-    // tensor_array = 4;
-    case 4: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(34u /* 34 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-            input, mutable_tensor_array()));
-      } else {
-        goto handle_unusual;
+      // optional
+      // .paddle_mobile.framework.proto.VarType.LoDTensorArrayDesc
+      // tensor_array = 4;
+      case 4: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(34u /* 34 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::
+                  ReadMessageNoVirtual(input, mutable_tensor_array()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // optional
-    // .paddle_mobile.framework.proto.VarType.ReaderDesc reader
-    // = 5;
-    case 5: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(42u /* 42 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-            input, mutable_reader()));
-      } else {
-        goto handle_unusual;
+      // optional
+      // .paddle_mobile.framework.proto.VarType.ReaderDesc reader
+      // = 5;
+      case 5: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(42u /* 42 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::
+                  ReadMessageNoVirtual(input, mutable_reader()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // optional
-    // .paddle_mobile.framework.proto.VarType.ChannelDesc
-    // channel =
-    // 6;
-    case 6: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(50u /* 50 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-            input, mutable_channel()));
-      } else {
-        goto handle_unusual;
+      // optional
+      // .paddle_mobile.framework.proto.VarType.ChannelDesc
+      // channel =
+      // 6;
+      case 6: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(50u /* 50 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::
+                  ReadMessageNoVirtual(input, mutable_channel()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // optional .paddle_mobile.framework.proto.VarType.Tuple
-    // tuple = 7;
-    case 7: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(58u /* 58 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-            input, mutable_tuple()));
-      } else {
-        goto handle_unusual;
+      // optional .paddle_mobile.framework.proto.VarType.Tuple
+      // tuple = 7;
+      case 7: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(58u /* 58 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::
+                  ReadMessageNoVirtual(input, mutable_tuple()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    default: {
-    handle_unusual:
-      if (tag == 0) {
-        goto success;
+      default: {
+      handle_unusual:
+        if (tag == 0) {
+          goto success;
+        }
+        DO_(::google::protobuf::internal::WireFormatLite::SkipField(
+            input, tag, &unknown_fields_stream));
+        break;
       }
-      DO_(::google::protobuf::internal::WireFormatLite::SkipField(
-          input, tag, &unknown_fields_stream));
-      break;
-    }
     }
   }
 success:
@@ -6440,41 +6417,33 @@ void VarType::MergeFrom(const VarType &from) {
 
 void VarType::CopyFrom(const VarType &from) {
   // @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.VarType)
-  if (&from == this)
-    return;
+  if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 bool VarType::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000040) != 0x00000040)
-    return false;
+  if ((_has_bits_[0] & 0x00000040) != 0x00000040) return false;
   if (has_selected_rows()) {
-    if (!this->selected_rows_->IsInitialized())
-      return false;
+    if (!this->selected_rows_->IsInitialized()) return false;
   }
   if (has_lod_tensor()) {
-    if (!this->lod_tensor_->IsInitialized())
-      return false;
+    if (!this->lod_tensor_->IsInitialized()) return false;
   }
   if (has_tensor_array()) {
-    if (!this->tensor_array_->IsInitialized())
-      return false;
+    if (!this->tensor_array_->IsInitialized()) return false;
   }
   if (has_reader()) {
-    if (!this->reader_->IsInitialized())
-      return false;
+    if (!this->reader_->IsInitialized()) return false;
   }
   if (has_channel()) {
-    if (!this->channel_->IsInitialized())
-      return false;
+    if (!this->channel_->IsInitialized()) return false;
   }
   return true;
 }
 
 void VarType::Swap(VarType *other) {
-  if (other == this)
-    return;
+  if (other == this) return;
   InternalSwap(other);
 }
 void VarType::InternalSwap(VarType *other) {
@@ -6691,8 +6660,8 @@ void VarType::clear_reader() {
     reader_->::paddle_mobile::framework::proto::VarType_ReaderDesc::Clear();
   clear_has_reader();
 }
-const ::paddle_mobile::framework::proto::VarType_ReaderDesc &
-VarType::reader() const {
+const ::paddle_mobile::framework::proto::VarType_ReaderDesc &VarType::reader()
+    const {
   const ::paddle_mobile::framework::proto::VarType_ReaderDesc *p = reader_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.reader)
   return p != NULL
@@ -6741,8 +6710,8 @@ void VarType::clear_channel() {
     channel_->::paddle_mobile::framework::proto::VarType_ChannelDesc::Clear();
   clear_has_channel();
 }
-const ::paddle_mobile::framework::proto::VarType_ChannelDesc &
-VarType::channel() const {
+const ::paddle_mobile::framework::proto::VarType_ChannelDesc &VarType::channel()
+    const {
   const ::paddle_mobile::framework::proto::VarType_ChannelDesc *p = channel_;
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.VarType.channel)
   return p != NULL
@@ -6827,7 +6796,7 @@ void VarType::set_allocated_tuple(
   // @@protoc_insertion_point(field_set_allocated:paddle_mobile.framework.proto.VarType.tuple)
 }
 
-#endif // PROTOBUF_INLINE_NOT_IN_HEADERS
+#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
 
   // ===================================================================
 
@@ -6835,7 +6804,7 @@ void VarType::set_allocated_tuple(
 const int VarDesc::kNameFieldNumber;
 const int VarDesc::kTypeFieldNumber;
 const int VarDesc::kPersistableFieldNumber;
-#endif // !defined(_MSC_VER) || _MSC_VER >= 1900
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 VarDesc::VarDesc()
     : ::google::protobuf::MessageLite(), _internal_metadata_(NULL) {
@@ -6846,8 +6815,10 @@ VarDesc::VarDesc()
   // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.VarDesc)
 }
 VarDesc::VarDesc(const VarDesc &from)
-    : ::google::protobuf::MessageLite(), _internal_metadata_(NULL),
-      _has_bits_(from._has_bits_), _cached_size_(0) {
+    : ::google::protobuf::MessageLite(),
+      _internal_metadata_(NULL),
+      _has_bits_(from._has_bits_),
+      _cached_size_(0) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   name_.UnsafeSetDefault(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -6883,8 +6854,7 @@ VarDesc::~VarDesc() {
 void VarDesc::SharedDtor() {
   name_.DestroyNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  if (this != internal_default_instance())
-    delete type_;
+  if (this != internal_default_instance()) delete type_;
 }
 
 void VarDesc::SetCachedSize(int size) const {
@@ -6930,9 +6900,8 @@ void VarDesc::Clear() {
 
 bool VarDesc::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream *input) {
-#define DO_(EXPRESSION)                                                        \
-  if (!GOOGLE_PREDICT_TRUE(EXPRESSION))                                        \
-  goto failure
+#define DO_(EXPRESSION) \
+  if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   ::google::protobuf::io::LazyStringOutputStream unknown_fields_string(
       ::google::protobuf::NewPermanentCallback(
@@ -6946,57 +6915,56 @@ bool VarDesc::MergePartialFromCodedStream(
     ::std::pair<::google::protobuf::uint32, bool> p =
         input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
-    if (!p.second)
-      goto handle_unusual;
+    if (!p.second) goto handle_unusual;
     switch (
         ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-    // required string name = 1;
-    case 1: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-            input, this->mutable_name()));
-      } else {
-        goto handle_unusual;
+      // required string name = 1;
+      case 1: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+              input, this->mutable_name()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // required .paddle_mobile.framework.proto.VarType type = 2;
-    case 2: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(18u /* 18 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-            input, mutable_type()));
-      } else {
-        goto handle_unusual;
+      // required .paddle_mobile.framework.proto.VarType type = 2;
+      case 2: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(18u /* 18 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::
+                  ReadMessageNoVirtual(input, mutable_type()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // optional bool persistable = 3 [default = false];
-    case 3: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(24u /* 24 & 0xFF */)) {
-        set_has_persistable();
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
-            input, &persistable_)));
-      } else {
-        goto handle_unusual;
+      // optional bool persistable = 3 [default = false];
+      case 3: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(24u /* 24 & 0xFF */)) {
+          set_has_persistable();
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
+              input, &persistable_)));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    default: {
-    handle_unusual:
-      if (tag == 0) {
-        goto success;
+      default: {
+      handle_unusual:
+        if (tag == 0) {
+          goto success;
+        }
+        DO_(::google::protobuf::internal::WireFormatLite::SkipField(
+            input, tag, &unknown_fields_stream));
+        break;
       }
-      DO_(::google::protobuf::internal::WireFormatLite::SkipField(
-          input, tag, &unknown_fields_stream));
-      break;
-    }
     }
   }
 success:
@@ -7065,7 +7033,7 @@ size_t VarDesc::ByteSizeLong() const {
   total_size += _internal_metadata_.unknown_fields().size();
 
   if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) ==
-      0) { // All required fields are present.
+      0) {  // All required fields are present.
     // required string name = 1;
     total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                           this->name());
@@ -7123,25 +7091,21 @@ void VarDesc::MergeFrom(const VarDesc &from) {
 
 void VarDesc::CopyFrom(const VarDesc &from) {
   // @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.VarDesc)
-  if (&from == this)
-    return;
+  if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 bool VarDesc::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000003) != 0x00000003)
-    return false;
+  if ((_has_bits_[0] & 0x00000003) != 0x00000003) return false;
   if (has_type()) {
-    if (!this->type_->IsInitialized())
-      return false;
+    if (!this->type_->IsInitialized()) return false;
   }
   return true;
 }
 
 void VarDesc::Swap(VarDesc *other) {
-  if (other == this)
-    return;
+  if (other == this) return;
   InternalSwap(other);
 }
 void VarDesc::InternalSwap(VarDesc *other) {
@@ -7229,8 +7193,7 @@ bool VarDesc::has_type() const { return (_has_bits_[0] & 0x00000002u) != 0; }
 void VarDesc::set_has_type() { _has_bits_[0] |= 0x00000002u; }
 void VarDesc::clear_has_type() { _has_bits_[0] &= ~0x00000002u; }
 void VarDesc::clear_type() {
-  if (type_ != NULL)
-    type_->::paddle_mobile::framework::proto::VarType::Clear();
+  if (type_ != NULL) type_->::paddle_mobile::framework::proto::VarType::Clear();
   clear_has_type();
 }
 const ::paddle_mobile::framework::proto::VarType &VarDesc::type() const {
@@ -7289,7 +7252,7 @@ void VarDesc::set_persistable(bool value) {
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.VarDesc.persistable)
 }
 
-#endif // PROTOBUF_INLINE_NOT_IN_HEADERS
+#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
 
   // ===================================================================
 
@@ -7299,7 +7262,7 @@ const int BlockDesc::kParentIdxFieldNumber;
 const int BlockDesc::kVarsFieldNumber;
 const int BlockDesc::kOpsFieldNumber;
 const int BlockDesc::kForwardBlockIdxFieldNumber;
-#endif // !defined(_MSC_VER) || _MSC_VER >= 1900
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 BlockDesc::BlockDesc()
     : ::google::protobuf::MessageLite(), _internal_metadata_(NULL) {
@@ -7310,8 +7273,11 @@ BlockDesc::BlockDesc()
   // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.BlockDesc)
 }
 BlockDesc::BlockDesc(const BlockDesc &from)
-    : ::google::protobuf::MessageLite(), _internal_metadata_(NULL),
-      _has_bits_(from._has_bits_), _cached_size_(0), vars_(from.vars_),
+    : ::google::protobuf::MessageLite(),
+      _internal_metadata_(NULL),
+      _has_bits_(from._has_bits_),
+      _cached_size_(0),
+      vars_(from.vars_),
       ops_(from.ops_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::memcpy(&idx_, &from.idx_,
@@ -7377,9 +7343,8 @@ void BlockDesc::Clear() {
 
 bool BlockDesc::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream *input) {
-#define DO_(EXPRESSION)                                                        \
-  if (!GOOGLE_PREDICT_TRUE(EXPRESSION))                                        \
-  goto failure
+#define DO_(EXPRESSION) \
+  if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   ::google::protobuf::io::LazyStringOutputStream unknown_fields_string(
       ::google::protobuf::NewPermanentCallback(
@@ -7393,88 +7358,87 @@ bool BlockDesc::MergePartialFromCodedStream(
     ::std::pair<::google::protobuf::uint32, bool> p =
         input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
-    if (!p.second)
-      goto handle_unusual;
+    if (!p.second) goto handle_unusual;
     switch (
         ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-    // required int32 idx = 1;
-    case 1: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(8u /* 8 & 0xFF */)) {
-        set_has_idx();
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             ::google::protobuf::int32,
-             ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(input,
-                                                                       &idx_)));
-      } else {
-        goto handle_unusual;
+      // required int32 idx = 1;
+      case 1: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(8u /* 8 & 0xFF */)) {
+          set_has_idx();
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               ::google::protobuf::int32,
+               ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+              input, &idx_)));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // required int32 parent_idx = 2;
-    case 2: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(16u /* 16 & 0xFF */)) {
-        set_has_parent_idx();
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             ::google::protobuf::int32,
-             ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
-            input, &parent_idx_)));
-      } else {
-        goto handle_unusual;
+      // required int32 parent_idx = 2;
+      case 2: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(16u /* 16 & 0xFF */)) {
+          set_has_parent_idx();
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               ::google::protobuf::int32,
+               ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+              input, &parent_idx_)));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // repeated .paddle_mobile.framework.proto.VarDesc vars = 3;
-    case 3: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(26u /* 26 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-            input, add_vars()));
-      } else {
-        goto handle_unusual;
+      // repeated .paddle_mobile.framework.proto.VarDesc vars = 3;
+      case 3: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(26u /* 26 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::
+                  ReadMessageNoVirtual(input, add_vars()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // repeated .paddle_mobile.framework.proto.OpDesc ops = 4;
-    case 4: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(34u /* 34 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-            input, add_ops()));
-      } else {
-        goto handle_unusual;
+      // repeated .paddle_mobile.framework.proto.OpDesc ops = 4;
+      case 4: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(34u /* 34 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::
+                  ReadMessageNoVirtual(input, add_ops()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    // optional int32 forward_block_idx = 5 [default = -1];
-    case 5: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(40u /* 40 & 0xFF */)) {
-        set_has_forward_block_idx();
-        DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-             ::google::protobuf::int32,
-             ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
-            input, &forward_block_idx_)));
-      } else {
-        goto handle_unusual;
+      // optional int32 forward_block_idx = 5 [default = -1];
+      case 5: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(40u /* 40 & 0xFF */)) {
+          set_has_forward_block_idx();
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               ::google::protobuf::int32,
+               ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+              input, &forward_block_idx_)));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    default: {
-    handle_unusual:
-      if (tag == 0) {
-        goto success;
+      default: {
+      handle_unusual:
+        if (tag == 0) {
+          goto success;
+        }
+        DO_(::google::protobuf::internal::WireFormatLite::SkipField(
+            input, tag, &unknown_fields_stream));
+        break;
       }
-      DO_(::google::protobuf::internal::WireFormatLite::SkipField(
-          input, tag, &unknown_fields_stream));
-      break;
-    }
     }
   }
 success:
@@ -7556,7 +7520,7 @@ size_t BlockDesc::ByteSizeLong() const {
   total_size += _internal_metadata_.unknown_fields().size();
 
   if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) ==
-      0) { // All required fields are present.
+      0) {  // All required fields are present.
     // required int32 idx = 1;
     total_size += 1 + ::google::protobuf::internal::WireFormatLite::Int32Size(
                           this->idx());
@@ -7634,15 +7598,13 @@ void BlockDesc::MergeFrom(const BlockDesc &from) {
 
 void BlockDesc::CopyFrom(const BlockDesc &from) {
   // @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.BlockDesc)
-  if (&from == this)
-    return;
+  if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 bool BlockDesc::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000003) != 0x00000003)
-    return false;
+  if ((_has_bits_[0] & 0x00000003) != 0x00000003) return false;
   if (!::google::protobuf::internal::AllAreInitialized(this->vars()))
     return false;
   if (!::google::protobuf::internal::AllAreInitialized(this->ops()))
@@ -7651,8 +7613,7 @@ bool BlockDesc::IsInitialized() const {
 }
 
 void BlockDesc::Swap(BlockDesc *other) {
-  if (other == this)
-    return;
+  if (other == this) return;
   InternalSwap(other);
 }
 void BlockDesc::InternalSwap(BlockDesc *other) {
@@ -7715,8 +7676,8 @@ void BlockDesc::set_parent_idx(::google::protobuf::int32 value) {
 // repeated .paddle_mobile.framework.proto.VarDesc vars = 3;
 int BlockDesc::vars_size() const { return vars_.size(); }
 void BlockDesc::clear_vars() { vars_.Clear(); }
-const ::paddle_mobile::framework::proto::VarDesc &
-BlockDesc::vars(int index) const {
+const ::paddle_mobile::framework::proto::VarDesc &BlockDesc::vars(
+    int index) const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.BlockDesc.vars)
   return vars_.Get(index);
 }
@@ -7734,8 +7695,8 @@ BlockDesc::vars(int index) const {
   return &vars_;
 }
 const ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::VarDesc> &
-BlockDesc::vars() const {
+    ::paddle_mobile::framework::proto::VarDesc>
+    &BlockDesc::vars() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.BlockDesc.vars)
   return vars_;
 }
@@ -7743,8 +7704,8 @@ BlockDesc::vars() const {
 // repeated .paddle_mobile.framework.proto.OpDesc ops = 4;
 int BlockDesc::ops_size() const { return ops_.size(); }
 void BlockDesc::clear_ops() { ops_.Clear(); }
-const ::paddle_mobile::framework::proto::OpDesc &
-BlockDesc::ops(int index) const {
+const ::paddle_mobile::framework::proto::OpDesc &BlockDesc::ops(
+    int index) const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.BlockDesc.ops)
   return ops_.Get(index);
 }
@@ -7762,8 +7723,8 @@ BlockDesc::ops(int index) const {
   return &ops_;
 }
 const ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::OpDesc> &
-BlockDesc::ops() const {
+    ::paddle_mobile::framework::proto::OpDesc>
+    &BlockDesc::ops() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.BlockDesc.ops)
   return ops_;
 }
@@ -7788,13 +7749,13 @@ void BlockDesc::set_forward_block_idx(::google::protobuf::int32 value) {
   // @@protoc_insertion_point(field_set:paddle_mobile.framework.proto.BlockDesc.forward_block_idx)
 }
 
-#endif // PROTOBUF_INLINE_NOT_IN_HEADERS
+#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
 
   // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int ProgramDesc::kBlocksFieldNumber;
-#endif // !defined(_MSC_VER) || _MSC_VER >= 1900
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 ProgramDesc::ProgramDesc()
     : ::google::protobuf::MessageLite(), _internal_metadata_(NULL) {
@@ -7805,8 +7766,11 @@ ProgramDesc::ProgramDesc()
   // @@protoc_insertion_point(constructor:paddle_mobile.framework.proto.ProgramDesc)
 }
 ProgramDesc::ProgramDesc(const ProgramDesc &from)
-    : ::google::protobuf::MessageLite(), _internal_metadata_(NULL),
-      _has_bits_(from._has_bits_), _cached_size_(0), blocks_(from.blocks_) {
+    : ::google::protobuf::MessageLite(),
+      _internal_metadata_(NULL),
+      _has_bits_(from._has_bits_),
+      _cached_size_(0),
+      blocks_(from.blocks_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   // @@protoc_insertion_point(copy_constructor:paddle_mobile.framework.proto.ProgramDesc)
 }
@@ -7851,9 +7815,8 @@ void ProgramDesc::Clear() {
 
 bool ProgramDesc::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream *input) {
-#define DO_(EXPRESSION)                                                        \
-  if (!GOOGLE_PREDICT_TRUE(EXPRESSION))                                        \
-  goto failure
+#define DO_(EXPRESSION) \
+  if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   ::google::protobuf::io::LazyStringOutputStream unknown_fields_string(
       ::google::protobuf::NewPermanentCallback(
@@ -7867,32 +7830,31 @@ bool ProgramDesc::MergePartialFromCodedStream(
     ::std::pair<::google::protobuf::uint32, bool> p =
         input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
-    if (!p.second)
-      goto handle_unusual;
+    if (!p.second) goto handle_unusual;
     switch (
         ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-    // repeated .paddle_mobile.framework.proto.BlockDesc blocks
-    // = 1;
-    case 1: {
-      if (static_cast<::google::protobuf::uint8>(tag) ==
-          static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
-        DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-            input, add_blocks()));
-      } else {
-        goto handle_unusual;
+      // repeated .paddle_mobile.framework.proto.BlockDesc blocks
+      // = 1;
+      case 1: {
+        if (static_cast<::google::protobuf::uint8>(tag) ==
+            static_cast<::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
+          DO_(::google::protobuf::internal::WireFormatLite::
+                  ReadMessageNoVirtual(input, add_blocks()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
       }
-      break;
-    }
 
-    default: {
-    handle_unusual:
-      if (tag == 0) {
-        goto success;
+      default: {
+      handle_unusual:
+        if (tag == 0) {
+          goto success;
+        }
+        DO_(::google::protobuf::internal::WireFormatLite::SkipField(
+            input, tag, &unknown_fields_stream));
+        break;
       }
-      DO_(::google::protobuf::internal::WireFormatLite::SkipField(
-          input, tag, &unknown_fields_stream));
-      break;
-    }
     }
   }
 success:
@@ -7964,8 +7926,7 @@ void ProgramDesc::MergeFrom(const ProgramDesc &from) {
 
 void ProgramDesc::CopyFrom(const ProgramDesc &from) {
   // @@protoc_insertion_point(class_specific_copy_from_start:paddle_mobile.framework.proto.ProgramDesc)
-  if (&from == this)
-    return;
+  if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
@@ -7977,8 +7938,7 @@ bool ProgramDesc::IsInitialized() const {
 }
 
 void ProgramDesc::Swap(ProgramDesc *other) {
-  if (other == this)
-    return;
+  if (other == this) return;
   InternalSwap(other);
 }
 void ProgramDesc::InternalSwap(ProgramDesc *other) {
@@ -7999,13 +7959,13 @@ void ProgramDesc::InternalSwap(ProgramDesc *other) {
 // repeated .paddle_mobile.framework.proto.BlockDesc blocks = 1;
 int ProgramDesc::blocks_size() const { return blocks_.size(); }
 void ProgramDesc::clear_blocks() { blocks_.Clear(); }
-const ::paddle_mobile::framework::proto::BlockDesc &
-ProgramDesc::blocks(int index) const {
+const ::paddle_mobile::framework::proto::BlockDesc &ProgramDesc::blocks(
+    int index) const {
   // @@protoc_insertion_point(field_get:paddle_mobile.framework.proto.ProgramDesc.blocks)
   return blocks_.Get(index);
 }
-::paddle_mobile::framework::proto::BlockDesc *
-ProgramDesc::mutable_blocks(int index) {
+::paddle_mobile::framework::proto::BlockDesc *ProgramDesc::mutable_blocks(
+    int index) {
   // @@protoc_insertion_point(field_mutable:paddle_mobile.framework.proto.ProgramDesc.blocks)
   return blocks_.Mutable(index);
 }
@@ -8014,24 +7974,24 @@ ProgramDesc::mutable_blocks(int index) {
   return blocks_.Add();
 }
 ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::BlockDesc> *
-ProgramDesc::mutable_blocks() {
+    ::paddle_mobile::framework::proto::BlockDesc>
+    *ProgramDesc::mutable_blocks() {
   // @@protoc_insertion_point(field_mutable_list:paddle_mobile.framework.proto.ProgramDesc.blocks)
   return &blocks_;
 }
 const ::google::protobuf::RepeatedPtrField<
-    ::paddle_mobile::framework::proto::BlockDesc> &
-ProgramDesc::blocks() const {
+    ::paddle_mobile::framework::proto::BlockDesc>
+    &ProgramDesc::blocks() const {
   // @@protoc_insertion_point(field_list:paddle_mobile.framework.proto.ProgramDesc.blocks)
   return blocks_;
 }
 
-#endif // PROTOBUF_INLINE_NOT_IN_HEADERS
+#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
 
 // @@protoc_insertion_point(namespace_scope)
 
-} // namespace proto
-} // namespace framework
-} // namespace paddle_mobile
+}  // namespace proto
+}  // namespace framework
+}  // namespace paddle_mobile
 
 // @@protoc_insertion_point(global_scope)

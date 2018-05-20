@@ -37,5 +37,5 @@ void DataTransform(const OpKernelType &expected_kernel_type,
 void CopyVariableWithTensor(const Variable &in_var, const Tensor &tensor,
                             Variable &out_var);
 
-} // namespace framework
-} // namespace paddle_mobile
+}  // namespace framework
+}  // namespace paddle_mobile

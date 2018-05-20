@@ -24,7 +24,8 @@ namespace paddle_mobile {
 namespace framework {
 
 // Statically sized, statically indexed dimension
-template <int i> struct Dim {
+template <int i>
+struct Dim {
   static constexpr int dimensions = i;
 
   template <typename... Args>
@@ -70,7 +71,8 @@ template <int i> struct Dim {
 };
 
 // Base case specialization
-template <> struct Dim<0> {
+template <>
+struct Dim<0> {
   static constexpr int dimensions = 0;
 
   HOSTDEVICE
@@ -105,28 +107,37 @@ template <> struct Dim<0> {
 namespace {
 
 // Helper for accessing Dim classes
-template <int i> struct DimGetter {
+template <int i>
+struct DimGetter {
   // Return a copy if Dim is const
-  template <typename D> HOSTDEVICE static int64_t impl(const D &d) {
+  template <typename D>
+  HOSTDEVICE static int64_t impl(const D &d) {
     return DimGetter<i - 1>::impl(d.tail);
   }
   // Return a reference if Dim is mutable
-  template <typename D> HOSTDEVICE static int64_t &impl(D &d) {
+  template <typename D>
+  HOSTDEVICE static int64_t &impl(D &d) {
     return DimGetter<i - 1>::impl(d.tail);
   }
 };
 
 // Eureka! We found the element!
-template <> struct DimGetter<0> {
+template <>
+struct DimGetter<0> {
   // Return a copy if Dim is const
-  template <typename D> HOSTDEVICE static int64_t impl(const D &d) {
+  template <typename D>
+  HOSTDEVICE static int64_t impl(const D &d) {
     return d.head;
   }
   // Return a reference if Dim is mutable
-  template <typename D> HOSTDEVICE static int64_t &impl(D &d) { return d.head; }
+  template <typename D>
+  HOSTDEVICE static int64_t &impl(D &d) {
+    return d.head;
+  }
 };
 
-template <int D> HOSTDEVICE int64_t &indexer(Dim<D> &dim, int idx) {
+template <int D>
+HOSTDEVICE int64_t &indexer(Dim<D> &dim, int idx) {
 #ifndef __CUDA_ARCH__
   if (idx < 0) {
     throw std::invalid_argument("Tried to access a negative dimension");
@@ -140,7 +151,8 @@ template <int D> HOSTDEVICE int64_t &indexer(Dim<D> &dim, int idx) {
   return indexer(dim.tail, idx - 1);
 }
 
-template <> HOSTDEVICE int64_t &indexer<0>(Dim<0> &dim, int idx) {
+template <>
+HOSTDEVICE int64_t &indexer<0>(Dim<0> &dim, int idx) {
 #ifndef __CUDA_ARCH__
   throw std::invalid_argument("Invalid index");
 #else
@@ -156,7 +168,8 @@ template <> HOSTDEVICE int64_t &indexer<0>(Dim<0> &dim, int idx) {
 #endif
 }
 
-template <int D> HOSTDEVICE int64_t indexer(const Dim<D> &dim, int idx) {
+template <int D>
+HOSTDEVICE int64_t indexer(const Dim<D> &dim, int idx) {
 #ifndef __CUDA_ARCH__
   if (idx < 0) {
     throw std::invalid_argument("Tried to access a negative dimension");
@@ -170,7 +183,8 @@ template <int D> HOSTDEVICE int64_t indexer(const Dim<D> &dim, int idx) {
   return indexer(dim.tail, idx - 1);
 }
 
-template <> HOSTDEVICE int64_t indexer<0>(const Dim<0> &dim, int idx) {
+template <>
+HOSTDEVICE int64_t indexer<0>(const Dim<0> &dim, int idx) {
 #ifndef __CUDA_ARCH__
   throw std::invalid_argument("Invalid index");
 #else
@@ -186,25 +200,29 @@ template <> HOSTDEVICE int64_t indexer<0>(const Dim<0> &dim, int idx) {
 #endif
 }
 
-} // namespace
+}  // namespace
 // Static access to constant Dim
-template <int i, int l> HOSTDEVICE int64_t get(const Dim<l> &d) {
+template <int i, int l>
+HOSTDEVICE int64_t get(const Dim<l> &d) {
   return DimGetter<i>::impl(d);
 }
 
 // Static access to mutable Dim
-template <int i, int l> HOSTDEVICE int64_t &get(Dim<l> &d) {
+template <int i, int l>
+HOSTDEVICE int64_t &get(Dim<l> &d) {
   return DimGetter<i>::impl(d);
 }
 
 // Dynamic access to constant Dim
-template <int l> HOSTDEVICE int64_t Dim<l>::operator[](int i) const {
+template <int l>
+HOSTDEVICE int64_t Dim<l>::operator[](int i) const {
   //  std::cout << "l: " << l << std::endl;
   return indexer(*this, i);
 }
 
 // Dynamic access to mutable Dim
-template <int l> HOSTDEVICE int64_t &Dim<l>::operator[](int i) {
+template <int l>
+HOSTDEVICE int64_t &Dim<l>::operator[](int i) {
   return indexer(*this, i);
 }
 
@@ -247,13 +265,15 @@ HOSTDEVICE inline int64_t linearize(const Dim<0> &a, const Dim<0> &b) {
 }
 
 // Product of a Dim
-template <int i> HOSTDEVICE int64_t product(const Dim<i> &a, int prod = 1) {
+template <int i>
+HOSTDEVICE int64_t product(const Dim<i> &a, int prod = 1) {
   return prod * a.head * product(a.tail);
 }
 
 // Base case product of a Dim
 // Notice it is inline because it is no longer a template
-template <> HOSTDEVICE inline int64_t product(const Dim<0> &a, int prod) {
+template <>
+HOSTDEVICE inline int64_t product(const Dim<0> &a, int prod) {
   return prod;
 }
 
@@ -282,7 +302,8 @@ HOSTDEVICE Dim<i> ex_prefix_mul(const Dim<i> &src, int mul = 1) {
 ///\cond HIDDEN
 // Base case of ex_prefix_mul
 // Notice it is inline because it is no longer a template
-template <> HOSTDEVICE inline Dim<0> ex_prefix_mul(const Dim<0> &src, int mul) {
+template <>
+HOSTDEVICE inline Dim<0> ex_prefix_mul(const Dim<0> &src, int mul) {
   return Dim<0>();
 }
 ///\endcond
@@ -290,7 +311,8 @@ template <> HOSTDEVICE inline Dim<0> ex_prefix_mul(const Dim<0> &src, int mul) {
 /**
  * Add two dimensions together
  */
-template <int i> HOSTDEVICE Dim<i> dim_plus(const Dim<i> &a, const Dim<i> &b) {
+template <int i>
+HOSTDEVICE Dim<i> dim_plus(const Dim<i> &a, const Dim<i> &b) {
   return Dim<i>(a.head + b.head, dim_plus(a.tail, b.tail));
 }
 
@@ -308,7 +330,8 @@ HOSTDEVICE Dim<i> operator+(const Dim<i> &lhs, const Dim<i> &rhs) {
 /**
  * Multiply two dimensions together
  */
-template <int i> HOSTDEVICE Dim<i> dim_mult(const Dim<i> &a, const Dim<i> &b) {
+template <int i>
+HOSTDEVICE Dim<i> dim_mult(const Dim<i> &a, const Dim<i> &b) {
   return Dim<i>(a.head * b.head, dim_mult(a.tail, b.tail));
 }
 
@@ -365,8 +388,8 @@ HOSTDEVICE Dim<sizeof...(Args)> make_dim(Args... idxes) {
 // Allows us to output a Dim
 // XXX For some reason, overloading fails to resolve this correctly
 template <int i>
-typename std::enable_if<(i > 1), std::ostream &>::type
-operator<<(std::ostream &os, const Dim<i> &d) {
+typename std::enable_if<(i > 1), std::ostream &>::type operator<<(
+    std::ostream &os, const Dim<i> &d) {
   os << d.head << ", " << d.tail;
   return os;
 }
@@ -374,8 +397,8 @@ operator<<(std::ostream &os, const Dim<i> &d) {
 // Base case that allows us to output a Dim
 // XXX I wish this could be an overload instead of a template
 template <int i>
-typename std::enable_if<(i == 1), std::ostream &>::type
-operator<<(std::ostream &os, const Dim<i> &d) {
+typename std::enable_if<(i == 1), std::ostream &>::type operator<<(
+    std::ostream &os, const Dim<i> &d) {
   os << d.head;
   return os;
 }
@@ -384,7 +407,8 @@ inline std::ostream &operator<<(std::ostream &os, const Dim<0> &d) {
   return os;
 }
 
-template <int i> HOST std::string Dim<i>::to_string() const {
+template <int i>
+HOST std::string Dim<i>::to_string() const {
   std::stringstream stream;
 
   stream << *this;
@@ -406,5 +430,5 @@ HOSTDEVICE Dim<D> linear_to_dimension(int linear_index, Dim<D> extents) {
   return result;
 }
 
-} // namespace framework
-} // namespace paddle_mobile
+}  // namespace framework
+}  // namespace paddle_mobile

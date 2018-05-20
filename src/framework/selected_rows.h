@@ -27,7 +27,7 @@ namespace paddle_mobile {
 namespace framework {
 
 class SelectedRows {
-public:
+ public:
   SelectedRows(const std::vector<int64_t> &rows, const int64_t &height)
       : rows_(rows), height_(height) {
     value_.reset(new Tensor());
@@ -67,7 +67,7 @@ public:
     return make_ddim(dims);
   }
 
-private:
+ private:
   // Notice: rows can be duplicate. We can have {0, 4, 7, 0, 5, 7, 9}
   // here.
   // SelectedRows are simply concated when adding together. Until a
@@ -77,5 +77,5 @@ private:
   int64_t height_;
 };
 
-} // namespace framework
-} // namespace paddle_mobile
+}  // namespace framework
+}  // namespace paddle_mobile

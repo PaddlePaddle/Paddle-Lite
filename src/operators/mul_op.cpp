@@ -21,7 +21,8 @@ SOFTWARE.
 namespace paddle_mobile {
 namespace operators {
 
-template <typename Dtype, typename T> void MulOp<Dtype, T>::InferShape() const {
+template <typename Dtype, typename T>
+void MulOp<Dtype, T>::InferShape() const {
   auto x_dims = param_.InputX()->dims();
   auto y_dims = param_.InputY()->dims();
   int x_num_col_dims = param_.XNumColDims();
@@ -52,5 +53,5 @@ template <typename Dtype, typename T> void MulOp<Dtype, T>::InferShape() const {
   param_.Out()->Resize(ddim);
 }
 template class MulOp<CPU, float>;
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile

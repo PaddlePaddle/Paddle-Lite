@@ -15,8 +15,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
-#include "common/log.h"
 #include <operators/kernel/pool_kernel.h>
+#include "common/log.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -36,7 +36,8 @@ inline void PoolBasic(std::string pooling_type, std::vector<int> ksize,
   }
 }
 
-template <> void PoolKernel<CPU, float>::Compute(const PoolParam &param) const {
+template <>
+void PoolKernel<CPU, float>::Compute(const PoolParam &param) const {
   const Tensor *in_x = param.Input();
   Tensor *out = param.Output();
   std::string pooling_type = param.PoolingType();
@@ -73,5 +74,5 @@ template <> void PoolKernel<CPU, float>::Compute(const PoolParam &param) const {
   //        PoolBasic(pooling_type, ksize, strides, paddings, in_x, out);
   //    }
 }
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile
