@@ -19,49 +19,53 @@ namespace framework {
 
 /// @cond HIDDEN
 
-template <int i> Dim<i> make_dim(const int64_t *d) {
+template <int i>
+Dim<i> make_dim(const int64_t *d) {
   return Dim<i>(*d, make_dim<i - 1>(d + 1));
 }
 
-template <> Dim<0> make_dim<0>(const int64_t *d) { return Dim<0>(*d); }
+template <>
+Dim<0> make_dim<0>(const int64_t *d) {
+  return Dim<0>(*d);
+}
 
 void make_ddim(DDim &ddim, const int64_t *dims, int n) {
   switch (n) {
-  case 0:
-    ddim = make_dim<0>(dims);
-    break;
-  case 1:
-    ddim = make_dim<1>(dims);
-    break;
-  case 2:
-    ddim = make_dim<2>(dims);
-    break;
-  case 3:
-    ddim = make_dim<3>(dims);
-    break;
-  case 4:
-    ddim = make_dim<4>(dims);
-    break;
-  case 5:
-    ddim = make_dim<5>(dims);
-    break;
-  case 6:
-    ddim = make_dim<6>(dims);
-    break;
-  case 7:
-    ddim = make_dim<7>(dims);
-    break;
-  case 8:
-    ddim = make_dim<8>(dims);
-    break;
-  case 9:
-    ddim = make_dim<9>(dims);
-    break;
-  default:
-    //      std::cout << "Dynamic dimensions must have between [1,
-    //      9]
-    //      dimensions.";
-    break;
+    case 0:
+      ddim = make_dim<0>(dims);
+      break;
+    case 1:
+      ddim = make_dim<1>(dims);
+      break;
+    case 2:
+      ddim = make_dim<2>(dims);
+      break;
+    case 3:
+      ddim = make_dim<3>(dims);
+      break;
+    case 4:
+      ddim = make_dim<4>(dims);
+      break;
+    case 5:
+      ddim = make_dim<5>(dims);
+      break;
+    case 6:
+      ddim = make_dim<6>(dims);
+      break;
+    case 7:
+      ddim = make_dim<7>(dims);
+      break;
+    case 8:
+      ddim = make_dim<8>(dims);
+      break;
+    case 9:
+      ddim = make_dim<9>(dims);
+      break;
+    default:
+      //      std::cout << "Dynamic dimensions must have between [1,
+      //      9]
+      //      dimensions.";
+      break;
   }
 }
 
@@ -90,24 +94,28 @@ DDim make_ddim(const std::vector<int> &dims) {
 // XXX For some reason, putting this in an anonymous namespace causes
 // errors
 struct DynamicMutableIndexer : Vistor<int64_t &> {
-public:
+ public:
   explicit DynamicMutableIndexer(int idx) : idx_(idx) {}
 
-  template <int D> int64_t &operator()(Dim<D> &dim) const { return dim[idx_]; }
+  template <int D>
+  int64_t &operator()(Dim<D> &dim) const {
+    return dim[idx_];
+  }
 
-private:
+ private:
   int idx_;
 };
 
 struct DynamicConstIndexer : public Vistor<int64_t> {
-public:
+ public:
   explicit DynamicConstIndexer(int idx) : idx_(idx) {}
 
-  template <int D> int64_t operator()(const Dim<D> &dim) const {
+  template <int D>
+  int64_t operator()(const Dim<D> &dim) const {
     return dim[idx_];
   }
 
-private:
+ private:
   int idx_;
 };
 
@@ -182,7 +190,8 @@ struct VectorizeVisitor : Vistor<void> {
 
   explicit VectorizeVisitor(std::vector<int64_t> &v) : vector(v) {}
 
-  template <typename T> void operator()(const T &t) {
+  template <typename T>
+  void operator()(const T &t) {
     vector.push_back(t.head);
     this->operator()(t.tail);
   }
@@ -207,7 +216,8 @@ std::vector<int> vectorize2int(const DDim &ddim) {
 }
 
 struct ProductVisitor : Vistor<int64_t> {
-  template <int D> int64_t operator()(const Dim<D> &dim) {
+  template <int D>
+  int64_t operator()(const Dim<D> &dim) {
     return product(dim);
   }
 };
@@ -233,7 +243,8 @@ struct SliceVectorizeVisitor : Vistor<void> {
     //                   ddim slice.");
   }
 
-  template <int S> void operator()(const Dim<S> &dim) {
+  template <int S>
+  void operator()(const Dim<S> &dim) {
     if (begin == 0) {
       vector.push_back(dim.head);
     } else {
@@ -264,7 +275,10 @@ DDim slice_ddim(const DDim &ddim, int begin, int end) {
 /// \cond HIDDEN
 
 struct ArityVisitor : Vistor<int> {
-  template <int D> int operator()(Dim<D>) const { return D; }
+  template <int D>
+  int operator()(Dim<D>) const {
+    return D;
+  }
 };
 
 /// \endcond
@@ -282,11 +296,12 @@ int arity(const DDim &d) {
 struct OSVistor : Vistor<std::ostream &> {
   OSVistor(std::ostream &os) : os_(os) {}
 
-  template <int D> std::ostream &operator()(Dim<D> dim) const {
+  template <int D>
+  std::ostream &operator()(Dim<D> dim) const {
     return os_ << dim;
   }
 
-private:
+ private:
   std::ostream &os_;
 };
 
@@ -326,5 +341,5 @@ DDim stride_numel(const framework::DDim &ddim) {
   return framework::make_ddim(strides);
 }
 
-} // namespace framework
-} // namespace paddle_mobile
+}  // namespace framework
+}  // namespace paddle_mobile

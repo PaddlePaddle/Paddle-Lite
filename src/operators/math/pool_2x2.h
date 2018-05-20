@@ -19,7 +19,7 @@ SOFTWARE.
 
 #if __ARM_NEON
 #include <arm_neon.h>
-#endif // __ARM_NEON
+#endif  // __ARM_NEON
 
 static void Pool2x2Max() {
   // todo impl with neon

@@ -18,8 +18,9 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
-template <typename T> class ConcatFunctor {
-public:
+template <typename T>
+class ConcatFunctor {
+ public:
   void operator()(const std::vector<framework::Tensor> &input, const int axis,
                   framework::Tensor *output) {
     size_t num = input.size();
@@ -112,5 +113,5 @@ void ConcatKernel<CPU, float>::Compute(const ConcatParam &param) const {
   }
 }
 
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile
