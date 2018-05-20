@@ -23,7 +23,8 @@ SOFTWARE.
 namespace paddle_mobile {
 namespace operators {
 
-template <> void LrnKernel<CPU, float>::Compute(const LrnParam &param) const {
+template <>
+void LrnKernel<CPU, float>::Compute(const LrnParam &param) const {
   const Tensor *input_x = param.InputX();
   auto x_dims = input_x->dims();
   /// data_format = NCHW
@@ -43,5 +44,5 @@ template <> void LrnKernel<CPU, float>::Compute(const LrnParam &param) const {
 
 template class LrnKernel<CPU, float>;
 
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile

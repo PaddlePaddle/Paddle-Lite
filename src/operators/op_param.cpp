@@ -40,5 +40,5 @@ Print &operator<<(Print &printer, const ConvParam &conv_param) {
   printer << "  output dims: " << conv_param.Output()->dims();
   return printer;
 }
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile
