@@ -89,7 +89,7 @@ enum class ColFormat { kCFO = 0, kOCF = 1 };
  */
 template <ColFormat Format, typename DeviceType, typename T>
 class Im2ColFunctor {
-public:
+ public:
   void operator()(const framework::Tensor &im, const std::vector<int> &dilation,
                   const std::vector<int> &stride,
                   const std::vector<int> &padding, framework::Tensor *col);
@@ -97,13 +97,13 @@ public:
 
 template <ColFormat Format, typename DeviceType, typename T>
 class Col2ImFunctor {
-public:
+ public:
   void operator()(const framework::Tensor &col,
                   const std::vector<int> &dilation,
                   const std::vector<int> &stride,
                   const std::vector<int> &padding, framework::Tensor *im);
 };
 
-} // namespace math
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace math
+}  // namespace operators
+}  // namespace paddle_mobile

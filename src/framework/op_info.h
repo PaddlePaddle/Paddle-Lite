@@ -24,7 +24,8 @@ SOFTWARE.
 namespace paddle_mobile {
 namespace framework {
 
-template <typename Dtype> struct OpInfo {
+template <typename Dtype>
+struct OpInfo {
   OpCreator<Dtype> creator_;
   const OpCreator<Dtype> &Creator() const {
     //    PADDLE_ENFORCE_NOT_NULL(creator_,
@@ -34,12 +35,15 @@ template <typename Dtype> struct OpInfo {
   }
 };
 
-template <typename Dtype> class OpInfoMap;
+template <typename Dtype>
+class OpInfoMap;
 
-template <typename Dtype> static OpInfoMap<Dtype> *g_op_info_map = nullptr;
+template <typename Dtype>
+static OpInfoMap<Dtype> *g_op_info_map = nullptr;
 
-template <typename Dtype> class OpInfoMap {
-public:
+template <typename Dtype>
+class OpInfoMap {
+ public:
   static OpInfoMap &Instance() {
     if (g_op_info_map<Dtype> == nullptr) {
       g_op_info_map<Dtype> = new OpInfoMap();
@@ -83,12 +87,12 @@ public:
     return &map_;
   }
 
-private:
+ private:
   OpInfoMap() = default;
   std::unordered_map<std::string, OpInfo<Dtype>> map_;
 
   //  DISABLE_COPY_AND_ASSIGN(OpInfoMap);
 };
 
-} // namespace framework
-} // namespace paddle_mobile
+}  // namespace framework
+}  // namespace paddle_mobile

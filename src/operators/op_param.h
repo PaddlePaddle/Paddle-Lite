@@ -31,8 +31,8 @@ namespace operators {
 using namespace framework;
 
 class OpParam : PaddleMobileObject {
-public:
-protected:
+ public:
+ protected:
   template <typename T>
   static T *InputFrom(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue<T>("Input", inputs, scope);
@@ -132,7 +132,7 @@ protected:
 };
 
 class ConvParam : OpParam {
-public:
+ public:
   ConvParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
             const framework::AttributeMap &attrs,
             const framework::Scope &scope) {
@@ -159,7 +159,7 @@ public:
 
   const int &Groups() const { return groups; }
 
-private:
+ private:
   Tensor *input_;
   Tensor *output_;
   LoDTensor *filter_;
@@ -172,7 +172,7 @@ private:
 Print &operator<<(Print &printer, const ConvParam &conv_param);
 
 class ElementwiseAddParam : OpParam {
-public:
+ public:
   ElementwiseAddParam(const VariableNameMap &inputs,
                       const VariableNameMap &outputs,
                       const framework::AttributeMap &attrs,
@@ -191,7 +191,7 @@ public:
 
   const int &Axis() const { return axis_; }
 
-private:
+ private:
   Tensor *input_x_;
   Tensor *input_y_;
   Tensor *out_;
@@ -199,7 +199,7 @@ private:
 };
 
 class MulParam : OpParam {
-public:
+ public:
   MulParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
            const framework::AttributeMap &attrs,
            const framework::Scope &scope) {
@@ -220,7 +220,7 @@ public:
 
   const int &YNumColDims() const { return y_num_col_dims_; }
 
-private:
+ private:
   Tensor *input_x_;
   Tensor *input_y_;
   Tensor *out_;
@@ -229,7 +229,7 @@ private:
 };
 
 class ConcatParam : public OpParam {
-public:
+ public:
   ConcatParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
               const framework::AttributeMap &attrs,
               const framework::Scope &scope) {
@@ -244,14 +244,14 @@ public:
 
   const int &Axis() const { return axis_; }
 
-private:
+ private:
   std::vector<Tensor *> inputs_;
   Tensor *out_;
   int axis_;
 };
 
 class LrnParam : public OpParam {
-public:
+ public:
   LrnParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
            const framework::AttributeMap &attrs,
            const framework::Scope &scope) {
@@ -281,7 +281,7 @@ public:
 
   const std::string &DataFormat() const { return data_format_; }
 
-private:
+ private:
   Tensor *input_x_;
   Tensor *out_;
   Tensor *mid_out_;
@@ -292,7 +292,7 @@ private:
   std::string data_format_;
 };
 class BatchNormParam : OpParam {
-public:
+ public:
   BatchNormParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
                  const framework::AttributeMap &attrs,
                  const framework::Scope &scope) {
@@ -327,7 +327,7 @@ public:
 
   const std::string &DataFormat() const { return data_format_; }
 
-private:
+ private:
   Tensor *input_x_;
   Tensor *output_y_;
   Tensor *input_bias_;
@@ -340,7 +340,7 @@ private:
   std::string data_format_;
 };
 class PoolParam : public OpParam {
-public:
+ public:
   PoolParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
             const framework::AttributeMap &attrs,
             const framework::Scope &scope) {
@@ -371,7 +371,7 @@ public:
 
   bool isGlobalPooling() const { return gloabal_pooling_; }
 
-private:
+ private:
   Tensor *input_;
   Tensor *output_;
   std::string pooling_type_;
@@ -382,5 +382,5 @@ private:
   bool gloabal_pooling_ = false;
 };
 
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile
