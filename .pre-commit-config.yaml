@@ -27,17 +27,27 @@ repos:
         description: Format files with ClangFormat.
         entry: bash ./tools/pre-commit.hooks/.clang-format.hook -i
         language: system
-        files: \.(c|cc|cxx|cpp|h|hpp|hxx)$
+        files: (src).*\.(c|cc|cxx|cpp|h|hpp|hxx)$
+
+#     
+#-   repo: local
+#    hooks:
+#    -   id: clang-tidy
+#        name: clang-tidy
+#        description: Check C++ code style using clang-tidy.
+#        entry: bash ./tools/pre-commit.hooks/.clang-tidy.hook -i
+#        language: system
+#        files: (src).*\.(c|cc|cxx|cpp|h|hpp|hxx)$
 
 -   repo: local
     hooks:
-    -   id: clang-tidy
-        name: clang-tidy
-        description: Check C++ code style using clang-tidy.
-        entry: bash ./tools/pre-commit.hooks/.clang-tidy.hook -i
+    -   id: cpplint
+        name: cpplint
+        description: Check C++ code style using cpplint.
+        entry: bash ./tools/pre-commit.hooks/.cpplint.hook
         language: system
-        files: (src).*\.(c|cc|cxx|cpp|h|hpp|hxx)$
-#
+        files: (src).*\.(c|cc|cxx|cpp|cu|h|hpp|hxx)$
+        exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$i | *\.pb\.cpp
 #-   repo: local
 #    hooks:
 #    -   id: copyright_checker
