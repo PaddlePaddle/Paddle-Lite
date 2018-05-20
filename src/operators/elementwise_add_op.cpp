@@ -23,8 +23,8 @@ namespace operators {
 
 template <typename Dtype, typename T>
 void ElementwiseAddOp<Dtype, T>::InferShape() const {
-    auto x_dim = param_.InputX()->dims();
-    param_.Out()->Resize(x_dim);
+  auto x_dim = param_.InputX()->dims();
+  param_.Out()->Resize(x_dim);
 }
 template class ElementwiseAddOp<CPU, float>;
 } // namespace operators

@@ -67,7 +67,7 @@
 
 #ifdef OPENBLAS_QUAD_PRECISION
 typedef struct {
-    unsigned long x[2];
+  unsigned long x[2];
 } xdouble;
 #elif defined OPENBLAS_EXPRECISION
 #define xdouble long double
@@ -129,20 +129,20 @@ typedef xdouble _Complex openblas_complex_xdouble;
 #else
 #define OPENBLAS_COMPLEX_STRUCT
 typedef struct {
-    float real, imag;
+  float real, imag;
 } openblas_complex_float;
 typedef struct {
-    double real, imag;
+  double real, imag;
 } openblas_complex_double;
 typedef struct {
-    xdouble real, imag;
+  xdouble real, imag;
 } openblas_complex_xdouble;
 #define openblas_make_complex_float(real, imag)                                \
-    { (real), (imag) }
+  { (real), (imag) }
 #define openblas_make_complex_double(real, imag)                               \
-    { (real), (imag) }
+  { (real), (imag) }
 #define openblas_make_complex_xdouble(real, imag)                              \
-    { (real), (imag) }
+  { (real), (imag) }
 #define openblas_complex_float_real(z) ((z).real)
 #define openblas_complex_float_imag(z) ((z).imag)
 #define openblas_complex_double_real(z) ((z).real)

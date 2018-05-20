@@ -34,8 +34,8 @@
 #include <stddef.h>
 
 struct FileToc {
-    const char *name;
-    const char *data;
+  const char *name;
+  const char *data;
 };
 
 extern struct FileToc well_known_types_js[];
