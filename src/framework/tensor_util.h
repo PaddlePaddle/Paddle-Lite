@@ -43,23 +43,23 @@ void TensorFromStream(std::istream &is, Tensor *tensor);
 
 template <typename T>
 void TensorFromVector(const std::vector<T> &src, Tensor *dst) {
-    auto src_ptr = static_cast<const void *>(src.data());
-    dst->Resize({static_cast<int64_t>(src.size())});
-    auto dst_ptr = static_cast<void *>(dst->mutable_data<T>());
-    auto size = src.size() * sizeof(T);
+  auto src_ptr = static_cast<const void *>(src.data());
+  dst->Resize({static_cast<int64_t>(src.size())});
+  auto dst_ptr = static_cast<void *>(dst->mutable_data<T>());
+  auto size = src.size() * sizeof(T);
 
-    memory::Copy(dst_ptr, src_ptr, size);
+  memory::Copy(dst_ptr, src_ptr, size);
 }
 
 template <typename T>
 void TensorToVector(const Tensor &src, std::vector<T> *dst) {
-    auto src_ptr = static_cast<const void *>(src.data<T>());
-    auto size = src.numel() * sizeof(T);
+  auto src_ptr = static_cast<const void *>(src.data<T>());
+  auto size = src.numel() * sizeof(T);
 
-    dst->resize(src.numel());
-    auto dst_ptr = static_cast<void *>(dst->data());
+  dst->resize(src.numel());
+  auto dst_ptr = static_cast<void *>(dst->data());
 
-    memory::Copy(dst_ptr, src_ptr, size);
+  memory::Copy(dst_ptr, src_ptr, size);
 }
 
 } // namespace framework

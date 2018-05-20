@@ -21,26 +21,26 @@ SOFTWARE.
 #include "io.h"
 
 int main() {
-    paddle_mobile::Loader<paddle_mobile::CPU> loader;
-    auto program = loader.Load(std::string("../models/googlenet"));
-    if (program.originProgram == nullptr) {
-        DLOG << "program read file";
-    }
+  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  auto program = loader.Load(std::string("../models/googlenet"));
+  if (program.originProgram == nullptr) {
+    DLOG << "program read file";
+  }
 
-    Executor4Test<paddle_mobile::CPU,
-                  paddle_mobile::operators::PoolOp<paddle_mobile::CPU, float>>
-        executor(program, "pool2d");
+  Executor4Test<paddle_mobile::CPU,
+                paddle_mobile::operators::PoolOp<paddle_mobile::CPU, float>>
+      executor(program, "pool2d");
 
-    paddle_mobile::framework::Tensor input;
-    SetupTensor<float>(&input, {1, 64, 112, 112}, static_cast<float>(0),
-                       static_cast<float>(1));
+  paddle_mobile::framework::Tensor input;
+  SetupTensor<float>(&input, {1, 64, 112, 112}, static_cast<float>(0),
+                     static_cast<float>(1));
 
-    auto output = executor.predict(input, "conv2d_0.tmp_1", "pool2d_0.tmp_0",
-                                   {1, 64, 56, 56});
+  auto output = executor.predict(input, "conv2d_0.tmp_1", "pool2d_0.tmp_0",
+                                 {1, 64, 56, 56});
 
-    float *output_ptr = output->data<float>();
-    for (int j = 0; j < output->numel(); ++j) {
-        DLOG << " value of output: " << output_ptr[j];
-    }
-    return 0;
+  float *output_ptr = output->data<float>();
+  for (int j = 0; j < output->numel(); ++j) {
+    DLOG << " value of output: " << output_ptr[j];
+  }
+  return 0;
 }

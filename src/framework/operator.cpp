@@ -30,7 +30,7 @@ OperatorBase<Dtype>::OperatorBase(const std::string &type,
                                   std::shared_ptr<Scope> scope)
     : type_(type), inputs_(inputs), outputs_(outputs), attrs_(attrs),
       scope_(scope) {
-    CheckAllInputOutputSet();
+  CheckAllInputOutputSet();
 }
 template <typename Dtype>
 void OperatorBase<Dtype>::CheckAllInputOutputSet() const {}
