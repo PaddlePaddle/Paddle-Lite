@@ -39,7 +39,7 @@ Checks: >
   -modernize-use-default-member-init
   -clang-diagnostic-*
   -clang-analyzer-*
-WarningsAsErrors: ''
+WarningsAsErrors: '*'
 HeaderFilterRegex: ''
 AnalyzeTemporaryDtors: false
 FormatStyle:     none
