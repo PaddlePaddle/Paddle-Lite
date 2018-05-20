@@ -166,7 +166,7 @@ Atomic64 Release_Load(volatile const Atomic64 *ptr);
 
 // Include our platform specific implementation.
 #define GOOGLE_PROTOBUF_ATOMICOPS_ERROR                                        \
-    "Atomic operations are not supported on your platform"
+  "Atomic operations are not supported on your platform"
 
 // ThreadSanitizer, http://clang.llvm.org/docs/ThreadSanitizer.html.
 #if defined(THREAD_SANITIZER)

@@ -44,127 +44,126 @@ namespace protobuf {
 namespace util {
 
 class LIBPROTOBUF_EXPORT FieldMaskUtil {
-    typedef google::protobuf::FieldMask FieldMask;
+  typedef google::protobuf::FieldMask FieldMask;
 
-  public:
-    // Converts FieldMask to/from string, formatted by separating each path
-    // with a comma (e.g., "foo_bar,baz.quz").
-    static string ToString(const FieldMask &mask);
-    static void FromString(StringPiece str, FieldMask *out);
+public:
+  // Converts FieldMask to/from string, formatted by separating each path
+  // with a comma (e.g., "foo_bar,baz.quz").
+  static string ToString(const FieldMask &mask);
+  static void FromString(StringPiece str, FieldMask *out);
 
-    // Converts FieldMask to/from string, formatted according to proto3 JSON
-    // spec for FieldMask (e.g., "fooBar,baz.quz"). If the field name is not
-    // style conforming (i.e., not snake_case when converted to string, or not
-    // camelCase when converted from string), the conversion will fail.
-    static bool ToJsonString(const FieldMask &mask, string *out);
-    static bool FromJsonString(StringPiece str, FieldMask *out);
+  // Converts FieldMask to/from string, formatted according to proto3 JSON
+  // spec for FieldMask (e.g., "fooBar,baz.quz"). If the field name is not
+  // style conforming (i.e., not snake_case when converted to string, or not
+  // camelCase when converted from string), the conversion will fail.
+  static bool ToJsonString(const FieldMask &mask, string *out);
+  static bool FromJsonString(StringPiece str, FieldMask *out);
 
-    // Get the descriptors of the fields which the given path from the message
-    // descriptor traverses, if field_descriptors is not null.
-    // Return false if the path is not valid, and the content of
-    // field_descriptors is unspecified.
-    static bool GetFieldDescriptors(
-        const Descriptor *descriptor, StringPiece path,
-        std::vector<const FieldDescriptor *> *field_descriptors);
+  // Get the descriptors of the fields which the given path from the message
+  // descriptor traverses, if field_descriptors is not null.
+  // Return false if the path is not valid, and the content of
+  // field_descriptors is unspecified.
+  static bool
+  GetFieldDescriptors(const Descriptor *descriptor, StringPiece path,
+                      std::vector<const FieldDescriptor *> *field_descriptors);
 
-    // Checks whether the given path is valid for type T.
-    template <typename T> static bool IsValidPath(StringPiece path) {
-        return GetFieldDescriptors(T::descriptor(), path, NULL);
+  // Checks whether the given path is valid for type T.
+  template <typename T> static bool IsValidPath(StringPiece path) {
+    return GetFieldDescriptors(T::descriptor(), path, NULL);
+  }
+
+  // Checks whether the given FieldMask is valid for type T.
+  template <typename T> static bool IsValidFieldMask(const FieldMask &mask) {
+    for (int i = 0; i < mask.paths_size(); ++i) {
+      if (!GetFieldDescriptors(T::descriptor(), mask.paths(i), NULL))
+        return false;
     }
+    return true;
+  }
 
-    // Checks whether the given FieldMask is valid for type T.
-    template <typename T> static bool IsValidFieldMask(const FieldMask &mask) {
-        for (int i = 0; i < mask.paths_size(); ++i) {
-            if (!GetFieldDescriptors(T::descriptor(), mask.paths(i), NULL))
-                return false;
-        }
-        return true;
-    }
+  // Adds a path to FieldMask after checking whether the given path is valid.
+  // This method check-fails if the path is not a valid path for type T.
+  template <typename T>
+  static void AddPathToFieldMask(StringPiece path, FieldMask *mask) {
+    GOOGLE_CHECK(IsValidPath<T>(path));
+    mask->add_paths(path);
+  }
 
-    // Adds a path to FieldMask after checking whether the given path is valid.
-    // This method check-fails if the path is not a valid path for type T.
-    template <typename T>
-    static void AddPathToFieldMask(StringPiece path, FieldMask *mask) {
-        GOOGLE_CHECK(IsValidPath<T>(path));
-        mask->add_paths(path);
-    }
+  // Creates a FieldMask with all fields of type T. This FieldMask only
+  // contains fields of T but not any sub-message fields.
+  template <typename T> static void GetFieldMaskForAllFields(FieldMask *out) {
+    InternalGetFieldMaskForAllFields(T::descriptor(), out);
+  }
 
-    // Creates a FieldMask with all fields of type T. This FieldMask only
-    // contains fields of T but not any sub-message fields.
-    template <typename T> static void GetFieldMaskForAllFields(FieldMask *out) {
-        InternalGetFieldMaskForAllFields(T::descriptor(), out);
-    }
+  // Converts a FieldMask to the canonical form. It will:
+  //   1. Remove paths that are covered by another path. For example,
+  //      "foo.bar" is covered by "foo" and will be removed if "foo"
+  //      is also in the FieldMask.
+  //   2. Sort all paths in alphabetical order.
+  static void ToCanonicalForm(const FieldMask &mask, FieldMask *out);
 
-    // Converts a FieldMask to the canonical form. It will:
-    //   1. Remove paths that are covered by another path. For example,
-    //      "foo.bar" is covered by "foo" and will be removed if "foo"
-    //      is also in the FieldMask.
-    //   2. Sort all paths in alphabetical order.
-    static void ToCanonicalForm(const FieldMask &mask, FieldMask *out);
+  // Creates an union of two FieldMasks.
+  static void Union(const FieldMask &mask1, const FieldMask &mask2,
+                    FieldMask *out);
 
-    // Creates an union of two FieldMasks.
-    static void Union(const FieldMask &mask1, const FieldMask &mask2,
-                      FieldMask *out);
+  // Creates an intersection of two FieldMasks.
+  static void Intersect(const FieldMask &mask1, const FieldMask &mask2,
+                        FieldMask *out);
 
-    // Creates an intersection of two FieldMasks.
-    static void Intersect(const FieldMask &mask1, const FieldMask &mask2,
-                          FieldMask *out);
+  // Returns true if path is covered by the given FieldMask. Note that path
+  // "foo.bar" covers all paths like "foo.bar.baz", "foo.bar.quz.x", etc.
+  static bool IsPathInFieldMask(StringPiece path, const FieldMask &mask);
 
-    // Returns true if path is covered by the given FieldMask. Note that path
-    // "foo.bar" covers all paths like "foo.bar.baz", "foo.bar.quz.x", etc.
-    static bool IsPathInFieldMask(StringPiece path, const FieldMask &mask);
+  class MergeOptions;
+  // Merges fields specified in a FieldMask into another message. See the
+  // comments in MergeOptions regarding compatibility with
+  // google/protobuf/field_mask.proto
+  static void MergeMessageTo(const Message &source, const FieldMask &mask,
+                             const MergeOptions &options, Message *destination);
 
-    class MergeOptions;
-    // Merges fields specified in a FieldMask into another message. See the
-    // comments in MergeOptions regarding compatibility with
-    // google/protobuf/field_mask.proto
-    static void MergeMessageTo(const Message &source, const FieldMask &mask,
-                               const MergeOptions &options,
-                               Message *destination);
+  class TrimOptions;
+  // Removes from 'message' any field that is not represented in the given
+  // FieldMask. If the FieldMask is empty, does nothing.
+  static void TrimMessage(const FieldMask &mask, Message *message);
 
-    class TrimOptions;
-    // Removes from 'message' any field that is not represented in the given
-    // FieldMask. If the FieldMask is empty, does nothing.
-    static void TrimMessage(const FieldMask &mask, Message *message);
+  // Removes from 'message' any field that is not represented in the given
+  // FieldMask with customized TrimOptions.
+  // If the FieldMask is empty, does nothing.
+  static void TrimMessage(const FieldMask &mask, Message *message,
+                          const TrimOptions &options);
 
-    // Removes from 'message' any field that is not represented in the given
-    // FieldMask with customized TrimOptions.
-    // If the FieldMask is empty, does nothing.
-    static void TrimMessage(const FieldMask &mask, Message *message,
-                            const TrimOptions &options);
+private:
+  friend class SnakeCaseCamelCaseTest;
+  // Converts a field name from snake_case to camelCase:
+  //   1. Every character after "_" will be converted to uppercase.
+  //   2. All "_"s are removed.
+  // The conversion will fail if:
+  //   1. The field name contains uppercase letters.
+  //   2. Any character after a "_" is not a lowercase letter.
+  // If the conversion succeeds, it's guaranteed that the resulted
+  // camelCase name will yield the original snake_case name when
+  // converted using CamelCaseToSnakeCase().
+  //
+  // Note that the input can contain characters not allowed in C identifiers.
+  // For example, "foo_bar,baz_quz" will be converted to "fooBar,bazQuz"
+  // successfully.
+  static bool SnakeCaseToCamelCase(StringPiece input, string *output);
+  // Converts a field name from camelCase to snake_case:
+  //   1. Every uppercase letter is converted to lowercase with a additional
+  //      preceding "-".
+  // The conversion will fail if:
+  //   1. The field name contains "_"s.
+  // If the conversion succeeds, it's guaranteed that the resulted
+  // snake_case name will yield the original camelCase name when
+  // converted using SnakeCaseToCamelCase().
+  //
+  // Note that the input can contain characters not allowed in C identifiers.
+  // For example, "fooBar,bazQuz" will be converted to "foo_bar,baz_quz"
+  // successfully.
+  static bool CamelCaseToSnakeCase(StringPiece input, string *output);
 
-  private:
-    friend class SnakeCaseCamelCaseTest;
-    // Converts a field name from snake_case to camelCase:
-    //   1. Every character after "_" will be converted to uppercase.
-    //   2. All "_"s are removed.
-    // The conversion will fail if:
-    //   1. The field name contains uppercase letters.
-    //   2. Any character after a "_" is not a lowercase letter.
-    // If the conversion succeeds, it's guaranteed that the resulted
-    // camelCase name will yield the original snake_case name when
-    // converted using CamelCaseToSnakeCase().
-    //
-    // Note that the input can contain characters not allowed in C identifiers.
-    // For example, "foo_bar,baz_quz" will be converted to "fooBar,bazQuz"
-    // successfully.
-    static bool SnakeCaseToCamelCase(StringPiece input, string *output);
-    // Converts a field name from camelCase to snake_case:
-    //   1. Every uppercase letter is converted to lowercase with a additional
-    //      preceding "-".
-    // The conversion will fail if:
-    //   1. The field name contains "_"s.
-    // If the conversion succeeds, it's guaranteed that the resulted
-    // snake_case name will yield the original camelCase name when
-    // converted using SnakeCaseToCamelCase().
-    //
-    // Note that the input can contain characters not allowed in C identifiers.
-    // For example, "fooBar,bazQuz" will be converted to "foo_bar,baz_quz"
-    // successfully.
-    static bool CamelCaseToSnakeCase(StringPiece input, string *output);
-
-    static void InternalGetFieldMaskForAllFields(const Descriptor *descriptor,
-                                                 FieldMask *out);
+  static void InternalGetFieldMaskForAllFields(const Descriptor *descriptor,
+                                               FieldMask *out);
 };
 
 // Note that for compatibility with the defined behaviour for FieldMask in
@@ -172,45 +171,45 @@ class LIBPROTOBUF_EXPORT FieldMaskUtil {
 // replace_repeated_fields to 'true'. The default options are not compatible
 // with google/protobuf/field_mask.proto.
 class LIBPROTOBUF_EXPORT FieldMaskUtil::MergeOptions {
-  public:
-    MergeOptions()
-        : replace_message_fields_(false), replace_repeated_fields_(false) {}
-    // When merging message fields, the default behavior is to merge the
-    // content of two message fields together. If you instead want to use
-    // the field from the source message to replace the corresponding field
-    // in the destination message, set this flag to true. When this flag is set,
-    // specified submessage fields that are missing in source will be cleared in
-    // destination.
-    void set_replace_message_fields(bool value) {
-        replace_message_fields_ = value;
-    }
-    bool replace_message_fields() const { return replace_message_fields_; }
-    // The default merging behavior will append entries from the source
-    // repeated field to the destination repeated field. If you only want
-    // to keep the entries from the source repeated field, set this flag
-    // to true.
-    void set_replace_repeated_fields(bool value) {
-        replace_repeated_fields_ = value;
-    }
-    bool replace_repeated_fields() const { return replace_repeated_fields_; }
+public:
+  MergeOptions()
+      : replace_message_fields_(false), replace_repeated_fields_(false) {}
+  // When merging message fields, the default behavior is to merge the
+  // content of two message fields together. If you instead want to use
+  // the field from the source message to replace the corresponding field
+  // in the destination message, set this flag to true. When this flag is set,
+  // specified submessage fields that are missing in source will be cleared in
+  // destination.
+  void set_replace_message_fields(bool value) {
+    replace_message_fields_ = value;
+  }
+  bool replace_message_fields() const { return replace_message_fields_; }
+  // The default merging behavior will append entries from the source
+  // repeated field to the destination repeated field. If you only want
+  // to keep the entries from the source repeated field, set this flag
+  // to true.
+  void set_replace_repeated_fields(bool value) {
+    replace_repeated_fields_ = value;
+  }
+  bool replace_repeated_fields() const { return replace_repeated_fields_; }
 
-  private:
-    bool replace_message_fields_;
-    bool replace_repeated_fields_;
+private:
+  bool replace_message_fields_;
+  bool replace_repeated_fields_;
 };
 
 class LIBPROTOBUF_EXPORT FieldMaskUtil::TrimOptions {
-  public:
-    TrimOptions() : keep_required_fields_(false) {}
-    // When trimming message fields, the default behavior is to trim required
-    // fields of the present message if they are not specified in the field
-    // mask. If you instead want to keep required fields of the present message
-    // even they are not speicifed in the field mask, set this flag to true.
-    void set_keep_required_fields(bool value) { keep_required_fields_ = value; }
-    bool keep_required_fields() const { return keep_required_fields_; }
+public:
+  TrimOptions() : keep_required_fields_(false) {}
+  // When trimming message fields, the default behavior is to trim required
+  // fields of the present message if they are not specified in the field
+  // mask. If you instead want to keep required fields of the present message
+  // even they are not speicifed in the field mask, set this flag to true.
+  void set_keep_required_fields(bool value) { keep_required_fields_ = value; }
+  bool keep_required_fields() const { return keep_required_fields_; }
 
-  private:
-    bool keep_required_fields_;
+private:
+  bool keep_required_fields_;
 };
 
 } // namespace util

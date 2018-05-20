@@ -26,25 +26,24 @@ using namespace framework;
 
 template <typename DeviceType, typename T>
 class ConcatOp : public framework::OperatorWithKernel<DeviceType> {
-  public:
-    ConcatOp(const std::string &type, const VariableNameMap &inputs,
-             const VariableNameMap &outputs,
-             const framework::AttributeMap attrs,
-             std::shared_ptr<framework::Scope> scope)
-        : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs,
-                                                    attrs, scope),
-          param_(inputs, outputs, attrs, *scope) {}
+public:
+  ConcatOp(const std::string &type, const VariableNameMap &inputs,
+           const VariableNameMap &outputs, const framework::AttributeMap attrs,
+           std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
+                                                  scope),
+        param_(inputs, outputs, attrs, *scope) {}
 
-    void Run() const {
-        operators::ConcatKernel<DeviceType, T> kernel;
-        kernel.Compute(param_);
-    }
+  void Run() const {
+    operators::ConcatKernel<DeviceType, T> kernel;
+    kernel.Compute(param_);
+  }
 
-    using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
-    void InferShape() const override;
+  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  void InferShape() const override;
 
-  protected:
-    ConcatParam param_;
+protected:
+  ConcatParam param_;
 };
 
 } // namespace operators
