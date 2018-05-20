@@ -35,23 +35,23 @@ namespace paddle_mobile {
 namespace framework {
 
 template <typename Dtype> class Executor {
-  public:
-    Executor();
+public:
+  Executor();
 
-    Executor(const Program<Dtype> p);
+  Executor(const Program<Dtype> p);
 
-    std::shared_ptr<Tensor> predict(Tensor &t);
+  std::shared_ptr<Tensor> predict(Tensor &t);
 
-  public:
-    const framework::Program<Dtype> program_;
-    std::shared_ptr<ProgramDesc> to_predict_program_;
+public:
+  const framework::Program<Dtype> program_;
+  std::shared_ptr<ProgramDesc> to_predict_program_;
 
-    void predict(const Tensor &t, int block_id);
+  void predict(const Tensor &t, int block_id);
 
-    std::map<framework::BlockDesc,
-             std::vector<std::shared_ptr<OperatorBase<Dtype>>>>
-        ops_of_block_;
-    bool use_optimize_ = false;
+  std::map<framework::BlockDesc,
+           std::vector<std::shared_ptr<OperatorBase<Dtype>>>>
+      ops_of_block_;
+  bool use_optimize_ = false;
 };
 
 } // namespace framework
