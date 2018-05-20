@@ -102,45 +102,45 @@ bool CheckAbsLoD(const LoD &in, int tensor_height = -1);
  * see https://en.wikipedia.org/wiki/Level_of_details for reference.
  */
 class LoDTensor : public Tensor {
-  public:
-    LoDTensor() : Tensor() {}
+public:
+  LoDTensor() : Tensor() {}
 
-    explicit LoDTensor(const LoD &lod) : lod_(lod) {}
+  explicit LoDTensor(const LoD &lod) : lod_(lod) {}
 
-    void set_lod(const LoD &lod) { lod_ = lod; }
+  void set_lod(const LoD &lod) { lod_ = lod; }
 
-    const LoD &lod() const { return lod_; }
+  const LoD &lod() const { return lod_; }
 
-    LoD *mutable_lod() { return &lod_; }
+  LoD *mutable_lod() { return &lod_; }
 
-    /*
-     * Get the start offset and end offset of an  element from LoD.
-     */
-    std::pair<size_t, size_t> lod_element(size_t level, size_t elem) const {
-        //    PADDLE_ENFORCE_LT(level, NumLevels());
-        //    PADDLE_ENFORCE_LT(elem, NumElements(level));
-        return std::make_pair((lod_)[level][elem], (lod_)[level][elem + 1]);
-    }
+  /*
+   * Get the start offset and end offset of an  element from LoD.
+   */
+  std::pair<size_t, size_t> lod_element(size_t level, size_t elem) const {
+    //    PADDLE_ENFORCE_LT(level, NumLevels());
+    //    PADDLE_ENFORCE_LT(elem, NumElements(level));
+    return std::make_pair((lod_)[level][elem], (lod_)[level][elem + 1]);
+  }
 
-    /*
-     * Number of LoDTensor's levels, each level has units of data, for
-     * example,
-     * in the sentence's view, article, paragraph, sentence are 3
-     * levels.
-     */
-    size_t NumLevels() const { return lod_.size(); }
+  /*
+   * Number of LoDTensor's levels, each level has units of data, for
+   * example,
+   * in the sentence's view, article, paragraph, sentence are 3
+   * levels.
+   */
+  size_t NumLevels() const { return lod_.size(); }
 
-    /*
-     * Number of elements in a level.
-     */
-    size_t NumElements(size_t level = 0) const {
-        //    PADDLE_ENFORCE_LT(level, NumLevels());
-        // the last offset is the end of last element
-        return (lod_)[level].size() - 1;
-    }
+  /*
+   * Number of elements in a level.
+   */
+  size_t NumElements(size_t level = 0) const {
+    //    PADDLE_ENFORCE_LT(level, NumLevels());
+    // the last offset is the end of last element
+    return (lod_)[level].size() - 1;
+  }
 
-  private:
-    LoD lod_;
+private:
+  LoD lod_;
 };
 
 /*
@@ -155,26 +155,26 @@ class LoDTensor : public Tensor {
  */
 template <typename T>
 LoDTensor LodExpand(const LoDTensor &source, const LoD &lod, size_t level) {
-    LoD abs_lod = ToAbsOffset(lod);
-    const auto &lod_level = lod[level];
-    size_t num_instances = source.dims()[0];
+  LoD abs_lod = ToAbsOffset(lod);
+  const auto &lod_level = lod[level];
+  size_t num_instances = source.dims()[0];
 
-    // new tensor
-    LoDTensor tensor;
-    tensor.set_lod(lod);
-    auto dims = source.dims();
-    dims[0] = lod_level.back();
-    tensor.Resize(dims);
-    tensor.mutable_data<T>();
+  // new tensor
+  LoDTensor tensor;
+  tensor.set_lod(lod);
+  auto dims = source.dims();
+  dims[0] = lod_level.back();
+  tensor.Resize(dims);
+  tensor.mutable_data<T>();
 
-    //  PADDLE_ENFORCE_EQ(num_instances, lod_level.size() - 1);
-    for (size_t ins = 0; ins < num_instances; ins++) {
-        for (size_t elem = lod_level[ins]; elem < lod_level[ins + 1]; elem++) {
-            auto slice = tensor.Slice(elem, elem + 1);
-            TensorCopy(source.Slice(ins, ins + 1), &slice);
-        }
+  //  PADDLE_ENFORCE_EQ(num_instances, lod_level.size() - 1);
+  for (size_t ins = 0; ins < num_instances; ins++) {
+    for (size_t elem = lod_level[ins]; elem < lod_level[ins + 1]; elem++) {
+      auto slice = tensor.Slice(elem, elem + 1);
+      TensorCopy(source.Slice(ins, ins + 1), &slice);
     }
-    return tensor;
+  }
+  return tensor;
 }
 
 // Get the absolute offset of a lod[start_level][start_idx:end_idx] and

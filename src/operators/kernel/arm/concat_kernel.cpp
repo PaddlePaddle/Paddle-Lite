@@ -19,36 +19,36 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 template <typename T> class ConcatFunctor {
-  public:
-    void operator()(const std::vector<framework::Tensor> &input, const int axis,
-                    framework::Tensor *output) {
-        size_t num = input.size();
-        int rows = 1;
-        auto dim_0 = input[0].dims();
-        for (int i = 0; i < axis; ++i) {
-            rows *= dim_0[i];
-        }
-        int out_rows = rows, out_cols = 0;
-
-        std::vector<int64_t> input_cols(input.size());
-        for (int i = 0; i < num; ++i) {
-            int t_cols = input[i].numel() / rows;
-            out_cols += t_cols;
-            input_cols[i] = t_cols;
-        }
-
-        // computation
-        for (int k = 0; k < out_rows; ++k) {
-            T *dst_ptr = output->data<T>() + k * out_cols;
-            int col_idx = 0;
-            for (int j = 0; j < num; ++j) {
-                int col_len = input_cols[j];
-                const T *src_prt = input[j].data<T>() + k * col_len;
-                memory::Copy(dst_ptr + col_idx, src_prt, sizeof(T) * col_len);
-                col_idx += col_len;
-            }
-        }
+public:
+  void operator()(const std::vector<framework::Tensor> &input, const int axis,
+                  framework::Tensor *output) {
+    size_t num = input.size();
+    int rows = 1;
+    auto dim_0 = input[0].dims();
+    for (int i = 0; i < axis; ++i) {
+      rows *= dim_0[i];
     }
+    int out_rows = rows, out_cols = 0;
+
+    std::vector<int64_t> input_cols(input.size());
+    for (int i = 0; i < num; ++i) {
+      int t_cols = input[i].numel() / rows;
+      out_cols += t_cols;
+      input_cols[i] = t_cols;
+    }
+
+    // computation
+    for (int k = 0; k < out_rows; ++k) {
+      T *dst_ptr = output->data<T>() + k * out_cols;
+      int col_idx = 0;
+      for (int j = 0; j < num; ++j) {
+        int col_len = input_cols[j];
+        const T *src_prt = input[j].data<T>() + k * col_len;
+        memory::Copy(dst_ptr + col_idx, src_prt, sizeof(T) * col_len);
+        col_idx += col_len;
+      }
+    }
+  }
 };
 template <typename T>
 void StridedNumelCopyWithAxis(int64_t axis, T *dst,
@@ -56,61 +56,60 @@ void StridedNumelCopyWithAxis(int64_t axis, T *dst,
                               const T *src,
                               const framework::DDim &src_stride_numel,
                               int64_t size) {
-    int64_t before = dst_stride_numel[0] / dst_stride_numel[axis];
-    int64_t src_after = src_stride_numel[axis];
-    int64_t dst_after = dst_stride_numel[axis];
+  int64_t before = dst_stride_numel[0] / dst_stride_numel[axis];
+  int64_t src_after = src_stride_numel[axis];
+  int64_t dst_after = dst_stride_numel[axis];
 
-    ///"src and dst tensor should have the same dims size."
-    assert(src_stride_numel.size() == dst_stride_numel.size());
+  ///"src and dst tensor should have the same dims size."
+  assert(src_stride_numel.size() == dst_stride_numel.size());
 
-    for (int64_t i = 0; i < axis; ++i) {
-        if (i < axis) {
-            /// src and dst should have the same elements
-            /// except the specified axis.
-            assert(src_stride_numel[i] / src_stride_numel[axis] ==
-                   dst_stride_numel[i] / dst_stride_numel[axis]);
+  for (int64_t i = 0; i < axis; ++i) {
+    if (i < axis) {
+      /// src and dst should have the same elements
+      /// except the specified axis.
+      assert(src_stride_numel[i] / src_stride_numel[axis] ==
+             dst_stride_numel[i] / dst_stride_numel[axis]);
 
-        } else if (i == axis) {
-            continue;
-        } else {
-            /// "src and dst should have the same elements "
-            ///         "except the specified axis."
-            assert(src_stride_numel[i] == dst_stride_numel[i]);
-        }
+    } else if (i == axis) {
+      continue;
+    } else {
+      /// "src and dst should have the same elements "
+      ///         "except the specified axis."
+      assert(src_stride_numel[i] == dst_stride_numel[i]);
     }
+  }
 
-    for (int64_t i = 0; i < before; ++i) {
-        memory::Copy(dst + i * dst_after, src + i * src_after,
-                     sizeof(T) * size);
-    }
+  for (int64_t i = 0; i < before; ++i) {
+    memory::Copy(dst + i * dst_after, src + i * src_after, sizeof(T) * size);
+  }
 }
 
 template <>
 void ConcatKernel<CPU, float>::Compute(const ConcatParam &param) const {
-    auto inputs = param.Inputs();
-    auto *out = param.Out();
-    int64_t axis = param.Axis();
-    out->mutable_data<float>();
+  auto inputs = param.Inputs();
+  auto *out = param.Out();
+  int64_t axis = param.Axis();
+  out->mutable_data<float>();
 
-    /// Sometimes direct copies will be faster, this maybe need deeply analysis.
-    if (axis == 0 && inputs.size() < 10) {
-        size_t output_offset = 0;
-        for (auto *in : inputs) {
-            auto in_stride = framework::stride_numel(in->dims());
-            auto out_stride = framework::stride_numel(out->dims());
-            StridedNumelCopyWithAxis<float>(
-                axis, out->data<float>() + output_offset, out_stride,
-                in->data<float>(), in_stride, in_stride[axis]);
-            output_offset += in_stride[axis];
-        }
-    } else {
-        std::vector<framework::Tensor> inputs_concat(inputs.size());
-        for (int j = 0; j < inputs.size(); ++j) {
-            inputs_concat[j] = *inputs[j];
-        }
-        ConcatFunctor<float> concat_functor;
-        concat_functor(inputs_concat, static_cast<int>(axis), out);
+  /// Sometimes direct copies will be faster, this maybe need deeply analysis.
+  if (axis == 0 && inputs.size() < 10) {
+    size_t output_offset = 0;
+    for (auto *in : inputs) {
+      auto in_stride = framework::stride_numel(in->dims());
+      auto out_stride = framework::stride_numel(out->dims());
+      StridedNumelCopyWithAxis<float>(axis, out->data<float>() + output_offset,
+                                      out_stride, in->data<float>(), in_stride,
+                                      in_stride[axis]);
+      output_offset += in_stride[axis];
     }
+  } else {
+    std::vector<framework::Tensor> inputs_concat(inputs.size());
+    for (int j = 0; j < inputs.size(); ++j) {
+      inputs_concat[j] = *inputs[j];
+    }
+    ConcatFunctor<float> concat_functor;
+    concat_functor(inputs_concat, static_cast<int>(axis), out);
+  }
 }
 
 } // namespace operators
