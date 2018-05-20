@@ -24,8 +24,8 @@ namespace framework {
 
 std::shared_ptr<ProgramDesc> ProgramOptimize::Optimize() {}
 
-std::shared_ptr<ProgramDesc>
-ProgramOptimize::FushionOptimize(std::shared_ptr<ProgramDesc> ori_des) {
+std::shared_ptr<ProgramDesc> ProgramOptimize::FushionOptimize(
+    std::shared_ptr<ProgramDesc> ori_des) {
   for (int i = 0; i < ori_des->Blocks().size(); ++i) {
     std::unordered_map<std::string, std::shared_ptr<Node>> output_nodes;
     std::shared_ptr<Node> begin_node;
@@ -69,5 +69,5 @@ ProgramOptimize::FushionOptimize(std::shared_ptr<ProgramDesc> ori_des) {
   }
   return ori_des;
 }
-} // namespace framework
-} // namespace paddle_mobile
+}  // namespace framework
+}  // namespace paddle_mobile

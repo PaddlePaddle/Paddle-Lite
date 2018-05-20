@@ -27,7 +27,7 @@ using namespace framework;
 
 template <typename DeviceType, typename T>
 class MulOp : public framework::OperatorWithKernel<DeviceType> {
-public:
+ public:
   MulOp(const std::string &type, const VariableNameMap &inputs,
         const VariableNameMap &outputs, const framework::AttributeMap attrs,
         std::shared_ptr<framework::Scope> scope)
@@ -43,9 +43,9 @@ public:
   using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
   void InferShape() const override;
 
-protected:
+ protected:
   MulParam param_;
 };
 
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile

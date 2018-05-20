@@ -50,6 +50,6 @@ struct Transform {
     std::transform(first1, last1, first2, result, op);
   }
 };
-} // namespace math
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace math
+}  // namespace operators
+}  // namespace paddle_mobile

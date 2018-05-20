@@ -51,12 +51,13 @@ struct Print;
 struct Print {
   friend struct ToLog;
 
-  template <typename T> Print &operator<<(T const &value) {
+  template <typename T>
+  Print &operator<<(T const &value) {
     buffer_ << value;
     return *this;
   }
 
-private:
+ private:
   void print(LogLevel level) {
     buffer_ << std::endl;
     if (level == kLOG_ERROR) {
@@ -76,14 +77,15 @@ struct ToLog {
     printer_ << logs[level] << " " << info << ":" << std::string(blanks, ' ');
   }
 
-  template <typename T> ToLog &operator<<(T const &value) {
+  template <typename T>
+  ToLog &operator<<(T const &value) {
     printer_ << value;
     return *this;
   }
 
   ~ToLog() { printer_.print(level_); }
 
-private:
+ private:
   LogLevel level_;
   Print printer_;
 };
@@ -109,16 +111,16 @@ private:
          << (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1) : __FILE__) \
          << "] [line: " << __LINE__ << "] ")                                   \
             .str())
-} // namespace paddle_mobile
+}  // namespace paddle_mobile
 
-#define LOGF(level, format, ...)                                               \
-  if (level > paddle_mobile::log_level) {                                      \
-  } else                                                                       \
+#define LOGF(level, format, ...)          \
+  if (level > paddle_mobile::log_level) { \
+  } else                                  \
     printf(format, ##__VA_ARGS__)
 
-#define DLOGF(format, ...)                                                     \
-  if (paddle_mobile::kLOG_DEBUG > paddle_mobile::log_level) {                  \
-  } else                                                                       \
+#define DLOGF(format, ...)                                    \
+  if (paddle_mobile::kLOG_DEBUG > paddle_mobile::log_level) { \
+  } else                                                      \
     printf(format, ##__VA_ARGS__)
 
 #else
@@ -140,30 +142,34 @@ enum LogLevel {
 struct ToLog;
 struct Print {
   friend struct ToLog;
-  template <typename T> Print &operator<<(T const &value) {}
+  template <typename T>
+  Print &operator<<(T const &value) {}
 
-private:
+ private:
 };
 
 struct ToLog {
   ToLog(LogLevel level) {}
 
-  template <typename T> ToLog &operator<<(T const &value) { return *this; }
+  template <typename T>
+  ToLog &operator<<(T const &value) {
+    return *this;
+  }
 };
 
-#define LOG(level)                                                             \
-  if (true) {                                                                  \
-  } else                                                                       \
+#define LOG(level) \
+  if (true) {      \
+  } else           \
     paddle_mobile::ToLog(level)
 
-#define DLOG                                                                   \
-  if (true) {                                                                  \
-  } else                                                                       \
+#define DLOG  \
+  if (true) { \
+  } else      \
     paddle_mobile::ToLog(paddle_mobile::kLOG_DEBUG)
 
 #define LOGF(level, format, ...)
 
 #define DLOGF(format, ...)
-} // namespace paddle_mobile
+}  // namespace paddle_mobile
 
 #endif

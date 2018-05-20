@@ -27,7 +27,7 @@ using namespace framework;
 
 template <typename DeviceType, typename T>
 class BatchNormOp : public framework::OperatorWithKernel<DeviceType> {
-public:
+ public:
   BatchNormOp(const std::string &type, const VariableNameMap &inputs,
               const VariableNameMap &outputs,
               const framework::AttributeMap attrs,
@@ -44,9 +44,9 @@ public:
   using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
   void InferShape() const override;
 
-protected:
+ protected:
   BatchNormParam param_;
 };
 
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile

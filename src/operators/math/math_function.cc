@@ -119,6 +119,6 @@ void matmul<double>(const framework::Tensor &matrix_a, bool trans_a,
                matrix_b.data<double>(), beta, matrix_out->data<double>());
 }
 
-} // namespace math
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace math
+}  // namespace operators
+}  // namespace paddle_mobile
