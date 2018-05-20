@@ -54,5 +54,6 @@ paddle-mobile.cbp
 compile_commands.json
 
 cmake-build-debug/
+cmake-build-release/
 
 test/models/
