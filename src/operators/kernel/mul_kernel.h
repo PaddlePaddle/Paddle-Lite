@@ -28,8 +28,8 @@ using namespace framework;
 
 template <typename DeviceType, typename T>
 class MulKernel : public framework::OpKernelBase<DeviceType, MulParam> {
-  public:
-    void Compute(const MulParam &param) const;
+public:
+  void Compute(const MulParam &param) const;
 };
 } // namespace operators
 } // namespace paddle_mobile

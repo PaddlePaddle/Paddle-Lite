@@ -69,19 +69,19 @@ namespace protobuf {
 namespace internal {
 
 template <typename B, typename D> struct is_base_of {
-    typedef char (&yes)[1];
-    typedef char (&no)[2];
+  typedef char (&yes)[1];
+  typedef char (&no)[2];
 
 // BEGIN GOOGLE LOCAL MODIFICATION -- check is a #define on Mac.
 #undef check
-    // END GOOGLE LOCAL MODIFICATION
+  // END GOOGLE LOCAL MODIFICATION
 
-    static yes check(const B *);
-    static no check(const void *);
+  static yes check(const B *);
+  static no check(const void *);
 
-    enum {
-        value = sizeof(check(static_cast<const D *>(NULL))) == sizeof(yes),
-    };
+  enum {
+    value = sizeof(check(static_cast<const D *>(NULL))) == sizeof(yes),
+  };
 };
 
 template <bool cond, class T = void> struct enable_if;
@@ -172,9 +172,9 @@ template <class T> struct is_pointer<const volatile T> : is_pointer<T> {};
 namespace type_traits_internal {
 
 template <class T> struct is_class_or_union {
-    template <class U> static small_ tester(void (U::*)());
-    template <class U> static big_ tester(...);
-    static const bool value = sizeof(tester<T>(0)) == sizeof(small_);
+  template <class U> static small_ tester(void (U::*)());
+  template <class U> static big_ tester(...);
+  static const bool value = sizeof(tester<T>(0)) == sizeof(small_);
 };
 
 // is_convertible chokes if the first argument is an array. That's why
@@ -298,7 +298,7 @@ template <typename T> struct remove_const<T const> { typedef T type; };
 template <typename T> struct remove_volatile { typedef T type; };
 template <typename T> struct remove_volatile<T volatile> { typedef T type; };
 template <typename T> struct remove_cv {
-    typedef typename remove_const<typename remove_volatile<T>::type>::type type;
+  typedef typename remove_const<typename remove_volatile<T>::type>::type type;
 };
 
 // Specified by TR1 [4.7.2] Reference modifications.
@@ -314,7 +314,7 @@ template <typename T> struct remove_pointer<T *> { typedef T type; };
 template <typename T> struct remove_pointer<T *const> { typedef T type; };
 template <typename T> struct remove_pointer<T *volatile> { typedef T type; };
 template <typename T> struct remove_pointer<T *const volatile> {
-    typedef T type;
+  typedef T type;
 };
 
 // Specified by TR1 [4.6] Relationships between types
@@ -335,10 +335,10 @@ namespace type_traits_internal {
 // _Modern C++ Design_ for more details on this sort of trick.
 
 template <typename From, typename To> struct ConvertHelper {
-    static small_ Test(To);
-    static big_ Test(...);
-    static From Create();
-    enum { value = sizeof(Test(Create())) == sizeof(small_) };
+  static small_ Test(To);
+  static big_ Test(...);
+  static From Create();
+  enum { value = sizeof(Test(Create())) == sizeof(small_) };
 };
 } // namespace type_traits_internal
 

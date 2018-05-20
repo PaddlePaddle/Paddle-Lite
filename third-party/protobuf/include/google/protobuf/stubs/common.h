@@ -81,12 +81,12 @@
 // function.  The inline function should be equivalent for C++ users.
 inline BOOL GetMessage_Win32(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin,
                              UINT wMsgFilterMax) {
-    return GetMessage(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax);
+  return GetMessage(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax);
 }
 #undef GetMessage
 inline BOOL GetMessage(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin,
                        UINT wMsgFilterMax) {
-    return GetMessage_Win32(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax);
+  return GetMessage_Win32(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax);
 }
 #endif
 
@@ -138,9 +138,8 @@ std::string LIBPROTOBUF_EXPORT VersionString(int version);
 // matches the headers you compiled against.  If a version mismatch is
 // detected, the process will abort.
 #define GOOGLE_PROTOBUF_VERIFY_VERSION                                         \
-    ::google::protobuf::internal::VerifyVersion(                               \
-        GOOGLE_PROTOBUF_VERSION, GOOGLE_PROTOBUF_MIN_LIBRARY_VERSION,          \
-        __FILE__)
+  ::google::protobuf::internal::VerifyVersion(                                 \
+      GOOGLE_PROTOBUF_VERSION, GOOGLE_PROTOBUF_MIN_LIBRARY_VERSION, __FILE__)
 
 // ===================================================================
 // from google3/util/utf8/public/unilib.h
@@ -153,7 +152,7 @@ namespace internal {
 LIBPROTOBUF_EXPORT bool IsStructurallyValidUTF8(const char *buf, int len);
 
 inline bool IsStructurallyValidUTF8(const std::string &str) {
-    return IsStructurallyValidUTF8(str.data(), static_cast<int>(str.length()));
+  return IsStructurallyValidUTF8(str.data(), static_cast<int>(str.length()));
 }
 
 // Returns initial number of bytes of structually valid UTF-8.
@@ -208,21 +207,21 @@ LIBPROTOBUF_EXPORT void OnShutdownDestroyMessage(const void *ptr);
 
 #if PROTOBUF_USE_EXCEPTIONS
 class FatalException : public std::exception {
-  public:
-    FatalException(const char *filename, int line, const std::string &message)
-        : filename_(filename), line_(line), message_(message) {}
-    virtual ~FatalException() throw();
+public:
+  FatalException(const char *filename, int line, const std::string &message)
+      : filename_(filename), line_(line), message_(message) {}
+  virtual ~FatalException() throw();
 
-    virtual const char *what() const throw();
+  virtual const char *what() const throw();
 
-    const char *filename() const { return filename_; }
-    int line() const { return line_; }
-    const std::string &message() const { return message_; }
+  const char *filename() const { return filename_; }
+  int line() const { return line_; }
+  const std::string &message() const { return message_; }
 
-  private:
-    const char *filename_;
-    const int line_;
-    const std::string message_;
+private:
+  const char *filename_;
+  const int line_;
+  const std::string message_;
 };
 #endif
 
