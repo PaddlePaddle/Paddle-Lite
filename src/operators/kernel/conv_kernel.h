@@ -31,8 +31,8 @@ using namespace framework;
 
 template <typename DeviceType, typename T>
 class ConvKernel : public framework::OpKernelBase<DeviceType, ConvParam> {
-public:
+ public:
   void Compute(const ConvParam &param) const;
 };
-} // namespace operators
-} // namespace paddle_mobile
+}  // namespace operators
+}  // namespace paddle_mobile
