@@ -59,7 +59,7 @@ namespace internal {
 typedef char small_;
 
 struct big_ {
-    char dummy[2];
+  char dummy[2];
 };
 
 // Identity metafunction.
@@ -71,9 +71,9 @@ template <class T> struct identity_ { typedef T type; };
 // general integer_constant for compatibility with tr1.
 
 template <class T, T v> struct integral_constant {
-    static const T value = v;
-    typedef T value_type;
-    typedef integral_constant<T, v> type;
+  static const T value = v;
+  typedef T value_type;
+  typedef integral_constant<T, v> type;
 };
 
 template <class T, T v> const T integral_constant<T, v>::value;

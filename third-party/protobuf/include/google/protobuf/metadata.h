@@ -48,25 +48,23 @@ namespace internal {
 class InternalMetadataWithArena
     : public InternalMetadataWithArenaBase<UnknownFieldSet,
                                            InternalMetadataWithArena> {
-  public:
-    InternalMetadataWithArena() {}
-    explicit InternalMetadataWithArena(Arena *arena)
-        : InternalMetadataWithArenaBase<UnknownFieldSet,
-                                        InternalMetadataWithArena>(arena) {}
+public:
+  InternalMetadataWithArena() {}
+  explicit InternalMetadataWithArena(Arena *arena)
+      : InternalMetadataWithArenaBase<UnknownFieldSet,
+                                      InternalMetadataWithArena>(arena) {}
 
-    void DoSwap(UnknownFieldSet *other) {
-        mutable_unknown_fields()->Swap(other);
-    }
+  void DoSwap(UnknownFieldSet *other) { mutable_unknown_fields()->Swap(other); }
 
-    void DoMergeFrom(const UnknownFieldSet &other) {
-        mutable_unknown_fields()->MergeFrom(other);
-    }
+  void DoMergeFrom(const UnknownFieldSet &other) {
+    mutable_unknown_fields()->MergeFrom(other);
+  }
 
-    void DoClear() { mutable_unknown_fields()->Clear(); }
+  void DoClear() { mutable_unknown_fields()->Clear(); }
 
-    static const UnknownFieldSet &default_instance() {
-        return *UnknownFieldSet::default_instance();
-    }
+  static const UnknownFieldSet &default_instance() {
+    return *UnknownFieldSet::default_instance();
+  }
 };
 
 } // namespace internal

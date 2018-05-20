@@ -27,9 +27,9 @@ using namespace paddle_mobile::framework;
 
 template <typename DeviceType, typename OpType>
 class Executor4Test : public Executor<DeviceType> {
-  public:
-    Executor4Test(const Program<DeviceType> p, std::string op_type);
+public:
+  Executor4Test(const Program<DeviceType> p, std::string op_type);
 
-    std::shared_ptr<Tensor> predict(Tensor &t, std::string input,
-                                    std::string output, DDim dDim);
+  std::shared_ptr<Tensor> predict(Tensor &t, std::string input,
+                                  std::string output, DDim dDim);
 };

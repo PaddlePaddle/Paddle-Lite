@@ -28,8 +28,8 @@ using namespace framework;
 
 template <typename DeviceType, typename T>
 class PoolKernel : public framework::OpKernelBase<DeviceType, PoolParam> {
-  public:
-    void Compute(const PoolParam &param) const;
+public:
+  void Compute(const PoolParam &param) const;
 };
 } // namespace operators
 } // namespace paddle_mobile

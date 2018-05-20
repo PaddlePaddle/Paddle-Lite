@@ -23,37 +23,37 @@ namespace operators {
 
 int PoolOutputSize(int input_size, int filter_size, int padding, int stride,
                    bool ceil_mode) {
-    int output_size;
-    if (!ceil_mode) {
-        output_size = (input_size - filter_size + 2 * padding) / stride + 1;
-    } else {
-        output_size =
-            (input_size - filter_size + 2 * padding + stride - 1) / stride + 1;
-    }
-    return output_size;
+  int output_size;
+  if (!ceil_mode) {
+    output_size = (input_size - filter_size + 2 * padding) / stride + 1;
+  } else {
+    output_size =
+        (input_size - filter_size + 2 * padding + stride - 1) / stride + 1;
+  }
+  return output_size;
 }
 template <typename DeviceType, typename T>
 void PoolOp<DeviceType, T>::InferShape() const {
-    auto in_x_dims = param_.Input()->dims();
-    std::vector<int> ksize = param_.Ksize();
-    std::vector<int> paddings = param_.Paddings();
-    std::vector<int> strides = param_.Strides();
-    bool ceil_mode = param_.isCeilMode();
+  auto in_x_dims = param_.Input()->dims();
+  std::vector<int> ksize = param_.Ksize();
+  std::vector<int> paddings = param_.Paddings();
+  std::vector<int> strides = param_.Strides();
+  bool ceil_mode = param_.isCeilMode();
 
-    if (param_.isGlobalPooling()) {
-        ksize.resize(static_cast<size_t>(in_x_dims.size()) - 2);
-        for (size_t i = 0; i < ksize.size(); ++i) {
-            paddings[i] = 0;
-            ksize[i] = static_cast<int>(in_x_dims[i + 2]);
-        }
-    }
-    std::vector<int64_t> output_shape({in_x_dims[0], in_x_dims[1]});
+  if (param_.isGlobalPooling()) {
+    ksize.resize(static_cast<size_t>(in_x_dims.size()) - 2);
     for (size_t i = 0; i < ksize.size(); ++i) {
-        output_shape.push_back(PoolOutputSize(
-            in_x_dims[i + 2], ksize[i], paddings[i], strides[i], ceil_mode));
+      paddings[i] = 0;
+      ksize[i] = static_cast<int>(in_x_dims[i + 2]);
     }
-    param_.Output()->Resize(framework::make_ddim(output_shape));
-    DLOG << "infer shape out size =" << param_.Output()->numel();
+  }
+  std::vector<int64_t> output_shape({in_x_dims[0], in_x_dims[1]});
+  for (size_t i = 0; i < ksize.size(); ++i) {
+    output_shape.push_back(PoolOutputSize(in_x_dims[i + 2], ksize[i],
+                                          paddings[i], strides[i], ceil_mode));
+  }
+  param_.Output()->Resize(framework::make_ddim(output_shape));
+  DLOG << "infer shape out size =" << param_.Output()->numel();
 }
 template class PoolOp<CPU, float>;
 } // namespace operators
