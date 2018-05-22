@@ -23,6 +23,10 @@ target_link_libraries(test-lrn-op paddle-mobile)
 ADD_EXECUTABLE(test-batchnorm-op  operators/test_batchnorm_op.cpp test_helper.h  test_include.h)
 target_link_libraries(test-batchnorm-op paddle-mobile)
 
+# gen test
+ADD_EXECUTABLE(test-priorbox-op  operators/test_prior_box_op.cpp test_helper.h  test_include.h)
+target_link_libraries(test-priorbox-op paddle-mobile)
+
 # gen test log
 ADD_EXECUTABLE(test-log common/test_log.cpp)
 target_link_libraries(test-log paddle-mobile)
