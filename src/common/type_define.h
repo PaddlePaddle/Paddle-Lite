@@ -19,7 +19,9 @@ SOFTWARE.
 
 #include <map>
 #include <string>
+#include <vector>
 #include "framework/attribute.h"
+#include "framework/scope.h"
 
 namespace paddle_mobile {
 
@@ -37,7 +39,8 @@ template <typename Dtype>
 using OpCreator = std::function<framework::OperatorBase<Dtype> *(
     const std::string & /*type*/, const VariableNameMap & /*inputs*/,
     const VariableNameMap & /*outputs*/,
-    const framework::AttributeMap & /*attrs*/)>;
+    const framework::AttributeMap & /*attrs*/,
+    std::shared_ptr<framework::Scope> /*scope*/)>;
 
 using GradOpMakerFN =
     std::function<std::vector<std::unique_ptr<framework::OpDesc>>(
