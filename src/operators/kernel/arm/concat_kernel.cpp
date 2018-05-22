@@ -61,7 +61,7 @@ void StridedNumelCopyWithAxis(int64_t axis, T *dst,
   int64_t src_after = src_stride_numel[axis];
   int64_t dst_after = dst_stride_numel[axis];
 
-  ///"src and dst tensor should have the same dims size."
+  /// "src and dst tensor should have the same dims size."
   assert(src_stride_numel.size() == dst_stride_numel.size());
 
   for (int64_t i = 0; i < axis; ++i) {
@@ -79,7 +79,6 @@ void StridedNumelCopyWithAxis(int64_t axis, T *dst,
       assert(src_stride_numel[i] == dst_stride_numel[i]);
     }
   }
-
   for (int64_t i = 0; i < before; ++i) {
     memory::Copy(dst + i * dst_after, src + i * src_after, sizeof(T) * size);
   }

@@ -18,6 +18,7 @@ SOFTWARE.
 
 #pragma once
 
+#include <string>
 #include "common/log.h"
 #include "common/type_define.h"
 #include "framework/lod_tensor.h"
@@ -69,6 +70,22 @@ class OpParam : PaddleMobileObject {
   static T *InputImageFrom(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue<T>("Image", inputs, scope);
   }
+  template <typename T>
+  static T *InputPriorBoxFrom(const VariableNameMap &inputs,
+                              const Scope &scope) {
+    return GetVarValue<T>("PriorBox", inputs, scope);
+  }
+  template <typename T>
+  static T *InputPriorBoxVarFrom(const VariableNameMap &inputs,
+                                 const Scope &scope) {
+    return GetVarValue<T>("PriorBoxVar", inputs, scope);
+  }
+  // LoDTensor but now use Tensor
+  template <typename T>
+  static T *InputTargetBoxFrom(const VariableNameMap &inputs,
+                               const Scope &scope) {
+    return GetVarValue<T>("TargetBox", inputs, scope);
+  }
 
   template <typename T>
   static std::vector<T *> InputMultiFrom(const VariableNameMap &inputs,
@@ -95,6 +112,11 @@ class OpParam : PaddleMobileObject {
   static T *OutputBoxesFrom(const VariableNameMap &outputs,
                             const Scope &scope) {
     return GetVarValue<T>("Boxes", outputs, scope);
+  }
+
+  template <typename T>
+  static T *OutputBoxFrom(const VariableNameMap &outputs, const Scope &scope) {
+    return GetVarValue<T>("OutputBox", outputs, scope);
   }
 
   template <typename T>
@@ -457,6 +479,35 @@ class PriorBoxParam : public OpParam {
   float step_w_;
   float step_h_;
   float offset_;
+};
+
+class BoxCoderParam : public OpParam {
+ public:
+  BoxCoderParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+                const framework::AttributeMap &attrs,
+                const framework::Scope &scope) {
+    input_priorbox_ = InputPriorBoxFrom<framework::Tensor>(inputs, scope);
+    input_priorboxvar_ = InputPriorBoxVarFrom<framework::Tensor>(inputs, scope);
+    input_targetbox_ = InputTargetBoxFrom<framework::Tensor>(inputs, scope);
+    output_box_ = OutputBoxFrom<framework::Tensor>(outputs, scope);
+    code_type_ = GetAttr<std::string>("code_type", attrs);
+  }
+  const Tensor *InputPriorBox() const { return input_priorbox_; }
+
+  const Tensor *InputPriorBoxVar() const { return input_priorboxvar_; }
+
+  const Tensor *InputTargetBox() const { return input_targetbox_; }
+
+  Tensor *OutputBox() const { return output_box_; }
+
+  const std::string &CodeType() const { return code_type_; }
+
+ private:
+  Tensor *input_priorbox_;
+  Tensor *input_priorboxvar_;
+  Tensor *input_targetbox_;
+  Tensor *output_box_;
+  std::string code_type_;
 };
 }  // namespace operators
 }  // namespace paddle_mobile
