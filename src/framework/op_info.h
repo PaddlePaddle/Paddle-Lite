@@ -18,8 +18,10 @@ SOFTWARE.
 
 #pragma once
 
+#include <string>
+#include "common/log.h"
 #include "common/type_define.h"
-#include "framework.pb.h"
+#include "framework/framework.pb.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -45,11 +47,12 @@ template <typename Dtype>
 class OpInfoMap {
  public:
   static OpInfoMap &Instance() {
+    LOG(paddle_mobile::kLOG_DEBUG1) << " TODO: fix bug";
     if (g_op_info_map<Dtype> == nullptr) {
       g_op_info_map<Dtype> = new OpInfoMap();
     }
     return *g_op_info_map<Dtype>;
-  };
+  }
 
   bool Has(const std::string &op_type) const {
     return map_.find(op_type) != map_.end();
