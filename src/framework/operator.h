@@ -19,18 +19,20 @@ SOFTWARE.
 #pragma once
 
 #include <map>
-
-#include "attribute.h"
-#include "block_desc.h"
+#include <string>
+#include <utility>
+#include <vector>
 #include "common/type_define.h"
 #include "common/types.h"
 #include "common/variant.h"
-#include "op_info.h"
-#include "op_kernel_type.h"
-#include "paddle_mobile_object.h"
-#include "scope.h"
-#include "tensor.h"
-#include "variable.h"
+#include "framework/attribute.h"
+#include "framework/block_desc.h"
+#include "framework/op_info.h"
+#include "framework/op_kernel_type.h"
+#include "framework/paddle_mobile_object.h"
+#include "framework/scope.h"
+#include "framework/tensor.h"
+#include "framework/variable.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -96,6 +98,13 @@ class OpKernelBase : PaddleMobileObject {
 
   virtual ~OpKernelBase() = default;
 };
+
+#define DEFINE_OP_CONSTRUCTOR(cls, parent_cls)                                 \
+  cls(const std::string &type, const ::paddle_mobile::VariableNameMap &inputs, \
+      const ::paddle_mobile::VariableNameMap &outputs,                         \
+      const ::paddle_mobile::framework::AttributeMap &attrs,                   \
+      std::shared_ptr<::paddle_mobile::framework::Scope> scope)                \
+      : parent_cls<Dtype, T>(type, inputs, outputs, attrs, scope) {}
 
 }  // namespace framework
 }  // namespace paddle_mobile

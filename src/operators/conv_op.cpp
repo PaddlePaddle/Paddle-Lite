@@ -16,9 +16,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#include "conv_op.h"
+#include "operators/conv_op.h"
+#include <vector>
 #include "framework/data_type.h"
 #include "framework/op_proto_maker.h"
+#include "framework/op_registry.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -73,3 +75,7 @@ template class ConvOp<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+USE_OP(conv2d);
+REGISTER_OPERATOR(conv2d, ops::ConvOp);
