@@ -131,12 +131,11 @@ void PriorBoxKernel<CPU, float>::Compute(const PriorBoxParam &param) const {
           output_boxes_dataptr, clip_func);
   }
 
-  Tensor var_t;
-  var_t.mutable_data<float>(make_ddim({1, static_cast<int>(variances.size())}));
+  if ((variances.size() != 4)) {
+    LOG(kLOG_ERROR) << " variances.size() must be 4.";
+  }
 
-  int box_num = feature_height * feature_width * num_priors;
-  // auto var_dim = output_variances->dims();
-  // output_variances->Resize({box_num, static_cast<int>(variances.size())});
+  int64_t box_num = feature_height * feature_width * num_priors;
 
   for (int i = 0; i < box_num; i++) {
     output_variances_dataptr[4 * i] = variances[0];
@@ -144,8 +143,6 @@ void PriorBoxKernel<CPU, float>::Compute(const PriorBoxParam &param) const {
     output_variances_dataptr[4 * i + 2] = variances[2];
     output_variances_dataptr[4 * i + 3] = variances[3];
   }
-
-  // output_variances->Resize(var_dim);
 }
 
 }  // namespace operators
