@@ -16,8 +16,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
 
-#include <vector>
 #include "operators/conv_op.h"
+#include <vector>
 #include "framework/data_type.h"
 #include "framework/op_proto_maker.h"
 #include "framework/op_registry.h"
