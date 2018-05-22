@@ -65,6 +65,10 @@ class OpParam : PaddleMobileObject {
   static T *InputScaleFrom(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue<T>("Scale", inputs, scope);
   }
+  template <typename T>
+  static T *InputImageFrom(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("Image", inputs, scope);
+  }
 
   template <typename T>
   static std::vector<T *> InputMultiFrom(const VariableNameMap &inputs,
@@ -85,6 +89,18 @@ class OpParam : PaddleMobileObject {
   template <typename T>
   static T *OutputYFrom(const VariableNameMap &outputs, const Scope &scope) {
     return GetVarValue<T>("Y", outputs, scope);
+  }
+
+  template <typename T>
+  static T *OutputBoxesFrom(const VariableNameMap &outputs,
+                            const Scope &scope) {
+    return GetVarValue<T>("Boxes", outputs, scope);
+  }
+
+  template <typename T>
+  static T *OutputVariancesFrom(const VariableNameMap &outputs,
+                                const Scope &scope) {
+    return GetVarValue<T>("Variances", outputs, scope);
   }
 
   template <typename T>
@@ -382,5 +398,65 @@ class PoolParam : public OpParam {
   bool gloabal_pooling_ = false;
 };
 
+class PriorBoxParam : public OpParam {
+ public:
+  PriorBoxParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+                const framework::AttributeMap &attrs,
+                const framework::Scope &scope) {
+    input_ = InputFrom<framework::Tensor>(inputs, scope);
+    input_image_ = InputImageFrom<framework::Tensor>(inputs, scope);
+    output_boxes_ = OutputBoxesFrom<framework::Tensor>(outputs, scope);
+    output_variances_ = OutputVariancesFrom<framework::Tensor>(outputs, scope);
+    min_sizes_ = GetAttr<std::vector<float>>("min_sizes", attrs);
+    max_sizes_ = GetAttr<std::vector<float>>("max_sizes", attrs);
+    aspect_ratios_ = GetAttr<std::vector<float>>("aspect_ratios", attrs);
+    variances_ = GetAttr<std::vector<float>>("variances", attrs);
+    flip_ = GetAttr<bool>("flip", attrs);
+    clip_ = GetAttr<bool>("clip", attrs);
+    step_w_ = GetAttr<float>("step_w", attrs);
+    step_h_ = GetAttr<float>("step_h", attrs);
+    offset_ = GetAttr<float>("offset", attrs);
+  }
+  const Tensor *Input() const { return input_; }
+
+  const Tensor *InputImage() const { return input_image_; }
+
+  Tensor *OutputBoxes() const { return output_boxes_; }
+
+  Tensor *OutputVariances() const { return output_variances_; }
+
+  const std::vector<float> &MinSizes() const { return min_sizes_; }
+
+  const std::vector<float> &MaxSizes() const { return max_sizes_; }
+
+  const std::vector<float> &AspectRatios() const { return aspect_ratios_; }
+
+  const std::vector<float> &Variances() const { return variances_; }
+
+  const bool &Flip() const { return flip_; }
+
+  const bool &Clip() const { return clip_; }
+
+  const float &StepW() const { return step_w_; }
+
+  const float &StepH() const { return step_h_; }
+
+  const float &Offset() const { return offset_; }
+
+ private:
+  Tensor *input_;
+  Tensor *input_image_;
+  Tensor *output_boxes_;
+  Tensor *output_variances_;
+  std::vector<float> min_sizes_;
+  std::vector<float> max_sizes_;
+  std::vector<float> aspect_ratios_;
+  std::vector<float> variances_;
+  bool flip_;
+  bool clip_;
+  float step_w_;
+  float step_h_;
+  float offset_;
+};
 }  // namespace operators
 }  // namespace paddle_mobile
