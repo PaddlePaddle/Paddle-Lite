@@ -25,7 +25,7 @@ SOFTWARE.
 #include "framework/program_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
-
+#define PADDLE_MOBILE_DEBUG 1
 namespace paddle_mobile {
 
 void ReadBinaryFile(const std::string &filename, std::string *contents) {
@@ -165,9 +165,9 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
   for (const auto &block : program_desc_proto.blocks()) {
     LOG(kLOG_DEBUG) << "block: " << block.idx();
     for (int j = 0; j < block.ops().size(); ++j) {
-      if (j == 2) {
-        break;
-      }
+      //      if (j == 2) {
+      //        break;
+      //      }
       framework::proto::OpDesc op = block.ops()[j];
       LOG(kLOG_DEBUG1) << "op: " << op.type();
       for (int m = 0; m < op.inputs_size(); ++m) {
