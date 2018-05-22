@@ -94,19 +94,13 @@ class OpRegistry {
       const std::string& type, const VariableNameMap& inputs,
       const VariableNameMap& outputs, const AttributeMap attrs,
       std::shared_ptr<paddle_mobile::framework::Scope> scope) {
-    LOG(paddle_mobile::kLOG_DEBUG1) << " type: "
-                                    << type;
-    LOG(paddle_mobile::kLOG_DEBUG1) << " input size: "
-                                    << inputs.size();
-    LOG(paddle_mobile::kLOG_DEBUG1) << " output size: "
-                                    << outputs.size();
-    LOG(paddle_mobile::kLOG_DEBUG1) << " attr size: "
-                                    << attrs.size();
-    LOG(paddle_mobile::kLOG_DEBUG1) << " OpInfoMap size: "
-                                    << OpInfoMap<Dtype>::Instance().map().size();
-    LOG(paddle_mobile::kLOG_DEBUG1) << " has type: "
-                                    << type
-                                    << " "
+    LOG(paddle_mobile::kLOG_DEBUG1) << " type: " << type;
+    LOG(paddle_mobile::kLOG_DEBUG1) << " input size: " << inputs.size();
+    LOG(paddle_mobile::kLOG_DEBUG1) << " output size: " << outputs.size();
+    LOG(paddle_mobile::kLOG_DEBUG1) << " attr size: " << attrs.size();
+    LOG(paddle_mobile::kLOG_DEBUG1)
+        << " OpInfoMap size: " << OpInfoMap<Dtype>::Instance().map().size();
+    LOG(paddle_mobile::kLOG_DEBUG1) << " has type: " << type << " "
                                     << OpInfoMap<Dtype>::Instance().Has(type);
     auto& info = OpInfoMap<Dtype>::Instance().Get(type);
     auto op = info.Creator()(type, inputs, outputs, attrs, scope);
