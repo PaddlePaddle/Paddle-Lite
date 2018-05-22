@@ -20,13 +20,13 @@ SOFTWARE.
 
 #include <map>
 #include <string>
-#include <vector>
 #include <utility>
-#include "framework/attribute.h"
-#include "framework/block_desc.h"
+#include <vector>
 #include "common/type_define.h"
 #include "common/types.h"
 #include "common/variant.h"
+#include "framework/attribute.h"
+#include "framework/block_desc.h"
 #include "framework/op_info.h"
 #include "framework/op_kernel_type.h"
 #include "framework/paddle_mobile_object.h"
