@@ -23,13 +23,14 @@ int main() {
     DLOG << "program read file";
   }
   Executor4Test<paddle_mobile::CPU,
-          paddle_mobile::operators::SoftmaxOp<paddle_mobile::CPU, float>>
-          executor(program, "softmax");
+                paddle_mobile::operators::SoftmaxOp<paddle_mobile::CPU, float>>
+      executor(program, "softmax");
   paddle_mobile::framework::Tensor input;
   SetupTensor<float>(&input, {1, 1000}, static_cast<float>(0),
                      static_cast<float>(1));
-  auto output = executor.predict(input, "reshape_0.tmp_0", "softmax_0.tmp_0",
-                                 {1, 1000});
+  auto out_ddim = paddle_mobile::framework::make_ddim({1, 1000});
+  auto output =
+      executor.predict(input, "reshape_0.tmp_0", "softmax_0.tmp_0", out_ddim);
   auto *output_ptr = output->data<float>();
   for (int j = 0; j < output->numel(); ++j) {
     DLOG << " value of output: " << output_ptr[j];
