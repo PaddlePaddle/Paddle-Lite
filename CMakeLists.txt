@@ -3,6 +3,8 @@ project(paddle-mobile)
 add_definitions(-std=c++11)
 add_definitions(-DPADDLE_MOBILE_DEBUG="true")
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake")
+include(like-bazel)
 
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
 set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -47,3 +49,5 @@ target_link_libraries(paddle-mobile-static protobuf-lite openblas)
 #add_dependencies(paddle-mobile openblas_proj)
 
 add_subdirectory(test)
+
+add_subdirectory(cpp)

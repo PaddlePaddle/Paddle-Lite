@@ -6,6 +6,28 @@
 
 This project is used to develop the next version deep learning freamwork for mobile device.
 
+## How to Build
+
+1. Clone the source code
+
+   ```bash
+   https://github.com/PaddlePaddle/paddle-mobile
+   ```
+
+1. Run CMake to configure the build
+
+   ```bash
+   cd paddle-mobile
+   mkdir build
+   cd build
+   cmake ..
+   ```
+
+1. Build
+
+   ```bash
+   make
+   ```
 
 ## Old Version of Mobile-Deep-Learning
 The old version of MDL was I moved to here [Mobile-Deep-Learning](https://github.com/allonli/mobile-deep-learning) 
