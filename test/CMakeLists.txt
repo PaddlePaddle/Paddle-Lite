@@ -48,3 +48,7 @@ target_link_libraries(test-optimize paddle-mobile)
 #gen test
 ADD_EXECUTABLE(test-pool operators/test_pool_op.cpp test_helper.h test_include.h framework/executor_for_test.h framework/executor_for_test.cpp)
 target_link_libraries(test-pool paddle-mobile)
+
+# gen test
+ADD_EXECUTABLE(test-gemm common/test_gemm.cpp)
+target_link_libraries(test-gemm paddle-mobile)
