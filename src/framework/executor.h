@@ -33,7 +33,7 @@ namespace framework {
 template <typename Dtype>
 class Executor {
  public:
-  Executor();
+  Executor() = default;
 
   Executor(const Program<Dtype> p);
 
