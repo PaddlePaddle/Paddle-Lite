@@ -12,37 +12,38 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "framework/operator.h"
-#include "operators/kernel/batchnorm_kernel.h"
-#include "operators/op_param.h"
+#pragma once
+
+#include <framework/operator.h>
+#include <operators/op_param.h>
+#include <string>
+#include "operators/kernel/softmax_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
-
-using namespace framework;
-
 template <typename DeviceType, typename T>
-class BatchNormOp : public framework::OperatorWithKernel<DeviceType> {
+class SoftmaxOp : public framework::OperatorWithKernel<DeviceType> {
  public:
-  BatchNormOp(const std::string &type, const VariableNameMap &inputs,
-              const VariableNameMap &outputs,
-              const framework::AttributeMap attrs,
-              std::shared_ptr<framework::Scope> scope)
+  SoftmaxOp(const std::string &type, const VariableNameMap &inputs,
+            const VariableNameMap &outputs,
+            const framework::AttributeMap &attrs,
+            std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
                                                   scope),
         param_(inputs, outputs, attrs, *scope) {}
 
-  void Run() const {
-    operators::BatchNormKernel<DeviceType, T> kernel;
-    kernel.Compute(param_);
-  }
-
   using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+
   void InferShape() const override;
 
- protected:
-  BatchNormParam param_;
-};
+  void Run() const {
+    operators::SoftmaxKernel<DeviceType, T> kernel;
+    kernel.Compute(param_);
+    this->ClearVariables({"X"});
+  }
 
+ private:
+  SoftmaxParam param_;
+};
 }  // namespace operators
 }  // namespace paddle_mobile

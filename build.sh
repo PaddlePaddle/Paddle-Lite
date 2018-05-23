@@ -70,17 +70,17 @@ build_for_android() {
         exit -1
     fi
 
-#    PLATFORM="arm-v7a"
-    PLATFORM="arm-v8a"
+    PLATFORM="arm-v7a"
+#    PLATFORM="arm-v8a"
 
     if [ "${PLATFORM}" = "arm-v7a" ]; then
         ABI="armeabi-v7a with NEON"
         ARM_PLATFORM="V7"
-        CXX_FLAGS="-O3 -std=c++11 -s"
+        CXX_FLAGS="-O3 -std=c++11 -s -march=armv7-a -mfpu=neon -mfloat-abi=softfp -pie -fPIE -w -Wno-error=format-security -llog"
     elif [ "${PLATFORM}" = "arm-v8a" ]; then
         ABI="arm64-v8a"
         ARM_PLATFORM="V8"
-        CXX_FLAGS="-O3 -std=c++11 -s"
+        CXX_FLAGS="-O3 -std=c++11 -s -march=armv8-a  -pie -fPIE -w -Wno-error=format-security -llog"
     else
         echo "unknown platform!"
         exit -1
