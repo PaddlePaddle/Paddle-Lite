@@ -63,3 +63,7 @@ test/models/
 
 # CMake building directory
 build
+
+# clion building directories
+cmake-build-debug
+cmake-build-release
