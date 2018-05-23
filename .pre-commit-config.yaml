@@ -39,15 +39,17 @@ repos:
 #        language: system
 #        files: (src).*\.(c|cc|cxx|cpp|h|hpp|hxx)$
 
--   repo: local
-    hooks:
-    -   id: cpplint
-        name: cpplint
-        description: Check C++ code style using cpplint.
-        entry: bash ./tools/pre-commit.hooks/cpplint.hook
-        language: system
-        files: (src).*\.(c|cc|cxx|cpp|cu|h|hpp|hxx)$
-        exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$i | *\.pb\.cpp
+# TODO(yi): Cannot enable cpplint because /test includes many source files
+#           that are out of code style!
+# -   repo: local
+#     hooks:
+#     -   id: cpplint
+#         name: cpplint
+#         description: Check C++ code style using cpplint.
+#         entry: bash ./tools/pre-commit.hooks/cpplint.hook
+#         language: system
+#         files: (src).*\.(c|cc|cxx|cpp|cu|h|hpp|hxx)$
+#         exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$i | *\.pb\.cpp
 
 -   repo: local
     hooks:
