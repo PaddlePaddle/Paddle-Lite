@@ -35,7 +35,7 @@ repos:
 #    -   id: clang-tidy
 #        name: clang-tidy
 #        description: Check C++ code style using clang-tidy.
-#        entry: bash ./tools/pre-commit.hooks/.clang-tidy.hook -i
+#        entry: bash ./tools/pre-commit.hooks/clang-tidy.hook -i
 #        language: system
 #        files: (src).*\.(c|cc|cxx|cpp|h|hpp|hxx)$
 
