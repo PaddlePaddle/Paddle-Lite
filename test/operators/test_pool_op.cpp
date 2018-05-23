@@ -30,9 +30,9 @@ int main() {
   paddle_mobile::framework::Tensor input;
   SetupTensor<float>(&input, {1, 64, 112, 112}, static_cast<float>(0),
                      static_cast<float>(1));
-
-  auto output = executor.predict(input, "conv2d_0.tmp_1", "pool2d_0.tmp_0",
-                                 {1, 64, 56, 56});
+  auto out_ddim = paddle_mobile::framework::make_ddim({1, 64, 56, 56});
+  auto output =
+      executor.predict(input, "conv2d_0.tmp_1", "pool2d_0.tmp_0", out_ddim);
 
   float *output_ptr = output->data<float>();
   for (int j = 0; j < output->numel(); ++j) {
