@@ -28,22 +28,27 @@ include_directories(src/)
 #        INSTALL_COMMAND "make" "PREFIX=${CMAKE_BINARY_DIR}/" "install"
 #        )
 #set_target_properties(openblas_proj PROPERTIES EXCLUDE_FROM_ALL 1)
-# link openblas
-include_directories(third-party/openblas/include)
-link_directories(third-party/openblas/lib)
-
 # link protobuf
 include_directories(third-party/protobuf/include)
-link_directories(third-party/protobuf/lib)
+if (ANDROID)
+    link_directories(third-party/protobuf/armeabi-v7a)
+else()
+    # link openblas
+    include_directories(third-party/openblas/include)
+    link_directories(third-party/openblas/lib)
+    link_directories(third-party/protobuf/lib)
+endif ()
 
-# gen so
-ADD_LIBRARY(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
-target_link_libraries(paddle-mobile protobuf-lite openblas)
 #add_dependencies(paddle-mobile openblas_proj)
 
 # gen static
-ADD_LIBRARY(paddle-mobile-static STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
-target_link_libraries(paddle-mobile-static protobuf-lite openblas)
+ADD_LIBRARY(paddle-mobile STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+if (ANDROID)
+    # openblas.a need log lib
+    target_link_libraries(paddle-mobile protobuf-lite)
+else()
+    target_link_libraries(paddle-mobile protobuf-lite openblas)
+endif ()
 #add_dependencies(paddle-mobile openblas_proj)
 
 add_subdirectory(test)
