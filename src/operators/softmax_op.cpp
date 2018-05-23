@@ -12,16 +12,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "elementwise_add_op.h"
+#include "operators/softmax_op.h"
 
 namespace paddle_mobile {
 namespace operators {
-
-template <typename Dtype, typename T>
-void ElementwiseAddOp<Dtype, T>::InferShape() const {
-  auto x_dim = param_.InputX()->dims();
-  param_.Out()->Resize(x_dim);
+template <typename DeviceType, typename T>
+void SoftmaxOp<DeviceType, T>::InferShape() const {
+  param_.Out()->Resize(param_.InputX()->dims());
 }
-template class ElementwiseAddOp<CPU, float>;
+template class SoftmaxOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
