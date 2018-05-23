@@ -17,7 +17,6 @@ SOFTWARE.
 ==============================================================================*/
 
 #include "operators/math/Gemm.h"
-#include <algorithm>
 #include <iostream>
 
 namespace paddle_mobile {
@@ -179,11 +178,11 @@ void sgemm(int m, int n, int k, float alpha, const float *A, int lda,
   int i, j, p, mc, nc, kc;
 
   for (j = 0; j < n; j += NC) {
-    nc = min(n - j, NC);
+    nc = s_min(n - j, NC);
     for (p = 0; p < k; p += KC) {
-      kc = min(k - p, KC);
+      kc = s_min(k - p, KC);
       for (i = 0; i < m; i += MC) {
-        mc = min(m - i, MC);
+        mc = s_min(m - i, MC);
         InnerKernel(mc, nc, kc, &A(i, p), lda, &B(p, j), ldb, &C(i, j), ldc,
                     i == 0);
       }
