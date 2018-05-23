@@ -55,7 +55,8 @@ def generate_copyright(template, lang='C'):
         lang_coment_mark = ""
         start = "/* "
         blank = ""
-        end_line = "==============================================================================*/"
+        end_line = '''==============================================================================*/
+        '''
     lines = template.split(NEW_LINE_MARK)
 
     ans = start + blank + COPYRIGHT_HEADER + NEW_LINE_MARK
@@ -104,7 +105,7 @@ def main(argv=None):
         fd = io.open(filename, encoding="utf-8")
         first_line = fd.readline()
         second_line = fd.readline()
-        if "COPYRIGHT (C)" in first_line.upper():
+        if "COPYRIGHT (C)" in first_line.upper() or "COPYRIGHT (C)" in second_line.upper():
             continue
         if first_line.startswith("/*") or first_line.startswith("#!") or PYTHON_ENCODE.match(
                 second_line) is not None or PYTHON_ENCODE.match(first_line) is not None:
@@ -116,8 +117,6 @@ def main(argv=None):
         retv = 1
         with io.open(filename, 'w') as output_file:
             output_file.write(new_contents)
-            print(new_contents)
-
     return retv
 
 

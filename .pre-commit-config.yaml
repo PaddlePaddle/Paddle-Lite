@@ -22,6 +22,15 @@ repos:
 
 -   repo: local
     hooks:
+    -   id: copyright
+        name: copyright
+        entry: python ./tools/pre-commit.hooks/.copyright.hook
+        language: system
+        files: (src).*\.(c|cc|cxx|cpp|cu|h|hpp|hxx|py)$
+        exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$
+
+-   repo: local
+    hooks:
     -   id: clang-format
         name: clang-format
         description: Format files with ClangFormat.
@@ -49,11 +58,3 @@ repos:
         files: (src).*\.(c|cc|cxx|cpp|cu|h|hpp|hxx)$
         exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$i | *\.pb\.cpp
 
--   repo: local
-    hooks:
-    -   id: copyright
-        name: copyright
-        entry: python ./tools/pre-commit.hooks/.copyright.hook
-        language: system
-        files: (src).*\.(c|cc|cxx|cpp|cu|h|hpp|hxx|py)$
-        exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$
