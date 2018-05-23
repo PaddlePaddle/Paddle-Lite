@@ -57,3 +57,9 @@ cmake-build-debug/
 cmake-build-release/
 
 test/models/
+
+# Emacs intermediate files
+*~
+
+# CMake building directory
+build
