@@ -15,34 +15,35 @@ limitations under the License. */
 #pragma once
 
 #include <framework/operator.h>
-#include <operators/kernel/pool_kernel.h>
 #include <operators/op_param.h>
+#include <string>
+#include "operators/kernel/softmax_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
-using namespace framework;
-
 template <typename DeviceType, typename T>
-class PoolOp : public framework::OperatorWithKernel<DeviceType> {
+class SoftmaxOp : public framework::OperatorWithKernel<DeviceType> {
  public:
-  PoolOp(const std::string &type, const VariableNameMap &inputs,
-         const VariableNameMap &outputs, const framework::AttributeMap &attrs,
-         std::shared_ptr<framework::Scope> scope)
+  SoftmaxOp(const std::string &type, const VariableNameMap &inputs,
+            const VariableNameMap &outputs,
+            const framework::AttributeMap &attrs,
+            std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
                                                   scope),
         param_(inputs, outputs, attrs, *scope) {}
+
   using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+
   void InferShape() const override;
 
   void Run() const {
-    //        InferShape();
-    operators::PoolKernel<DeviceType, T> kernel;
+    operators::SoftmaxKernel<DeviceType, T> kernel;
     kernel.Compute(param_);
     this->ClearVariables({"X"});
   }
 
  private:
-  PoolParam param_;
+  SoftmaxParam param_;
 };
 }  // namespace operators
 }  // namespace paddle_mobile
