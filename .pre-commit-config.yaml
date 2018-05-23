@@ -55,5 +55,5 @@ repos:
         name: copyright
         entry: python ./tools/pre-commit.hooks/.copyright.hook
         language: system
-        files: (src).*\.(c|cc|cxx|cpp|cu|h|hpp|hxx|proto|py)$
+        files: (src).*\.(c|cc|cxx|cpp|cu|h|hpp|hxx|py)$
         exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$
