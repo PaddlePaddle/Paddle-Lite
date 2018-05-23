@@ -30,7 +30,7 @@ SOFTWARE.
 #define MR 4
 #define NR 4
 
-#define min(i, j) ((i) < (j) ? (i) : (j))
+#define s_min(i, j) ((i) < (j) ? (i) : (j))
 
 namespace paddle_mobile {
 namespace operators {

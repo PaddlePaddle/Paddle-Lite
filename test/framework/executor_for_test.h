@@ -1,35 +1,40 @@
-/* Copyright (c) 2016 Baidu, Inc. All Rights Reserved.
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-==============================================================================*/
+/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License. */
 
 #pragma once
 
+#include <string>
 #include "common/log.h"
 #include "framework/executor.h"
 #include "operators/conv_op.h"
 #include "operators/pool_op.h"
+#include "operators/softmax_op.h"
 
-using namespace paddle_mobile::framework;
-
+using paddle_mobile::framework::Tensor;
+using paddle_mobile::framework::LoDTensor;
+using std::string;
+using paddle_mobile::framework::DDim;
+using paddle_mobile::framework::Executor;
+using paddle_mobile::framework::Program;
+using paddle_mobile::framework::BlockDesc;
+using paddle_mobile::framework::OpDesc;
+using paddle_mobile::framework::Variable;
 template <typename DeviceType, typename OpType>
 class Executor4Test : public Executor<DeviceType> {
-public:
-  Executor4Test(const Program<DeviceType> p, std::string op_type);
+ public:
+  Executor4Test(Program<DeviceType> p, string op_type);
 
-  std::shared_ptr<Tensor> predict(Tensor &t, std::string input,
-                                  std::string output, DDim dDim);
+  std::shared_ptr<Tensor> predict(const Tensor &t, string input, string output,
+                                  DDim &dDim);
 };
