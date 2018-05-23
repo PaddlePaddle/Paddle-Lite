@@ -15,20 +15,18 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ==============================================================================*/
+
 #pragma once
-
-#include "framework/operator.h"
-#include "operators/math/pooling.h"
-#include "operators/op_param.h"
-
+#include "framework/tensor.h"
 namespace paddle_mobile {
 namespace operators {
-using framework::OpKernelBase;
+namespace math {
 
 template <typename DeviceType, typename T>
-class PoolKernel : public OpKernelBase<DeviceType, PoolParam> {
+class SoftmaxFuntor {
  public:
-  void Compute(const PoolParam &param) const override;
+  void operator()(const framework::Tensor *X, framework::Tensor *Y);
 };
+}  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile

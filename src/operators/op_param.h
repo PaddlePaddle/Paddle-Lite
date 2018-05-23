@@ -19,6 +19,7 @@ SOFTWARE.
 #pragma once
 
 #include <string>
+#include <vector>
 #include "common/log.h"
 #include "common/type_define.h"
 #include "framework/lod_tensor.h"
@@ -29,10 +30,15 @@ SOFTWARE.
 namespace paddle_mobile {
 namespace operators {
 
-using namespace framework;
+using framework::Attribute;
+using framework::AttributeMap;
+using framework::LoDTensor;
+using framework::Scope;
+using framework::Tensor;
+using std::string;
+using std::vector;
 
 class OpParam : PaddleMobileObject {
- public:
  protected:
   template <typename T>
   static T *InputFrom(const VariableNameMap &inputs, const Scope &scope) {
@@ -88,8 +94,8 @@ class OpParam : PaddleMobileObject {
   }
 
   template <typename T>
-  static std::vector<T *> InputMultiFrom(const VariableNameMap &inputs,
-                                         const Scope &scope) {
+  static vector<T *> InputMultiFrom(const VariableNameMap &inputs,
+                                    const Scope &scope) {
     return GetMultiVarValue<T>("X", inputs, scope);
   }
 
@@ -136,12 +142,12 @@ class OpParam : PaddleMobileObject {
   }
 
   template <typename T>
-  static const T GetAttr(const std::string &key, const AttributeMap &map) {
+  static const T GetAttr(const string &key, const AttributeMap &map) {
     return ((Attribute)map.at(key)).Get<T>();
   }
 
   template <typename T>
-  static T *GetVarValue(const std::string &key, const VariableNameMap &var_map,
+  static T *GetVarValue(const string &key, const VariableNameMap &var_map,
                         const Scope &scope) {
     auto var_vec = var_map.at(key);
     if (!var_vec.empty()) {
@@ -155,12 +161,12 @@ class OpParam : PaddleMobileObject {
   }
 
   template <typename T>
-  static std::vector<T *> GetMultiVarValue(const std::string &key,
-                                           const VariableNameMap &var_map,
-                                           const Scope &scope) {
+  static vector<T *> GetMultiVarValue(const string &key,
+                                      const VariableNameMap &var_map,
+                                      const Scope &scope) {
     auto var_vecs = var_map.at(key);
     assert(var_vecs.size() > 1);
-    std::vector<T *> var_res;
+    vector<T *> var_res;
     for (auto &var_vec : var_vecs) {
       auto var = scope.FindVar(var_vec);
       var_res.push_back(var->GetMutable<T>());
@@ -174,12 +180,12 @@ class ConvParam : OpParam {
   ConvParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
             const framework::AttributeMap &attrs,
             const framework::Scope &scope) {
-    filter_ = FilterFrom<framework::LoDTensor>(inputs, scope);
-    input_ = InputFrom<framework::Tensor>(inputs, scope);
-    output_ = OutputFrom<framework::Tensor>(outputs, scope);
-    strides_ = GetAttr<std::vector<int>>("strides", attrs);
-    paddings_ = GetAttr<std::vector<int>>("paddings", attrs);
-    dilations_ = GetAttr<std::vector<int>>("dilations", attrs);
+    filter_ = FilterFrom<LoDTensor>(inputs, scope);
+    input_ = InputFrom<Tensor>(inputs, scope);
+    output_ = OutputFrom<Tensor>(outputs, scope);
+    strides_ = GetAttr<vector<int>>("strides", attrs);
+    paddings_ = GetAttr<vector<int>>("paddings", attrs);
+    dilations_ = GetAttr<vector<int>>("dilations", attrs);
     groups = GetAttr<int>("groups", attrs);
   }
 
@@ -189,11 +195,11 @@ class ConvParam : OpParam {
 
   Tensor *Output() const { return output_; }
 
-  const std::vector<int> &Strides() const { return strides_; }
+  const vector<int> &Strides() const { return strides_; }
 
-  const std::vector<int> &Paddings() const { return paddings_; }
+  const vector<int> &Paddings() const { return paddings_; }
 
-  const std::vector<int> &Dilations() const { return dilations_; }
+  const vector<int> &Dilations() const { return dilations_; }
 
   const int &Groups() const { return groups; }
 
@@ -201,9 +207,9 @@ class ConvParam : OpParam {
   Tensor *input_;
   Tensor *output_;
   LoDTensor *filter_;
-  std::vector<int> strides_;
-  std::vector<int> paddings_;
-  std::vector<int> dilations_;
+  vector<int> strides_;
+  vector<int> paddings_;
+  vector<int> dilations_;
   int groups;
 };
 
@@ -276,14 +282,14 @@ class ConcatParam : public OpParam {
     axis_ = GetAttr<int>("axis", attrs);
   }
 
-  std::vector<Tensor *> Inputs() const { return inputs_; }
+  vector<Tensor *> Inputs() const { return inputs_; }
 
   Tensor *Out() const { return out_; }
 
   const int &Axis() const { return axis_; }
 
  private:
-  std::vector<Tensor *> inputs_;
+  vector<Tensor *> inputs_;
   Tensor *out_;
   int axis_;
 };
@@ -300,7 +306,7 @@ class LrnParam : public OpParam {
     alpha_ = GetAttr<float>("alpha", attrs);
     beta_ = GetAttr<float>("beta", attrs);
     k_ = GetAttr<float>("k", attrs);
-    data_format_ = GetAttr<std::string>("data_format", attrs);
+    data_format_ = GetAttr<string>("data_format", attrs);
   }
 
   const Tensor *InputX() const { return input_x_; }
@@ -317,7 +323,7 @@ class LrnParam : public OpParam {
 
   const float &K() const { return k_; }
 
-  const std::string &DataFormat() const { return data_format_; }
+  const string &DataFormat() const { return data_format_; }
 
  private:
   Tensor *input_x_;
@@ -327,7 +333,7 @@ class LrnParam : public OpParam {
   float alpha_;
   float beta_;
   float k_;
-  std::string data_format_;
+  string data_format_;
 };
 class BatchNormParam : OpParam {
  public:
@@ -363,7 +369,7 @@ class BatchNormParam : OpParam {
 
   const bool &IsTest() const { return is_test_; }
 
-  const std::string &DataFormat() const { return data_format_; }
+  const string &DataFormat() const { return data_format_; }
 
  private:
   Tensor *input_x_;
@@ -375,7 +381,7 @@ class BatchNormParam : OpParam {
   float epsilon_;
   float momentum_;
   bool is_test_;
-  std::string data_format_;
+  string data_format_;
 };
 class PoolParam : public OpParam {
  public:
@@ -385,10 +391,10 @@ class PoolParam : public OpParam {
     input_ = InputXFrom<framework::Tensor>(inputs, scope);
 
     output_ = OutFrom<framework::Tensor>(outputs, scope);
-    pooling_type_ = GetAttr<std::string>("pooling_type", attrs);
-    ksize_ = GetAttr<std::vector<int>>("ksize", attrs);
-    strides_ = GetAttr<std::vector<int>>("strides", attrs);
-    paddings_ = GetAttr<std::vector<int>>("paddings", attrs);
+    pooling_type_ = GetAttr<string>("pooling_type", attrs);
+    ksize_ = GetAttr<vector<int>>("ksize", attrs);
+    strides_ = GetAttr<vector<int>>("strides", attrs);
+    paddings_ = GetAttr<vector<int>>("paddings", attrs);
     ceil_mode_ = GetAttr<bool>("ceil_mode", attrs);
     gloabal_pooling_ = GetAttr<bool>("global_pooling", attrs);
   }
@@ -397,13 +403,13 @@ class PoolParam : public OpParam {
 
   Tensor *Output() const { return output_; }
 
-  const std::string &PoolingType() const { return pooling_type_; }
+  const string &PoolingType() const { return pooling_type_; }
 
-  const std::vector<int> &Ksize() const { return ksize_; }
+  const vector<int> &Ksize() const { return ksize_; }
 
-  const std::vector<int> &Strides() const { return strides_; }
+  const vector<int> &Strides() const { return strides_; }
 
-  const std::vector<int> &Paddings() const { return paddings_; }
+  const vector<int> &Paddings() const { return paddings_; }
 
   bool isCeilMode() const { return ceil_mode_; }
 
@@ -412,10 +418,10 @@ class PoolParam : public OpParam {
  private:
   Tensor *input_;
   Tensor *output_;
-  std::string pooling_type_;
-  std::vector<int> ksize_;
-  std::vector<int> strides_;
-  std::vector<int> paddings_;
+  string pooling_type_;
+  vector<int> ksize_;
+  vector<int> strides_;
+  vector<int> paddings_;
   bool ceil_mode_;
   bool gloabal_pooling_ = false;
 };
@@ -429,10 +435,10 @@ class PriorBoxParam : public OpParam {
     input_image_ = InputImageFrom<framework::Tensor>(inputs, scope);
     output_boxes_ = OutputBoxesFrom<framework::Tensor>(outputs, scope);
     output_variances_ = OutputVariancesFrom<framework::Tensor>(outputs, scope);
-    min_sizes_ = GetAttr<std::vector<float>>("min_sizes", attrs);
-    max_sizes_ = GetAttr<std::vector<float>>("max_sizes", attrs);
-    aspect_ratios_ = GetAttr<std::vector<float>>("aspect_ratios", attrs);
-    variances_ = GetAttr<std::vector<float>>("variances", attrs);
+    min_sizes_ = GetAttr<vector<float>>("min_sizes", attrs);
+    max_sizes_ = GetAttr<vector<float>>("max_sizes", attrs);
+    aspect_ratios_ = GetAttr<vector<float>>("aspect_ratios", attrs);
+    variances_ = GetAttr<vector<float>>("variances", attrs);
     flip_ = GetAttr<bool>("flip", attrs);
     clip_ = GetAttr<bool>("clip", attrs);
     step_w_ = GetAttr<float>("step_w", attrs);
@@ -447,13 +453,13 @@ class PriorBoxParam : public OpParam {
 
   Tensor *OutputVariances() const { return output_variances_; }
 
-  const std::vector<float> &MinSizes() const { return min_sizes_; }
+  const vector<float> &MinSizes() const { return min_sizes_; }
 
-  const std::vector<float> &MaxSizes() const { return max_sizes_; }
+  const vector<float> &MaxSizes() const { return max_sizes_; }
 
-  const std::vector<float> &AspectRatios() const { return aspect_ratios_; }
+  const vector<float> &AspectRatios() const { return aspect_ratios_; }
 
-  const std::vector<float> &Variances() const { return variances_; }
+  const vector<float> &Variances() const { return variances_; }
 
   const bool &Flip() const { return flip_; }
 
@@ -470,10 +476,10 @@ class PriorBoxParam : public OpParam {
   Tensor *input_image_;
   Tensor *output_boxes_;
   Tensor *output_variances_;
-  std::vector<float> min_sizes_;
-  std::vector<float> max_sizes_;
-  std::vector<float> aspect_ratios_;
-  std::vector<float> variances_;
+  vector<float> min_sizes_;
+  vector<float> max_sizes_;
+  vector<float> aspect_ratios_;
+  vector<float> variances_;
   bool flip_;
   bool clip_;
   float step_w_;
@@ -509,5 +515,22 @@ class BoxCoderParam : public OpParam {
   Tensor *output_box_;
   std::string code_type_;
 };
+
+class SoftmaxParam : public OpParam {
+ public:
+  SoftmaxParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+               const framework::AttributeMap &attrs,
+               const framework::Scope &scope) {
+    input_x_ = InputXFrom<framework::Tensor>(inputs, scope);
+    out_ = OutFrom<framework::Tensor>(outputs, scope);
+  }
+  const Tensor *InputX() const { return input_x_; }
+  Tensor *Out() const { return out_; }
+
+ private:
+  Tensor *input_x_;
+  Tensor *out_;
+};
+
 }  // namespace operators
 }  // namespace paddle_mobile
