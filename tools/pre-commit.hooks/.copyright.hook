@@ -3,10 +3,10 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import argparse
-import io, re
-import sys, os
-import subprocess
+import io
 import platform
+import re
+import subprocess
 
 COPYRIGHT = '''
 Copyright (c) 2016 Baidu, Inc. All Rights Reserved.
@@ -46,21 +46,26 @@ else:
 
 
 def generate_copyright(template, lang='C'):
+    end_line = ""
     if lang == 'Python':
-        LANG_COMMENT_MARK = '#'
+        lang_coment_mark = '# '
+        start = lang_coment_mark
+        blank = " "
     else:
-        LANG_COMMENT_MARK = "//"
-
+        lang_coment_mark = ""
+        start = "/* "
+        blank = ""
+        end_line = "==============================================================================*/"
     lines = template.split(NEW_LINE_MARK)
-    BLANK = " "
-    ans = LANG_COMMENT_MARK + BLANK + COPYRIGHT_HEADER + NEW_LINE_MARK
+
+    ans = start + blank + COPYRIGHT_HEADER + NEW_LINE_MARK
+
     for lino, line in enumerate(lines):
-        if lino == 0 or lino == 1 or lino == len(lines) - 1: continue
-        if len(line)  == 0:
-            BLANK = ""
-        else:
-            BLANK = " "
-        ans += LANG_COMMENT_MARK + BLANK + line + NEW_LINE_MARK
+        if lino == 0 or lino == 1 or lino == len(lines) - 1:
+            continue
+        ans += lang_coment_mark + blank + line + NEW_LINE_MARK
+
+    ans += end_line
 
     return ans + "\n"
 
@@ -77,12 +82,6 @@ def lang_type(filename):
     elif filename.endswith(".cc"):
         return "C"
     elif filename.endswith(".cpp"):
-        return "C"
-    elif filename.endswith(".cu"):
-        return "C"
-    elif filename.endswith(".cuh"):
-        return "C"
-    elif filename.endswith(".go"):
         return "C"
     elif filename.endswith(".proto"):
         return "C"
@@ -105,9 +104,10 @@ def main(argv=None):
         fd = io.open(filename, encoding="utf-8")
         first_line = fd.readline()
         second_line = fd.readline()
-        if "COPYRIGHT (C)" in first_line.upper(): continue
-        if first_line.startswith("#!") or PYTHON_ENCODE.match(
-                second_line) != None or PYTHON_ENCODE.match(first_line) != None:
+        if "COPYRIGHT (C)" in first_line.upper():
+            continue
+        if first_line.startswith("/*") or first_line.startswith("#!") or PYTHON_ENCODE.match(
+                second_line) is not None or PYTHON_ENCODE.match(first_line) is not None:
             continue
         original_contents = io.open(filename, encoding="utf-8").read()
         new_contents = generate_copyright(
@@ -116,9 +116,16 @@ def main(argv=None):
         retv = 1
         with io.open(filename, 'w') as output_file:
             output_file.write(new_contents)
+            print(new_contents)
 
     return retv
 
 
+def test_generate_copyright():
+    print(generate_copyright(COPYRIGHT))
+
+
 if __name__ == '__main__':
+    # test_generate_copyright()
     exit(main())
+
