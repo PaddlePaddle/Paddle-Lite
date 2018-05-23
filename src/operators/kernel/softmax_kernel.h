@@ -18,7 +18,6 @@ SOFTWARE.
 #pragma once
 
 #include "framework/operator.h"
-#include "operators/math/pooling.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
@@ -26,9 +25,9 @@ namespace operators {
 using framework::OpKernelBase;
 
 template <typename DeviceType, typename T>
-class PoolKernel : public OpKernelBase<DeviceType, PoolParam> {
+class SoftmaxKernel : public OpKernelBase<DeviceType, SoftmaxParam> {
  public:
-  void Compute(const PoolParam &param) const override;
+  void Compute(const SoftmaxParam &param) const override;
 };
 }  // namespace operators
 }  // namespace paddle_mobile
