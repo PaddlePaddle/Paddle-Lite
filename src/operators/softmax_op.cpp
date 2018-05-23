@@ -12,14 +12,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+#include "operators/softmax_op.h"
 
-#ifdef __CUDACC__
-#define HOSTDEVICE __host__ __device__
-#define DEVICE __device__
-#define HOST __host__
-#else
-#define HOSTDEVICE
-#define DEVICE
-#define HOST
-#endif
+namespace paddle_mobile {
+namespace operators {
+template <typename DeviceType, typename T>
+void SoftmaxOp<DeviceType, T>::InferShape() const {
+  param_.Out()->Resize(param_.InputX()->dims());
+}
+template class SoftmaxOp<CPU, float>;
+}  // namespace operators
+}  // namespace paddle_mobile
