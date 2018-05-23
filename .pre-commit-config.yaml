@@ -16,16 +16,25 @@ repos:
     -   id: detect-private-key
         files: (?!.*tar.gz)^.*$ 
     -   id: end-of-file-fixer
-        files: (src).*\.(md|py|mm|swift|java|c|cc|cxx|cpp|cu|h|hpp|hxx)$
+        files: (src).*\.(md|py|mm|swift|java|c|cc|cxx|cpp|h|hpp|hxx)$
     -   id: trailing-whitespace
-        files: (src).*\.(md|py|mm|swift|java|c|cc|cxx|cpp|cu|h|hpp|hxx)$
+        files: (src).*\.(md|py|mm|swift|java|c|cc|cxx|cpp|h|hpp|hxx)$
+
+-   repo: local
+    hooks:
+    -   id: copyright
+        name: copyright
+        entry: python ./tools/pre-commit.hooks/copyright.hook
+        language: system
+        files: (src).*\.(c|cc|cxx|cpp|h|hpp|hxx|py)$
+        exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$
 
 -   repo: local
     hooks:
     -   id: clang-format
         name: clang-format
         description: Format files with ClangFormat.
-        entry: bash ./tools/pre-commit.hooks/.clang-format.hook -i
+        entry: bash ./tools/pre-commit.hooks/clang-format.hook -i
         language: system
         files: (src).*\.(c|cc|cxx|cpp|h|hpp|hxx)$
 
@@ -44,15 +53,8 @@ repos:
     -   id: cpplint
         name: cpplint
         description: Check C++ code style using cpplint.
-        entry: bash ./tools/pre-commit.hooks/.cpplint.hook
+        entry: bash ./tools/pre-commit.hooks/cpplint.hook
         language: system
-        files: (src).*\.(c|cc|cxx|cpp|cu|h|hpp|hxx)$
+        files: (src).*\.(c|cc|cxx|cpp|h|hpp|hxx)$
         exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$i | *\.pb\.cpp
-#-   repo: local
-#    hooks:
-#    -   id: copyright_checker
-#        name: copyright_checker
-#        entry: python ./tools/pre-commit.hooks/.copyright.hook
-#        language: system
-#        files: (src).*\.(c|cc|cxx|cpp|cu|h|hpp|hxx|proto|py)$
-#        exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$
+
