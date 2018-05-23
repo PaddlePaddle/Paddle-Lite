@@ -25,7 +25,7 @@ repos:
     -   id: clang-format
         name: clang-format
         description: Format files with ClangFormat.
-        entry: bash ./tools/pre-commit.hooks/.clang-format.hook -i
+        entry: bash ./tools/pre-commit.hooks/clang-format.hook -i
         language: system
         files: (src).*\.(c|cc|cxx|cpp|h|hpp|hxx)$
 
@@ -44,15 +44,16 @@ repos:
     -   id: cpplint
         name: cpplint
         description: Check C++ code style using cpplint.
-        entry: bash ./tools/pre-commit.hooks/.cpplint.hook
+        entry: bash ./tools/pre-commit.hooks/cpplint.hook
         language: system
         files: (src).*\.(c|cc|cxx|cpp|cu|h|hpp|hxx)$
         exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$i | *\.pb\.cpp
-#-   repo: local
-#    hooks:
-#    -   id: copyright_checker
-#        name: copyright_checker
-#        entry: python ./tools/pre-commit.hooks/.copyright.hook
-#        language: system
-#        files: (src).*\.(c|cc|cxx|cpp|cu|h|hpp|hxx|proto|py)$
-#        exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$
+
+-   repo: local
+    hooks:
+    -   id: copyright_checker
+        name: copyright_checker
+        entry: python ./tools/pre-commit.hooks/copyright.hook
+        language: system
+        files: \.(c|cc|cxx|cpp|cu|h|hpp|hxx|proto|py)$
+        exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$
