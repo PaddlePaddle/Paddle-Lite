@@ -55,6 +55,6 @@ repos:
         description: Check C++ code style using cpplint.
         entry: bash ./tools/pre-commit.hooks/cpplint.hook
         language: system
-        files: (src).*\.(c|cc|cxx|cpp|h|hpp|hxx)$
+        files: (test|src).*\.(c|cc|cxx|cpp|h|hpp|hxx)$
         exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$i | *\.pb\.cpp
 
