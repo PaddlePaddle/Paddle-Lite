@@ -19,8 +19,9 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace framework {
 
-template <typename Dtype> class TestConcatOp {
-public:
+template <typename Dtype>
+class TestConcatOp {
+ public:
   explicit TestConcatOp(const Program<Dtype> p) : program_(p) {
     if (use_optimize_) {
       to_predict_program_ = program_.optimizeProgram;
@@ -55,8 +56,8 @@ public:
     }
   }
 
-  std::shared_ptr<Tensor> predict_concat(Tensor &t1, Tensor &t2, Tensor &t3,
-                                         Tensor &t4) {
+  std::shared_ptr<Tensor> predict_concat(const Tensor &t1, const Tensor &t2,
+                                         const Tensor &t3, const Tensor &t4) {
     // feed
     auto scope = program_.scope;
     Variable *x1_feed_value = scope->Var("conv2d_3.tmp_1");
@@ -88,7 +89,7 @@ public:
     return out_tensor;
   }
 
-private:
+ private:
   const framework::Program<Dtype> program_;
   std::shared_ptr<ProgramDesc> to_predict_program_;
   std::map<framework::BlockDesc,
@@ -109,8 +110,8 @@ private:
 };
 
 template class TestConcatOp<CPU>;
-} // namespace framework
-} // namespace paddle_mobile
+}  // namespace framework
+}  // namespace paddle_mobile
 
 int main() {
   DLOG << "----------**********----------";

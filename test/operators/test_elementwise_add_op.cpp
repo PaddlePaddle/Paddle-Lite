@@ -19,8 +19,9 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace framework {
 
-template <typename Dtype> class TestElementwiseAddOp {
-public:
+template <typename Dtype>
+class TestElementwiseAddOp {
+ public:
   explicit TestElementwiseAddOp(const Program<Dtype> p) : program_(p) {
     if (use_optimize_) {
       to_predict_program_ = program_.optimizeProgram;
@@ -59,7 +60,7 @@ public:
     }
   }
 
-  std::shared_ptr<Tensor> predict_add(Tensor &t1, Tensor &t2) {
+  std::shared_ptr<Tensor> predict_add(const Tensor &t1, const Tensor &t2) {
     // feed
     auto scope = program_.scope;
     Variable *x_feed_value = scope->Var("batch_norm_2.tmp_2");
@@ -83,7 +84,7 @@ public:
     return out_tensor;
   }
 
-private:
+ private:
   const framework::Program<Dtype> program_;
   std::shared_ptr<ProgramDesc> to_predict_program_;
   std::map<framework::BlockDesc,
@@ -103,8 +104,8 @@ private:
 };
 
 template class TestElementwiseAddOp<CPU>;
-} // namespace framework
-} // namespace paddle_mobile
+}  // namespace framework
+}  // namespace paddle_mobile
 int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run ElementAddOp Test";

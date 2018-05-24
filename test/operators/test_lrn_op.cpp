@@ -19,8 +19,9 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace framework {
 
-template <typename Dtype> class TestLrnOp {
-public:
+template <typename Dtype>
+class TestLrnOp {
+ public:
   explicit TestLrnOp(const Program<Dtype> p) : program_(p) {
     if (use_optimize_) {
       to_predict_program_ = program_.optimizeProgram;
@@ -57,7 +58,7 @@ public:
     }
   }
 
-  std::shared_ptr<Tensor> predict_lrn(Tensor &t1) {
+  std::shared_ptr<Tensor> predict_lrn(const Tensor &t1) {
     // feed
     auto scope = program_.scope;
     Variable *x1_feed_value = scope->Var("pool2d_0.tmp_0");
@@ -77,7 +78,7 @@ public:
     return out_tensor;
   }
 
-private:
+ private:
   const framework::Program<Dtype> program_;
   std::shared_ptr<ProgramDesc> to_predict_program_;
   std::map<framework::BlockDesc,
@@ -97,8 +98,8 @@ private:
 };
 
 template class TestLrnOp<CPU>;
-} // namespace framework
-} // namespace paddle_mobile
+}  // namespace framework
+}  // namespace paddle_mobile
 
 int main() {
   DLOG << "----------**********----------";
