@@ -14,14 +14,14 @@ limitations under the License. */
 
 #include <fstream>
 
-#include "../src/io.h"
+#include "io.h"
 #include "common/log.h"
-#include "framework/framework.pb.h"
-#include "framework/lod_tensor.h"
-#include "framework/program_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
-#define PADDLE_MOBILE_DEBUG 1
+#include "framework/lod_tensor.h"
+#include "framework/framework.pb.h"
+#include "framework/program/program_desc.h"
+
 namespace paddle_mobile {
 
 void ReadBinaryFile(const std::string &filename, std::string *contents) {
@@ -152,7 +152,7 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
           LoadVar(tensor, dirname + "/" + var_desc->Name());
         }
       } else {
-        //  TODO by someone
+        // TODO(codeWorm): some.
       }
     }
   }
@@ -303,7 +303,7 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
         is.read(static_cast<char *>(memory), memory_size * type_size);
         is.close();
       } else {
-        //  TODO
+        // TODO
       }
     }
   }
