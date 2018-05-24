@@ -51,14 +51,14 @@ struct PaddleMobileException : public std::exception {
                                                __FILE__, __LINE__);        \
   }
 
-#define PADDLE_MOBILE_ENFORCE(stat, ...)                                       \
+#define PADDLE_MOBILE_ENFORCE(stat, ...)                                      \
   {                                                                           \
     if (stat) {                                                               \
     } else {                                                                  \
       char buffer[1000];                                                      \
       snprintf(buffer, sizeof(buffer), __VA_ARGS__);                          \
       std::string detail(buffer);                                             \
-      throw paddle_mobile::PaddleMobileException("paddle-mobile enforce",      \
+      throw paddle_mobile::PaddleMobileException("paddle-mobile enforce",     \
                                                  buffer, __FILE__, __LINE__); \
     }                                                                         \
   }
