@@ -12,21 +12,21 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "/io.h"
+#include "io.h"
 #include "framework/program/program-optimize/node.h"
 #include "framework/program/program-optimize/program_optimize.h"
 
 int main() {
-  Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::Loader<paddle_mobile::CPU> loader;
   //    "../../../test/models/googlenet"
   auto program = loader.Load("../models/googlenet");
-  ProgramOptimize optimize;
+  paddle_mobile::framework::ProgramOptimize optimize;
   //  program.originProgram->Description("origin");
   auto optimize_program = optimize.FushionOptimize(program.originProgram);
   if (optimize_program != nullptr) {
     //    optimize_program->Description("optimize");
   } else {
-    LOG(kLOG_ERROR) << "optimize_program is null";
+    LOG(paddle_mobile::kLOG_ERROR) << "optimize_program is null";
   }
   return 0;
 }
