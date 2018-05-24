@@ -12,13 +12,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "operators/math/Gemm.h"
-#include <iostream>
+#include "operators/math/gemm.h"
 
 namespace paddle_mobile {
 namespace operators {
 namespace math {
-// 将A矩阵分块复制到连续内存
+// 将A矩阵分块复制到连续内存(ColMajor)
 void PackMatrixA(int m, int k, int paddingM, const float *A, int lda,
                  float *buffer) {
   int i, j;
@@ -45,15 +44,45 @@ void PackMatrixA(int m, int k, int paddingM, const float *A, int lda,
   }
 }
 
-// 将B矩阵分块复制到连续内存
+// 将A矩阵分块复制到连续内存(RowMajor)
+void PackMatrixA_(int m, int k, int paddingM, const float *A, int lda,
+                  float *buffer) {
+  int i, j;
+  const float *Ai, *Ai1, *Ai2, *Ai3;
+  for (i = 0; i < m - paddingM; i += MR) {
+    Ai = &A(i, 0);
+    Ai1 = &A(i + 1, 0);
+    Ai2 = &A(i + 2, 0);
+    Ai3 = &A(i + 3, 0);
+    for (int j = 0; j < k; ++j) {
+      *buffer++ = *Ai++;
+      *buffer++ = *Ai1++;
+      *buffer++ = *Ai2++;
+      *buffer++ = *Ai3++;
+    }
+  }
+  if (paddingM != 0) {
+    for (j = 0; j < k; ++j) {
+      for (i = m - paddingM; i < m; ++i) {
+        *buffer++ = A(i, j);
+      }
+      for (i = m; i < m + (MR - paddingM); ++i) {
+        *buffer++ = 0;
+      }
+    }
+  }
+}
+
+// 将B矩阵分块复制到连续内存(ColMajor)
 void PackMatrixB(int k, int n, int paddingN, const float *B, int ldb,
                  float *buffer) {
   int i, j;
+  const float *Bj, *Bj1, *Bj2, *Bj3;
   for (j = 0; j < n - paddingN; j += NR) {
-    const float *Bj = &B(0, j);
-    const float *Bj1 = &B(0, j + 1);
-    const float *Bj2 = &B(0, j + 2);
-    const float *Bj3 = &B(0, j + 3);
+    Bj = &B(0, j);
+    Bj1 = &B(0, j + 1);
+    Bj2 = &B(0, j + 2);
+    Bj3 = &B(0, j + 3);
     for (i = 0; i < k; ++i) {
       *buffer++ = *Bj++;
       *buffer++ = *Bj1++;
@@ -64,7 +93,33 @@ void PackMatrixB(int k, int n, int paddingN, const float *B, int ldb,
   if (paddingN != 0) {
     for (i = 0; i < k; ++i) {
       for (int j = n - paddingN; j < n; ++j) {
-        const float *Bij = &B(i, j);
+        *buffer++ = B(i, j);
+      }
+      for (int j = n; j < n + (NR - paddingN); ++j) {
+        *buffer++ = 0;
+      }
+    }
+  }
+}
+
+// 将B矩阵分块复制到连续内存(RowMajor)
+void PackMatrixB_(int k, int n, int paddingN, const float *B, int ldb,
+                  float *buffer) {
+  int i, j;
+  const float *Bij;
+  for (j = 0; j < n - paddingN; j += NR) {
+    for (i = 0; i < k; ++i) {
+      Bij = &B(i, j);
+      *buffer++ = *Bij;
+      *buffer++ = *(Bij + 1);
+      *buffer++ = *(Bij + 2);
+      *buffer++ = *(Bij + 3);
+    }
+  }
+  if (paddingN != 0) {
+    for (i = 0; i < k; ++i) {
+      Bij = &B(i, n - paddingN);
+      for (int j = n - paddingN; j < n; ++j) {
         *buffer++ = *Bij++;
       }
       for (int j = n; j < n + (NR - paddingN); ++j) {
@@ -95,9 +150,9 @@ void InnerKernel(int m, int n, int k, const float *A, int lda, const float *B,
   static float packedB[KC * NC];
 
   if (first_time) {
-    PackMatrixB(k, n, _nc, B, ldb, packedB);
+    PackMatrixB_(k, n, _nc, B, ldb, packedB);
   }
-  PackMatrixA(m, k, _mc, A, lda, packedA);
+  PackMatrixA_(m, k, _mc, A, lda, packedA);
 
   int i, j, mc, nc;
 
