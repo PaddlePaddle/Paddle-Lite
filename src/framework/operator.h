@@ -18,17 +18,19 @@ limitations under the License. */
 #include <string>
 #include <utility>
 #include <vector>
+
 #include "common/type_define.h"
 #include "common/types.h"
 #include "common/variant.h"
-#include "framework/attribute.h"
-#include "framework/block_desc.h"
-#include "framework/op_info.h"
-#include "framework/op_kernel_type.h"
-#include "framework/paddle_mobile_object.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
+#include "framework/op_info.h"
 #include "framework/variable.h"
+#include "framework/attribute.h"
+#include "framework/op_kernel_type.h"
+#include "framework/program/block_desc.h"
+#include "framework/paddle_mobile_object.h"
+#include "framework/program/program-optimize/node.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -101,6 +103,31 @@ class OpKernelBase : PaddleMobileObject {
       const ::paddle_mobile::framework::AttributeMap &attrs,                   \
       std::shared_ptr<::paddle_mobile::framework::Scope> scope)                \
       : parent_cls<Dtype, T>(type, inputs, outputs, attrs, scope) {}
+
+class FusionOpMatcher: PaddleMobileObject{
+ public:
+  FusionOpMatcher() {}
+
+  virtual std::string Type() = 0;
+
+  virtual void FolderNodes(Node &node) {
+    node.Folder(node_.Depth(), Type(), {});
+
+  }
+
+  virtual Node &BeginNode() {
+    return node_;
+  }
+
+  std::string BeginType() {
+    return node_.BeginType();
+  }
+
+ protected:
+  Node node_;
+  std::string type_;
+  std::shared_ptr<OpDesc> new_opdesc_;
+};
 
 }  // namespace framework
 }  // namespace paddle_mobile
