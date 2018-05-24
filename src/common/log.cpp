@@ -14,6 +14,4 @@ limitations under the License. */
 
 #include "log.h"
 
-namespace paddle_mobile {
-
-}
+namespace paddle_mobile {}

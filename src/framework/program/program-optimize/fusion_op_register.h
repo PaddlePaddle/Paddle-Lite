@@ -25,8 +25,8 @@ namespace framework {
 
 class FusionOpRegister {
  public:
-  static FusionOpRegister *Instance() {
-    static FusionOpRegister *regist = nullptr;
+  static FusionOpRegister* Instance() {
+    static FusionOpRegister* regist = nullptr;
     if (regist == nullptr) {
       regist = new FusionOpRegister();
     }
@@ -47,9 +47,9 @@ class FusionOpRegister {
   FusionOpRegister() {}
 };
 
-class FusionOpRegistrar{
+class FusionOpRegistrar {
  public:
-  explicit FusionOpRegistrar(FusionOpMatcher* matcher){
+  explicit FusionOpRegistrar(FusionOpMatcher* matcher) {
     FusionOpRegister::Instance()->regist(matcher);
   }
 };
