@@ -16,39 +16,42 @@ limitations under the License. */
 
 #include <map>
 #include <string>
-#include <vector>
 
-#include "framework.pb.h"
-#include "framework/program/block_desc.h"
-#include "framework/program/program.h"
-#include "framework/program/program_desc.h"
-#include "operator.h"
-#include "scope.h"
-#include "tensor.h"
-#include "variable.h"
+#include "framework/operator.h"
+#include "node.h"
 
 namespace paddle_mobile {
 namespace framework {
 
-template <typename Dtype>
-class Executor {
+class FusionOpRegister {
  public:
-  Executor() = default;
+  static FusionOpRegister* Instance() {
+    static FusionOpRegister* regist = nullptr;
+    if (regist == nullptr) {
+      regist = new FusionOpRegister();
+    }
+    return regist;
+  }
 
-  Executor(const Program<Dtype> p);
+  void regist(FusionOpMatcher* matcher) {
+    std::shared_ptr<FusionOpMatcher> shared_matcher(matcher);
+    matchers_[matcher->Type()] = shared_matcher;
+  }
 
-  std::shared_ptr<Tensor> predict(Tensor &t);
+  const std::map<std::string, std::shared_ptr<FusionOpMatcher>> Matchers() {
+    return matchers_;
+  }
 
+ private:
+  std::map<std::string, std::shared_ptr<FusionOpMatcher>> matchers_;
+  FusionOpRegister() {}
+};
+
+class FusionOpRegistrar {
  public:
-  const framework::Program<Dtype> program_;
-  std::shared_ptr<ProgramDesc> to_predict_program_;
-
-  void predict(const Tensor &t, int block_id);
-
-  std::map<framework::BlockDesc,
-           std::vector<std::shared_ptr<OperatorBase<Dtype>>>>
-      ops_of_block_;
-  bool use_optimize_ = false;
+  explicit FusionOpRegistrar(FusionOpMatcher* matcher) {
+    FusionOpRegister::Instance()->regist(matcher);
+  }
 };
 
 }  // namespace framework

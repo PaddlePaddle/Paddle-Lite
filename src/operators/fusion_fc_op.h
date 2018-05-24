@@ -16,20 +16,34 @@ limitations under the License. */
 
 #include <string>
 
-#include "common/types.h"
-#include "framework/lod_tensor.h"
-#include "framework/paddle_mobile_object.h"
-#include "framework/program/program.h"
+#include "framework/operator.h"
+#include "framework/program/program-optimize/fusion_op_register.h"
 
 namespace paddle_mobile {
+namespace operators {
 
-template <typename Dtype, Precision P = Precision::FP32>
-class Loader : PaddleMobileObject {
+class FusionFcMatcher : public framework::FusionOpMatcher {
  public:
-  const framework::Program<Dtype, P> Load(const std::string &dirname);
+  FusionFcMatcher() {
+    node_ = framework::Node("mul");
+    node_ > std::make_shared<framework::Node>("elementwise_add");
+  }
 
- private:
-  void LoadVar(framework::LoDTensor *tensor, const std::string &file_path);
+  void FolderNodes(framework::Node &node) {
+    std::vector<std::shared_ptr<framework::OpDesc>> origin_descs =
+        node.OpDescs(node_.Depth());
+    node.Folder(node_.Depth(), Type(), {{"elementwise_add", {"Y", "Z"}}});
+  }
+
+  std::string Type() { return "fc"; }
 };
 
+class FusionFcOp {
+ public:
+ private:
+};
+
+static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
+
+}  // namespace operators
 }  // namespace paddle_mobile
