@@ -14,22 +14,35 @@ limitations under the License. */
 
 #pragma once
 
-#include <string>
+#include <vector>
 
 #include "common/types.h"
-#include "framework/lod_tensor.h"
 #include "framework/paddle_mobile_object.h"
-#include "framework/program/program.h"
+#include "framework/program/block_desc.h"
 
 namespace paddle_mobile {
+namespace framework {
 
-template <typename Dtype, Precision P = Precision::FP32>
-class Loader : PaddleMobileObject {
+class ProgramDesc : PaddleMobileObject {
  public:
-  const framework::Program<Dtype, P> Load(const std::string &dirname);
+  friend class Node;
+  friend class ProgramOptimize;
+  explicit ProgramDesc(const proto::ProgramDesc &desc);
+  std::shared_ptr<BlockDesc> Block(size_t idx);
+  const std::vector<std::shared_ptr<BlockDesc>> &Blocks() { return blocks_; }
+  ProgramDesc(const ProgramDesc &program_desc) {
+    for (auto &block : program_desc.blocks_) {
+      std::shared_ptr<BlockDesc> copy_block =
+          std::make_shared<BlockDesc>(*block);
+      blocks_.push_back(copy_block);
+    }
+  }
+
+  void Description(std::string header = "");
 
  private:
-  void LoadVar(framework::LoDTensor *tensor, const std::string &file_path);
+  std::vector<std::shared_ptr<BlockDesc>> blocks_;
 };
 
+}  // namespace framework
 }  // namespace paddle_mobile

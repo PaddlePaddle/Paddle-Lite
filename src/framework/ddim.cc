@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "ddim.h"
+#include <algorithm>
 
 namespace paddle_mobile {
 namespace framework {
