@@ -12,13 +12,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "io.h"
+#include "/io.h"
 
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
 
-  //../../../test/models/googlenet
-  //../../../test/models/mobilenet
+  //  ../../../test/models/googlenet
+  //  ../../../test/models/mobilenet
   auto program = loader.Load(std::string("../models/googlenet"));
   return 0;
 }

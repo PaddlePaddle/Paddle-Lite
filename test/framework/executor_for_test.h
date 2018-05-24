@@ -21,20 +21,20 @@ limitations under the License. */
 #include "operators/pool_op.h"
 #include "operators/softmax_op.h"
 
-using paddle_mobile::framework::Tensor;
-using paddle_mobile::framework::LoDTensor;
-using std::string;
+using paddle_mobile::framework::BlockDesc;
 using paddle_mobile::framework::DDim;
 using paddle_mobile::framework::Executor;
-using paddle_mobile::framework::Program;
-using paddle_mobile::framework::BlockDesc;
+using paddle_mobile::framework::LoDTensor;
 using paddle_mobile::framework::OpDesc;
+using paddle_mobile::framework::Program;
+using paddle_mobile::framework::Tensor;
 using paddle_mobile::framework::Variable;
+using std::string;
 template <typename DeviceType, typename OpType>
 class Executor4Test : public Executor<DeviceType> {
  public:
   Executor4Test(Program<DeviceType> p, string op_type);
 
   std::shared_ptr<Tensor> predict(const Tensor &t, string input, string output,
-                                  DDim &dDim);
+                                  const DDim &dDim);
 };
