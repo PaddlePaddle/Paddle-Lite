@@ -12,8 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "program_desc.h"
 
@@ -29,7 +29,7 @@ ProgramDesc::ProgramDesc(const proto::ProgramDesc &desc) {
 
 void ProgramDesc::Description(std::string header) {
 #ifdef PADDLE_MOBILE_DEBUG
-  if (header.size()){
+  if (header.size()) {
     LOG(kLOG_INFO) << header;
   }
   for (const auto &block : this->blocks_) {

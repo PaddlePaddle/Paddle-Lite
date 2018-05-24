@@ -111,15 +111,18 @@ class Attribute {
       return vistor(attr.variant_.Get<std::string>());
     } else if (attr.variant_.TypeId() == typeid(std::vector<int>).hash_code()) {
       return vistor(attr.variant_.Get<std::vector<int>>());
-    } else if (attr.variant_.TypeId() == typeid(std::vector<float>).hash_code()) {
+    } else if (attr.variant_.TypeId() ==
+               typeid(std::vector<float>).hash_code()) {
       return vistor(attr.variant_.Get<std::vector<float>>());
-    } else if (attr.variant_.TypeId() == typeid(std::vector<std::string>).hash_code()) {
+    } else if (attr.variant_.TypeId() ==
+               typeid(std::vector<std::string>).hash_code()) {
       return vistor(attr.variant_.Get<std::vector<std::string>>());
     } else if (attr.variant_.TypeId() == typeid(bool).hash_code()) {
       return vistor(attr.variant_.Get<bool>());
-    } else if (attr.variant_.TypeId() == typeid(std::vector<bool>).hash_code()) {
+    } else if (attr.variant_.TypeId() ==
+               typeid(std::vector<bool>).hash_code()) {
       return vistor(attr.variant_.Get<std::vector<bool>>());
-    }  else if (attr.variant_.TypeId() == typeid(int64_t).hash_code()) {
+    } else if (attr.variant_.TypeId() == typeid(int64_t).hash_code()) {
       return vistor(attr.variant_.Get<int64_t>());
     } else {
       throw std::bad_exception();
@@ -151,9 +154,6 @@ class AttrReader {
  private:
   const AttributeMap &attrs_;
 };
-
-
-
 
 Print &operator<<(Print &printer, const Attribute &op_desc);
 

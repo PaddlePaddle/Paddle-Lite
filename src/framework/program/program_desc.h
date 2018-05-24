@@ -17,8 +17,8 @@ limitations under the License. */
 #include <vector>
 
 #include "common/types.h"
-#include "framework/program/block_desc.h"
 #include "framework/paddle_mobile_object.h"
+#include "framework/program/block_desc.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -33,12 +33,13 @@ class ProgramDesc : PaddleMobileObject {
   ProgramDesc(const ProgramDesc &program_desc) {
     for (auto &block : program_desc.blocks_) {
       std::shared_ptr<BlockDesc> copy_block =
-              std::make_shared<BlockDesc>(*block);
+          std::make_shared<BlockDesc>(*block);
       blocks_.push_back(copy_block);
     }
   }
 
   void Description(std::string header = "");
+
  private:
   std::vector<std::shared_ptr<BlockDesc>> blocks_;
 };
