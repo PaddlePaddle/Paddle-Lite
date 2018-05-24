@@ -12,19 +12,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-//
-// Created by liuRuiLong on 2018/5/4.
-//
-#include "framework/op_desc.h"
 #include <string>
 #include <vector>
+
+#include "framework/program/op_desc.h"
 
 namespace paddle_mobile {
 namespace framework {
 
-OpDesc::OpDesc(const proto::OpDesc &desc) : desc_(desc) {
-  for (int i = 0; i < desc_.inputs_size(); ++i) {
-    const proto::OpDesc::Var &var = desc_.inputs(i);
+OpDesc::OpDesc(const proto::OpDesc &desc) : type_(desc.type()) {
+  for (int i = 0; i < desc.inputs_size(); ++i) {
+    const proto::OpDesc::Var &var = desc.inputs(i);
     std::vector<std::string> &args = inputs_[var.parameter()];
     int arg_size = var.arguments_size();
     for (int j = 0; j < arg_size; ++j) {
@@ -32,8 +30,8 @@ OpDesc::OpDesc(const proto::OpDesc &desc) : desc_(desc) {
     }
   }
 
-  for (int i = 0; i < desc_.outputs_size(); ++i) {
-    const proto::OpDesc::Var &var = desc_.outputs(i);
+  for (int i = 0; i < desc.outputs_size(); ++i) {
+    const proto::OpDesc::Var &var = desc.outputs(i);
     std::vector<std::string> &args = outputs_[var.parameter()];
     int arg_size = var.arguments_size();
     for (int j = 0; j < arg_size; ++j) {
@@ -41,7 +39,7 @@ OpDesc::OpDesc(const proto::OpDesc &desc) : desc_(desc) {
     }
   }
 
-  for (const proto::OpDesc::Attr &attr : desc_.attrs()) {
+  for (const proto::OpDesc::Attr &attr : desc.attrs()) {
     std::string attr_name = attr.name();
     if (attr.type() != proto::AttrType::BLOCK) {
       attrs_[attr_name] = Attribute::GetAttrValue(attr);
@@ -62,8 +60,27 @@ Attribute OpDesc::GetAttr(const std::string &name) const {
   return it->second;
 }
 
-const std::unordered_map<std::string, Attribute> &OpDesc::GetAttrMap() const {
+std::unordered_map<std::string, Attribute> &OpDesc::GetAttrMap() {
   return attrs_;
+}
+
+Print &operator<<(Print &printer, const OpDesc &op_desc) {
+  OpDesc &no_const_op_desc = const_cast<OpDesc &>(op_desc);
+  printer << "inputs: \n";
+  for (const auto &input : no_const_op_desc.GetInputs()) {
+    printer << input.first << " : " << input.second << "\n";
+  }
+
+  printer << "outputs: \n";
+  for (const auto &output : no_const_op_desc.GetOutputs()) {
+    printer << output.first << " : " << output.second << "\n";
+  }
+
+  printer << "outputs: \n";
+  for (const auto &attr : no_const_op_desc.GetAttrMap()) {
+    printer << attr.first << " : " << attr.second << "\n";
+  }
+  return printer;
 }
 
 }  // namespace framework
