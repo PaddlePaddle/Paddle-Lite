@@ -12,13 +12,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "executor_for_test.h"
+#include "framework/executor_for_test.h"
 
 template <typename DeviceType, typename OpType>
 Executor4Test<DeviceType, OpType>::Executor4Test(const Program<DeviceType> p,
                                                  std::string op_type)
     : Executor<DeviceType>(p) {
-
   if (this->program_.originProgram == nullptr) {
     LOG(paddle_mobile::LogLevel::kLOG_ERROR)
         << "to_predict_program_ == nullptr";
@@ -27,7 +26,7 @@ Executor4Test<DeviceType, OpType>::Executor4Test(const Program<DeviceType> p,
   const std::vector<std::shared_ptr<BlockDesc>> blocks =
       this->to_predict_program_->Blocks();
 
-  for (std::shared_ptr<BlockDesc> block_desc: blocks) {
+  for (std::shared_ptr<BlockDesc> block_desc : blocks) {
     std::vector<std::shared_ptr<OpDesc>> ops = block_desc->Ops();
     for (std::shared_ptr<OpDesc> op : ops) {
       if (op->Type() == op_type) {
@@ -43,9 +42,8 @@ Executor4Test<DeviceType, OpType>::Executor4Test(const Program<DeviceType> p,
 }
 
 template <typename DeviceType, typename OpType>
-std::shared_ptr<Tensor>
-Executor4Test<DeviceType, OpType>::predict(const Tensor &t, std::string input,
-                                           std::string output, DDim &dDim) {
+std::shared_ptr<Tensor> Executor4Test<DeviceType, OpType>::predict(
+    const Tensor &t, std::string input, std::string output, const DDim &dDim) {
   auto scope = this->program_.scope;
   Variable *g_feed_value = scope->Var(input);
   auto tensor = g_feed_value->GetMutable<Tensor>();
@@ -68,5 +66,5 @@ template class Executor4Test<
     paddle_mobile::CPU,
     paddle_mobile::operators::PoolOp<paddle_mobile::CPU, float>>;
 template class Executor4Test<
-        paddle_mobile::CPU,
-        paddle_mobile::operators::SoftmaxOp<paddle_mobile::CPU, float>>;
+    paddle_mobile::CPU,
+    paddle_mobile::operators::SoftmaxOp<paddle_mobile::CPU, float>>;
