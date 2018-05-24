@@ -19,7 +19,7 @@ limitations under the License. */
 
 #include "framework/operator.h"
 #include "framework/program/program_desc.h"
-#include "node.h"
+#include "framework/program/program-optimize/node.h"
 
 namespace paddle_mobile {
 

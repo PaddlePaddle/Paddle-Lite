@@ -12,10 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "common/assert.h"
+#include "common/enforce.h"
 
 int main() {
-  PADDLE_MOBILE_ASSERT(false, "assert");
+  PADDLE_MOBILE_ENFORCE(false, "enforce");
   PADDLE_MOBILE_THROW_EXCEPTION("throw a exception");
   return 0;
 }
