@@ -1,25 +1,8 @@
-/* Copyright (c) 2016 Baidu, Inc. All Rights Reserved.
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-==============================================================================*/
-
 #pragma once
 
+#include "common/log.h"
 #include "common/variant.h"
-#include "framework.pb.h"
+#include "framework/framework.pb.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -104,6 +87,31 @@ class Attribute {
     return variant_.Get<T>();
   }
 
+  template <typename Vistor>
+  static typename Vistor::type_t ApplyVistor(Vistor vistor, Attribute attr) {
+    if (attr.variant_.TypeId() == typeid(int).hash_code()) {
+      return vistor(attr.variant_.Get<int>());
+    } else if (attr.variant_.TypeId() == typeid(float).hash_code()) {
+      return vistor(attr.variant_.Get<float>());
+    } else if (attr.variant_.TypeId() == typeid(std::string).hash_code()) {
+      return vistor(attr.variant_.Get<std::string>());
+    } else if (attr.variant_.TypeId() == typeid(std::vector<int>).hash_code()) {
+      return vistor(attr.variant_.Get<std::vector<int>>());
+    } else if (attr.variant_.TypeId() == typeid(std::vector<float>).hash_code()) {
+      return vistor(attr.variant_.Get<std::vector<float>>());
+    } else if (attr.variant_.TypeId() == typeid(std::vector<std::string>).hash_code()) {
+      return vistor(attr.variant_.Get<std::vector<std::string>>());
+    } else if (attr.variant_.TypeId() == typeid(bool).hash_code()) {
+      return vistor(attr.variant_.Get<bool>());
+    } else if (attr.variant_.TypeId() == typeid(std::vector<bool>).hash_code()) {
+      return vistor(attr.variant_.Get<std::vector<bool>>());
+    }  else if (attr.variant_.TypeId() == typeid(int64_t).hash_code()) {
+      return vistor(attr.variant_.Get<int64_t>());
+    } else {
+      throw std::bad_exception();
+    }
+  }
+
  private:
   Variant<int, float, std::string, std::vector<int>, std::vector<float>,
           std::vector<std::string>, bool, std::vector<bool>, BlockDesc *,
@@ -129,6 +137,11 @@ class AttrReader {
  private:
   const AttributeMap &attrs_;
 };
+
+
+
+
+Print &operator<<(Print &printer, const Attribute &op_desc);
 
 }  // namespace framework
 }  // namespace paddle_mobile

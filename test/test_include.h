@@ -12,17 +12,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "framework/block_desc.h"
+#include <map>
+#include <string>
+#include <vector>
+
+#include "framework/program/block_desc.h"
 #include "framework/framework.pb.h"
 #include "framework/lod_tensor.h"
 #include "framework/operator.h"
-#include "framework/program.h"
-#include "framework/program_desc.h"
+#include "framework/program/program.h"
+#include "framework/program/program_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
 #include "framework/variable.h"
 #include "io.h"
 #include "test_helper.h"
-#include <map>
-#include <string>
-#include <vector>
