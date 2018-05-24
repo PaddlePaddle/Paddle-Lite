@@ -24,7 +24,7 @@ class VarDesc {
  public:
   VarDesc(const proto::VarDesc &desc);
 
-  VarDesc(const VarDesc &var_desc):desc_(var_desc.desc_) {}
+  VarDesc(const VarDesc &var_desc) : desc_(var_desc.desc_) {}
 
   std::string Name() const { return desc_.name(); }
 

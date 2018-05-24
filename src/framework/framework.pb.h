@@ -124,7 +124,7 @@ void AddDescriptors();
 void InitDefaults();
 }  // namespace protobuf_framework_2eproto
 
-enum  VarType_Type {
+enum VarType_Type {
   VarType_Type_BOOL = 0,
   VarType_Type_INT16 = 1,
   VarType_Type_INT32 = 2,

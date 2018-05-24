@@ -14,8 +14,8 @@ limitations under the License. */
 
 #pragma once
 
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "common/log.h"
 #include "common/type_define.h"
@@ -32,14 +32,13 @@ class OpDesc : PaddleMobileObject {
   friend class Node;
   explicit OpDesc(const proto::OpDesc &desc);
 
-  OpDesc(const OpDesc &op_desc): type_(op_desc.type_) {
+  OpDesc(const OpDesc &op_desc) : type_(op_desc.type_) {
     this->inputs_ = op_desc.inputs_;
     this->outputs_ = op_desc.outputs_;
     this->attrs_ = op_desc.attrs_;
   }
 
-  OpDesc() {
-  }
+  OpDesc() {}
   const std::vector<std::string> &Input(const std::string &name) const;
   const std::vector<std::string> &Output(const std::string &name) const;
   Attribute GetAttr(const std::string &name) const;
@@ -52,17 +51,11 @@ class OpDesc : PaddleMobileObject {
 
   const std::string &Type() { return type_; }
 
-  void SetInputs(VariableNameMap inputs){
-    inputs_ = inputs;
-  }
+  void SetInputs(VariableNameMap inputs) { inputs_ = inputs; }
 
-  void SetOutputs(VariableNameMap outputs){
-    outputs_ = outputs;
-  }
+  void SetOutputs(VariableNameMap outputs) { outputs_ = outputs; }
 
-  void SetAttrMap(AttributeMap attrs){
-    attrs_ = attrs;
-  }
+  void SetAttrMap(AttributeMap attrs) { attrs_ = attrs; }
 
  private:
   std::string type_;

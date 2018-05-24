@@ -18,11 +18,11 @@ limitations under the License. */
 #include <string>
 #include <vector>
 
-#include "framework/program/block_desc.h"
 #include "framework.pb.h"
-#include "operator.h"
+#include "framework/program/block_desc.h"
 #include "framework/program/program.h"
 #include "framework/program/program_desc.h"
+#include "operator.h"
 #include "scope.h"
 #include "tensor.h"
 #include "variable.h"

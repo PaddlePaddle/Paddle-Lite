@@ -14,13 +14,13 @@ limitations under the License. */
 
 #include <fstream>
 
-#include "io.h"
 #include "common/log.h"
+#include "framework/framework.pb.h"
+#include "framework/lod_tensor.h"
+#include "framework/program/program_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
-#include "framework/lod_tensor.h"
-#include "framework/framework.pb.h"
-#include "framework/program/program_desc.h"
+#include "io.h"
 
 namespace paddle_mobile {
 

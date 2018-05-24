@@ -72,7 +72,8 @@ void Node::OpDescs(uint index,
   }
 }
 
-void Node::OpDescs(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc, Node *node) {
+void Node::OpDescs(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
+                   Node *node) {
   auto iter = std::find(op_desc->begin(), op_desc->end(), this->op_desc_);
   if (inputs_.size() > 1 && node != inputs_.back()) {
     return;
