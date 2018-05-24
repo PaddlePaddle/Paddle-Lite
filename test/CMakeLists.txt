@@ -58,5 +58,5 @@ ADD_EXECUTABLE(test-gemm common/test_gemm.cpp)
 target_link_libraries(test-gemm paddle-mobile)
 
 # gen test
-ADD_EXECUTABLE(test-exception common/test_exception.cpp)
-target_link_libraries(test-exception paddle-mobile)
+ADD_EXECUTABLE(test-assert common/test_assert.cpp)
+target_link_libraries(test-assert paddle-mobile)
