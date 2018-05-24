@@ -1,21 +1,34 @@
-/* Copyright (c) 2016 Baidu, Inc. All Rights Reserved.
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-==============================================================================*/
+#include "attribute.h"
 
 namespace paddle_mobile {
-namespace framework {}
+namespace framework {
+
+
+
+/*
+ * Variant<int, float, std::string, std::vector<int>, std::vector<float>,
+          std::vector<std::string>, bool, std::vector<bool>, BlockDesc *,
+          int64_t>
+ * */
+
+struct PrintVistor: Vistor<Print &>{
+  PrintVistor(Print &printer):printer_(printer){
+  }
+  template <typename T>
+  Print &operator()(const T &value){
+    printer_ << value;
+    return printer_;
+  }
+ private:
+  Print &printer_;
+};
+
+Print &operator<<(Print &printer, const Attribute &attr) {
+  Attribute::ApplyVistor(PrintVistor(printer), attr);
+//  std::vector<std::string> v = {"1", "2"};
+//  printer << (v);
+  return printer;
+}
+
+}
 }  // namespace paddle_mobile
