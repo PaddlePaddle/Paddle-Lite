@@ -19,7 +19,7 @@ limitations under the License. */
 #include "common/types.h"
 #include "framework/lod_tensor.h"
 #include "framework/paddle_mobile_object.h"
-#include "framework/program.h"
+#include "framework/program/program.h"
 
 namespace paddle_mobile {
 
