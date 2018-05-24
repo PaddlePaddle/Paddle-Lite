@@ -56,3 +56,7 @@ target_link_libraries(test-softmax paddle-mobile)
 # gen test
 ADD_EXECUTABLE(test-gemm common/test_gemm.cpp)
 target_link_libraries(test-gemm paddle-mobile)
+
+# gen test
+ADD_EXECUTABLE(test-enforce common/test_enforce.cpp)
+target_link_libraries(test-enforce paddle-mobile)
