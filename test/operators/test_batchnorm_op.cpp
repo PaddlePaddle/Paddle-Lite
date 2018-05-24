@@ -19,8 +19,9 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace framework {
 
-template <typename Dtype> class TestBatchNormOp {
-public:
+template <typename Dtype>
+class TestBatchNormOp {
+ public:
   explicit TestBatchNormOp(const Program<Dtype> p) : program_(p) {
     if (use_optimize_) {
       to_predict_program_ = program_.optimizeProgram;
@@ -59,8 +60,9 @@ public:
     }
   }
 
-  std::shared_ptr<Tensor> predict_bn(Tensor &t1, Tensor &t2, Tensor &t3,
-                                     Tensor &t4, Tensor &t5) {
+  std::shared_ptr<Tensor> predict_bn(const Tensor &t1, const Tensor &t2,
+                                     const Tensor &t3, const Tensor &t4,
+                                     const Tensor &t5) {
     // feed
     auto scope = program_.scope;
     Variable *x1_feed_value = scope->Var("conv2d_0.tmp_0");
@@ -96,7 +98,7 @@ public:
     return out_tensor;
   }
 
-private:
+ private:
   const framework::Program<Dtype> program_;
   std::shared_ptr<ProgramDesc> to_predict_program_;
   std::map<framework::BlockDesc,
@@ -117,8 +119,8 @@ private:
 };
 
 template class TestBatchNormOp<CPU>;
-} // namespace framework
-} // namespace paddle_mobile
+}  // namespace framework
+}  // namespace paddle_mobile
 
 int main() {
   DLOG << "----------**********----------";

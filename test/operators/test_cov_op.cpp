@@ -12,13 +12,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "../framework/executor_for_test.h"
-#include "../test_helper.h"
-#include "./io.h"
+#include <io>
+#include "framework/executor_for_test.h"
+#include "framework/test_helper.h"
 
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
-  //../models/image_classification_resnet.inference.model
+  //  ../models/image_classification_resnet.inference.model
   auto program = loader.Load(std::string("../models/googlenet"));
   if (program.originProgram == nullptr) {
     DLOG << "program file read fail";
@@ -32,8 +32,7 @@ int main() {
   SetupTensor<float>(&input, {1, 3, 32, 32}, static_cast<float>(0),
                      static_cast<float>(1));
   auto out_ddim = paddle_mobile::framework::make_ddim({1, 64, 56, 56});
-  auto output =
-      executor.predict(input, "data", "conv2d_0.tmp_0", out_ddim);
+  auto output = executor.predict(input, "data", "conv2d_0.tmp_0", out_ddim);
 
   auto output_ptr = output->data<float>();
   for (int j = 0; j < output->numel(); ++j) {
