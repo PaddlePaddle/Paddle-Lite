@@ -14,10 +14,10 @@ limitations under the License. */
 
 #pragma once
 
-// 矩阵取值运算宏，假设矩阵按列存储
-#define A(i, j) A[(j)*lda + (i)]
-#define B(i, j) B[(j)*ldb + (i)]
-#define C(i, j) C[(j)*ldc + (i)]
+// 矩阵取值运算宏，假设矩阵按行存储
+#define A(i, j) A[(i)*lda + (j)]
+#define B(i, j) B[(i)*ldb + (j)]
+#define C(i, j) C[(i)*ldc + (j)]
 
 // 分块计算的块大小，mc 与 kc 分别对应分块计算时的 m 与 k
 #define MC 384
@@ -32,13 +32,21 @@ namespace paddle_mobile {
 namespace operators {
 namespace math {
 
-// 将 A 矩阵分块复制到连续内存
+// 将 A 矩阵分块复制到连续内存(ColMajor)
 void PackMatrixA(int m, int k, int paddingM, const float *A, int lda,
                  float *buffer);
 
-// 将 B 矩阵分块复制到连续内存
+// 将 B 矩阵分块复制到连续内存(ColMajor)
 void PackMatrixB(int k, int n, int paddingN, const float *B, int ldb,
                  float *buffer);
+
+// 将 A 矩阵分块复制到连续内存(RowMajor)
+void PackMatrixA_(int m, int k, int paddingM, const float *A, int lda,
+                  float *buffer);
+
+// 将 B 矩阵分块复制到连续内存(RowMajor)
+void PackMatrixB_(int k, int n, int paddingN, const float *B, int ldb,
+                  float *buffer);
 
 // 分块矩阵乘法
 void InnerKernel(int m, int n, int k, const float *A, int lda, const float *B,
