@@ -34,8 +34,6 @@ if (ANDROID)
     link_directories(third-party/protobuf/armeabi-v7a)
 else()
     # link openblas
-    include_directories(third-party/openblas/include)
-    link_directories(third-party/openblas/lib)
     link_directories(third-party/protobuf/lib)
 endif ()
 
@@ -47,7 +45,7 @@ if (ANDROID)
     # openblas.a need log lib
     target_link_libraries(paddle-mobile protobuf-lite)
 else()
-    target_link_libraries(paddle-mobile protobuf-lite openblas)
+    target_link_libraries(paddle-mobile protobuf-lite)
 endif ()
 #add_dependencies(paddle-mobile openblas_proj)
 
