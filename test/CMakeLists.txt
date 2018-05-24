@@ -1,6 +1,9 @@
 
+set(dir ${CMAKE_CURRENT_SOURCE_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${dir}/build")
+
 # gen test
-ADD_EXECUTABLE(test-conv-op  operators/test_cov_op.cpp test_helper.h  test_include.h framework/executor_for_test.h framework/executor_for_test.cpp)
+ADD_EXECUTABLE(test-conv-op  operators/test_cov_op.cpp test_helper.h  test_include.h executor_for_test.h)
 target_link_libraries(test-conv-op paddle-mobile)
 
 # gen test
@@ -46,11 +49,11 @@ target_link_libraries(test-optimize paddle-mobile)
 
 
 #gen test
-ADD_EXECUTABLE(test-pool operators/test_pool_op.cpp test_helper.h test_include.h framework/executor_for_test.h framework/executor_for_test.cpp)
+ADD_EXECUTABLE(test-pool operators/test_pool_op.cpp test_helper.h test_include.h executor_for_test.h)
 target_link_libraries(test-pool paddle-mobile)
 
 #gen test
-ADD_EXECUTABLE(test-softmax operators/test_softmax_op.cpp test_helper.h test_include.h framework/executor_for_test.h framework/executor_for_test.cpp)
+ADD_EXECUTABLE(test-softmax operators/test_softmax_op.cpp test_helper.h test_include.h executor_for_test.h)
 target_link_libraries(test-softmax paddle-mobile)
 
 # gen test
