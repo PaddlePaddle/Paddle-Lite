@@ -24,17 +24,17 @@ class FushionConvAddReluOpMatcher : public framework::FusionOpMatcher {
  public:
   FushionConvAddReluOpMatcher() {
     node_ = framework::Node("conv2d");
-    node_ > std::make_shared<framework::Node>("elementwise_add") > std::make_shared<framework::Node>("relu");
+    node_ > std::make_shared<framework::Node>("elementwise_add") >
+        std::make_shared<framework::Node>("relu");
   }
 
   void FolderNodes(framework::Node &node) {
-    std::vector<std::shared_ptr<framework::OpDesc>> origin_descs = node.OpDescs(node_.Depth());
-    node.Folder(node_.Depth(), Type(), {{"elementwise_add" , {"Y", "Z"}}});
+    std::vector<std::shared_ptr<framework::OpDesc>> origin_descs =
+        node.OpDescs(node_.Depth());
+    node.Folder(node_.Depth(), Type(), {{"elementwise_add", {"Y", "Z"}}});
   }
 
-  std::string Type() {
-    return "FusionConvAddRelu";
-  }
+  std::string Type() { return "FusionConvAddRelu"; }
 };
 
 class FusionFcOp {
@@ -42,7 +42,8 @@ class FusionFcOp {
  private:
 };
 
-static framework::FusionOpRegistrar fc_registrar(new FushionConvAddReluOpMatcher());
+static framework::FusionOpRegistrar fc_registrar(
+    new FushionConvAddReluOpMatcher());
 
-}
-}
+}  // namespace operators
+}  // namespace paddle_mobile
