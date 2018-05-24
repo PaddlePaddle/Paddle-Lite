@@ -14,24 +14,25 @@ limitations under the License. */
 
 #include <iostream>
 #include "common/log.h"
-#include "operators/math/Gemm.h"
+#include "operators/math/gemm.h"
 
-#define a(i, j) a[(j)*lda + (i)]
-#define b(i, j) b[(j)*ldb + (i)]
-#define c1(i, j) c1[(j)*ldc + (i)]
+#define a(i, j) a[(i)*lda + (j)]
+#define b(i, j) b[(i)*ldb + (j)]
+#define c1(i, j) c1[(i)*ldc + (j)]
+
+#define m 7
+#define n 7
+#define k 7
 
 int main() {
-  int m = 45;
-  int n = 46;
-  int k = 125;
-  int lda = m;
-  int ldb = k;
-  int ldc = m;
+  int lda = k;
+  int ldb = n;
+  int ldc = n;
 
-  float a[45 * 125];
-  float b[125 * 46];
-  float c[45 * 46] = {0};
-  float c1[45 * 46] = {0};
+  float a[7 * 7];
+  float b[7 * 7];
+  float c[7 * 7] = {0};
+  float c1[7 * 7] = {0};
   for (int i = 0; i < m * k; ++i) {
     a[i] = 2;
   }
