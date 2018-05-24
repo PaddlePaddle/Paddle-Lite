@@ -15,7 +15,6 @@ limitations under the License. */
 #include "common/log.h"
 
 int main() {
-
   DLOGF("DASJFDAFJ%d -- %f", 12345, 344.234);
 
   LOGF(paddle_mobile::kLOG_DEBUG, "DASJFDAFJ%d -- %f", 12345, 344.234);
