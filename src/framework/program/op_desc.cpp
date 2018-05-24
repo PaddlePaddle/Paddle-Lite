@@ -20,7 +20,7 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace framework {
 
-OpDesc::OpDesc(const proto::OpDesc &desc):type_(desc.type()) {
+OpDesc::OpDesc(const proto::OpDesc &desc) : type_(desc.type()) {
   for (int i = 0; i < desc.inputs_size(); ++i) {
     const proto::OpDesc::Var &var = desc.inputs(i);
     std::vector<std::string> &args = inputs_[var.parameter()];
@@ -65,7 +65,7 @@ std::unordered_map<std::string, Attribute> &OpDesc::GetAttrMap() {
 }
 
 Print &operator<<(Print &printer, const OpDesc &op_desc) {
-  OpDesc &no_const_op_desc =  const_cast<OpDesc &>(op_desc);
+  OpDesc &no_const_op_desc = const_cast<OpDesc &>(op_desc);
   printer << "inputs: \n";
   for (const auto &input : no_const_op_desc.GetInputs()) {
     printer << input.first << " : " << input.second << "\n";

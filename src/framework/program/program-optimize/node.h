@@ -20,8 +20,8 @@ limitations under the License. */
 #include <vector>
 
 #include "common/log.h"
-#include "framework/program/op_desc.h"
 #include "framework/paddle_mobile_object.h"
+#include "framework/program/op_desc.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -42,7 +42,8 @@ class Node : PaddleMobileObject {
       std::map<std::string, std::pair<std::string, std::string>> change_map);
   std::vector<std::shared_ptr<framework::OpDesc>> OpDescs(uint size);
   std::vector<std::shared_ptr<framework::OpDesc>> OpDescs();
-  void OpDescs(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,  Node *node);
+  void OpDescs(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
+               Node *node);
   std::shared_ptr<framework::OpDesc> OpDesc() { return op_desc_; }
   std::string BeginType() { return type_; }
   void Description();

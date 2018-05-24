@@ -33,8 +33,8 @@ std::vector<std::shared_ptr<OpDesc>> BlockDesc::Ops() const {
   return res;
 }
 
-BlockDesc::BlockDesc(const proto::BlockDesc &desc):
-        index_(desc.idx()), parent_index_(desc.parent_idx()) {
+BlockDesc::BlockDesc(const proto::BlockDesc &desc)
+    : index_(desc.idx()), parent_index_(desc.parent_idx()) {
   for (const proto::VarDesc &var_desc : desc.vars()) {
     vars_[var_desc.name()].reset(new VarDesc(var_desc));
   }

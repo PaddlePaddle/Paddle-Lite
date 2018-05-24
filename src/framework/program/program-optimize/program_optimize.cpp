@@ -23,7 +23,6 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::Optimize() {}
 
 std::shared_ptr<ProgramDesc> ProgramOptimize::FushionOptimize(
     std::shared_ptr<ProgramDesc> ori_des) {
-
   ProgramDesc *optimize_program = new ProgramDesc(*ori_des);
 
   for (int i = 0; i < optimize_program->Blocks().size(); ++i) {
@@ -96,9 +95,8 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FushionOptimize(
       }
     }
 
-//    DLOG << "node: \n" << *begin_node;
+    //    DLOG << "node: \n" << *begin_node;
     block->ops_ = begin_node->OpDescs();
-
   }
   std::shared_ptr<ProgramDesc> shared_optimzie(optimize_program);
   return shared_optimzie;
