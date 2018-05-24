@@ -15,7 +15,7 @@ limitations under the License. */
 #include "operators/math/softmax.h"
 #include "common/types.h"
 #if __ARM_NEON
-#include <algorithm>
+#include <math.h>
 #include "operators/math/math_func_neon.h"
 #endif
 
