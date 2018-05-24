@@ -12,20 +12,24 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include "io.h"
 #include <fstream>
+#include <vector>
 
+#include "common/enforce.h"
 #include "common/log.h"
 #include "framework/framework.pb.h"
 #include "framework/lod_tensor.h"
 #include "framework/program/program_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
-#include "io.h"
 
 namespace paddle_mobile {
 
 void ReadBinaryFile(const std::string &filename, std::string *contents) {
   std::ifstream fin(filename, std::ios::in | std::ios::binary);
+  PADDLE_MOBILE_ENFORCE(fin.is_open(), "open file: %s failed",
+                        filename.c_str());
   fin.seekg(0, std::ios::end);
   contents->clear();
   contents->resize(fin.tellg());
@@ -38,7 +42,8 @@ template <typename Dtype, Precision P>
 void Loader<Dtype, P>::LoadVar(framework::LoDTensor *tensor,
                                const std::string &file_path) {
   std::ifstream is(file_path);
-
+  PADDLE_MOBILE_ENFORCE(is.is_open(), "open file: %s failed",
+                        file_path.c_str());
   std::fpos<mbstate_t> pos;
   pos = is.tellg();  // save   current   position
   is.seekg(0, std::ios::end);
@@ -238,6 +243,8 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
           var.type().type() != framework::proto::VarType::FETCH_LIST) {
         std::string file_path = dirname + "/" + var.name();
         std::ifstream is(file_path);
+        PADDLE_MOBILE_ENFORCE(is.is_open(), "open file: %s failed",
+                              file_path.c_str());
         std::fpos<mbstate_t> pos;
         pos = is.tellg();  // save   current   position
         is.seekg(0, std::ios::end);
