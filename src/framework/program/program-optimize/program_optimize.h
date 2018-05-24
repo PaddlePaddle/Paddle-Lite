@@ -18,8 +18,8 @@ limitations under the License. */
 #include <vector>
 
 #include "framework/operator.h"
+#include "framework/program/program-optimize/node.h"
 #include "framework/program/program_desc.h"
-#include "node.h"
 
 namespace paddle_mobile {
 
