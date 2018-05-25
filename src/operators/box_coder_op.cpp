@@ -48,3 +48,7 @@ void BoxCoderOp<Dtype, T>::InferShape() const {
 template class BoxCoderOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+USE_OP(box_coder);
+REGISTER_OPERATOR(box_coder, ops::BoxCoderOp);

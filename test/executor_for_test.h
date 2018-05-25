@@ -15,11 +15,13 @@ limitations under the License. */
 #pragma once
 
 #include <string>
+#include <vector>
 #include "common/log.h"
 #include "framework/executor.h"
 #include "operators/conv_op.h"
 #include "operators/pool_op.h"
 #include "operators/softmax_op.h"
+#include "operators/transpose_op.h"
 
 using paddle_mobile::framework::BlockDesc;
 using paddle_mobile::framework::DDim;
