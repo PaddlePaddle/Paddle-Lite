@@ -12,13 +12,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "io.h"
+#include "framework/operator.h"
+#include "operators/op_param.h"
 
-int main() {
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+#pragma once;
 
-  //  ../../../test/models/googlenet
-  //  ../../../test/models/mobilenet
-  auto program = loader.Load(std::string("../models/googlenet"));
-  return 0;
-}
+namespace paddle_mobile {
+namespace operators {
+
+template <typename DeviceType, typename T>
+class MultiClassNMSKernel
+    : public framework::OpKernelBase<DeviceType, MultiClassNMSParam> {
+ public:
+  void Compute(const MultiClassNMSParam& param) const;
+};
+}  // namespace operators
+}  // namespace paddle_mobile
