@@ -27,5 +27,5 @@ template class BatchNormOp<CPU, float>;
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-USE_OP(batchnorm);
-REGISTER_OPERATOR(batchnorm, ops::BatchNormOp);
+USE_OP(batch_norm);
+REGISTER_OPERATOR(batch_norm, ops::BatchNormOp);
