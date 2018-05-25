@@ -12,10 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifndef TEST_TEST_INCLUDE_H_
-#define TEST_TEST_INCLUDE_H_
-
 #pragma once
+
 #include <random>
 #include "common/log.h"
 #include "framework/ddim.h"
@@ -33,5 +31,3 @@ void SetupTensor(paddle_mobile::framework::Tensor *input,
     input_ptr[i] = static_cast<T>(uniform_dist(rng) * (upper - lower) + lower);
   }
 }
-
-#endif
