@@ -1,7 +1,8 @@
 # Paddle-Mobile 
 
-![License MIT](https://img.shields.io/github/license/mashape/apistatus.svg)  [![Build Status](https://travis-ci.org/PaddlePaddle/paddle-mobile.svg?branch=develop&longCache=true&style=flat-square)](https://travis-ci.org/PaddlePaddle/paddle-mobile)
-
+ 
+[![Build Status](https://travis-ci.org/PaddlePaddle/paddle-mobile.svg?branch=develop&longCache=true&style=flat-square)](https://travis-ci.org/PaddlePaddle/paddle-mobile)
+[![License](https://img.shields.io/badge/license-Apache%202-brightgreen.svg)](LICENSE)
 
 
 This project is used to develop the next version deep learning freamwork for mobile device.
