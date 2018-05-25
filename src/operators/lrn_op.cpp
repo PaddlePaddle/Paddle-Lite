@@ -25,3 +25,7 @@ void LrnOp<Dtype, T>::InferShape() const {
 template class LrnOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+USE_OP(lrn);
+REGISTER_OPERATOR(lrn, ops::LrnOp);

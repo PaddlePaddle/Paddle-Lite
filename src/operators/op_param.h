@@ -583,5 +583,25 @@ class MultiClassNMSParam : public OpParam {
   float score_threshold_;
 };
 
+class TransposeParam : public OpParam {
+ public:
+  TransposeParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+                 const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<Tensor>(inputs, scope);
+    out_ = OutFrom<Tensor>(outputs, scope);
+    axis_ = GetAttr<vector<int>>("axis", attrs);
+  }
+
+  const Tensor *InputX() const { return input_x_; }
+
+  Tensor *Out() const { return out_; }
+
+  const vector<int> &Axis() const { return axis_; }
+
+ private:
+  Tensor *input_x_;
+  Tensor *out_;
+  vector<int> axis_;
+};
 }  // namespace operators
 }  // namespace paddle_mobile

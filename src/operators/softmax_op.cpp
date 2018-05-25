@@ -23,3 +23,7 @@ void SoftmaxOp<DeviceType, T>::InferShape() const {
 template class SoftmaxOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+USE_OP(softmax);
+REGISTER_OPERATOR(softmax, ops::SoftmaxOp);

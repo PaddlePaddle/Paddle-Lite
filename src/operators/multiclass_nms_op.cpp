@@ -35,3 +35,7 @@ void MultiClassNMSOp<Dtype, T>::InferShape() const {
 template class MultiClassNMSOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+USE_OP(multiclass_nms);
+REGISTER_OPERATOR(multiclass_nms, ops::MultiClassNMSOp);
