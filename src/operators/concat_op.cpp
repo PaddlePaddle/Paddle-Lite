@@ -58,3 +58,7 @@ template class ConcatOp<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+USE_OP(concat);
+REGISTER_OPERATOR(concat, ops::ConcatOp);

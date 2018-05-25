@@ -25,6 +25,7 @@ limitations under the License. */
 #include "framework/attribute.h"
 #include "framework/op_info.h"
 #include "framework/op_kernel_type.h"
+#include "framework/op_registry.h"
 #include "framework/paddle_mobile_object.h"
 #include "framework/program/block_desc.h"
 #include "framework/program/program-optimize/node.h"

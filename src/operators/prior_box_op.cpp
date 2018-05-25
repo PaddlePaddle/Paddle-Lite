@@ -45,3 +45,7 @@ void PriorBoxOp<Dtype, T>::InferShape() const {
 template class PriorBoxOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+USE_OP(prior_box);
+REGISTER_OPERATOR(prior_box, ops::PriorBoxOp);
