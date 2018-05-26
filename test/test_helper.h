@@ -23,7 +23,7 @@ limitations under the License. */
 
 static const std::string g_googlenet = "../models/googlenet";
 static const std::string g_mobilenet = "../models/mobilenet";
-static const std::string g_mobilenet_ssd = "../models/mobilenet";
+static const std::string g_mobilenet_ssd = "../models/mobilenet+ssd";
 static const std::string g_squeezenet = "../models/squeezenet";
 static const std::string g_resnet =
     "../models/image_classification_resnet.inference.model";

@@ -29,6 +29,9 @@ int main() {
 
   paddle_mobile::framework::Tensor input;
   GetInput<float>(g_test_image_1x3x224x224, &input, {1, 3, 224, 224});
+  //  // use SetupTensor if not has local input image .
+  //  SetupTensor<float>(&input, {1, 3, 224, 224}, static_cast<float>(0),
+  //                     static_cast<float>(1));
 
   auto out_ddim = paddle_mobile::framework::make_ddim({1, 64, 112, 112});
   auto output = executor.predict(input, "data", "conv2d_0.tmp_0", out_ddim);
