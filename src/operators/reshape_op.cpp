@@ -15,18 +15,18 @@ limitations under the License. */
 #include "operators/reshape_op.h"
 #include <vector>
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        template <typename Dtype, typename T>
-        void ReshapeOp<Dtype, T>::InferShape() const {
-            /// todo: add InputShape() detection.
-            auto &shape = param_.Shape();
-            auto input_x_dims = param_.InputX()->dims();
-            auto out_dims = ValidateShape(shape, input_x_dims);
-            param_.Out()->Resize(out_dims);
-        }
-        template class ReshapeOp<CPU, float>;
-    }  // namespace operators
+template <typename Dtype, typename T>
+void ReshapeOp<Dtype, T>::InferShape() const {
+  /// todo: add InputShape() detection.
+  auto &shape = param_.Shape();
+  auto input_x_dims = param_.InputX()->dims();
+  auto out_dims = ValidateShape(shape, input_x_dims);
+  param_.Out()->Resize(out_dims);
+}
+template class ReshapeOp<CPU, float>;
+}  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;

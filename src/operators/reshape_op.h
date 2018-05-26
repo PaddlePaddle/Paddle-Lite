@@ -21,32 +21,31 @@ limitations under the License. */
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        using paddle_mobile::framework::Tensor;
+using paddle_mobile::framework::Tensor;
 
-        template <typename DeviceType, typename T>
-        class ReshapeOp : public framework::OperatorWithKernel<DeviceType> {
-        public:
-            ReshapeOp(const std::string &type, const VariableNameMap &inputs,
-                       const VariableNameMap &outputs,
-                       const framework::AttributeMap attrs,
-                       std::shared_ptr<framework::Scope> scope)
-                    : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
-                                                                scope),
-                      param_(inputs, outputs, attrs, *scope) {}
+template <typename DeviceType, typename T>
+class ReshapeOp : public framework::OperatorWithKernel<DeviceType> {
+ public:
+  ReshapeOp(const std::string &type, const VariableNameMap &inputs,
+            const VariableNameMap &outputs, const framework::AttributeMap attrs,
+            std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
+                                                  scope),
+        param_(inputs, outputs, attrs, *scope) {}
 
-            void Run() const {
-                operators::ReshapeKernel<DeviceType, T> kernel;
-                kernel.Compute(param_);
-            }
+  void Run() const {
+    operators::ReshapeKernel<DeviceType, T> kernel;
+    kernel.Compute(param_);
+  }
 
-            using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
-            void InferShape() const override;
+  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  void InferShape() const override;
 
-        protected:
-            ReshapeParam param_;
-        };
+ protected:
+  ReshapeParam param_;
+};
 
-    }  // namespace operators
+}  // namespace operators
 }  // namespace paddle_mobile

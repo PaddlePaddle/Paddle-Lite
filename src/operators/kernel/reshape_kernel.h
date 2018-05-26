@@ -20,58 +20,55 @@ limitations under the License. */
 #pragma once;
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
+inline framework::DDim ValidateShape(const std::vector<int> shape,
+                                     const framework::DDim& in_dims) {
+  const int64_t in_size = framework::product(in_dims);
+  // only one dimension can be set to -1, whose size will be automatically
+  // infered.
+  const int64_t unk_dim_val = -1;
+  const int64_t copy_dim_val = 0;
 
-        inline framework::DDim ValidateShape(const std::vector<int> shape,
-                                             const framework::DDim &in_dims) {
-            const int64_t in_size = framework::product(in_dims);
-            // only one dimension can be set to -1, whose size will be automatically
-            // infered.
-            const int64_t unk_dim_val = -1;
-            const int64_t copy_dim_val = 0;
+  std::vector<int64_t> output_shape(shape.size(), 0);
+  int64_t capacity = 1;
+  int unk_dim_idx = -1;
+  for (size_t i = 0; i < shape.size(); ++i) {
+    if (shape[i] == unk_dim_val) {
+      PADDLE_MOBILE_ENFORCE(
+          unk_dim_idx == -1,
+          "Only one input dimension of Attr(shape) can be unknown.");
+      unk_dim_idx = i;
+    } else if (shape[i] == copy_dim_val) {
+      PADDLE_MOBILE_ENFORCE(
+          static_cast<int>(i) < in_dims.size(),
+          "The index of dimension to copy from input shape must be less "
+          "than the size of input shape.");
+    } else {
+      PADDLE_MOBILE_ENFORCE(
+          shape[i] > 0,
+          "Each input dimension of Attr(shape) must not be negtive except "
+          "one unknown dimension.");
+    }
 
-            std::vector<int64_t> output_shape(shape.size(), 0);
-            int64_t capacity = 1;
-            int unk_dim_idx = -1;
-            for (size_t i = 0; i < shape.size(); ++i) {
-                if (shape[i] == unk_dim_val) {
-                    PADDLE_MOBILE_ENFORCE(
-                            unk_dim_idx == -1,
-                            "Only one input dimension of Attr(shape) can be unknown.");
-                    unk_dim_idx = i;
-                } else if (shape[i] == copy_dim_val) {
-                    PADDLE_MOBILE_ENFORCE(
-                            static_cast<int>(i) < in_dims.size(),
-                            "The index of dimension to copy from input shape must be less "
-                                    "than the size of input shape.");
-                } else {
-                    PADDLE_MOBILE_ENFORCE(
-                            shape[i] > 0,
-                            "Each input dimension of Attr(shape) must not be negtive except "
-                                    "one unknown dimension.");
-                }
+    capacity *= (shape[i] ? shape[i] : in_dims[i]);
+    output_shape[i] = (shape[i] ? static_cast<int64_t>(shape[i]) : in_dims[i]);
+  }
 
-                capacity *= (shape[i] ? shape[i] : in_dims[i]);
-                output_shape[i] =
-                        (shape[i] ? static_cast<int64_t>(shape[i]) : in_dims[i]);
-            }
+  if (unk_dim_idx != -1) {
+    output_shape[unk_dim_idx] = -in_size / capacity;
+    PADDLE_MOBILE_ENFORCE(output_shape[unk_dim_idx] * capacity == -in_size,
+                          "Invalid shape is given.");
+  } else {
+    PADDLE_MOBILE_ENFORCE(capacity == in_size, "Invalid shape is given.");
+  }
+  return framework::make_ddim(output_shape);
+}
 
-            if (unk_dim_idx != -1) {
-                output_shape[unk_dim_idx] = -in_size / capacity;
-                PADDLE_MOBILE_ENFORCE(output_shape[unk_dim_idx] * capacity == -in_size,
-                                      "Invalid shape is given.");
-            } else {
-                PADDLE_MOBILE_ENFORCE(capacity==in_size, "Invalid shape is given.");
-            }
-            return framework::make_ddim(output_shape);
-        }
-
-        template <typename DeviceType, typename T>
-        class ReshapeKernel
-                : public framework::OpKernelBase<DeviceType, ReshapeParam> {
-        public:
-            void Compute(const ReshapeParam& param) const;
-        };
-    }  // namespace operators
+template <typename DeviceType, typename T>
+class ReshapeKernel : public framework::OpKernelBase<DeviceType, ReshapeParam> {
+ public:
+  void Compute(const ReshapeParam& param) const;
+};
+}  // namespace operators
 }  // namespace paddle_mobile
