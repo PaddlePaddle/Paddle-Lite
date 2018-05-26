@@ -635,6 +635,6 @@ class TransposeParam : public OpParam {
   Tensor *out_;
   vector<int> axis_;
 };
-  
+
 }  // namespace operators
 }  // namespace paddle_mobile
