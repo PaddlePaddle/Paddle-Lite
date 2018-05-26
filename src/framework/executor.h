@@ -28,9 +28,5 @@ limitations under the License. */
 #include "variable.h"
 
 namespace paddle_mobile {
-namespace framework {
-
-
-
-}  // namespace framework
+namespace framework {}  // namespace framework
 }  // namespace paddle_mobile

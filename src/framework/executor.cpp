@@ -17,8 +17,5 @@ limitations under the License. */
 #include "operators/conv_op.h"
 
 namespace paddle_mobile {
-namespace framework {
-
-
-}  // namespace framework
+namespace framework {}  // namespace framework
 }  // namespace paddle_mobile
