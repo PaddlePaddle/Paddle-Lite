@@ -542,6 +542,22 @@ class SoftmaxParam : public OpParam {
   Tensor *input_x_;
   Tensor *out_;
 };
+
+class SigmoidParam : public OpParam {
+ public:
+  SigmoidParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+               const framework::AttributeMap &attrs,
+               const framework::Scope &scope) {
+    input_x_ = InputXFrom<framework::Tensor>(inputs, scope);
+    out_ = OutFrom<framework::Tensor>(outputs, scope);
+  }
+  const Tensor *InputX() const { return input_x_; }
+  Tensor *Out() const { return out_; }
+
+ private:
+  Tensor *input_x_;
+  Tensor *out_;
+};
 class MultiClassNMSParam : public OpParam {
  public:
   MultiClassNMSParam(const VariableNameMap &inputs,
