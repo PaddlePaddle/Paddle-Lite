@@ -224,6 +224,18 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
     }
 
     for (const auto &var : block.vars()) {
+      if (var.type().type() == framework::proto::VarType::LOD_TENSOR) {
+        LOG(kLOG_DEBUG1) << "var name: " << var.name();
+        const framework::proto::VarType::TensorDesc &tensor_desc =
+            var.type().lod_tensor().tensor();
+        LOG(kLOG_DEBUG2) << "in var tensor desc dims size: "
+                         << tensor_desc.dims().size();
+        for (int l = 0; l < tensor_desc.dims().size(); ++l) {
+          LOG(kLOG_DEBUG3) << "var tensor desc dim " << l
+                           << " value: " << tensor_desc.dims()[l];
+        }
+      }
+
       if (var.persistable() &&
           var.type().type() != framework::proto::VarType::FEED_MINIBATCH &&
           var.type().type() != framework::proto::VarType::FETCH_LIST) {
