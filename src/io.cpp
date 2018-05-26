@@ -16,14 +16,16 @@ limitations under the License. */
 #include <fstream>
 #include <vector>
 
-#include "common/enforce.h"
 #include "common/log.h"
-#include "framework/framework.pb.h"
-#include "framework/lod_tensor.h"
-#include "framework/operator.h"
-#include "framework/program/program_desc.h"
+#include "common/enforce.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
+#include "framework/operator.h"
+#include "framework/lod_tensor.h"
+#include "framework/framework.pb.h"
+#include "framework/framework.pb-c.h"
+#include "framework/program/var_desc.h"
+#include "framework/program/program_desc.h"
 
 namespace paddle_mobile {
 
@@ -39,12 +41,37 @@ void ReadBinaryFile(const std::string &filename, std::string *contents) {
   fin.close();
 }
 
+static size_t ReadBuffer (const char *file_name, uint8_t **out) {
+  printf("%s \n", file_name);
+  FILE *fp;
+  fp = fopen(file_name, "rb");
+  PADDLE_MOBILE_ENFORCE(fp != NULL, "open failed !");
+
+  fseek(fp, 0, SEEK_END);
+  size_t size = ftell(fp);
+  rewind(fp);
+
+  DLOG << "model size: " << size;
+
+  *out = (uint8_t *)malloc(size);
+
+  size_t cur_len = 0;
+  size_t nread;
+  while ((nread=fread(*out + cur_len, 1, size - cur_len, fp)) != 0) {
+    cur_len += nread;
+  }
+  fclose(fp);
+  return cur_len;
+}
+
 template <typename Dtype, Precision P>
-void Loader<Dtype, P>::LoadVar(framework::LoDTensor *tensor,
+void Loader<Dtype, P>::LoadVar(framework::Variable *variable, const framework::VarDesc &var_desc,
                                const std::string &file_path) {
+  auto tensor = variable->GetMutable<framework::LoDTensor>();
   std::ifstream is(file_path);
   PADDLE_MOBILE_ENFORCE(is.is_open(), "open file: %s failed",
                         file_path.c_str());
+
   std::fpos<mbstate_t> pos;
   pos = is.tellg();  // save   current   position
   is.seekg(0, std::ios::end);
@@ -81,39 +108,44 @@ void Loader<Dtype, P>::LoadVar(framework::LoDTensor *tensor,
   std::unique_ptr<char[]> buf(new char[size]);
   is.read(reinterpret_cast<char *>(buf.get()), size);
 
-  framework::proto::VarType::TensorDesc desc;
-  desc.ParseFromArray(buf.get(), size);
+  const framework::TensorDesc &desc = var_desc.Tensor_desc();
+
+//  framework::TensorDesc &tensor_desc = variable->
+//  PaddleMobile__Framework__Proto__ProgramDesc *c_program;
+//  uint8_t *proto_buf = NULL;
+//  size_t read_size = ReadBuffer(file_path.c_str(), &proto_buf);
+//  c_program = paddle_mobile__framework__proto__program_desc__unpack(NULL, read_size, buf);
+
+//  paddle_mobile__framework__proto__var_type__tensor_desc__init()
+
 
   int memory_size = 1;
-  for (auto l : desc.dims()) {
+  for (auto l : desc.Dims()) {
     memory_size *= l;
   }
 
-  std::vector<int64_t> dims;
-  dims.reserve(static_cast<size_t>(desc.dims().size()));
-  std::copy(desc.dims().begin(), desc.dims().end(), std::back_inserter(dims));
-  tensor->Resize(framework::make_ddim(dims));
+  tensor->Resize(framework::make_ddim(desc.Dims()));
 
   void *memory = tensor;
   int type_size = 0;
-  switch (desc.data_type()) {
-    case framework::proto::VarType::FP16:
+  switch (desc.DataType()) {
+    case framework::VARTYPE_TYPE_FP16:
       type_size = 2;
       break;
-    case framework::proto::VarType::FP32:
+    case framework::VARTYPE_TYPE_FP32:
       type_size = 4;
       memory = tensor->mutable_data<float>();
       break;
-    case framework::proto::VarType::FP64:
+    case framework::VARTYPE_TYPE_FP64:
       type_size = 8;
       break;
-    case framework::proto::VarType::INT32:
+    case framework::VARTYPE_TYPE_INT32:
       type_size = 4;
       break;
-    case framework::proto::VarType::INT64:
+    case framework::VARTYPE_TYPE_INT64:
       type_size = 8;
       break;
-    case framework::proto::VarType::BOOL:
+    case framework::VARTYPE_TYPE_BOOL:
       type_size = 1;
       break;
     default:
@@ -128,13 +160,20 @@ template <typename Dtype, Precision P>
 const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
     const std::string &dirname) {
   std::string model_filename = dirname + "/__model__";
-  std::string program_desc_str;
-  ReadBinaryFile(model_filename, &program_desc_str);
-  framework::proto::ProgramDesc program_desc_proto;
-  program_desc_proto.ParseFromString(program_desc_str);
+  PaddleMobile__Framework__Proto__ProgramDesc *c_program;
+  uint8_t *buf = NULL;
+  size_t read_size = ReadBuffer(model_filename.c_str(), &buf);
+
+  PADDLE_MOBILE_ENFORCE(buf != NULL, "read from __model__ is null");
+
+  c_program = paddle_mobile__framework__proto__program_desc__unpack(NULL, read_size, buf);
+
+  PADDLE_MOBILE_ENFORCE(c_program != NULL, "program is null");
+
+  DLOG << "n_ops: " << (*c_program->blocks)->n_ops;
 
   std::shared_ptr<framework::ProgramDesc> originProgramDesc =
-      std::make_shared<framework::ProgramDesc>(program_desc_proto);
+      std::make_shared<framework::ProgramDesc>(c_program);
 
   framework::Program<Dtype, P> program;
   program.model_path = dirname;
@@ -148,172 +187,26 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
   for (const auto &block : originProgramDesc->Blocks()) {
     for (int i = 0; i < block->Vars().size(); ++i) {
       std::shared_ptr<framework::VarDesc> var_desc = block->Vars()[i];
+//      DLOG << "var name-- " << var_desc->Name();
       auto var = scope->Var(var_desc->Name());
-      if (var_desc->GetType() == framework::proto::VarType::LOD_TENSOR) {
+
+      if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
         if (var_desc->Persistable() &&
-            var_desc->GetType() != framework::proto::VarType::FEED_MINIBATCH &&
-            var_desc->GetType() != framework::proto::VarType::FETCH_LIST) {
-          auto tensor = var->GetMutable<framework::LoDTensor>();
-          // to load
-          LoadVar(tensor, dirname + "/" + var_desc->Name());
+            var_desc->Type() != framework::VARTYPE_TYPE_FEED_MINIBATCH &&
+            var_desc->Type() != framework::VARTYPE_TYPE_FETCH_LIST) {
+//          DLOG << "to load var ";
+          LoadVar(var, *var_desc, dirname + "/" + var_desc->Name());
         }
+
       } else {
         // TODO(codeWorm): some.
       }
     }
   }
 
-#ifdef PADDLE_MOBILE_DEBUG
-  for (const auto &block : program_desc_proto.blocks()) {
-    LOG(kLOG_DEBUG) << "block: " << block.idx();
-    for (int j = 0; j < block.ops().size(); ++j) {
-      framework::proto::OpDesc op = block.ops()[j];
-      LOG(kLOG_DEBUG1) << "op: " << op.type();
-      for (int m = 0; m < op.inputs_size(); ++m) {
-        const framework::proto::OpDesc::Var &var = op.inputs(m);
-        LOG(kLOG_DEBUG2) << "input parameter: " << var.parameter();
-        for (const auto &n : var.arguments()) {
-          LOG(kLOG_DEBUG3) << "argument - " << n;
-        }
-      }
+  originProgramDesc->Description("program: ");
 
-      for (int y = 0; y < op.outputs_size(); ++y) {
-        const framework::proto::OpDesc::Var &var = op.outputs(y);
-        LOG(kLOG_DEBUG2) << "out parameter: " << var.parameter();
-        for (const auto &z : var.arguments()) {
-          LOG(kLOG_DEBUG3) << "argument - " << z;
-        }
-      }
-
-      for (const auto &attr : op.attrs()) {
-        LOG(kLOG_DEBUG2) << "attr name: " << attr.name();
-
-        switch (attr.type()) {
-          case framework::proto::AttrType::BOOLEAN:
-            LOG(kLOG_DEBUG3) << "boolen: " << attr.b();
-            break;
-          case framework::proto::AttrType::INT:
-            LOG(kLOG_DEBUG3) << "int: " << attr.i();
-            break;
-          case framework::proto::AttrType::FLOAT:
-            LOG(kLOG_DEBUG3) << "float: " << attr.f();
-          case framework::proto::AttrType::STRING:
-            LOG(kLOG_DEBUG3) << "string: " << attr.s();
-          case framework::proto::AttrType::BOOLEANS:
-            for (int y = 0; y < attr.bools_size(); ++y) {
-              LOG(kLOG_DEBUG3) << "bools: " << attr.bools(y);
-            }
-          case framework::proto::AttrType::LONG:
-            LOG(kLOG_DEBUG3) << "long: " << attr.l();
-          case framework::proto::AttrType::FLOATS:
-            for (int y = 0; y < attr.floats_size(); ++y) {
-              LOG(kLOG_DEBUG3) << "floats: " << attr.floats(y);
-            }
-          case framework::proto::AttrType::INTS:
-            for (int y = 0; y < attr.ints_size(); ++y) {
-              LOG(kLOG_DEBUG3) << "ints: " << attr.ints(y);
-            }
-          case framework::proto::AttrType::STRINGS:
-            for (int y = 0; y < attr.strings_size(); ++y) {
-              LOG(kLOG_DEBUG3) << "strings: " << attr.strings(y);
-            }
-          case framework::proto::BLOCK:
-            break;
-        }
-      }
-    }
-
-    for (const auto &var : block.vars()) {
-      if (var.type().type() == framework::proto::VarType::LOD_TENSOR) {
-        LOG(kLOG_DEBUG1) << "var name: " << var.name();
-        const framework::proto::VarType::TensorDesc &tensor_desc =
-            var.type().lod_tensor().tensor();
-        LOG(kLOG_DEBUG2) << "in var tensor desc dims size: "
-                         << tensor_desc.dims().size();
-        for (int l = 0; l < tensor_desc.dims().size(); ++l) {
-          LOG(kLOG_DEBUG3) << "var tensor desc dim " << l
-                           << " value: " << tensor_desc.dims()[l];
-        }
-      }
-
-      if (var.persistable() &&
-          var.type().type() != framework::proto::VarType::FEED_MINIBATCH &&
-          var.type().type() != framework::proto::VarType::FETCH_LIST) {
-        std::string file_path = dirname + "/" + var.name();
-        std::ifstream is(file_path);
-        PADDLE_MOBILE_ENFORCE(is.is_open(), "open file: %s failed",
-                              file_path.c_str());
-        std::fpos<mbstate_t> pos;
-        pos = is.tellg();  // save   current   position
-        is.seekg(0, std::ios::end);
-        is.seekg(pos);  // restore   saved   position
-
-        // 1. version
-        uint32_t version;
-        is.read(reinterpret_cast<char *>(&version), sizeof(version));
-
-        // 2 Lod information
-        uint64_t lod_level;
-        is.read(reinterpret_cast<char *>(&lod_level), sizeof(lod_level));
-        for (uint64_t i = 0; i < lod_level; ++i) {
-          uint64_t size;
-          is.read(reinterpret_cast<char *>(&size), sizeof(size));
-          std::vector<size_t> tmp(size / sizeof(size_t));
-          is.read(reinterpret_cast<char *>(tmp.data()),
-                  static_cast<std::streamsize>(size));
-          for (int j = 0; j < tmp.size(); ++j) {
-          }
-        }
-
-        is.read(reinterpret_cast<char *>(&version), sizeof(version));
-
-        int32_t size;
-        is.read(reinterpret_cast<char *>(&size), sizeof(size));
-        std::unique_ptr<char[]> buf(new char[size]);
-        is.read(reinterpret_cast<char *>(buf.get()), size);
-
-        framework::proto::VarType::TensorDesc desc;
-        desc.ParseFromArray(buf.get(), size);
-
-        int memory_size = 1;
-        for (long long l : desc.dims()) {
-          memory_size *= l;
-        }
-
-        int type_size = 0;
-        switch (desc.data_type()) {
-          case framework::proto::VarType::FP16:
-            type_size = 2;
-            break;
-          case framework::proto::VarType::FP32:
-            type_size = 4;
-            break;
-          case framework::proto::VarType::FP64:
-            type_size = 8;
-            break;
-          case framework::proto::VarType::INT32:
-            type_size = 4;
-            break;
-          case framework::proto::VarType::INT64:
-            type_size = 8;
-            break;
-          case framework::proto::VarType::BOOL:
-            type_size = 1;
-            break;
-          default:
-            break;
-        }
-
-        void *memory = malloc(memory_size * type_size);
-        is.read(static_cast<char *>(memory), memory_size * type_size);
-        is.close();
-      } else {
-        // TODO
-      }
-    }
-  }
-
-#endif
+  paddle_mobile__framework__proto__program_desc__free_unpacked(c_program, NULL);
   return program;
 }
 
@@ -440,7 +333,7 @@ void Executor<Dtype, P>::InitMemory() {
         auto tensor = var->template GetMutable<framework::LoDTensor>();
         LoadMemory(tensor, program_.model_path + "/" + var_desc->Name());
       } else {
-        if (var_desc->GetType() == framework::proto::VarType::LOD_TENSOR) {
+        if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
           auto tensor = var->template GetMutable<framework::Tensor>();
           tensor->template mutable_data<Ptype>();
         }

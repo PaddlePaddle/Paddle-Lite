@@ -55,6 +55,7 @@ class Executor4Test : public Executor<DeviceType> {
     for (std::shared_ptr<BlockDesc> block_desc : blocks) {
       std::vector<std::shared_ptr<OpDesc>> ops = block_desc->Ops();
       for (std::shared_ptr<OpDesc> op : ops) {
+
         if (op->Type() == op_type) {
           std::shared_ptr<OpType> op_ptr = std::make_shared<OpType>(
               op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(),

@@ -33,14 +33,17 @@ std::vector<std::shared_ptr<OpDesc>> BlockDesc::Ops() const {
   return res;
 }
 
-BlockDesc::BlockDesc(const proto::BlockDesc &desc)
-    : index_(desc.idx()), parent_index_(desc.parent_idx()) {
-  for (const proto::VarDesc &var_desc : desc.vars()) {
-    vars_[var_desc.name()].reset(new VarDesc(var_desc));
+BlockDesc::BlockDesc(PaddleMobile__Framework__Proto__BlockDesc *desc): index_(desc->idx), parent_index_(desc->idx) {
+  for (int i = 0; i < desc->n_vars; ++i) {
+    PaddleMobile__Framework__Proto__VarDesc *var_desc = desc->vars[i];
+    vars_[std::string(var_desc->name)] = std::shared_ptr<VarDesc>(new VarDesc(var_desc));
   }
-  for (const proto::OpDesc &op_desc : desc.ops()) {
+
+  for (int j = 0; j < desc->n_ops; ++j) {
+    PaddleMobile__Framework__Proto__OpDesc *op_desc = desc->ops[j];
     ops_.emplace_back(new framework::OpDesc(op_desc));
   }
+
 }
 
 }  // namespace framework
