@@ -16,7 +16,7 @@ limitations under the License. */
 
 #include "../test_helper.h"
 #include "../test_include.h"
-#include "framework/executor.h"
+#include "io.h"
 
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;

@@ -53,7 +53,7 @@ class Executor {
  protected:
   void InitMemory();
   void LoadMemory(framework::LoDTensor *tensor, const std::string &file_path);
-  const framework::Program<Dtype> program_;
+  framework::Program<Dtype> program_;
   std::shared_ptr<framework::ProgramDesc> to_predict_program_;
   void predict(const framework::Tensor &t, int block_id);
   std::map<framework::BlockDesc,
