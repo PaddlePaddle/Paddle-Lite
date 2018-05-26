@@ -100,6 +100,11 @@ class OpParam : PaddleMobileObject {
   }
 
   template <typename T>
+  static T *InputShapeFrom(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("Shape", inputs, scope);
+  }
+
+  template <typename T>
   static vector<T *> InputMultiFrom(const VariableNameMap &inputs,
                                     const Scope &scope) {
     return GetMultiVarValue<T>("X", inputs, scope);
@@ -636,5 +641,33 @@ class TransposeParam : public OpParam {
   vector<int> axis_;
 };
 
+class ReshapeParam : public OpParam {
+ public:
+  ReshapeParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+               const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<Tensor>(inputs, scope);
+    input_shape_ = InputShapeFrom<Tensor>(inputs, scope);
+    out_ = OutFrom<Tensor>(outputs, scope);
+    shape_ = GetAttr<vector<int>>("shape", attrs);
+    inplace_ = GetAttr<bool>("inplace", attrs);
+  }
+
+  const Tensor *InputX() const { return input_x_; }
+
+  const Tensor *InputShape() const { return input_shape_; }
+
+  Tensor *Out() const { return out_; }
+
+  const vector<int> &Shape() const { return shape_; }
+
+  const bool &Inplace() const { return inplace_; }
+
+ private:
+  Tensor *input_x_;
+  Tensor *input_shape_;
+  Tensor *out_;
+  vector<int> shape_;
+  bool inplace_;
+};
 }  // namespace operators
 }  // namespace paddle_mobile
