@@ -143,7 +143,6 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
   std::shared_ptr<framework::Scope> scope =
       std::make_shared<framework::Scope>();
   program.scope = scope;
-
   originProgramDesc->Block(0);
 
   for (const auto &block : originProgramDesc->Blocks()) {
@@ -168,9 +167,6 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
   for (const auto &block : program_desc_proto.blocks()) {
     LOG(kLOG_DEBUG) << "block: " << block.idx();
     for (int j = 0; j < block.ops().size(); ++j) {
-      //      if (j == 2) {
-      //        break;
-      //      }
       framework::proto::OpDesc op = block.ops()[j];
       LOG(kLOG_DEBUG1) << "op: " << op.type();
       for (int m = 0; m < op.inputs_size(); ++m) {
@@ -440,8 +436,15 @@ void Executor<Dtype, P>::InitMemory() {
   for (const auto &block : to_predict_program_->Blocks()) {
     for (const auto &var_desc : block->Vars()) {
       auto var = program_.scope->Var(var_desc->Name());
-      auto tensor = var->template GetMutable<framework::LoDTensor>();
-      LoadMemory(tensor, program_.model_path + "/" + var_desc->Name());
+      if (var_desc->Persistable()) {
+        auto tensor = var->template GetMutable<framework::LoDTensor>();
+        LoadMemory(tensor, program_.model_path + "/" + var_desc->Name());
+      } else {
+        if (var_desc->GetType() == framework::proto::VarType::LOD_TENSOR) {
+          auto tensor = var->template GetMutable<framework::Tensor>();
+          tensor->template mutable_data<Ptype>();
+        }
+      }
     }
   }
 }
@@ -473,9 +476,9 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::predict(
 
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::predict(const framework::Tensor &t, int block_id) {
-  framework::Variable *g_feed_value = program_.scope->Var("feed");
-  auto feed_tensor = g_feed_value->GetMutable<framework::Tensor>();
-  feed_tensor->ShareDataWith(t);
+  //  framework::Variable *g_feed_value = program_.scope->Var("feed");
+  //  auto feed_tensor = g_feed_value->GetMutable<framework::Tensor>();
+  //  feed_tensor->ShareDataWith(t);
 
   std::shared_ptr<framework::BlockDesc> to_predict_block =
       to_predict_program_->Block(block_id);

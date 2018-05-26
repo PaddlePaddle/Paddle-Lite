@@ -21,7 +21,7 @@ limitations under the License. */
 #include "framework/ddim.h"
 #include "framework/tensor.h"
 
-static const std::string g_google = "../models/googlenet";
+static const std::string g_googlenet = "../models/googlenet";
 static const std::string g_mobilenet = "../models/mobilenet";
 static const std::string g_mobilenet_ssd = "../models/mobilenet";
 static const std::string g_squeezenet = "../models/squeezenet";
@@ -59,4 +59,15 @@ void GetInput(const std::string &input_name, std::vector<T> *input,
     input->push_back(input_ptr[i]);
   }
   free(input_ptr);
+}
+
+template <typename T>
+void GetInput(const std::string &input_name,
+              paddle_mobile::framework::Tensor *input,
+              paddle_mobile::framework::DDim dims) {
+  T *input_ptr = input->mutable_data<T>(dims);
+
+  std::ifstream in(input_name, std::ios::in | std::ios::binary);
+  in.read((char *)(input_ptr), input->numel() * sizeof(T));
+  in.close();
 }

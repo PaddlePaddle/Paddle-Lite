@@ -13,25 +13,24 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "../executor_for_test.h"
-#include "../test_helper.h"
-#include "io.h"
+#include "../test_include.h"
 
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
   //  ../models/image_classification_resnet.inference.model
-  auto program = loader.Load(std::string("../models/googlenet"));
-  if (program.originProgram == nullptr) {
-    DLOG << "program file read fail";
-  }
+  auto program = loader.Load(g_googlenet);
+
+  PADDLE_MOBILE_ENFORCE(program.originProgram != nullptr,
+                        "program file read fail");
 
   Executor4Test<paddle_mobile::CPU,
                 paddle_mobile::operators::ConvOp<paddle_mobile::CPU, float>>
       executor(program, "conv2d");
 
   paddle_mobile::framework::Tensor input;
-  SetupTensor<float>(&input, {1, 3, 32, 32}, static_cast<float>(0),
-                     static_cast<float>(1));
-  auto out_ddim = paddle_mobile::framework::make_ddim({1, 64, 56, 56});
+  GetInput<float>(g_test_image_1x3x224x224, &input, {1, 3, 224, 224});
+
+  auto out_ddim = paddle_mobile::framework::make_ddim({1, 64, 112, 112});
   auto output = executor.predict(input, "data", "conv2d_0.tmp_0", out_ddim);
 
   auto output_ptr = output->data<float>();
