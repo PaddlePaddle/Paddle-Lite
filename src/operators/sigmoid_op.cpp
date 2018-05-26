@@ -12,21 +12,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
-
-#include "framework/operator.h"
-#include "operators/op_param.h"
+#include "operators/sigmoid_op.h"
 
 namespace paddle_mobile {
 namespace operators {
-using framework::OpKernelBase;
-
-void simoid(Tensor *X, Tensor *Y);
-
 template <typename DeviceType, typename T>
-class SoftmaxKernel : public OpKernelBase<DeviceType, SoftmaxParam> {
- public:
-  void Compute(const SoftmaxParam &param) const override;
-};
+void SigmoidOp<DeviceType, T>::InferShape() const {
+  param_.Out()->Resize(param_.InputX()->dims());
+}
+template class SigmoidOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+USE_OP(sigmoid);
+REGISTER_OPERATOR(sigmoid, ops::SigmoidOp);
