@@ -28,9 +28,9 @@ int main() {
       executor(program, "conv2d");
 
   paddle_mobile::framework::Tensor input;
-  SetupTensor<float>(&input, {1, 3, 32, 32}, static_cast<float>(0),
-                     static_cast<float>(1));
-  auto out_ddim = paddle_mobile::framework::make_ddim({1, 64, 56, 56});
+  GetInput<float>(g_test_image_1x3x224x224, &input, {1, 3, 224, 224});
+
+  auto out_ddim = paddle_mobile::framework::make_ddim({1, 64, 112, 112});
   auto output = executor.predict(input, "data", "conv2d_0.tmp_0", out_ddim);
 
   auto output_ptr = output->data<float>();
