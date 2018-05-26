@@ -80,5 +80,5 @@ ADD_EXECUTABLE(test-enforce common/test_enforce.cpp)
 target_link_libraries(test-enforce paddle-mobile)
 
 # gen test
-ADD_EXECUTABLE(test-googlenet net/test-googlenet.cpp  test_helper.h  test_include.h executor_for_test.h)
+ADD_EXECUTABLE(test-googlenet net/test_googlenet.cpp test_helper.h  test_include.h executor_for_test.h)
 target_link_libraries(test-googlenet paddle-mobile)

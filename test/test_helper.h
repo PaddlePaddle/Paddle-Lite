@@ -21,7 +21,7 @@ limitations under the License. */
 #include "framework/ddim.h"
 #include "framework/tensor.h"
 
-static const std::string g_google = "../models/googlenet";
+static const std::string g_googlenet = "../models/googlenet";
 static const std::string g_mobilenet = "../models/mobilenet";
 static const std::string g_mobilenet_ssd = "../models/mobilenet";
 static const std::string g_squeezenet = "../models/squeezenet";

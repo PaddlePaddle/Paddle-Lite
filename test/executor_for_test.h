@@ -16,8 +16,8 @@ limitations under the License. */
 
 #include <string>
 #include <vector>
+
 #include "common/log.h"
-#include "framework/executor.h"
 #include "io.h"
 #include "operators/conv_op.h"
 #include "operators/pool_op.h"
@@ -38,7 +38,14 @@ template <typename DeviceType, typename OpType>
 class Executor4Test : public Executor<DeviceType> {
  public:
   Executor4Test(Program<DeviceType> p, string op_type)
-      : Executor<DeviceType>(p) {
+      : Executor<DeviceType>() {
+    this->program_ = p;
+    if (this->use_optimize_) {
+      this->to_predict_program_ = this->program_.optimizeProgram;
+    } else {
+      this->to_predict_program_ = this->program_.originProgram;
+    }
+
     if (this->program_.originProgram == nullptr) {
       LOG(paddle_mobile::LogLevel::kLOG_ERROR)
           << "to_predict_program_ == nullptr";
@@ -52,7 +59,6 @@ class Executor4Test : public Executor<DeviceType> {
           std::shared_ptr<OpType> op_ptr = std::make_shared<OpType>(
               op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(),
               this->program_.scope);
-
           this->ops_of_block_[*block_desc.get()].push_back(op_ptr);
           break;
         }
@@ -73,7 +79,14 @@ class Executor4Test : public Executor<DeviceType> {
     std::shared_ptr<Tensor> out_tensor = std::make_shared<LoDTensor>();
     out_tensor.reset(output_tensor);
 
-    Executor<DeviceType>::predict(t, 0);
+    std::shared_ptr<paddle_mobile::framework::BlockDesc> to_predict_block =
+        this->to_predict_program_->Block(0);
+    for (int j = 0; j < this->ops_of_block_[*to_predict_block.get()].size();
+         ++j) {
+      auto op = this->ops_of_block_[*to_predict_block.get()][j];
+      op->Run();
+    }
+
     return out_tensor;
   }
 };
