@@ -111,7 +111,7 @@ int main() {
   DLOG << "begin to run ElementAddOp Test";
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
   auto program =
-      loader.Load(std::string("../../test/models/"
+      loader.Load(std::string("../models/"
                               "image_classification_resnet.inference.model"));
 
   /// input x (1,3,224,224)
