@@ -16,17 +16,14 @@ limitations under the License. */
 
 #include "framework/operator.h"
 #include "operators/op_param.h"
-
 namespace paddle_mobile {
 namespace operators {
 using framework::OpKernelBase;
-
-void simoid(Tensor *X, Tensor *Y);
-
+void sigmoid(const Tensor* X, Tensor* Y);
 template <typename DeviceType, typename T>
-class SoftmaxKernel : public OpKernelBase<DeviceType, SoftmaxParam> {
+class SigmoidKernel : public OpKernelBase<DeviceType, SigmoidParam> {
  public:
-  void Compute(const SoftmaxParam &param) const override;
+  void Compute(const SigmoidParam& param) const override;
 };
 }  // namespace operators
 }  // namespace paddle_mobile

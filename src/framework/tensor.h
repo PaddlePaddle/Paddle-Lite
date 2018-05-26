@@ -132,13 +132,6 @@ class Tensor {
         reinterpret_cast<uintptr_t>(holder_->ptr()) + offset_);
   }
 
-  inline void *mutable_data() {
-    //  PADDLE_ENFORCE(this->holder_ != nullptr,
-    //                 "Cannot invoke mutable data if current hold
-    //                 nothing.");
-    return mutable_data(holder_->type());
-  }
-
   /**
    * @brief     Return a pointer to mutable memory block.
    *
