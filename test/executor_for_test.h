@@ -21,6 +21,7 @@ limitations under the License. */
 #include "io.h"
 #include "operators/conv_op.h"
 #include "operators/pool_op.h"
+#include "operators/relu_op.h"
 #include "operators/reshape_op.h"
 #include "operators/softmax_op.h"
 #include "operators/transpose_op.h"
@@ -56,6 +57,7 @@ class Executor4Test : public Executor<DeviceType> {
       std::vector<std::shared_ptr<OpDesc>> ops = block_desc->Ops();
       for (std::shared_ptr<OpDesc> op : ops) {
         if (op->Type() == op_type) {
+          /// test first meeting op in program
           std::shared_ptr<OpType> op_ptr = std::make_shared<OpType>(
               op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(),
               this->program_.scope);
