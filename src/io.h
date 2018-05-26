@@ -33,7 +33,7 @@ class Loader : PaddleMobileObject {
   const framework::Program<Dtype, P> Load(const std::string &dirname);
 
  private:
-  void LoadVar(framework::LoDTensor *tensor, const std::string &file_path);
+  void LoadVar(framework::Variable *variable, const framework::VarDesc &var_desc, const std::string &file_path);
 };
 
 template <typename Dtype, Precision P = Precision::FP32>

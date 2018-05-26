@@ -15,71 +15,140 @@ limitations under the License. */
 #pragma once
 
 #include "framework/framework.pb.h"
+#include "framework/framework.pb-c.h"
+#include "framework/program/tensor_desc.h"
 #include "framework/paddle_mobile_object.h"
 
 namespace paddle_mobile {
 namespace framework {
 
+/*
+
+PADDLE_MOBILE__FRAMEWORK__PROTO__VAR_TYPE__TYPE__BOOL = 0,
+        PADDLE_MOBILE__FRAMEWORK__PROTO__VAR_TYPE__TYPE__INT16 = 1,
+        PADDLE_MOBILE__FRAMEWORK__PROTO__VAR_TYPE__TYPE__INT32 = 2,
+        PADDLE_MOBILE__FRAMEWORK__PROTO__VAR_TYPE__TYPE__INT64 = 3,
+        PADDLE_MOBILE__FRAMEWORK__PROTO__VAR_TYPE__TYPE__FP16 = 4,
+        PADDLE_MOBILE__FRAMEWORK__PROTO__VAR_TYPE__TYPE__FP32 = 5,
+        PADDLE_MOBILE__FRAMEWORK__PROTO__VAR_TYPE__TYPE__FP64 = 6,
+
+        PADDLE_MOBILE__FRAMEWORK__PROTO__VAR_TYPE__TYPE__LOD_TENSOR = 7,
+        PADDLE_MOBILE__FRAMEWORK__PROTO__VAR_TYPE__TYPE__SELECTED_ROWS = 8,
+        PADDLE_MOBILE__FRAMEWORK__PROTO__VAR_TYPE__TYPE__FEED_MINIBATCH = 9,
+        PADDLE_MOBILE__FRAMEWORK__PROTO__VAR_TYPE__TYPE__FETCH_LIST = 10,
+        PADDLE_MOBILE__FRAMEWORK__PROTO__VAR_TYPE__TYPE__STEP_SCOPES = 11,
+        PADDLE_MOBILE__FRAMEWORK__PROTO__VAR_TYPE__TYPE__LOD_RANK_TABLE = 12,
+        PADDLE_MOBILE__FRAMEWORK__PROTO__VAR_TYPE__TYPE__LOD_TENSOR_ARRAY = 13,
+        PADDLE_MOBILE__FRAMEWORK__PROTO__VAR_TYPE__TYPE__PLACE_LIST = 14,
+        PADDLE_MOBILE__FRAMEWORK__PROTO__VAR_TYPE__TYPE__READER = 15,
+        PADDLE_MOBILE__FRAMEWORK__PROTO__VAR_TYPE__TYPE__CHANNEL = 16,
+
+        PADDLE_MOBILE__FRAMEWORK__PROTO__VAR_TYPE__TYPE__RAW = 17,
+        PADDLE_MOBILE__FRAMEWORK__PROTO__VAR_TYPE__TYPE__TUPLE = 18
+
+
+                                                                 */
+
+
 class VarDesc {
  public:
-  VarDesc(const proto::VarDesc &desc);
+  VarDesc(const VarDesc &var_desc) {
+    this->data_type_ = var_desc.data_type_;
+    this->name_ = var_desc.name_;
+    this->persistable_ = var_desc.persistable_;
+    this->tensor_desc_ = var_desc.tensor_desc_;
+    this->type_ = var_desc.type_;
+    /*
+     *
+     *  std::string name_;
+  bool persistable_;
+  TensorDesc tensor_desc_;
+  VarType_Type type_;
+  VarType_Type data_type_;
+     * */
 
-  VarDesc(const VarDesc &var_desc) : desc_(var_desc.desc_) {}
+  }
+  VarDesc(PaddleMobile__Framework__Proto__VarDesc *desc) {
+    type_ = (VarType_Type)desc->type->type;
+    name_ = std::string(desc->name);
+    persistable_ = (bool)desc->persistable;
 
-  std::string Name() const { return desc_.name(); }
+    switch (type_) {
+      case VARTYPE_TYPE_SELECTED_ROWS:
+        tensor_desc_ = TensorDesc(desc->type->selected_rows);
+        break;
+      case VARTYPE_TYPE_LOD_TENSOR:
+        tensor_desc_ = TensorDesc(desc->type->lod_tensor->tensor);
+        break;
+      case VARTYPE_TYPE_STEP_LOD_TENSOR_ARRAY:
+        desc->type->tensor_array->tensor->data_type;
+        tensor_desc_ = TensorDesc(desc->type->tensor_array->tensor);
 
-  proto::VarType::Type GetType() const { return desc_.type().type(); }
-
-  bool Persistable() const { return desc_.persistable(); }
-
-  const proto::VarType::ChannelDesc &channel_desc() const {
-    switch (desc_.type().type()) {
-      case proto::VarType::CHANNEL:
-        return desc_.type().channel();
+        break;
       default:
         break;
     }
-  }
-
-  const proto::VarType::TensorDesc &tensor_desc() const {
-    switch (desc_.type().type()) {
-      case proto::VarType::SELECTED_ROWS:
-        return desc_.type().selected_rows();
-      case proto::VarType::LOD_TENSOR:
-        return desc_.type().lod_tensor().tensor();
-      case proto::VarType::LOD_TENSOR_ARRAY:
-        return desc_.type().tensor_array().tensor();
-      default:
-        break;
-    }
-  }
-
-  proto::VarType::Type GetDataType() const {
-    switch (desc_.type().type()) {
-      case proto::VarType::CHANNEL:
-        return channel_desc().data_type();
+    switch (type_) {
+      case VARTYPE_TYPE_CHANNEL:
+        data_type_ = (VarType_Type)desc->type->channel->data_type;
         break;
       default:
-        return tensor_desc().data_type();
+        data_type_ = tensor_desc_.DataType();
+        break;
+
     }
+
+  }
+  std::string Name() const { return name_; }
+
+  VarType_Type Type() const { return type_; }
+
+  bool Persistable() const { return persistable_; }
+
+  const TensorDesc &Tensor_desc() const {
+    return tensor_desc_;
   }
 
-  template <typename T>
-  std::vector<T> RepeatedToVector(
-      const google::protobuf::RepeatedField<T> &repeated_field) const {
-    std::vector<T> ret;
-    ret.reserve(repeated_field.size());
-    std::copy(repeated_field.begin(), repeated_field.end(),
-              std::back_inserter(ret));
-    return ret;
-  }
+  //  const proto::VarType::ChannelDesc &channel_desc() const {
+//    switch (desc_.type().type()) {
+//      case proto::VarType::CHANNEL:
+//        return desc_.type().channel();
+//      default:
+//        break;
+//    }
+//  }
 
-  std::vector<int64_t> GetShape() const {
-    return this->RepeatedToVector(tensor_desc().dims());
-  }
+//  proto::VarType::Type GetDataType() const {
+//    switch (desc_.type().type()) {
+//      case proto::VarType::CHANNEL:
+//        return channel_desc().data_type();
+//        break;
+//      default:
+//        return tensor_desc().data_type();
+//    }
+//  }
+
+//  template <typename T>
+//  std::vector<T> RepeatedToVector(
+//      const google::protobuf::RepeatedField<T> &repeated_field) const {
+//    std::vector<T> ret;
+//    ret.reserve(repeated_field.size());
+//    std::copy(repeated_field.begin(), repeated_field.end(),
+//              std::back_inserter(ret));
+//    return ret;
+//  }
+
+//  std::vector<int64_t> GetShape() const {
+//    return this->RepeatedToVector(tensor_desc().dims());
+//  }
 
  private:
-  proto::VarDesc desc_;
+  std::string name_;
+  bool persistable_;
+  TensorDesc tensor_desc_;
+  VarType_Type type_;
+  VarType_Type data_type_;
+
 };
 
 }  // namespace framework

@@ -20,6 +20,7 @@ limitations under the License. */
 #include "common/log.h"
 #include "common/type_define.h"
 #include "framework/framework.pb.h"
+#include "framework/framework.pb-c.h"
 #include "framework/paddle_mobile_object.h"
 
 namespace paddle_mobile {
@@ -30,8 +31,7 @@ class OpDesc : PaddleMobileObject {
   friend class ProgramOptimize;
   friend class FusionOpMatcher;
   friend class Node;
-  explicit OpDesc(const proto::OpDesc &desc);
-
+  explicit OpDesc(PaddleMobile__Framework__Proto__OpDesc *op_desc);
   OpDesc(const OpDesc &op_desc) : type_(op_desc.type_) {
     this->inputs_ = op_desc.inputs_;
     this->outputs_ = op_desc.outputs_;

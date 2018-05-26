@@ -20,28 +20,28 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace framework {
 
-OpDesc::OpDesc(const proto::OpDesc &desc) : type_(desc.type()) {
-  for (int i = 0; i < desc.inputs_size(); ++i) {
-    const proto::OpDesc::Var &var = desc.inputs(i);
-    std::vector<std::string> &args = inputs_[var.parameter()];
-    int arg_size = var.arguments_size();
-    for (int j = 0; j < arg_size; ++j) {
-      args.push_back(var.arguments(j));
+OpDesc::OpDesc(PaddleMobile__Framework__Proto__OpDesc *desc) {
+  this->type_ = std::string(desc->type);
+  for (int i = 0; i < desc->n_inputs; ++i) {
+    PaddleMobile__Framework__Proto__OpDesc__Var *var = desc->inputs[i];
+    std::vector<std::string> &args = inputs_[std::string(var->parameter)];
+    for (int j = 0; j < var->n_arguments; ++j) {
+      args.emplace_back(std::string(var->arguments[j]));
     }
   }
 
-  for (int i = 0; i < desc.outputs_size(); ++i) {
-    const proto::OpDesc::Var &var = desc.outputs(i);
-    std::vector<std::string> &args = outputs_[var.parameter()];
-    int arg_size = var.arguments_size();
-    for (int j = 0; j < arg_size; ++j) {
-      args.push_back(var.arguments(j));
+  for (int i = 0; i < desc->n_outputs; ++i) {
+    PaddleMobile__Framework__Proto__OpDesc__Var *var = desc->outputs[i];
+    std::vector<std::string> &args = outputs_[std::string(var->parameter)];
+    for (int j = 0; j < var->n_arguments; ++j) {
+      args.emplace_back(std::string(var->arguments[j]));
     }
   }
 
-  for (const proto::OpDesc::Attr &attr : desc.attrs()) {
-    std::string attr_name = attr.name();
-    if (attr.type() != proto::AttrType::BLOCK) {
+  for (int k = 0; k < desc->n_attrs; ++k) {
+    PaddleMobile__Framework__Proto__OpDesc__Attr *attr = desc->attrs[k];
+    std::string attr_name(attr->name);
+    if (attr->type != PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__BLOCK) {
       attrs_[attr_name] = Attribute::GetAttrValue(attr);
     }
   }

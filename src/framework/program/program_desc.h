@@ -17,6 +17,7 @@ limitations under the License. */
 #include <vector>
 
 #include "common/types.h"
+#include "framework/framework.pb-c.h"
 #include "framework/paddle_mobile_object.h"
 #include "framework/program/block_desc.h"
 
@@ -27,8 +28,10 @@ class ProgramDesc : PaddleMobileObject {
  public:
   friend class Node;
   friend class ProgramOptimize;
-  explicit ProgramDesc(const proto::ProgramDesc &desc);
+  explicit ProgramDesc(PaddleMobile__Framework__Proto__ProgramDesc *desc);
+
   std::shared_ptr<BlockDesc> Block(size_t idx);
+
   const std::vector<std::shared_ptr<BlockDesc>> &Blocks() { return blocks_; }
   ProgramDesc(const ProgramDesc &program_desc) {
     for (auto &block : program_desc.blocks_) {
