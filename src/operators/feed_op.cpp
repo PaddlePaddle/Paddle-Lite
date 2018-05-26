@@ -12,25 +12,4 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
-
-#include <map>
-#include <string>
-#include <vector>
-
-#include "framework.pb.h"
-#include "framework/program/block_desc.h"
-#include "framework/program/program.h"
-#include "framework/program/program_desc.h"
-#include "operator.h"
-#include "scope.h"
-#include "tensor.h"
-#include "variable.h"
-
-namespace paddle_mobile {
-namespace framework {
-
-
-
-}  // namespace framework
-}  // namespace paddle_mobile
+#include "feed_op.h"

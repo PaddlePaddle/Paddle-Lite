@@ -18,6 +18,7 @@ limitations under the License. */
 
 #include "common/enforce.h"
 #include "common/log.h"
+#include "framework/operator.h"
 #include "framework/framework.pb.h"
 #include "framework/lod_tensor.h"
 #include "framework/program/program_desc.h"
@@ -136,31 +137,32 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
       std::make_shared<framework::ProgramDesc>(program_desc_proto);
 
   framework::Program<Dtype, P> program;
+  program.model_path = dirname;
   program.originProgram = originProgramDesc;
 
   std::shared_ptr<framework::Scope> scope =
       std::make_shared<framework::Scope>();
   program.scope = scope;
 
-  originProgramDesc->Block(0);
+//  originProgramDesc->Block(0);
 
-  for (const auto &block : originProgramDesc->Blocks()) {
-    for (int i = 0; i < block->Vars().size(); ++i) {
-      std::shared_ptr<framework::VarDesc> var_desc = block->Vars()[i];
-      auto var = scope->Var(var_desc->Name());
-      if (var_desc->GetType() == framework::proto::VarType::LOD_TENSOR) {
-        if (var_desc->Persistable() &&
-            var_desc->GetType() != framework::proto::VarType::FEED_MINIBATCH &&
-            var_desc->GetType() != framework::proto::VarType::FETCH_LIST) {
-          auto tensor = var->GetMutable<framework::LoDTensor>();
-          // to load
-          LoadVar(tensor, dirname + "/" + var_desc->Name());
-        }
-      } else {
-        // TODO(codeWorm): some.
-      }
-    }
-  }
+//  for (const auto &block : originProgramDesc->Blocks()) {
+//    for (int i = 0; i < block->Vars().size(); ++i) {
+//      std::shared_ptr<framework::VarDesc> var_desc = block->Vars()[i];
+////      auto var = scope->Var(var_desc->Name());
+//      if (var_desc->GetType() == framework::proto::VarType::LOD_TENSOR) {
+//        if (var_desc->Persistable() &&
+//            var_desc->GetType() != framework::proto::VarType::FEED_MINIBATCH &&
+//            var_desc->GetType() != framework::proto::VarType::FETCH_LIST) {
+//          //          auto tensor = var->GetMutable<framework::LoDTensor>();
+//          // to load
+//          //          LoadVar(tensor, dirname + "/" + var_desc->Name());
+//        }
+//      } else {
+//        // TODO(codeWorm): some.
+//      }
+//    }
+//  }
 
 #ifdef PADDLE_MOBILE_DEBUG
   for (const auto &block : program_desc_proto.blocks()) {
@@ -320,5 +322,185 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
 }
 
 template class Loader<CPU, Precision::FP32>;
+
+
+#pragma mark - executor
+
+template <typename Dtype, Precision P>
+Executor<Dtype, P>::Executor(const framework::Program<Dtype> p) : program_(p) {
+  if (use_optimize_) {
+    to_predict_program_ = program_.optimizeProgram;
+  } else {
+    to_predict_program_ = program_.originProgram;
+  }
+
+      const std::vector<std::shared_ptr<framework::BlockDesc>> blocks = to_predict_program_->Blocks();
+      for (int i = 0; i < blocks.size(); ++i) {
+          std::shared_ptr<framework::BlockDesc> block_desc = blocks[i];
+          std::vector<std::shared_ptr<framework::OpDesc>> ops = block_desc->Ops();
+          for (int j = 0; j < ops.size(); ++j) {
+              std::shared_ptr<framework::OpDesc> op = ops[j];
+//              auto op_base = framework::OpRegistry<Dtype>::CreateOp(op->Type(),
+//                      op->GetInputs(), op->GetOutputs(), op->GetAttrMap(), program_.scope);
+//              op_base->InferShape();
+          }
+      }
+      InitMemory();
+}
+
+template <typename Dtype, Precision P>
+void Executor<Dtype, P>::LoadMemory(framework::LoDTensor *tensor, const std::string &file_path){
+  std::ifstream is(file_path);
+  PADDLE_MOBILE_ENFORCE(is.is_open(), "open file: %s failed",
+                        file_path.c_str());
+  std::fpos<mbstate_t> pos;
+  pos = is.tellg();  // save   current   position
+  is.seekg(0, std::ios::end);
+  is.seekg(pos);  // restore   saved   position
+
+  // 1. version
+  uint32_t version;
+  is.read(reinterpret_cast<char *>(&version), sizeof(version));
+
+  // 2 Lod information
+  uint64_t lod_level;
+  is.read(reinterpret_cast<char *>(&lod_level), sizeof(lod_level));
+  auto &lod = *tensor->mutable_lod();
+  lod.resize(lod_level);
+  for (uint64_t i = 0; i < lod_level; ++i) {
+    uint64_t size;
+    is.read(reinterpret_cast<char *>(&size), sizeof(size));
+    std::vector<size_t> tmp(size / sizeof(size_t));
+    is.read(reinterpret_cast<char *>(tmp.data()),
+            static_cast<std::streamsize>(size));
+    for (auto j : tmp) {
+      LOG(kLOG_DEBUG1) << "    lod - " << j;
+    }
+    lod[i] = tmp;
+  }
+
+  // 3. tensor version
+  uint32_t tensor_version;
+  is.read(reinterpret_cast<char *>(&tensor_version), sizeof(tensor_version));
+
+  // 4. tensor desc
+  int32_t size;
+  is.read(reinterpret_cast<char *>(&size), sizeof(size));
+  std::unique_ptr<char[]> buf(new char[size]);
+  is.read(reinterpret_cast<char *>(buf.get()), size);
+
+  framework::proto::VarType::TensorDesc desc;
+  desc.ParseFromArray(buf.get(), size);
+
+  int memory_size = 1;
+  for (auto l : desc.dims()) {
+    memory_size *= l;
+  }
+
+  std::vector<int64_t> dims;
+  dims.reserve(static_cast<size_t>(desc.dims().size()));
+  std::copy(desc.dims().begin(), desc.dims().end(), std::back_inserter(dims));
+  tensor->Resize(framework::make_ddim(dims));
+
+  void *memory = tensor;
+  int type_size = 0;
+  switch (desc.data_type()) {
+    case framework::proto::VarType::FP16:
+      type_size = 2;
+      break;
+    case framework::proto::VarType::FP32:
+      type_size = 4;
+      memory = tensor->mutable_data<float>();
+      break;
+    case framework::proto::VarType::FP64:
+      type_size = 8;
+      break;
+    case framework::proto::VarType::INT32:
+      type_size = 4;
+      break;
+    case framework::proto::VarType::INT64:
+      type_size = 8;
+      break;
+    case framework::proto::VarType::BOOL:
+      type_size = 1;
+      break;
+    default:
+      break;
+  }
+
+  is.read(static_cast<char *>(memory), memory_size * type_size);
+  is.close();
+};
+
+template <typename Dtype, Precision P>
+void Executor<Dtype, P>::InitMemory() {
+  for (const auto &block : to_predict_program_->Blocks()) {
+    for (const auto &var_desc : block->Vars()) {
+      auto var = program_.scope->Var(var_desc->Name());
+      auto tensor = var->template GetMutable<framework::LoDTensor>();
+      LoadMemory(tensor, program_.model_path + "/" + var_desc->Name());
+    }
+  }
+}
+
+template <typename Dtype, Precision P>
+std::shared_ptr<framework::Tensor> Executor<Dtype, P>::predict(framework::Tensor &t) {
+  // feed
+  auto scope = program_.scope;
+  framework::Variable *g_feed_value = scope->Var("pixel");
+  auto tensor = g_feed_value->GetMutable<framework::Tensor>();
+  tensor->ShareDataWith(t);
+
+  framework::Variable *con_output = scope->Var("conv2d_0.tmp_0");
+  framework::Tensor *output_tensor = con_output->GetMutable<framework::Tensor>();
+  output_tensor->mutable_data<float>({1, 16, 32, 32});
+  //  std::cout << typeid(output_tensor).name() << std::endl;
+  //  std::cout << "output_tensor dims: " << output_tensor->dims() <<
+  //  std::endl;
+
+  std::shared_ptr<framework::Tensor> out_tensor = std::make_shared<framework::LoDTensor>();
+  out_tensor.reset(output_tensor);
+
+  predict(t, 0);
+  return out_tensor;
+}
+
+template <typename Dtype, Precision P>
+void Executor<Dtype, P>::predict(const framework::Tensor &t, int block_id) {
+  framework::Variable *g_feed_value = program_.scope->Var("feed");
+  auto feed_tensor = g_feed_value->GetMutable<framework::Tensor>();
+  feed_tensor->ShareDataWith(t);
+
+  std::shared_ptr<framework::BlockDesc> to_predict_block =
+          to_predict_program_->Block(block_id);
+  for (int j = 0; j < ops_of_block_[*to_predict_block.get()].size(); ++j) {
+    auto op = ops_of_block_[*to_predict_block.get()][j];
+    op->Run();
+  }
+}
+
+template <typename Dtype, Precision P>
+std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::predict(const std::vector<Ptype> &input, const std::vector<int64_t> &dims){
+
+  DLOG << "start predict: ";
+
+  framework::Tensor tensor;
+  auto ddim = framework::make_ddim(dims);
+
+  auto input_ptr = tensor.mutable_data<Ptype >(ddim);
+  for (int i = 0; i < input.size(); ++i) {
+    input_ptr[i] = input[i];
+  }
+
+  predict(tensor, 0);
+
+  framework::Variable *g_feed_value = program_.scope->Var("col");
+  auto feed_tensor = g_feed_value->GetMutable<framework::Tensor>();
+
+
+  return {};
+}
+
+template class Executor<CPU, Precision::FP32>;
 
 }  // namespace paddle_mobile
