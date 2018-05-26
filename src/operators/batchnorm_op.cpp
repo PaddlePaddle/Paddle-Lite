@@ -25,3 +25,7 @@ void BatchNormOp<Dtype, T>::InferShape() const {
 template class BatchNormOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+USE_OP(batch_norm);
+REGISTER_OPERATOR(batch_norm, ops::BatchNormOp);

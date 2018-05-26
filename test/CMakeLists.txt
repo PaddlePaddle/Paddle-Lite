@@ -34,6 +34,14 @@ target_link_libraries(test-priorbox-op paddle-mobile)
 ADD_EXECUTABLE(test-boxcoder-op  operators/test_box_coder_op.cpp test_helper.h  test_include.h)
 target_link_libraries(test-boxcoder-op paddle-mobile)
 
+# gen test
+ADD_EXECUTABLE(test-transpose-op  operators/test_transpose_op.cpp test_helper.h  test_include.h)
+target_link_libraries(test-transpose-op paddle-mobile)
+
+# gen test
+ADD_EXECUTABLE(test-multiclassnms-op  operators/test_multiclass_nms_op.cpp test_helper.h  test_include.h)
+target_link_libraries(test-multiclassnms-op paddle-mobile)
+
 # gen test log
 ADD_EXECUTABLE(test-log common/test_log.cpp)
 target_link_libraries(test-log paddle-mobile)

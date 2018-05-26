@@ -54,3 +54,7 @@ void PoolOp<DeviceType, T>::InferShape() const {
 template class PoolOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+USE_OP(pool2d);
+REGISTER_OPERATOR(pool2d, ops::PoolOp);

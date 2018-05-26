@@ -51,3 +51,7 @@ void MulOp<Dtype, T>::InferShape() const {
 template class MulOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+USE_OP(mul);
+REGISTER_OPERATOR(mul, ops::MulOp);
