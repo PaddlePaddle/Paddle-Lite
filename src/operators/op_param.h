@@ -528,5 +528,36 @@ class SoftmaxParam : public OpParam {
   Tensor *out_;
 };
 
+class FeedParam : public OpParam {
+ public:
+  FeedParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+             const framework::AttributeMap &attrs,
+             const framework::Scope &scope) {
+    input_x_ = InputXFrom<framework::Tensor>(inputs, scope);
+    out_ = OutFrom<framework::Tensor>(outputs, scope);
+  }
+  const Tensor *InputX() const { return input_x_; }
+  Tensor *Out() const { return out_; }
+ private:
+  Tensor *input_x_;
+  Tensor *out_;
+};
+
+
+class FetchParam : public OpParam {
+ public:
+  FetchParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+            const framework::AttributeMap &attrs,
+            const framework::Scope &scope) {
+    input_x_ = InputXFrom<framework::Tensor>(inputs, scope);
+    out_ = OutFrom<framework::Tensor>(outputs, scope);
+  }
+  const Tensor *InputX() const { return input_x_; }
+  Tensor *Out() const { return out_; }
+ private:
+  Tensor *input_x_;
+  Tensor *out_;
+};
+
 }  // namespace operators
 }  // namespace paddle_mobile

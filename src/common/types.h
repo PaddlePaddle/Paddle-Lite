@@ -17,6 +17,19 @@ limitations under the License. */
 namespace paddle_mobile {
 enum class Precision : int { FP32 = 0 };
 
+template <Precision p>
+struct PrecisionTrait{
+  typedef void ptype;
+};
+
+template <>
+struct PrecisionTrait<Precision::FP32>{
+  typedef float ptype;
+};
+
+
+
+
 //! device type
 enum DeviceTypeEnum { kINVALID = -1, kCPU = 0, kFPGA = 1, kGPU_MALI = 2 };
 

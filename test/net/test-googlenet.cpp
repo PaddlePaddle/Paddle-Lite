@@ -12,25 +12,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+#include <fstream>
 
-#include <map>
-#include <string>
-#include <vector>
+#include "../test_helper.h"
+#include "../test_include.h"
+#include "framework/executor.h"
 
-#include "framework.pb.h"
-#include "framework/program/block_desc.h"
-#include "framework/program/program.h"
-#include "framework/program/program_desc.h"
-#include "operator.h"
-#include "scope.h"
-#include "tensor.h"
-#include "variable.h"
+int main(){
+  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  //  ../../../test/models/googlenet
+  //  ../../../test/models/mobilenet
+  auto program = loader.Load(std::string("../models/googlenet"));
 
-namespace paddle_mobile {
-namespace framework {
+  paddle_mobile::Executor<paddle_mobile::CPU> executor(program);
 
+  std::vector<float> input;
+  std::vector<int64_t> dims{1, 3, 224, 224};
+  GetInput<float>(g_test_image_1x3x224x224, &input, dims);
 
+//  DLOG << " input: " << input;
+  executor.predict(input, dims);
 
-}  // namespace framework
-}  // namespace paddle_mobile
+  return 0;
+}
