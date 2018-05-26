@@ -669,5 +669,23 @@ class ReshapeParam : public OpParam {
   vector<int> shape_;
   bool inplace_;
 };
+
+class ReluParam : public OpParam {
+ public:
+  ReluParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+            const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<Tensor>(inputs, scope);
+    out_ = OutFrom<Tensor>(outputs, scope);
+  }
+
+  const Tensor *InputX() const { return input_x_; }
+
+  Tensor *Out() const { return out_; }
+
+ private:
+  Tensor *input_x_;
+  Tensor *out_;
+};
+
 }  // namespace operators
 }  // namespace paddle_mobile

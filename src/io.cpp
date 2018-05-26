@@ -144,26 +144,25 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
       std::make_shared<framework::Scope>();
   program.scope = scope;
 
-  //  originProgramDesc->Block(0);
+  originProgramDesc->Block(0);
 
-  //  for (const auto &block : originProgramDesc->Blocks()) {
-  //    for (int i = 0; i < block->Vars().size(); ++i) {
-  //      std::shared_ptr<framework::VarDesc> var_desc = block->Vars()[i];
-  ////      auto var = scope->Var(var_desc->Name());
-  //      if (var_desc->GetType() == framework::proto::VarType::LOD_TENSOR) {
-  //        if (var_desc->Persistable() &&
-  //            var_desc->GetType() != framework::proto::VarType::FEED_MINIBATCH
-  //            && var_desc->GetType() != framework::proto::VarType::FETCH_LIST)
-  //            {
-  //          //          auto tensor = var->GetMutable<framework::LoDTensor>();
-  //          // to load
-  //          //          LoadVar(tensor, dirname + "/" + var_desc->Name());
-  //        }
-  //      } else {
-  //        // TODO(codeWorm): some.
-  //      }
-  //    }
-  //  }
+  for (const auto &block : originProgramDesc->Blocks()) {
+    for (int i = 0; i < block->Vars().size(); ++i) {
+      std::shared_ptr<framework::VarDesc> var_desc = block->Vars()[i];
+      auto var = scope->Var(var_desc->Name());
+      if (var_desc->GetType() == framework::proto::VarType::LOD_TENSOR) {
+        if (var_desc->Persistable() &&
+            var_desc->GetType() != framework::proto::VarType::FEED_MINIBATCH &&
+            var_desc->GetType() != framework::proto::VarType::FETCH_LIST) {
+          auto tensor = var->GetMutable<framework::LoDTensor>();
+          // to load
+          LoadVar(tensor, dirname + "/" + var_desc->Name());
+        }
+      } else {
+        // TODO(codeWorm): some.
+      }
+    }
+  }
 
 #ifdef PADDLE_MOBILE_DEBUG
   for (const auto &block : program_desc_proto.blocks()) {
