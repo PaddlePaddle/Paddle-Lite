@@ -22,6 +22,7 @@ limitations under the License. */
 #include "framework/op_registry.h"
 #include "operators/conv_op.h"
 #include "operators/pool_op.h"
+#include "operators/relu_op.h"
 #include "operators/reshape_op.h"
 #include "operators/sigmoid_op.h"
 #include "operators/softmax_op.h"
@@ -58,6 +59,7 @@ class Executor4Test : public Executor<DeviceType> {
       std::vector<std::shared_ptr<OpDesc>> ops = block_desc->Ops();
       for (std::shared_ptr<OpDesc> op : ops) {
         if (op->Type() == op_type) {
+          /// test first meeting op in program
           std::shared_ptr<paddle_mobile::framework::OperatorBase<DeviceType>>
               op_ptr = paddle_mobile::framework::OpRegistry<
                   paddle_mobile::CPU>::CreateOp(op->Type(), op->GetInputs(),
