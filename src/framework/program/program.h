@@ -28,6 +28,7 @@ class Program : PaddleMobileObject {
   std::shared_ptr<ProgramDesc> originProgram;
   std::shared_ptr<ProgramDesc> optimizeProgram;
   std::shared_ptr<Scope> scope;
+  std::string model_path;
 
  private:
 };

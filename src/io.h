@@ -14,12 +14,16 @@ limitations under the License. */
 
 #pragma once
 
+#include <memory.h>
 #include <string>
+#include <vector>
 
 #include "common/types.h"
 #include "framework/lod_tensor.h"
+#include "framework/operator.h"
 #include "framework/paddle_mobile_object.h"
 #include "framework/program/program.h"
+#include "framework/tensor.h"
 
 namespace paddle_mobile {
 
@@ -30,6 +34,32 @@ class Loader : PaddleMobileObject {
 
  private:
   void LoadVar(framework::LoDTensor *tensor, const std::string &file_path);
+};
+
+template <typename Dtype, Precision P = Precision::FP32>
+class Executor {
+ public:
+  typedef typename PrecisionTrait<P>::ptype Ptype;
+
+  Executor() = default;
+
+  Executor(const framework::Program<Dtype> p);
+
+  std::shared_ptr<framework::Tensor> predict(framework::Tensor &t);
+
+  std::vector<Ptype> predict(const std::vector<Ptype> &input,
+                             const std::vector<int64_t> &dims);
+
+ protected:
+  void InitMemory();
+  void LoadMemory(framework::LoDTensor *tensor, const std::string &file_path);
+  const framework::Program<Dtype> program_;
+  std::shared_ptr<framework::ProgramDesc> to_predict_program_;
+  void predict(const framework::Tensor &t, int block_id);
+  std::map<framework::BlockDesc,
+           std::vector<std::shared_ptr<framework::OperatorBase<Dtype>>>>
+      ops_of_block_;
+  bool use_optimize_ = false;
 };
 
 }  // namespace paddle_mobile

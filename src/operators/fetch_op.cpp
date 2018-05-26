@@ -12,21 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+//
+// Created by liuRuiLong on 2018/5/25.
+//
 
-#include <map>
-#include <string>
-#include <vector>
-
-#include "./test_helper.h"
-#include "common/log.h"
-#include "framework/framework.pb.h"
-#include "framework/lod_tensor.h"
-#include "framework/operator.h"
-#include "framework/program/block_desc.h"
-#include "framework/program/program.h"
-#include "framework/program/program_desc.h"
-#include "framework/scope.h"
-#include "framework/tensor.h"
-#include "framework/variable.h"
-#include "io.h"
+#include "fetch_op.h"
