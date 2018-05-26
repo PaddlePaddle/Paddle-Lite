@@ -35,7 +35,7 @@ class OperatorRegistrarRecursive;
 template <typename Dtype, typename... ARGS>
 struct OperatorRegistrar : public Registrar {
   explicit OperatorRegistrar(const std::string& op_type) {
-    if (OpInfoMap<Dtype>::Instance().Has(op_type)) {
+    if (OpInfoMap<Dtype>::Instance()->Has(op_type)) {
       LOG(paddle_mobile::kLOG_DEBUG1)
           << op_type << " is registered more than once.";
       return;
@@ -47,7 +47,7 @@ struct OperatorRegistrar : public Registrar {
     }
     OpInfo<Dtype> info;
     OperatorRegistrarRecursive<Dtype, 0, false, ARGS...>(op_type, &info);
-    OpInfoMap<Dtype>::Instance().Insert(op_type, info);
+    OpInfoMap<Dtype>::Instance()->Insert(op_type, info);
   }
 };
 
@@ -95,10 +95,10 @@ class OpRegistry {
     LOG(paddle_mobile::kLOG_DEBUG1) << " output size: " << outputs.size();
     LOG(paddle_mobile::kLOG_DEBUG1) << " attr size: " << attrs.size();
     LOG(paddle_mobile::kLOG_DEBUG1)
-        << " OpInfoMap size: " << OpInfoMap<Dtype>::Instance().map().size();
+        << " OpInfoMap size: " << OpInfoMap<Dtype>::Instance()->map().size();
     LOG(paddle_mobile::kLOG_DEBUG1) << " has type: " << type << " "
-                                    << OpInfoMap<Dtype>::Instance().Has(type);
-    auto& info = OpInfoMap<Dtype>::Instance().Get(type);
+                                    << OpInfoMap<Dtype>::Instance()->Has(type);
+    auto& info = OpInfoMap<Dtype>::Instance()->Get(type);
     auto op = info.Creator()(type, inputs, outputs, attrs, scope);
     return std::shared_ptr<OperatorBase<Dtype>>(op);
   }
