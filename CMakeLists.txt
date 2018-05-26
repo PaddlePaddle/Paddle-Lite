@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 3.0)
 project(paddle-mobile)
-add_definitions(-std=c++11)
 add_definitions(-DPADDLE_MOBILE_DEBUG="true")
 
-
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -11,7 +10,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY build)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY build)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 
-file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp)
+file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c)
 file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
 
 # include headers
@@ -30,11 +29,13 @@ include_directories(src/)
 #set_target_properties(openblas_proj PROPERTIES EXCLUDE_FROM_ALL 1)
 # link protobuf
 include_directories(third-party/protobuf/include)
+include_directories(third-party/protobuf-c-decoder/include)
 if (ANDROID)
     link_directories(third-party/protobuf/armeabi-v7a)
 else()
     # link openblas
     link_directories(third-party/protobuf/lib)
+    link_directories(third-party/protobuf-c-decoder/lib)
 endif ()
 
 #add_dependencies(paddle-mobile openblas_proj)
@@ -47,6 +48,7 @@ if (ANDROID)
     target_link_libraries(paddle-mobile protobuf-lite)
 else()
     target_link_libraries(paddle-mobile protobuf-lite)
+    target_link_libraries(paddle-mobile protobuf-c-decoder)
 endif ()
 #add_dependencies(paddle-mobile openblas_proj)
 
