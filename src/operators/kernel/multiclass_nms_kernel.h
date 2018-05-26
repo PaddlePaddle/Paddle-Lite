@@ -12,20 +12,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "elementwise_add_op.h"
+#include "framework/operator.h"
+#include "operators/op_param.h"
+
+#pragma once;
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename Dtype, typename T>
-void ElementwiseAddOp<Dtype, T>::InferShape() const {
-  auto x_dim = param_.InputX()->dims();
-  param_.Out()->Resize(x_dim);
-}
-template class ElementwiseAddOp<CPU, float>;
+template <typename DeviceType, typename T>
+class MultiClassNMSKernel
+    : public framework::OpKernelBase<DeviceType, MultiClassNMSParam> {
+ public:
+  void Compute(const MultiClassNMSParam& param) const;
+};
 }  // namespace operators
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-USE_OP(elementwise_add);
-REGISTER_OPERATOR(elementwise_add, ops::ElementwiseAddOp);

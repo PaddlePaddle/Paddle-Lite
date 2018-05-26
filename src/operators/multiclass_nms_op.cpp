@@ -12,20 +12,30 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "elementwise_add_op.h"
-
+#include "operators/multiclass_nms_op.h"
 namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
-void ElementwiseAddOp<Dtype, T>::InferShape() const {
-  auto x_dim = param_.InputX()->dims();
-  param_.Out()->Resize(x_dim);
+void MultiClassNMSOp<Dtype, T>::InferShape() const {
+  auto input_bboxes_dims = param_.InputBBoxes()->dims();
+  auto input_scores_dims = param_.InputScores()->dims();
+  if (input_scores_dims.size() != 3) {
+    LOG(kLOG_ERROR) << "Input Scores size must be 3";
+  }
+  if (input_bboxes_dims[2] != 4) {
+    LOG(kLOG_ERROR) << "Input BBoxes 2nd dimension must be 4";
+  }
+  if (input_bboxes_dims[1] != input_scores_dims[2]) {
+    LOG(kLOG_ERROR) << "Predict bboxes must be equal";
+  }
+  // pre size, will change in Compute.
+  param_.Out()->Resize(framework::make_ddim({input_bboxes_dims[1], 6}));
 }
-template class ElementwiseAddOp<CPU, float>;
+template class MultiClassNMSOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-USE_OP(elementwise_add);
-REGISTER_OPERATOR(elementwise_add, ops::ElementwiseAddOp);
+USE_OP(multiclass_nms);
+REGISTER_OPERATOR(multiclass_nms, ops::MultiClassNMSOp);

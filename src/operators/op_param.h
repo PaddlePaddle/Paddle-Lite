@@ -90,6 +90,16 @@ class OpParam : PaddleMobileObject {
   }
 
   template <typename T>
+  static T *InputBBoxesFrom(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("BBoxes", inputs, scope);
+  }
+
+  template <typename T>
+  static T *InputScoresFrom(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("Scores", inputs, scope);
+  }
+
+  template <typename T>
   static vector<T *> InputMultiFrom(const VariableNameMap &inputs,
                                     const Scope &scope) {
     return GetMultiVarValue<T>("X", inputs, scope);
@@ -527,6 +537,51 @@ class SoftmaxParam : public OpParam {
   Tensor *input_x_;
   Tensor *out_;
 };
+class MultiClassNMSParam : public OpParam {
+ public:
+  MultiClassNMSParam(const VariableNameMap &inputs,
+                     const VariableNameMap &outputs, const AttributeMap &attrs,
+                     const Scope &scope) {
+    input_bboxes_ = InputBBoxesFrom<Tensor>(inputs, scope);
+    input_scores_ = InputScoresFrom<Tensor>(inputs, scope);
+    out_ = OutFrom<Tensor>(outputs, scope);
+    background_label_ = GetAttr<int>("background_label", attrs);
+    nms_top_k_ = GetAttr<int>("nms_top_k", attrs);
+    keep_top_k_ = GetAttr<int>("keep_top_k", attrs);
+    nms_threshold_ = GetAttr<float>("nms_threshold", attrs);
+    nms_eta_ = GetAttr<float>("nms_eta", attrs);
+    score_threshold_ = GetAttr<float>("score_threshold", attrs);
+  }
+
+  const Tensor *InputBBoxes() const { return input_bboxes_; }
+
+  const Tensor *InputScores() const { return input_scores_; }
+
+  Tensor *Out() const { return out_; }
+
+  const int &BackGroundLabel() const { return background_label_; }
+
+  const int &NMSTopK() const { return nms_top_k_; }
+
+  const int &KeepTopK() const { return keep_top_k_; }
+
+  const float &NMSThreshold() const { return nms_threshold_; }
+
+  const float &NMSEta() const { return nms_eta_; }
+
+  const float &ScoreThreshold() const { return score_threshold_; }
+
+ private:
+  Tensor *input_bboxes_;
+  Tensor *input_scores_;
+  Tensor *out_;
+  int background_label_;
+  int nms_top_k_;
+  int keep_top_k_;
+  float nms_threshold_;
+  float nms_eta_;
+  float score_threshold_;
+};
 
 class FeedParam : public OpParam {
  public:
@@ -560,5 +615,26 @@ class FetchParam : public OpParam {
   Tensor *out_;
 };
 
+class TransposeParam : public OpParam {
+ public:
+  TransposeParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+                 const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<Tensor>(inputs, scope);
+    out_ = OutFrom<Tensor>(outputs, scope);
+    axis_ = GetAttr<vector<int>>("axis", attrs);
+  }
+
+  const Tensor *InputX() const { return input_x_; }
+
+  Tensor *Out() const { return out_; }
+
+  const vector<int> &Axis() const { return axis_; }
+
+ private:
+  Tensor *input_x_;
+  Tensor *out_;
+  vector<int> axis_;
+};
+  
 }  // namespace operators
 }  // namespace paddle_mobile
