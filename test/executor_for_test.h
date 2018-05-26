@@ -23,6 +23,7 @@ limitations under the License. */
 #include "operators/pool_op.h"
 #include "operators/relu_op.h"
 #include "operators/reshape_op.h"
+#include "operators/sigmoid_op.h"
 #include "operators/softmax_op.h"
 #include "operators/transpose_op.h"
 
