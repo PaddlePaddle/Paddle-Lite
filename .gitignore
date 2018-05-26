@@ -58,6 +58,8 @@ cmake-build-release/
 
 test/models/
 
+test/images/
+
 # Emacs intermediate files
 *~
 

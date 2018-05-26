@@ -40,7 +40,7 @@ endif ()
 #add_dependencies(paddle-mobile openblas_proj)
 
 # gen static
-ADD_LIBRARY(paddle-mobile STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+ADD_LIBRARY(paddle-mobile STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H} src/operators/feed_op.cpp src/operators/feed_op.h src/operators/fetch_op.cpp src/operators/fetch_op.h)
 if (ANDROID)
     # openblas.a need log lib
     target_link_libraries(paddle-mobile protobuf-lite)

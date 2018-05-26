@@ -14,10 +14,21 @@ limitations under the License. */
 
 #pragma once
 
+#include <fstream>
 #include <random>
+
 #include "common/log.h"
 #include "framework/ddim.h"
 #include "framework/tensor.h"
+
+static const std::string g_google = "../models/googlenet";
+static const std::string g_mobilenet = "../models/mobilenet";
+static const std::string g_mobilenet_ssd = "../models/mobilenet";
+static const std::string g_squeezenet = "../models/squeezenet";
+static const std::string g_resnet =
+    "../models/image_classification_resnet.inference.model";
+static const std::string g_test_image_1x3x224x224 =
+    "../images/test_image_1x3x224x224_float";
 
 template <typename T>
 void SetupTensor(paddle_mobile::framework::Tensor *input,
@@ -30,4 +41,22 @@ void SetupTensor(paddle_mobile::framework::Tensor *input,
   for (int i = 0; i < input->numel(); ++i) {
     input_ptr[i] = static_cast<T>(uniform_dist(rng) * (upper - lower) + lower);
   }
+}
+
+template <typename T>
+void GetInput(const std::string &input_name, std::vector<T> *input,
+              const std::vector<int64_t> &dims) {
+  int size = 1;
+  for (const auto &dim : dims) {
+    size *= dim;
+  }
+
+  T *input_ptr = (T *)malloc(sizeof(T) * size);
+  std::ifstream in(input_name, std::ios::in | std::ios::binary);
+  in.read((char *)(input_ptr), size * sizeof(T));
+  in.close();
+  for (int i = 0; i < size; ++i) {
+    input->push_back(input_ptr[i]);
+  }
+  free(input_ptr);
 }
