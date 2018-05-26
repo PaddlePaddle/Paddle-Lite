@@ -18,7 +18,7 @@ limitations under the License. */
 #include "../test_include.h"
 #include "framework/executor.h"
 
-int main(){
+int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
   //  ../../../test/models/googlenet
   //  ../../../test/models/mobilenet
@@ -30,7 +30,7 @@ int main(){
   std::vector<int64_t> dims{1, 3, 224, 224};
   GetInput<float>(g_test_image_1x3x224x224, &input, dims);
 
-//  DLOG << " input: " << input;
+  //  DLOG << " input: " << input;
   executor.predict(input, dims);
 
   return 0;

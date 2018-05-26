@@ -14,20 +14,21 @@ limitations under the License. */
 
 #pragma once
 
-#include <random>
 #include <fstream>
+#include <random>
 
 #include "common/log.h"
 #include "framework/ddim.h"
 #include "framework/tensor.h"
 
-
 static const std::string g_google = "../models/googlenet";
 static const std::string g_mobilenet = "../models/mobilenet";
 static const std::string g_mobilenet_ssd = "../models/mobilenet";
 static const std::string g_squeezenet = "../models/squeezenet";
-static const std::string g_resnet = "../models/image_classification_resnet.inference.model";
-static const std::string g_test_image_1x3x224x224 = "../images/test_image_1x3x224x224_float";
+static const std::string g_resnet =
+    "../models/image_classification_resnet.inference.model";
+static const std::string g_test_image_1x3x224x224 =
+    "../images/test_image_1x3x224x224_float";
 
 template <typename T>
 void SetupTensor(paddle_mobile::framework::Tensor *input,
@@ -43,7 +44,8 @@ void SetupTensor(paddle_mobile::framework::Tensor *input,
 }
 
 template <typename T>
-void GetInput(const std::string &input_name, std::vector<T> *input, const std::vector<int64_t> &dims){
+void GetInput(const std::string &input_name, std::vector<T> *input,
+              const std::vector<int64_t> &dims) {
   int size = 1;
   for (const auto &dim : dims) {
     size *= dim;
