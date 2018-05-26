@@ -22,6 +22,7 @@ limitations under the License. */
 #include "operators/pool_op.h"
 #include "operators/softmax_op.h"
 #include "operators/transpose_op.h"
+#include "operators/reshape_op.h"
 
 using paddle_mobile::framework::BlockDesc;
 using paddle_mobile::framework::DDim;

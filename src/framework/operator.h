@@ -19,6 +19,7 @@ limitations under the License. */
 #include <utility>
 #include <vector>
 
+#include "common/enforce.h"
 #include "common/type_define.h"
 #include "common/types.h"
 #include "common/variant.h"
