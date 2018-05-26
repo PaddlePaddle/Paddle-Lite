@@ -18,15 +18,16 @@ limitations under the License. */
 #include <vector>
 #include "common/log.h"
 #include "framework/executor.h"
+#include "io.h"
 #include "operators/conv_op.h"
 #include "operators/pool_op.h"
 #include "operators/softmax_op.h"
 #include "operators/transpose_op.h"
 #include "operators/reshape_op.h"
 
+using paddle_mobile::Executor;
 using paddle_mobile::framework::BlockDesc;
 using paddle_mobile::framework::DDim;
-using paddle_mobile::framework::Executor;
 using paddle_mobile::framework::LoDTensor;
 using paddle_mobile::framework::OpDesc;
 using paddle_mobile::framework::Program;

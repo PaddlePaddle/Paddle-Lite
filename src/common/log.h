@@ -170,11 +170,16 @@ struct ToLog {
 
 template <typename T>
 Print &operator<<(Print &printer, const std::vector<T> &v) {
-  printer << "[ ";
-  for (const auto &value : v) {
+  printer << "[\n ";
+
+  for (int i = 0; i < v.size(); ++i) {
+    const auto &value = v[i];
     printer << value << " ";
+    if (i % 10 == 9) {
+      printer << "\n";
+    }
   }
-  printer << " ]";
+  printer << " \n]";
   return printer;
 }
 
