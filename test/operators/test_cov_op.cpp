@@ -13,16 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "../executor_for_test.h"
-#include "../test_helper.h"
-#include "io.h"
+#include "../test_include.h"
 
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
   //  ../models/image_classification_resnet.inference.model
-  auto program = loader.Load(std::string("../models/googlenet"));
-  if (program.originProgram == nullptr) {
-    DLOG << "program file read fail";
-  }
+  auto program = loader.Load(g_googlenet);
+
+  PADDLE_MOBILE_ENFORCE(program.originProgram != nullptr,
+                        "program file read fail");
 
   Executor4Test<paddle_mobile::CPU,
                 paddle_mobile::operators::ConvOp<paddle_mobile::CPU, float>>
