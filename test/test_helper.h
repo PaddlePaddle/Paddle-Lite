@@ -62,9 +62,9 @@ void GetInput(const std::string &input_name, std::vector<T> *input,
 }
 
 template <typename T>
-void GetInput(const std::string &input_name, paddle_mobile::framework::Tensor *input,
+void GetInput(const std::string &input_name,
+              paddle_mobile::framework::Tensor *input,
               paddle_mobile::framework::DDim dims) {
-
   T *input_ptr = input->mutable_data<T>(dims);
 
   std::ifstream in(input_name, std::ios::in | std::ios::binary);
