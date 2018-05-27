@@ -4,7 +4,7 @@
 #ifndef PROTOBUF_C_framework_2eproto__INCLUDED
 #define PROTOBUF_C_framework_2eproto__INCLUDED
 
-#include "protobuf-c.h"
+#include "common/protobuf-c.h"
 
 PROTOBUF_C__BEGIN_DECLS
 

@@ -14,7 +14,6 @@ limitations under the License. */
 
 #pragma once
 
-#include "framework/framework.pb.h"
 #include "framework/framework.pb-c.h"
 #include "framework/program/tensor_desc.h"
 #include "framework/paddle_mobile_object.h"

@@ -132,37 +132,6 @@ bool TensorContainsInf(const framework::Tensor &tensor) {
   return Any(tensor, predicate);
 }
 
-void TensorToStream(std::ostream &os, const Tensor &tensor) {
-  {  // the 1st field, uint32_t version
-    constexpr uint32_t version = 0;
-    os.write(reinterpret_cast<const char *>(&version), sizeof(version));
-  }
-  {  // the 2nd field, tensor description
-    // int32_t  size
-    // void*    protobuf message
-    proto::VarType::TensorDesc desc;
-    desc.set_data_type(framework::ToDataType(tensor.type()));
-    auto dims = framework::vectorize(tensor.dims());
-    auto *pb_dims = desc.mutable_dims();
-    pb_dims->Resize(static_cast<int>(dims.size()), 0);
-    std::copy(dims.begin(), dims.end(), pb_dims->begin());
-    int32_t size = desc.ByteSize();
-    os.write(reinterpret_cast<const char *>(&size), sizeof(size));
-    auto out = desc.SerializeAsString();
-    os.write(out.data(), size);
-  }
-  {  // the 3rd field, tensor data
-    uint64_t size = tensor.memory_size();
-    auto *data_ptr = tensor.data<void>();
-    //    PADDLE_ENFORCE(size <
-    //    std::numeric_limits<std::streamsize>::max(),
-    //                   "Index overflow when writing tensor");
-
-    os.write(static_cast<const char *>(data_ptr),
-             static_cast<std::streamsize>(size));
-  }
-}
-
 struct DeserializedDataFunctor {
   DeserializedDataFunctor(void **buf, Tensor *tensor)
       : buf_(buf), tensor_(tensor) {}
@@ -175,33 +144,6 @@ struct DeserializedDataFunctor {
   void **buf_;
   Tensor *tensor_;
 };
-
-void TensorFromStream(std::istream &is, framework::Tensor *tensor) {
-  uint32_t version;
-  is.read(reinterpret_cast<char *>(&version), sizeof(version));
-  //  PADDLE_ENFORCE_EQ(version, 0U, "Only version 0 is supported");
-  proto::VarType::TensorDesc desc;
-  {  // int32_t size
-    // proto buffer
-    int32_t size;
-    is.read(reinterpret_cast<char *>(&size), sizeof(size));
-    std::unique_ptr<char[]> buf(new char[size]);
-    is.read(reinterpret_cast<char *>(buf.get()), size);
-    //    PADDLE_ENFORCE(desc.ParseFromArray(buf.get(), size),
-    //                   "Cannot parse tensor desc");
-  }
-  {  // read tensor
-    std::vector<int64_t> dims;
-    dims.reserve(static_cast<size_t>(desc.dims().size()));
-    std::copy(desc.dims().begin(), desc.dims().end(), std::back_inserter(dims));
-    tensor->Resize(framework::make_ddim(dims));
-    void *buf;
-
-    framework::VisitDataType(desc.data_type(),
-                             DeserializedDataFunctor(&buf, tensor));
-    is.read(static_cast<char *>(buf), tensor->memory_size());
-  }
-}
 
 }  // namespace framework
 }  // namespace paddle_mobile

@@ -17,7 +17,6 @@ limitations under the License. */
 #include <string>
 #include "common/log.h"
 #include "common/type_define.h"
-#include "framework/framework.pb.h"
 
 namespace paddle_mobile {
 namespace framework {

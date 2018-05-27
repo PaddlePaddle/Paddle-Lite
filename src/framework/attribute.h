@@ -14,10 +14,10 @@ limitations under the License. */
 
 #pragma once
 
+#include <unordered_map>
 #include "common/log.h"
 #include "common/enforce.h"
 #include "common/variant.h"
-#include "framework/framework.pb.h"
 #include "framework/framework.pb-c.h"
 
 namespace paddle_mobile {
@@ -27,69 +27,6 @@ class BlockDesc;
 
 class Attribute {
  public:
-  static Attribute GetAttrValue(const proto::OpDesc::Attr &attr_desc) {
-    //    std::cout << "begin get attr value" << std::endl;
-    Attribute attr;
-    switch (attr_desc.type()) {
-      case proto::AttrType::BOOLEAN: {
-        attr.Set<bool>(attr_desc.b());
-        break;
-      }
-      case proto::AttrType::INT: {
-        attr.Set<int>(attr_desc.i());
-        break;
-      }
-      case proto::AttrType::FLOAT: {
-        attr.Set<float>(attr_desc.f());
-        break;
-      }
-      case proto::AttrType::STRING: {
-        attr.Set<std::string>(attr_desc.s());
-        break;
-      }
-      case proto::AttrType::BOOLEANS: {
-        std::vector<bool> val(attr_desc.bools_size());
-        for (int i = 0; i < attr_desc.bools_size(); ++i) {
-          val[i] = attr_desc.bools(i);
-        }
-        attr.Set<std::vector<bool>>(val);
-        break;
-      }
-      case proto::AttrType::INTS: {
-        std::vector<int> val(attr_desc.ints_size());
-        for (int i = 0; i < attr_desc.ints_size(); ++i) {
-          val[i] = attr_desc.ints(i);
-        }
-        attr.Set<std::vector<int>>(val);
-        break;
-      }
-      case proto::AttrType::FLOATS: {
-        std::vector<float> val(attr_desc.floats_size());
-        for (int i = 0; i < attr_desc.floats_size(); ++i) {
-          val[i] = attr_desc.floats(i);
-        }
-        attr.Set<std::vector<float>>(val);
-        break;
-      }
-      case proto::AttrType::STRINGS: {
-        std::vector<std::string> val(attr_desc.strings_size());
-        for (int i = 0; i < attr_desc.strings_size(); ++i) {
-          val[i] = attr_desc.strings(i);
-        }
-        attr.Set<std::vector<std::string>>(val);
-        break;
-      }
-      case proto::AttrType::LONG: {
-        attr.Set<int64_t>(attr_desc.l());
-        break;
-      }
-      default:
-        //        std::cout << " not support " << std::endl;
-        break;
-    }
-    //    std::cout << "end get attr value" << std::endl;
-    return attr;
-  }
 
   /*
    *  PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__INT = 0,

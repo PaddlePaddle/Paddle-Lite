@@ -17,6 +17,7 @@ limitations under the License. */
 #include <map>
 #include <string>
 #include <vector>
+#include <unordered_set>
 #include "framework/attribute.h"
 #include "framework/scope.h"
 
