@@ -15,15 +15,15 @@ limitations under the License. */
 #include <string>
 #include <vector>
 
+#include "framework/program/tensor_desc.h"
 #include "program_desc.h"
 
 namespace paddle_mobile {
 namespace framework {
 
-ProgramDesc::ProgramDesc(const proto::ProgramDesc &desc) {
-  for (auto &block_desc : desc.blocks()) {
-    // new framework::BlockDesc(block_desc)
-    blocks_.emplace_back(std::make_shared<BlockDesc>(block_desc));
+ProgramDesc::ProgramDesc(PaddleMobile__Framework__Proto__ProgramDesc *desc) {
+  for (int i = 0; i < desc->n_blocks; ++i) {
+    blocks_.emplace_back(std::make_shared<BlockDesc>(desc->blocks[i]));
   }
 }
 
@@ -53,6 +53,21 @@ void ProgramDesc::Description(std::string header) {
       for (auto &attr : op->GetAttrMap()) {
         LOG(kLOG_DEBUG2) << "attr name:: " << attr.first;
         LOG(kLOG_DEBUG3) << "argument - " << attr.second;
+      }
+    }
+
+    for (const auto &var_desc : block->Vars()) {
+      if (var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
+        LOG(kLOG_DEBUG1) << "var name: " << var_desc->Name();
+
+        const TensorDesc &tensor_desc = var_desc->Tensor_desc();
+
+        LOG(kLOG_DEBUG2) << "in var tensor desc dims size: "
+                         << tensor_desc.Dims().size();
+        for (int l = 0; l < tensor_desc.Dims().size(); ++l) {
+          LOG(kLOG_DEBUG3) << "var tensor desc dim " << l
+                           << " value: " << tensor_desc.Dims()[l];
+        }
       }
     }
   }

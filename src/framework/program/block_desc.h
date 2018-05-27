@@ -14,7 +14,7 @@ limitations under the License. */
 
 #pragma once
 
-#include "framework/framework.pb.h"
+#include "framework/framework.pb-c.h"
 #include "framework/paddle_mobile_object.h"
 #include "framework/program/op_desc.h"
 #include "framework/program/var_desc.h"
@@ -26,8 +26,7 @@ class BlockDesc : PaddleMobileObject {
  public:
   friend class Node;
   friend class ProgramOptimize;
-  BlockDesc(const proto::BlockDesc &desc);
-
+  BlockDesc(PaddleMobile__Framework__Proto__BlockDesc *desc);
   BlockDesc(const BlockDesc &block_desc)
       : index_(block_desc.index_), parent_index_(block_desc.parent_index_) {
     for (auto &op_desc : block_desc.ops_) {
