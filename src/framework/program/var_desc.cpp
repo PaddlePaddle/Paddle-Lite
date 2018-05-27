@@ -16,8 +16,5 @@ limitations under the License. */
 
 namespace paddle_mobile {
 
-namespace framework {
-
-
-}  // namespace framework
+namespace framework {}  // namespace framework
 }  // namespace paddle_mobile

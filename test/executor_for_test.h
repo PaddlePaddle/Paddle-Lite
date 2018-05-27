@@ -58,7 +58,6 @@ class Executor4Test : public Executor<DeviceType> {
     for (std::shared_ptr<BlockDesc> block_desc : blocks) {
       std::vector<std::shared_ptr<OpDesc>> ops = block_desc->Ops();
       for (std::shared_ptr<OpDesc> op : ops) {
-
         if (op->Type() == op_type) {
           /// test first meeting op in program
           std::shared_ptr<paddle_mobile::framework::OperatorBase<DeviceType>>

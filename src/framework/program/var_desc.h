@@ -15,8 +15,8 @@ limitations under the License. */
 #pragma once
 
 #include "framework/framework.pb-c.h"
-#include "framework/program/tensor_desc.h"
 #include "framework/paddle_mobile_object.h"
+#include "framework/program/tensor_desc.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -48,7 +48,6 @@ PADDLE_MOBILE__FRAMEWORK__PROTO__VAR_TYPE__TYPE__BOOL = 0,
 
                                                                  */
 
-
 class VarDesc {
  public:
   VarDesc(const VarDesc &var_desc) {
@@ -65,7 +64,6 @@ class VarDesc {
   VarType_Type type_;
   VarType_Type data_type_;
      * */
-
   }
   VarDesc(PaddleMobile__Framework__Proto__VarDesc *desc) {
     type_ = (VarType_Type)desc->type->type;
@@ -94,9 +92,7 @@ class VarDesc {
       default:
         data_type_ = tensor_desc_.DataType();
         break;
-
     }
-
   }
   std::string Name() const { return name_; }
 
@@ -104,42 +100,40 @@ class VarDesc {
 
   bool Persistable() const { return persistable_; }
 
-  const TensorDesc &Tensor_desc() const {
-    return tensor_desc_;
-  }
+  const TensorDesc &Tensor_desc() const { return tensor_desc_; }
 
   //  const proto::VarType::ChannelDesc &channel_desc() const {
-//    switch (desc_.type().type()) {
-//      case proto::VarType::CHANNEL:
-//        return desc_.type().channel();
-//      default:
-//        break;
-//    }
-//  }
+  //    switch (desc_.type().type()) {
+  //      case proto::VarType::CHANNEL:
+  //        return desc_.type().channel();
+  //      default:
+  //        break;
+  //    }
+  //  }
 
-//  proto::VarType::Type GetDataType() const {
-//    switch (desc_.type().type()) {
-//      case proto::VarType::CHANNEL:
-//        return channel_desc().data_type();
-//        break;
-//      default:
-//        return tensor_desc().data_type();
-//    }
-//  }
+  //  proto::VarType::Type GetDataType() const {
+  //    switch (desc_.type().type()) {
+  //      case proto::VarType::CHANNEL:
+  //        return channel_desc().data_type();
+  //        break;
+  //      default:
+  //        return tensor_desc().data_type();
+  //    }
+  //  }
 
-//  template <typename T>
-//  std::vector<T> RepeatedToVector(
-//      const google::protobuf::RepeatedField<T> &repeated_field) const {
-//    std::vector<T> ret;
-//    ret.reserve(repeated_field.size());
-//    std::copy(repeated_field.begin(), repeated_field.end(),
-//              std::back_inserter(ret));
-//    return ret;
-//  }
+  //  template <typename T>
+  //  std::vector<T> RepeatedToVector(
+  //      const google::protobuf::RepeatedField<T> &repeated_field) const {
+  //    std::vector<T> ret;
+  //    ret.reserve(repeated_field.size());
+  //    std::copy(repeated_field.begin(), repeated_field.end(),
+  //              std::back_inserter(ret));
+  //    return ret;
+  //  }
 
-//  std::vector<int64_t> GetShape() const {
-//    return this->RepeatedToVector(tensor_desc().dims());
-//  }
+  //  std::vector<int64_t> GetShape() const {
+  //    return this->RepeatedToVector(tensor_desc().dims());
+  //  }
 
  private:
   std::string name_;
@@ -147,7 +141,6 @@ class VarDesc {
   TensorDesc tensor_desc_;
   VarType_Type type_;
   VarType_Type data_type_;
-
 };
 
 }  // namespace framework

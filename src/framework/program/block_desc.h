@@ -15,9 +15,9 @@ limitations under the License. */
 #pragma once
 
 #include "framework/framework.pb-c.h"
+#include "framework/paddle_mobile_object.h"
 #include "framework/program/op_desc.h"
 #include "framework/program/var_desc.h"
-#include "framework/paddle_mobile_object.h"
 
 namespace paddle_mobile {
 namespace framework {

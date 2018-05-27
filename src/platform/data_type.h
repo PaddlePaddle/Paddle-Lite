@@ -116,8 +116,7 @@ inline std::string DataTypeToString(const VarType_Type type) {
   }
 }
 
-inline std::ostream &operator<<(std::ostream &out,
-                                const VarType_Type &type) {
+inline std::ostream &operator<<(std::ostream &out, const VarType_Type &type) {
   out << DataTypeToString(type);
   return out;
 }
