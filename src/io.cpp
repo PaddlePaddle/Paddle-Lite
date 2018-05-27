@@ -16,15 +16,15 @@ limitations under the License. */
 #include <fstream>
 #include <vector>
 
-#include "common/log.h"
 #include "common/enforce.h"
+#include "common/log.h"
+#include "framework/framework.pb-c.h"
+#include "framework/lod_tensor.h"
+#include "framework/operator.h"
+#include "framework/program/program_desc.h"
+#include "framework/program/var_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
-#include "framework/operator.h"
-#include "framework/lod_tensor.h"
-#include "framework/framework.pb-c.h"
-#include "framework/program/var_desc.h"
-#include "framework/program/program_desc.h"
 
 namespace paddle_mobile {
 
@@ -40,7 +40,7 @@ void ReadBinaryFile(const std::string &filename, std::string *contents) {
   fin.close();
 }
 
-static size_t ReadBuffer (const char *file_name, uint8_t **out) {
+static size_t ReadBuffer(const char *file_name, uint8_t **out) {
   printf("%s \n", file_name);
   FILE *fp;
   fp = fopen(file_name, "rb");
@@ -56,7 +56,7 @@ static size_t ReadBuffer (const char *file_name, uint8_t **out) {
 
   size_t cur_len = 0;
   size_t nread;
-  while ((nread=fread(*out + cur_len, 1, size - cur_len, fp)) != 0) {
+  while ((nread = fread(*out + cur_len, 1, size - cur_len, fp)) != 0) {
     cur_len += nread;
   }
   fclose(fp);
@@ -64,7 +64,8 @@ static size_t ReadBuffer (const char *file_name, uint8_t **out) {
 }
 
 template <typename Dtype, Precision P>
-void Loader<Dtype, P>::LoadVar(framework::Variable *variable, const framework::VarDesc &var_desc,
+void Loader<Dtype, P>::LoadVar(framework::Variable *variable,
+                               const framework::VarDesc &var_desc,
                                const std::string &file_path) {
   auto tensor = variable->GetMutable<framework::LoDTensor>();
   std::ifstream is(file_path);
@@ -109,22 +110,22 @@ void Loader<Dtype, P>::LoadVar(framework::Variable *variable, const framework::V
 
   const framework::TensorDesc &desc = var_desc.Tensor_desc();
 
-
   PaddleMobile__Framework__Proto__VarType__TensorDesc *tensor_desc = NULL;
-//  void *v;
-//  PaddleMobile__Framework__Proto__VarType__TensorDesc_Closure()(tensor_desc, buf.get());
+  //  void *v;
+  //  PaddleMobile__Framework__Proto__VarType__TensorDesc_Closure()(tensor_desc,
+  //  buf.get());
 
-//  DLOG << "PaddleMobile__Framework__Proto__VarType__TensorDesc_Closure- " << tensor_desc;
+  //  DLOG << "PaddleMobile__Framework__Proto__VarType__TensorDesc_Closure- " <<
+  //  tensor_desc;
 
+  //  framework::TensorDesc &tensor_desc = variable->
+  //  PaddleMobile__Framework__Proto__ProgramDesc *c_program;
+  //  uint8_t *proto_buf = NULL;
+  //  size_t read_size = ReadBuffer(file_path.c_str(), &proto_buf);
+  //  c_program = paddle_mobile__framework__proto__program_desc__unpack(NULL,
+  //  read_size, buf);
 
-//  framework::TensorDesc &tensor_desc = variable->
-//  PaddleMobile__Framework__Proto__ProgramDesc *c_program;
-//  uint8_t *proto_buf = NULL;
-//  size_t read_size = ReadBuffer(file_path.c_str(), &proto_buf);
-//  c_program = paddle_mobile__framework__proto__program_desc__unpack(NULL, read_size, buf);
-
-//  paddle_mobile__framework__proto__var_type__tensor_desc__init()
-
+  //  paddle_mobile__framework__proto__var_type__tensor_desc__init()
 
   int memory_size = 1;
   for (auto l : desc.Dims()) {
@@ -173,7 +174,8 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
 
   PADDLE_MOBILE_ENFORCE(buf != NULL, "read from __model__ is null");
 
-  c_program = paddle_mobile__framework__proto__program_desc__unpack(NULL, read_size, buf);
+  c_program = paddle_mobile__framework__proto__program_desc__unpack(
+      NULL, read_size, buf);
 
   PADDLE_MOBILE_ENFORCE(c_program != NULL, "program is null");
 
@@ -194,14 +196,14 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
   for (const auto &block : originProgramDesc->Blocks()) {
     for (int i = 0; i < block->Vars().size(); ++i) {
       std::shared_ptr<framework::VarDesc> var_desc = block->Vars()[i];
-//      DLOG << "var name-- " << var_desc->Name();
+      //      DLOG << "var name-- " << var_desc->Name();
       auto var = scope->Var(var_desc->Name());
 
       if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
         if (var_desc->Persistable() &&
             var_desc->Type() != framework::VARTYPE_TYPE_FEED_MINIBATCH &&
             var_desc->Type() != framework::VARTYPE_TYPE_FETCH_LIST) {
-//          DLOG << "to load var ";
+          //          DLOG << "to load var ";
           LoadVar(var, *var_desc, dirname + "/" + var_desc->Name());
         }
 
@@ -247,7 +249,8 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p) : program_(p) {
 }
 
 template <typename Dtype, Precision P>
-void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc, framework::LoDTensor *tensor,
+void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
+                                    framework::LoDTensor *tensor,
                                     const std::string &file_path) {
   std::ifstream is(file_path);
   PADDLE_MOBILE_ENFORCE(is.is_open(), "open file: %s failed",
@@ -289,7 +292,6 @@ void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc, framework
   is.read(reinterpret_cast<char *>(buf.get()), size);
 
   const framework::TensorDesc &desc = var_desc.Tensor_desc();
-
 
   int memory_size = 1;
   for (auto l : desc.Dims()) {
@@ -335,7 +337,8 @@ void Executor<Dtype, P>::InitMemory() {
       auto var = program_.scope->Var(var_desc->Name());
       if (var_desc->Persistable()) {
         auto tensor = var->template GetMutable<framework::LoDTensor>();
-        LoadMemory(*var_desc, tensor, program_.model_path + "/" + var_desc->Name());
+        LoadMemory(*var_desc, tensor,
+                   program_.model_path + "/" + var_desc->Name());
       } else {
         if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
           auto tensor = var->template GetMutable<framework::Tensor>();

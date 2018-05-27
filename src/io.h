@@ -33,7 +33,9 @@ class Loader : PaddleMobileObject {
   const framework::Program<Dtype, P> Load(const std::string &dirname);
 
  private:
-  void LoadVar(framework::Variable *variable, const framework::VarDesc &var_desc, const std::string &file_path);
+  void LoadVar(framework::Variable *variable,
+               const framework::VarDesc &var_desc,
+               const std::string &file_path);
 };
 
 template <typename Dtype, Precision P = Precision::FP32>
@@ -52,7 +54,8 @@ class Executor {
 
  protected:
   void InitMemory();
-  void LoadMemory(const framework::VarDesc var_desc, framework::LoDTensor *tensor, const std::string &file_path);
+  void LoadMemory(const framework::VarDesc var_desc,
+                  framework::LoDTensor *tensor, const std::string &file_path);
   framework::Program<Dtype> program_;
   std::shared_ptr<framework::ProgramDesc> to_predict_program_;
   void predict(const framework::Tensor &t, int block_id);

@@ -15,8 +15,8 @@ limitations under the License. */
 #include <string>
 #include <vector>
 
-#include "program_desc.h"
 #include "framework/program/tensor_desc.h"
+#include "program_desc.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -70,7 +70,6 @@ void ProgramDesc::Description(std::string header) {
         }
       }
     }
-
   }
 #endif
 }

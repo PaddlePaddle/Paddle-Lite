@@ -21,26 +21,26 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace framework {
 
-enum VarType_Type{
-  VARTYPE_TYPE_BOOL                   = 0,
-  VARTYPE_TYPE_INT16                  = 1,
-  VARTYPE_TYPE_INT32                  = 2,
-  VARTYPE_TYPE_INT64                  = 3,
-  VARTYPE_TYPE_FP16                   = 4,
-  VARTYPE_TYPE_FP32                   = 5,
-  VARTYPE_TYPE_FP64                   = 6,
-  VARTYPE_TYPE_LOD_TENSOR             = 7,
-  VARTYPE_TYPE_SELECTED_ROWS          = 8,
-  VARTYPE_TYPE_FEED_MINIBATCH         = 9,
-  VARTYPE_TYPE_FETCH_LIST             = 10,
-  VARTYPE_TYPE_STEP_SCOPES            = 11,
-  VARTYPE_TYPE_STEP_LOD_RANK_TABLE    = 12,
-  VARTYPE_TYPE_STEP_LOD_TENSOR_ARRAY  = 13,
-  VARTYPE_TYPE_STEP_PLACE_LIST        = 14,
-  VARTYPE_TYPE_READER                 = 15,
-  VARTYPE_TYPE_CHANNEL                = 16,
-  VARTYPE_TYPE_RAW                    = 17,
-  VARTYPE_TYPE_TUPLE                  = 18
+enum VarType_Type {
+  VARTYPE_TYPE_BOOL = 0,
+  VARTYPE_TYPE_INT16 = 1,
+  VARTYPE_TYPE_INT32 = 2,
+  VARTYPE_TYPE_INT64 = 3,
+  VARTYPE_TYPE_FP16 = 4,
+  VARTYPE_TYPE_FP32 = 5,
+  VARTYPE_TYPE_FP64 = 6,
+  VARTYPE_TYPE_LOD_TENSOR = 7,
+  VARTYPE_TYPE_SELECTED_ROWS = 8,
+  VARTYPE_TYPE_FEED_MINIBATCH = 9,
+  VARTYPE_TYPE_FETCH_LIST = 10,
+  VARTYPE_TYPE_STEP_SCOPES = 11,
+  VARTYPE_TYPE_STEP_LOD_RANK_TABLE = 12,
+  VARTYPE_TYPE_STEP_LOD_TENSOR_ARRAY = 13,
+  VARTYPE_TYPE_STEP_PLACE_LIST = 14,
+  VARTYPE_TYPE_READER = 15,
+  VARTYPE_TYPE_CHANNEL = 16,
+  VARTYPE_TYPE_RAW = 17,
+  VARTYPE_TYPE_TUPLE = 18
 };
 
 class TensorDesc {
@@ -59,17 +59,13 @@ class TensorDesc {
     data_type_ = (VarType_Type)desc->data_type;
   }
 
-  std::vector<int64_t> Dims() const {
-    return dims_;
-  };
-  VarType_Type DataType() const {
-    return data_type_;
-  }
+  std::vector<int64_t> Dims() const { return dims_; };
+  VarType_Type DataType() const { return data_type_; }
+
  private:
   std::vector<int64_t> dims_;
   VarType_Type data_type_;
-
 };
 
-}
-}
+}  // namespace framework
+}  // namespace paddle_mobile

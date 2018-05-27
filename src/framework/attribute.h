@@ -15,8 +15,8 @@ limitations under the License. */
 #pragma once
 
 #include <unordered_map>
-#include "common/log.h"
 #include "common/enforce.h"
+#include "common/log.h"
 #include "common/variant.h"
 #include "framework/framework.pb-c.h"
 
@@ -27,7 +27,6 @@ class BlockDesc;
 
 class Attribute {
  public:
-
   /*
    *  PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__INT = 0,
   PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__FLOAT = 1,
@@ -42,7 +41,8 @@ class Attribute {
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE)
    *
    * */
-  static Attribute GetAttrValue(PaddleMobile__Framework__Proto__OpDesc__Attr *attr_desc) {
+  static Attribute GetAttrValue(
+      PaddleMobile__Framework__Proto__OpDesc__Attr *attr_desc) {
     //    std::cout << "begin get attr value" << std::endl;
     Attribute attr;
     switch (attr_desc->type) {
