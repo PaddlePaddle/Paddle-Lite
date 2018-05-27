@@ -33,20 +33,14 @@ struct OpInfo {
 };
 
 template <typename Dtype>
-class OpInfoMap;
-
-template <typename Dtype>
-static OpInfoMap<Dtype> *g_op_info_map = nullptr;
-
-template <typename Dtype>
 class OpInfoMap {
  public:
-  static OpInfoMap &Instance() {
-    LOG(paddle_mobile::kLOG_DEBUG1) << " TODO: fix bug";
-    if (g_op_info_map<Dtype> == nullptr) {
-      g_op_info_map<Dtype> = new OpInfoMap();
+  static OpInfoMap<Dtype> *Instance() {
+    static OpInfoMap<Dtype> *s_instance = nullptr;
+    if (s_instance == nullptr) {
+      s_instance = new OpInfoMap();
     }
-    return *g_op_info_map<Dtype>;
+    return s_instance;
   }
 
   bool Has(const std::string &op_type) const {

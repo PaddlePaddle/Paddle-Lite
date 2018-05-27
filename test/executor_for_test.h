@@ -17,11 +17,14 @@ limitations under the License. */
 #include <string>
 #include <vector>
 
+#include "./io.h"
 #include "common/log.h"
-#include "io.h"
+#include "framework/op_registry.h"
 #include "operators/conv_op.h"
 #include "operators/pool_op.h"
+#include "operators/relu_op.h"
 #include "operators/reshape_op.h"
+#include "operators/sigmoid_op.h"
 #include "operators/softmax_op.h"
 #include "operators/transpose_op.h"
 
@@ -57,9 +60,13 @@ class Executor4Test : public Executor<DeviceType> {
       for (std::shared_ptr<OpDesc> op : ops) {
 
         if (op->Type() == op_type) {
-          std::shared_ptr<OpType> op_ptr = std::make_shared<OpType>(
-              op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(),
-              this->program_.scope);
+          /// test first meeting op in program
+          std::shared_ptr<paddle_mobile::framework::OperatorBase<DeviceType>>
+              op_ptr = paddle_mobile::framework::OpRegistry<
+                  paddle_mobile::CPU>::CreateOp(op->Type(), op->GetInputs(),
+                                                op->GetOutputs(),
+                                                op->GetAttrMap(),
+                                                this->program_.scope);
           this->ops_of_block_[*block_desc.get()].push_back(op_ptr);
           break;
         }
