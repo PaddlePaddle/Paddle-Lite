@@ -15,7 +15,7 @@ limitations under the License. */
 #pragma once
 
 #include "framework/data_layout.h"
-#include "framework/framework.pb.h"
+#include "framework/program/tensor_desc.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -33,10 +33,10 @@ struct OpKernelType {
   // place, data_type, library_type kinds less than 2^8
   constexpr static int LEFT_SHIFT = 8;
 
-  proto::VarType::Type data_type_;
+  VarType_Type data_type_;
   DataLayout data_layout_;
 
-  OpKernelType(proto::VarType::Type data_type,
+  OpKernelType(VarType_Type data_type,
                DataLayout data_layout = DataLayout::kAnyLayout)
       : data_type_(data_type), data_layout_(data_layout) {}
 

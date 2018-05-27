@@ -14,7 +14,6 @@ limitations under the License. */
 
 #pragma once
 #include <vector>
-#include "framework.pb.h"
 #include "memory/t_malloc.h"
 #include "platform/data_type.h"
 #include "tensor.h"

@@ -27,29 +27,12 @@ include_directories(src/)
 #        INSTALL_COMMAND "make" "PREFIX=${CMAKE_BINARY_DIR}/" "install"
 #        )
 #set_target_properties(openblas_proj PROPERTIES EXCLUDE_FROM_ALL 1)
-# link protobuf
-include_directories(third-party/protobuf/include)
-include_directories(third-party/protobuf-c-decoder/include)
-if (ANDROID)
-    link_directories(third-party/protobuf/armeabi-v7a)
-else()
-    # link openblas
-    link_directories(third-party/protobuf/lib)
-    link_directories(third-party/protobuf-c-decoder/lib)
-endif ()
 
 #add_dependencies(paddle-mobile openblas_proj)
 
 # gen static
 ADD_LIBRARY(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 
-if (ANDROID)
-    # openblas.a need log lib
-    target_link_libraries(paddle-mobile protobuf-lite)
-else()
-    target_link_libraries(paddle-mobile protobuf-lite)
-    target_link_libraries(paddle-mobile protobuf-c-decoder)
-endif ()
 #add_dependencies(paddle-mobile openblas_proj)
 
 add_subdirectory(test)

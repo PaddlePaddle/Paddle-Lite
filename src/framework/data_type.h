@@ -14,8 +14,6 @@ limitations under the License. */
 
 #pragma once
 
-#include "framework/framework.pb.h"
-
 namespace paddle_mobile {
 namespace framework {
 

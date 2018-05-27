@@ -19,7 +19,6 @@ limitations under the License. */
 
 #include "common/log.h"
 #include "common/type_define.h"
-#include "framework/framework.pb.h"
 #include "framework/framework.pb-c.h"
 #include "framework/paddle_mobile_object.h"
 

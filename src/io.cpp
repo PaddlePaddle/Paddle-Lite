@@ -22,7 +22,6 @@ limitations under the License. */
 #include "framework/tensor.h"
 #include "framework/operator.h"
 #include "framework/lod_tensor.h"
-#include "framework/framework.pb.h"
 #include "framework/framework.pb-c.h"
 #include "framework/program/var_desc.h"
 #include "framework/program/program_desc.h"
@@ -109,6 +108,14 @@ void Loader<Dtype, P>::LoadVar(framework::Variable *variable, const framework::V
   is.read(reinterpret_cast<char *>(buf.get()), size);
 
   const framework::TensorDesc &desc = var_desc.Tensor_desc();
+
+
+  PaddleMobile__Framework__Proto__VarType__TensorDesc *tensor_desc = NULL;
+//  void *v;
+//  PaddleMobile__Framework__Proto__VarType__TensorDesc_Closure()(tensor_desc, buf.get());
+
+//  DLOG << "PaddleMobile__Framework__Proto__VarType__TensorDesc_Closure- " << tensor_desc;
+
 
 //  framework::TensorDesc &tensor_desc = variable->
 //  PaddleMobile__Framework__Proto__ProgramDesc *c_program;
@@ -240,7 +247,7 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p) : program_(p) {
 }
 
 template <typename Dtype, Precision P>
-void Executor<Dtype, P>::LoadMemory(framework::LoDTensor *tensor,
+void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc, framework::LoDTensor *tensor,
                                     const std::string &file_path) {
   std::ifstream is(file_path);
   PADDLE_MOBILE_ENFORCE(is.is_open(), "open file: %s failed",
@@ -281,39 +288,36 @@ void Executor<Dtype, P>::LoadMemory(framework::LoDTensor *tensor,
   std::unique_ptr<char[]> buf(new char[size]);
   is.read(reinterpret_cast<char *>(buf.get()), size);
 
-  framework::proto::VarType::TensorDesc desc;
-  desc.ParseFromArray(buf.get(), size);
+  const framework::TensorDesc &desc = var_desc.Tensor_desc();
+
 
   int memory_size = 1;
-  for (auto l : desc.dims()) {
+  for (auto l : desc.Dims()) {
     memory_size *= l;
   }
 
-  std::vector<int64_t> dims;
-  dims.reserve(static_cast<size_t>(desc.dims().size()));
-  std::copy(desc.dims().begin(), desc.dims().end(), std::back_inserter(dims));
-  tensor->Resize(framework::make_ddim(dims));
+  tensor->Resize(framework::make_ddim(desc.Dims()));
 
   void *memory = tensor;
   int type_size = 0;
-  switch (desc.data_type()) {
-    case framework::proto::VarType::FP16:
+  switch (desc.DataType()) {
+    case framework::VARTYPE_TYPE_FP16:
       type_size = 2;
       break;
-    case framework::proto::VarType::FP32:
+    case framework::VARTYPE_TYPE_FP32:
       type_size = 4;
       memory = tensor->mutable_data<float>();
       break;
-    case framework::proto::VarType::FP64:
+    case framework::VARTYPE_TYPE_FP64:
       type_size = 8;
       break;
-    case framework::proto::VarType::INT32:
+    case framework::VARTYPE_TYPE_INT32:
       type_size = 4;
       break;
-    case framework::proto::VarType::INT64:
+    case framework::VARTYPE_TYPE_INT64:
       type_size = 8;
       break;
-    case framework::proto::VarType::BOOL:
+    case framework::VARTYPE_TYPE_BOOL:
       type_size = 1;
       break;
     default:
@@ -331,7 +335,7 @@ void Executor<Dtype, P>::InitMemory() {
       auto var = program_.scope->Var(var_desc->Name());
       if (var_desc->Persistable()) {
         auto tensor = var->template GetMutable<framework::LoDTensor>();
-        LoadMemory(tensor, program_.model_path + "/" + var_desc->Name());
+        LoadMemory(*var_desc, tensor, program_.model_path + "/" + var_desc->Name());
       } else {
         if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
           auto tensor = var->template GetMutable<framework::Tensor>();

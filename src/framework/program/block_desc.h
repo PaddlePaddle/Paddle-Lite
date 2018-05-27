@@ -14,7 +14,6 @@ limitations under the License. */
 
 #pragma once
 
-#include "framework/framework.pb.h"
 #include "framework/framework.pb-c.h"
 #include "framework/program/op_desc.h"
 #include "framework/program/var_desc.h"
