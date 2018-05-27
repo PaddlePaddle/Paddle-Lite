@@ -11,11 +11,11 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-
 #include "operators/math/softmax.h"
 #include "common/types.h"
 #if __ARM_NEON
 #include <math.h>
+#include <algorithm>
 #include "operators/math/math_func_neon.h"
 #endif
 
@@ -108,7 +108,7 @@ class SoftmaxFuntor<CPU, T> {
     // sum exp
     sum(exp_sub_max, sumptr, inner_size, out_size);
     // div
-    auto *out_ptr = static_cast<float *>(Y->mutable_data());
+    auto *out_ptr = Y->mutable_data<float>();
     for (int l = 0; l < out_size; ++l) {
       const float *input_outer_ptr = exp_sub_max + l * inner_size;
       float *output_outer_ptr = out_ptr + l * inner_size;
