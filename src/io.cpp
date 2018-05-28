@@ -205,8 +205,13 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
             var_desc->Type() != framework::VARTYPE_TYPE_FETCH_LIST) {
           //          DLOG << "to load var ";
           LoadVar(var, *var_desc, dirname + "/" + var_desc->Name());
+        } else {
+          auto dim = var_desc->Tensor_desc().Dims();
+          PADDLE_MOBILE_ENFORCE(dim.size() > 0, "dim size is 0");
+          dim[0] = 1;
+          auto tensor = var->GetMutable<framework::LoDTensor>();
+          tensor->Resize(framework::make_ddim(dim));
         }
-
       } else {
         // TODO(codeWorm): some.
       }
