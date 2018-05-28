@@ -14,30 +14,31 @@ limitations under the License. */
 
 #pragma once
 
-#include <operators/math/transform.h>
 #include "operators/kernel/relu_kernel.h"
+#include <operators/math/transform.h>
 
 namespace paddle_mobile {
 namespace operators {
 
-    template <typename T>
-    struct ReluFunctor {
-        inline T operator()(T in) const { return in > 0 ? in : 0; }
-    };
-    template <>
-    void ReluKernel<CPU, float>::Compute(const ReluParam &param) const {
-      const auto *input_x = param.InputX();
-      auto *input_x_ptr = input_x->data<float>();
-      auto *out = param.Out();
-      auto *out_ptr = out->mutable_data<float>();
+template <typename T>
+struct ReluFunctor {
+  inline T operator()(T in) const { return in > 0 ? in : 0; }
+};
 
-      ReluFunctor<float> func_;
-      math::Transform trans;
-      trans(input_x_ptr, input_x_ptr + input_x->numel(), out_ptr, func_);
+template <>
+void ReluKernel<CPU, float>::Compute(const ReluParam &param) const {
+  const auto *input_x = param.InputX();
+  auto *input_x_ptr = input_x->data<float>();
+  auto *out = param.Out();
+  auto *out_ptr = out->mutable_data<float>();
 
-      //  for (int i = 0; i < input_x->numel(); i++) {
-      //    out_ptr[i] = input_x_ptr[i] > 0 ? input_x_ptr[i] : 0;
-      //  }
-    }
+  ReluFunctor<float> func_;
+  math::Transform trans;
+  trans(input_x_ptr, input_x_ptr + input_x->numel(), out_ptr, func_);
+
+  //  for (int i = 0; i < input_x->numel(); i++) {
+  //    out_ptr[i] = input_x_ptr[i] > 0 ? input_x_ptr[i] : 0;
+  //  }
+}
 }  // namespace operators
 }  // namespace paddle_mobile
