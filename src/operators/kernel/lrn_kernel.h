@@ -42,12 +42,13 @@ struct LRNFunctor {
         for (int index = start; index < end; index++) {
           int channel = b + index;
           if (channel >= 0 && channel < C) {
+            int tmp_u = a * stride0 + b * stride1;
+            int tmp_i = a * stride0 + channel * stride1;
             for (int c = 0; c < H; c++) {
               for (int d = 0; d < W; d++) {
-                int u = a * stride0 + b * stride1 + c * stride2 + d;
-
-                int i = a * stride0 + channel * stride1 + c * stride2 + d;
-
+                int tmp = c * stride2 + d;
+                int u = tmp_u + tmp;
+                int i = tmp_i + tmp;
                 sqr_buffer_ptr[u] += alpha * input_ptr[i] * input_ptr[i];
               }
             }

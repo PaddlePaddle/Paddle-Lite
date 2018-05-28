@@ -51,38 +51,6 @@ class ConcatFunctor {
     }
   }
 };
-template <typename T>
-void StridedNumelCopyWithAxis(int64_t axis, T *dst,
-                              const framework::DDim &dst_stride_numel,
-                              const T *src,
-                              const framework::DDim &src_stride_numel,
-                              int64_t size) {
-  int64_t before = dst_stride_numel[0] / dst_stride_numel[axis];
-  int64_t src_after = src_stride_numel[axis];
-  int64_t dst_after = dst_stride_numel[axis];
-
-  /// "src and dst tensor should have the same dims size."
-  assert(src_stride_numel.size() == dst_stride_numel.size());
-
-  for (int64_t i = 0; i < axis; ++i) {
-    if (i < axis) {
-      /// src and dst should have the same elements
-      /// except the specified axis.
-      assert(src_stride_numel[i] / src_stride_numel[axis] ==
-             dst_stride_numel[i] / dst_stride_numel[axis]);
-
-    } else if (i == axis) {
-      continue;
-    } else {
-      /// "src and dst should have the same elements "
-      ///         "except the specified axis."
-      assert(src_stride_numel[i] == dst_stride_numel[i]);
-    }
-  }
-  for (int64_t i = 0; i < before; ++i) {
-    memory::Copy(dst + i * dst_after, src + i * src_after, sizeof(T) * size);
-  }
-}
 
 template <>
 void ConcatKernel<CPU, float>::Compute(const ConcatParam &param) const {
@@ -97,10 +65,13 @@ void ConcatKernel<CPU, float>::Compute(const ConcatParam &param) const {
     for (auto *in : inputs) {
       auto in_stride = framework::stride_numel(in->dims());
       auto out_stride = framework::stride_numel(out->dims());
-      StridedNumelCopyWithAxis<float>(axis, out->data<float>() + output_offset,
-                                      out_stride, in->data<float>(), in_stride,
-                                      in_stride[axis]);
-      output_offset += in_stride[axis];
+      auto dst = out->data<float>() + output_offset;
+      auto src = in->data<float>();
+      PADDLE_MOBILE_ENFORCE(
+          in_stride.size() == out_stride.size(),
+          "src and dst tensor should have the same dims size.");
+      memory::Copy(dst, src, sizeof(float) * in_stride[0]);
+      output_offset += in_stride[0];
     }
   } else {
     std::vector<framework::Tensor> inputs_concat(inputs.size());
