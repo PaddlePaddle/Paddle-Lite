@@ -20,27 +20,32 @@ limitations under the License. */
 #define b(i, j) b[(i)*ldb + (j)]
 #define c1(i, j) c1[(i)*ldc + (j)]
 
-#define m 7
-#define n 7
-#define k 7
+#define m 62
+#define n 63
+#define k 74
 
 int main() {
   int lda = k;
   int ldb = n;
   int ldc = n;
 
-  float a[7 * 7];
-  float b[7 * 7];
-  float c[7 * 7] = {0};
-  float c1[7 * 7] = {0};
+  float a[62 * 74];
+  float b[74 * 63];
+  float c[62 * 63] = {0};
+  float c1[62 * 63] = {0};
   for (int i = 0; i < m * k; ++i) {
     a[i] = 2;
   }
   for (int i = 0; i < k * n; ++i) {
     b[i] = 2;
   }
+  for (int i = 0; i < m * n; ++i) {
+    c[i] = 2;
+    c1[i] = 2;
+  }
 
-  paddle_mobile::operators::math::sgemm(m, n, k, 1, a, lda, b, ldb, 0, c, ldc);
+  paddle_mobile::operators::math::sgemm(m, n, k, 0.9, a, lda, b, ldb, 0.3, c,
+                                        ldc);
   for (int i = 0; i < m * n; ++i) {
     std::cout << c[i] << " | ";
     if (i % n == (n - 1)) {
@@ -49,8 +54,9 @@ int main() {
   }
   for (int j = 0; j < n; ++j) {
     for (int i = 0; i < m; ++i) {
+      c1(i, j) *= 0.3;
       for (int p = 0; p < k; ++p) {
-        c1(i, j) += a(i, p) * b(p, j);
+        c1(i, j) += 0.9 * a(i, p) * b(p, j);
       }
     }
   }
