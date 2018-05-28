@@ -5,39 +5,10 @@
 #. ~/.zshrc
 
 build_for_linux() {
-	if [ ! `which brew` ]; then
-        echo "building failed! homebrew not found, please install homebrew."
-        return
-    fi
-    if [ ! `which cmake` ]; then
-        echo "installing cmake."
-        brew install cmake
-        if [ ! $? ]; then
-            echo "cmake install failed."
-            return
-        fi
-    fi
-    PLATFORM="x86"
-    MODE="Release"
-    CXX_FLAGS="-std=c++11 -O3 -s"
-    BUILD_DIR=build/release/"${PLATFORM}"
-    mkdir -p ${BUILD_DIR}/build
-
-    mkdir -p ${BUILD_DIR}/test
-    cp -r test/models ${BUILD_DIR}/test/models
-
-    cmake . \
-        -B"${BUILD_DIR}" \
-    	-DCMAKE_BUILD_TYPE="${MODE}" \
-    	-DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
-    	-DIS_MAC=true
-
-    cd ${BUILD_DIR}
-    make -j 8
 }
 
 build_for_mac() {
-	if [ ! `which brew` ]; then
+    if [ ! `which brew` ]; then
         echo "building failed! homebrew not found, please install homebrew."
         return
     fi
