@@ -45,9 +45,14 @@ target_link_libraries(test-multiclassnms-op paddle-mobile)
 # gen test
 ADD_EXECUTABLE(test-reshape-op  operators/test_reshape_op.cpp test_helper.h  test_include.h)
 target_link_libraries(test-reshape-op paddle-mobile)
+
 # gen test
 ADD_EXECUTABLE(test-relu-op  operators/test_relu_op.cpp test_helper.h  test_include.h)
 target_link_libraries(test-relu-op paddle-mobile)
+
+# gen test
+ADD_EXECUTABLE(test-fc-op  operators/test_fushion_fc_op.cpp test_helper.h  test_include.h)
+target_link_libraries(test-fc-op paddle-mobile)
 
 # gen test log
 ADD_EXECUTABLE(test-log common/test_log.cpp)
