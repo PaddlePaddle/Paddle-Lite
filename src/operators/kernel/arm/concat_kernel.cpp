@@ -84,33 +84,36 @@ void StridedNumelCopyWithAxis(int64_t axis, T *dst,
   }
 }
 
-template <>
-void ConcatKernel<CPU, float>::Compute(const ConcatParam &param) const {
-  auto inputs = param.Inputs();
-  auto *out = param.Out();
-  int64_t axis = param.Axis();
-  out->mutable_data<float>();
+    template <>
+    void ConcatKernel<CPU, float>::Compute(const ConcatParam &param) const {
+      auto inputs = param.Inputs();
+      auto *out = param.Out();
+      int64_t axis = param.Axis();
+      out->mutable_data<float>();
 
-  /// Sometimes direct copies will be faster, this maybe need deeply analysis.
-  if (axis == 0 && inputs.size() < 10) {
-    size_t output_offset = 0;
-    for (auto *in : inputs) {
-      auto in_stride = framework::stride_numel(in->dims());
-      auto out_stride = framework::stride_numel(out->dims());
-      StridedNumelCopyWithAxis<float>(axis, out->data<float>() + output_offset,
-                                      out_stride, in->data<float>(), in_stride,
-                                      in_stride[axis]);
-      output_offset += in_stride[axis];
+      /// Sometimes direct copies will be faster, this maybe need deeply analysis.
+      if (axis == 0 && inputs.size() < 10) {
+        size_t output_offset = 0;
+        for (auto *in : inputs) {
+          auto in_stride = framework::stride_numel(in->dims());
+          auto out_stride = framework::stride_numel(out->dims());
+          auto dst = out->data<float>() + output_offset;
+          auto src = in->data<float>();
+          PADDLE_MOBILE_ENFORCE(
+                  in_stride.size() == out_stride.size(),
+                  "src and dst tensor should have the same dims size.");
+          memory::Copy(dst, src, sizeof(float) * in_stride[0]);
+          output_offset += in_stride[0];
+        }
+      } else {
+        std::vector<framework::Tensor> inputs_concat(inputs.size());
+        for (int j = 0; j < inputs.size(); ++j) {
+          inputs_concat[j] = *inputs[j];
+        }
+        ConcatFunctor<float> concat_functor;
+        concat_functor(inputs_concat, static_cast<int>(axis), out);
+      }
     }
-  } else {
-    std::vector<framework::Tensor> inputs_concat(inputs.size());
-    for (int j = 0; j < inputs.size(); ++j) {
-      inputs_concat[j] = *inputs[j];
-    }
-    ConcatFunctor<float> concat_functor;
-    concat_functor(inputs_concat, static_cast<int>(axis), out);
-  }
-}
 
 }  // namespace operators
 }  // namespace paddle_mobile

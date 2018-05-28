@@ -65,16 +65,17 @@ void BatchNormKernel<CPU, float>::Compute(const BatchNormParam &param) const {
 
   /// ((x - est_mean) * (inv_var) * scale + bias equal to
   /// (x * inv_var * scale) + (bias - est_mean * inv_var * scale)
-  for (int i = 0; i < C; i++) {
-    new_scale_ptr[i] = inv_std_ptr[i] * scale_ptr[i];
-    new_bias_ptr[i] = bias_ptr[i] - mean_ptr[i] * inv_std_ptr[i] * scale_ptr[i];
-    {
-      for (int n = 0; n < N; n++) {
-        for (int h = 0; h < H; h++) {
-          for (int w = 0; w < W; w++) {
-            int index = n * stride0 + i * stride1 + h * stride2 + w;
-            out_ptr[index] =
-                input_x_ptr[index] * new_scale_ptr[i] + new_bias_ptr[i];
+    for (int i = 0; i < C; i++) {
+        new_scale_ptr[i] = inv_std_ptr[i] * scale_ptr[i];
+        new_bias_ptr[i] = bias_ptr[i] - mean_ptr[i] * inv_std_ptr[i] * scale_ptr[i];
+        {
+            for (int n = 0; n < N; n++) {
+                for (int h = 0; h < H; h++) {
+                    int tmp_index = n * stride0 + i * stride1 + h * stride2;
+                    for (int w = 0; w < W; w++) {
+                        int index = tmp_index + w;
+                        out_ptr[index] =
+                                input_x_ptr[index] * new_scale_ptr[i] + new_bias_ptr[i];
           }
         }
       }
