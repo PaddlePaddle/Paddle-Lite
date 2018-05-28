@@ -49,12 +49,13 @@ void PackMatrixB_(int k, int n, int paddingN, const float *B, int ldb,
                   float *buffer);
 
 // 分块矩阵乘法
-void InnerKernel(int m, int n, int k, const float *A, int lda, const float *B,
-                 int ldb, float *C, int ldc, int first_time);
+void InnerKernel(int m, int n, int k, float alpha, const float *A, int lda,
+                 const float *B, int ldb, float beta, float *C, int ldc,
+                 int first_time);
 
 // 计算一个更小的 4 * 4 的 C 矩阵分块
-void AddDot4x4(int k, const float *A, int lda, const float *B, int ldb,
-               float *C, int ldc, int mc, int nc);
+void AddDot4x4(int k, float alpha, const float *A, int lda, const float *B,
+               int ldb, float beta, float *C, int ldc, int mc, int nc);
 
 // 32位 float 矩阵乘法
 void sgemm(int m, int n, int k, float alpha, const float *A, int lda,
