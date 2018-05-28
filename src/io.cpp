@@ -27,6 +27,7 @@ limitations under the License. */
 #include "framework/tensor.h"
 
 namespace paddle_mobile {
+using framework::Variable;
 
 void ReadBinaryFile(const std::string &filename, std::string *contents) {
   std::ifstream fin(filename, std::ios::in | std::ios::binary);
@@ -204,10 +205,12 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
             var_desc->Type() != framework::VARTYPE_TYPE_FEED_MINIBATCH &&
             var_desc->Type() != framework::VARTYPE_TYPE_FETCH_LIST) {
           //          DLOG << "to load var ";
-          LoadVar(var, *var_desc, dirname + "/" + var_desc->Name());
+          auto dim = var_desc->Tensor_desc().Dims();
+          auto tensor = var->GetMutable<framework::LoDTensor>();
+          tensor->Resize(framework::make_ddim(dim));
         } else {
           auto dim = var_desc->Tensor_desc().Dims();
-          PADDLE_MOBILE_ENFORCE(dim.size() > 0, "dim size is 0");
+          PADDLE_MOBILE_ENFORCE(dim.size() > 1, "dim size is 0");
           dim[0] = 1;
           auto tensor = var->GetMutable<framework::LoDTensor>();
           tensor->Resize(framework::make_ddim(dim));
@@ -243,11 +246,39 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p) : program_(p) {
     std::vector<std::shared_ptr<framework::OpDesc>> ops = block_desc->Ops();
     for (int j = 0; j < ops.size(); ++j) {
       std::shared_ptr<framework::OpDesc> op = ops[j];
-      //              auto op_base =
-      //              framework::OpRegistry<Dtype>::CreateOp(op->Type(),
-      //                      op->GetInputs(), op->GetOutputs(),
-      //                      op->GetAttrMap(), program_.scope);
-      //              op_base->InferShape();
+      auto op_base = framework::OpRegistry<Dtype>::CreateOp(
+          op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(),
+          program_.scope);
+      op_base->InferShape();
+      ops_of_block_[*block_desc.get()].push_back(op_base);
+    }
+  }
+  InitMemory();
+}
+
+template <typename Dtype, Precision P>
+Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size)
+    : program_(p), batch_size_(batch_size) {
+  if (use_optimize_) {
+    to_predict_program_ = program_.optimizeProgram;
+  } else {
+    to_predict_program_ = program_.originProgram;
+  }
+  Variable *variable_ptr = program_.scope->Var("batch_size");
+  variable_ptr[0].SetValue<int>(batch_size);
+  const std::vector<std::shared_ptr<framework::BlockDesc>> blocks =
+      to_predict_program_->Blocks();
+  for (int i = 0; i < blocks.size(); ++i) {
+    std::shared_ptr<framework::BlockDesc> block_desc = blocks[i];
+    std::vector<std::shared_ptr<framework::OpDesc>> ops = block_desc->Ops();
+    for (int j = 0; j < ops.size(); ++j) {
+      std::shared_ptr<framework::OpDesc> op = ops[j];
+      auto op_base = framework::OpRegistry<Dtype>::CreateOp(
+          op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(),
+          program_.scope);
+      op_base->InferShape();
+
+      ops_of_block_[*block_desc.get()].push_back(op_base);
     }
   }
   InitMemory();
@@ -342,6 +373,9 @@ void Executor<Dtype, P>::InitMemory() {
       auto var = program_.scope->Var(var_desc->Name());
       if (var_desc->Persistable()) {
         auto tensor = var->template GetMutable<framework::LoDTensor>();
+        if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
+          continue;
+        }
         LoadMemory(*var_desc, tensor,
                    program_.model_path + "/" + var_desc->Name());
       } else {
@@ -381,9 +415,11 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::predict(
 
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::predict(const framework::Tensor &t, int block_id) {
-  //  framework::Variable *g_feed_value = program_.scope->Var("feed");
-  //  auto feed_tensor = g_feed_value->GetMutable<framework::Tensor>();
-  //  feed_tensor->ShareDataWith(t);
+  framework::Variable *g_feed_value = program_.scope->Var("feed");
+  auto feed_tensor = g_feed_value->GetMutable<framework::LoDTensor>();
+  feed_tensor->Resize(t.dims());
+
+  feed_tensor->ShareDataWith(t);
 
   std::shared_ptr<framework::BlockDesc> to_predict_block =
       to_predict_program_->Block(block_id);
