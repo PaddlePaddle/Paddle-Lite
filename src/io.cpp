@@ -218,7 +218,7 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
     }
   }
 
-  originProgramDesc->Description("program: ");
+  //  originProgramDesc->Description("program: ");
 
   paddle_mobile__framework__proto__program_desc__free_unpacked(c_program, NULL);
   return program;

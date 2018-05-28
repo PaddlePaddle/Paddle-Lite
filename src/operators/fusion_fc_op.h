@@ -18,6 +18,7 @@ limitations under the License. */
 
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
+#include "operators/kernel/fushion_fc_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -38,9 +39,27 @@ class FusionFcMatcher : public framework::FusionOpMatcher {
   std::string Type() { return "fc"; }
 };
 
-class FusionFcOp {
+template <typename DeviceType, typename T>
+class FushionFcOp : public framework::OperatorWithKernel<DeviceType> {
  public:
- private:
+  FushionFcOp(const std::string &type, const VariableNameMap &inputs,
+              const VariableNameMap &outputs,
+              const framework::AttributeMap attrs,
+              std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
+                                                  scope),
+        param_(inputs, outputs, attrs, *scope) {}
+
+  void Run() const {
+    operators::FushionFcKernel<DeviceType, T> kernel;
+    kernel.Compute(param_);
+  }
+
+  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  void InferShape() const override;
+
+ protected:
+  FushionFcParam param_;
 };
 
 static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());

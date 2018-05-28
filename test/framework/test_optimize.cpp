@@ -24,7 +24,7 @@ int main() {
   //  program.originProgram->Description("origin");
   auto optimize_program = optimize.FushionOptimize(program.originProgram);
   if (optimize_program != nullptr) {
-    //    optimize_program->Description("optimize");
+    optimize_program->Description("optimize");
   } else {
     LOG(paddle_mobile::kLOG_ERROR) << "optimize_program is null";
   }
