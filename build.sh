@@ -1,15 +1,4 @@
-#!/bin/bash
-
-if [ -f "~/.bashrc" ] ; then
-    . ~/.bashrc
-elif [ -f "~/.bash_profile" ] ; then
-   ~/.bash_profile
-elif [ -f "~/.zshrc" ] ; then
-   . ~/.zshrc
-else
-   echo "not found user environment. load /etc/profile"
-   . /etc/profile
-fi
+#!/usr/bin/env bash
 
 build_for_mac() {
     if [ ! `which brew` ]; then
