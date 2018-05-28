@@ -49,7 +49,6 @@ void PoolOp<DeviceType, T>::InferShape() const {
                                           paddings[i], strides[i], ceil_mode));
   }
   param_.Output()->Resize(framework::make_ddim(output_shape));
-  DLOG << "infer shape out size =" << param_.Output()->numel();
 }
 template class PoolOp<CPU, float>;
 }  // namespace operators

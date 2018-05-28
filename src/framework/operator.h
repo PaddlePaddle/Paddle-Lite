@@ -58,6 +58,7 @@ class OperatorBase : PaddleMobileObject {
                std::shared_ptr<Scope> scope);
   virtual ~OperatorBase() {}
   virtual void Run() const = 0;
+  virtual void InferShape() const = 0;
 
   const VariableNameMap &Inputs() const { return inputs_; }
   const VariableNameMap &Outputs() const { return outputs_; }
@@ -87,8 +88,8 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
                      const VariableNameMap &outputs, const AttributeMap &attrs,
                      std::shared_ptr<Scope> scope)
       : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope) {}
-  virtual void InferShape() const = 0;
   virtual void Run() const = 0;
+  virtual void InferShape() const = 0;
 };
 
 template <typename Dtype, typename P>
