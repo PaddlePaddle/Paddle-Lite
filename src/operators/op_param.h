@@ -52,6 +52,11 @@ class OpParam : PaddleMobileObject {
   }
 
   template <typename T>
+  static T *InputZFrom(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("Z", inputs, scope);
+  }
+
+  template <typename T>
   static T *InputBiasFrom(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue<T>("Bias", inputs, scope);
   }
@@ -701,6 +706,43 @@ class ReluParam : public OpParam {
  private:
   Tensor *input_x_;
   Tensor *out_;
+};
+
+class FushionFcParam : public OpParam {
+ public:
+  FushionFcParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+                 const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<Tensor>(inputs, scope);
+    input_y_ = InputYFrom<Tensor>(inputs, scope);
+    input_z_ = InputZFrom<Tensor>(inputs, scope);
+    out_ = OutFrom<Tensor>(outputs, scope);
+    x_num_col_dims_ = GetAttr<int>("x_num_col_dims", attrs);
+    y_num_col_dims_ = GetAttr<int>("y_num_col_dims", attrs);
+    axis_ = GetAttr<int>("axis", attrs);
+  }
+
+  const Tensor *InputX() const { return input_x_; }
+
+  const Tensor *InputY() const { return input_y_; }
+
+  const Tensor *InputZ() const { return input_z_; }
+
+  Tensor *Out() const { return out_; }
+
+  const int &XNumColDims() const { return x_num_col_dims_; }
+
+  const int &YNumColDims() const { return y_num_col_dims_; }
+
+  const int &Axis() const { return axis_; }
+
+ private:
+  Tensor *input_x_;
+  Tensor *input_y_;
+  Tensor *input_z_;
+  Tensor *out_;
+  int x_num_col_dims_;
+  int y_num_col_dims_;
+  int axis_;
 };
 
 }  // namespace operators
