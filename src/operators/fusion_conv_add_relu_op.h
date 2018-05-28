@@ -42,8 +42,8 @@ class FusionFcOp {
  private:
 };
 
-static framework::FusionOpRegistrar fc_registrar(
-    new FushionConvAddReluOpMatcher());
+// static framework::FusionOpRegistrar fc_registrar(
+//    new FushionConvAddReluOpMatcher());
 
 }  // namespace operators
 }  // namespace paddle_mobile

@@ -12,31 +12,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+#include "framework/operator.h"
+#include "operators/math/math_function.h"
+#include "operators/op_param.h"
 
-#include "operators/kernel/elementwise_add_kernel.h"
+#pragma once;
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename T>
-struct AddFunctor {
-  inline T operator()(T a, T b) const { return a + b; }
+template <typename DeviceType, typename T>
+class FushionFcKernel
+    : public framework::OpKernelBase<DeviceType, FushionFcParam> {
+ public:
+  void Compute(const FushionFcParam& param) const;
 };
-
-template <>
-void ElementwiseAddKernel<CPU, float>::Compute(
-    const ElementwiseAddParam &param) const {
-  const Tensor *input_x = param.InputX();
-  const Tensor *input_y = param.InputY();
-  Tensor *Out = param.Out();
-  Out->mutable_data<float>();
-  int axis = param.Axis();
-  ElementwiseComputeEx<AddFunctor<float>, float>(input_x, input_y, axis,
-                                                 AddFunctor<float>(), Out);
-}
-
-template class ElementwiseAddKernel<CPU, float>;
-
 }  // namespace operators
 }  // namespace paddle_mobile

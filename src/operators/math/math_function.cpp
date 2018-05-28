@@ -41,8 +41,8 @@ void matmul<float>(const framework::Tensor &matrix_a, bool trans_a,
   int N = dim_out[1];
   int K = (trans_a == false) ? dim_a[1] : dim_a[0];
 
-  sgemm(M, N, K, 1, matrix_a.data<float>(), K, matrix_b.data<float>(), N, 0,
-        matrix_out->data<float>(), N);
+  sgemm(M, N, K, alpha, matrix_a.data<float>(), K, matrix_b.data<float>(), N,
+        beta, matrix_out->data<float>(), N);
 }
 
 template <>
