@@ -67,35 +67,6 @@ inline void trim_trailing_singular_dims(framework::DDim *dims) {
   }
 }
 
-template <typename T>
-class RowwiseTransformIterator {
- public:
-  RowwiseTransformIterator(const T *ptr, int n) : ptr_(ptr), i_(0), n_(n) {}
-
-  RowwiseTransformIterator<T> &operator++() {
-    ++i_;
-    if (UNLIKELY(i_ == n_)) {
-      i_ = 0;
-    }
-    return *this;
-  }
-
-  bool operator==(const RowwiseTransformIterator<T> &rhs) const {
-    return (ptr_ + i_) == &(*rhs);
-  }
-
-  bool operator!=(const RowwiseTransformIterator<T> &rhs) const {
-    return (ptr_ + i_) != &(*rhs);
-  }
-
-  const T &operator*() { return ptr_[i_]; }
-
- private:
-  const T *ptr_;
-  int i_;
-  int64_t n_;
-};
-
 /// (4,20,2)+(20,): (20,) just as (20,1), when move 2 strides in last
 /// dimension
 /// in (4,20,2) is 2 ,
@@ -107,15 +78,23 @@ class MidWiseTransformIterator {
       : ptr_(ptr), i_(0), j_(0), n_(n), post_(post) {}
 
   MidWiseTransformIterator<T> &operator++() {
-    ++j_;
-    if (UNLIKELY(j_ == post_)) {
+    if (post_ != 1) {
+      ++j_;
+      if (UNLIKELY(j_ == post_)) {
+        ++i_;
+        j_ = 0;
+        if (UNLIKELY(i_ == n_)) {
+          i_ = 0;
+        }
+      }
+      return *this;
+    } else {
       ++i_;
-      j_ = 0;
       if (UNLIKELY(i_ == n_)) {
         i_ = 0;
       }
+      return *this;
     }
-    return *this;
   }
 
   bool operator==(const MidWiseTransformIterator<T> &rhs) const {
@@ -153,11 +132,6 @@ class TransformFunctor {
     trans(x_, x_ + nx_, y_, z_, func_);
   }
 
-  inline void RunRowWise(int n, int pre) const {
-    math::Transform trans;
-    trans(x_, x_ + nx_, RowwiseTransformIterator<T>(y_, n), z_, func_);
-  }
-
   inline void RunMidWise(int n, int pre, int post) const {
     math::Transform trans;
     trans(x_, x_ + nx_, MidWiseTransformIterator<T>(y_, n, post), z_, func_);
@@ -179,31 +153,25 @@ void ElementwiseComputeEx(const framework::Tensor *x,
 
   auto x_dims = x->dims();
   auto y_dims = y->dims();
-  // PADDLE_ENFORCE_GE(x_dims.size(), y_dims.size(),
-  //                  "Rank of first input must >= rank of second
-  //                  input.");
+  PADDLE_MOBILE_ENFORCE(x_dims.size() >= y_dims.size(),
+                        "Rank of first input must >= rank of second input.");
 
   if (x_dims == y_dims) {
     functor.Run();
     return;
   }
 
-  /// axis = -1 represent the last dimension.
+  /// axis = -1 represent the last dimensions.
   axis = (axis == -1 ? x_dims.size() - y_dims.size() : axis);
-  // PADDLE_ENFORCE(axis >= 0 && axis < x_dims.size(),
-  //               "Axis should be in range [0, x_dims)");
+  PADDLE_MOBILE_ENFORCE(axis >= 0 && axis < x_dims.size(),
+                        "Axis should be in range [0, x_dims)");
   trim_trailing_singular_dims(&y_dims);
   axis = (y_dims.size() == 0) ? x_dims.size() : axis;
 
   int pre, n, post;
   get_mid_dims(x_dims, y_dims, axis, &pre, &n, &post);
-  if (post == 1) {
-    functor.RunRowWise(n, pre);
-    return;
-  } else {
-    functor.RunMidWise(n, pre, post);
-    return;
-  }
+
+  functor.RunMidWise(n, pre, post);
 }
 
 }  // namespace operators
