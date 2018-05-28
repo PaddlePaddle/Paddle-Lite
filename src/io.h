@@ -47,6 +47,8 @@ class Executor {
 
   Executor(const framework::Program<Dtype> p);
 
+  Executor(const framework::Program<Dtype> p, int batch_size);
+
   std::shared_ptr<framework::Tensor> predict(framework::Tensor &t);
 
   std::vector<Ptype> predict(const std::vector<Ptype> &input,
@@ -57,6 +59,7 @@ class Executor {
   void LoadMemory(const framework::VarDesc var_desc,
                   framework::LoDTensor *tensor, const std::string &file_path);
   framework::Program<Dtype> program_;
+  int batch_size_ = 1;
   std::shared_ptr<framework::ProgramDesc> to_predict_program_;
   void predict(const framework::Tensor &t, int block_id);
   std::map<framework::BlockDesc,

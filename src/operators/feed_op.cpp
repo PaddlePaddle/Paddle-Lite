@@ -13,3 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "feed_op.h"
+namespace paddle_mobile {
+namespace operators {
+
+template class FeedOp<CPU, float>;
+}
+}  // namespace paddle_mobile

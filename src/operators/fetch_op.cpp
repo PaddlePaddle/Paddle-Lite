@@ -12,8 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-//
-// Created by liuRuiLong on 2018/5/25.
-//
-
 #include "fetch_op.h"
+namespace paddle_mobile {
+namespace operators {
+
+template class FetchOp<CPU, float>;
+}
+}  // namespace paddle_mobile

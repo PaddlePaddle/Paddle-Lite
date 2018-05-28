@@ -21,7 +21,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename DeviceType, typename T>
-class FeedOp : framework::OperatorBase<DeviceType> {
+class FeedOp : public framework::OperatorBase<DeviceType> {
  public:
   FeedOp(const std::string &type, const VariableNameMap &inputs,
          const VariableNameMap &outputs, const framework::AttributeMap attrs,
@@ -32,8 +32,9 @@ class FeedOp : framework::OperatorBase<DeviceType> {
   void Run() const { param_.Out()->ShareDataWith(*param_.InputX()); }
 
   void InferShape() const {
-    auto x_dims = param_.InputX()->dims();
-    param_.Out()->Resize(x_dims);
+    auto out_dims = param_.Out()->dims();
+    out_dims[0] = param_.BatchSize();
+    param_.Out()->Resize(out_dims);
   }
 
  protected:
@@ -41,8 +42,8 @@ class FeedOp : framework::OperatorBase<DeviceType> {
 };
 
 namespace ops = paddle_mobile::operators;
-// USE_OP(Feed);
-// REGISTER_OPERATOR(Feed, ops::FeedOp);
+USE_OP(feed);
+REGISTER_OPERATOR(feed, ops::FeedOp);
 
 }  // namespace operators
 }  // namespace paddle_mobile

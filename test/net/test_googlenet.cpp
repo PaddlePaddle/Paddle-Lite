@@ -24,7 +24,7 @@ int main() {
   //  ../../../test/models/mobilenet
   auto program = loader.Load(std::string("../models/googlenet"));
 
-  paddle_mobile::Executor<paddle_mobile::CPU> executor(program);
+  paddle_mobile::Executor<paddle_mobile::CPU> executor(program, 1);
 
   std::vector<float> input;
   std::vector<int64_t> dims{1, 3, 224, 224};
