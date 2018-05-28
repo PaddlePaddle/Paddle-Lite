@@ -14,6 +14,7 @@ limitations under the License. */
 
 #pragma once
 
+#include <common/enforce.h>
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -217,18 +218,14 @@ class Tensor {
   }
 
   inline void check_memory_size() const {
-    //  PADDLE_ENFORCE_NOT_NULL(
-    //      holder_, "Tensor holds no memory. Call
-    //      Tensor::mutable_data
-    //      first.");
-    //  PADDLE_ENFORCE_LE(
-    //      numel() * SizeOfType(type()), memory_size(),
-    //      "Tensor's dims_ is out of bound. Call
-    //      Tensor::mutable_data "
-    //      "first to re-allocate memory.\n"
-    //      "or maybe the required data-type mismatches the data
-    //      already
-    //      stored.");
+    PADDLE_MOBILE_ENFORCE(
+        holder_, "Tensor holds no memory. Call Tensor::mutable_data first.");
+    PADDLE_MOBILE_ENFORCE(
+        numel() * SizeOfType(type()) <= memory_size(),
+        "Tensor's dims_ is out of bound. CallTensor::mutable_data "
+        "first to re-allocate memory.\n"
+        "or maybe the required data-type mismatches the data\
+          already stored.");
   }
 
   inline DataLayout layout() const { return layout_; }

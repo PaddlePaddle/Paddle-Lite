@@ -21,7 +21,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename DeviceType, typename T>
-class FetchOp : framework::OperatorBase<DeviceType> {
+class FetchOp : public framework::OperatorBase<DeviceType> {
  public:
   FetchOp(const std::string &type, const VariableNameMap &inputs,
           const VariableNameMap &outputs, const framework::AttributeMap attrs,
@@ -29,7 +29,12 @@ class FetchOp : framework::OperatorBase<DeviceType> {
       : framework::OperatorBase<DeviceType>(type, inputs, outputs, attrs,
                                             scope),
         param_(inputs, outputs, attrs, *scope) {}
-  void Run() const { param_.Out()->ShareDataWith(*param_.InputX()); }
+  void Run() const {
+    param_.Out()->ShareDataWith(*param_.InputX());
+    for (int i = 0; i < param_.Out()->numel(); ++i) {
+      DLOG << param_.Out()->template data<float>()[i];
+    }
+  }
 
   void InferShape() const {
     auto x_dims = param_.InputX()->dims();
@@ -41,8 +46,8 @@ class FetchOp : framework::OperatorBase<DeviceType> {
 };
 
 namespace ops = paddle_mobile::operators;
-// USE_OP(Fetch);
-// REGISTER_OPERATOR(Fetch, ops::FetchOp);
+USE_OP(fetch);
+REGISTER_OPERATOR(fetch, ops::FetchOp);
 
 }  // namespace operators
 }  // namespace paddle_mobile

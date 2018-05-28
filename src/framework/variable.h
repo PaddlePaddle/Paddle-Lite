@@ -19,10 +19,13 @@ limitations under the License. */
 #include <string>
 #include <typeindex>
 #include <typeinfo>
+#include "../common/variant.h"
 #include "paddle_mobile_object.h"
 
 namespace paddle_mobile {
 namespace framework {
+using std::string;
+
 class Variable : public PaddleMobileObject {
  public:
   template <typename T>
@@ -30,17 +33,23 @@ class Variable : public PaddleMobileObject {
     return static_cast<const T *>(holder_->Ptr());
   }
 
+  template <typename T>
+  const T GetValue() const {
+    return variant.Get<T>();
+  }
+
+  template <typename T>
+  void SetValue(T value) {
+    variant.Set<T>(value);
+  }
+
   bool IsInitialized() const { return holder_ != nullptr; }
 
-  const std::string *Name() { return name_; }
+  const std::string Name() { return name_; }
 
   template <typename T>
   T *GetMutable() {
     if (!IsType<T>()) {
-      if (*Name() == "pixel") {
-        //        std::cout << " reset " << *Name() <<
-        //        std::endl;
-      }
       holder_.reset(new PlaceholderImp<T>(new T()));
     }
     return static_cast<T *>(holder_->Ptr());
@@ -48,15 +57,6 @@ class Variable : public PaddleMobileObject {
 
   template <typename T>
   bool IsType() const {
-    if (holder_) {
-      //                printf("not null \n");
-      printf(" holder type : %s, this type %s \n", holder_->Type().name(),
-             typeid(T).name());
-    }
-
-    //              std::cout << " " << holder_->Type() << " " <<
-    //              typeid(T) <<
-    //              std::endl;
     return holder_ != nullptr && holder_->Type() == typeid(T);
   }
 
@@ -64,7 +64,7 @@ class Variable : public PaddleMobileObject {
 
   std::type_index Type() const { return holder_->Type(); }
 
-  void SetName(const std::string *name) { name_ = name; }
+  void SetName(const string name) { name_ = name; }
 
  private:
   struct Placeholder {
@@ -87,10 +87,10 @@ class Variable : public PaddleMobileObject {
     std::unique_ptr<T> ptr_;
     const std::type_info &type_;
   };
-
+  Variant<int, bool, string, float, double> variant;
   std::unique_ptr<Placeholder> holder_;
   friend class Scope;
-  const std::string *name_;
+  string name_;
 };
 }  // namespace framework
 }  // namespace paddle_mobile

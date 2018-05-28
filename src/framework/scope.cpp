@@ -34,18 +34,9 @@ Variable *Scope::Var(const std::string &name) {
   }
   pvar = new Variable;
   vars_[name] = pvar;
-  pvar->name_ = &(vars_.find(name)->first);
+  pvar->name_ = vars_.find(name)->first;
   return pvar;
 }
-
-//            Variable* Scope::Var(std::string* name) {
-//                auto var_name = string::Sprintf("%p.%d", this,
-//                vars_.size());
-//                if (name != nullptr) {
-//                    *name = var_name;
-//                }
-//                return Var(var_name);
-//            }
 
 Variable *Scope::FindVar(const std::string &name) const {
   auto *pvar = FindVarLocally(name);
