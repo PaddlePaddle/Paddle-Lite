@@ -1,5 +1,9 @@
 #!/bin/bash
 
+. /etc/profile
+. ~/.bashrc
+#. ~/.zshrc
+
 build_for_linux() {
 	if [ ! `which brew` ]; then
         echo "building failed! homebrew not found, please install homebrew."
@@ -65,8 +69,8 @@ build_for_mac() {
 }
 
 build_for_android() {
-    if [ -z "${NDK_ROOT}" ]; then
-        echo "NDK_ROOT not found!"
+    if [ -z "${ANDROID_NDK}" ]; then
+        echo "ANDROID_NDK not found!"
         exit -1
     fi
 
