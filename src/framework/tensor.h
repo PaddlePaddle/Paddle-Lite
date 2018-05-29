@@ -219,7 +219,8 @@ class Tensor {
 
   inline void check_memory_size() const {
     PADDLE_MOBILE_ENFORCE(
-        holder_, "Tensor holds no memory. Call Tensor::mutable_data first.");
+        holder_ != nullptr,
+        "Tensor holds no memory. Call Tensor::mutable_data first.");
     PADDLE_MOBILE_ENFORCE(
         numel() * SizeOfType(type()) <= memory_size(),
         "Tensor's dims_ is out of bound. CallTensor::mutable_data "
