@@ -21,6 +21,7 @@ limitations under the License. */
 #include "common/log.h"
 #include "framework/op_registry.h"
 #include "operators/conv_op.h"
+#include "operators/elementwise_add_op.h"
 #include "operators/pool_op.h"
 #include "operators/relu_op.h"
 #include "operators/reshape_op.h"
@@ -37,6 +38,7 @@ using paddle_mobile::framework::Program;
 using paddle_mobile::framework::Tensor;
 using paddle_mobile::framework::Variable;
 using std::string;
+using std::vector;
 template <typename DeviceType, typename OpType>
 class Executor4Test : public Executor<DeviceType> {
  public:
@@ -73,18 +75,34 @@ class Executor4Test : public Executor<DeviceType> {
     }
   }
 
-  std::shared_ptr<Tensor> predict(const Tensor &t, string input, string output,
-                                  const DDim &dDim) {
+  template <typename T = LoDTensor>
+  vector<std::shared_ptr<Tensor>> predict(const vector<Tensor> &ts,
+                                          const vector<string> &input_names,
+                                          const vector<string> &output_names,
+                                          const vector<DDim> &ddims) {
     auto scope = this->program_.scope;
-    Variable *g_feed_value = scope->Var(input);
-    auto tensor = g_feed_value->GetMutable<LoDTensor>();
-    tensor->ShareDataWith(t);
+    size_t input_size = input_names.size();
+    size_t out_size = output_names.size();
 
-    Variable *con_output = scope->Var(output);
-    auto *output_tensor = con_output->GetMutable<LoDTensor>();
-    output_tensor->mutable_data<float>(dDim);
-    std::shared_ptr<LoDTensor> out_tensor = std::make_shared<LoDTensor>();
-    out_tensor.reset(output_tensor);
+    vector<Variable *> input_vars(input_size);
+    vector<LoDTensor *> input_tensors(input_size);
+    for (int i = 0; i < input_size; i++) {
+      input_vars[i] = scope->Var(input_names[i]);
+      input_tensors[i] = input_vars[i]->GetMutable<T>();
+      input_tensors[i]->ShareDataWith(ts[i]);
+    }
+
+    vector<Variable *> output_vars(out_size);
+    vector<LoDTensor *> output_tensors(out_size);
+    vector<std::shared_ptr<Tensor>> output_tensor_sptrs(out_size);
+
+    for (int i = 0; i < out_size; i++) {
+      output_vars[i] = scope->Var(output_names[i]);
+      output_tensors[i] = output_vars[i]->GetMutable<T>();
+      output_tensors[i]->mutable_data<float>(ddims[i]);
+      output_tensor_sptrs[i] = std::make_shared<LoDTensor>();
+      output_tensor_sptrs[i].reset(output_tensors[i]);
+    }
 
     std::shared_ptr<paddle_mobile::framework::BlockDesc> to_predict_block =
         this->to_predict_program_->Block(0);
@@ -94,6 +112,6 @@ class Executor4Test : public Executor<DeviceType> {
       op->Run();
     }
 
-    return out_tensor;
+    return output_tensor_sptrs;
   }
 };

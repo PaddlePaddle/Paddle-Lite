@@ -38,7 +38,6 @@ void ConvKernel<CPU, float>::Compute(const ConvParam &param) const {
   Tensor filter = *param.Filter();
   Tensor *output = param.Output();
   output->mutable_data<float>();
-
   int groups = param.Groups();
   std::vector<int> strides = param.Strides();
   std::vector<int> paddings = param.Paddings();
@@ -78,6 +77,7 @@ void ConvKernel<CPU, float>::Compute(const ConvParam &param) const {
   framework::DDim filter_matrix_shape = {filter.dims()[0],
                                          filter.numel() / filter.dims()[0]};
   filter.Resize(filter_matrix_shape);
+  DLOG << " filter.dims() = " << filter.dims();
   framework::DDim output_matrix_shape = {
       output->dims()[1],
       output->numel() / (output->dims()[0] * output->dims()[1])};
