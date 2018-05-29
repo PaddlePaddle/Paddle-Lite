@@ -221,7 +221,7 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
     }
   }
 
-  //  originProgramDesc->Description("program: ");
+  originProgramDesc->Description("program: ");
 
   paddle_mobile__framework__proto__program_desc__free_unpacked(c_program, NULL);
   return program;
@@ -381,7 +381,6 @@ void Executor<Dtype, P>::InitMemory() {
       } else {
         if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
           auto tensor = var->template GetMutable<framework::LoDTensor>();
-
           tensor->template mutable_data<Ptype>();
         }
       }
@@ -392,7 +391,8 @@ void Executor<Dtype, P>::InitMemory() {
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::predict(const framework::Tensor &t, int block_id) {
   framework::Variable *g_feed_value = program_.scope->Var("feed");
-  auto feed_tensor = g_feed_value->GetMutable<framework::LoDTensor>();
+  framework::Tensor *feed_tensor =
+      g_feed_value->GetMutable<framework::LoDTensor>();
   feed_tensor->Resize(t.dims());
   feed_tensor->ShareDataWith(t);
   std::shared_ptr<framework::BlockDesc> to_predict_block =
@@ -408,7 +408,7 @@ std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::predict(
     const std::vector<Ptype> &input, const std::vector<int64_t> &dims) {
   DLOG << "start predict: ";
 
-  framework::Tensor tensor;
+  framework::LoDTensor tensor;
   auto ddim = framework::make_ddim(dims);
 
   auto input_ptr = tensor.mutable_data<Ptype>(ddim);

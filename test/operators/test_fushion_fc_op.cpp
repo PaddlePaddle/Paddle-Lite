@@ -64,24 +64,24 @@ class TestFcOp {
     // feed
     auto scope = program_.scope;
     Variable *x_feed_value = scope->Var("pool2d_13.tmp_0");
-    auto tensor_x = x_feed_value->GetMutable<Tensor>();
+    auto tensor_x = x_feed_value->GetMutable<LoDTensor>();
     tensor_x->ShareDataWith(t1);
 
     Variable *y_feed_value = scope->Var("loss3_classifier-loc_weights");
-    auto tensor_y = y_feed_value->GetMutable<Tensor>();
+    auto tensor_y = y_feed_value->GetMutable<LoDTensor>();
     tensor_y->ShareDataWith(t2);
 
     Variable *z_feed_value = scope->Var("loss3_classifier-loc_biases");
-    auto tensor_z = z_feed_value->GetMutable<Tensor>();
+    auto tensor_z = z_feed_value->GetMutable<LoDTensor>();
     tensor_z->ShareDataWith(t3);
 
     Variable *con_output = scope->Var("loss3_classifier-loc.tmp_1");
-    auto *output_tensor = con_output->GetMutable<Tensor>();
+    auto *output_tensor = con_output->GetMutable<LoDTensor>();
     output_tensor->mutable_data<float>({3, 10});
     //  DLOG << typeid(output_tensor).name();
     //  DLOG << "output_tensor dims: " << output_tensor->dims();
 
-    std::shared_ptr<Tensor> out_tensor = std::make_shared<LoDTensor>();
+    std::shared_ptr<LoDTensor> out_tensor = std::make_shared<LoDTensor>();
     out_tensor.reset(output_tensor);
 
     predict(t1, t2, t3, 0);
@@ -130,17 +130,17 @@ int main() {
   }
 
   /// input x (1,3,224,224)
-  paddle_mobile::framework::Tensor inputx;
+  paddle_mobile::framework::LoDTensor inputx;
   SetupTensor<float>(&inputx, {3, 64, 1, 1}, static_cast<float>(1),
                      static_cast<float>(1));
   auto *inputx_ptr = inputx.data<float>();
   /// input y (224,)
-  paddle_mobile::framework::Tensor inputy;
+  paddle_mobile::framework::LoDTensor inputy;
   SetupTensor<float>(&inputy, {64, 10}, static_cast<float>(1.5),
                      static_cast<float>(1.5));
   auto *inputy_ptr = inputy.data<float>();
 
-  paddle_mobile::framework::Tensor inputz;
+  paddle_mobile::framework::LoDTensor inputz;
   SetupTensor<float>(&inputz, {10}, static_cast<float>(0),
                      static_cast<float>(1));
   auto *inputz_ptr = inputz.data<float>();
