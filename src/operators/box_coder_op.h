@@ -36,7 +36,7 @@ class BoxCoderOp : public framework::OperatorWithKernel<DeviceType> {
                                                   scope),
         param_(inputs, outputs, attrs, *scope) {}
 
-  void Run() const {
+  void RunImpl() const {
     operators::BoxCoderKernel<DeviceType, T> kernel;
     kernel.Compute(param_);
   }

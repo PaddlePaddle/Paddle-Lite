@@ -11,27 +11,27 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
+#pragma once
 
+#include <string>
 #include "framework/operator.h"
 #include "operators/kernel/lrn_kernel.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
-
-using namespace framework;
-
+using std::string;
 template <typename DeviceType, typename T>
 class LrnOp : public framework::OperatorWithKernel<DeviceType> {
  public:
-  LrnOp(const std::string &type, const VariableNameMap &inputs,
+  LrnOp(const string &type, const VariableNameMap &inputs,
         const VariableNameMap &outputs, const framework::AttributeMap attrs,
         std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
                                                   scope),
         param_(inputs, outputs, attrs, *scope) {}
 
-  void Run() const {
+  void RunImpl() const {
     operators::LrnKernel<DeviceType, T> kernel;
     kernel.Compute(param_);
   }
