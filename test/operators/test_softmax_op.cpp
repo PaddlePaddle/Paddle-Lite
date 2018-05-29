@@ -18,7 +18,7 @@ limitations under the License. */
 
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
-  auto program = loader.Load(std::string("models/mobilenet"));
+  auto program = loader.Load(std::string("../models/mobilenet"));
   if (program.originProgram == nullptr) {
     DLOG << "program read file";
   }
