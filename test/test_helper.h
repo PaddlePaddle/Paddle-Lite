@@ -29,8 +29,8 @@ static const std::string g_resnet =
     "../models/image_classification_resnet.inference.model";
 static const std::string g_test_image_1x3x224x224 =
     "../images/test_image_1x3x224x224_float";
-using paddle_mobile::framework::Tensor;
 using paddle_mobile::framework::DDim;
+using paddle_mobile::framework::Tensor;
 template <typename T>
 void SetupTensor(paddle_mobile::framework::Tensor *input,
                  paddle_mobile::framework::DDim dims, T lower, T upper) {
