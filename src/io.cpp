@@ -210,7 +210,7 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
           tensor->Resize(framework::make_ddim(dim));
         } else {
           auto dim = var_desc->Tensor_desc().Dims();
-          PADDLE_MOBILE_ENFORCE(dim.size() > 1, "dim size is 0");
+          PADDLE_MOBILE_ENFORCE(dim.size() > 0, "dim size is 0");
           dim[0] = 1;
           auto tensor = var->GetMutable<framework::LoDTensor>();
           tensor->Resize(framework::make_ddim(dim));
@@ -221,7 +221,7 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
     }
   }
 
-  //  originProgramDesc->Description("program: ");
+  originProgramDesc->Description("program: ");
 
   paddle_mobile__framework__proto__program_desc__free_unpacked(c_program, NULL);
   return program;
@@ -380,7 +380,7 @@ void Executor<Dtype, P>::InitMemory() {
                    program_.model_path + "/" + var_desc->Name());
       } else {
         if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
-          auto tensor = var->template GetMutable<framework::Tensor>();
+          auto tensor = var->template GetMutable<framework::LoDTensor>();
           tensor->template mutable_data<Ptype>();
         }
       }
@@ -416,7 +416,8 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::predict(
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::predict(const framework::Tensor &t, int block_id) {
   framework::Variable *g_feed_value = program_.scope->Var("feed");
-  auto feed_tensor = g_feed_value->GetMutable<framework::LoDTensor>();
+  framework::Tensor *feed_tensor =
+      g_feed_value->GetMutable<framework::LoDTensor>();
   feed_tensor->Resize(t.dims());
 
   feed_tensor->ShareDataWith(t);
@@ -434,7 +435,7 @@ std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::predict(
     const std::vector<Ptype> &input, const std::vector<int64_t> &dims) {
   DLOG << "start predict: ";
 
-  framework::Tensor tensor;
+  framework::LoDTensor tensor;
   auto ddim = framework::make_ddim(dims);
 
   auto input_ptr = tensor.mutable_data<Ptype>(ddim);

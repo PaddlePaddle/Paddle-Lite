@@ -11,11 +11,11 @@ ADD_EXECUTABLE(test-mul-op  operators/test_mul_op.cpp test_helper.h  test_includ
 target_link_libraries(test-mul-op paddle-mobile)
 
 # gen test
-ADD_EXECUTABLE(test-elementwiseadd-op  operators/test_elementwise_add_op.cpp test_helper.h  test_include.h)
+ADD_EXECUTABLE(test-elementwiseadd-op operators/test_elementwise_add_op.cpp test_helper.h  test_include.h)
 target_link_libraries(test-elementwiseadd-op paddle-mobile)
 
 # gen test
-ADD_EXECUTABLE(test-concat-op  operators/test_concat_op.cpp test_helper.h  test_include.h)
+ADD_EXECUTABLE(test-concat-op operators/test_concat_op.cpp test_helper.h  test_include.h)
 target_link_libraries(test-concat-op paddle-mobile)
 
 # gen test

@@ -14,12 +14,11 @@ limitations under the License. */
 
 #include "../executor_for_test.h"
 #include "../test_include.h"
+#include "operators/relu_op.h"
 
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
-  //  ../models/image_classification_resnet.inference.model
-  auto program = loader.Load(g_mobilenet_ssd);
-
+  auto program = loader.Load(g_resnet);
   PADDLE_MOBILE_ENFORCE(program.originProgram != nullptr,
                         "program file read fail");
 
@@ -27,17 +26,33 @@ int main() {
                 paddle_mobile::operators::ReluOp<paddle_mobile::CPU, float>>
       executor(program, "relu");
 
-  paddle_mobile::framework::Tensor input;
-  SetupTensor<float>(&input, {1, 2, 3, 4}, static_cast<float>(-1),
-                     static_cast<float>(1));
+  // 1. input_tensors;
+  vector<Tensor> input_tensors;
 
+  Tensor input1;
+  auto input1_data = CreateInput<float>(&input1, {1, 2, 3, 4}, -1, 1);
+  input_tensors.push_back(input1);
+
+  // 2. input_names
+  vector<string> input_names({
+      "batch_norm_0.tmp_2",
+  });
+
+  // 3. output_names
+  vector<string> output_names({"batch_norm_0.tmp_3"});
+
+  // 4. out_dims;
+  vector<DDim> out_ddims;
   auto out_ddim = paddle_mobile::framework::make_ddim({1, 2, 3, 4});
-  auto output = executor.predict(input, "batch_norm_0.tmp_2",
-                                 "batch_norm_0.tmp_3", out_ddim);
+  out_ddims.push_back(out_ddim);
 
-  auto output_ptr = output->data<float>();
-  for (int j = 0; j < output->numel(); ++j) {
-    DLOG << " value of output: " << output_ptr[j];
+  auto output = executor.predict<LoDTensor>(input_tensors, input_names,
+                                            output_names, out_ddims);
+
+  auto output0_data = output[0]->data<float>();
+
+  for (int j = 0; j < output[0]->numel(); ++j) {
+    DLOG << " value of output: " << output0_data[j];
   }
   return 0;
 }

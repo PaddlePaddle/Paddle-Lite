@@ -77,15 +77,15 @@ class TestMultiClassNMSOp {
     // feed
     auto scope = program_.scope;
     Variable *x1_feed_value = scope->Var("box_coder_0.tmp_0");
-    auto tensor_x1 = x1_feed_value->GetMutable<Tensor>();
+    auto tensor_x1 = x1_feed_value->GetMutable<LoDTensor>();
     tensor_x1->ShareDataWith(t1);
 
     Variable *x2_feed_value = scope->Var("transpose_12.tmp_0");
-    auto tensor_x2 = x2_feed_value->GetMutable<Tensor>();
+    auto tensor_x2 = x2_feed_value->GetMutable<LoDTensor>();
     tensor_x2->ShareDataWith(t2);
 
     Variable *output = scope->Var("detection_output_0.tmp_0");
-    auto *output_tensor = output->GetMutable<Tensor>();
+    auto *output_tensor = output->GetMutable<LoDTensor>();
     output_tensor->mutable_data<float>({1917, 6});
 
     //  DLOG << typeid(output_tensor).name();

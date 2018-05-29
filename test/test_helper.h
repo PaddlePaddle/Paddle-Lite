@@ -44,6 +44,12 @@ void SetupTensor(paddle_mobile::framework::Tensor *input,
 }
 
 template <typename T>
+T *CreateInput(Tensor *input, DDim dims, T low, T up) {
+  SetupTensor<T>(input, dims, static_cast<float>(low), static_cast<float>(up));
+  return input->data<T>();
+}
+
+template <typename T>
 void GetInput(const std::string &input_name, std::vector<T> *input,
               const std::vector<int64_t> &dims) {
   int size = 1;
