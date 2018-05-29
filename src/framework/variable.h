@@ -45,8 +45,6 @@ class Variable : public PaddleMobileObject {
 
   bool IsInitialized() const { return holder_ != nullptr; }
 
-  const std::string Name() { return name_; }
-
   template <typename T>
   T *GetMutable() {
     if (!IsType<T>()) {
@@ -63,8 +61,6 @@ class Variable : public PaddleMobileObject {
   void Clear() { holder_.reset(); }
 
   std::type_index Type() const { return holder_->Type(); }
-
-  void SetName(const string name) { name_ = name; }
 
  private:
   struct Placeholder {

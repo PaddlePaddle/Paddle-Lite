@@ -45,7 +45,7 @@ static size_t ReadBuffer(const char *file_name, uint8_t **out) {
   printf("%s \n", file_name);
   FILE *fp;
   fp = fopen(file_name, "rb");
-  PADDLE_MOBILE_ENFORCE(fp != NULL, "open failed !");
+  PADDLE_MOBILE_ENFORCE(fp != NULL, " %s open failed !", file_name);
 
   fseek(fp, 0, SEEK_END);
   size_t size = ftell(fp);
@@ -389,39 +389,12 @@ void Executor<Dtype, P>::InitMemory() {
 }
 
 template <typename Dtype, Precision P>
-std::shared_ptr<framework::Tensor> Executor<Dtype, P>::predict(
-    framework::Tensor &t) {
-  // feed
-  auto scope = program_.scope;
-  framework::Variable *g_feed_value = scope->Var("pixel");
-  auto tensor = g_feed_value->GetMutable<framework::Tensor>();
-  tensor->ShareDataWith(t);
-
-  framework::Variable *con_output = scope->Var("conv2d_0.tmp_0");
-  framework::Tensor *output_tensor =
-      con_output->GetMutable<framework::Tensor>();
-  output_tensor->mutable_data<float>({1, 16, 32, 32});
-  //  std::cout << typeid(output_tensor).name() << std::endl;
-  //  std::cout << "output_tensor dims: " << output_tensor->dims() <<
-  //  std::endl;
-
-  std::shared_ptr<framework::Tensor> out_tensor =
-      std::make_shared<framework::LoDTensor>();
-  out_tensor.reset(output_tensor);
-
-  predict(t, 0);
-  return out_tensor;
-}
-
-template <typename Dtype, Precision P>
 void Executor<Dtype, P>::predict(const framework::Tensor &t, int block_id) {
   framework::Variable *g_feed_value = program_.scope->Var("feed");
   framework::Tensor *feed_tensor =
       g_feed_value->GetMutable<framework::LoDTensor>();
   feed_tensor->Resize(t.dims());
-
   feed_tensor->ShareDataWith(t);
-
   std::shared_ptr<framework::BlockDesc> to_predict_block =
       to_predict_program_->Block(block_id);
   for (int j = 0; j < ops_of_block_[*to_predict_block.get()].size(); ++j) {

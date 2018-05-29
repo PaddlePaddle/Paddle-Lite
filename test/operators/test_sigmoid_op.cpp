@@ -19,16 +19,12 @@ limitations under the License. */
 int main() {
   paddle_mobile::framework::Tensor input;
   paddle_mobile::framework::Tensor output;
-  DLOG << 1;
   SetupTensor<float>(&input, {1, 4, 60, 60}, static_cast<float>(0),
                      static_cast<float>(1));
-  DLOG << 2;
 
   auto out_ddim = paddle_mobile::framework::make_ddim({1, 4, 60, 60});
   output.Resize(out_ddim);
-  DLOG << 3;
   paddle_mobile::operators::sigmoid(&input, &output);
-  DLOG << 4;
   auto *output_ptr = output.data<float>();
   for (int j = 0; j < output.numel(); ++j) {
     DLOG << " value of output: " << output_ptr[j];
