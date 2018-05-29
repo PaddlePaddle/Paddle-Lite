@@ -12,10 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "io.h"
+#include "/io.h"
 #include <fstream>
 #include <vector>
-
 #include "common/enforce.h"
 #include "common/log.h"
 #include "framework/framework.pb-c.h"
@@ -53,7 +52,7 @@ static size_t ReadBuffer(const char *file_name, uint8_t **out) {
 
   DLOG << "model size: " << size;
 
-  *out = (uint8_t *)malloc(size);
+  *out = reinterpret_cast<uint8_t *>(size);
 
   size_t cur_len = 0;
   size_t nread;
@@ -364,7 +363,7 @@ void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
 
   is.read(static_cast<char *>(memory), memory_size * type_size);
   is.close();
-};
+}
 
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::InitMemory() {
@@ -381,6 +380,7 @@ void Executor<Dtype, P>::InitMemory() {
       } else {
         if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
           auto tensor = var->template GetMutable<framework::LoDTensor>();
+
           tensor->template mutable_data<Ptype>();
         }
       }
@@ -406,15 +406,7 @@ void Executor<Dtype, P>::predict(const framework::Tensor &t, int block_id) {
 template <typename Dtype, Precision P>
 std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::predict(
     const std::vector<Ptype> &input, const std::vector<int64_t> &dims) {
-  DLOG << "start predict: ";
-
-  framework::LoDTensor tensor;
-  auto ddim = framework::make_ddim(dims);
-
-  auto input_ptr = tensor.mutable_data<Ptype>(ddim);
-  for (int i = 0; i < input.size(); ++i) {
-    input_ptr[i] = input[i];
-  }
+  framework::Tensor tensor(input, framework::make_ddim(dims));
 
   predict(tensor, 0);
 

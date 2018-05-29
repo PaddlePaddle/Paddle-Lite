@@ -36,7 +36,7 @@ class SigmoidOp : public framework::OperatorWithKernel<DeviceType> {
 
   void InferShape() const override;
 
-  void Run() const {
+  void RunImpl() const {
     operators::SigmoidKernel<DeviceType, T> kernel;
     kernel.Compute(param_);
     this->ClearVariables({"X"});

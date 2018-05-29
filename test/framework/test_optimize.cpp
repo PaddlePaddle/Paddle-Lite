@@ -14,7 +14,7 @@ limitations under the License. */
 
 #include "framework/program/program-optimize/node.h"
 #include "framework/program/program-optimize/program_optimize.h"
-#include "io.h"
+#include "io/io.h"
 
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;

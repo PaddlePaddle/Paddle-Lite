@@ -11,15 +11,15 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
+#pragma once
 
+#include <string>
 #include "framework/operator.h"
 #include "operators/kernel/mul_kernel.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
-
-using namespace framework;
 
 template <typename DeviceType, typename T>
 class MulOp : public framework::OperatorWithKernel<DeviceType> {
@@ -31,7 +31,7 @@ class MulOp : public framework::OperatorWithKernel<DeviceType> {
                                                   scope),
         param_(inputs, outputs, attrs, *scope) {}
 
-  void Run() const {
+  void RunImpl() const {
     operators::MulKernel<DeviceType, T> kernel;
     kernel.Compute(param_);
   }
