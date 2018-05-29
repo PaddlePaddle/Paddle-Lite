@@ -114,4 +114,29 @@ class Executor4Test : public Executor<DeviceType> {
 
     return output_tensor_sptrs;
   }
+
+  std::shared_ptr<Tensor> predict(const Tensor &t, string input, string output,
+                                  const DDim &dDim) {
+    auto scope = this->program_.scope;
+    Variable *g_feed_value = scope->Var(input);
+    auto tensor = g_feed_value->GetMutable<LoDTensor>();
+    tensor->ShareDataWith(t);
+
+    Variable *con_output = scope->Var(output);
+    auto *output_tensor = con_output->GetMutable<LoDTensor>();
+    output_tensor->mutable_data<float>(dDim);
+
+    std::shared_ptr<Tensor> out_tensor = std::make_shared<LoDTensor>();
+    out_tensor.reset(output_tensor);
+
+    std::shared_ptr<paddle_mobile::framework::BlockDesc> to_predict_block =
+        this->to_predict_program_->Block(0);
+    for (int j = 0; j < this->ops_of_block_[*to_predict_block.get()].size();
+         ++j) {
+      auto op = this->ops_of_block_[*to_predict_block.get()][j];
+      op->Run();
+    }
+
+    return out_tensor;
+  }
 };
