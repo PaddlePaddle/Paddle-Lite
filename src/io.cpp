@@ -399,7 +399,7 @@ void Executor<Dtype, P>::predict(const framework::Tensor &t, int block_id) {
       to_predict_program_->Block(block_id);
   for (int j = 0; j < ops_of_block_[*to_predict_block.get()].size(); ++j) {
     auto op = ops_of_block_[*to_predict_block.get()][j];
-      op->Run();
+    op->Run();
   }
 }
 
