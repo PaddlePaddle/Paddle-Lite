@@ -44,7 +44,7 @@ void ConvKernel<CPU, float>::Compute(const ConvParam &param) const {
   std::vector<int> paddings = param.Paddings();
   std::vector<int> dilations = param.Dilations();
 
-//  DLOG << " compute end get Attrs " << strides[0];
+  //  DLOG << " compute end get Attrs " << strides[0];
 
   const int batch_size = static_cast<int>(input->dims()[0]);
 
