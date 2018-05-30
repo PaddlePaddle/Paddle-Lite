@@ -73,6 +73,7 @@ class Executor4Test : public Executor<DeviceType> {
         }
       }
     }
+    this->InitMemory();
   }
 
   template <typename T = LoDTensor>

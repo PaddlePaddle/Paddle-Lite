@@ -23,6 +23,7 @@ vector<string> OperatorBase<Dtype>::GetOutKeys() const {
   auto it = op_input_output_key.find(type_);
   if (it == op_input_output_key.end()) {
     DLOG << type_ << " has no outputs";
+    return {};
   }
   return it->second.second;
 }
