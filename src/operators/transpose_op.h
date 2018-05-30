@@ -36,7 +36,7 @@ class TransposeOp : public framework::OperatorWithKernel<DeviceType> {
                                                   scope),
         param_(inputs, outputs, attrs, *scope) {}
 
-  void Run() const {
+  void RunImpl() const {
     operators::TransposeKernel<DeviceType, T> kernel;
     kernel.Compute(param_);
   }

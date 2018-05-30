@@ -12,19 +12,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#pragma once
+
+#include <string>
 #include "framework/operator.h"
 #include "operators/kernel/batchnorm_kernel.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
-
-using namespace framework;
-
+using std::string;
 template <typename DeviceType, typename T>
 class BatchNormOp : public framework::OperatorWithKernel<DeviceType> {
  public:
-  BatchNormOp(const std::string &type, const VariableNameMap &inputs,
+  BatchNormOp(const string &type, const VariableNameMap &inputs,
               const VariableNameMap &outputs,
               const framework::AttributeMap attrs,
               std::shared_ptr<framework::Scope> scope)
@@ -32,7 +33,7 @@ class BatchNormOp : public framework::OperatorWithKernel<DeviceType> {
                                                   scope),
         param_(inputs, outputs, attrs, *scope) {}
 
-  void Run() const {
+  void RunImpl() const {
     operators::BatchNormKernel<DeviceType, T> kernel;
     kernel.Compute(param_);
   }

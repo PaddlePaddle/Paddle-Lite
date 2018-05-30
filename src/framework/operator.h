@@ -36,6 +36,8 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace framework {
+using std::string;
+using std::vector;
 static std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
     op_input_output_key = {{"conv2d", {{"Input"}, {"Output"}}},
@@ -57,7 +59,9 @@ class OperatorBase : PaddleMobileObject {
                const VariableNameMap &outputs, const AttributeMap &attrs,
                std::shared_ptr<Scope> scope);
   virtual ~OperatorBase() {}
-  virtual void Run() const = 0;
+  void Run() const;
+  vector<string> GetOutKeys() const;
+  virtual void RunImpl() const = 0;
   virtual void InferShape() const = 0;
 
   const VariableNameMap &Inputs() const { return inputs_; }
@@ -88,7 +92,8 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
                      const VariableNameMap &outputs, const AttributeMap &attrs,
                      std::shared_ptr<Scope> scope)
       : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope) {}
-  virtual void Run() const = 0;
+
+  virtual void RunImpl() const = 0;
   virtual void InferShape() const = 0;
 };
 
