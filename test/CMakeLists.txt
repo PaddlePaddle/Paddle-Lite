@@ -91,3 +91,7 @@ target_link_libraries(test-googlenet paddle-mobile)
 # gen test
 ADD_EXECUTABLE(test-sigmoid operators/test_sigmoid_op.cpp  test_include.h)
 target_link_libraries(test-sigmoid paddle-mobile)
+
+# gen test
+ADD_EXECUTABLE(test-depthwise-conv-op operators/test_depthwise_conv_op.cpp test_helper.h test_include.h executor_for_test.h)
+target_link_libraries(test-depthwise-conv-op paddle-mobile)
