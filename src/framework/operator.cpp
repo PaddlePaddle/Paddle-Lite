@@ -28,18 +28,6 @@ vector<string> OperatorBase<Dtype>::GetOutKeys() const {
   return it->second.second;
 }
 
-template <typename T>
-static T *GetVarValue(const string &key, const VariableNameMap &var_map,
-                      const Scope &scope) {
-  auto var_vec = var_map.at(key);
-  if (!var_vec.empty()) {
-    auto var = scope.FindVar(var_vec[0]);
-    return var->GetMutable<T>();
-  } else {
-    return nullptr;
-  }
-}
-
 template <typename Dtype>
 OperatorBase<Dtype>::OperatorBase(const std::string &type,
                                   const VariableNameMap &inputs,
@@ -60,7 +48,7 @@ void OperatorBase<Dtype>::CheckAllInputOutputSet() const {}
 template <typename Dtype>
 void OperatorBase<Dtype>::Run() const {
   RunImpl();
-#ifdef PADDLE_MOBILE_DEBUG
+#if (PADDLE_MOBILE_DEBUG)
   vector<string> output_keys = GetOutKeys();
   for (const auto key : output_keys) {
     Tensor *out_ = GetVarValue<framework::LoDTensor>(key, outputs_, *scope_);
