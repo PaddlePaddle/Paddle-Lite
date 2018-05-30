@@ -85,8 +85,27 @@ ADD_EXECUTABLE(test-enforce common/test_enforce.cpp)
 target_link_libraries(test-enforce paddle-mobile)
 
 # gen test
+ADD_EXECUTABLE(test-yolo net/test_yolo.cpp test_helper.h  test_include.h executor_for_test.h)
+target_link_libraries(test-yolo paddle-mobile)
+
+# gen test
 ADD_EXECUTABLE(test-googlenet net/test_googlenet.cpp test_helper.h  test_include.h executor_for_test.h)
 target_link_libraries(test-googlenet paddle-mobile)
+
+# gen test
+ADD_EXECUTABLE(test-mobilenet net/test_mobilenet.cpp test_helper.h  test_include.h executor_for_test.h)
+target_link_libraries(test-mobilenet paddle-mobile)
+
+# gen test
+ADD_EXECUTABLE(test-resnet net/test_resnet.cpp test_helper.h  test_include.h executor_for_test.h)
+target_link_libraries(test-resnet paddle-mobile)
+# gen test
+ADD_EXECUTABLE(test-mobilenetssd net/test_mobilenet+ssd.cpp test_helper.h  test_include.h executor_for_test.h)
+target_link_libraries(test-mobilenetssd paddle-mobile)
+
+# gen test
+ADD_EXECUTABLE(test-squeezenet net/test_squeezenet.cpp test_helper.h  test_include.h executor_for_test.h)
+target_link_libraries(test-squeezenet paddle-mobile)
 
 # gen test
 ADD_EXECUTABLE(test-sigmoid operators/test_sigmoid_op.cpp  test_include.h)
