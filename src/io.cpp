@@ -220,7 +220,7 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
       }
     }
   }
-  //  originProgramDesc->Description("program: ");
+  originProgramDesc->Description("program: ");
 
   if (optimize) {
     framework::ProgramOptimize program_optimize;
