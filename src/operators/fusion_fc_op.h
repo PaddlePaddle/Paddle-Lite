@@ -32,7 +32,7 @@ class FusionFcMatcher : public framework::FusionOpMatcher {
     node_ > std::make_shared<framework::Node>("elementwise_add");
   }
 
-  void FolderNodes(const framework::Node &node) {
+  void FolderNodes(framework::Node &node) {
     vector<std::shared_ptr<framework::OpDesc>> origin_descs =
         node.OpDescs(node_.Depth());
     node.Folder(node_.Depth(), Type(), {{"elementwise_add", {"Y", "Z"}}});

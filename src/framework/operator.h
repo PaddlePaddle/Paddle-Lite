@@ -118,7 +118,7 @@ class FusionOpMatcher : PaddleMobileObject {
 
   virtual std::string Type() = 0;
 
-  virtual void FolderNodes(const Node &node) {
+  virtual void FolderNodes(Node &node) {
     node.Folder(node_.Depth(), Type(), {});
   }
 
