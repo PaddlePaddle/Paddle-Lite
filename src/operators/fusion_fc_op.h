@@ -15,6 +15,7 @@ limitations under the License. */
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
@@ -22,7 +23,8 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
-
+using std::string;
+using std::vector;
 class FusionFcMatcher : public framework::FusionOpMatcher {
  public:
   FusionFcMatcher() {
@@ -31,7 +33,7 @@ class FusionFcMatcher : public framework::FusionOpMatcher {
   }
 
   void FolderNodes(framework::Node &node) {
-    std::vector<std::shared_ptr<framework::OpDesc>> origin_descs =
+    vector<std::shared_ptr<framework::OpDesc>> origin_descs =
         node.OpDescs(node_.Depth());
     node.Folder(node_.Depth(), Type(), {{"elementwise_add", {"Y", "Z"}}});
   }
@@ -42,7 +44,7 @@ class FusionFcMatcher : public framework::FusionOpMatcher {
 template <typename DeviceType, typename T>
 class FushionFcOp : public framework::OperatorWithKernel<DeviceType> {
  public:
-  FushionFcOp(const std::string &type, const VariableNameMap &inputs,
+  FushionFcOp(const string &type, const VariableNameMap &inputs,
               const VariableNameMap &outputs,
               const framework::AttributeMap attrs,
               std::shared_ptr<framework::Scope> scope)
@@ -50,7 +52,7 @@ class FushionFcOp : public framework::OperatorWithKernel<DeviceType> {
                                                   scope),
         param_(inputs, outputs, attrs, *scope) {}
 
-  void Run() const {
+  void RunImpl() const {
     operators::FushionFcKernel<DeviceType, T> kernel;
     kernel.Compute(param_);
   }

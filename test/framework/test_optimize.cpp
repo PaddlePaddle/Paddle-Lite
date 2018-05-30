@@ -12,9 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include "common/io.h"
 #include "framework/program/program-optimize/node.h"
 #include "framework/program/program-optimize/program_optimize.h"
-#include "io.h"
 
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
