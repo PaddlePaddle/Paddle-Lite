@@ -19,7 +19,7 @@ namespace paddle_mobile {
 
 namespace framework {
 
-std::shared_ptr<ProgramDesc> ProgramOptimize::Optimize() {}
+//std::shared_ptr<ProgramDesc> ProgramOptimize::Optimize() {}
 
 std::shared_ptr<ProgramDesc> ProgramOptimize::FushionOptimize(
     std::shared_ptr<ProgramDesc> ori_des) {
@@ -86,7 +86,7 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FushionOptimize(
           //          DLOG << " match success " << " fusion node: \n" <<
           //          matcher->BeginNode() << "\nsub node: \n" << *sub_node;
           //          DLOG << "match node\n"<< *match_node;
-          matcher->FolderNodes(*match_node);
+          matcher->FolderNodes(match_node.get());
           //          DLOG << " after match node\n"<< *match_node;
           //          match_node->Description();
 

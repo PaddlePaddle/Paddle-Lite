@@ -14,6 +14,10 @@ limitations under the License. */
 
 #pragma once;
 
+#include <string>
+#include <utility>
+#include <unordered_map>
+
 namespace paddle_mobile {
 enum class Precision : int { FP32 = 0 };
 
@@ -67,4 +71,41 @@ enum PMStatus {
   PMUnImplError = 0x07,    /*!< Unimplement error. */
   PMWrongDevice = 0x08     /*!< un-correct device. */
 };
+
+static const std::string G_OP_TYPE_CONV = "conv2d";
+static const std::string G_OP_TYPE_BATCHNORM = "batch_norm";
+static const std::string G_OP_TYPE_BOX_CODER = "box_coder";
+static const std::string G_OP_TYPE_CONCAT = "concat";
+static const std::string G_OP_TYPE_ELEMENTWISE_ADD = "elementwise_add";
+static const std::string G_OP_TYPE_FUSION_CONV_ADD_RELU = "FusionConvAddRelu";
+static const std::string G_OP_TYPE_FC = "fc";
+static const std::string G_OP_TYPE_LRN = "lrn";
+static const std::string G_OP_TYPE_MUL = "mul";
+static const std::string G_OP_TYPE_MULTICLASS_NMS = "multiclass_nms";
+static const std::string G_OP_TYPE_POOL2D = "pool2d";
+static const std::string G_OP_TYPE_PRIOR_BOX = "prior_box";
+static const std::string G_OP_TYPE_RELU = "relu";
+static const std::string G_OP_TYPE_RESHAPE = "reshape";
+static const std::string G_OP_TYPE_SIGMOID = "sigmoid";
+static const std::string G_OP_TYPE_SOFTMAX = "softmax";
+static const std::string G_OP_TYPE_TRANSPOSE = "transpose";
+static const std::string G_OP_TYPE_SPLIT = "split";
+static const std::string G_OP_TYPE_FEED = "feed";
+static const std::string G_OP_TYPE_FETCH = "fetch";
+
+static std::unordered_map<
+        std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
+        op_input_output_key = {{G_OP_TYPE_CONV, {{"Input"}, {"Output"}}},
+                               {G_OP_TYPE_RELU, {{"X"}, {"Out"}}},
+                               {G_OP_TYPE_SOFTMAX, {{"X"}, {"Out"}}},
+                               {G_OP_TYPE_MUL, {{"X"}, {"Out"}}},
+                               {G_OP_TYPE_ELEMENTWISE_ADD, {{"X", "Y"}, {"Out"}}},
+                               {G_OP_TYPE_POOL2D, {{"X"}, {"Out"}}},
+                               {G_OP_TYPE_BATCHNORM, {{"X"}, {"Y"}}},
+                               {G_OP_TYPE_LRN, {{"X"}, {"Out"}}},
+                               {G_OP_TYPE_CONCAT, {{"X"}, {"Out"}}},
+                               {G_OP_TYPE_SPLIT, {{"X"}, {"Out"}}},
+                               {G_OP_TYPE_FEED, {{"X"}, {"Out"}}},
+                               {G_OP_TYPE_FETCH, {{"X"}, {"Out"}}}};
+
 }  // namespace paddle_mobile

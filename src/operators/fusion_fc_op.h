@@ -28,17 +28,17 @@ using std::vector;
 class FusionFcMatcher : public framework::FusionOpMatcher {
  public:
   FusionFcMatcher() {
-    node_ = framework::Node("mul");
-    node_ > std::make_shared<framework::Node>("elementwise_add");
+    node_ = framework::Node(G_OP_TYPE_MUL);
+    node_ > std::make_shared<framework::Node>(G_OP_TYPE_ELEMENTWISE_ADD);
   }
 
   void FolderNodes(framework::Node &node) {
     vector<std::shared_ptr<framework::OpDesc>> origin_descs =
         node.OpDescs(node_.Depth());
-    node.Folder(node_.Depth(), Type(), {{"elementwise_add", {"Y", "Z"}}});
+    node.Folder(node_.Depth(), Type(), {{G_OP_TYPE_ELEMENTWISE_ADD, {"Y", "Z"}}});
   }
 
-  std::string Type() { return "fc"; }
+  std::string Type() { return G_OP_TYPE_FC; }
 };
 
 template <typename DeviceType, typename T>

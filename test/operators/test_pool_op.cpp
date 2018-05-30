@@ -14,11 +14,11 @@ limitations under the License. */
 
 #include "../executor_for_test.h"
 #include "../test_helper.h"
-#include "common/io.h"
+#include "io.h"
 
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
-  auto program = loader.Load(std::string("../models/googlenet"));
+  auto program = loader.Load(std::string(g_googlenet));
   if (program.originProgram == nullptr) {
     DLOG << "program read file";
   }
@@ -32,7 +32,7 @@ int main() {
                      static_cast<float>(1));
   auto out_ddim = paddle_mobile::framework::make_ddim({1, 64, 56, 56});
   auto output =
-      executor.predict(input, "conv2d_0.tmp_1", "pool2d_0.tmp_0", out_ddim);
+      executor.Predict(input, "conv2d_0.tmp_1", "pool2d_0.tmp_0", out_ddim);
 
   float *output_ptr = output->data<float>();
   for (int j = 0; j < output->numel(); ++j) {
