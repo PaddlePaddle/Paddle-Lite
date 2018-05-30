@@ -28,6 +28,7 @@ static const std::string g_mobilenet_ssd = "../models/mobilenet+ssd";
 static const std::string g_squeezenet = "../models/squeezenet";
 static const std::string g_resnet =
     "../models/image_classification_resnet.inference.model";
+static const std::string g_yolo = "../models/yolo";
 static const std::string g_test_image_1x3x224x224 =
     "../images/test_image_1x3x224x224_float";
 using paddle_mobile::framework::DDim;

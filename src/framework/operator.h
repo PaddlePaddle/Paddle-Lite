@@ -38,6 +38,7 @@ namespace paddle_mobile {
 namespace framework {
 using std::string;
 using std::vector;
+
 template <typename Dtype>
 class OperatorBase : PaddleMobileObject {
  public:
