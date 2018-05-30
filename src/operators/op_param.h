@@ -696,6 +696,9 @@ class ReshapeParam : public OpParam {
   bool inplace_;
 };
 
+/*
+ * @b op 层实例化好这个 param 传递给 kernel 层使用
+ * */
 class ReluParam : public OpParam {
  public:
   ReluParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
@@ -725,7 +728,6 @@ class FushionFcParam : public OpParam {
     y_num_col_dims_ = GetAttr<int>("y_num_col_dims", attrs);
     axis_ = GetAttr<int>("axis", attrs);
   }
-
   const Tensor *InputX() const { return input_x_; }
 
   const Tensor *InputY() const { return input_y_; }

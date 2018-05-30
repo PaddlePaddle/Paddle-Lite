@@ -38,41 +38,45 @@ namespace paddle_mobile {
 namespace framework {
 using std::string;
 using std::vector;
-static std::unordered_map<
-    std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
-    op_input_output_key = {{"conv2d", {{"Input"}, {"Output"}}},
-                           {"relu", {{"X"}, {"Out"}}},
-                           {"softmax", {{"X"}, {"Out"}}},
-                           {"mul", {{"X"}, {"Out"}}},
-                           {"elementwise_add", {{"X", "Y"}, {"Out"}}},
-                           {"pool2d", {{"X"}, {"Out"}}},
-                           {"batch_norm", {{"X"}, {"Y"}}},
-                           {"lrn", {{"X"}, {"Out"}}},
-                           {"concat", {{"X"}, {"Out"}}},
-                           {"feed", {{"X"}, {"Out"}}},
-                           {"fetch", {{"X"}, {"Out"}}}};
-
 template <typename Dtype>
 class OperatorBase : PaddleMobileObject {
  public:
+  /*
+   *  @b op 基类的实例化方法, op 获取到了 输入、参数以及提前分配好的输出 tensor
+   * */
   OperatorBase(const std::string &type, const VariableNameMap &inputs,
                const VariableNameMap &outputs, const AttributeMap &attrs,
                std::shared_ptr<Scope> scope);
   virtual ~OperatorBase() {}
   void Run() const;
-  vector<string> GetOutKeys() const;
+  std::vector<string> GetOutKeys() const;
   virtual void RunImpl() const = 0;
-  virtual void InferShape() const = 0;
 
+  /*
+   * @b op 运算所需的输入, 如上一层的输出结果、卷积核
+   * */
   const VariableNameMap &Inputs() const { return inputs_; }
+  /*
+   * @b op 的输出, 内存会提前被分配好, 运算结果会被存到分配好的内存内
+   * */
   const VariableNameMap &Outputs() const { return outputs_; }
+  /*
+   * @b op 类型
+   * */
   const std::string &Type() const { return type_; }
+  /*
+   * @b op 运算所需要用到的参数: 如 conv 运算所需要用到的 stride
+   * */
   const AttributeMap &Attrs() const { return attrs_; }
   void ClearVariables(const std::vector<std::string> &var_names) const {
     if (this->scope_) {
       this->scope_->EraseVars(var_names);
     }
   }
+  /*
+   * @b 根据输入形状和参数计算出输出形状
+   * */
+  virtual void InferShape() const = 0;
 
  protected:
   std::shared_ptr<Scope> scope_;
@@ -85,6 +89,9 @@ class OperatorBase : PaddleMobileObject {
   void CheckAllInputOutputSet() const;
 };
 
+/*
+ * @b 这个类为所有带有运算的 op 的父类, 这个 op 继承与 OperatorBase
+ * */
 template <typename Dtype>
 class OperatorWithKernel : public OperatorBase<Dtype> {
  public:
@@ -97,11 +104,18 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
   virtual void InferShape() const = 0;
 };
 
+/*
+ * @b 所有kernel的父类
+ * */
 template <typename Dtype, typename P>
 class OpKernelBase : PaddleMobileObject {
  public:
+  /*
+   * @b 所有kernel 需实现 Compute 方法
+   * @p para 这个参数为 kernel 运算时所需要用到参数组成的一个结构体,
+   *    所有结构体存在与: paddle-mobile/src/operators/op_param.h
+   * */
   virtual void Compute(const P &para) const = 0;
-
   virtual ~OpKernelBase() = default;
 };
 
@@ -118,8 +132,8 @@ class FusionOpMatcher : PaddleMobileObject {
 
   virtual std::string Type() = 0;
 
-  virtual void FolderNodes(Node &node) {
-    node.Folder(node_.Depth(), Type(), {});
+  virtual void FolderNodes(Node *node) {
+    node->Folder(node_.Depth(), Type(), {});
   }
 
   virtual Node &BeginNode() { return node_; }

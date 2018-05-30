@@ -116,7 +116,7 @@ int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run BoxCoderOp Test";
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
-  auto program = loader.Load(std::string("../../test/models/mobilenet+ssd"));
+  auto program = loader.Load(std::string(g_mobilenet_ssd));
 
   paddle_mobile::framework::Tensor priorbox;
   SetupTensor<float>(&priorbox, {1917, 4}, static_cast<float>(0),

@@ -34,7 +34,7 @@ int main() {
   //                     static_cast<float>(1));
 
   auto out_ddim = paddle_mobile::framework::make_ddim({1, 64, 112, 112});
-  auto output = executor.predict(input, "data", "conv2d_0.tmp_0", out_ddim);
+  auto output = executor.Predict(input, "data", "conv2d_0.tmp_0", out_ddim);
 
   auto output_ptr = output->data<float>();
   for (int j = 0; j < output->numel(); ++j) {

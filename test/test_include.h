@@ -20,7 +20,6 @@ limitations under the License. */
 
 #include "./test_helper.h"
 #include "common/enforce.h"
-#include "common/io.h"
 #include "common/log.h"
 #include "framework/lod_tensor.h"
 #include "framework/operator.h"
@@ -30,3 +29,4 @@ limitations under the License. */
 #include "framework/scope.h"
 #include "framework/tensor.h"
 #include "framework/variable.h"
+#include "io.h"

@@ -17,9 +17,9 @@ limitations under the License. */
 #include <string>
 #include <vector>
 
-#include "common/io.h"
 #include "common/log.h"
 #include "framework/op_registry.h"
+#include "io.h"
 #include "operators/conv_op.h"
 #include "operators/elementwise_add_op.h"
 #include "operators/pool_op.h"
@@ -77,7 +77,7 @@ class Executor4Test : public Executor<DeviceType> {
   }
 
   template <typename T = LoDTensor>
-  vector<std::shared_ptr<Tensor>> predict(const vector<Tensor> &ts,
+  vector<std::shared_ptr<Tensor>> Predict(const vector<Tensor> &ts,
                                           const vector<string> &input_names,
                                           const vector<string> &output_names,
                                           const vector<DDim> &ddims) {
@@ -116,7 +116,7 @@ class Executor4Test : public Executor<DeviceType> {
     return output_tensor_sptrs;
   }
 
-  std::shared_ptr<Tensor> predict(const Tensor &t, string input, string output,
+  std::shared_ptr<Tensor> Predict(const Tensor &t, string input, string output,
                                   const DDim &dDim) {
     auto scope = this->program_.scope;
     Variable *g_feed_value = scope->Var(input);

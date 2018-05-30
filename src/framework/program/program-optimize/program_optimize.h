@@ -27,7 +27,6 @@ namespace framework {
 class ProgramOptimize {
  public:
   ProgramOptimize() {}
-  std::shared_ptr<ProgramDesc> Optimize();
   std::shared_ptr<ProgramDesc> FushionOptimize(
       std::shared_ptr<ProgramDesc> ori_des);
 
