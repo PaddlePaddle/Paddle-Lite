@@ -15,8 +15,8 @@ limitations under the License. */
 #pragma once;
 
 #include <string>
-#include <utility>
 #include <unordered_map>
+#include <utility>
 
 namespace paddle_mobile {
 enum class Precision : int { FP32 = 0 };
@@ -94,18 +94,18 @@ static const std::string G_OP_TYPE_FEED = "feed";
 static const std::string G_OP_TYPE_FETCH = "fetch";
 
 static std::unordered_map<
-        std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
-        op_input_output_key = {{G_OP_TYPE_CONV, {{"Input"}, {"Output"}}},
-                               {G_OP_TYPE_RELU, {{"X"}, {"Out"}}},
-                               {G_OP_TYPE_SOFTMAX, {{"X"}, {"Out"}}},
-                               {G_OP_TYPE_MUL, {{"X"}, {"Out"}}},
-                               {G_OP_TYPE_ELEMENTWISE_ADD, {{"X", "Y"}, {"Out"}}},
-                               {G_OP_TYPE_POOL2D, {{"X"}, {"Out"}}},
-                               {G_OP_TYPE_BATCHNORM, {{"X"}, {"Y"}}},
-                               {G_OP_TYPE_LRN, {{"X"}, {"Out"}}},
-                               {G_OP_TYPE_CONCAT, {{"X"}, {"Out"}}},
-                               {G_OP_TYPE_SPLIT, {{"X"}, {"Out"}}},
-                               {G_OP_TYPE_FEED, {{"X"}, {"Out"}}},
-                               {G_OP_TYPE_FETCH, {{"X"}, {"Out"}}}};
+    std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
+    op_input_output_key = {{G_OP_TYPE_CONV, {{"Input"}, {"Output"}}},
+                           {G_OP_TYPE_RELU, {{"X"}, {"Out"}}},
+                           {G_OP_TYPE_SOFTMAX, {{"X"}, {"Out"}}},
+                           {G_OP_TYPE_MUL, {{"X"}, {"Out"}}},
+                           {G_OP_TYPE_ELEMENTWISE_ADD, {{"X", "Y"}, {"Out"}}},
+                           {G_OP_TYPE_POOL2D, {{"X"}, {"Out"}}},
+                           {G_OP_TYPE_BATCHNORM, {{"X"}, {"Y"}}},
+                           {G_OP_TYPE_LRN, {{"X"}, {"Out"}}},
+                           {G_OP_TYPE_CONCAT, {{"X"}, {"Out"}}},
+                           {G_OP_TYPE_SPLIT, {{"X"}, {"Out"}}},
+                           {G_OP_TYPE_FEED, {{"X"}, {"Out"}}},
+                           {G_OP_TYPE_FETCH, {{"X"}, {"Out"}}}};
 
 }  // namespace paddle_mobile

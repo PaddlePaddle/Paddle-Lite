@@ -19,20 +19,20 @@ limitations under the License. */
 #include <utility>
 #include <vector>
 
-#include "common/types.h"
 #include "common/enforce.h"
+#include "common/type_define.h"
+#include "common/types.h"
 #include "common/variant.h"
+#include "framework/attribute.h"
+#include "framework/op_info.h"
+#include "framework/op_kernel_type.h"
+#include "framework/op_registry.h"
+#include "framework/paddle_mobile_object.h"
+#include "framework/program/block_desc.h"
+#include "framework/program/program-optimize/node.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
-#include "framework/op_info.h"
-#include "common/type_define.h"
 #include "framework/variable.h"
-#include "framework/attribute.h"
-#include "framework/op_registry.h"
-#include "framework/op_kernel_type.h"
-#include "framework/program/block_desc.h"
-#include "framework/paddle_mobile_object.h"
-#include "framework/program/program-optimize/node.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -77,6 +77,7 @@ class OperatorBase : PaddleMobileObject {
    * @b 根据输入形状和参数计算出输出形状
    * */
   virtual void InferShape() const = 0;
+
  protected:
   std::shared_ptr<Scope> scope_;
   std::string type_;

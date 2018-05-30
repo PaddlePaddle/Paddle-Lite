@@ -35,7 +35,8 @@ class FusionFcMatcher : public framework::FusionOpMatcher {
   void FolderNodes(framework::Node &node) {
     vector<std::shared_ptr<framework::OpDesc>> origin_descs =
         node.OpDescs(node_.Depth());
-    node.Folder(node_.Depth(), Type(), {{G_OP_TYPE_ELEMENTWISE_ADD, {"Y", "Z"}}});
+    node.Folder(node_.Depth(), Type(),
+                {{G_OP_TYPE_ELEMENTWISE_ADD, {"Y", "Z"}}});
   }
 
   std::string Type() { return G_OP_TYPE_FC; }

@@ -30,7 +30,8 @@ namespace paddle_mobile {
 template <typename Dtype, Precision P = Precision::FP32>
 class Loader : PaddleMobileObject {
  public:
-  const framework::Program<Dtype, P> Load(const std::string &dirname, bool optimize = true);
+  const framework::Program<Dtype, P> Load(const std::string &dirname,
+                                          bool optimize = true);
 
  private:
   void LoadVar(framework::Variable *variable,
@@ -45,7 +46,8 @@ class Executor {
 
   Executor() = default;
 
-  Executor(const framework::Program<Dtype> p, int batch_size = 1, bool use_optimize = true);
+  Executor(const framework::Program<Dtype> p, int batch_size = 1,
+           bool use_optimize = true);
 
   //  std::shared_ptr<framework::Tensor> Predict(framework::Tensor &t);
 
