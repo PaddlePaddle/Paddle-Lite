@@ -12,41 +12,23 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "operators/conv_op.h"
+#include "operators/depthwise_conv_op.h"
 #include <vector>
 #include "framework/data_type.h"
 #include "framework/op_proto_maker.h"
 #include "framework/op_registry.h"
+#include "operators/conv_op.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
-void ConvOp<Dtype, T>::InferShape() const {
-  //  std::cout << " begin get dims: " << std::endl;
-
+void DepthwiseConvOp<Dtype, T>::InferShape() const {
   auto in_dims = param_.Input()->dims();
-
-  //  std::cout << " end get in dims: " << std::endl;
-
-  //  std::cout << " in_dims: " << in_dims << std::endl;
-
-  //  std::cout << " begin get Filter " << std::endl;
-
   auto filter_dims = param_.Filter()->dims();
-
-  //  std::cout << " end get Filter " << std::endl;
-
-  //  std::cout << " begin get Attrs " << std::endl;
-
   const std::vector<int> &strides = param_.Strides();
-
-  //  std::cout << " end get Attrs " << strides[0] << std::endl;
-
   std::vector<int> paddings = param_.Paddings();
-
   int groups = param_.Groups();
-
   std::vector<int> dilations = param_.Dilations();
 
   PADDLE_MOBILE_ENFORCE((in_dims.size() == filter_dims.size() &&
@@ -65,11 +47,11 @@ void ConvOp<Dtype, T>::InferShape() const {
   param_.Output()->Resize(ddim);
 }
 
-template class ConvOp<CPU, float>;
+template class DepthwiseConvOp<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-USE_OP(conv2d);
-REGISTER_OPERATOR(conv2d, ops::ConvOp);
+USE_OP(depthwise_conv2d);
+REGISTER_OPERATOR(depthwise_conv2d, ops::DepthwiseConvOp);

@@ -127,7 +127,7 @@ int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run PriorBoxOp Test";
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
-  auto program = loader.Load(std::string("../../test/models/mobilenet+ssd"));
+  auto program = loader.Load(std::string(g_mobilenet_ssd));
 
   /// input x (1,3,300,300)
   paddle_mobile::framework::Tensor input_image;

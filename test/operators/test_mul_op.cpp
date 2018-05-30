@@ -50,7 +50,7 @@ int main() {
   auto out_ddim = paddle_mobile::framework::make_ddim({3, 3});
   out_ddims.push_back(out_ddim);
 
-  auto output = executor.predict<LoDTensor>(input_tensors, input_names,
+  auto output = executor.Predict<LoDTensor>(input_tensors, input_names,
                                             output_names, out_ddims);
 
   auto output0_data = output[0]->data<float>();

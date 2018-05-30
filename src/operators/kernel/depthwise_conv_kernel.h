@@ -12,24 +12,23 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "operators/relu_op.h"
+#include "framework/operator.h"
+#include "operators/math/im2col.h"
+#include "operators/math/math_function.h"
+#include "operators/math/vol2col.h"
+#include "operators/op_param.h"
+
+#pragma once;
+
 namespace paddle_mobile {
 namespace operators {
 
-template <typename Dtype, typename T>
-void ReluOp<Dtype, T>::InferShape() const {
-  auto input_dims = param_.InputX()->dims();
-  param_.Out()->Resize(input_dims);
-}
-template class ReluOp<CPU, float>;
+using framework::OpKernelBase;
+
+template <typename DeviceType, typename T>
+class DepthwiseConvKernel : public OpKernelBase<DeviceType, ConvParam> {
+ public:
+  void Compute(const ConvParam &param) const;
+};
 }  // namespace operators
 }  // namespace paddle_mobile
-
-/*
- * @b 每一个 op 都需要注册一下的,
- *    USE_OP的参数 和 REGISTER_OPERATOR的第一个参数
- * 都是需要和model中类型对应起来的
- * */
-namespace ops = paddle_mobile::operators;
-USE_OP(relu);
-REGISTER_OPERATOR(relu, ops::ReluOp);
