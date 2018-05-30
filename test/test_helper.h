@@ -15,8 +15,8 @@ limitations under the License. */
 #pragma once
 
 #include <chrono>
-#include <fstream>
 #include <random>
+#include <fstream>
 
 #include "common/log.h"
 #include "framework/ddim.h"

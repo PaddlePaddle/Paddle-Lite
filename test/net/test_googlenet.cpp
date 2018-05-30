@@ -21,16 +21,16 @@ int main() {
   //  ../../../test/models/googlenet
   //  ../../../test/models/mobilenet
   auto time1 = time();
-  auto program = loader.Load(std::string("../models/googlenet"));
+  auto program = loader.Load(g_googlenet, false);
   auto time2 = time();
   DLOG << "load cost :" << time_diff(time1, time1) << "ms";
-  paddle_mobile::Executor<paddle_mobile::CPU> executor(program, 1);
+  paddle_mobile::Executor<paddle_mobile::CPU> executor(program, 1, false);
 
   std::vector<float> input;
   std::vector<int64_t> dims{1, 3, 224, 224};
   GetInput<float>(g_test_image_1x3x224x224, &input, dims);
   auto time3 = time();
-  executor.predict(input, dims);
+  executor.Predict(input, dims);
   auto time4 = time();
   DLOG << "predict cost :" << time_diff(time3, time4) << "ms";
   return 0;

@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include <sstream>
 
+#include "framework/operator.h"
 #include "framework/program/program-optimize/node.h"
 
 namespace paddle_mobile {
@@ -73,24 +74,79 @@ void Node::OpDescs(uint index,
 }
 
 void Node::OpDescs(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
-                   Node *node) {
-  auto iter = std::find(op_desc->begin(), op_desc->end(), this->op_desc_);
+                   Node *node, bool adding_thread, int thread_num) {
+  bool can_add_split = false;
+  if (outputs_.size() > 1) {
+    can_add_split = true;
+    if (op_input_output_key[op_desc_->type_].second.size() != 1) {
+      DLOG << "当前 op desc 输出数不为 1 ";
+      can_add_split = false;
+    }
+    for (const auto& output : outputs_) {
+      if (op_input_output_key.find(output->op_desc_->type_) != op_input_output_key.end()) {
+        auto inputs_and_outputs = op_input_output_key[output->op_desc_->type_];
+        auto outputs_of_output = output->op_desc_->Output(inputs_and_outputs.second[0]);
+        auto inputs_of_output = output->op_desc_->Input(inputs_and_outputs.first[0]);
+        for (int i = 0; i < inputs_of_output.size(); ++i) {
+          std::string input_of_output = inputs_of_output[i];
+          for (int j = 0; j < outputs_of_output.size(); ++j) {
+            std::string output_of_output = outputs_of_output[j];
+            if (input_of_output == output_of_output) {
+              DLOG << "output的 output 包含 input" << input_of_output;
+              can_add_split = false;
+              break;
+            }
+          }
+        }
+      } else {
+        DLOG << "找不到 这个 op 类型: " << output->op_desc_->type_;
+        can_add_split = false;
+      }
+    }
+  }
+
   if (inputs_.size() > 1 && node != inputs_.back()) {
     return;
   } else if (inputs_.size() > 1 && node == inputs_.back()) {
+    adding_thread = false;
     op_desc->push_back(this->op_desc_);
   } else {
     op_desc->push_back(this->op_desc_);
   }
+  if (adding_thread) {
+    Attribute attr;
+    attr.Set<int>(thread_num);
+    this->op_desc_->attrs_["thread"] = attr;
+  }
 
-  for (auto &output : outputs_) {
-    output->OpDescs(op_desc, this);
+  if (can_add_split) {
+    adding_thread = true;
+    std::shared_ptr<class OpDesc> split_op_desc = std::make_shared<class OpDesc>();
+    split_op_desc->type_ = G_OP_TYPE_SPLIT;
+    auto outputs = this->op_desc_->Output(op_input_output_key[this->op_desc_->Type()].second[0]);
+
+    split_op_desc->inputs_ = {{op_input_output_key[G_OP_TYPE_SPLIT].first[0], outputs}};
+    auto &split_outputs = split_op_desc->outputs_[op_input_output_key[G_OP_TYPE_SPLIT].second[0]];
+    for (const auto& output : outputs_) {
+      split_outputs.push_back(outputs[0]);
+    }
+    DLOG << "add split";
+    op_desc->push_back(split_op_desc);
+  }
+
+  for (int i = 0; i < outputs_.size(); ++i) {
+    auto &output = outputs_[i];
+    if (can_add_split) {
+      output->OpDescs(op_desc, this, adding_thread, i);
+    } else {
+      output->OpDescs(op_desc, this, adding_thread, thread_num);
+    }
   }
 }
 
 std::vector<std::shared_ptr<framework::OpDesc>> Node::OpDescs() {
   std::vector<std::shared_ptr<framework::OpDesc>> op_descs;
-  OpDescs(&op_descs, this);
+  OpDescs(&op_descs, this, false, 0);
   return op_descs;
 }
 

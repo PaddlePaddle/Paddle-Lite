@@ -28,6 +28,9 @@ using paddle_mobile::framework::Tensor;
 template <typename DeviceType, typename T>
 class ReluOp : public framework::OperatorWithKernel<DeviceType> {
  public:
+  /*
+   * @b op 的实例化方法, 需要调用父类的实例化方法, 以及实例化自己的参数结构体
+   * */
   ReluOp(const std::string &type, const VariableNameMap &inputs,
          const VariableNameMap &outputs, const framework::AttributeMap attrs,
          std::shared_ptr<framework::Scope> scope)
@@ -35,6 +38,9 @@ class ReluOp : public framework::OperatorWithKernel<DeviceType> {
                                                   scope),
         param_(inputs, outputs, attrs, *scope) {}
 
+   /*
+   * @b op 进行运算, 调用相应的 kernel 进行运算
+   * */
   void RunImpl() const {
     operators::ReluKernel<DeviceType, T> kernel;
     kernel.Compute(param_);
@@ -44,6 +50,10 @@ class ReluOp : public framework::OperatorWithKernel<DeviceType> {
   void InferShape() const override;
 
  protected:
+  /*
+   * @b Relu kernel 进行运算时所需要用到参数的结构体,
+   *    结构体定义在: paddle-mobile/src/operators/op_param.h
+   * */
   ReluParam param_;
 };
 

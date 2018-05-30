@@ -25,6 +25,10 @@ template class ReluOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
 
+/*
+ * @b 每一个 op 都需要注册一下的,
+ *    USE_OP的参数 和 REGISTER_OPERATOR的第一个参数 都是需要和model中类型对应起来的
+ * */
 namespace ops = paddle_mobile::operators;
 USE_OP(relu);
 REGISTER_OPERATOR(relu, ops::ReluOp);
