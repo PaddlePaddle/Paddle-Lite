@@ -20,7 +20,6 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-
 template <typename T>
 struct ReluFunctor {
   inline T operator()(T in) const { return in > 0 ? in : 0; }

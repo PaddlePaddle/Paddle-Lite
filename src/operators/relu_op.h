@@ -38,7 +38,7 @@ class ReluOp : public framework::OperatorWithKernel<DeviceType> {
                                                   scope),
         param_(inputs, outputs, attrs, *scope) {}
 
-   /*
+  /*
    * @b op 进行运算, 调用相应的 kernel 进行运算
    * */
   void RunImpl() const {

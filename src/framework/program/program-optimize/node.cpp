@@ -82,11 +82,14 @@ void Node::OpDescs(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
       DLOG << "当前 op desc 输出数不为 1 ";
       can_add_split = false;
     }
-    for (const auto& output : outputs_) {
-      if (op_input_output_key.find(output->op_desc_->type_) != op_input_output_key.end()) {
+    for (const auto &output : outputs_) {
+      if (op_input_output_key.find(output->op_desc_->type_) !=
+          op_input_output_key.end()) {
         auto inputs_and_outputs = op_input_output_key[output->op_desc_->type_];
-        auto outputs_of_output = output->op_desc_->Output(inputs_and_outputs.second[0]);
-        auto inputs_of_output = output->op_desc_->Input(inputs_and_outputs.first[0]);
+        auto outputs_of_output =
+            output->op_desc_->Output(inputs_and_outputs.second[0]);
+        auto inputs_of_output =
+            output->op_desc_->Input(inputs_and_outputs.first[0]);
         for (int i = 0; i < inputs_of_output.size(); ++i) {
           std::string input_of_output = inputs_of_output[i];
           for (int j = 0; j < outputs_of_output.size(); ++j) {
@@ -121,13 +124,17 @@ void Node::OpDescs(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
 
   if (can_add_split) {
     adding_thread = true;
-    std::shared_ptr<class OpDesc> split_op_desc = std::make_shared<class OpDesc>();
+    std::shared_ptr<class OpDesc> split_op_desc =
+        std::make_shared<class OpDesc>();
     split_op_desc->type_ = G_OP_TYPE_SPLIT;
-    auto outputs = this->op_desc_->Output(op_input_output_key[this->op_desc_->Type()].second[0]);
+    auto outputs = this->op_desc_->Output(
+        op_input_output_key[this->op_desc_->Type()].second[0]);
 
-    split_op_desc->inputs_ = {{op_input_output_key[G_OP_TYPE_SPLIT].first[0], outputs}};
-    auto &split_outputs = split_op_desc->outputs_[op_input_output_key[G_OP_TYPE_SPLIT].second[0]];
-    for (const auto& output : outputs_) {
+    split_op_desc->inputs_ = {
+        {op_input_output_key[G_OP_TYPE_SPLIT].first[0], outputs}};
+    auto &split_outputs =
+        split_op_desc->outputs_[op_input_output_key[G_OP_TYPE_SPLIT].second[0]];
+    for (const auto &output : outputs_) {
       split_outputs.push_back(outputs[0]);
     }
     DLOG << "add split";

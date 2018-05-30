@@ -18,15 +18,14 @@ limitations under the License. */
 #include "common/log.h"
 
 #include "common/enforce.h"
-#include "common/enforce.h"
+#include "framework/framework.pb-c.h"
+#include "framework/lod_tensor.h"
+#include "framework/operator.h"
+#include "framework/program/program-optimize/program_optimize.h"
+#include "framework/program/program_desc.h"
+#include "framework/program/var_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
-#include "framework/operator.h"
-#include "framework/lod_tensor.h"
-#include "framework/framework.pb-c.h"
-#include "framework/program/var_desc.h"
-#include "framework/program/program_desc.h"
-#include "framework/program/program-optimize/program_optimize.h"
 
 namespace paddle_mobile {
 using framework::Variable;
@@ -202,7 +201,6 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
       //      DLOG << "var name-- " << var_desc->Name();
       auto var = scope->Var(var_desc->Name());
 
-
       if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
         if (var_desc->Persistable() &&
             var_desc->Type() != framework::VARTYPE_TYPE_FEED_MINIBATCH &&
@@ -226,7 +224,8 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
 
   if (optimize) {
     framework::ProgramOptimize program_optimize;
-    program.optimizeProgram = program_optimize.FushionOptimize(originProgramDesc);
+    program.optimizeProgram =
+        program_optimize.FushionOptimize(originProgramDesc);
   }
 
   paddle_mobile__framework__proto__program_desc__free_unpacked(c_program, NULL);
@@ -238,7 +237,8 @@ template class Loader<CPU, Precision::FP32>;
 #pragma mark - executor
 
 template <typename Dtype, Precision P>
-Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size, bool use_optimize)
+Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
+                             bool use_optimize)
     : program_(p), batch_size_(batch_size), use_optimize_(use_optimize) {
   if (use_optimize_) {
     to_predict_program_ = program_.optimizeProgram;
