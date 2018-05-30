@@ -50,7 +50,8 @@ static std::unordered_map<
                            {"lrn", {{"X"}, {"Out"}}},
                            {"concat", {{"X"}, {"Out"}}},
                            {"feed", {{"X"}, {"Out"}}},
-                           {"fetch", {{"X"}, {"Out"}}}};
+                           {"fetch", {{"X"}, {"Out"}}},
+                           {"reshape", {{"X"}, {"Out"}}}};
 
 template <typename Dtype>
 class OperatorBase : PaddleMobileObject {
