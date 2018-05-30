@@ -25,6 +25,9 @@ struct ReluFunctor {
   inline T operator()(T in) const { return in > 0 ? in : 0; }
 };
 
+/*
+ * @b 特化到具体平台的实现, param 从 op 层传入
+ * */
 template <>
 void ReluKernel<CPU, float>::Compute(const ReluParam &param) const {
   const auto *input_x = param.InputX();

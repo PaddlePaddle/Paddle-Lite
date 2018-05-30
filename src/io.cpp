@@ -15,11 +15,13 @@ limitations under the License. */
 #include "io.h"
 #include <fstream>
 #include <vector>
-#include "common/enforce.h"
 #include "common/log.h"
+
+#include "common/enforce.h"
 #include "framework/framework.pb-c.h"
 #include "framework/lod_tensor.h"
 #include "framework/operator.h"
+#include "framework/program/program-optimize/program_optimize.h"
 #include "framework/program/program_desc.h"
 #include "framework/program/var_desc.h"
 #include "framework/scope.h"
@@ -166,7 +168,7 @@ void Loader<Dtype, P>::LoadVar(framework::Variable *variable,
 
 template <typename Dtype, Precision P>
 const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
-    const std::string &dirname) {
+    const std::string &dirname, bool optimize) {
   std::string model_filename = dirname + "/__model__";
   PaddleMobile__Framework__Proto__ProgramDesc *c_program;
   uint8_t *buf = NULL;
@@ -203,7 +205,6 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
         if (var_desc->Persistable() &&
             var_desc->Type() != framework::VARTYPE_TYPE_FEED_MINIBATCH &&
             var_desc->Type() != framework::VARTYPE_TYPE_FETCH_LIST) {
-          //          DLOG << "to load var ";
           auto dim = var_desc->Tensor_desc().Dims();
           auto tensor = var->GetMutable<framework::LoDTensor>();
           tensor->Resize(framework::make_ddim(dim));
@@ -219,8 +220,13 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
       }
     }
   }
+  //  originProgramDesc->Description("program: ");
 
-  originProgramDesc->Description("program: ");
+  if (optimize) {
+    framework::ProgramOptimize program_optimize;
+    program.optimizeProgram =
+        program_optimize.FushionOptimize(originProgramDesc);
+  }
 
   paddle_mobile__framework__proto__program_desc__free_unpacked(c_program, NULL);
   return program;
@@ -231,33 +237,9 @@ template class Loader<CPU, Precision::FP32>;
 #pragma mark - executor
 
 template <typename Dtype, Precision P>
-Executor<Dtype, P>::Executor(const framework::Program<Dtype> p) : program_(p) {
-  if (use_optimize_) {
-    to_predict_program_ = program_.optimizeProgram;
-  } else {
-    to_predict_program_ = program_.originProgram;
-  }
-
-  const std::vector<std::shared_ptr<framework::BlockDesc>> blocks =
-      to_predict_program_->Blocks();
-  for (int i = 0; i < blocks.size(); ++i) {
-    std::shared_ptr<framework::BlockDesc> block_desc = blocks[i];
-    std::vector<std::shared_ptr<framework::OpDesc>> ops = block_desc->Ops();
-    for (int j = 0; j < ops.size(); ++j) {
-      std::shared_ptr<framework::OpDesc> op = ops[j];
-      auto op_base = framework::OpRegistry<Dtype>::CreateOp(
-          op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(),
-          program_.scope);
-      op_base->InferShape();
-      ops_of_block_[*block_desc.get()].push_back(op_base);
-    }
-  }
-  InitMemory();
-}
-
-template <typename Dtype, Precision P>
-Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size)
-    : program_(p), batch_size_(batch_size) {
+Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
+                             bool use_optimize)
+    : program_(p), batch_size_(batch_size), use_optimize_(use_optimize) {
   if (use_optimize_) {
     to_predict_program_ = program_.optimizeProgram;
   } else {
@@ -389,7 +371,7 @@ void Executor<Dtype, P>::InitMemory() {
 }
 
 template <typename Dtype, Precision P>
-void Executor<Dtype, P>::predict(const framework::Tensor &t, int block_id) {
+void Executor<Dtype, P>::Predict(const framework::Tensor &t, int block_id) {
   framework::Variable *g_feed_value = program_.scope->Var("feed");
   framework::Tensor *feed_tensor =
       g_feed_value->GetMutable<framework::LoDTensor>();
@@ -404,11 +386,11 @@ void Executor<Dtype, P>::predict(const framework::Tensor &t, int block_id) {
 }
 
 template <typename Dtype, Precision P>
-std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::predict(
+std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::Predict(
     const std::vector<Ptype> &input, const std::vector<int64_t> &dims) {
   framework::Tensor tensor(input, framework::make_ddim(dims));
 
-  predict(tensor, 0);
+  Predict(tensor, 0);
 
   framework::Variable *g_feed_value = program_.scope->Var("col");
   auto feed_tensor = g_feed_value->GetMutable<framework::Tensor>();
