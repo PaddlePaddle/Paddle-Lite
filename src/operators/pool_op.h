@@ -22,6 +22,7 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 using framework::AttributeMap;
+using framework::OperatorWithKernel;
 using framework::Scope;
 using std::string;
 template <typename DeviceType, typename T>
