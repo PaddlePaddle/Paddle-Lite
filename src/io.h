@@ -30,7 +30,8 @@ namespace paddle_mobile {
 template <typename Dtype, Precision P = Precision::FP32>
 class Loader : PaddleMobileObject {
  public:
-  const framework::Program<Dtype, P> Load(const std::string &dirname);
+  const framework::Program<Dtype, P> Load(const std::string &dirname,
+                                          bool optimize = true);
 
  private:
   void LoadVar(framework::Variable *variable,
@@ -45,13 +46,12 @@ class Executor {
 
   Executor() = default;
 
-  Executor(const framework::Program<Dtype> p);
+  Executor(const framework::Program<Dtype> p, int batch_size = 1,
+           bool use_optimize = true);
 
-  Executor(const framework::Program<Dtype> p, int batch_size);
+  //  std::shared_ptr<framework::Tensor> Predict(framework::Tensor &t);
 
-  std::shared_ptr<framework::Tensor> predict(framework::Tensor &t);
-
-  std::vector<Ptype> predict(const std::vector<Ptype> &input,
+  std::vector<Ptype> Predict(const std::vector<Ptype> &input,
                              const std::vector<int64_t> &dims);
 
  protected:
@@ -61,7 +61,7 @@ class Executor {
   framework::Program<Dtype> program_;
   int batch_size_ = 1;
   std::shared_ptr<framework::ProgramDesc> to_predict_program_;
-  void predict(const framework::Tensor &t, int block_id);
+  void Predict(const framework::Tensor &t, int block_id);
   std::map<framework::BlockDesc,
            std::vector<std::shared_ptr<framework::OperatorBase<Dtype>>>>
       ops_of_block_;

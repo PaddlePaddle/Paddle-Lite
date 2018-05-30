@@ -44,5 +44,12 @@ class ConvOp : public framework::OperatorWithKernel<DeviceType> {
   ConvParam param_;
 };
 
+inline int ConvOutputSize(int input_size, int filter_size, int dilation,
+                          int padding, int stride) {
+  const int dkernel = dilation * (filter_size - 1) + 1;
+  int output_size = (input_size + 2 * padding - dkernel) / stride + 1;
+  return output_size;
+}
+
 }  // namespace operators
 }  // namespace paddle_mobile

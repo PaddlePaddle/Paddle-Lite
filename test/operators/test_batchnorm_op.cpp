@@ -128,8 +128,7 @@ int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run BatchNormOp Test";
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
-  auto program = loader.Load(std::string(
-      "../../test/models/image_classification_resnet.inference.model"));
+  auto program = loader.Load(std::string(g_resnet));
 
   /// input x (4,10,2,2)
   paddle_mobile::framework::Tensor inputx1;

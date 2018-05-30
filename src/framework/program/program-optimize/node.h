@@ -42,13 +42,13 @@ class Node : PaddleMobileObject {
       std::map<std::string, std::pair<std::string, std::string>> change_map);
   std::vector<std::shared_ptr<framework::OpDesc>> OpDescs(uint size);
   std::vector<std::shared_ptr<framework::OpDesc>> OpDescs();
-  void OpDescs(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
-               Node *node);
   std::shared_ptr<framework::OpDesc> OpDesc() { return op_desc_; }
   std::string BeginType() { return type_; }
   void Description();
 
  private:
+  void OpDescs(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
+               Node *node, bool adding_thread, int thread_num);
   void OpDescs(uint size,
                std::vector<std::shared_ptr<framework::OpDesc>> *op_desc);
   void To(int index, std::shared_ptr<Node>);
