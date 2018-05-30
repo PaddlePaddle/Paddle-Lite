@@ -176,11 +176,11 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
 
   c_program = paddle_mobile__framework__proto__program_desc__unpack(
       NULL, read_size, buf);
-//
+  //
   PADDLE_MOBILE_ENFORCE(c_program != NULL, "program is null");
-//
+  //
   DLOG << "n_ops: " << (*c_program->blocks)->n_ops;
-//
+  //
   std::shared_ptr<framework::ProgramDesc> originProgramDesc =
       std::make_shared<framework::ProgramDesc>(c_program);
 
