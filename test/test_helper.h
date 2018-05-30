@@ -14,6 +14,7 @@ limitations under the License. */
 
 #pragma once
 
+#include <chrono>
 #include <fstream>
 #include <random>
 
@@ -31,6 +32,18 @@ static const std::string g_test_image_1x3x224x224 =
     "../images/test_image_1x3x224x224_float";
 using paddle_mobile::framework::DDim;
 using paddle_mobile::framework::Tensor;
+
+using Time = decltype(std::chrono::high_resolution_clock::now());
+
+Time time() { return std::chrono::high_resolution_clock::now(); }
+
+double time_diff(Time t1, Time t2) {
+  typedef std::chrono::microseconds ms;
+  auto diff = t2 - t1;
+  ms counter = std::chrono::duration_cast<ms>(diff);
+  return counter.count() / 1000.0;
+}
+
 template <typename T>
 void SetupTensor(paddle_mobile::framework::Tensor *input,
                  paddle_mobile::framework::DDim dims, T lower, T upper) {

@@ -17,9 +17,9 @@ limitations under the License. */
 #include <string>
 #include <vector>
 
+#include "common/io.h"
 #include "common/log.h"
 #include "framework/op_registry.h"
-#include "io/io.h"
 #include "operators/conv_op.h"
 #include "operators/elementwise_add_op.h"
 #include "operators/pool_op.h"
