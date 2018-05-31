@@ -14,7 +14,7 @@ limitations under the License. */
 
 #pragma once
 
-#ifdef PADDLE_MOBILE_DEBUG
+#ifdef ENABLE_EXCEPTION
 #include <stdio.h>
 #include <exception>
 #include <sstream>
@@ -25,7 +25,7 @@ limitations under the License. */
 
 namespace paddle_mobile {
 
-#ifdef PADDLE_MOBILE_DEBUG
+#ifdef ENABLE_EXCEPTION
 struct PaddleMobileException : public std::exception {
   const std::string exception_prefix = "paddle mobile C++ Exception: \n";
   std::string message;
@@ -64,7 +64,7 @@ struct PaddleMobileException : public std::exception {
   }
 #else
 #define PADDLE_MOBILE_THROW_EXCEPTION(...)
-#define PADDLE_MOBILE_ASSERT(stat, ...)
+#define PADDLE_MOBILE_ENFORCE(stat, ...)
 #endif
 
 }  // namespace paddle_mobile
