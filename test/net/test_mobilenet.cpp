@@ -22,17 +22,22 @@ int main() {
   auto program = loader.Load(g_mobilenet, false);
   auto time2 = time();
   DLOG << "load cost :" << time_diff(time1, time1) << "ms";
-  paddle_mobile::Executor<paddle_mobile::CPU> executor(program, 1, false);
+  paddle_mobile::Executor<paddle_mobile::CPU> executor(program, 2, false);
 
-  std::vector<int64_t> dims{1, 3, 224, 224};
+  std::vector<int64_t> dims{2, 3, 224, 224};
   Tensor input_tensor;
-  SetupTensor<float>(&input_tensor, {1, 3, 224, 224}, static_cast<float>(0),
+  SetupTensor<float>(&input_tensor, {2, 3, 224, 224}, static_cast<float>(0),
                      static_cast<float>(1));
 
   std::vector<float> input(input_tensor.data<float>(),
                            input_tensor.data<float>() + input_tensor.numel());
   auto time3 = time();
-  executor.Predict(input, dims);
+  auto vec_result = executor.Predict(input, dims);
+  float  sum = 0;
+  for (const auto item : vec_result) {
+    sum += item;
+  }
+  DLOG << "mobilenet output sum =" << sum;
   auto time4 = time();
   DLOG << "predict cost :" << time_diff(time3, time4) << "ms";
   return 0;
