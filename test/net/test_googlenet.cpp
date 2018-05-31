@@ -18,11 +18,12 @@ limitations under the License. */
 
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  bool optimize = true;
   auto time1 = time();
-  auto program = loader.Load(g_googlenet, false);
+  auto program = loader.Load(g_googlenet, optimize);
   auto time2 = time();
   DLOG << "load cost :" << time_diff(time1, time2) << "ms\n";
-  paddle_mobile::Executor<paddle_mobile::CPU> executor(program, 1, false);
+  paddle_mobile::Executor<paddle_mobile::CPU> executor(program, 1, optimize);
   std::vector<float> input;
   std::vector<int64_t> dims{1, 3, 224, 224};
   GetInput<float>(g_test_image_1x3x224x224, &input, dims);
