@@ -26,6 +26,7 @@ class BlockDesc : PaddleMobileObject {
  public:
   friend class Node;
   friend class ProgramOptimize;
+  BlockDesc() {}
   BlockDesc(PaddleMobile__Framework__Proto__BlockDesc *desc);
   BlockDesc(const BlockDesc &block_desc)
       : index_(block_desc.index_), parent_index_(block_desc.parent_index_) {
@@ -43,6 +44,8 @@ class BlockDesc : PaddleMobileObject {
 
   const int &ID() const { return index_; }
 
+  const bool &MultiThread() const { return multi_thread_; }
+
   const int &Parent() const { return parent_index_; }
 
   bool operator==(const paddle_mobile::framework::BlockDesc &in_block) const {
@@ -58,6 +61,7 @@ class BlockDesc : PaddleMobileObject {
 
  private:
   int index_;
+  bool multi_thread_;
   int parent_index_;
   std::vector<std::shared_ptr<OpDesc>> ops_;
   std::unordered_map<std::string, std::shared_ptr<VarDesc>> vars_;
