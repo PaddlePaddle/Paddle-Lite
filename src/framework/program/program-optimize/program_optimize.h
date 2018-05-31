@@ -37,11 +37,8 @@ class ProgramOptimize {
   void GenerateOps(std::vector<std::shared_ptr<framework::OpDesc>> *op_descs,
                    Node *begin_node);
   void GenerateOps(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
-                   Node *input_node,
-                   Node *current_node,
-                   bool adding_thread,
-                   int thread_num,
-                   std::shared_ptr<BlockDesc> new_block);
+                   Node *input_node, Node *current_node, bool adding_thread,
+                   int thread_num, std::shared_ptr<BlockDesc> new_block);
 };
 }  // namespace framework
 }  // namespace paddle_mobile

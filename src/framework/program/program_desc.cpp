@@ -75,7 +75,6 @@ void ProgramDesc::Description(std::string header) {
   }
 
   for (const auto &block : this->blocks_) {
-
   }
 #endif
 }

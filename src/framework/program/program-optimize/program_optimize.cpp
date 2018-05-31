@@ -21,9 +21,9 @@ namespace framework {
 
 std::shared_ptr<ProgramDesc> ProgramOptimize::FushionOptimize(
     std::shared_ptr<ProgramDesc> ori_des, bool add_split) {
-
-//  ProgramDesc *optimize_program = new ProgramDesc(*ori_des);
-  std::shared_ptr<ProgramDesc> optimize_program = std::make_shared<ProgramDesc>(*ori_des);
+  //  ProgramDesc *optimize_program = new ProgramDesc(*ori_des);
+  std::shared_ptr<ProgramDesc> optimize_program =
+      std::make_shared<ProgramDesc>(*ori_des);
   current_block_ = optimize_program->Blocks().size();
 
   for (int i = 0; i < optimize_program->Blocks().size(); ++i) {
@@ -98,7 +98,6 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FushionOptimize(
 
     //    DLOG << "node: \n" << *begin_node;
 
-
     std::vector<std::shared_ptr<framework::OpDesc>> op_descs;
     GenerateOps(&op_descs, begin_node.get());
     block->ops_ = op_descs;
@@ -112,13 +111,10 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FushionOptimize(
   return optimize_program;
 }
 
-
-void ProgramOptimize::GenerateOps(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
-                                  Node *input_node,
-                                  Node *current_node,
-                                  bool adding_thread,
-                                  int thread_num,
-                                  std::shared_ptr<BlockDesc> new_block) {
+void ProgramOptimize::GenerateOps(
+    std::vector<std::shared_ptr<framework::OpDesc>> *op_desc, Node *input_node,
+    Node *current_node, bool adding_thread, int thread_num,
+    std::shared_ptr<BlockDesc> new_block) {
   if (current_node->outputs_.size() > 1) {
     adding_thread = false;
   }
@@ -147,7 +143,7 @@ void ProgramOptimize::GenerateOps(std::vector<std::shared_ptr<framework::OpDesc>
       //判断现在 是否存在这个 op
       //判断这个 output 和 input key 的 size 等于 1
       if (op_input_output_key.find(op_desc->type_) !=
-          op_input_output_key.end() &&
+              op_input_output_key.end() &&
           inputs_and_outputs.first.size() == 1 &&
           inputs_and_outputs.second.size() == 1) {
         auto inputs_of_output = op_desc->Input(inputs_and_outputs.first[0]);
@@ -172,9 +168,11 @@ void ProgramOptimize::GenerateOps(std::vector<std::shared_ptr<framework::OpDesc>
     }
   }
 
-  if (current_node->inputs_.size() > 1 && input_node != current_node->inputs_.back()) {
+  if (current_node->inputs_.size() > 1 &&
+      input_node != current_node->inputs_.back()) {
     return;
-  } else if (current_node->inputs_.size() > 1 && input_node == current_node->inputs_.back()) {
+  } else if (current_node->inputs_.size() > 1 &&
+             input_node == current_node->inputs_.back()) {
     new_block.reset();
     adding_thread = false;
     op_desc->push_back(current_node->op_desc_);
@@ -191,8 +189,6 @@ void ProgramOptimize::GenerateOps(std::vector<std::shared_ptr<framework::OpDesc>
     current_node->op_desc_->attrs_["thread"] = attr;
   }
 
-
-
   if (can_add_split) {
     new_block = std::make_shared<BlockDesc>();
     new_block->multi_thread_ = true;
@@ -200,15 +196,14 @@ void ProgramOptimize::GenerateOps(std::vector<std::shared_ptr<framework::OpDesc>
     new_blocks_.push_back(new_block);
 
     adding_thread = true;
-    std::shared_ptr<OpDesc> split_op_desc =
-            std::make_shared<OpDesc>();
+    std::shared_ptr<OpDesc> split_op_desc = std::make_shared<OpDesc>();
     split_op_desc->type_ = G_OP_TYPE_SPLIT;
     auto outputs = current_node->op_desc_->Output(
-            op_input_output_key[current_node->op_desc_->Type()].second[0]);
+        op_input_output_key[current_node->op_desc_->Type()].second[0]);
     split_op_desc->inputs_ = {
-            {op_input_output_key[G_OP_TYPE_SPLIT].first[0], outputs}};
+        {op_input_output_key[G_OP_TYPE_SPLIT].first[0], outputs}};
     auto &split_outputs =
-            split_op_desc->outputs_[op_input_output_key[G_OP_TYPE_SPLIT].second[0]];
+        split_op_desc->outputs_[op_input_output_key[G_OP_TYPE_SPLIT].second[0]];
     for (const auto &output : current_node->outputs_) {
       split_outputs.push_back(outputs[0]);
     }
@@ -224,19 +219,21 @@ void ProgramOptimize::GenerateOps(std::vector<std::shared_ptr<framework::OpDesc>
   for (int i = 0; i < current_node->outputs_.size(); ++i) {
     auto &output = current_node->outputs_[i];
     if (can_add_split) {
-      GenerateOps(op_desc, current_node, output.get(), adding_thread, i, new_block);
+      GenerateOps(op_desc, current_node, output.get(), adding_thread, i,
+                  new_block);
     } else {
-      GenerateOps(op_desc, current_node, output.get(), adding_thread, thread_num, new_block);
+      GenerateOps(op_desc, current_node, output.get(), adding_thread,
+                  thread_num, new_block);
     }
   }
 }
 
-void ProgramOptimize::GenerateOps(std::vector<std::shared_ptr<framework::OpDesc>> *op_descs,
-                                  Node *begin_node) {
-
-
-  //std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
-  //             Node *input_node, Node *current_node, bool adding_thread, int thread_num
+void ProgramOptimize::GenerateOps(
+    std::vector<std::shared_ptr<framework::OpDesc>> *op_descs,
+    Node *begin_node) {
+  // std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
+  //             Node *input_node, Node *current_node, bool adding_thread, int
+  //             thread_num
   this->GenerateOps(op_descs, begin_node, begin_node, false, -1, nullptr);
 }
 
