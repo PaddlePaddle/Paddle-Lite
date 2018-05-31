@@ -51,9 +51,9 @@ bool Node::CanSplit(std::unordered_set<std::string> complex_compute_set) {
   return split;
 }
 
-void Node::CanSplit(bool *split, bool spliting,
-                    int complex_count,
-                    std::unordered_set<std::string> *complex_compute_set, Node *pre_node) {
+void Node::CanSplit(bool *split, bool spliting, int complex_count,
+                    std::unordered_set<std::string> *complex_compute_set,
+                    Node *pre_node) {
   if (spliting) {
     if (complex_compute_set->find(this->type_) != complex_compute_set->end()) {
       complex_count++;
