@@ -99,6 +99,8 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FushionOptimize(
     //    DLOG << "node: \n" << *begin_node;
 
     std::vector<std::shared_ptr<framework::OpDesc>> op_descs;
+    //    bool can_splite = begin_node->CanSplit({G_OP_TYPE_CONV,
+    //    G_OP_TYPE_BATCHNORM, G_OP_TYPE_DEPTHWISE_CONV});
     GenerateOps(&op_descs, begin_node.get());
     block->ops_ = op_descs;
   }
@@ -109,6 +111,25 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FushionOptimize(
     optimize_program->blocks_.push_back(new_block);
   }
   return optimize_program;
+}
+
+void ProgramOptimize::GenerateOps(
+    std::vector<std::shared_ptr<framework::OpDesc>> *op_desc, Node *input_node,
+    Node *current_node) {
+  if (current_node->inputs_.size() > 1 &&
+      input_node != current_node->inputs_.back()) {
+    return;
+  } else if (current_node->inputs_.size() > 1 &&
+             input_node == current_node->inputs_.back()) {
+    op_desc->push_back(current_node->op_desc_);
+  } else {
+    op_desc->push_back(current_node->op_desc_);
+  }
+
+  for (int i = 0; i < current_node->outputs_.size(); ++i) {
+    auto &output = current_node->outputs_[i];
+    GenerateOps(op_desc, current_node, output.get());
+  }
 }
 
 void ProgramOptimize::GenerateOps(
@@ -234,7 +255,11 @@ void ProgramOptimize::GenerateOps(
   // std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
   //             Node *input_node, Node *current_node, bool adding_thread, int
   //             thread_num
-  this->GenerateOps(op_descs, begin_node, begin_node, false, -1, nullptr);
+  if (false) {
+    this->GenerateOps(op_descs, begin_node, begin_node, false, -1, nullptr);
+  } else {
+    this->GenerateOps(op_descs, begin_node, begin_node);
+  }
 }
 
 }  // namespace framework

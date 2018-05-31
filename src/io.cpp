@@ -220,12 +220,16 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
       }
     }
   }
-  originProgramDesc->Description("program: ");
 
   if (optimize) {
     framework::ProgramOptimize program_optimize;
     program.optimizeProgram =
         program_optimize.FushionOptimize(originProgramDesc);
+  }
+  if (optimize) {
+    program.optimizeProgram->Description("optimize: ");
+  } else {
+    originProgramDesc->Description("program: ");
   }
 
   paddle_mobile__framework__proto__program_desc__free_unpacked(c_program, NULL);
@@ -254,6 +258,7 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
     std::vector<std::shared_ptr<framework::OpDesc>> ops = block_desc->Ops();
     for (int j = 0; j < ops.size(); ++j) {
       std::shared_ptr<framework::OpDesc> op = ops[j];
+      DLOG << "create op: " << op->Type();
       auto op_base = framework::OpRegistry<Dtype>::CreateOp(
           op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(),
           program_.scope);
