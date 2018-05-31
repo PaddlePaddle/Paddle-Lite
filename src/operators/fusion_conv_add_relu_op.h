@@ -28,10 +28,10 @@ class FushionConvAddReluOpMatcher : public framework::FusionOpMatcher {
         std::make_shared<framework::Node>(G_OP_TYPE_RELU);
   }
 
-  void FolderNodes(framework::Node &node) {
+  void FolderNodes(framework::Node *node) {
     std::vector<std::shared_ptr<framework::OpDesc>> origin_descs =
-        node.OpDescs(node_.Depth());
-    node.Folder(node_.Depth(), Type(),
+        node->OpDescs(node_.Depth());
+    node->Folder(node_.Depth(), Type(),
                 {{G_OP_TYPE_ELEMENTWISE_ADD, {"Y", "Z"}}});
   }
   std::string Type() { return G_OP_TYPE_FUSION_CONV_ADD_RELU; }

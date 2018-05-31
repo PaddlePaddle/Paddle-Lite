@@ -33,9 +33,11 @@ class ProgramOptimize {
  private:
   int current_block_;
   std::vector<std::shared_ptr<BlockDesc>> new_blocks_;
-
   void GenerateOps(std::vector<std::shared_ptr<framework::OpDesc>> *op_descs,
                    Node *begin_node);
+  void GenerateOps(
+          std::vector<std::shared_ptr<framework::OpDesc>> *op_desc, Node *input_node,
+          Node *current_node);
   void GenerateOps(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
                    Node *input_node, Node *current_node, bool adding_thread,
                    int thread_num, std::shared_ptr<BlockDesc> new_block);

@@ -45,6 +45,47 @@ bool Node::operator==(const Node &in) {
   return true;
 }
 
+bool Node::CanSplit(std::unordered_set<std::string> complex_compute_set) {
+  bool split = false;
+  CanSplit(&split, false, 0, &complex_compute_set, this);
+  return split;
+}
+
+void Node::CanSplit(bool *split, bool spliting,
+                    int complex_count,
+                    std::unordered_set<std::string> *complex_compute_set, Node *pre_node) {
+  if (spliting) {
+    if (complex_compute_set->find(this->type_) != complex_compute_set->end()) {
+      complex_count++;
+    }
+  }
+
+  if (inputs_.size() > 1 && pre_node != inputs_.back()) {
+    return;
+  }
+  if (inputs_.size() > 1 && pre_node == inputs_.back()) {
+    if (complex_count > 1) {
+      *split = true;
+      return;
+    }
+  }
+
+  // multi output, to check
+  if (outputs_.size() > 1) {
+    spliting = true;
+    complex_compute_set = 0;
+  } else {
+    if (spliting == true && inputs_.size() > 0) {
+      spliting = false;
+    } else {
+    }
+  }
+
+  for (auto &output : outputs_) {
+    output->CanSplit(split, spliting, complex_count, complex_compute_set, this);
+  }
+}
+
 std::vector<std::shared_ptr<framework::OpDesc>> Node::OpDescs(uint size) {
   std::vector<std::shared_ptr<framework::OpDesc>> op_descs;
   OpDescs(size - 1, &op_descs);
