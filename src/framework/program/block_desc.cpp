@@ -26,11 +26,7 @@ std::vector<std::shared_ptr<VarDesc>> BlockDesc::Vars() const {
 }
 
 std::vector<std::shared_ptr<OpDesc>> BlockDesc::Ops() const {
-  std::vector<std::shared_ptr<OpDesc>> res;
-  for (const auto &op : ops_) {
-    res.push_back(op);
-  }
-  return res;
+  return ops_;
 }
 
 BlockDesc::BlockDesc(PaddleMobile__Framework__Proto__BlockDesc *desc)
