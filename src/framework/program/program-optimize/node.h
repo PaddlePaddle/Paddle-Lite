@@ -27,6 +27,8 @@ namespace paddle_mobile {
 namespace framework {
 
 class Node : PaddleMobileObject {
+  friend class ProgramOptimize;
+
  public:
   Node() {}
   explicit Node(const std::string &type) : type_(type) {}
@@ -42,8 +44,8 @@ class Node : PaddleMobileObject {
       std::map<std::string, std::pair<std::string, std::string>> change_map);
   std::vector<std::shared_ptr<framework::OpDesc>> OpDescs(uint size);
   std::vector<std::shared_ptr<framework::OpDesc>> OpDescs();
-  std::shared_ptr<framework::OpDesc> OpDesc() { return op_desc_; }
-  std::string BeginType() { return type_; }
+  std::shared_ptr<framework::OpDesc> OpDescOfNode() { return op_desc_; }
+  std::string Type() { return type_; }
   void Description();
 
  private:

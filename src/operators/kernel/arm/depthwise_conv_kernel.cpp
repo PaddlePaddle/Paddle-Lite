@@ -32,7 +32,7 @@ void DepthwiseConvKernel<CPU, float>::Compute(const ConvParam &param) const {
   std::vector<int> paddings = param.Paddings();
   std::vector<int> dilations = param.Dilations();
 
-  DLOG << " compute end get Attrs " << strides[0];
+  //  DLOG << " compute end get Attrs " << strides[0];
 
   const int batch_size = static_cast<int>(input->dims()[0]);
 
@@ -59,17 +59,17 @@ void DepthwiseConvKernel<CPU, float>::Compute(const ConvParam &param) const {
     col_matrix.ShareDataWith(col);
     col_matrix.Resize(col_matrix_shape);
   }
-  DLOG << " col_shape = " << col_shape;
-  DLOG << " col_matrix_shape = " << col_matrix_shape;
+  //  DLOG << " col_shape = " << col_shape;
+  //  DLOG << " col_matrix_shape = " << col_matrix_shape;
 
   framework::DDim input_shape = framework::slice_ddim(
       input->dims(), 1, static_cast<int>(input->dims().size()));
-  DLOG << " input_shape = " << input_shape;
+  //  DLOG << " input_shape = " << input_shape;
 
   framework::DDim filter_matrix_shape = {filter.dims()[0],
                                          filter.numel() / filter.dims()[0]};
   filter.Resize(filter_matrix_shape);
-  DLOG << " filter.dims() = " << filter.dims();
+  //  DLOG << " filter.dims() = " << filter.dims();
 
   framework::DDim output_matrix_shape = {
       output->dims()[1],
@@ -85,8 +85,8 @@ void DepthwiseConvKernel<CPU, float>::Compute(const ConvParam &param) const {
   for (int i = 0; i < batch_size; i++) {
     Tensor in_batch = input->Slice(i, i + 1).Resize(input_shape);
     Tensor out_batch = output->Slice(i, i + 1).Resize(output_matrix_shape);
-    DLOG << " in_batch.dims() = " << in_batch.dims();
-    DLOG << " out_batch.dims() = " << out_batch.dims();
+    //    DLOG << " in_batch.dims() = " << in_batch.dims();
+    //    DLOG << " out_batch.dims() = " << out_batch.dims();
 
     for (int g = 0; g < groups; g++) {
       Tensor in_slice = in_batch.Slice(g * in_step, (g + 1) * in_step);
@@ -109,9 +109,9 @@ void DepthwiseConvKernel<CPU, float>::Compute(const ConvParam &param) const {
       // gemm
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
-      DLOG << " out_slice " << out_slice.dims();
-      DLOG << " filter_slice " << filter_slice.dims();
-      DLOG << " col_matrix " << col_matrix.dims();
+      //      DLOG << " out_slice " << out_slice.dims();
+      //      DLOG << " filter_slice " << filter_slice.dims();
+      //      DLOG << " col_matrix " << col_matrix.dims();
       math::matmul<float>(filter_slice, false, col_matrix, false,
                           static_cast<float>(1), &out_slice,
                           static_cast<float>(0));
