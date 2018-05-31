@@ -25,9 +25,7 @@ std::vector<std::shared_ptr<VarDesc>> BlockDesc::Vars() const {
   return res;
 }
 
-std::vector<std::shared_ptr<OpDesc>> BlockDesc::Ops() const {
-  return ops_;
-}
+std::vector<std::shared_ptr<OpDesc>> BlockDesc::Ops() const { return ops_; }
 
 BlockDesc::BlockDesc(PaddleMobile__Framework__Proto__BlockDesc *desc)
     : index_(desc->idx), parent_index_(desc->idx) {

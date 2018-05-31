@@ -132,8 +132,7 @@ void Node::OpDescs(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
 
   if (can_add_split) {
     adding_thread = true;
-    std::shared_ptr<OpDesc> split_op_desc =
-        std::make_shared<OpDesc>();
+    std::shared_ptr<OpDesc> split_op_desc = std::make_shared<OpDesc>();
     split_op_desc->type_ = G_OP_TYPE_SPLIT;
     auto outputs = this->op_desc_->Output(
         op_input_output_key[this->op_desc_->Type()].second[0]);

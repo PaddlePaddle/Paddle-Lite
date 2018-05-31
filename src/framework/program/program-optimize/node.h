@@ -28,6 +28,7 @@ namespace framework {
 
 class Node : PaddleMobileObject {
   friend class ProgramOptimize;
+
  public:
   Node() {}
   explicit Node(const std::string &type) : type_(type) {}
