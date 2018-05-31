@@ -32,11 +32,13 @@ void ProgramDesc::Description(std::string header) {
   if (header.size()) {
     LOG(kLOG_INFO) << header;
   }
-  for (const auto &block : this->blocks_) {
+
+  for (int i = 0; i < this->blocks_.size(); ++i) {
+    auto block = this->blocks_[i];
     LOG(kLOG_DEBUG) << "block: " << block->ID();
     LOG(kLOG_INFO) << "block ops size: " << block->Ops().size();
     for (int j = 0; j < block->Ops().size(); ++j) {
-      const auto &op = block->Ops()[j];
+      auto op = block->Ops()[j];
       LOG(kLOG_DEBUG1) << "op: " << op->Type();
       for (auto &input : op->GetInputs()) {
         LOG(kLOG_DEBUG2) << "input parameter: " << input.first;
@@ -70,6 +72,10 @@ void ProgramDesc::Description(std::string header) {
         }
       }
     }
+  }
+
+  for (const auto &block : this->blocks_) {
+
   }
 #endif
 }
