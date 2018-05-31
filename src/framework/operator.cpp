@@ -48,7 +48,7 @@ void OperatorBase<Dtype>::CheckAllInputOutputSet() const {}
 template <typename Dtype>
 void OperatorBase<Dtype>::Run() const {
   RunImpl();
-#if (PADDLE_MOBILE_DEBUG)
+#ifdef PADDLE_MOBILE_DEBUG
   vector<string> output_keys = GetOutKeys();
   for (const auto key : output_keys) {
     Tensor *out_ = GetVarValue<framework::LoDTensor>(key, outputs_, *scope_);
