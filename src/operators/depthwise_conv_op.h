@@ -16,17 +16,18 @@ limitations under the License. */
 
 #include <string>
 #include "framework/operator.h"
-#include "operators/kernel/conv_kernel.h"
+#include "operators/kernel/depthwise_conv_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
-using std::string;
+
 template <typename DeviceType, typename T>
-class ConvOp : public framework::OperatorWithKernel<DeviceType> {
+class DepthwiseConvOp : public framework::OperatorWithKernel<DeviceType> {
  public:
-  ConvOp(const std::string &type, const VariableNameMap &inputs,
-         const VariableNameMap &outputs, const framework::AttributeMap &attrs,
-         std::shared_ptr<framework::Scope> scope)
+  DepthwiseConvOp(const std::string &type, const VariableNameMap &inputs,
+                  const VariableNameMap &outputs,
+                  const framework::AttributeMap &attrs,
+                  std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
                                                   scope),
         param_(inputs, outputs, attrs, *scope) {}
@@ -35,7 +36,7 @@ class ConvOp : public framework::OperatorWithKernel<DeviceType> {
   void InferShape() const override;
 
   void RunImpl() const {
-    operators::ConvKernel<DeviceType, T> kernel;
+    operators::DepthwiseConvKernel<DeviceType, T> kernel;
     kernel.Compute(param_);
     this->ClearVariables({"Filter", "Input"});
   }
@@ -43,13 +44,6 @@ class ConvOp : public framework::OperatorWithKernel<DeviceType> {
  private:
   ConvParam param_;
 };
-
-inline int ConvOutputSize(int input_size, int filter_size, int dilation,
-                          int padding, int stride) {
-  const int dkernel = dilation * (filter_size - 1) + 1;
-  int output_size = (input_size + 2 * padding - dkernel) / stride + 1;
-  return output_size;
-}
 
 }  // namespace operators
 }  // namespace paddle_mobile
