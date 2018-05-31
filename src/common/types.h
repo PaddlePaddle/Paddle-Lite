@@ -77,7 +77,7 @@ static const std::string G_OP_TYPE_BATCHNORM = "batch_norm";
 static const std::string G_OP_TYPE_BOX_CODER = "box_coder";
 static const std::string G_OP_TYPE_CONCAT = "concat";
 static const std::string G_OP_TYPE_ELEMENTWISE_ADD = "elementwise_add";
-static const std::string G_OP_TYPE_FUSION_CONV_ADD_RELU = "FusionConvAddRelu";
+static const std::string G_OP_TYPE_FUSION_CONV_ADD_RELU = "fusion_conv_add_relu";
 static const std::string G_OP_TYPE_FC = "fc";
 static const std::string G_OP_TYPE_LRN = "lrn";
 static const std::string G_OP_TYPE_MUL = "mul";
@@ -92,6 +92,7 @@ static const std::string G_OP_TYPE_TRANSPOSE = "transpose";
 static const std::string G_OP_TYPE_SPLIT = "split";
 static const std::string G_OP_TYPE_FEED = "feed";
 static const std::string G_OP_TYPE_FETCH = "fetch";
+static const std::string G_OP_TYPE_DEPTHWISE_CONV = "depthwise_conv2d";
 
 static std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>

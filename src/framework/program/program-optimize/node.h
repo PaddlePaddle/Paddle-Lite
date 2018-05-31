@@ -18,6 +18,7 @@ limitations under the License. */
 #include <string>
 #include <utility>
 #include <vector>
+#include <unordered_set>
 
 #include "common/log.h"
 #include "framework/paddle_mobile_object.h"
@@ -36,6 +37,7 @@ class Node : PaddleMobileObject {
       : op_desc_(op_desc), type_(op_desc->Type()) {}
   Node &operator>(std::shared_ptr<Node> node);
   bool operator==(const Node &in);
+  bool CanSplit(std::unordered_set<std::string> complex_compute_set);
   std::string ToString() const;
   std::shared_ptr<Node> To(int size);
   uint Depth(uint begin = 0);
@@ -49,6 +51,9 @@ class Node : PaddleMobileObject {
   void Description();
 
  private:
+  void CanSplit(bool *split, bool spliting,
+                int complex_count,
+                std::unordered_set<std::string> *complex_compute_set, Node *pre_node);
   void OpDescs(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
                Node *node, bool adding_thread, int thread_num);
   void OpDescs(uint size,
