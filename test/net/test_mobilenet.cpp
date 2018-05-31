@@ -33,7 +33,7 @@ int main() {
                            input_tensor.data<float>() + input_tensor.numel());
   auto time3 = time();
   auto vec_result = executor.Predict(input, dims);
-  float  sum = 0;
+  float sum = 0;
   for (const auto item : vec_result) {
     sum += item;
   }
