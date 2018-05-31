@@ -16,9 +16,9 @@ limitations under the License. */
 
 #include <map>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
-#include <unordered_set>
 
 #include "common/log.h"
 #include "framework/paddle_mobile_object.h"
@@ -51,9 +51,9 @@ class Node : PaddleMobileObject {
   void Description();
 
  private:
-  void CanSplit(bool *split, bool spliting,
-                int complex_count,
-                std::unordered_set<std::string> *complex_compute_set, Node *pre_node);
+  void CanSplit(bool *split, bool spliting, int complex_count,
+                std::unordered_set<std::string> *complex_compute_set,
+                Node *pre_node);
   void OpDescs(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
                Node *node, bool adding_thread, int thread_num);
   void OpDescs(uint size,
