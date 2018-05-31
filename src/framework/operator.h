@@ -151,7 +151,7 @@ class FusionOpMatcher : PaddleMobileObject {
 
   virtual Node &BeginNode() { return node_; }
 
-  std::string BeginType() { return node_.BeginType(); }
+  std::string BeginType() { return node_.Type(); }
 
  protected:
   Node node_;
