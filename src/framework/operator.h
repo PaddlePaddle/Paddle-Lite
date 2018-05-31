@@ -39,6 +39,18 @@ namespace framework {
 using std::string;
 using std::vector;
 
+template <typename T>
+static T *GetVarValue(const string &key, const VariableNameMap &var_map,
+                      const Scope &scope) {
+  auto var_vec = var_map.at(key);
+  if (!var_vec.empty()) {
+    auto var = scope.FindVar(var_vec[0]);
+    return var->GetMutable<T>();
+  } else {
+    return nullptr;
+  }
+}
+
 template <typename Dtype>
 class OperatorBase : PaddleMobileObject {
  public:

@@ -371,31 +371,47 @@ void Executor<Dtype, P>::InitMemory() {
 }
 
 template <typename Dtype, Precision P>
-void Executor<Dtype, P>::Predict(const framework::Tensor &t, int block_id) {
+std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
+    const framework::Tensor &t) {
   framework::Variable *g_feed_value = program_.scope->Var("feed");
   framework::Tensor *feed_tensor =
       g_feed_value->GetMutable<framework::LoDTensor>();
   feed_tensor->Resize(t.dims());
   feed_tensor->ShareDataWith(t);
   std::shared_ptr<framework::BlockDesc> to_predict_block =
-      to_predict_program_->Block(block_id);
+      to_predict_program_->Block(0);
   for (int j = 0; j < ops_of_block_[*to_predict_block.get()].size(); ++j) {
     auto op = ops_of_block_[*to_predict_block.get()][j];
     op->Run();
   }
+  auto ops = ops_of_block_[*to_predict_program_->Block(0)];
+  auto last_op = ops.rbegin();
+  auto output_map = (*last_op)->Outputs();
+  std::vector<std::string> out_keys = (*last_op)->GetOutKeys();
+  PADDLE_MOBILE_ENFORCE(out_keys.size() > 0, "the last op contains no output");
+  framework::LoDTensor *output_tensor =
+      framework::GetVarValue<framework::LoDTensor>(out_keys[0], output_map,
+                                                   *(program_.scope));
+  return std::shared_ptr<framework::Tensor>(output_tensor);
+}
+template <typename Dtype, Precision P>
+std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
+    const framework::Tensor &t, int block_id) {
+  return Predict(t);
 }
 
 template <typename Dtype, Precision P>
 std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::Predict(
     const std::vector<Ptype> &input, const std::vector<int64_t> &dims) {
   framework::Tensor tensor(input, framework::make_ddim(dims));
-
-  Predict(tensor, 0);
-
-  framework::Variable *g_feed_value = program_.scope->Var("col");
-  auto feed_tensor = g_feed_value->GetMutable<framework::Tensor>();
-
-  return {};
+  std::shared_ptr<framework::Tensor> output_tensor = Predict(tensor, 0);
+  Executor<Dtype, P>::Ptype *output_ptr =
+      output_tensor->data<typename Executor<Dtype, P>::Ptype>();
+  std::vector<typename Executor<Dtype, P>::Ptype> result_vector;
+  for (int j = 0; j < output_tensor->numel(); ++j) {
+    result_vector.push_back(output_ptr[j]);
+  }
+  return result_vector;
 }
 
 template class Executor<CPU, Precision::FP32>;
