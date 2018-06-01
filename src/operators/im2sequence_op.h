@@ -39,7 +39,7 @@ class Im2SequenceOp : public framework::OperatorWithKernel<DeviceType> {
   void RunImpl() const {
     operators::Im2SequenceKernel<DeviceType, T> kernel;
     kernel.Compute(param_);
-    this->ClearVariables({"Input"});
+    this->ClearVariables({"X"});
   }
 
  private:

@@ -94,6 +94,7 @@ static const std::string G_OP_TYPE_SPLIT = "split";
 static const std::string G_OP_TYPE_FEED = "feed";
 static const std::string G_OP_TYPE_FETCH = "fetch";
 static const std::string G_OP_TYPE_DEPTHWISE_CONV = "depthwise_conv2d";
+static const std::string G_OP_TYPE_IM2SEQUENCE = "im2sequence";
 
 static std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
@@ -115,5 +116,6 @@ static std::unordered_map<
          {{"PriorBox", "PriorBoxVar", "TargetBox"}, {"OutputBox"}}},
         {G_OP_TYPE_PRIOR_BOX, {{"Image", "Input"}, {"Boxes", "Variances"}}},
         {G_OP_TYPE_MULTICLASS_NMS, {{"BBoxes", "Scores"}, {"Out"}}},
-        {G_OP_TYPE_RESHAPE, {{"X"}, {"Out"}}}};
+        {G_OP_TYPE_RESHAPE, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_IM2SEQUENCE, {{"X"}, {"Out"}}}};
 }  // namespace paddle_mobile

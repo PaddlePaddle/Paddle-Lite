@@ -26,7 +26,7 @@ int Im2SequenceOutputSize(int input_size, int kernel, int padding_1, int padding
 template <typename Dtype, typename T>
 void Im2SequenceOp<Dtype, T>::InferShape() const {
 
-  auto in_dims = param_.Input()->dims();
+  auto in_x_dims = param_.Input()->dims();
 
   const std::vector<int> &kernels = param_.Kernels();
 
@@ -34,9 +34,9 @@ void Im2SequenceOp<Dtype, T>::InferShape() const {
 
   std::vector<int> paddings = param_.Paddings();
 
-  std::vector<int64_t> output_shape({in_dims[0], in_dims[0]});
+  std::vector<int64_t> output_shape({in_x_dims[0], in_x_dims[1]});
   for (size_t i = 0; i < strides.size(); ++i) {
-    output_shape.push_back(Im2SequenceOutputSize(in_dims[i + 2], kernels[i],
+    output_shape.push_back(Im2SequenceOutputSize(in_x_dims[i + 2], kernels[i],
                                                  paddings[i], paddings[i + 2],
                                                  strides[i]));
   }
