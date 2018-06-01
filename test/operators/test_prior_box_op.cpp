@@ -72,19 +72,19 @@ class TestPriorBoxOp {
     // feed
     auto scope = program_.scope;
     Variable *x1_feed_value = scope->Var("image");
-    auto tensor_x1 = x1_feed_value->GetMutable<Tensor>();
+    auto tensor_x1 = x1_feed_value->GetMutable<LoDTensor>();
     tensor_x1->ShareDataWith(t1);
 
     Variable *x2_feed_value = scope->Var("batch_norm_26.tmp_3");
-    auto tensor_x2 = x2_feed_value->GetMutable<Tensor>();
+    auto tensor_x2 = x2_feed_value->GetMutable<LoDTensor>();
     tensor_x2->ShareDataWith(t2);
 
     Variable *boxes_output = scope->Var("prior_box_1.tmp_0");
-    auto *boxes_output_tensor = boxes_output->GetMutable<Tensor>();
+    auto *boxes_output_tensor = boxes_output->GetMutable<LoDTensor>();
     boxes_output_tensor->mutable_data<float>({10, 10, 6, 4});
 
     Variable *variances_output = scope->Var("prior_box_1.tmp_1");
-    auto *variances_output_tesnor = variances_output->GetMutable<Tensor>();
+    auto *variances_output_tesnor = variances_output->GetMutable<LoDTensor>();
     variances_output_tesnor->mutable_data<float>({10, 10, 6, 4});
     //  DLOG << typeid(output_tensor).name();
     //  DLOG << "output_tensor dims: " << output_tensor->dims();
@@ -127,7 +127,7 @@ int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run PriorBoxOp Test";
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
-  auto program = loader.Load(std::string("../../test/models/mobilenet+ssd"));
+  auto program = loader.Load(std::string(g_mobilenet_ssd));
 
   /// input x (1,3,300,300)
   paddle_mobile::framework::Tensor input_image;

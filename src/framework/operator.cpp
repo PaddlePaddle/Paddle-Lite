@@ -13,10 +13,20 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "framework/operator.h"
-#include "framework/op_info.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace framework {
+
+template <typename Dtype>
+vector<string> OperatorBase<Dtype>::GetOutKeys() const {
+  auto it = op_input_output_key.find(type_);
+  if (it == op_input_output_key.end()) {
+    DLOG << type_ << " has no outputs";
+    return {};
+  }
+  return it->second.second;
+}
 
 template <typename Dtype>
 OperatorBase<Dtype>::OperatorBase(const std::string &type,
@@ -31,8 +41,21 @@ OperatorBase<Dtype>::OperatorBase(const std::string &type,
       scope_(scope) {
   CheckAllInputOutputSet();
 }
+
 template <typename Dtype>
 void OperatorBase<Dtype>::CheckAllInputOutputSet() const {}
+
+template <typename Dtype>
+void OperatorBase<Dtype>::Run() const {
+  RunImpl();
+#ifdef PADDLE_MOBILE_DEBUG
+  vector<string> output_keys = GetOutKeys();
+  for (const auto key : output_keys) {
+    Tensor *out_ = GetVarValue<framework::LoDTensor>(key, outputs_, *scope_);
+    DLOG << type_ << " output- " << key << "=" << *out_;
+  }
+#endif
+}
 
 template class OperatorBase<CPU>;
 template class OperatorWithKernel<CPU>;

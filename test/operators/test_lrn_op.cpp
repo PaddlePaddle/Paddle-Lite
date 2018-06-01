@@ -12,118 +12,51 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+#include "../executor_for_test.h"
 #include "../test_include.h"
 #include "operators/lrn_op.h"
 
-namespace paddle_mobile {
-namespace framework {
-
-template <typename Dtype>
-class TestLrnOp {
- public:
-  explicit TestLrnOp(const Program<Dtype> p) : program_(p) {
-    if (use_optimize_) {
-      to_predict_program_ = program_.optimizeProgram;
-    } else {
-      to_predict_program_ = program_.originProgram;
-    }
-
-    const std::vector<std::shared_ptr<BlockDesc>> blocks =
-        to_predict_program_->Blocks();
-    //  DLOG << " **block size " << blocks.size();
-    for (int i = 0; i < blocks.size(); ++i) {
-      std::shared_ptr<BlockDesc> block_desc = blocks[i];
-      std::vector<std::shared_ptr<OpDesc>> ops = block_desc->Ops();
-      //    DLOG << " ops " << ops.size();
-      for (int j = 0; j < ops.size(); ++j) {
-        std::shared_ptr<OpDesc> op = ops[j];
-        if (op->Type() == "lrn" && op->Input("X")[0] == "pool2d_0.tmp_0") {
-          DLOG << " mul attr size: " << op->GetAttrMap().size();
-          DLOG << " inputs size: " << op->GetInputs().size();
-          DLOG << " outputs size: " << op->GetOutputs().size();
-          DLOG << " Input X is : " << op->Input("X")[0];
-          DLOG << " Output Out is : " << op->Output("Out")[0];
-          DLOG << " n : " << op->GetAttrMap().at("n").Get<int>();
-          DLOG << " alpha : " << op->GetAttrMap().at("alpha").Get<float>();
-          DLOG << " beta : " << op->GetAttrMap().at("beta").Get<float>();
-          DLOG << " k : " << op->GetAttrMap().at("k").Get<float>();
-          std::shared_ptr<operators::LrnOp<Dtype, float>> lrn =
-              std::make_shared<operators::LrnOp<Dtype, float>>(
-                  op->Type(), op->GetInputs(), op->GetOutputs(),
-                  op->GetAttrMap(), program_.scope);
-          ops_of_block_[*block_desc.get()].push_back(lrn);
-        }
-      }
-    }
-  }
-
-  std::shared_ptr<Tensor> predict_lrn(const Tensor &t1) {
-    // feed
-    auto scope = program_.scope;
-    Variable *x1_feed_value = scope->Var("pool2d_0.tmp_0");
-    auto tensor_x1 = x1_feed_value->GetMutable<Tensor>();
-    tensor_x1->ShareDataWith(t1);
-
-    Variable *con_output = scope->Var("pool1_norm1.tmp_1");
-    auto *output_tensor = con_output->GetMutable<Tensor>();
-    output_tensor->mutable_data<float>({3, 4, 2, 2});
-    //  DLOG << typeid(output_tensor).name();
-    //  DLOG << "output_tensor dims: " << output_tensor->dims();
-
-    std::shared_ptr<Tensor> out_tensor = std::make_shared<LoDTensor>();
-    out_tensor.reset(output_tensor);
-
-    predict_lrn(t1, 0);
-    return out_tensor;
-  }
-
- private:
-  const framework::Program<Dtype> program_;
-  std::shared_ptr<ProgramDesc> to_predict_program_;
-  std::map<framework::BlockDesc,
-           std::vector<std::shared_ptr<OperatorBase<Dtype>>>>
-      ops_of_block_;
-  bool use_optimize_ = false;
-
-  void predict_lrn(const Tensor &t1, int block_id) {
-    std::shared_ptr<BlockDesc> to_predict_block =
-        to_predict_program_->Block(block_id);
-    for (int j = 0; j < ops_of_block_[*to_predict_block.get()].size(); ++j) {
-      auto op = ops_of_block_[*to_predict_block.get()][j];
-      DLOG << "op -> run()";
-      op->Run();
-    }
-  }
-};
-
-template class TestLrnOp<CPU>;
-}  // namespace framework
-}  // namespace paddle_mobile
-
 int main() {
-  DLOG << "----------**********----------";
-  DLOG << "begin to run LrnOp Test";
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
-  auto program = loader.Load(std::string("../../test/models/googlenet"));
+  auto program = loader.Load(g_googlenet);
+  PADDLE_MOBILE_ENFORCE(program.originProgram != nullptr,
+                        "program file read fail");
 
-  /// input x (3,4,2,2)
-  paddle_mobile::framework::Tensor inputx1;
-  SetupTensor<float>(&inputx1, {3, 4, 2, 2}, static_cast<float>(0),
-                     static_cast<float>(1));
-  auto *inputx1_ptr = inputx1.data<float>();
+  Executor4Test<paddle_mobile::CPU,
+                paddle_mobile::operators::LrnOp<paddle_mobile::CPU, float>>
+      executor(program, "lrn");
 
-  paddle_mobile::framework::TestLrnOp<paddle_mobile::CPU> testLrnOp(program);
+  // 1. input_tensors;
+  vector<Tensor> input_tensors;
 
-  auto output_lrn = testLrnOp.predict_lrn(inputx1);
-  auto *output_lrn_ptr = output_lrn->data<float>();
+  Tensor input1;
+  auto input1_data = CreateInput<float>(&input1, {3, 4, 2, 2}, 0, 1);
+  input_tensors.push_back(input1);
+
+  // 2. input_names
+  vector<string> input_names({
+      "pool2d_0.tmp_0",
+  });
+
+  // 3. output_names
+  vector<string> output_names({"pool1_norm1.tmp_1"});
+
+  // 4. out_dims;
+  vector<DDim> out_ddims;
+  auto out_ddim = paddle_mobile::framework::make_ddim({3, 4, 2, 2});
+  out_ddims.push_back(out_ddim);
+
+  auto output = executor.Predict<LoDTensor>(input_tensors, input_names,
+                                            output_names, out_ddims);
+
+  auto output0_data = output[0]->data<float>();
 
   DLOG << " LrnOp input: ";
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 4; j++) {
       for (int c = 0; c < 2; c++) {
         for (int d = 0; d < 2; d++) {
-          DLOGF("%f ", inputx1_ptr[i * 16 + j * 4 + c * 2 + d]);
+          DLOGF("%f ", input1_data[i * 16 + j * 4 + c * 2 + d]);
         }
         DLOGF("\n");
       }
@@ -136,7 +69,7 @@ int main() {
     for (int j = 0; j < 4; j++) {
       for (int c = 0; c < 2; c++) {
         for (int d = 0; d < 2; d++) {
-          DLOGF("%f ", output_lrn_ptr[i * 16 + j * 4 + c * 2 + d]);
+          DLOGF("%f ", output0_data[i * 16 + j * 4 + c * 2 + d]);
         }
         DLOGF("\n");
       }
@@ -144,8 +77,8 @@ int main() {
     }
     DLOGF("\n");
   }
-  DLOG << inputx1_ptr[0] << " / ((1 + 0.00002 * ( " << inputx1_ptr[0] << "^2 + "
-       << inputx1_ptr[4] << "^2 + " << inputx1_ptr[8] << "^2 ))^0.75) = ";
-  DLOG << output_lrn_ptr[0];
+  DLOG << input1_data[0] << " / ((1 + 0.00002 * ( " << input1_data[0] << "^2 + "
+       << input1_data[4] << "^2 + " << input1_data[8] << "^2 ))^0.75) = ";
+  DLOG << output0_data[0];
   return 0;
 }

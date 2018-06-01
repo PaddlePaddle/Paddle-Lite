@@ -12,36 +12,23 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
-
-#include <string>
 #include "framework/operator.h"
-#include "operators/kernel/concat_kernel.h"
+#include "operators/math/im2col.h"
+#include "operators/math/math_function.h"
+#include "operators/math/vol2col.h"
 #include "operators/op_param.h"
+
+#pragma once;
+
 namespace paddle_mobile {
 namespace operators {
-using std::string;
+
+using framework::OpKernelBase;
+
 template <typename DeviceType, typename T>
-class ConcatOp : public framework::OperatorWithKernel<DeviceType> {
+class DepthwiseConvKernel : public OpKernelBase<DeviceType, ConvParam> {
  public:
-  ConcatOp(const string &type, const VariableNameMap &inputs,
-           const VariableNameMap &outputs, const framework::AttributeMap attrs,
-           std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
-                                                  scope),
-        param_(inputs, outputs, attrs, *scope) {}
-
-  void RunImpl() const {
-    operators::ConcatKernel<DeviceType, T> kernel;
-    kernel.Compute(param_);
-  }
-
-  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
-  void InferShape() const override;
-
- protected:
-  ConcatParam param_;
+  void Compute(const ConvParam &param) const;
 };
-
 }  // namespace operators
 }  // namespace paddle_mobile

@@ -68,27 +68,27 @@ class TestBatchNormOp {
     // feed
     auto scope = program_.scope;
     Variable *x1_feed_value = scope->Var("conv2d_0.tmp_0");
-    auto tensor_x1 = x1_feed_value->GetMutable<Tensor>();
+    auto tensor_x1 = x1_feed_value->GetMutable<LoDTensor>();
     tensor_x1->ShareDataWith(t1);
 
     Variable *mean_feed_value = scope->Var("batch_norm_0.w_1");
-    auto tensor_mean = mean_feed_value->GetMutable<Tensor>();
+    auto tensor_mean = mean_feed_value->GetMutable<LoDTensor>();
     tensor_mean->ShareDataWith(t2);
 
     Variable *scale_feed_value = scope->Var("batch_norm_0.w_0");
-    auto tensor_scale = scale_feed_value->GetMutable<Tensor>();
+    auto tensor_scale = scale_feed_value->GetMutable<LoDTensor>();
     tensor_scale->ShareDataWith(t3);
 
     Variable *variance_feed_value = scope->Var("batch_norm_0.w_2");
-    auto tensor_variance = variance_feed_value->GetMutable<Tensor>();
+    auto tensor_variance = variance_feed_value->GetMutable<LoDTensor>();
     tensor_variance->ShareDataWith(t4);
 
     Variable *bias_feed_value = scope->Var("batch_norm_0.b_0");
-    auto tensor_bias = bias_feed_value->GetMutable<Tensor>();
+    auto tensor_bias = bias_feed_value->GetMutable<LoDTensor>();
     tensor_bias->ShareDataWith(t5);
 
     Variable *output = scope->Var("batch_norm_0.tmp_2");
-    auto *output_tensor = output->GetMutable<Tensor>();
+    auto *output_tensor = output->GetMutable<LoDTensor>();
     output_tensor->mutable_data<float>({4, 10, 2, 2});
     //  DLOG << typeid(output_tensor).name();
     //  DLOG << "output_tensor dims: " << output_tensor->dims();
@@ -128,8 +128,7 @@ int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run BatchNormOp Test";
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
-  auto program = loader.Load(std::string(
-      "../../test/models/image_classification_resnet.inference.model"));
+  auto program = loader.Load(std::string(g_resnet));
 
   /// input x (4,10,2,2)
   paddle_mobile::framework::Tensor inputx1;

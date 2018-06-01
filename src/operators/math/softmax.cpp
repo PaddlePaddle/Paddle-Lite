@@ -136,9 +136,15 @@ class SoftmaxFuntor<CPU, T> {
 
  public:
   void operator()(const framework::Tensor *X, framework::Tensor *Y) {
+    const DDim dDim = X->dims();
+    for (int i = 0; i < dDim[0]; ++i) {
+      framework::Tensor sub_X = X->Slice(i, i + 1);
+      framework::Tensor sub_Y = Y->Slice(i, i + 1);
+
 #if __ARM_NEON
-    SoftmaxCacl(X, Y);
+      SoftmaxCacl(&sub_X, &sub_Y);
 #endif
+    }
   }
 };
 

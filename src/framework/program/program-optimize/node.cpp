@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include <sstream>
 
+#include "framework/operator.h"
 #include "framework/program/program-optimize/node.h"
 
 namespace paddle_mobile {
@@ -44,16 +45,46 @@ bool Node::operator==(const Node &in) {
   return true;
 }
 
-// std::shared_ptr<Node> Node::MatchTheFirstNode(std::string type){
-//
-//  for (const auto &node : outputs_){
-//    if (node->type_ == type){
-//      return node;
-//    }else{
-//
-//    }
-//  }
-//}
+bool Node::CanSplit(std::unordered_set<std::string> complex_compute_set) {
+  bool split = false;
+  CanSplit(&split, false, 0, &complex_compute_set, this);
+  return split;
+}
+
+void Node::CanSplit(bool *split, bool spliting, int complex_count,
+                    std::unordered_set<std::string> *complex_compute_set,
+                    Node *pre_node) {
+  if (spliting) {
+    if (complex_compute_set->find(this->type_) != complex_compute_set->end()) {
+      complex_count++;
+    }
+  }
+
+  if (inputs_.size() > 1 && pre_node != inputs_.back()) {
+    return;
+  }
+  if (inputs_.size() > 1 && pre_node == inputs_.back()) {
+    if (complex_count > 1) {
+      *split = true;
+      return;
+    }
+  }
+
+  // multi output, to check
+  if (outputs_.size() > 1) {
+    spliting = true;
+    complex_compute_set = 0;
+  } else {
+    if (spliting == true && inputs_.size() > 0) {
+      spliting = false;
+    } else {
+    }
+  }
+
+  for (auto &output : outputs_) {
+    output->CanSplit(split, spliting, complex_count, complex_compute_set, this);
+  }
+}
 
 std::vector<std::shared_ptr<framework::OpDesc>> Node::OpDescs(uint size) {
   std::vector<std::shared_ptr<framework::OpDesc>> op_descs;
@@ -73,61 +104,111 @@ void Node::OpDescs(uint index,
 }
 
 void Node::OpDescs(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
-                   Node *node) {
-  auto iter = std::find(op_desc->begin(), op_desc->end(), this->op_desc_);
+                   Node *node, bool adding_thread, int thread_num) {
+  if (outputs_.size() > 1) {
+    adding_thread = false;
+  }
+
+  bool can_add_split = false;
+  // 如果当前节点有多个输出 并且 只有当前节点对应的 op_desc_ 输出数为 1 时支持
+  if (outputs_.size() > 1 &&
+      op_input_output_key[op_desc_->type_].second.size() == 1) {
+    can_add_split = true;
+
+    // 遍历当前节点的 output 节点
+    for (const auto &output : outputs_) {
+      // 不支持 output 有多个 output 的情况
+      if (output->outputs_.size() > 0) {
+        can_add_split = false;
+        break;
+      }
+
+      //与节点关联的 OpDesc
+      std::shared_ptr<framework::OpDesc> &op_desc = output->op_desc_;
+
+      //获取这个 op 的 inputs key 和 outputs key
+      auto inputs_and_outputs = op_input_output_key[op_desc->type_];
+
+      //判断现在 是否存在这个 op
+      //判断这个 output 和 input key 的 size 等于 1
+      if (op_input_output_key.find(op_desc->type_) !=
+              op_input_output_key.end() &&
+          inputs_and_outputs.first.size() == 1 &&
+          inputs_and_outputs.second.size() == 1) {
+        auto inputs_of_output = op_desc->Input(inputs_and_outputs.first[0]);
+        auto outputs_of_output = op_desc->Output(inputs_and_outputs.second[0]);
+
+        // 判断一下, 如果输入和输出没有同名, 是支持的
+        for (int i = 0; i < inputs_of_output.size(); ++i) {
+          std::string input_of_output = inputs_of_output[i];
+          for (int j = 0; j < outputs_of_output.size(); ++j) {
+            std::string output_of_output = outputs_of_output[j];
+            if (input_of_output == output_of_output) {
+              DLOG << "output的 output 包含 input" << input_of_output;
+              can_add_split = false;
+              break;
+            }
+          }
+        }
+      } else {  // 如果模型中包含没有的 op, 则不支持添加 split
+        DLOG << "找不到 这个 op 类型: " << output->op_desc_->type_;
+        can_add_split = false;
+      }
+    }
+  }
+
   if (inputs_.size() > 1 && node != inputs_.back()) {
     return;
   } else if (inputs_.size() > 1 && node == inputs_.back()) {
+    adding_thread = false;
     op_desc->push_back(this->op_desc_);
   } else {
     op_desc->push_back(this->op_desc_);
   }
+  if (adding_thread) {
+    Attribute attr;
+    attr.Set<int>(thread_num);
+    this->op_desc_->attrs_["thread"] = attr;
+  }
 
-  for (auto &output : outputs_) {
-    output->OpDescs(op_desc, this);
+  if (can_add_split) {
+    adding_thread = true;
+    std::shared_ptr<OpDesc> split_op_desc = std::make_shared<OpDesc>();
+    split_op_desc->type_ = G_OP_TYPE_SPLIT;
+    auto outputs = this->op_desc_->Output(
+        op_input_output_key[this->op_desc_->Type()].second[0]);
+    split_op_desc->inputs_ = {
+        {op_input_output_key[G_OP_TYPE_SPLIT].first[0], outputs}};
+    auto &split_outputs =
+        split_op_desc->outputs_[op_input_output_key[G_OP_TYPE_SPLIT].second[0]];
+    for (const auto &output : outputs_) {
+      split_outputs.push_back(outputs[0]);
+    }
+    DLOG << "add split";
+    op_desc->push_back(split_op_desc);
+  }
+
+  for (int i = 0; i < outputs_.size(); ++i) {
+    auto &output = outputs_[i];
+    if (can_add_split) {
+      output->OpDescs(op_desc, this, adding_thread, i);
+    } else {
+      output->OpDescs(op_desc, this, adding_thread, thread_num);
+    }
   }
 }
 
 std::vector<std::shared_ptr<framework::OpDesc>> Node::OpDescs() {
   std::vector<std::shared_ptr<framework::OpDesc>> op_descs;
-  OpDescs(&op_descs, this);
+  OpDescs(&op_descs, this, false, 0);
   return op_descs;
 }
-
-std::string Node::ToString(std::string blank, const Node *node) const {
-  std::stringstream ss;
-  ss << type_ << "-> \n";
-
-  if (inputs_.size() > 1 && node != inputs_.back()) {
-    return ss.str();
-  } else if (inputs_.size() > 1 && node == inputs_.back()) {
-    ss << "\n" << blank << type_ << "\n";
-  }
-
-  for (int i = 0; i < outputs_.size(); ++i) {
-    ss << blank << outputs_[i]->ToString(blank + "  ", this) << "";
-  }
-  return ss.str();
-}
-
-std::string Node::ToString() const { return this->ToString("  ", this); }
 
 std::shared_ptr<Node> Node::To(int size) {
   std::shared_ptr<Node> node = std::make_shared<Node>();
   this->To(size - 1, node);
   return node;
 }
-
-// Node &Node::To(int size) {
-//  if (size == 1) {
-//    this->outputs_.clear();
-//  }
-//
-//  for (int j = 0; j < this->outputs_.size(); ++j) {
-//    outputs_[j]->To(size - 1);
-//  }
-//  return *this;
-//}
 
 void Node::To(int index, std::shared_ptr<Node> node) {
   node->type_ = this->type_;
@@ -204,6 +285,24 @@ void Node::Folder(
     }
   }
 }
+
+std::string Node::ToString(std::string blank, const Node *node) const {
+  std::stringstream ss;
+  ss << type_ << "-> \n";
+
+  if (inputs_.size() > 1 && node != inputs_.back()) {
+    return ss.str();
+  } else if (inputs_.size() > 1 && node == inputs_.back()) {
+    ss << "\n" << blank << type_ << "\n";
+  }
+
+  for (int i = 0; i < outputs_.size(); ++i) {
+    ss << blank << outputs_[i]->ToString(blank + "  ", this) << "";
+  }
+  return ss.str();
+}
+
+std::string Node::ToString() const { return this->ToString("  ", this); }
 
 void Node::Description() {
   if (op_desc_.get()) {

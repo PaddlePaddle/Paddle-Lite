@@ -15,12 +15,13 @@ limitations under the License. */
 #include "io.h"
 #include <fstream>
 #include <vector>
+#include "common/log.h"
 
 #include "common/enforce.h"
-#include "common/log.h"
 #include "framework/framework.pb-c.h"
 #include "framework/lod_tensor.h"
 #include "framework/operator.h"
+#include "framework/program/program-optimize/program_optimize.h"
 #include "framework/program/program_desc.h"
 #include "framework/program/var_desc.h"
 #include "framework/scope.h"
@@ -45,7 +46,7 @@ static size_t ReadBuffer(const char *file_name, uint8_t **out) {
   printf("%s \n", file_name);
   FILE *fp;
   fp = fopen(file_name, "rb");
-  PADDLE_MOBILE_ENFORCE(fp != NULL, "open failed !");
+  PADDLE_MOBILE_ENFORCE(fp != NULL, " %s open failed !", file_name);
 
   fseek(fp, 0, SEEK_END);
   size_t size = ftell(fp);
@@ -53,7 +54,7 @@ static size_t ReadBuffer(const char *file_name, uint8_t **out) {
 
   DLOG << "model size: " << size;
 
-  *out = (uint8_t *)malloc(size);
+  *out = reinterpret_cast<uint8_t *>(malloc(size));
 
   size_t cur_len = 0;
   size_t nread;
@@ -167,7 +168,7 @@ void Loader<Dtype, P>::LoadVar(framework::Variable *variable,
 
 template <typename Dtype, Precision P>
 const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
-    const std::string &dirname) {
+    const std::string &dirname, bool optimize) {
   std::string model_filename = dirname + "/__model__";
   PaddleMobile__Framework__Proto__ProgramDesc *c_program;
   uint8_t *buf = NULL;
@@ -177,11 +178,11 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
 
   c_program = paddle_mobile__framework__proto__program_desc__unpack(
       NULL, read_size, buf);
-
+  //
   PADDLE_MOBILE_ENFORCE(c_program != NULL, "program is null");
-
+  //
   DLOG << "n_ops: " << (*c_program->blocks)->n_ops;
-
+  //
   std::shared_ptr<framework::ProgramDesc> originProgramDesc =
       std::make_shared<framework::ProgramDesc>(c_program);
 
@@ -204,13 +205,12 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
         if (var_desc->Persistable() &&
             var_desc->Type() != framework::VARTYPE_TYPE_FEED_MINIBATCH &&
             var_desc->Type() != framework::VARTYPE_TYPE_FETCH_LIST) {
-          //          DLOG << "to load var ";
           auto dim = var_desc->Tensor_desc().Dims();
           auto tensor = var->GetMutable<framework::LoDTensor>();
           tensor->Resize(framework::make_ddim(dim));
         } else {
           auto dim = var_desc->Tensor_desc().Dims();
-          PADDLE_MOBILE_ENFORCE(dim.size() > 1, "dim size is 0");
+          PADDLE_MOBILE_ENFORCE(dim.size() > 0, "dim size is 0");
           dim[0] = 1;
           auto tensor = var->GetMutable<framework::LoDTensor>();
           tensor->Resize(framework::make_ddim(dim));
@@ -221,7 +221,16 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
     }
   }
 
-  //  originProgramDesc->Description("program: ");
+  if (optimize) {
+    framework::ProgramOptimize program_optimize;
+    program.optimizeProgram =
+        program_optimize.FushionOptimize(originProgramDesc);
+  }
+  if (optimize) {
+    program.optimizeProgram->Description("optimize: ");
+  } else {
+    originProgramDesc->Description("program: ");
+  }
 
   paddle_mobile__framework__proto__program_desc__free_unpacked(c_program, NULL);
   return program;
@@ -232,33 +241,9 @@ template class Loader<CPU, Precision::FP32>;
 #pragma mark - executor
 
 template <typename Dtype, Precision P>
-Executor<Dtype, P>::Executor(const framework::Program<Dtype> p) : program_(p) {
-  if (use_optimize_) {
-    to_predict_program_ = program_.optimizeProgram;
-  } else {
-    to_predict_program_ = program_.originProgram;
-  }
-
-  const std::vector<std::shared_ptr<framework::BlockDesc>> blocks =
-      to_predict_program_->Blocks();
-  for (int i = 0; i < blocks.size(); ++i) {
-    std::shared_ptr<framework::BlockDesc> block_desc = blocks[i];
-    std::vector<std::shared_ptr<framework::OpDesc>> ops = block_desc->Ops();
-    for (int j = 0; j < ops.size(); ++j) {
-      std::shared_ptr<framework::OpDesc> op = ops[j];
-      auto op_base = framework::OpRegistry<Dtype>::CreateOp(
-          op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(),
-          program_.scope);
-      op_base->InferShape();
-      ops_of_block_[*block_desc.get()].push_back(op_base);
-    }
-  }
-  InitMemory();
-}
-
-template <typename Dtype, Precision P>
-Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size)
-    : program_(p), batch_size_(batch_size) {
+Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
+                             bool use_optimize)
+    : program_(p), batch_size_(batch_size), use_optimize_(use_optimize) {
   if (use_optimize_) {
     to_predict_program_ = program_.optimizeProgram;
   } else {
@@ -273,6 +258,7 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size)
     std::vector<std::shared_ptr<framework::OpDesc>> ops = block_desc->Ops();
     for (int j = 0; j < ops.size(); ++j) {
       std::shared_ptr<framework::OpDesc> op = ops[j];
+      DLOG << "create op: " << op->Type();
       auto op_base = framework::OpRegistry<Dtype>::CreateOp(
           op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(),
           program_.scope);
@@ -364,7 +350,7 @@ void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
 
   is.read(static_cast<char *>(memory), memory_size * type_size);
   is.close();
-};
+}
 
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::InitMemory() {
@@ -380,7 +366,8 @@ void Executor<Dtype, P>::InitMemory() {
                    program_.model_path + "/" + var_desc->Name());
       } else {
         if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
-          auto tensor = var->template GetMutable<framework::Tensor>();
+          auto tensor = var->template GetMutable<framework::LoDTensor>();
+
           tensor->template mutable_data<Ptype>();
         }
       }
@@ -389,65 +376,47 @@ void Executor<Dtype, P>::InitMemory() {
 }
 
 template <typename Dtype, Precision P>
-std::shared_ptr<framework::Tensor> Executor<Dtype, P>::predict(
-    framework::Tensor &t) {
-  // feed
-  auto scope = program_.scope;
-  framework::Variable *g_feed_value = scope->Var("pixel");
-  auto tensor = g_feed_value->GetMutable<framework::Tensor>();
-  tensor->ShareDataWith(t);
-
-  framework::Variable *con_output = scope->Var("conv2d_0.tmp_0");
-  framework::Tensor *output_tensor =
-      con_output->GetMutable<framework::Tensor>();
-  output_tensor->mutable_data<float>({1, 16, 32, 32});
-  //  std::cout << typeid(output_tensor).name() << std::endl;
-  //  std::cout << "output_tensor dims: " << output_tensor->dims() <<
-  //  std::endl;
-
-  std::shared_ptr<framework::Tensor> out_tensor =
-      std::make_shared<framework::LoDTensor>();
-  out_tensor.reset(output_tensor);
-
-  predict(t, 0);
-  return out_tensor;
-}
-
-template <typename Dtype, Precision P>
-void Executor<Dtype, P>::predict(const framework::Tensor &t, int block_id) {
+std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
+    const framework::Tensor &t) {
   framework::Variable *g_feed_value = program_.scope->Var("feed");
-  auto feed_tensor = g_feed_value->GetMutable<framework::LoDTensor>();
+  framework::Tensor *feed_tensor =
+      g_feed_value->GetMutable<framework::LoDTensor>();
   feed_tensor->Resize(t.dims());
-
   feed_tensor->ShareDataWith(t);
-
   std::shared_ptr<framework::BlockDesc> to_predict_block =
-      to_predict_program_->Block(block_id);
+      to_predict_program_->Block(0);
   for (int j = 0; j < ops_of_block_[*to_predict_block.get()].size(); ++j) {
     auto op = ops_of_block_[*to_predict_block.get()][j];
     op->Run();
   }
+  auto ops = ops_of_block_[*to_predict_program_->Block(0)];
+  auto last_op = ops.rbegin();
+  auto output_map = (*last_op)->Outputs();
+  std::vector<std::string> out_keys = (*last_op)->GetOutKeys();
+  PADDLE_MOBILE_ENFORCE(out_keys.size() > 0, "the last op contains no output");
+  framework::LoDTensor *output_tensor =
+      framework::GetVarValue<framework::LoDTensor>(out_keys[0], output_map,
+                                                   *(program_.scope));
+  return std::shared_ptr<framework::Tensor>(output_tensor);
+}
+template <typename Dtype, Precision P>
+std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
+    const framework::Tensor &t, int block_id) {
+  return Predict(t);
 }
 
 template <typename Dtype, Precision P>
-std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::predict(
+std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::Predict(
     const std::vector<Ptype> &input, const std::vector<int64_t> &dims) {
-  DLOG << "start predict: ";
-
-  framework::Tensor tensor;
-  auto ddim = framework::make_ddim(dims);
-
-  auto input_ptr = tensor.mutable_data<Ptype>(ddim);
-  for (int i = 0; i < input.size(); ++i) {
-    input_ptr[i] = input[i];
+  framework::Tensor tensor(input, framework::make_ddim(dims));
+  std::shared_ptr<framework::Tensor> output_tensor = Predict(tensor, 0);
+  Executor<Dtype, P>::Ptype *output_ptr =
+      output_tensor->data<typename Executor<Dtype, P>::Ptype>();
+  std::vector<typename Executor<Dtype, P>::Ptype> result_vector;
+  for (int j = 0; j < output_tensor->numel(); ++j) {
+    result_vector.push_back(output_ptr[j]);
   }
-
-  predict(tensor, 0);
-
-  framework::Variable *g_feed_value = program_.scope->Var("col");
-  auto feed_tensor = g_feed_value->GetMutable<framework::Tensor>();
-
-  return {};
+  return result_vector;
 }
 
 template class Executor<CPU, Precision::FP32>;

@@ -14,11 +14,11 @@ limitations under the License. */
 
 #include "../executor_for_test.h"
 #include "../test_helper.h"
-#include "./io.h"
+#include "io.h"
 
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
-  auto program = loader.Load(std::string("models/mobilenet"));
+  auto program = loader.Load(std::string(g_mobilenet));
   if (program.originProgram == nullptr) {
     DLOG << "program read file";
   }
@@ -30,7 +30,7 @@ int main() {
                      static_cast<float>(1));
   auto out_ddim = paddle_mobile::framework::make_ddim({1, 1000});
   auto output =
-      executor.predict(input, "reshape_0.tmp_0", "softmax_0.tmp_0", out_ddim);
+      executor.Predict(input, "reshape_0.tmp_0", "softmax_0.tmp_0", out_ddim);
   auto *output_ptr = output->data<float>();
   for (int j = 0; j < output->numel(); ++j) {
     DLOG << " value of output: " << output_ptr[j];

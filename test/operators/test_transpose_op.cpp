@@ -14,11 +14,11 @@ limitations under the License. */
 
 #include "../executor_for_test.h"
 #include "../test_helper.h"
-#include "./io.h"
+#include "io.h"
 
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
-  auto program = loader.Load(std::string("../../test/models/mobilenet+ssd"));
+  auto program = loader.Load(std::string(g_mobilenet_ssd));
   if (program.originProgram == nullptr) {
     DLOG << "program read file";
   }
@@ -31,7 +31,7 @@ int main() {
   auto input_ptr = input.data<float>();
   auto out_ddim = paddle_mobile::framework::make_ddim({1, 3, 4, 2});
   auto output =
-      executor.predict(input, "conv2d_22.tmp_1", "transpose_0.tmp_0", out_ddim);
+      executor.Predict(input, "conv2d_22.tmp_1", "transpose_0.tmp_0", out_ddim);
   auto *output_ptr = output->data<float>();
 
   DLOG << "input : ";

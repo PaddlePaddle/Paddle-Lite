@@ -14,22 +14,23 @@ limitations under the License. */
 
 #pragma once
 
+#include <string>
 #include "framework/operator.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
-
+using std::string;
 template <typename DeviceType, typename T>
 class FeedOp : public framework::OperatorBase<DeviceType> {
  public:
-  FeedOp(const std::string &type, const VariableNameMap &inputs,
+  FeedOp(const string &type, const VariableNameMap &inputs,
          const VariableNameMap &outputs, const framework::AttributeMap attrs,
          std::shared_ptr<framework::Scope> scope)
       : framework::OperatorBase<DeviceType>(type, inputs, outputs, attrs,
                                             scope),
         param_(inputs, outputs, attrs, *scope) {}
-  void Run() const { param_.Out()->ShareDataWith(*param_.InputX()); }
+  void RunImpl() const { param_.Out()->ShareDataWith(*param_.InputX()); }
 
   void InferShape() const {
     auto out_dims = param_.Out()->dims();

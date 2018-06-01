@@ -14,6 +14,7 @@ limitations under the License. */
 
 #pragma once
 
+#include <chrono>
 #include <fstream>
 #include <random>
 
@@ -27,8 +28,22 @@ static const std::string g_mobilenet_ssd = "../models/mobilenet+ssd";
 static const std::string g_squeezenet = "../models/squeezenet";
 static const std::string g_resnet =
     "../models/image_classification_resnet.inference.model";
+static const std::string g_yolo = "../models/yolo";
 static const std::string g_test_image_1x3x224x224 =
     "../images/test_image_1x3x224x224_float";
+using paddle_mobile::framework::DDim;
+using paddle_mobile::framework::Tensor;
+
+using Time = decltype(std::chrono::high_resolution_clock::now());
+
+Time time() { return std::chrono::high_resolution_clock::now(); }
+
+double time_diff(Time t1, Time t2) {
+  typedef std::chrono::microseconds ms;
+  auto diff = t2 - t1;
+  ms counter = std::chrono::duration_cast<ms>(diff);
+  return counter.count() / 1000.0;
+}
 
 template <typename T>
 void SetupTensor(paddle_mobile::framework::Tensor *input,
@@ -41,6 +56,12 @@ void SetupTensor(paddle_mobile::framework::Tensor *input,
   for (int i = 0; i < input->numel(); ++i) {
     input_ptr[i] = static_cast<T>(uniform_dist(rng) * (upper - lower) + lower);
   }
+}
+
+template <typename T>
+T *CreateInput(Tensor *input, DDim dims, T low, T up) {
+  SetupTensor<T>(input, dims, static_cast<float>(low), static_cast<float>(up));
+  return input->data<T>();
 }
 
 template <typename T>

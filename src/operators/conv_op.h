@@ -14,14 +14,13 @@ limitations under the License. */
 
 #pragma once
 
+#include <string>
 #include "framework/operator.h"
 #include "operators/kernel/conv_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
-
-using namespace framework;
-
+using std::string;
 template <typename DeviceType, typename T>
 class ConvOp : public framework::OperatorWithKernel<DeviceType> {
  public:
@@ -35,7 +34,7 @@ class ConvOp : public framework::OperatorWithKernel<DeviceType> {
   using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
   void InferShape() const override;
 
-  void Run() const {
+  void RunImpl() const {
     operators::ConvKernel<DeviceType, T> kernel;
     kernel.Compute(param_);
     this->ClearVariables({"Filter", "Input"});
@@ -44,6 +43,13 @@ class ConvOp : public framework::OperatorWithKernel<DeviceType> {
  private:
   ConvParam param_;
 };
+
+inline int ConvOutputSize(int input_size, int filter_size, int dilation,
+                          int padding, int stride) {
+  const int dkernel = dilation * (filter_size - 1) + 1;
+  int output_size = (input_size + 2 * padding - dkernel) / stride + 1;
+  return output_size;
+}
 
 }  // namespace operators
 }  // namespace paddle_mobile

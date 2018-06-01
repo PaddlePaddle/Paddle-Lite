@@ -27,14 +27,19 @@ namespace framework {
 class ProgramOptimize {
  public:
   ProgramOptimize() {}
-  std::shared_ptr<ProgramDesc> Optimize();
   std::shared_ptr<ProgramDesc> FushionOptimize(
-      std::shared_ptr<ProgramDesc> ori_des);
+      std::shared_ptr<ProgramDesc> ori_des, bool add_split = false);
 
  private:
-  //                std::shared_ptr<ProgramDesc> ori_desc_;
-  std::vector<std::unordered_map<std::string, std::shared_ptr<Node>>>
-      outputs_nodes_;
+  int current_block_;
+  std::vector<std::shared_ptr<BlockDesc>> new_blocks_;
+  void GenerateOps(std::vector<std::shared_ptr<framework::OpDesc>> *op_descs,
+                   Node *begin_node);
+  void GenerateOps(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
+                   Node *input_node, Node *current_node);
+  void GenerateOps(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
+                   Node *input_node, Node *current_node, bool adding_thread,
+                   int thread_num, std::shared_ptr<BlockDesc> new_block);
 };
 }  // namespace framework
 }  // namespace paddle_mobile

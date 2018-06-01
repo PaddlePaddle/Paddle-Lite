@@ -14,36 +14,36 @@ limitations under the License. */
 
 #pragma once
 
-#include <framework/operator.h>
-#include <operators/op_param.h>
 #include <string>
-#include "operators/kernel/softmax_kernel.h"
+#include "framework/operator.h"
+#include "operators/kernel/depthwise_conv_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
+
 template <typename DeviceType, typename T>
-class SoftmaxOp : public framework::OperatorWithKernel<DeviceType> {
+class DepthwiseConvOp : public framework::OperatorWithKernel<DeviceType> {
  public:
-  SoftmaxOp(const std::string &type, const VariableNameMap &inputs,
-            const VariableNameMap &outputs,
-            const framework::AttributeMap &attrs,
-            std::shared_ptr<framework::Scope> scope)
+  DepthwiseConvOp(const std::string &type, const VariableNameMap &inputs,
+                  const VariableNameMap &outputs,
+                  const framework::AttributeMap &attrs,
+                  std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
                                                   scope),
         param_(inputs, outputs, attrs, *scope) {}
 
   using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
-
   void InferShape() const override;
 
   void RunImpl() const {
-    operators::SoftmaxKernel<DeviceType, T> kernel;
+    operators::DepthwiseConvKernel<DeviceType, T> kernel;
     kernel.Compute(param_);
-    this->ClearVariables({"X"});
+    this->ClearVariables({"Filter", "Input"});
   }
 
  private:
-  SoftmaxParam param_;
+  ConvParam param_;
 };
+
 }  // namespace operators
 }  // namespace paddle_mobile

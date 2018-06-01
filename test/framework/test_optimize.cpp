@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include "../test_helper.h"
 #include "framework/program/program-optimize/node.h"
 #include "framework/program/program-optimize/program_optimize.h"
 #include "io.h"
@@ -19,7 +20,7 @@ limitations under the License. */
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
   //    "../../../test/models/googlenet"
-  auto program = loader.Load("../models/googlenet");
+  auto program = loader.Load(g_googlenet);
   paddle_mobile::framework::ProgramOptimize optimize;
   //  program.originProgram->Description("origin");
   auto optimize_program = optimize.FushionOptimize(program.originProgram);
