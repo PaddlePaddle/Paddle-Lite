@@ -17,7 +17,7 @@ This project is used to develop the next version deep learning freamwork for mob
 * ANDROID_NDK environment variable is required
 
 ```bash 
-sh build.sh android
+tools/build.sh android
 ```
 
 ## build for x86
@@ -26,7 +26,7 @@ paddle-mobile is to run on arm platform. x86 only used to test not arm assembly 
 Now only support osx.
 
 ```
-sh build.sh mac
+tools/build.sh mac
 ```
 
 ## Old Version of Mobile-Deep-Learning
