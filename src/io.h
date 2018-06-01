@@ -15,6 +15,7 @@ limitations under the License. */
 #pragma once
 
 #include <memory.h>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -30,7 +31,8 @@ namespace paddle_mobile {
 template <typename Dtype, Precision P = Precision::FP32>
 class Loader : PaddleMobileObject {
  public:
-  const framework::Program<Dtype, P> Load(const std::string &dirname);
+  const framework::Program<Dtype, P> Load(const std::string &dirname,
+                                          bool optimize = true);
 
  private:
   void LoadVar(framework::Variable *variable,
@@ -43,25 +45,25 @@ class Executor {
  public:
   typedef typename PrecisionTrait<P>::ptype Ptype;
 
-  Executor() = default;
+  Executor(const framework::Program<Dtype> p, int batch_size = 1,
+           bool use_optimize = true);
 
-  Executor(const framework::Program<Dtype> p);
+  std::shared_ptr<framework::Tensor> Predict(const framework::Tensor &t);
 
-  Executor(const framework::Program<Dtype> p, int batch_size);
-
-  std::shared_ptr<framework::Tensor> predict(framework::Tensor &t);
-
-  std::vector<Ptype> predict(const std::vector<Ptype> &input,
+  std::vector<Ptype> Predict(const std::vector<Ptype> &input,
                              const std::vector<int64_t> &dims);
 
  protected:
+  Executor() = default;
+
   void InitMemory();
   void LoadMemory(const framework::VarDesc var_desc,
                   framework::LoDTensor *tensor, const std::string &file_path);
   framework::Program<Dtype> program_;
   int batch_size_ = 1;
   std::shared_ptr<framework::ProgramDesc> to_predict_program_;
-  void predict(const framework::Tensor &t, int block_id);
+  std::shared_ptr<framework::Tensor> Predict(const framework::Tensor &t,
+                                             int block_id);
   std::map<framework::BlockDesc,
            std::vector<std::shared_ptr<framework::OperatorBase<Dtype>>>>
       ops_of_block_;

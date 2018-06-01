@@ -18,11 +18,12 @@ limitations under the License. */
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <type_traits>
 #include <typeindex>
 #include <vector>
 
-#include "data_layout.h"
-#include "ddim.h"
+#include "framework/data_layout.h"
+#include "framework/ddim.h"
 #include "memory/t_malloc.h"
 
 namespace paddle_mobile {
@@ -62,8 +63,8 @@ struct SizeOfTypeFunctor<HEAD, TAIL...> {
 static inline size_t SizeOfType(std::type_index type) {
   SizeOfTypeFunctor<int, float, double, int16_t, int64_t, bool, size_t> functor;
   size_t size = functor(type);
-  //  PADDLE_ENFORCE(size != 0UL, "Cannot get size of type %s",
-  //  type.name());
+
+  PADDLE_MOBILE_ENFORCE(size != 0UL, "Cannot get size of type %s", type.name());
   return size;
 }
 
@@ -72,16 +73,27 @@ class LoDTensor;
 class Tensor {
  public:
   Tensor() : offset_(0) {}
+  template <typename T>
+  Tensor(std::vector<T> input, DDim ddim) : offset_(0) {
+    PADDLE_MOBILE_ENFORCE(
+        input.size() == framework::product(ddim),
+        "input vector'length should be equal to tensor's length");
+    auto input_ptr = mutable_data<T>(ddim);
+    for (int i = 0; i < input.size(); ++i) {
+      input_ptr[i] = input[i];
+    }
+  }
 
   /*! Return a pointer to mutable memory block. */
   template <typename T>
   inline T *data() {
     check_memory_size();
-    //  PADDLE_ENFORCE(std::is_same<T, void>::value ||
-    //                     holder_->type().hash_code() ==
-    //                     typeid(T).hash_code(),
-    //                 "Tensor holds the wrong type, it holds %s",
-    //                 this->holder_->type().name());
+    PADDLE_MOBILE_ENFORCE(
+        (std::is_same<T, void>::value ||
+         holder_->type().hash_code() == typeid(T).hash_code()),
+        "Tensor holds the wrong type, it holds %s",
+        this->holder_->type().name());
+
     return reinterpret_cast<T *>(reinterpret_cast<uintptr_t>(holder_->ptr()) +
                                  offset_);
   }
@@ -90,11 +102,11 @@ class Tensor {
   template <typename T>
   inline const T *data() const {
     check_memory_size();
-    //  PADDLE_ENFORCE(std::is_same<T, void>::value ||
-    //                     holder_->type().hash_code() ==
-    //                     typeid(T).hash_code(),
-    //                 "Tensor holds the wrong type, it holds %s",
-    //                 this->holder_->type().name());
+    PADDLE_MOBILE_ENFORCE(
+        (std::is_same<T, void>::value ||
+         holder_->type().hash_code() == typeid(T).hash_code()),
+        "Tensor holds the wrong type, it holds %s",
+        this->holder_->type().name());
 
     return reinterpret_cast<const T *>(
         reinterpret_cast<uintptr_t>(holder_->ptr()) + offset_);
@@ -116,17 +128,11 @@ class Tensor {
     if (holder_ != nullptr) {
       holder_->set_type(type);
     }
-    //  PADDLE_ENFORCE_GE(numel(), 0,
-    //                    "When calling this method, the Tensor's
-    //                    numel must be
-    //                    " "equal or larger than zero. " "Please
-    //                    check
-    //                    Tensor::Resize has been called first.");
+    PADDLE_MOBILE_ENFORCE(numel() >= 0, "the Tensor'snumel must >=0.")
     int64_t size = numel() * SizeOfType(type);
     /* some versions of boost::variant don't have operator!= */
     if (holder_ == nullptr || holder_->size() < size + offset_) {
       holder_.reset(new PlaceholderImpl(size, type));
-
       offset_ = 0;
     }
     return reinterpret_cast<void *>(
@@ -179,16 +185,13 @@ class Tensor {
    */
   inline Tensor Slice(int begin_idx, int end_idx) const {
     check_memory_size();
-    //  PADDLE_ENFORCE_GE(begin_idx, 0,
-    //                    "The start row index must be greater than
-    //                    0.");
-    //  PADDLE_ENFORCE_LE(end_idx, dims_[0], "The end row index is
-    //  out of
-    //  bound."); PADDLE_ENFORCE_LT(
-    //      begin_idx, end_idx,
-    //      "The start row index must be lesser than the end row
-    //      index.");
-
+    PADDLE_MOBILE_ENFORCE(begin_idx >= 0,
+                          "The start row index must be greater than 0.")
+    PADDLE_MOBILE_ENFORCE(end_idx <= dims_[0],
+                          "The end row index is out of bound.")
+    PADDLE_MOBILE_ENFORCE(
+        begin_idx < end_idx,
+        "The start row index must be lesser than the end row index")
     if (dims_[0] == 1) {
       return *this;
     } else {
@@ -205,10 +208,9 @@ class Tensor {
   }
 
   std::type_index type() const {
-    //                PADDLE_ENFORCE_NOT_NULL(
-    //                        holder_, "Tensor not initialized yet
-    //                        when
-    //                        Tensor::type() is called.");
+    PADDLE_MOBILE_ENFORCE(
+        holder_ != nullptr,
+        "Tensor not initialized yet when Tensor::type() is called.")
     return holder_->type();
   }
 
@@ -219,13 +221,10 @@ class Tensor {
 
   inline void check_memory_size() const {
     PADDLE_MOBILE_ENFORCE(
-        holder_, "Tensor holds no memory. Call Tensor::mutable_data first.");
-    PADDLE_MOBILE_ENFORCE(
-        numel() * SizeOfType(type()) <= memory_size(),
-        "Tensor's dims_ is out of bound. CallTensor::mutable_data "
-        "first to re-allocate memory.\n"
-        "or maybe the required data-type mismatches the data\
-          already stored.");
+        holder_ != nullptr,
+        "Tensor holds no memory. Call Tensor::mutable_data first.");
+    PADDLE_MOBILE_ENFORCE(numel() * SizeOfType(type()) <= memory_size(),
+                          "Tensor's dims_ is out of bound. ");
   }
 
   inline DataLayout layout() const { return layout_; }
@@ -256,13 +255,8 @@ class Tensor {
                memory::PODDeleter<uint8_t>()),
           size_(size),
           type_(type) {
-      //                    PADDLE_ENFORCE_NOT_NULL(ptr_,
-      //                    "Insufficient %s
-      //                    memory to allocation.",
-      //                                            (is_cpu_place(place_)
-      //                                            ?
-      //                                            "CPU" :
-      //                                            "GPU"));
+      PADDLE_MOBILE_ENFORCE(ptr_ != nullptr,
+                            "Insufficient memory to allocation");
     }
 
     virtual size_t size() const { return size_; }
@@ -319,6 +313,19 @@ class Tensor {
    */
   size_t offset_;
 };
+
+#ifdef PADDLE_MOBILE_DEBUG
+inline Print &operator<<(Print &printer, const Tensor &tensor) {
+  printer << " dims: " << tensor.dims() << "\n";
+  int stride = tensor.numel() / 20;
+  stride = stride > 0 ? stride : 1;
+  for (int i = 0; i < tensor.numel(); i += stride) {
+    printer << tensor.data<float>()[i] << " ";
+  }
+  return printer;
+}
+
+#endif
 
 inline Tensor ReshapeToMatrix(const Tensor &src, int num_col_dims) {
   Tensor res;

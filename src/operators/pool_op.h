@@ -17,25 +17,26 @@ limitations under the License. */
 #include <framework/operator.h>
 #include <operators/kernel/pool_kernel.h>
 #include <operators/op_param.h>
+#include <string>
 
 namespace paddle_mobile {
 namespace operators {
-using namespace framework;
-
+using framework::AttributeMap;
+using framework::OperatorWithKernel;
+using framework::Scope;
+using std::string;
 template <typename DeviceType, typename T>
-class PoolOp : public framework::OperatorWithKernel<DeviceType> {
+class PoolOp : public OperatorWithKernel<DeviceType> {
  public:
-  PoolOp(const std::string &type, const VariableNameMap &inputs,
-         const VariableNameMap &outputs, const framework::AttributeMap &attrs,
-         std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
-                                                  scope),
+  PoolOp(const string &type, const VariableNameMap &inputs,
+         const VariableNameMap &outputs, const AttributeMap &attrs,
+         std::shared_ptr<Scope> scope)
+      : OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs, scope),
         param_(inputs, outputs, attrs, *scope) {}
-  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  using OperatorWithKernel<DeviceType>::OperatorWithKernel;
   void InferShape() const override;
 
-  void Run() const {
-    //        InferShape();
+  void RunImpl() const {
     operators::PoolKernel<DeviceType, T> kernel;
     kernel.Compute(param_);
     this->ClearVariables({"X"});

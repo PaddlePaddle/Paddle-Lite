@@ -23,18 +23,18 @@ namespace operators {
 class FushionConvAddReluOpMatcher : public framework::FusionOpMatcher {
  public:
   FushionConvAddReluOpMatcher() {
-    node_ = framework::Node("conv2d");
-    node_ > std::make_shared<framework::Node>("elementwise_add") >
-        std::make_shared<framework::Node>("relu");
+    node_ = framework::Node(G_OP_TYPE_CONV);
+    node_ > std::make_shared<framework::Node>(G_OP_TYPE_ELEMENTWISE_ADD) >
+        std::make_shared<framework::Node>(G_OP_TYPE_RELU);
   }
 
-  void FolderNodes(framework::Node &node) {
+  void FolderNodes(framework::Node *node) {
     std::vector<std::shared_ptr<framework::OpDesc>> origin_descs =
-        node.OpDescs(node_.Depth());
-    node.Folder(node_.Depth(), Type(), {{"elementwise_add", {"Y", "Z"}}});
+        node->OpDescs(node_.Depth());
+    node->Folder(node_.Depth(), Type(),
+                 {{G_OP_TYPE_ELEMENTWISE_ADD, {"Y", "Z"}}});
   }
-
-  std::string Type() { return "FusionConvAddRelu"; }
+  std::string Type() { return G_OP_TYPE_FUSION_CONV_ADD_RELU; }
 };
 
 class FusionFcOp {

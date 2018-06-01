@@ -62,19 +62,19 @@ class TestBoxCoderOp {
     // feed
     auto scope = program_.scope;
     Variable *prior_box = scope->Var("concat_0.tmp_0");
-    auto tensor_x1 = prior_box->GetMutable<Tensor>();
+    auto tensor_x1 = prior_box->GetMutable<LoDTensor>();
     tensor_x1->ShareDataWith(t1);
 
     Variable *prior_box_var = scope->Var("concat_1.tmp_0");
-    auto tensor_x2 = prior_box_var->GetMutable<Tensor>();
+    auto tensor_x2 = prior_box_var->GetMutable<LoDTensor>();
     tensor_x2->ShareDataWith(t2);
 
     Variable *target_box = scope->Var("concat_2.tmp_0");
-    auto tensor_x3 = target_box->GetMutable<Tensor>();
+    auto tensor_x3 = target_box->GetMutable<LoDTensor>();
     tensor_x3->ShareDataWith(t3);
 
     Variable *boxes_output = scope->Var("box_coder_0.tmp_0");
-    auto *boxes_output_tensor = boxes_output->GetMutable<Tensor>();
+    auto *boxes_output_tensor = boxes_output->GetMutable<LoDTensor>();
     boxes_output_tensor->mutable_data<float>({1, 1917, 4});
 
     //  DLOG << typeid(output_tensor).name();
@@ -116,7 +116,7 @@ int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run BoxCoderOp Test";
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
-  auto program = loader.Load(std::string("../../test/models/mobilenet+ssd"));
+  auto program = loader.Load(std::string(g_mobilenet_ssd));
 
   paddle_mobile::framework::Tensor priorbox;
   SetupTensor<float>(&priorbox, {1917, 4}, static_cast<float>(0),

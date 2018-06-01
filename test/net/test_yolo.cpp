@@ -18,18 +18,24 @@ limitations under the License. */
 
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
-  bool optimize = true;
+  //  ../../../test/models/googlenet
+  //  ../../../test/models/mobilenet
   auto time1 = time();
-  auto program = loader.Load(g_googlenet, optimize);
+  auto program = loader.Load(g_yolo, false);
   auto time2 = time();
-  DLOG << "load cost :" << time_diff(time1, time2) << "ms\n";
-  paddle_mobile::Executor<paddle_mobile::CPU> executor(program, 1, optimize);
-  std::vector<float> input;
-  std::vector<int64_t> dims{1, 3, 224, 224};
-  GetInput<float>(g_test_image_1x3x224x224, &input, dims);
+  DLOG << "load cost :" << time_diff(time1, time1) << "ms";
+  paddle_mobile::Executor<paddle_mobile::CPU> executor(program, 1, false);
+
+  std::vector<int64_t> dims{1, 3, 227, 227};
+  Tensor input_tensor;
+  SetupTensor<float>(&input_tensor, {1, 3, 227, 227}, static_cast<float>(0),
+                     static_cast<float>(1));
+
+  std::vector<float> input(input_tensor.data<float>(),
+                           input_tensor.data<float>() + input_tensor.numel());
   auto time3 = time();
   executor.Predict(input, dims);
   auto time4 = time();
-  DLOG << "predict cost :" << time_diff(time3, time4) << "ms\n";
+  DLOG << "predict cost :" << time_diff(time3, time4) << "ms";
   return 0;
 }

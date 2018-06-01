@@ -207,7 +207,7 @@ class ConvParam : OpParam {
 
   const Tensor *Input() const { return input_; }
 
-  const LoDTensor *Filter() const { return filter_; }
+  const Tensor *Filter() const { return filter_; }
 
   Tensor *Output() const { return output_; }
 
@@ -222,7 +222,7 @@ class ConvParam : OpParam {
  private:
   Tensor *input_;
   Tensor *output_;
-  LoDTensor *filter_;
+  Tensor *filter_;
   vector<int> strides_;
   vector<int> paddings_;
   vector<int> dilations_;
@@ -696,6 +696,9 @@ class ReshapeParam : public OpParam {
   bool inplace_;
 };
 
+/*
+ * @b op 层实例化好这个 param 传递给 kernel 层使用
+ * */
 class ReluParam : public OpParam {
  public:
   ReluParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
@@ -717,15 +720,14 @@ class FushionFcParam : public OpParam {
  public:
   FushionFcParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
                  const AttributeMap &attrs, const Scope &scope) {
-    input_x_ = InputXFrom<Tensor>(inputs, scope);
-    input_y_ = InputYFrom<Tensor>(inputs, scope);
-    input_z_ = InputZFrom<Tensor>(inputs, scope);
-    out_ = OutFrom<Tensor>(outputs, scope);
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    input_y_ = InputYFrom<LoDTensor>(inputs, scope);
+    input_z_ = InputZFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
     x_num_col_dims_ = GetAttr<int>("x_num_col_dims", attrs);
     y_num_col_dims_ = GetAttr<int>("y_num_col_dims", attrs);
     axis_ = GetAttr<int>("axis", attrs);
   }
-
   const Tensor *InputX() const { return input_x_; }
 
   const Tensor *InputY() const { return input_y_; }

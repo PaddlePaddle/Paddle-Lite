@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include <map>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -27,6 +28,8 @@ namespace paddle_mobile {
 namespace framework {
 
 class Node : PaddleMobileObject {
+  friend class ProgramOptimize;
+
  public:
   Node() {}
   explicit Node(const std::string &type) : type_(type) {}
@@ -34,6 +37,7 @@ class Node : PaddleMobileObject {
       : op_desc_(op_desc), type_(op_desc->Type()) {}
   Node &operator>(std::shared_ptr<Node> node);
   bool operator==(const Node &in);
+  bool CanSplit(std::unordered_set<std::string> complex_compute_set);
   std::string ToString() const;
   std::shared_ptr<Node> To(int size);
   uint Depth(uint begin = 0);
@@ -42,13 +46,16 @@ class Node : PaddleMobileObject {
       std::map<std::string, std::pair<std::string, std::string>> change_map);
   std::vector<std::shared_ptr<framework::OpDesc>> OpDescs(uint size);
   std::vector<std::shared_ptr<framework::OpDesc>> OpDescs();
-  void OpDescs(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
-               Node *node);
-  std::shared_ptr<framework::OpDesc> OpDesc() { return op_desc_; }
-  std::string BeginType() { return type_; }
+  std::shared_ptr<framework::OpDesc> OpDescOfNode() { return op_desc_; }
+  std::string Type() { return type_; }
   void Description();
 
  private:
+  void CanSplit(bool *split, bool spliting, int complex_count,
+                std::unordered_set<std::string> *complex_compute_set,
+                Node *pre_node);
+  void OpDescs(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
+               Node *node, bool adding_thread, int thread_num);
   void OpDescs(uint size,
                std::vector<std::shared_ptr<framework::OpDesc>> *op_desc);
   void To(int index, std::shared_ptr<Node>);
