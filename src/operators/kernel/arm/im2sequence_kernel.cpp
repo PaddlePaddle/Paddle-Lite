@@ -1,0 +1,82 @@
+/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License. */
+
+#include "operators/kernel/im2sequence_kernel.h"
+
+namespace paddle_mobile {
+namespace operators {
+
+bool IsExpand(const std::vector<int> &kernels,
+              const std::vector<int> &strides,
+              const std::vector<int> &paddings) {
+  bool kernels_1 = true, strides_1 = true, padding_0 = true;
+  for (size_t j = 0; j < strides.size(); ++j) {
+    kernels_1 = kernels_1 && (kernels[j] == 1);
+    strides_1 = strides_1 && (strides[j] == 1);
+    padding_0 = padding_0 && (paddings[j] == 0);
+  }
+  return !(kernels_1 && strides_1 && padding_0);
+}
+
+inline int Im2SeqOutputSize(int input_size, int filter_size, int padding_0,
+                            int padding_1, int stride) {
+  const int output_size =
+      (input_size + padding_0 + padding_1 - filter_size) / stride + 1;
+  return output_size;
+}
+
+template <>
+void Im2SequenceKernel<CPU, float>::Compute(const Im2SequenceParam &param) const {
+  //LOG(kLOG_DEBUG) << param;
+
+  const Tensor *input = param.Input();
+  Tensor *output = param.Output();
+  output->mutable_data<float>();
+
+  std::vector<int> kernels = param.Kernels();
+  std::vector<int> strides = param.Strides();
+  std::vector<int> paddings = param.Paddings();
+
+  auto in_dim = input->dims();
+  const int batch_size = static_cast<int>(in_dim[0]);
+  const int img_channels = static_cast<int>(in_dim[1]);
+  const int img_height = static_cast<int>(in_dim[2]);
+  const int img_width = static_cast<int>(in_dim[3]);
+
+  int output_height = Im2SeqOutputSize(img_height, kernels[0], paddings[0],
+                                       paddings[2], strides[0]);
+  int output_width = Im2SeqOutputSize(img_width, kernels[1], paddings[1],
+                                      paddings[3], strides[1]);
+  const std::vector<int> dilations({1, 1});
+
+  //TODO: verify 
+  auto out_dims = output->dims();
+  output->Resize({batch_size, output->numel() / batch_size});
+
+  for (int i = 0; i < batch_size; i++) {
+    const Tensor src =
+          input->Slice(i, i + 1).Resize({img_channels, img_height, img_width});
+    Tensor dst = output->Slice(i, i + 1).Resize(
+      {output_height, output_width, img_channels, kernels[0], kernels[1]});
+
+    math::Im2ColFunctor<math::ColFormat::kOCF, CPU, float> f;
+    f(src, dilations, strides, paddings, &dst);
+  }
+  output->Resize(out_dims);
+}
+
+template class Im2SequenceKernel<CPU, float>;
+
+}  // namespace operators
+}  // namespace paddle_mobile
