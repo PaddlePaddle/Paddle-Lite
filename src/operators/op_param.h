@@ -756,16 +756,16 @@ class Im2SequenceParam : public OpParam {
  public:
   Im2SequenceParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
                    const AttributeMap &attrs, const Scope &scope) {
-    input_ = InputFrom<LoDTensor>(inputs, scope);
-    output_ = OutputFrom<LoDTensor>(outputs, scope);
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
     kernels_ = GetAttr<vector<int>>("kernels", attrs);
     strides_ = GetAttr<vector<int>>("strides", attrs);
     paddings_ = GetAttr<vector<int>>("paddings", attrs);
   }
 
-  const Tensor *Input() const { return input_; }
+  const Tensor *Input() const { return input_x_; }
 
-  Tensor *Output() const { return output_; }
+  Tensor *Output() const { return out_; }
 
   const vector<int> &Kernels() const { return kernels_; }
 
@@ -774,8 +774,8 @@ class Im2SequenceParam : public OpParam {
   const vector<int> &Paddings() const { return paddings_; }
 
  private:
-  Tensor *input_;
-  Tensor *output_;
+  Tensor *input_x_;
+  Tensor *out_;
   vector<int> kernels_;
   vector<int> strides_;
   vector<int> paddings_;
