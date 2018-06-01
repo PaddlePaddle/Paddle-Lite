@@ -752,5 +752,34 @@ class FushionFcParam : public OpParam {
   int axis_;
 };
 
+class Im2SequenceParam : public OpParam {
+ public:
+  Im2SequenceParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+                   const AttributeMap &attrs, const Scope &scope) {
+    input_ = InputFrom<LoDTensor>(inputs, scope);
+    output_ = OutputFrom<LoDTensor>(outputs, scope);
+    kernels_ = GetAttr<vector<int>>("kernels", attrs);
+    strides_ = GetAttr<vector<int>>("strides", attrs);
+    paddings_ = GetAttr<vector<int>>("paddings", attrs);
+  }
+
+  const Tensor *Input() const { return input_; }
+
+  Tensor *Output() const { return output_; }
+
+  const vector<int> &Kernels() const { return kernels_; }
+
+  const vector<int> &Strides() const { return strides_; }
+
+  const vector<int> &Paddings() const { return paddings_; }
+
+ private:
+  Tensor *input_;
+  Tensor *output_;
+  vector<int> kernels_;
+  vector<int> strides_;
+  vector<int> paddings_;
+};
+
 }  // namespace operators
 }  // namespace paddle_mobile
