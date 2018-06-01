@@ -37,7 +37,7 @@ class FushionConvAddReluOpMatcher : public framework::FusionOpMatcher {
   std::string Type() { return G_OP_TYPE_FUSION_CONV_ADD_RELU; }
 };
 
-class FusionFcOp {
+class ConvAddReluOp {
  public:
  private:
 };

@@ -20,7 +20,7 @@ limitations under the License. */
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
   //    "../../../test/models/googlenet"
-  auto program = loader.Load(g_googlenet);
+  auto program = loader.Load(g_mobilenet_ssd);
   paddle_mobile::framework::ProgramOptimize optimize;
   //  program.originProgram->Description("origin");
   auto optimize_program = optimize.FushionOptimize(program.originProgram);
