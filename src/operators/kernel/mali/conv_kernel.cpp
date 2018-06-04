@@ -17,10 +17,9 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
- template<>
- void ConvKernel<GPU_MALI, float>::Compute(const ConvParam &param) const
- {}
+template <>
+void ConvKernel<GPU_MALI, float>::Compute(const ConvParam &param) const {}
 
- template class ConvKernel<GPU_MALI, float>;
-}
+template class ConvKernel<GPU_MALI, float>;
+}  // namespace operators
 }  // namespace paddle_mobile

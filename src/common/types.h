@@ -117,6 +117,5 @@ static std::unordered_map<
         {G_OP_TYPE_PRIOR_BOX, {{"Image", "Input"}, {"Boxes", "Variances"}}},
         {G_OP_TYPE_MULTICLASS_NMS, {{"BBoxes", "Scores"}, {"Out"}}},
         {G_OP_TYPE_RESHAPE, {{"X"}, {"Out"}}},
-        {G_OP_TYPE_DEPTHWISE_CONV, {{"Input"}, {"Output"}}}
-};
+        {G_OP_TYPE_DEPTHWISE_CONV, {{"Input"}, {"Output"}}}};
 }  // namespace paddle_mobile

@@ -254,8 +254,7 @@ void Node::Folder(
     std::shared_ptr<framework::OpDesc> op_desc,
     std::vector<std::shared_ptr<Node>> *outputs, uint index,
     std::map<std::string, std::pair<std::string, std::string>> *change,
-    Node *begin_node,
-    std::vector<std::shared_ptr<Node>> *removed_nodes) {
+    Node *begin_node, std::vector<std::shared_ptr<Node>> *removed_nodes) {
   if (change->find(this->type_) != change->end()) {
     auto change_pair = (*change)[this->type_];
     op_desc->GetInputs()[change_pair.second] =
@@ -269,7 +268,8 @@ void Node::Folder(
     --index;
     for (auto output : outputs_) {
       removed_nodes->push_back(output);
-      output->Folder(op_desc, outputs, index, change, begin_node, removed_nodes);
+      output->Folder(op_desc, outputs, index, change, begin_node,
+                     removed_nodes);
     }
   } else {
     for (auto &op_output : this->op_desc_->outputs_) {
@@ -282,7 +282,6 @@ void Node::Folder(
 
       if (iter != output->inputs_.end()) {
         output->inputs_.erase(iter);
-
       }
       output->inputs_.push_back(begin_node);
       outputs->push_back(output);

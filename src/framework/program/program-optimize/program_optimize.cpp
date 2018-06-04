@@ -31,7 +31,6 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FushionOptimize(
     std::unordered_map<std::string, std::vector<std::shared_ptr<Node>>>
         type_map;
 
-
     std::vector<std::shared_ptr<Node>> nodes;
 
     std::shared_ptr<Node> begin_node;
@@ -41,7 +40,8 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FushionOptimize(
       auto op = block->Ops()[j];
       auto op_type = op->Type();
       if (op_input_output_key.find(op->Type()) == op_input_output_key.end()) {
-        LOG(kLOG_ERROR) << "has not support op return null " << " op type: " << op->Type();
+        LOG(kLOG_ERROR) << "has not support op return null "
+                        << " op type: " << op->Type();
         return nullptr;
       }
 
@@ -97,14 +97,15 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FushionOptimize(
 
           for (int j = 0; j < removed_nodes.size(); ++j) {
             auto removed_node = removed_nodes[j];
-            auto removed_ite = std::find(nodes.begin(), nodes.end(), removed_node);
+            auto removed_ite =
+                std::find(nodes.begin(), nodes.end(), removed_node);
             nodes.erase(removed_ite);
           }
         }
       }
     }
 
-//        DLOG << "node: \n" << *begin_node;
+    //        DLOG << "node: \n" << *begin_node;
 
     std::vector<std::shared_ptr<framework::OpDesc>> op_descs;
     //    bool can_splite = begin_node->CanSplit({G_OP_TYPE_CONV,
@@ -113,7 +114,7 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FushionOptimize(
       auto &node = nodes[m];
       op_descs.push_back(node->op_desc_);
     }
-//    GenerateOps(&op_descs, begin_node.get());
+    //    GenerateOps(&op_descs, begin_node.get());
     block->ops_ = op_descs;
   }
 
@@ -128,7 +129,6 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FushionOptimize(
 void ProgramOptimize::GenerateOps(
     std::vector<std::shared_ptr<framework::OpDesc>> *op_desc, Node *input_node,
     Node *current_node) {
-
   if (current_node->inputs_.size() > 1 &&
       input_node != current_node->inputs_.back()) {
     DLOG << " current type " << current_node->type_;

@@ -32,7 +32,9 @@ class FusionFcMatcher : public framework::FusionOpMatcher {
     node_ > std::make_shared<framework::Node>(G_OP_TYPE_ELEMENTWISE_ADD);
   }
 
-  void FolderNodes(framework::Node *node, std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
+  void FolderNodes(
+      framework::Node *node,
+      std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
     vector<std::shared_ptr<framework::OpDesc>> origin_descs =
         node->OpDescs(node_.Depth());
     node->Folder(node_.Depth(), Type(),
@@ -65,7 +67,7 @@ class FushionFcOp : public framework::OperatorWithKernel<DeviceType> {
   FushionFcParam param_;
 };
 
-//static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
+// static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
 
 }  // namespace operators
 }  // namespace paddle_mobile

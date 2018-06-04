@@ -28,7 +28,9 @@ class FushionConvAddReluOpMatcher : public framework::FusionOpMatcher {
         std::make_shared<framework::Node>(G_OP_TYPE_RELU);
   }
 
-  void FolderNodes(framework::Node *node, std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
+  void FolderNodes(
+      framework::Node *node,
+      std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
     std::vector<std::shared_ptr<framework::OpDesc>> origin_descs =
         node->OpDescs(node_.Depth());
     node->Folder(node_.Depth(), Type(),
