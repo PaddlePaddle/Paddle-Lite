@@ -19,53 +19,48 @@ limitations under the License. */
 
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
-#include "operators/kernel/fushion_fc_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
 using std::string;
 using std::vector;
-class FusionFcMatcher : public framework::FusionOpMatcher {
+class FusionConvAddMatcher : public framework::FusionOpMatcher {
  public:
-  FusionFcMatcher() {
-    node_ = framework::Node(G_OP_TYPE_MUL);
+  FusionConvAddMatcher() {
+    node_ = framework::Node(G_OP_TYPE_CONV);
     node_ > std::make_shared<framework::Node>(G_OP_TYPE_ELEMENTWISE_ADD);
   }
 
   void FolderNodes(framework::Node *node, std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
     vector<std::shared_ptr<framework::OpDesc>> origin_descs =
-        node->OpDescs(node_.Depth());
-    node->Folder(node_.Depth(), Type(),
-                 {{G_OP_TYPE_ELEMENTWISE_ADD, {"Y", "Z"}}}, removed_nodes);
+            node->OpDescs(node_.Depth());
+    node->Folder(node_.Depth(), Type(), {{G_OP_TYPE_ELEMENTWISE_ADD, {"Y", "Y"}}}, removed_nodes);
   }
 
-  std::string Type() { return G_OP_TYPE_FC; }
+  std::string Type() { return G_OP_TYPE_CONV_ADD; }
 };
 
 template <typename DeviceType, typename T>
-class FushionFcOp : public framework::OperatorWithKernel<DeviceType> {
+class FushionConvAddOp : public framework::OperatorWithKernel<DeviceType> {
  public:
-  FushionFcOp(const string &type, const VariableNameMap &inputs,
+  FushionConvAddOp(const string &type, const VariableNameMap &inputs,
               const VariableNameMap &outputs,
               const framework::AttributeMap attrs,
               std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
-                                                  scope),
-        param_(inputs, outputs, attrs, *scope) {}
+          : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
+                                                      scope) {}
 
   void RunImpl() const {
-    operators::FushionFcKernel<DeviceType, T> kernel;
-    kernel.Compute(param_);
   }
 
   using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:
-  FushionFcParam param_;
+  //  FushionFcParam param_;
 };
 
-//static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
+//static framework::FusionOpRegistrar fc_registrar(new FusionConvAddMatcher());
 
 }  // namespace operators
 }  // namespace paddle_mobile
