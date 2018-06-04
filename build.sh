@@ -38,8 +38,9 @@ build_for_android() {
         exit -1
     fi
 
-    PLATFORM="arm-v7a"
-#    PLATFORM="arm-v8a"
+    if [ -z "$PLATFORM" ]; then
+        PLATFORM="arm-v7a"  # Users could choose "arm-v8a" or other platforms from the command line.
+    fi
 
     if [ "${PLATFORM}" = "arm-v7a" ]; then
         ABI="armeabi-v7a with NEON"
