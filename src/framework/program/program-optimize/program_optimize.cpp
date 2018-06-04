@@ -31,6 +31,9 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FushionOptimize(
     std::unordered_map<std::string, std::vector<std::shared_ptr<Node>>>
         type_map;
 
+
+    std::vector<std::shared_ptr<Node>> nodes;
+
     std::shared_ptr<Node> begin_node;
     auto block = optimize_program->Block(i);
     //        DLOG << " ops size: " << block->Ops().size();
@@ -38,11 +41,12 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FushionOptimize(
       auto op = block->Ops()[j];
       auto op_type = op->Type();
       if (op_input_output_key.find(op->Type()) == op_input_output_key.end()) {
-        LOG(kLOG_ERROR) << "return null ";
+        LOG(kLOG_ERROR) << "has not support op return null " << " op type: " << op->Type();
         return nullptr;
       }
 
       std::shared_ptr<Node> node = std::make_shared<Node>(op);
+      nodes.push_back(node);
 
       //
       type_map[op->Type()].push_back(node);
@@ -87,21 +91,29 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FushionOptimize(
           //          DLOG << " match success " << " fusion node: \n" <<
           //          matcher->BeginNode() << "\nsub node: \n" << *sub_node;
           //          DLOG << "match node\n"<< *match_node;
-          matcher->FolderNodes(match_node.get());
-          //          DLOG << " after match node\n"<< *match_node;
-          //          match_node->Description();
 
-          //          DLOG << "begin node: \n" << *begin_node;
+          std::vector<std::shared_ptr<Node>> removed_nodes;
+          matcher->FolderNodes(match_node.get(), &removed_nodes);
+
+          for (int j = 0; j < removed_nodes.size(); ++j) {
+            auto removed_node = removed_nodes[j];
+            auto removed_ite = std::find(nodes.begin(), nodes.end(), removed_node);
+            nodes.erase(removed_ite);
+          }
         }
       }
     }
 
-    //    DLOG << "node: \n" << *begin_node;
+//        DLOG << "node: \n" << *begin_node;
 
     std::vector<std::shared_ptr<framework::OpDesc>> op_descs;
     //    bool can_splite = begin_node->CanSplit({G_OP_TYPE_CONV,
     //    G_OP_TYPE_BATCHNORM, G_OP_TYPE_DEPTHWISE_CONV});
-    GenerateOps(&op_descs, begin_node.get());
+    for (int m = 0; m < nodes.size(); ++m) {
+      auto &node = nodes[m];
+      op_descs.push_back(node->op_desc_);
+    }
+//    GenerateOps(&op_descs, begin_node.get());
     block->ops_ = op_descs;
   }
 
@@ -116,8 +128,17 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FushionOptimize(
 void ProgramOptimize::GenerateOps(
     std::vector<std::shared_ptr<framework::OpDesc>> *op_desc, Node *input_node,
     Node *current_node) {
+
   if (current_node->inputs_.size() > 1 &&
       input_node != current_node->inputs_.back()) {
+    DLOG << " current type " << current_node->type_;
+
+    DLOG << " inputs size of current node > 0 ";
+
+    for (int i = 0; i < current_node->inputs_.size(); ++i) {
+      DLOG << " input i: " << current_node->inputs_[i]->type_;
+    }
+
     return;
   } else if (current_node->inputs_.size() > 1 &&
              input_node == current_node->inputs_.back()) {

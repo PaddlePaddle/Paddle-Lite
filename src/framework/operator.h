@@ -145,8 +145,8 @@ class FusionOpMatcher : PaddleMobileObject {
 
   virtual std::string Type() = 0;
 
-  virtual void FolderNodes(Node *node) {
-    node->Folder(node_.Depth(), Type(), {});
+  virtual void FolderNodes(Node *node, std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
+    node->Folder(node_.Depth(), Type(), {}, removed_nodes);
   }
 
   virtual Node &BeginNode() { return node_; }
