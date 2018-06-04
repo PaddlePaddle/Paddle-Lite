@@ -32,7 +32,7 @@ template <typename Dtype, Precision P = Precision::FP32>
 class Loader : PaddleMobileObject {
  public:
   const framework::Program<Dtype, P> Load(const std::string &dirname,
-                                          bool optimize = true);
+                                          bool optimize = false);
 
  private:
   void LoadVar(framework::Variable *variable,

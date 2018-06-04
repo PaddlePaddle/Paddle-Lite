@@ -12,14 +12,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "../test_helper.h"
-#include "io.h"
+#include "operators/kernel/conv_kernel.h"
 
-int main() {
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
-  //  ../../../test/models/googlenet
-  //  ../../../test/models/mobilenet
-  auto program = loader.Load(g_mobilenet_ssd, true);
-  program.originProgram->Description("program desc: ");
-  return 0;
-}
+namespace paddle_mobile {
+namespace operators {
+
+template <>
+void ConvKernel<GPU_MALI, float>::Compute(const ConvParam &param) const {}
+
+template class ConvKernel<GPU_MALI, float>;
+}  // namespace operators
+}  // namespace paddle_mobile

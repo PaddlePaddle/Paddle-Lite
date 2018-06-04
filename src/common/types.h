@@ -80,6 +80,7 @@ static const std::string G_OP_TYPE_ELEMENTWISE_ADD = "elementwise_add";
 static const std::string G_OP_TYPE_FUSION_CONV_ADD_RELU =
     "fusion_conv_add_relu";
 static const std::string G_OP_TYPE_FC = "fc";
+static const std::string G_OP_TYPE_CONV_ADD = "conv_add";
 static const std::string G_OP_TYPE_LRN = "lrn";
 static const std::string G_OP_TYPE_MUL = "mul";
 static const std::string G_OP_TYPE_MULTICLASS_NMS = "multiclass_nms";
@@ -115,5 +116,6 @@ static std::unordered_map<
          {{"PriorBox", "PriorBoxVar", "TargetBox"}, {"OutputBox"}}},
         {G_OP_TYPE_PRIOR_BOX, {{"Image", "Input"}, {"Boxes", "Variances"}}},
         {G_OP_TYPE_MULTICLASS_NMS, {{"BBoxes", "Scores"}, {"Out"}}},
-        {G_OP_TYPE_RESHAPE, {{"X"}, {"Out"}}}};
+        {G_OP_TYPE_RESHAPE, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_DEPTHWISE_CONV, {{"Input"}, {"Output"}}}};
 }  // namespace paddle_mobile
