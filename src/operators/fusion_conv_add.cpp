@@ -12,14 +12,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "../test_helper.h"
-#include "io.h"
+#include "operators/fusion_conv_add.h"
+namespace paddle_mobile {
+namespace operators {
 
-int main() {
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
-  //  ../../../test/models/googlenet
-  //  ../../../test/models/mobilenet
-  auto program = loader.Load(g_mobilenet_ssd, true);
-  program.originProgram->Description("program desc: ");
-  return 0;
-}
+template <typename Dtype, typename T>
+void FushionConvAddOp<Dtype, T>::InferShape() const {}
+template class FushionConvAddOp<CPU, float>;
+}  // namespace operators
+}  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+USE_OP(conv_add);
+REGISTER_OPERATOR(conv_add, ops::FushionConvAddOp);

@@ -236,12 +236,13 @@ uint Node::Depth(uint begin) {
 
 Node &Node::Folder(
     uint size, std::string type,
-    std::map<std::string, std::pair<std::string, std::string>> change) {
+    std::map<std::string, std::pair<std::string, std::string>> change,
+    std::vector<std::shared_ptr<Node>> *removed_nodes) {
   std::shared_ptr<framework::OpDesc> op_desc =
       std::make_shared<framework::OpDesc>();
   op_desc->inputs_ = this->op_desc_->inputs_;
   std::vector<std::shared_ptr<Node>> outputs;
-  this->Folder(op_desc, &outputs, size - 1, &change, this);
+  this->Folder(op_desc, &outputs, size - 1, &change, this, removed_nodes);
   this->outputs_ = outputs;
   this->type_ = type;
   this->op_desc_ = op_desc;
@@ -253,7 +254,7 @@ void Node::Folder(
     std::shared_ptr<framework::OpDesc> op_desc,
     std::vector<std::shared_ptr<Node>> *outputs, uint index,
     std::map<std::string, std::pair<std::string, std::string>> *change,
-    Node *begin_node) {
+    Node *begin_node, std::vector<std::shared_ptr<Node>> *removed_nodes) {
   if (change->find(this->type_) != change->end()) {
     auto change_pair = (*change)[this->type_];
     op_desc->GetInputs()[change_pair.second] =
@@ -266,7 +267,9 @@ void Node::Folder(
   if (index > 0) {
     --index;
     for (auto output : outputs_) {
-      output->Folder(op_desc, outputs, index, change, begin_node);
+      removed_nodes->push_back(output);
+      output->Folder(op_desc, outputs, index, change, begin_node,
+                     removed_nodes);
     }
   } else {
     for (auto &op_output : this->op_desc_->outputs_) {
