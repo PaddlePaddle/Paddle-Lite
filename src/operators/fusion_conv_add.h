@@ -31,10 +31,13 @@ class FusionConvAddMatcher : public framework::FusionOpMatcher {
     node_ > std::make_shared<framework::Node>(G_OP_TYPE_ELEMENTWISE_ADD);
   }
 
-  void FolderNodes(framework::Node *node, std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
+  void FolderNodes(
+      framework::Node *node,
+      std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
     vector<std::shared_ptr<framework::OpDesc>> origin_descs =
-            node->OpDescs(node_.Depth());
-    node->Folder(node_.Depth(), Type(), {{G_OP_TYPE_ELEMENTWISE_ADD, {"Y", "Y"}}}, removed_nodes);
+        node->OpDescs(node_.Depth());
+    node->Folder(node_.Depth(), Type(),
+                 {{G_OP_TYPE_ELEMENTWISE_ADD, {"Y", "Y"}}}, removed_nodes);
   }
 
   std::string Type() { return G_OP_TYPE_CONV_ADD; }
@@ -44,14 +47,13 @@ template <typename DeviceType, typename T>
 class FushionConvAddOp : public framework::OperatorWithKernel<DeviceType> {
  public:
   FushionConvAddOp(const string &type, const VariableNameMap &inputs,
-              const VariableNameMap &outputs,
-              const framework::AttributeMap attrs,
-              std::shared_ptr<framework::Scope> scope)
-          : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
-                                                      scope) {}
+                   const VariableNameMap &outputs,
+                   const framework::AttributeMap attrs,
+                   std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
+                                                  scope) {}
 
-  void RunImpl() const {
-  }
+  void RunImpl() const {}
 
   using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
   void InferShape() const override;
@@ -60,7 +62,7 @@ class FushionConvAddOp : public framework::OperatorWithKernel<DeviceType> {
   //  FushionFcParam param_;
 };
 
-//static framework::FusionOpRegistrar fc_registrar(new FusionConvAddMatcher());
+// static framework::FusionOpRegistrar fc_registrar(new FusionConvAddMatcher());
 
 }  // namespace operators
 }  // namespace paddle_mobile

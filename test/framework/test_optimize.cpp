@@ -12,10 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "io.h"
 #include "../test_helper.h"
 #include "framework/program/program-optimize/node.h"
 #include "framework/program/program-optimize/program_optimize.h"
+#include "io.h"
 
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
@@ -25,7 +25,7 @@ int main() {
   //  program.originProgram->Description("origin");
   auto optimize_program = optimize.FushionOptimize(program.originProgram);
   if (optimize_program != nullptr) {
-//    optimize_program->Description("optimize");
+    //    optimize_program->Description("optimize");
   } else {
     LOG(paddle_mobile::kLOG_ERROR) << "optimize_program is null";
   }

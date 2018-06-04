@@ -17,9 +17,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
-void FushionConvAddOp<Dtype, T>::InferShape() const {
-
-}
+void FushionConvAddOp<Dtype, T>::InferShape() const {}
 template class FushionConvAddOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile

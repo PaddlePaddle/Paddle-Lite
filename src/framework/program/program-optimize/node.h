@@ -43,7 +43,8 @@ class Node : PaddleMobileObject {
   uint Depth(uint begin = 0);
   Node &Folder(
       uint size, std::string type,
-      std::map<std::string, std::pair<std::string, std::string>> change_map, std::vector<std::shared_ptr<Node>> *removed_nodes);
+      std::map<std::string, std::pair<std::string, std::string>> change_map,
+      std::vector<std::shared_ptr<Node>> *removed_nodes);
   std::vector<std::shared_ptr<framework::OpDesc>> OpDescs(uint size);
   std::vector<std::shared_ptr<framework::OpDesc>> OpDescs();
   std::shared_ptr<framework::OpDesc> OpDescOfNode() { return op_desc_; }
@@ -63,8 +64,7 @@ class Node : PaddleMobileObject {
       std::shared_ptr<framework::OpDesc> op_desc,
       std::vector<std::shared_ptr<Node>> *outputs, uint index,
       std::map<std::string, std::pair<std::string, std::string>> *change,
-      Node *begin_node,
-      std::vector<std::shared_ptr<Node>> *removed_nodes);
+      Node *begin_node, std::vector<std::shared_ptr<Node>> *removed_nodes);
   std::shared_ptr<framework::OpDesc> op_desc_;
   std::string ToString(std::string blank, const Node *node) const;
   std::vector<std::shared_ptr<Node>> outputs_;
