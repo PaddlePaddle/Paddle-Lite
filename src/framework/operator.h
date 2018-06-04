@@ -128,8 +128,17 @@ class OpKernelBase : PaddleMobileObject {
    * @p para 这个参数为 kernel 运算时所需要用到参数组成的一个结构体,
    *    所有结构体存在与: paddle-mobile/src/operators/op_param.h
    * */
+#if defined(USE_ACL)
+  OpKernelBase() { acl_op_ = nullptr; }
+  void* GetAclOp() const { return acl_op_; }
+  void SetAclOp(void* op, void* ob) const { reinterpret_cast<OpKernelBase<Dtype, P>*>(ob)->acl_op_ = op; }
+#endif
   virtual void Compute(const P &para) const = 0;
   virtual ~OpKernelBase() = default;
+private:
+#if defined(USE_ACL)
+  void* acl_op_;
+#endif
 };
 
 #define DEFINE_OP_CONSTRUCTOR(cls, parent_cls)                                 \

@@ -1,18 +1,6 @@
 #!/usr/bin/env bash
 
 build_for_mac() {
-    if [ ! `which brew` ]; then
-        echo "building failed! homebrew not found, please install homebrew."
-        return
-    fi
-    if [ ! `which cmake` ]; then
-        echo "installing cmake."
-        brew install cmake
-        if [ ! $? ]; then
-            echo "cmake install failed."
-            return
-        fi
-    fi
     PLATFORM="x86"
     MODE="Release"
     CXX_FLAGS="-std=c++11 -O3 -s"
@@ -38,8 +26,8 @@ build_for_android() {
         exit -1
     fi
 
-    PLATFORM="arm-v7a"
-#    PLATFORM="arm-v8a"
+#    PLATFORM="arm-v7a"
+    PLATFORM="arm-v8a"
 
     if [ "${PLATFORM}" = "arm-v7a" ]; then
         ABI="armeabi-v7a with NEON"
@@ -48,7 +36,7 @@ build_for_android() {
     elif [ "${PLATFORM}" = "arm-v8a" ]; then
         ABI="arm64-v8a"
         ARM_PLATFORM="V8"
-        CXX_FLAGS="-O3 -std=c++11 -s -march=armv8-a  -pie -fPIE -w -Wno-error=format-security -llog"
+        CXX_FLAGS="-O3 -std=c++11 -s -march=armv8-a  -pie -fPIE -w -Wno-error=format-security -llog -O0 -ggdb3  -fno-inline -g"
     else
         echo "unknown platform!"
         exit -1
@@ -61,6 +49,7 @@ build_for_android() {
 
     cmake . \
         -B"build/release/${PLATFORM}" \
+	-DANDROID_NDK="/home/halsay/android-ndk-r16b/" \
         -DANDROID_ABI="${ABI}" \
         -DCMAKE_BUILD_TYPE="${MODE}" \
         -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
@@ -69,6 +58,8 @@ build_for_android() {
         -DANDROID_STL=c++_static \
         -DANDROID=true \
         -D"${ARM_PLATFORM}"=true
+	-DACL_ROOT=~/ComputeLibrary \
+	-DWITH_ACL=ON \
 
     cd "./build/release/${PLATFORM}"
     make -j 8
@@ -110,6 +101,8 @@ else
 	elif [ $1 = "linux" ]; then
 		build_for_linux
 	elif [ $1 = "android" ]; then
+		export ANDROID_NDK=/home/halsay/android-ndk-r16b/
+		export PATH=$ANDROID_NDK:$PATH
 		build_for_android
 	elif [ $1 = "ios" ]; then
 		build_for_ios

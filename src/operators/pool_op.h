@@ -18,6 +18,9 @@ limitations under the License. */
 #include <operators/kernel/pool_kernel.h>
 #include <operators/op_param.h>
 #include <string>
+#if defined(USE_ACL)
+#include "operators/acl/acl_pool_op.h"
+#endif
 
 namespace paddle_mobile {
 namespace operators {
@@ -37,6 +40,16 @@ class PoolOp : public OperatorWithKernel<DeviceType> {
   void InferShape() const override;
 
   void RunImpl() const {
+#if defined(USE_ACL)
+    std::cout << "Using ACL!" << std::endl;
+    if (std::is_same<T, float>::value &&
+        !acl_pool_kernel_.Bypass_acl(param_)) {
+      acl_pool_kernel_.Compute(param_);
+      this->ClearVariables({"X"});
+      return;
+    }
+#endif
+    std::cout << "Not using ACL!" << std::endl;
     operators::PoolKernel<DeviceType, T> kernel;
     kernel.Compute(param_);
     this->ClearVariables({"X"});
@@ -44,6 +57,9 @@ class PoolOp : public OperatorWithKernel<DeviceType> {
 
  private:
   PoolParam param_;
+#if defined(USE_ACL)
+  AclPoolKernel<DeviceType, T> acl_pool_kernel_;
+#endif
 };
 }  // namespace operators
 }  // namespace paddle_mobile

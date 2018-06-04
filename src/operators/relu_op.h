@@ -19,6 +19,9 @@ limitations under the License. */
 #include "framework/operator.h"
 #include "operators/kernel/relu_kernel.h"
 #include "operators/op_param.h"
+#if defined(USE_ACL)
+#include "operators/acl/acl_relu_op.h"
+#endif
 
 namespace paddle_mobile {
 namespace operators {
@@ -42,6 +45,15 @@ class ReluOp : public framework::OperatorWithKernel<DeviceType> {
    * @b op 进行运算, 调用相应的 kernel 进行运算
    * */
   void RunImpl() const {
+#if defined(USE_ACL)
+    std::cout << "Using ACL!" << std::endl;
+    if (std::is_same<T, float>::value &&
+        !acl_relu_kernel_.Bypass_acl(param_)) {
+      acl_relu_kernel_.Compute(param_);
+      return;
+    }
+#endif
+    std::cout << "Not using ACL!" << std::endl;
     operators::ReluKernel<DeviceType, T> kernel;
     kernel.Compute(param_);
   }
@@ -55,6 +67,11 @@ class ReluOp : public framework::OperatorWithKernel<DeviceType> {
    *    结构体定义在: paddle-mobile/src/operators/op_param.h
    * */
   ReluParam param_;
+
+ private:
+#if defined(USE_ACL)
+  AclReluKernel<DeviceType, T> acl_relu_kernel_;
+#endif
 };
 
 }  // namespace operators
