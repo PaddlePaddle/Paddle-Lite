@@ -19,7 +19,7 @@ int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
   //  ../../../test/models/googlenet
   //  ../../../test/models/mobilenet
-  auto program = loader.Load(g_mobilenet_ssd, true);
+  auto program = loader.Load(g_resnet, true);
   program.originProgram->Description("program desc: ");
   return 0;
 }

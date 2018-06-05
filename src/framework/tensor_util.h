@@ -15,7 +15,6 @@ limitations under the License. */
 #pragma once
 #include <vector>
 #include "memory/t_malloc.h"
-#include "platform/data_type.h"
 #include "tensor.h"
 
 namespace paddle_mobile {

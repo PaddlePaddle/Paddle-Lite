@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef SOFTMAX_OP
+
 #include "../softmax_kernel.h"
 #include "../../math/softmax.h"
 namespace paddle_mobile {
@@ -29,3 +31,5 @@ void SoftmaxKernel<CPU, float>::Compute(const SoftmaxParam &param) const {
 template class SoftmaxKernel<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif
