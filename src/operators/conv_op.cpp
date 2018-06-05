@@ -23,30 +23,11 @@ namespace operators {
 
 template <typename Dtype, typename T>
 void ConvOp<Dtype, T>::InferShape() const {
-  //  std::cout << " begin get dims: " << std::endl;
-
   auto in_dims = param_.Input()->dims();
-
-  //  std::cout << " end get in dims: " << std::endl;
-
-  //  std::cout << " in_dims: " << in_dims << std::endl;
-
-  //  std::cout << " begin get Filter " << std::endl;
-
   auto filter_dims = param_.Filter()->dims();
-
-  //  std::cout << " end get Filter " << std::endl;
-
-  //  std::cout << " begin get Attrs " << std::endl;
-
   const std::vector<int> &strides = param_.Strides();
-
-  //  std::cout << " end get Attrs " << strides[0] << std::endl;
-
   std::vector<int> paddings = param_.Paddings();
-
   int groups = param_.Groups();
-
   std::vector<int> dilations = param_.Dilations();
 
   PADDLE_MOBILE_ENFORCE((in_dims.size() == filter_dims.size() &&
