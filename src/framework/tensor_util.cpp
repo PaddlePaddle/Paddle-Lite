@@ -39,9 +39,6 @@ void TensorCopy(const Tensor &src, Tensor *dst) {
 }
 
 void TensorCopySync(const Tensor &src, Tensor *dst) {
-  //  VLOG(3) << "TensorCopySync " << src.dims() << " from " <<
-  //  src.place()
-  //          << " to " << dst_place;
   src.check_memory_size();
   dst->Resize(src.dims());
   dst->set_layout(src.layout());
@@ -69,41 +66,6 @@ struct AnyDTypeVisitor {
   }
 };
 
-template <typename Predicate>
-inline void AnyImpl(Predicate predicate, const Tensor &tensor,
-                    framework::Tensor *out) {
-  VisitDataType(ToDataType(tensor.type()),
-                AnyDTypeVisitor<Predicate>(predicate, tensor, out));
-}
-
-template <typename Predicate>
-struct AnyVisitor {
-  const framework::Tensor &tensor_;
-  Predicate predicate_;
-
-  AnyVisitor(const framework::Tensor &tensor, Predicate predicate)
-      : tensor_(tensor), predicate_(std::move(predicate)) {}
-
-  bool operator()(void) const {
-    framework::Tensor out;
-    out.Resize({1});
-    out.mutable_data<bool>();
-    AnyImpl(predicate_, tensor_, &out);
-    return this->GetResult(out);
-  }
-
-  bool GetResult(const framework::Tensor &out) const {
-    return *out.data<bool>();
-  }
-};
-
-template <typename Predicate>
-inline bool Any(const framework::Tensor &tensor, Predicate predicate) {
-  AnyVisitor<Predicate> visitor(tensor, predicate);
-  //  return platform::VisitPlace(visitor);
-  return visitor();
-}
-
 struct ContainsNANPredicate {
   template <typename T>
   auto operator()(const T &eigen_vec) const
@@ -113,11 +75,6 @@ struct ContainsNANPredicate {
   }
 };
 
-bool TensorContainsNAN(const framework::Tensor &tensor) {
-  ContainsNANPredicate predicate;
-  return Any(tensor, predicate);
-}
-
 struct ContainsInfPredicate {
   template <typename T>
   auto operator()(const T &eigen_vec) const
@@ -126,11 +83,6 @@ struct ContainsInfPredicate {
     return eigen_vec.isinf();
   }
 };
-
-bool TensorContainsInf(const framework::Tensor &tensor) {
-  ContainsInfPredicate predicate;
-  return Any(tensor, predicate);
-}
 
 struct DeserializedDataFunctor {
   DeserializedDataFunctor(void **buf, Tensor *tensor)
