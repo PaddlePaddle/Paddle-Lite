@@ -17,8 +17,8 @@ limitations under the License. */
 #include <map>
 #include <string>
 
-#include "node.h"
 #include "framework/operator.h"
+#include "node.h"
 
 namespace paddle_mobile {
 namespace framework {

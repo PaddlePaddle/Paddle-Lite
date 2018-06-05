@@ -18,9 +18,9 @@ limitations under the License. */
 #include <utility>
 #include <vector>
 
+#include "framework/op_kernel_type.h"
 #include "framework/tensor.h"
 #include "framework/variable.h"
-#include "framework/op_kernel_type.h"
 
 namespace paddle_mobile {
 namespace framework {

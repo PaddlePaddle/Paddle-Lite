@@ -17,28 +17,30 @@ limitations under the License. */
 #include "common/log.h"
 
 #include "common/enforce.h"
+#include "framework/framework.pb-c.h"
+#include "framework/lod_tensor.h"
+#include "framework/operator.h"
+#include "framework/program/program-optimize/program_optimize.h"
+#include "framework/program/program_desc.h"
+#include "framework/program/var_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
-#include "framework/operator.h"
-#include "framework/lod_tensor.h"
-#include "framework/framework.pb-c.h"
-#include "framework/program/var_desc.h"
-#include "framework/program/program_desc.h"
-#include "framework/program/program-optimize/program_optimize.h"
 
 namespace paddle_mobile {
 using framework::Variable;
 
 char *Get_binary_data(std::string filename) {
   FILE *file = fopen(filename.c_str(), "rb");
-  PADDLE_MOBILE_ENFORCE(file != nullptr, "can't open file: %s ", filename.c_str());
+  PADDLE_MOBILE_ENFORCE(file != nullptr, "can't open file: %s ",
+                        filename.c_str());
   fseek(file, 0, SEEK_END);
   long size = ftell(file);
   PADDLE_MOBILE_ENFORCE(size > 0, "size is too small");
   rewind(file);
   char *data = new char[size];
   size_t bytes_read = fread(data, 1, size, file);
-  PADDLE_MOBILE_ENFORCE(bytes_read == size, "read binary file bytes do not match with fseek");
+  PADDLE_MOBILE_ENFORCE(bytes_read == size,
+                        "read binary file bytes do not match with fseek");
   fclose(file);
   return data;
 }
@@ -84,7 +86,6 @@ void Loader<Dtype, P>::LoadVar(framework::Variable *variable,
   auto &lod = *tensor->mutable_lod();
   lod.resize(lod_level);
   for (uint64_t i = 0; i < lod_level; ++i) {
-
     uint32_t size = *(uint64_t *)data;
     data += sizeof(uint64_t);
 
@@ -99,7 +100,6 @@ void Loader<Dtype, P>::LoadVar(framework::Variable *variable,
   // 3. tensor version
   uint32_t tensor_version = *(uint32_t *)data;
   data += sizeof(uint32_t);
-
 
   // 4. tensor desc
   uint32_t size = *(int32_t *)data;
@@ -278,15 +278,12 @@ void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
   data += sizeof(uint64_t);
   DLOG << "lod_level: " << lod_level;
 
-
   auto &lod = *tensor->mutable_lod();
   lod.resize(lod_level);
   for (uint64_t i = 0; i < lod_level; ++i) {
-
     uint64_t size = *(uint64_t *)data;
     data += sizeof(uint64_t);
     DLOG << "lod size: " << i << size;
-
 
     std::vector<size_t> tmp(size / sizeof(size_t));
 
