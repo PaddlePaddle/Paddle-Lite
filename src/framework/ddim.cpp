@@ -183,7 +183,7 @@ DDim DDim::operator*(DDim d) const {
 
 int64_t get(const DDim &ddim, int idx) { return ddim[idx]; }
 
-void set(DDim &ddim, int idx, int value) { ddim[idx] = value; }
+void set(DDim *ddim, int idx, int value) { (*ddim)[idx] = value; }
 
 /// @cond HIDDEN
 struct VectorizeVisitor : Vistor<void> {

@@ -83,17 +83,6 @@ struct DDim {
 
   int64_t operator[](int idx) const;
 
-  //  template <typename Visitor>
-  //  typename Visitor::result_type apply_visitor(Visitor& visitor) {
-  //    return var.apply_visitor(visitor);
-  //  }
-  //
-  //  template <typename Visitor>
-  //  typename Visitor::result_type apply_visitor(Visitor& visitor)
-  //  const {
-  //    return var.apply_visitor(visitor);
-  //  }
-
   DDimVar getVar() { return var; }
 
   bool operator==(DDim d) const;
@@ -126,7 +115,7 @@ DDim make_ddim(std::initializer_list<int64_t> dims);
 
 int64_t get(const DDim &dim, int idx);
 
-void set(DDim &dim, int idx, int val);
+void set(DDim *dim, int idx, int val);
 
 std::vector<int64_t> vectorize(const DDim &ddim);
 

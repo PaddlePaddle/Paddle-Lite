@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef SIGMOID_OP
+
 #include "operators/sigmoid_op.h"
 
 namespace paddle_mobile {
@@ -27,3 +29,5 @@ template class SigmoidOp<CPU, float>;
 namespace ops = paddle_mobile::operators;
 USE_OP(sigmoid);
 REGISTER_OPERATOR(sigmoid, ops::SigmoidOp);
+
+#endif

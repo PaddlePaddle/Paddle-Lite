@@ -1,9 +1,9 @@
 #!/usr/bin/env sh
 
 push_fn () {
-MODELS_PATH="../test/models/*"
-IMAGE_PATH="../test/images/*"
-EXE_FILE="../test/build/*"
+MODELS_PATH="../../test/models/*"
+IMAGE_PATH="../../test/images/*"
+EXE_FILE="../../test/build/*"
 EXE_DIR="data/local/tmp/bin"
 MODELS_DIR="data/local/tmp/models"
 IMAGES_DIR="data/local/tmp/images"
