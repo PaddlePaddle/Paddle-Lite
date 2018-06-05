@@ -21,13 +21,12 @@ limitations under the License. */
 #include <vector>
 
 #include "common/log.h"
-#include "framework/paddle_mobile_object.h"
 #include "framework/program/op_desc.h"
 
 namespace paddle_mobile {
 namespace framework {
 
-class Node : PaddleMobileObject {
+class Node {
   friend class ProgramOptimize;
 
  public:
