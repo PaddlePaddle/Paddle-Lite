@@ -22,14 +22,13 @@ limitations under the License. */
 #include "common/types.h"
 #include "framework/lod_tensor.h"
 #include "framework/operator.h"
-#include "framework/paddle_mobile_object.h"
 #include "framework/program/program.h"
 #include "framework/tensor.h"
 
 namespace paddle_mobile {
 
 template <typename Dtype, Precision P = Precision::FP32>
-class Loader : PaddleMobileObject {
+class Loader {
  public:
   const framework::Program<Dtype, P> Load(const std::string &dirname,
                                           bool optimize = false);

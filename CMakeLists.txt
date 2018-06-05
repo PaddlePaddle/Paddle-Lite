@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 project(paddle-mobile)
-add_definitions(-DPADDLE_MOBILE_DEBUG)
+#add_definitions(-DPADDLE_MOBILE_DEBUG)
 add_definitions(-DENABLE_EXCEPTION)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")

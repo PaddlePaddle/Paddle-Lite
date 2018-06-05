@@ -105,11 +105,7 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FushionOptimize(
       }
     }
 
-    //        DLOG << "node: \n" << *begin_node;
-
     std::vector<std::shared_ptr<framework::OpDesc>> op_descs;
-    //    bool can_splite = begin_node->CanSplit({G_OP_TYPE_CONV,
-    //    G_OP_TYPE_BATCHNORM, G_OP_TYPE_DEPTHWISE_CONV});
     for (int m = 0; m < nodes.size(); ++m) {
       auto &node = nodes[m];
       op_descs.push_back(node->op_desc_);

@@ -34,7 +34,7 @@ using framework::Tensor;
 using std::string;
 using std::vector;
 
-class OpParam : PaddleMobileObject {
+class OpParam {
  protected:
   template <typename T>
   static T *InputFrom(const VariableNameMap &inputs, const Scope &scope) {

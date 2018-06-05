@@ -20,12 +20,11 @@ limitations under the License. */
 #include "common/log.h"
 #include "common/type_define.h"
 #include "framework/framework.pb-c.h"
-#include "framework/paddle_mobile_object.h"
 
 namespace paddle_mobile {
 namespace framework {
 
-class OpDesc : PaddleMobileObject {
+class OpDesc {
  public:
   friend class ProgramOptimize;
   friend class FusionOpMatcher;
