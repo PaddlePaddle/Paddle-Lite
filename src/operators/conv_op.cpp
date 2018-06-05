@@ -14,7 +14,6 @@ limitations under the License. */
 
 #include "operators/conv_op.h"
 #include <vector>
-#include "framework/data_type.h"
 #include "framework/op_proto_maker.h"
 #include "framework/op_registry.h"
 

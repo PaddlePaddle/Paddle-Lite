@@ -25,9 +25,8 @@ template <typename Dtype>
 struct OpInfo {
   OpCreator<Dtype> creator_;
   const OpCreator<Dtype> &Creator() const {
-    //    PADDLE_ENFORCE_NOT_NULL(creator_,
-    //                            "Operator Creator has not been
-    //                            registered");
+    PADDLE_MOBILE_ENFORCE(creator_ != nullptr,
+                          "Operator Creator has not been registered");
     return creator_;
   }
 };
@@ -48,17 +47,15 @@ class OpInfoMap {
   }
 
   void Insert(const std::string &type, const OpInfo<Dtype> &info) {
-    //    PADDLE_ENFORCE(!Has(type), "Operator %s has been
-    //    registered", type);
+    PADDLE_MOBILE_ENFORCE(!Has(type), "Operator %s has been registered",
+                          type.c_str());
     map_.insert({type, info});
   }
 
   const OpInfo<Dtype> &Get(const std::string &type) const {
     auto op_info_ptr = GetNullable(type);
-    //    PADDLE_ENFORCE_NOT_NULL(op_info_ptr, "Operator %s has not
-    //    been
-    //    registered",
-    //                            type);
+    PADDLE_MOBILE_ENFORCE(op_info_ptr != nullptr,
+                          "Operator %s has not been registered", type.c_str());
     return *op_info_ptr;
   }
 
