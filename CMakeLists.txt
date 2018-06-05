@@ -3,6 +3,11 @@ project(paddle-mobile)
 #add_definitions(-DPADDLE_MOBILE_DEBUG)
 add_definitions(-DENABLE_EXCEPTION)
 
+add_definitions(-DARMV7)
+#add_definitions(-DARMV8)
+#add_definitions(-DIOS)
+#add_definitions(-DX86)
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
 set(CMAKE_VERBOSE_MAKEFILE ON)
