@@ -19,7 +19,6 @@ limitations under the License. */
 #include <vector>
 
 #include "framework/op_kernel_type.h"
-#include "framework/selected_rows.h"
 #include "framework/tensor.h"
 #include "framework/variable.h"
 
