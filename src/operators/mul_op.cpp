@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef MUL_OP
+
 #include "mul_op.h"
 
 namespace paddle_mobile {
@@ -55,3 +57,5 @@ template class MulOp<CPU, float>;
 namespace ops = paddle_mobile::operators;
 USE_OP(mul);
 REGISTER_OPERATOR(mul, ops::MulOp);
+
+#endif
