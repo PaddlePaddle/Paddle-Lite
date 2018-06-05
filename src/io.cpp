@@ -13,33 +13,34 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "io.h"
-#include <fstream>
 #include <vector>
 #include "common/log.h"
 
 #include "common/enforce.h"
-#include "framework/framework.pb-c.h"
-#include "framework/lod_tensor.h"
-#include "framework/operator.h"
-#include "framework/program/program-optimize/program_optimize.h"
-#include "framework/program/program_desc.h"
-#include "framework/program/var_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
+#include "framework/operator.h"
+#include "framework/lod_tensor.h"
+#include "framework/framework.pb-c.h"
+#include "framework/program/var_desc.h"
+#include "framework/program/program_desc.h"
+#include "framework/program/program-optimize/program_optimize.h"
 
 namespace paddle_mobile {
 using framework::Variable;
 
-void ReadBinaryFile(const std::string &filename, std::string *contents) {
-  std::ifstream fin(filename, std::ios::in | std::ios::binary);
-  PADDLE_MOBILE_ENFORCE(fin.is_open(), "open file: %s failed",
-                        filename.c_str());
-  fin.seekg(0, std::ios::end);
-  contents->clear();
-  contents->resize(fin.tellg());
-  fin.seekg(0, std::ios::beg);
-  fin.read(&(contents->at(0)), contents->size());
-  fin.close();
+char *Get_binary_data(std::string filename) {
+  FILE *file = fopen(filename.c_str(), "rb");
+  PADDLE_MOBILE_ENFORCE(file != nullptr, "can't open file: %s ", filename.c_str());
+  fseek(file, 0, SEEK_END);
+  long size = ftell(file);
+  PADDLE_MOBILE_ENFORCE(size > 0, "size is too small");
+  rewind(file);
+  char *data = new char[size];
+  size_t bytes_read = fread(data, 1, size, file);
+  PADDLE_MOBILE_ENFORCE(bytes_read == size, "read binary file bytes do not match with fseek");
+  fclose(file);
+  return data;
 }
 
 static size_t ReadBuffer(const char *file_name, uint8_t **out) {
@@ -70,64 +71,49 @@ void Loader<Dtype, P>::LoadVar(framework::Variable *variable,
                                const framework::VarDesc &var_desc,
                                const std::string &file_path) {
   auto tensor = variable->GetMutable<framework::LoDTensor>();
-  std::ifstream is(file_path);
-  PADDLE_MOBILE_ENFORCE(is.is_open(), "open file: %s failed",
-                        file_path.c_str());
-
-  std::fpos<mbstate_t> pos;
-  pos = is.tellg();  // save   current   position
-  is.seekg(0, std::ios::end);
-  is.seekg(pos);  // restore   saved   position
+  char *data = Get_binary_data(file_path);
 
   // 1. version
-  uint32_t version;
-  is.read(reinterpret_cast<char *>(&version), sizeof(version));
+  uint32_t version = *(uint32_t *)data;
+  data += sizeof(uint32_t);
 
   // 2 Lod information
-  uint64_t lod_level;
-  is.read(reinterpret_cast<char *>(&lod_level), sizeof(lod_level));
+  uint32_t lod_level = *(uint64_t *)data;
+  data += sizeof(uint64_t);
+
   auto &lod = *tensor->mutable_lod();
   lod.resize(lod_level);
   for (uint64_t i = 0; i < lod_level; ++i) {
-    uint64_t size;
-    is.read(reinterpret_cast<char *>(&size), sizeof(size));
+
+    uint32_t size = *(uint64_t *)data;
+    data += sizeof(uint64_t);
+
     std::vector<size_t> tmp(size / sizeof(size_t));
-    is.read(reinterpret_cast<char *>(tmp.data()),
-            static_cast<std::streamsize>(size));
-    for (auto j : tmp) {
-      LOG(kLOG_DEBUG1) << "    lod - " << j;
+
+    for (int k = 0; k < tmp.size(); ++k) {
+      tmp[k] = *(size_t *)data;
     }
     lod[i] = tmp;
   }
 
   // 3. tensor version
-  uint32_t tensor_version;
-  is.read(reinterpret_cast<char *>(&tensor_version), sizeof(tensor_version));
+  uint32_t tensor_version = *(uint32_t *)data;
+  data += sizeof(uint32_t);
+
 
   // 4. tensor desc
-  int32_t size;
-  is.read(reinterpret_cast<char *>(&size), sizeof(size));
+  uint32_t size = *(int32_t *)data;
+  data += sizeof(int32_t);
+
   std::unique_ptr<char[]> buf(new char[size]);
-  is.read(reinterpret_cast<char *>(buf.get()), size);
+
+  for (int m = 0; m < size; ++m) {
+    buf.get()[m] = data[m];
+  }
 
   const framework::TensorDesc &desc = var_desc.Tensor_desc();
 
   PaddleMobile__Framework__Proto__VarType__TensorDesc *tensor_desc = NULL;
-  //  void *v;
-  //  PaddleMobile__Framework__Proto__VarType__TensorDesc_Closure()(tensor_desc,
-  //  buf.get());
-
-  //  DLOG << "PaddleMobile__Framework__Proto__VarType__TensorDesc_Closure- " <<
-  //  tensor_desc;
-
-  //  framework::TensorDesc &tensor_desc = variable->
-  //  PaddleMobile__Framework__Proto__ProgramDesc *c_program;
-  //  uint8_t *proto_buf = NULL;
-  //  size_t read_size = ReadBuffer(file_path.c_str(), &proto_buf);
-  //  c_program = paddle_mobile__framework__proto__program_desc__unpack(NULL,
-  //  read_size, buf);
-
-  //  paddle_mobile__framework__proto__var_type__tensor_desc__init()
 
   int memory_size = 1;
   for (auto l : desc.Dims()) {
@@ -162,8 +148,11 @@ void Loader<Dtype, P>::LoadVar(framework::Variable *variable,
       break;
   }
 
-  is.read(static_cast<char *>(memory), memory_size * type_size);
-  is.close();
+  for (int n = 0; n < memory_size * type_size; ++n) {
+    static_cast<char *>(memory)[n] = data[n];
+  }
+
+  delete data;
 }
 
 template <typename Dtype, Precision P>
@@ -276,29 +265,37 @@ template <typename Dtype, Precision P>
 void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
                                     framework::LoDTensor *tensor,
                                     const std::string &file_path) {
-  std::ifstream is(file_path);
-  PADDLE_MOBILE_ENFORCE(is.is_open(), "open file: %s failed",
-                        file_path.c_str());
-  std::fpos<mbstate_t> pos;
-  pos = is.tellg();  // save   current   position
-  is.seekg(0, std::ios::end);
-  is.seekg(pos);  // restore   saved   position
+  char *origin_data = Get_binary_data(file_path);
+  char *data = origin_data;
 
   // 1. version
-  uint32_t version;
-  is.read(reinterpret_cast<char *>(&version), sizeof(version));
+  uint32_t version = *(uint32_t *)data;
+  data += sizeof(uint32_t);
+  DLOG << "version: " << version;
 
   // 2 Lod information
-  uint64_t lod_level;
-  is.read(reinterpret_cast<char *>(&lod_level), sizeof(lod_level));
+  uint64_t lod_level = *(uint64_t *)data;
+  data += sizeof(uint64_t);
+  DLOG << "lod_level: " << lod_level;
+
+
   auto &lod = *tensor->mutable_lod();
   lod.resize(lod_level);
   for (uint64_t i = 0; i < lod_level; ++i) {
-    uint64_t size;
-    is.read(reinterpret_cast<char *>(&size), sizeof(size));
+
+    uint64_t size = *(uint64_t *)data;
+    data += sizeof(uint64_t);
+    DLOG << "lod size: " << i << size;
+
+
     std::vector<size_t> tmp(size / sizeof(size_t));
-    is.read(reinterpret_cast<char *>(tmp.data()),
-            static_cast<std::streamsize>(size));
+
+    for (int k = 0; k < tmp.size(); ++k) {
+      tmp[k] = *(size_t *)data;
+      DLOG << "tmp[k]: " << k << *(size_t *)data;
+      data += sizeof(size_t);
+    }
+
     for (auto j : tmp) {
       LOG(kLOG_DEBUG1) << "    lod - " << j;
     }
@@ -306,17 +303,22 @@ void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
   }
 
   // 3. tensor version
-  uint32_t tensor_version;
-  is.read(reinterpret_cast<char *>(&tensor_version), sizeof(tensor_version));
+  uint32_t tensor_version = *(uint32_t *)data;
+  data += sizeof(uint32_t);
+  DLOG << "tensor_version: " << tensor_version;
 
   // 4. tensor desc
-  int32_t size;
-  is.read(reinterpret_cast<char *>(&size), sizeof(size));
+  int32_t size = *(int32_t *)data;
+  data += sizeof(int32_t);
+  DLOG << "tensor desc size: " << size;
+
   std::unique_ptr<char[]> buf(new char[size]);
-  is.read(reinterpret_cast<char *>(buf.get()), size);
+  for (int m = 0; m < size; ++m) {
+    buf.get()[m] = data[m];
+  }
+  data += (sizeof(char) * size);
 
   const framework::TensorDesc &desc = var_desc.Tensor_desc();
-
   int memory_size = 1;
   for (auto l : desc.Dims()) {
     memory_size *= l;
@@ -332,6 +334,7 @@ void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
       break;
     case framework::VARTYPE_TYPE_FP32:
       type_size = 4;
+      DLOG << " type size: " << type_size;
       memory = tensor->mutable_data<float>();
       break;
     case framework::VARTYPE_TYPE_FP64:
@@ -350,8 +353,11 @@ void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
       break;
   }
 
-  is.read(static_cast<char *>(memory), memory_size * type_size);
-  is.close();
+  for (int n = 0; n < memory_size * type_size; ++n) {
+    static_cast<char *>(memory)[n] = data[n];
+  }
+
+  delete origin_data;
 }
 
 template <typename Dtype, Precision P>
