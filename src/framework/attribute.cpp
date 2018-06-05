@@ -17,14 +17,8 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace framework {
 
-/*
- * Variant<int, float, std::string, std::vector<int>, std::vector<float>,
-          std::vector<std::string>, bool, std::vector<bool>, BlockDesc *,
-          int64_t>
- * */
-
 struct PrintVistor : Vistor<Print &> {
-  PrintVistor(Print &printer) : printer_(printer) {}
+  explicit PrintVistor(Print &printer) : printer_(printer) {}
   template <typename T>
   Print &operator()(const T &value) {
     printer_ << value;

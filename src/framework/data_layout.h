@@ -54,7 +54,6 @@ inline std::string DataLayoutToString(const DataLayout &data_layout) {
       return "ANY_LAYOUT";
     default:
       break;
-      //      std::cout << "unknown DataLayou %d", data_layout;
   }
 }
 
