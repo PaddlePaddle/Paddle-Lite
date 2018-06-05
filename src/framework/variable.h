@@ -20,13 +20,12 @@ limitations under the License. */
 #include <typeindex>
 #include <typeinfo>
 #include "../common/variant.h"
-#include "paddle_mobile_object.h"
 
 namespace paddle_mobile {
 namespace framework {
 using std::string;
 
-class Variable : public PaddleMobileObject {
+class Variable {
  public:
   template <typename T>
   const T *Get() const {
