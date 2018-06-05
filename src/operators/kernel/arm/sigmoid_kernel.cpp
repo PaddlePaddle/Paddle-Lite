@@ -25,35 +25,21 @@ using framework::Tensor;
 
 void sigmoid(const Tensor *X, Tensor *Y) {
 #if __ARM_NEON
-  DLOG << "step1";
   const float *input = X->data<float>();
-  DLOG << "step11";
-
   float *output = Y->mutable_data<float>();
-  DLOG << "step2";
-
   const DDim &dDim = X->dims();
-  DLOG << "step3";
-
   int axis_index = 1;
   if (dDim.size() < 4) {
     axis_index = 0;
   }
-  DLOG << "step4";
-
   DDim outer_ddim =
       paddle_mobile::framework::slice_ddim(dDim, 0, axis_index + 1);
   DDim inner_ddim =
       paddle_mobile::framework::slice_ddim(dDim, axis_index + 1, dDim.size());
-  DLOG << "step5";
-
   int out_size = paddle_mobile::framework::product(outer_ddim);
   int inner_size = paddle_mobile::framework::product(inner_ddim);
-  DLOG << "step6";
 
 #pragma omp parallel for
-  DLOG << "outsize=" << out_size;
-  DLOG << "innersize=" << inner_size;
   for (int i = 0; i < out_size; ++i) {
     const float *input_outer_ptr = input + i * inner_size;
     float *output_outer_ptr = output + i * inner_size;
