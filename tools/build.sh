@@ -16,13 +16,13 @@ build_for_mac() {
     PLATFORM="x86"
     MODE="Release"
     CXX_FLAGS="-std=c++11 -O3 -s"
-    BUILD_DIR=build/release/"${PLATFORM}"
+    BUILD_DIR=../build/release/"${PLATFORM}"
     mkdir -p ${BUILD_DIR}/build
 
     mkdir -p ${BUILD_DIR}/test
-    cp -r test/models ${BUILD_DIR}/test/models
+    cp -r ../test/models ${BUILD_DIR}/test/models
 
-    cmake . \
+    cmake .. \
         -B"${BUILD_DIR}" \
     	-DCMAKE_BUILD_TYPE="${MODE}" \
     	-DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
@@ -57,11 +57,11 @@ build_for_android() {
 
     MODE="Release"
     ANDROID_PLATFORM_VERSION="android-15"
-    TOOLCHAIN_FILE="./tools/android-cmake/android.toolchain.cmake"
+    TOOLCHAIN_FILE="android-cmake/android.toolchain.cmake"
     ANDROID_ARM_MODE="arm"
 
-    cmake . \
-        -B"build/release/${PLATFORM}" \
+    cmake .. \
+        -B"../build/release/${PLATFORM}" \
         -DANDROID_ABI="${ABI}" \
         -DCMAKE_BUILD_TYPE="${MODE}" \
         -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
@@ -71,20 +71,20 @@ build_for_android() {
         -DANDROID=true \
         -D"${ARM_PLATFORM}"=true
 
-    cd "./build/release/${PLATFORM}"
+    cd "../build/release/${PLATFORM}"
     make -j 8
 }
 
 build_for_ios() {
     PLATFORM="ios"
     MODE="Release"
-    BUILD_DIR=build/release/"${PLATFORM}"
+    BUILD_DIR=../build/release/"${PLATFORM}"
     TOOLCHAIN_FILE="./tools/ios-cmake/ios.toolchain.cmake"
     C_FLAGS="-fobjc-abi-version=2 -fobjc-arc -isysroot ${CMAKE_OSX_SYSROOT}"
     CXX_FLAGS="-fobjc-abi-version=2 -fobjc-arc -std=gnu++11 -stdlib=libc++ -isysroot ${CMAKE_OSX_SYSROOT}"
     mkdir -p "${BUILD_DIR}"
 
-    cmake . \
+    cmake .. \
         -B"${BUILD_DIR}" \
         -DCMAKE_BUILD_TYPE="${MODE}" \
         -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
