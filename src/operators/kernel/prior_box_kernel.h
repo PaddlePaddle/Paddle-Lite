@@ -18,9 +18,9 @@ limitations under the License. */
 
 #include <vector>
 
-#include "operators/op_param.h"
 #include "framework/operator.h"
 #include "operators/math/transform.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
