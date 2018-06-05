@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef BATCHNORM_OP
+
 #include "batchnorm_op.h"
 
 namespace paddle_mobile {
@@ -29,3 +31,5 @@ template class BatchNormOp<CPU, float>;
 namespace ops = paddle_mobile::operators;
 USE_OP(batch_norm);
 REGISTER_OPERATOR(batch_norm, ops::BatchNormOp);
+
+#endif

@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef CONV_OP
+
 #include "operators/conv_op.h"
 #include <vector>
 #include "framework/op_proto_maker.h"
@@ -53,3 +55,5 @@ template class ConvOp<CPU, float>;
 namespace ops = paddle_mobile::operators;
 USE_OP(conv2d);
 REGISTER_OPERATOR(conv2d, ops::ConvOp);
+
+#endif

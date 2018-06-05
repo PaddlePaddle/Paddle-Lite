@@ -12,7 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once;
+#ifdef ELEMENTWISEADD_OP
+
+#pragma once
 
 #include "framework/operator.h"
 #include "operators/math/elementwise_op_function.h"
@@ -31,3 +33,5 @@ class ElementwiseAddKernel
 };
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

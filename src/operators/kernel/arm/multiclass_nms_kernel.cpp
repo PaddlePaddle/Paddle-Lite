@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef MULTICLASSNMS_OP
+
 #pragma once
 
 #include "operators/kernel/multiclass_nms_kernel.h"
@@ -273,3 +275,5 @@ void MultiClassNMSKernel<CPU, float>::Compute(
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif
