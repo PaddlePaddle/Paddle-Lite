@@ -16,6 +16,11 @@ file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
 
 include_directories(src/)
 
+option(USE_OPENMP "openmp support" ON)
+if(USE_OPENMP)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+endif()
+
 add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 
 add_subdirectory(test)
