@@ -213,27 +213,21 @@ int64_t &Dim<l>::operator[](int i) {
 }
 
 // Dynamic access to constant Dim
-inline int64_t Dim<0>::operator[](int i) const {
-  return indexer(*this, i);
-}
+inline int64_t Dim<0>::operator[](int i) const { return indexer(*this, i); }
 
 // Dynamic access to mutable Dim
-inline int64_t &Dim<0>::operator[](int i) {
-  return indexer(*this, i);
-}
+inline int64_t &Dim<0>::operator[](int i) { return indexer(*this, i); }
 
 // Dynamic access to constant Dim
 // without std::enable_if will try to instantiate this on get<0>(d)
 template <int l>
-typename std::enable_if<(l > 0), int64_t>::type get(const Dim<l> &d,
-                                                               int i) {
+typename std::enable_if<(l > 0), int64_t>::type get(const Dim<l> &d, int i) {
   return d[i];
 }
 
 // Dynamic access to mutable Dim
 template <int l>
-typename std::enable_if<(l > 0), int64_t &>::type get(Dim<l> &d,
-                                                                 int i) {
+typename std::enable_if<(l > 0), int64_t &>::type get(Dim<l> &d, int i) {
   return d[i];
 }
 
@@ -351,8 +345,7 @@ Dim<i> normalize_strides(const Dim<i> &size, const Dim<i> &stride) {
 ///\cond HIDDEN
 
 template <>
-inline Dim<0> normalize_strides(const Dim<0> &size,
-                                           const Dim<0> &stride) {
+inline Dim<0> normalize_strides(const Dim<0> &size, const Dim<0> &stride) {
   return Dim<0>();
 }
 
