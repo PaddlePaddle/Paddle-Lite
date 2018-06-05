@@ -877,7 +877,6 @@ PROTOBUF_C__API
 void protobuf_c_message_init(const ProtobufCMessageDescriptor *descriptor,
                              void *message);
 
-
 /**
  * Initialise a `ProtobufCBufferSimple` object.
  */
