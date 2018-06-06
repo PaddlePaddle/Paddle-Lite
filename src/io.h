@@ -14,8 +14,8 @@ limitations under the License. */
 
 #pragma once
 
-#include <memory.h>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -27,7 +27,7 @@ limitations under the License. */
 
 namespace paddle_mobile {
 
-template <typename Dtype, Precision P = Precision::FP32>
+template <typename Dtype = CPU, Precision P = Precision::FP32>
 class Loader {
  public:
   const framework::Program<Dtype, P> Load(const std::string &dirname,
@@ -39,7 +39,7 @@ class Loader {
                const std::string &file_path);
 };
 
-template <typename Dtype, Precision P = Precision::FP32>
+template <typename Dtype = CPU, Precision P = Precision::FP32>
 class Executor {
  public:
   typedef typename PrecisionTrait<P>::ptype Ptype;

@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef RELU_OP
+
 #pragma once
 
 #include "operators/kernel/relu_kernel.h"
@@ -45,3 +47,5 @@ void ReluKernel<CPU, float>::Compute(const ReluParam &param) const {
 }
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

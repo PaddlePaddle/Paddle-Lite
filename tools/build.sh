@@ -55,10 +55,25 @@ build_for_android() {
         exit -1
     fi
 
+
     MODE="Release"
     ANDROID_PLATFORM_VERSION="android-15"
     TOOLCHAIN_FILE="./tools/android-cmake/android.toolchain.cmake"
     ANDROID_ARM_MODE="arm"
+    if [ $# -eq 1 ]; then
+    NET=$1
+    cmake . \
+        -B"build/release/${PLATFORM}" \
+        -DANDROID_ABI="${ABI}" \
+        -DCMAKE_BUILD_TYPE="${MODE}" \
+        -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
+        -DANDROID_PLATFORM="${ANDROID_PLATFORM_VERSION}" \
+        -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
+        -DANDROID_STL=c++_static \
+        -DANDROID=true \
+        -D"${NET}=true" \
+        -D"${ARM_PLATFORM}"=true
+    else
 
     cmake .. \
         -B"../build/release/${PLATFORM}" \
@@ -70,9 +85,10 @@ build_for_android() {
         -DANDROID_STL=c++_static \
         -DANDROID=true \
         -D"${ARM_PLATFORM}"=true
-
-    cd "../build/release/${PLATFORM}"
+    fi
+    cd "./build/release/${PLATFORM}"
     make -j 8
+
 }
 
 build_for_ios() {
@@ -106,15 +122,44 @@ if [ $# -lt 1 ]; then
     echo "available targets: mac|linux|ios|android"
     echo "sample usage: ./build.sh mac"
 else
-	if [ $1 = "mac" ]; then
-		build_for_mac
-	elif [ $1 = "linux" ]; then
-		build_for_linux
-	elif [ $1 = "android" ]; then
-		build_for_android
-	elif [ $1 = "ios" ]; then
-		build_for_ios
-	else
-		build_error
+    if [ $# -eq 2 ]; then
+
+        if [[$2 != "googlenet"]] -a [[$2 != "mobilenet"]] -a [[$2 != "yolo"]] -a [[$2 != "squeezenet"]] -a [[$2 != "resnet"]]; then
+            if [ $1 = "mac" ]; then
+		        build_for_mac
+	        elif [ $1 = "linux" ]; then
+		        build_for_linux
+	        elif [ $1 = "android" ]; then
+		        build_for_android
+	        elif [ $1 = "ios" ]; then
+		        build_for_ios
+	        else
+		        build_error
+	        fi
+        else
+            if [ $1 = "mac" ]; then
+		        build_for_mac $2
+	        elif [ $1 = "linux" ]; then
+		        build_for_linux $2
+	        elif [ $1 = "android" ]; then
+		        build_for_android $2
+	        elif [ $1 = "ios" ]; then
+		        build_for_ios $2
+	        else
+		        build_error
+	        fi
+        fi
+    else
+        if [ $1 = "mac" ]; then
+		    build_for_mac
+	    elif [ $1 = "linux" ]; then
+		    build_for_linux
+	    elif [ $1 = "android" ]; then
+		    build_for_android
+	    elif [ $1 = "ios" ]; then
+		    build_for_ios
+	    else
+		    build_error
+	    fi
 	fi
 fi

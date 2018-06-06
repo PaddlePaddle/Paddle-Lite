@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef FUSIONCONVADD_OP
+
 #include "operators/fusion_conv_add.h"
 namespace paddle_mobile {
 namespace operators {
@@ -25,3 +27,5 @@ template class FushionConvAddOp<CPU, float>;
 namespace ops = paddle_mobile::operators;
 USE_OP(conv_add);
 REGISTER_OPERATOR(conv_add, ops::FushionConvAddOp);
+
+#endif
