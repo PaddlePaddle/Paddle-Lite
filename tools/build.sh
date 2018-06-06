@@ -16,13 +16,13 @@ build_for_mac() {
     PLATFORM="x86"
     MODE="Release"
     CXX_FLAGS="-std=c++11 -O3 -s"
-    BUILD_DIR=build/release/"${PLATFORM}"
+    BUILD_DIR=../build/release/"${PLATFORM}"
     mkdir -p ${BUILD_DIR}/build
 
     mkdir -p ${BUILD_DIR}/test
-    cp -r test/models ${BUILD_DIR}/test/models
+    cp -r ../test/models ${BUILD_DIR}/test/models
 
-    cmake . \
+    cmake .. \
         -B"${BUILD_DIR}" \
     	-DCMAKE_BUILD_TYPE="${MODE}" \
     	-DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
@@ -33,8 +33,6 @@ build_for_mac() {
 }
 
 build_for_android() {
-
-
     if [ -z "${ANDROID_NDK}" ]; then
         echo "ANDROID_NDK not found!"
         exit -1
@@ -77,8 +75,8 @@ build_for_android() {
         -D"${ARM_PLATFORM}"=true
     else
 
-    cmake . \
-        -B"build/release/${PLATFORM}" \
+    cmake .. \
+        -B"../build/release/${PLATFORM}" \
         -DANDROID_ABI="${ABI}" \
         -DCMAKE_BUILD_TYPE="${MODE}" \
         -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
@@ -88,7 +86,7 @@ build_for_android() {
         -DANDROID=true \
         -D"${ARM_PLATFORM}"=true
     fi
-    cd "./build/release/${PLATFORM}"
+    cd "../build/release/${PLATFORM}"
     make -j 8
 
 }
@@ -96,13 +94,13 @@ build_for_android() {
 build_for_ios() {
     PLATFORM="ios"
     MODE="Release"
-    BUILD_DIR=build/release/"${PLATFORM}"
+    BUILD_DIR=../build/release/"${PLATFORM}"
     TOOLCHAIN_FILE="./tools/ios-cmake/ios.toolchain.cmake"
     C_FLAGS="-fobjc-abi-version=2 -fobjc-arc -isysroot ${CMAKE_OSX_SYSROOT}"
     CXX_FLAGS="-fobjc-abi-version=2 -fobjc-arc -std=gnu++11 -stdlib=libc++ -isysroot ${CMAKE_OSX_SYSROOT}"
     mkdir -p "${BUILD_DIR}"
 
-    cmake . \
+    cmake .. \
         -B"${BUILD_DIR}" \
         -DCMAKE_BUILD_TYPE="${MODE}" \
         -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
@@ -125,7 +123,7 @@ if [ $# -lt 1 ]; then
     echo "sample usage: ./build.sh mac"
 else
     if [ $# -eq 2 ]; then
-    
+
         if [[$2 != "googlenet"]] -a [[$2 != "mobilenet"]] -a [[$2 != "yolo"]] -a [[$2 != "squeezenet"]] -a [[$2 != "resnet"]]; then
             if [ $1 = "mac" ]; then
 		        build_for_mac
