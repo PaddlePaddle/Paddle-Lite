@@ -57,7 +57,7 @@ build_for_android() {
 
     MODE="Release"
     ANDROID_PLATFORM_VERSION="android-15"
-    TOOLCHAIN_FILE="android-cmake/android.toolchain.cmake"
+    TOOLCHAIN_FILE="./tools/android-cmake/android.toolchain.cmake"
     ANDROID_ARM_MODE="arm"
 
     cmake .. \
