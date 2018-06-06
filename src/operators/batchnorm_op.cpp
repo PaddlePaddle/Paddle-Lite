@@ -15,6 +15,8 @@ limitations under the License. */
 #ifdef BATCHNORM_OP
 
 #include "batchnorm_op.h"
+#include "framework/op_proto_maker.h"
+#include "framework/op_registry.h"
 
 namespace paddle_mobile {
 namespace operators {
