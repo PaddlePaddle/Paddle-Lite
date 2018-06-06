@@ -33,6 +33,7 @@ build_for_mac() {
 }
 
 build_for_android() {
+    rm -rf "../build"
     if [ -z "${ANDROID_NDK}" ]; then
         echo "ANDROID_NDK not found!"
         exit -1
@@ -61,37 +62,36 @@ build_for_android() {
     TOOLCHAIN_FILE="./tools/android-cmake/android.toolchain.cmake"
     ANDROID_ARM_MODE="arm"
     if [ $# -eq 1 ]; then
-    NET=$1
-    cmake . \
-        -B"build/release/${PLATFORM}" \
-        -DANDROID_ABI="${ABI}" \
-        -DCMAKE_BUILD_TYPE="${MODE}" \
-        -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
-        -DANDROID_PLATFORM="${ANDROID_PLATFORM_VERSION}" \
-        -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
-        -DANDROID_STL=c++_static \
-        -DANDROID=true \
-        -D"${NET}=true" \
-        -D"${ARM_PLATFORM}"=true
+        NET=$1
+        cmake .. \
+            -B"../build/release/${PLATFORM}" \
+            -DANDROID_ABI="${ABI}" \
+            -DCMAKE_BUILD_TYPE="${MODE}" \
+            -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
+            -DANDROID_PLATFORM="${ANDROID_PLATFORM_VERSION}" \
+            -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
+            -DANDROID_STL=c++_static \
+            -DANDROID=true \
+            -D"${NET}"=true \
+            -D"${ARM_PLATFORM}"=true
     else
-
-    cmake .. \
-        -B"../build/release/${PLATFORM}" \
-        -DANDROID_ABI="${ABI}" \
-        -DCMAKE_BUILD_TYPE="${MODE}" \
-        -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
-        -DANDROID_PLATFORM="${ANDROID_PLATFORM_VERSION}" \
-        -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
-        -DANDROID_STL=c++_static \
-        -DANDROID=true \
-        -D"${ARM_PLATFORM}"=true
+        cmake .. \
+            -B"../build/release/${PLATFORM}" \
+            -DANDROID_ABI="${ABI}" \
+            -DCMAKE_BUILD_TYPE="${MODE}" \
+            -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
+            -DANDROID_PLATFORM="${ANDROID_PLATFORM_VERSION}" \
+            -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
+            -DANDROID_STL=c++_static \
+            -DANDROID=true \
+            -D"${ARM_PLATFORM}"=true
     fi
     cd "../build/release/${PLATFORM}"
     make -j 8
-
 }
 
 build_for_ios() {
+    rm -rf "../build"
     PLATFORM="ios"
     MODE="Release"
     BUILD_DIR=../build/release/"${PLATFORM}"
@@ -99,16 +99,27 @@ build_for_ios() {
     C_FLAGS="-fobjc-abi-version=2 -fobjc-arc -isysroot ${CMAKE_OSX_SYSROOT}"
     CXX_FLAGS="-fobjc-abi-version=2 -fobjc-arc -std=gnu++11 -stdlib=libc++ -isysroot ${CMAKE_OSX_SYSROOT}"
     mkdir -p "${BUILD_DIR}"
-
-    cmake .. \
-        -B"${BUILD_DIR}" \
-        -DCMAKE_BUILD_TYPE="${MODE}" \
-        -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
-        -DIOS_PLATFORM=OS \
-        -DCMAKE_C_FLAGS="${C_FLAGS}" \
-        -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
-        -DIS_IOS="true" \
-
+    if [ $# -eq 1 ]; then
+        NET=$1
+        cmake .. \
+            -B"${BUILD_DIR}" \
+            -DCMAKE_BUILD_TYPE="${MODE}" \
+            -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
+            -DIOS_PLATFORM=OS \
+            -DCMAKE_C_FLAGS="${C_FLAGS}" \
+            -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
+            -D"${NET}"=true \
+            -DIS_IOS="true"
+    else
+        cmake .. \
+            -B"${BUILD_DIR}" \
+            -DCMAKE_BUILD_TYPE="${MODE}" \
+            -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
+            -DIOS_PLATFORM=OS \
+            -DCMAKE_C_FLAGS="${C_FLAGS}" \
+            -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
+            -DIS_IOS="true"
+    fi
     cd "${BUILD_DIR}"
     make -j 8
 }
@@ -123,8 +134,7 @@ if [ $# -lt 1 ]; then
     echo "sample usage: ./build.sh mac"
 else
     if [ $# -eq 2 ]; then
-
-        if [[$2 != "googlenet"]] -a [[$2 != "mobilenet"]] -a [[$2 != "yolo"]] -a [[$2 != "squeezenet"]] -a [[$2 != "resnet"]]; then
+        if [ $2 != "googlenet" -a $2 != "mobilenet" -a $2 != "yolo" -a $2 != "squeezenet" -a $2 != "resnet" ]; then
             if [ $1 = "mac" ]; then
 		        build_for_mac
 	        elif [ $1 = "linux" ]; then

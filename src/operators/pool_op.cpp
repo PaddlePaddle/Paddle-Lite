@@ -15,6 +15,8 @@ limitations under the License. */
 #ifdef POOL_OP
 
 #include "pool_op.h"
+#include "framework/op_registry.h"
+#include "framework/op_proto_maker.h"
 
 namespace paddle_mobile {
 namespace operators {
