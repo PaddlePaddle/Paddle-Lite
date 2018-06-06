@@ -86,7 +86,7 @@ build_for_android() {
         -DANDROID=true \
         -D"${ARM_PLATFORM}"=true
     fi
-    cd "./build/release/${PLATFORM}"
+    cd "../build/release/${PLATFORM}"
     make -j 8
 
 }
