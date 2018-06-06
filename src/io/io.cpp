@@ -182,9 +182,7 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
   program.scope = scope;
 
   for (const auto &block : originProgramDesc->Blocks()) {
-    for (int i = 0; i < block->Vars().size(); i++) {
-      std::shared_ptr<framework::VarDesc> var_desc = block->Vars()[i];
-      //      DLOG << "var name-- " << var_desc->Name();
+    for (auto var_desc : block->Vars()) {
       auto var = scope->Var(var_desc->Name());
 
       if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
