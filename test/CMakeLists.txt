@@ -22,6 +22,23 @@ elseif(resnet)
     ADD_EXECUTABLE(test-resnet net/test_resnet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-resnet paddle-mobile)
 else ()
+
+    # gen test
+    ADD_EXECUTABLE(test-resnet net/test_resnet.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-resnet paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-squeezenet net/test_squeezenet.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-squeezenet paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-yolo net/test_yolo.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-yolo paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-googlenet net/test_googlenet.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-googlenet paddle-mobile)
+
     # gen test
     ADD_EXECUTABLE(test-conv-op  operators/test_cov_op.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-conv-op paddle-mobile)
