@@ -76,7 +76,6 @@ void Scope::DeleteScope(Scope *scope) const {
   auto it = std::find(kids_.begin(), kids_.end(), scope);
   kids_.erase(it);
   delete scope;
-  // deferent
 }
 
 void Scope::EraseVars(const std::vector<std::string> &var_names) {
@@ -104,14 +103,6 @@ void Scope::Rename(const std::string &origin_name,
   vars_[new_name] = origin_it->second;
   vars_.erase(origin_it);
 }
-//
-//            std::string Scope::Rename(const std::string& origin_name)
-//            const {
-//                auto var_name = string::Sprintf("%p.%d", this,
-//                vars_.size());
-//                Rename(origin_name, var_name);
-//                return var_name;
-//            }
 
 Variable *Scope::FindVarLocally(const std::string &name) const {
   auto it = vars_.find(name);

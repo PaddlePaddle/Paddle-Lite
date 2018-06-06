@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef PRIORBOX_OP
+
 #include "operators/prior_box_op.h"
 #include <vector>
 namespace paddle_mobile {
@@ -49,3 +51,5 @@ template class PriorBoxOp<CPU, float>;
 namespace ops = paddle_mobile::operators;
 USE_OP(prior_box);
 REGISTER_OPERATOR(prior_box, ops::PriorBoxOp);
+
+#endif

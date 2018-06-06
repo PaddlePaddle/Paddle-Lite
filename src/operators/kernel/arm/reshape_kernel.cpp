@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef RESHAPE_OP
+
 #pragma once
 
 #include "operators/kernel/reshape_kernel.h"
@@ -49,3 +51,5 @@ void ReshapeKernel<CPU, float>::Compute(const ReshapeParam &param) const {
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif
