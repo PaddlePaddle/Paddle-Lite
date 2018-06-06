@@ -29,11 +29,11 @@ namespace paddle_mobile {
 
 template <typename Dtype = CPU, Precision P = Precision::FP32>
 class Loader {
-public:
+ public:
   const framework::Program<Dtype, P> Load(const std::string &dirname,
                                           bool optimize = false);
 
-private:
+ private:
   void LoadVar(framework::Variable *variable,
                const framework::VarDesc &var_desc,
                const std::string &file_path);
@@ -41,7 +41,7 @@ private:
 
 template <typename Dtype = CPU, Precision P = Precision::FP32>
 class Executor {
-public:
+ public:
   typedef typename PrecisionTrait<P>::ptype Ptype;
 
   Executor(const framework::Program<Dtype> p, int batch_size = 1,
@@ -52,7 +52,7 @@ public:
   std::vector<Ptype> Predict(const std::vector<Ptype> &input,
                              const std::vector<int64_t> &dims);
 
-protected:
+ protected:
   Executor() = default;
 
   void InitMemory();
@@ -64,8 +64,8 @@ protected:
   std::shared_ptr<framework::Tensor> Predict(const framework::Tensor &t,
                                              int block_id);
   std::map<framework::BlockDesc,
-          std::vector<std::shared_ptr<framework::OperatorBase<Dtype>>>>
-          ops_of_block_;
+           std::vector<std::shared_ptr<framework::OperatorBase<Dtype>>>>
+      ops_of_block_;
   bool use_optimize_ = false;
 };
 
