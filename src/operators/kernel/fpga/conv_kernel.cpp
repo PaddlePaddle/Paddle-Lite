@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef CONV_OP
+
 namespace paddle_mobile {
 namespace operators {
 
@@ -22,3 +24,5 @@ namespace operators {
 // template class ConvKernel<FPGA, float>;
 }
 }  // namespace paddle_mobile
+
+#endif

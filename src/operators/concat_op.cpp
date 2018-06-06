@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef CONCAT_OP
+
 #include "concat_op.h"
 
 namespace paddle_mobile {
@@ -62,3 +64,5 @@ template class ConcatOp<CPU, float>;
 namespace ops = paddle_mobile::operators;
 USE_OP(concat);
 REGISTER_OPERATOR(concat, ops::ConcatOp);
+
+#endif

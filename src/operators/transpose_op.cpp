@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef TRANSPOSE_OP
+
 #include "operators/transpose_op.h"
 #include <common/enforce.h>
 #include <vector>
@@ -51,3 +53,5 @@ template class TransposeOp<CPU, float>;
 namespace ops = paddle_mobile::operators;
 USE_OP(transpose);
 REGISTER_OPERATOR(transpose, ops::TransposeOp);
+
+#endif

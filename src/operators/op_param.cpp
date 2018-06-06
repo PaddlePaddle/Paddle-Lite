@@ -13,9 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "op_param.h"
-
 namespace paddle_mobile {
 namespace operators {
+
+#ifdef CONV_OP
 Print &operator<<(Print &printer, const ConvParam &conv_param) {
   printer << "parameter of conv: "
           << "\n";
@@ -36,5 +37,7 @@ Print &operator<<(Print &printer, const ConvParam &conv_param) {
   printer << "  output dims: " << conv_param.Output()->dims();
   return printer;
 }
+#endif
+
 }  // namespace operators
 }  // namespace paddle_mobile
