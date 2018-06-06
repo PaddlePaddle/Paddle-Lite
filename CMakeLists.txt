@@ -8,7 +8,7 @@ add_definitions(-DENABLE_EXCEPTION)
 #add_definitions(-DIOS)
 add_definitions(-DX86)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
