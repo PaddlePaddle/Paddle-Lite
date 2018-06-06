@@ -14,9 +14,9 @@ limitations under the License. */
 
 #include "io.h"
 #include <vector>
-#include "common/log.h"
 
 #include "common/enforce.h"
+#include "common/log.h"
 #include "framework/framework.pb-c.h"
 #include "framework/lod_tensor.h"
 #include "framework/operator.h"
