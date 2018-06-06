@@ -41,7 +41,9 @@ void sigmoid(const Tensor *X, Tensor *Y) {
   int out_size = paddle_mobile::framework::product(outer_ddim);
   int inner_size = paddle_mobile::framework::product(inner_ddim);
 
-#pragma omp parallel for
+  DLOG << "outsize=" << out_size;
+  DLOG << "innersize=" << inner_size;
+  #pragma omp parallel for
   for (int i = 0; i < out_size; ++i) {
     const float *input_outer_ptr = input + i * inner_size;
     float *output_outer_ptr = output + i * inner_size;
