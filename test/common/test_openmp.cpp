@@ -12,16 +12,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef PADDLE_MOBILE_USE_OPENMP
-/**
- * android-ndk-r17 has a problem when linking with openmp.
- * if paddle-mobile enables -fopenmp, but didn't use those omp_* functions, after
- * linking another binary with libpaddle-mobile.so, the omp_get_thread_num will not work.
- * see test/common/test_openmp.cc
- * the detailed reason is still unclear, but this trick will work.
- * a better solution is hacking the linker, try some flags to make it link omp_* functions,
- * but I didn't find out how to make it work.
- */
 #include <omp.h>
-static int _ = omp_get_num_procs();
-#endif
+#include <iostream>
+
+int main(void) {
+  #pragma omp parallel num_threads(2)
+  {
+    int thread_id = omp_get_thread_num();
+    int nthreads = omp_get_num_threads();
+    std::cout << "Hello, OMP " << thread_id << "/" << nthreads << "\n";
+  }
+  return 0;
+}
