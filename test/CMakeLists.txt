@@ -84,6 +84,10 @@ target_link_libraries(test-gemm paddle-mobile)
 ADD_EXECUTABLE(test-enforce common/test_enforce.cpp)
 target_link_libraries(test-enforce paddle-mobile)
 
+# gen test - test if openmp works
+ADD_EXECUTABLE(test-openmp common/test_openmp.cc test_helper.h test_include.h executor_for_test.h)
+target_link_libraries(test-openmp paddle-mobile)
+
 # gen test
 ADD_EXECUTABLE(test-yolo net/test_yolo.cpp test_helper.h  test_include.h executor_for_test.h)
 target_link_libraries(test-yolo paddle-mobile)

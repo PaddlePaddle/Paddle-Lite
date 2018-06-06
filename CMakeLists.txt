@@ -26,6 +26,12 @@ file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
 
 include_directories(src/)
 
+option(USE_OPENMP "openmp support" ON)
+if(USE_OPENMP)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+    add_definitions(-DPADDLE_MOBILE_USE_OPENMP)
+endif()
+
 if (googlenet)
     add_definitions(-DCONCAT_OP)
     add_definitions(-DCONV_OP)
