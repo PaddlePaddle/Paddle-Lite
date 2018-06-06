@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef DEPTHWISECONV_OP
+
 #include "operators/kernel/depthwise_conv_kernel.h"
 #include "operators/kernel/conv_kernel.h"
 
@@ -124,3 +126,5 @@ template class DepthwiseConvKernel<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

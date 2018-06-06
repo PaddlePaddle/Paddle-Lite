@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef PRIORBOX_OP
+
 #pragma once
 
 #include <string>
@@ -50,3 +52,5 @@ class PriorBoxOp : public framework::OperatorWithKernel<DeviceType> {
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

@@ -18,7 +18,6 @@ limitations under the License. */
 #include <stdio.h>
 #include <exception>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 
 #endif

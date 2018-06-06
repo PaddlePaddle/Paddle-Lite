@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef SIGMOID_OP
+
 #include "../sigmoid_kernel.h"
 #if __ARM_NEON
 #include "../../math/math_func_neon.h"
@@ -79,3 +81,5 @@ void SigmoidKernel<CPU, float>::Compute(const SigmoidParam &param) const {
 template class SigmoidKernel<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

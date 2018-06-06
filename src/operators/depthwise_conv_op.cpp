@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef DEPTHWISECONV_OP
+
 #include "operators/depthwise_conv_op.h"
 #include <vector>
 #include "framework/op_proto_maker.h"
@@ -54,3 +56,5 @@ template class DepthwiseConvOp<CPU, float>;
 namespace ops = paddle_mobile::operators;
 USE_OP(depthwise_conv2d);
 REGISTER_OPERATOR(depthwise_conv2d, ops::DepthwiseConvOp);
+
+#endif

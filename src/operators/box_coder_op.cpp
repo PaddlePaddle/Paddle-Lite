@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef BOXCODER_OP
+
 #include "operators/box_coder_op.h"
 #include <vector>
 namespace paddle_mobile {
@@ -52,3 +54,5 @@ template class BoxCoderOp<CPU, float>;
 namespace ops = paddle_mobile::operators;
 USE_OP(box_coder);
 REGISTER_OPERATOR(box_coder, ops::BoxCoderOp);
+
+#endif
