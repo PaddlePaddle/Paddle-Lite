@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "../test_helper.h"
-#include "io.h"
+#include "io/io.h"
 
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
