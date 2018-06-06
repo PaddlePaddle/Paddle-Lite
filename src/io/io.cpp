@@ -15,16 +15,16 @@ limitations under the License. */
 #include "io.h"
 #include <vector>
 
-#include "common/log.h"
 #include "common/enforce.h"
+#include "common/log.h"
+#include "framework/framework.pb-c.h"
+#include "framework/lod_tensor.h"
+#include "framework/operator.h"
+#include "framework/program/program-optimize/program_optimize.h"
+#include "framework/program/program_desc.h"
+#include "framework/program/var_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
-#include "framework/operator.h"
-#include "framework/lod_tensor.h"
-#include "framework/framework.pb-c.h"
-#include "framework/program/var_desc.h"
-#include "framework/program/program_desc.h"
-#include "framework/program/program-optimize/program_optimize.h"
 
 namespace paddle_mobile {
 using framework::Variable;
