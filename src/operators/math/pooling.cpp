@@ -59,7 +59,7 @@ class PoolFunctor<CPU, PoolProcess, T> {
     T *output_data = output->mutable_data<T>();
 
     for (int i = 0; i < batch_size; i++) {
-#pragma omp parallel for
+      #pragma omp parallel for
       for (int c = 0; c < output_channels; ++c) {
         for (int ph = 0; ph < output_height; ++ph) {
           int hstart = ph * stride_height - padding_height;
