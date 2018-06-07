@@ -14,9 +14,10 @@ limitations under the License. */
 
 #ifdef TRANSPOSE_OP
 
-#include "operators/transpose_op.h"
-#include <common/enforce.h>
 #include <vector>
+
+#include "common/enforce.h"
+#include "operators/transpose_op.h"
 namespace paddle_mobile {
 namespace operators {
 
