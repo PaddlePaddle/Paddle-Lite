@@ -31,8 +31,7 @@ struct PaddleMobileException : public std::exception {
   PaddleMobileException(const char *header, const char *detail,
                         const char *file, const int line) {
     char buffer[1500];
-    snprintf(buffer,
-             sizeof(buffer),
+    snprintf(buffer, sizeof(buffer),
              "%s| %s \n| [in file] : %s\n| [on line] : %d\n| [detail]  : %s\n",
              exception_prefix.c_str(), header, file, line, detail);
     message = std::string(buffer);
