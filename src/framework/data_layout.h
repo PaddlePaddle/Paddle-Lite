@@ -39,7 +39,7 @@ inline DataLayout StringToDataLayout(const std::string &str) {
   } else if (s == "ANYLAYOUT") {
     return DataLayout::kAnyLayout;
   } else {
-    PADDLE_MOBILE_THROW_EXCEPTION("Unknown storage order string: %s", s)
+    PADDLE_MOBILE_THROW_EXCEPTION("Unknown storage order string: %s", s.c_str())
   }
 }
 

@@ -277,30 +277,9 @@ int arity(const DDim &d) {
   ArityVisitor arityVisitor = ArityVisitor();
   return DDim::ApplyVistor(arityVisitor, d);
 }
-  /// \cond HIDDEN
-
-  /// \endcond
-
-  // struct OSVistor : Vistor<std::ostream &> {
-  //  OSVistor(std::ostream &os) : os_(os) {}
-  //
-  //  template <int D>
-  //  std::ostream &operator()(Dim<D> dim) const {
-  //    return os_ << dim;
-  //  }
-  //
-  // private:
-  //  std::ostream &os_;
-  //};
-
-  // std::ostream &operator<<(std::ostream &os, const DDim &ddim) {
-  //  auto vistor = OSVistor(os);
-  //  DDim::ApplyVistor(vistor, ddim);
-  //  return os;
-  //}
 
 #ifdef PADDLE_MOBILE_DEBUG
-inline Print &operator<<(Print &printer, const DDim &ddim) {
+Print &operator<<(Print &printer, const DDim &ddim) {
   for (int j = 0; j < ddim.size(); ++j) {
     printer << ddim[j] << " ";
   }

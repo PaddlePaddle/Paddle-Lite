@@ -147,5 +147,9 @@ DDim flatten_to_1d(const DDim &src);
 DDim stride(const DDim &ddim);
 
 DDim stride_numel(const DDim &ddim);
+
+#ifdef PADDLE_MOBILE_DEBUG
+Print &operator<<(Print &printer, const DDim &ddim);
+#endif
 }  // namespace framework
 }  // namespace paddle_mobile
