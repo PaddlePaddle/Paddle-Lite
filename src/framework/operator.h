@@ -16,7 +16,6 @@ limitations under the License. */
 
 #include <map>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "common/enforce.h"

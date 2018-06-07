@@ -122,12 +122,8 @@ else ()
     target_link_libraries(test-enforce paddle-mobile)
 
     # gen test - test if openmp works
-    ADD_EXECUTABLE(test-openmp common/test_openmp.cc test_helper.h test_include.h executor_for_test.h)
+    ADD_EXECUTABLE(test-openmp common/test_openmp.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-openmp paddle-mobile)
-
-    # gen test
-    ADD_EXECUTABLE(test-yolo net/test_yolo.cpp test_helper.h  test_include.h executor_for_test.h)
-    target_link_libraries(test-yolo paddle-mobile)
 
     # gen test
     ADD_EXECUTABLE(test-mobilenetssd net/test_mobilenet+ssd.cpp test_helper.h  test_include.h executor_for_test.h)
