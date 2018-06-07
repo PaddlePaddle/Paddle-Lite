@@ -16,9 +16,10 @@ limitations under the License. */
 
 #pragma once
 
-#include <framework/operator.h>
-#include <operators/op_param.h>
 #include <string>
+
+#include "framework/operator.h"
+#include "operators/op_param.h"
 #include "operators/kernel/softmax_kernel.h"
 
 namespace paddle_mobile {

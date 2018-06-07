@@ -17,7 +17,6 @@ limitations under the License. */
 #ifdef ENABLE_EXCEPTION
 #include <stdio.h>
 #include <exception>
-#include <sstream>
 #include <string>
 
 #endif
@@ -31,12 +30,12 @@ struct PaddleMobileException : public std::exception {
 
   PaddleMobileException(const char *header, const char *detail,
                         const char *file, const int line) {
-    std::stringstream ss;
-    ss << exception_prefix << "| " << header << "\n";
-    ss << "| [in file] : " << file << " \n";
-    ss << "| [on line] : " << line << " \n";
-    ss << "| [detail]  : " << detail;
-    message = ss.str();
+    char buffer[1500];
+    snprintf(buffer,
+             sizeof(buffer),
+             "%s| %s \n| [in file] : %s\n| [on line] : %d\n| [detail]  : %s\n",
+             exception_prefix.c_str(), header, file, line, detail);
+    message = std::string(buffer);
   }
   const char *what() const noexcept { return message.c_str(); }
 };

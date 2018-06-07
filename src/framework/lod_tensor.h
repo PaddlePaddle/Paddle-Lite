@@ -16,7 +16,6 @@ limitations under the License. */
 
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 #include "tensor.h"
 #include "tensor_util.h"
