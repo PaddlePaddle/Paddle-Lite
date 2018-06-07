@@ -69,7 +69,6 @@ class Scope {
   mutable std::unordered_map<std::string, Variable *> vars_;
   mutable std::list<Scope *> kids_;
   Scope const *parent_{nullptr};
-
 };
 }  // namespace framework
 }  // namespace paddle_mobile
