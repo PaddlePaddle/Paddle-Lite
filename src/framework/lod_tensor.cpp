@@ -17,7 +17,7 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace framework {
 
-//std::ostream &operator<<(std::ostream &os, const LoD &lod) {
+// std::ostream &operator<<(std::ostream &os, const LoD &lod) {
 //  os << "{";
 //  for (auto &v : lod) {
 //    os << "{";
@@ -37,7 +37,7 @@ namespace framework {
 //  return os;
 //}
 //
-//std::ostream &operator<<(std::ostream &os, const LoDTensor &t) {
+// std::ostream &operator<<(std::ostream &os, const LoDTensor &t) {
 //  PADDLE_MOBILE_ENFORCE(t.type().hash_code() == typeid(float).hash_code(),
 //                        "t.type() is not float");
 //  os << "dim: " << t.dims() << "\n";
@@ -51,7 +51,7 @@ namespace framework {
 //  return os;
 //}
 
-//std::string LoDToString(const LoD &lod) {
+// std::string LoDToString(const LoD &lod) {
 //  std::ostringstream stream;
 //  stream << lod;
 //  return stream.str();

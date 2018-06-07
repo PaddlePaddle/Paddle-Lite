@@ -16,9 +16,9 @@ limitations under the License. */
 
 #include <initializer_list>
 #include <vector>
+#include "common/enforce.h"
 #include "common/variant.h"
 #include "dim.h"
-#include "common/enforce.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -57,7 +57,7 @@ struct DDim {
     } else if (d.var.TypeId() == typeid(Dim<9>).hash_code()) {
       return vistor(d.var.Get<Dim<9>>());
     } else {
-      DLOG <<" dim not support";
+      DLOG << " dim not support";
     }
   }
 

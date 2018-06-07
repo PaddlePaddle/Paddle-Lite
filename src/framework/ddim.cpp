@@ -151,7 +151,7 @@ DDim DDim::operator+(DDim d) const {
 
   std::vector<int64_t> v3;
 
-  PADDLE_MOBILE_ENFORCE(v1.size() == v2.size(),"v1.size() != v2.size()");
+  PADDLE_MOBILE_ENFORCE(v1.size() == v2.size(), "v1.size() != v2.size()");
 
   for (unsigned int i = 0; i < v1.size(); i++) {
     v3.push_back(v1[i] + v2[i]);
@@ -277,30 +277,30 @@ int arity(const DDim &d) {
   ArityVisitor arityVisitor = ArityVisitor();
   return DDim::ApplyVistor(arityVisitor, d);
 }
-/// \cond HIDDEN
+  /// \cond HIDDEN
 
-/// \endcond
+  /// \endcond
 
-//struct OSVistor : Vistor<std::ostream &> {
-//  OSVistor(std::ostream &os) : os_(os) {}
-//
-//  template <int D>
-//  std::ostream &operator()(Dim<D> dim) const {
-//    return os_ << dim;
-//  }
-//
-// private:
-//  std::ostream &os_;
-//};
+  // struct OSVistor : Vistor<std::ostream &> {
+  //  OSVistor(std::ostream &os) : os_(os) {}
+  //
+  //  template <int D>
+  //  std::ostream &operator()(Dim<D> dim) const {
+  //    return os_ << dim;
+  //  }
+  //
+  // private:
+  //  std::ostream &os_;
+  //};
 
-//std::ostream &operator<<(std::ostream &os, const DDim &ddim) {
-//  auto vistor = OSVistor(os);
-//  DDim::ApplyVistor(vistor, ddim);
-//  return os;
-//}
+  // std::ostream &operator<<(std::ostream &os, const DDim &ddim) {
+  //  auto vistor = OSVistor(os);
+  //  DDim::ApplyVistor(vistor, ddim);
+  //  return os;
+  //}
 
 #ifdef PADDLE_MOBILE_DEBUG
-inline Print &operator<<(Print &printer,  const DDim &ddim) {
+inline Print &operator<<(Print &printer, const DDim &ddim) {
   for (int j = 0; j < ddim.size(); ++j) {
     printer << ddim[j] << " ";
   }
