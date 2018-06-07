@@ -14,7 +14,7 @@ limitations under the License. */
 
 #pragma once
 
-#include <common/enforce.h>
+#include "common/enforce.h"
 #include <cstdint>
 #include <cstring>
 #include <memory>
