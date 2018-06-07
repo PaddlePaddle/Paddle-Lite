@@ -17,7 +17,9 @@ if(DEBUGING)
 else()
     message(STATUS "releasing")
     add_definitions(-fvisibility=hidden -fvisibility-inlines-hidden)
-    add_definitions(-fno-exceptions)
+    add_definitions(-DENABLE_EXCEPTION)
+
+    #    add_definitions(-fno-exceptions)
 endif()
 
 if(IS_MAC)
@@ -114,4 +116,4 @@ endif()
 
 add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 
-#add_subdirectory(test)
+add_subdirectory(test)
