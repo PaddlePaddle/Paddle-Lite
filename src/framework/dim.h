@@ -14,11 +14,7 @@ limitations under the License. */
 
 #pragma once
 
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
-#include <type_traits>
-
+#include "common/enforce.h"
 namespace paddle_mobile {
 namespace framework {
 
@@ -72,13 +68,9 @@ struct Dim<0> {
   Dim() {}
 
   Dim(int idx, const Dim<0> &size) {
-#ifndef __CUDA_ARCH__
     if (idx > 0) {
-      throw std::invalid_argument("Index out of range.");
+      PADDLE_MOBILE_THROW_EXCEPTION("Index out of range.")
     }
-#else
-    PADDLE_ASSERT(idx == 0);
-#endif
   }
 
   bool operator==(const Dim<0> &o) const { return true; }
@@ -124,13 +116,10 @@ struct DimGetter<0> {
 
 template <int D>
 int64_t &indexer(Dim<D> &dim, int idx) {
-#ifndef __CUDA_ARCH__
   if (idx < 0) {
-    throw std::invalid_argument("Tried to access a negative dimension");
+    PADDLE_MOBILE_THROW_EXCEPTION("Tried to access a negative dimension")
   }
-#else
-  PADDLE_ASSERT(idx >= 0);
-#endif
+
   if (idx == 0) {
     return dim.head;
   }
@@ -139,30 +128,17 @@ int64_t &indexer(Dim<D> &dim, int idx) {
 
 template <>
 int64_t &indexer<0>(Dim<0> &dim, int idx) {
-#ifndef __CUDA_ARCH__
-  throw std::invalid_argument("Invalid index");
-#else
-  PADDLE_ASSERT(false);
-#if CUDA_VERSION < 8000
-  // On CUDA versions previous to 8.0, only __shared__ variables
-  // could be declared as static in the device code.
-  int64_t head = 0;
-#else
-  static int64_t head = 0;
-#endif
-  return head;
-#endif
+  PADDLE_MOBILE_THROW_EXCEPTION("Invalid index")
+
 }
 
 template <int D>
 int64_t indexer(const Dim<D> &dim, int idx) {
-#ifndef __CUDA_ARCH__
   if (idx < 0) {
-    throw std::invalid_argument("Tried to access a negative dimension");
+    PADDLE_MOBILE_THROW_EXCEPTION("Tried to access a negative dimension")
+
+
   }
-#else
-  PADDLE_ASSERT(idx >= 0);
-#endif
   if (idx == 0) {
     return dim.head;
   }
@@ -171,19 +147,8 @@ int64_t indexer(const Dim<D> &dim, int idx) {
 
 template <>
 int64_t indexer<0>(const Dim<0> &dim, int idx) {
-#ifndef __CUDA_ARCH__
-  throw std::invalid_argument("Invalid index");
-#else
-  PADDLE_ASSERT(false);
-#if CUDA_VERSION < 8000
-  // On CUDA versions previous to 8.0, only __shared__ variables
-  // could be declared as static in the device code.
-  int64_t head = 0;
-#else
-  static int64_t head = 0;
-#endif
-  return head;
-#endif
+  PADDLE_MOBILE_THROW_EXCEPTION("Invalid index")
+
 }
 
 }  // namespace
@@ -366,10 +331,10 @@ Dim<sizeof...(Args)> make_dim(Args... idxes) {
 
 // Allows us to output a Dim
 // XXX For some reason, overloading fails to resolve this correctly
-template <int i>
-typename std::enable_if<(i > 1), std::ostream &>::type operator<<(
+//template <int i>
+/*typename std::enable_if<(i > 1), std::ostream &>::type operator<<(
     std::ostream &os, const Dim<i> &d) {
-  os << d.head << ", " << d.tail;
+  os << d.head << ", " << d.tail;l
   return os;
 }
 
@@ -384,30 +349,9 @@ typename std::enable_if<(i == 1), std::ostream &>::type operator<<(
 
 inline std::ostream &operator<<(std::ostream &os, const Dim<0> &d) {
   return os;
-}
+}*/
 
-template <int i>
-std::string Dim<i>::to_string() const {
-  std::stringstream stream;
 
-  stream << *this;
-
-  return stream.str();
-}
-
-template <int D>
-Dim<D> linear_to_dimension(int linear_index, Dim<D> extents) {
-  Dim<D> result;
-
-  for (int i = 0; i < D - 1; ++i) {
-    result[i] = linear_index % extents[i];
-    linear_index /= extents[i];
-  }
-
-  result[D - 1] = linear_index;
-
-  return result;
-}
 
 }  // namespace framework
 }  // namespace paddle_mobile

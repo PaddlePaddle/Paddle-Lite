@@ -37,7 +37,11 @@ class Node {
   Node &operator>(std::shared_ptr<Node> node);
   bool operator==(const Node &in);
   bool CanSplit(std::unordered_set<std::string> complex_compute_set);
+
+#ifdef PADDLE_MOBILE_DEBUG
   std::string ToString() const;
+  void Description();
+#endif
   std::shared_ptr<Node> To(int size);
   uint Depth(uint begin = 0);
   Node &Folder(
@@ -48,7 +52,6 @@ class Node {
   std::vector<std::shared_ptr<framework::OpDesc>> OpDescs();
   std::shared_ptr<framework::OpDesc> OpDescOfNode() { return op_desc_; }
   std::string Type() { return type_; }
-  void Description();
 
  private:
   void CanSplit(bool *split, bool spliting, int complex_count,
@@ -65,7 +68,9 @@ class Node {
       std::map<std::string, std::pair<std::string, std::string>> *change,
       Node *begin_node, std::vector<std::shared_ptr<Node>> *removed_nodes);
   std::shared_ptr<framework::OpDesc> op_desc_;
+#ifdef PADDLE_MOBILE_DEBUG
   std::string ToString(std::string blank, const Node *node) const;
+#endif
   std::vector<std::shared_ptr<Node>> outputs_;
   std::vector<Node *> inputs_;
   std::string type_;

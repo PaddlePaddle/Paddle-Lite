@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(paddle-mobile)
-add_definitions(-DPADDLE_MOBILE_DEBUG)
-add_definitions(-DENABLE_EXCEPTION)
+#add_definitions(-DPADDLE_MOBILE_DEBUG)
+#add_definitions(-DENABLE_EXCEPTION)
 
 if(IS_MAC)
     add_definitions(-DX86)
@@ -17,7 +17,6 @@ endif()
 
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY build)

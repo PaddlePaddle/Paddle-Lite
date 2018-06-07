@@ -126,7 +126,8 @@ class Attribute {
     } else if (attr.variant_.TypeId() == typeid(int64_t).hash_code()) {
       return vistor(attr.variant_.Get<int64_t>());
     } else {
-      throw std::bad_exception();
+      PADDLE_MOBILE_THROW_EXCEPTION("type not support");
+
     }
   }
 

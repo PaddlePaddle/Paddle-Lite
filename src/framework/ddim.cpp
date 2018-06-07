@@ -63,9 +63,6 @@ void make_ddim(DDim &ddim, const int64_t *dims, int n) {
       ddim = make_dim<9>(dims);
       break;
     default:
-      //      std::cout << "Dynamic dimensions must have between [1,
-      //      9]
-      //      dimensions.";
       break;
   }
 }
@@ -133,9 +130,6 @@ int64_t DDim::operator[](int idx) const {
 int DDim::size() const { return arity(*this); }
 
 bool DDim::operator==(DDim d) const {
-  //  if (var.which() != d.getVar().which()) {
-  //    return false;
-  //  } else {
   std::vector<int64_t> v1 = vectorize(*this);
   std::vector<int64_t> v2 = vectorize(d);
 
@@ -157,7 +151,7 @@ DDim DDim::operator+(DDim d) const {
 
   std::vector<int64_t> v3;
 
-  assert(v1.size() == v2.size());
+  PADDLE_MOBILE_ENFORCE(v1.size() == v2.size(),"v1.size() != v2.size()");
 
   for (unsigned int i = 0; i < v1.size(); i++) {
     v3.push_back(v1[i] + v2[i]);
@@ -172,7 +166,7 @@ DDim DDim::operator*(DDim d) const {
 
   std::vector<int64_t> v3;
 
-  assert(v1.size() == v2.size());
+  PADDLE_MOBILE_ENFORCE(v1.size() == v2.size(), "v1.size() == v2.size()");
 
   for (unsigned int i = 0; i < v1.size(); i++) {
     v3.push_back(v1[i] * v2[i]);
@@ -235,13 +229,10 @@ struct SliceVectorizeVisitor : Vistor<void> {
 
   SliceVectorizeVisitor(std::vector<int64_t> &v, int b, int e)
       : vector(v), begin(b), end(e) {
-    //    PADDLE_ENFORCE(begin < end,
-    //                   "Begin index must be less than end index in
-    //                   ddim
-    //                   slice.");
-    //    PADDLE_ENFORCE(begin >= 0,
-    //                   "Begin index can't be less than zero in
-    //                   ddim slice.");
+    PADDLE_MOBILE_ENFORCE(
+        begin < end, "Begin index must be less than end index in ddim slice.");
+    PADDLE_MOBILE_ENFORCE(begin >= 0,
+                          "Begin index can't be less than zero in ddim slice.");
   }
 
   template <int S>
@@ -267,9 +258,7 @@ DDim slice_ddim(const DDim &ddim, int begin, int end) {
   std::vector<int64_t> vec;
   vec.reserve(end - begin);
   SliceVectorizeVisitor visitor(vec, begin, end);
-  //  boost::apply_visitor(visitor, dim);
   DDim::ApplyVistor(visitor, ddim);
-  //  visitor(ddim.var.Get<Dim<4>>());
   return make_ddim(vec);
 }
 
@@ -287,30 +276,39 @@ struct ArityVisitor : Vistor<int> {
 int arity(const DDim &d) {
   ArityVisitor arityVisitor = ArityVisitor();
   return DDim::ApplyVistor(arityVisitor, d);
-  //  return arityVisitor(d.var.Get<Dim<4>>());
-  //  return boost::apply_visitor(ArityVisitor(), d); }
 }
 /// \cond HIDDEN
 
 /// \endcond
 
-struct OSVistor : Vistor<std::ostream &> {
-  OSVistor(std::ostream &os) : os_(os) {}
+//struct OSVistor : Vistor<std::ostream &> {
+//  OSVistor(std::ostream &os) : os_(os) {}
+//
+//  template <int D>
+//  std::ostream &operator()(Dim<D> dim) const {
+//    return os_ << dim;
+//  }
+//
+// private:
+//  std::ostream &os_;
+//};
 
-  template <int D>
-  std::ostream &operator()(Dim<D> dim) const {
-    return os_ << dim;
+//std::ostream &operator<<(std::ostream &os, const DDim &ddim) {
+//  auto vistor = OSVistor(os);
+//  DDim::ApplyVistor(vistor, ddim);
+//  return os;
+//}
+
+#ifdef PADDLE_MOBILE_DEBUG
+inline Print &operator<<(Print &printer,  const DDim &ddim) {
+  for (int j = 0; j < ddim.size(); ++j) {
+    printer << ddim[j] << " ";
   }
 
- private:
-  std::ostream &os_;
-};
-
-std::ostream &operator<<(std::ostream &os, const DDim &ddim) {
-  auto vistor = OSVistor(os);
-  DDim::ApplyVistor(vistor, ddim);
-  return os;
+  return printer;
 }
+
+#endif
 
 DDim::DDim(std::initializer_list<int64_t> init_list) {
   *this = make_ddim(init_list);

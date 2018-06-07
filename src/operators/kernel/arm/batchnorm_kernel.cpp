@@ -49,7 +49,7 @@ void BatchNormKernel<CPU, float>::Compute(const BatchNormParam &param) const {
   Tensor inv_std;
   auto inv_std_ptr = inv_std.mutable_data<float>(make_ddim({C}));
   if (C != variance->numel()) {
-    std::cout << "C must equal to variance.numel()" << std::endl;
+    DLOG << "C must equal to variance.numel()";
   }
   assert(C == variance->numel());
 
