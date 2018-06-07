@@ -14,7 +14,6 @@ limitations under the License. */
 
 #pragma once
 
-#include <assert.h>
 #include <initializer_list>
 #include <stdexcept>
 #include <vector>

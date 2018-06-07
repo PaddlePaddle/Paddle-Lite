@@ -15,7 +15,7 @@ limitations under the License. */
 #ifdef POOL_OP
 
 #include "pooling.h"
-#include <common/types.h>
+#include "common/types.h"
 
 namespace paddle_mobile {
 namespace operators {

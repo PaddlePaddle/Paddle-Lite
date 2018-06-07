@@ -16,7 +16,6 @@ limitations under the License. */
 
 #include <map>
 #include <string>
-#include <unordered_set>
 #include <vector>
 #include "framework/attribute.h"
 #include "framework/scope.h"
@@ -40,12 +39,6 @@ using OpCreator = std::function<framework::OperatorBase<Dtype> *(
     const framework::AttributeMap & /*attrs*/,
     std::shared_ptr<framework::Scope> /*scope*/)>;
 
-using GradOpMakerFN =
-    std::function<std::vector<std::unique_ptr<framework::OpDesc>>(
-        const framework::OpDesc &,
-        const std::unordered_set<std::string> & /*no_grad_set*/,
-        std::unordered_map<std::string, std::string> * /*grad_to_var*/,
-        const std::vector<framework::BlockDesc *> &grad_block)>;
 
 using InferVarTypeFN = std::function<void(const framework::OpDesc & /*op_desc*/,
                                           framework::BlockDesc * /*block*/)>;
