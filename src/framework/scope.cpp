@@ -22,7 +22,6 @@ namespace paddle_mobile {
 namespace framework {
 
 Scope &Scope::NewScope() const {
-  std::unique_lock<std::mutex> lock(mutex_);
   kids_.push_back(new Scope(this));
   return *kids_.back();
 }
@@ -72,7 +71,6 @@ std::vector<std::string> Scope::LocalVarNames() const {
 }
 
 void Scope::DeleteScope(Scope *scope) const {
-  std::unique_lock<std::mutex> lock(mutex_);
   auto it = std::find(kids_.begin(), kids_.end(), scope);
   kids_.erase(it);
   delete scope;
