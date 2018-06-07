@@ -19,8 +19,8 @@ limitations under the License. */
 #include <string>
 
 #include "framework/operator.h"
-#include "operators/op_param.h"
 #include "operators/kernel/pool_kernel.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
