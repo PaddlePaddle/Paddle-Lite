@@ -325,27 +325,5 @@ Dim<sizeof...(Args)> make_dim(Args... idxes) {
   return Dim<sizeof...(Args)>(idxes...);
 }
 
-// Allows us to output a Dim
-// XXX For some reason, overloading fails to resolve this correctly
-// template <int i>
-/*typename std::enable_if<(i > 1), std::ostream &>::type operator<<(
-    std::ostream &os, const Dim<i> &d) {
-  os << d.head << ", " << d.tail;l
-  return os;
-}
-
-// Base case that allows us to output a Dim
-// XXX I wish this could be an overload instead of a template
-template <int i>
-typename std::enable_if<(i == 1), std::ostream &>::type operator<<(
-    std::ostream &os, const Dim<i> &d) {
-  os << d.head;
-  return os;
-}
-
-inline std::ostream &operator<<(std::ostream &os, const Dim<0> &d) {
-  return os;
-}*/
-
 }  // namespace framework
 }  // namespace paddle_mobile
