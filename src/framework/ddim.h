@@ -15,8 +15,8 @@ limitations under the License. */
 #pragma once
 
 #include <initializer_list>
-#include <stdexcept>
 #include <vector>
+#include "common/enforce.h"
 #include "common/variant.h"
 #include "dim.h"
 
@@ -57,9 +57,7 @@ struct DDim {
     } else if (d.var.TypeId() == typeid(Dim<9>).hash_code()) {
       return vistor(d.var.Get<Dim<9>>());
     } else {
-      printf(" dim not support  \n");
-      throw std::bad_exception();
-      //        return typename Vistor::type_t();
+      DLOG << " dim not support";
     }
   }
 
@@ -138,8 +136,6 @@ DDim slice_ddim(const DDim &dim, int begin, int end);
  */
 
 int arity(const DDim &ddim);
-
-std::ostream &operator<<(std::ostream &, const DDim &);
 
 // Reshape a tensor to a matrix. The matrix's first dimension(column
 // length)
