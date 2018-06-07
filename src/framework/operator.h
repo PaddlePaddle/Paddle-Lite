@@ -135,7 +135,7 @@ class OpKernelBase {
       const ::paddle_mobile::VariableNameMap &outputs,                         \
       const ::paddle_mobile::framework::AttributeMap &attrs,                   \
       std::shared_ptr<::paddle_mobile::framework::Scope> scope)                \
-      : parent_cls<Dtype, T>(type, inputs, outputs, attrs, scope){}
+      : parent_cls<Dtype, T>(type, inputs, outputs, attrs, scope) {}
 
 class FusionOpMatcher {
  public:
