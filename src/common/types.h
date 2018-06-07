@@ -16,7 +16,6 @@ limitations under the License. */
 
 #include <string>
 #include <unordered_map>
-#include <utility>
 
 namespace paddle_mobile {
 enum class Precision : int { FP32 = 0 };
