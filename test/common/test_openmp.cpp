@@ -16,6 +16,7 @@ limitations under the License. */
 #include <iostream>
 
 int main(void) {
+#ifdef PADDLE_MOBILE_USE_OPENMP
   #pragma omp parallel num_threads(2)
   {
     //        int thread_id = omp_get_thread_num();
@@ -23,5 +24,6 @@ int main(void) {
     //        std::cout << "Hello, OMP " << thread_id << "/" << nthreads <<
     //        "\n";
   }
+#endif
   return 0;
 }
