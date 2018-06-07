@@ -15,7 +15,6 @@ limitations under the License. */
 #pragma once
 
 #include <cctype>
-#include <iostream>
 #include <string>
 
 namespace paddle_mobile {
@@ -40,7 +39,7 @@ inline DataLayout StringToDataLayout(const std::string &str) {
   } else if (s == "ANYLAYOUT") {
     return DataLayout::kAnyLayout;
   } else {
-    //    std::cout << "Unknown storage order string: %s", s;
+    PADDLE_MOBILE_THROW_EXCEPTION("Unknown storage order string: %s", s)
   }
 }
 
