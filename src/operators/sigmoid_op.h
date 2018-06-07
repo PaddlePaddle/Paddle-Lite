@@ -16,10 +16,11 @@ limitations under the License. */
 
 #pragma once
 
-#include <framework/operator.h>
-#include <operators/op_param.h>
 #include <string>
+
+#include "framework/operator.h"
 #include "operators/kernel/sigmoid_kernel.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
