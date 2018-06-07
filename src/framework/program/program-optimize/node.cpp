@@ -286,7 +286,7 @@ void Node::Folder(
     }
   }
 }
-
+#ifdef PADDLE_MOBILE_DEBUG
 std::string Node::ToString(std::string blank, const Node *node) const {
   std::stringstream ss;
   ss << type_ << "-> \n";
@@ -317,6 +317,7 @@ Print &operator<<(Print &printer, const Node &node) {
   printer << node.ToString();
   return printer;
 }
+#endif
 
 }  // namespace framework
 }  // namespace paddle_mobile
