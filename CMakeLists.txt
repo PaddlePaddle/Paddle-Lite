@@ -1,7 +1,22 @@
 cmake_minimum_required(VERSION 3.0)
 project(paddle-mobile)
-#add_definitions(-DPADDLE_MOBILE_DEBUG)
-#add_definitions(-DENABLE_EXCEPTION)
+
+option(DEBUGING "enable debug mode" ON)
+option(USE_OPENMP "openmp support" OFF)
+
+if (DEBUGING)
+    set(CMAKE_BUILD_TYPE Release)
+    else()
+    set(CMAKE_BUILD_TYPE debug)
+endif ()
+
+if(DEBUGING)
+    add_definitions(-fvisibility=hidden -fvisibility-inlines-hidden)
+    add_definitions(-fno-exceptions)
+else()
+    add_definitions(-DPADDLE_MOBILE_DEBUG)
+    add_definitions(-DENABLE_EXCEPTION)
+endif()
 
 if(IS_MAC)
     add_definitions(-DX86)
@@ -15,9 +30,7 @@ else ()
     add_definitions(-DX86)
 endif()
 
-
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY build)
@@ -29,7 +42,6 @@ file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
 
 include_directories(src/)
 
-option(USE_OPENMP "openmp support" OFF)
 if(USE_OPENMP)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
     add_definitions(-DPADDLE_MOBILE_USE_OPENMP)
@@ -97,6 +109,7 @@ else ()
     add_definitions(-DTRANSPOSE_OP)
 endif()
 
+
 add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 
-add_subdirectory(test)
+#add_subdirectory(test)

@@ -167,8 +167,6 @@ class OpParam {
                         const Scope &scope) {
     auto var_vec = var_map.at(key);
     if (!var_vec.empty()) {
-      //      std::cout << " get var value -- " << var_vec[0] <<
-      //      std::endl;
       auto var = scope.FindVar(var_vec[0]);
       return var->GetMutable<T>();
     } else {
