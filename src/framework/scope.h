@@ -15,7 +15,6 @@ limitations under the License. */
 #pragma once
 
 #include <list>
-#include <mutex>
 #include <unordered_map>
 #include "variable.h"
 
@@ -70,8 +69,6 @@ class Scope {
   mutable std::unordered_map<std::string, Variable *> vars_;
   mutable std::list<Scope *> kids_;
   Scope const *parent_{nullptr};
-
-  mutable std::mutex mutex_;
 };
 }  // namespace framework
 }  // namespace paddle_mobile

@@ -46,7 +46,7 @@ build_for_android() {
     if [ "${PLATFORM}" = "arm-v7a" ]; then
         ABI="armeabi-v7a with NEON"
         ARM_PLATFORM="V7"
-        CXX_FLAGS="-O3 -std=c++11 -s -march=armv7-a -mfpu=neon -mfloat-abi=softfp -pie -fPIE -w -Wno-error=format-security -fno-exceptions"
+        CXX_FLAGS="-O3 -std=c++11 -s -march=armv7-a -mfpu=neon -mfloat-abi=softfp -pie -fPIE -w -Wno-error=format-security"
     elif [ "${PLATFORM}" = "arm-v8a" ]; then
         ABI="arm64-v8a"
         ARM_PLATFORM="V8"
