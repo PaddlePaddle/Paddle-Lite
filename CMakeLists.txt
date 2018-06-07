@@ -100,3 +100,4 @@ endif()
 add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 
 add_subdirectory(test)
+
