@@ -172,22 +172,17 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
   //
   DLOG << "n_ops: " << (*c_program->blocks)->n_ops;
   //
-  std::shared_ptr<framework::ProgramDesc> originProgramDesc =
-      std::make_shared<framework::ProgramDesc>(c_program);
+  auto originProgramDesc = std::make_shared<framework::ProgramDesc>(c_program);
 
   framework::Program<Dtype, P> program;
   program.model_path = dirname;
   program.originProgram = originProgramDesc;
 
-  std::shared_ptr<framework::Scope> scope =
-      std::make_shared<framework::Scope>();
+  auto scope = std::make_shared<framework::Scope>();
   program.scope = scope;
-  originProgramDesc->Block(0);
 
   for (const auto &block : originProgramDesc->Blocks()) {
-    for (int i = 0; i < block->Vars().size(); ++i) {
-      std::shared_ptr<framework::VarDesc> var_desc = block->Vars()[i];
-      //      DLOG << "var name-- " << var_desc->Name();
+    for (auto var_desc : block->Vars()) {
       auto var = scope->Var(var_desc->Name());
 
       if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
