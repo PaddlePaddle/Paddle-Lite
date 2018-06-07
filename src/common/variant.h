@@ -12,8 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "common/log.h"
 #include "common/enforce.h"
+#include "common/log.h"
 
 #pragma once
 
@@ -56,7 +56,6 @@ class RawData {
   char data[size];
   RawData() {}
   RawData(const RawData &raw_data) { strcpy(data, raw_data.data); }
-
 };
 
 template <typename... Ts>

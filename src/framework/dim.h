@@ -129,15 +129,12 @@ int64_t &indexer(Dim<D> &dim, int idx) {
 template <>
 int64_t &indexer<0>(Dim<0> &dim, int idx) {
   PADDLE_MOBILE_THROW_EXCEPTION("Invalid index")
-
 }
 
 template <int D>
 int64_t indexer(const Dim<D> &dim, int idx) {
   if (idx < 0) {
     PADDLE_MOBILE_THROW_EXCEPTION("Tried to access a negative dimension")
-
-
   }
   if (idx == 0) {
     return dim.head;
@@ -148,7 +145,6 @@ int64_t indexer(const Dim<D> &dim, int idx) {
 template <>
 int64_t indexer<0>(const Dim<0> &dim, int idx) {
   PADDLE_MOBILE_THROW_EXCEPTION("Invalid index")
-
 }
 
 }  // namespace
@@ -331,7 +327,7 @@ Dim<sizeof...(Args)> make_dim(Args... idxes) {
 
 // Allows us to output a Dim
 // XXX For some reason, overloading fails to resolve this correctly
-//template <int i>
+// template <int i>
 /*typename std::enable_if<(i > 1), std::ostream &>::type operator<<(
     std::ostream &os, const Dim<i> &d) {
   os << d.head << ", " << d.tail;l
@@ -350,8 +346,6 @@ typename std::enable_if<(i == 1), std::ostream &>::type operator<<(
 inline std::ostream &operator<<(std::ostream &os, const Dim<0> &d) {
   return os;
 }*/
-
-
 
 }  // namespace framework
 }  // namespace paddle_mobile

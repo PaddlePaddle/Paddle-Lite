@@ -17,7 +17,6 @@ limitations under the License. */
 #include <map>
 #include <string>
 #include <vector>
-
 #include "common/log.h"
 #include "framework/program/op_desc.h"
 
@@ -34,7 +33,6 @@ class Node {
       : op_desc_(op_desc), type_(op_desc->Type()) {}
   Node &operator>(std::shared_ptr<Node> node);
   bool operator==(const Node &in);
-  bool CanSplit(std::unordered_set<std::string> complex_compute_set);
 
 #ifdef PADDLE_MOBILE_DEBUG
   std::string ToString() const;
