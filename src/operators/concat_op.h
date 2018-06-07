@@ -27,7 +27,7 @@ template <typename DeviceType, typename T>
 class ConcatOp : public framework::OperatorWithKernel<DeviceType> {
  public:
   ConcatOp(const string &type, const VariableNameMap &inputs,
-           const VariableNameMap &outputs, const framework::AttributeMap attrs,
+           const VariableNameMap &outputs, const framework::AttributeMap &attrs,
            std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
                                                   scope),

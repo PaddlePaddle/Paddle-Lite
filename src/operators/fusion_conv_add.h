@@ -50,7 +50,7 @@ class FushionConvAddOp : public framework::OperatorWithKernel<DeviceType> {
  public:
   FushionConvAddOp(const string &type, const VariableNameMap &inputs,
                    const VariableNameMap &outputs,
-                   const framework::AttributeMap attrs,
+                   const framework::AttributeMap &attrs,
                    std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
                                                   scope) {}
