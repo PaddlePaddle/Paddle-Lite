@@ -3,6 +3,7 @@ project(paddle-mobile)
 
 option(DEBUGING "enable debug mode" OFF)
 option(USE_OPENMP "openmp support" OFF)
+option(USE_EXCEPTION "use std exception" OFF)
 
 if (DEBUGING)
     set(CMAKE_BUILD_TYPE Debug)
@@ -13,12 +14,19 @@ endif ()
 if(DEBUGING)
     message(STATUS "debuging")
     add_definitions(-DPADDLE_MOBILE_DEBUG)
-    add_definitions(-DENABLE_EXCEPTION)
+
 else()
     message(STATUS "releasing")
     add_definitions(-fvisibility=hidden -fvisibility-inlines-hidden)
-    add_definitions(-fno-exceptions)
 endif()
+
+if (USE_EXCEPTION)
+    add_definitions(-DENABLE_EXCEPTION)
+    add_definitions(-fexceptions)
+else()
+    add_definitions(-fno-exceptions)
+
+endif ()
 
 if(IS_MAC)
     add_definitions(-DX86)
@@ -114,4 +122,8 @@ endif()
 
 add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 
-#add_subdirectory(test)
+if(DEBUGING)
+    add_subdirectory(test)
+endif()
+
+
