@@ -33,7 +33,13 @@ class Loader {
   const framework::Program<Dtype, P> Load(const std::string &dirname,
                                           bool optimize = false);
 
+  const framework::Program<Dtype, P> Load(const std::string &model_path,
+                                          const std::string &para_path,
+                                          bool optimize = false);
+
  private:
+  const framework::Program<Dtype, P> LoadProgram(const std::string &model_path,
+                                                 bool optimize = false);
   void LoadVar(framework::Variable *variable,
                const framework::VarDesc &var_desc,
                const std::string &file_path);
@@ -57,7 +63,8 @@ class Executor {
 
   void InitMemory();
   void LoadMemory(const framework::VarDesc var_desc,
-                  framework::LoDTensor *tensor, const std::string &file_path);
+                  framework::LoDTensor *tensor, const std::string &file_path, char *data);
+  void InitCombineMemory();
   framework::Program<Dtype> program_;
   int batch_size_ = 1;
   std::shared_ptr<framework::ProgramDesc> to_predict_program_;

@@ -43,13 +43,13 @@ bool Node::operator==(const Node &in) {
   return true;
 }
 
-std::vector<std::shared_ptr<framework::OpDesc>> Node::OpDescs(uint size) {
+std::vector<std::shared_ptr<framework::OpDesc>> Node::OpDescs(int size) {
   std::vector<std::shared_ptr<framework::OpDesc>> op_descs;
   OpDescs(size - 1, &op_descs);
   return op_descs;
 }
 
-void Node::OpDescs(uint index,
+void Node::OpDescs(int index,
                    std::vector<std::shared_ptr<framework::OpDesc>> *op_desc) {
   if (index == 0) {
     return;
@@ -80,18 +80,18 @@ void Node::To(int index, std::shared_ptr<Node> node) {
   }
 }
 
-uint Node::Depth(uint begin) {
-  uint depth = 0;
+int Node::Depth(int begin) {
+  int depth = 0;
   begin++;
   for (int i = 0; i < outputs_.size(); ++i) {
-    uint output_depth = outputs_[i]->Depth(begin);
+    int output_depth = outputs_[i]->Depth(begin);
     depth = output_depth > depth ? output_depth : depth;
   }
   return begin > depth ? begin : depth;
 }
 
 Node &Node::Folder(
-    uint size, std::string type,
+        int size, std::string type,
     std::map<std::string, std::pair<std::string, std::string>> change,
     std::vector<std::shared_ptr<Node>> *removed_nodes) {
   std::shared_ptr<framework::OpDesc> op_desc =
@@ -108,7 +108,7 @@ Node &Node::Folder(
 
 void Node::Folder(
     std::shared_ptr<framework::OpDesc> op_desc,
-    std::vector<std::shared_ptr<Node>> *outputs, uint index,
+    std::vector<std::shared_ptr<Node>> *outputs, int index,
     std::map<std::string, std::pair<std::string, std::string>> *change,
     Node *begin_node, std::vector<std::shared_ptr<Node>> *removed_nodes) {
   if (change->find(this->type_) != change->end()) {

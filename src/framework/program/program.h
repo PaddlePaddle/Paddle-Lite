@@ -28,7 +28,8 @@ class Program {
   std::shared_ptr<ProgramDesc> optimizeProgram;
   std::shared_ptr<Scope> scope;
   std::string model_path;
-
+  std::string para_path;
+  bool is_commbine = false;
  private:
 };
 
