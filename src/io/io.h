@@ -20,17 +20,16 @@ limitations under the License. */
 #include <vector>
 
 #include "common/types.h"
-#include "framework/tensor.h"
-#include "framework/operator.h"
 #include "framework/lod_tensor.h"
+#include "framework/operator.h"
 #include "framework/program/program.h"
+#include "framework/tensor.h"
 
 namespace paddle_mobile {
 
 template <typename Dtype = CPU, Precision P = Precision::FP32>
 class Loader {
  public:
-
   /*
    * @b load separate format fluid model
    * @b 加载分开形式的 fluid 模型
@@ -45,6 +44,7 @@ class Loader {
   const framework::Program<Dtype, P> Load(const std::string &model_path,
                                           const std::string &para_path,
                                           bool optimize = false);
+
  private:
   const framework::Program<Dtype, P> LoadProgram(const std::string &model_path,
                                                  bool optimize = false);
