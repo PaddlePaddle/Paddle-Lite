@@ -5,22 +5,19 @@ option(DEBUGING "enable debug mode" OFF)
 option(USE_OPENMP "openmp support" OFF)
 option(USE_EXCEPTION "use std exception" OFF)
 
-
-set(CMAKE_BUILD_TYPE Debug)
-
 if (DEBUGING)
+    set(CMAKE_BUILD_TYPE Debug)
 else()
-#    set(CMAKE_BUILD_TYPE Release)
+    set(CMAKE_BUILD_TYPE Release)
 endif ()
 
-add_definitions(-DPADDLE_MOBILE_DEBUG)
+
 if(DEBUGING)
-#    message(STATUS "debuging")
-
-
+    message(STATUS "debuging")
+    add_definitions(-DPADDLE_MOBILE_DEBUG)
 else()
-#    message(STATUS "releasing")
-#    add_definitions(-fvisibility=hidden -fvisibility-inlines-hidden)
+    message(STATUS "releasing")
+    add_definitions(-fvisibility=hidden -fvisibility-inlines-hidden)
 endif()
 
 if (USE_EXCEPTION)
@@ -28,7 +25,6 @@ if (USE_EXCEPTION)
     add_definitions(-fexceptions)
 else()
     add_definitions(-fno-exceptions)
-
 endif ()
 
 if(IS_MAC)
@@ -122,11 +118,10 @@ else ()
     add_definitions(-DTRANSPOSE_OP)
 endif()
 
-
 add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 
-add_subdirectory(test)
 if(DEBUGING)
+    add_subdirectory(test)
 endif()
 
 
