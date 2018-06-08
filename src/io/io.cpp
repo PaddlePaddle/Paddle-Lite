@@ -158,7 +158,26 @@ void Loader<Dtype, P>::LoadVar(framework::Variable *variable,
 template <typename Dtype, Precision P>
 const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
     const std::string &dirname, bool optimize) {
-  std::string model_filename = dirname + "/__model__";
+  auto program = this->LoadProgram(dirname + "/__model__", optimize);
+  program.model_path = dirname;
+  return program;
+}
+
+template <typename Dtype, Precision P>
+const framework::Program<Dtype, P> Loader<Dtype, P>::Load(const std::string &model_path,
+                                        const std::string &para_path,
+                                        bool optimize){
+  auto program = this->LoadProgram(model_path, optimize);
+  program.para_path = para_path;
+  program.is_commbine = true;
+  return program;
+}
+
+template <typename Dtype, Precision P>
+const framework::Program<Dtype, P> Loader<Dtype, P>::LoadProgram(const std::string &model_path,
+                                                                  bool optimize){
+
+  std::string model_filename = model_path;
   PaddleMobile__Framework__Proto__ProgramDesc *c_program;
   uint8_t *buf = NULL;
   size_t read_size = ReadBuffer(model_filename.c_str(), &buf);
@@ -166,7 +185,7 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
   PADDLE_MOBILE_ENFORCE(buf != NULL, "read from __model__ is null");
 
   c_program = paddle_mobile__framework__proto__program_desc__unpack(
-      NULL, read_size, buf);
+          NULL, read_size, buf);
   //
   PADDLE_MOBILE_ENFORCE(c_program != NULL, "program is null");
   //
@@ -175,7 +194,6 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
   auto originProgramDesc = std::make_shared<framework::ProgramDesc>(c_program);
 
   framework::Program<Dtype, P> program;
-  program.model_path = dirname;
   program.originProgram = originProgramDesc;
 
   auto scope = std::make_shared<framework::Scope>();
@@ -210,7 +228,7 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
   if (optimize) {
     framework::ProgramOptimize program_optimize;
     program.optimizeProgram =
-        program_optimize.FushionOptimize(originProgramDesc);
+            program_optimize.FushionOptimize(originProgramDesc);
   }
   if (optimize) {
     program.optimizeProgram->Description("optimize: ");
@@ -253,15 +271,18 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
       ops_of_block_[*block_desc.get()].push_back(op_base);
     }
   }
-  InitMemory();
+  if (program_.is_commbine) {
+    InitCombineMemory();
+  } else {
+    InitMemory();
+  }
+
 }
 
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
                                     framework::LoDTensor *tensor,
-                                    const std::string &file_path) {
-  char *origin_data = Get_binary_data(file_path);
-  char *data = origin_data;
+                                    const std::string &file_path, char *data) {
 
   // 1. version
   uint32_t version = *(uint32_t *)data;
@@ -348,8 +369,7 @@ void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
   for (int n = 0; n < memory_size * type_size; ++n) {
     static_cast<char *>(memory)[n] = data[n];
   }
-
-  delete origin_data;
+  data += (sizeof(char) * memory_size * type_size);
 }
 
 template <typename Dtype, Precision P>
@@ -362,8 +382,11 @@ void Executor<Dtype, P>::InitMemory() {
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
           continue;
         }
+
+        char *origin_data = Get_binary_data(program_.model_path + "/" + var_desc->Name());
         LoadMemory(*var_desc, tensor,
-                   program_.model_path + "/" + var_desc->Name());
+                   program_.model_path + "/" + var_desc->Name(), origin_data);
+        delete origin_data;
       } else {
         if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
           auto tensor = var->template GetMutable<framework::LoDTensor>();
@@ -373,6 +396,33 @@ void Executor<Dtype, P>::InitMemory() {
       }
     }
   }
+}
+
+template <typename Dtype, Precision P>
+void Executor<Dtype, P>::InitCombineMemory(){
+  char *origin_data = Get_binary_data(program_.para_path);
+
+  for (const auto &block : to_predict_program_->Blocks()) {
+    for (const auto &var_desc : block->Vars()) {
+      auto var = program_.scope->Var(var_desc->Name());
+      if (var_desc->Persistable()) {
+        auto tensor = var->template GetMutable<framework::LoDTensor>();
+        if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
+          continue;
+        }
+        LoadMemory(*var_desc, tensor,
+                   program_.model_path + "/" + var_desc->Name(), origin_data);
+      } else {
+        if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
+          auto tensor = var->template GetMutable<framework::LoDTensor>();
+
+          tensor->template mutable_data<Ptype>();
+        }
+      }
+    }
+  }
+
+  delete origin_data;
 }
 
 template <typename Dtype, Precision P>
