@@ -36,7 +36,7 @@ class BlockDesc {
 
     for (int i = 0; i < block_desc.vars_.size(); ++i) {
       auto &var_desc = block_desc.vars_[i];
-      vars_.emplace_back(std::make_shared<VarDesc>(*var_desc)) ;
+      vars_.emplace_back(std::make_shared<VarDesc>(*var_desc));
     }
   }
 
