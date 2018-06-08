@@ -32,16 +32,16 @@ namespace paddle_mobile {
 
 extern const char *ANDROID_LOG_TAG;
 
-#define ANDROIDLOGI(...)                                                      \
+#define ANDROIDLOGI(...)                                               \
   __android_log_print(ANDROID_LOG_INFO, ANDROID_LOG_TAG, __VA_ARGS__); \
   printf(__VA_ARGS__)
-#define ANDROIDLOGW(...)                                                         \
+#define ANDROIDLOGW(...)                                                  \
   __android_log_print(ANDROID_LOG_WARNING, ANDROID_LOG_TAG, __VA_ARGS__); \
   printf(__VA_ARGS__)
-#define ANDROIDLOGD(...)                                                       \
+#define ANDROIDLOGD(...)                                                \
   __android_log_print(ANDROID_LOG_DEBUG, ANDROID_LOG_TAG, __VA_ARGS__); \
   printf(__VA_ARGS__)
-#define ANDROIDLOGE(...)                                                       \
+#define ANDROIDLOGE(...)                                                \
   __android_log_print(ANDROID_LOG_ERROR, ANDROID_LOG_TAG, __VA_ARGS__); \
   printf(__VA_ARGS__)
 #else
