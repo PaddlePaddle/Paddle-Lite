@@ -11,10 +11,10 @@ else()
     set(CMAKE_BUILD_TYPE Release)
 endif ()
 
+
 if(DEBUGING)
     message(STATUS "debuging")
     add_definitions(-DPADDLE_MOBILE_DEBUG)
-
 else()
     message(STATUS "releasing")
     add_definitions(-fvisibility=hidden -fvisibility-inlines-hidden)
@@ -25,7 +25,6 @@ if (USE_EXCEPTION)
     add_definitions(-fexceptions)
 else()
     add_definitions(-fno-exceptions)
-
 endif ()
 
 if(IS_MAC)
@@ -118,7 +117,6 @@ else ()
     add_definitions(-DSOFTMAX_OP)
     add_definitions(-DTRANSPOSE_OP)
 endif()
-
 
 add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 
