@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(paddle-mobile)
 
-option(DEBUGING "enable debug mode" ON)
+option(DEBUGING "enable debug mode" OFF)
 option(USE_OPENMP "openmp support" OFF)
 option(USE_EXCEPTION "use std exception" OFF)
 
@@ -130,8 +130,8 @@ endif()
 
 add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 
-#if(DEBUGING)
+if(DEBUGING)
     add_subdirectory(test)
-#endif()
+endif()
 
 

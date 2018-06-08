@@ -32,18 +32,23 @@ namespace paddle_mobile {
 
 extern const char *ANDROID_LOG_TAG;
 
-#define LOGI(...)                                                      \
+#define ANDROIDLOGI(...)                                                      \
   __android_log_print(ANDROID_LOG_INFO, ANDROID_LOG_TAG, __VA_ARGS__); \
   printf(__VA_ARGS__)
-#define LOGW(...)                                                         \
+#define ANDROIDLOGW(...)                                                         \
   __android_log_print(ANDROID_LOG_WARNING, ANDROID_LOG_TAG, __VA_ARGS__); \
   printf(__VA_ARGS__)
-#define LOGD(...)                                                       \
+#define ANDROIDLOGD(...)                                                       \
   __android_log_print(ANDROID_LOG_DEBUG, ANDROID_LOG_TAG, __VA_ARGS__); \
   printf(__VA_ARGS__)
-#define LOGE(...)                                                       \
+#define ANDROIDLOGE(...)                                                       \
   __android_log_print(ANDROID_LOG_ERROR, ANDROID_LOG_TAG, __VA_ARGS__); \
   printf(__VA_ARGS__)
+#else
+#define ANDROIDLOGI(...)
+#define ANDROIDLOGW(...)
+#define ANDROIDLOGD(...)
+#define ANDROIDLOGE(...)
 
 #endif
 
@@ -143,6 +148,11 @@ struct ToLog {
     printf(format, ##__VA_ARGS__)
 
 #else
+
+#define ANDROIDLOGI(...)
+#define ANDROIDLOGW(...)
+#define ANDROIDLOGD(...)
+#define ANDROIDLOGE(...)
 
 enum LogLevel {
   kNO_LOG,
