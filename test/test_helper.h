@@ -28,6 +28,7 @@ static const std::string g_googlenet = "../models/googlenet";
 static const std::string g_mobilenet = "../models/mobilenet";
 static const std::string g_resnet_50 = "../models/resnet_50";
 static const std::string g_resnet = "../models/resnet";
+static const std::string g_googlenet_combine = "../models/googlenet_combine";
 static const std::string g_yolo = "../models/yolo";
 static const std::string g_test_image_1x3x224x224 =
     "../images/test_image_1x3x224x224_float";

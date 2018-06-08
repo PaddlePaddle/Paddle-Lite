@@ -56,10 +56,5 @@ inline std::string DataLayoutToString(const DataLayout &data_layout) {
   }
 }
 
-inline std::ostream &operator<<(std::ostream &out, const DataLayout &l) {
-  out << DataLayoutToString(l);
-  return out;
-}
-
 }  // namespace framework
 }  // namespace paddle_mobile

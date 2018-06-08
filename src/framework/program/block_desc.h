@@ -34,10 +34,9 @@ class BlockDesc {
       ops_.push_back(copy_op_desc);
     }
 
-    for (auto &var_desc : block_desc.vars_) {
-      std::shared_ptr<VarDesc> copy_var_desc =
-          std::make_shared<VarDesc>(*var_desc.second);
-      vars_[var_desc.first] = copy_var_desc;
+    for (int i = 0; i < block_desc.vars_.size(); ++i) {
+      auto &var_desc = block_desc.vars_[i];
+      vars_.emplace_back(std::make_shared<VarDesc>(*var_desc));
     }
   }
 
@@ -63,7 +62,7 @@ class BlockDesc {
   bool multi_thread_;
   int parent_index_;
   std::vector<std::shared_ptr<OpDesc>> ops_;
-  std::unordered_map<std::string, std::shared_ptr<VarDesc>> vars_;
+  std::vector<std::shared_ptr<VarDesc>> vars_;
 };
 
 }  // namespace framework
