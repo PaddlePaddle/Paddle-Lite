@@ -30,6 +30,7 @@ class Program {
   std::string model_path;
   std::string para_path;
   bool is_commbine = false;
+
  private:
 };
 

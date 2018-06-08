@@ -164,9 +164,9 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
 }
 
 template <typename Dtype, Precision P>
-const framework::Program<Dtype, P> Loader<Dtype, P>::Load(const std::string &model_path,
-                                        const std::string &para_path,
-                                        bool optimize){
+const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
+    const std::string &model_path, const std::string &para_path,
+    bool optimize) {
   auto program = this->LoadProgram(model_path, optimize);
   program.para_path = para_path;
   program.is_commbine = true;
@@ -174,9 +174,8 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(const std::string &mod
 }
 
 template <typename Dtype, Precision P>
-const framework::Program<Dtype, P> Loader<Dtype, P>::LoadProgram(const std::string &model_path,
-                                                                  bool optimize){
-
+const framework::Program<Dtype, P> Loader<Dtype, P>::LoadProgram(
+    const std::string &model_path, bool optimize) {
   std::string model_filename = model_path;
   PaddleMobile__Framework__Proto__ProgramDesc *c_program;
   uint8_t *buf = NULL;
@@ -185,7 +184,7 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::LoadProgram(const std::stri
   PADDLE_MOBILE_ENFORCE(buf != NULL, "read from __model__ is null");
 
   c_program = paddle_mobile__framework__proto__program_desc__unpack(
-          NULL, read_size, buf);
+      NULL, read_size, buf);
   //
   PADDLE_MOBILE_ENFORCE(c_program != NULL, "program is null");
   //
@@ -228,7 +227,7 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::LoadProgram(const std::stri
   if (optimize) {
     framework::ProgramOptimize program_optimize;
     program.optimizeProgram =
-            program_optimize.FushionOptimize(originProgramDesc);
+        program_optimize.FushionOptimize(originProgramDesc);
   }
   if (optimize) {
     program.optimizeProgram->Description("optimize: ");
@@ -276,14 +275,12 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
   } else {
     InitMemory();
   }
-
 }
 
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
                                     framework::LoDTensor *tensor,
                                     const std::string &file_path, char *data) {
-
   // 1. version
   uint32_t version = *(uint32_t *)data;
   data += sizeof(uint32_t);
@@ -383,7 +380,8 @@ void Executor<Dtype, P>::InitMemory() {
           continue;
         }
 
-        char *origin_data = Get_binary_data(program_.model_path + "/" + var_desc->Name());
+        char *origin_data =
+            Get_binary_data(program_.model_path + "/" + var_desc->Name());
         LoadMemory(*var_desc, tensor,
                    program_.model_path + "/" + var_desc->Name(), origin_data);
         delete origin_data;
@@ -399,7 +397,7 @@ void Executor<Dtype, P>::InitMemory() {
 }
 
 template <typename Dtype, Precision P>
-void Executor<Dtype, P>::InitCombineMemory(){
+void Executor<Dtype, P>::InitCombineMemory() {
   char *origin_data = Get_binary_data(program_.para_path);
 
   for (const auto &block : to_predict_program_->Blocks()) {

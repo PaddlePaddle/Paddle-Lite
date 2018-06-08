@@ -14,10 +14,10 @@ limitations under the License. */
 
 #pragma once
 
+#include <cinttypes>
 #include <map>
 #include <string>
 #include <vector>
-#include <cinttypes>
 #include "common/log.h"
 #include "framework/program/op_desc.h"
 
@@ -42,7 +42,7 @@ class Node {
   std::shared_ptr<Node> To(int size);
   int Depth(int begin = 0);
   Node &Folder(
-          int size, std::string type,
+      int size, std::string type,
       std::map<std::string, std::pair<std::string, std::string>> change_map,
       std::vector<std::shared_ptr<Node>> *removed_nodes);
   std::vector<std::shared_ptr<framework::OpDesc>> OpDescs(int size);

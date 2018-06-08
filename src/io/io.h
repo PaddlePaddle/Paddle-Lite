@@ -63,7 +63,8 @@ class Executor {
 
   void InitMemory();
   void LoadMemory(const framework::VarDesc var_desc,
-                  framework::LoDTensor *tensor, const std::string &file_path, char *data);
+                  framework::LoDTensor *tensor, const std::string &file_path,
+                  char *data);
   void InitCombineMemory();
   framework::Program<Dtype> program_;
   int batch_size_ = 1;

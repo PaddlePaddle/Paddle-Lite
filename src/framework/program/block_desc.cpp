@@ -17,9 +17,7 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace framework {
 
-std::vector<std::shared_ptr<VarDesc>> BlockDesc::Vars() const {
-  return vars_;
-}
+std::vector<std::shared_ptr<VarDesc>> BlockDesc::Vars() const { return vars_; }
 
 std::vector<std::shared_ptr<OpDesc>> BlockDesc::Ops() const { return ops_; }
 
@@ -30,11 +28,10 @@ BlockDesc::BlockDesc(PaddleMobile__Framework__Proto__BlockDesc *desc)
     vars_.emplace_back(std::shared_ptr<VarDesc>(new VarDesc(var_desc)));
   }
 
-  std::sort(vars_.begin(),
-            vars_.end(),
-            [](std::shared_ptr<VarDesc> left, std::shared_ptr<VarDesc> right){
+  std::sort(vars_.begin(), vars_.end(),
+            [](std::shared_ptr<VarDesc> left, std::shared_ptr<VarDesc> right) {
               return left->Name() < right->Name();
-  });
+            });
 
   for (int j = 0; j < desc->n_ops; ++j) {
     PaddleMobile__Framework__Proto__OpDesc *op_desc = desc->ops[j];

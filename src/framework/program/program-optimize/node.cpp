@@ -91,7 +91,7 @@ int Node::Depth(int begin) {
 }
 
 Node &Node::Folder(
-        int size, std::string type,
+    int size, std::string type,
     std::map<std::string, std::pair<std::string, std::string>> change,
     std::vector<std::shared_ptr<Node>> *removed_nodes) {
   std::shared_ptr<framework::OpDesc> op_desc =
