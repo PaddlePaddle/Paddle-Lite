@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(paddle-mobile)
 
-option(DEBUGING "enable debug mode" OFF)
+option(DEBUGING "enable debug mode" ON)
 option(USE_OPENMP "openmp support" OFF)
 option(USE_EXCEPTION "use std exception" OFF)
 
@@ -11,10 +11,13 @@ else()
     set(CMAKE_BUILD_TYPE Release)
 endif ()
 
-
 if(DEBUGING)
     message(STATUS "debuging")
     add_definitions(-DPADDLE_MOBILE_DEBUG)
+    if(ANDROID)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -llog")
+    endif()
+
 else()
     message(STATUS "releasing")
     add_definitions(-fvisibility=hidden -fvisibility-inlines-hidden)
@@ -48,6 +51,12 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 
 file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c)
 file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
+
+if (NOT ANDROID)
+list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/jni/*.cpp)
+list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/jni/*.h)
+list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/math/math_func_neon.h)
+endif ()
 
 include_directories(src/)
 
@@ -118,10 +127,11 @@ else ()
     add_definitions(-DTRANSPOSE_OP)
 endif()
 
+
 add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 
-if(DEBUGING)
+#if(DEBUGING)
     add_subdirectory(test)
-endif()
+#endif()
 
 

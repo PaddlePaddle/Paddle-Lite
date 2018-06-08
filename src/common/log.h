@@ -20,10 +20,32 @@ limitations under the License. */
 #include <sstream>
 #include <string>
 #endif
+#ifdef ANDROID
+#include <android/log.h>
+#endif
 
 namespace paddle_mobile {
 
 #ifdef PADDLE_MOBILE_DEBUG
+
+#ifdef ANDROID
+
+extern const char *ANDROID_LOG_TAG;
+
+#define LOGI(...)                                                      \
+  __android_log_print(ANDROID_LOG_INFO, ANDROID_LOG_TAG, __VA_ARGS__); \
+  printf(__VA_ARGS__)
+#define LOGW(...)                                                         \
+  __android_log_print(ANDROID_LOG_WARNING, ANDROID_LOG_TAG, __VA_ARGS__); \
+  printf(__VA_ARGS__)
+#define LOGD(...)                                                       \
+  __android_log_print(ANDROID_LOG_DEBUG, ANDROID_LOG_TAG, __VA_ARGS__); \
+  printf(__VA_ARGS__)
+#define LOGE(...)                                                       \
+  __android_log_print(ANDROID_LOG_ERROR, ANDROID_LOG_TAG, __VA_ARGS__); \
+  printf(__VA_ARGS__)
+
+#endif
 
 enum LogLevel {
   kNO_LOG,
