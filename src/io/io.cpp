@@ -279,17 +279,14 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
 
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
-                                    framework::LoDTensor *tensor,
-                                    const std::string &file_path, char *data) {
+                                    framework::LoDTensor *tensor, char *&data) {
   // 1. version
   uint32_t version = *(uint32_t *)data;
   data += sizeof(uint32_t);
-  DLOG << "version: " << version;
 
   // 2 Lod information
   uint64_t lod_level = *(uint64_t *)data;
   data += sizeof(uint64_t);
-  DLOG << "lod_level: " << lod_level;
 
   auto &lod = *tensor->mutable_lod();
   lod.resize(lod_level);
@@ -297,7 +294,6 @@ void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
     uint64_t size = *(uint64_t *)data;
     data += sizeof(uint64_t);
     DLOG << "lod size: " << i << size;
-
     std::vector<size_t> tmp(size / sizeof(size_t));
 
     for (int k = 0; k < tmp.size(); ++k) {
@@ -315,12 +311,10 @@ void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
   // 3. tensor version
   uint32_t tensor_version = *(uint32_t *)data;
   data += sizeof(uint32_t);
-  DLOG << "tensor_version: " << tensor_version;
 
   // 4. tensor desc
   int32_t size = *(int32_t *)data;
   data += sizeof(int32_t);
-  DLOG << "tensor desc size: " << size;
 
   std::unique_ptr<char[]> buf(new char[size]);
   for (int m = 0; m < size; ++m) {
@@ -344,7 +338,6 @@ void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
       break;
     case framework::VARTYPE_TYPE_FP32:
       type_size = 4;
-      DLOG << " type size: " << type_size;
       memory = tensor->mutable_data<float>();
       break;
     case framework::VARTYPE_TYPE_FP64:
@@ -382,8 +375,8 @@ void Executor<Dtype, P>::InitMemory() {
 
         char *origin_data =
             Get_binary_data(program_.model_path + "/" + var_desc->Name());
-        LoadMemory(*var_desc, tensor,
-                   program_.model_path + "/" + var_desc->Name(), origin_data);
+        char *data = origin_data;
+        LoadMemory(*var_desc, tensor, data);
         delete origin_data;
       } else {
         if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
@@ -399,7 +392,7 @@ void Executor<Dtype, P>::InitMemory() {
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::InitCombineMemory() {
   char *origin_data = Get_binary_data(program_.para_path);
-
+  char *data = origin_data;
   for (const auto &block : to_predict_program_->Blocks()) {
     for (const auto &var_desc : block->Vars()) {
       auto var = program_.scope->Var(var_desc->Name());
@@ -408,18 +401,15 @@ void Executor<Dtype, P>::InitCombineMemory() {
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
           continue;
         }
-        LoadMemory(*var_desc, tensor,
-                   program_.model_path + "/" + var_desc->Name(), origin_data);
+        LoadMemory(*var_desc, tensor, data);
       } else {
         if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
           auto tensor = var->template GetMutable<framework::LoDTensor>();
-
           tensor->template mutable_data<Ptype>();
         }
       }
     }
   }
-
   delete origin_data;
 }
 
