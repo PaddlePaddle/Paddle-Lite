@@ -70,7 +70,6 @@ build_for_android() {
         -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
         -DANDROID_PLATFORM="${ANDROID_PLATFORM_VERSION}" \
         -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
-        -DCMAKE_LDFLAGS="-Wl,--gc-sections --icf=safe" \
         -DANDROID_STL=c++_static \
         -DANDROID=true \
         -D"${NET}=true" \
