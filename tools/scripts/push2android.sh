@@ -21,8 +21,10 @@ adb push ${EXE_FILE} ${EXE_DIR}
 adb push ${LIB_PATH} ${EXE_DIR}
 adb push ${IMAGE_PATH} ${IMAGES_DIR}
 adb push ${MODELS_PATH} ${MODELS_DIR}
-echo "test files sync completed"
-echo "!!must cd /data/local/tmp/bin and export LD_LIBRARY_PATH=. "
-echo "you can cd /data/local/tmp/bin and ./test-xxx"
+echo "test-op or test-net below : "
+adb shell ls /data/local/tmp/bin
+echo "**** choose OP or NET to test ****"
+read -p "which to test : " test_name
+adb shell "cd /data/local/tmp/bin; LD_LIBRARY_PATH=. ./${test_name}"
 }
 push_fn
