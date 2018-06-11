@@ -3,7 +3,7 @@ project(paddle-mobile)
 
 option(DEBUGING "enable debug mode" OFF)
 option(USE_OPENMP "openmp support" OFF)
-option(USE_EXCEPTION "use std exception" OFF)
+option(USE_EXCEPTION "use std exception" ON)
 
 if (DEBUGING)
     set(CMAKE_BUILD_TYPE Debug)
@@ -127,8 +127,13 @@ else ()
     add_definitions(-DTRANSPOSE_OP)
 endif()
 
-
-add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+if (IS_IOS)
+    add_library(paddle-mobile STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+elseif(ANDROID)
+    add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+else()
+    add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+endif ()
 
 if(DEBUGING)
     add_subdirectory(test)
