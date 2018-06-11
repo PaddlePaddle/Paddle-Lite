@@ -7,7 +7,7 @@ option(USE_EXCEPTION "use std exception" ON)
 
 option(CPU "cpu" ON)
 option(MALI_GPU "mali gpu" OFF)
-option(FPGA "fpga" ON)
+option(FPGA "fpga" OFF)
 
 if (CPU)
     add_definitions(-DPADDLE_MOBILE_CPU)
