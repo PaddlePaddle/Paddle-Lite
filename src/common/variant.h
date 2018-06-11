@@ -12,8 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include <iostream>
-
+#include "common/enforce.h"
 #include "common/log.h"
 
 #pragma once
@@ -57,15 +56,11 @@ class RawData {
   char data[size];
   RawData() {}
   RawData(const RawData &raw_data) { strcpy(data, raw_data.data); }
-  //      void operator=(const RawData &raw_data){
-  //        strcpy(data, raw_data.data);
-  //      }
 };
 
 template <typename... Ts>
 struct Variant {
   Variant(const Variant &variant) {
-    //        std::cout << " 赋值构造函数 " << std::endl;
     type_id = variant.type_id;
     data = variant.data;
   }
@@ -87,8 +82,7 @@ struct Variant {
     if (type_id == typeid(T).hash_code()) {
       return *const_cast<T *>(reinterpret_cast<const T *>(&data));
     } else {
-      //      std::cout << " bad cast in variant " << std::endl;
-      throw std::bad_cast();
+      PADDLE_MOBILE_THROW_EXCEPTION(" bad cast in variant ");
     }
   }
 

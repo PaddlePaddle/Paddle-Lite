@@ -14,14 +14,15 @@ limitations under the License. */
 
 #pragma once
 
-#include <common/enforce.h>
 #include <cstdint>
 #include <cstring>
 #include <memory>
 #include <type_traits>
 #include <typeindex>
 #include <vector>
+#include "common/enforce.h"
 
+#include "common/enforce.h"
 #include "framework/data_layout.h"
 #include "framework/ddim.h"
 #include "memory/t_malloc.h"

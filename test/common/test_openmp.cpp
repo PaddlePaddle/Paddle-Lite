@@ -12,8 +12,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-//
-// Created by liuRuiLong on 2018/5/26.
-//
+//#include <omp.h>
+#include <iostream>
 
-#include "tensor_desc.h"
+int main(void) {
+#ifdef PADDLE_MOBILE_USE_OPENMP
+  #pragma omp parallel num_threads(2)
+  {
+    //        int thread_id = omp_get_thread_num();
+    //        int nthreads = omp_get_num_threads();
+    //        std::cout << "Hello, OMP " << thread_id << "/" << nthreads <<
+    //        "\n";
+  }
+#endif
+  return 0;
+}

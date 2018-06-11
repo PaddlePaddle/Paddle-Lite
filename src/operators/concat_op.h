@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef CONCAT_OP
+
 #pragma once
 
 #include <string>
@@ -25,7 +27,7 @@ template <typename DeviceType, typename T>
 class ConcatOp : public framework::OperatorWithKernel<DeviceType> {
  public:
   ConcatOp(const string &type, const VariableNameMap &inputs,
-           const VariableNameMap &outputs, const framework::AttributeMap attrs,
+           const VariableNameMap &outputs, const framework::AttributeMap &attrs,
            std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
                                                   scope),
@@ -45,3 +47,5 @@ class ConcatOp : public framework::OperatorWithKernel<DeviceType> {
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

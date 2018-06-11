@@ -12,4 +12,8 @@ if ! [[ $version == *"$VERSION"* ]]; then
     exit -1
 fi
 
-clang-format $@
+# https://medicineyeh.wordpress.com/2017/07/13/clang-format-with-pragma/
+shift
+perl -i -pe 's|#pragma\s+omp|// <TRICKY-CLANG-FORMAT-PRAGMA-FIX> #pragma omp|' "$@"
+clang-format -i $@
+perl -i -pe 's|// <TRICKY-CLANG-FORMAT-PRAGMA-FIX> ||' "$@"

@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef RELU_OP
+
 #pragma once
 
 #include <string>
@@ -32,7 +34,7 @@ class ReluOp : public framework::OperatorWithKernel<DeviceType> {
    * @b op 的实例化方法, 需要调用父类的实例化方法, 以及实例化自己的参数结构体
    * */
   ReluOp(const std::string &type, const VariableNameMap &inputs,
-         const VariableNameMap &outputs, const framework::AttributeMap attrs,
+         const VariableNameMap &outputs, const framework::AttributeMap &attrs,
          std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
                                                   scope),
@@ -59,3 +61,5 @@ class ReluOp : public framework::OperatorWithKernel<DeviceType> {
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

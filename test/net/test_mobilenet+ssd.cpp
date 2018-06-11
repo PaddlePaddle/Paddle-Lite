@@ -19,10 +19,10 @@ limitations under the License. */
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
   auto time1 = time();
-  auto program = loader.Load(g_mobilenet_ssd, false);
+  auto program = loader.Load(g_mobilenet_ssd, true);
   auto time2 = time();
   DLOG << "load cost :" << time_diff(time1, time1) << "ms";
-  paddle_mobile::Executor<paddle_mobile::CPU> executor(program, 1, false);
+  paddle_mobile::Executor<paddle_mobile::CPU> executor(program, 1, true);
 
   std::vector<int64_t> dims{1, 3, 300, 300};
   Tensor input_tensor;
