@@ -14,14 +14,15 @@ limitations under the License. */
 
 #ifdef CONV_OP
 
+#include "operators/kernel/conv_kernel.h"
+
 namespace paddle_mobile {
 namespace operators {
 
-// template<>
-// void ConvKernel<FPGA, float>::Compute(const ConvParam &param) const
-// {}
-//
-// template class ConvKernel<FPGA, float>;
+template<>
+void ConvKernel<FPGA, float>::Compute(const ConvParam &param) const {}
+template class ConvKernel<FPGA, float>;
+
 }
 }  // namespace paddle_mobile
 

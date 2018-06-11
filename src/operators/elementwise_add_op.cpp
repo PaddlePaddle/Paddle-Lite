@@ -29,7 +29,13 @@ template class ElementwiseAddOp<CPU, float>;
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-USE_OP(elementwise_add);
-REGISTER_OPERATOR(elementwise_add, ops::ElementwiseAddOp);
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(elementwise_add);
+REGISTER_OPERATOR_CPU(elementwise_add, ops::ElementwiseAddOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
 
 #endif
