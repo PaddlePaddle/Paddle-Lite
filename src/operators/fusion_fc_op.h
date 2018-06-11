@@ -69,7 +69,7 @@ class FushionFcOp : public framework::OperatorWithKernel<DeviceType> {
   FushionFcParam param_;
 };
 
-// static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
+static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
 
 }  // namespace operators
 }  // namespace paddle_mobile
