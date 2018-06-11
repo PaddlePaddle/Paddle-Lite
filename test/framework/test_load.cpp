@@ -13,13 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "../test_helper.h"
-#include "io.h"
+#include "io/io.h"
 
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
   //  ../../../test/models/googlenet
   //  ../../../test/models/mobilenet
-  auto program = loader.Load(g_googlenet);
-  program.optimizeProgram->Description("program desc: ");
+  auto program = loader.Load(g_resnet, true);
+  loader.Load(g_googlenet_combine + "/model", g_googlenet_combine + "/params",
+              true);
+
+  program.originProgram->Description("program desc: ");
   return 0;
 }

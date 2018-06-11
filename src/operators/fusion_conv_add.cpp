@@ -12,6 +12,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef FUSIONCONVADD_OP
+
+#include "operators/fusion_conv_add.h"
 namespace paddle_mobile {
-namespace framework {}
+namespace operators {
+
+template <typename Dtype, typename T>
+void FushionConvAddOp<Dtype, T>::InferShape() const {}
+template class FushionConvAddOp<CPU, float>;
+}  // namespace operators
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+USE_OP(conv_add);
+REGISTER_OPERATOR(conv_add, ops::FushionConvAddOp);
+
+#endif

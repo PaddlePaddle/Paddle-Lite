@@ -34,7 +34,7 @@ using framework::Tensor;
 using std::string;
 using std::vector;
 
-class OpParam : PaddleMobileObject {
+class OpParam {
  protected:
   template <typename T>
   static T *InputFrom(const VariableNameMap &inputs, const Scope &scope) {
@@ -167,8 +167,6 @@ class OpParam : PaddleMobileObject {
                         const Scope &scope) {
     auto var_vec = var_map.at(key);
     if (!var_vec.empty()) {
-      //      std::cout << " get var value -- " << var_vec[0] <<
-      //      std::endl;
       auto var = scope.FindVar(var_vec[0]);
       return var->GetMutable<T>();
     } else {
@@ -191,6 +189,7 @@ class OpParam : PaddleMobileObject {
   }
 };
 
+#ifdef CONV_OP
 class ConvParam : OpParam {
  public:
   ConvParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
@@ -230,7 +229,9 @@ class ConvParam : OpParam {
 };
 
 Print &operator<<(Print &printer, const ConvParam &conv_param);
+#endif
 
+#ifdef ELEMENTWISEADD_OP
 class ElementwiseAddParam : OpParam {
  public:
   ElementwiseAddParam(const VariableNameMap &inputs,
@@ -258,6 +259,9 @@ class ElementwiseAddParam : OpParam {
   int axis_;
 };
 
+#endif
+
+#ifdef MUL_OP
 class MulParam : OpParam {
  public:
   MulParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
@@ -287,7 +291,9 @@ class MulParam : OpParam {
   int x_num_col_dims_;
   int y_num_col_dims_;
 };
+#endif
 
+#ifdef CONCAT_OP
 class ConcatParam : public OpParam {
  public:
   ConcatParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
@@ -309,7 +315,9 @@ class ConcatParam : public OpParam {
   Tensor *out_;
   int axis_;
 };
+#endif
 
+#ifdef LRN_OP
 class LrnParam : public OpParam {
  public:
   LrnParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
@@ -351,6 +359,9 @@ class LrnParam : public OpParam {
   float k_;
   string data_format_;
 };
+#endif
+
+#ifdef BATCHNORM_OP
 class BatchNormParam : OpParam {
  public:
   BatchNormParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
@@ -399,6 +410,9 @@ class BatchNormParam : OpParam {
   bool is_test_;
   string data_format_;
 };
+#endif
+
+#ifdef POOL_OP
 class PoolParam : public OpParam {
  public:
   PoolParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
@@ -442,6 +456,9 @@ class PoolParam : public OpParam {
   bool gloabal_pooling_ = false;
 };
 
+#endif
+
+#ifdef PRIORBOX_OP
 class PriorBoxParam : public OpParam {
  public:
   PriorBoxParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
@@ -503,7 +520,9 @@ class PriorBoxParam : public OpParam {
   float step_h_;
   float offset_;
 };
+#endif
 
+#ifdef BOXCODER_OP
 class BoxCoderParam : public OpParam {
  public:
   BoxCoderParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
@@ -533,7 +552,9 @@ class BoxCoderParam : public OpParam {
   Tensor *output_box_;
   std::string code_type_;
 };
+#endif
 
+#ifdef SOFTMAX_OP
 class SoftmaxParam : public OpParam {
  public:
   SoftmaxParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
@@ -549,7 +570,9 @@ class SoftmaxParam : public OpParam {
   Tensor *input_x_;
   Tensor *out_;
 };
+#endif
 
+#ifdef SIGMOID_OP
 class SigmoidParam : public OpParam {
  public:
   SigmoidParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
@@ -565,6 +588,9 @@ class SigmoidParam : public OpParam {
   Tensor *input_x_;
   Tensor *out_;
 };
+#endif
+
+#ifdef MULTICLASSNMS_OP
 class MultiClassNMSParam : public OpParam {
  public:
   MultiClassNMSParam(const VariableNameMap &inputs,
@@ -610,6 +636,7 @@ class MultiClassNMSParam : public OpParam {
   float nms_eta_;
   float score_threshold_;
 };
+#endif
 
 class FeedParam : public OpParam {
  public:
@@ -646,6 +673,7 @@ class FetchParam : public OpParam {
   Tensor *out_;
 };
 
+#ifdef TRANSPOSE_OP
 class TransposeParam : public OpParam {
  public:
   TransposeParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
@@ -666,7 +694,9 @@ class TransposeParam : public OpParam {
   Tensor *out_;
   vector<int> axis_;
 };
+#endif
 
+#ifdef RESHAPE_OP
 class ReshapeParam : public OpParam {
  public:
   ReshapeParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
@@ -695,7 +725,9 @@ class ReshapeParam : public OpParam {
   vector<int> shape_;
   bool inplace_;
 };
+#endif
 
+#ifdef RELU_OP
 /*
  * @b op 层实例化好这个 param 传递给 kernel 层使用
  * */
@@ -715,7 +747,9 @@ class ReluParam : public OpParam {
   Tensor *input_x_;
   Tensor *out_;
 };
+#endif
 
+#ifdef FUSION_FC_OP
 class FushionFcParam : public OpParam {
  public:
   FushionFcParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
@@ -751,6 +785,7 @@ class FushionFcParam : public OpParam {
   int y_num_col_dims_;
   int axis_;
 };
+#endif
 
 }  // namespace operators
 }  // namespace paddle_mobile

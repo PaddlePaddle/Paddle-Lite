@@ -14,10 +14,9 @@ limitations under the License. */
 
 #pragma once
 
-#include <assert.h>
 #include <initializer_list>
-#include <stdexcept>
 #include <vector>
+#include "common/enforce.h"
 #include "common/variant.h"
 #include "dim.h"
 
@@ -58,9 +57,7 @@ struct DDim {
     } else if (d.var.TypeId() == typeid(Dim<9>).hash_code()) {
       return vistor(d.var.Get<Dim<9>>());
     } else {
-      printf(" dim not support  \n");
-      throw std::bad_exception();
-      //        return typename Vistor::type_t();
+      DLOG << " dim not support";
     }
   }
 
@@ -82,17 +79,6 @@ struct DDim {
   int64_t &operator[](int idx);
 
   int64_t operator[](int idx) const;
-
-  //  template <typename Visitor>
-  //  typename Visitor::result_type apply_visitor(Visitor& visitor) {
-  //    return var.apply_visitor(visitor);
-  //  }
-  //
-  //  template <typename Visitor>
-  //  typename Visitor::result_type apply_visitor(Visitor& visitor)
-  //  const {
-  //    return var.apply_visitor(visitor);
-  //  }
 
   DDimVar getVar() { return var; }
 
@@ -126,7 +112,7 @@ DDim make_ddim(std::initializer_list<int64_t> dims);
 
 int64_t get(const DDim &dim, int idx);
 
-void set(DDim &dim, int idx, int val);
+void set(DDim *dim, int idx, int val);
 
 std::vector<int64_t> vectorize(const DDim &ddim);
 
@@ -151,8 +137,6 @@ DDim slice_ddim(const DDim &dim, int begin, int end);
 
 int arity(const DDim &ddim);
 
-std::ostream &operator<<(std::ostream &, const DDim &);
-
 // Reshape a tensor to a matrix. The matrix's first dimension(column
 // length)
 // will be the product of tensor's first `num_col_dims` dimensions.
@@ -163,5 +147,9 @@ DDim flatten_to_1d(const DDim &src);
 DDim stride(const DDim &ddim);
 
 DDim stride_numel(const DDim &ddim);
+
+#ifdef PADDLE_MOBILE_DEBUG
+Print &operator<<(Print &printer, const DDim &ddim);
+#endif
 }  // namespace framework
 }  // namespace paddle_mobile

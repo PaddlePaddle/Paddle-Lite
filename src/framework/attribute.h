@@ -14,7 +14,10 @@ limitations under the License. */
 
 #pragma once
 
+#include <string>
 #include <unordered_map>
+#include <vector>
+
 #include "common/enforce.h"
 #include "common/log.h"
 #include "common/variant.h"
@@ -22,28 +25,15 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace framework {
+using std::string;
+using std::vector;
 
 class BlockDesc;
 
 class Attribute {
  public:
-  /*
-   *  PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__INT = 0,
-  PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__FLOAT = 1,
-  PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__STRING = 2,
-  PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__INTS = 3,
-  PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__FLOATS = 4,
-  PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__STRINGS = 5,
-  PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__BOOLEAN = 6,
-  PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__BOOLEANS = 7,
-  PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__BLOCK = 8,
-  PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__LONG = 9
-    PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE)
-   *
-   * */
   static Attribute GetAttrValue(
       PaddleMobile__Framework__Proto__OpDesc__Attr *attr_desc) {
-    //    std::cout << "begin get attr value" << std::endl;
     Attribute attr;
     switch (attr_desc->type) {
       case PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__BOOLEAN: {
@@ -63,35 +53,35 @@ class Attribute {
         break;
       }
       case PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__BOOLEANS: {
-        std::vector<bool> val(attr_desc->n_bools);
+        vector<bool> val(attr_desc->n_bools);
         for (int i = 0; i < attr_desc->n_bools; ++i) {
           val[i] = attr_desc->bools[i];
         }
-        attr.Set<std::vector<bool>>(val);
+        attr.Set<vector<bool>>(val);
         break;
       }
       case PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__INTS: {
-        std::vector<int> val(attr_desc->n_ints);
+        vector<int> val(attr_desc->n_ints);
         for (int i = 0; i < attr_desc->n_ints; ++i) {
           val[i] = attr_desc->ints[i];
         }
-        attr.Set<std::vector<int>>(val);
+        attr.Set<vector<int>>(val);
         break;
       }
       case PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__FLOATS: {
-        std::vector<float> val(attr_desc->n_floats);
+        vector<float> val(attr_desc->n_floats);
         for (int i = 0; i < attr_desc->n_floats; ++i) {
           val[i] = attr_desc->floats[i];
         }
-        attr.Set<std::vector<float>>(val);
+        attr.Set<vector<float>>(val);
         break;
       }
       case PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__STRINGS: {
-        std::vector<std::string> val(attr_desc->n_strings);
+        vector<string> val(attr_desc->n_strings);
         for (int i = 0; i < attr_desc->n_strings; ++i) {
           val[i] = attr_desc->strings[i];
         }
-        attr.Set<std::vector<std::string>>(val);
+        attr.Set<vector<string>>(val);
         break;
       }
       case PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__LONG: {
@@ -122,47 +112,41 @@ class Attribute {
       return vistor(attr.variant_.Get<int>());
     } else if (attr.variant_.TypeId() == typeid(float).hash_code()) {
       return vistor(attr.variant_.Get<float>());
-    } else if (attr.variant_.TypeId() == typeid(std::string).hash_code()) {
-      return vistor(attr.variant_.Get<std::string>());
-    } else if (attr.variant_.TypeId() == typeid(std::vector<int>).hash_code()) {
-      return vistor(attr.variant_.Get<std::vector<int>>());
-    } else if (attr.variant_.TypeId() ==
-               typeid(std::vector<float>).hash_code()) {
-      return vistor(attr.variant_.Get<std::vector<float>>());
-    } else if (attr.variant_.TypeId() ==
-               typeid(std::vector<std::string>).hash_code()) {
-      return vistor(attr.variant_.Get<std::vector<std::string>>());
+    } else if (attr.variant_.TypeId() == typeid(string).hash_code()) {
+      return vistor(attr.variant_.Get<string>());
+    } else if (attr.variant_.TypeId() == typeid(vector<int>).hash_code()) {
+      return vistor(attr.variant_.Get<vector<int>>());
+    } else if (attr.variant_.TypeId() == typeid(vector<float>).hash_code()) {
+      return vistor(attr.variant_.Get<vector<float>>());
+    } else if (attr.variant_.TypeId() == typeid(vector<string>).hash_code()) {
+      return vistor(attr.variant_.Get<vector<string>>());
     } else if (attr.variant_.TypeId() == typeid(bool).hash_code()) {
       return vistor(attr.variant_.Get<bool>());
-    } else if (attr.variant_.TypeId() ==
-               typeid(std::vector<bool>).hash_code()) {
-      return vistor(attr.variant_.Get<std::vector<bool>>());
+    } else if (attr.variant_.TypeId() == typeid(vector<bool>).hash_code()) {
+      return vistor(attr.variant_.Get<vector<bool>>());
     } else if (attr.variant_.TypeId() == typeid(int64_t).hash_code()) {
       return vistor(attr.variant_.Get<int64_t>());
     } else {
-      throw std::bad_exception();
+      PADDLE_MOBILE_THROW_EXCEPTION("type not support");
     }
   }
 
  private:
-  Variant<int, float, std::string, std::vector<int>, std::vector<float>,
-          std::vector<std::string>, bool, std::vector<bool>, BlockDesc *,
-          int64_t>
+  Variant<int, float, string, vector<int>, vector<float>, vector<string>, bool,
+          vector<bool>, BlockDesc *, int64_t>
       variant_;
 };
 
-using AttributeMap = std::unordered_map<std::string, Attribute>;
+using AttributeMap = std::unordered_map<string, Attribute>;
 
 class AttrReader {
  public:
   explicit AttrReader(const AttributeMap &attrs) : attrs_(attrs) {}
 
   template <typename T>
-  inline T Get(const std::string &name) const {
-    //          PADDLE_ENFORCE(attrs_.count(name) != 0, "%s should
-    //          be in
-    //          AttributeMap",
-    //                         name);
+  inline T Get(const string &name) const {
+    PADDLE_MOBILE_ENFORCE(attrs_.count(name) != 0,
+                          "%s should  be in AttributeMap", name);
     return ((Attribute)attrs_.at(name)).Get<T>();
   }
 

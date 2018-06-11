@@ -12,24 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
-#include "framework.pb.h"
-#include "lod_tensor.h"
-#include "selected_rows.h"
-#include "variable.h"
+//
+// Created by liuRuiLong on 2018/6/6.
+//
 
-namespace paddle_mobile {
-namespace framework {
-inline proto::VarType::Type ToVarType(std::type_index type) {
-  if (type.hash_code() == typeid(LoDTensor).hash_code()) {
-    return proto::VarType_Type_LOD_TENSOR;
-  } else if (type.hash_code() == typeid(SelectedRows).hash_code()) {
-    return proto::VarType_Type_SELECTED_ROWS;
-  } else {
-    //    PADDLE_THROW("ToVarType:Unsupported type %s",
-    //    type.name());
-  }
-}
+#include "test_lib_size.h"
 
-}  // namespace framework
-}  // namespace paddle_mobile
+static test_lib_size t;

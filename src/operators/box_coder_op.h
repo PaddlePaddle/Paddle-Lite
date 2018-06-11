@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef BOXCODER_OP
+
 #pragma once
 
 #include <string>
@@ -30,7 +32,7 @@ class BoxCoderOp : public framework::OperatorWithKernel<DeviceType> {
  public:
   BoxCoderOp(const std::string &type, const VariableNameMap &inputs,
              const VariableNameMap &outputs,
-             const framework::AttributeMap attrs,
+             const framework::AttributeMap &attrs,
              std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
                                                   scope),
@@ -50,3 +52,5 @@ class BoxCoderOp : public framework::OperatorWithKernel<DeviceType> {
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

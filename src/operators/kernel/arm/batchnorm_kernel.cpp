@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef BATCHNORM_OP
+
 #pragma once
 
 #include "operators/kernel/batchnorm_kernel.h"
@@ -47,7 +49,7 @@ void BatchNormKernel<CPU, float>::Compute(const BatchNormParam &param) const {
   Tensor inv_std;
   auto inv_std_ptr = inv_std.mutable_data<float>(make_ddim({C}));
   if (C != variance->numel()) {
-    std::cout << "C must equal to variance.numel()" << std::endl;
+    DLOG << "C must equal to variance.numel()";
   }
   assert(C == variance->numel());
 
@@ -91,3 +93,5 @@ void BatchNormKernel<CPU, float>::Compute(const BatchNormParam &param) const {
 }
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

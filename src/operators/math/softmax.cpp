@@ -11,6 +11,9 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
+
+#ifdef SOFTMAX_OP
+
 #include "operators/math/softmax.h"
 #include "common/types.h"
 #if __ARM_NEON
@@ -153,3 +156,4 @@ template class SoftmaxFuntor<CPU, float>;
 }  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile
+#endif

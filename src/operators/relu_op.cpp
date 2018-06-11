@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef RELU_OP
+
 #include "operators/relu_op.h"
 namespace paddle_mobile {
 namespace operators {
@@ -33,3 +35,5 @@ template class ReluOp<CPU, float>;
 namespace ops = paddle_mobile::operators;
 USE_OP(relu);
 REGISTER_OPERATOR(relu, ops::ReluOp);
+
+#endif
