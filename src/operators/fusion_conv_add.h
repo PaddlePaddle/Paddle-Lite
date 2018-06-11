@@ -64,7 +64,13 @@ class FushionConvAddOp : public framework::OperatorWithKernel<DeviceType> {
   //  FushionFcParam param_;
 };
 
-// static framework::FusionOpRegistrar fc_registrar(new FusionConvAddMatcher());
+#ifdef PADDLE_MOBILE_CPU
+static framework::FusionOpRegistrar fc_registrar(new FusionConvAddMatcher());
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
 
 }  // namespace operators
 }  // namespace paddle_mobile

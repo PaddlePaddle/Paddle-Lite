@@ -137,6 +137,7 @@ class OpKernelBase {
       std::shared_ptr<::paddle_mobile::framework::Scope> scope)                \
       : parent_cls<Dtype, T>(type, inputs, outputs, attrs, scope) {}
 
+
 class FusionOpMatcher {
  public:
   FusionOpMatcher() {}
@@ -153,6 +154,7 @@ class FusionOpMatcher {
 
   std::string BeginType() { return node_.Type(); }
 
+  //  virtual  bool Fusion();
  protected:
   Node node_;
   std::string type_;

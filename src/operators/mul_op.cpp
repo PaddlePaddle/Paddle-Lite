@@ -55,7 +55,13 @@ template class MulOp<CPU, float>;
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-USE_OP(mul);
-REGISTER_OPERATOR(mul, ops::MulOp);
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(mul);
+REGISTER_OPERATOR_CPU(mul, ops::MulOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
 
 #endif

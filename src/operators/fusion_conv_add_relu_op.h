@@ -46,8 +46,14 @@ class ConvAddReluOp {
  private:
 };
 
-// static framework::FusionOpRegistrar fc_registrar(
-//    new FushionConvAddReluOpMatcher());
+#ifdef PADDLE_MOBILE_CPU
+//static framework::FusionOpRegistrar fusion_conv_add_relu_registrar(
+//        new FushionConvAddReluOpMatcher());
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
 
 }  // namespace operators
 }  // namespace paddle_mobile
