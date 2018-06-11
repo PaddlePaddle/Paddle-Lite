@@ -61,5 +61,4 @@ REGISTER_OPERATOR_CPU(transpose, ops::TransposeOp);
 #ifdef PADDLE_MOBILE_FPGA
 #endif
 
-
 #endif

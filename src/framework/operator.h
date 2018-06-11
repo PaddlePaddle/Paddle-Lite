@@ -137,7 +137,6 @@ class OpKernelBase {
       std::shared_ptr<::paddle_mobile::framework::Scope> scope)                \
       : parent_cls<Dtype, T>(type, inputs, outputs, attrs, scope) {}
 
-
 class FusionOpMatcher {
  public:
   FusionOpMatcher() {}

@@ -47,7 +47,7 @@ class ConvAddReluOp {
 };
 
 #ifdef PADDLE_MOBILE_CPU
-//static framework::FusionOpRegistrar fusion_conv_add_relu_registrar(
+// static framework::FusionOpRegistrar fusion_conv_add_relu_registrar(
 //        new FushionConvAddReluOpMatcher());
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
