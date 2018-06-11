@@ -19,11 +19,11 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-template<>
+template <>
 void ConvKernel<FPGA, float>::Compute(const ConvParam &param) const {}
 template class ConvKernel<FPGA, float>;
 
-}
+}  // namespace operators
 }  // namespace paddle_mobile
 
 #endif

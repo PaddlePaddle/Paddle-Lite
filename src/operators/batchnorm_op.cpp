@@ -40,5 +40,4 @@ REGISTER_OPERATOR_CPU(batch_norm, ops::BatchNormOp);
 #ifdef PADDLE_MOBILE_FPGA
 #endif
 
-
 #endif

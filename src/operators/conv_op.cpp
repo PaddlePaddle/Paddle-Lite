@@ -66,6 +66,4 @@ USE_OP_FPGA(conv2d);
 REGISTER_OPERATOR_FPGA(conv2d, ops::ConvOp);
 #endif
 
-
-
 #endif
