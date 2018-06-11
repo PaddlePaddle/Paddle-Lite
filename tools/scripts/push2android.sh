@@ -22,5 +22,7 @@ adb push ${LIB_PATH} ${EXE_DIR}
 adb push ${IMAGE_PATH} ${IMAGES_DIR}
 adb push ${MODELS_PATH} ${MODELS_DIR}
 echo "test files sync completed"
+echo "!!must cd /data/local/tmp/bin and export LD_LIBRARY_PATH=. "
+echo "you can cd /data/local/tmp/bin and ./test-xxx"
 }
 push_fn
