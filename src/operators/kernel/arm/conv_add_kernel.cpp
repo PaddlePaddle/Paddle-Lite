@@ -39,7 +39,6 @@ void expand_bias(Tensor &bias, int axis, const DDim &dDim) {
   }
 }
 
-
 template <>
 void ConvAddKernel<CPU, float>::Compute(
     const FushionConvAddParam &param) const {
