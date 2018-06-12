@@ -27,7 +27,13 @@ template class SigmoidOp<CPU, float>;
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-USE_OP(sigmoid);
-REGISTER_OPERATOR(sigmoid, ops::SigmoidOp);
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(sigmoid);
+REGISTER_OPERATOR_CPU(sigmoid, ops::SigmoidOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
 
 #endif

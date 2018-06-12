@@ -52,7 +52,13 @@ template class BoxCoderOp<CPU, float>;
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-USE_OP(box_coder);
-REGISTER_OPERATOR(box_coder, ops::BoxCoderOp);
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(box_coder);
+REGISTER_OPERATOR_CPU(box_coder, ops::BoxCoderOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
 
 #endif

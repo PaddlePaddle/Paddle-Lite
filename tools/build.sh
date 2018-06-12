@@ -98,7 +98,7 @@ build_for_ios() {
     BUILD_DIR=../build/release/"${PLATFORM}"
     TOOLCHAIN_FILE="./tools/ios-cmake/ios.toolchain.cmake"
     C_FLAGS="-fobjc-abi-version=2 -fobjc-arc -isysroot ${CMAKE_OSX_SYSROOT}"
-    CXX_FLAGS="-fobjc-abi-version=2 -fobjc-arc -std=gnu++11 -stdlib=libc++ -isysroot ${CMAKE_OSX_SYSROOT}"
+    CXX_FLAGS="-fobjc-abi-version=2 -fobjc-arc -std=gnu++14 -stdlib=libc++ -isysroot ${CMAKE_OSX_SYSROOT}"
     mkdir -p "${BUILD_DIR}"
     if [ $# -eq 1 ]; then
         NET=$1
