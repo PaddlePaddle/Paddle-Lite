@@ -19,7 +19,8 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-void ConvAddKernel<CPU, float>::Compute(const FushionConvAddParam &param) const {
+void ConvAddKernel<CPU, float>::Compute(
+    const FushionConvAddParam &param) const {
   DLOG << param;
 
   const Tensor *input = param.Input();
@@ -48,7 +49,7 @@ void ConvAddKernel<CPU, float>::Compute(const FushionConvAddParam &param) const 
   framework::DDim col_shape(framework::make_ddim(col_shape_vec));
 
   framework::DDim col_matrix_shape =
-          framework::flatten_to_2d(col_shape, data_dim + 1);
+      framework::flatten_to_2d(col_shape, data_dim + 1);
 
   bool is_expand = IsExpand(filter_shape_vec, strides, paddings, dilations);
   Tensor col;
@@ -60,15 +61,15 @@ void ConvAddKernel<CPU, float>::Compute(const FushionConvAddParam &param) const 
   }
 
   framework::DDim input_shape = framework::slice_ddim(
-          input->dims(), 1, static_cast<int>(input->dims().size()));
+      input->dims(), 1, static_cast<int>(input->dims().size()));
 
   framework::DDim filter_matrix_shape = {filter.dims()[0],
                                          filter.numel() / filter.dims()[0]};
   filter.Resize(filter_matrix_shape);
   DLOG << " filter.dims() = " << filter.dims();
   framework::DDim output_matrix_shape = {
-          output->dims()[1],
-          output->numel() / (output->dims()[0] * output->dims()[1])};
+      output->dims()[1],
+      output->numel() / (output->dims()[0] * output->dims()[1])};
 
   // convolution operator: im2col(or vol2col) + gemm
   int in_step = static_cast<int>(input->dims()[1]) / groups;
