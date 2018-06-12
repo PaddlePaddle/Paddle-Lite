@@ -17,6 +17,7 @@ limitations under the License. */
 #pragma once
 
 #include <vector>
+#include "framework/ddim.h"
 #include "framework/operator.h"
 #include "operators/math/im2col.h"
 #include "operators/math/math_function.h"
@@ -26,6 +27,7 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
+using framework::DDim;
 using framework::OpKernelBase;
 
 template <typename DeviceType, typename T>
