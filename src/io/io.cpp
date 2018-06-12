@@ -14,9 +14,13 @@ limitations under the License. */
 
 #include "io.h"
 #include <vector>
+#define PADDLE_MOBILE_PROFILE
 #ifdef PADDLE_MOBILE_PROFILE
 #include <ctime>
+#include <unordered_map>
 #include <map>
+#include <algorithm>
+#include <numeric>
 #endif
 
 #include "common/enforce.h"
@@ -346,26 +350,31 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
   for (int j = 0; j < ops_of_block_[*to_predict_block.get()].size(); ++j) {
     auto op = ops_of_block_[*to_predict_block.get()][j];
 #ifdef PADDLE_MOBILE_PROFILE
-    _profile[op->Type()] = clock();
+    clock_t _tic = clock();
 #endif
     op->Run();
 #ifdef PADDLE_MOBILE_PROFILE
-    _profile[op->Type()] = clock() - _profile[op->Type()];
+    _profile[op->Type()] += clock() - _tic;
 #endif
   }
 #ifdef PADDLE_MOBILE_PROFILE
   {
-    DLOG << "========================[ profile ]==========================";
-    clock_t _ptotal = 0;
-    for (auto const &p : _profile) {
+    std::cout << "========================[ profile ]==========================\n";
+    std::vector<std::pair<std::string, clock_t>> _tprofile(_profile.begin(), _profile.end());
+    clock_t _ptotal;
+    for (auto const& p : _tprofile) {
       _ptotal += p.second;
     }
-    for (auto const &p : _profile) {
-      DLOG << p.first << std::string(16 - p.first.size(), ' ') << "\t"
-           << (float)p.second << "\t\t"
-           << (float)p.second / (float)_ptotal * 100.0;
+    std::sort(_tprofile.begin(), _tprofile.end(), [](auto& a, auto& b) {
+      return a.second > b.second;
+    });
+    _tprofile.push_back(std::make_pair("total", _ptotal));
+    for (auto const &p : _tprofile) {
+      std::cout << p.first << std::string(16 - p.first.size(), ' ') << "\t"
+           << p.second << "\t\t"
+           << (float)p.second / _ptotal * 100.0 << "\n";
     }
-    DLOG << "========================[         ]==========================";
+    std::cout << "========================[---------]==========================\n";
   }
 #endif
   auto ops = ops_of_block_[*to_predict_program_->Block(0)];
