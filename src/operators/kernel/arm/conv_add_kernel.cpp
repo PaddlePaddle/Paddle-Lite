@@ -18,6 +18,27 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
+void expand_bias(Tensor &bias, int axis, const DDim &dDim) {
+  auto bias_ptr = bias.data<float>();
+  const DDim bias_ddim = bias.dims();
+  PADDLE_MOBILE_ENFORCE(bias.dims().size() == 1,
+                        "the bias tensor's dims size != 1")
+  DDim outer_ddim = paddle_mobile::framework::slice_ddim(dDim, 0, axis + 1);
+  DDim inner_ddim =
+      paddle_mobile::framework::slice_ddim(dDim, axis + 1, dDim.size());
+  int outer_size = paddle_mobile::framework::product(outer_ddim);
+  int inner_size = paddle_mobile::framework::product(inner_ddim);
+  bias.Resize(dDim);
+  auto new_ptr = bias.mutable_data<float>();
+  int axis_size = dDim[axis];
+  for (int i = 0; i < outer_size; ++i) {
+    float v_bias = bias_ptr[i * axis_size / outer_size];
+    for (int j = 0; j < inner_size; ++j) {
+      new_ptr[i * inner_size + j] = v_bias;
+    }
+  }
+}
+
 template <>
 void ConvAddKernel<CPU, float>::Compute(
     const FushionConvAddParam &param) const {
@@ -25,14 +46,15 @@ void ConvAddKernel<CPU, float>::Compute(
 
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
+  Tensor bias = *param.Bias();
+  int axis = param.Axis();
   Tensor *output = param.Output();
-  output->mutable_data<float>();
+  expand_bias(bias, axis, output->dims());
+  output->ShareDataWith(bias);
   int groups = param.Groups();
   std::vector<int> strides = param.Strides();
   std::vector<int> paddings = param.Paddings();
   std::vector<int> dilations = param.Dilations();
-
-  //  DLOG << " compute end get Attrs " << strides[0];
 
   const int batch_size = static_cast<int>(input->dims()[0]);
 
@@ -66,7 +88,6 @@ void ConvAddKernel<CPU, float>::Compute(
   framework::DDim filter_matrix_shape = {filter.dims()[0],
                                          filter.numel() / filter.dims()[0]};
   filter.Resize(filter_matrix_shape);
-  DLOG << " filter.dims() = " << filter.dims();
   framework::DDim output_matrix_shape = {
       output->dims()[1],
       output->numel() / (output->dims()[0] * output->dims()[1])};
@@ -105,7 +126,7 @@ void ConvAddKernel<CPU, float>::Compute(
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
       math::matmul<float>(filter_slice, false, col_matrix, false,
                           static_cast<float>(1), &out_slice,
-                          static_cast<float>(0));
+                          static_cast<float>(1));
     }
   }
 }
