@@ -114,10 +114,10 @@ class OpRegistry {
   REGISTER_OPERATOR(op_type, op_class, cpu, paddle_mobile::CPU);
 
 #define REGISTER_OPERATOR_MALI_GPU(op_type, op_class) \
-  REGISTER_OPERATOR(op_type, op_class, mali_gpu, paddle_movile::GPU_MALI);
+  REGISTER_OPERATOR(op_type, op_class, mali_gpu, paddle_mobile::GPU_MALI);
 
 #define REGISTER_OPERATOR_FPGA(op_type, op_class) \
-  REGISTER_OPERATOR(op_type, op_class, fpga, paddle_movile::FPGA);
+  REGISTER_OPERATOR(op_type, op_class, fpga, paddle_mobile::FPGA);
 
 #define USE_OP(op_type, device_name)                                           \
   extern int TouchOpRegistrar_##op_type##_##device_name();                     \
