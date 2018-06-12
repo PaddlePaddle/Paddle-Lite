@@ -346,24 +346,24 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
   for (int j = 0; j < ops_of_block_[*to_predict_block.get()].size(); ++j) {
     auto op = ops_of_block_[*to_predict_block.get()][j];
 #ifdef PADDLE_MOBILE_PROFILE
-  _profile[op->Type()] = clock();
+    _profile[op->Type()] = clock();
 #endif
     op->Run();
 #ifdef PADDLE_MOBILE_PROFILE
-  _profile[op->Type()] = clock() - _profile[op->Type()];
+    _profile[op->Type()] = clock() - _profile[op->Type()];
 #endif
   }
 #ifdef PADDLE_MOBILE_PROFILE
   {
     DLOG << "========================[ profile ]==========================";
     clock_t _ptotal = 0;
-    for (auto const & p : _profile) {
+    for (auto const &p : _profile) {
       _ptotal += p.second;
     }
-    for (auto const & p : _profile) {
-      DLOG << p.first << std::string(16-p.first.size(), ' ')
-           << "\t" << (float)p.second
-           << "\t\t" << (float)p.second / (float)_ptotal * 100.0;
+    for (auto const &p : _profile) {
+      DLOG << p.first << std::string(16 - p.first.size(), ' ') << "\t"
+           << (float)p.second << "\t\t"
+           << (float)p.second / (float)_ptotal * 100.0;
     }
     DLOG << "========================[         ]==========================";
   }
