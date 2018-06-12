@@ -25,7 +25,13 @@ template class FushionConvAddOp<CPU, float>;
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-USE_OP(conv_add);
-REGISTER_OPERATOR(conv_add, ops::FushionConvAddOp);
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(conv_add);
+REGISTER_OPERATOR_CPU(conv_add, ops::FushionConvAddOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
 
 #endif
