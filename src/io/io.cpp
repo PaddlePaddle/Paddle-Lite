@@ -16,11 +16,11 @@ limitations under the License. */
 #include <vector>
 #define PADDLE_MOBILE_PROFILE
 #ifdef PADDLE_MOBILE_PROFILE
-#include <ctime>
-#include <unordered_map>
-#include <map>
 #include <algorithm>
+#include <ctime>
+#include <map>
 #include <numeric>
+#include <unordered_map>
 #endif
 
 #include "common/enforce.h"
@@ -359,22 +359,22 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
   }
 #ifdef PADDLE_MOBILE_PROFILE
   {
-    std::cout << "========================[ profile ]==========================\n";
-    std::vector<std::pair<std::string, clock_t>> _tprofile(_profile.begin(), _profile.end());
+    std::cout << "====================[ profile ]======================\n";
+    std::vector<std::pair<std::string, clock_t>> _tprofile(_profile.begin(),
+                                                           _profile.end());
     clock_t _ptotal;
-    for (auto const& p : _tprofile) {
+    for (auto const &p : _tprofile) {
       _ptotal += p.second;
     }
-    std::sort(_tprofile.begin(), _tprofile.end(), [](auto& a, auto& b) {
-      return a.second > b.second;
-    });
+    std::sort(_tprofile.begin(), _tprofile.end(),
+              [](auto &a, auto &b) { return a.second > b.second; });
     _tprofile.push_back(std::make_pair("total", _ptotal));
     for (auto const &p : _tprofile) {
       std::cout << p.first << std::string(16 - p.first.size(), ' ') << "\t"
-           << p.second << "\t\t"
-           << (float)p.second / _ptotal * 100.0 << "\n";
+                << p.second << "\t\t" << (float)p.second / _ptotal * 100.0
+                << "\n";
     }
-    std::cout << "========================[---------]==========================\n";
+    std::cout << "====================[---------]======================\n";
   }
 #endif
   auto ops = ops_of_block_[*to_predict_program_->Block(0)];
