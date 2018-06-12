@@ -12,15 +12,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSIONCONVADD_OP
+#ifdef FUSION_CONVADD_OP
 
 #pragma once
 
 #include <string>
 #include <vector>
-
+#include "operators/kernel/conv_add_kernel.h"
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
+#include "op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -53,19 +54,32 @@ class FushionConvAddOp : public framework::OperatorWithKernel<DeviceType> {
                    const framework::AttributeMap &attrs,
                    std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
-                                                  scope) {}
+                                                  scope),
+        param_(inputs, outputs, attrs, *scope) {}
 
-  void RunImpl() const {}
+  void RunImpl() const {
+    operators::ConvAddKernel<DeviceType, T> kernel;
+    kernel.Compute(param_);
+    this->ClearVariables({"Filter", "Input", "Y"});
+  }
 
   using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:
-  //  FushionFcParam param_;
+  FushionConvAddParam param_;
 };
 
+inline int ConvOutputSize(int input_size, int filter_size, int dilation,
+                          int padding, int stride) {
+  const int dkernel = dilation * (filter_size - 1) + 1;
+  int output_size = (input_size + 2 * padding - dkernel) / stride + 1;
+  return output_size;
+}
+
 #ifdef PADDLE_MOBILE_CPU
-static framework::FusionOpRegistrar fc_registrar(new FusionConvAddMatcher());
+static framework::FusionOpRegistrar convadd_registrar(
+    new FusionConvAddMatcher());
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
 #endif
