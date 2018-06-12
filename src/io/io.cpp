@@ -14,6 +14,10 @@ limitations under the License. */
 
 #include "io.h"
 #include <vector>
+#ifdef PADDLE_MOBILE_PROFILE
+#include <ctime>
+#include <map>
+#endif
 
 #include "common/enforce.h"
 #include "common/log.h"
@@ -336,10 +340,34 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
   feed_tensor->ShareDataWith(t);
   std::shared_ptr<framework::BlockDesc> to_predict_block =
       to_predict_program_->Block(0);
+#ifdef PADDLE_MOBILE_PROFILE
+  std::map<std::string, clock_t> _profile;
+#endif
   for (int j = 0; j < ops_of_block_[*to_predict_block.get()].size(); ++j) {
     auto op = ops_of_block_[*to_predict_block.get()][j];
+#ifdef PADDLE_MOBILE_PROFILE
+  _profile[op->Type()] = clock();
+#endif
     op->Run();
+#ifdef PADDLE_MOBILE_PROFILE
+  _profile[op->Type()] = clock() - _profile[op->Type()];
+#endif
   }
+#ifdef PADDLE_MOBILE_PROFILE
+  {
+    DLOG << "========================[ profile ]==========================";
+    clock_t _ptotal = 0;
+    for (auto const & p : _profile) {
+      _ptotal += p.second;
+    }
+    for (auto const & p : _profile) {
+      DLOG << p.first << std::string(16-p.first.size(), ' ')
+           << "\t" << (float)p.second
+           << "\t\t" << (float)p.second / (float)_ptotal * 100.0;
+    }
+    DLOG << "========================[         ]==========================";
+  }
+#endif
   auto ops = ops_of_block_[*to_predict_program_->Block(0)];
   auto last_op = ops.rbegin();
   auto output_map = (*last_op)->Outputs();
