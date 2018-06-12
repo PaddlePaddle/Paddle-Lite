@@ -30,7 +30,7 @@ using framework::OpKernelBase;
 
 template <typename DeviceType, typename T>
 class ConvAddKernel : public OpKernelBase<DeviceType, FushionConvAddParam> {
-public:
+ public:
   void Compute(const FushionConvAddParam &param) const;
 };
 
