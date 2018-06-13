@@ -14,9 +14,11 @@ limitations under the License. */
 
 #include "io.h"
 #include <vector>
+#define PADDLE_MOBILE_PROFILE
 #ifdef PADDLE_MOBILE_PROFILE
+#include <algorithm>
 #include <ctime>
-#include <map>
+#include <unordered_map>
 #endif
 
 #include "common/enforce.h"
@@ -74,8 +76,9 @@ static size_t ReadBuffer(const char *file_name, uint8_t **out) {
 
 template <typename Dtype, Precision P>
 const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
-    const std::string &dirname, bool optimize) {
-  auto program = this->LoadProgram(dirname + "/__model__", optimize);
+    const std::string &dirname, bool optimize, bool can_add_split) {
+  auto program =
+      this->LoadProgram(dirname + "/__model__", optimize, can_add_split);
   program.model_path = dirname;
   return program;
 }
@@ -92,7 +95,7 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
 
 template <typename Dtype, Precision P>
 const framework::Program<Dtype, P> Loader<Dtype, P>::LoadProgram(
-    const std::string &model_path, bool optimize) {
+    const std::string &model_path, bool optimize, bool can_add_split) {
   std::string model_filename = model_path;
   PaddleMobile__Framework__Proto__ProgramDesc *c_program;
   uint8_t *buf = NULL;
@@ -144,7 +147,7 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::LoadProgram(
   if (optimize) {
     framework::ProgramOptimize program_optimize;
     program.optimizeProgram =
-        program_optimize.FushionOptimize(originProgramDesc);
+        program_optimize.FushionOptimize(originProgramDesc, can_add_split);
   }
   if (optimize) {
     program.optimizeProgram->Description("optimize: ");
@@ -308,6 +311,7 @@ void Executor<Dtype, P>::InitMemory() {
 
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::InitCombineMemory() {
+  LOG(kLOG_INFO) << " begin init combine memory";
   char *origin_data = Get_binary_data(program_.para_path);
   char *data = origin_data;
   for (const auto &block : to_predict_program_->Blocks()) {
@@ -328,6 +332,7 @@ void Executor<Dtype, P>::InitCombineMemory() {
     }
   }
   delete origin_data;
+  LOG(kLOG_INFO) << " end init combine memory ";
 }
 
 template <typename Dtype, Precision P>
@@ -341,31 +346,37 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
   std::shared_ptr<framework::BlockDesc> to_predict_block =
       to_predict_program_->Block(0);
 #ifdef PADDLE_MOBILE_PROFILE
-  std::map<std::string, clock_t> _profile;
+  std::unordered_map<std::string, clock_t> _profile;
 #endif
   for (int j = 0; j < ops_of_block_[*to_predict_block.get()].size(); ++j) {
     auto op = ops_of_block_[*to_predict_block.get()][j];
 #ifdef PADDLE_MOBILE_PROFILE
-    _profile[op->Type()] = clock();
+    _profile[op->Type()] -= clock();
 #endif
     op->Run();
 #ifdef PADDLE_MOBILE_PROFILE
-    _profile[op->Type()] = clock() - _profile[op->Type()];
+    _profile[op->Type()] += clock();
 #endif
   }
 #ifdef PADDLE_MOBILE_PROFILE
   {
-    DLOG << "========================[ profile ]==========================";
+    std::cout << "====================[ profile ]======================\n";
+    using prof_t = std::pair<std::string, clock_t>;
+    std::vector<prof_t> _tprofile(_profile.begin(), _profile.end());
     clock_t _ptotal = 0;
-    for (auto const &p : _profile) {
+    for (auto const &p : _tprofile) {
       _ptotal += p.second;
     }
-    for (auto const &p : _profile) {
-      DLOG << p.first << std::string(16 - p.first.size(), ' ') << "\t"
-           << (float)p.second << "\t\t"
-           << (float)p.second / (float)_ptotal * 100.0;
+    auto compf = [](const prof_t &a, const prof_t &b) {
+      return a.second > b.second;
+    };
+    std::sort(_tprofile.begin(), _tprofile.end(), compf);
+    _tprofile.push_back(std::make_pair("total", _ptotal));
+    for (auto const &p : _tprofile) {
+      printf("%-16s\t%-10.0f\t%-.4f\n", p.first.c_str(), (float)p.second,
+             (float)p.second / _ptotal * 100.0);
     }
-    DLOG << "========================[         ]==========================";
+    std::cout << "====================[---------]======================\n";
   }
 #endif
   auto ops = ops_of_block_[*to_predict_program_->Block(0)];
