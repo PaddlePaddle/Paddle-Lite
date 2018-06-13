@@ -360,7 +360,7 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
     std::cout << "====================[ profile ]======================\n";
     using prof_t = std::pair<std::string, clock_t>;
     std::vector<prof_t> _tprofile(_profile.begin(), _profile.end());
-    clock_t _ptotal;
+    clock_t _ptotal = 0;
     for (auto const &p : _tprofile) {
       _ptotal += p.second;
     }
@@ -370,9 +370,8 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
     std::sort(_tprofile.begin(), _tprofile.end(), compf);
     _tprofile.push_back(std::make_pair("total", _ptotal));
     for (auto const &p : _tprofile) {
-      std::cout << p.first << std::string(16 - p.first.size(), ' ') << "\t"
-                << p.second << "\t\t" << (float)p.second / _ptotal * 100.0
-                << "\n";
+      printf("%-16s\t%-10.0f\t%-.4f\n", p.first.c_str(), (float)p.second,
+             (float)p.second / _ptotal * 100.0);
     }
     std::cout << "====================[---------]======================\n";
   }
