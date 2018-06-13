@@ -75,7 +75,8 @@ static size_t ReadBuffer(const char *file_name, uint8_t **out) {
 template <typename Dtype, Precision P>
 const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
     const std::string &dirname, bool optimize, bool can_add_split) {
-  auto program = this->LoadProgram(dirname + "/__model__", optimize, can_add_split);
+  auto program =
+      this->LoadProgram(dirname + "/__model__", optimize, can_add_split);
   program.model_path = dirname;
   return program;
 }
