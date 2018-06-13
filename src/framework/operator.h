@@ -153,6 +153,7 @@ class FusionOpMatcher {
 
   std::string BeginType() { return node_.Type(); }
 
+  //  virtual  bool Fusion();
  protected:
   Node node_;
   std::string type_;

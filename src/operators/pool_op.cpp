@@ -59,7 +59,13 @@ template class PoolOp<CPU, float>;
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-USE_OP(pool2d);
-REGISTER_OPERATOR(pool2d, ops::PoolOp);
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(pool2d);
+REGISTER_OPERATOR_CPU(pool2d, ops::PoolOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
 
 #endif

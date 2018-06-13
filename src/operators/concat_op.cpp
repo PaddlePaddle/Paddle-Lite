@@ -62,7 +62,13 @@ template class ConcatOp<CPU, float>;
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-USE_OP(concat);
-REGISTER_OPERATOR(concat, ops::ConcatOp);
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(concat);
+REGISTER_OPERATOR_CPU(concat, ops::ConcatOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
 
 #endif
