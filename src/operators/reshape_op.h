@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef RESHAPE_OP
+
 #pragma once
 
 #include <string>
@@ -29,7 +31,8 @@ template <typename DeviceType, typename T>
 class ReshapeOp : public framework::OperatorWithKernel<DeviceType> {
  public:
   ReshapeOp(const std::string &type, const VariableNameMap &inputs,
-            const VariableNameMap &outputs, const framework::AttributeMap attrs,
+            const VariableNameMap &outputs,
+            const framework::AttributeMap &attrs,
             std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
                                                   scope),
@@ -49,3 +52,5 @@ class ReshapeOp : public framework::OperatorWithKernel<DeviceType> {
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

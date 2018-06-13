@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef FUSION_FC_OP
+
 #include "operators/fusion_fc_op.h"
 namespace paddle_mobile {
 namespace operators {
@@ -52,5 +54,13 @@ template class FushionFcOp<CPU, float>;
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-USE_OP(fc);
-REGISTER_OPERATOR(fc, ops::FushionFcOp);
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(fc);
+REGISTER_OPERATOR_CPU(fc, ops::FushionFcOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
+
+#endif

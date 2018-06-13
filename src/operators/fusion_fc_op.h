@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef FUSION_FC_OP
+
 #pragma once
 
 #include <string>
@@ -32,11 +34,11 @@ class FusionFcMatcher : public framework::FusionOpMatcher {
     node_ > std::make_shared<framework::Node>(G_OP_TYPE_ELEMENTWISE_ADD);
   }
 
-  void FolderNodes(framework::Node *node) {
-    vector<std::shared_ptr<framework::OpDesc>> origin_descs =
-        node->OpDescs(node_.Depth());
+  void FolderNodes(
+      framework::Node *node,
+      std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
     node->Folder(node_.Depth(), Type(),
-                 {{G_OP_TYPE_ELEMENTWISE_ADD, {"Y", "Z"}}});
+                 {{G_OP_TYPE_ELEMENTWISE_ADD, {"Y", "Z"}}}, removed_nodes);
   }
 
   std::string Type() { return G_OP_TYPE_FC; }
@@ -47,7 +49,7 @@ class FushionFcOp : public framework::OperatorWithKernel<DeviceType> {
  public:
   FushionFcOp(const string &type, const VariableNameMap &inputs,
               const VariableNameMap &outputs,
-              const framework::AttributeMap attrs,
+              const framework::AttributeMap &attrs,
               std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
                                                   scope),
@@ -65,7 +67,16 @@ class FushionFcOp : public framework::OperatorWithKernel<DeviceType> {
   FushionFcParam param_;
 };
 
+#ifdef PADDLE_MOBILE_CPU
 static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

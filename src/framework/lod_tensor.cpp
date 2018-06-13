@@ -13,72 +13,55 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lod_tensor.h"
-#include <stdint.h>
-#include <string.h>
-#include <algorithm>
-#include <iterator>
 
 namespace paddle_mobile {
 namespace framework {
 
-std::ostream &operator<<(std::ostream &os, const LoD &lod) {
-  os << "{";
-  for (auto &v : lod) {
-    os << "{";
-    bool is_first = true;
-    for (auto &i : v) {
-      if (is_first) {
-        os << i;
-        is_first = false;
-      } else {
-        os << ", " << i;
-      }
-    }
-    os << "}";
-  }
-  os << "}";
+// std::ostream &operator<<(std::ostream &os, const LoD &lod) {
+//  os << "{";
+//  for (auto &v : lod) {
+//    os << "{";
+//    bool is_first = true;
+//    for (auto &i : v) {
+//      if (is_first) {
+//        os << i;
+//        is_first = false;
+//      } else {
+//        os << ", " << i;
+//      }
+//    }
+//    os << "}";
+//  }
+//  os << "}";
+//
+//  return os;
+//}
+//
+// std::ostream &operator<<(std::ostream &os, const LoDTensor &t) {
+//  PADDLE_MOBILE_ENFORCE(t.type().hash_code() == typeid(float).hash_code(),
+//                        "t.type() is not float");
+//  os << "dim: " << t.dims() << "\n";
+//  os << "lod: " << t.lod() << "\n";
+//  // only print first ten elements
+//  int64_t size = t.numel() < 10 ? t.numel() : 10;
+//  for (int64_t i = 0; i < size; ++i) {
+//    os << t.data<float>()[i] << " ";
+//  }
+//
+//  return os;
+//}
 
-  return os;
-}
-
-std::ostream &operator<<(std::ostream &os, const LoDTensor &t) {
-  //  PADDLE_ENFORCE(t.type().hash_code() ==
-  //  typeid(float).hash_code());
-
-  //  if (!platform::is_cpu_place(t.place())) {
-  //    LoDTensor tt;
-  //    framework::TensorCopy(t, platform::CPUPlace(), &tt);
-  //    platform::DeviceContextPool &pool =
-  //    platform::DeviceContextPool::Instance(); auto &dev_ctx =
-  //    *pool.Get(t.place()); dev_ctx.Wait();
-  //
-  //    os << tt;
-  //    return os;
-  //  }
-
-  os << "dim: " << t.dims() << "\n";
-  os << "lod: " << t.lod() << "\n";
-
-  // only print first ten elements
-  int64_t size = t.numel() < 10 ? t.numel() : 10;
-  for (int64_t i = 0; i < size; ++i) {
-    os << t.data<float>()[i] << " ";
-  }
-
-  return os;
-}
-
-std::string LoDToString(const LoD &lod) {
-  std::ostringstream stream;
-  stream << lod;
-  return stream.str();
-}
+// std::string LoDToString(const LoD &lod) {
+//  std::ostringstream stream;
+//  stream << lod;
+//  return stream.str();
+//}
 
 LoD SliceInLevel(const LoD &in, size_t level, size_t elem_begin,
                  size_t elem_end) {
-  //  PADDLE_ENFORCE_LT(level, in.size());
-  //  PADDLE_ENFORCE_LT(elem_end, in[level].size());
-
+  PADDLE_MOBILE_ENFORCE(level < in.size(), "level should >= in.size()");
+  PADDLE_MOBILE_ENFORCE(elem_end < in[level].size(),
+                        "elem_end >= in[level].size()");
   LoD res;
   res.resize(in.size() - level);
   // copy the first level
@@ -152,7 +135,7 @@ bool CheckLoD(const LoD &in, int tensor_height) {
           if (a < b) return true;
           return false;
         })) {
-      std::cout << "ascending error";
+      PADDLE_MOBILE_THROW_EXCEPTION("ascending error")
       return false;
     }
   }
@@ -211,8 +194,9 @@ LoDAndOffset GetSubLoDAndAbsoluteOffset(const LoD &lod, size_t start_idx,
   LoD sub_lod;
 
   for (size_t level_idx = start_level; level_idx < lod.size(); ++level_idx) {
-    //    PADDLE_ENFORCE_LE(start_idx, end_idx);
-    //    PADDLE_ENFORCE_LT(end_idx, lod[level_idx].size());
+    PADDLE_MOBILE_ENFORCE(start_idx <= end_idx, "start_idx > end_idx");
+    PADDLE_MOBILE_ENFORCE(end_idx < lod[level_idx].size(),
+                          "end_idx >= lod[level_idx].size()");
     std::vector<size_t> level_lens;
     for (size_t i = start_idx; i < end_idx; ++i) {
       level_lens.push_back(lod[level_idx][i + 1] - lod[level_idx][i]);
@@ -226,10 +210,9 @@ LoDAndOffset GetSubLoDAndAbsoluteOffset(const LoD &lod, size_t start_idx,
 }
 
 void AppendLoD(LoD *lod, const LoD &lod_length) {
-  //  PADDLE_ENFORCE(
-  //      lod->empty() || lod->size() == lod_length.size(),
-  //      "The lod_length should has the same size with the appended
-  //      lod.");
+  PADDLE_MOBILE_ENFORCE(
+      lod->empty() || lod->size() == lod_length.size(),
+      "The lod_length should has the same size with the appended lod.");
   if (lod->empty()) {
     for (size_t i = 0; i < lod_length.size(); ++i) {
       lod->emplace_back(1, 0);  // size = 1, value = 0;

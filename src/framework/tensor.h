@@ -14,14 +14,15 @@ limitations under the License. */
 
 #pragma once
 
-#include <common/enforce.h>
 #include <cstdint>
 #include <cstring>
 #include <memory>
 #include <type_traits>
 #include <typeindex>
 #include <vector>
+#include "common/enforce.h"
 
+#include "common/enforce.h"
 #include "framework/data_layout.h"
 #include "framework/ddim.h"
 #include "memory/t_malloc.h"
@@ -130,7 +131,6 @@ class Tensor {
     }
     PADDLE_MOBILE_ENFORCE(numel() >= 0, "the Tensor'snumel must >=0.")
     int64_t size = numel() * SizeOfType(type);
-    /* some versions of boost::variant don't have operator!= */
     if (holder_ == nullptr || holder_->size() < size + offset_) {
       holder_.reset(new PlaceholderImpl(size, type));
       offset_ = 0;

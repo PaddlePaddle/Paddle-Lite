@@ -6,6 +6,8 @@
 */
 #ifndef ACL_OPERATOR_H_
 #define ACL_OPERATOR_H_
+#include <framework/tensor.h>
+#include <operators/op_param.h>
 
 #if USE_ACL == 1
 #include "arm_compute/runtime/NEON/functions/NEDepthConcatenateLayer.h"
@@ -219,6 +221,9 @@ public:
   std::string data_layout;
 
   bool is_global_pool;
+  bool is_channel_concat;
+
+  std::vector<framework::LoDTensor*> in_tensor;
 };
 
 enum TensorType {
@@ -1080,11 +1085,21 @@ inline bool instantiate_op_concat(ACLOperator* acl_op,
     }
     return true;
 }
+template <typename Dtype>
+void* InputdataPtr(ACLOperator* op,
+      const std::vector<framework::LoDTensor*>& input_data, Dtype type, int index=-1)
+{
+    if (index==-1) index=0;
+    return (void*)(input_data[index]->mutable_data<Dtype>());
+}
 
 template <typename Dtype>
-void acl_run(ACLOperator* op, void*in_data, void *out_data,
-             bool multi_input_run = true) {
-    op->acl_run(NULL, out_data);
+void acl_run(ACLOperator* op, const std::vector<framework::LoDTensor*>& in_data, void *out_data,
+              Dtype type, bool multi_input_run = true) {
+    for (int i = 0; i < in_data.size(); ++i) {
+        op->tensor_mem(op->cinput(i),InputdataPtr(op,in_data,type,i));
+    }
+    op->acl_run(NULL,out_data);
 }
 }  // namespace acl
 }  // namespace operators

@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef RESHAPE_OP
+
 #include "operators/reshape_op.h"
 #include <vector>
 namespace paddle_mobile {
@@ -30,5 +32,13 @@ template class ReshapeOp<CPU, float>;
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-USE_OP(reshape);
-REGISTER_OPERATOR(reshape, ops::ReshapeOp);
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(reshape);
+REGISTER_OPERATOR_CPU(reshape, ops::ReshapeOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
+
+#endif

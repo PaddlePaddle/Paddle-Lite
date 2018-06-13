@@ -18,13 +18,12 @@ limitations under the License. */
 
 #include "common/types.h"
 #include "framework/framework.pb-c.h"
-#include "framework/paddle_mobile_object.h"
 #include "framework/program/block_desc.h"
 
 namespace paddle_mobile {
 namespace framework {
 
-class ProgramDesc : PaddleMobileObject {
+class ProgramDesc {
  public:
   friend class Node;
   friend class ProgramOptimize;

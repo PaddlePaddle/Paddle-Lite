@@ -20,10 +20,37 @@ limitations under the License. */
 #include <sstream>
 #include <string>
 #endif
+#ifdef ANDROID
+#include <android/log.h>
+#endif
 
 namespace paddle_mobile {
 
 #ifdef PADDLE_MOBILE_DEBUG
+
+#ifdef ANDROID
+
+extern const char *ANDROID_LOG_TAG;
+
+#define ANDROIDLOGI(...)                                               \
+  __android_log_print(ANDROID_LOG_INFO, ANDROID_LOG_TAG, __VA_ARGS__); \
+  printf(__VA_ARGS__)
+#define ANDROIDLOGW(...)                                                  \
+  __android_log_print(ANDROID_LOG_WARNING, ANDROID_LOG_TAG, __VA_ARGS__); \
+  printf(__VA_ARGS__)
+#define ANDROIDLOGD(...)                                                \
+  __android_log_print(ANDROID_LOG_DEBUG, ANDROID_LOG_TAG, __VA_ARGS__); \
+  printf(__VA_ARGS__)
+#define ANDROIDLOGE(...)                                                \
+  __android_log_print(ANDROID_LOG_ERROR, ANDROID_LOG_TAG, __VA_ARGS__); \
+  printf(__VA_ARGS__)
+#else
+#define ANDROIDLOGI(...)
+#define ANDROIDLOGW(...)
+#define ANDROIDLOGD(...)
+#define ANDROIDLOGE(...)
+
+#endif
 
 enum LogLevel {
   kNO_LOG,
@@ -121,6 +148,11 @@ struct ToLog {
     printf(format, ##__VA_ARGS__)
 
 #else
+
+#define ANDROIDLOGI(...)
+#define ANDROIDLOGW(...)
+#define ANDROIDLOGD(...)
+#define ANDROIDLOGE(...)
 
 enum LogLevel {
   kNO_LOG,

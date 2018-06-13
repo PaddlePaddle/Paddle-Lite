@@ -16,7 +16,7 @@ limitations under the License. */
 #include <string>
 #include "operators/kernel/softmax_kernel.h"
 #if defined(USE_ACL)
-#include "operators/acl/acl_softmax_op.h"
+#include "operators/kernel/mali/acl_softmax_op.h"
 #endif
 
 namespace paddle_mobile {

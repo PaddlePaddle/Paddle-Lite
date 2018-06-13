@@ -21,10 +21,10 @@ int main() {
   //  ../../../test/models/googlenet
   //  ../../../test/models/mobilenet
   auto time1 = time();
-  auto program = loader.Load(g_squeezenet, false);
+  auto program = loader.Load(g_squeezenet, true);
   auto time2 = time();
   DLOG << "load cost :" << time_diff(time1, time1) << "ms";
-  paddle_mobile::Executor<paddle_mobile::CPU> executor(program, 1, false);
+  paddle_mobile::Executor<paddle_mobile::CPU> executor(program, 1, true);
 
   std::vector<int64_t> dims{1, 3, 227, 227};
   Tensor input_tensor;

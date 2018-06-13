@@ -18,6 +18,10 @@ limitations under the License. */
 #include "framework/operator.h"
 #include "operators/kernel/concat_kernel.h"
 #include "operators/op_param.h"
+#if defined(USE_ACL)
+#include "operators/kernel/mali/acl_concat_op.h"
+#endif
+
 namespace paddle_mobile {
 namespace operators {
 using std::string;
@@ -32,6 +36,15 @@ class ConcatOp : public framework::OperatorWithKernel<DeviceType> {
         param_(inputs, outputs, attrs, *scope) {}
 
   void RunImpl() const {
+#if defined(USE_ACL)
+    std::cout << "Using ACL!" << std::endl;
+    if (std::is_same<T, float>::value &&
+        !acl_concat_kernel_.Bypass_acl(param_)) {
+      acl_concat_kernel_.Compute(param_);
+      return;
+    }
+#endif
+    std::cout << "Not using ACL!" << std::endl;
     operators::ConcatKernel<DeviceType, T> kernel;
     kernel.Compute(param_);
   }
@@ -41,6 +54,11 @@ class ConcatOp : public framework::OperatorWithKernel<DeviceType> {
 
  protected:
   ConcatParam param_;
+
+ private:
+#if defined(USE_ACL)
+  AclConcatKernel<DeviceType, T> acl_concat_kernel_;
+#endif
 };
 
 }  // namespace operators

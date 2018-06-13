@@ -20,7 +20,7 @@ limitations under the License. */
 #include "operators/kernel/relu_kernel.h"
 #include "operators/op_param.h"
 #if defined(USE_ACL)
-#include "operators/acl/acl_relu_op.h"
+#include "operators/kernel/mali/acl_relu_op.h"
 #endif
 
 namespace paddle_mobile {

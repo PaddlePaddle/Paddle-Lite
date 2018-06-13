@@ -24,110 +24,100 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename DeviceType, typename T>
-class AclConcatOp : public acl::ACLOperator {
+class AclReluOp : public acl::ACLOperator {
  public:
-  AclConcatOp(){
+  AclReluOp(){
       this->force_bypass_acl_path_= bypass_acl_class_layer & 
-                                    FLAGS_ENABLE_ACL_CONCAT;
+                                    FLAGS_ENABLE_ACL_RELU;
   }
-  ~AclConcatOp() = default;
-  AclConcatOp(const AclConcatOp&) = delete;
-  AclConcatOp& operator=(const AclConcatOp&) = delete;
-  AclConcatOp(AclConcatOp&&) = delete;
-  AclConcatOp& operator=(AclConcatOp&&) = delete;
+  ~AclReluOp() = default;
+  AclReluOp(const AclReluOp&) = delete;
+  AclReluOp& operator=(const AclReluOp&) = delete;
+  AclReluOp(AclReluOp&&) = delete;
+  AclReluOp& operator=(AclReluOp&&) = delete;
 
   acl::AclParameters& getargs() {
       return args;
   }
-  void InitAclLayer(const ConcatParam &param) {
-    auto inputs = param.Inputs();
-    const std::vector<LoDTensor*>* input_data = &inputs;
+  void InitAclLayer(const ReluParam &param) {
+    setTargetHint(acl::TargetHint::OPENCL);
+    arm_compute::TensorShape input_shape(
+      args.in_cols*args.in_rows*args.in_depth*args.batch);
     arm_compute::TensorShape output_shape(
-      args.out_cols, args.out_rows, args.out_depth, args.batch);
+      args.in_cols*args.in_rows*args.in_depth*args.out_num);
+    //arm_compute::TensorShape weights_shape(
+      //args.filter_cols, args.filter_rows, args.in_depth, args.out_depth);
+    //arm_compute::TensorShape biases_shape(args.out_depth);
+    arm_compute::ActivationLayerInfo::ActivationFunction type;
+    type=arm_compute::ActivationLayerInfo::ActivationFunction::RELU;
 
-    if (is_operator_init_done(output_shape)) return;
+    arm_compute::ActivationLayerInfo act_info(type);
+
+    if (is_operator_init_done(input_shape)) return;
     set_operator_init_done();
     this->force_bypass_acl_path_=false;
 
-    std::cout << input_data->size() << std::endl;
-    for (int i = 0; i < input_data->size(); i++) {
-      std::cout << i << std::endl;
-      const T* idata= (*input_data)[i]->data<T>();
-      std::cout << i << std::endl;
-      int in_channels = (*input_data)[i]->dims()[1];
-      std::cout << i << std::endl;
-      int in_width = (*input_data)[i]->dims()[2];
-      int in_height = (*input_data)[i]->dims()[3];
-      arm_compute::TensorShape in_shape(in_width, in_height,in_channels);
-      std::cout << in_width << in_height << in_channels << std::endl;
-      void* input = (void*)idata;
-      new_tensor(cinput(i),in_shape,input);
-    }
-
+    //[width, height, IFM]
+    new_tensor(input(),input_shape,args.input_data);
     //[width, height, OFM]
     new_tensor(output(),output_shape,args.output_data);
 
-    acl_configure(concat,this,input_data->size());
+    acl_configure(activation,this,act_info);
   }
 
   void RunAcl(void* input, void* output) {
     acl::ACLOperator::acl_run(input, output);
   }
-  bool Bypass_acl(const ConcatParam &param) {
+  bool Bypass_acl(const ReluParam &param) {
     bool bypass_acl = false;
     AclParametersByContext(param);
-    const std::vector<LoDTensor*>* input_data_test = 
-      reinterpret_cast<std::vector<LoDTensor*>*>(args.input_data);
-    std::cout << "in bypass_acl" << input_data_test->size() << std::endl;
     //for performance, more groups impact GPU performance
-    if (this->force_bypass_acl_path_ || args.num_group>=5) {
+    if (this->force_bypass_acl_path_) {
         bypass_acl = true;
     }
     return bypass_acl;
   }
 private:
-  void AclParametersByContext(const ConcatParam &param){
-    //auto inputs = param.Inputs();
-    auto *output = param.Out();
-    //const std::vector<LoDTensor*>* input_data = &inputs;
-    T* output_data = output->mutable_data<T>();
-    //std::cout << input_data->size() << std::endl;
+  void AclParametersByContext(const ReluParam &param){
+    const auto *input_x = param.InputX();
+    auto *out = param.Out();
 
-    //args.input_data = (void*)input_data;
+    const T* input_data = input_x->data<T>();
+    T* output_data = out->mutable_data<T>();
+
+    args.input_data = (void*)input_data;
     args.output_data = (void*)output_data;
 
-    args.batch = output->dims()[0];
-    args.out_depth = output->dims()[1];
-    args.out_rows  = output->dims()[2];
-    args.out_cols  = output->dims()[3];
+    args.batch = input_x->dims()[0];
+    args.in_depth = input_x->dims()[1];
+    args.in_rows  = input_x->dims()[2];
+    args.in_cols  = input_x->dims()[3];
+    args.out_num = out->dims()[0];
   }
   acl::AclParameters args;
 
 };
 
 template <typename DeviceType, typename T>
-class AclConcatKernel : public framework::OpKernelBase<DeviceType, ConcatParam> {
+class AclReluKernel : public framework::OpKernelBase<DeviceType, ReluParam> {
  public:
-  bool Bypass_acl(const ConcatParam &param) const {
-      AclConcatOp<DeviceType, T>* acl_op = reinterpret_cast<AclConcatOp<DeviceType, T>*>(this->GetAclOp());
+  bool Bypass_acl(const ReluParam &param) const {
+      AclReluOp<DeviceType, T>* acl_op = reinterpret_cast<AclReluOp<DeviceType, T>*>(this->GetAclOp());
       if (acl_op == nullptr) {
-        acl_op = new AclConcatOp<DeviceType, T>();
+        acl_op = new AclReluOp<DeviceType, T>();
         this->SetAclOp((void*)acl_op, (void*)this);
       }
       return acl_op->Bypass_acl(param);
   }
 
-  void Compute(const ConcatParam &param) const override {
-    AclConcatOp<DeviceType, T>* acl_op = reinterpret_cast<AclConcatOp<DeviceType, T>*>(this->GetAclOp());
+  void Compute(const ReluParam &param) const override {
+    AclReluOp<DeviceType, T>* acl_op = reinterpret_cast<AclReluOp<DeviceType, T>*>(this->GetAclOp());
     if (acl_op == nullptr) {
         return;
     }
     acl::AclParameters& args = acl_op->getargs();
-    //const T* input_data = (const T*)args.input_data;
-    auto inputs = param.Inputs();
-    const std::vector<LoDTensor*>* input_data = &inputs;
+    const T* input_data = (const T*)args.input_data;
     const T* output_data = (const T*)args.output_data;
-
 #if 0
     std::cout << "Input: " << std::endl;
     for (int i = 0; i < in_x->dims()[0]; i++) {
@@ -181,6 +171,10 @@ class AclConcatKernel : public framework::OpKernelBase<DeviceType, ConcatParam> 
 #endif
     acl_op->InitAclLayer(param);
     acl_op->RunAcl((void*)input_data, (void*)output_data);
+
+
+
+    
 
 #if 0
     std::cout << "Input: " << std::endl;

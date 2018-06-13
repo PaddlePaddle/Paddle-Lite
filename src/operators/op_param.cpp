@@ -13,9 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "op_param.h"
-
 namespace paddle_mobile {
 namespace operators {
+
+#ifdef CONV_OP
 Print &operator<<(Print &printer, const ConvParam &conv_param) {
   printer << "parameter of conv: "
           << "\n";
@@ -36,5 +37,33 @@ Print &operator<<(Print &printer, const ConvParam &conv_param) {
   printer << "  output dims: " << conv_param.Output()->dims();
   return printer;
 }
+#endif
+
+#ifdef FUSION_CONVADD_OP
+
+Print &operator<<(Print &printer, const FushionConvAddParam &conv_param) {
+  printer << "parameter of conv_add: "
+          << "\n";
+  printer << "  stride: "
+          << " (" << conv_param.Strides()[0] << conv_param.Strides()[1] << ") "
+          << "\n";
+  printer << "  paddings: "
+          << " (" << conv_param.Paddings()[0] << conv_param.Paddings()[1]
+          << ") "
+          << "\n";
+  printer << "  dilations: "
+          << " (" << conv_param.Dilations()[0] << conv_param.Dilations()[1]
+          << ") "
+          << "\n";
+  printer << "  groups: " << conv_param.Groups() << "\n";
+  printer << "  input  dims: " << conv_param.Input()->dims() << "\n";
+  printer << "  filter dims: " << conv_param.Filter()->dims() << "\n";
+  printer << "  bias dims: " << conv_param.Bias()->dims() << "\n";
+  printer << "  output dims: " << conv_param.Output()->dims();
+  return printer;
+}
+
+#endif
+
 }  // namespace operators
 }  // namespace paddle_mobile

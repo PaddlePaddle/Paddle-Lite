@@ -15,7 +15,7 @@ limitations under the License. */
 #include "framework/operator.h"
 #include "operators/kernel/conv_kernel.h"
 #if defined(USE_ACL)
-#include "operators/acl/acl_conv_op.h"
+#include "operators/kernel/mali/acl_conv_op.h"
 #endif
 
 namespace paddle_mobile {

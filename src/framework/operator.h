@@ -1,11 +1,8 @@
 /* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,7 +13,6 @@ limitations under the License. */
 
 #include <map>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "common/enforce.h"
@@ -27,7 +23,6 @@ limitations under the License. */
 #include "framework/op_info.h"
 #include "framework/op_kernel_type.h"
 #include "framework/op_registry.h"
-#include "framework/paddle_mobile_object.h"
 #include "framework/program/block_desc.h"
 #include "framework/program/program-optimize/node.h"
 #include "framework/scope.h"
@@ -52,7 +47,7 @@ static T *GetVarValue(const string &key, const VariableNameMap &var_map,
 }
 
 template <typename Dtype>
-class OperatorBase : PaddleMobileObject {
+class OperatorBase {
  public:
   /*
    *  @b op 基类的实例化方法, op 获取到了 输入、参数以及提前分配好的输出 tensor
@@ -121,7 +116,7 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
  * @b 所有kernel的父类
  * */
 template <typename Dtype, typename P>
-class OpKernelBase : PaddleMobileObject {
+class OpKernelBase {
  public:
   /*
    * @b 所有kernel 需实现 Compute 方法
@@ -148,20 +143,23 @@ private:
       std::shared_ptr<::paddle_mobile::framework::Scope> scope)                \
       : parent_cls<Dtype, T>(type, inputs, outputs, attrs, scope) {}
 
-class FusionOpMatcher : PaddleMobileObject {
+class FusionOpMatcher {
  public:
   FusionOpMatcher() {}
 
   virtual std::string Type() = 0;
 
-  virtual void FolderNodes(Node *node) {
-    node->Folder(node_.Depth(), Type(), {});
+  virtual void FolderNodes(
+      Node *node,
+      std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
+    node->Folder(node_.Depth(), Type(), {}, removed_nodes);
   }
 
   virtual Node &BeginNode() { return node_; }
 
   std::string BeginType() { return node_.Type(); }
 
+  //  virtual  bool Fusion();
  protected:
   Node node_;
   std::string type_;

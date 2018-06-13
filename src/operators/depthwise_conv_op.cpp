@@ -12,9 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef DEPTHWISECONV_OP
+
 #include "operators/depthwise_conv_op.h"
 #include <vector>
-#include "framework/data_type.h"
 #include "framework/op_proto_maker.h"
 #include "framework/op_registry.h"
 #include "operators/conv_op.h"
@@ -53,5 +54,13 @@ template class DepthwiseConvOp<CPU, float>;
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-USE_OP(depthwise_conv2d);
-REGISTER_OPERATOR(depthwise_conv2d, ops::DepthwiseConvOp);
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(depthwise_conv2d);
+REGISTER_OPERATOR_CPU(depthwise_conv2d, ops::DepthwiseConvOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
+
+#endif

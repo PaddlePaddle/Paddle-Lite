@@ -40,6 +40,7 @@ class AclSoftmaxOp : public acl::ACLOperator {
       return args;
   }
   void InitAclLayer(const SoftmaxParam &param) {
+    setTargetHint(acl::TargetHint::OPENCL);
     arm_compute::TensorShape shape(
       args.in_depth, args.batch);
 

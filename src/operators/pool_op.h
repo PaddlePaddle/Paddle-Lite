@@ -19,7 +19,7 @@ limitations under the License. */
 #include <operators/op_param.h>
 #include <string>
 #if defined(USE_ACL)
-#include "operators/acl/acl_pool_op.h"
+#include "operators/kernel/mali/acl_pool_op.h"
 #endif
 
 namespace paddle_mobile {
