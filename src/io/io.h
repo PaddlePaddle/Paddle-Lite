@@ -35,7 +35,8 @@ class Loader {
    * @b 加载分开形式的 fluid 模型
    * */
   const framework::Program<Dtype, P> Load(const std::string &dirname,
-                                          bool optimize = false);
+                                          bool optimize = false,
+                                          bool can_add_split = false);
 
   /*
    * @b load combine format fluid mode
@@ -47,7 +48,8 @@ class Loader {
 
  private:
   const framework::Program<Dtype, P> LoadProgram(const std::string &model_path,
-                                                 bool optimize = false);
+                                                 bool optimize = false,
+                                                 bool can_add_split = false);
 };
 
 template <typename Dtype = CPU, Precision P = Precision::FP32>
