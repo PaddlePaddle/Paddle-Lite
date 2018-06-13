@@ -4,7 +4,8 @@ project(paddle-mobile)
 option(DEBUGING "enable debug mode" ON)
 option(USE_OPENMP "openmp support" OFF)
 option(USE_EXCEPTION "use std exception" ON)
-
+option(LOG_PROFILE "log profile" ON)
+# select the platform to build
 option(CPU "cpu" ON)
 option(MALI_GPU "mali gpu" OFF)
 option(FPGA "fpga" OFF)
@@ -44,6 +45,10 @@ if (USE_EXCEPTION)
 else()
     add_definitions(-fno-exceptions)
 endif ()
+
+if (LOG_PROFILE)
+    add_definitions(-DPADDLE_MOBILE_PROFILE)
+endif()
 
 if(IS_MAC)
     add_definitions(-DX86)
