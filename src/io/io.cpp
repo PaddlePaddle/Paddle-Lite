@@ -76,8 +76,9 @@ static size_t ReadBuffer(const char *file_name, uint8_t **out) {
 
 template <typename Dtype, Precision P>
 const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
-    const std::string &dirname, bool optimize) {
-  auto program = this->LoadProgram(dirname + "/__model__", optimize);
+    const std::string &dirname, bool optimize, bool can_add_split) {
+  auto program =
+      this->LoadProgram(dirname + "/__model__", optimize, can_add_split);
   program.model_path = dirname;
   return program;
 }
@@ -94,7 +95,7 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
 
 template <typename Dtype, Precision P>
 const framework::Program<Dtype, P> Loader<Dtype, P>::LoadProgram(
-    const std::string &model_path, bool optimize) {
+    const std::string &model_path, bool optimize, bool can_add_split) {
   std::string model_filename = model_path;
   PaddleMobile__Framework__Proto__ProgramDesc *c_program;
   uint8_t *buf = NULL;
@@ -146,7 +147,7 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::LoadProgram(
   if (optimize) {
     framework::ProgramOptimize program_optimize;
     program.optimizeProgram =
-        program_optimize.FushionOptimize(originProgramDesc);
+        program_optimize.FushionOptimize(originProgramDesc, can_add_split);
   }
   if (optimize) {
     program.optimizeProgram->Description("optimize: ");
@@ -310,6 +311,7 @@ void Executor<Dtype, P>::InitMemory() {
 
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::InitCombineMemory() {
+  LOG(kLOG_INFO) << " begin init combine memory";
   char *origin_data = Get_binary_data(program_.para_path);
   char *data = origin_data;
   for (const auto &block : to_predict_program_->Blocks()) {
@@ -330,6 +332,7 @@ void Executor<Dtype, P>::InitCombineMemory() {
     }
   }
   delete origin_data;
+  LOG(kLOG_INFO) << " end init combine memory ";
 }
 
 template <typename Dtype, Precision P>

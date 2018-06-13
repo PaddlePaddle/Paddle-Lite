@@ -19,9 +19,10 @@ int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
   //  ../../../test/models/googlenet
   //  ../../../test/models/mobilenet
-  auto program = loader.Load(g_resnet, true);
-  loader.Load(g_googlenet_combine + "/model", g_googlenet_combine + "/params",
-              true);
+  auto program = loader.Load(g_googlenet, true, true);
+  //  loader.Load(g_googlenet_combine + "/model", g_googlenet_combine +
+  //  "/params",
+  //              true);
 
   program.originProgram->Description("program desc: ");
   return 0;
