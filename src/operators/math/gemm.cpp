@@ -114,10 +114,12 @@ void PackMatrixB_(int k, int n, int paddingN, const float *B, int ldb,
   for (j = 0; j < n - paddingN; j += NR) {
     for (i = 0; i < k; ++i) {
       Bij = &B(i, j);
-      *buffer++ = *Bij;
-      *buffer++ = *(Bij + 1);
-      *buffer++ = *(Bij + 2);
-      *buffer++ = *(Bij + 3);
+      asm volatile(
+          "vld1.32    {q0}, [%[Bij]]        \n\t"
+          "vst1.32    {q0}, [%[buffer]]!    \n\t"
+          : [buffer] "+r"(buffer)
+          : [Bij] "r"(Bij)
+          : "memory", "q0");
     }
   }
   if (paddingN != 0) {
