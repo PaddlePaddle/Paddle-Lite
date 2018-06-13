@@ -271,31 +271,6 @@ class AclConvKernel : public framework::OpKernelBase<DeviceType, ConvParam> {
     acl_op->InitAclLayer(param);
     acl_op->RunAcl((void*)input_data, (void*)output_data);
 
-#if 0
-    std::cout << "Input: " << std::endl;
-    for(int i = 0; i < args.batch; i++) {
-      for(int m = 0; m < args.in_depth; m++) {
-        for(int j = 0; j < args.in_rows; j++) {
-          for(int k = 0; k < args.in_cols; k++)
-            std::cout << " " << *input_data++;
-          std::cout << std::endl;
-        }
-        std::cout << std::endl;
-      }
-    }
-
-    std::cout << "Output: " << std::endl;
-    for(int i = 0; i < args.batch; i++) {
-      for(int m = 0; m < args.out_depth; m++) {
-        for(int j = 0; j < args.out_rows; j++) {
-          for(int k = 0; k < args.out_cols; k++)
-            std::cout << " " << *output_data++;
-          std::cout << std::endl;
-        }
-        std::cout << std::endl;
-      }
-    }
-#endif
   }
 
 
