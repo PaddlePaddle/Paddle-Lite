@@ -106,11 +106,14 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FushionOptimize(
     }
 
     std::vector<std::shared_ptr<framework::OpDesc>> op_descs;
-    for (int m = 0; m < nodes.size(); ++m) {
-      auto &node = nodes[m];
-      op_descs.push_back(node->op_desc_);
+    if (add_split) {
+      GenerateOps(&op_descs, begin_node.get(), add_split);
+    } else {
+      for (int m = 0; m < nodes.size(); ++m) {
+        auto &node = nodes[m];
+        op_descs.push_back(node->op_desc_);
+      }
     }
-    //    GenerateOps(&op_descs, begin_node.get());
     block->ops_ = op_descs;
   }
 
@@ -268,11 +271,11 @@ void ProgramOptimize::GenerateOps(
 
 void ProgramOptimize::GenerateOps(
     std::vector<std::shared_ptr<framework::OpDesc>> *op_descs,
-    Node *begin_node) {
+    Node *begin_node, bool can_add_split) {
   // std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
   //             Node *input_node, Node *current_node, bool adding_thread, int
   //             thread_num
-  if (false) {
+  if (can_add_split) {
     this->GenerateOps(op_descs, begin_node, begin_node, false, -1, nullptr);
   } else {
     this->GenerateOps(op_descs, begin_node, begin_node);
