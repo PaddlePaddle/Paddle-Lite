@@ -20,9 +20,9 @@ limitations under the License. */
 #define C(i, j) C[(i)*ldc + (j)]
 
 // 分块计算的块大小，mc 与 kc 分别对应分块计算时的 m 与 k
-#define MC 384
-#define KC 384
-#define NC 4096
+#define MC 128
+#define KC 128
+#define NC 1024
 #define MR 4
 #define NR 4
 
