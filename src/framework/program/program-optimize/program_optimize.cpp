@@ -270,8 +270,8 @@ void ProgramOptimize::GenerateOps(
 }
 
 void ProgramOptimize::GenerateOps(
-    std::vector<std::shared_ptr<framework::OpDesc>> *op_descs,
-    Node *begin_node, bool can_add_split) {
+    std::vector<std::shared_ptr<framework::OpDesc>> *op_descs, Node *begin_node,
+    bool can_add_split) {
   // std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
   //             Node *input_node, Node *current_node, bool adding_thread, int
   //             thread_num
