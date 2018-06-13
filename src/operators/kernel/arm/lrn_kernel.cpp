@@ -25,13 +25,14 @@ template <>
 void LrnKernel<CPU, float>::Compute(const LrnParam &param) const {
   const Tensor *input_x = param.InputX();
   auto x_dims = input_x->dims();
+  Tensor *out = param.Out();
+  out->mutable_data<float>();
   /// data_format = NCHW
   const int N = x_dims[0];
   const int C = x_dims[1];
   const int H = x_dims[2];
   const int W = x_dims[3];
-  Tensor *out = param.Out();
-  out->mutable_data<float>();
+
   const int n = param.N();
   const float alpha = param.Alpha();
   const float beta = param.Beta();
