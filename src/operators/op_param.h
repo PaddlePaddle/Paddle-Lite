@@ -165,6 +165,8 @@ class OpParam {
   template <typename T>
   static T *GetVarValue(const string &key, const VariableNameMap &var_map,
                         const Scope &scope) {
+    PADDLE_MOBILE_ENFORCE(var_map.count(key) > 0,
+                          "%s is not contained in var_map", key.c_str())
     auto var_vec = var_map.at(key);
     if (!var_vec.empty()) {
       auto var = scope.FindVar(var_vec[0]);
@@ -785,6 +787,55 @@ class FushionFcParam : public OpParam {
   int y_num_col_dims_;
   int axis_;
 };
+#endif
+
+#ifdef FUSION_CONVADD_OP
+class FushionConvAddParam : public OpParam {
+ public:
+  FushionConvAddParam(const VariableNameMap &inputs,
+                      const VariableNameMap &outputs, const AttributeMap &attrs,
+                      const Scope &scope) {
+    bias_ = InputYFrom<LoDTensor>(inputs, scope);
+    axis_ = GetAttr<int>("axis", attrs);
+    filter_ = FilterFrom<LoDTensor>(inputs, scope);
+    input_ = InputFrom<LoDTensor>(inputs, scope);
+    output_ = OutFrom<LoDTensor>(outputs, scope);
+    strides_ = GetAttr<vector<int>>("strides", attrs);
+    paddings_ = GetAttr<vector<int>>("paddings", attrs);
+    dilations_ = GetAttr<vector<int>>("dilations", attrs);
+    groups = GetAttr<int>("groups", attrs);
+  }
+  Tensor *Bias() const { return bias_; }
+
+  const int &Axis() const { return axis_; }
+
+  const Tensor *Input() const { return input_; }
+
+  const Tensor *Filter() const { return filter_; }
+
+  Tensor *Output() const { return output_; }
+
+  const vector<int> &Strides() const { return strides_; }
+
+  const vector<int> &Paddings() const { return paddings_; }
+
+  const vector<int> &Dilations() const { return dilations_; }
+
+  const int &Groups() const { return groups; }
+
+ private:
+  Tensor *bias_;
+  int axis_;
+  Tensor *input_;
+  Tensor *output_;
+  Tensor *filter_;
+  vector<int> strides_;
+  vector<int> paddings_;
+  vector<int> dilations_;
+  int groups;
+};
+
+Print &operator<<(Print &printer, const FushionConvAddParam &conv_param);
 #endif
 
 }  // namespace operators

@@ -99,6 +99,7 @@ static std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
     op_input_output_key = {
         {G_OP_TYPE_CONV, {{"Input"}, {"Output"}}},
+        {G_OP_TYPE_CONV_ADD, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_RELU, {{"X"}, {"Out"}}},
         {G_OP_TYPE_SOFTMAX, {{"X"}, {"Out"}}},
         {G_OP_TYPE_MUL, {{"X"}, {"Out"}}},
