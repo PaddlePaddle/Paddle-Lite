@@ -18,8 +18,6 @@ limitations under the License. */
 #ifdef PADDLE_MOBILE_PROFILE
 #include <algorithm>
 #include <ctime>
-#include <map>
-#include <numeric>
 #include <unordered_map>
 #endif
 
@@ -345,29 +343,31 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
   std::shared_ptr<framework::BlockDesc> to_predict_block =
       to_predict_program_->Block(0);
 #ifdef PADDLE_MOBILE_PROFILE
-  std::map<std::string, clock_t> _profile;
+  std::unordered_map<std::string, clock_t> _profile;
 #endif
   for (int j = 0; j < ops_of_block_[*to_predict_block.get()].size(); ++j) {
     auto op = ops_of_block_[*to_predict_block.get()][j];
 #ifdef PADDLE_MOBILE_PROFILE
-    clock_t _tic = clock();
+    _profile[op->Type()] -= clock();
 #endif
     op->Run();
 #ifdef PADDLE_MOBILE_PROFILE
-    _profile[op->Type()] += clock() - _tic;
+    _profile[op->Type()] += clock();
 #endif
   }
 #ifdef PADDLE_MOBILE_PROFILE
   {
     std::cout << "====================[ profile ]======================\n";
-    std::vector<std::pair<std::string, clock_t>> _tprofile(_profile.begin(),
-                                                           _profile.end());
+    using prof_t = std::pair<std::string, clock_t>;
+    std::vector<prof_t> _tprofile(_profile.begin(), _profile.end());
     clock_t _ptotal;
     for (auto const &p : _tprofile) {
       _ptotal += p.second;
     }
-    std::sort(_tprofile.begin(), _tprofile.end(),
-              [](auto &a, auto &b) { return a.second > b.second; });
+    auto compf = [](const prof_t &a, const prof_t &b) {
+      return a.second > b.second;
+    };
+    std::sort(_tprofile.begin(), _tprofile.end(), compf);
     _tprofile.push_back(std::make_pair("total", _ptotal));
     for (auto const &p : _tprofile) {
       std::cout << p.first << std::string(16 - p.first.size(), ' ') << "\t"
