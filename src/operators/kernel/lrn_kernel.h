@@ -50,27 +50,26 @@ struct LRNFunctor {
         for (int index = start; index < end; index++) {
           int channel = b + index;
           if (channel >= 0 && channel < C) {
-              int tmp_s = a * stride0 + b * stride1;
-              int tmp_c = a * stride0 + channel * stride1;
+            int tmp_s = a * stride0 + b * stride1;
+            int tmp_c = a * stride0 + channel * stride1;
 #ifdef __ARM_NEON
-              int n4 = stride1 / 4;
-              int m4 = stride1 % 4;
-              float32x4_t sqr0;
-              float32x4_t in0;
-              float32x4_t res0;
-              for (int i = 0; i < n4; i++) {
-
-              sqr0 = vld1q_f32(sqr_buffer_ptr+tmp_s);
-              in0 = vld1q_f32(input_ptr+tmp_c);
+            int n4 = stride1 / 4;
+            int m4 = stride1 % 4;
+            float32x4_t sqr0;
+            float32x4_t in0;
+            float32x4_t res0;
+            for (int i = 0; i < n4; i++) {
+              sqr0 = vld1q_f32(sqr_buffer_ptr + tmp_s);
+              in0 = vld1q_f32(input_ptr + tmp_c);
 
               res0 = vmlaq_f32(sqr0, in0, in0);
-              vst1q_f32(sqr_buffer_ptr+tmp_s, res0);
+              vst1q_f32(sqr_buffer_ptr + tmp_s, res0);
 
-              tmp_s+=4;
-              tmp_c+=4;
+              tmp_s += 4;
+              tmp_c += 4;
             }
 
-              for (int i = 0; i < m4; i++) {
+            for (int i = 0; i < m4; i++) {
               int s_i = tmp_s + i;
               int c_i = tmp_c + i;
               sqr_buffer_ptr[s_i] += input_ptr[c_i] * input_ptr[c_i];
