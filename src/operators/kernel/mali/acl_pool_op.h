@@ -27,7 +27,7 @@ template <typename DeviceType, typename T>
 class AclPoolOp : public acl::ACLOperator {
  public:
   AclPoolOp(){
-      this->force_bypass_acl_path_= bypass_acl_class_layer & 
+      this->force_bypass_acl_path_= bypass_acl_class_layer &
                                     FLAGS_ENABLE_ACL_POOLING;
   }
   ~AclPoolOp() = default;
@@ -54,7 +54,7 @@ class AclPoolOp : public acl::ACLOperator {
       pool_info=arm_compute::PoolingLayerInfo(
         arm_compute::PoolingType::MAX, args.filter_rows, arm_compute::PadStrideInfo(
         args.stride_cols,args.stride_rows,args.pad_cols,args.pad_rows,arm_compute::DimensionRoundingType::CEIL));
-    } 
+    }
     else {
       pool_info=arm_compute::PoolingLayerInfo(
         arm_compute::PoolingType::AVG, args.filter_rows, arm_compute::PadStrideInfo(
@@ -246,7 +246,7 @@ class AclPoolKernel : public framework::OpKernelBase<DeviceType, PoolParam> {
     }
 
 
-    
+
 
 #if 0
     std::cout << "Input: " << std::endl;

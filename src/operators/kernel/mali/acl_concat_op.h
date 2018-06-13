@@ -27,7 +27,7 @@ template <typename DeviceType, typename T>
 class AclConcatOp : public acl::ACLOperator {
  public:
   AclConcatOp(){
-      this->force_bypass_acl_path_= bypass_acl_class_layer & 
+      this->force_bypass_acl_path_= bypass_acl_class_layer &
                                     FLAGS_ENABLE_ACL_CONCAT;
   }
   ~AclConcatOp() = default;
@@ -87,7 +87,7 @@ private:
     auto inputs = param.Inputs();
     auto *output = param.Out();
     int64_t axis = param.Axis();
-    
+
     T* output_data = output->mutable_data<T>();
 
     args.is_channel_concat = (axis == 1);

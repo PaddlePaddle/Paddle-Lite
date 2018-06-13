@@ -27,7 +27,7 @@ template <typename DeviceType, typename T>
 class AclConvAddOp : public acl::ACLOperator {
  public:
   AclConvAddOp(){
-      this->force_bypass_acl_path_= bypass_acl_class_layer & 
+      this->force_bypass_acl_path_= bypass_acl_class_layer &
                                     FLAGS_ENABLE_ACL_CONV;
   }
   ~AclConvAddOp() = default;
@@ -105,12 +105,12 @@ private:
             printf("DIRECTCONV: %x\n", use_direct_conv);
         }
       }
-      int pad_data[2], kernel[2]; 
+      int pad_data[2], kernel[2];
       pad_data[1] = args.pad_rows;
       pad_data[0] = args.pad_cols;
       kernel[1] = args.filter_rows;
       kernel[0] = args.filter_cols;
-      if (use_direct_conv && 
+      if (use_direct_conv &&
           ((kernel[0] == 1 && kernel[1] == 1 && pad_data[0] == 0 && pad_data[1] == 0) ||
             (kernel[0] == 3 && kernel[1] == 3 && pad_data[0] <= 1 && pad_data[1] <= 1 ) )) {
           setConvMethod(); //NEDirectConvolutionLayer only for 1x1 and 3x3
@@ -127,7 +127,7 @@ private:
     const Tensor *input = param.Input();
     Tensor filter = *param.Filter();
     Tensor *output = param.Output();
-	Tensor *bias;
+    Tensor *bias;
 
     int groups = param.Groups();
     std::vector<int> strides = param.Strides();

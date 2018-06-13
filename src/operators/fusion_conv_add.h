@@ -81,7 +81,7 @@ class FushionConvAddOp : public framework::OperatorWithKernel<DeviceType> {
 
  protected:
   FushionConvAddParam param_;
-  
+
  private:
 #if defined(USE_ACL)
   AclConvAddKernel<DeviceType, T> acl_conv_kernel_;

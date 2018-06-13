@@ -44,7 +44,7 @@ class ConvOp : public framework::OperatorWithKernel<DeviceType> {
       return;
     }
 #endif
-	std::cout << "Not using ACL!" << std::endl;
+    std::cout << "Not using ACL!" << std::endl;
     operators::ConvKernel<DeviceType, T> kernel;
     kernel.Compute(param_);
     this->ClearVariables({"Filter", "Input"});

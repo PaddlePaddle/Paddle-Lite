@@ -151,4 +151,3 @@ void SubTensor::instantiate_subtensor() {
 }  // namespace acl
 }  // namespace operators
 }  // namespace paddle
-

@@ -27,7 +27,7 @@ template <typename DeviceType, typename T>
 class AclReluOp : public acl::ACLOperator {
  public:
   AclReluOp(){
-      this->force_bypass_acl_path_= bypass_acl_class_layer & 
+      this->force_bypass_acl_path_= bypass_acl_class_layer &
                                     FLAGS_ENABLE_ACL_RELU;
   }
   ~AclReluOp() = default;
@@ -174,7 +174,7 @@ class AclReluKernel : public framework::OpKernelBase<DeviceType, ReluParam> {
 
 
 
-    
+
 
 #if 0
     std::cout << "Input: " << std::endl;

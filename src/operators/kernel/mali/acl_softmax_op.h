@@ -27,7 +27,7 @@ template <typename DeviceType, typename T>
 class AclSoftmaxOp : public acl::ACLOperator {
  public:
   AclSoftmaxOp(){
-      this->force_bypass_acl_path_= bypass_acl_class_layer & 
+      this->force_bypass_acl_path_= bypass_acl_class_layer &
                                     FLAGS_ENABLE_ACL_SOFTMAX;
   }
   ~AclSoftmaxOp() = default;
@@ -177,7 +177,7 @@ class AclSoftmaxKernel : public framework::OpKernelBase<DeviceType, SoftmaxParam
     }
 
 
-    
+
 
 #if 0
     std::cout << "Input: " << std::endl;
