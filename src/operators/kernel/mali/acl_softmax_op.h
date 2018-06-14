@@ -26,9 +26,9 @@ namespace operators {
 template <typename DeviceType, typename T>
 class AclSoftmaxOp : public acl::ACLOperator {
  public:
-  AclSoftmaxOp(){
-      this->force_bypass_acl_path_= bypass_acl_class_layer &
-                                    FLAGS_ENABLE_ACL_SOFTMAX;
+  AclSoftmaxOp() {
+    this->force_bypass_acl_path_ =
+        bypass_acl_class_layer & FLAGS_ENABLE_ACL_SOFTMAX;
   }
   ~AclSoftmaxOp() = default;
   AclSoftmaxOp(const AclSoftmaxOp&) = delete;
@@ -36,83 +36,82 @@ class AclSoftmaxOp : public acl::ACLOperator {
   AclSoftmaxOp(AclSoftmaxOp&&) = delete;
   AclSoftmaxOp& operator=(AclSoftmaxOp&&) = delete;
 
-  acl::AclParameters& getargs() {
-      return args;
-  }
-  void InitAclLayer(const SoftmaxParam &param) {
+  acl::AclParameters& getargs() { return args; }
+  void InitAclLayer(const SoftmaxParam& param) {
     setTargetHint(acl::TargetHint::OPENCL);
-    arm_compute::TensorShape shape(
-      args.in_depth, args.batch);
+    arm_compute::TensorShape shape(args.in_depth, args.batch);
 
     if (is_operator_init_done(shape)) return;
     set_operator_init_done();
-    this->force_bypass_acl_path_=false;
+    this->force_bypass_acl_path_ = false;
 
     //[width, height, IFM]
-    new_tensor(input(),shape,args.input_data);
+    new_tensor(input(), shape, args.input_data);
     //[width, height, OFM]
-    new_tensor(output(),shape,args.output_data);
+    new_tensor(output(), shape, args.output_data);
 
-    acl_configure(softmax,this,NULL);
+    acl_configure(softmax, this, NULL);
   }
 
   void RunAcl(void* input, void* output) {
     acl::ACLOperator::acl_run(input, output);
   }
-  bool Bypass_acl(const SoftmaxParam &param) {
+  bool Bypass_acl(const SoftmaxParam& param) {
     bool bypass_acl = false;
     AclParametersByContext(param);
-    //for performance, more groups impact GPU performance
+    // for performance, more groups impact GPU performance
     if (this->force_bypass_acl_path_) {
-        bypass_acl = true;
+      bypass_acl = true;
     }
 
     return bypass_acl;
   }
-private:
-  void AclParametersByContext(const SoftmaxParam &param){
-      const framework::Tensor* in_x = param.InputX();
-      framework::Tensor* out = param.Out();
-      auto x_dims = in_x->dims();
-      out->Resize(x_dims);
 
-      const T* input_data = in_x->data<T>();
-      T* output_data = out->data<T>();
+ private:
+  void AclParametersByContext(const SoftmaxParam& param) {
+    const framework::Tensor* in_x = param.InputX();
+    framework::Tensor* out = param.Out();
+    auto x_dims = in_x->dims();
+    out->Resize(x_dims);
 
-      args.input_data = (void*)input_data;
-      args.output_data = (void*)output_data;
+    const T* input_data = in_x->data<T>();
+    T* output_data = out->data<T>();
 
-      // NCHW
-      args.batch    = in_x->dims()[0];
-      args.in_depth = in_x->dims()[1];
+    args.input_data = (void*)input_data;
+    args.output_data = (void*)output_data;
 
-      args.out_num = out->dims()[0];
+    // NCHW
+    args.batch = in_x->dims()[0];
+    args.in_depth = in_x->dims()[1];
 
-      //std::cout
-      //  << "Out C: " <<  args.out_depth
-      //  << " H: " << args.out_rows << " W: " << args.out_cols << "\n";
+    args.out_num = out->dims()[0];
 
+    // std::cout
+    //  << "Out C: " <<  args.out_depth
+    //  << " H: " << args.out_rows << " W: " << args.out_cols << "\n";
   }
   acl::AclParameters args;
-
 };
 
 template <typename DeviceType, typename T>
-class AclSoftmaxKernel : public framework::OpKernelBase<DeviceType, SoftmaxParam> {
+class AclSoftmaxKernel
+    : public framework::OpKernelBase<DeviceType, SoftmaxParam> {
  public:
-  bool Bypass_acl(const SoftmaxParam &param) const {
-      AclSoftmaxOp<DeviceType, T>* acl_op = reinterpret_cast<AclSoftmaxOp<DeviceType, T>*>(this->GetAclOp());
-      if (acl_op == nullptr) {
-        acl_op = new AclSoftmaxOp<DeviceType, T>();
-        this->SetAclOp((void*)acl_op, (void*)this);
-      }
-      return acl_op->Bypass_acl(param);
+  bool Bypass_acl(const SoftmaxParam& param) const {
+    AclSoftmaxOp<DeviceType, T>* acl_op =
+        reinterpret_cast<AclSoftmaxOp<DeviceType, T>*>(this->GetAclOp());
+    if (acl_op == nullptr) {
+      acl_op = new AclSoftmaxOp<DeviceType, T>();
+      this->SetAclOp((void*)acl_op, (void*)this);
+    }
+    return acl_op->Bypass_acl(param);
   }
 
-  void Compute(const SoftmaxParam &param) const override {
-    AclSoftmaxOp<DeviceType, T>* acl_op = reinterpret_cast<AclSoftmaxOp<DeviceType, T>*>(this->GetAclOp());
+  void Compute(const SoftmaxParam& param) const override {
+    AclSoftmaxOp<DeviceType, T>* acl_op =
+        reinterpret_cast<AclSoftmaxOp<DeviceType, T>*>(this->GetAclOp());
     if (acl_op == nullptr) {
-        return;
+      return;
     }
 
     acl::AclParameters& args = acl_op->getargs();
@@ -176,9 +175,6 @@ class AclSoftmaxKernel : public framework::OpKernelBase<DeviceType, SoftmaxParam
       output_data += args.in_depth;
     }
 
-
-
-
 #if 0
     std::cout << "Input: " << std::endl;
     for(int i = 0; i < args.batch; i++) {
@@ -205,10 +201,8 @@ class AclSoftmaxKernel : public framework::OpKernelBase<DeviceType, SoftmaxParam
     }
 #endif
   }
-
-
 };
 
 }  // namespace operators
-}  // namespace paddle
-#endif //USE_ACL
+}  // namespace paddle_mobile
+#endif  // USE_ACL

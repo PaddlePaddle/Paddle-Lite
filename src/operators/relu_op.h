@@ -47,8 +47,7 @@ class ReluOp : public framework::OperatorWithKernel<DeviceType> {
   void RunImpl() const {
 #if defined(USE_ACL)
     std::cout << "Using ACL!" << std::endl;
-    if (std::is_same<T, float>::value &&
-        !acl_relu_kernel_.Bypass_acl(param_)) {
+    if (std::is_same<T, float>::value && !acl_relu_kernel_.Bypass_acl(param_)) {
       acl_relu_kernel_.Compute(param_);
       return;
     }

@@ -63,8 +63,7 @@ class FushionConvAddOp : public framework::OperatorWithKernel<DeviceType> {
   void RunImpl() const {
 #if defined(USE_ACL)
     std::cout << "Using ACL!" << std::endl;
-    if (std::is_same<T, float>::value &&
-        !acl_conv_kernel_.Bypass_acl(param_)) {
+    if (std::is_same<T, float>::value && !acl_conv_kernel_.Bypass_acl(param_)) {
       acl_conv_kernel_.Compute(param_);
       this->ClearVariables({"Filter", "Input", "Y"});
       return;

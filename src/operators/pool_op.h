@@ -42,8 +42,7 @@ class PoolOp : public OperatorWithKernel<DeviceType> {
   void RunImpl() const {
 #if defined(USE_ACL)
     std::cout << "Using ACL!" << std::endl;
-    if (std::is_same<T, float>::value &&
-        !acl_pool_kernel_.Bypass_acl(param_)) {
+    if (std::is_same<T, float>::value && !acl_pool_kernel_.Bypass_acl(param_)) {
       acl_pool_kernel_.Compute(param_);
       this->ClearVariables({"X"});
       return;

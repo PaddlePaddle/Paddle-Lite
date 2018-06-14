@@ -26,9 +26,9 @@ namespace operators {
 template <typename DeviceType, typename T>
 class AclReluOp : public acl::ACLOperator {
  public:
-  AclReluOp(){
-      this->force_bypass_acl_path_= bypass_acl_class_layer &
-                                    FLAGS_ENABLE_ACL_RELU;
+  AclReluOp() {
+    this->force_bypass_acl_path_ =
+        bypass_acl_class_layer & FLAGS_ENABLE_ACL_RELU;
   }
   ~AclReluOp() = default;
   AclReluOp(const AclReluOp&) = delete;
@@ -36,51 +36,50 @@ class AclReluOp : public acl::ACLOperator {
   AclReluOp(AclReluOp&&) = delete;
   AclReluOp& operator=(AclReluOp&&) = delete;
 
-  acl::AclParameters& getargs() {
-      return args;
-  }
-  void InitAclLayer(const ReluParam &param) {
+  acl::AclParameters& getargs() { return args; }
+  void InitAclLayer(const ReluParam& param) {
     setTargetHint(acl::TargetHint::OPENCL);
-    arm_compute::TensorShape input_shape(
-      args.in_cols*args.in_rows*args.in_depth*args.batch);
-    arm_compute::TensorShape output_shape(
-      args.in_cols*args.in_rows*args.in_depth*args.out_num);
-    //arm_compute::TensorShape weights_shape(
-      //args.filter_cols, args.filter_rows, args.in_depth, args.out_depth);
-    //arm_compute::TensorShape biases_shape(args.out_depth);
+    arm_compute::TensorShape input_shape(args.in_cols * args.in_rows *
+                                         args.in_depth * args.batch);
+    arm_compute::TensorShape output_shape(args.in_cols * args.in_rows *
+                                          args.in_depth * args.out_num);
+    // arm_compute::TensorShape weights_shape(
+    // args.filter_cols, args.filter_rows, args.in_depth, args.out_depth);
+    // arm_compute::TensorShape biases_shape(args.out_depth);
     arm_compute::ActivationLayerInfo::ActivationFunction type;
-    type=arm_compute::ActivationLayerInfo::ActivationFunction::RELU;
+    type = arm_compute::ActivationLayerInfo::ActivationFunction::RELU;
 
     arm_compute::ActivationLayerInfo act_info(type);
 
     if (is_operator_init_done(input_shape)) return;
     set_operator_init_done();
-    this->force_bypass_acl_path_=false;
+    this->force_bypass_acl_path_ = false;
 
     //[width, height, IFM]
-    new_tensor(input(),input_shape,args.input_data);
+    new_tensor(input(), input_shape, args.input_data);
     //[width, height, OFM]
-    new_tensor(output(),output_shape,args.output_data);
+    new_tensor(output(), output_shape, args.output_data);
 
-    acl_configure(activation,this,act_info);
+    acl_configure(activation, this, act_info);
   }
 
   void RunAcl(void* input, void* output) {
     acl::ACLOperator::acl_run(input, output);
   }
-  bool Bypass_acl(const ReluParam &param) {
+  bool Bypass_acl(const ReluParam& param) {
     bool bypass_acl = false;
     AclParametersByContext(param);
-    //for performance, more groups impact GPU performance
+    // for performance, more groups impact GPU performance
     if (this->force_bypass_acl_path_) {
-        bypass_acl = true;
+      bypass_acl = true;
     }
     return bypass_acl;
   }
-private:
-  void AclParametersByContext(const ReluParam &param){
-    const auto *input_x = param.InputX();
-    auto *out = param.Out();
+
+ private:
+  void AclParametersByContext(const ReluParam& param) {
+    const auto* input_x = param.InputX();
+    auto* out = param.Out();
 
     const T* input_data = input_x->data<T>();
     T* output_data = out->mutable_data<T>();
@@ -90,30 +89,31 @@ private:
 
     args.batch = input_x->dims()[0];
     args.in_depth = input_x->dims()[1];
-    args.in_rows  = input_x->dims()[2];
-    args.in_cols  = input_x->dims()[3];
+    args.in_rows = input_x->dims()[2];
+    args.in_cols = input_x->dims()[3];
     args.out_num = out->dims()[0];
   }
   acl::AclParameters args;
-
 };
 
 template <typename DeviceType, typename T>
 class AclReluKernel : public framework::OpKernelBase<DeviceType, ReluParam> {
  public:
-  bool Bypass_acl(const ReluParam &param) const {
-      AclReluOp<DeviceType, T>* acl_op = reinterpret_cast<AclReluOp<DeviceType, T>*>(this->GetAclOp());
-      if (acl_op == nullptr) {
-        acl_op = new AclReluOp<DeviceType, T>();
-        this->SetAclOp((void*)acl_op, (void*)this);
-      }
-      return acl_op->Bypass_acl(param);
+  bool Bypass_acl(const ReluParam& param) const {
+    AclReluOp<DeviceType, T>* acl_op =
+        reinterpret_cast<AclReluOp<DeviceType, T>*>(this->GetAclOp());
+    if (acl_op == nullptr) {
+      acl_op = new AclReluOp<DeviceType, T>();
+      this->SetAclOp((void*)acl_op, (void*)this);
+    }
+    return acl_op->Bypass_acl(param);
   }
 
-  void Compute(const ReluParam &param) const override {
-    AclReluOp<DeviceType, T>* acl_op = reinterpret_cast<AclReluOp<DeviceType, T>*>(this->GetAclOp());
+  void Compute(const ReluParam& param) const override {
+    AclReluOp<DeviceType, T>* acl_op =
+        reinterpret_cast<AclReluOp<DeviceType, T>*>(this->GetAclOp());
     if (acl_op == nullptr) {
-        return;
+      return;
     }
     acl::AclParameters& args = acl_op->getargs();
     const T* input_data = (const T*)args.input_data;
@@ -172,10 +172,6 @@ class AclReluKernel : public framework::OpKernelBase<DeviceType, ReluParam> {
     acl_op->InitAclLayer(param);
     acl_op->RunAcl((void*)input_data, (void*)output_data);
 
-
-
-
-
 #if 0
     std::cout << "Input: " << std::endl;
     for(int i = 0; i < args.batch; i++) {
@@ -202,10 +198,8 @@ class AclReluKernel : public framework::OpKernelBase<DeviceType, ReluParam> {
     }
 #endif
   }
-
-
 };
 
 }  // namespace operators
-}  // namespace paddle
-#endif //USE_ACL
+}  // namespace paddle_mobile
+#endif  // USE_ACL

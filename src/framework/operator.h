@@ -125,14 +125,17 @@ class OpKernelBase {
    * */
 #if defined(USE_ACL)
   OpKernelBase() { acl_op_ = nullptr; }
-  void* GetAclOp() const { return acl_op_; }
-  void SetAclOp(void* op, void* ob) const { reinterpret_cast<OpKernelBase<Dtype, P>*>(ob)->acl_op_ = op; }
+  void *GetAclOp() const { return acl_op_; }
+  void SetAclOp(void *op, void *ob) const {
+    reinterpret_cast<OpKernelBase<Dtype, P> *>(ob)->acl_op_ = op;
+  }
 #endif
   virtual void Compute(const P &para) const = 0;
   virtual ~OpKernelBase() = default;
-private:
+
+ private:
 #if defined(USE_ACL)
-  void* acl_op_;
+  void *acl_op_;
 #endif
 };
 
