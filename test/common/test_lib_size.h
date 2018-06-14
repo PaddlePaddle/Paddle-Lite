@@ -19,6 +19,8 @@ limitations under the License. */
 #ifndef PADDLE_MOBILE_TEST_LIB_SIZE_H
 #define PADDLE_MOBILE_TEST_LIB_SIZE_H
 
+#include <pthread.h>
+#include <thread>
 #include <vector>
 //#include <list>
 //#include <tuple>
@@ -33,7 +35,7 @@ limitations under the License. */
 
 //#include <iostream>
 //#include <sstream>
-#include <memory>
+//#include <memory>
 //#include <stdio.h>
 //#include <cstring>
 
@@ -44,8 +46,10 @@ void foo() {
 
   //  std::cout << "12345" << std::endl;
   std::vector<int> vec = {1, 2, 3, 4, 5};
+  vec.push_back(2);
 
-  //  std::find(vec.begin(), vec.end(), 1);
+  pthread_mutex_init(NULL, NULL);
+  pthread_attr_destroy(NULL);
   //  std::find(vec.begin(), vec.end(), 1);
 
   //  std::list<int> l;
@@ -70,7 +74,7 @@ void foo() {
   //    int z = 10;
   //  }
 
-  std::shared_ptr<int> s1 = std::make_shared<int>();
+  //  std::shared_ptr<int> s1 = std::make_shared<int>();
 
   //  std::stringstream ss;
   //  ss << "12345";
