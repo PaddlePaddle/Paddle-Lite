@@ -20,6 +20,9 @@ limitations under the License. */
 #include "framework/operator.h"
 #include "operators/kernel/lrn_kernel.h"
 #include "operators/op_param.h"
+#if defined(USE_ACL)
+#include "operators/kernel/mali/acl_lrn_op.h"
+#endif
 
 namespace paddle_mobile {
 namespace operators {
@@ -35,6 +38,15 @@ class LrnOp : public framework::OperatorWithKernel<DeviceType> {
         param_(inputs, outputs, attrs, *scope) {}
 
   void RunImpl() const {
+#if defined(USE_ACL)
+    std::cout << "Using ACL!" << std::endl;
+    if (std::is_same<T, float>::value && !acl_lrn_kernel_.Bypass_acl(param_)) {
+      acl_lrn_kernel_.Compute(param_);
+      this->ClearVariables({"Filter", "Input"});
+      return;
+    }
+#endif
+    std::cout << "Not using ACL!" << std::endl;
     operators::LrnKernel<DeviceType, T> kernel;
     kernel.Compute(param_);
   }
@@ -44,6 +56,11 @@ class LrnOp : public framework::OperatorWithKernel<DeviceType> {
 
  protected:
   LrnParam param_;
+
+ private:
+#if defined(USE_ACL)
+  AclLrnKernel<DeviceType, T> acl_lrn_kernel_;
+#endif
 };
 
 }  // namespace operators
