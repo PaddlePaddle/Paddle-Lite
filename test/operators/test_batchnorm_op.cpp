@@ -137,7 +137,8 @@ int main() {
   auto *inputx1_ptr = inputx1.data<float>();
 
   paddle_mobile::framework::Tensor mean;
-  SetupTensor<float>(&mean, {256}, static_cast<float>(0), static_cast<float>(1));
+  SetupTensor<float>(&mean, {256}, static_cast<float>(0),
+                     static_cast<float>(1));
   auto *mean_ptr = mean.data<float>();
 
   paddle_mobile::framework::Tensor scale;
@@ -151,7 +152,8 @@ int main() {
   auto *variance_ptr = variance.data<float>();
 
   paddle_mobile::framework::Tensor bias;
-  SetupTensor<float>(&bias, {256}, static_cast<float>(0), static_cast<float>(1));
+  SetupTensor<float>(&bias, {256}, static_cast<float>(0),
+                     static_cast<float>(1));
   auto *bias_ptr = bias.data<float>();
 
   paddle_mobile::framework::TestBatchNormOp<paddle_mobile::CPU> testBatchNormOp(

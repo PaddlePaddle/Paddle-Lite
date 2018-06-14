@@ -19,9 +19,9 @@ limitations under the License. */
 #ifndef PADDLE_MOBILE_TEST_LIB_SIZE_H
 #define PADDLE_MOBILE_TEST_LIB_SIZE_H
 
-#include <vector>
 #include <pthread.h>
 #include <thread>
+#include <vector>
 //#include <list>
 //#include <tuple>
 //#include <typeinfo>
@@ -74,7 +74,7 @@ void foo() {
   //    int z = 10;
   //  }
 
-//  std::shared_ptr<int> s1 = std::make_shared<int>();
+  //  std::shared_ptr<int> s1 = std::make_shared<int>();
 
   //  std::stringstream ss;
   //  ss << "12345";
