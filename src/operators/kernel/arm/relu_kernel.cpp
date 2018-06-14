@@ -38,70 +38,71 @@ void ReluKernel<CPU, float>::Compute(const ReluParam &param) const {
   auto *out_ptr = out->mutable_data<float>();
 
   int numel = input_x->numel();
-  if (numel > 32) {
-    asm volatile(
-        "pld        [%[input_x_ptr], #0]        \n\t"
-        "vmov.f32   q8,    #0.0                 \n\t"
-        "subs %[num], %[num], #32                \n\t"
-        "blt        end_num_%=                  \n\t"
-        "loop_num_%=:                           \n\t"
-        "pld        [%[input_x_ptr], #1024]      \n\t"
-
-        "vld1.32 {q0, q1}, [%[input_x_ptr]]!    \n\t"
-        "vld1.32 {q2, q3}, [%[input_x_ptr]]!    \n\t"
-        "vld1.32 {q4, q5}, [%[input_x_ptr]]!    \n\t"
-        "vld1.32 {q6, q7}, [%[input_x_ptr]]!    \n\t"
-
-        "vmax.f32 q0, q0, q8                   \n\t"
-        "vmax.f32 q1, q1, q8                    \n\t"
-        "vmax.f32 q2, q2, q8                   \n\t"
-        "vmax.f32 q3, q3, q8                   \n\t"
-        "vmax.f32 q4, q4, q8                   \n\t"
-        "vmax.f32 q5, q5, q8                   \n\t"
-        "vmax.f32 q6, q6, q8                   \n\t"
-        "vmax.f32 q7, q7, q8                   \n\t"
-
-        "vst1.32 {q0, q1}, [%[out_ptr]]!        \n\t"
-        "vst1.32 {q2, q3}, [%[out_ptr]]!       \n\t"
-        "vst1.32 {q4, q5}, [%[out_ptr]]!       \n\t"
-        "vst1.32 {q6, q7}, [%[out_ptr]]!       \n\t"
-
-        "subs %[num], %[num], #32              \n\t"
-        "bge        loop_num_%=                \n\t"
-        "end_num_%=:                           \n\t"
-        "cmp %[num], #0                         \n\t"
-        "bge   end_%=                          \n\t"
-        "mov r6, #4                             \n\t"
-        "mul r5, %[num], r6                     \n\t"
-        "add %[input_x_ptr], %[input_x_ptr], r5     \n\t"
-        "vld1.32 {q0, q1}, [%[input_x_ptr]]!    \n\t"
-        "vld1.32 {q2, q3}, [%[input_x_ptr]]!    \n\t"
-        "vld1.32 {q4, q5}, [%[input_x_ptr]]!    \n\t"
-        "vld1.32 {q6, q7}, [%[input_x_ptr]]!    \n\t"
-        "vmax.f32 q0, q0, q8                   \n\t"
-        "vmax.f32 q1, q1, q8                    \n\t"
-        "vmax.f32 q2, q2, q8                   \n\t"
-        "vmax.f32 q3, q3, q8                   \n\t"
-        "vmax.f32 q4, q4, q8                   \n\t"
-        "vmax.f32 q5, q5, q8                   \n\t"
-        "vmax.f32 q6, q6, q8                   \n\t"
-        "vmax.f32 q7, q7, q8                   \n\t"
-        "add %[out_ptr], %[out_ptr], r5       \n\t"
-        "vst1.32 {q0, q1}, [%[out_ptr]]!        \n\t"
-        "vst1.32 {q2, q3}, [%[out_ptr]]!       \n\t"
-        "vst1.32 {q4, q5}, [%[out_ptr]]!       \n\t"
-        "vst1.32 {q6, q7}, [%[out_ptr]]!       \n\t"
-        "end_%=:                                \n\t"
-        :
-        :
-        [out_ptr] "r"(out_ptr), [input_x_ptr] "r"(input_x_ptr), [num] "r"(numel)
-        : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "r5",
-          "r6");
-  } else {
-    ReluFunctor<float> func_;
-    math::Transform trans;
-    trans(input_x_ptr, input_x_ptr + numel, out_ptr, func_);
-  }
+  //  if (numel > 64) {
+  //    asm volatile(
+  //        "pld        [%[input_x_ptr], #0]        \n\t"
+  //        "vmov.f32   q8,    #0.0                 \n\t"
+  //        "subs %[num], %[num], #32                \n\t"
+  //        "blt        end_num_%=                  \n\t"
+  //        "loop_num_%=:                           \n\t"
+  //        "pld        [%[input_x_ptr], #1024]      \n\t"
+  //
+  //        "vld1.32 {q0, q1}, [%[input_x_ptr]]!    \n\t"
+  //        "vld1.32 {q2, q3}, [%[input_x_ptr]]!    \n\t"
+  //        "vld1.32 {q4, q5}, [%[input_x_ptr]]!    \n\t"
+  //        "vld1.32 {q6, q7}, [%[input_x_ptr]]!    \n\t"
+  //
+  //        "vmax.f32 q0, q0, q8                   \n\t"
+  //        "vmax.f32 q1, q1, q8                    \n\t"
+  //        "vmax.f32 q2, q2, q8                   \n\t"
+  //        "vmax.f32 q3, q3, q8                   \n\t"
+  //        "vmax.f32 q4, q4, q8                   \n\t"
+  //        "vmax.f32 q5, q5, q8                   \n\t"
+  //        "vmax.f32 q6, q6, q8                   \n\t"
+  //        "vmax.f32 q7, q7, q8                   \n\t"
+  //
+  //        "vst1.32 {q0, q1}, [%[out_ptr]]!        \n\t"
+  //        "vst1.32 {q2, q3}, [%[out_ptr]]!       \n\t"
+  //        "vst1.32 {q4, q5}, [%[out_ptr]]!       \n\t"
+  //        "vst1.32 {q6, q7}, [%[out_ptr]]!       \n\t"
+  //
+  //        "subs %[num], %[num], #32              \n\t"
+  //        "bge        loop_num_%=                \n\t"
+  //        "end_num_%=:                           \n\t"
+  //        "cmp %[num], #0                         \n\t"
+  //        "bge   end_%=                          \n\t"
+  //        "mov r6, #4                             \n\t"
+  //        "mul r5, %[num], r6                     \n\t"
+  //        "add %[input_x_ptr], %[input_x_ptr], r5     \n\t"
+  //        "vld1.32 {q0, q1}, [%[input_x_ptr]]!    \n\t"
+  //        "vld1.32 {q2, q3}, [%[input_x_ptr]]!    \n\t"
+  //        "vld1.32 {q4, q5}, [%[input_x_ptr]]!    \n\t"
+  //        "vld1.32 {q6, q7}, [%[input_x_ptr]]!    \n\t"
+  //        "vmax.f32 q0, q0, q8                   \n\t"
+  //        "vmax.f32 q1, q1, q8                    \n\t"
+  //        "vmax.f32 q2, q2, q8                   \n\t"
+  //        "vmax.f32 q3, q3, q8                   \n\t"
+  //        "vmax.f32 q4, q4, q8                   \n\t"
+  //        "vmax.f32 q5, q5, q8                   \n\t"
+  //        "vmax.f32 q6, q6, q8                   \n\t"
+  //        "vmax.f32 q7, q7, q8                   \n\t"
+  //        "add %[out_ptr], %[out_ptr], r5       \n\t"
+  //        "vst1.32 {q0, q1}, [%[out_ptr]]!        \n\t"
+  //        "vst1.32 {q2, q3}, [%[out_ptr]]!       \n\t"
+  //        "vst1.32 {q4, q5}, [%[out_ptr]]!       \n\t"
+  //        "vst1.32 {q6, q7}, [%[out_ptr]]!       \n\t"
+  //        "end_%=:                                \n\t"
+  //        :
+  //        :
+  //        [out_ptr] "r"(out_ptr), [input_x_ptr] "r"(input_x_ptr), [num]
+  //        "r"(numel) : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6",
+  //        "q7", "q8", "r5",
+  //          "r6");
+  //  } else {
+  ReluFunctor<float> func_;
+  math::Transform trans;
+  trans(input_x_ptr, input_x_ptr + numel, out_ptr, func_);
+  //  }
 }
 }  // namespace operators
 }  // namespace paddle_mobile
