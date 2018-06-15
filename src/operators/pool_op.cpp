@@ -34,13 +34,13 @@ int PoolOutputSize(int input_size, int filter_size, int padding, int stride,
 }
 template <typename DeviceType, typename T>
 void PoolOp<DeviceType, T>::InferShape() const {
-  auto in_x_dims = param_.Input()->dims();
-  std::vector<int> ksize = param_.Ksize();
-  std::vector<int> paddings = param_.Paddings();
-  std::vector<int> strides = param_.Strides();
-  bool ceil_mode = param_.isCeilMode();
+  auto in_x_dims = this->param_.Input()->dims();
+  std::vector<int> ksize = this->param_.Ksize();
+  std::vector<int> paddings = this->param_.Paddings();
+  std::vector<int> strides = this->param_.Strides();
+  bool ceil_mode = this->param_.isCeilMode();
 
-  if (param_.isGlobalPooling()) {
+  if (this->param_.isGlobalPooling()) {
     ksize.resize(static_cast<size_t>(in_x_dims.size()) - 2);
     for (size_t i = 0; i < ksize.size(); ++i) {
       paddings[i] = 0;
@@ -52,7 +52,7 @@ void PoolOp<DeviceType, T>::InferShape() const {
     output_shape.push_back(PoolOutputSize(in_x_dims[i + 2], ksize[i],
                                           paddings[i], strides[i], ceil_mode));
   }
-  param_.Output()->Resize(framework::make_ddim(output_shape));
+  this->param_.Output()->Resize(framework::make_ddim(output_shape));
 }
 template class PoolOp<CPU, float>;
 }  // namespace operators

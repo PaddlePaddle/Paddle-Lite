@@ -45,26 +45,25 @@ class FusionFcMatcher : public framework::FusionOpMatcher {
 };
 
 template <typename DeviceType, typename T>
-class FushionFcOp : public framework::OperatorWithKernel<DeviceType> {
+class FushionFcOp : public framework::OperatorWithKernel<
+                        DeviceType, FushionFcParam,
+                        operators::FushionFcKernel<DeviceType, T>> {
  public:
   FushionFcOp(const string &type, const VariableNameMap &inputs,
               const VariableNameMap &outputs,
               const framework::AttributeMap &attrs,
               std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
-                                                  scope),
-        param_(inputs, outputs, attrs, *scope) {}
+      : framework::OperatorWithKernel<
+            DeviceType, FushionFcParam,
+            operators::FushionFcKernel<DeviceType, T>>(type, inputs, outputs,
+                                                       attrs, scope) {}
 
-  void RunImpl() const {
-    operators::FushionFcKernel<DeviceType, T> kernel;
-    kernel.Compute(param_);
-  }
-
-  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  using framework::OperatorWithKernel<
+      DeviceType, FushionFcParam,
+      operators::FushionFcKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:
-  FushionFcParam param_;
 };
 
 #ifdef PADDLE_MOBILE_CPU

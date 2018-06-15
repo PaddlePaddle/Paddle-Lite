@@ -20,7 +20,10 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-void ConvKernel<GPU_MALI, float>::Compute(const ConvParam &param) const {}
+void ConvKernel<GPU_MALI, float>::Compute(const ConvParam &param) const {
+  //  ArmConvImplement imp;
+  //  imp.Compute(param);
+}
 
 template class ConvKernel<GPU_MALI, float>;
 }  // namespace operators

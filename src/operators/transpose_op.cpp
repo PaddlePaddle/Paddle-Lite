@@ -23,8 +23,8 @@ namespace operators {
 
 template <typename Dtype, typename T>
 void TransposeOp<Dtype, T>::InferShape() const {
-  auto input_x_dims = param_.InputX()->dims();
-  auto axis = param_.Axis();
+  auto input_x_dims = this->param_.InputX()->dims();
+  auto axis = this->param_.Axis();
 
   size_t x_dims_size = input_x_dims.size();
   size_t axis_size = axis.size();
@@ -45,7 +45,7 @@ void TransposeOp<Dtype, T>::InferShape() const {
   for (size_t i = 0; i < axis_size; i++) {
     out_dims[i] = input_x_dims[axis[i]];
   }
-  param_.Out()->Resize(out_dims);
+  this->param_.Out()->Resize(out_dims);
 }
 template class TransposeOp<CPU, float>;
 }  // namespace operators
