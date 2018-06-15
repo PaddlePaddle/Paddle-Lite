@@ -12,8 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include <vector>
 #include "common/types.h"
+#include <vector>
 
 namespace paddle_mobile {
 
@@ -22,8 +22,7 @@ const std::string G_OP_TYPE_BATCHNORM = "batch_norm";
 const std::string G_OP_TYPE_BOX_CODER = "box_coder";
 const std::string G_OP_TYPE_CONCAT = "concat";
 const std::string G_OP_TYPE_ELEMENTWISE_ADD = "elementwise_add";
-const std::string G_OP_TYPE_FUSION_CONV_ADD_RELU =
- "fusion_conv_add_relu";
+const std::string G_OP_TYPE_FUSION_CONV_ADD_RELU = "fusion_conv_add_relu";
 const std::string G_OP_TYPE_FC = "fc";
 const std::string G_OP_TYPE_CONV_ADD = "conv_add";
 const std::string G_OP_TYPE_LRN = "lrn";
@@ -41,10 +40,9 @@ const std::string G_OP_TYPE_FEED = "feed";
 const std::string G_OP_TYPE_FETCH = "fetch";
 const std::string G_OP_TYPE_DEPTHWISE_CONV = "depthwise_conv2d";
 
-
 std::unordered_map<
-        std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
-        op_input_output_key = {
+    std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
+    op_input_output_key = {
         {G_OP_TYPE_CONV, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_CONV_ADD, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_RELU, {{"X"}, {"Out"}}},
@@ -60,11 +58,11 @@ std::unordered_map<
         {G_OP_TYPE_FETCH, {{"X"}, {"Out"}}},
         {G_OP_TYPE_TRANSPOSE, {{"X"}, {"Out"}}},
         {G_OP_TYPE_BOX_CODER,
-                {{"PriorBox", "PriorBoxVar", "TargetBox"}, {"OutputBox"}}},
+         {{"PriorBox", "PriorBoxVar", "TargetBox"}, {"OutputBox"}}},
         {G_OP_TYPE_PRIOR_BOX, {{"Image", "Input"}, {"Boxes", "Variances"}}},
         {G_OP_TYPE_MULTICLASS_NMS, {{"BBoxes", "Scores"}, {"Out"}}},
         {G_OP_TYPE_FC, {{"X", "Y", "Z"}, {"Out"}}},
         {G_OP_TYPE_RESHAPE, {{"X"}, {"Out"}}},
         {G_OP_TYPE_DEPTHWISE_CONV, {{"Input"}, {"Output"}}}};
 
-}
+}  // namespace paddle_mobile

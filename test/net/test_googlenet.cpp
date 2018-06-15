@@ -20,9 +20,9 @@ int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
   bool optimize = true;
   auto time1 = time();
-//  auto program = loader.Load(g_googlenet, optimize);
+  //  auto program = loader.Load(g_googlenet, optimize);
   auto program = loader.Load(g_googlenet_combine + "/model",
-                               g_googlenet_combine + "/params", optimize);
+                             g_googlenet_combine + "/params", optimize);
   auto time2 = time();
   DLOG << "load cost :" << time_diff(time1, time2) << "ms\n";
   paddle_mobile::Executor<paddle_mobile::CPU> executor(program, 1, optimize);
