@@ -29,24 +29,16 @@ using framework::OperatorWithKernel;
 using framework::Scope;
 using std::string;
 template <typename DeviceType, typename T>
-class PoolOp : public OperatorWithKernel<DeviceType> {
+class PoolOp : public OperatorWithKernel<DeviceType, PoolParam, operators::PoolKernel<DeviceType, T>> {
  public:
   PoolOp(const string &type, const VariableNameMap &inputs,
          const VariableNameMap &outputs, const AttributeMap &attrs,
          std::shared_ptr<Scope> scope)
-      : OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs, scope),
-        param_(inputs, outputs, attrs, *scope) {}
-  using OperatorWithKernel<DeviceType>::OperatorWithKernel;
+      : OperatorWithKernel<DeviceType, PoolParam, operators::PoolKernel<DeviceType, T>>(type, inputs, outputs, attrs, scope) {}
+  using OperatorWithKernel<DeviceType, PoolParam, operators::PoolKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
-  void RunImpl() const {
-    operators::PoolKernel<DeviceType, T> kernel;
-    kernel.Compute(param_);
-    this->ClearVariables({"X"});
-  }
-
  private:
-  PoolParam param_;
 };
 }  // namespace operators
 }  // namespace paddle_mobile

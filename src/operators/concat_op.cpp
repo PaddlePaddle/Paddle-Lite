@@ -21,7 +21,7 @@ namespace operators {
 
 template <typename Dtype, typename T>
 void ConcatOp<Dtype, T>::InferShape() const {
-  auto inputs = param_.Inputs();
+  auto inputs = this->param_.Inputs();
   const size_t n = inputs.size();
 
   std::vector<DDim> inputs_dims;
@@ -30,7 +30,7 @@ void ConcatOp<Dtype, T>::InferShape() const {
     inputs_dims.push_back(inputs[i]->dims());
   }
 
-  auto axis = static_cast<size_t>(param_.Axis());
+  auto axis = static_cast<size_t>(this->param_.Axis());
 
   if (n == 1) {
     DLOG << "Warning: concat op have only one input, "
@@ -54,7 +54,7 @@ void ConcatOp<Dtype, T>::InferShape() const {
     out_dims[axis] = -1;
   }
 
-  param_.Out()->Resize(out_dims);
+  this->param_.Out()->Resize(out_dims);
 }
 template class ConcatOp<CPU, float>;
 
