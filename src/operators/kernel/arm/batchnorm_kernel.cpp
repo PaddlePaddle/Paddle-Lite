@@ -61,7 +61,7 @@ void BatchNormKernel<CPU, float>::Compute(const BatchNormParam &param) const {
     /// std = (var + epsilon).sqrt();
     /// inv_std = 1 / std;
     for (int i = 0; i < C * 4; i += 4) {
-      int index = i/4;
+      int index = i / 4;
       inv_std_ptr[i] =
           1 / static_cast<float>(pow((variance_ptr[index] + epsilon), 0.5));
       inv_std_ptr[i + 1] = inv_std_ptr[i];

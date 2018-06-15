@@ -21,8 +21,8 @@ namespace operators {
 
 template <>
 void ConvKernel<GPU_MALI, float>::Compute(const ConvParam &param) const {
-//  ArmConvImplement imp;
-//  imp.Compute(param);
+  //  ArmConvImplement imp;
+  //  imp.Compute(param);
 }
 
 template class ConvKernel<GPU_MALI, float>;

@@ -25,15 +25,19 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename DeviceType, typename T>
-class MulOp : public framework::OperatorWithKernel<DeviceType, MulParam, operators::MulKernel<DeviceType, T>> {
+class MulOp : public framework::OperatorWithKernel<
+                  DeviceType, MulParam, operators::MulKernel<DeviceType, T>> {
  public:
   MulOp(const std::string &type, const VariableNameMap &inputs,
         const VariableNameMap &outputs, const framework::AttributeMap &attrs,
         std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, MulParam, operators::MulKernel<DeviceType, T>>(type, inputs, outputs, attrs,
-                                                  scope) {}
+      : framework::OperatorWithKernel<DeviceType, MulParam,
+                                      operators::MulKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
 
-  using framework::OperatorWithKernel<DeviceType, MulParam, operators::MulKernel<DeviceType, T>>::OperatorWithKernel;
+  using framework::OperatorWithKernel<
+      DeviceType, MulParam,
+      operators::MulKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:

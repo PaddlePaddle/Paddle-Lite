@@ -25,16 +25,22 @@ namespace paddle_mobile {
 namespace operators {
 using std::string;
 template <typename DeviceType, typename T>
-class ElementwiseAddOp : public framework::OperatorWithKernel<DeviceType, ElementwiseAddParam, operators::ElementwiseAddKernel<DeviceType, T>> {
+class ElementwiseAddOp : public framework::OperatorWithKernel<
+                             DeviceType, ElementwiseAddParam,
+                             operators::ElementwiseAddKernel<DeviceType, T>> {
  public:
   ElementwiseAddOp(const string &type, const VariableNameMap &inputs,
                    const VariableNameMap &outputs,
                    const framework::AttributeMap &attrs,
                    std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, ElementwiseAddParam, operators::ElementwiseAddKernel<DeviceType, T>>(type, inputs, outputs, attrs,
-                                                  scope) {}
+      : framework::OperatorWithKernel<
+            DeviceType, ElementwiseAddParam,
+            operators::ElementwiseAddKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
 
-  using framework::OperatorWithKernel<DeviceType, ElementwiseAddParam, operators::ElementwiseAddKernel<DeviceType, T>>::OperatorWithKernel;
+  using framework::OperatorWithKernel<
+      DeviceType, ElementwiseAddParam,
+      operators::ElementwiseAddKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:

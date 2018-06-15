@@ -28,7 +28,9 @@ namespace operators {
 using paddle_mobile::framework::Tensor;
 
 template <typename DeviceType, typename T>
-class ReluOp : public framework::OperatorWithKernel<DeviceType, ReluParam, operators::ReluKernel<DeviceType, T>> {
+class ReluOp
+    : public framework::OperatorWithKernel<
+          DeviceType, ReluParam, operators::ReluKernel<DeviceType, T>> {
  public:
   /*
    * @b op 的实例化方法, 需要调用父类的实例化方法, 以及实例化自己的参数结构体
@@ -36,10 +38,13 @@ class ReluOp : public framework::OperatorWithKernel<DeviceType, ReluParam, opera
   ReluOp(const std::string &type, const VariableNameMap &inputs,
          const VariableNameMap &outputs, const framework::AttributeMap &attrs,
          std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, ReluParam, operators::ReluKernel<DeviceType, T>>(type, inputs, outputs, attrs,
-                                                  scope) {}
+      : framework::OperatorWithKernel<DeviceType, ReluParam,
+                                      operators::ReluKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
 
-  using framework::OperatorWithKernel<DeviceType, ReluParam, operators::ReluKernel<DeviceType, T>>::OperatorWithKernel;
+  using framework::OperatorWithKernel<
+      DeviceType, ReluParam,
+      operators::ReluKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:
