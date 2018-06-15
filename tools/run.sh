@@ -24,14 +24,14 @@ adb shell mkdir ${IMAGES_DIR}
 LIB_PATH="../build/release/arm-v7a/build/*"
 adb push ${EXE_FILE} ${EXE_DIR}
 adb push ${LIB_PATH} ${EXE_DIR}
-if [[ $1 != "pm" ]]; then
+if [[ $1 != "npm" ]]; then
 adb push ${IMAGE_PATH} ${IMAGES_DIR}
 adb push ${MODELS_PATH} ${MODELS_DIR}
 fi
 adb shell "cd /data/local/tmp/bin; LD_LIBRARY_PATH=. ./${TESTUNIT}"
 }
 
-if [[ $1 == "pm" ]]; then
+if [[ $1 == "npm" ]]; then
 push_fn $1
 else
 push_fn
