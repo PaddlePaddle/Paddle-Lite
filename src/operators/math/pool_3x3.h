@@ -16,16 +16,24 @@ limitations under the License. */
 
 #pragma once
 
+#include "framework/tensor.h"
 #if __ARM_NEON
 #include <arm_neon.h>
 #endif  // __ARM_NEON
 
-static void Pool3x3Max() {
-  // todo impl with neon
-}
+namespace paddle_mobile {
+namespace operators {
+namespace math {
+using framework::Tensor;
+using std::vector;
 
-static void Pool3x3Avg() {
-  // todo impl with neon
-}
+void Pool3x3Max(vector<int> strides, vector<int> paddings, const Tensor *input,
+                Tensor *output);
+
+void Pool3x3Avg(vector<int> strides, vector<int> paddings, const Tensor *in_x,
+                Tensor *out);
+}  // namespace math
+}  // namespace operators
+}  // namespace paddle_mobile
 
 #endif
