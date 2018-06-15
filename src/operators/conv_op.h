@@ -14,9 +14,6 @@ limitations under the License. */
 #include <string>
 #include "framework/operator.h"
 #include "operators/kernel/conv_kernel.h"
-#if defined(USE_ACL)
-#include "operators/kernel/mali/acl_conv_op.h"
-#endif
 
 namespace paddle_mobile {
 namespace operators {
@@ -35,25 +32,13 @@ class ConvOp : public framework::OperatorWithKernel<DeviceType> {
   void InferShape() const override;
 
   void RunImpl() const {
-#if defined(USE_ACL)
-    std::cout << "Using ACL!" << std::endl;
-    if (std::is_same<T, float>::value && !acl_conv_kernel_.Bypass_acl(param_)) {
-      acl_conv_kernel_.Compute(param_);
-      this->ClearVariables({"Filter", "Input"});
-      return;
-    }
-#endif
-    std::cout << "Not using ACL!" << std::endl;
-    operators::ConvKernel<DeviceType, T> kernel;
     kernel.Compute(param_);
     this->ClearVariables({"Filter", "Input"});
   }
 
  private:
   ConvParam param_;
-#if defined(USE_ACL)
-  AclConvKernel<DeviceType, T> acl_conv_kernel_;
-#endif
+  operators::ConvKernel<DeviceType, T> kernel;
 };
 
 inline int ConvOutputSize(int input_size, int filter_size, int dilation,
