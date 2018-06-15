@@ -20,10 +20,10 @@ namespace operators {
 
 template <typename Dtype, typename T>
 void FushionFcOp<Dtype, T>::InferShape() const {
-  auto x_dims = param_.InputX()->dims();
-  auto y_dims = param_.InputY()->dims();
-  int x_num_col_dims = param_.XNumColDims();
-  int y_num_col_dims = param_.YNumColDims();
+  auto x_dims = this->param_.InputX()->dims();
+  auto y_dims = this->param_.InputY()->dims();
+  int x_num_col_dims = this->param_.XNumColDims();
+  int y_num_col_dims = this->param_.YNumColDims();
 
   assert(x_dims.size() > x_num_col_dims);
   assert(y_dims.size() > y_num_col_dims);
@@ -47,7 +47,7 @@ void FushionFcOp<Dtype, T>::InferShape() const {
   }
 
   framework::DDim ddim = framework::make_ddim(output_dims);
-  param_.Out()->Resize(ddim);
+  this->param_.Out()->Resize(ddim);
 }
 template class FushionFcOp<CPU, float>;
 }  // namespace operators

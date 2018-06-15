@@ -28,26 +28,23 @@ namespace operators {
 using paddle_mobile::framework::Tensor;
 
 template <typename DeviceType, typename T>
-class TransposeOp : public framework::OperatorWithKernel<DeviceType> {
+class TransposeOp : public framework::OperatorWithKernel<
+                        DeviceType, TransposeParam,
+                        operators::TransposeKernel<DeviceType, T>> {
  public:
   TransposeOp(const std::string &type, const VariableNameMap &inputs,
               const VariableNameMap &outputs,
               const framework::AttributeMap &attrs,
               std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
-                                                  scope),
-        param_(inputs, outputs, attrs, *scope) {}
+      : framework::OperatorWithKernel<
+            DeviceType, TransposeParam,
+            operators::TransposeKernel<DeviceType, T>>(type, inputs, outputs,
+                                                       attrs, scope) {}
 
-  void RunImpl() const {
-    operators::TransposeKernel<DeviceType, T> kernel;
-    kernel.Compute(param_);
-  }
-
-  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  using framework::OperatorWithKernel<
+      DeviceType, TransposeParam,
+      operators::TransposeKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
-
- protected:
-  TransposeParam param_;
 };
 
 }  // namespace operators
