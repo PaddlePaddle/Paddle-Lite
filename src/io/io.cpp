@@ -205,7 +205,10 @@ void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
   data += sizeof(uint32_t);
 
   // 2 Lod information
-  uint64_t lod_level = *(uint64_t *)data;
+  uint64_t *lod_level_ptr = new uint64_t();
+  memcpy(lod_level_ptr, data, sizeof(uint64_t));
+  uint64_t lod_level = *lod_level_ptr;
+  delete lod_level_ptr;
   data += sizeof(uint64_t);
 
   auto &lod = *tensor->mutable_lod();
