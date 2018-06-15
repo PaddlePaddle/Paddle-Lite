@@ -137,4 +137,6 @@ else ()
     ADD_EXECUTABLE(test-depthwise-conv-op operators/test_depthwise_conv_op.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-depthwise-conv-op paddle-mobile)
 
+    #add_library(test-lib-size SHARED common/test_lib_size.h common/test_lib_size.cpp)
+
 endif()
