@@ -22,7 +22,7 @@ namespace operators {
 
 template <>
 void DepthwiseConvKernel<CPU, float>::Compute(const ConvParam &param) const {
-  LOG(kLOG_DEBUG) << param;
+  // LOG(kLOG_DEBUG) << param;
 
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
