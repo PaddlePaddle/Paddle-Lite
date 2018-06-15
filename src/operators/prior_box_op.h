@@ -28,26 +28,19 @@ namespace operators {
 using paddle_mobile::framework::Tensor;
 
 template <typename DeviceType, typename T>
-class PriorBoxOp : public framework::OperatorWithKernel<DeviceType> {
+class PriorBoxOp : public framework::OperatorWithKernel<DeviceType, PriorBoxParam, operators::PriorBoxKernel<DeviceType, T>> {
  public:
   PriorBoxOp(const std::string &type, const VariableNameMap &inputs,
              const VariableNameMap &outputs,
              const framework::AttributeMap &attrs,
              std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
-                                                  scope),
-        param_(inputs, outputs, attrs, *scope) {}
+      : framework::OperatorWithKernel<DeviceType, PriorBoxParam, operators::PriorBoxKernel<DeviceType, T>>(type, inputs, outputs, attrs,
+                                                  scope) {}
 
-  void RunImpl() const {
-    operators::PriorBoxKernel<DeviceType, T> kernel;
-    kernel.Compute(param_);
-  }
-
-  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  using framework::OperatorWithKernel<DeviceType, PriorBoxParam, operators::PriorBoxKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:
-  PriorBoxParam param_;
 };
 
 }  // namespace operators

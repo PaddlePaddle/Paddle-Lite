@@ -25,28 +25,20 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 template <typename DeviceType, typename T>
-class SoftmaxOp : public framework::OperatorWithKernel<DeviceType> {
+class SoftmaxOp : public framework::OperatorWithKernel<DeviceType, SoftmaxParam, operators::SoftmaxKernel<DeviceType, T>> {
  public:
   SoftmaxOp(const std::string &type, const VariableNameMap &inputs,
             const VariableNameMap &outputs,
             const framework::AttributeMap &attrs,
             std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
-                                                  scope),
-        param_(inputs, outputs, attrs, *scope) {}
+      : framework::OperatorWithKernel<DeviceType, SoftmaxParam, operators::SoftmaxKernel<DeviceType, T>>(type, inputs, outputs, attrs,
+                                                  scope) {}
 
-  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  using framework::OperatorWithKernel<DeviceType, SoftmaxParam, operators::SoftmaxKernel<DeviceType, T>>::OperatorWithKernel;
 
   void InferShape() const override;
 
-  void RunImpl() const {
-    operators::SoftmaxKernel<DeviceType, T> kernel;
-    kernel.Compute(param_);
-    this->ClearVariables({"X"});
-  }
-
  private:
-  SoftmaxParam param_;
 };
 }  // namespace operators
 }  // namespace paddle_mobile

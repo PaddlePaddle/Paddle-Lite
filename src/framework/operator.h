@@ -103,16 +103,24 @@ class OperatorBase {
 /*
  * @b 这个类为所有带有运算的 op 的父类, 这个 op 继承与 OperatorBase
  * */
-template <typename Dtype>
+template <typename Dtype, typename ParamType, typename KernelType>
 class OperatorWithKernel : public OperatorBase<Dtype> {
  public:
   OperatorWithKernel(const std::string &type, const VariableNameMap &inputs,
                      const VariableNameMap &outputs, const AttributeMap &attrs,
                      std::shared_ptr<Scope> scope)
-      : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope) {}
+      : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope), param_(inputs, outputs, attrs, *scope){
+    kernel_.Init(param_);
+  }
 
-  virtual void RunImpl() const = 0;
+  virtual void RunImpl() const {
+    this->kernel_.Compute(this->param_);
+  }
+
   virtual void InferShape() const = 0;
+ protected:
+  KernelType kernel_;
+  ParamType param_;
 };
 
 /*
@@ -127,6 +135,9 @@ class OpKernelBase {
    *    所有结构体存在与: paddle-mobile/src/operators/op_param.h
    * */
   virtual void Compute(const P &para) const = 0;
+  virtual bool Init(const P &para) const {
+    return true;
+  };
   virtual ~OpKernelBase() = default;
 };
 
