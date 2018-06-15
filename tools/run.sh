@@ -31,4 +31,8 @@ fi
 adb shell "cd /data/local/tmp/bin; LD_LIBRARY_PATH=. ./${TESTUNIT}"
 }
 
+if [[ $1 == "pm" ]]; then
+push_fn $1
+else
 push_fn
+fi
