@@ -27,8 +27,7 @@ template <typename DeviceType, typename T>
 class AclBatchNormOp : public acl::ACLOperator {
  public:
   AclBatchNormOp() {
-    this->force_bypass_acl_path_ =
-        bypass_acl_class_layer & FLAGS_ENABLE_ACL_BN;
+    this->force_bypass_acl_path_ = bypass_acl_class_layer & FLAGS_ENABLE_ACL_BN;
   }
   ~AclBatchNormOp() = default;
   AclBatchNormOp(const AclBatchNormOp&) = delete;
@@ -39,32 +38,31 @@ class AclBatchNormOp : public acl::ACLOperator {
   acl::AclParameters& getargs() { return args; }
   void InitAclLayer(const BatchNormParam& param) {
     setTargetHint(acl::TargetHint::OPENCL);
-    arm_compute::TensorShape input_shape(
-      args.in_cols, args.in_rows, args.in_depth, args.batch);
-    arm_compute::TensorShape output_shape(
-      args.out_cols, args.out_rows, args.out_depth, args.out_num);
+    arm_compute::TensorShape input_shape(args.in_cols, args.in_rows,
+                                         args.in_depth, args.batch);
+    arm_compute::TensorShape output_shape(args.out_cols, args.out_rows,
+                                          args.out_depth, args.out_num);
 
     if (is_operator_init_done(input_shape)) return;
     set_operator_init_done();
-    this->force_bypass_acl_path_=false;
+    this->force_bypass_acl_path_ = false;
 
     arm_compute::TensorShape mean_shape(args.in_depth);
-    arm_compute::TensorShape var_shape=mean_shape;
-    arm_compute::TensorShape beta_shape=mean_shape;
-    arm_compute::TensorShape gamma_shape=mean_shape;
-
+    arm_compute::TensorShape var_shape = mean_shape;
+    arm_compute::TensorShape beta_shape = mean_shape;
+    arm_compute::TensorShape gamma_shape = mean_shape;
 
     //[width, height, IFM]
-    new_tensor(input(),input_shape,args.input_data);
+    new_tensor(input(), input_shape, args.input_data);
     //[width, height, OFM]
-    new_tensor(output(),output_shape,args.output_data);
+    new_tensor(output(), output_shape, args.output_data);
 
-    new_tensor(mean(),mean_shape,args.mean_data);
-    new_tensor(var(),var_shape,args.var_data);
-    new_tensor(beta(),beta_shape,args.biases_data);
-    new_tensor(gamma(),gamma_shape,args.weight_data);
+    new_tensor(mean(), mean_shape, args.mean_data);
+    new_tensor(var(), var_shape, args.var_data);
+    new_tensor(beta(), beta_shape, args.biases_data);
+    new_tensor(gamma(), gamma_shape, args.weight_data);
 
-    acl_configure(bn,this,args.epsilon);
+    acl_configure(bn, this, args.epsilon);
   }
 
   void RunAcl(void* input, void* output) {
@@ -83,45 +81,44 @@ class AclBatchNormOp : public acl::ACLOperator {
 
  private:
   void AclParametersByContext(const BatchNormParam& param) {
-      const Tensor* in_x = param.InputX();
-      Tensor* out = param.OutputY();
-      const Tensor* scale = param.InputScale();
-      const Tensor* bias = param.InputBias();
-      const Tensor* saved_mean = param.InputMean();
-      const Tensor* saved_variance = param.InputVariance();
+    const Tensor* in_x = param.InputX();
+    Tensor* out = param.OutputY();
+    const Tensor* scale = param.InputScale();
+    const Tensor* bias = param.InputBias();
+    const Tensor* saved_mean = param.InputMean();
+    const Tensor* saved_variance = param.InputVariance();
 
-      const T* input_data = in_x->data<T>();
-      T* output_data = out->mutable_data<T>();
-      const T* weight_data = scale->data<T>();
-      const T* bias_data = bias->data<T>();
-      const T* mean_data = saved_mean->data<T>();
-      const T* var_data = saved_variance->data<T>();
+    const T* input_data = in_x->data<T>();
+    T* output_data = out->mutable_data<T>();
+    const T* weight_data = scale->data<T>();
+    const T* bias_data = bias->data<T>();
+    const T* mean_data = saved_mean->data<T>();
+    const T* var_data = saved_variance->data<T>();
 
-      float epsilon = param.Epsilon();
+    float epsilon = param.Epsilon();
 
-      args.input_data = (void*)input_data;
-      args.output_data = (void*)output_data;
-      //args.weight_data = (void*)weight_data;
-      //args.biases_data = (void*)bias_data;
-      args.mean_data = (void*)mean_data;
-      args.var_data = (void*)var_data;
-      args.epsilon = epsilon;
+    args.input_data = (void*)input_data;
+    args.output_data = (void*)output_data;
+    // args.weight_data = (void*)weight_data;
+    // args.biases_data = (void*)bias_data;
+    args.mean_data = (void*)mean_data;
+    args.var_data = (void*)var_data;
+    args.epsilon = epsilon;
 
-      args.dim = in_x->dims().size();
+    args.dim = in_x->dims().size();
 
+    args.batch = in_x->dims()[0];
+    args.in_depth = in_x->dims()[1];
+    args.in_rows = in_x->dims()[2];
+    args.in_cols = in_x->dims()[3];
 
-      args.batch  = in_x->dims()[0];
-      args.in_depth = in_x->dims()[1];
-      args.in_rows  = in_x->dims()[2];
-      args.in_cols  = in_x->dims()[3];
+    args.out_num = out->dims()[0];
+    args.out_depth = out->dims()[1];
+    args.out_rows = out->dims()[2];
+    args.out_cols = out->dims()[3];
 
-      args.out_num = out->dims()[0];
-      args.out_depth = out->dims()[1];
-      args.out_rows  = out->dims()[2];
-      args.out_cols  = out->dims()[3];
-
-      args.weight_data = (void*)weight_data;
-      args.biases_data = (void*)bias_data;
+    args.weight_data = (void*)weight_data;
+    args.biases_data = (void*)bias_data;
 
     // std::cout
     //  << "Out C: " <<  args.out_depth
