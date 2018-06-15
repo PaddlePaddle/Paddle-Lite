@@ -38,9 +38,7 @@ class PoolFunctor<CPU, PoolProcess, T> {
     const int input_height = input.dims()[2];
 
     const int input_width = input.dims()[3];
-    if (output == nullptr) {
-      DLOG << "output tensor is null";
-    }
+
     const int output_channels = output->dims()[1];
 
     const int output_height = output->dims()[2];

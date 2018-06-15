@@ -18,6 +18,8 @@ limitations under the License. */
 
 #include "common/log.h"
 #include "framework/tensor.h"
+#include "pool_2x2.h"
+#include "pool_3x3.h"
 
 namespace paddle_mobile {
 namespace operators {
