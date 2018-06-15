@@ -47,16 +47,21 @@ class FusionConvAddMatcher : public framework::FusionOpMatcher {
 };
 
 template <typename DeviceType, typename T>
-class FushionConvAddOp : public framework::OperatorWithKernel<DeviceType, FushionConvAddParam, operators::ConvAddKernel<DeviceType, T>> {
+class FushionConvAddOp : public framework::OperatorWithKernel<
+                             DeviceType, FushionConvAddParam,
+                             operators::ConvAddKernel<DeviceType, T>> {
  public:
   FushionConvAddOp(const string &type, const VariableNameMap &inputs,
                    const VariableNameMap &outputs,
                    const framework::AttributeMap &attrs,
                    std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, FushionConvAddParam, operators::ConvAddKernel<DeviceType, T>>(type, inputs, outputs, attrs,
-                                                  scope) {}
+      : framework::OperatorWithKernel<DeviceType, FushionConvAddParam,
+                                      operators::ConvAddKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
 
-  using framework::OperatorWithKernel<DeviceType, FushionConvAddParam, operators::ConvAddKernel<DeviceType, T>>::OperatorWithKernel;
+  using framework::OperatorWithKernel<
+      DeviceType, FushionConvAddParam,
+      operators::ConvAddKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:

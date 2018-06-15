@@ -25,15 +25,17 @@ namespace paddle_mobile {
 namespace operators {
 using std::string;
 template <typename DeviceType, typename T>
-class BatchNormOp : public framework::OperatorWithKernel<DeviceType, BatchNormParam,BatchNormKernel<DeviceType, T>> {
+class BatchNormOp
+    : public framework::OperatorWithKernel<DeviceType, BatchNormParam,
+                                           BatchNormKernel<DeviceType, T>> {
  public:
   BatchNormOp(const string &type, const VariableNameMap &inputs,
               const VariableNameMap &outputs,
               const framework::AttributeMap &attrs,
               std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, BatchNormParam, BatchNormKernel<DeviceType, T>>(type, inputs, outputs, attrs,
-                                                  scope) {
-  }
+      : framework::OperatorWithKernel<DeviceType, BatchNormParam,
+                                      BatchNormKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
 
   void InferShape() const override;
 

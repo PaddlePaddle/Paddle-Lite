@@ -109,15 +109,15 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
   OperatorWithKernel(const std::string &type, const VariableNameMap &inputs,
                      const VariableNameMap &outputs, const AttributeMap &attrs,
                      std::shared_ptr<Scope> scope)
-      : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope), param_(inputs, outputs, attrs, *scope){
+      : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope),
+        param_(inputs, outputs, attrs, *scope) {
     kernel_.Init(param_);
   }
 
-  virtual void RunImpl() const {
-    this->kernel_.Compute(this->param_);
-  }
+  virtual void RunImpl() const { this->kernel_.Compute(this->param_); }
 
   virtual void InferShape() const = 0;
+
  protected:
   KernelType kernel_;
   ParamType param_;
@@ -135,9 +135,7 @@ class OpKernelBase {
    *    所有结构体存在与: paddle-mobile/src/operators/op_param.h
    * */
   virtual void Compute(const P &para) const = 0;
-  virtual bool Init(const P &para) const {
-    return true;
-  };
+  virtual bool Init(const P &para) const { return true; };
   virtual ~OpKernelBase() = default;
 };
 
