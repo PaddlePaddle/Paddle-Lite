@@ -61,19 +61,20 @@ void BatchNormKernel<CPU, float>::Compute(const BatchNormParam &param) const {
     /// std = (var + epsilon).sqrt();
     /// inv_std = 1 / std;
     for (int i = 0; i < C * 4; i += 4) {
+      int index = i / 4;
       inv_std_ptr[i] =
-          1 / static_cast<float>(pow((variance_ptr[i / 4] + epsilon), 0.5));
+          1 / static_cast<float>(pow((variance_ptr[index] + epsilon), 0.5));
       inv_std_ptr[i + 1] = inv_std_ptr[i];
       inv_std_ptr[i + 2] = inv_std_ptr[i];
       inv_std_ptr[i + 3] = inv_std_ptr[i];
 
-      new_scale_ptr[i] = inv_std_ptr[i] * scale_ptr[i / 4];
+      new_scale_ptr[i] = inv_std_ptr[i] * scale_ptr[index];
       new_scale_ptr[i + 1] = new_scale_ptr[i];
       new_scale_ptr[i + 2] = new_scale_ptr[i];
       new_scale_ptr[i + 3] = new_scale_ptr[i];
 
       new_bias_ptr[i] =
-          bias_ptr[i / 4] - mean_ptr[i / 4] * inv_std_ptr[i] * scale_ptr[i / 4];
+          bias_ptr[index] - mean_ptr[index] * inv_std_ptr[i] * scale_ptr[index];
 
       new_bias_ptr[i + 1] = new_bias_ptr[i];
       new_bias_ptr[i + 2] = new_bias_ptr[i];
@@ -164,21 +165,21 @@ void BatchNormKernel<CPU, float>::Compute(const BatchNormParam &param) const {
         "vadd.f32   q7,  q7,  q10 \n\t"
         "vadd.f32   q8,  q8,  q10 \n\t"
 
-        "add %[out_ptr], %[out_ptr], r6       \n\t"
+        "add %[out_ptr], %[out_ptr], r6         \n\t"
         "vst1.32 {q1, q2}, [%[out_ptr]]!        \n\t"
-        "vst1.32 {q3, q4}, [%[out_ptr]]!       \n\t"
-        "vst1.32 {q5, q6}, [%[out_ptr]]!       \n\t"
-        "vst1.32 {q7, q8}, [%[out_ptr]]!       \n\t"
+        "vst1.32 {q3, q4}, [%[out_ptr]]!        \n\t"
+        "vst1.32 {q5, q6}, [%[out_ptr]]!        \n\t"
+        "vst1.32 {q7, q8}, [%[out_ptr]]!        \n\t"
 
-        "end_remainder_%=:                     \n\t"
+        "end_remainder_%=:                      \n\t"
 
         "subs %[C], %[C], #1                    \n\t"
         "bge        loop_c_%=                   \n\t"
         "end_c_%=:                              \n\t"
 
-        "subs %[N], %[N], #1                  \n\t"
-        "bge        loop_n_%=                \n\t"
-        "end_n_%=:                           \n\t"
+        "subs %[N], %[N], #1                    \n\t"
+        "bge        loop_n_%=                   \n\t"
+        "end_n_%=:                              \n\t"
         :
         : [input_x_ptr] "r"(input_x_ptr), [out_ptr] "r"(out_ptr),
           [new_scale_ptr] "r"(new_scale_ptr), [new_bias_ptr] "r"(new_bias_ptr),
@@ -232,6 +233,7 @@ void BatchNormKernel<CPU, float>::Compute(const BatchNormParam &param) const {
     //    DLOG << "out_ptr : " << out_ptr[102];
   }
 }
+
 }  // namespace operators
 }  // namespace paddle_mobile
 

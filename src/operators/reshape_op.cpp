@@ -22,10 +22,10 @@ namespace operators {
 template <typename Dtype, typename T>
 void ReshapeOp<Dtype, T>::InferShape() const {
   /// todo: add InputShape() detection.
-  auto &shape = param_.Shape();
-  auto input_x_dims = param_.InputX()->dims();
+  auto &shape = this->param_.Shape();
+  auto input_x_dims = this->param_.InputX()->dims();
   auto out_dims = ValidateShape(shape, input_x_dims);
-  param_.Out()->Resize(out_dims);
+  this->param_.Out()->Resize(out_dims);
 }
 template class ReshapeOp<CPU, float>;
 }  // namespace operators
