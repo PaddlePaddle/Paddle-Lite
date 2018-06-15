@@ -28,26 +28,24 @@ namespace operators {
 using paddle_mobile::framework::Tensor;
 
 template <typename DeviceType, typename T>
-class BoxCoderOp : public framework::OperatorWithKernel<DeviceType> {
+class BoxCoderOp
+    : public framework::OperatorWithKernel<
+          DeviceType, BoxCoderParam, operators::BoxCoderKernel<DeviceType, T>> {
  public:
   BoxCoderOp(const std::string &type, const VariableNameMap &inputs,
              const VariableNameMap &outputs,
              const framework::AttributeMap &attrs,
              std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
-                                                  scope),
-        param_(inputs, outputs, attrs, *scope) {}
+      : framework::OperatorWithKernel<DeviceType, BoxCoderParam,
+                                      operators::BoxCoderKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
 
-  void RunImpl() const {
-    operators::BoxCoderKernel<DeviceType, T> kernel;
-    kernel.Compute(param_);
-  }
-
-  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  using framework::OperatorWithKernel<
+      DeviceType, BoxCoderParam,
+      operators::BoxCoderKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:
-  BoxCoderParam param_;
 };
 
 }  // namespace operators

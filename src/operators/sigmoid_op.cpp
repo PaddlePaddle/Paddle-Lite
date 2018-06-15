@@ -20,7 +20,7 @@ namespace paddle_mobile {
 namespace operators {
 template <typename DeviceType, typename T>
 void SigmoidOp<DeviceType, T>::InferShape() const {
-  param_.Out()->Resize(param_.InputX()->dims());
+  this->param_.Out()->Resize(this->param_.InputX()->dims());
 }
 template class SigmoidOp<CPU, float>;
 }  // namespace operators

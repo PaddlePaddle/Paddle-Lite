@@ -19,14 +19,14 @@ limitations under the License. */
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
   auto time1 = time();
-  auto program = loader.Load(g_mobilenet, false);
+  auto program = loader.Load(g_mobilenet, true);
   auto time2 = time();
   DLOG << "load cost :" << time_diff(time1, time1) << "ms";
-  paddle_mobile::Executor<paddle_mobile::CPU> executor(program, 2, false);
+  paddle_mobile::Executor<paddle_mobile::CPU> executor(program, 1, true);
 
-  std::vector<int64_t> dims{2, 3, 224, 224};
+  std::vector<int64_t> dims{1, 3, 224, 224};
   Tensor input_tensor;
-  SetupTensor<float>(&input_tensor, {2, 3, 224, 224}, static_cast<float>(0),
+  SetupTensor<float>(&input_tensor, {1, 3, 224, 224}, static_cast<float>(0),
                      static_cast<float>(1));
 
   std::vector<float> input(input_tensor.data<float>(),
