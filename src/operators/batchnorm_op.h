@@ -20,6 +20,9 @@ limitations under the License. */
 #include "framework/operator.h"
 #include "operators/kernel/batchnorm_kernel.h"
 #include "operators/op_param.h"
+#if defined(USE_ACL)
+#include "operators/kernel/mali/acl_batchnorm_op.h"
+#endif
 
 namespace paddle_mobile {
 namespace operators {
@@ -36,6 +39,14 @@ class BatchNormOp : public framework::OperatorWithKernel<DeviceType> {
         param_(inputs, outputs, attrs, *scope) {}
 
   void RunImpl() const {
+#if defined(USE_ACL)
+    std::cout << "Using ACL!" << std::endl;
+    if (std::is_same<T, float>::value && !acl_bn_kernel_.Bypass_acl(param_)) {
+      acl_bn_kernel_.Compute(param_);
+      return;
+    }
+#endif
+    std::cout << "Not using ACL!" << std::endl;
     operators::BatchNormKernel<DeviceType, T> kernel;
     kernel.Compute(param_);
   }
@@ -45,6 +56,11 @@ class BatchNormOp : public framework::OperatorWithKernel<DeviceType> {
 
  protected:
   BatchNormParam param_;
+
+ private:
+#if defined(USE_ACL)
+  AclBatchNormKernel<DeviceType, T> acl_bn_kernel_;
+#endif
 };
 
 }  // namespace operators
