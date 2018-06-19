@@ -7,7 +7,7 @@ option(USE_EXCEPTION "use std exception" ON)
 option(LOG_PROFILE "log profile" ON)
 # select the platform to build
 option(CPU "cpu" ON)
-option(MALI_GPU "mali gpu" OFF)
+option(MALI_GPU "mali gpu" ON)
 option(FPGA "fpga" OFF)
 
 if (CPU)
