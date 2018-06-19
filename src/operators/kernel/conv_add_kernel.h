@@ -39,7 +39,6 @@ class ConvAddKernel : public OpKernelBase<DeviceType, FushionConvAddParam> {
   void Compute(const FushionConvAddParam &param) const;
 };
 
-
 inline void expand_bias(Tensor &bias, int axis, const DDim &dDim) {
   auto bias_ptr = bias.data<float>();
   const DDim bias_ddim = bias.dims();
@@ -47,7 +46,7 @@ inline void expand_bias(Tensor &bias, int axis, const DDim &dDim) {
                         "the bias tensor's dims size != 1")
   DDim outer_ddim = paddle_mobile::framework::slice_ddim(dDim, 0, axis + 1);
   DDim inner_ddim =
-          paddle_mobile::framework::slice_ddim(dDim, axis + 1, dDim.size());
+      paddle_mobile::framework::slice_ddim(dDim, axis + 1, dDim.size());
   int outer_size = paddle_mobile::framework::product(outer_ddim);
   int inner_size = paddle_mobile::framework::product(inner_ddim);
   bias.Resize(dDim);
@@ -76,7 +75,6 @@ inline void expand_bias(Tensor &bias, int axis, const DDim &dDim) {
     for (; remain > 0; remain--) {
       *new_ptr = v_bias;
       new_ptr++;
-
     }
   }
 #else
