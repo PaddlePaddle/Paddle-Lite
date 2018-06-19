@@ -111,7 +111,8 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
                      std::shared_ptr<Scope> scope)
       : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope),
         param_(inputs, outputs, attrs, *scope) {
-    kernel_.Init(param_);
+    PADDLE_MOBILE_ENFORCE(kernel_.Init(param_), "  %s kernel init failed",
+                          this->type_.c_str());
   }
 
   virtual void RunImpl() const { this->kernel_.Compute(this->param_); }
