@@ -71,52 +71,31 @@ enum PMStatus {
   PMWrongDevice = 0x08     /*!< un-correct device. */
 };
 
-static const std::string G_OP_TYPE_CONV = "conv2d";
-static const std::string G_OP_TYPE_BATCHNORM = "batch_norm";
-static const std::string G_OP_TYPE_BOX_CODER = "box_coder";
-static const std::string G_OP_TYPE_CONCAT = "concat";
-static const std::string G_OP_TYPE_ELEMENTWISE_ADD = "elementwise_add";
-static const std::string G_OP_TYPE_FUSION_CONV_ADD_RELU =
-    "fusion_conv_add_relu";
-static const std::string G_OP_TYPE_FC = "fc";
-static const std::string G_OP_TYPE_CONV_ADD = "conv_add";
-static const std::string G_OP_TYPE_LRN = "lrn";
-static const std::string G_OP_TYPE_MUL = "mul";
-static const std::string G_OP_TYPE_MULTICLASS_NMS = "multiclass_nms";
-static const std::string G_OP_TYPE_POOL2D = "pool2d";
-static const std::string G_OP_TYPE_PRIOR_BOX = "prior_box";
-static const std::string G_OP_TYPE_RELU = "relu";
-static const std::string G_OP_TYPE_RESHAPE = "reshape";
-static const std::string G_OP_TYPE_SIGMOID = "sigmoid";
-static const std::string G_OP_TYPE_SOFTMAX = "softmax";
-static const std::string G_OP_TYPE_TRANSPOSE = "transpose";
-static const std::string G_OP_TYPE_SPLIT = "split";
-static const std::string G_OP_TYPE_FEED = "feed";
-static const std::string G_OP_TYPE_FETCH = "fetch";
-static const std::string G_OP_TYPE_DEPTHWISE_CONV = "depthwise_conv2d";
+extern const std::string G_OP_TYPE_CONV;
+extern const std::string G_OP_TYPE_BATCHNORM;
+extern const std::string G_OP_TYPE_BOX_CODER;
+extern const std::string G_OP_TYPE_CONCAT;
+extern const std::string G_OP_TYPE_ELEMENTWISE_ADD;
+extern const std::string G_OP_TYPE_FUSION_CONV_ADD_RELU;
+extern const std::string G_OP_TYPE_FC;
+extern const std::string G_OP_TYPE_CONV_ADD;
+extern const std::string G_OP_TYPE_LRN;
+extern const std::string G_OP_TYPE_MUL;
+extern const std::string G_OP_TYPE_MULTICLASS_NMS;
+extern const std::string G_OP_TYPE_POOL2D;
+extern const std::string G_OP_TYPE_PRIOR_BOX;
+extern const std::string G_OP_TYPE_RELU;
+extern const std::string G_OP_TYPE_RESHAPE;
+extern const std::string G_OP_TYPE_SIGMOID;
+extern const std::string G_OP_TYPE_SOFTMAX;
+extern const std::string G_OP_TYPE_TRANSPOSE;
+extern const std::string G_OP_TYPE_SPLIT;
+extern const std::string G_OP_TYPE_FEED;
+extern const std::string G_OP_TYPE_FETCH;
+extern const std::string G_OP_TYPE_DEPTHWISE_CONV;
 
-static std::unordered_map<
+extern std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
-    op_input_output_key = {
-        {G_OP_TYPE_CONV, {{"Input"}, {"Output"}}},
-        {G_OP_TYPE_CONV_ADD, {{"Input"}, {"Out"}}},
-        {G_OP_TYPE_RELU, {{"X"}, {"Out"}}},
-        {G_OP_TYPE_SOFTMAX, {{"X"}, {"Out"}}},
-        {G_OP_TYPE_MUL, {{"X"}, {"Out"}}},
-        {G_OP_TYPE_ELEMENTWISE_ADD, {{"X", "Y"}, {"Out"}}},
-        {G_OP_TYPE_POOL2D, {{"X"}, {"Out"}}},
-        {G_OP_TYPE_BATCHNORM, {{"X"}, {"Y"}}},
-        {G_OP_TYPE_LRN, {{"X"}, {"Out"}}},
-        {G_OP_TYPE_CONCAT, {{"X"}, {"Out"}}},
-        {G_OP_TYPE_SPLIT, {{"X"}, {"Out"}}},
-        {G_OP_TYPE_FEED, {{"X"}, {"Out"}}},
-        {G_OP_TYPE_FETCH, {{"X"}, {"Out"}}},
-        {G_OP_TYPE_TRANSPOSE, {{"X"}, {"Out"}}},
-        {G_OP_TYPE_BOX_CODER,
-         {{"PriorBox", "PriorBoxVar", "TargetBox"}, {"OutputBox"}}},
-        {G_OP_TYPE_PRIOR_BOX, {{"Image", "Input"}, {"Boxes", "Variances"}}},
-        {G_OP_TYPE_MULTICLASS_NMS, {{"BBoxes", "Scores"}, {"Out"}}},
-        {G_OP_TYPE_FC, {{"X", "Y", "Z"}, {"Out"}}},
-        {G_OP_TYPE_RESHAPE, {{"X"}, {"Out"}}},
-        {G_OP_TYPE_DEPTHWISE_CONV, {{"Input"}, {"Output"}}}};
+    op_input_output_key;
+
 }  // namespace paddle_mobile

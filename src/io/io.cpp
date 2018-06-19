@@ -160,6 +160,8 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::LoadProgram(
 }
 
 template class Loader<CPU, Precision::FP32>;
+template class Loader<FPGA, Precision::FP32>;
+template class Loader<GPU_MALI, Precision::FP32>;
 
 #pragma mark - executor
 
@@ -205,7 +207,10 @@ void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
   data += sizeof(uint32_t);
 
   // 2 Lod information
-  uint64_t lod_level = *(uint64_t *)data;
+  uint64_t *lod_level_ptr = new uint64_t();
+  memcpy(lod_level_ptr, data, sizeof(uint64_t));
+  uint64_t lod_level = *lod_level_ptr;
+  delete lod_level_ptr;
   data += sizeof(uint64_t);
 
   auto &lod = *tensor->mutable_lod();
@@ -410,5 +415,7 @@ std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::Predict(
 }
 
 template class Executor<CPU, Precision::FP32>;
+template class Executor<FPGA, Precision::FP32>;
+template class Executor<GPU_MALI, Precision::FP32>;
 
 }  // namespace paddle_mobile
