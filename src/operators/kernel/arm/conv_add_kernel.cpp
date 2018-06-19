@@ -18,27 +18,6 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-void expand_bias(Tensor &bias, int axis, const DDim &dDim) {
-  auto bias_ptr = bias.data<float>();
-  const DDim bias_ddim = bias.dims();
-  PADDLE_MOBILE_ENFORCE(bias.dims().size() == 1,
-                        "the bias tensor's dims size != 1")
-  DDim outer_ddim = paddle_mobile::framework::slice_ddim(dDim, 0, axis + 1);
-  DDim inner_ddim =
-      paddle_mobile::framework::slice_ddim(dDim, axis + 1, dDim.size());
-  int outer_size = paddle_mobile::framework::product(outer_ddim);
-  int inner_size = paddle_mobile::framework::product(inner_ddim);
-  bias.Resize(dDim);
-  auto new_ptr = bias.mutable_data<float>();
-  int axis_size = dDim[axis];
-  for (int i = 0; i < outer_size; ++i) {
-    float v_bias = bias_ptr[i * axis_size / outer_size];
-    for (int j = 0; j < inner_size; ++j) {
-      new_ptr[i * inner_size + j] = v_bias;
-    }
-  }
-}
-
 template <>
 void ConvAddKernel<CPU, float>::Compute(
     const FushionConvAddParam &param) const {

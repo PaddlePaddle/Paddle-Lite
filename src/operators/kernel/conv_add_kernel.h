@@ -17,6 +17,9 @@ limitations under the License. */
 #pragma once
 
 #include <vector>
+#if __ARM_NEON
+#include <arm_neon.h>
+#endif
 #include "framework/ddim.h"
 #include "framework/operator.h"
 #include "operators/math/im2col.h"
@@ -35,6 +38,54 @@ class ConvAddKernel : public OpKernelBase<DeviceType, FushionConvAddParam> {
  public:
   void Compute(const FushionConvAddParam &param) const;
 };
+
+inline void expand_bias(Tensor &bias, int axis, const DDim &dDim) {
+  auto bias_ptr = bias.data<float>();
+  const DDim bias_ddim = bias.dims();
+  PADDLE_MOBILE_ENFORCE(bias.dims().size() == 1,
+                        "the bias tensor's dims size != 1")
+  DDim outer_ddim = paddle_mobile::framework::slice_ddim(dDim, 0, axis + 1);
+  DDim inner_ddim =
+      paddle_mobile::framework::slice_ddim(dDim, axis + 1, dDim.size());
+  int outer_size = paddle_mobile::framework::product(outer_ddim);
+  int inner_size = paddle_mobile::framework::product(inner_ddim);
+  bias.Resize(dDim);
+  auto new_ptr = bias.mutable_data<float>();
+  int axis_size = dDim[axis];
+
+#if __ARM_NEON
+  for (int i = 0; i < outer_size; ++i) {
+    int inner_num = inner_size >> 4;
+    int remain = inner_size - (inner_num << 4);
+    float v_bias = bias_ptr[i * axis_size / outer_size];
+    for (; inner_num > 0; inner_num--) {
+      float32x4_t v_newptr1 = vdupq_n_f32(v_bias);
+      float32x4_t v_newptr2 = vdupq_n_f32(v_bias);
+      float32x4_t v_newptr3 = vdupq_n_f32(v_bias);
+      float32x4_t v_newptr4 = vdupq_n_f32(v_bias);
+      vst1q_f32(new_ptr, v_newptr1);
+      new_ptr += 4;
+      vst1q_f32(new_ptr, v_newptr2);
+      new_ptr += 4;
+      vst1q_f32(new_ptr, v_newptr3);
+      new_ptr += 4;
+      vst1q_f32(new_ptr, v_newptr4);
+      new_ptr += 4;
+    }
+    for (; remain > 0; remain--) {
+      *new_ptr = v_bias;
+      new_ptr++;
+    }
+  }
+#else
+  for (int i = 0; i < outer_size; ++i) {
+    float v_bias = bias_ptr[i * axis_size / outer_size];
+    for (int j = 0; j < inner_size; ++j) {
+      new_ptr[i * inner_size + j] = v_bias;
+    }
+  }
+#endif
+}
 
 inline bool IsExpand(const std::vector<int64_t> &filter_dim,
                      const std::vector<int> &strides,
