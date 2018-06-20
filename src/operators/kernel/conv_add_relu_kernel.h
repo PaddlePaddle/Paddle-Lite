@@ -33,9 +33,9 @@ using framework::OpKernelBase;
 
 template <typename DeviceType, typename T>
 class ConvAddReluKernel
-    : public OpKernelBase<DeviceType, FushionConvAddReluParam> {
+    : public OpKernelBase<DeviceType, FusionConvAddReluParam> {
  public:
-  void Compute(const FushionConvAddReluParam &param) const;
+  void Compute(const FusionConvAddReluParam &param) const;
 };
 
 }  // namespace operators

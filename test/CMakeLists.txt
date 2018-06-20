@@ -88,7 +88,7 @@ else ()
     target_link_libraries(test-relu-op paddle-mobile)
 
     # gen test
-    ADD_EXECUTABLE(test-fc-op  operators/test_fushion_fc_op.cpp test_helper.h  test_include.h)
+    ADD_EXECUTABLE(test-fc-op  operators/test_fusion_fc_op.cpp test_helper.h  test_include.h)
     target_link_libraries(test-fc-op paddle-mobile)
 
     # gen test log

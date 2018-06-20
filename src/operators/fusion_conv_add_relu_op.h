@@ -24,9 +24,9 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-class FushionConvAddReluOpMatcher : public framework::FusionOpMatcher {
+class FusionConvAddReluOpMatcher : public framework::FusionOpMatcher {
  public:
-  FushionConvAddReluOpMatcher() {
+  FusionConvAddReluOpMatcher() {
     node_ = framework::Node(G_OP_TYPE_CONV);
     node_ > std::make_shared<framework::Node>(G_OP_TYPE_ELEMENTWISE_ADD) >
         std::make_shared<framework::Node>(G_OP_TYPE_RELU);
@@ -43,7 +43,7 @@ class FushionConvAddReluOpMatcher : public framework::FusionOpMatcher {
 
 template <typename DeviceType, typename T>
 class FusionConvAddReluOp : public framework::OperatorWithKernel<
-                                DeviceType, FushionConvAddReluParam,
+                                DeviceType, FusionConvAddReluParam,
                                 operators::ConvAddReluKernel<DeviceType, T>> {
  public:
   FusionConvAddReluOp(const string &type, const VariableNameMap &inputs,
@@ -51,12 +51,12 @@ class FusionConvAddReluOp : public framework::OperatorWithKernel<
                       const framework::AttributeMap &attrs,
                       std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<
-            DeviceType, FushionConvAddReluParam,
+            DeviceType, FusionConvAddReluParam,
             operators::ConvAddReluKernel<DeviceType, T>>(type, inputs, outputs,
                                                          attrs, scope) {}
 
   using framework::OperatorWithKernel<
-      DeviceType, FushionConvAddReluParam,
+      DeviceType, FusionConvAddReluParam,
       operators::ConvAddReluKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
@@ -65,7 +65,7 @@ class FusionConvAddReluOp : public framework::OperatorWithKernel<
 
 #ifdef PADDLE_MOBILE_CPU
 // static framework::FusionOpRegistrar fusion_conv_add_relu_registrar(new
-// FushionConvAddReluOpMatcher());
+// FusionConvAddReluOpMatcher());
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
 #endif

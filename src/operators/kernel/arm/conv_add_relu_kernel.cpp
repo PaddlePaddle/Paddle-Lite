@@ -21,7 +21,7 @@ namespace operators {
 
 template <>
 void ConvAddReluKernel<CPU, float>::Compute(
-    const FushionConvAddReluParam &param) const {
+    const FusionConvAddReluParam &param) const {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
   Tensor bias = *param.Bias();
