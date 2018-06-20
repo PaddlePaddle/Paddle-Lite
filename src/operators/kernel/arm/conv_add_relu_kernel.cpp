@@ -11,15 +11,17 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#ifdef FUSION_CONVADD_OP
 
-#include "operators/kernel/conv_add_kernel.h"
+#ifdef FUSION_CONVADD_RELU_OP
+
+#include "operators/kernel/conv_add_relu_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-void ConvAddKernel<CPU, float>::Compute(const FusionConvAddParam &param) const {
+void ConvAddReluKernel<CPU, float>::Compute(
+    const FusionConvAddReluParam &param) const {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
   Tensor bias = *param.Bias();
@@ -103,11 +105,11 @@ void ConvAddKernel<CPU, float>::Compute(const FusionConvAddParam &param) const {
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
       math::matmul<float>(filter_slice, false, col_matrix, false,
                           static_cast<float>(1), &out_slice,
-                          static_cast<float>(1));
+                          static_cast<float>(1), true);
     }
   }
 }
-template class ConvAddKernel<CPU, float>;
+template class ConvAddReluKernel<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile

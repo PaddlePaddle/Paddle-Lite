@@ -41,7 +41,7 @@ Print &operator<<(Print &printer, const ConvParam &conv_param) {
 
 #ifdef FUSION_CONVADD_OP
 
-Print &operator<<(Print &printer, const FushionConvAddParam &conv_param) {
+Print &operator<<(Print &printer, const FusionConvAddParam &conv_param) {
   printer << "parameter of conv_add: "
           << "\n";
   printer << "  stride: "

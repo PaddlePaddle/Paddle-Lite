@@ -12,20 +12,24 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef FUSION_FC_OP
+
 #pragma once
 
-#include <cmath>
-#include "framework/tensor.h"
+#include "framework/operator.h"
+#include "operators/math/math_function.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
-namespace math {
 
-// matrix multiply with continuous memory
-template <typename T>
-void matmul(const framework::Tensor &matrix_a, bool trans_a,
-            const framework::Tensor &matrix_b, bool trans_b, T alpha,
-            framework::Tensor *matrix_out, T beta, bool relu = false);
-}  // namespace math
+template <typename DeviceType, typename T>
+class FusionFcKernel
+    : public framework::OpKernelBase<DeviceType, FusionFcParam> {
+ public:
+  void Compute(const FusionFcParam& param) const;
+};
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

@@ -47,32 +47,25 @@ class FusionConvAddMatcher : public framework::FusionOpMatcher {
 };
 
 template <typename DeviceType, typename T>
-class FushionConvAddOp : public framework::OperatorWithKernel<
-                             DeviceType, FushionConvAddParam,
-                             operators::ConvAddKernel<DeviceType, T>> {
+class FusionConvAddOp : public framework::OperatorWithKernel<
+                            DeviceType, FusionConvAddParam,
+                            operators::ConvAddKernel<DeviceType, T>> {
  public:
-  FushionConvAddOp(const string &type, const VariableNameMap &inputs,
-                   const VariableNameMap &outputs,
-                   const framework::AttributeMap &attrs,
-                   std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, FushionConvAddParam,
+  FusionConvAddOp(const string &type, const VariableNameMap &inputs,
+                  const VariableNameMap &outputs,
+                  const framework::AttributeMap &attrs,
+                  std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<DeviceType, FusionConvAddParam,
                                       operators::ConvAddKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 
   using framework::OperatorWithKernel<
-      DeviceType, FushionConvAddParam,
+      DeviceType, FusionConvAddParam,
       operators::ConvAddKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:
 };
-
-inline int ConvOutputSize(int input_size, int filter_size, int dilation,
-                          int padding, int stride) {
-  const int dkernel = dilation * (filter_size - 1) + 1;
-  int output_size = (input_size + 2 * padding - dkernel) / stride + 1;
-  return output_size;
-}
 
 #ifdef PADDLE_MOBILE_CPU
 static framework::FusionOpRegistrar convadd_registrar(
