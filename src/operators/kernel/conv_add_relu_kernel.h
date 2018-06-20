@@ -19,11 +19,11 @@ limitations under the License. */
 #include <vector>
 #include "framework/ddim.h"
 #include "framework/operator.h"
-#include "operators/op_param.h"
-#include "operators/math/im2col.h"
-#include "operators/math/vol2col.h"
 #include "operators/math/conv_func.h"
+#include "operators/math/im2col.h"
 #include "operators/math/math_function.h"
+#include "operators/math/vol2col.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -32,7 +32,8 @@ using framework::DDim;
 using framework::OpKernelBase;
 
 template <typename DeviceType, typename T>
-class ConvAddReluKernel : public OpKernelBase<DeviceType, FushionConvAddReluParam> {
+class ConvAddReluKernel
+    : public OpKernelBase<DeviceType, FushionConvAddReluParam> {
  public:
   void Compute(const FushionConvAddReluParam &param) const;
 };

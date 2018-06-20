@@ -50,7 +50,8 @@ void ConvAddKernel<CPU, float>::Compute(
   framework::DDim col_matrix_shape =
       framework::flatten_to_2d(col_shape, data_dim + 1);
 
-  bool is_expand = math::IsExpand(filter_shape_vec, strides, paddings, dilations);
+  bool is_expand =
+      math::IsExpand(filter_shape_vec, strides, paddings, dilations);
   Tensor col;
   Tensor col_matrix;
   if (is_expand) {

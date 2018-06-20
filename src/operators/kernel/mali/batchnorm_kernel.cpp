@@ -22,8 +22,8 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-void BatchNormKernel<GPU_MALI, float>::Compute(const BatchNormParam &param) const {
-}
+void BatchNormKernel<GPU_MALI, float>::Compute(
+    const BatchNormParam &param) const {}
 
 }  // namespace operators
 }  // namespace paddle_mobile

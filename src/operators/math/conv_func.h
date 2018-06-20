@@ -42,7 +42,7 @@ inline void expand_bias(Tensor &bias, int axis, const DDim &dDim) {
                         "the bias tensor's dims size != 1")
   DDim outer_ddim = paddle_mobile::framework::slice_ddim(dDim, 0, axis + 1);
   DDim inner_ddim =
-          paddle_mobile::framework::slice_ddim(dDim, axis + 1, dDim.size());
+      paddle_mobile::framework::slice_ddim(dDim, axis + 1, dDim.size());
   int outer_size = paddle_mobile::framework::product(outer_ddim);
   int inner_size = paddle_mobile::framework::product(inner_ddim);
   bias.Resize(dDim);
@@ -98,6 +98,6 @@ inline bool IsExpand(const std::vector<int64_t> &filter_dim,
   return !(filter_1 && strides_1 && padding_0 && dilation_1);
 }
 
-}
-}
-}
+}  // namespace math
+}  // namespace operators
+}  // namespace paddle_mobile

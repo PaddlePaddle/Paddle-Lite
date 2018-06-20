@@ -23,9 +23,10 @@ int main() {
   PADDLE_MOBILE_ENFORCE(program.originProgram != nullptr,
                         "program file read fail");
 
-  Executor4Test<paddle_mobile::CPU,
-          paddle_mobile::operators::FusionConvAddReluOp<paddle_mobile::CPU, float>>
-          executor(program, "fusion_conv_add_relu", true);
+  Executor4Test<
+      paddle_mobile::CPU,
+      paddle_mobile::operators::FusionConvAddReluOp<paddle_mobile::CPU, float>>
+      executor(program, "fusion_conv_add_relu", true);
 
   paddle_mobile::framework::Tensor input;
   GetInput<float>(g_test_image_1x3x224x224, &input, {1, 3, 224, 224});

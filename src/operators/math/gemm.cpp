@@ -177,8 +177,8 @@ void InnerKernel(int m, int n, int k, float alpha, const float *A, int lda,
 
 // 分块矩阵乘法
 void InnerKernel_relu(int m, int n, int k, float alpha, const float *A, int lda,
-                 const float *B, int ldb, float beta, float *C, int ldc,
-                 int first_time, bool relu = false) {
+                      const float *B, int ldb, float beta, float *C, int ldc,
+                      int first_time, bool relu = false) {
   int Buff_A_M = m;
   int Buff_B_N = n;
 
@@ -210,11 +210,10 @@ void InnerKernel_relu(int m, int n, int k, float alpha, const float *A, int lda,
     for (i = 0; i < Buff_A_M; i += MR) {
       mc = (m - i) < MR ? _mc : MR;
       AddDot4x4_relu(k, alpha, &packedA[i * k], 4, &packedB[j * k], k, beta,
-                &C(i, j), ldc, mc, nc, relu);
+                     &C(i, j), ldc, mc, nc, relu);
     }
   }
 }
-
 
 //计算一个更小的 4 * 4 的 C 矩阵分块
 #if defined(IOS)
@@ -269,8 +268,9 @@ void AddDot4x4(int k, float alpha, const float *a, int lda, const float *b,
 }
 
 void AddDot4x4_relu(int k, float alpha, const float *a, int lda, const float *b,
-               int ldb, float beta, float *C, int ldc, int mc, int nc, bool relu = false) {
-   // init C
+                    int ldb, float beta, float *C, int ldc, int mc, int nc,
+                    bool relu = false) {
+  // init C
   float32x4_t cv0 = vdupq_n_f32(0.0);
   float32x4_t cv1 = vdupq_n_f32(0.0);
   float32x4_t cv2 = vdupq_n_f32(0.0);
@@ -458,7 +458,8 @@ void AddDot4x4(int k, float alpha, const float *a, int lda, const float *b,
 }
 
 void AddDot4x4_relu(int k, float alpha, const float *a, int lda, const float *b,
-               int ldb, float beta, float *C, int ldc, int mc, int nc, bool relu = false) {
+                    int ldb, float beta, float *C, int ldc, int mc, int nc,
+                    bool relu = false) {
   int kc1 = k / 2, kc2 = k % 2;
   int bytes_ldc = 4 * ldc;
   int flag_alpha = (alpha == 1.0) ? 1 : 2;
@@ -571,8 +572,8 @@ void AddDot4x4_relu(int k, float alpha, const float *a, int lda, const float *b,
         [kc2] "r"(kc2), [mc] "r"(mc), [nc] "r"(nc), [alpha] "r"(alpha),
         [beta] "r"(beta), [bytes_ldc] "r"(bytes_ldc),
         [flag_alpha] "r"(flag_alpha), [flag_beta] "r"(flag_beta)
-      : "memory", "q0", "q1", "q2", "q3", "q4", "q10", "q11", "q12", "q13", "q14");
-
+      : "memory", "q0", "q1", "q2", "q3", "q4", "q10", "q11", "q12", "q13",
+        "q14");
 
   if (mc != MR || nc != NR) {
     int i, j;
@@ -599,7 +600,6 @@ void AddDot4x4_relu(int k, float alpha, const float *a, int lda, const float *b,
             C(i, j) = 0;
           }
         }
-
       }
     }
   }
@@ -664,7 +664,8 @@ void AddDot4x4(int k, float alpha, const float *a, int lda, const float *b,
 }
 
 void AddDot4x4_relu(int k, float alpha, const float *a, int lda, const float *b,
-               int ldb, float beta, float *C, int ldc, int mc, int nc, bool relu) {
+                    int ldb, float beta, float *C, int ldc, int mc, int nc,
+                    bool relu) {
   float c[16] = {0};
   float reg_a0, reg_a1, reg_a2, reg_a3, reg_b0, reg_b1, reg_b2, reg_b3;
 
@@ -725,7 +726,6 @@ void AddDot4x4_relu(int k, float alpha, const float *a, int lda, const float *b,
   }
 }
 
-
 #endif
 
 // 32位 float 矩阵乘法
@@ -768,11 +768,11 @@ void sgemm_relu(int m, int n, int k, float alpha, const float *A, int lda,
         }
 
         if (p + KC >= k) {
-          InnerKernel_relu(mc, nc, kc, alpha, &A(i, p), lda, &B(p, j), ldb, beta_,
-                           &C(i, j), ldc, i == 0, true);
+          InnerKernel_relu(mc, nc, kc, alpha, &A(i, p), lda, &B(p, j), ldb,
+                           beta_, &C(i, j), ldc, i == 0, true);
         } else {
           InnerKernel(mc, nc, kc, alpha, &A(i, p), lda, &B(p, j), ldb, beta_,
-                           &C(i, j), ldc, i == 0);
+                      &C(i, j), ldc, i == 0);
         }
       }
     }
