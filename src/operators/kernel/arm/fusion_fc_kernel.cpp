@@ -16,13 +16,13 @@ limitations under the License. */
 
 #pragma once
 
-#include "operators/kernel/fushion_fc_kernel.h"
+#include "operators/kernel/fusion_fc_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-void FushionFcKernel<CPU, float>::Compute(const FushionFcParam &param) const {
+void FusionFcKernel<CPU, float>::Compute(const FusionFcParam &param) const {
   const Tensor *input_x = param.InputX();
   const Tensor *input_y = param.InputY();
   const Tensor *input_z = param.InputZ();

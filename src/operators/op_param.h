@@ -752,9 +752,9 @@ class ReluParam : public OpParam {
 #endif
 
 #ifdef FUSION_FC_OP
-class FushionFcParam : public OpParam {
+class FusionFcParam : public OpParam {
  public:
-  FushionFcParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+  FusionFcParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
                  const AttributeMap &attrs, const Scope &scope) {
     input_x_ = InputXFrom<LoDTensor>(inputs, scope);
     input_y_ = InputYFrom<LoDTensor>(inputs, scope);
@@ -790,9 +790,9 @@ class FushionFcParam : public OpParam {
 #endif
 
 #ifdef FUSION_CONVADD_OP
-class FushionConvAddParam : public OpParam {
+class FusionConvAddParam : public OpParam {
  public:
-  FushionConvAddParam(const VariableNameMap &inputs,
+  FusionConvAddParam(const VariableNameMap &inputs,
                       const VariableNameMap &outputs, const AttributeMap &attrs,
                       const Scope &scope) {
     bias_ = InputYFrom<LoDTensor>(inputs, scope);
@@ -835,16 +835,16 @@ class FushionConvAddParam : public OpParam {
   int groups;
 };
 
-Print &operator<<(Print &printer, const FushionConvAddParam &conv_param);
+Print &operator<<(Print &printer, const FusionConvAddParam &conv_param);
 #endif
 
 #ifdef FUSION_CONVADD_RELU_OP
-class FushionConvAddReluParam : public FushionConvAddParam {
+class FusionConvAddReluParam : public FusionConvAddParam {
  public:
-  FushionConvAddReluParam(const VariableNameMap &inputs,
+  FusionConvAddReluParam(const VariableNameMap &inputs,
                           const VariableNameMap &outputs,
                           const AttributeMap &attrs, const Scope &scope)
-      : FushionConvAddParam(inputs, outputs, attrs, scope) {}
+      : FusionConvAddParam(inputs, outputs, attrs, scope) {}
 };
 #endif
 

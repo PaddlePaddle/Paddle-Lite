@@ -21,7 +21,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
-void FushionConvAddOp<Dtype, T>::InferShape() const {
+void FusionConvAddOp<Dtype, T>::InferShape() const {
   auto in_dims = this->param_.Input()->dims();
   auto filter_dims = this->param_.Filter()->dims();
   const std::vector<int> &strides = this->param_.Strides();
@@ -44,14 +44,14 @@ void FushionConvAddOp<Dtype, T>::InferShape() const {
   framework::DDim ddim = framework::make_ddim(output_shape);
   this->param_.Output()->Resize(ddim);
 }
-template class FushionConvAddOp<CPU, float>;
+template class FusionConvAddOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 USE_OP_CPU(conv_add);
-REGISTER_OPERATOR_CPU(conv_add, ops::FushionConvAddOp);
+REGISTER_OPERATOR_CPU(conv_add, ops::FusionConvAddOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
 #endif
