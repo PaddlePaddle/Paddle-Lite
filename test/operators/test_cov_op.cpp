@@ -23,8 +23,8 @@ int main() {
   PADDLE_MOBILE_ENFORCE(program.originProgram != nullptr,
                         "program file read fail");
 
-  Executor4Test<paddle_mobile::GPU_MALI,
-                paddle_mobile::operators::ConvOp<paddle_mobile::GPU_MALI, float>>
+  Executor4Test<paddle_mobile::GPU_MALI, paddle_mobile::operators::ConvOp<
+                                             paddle_mobile::GPU_MALI, float>>
       executor(program, "conv2d");
 
   paddle_mobile::framework::Tensor input;

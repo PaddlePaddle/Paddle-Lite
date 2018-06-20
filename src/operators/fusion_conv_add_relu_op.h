@@ -17,9 +17,9 @@ limitations under the License. */
 #pragma once
 
 #include "framework/operator.h"
-#include "operators/op_param.h"
-#include "operators/kernel/conv_add_relu_kernel.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
+#include "operators/kernel/conv_add_relu_kernel.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -42,27 +42,30 @@ class FushionConvAddReluOpMatcher : public framework::FusionOpMatcher {
 };
 
 template <typename DeviceType, typename T>
-class FusionConvAddReluOp: public framework::OperatorWithKernel<
-        DeviceType, FushionConvAddReluParam,
-        operators::ConvAddReluKernel<DeviceType, T>> {
+class FusionConvAddReluOp : public framework::OperatorWithKernel<
+                                DeviceType, FushionConvAddReluParam,
+                                operators::ConvAddReluKernel<DeviceType, T>> {
  public:
   FusionConvAddReluOp(const string &type, const VariableNameMap &inputs,
-                   const VariableNameMap &outputs,
-                   const framework::AttributeMap &attrs,
-                   std::shared_ptr<framework::Scope> scope)
-          : framework::OperatorWithKernel<DeviceType, FushionConvAddReluParam,
-          operators::ConvAddReluKernel<DeviceType, T>>(
-          type, inputs, outputs, attrs, scope) {}
+                      const VariableNameMap &outputs,
+                      const framework::AttributeMap &attrs,
+                      std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<
+            DeviceType, FushionConvAddReluParam,
+            operators::ConvAddReluKernel<DeviceType, T>>(type, inputs, outputs,
+                                                         attrs, scope) {}
 
   using framework::OperatorWithKernel<
-          DeviceType, FushionConvAddReluParam,
-          operators::ConvAddReluKernel<DeviceType, T>>::OperatorWithKernel;
+      DeviceType, FushionConvAddReluParam,
+      operators::ConvAddReluKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
+
  protected:
 };
 
 #ifdef PADDLE_MOBILE_CPU
-//static framework::FusionOpRegistrar fusion_conv_add_relu_registrar(new FushionConvAddReluOpMatcher());
+// static framework::FusionOpRegistrar fusion_conv_add_relu_registrar(new
+// FushionConvAddReluOpMatcher());
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
 #endif

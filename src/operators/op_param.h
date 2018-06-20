@@ -839,12 +839,12 @@ Print &operator<<(Print &printer, const FushionConvAddParam &conv_param);
 #endif
 
 #ifdef FUSION_CONVADD_RELU_OP
-class FushionConvAddReluParam: public FushionConvAddParam {
+class FushionConvAddReluParam : public FushionConvAddParam {
  public:
   FushionConvAddReluParam(const VariableNameMap &inputs,
-                      const VariableNameMap &outputs, const AttributeMap &attrs,
-                      const Scope &scope): FushionConvAddParam(inputs, outputs, attrs, scope) {
-  }
+                          const VariableNameMap &outputs,
+                          const AttributeMap &attrs, const Scope &scope)
+      : FushionConvAddParam(inputs, outputs, attrs, scope) {}
 };
 #endif
 

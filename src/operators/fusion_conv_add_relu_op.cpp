@@ -36,16 +36,16 @@ void FusionConvAddReluOp<Dtype, T>::InferShape() const {
 
   std::vector<int64_t> output_shape({in_dims[0], filter_dims[0]});
   for (size_t i = 0; i < strides.size(); ++i) {
-    output_shape.push_back(math::ConvOutputSize(in_dims[i + 2], filter_dims[i + 2],
-                                          dilations[i], paddings[i],
-                                          strides[i]));
+    output_shape.push_back(
+        math::ConvOutputSize(in_dims[i + 2], filter_dims[i + 2], dilations[i],
+                             paddings[i], strides[i]));
   }
   framework::DDim ddim = framework::make_ddim(output_shape);
   this->param_.Output()->Resize(ddim);
 }
 
-}
-}
+}  // namespace operators
+}  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
