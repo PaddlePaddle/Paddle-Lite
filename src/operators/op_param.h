@@ -755,7 +755,7 @@ class ReluParam : public OpParam {
 class FusionFcParam : public OpParam {
  public:
   FusionFcParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-                 const AttributeMap &attrs, const Scope &scope) {
+                const AttributeMap &attrs, const Scope &scope) {
     input_x_ = InputXFrom<LoDTensor>(inputs, scope);
     input_y_ = InputYFrom<LoDTensor>(inputs, scope);
     input_z_ = InputZFrom<LoDTensor>(inputs, scope);
@@ -793,8 +793,8 @@ class FusionFcParam : public OpParam {
 class FusionConvAddParam : public OpParam {
  public:
   FusionConvAddParam(const VariableNameMap &inputs,
-                      const VariableNameMap &outputs, const AttributeMap &attrs,
-                      const Scope &scope) {
+                     const VariableNameMap &outputs, const AttributeMap &attrs,
+                     const Scope &scope) {
     bias_ = InputYFrom<LoDTensor>(inputs, scope);
     axis_ = GetAttr<int>("axis", attrs);
     filter_ = FilterFrom<LoDTensor>(inputs, scope);
@@ -842,8 +842,8 @@ Print &operator<<(Print &printer, const FusionConvAddParam &conv_param);
 class FusionConvAddReluParam : public FusionConvAddParam {
  public:
   FusionConvAddReluParam(const VariableNameMap &inputs,
-                          const VariableNameMap &outputs,
-                          const AttributeMap &attrs, const Scope &scope)
+                         const VariableNameMap &outputs,
+                         const AttributeMap &attrs, const Scope &scope)
       : FusionConvAddParam(inputs, outputs, attrs, scope) {}
 };
 #endif
