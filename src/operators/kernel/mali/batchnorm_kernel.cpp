@@ -18,9 +18,9 @@ limitations under the License. */
 
 #include "operators/kernel/batchnorm_kernel.h"
 #ifdef PADDLE_MOBILE_MALI_GPU
+#include "acl_operator.h"
 #include "framework/operator.h"
 #include "operators/op_param.h"
-#include "acl_operator.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -141,7 +141,8 @@ bool BatchNormKernel<GPU_MALI, float>::Init(const BatchNormParam& param) const {
 }
 
 template <>
-void BatchNormKernel<GPU_MALI, float>::Compute(const BatchNormParam& param) const {
+void BatchNormKernel<GPU_MALI, float>::Compute(
+    const BatchNormParam& param) const {
   std::cout << "init acl" << std::endl;
   AclBatchNormOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclBatchNormOp<GPU_MALI, float>*>(this->GetAclOp());

@@ -16,9 +16,9 @@ limitations under the License. */
 
 #include "operators/kernel/conv_add_kernel.h"
 #ifdef PADDLE_MOBILE_MALI_GPU
+#include "acl_operator.h"
 #include "framework/operator.h"
 #include "operators/op_param.h"
-#include "acl_operator.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -196,7 +196,8 @@ class AclConvAddOp : public acl::ACLOperator {
 };
 
 template <>
-bool ConvAddKernel<GPU_MALI, float>::Init(const FushionConvAddParam& param) const {
+bool ConvAddKernel<GPU_MALI, float>::Init(
+    const FushionConvAddParam& param) const {
   AclConvAddOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclConvAddOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {
@@ -207,7 +208,8 @@ bool ConvAddKernel<GPU_MALI, float>::Init(const FushionConvAddParam& param) cons
 }
 
 template <>
-void ConvAddKernel<GPU_MALI, float>::Compute(const FushionConvAddParam& param) const {
+void ConvAddKernel<GPU_MALI, float>::Compute(
+    const FushionConvAddParam& param) const {
   std::cout << "init acl" << std::endl;
   AclConvAddOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclConvAddOp<GPU_MALI, float>*>(this->GetAclOp());

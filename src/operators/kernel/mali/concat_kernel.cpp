@@ -16,9 +16,9 @@ limitations under the License. */
 
 #include "operators/kernel/concat_kernel.h"
 #ifdef PADDLE_MOBILE_MALI_GPU
+#include "acl_operator.h"
 #include "framework/operator.h"
 #include "operators/op_param.h"
-#include "acl_operator.h"
 
 namespace paddle_mobile {
 namespace operators {
