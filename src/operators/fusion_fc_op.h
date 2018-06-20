@@ -70,7 +70,7 @@ class FushionFcOp : public framework::OperatorWithKernel<
 static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
-static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
+//static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 #endif

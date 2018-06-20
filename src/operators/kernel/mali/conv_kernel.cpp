@@ -23,6 +23,7 @@ template <>
 void ConvKernel<GPU_MALI, float>::Compute(const ConvParam &param) const {
   //  ArmConvImplement imp;
   //  imp.Compute(param);
+  param.Output()->mutable_data<float>()[0] = 100.0;
 }
 
 template class ConvKernel<GPU_MALI, float>;

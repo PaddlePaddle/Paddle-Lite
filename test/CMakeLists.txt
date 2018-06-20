@@ -141,6 +141,10 @@ else ()
     ADD_EXECUTABLE(test-mobilenet net/test_mobilenet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-mobilenet paddle-mobile)
 
+    # gen test
+    ADD_EXECUTABLE(test-conv-add-relu-op operators/test_conv_add_relu_op.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-conv-add-relu-op paddle-mobile)
+
     #add_library(test-lib-size SHARED common/test_lib_size.h common/test_lib_size.cpp)
 
 endif()

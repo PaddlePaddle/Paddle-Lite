@@ -18,10 +18,10 @@ limitations under the License. */
 
 #include <string>
 #include <vector>
-#include "framework/operator.h"
-#include "framework/program/program-optimize/fusion_op_register.h"
 #include "op_param.h"
+#include "framework/operator.h"
 #include "operators/kernel/conv_add_kernel.h"
+#include "framework/program/program-optimize/fusion_op_register.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -66,13 +66,6 @@ class FushionConvAddOp : public framework::OperatorWithKernel<
 
  protected:
 };
-
-inline int ConvOutputSize(int input_size, int filter_size, int dilation,
-                          int padding, int stride) {
-  const int dkernel = dilation * (filter_size - 1) + 1;
-  int output_size = (input_size + 2 * padding - dkernel) / stride + 1;
-  return output_size;
-}
 
 #ifdef PADDLE_MOBILE_CPU
 static framework::FusionOpRegistrar convadd_registrar(
