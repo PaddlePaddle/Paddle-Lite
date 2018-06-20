@@ -34,6 +34,7 @@ template <typename DeviceType, typename T>
 class ConvAddKernel : public OpKernelBase<DeviceType, FushionConvAddParam> {
  public:
   void Compute(const FushionConvAddParam &param) const;
+  virtual bool Init(const FushionConvAddParam &param) const { return true; };
 };
 
 inline bool IsExpand(const std::vector<int64_t> &filter_dim,

@@ -18,7 +18,7 @@ limitations under the License. */
 
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
-  bool optimize = false;
+  bool optimize = true;
   auto time1 = time();
   //  auto program = loader.Load(g_googlenet, optimize);
   auto program = loader.Load(g_googlenet_combine + "/model",

@@ -22,9 +22,6 @@ limitations under the License. */
 #include "framework/program/program-optimize/fusion_op_register.h"
 #include "op_param.h"
 #include "operators/kernel/conv_add_kernel.h"
-#if defined(USE_ACL)
-#include "operators/kernel/mali/acl_conv_add_op.h"
-#endif
 
 namespace paddle_mobile {
 namespace operators {
@@ -50,41 +47,24 @@ class FusionConvAddMatcher : public framework::FusionOpMatcher {
 };
 
 template <typename DeviceType, typename T>
-class FushionConvAddOp : public framework::OperatorWithKernel<DeviceType> {
+class FushionConvAddOp : public framework::OperatorWithKernel<
+                             DeviceType, FushionConvAddParam,
+                             operators::ConvAddKernel<DeviceType, T>> {
  public:
   FushionConvAddOp(const string &type, const VariableNameMap &inputs,
                    const VariableNameMap &outputs,
                    const framework::AttributeMap &attrs,
                    std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
-                                                  scope),
-        param_(inputs, outputs, attrs, *scope) {}
+      : framework::OperatorWithKernel<DeviceType, FushionConvAddParam,
+                                      operators::ConvAddKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
 
-  void RunImpl() const {
-#if defined(USE_ACL)
-    std::cout << "Using ACL!" << std::endl;
-    if (std::is_same<T, float>::value && !acl_conv_kernel_.Bypass_acl(param_)) {
-      acl_conv_kernel_.Compute(param_);
-      this->ClearVariables({"Filter", "Input", "Y"});
-      return;
-    }
-#endif
-    std::cout << "Not using ACL!" << std::endl;
-    operators::ConvAddKernel<DeviceType, T> kernel;
-    kernel.Compute(param_);
-    this->ClearVariables({"Filter", "Input", "Y"});
-  }
-
-  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  using framework::OperatorWithKernel<
+      DeviceType, FushionConvAddParam,
+      operators::ConvAddKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:
-  FushionConvAddParam param_;
-
- private:
-#if defined(USE_ACL)
-  AclConvAddKernel<DeviceType, T> acl_conv_kernel_;
-#endif
 };
 
 inline int ConvOutputSize(int input_size, int filter_size, int dilation,
@@ -99,6 +79,8 @@ static framework::FusionOpRegistrar convadd_registrar(
     new FusionConvAddMatcher());
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
+static framework::FusionOpRegistrar convadd_registrar(
+    new FusionConvAddMatcher());
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 #endif

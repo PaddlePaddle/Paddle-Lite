@@ -15,9 +15,9 @@ limitations under the License. */
 #ifdef CONV_OP
 
 #include "operators/kernel/conv_kernel.h"
-#if USE_ACL == 1
-#include <framework/operator.h>
-#include <operators/op_param.h>
+#ifdef PADDLE_MOBILE_MALI_GPU
+#include "framework/operator.h"
+#include "operators/op_param.h"
 #include "acl_operator.h"
 
 namespace paddle_mobile {
@@ -117,11 +117,6 @@ class AclConvOp : public acl::ACLOperator {
                              pad_data[0] <= 1 && pad_data[1] <= 1))) {
       setConvMethod();  // NEDirectConvolutionLayer only for 1x1 and 3x3
     }
-#ifdef USE_OPENGLES
-    if (param_.num_group > 1) {
-      bypass_acl_class_layer |= FLAGS_ENABLE_ACL_CONV;
-    }
-#endif
   }
 
   void AclParametersByContext(const ConvParam& param) {
@@ -200,26 +195,26 @@ class AclConvOp : public acl::ACLOperator {
 };
 
 template <>
-bool ConvKernel<GPU_MALI, float>::Bypass_acl(const ConvParam& param) const {
+bool ConvKernel<GPU_MALI, float>::Init(const ConvParam& param) const {
   AclConvOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclConvOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {
     acl_op = new AclConvOp<GPU_MALI, float>();
     this->SetAclOp((void*)acl_op, (void*)this);
   }
-  return acl_op->Bypass_acl(param);
+  return true;
 }
 
 template <>
 void ConvKernel<GPU_MALI, float>::Compute(const ConvParam& param) const {
   std::cout << "init acl" << std::endl;
-  if (Bypass_acl(param)) {
-    std::cout << "init acl failed" << std::endl;
-    return;
-  }
   AclConvOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclConvOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {
+    return;
+  }
+  if (acl_op->Bypass_acl(param)) {
+    std::cout << "init acl failed" << std::endl;
     return;
   }
   acl::AclParameters& args = acl_op->getargs();

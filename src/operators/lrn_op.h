@@ -20,47 +20,27 @@ limitations under the License. */
 #include "framework/operator.h"
 #include "operators/kernel/lrn_kernel.h"
 #include "operators/op_param.h"
-#if defined(USE_ACL)
-#include "operators/kernel/mali/acl_lrn_op.h"
-#endif
 
 namespace paddle_mobile {
 namespace operators {
 using std::string;
 template <typename DeviceType, typename T>
-class LrnOp : public framework::OperatorWithKernel<DeviceType> {
+class LrnOp : public framework::OperatorWithKernel<
+                  DeviceType, LrnParam, operators::LrnKernel<DeviceType, T>> {
  public:
   LrnOp(const string &type, const VariableNameMap &inputs,
         const VariableNameMap &outputs, const framework::AttributeMap &attrs,
         std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
-                                                  scope),
-        param_(inputs, outputs, attrs, *scope) {}
+      : framework::OperatorWithKernel<DeviceType, LrnParam,
+                                      operators::LrnKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
 
-  void RunImpl() const {
-#if defined(USE_ACL)
-    std::cout << "Using ACL!" << std::endl;
-    if (std::is_same<T, float>::value && !acl_lrn_kernel_.Bypass_acl(param_)) {
-      acl_lrn_kernel_.Compute(param_);
-      this->ClearVariables({"Filter", "Input"});
-      return;
-    }
-#endif
-    std::cout << "Not using ACL!" << std::endl;
-    operators::LrnKernel<DeviceType, T> kernel;
-    kernel.Compute(param_);
-  }
-
-  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  using framework::OperatorWithKernel<
+      DeviceType, LrnParam,
+      operators::LrnKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:
-  LrnParam param_;
-
- private:
-#if defined(USE_ACL)
-  AclLrnKernel<DeviceType, T> acl_lrn_kernel_;
-#endif
 };
 
 }  // namespace operators

@@ -23,8 +23,8 @@ namespace operators {
 
 template <typename Dtype, typename T>
 void BatchNormOp<Dtype, T>::InferShape() const {
-  auto x_dims = param_.InputX()->dims();
-  param_.OutputY()->Resize(x_dims);
+  auto x_dims = this->param_.InputX()->dims();
+  this->param_.OutputY()->Resize(x_dims);
 }
 template class BatchNormOp<CPU, float>;
 }  // namespace operators
@@ -36,6 +36,8 @@ USE_OP_CPU(batch_norm);
 REGISTER_OPERATOR_CPU(batch_norm, ops::BatchNormOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(batch_norm);
+REGISTER_OPERATOR_MALI_GPU(batch_norm, ops::BatchNormOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 #endif

@@ -61,9 +61,5 @@ template class OperatorBase<CPU>;
 template class OperatorBase<FPGA>;
 template class OperatorBase<GPU_MALI>;
 
-template class OperatorWithKernel<CPU>;
-template class OperatorWithKernel<FPGA>;
-template class OperatorWithKernel<GPU_MALI>;
-
 }  // namespace framework
 }  // namespace paddle_mobile

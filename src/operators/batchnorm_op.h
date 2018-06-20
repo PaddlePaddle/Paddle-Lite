@@ -20,47 +20,26 @@ limitations under the License. */
 #include "framework/operator.h"
 #include "operators/kernel/batchnorm_kernel.h"
 #include "operators/op_param.h"
-#if defined(USE_ACL)
-#include "operators/kernel/mali/acl_batchnorm_op.h"
-#endif
 
 namespace paddle_mobile {
 namespace operators {
 using std::string;
 template <typename DeviceType, typename T>
-class BatchNormOp : public framework::OperatorWithKernel<DeviceType> {
+class BatchNormOp
+    : public framework::OperatorWithKernel<DeviceType, BatchNormParam,
+                                           BatchNormKernel<DeviceType, T>> {
  public:
   BatchNormOp(const string &type, const VariableNameMap &inputs,
               const VariableNameMap &outputs,
               const framework::AttributeMap &attrs,
               std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
-                                                  scope),
-        param_(inputs, outputs, attrs, *scope) {}
+      : framework::OperatorWithKernel<DeviceType, BatchNormParam,
+                                      BatchNormKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
 
-  void RunImpl() const {
-#if defined(USE_ACL)
-    std::cout << "Using ACL!" << std::endl;
-    if (std::is_same<T, float>::value && !acl_bn_kernel_.Bypass_acl(param_)) {
-      acl_bn_kernel_.Compute(param_);
-      return;
-    }
-#endif
-    std::cout << "Not using ACL!" << std::endl;
-    operators::BatchNormKernel<DeviceType, T> kernel;
-    kernel.Compute(param_);
-  }
-
-  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:
-  BatchNormParam param_;
-
- private:
-#if defined(USE_ACL)
-  AclBatchNormKernel<DeviceType, T> acl_bn_kernel_;
-#endif
 };
 
 }  // namespace operators

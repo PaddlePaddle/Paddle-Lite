@@ -20,8 +20,8 @@ namespace operators {
 
 template <typename Dtype, typename T>
 void ReluOp<Dtype, T>::InferShape() const {
-  auto input_dims = param_.InputX()->dims();
-  param_.Out()->Resize(input_dims);
+  auto input_dims = this->param_.InputX()->dims();
+  this->param_.Out()->Resize(input_dims);
 }
 template class ReluOp<CPU, float>;
 }  // namespace operators
@@ -38,6 +38,8 @@ USE_OP_CPU(relu);
 REGISTER_OPERATOR_CPU(relu, ops::ReluOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(relu);
+REGISTER_OPERATOR_MALI_GPU(relu, ops::ReluOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 #endif

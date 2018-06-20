@@ -32,7 +32,7 @@ template <typename DeviceType, typename T>
 class ConvKernel : public OpKernelBase<DeviceType, ConvParam> {
  public:
   void Compute(const ConvParam &param) const;
-  bool Bypass_acl(const ConvParam &param) const;
+  virtual bool Init(const ConvParam &param) const { return true; };
 };
 
 inline bool IsExpand(const std::vector<int64_t> &filter_dim,

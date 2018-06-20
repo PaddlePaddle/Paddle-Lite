@@ -29,6 +29,7 @@ template <typename DeviceType, typename T>
 class SoftmaxKernel : public OpKernelBase<DeviceType, SoftmaxParam> {
  public:
   void Compute(const SoftmaxParam &param) const override;
+  virtual bool Init(const SoftmaxParam &param) const { return true; };
 };
 }  // namespace operators
 }  // namespace paddle_mobile

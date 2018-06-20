@@ -22,7 +22,7 @@
 #include "arm_compute/runtime/NEON/functions/NESoftmaxLayer.h"
 #include "arm_compute/runtime/Tensor.h"
 
-#ifdef USE_OPENCL
+#ifdef PADDLE_MOBILE_MALI_GPU
 #include "arm_compute/core/CL/OpenCL.h"
 #include "arm_compute/runtime/CL/CLScheduler.h"
 #include "arm_compute/runtime/CL/CLTensor.h"

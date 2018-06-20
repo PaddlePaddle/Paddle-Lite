@@ -28,26 +28,25 @@ namespace operators {
 using paddle_mobile::framework::Tensor;
 
 template <typename DeviceType, typename T>
-class MultiClassNMSOp : public framework::OperatorWithKernel<DeviceType> {
+class MultiClassNMSOp : public framework::OperatorWithKernel<
+                            DeviceType, MultiClassNMSParam,
+                            operators::MultiClassNMSKernel<DeviceType, T>> {
  public:
   MultiClassNMSOp(const std::string &type, const VariableNameMap &inputs,
                   const VariableNameMap &outputs,
                   const framework::AttributeMap &attrs,
                   std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
-                                                  scope),
-        param_(inputs, outputs, attrs, *scope) {}
+      : framework::OperatorWithKernel<
+            DeviceType, MultiClassNMSParam,
+            operators::MultiClassNMSKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
 
-  void RunImpl() const {
-    operators::MultiClassNMSKernel<DeviceType, T> kernel;
-    kernel.Compute(param_);
-  }
-
-  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  using framework::OperatorWithKernel<
+      DeviceType, MultiClassNMSParam,
+      operators::MultiClassNMSKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:
-  MultiClassNMSParam param_;
 };
 
 }  // namespace operators

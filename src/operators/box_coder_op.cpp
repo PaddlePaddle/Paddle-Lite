@@ -21,11 +21,11 @@ namespace operators {
 
 template <typename Dtype, typename T>
 void BoxCoderOp<Dtype, T>::InferShape() const {
-  auto input_priorbox_dims = param_.InputPriorBox()->dims();
-  auto input_priorboxvar_dims = param_.InputPriorBoxVar()->dims();
-  auto input_targetbox_dims = param_.InputTargetBox()->dims();
+  auto input_priorbox_dims = this->param_.InputPriorBox()->dims();
+  auto input_priorboxvar_dims = this->param_.InputPriorBoxVar()->dims();
+  auto input_targetbox_dims = this->param_.InputTargetBox()->dims();
 
-  auto code_type = param_.CodeType();
+  auto code_type = this->param_.CodeType();
 
   if (code_type == "encode_center_size") {
     if (input_targetbox_dims.size() != 2) {
@@ -44,7 +44,7 @@ void BoxCoderOp<Dtype, T>::InferShape() const {
       LOG(kLOG_ERROR) << " dimension not match";
     }
   }
-  param_.OutputBox()->Resize(framework::make_ddim(
+  this->param_.OutputBox()->Resize(framework::make_ddim(
       {input_targetbox_dims[0], input_priorbox_dims[0], 4}));
 }
 template class BoxCoderOp<CPU, float>;

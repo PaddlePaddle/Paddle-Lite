@@ -21,8 +21,6 @@ namespace operators {
 
 template <>
 void ConvKernel<CPU, float>::Compute(const ConvParam &param) const {
-  LOG(kLOG_DEBUG) << param;
-
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
   Tensor *output = param.Output();
@@ -31,8 +29,6 @@ void ConvKernel<CPU, float>::Compute(const ConvParam &param) const {
   std::vector<int> strides = param.Strides();
   std::vector<int> paddings = param.Paddings();
   std::vector<int> dilations = param.Dilations();
-
-  //  DLOG << " compute end get Attrs " << strides[0];
 
   const int batch_size = static_cast<int>(input->dims()[0]);
 
@@ -66,7 +62,6 @@ void ConvKernel<CPU, float>::Compute(const ConvParam &param) const {
   framework::DDim filter_matrix_shape = {filter.dims()[0],
                                          filter.numel() / filter.dims()[0]};
   filter.Resize(filter_matrix_shape);
-  DLOG << " filter.dims() = " << filter.dims();
   framework::DDim output_matrix_shape = {
       output->dims()[1],
       output->numel() / (output->dims()[0] * output->dims()[1])};

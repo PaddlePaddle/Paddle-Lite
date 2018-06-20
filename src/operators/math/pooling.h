@@ -18,6 +18,8 @@ limitations under the License. */
 
 #include "common/log.h"
 #include "framework/tensor.h"
+#include "pool_2x2.h"
+#include "pool_3x3.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -63,7 +65,7 @@ class PoolFunctor {
                   const std::vector<int> &paddings, PoolProcess pool_compute,
                   framework::Tensor *output);
 };
-}  // namespace math
+}
 }  // namespace operators
 }  // namespace paddle_mobile
 

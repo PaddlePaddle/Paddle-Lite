@@ -25,12 +25,12 @@ namespace operators {
 
 template <typename Dtype, typename T>
 void DepthwiseConvOp<Dtype, T>::InferShape() const {
-  auto in_dims = param_.Input()->dims();
-  auto filter_dims = param_.Filter()->dims();
-  const std::vector<int> &strides = param_.Strides();
-  std::vector<int> paddings = param_.Paddings();
-  int groups = param_.Groups();
-  std::vector<int> dilations = param_.Dilations();
+  auto in_dims = this->param_.Input()->dims();
+  auto filter_dims = this->param_.Filter()->dims();
+  const std::vector<int> &strides = this->param_.Strides();
+  std::vector<int> paddings = this->param_.Paddings();
+  int groups = this->param_.Groups();
+  std::vector<int> dilations = this->param_.Dilations();
 
   PADDLE_MOBILE_ENFORCE((in_dims.size() == filter_dims.size() &&
                          dilations.size() == paddings.size() &&
@@ -45,7 +45,7 @@ void DepthwiseConvOp<Dtype, T>::InferShape() const {
   }
 
   framework::DDim ddim = framework::make_ddim(output_shape);
-  param_.Output()->Resize(ddim);
+  this->param_.Output()->Resize(ddim);
 }
 
 template class DepthwiseConvOp<CPU, float>;

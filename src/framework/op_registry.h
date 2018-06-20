@@ -96,74 +96,39 @@ class OpRegistry {
   }
 };
 
-#ifdef PADDLE_MOBILE_CPU
-
-#define REGISTER_OPERATOR_CPU(op_type, op_class)                               \
-  template <typename Dtype, typename T>                                        \
-  class _OpClass_##op_type##_cpu : public op_class<Dtype, T> {                 \
-   public:                                                                     \
-    DEFINE_OP_CONSTRUCTOR(_OpClass_##op_type##_cpu, op_class);                 \
-  };                                                                           \
-  static paddle_mobile::framework::OperatorRegistrar<                          \
-      paddle_mobile::CPU, _OpClass_##op_type##_cpu<paddle_mobile::CPU, float>> \
-      __op_registrar_##op_type##__cpu(#op_type);                               \
-  int TouchOpRegistrar_##op_type##_cpu() {                                     \
-    __op_registrar_##op_type##__cpu.Touch();                                   \
-    return 0;                                                                  \
+#define REGISTER_OPERATOR(op_type, op_class, device_name, device_type)     \
+  template <typename Dtype, typename T>                                    \
+  class _OpClass_##op_type##_##device_name : public op_class<Dtype, T> {   \
+   public:                                                                 \
+    DEFINE_OP_CONSTRUCTOR(_OpClass_##op_type##_##device_name, op_class);   \
+  };                                                                       \
+  static paddle_mobile::framework::OperatorRegistrar<                      \
+      device_type, _OpClass_##op_type##_##device_name<device_type, float>> \
+      __op_registrar_##op_type##_##device_name(#op_type);                  \
+  int TouchOpRegistrar_##op_type##_##device_name() {                       \
+    __op_registrar_##op_type##_##device_name.Touch();                      \
+    return 0;                                                              \
   }
 
-#define USE_OP_CPU(op_type)                                       \
-  extern int TouchOpRegistrar_##op_type##_cpu();                  \
-  static int use_op_itself_##op_type##_ __attribute__((unused)) = \
-      TouchOpRegistrar_##op_type##_cpu()
+#define REGISTER_OPERATOR_CPU(op_type, op_class) \
+  REGISTER_OPERATOR(op_type, op_class, cpu, paddle_mobile::CPU);
 
-#endif
+#define REGISTER_OPERATOR_MALI_GPU(op_type, op_class) \
+  REGISTER_OPERATOR(op_type, op_class, mali_gpu, paddle_mobile::GPU_MALI);
 
-#ifdef PADDLE_MOBILE_MALI_GPU
-#define REGISTER_OPERATOR_MALI_GPU(op_type, op_class)               \
-  template <typename Dtype, typename T>                             \
-  class _OpClass_##op_type##_mali_gpu : public op_class<Dtype, T> { \
-   public:                                                          \
-    DEFINE_OP_CONSTRUCTOR(_OpClass_##op_type##_mali_gpu, op_class); \
-  };                                                                \
-  static paddle_mobile::framework::OperatorRegistrar<               \
-      paddle_mobile::CPU,                                           \
-      _OpClass_##op_type##_mali_gpu<paddle_mobile::CPU, float>>     \
-      __op_registrar_##op_type##__mali_gpu(#op_type);               \
-  int TouchOpRegistrar_##op_type##_mali_gpu() {                     \
-    __op_registrar_##op_type##__mali_gpu.Touch();                   \
-    return 0;                                                       \
-  }
+#define REGISTER_OPERATOR_FPGA(op_type, op_class) \
+  REGISTER_OPERATOR(op_type, op_class, fpga, paddle_mobile::FPGA);
 
-#define USE_OP_MALI_GPU(op_type)                                  \
-  extern int TouchOpRegistrar_##op_type##_mali_gpu();             \
-  static int use_op_itself_##op_type##_ __attribute__((unused)) = \
-      TouchOpRegistrar_##op_type##_mali_gpu()
+#define USE_OP(op_type, device_name)                                           \
+  extern int TouchOpRegistrar_##op_type##_##device_name();                     \
+  static int use_op_itself_##op_type##_##device_name __attribute__((unused)) = \
+      TouchOpRegistrar_##op_type##_##device_name()
 
-#endif
+#define USE_OP_CPU(op_type) USE_OP(op_type, cpu);
 
-#ifdef PADDLE_MOBILE_FPGA
-#define REGISTER_OPERATOR_FPGA(op_type, op_class)               \
-  template <typename Dtype, typename T>                         \
-  class _OpClass_##op_type##_fpga : public op_class<Dtype, T> { \
-   public:                                                      \
-    DEFINE_OP_CONSTRUCTOR(_OpClass_##op_type##_fpga, op_class); \
-  };                                                            \
-  static paddle_mobile::framework::OperatorRegistrar<           \
-      paddle_mobile::CPU,                                       \
-      _OpClass_##op_type##_fpga<paddle_mobile::CPU, float>>     \
-      __op_registrar_##op_type##__fpga(#op_type);               \
-  int TouchOpRegistrar_##op_type##_fpga() {                     \
-    __op_registrar_##op_type##__fpga.Touch();                   \
-    return 0;                                                   \
-  }
+#define USE_OP_MALI_GPU(op_type) USE_OP(op_type, mali_gpu);
 
-#define USE_OP_FPGA(op_type)                                      \
-  extern int TouchOpRegistrar_##op_type##_fpga();                 \
-  static int use_op_itself_##op_type##_ __attribute__((unused)) = \
-      TouchOpRegistrar_##op_type##_fpga()
-
-#endif
+#define USE_OP_FPGA(op_type) USE_OP(op_type, fpga);
 
 }  // namespace framework
 }  // namespace paddle_mobile

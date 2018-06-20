@@ -1,8 +1,11 @@
 /* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
+
     http://www.apache.org/licenses/LICENSE-2.0
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -100,16 +103,25 @@ class OperatorBase {
 /*
  * @b 这个类为所有带有运算的 op 的父类, 这个 op 继承与 OperatorBase
  * */
-template <typename Dtype>
+template <typename Dtype, typename ParamType, typename KernelType>
 class OperatorWithKernel : public OperatorBase<Dtype> {
  public:
   OperatorWithKernel(const std::string &type, const VariableNameMap &inputs,
                      const VariableNameMap &outputs, const AttributeMap &attrs,
                      std::shared_ptr<Scope> scope)
-      : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope) {}
+      : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope),
+        param_(inputs, outputs, attrs, *scope) {
+    PADDLE_MOBILE_ENFORCE(kernel_.Init(param_), "  %s kernel init failed",
+                          this->type_.c_str());
+  }
 
-  virtual void RunImpl() const = 0;
+  virtual void RunImpl() const { this->kernel_.Compute(this->param_); }
+
   virtual void InferShape() const = 0;
+
+ protected:
+  KernelType kernel_;
+  ParamType param_;
 };
 
 /*
@@ -123,7 +135,7 @@ class OpKernelBase {
    * @p para 这个参数为 kernel 运算时所需要用到参数组成的一个结构体,
    *    所有结构体存在与: paddle-mobile/src/operators/op_param.h
    * */
-#if defined(USE_ACL)
+#ifdef PADDLE_MOBILE_MALI_GPU
   OpKernelBase() { acl_op_ = nullptr; }
   void *GetAclOp() const { return acl_op_; }
   void SetAclOp(void *op, void *ob) const {
@@ -131,10 +143,11 @@ class OpKernelBase {
   }
 #endif
   virtual void Compute(const P &para) const = 0;
+  virtual bool Init(const P &para) const { return true; };
   virtual ~OpKernelBase() = default;
 
  private:
-#if defined(USE_ACL)
+#ifdef PADDLE_MOBILE_MALI_GPU
   void *acl_op_;
 #endif
 };

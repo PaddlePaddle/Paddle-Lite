@@ -12,15 +12,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef POOL_OP
+
 #pragma once
 
-#include <framework/operator.h>
-#include <operators/kernel/pool_kernel.h>
-#include <operators/op_param.h>
 #include <string>
-#if defined(USE_ACL)
-#include "operators/kernel/mali/acl_pool_op.h"
-#endif
+
+#include "framework/operator.h"
+#include "operators/kernel/pool_kernel.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -29,36 +29,23 @@ using framework::OperatorWithKernel;
 using framework::Scope;
 using std::string;
 template <typename DeviceType, typename T>
-class PoolOp : public OperatorWithKernel<DeviceType> {
+class PoolOp : public OperatorWithKernel<DeviceType, PoolParam,
+                                         operators::PoolKernel<DeviceType, T>> {
  public:
   PoolOp(const string &type, const VariableNameMap &inputs,
          const VariableNameMap &outputs, const AttributeMap &attrs,
          std::shared_ptr<Scope> scope)
-      : OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs, scope),
-        param_(inputs, outputs, attrs, *scope) {}
-  using OperatorWithKernel<DeviceType>::OperatorWithKernel;
+      : OperatorWithKernel<DeviceType, PoolParam,
+                           operators::PoolKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
+  using OperatorWithKernel<
+      DeviceType, PoolParam,
+      operators::PoolKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
-  void RunImpl() const {
-#if defined(USE_ACL)
-    std::cout << "Using ACL!" << std::endl;
-    if (std::is_same<T, float>::value && !acl_pool_kernel_.Bypass_acl(param_)) {
-      acl_pool_kernel_.Compute(param_);
-      this->ClearVariables({"X"});
-      return;
-    }
-#endif
-    std::cout << "Not using ACL!" << std::endl;
-    operators::PoolKernel<DeviceType, T> kernel;
-    kernel.Compute(param_);
-    this->ClearVariables({"X"});
-  }
-
  private:
-  PoolParam param_;
-#if defined(USE_ACL)
-  AclPoolKernel<DeviceType, T> acl_pool_kernel_;
-#endif
 };
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif
