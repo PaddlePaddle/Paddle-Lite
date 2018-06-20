@@ -14,18 +14,31 @@ limitations under the License. */
 
 #pragma once
 
-#include <cmath>
-#include "framework/tensor.h"
+#ifdef FUSION_CONVADD_RELU_OP
+
+#include <vector>
+#include "framework/ddim.h"
+#include "framework/operator.h"
+#include "operators/math/conv_func.h"
+#include "operators/math/im2col.h"
+#include "operators/math/math_function.h"
+#include "operators/math/vol2col.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
-namespace math {
 
-// matrix multiply with continuous memory
-template <typename T>
-void matmul(const framework::Tensor &matrix_a, bool trans_a,
-            const framework::Tensor &matrix_b, bool trans_b, T alpha,
-            framework::Tensor *matrix_out, T beta, bool relu = false);
-}  // namespace math
+using framework::DDim;
+using framework::OpKernelBase;
+
+template <typename DeviceType, typename T>
+class ConvAddReluKernel
+    : public OpKernelBase<DeviceType, FusionConvAddReluParam> {
+ public:
+  void Compute(const FusionConvAddReluParam &param) const;
+};
+
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

@@ -13,19 +13,20 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "../test_include.h"
-#include "operators/conv_op.h"
+#include "operators/fusion_conv_add_relu_op.h"
 
 int main() {
-  paddle_mobile::Loader<paddle_mobile::GPU_MALI> loader;
+  paddle_mobile::Loader<paddle_mobile::CPU> loader;
   //  ../models/image_classification_resnet.inference.model
-  auto program = loader.Load(g_googlenet);
+  auto program = loader.Load(g_googlenet, true);
 
   PADDLE_MOBILE_ENFORCE(program.originProgram != nullptr,
                         "program file read fail");
 
-  Executor4Test<paddle_mobile::GPU_MALI, paddle_mobile::operators::ConvOp<
-                                             paddle_mobile::GPU_MALI, float>>
-      executor(program, "conv2d");
+  Executor4Test<
+      paddle_mobile::CPU,
+      paddle_mobile::operators::FusionConvAddReluOp<paddle_mobile::CPU, float>>
+      executor(program, "fusion_conv_add_relu", true);
 
   paddle_mobile::framework::Tensor input;
   GetInput<float>(g_test_image_1x3x224x224, &input, {1, 3, 224, 224});
@@ -34,10 +35,10 @@ int main() {
   //                     static_cast<float>(1));
 
   auto out_ddim = paddle_mobile::framework::make_ddim({1, 64, 112, 112});
-  auto output = executor.Predict(input, "data", "conv2d_0.tmp_0", out_ddim);
+  auto output = executor.Predict(input, "data", "conv2d_0.tmp_2", out_ddim);
 
   auto output_ptr = output->data<float>();
-  for (int j = 0; j < 20; ++j) {
+  for (int j = 0; j < 25; ++j) {
     DLOG << " value of output: " << output_ptr[j];
   }
   return 0;

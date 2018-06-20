@@ -147,7 +147,7 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::LoadProgram(
   if (optimize) {
     framework::ProgramOptimize program_optimize;
     program.optimizeProgram =
-        program_optimize.FushionOptimize(originProgramDesc, can_add_split);
+        program_optimize.FusionOptimize(originProgramDesc, can_add_split);
   }
   if (optimize) {
     program.optimizeProgram->Description("optimize: ");

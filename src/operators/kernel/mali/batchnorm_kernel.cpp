@@ -12,23 +12,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_FC_OP
+#ifdef BATCHNORM_OP
 
 #pragma once
 
-#include "framework/operator.h"
-#include "operators/math/math_function.h"
-#include "operators/op_param.h"
+#include "operators/kernel/batchnorm_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename DeviceType, typename T>
-class FushionFcKernel
-    : public framework::OpKernelBase<DeviceType, FushionFcParam> {
- public:
-  void Compute(const FushionFcParam& param) const;
-};
+template <>
+void BatchNormKernel<GPU_MALI, float>::Compute(
+    const BatchNormParam &param) const {}
+
 }  // namespace operators
 }  // namespace paddle_mobile
 

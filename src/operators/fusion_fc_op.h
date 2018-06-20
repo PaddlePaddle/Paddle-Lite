@@ -21,7 +21,7 @@ limitations under the License. */
 
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
-#include "operators/kernel/fushion_fc_kernel.h"
+#include "operators/kernel/fusion_fc_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -45,22 +45,21 @@ class FusionFcMatcher : public framework::FusionOpMatcher {
 };
 
 template <typename DeviceType, typename T>
-class FushionFcOp : public framework::OperatorWithKernel<
-                        DeviceType, FushionFcParam,
-                        operators::FushionFcKernel<DeviceType, T>> {
+class FusionFcOp
+    : public framework::OperatorWithKernel<
+          DeviceType, FusionFcParam, operators::FusionFcKernel<DeviceType, T>> {
  public:
-  FushionFcOp(const string &type, const VariableNameMap &inputs,
-              const VariableNameMap &outputs,
-              const framework::AttributeMap &attrs,
-              std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<
-            DeviceType, FushionFcParam,
-            operators::FushionFcKernel<DeviceType, T>>(type, inputs, outputs,
-                                                       attrs, scope) {}
+  FusionFcOp(const string &type, const VariableNameMap &inputs,
+             const VariableNameMap &outputs,
+             const framework::AttributeMap &attrs,
+             std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<DeviceType, FusionFcParam,
+                                      operators::FusionFcKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
 
   using framework::OperatorWithKernel<
-      DeviceType, FushionFcParam,
-      operators::FushionFcKernel<DeviceType, T>>::OperatorWithKernel;
+      DeviceType, FusionFcParam,
+      operators::FusionFcKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:
@@ -70,7 +69,7 @@ class FushionFcOp : public framework::OperatorWithKernel<
 static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
-static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
+// static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 #endif

@@ -752,10 +752,10 @@ class ReluParam : public OpParam {
 #endif
 
 #ifdef FUSION_FC_OP
-class FushionFcParam : public OpParam {
+class FusionFcParam : public OpParam {
  public:
-  FushionFcParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-                 const AttributeMap &attrs, const Scope &scope) {
+  FusionFcParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+                const AttributeMap &attrs, const Scope &scope) {
     input_x_ = InputXFrom<LoDTensor>(inputs, scope);
     input_y_ = InputYFrom<LoDTensor>(inputs, scope);
     input_z_ = InputZFrom<LoDTensor>(inputs, scope);
@@ -790,11 +790,11 @@ class FushionFcParam : public OpParam {
 #endif
 
 #ifdef FUSION_CONVADD_OP
-class FushionConvAddParam : public OpParam {
+class FusionConvAddParam : public OpParam {
  public:
-  FushionConvAddParam(const VariableNameMap &inputs,
-                      const VariableNameMap &outputs, const AttributeMap &attrs,
-                      const Scope &scope) {
+  FusionConvAddParam(const VariableNameMap &inputs,
+                     const VariableNameMap &outputs, const AttributeMap &attrs,
+                     const Scope &scope) {
     bias_ = InputYFrom<LoDTensor>(inputs, scope);
     axis_ = GetAttr<int>("axis", attrs);
     filter_ = FilterFrom<LoDTensor>(inputs, scope);
@@ -823,7 +823,7 @@ class FushionConvAddParam : public OpParam {
 
   const int &Groups() const { return groups; }
 
- private:
+ protected:
   Tensor *bias_;
   int axis_;
   Tensor *input_;
@@ -835,7 +835,17 @@ class FushionConvAddParam : public OpParam {
   int groups;
 };
 
-Print &operator<<(Print &printer, const FushionConvAddParam &conv_param);
+Print &operator<<(Print &printer, const FusionConvAddParam &conv_param);
+#endif
+
+#ifdef FUSION_CONVADD_RELU_OP
+class FusionConvAddReluParam : public FusionConvAddParam {
+ public:
+  FusionConvAddReluParam(const VariableNameMap &inputs,
+                         const VariableNameMap &outputs,
+                         const AttributeMap &attrs, const Scope &scope)
+      : FusionConvAddParam(inputs, outputs, attrs, scope) {}
+};
 #endif
 
 }  // namespace operators

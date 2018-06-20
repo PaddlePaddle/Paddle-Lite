@@ -49,8 +49,8 @@ class TestFcOp {
           DLOG << " Input Y is : " << op->Input("Y")[0];
           DLOG << " Input Y is : " << op->Input("Z")[0];
           DLOG << " Output Out is : " << op->Output("Out")[0];
-          std::shared_ptr<operators::FushionFcOp<Dtype, float>> testOp =
-              std::make_shared<operators::FushionFcOp<Dtype, float>>(
+          std::shared_ptr<operators::FusionFcOp<Dtype, float>> testOp =
+              std::make_shared<operators::FusionFcOp<Dtype, float>>(
                   op->Type(), op->GetInputs(), op->GetOutputs(),
                   op->GetAttrMap(), program_.scope);
           ops_of_block_[*block_desc.get()].push_back(testOp);
@@ -119,7 +119,7 @@ int main() {
   auto program = loader.Load(g_googlenet);
   paddle_mobile::framework::ProgramOptimize optimize;
   //  program.originProgram->Description("origin");
-  auto optimize_program = optimize.FushionOptimize(program.originProgram);
+  auto optimize_program = optimize.FusionOptimize(program.originProgram);
 
   program.optimizeProgram = optimize_program;
 

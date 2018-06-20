@@ -15,12 +15,13 @@ limitations under the License. */
 #ifdef FUSION_CONVADD_OP
 
 #include "operators/fusion_conv_add.h"
+#include "operators/math/conv_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
-void FushionConvAddOp<Dtype, T>::InferShape() const {
+void FusionConvAddOp<Dtype, T>::InferShape() const {
   auto in_dims = this->param_.Input()->dims();
   auto filter_dims = this->param_.Filter()->dims();
   const std::vector<int> &strides = this->param_.Strides();
@@ -35,22 +36,22 @@ void FushionConvAddOp<Dtype, T>::InferShape() const {
 
   std::vector<int64_t> output_shape({in_dims[0], filter_dims[0]});
   for (size_t i = 0; i < strides.size(); ++i) {
-    output_shape.push_back(ConvOutputSize(in_dims[i + 2], filter_dims[i + 2],
-                                          dilations[i], paddings[i],
-                                          strides[i]));
+    output_shape.push_back(
+        math::ConvOutputSize(in_dims[i + 2], filter_dims[i + 2], dilations[i],
+                             paddings[i], strides[i]));
   }
 
   framework::DDim ddim = framework::make_ddim(output_shape);
   this->param_.Output()->Resize(ddim);
 }
-template class FushionConvAddOp<CPU, float>;
+template class FusionConvAddOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 USE_OP_CPU(conv_add);
-REGISTER_OPERATOR_CPU(conv_add, ops::FushionConvAddOp);
+REGISTER_OPERATOR_CPU(conv_add, ops::FusionConvAddOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
 #endif

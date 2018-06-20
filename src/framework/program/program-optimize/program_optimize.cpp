@@ -19,7 +19,7 @@ namespace paddle_mobile {
 
 namespace framework {
 
-std::shared_ptr<ProgramDesc> ProgramOptimize::FushionOptimize(
+std::shared_ptr<ProgramDesc> ProgramOptimize::FusionOptimize(
     std::shared_ptr<ProgramDesc> ori_des, bool add_split) {
   //  ProgramDesc *optimize_program = new ProgramDesc(*ori_des);
   std::shared_ptr<ProgramDesc> optimize_program =
