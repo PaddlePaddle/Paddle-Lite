@@ -20,7 +20,9 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 namespace math {
-float ab[MR * NR];
+alignas(64) float packedA[MC * KC];
+alignas(64) float packedB[KC * NC];
+alignas(64) float ab[MR * NR];
 // 将A矩阵分块复制到连续内存(ColMajor)
 void PackMatrixA(int m, int k, int paddingM, const float *A, int lda,
                  float *buffer) {
@@ -152,9 +154,6 @@ void InnerKernel(int m, int n, int k, float alpha, const float *A, int lda,
   if (_nc != 0) {
     Buff_B_N = n + (NR - _nc);
   }
-
-  float packedA[MC * KC];
-  static float packedB[KC * NC];
 
   if (first_time) {
     PackMatrixB_(k, n, _nc, B, ldb, packedB);
@@ -324,7 +323,7 @@ void AddDot4x4_relu(int k, float alpha, const float *a, int lda, const float *b,
 #elif defined(ARMV7)
 void AddDot4x4(int k, float alpha, const float *a, int lda, const float *b,
                int ldb, float beta, float *C, int ldc, int mc, int nc) {
-  int kc1 = k / 2, kc2 = k % 2;
+  int kc1 = k / 4, kc2 = k % 4;
   int bytes_ldc = 4 * ldc;
   int flag_alpha = (alpha == 1.0) ? 1 : 2;
   int flag_beta;
@@ -336,6 +335,8 @@ void AddDot4x4(int k, float alpha, const float *a, int lda, const float *b,
     flag_beta = 2;
   }
   asm volatile(
+      "pld        [%[a]]              \n\t"
+      "pld        [%[b]]              \n\t"
       "vmov.f32   q10,    #0.0        \n\t"
       "vmov.f32   q11,    #0.0        \n\t"
       "vmov.f32   q12,    #0.0        \n\t"
@@ -344,6 +345,18 @@ void AddDot4x4(int k, float alpha, const float *a, int lda, const float *b,
       "subs       %[kc1], %[kc1], #1  \n\t"
       "blt        end_kc1_%=          \n\t"
       "loop_kc1_%=:                   \n\t"
+      "pld        [%[a], #64]         \n\t"
+      "pld        [%[b], #64]         \n\t"
+      "vld1.32    {q0, q1}, [%[a]]!   \n\t"
+      "vld1.32    {q2, q3}, [%[b]]!   \n\t"
+      "vmla.f32   q10, q2, d0[0]      \n\t"
+      "vmla.f32   q11, q2, d0[1]      \n\t"
+      "vmla.f32   q12, q2, d1[0]      \n\t"
+      "vmla.f32   q13, q2, d1[1]      \n\t"
+      "vmla.f32   q10, q3, d2[0]      \n\t"
+      "vmla.f32   q11, q3, d2[1]      \n\t"
+      "vmla.f32   q12, q3, d3[0]      \n\t"
+      "vmla.f32   q13, q3, d3[1]      \n\t"
       "vld1.32    {q0, q1}, [%[a]]!   \n\t"
       "vld1.32    {q2, q3}, [%[b]]!   \n\t"
       "vmla.f32   q10, q2, d0[0]      \n\t"
