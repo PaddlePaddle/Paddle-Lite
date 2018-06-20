@@ -63,6 +63,7 @@ std::unordered_map<
         {G_OP_TYPE_MULTICLASS_NMS, {{"BBoxes", "Scores"}, {"Out"}}},
         {G_OP_TYPE_FC, {{"X", "Y", "Z"}, {"Out"}}},
         {G_OP_TYPE_RESHAPE, {{"X"}, {"Out"}}},
-        {G_OP_TYPE_DEPTHWISE_CONV, {{"Input"}, {"Output"}}}};
+        {G_OP_TYPE_DEPTHWISE_CONV, {{"Input"}, {"Output"}}},
+        {G_OP_TYPE_FUSION_CONV_ADD_RELU, {{"Input"}, {"Out"}}}};
 
 }  // namespace paddle_mobile

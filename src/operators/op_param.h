@@ -823,7 +823,7 @@ class FushionConvAddParam : public OpParam {
 
   const int &Groups() const { return groups; }
 
- private:
+ protected:
   Tensor *bias_;
   int axis_;
   Tensor *input_;
@@ -836,6 +836,16 @@ class FushionConvAddParam : public OpParam {
 };
 
 Print &operator<<(Print &printer, const FushionConvAddParam &conv_param);
+#endif
+
+#ifdef FUSION_CONVADD_RELU_OP
+class FushionConvAddReluParam: public FushionConvAddParam {
+ public:
+  FushionConvAddReluParam(const VariableNameMap &inputs,
+                      const VariableNameMap &outputs, const AttributeMap &attrs,
+                      const Scope &scope): FushionConvAddParam(inputs, outputs, attrs, scope) {
+  }
+};
 #endif
 
 }  // namespace operators

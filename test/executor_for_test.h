@@ -42,8 +42,9 @@ using std::vector;
 template <typename DeviceType, typename OpType>
 class Executor4Test : public Executor<DeviceType> {
  public:
-  Executor4Test(Program<DeviceType> p, string op_type)
+  Executor4Test(Program<DeviceType> p, string op_type, bool use_optimize = false)
       : Executor<DeviceType>() {
+    this->use_optimize_ = use_optimize;
     this->program_ = p;
     if (this->use_optimize_) {
       this->to_predict_program_ = this->program_.optimizeProgram;
@@ -61,10 +62,13 @@ class Executor4Test : public Executor<DeviceType> {
       std::vector<std::shared_ptr<OpDesc>> ops = block_desc->Ops();
       for (std::shared_ptr<OpDesc> op : ops) {
         if (op->Type() == op_type) {
+
+          DLOG << "匹配到: " << op->Type();
+
           /// test first meeting op in program
           std::shared_ptr<paddle_mobile::framework::OperatorBase<DeviceType>>
               op_ptr = paddle_mobile::framework::OpRegistry<
-                  paddle_mobile::CPU>::CreateOp(op->Type(), op->GetInputs(),
+                  DeviceType>::CreateOp(op->Type(), op->GetInputs(),
                                                 op->GetOutputs(),
                                                 op->GetAttrMap(),
                                                 this->program_.scope);
