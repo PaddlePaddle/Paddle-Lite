@@ -24,6 +24,7 @@ limitations under the License. */
 #include <thread>
 #include <vector>
 
+namespace paddle_mobile {
 class ThreadPool {
  public:
   static ThreadPool& getThreadPool();
@@ -122,3 +123,4 @@ ThreadPool& ThreadPool::getThreadPool() {
 int ThreadPool::getThreadPoolThreadId() {
   return getThreadPool().getTid(std::this_thread::get_id());
 }
+}  // namespace paddle_mobile
