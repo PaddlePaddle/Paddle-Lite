@@ -1,0 +1,3 @@
+[submodule "ACL_Android"]
+	path = ACL_Android
+	url = https://github.com/halsay/ACL_Android.git
