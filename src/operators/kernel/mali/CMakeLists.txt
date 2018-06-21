@@ -1,4 +1,4 @@
-IF(PADDLE_MOBILE_MALI_GPU)
+IF(WITH_ACL)
    cc_library(acl_ops SRCS acl_operator.cc acl_tensor.cc)
 ENDIF()
 

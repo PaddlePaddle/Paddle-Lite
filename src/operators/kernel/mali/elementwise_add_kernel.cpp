@@ -14,30 +14,33 @@ limitations under the License. */
 
 #ifdef ELEMENTWISEADD_OP
 
-#include "elementwise_add_op.h"
+#pragma once
+
+#include "operators/kernel/elementwise_add_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename Dtype, typename T>
-void ElementwiseAddOp<Dtype, T>::InferShape() const {
-  auto x_dim = this->param_.InputX()->dims();
-  this->param_.Out()->Resize(x_dim);
+template <typename T>
+struct AddFunctor {
+  inline T operator()(T a, T b) const { return a + b; }
+};
+
+template <>
+void ElementwiseAddKernel<GPU_MALI, float>::Compute(
+    const ElementwiseAddParam &param) const {
+  const Tensor *input_x = param.InputX();
+  const Tensor *input_y = param.InputY();
+  Tensor *Out = param.Out();
+  Out->mutable_data<float>();
+  int axis = param.Axis();
+  ElementwiseComputeEx<AddFunctor<float>, float>(input_x, input_y, axis,
+                                                 AddFunctor<float>(), Out);
 }
-template class ElementwiseAddOp<CPU, float>;
+
+template class ElementwiseAddKernel<GPU_MALI, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(elementwise_add);
-REGISTER_OPERATOR_CPU(elementwise_add, ops::ElementwiseAddOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(elementwise_add);
-REGISTER_OPERATOR_MALI_GPU(elementwise_add, ops::ElementwiseAddOp);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-#endif
 
 #endif

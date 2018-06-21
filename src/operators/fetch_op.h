@@ -48,6 +48,8 @@ USE_OP_CPU(fetch);
 REGISTER_OPERATOR_CPU(fetch, ops::FetchOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(fetch);
+REGISTER_OPERATOR_MALI_GPU(fetch, ops::FetchOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 #endif
