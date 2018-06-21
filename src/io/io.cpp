@@ -12,15 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "io.h"
+#include "io/io.h"
 #include <vector>
-#define PADDLE_MOBILE_PROFILE
-#ifdef PADDLE_MOBILE_PROFILE
-#include <algorithm>
-#include <ctime>
-#include <unordered_map>
-#endif
-
 #include "common/enforce.h"
 #include "common/log.h"
 #include "framework/framework.pb-c.h"
@@ -31,6 +24,12 @@ limitations under the License. */
 #include "framework/program/var_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
+#ifdef PADDLE_EXECUTOR_MULTITHREAD
+#include <algorithm>
+#include <queue>
+#include <utility>
+#include "common/threadpool.h"
+#endif
 
 namespace paddle_mobile {
 using framework::Variable;
@@ -142,8 +141,6 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::LoadProgram(
     }
   }
 
-  //  originProgramDesc->Description("program: ");
-
   if (optimize) {
     framework::ProgramOptimize program_optimize;
     program.optimizeProgram =
@@ -164,7 +161,6 @@ template class Loader<FPGA, Precision::FP32>;
 template class Loader<GPU_MALI, Precision::FP32>;
 
 #pragma mark - executor
-
 template <typename Dtype, Precision P>
 Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
                              bool use_optimize)
@@ -178,6 +174,9 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
   variable_ptr[0].SetValue<int>(batch_size);
   const std::vector<std::shared_ptr<framework::BlockDesc>> blocks =
       to_predict_program_->Blocks();
+#ifdef PADDLE_EXECUTOR_MULTITHREAD
+  depManager.resize(blocks.size());
+#endif
   for (int i = 0; i < blocks.size(); ++i) {
     std::shared_ptr<framework::BlockDesc> block_desc = blocks[i];
     std::vector<std::shared_ptr<framework::OpDesc>> ops = block_desc->Ops();
@@ -188,8 +187,10 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
           op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(),
           program_.scope);
       op_base->InferShape();
-
       ops_of_block_[*block_desc.get()].push_back(op_base);
+#ifdef PADDLE_EXECUTOR_MULTITHREAD
+      depManager[i].analysisDep(ops_of_block_[*block_desc.get()]);
+#endif
     }
   }
   if (program_.is_commbine) {
@@ -350,48 +351,132 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
   feed_tensor->ShareDataWith(t);
   std::shared_ptr<framework::BlockDesc> to_predict_block =
       to_predict_program_->Block(0);
+  auto &ops = ops_of_block_[*to_predict_block.get()];
 #ifdef PADDLE_MOBILE_PROFILE
-  std::unordered_map<std::string, clock_t> _profile;
+  std::vector<ProfInfo> profile(ops.size());
 #endif
-  for (int j = 0; j < ops_of_block_[*to_predict_block.get()].size(); ++j) {
-    auto op = ops_of_block_[*to_predict_block.get()][j];
+#ifdef PADDLE_EXECUTOR_MULTITHREAD
+  std::mutex m;
+  std::condition_variable cv;
+  std::queue<int> next;
+  next.push(0);
+  int rsize = ops.size();
+  std::vector<int> status(rsize, 0);
+  auto &threadPool = ThreadPool::getThreadPool();
+  auto &dep = depManager[0];
+  auto finishF = [&ops, &m, &cv, &next, &status, &rsize, &dep](int opi) {
+    std::lock_guard<std::mutex> lk(m);
+    rsize--;
+    status[opi] = 2;
+    for (int i : dep.getNext(opi)) {
+      bool ok = true;
+      for (int j : dep.getDeps(i)) {
+        if (status[j] != 2) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok && (status[i] == 0)) {
+        next.push(i);
+      }
+    }
+    cv.notify_one();
+  };
+  for (;;) {
+    std::unique_lock<std::mutex> lk(m);
+    cv.wait(lk, [&next, &rsize] { return rsize == 0 || !next.empty(); });
+    if (rsize == 0) {
+      break;
+    }
+    while (next.size() > 0) {
+      int opi = next.front();
+      next.pop();
+      status[opi] = 1;
+      threadPool.enqueue([opi, &ops, &finishF, &profile] {
+        auto &op = ops[opi];
 #ifdef PADDLE_MOBILE_PROFILE
-    _profile[op->Type()] -= clock();
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        profile[opi].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+        profile[opi].tid = ThreadPool::getThreadPoolThreadId();
 #endif
-    op->Run();
+        ops[opi]->Run();
 #ifdef PADDLE_MOBILE_PROFILE
-    _profile[op->Type()] += clock();
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        profile[opi].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+#endif
+        finishF(opi);
+      });
+    }
+  }
+#else
+  for (int i = 0; i < ops.size(); i++) {
+#ifdef PADDLE_MOBILE_PROFILE
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    profile[i].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+#endif
+    ops[i]->Run();
+#ifdef PADDLE_MOBILE_PROFILE
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    profile[i].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
 #endif
   }
-#ifdef PADDLE_MOBILE_PROFILE
-  {
-    std::cout << "====================[ profile ]======================\n";
-    using prof_t = std::pair<std::string, clock_t>;
-    std::vector<prof_t> _tprofile(_profile.begin(), _profile.end());
-    clock_t _ptotal = 0;
-    for (auto const &p : _tprofile) {
-      _ptotal += p.second;
-    }
-    auto compf = [](const prof_t &a, const prof_t &b) {
-      return a.second > b.second;
-    };
-    std::sort(_tprofile.begin(), _tprofile.end(), compf);
-    _tprofile.push_back(std::make_pair("total", _ptotal));
-    for (auto const &p : _tprofile) {
-      printf("%-16s\t%-10.0f\t%-.4f\n", p.first.c_str(), (float)p.second,
-             (float)p.second / _ptotal * 100.0);
-    }
-    std::cout << "====================[---------]======================\n";
-  }
 #endif
-  auto ops = ops_of_block_[*to_predict_program_->Block(0)];
   auto last_op = ops.rbegin();
+
   auto output_map = (*last_op)->Outputs();
   std::vector<std::string> out_keys = (*last_op)->GetOutKeys();
   PADDLE_MOBILE_ENFORCE(out_keys.size() > 0, "the last op contains no output");
   framework::LoDTensor *output_tensor =
       framework::GetVarValue<framework::LoDTensor>(out_keys[0], output_map,
                                                    *(program_.scope));
+#ifdef PADDLE_MOBILE_PROFILE
+#ifdef PADDLE_EXECUTOR_MULTITHREAD
+  // TODO expose profile info as an interface, user can get them to analysis
+  //      the performance of their deepnet.
+  FILE *df = fopen("net.dot", "w");
+  fprintf(df, "digraph {\n");
+  for (int i = 0; i < ops.size(); i++) {
+    for (int j : dep.getNext(i)) {
+      fprintf(df, "op_%d -> op_%d\n", i, j);
+    }
+  }
+  for (int i = 0; i < ops.size(); i++) {
+    fprintf(df, "op_%d[label=\"%s (%d)\"]\n", i, ops[i]->Type().c_str(), i);
+  }
+  fprintf(df, "}\n");
+  fclose(df);
+#endif
+  FILE *pf = fopen("profile.out", "w");
+  std::unordered_map<std::string, uint64_t> _tp;
+  for (int i = 0; i < profile.size(); i++) {
+    const auto &pInfo = profile[i];
+    uint64_t timeCost = pInfo.runEnd - pInfo.runBegin;
+    _tp[ops[i]->Type()] += timeCost;
+    fprintf(pf, "%d\t%s\t%d\t%llu\t%llu\t%llu\n", i, ops[i]->Type().c_str(),
+            pInfo.tid, pInfo.runBegin, pInfo.runEnd, timeCost);
+  }
+  fclose(pf);
+  printf("====================[ profile ]======================\n");
+  using prof_t = std::pair<std::string, uint64_t>;
+  std::vector<prof_t> _tv(_tp.begin(), _tp.end());
+  uint64_t _ptotal = 0;
+  for (auto const &p : _tv) {
+    _ptotal += p.second;
+  }
+  auto compf = [](const prof_t &a, const prof_t &b) {
+    return a.second > b.second;
+  };
+  std::sort(_tv.begin(), _tv.end(), compf);
+  _tv.push_back(std::make_pair("total", _ptotal));
+  for (auto const &p : _tv) {
+    printf("%-16s\t%-10.0f\t%-2.4f\n", p.first.c_str(), (float)p.second,
+           (float)p.second / _ptotal * 100.0);
+  }
+  printf("====================[---------]======================\n");
+#endif
+
   return std::shared_ptr<framework::Tensor>(output_tensor);
 }
 template <typename Dtype, Precision P>
