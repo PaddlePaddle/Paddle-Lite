@@ -28,32 +28,29 @@ class depCore {
       const std::vector<std::shared_ptr<framework::OperatorBase<Dtype>>>& ops) {
     std::unordered_map<std::string, int> vars;
     size_t nop = ops.size();
-    for (size_t i = 0; i < nop; i++) {
-      const auto& op = ops[i];
-      for (const auto& kv : op->Outputs()) {
-        for (const auto& v : kv.second) {
-          vars[v] = i;
-        }
-      }
-    }
     deps.resize(nop);
     next.resize(nop);
     for (size_t i = 0; i < nop; i++) {
       const auto& op = ops[i];
       for (const auto& kv : op->Inputs()) {
+          for (const auto& v : kv.second) {
+              if (vars.find(v) == vars.end()) {
+                  continue;
+              }
+              int di = vars[v];
+              if (di == i) {
+                  continue;
+              }
+              if (std::find(deps[i].begin(), deps[i].end(), di) != deps[i].end()) {
+                  continue;
+              }
+              deps[i].push_back(di);
+              next[di].push_back(i);
+          }
+      }
+      for (const auto& kv : op->Outputs()) {
         for (const auto& v : kv.second) {
-          if (vars.find(v) == vars.end()) {
-            continue;
-          }
-          int di = vars[v];
-          if (di == i) {
-            continue;
-          }
-          if (std::find(deps[i].begin(), deps[i].end(), di) != deps[i].end()) {
-            continue;
-          }
-          deps[i].push_back(di);
-          next[di].push_back(i);
+          vars[v] = i;
         }
       }
     }
