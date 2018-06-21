@@ -18,12 +18,17 @@ limitations under the License. */
 #include <memory>
 #include <string>
 #include <vector>
-
 #include "common/types.h"
 #include "framework/lod_tensor.h"
 #include "framework/operator.h"
 #include "framework/program/program.h"
 #include "framework/tensor.h"
+#ifdef PADDLE_EXECUTOR_MULTITHREAD
+#include <condition_variable>
+#include <mutex>
+#include <thread>
+#include "common/depCore.h"
+#endif
 
 namespace paddle_mobile {
 
@@ -92,6 +97,16 @@ class Executor {
            std::vector<std::shared_ptr<framework::OperatorBase<Dtype>>>>
       ops_of_block_;
   bool use_optimize_ = false;
+#ifdef PADDLE_EXECUTOR_MULTITHREAD
+  std::vector<depCore> depManager;
+#endif
+#ifdef PADDLE_MOBILE_PROFILE
+  struct ProfInfo {
+    int tid = 0;
+    uint64_t runBegin = 0UL;
+    uint64_t runEnd = 0UL;
+  };
+#endif
 };
 
 }  // namespace paddle_mobile
