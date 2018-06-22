@@ -38,7 +38,7 @@ build_for_android() {
     fi
 
     if [ -z "$PLATFORM" ]; then
-        PLATFORM="arm-v7a"  # Users could choose "arm-v8a" or other platforms from the command line.
+        PLATFORM="arm-v8a"  # Users could choose "arm-v8a" or other platforms from the command line.
     fi
 
     if [ "${PLATFORM}" = "arm-v7a" ]; then
@@ -71,7 +71,8 @@ build_for_android() {
         -DANDROID_STL=c++_static \
         -DANDROID=true \
         -D"${NET}=true" \
-        -D"${ARM_PLATFORM}"=true
+        -D"${ARM_PLATFORM}"=true \
+        -DACL_ROOT=../ACL_Android 
     else
 
     cmake .. \
@@ -83,7 +84,8 @@ build_for_android() {
         -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
         -DANDROID_STL=c++_static \
         -DANDROID=true \
-        -D"${ARM_PLATFORM}"=true
+        -D"${ARM_PLATFORM}"=true \
+        -DACL_ROOT=../ACL_Android 
     fi
     cd "../build/release/${PLATFORM}"
     make -j 8
