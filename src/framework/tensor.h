@@ -234,10 +234,6 @@ class Tensor {
                           "Tensor's dims_ is out of bound. ");
   }
 
-
-
-
-
  private:
   /**
    * @note    Placeholder hides type T, so it doesn't appear as a
