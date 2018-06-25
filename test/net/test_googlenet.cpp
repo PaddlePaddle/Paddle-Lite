@@ -30,7 +30,11 @@ int main() {
   std::vector<int64_t> dims{1, 3, 224, 224};
   GetInput<float>(g_test_image_1x3x224x224, &input, dims);
   auto time3 = time();
-  executor.Predict(input, dims);
+
+  for (int i = 0; i < 10; ++i) {
+    executor.Predict(input, dims);
+  }
+
   auto time4 = time();
   DLOG << "predict cost :" << time_diff(time3, time4) << "ms\n";
   return 0;

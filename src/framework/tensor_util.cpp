@@ -20,7 +20,6 @@ namespace framework {
 void TensorCopy(const Tensor &src, Tensor *dst) {
   src.check_memory_size();
   dst->Resize(src.dims());
-  dst->set_layout(src.layout());
   auto src_ptr = src.data<void>();
   auto dst_ptr = dst->mutable_data(src.type());
   auto size = src.numel() * SizeOfType(src.type());
