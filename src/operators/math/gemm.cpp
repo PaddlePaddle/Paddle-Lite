@@ -216,7 +216,7 @@ void InnerKernel_relu(int m, int n, int k, float alpha, const float *A, int lda,
   }
 }
 
-//计算一个更小的 4 * 4 的 C 矩阵分块
+// 计算一个更小的 4 * 4 的 C 矩阵分块
 #if defined(IOS)
 void AddDot4x4(int k, float alpha, const float *a, int lda, const float *b,
                int ldb, float beta, float *C, int ldc, int mc, int nc) {
@@ -822,9 +822,6 @@ void VectorKernel(int m, int n, int k, float alpha, const float *A, int lda,
   int _nc1 = n % 16;
   int volatile nc2 = _nc1 / 4;
   int volatile nc3 = _nc1 % 4;
-  //  DLOG << "GEMM VECTOR kc1 = " << kc1 << ", kc2 = " << kc2;
-  //  DLOG << "GEMM VECTOR nc1 = " << nc1 << ", nc2 = " << nc2 << ", nc3 = " <<
-  //  nc3;
   for (int i = 0; i < kc1; i++) {
     a0 = A + i * 4;
     b0 = B + i * 4 * ldb;
