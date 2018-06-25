@@ -55,7 +55,7 @@ void InnerKernel(int m, int n, int k, float alpha, const float *A, int lda,
 
 // 向量矩阵乘法 (M = 1)
 void VectorKernel(int m, int n, int k, float alpha, const float *A, int lda,
-                   const float *B, int ldb, float beta, float *C, int ldc);
+                  const float *B, int ldb, float beta, float *C, int ldc);
 
 // 计算一个更小的 4 * 4 的 C 矩阵分块
 void AddDot4x4(int k, float alpha, const float *A, int lda, const float *B,

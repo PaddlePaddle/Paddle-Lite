@@ -14,17 +14,17 @@ limitations under the License. */
 
 #pragma once
 
-#include "t_malloc.h"
+#include "memory/t_malloc.h"
 #include <cstdlib>
 #include <cstring>
 
 namespace paddle_mobile {
 namespace memory {
-const int MALLOC_ALIGN = 64;
+const int MALLOC_ALIGN = 16;
 
 void Copy(void *dst, const void *src, size_t num) {
   std::memcpy(dst, src, num);
-};
+}
 
 void *Alloc(size_t size) {
   size_t offset = sizeof(void *) + MALLOC_ALIGN - 1;
