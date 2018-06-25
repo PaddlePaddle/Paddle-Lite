@@ -7,193 +7,193 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		12F10C488EAE0B360E3ED522 /* Pods_paddle_mobile.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7379EE496BCB959550E49F06 /* Pods_paddle_mobile.framework */; };
-		FC111A6A20DD4DE200F213F8 /* BlockDesc.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC111A6920DD4DE200F213F8 /* BlockDesc.swift */; };
-		FC111A6C20DD4DEC00F213F8 /* VarDesc.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC111A6B20DD4DEC00F213F8 /* VarDesc.swift */; };
-		FC111A6E20DD4DF500F213F8 /* TensorDesc.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC111A6D20DD4DF500F213F8 /* TensorDesc.swift */; };
-		FC111A7020DD50AB00F213F8 /* OpDesc.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC111A6F20DD50AB00F213F8 /* OpDesc.swift */; };
-		FC111A7220DDED3D00F213F8 /* Attribute.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC111A7120DDED3D00F213F8 /* Attribute.swift */; };
-		FC111BE620DE088600F213F8 /* Program.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC111BE520DE088600F213F8 /* Program.swift */; };
-		FC2712A720DE11FE007BC206 /* Tensor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC2712A620DE11FE007BC206 /* Tensor.swift */; };
-		FC2712A920DE1206007BC206 /* Dim.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC2712A820DE1206007BC206 /* Dim.swift */; };
-		FC2712AB20DE2340007BC206 /* Types.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC2712AA20DE2340007BC206 /* Types.swift */; };
-		FC2712AD20DE5060007BC206 /* Scope.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC2712AC20DE5060007BC206 /* Scope.swift */; };
-		FC2712AF20DEA008007BC206 /* Operator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC2712AE20DEA008007BC206 /* Operator.swift */; };
-		FC2712B220DEA108007BC206 /* ConvOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC2712B120DEA108007BC206 /* ConvOp.swift */; };
-		FC88679D20E0F47900A29C00 /* Executor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC88679C20E0F47900A29C00 /* Executor.swift */; };
-		FC9F530720DA7FB700C9F612 /* ProgramDesc.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9F530620DA7FB700C9F612 /* ProgramDesc.swift */; };
-		FC9F530A20DA835D00C9F612 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9F530920DA835D00C9F612 /* Extensions.swift */; };
-		FC9F530C20DA83A700C9F612 /* Errors.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9F530B20DA83A700C9F612 /* Errors.swift */; };
-		FC9F530E20DA861D00C9F612 /* framework.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9F530D20DA861D00C9F612 /* framework.pb.swift */; };
-		FCB7C3FA20DF885900156259 /* ReluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCB7C3F920DF885900156259 /* ReluOp.swift */; };
-		FCB7C3FC20DF8EEE00156259 /* BatchNormOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCB7C3FB20DF8EEE00156259 /* BatchNormOp.swift */; };
-		FCB7C3FE20DFE49B00156259 /* ElementwiseAddOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCB7C3FD20DFE49B00156259 /* ElementwiseAddOp.swift */; };
-		FCBA505920DA7A1100044AA3 /* paddle_mobile.h in Headers */ = {isa = PBXBuildFile; fileRef = FCBA505720DA7A1100044AA3 /* paddle_mobile.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		FCBA506020DA7CEF00044AA3 /* Loader.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCBA505F20DA7CEF00044AA3 /* Loader.swift */; };
+		D3831F70E7E0B565B9AC22DA /* Pods_paddle_mobile.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD2E06330A1E7129C918DB46 /* Pods_paddle_mobile.framework */; };
+		FC039B6F20E11C3C0081E9F8 /* paddle_mobile.h in Headers */ = {isa = PBXBuildFile; fileRef = FC039B6D20E11C3C0081E9F8 /* paddle_mobile.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		FC039B9720E11C9A0081E9F8 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039B9420E11C9A0081E9F8 /* Extensions.swift */; };
+		FC039B9820E11C9A0081E9F8 /* Errors.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039B9520E11C9A0081E9F8 /* Errors.swift */; };
+		FC039B9920E11C9A0081E9F8 /* Types.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039B9620E11C9A0081E9F8 /* Types.swift */; };
+		FC039B9B20E11CA00081E9F8 /* Executor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039B9A20E11CA00081E9F8 /* Executor.swift */; };
+		FC039B9F20E11CB20081E9F8 /* Tensor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039B9D20E11CB20081E9F8 /* Tensor.swift */; };
+		FC039BA020E11CB20081E9F8 /* Dim.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039B9E20E11CB20081E9F8 /* Dim.swift */; };
+		FC039BA220E11CB70081E9F8 /* Loader.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039BA120E11CB70081E9F8 /* Loader.swift */; };
+		FC039BA920E11CBC0081E9F8 /* ConvOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039BA420E11CBC0081E9F8 /* ConvOp.swift */; };
+		FC039BAA20E11CBC0081E9F8 /* ElementwiseAddOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039BA520E11CBC0081E9F8 /* ElementwiseAddOp.swift */; };
+		FC039BAB20E11CBC0081E9F8 /* Operator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039BA620E11CBC0081E9F8 /* Operator.swift */; };
+		FC039BAC20E11CBC0081E9F8 /* BatchNormOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039BA720E11CBC0081E9F8 /* BatchNormOp.swift */; };
+		FC039BAD20E11CBC0081E9F8 /* ReluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039BA820E11CBC0081E9F8 /* ReluOp.swift */; };
+		FC039BB820E11CC20081E9F8 /* framework.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039BAF20E11CC20081E9F8 /* framework.pb.swift */; };
+		FC039BB920E11CC20081E9F8 /* Scope.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039BB020E11CC20081E9F8 /* Scope.swift */; };
+		FC039BBA20E11CC20081E9F8 /* TensorDesc.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039BB120E11CC20081E9F8 /* TensorDesc.swift */; };
+		FC039BBB20E11CC20081E9F8 /* ProgramDesc.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039BB220E11CC20081E9F8 /* ProgramDesc.swift */; };
+		FC039BBC20E11CC20081E9F8 /* VarDesc.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039BB320E11CC20081E9F8 /* VarDesc.swift */; };
+		FC039BBD20E11CC20081E9F8 /* Program.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039BB420E11CC20081E9F8 /* Program.swift */; };
+		FC039BBE20E11CC20081E9F8 /* OpDesc.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039BB520E11CC20081E9F8 /* OpDesc.swift */; };
+		FC039BBF20E11CC20081E9F8 /* Attribute.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039BB620E11CC20081E9F8 /* Attribute.swift */; };
+		FC039BC020E11CC20081E9F8 /* BlockDesc.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039BB720E11CC20081E9F8 /* BlockDesc.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		1BA510B509FF05304A0AA5CF /* Pods-paddle-mobile.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-paddle-mobile.release.xcconfig"; path = "Pods/Target Support Files/Pods-paddle-mobile/Pods-paddle-mobile.release.xcconfig"; sourceTree = "<group>"; };
-		637CE9BBF82421D0FAECA982 /* Pods-paddle-mobile.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-paddle-mobile.debug.xcconfig"; path = "Pods/Target Support Files/Pods-paddle-mobile/Pods-paddle-mobile.debug.xcconfig"; sourceTree = "<group>"; };
-		7379EE496BCB959550E49F06 /* Pods_paddle_mobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_paddle_mobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		FC111A6920DD4DE200F213F8 /* BlockDesc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockDesc.swift; sourceTree = "<group>"; };
-		FC111A6B20DD4DEC00F213F8 /* VarDesc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VarDesc.swift; sourceTree = "<group>"; };
-		FC111A6D20DD4DF500F213F8 /* TensorDesc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TensorDesc.swift; sourceTree = "<group>"; };
-		FC111A6F20DD50AB00F213F8 /* OpDesc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpDesc.swift; sourceTree = "<group>"; };
-		FC111A7120DDED3D00F213F8 /* Attribute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Attribute.swift; sourceTree = "<group>"; };
-		FC111BE520DE088600F213F8 /* Program.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Program.swift; sourceTree = "<group>"; };
-		FC2712A620DE11FE007BC206 /* Tensor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tensor.swift; sourceTree = "<group>"; };
-		FC2712A820DE1206007BC206 /* Dim.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dim.swift; sourceTree = "<group>"; };
-		FC2712AA20DE2340007BC206 /* Types.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Types.swift; sourceTree = "<group>"; };
-		FC2712AC20DE5060007BC206 /* Scope.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scope.swift; sourceTree = "<group>"; };
-		FC2712AE20DEA008007BC206 /* Operator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Operator.swift; sourceTree = "<group>"; };
-		FC2712B120DEA108007BC206 /* ConvOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvOp.swift; sourceTree = "<group>"; };
-		FC88679C20E0F47900A29C00 /* Executor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Executor.swift; sourceTree = "<group>"; };
-		FC9F530620DA7FB700C9F612 /* ProgramDesc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramDesc.swift; sourceTree = "<group>"; };
-		FC9F530920DA835D00C9F612 /* Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
-		FC9F530B20DA83A700C9F612 /* Errors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Errors.swift; sourceTree = "<group>"; };
-		FC9F530D20DA861D00C9F612 /* framework.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = framework.pb.swift; sourceTree = "<group>"; };
-		FCB7C3F920DF885900156259 /* ReluOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReluOp.swift; sourceTree = "<group>"; };
-		FCB7C3FB20DF8EEE00156259 /* BatchNormOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchNormOp.swift; sourceTree = "<group>"; };
-		FCB7C3FD20DFE49B00156259 /* ElementwiseAddOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElementwiseAddOp.swift; sourceTree = "<group>"; };
-		FCBA505420DA7A1100044AA3 /* paddle_mobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = paddle_mobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		FCBA505720DA7A1100044AA3 /* paddle_mobile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = paddle_mobile.h; sourceTree = "<group>"; };
-		FCBA505820DA7A1100044AA3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		FCBA505F20DA7CEF00044AA3 /* Loader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Loader.swift; sourceTree = "<group>"; };
+		CDF58151D902A1CBAE56A0C2 /* Pods-paddle-mobile.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-paddle-mobile.debug.xcconfig"; path = "../Pods/Target Support Files/Pods-paddle-mobile/Pods-paddle-mobile.debug.xcconfig"; sourceTree = "<group>"; };
+		DD2E06330A1E7129C918DB46 /* Pods_paddle_mobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_paddle_mobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		E2A7957C92EDA5C3BEC0FFC2 /* Pods-paddle-mobile.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-paddle-mobile.release.xcconfig"; path = "../Pods/Target Support Files/Pods-paddle-mobile/Pods-paddle-mobile.release.xcconfig"; sourceTree = "<group>"; };
+		FC039B6A20E11C3C0081E9F8 /* paddle_mobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = paddle_mobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		FC039B6D20E11C3C0081E9F8 /* paddle_mobile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = paddle_mobile.h; sourceTree = "<group>"; };
+		FC039B6E20E11C3C0081E9F8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		FC039B9420E11C9A0081E9F8 /* Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		FC039B9520E11C9A0081E9F8 /* Errors.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Errors.swift; sourceTree = "<group>"; };
+		FC039B9620E11C9A0081E9F8 /* Types.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Types.swift; sourceTree = "<group>"; };
+		FC039B9A20E11CA00081E9F8 /* Executor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Executor.swift; sourceTree = "<group>"; };
+		FC039B9D20E11CB20081E9F8 /* Tensor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Tensor.swift; sourceTree = "<group>"; };
+		FC039B9E20E11CB20081E9F8 /* Dim.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Dim.swift; sourceTree = "<group>"; };
+		FC039BA120E11CB70081E9F8 /* Loader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Loader.swift; sourceTree = "<group>"; };
+		FC039BA420E11CBC0081E9F8 /* ConvOp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConvOp.swift; sourceTree = "<group>"; };
+		FC039BA520E11CBC0081E9F8 /* ElementwiseAddOp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ElementwiseAddOp.swift; sourceTree = "<group>"; };
+		FC039BA620E11CBC0081E9F8 /* Operator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Operator.swift; sourceTree = "<group>"; };
+		FC039BA720E11CBC0081E9F8 /* BatchNormOp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BatchNormOp.swift; sourceTree = "<group>"; };
+		FC039BA820E11CBC0081E9F8 /* ReluOp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReluOp.swift; sourceTree = "<group>"; };
+		FC039BAF20E11CC20081E9F8 /* framework.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = framework.pb.swift; sourceTree = "<group>"; };
+		FC039BB020E11CC20081E9F8 /* Scope.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Scope.swift; sourceTree = "<group>"; };
+		FC039BB120E11CC20081E9F8 /* TensorDesc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TensorDesc.swift; sourceTree = "<group>"; };
+		FC039BB220E11CC20081E9F8 /* ProgramDesc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProgramDesc.swift; sourceTree = "<group>"; };
+		FC039BB320E11CC20081E9F8 /* VarDesc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VarDesc.swift; sourceTree = "<group>"; };
+		FC039BB420E11CC20081E9F8 /* Program.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Program.swift; sourceTree = "<group>"; };
+		FC039BB520E11CC20081E9F8 /* OpDesc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OpDesc.swift; sourceTree = "<group>"; };
+		FC039BB620E11CC20081E9F8 /* Attribute.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Attribute.swift; sourceTree = "<group>"; };
+		FC039BB720E11CC20081E9F8 /* BlockDesc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BlockDesc.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		FCBA505020DA7A1100044AA3 /* Frameworks */ = {
+		FC039B6620E11C3C0081E9F8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				12F10C488EAE0B360E3ED522 /* Pods_paddle_mobile.framework in Frameworks */,
+				D3831F70E7E0B565B9AC22DA /* Pods_paddle_mobile.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		C496DE8B9216803C3A836198 /* Pods */ = {
+		336CBE234BF5DE48658DE65F /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				637CE9BBF82421D0FAECA982 /* Pods-paddle-mobile.debug.xcconfig */,
-				1BA510B509FF05304A0AA5CF /* Pods-paddle-mobile.release.xcconfig */,
-			);
-			name = Pods;
-			sourceTree = "<group>";
-		};
-		E707ADA0AE1047E37B361DCE /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				7379EE496BCB959550E49F06 /* Pods_paddle_mobile.framework */,
+				DD2E06330A1E7129C918DB46 /* Pods_paddle_mobile.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		FC2712A520DE11F1007BC206 /* framework */ = {
+		8EB858F9B68D372C9F1CA263 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				FC2712A620DE11FE007BC206 /* Tensor.swift */,
-				FC2712A820DE1206007BC206 /* Dim.swift */,
+				CDF58151D902A1CBAE56A0C2 /* Pods-paddle-mobile.debug.xcconfig */,
+				E2A7957C92EDA5C3BEC0FFC2 /* Pods-paddle-mobile.release.xcconfig */,
 			);
-			path = framework;
+			name = Pods;
 			sourceTree = "<group>";
 		};
-		FC2712B020DEA0FE007BC206 /* Operators */ = {
+		FC039B6020E11C3C0081E9F8 = {
 			isa = PBXGroup;
 			children = (
-				FC2712AE20DEA008007BC206 /* Operator.swift */,
-				FC2712B120DEA108007BC206 /* ConvOp.swift */,
-				FCB7C3F920DF885900156259 /* ReluOp.swift */,
-				FCB7C3FB20DF8EEE00156259 /* BatchNormOp.swift */,
-				FCB7C3FD20DFE49B00156259 /* ElementwiseAddOp.swift */,
-			);
-			path = Operators;
-			sourceTree = "<group>";
-		};
-		FC9F52E320DA7E7E00C9F612 /* Program */ = {
-			isa = PBXGroup;
-			children = (
-				FC9F530D20DA861D00C9F612 /* framework.pb.swift */,
-				FC9F530620DA7FB700C9F612 /* ProgramDesc.swift */,
-				FC111A6920DD4DE200F213F8 /* BlockDesc.swift */,
-				FC111A6B20DD4DEC00F213F8 /* VarDesc.swift */,
-				FC111A6D20DD4DF500F213F8 /* TensorDesc.swift */,
-				FC111A6F20DD50AB00F213F8 /* OpDesc.swift */,
-				FC111A7120DDED3D00F213F8 /* Attribute.swift */,
-				FC111BE520DE088600F213F8 /* Program.swift */,
-				FC2712AC20DE5060007BC206 /* Scope.swift */,
-			);
-			path = Program;
-			sourceTree = "<group>";
-		};
-		FC9F530820DA835700C9F612 /* Common */ = {
-			isa = PBXGroup;
-			children = (
-				FC9F530920DA835D00C9F612 /* Extensions.swift */,
-				FC9F530B20DA83A700C9F612 /* Errors.swift */,
-				FC2712AA20DE2340007BC206 /* Types.swift */,
-			);
-			path = Common;
-			sourceTree = "<group>";
-		};
-		FCBA504A20DA7A1100044AA3 = {
-			isa = PBXGroup;
-			children = (
-				FCBA505620DA7A1100044AA3 /* paddle-mobile */,
-				FCBA505520DA7A1100044AA3 /* Products */,
-				C496DE8B9216803C3A836198 /* Pods */,
-				E707ADA0AE1047E37B361DCE /* Frameworks */,
+				FC039B6C20E11C3C0081E9F8 /* paddle-mobile */,
+				FC039B6B20E11C3C0081E9F8 /* Products */,
+				8EB858F9B68D372C9F1CA263 /* Pods */,
+				336CBE234BF5DE48658DE65F /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
-		FCBA505520DA7A1100044AA3 /* Products */ = {
+		FC039B6B20E11C3C0081E9F8 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				FCBA505420DA7A1100044AA3 /* paddle_mobile.framework */,
+				FC039B6A20E11C3C0081E9F8 /* paddle_mobile.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		FCBA505620DA7A1100044AA3 /* paddle-mobile */ = {
+		FC039B6C20E11C3C0081E9F8 /* paddle-mobile */ = {
 			isa = PBXGroup;
 			children = (
-				FC2712B020DEA0FE007BC206 /* Operators */,
-				FC2712A520DE11F1007BC206 /* framework */,
-				FC9F530820DA835700C9F612 /* Common */,
-				FC9F52E320DA7E7E00C9F612 /* Program */,
-				FCBA505720DA7A1100044AA3 /* paddle_mobile.h */,
-				FCBA505820DA7A1100044AA3 /* Info.plist */,
-				FCBA505F20DA7CEF00044AA3 /* Loader.swift */,
-				FC88679C20E0F47900A29C00 /* Executor.swift */,
+				FC039BAE20E11CC20081E9F8 /* Program */,
+				FC039BA320E11CBC0081E9F8 /* Operators */,
+				FC039BA120E11CB70081E9F8 /* Loader.swift */,
+				FC039B9C20E11CB20081E9F8 /* framework */,
+				FC039B9A20E11CA00081E9F8 /* Executor.swift */,
+				FC039B9320E11C9A0081E9F8 /* Common */,
+				FC039B6D20E11C3C0081E9F8 /* paddle_mobile.h */,
+				FC039B6E20E11C3C0081E9F8 /* Info.plist */,
 			);
 			path = "paddle-mobile";
+			sourceTree = "<group>";
+		};
+		FC039B9320E11C9A0081E9F8 /* Common */ = {
+			isa = PBXGroup;
+			children = (
+				FC039B9420E11C9A0081E9F8 /* Extensions.swift */,
+				FC039B9520E11C9A0081E9F8 /* Errors.swift */,
+				FC039B9620E11C9A0081E9F8 /* Types.swift */,
+			);
+			path = Common;
+			sourceTree = "<group>";
+		};
+		FC039B9C20E11CB20081E9F8 /* framework */ = {
+			isa = PBXGroup;
+			children = (
+				FC039B9D20E11CB20081E9F8 /* Tensor.swift */,
+				FC039B9E20E11CB20081E9F8 /* Dim.swift */,
+			);
+			path = framework;
+			sourceTree = "<group>";
+		};
+		FC039BA320E11CBC0081E9F8 /* Operators */ = {
+			isa = PBXGroup;
+			children = (
+				FC039BA420E11CBC0081E9F8 /* ConvOp.swift */,
+				FC039BA520E11CBC0081E9F8 /* ElementwiseAddOp.swift */,
+				FC039BA620E11CBC0081E9F8 /* Operator.swift */,
+				FC039BA720E11CBC0081E9F8 /* BatchNormOp.swift */,
+				FC039BA820E11CBC0081E9F8 /* ReluOp.swift */,
+			);
+			path = Operators;
+			sourceTree = "<group>";
+		};
+		FC039BAE20E11CC20081E9F8 /* Program */ = {
+			isa = PBXGroup;
+			children = (
+				FC039BAF20E11CC20081E9F8 /* framework.pb.swift */,
+				FC039BB020E11CC20081E9F8 /* Scope.swift */,
+				FC039BB120E11CC20081E9F8 /* TensorDesc.swift */,
+				FC039BB220E11CC20081E9F8 /* ProgramDesc.swift */,
+				FC039BB320E11CC20081E9F8 /* VarDesc.swift */,
+				FC039BB420E11CC20081E9F8 /* Program.swift */,
+				FC039BB520E11CC20081E9F8 /* OpDesc.swift */,
+				FC039BB620E11CC20081E9F8 /* Attribute.swift */,
+				FC039BB720E11CC20081E9F8 /* BlockDesc.swift */,
+			);
+			path = Program;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
-		FCBA505120DA7A1100044AA3 /* Headers */ = {
+		FC039B6720E11C3C0081E9F8 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FCBA505920DA7A1100044AA3 /* paddle_mobile.h in Headers */,
+				FC039B6F20E11C3C0081E9F8 /* paddle_mobile.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		FCBA505320DA7A1100044AA3 /* paddle-mobile */ = {
+		FC039B6920E11C3C0081E9F8 /* paddle-mobile */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = FCBA505C20DA7A1100044AA3 /* Build configuration list for PBXNativeTarget "paddle-mobile" */;
+			buildConfigurationList = FC039B7220E11C3C0081E9F8 /* Build configuration list for PBXNativeTarget "paddle-mobile" */;
 			buildPhases = (
-				522C71CE8D72187FBDA21FBA /* [CP] Check Pods Manifest.lock */,
-				FCBA504F20DA7A1100044AA3 /* Sources */,
-				FCBA505020DA7A1100044AA3 /* Frameworks */,
-				FCBA505120DA7A1100044AA3 /* Headers */,
-				FCBA505220DA7A1100044AA3 /* Resources */,
+				AF33BB8D0770A77AC22B5EF4 /* [CP] Check Pods Manifest.lock */,
+				FC039B6520E11C3C0081E9F8 /* Sources */,
+				FC039B6620E11C3C0081E9F8 /* Frameworks */,
+				FC039B6720E11C3C0081E9F8 /* Headers */,
+				FC039B6820E11C3C0081E9F8 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -201,43 +201,42 @@
 			);
 			name = "paddle-mobile";
 			productName = "paddle-mobile";
-			productReference = FCBA505420DA7A1100044AA3 /* paddle_mobile.framework */;
+			productReference = FC039B6A20E11C3C0081E9F8 /* paddle_mobile.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		FCBA504B20DA7A1100044AA3 /* Project object */ = {
+		FC039B6120E11C3C0081E9F8 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				LastUpgradeCheck = 0930;
 				ORGANIZATIONNAME = orange;
 				TargetAttributes = {
-					FCBA505320DA7A1100044AA3 = {
+					FC039B6920E11C3C0081E9F8 = {
 						CreatedOnToolsVersion = 9.3.1;
-						LastSwiftMigration = 0930;
 					};
 				};
 			};
-			buildConfigurationList = FCBA504E20DA7A1100044AA3 /* Build configuration list for PBXProject "paddle-mobile" */;
+			buildConfigurationList = FC039B6420E11C3C0081E9F8 /* Build configuration list for PBXProject "paddle-mobile" */;
 			compatibilityVersion = "Xcode 9.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 			);
-			mainGroup = FCBA504A20DA7A1100044AA3;
-			productRefGroup = FCBA505520DA7A1100044AA3 /* Products */;
+			mainGroup = FC039B6020E11C3C0081E9F8;
+			productRefGroup = FC039B6B20E11C3C0081E9F8 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				FCBA505320DA7A1100044AA3 /* paddle-mobile */,
+				FC039B6920E11C3C0081E9F8 /* paddle-mobile */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		FCBA505220DA7A1100044AA3 /* Resources */ = {
+		FC039B6820E11C3C0081E9F8 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -247,7 +246,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		522C71CE8D72187FBDA21FBA /* [CP] Check Pods Manifest.lock */ = {
+		AF33BB8D0770A77AC22B5EF4 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -268,38 +267,38 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		FCBA504F20DA7A1100044AA3 /* Sources */ = {
+		FC039B6520E11C3C0081E9F8 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FC111A7220DDED3D00F213F8 /* Attribute.swift in Sources */,
-				FC9F530C20DA83A700C9F612 /* Errors.swift in Sources */,
-				FC111A7020DD50AB00F213F8 /* OpDesc.swift in Sources */,
-				FC2712AB20DE2340007BC206 /* Types.swift in Sources */,
-				FC2712AD20DE5060007BC206 /* Scope.swift in Sources */,
-				FC2712AF20DEA008007BC206 /* Operator.swift in Sources */,
-				FCBA506020DA7CEF00044AA3 /* Loader.swift in Sources */,
-				FCB7C3FC20DF8EEE00156259 /* BatchNormOp.swift in Sources */,
-				FC111A6C20DD4DEC00F213F8 /* VarDesc.swift in Sources */,
-				FC111A6A20DD4DE200F213F8 /* BlockDesc.swift in Sources */,
-				FC2712A720DE11FE007BC206 /* Tensor.swift in Sources */,
-				FC111BE620DE088600F213F8 /* Program.swift in Sources */,
-				FC2712B220DEA108007BC206 /* ConvOp.swift in Sources */,
-				FC88679D20E0F47900A29C00 /* Executor.swift in Sources */,
-				FC9F530E20DA861D00C9F612 /* framework.pb.swift in Sources */,
-				FC2712A920DE1206007BC206 /* Dim.swift in Sources */,
-				FCB7C3FE20DFE49B00156259 /* ElementwiseAddOp.swift in Sources */,
-				FC111A6E20DD4DF500F213F8 /* TensorDesc.swift in Sources */,
-				FC9F530A20DA835D00C9F612 /* Extensions.swift in Sources */,
-				FCB7C3FA20DF885900156259 /* ReluOp.swift in Sources */,
-				FC9F530720DA7FB700C9F612 /* ProgramDesc.swift in Sources */,
+				FC039B9F20E11CB20081E9F8 /* Tensor.swift in Sources */,
+				FC039BAA20E11CBC0081E9F8 /* ElementwiseAddOp.swift in Sources */,
+				FC039B9B20E11CA00081E9F8 /* Executor.swift in Sources */,
+				FC039BBB20E11CC20081E9F8 /* ProgramDesc.swift in Sources */,
+				FC039BBA20E11CC20081E9F8 /* TensorDesc.swift in Sources */,
+				FC039BA020E11CB20081E9F8 /* Dim.swift in Sources */,
+				FC039BB820E11CC20081E9F8 /* framework.pb.swift in Sources */,
+				FC039B9920E11C9A0081E9F8 /* Types.swift in Sources */,
+				FC039BA920E11CBC0081E9F8 /* ConvOp.swift in Sources */,
+				FC039B9820E11C9A0081E9F8 /* Errors.swift in Sources */,
+				FC039BBF20E11CC20081E9F8 /* Attribute.swift in Sources */,
+				FC039BB920E11CC20081E9F8 /* Scope.swift in Sources */,
+				FC039BAC20E11CBC0081E9F8 /* BatchNormOp.swift in Sources */,
+				FC039BBC20E11CC20081E9F8 /* VarDesc.swift in Sources */,
+				FC039BAB20E11CBC0081E9F8 /* Operator.swift in Sources */,
+				FC039BBD20E11CC20081E9F8 /* Program.swift in Sources */,
+				FC039BA220E11CB70081E9F8 /* Loader.swift in Sources */,
+				FC039BC020E11CC20081E9F8 /* BlockDesc.swift in Sources */,
+				FC039BAD20E11CBC0081E9F8 /* ReluOp.swift in Sources */,
+				FC039BBE20E11CC20081E9F8 /* OpDesc.swift in Sources */,
+				FC039B9720E11C9A0081E9F8 /* Extensions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		FCBA505A20DA7A1100044AA3 /* Debug */ = {
+		FC039B7020E11C3C0081E9F8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -362,7 +361,7 @@
 			};
 			name = Debug;
 		};
-		FCBA505B20DA7A1100044AA3 /* Release */ = {
+		FC039B7120E11C3C0081E9F8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -419,11 +418,10 @@
 			};
 			name = Release;
 		};
-		FCBA505D20DA7A1100044AA3 /* Debug */ = {
+		FC039B7320E11C3C0081E9F8 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 637CE9BBF82421D0FAECA982 /* Pods-paddle-mobile.debug.xcconfig */;
+			baseConfigurationReference = CDF58151D902A1CBAE56A0C2 /* Pods-paddle-mobile.debug.xcconfig */;
 			buildSettings = {
-				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
@@ -438,21 +436,18 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACH_O_TYPE = staticlib;
 				PRODUCT_BUNDLE_IDENTIFIER = "orange.paddle-mobile";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
-		FCBA505E20DA7A1100044AA3 /* Release */ = {
+		FC039B7420E11C3C0081E9F8 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 1BA510B509FF05304A0AA5CF /* Pods-paddle-mobile.release.xcconfig */;
+			baseConfigurationReference = E2A7957C92EDA5C3BEC0FFC2 /* Pods-paddle-mobile.release.xcconfig */;
 			buildSettings = {
-				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
@@ -467,7 +462,6 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACH_O_TYPE = staticlib;
 				PRODUCT_BUNDLE_IDENTIFIER = "orange.paddle-mobile";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
@@ -479,25 +473,25 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		FCBA504E20DA7A1100044AA3 /* Build configuration list for PBXProject "paddle-mobile" */ = {
+		FC039B6420E11C3C0081E9F8 /* Build configuration list for PBXProject "paddle-mobile" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				FCBA505A20DA7A1100044AA3 /* Debug */,
-				FCBA505B20DA7A1100044AA3 /* Release */,
+				FC039B7020E11C3C0081E9F8 /* Debug */,
+				FC039B7120E11C3C0081E9F8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		FCBA505C20DA7A1100044AA3 /* Build configuration list for PBXNativeTarget "paddle-mobile" */ = {
+		FC039B7220E11C3C0081E9F8 /* Build configuration list for PBXNativeTarget "paddle-mobile" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				FCBA505D20DA7A1100044AA3 /* Debug */,
-				FCBA505E20DA7A1100044AA3 /* Release */,
+				FC039B7320E11C3C0081E9F8 /* Debug */,
+				FC039B7420E11C3C0081E9F8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = FCBA504B20DA7A1100044AA3 /* Project object */;
+	rootObject = FC039B6120E11C3C0081E9F8 /* Project object */;
 }
