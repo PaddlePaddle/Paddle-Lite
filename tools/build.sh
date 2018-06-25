@@ -38,7 +38,7 @@ build_for_android() {
     fi
 
     if [ -z "$PLATFORM" ]; then
-        PLATFORM="arm-v8a"  # Users could choose "arm-v8a" or other platforms from the command line.
+        PLATFORM="arm-v7a"  # Users could choose "arm-v8a" or other platforms from the command line.
     fi
 
     if [ "${PLATFORM}" = "arm-v7a" ]; then
@@ -56,7 +56,7 @@ build_for_android() {
 
 
     MODE="Release"
-    ANDROID_PLATFORM_VERSION="android-15"
+    ANDROID_PLATFORM_VERSION="android-22"
     TOOLCHAIN_FILE="./tools/android-cmake/android.toolchain.cmake"
     ANDROID_ARM_MODE="arm"
     if [ $# -eq 1 ]; then
