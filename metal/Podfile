@@ -1,0 +1,14 @@
+platform :ios, ‘9.0’
+use_frameworks!
+
+workspace 'paddle-mobile.xcworkspace'
+
+target 'paddle-mobile-demo' do
+	project 'paddle-mobile-demo/paddle-mobile-demo.xcodeproj'
+    pod 'SwiftProtobuf', '~> 1.0'
+end
+
+target 'paddle-mobile' do
+	project 'paddle-mobile/paddle-mobile.xcodeproj'
+	pod 'SwiftProtobuf', '~> 1.0'
+end
