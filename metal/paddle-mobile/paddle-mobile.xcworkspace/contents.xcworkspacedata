@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "group:../../example/paddle-mobile-demo/paddle-mobile-demo.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:paddle-mobile.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Pods/Pods.xcodeproj">
+   </FileRef>
+</Workspace>

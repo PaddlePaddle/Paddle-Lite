@@ -1,0 +1,10 @@
+platform :ios, ‘9.0’
+use_frameworks!
+
+target 'paddle-mobile-demo' do
+    pod 'SwiftProtobuf', '~> 1.0'
+end
+
+target 'paddle-mobile' do
+pod 'SwiftProtobuf', '~> 1.0'
+end
