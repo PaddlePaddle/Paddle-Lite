@@ -20,7 +20,7 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace memory {
-const int MALLOC_ALIGN = 16;
+const int MALLOC_ALIGN = 64;
 
 void Copy(void *dst, const void *src, size_t num) {
   std::memcpy(dst, src, num);
