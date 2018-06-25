@@ -76,11 +76,9 @@ Podfile.lock
 
 SwiftProtobuf.framework
 
-metal/paddle-mobile/Pods/
+metal/Pods/
 
-
-example/paddle-mobile-demo/paddle-mobile-demo/yolo/
-
+paddle-mobile.xcworkspace
 
 
 
