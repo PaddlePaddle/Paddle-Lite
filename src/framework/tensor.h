@@ -85,6 +85,12 @@ class Tensor {
     }
   }
 
+  Tensor(const Tensor &inTensor) {
+    this->dims_ = inTensor.dims_;
+    this->holder_ = inTensor.holder_;
+    this->offset_ = inTensor.offset_;
+  }
+
   /*! Return a pointer to mutable memory block. */
   template <typename T>
   inline T *data() {
@@ -169,7 +175,9 @@ class Tensor {
   /*! The internal of two tensors share the same memory block. */
   inline Tensor &ShareDataWith(const Tensor &src) {
     src.check_memory_size();
-    *this = src;
+    if (holder_.get() != src.holder_.get()) {
+      *this = src;
+    }
     return *this;
   }
 
@@ -198,7 +206,6 @@ class Tensor {
       size_t base = numel() / dims_[0];
       Tensor dst;
       dst.holder_ = holder_;
-      dst.set_layout(layout_);
       DDim dst_dims = dims_;
       dst_dims[0] = end_idx - begin_idx;
       dst.Resize(dst_dims);
@@ -227,9 +234,9 @@ class Tensor {
                           "Tensor's dims_ is out of bound. ");
   }
 
-  inline DataLayout layout() const { return layout_; }
 
-  inline void set_layout(const DataLayout layout) { layout_ = layout; }
+
+
 
  private:
   /**
@@ -287,21 +294,6 @@ class Tensor {
    */
 
   DDim dims_;
-
-  /**
-   * @brief the layout of memory block, default is NHWC.
-   *
-   * @note the memory allocation order, describe how weight/data is
-   * stored
-   *       For example, in 4-D Tensor(rank=4), there are three
-   * commonly
-   *       used layout. They are
-   *            NCHW, NHWC, CHWN.
-   *       N,C,H,W for respectively the batch size, the number of
-   *       feature maps, the height, the width.
-   */
-
-  DataLayout layout_ = DataLayout::kNHWC;
 
   /**
    * @brief   A PlaceHolder may be shared by more than one tensor.
