@@ -477,7 +477,7 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
   printf("====================[---------]======================\n");
 #endif
 
-  return std::shared_ptr<framework::Tensor>(output_tensor);
+  return std::make_shared<framework::Tensor>(framework::Tensor(*output_tensor));
 }
 template <typename Dtype, Precision P>
 std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
