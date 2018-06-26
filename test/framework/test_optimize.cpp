@@ -23,7 +23,7 @@ int main() {
   auto program = loader.Load(g_mobilenet_ssd, true);
   paddle_mobile::framework::ProgramOptimize optimize;
   //  program.originProgram->Description("origin");
-  auto optimize_program = optimize.FushionOptimize(program.originProgram);
+  auto optimize_program = optimize.FusionOptimize(program.originProgram);
   if (optimize_program != nullptr) {
     //    optimize_program->Description("optimize");
   } else {

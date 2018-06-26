@@ -53,13 +53,24 @@ void InnerKernel(int m, int n, int k, float alpha, const float *A, int lda,
                  const float *B, int ldb, float beta, float *C, int ldc,
                  int first_time);
 
+// 向量矩阵乘法 (M = 1)
+void VectorKernel(int m, int n, int k, float alpha, const float *A, int lda,
+                  const float *B, int ldb, float beta, float *C, int ldc);
+
 // 计算一个更小的 4 * 4 的 C 矩阵分块
 void AddDot4x4(int k, float alpha, const float *A, int lda, const float *B,
                int ldb, float beta, float *C, int ldc, int mc, int nc);
 
+void AddDot4x4_relu(int k, float alpha, const float *a, int lda, const float *b,
+                    int ldb, float beta, float *C, int ldc, int mc, int nc,
+                    bool relu);
+
 // 32位 float 矩阵乘法
 void sgemm(int m, int n, int k, float alpha, const float *A, int lda,
            const float *B, int ldb, float beta, float *C, int ldc);
+
+void sgemm_relu(int m, int n, int k, float alpha, const float *A, int lda,
+                const float *B, int ldb, float beta, float *C, int ldc);
 
 // 64位 double 矩阵乘法
 void dgemm(int m, int n, int k, float alpha, const double *A, int lda,

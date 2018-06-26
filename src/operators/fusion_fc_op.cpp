@@ -19,7 +19,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
-void FushionFcOp<Dtype, T>::InferShape() const {
+void FusionFcOp<Dtype, T>::InferShape() const {
   auto x_dims = this->param_.InputX()->dims();
   auto y_dims = this->param_.InputY()->dims();
   int x_num_col_dims = this->param_.XNumColDims();
@@ -49,18 +49,17 @@ void FushionFcOp<Dtype, T>::InferShape() const {
   framework::DDim ddim = framework::make_ddim(output_dims);
   this->param_.Out()->Resize(ddim);
 }
-template class FushionFcOp<CPU, float>;
+template class FusionFcOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 USE_OP_CPU(fc);
-REGISTER_OPERATOR_CPU(fc, ops::FushionFcOp);
+REGISTER_OPERATOR_CPU(fc, ops::FusionFcOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(fc);
-REGISTER_OPERATOR_MALI_GPU(fc, ops::FushionFcOp);
+REGISTER_OPERATOR_MALI_GPU(fc, ops::FusionFcOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 #endif

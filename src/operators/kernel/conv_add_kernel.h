@@ -17,8 +17,12 @@ limitations under the License. */
 #pragma once
 
 #include <vector>
+#if __ARM_NEON
+#include <arm_neon.h>
+#endif
 #include "framework/ddim.h"
 #include "framework/operator.h"
+#include "operators/math/conv_func.h"
 #include "operators/math/im2col.h"
 #include "operators/math/math_function.h"
 #include "operators/math/vol2col.h"
@@ -31,26 +35,12 @@ using framework::DDim;
 using framework::OpKernelBase;
 
 template <typename DeviceType, typename T>
-class ConvAddKernel : public OpKernelBase<DeviceType, FushionConvAddParam> {
+class ConvAddKernel : public OpKernelBase<DeviceType, FusionConvAddParam> {
  public:
-  void Compute(const FushionConvAddParam &param) const;
-  virtual bool Init(const FushionConvAddParam &param) const { return true; };
+  void Compute(const FusionConvAddParam &param) const;
+  virtual bool Init(const FusionConvAddParam &param) const { return true; };
+
 };
-
-inline bool IsExpand(const std::vector<int64_t> &filter_dim,
-                     const std::vector<int> &strides,
-                     const std::vector<int> &paddings,
-                     const std::vector<int> &dilations) {
-  bool filter_1 = true, strides_1 = true, padding_0 = true, dilation_1 = true;
-  for (size_t j = 0; j < strides.size(); ++j) {
-    filter_1 = filter_1 && (static_cast<int>(filter_dim[j + 2]) == 1);
-    strides_1 = strides_1 && (strides[j] == 1);
-    padding_0 = padding_0 && (paddings[j] == 0);
-    dilation_1 = dilation_1 && (dilations[j] == 1);
-  }
-
-  return !(filter_1 && strides_1 && padding_0 && dilation_1);
-}
 
 }  // namespace operators
 }  // namespace paddle_mobile

@@ -17,12 +17,12 @@ limitations under the License. */
 #include "../test_include.h"
 
 int main() {
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::Loader<paddle_mobile::GPU_MALI> loader;
   auto time1 = time();
-  auto program = loader.Load(g_resnet, false);
+  auto program = loader.Load(g_resnet, true);
   auto time2 = time();
   DLOG << "load cost :" << time_diff(time1, time1) << "ms";
-  paddle_mobile::Executor<paddle_mobile::CPU> executor(program, 1, false);
+  paddle_mobile::Executor<paddle_mobile::GPU_MALI> executor(program, 1, true);
 
   std::vector<int64_t> dims{1, 3, 32, 32};
   Tensor input_tensor;
@@ -31,9 +31,11 @@ int main() {
 
   std::vector<float> input(input_tensor.data<float>(),
                            input_tensor.data<float>() + input_tensor.numel());
+  for (int i = 0; i < 10; ++i) {
   auto time3 = time();
   executor.Predict(input, dims);
   auto time4 = time();
   DLOG << "predict cost :" << time_diff(time3, time4) << "ms";
+}
   return 0;
 }

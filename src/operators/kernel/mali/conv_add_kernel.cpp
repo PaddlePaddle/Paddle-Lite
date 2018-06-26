@@ -37,7 +37,7 @@ class AclConvAddOp : public acl::ACLOperator {
   AclConvAddOp& operator=(AclConvAddOp&&) = delete;
 
   acl::AclParameters& getargs() { return args; }
-  void InitAclLayer(const FushionConvAddParam& param) {
+  void InitAclLayer(const FusionConvAddParam& param) {
     setTargetHint(acl::TargetHint::OPENCL);
     arm_compute::TensorShape input_shape(args.in_cols, args.in_rows,
                                          args.in_depth, args.batch);
@@ -76,7 +76,7 @@ class AclConvAddOp : public acl::ACLOperator {
   void RunAcl(void* input, void* output) {
     acl::ACLOperator::acl_run(input, output);
   }
-  bool Bypass_acl(const FushionConvAddParam& param) {
+  bool Bypass_acl(const FusionConvAddParam& param) {
     bool bypass_acl = false;
     AclParametersByContext(param);
     // for performance, more groups impact GPU performance
@@ -119,7 +119,7 @@ class AclConvAddOp : public acl::ACLOperator {
     }
   }
 
-  void AclParametersByContext(const FushionConvAddParam& param) {
+  void AclParametersByContext(const FusionConvAddParam& param) {
     const Tensor* input = param.Input();
     Tensor filter = *param.Filter();
     Tensor* output = param.Output();
@@ -197,7 +197,7 @@ class AclConvAddOp : public acl::ACLOperator {
 
 template <>
 bool ConvAddKernel<GPU_MALI, float>::Init(
-    const FushionConvAddParam& param) const {
+    const FusionConvAddParam& param) const {
   AclConvAddOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclConvAddOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {
@@ -209,7 +209,7 @@ bool ConvAddKernel<GPU_MALI, float>::Init(
 
 template <>
 void ConvAddKernel<GPU_MALI, float>::Compute(
-    const FushionConvAddParam& param) const {
+    const FusionConvAddParam& param) const {
   std::cout << "init acl" << std::endl;
   AclConvAddOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclConvAddOp<GPU_MALI, float>*>(this->GetAclOp());
