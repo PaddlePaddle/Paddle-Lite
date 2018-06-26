@@ -14,14 +14,14 @@
 
 import Foundation
 
-struct ConvParam<P: PrecisionType>: Param {
-    typealias ParamP = P
+struct ConvParam<P: PrecisionType>: OpParam {
+    typealias ParamPrecisionType = P
     init(opDesc: OpDesc, scope: Scope) throws {
         do {
             filter = try ConvParam.inputFilter(paraInputs: opDesc.paraInputs, from: scope)
             input = try ConvParam.input(inputs: opDesc.inputs, from: scope)
             output = try ConvParam.output(outputs: opDesc.outputs, from: scope)
-            stride = try ConvParam.getAttr(key: "stride", attrs: opDesc.attrs)
+            stride = try ConvParam.getAttr(key: "strides", attrs: opDesc.attrs)
             paddings = try ConvParam.getAttr(key: "paddings", attrs: opDesc.attrs)
             dilations = try ConvParam.getAttr(key: "dilations", attrs: opDesc.attrs)
             groups = try ConvParam.getAttr(key: "groups", attrs: opDesc.attrs)
@@ -30,17 +30,18 @@ struct ConvParam<P: PrecisionType>: Param {
         }
     }
     
-    let input: Tensor<ParamP>
-    let output: Tensor<ParamP>
-    let filter: Tensor<ParamP>
-    let stride: [Int]
-    let paddings: [Int]
-    let dilations: [Int]
+    let input: Texture
+    let output: Texture
+    let filter: Tensor<ParamPrecisionType>
+    let stride: [Int32]
+    let paddings: [Int32]
+    let dilations: [Int32]
     let groups: Int
 }
 
-class ConvOp<P: PrecisionType>: Operator<ConvParam<P>> {
-    override func runImpl() {
-        
+class ConvOp<P: PrecisionType>: Operator<ConvParam<P>>, Runable, Creator {
+    typealias OpType = ConvOp<P>
+    func runImpl() {
+        print("this is conv")
     }
 }

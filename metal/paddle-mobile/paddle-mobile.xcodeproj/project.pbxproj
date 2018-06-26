@@ -30,6 +30,10 @@
 		FC039BBE20E11CC20081E9F8 /* OpDesc.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039BB520E11CC20081E9F8 /* OpDesc.swift */; };
 		FC039BBF20E11CC20081E9F8 /* Attribute.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039BB620E11CC20081E9F8 /* Attribute.swift */; };
 		FC039BC020E11CC20081E9F8 /* BlockDesc.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039BB720E11CC20081E9F8 /* BlockDesc.swift */; };
+		FC9D037920E229E4000F735A /* OpParam.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9D037820E229E4000F735A /* OpParam.swift */; };
+		FC9D038020E22FBB000F735A /* FeedOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9D037F20E22FBB000F735A /* FeedOp.swift */; };
+		FC9D038220E2312E000F735A /* FetchOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9D038120E2312E000F735A /* FetchOp.swift */; };
+		FC9D038420E23B01000F735A /* Texture.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9D038320E23B01000F735A /* Texture.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -60,6 +64,10 @@
 		FC039BB520E11CC20081E9F8 /* OpDesc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OpDesc.swift; sourceTree = "<group>"; };
 		FC039BB620E11CC20081E9F8 /* Attribute.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Attribute.swift; sourceTree = "<group>"; };
 		FC039BB720E11CC20081E9F8 /* BlockDesc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BlockDesc.swift; sourceTree = "<group>"; };
+		FC9D037820E229E4000F735A /* OpParam.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpParam.swift; sourceTree = "<group>"; };
+		FC9D037F20E22FBB000F735A /* FeedOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedOp.swift; sourceTree = "<group>"; };
+		FC9D038120E2312E000F735A /* FetchOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchOp.swift; sourceTree = "<group>"; };
+		FC9D038320E23B01000F735A /* Texture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Texture.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -115,8 +123,8 @@
 				FC039BAE20E11CC20081E9F8 /* Program */,
 				FC039BA320E11CBC0081E9F8 /* Operators */,
 				FC039BA120E11CB70081E9F8 /* Loader.swift */,
-				FC039B9C20E11CB20081E9F8 /* framework */,
 				FC039B9A20E11CA00081E9F8 /* Executor.swift */,
+				FC039B9C20E11CB20081E9F8 /* framework */,
 				FC039B9320E11C9A0081E9F8 /* Common */,
 				FC039B6D20E11C3C0081E9F8 /* paddle_mobile.h */,
 				FC039B6E20E11C3C0081E9F8 /* Info.plist */,
@@ -139,6 +147,7 @@
 			children = (
 				FC039B9D20E11CB20081E9F8 /* Tensor.swift */,
 				FC039B9E20E11CB20081E9F8 /* Dim.swift */,
+				FC9D038320E23B01000F735A /* Texture.swift */,
 			);
 			path = framework;
 			sourceTree = "<group>";
@@ -151,6 +160,9 @@
 				FC039BA620E11CBC0081E9F8 /* Operator.swift */,
 				FC039BA720E11CBC0081E9F8 /* BatchNormOp.swift */,
 				FC039BA820E11CBC0081E9F8 /* ReluOp.swift */,
+				FC9D037820E229E4000F735A /* OpParam.swift */,
+				FC9D037F20E22FBB000F735A /* FeedOp.swift */,
+				FC9D038120E2312E000F735A /* FetchOp.swift */,
 			);
 			path = Operators;
 			sourceTree = "<group>";
@@ -271,21 +283,25 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FC9D038020E22FBB000F735A /* FeedOp.swift in Sources */,
 				FC039B9F20E11CB20081E9F8 /* Tensor.swift in Sources */,
 				FC039BAA20E11CBC0081E9F8 /* ElementwiseAddOp.swift in Sources */,
 				FC039B9B20E11CA00081E9F8 /* Executor.swift in Sources */,
 				FC039BBB20E11CC20081E9F8 /* ProgramDesc.swift in Sources */,
+				FC9D037920E229E4000F735A /* OpParam.swift in Sources */,
 				FC039BBA20E11CC20081E9F8 /* TensorDesc.swift in Sources */,
 				FC039BA020E11CB20081E9F8 /* Dim.swift in Sources */,
 				FC039BB820E11CC20081E9F8 /* framework.pb.swift in Sources */,
 				FC039B9920E11C9A0081E9F8 /* Types.swift in Sources */,
 				FC039BA920E11CBC0081E9F8 /* ConvOp.swift in Sources */,
+				FC9D038420E23B01000F735A /* Texture.swift in Sources */,
 				FC039B9820E11C9A0081E9F8 /* Errors.swift in Sources */,
 				FC039BBF20E11CC20081E9F8 /* Attribute.swift in Sources */,
 				FC039BB920E11CC20081E9F8 /* Scope.swift in Sources */,
 				FC039BAC20E11CBC0081E9F8 /* BatchNormOp.swift in Sources */,
 				FC039BBC20E11CC20081E9F8 /* VarDesc.swift in Sources */,
 				FC039BAB20E11CBC0081E9F8 /* Operator.swift in Sources */,
+				FC9D038220E2312E000F735A /* FetchOp.swift in Sources */,
 				FC039BBD20E11CC20081E9F8 /* Program.swift in Sources */,
 				FC039BA220E11CB70081E9F8 /* Loader.swift in Sources */,
 				FC039BC020E11CC20081E9F8 /* BlockDesc.swift in Sources */,
