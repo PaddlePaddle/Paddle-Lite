@@ -14,10 +14,6 @@
 
 import Foundation
 
-public enum PaddleMobileError: Error{
-    case loaderError(message: String)
-    case netError(message: String)
-    case memoryError(message: String)
-    case paramError(message: String)
-    case opError(message: String)
+class Texture {
+    
 }

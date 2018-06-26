@@ -34,19 +34,19 @@ struct OpDesc {
         }
         
         inputs = creator(protoOpDesc.inputs) {
-            opInputsOutputsKey[protoOpDesc.type]?.inputs.contains($0) ?? false
+            opInfos[protoOpDesc.type]?.inputs.contains($0) ?? false
         }
         
         paraInputs = creator(protoOpDesc.inputs) {
-            !(opInputsOutputsKey[protoOpDesc.type]?.inputs.contains($0) ?? false)
+            !(opInfos[protoOpDesc.type]?.inputs.contains($0) ?? false)
         }
         
         outputs = creator(protoOpDesc.outputs) {
-            opInputsOutputsKey[protoOpDesc.type]?.outputs.contains($0) ?? false
+            opInfos[protoOpDesc.type]?.outputs.contains($0) ?? false
         }
         
         unusedOutputs = creator(protoOpDesc.outputs) {
-            !(opInputsOutputsKey[protoOpDesc.type]?.outputs.contains($0) ?? false)
+            !(opInfos[protoOpDesc.type]?.outputs.contains($0) ?? false)
         }
         
         for attr in protoOpDesc.attrs {
