@@ -375,12 +375,15 @@ void AddDot4x4(int k, float alpha, const float *a, int lda, const float *b,
 
       "subs       %[kc2], %[kc2], #1  \n\t"
       "blt        end_kc2_%=          \n\t"
+      "loop_kc2_%=:                   \n\t"
       "vld1.32    {q0}, [%[a]]!       \n\t"
       "vld1.32    {q1}, [%[b]]!       \n\t"
       "vmla.f32   q10, q1, d0[0]      \n\t"
       "vmla.f32   q11, q1, d0[1]      \n\t"
       "vmla.f32   q12, q1, d1[0]      \n\t"
       "vmla.f32   q13, q1, d1[1]      \n\t"
+      "subs       %[kc2], %[kc2], #1  \n\t"
+      "bge        loop_kc2_%=         \n\t"
       "end_kc2_%=:                    \n\t"
 
       "cmp        %[mc],      #4      \n\t"
