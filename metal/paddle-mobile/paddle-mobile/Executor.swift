@@ -14,6 +14,31 @@
 
 import Foundation
 
-class Executor {
+public class Executor<P: PrecisionType> {
+    var ops: [Runable] = []
+    public init(program: Program) throws {
+        for block in program.programDesc.blocks {
+            for varDesc in block.vars {
+                if !varDesc.persistable {
+                    program.scope.vars[varDesc.name] = Texture.init()
+                }
+            }
+            for op in block.ops {
+                do {
+                    let op = try OpCreator<P>.shared.creat(opDesc: op, scope: program.scope)
+                    ops.append(op)
+                } catch let error {
+                    throw error
+                }
+            }
+        }
+    }
     
+    public func predict() {
+        for op in ops {
+            op.run()
+        }
+    }
 }
+
+//public let paddle_executor: Executor = Executor.init()

@@ -20,7 +20,7 @@ precedencegroup ExecutedOrFatalError{
     higherThan: AssignmentPrecedence
 }
 infix operator ?!: ExecutedOrFatalError
-func ?!<T>(option: T?, excuteOrError: @autoclosure () -> String) -> T{
+public func ?!<T>(option: T?, excuteOrError: @autoclosure () -> String) -> T{
     if let inOpt = option {
         return inOpt
     }else{

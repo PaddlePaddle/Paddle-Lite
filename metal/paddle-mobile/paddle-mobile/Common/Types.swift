@@ -35,16 +35,58 @@ protocol Variant {
 extension Tensor: Variant {
     
 }
+extension Texture: Variant {
+}
 
 
-
+let gFetchType          = "fetch"
+let gFeedType           = "feed"
 let gConvType           = "conv2d"
 let gBatchNormType      = "batch_norm"
 let gReluType           = "relu"
 let gElementwiseAdd     = "elementwise_add"
 
-let opInputsOutputsKey  = [gConvType         : (inputs: ["Input"], outputs: ["Output"]),
-                          gBatchNormType    : (inputs: ["X"], outputs: ["Y"]),
-                          gReluType         : (inputs: ["X"], outputs: ["Out"]),
-                          gElementwiseAdd   : (inputs: ["X", "Y"], outputs: ["Out"])]
+
+fileprivate var singletons : [String : Any] = [:]
+class OpCreator<P: PrecisionType> {
+    static var shared : OpCreator<P> {
+        let key = String(describing: P.self)
+        if let singleton = singletons[key] {
+            return singleton as! OpCreator<P>
+        } else {
+            let newSingleton = OpCreator<P>()
+            singletons[key] = newSingleton
+            return newSingleton
+        }
+    }
+    
+    func creat(opDesc: OpDesc, scope: Scope) throws -> Runable {
+        guard let opCreator = opCreators[opDesc.type] else {
+            throw PaddleMobileError.opError(message: "there is no " + opDesc.type + " yet")
+        }
+        
+        do {
+            return try opCreator(opDesc, scope)
+        } catch let error {
+            throw error
+        }
+    }
+    
+    let opCreators: [String : (OpDesc, Scope) throws -> Runable] =
+                    [gConvType        :     ConvOp<P>.creat,
+                    gBatchNormType    :     BatchNormOp<P>.creat,
+                    gReluType         :     ReluOp<P>.creat,
+                    gElementwiseAdd   :     ElementwiseAddOp<P>.creat,
+                    gFeedType         :     FeedOp<P>.creat,
+                    gFetchType        :     FetchOp<P>.creat]
+    
+    private init(){}
+}
+
+let opInfos = [gConvType         : (inputs: ["Input"], outputs: ["Output"]),
+               gBatchNormType    : (inputs: ["X"], outputs: ["Y"]),
+               gReluType         : (inputs: ["X"], outputs: ["Out"]),
+               gElementwiseAdd   : (inputs: ["X", "Y"], outputs: ["Out"]),
+               gFeedType         : (inputs: ["X"], outputs: ["Out"]),
+               gFetchType        : (inputs: ["X"], outputs: ["Out"])]
 

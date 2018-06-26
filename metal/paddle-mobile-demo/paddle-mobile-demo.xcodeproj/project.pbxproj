@@ -13,8 +13,25 @@
 		FC039B8720E11C550081E9F8 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = FC039B8520E11C550081E9F8 /* Main.storyboard */; };
 		FC039B8920E11C560081E9F8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FC039B8820E11C560081E9F8 /* Assets.xcassets */; };
 		FC039B8C20E11C560081E9F8 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = FC039B8A20E11C560081E9F8 /* LaunchScreen.storyboard */; };
-		FC039BC220E11CD00081E9F8 /* test.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039BC120E11CD00081E9F8 /* test.pb.swift */; };
+		FC9D037D20E22E4E000F735A /* params in Resources */ = {isa = PBXBuildFile; fileRef = FC9D037B20E22E4E000F735A /* params */; };
+		FC9D037E20E22E4E000F735A /* model in Resources */ = {isa = PBXBuildFile; fileRef = FC9D037C20E22E4E000F735A /* model */; };
+		FCEBEC2C20E1391F00C0B14D /* paddle_mobile.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */; };
+		FCEBEC2D20E1391F00C0B14D /* paddle_mobile.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		FCEBEC2E20E1392000C0B14D /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				FCEBEC2D20E1391F00C0B14D /* paddle_mobile.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		081C9CF10DB06C58B8B6B039 /* Pods-paddle-mobile-demo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-paddle-mobile-demo.release.xcconfig"; path = "../Pods/Target Support Files/Pods-paddle-mobile-demo/Pods-paddle-mobile-demo.release.xcconfig"; sourceTree = "<group>"; };
@@ -27,7 +44,9 @@
 		FC039B8820E11C560081E9F8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		FC039B8B20E11C560081E9F8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		FC039B8D20E11C560081E9F8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		FC039BC120E11CD00081E9F8 /* test.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = test.pb.swift; sourceTree = "<group>"; };
+		FC9D037B20E22E4E000F735A /* params */ = {isa = PBXFileReference; lastKnownFileType = file; path = params; sourceTree = "<group>"; };
+		FC9D037C20E22E4E000F735A /* model */ = {isa = PBXFileReference; lastKnownFileType = file; path = model; sourceTree = "<group>"; };
+		FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = paddle_mobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -35,6 +54,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FCEBEC2C20E1391F00C0B14D /* paddle_mobile.framework in Frameworks */,
 				30D0ED21F392CFA3885B1002 /* Pods_paddle_mobile_demo.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -62,6 +82,7 @@
 		FC039B7520E11C550081E9F8 = {
 			isa = PBXGroup;
 			children = (
+				FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */,
 				FC039B8020E11C550081E9F8 /* paddle-mobile-demo */,
 				FC039B7F20E11C550081E9F8 /* Products */,
 				5722B50FEC38F55CA9B6A57B /* Pods */,
@@ -80,7 +101,7 @@
 		FC039B8020E11C550081E9F8 /* paddle-mobile-demo */ = {
 			isa = PBXGroup;
 			children = (
-				FC039BC120E11CD00081E9F8 /* test.pb.swift */,
+				FC9D037A20E22E4E000F735A /* yolo */,
 				FC039B8120E11C550081E9F8 /* AppDelegate.swift */,
 				FC039B8320E11C550081E9F8 /* ViewController.swift */,
 				FC039B8520E11C550081E9F8 /* Main.storyboard */,
@@ -89,6 +110,16 @@
 				FC039B8D20E11C560081E9F8 /* Info.plist */,
 			);
 			path = "paddle-mobile-demo";
+			sourceTree = "<group>";
+		};
+		FC9D037A20E22E4E000F735A /* yolo */ = {
+			isa = PBXGroup;
+			children = (
+				FC9D037B20E22E4E000F735A /* params */,
+				FC9D037C20E22E4E000F735A /* model */,
+			);
+			name = yolo;
+			path = ../../models/yolo;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -103,6 +134,7 @@
 				FC039B7B20E11C550081E9F8 /* Frameworks */,
 				FC039B7C20E11C550081E9F8 /* Resources */,
 				84ED590C0E51ABA9C34F51B5 /* [CP] Embed Pods Frameworks */,
+				FCEBEC2E20E1392000C0B14D /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -152,7 +184,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				FC039B8C20E11C560081E9F8 /* LaunchScreen.storyboard in Resources */,
+				FC9D037E20E22E4E000F735A /* model in Resources */,
 				FC039B8920E11C560081E9F8 /* Assets.xcassets in Resources */,
+				FC9D037D20E22E4E000F735A /* params in Resources */,
 				FC039B8720E11C550081E9F8 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -204,7 +238,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				FC039B8420E11C550081E9F8 /* ViewController.swift in Sources */,
-				FC039BC220E11CD00081E9F8 /* test.pb.swift in Sources */,
 				FC039B8220E11C550081E9F8 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

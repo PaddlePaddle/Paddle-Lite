@@ -70,15 +70,13 @@ build
 cmake-build-debug
 cmake-build-release
 
-# Pods
 
+# metal
 Podfile.lock
-
-SwiftProtobuf.framework
-
 metal/Pods/
-
+SwiftProtobuf.framework
 paddle-mobile.xcworkspace
+metal/models/
 
 
 

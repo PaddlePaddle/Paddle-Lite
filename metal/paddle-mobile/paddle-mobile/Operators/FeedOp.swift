@@ -14,10 +14,18 @@
 
 import Foundation
 
-public enum PaddleMobileError: Error{
-    case loaderError(message: String)
-    case netError(message: String)
-    case memoryError(message: String)
-    case paramError(message: String)
-    case opError(message: String)
+struct FeedParam<P: PrecisionType>: OpParam{
+    init(opDesc: OpDesc, scope: Scope) throws {
+        
+    }
+    
+    typealias ParamPrecisionType = P
 }
+
+class FeedOp<P: PrecisionType>: Operator<FeedParam<P>>, Runable, Creator {
+    typealias OpType = FeedOp<P>
+    func runImpl() {
+        print("feed op")
+    }
+}
+
