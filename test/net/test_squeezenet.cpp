@@ -33,11 +33,11 @@ int main() {
 
   std::vector<float> input(input_tensor.data<float>(),
                            input_tensor.data<float>() + input_tensor.numel());
-  for (int i = 0; i < 10; ++i) {  
-  auto time3 = time();
-  executor.Predict(input, dims);
-  auto time4 = time();
-  DLOG << "predict cost :" << time_diff(time3, time4) << "ms";
-}
+  for (int i = 0; i < 10; ++i) {
+    auto time3 = time();
+    executor.Predict(input, dims);
+    auto time4 = time();
+    DLOG << "predict cost :" << time_diff(time3, time4) << "ms";
+  }
   return 0;
 }

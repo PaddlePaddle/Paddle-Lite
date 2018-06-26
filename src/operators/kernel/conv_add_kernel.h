@@ -39,7 +39,6 @@ class ConvAddKernel : public OpKernelBase<DeviceType, FusionConvAddParam> {
  public:
   void Compute(const FusionConvAddParam &param) const;
   virtual bool Init(const FusionConvAddParam &param) const { return true; };
-
 };
 
 }  // namespace operators
