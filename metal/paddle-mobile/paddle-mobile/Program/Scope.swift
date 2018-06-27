@@ -17,7 +17,13 @@ import Foundation
 class Scope {
     var vars: [String : Variant] = [:]
     subscript(key: String) -> Variant?{
-        return vars[key]
+        get {
+            return vars[key]
+        }
+        set {
+            vars[key] = newValue
+        }
+        
     }
 
 }

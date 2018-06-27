@@ -39,7 +39,28 @@ struct ConvParam<P: PrecisionType>: OpParam {
     let groups: Int
 }
 
-class ConvOp<P: PrecisionType>: Operator<ConvParam<P>>, Runable, Creator {
+class ConvOp<P: PrecisionType>: Operator<ConvParam<P>>, Runable, Creator, InferShaperable {
+    func inferShape() {
+//        let inDims = para.input.dim
+//        let filterDim = para.filter.dim
+//        let strides = para.stride
+//        let paddings = para.paddings
+//        let dilations = para.dilations
+//        
+//        var outDim = [inDims[0]]
+//        for i in 0..<strides.count {
+//            let dilation: Int = Int(dilations[i])
+//            let filterSize: Int = filterDim[i + 1]
+//            let inputSize: Int = inDims[i + 1]
+//            let padding: Int = Int(paddings[i])
+//            let stride: Int = Int(strides[i])
+//            let dKernel = dilation * (filterSize - 1) + 1
+//            let outputSize = (inputSize + 2 * padding - dKernel) / stride + 1
+//            outDim.append(outputSize)
+//        }
+//        outDim.append(filterDim[0])
+    }
+    
     typealias OpType = ConvOp<P>
     func runImpl() {
         print("this is conv")
