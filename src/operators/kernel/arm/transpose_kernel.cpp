@@ -35,7 +35,7 @@ namespace operators {
 // }
 
 template <>
-bool TransposeKernel<CPU, float>::Init(const TransposeParam &para) const {
+bool TransposeKernel<CPU, float>::Init(const TransposeParam& para) const {
   return true;
 }
 

@@ -111,9 +111,7 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
                      const VariableNameMap &outputs, const AttributeMap &attrs,
                      std::shared_ptr<Scope> scope)
       : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope),
-        param_(inputs, outputs, attrs, *scope) {
-
-  }
+        param_(inputs, outputs, attrs, *scope) {}
 
   virtual void RunImpl() const { this->kernel_.Compute(this->param_); }
 

@@ -206,7 +206,8 @@ void MultiClassOutput(const Tensor& scores, const Tensor& bboxes,
 }
 
 template <>
-bool MultiClassNMSKernel<CPU, float>::Init(const MultiClassNMSParam &para) const {
+bool MultiClassNMSKernel<CPU, float>::Init(
+    const MultiClassNMSParam& para) const {
   return true;
 }
 
