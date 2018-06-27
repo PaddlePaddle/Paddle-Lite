@@ -44,3 +44,9 @@ public struct Dim {
         fatalError()
     }
 }
+
+extension Dim: CustomStringConvertible {
+    public var description: String {
+        return "\(dims)"
+    }
+}

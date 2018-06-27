@@ -22,6 +22,10 @@ import Foundation
  */
 
 protocol OpParam {
+    associatedtype OutputType: Variant
+    var output: OutputType { get }
+    func outputDesc() -> String
+    
     associatedtype ParamPrecisionType: PrecisionType
     init(opDesc: OpDesc, scope: Scope) throws
     static func getFirstTensor<VarType: Variant>(key: String, map: [String : [String]], from: Scope) throws -> VarType
@@ -40,6 +44,10 @@ protocol OpParam {
 }
 
 extension OpParam {
+    func outputDesc() -> String {
+        return output.debugDescription
+    }
+    
     static func getFirstTensor<VarType: Variant>(key: String, map: [String : [String]], from: Scope) throws -> VarType {
         guard let mapKeys = map[key], mapKeys.count > 0 else {
             throw PaddleMobileError.paramError(message: key + " not found in \(map) or maped values is empty")

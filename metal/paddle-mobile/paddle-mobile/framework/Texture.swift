@@ -17,20 +17,39 @@ import Foundation
 
 public class Texture: Tensorial {
     var dim: Dim
-//    let texture: MTLTexture
-    func dataLayout() -> DataLayout {
-        return .NHWC
+    
+    required public init(inDim: Dim, inLayout: DataLayout = .NHWC) {
+        dim = inDim
+        layout = inLayout
     }
+    
+    private(set) var layout: DataLayout
+    
+    //    let texture: MTLTexture
     
     public init(inTexture: MTLTexture, inDim: Dim) {
-//        texture = inTexture
+        //        texture = inTexture
         dim = inDim
+        layout = .NHWC
     }
     
-    public init() {
+    public init(inLayout: DataLayout = .NHWC) {
         dim = Dim.init(inDim: [])
-        
-//        fatalError()
+        layout = inLayout
+    }
+    
+}
+
+extension Texture {
+    public var description: String {
+        return debugDescription
+    }
+    
+    public var debugDescription: String{
+        var str = ""
+        str += "Dim: \(dim) \n value:[ "
+        str += " ]"
+        return str
     }
     
 }

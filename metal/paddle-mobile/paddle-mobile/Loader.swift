@@ -15,72 +15,6 @@
 import Foundation
 import SwiftProtobuf
 
-class ParamData<P: PrecisionType> {
-    let size: Int
-    var dim: Dim
-    private(set) var layout: DataLayout
-    var pointer: UnsafeMutablePointer<P>
-    init(inDim: Dim, inLayout: DataLayout = .NCHW) {
-        dim = inDim
-        size = inDim.numel() * MemoryLayout<P>.size
-        pointer = UnsafeMutablePointer<P>.allocate(capacity: size)
-        layout = inLayout
-    }
-    
-    func convert(to: DataLayout) {
-        guard to != layout else {
-            return
-        }
-        
-        guard dim.cout() == 4 else {
-            return
-        }
-        
-        guard layout == .NCHW && to == .NHWC else {
-            // other not support
-            return
-        }
-        let newPointer = UnsafeMutablePointer<P>.allocate(capacity: size)
-        
-        if layout == .NCHW {
-            NCHW2NHWC(newPtr: newPointer)
-        }
-        
-        pointer.deinitialize(count: size)
-        pointer.deallocate()
-        pointer = newPointer
-        layout = to
-    }
-    
-    func NCHW2NHWC(newPtr: UnsafeMutablePointer<P>) {
-        let N = dim[0]
-        let C = dim[1]
-        let H = dim[2]
-        let W = dim[3]
-        let HXW = H * W
-        let CXHXW = C * H * W
-        
-        var index: Int = 0
-        for n in 0..<N {
-            for h in 0..<H{
-                for w in 0..<W{
-                    for c in 0..<C{
-                        newPtr[index] = pointer[n * CXHXW + c * HXW + h * w + w]
-                        index += 1
-                    }
-                }
-            }
-        }
-        dim.swapeDimAt(index1: 1, index2: 3)
-    }
-    
-    
-    
-    deinit {
-        pointer.deinitialize(count: size)
-        pointer.deallocate()
-    }
-}
 
 public class Loader<P: PrecisionType> {
     class ParaLoader {
@@ -101,7 +35,7 @@ public class Loader<P: PrecisionType> {
             nowIndex = 0
         }
         
-        func read(data: ParamData<P>) throws {
+        func read(tensor: Tensor<P>) throws {
             guard nowIndex <= fileSize else {
                 throw PaddleMobileError.loaderError(message: "out of the file range")
             }
@@ -135,8 +69,8 @@ public class Loader<P: PrecisionType> {
              这里没有根据 Data Type 去判断, 而是从外部泛型直接指定了精度
              */
 
-            let bytesRead = fread(data.pointer, 1, data.size, file)
-            guard bytesRead == data.size else {
+            let bytesRead = fread(tensor.data.pointer, 1, tensor.data.size, file)
+            guard bytesRead == tensor.data.size else {
                 throw PaddleMobileError.loaderError(message: "param read size error")
             }
             nowIndex += bytesRead
@@ -166,48 +100,7 @@ public class Loader<P: PrecisionType> {
                 throw PaddleMobileError.loaderError(message: "count of blocks must greater than 0")
             }
             
-            for block in programDesc.blocks {
-                for varDesc in block.vars {
-                    print(varDesc.name + "\(varDesc.persistable)")
-
-                    if (varDesc.type == .LodTensor) {
-                        if (varDesc.persistable
-                            && varDesc.type != .FeedMiniBatch
-                            && varDesc.type != .FetchList) {
-                            guard let tensorDesc = varDesc.tensorDesc else {
-                                throw PaddleMobileError.loaderError(message: "get tensor desc failed")
-                            }
-                            
-                            guard (try? tensorDesc.dataType.dataTypeSize()) == MemoryLayout<P>.size else {
-                                throw PaddleMobileError.memoryError(message: "PrecisionType not support")
-                            }
-                            
-                            let dimArr = tensorDesc.dims
-                            
-                            
-                            guard dimArr.count > 0 else {
-                                throw PaddleMobileError.loaderError(message: "tensor desc dim size error")
-                            }
-                            
-                            let dim = Dim.init(inDim: dimArr)
-                            let paraData = ParamData<P>.init(inDim: dim)
-                            do {
-                                try paraLoader.read(data: paraData)
-                            } catch let error {
-                                throw error
-                            }
-                            paraData.convert(to: .NHWC)
-                            let tensor = Tensor<P>.init(inData: paraData)
-                            scope[varDesc.name] = tensor
-                        } else {
-                            scope[varDesc.name] = Texture.init()
-                        }
-                    } else {
-                        scope[varDesc.name] = Texture.init()
-                    }
-                }
-            }
-            
+            // to get feed key and fetch key
             let block = programDesc.blocks[0]
             guard let firstOp = block.ops.first, let lastOp = block.ops.last else {
                 throw PaddleMobileError.loaderError(message: "at least two operator")
@@ -221,6 +114,50 @@ public class Loader<P: PrecisionType> {
             }
             guard let feedKey = firstOp.inputs[inputKey]?.first, let fetchKey = lastOp.outputs[outKey]?.first else {
                 throw PaddleMobileError.loaderError(message: "feed key or fetch key not found")
+            }
+            
+            // to load memory
+            for block in programDesc.blocks {
+                for varDesc in block.vars {
+                    if (varDesc.type == .LodTensor) {
+                        guard let tensorDesc = varDesc.tensorDesc else {
+                            throw PaddleMobileError.loaderError(message: "get tensor desc failed")
+                        }
+                        
+                        guard (try? tensorDesc.dataType.dataTypeSize()) == MemoryLayout<P>.size else {
+                            throw PaddleMobileError.memoryError(message: "PrecisionType not support")
+                        }
+                        
+                        if (varDesc.persistable
+                            && varDesc.type != .FeedMiniBatch
+                            && varDesc.type != .FetchList) {
+                            let dimArr = tensorDesc.dims
+                            
+                            guard dimArr.count > 0 else {
+                                throw PaddleMobileError.loaderError(message: "tensor desc dim size error")
+                            }
+                            
+                            let dim = Dim.init(inDim: dimArr)
+                            let tensor = Tensor<P>.init(inDim: dim, inLayout: tensorDesc.dataLayout)
+                            do {
+                                try paraLoader.read(tensor: tensor)
+                            } catch let error {
+                                throw error
+                            }
+                            tensor.convert(to: .NHWC)
+                            scope[varDesc.name] = tensor
+                        } else {
+                            let dim = Dim.init(inDim: tensorDesc.NHWCDim)
+                            scope[varDesc.name] = Texture.init(inDim: dim, inLayout: .NHWC)
+                        }
+                    } else {
+                        if varDesc.name == fetchKey {
+                            scope[varDesc.name] = ResultHolder<P>.init(inDim: [], inResult: [])
+                        } else if varDesc.name == feedKey {
+                            scope[varDesc.name] = Texture.init()
+                        }
+                    }
+                }
             }
             
             let program = Program.init(protoProgramDesc: protoProgram, inParamPath: paraPath, inScope: scope, inFeedKey: feedKey, inFetchKey: fetchKey)

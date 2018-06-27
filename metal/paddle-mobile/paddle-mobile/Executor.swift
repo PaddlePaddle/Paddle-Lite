@@ -14,9 +14,41 @@
 
 import Foundation
 
+public class ResultHolder<P: PrecisionType> {
+    public let dim: [Int]
+    public let resultArr: [P]
+    public init(inDim: [Int], inResult: [P]) {
+        dim = inDim
+        resultArr = inResult
+    }
+}
+
+extension ResultHolder: CustomDebugStringConvertible, CustomStringConvertible {
+    public var debugDescription: String {
+        var str = ""
+        str += "Dim: \(dim) \n value:[ "
+        if resultArr.count < 20 {
+            for d in resultArr {
+                str += " \(d) "
+            }
+        } else {
+            for d in stride(from: 0, to: resultArr.count, by: resultArr.count/20) {
+                str += " \(resultArr[d]) "
+            }
+        }
+        str += " ]"
+        return str
+    }
+    
+    public var description: String {
+        return debugDescription
+    }
+}
+
 public class Executor<P: PrecisionType> {
     var ops: [Runable & InferShaperable] = []
     let program: Program
+    
     public init(inProgram: Program) throws {
         program = inProgram
         for block in inProgram.programDesc.blocks {
@@ -32,13 +64,13 @@ public class Executor<P: PrecisionType> {
         }
     }
     
-    public func predict(input: Texture) throws -> Texture {
+    public func predict(input: Texture) throws -> ResultHolder<P> {
         program.scope[program.feedKey] = input
         for op in ops {
             op.run()
         }
         let outputVar = program.scope[program.fetchKey]
-        guard let output = outputVar as? Texture else {
+        guard let output = outputVar as? ResultHolder<P> else {
             throw PaddleMobileError.netError(message: "output var type error")
         }
         return output
