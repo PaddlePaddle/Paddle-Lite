@@ -64,7 +64,6 @@ build_for_android() {
     if [ $# -eq 1 ]; then
     NET=$1
     cmake .. \
-	-DANDROID_NDK="" \
         -B"../build/release/${PLATFORM}" \
         -DANDROID_ABI="${ABI}" \
         -DCMAKE_BUILD_TYPE="${MODE}" \
@@ -79,7 +78,6 @@ build_for_android() {
     else
 
     cmake .. \
-	-DANDROID_NDK="" \
         -B"../build/release/${PLATFORM}" \
         -DANDROID_ABI="${ABI}" \
         -DCMAKE_BUILD_TYPE="${MODE}" \
