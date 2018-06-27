@@ -18,17 +18,22 @@ struct ReluParam<P: PrecisionType>: OpParam {
     typealias ParamPrecisionType = P
     init(opDesc: OpDesc, scope: Scope) throws {
         do {
-            inputX = try ReluParam.inputX(inputs: opDesc.inputs, from: scope)
-            out = try ReluParam.outputOut(outputs: opDesc.outputs, from: scope)
+            input = try ReluParam.inputX(inputs: opDesc.inputs, from: scope)
+            output = try ReluParam.outputOut(outputs: opDesc.outputs, from: scope)
         } catch let error {
             throw error
         }
     }
-    let inputX: Texture
-    let out: Texture
+    let input: Texture
+    let output: Texture
 }
 
-class ReluOp<P: PrecisionType>: Operator<ReluParam<P>>, Runable, Creator{
+class ReluOp<P: PrecisionType>: Operator<ReluParam<P>>, Runable, Creator, InferShaperable{
+    
+    func inferShape() {
+        para.output.dim = para.input.dim
+    }
+    
     typealias OpType = ReluOp<P>
     func runImpl() {
         print("this is ReluOp")

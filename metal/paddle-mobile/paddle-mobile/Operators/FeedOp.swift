@@ -15,15 +15,28 @@
 import Foundation
 
 struct FeedParam<P: PrecisionType>: OpParam{
+    var output: Texture
+    var input: Texture
+    
     init(opDesc: OpDesc, scope: Scope) throws {
-        
+        do {
+            input = try FeedParam.inputX(inputs: opDesc.inputs, from: scope)
+            output = try FeedParam.outputOut(outputs: opDesc.outputs, from: scope)
+        } catch let error {
+            throw error
+        }
     }
     
     typealias ParamPrecisionType = P
 }
 
-class FeedOp<P: PrecisionType>: Operator<FeedParam<P>>, Runable, Creator {
+class FeedOp<P: PrecisionType>: Operator<FeedParam<P>>, Runable, Creator, InferShaperable {
     typealias OpType = FeedOp<P>
+    
+    func inferShape() {
+        para.output.dim = para.input.dim
+    }
+    
     func runImpl() {
         print("feed op")
     }

@@ -16,11 +16,15 @@ import Foundation
 
 public struct Program {
     let paramPath: String
+    let feedKey: String
+    let fetchKey: String
     let programDesc: ProgramDesc
     let scope: Scope
-    init(protoProgramDesc: PaddleMobile_Framework_Proto_ProgramDesc, inParamPath: String, inScope: Scope) {
+    init(protoProgramDesc: PaddleMobile_Framework_Proto_ProgramDesc, inParamPath: String, inScope: Scope, inFeedKey: String, inFetchKey: String) {
         programDesc = ProgramDesc.init(protoProgram: protoProgramDesc)
         paramPath = inParamPath
         scope = inScope
+        feedKey = inFeedKey
+        fetchKey = inFetchKey
     }
 }
