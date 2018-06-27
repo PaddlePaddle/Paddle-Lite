@@ -26,10 +26,10 @@ alignas(64) float packedA[MC * KC];
 alignas(64) float packedB[KC * NC];
 alignas(64) float ab[MR * NR];
 // 将A矩阵分块复制到连续内存(ColMajor)
-void PackMatrixA(int m, int k, const float *A, int lda, float *buffer) {
-  int i, j, m_tail;
+void PackMatrixA(int m, int k, int m_tail, const float *A, int lda,
+                 float *buffer) {
+  int i, j;
   const float *Aij;
-  m_tail = m % NR;
   for (i = 0; i < m - m_tail; i += MR) {
     for (j = 0; j < k; ++j) {
       Aij = &A(i, j);
@@ -53,10 +53,10 @@ void PackMatrixA(int m, int k, const float *A, int lda, float *buffer) {
 }
 
 // 将A矩阵分块复制到连续内存(RowMajor)
-void PackMatrixA_(int m, int k, const float *A, int lda, float *buffer) {
-  int i, j, m_tail;
+void PackMatrixA_(int m, int k, int m_tail, const float *A, int lda,
+                  float *buffer) {
+  int i, j;
   const float *Ai, *Ai1, *Ai2, *Ai3;
-  m_tail = m % NR;
   for (i = 0; i < m - m_tail; i += MR) {
     Ai = &A(i, 0);
     Ai1 = &A(i + 1, 0);
@@ -82,10 +82,10 @@ void PackMatrixA_(int m, int k, const float *A, int lda, float *buffer) {
 }
 
 // 将B矩阵分块复制到连续内存(ColMajor)
-void PackMatrixB(int k, int n, const float *B, int ldb, float *buffer) {
-  int i, j, n_tail;
+void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
+                 float *buffer) {
+  int i, j;
   const float *Bj, *Bj1, *Bj2, *Bj3;
-  n_tail = n % NR;
   for (j = 0; j < n - n_tail; j += NR) {
     Bj = &B(0, j);
     Bj1 = &B(0, j + 1);
@@ -111,10 +111,10 @@ void PackMatrixB(int k, int n, const float *B, int ldb, float *buffer) {
 }
 
 // 将B矩阵分块复制到连续内存(RowMajor)
-void PackMatrixB_(int k, int n, const float *B, int ldb, float *buffer) {
-  int i, j, n_tail;
+void PackMatrixB_(int k, int n, int n_tail, const float *B, int ldb,
+                  float *buffer) {
+  int i, j;
   const float *Bij;
-  n_tail = n % NR;
   for (j = 0; j < n - n_tail; j += NR) {
     for (i = 0; i < k; ++i) {
       Bij = &B(i, j);
@@ -150,9 +150,9 @@ void InnerKernel(int m, int n, int k, float alpha, const float *A, int lda,
   int n_tail = n % NR;
 
   if (first_time) {
-    PackMatrixB_(k, n, B, ldb, packedB);
+    PackMatrixB_(k, n, n_tail, B, ldb, packedB);
   }
-  PackMatrixA_(m, k, A, lda, packedA);
+  PackMatrixA_(m, k, m_tail, A, lda, packedA);
 
   int i, j, mc, nc;
 
@@ -179,9 +179,9 @@ void InnerKernel_relu(int m, int n, int k, float alpha, const float *A, int lda,
   int n_tail = n % NR;
 
   if (first_time) {
-    PackMatrixB_(k, n, B, ldb, packedB);
+    PackMatrixB_(k, n, n_tail, B, ldb, packedB);
   }
-  PackMatrixA_(m, k, A, lda, packedA);
+  PackMatrixA_(m, k, m_tail, A, lda, packedA);
 
   int i, j, mc, nc;
 
@@ -340,16 +340,16 @@ void AddDot4x4(int k, float alpha, const float *a, int lda, const float *b,
       "vmla.f32   q11, q3, d2[1]      \n\t"
       "vmla.f32   q12, q3, d3[0]      \n\t"
       "vmla.f32   q13, q3, d3[1]      \n\t"
-      "vld1.32    {q4, q5}, [%[a]]!   \n\t"
-      "vld1.32    {q6, q7}, [%[b]]!   \n\t"
-      "vmla.f32   q10, q6, d8[0]      \n\t"
-      "vmla.f32   q11, q6, d8[1]      \n\t"
-      "vmla.f32   q12, q6, d9[0]      \n\t"
-      "vmla.f32   q13, q6, d9[1]      \n\t"
-      "vmla.f32   q10, q7, d10[0]     \n\t"
-      "vmla.f32   q11, q7, d10[1]     \n\t"
-      "vmla.f32   q12, q7, d11[0]     \n\t"
-      "vmla.f32   q13, q7, d11[1]     \n\t"
+      "vld1.32    {q0, q1}, [%[a]]!   \n\t"
+      "vld1.32    {q2, q3}, [%[b]]!   \n\t"
+      "vmla.f32   q10, q2, d0[0]      \n\t"
+      "vmla.f32   q11, q2, d0[1]      \n\t"
+      "vmla.f32   q12, q2, d1[0]      \n\t"
+      "vmla.f32   q13, q2, d1[1]      \n\t"
+      "vmla.f32   q10, q3, d2[0]      \n\t"
+      "vmla.f32   q11, q3, d2[1]      \n\t"
+      "vmla.f32   q12, q3, d3[0]      \n\t"
+      "vmla.f32   q13, q3, d3[1]      \n\t"
       "subs       %[kc1], %[kc1], #1  \n\t"
       "bge        loop_kc1_%=         \n\t"
       "end_kc1_%=:                    \n\t"
@@ -372,11 +372,13 @@ void AddDot4x4(int k, float alpha, const float *a, int lda, const float *b,
       "cmp        %[nc],      #4      \n\t"
       "bne        temp_%=             \n\t"
 
+      "vmov.f32   d8[0],    %[alpha]  \n\t"
+      "vmov.f32   d8[1],    %[beta]   \n\t"
+
       "cmp        %[flag_alpha],  #1  \n\t"
       "bne        alpha_%=            \n\t"
 
       "alpha_%=:                      \n\t"
-      "vmov.f32   d8[0],    %[alpha]  \n\t"
       "vmul.f32   q10, q10, d8[0]     \n\t"
       "vmul.f32   q11, q11, d8[0]     \n\t"
       "vmul.f32   q12, q12, d8[0]     \n\t"
@@ -404,7 +406,6 @@ void AddDot4x4(int k, float alpha, const float *a, int lda, const float *b,
       "b          memory_%=           \n\t"
 
       "beta_ne1_%=:                   \n\t"
-      "vmov.f32   d8[1],    %[beta]   \n\t"
       "vmla.f32   q10, q0, d8[1]      \n\t"
       "vmla.f32   q11, q1, d8[1]      \n\t"
       "vmla.f32   q12, q2, d8[1]      \n\t"
@@ -428,8 +429,7 @@ void AddDot4x4(int k, float alpha, const float *a, int lda, const float *b,
         [kc2] "r"(kc2), [mc] "r"(mc), [nc] "r"(nc), [alpha] "r"(alpha),
         [beta] "r"(beta), [bytes_ldc] "r"(bytes_ldc),
         [flag_alpha] "r"(flag_alpha), [flag_beta] "r"(flag_beta)
-      : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q10", "q11",
-        "q12", "q13");
+      : "memory", "q0", "q1", "q2", "q3", "q4", "q10", "q11", "q12", "q13");
 
   if (mc != MR || nc != NR) {
     int i, j;
@@ -493,16 +493,16 @@ void AddDot4x4_relu(int k, float alpha, const float *a, int lda, const float *b,
       "vmla.f32   q11, q3, d2[1]      \n\t"
       "vmla.f32   q12, q3, d3[0]      \n\t"
       "vmla.f32   q13, q3, d3[1]      \n\t"
-      "vld1.32    {q4, q5}, [%[a]]!   \n\t"
-      "vld1.32    {q6, q7}, [%[b]]!   \n\t"
-      "vmla.f32   q10, q6, d8[0]      \n\t"
-      "vmla.f32   q11, q6, d8[1]      \n\t"
-      "vmla.f32   q12, q6, d9[0]      \n\t"
-      "vmla.f32   q13, q6, d9[1]      \n\t"
-      "vmla.f32   q10, q7, d10[0]     \n\t"
-      "vmla.f32   q11, q7, d10[1]     \n\t"
-      "vmla.f32   q12, q7, d11[0]     \n\t"
-      "vmla.f32   q13, q7, d11[1]     \n\t"
+      "vld1.32    {q0, q1}, [%[a]]!   \n\t"
+      "vld1.32    {q2, q3}, [%[b]]!   \n\t"
+      "vmla.f32   q10, q2, d0[0]      \n\t"
+      "vmla.f32   q11, q2, d0[1]      \n\t"
+      "vmla.f32   q12, q2, d1[0]      \n\t"
+      "vmla.f32   q13, q2, d1[1]      \n\t"
+      "vmla.f32   q10, q3, d2[0]      \n\t"
+      "vmla.f32   q11, q3, d2[1]      \n\t"
+      "vmla.f32   q12, q3, d3[0]      \n\t"
+      "vmla.f32   q13, q3, d3[1]      \n\t"
       "subs       %[kc1], %[kc1], #1  \n\t"
       "bge        loop_kc1_%=         \n\t"
       "end_kc1_%=:                    \n\t"
@@ -525,11 +525,13 @@ void AddDot4x4_relu(int k, float alpha, const float *a, int lda, const float *b,
       "cmp        %[nc],      #4      \n\t"
       "bne        temp_%=             \n\t"
 
+      "vmov.f32   d8[0],    %[alpha]  \n\t"
+      "vmov.f32   d8[1],    %[beta]   \n\t"
+
       "cmp        %[flag_alpha],  #1  \n\t"
       "bne        alpha_%=            \n\t"
 
       "alpha_%=:                      \n\t"
-      "vmov.f32   d8[0],    %[alpha]  \n\t"
       "vmul.f32   q10, q10, d8[0]     \n\t"
       "vmul.f32   q11, q11, d8[0]     \n\t"
       "vmul.f32   q12, q12, d8[0]     \n\t"
@@ -557,18 +559,16 @@ void AddDot4x4_relu(int k, float alpha, const float *a, int lda, const float *b,
       "b          memory_%=           \n\t"
 
       "beta_ne1_%=:                   \n\t"
-      "vmov.f32   d8[1],   %[beta]    \n\t"
       "vmla.f32   q10, q0, d8[1]      \n\t"
       "vmla.f32   q11, q1, d8[1]      \n\t"
       "vmla.f32   q12, q2, d8[1]      \n\t"
       "vmla.f32   q13, q3, d8[1]      \n\t"
 
       "memory_%=:                     \n\t"
-      "vmov.f32   q14,    #0.0        \n\t"
-      "vmax.f32   q10, q10, q14       \n\t"
-      "vmax.f32   q11, q11, q14       \n\t"
-      "vmax.f32   q12, q12, q14       \n\t"
-      "vmax.f32   q13, q13, q14       \n\t"
+      "vmax.f32 q10, q10, q14         \n\t"
+      "vmax.f32 q11, q11, q14         \n\t"
+      "vmax.f32 q12, q12, q14         \n\t"
+      "vmax.f32 q13, q13, q14         \n\t"
       "mov        r5,     %[C]        \n\t"
       "mov        r6,     %[bytes_ldc]\n\t"
       "vst1.32    {q10}, [r5], r6     \n\t"
@@ -586,8 +586,8 @@ void AddDot4x4_relu(int k, float alpha, const float *a, int lda, const float *b,
         [kc2] "r"(kc2), [mc] "r"(mc), [nc] "r"(nc), [alpha] "r"(alpha),
         [beta] "r"(beta), [bytes_ldc] "r"(bytes_ldc),
         [flag_alpha] "r"(flag_alpha), [flag_beta] "r"(flag_beta)
-      : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q10", "q11",
-        "q12", "q13", "q14");
+      : "memory", "q0", "q1", "q2", "q3", "q4", "q10", "q11", "q12", "q13",
+        "q14");
 
   if (mc != MR || nc != NR) {
     int i, j;
