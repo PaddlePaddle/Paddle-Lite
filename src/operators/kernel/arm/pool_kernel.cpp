@@ -36,6 +36,11 @@ inline void PoolBasic(std::string pooling_type, std::vector<int> ksize,
 }
 
 template <>
+bool PoolKernel<CPU, float>::Init(const PoolParam &para) const {
+  return true;
+}
+
+template <>
 void PoolKernel<CPU, float>::Compute(const PoolParam &param) const {
   const Tensor *in_x = param.Input();
   Tensor *out = param.Output();

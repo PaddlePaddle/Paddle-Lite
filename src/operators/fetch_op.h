@@ -33,6 +33,8 @@ class FetchOp : public framework::OperatorBase<DeviceType> {
         param_(inputs, outputs, attrs, *scope) {}
   void RunImpl() const { param_.Out()->ShareDataWith(*param_.InputX()); }
 
+  void Init() const {}
+
   void InferShape() const {
     auto x_dims = param_.InputX()->dims();
     param_.Out()->Resize(x_dims);
@@ -48,6 +50,7 @@ USE_OP_CPU(fetch);
 REGISTER_OPERATOR_CPU(fetch, ops::FetchOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(fetch);
 REGISTER_OPERATOR_MALI_GPU(fetch, ops::FetchOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA

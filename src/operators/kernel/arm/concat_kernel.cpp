@@ -53,6 +53,11 @@ class ConcatFunctor {
 };
 
 template <>
+bool ConcatKernel<CPU, float>::Init(const ConcatParam &para) const {
+  return true;
+}
+
+template <>
 void ConcatKernel<CPU, float>::Compute(const ConcatParam &param) const {
   auto inputs = param.Inputs();
   auto *out = param.Out();

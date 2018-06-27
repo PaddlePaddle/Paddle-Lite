@@ -20,6 +20,11 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
+bool ConvKernel<CPU, float>::Init(const ConvParam &para) const {
+  return true;
+}
+
+template <>
 void ConvKernel<CPU, float>::Compute(const ConvParam &param) const {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();

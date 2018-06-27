@@ -59,9 +59,9 @@ namespace ops = paddle_mobile::operators;
 USE_OP_CPU(mul);
 REGISTER_OPERATOR_CPU(mul, ops::MulOp);
 #endif
-#ifdef PADDLE_MOBILE_MALI_GPU
 USE_OP_MALI_GPU(mul);
 REGISTER_OPERATOR_MALI_GPU(mul, ops::MulOp);
+#ifdef PADDLE_MOBILE_MALI_GPU
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 #endif

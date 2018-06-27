@@ -35,6 +35,11 @@ namespace operators {
 // }
 
 template <>
+bool TransposeKernel<CPU, float>::Init(const TransposeParam& para) const {
+  return true;
+}
+
+template <>
 void TransposeKernel<CPU, float>::Compute(const TransposeParam& param) const {
   const auto* input_x = param.InputX();
   const auto input_x_dims = input_x->dims();
