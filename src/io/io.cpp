@@ -198,6 +198,13 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
   } else {
     InitMemory();
   }
+
+  std::shared_ptr<framework::BlockDesc> to_predict_block =
+      to_predict_program_->Block(0);
+  auto &ops = ops_of_block_[*to_predict_block.get()];
+  for (const auto &op : ops) {
+    op->Init();
+  }
 }
 
 template <typename Dtype, Precision P>
@@ -416,6 +423,8 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
     clock_gettime(CLOCK_MONOTONIC, &ts);
     profile[i].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
 #endif
+
+    // to Run
     ops[i]->Run();
 #ifdef PADDLE_MOBILE_PROFILE
     clock_gettime(CLOCK_MONOTONIC, &ts);
