@@ -32,6 +32,8 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
         param_(inputs, outputs, attrs, *scope) {}
   void RunImpl() const { param_.Out()->ShareDataWith(*param_.InputX()); }
 
+  void Init() const {}
+
   void InferShape() const {
     auto out_dims = param_.Out()->dims();
     out_dims[0] = param_.BatchSize();

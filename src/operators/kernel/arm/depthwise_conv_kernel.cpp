@@ -21,6 +21,11 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
+bool DepthwiseConvKernel<CPU, float>::Init(const ConvParam &para) const {
+  return true;
+}
+
+template <>
 void DepthwiseConvKernel<CPU, float>::Compute(const ConvParam &param) const {
   LOG(kLOG_DEBUG) << param;
 

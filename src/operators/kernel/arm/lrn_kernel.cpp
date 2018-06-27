@@ -22,6 +22,11 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
+bool LrnKernel<CPU, float>::Init(const LrnParam &para) const {
+  return true;
+}
+
+template <>
 void LrnKernel<CPU, float>::Compute(const LrnParam &param) const {
   const Tensor *input_x = param.InputX();
   auto x_dims = input_x->dims();

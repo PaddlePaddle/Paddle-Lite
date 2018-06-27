@@ -169,6 +169,7 @@ template <typename DeviceType, typename T>
 class LrnKernel : public framework::OpKernelBase<DeviceType, LrnParam> {
  public:
   void Compute(const LrnParam &param) const;
+  bool Init(const LrnParam &para) const;
 };
 }  // namespace operators
 }  // namespace paddle_mobile
