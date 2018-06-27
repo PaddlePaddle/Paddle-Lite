@@ -35,7 +35,4 @@ struct BlockDesc {
         self.ops = ops
     }
     
-    
-
-    
 }
