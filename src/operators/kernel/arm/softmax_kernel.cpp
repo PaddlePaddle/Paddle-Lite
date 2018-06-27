@@ -20,6 +20,11 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
+bool SoftmaxKernel<CPU, float>::Init(const SoftmaxParam &para) const {
+  return true;
+}
+
+template <>
 void SoftmaxKernel<CPU, float>::Compute(const SoftmaxParam &param) const {
   const Tensor *in_x = param.InputX();
   Tensor *out = param.Out();

@@ -28,6 +28,7 @@ class MultiClassNMSKernel
     : public framework::OpKernelBase<DeviceType, MultiClassNMSParam> {
  public:
   void Compute(const MultiClassNMSParam& param) const;
+  bool Init(const MultiClassNMSParam& para) const;
 };
 }  // namespace operators
 }  // namespace paddle_mobile
