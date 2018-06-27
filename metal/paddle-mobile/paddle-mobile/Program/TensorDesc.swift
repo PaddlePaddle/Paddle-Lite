@@ -17,8 +17,43 @@ import Foundation
 struct TensorDesc {
     let dims: [Int]
     let dataType: VarTypeType
+    let dataLayout: DataLayout = .NCHW
+    var NCHWDim: [Int] {
+        get {
+            if dims.count != 4 {
+                return dims
+            }
+            if dataLayout == .NCHW {
+                return dims
+            } else if dataLayout == .NHWC{
+                var resultDims = dims
+                resultDims.swapAt(1, 3)
+                return resultDims
+            } else {
+                fatalError(" not support other layout")
+            }
+        }
+    }
+    
+    var NHWCDim: [Int] {
+        get {
+            if dims.count != 4 {
+                return dims
+            }
+            if dataLayout == .NHWC {
+                return dims
+            } else if dataLayout == .NCHW{
+                var resultDims = dims
+                resultDims.swapAt(1, 3)
+                return resultDims
+            } else {
+                fatalError(" not support other layout")
+            }
+        }
+    }
+    
     init(protoTensorDesc: PaddleMobile_Framework_Proto_VarType.TensorDesc) {
-        dims = protoTensorDesc.dims.map{ Int($0)}
+        dims = protoTensorDesc.dims.map{ Int($0) > 0 ? Int($0) : 1 }
         dataType = VarTypeType.init(rawValue: protoTensorDesc.dataType.rawValue) ?? .ErrorType
     }
     

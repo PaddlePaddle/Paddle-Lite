@@ -22,6 +22,7 @@ protocol Runable {
 extension Runable where Self: OperatorProtocol{
     func run() {
         runImpl()
+        print(type + ": " + para.outputDesc())
     }
 }
 
@@ -44,7 +45,6 @@ protocol InferShaperable {
     func inferShape()
 }
 
-
 protocol OperatorProtocol {
     associatedtype ParamType: OpParam
     var type: String { get }
@@ -65,6 +65,7 @@ extension OperatorProtocol {
         }
     }
 }
+
 
 class Operator <ParameterType: OpParam>: OperatorProtocol{
    typealias ParamType = ParameterType
@@ -87,3 +88,19 @@ class Operator <ParameterType: OpParam>: OperatorProtocol{
         }
     }
 }
+
+// op infos
+let gFetchType          = "fetch"
+let gFeedType           = "feed"
+let gConvType           = "conv2d"
+let gBatchNormType      = "batch_norm"
+let gReluType           = "relu"
+let gElementwiseAdd     = "elementwise_add"
+
+let opInfos = [gConvType         : (inputs: ["Input"], outputs: ["Output"]),
+               gBatchNormType    : (inputs: ["X"], outputs: ["Y"]),
+               gReluType         : (inputs: ["X"], outputs: ["Out"]),
+               gElementwiseAdd   : (inputs: ["X", "Y"], outputs: ["Out"]),
+               gFeedType         : (inputs: ["X"], outputs: ["Out"]),
+               gFetchType        : (inputs: ["X"], outputs: ["Out"])]
+
