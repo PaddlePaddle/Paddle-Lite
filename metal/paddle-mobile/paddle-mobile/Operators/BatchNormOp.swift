@@ -18,8 +18,8 @@ struct BatchNormParam<P: PrecisionType>: OpParam {
     typealias ParamPrecisionType = P
     init(opDesc: OpDesc, scope: Scope) throws {
         do {
-            inputX = try BatchNormParam.inputX(inputs: opDesc.inputs, from: scope)
-            outputY = try BatchNormParam.outputY(outputs: opDesc.outputs, from: scope)
+            input = try BatchNormParam.inputX(inputs: opDesc.inputs, from: scope)
+            output = try BatchNormParam.outputY(outputs: opDesc.outputs, from: scope)
             inputBias = try BatchNormParam.inputBiase(inputs: opDesc.paraInputs, from: scope)
             inputMean = try BatchNormParam.inputMean(inputs: opDesc.paraInputs, from: scope)
             inputScale = try BatchNormParam.inputScale(inputs: opDesc.paraInputs, from: scope)
@@ -31,8 +31,8 @@ struct BatchNormParam<P: PrecisionType>: OpParam {
             throw error
         }
     }
-    let inputX: Texture
-    let outputY: Texture
+    let input: Texture
+    let output: Texture
     let inputBias: Tensor<ParamPrecisionType>
     let inputMean: Tensor<ParamPrecisionType>
     let inputScale: Tensor<ParamPrecisionType>
@@ -42,7 +42,10 @@ struct BatchNormParam<P: PrecisionType>: OpParam {
     let is_test: Bool
 }
 
-class BatchNormOp<P: PrecisionType>: Operator<BatchNormParam<P>>, Runable, Creator{
+class BatchNormOp<P: PrecisionType>: Operator<BatchNormParam<P>>, Runable, Creator, InferShaperable{
+    func inferShape() {
+        para.output.dim = para.input.dim
+    }
     typealias OpType = BatchNormOp<P>
     func runImpl() {
         print("this is BatchNormOp")

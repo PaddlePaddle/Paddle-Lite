@@ -24,8 +24,9 @@ class ViewController: UIViewController {
             let modelPath = Bundle.main.path(forResource: "model", ofType: nil) ?! "model null"
             let paraPath = Bundle.main.path(forResource: "params", ofType: nil) ?! "para null"
             let program = try loader.load(modelPath: modelPath, paraPath: paraPath)
-            let executor = try Executor<Float>.init(program: program)
-            executor.predict()
+            let executor = try Executor<Float>.init(inProgram: program)
+            let output = try executor.predict(input: Texture.init())
+            print(output)
         } catch let error {
             print(error)
         }

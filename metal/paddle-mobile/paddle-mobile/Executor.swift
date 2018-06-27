@@ -15,17 +15,15 @@
 import Foundation
 
 public class Executor<P: PrecisionType> {
-    var ops: [Runable] = []
-    public init(program: Program) throws {
-        for block in program.programDesc.blocks {
-            for varDesc in block.vars {
-                if !varDesc.persistable {
-                    program.scope.vars[varDesc.name] = Texture.init()
-                }
-            }
+    var ops: [Runable & InferShaperable] = []
+    let program: Program
+    public init(inProgram: Program) throws {
+        program = inProgram
+        for block in inProgram.programDesc.blocks {
             for op in block.ops {
                 do {
-                    let op = try OpCreator<P>.shared.creat(opDesc: op, scope: program.scope)
+                    let op = try OpCreator<P>.shared.creat(opDesc: op, scope: inProgram.scope)
+                    op.inferShape()
                     ops.append(op)
                 } catch let error {
                     throw error
@@ -34,10 +32,16 @@ public class Executor<P: PrecisionType> {
         }
     }
     
-    public func predict() {
+    public func predict(input: Texture) throws -> Texture {
+        program.scope[program.feedKey] = input
         for op in ops {
             op.run()
         }
+        let outputVar = program.scope[program.fetchKey]
+        guard let output = outputVar as? Texture else {
+            throw PaddleMobileError.netError(message: "output var type error")
+        }
+        return output
     }
 }
 

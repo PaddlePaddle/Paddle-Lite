@@ -18,21 +18,26 @@ struct ElementwiseAddParam<P: PrecisionType>: OpParam {
     typealias ParamPrecisionType = P
     init(opDesc: OpDesc, scope: Scope) throws {
         do {
-            inputX = try ElementwiseAddParam.inputX(inputs: opDesc.inputs, from: scope)
+            input = try ElementwiseAddParam.inputX(inputs: opDesc.inputs, from: scope)
             inputY = try ElementwiseAddParam.inputY(inputs: opDesc.inputs, from: scope)
-            out = try ElementwiseAddParam.outputOut(outputs: opDesc.outputs, from: scope)
+            output = try ElementwiseAddParam.outputOut(outputs: opDesc.outputs, from: scope)
             axis = try ElementwiseAddParam.getAttr(key: "axis", attrs: opDesc.attrs)
         } catch let error {
             throw error
         }
     }
-    let inputX: Texture
+    let input: Texture
     let inputY: Tensor<P>
-    let out: Texture
+    let output: Texture
     let axis: Int
 }
 
-class ElementwiseAddOp<P: PrecisionType>: Operator<ElementwiseAddParam<P>>, Runable, Creator{
+class ElementwiseAddOp<P: PrecisionType>: Operator<ElementwiseAddParam<P>>, Runable, Creator, InferShaperable{
+    
+    func inferShape() {
+        para.output.dim = para.input.dim
+    }
+    
     typealias OpType = ElementwiseAddOp<P>
     func runImpl() {
         print("this is ElementwiseAddOp")

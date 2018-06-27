@@ -14,7 +14,6 @@
 
 import Foundation
 
-
 protocol Runable {
     func run()
     func runImpl()
@@ -27,7 +26,7 @@ extension Runable where Self: OperatorProtocol{
 }
 
 protocol Creator where Self: OperatorProtocol{
-    associatedtype OpType: OperatorProtocol
+    associatedtype OpType: OperatorProtocol & Runable & InferShaperable
     static func creat(opDesc: OpDesc, inScope: Scope) throws -> OpType
 }
 
@@ -40,6 +39,11 @@ extension Creator where Self: OperatorProtocol {
         }
     }
 }
+
+protocol InferShaperable {
+    func inferShape()
+}
+
 
 protocol OperatorProtocol {
     associatedtype ParamType: OpParam

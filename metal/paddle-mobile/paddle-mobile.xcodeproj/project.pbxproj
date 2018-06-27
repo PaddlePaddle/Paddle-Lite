@@ -155,12 +155,12 @@
 		FC039BA320E11CBC0081E9F8 /* Operators */ = {
 			isa = PBXGroup;
 			children = (
+				FCD592FA20E248EC00252966 /* Base */,
+				FCD592F920E248EC00252966 /* Kernels */,
 				FC039BA420E11CBC0081E9F8 /* ConvOp.swift */,
 				FC039BA520E11CBC0081E9F8 /* ElementwiseAddOp.swift */,
-				FC039BA620E11CBC0081E9F8 /* Operator.swift */,
 				FC039BA720E11CBC0081E9F8 /* BatchNormOp.swift */,
 				FC039BA820E11CBC0081E9F8 /* ReluOp.swift */,
-				FC9D037820E229E4000F735A /* OpParam.swift */,
 				FC9D037F20E22FBB000F735A /* FeedOp.swift */,
 				FC9D038120E2312E000F735A /* FetchOp.swift */,
 			);
@@ -181,6 +181,22 @@
 				FC039BB720E11CC20081E9F8 /* BlockDesc.swift */,
 			);
 			path = Program;
+			sourceTree = "<group>";
+		};
+		FCD592F920E248EC00252966 /* Kernels */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Kernels;
+			sourceTree = "<group>";
+		};
+		FCD592FA20E248EC00252966 /* Base */ = {
+			isa = PBXGroup;
+			children = (
+				FC9D037820E229E4000F735A /* OpParam.swift */,
+				FC039BA620E11CBC0081E9F8 /* Operator.swift */,
+			);
+			path = Base;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
