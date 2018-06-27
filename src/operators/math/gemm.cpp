@@ -586,7 +586,8 @@ void AddDot4x4_relu(int k, float alpha, const float *a, int lda, const float *b,
         [kc2] "r"(kc2), [mc] "r"(mc), [nc] "r"(nc), [alpha] "r"(alpha),
         [beta] "r"(beta), [bytes_ldc] "r"(bytes_ldc),
         [flag_alpha] "r"(flag_alpha), [flag_beta] "r"(flag_beta)
-      : "memory", "q0", "q1", "q2", "q3", "q4", "q10", "q11", "q12", "q13", "q14");
+      : "memory", "q0", "q1", "q2", "q3", "q4", "q10", "q11", "q12", "q13",
+        "q14");
 
   if (mc != MR || nc != NR) {
     int i, j;
