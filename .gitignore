@@ -69,3 +69,20 @@ build
 # clion building directories
 cmake-build-debug
 cmake-build-release
+
+
+# metal
+Podfile.lock
+metal/Pods/
+SwiftProtobuf.framework
+paddle-mobile.xcworkspace
+metal/models/
+
+
+
+
+
+
+
+
+
