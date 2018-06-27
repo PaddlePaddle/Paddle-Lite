@@ -156,14 +156,20 @@ public class Loader<P: PrecisionType> {
             let protoProgram = try PaddleMobile_Framework_Proto_ProgramDesc.init(
                 serializedData: modelData)
             let scope = Scope.init()
-            let program = Program.init(protoProgramDesc: protoProgram, inParamPath: paraPath, inScope: scope)
+            let programDesc = ProgramDesc.init(protoProgram: protoProgram)
             
             guard let paraLoader = try? ParaLoader.init(paramPath: paraPath) else {
                 throw PaddleMobileError.loaderError(message: "load para error")
             }
-         
-            for block in program.programDesc.blocks {
+            
+            guard programDesc.blocks.count > 0 else {
+                throw PaddleMobileError.loaderError(message: "count of blocks must greater than 0")
+            }
+            
+            for block in programDesc.blocks {
                 for varDesc in block.vars {
+                    print(varDesc.name + "\(varDesc.persistable)")
+
                     if (varDesc.type == .LodTensor) {
                         if (varDesc.persistable
                             && varDesc.type != .FeedMiniBatch
@@ -192,11 +198,33 @@ public class Loader<P: PrecisionType> {
                             }
                             paraData.convert(to: .NHWC)
                             let tensor = Tensor<P>.init(inData: paraData)
-                            scope.vars[varDesc.name] = tensor
+                            scope[varDesc.name] = tensor
+                        } else {
+                            scope[varDesc.name] = Texture.init()
                         }
+                    } else {
+                        scope[varDesc.name] = Texture.init()
                     }
                 }
             }
+            
+            let block = programDesc.blocks[0]
+            guard let firstOp = block.ops.first, let lastOp = block.ops.last else {
+                throw PaddleMobileError.loaderError(message: "at least two operator")
+            }
+            guard firstOp.type == gFeedType, lastOp.type == gFetchType else {
+                throw PaddleMobileError.loaderError(message: "the first op is not feed or the last op is not fetch")
+            }
+            
+            guard let inputKey = opInfos[gFeedType]?.inputs.first, let outKey = opInfos[gFetchType]?.outputs.first else {
+                throw PaddleMobileError.loaderError(message: "the feed input key or fetch output key not found")
+            }
+            guard let feedKey = firstOp.inputs[inputKey]?.first, let fetchKey = lastOp.outputs[outKey]?.first else {
+                throw PaddleMobileError.loaderError(message: "feed key or fetch key not found")
+            }
+            
+            let program = Program.init(protoProgramDesc: protoProgram, inParamPath: paraPath, inScope: scope, inFeedKey: feedKey, inFetchKey: fetchKey)
+            
             return program
         } catch _ {
             throw PaddleMobileError.loaderError(message: "protobuf decoder error")

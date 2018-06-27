@@ -14,19 +14,34 @@
 
 import Foundation
 
-class Tensor <P: PrecisionType>{
-    var dim: Dim {
-        return paraData.dim
+protocol Tensorial {
+    var dim: Dim { get set }
+    func numel() -> Int
+    func dataLayout() -> DataLayout
+}
+
+extension Tensorial {
+    func numel() -> Int {
+        return dim.numel()
     }
+}
+
+class Tensor <P: PrecisionType>: Tensorial {
+    var dim: Dim {
+        get {
+            return paraData.dim
+        }
+        set {
+            paraData.dim = newValue
+        }
+    }
+    
     let paraData: ParamData<P>
     init(inDimArray: [Int], inData: ParamData<P>) {
         paraData = inData
     }
     init(inData: ParamData<P>) {
         paraData = inData
-    }
-    func numel() -> Int {
-        return dim.numel()
     }
     
     func dataLayout() -> DataLayout {

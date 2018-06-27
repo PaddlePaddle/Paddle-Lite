@@ -12,8 +12,25 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
+import Metal
 import Foundation
 
-class Texture {
+public class Texture: Tensorial {
+    var dim: Dim
+//    let texture: MTLTexture
+    func dataLayout() -> DataLayout {
+        return .NHWC
+    }
+    
+    public init(inTexture: MTLTexture, inDim: Dim) {
+//        texture = inTexture
+        dim = inDim
+    }
+    
+    public init() {
+        dim = Dim.init(inDim: [])
+        
+//        fatalError()
+    }
     
 }
