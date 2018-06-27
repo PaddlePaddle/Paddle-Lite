@@ -15,9 +15,9 @@
 import Foundation
 
 struct FetchParam<P: PrecisionType>: OpParam{
-    var input: Texture
-    var output: Texture
-
+    let output: ResultHolder<P>
+    let input: Texture
+    
     init(opDesc: OpDesc, scope: Scope) throws {
         do {
             input = try FetchParam.inputX(inputs: opDesc.inputs, from: scope)
@@ -32,7 +32,7 @@ struct FetchParam<P: PrecisionType>: OpParam{
 
 class FetchOp<P: PrecisionType>: Operator<FetchParam<P>>, Runable, Creator, InferShaperable{
     func inferShape() {
-        para.output.dim = para.input.dim
+        print(para.input.dim)
     }
     
     typealias OpType = FetchOp<P>

@@ -34,7 +34,6 @@ class FeedOp<P: PrecisionType>: Operator<FeedParam<P>>, Runable, Creator, InferS
     typealias OpType = FeedOp<P>
     
     func inferShape() {
-        para.output.dim = para.input.dim
     }
     
     func runImpl() {
