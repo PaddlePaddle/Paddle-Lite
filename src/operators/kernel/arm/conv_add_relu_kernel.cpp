@@ -20,6 +20,11 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
+bool ConvAddReluKernel<CPU, float>::Init(const FusionConvAddReluParam &para) const {
+  return true;
+}
+
+template <>
 void ConvAddReluKernel<CPU, float>::Compute(
     const FusionConvAddReluParam &param) const {
   const Tensor *input = param.Input();

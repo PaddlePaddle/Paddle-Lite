@@ -22,6 +22,11 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
+bool FusionFcKernel<CPU, float>::Init(const FusionFcParam &para) const {
+  return true;
+}
+
+template <>
 void FusionFcKernel<CPU, float>::Compute(const FusionFcParam &param) const {
   const Tensor *input_x = param.InputX();
   const Tensor *input_y = param.InputY();

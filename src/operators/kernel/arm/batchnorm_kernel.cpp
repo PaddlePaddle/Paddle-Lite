@@ -22,6 +22,11 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
+bool BatchNormKernel<CPU, float>::Init(const BatchNormParam &para) const {
+  return true;
+}
+
+template <>
 void BatchNormKernel<CPU, float>::Compute(const BatchNormParam &param) const {
   const Tensor *input_x = param.InputX();
   auto input_x_ptr = input_x->data<float>();
