@@ -13,7 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include <iostream>
+#include "../test_helper.h"
 #include "common/log.h"
+#include "memory/t_malloc.h"
 #include "operators/math/gemm.h"
 
 #define a(i, j) a[(i)*lda + (j)]
@@ -29,10 +31,15 @@ int main() {
   int ldb = n;
   int ldc = n;
 
-  float a[62 * 74];
-  float b[74 * 63];
-  float c[62 * 63] = {0};
-  float c1[62 * 63] = {0};
+  float *a =
+      static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m * k));
+  float *b =
+      static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * k * n));
+  float *c =
+      static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m * n));
+  float *c1 =
+      static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m * n));
+
   for (int i = 0; i < m * k; ++i) {
     a[i] = 2;
   }
@@ -44,8 +51,11 @@ int main() {
     c1[i] = 2;
   }
 
+  auto time1 = time();
   paddle_mobile::operators::math::sgemm(m, n, k, 0.9, a, lda, b, ldb, 0.3, c,
                                         ldc);
+  auto time2 = time();
+  DLOG << "gemm cost :" << time_diff(time1, time2) << "ms\n";
   for (int i = 0; i < m * n; ++i) {
     std::cout << c[i] << " | ";
     if (i % n == (n - 1)) {

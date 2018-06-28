@@ -33,19 +33,19 @@ namespace operators {
 namespace math {
 
 // 将 A 矩阵分块复制到连续内存(ColMajor)
-void PackMatrixA(int m, int k, int paddingM, const float *A, int lda,
+void PackMatrixA(int m, int k, int m_tail, const float *A, int lda,
                  float *buffer);
 
 // 将 B 矩阵分块复制到连续内存(ColMajor)
-void PackMatrixB(int k, int n, int paddingN, const float *B, int ldb,
+void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
                  float *buffer);
 
 // 将 A 矩阵分块复制到连续内存(RowMajor)
-void PackMatrixA_(int m, int k, int paddingM, const float *A, int lda,
+void PackMatrixA_(int m, int k, int m_tail, const float *A, int lda,
                   float *buffer);
 
 // 将 B 矩阵分块复制到连续内存(RowMajor)
-void PackMatrixB_(int k, int n, int paddingN, const float *B, int ldb,
+void PackMatrixB_(int k, int n, int n_tail, const float *B, int ldb,
                   float *buffer);
 
 // 分块矩阵乘法

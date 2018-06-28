@@ -20,6 +20,11 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
+bool ReshapeKernel<CPU, float>::Init(const ReshapeParam &para) const {
+  return true;
+}
+
+template <>
 void ReshapeKernel<CPU, float>::Compute(const ReshapeParam &param) const {
   const auto *input_x = param.InputX();
   const auto &input_x_dims = input_x->dims();
