@@ -66,11 +66,19 @@ class FusionFcOp
 };
 
 #ifdef PADDLE_MOBILE_CPU
+#ifndef CONV_CPU_REGISTER
+#define CONV_CPU_REGISTER
 static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
 #endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-// static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
 #endif
+
+#ifdef PADDLE_MOBILE_MALI_GPU
+#ifndef CONV_CPU_REGISTER
+#define CONV_CPU_REGISTER
+static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
+#endif
+#endif
+
 #ifdef PADDLE_MOBILE_FPGA
 #endif
 
