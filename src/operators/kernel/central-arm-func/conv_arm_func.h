@@ -12,23 +12,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVADD_RELU_OP
+#ifdef CONV_OP
 
 #pragma once
+#include <vector>
+#include "operators/math/conv_func.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <typename P>
-void ConvAddReluCompute(const FusionConvAddReluParam &param) {
+void ConvCompute(const ConvParam &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
-  Tensor bias = *param.Bias();
-  int axis = param.Axis();
   Tensor *output = param.Output();
-  math::expand_bias(bias, axis, output->dims());
-  output->ShareDataWith(bias);
+  output->mutable_data<float>();
   int groups = param.Groups();
   std::vector<int> strides = param.Strides();
   std::vector<int> paddings = param.Paddings();
@@ -105,7 +104,7 @@ void ConvAddReluCompute(const FusionConvAddReluParam &param) {
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
       math::matmul<float>(filter_slice, false, col_matrix, false,
                           static_cast<float>(1), &out_slice,
-                          static_cast<float>(1), true);
+                          static_cast<float>(0));
     }
   }
 }

@@ -12,20 +12,24 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef CONV_OP
+#ifdef FUSION_CONVADD_RELU_OP
 
 #pragma once
+#include <vector>
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <typename P>
-void ConvCompute(const ConvParam &param) {
+void ConvAddReluCompute(const FusionConvAddReluParam &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
+  Tensor bias = *param.Bias();
+  int axis = param.Axis();
   Tensor *output = param.Output();
-  output->mutable_data<float>();
+  math::expand_bias(bias, axis, output->dims());
+  output->ShareDataWith(bias);
   int groups = param.Groups();
   std::vector<int> strides = param.Strides();
   std::vector<int> paddings = param.Paddings();
@@ -48,7 +52,8 @@ void ConvCompute(const ConvParam &param) {
   framework::DDim col_matrix_shape =
       framework::flatten_to_2d(col_shape, data_dim + 1);
 
-  bool is_expand = IsExpand(filter_shape_vec, strides, paddings, dilations);
+  bool is_expand =
+      math::IsExpand(filter_shape_vec, strides, paddings, dilations);
   Tensor col;
   Tensor col_matrix;
   if (is_expand) {
@@ -101,7 +106,7 @@ void ConvCompute(const ConvParam &param) {
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
       math::matmul<float>(filter_slice, false, col_matrix, false,
                           static_cast<float>(1), &out_slice,
-                          static_cast<float>(0));
+                          static_cast<float>(1), true);
     }
   }
 }
