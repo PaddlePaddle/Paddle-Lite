@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef BOXCODER_OP
 
 #include "operators/kernel/box_coder_kernel.h"
+#include <cmath>
 
 namespace paddle_mobile {
 namespace operators {

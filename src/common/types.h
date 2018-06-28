@@ -12,10 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once;
+#pragma once
 
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace paddle_mobile {
 enum class Precision : int { FP32 = 0 };

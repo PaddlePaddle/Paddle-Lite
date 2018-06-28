@@ -24,8 +24,8 @@ limitations under the License. */
 #include "framework/program/var_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
-#ifdef PADDLE_EXECUTOR_MULTITHREAD
 #include <algorithm>
+#ifdef PADDLE_EXECUTOR_MULTITHREAD
 #include <queue>
 #include <utility>
 #include "common/threadpool.h"

@@ -12,19 +12,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef BATCHNORM_OP
+#pragma once
 
+// #include "framework/program/program.h"
 
-#include "operators/kernel/batchnorm_kernel.h"
+// class Profile {
+// public:
+//     template <typename T, typename P>
+//     void init(const framework::Program<T, P> &);
+//     // getDotDesc();
+//     // getTimelineInfo();
+// private:
+//     struct OpInfo {
+//         int index;
+//         std::shared_ptr<framework::OpDesc> op;
+//     };
+//     std::unordered_map<void*, OpInfo> opInfo;
+// };
 
-namespace paddle_mobile {
-namespace operators {
-
-template <>
-void BatchNormKernel<GPU_MALI, float>::Compute(
-    const BatchNormParam &param) const {}
-
-}  // namespace operators
-}  // namespace paddle_mobile
-
-#endif
+// Profile & getProfile();

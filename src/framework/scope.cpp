@@ -17,6 +17,7 @@ limitations under the License. */
 #include <set>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 namespace paddle_mobile {
 namespace framework {
