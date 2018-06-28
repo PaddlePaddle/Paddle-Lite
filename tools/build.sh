@@ -56,7 +56,7 @@ build_for_android() {
 
 
     MODE="Release"
-    ANDROID_PLATFORM_VERSION="android-15"
+    ANDROID_PLATFORM_VERSION="android-22"
     TOOLCHAIN_FILE="./tools/android-cmake/android.toolchain.cmake"
     ANDROID_ARM_MODE="arm"
     if [ $# -eq 1 ]; then
