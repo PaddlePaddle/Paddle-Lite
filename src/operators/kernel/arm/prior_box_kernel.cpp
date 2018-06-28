@@ -14,8 +14,6 @@ limitations under the License. */
 
 #ifdef PRIORBOX_OP
 
-#pragma once
-
 #include "operators/kernel/prior_box_kernel.h"
 
 namespace paddle_mobile {

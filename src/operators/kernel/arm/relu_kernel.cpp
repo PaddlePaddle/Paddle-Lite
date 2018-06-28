@@ -14,8 +14,6 @@ limitations under the License. */
 
 #ifdef RELU_OP
 
-#pragma once
-
 #include "operators/kernel/relu_kernel.h"
 #include <operators/math/transform.h>
 
