@@ -15,7 +15,7 @@ limitations under the License. */
 #ifdef FUSION_CONVADD_RELU_OP
 
 #include "operators/kernel/conv_add_relu_kernel.h"
-#include "operators/kernel/central-arm-func/conv_add_relu_func.h"
+#include "operators/kernel/central-arm-func/conv_add_relu_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
