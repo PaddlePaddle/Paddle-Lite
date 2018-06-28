@@ -12,25 +12,39 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef BATCHNORM_OP
+#ifdef ELEMENTWISEADD_OP
 
 #pragma once
 
-#include "operators/kernel/batchnorm_kernel.h"
-#include "operators/kernel/central-arm-func/batchnorm_arm_func.h"
+#include "operators/kernel/elementwise_add_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
 
+template <typename T>
+struct AddFunctor {
+  inline T operator()(T a, T b) const { return a + b; }
+};
+
 template <>
-bool BatchNormKernel<CPU, float>::Init(const BatchNormParam &para) const {
+bool ElementwiseAddKernel<GPU_MALI, float>::Init(
+    const ElementwiseAddParam &para) const {
   return true;
 }
 
 template <>
-void BatchNormKernel<CPU, float>::Compute(const BatchNormParam &param) const {
-  BatchnormCompute<float>(param);
+void ElementwiseAddKernel<GPU_MALI, float>::Compute(
+    const ElementwiseAddParam &param) const {
+  const Tensor *input_x = param.InputX();
+  const Tensor *input_y = param.InputY();
+  Tensor *Out = param.Out();
+  Out->mutable_data<float>();
+  int axis = param.Axis();
+  ElementwiseComputeEx<AddFunctor<float>, float>(input_x, input_y, axis,
+                                                 AddFunctor<float>(), Out);
 }
+
+template class ElementwiseAddKernel<GPU_MALI, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
