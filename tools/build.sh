@@ -15,7 +15,6 @@ build_for_mac() {
     fi
     PLATFORM="x86"
     MODE="Release"
-    CXX_FLAGS="-std=c++11 -O3 -s"
     BUILD_DIR=../build/release/"${PLATFORM}"
     mkdir -p ${BUILD_DIR}/build
 
@@ -25,7 +24,6 @@ build_for_mac() {
     cmake .. \
         -B"${BUILD_DIR}" \
     	-DCMAKE_BUILD_TYPE="${MODE}" \
-    	-DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
     	-DIS_MAC=true
 
     cd ${BUILD_DIR}
@@ -46,11 +44,11 @@ build_for_android() {
     if [ "${PLATFORM}" = "arm-v7a" ]; then
         ABI="armeabi-v7a with NEON"
         ARM_PLATFORM="V7"
-        CXX_FLAGS="-O3 -std=c++11 -s -march=armv7-a -mfpu=neon -mfloat-abi=softfp -pie -fPIE -w -Wno-error=format-security"
+        CXX_FLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=softfp -pie -fPIE -w -Wno-error=format-security"
     elif [ "${PLATFORM}" = "arm-v8a" ]; then
         ABI="arm64-v8a"
         ARM_PLATFORM="V8"
-        CXX_FLAGS="-std=c++11 -march=armv8-a  -pie -fPIE -w -Wno-error=format-security -llog -O0 -ggdb3  -fno-inline -g"
+        CXX_FLAGS="-march=armv8-a  -pie -fPIE -w -Wno-error=format-security -llog"
     else
         echo "unknown platform!"
         exit -1
