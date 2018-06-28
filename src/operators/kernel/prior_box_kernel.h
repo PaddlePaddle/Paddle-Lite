@@ -55,6 +55,7 @@ class PriorBoxKernel
     : public framework::OpKernelBase<DeviceType, PriorBoxParam> {
  public:
   void Compute(const PriorBoxParam& param) const;
+  bool Init(const PriorBoxParam& para) const;
 };
 }  // namespace operators
 }  // namespace paddle_mobile

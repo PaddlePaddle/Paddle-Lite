@@ -27,6 +27,11 @@ struct ClipFunctor {
 };
 
 template <>
+bool PriorBoxKernel<CPU, float>::Init(const PriorBoxParam &para) const {
+  return true;
+}
+
+template <>
 void PriorBoxKernel<CPU, float>::Compute(const PriorBoxParam &param) const {
   const auto *input_ = param.Input();
   const auto &input_dims = input_->dims();

@@ -111,6 +111,11 @@ void DecodeCenterSize(const framework::Tensor& target_box,
 }
 
 template <>
+bool BoxCoderKernel<CPU, float>::Init(const BoxCoderParam& para) const {
+  return true;
+}
+
+template <>
 void BoxCoderKernel<CPU, float>::Compute(const BoxCoderParam& param) const {
   const auto* input_priorbox = param.InputPriorBox();
   const auto* input_priorboxvar = param.InputPriorBoxVar();
