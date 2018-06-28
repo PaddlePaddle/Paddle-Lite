@@ -12,27 +12,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef CONV_OP
-
-#include "operators/kernel/conv_kernel.h"
-#include "operators/kernel/central-arm-func/conv_arm_func.h"
+#pragma once
+#include "framework/tensor.h"
 
 namespace paddle_mobile {
 namespace operators {
+namespace math {
+using framework::Tensor;
 
-template <>
-bool ConvKernel<CPU, float>::Init(const ConvParam &para) const {
-  return true;
-}
-
-template <>
-void ConvKernel<CPU, float>::Compute(const ConvParam &param) const {
-  ConvCompute<float>(param);
-}
-
-template class ConvKernel<CPU, float>;
-
+void DepthwiseConv3x3s1p1(const Tensor *input, Tensor filter, Tensor *output,
+                          Tensor bias, bool if_bias);
+}  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile
-
-#endif

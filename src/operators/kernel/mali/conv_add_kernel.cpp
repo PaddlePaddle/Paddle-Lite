@@ -12,9 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef CONV_OP
+#ifdef FUSION_CONVADD_OP
 
-#include "operators/kernel/conv_kernel.h"
+#include "operators/kernel/conv_add_kernel.h"
 #ifdef PADDLE_MOBILE_MALI_GPU
 #include "acl_operator.h"
 #include "framework/operator.h"
@@ -24,20 +24,20 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename DeviceType, typename T>
-class AclConvOp : public acl::ACLOperator {
+class AclConvAddOp : public acl::ACLOperator {
  public:
-  AclConvOp() {
+  AclConvAddOp() {
     this->force_bypass_acl_path_ =
         bypass_acl_class_layer & FLAGS_ENABLE_ACL_CONV;
   }
-  ~AclConvOp() = default;
-  AclConvOp(const AclConvOp&) = delete;
-  AclConvOp& operator=(const AclConvOp&) = delete;
-  AclConvOp(AclConvOp&&) = delete;
-  AclConvOp& operator=(AclConvOp&&) = delete;
+  ~AclConvAddOp() = default;
+  AclConvAddOp(const AclConvAddOp&) = delete;
+  AclConvAddOp& operator=(const AclConvAddOp&) = delete;
+  AclConvAddOp(AclConvAddOp&&) = delete;
+  AclConvAddOp& operator=(AclConvAddOp&&) = delete;
 
   acl::AclParameters& getargs() { return args; }
-  void InitAclLayer(const ConvParam& param) {
+  void InitAclLayer(const FusionConvAddParam& param) {
     setTargetHint(acl::TargetHint::OPENCL);
     arm_compute::TensorShape input_shape(args.in_cols, args.in_rows,
                                          args.in_depth, args.batch);
@@ -46,7 +46,7 @@ class AclConvOp : public acl::ACLOperator {
     arm_compute::TensorShape weights_shape(args.filter_cols, args.filter_rows,
                                            args.in_depth / args.num_group,
                                            args.out_depth);
-    // arm_compute::TensorShape biases_shape(args.out_depth);
+    arm_compute::TensorShape biases_shape(args.out_depth);
     arm_compute::PadStrideInfo conv_info(
         args.stride_cols, args.stride_rows, args.pad_cols, args.pad_rows,
         arm_compute::DimensionRoundingType::FLOOR);
@@ -59,9 +59,9 @@ class AclConvOp : public acl::ACLOperator {
     //[kernel_x, kernel_y, IFM, OFM]
     new_tensor(weights(), weights_shape, args.weight_data);
     //[OFM]
-    // if (args.biases_data) {
-    //    new_tensor(biases(),biases_shape,args.biases_data);
-    //}
+    if (args.biases_data) {
+      new_tensor(biases(), biases_shape, args.biases_data);
+    }
 
     group() = args.num_group;
 
@@ -76,7 +76,7 @@ class AclConvOp : public acl::ACLOperator {
   void RunAcl(void* input, void* output) {
     acl::ACLOperator::acl_run(input, output);
   }
-  bool Bypass_acl(const ConvParam& param) {
+  bool Bypass_acl(const FusionConvAddParam& param) {
     bool bypass_acl = false;
     AclParametersByContext(param);
     // for performance, more groups impact GPU performance
@@ -119,10 +119,11 @@ class AclConvOp : public acl::ACLOperator {
     }
   }
 
-  void AclParametersByContext(const ConvParam& param) {
+  void AclParametersByContext(const FusionConvAddParam& param) {
     const Tensor* input = param.Input();
     Tensor filter = *param.Filter();
     Tensor* output = param.Output();
+    Tensor* bias;
 
     int groups = param.Groups();
     std::vector<int> strides = param.Strides();
@@ -138,14 +139,14 @@ class AclConvOp : public acl::ACLOperator {
     args.weight_data = (void*)weight_data;
     args.biases_data = nullptr;
 
-    // try {
-    //     bias = context.Input<framework::Tensor>("Bias");
-    // } catch (const std::exception& e) {
-    // }
-    // if (bias) {
-    //     const T* biases_data = bias->data<T>();
-    //     args.biases_data = (void*)biases_data;
-    // }
+    try {
+      bias = param.Bias();
+    } catch (const std::exception& e) {
+    }
+    if (bias) {
+      const T* biases_data = bias->data<T>();
+      args.biases_data = (void*)biases_data;
+    }
 
     args.num_group = groups;
 
@@ -161,8 +162,8 @@ class AclConvOp : public acl::ACLOperator {
     args.in_depth = input->dims()[1];
     args.in_rows = input->dims()[2];
     args.in_cols = input->dims()[3];
-    std::cout << "In N: " << args.batch << " C: " << args.in_depth
-              << " H: " << args.in_rows << " W: " << args.in_cols << "\n";
+    // std::cout <<"In N: " << args.batch << " C: " <<  args.in_depth
+    //  << " H: " << args.in_rows << " W: " << args.in_cols << "\n";
     // NCHW
     // std::cout << "Out dims: " << (output->dims()).size() << std::endl;
     args.out_num = output->dims()[0];
@@ -195,21 +196,23 @@ class AclConvOp : public acl::ACLOperator {
 };
 
 template <>
-bool ConvKernel<GPU_MALI, float>::Init(const ConvParam& param) const {
-  AclConvOp<GPU_MALI, float>* acl_op =
-      reinterpret_cast<AclConvOp<GPU_MALI, float>*>(this->GetAclOp());
+bool ConvAddKernel<GPU_MALI, float>::Init(
+    const FusionConvAddParam& param) const {
+  AclConvAddOp<GPU_MALI, float>* acl_op =
+      reinterpret_cast<AclConvAddOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {
-    acl_op = new AclConvOp<GPU_MALI, float>();
+    acl_op = new AclConvAddOp<GPU_MALI, float>();
     this->SetAclOp((void*)acl_op, (void*)this);
   }
   return true;
 }
 
 template <>
-void ConvKernel<GPU_MALI, float>::Compute(const ConvParam& param) const {
+void ConvAddKernel<GPU_MALI, float>::Compute(
+    const FusionConvAddParam& param) const {
   std::cout << "init acl" << std::endl;
-  AclConvOp<GPU_MALI, float>* acl_op =
-      reinterpret_cast<AclConvOp<GPU_MALI, float>*>(this->GetAclOp());
+  AclConvAddOp<GPU_MALI, float>* acl_op =
+      reinterpret_cast<AclConvAddOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {
     return;
   }
@@ -224,7 +227,7 @@ void ConvKernel<GPU_MALI, float>::Compute(const ConvParam& param) const {
   acl_op->RunAcl((void*)input_data, (void*)output_data);
 }
 
-template class ConvKernel<GPU_MALI, float>;
+template class ConvAddKernel<GPU_MALI, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
 
