@@ -35,21 +35,6 @@ class ConvKernel : public OpKernelBase<DeviceType, ConvParam> {
   bool Init(const ConvParam &para) const;
 };
 
-inline bool IsExpand(const std::vector<int64_t> &filter_dim,
-                     const std::vector<int> &strides,
-                     const std::vector<int> &paddings,
-                     const std::vector<int> &dilations) {
-  bool filter_1 = true, strides_1 = true, padding_0 = true, dilation_1 = true;
-  for (size_t j = 0; j < strides.size(); ++j) {
-    filter_1 = filter_1 && (static_cast<int>(filter_dim[j + 2]) == 1);
-    strides_1 = strides_1 && (strides[j] == 1);
-    padding_0 = padding_0 && (paddings[j] == 0);
-    dilation_1 = dilation_1 && (dilations[j] == 1);
-  }
-
-  return !(filter_1 && strides_1 && padding_0 && dilation_1);
-}
-
 }  // namespace operators
 }  // namespace paddle_mobile
 
