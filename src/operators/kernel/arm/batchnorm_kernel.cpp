@@ -14,8 +14,6 @@ limitations under the License. */
 
 #ifdef BATCHNORM_OP
 
-#pragma once
-
 #include "operators/kernel/batchnorm_kernel.h"
 #include "operators/kernel/central-arm-func/batchnorm_arm_func.h"
 

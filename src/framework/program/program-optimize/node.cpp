@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "framework/program/program-optimize/node.h"
+#include <algorithm>
 #include "framework/operator.h"
 
 namespace paddle_mobile {
