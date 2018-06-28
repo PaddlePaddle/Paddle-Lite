@@ -22,6 +22,11 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
+bool ReshapeKernel<GPU_MALI, float>::Init(const ReshapeParam &para) const {
+  return true;
+}
+
+template <>
 void ReshapeKernel<GPU_MALI, float>::Compute(const ReshapeParam &param) const {
   const auto *input_x = param.InputX();
   const auto &input_x_dims = input_x->dims();

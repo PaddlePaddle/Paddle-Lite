@@ -73,8 +73,7 @@ build_for_android() {
         -DANDROID_STL=c++_static \
         -DANDROID=true \
         -D"${NET}=true" \
-        -D"${ARM_PLATFORM}"=true \
-	-DACL_ROOT=./ACL_Android
+        -D"${ARM_PLATFORM}"=true
     else
 
     cmake .. \
@@ -86,8 +85,7 @@ build_for_android() {
         -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
         -DANDROID_STL=c++_static \
         -DANDROID=true \
-        -D"${ARM_PLATFORM}"=true \
-	-DACL_ROOT=./ACL_Android
+        -D"${ARM_PLATFORM}"=true
     fi
     cd "../build/release/${PLATFORM}"
     make -j 8
