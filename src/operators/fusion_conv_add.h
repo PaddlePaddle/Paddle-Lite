@@ -68,6 +68,7 @@ class FusionConvAddOp : public framework::OperatorWithKernel<
 };
 
 #ifdef PADDLE_MOBILE_CPU
+<<<<<<< HEAD
 static framework::FusionOpRegistrar convadd_registrar(
     new FusionConvAddMatcher());
 #endif
@@ -75,6 +76,25 @@ static framework::FusionOpRegistrar convadd_registrar(
 static framework::FusionOpRegistrar convadd_registrar(
     new FusionConvAddMatcher());
 #endif
+=======
+#ifndef CONV_ADD_REGISTER
+static framework::FusionOpRegistrar convadd_registrar(
+    new FusionConvAddMatcher());
+#define CONV_ADD_REGISTER
+#endif
+#endif
+
+#ifdef PADDLE_MOBILE_MALI_GPU
+
+#ifndef CONV_ADD_REGISTER
+static framework::FusionOpRegistrar convadd_registrar(
+    new FusionConvAddMatcher());
+#define CONV_ADD_REGISTER
+#endif
+
+#endif
+
+>>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b
 #ifdef PADDLE_MOBILE_FPGA
 #endif
 

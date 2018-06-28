@@ -116,6 +116,7 @@ else ()
     # gen test
     ADD_EXECUTABLE(test-gemm common/test_gemm.cpp)
     target_link_libraries(test-gemm paddle-mobile)
+<<<<<<< HEAD
 
     # gen test
     ADD_EXECUTABLE(test-enforce common/test_enforce.cpp)
@@ -140,6 +141,36 @@ else ()
     # gen test
     ADD_EXECUTABLE(test-mobilenet net/test_mobilenet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-mobilenet paddle-mobile)
+=======
+
+    # gen test
+    ADD_EXECUTABLE(test-enforce common/test_enforce.cpp)
+    target_link_libraries(test-enforce paddle-mobile)
+
+    # gen test - test if openmp works
+    ADD_EXECUTABLE(test-openmp common/test_openmp.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test-openmp paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-mobilenetssd net/test_mobilenet+ssd.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-mobilenetssd paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-sigmoid operators/test_sigmoid_op.cpp  test_include.h)
+    target_link_libraries(test-sigmoid paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-depthwise-conv-op operators/test_depthwise_conv_op.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test-depthwise-conv-op paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-mobilenet net/test_mobilenet.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-mobilenet paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-conv-add-relu-op operators/test_conv_add_relu_op.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-conv-add-relu-op paddle-mobile)
+>>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b
 
     #add_library(test-lib-size SHARED common/test_lib_size.h common/test_lib_size.cpp)
 

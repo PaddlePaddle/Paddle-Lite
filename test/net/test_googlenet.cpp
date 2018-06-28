@@ -20,9 +20,15 @@ int main() {
   paddle_mobile::Loader<paddle_mobile::GPU_MALI> loader;
   bool optimize = true;
   auto time1 = time();
+<<<<<<< HEAD
   auto program = loader.Load(g_googlenet, optimize);
   // auto program = loader.Load(g_googlenet_combine + "/model",
   //                           g_googlenet_combine + "/params", optimize);
+=======
+  //  auto program = loader.Load(g_googlenet, optimize);
+  auto program = loader.Load(g_googlenet_combine + "/model",
+                             g_googlenet_combine + "/params", optimize);
+>>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b
   auto time2 = time();
   DLOG << "load cost :" << time_diff(time1, time2) << "ms\n";
   paddle_mobile::Executor<paddle_mobile::GPU_MALI> executor(program, 1,
@@ -33,10 +39,18 @@ int main() {
   auto time3 = time();
 
   for (int i = 0; i < 10; ++i) {
+<<<<<<< HEAD
     auto time3 = time();
     executor.Predict(input, dims);
     auto time4 = time();
     DLOG << "predict cost :" << time_diff(time3, time4) << "ms\n";
   }
+=======
+    executor.Predict(input, dims);
+  }
+
+  auto time4 = time();
+  DLOG << "predict cost :" << time_diff(time3, time4) << "ms\n";
+>>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b
   return 0;
 }

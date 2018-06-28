@@ -26,12 +26,12 @@ alignas(64) float packedA[MC * KC];
 alignas(64) float packedB[KC * NC];
 alignas(64) float ab[MR * NR];
 // 将A矩阵分块复制到连续内存(ColMajor)
-void PackMatrixA(int m, int k, int paddingM, const float *A, int lda,
+void PackMatrixA(int m, int k, int m_tail, const float *A, int lda,
                  float *buffer) {
   int i, j;
   const float *Aij;
-  for (i = 0; i < m - paddingM; i += MR) {
-    for (int j = 0; j < k; ++j) {
+  for (i = 0; i < m - m_tail; i += MR) {
+    for (j = 0; j < k; ++j) {
       Aij = &A(i, j);
       *buffer++ = *Aij;
       *buffer++ = *(Aij + 1);
@@ -39,13 +39,13 @@ void PackMatrixA(int m, int k, int paddingM, const float *A, int lda,
       *buffer++ = *(Aij + 3);
     }
   }
-  if (paddingM != 0) {
+  if (m_tail != 0) {
     for (j = 0; j < k; ++j) {
-      Aij = &A(m - paddingM, j);
-      for (i = 0; i < paddingM; ++i) {
+      Aij = &A(m - m_tail, j);
+      for (i = 0; i < m_tail; ++i) {
         *buffer++ = *(Aij + i);
       }
-      for (i = paddingM; i < MR; ++i) {
+      for (i = m_tail; i < MR; ++i) {
         *buffer++ = 0;
       }
     }
@@ -53,11 +53,11 @@ void PackMatrixA(int m, int k, int paddingM, const float *A, int lda,
 }
 
 // 将A矩阵分块复制到连续内存(RowMajor)
-void PackMatrixA_(int m, int k, int paddingM, const float *A, int lda,
+void PackMatrixA_(int m, int k, int m_tail, const float *A, int lda,
                   float *buffer) {
   int i, j;
   const float *Ai, *Ai1, *Ai2, *Ai3;
-  for (i = 0; i < m - paddingM; i += MR) {
+  for (i = 0; i < m - m_tail; i += MR) {
     Ai = &A(i, 0);
     Ai1 = &A(i + 1, 0);
     Ai2 = &A(i + 2, 0);
@@ -69,12 +69,12 @@ void PackMatrixA_(int m, int k, int paddingM, const float *A, int lda,
       *buffer++ = *Ai3++;
     }
   }
-  if (paddingM != 0) {
+  if (m_tail != 0) {
     for (j = 0; j < k; ++j) {
-      for (i = m - paddingM; i < m; ++i) {
+      for (i = m - m_tail; i < m; ++i) {
         *buffer++ = A(i, j);
       }
-      for (i = m; i < m + (MR - paddingM); ++i) {
+      for (i = m; i < m + (MR - m_tail); ++i) {
         *buffer++ = 0;
       }
     }
@@ -82,11 +82,11 @@ void PackMatrixA_(int m, int k, int paddingM, const float *A, int lda,
 }
 
 // 将B矩阵分块复制到连续内存(ColMajor)
-void PackMatrixB(int k, int n, int paddingN, const float *B, int ldb,
+void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
                  float *buffer) {
   int i, j;
   const float *Bj, *Bj1, *Bj2, *Bj3;
-  for (j = 0; j < n - paddingN; j += NR) {
+  for (j = 0; j < n - n_tail; j += NR) {
     Bj = &B(0, j);
     Bj1 = &B(0, j + 1);
     Bj2 = &B(0, j + 2);
@@ -98,12 +98,12 @@ void PackMatrixB(int k, int n, int paddingN, const float *B, int ldb,
       *buffer++ = *Bj3++;
     }
   }
-  if (paddingN != 0) {
+  if (n_tail != 0) {
     for (i = 0; i < k; ++i) {
-      for (int j = n - paddingN; j < n; ++j) {
+      for (int j = n - n_tail; j < n; ++j) {
         *buffer++ = B(i, j);
       }
-      for (int j = n; j < n + (NR - paddingN); ++j) {
+      for (int j = n; j < n + (NR - n_tail); ++j) {
         *buffer++ = 0;
       }
     }
@@ -111,11 +111,11 @@ void PackMatrixB(int k, int n, int paddingN, const float *B, int ldb,
 }
 
 // 将B矩阵分块复制到连续内存(RowMajor)
-void PackMatrixB_(int k, int n, int paddingN, const float *B, int ldb,
+void PackMatrixB_(int k, int n, int n_tail, const float *B, int ldb,
                   float *buffer) {
   int i, j;
   const float *Bij;
-  for (j = 0; j < n - paddingN; j += NR) {
+  for (j = 0; j < n - n_tail; j += NR) {
     for (i = 0; i < k; ++i) {
       Bij = &B(i, j);
       asm volatile(
@@ -126,13 +126,13 @@ void PackMatrixB_(int k, int n, int paddingN, const float *B, int ldb,
           : "memory", "q0");
     }
   }
-  if (paddingN != 0) {
+  if (n_tail != 0) {
     for (i = 0; i < k; ++i) {
-      Bij = &B(i, n - paddingN);
-      for (int j = n - paddingN; j < n; ++j) {
+      Bij = &B(i, n - n_tail);
+      for (int j = n - n_tail; j < n; ++j) {
         *buffer++ = *Bij++;
       }
-      for (int j = n; j < n + (NR - paddingN); ++j) {
+      for (int j = n; j < n + (NR - n_tail); ++j) {
         *buffer++ = 0;
       }
     }
@@ -143,20 +143,32 @@ void PackMatrixB_(int k, int n, int paddingN, const float *B, int ldb,
 void InnerKernel(int m, int n, int k, float alpha, const float *A, int lda,
                  const float *B, int ldb, float beta, float *C, int ldc,
                  int first_time) {
-  int Buff_A_M = m;
-  int Buff_B_N = n;
+  int m_block = (m + MR - 1) / MR * MR;
+  int n_block = (n + NR - 1) / NR * NR;
 
-  int _mc = m % MR;
-  int _nc = n % NR;
+  int m_tail = m % MR;
+  int n_tail = n % NR;
 
-  if (_mc != 0) {
-    Buff_A_M = m + (MR - _mc);
+  if (first_time) {
+    PackMatrixB_(k, n, n_tail, B, ldb, packedB);
   }
+  PackMatrixA_(m, k, m_tail, A, lda, packedA);
 
-  if (_nc != 0) {
-    Buff_B_N = n + (NR - _nc);
+  int i, j, mc, nc;
+
+  // B 取 4 列, 打包预热
+  for (j = 0; j < n_block; j += NR) {
+    nc = (n - j) < NR ? n_tail : NR;
+    // A 取 4 行，打包预热
+    for (i = 0; i < m_block; i += MR) {
+      mc = (m - i) < MR ? m_tail : MR;
+      AddDot4x4(k, alpha, &packedA[i * k], 4, &packedB[j * k], k, beta,
+                &C(i, j), ldc, mc, nc);
+    }
   }
+}
 
+<<<<<<< HEAD
   if (first_time) {
     PackMatrixB_(k, n, _nc, B, ldb, packedB);
   }
@@ -176,10 +188,13 @@ void InnerKernel(int m, int n, int k, float alpha, const float *A, int lda,
   }
 }
 
+=======
+>>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b
 // 分块矩阵乘法
 void InnerKernel_relu(int m, int n, int k, float alpha, const float *A, int lda,
                       const float *B, int ldb, float beta, float *C, int ldc,
                       int first_time, bool relu = false) {
+<<<<<<< HEAD
   int Buff_A_M = m;
   int Buff_B_N = n;
 
@@ -196,20 +211,32 @@ void InnerKernel_relu(int m, int n, int k, float alpha, const float *A, int lda,
 
   float packedA[MC * KC];
   static float packedB[KC * NC];
+=======
+  int m_block = (m + MR - 1) / MR * MR;
+  int n_block = (n + NR - 1) / NR * NR;
+
+  int m_tail = m % MR;
+  int n_tail = n % NR;
+>>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b
 
   if (first_time) {
-    PackMatrixB_(k, n, _nc, B, ldb, packedB);
+    PackMatrixB_(k, n, n_tail, B, ldb, packedB);
   }
-  PackMatrixA_(m, k, _mc, A, lda, packedA);
+  PackMatrixA_(m, k, m_tail, A, lda, packedA);
 
   int i, j, mc, nc;
 
   // B 取 4 列, 打包预热
-  for (j = 0; j < Buff_B_N; j += NR) {
-    nc = (n - j) < NR ? _nc : NR;
+  for (j = 0; j < n_block; j += NR) {
+    nc = (n - j) < NR ? n_tail : NR;
     // A 取 4 行，打包预热
+<<<<<<< HEAD
     for (i = 0; i < Buff_A_M; i += MR) {
       mc = (m - i) < MR ? _mc : MR;
+=======
+    for (i = 0; i < m_block; i += MR) {
+      mc = (m - i) < MR ? m_tail : MR;
+>>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b
       AddDot4x4_relu(k, alpha, &packedA[i * k], 4, &packedB[j * k], k, beta,
                      &C(i, j), ldc, mc, nc, relu);
     }
@@ -528,12 +555,21 @@ void AddDot4x4_relu(int k, float alpha, const float *a, int lda, const float *b,
 
       "subs       %[kc2], %[kc2], #1  \n\t"
       "blt        end_kc2_%=          \n\t"
+<<<<<<< HEAD
+=======
+      "loop_kc2_%=:                   \n\t"
+>>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b
       "vld1.32    {q0}, [%[a]]!       \n\t"
       "vld1.32    {q1}, [%[b]]!       \n\t"
       "vmla.f32   q10, q1, d0[0]      \n\t"
       "vmla.f32   q11, q1, d0[1]      \n\t"
       "vmla.f32   q12, q1, d1[0]      \n\t"
       "vmla.f32   q13, q1, d1[1]      \n\t"
+<<<<<<< HEAD
+=======
+      "subs       %[kc2], %[kc2], #1  \n\t"
+      "bge        loop_kc2_%=         \n\t"
+>>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b
       "end_kc2_%=:                    \n\t"
 
       "cmp        %[mc],      #4      \n\t"
@@ -581,10 +617,17 @@ void AddDot4x4_relu(int k, float alpha, const float *a, int lda, const float *b,
       "vmla.f32   q13, q3, d8[1]      \n\t"
 
       "memory_%=:                     \n\t"
+<<<<<<< HEAD
       "vmax.f32 q10, q10, q14           \n\t"
       "vmax.f32 q11, q11, q14           \n\t"
       "vmax.f32 q12, q12, q14           \n\t"
       "vmax.f32 q13, q13, q14           \n\t"
+=======
+      "vmax.f32 q10, q10, q14         \n\t"
+      "vmax.f32 q11, q11, q14         \n\t"
+      "vmax.f32 q12, q12, q14         \n\t"
+      "vmax.f32 q13, q13, q14         \n\t"
+>>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b
       "mov        r5,     %[C]        \n\t"
       "mov        r6,     %[bytes_ldc]\n\t"
       "vst1.32    {q10}, [r5], r6     \n\t"
@@ -602,7 +645,12 @@ void AddDot4x4_relu(int k, float alpha, const float *a, int lda, const float *b,
         [kc2] "r"(kc2), [mc] "r"(mc), [nc] "r"(nc), [alpha] "r"(alpha),
         [beta] "r"(beta), [bytes_ldc] "r"(bytes_ldc),
         [flag_alpha] "r"(flag_alpha), [flag_beta] "r"(flag_beta)
+<<<<<<< HEAD
       : "memory", "q0", "q1", "q2", "q3", "q4", "q10", "q11", "q12", "q13");
+=======
+      : "memory", "q0", "q1", "q2", "q3", "q4", "q10", "q11", "q12", "q13",
+        "q14");
+>>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b
 
   if (mc != MR || nc != NR) {
     int i, j;

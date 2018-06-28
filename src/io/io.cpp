@@ -198,6 +198,16 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
   } else {
     InitMemory();
   }
+<<<<<<< HEAD:src/io/io.cpp
+=======
+
+  std::shared_ptr<framework::BlockDesc> to_predict_block =
+      to_predict_program_->Block(0);
+  auto &ops = ops_of_block_[*to_predict_block.get()];
+  for (const auto &op : ops) {
+    op->Init();
+  }
+>>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b:src/io/io.cpp
 }
 
 template <typename Dtype, Precision P>
@@ -408,6 +418,7 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
         finishF(opi);
       });
     }
+<<<<<<< HEAD:src/io/io.cpp
   }
 #else
   for (int i = 0; i < ops.size(); i++) {
@@ -422,6 +433,24 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
     profile[i].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
 #endif
   }
+=======
+  }
+#else
+  for (int i = 0; i < ops.size(); i++) {
+#ifdef PADDLE_MOBILE_PROFILE
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    profile[i].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+#endif
+
+    // to Run
+    ops[i]->Run();
+#ifdef PADDLE_MOBILE_PROFILE
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    profile[i].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+#endif
+  }
+>>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b:src/io/io.cpp
 #endif
   auto last_op = ops.rbegin();
 

@@ -54,8 +54,11 @@ USE_OP_CPU(conv_add);
 REGISTER_OPERATOR_CPU(conv_add, ops::FusionConvAddOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
+<<<<<<< HEAD
 USE_OP_MALI_GPU(conv_add);
 REGISTER_OPERATOR_MALI_GPU(conv_add, ops::FusionConvAddOp);
+=======
+>>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 #endif

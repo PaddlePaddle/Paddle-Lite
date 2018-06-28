@@ -37,8 +37,11 @@ USE_OP_CPU(reshape);
 REGISTER_OPERATOR_CPU(reshape, ops::ReshapeOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
+<<<<<<< HEAD
 USE_OP_MALI_GPU(reshape);
 REGISTER_OPERATOR_MALI_GPU(reshape, ops::ReshapeOp);
+=======
+>>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 #endif

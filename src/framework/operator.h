@@ -63,6 +63,7 @@ class OperatorBase {
   std::vector<string> GetOutKeys() const;
   virtual void RunImpl() const = 0;
 
+  virtual void Init() const = 0;
   /*
    * @b op 运算所需的输入, 如上一层的输出结果、卷积核
    * */
@@ -110,15 +111,27 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
                      const VariableNameMap &outputs, const AttributeMap &attrs,
                      std::shared_ptr<Scope> scope)
       : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope),
+<<<<<<< HEAD
         param_(inputs, outputs, attrs, *scope) {
     PADDLE_MOBILE_ENFORCE(kernel_.Init(param_), "  %s kernel init failed",
                           this->type_.c_str());
   }
+=======
+        param_(inputs, outputs, attrs, *scope) {}
+>>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b
 
   virtual void RunImpl() const { this->kernel_.Compute(this->param_); }
 
   virtual void InferShape() const = 0;
 
+<<<<<<< HEAD
+=======
+  void Init() const {
+    PADDLE_MOBILE_ENFORCE(kernel_.Init(param_), "  %s kernel init failed",
+                          this->type_.c_str());
+  }
+
+>>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b
  protected:
   KernelType kernel_;
   ParamType param_;

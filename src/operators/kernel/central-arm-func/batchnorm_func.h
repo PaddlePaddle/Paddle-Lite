@@ -16,20 +16,13 @@ limitations under the License. */
 
 #pragma once
 
-#include "operators/kernel/batchnorm_kernel.h"
-#include "operators/kernel/central-arm-func/batchnorm_func.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <>
-bool BatchNormKernel<CPU, float>::Init(const BatchNormParam &para) const {
-  return true;
-}
-
-template <>
-void BatchNormKernel<CPU, float>::Compute(const BatchNormParam &param) const {
-<<<<<<< HEAD
+template <typename P>
+void BatchnormCompute(const BatchNormParam &param) {
   const Tensor *input_x = param.InputX();
   auto input_x_ptr = input_x->data<float>();
   const auto &x_dims = input_x->dims();
@@ -206,9 +199,10 @@ void BatchNormKernel<CPU, float>::Compute(const BatchNormParam &param) const {
     }
 
     Tensor new_scale;
-    auto new_scale_ptr = new_scale.mutable_data<float>(make_ddim({C}));
+    auto new_scale_ptr =
+        new_scale.mutable_data<float>(framework::make_ddim({C}));
     Tensor new_bias;
-    auto new_bias_ptr = new_bias.mutable_data<float>(make_ddim({C}));
+    auto new_bias_ptr = new_bias.mutable_data<float>(framework::make_ddim({C}));
 
     /// ((x - est_mean) * (inv_var) * scale + bias equal to
     /// (x * inv_var * scale) + (bias - est_mean * inv_var * scale)
@@ -231,17 +225,7 @@ void BatchNormKernel<CPU, float>::Compute(const BatchNormParam &param) const {
     }
 
     delete[] inv_std_ptr;
-    //    DLOG << "input[2,5,1,0](input[102]) ,channel 5 :";
-    //    DLOG << "input_x_ptr : " << input_x_ptr[102];
-    //    DLOG << "variance : " << variance_ptr[5];
-    //    DLOG << "inv_std_ptr : " << inv_std_ptr[5];
-    //    DLOG << "new_scale_ptr : " << new_scale_ptr[5];
-    //    DLOG << "new_bias_ptr : " << new_bias_ptr[5];
-    //    DLOG << "out_ptr : " << out_ptr[102];
   }
-=======
-  BatchnormCompute<float>(param);
->>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b
 }
 
 }  // namespace operators

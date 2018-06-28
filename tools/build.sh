@@ -15,7 +15,10 @@ build_for_mac() {
     fi
     PLATFORM="x86"
     MODE="Release"
+<<<<<<< HEAD
     CXX_FLAGS="-std=c++11 -O3 -s"
+=======
+>>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b
     BUILD_DIR=../build/release/"${PLATFORM}"
     mkdir -p ${BUILD_DIR}/build
 
@@ -25,7 +28,10 @@ build_for_mac() {
     cmake .. \
         -B"${BUILD_DIR}" \
     	-DCMAKE_BUILD_TYPE="${MODE}" \
+<<<<<<< HEAD
     	-DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
+=======
+>>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b
     	-DIS_MAC=true
 
     cd ${BUILD_DIR}
@@ -46,11 +52,19 @@ build_for_android() {
     if [ "${PLATFORM}" = "arm-v7a" ]; then
         ABI="armeabi-v7a with NEON"
         ARM_PLATFORM="V7"
+<<<<<<< HEAD
         CXX_FLAGS="-O3 -std=c++11 -s -march=armv7-a -mfpu=neon -mfloat-abi=softfp -pie -fPIE -w -Wno-error=format-security"
     elif [ "${PLATFORM}" = "arm-v8a" ]; then
         ABI="arm64-v8a"
         ARM_PLATFORM="V8"
         CXX_FLAGS="-std=c++11 -march=armv8-a  -pie -fPIE -w -Wno-error=format-security -llog -O0 -ggdb3  -fno-inline -g"
+=======
+        CXX_FLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=softfp -pie -fPIE -w -Wno-error=format-security"
+    elif [ "${PLATFORM}" = "arm-v8a" ]; then
+        ABI="arm64-v8a"
+        ARM_PLATFORM="V8"
+        CXX_FLAGS="-march=armv8-a  -pie -fPIE -w -Wno-error=format-security -llog"
+>>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b
     else
         echo "unknown platform!"
         exit -1
@@ -58,7 +72,11 @@ build_for_android() {
 
 
     MODE="Release"
+<<<<<<< HEAD
     ANDROID_PLATFORM_VERSION="android-22"
+=======
+    ANDROID_PLATFORM_VERSION="android-15"
+>>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b
     TOOLCHAIN_FILE="./tools/android-cmake/android.toolchain.cmake"
     ANDROID_ARM_MODE="arm"
     if [ $# -eq 1 ]; then
@@ -173,4 +191,8 @@ else
 		    build_error
 	    fi
 	fi
+<<<<<<< HEAD
 fi
+=======
+fi
+>>>>>>> c71c2f8879fc105d1d144df744a5dfef3ab2a77b
