@@ -18,6 +18,7 @@ limitations under the License. */
 #ifdef PADDLE_MOBILE_DEBUG
 #include <iostream>
 #include <sstream>
+#include <cstring>
 #include <string>
 #endif
 #ifdef ANDROID
@@ -120,7 +121,7 @@ struct ToLog {
   } else                                                                       \
     paddle_mobile::ToLog(                                                      \
         level,                                                                 \
-        (std::stringstream()                                                   \
+        static_cast<std::stringstream&>(std::stringstream()                                                   \
          << "[file: "                                                          \
          << (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1) : __FILE__) \
          << "] [line: " << __LINE__ << "] ")                                   \
@@ -131,7 +132,7 @@ struct ToLog {
   } else                                                                       \
     paddle_mobile::ToLog(                                                      \
         paddle_mobile::kLOG_DEBUG,                                             \
-        (std::stringstream()                                                   \
+        static_cast<std::stringstream&>(std::stringstream()                    \
          << "[file: "                                                          \
          << (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1) : __FILE__) \
          << "] [line: " << __LINE__ << "] ")                                   \

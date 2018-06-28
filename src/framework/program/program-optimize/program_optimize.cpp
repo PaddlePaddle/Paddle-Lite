@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include "framework/program/program-optimize/program_optimize.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
+#include <algorithm>
 
 namespace paddle_mobile {
 

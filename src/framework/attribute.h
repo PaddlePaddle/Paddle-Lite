@@ -17,6 +17,7 @@ limitations under the License. */
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <typeinfo>
 
 #include "common/enforce.h"
 #include "common/log.h"

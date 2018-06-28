@@ -14,10 +14,8 @@ limitations under the License. */
 
 #ifdef MULTICLASSNMS_OP
 
-#pragma once
-
 #include "operators/kernel/multiclass_nms_kernel.h"
-
+#include <algorithm>
 namespace paddle_mobile {
 namespace operators {
 

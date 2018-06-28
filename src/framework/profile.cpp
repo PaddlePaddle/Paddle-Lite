@@ -12,19 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef BATCHNORM_OP
+// #include "profile.h"
 
-
-#include "operators/kernel/batchnorm_kernel.h"
-
-namespace paddle_mobile {
-namespace operators {
-
-template <>
-void BatchNormKernel<GPU_MALI, float>::Compute(
-    const BatchNormParam &param) const {}
-
-}  // namespace operators
-}  // namespace paddle_mobile
-
-#endif
+// Profile & getProfile() {
+//     static Profile p;
+//     return p;
+// }

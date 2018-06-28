@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include "framework/program/program-optimize/node.h"
 #include "framework/operator.h"
+#include <algorithm>
 
 namespace paddle_mobile {
 
