@@ -43,7 +43,7 @@ class Node {
   int Depth(int begin = 0);
   Node &Folder(
       int size, std::string type,
-      std::map<std::string, std::pair<std::string, std::string>> change_map,
+      std::map<std::string, std::vector<std::pair<std::string, std::string>>> change,
       std::vector<std::shared_ptr<Node>> *removed_nodes);
   std::vector<std::shared_ptr<framework::OpDesc>> OpDescs(int size);
   std::shared_ptr<framework::OpDesc> OpDescOfNode() { return op_desc_; }
@@ -56,7 +56,7 @@ class Node {
   void Folder(
       std::shared_ptr<framework::OpDesc> op_desc,
       std::vector<std::shared_ptr<Node>> *outputs, int index,
-      std::map<std::string, std::pair<std::string, std::string>> *change,
+      std::map<std::string, std::vector<std::pair<std::string, std::string>>> *change,
       Node *begin_node, std::vector<std::shared_ptr<Node>> *removed_nodes);
   std::shared_ptr<framework::OpDesc> op_desc_;
 #ifdef PADDLE_MOBILE_DEBUG
