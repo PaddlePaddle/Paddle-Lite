@@ -27,7 +27,7 @@ limitations under the License. */
 #include <condition_variable>
 #include <mutex>
 #include <thread>
-#include "common/depCore.h"
+#include "common/dep_core.h"
 #endif
 
 namespace paddle_mobile {
