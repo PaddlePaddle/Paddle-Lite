@@ -14,7 +14,6 @@ limitations under the License. */
 
 #ifdef BATCHNORM_OP
 
-
 #include "operators/kernel/batchnorm_kernel.h"
 
 namespace paddle_mobile {

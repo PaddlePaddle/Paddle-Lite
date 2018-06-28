@@ -15,9 +15,9 @@ limitations under the License. */
 #pragma once
 
 #include <string>
+#include <typeinfo>
 #include <unordered_map>
 #include <vector>
-#include <typeinfo>
 
 #include "common/enforce.h"
 #include "common/log.h"

@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "io/io.h"
+#include <algorithm>
 #include <vector>
 #include "common/enforce.h"
 #include "common/log.h"
@@ -24,7 +25,6 @@ limitations under the License. */
 #include "framework/program/var_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
-#include <algorithm>
 #ifdef PADDLE_EXECUTOR_MULTITHREAD
 #include <queue>
 #include <utility>

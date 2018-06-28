@@ -16,9 +16,9 @@ limitations under the License. */
 
 #pragma once
 
-#include <vector>
-#include <cmath>
 #include <algorithm>
+#include <cmath>
+#include <vector>
 #include "framework/operator.h"
 #include "operators/math/transform.h"
 #include "operators/op_param.h"
