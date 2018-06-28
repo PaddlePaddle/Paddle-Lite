@@ -33,8 +33,6 @@ build_for_mac() {
 }
 
 build_for_android() {
-    export ANDROID_NDK=/home/halsay/android-ndk-r16b
-    export NDK_ROOT=/home/halsay/android-ndk-r16b
     rm -rf "../build"
     if [ -z "${ANDROID_NDK}" ]; then
         echo "ANDROID_NDK not found!"
