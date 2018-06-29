@@ -12,38 +12,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVADD_OP
-
 #pragma once
 
+#include <algorithm>
 #include <vector>
-#if __ARM_NEON
-#include <arm_neon.h>
-#endif
-#include "common/common.h"
-#include "framework/ddim.h"
-#include "framework/operator.h"
+#include "framework/tensor.h"
 #include "operators/math/conv_func.h"
-#include "operators/math/depthwise_conv_3x3.h"
-#include "operators/math/im2col.h"
-#include "operators/math/math_function.h"
-#include "operators/math/vol2col.h"
-#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
+namespace math {
+using framework::Tensor;
+using std::max;
+using std::min;
+using std::vector;
 
-using framework::DDim;
-using framework::OpKernelBase;
-
-template <typename DeviceType, typename T>
-class ConvAddKernel : public OpKernelBase<DeviceType, FusionConvAddParam> {
- public:
-  void Compute(const FusionConvAddParam &param) const;
-  bool Init(const FusionConvAddParam &para) const;
-};
-
+void DepthwiseConv3x3(const Tensor *input, vector<int> strides,
+                      vector<int> paddings, const Tensor *filter, Tensor *bias,
+                      Tensor *output, bool if_bias);
+void DepthwiseConv3x3s1p1(const Tensor *input, const Tensor *filter,
+                          Tensor *output, Tensor *bias, bool if_bias);
+}  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile
-
-#endif
