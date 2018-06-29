@@ -120,7 +120,7 @@ struct ToLog {
   if (level > paddle_mobile::log_level) {                                    \
   } else                                                                     \
     paddle_mobile::ToLog(                                                    \
-        level, static_cast<std::stringstream &>(                             \
+        level, static_cast<const std::stringstream &>(                       \
                    std::stringstream()                                       \
                    << "[file: "                                              \
                    << (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1) \
@@ -133,7 +133,7 @@ struct ToLog {
   } else                                                              \
     paddle_mobile::ToLog(                                             \
         paddle_mobile::kLOG_DEBUG,                                    \
-        static_cast<std::stringstream &>(                             \
+        static_cast<const std::stringstream &>(                       \
             std::stringstream()                                       \
             << "[file: "                                              \
             << (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1) \

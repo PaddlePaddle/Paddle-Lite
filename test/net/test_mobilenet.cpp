@@ -33,12 +33,8 @@ int main() {
                            input_tensor.data<float>() + input_tensor.numel());
   auto time3 = time();
   auto vec_result = executor.Predict(input, dims);
-  float sum = 0;
-  for (const auto item : vec_result) {
-    sum += item;
-  }
-  DLOG << "mobilenet output sum =" << sum;
   auto time4 = time();
+
   DLOG << "predict cost :" << time_diff(time3, time4) << "ms";
   return 0;
 }
