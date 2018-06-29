@@ -877,6 +877,23 @@ class Im2SequenceParam : public OpParam {
   vector<int> strides_;
   vector<int> paddings_;
 };
+    
+class DropoutParam : public OpParam {
+public:
+    DropoutParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+                 const AttributeMap &attrs, const Scope &scope) {
+        input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+        out_ = OutFrom<LoDTensor>(outputs, scope);
+    }
+    
+    const Tensor *InputX() const { return input_x_; }
+    
+    Tensor *Out() const { return out_; }
+    
+private:
+    Tensor *input_x_;
+    Tensor *out_;
+};
 
 }  // namespace operators
 }  // namespace paddle_mobile

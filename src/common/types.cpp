@@ -40,6 +40,7 @@ const std::string G_OP_TYPE_FEED = "feed";
 const std::string G_OP_TYPE_FETCH = "fetch";
 const std::string G_OP_TYPE_DEPTHWISE_CONV = "depthwise_conv2d";
 const std::string G_OP_TYPE_IM2SEQUENCE = "im2sequence";
+const std::string G_OP_TYPE_DROPOUT = "dropout";
 
 std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
@@ -66,6 +67,7 @@ std::unordered_map<
         {G_OP_TYPE_RESHAPE, {{"X"}, {"Out"}}},
         {G_OP_TYPE_DEPTHWISE_CONV, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_RELU, {{"Input"}, {"Out"}}},
-        {G_OP_TYPE_IM2SEQUENCE, {{"X"}, {"Out"}}}};
+        {G_OP_TYPE_IM2SEQUENCE, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_DROPOUT, {{"X"}, {"Out"}}}};
 
 }  // namespace paddle_mobile
