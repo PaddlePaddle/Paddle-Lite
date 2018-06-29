@@ -850,8 +850,9 @@ class FusionConvAddReluParam : public FusionConvAddParam {
 
 class Im2SequenceParam : public OpParam {
  public:
-  Im2SequenceParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-                   const AttributeMap &attrs, const Scope &scope) {
+  Im2SequenceParam(const VariableNameMap &inputs,
+                   const VariableNameMap &outputs, const AttributeMap &attrs,
+                   const Scope &scope) {
     input_x_ = InputXFrom<LoDTensor>(inputs, scope);
     out_ = OutFrom<LoDTensor>(outputs, scope);
     kernels_ = GetAttr<vector<int>>("kernels", attrs);

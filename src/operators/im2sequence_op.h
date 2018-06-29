@@ -14,9 +14,9 @@ limitations under the License. */
 
 #pragma once
 
+#include <operators/op_param.h>
 #include "framework/operator.h"
 #include "operators/kernel/im2sequence_kernel.h"
-#include <operators/op_param.h>
 
 namespace paddle_mobile {
 namespace operators {
@@ -27,7 +27,8 @@ template <typename DeviceType, typename T>
 class Im2SequenceOp : public framework::OperatorWithKernel<DeviceType> {
  public:
   Im2SequenceOp(const std::string &type, const VariableNameMap &inputs,
-                const VariableNameMap &outputs, const framework::AttributeMap &attrs,
+                const VariableNameMap &outputs,
+                const framework::AttributeMap &attrs,
                 std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
                                                   scope),
