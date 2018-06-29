@@ -95,6 +95,7 @@ extern const std::string G_OP_TYPE_FEED;
 extern const std::string G_OP_TYPE_FETCH;
 extern const std::string G_OP_TYPE_DEPTHWISE_CONV;
 extern const std::string G_OP_TYPE_IM2SEQUENCE;
+extern const std::string G_OP_TYPE_DROPOUT;
 
 extern std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
