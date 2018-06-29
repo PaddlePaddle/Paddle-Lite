@@ -14,8 +14,6 @@ limitations under the License. */
 
 #ifdef RESHAPE_OP
 
-#pragma once
-
 #include "operators/kernel/reshape_kernel.h"
 
 namespace paddle_mobile {

@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "io/io.h"
+#include <algorithm>
 #include <vector>
 #include "common/enforce.h"
 #include "common/log.h"
@@ -25,7 +26,6 @@ limitations under the License. */
 #include "framework/scope.h"
 #include "framework/tensor.h"
 #ifdef PADDLE_EXECUTOR_MULTITHREAD
-#include <algorithm>
 #include <queue>
 #include <utility>
 #include "common/threadpool.h"
@@ -88,7 +88,7 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
     bool optimize) {
   auto program = this->LoadProgram(model_path, optimize);
   program.para_path = para_path;
-  program.is_commbine = true;
+  program.combined = true;
   return program;
 }
 
@@ -193,7 +193,7 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
 #endif
     }
   }
-  if (program_.is_commbine) {
+  if (program_.combined) {
     InitCombineMemory();
   } else {
     InitMemory();

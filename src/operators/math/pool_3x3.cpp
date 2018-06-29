@@ -19,7 +19,7 @@ limitations under the License. */
 #if __ARM_NEON
 #include <arm_neon.h>
 #endif  // __ARM_NEON
-
+#include <climits>
 namespace paddle_mobile {
 namespace operators {
 namespace math {

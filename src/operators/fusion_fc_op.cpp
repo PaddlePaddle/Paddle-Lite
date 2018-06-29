@@ -59,6 +59,8 @@ USE_OP_CPU(fc);
 REGISTER_OPERATOR_CPU(fc, ops::FusionFcOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(fc);
+REGISTER_OPERATOR_MALI_GPU(fc, ops::FusionFcOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 #endif
