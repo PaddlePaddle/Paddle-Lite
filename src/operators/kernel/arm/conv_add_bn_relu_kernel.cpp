@@ -48,7 +48,6 @@ bool ConvAddBNReluKernel<CPU, float>::Init(
     new_scale_ptr[i] = inv_std_ptr[i] * scale_ptr[i];
     new_bias_ptr[i] = bias_ptr[i] - mean_ptr[i] * inv_std_ptr[i] * scale_ptr[i];
   }
-  std::cout << "yes" << std::endl;
   (*param).SetNewScale(new_scale);
   (*param).SetNewBias(new_bias);
   return true;
