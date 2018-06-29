@@ -32,7 +32,7 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
         param_(inputs, outputs, attrs, *scope) {}
   void RunImpl() const { param_.Out()->ShareDataWith(*param_.InputX()); }
 
-  void Init() const {}
+  void Init() {}
 
   void InferShape() const {
     auto out_dims = param_.Out()->dims();

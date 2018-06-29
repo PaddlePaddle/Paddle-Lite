@@ -63,7 +63,7 @@ class OperatorBase {
   std::vector<string> GetOutKeys() const;
   virtual void RunImpl() const = 0;
 
-  virtual void Init() const = 0;
+  virtual void Init() = 0;
   /*
    * @b op 运算所需的输入, 如上一层的输出结果、卷积核
    * */
@@ -117,8 +117,8 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
 
   virtual void InferShape() const = 0;
 
-  void Init() const {
-    PADDLE_MOBILE_ENFORCE(kernel_.Init(param_), "  %s kernel init failed",
+  void Init() {
+    PADDLE_MOBILE_ENFORCE(kernel_.Init(&param_), "  %s kernel init failed",
                           this->type_.c_str());
   }
 
@@ -146,7 +146,7 @@ class OpKernelBase {
   }
 #endif
   virtual void Compute(const P &para) const = 0;
-  virtual bool Init(const P &para) const { return true; };
+  virtual bool Init(P *para) { return true; };
   virtual ~OpKernelBase() = default;
 
  private:

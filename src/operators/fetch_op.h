@@ -33,7 +33,7 @@ class FetchOp : public framework::OperatorBase<DeviceType> {
         param_(inputs, outputs, attrs, *scope) {}
   void RunImpl() const { param_.Out()->ShareDataWith(*param_.InputX()); }
 
-  void Init() const {}
+  void Init() {}
 
   void InferShape() const {
     auto x_dims = param_.InputX()->dims();
