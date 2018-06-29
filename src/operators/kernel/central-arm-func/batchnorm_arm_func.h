@@ -53,7 +53,7 @@ void BatchnormCompute(const BatchNormParam &param) {
                         "C must equal to variance.numel()");
 
   int HXW = H * W;
-  if (0 && HXW > 32) {
+  if (HXW > 32) {
     int NXC = N * C;
     float *inv_std_ptr = new float[NXC * 4];
     float *volatile new_scale_ptr = new float[NXC * 4];
@@ -224,12 +224,6 @@ void BatchnormCompute(const BatchNormParam &param) {
         }
       }
     }
-    //      for(int i = 0; i < new_scale.numel(); i++){
-    //          std::cout << "new_scale " << new_scale_ptr[i] <<std::endl;
-    //      }
-    //      for(int i = 0; i < new_bias.numel(); i++){
-    //          std::cout << "new_bias " << new_bias_ptr[i] <<std::endl;
-    //      }
 
     delete[] inv_std_ptr;
   }
