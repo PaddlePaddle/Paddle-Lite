@@ -7,11 +7,20 @@ option(USE_EXCEPTION "use std exception" ON)
 option(LOG_PROFILE "log profile" ON)
 # select the platform to build
 option(CPU "armv7 with neon" ON)
-option(MALI_GPU "mali gpu" ON)
+option(MALI_GPU "mali gpu" OFF)
 option(FPGA "fpga" OFF)
 set(DEBUGING ON)
+
+file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c)
+file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
+
 if (CPU)
   add_definitions(-DPADDLE_MOBILE_CPU)
+else()
+    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/kernel/arm/*.h)
+    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/kernel/arm/*.cc)
+    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/kernel/arm/*.cpp)
+
 endif()
 
 if (MALI_GPU)
@@ -27,15 +36,24 @@ if (MALI_GPU)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -L${ACL_ROOT}/build/opencl-1.2-stubs")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lOpenCL")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_ACL=1")
+else()
+    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/kernel/mali/*.h)
+    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/kernel/mali/*.cc)
+    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/kernel/mali/*.cpp)
+
+
 endif()
 
 if(FPGA)
-  add_definitions(-DPADDLE_MOBILE_FPGA)
+    add_definitions(-DPADDLE_MOBILE_FPGA)
+else()
+    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/kernel/fpga/*.h)
+    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/kernel/fpga/*.cc)
+    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/kernel/fpga/*.cpp)
 endif()
 
 
 set(CMAKE_CXX_FLAGS "-std=c++14 -O3 -s ${CMAKE_CXX_FLAGS}")
-
 if (DEBUGING)
   message(STATUS "debug")
   set(CMAKE_BUILD_TYPE Debug)
@@ -69,8 +87,7 @@ if(USE_OPENMP)
 endif()
 
 
-file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c)
-file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
+
 
 if (NOT ANDROID_NDK_TOOLCHAIN_INCLUDED)
   list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/jni/*.cpp)
