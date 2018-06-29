@@ -35,7 +35,6 @@ void DropoutKernel<CPU, float>::Compute(const DropoutParam &param) const {
   DropoutFunctor<float> func_;
   math::Transform trans;
   trans(input_x_ptr, input_x_ptr + input_x->numel(), out_ptr, func_);
-
 }
 }  // namespace operators
 }  // namespace paddle_mobile
