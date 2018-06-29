@@ -14,25 +14,24 @@ limitations under the License. */
 
 #pragma once
 
-#include "common/types.h"
-#include "framework/program/program_desc.h"
-#include "framework/scope.h"
+#include <algorithm>
+#include <vector>
+#include "framework/tensor.h"
+#include "operators/math/conv_func.h"
 
 namespace paddle_mobile {
-namespace framework {
+namespace operators {
+namespace math {
+using framework::Tensor;
+using std::max;
+using std::min;
+using std::vector;
 
-template <typename Dtype, Precision P = Precision::FP32>
-class Program {
- public:
-  std::shared_ptr<ProgramDesc> originProgram;
-  std::shared_ptr<ProgramDesc> optimizeProgram;
-  std::shared_ptr<Scope> scope;
-  std::string model_path;
-  std::string para_path;
-  bool combined = false;
-
- private:
-};
-
-}  // namespace framework
+void DepthwiseConv3x3(const Tensor *input, vector<int> strides,
+                      vector<int> paddings, const Tensor *filter, Tensor *bias,
+                      Tensor *output, bool if_bias);
+void DepthwiseConv3x3s1p1(const Tensor *input, const Tensor *filter,
+                          Tensor *output, Tensor *bias, bool if_bias);
+}  // namespace math
+}  // namespace operators
 }  // namespace paddle_mobile

@@ -13,26 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma once
+#include <chrono>
 
-#include "common/types.h"
-#include "framework/program/program_desc.h"
-#include "framework/scope.h"
+using Time = decltype(std::chrono::high_resolution_clock::now());
 
-namespace paddle_mobile {
-namespace framework {
+inline Time time() { return std::chrono::high_resolution_clock::now(); }
 
-template <typename Dtype, Precision P = Precision::FP32>
-class Program {
- public:
-  std::shared_ptr<ProgramDesc> originProgram;
-  std::shared_ptr<ProgramDesc> optimizeProgram;
-  std::shared_ptr<Scope> scope;
-  std::string model_path;
-  std::string para_path;
-  bool combined = false;
-
- private:
-};
-
-}  // namespace framework
-}  // namespace paddle_mobile
+inline double time_diff(Time t1, Time t2) {
+  typedef std::chrono::microseconds ms;
+  auto diff = t2 - t1;
+  ms counter = std::chrono::duration_cast<ms>(diff);
+  return counter.count() / 1000.0;
+}
