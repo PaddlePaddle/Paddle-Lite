@@ -40,7 +40,7 @@ template <typename DeviceType, typename T>
 class ConvAddKernel : public OpKernelBase<DeviceType, FusionConvAddParam> {
  public:
   void Compute(const FusionConvAddParam &param) const;
-  bool Init(const FusionConvAddParam &para) const;
+  bool Init(FusionConvAddParam *param) const;
 };
 
 }  // namespace operators

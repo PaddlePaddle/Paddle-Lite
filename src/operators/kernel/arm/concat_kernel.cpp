@@ -53,7 +53,7 @@ class ConcatFunctor {
 };
 
 template <>
-bool ConcatKernel<CPU, float>::Init(const ConcatParam &para) const {
+bool ConcatKernel<CPU, float>::Init(ConcatParam *param) const {
   return true;
 }
 

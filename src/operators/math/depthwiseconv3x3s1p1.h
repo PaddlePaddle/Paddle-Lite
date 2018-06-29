@@ -21,7 +21,8 @@ namespace math {
 using framework::Tensor;
 
 void DepthwiseConv3x3s1p1(const Tensor *input, Tensor filter, Tensor *output,
-                          Tensor bias, bool if_bias);
+                          Tensor *bias, bool if_bias, Tensor *new_scale,
+                          Tensor *new_bias, bool if_bn, bool if_relu);
 }  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile

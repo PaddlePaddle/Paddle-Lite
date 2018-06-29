@@ -14,7 +14,7 @@ limitations under the License. */
 
 #pragma once
 
-#ifdef FUSION_CONVADD_BN_RELU_OP
+#ifdef FUSION_CONVADDBNRELU_OP
 
 #include <vector>
 #include "framework/ddim.h"
@@ -26,20 +26,20 @@ limitations under the License. */
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        using framework::DDim;
-        using framework::OpKernelBase;
+using framework::DDim;
+using framework::OpKernelBase;
 
-        template <typename DeviceType, typename T>
-        class ConvAddBNReluKernel
-                : public OpKernelBase<DeviceType, FusionConvAddBNReluParam> {
-        public:
-            void Compute(const FusionConvAddBNReluParam &param) const;
-            bool Init(const FusionConvAddBNReluParam &para) const;
-        };
+template <typename DeviceType, typename T>
+class ConvAddBNReluKernel
+    : public OpKernelBase<DeviceType, FusionConvAddBNReluParam> {
+ public:
+  void Compute(const FusionConvAddBNReluParam &param) const;
+  bool Init(FusionConvAddBNReluParam *param) const;
+};
 
-    }  // namespace operators
+}  // namespace operators
 }  // namespace paddle_mobile
 
 #endif
