@@ -17,18 +17,6 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-bool IsExpand(const std::vector<int> &kernels,
-              const std::vector<int> &strides,
-              const std::vector<int> &paddings) {
-  bool kernels_1 = true, strides_1 = true, padding_0 = true;
-  for (size_t j = 0; j < strides.size(); ++j) {
-    kernels_1 = kernels_1 && (kernels[j] == 1);
-    strides_1 = strides_1 && (strides[j] == 1);
-    padding_0 = padding_0 && (paddings[j] == 0);
-  }
-  return !(kernels_1 && strides_1 && padding_0);
-}
-
 inline int Im2SeqOutputSize(int input_size, int filter_size, int padding_0,
                             int padding_1, int stride) {
   const int output_size =
