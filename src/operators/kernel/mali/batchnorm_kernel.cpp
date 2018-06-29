@@ -128,7 +128,7 @@ class AclBatchNormOp : public acl::ACLOperator {
 };
 
 template <>
-bool BatchNormKernel<GPU_MALI, float>::Init(BatchNormParam *param) const {
+bool BatchNormKernel<GPU_MALI, float>::Init(BatchNormParam* param) const {
   AclBatchNormOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclBatchNormOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {

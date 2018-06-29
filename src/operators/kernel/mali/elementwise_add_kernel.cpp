@@ -27,7 +27,8 @@ struct AddFunctor {
 };
 
 template <>
-bool ElementwiseAddKernel<GPU_MALI, float>::Init(ElementwiseAddParam *param) const {
+bool ElementwiseAddKernel<GPU_MALI, float>::Init(
+    ElementwiseAddParam *param) const {
   return true;
 }
 

@@ -15,8 +15,8 @@ limitations under the License. */
 #ifdef FUSION_CONVADDBNRELU_OP
 
 #pragma once
-#include "operators/math/depthwiseconv3x3s1p1.h"
 #include "operators/kernel/conv_add_bn_relu_kernel.h"
+#include "operators/math/depthwiseconv3x3s1p1.h"
 #include "operators/op_param.h"
 namespace paddle_mobile {
 namespace operators {
@@ -130,11 +130,12 @@ void ConvAddBNReluCompute(const FusionConvAddBNReluParam &param) {
     }
 
     auto output_ptr = output->data<float>();
-    for (int c = 0; c < output_matrix_shape[0]; c++){
+    for (int c = 0; c < output_matrix_shape[0]; c++) {
       // int start = c * output_matrix_shape[1];
-      for (int j = 0; j < output_matrix_shape[1]; j++){
-       //  output_ptr[start + j] = output_ptr[start +j]*new_scale_ptr[c]+new_bias_ptr[c];
-        //  output_ptr[start + j] = output_ptr[start+j]< 0 ? 0 : output_ptr[start +j];
+      for (int j = 0; j < output_matrix_shape[1]; j++) {
+        //  output_ptr[start + j] = output_ptr[start
+        //  +j]*new_scale_ptr[c]+new_bias_ptr[c]; output_ptr[start + j] =
+        //  output_ptr[start+j]< 0 ? 0 : output_ptr[start +j];
       }
     }
   }
