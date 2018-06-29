@@ -27,7 +27,7 @@ struct AddFunctor {
 };
 
 template <>
-bool ElementwiseAddKernel<CPU, float>::Init(ElementwiseAddParam *param) const {
+bool ElementwiseAddKernel<CPU, float>::Init(ElementwiseAddParam *param) {
   return true;
 }
 

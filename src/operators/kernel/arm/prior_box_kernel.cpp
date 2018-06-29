@@ -27,7 +27,7 @@ struct ClipFunctor {
 };
 
 template <>
-bool PriorBoxKernel<CPU, float>::Init(PriorBoxParam *param) const {
+bool PriorBoxKernel<CPU, float>::Init(PriorBoxParam *param) {
   return true;
 }
 

@@ -36,7 +36,7 @@ class ConvAddReluKernel
     : public OpKernelBase<DeviceType, FusionConvAddReluParam> {
  public:
   void Compute(const FusionConvAddReluParam &param) const;
-  bool Init(FusionConvAddReluParam *param) const;
+  bool Init(FusionConvAddReluParam *param);
 };
 
 }  // namespace operators

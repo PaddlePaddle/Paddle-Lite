@@ -22,7 +22,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ReshapeKernel<GPU_MALI, float>::Init(ReshapeParam *param) const {
+bool ReshapeKernel<GPU_MALI, float>::Init(ReshapeParam *param) {
   return true;
 }
 

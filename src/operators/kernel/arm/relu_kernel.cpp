@@ -26,7 +26,7 @@ struct ReluFunctor {
 };
 
 template <>
-bool ReluKernel<CPU, float>::Init(ReluParam *param) const {
+bool ReluKernel<CPU, float>::Init(ReluParam *param) {
   return true;
 }
 
