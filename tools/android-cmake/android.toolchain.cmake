@@ -37,7 +37,7 @@
 # ANDROID_DISABLE_FORMAT_STRING_CHECKS
 # ANDROID_CCACHE
 
-cmake_minimum_required(VERSION 3.6.0)
+# cmake_minimum_required(VERSION 3.6.0)
 
 # Inhibit all of CMake's own NDK handling code.
 set(CMAKE_SYSTEM_VERSION 1)
