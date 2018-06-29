@@ -25,7 +25,8 @@ inline int Im2SeqOutputSize(int input_size, int filter_size, int padding_0,
 }
 
 template <>
-void Im2SequenceKernel<CPU, float>::Compute(const Im2SequenceParam &param) const {
+void Im2SequenceKernel<CPU, float>::Compute(
+    const Im2SequenceParam &param) const {
   const Tensor *in_x = param.Input();
   Tensor *out = param.Output();
   out->mutable_data<float>();
@@ -46,15 +47,15 @@ void Im2SequenceKernel<CPU, float>::Compute(const Im2SequenceParam &param) const
                                       paddings[3], strides[1]);
   const std::vector<int> dilations({1, 1});
 
-  //TODO: verify 
+  // TODO: verify
   auto out_dims = out->dims();
   out->Resize({batch_size, out->numel() / batch_size});
 
   for (int i = 0; i < batch_size; i++) {
     const Tensor src =
-          in_x->Slice(i, i + 1).Resize({img_channels, img_height, img_width});
+        in_x->Slice(i, i + 1).Resize({img_channels, img_height, img_width});
     Tensor dst = out->Slice(i, i + 1).Resize(
-      {output_height, output_width, img_channels, kernels[0], kernels[1]});
+        {output_height, output_width, img_channels, kernels[0], kernels[1]});
 
     math::Im2ColFunctor<math::ColFormat::kOCF, CPU, float> f;
     f(src, dilations, strides, paddings, &dst);

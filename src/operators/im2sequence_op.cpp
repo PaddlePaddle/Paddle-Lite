@@ -17,15 +17,15 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-int Im2SequenceOutputSize(int input_size, int kernel, int padding_1, int padding_2,
-                          int stride) {
-  int output_size = 1 + (padding_1 + padding_2 + input_size - kernel + stride - 1) / stride;
+int Im2SequenceOutputSize(int input_size, int kernel, int padding_1,
+                          int padding_2, int stride) {
+  int output_size =
+      1 + (padding_1 + padding_2 + input_size - kernel + stride - 1) / stride;
   return output_size;
 }
 
 template <typename Dtype, typename T>
 void Im2SequenceOp<Dtype, T>::InferShape() const {
-
   auto in_x_dims = param_.Input()->dims();
 
   const std::vector<int> &kernels = param_.Kernels();

@@ -26,7 +26,8 @@ namespace operators {
 using namespace framework;
 
 template <typename DeviceType, typename T>
-class Im2SequenceKernel : public framework::OpKernelBase<DeviceType, Im2SequenceParam> {
+class Im2SequenceKernel
+    : public framework::OpKernelBase<DeviceType, Im2SequenceParam> {
  public:
   void Compute(const Im2SequenceParam &param) const;
 };
