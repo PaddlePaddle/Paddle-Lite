@@ -28,7 +28,7 @@ template <typename DeviceType, typename T>
 class PoolKernel : public OpKernelBase<DeviceType, PoolParam> {
  public:
   void Compute(const PoolParam &param) const override;
-  bool Init(const PoolParam &para) const;
+  bool Init(PoolParam *param) const;
 };
 }  // namespace operators
 }  // namespace paddle_mobile

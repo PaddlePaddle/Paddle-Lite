@@ -195,7 +195,7 @@ class AclConvOp : public acl::ACLOperator {
 };
 
 template <>
-bool ConvKernel<GPU_MALI, float>::Init(const ConvParam& param) const {
+bool ConvKernel<GPU_MALI, float>::Init(ConvParam *param) const {
   AclConvOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclConvOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {

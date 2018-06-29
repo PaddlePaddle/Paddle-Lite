@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include "operators/math/depthwiseconv3x3s1p1.h"
 #include <arm_neon.h>
+#include <algorithm>
 
 namespace paddle_mobile {
 namespace operators {
@@ -22,11 +23,14 @@ namespace math {
 using framework::Tensor;
 
 void DepthwiseConv3x3s1p1(const Tensor *input, Tensor filter, Tensor *output,
-                          Tensor bias, bool if_bias) {
+                          Tensor *bias, bool if_bias, Tensor *new_scale,
+                          Tensor *new_bias, bool if_bn, bool if_relu) {
   const float *input_data = input->data<float>();
   const float *filter_data = filter.data<float>();
   float *output_data = output->data<float>();
-  const float *bias_data = bias.data<float>();
+  const float *bias_data = bias->data<float>();
+  const float *newscale_data = new_scale->data<float>();
+  const float *newbias_data = new_bias->data<float>();
 
   const int h = static_cast<int>(input->dims()[2]);
   const int w = static_cast<int>(input->dims()[3]);
@@ -36,6 +40,10 @@ void DepthwiseConv3x3s1p1(const Tensor *input, Tensor filter, Tensor *output,
   const int c = static_cast<int>(input->dims()[1]);
   const int hxw = h * w;
   float32x4_t vbias = vdupq_n_f32(0.0);
+  float32x4_t vnewbias = vdupq_n_f32(0.0);
+  float32x4_t vnewscale = vdupq_n_f32(1.0);
+  float32x4_t vzero = vdupq_n_f32(0);
+
   for (int b = 0; b < batch_size; ++b) {
     const float *filter_data_tmp = filter_data;
 
@@ -43,7 +51,10 @@ void DepthwiseConv3x3s1p1(const Tensor *input, Tensor filter, Tensor *output,
       if (if_bias) {
         vbias = vdupq_n_f32(bias_data[j]);
       }
-
+      if (if_bn) {
+        vnewbias = vdupq_n_f32(newbias_data[j]);
+        vnewscale = vdupq_n_f32(newscale_data[j]);
+      }
       int l_mid = l - 2;  // l=1->l_mid=-1,l=2->l_mid=0
       float w00 = filter_data_tmp[0];
       float w01 = filter_data_tmp[1];
@@ -55,34 +66,55 @@ void DepthwiseConv3x3s1p1(const Tensor *input, Tensor filter, Tensor *output,
       float w21 = filter_data_tmp[7];
       float w22 = filter_data_tmp[8];
 
-      output_data[0] = w11 * input_data[0] + w12 * input_data[1] +
-                       w21 * input_data[l] + w22 * input_data[l + 1] +
-                       bias_data[j];
-      output_data[l - 1] = w10 * input_data[l - 2] + w11 * input_data[l - 1] +
-                           w20 * input_data[2 * l - 2] +
-                           w21 * input_data[2 * l - 1] + bias_data[j];
-      output_data[(l - 1) * l] =
-          w01 * input_data[(l - 2) * l] + w02 * input_data[(l - 2) * l + 1] +
-          w11 * input_data[(l - 1) * l] + w12 * input_data[(l - 1) * l + 1] +
-          bias_data[j];
-      output_data[l * l - 1] = w00 * input_data[(l - 2) * (l + 1)] +
-                               w01 * input_data[(l - 2) * (l + 1) + 1] +
-                               w10 * input_data[l * l - 2] +
-                               w11 * input_data[l * l - 1] + bias_data[j];
+      output_data[0] =(w11 * input_data[0] + w12 * input_data[1] + w21 * input_data[l] +
+                                w22 * input_data[l + 1] + bias_data[j]) *
+                               newscale_data[j] +
+                               newbias_data[j];
+      output_data[l - 1] = (w10 * input_data[l - 2] + w11 * input_data[l - 1] +
+                            w20 * input_data[2 * l - 2] +
+                            w21 * input_data[2 * l - 1] + bias_data[j]) *
+                               newscale_data[j] +
+                           newbias_data[j];
 
+      output_data[(l - 1) * l] =
+          (w01 * input_data[(l - 2) * l] + w02 * input_data[(l - 2) * l + 1] +
+           w11 * input_data[(l - 1) * l] + w12 * input_data[(l - 1) * l + 1] +
+           bias_data[j]) *
+              newscale_data[j] +
+          newbias_data[j];
+      output_data[l * l - 1] = (w00 * input_data[(l - 2) * (l + 1)] +
+                                w01 * input_data[(l - 2) * (l + 1) + 1] +
+                                w10 * input_data[l * l - 2] +
+                                w11 * input_data[l * l - 1] + bias_data[j]) *
+                                   newscale_data[j] +
+                               newbias_data[j];
+      if(if_relu){
+        output_data[0] = output_data[0] < 0 ? 0 : output_data[0];
+        output_data[l-1] = output_data[l-1] < 0 ? 0 : output_data[l-1];
+        output_data[(l-1)*l] = output_data[(l-1)*l] < 0 ? 0 : output_data[(l-1)*l];
+        output_data[l * l - 1] = output_data[l * l - 1] < 0 ? 0 : output_data[l * l - 1];
+      }
       for (int i = 1; i < l - 1; ++i) {
         output_data[i * l] =
-            w01 * input_data[i * l - l] + w02 * input_data[i * l - l + 1] +
-            w11 * input_data[i * l] + w12 * input_data[i * l + 1] +
-            w21 * input_data[i * l + l] + w22 * input_data[i * l + l + 1] +
-            bias_data[j];
-        output_data[i * l + l - 1] = w00 * input_data[i * l + l - 1 - l - 1] +
-                                     w01 * input_data[i * l + l - 1 - l] +
-                                     w10 * input_data[i * l + l - 1 - 1] +
-                                     w11 * input_data[i * l + l - 1] +
-                                     w20 * input_data[i * l + l - 1 + l - 1] +
-                                     w21 * input_data[i * l + l - 1 + l] +
-                                     bias_data[j];
+            (w01 * input_data[i * l - l] + w02 * input_data[i * l - l + 1] +
+             w11 * input_data[i * l] + w12 * input_data[i * l + 1] +
+             w21 * input_data[i * l + l] + w22 * input_data[i * l + l + 1] +
+             bias_data[j]) *
+                newscale_data[j] +
+            newbias_data[j];
+        output_data[i * l + l - 1] =
+            (w00 * input_data[i * l + l - 1 - l - 1] +
+             w01 * input_data[i * l + l - 1 - l] +
+             w10 * input_data[i * l + l - 1 - 1] +
+             w11 * input_data[i * l + l - 1] +
+             w20 * input_data[i * l + l - 1 + l - 1] +
+             w21 * input_data[i * l + l - 1 + l] + bias_data[j]) *
+                newscale_data[j] +
+            newbias_data[j];
+        if(if_relu){
+          output_data[i * l] = output_data[i * l] < 0 ? 0 : output_data[i * l];
+          output_data[i * l + l - 1] = output_data[i * l + l - 1] < 0 ? 0 : output_data[i * l + l - 1];
+        }
       }
 
       // top 1 row and bottom 1 row
@@ -114,7 +146,10 @@ void DepthwiseConv3x3s1p1(const Tensor *input, Tensor filter, Tensor *output,
         out0 = vmlaq_n_f32(out0, tmp2, w21);
         out0 = vmlaq_n_f32(out0, tmp3, w22);
         out0 = vaddq_f32(out0, vbias);
-
+        out0 = vmlaq_f32(vnewbias, vnewscale, out0);
+        if (if_relu) {
+          out0 = vmaxq_f32(out0, vzero);
+        }
         vst1q_f32(output_ptr, out0);
 
         in5 = vld1q_f32(input_tmp_end + 4);
@@ -132,7 +167,10 @@ void DepthwiseConv3x3s1p1(const Tensor *input, Tensor filter, Tensor *output,
         out0 = vmlaq_n_f32(out0, tmp2, w11);
         out0 = vmlaq_n_f32(out0, tmp3, w12);
         out0 = vaddq_f32(out0, vbias);
-
+        out0 = vmlaq_f32(vnewbias, vnewscale, out0);
+        if (if_relu) {
+          out0 = vmaxq_f32(out0, vzero);
+        }
         vst1q_f32(output_ptr + (l - 1) * l, out0);
 
         // can optimize to each 8 stride.
@@ -161,7 +199,10 @@ void DepthwiseConv3x3s1p1(const Tensor *input, Tensor filter, Tensor *output,
       out0 = vmlaq_n_f32(out0, tmp2, w21);
       out0 = vmlaq_n_f32(out0, tmp3, w22);
       out0 = vaddq_f32(out0, vbias);
-
+      out0 = vmlaq_f32(vnewbias, vnewscale, out0);
+      if (if_relu) {
+        out0 = vmaxq_f32(out0, vzero);
+      }
       for (int i = 0; i < c_mid; ++i) {
         if (i == 0) {
           vst1q_lane_f32(output_ptr + i, out0, 0);
@@ -190,7 +231,10 @@ void DepthwiseConv3x3s1p1(const Tensor *input, Tensor filter, Tensor *output,
       out0 = vmlaq_n_f32(out0, tmp2, w11);
       out0 = vmlaq_n_f32(out0, tmp3, w12);
       out0 = vaddq_f32(out0, vbias);
-
+      out0 = vmlaq_f32(vnewbias, vnewscale, out0);
+      if (if_relu) {
+        out0 = vmaxq_f32(out0, vzero);
+      }
       for (int i = 0; i < c_mid; ++i) {
         if (i == 0) {
           vst1q_lane_f32(output_ptr + (l - 1) * l + i, out0, 0);
@@ -233,7 +277,10 @@ void DepthwiseConv3x3s1p1(const Tensor *input, Tensor filter, Tensor *output,
           out0 = vmlaq_n_f32(out0, tmp4, w21);
           out0 = vmlaq_n_f32(out0, tmp5, w22);
           out0 = vaddq_f32(out0, vbias);
-
+          out0 = vmlaq_f32(vnewbias, vnewscale, out0);
+          if (if_relu) {
+            out0 = vmaxq_f32(out0, vzero);
+          }
           vst1q_f32(output_ptr, out0);
 
           output_ptr += 4;
@@ -264,7 +311,10 @@ void DepthwiseConv3x3s1p1(const Tensor *input, Tensor filter, Tensor *output,
         out0 = vmlaq_n_f32(out0, tmp4, w21);
         out0 = vmlaq_n_f32(out0, tmp5, w22);
         out0 = vaddq_f32(out0, vbias);
-
+        out0 = vmlaq_f32(vnewbias, vnewscale, out0);
+        if (if_relu) {
+          out0 = vmaxq_f32(out0, vzero);
+        }
         for (int i = 0; i < c_mid; ++i) {
           if (i == 0) {
             vst1q_lane_f32(output_ptr + i, out0, 0);
@@ -282,6 +332,7 @@ void DepthwiseConv3x3s1p1(const Tensor *input, Tensor filter, Tensor *output,
       filter_data_tmp += 9;
     }
   }
+
 }
 }  // namespace math
 }  // namespace operators

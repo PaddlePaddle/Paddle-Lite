@@ -111,7 +111,7 @@ void DecodeCenterSize(const framework::Tensor& target_box,
 }
 
 template <>
-bool BoxCoderKernel<CPU, float>::Init(const BoxCoderParam& para) const {
+bool BoxCoderKernel<CPU, float>::Init(BoxCoderParam* param) const {
   return true;
 }
 

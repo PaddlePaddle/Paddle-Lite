@@ -55,8 +55,8 @@ template class FusionFcOp<CPU, float>;
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(fc);
-REGISTER_OPERATOR_CPU(fc, ops::FusionFcOp);
+USE_OP_CPU(fusion_fc);
+REGISTER_OPERATOR_CPU(fusion_fc, ops::FusionFcOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
 USE_OP_MALI_GPU(fc);

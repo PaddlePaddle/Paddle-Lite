@@ -26,7 +26,7 @@ template <typename DeviceType, typename T>
 class SigmoidKernel : public OpKernelBase<DeviceType, SigmoidParam> {
  public:
   void Compute(const SigmoidParam& param) const override;
-  bool Init(const SigmoidParam& para) const;
+  bool Init(SigmoidParam* param) const;
 };
 }  // namespace operators
 }  // namespace paddle_mobile

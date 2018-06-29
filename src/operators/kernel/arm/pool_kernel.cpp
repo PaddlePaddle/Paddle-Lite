@@ -36,7 +36,7 @@ inline void PoolBasic(std::string pooling_type, std::vector<int> ksize,
 }
 
 template <>
-bool PoolKernel<CPU, float>::Init(const PoolParam &para) const {
+bool PoolKernel<CPU, float>::Init(PoolParam *param) const {
   return true;
 }
 

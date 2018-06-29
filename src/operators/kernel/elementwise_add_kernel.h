@@ -30,7 +30,7 @@ class ElementwiseAddKernel
     : public framework::OpKernelBase<DeviceType, ElementwiseAddParam> {
  public:
   void Compute(const ElementwiseAddParam &param) const;
-  bool Init(const ElementwiseAddParam &para) const;
+  bool Init(ElementwiseAddParam *param) const;
 };
 }  // namespace operators
 }  // namespace paddle_mobile

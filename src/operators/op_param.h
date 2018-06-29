@@ -823,6 +823,10 @@ class FusionConvAddParam : public OpParam {
 
   const int &Groups() const { return groups; }
 
+    void Set(Tensor *t) {t_ = t;}
+
+    const Tensor *Get() const {return t_;}
+
  protected:
   Tensor *bias_;
   int axis_;
@@ -833,6 +837,7 @@ class FusionConvAddParam : public OpParam {
   vector<int> paddings_;
   vector<int> dilations_;
   int groups;
+    Tensor *t_;
 };
 
 Print &operator<<(Print &printer, const FusionConvAddParam &conv_param);
@@ -848,5 +853,91 @@ class FusionConvAddReluParam : public FusionConvAddParam {
 };
 #endif
 
+#ifdef FUSION_CONVADDBNRELU_OP
+class FusionConvAddBNReluParam : public OpParam {
+ public:
+  FusionConvAddBNReluParam(const VariableNameMap &inputs,
+                           const VariableNameMap &outputs,
+                           const AttributeMap &attrs, const Scope &scope) {
+    bias_ = InputYFrom<LoDTensor>(inputs, scope);
+    axis_ = GetAttr<int>("axis", attrs);
+    filter_ = FilterFrom<LoDTensor>(inputs, scope);
+    input_ = InputFrom<LoDTensor>(inputs, scope);
+    output_ = OutFrom<LoDTensor>(outputs, scope);
+    strides_ = GetAttr<vector<int>>("strides", attrs);
+    paddings_ = GetAttr<vector<int>>("paddings", attrs);
+    dilations_ = GetAttr<vector<int>>("dilations", attrs);
+    groups = GetAttr<int>("groups", attrs);
+    input_bias_ = InputBiasFrom<framework::LoDTensor>(inputs, scope);
+    input_mean_ = InputMeanFrom<framework::LoDTensor>(inputs, scope);
+    input_scale_ = InputScaleFrom<framework::LoDTensor>(inputs, scope);
+    input_variance_ = InputVarianceFrom<framework::LoDTensor>(inputs, scope);
+    epsilon_ = GetAttr<float>("epsilon", attrs);
+    momentum_ = GetAttr<float>("momentum", attrs);
+    is_test_ = GetAttr<bool>("is_test", attrs);
+  }
+  Tensor *Bias() const { return bias_; }
+
+  const int &Axis() const { return axis_; }
+
+  const Tensor *Input() const { return input_; }
+
+  const Tensor *Filter() const { return filter_; }
+
+  Tensor *Output() const { return output_; }
+
+  const vector<int> &Strides() const { return strides_; }
+
+  const vector<int> &Paddings() const { return paddings_; }
+
+  const vector<int> &Dilations() const { return dilations_; }
+
+  const int &Groups() const { return groups; }
+
+  const Tensor *InputBias() const { return input_bias_; }
+
+  const Tensor *InputMean() const { return input_mean_; }
+
+  const Tensor *InputScale() const { return input_scale_; }
+
+  const Tensor *InputVariance() const { return input_variance_; }
+
+  const float &Epsilon() const { return epsilon_; }
+
+  const float &Momentum() const { return momentum_; }
+
+  const bool &IsTest() const { return is_test_; }
+
+  void SetNewScale(Tensor *new_scale) { new_scale_ = new_scale; }
+
+  void SetNewBias(Tensor *new_bias) { new_bias_ = new_bias; }
+
+  const Tensor *NewScale() const { return new_scale_; }
+
+  const Tensor *NewBias() const { return new_bias_; }
+
+ protected:
+  Tensor *bias_;
+  int axis_;
+  Tensor *input_;
+  Tensor *output_;
+  Tensor *filter_;
+  vector<int> strides_;
+  vector<int> paddings_;
+  vector<int> dilations_;
+  int groups;
+  Tensor *input_bias_;
+  Tensor *input_mean_;
+  Tensor *input_scale_;
+  Tensor *input_variance_;
+  float epsilon_;
+  float momentum_;
+  bool is_test_;
+  Tensor *new_bias_;
+  Tensor *new_scale_;
+};
+
+Print &operator<<(Print &printer, const FusionConvAddParam &conv_param);
+#endif
 }  // namespace operators
 }  // namespace paddle_mobile
