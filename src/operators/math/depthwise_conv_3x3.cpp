@@ -12,8 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 #include "operators/math/depthwise_conv_3x3.h"
-#include <vector>
 #include <arm_neon.h>
+#include <vector>
 
 namespace paddle_mobile {
 namespace operators {

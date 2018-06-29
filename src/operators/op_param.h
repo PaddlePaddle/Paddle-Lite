@@ -823,9 +823,9 @@ class FusionConvAddParam : public OpParam {
 
   const int &Groups() const { return groups; }
 
-    void Set(Tensor *t) {t_ = t;}
+  void Set(Tensor *t) { t_ = t; }
 
-    const Tensor *Get() const {return t_;}
+  const Tensor *Get() const { return t_; }
 
  protected:
   Tensor *bias_;
@@ -837,7 +837,7 @@ class FusionConvAddParam : public OpParam {
   vector<int> paddings_;
   vector<int> dilations_;
   int groups;
-    Tensor *t_;
+  Tensor *t_;
 };
 
 Print &operator<<(Print &printer, const FusionConvAddParam &conv_param);

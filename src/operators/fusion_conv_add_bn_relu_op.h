@@ -42,12 +42,14 @@ class FusionConvAddBNReluMatcher : public framework::FusionOpMatcher {
       std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
     vector<std::shared_ptr<framework::OpDesc>> origin_descs =
         node->OpDescs(node_.Depth());
-      node->Folder(node_.Depth(), Type(),
-                   { {G_OP_TYPE_ELEMENTWISE_ADD, {{"Y", "Y"}}},
-                     {G_OP_TYPE_BATCHNORM, {{"Scale", "Scale"},
-                                                         {"Mean", "Mean"},
-                                                         {"Bias", "Bias"},
-                                                         {"Variance", "Variance"}}}}, removed_nodes);
+    node->Folder(node_.Depth(), Type(),
+                 {{G_OP_TYPE_ELEMENTWISE_ADD, {{"Y", "Y"}}},
+                  {G_OP_TYPE_BATCHNORM,
+                   {{"Scale", "Scale"},
+                    {"Mean", "Mean"},
+                    {"Bias", "Bias"},
+                    {"Variance", "Variance"}}}},
+                 removed_nodes);
   }
 
   std::string Type() { return G_OP_TYPE_FUSION_CONV_ADD_BN_RELU; }
@@ -78,7 +80,7 @@ class FusionConvAddBNReluOp
 
 #ifdef PADDLE_MOBILE_CPU
 //#ifndef FUSION_CONV_ADD_BN_RELU_REGISTER
-//static framework::FusionOpRegistrar fusion_conv_add_bn_relu_registrar(
+// static framework::FusionOpRegistrar fusion_conv_add_bn_relu_registrar(
 //    new FusionConvAddBNReluMatcher());
 //#define FUSION_CONV_ADD_BN_RELU_REGISTER
 //#endif
