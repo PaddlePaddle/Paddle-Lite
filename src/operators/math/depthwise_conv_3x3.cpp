@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 #include "operators/math/depthwise_conv_3x3.h"
 #include <vector>
+#include <arm_neon.h>
 
 namespace paddle_mobile {
 namespace operators {
