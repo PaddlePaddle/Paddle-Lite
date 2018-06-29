@@ -14,9 +14,10 @@ limitations under the License. */
 
 #ifdef LRN_OP
 
-#pragma once
 #include "framework/operator.h"
 #include "operators/op_param.h"
+
+#include <cmath>
 
 #ifdef __ARM_NEON
 #include "arm_neon.h"

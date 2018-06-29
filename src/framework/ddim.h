@@ -15,6 +15,7 @@ limitations under the License. */
 #pragma once
 
 #include <initializer_list>
+#include <typeinfo>
 #include <vector>
 #include "common/enforce.h"
 #include "common/variant.h"

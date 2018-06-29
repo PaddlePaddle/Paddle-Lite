@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "framework/program/program-optimize/program_optimize.h"
+#include <algorithm>
 #include "framework/program/program-optimize/fusion_op_register.h"
 
 namespace paddle_mobile {
