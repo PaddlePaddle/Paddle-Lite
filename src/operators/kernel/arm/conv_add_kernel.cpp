@@ -23,8 +23,7 @@ bool ConvAddKernel<CPU, float>::Init(const FusionConvAddParam &para) const {
   return true;
 }
 
-template <>
-void ConvAddKernel<CPU, float>::Compute(const FusionConvAddParam &param) const {
+void ConvAddBasic(const FusionConvAddParam &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
   Tensor bias = *param.Bias();
@@ -102,7 +101,6 @@ void ConvAddKernel<CPU, float>::Compute(const FusionConvAddParam &param) const {
         // vol2col
         vol2col(in_slice, dilations, strides, paddings, &col);
       }
-
       // gemm
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
@@ -112,6 +110,26 @@ void ConvAddKernel<CPU, float>::Compute(const FusionConvAddParam &param) const {
     }
   }
 }
+
+template <>
+void ConvAddKernel<CPU, float>::Compute(const FusionConvAddParam &param) const {
+  if (param.Groups() == param.Input()->dims()[1] &&
+      param.Input()->dims()[1] == param.Output()->dims()[1] &&
+      param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
+      param.Filter()->dims()[2] == 3 && param.Strides()[0] == 1) {
+    math::DepthwiseConv3x3s1p1(param.Input(), param.Filter(), param.Output(),
+                               param.Bias(), true);
+  } else if (param.Groups() == param.Input()->dims()[1] &&
+             param.Input()->dims()[1] == param.Output()->dims()[1] &&
+             param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
+             param.Filter()->dims()[2] == 3) {
+    math::DepthwiseConv3x3(param.Input(), param.Strides(), param.Paddings(),
+                           param.Filter(), param.Bias(), param.Output(), true);
+  } else {
+    ConvAddBasic(param);
+  }
+}
+
 template class ConvAddKernel<CPU, float>;
 
 }  // namespace operators
