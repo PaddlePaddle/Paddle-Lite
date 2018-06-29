@@ -12,13 +12,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef BOXCODER_OP
+
+#pragma once
+
 #include <vector>
 
 #include "framework/operator.h"
 #include "operators/math/transform.h"
 #include "operators/op_param.h"
-
-#pragma once;
 
 namespace paddle_mobile {
 namespace operators {
@@ -28,6 +30,9 @@ class BoxCoderKernel
     : public framework::OpKernelBase<DeviceType, BoxCoderParam> {
  public:
   void Compute(const BoxCoderParam& param) const;
+  bool Init(const BoxCoderParam& para) const;
 };
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

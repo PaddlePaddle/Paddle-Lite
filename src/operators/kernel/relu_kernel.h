@@ -12,10 +12,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "framework/operator.h"
-#include "operators/op_param.h"
+#ifdef RELU_OP
 
-#pragma once;
+#pragma once
+
+#include "framework/operator.h"
+
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -24,6 +27,9 @@ template <typename DeviceType, typename T>
 class ReluKernel : public framework::OpKernelBase<DeviceType, ReluParam> {
  public:
   void Compute(const ReluParam& param) const;
+  bool Init(const ReluParam& para) const;
 };
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef RELU_OP
+
 #pragma once
 
 #include <string>
@@ -26,36 +28,29 @@ namespace operators {
 using paddle_mobile::framework::Tensor;
 
 template <typename DeviceType, typename T>
-class ReluOp : public framework::OperatorWithKernel<DeviceType> {
+class ReluOp
+    : public framework::OperatorWithKernel<
+          DeviceType, ReluParam, operators::ReluKernel<DeviceType, T>> {
  public:
   /*
    * @b op 的实例化方法, 需要调用父类的实例化方法, 以及实例化自己的参数结构体
    * */
   ReluOp(const std::string &type, const VariableNameMap &inputs,
-         const VariableNameMap &outputs, const framework::AttributeMap attrs,
+         const VariableNameMap &outputs, const framework::AttributeMap &attrs,
          std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
-                                                  scope),
-        param_(inputs, outputs, attrs, *scope) {}
+      : framework::OperatorWithKernel<DeviceType, ReluParam,
+                                      operators::ReluKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
 
-  /*
-   * @b op 进行运算, 调用相应的 kernel 进行运算
-   * */
-  void RunImpl() const {
-    operators::ReluKernel<DeviceType, T> kernel;
-    kernel.Compute(param_);
-  }
-
-  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  using framework::OperatorWithKernel<
+      DeviceType, ReluParam,
+      operators::ReluKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:
-  /*
-   * @b Relu kernel 进行运算时所需要用到参数的结构体,
-   *    结构体定义在: paddle-mobile/src/operators/op_param.h
-   * */
-  ReluParam param_;
 };
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

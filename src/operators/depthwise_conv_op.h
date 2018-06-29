@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef DEPTHWISECONV_OP
+
 #pragma once
 
 #include <string>
@@ -22,28 +24,28 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename DeviceType, typename T>
-class DepthwiseConvOp : public framework::OperatorWithKernel<DeviceType> {
+class DepthwiseConvOp : public framework::OperatorWithKernel<
+                            DeviceType, ConvParam,
+                            operators::DepthwiseConvKernel<DeviceType, T>> {
  public:
   DepthwiseConvOp(const std::string &type, const VariableNameMap &inputs,
                   const VariableNameMap &outputs,
                   const framework::AttributeMap &attrs,
                   std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
-                                                  scope),
-        param_(inputs, outputs, attrs, *scope) {}
+      : framework::OperatorWithKernel<
+            DeviceType, ConvParam,
+            operators::DepthwiseConvKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
 
-  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  using framework::OperatorWithKernel<
+      DeviceType, ConvParam,
+      operators::DepthwiseConvKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
-  void RunImpl() const {
-    operators::DepthwiseConvKernel<DeviceType, T> kernel;
-    kernel.Compute(param_);
-    this->ClearVariables({"Filter", "Input"});
-  }
-
  private:
-  ConvParam param_;
 };
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

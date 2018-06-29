@@ -12,10 +12,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef POOL_OP
+
 #pragma once
 
 #include "common/log.h"
 #include "framework/tensor.h"
+#include "pool_2x2.h"
+#include "pool_3x3.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -64,3 +68,5 @@ class PoolFunctor {
 }
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

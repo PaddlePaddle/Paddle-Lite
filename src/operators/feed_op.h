@@ -32,6 +32,8 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
         param_(inputs, outputs, attrs, *scope) {}
   void RunImpl() const { param_.Out()->ShareDataWith(*param_.InputX()); }
 
+  void Init() const {}
+
   void InferShape() const {
     auto out_dims = param_.Out()->dims();
     out_dims[0] = param_.BatchSize();
@@ -43,8 +45,16 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
 };
 
 namespace ops = paddle_mobile::operators;
-USE_OP(feed);
-REGISTER_OPERATOR(feed, ops::FeedOp);
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(feed);
+REGISTER_OPERATOR_CPU(feed, ops::FeedOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(feed);
+REGISTER_OPERATOR_MALI_GPU(feed, ops::FeedOp);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
 
 }  // namespace operators
 }  // namespace paddle_mobile

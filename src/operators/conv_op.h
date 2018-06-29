@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef CONV_OP
+
 #pragma once
 
 #include <string>
@@ -22,34 +24,26 @@ namespace paddle_mobile {
 namespace operators {
 using std::string;
 template <typename DeviceType, typename T>
-class ConvOp : public framework::OperatorWithKernel<DeviceType> {
+class ConvOp
+    : public framework::OperatorWithKernel<
+          DeviceType, ConvParam, operators::ConvKernel<DeviceType, T>> {
  public:
   ConvOp(const std::string &type, const VariableNameMap &inputs,
          const VariableNameMap &outputs, const framework::AttributeMap &attrs,
          std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
-                                                  scope),
-        param_(inputs, outputs, attrs, *scope) {}
+      : framework::OperatorWithKernel<DeviceType, ConvParam,
+                                      operators::ConvKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
 
-  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  using framework::OperatorWithKernel<
+      DeviceType, ConvParam,
+      operators::ConvKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
-  void RunImpl() const {
-    operators::ConvKernel<DeviceType, T> kernel;
-    kernel.Compute(param_);
-    this->ClearVariables({"Filter", "Input"});
-  }
-
  private:
-  ConvParam param_;
 };
-
-inline int ConvOutputSize(int input_size, int filter_size, int dilation,
-                          int padding, int stride) {
-  const int dkernel = dilation * (filter_size - 1) + 1;
-  int output_size = (input_size + 2 * padding - dkernel) / stride + 1;
-  return output_size;
-}
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

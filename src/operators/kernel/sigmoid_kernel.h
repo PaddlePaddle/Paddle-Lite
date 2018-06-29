@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef SIGMOID_OP
+
 #pragma once
 
 #include "framework/operator.h"
@@ -24,6 +26,9 @@ template <typename DeviceType, typename T>
 class SigmoidKernel : public OpKernelBase<DeviceType, SigmoidParam> {
  public:
   void Compute(const SigmoidParam& param) const override;
+  bool Init(const SigmoidParam& para) const;
 };
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

@@ -12,18 +12,30 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef SOFTMAX_OP
+
 #include "operators/softmax_op.h"
 
 namespace paddle_mobile {
 namespace operators {
 template <typename DeviceType, typename T>
 void SoftmaxOp<DeviceType, T>::InferShape() const {
-  param_.Out()->Resize(param_.InputX()->dims());
+  this->param_.Out()->Resize(this->param_.InputX()->dims());
 }
 template class SoftmaxOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-USE_OP(softmax);
-REGISTER_OPERATOR(softmax, ops::SoftmaxOp);
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(softmax);
+REGISTER_OPERATOR_CPU(softmax, ops::SoftmaxOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(softmax);
+REGISTER_OPERATOR_MALI_GPU(softmax, ops::SoftmaxOp);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
+
+#endif

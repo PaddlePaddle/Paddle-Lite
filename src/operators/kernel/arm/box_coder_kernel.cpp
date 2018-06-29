@@ -12,9 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+#ifdef BOXCODER_OP
 
 #include "operators/kernel/box_coder_kernel.h"
+#include <cmath>
 
 namespace paddle_mobile {
 namespace operators {
@@ -110,6 +111,11 @@ void DecodeCenterSize(const framework::Tensor& target_box,
 }
 
 template <>
+bool BoxCoderKernel<CPU, float>::Init(const BoxCoderParam& para) const {
+  return true;
+}
+
+template <>
 void BoxCoderKernel<CPU, float>::Compute(const BoxCoderParam& param) const {
   const auto* input_priorbox = param.InputPriorBox();
   const auto* input_priorboxvar = param.InputPriorBoxVar();
@@ -135,3 +141,5 @@ void BoxCoderKernel<CPU, float>::Compute(const BoxCoderParam& param) const {
 }
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

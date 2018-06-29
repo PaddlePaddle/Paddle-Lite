@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+#ifdef CONCAT_OP
 
 #include "operators/kernel/concat_kernel.h"
 
@@ -53,6 +53,11 @@ class ConcatFunctor {
 };
 
 template <>
+bool ConcatKernel<CPU, float>::Init(const ConcatParam &para) const {
+  return true;
+}
+
+template <>
 void ConcatKernel<CPU, float>::Compute(const ConcatParam &param) const {
   auto inputs = param.Inputs();
   auto *out = param.Out();
@@ -85,3 +90,5 @@ void ConcatKernel<CPU, float>::Compute(const ConcatParam &param) const {
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

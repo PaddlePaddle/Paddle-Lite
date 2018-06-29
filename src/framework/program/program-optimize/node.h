@@ -14,20 +14,17 @@ limitations under the License. */
 
 #pragma once
 
+#include <cinttypes>
 #include <map>
 #include <string>
-#include <unordered_set>
-#include <utility>
 #include <vector>
-
 #include "common/log.h"
-#include "framework/paddle_mobile_object.h"
 #include "framework/program/op_desc.h"
 
 namespace paddle_mobile {
 namespace framework {
 
-class Node : PaddleMobileObject {
+class Node {
   friend class ProgramOptimize;
 
  public:
@@ -37,35 +34,34 @@ class Node : PaddleMobileObject {
       : op_desc_(op_desc), type_(op_desc->Type()) {}
   Node &operator>(std::shared_ptr<Node> node);
   bool operator==(const Node &in);
-  bool CanSplit(std::unordered_set<std::string> complex_compute_set);
+
+#ifdef PADDLE_MOBILE_DEBUG
   std::string ToString() const;
+  void Description();
+#endif
   std::shared_ptr<Node> To(int size);
-  uint Depth(uint begin = 0);
+  int Depth(int begin = 0);
   Node &Folder(
-      uint size, std::string type,
-      std::map<std::string, std::pair<std::string, std::string>> change_map);
-  std::vector<std::shared_ptr<framework::OpDesc>> OpDescs(uint size);
-  std::vector<std::shared_ptr<framework::OpDesc>> OpDescs();
+      int size, std::string type,
+      std::map<std::string, std::pair<std::string, std::string>> change_map,
+      std::vector<std::shared_ptr<Node>> *removed_nodes);
+  std::vector<std::shared_ptr<framework::OpDesc>> OpDescs(int size);
   std::shared_ptr<framework::OpDesc> OpDescOfNode() { return op_desc_; }
   std::string Type() { return type_; }
-  void Description();
 
  private:
-  void CanSplit(bool *split, bool spliting, int complex_count,
-                std::unordered_set<std::string> *complex_compute_set,
-                Node *pre_node);
-  void OpDescs(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
-               Node *node, bool adding_thread, int thread_num);
-  void OpDescs(uint size,
+  void OpDescs(int size,
                std::vector<std::shared_ptr<framework::OpDesc>> *op_desc);
   void To(int index, std::shared_ptr<Node>);
   void Folder(
       std::shared_ptr<framework::OpDesc> op_desc,
-      std::vector<std::shared_ptr<Node>> *outputs, uint index,
+      std::vector<std::shared_ptr<Node>> *outputs, int index,
       std::map<std::string, std::pair<std::string, std::string>> *change,
-      Node *begin_node);
+      Node *begin_node, std::vector<std::shared_ptr<Node>> *removed_nodes);
   std::shared_ptr<framework::OpDesc> op_desc_;
+#ifdef PADDLE_MOBILE_DEBUG
   std::string ToString(std::string blank, const Node *node) const;
+#endif
   std::vector<std::shared_ptr<Node>> outputs_;
   std::vector<Node *> inputs_;
   std::string type_;

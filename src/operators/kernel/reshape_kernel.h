@@ -12,12 +12,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef RESHAPE_OP
+
+#pragma once
+
 #include <vector>
-
 #include "framework/operator.h"
-#include "operators/op_param.h"
 
-#pragma once;
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -69,6 +71,9 @@ template <typename DeviceType, typename T>
 class ReshapeKernel : public framework::OpKernelBase<DeviceType, ReshapeParam> {
  public:
   void Compute(const ReshapeParam& param) const;
+  bool Init(const ReshapeParam& para) const;
 };
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

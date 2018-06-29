@@ -12,24 +12,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef DEPTHWISECONV_OP
+
 #include "operators/depthwise_conv_op.h"
 #include <vector>
-#include "framework/data_type.h"
 #include "framework/op_proto_maker.h"
 #include "framework/op_registry.h"
 #include "operators/conv_op.h"
+#include "operators/math/conv_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
 void DepthwiseConvOp<Dtype, T>::InferShape() const {
-  auto in_dims = param_.Input()->dims();
-  auto filter_dims = param_.Filter()->dims();
-  const std::vector<int> &strides = param_.Strides();
-  std::vector<int> paddings = param_.Paddings();
-  int groups = param_.Groups();
-  std::vector<int> dilations = param_.Dilations();
+  auto in_dims = this->param_.Input()->dims();
+  auto filter_dims = this->param_.Filter()->dims();
+  const std::vector<int> &strides = this->param_.Strides();
+  std::vector<int> paddings = this->param_.Paddings();
+  int groups = this->param_.Groups();
+  std::vector<int> dilations = this->param_.Dilations();
 
   PADDLE_MOBILE_ENFORCE((in_dims.size() == filter_dims.size() &&
                          dilations.size() == paddings.size() &&
@@ -38,13 +40,13 @@ void DepthwiseConvOp<Dtype, T>::InferShape() const {
 
   std::vector<int64_t> output_shape({in_dims[0], filter_dims[0]});
   for (size_t i = 0; i < strides.size(); ++i) {
-    output_shape.push_back(ConvOutputSize(in_dims[i + 2], filter_dims[i + 2],
-                                          dilations[i], paddings[i],
-                                          strides[i]));
+    output_shape.push_back(
+        math::ConvOutputSize(in_dims[i + 2], filter_dims[i + 2], dilations[i],
+                             paddings[i], strides[i]));
   }
 
   framework::DDim ddim = framework::make_ddim(output_shape);
-  param_.Output()->Resize(ddim);
+  this->param_.Output()->Resize(ddim);
 }
 
 template class DepthwiseConvOp<CPU, float>;
@@ -53,5 +55,13 @@ template class DepthwiseConvOp<CPU, float>;
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-USE_OP(depthwise_conv2d);
-REGISTER_OPERATOR(depthwise_conv2d, ops::DepthwiseConvOp);
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(depthwise_conv2d);
+REGISTER_OPERATOR_CPU(depthwise_conv2d, ops::DepthwiseConvOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
+
+#endif

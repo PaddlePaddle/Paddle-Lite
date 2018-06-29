@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+#ifdef PRIORBOX_OP
 
 #include "operators/kernel/prior_box_kernel.h"
 
@@ -25,6 +25,11 @@ struct ClipFunctor {
     return std::min<T>(std::max<T>(in, 0.), 1.);
   }
 };
+
+template <>
+bool PriorBoxKernel<CPU, float>::Init(const PriorBoxParam &para) const {
+  return true;
+}
 
 template <>
 void PriorBoxKernel<CPU, float>::Compute(const PriorBoxParam &param) const {
@@ -143,3 +148,5 @@ void PriorBoxKernel<CPU, float>::Compute(const PriorBoxParam &param) const {
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

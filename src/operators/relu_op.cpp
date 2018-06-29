@@ -12,14 +12,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef RELU_OP
+
 #include "operators/relu_op.h"
 namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
 void ReluOp<Dtype, T>::InferShape() const {
-  auto input_dims = param_.InputX()->dims();
-  param_.Out()->Resize(input_dims);
+  auto input_dims = this->param_.InputX()->dims();
+  this->param_.Out()->Resize(input_dims);
 }
 template class ReluOp<CPU, float>;
 }  // namespace operators
@@ -31,5 +33,15 @@ template class ReluOp<CPU, float>;
  * 都是需要和model中类型对应起来的
  * */
 namespace ops = paddle_mobile::operators;
-USE_OP(relu);
-REGISTER_OPERATOR(relu, ops::ReluOp);
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(relu);
+REGISTER_OPERATOR_CPU(relu, ops::ReluOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(relu);
+REGISTER_OPERATOR_MALI_GPU(relu, ops::ReluOp);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
+
+#endif

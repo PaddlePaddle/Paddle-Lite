@@ -12,16 +12,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef FUSION_FC_OP
+
 #include "operators/fusion_fc_op.h"
 namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
-void FushionFcOp<Dtype, T>::InferShape() const {
-  auto x_dims = param_.InputX()->dims();
-  auto y_dims = param_.InputY()->dims();
-  int x_num_col_dims = param_.XNumColDims();
-  int y_num_col_dims = param_.YNumColDims();
+void FusionFcOp<Dtype, T>::InferShape() const {
+  auto x_dims = this->param_.InputX()->dims();
+  auto y_dims = this->param_.InputY()->dims();
+  int x_num_col_dims = this->param_.XNumColDims();
+  int y_num_col_dims = this->param_.YNumColDims();
 
   assert(x_dims.size() > x_num_col_dims);
   assert(y_dims.size() > y_num_col_dims);
@@ -45,12 +47,22 @@ void FushionFcOp<Dtype, T>::InferShape() const {
   }
 
   framework::DDim ddim = framework::make_ddim(output_dims);
-  param_.Out()->Resize(ddim);
+  this->param_.Out()->Resize(ddim);
 }
-template class FushionFcOp<CPU, float>;
+template class FusionFcOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-USE_OP(fc);
-REGISTER_OPERATOR(fc, ops::FushionFcOp);
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(fc);
+REGISTER_OPERATOR_CPU(fc, ops::FusionFcOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(fc);
+REGISTER_OPERATOR_MALI_GPU(fc, ops::FusionFcOp);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
+
+#endif

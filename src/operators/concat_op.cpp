@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef CONCAT_OP
+
 #include "concat_op.h"
 
 namespace paddle_mobile {
@@ -19,7 +21,7 @@ namespace operators {
 
 template <typename Dtype, typename T>
 void ConcatOp<Dtype, T>::InferShape() const {
-  auto inputs = param_.Inputs();
+  auto inputs = this->param_.Inputs();
   const size_t n = inputs.size();
 
   std::vector<DDim> inputs_dims;
@@ -28,7 +30,7 @@ void ConcatOp<Dtype, T>::InferShape() const {
     inputs_dims.push_back(inputs[i]->dims());
   }
 
-  auto axis = static_cast<size_t>(param_.Axis());
+  auto axis = static_cast<size_t>(this->param_.Axis());
 
   if (n == 1) {
     DLOG << "Warning: concat op have only one input, "
@@ -52,7 +54,7 @@ void ConcatOp<Dtype, T>::InferShape() const {
     out_dims[axis] = -1;
   }
 
-  param_.Out()->Resize(out_dims);
+  this->param_.Out()->Resize(out_dims);
 }
 template class ConcatOp<CPU, float>;
 
@@ -60,5 +62,15 @@ template class ConcatOp<CPU, float>;
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-USE_OP(concat);
-REGISTER_OPERATOR(concat, ops::ConcatOp);
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(concat);
+REGISTER_OPERATOR_CPU(concat, ops::ConcatOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(concat);
+REGISTER_OPERATOR_MALI_GPU(concat, ops::ConcatOp);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
+
+#endif

@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef POOL_OP
+
 #include <operators/kernel/pool_kernel.h>
 #include "common/log.h"
 
@@ -31,6 +33,11 @@ inline void PoolBasic(std::string pooling_type, std::vector<int> ksize,
     math::AvgPool<float> pool_process;
     pool2d_forward(*in_x, ksize, strides, paddings, pool_process, out);
   }
+}
+
+template <>
+bool PoolKernel<CPU, float>::Init(const PoolParam &para) const {
+  return true;
 }
 
 template <>
@@ -54,22 +61,25 @@ void PoolKernel<CPU, float>::Compute(const PoolParam &param) const {
       paddings[i] = 0;
       ksize[i] = static_cast<int>(in_x->dims()[i + 2]);
     }
+  } else if (ksize[0] == 3 && ksize[0] == ksize[1]) {
+    if (pooling_type == "max") {
+      math::Pool3x3Max(strides, paddings, in_x, out);
+    } else if (pooling_type == "avg") {
+      math::Pool3x3Avg(strides, paddings, in_x, out);
+    }
+
+  } else if (ksize[0] == 2 && ksize[0] == ksize[1]) {
+    if (pooling_type == "max") {
+      math::Pool2x2Max(strides, paddings, in_x, out);
+    } else if (pooling_type == "avg") {
+      math::Pool2x2Avg(strides, paddings, in_x, out);
+    }
+
+  } else {
+    PoolBasic(pooling_type, ksize, strides, paddings, in_x, out);
   }
-
-  PoolBasic(pooling_type, ksize, strides, paddings, in_x, out);
-
-  //    if (param.isGlobalPooling() || ksize[0] != ksize[1] ||
-  //        strides[0] != strides[1] || strides[1] != 2 ||
-  //        paddings[0] != paddings[1] || paddings[1] > 1) {
-  //        PoolBasic(pooling_type, ksize, strides, paddings, in_x, out);
-  //
-  //    } else if (ksize[0] == 2) {
-  //
-  //    } else if (ksize[0] == 3) {
-  //
-  //    } else {
-  //        PoolBasic(pooling_type, ksize, strides, paddings, in_x, out);
-  //    }
 }
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

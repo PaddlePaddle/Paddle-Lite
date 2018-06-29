@@ -12,12 +12,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef MUL_OP
+
 #pragma once
 
 #include "operators/kernel/mul_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
+
+template <>
+bool MulKernel<CPU, float>::Init(const MulParam &para) const {
+  return true;
+}
 
 template <>
 void MulKernel<CPU, float>::Compute(const MulParam &param) const {
@@ -48,3 +55,5 @@ template class MulKernel<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

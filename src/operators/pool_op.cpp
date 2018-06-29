@@ -12,7 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef POOL_OP
+
 #include "pool_op.h"
+#include "framework/op_proto_maker.h"
+#include "framework/op_registry.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -30,13 +34,13 @@ int PoolOutputSize(int input_size, int filter_size, int padding, int stride,
 }
 template <typename DeviceType, typename T>
 void PoolOp<DeviceType, T>::InferShape() const {
-  auto in_x_dims = param_.Input()->dims();
-  std::vector<int> ksize = param_.Ksize();
-  std::vector<int> paddings = param_.Paddings();
-  std::vector<int> strides = param_.Strides();
-  bool ceil_mode = param_.isCeilMode();
+  auto in_x_dims = this->param_.Input()->dims();
+  std::vector<int> ksize = this->param_.Ksize();
+  std::vector<int> paddings = this->param_.Paddings();
+  std::vector<int> strides = this->param_.Strides();
+  bool ceil_mode = this->param_.isCeilMode();
 
-  if (param_.isGlobalPooling()) {
+  if (this->param_.isGlobalPooling()) {
     ksize.resize(static_cast<size_t>(in_x_dims.size()) - 2);
     for (size_t i = 0; i < ksize.size(); ++i) {
       paddings[i] = 0;
@@ -48,12 +52,22 @@ void PoolOp<DeviceType, T>::InferShape() const {
     output_shape.push_back(PoolOutputSize(in_x_dims[i + 2], ksize[i],
                                           paddings[i], strides[i], ceil_mode));
   }
-  param_.Output()->Resize(framework::make_ddim(output_shape));
+  this->param_.Output()->Resize(framework::make_ddim(output_shape));
 }
 template class PoolOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-USE_OP(pool2d);
-REGISTER_OPERATOR(pool2d, ops::PoolOp);
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(pool2d);
+REGISTER_OPERATOR_CPU(pool2d, ops::PoolOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(pool2d);
+REGISTER_OPERATOR_MALI_GPU(pool2d, ops::PoolOp);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
+
+#endif

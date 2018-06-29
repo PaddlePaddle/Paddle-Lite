@@ -41,7 +41,7 @@ class TestBatchNormOp {
       for (int j = 0; j < ops.size(); ++j) {
         std::shared_ptr<OpDesc> op = ops[j];
         if (op->Type() == "batch_norm" &&
-            op->Input("X")[0] == "conv2d_0.tmp_0") {
+            op->Input("X")[0] == "conv2d_5.tmp_0") {
           DLOG << " mul attr size: " << op->GetAttrMap().size();
           DLOG << " inputs size: " << op->GetInputs().size();
           DLOG << " outputs size: " << op->GetOutputs().size();
@@ -67,29 +67,29 @@ class TestBatchNormOp {
                                      const Tensor &t5) {
     // feed
     auto scope = program_.scope;
-    Variable *x1_feed_value = scope->Var("conv2d_0.tmp_0");
+    Variable *x1_feed_value = scope->Var("conv2d_5.tmp_0");
     auto tensor_x1 = x1_feed_value->GetMutable<LoDTensor>();
     tensor_x1->ShareDataWith(t1);
 
-    Variable *mean_feed_value = scope->Var("batch_norm_0.w_1");
+    Variable *mean_feed_value = scope->Var("batch_norm_10.w_1");
     auto tensor_mean = mean_feed_value->GetMutable<LoDTensor>();
     tensor_mean->ShareDataWith(t2);
 
-    Variable *scale_feed_value = scope->Var("batch_norm_0.w_0");
+    Variable *scale_feed_value = scope->Var("batch_norm_10.w_0");
     auto tensor_scale = scale_feed_value->GetMutable<LoDTensor>();
     tensor_scale->ShareDataWith(t3);
 
-    Variable *variance_feed_value = scope->Var("batch_norm_0.w_2");
+    Variable *variance_feed_value = scope->Var("batch_norm_10.w_2");
     auto tensor_variance = variance_feed_value->GetMutable<LoDTensor>();
     tensor_variance->ShareDataWith(t4);
 
-    Variable *bias_feed_value = scope->Var("batch_norm_0.b_0");
+    Variable *bias_feed_value = scope->Var("batch_norm_10.b_0");
     auto tensor_bias = bias_feed_value->GetMutable<LoDTensor>();
     tensor_bias->ShareDataWith(t5);
 
-    Variable *output = scope->Var("batch_norm_0.tmp_2");
+    Variable *output = scope->Var("batch_norm_10.tmp_2");
     auto *output_tensor = output->GetMutable<LoDTensor>();
-    output_tensor->mutable_data<float>({4, 10, 2, 2});
+    output_tensor->mutable_data<float>({1, 256, 38, 38});
     //  DLOG << typeid(output_tensor).name();
     //  DLOG << "output_tensor dims: " << output_tensor->dims();
 
@@ -128,30 +128,32 @@ int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run BatchNormOp Test";
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
-  auto program = loader.Load(std::string(g_resnet));
+  auto program = loader.Load(std::string(g_mobilenet_ssd));
 
   /// input x (4,10,2,2)
   paddle_mobile::framework::Tensor inputx1;
-  SetupTensor<float>(&inputx1, {4, 10, 2, 2}, static_cast<float>(0),
+  SetupTensor<float>(&inputx1, {1, 256, 38, 38}, static_cast<float>(0),
                      static_cast<float>(1));
   auto *inputx1_ptr = inputx1.data<float>();
 
   paddle_mobile::framework::Tensor mean;
-  SetupTensor<float>(&mean, {10}, static_cast<float>(0), static_cast<float>(1));
+  SetupTensor<float>(&mean, {256}, static_cast<float>(0),
+                     static_cast<float>(1));
   auto *mean_ptr = mean.data<float>();
 
   paddle_mobile::framework::Tensor scale;
-  SetupTensor<float>(&scale, {10}, static_cast<float>(0),
+  SetupTensor<float>(&scale, {256}, static_cast<float>(0),
                      static_cast<float>(1));
   auto *scale_ptr = scale.data<float>();
 
   paddle_mobile::framework::Tensor variance;
-  SetupTensor<float>(&variance, {10}, static_cast<float>(0),
+  SetupTensor<float>(&variance, {256}, static_cast<float>(0),
                      static_cast<float>(1));
   auto *variance_ptr = variance.data<float>();
 
   paddle_mobile::framework::Tensor bias;
-  SetupTensor<float>(&bias, {10}, static_cast<float>(0), static_cast<float>(1));
+  SetupTensor<float>(&bias, {256}, static_cast<float>(0),
+                     static_cast<float>(1));
   auto *bias_ptr = bias.data<float>();
 
   paddle_mobile::framework::TestBatchNormOp<paddle_mobile::CPU> testBatchNormOp(
@@ -161,11 +163,13 @@ int main() {
       testBatchNormOp.predict_bn(inputx1, mean, scale, variance, bias);
   auto *output_bn_ptr = output_bn->data<float>();
 
-  /// [2, 5, 1, 0]
-  DLOG << " (" << inputx1_ptr[102] << " - " << mean_ptr[5] << ")/(("
-       << variance_ptr[5] << " + 0.00001"
-       << ")^0.5)* " << scale_ptr[5] << " + " << bias_ptr[5] << " = ";
-  DLOG << output_bn_ptr[102];
+  DLOG << " (" << inputx1_ptr[0] << " - " << mean_ptr[0] << ")/(("
+       << variance_ptr[0] << " + 0.00001"
+       << ")^0.5)* " << scale_ptr[0] << " + " << bias_ptr[0] << " = ";
+  DLOG << output_bn_ptr[0];
+
+  DLOG << "input_ptr 0 : " << inputx1_ptr[0];
+  DLOG << "output_ptr 0 : " << output_bn_ptr[0];
 
   return 0;
 }
