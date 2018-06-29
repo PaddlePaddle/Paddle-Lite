@@ -22,7 +22,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool FusionFcKernel<GPU_MALI, float>::Init(FusionFcParam *param) const {
+bool FusionFcKernel<GPU_MALI, float>::Init(FusionFcParam *param) {
   return true;
 }
 

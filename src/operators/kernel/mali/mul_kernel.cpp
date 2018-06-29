@@ -22,7 +22,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool MulKernel<GPU_MALI, float>::Init(MulParam *param) const {
+bool MulKernel<GPU_MALI, float>::Init(MulParam *param) {
   return true;
 }
 

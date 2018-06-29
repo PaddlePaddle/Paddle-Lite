@@ -16,7 +16,7 @@ limitations under the License. */
 
 #pragma once
 #include "operators/kernel/conv_add_bn_relu_kernel.h"
-#include "operators/math/depthwiseconv3x3s1p1.h"
+#include "operators/math/depthwise_conv_3x3.h"
 #include "operators/op_param.h"
 namespace paddle_mobile {
 namespace operators {
@@ -24,23 +24,12 @@ namespace operators {
 template <typename P>
 void ConvAddBNReluCompute(const FusionConvAddBNReluParam &param) {
   const Tensor *input = param.Input();
-  DLOG << "input: " << *input;
   Tensor filter = *param.Filter();
-  DLOG << "filter: " << filter;
   Tensor bias = *param.Bias();
-  DLOG << "bias: " << bias;
-
   Tensor new_bias = *param.NewBias();
   Tensor new_scale = *param.NewScale();
   auto new_bias_ptr = new_bias.data<float>();
   auto new_scale_ptr = new_scale.data<float>();
-  //
-  //  for(int i = 0; i < new_scale.numel(); i++){
-  //    std::cout << "new_scale " << new_scale_ptr[i] <<std::endl;
-  //  }
-  //  for(int i = 0; i < new_bias.numel(); i++){
-  //    std::cout << "new_bias " << new_bias_ptr[i] <<std::endl;
-  //  }
   int axis = param.Axis();
   int groups = param.Groups();
   std::vector<int> strides = param.Strides();
@@ -50,8 +39,8 @@ void ConvAddBNReluCompute(const FusionConvAddBNReluParam &param) {
   std::vector<int64_t> filter_shape_vec(framework::vectorize(filter.dims()));
 
   if (filter_shape_vec[2] == 3 && strides[0] == 1 && groups > 1) {
-    math::DepthwiseConv3x3s1p1(input, filter, output, &bias, 1, &new_scale,
-                               &new_bias, 1, 1);
+    math::DepthwiseConvAddBNRelu3x3s1p1(input, filter, output, &bias, 1,
+                                        &new_scale, &new_bias, 1, 1);
   } else {
     const int batch_size = static_cast<int>(input->dims()[0]);
 
@@ -131,11 +120,12 @@ void ConvAddBNReluCompute(const FusionConvAddBNReluParam &param) {
 
     auto output_ptr = output->data<float>();
     for (int c = 0; c < output_matrix_shape[0]; c++) {
-      // int start = c * output_matrix_shape[1];
+      int start = c * output_matrix_shape[1];
       for (int j = 0; j < output_matrix_shape[1]; j++) {
-        //  output_ptr[start + j] = output_ptr[start
-        //  +j]*new_scale_ptr[c]+new_bias_ptr[c]; output_ptr[start + j] =
-        //  output_ptr[start+j]< 0 ? 0 : output_ptr[start +j];
+        output_ptr[start + j] =
+            output_ptr[start + j] * new_scale_ptr[c] + new_bias_ptr[c];
+        output_ptr[start + j] =
+            output_ptr[start + j] < 0 ? 0 : output_ptr[start + j];
       }
     }
   }
