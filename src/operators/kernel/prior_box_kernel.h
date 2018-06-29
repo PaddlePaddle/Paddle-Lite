@@ -12,13 +12,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include <vector>
+#ifdef PRIORBOX_OP
 
+#pragma once
+
+#include <algorithm>
+#include <cmath>
+#include <vector>
 #include "framework/operator.h"
 #include "operators/math/transform.h"
 #include "operators/op_param.h"
-
-#pragma once;
 
 namespace paddle_mobile {
 namespace operators {
@@ -52,6 +55,9 @@ class PriorBoxKernel
     : public framework::OpKernelBase<DeviceType, PriorBoxParam> {
  public:
   void Compute(const PriorBoxParam& param) const;
+  bool Init(const PriorBoxParam& para) const;
 };
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

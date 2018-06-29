@@ -12,9 +12,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef BATCHNORM_OP
+
+#pragma once
+
 #include "framework/operator.h"
 #include "operators/op_param.h"
-#pragma once;
 
 namespace paddle_mobile {
 namespace operators {
@@ -26,7 +29,10 @@ class BatchNormKernel
     : public framework::OpKernelBase<DeviceType, BatchNormParam> {
  public:
   void Compute(const BatchNormParam &param) const;
+  bool Init(const BatchNormParam &para) const;
 };
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

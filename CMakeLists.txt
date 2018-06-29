@@ -1,39 +1,104 @@
 cmake_minimum_required(VERSION 3.0)
 project(paddle-mobile)
-add_definitions(-DPADDLE_MOBILE_DEBUG)
-add_definitions(-DENABLE_EXCEPTION)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
+option(DEBUGING "enable debug mode" ON)
+option(USE_OPENMP "openmp support" OFF)
+option(USE_EXCEPTION "use std exception" ON)
+option(LOG_PROFILE "log profile" ON)
+# select the platform to build
+option(CPU "armv7 with neon" ON)
+option(MALI_GPU "mali gpu" ON)
+option(FPGA "fpga" OFF)
+set(DEBUGING ON)
+if (CPU)
+  add_definitions(-DPADDLE_MOBILE_CPU)
+endif()
+
+if (MALI_GPU)
+    add_definitions(-DPADDLE_MOBILE_MALI_GPU)
+    add_definitions(-DUSE_ACL=1)
+    add_definitions(-DUSE_OPENCL)
+    set(ACL_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/kernel/mali/ACL_Android)
+    include_directories(${ACL_ROOT} ${ACL_ROOT}/include)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -L${ACL_ROOT}/build")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -larm_compute")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -larm_compute_core")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -larm_compute_graph")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -L${ACL_ROOT}/build/opencl-1.2-stubs")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lOpenCL")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_ACL=1")
+endif()
+
+if(FPGA)
+  add_definitions(-DPADDLE_MOBILE_FPGA)
+endif()
+
+
+set(CMAKE_CXX_FLAGS "-std=c++14 -O3 -s ${CMAKE_CXX_FLAGS}")
+
+if (DEBUGING)
+  message(STATUS "debug")
+  set(CMAKE_BUILD_TYPE Debug)
+  set(CMAKE_CXX_FLAGS_DEBUG "-g -DNDEBUG")
+  add_definitions(-DPADDLE_MOBILE_DEBUG)
+  if (ANDROID_NDK_TOOLCHAIN_INCLUDED)
+    add_definitions(-DARMV7)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -llog")
+  endif ()
+else ()
+  set(CMAKE_BUILD_TYPE Release)
+  set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG")
+  add_definitions(-fvisibility=hidden -fvisibility-inlines-hidden)
+endif ()
+
+if (USE_EXCEPTION)
+    message(STATUS "use exception")
+    add_definitions(-DENABLE_EXCEPTION)
+    add_definitions(-fexceptions)
+else()
+    add_definitions(-fno-exceptions)
+endif ()
+
+if (LOG_PROFILE)
+    add_definitions(-DPADDLE_MOBILE_PROFILE)
+endif()
+
+if(USE_OPENMP)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+    add_definitions(-DPADDLE_MOBILE_USE_OPENMP)
+endif()
+
+
+file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c)
+file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
+
+if (NOT ANDROID_NDK_TOOLCHAIN_INCLUDED)
+  list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/jni/*.cpp)
+  list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/jni/*.h)
+  list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/math/math_func_neon.h)
+endif ()
+
+include_directories(src/)
+
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY build)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY build)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 
-file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c)
-file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
+include("${CMAKE_CURRENT_LIST_DIR}/tools/op.cmake")
 
-# include headers
-include_directories(src/)
+# if (IS_IOS)
+#     add_library(paddle-mobile STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+if (ANDROID_NDK_TOOLCHAIN_INCLUDED)
+    list(REMOVE_DUPLICATES CMAKE_CXX_FLAGS)
+    add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+else ()
+    add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+endif ()
 
-#include(ExternalProject)
-#ExternalProject_Add(openblas_proj
-#        GIT_REPOSITORY "https://github.com/xianyi/OpenBLAS.git"
-#        GIT_TAG "v0.2.20"
-#        SOURCE_DIR "openblas/"
-#        BUILD_IN_SOURCE 1
-#        CONFIGURE_COMMAND ""
-#        BUILD_COMMAND "make" "ONLY_CBLAS=1"
-#        INSTALL_COMMAND "make" "PREFIX=${CMAKE_BINARY_DIR}/" "install"
-#        )
-#set_target_properties(openblas_proj PROPERTIES EXCLUDE_FROM_ALL 1)
+if(DEBUGING)
+    add_subdirectory(test)
+endif()
 
-#add_dependencies(paddle-mobile openblas_proj)
 
-# gen static
-ADD_LIBRARY(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
-
-#add_dependencies(paddle-mobile openblas_proj)
-
-add_subdirectory(test)

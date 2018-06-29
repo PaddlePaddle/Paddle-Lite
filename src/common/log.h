@@ -16,14 +16,42 @@ limitations under the License. */
 
 #include <vector>
 #ifdef PADDLE_MOBILE_DEBUG
+#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <string>
+#endif
+#ifdef ANDROID
+#include <android/log.h>
 #endif
 
 namespace paddle_mobile {
 
 #ifdef PADDLE_MOBILE_DEBUG
+
+#ifdef ANDROID
+
+extern const char *ANDROID_LOG_TAG;
+
+#define ANDROIDLOGI(...)                                               \
+  __android_log_print(ANDROID_LOG_INFO, ANDROID_LOG_TAG, __VA_ARGS__); \
+  printf(__VA_ARGS__)
+#define ANDROIDLOGW(...)                                                  \
+  __android_log_print(ANDROID_LOG_WARNING, ANDROID_LOG_TAG, __VA_ARGS__); \
+  printf(__VA_ARGS__)
+#define ANDROIDLOGD(...)                                                \
+  __android_log_print(ANDROID_LOG_DEBUG, ANDROID_LOG_TAG, __VA_ARGS__); \
+  printf(__VA_ARGS__)
+#define ANDROIDLOGE(...)                                                \
+  __android_log_print(ANDROID_LOG_ERROR, ANDROID_LOG_TAG, __VA_ARGS__); \
+  printf(__VA_ARGS__)
+#else
+#define ANDROIDLOGI(...)
+#define ANDROIDLOGW(...)
+#define ANDROIDLOGD(...)
+#define ANDROIDLOGE(...)
+
+#endif
 
 enum LogLevel {
   kNO_LOG,
@@ -88,26 +116,29 @@ struct ToLog {
   Print printer_;
 };
 
-#define LOG(level)                                                             \
-  if (level > paddle_mobile::log_level) {                                      \
-  } else                                                                       \
-    paddle_mobile::ToLog(                                                      \
-        level,                                                                 \
-        (std::stringstream()                                                   \
-         << "[file: "                                                          \
-         << (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1) : __FILE__) \
-         << "] [line: " << __LINE__ << "] ")                                   \
-            .str())
+#define LOG(level)                                                           \
+  if (level > paddle_mobile::log_level) {                                    \
+  } else                                                                     \
+    paddle_mobile::ToLog(                                                    \
+        level, static_cast<std::stringstream &>(                             \
+                   std::stringstream()                                       \
+                   << "[file: "                                              \
+                   << (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1) \
+                                              : __FILE__)                    \
+                   << "] [line: " << __LINE__ << "] ")                       \
+                   .str())
 
-#define DLOG                                                                   \
-  if (paddle_mobile::kLOG_DEBUG > paddle_mobile::log_level) {                  \
-  } else                                                                       \
-    paddle_mobile::ToLog(                                                      \
-        paddle_mobile::kLOG_DEBUG,                                             \
-        (std::stringstream()                                                   \
-         << "[file: "                                                          \
-         << (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1) : __FILE__) \
-         << "] [line: " << __LINE__ << "] ")                                   \
+#define DLOG                                                          \
+  if (paddle_mobile::kLOG_DEBUG > paddle_mobile::log_level) {         \
+  } else                                                              \
+    paddle_mobile::ToLog(                                             \
+        paddle_mobile::kLOG_DEBUG,                                    \
+        static_cast<std::stringstream &>(                             \
+            std::stringstream()                                       \
+            << "[file: "                                              \
+            << (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1) \
+                                       : __FILE__)                    \
+            << "] [line: " << __LINE__ << "] ")                       \
             .str())
 
 #define LOGF(level, format, ...)          \
@@ -121,6 +152,11 @@ struct ToLog {
     printf(format, ##__VA_ARGS__)
 
 #else
+
+#define ANDROIDLOGI(...)
+#define ANDROIDLOGW(...)
+#define ANDROIDLOGD(...)
+#define ANDROIDLOGE(...)
 
 enum LogLevel {
   kNO_LOG,

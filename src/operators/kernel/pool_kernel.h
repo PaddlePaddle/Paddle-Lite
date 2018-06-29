@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef POOL_OP
+
 #pragma once
 
 #include "framework/operator.h"
@@ -26,6 +28,9 @@ template <typename DeviceType, typename T>
 class PoolKernel : public OpKernelBase<DeviceType, PoolParam> {
  public:
   void Compute(const PoolParam &param) const override;
+  bool Init(const PoolParam &para) const;
 };
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

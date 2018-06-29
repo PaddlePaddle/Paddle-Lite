@@ -12,16 +12,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "operators/transpose_op.h"
-#include <common/enforce.h>
+#ifdef TRANSPOSE_OP
+
 #include <vector>
+
+#include "common/enforce.h"
+#include "operators/transpose_op.h"
 namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
 void TransposeOp<Dtype, T>::InferShape() const {
-  auto input_x_dims = param_.InputX()->dims();
-  auto axis = param_.Axis();
+  auto input_x_dims = this->param_.InputX()->dims();
+  auto axis = this->param_.Axis();
 
   size_t x_dims_size = input_x_dims.size();
   size_t axis_size = axis.size();
@@ -42,12 +45,20 @@ void TransposeOp<Dtype, T>::InferShape() const {
   for (size_t i = 0; i < axis_size; i++) {
     out_dims[i] = input_x_dims[axis[i]];
   }
-  param_.Out()->Resize(out_dims);
+  this->param_.Out()->Resize(out_dims);
 }
 template class TransposeOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-USE_OP(transpose);
-REGISTER_OPERATOR(transpose, ops::TransposeOp);
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(transpose);
+REGISTER_OPERATOR_CPU(transpose, ops::TransposeOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
+
+#endif

@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef LRN_OP
+
 #include "lrn_op.h"
 
 namespace paddle_mobile {
@@ -19,13 +21,23 @@ namespace operators {
 
 template <typename Dtype, typename T>
 void LrnOp<Dtype, T>::InferShape() const {
-  auto x_dims = param_.InputX()->dims();
-  param_.Out()->Resize(x_dims);
+  auto x_dims = this->param_.InputX()->dims();
+  this->param_.Out()->Resize(x_dims);
 }
 template class LrnOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-USE_OP(lrn);
-REGISTER_OPERATOR(lrn, ops::LrnOp);
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(lrn);
+REGISTER_OPERATOR_CPU(lrn, ops::LrnOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(lrn);
+REGISTER_OPERATOR_MALI_GPU(lrn, ops::LrnOp);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
+
+#endif

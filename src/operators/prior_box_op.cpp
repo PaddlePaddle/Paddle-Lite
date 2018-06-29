@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef PRIORBOX_OP
+
 #include "operators/prior_box_op.h"
 #include <vector>
 namespace paddle_mobile {
@@ -19,13 +21,13 @@ namespace operators {
 
 template <typename Dtype, typename T>
 void PriorBoxOp<Dtype, T>::InferShape() const {
-  auto input_dims = param_.Input()->dims();
-  auto input_image_dims = param_.InputImage()->dims();
-  auto min_sizes = param_.MinSizes();
-  auto max_sizes = param_.MaxSizes();
-  auto variances = param_.Variances();
-  auto aspect_ratios = param_.AspectRatios();
-  bool flip = param_.Flip();
+  auto input_dims = this->param_.Input()->dims();
+  auto input_image_dims = this->param_.InputImage()->dims();
+  auto min_sizes = this->param_.MinSizes();
+  auto max_sizes = this->param_.MaxSizes();
+  auto variances = this->param_.Variances();
+  auto aspect_ratios = this->param_.AspectRatios();
+  bool flip = this->param_.Flip();
   std::vector<float> aspect_ratios_vec;
   ExpandAspectRatios(aspect_ratios, flip, &aspect_ratios_vec);
 
@@ -39,13 +41,21 @@ void PriorBoxOp<Dtype, T>::InferShape() const {
   dim_vec[1] = input_dims[3];
   dim_vec[2] = num_priors;
   dim_vec[3] = 4;
-  param_.OutputBoxes()->Resize(framework::make_ddim(dim_vec));
-  param_.OutputVariances()->Resize(framework::make_ddim(dim_vec));
+  this->param_.OutputBoxes()->Resize(framework::make_ddim(dim_vec));
+  this->param_.OutputVariances()->Resize(framework::make_ddim(dim_vec));
 }
 template class PriorBoxOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-USE_OP(prior_box);
-REGISTER_OPERATOR(prior_box, ops::PriorBoxOp);
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(prior_box);
+REGISTER_OPERATOR_CPU(prior_box, ops::PriorBoxOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
+
+#endif

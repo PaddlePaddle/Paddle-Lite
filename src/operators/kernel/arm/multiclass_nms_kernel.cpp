@@ -12,10 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+#ifdef MULTICLASSNMS_OP
 
 #include "operators/kernel/multiclass_nms_kernel.h"
-
+#include <algorithm>
 namespace paddle_mobile {
 namespace operators {
 
@@ -204,6 +204,12 @@ void MultiClassOutput(const Tensor& scores, const Tensor& bboxes,
 }
 
 template <>
+bool MultiClassNMSKernel<CPU, float>::Init(
+    const MultiClassNMSParam& para) const {
+  return true;
+}
+
+template <>
 void MultiClassNMSKernel<CPU, float>::Compute(
     const MultiClassNMSParam& param) const {
   const auto* input_bboxes = param.InputBBoxes();
@@ -273,3 +279,5 @@ void MultiClassNMSKernel<CPU, float>::Compute(
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

@@ -12,13 +12,23 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef CONV_OP
+
+#include "operators/kernel/conv_kernel.h"
+
 namespace paddle_mobile {
 namespace operators {
 
-// template<>
-// void ConvKernel<FPGA, float>::Compute(const ConvParam &param) const
-// {}
-//
-// template class ConvKernel<FPGA, float>;
+template <>
+bool ConvKernel<FPGA, float>::Init(const ConvParam &para) const {
+  return true;
 }
+
+template <>
+void ConvKernel<FPGA, float>::Compute(const ConvParam &param) const {}
+template class ConvKernel<FPGA, float>;
+
+}  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

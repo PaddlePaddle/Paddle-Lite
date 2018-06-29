@@ -27,14 +27,14 @@ namespace framework {
 class ProgramOptimize {
  public:
   ProgramOptimize() {}
-  std::shared_ptr<ProgramDesc> FushionOptimize(
+  std::shared_ptr<ProgramDesc> FusionOptimize(
       std::shared_ptr<ProgramDesc> ori_des, bool add_split = false);
 
  private:
   int current_block_;
   std::vector<std::shared_ptr<BlockDesc>> new_blocks_;
   void GenerateOps(std::vector<std::shared_ptr<framework::OpDesc>> *op_descs,
-                   Node *begin_node);
+                   Node *begin_node, bool can_add_split);
   void GenerateOps(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,
                    Node *input_node, Node *current_node);
   void GenerateOps(std::vector<std::shared_ptr<framework::OpDesc>> *op_desc,

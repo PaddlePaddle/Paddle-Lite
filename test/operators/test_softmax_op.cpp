@@ -12,9 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "../executor_for_test.h"
-#include "../test_helper.h"
-#include "io.h"
+#include "../test_include.h"
+
+#include "operators/softmax_op.h"
 
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;

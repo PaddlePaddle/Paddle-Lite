@@ -16,7 +16,6 @@ limitations under the License. */
 
 #include <map>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "common/enforce.h"
@@ -27,7 +26,6 @@ limitations under the License. */
 #include "framework/op_info.h"
 #include "framework/op_kernel_type.h"
 #include "framework/op_registry.h"
-#include "framework/paddle_mobile_object.h"
 #include "framework/program/block_desc.h"
 #include "framework/program/program-optimize/node.h"
 #include "framework/scope.h"
@@ -52,7 +50,7 @@ static T *GetVarValue(const string &key, const VariableNameMap &var_map,
 }
 
 template <typename Dtype>
-class OperatorBase : PaddleMobileObject {
+class OperatorBase {
  public:
   /*
    *  @b op 基类的实例化方法, op 获取到了 输入、参数以及提前分配好的输出 tensor
@@ -65,6 +63,7 @@ class OperatorBase : PaddleMobileObject {
   std::vector<string> GetOutKeys() const;
   virtual void RunImpl() const = 0;
 
+  virtual void Init() const = 0;
   /*
    * @b op 运算所需的输入, 如上一层的输出结果、卷积核
    * */
@@ -105,31 +104,55 @@ class OperatorBase : PaddleMobileObject {
 /*
  * @b 这个类为所有带有运算的 op 的父类, 这个 op 继承与 OperatorBase
  * */
-template <typename Dtype>
+template <typename Dtype, typename ParamType, typename KernelType>
 class OperatorWithKernel : public OperatorBase<Dtype> {
  public:
   OperatorWithKernel(const std::string &type, const VariableNameMap &inputs,
                      const VariableNameMap &outputs, const AttributeMap &attrs,
                      std::shared_ptr<Scope> scope)
-      : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope) {}
+      : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope),
+        param_(inputs, outputs, attrs, *scope) {}
 
-  virtual void RunImpl() const = 0;
+  virtual void RunImpl() const { this->kernel_.Compute(this->param_); }
+
   virtual void InferShape() const = 0;
+
+  void Init() const {
+    PADDLE_MOBILE_ENFORCE(kernel_.Init(param_), "  %s kernel init failed",
+                          this->type_.c_str());
+  }
+
+ protected:
+  KernelType kernel_;
+  ParamType param_;
 };
 
 /*
  * @b 所有kernel的父类
  * */
 template <typename Dtype, typename P>
-class OpKernelBase : PaddleMobileObject {
+class OpKernelBase {
  public:
   /*
    * @b 所有kernel 需实现 Compute 方法
    * @p para 这个参数为 kernel 运算时所需要用到参数组成的一个结构体,
    *    所有结构体存在与: paddle-mobile/src/operators/op_param.h
    * */
+#ifdef PADDLE_MOBILE_MALI_GPU
+  OpKernelBase() { acl_op_ = nullptr; }
+  void *GetAclOp() const { return acl_op_; }
+  void SetAclOp(void *op, void *ob) const {
+    reinterpret_cast<OpKernelBase<Dtype, P> *>(ob)->acl_op_ = op;
+  }
+#endif
   virtual void Compute(const P &para) const = 0;
+  virtual bool Init(const P &para) const { return true; };
   virtual ~OpKernelBase() = default;
+
+ private:
+#ifdef PADDLE_MOBILE_MALI_GPU
+  void *acl_op_;
+#endif
 };
 
 #define DEFINE_OP_CONSTRUCTOR(cls, parent_cls)                                 \
@@ -139,20 +162,23 @@ class OpKernelBase : PaddleMobileObject {
       std::shared_ptr<::paddle_mobile::framework::Scope> scope)                \
       : parent_cls<Dtype, T>(type, inputs, outputs, attrs, scope) {}
 
-class FusionOpMatcher : PaddleMobileObject {
+class FusionOpMatcher {
  public:
   FusionOpMatcher() {}
 
   virtual std::string Type() = 0;
 
-  virtual void FolderNodes(Node *node) {
-    node->Folder(node_.Depth(), Type(), {});
+  virtual void FolderNodes(
+      Node *node,
+      std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
+    node->Folder(node_.Depth(), Type(), {}, removed_nodes);
   }
 
   virtual Node &BeginNode() { return node_; }
 
   std::string BeginType() { return node_.Type(); }
 
+  //  virtual  bool Fusion();
  protected:
   Node node_;
   std::string type_;

@@ -25,7 +25,7 @@ namespace math {
 template <typename T>
 void matmul(const framework::Tensor &matrix_a, bool trans_a,
             const framework::Tensor &matrix_b, bool trans_b, T alpha,
-            framework::Tensor *matrix_out, T beta);
+            framework::Tensor *matrix_out, T beta, bool relu = false);
 }  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile

@@ -12,19 +12,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "../executor_for_test.h"
 #include "../test_include.h"
+#include "operators/conv_op.h"
 
 int main() {
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::Loader<paddle_mobile::GPU_MALI> loader;
   //  ../models/image_classification_resnet.inference.model
   auto program = loader.Load(g_googlenet);
 
   PADDLE_MOBILE_ENFORCE(program.originProgram != nullptr,
                         "program file read fail");
 
-  Executor4Test<paddle_mobile::CPU,
-                paddle_mobile::operators::ConvOp<paddle_mobile::CPU, float>>
+  Executor4Test<paddle_mobile::GPU_MALI, paddle_mobile::operators::ConvOp<
+                                             paddle_mobile::GPU_MALI, float>>
       executor(program, "conv2d");
 
   paddle_mobile::framework::Tensor input;
@@ -37,7 +37,7 @@ int main() {
   auto output = executor.Predict(input, "data", "conv2d_0.tmp_0", out_ddim);
 
   auto output_ptr = output->data<float>();
-  for (int j = 0; j < output->numel(); ++j) {
+  for (int j = 0; j < 20; ++j) {
     DLOG << " value of output: " << output_ptr[j];
   }
   return 0;

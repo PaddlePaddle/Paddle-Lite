@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef RESHAPE_OP
+
 #include "operators/reshape_op.h"
 #include <vector>
 namespace paddle_mobile {
@@ -20,15 +22,25 @@ namespace operators {
 template <typename Dtype, typename T>
 void ReshapeOp<Dtype, T>::InferShape() const {
   /// todo: add InputShape() detection.
-  auto &shape = param_.Shape();
-  auto input_x_dims = param_.InputX()->dims();
+  auto &shape = this->param_.Shape();
+  auto input_x_dims = this->param_.InputX()->dims();
   auto out_dims = ValidateShape(shape, input_x_dims);
-  param_.Out()->Resize(out_dims);
+  this->param_.Out()->Resize(out_dims);
 }
 template class ReshapeOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-USE_OP(reshape);
-REGISTER_OPERATOR(reshape, ops::ReshapeOp);
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(reshape);
+REGISTER_OPERATOR_CPU(reshape, ops::ReshapeOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(reshape);
+REGISTER_OPERATOR_MALI_GPU(reshape, ops::ReshapeOp);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
+
+#endif

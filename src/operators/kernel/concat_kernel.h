@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef CONCAT_OP
+
 #pragma once
 #include "framework/operator.h"
 #include "operators/op_param.h"
@@ -25,7 +27,10 @@ template <typename DeviceType, typename T>
 class ConcatKernel : public framework::OpKernelBase<DeviceType, ConcatParam> {
  public:
   void Compute(const ConcatParam &param) const;
+  bool Init(const ConcatParam &para) const;
 };
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

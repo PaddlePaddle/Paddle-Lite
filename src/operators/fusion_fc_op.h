@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef FUSION_FC_OP
+
 #pragma once
 
 #include <string>
@@ -19,7 +21,7 @@ limitations under the License. */
 
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
-#include "operators/kernel/fushion_fc_kernel.h"
+#include "operators/kernel/fusion_fc_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -32,40 +34,55 @@ class FusionFcMatcher : public framework::FusionOpMatcher {
     node_ > std::make_shared<framework::Node>(G_OP_TYPE_ELEMENTWISE_ADD);
   }
 
-  void FolderNodes(framework::Node *node) {
-    vector<std::shared_ptr<framework::OpDesc>> origin_descs =
-        node->OpDescs(node_.Depth());
+  void FolderNodes(
+      framework::Node *node,
+      std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
     node->Folder(node_.Depth(), Type(),
-                 {{G_OP_TYPE_ELEMENTWISE_ADD, {"Y", "Z"}}});
+                 {{G_OP_TYPE_ELEMENTWISE_ADD, {"Y", "Z"}}}, removed_nodes);
   }
 
   std::string Type() { return G_OP_TYPE_FC; }
 };
 
 template <typename DeviceType, typename T>
-class FushionFcOp : public framework::OperatorWithKernel<DeviceType> {
+class FusionFcOp
+    : public framework::OperatorWithKernel<
+          DeviceType, FusionFcParam, operators::FusionFcKernel<DeviceType, T>> {
  public:
-  FushionFcOp(const string &type, const VariableNameMap &inputs,
-              const VariableNameMap &outputs,
-              const framework::AttributeMap attrs,
-              std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
-                                                  scope),
-        param_(inputs, outputs, attrs, *scope) {}
+  FusionFcOp(const string &type, const VariableNameMap &inputs,
+             const VariableNameMap &outputs,
+             const framework::AttributeMap &attrs,
+             std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<DeviceType, FusionFcParam,
+                                      operators::FusionFcKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
 
-  void RunImpl() const {
-    operators::FushionFcKernel<DeviceType, T> kernel;
-    kernel.Compute(param_);
-  }
-
-  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  using framework::OperatorWithKernel<
+      DeviceType, FusionFcParam,
+      operators::FusionFcKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:
-  FushionFcParam param_;
 };
 
+#ifdef PADDLE_MOBILE_CPU
+#ifndef CONV_CPU_REGISTER
+#define CONV_CPU_REGISTER
 static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
+#endif
+#endif
+
+#ifdef PADDLE_MOBILE_MALI_GPU
+#ifndef CONV_CPU_REGISTER
+#define CONV_CPU_REGISTER
+static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
+#endif
+#endif
+
+#ifdef PADDLE_MOBILE_FPGA
+#endif
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

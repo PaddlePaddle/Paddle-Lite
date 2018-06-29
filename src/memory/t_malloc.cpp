@@ -12,19 +12,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
-
-#include "t_malloc.h"
+#include "memory/t_malloc.h"
 #include <cstdlib>
 #include <cstring>
 
 namespace paddle_mobile {
 namespace memory {
-const int MALLOC_ALIGN = 16;
+const int MALLOC_ALIGN = 64;
 
 void Copy(void *dst, const void *src, size_t num) {
   std::memcpy(dst, src, num);
-};
+}
 
 void *Alloc(size_t size) {
   size_t offset = sizeof(void *) + MALLOC_ALIGN - 1;

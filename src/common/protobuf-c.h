@@ -799,76 +799,6 @@ uint32_t protobuf_c_version_number(void);
 #define PROTOBUF_C_MIN_COMPILER_VERSION 1000000
 
 /**
- * Look up a `ProtobufCEnumValue` from a `ProtobufCEnumDescriptor` by name.
- *
- * \param desc
- *      The `ProtobufCEnumDescriptor` object.
- * \param name
- *      The `name` field from the corresponding `ProtobufCEnumValue` object to
- *      match.
- * \return
- *      A `ProtobufCEnumValue` object.
- * \retval NULL
- *      If not found or if the optimize_for = CODE_SIZE option was set.
- */
-PROTOBUF_C__API
-const ProtobufCEnumValue *protobuf_c_enum_descriptor_get_value_by_name(
-    const ProtobufCEnumDescriptor *desc, const char *name);
-
-/**
- * Look up a `ProtobufCEnumValue` from a `ProtobufCEnumDescriptor` by numeric
- * value.
- *
- * \param desc
- *      The `ProtobufCEnumDescriptor` object.
- * \param value
- *      The `value` field from the corresponding `ProtobufCEnumValue` object to
- *      match.
- *
- * \return
- *      A `ProtobufCEnumValue` object.
- * \retval NULL
- *      If not found.
- */
-PROTOBUF_C__API
-const ProtobufCEnumValue *protobuf_c_enum_descriptor_get_value(
-    const ProtobufCEnumDescriptor *desc, int value);
-
-/**
- * Look up a `ProtobufCFieldDescriptor` from a `ProtobufCMessageDescriptor` by
- * the name of the field.
- *
- * \param desc
- *      The `ProtobufCMessageDescriptor` object.
- * \param name
- *      The name of the field.
- * \return
- *      A `ProtobufCFieldDescriptor` object.
- * \retval NULL
- *      If not found or if the optimize_for = CODE_SIZE option was set.
- */
-PROTOBUF_C__API
-const ProtobufCFieldDescriptor *protobuf_c_message_descriptor_get_field_by_name(
-    const ProtobufCMessageDescriptor *desc, const char *name);
-
-/**
- * Look up a `ProtobufCFieldDescriptor` from a `ProtobufCMessageDescriptor` by
- * the tag value of the field.
- *
- * \param desc
- *      The `ProtobufCMessageDescriptor` object.
- * \param value
- *      The tag value of the field.
- * \return
- *      A `ProtobufCFieldDescriptor` object.
- * \retval NULL
- *      If not found.
- */
-PROTOBUF_C__API
-const ProtobufCFieldDescriptor *protobuf_c_message_descriptor_get_field(
-    const ProtobufCMessageDescriptor *desc, unsigned value);
-
-/**
  * Determine the number of bytes required to store the serialised message.
  *
  * \param message
@@ -948,33 +878,6 @@ void protobuf_c_message_init(const ProtobufCMessageDescriptor *descriptor,
                              void *message);
 
 /**
- * Free a service.
- *
- * \param service
- *      The service object to free.
- */
-PROTOBUF_C__API
-void protobuf_c_service_destroy(ProtobufCService *service);
-
-/**
- * Look up a `ProtobufCMethodDescriptor` by name.
- *
- * \param desc
- *      Service descriptor.
- * \param name
- *      Name of the method.
- *
- * \return
- *      A `ProtobufCMethodDescriptor` object.
- * \retval NULL
- *      If not found or if the optimize_for = CODE_SIZE option was set.
- */
-PROTOBUF_C__API
-const ProtobufCMethodDescriptor *
-protobuf_c_service_descriptor_get_method_by_name(
-    const ProtobufCServiceDescriptor *desc, const char *name);
-
-/**
  * Initialise a `ProtobufCBufferSimple` object.
  */
 #define PROTOBUF_C_BUFFER_SIMPLE_INIT(array_of_bytes)             \
@@ -1010,18 +913,6 @@ protobuf_c_service_descriptor_get_method_by_name(
 PROTOBUF_C__API
 void protobuf_c_buffer_simple_append(ProtobufCBuffer *buffer, size_t len,
                                      const unsigned char *data);
-
-PROTOBUF_C__API
-void protobuf_c_service_generated_init(
-    ProtobufCService *service, const ProtobufCServiceDescriptor *descriptor,
-    ProtobufCServiceDestroy destroy);
-
-PROTOBUF_C__API
-void protobuf_c_service_invoke_internal(ProtobufCService *service,
-                                        unsigned method_index,
-                                        const ProtobufCMessage *input,
-                                        ProtobufCClosure closure,
-                                        void *closure_data);
 
 /**@}*/
 

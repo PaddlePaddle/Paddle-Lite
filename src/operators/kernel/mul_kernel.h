@@ -12,10 +12,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef MUL_OP
+
+#pragma once
+
 #include "framework/operator.h"
 #include "operators/math/math_function.h"
 #include "operators/op_param.h"
-#pragma once;
 
 namespace paddle_mobile {
 namespace operators {
@@ -26,6 +29,9 @@ template <typename DeviceType, typename T>
 class MulKernel : public framework::OpKernelBase<DeviceType, MulParam> {
  public:
   void Compute(const MulParam &param) const;
+  bool Init(const MulParam &para) const;
 };
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif
