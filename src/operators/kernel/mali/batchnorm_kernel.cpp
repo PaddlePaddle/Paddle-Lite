@@ -14,8 +14,6 @@ limitations under the License. */
 
 #ifdef BATCHNORM_OP
 
-#pragma once
-
 #include "operators/kernel/batchnorm_kernel.h"
 #ifdef PADDLE_MOBILE_MALI_GPU
 #include "acl_operator.h"
@@ -73,6 +71,7 @@ class AclBatchNormOp : public acl::ACLOperator {
   bool Bypass_acl(const BatchNormParam& param) {
     bool bypass_acl = false;
     AclParametersByContext(param);
+    InitAclLayer(param);
     // for performance, more groups impact GPU performance
     if (this->force_bypass_acl_path_) {
       bypass_acl = true;
@@ -137,6 +136,10 @@ bool BatchNormKernel<GPU_MALI, float>::Init(const BatchNormParam& param) const {
     acl_op = new AclBatchNormOp<GPU_MALI, float>();
     this->SetAclOp((void*)acl_op, (void*)this);
   }
+  if (acl_op->Bypass_acl(param)) {
+    std::cout << "init acl failed" << std::endl;
+    return false;
+  }
   return true;
 }
 
@@ -149,15 +152,8 @@ void BatchNormKernel<GPU_MALI, float>::Compute(
   if (acl_op == nullptr) {
     return;
   }
-  if (acl_op->Bypass_acl(param)) {
-    std::cout << "init acl failed" << std::endl;
-    return;
-  }
   acl::AclParameters& args = acl_op->getargs();
-  const float* input_data = (const float*)args.input_data;
-  const float* output_data = (const float*)args.output_data;
-  acl_op->InitAclLayer(param);
-  acl_op->RunAcl((void*)input_data, (void*)output_data);
+  acl_op->RunAcl(args.input_data, args.output_data);
 }
 
 template class BatchNormKernel<GPU_MALI, float>;
