@@ -41,10 +41,10 @@ class AclReluOp : public acl::ACLOperator {
   acl::AclParameters& getargs() { return args; }
   void InitAclLayer(const ReluParam& param) {
     setTargetHint(acl::TargetHint::OPENCL);
-    arm_compute::TensorShape input_shape(args.in_cols * args.in_rows *
-                                         args.in_depth * args.batch);
-    arm_compute::TensorShape output_shape(args.in_cols * args.in_rows *
-                                          args.in_depth * args.out_num);
+    arm_compute::TensorShape input_shape(args.in_cols, args.in_rows,
+                                         args.in_depth, args.batch);
+    arm_compute::TensorShape output_shape(args.in_cols, args.in_rows,
+                                          args.in_depth, args.out_num);
     // arm_compute::TensorShape weights_shape(
     // args.filter_cols, args.filter_rows, args.in_depth, args.out_depth);
     // arm_compute::TensorShape biases_shape(args.out_depth);
@@ -71,6 +71,7 @@ class AclReluOp : public acl::ACLOperator {
   bool Bypass_acl(const ReluParam& param) {
     bool bypass_acl = false;
     AclParametersByContext(param);
+    InitAclLayer(param);
     // for performance, more groups impact GPU performance
     if (this->force_bypass_acl_path_) {
       bypass_acl = true;
@@ -106,6 +107,10 @@ bool ReluKernel<GPU_MALI, float>::Init(const ReluParam& param) const {
     acl_op = new AclReluOp<GPU_MALI, float>();
     this->SetAclOp((void*)acl_op, (void*)this);
   }
+  if (acl_op->Bypass_acl(param)) {
+    std::cout << "init acl failed" << std::endl;
+    return false;
+  }
   return true;
 }
 
@@ -117,15 +122,8 @@ void ReluKernel<GPU_MALI, float>::Compute(const ReluParam& param) const {
   if (acl_op == nullptr) {
     return;
   }
-  if (acl_op->Bypass_acl(param)) {
-    std::cout << "init acl failed" << std::endl;
-    return;
-  }
   acl::AclParameters& args = acl_op->getargs();
-  const float* input_data = (const float*)args.input_data;
-  const float* output_data = (const float*)args.output_data;
-  acl_op->InitAclLayer(param);
-  acl_op->RunAcl((void*)input_data, (void*)output_data);
+  acl_op->RunAcl(args.input_data, args.output_data);
 }
 
 template class ReluKernel<GPU_MALI, float>;
