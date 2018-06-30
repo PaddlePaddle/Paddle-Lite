@@ -178,7 +178,7 @@ struct Print {
     Print p = Print();
     return p;
   }
-  
+
  private:
 };
 
