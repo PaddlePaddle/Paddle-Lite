@@ -63,8 +63,20 @@ void PoolKernel<CPU, float>::Compute(const PoolParam &param) const {
     }
   } else if (ksize[0] == 3 && ksize[0] == ksize[1]) {
     if (pooling_type == "max") {
+      if (strides[0] == strides[1] && strides[0] == 1 &&
+          paddings[0] == paddings[1] && paddings[1] == 1) {
+        math::Pool3x3Maxs1p1(in_x, out);
+      } else {
+        math::Pool3x3Max(strides, paddings, in_x, out);
+      }
       math::Pool3x3Max(strides, paddings, in_x, out);
     } else if (pooling_type == "avg") {
+      if (strides[0] == strides[1] && strides[0] == 1 &&
+          paddings[0] == paddings[1] && paddings[1] == 1) {
+        math::Pool3x3Avgs1p1(in_x, out);
+      } else {
+        math::Pool3x3Avg(strides, paddings, in_x, out);
+      }
       math::Pool3x3Avg(strides, paddings, in_x, out);
     }
 
