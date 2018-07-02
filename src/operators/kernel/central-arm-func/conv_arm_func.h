@@ -17,6 +17,7 @@ limitations under the License. */
 #pragma once
 #include <operators/math/depthwise_conv_3x3.h>
 #include <vector>
+
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
@@ -26,6 +27,7 @@ inline void ConvBasic(const ConvParam &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
   Tensor *output = param.Output();
+
   int groups = param.Groups();
   std::vector<int> strides = param.Strides();
   std::vector<int> paddings = param.Paddings();
@@ -96,6 +98,7 @@ inline void ConvBasic(const ConvParam &param) {
         // vol2col
         vol2col(in_slice, dilations, strides, paddings, &col);
       }
+
       // gemm
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
