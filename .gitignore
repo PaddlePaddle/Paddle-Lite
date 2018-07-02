@@ -69,6 +69,3 @@ build
 # clion building directories
 cmake-build-debug
 cmake-build-release
-
-tools/push2android.sh
-tools/android-debug-script/run.sh
