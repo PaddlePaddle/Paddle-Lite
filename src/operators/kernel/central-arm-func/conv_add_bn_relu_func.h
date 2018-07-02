@@ -15,7 +15,6 @@ limitations under the License. */
 #ifdef FUSION_CONVADDBNRELU_OP
 
 #pragma once
-#include "operators/kernel/conv_add_bn_relu_kernel.h"
 #include "operators/math/depthwise_conv_3x3.h"
 #include "operators/op_param.h"
 namespace paddle_mobile {

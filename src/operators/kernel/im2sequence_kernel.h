@@ -12,24 +12,28 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef LRN_OP
+#ifdef IM2SEQUENCE_OP
 
-#include "operators/kernel/lrn_kernel.h"
-#include "operators/kernel/central-arm-func/lrn_arm_func.h"
+#include "framework/operator.h"
+#include "operators/math/im2col.h"
+#include "operators/math/math_function.h"
+#include "operators/math/vol2col.h"
+#include "operators/op_param.h"
+
+#pragma once;
 
 namespace paddle_mobile {
 namespace operators {
 
-template <>
-bool LrnKernel<CPU, float>::Init(LrnParam *param) {
-  return true;
-}
+using namespace framework;
 
-template <>
-void LrnKernel<CPU, float>::Compute(const LrnParam &param) const {
-  LrnCompute<float>(param);
-}
-
+template <typename DeviceType, typename T>
+class Im2SequenceKernel
+    : public framework::OpKernelBase<DeviceType, Im2SequenceParam> {
+ public:
+  void Compute(const Im2SequenceParam& param) const;
+  bool Init(Im2SequenceParam* para);
+};
 }  // namespace operators
 }  // namespace paddle_mobile
 

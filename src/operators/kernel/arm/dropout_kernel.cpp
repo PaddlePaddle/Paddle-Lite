@@ -12,24 +12,37 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef LRN_OP
+#ifdef DROPOUT_OP
 
-#include "operators/kernel/lrn_kernel.h"
-#include "operators/kernel/central-arm-func/lrn_arm_func.h"
+#pragma once
+
+#include "operators/kernel/dropout_kernel.h"
+#include <operators/math/transform.h>
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool LrnKernel<CPU, float>::Init(LrnParam *param) {
+bool DropoutKernel<CPU, float>::Init(DropoutParam *para) {
   return true;
 }
 
-template <>
-void LrnKernel<CPU, float>::Compute(const LrnParam &param) const {
-  LrnCompute<float>(param);
-}
+template <typename T>
+struct DropoutFunctor {
+  inline T operator()(T in) const { return in; }
+};
 
+template <>
+void DropoutKernel<CPU, float>::Compute(const DropoutParam &param) const {
+  const auto *input_x = param.InputX();
+  auto *input_x_ptr = input_x->data<float>();
+  auto *out = param.Out();
+  auto *out_ptr = out->mutable_data<float>();
+
+  DropoutFunctor<float> func_;
+  math::Transform trans;
+  trans(input_x_ptr, input_x_ptr + input_x->numel(), out_ptr, func_);
+}
 }  // namespace operators
 }  // namespace paddle_mobile
 
