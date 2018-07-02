@@ -23,7 +23,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool DropoutKernel<CPU, float>::Init(const DropoutParam &para) const {
+bool DropoutKernel<CPU, float>::Init(DropoutParam *para) {
   return true;
 }
 
