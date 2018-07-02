@@ -39,8 +39,9 @@ class DropoutOp
                                       operators::DropoutKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 
-  //using framework::OperatorWithKernel<DeviceType, DropoutParam,
-  //                                    operators::DropoutKernel<DeviceType, T>>;
+  // using framework::OperatorWithKernel<DeviceType, DropoutParam,
+  //                                    operators::DropoutKernel<DeviceType,
+  //                                    T>>;
   void InferShape() const override;
 
  protected:
