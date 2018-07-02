@@ -79,7 +79,9 @@ extern const std::string G_OP_TYPE_CONCAT;
 extern const std::string G_OP_TYPE_ELEMENTWISE_ADD;
 extern const std::string G_OP_TYPE_FUSION_CONV_ADD_RELU;
 extern const std::string G_OP_TYPE_FC;
-extern const std::string G_OP_TYPE_CONV_ADD;
+extern const std::string G_OP_TYPE_FUSION_CONV_ADD;
+extern const std::string G_OP_TYPE_FUSION_CONV_ADD_BN_RELU;
+
 extern const std::string G_OP_TYPE_LRN;
 extern const std::string G_OP_TYPE_MUL;
 extern const std::string G_OP_TYPE_MULTICLASS_NMS;

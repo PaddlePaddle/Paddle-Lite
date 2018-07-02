@@ -50,8 +50,8 @@ template class FusionConvAddOp<CPU, float>;
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(conv_add);
-REGISTER_OPERATOR_CPU(conv_add, ops::FusionConvAddOp);
+USE_OP_CPU(fusion_conv_add);
+REGISTER_OPERATOR_CPU(fusion_conv_add, ops::FusionConvAddOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
 USE_OP_MALI_GPU(conv_add);

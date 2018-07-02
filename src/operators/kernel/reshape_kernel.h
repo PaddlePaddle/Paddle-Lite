@@ -71,7 +71,7 @@ template <typename DeviceType, typename T>
 class ReshapeKernel : public framework::OpKernelBase<DeviceType, ReshapeParam> {
  public:
   void Compute(const ReshapeParam& param) const;
-  bool Init(const ReshapeParam& para) const;
+  bool Init(ReshapeParam* param);
 };
 }  // namespace operators
 }  // namespace paddle_mobile
