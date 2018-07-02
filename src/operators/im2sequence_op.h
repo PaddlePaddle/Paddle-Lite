@@ -26,8 +26,9 @@ namespace operators {
 using namespace framework;
 
 template <typename DeviceType, typename T>
-class Im2SequenceOp : public framework::OperatorWithKernel<DeviceType, Im2SequenceParam,
-                                        operators::Im2SequenceKernal<DeviceType, T>> {
+class Im2SequenceOp : public framework::OperatorWithKernel<
+                          DeviceType, Im2SequenceParam,
+                          operators::Im2SequenceKernal<DeviceType, T>> {
  public:
   Im2SequenceOp(const std::string &type, const VariableNameMap &inputs,
                 const VariableNameMap &outputs,
@@ -37,8 +38,9 @@ class Im2SequenceOp : public framework::OperatorWithKernel<DeviceType, Im2Sequen
                                                   scope),
         param_(inputs, outputs, attrs, *scope) {}
 
-  using framework::OperatorWithKernel<DeviceType, Im2SequenceParam,
-                                            operators::Im2SequenceKernel<DeviceType, T>>::OperatorWithKernel;
+  using framework::OperatorWithKernel<
+      DeviceType, Im2SequenceParam,
+      operators::Im2SequenceKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  private:
