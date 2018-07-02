@@ -21,7 +21,6 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 void ConvAddBNReluBasic(const FusionConvAddBNReluParam &param) {
-
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
   Tensor bias = *param.Bias();
