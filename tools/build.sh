@@ -32,8 +32,8 @@ build_for_mac() {
 
 build_for_android() {
     #rm -rf "../build"
-    if [ -z "${ANDROID_NDK}" ]; then
-        echo "ANDROID_NDK not found!"
+    if [ -z "${NDK_ROOT}" ]; then
+        echo "NDK_ROOT not found!"
         exit -1
     fi
 

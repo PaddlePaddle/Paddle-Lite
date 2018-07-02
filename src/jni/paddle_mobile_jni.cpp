@@ -54,13 +54,14 @@ string jstring2cppstring(JNIEnv *env, jstring jstr) {
 JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_load(JNIEnv *env,
                                                           jclass thiz,
                                                           jstring modelPath) {
+  ANDROIDLOGI("load invoked");
   bool optimize = true;
   return getPaddleMobileInstance()->Load(jstring2cppstring(env, modelPath),
                                          optimize);
 }
 
-JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictImage(
-    JNIEnv *env, jclass thiz, jfloatArray buf) {
+JNIEXPORT jfloatArray JNICALL
+Java_com_baidu_paddle_PML_predict(JNIEnv *env, jclass thiz, jfloatArray buf) {
   jfloatArray result = NULL;
   int count = 0;
   float *dataPointer = nullptr;
@@ -78,6 +79,7 @@ JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictImage(
   count = output->numel();
   result = env->NewFloatArray(count);
   env->SetFloatArrayRegion(result, 0, count, output->data<float>());
+  ANDROIDLOGI("predict finished");
   return result;
 }
 

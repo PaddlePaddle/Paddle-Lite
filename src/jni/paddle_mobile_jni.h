@@ -31,8 +31,8 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_load(JNIEnv *env,
 /**
  * object detection for anroid
  */
-JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictImage(
-    JNIEnv *env, jclass thiz, jfloatArray buf);
+JNIEXPORT jfloatArray JNICALL
+Java_com_baidu_paddle_PML_predict(JNIEnv *env, jclass thiz, jfloatArray buf);
 
 /**
  * clear data of the net when destroy for android

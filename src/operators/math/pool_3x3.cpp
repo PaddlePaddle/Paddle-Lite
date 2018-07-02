@@ -13,9 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #ifdef POOL_OP
-#include "operators/math/pool_3x3.h"
-#include <climits>
+#include "pool_3x3.h"
 #include "framework/tensor.h"
+#if __ARM_NEON
+#include <arm_neon.h>
+#endif  // __ARM_NEON
+#include <climits>
 namespace paddle_mobile {
 namespace operators {
 namespace math {
