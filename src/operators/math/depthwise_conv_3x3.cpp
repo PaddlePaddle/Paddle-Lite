@@ -508,12 +508,13 @@ void DepthwiseConv3x3s1p1(const Tensor *input, const Tensor *filter,
   }
 }
 
-void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, Tensor filter,
+void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
                                    Tensor *output, Tensor *bias, bool if_bias,
-                                   Tensor *new_scale, Tensor *new_bias,
-                                   bool if_bn, bool if_relu) {
+                                   const Tensor *new_scale,
+                                   const Tensor *new_bias, bool if_bn,
+                                   bool if_relu) {
   const float *input_data = input->data<float>();
-  const float *filter_data = filter.data<float>();
+  const float *filter_data = filter->data<float>();
   float *output_data = output->data<float>();
   const float *bias_data = bias->data<float>();
   const float *newscale_data = new_scale->data<float>();
