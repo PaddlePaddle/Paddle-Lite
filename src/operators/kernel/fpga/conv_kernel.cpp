@@ -20,7 +20,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ConvKernel<FPGA, float>::Init(const ConvParam &para) const {
+bool ConvKernel<FPGA, float>::Init(ConvParam *param) {
   return true;
 }
 

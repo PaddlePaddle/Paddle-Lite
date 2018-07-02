@@ -39,10 +39,10 @@ class FusionConvAddMatcher : public framework::FusionOpMatcher {
     vector<std::shared_ptr<framework::OpDesc>> origin_descs =
         node->OpDescs(node_.Depth());
     node->Folder(node_.Depth(), Type(),
-                 {{G_OP_TYPE_ELEMENTWISE_ADD, {"Y", "Y"}}}, removed_nodes);
+                 {{G_OP_TYPE_ELEMENTWISE_ADD, {{"Y", "Y"}}}}, removed_nodes);
   }
 
-  std::string Type() { return G_OP_TYPE_CONV_ADD; }
+  std::string Type() { return G_OP_TYPE_FUSION_CONV_ADD; }
 };
 
 template <typename DeviceType, typename T>
@@ -67,11 +67,13 @@ class FusionConvAddOp : public framework::OperatorWithKernel<
 };
 
 #ifdef PADDLE_MOBILE_CPU
+
 #ifndef CONV_ADD_REGISTER
 static framework::FusionOpRegistrar convadd_registrar(
     new FusionConvAddMatcher());
 #define CONV_ADD_REGISTER
 #endif
+
 #endif
 
 #ifdef PADDLE_MOBILE_MALI_GPU
