@@ -21,7 +21,7 @@ template <>
 bool Im2SequenceKernel<CPU, float>::Init(const Im2SequenceParam &para) const {
   return true;
 }
-    
+
 inline int Im2SeqOutputSize(int input_size, int filter_size, int padding_0,
                             int padding_1, int stride) {
   const int output_size =
