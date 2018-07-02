@@ -595,21 +595,15 @@ void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
       }
       for (int i = 1; i < l - 1; ++i) {
         output_data[i * l] =
-            (w01 * input_data[i * l - l] + w02 * input_data[i * l - l + 1] +
-             w11 * input_data[i * l] + w12 * input_data[i * l + 1] +
-             w21 * input_data[i * l + l] + w22 * input_data[i * l + l + 1] +
-             bias_data[j]) *
-                newscale_data[j] +
-            newbias_data[j];
-        output_data[i * l + l - 1] =
-            (w00 * input_data[i * l + l - 1 - l - 1] +
-             w01 * input_data[i * l + l - 1 - l] +
-             w10 * input_data[i * l + l - 1 - 1] +
-             w11 * input_data[i * l + l - 1] +
-             w20 * input_data[i * l + l - 1 + l - 1] +
-             w21 * input_data[i * l + l - 1 + l] + bias_data[j]) *
-                newscale_data[j] +
-            newbias_data[j];
+            w01 * input_data[i * l - l] + w02 * input_data[i * l - l + 1] +
+            w11 * input_data[i * l] + w12 * input_data[i * l + 1] +
+            w21 * input_data[i * l + l] + w22 * input_data[i * l + l + 1];
+        output_data[i * l + l - 1] = w00 * input_data[i * l + l - 1 - l - 1] +
+                                     w01 * input_data[i * l + l - 1 - l] +
+                                     w10 * input_data[i * l + l - 1 - 1] +
+                                     w11 * input_data[i * l + l - 1] +
+                                     w20 * input_data[i * l + l - 1 + l - 1] +
+                                     w21 * input_data[i * l + l - 1 + l];
         if (if_bias) {
           output_data[i * l] += bias_data[j];
           output_data[i * l + l - 1] += bias_data[j];
