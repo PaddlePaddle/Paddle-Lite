@@ -28,14 +28,16 @@ using namespace framework;
 template <typename DeviceType, typename T>
 class Im2SequenceOp : public framework::OperatorWithKernel<
                           DeviceType, Im2SequenceParam,
-                          operators::Im2SequenceKernal<DeviceType, T>> {
+                          operators::Im2SequenceKernel<DeviceType, T>> {
  public:
   Im2SequenceOp(const std::string &type, const VariableNameMap &inputs,
                 const VariableNameMap &outputs,
                 const framework::AttributeMap &attrs,
                 std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
-                                                  scope),
+      : framework::OperatorWithKernel<
+            DeviceType, Im2SequenceParam,
+            operators::Im2SequenceKernel<DeviceType, T>>(type, inputs, outputs,
+                                                         attrs, scope),
         param_(inputs, outputs, attrs, *scope) {}
 
   using framework::OperatorWithKernel<

@@ -30,13 +30,14 @@ using paddle_mobile::framework::Tensor;
 template <typename DeviceType, typename T>
 class DropoutOp
     : public framework::OperatorWithKernel<
-          DeviceType, DropoutParam, operators::DropoutKernal<DeviceType, T>> {
+          DeviceType, DropoutParam, operators::DropoutKernel<DeviceType, T>> {
  public:
   DropoutOp(const std::string &type, const VariableNameMap &inputs,
             const VariableNameMap &outputs, const framework::AttributeMap attrs,
             std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType>(type, inputs, outputs, attrs,
-                                                  scope),
+      : framework::OperatorWithKernel<DeviceType, DropoutParam,
+                                      operators::DropoutKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope),
         param_(inputs, outputs, attrs, *scope) {}
 
   using framework::OperatorWithKernel<DeviceType, DropoutParam,
