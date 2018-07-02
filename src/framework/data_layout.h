@@ -40,6 +40,7 @@ inline DataLayout StringToDataLayout(const std::string &str) {
     return DataLayout::kAnyLayout;
   } else {
     PADDLE_MOBILE_THROW_EXCEPTION("Unknown storage order string: %s", s.c_str())
+    exit(0);
   }
 }
 
@@ -52,6 +53,8 @@ inline std::string DataLayoutToString(const DataLayout &data_layout) {
     case DataLayout::kAnyLayout:
       return "ANY_LAYOUT";
     default:
+      PADDLE_MOBILE_THROW_EXCEPTION("Unknown storage order string ")
+      exit(0);
       break;
   }
 }
