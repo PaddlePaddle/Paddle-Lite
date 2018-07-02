@@ -30,4 +30,4 @@ limitations under the License. */
 #include "framework/scope.h"
 #include "framework/tensor.h"
 #include "framework/variable.h"
-#include "io/io.h"
+#include "io/paddle_mobile.h"
