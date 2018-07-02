@@ -31,7 +31,7 @@ template <typename DeviceType, typename T>
 class Im2SequenceKernel
     : public framework::OpKernelBase<DeviceType, Im2SequenceParam> {
  public:
-  void Compute(const Im2SequenceParam &param) const;
+  void Compute(const Im2SequenceParam& param) const;
   bool Init(Im2SequenceParam* para);
 };
 }  // namespace operators

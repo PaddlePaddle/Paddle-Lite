@@ -39,7 +39,7 @@ class Im2SequenceOp : public framework::OperatorWithKernel<
             operators::Im2SequenceKernel<DeviceType, T>>(type, inputs, outputs,
                                                          attrs, scope) {}
 
-  //using framework::OperatorWithKernel<
+  // using framework::OperatorWithKernel<
   //    DeviceType, Im2SequenceParam,
   //    operators::Im2SequenceKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
