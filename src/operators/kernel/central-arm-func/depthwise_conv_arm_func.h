@@ -18,6 +18,7 @@ limitations under the License. */
 #include <operators/math/depthwise_conv_3x3.h>
 #include <vector>
 #include "operators/kernel/central-arm-func/conv_arm_func.h"
+
 #include "operators/op_param.h"
 
 namespace paddle_mobile {

@@ -21,6 +21,7 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 void ConvAddBNReluBasic(const FusionConvAddBNReluParam &param) {
+
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
   Tensor bias = *param.Bias();
@@ -32,6 +33,7 @@ void ConvAddBNReluBasic(const FusionConvAddBNReluParam &param) {
   Tensor *output = param.Output();
   math::expand_bias(bias, axis, output->dims());
   output->ShareDataWith(bias);
+
   int groups = param.Groups();
   std::vector<int> strides = param.Strides();
   std::vector<int> paddings = param.Paddings();
