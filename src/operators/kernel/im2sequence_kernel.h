@@ -30,6 +30,7 @@ class Im2SequenceKernel
     : public framework::OpKernelBase<DeviceType, Im2SequenceParam> {
  public:
   void Compute(const Im2SequenceParam &param) const;
+  bool Init(const Im2SequenceParam &para) const;
 };
 }  // namespace operators
 }  // namespace paddle_mobile

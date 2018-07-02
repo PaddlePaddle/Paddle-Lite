@@ -20,6 +20,11 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
+template <>
+bool DropoutKernel<CPU, float>::Init(const DropoutParam &para) const {
+    return true;
+}
+    
 template <typename T>
 struct DropoutFunctor {
   inline T operator()(T in) const { return in; }

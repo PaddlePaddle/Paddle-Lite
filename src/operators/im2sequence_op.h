@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef IM2SEQUENCE_OP
+
 #pragma once
 
 #include <operators/op_param.h>
@@ -24,7 +26,8 @@ namespace operators {
 using namespace framework;
 
 template <typename DeviceType, typename T>
-class Im2SequenceOp : public framework::OperatorWithKernel<DeviceType> {
+class Im2SequenceOp : public framework::OperatorWithKernel<DeviceType, Im2SequenceParam,
+                                        operators::Im2SequenceKernal<DeviceType, T>> {
  public:
   Im2SequenceOp(const std::string &type, const VariableNameMap &inputs,
                 const VariableNameMap &outputs,
@@ -34,18 +37,14 @@ class Im2SequenceOp : public framework::OperatorWithKernel<DeviceType> {
                                                   scope),
         param_(inputs, outputs, attrs, *scope) {}
 
-  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  using framework::OperatorWithKernel<DeviceType, Im2SequenceParam,
+                                            operators::Im2SequenceKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
-  void RunImpl() const {
-    operators::Im2SequenceKernel<DeviceType, T> kernel;
-    kernel.Compute(param_);
-    this->ClearVariables({"X"});
-  }
-
  private:
-  Im2SequenceParam param_;
 };
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

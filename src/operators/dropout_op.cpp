@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef DROPOUT_OP
 #include "operators/dropout_op.h"
 namespace paddle_mobile {
 namespace operators {
@@ -26,5 +27,13 @@ template class DropoutOp<CPU, float>;
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
+#ifdef PADDLE_MOBILE_CPU
 USE_OP(Dropout);
 REGISTER_OPERATOR(dropout, ops::DropoutOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
+
+#endif
