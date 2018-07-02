@@ -40,8 +40,6 @@ else()
     list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/kernel/mali/*.h)
     list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/kernel/mali/*.cc)
     list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/kernel/mali/*.cpp)
-
-
 endif()
 
 if(FPGA)
@@ -103,6 +101,10 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY build)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY build)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 
+# NET default
+set(NET "defult" CACHE STRING "select net type")
+set_property(CACHE NET PROPERTY STRINGS "defult" "googlenet" "mobilenet" "yolo" "squeezenet")
+
 include("${CMAKE_CURRENT_LIST_DIR}/tools/op.cmake")
 
 # if (IS_IOS)
@@ -117,5 +119,4 @@ endif ()
 if(DEBUGING)
     add_subdirectory(test)
 endif()
-
 
