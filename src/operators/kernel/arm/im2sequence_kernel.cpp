@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef IM2SEQUENCE_OP
+
 #include "operators/kernel/im2sequence_kernel.h"
 
 namespace paddle_mobile {
@@ -72,3 +74,5 @@ template class Im2SequenceKernel<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif
