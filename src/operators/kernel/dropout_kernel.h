@@ -12,24 +12,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef LRN_OP
+#ifdef DROPOUT_OP
 
-#include "operators/kernel/lrn_kernel.h"
-#include "operators/kernel/central-arm-func/lrn_arm_func.h"
+#include "framework/operator.h"
+#include "operators/op_param.h"
+
+#pragma once;
 
 namespace paddle_mobile {
 namespace operators {
 
-template <>
-bool LrnKernel<CPU, float>::Init(LrnParam *param) {
-  return true;
-}
-
-template <>
-void LrnKernel<CPU, float>::Compute(const LrnParam &param) const {
-  LrnCompute<float>(param);
-}
-
+template <typename DeviceType, typename T>
+class DropoutKernel : public framework::OpKernelBase<DeviceType, DropoutParam> {
+ public:
+  void Compute(const DropoutParam& param) const;
+  bool Init(DropoutParam* para);
+};
 }  // namespace operators
 }  // namespace paddle_mobile
 

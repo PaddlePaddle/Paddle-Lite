@@ -12,25 +12,28 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef LRN_OP
-
-#include "operators/kernel/lrn_kernel.h"
-#include "operators/kernel/central-arm-func/lrn_arm_func.h"
-
+#ifdef DROPOUT_OP
+#include "operators/dropout_op.h"
 namespace paddle_mobile {
 namespace operators {
 
-template <>
-bool LrnKernel<CPU, float>::Init(LrnParam *param) {
-  return true;
+template <typename Dtype, typename T>
+void DropoutOp<Dtype, T>::InferShape() const {
+  auto input_dims = this->param_.InputX()->dims();
+  this->param_.Out()->Resize(input_dims);
 }
-
-template <>
-void LrnKernel<CPU, float>::Compute(const LrnParam &param) const {
-  LrnCompute<float>(param);
-}
-
+template class DropoutOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(dropout);
+REGISTER_OPERATOR_CPU(dropout, ops::DropoutOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
 
 #endif
