@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef DROPOUT_OP
+
 #pragma once
 
 #include <string>
@@ -26,7 +28,8 @@ namespace operators {
 using paddle_mobile::framework::Tensor;
 
 template <typename DeviceType, typename T>
-class DropoutOp : public framework::OperatorWithKernel<DeviceType> {
+class DropoutOp : public framework::OperatorWithKernel<DeviceType, DropoutParam,
+                                    operators::DropoutKernal<DeviceType, T>> {
  public:
   DropoutOp(const std::string &type, const VariableNameMap &inputs,
             const VariableNameMap &outputs, const framework::AttributeMap attrs,
@@ -35,17 +38,15 @@ class DropoutOp : public framework::OperatorWithKernel<DeviceType> {
                                                   scope),
         param_(inputs, outputs, attrs, *scope) {}
 
-  void Run() const {
-    operators::DropoutKernel<DeviceType, T> kernel;
-    kernel.Compute(param_);
-  }
-
-  using framework::OperatorWithKernel<DeviceType>::OperatorWithKernel;
+  using framework::OperatorWithKernel<DeviceType, DropoutParam,
+                    operators::DropoutKernel<DeviceType, T>>;
   void InferShape() const override;
 
  protected:
-  DropoutParam param_;
 };
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif
+

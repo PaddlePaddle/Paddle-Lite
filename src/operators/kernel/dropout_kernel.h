@@ -24,6 +24,7 @@ template <typename DeviceType, typename T>
 class DropoutKernel : public framework::OpKernelBase<DeviceType, DropoutParam> {
  public:
   void Compute(const DropoutParam& param) const;
+  bool Init(const DropoutParam &para) const;
 };
 }  // namespace operators
 }  // namespace paddle_mobile

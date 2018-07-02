@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef IM2SEQUENCE_OP
+
 #include "operators/im2sequence_op.h"
 
 namespace paddle_mobile {
@@ -51,5 +53,13 @@ template class Im2SequenceOp<CPU, float>;
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
+#ifdef PADDLE_MOBILE_CPU
 USE_OP(im2sequence);
 REGISTER_OPERATOR(im2sequence, ops::Im2SequenceOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
+
+#endif
