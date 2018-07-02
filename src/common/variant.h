@@ -83,6 +83,7 @@ struct Variant {
       return *const_cast<T *>(reinterpret_cast<const T *>(&data));
     } else {
       PADDLE_MOBILE_THROW_EXCEPTION(" bad cast in variant ");
+      exit(0);
     }
   }
 
