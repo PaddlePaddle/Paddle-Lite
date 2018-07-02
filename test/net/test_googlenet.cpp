@@ -17,25 +17,25 @@ limitations under the License. */
 #include "../test_include.h"
 
 int main() {
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
   bool optimize = true;
   auto time1 = time();
   //  auto program = loader.Load(g_googlenet, optimize);
-  auto program = loader.Load(g_googlenet_combine + "/model",
-                             g_googlenet_combine + "/params", optimize);
-  auto time2 = time();
-  DLOG << "load cost :" << time_diff(time1, time2) << "ms\n";
-  paddle_mobile::Executor<paddle_mobile::CPU> executor(program, 1, optimize);
-  std::vector<float> input;
-  std::vector<int64_t> dims{1, 3, 224, 224};
-  GetInput<float>(g_test_image_1x3x224x224, &input, dims);
-  auto time3 = time();
+  if (paddle_mobile.Load(g_googlenet_combine + "/model",
+                         g_googlenet_combine + "/params", optimize)) {
+    auto time2 = time();
+    DLOG << "load cost :" << time_diff(time1, time2) << "ms\n";
+    std::vector<float> input;
+    std::vector<int64_t> dims{1, 3, 224, 224};
+    GetInput<float>(g_test_image_1x3x224x224, &input, dims);
+    auto time3 = time();
 
-  for (int i = 0; i < 10; ++i) {
-    executor.Predict(input, dims);
+    for (int i = 0; i < 10; ++i) {
+      paddle_mobile.Predict(input, dims);
+    }
+
+    auto time4 = time();
+    DLOG << "predict cost :" << time_diff(time3, time4) << "ms\n";
   }
-
-  auto time4 = time();
-  DLOG << "predict cost :" << time_diff(time3, time4) << "ms\n";
   return 0;
 }
