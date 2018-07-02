@@ -19,7 +19,7 @@ namespace operators {
 
 template <typename Dtype, typename T>
 void DropoutOp<Dtype, T>::InferShape() const {
-  auto input_dims = thsi->param_.InputX()->dims();
+  auto input_dims = this->param_.InputX()->dims();
   this->param_.Out()->Resize(input_dims);
 }
 template class DropoutOp<CPU, float>;
