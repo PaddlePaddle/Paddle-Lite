@@ -13,15 +13,33 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma once
-#include "framework/tensor.h"
+
+#ifdef FUSION_CONVADDBNRELU_OP
+
+#include <vector>
+#include "framework/ddim.h"
+#include "framework/operator.h"
+#include "operators/math/conv_func.h"
+#include "operators/math/im2col.h"
+#include "operators/math/math_function.h"
+#include "operators/math/vol2col.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
-namespace math {
-using framework::Tensor;
 
-void DepthwiseConv3x3s1p1(const Tensor *input, Tensor filter, Tensor *output,
-                          Tensor bias, bool if_bias);
-}  // namespace math
+using framework::DDim;
+using framework::OpKernelBase;
+
+template <typename DeviceType, typename T>
+class ConvAddBNReluKernel
+    : public OpKernelBase<DeviceType, FusionConvAddBNReluParam> {
+ public:
+  void Compute(const FusionConvAddBNReluParam &param) const;
+  bool Init(FusionConvAddBNReluParam *param);
+};
+
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

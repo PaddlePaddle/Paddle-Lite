@@ -72,7 +72,7 @@ void sigmoid(const Tensor *X, Tensor *Y) {
 }
 
 template <>
-bool SigmoidKernel<CPU, float>::Init(const SigmoidParam &para) const {
+bool SigmoidKernel<CPU, float>::Init(SigmoidParam *param) {
   return true;
 }
 
