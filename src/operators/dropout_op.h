@@ -28,8 +28,9 @@ namespace operators {
 using paddle_mobile::framework::Tensor;
 
 template <typename DeviceType, typename T>
-class DropoutOp : public framework::OperatorWithKernel<DeviceType, DropoutParam,
-                                    operators::DropoutKernal<DeviceType, T>> {
+class DropoutOp
+    : public framework::OperatorWithKernel<
+          DeviceType, DropoutParam, operators::DropoutKernal<DeviceType, T>> {
  public:
   DropoutOp(const std::string &type, const VariableNameMap &inputs,
             const VariableNameMap &outputs, const framework::AttributeMap attrs,
@@ -39,7 +40,7 @@ class DropoutOp : public framework::OperatorWithKernel<DeviceType, DropoutParam,
         param_(inputs, outputs, attrs, *scope) {}
 
   using framework::OperatorWithKernel<DeviceType, DropoutParam,
-                    operators::DropoutKernel<DeviceType, T>>;
+                                      operators::DropoutKernel<DeviceType, T>>;
   void InferShape() const override;
 
  protected:
@@ -49,4 +50,3 @@ class DropoutOp : public framework::OperatorWithKernel<DeviceType, DropoutParam,
 }  // namespace paddle_mobile
 
 #endif
-
