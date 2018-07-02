@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+export ANDROID_NDK=/Users/tianfei01/workspace/Android/NDK/android-ndk-r16b
 
 build_for_mac() {
     if [ ! `which brew` ]; then
@@ -13,6 +14,9 @@ build_for_mac() {
             return
         fi
     fi
+    alias gcc='gcc-5'
+    export CC=gcc-5
+    export CXX=g++-5
     PLATFORM="x86"
     MODE="Release"
     BUILD_DIR=../build/release/"${PLATFORM}"
@@ -56,8 +60,9 @@ build_for_android() {
 
 
     MODE="Release"
-    ANDROID_PLATFORM_VERSION="android-22"
-    TOOLCHAIN_FILE="./tools/android-cmake/android.toolchain.cmake"
+    ANDROID_PLATFORM_VERSION="android-15"
+    #TOOLCHAIN_FILE="./tools/android-cmake/android.toolchain.cmake"
+    TOOLCHAIN_FILE="${ANDROID_NDK}/build/cmake/android.toolchain.cmake"
     ANDROID_ARM_MODE="arm"
     if [ $# -eq 1 ]; then
     NET=$1
