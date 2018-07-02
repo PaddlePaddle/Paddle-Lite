@@ -20,7 +20,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool Im2SequenceKernel<CPU, float>::Init(const Im2SequenceParam &para) const {
+bool Im2SequenceKernel<CPU, float>::Init(Im2SequenceParam *para) {
   return true;
 }
 

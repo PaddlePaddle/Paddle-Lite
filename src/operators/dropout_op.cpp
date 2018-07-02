@@ -19,8 +19,8 @@ namespace operators {
 
 template <typename Dtype, typename T>
 void DropoutOp<Dtype, T>::InferShape() const {
-  auto input_dims = param_.InputX()->dims();
-  param_.Out()->Resize(input_dims);
+  auto input_dims = thsi->param_.InputX()->dims();
+  this->param_.Out()->Resize(input_dims);
 }
 template class DropoutOp<CPU, float>;
 }  // namespace operators
@@ -28,7 +28,7 @@ template class DropoutOp<CPU, float>;
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(Dropout);
+USE_OP_CPU(dropout);
 REGISTER_OPERATOR_CPU(dropout, ops::DropoutOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU

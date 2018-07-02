@@ -37,11 +37,10 @@ class DropoutOp
             std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<DeviceType, DropoutParam,
                                       operators::DropoutKernel<DeviceType, T>>(
-            type, inputs, outputs, attrs, scope),
-        param_(inputs, outputs, attrs, *scope) {}
+            type, inputs, outputs, attrs, scope) {}
 
-  using framework::OperatorWithKernel<DeviceType, DropoutParam,
-                                      operators::DropoutKernel<DeviceType, T>>;
+  //using framework::OperatorWithKernel<DeviceType, DropoutParam,
+  //                                    operators::DropoutKernel<DeviceType, T>>;
   void InferShape() const override;
 
  protected:
