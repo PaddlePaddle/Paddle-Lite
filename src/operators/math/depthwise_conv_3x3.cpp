@@ -245,7 +245,10 @@ void DepthwiseConv3x3s1p1(const Tensor *input, const Tensor *filter,
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
   float *output_data = output->data<float>();
-  const float *bias_data = bias->data<float>();
+  const float *bias_data;
+  if (if_bias) {
+    bias_data = bias->data<float>();
+  }
 
   const int h = static_cast<int>(input->dims()[2]);
   const int w = static_cast<int>(input->dims()[3]);
