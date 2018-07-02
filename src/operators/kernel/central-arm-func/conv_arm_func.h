@@ -15,19 +15,17 @@ limitations under the License. */
 #ifdef CONV_OP
 
 #pragma once
+#include <operators/math/depthwise_conv_3x3.h>
 #include <vector>
-#include "operators/math/conv_func.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename P>
-void ConvCompute(const ConvParam &param) {
+inline void ConvBasic(const ConvParam &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
   Tensor *output = param.Output();
-  output->mutable_data<float>();
   int groups = param.Groups();
   std::vector<int> strides = param.Strides();
   std::vector<int> paddings = param.Paddings();
@@ -98,14 +96,34 @@ void ConvCompute(const ConvParam &param) {
         // vol2col
         vol2col(in_slice, dilations, strides, paddings, &col);
       }
-
       // gemm
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
       math::matmul<float>(filter_slice, false, col_matrix, false,
                           static_cast<float>(1), &out_slice,
-                          static_cast<float>(0));
+                          static_cast<float>(1));
     }
+  }
+}
+
+template <typename P>
+void ConvCompute(const ConvParam &param) {
+  Tensor Bias;
+  Bias.mutable_data<float>({param.Groups()});
+  if (param.Groups() == param.Input()->dims()[1] &&
+      param.Input()->dims()[1] == param.Output()->dims()[1] &&
+      param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
+      param.Filter()->dims()[2] == 3 && param.Strides()[0] == 1) {
+    math::DepthwiseConv3x3s1p1(param.Input(), param.Filter(), param.Output(),
+                               &Bias, false);
+  } else if (param.Groups() == param.Input()->dims()[1] &&
+             param.Input()->dims()[1] == param.Output()->dims()[1] &&
+             param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
+             param.Filter()->dims()[2] == 3 && param.Strides()[0] == 2) {
+    math::DepthwiseConv3x3(param.Input(), param.Strides(), param.Paddings(),
+                           param.Filter(), &Bias, param.Output(), false);
+  } else {
+    ConvBasic(param);
   }
 }
 
