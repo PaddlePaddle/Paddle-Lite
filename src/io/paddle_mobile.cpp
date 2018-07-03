@@ -75,7 +75,7 @@ void PaddleMobile<Dtype, P>::Clear() {
 }
 
 template <typename Dtype, Precision P>
-PaddleMobile<Dtype, P>::~PaddleMobile(){
+PaddleMobile<Dtype, P>::~PaddleMobile() {
   executor_ = nullptr;
   loader_ = nullptr;
 }

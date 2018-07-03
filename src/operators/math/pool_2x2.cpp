@@ -102,7 +102,7 @@ void Pool2x2Avg(vector<int> strides, vector<int> paddings, const Tensor *input,
 #if __ARM_NEON
 
 #ifdef ARMV7
-const int batch_size = input->dims()[0];
+  const int batch_size = input->dims()[0];
 
   const int input_height = input->dims()[2];
 
@@ -173,7 +173,7 @@ const int batch_size = input->dims()[0];
   }
 #else
 
-  //TODO(): to imp other asm
+// TODO(): to imp other asm
 
 #endif
 

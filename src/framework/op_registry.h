@@ -108,7 +108,7 @@ class OpRegistry {
       __op_registrar_##op_type##_##device_name(#op_type);                  \
   int TouchOpRegistrar_##op_type##_##device_name() {                       \
     __op_registrar_##op_type##_##device_name.Touch();                      \
-    printf(" registering !! \n");        \
+    printf(" registering !! \n");                                          \
     return 0;                                                              \
   }
 
