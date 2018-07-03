@@ -76,12 +76,15 @@ void PoolCompute(const PoolParam &param) {
     }
 
   } else if (ksize[0] == 2 && ksize[0] == ksize[1]) {
+#ifndef IOS
     if (pooling_type == "max") {
       math::Pool2x2Max(strides, paddings, in_x, out);
     } else if (pooling_type == "avg") {
       math::Pool2x2Avg(strides, paddings, in_x, out);
     }
-
+#else
+    PoolBasic(pooling_type, ksize, strides, paddings, in_x, out);
+#endif
   } else {
     PoolBasic(pooling_type, ksize, strides, paddings, in_x, out);
   }

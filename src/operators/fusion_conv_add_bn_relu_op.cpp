@@ -50,7 +50,6 @@ template class FusionConvAddBNReluOp<CPU, float>;
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(fusion_conv_add_bn_relu);
 REGISTER_OPERATOR_CPU(fusion_conv_add_bn_relu, ops::FusionConvAddBNReluOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU

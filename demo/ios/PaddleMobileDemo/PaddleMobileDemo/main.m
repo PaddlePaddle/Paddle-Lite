@@ -12,30 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef LRN_OP
+#import <UIKit/UIKit.h>
+#import "AppDelegate.h"
 
-#include "lrn_op.h"
-
-namespace paddle_mobile {
-namespace operators {
-
-template <typename Dtype, typename T>
-void LrnOp<Dtype, T>::InferShape() const {
-  auto x_dims = this->param_.InputX()->dims();
-  this->param_.Out()->Resize(x_dims);
+int main(int argc, char * argv[]) {
+    @autoreleasepool {
+        return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
+    }
 }
-template class LrnOp<CPU, float>;
-}  // namespace operators
-}  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(lrn, ops::LrnOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-REGISTER_OPERATOR_MALI_GPU(lrn, ops::LrnOp);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-#endif
-
-#endif
