@@ -89,7 +89,7 @@ build_for_android() {
 }
 
 build_for_ios() {
-    rm -rf "../build"
+#    rm -rf "../build"
     PLATFORM="ios"
     MODE="Release"
     BUILD_DIR=../build/release/"${PLATFORM}"
@@ -119,6 +119,9 @@ build_for_ios() {
     fi
     cd "${BUILD_DIR}"
     make -j 8
+    cd ./build
+    # 生成符号表
+    ranlib *.a
 }
 
 build_error() {

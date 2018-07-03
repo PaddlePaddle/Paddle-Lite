@@ -12,22 +12,15 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
-#import "ViewController.h"
+#import <CoreImage/CoreImage.h>
+#import <Foundation/Foundation.h>
 
-@interface ViewController ()
+@interface PaddleMobile : NSObject
 
-@end
-
-@implementation ViewController
-
-- (void)viewDidLoad {
-    [super viewDidLoad];
-}
-
-
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-}
-
+- (instancetype)init;
+- (BOOL)load:(NSString *)modelPath andWeightsPath:(NSString *)weighsPath;
+- (NSArray *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim means:(NSArray<NSNumber *> *)means scale:(float)scale;
+- (NSArray *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim;
+- (void)clear;
 
 @end

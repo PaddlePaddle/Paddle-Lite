@@ -54,7 +54,6 @@ template class Im2SequenceOp<CPU, float>;
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(im2sequence);
 REGISTER_OPERATOR_CPU(im2sequence, ops::Im2SequenceOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU

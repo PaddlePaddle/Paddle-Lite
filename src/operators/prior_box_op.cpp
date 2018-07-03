@@ -50,7 +50,6 @@ template class PriorBoxOp<CPU, float>;
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(prior_box);
 REGISTER_OPERATOR_CPU(prior_box, ops::PriorBoxOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU

@@ -12,10 +12,17 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
-#import <UIKit/UIKit.h>
+#pragma once
 
-@interface ViewController : UIViewController
+#import <CoreImage/CoreImage.h>
+#import <Foundation/Foundation.h>
 
+@interface PaddleMobile : NSObject
+
+- (instancetype)init;
+- (BOOL)load:(NSString *)modelPath andWeightsPath:(NSString *)weighsPath;
+- (NSArray *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim means:(NSArray<NSNumber *> *)means scale:(float)scale;
+- (NSArray *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim;
+- (void)clear;
 
 @end
-

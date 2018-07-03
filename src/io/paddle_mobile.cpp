@@ -12,10 +12,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-//
-// Created by liuRuiLong on 2018/7/2.
-//
-
 #include "io/paddle_mobile.h"
 
 namespace paddle_mobile {
@@ -74,6 +70,12 @@ PaddleMobile<Dtype, P>::Predict(const std::vector<Ptype> &input,
 
 template <typename Dtype, Precision P>
 void PaddleMobile<Dtype, P>::Clear() {
+  executor_ = nullptr;
+  loader_ = nullptr;
+}
+
+template <typename Dtype, Precision P>
+PaddleMobile<Dtype, P>::~PaddleMobile(){
   executor_ = nullptr;
   loader_ = nullptr;
 }
