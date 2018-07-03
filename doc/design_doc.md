@@ -3,7 +3,6 @@
 
 #### 以下是 paddle-mobile 代码的执行流程图:
 
-
 ![执行流程图](http://otkwwi4x8.bkt.clouddn.com/2018-07-02-15305189473720.png)
 
 
@@ -15,13 +14,13 @@
 先来看一下模型, 模型分为两种结构:
  一种为参数文件是散开的, 如下图, 红框为模型结构的 protobuf 文件, 其余为参数文件
 
-
 ![模型描述](http://otkwwi4x8.bkt.clouddn.com/2018-07-02-15305190629577.png)
 
 
 另一种为参数文件结合在一起的, 如下图, 红框内为模型结构描述的 protobuf 文件, 另一个文件为结合在一起的参数文件
 
 ![模型描述combined](http://otkwwi4x8.bkt.clouddn.com/2018-07-02-15305191057130.png)
+
 
 loader 模块的作用是将模型结构信息 load 进内存, 将红框内的 protobuf 文件 load 进内存, 并对模型结构进行优化(如将几个细粒度的 op 融合成 粗粒度的 op, 如将 conv、 add、 batchnorm、 relu 融合为 conv\_add\_batchnorm\_relu).
 方便进行算法优化.
