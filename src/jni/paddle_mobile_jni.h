@@ -15,9 +15,6 @@ limitations under the License. */
 #pragma once
 #ifdef ANDROID
 #include <jni.h>
-#include "common/log.h"
-#include "framework/tensor.h"
-#include "io/io.h"
 
 #ifdef __cplusplus
 extern "C" {

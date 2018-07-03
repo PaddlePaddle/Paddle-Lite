@@ -1073,5 +1073,57 @@ class FusionConvAddBNReluParam : public OpParam {
 
 Print &operator<<(Print &printer, const FusionConvAddParam &conv_param);
 #endif
+
+#ifdef IM2SEQUENCE_OP
+class Im2SequenceParam : public OpParam {
+ public:
+  Im2SequenceParam(const VariableNameMap &inputs,
+                   const VariableNameMap &outputs, const AttributeMap &attrs,
+                   const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
+    kernels_ = GetAttr<vector<int>>("kernels", attrs);
+    strides_ = GetAttr<vector<int>>("strides", attrs);
+    paddings_ = GetAttr<vector<int>>("paddings", attrs);
+  }
+
+  const Tensor *Input() const { return input_x_; }
+
+  Tensor *Output() const { return out_; }
+
+  const vector<int> &Kernels() const { return kernels_; }
+
+  const vector<int> &Strides() const { return strides_; }
+
+  const vector<int> &Paddings() const { return paddings_; }
+
+ private:
+  Tensor *input_x_;
+  Tensor *out_;
+  vector<int> kernels_;
+  vector<int> strides_;
+  vector<int> paddings_;
+};
+#endif
+
+#ifdef DROPOUT_OP
+class DropoutParam : public OpParam {
+ public:
+  DropoutParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+               const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
+  }
+
+  const Tensor *InputX() const { return input_x_; }
+
+  Tensor *Out() const { return out_; }
+
+ private:
+  Tensor *input_x_;
+  Tensor *out_;
+};
+#endif
+
 }  // namespace operators
 }  // namespace paddle_mobile
