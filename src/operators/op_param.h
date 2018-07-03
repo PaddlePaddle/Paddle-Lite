@@ -195,8 +195,7 @@ class OpParam {
 class ConvParam : OpParam {
  public:
   ConvParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-            const framework::AttributeMap &attrs,
-            const framework::Scope &scope) {
+            const AttributeMap &attrs, const Scope &scope) {
     filter_ = FilterFrom<LoDTensor>(inputs, scope);
     input_ = InputFrom<LoDTensor>(inputs, scope);
     output_ = OutputFrom<LoDTensor>(outputs, scope);
@@ -237,12 +236,11 @@ Print &operator<<(Print &printer, const ConvParam &conv_param);
 class ElementwiseAddParam : OpParam {
  public:
   ElementwiseAddParam(const VariableNameMap &inputs,
-                      const VariableNameMap &outputs,
-                      const framework::AttributeMap &attrs,
-                      const framework::Scope &scope) {
-    input_x_ = InputXFrom<framework::LoDTensor>(inputs, scope);
-    input_y_ = InputYFrom<framework::LoDTensor>(inputs, scope);
-    out_ = OutFrom<framework::LoDTensor>(outputs, scope);
+                      const VariableNameMap &outputs, const AttributeMap &attrs,
+                      const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    input_y_ = InputYFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
     axis_ = GetAttr<int>("axis", attrs);
   }
 
@@ -267,11 +265,10 @@ class ElementwiseAddParam : OpParam {
 class MulParam : OpParam {
  public:
   MulParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-           const framework::AttributeMap &attrs,
-           const framework::Scope &scope) {
-    input_x_ = InputXFrom<framework::LoDTensor>(inputs, scope);
-    input_y_ = InputYFrom<framework::LoDTensor>(inputs, scope);
-    out_ = OutFrom<framework::LoDTensor>(outputs, scope);
+           const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    input_y_ = InputYFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
     x_num_col_dims_ = GetAttr<int>("x_num_col_dims", attrs);
     y_num_col_dims_ = GetAttr<int>("y_num_col_dims", attrs);
   }
@@ -299,10 +296,9 @@ class MulParam : OpParam {
 class ConcatParam : public OpParam {
  public:
   ConcatParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-              const framework::AttributeMap &attrs,
-              const framework::Scope &scope) {
+              const AttributeMap &attrs, const Scope &scope) {
     inputs_ = InputMultiFrom<LoDTensor>(inputs, scope);
-    out_ = OutFrom<framework::LoDTensor>(outputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
     axis_ = GetAttr<int>("axis", attrs);
   }
 
@@ -323,11 +319,10 @@ class ConcatParam : public OpParam {
 class LrnParam : public OpParam {
  public:
   LrnParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-           const framework::AttributeMap &attrs,
-           const framework::Scope &scope) {
-    input_x_ = InputXFrom<framework::LoDTensor>(inputs, scope);
-    out_ = OutFrom<framework::LoDTensor>(outputs, scope);
-    mid_out_ = MidOutFrom<framework::LoDTensor>(outputs, scope);
+           const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
+    mid_out_ = MidOutFrom<LoDTensor>(outputs, scope);
     n_ = GetAttr<int>("n", attrs);
     alpha_ = GetAttr<float>("alpha", attrs);
     beta_ = GetAttr<float>("beta", attrs);
@@ -367,14 +362,13 @@ class LrnParam : public OpParam {
 class BatchNormParam : OpParam {
  public:
   BatchNormParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-                 const framework::AttributeMap &attrs,
-                 const framework::Scope &scope) {
-    input_x_ = InputXFrom<framework::LoDTensor>(inputs, scope);
-    output_y_ = OutputYFrom<framework::LoDTensor>(outputs, scope);
-    input_bias_ = InputBiasFrom<framework::LoDTensor>(inputs, scope);
-    input_mean_ = InputMeanFrom<framework::LoDTensor>(inputs, scope);
-    input_scale_ = InputScaleFrom<framework::LoDTensor>(inputs, scope);
-    input_variance_ = InputVarianceFrom<framework::LoDTensor>(inputs, scope);
+                 const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    output_y_ = OutputYFrom<LoDTensor>(outputs, scope);
+    input_bias_ = InputBiasFrom<LoDTensor>(inputs, scope);
+    input_mean_ = InputMeanFrom<LoDTensor>(inputs, scope);
+    input_scale_ = InputScaleFrom<LoDTensor>(inputs, scope);
+    input_variance_ = InputVarianceFrom<LoDTensor>(inputs, scope);
     epsilon_ = GetAttr<float>("epsilon", attrs);
     momentum_ = GetAttr<float>("momentum", attrs);
     is_test_ = GetAttr<bool>("is_test", attrs);
@@ -418,11 +412,10 @@ class BatchNormParam : OpParam {
 class PoolParam : public OpParam {
  public:
   PoolParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-            const framework::AttributeMap &attrs,
-            const framework::Scope &scope) {
-    input_ = InputXFrom<framework::LoDTensor>(inputs, scope);
+            const AttributeMap &attrs, const Scope &scope) {
+    input_ = InputXFrom<LoDTensor>(inputs, scope);
 
-    output_ = OutFrom<framework::LoDTensor>(outputs, scope);
+    output_ = OutFrom<LoDTensor>(outputs, scope);
     pooling_type_ = GetAttr<string>("pooling_type", attrs);
     ksize_ = GetAttr<vector<int>>("ksize", attrs);
     strides_ = GetAttr<vector<int>>("strides", attrs);
@@ -464,13 +457,11 @@ class PoolParam : public OpParam {
 class PriorBoxParam : public OpParam {
  public:
   PriorBoxParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-                const framework::AttributeMap &attrs,
-                const framework::Scope &scope) {
-    input_ = InputFrom<framework::LoDTensor>(inputs, scope);
-    input_image_ = InputImageFrom<framework::LoDTensor>(inputs, scope);
-    output_boxes_ = OutputBoxesFrom<framework::LoDTensor>(outputs, scope);
-    output_variances_ =
-        OutputVariancesFrom<framework::LoDTensor>(outputs, scope);
+                const AttributeMap &attrs, const Scope &scope) {
+    input_ = InputFrom<LoDTensor>(inputs, scope);
+    input_image_ = InputImageFrom<LoDTensor>(inputs, scope);
+    output_boxes_ = OutputBoxesFrom<LoDTensor>(outputs, scope);
+    output_variances_ = OutputVariancesFrom<LoDTensor>(outputs, scope);
     min_sizes_ = GetAttr<vector<float>>("min_sizes", attrs);
     max_sizes_ = GetAttr<vector<float>>("max_sizes", attrs);
     aspect_ratios_ = GetAttr<vector<float>>("aspect_ratios", attrs);
@@ -528,13 +519,11 @@ class PriorBoxParam : public OpParam {
 class BoxCoderParam : public OpParam {
  public:
   BoxCoderParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-                const framework::AttributeMap &attrs,
-                const framework::Scope &scope) {
-    input_priorbox_ = InputPriorBoxFrom<framework::LoDTensor>(inputs, scope);
-    input_priorboxvar_ =
-        InputPriorBoxVarFrom<framework::LoDTensor>(inputs, scope);
-    input_targetbox_ = InputTargetBoxFrom<framework::LoDTensor>(inputs, scope);
-    output_box_ = OutputBoxFrom<framework::LoDTensor>(outputs, scope);
+                const AttributeMap &attrs, const Scope &scope) {
+    input_priorbox_ = InputPriorBoxFrom<LoDTensor>(inputs, scope);
+    input_priorboxvar_ = InputPriorBoxVarFrom<LoDTensor>(inputs, scope);
+    input_targetbox_ = InputTargetBoxFrom<LoDTensor>(inputs, scope);
+    output_box_ = OutputBoxFrom<LoDTensor>(outputs, scope);
     code_type_ = GetAttr<std::string>("code_type", attrs);
   }
   const Tensor *InputPriorBox() const { return input_priorbox_; }
@@ -560,10 +549,9 @@ class BoxCoderParam : public OpParam {
 class SoftmaxParam : public OpParam {
  public:
   SoftmaxParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-               const framework::AttributeMap &attrs,
-               const framework::Scope &scope) {
-    input_x_ = InputXFrom<framework::LoDTensor>(inputs, scope);
-    out_ = OutFrom<framework::LoDTensor>(outputs, scope);
+               const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
   }
   const Tensor *InputX() const { return input_x_; }
   Tensor *Out() const { return out_; }
@@ -578,10 +566,9 @@ class SoftmaxParam : public OpParam {
 class SigmoidParam : public OpParam {
  public:
   SigmoidParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-               const framework::AttributeMap &attrs,
-               const framework::Scope &scope) {
-    input_x_ = InputXFrom<framework::LoDTensor>(inputs, scope);
-    out_ = OutFrom<framework::LoDTensor>(outputs, scope);
+               const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
   }
   const Tensor *InputX() const { return input_x_; }
   Tensor *Out() const { return out_; }
@@ -643,9 +630,9 @@ class MultiClassNMSParam : public OpParam {
 class FeedParam : public OpParam {
  public:
   FeedParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-            const framework::AttributeMap &attrs, framework::Scope &scope) {
-    input_x_ = InputXFrom<framework::LoDTensor>(inputs, scope);
-    out_ = OutFrom<framework::LoDTensor>(outputs, scope);
+            const AttributeMap &attrs, Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
     auto var = scope.Var("batch_size");
     batch_size = var->GetValue<int>();
   }
@@ -662,10 +649,9 @@ class FeedParam : public OpParam {
 class FetchParam : public OpParam {
  public:
   FetchParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-             const framework::AttributeMap &attrs,
-             const framework::Scope &scope) {
-    input_x_ = InputXFrom<framework::LoDTensor>(inputs, scope);
-    out_ = OutFrom<framework::LoDTensor>(outputs, scope);
+             const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
   }
   const Tensor *InputX() const { return input_x_; }
   Tensor *Out() const { return out_; }
@@ -863,10 +849,10 @@ class FusionConvAddBNReluParam : public OpParam {
     paddings_ = GetAttr<vector<int>>("paddings", attrs);
     dilations_ = GetAttr<vector<int>>("dilations", attrs);
     groups = GetAttr<int>("groups", attrs);
-    input_bias_ = InputBiasFrom<framework::LoDTensor>(inputs, scope);
-    input_mean_ = InputMeanFrom<framework::LoDTensor>(inputs, scope);
-    input_scale_ = InputScaleFrom<framework::LoDTensor>(inputs, scope);
-    input_variance_ = InputVarianceFrom<framework::LoDTensor>(inputs, scope);
+    input_bias_ = InputBiasFrom<LoDTensor>(inputs, scope);
+    input_mean_ = InputMeanFrom<LoDTensor>(inputs, scope);
+    input_scale_ = InputScaleFrom<LoDTensor>(inputs, scope);
+    input_variance_ = InputVarianceFrom<LoDTensor>(inputs, scope);
     epsilon_ = GetAttr<float>("epsilon", attrs);
     momentum_ = GetAttr<float>("momentum", attrs);
     is_test_ = GetAttr<bool>("is_test", attrs);

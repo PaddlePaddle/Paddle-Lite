@@ -12,9 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef CONV_OP
-
+#ifdef FUSION_CONVADD_OP
 #pragma once
+
 #include <vector>
 #include "operators/math/conv_func.h"
 #include "operators/math/depthwise_conv_3x3.h"
@@ -25,11 +25,14 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
-inline void ConvBasic(const ConvParam &param) {
+void ConvAddBasic(const FusionConvAddParam &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
+  Tensor bias = *param.Bias();
+  int axis = param.Axis();
   Tensor *output = param.Output();
-  output->mutable_data<float>();
+  math::expand_bias(bias, axis, output->dims());
+  output->ShareDataWith(bias);
   int groups = param.Groups();
   std::vector<int> strides = param.Strides();
   std::vector<int> paddings = param.Paddings();
@@ -100,33 +103,32 @@ inline void ConvBasic(const ConvParam &param) {
         // vol2col
         vol2col(in_slice, dilations, strides, paddings, &col);
       }
-
       // gemm
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
       math::matmul<float>(filter_slice, false, col_matrix, false,
                           static_cast<float>(1), &out_slice,
-                          static_cast<float>(0));
+                          static_cast<float>(1));
     }
   }
 }
 
 template <typename P>
-void ConvCompute(const ConvParam &param) {
+void ConvAddCompute(const FusionConvAddParam &param) {
   if (param.Groups() == param.Input()->dims()[1] &&
       param.Input()->dims()[1] == param.Output()->dims()[1] &&
       param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
       param.Filter()->dims()[2] == 3 && param.Strides()[0] == 1) {
     math::DepthwiseConv3x3s1p1(param.Input(), param.Filter(), param.Output(),
-                               nullptr, false);
+                               param.Bias(), true);
   } else if (param.Groups() == param.Input()->dims()[1] &&
              param.Input()->dims()[1] == param.Output()->dims()[1] &&
              param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
              param.Filter()->dims()[2] == 3) {
     math::DepthwiseConv3x3(param.Input(), param.Strides(), param.Paddings(),
-                           param.Filter(), nullptr, param.Output(), false);
+                           param.Filter(), param.Bias(), param.Output(), true);
   } else {
-    ConvBasic(param);
+    ConvAddBasic(param);
   }
 }
 
