@@ -17,7 +17,7 @@ limitations under the License. */
 
 int main(void) {
 #ifdef PADDLE_MOBILE_USE_OPENMP
-  #pragma omp parallel num_threads(2)
+  // <TRICKY-CLANG-FORMAT-PRAGMA-FIX> #pragma omp parallel num_threads(2)
   {
     //        int thread_id = omp_get_thread_num();
     //        int nthreads = omp_get_num_threads();

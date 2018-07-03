@@ -129,14 +129,13 @@ void PackMatrixB_(int k, int n, int n_tail, const float *B, int ldb,
     }
 #else
     for (i = 0; i < k; ++i) {
-        Bij = &B(i, j);
-        *buffer++ = *Bij;
-        *buffer++ = *(Bij + 1);
-        *buffer++ = *(Bij + 2);
-        *buffer++ = *(Bij + 3);
-      }
+      Bij = &B(i, j);
+      *buffer++ = *Bij;
+      *buffer++ = *(Bij + 1);
+      *buffer++ = *(Bij + 2);
+      *buffer++ = *(Bij + 3);
+    }
 #endif
-
   }
   if (n_tail != 0) {
     for (i = 0; i < k; ++i) {

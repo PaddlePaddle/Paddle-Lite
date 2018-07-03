@@ -50,7 +50,6 @@ class TransposeOp : public framework::OperatorWithKernel<
 }  // namespace operators
 }  // namespace paddle_mobile
 
-
 #ifdef PADDLE_MOBILE_CPU
 USE_OP_CPU(transpose);
 #endif

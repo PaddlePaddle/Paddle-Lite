@@ -48,8 +48,7 @@ void FusionConvAddOp<Dtype, T>::InferShape() const {
 #ifdef PADDLE_MOBILE_CPU
 
 #ifndef CONV_ADD_REGISTER
-framework::FusionOpRegistrar convadd_registrar(
-        new FusionConvAddMatcher());
+framework::FusionOpRegistrar convadd_registrar(new FusionConvAddMatcher());
 #define CONV_ADD_REGISTER
 #endif
 

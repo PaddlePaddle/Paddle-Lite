@@ -59,4 +59,3 @@ USE_OP_CPU(im2sequence);
 #endif
 
 #endif
-

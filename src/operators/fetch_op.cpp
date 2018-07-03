@@ -29,5 +29,3 @@ REGISTER_OPERATOR_MALI_GPU(fetch, ops::FetchOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 #endif
-
-

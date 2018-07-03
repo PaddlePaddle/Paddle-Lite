@@ -355,8 +355,9 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
     const auto &pInfo = profile[i];
     uint64_t timeCost = pInfo.runEnd - pInfo.runBegin;
     _tp[ops[i]->Type()] += timeCost;
-  //    fprintf(pf, "%d\t%s\t%d\t%llu\t%llu\t%llu\n", i, ops[i]->Type().c_str(),
-  //            pInfo.tid, pInfo.runBegin, pInfo.runEnd, timeCost);
+    //    fprintf(pf, "%d\t%s\t%d\t%llu\t%llu\t%llu\n", i,
+    //    ops[i]->Type().c_str(),
+    //            pInfo.tid, pInfo.runBegin, pInfo.runEnd, timeCost);
   }
   //  fclose(pf);
 
