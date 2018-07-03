@@ -57,8 +57,6 @@ class PoolFunctor<CPU, PoolProcess, T> {
     T *output_data = output->mutable_data<T>();
 
     for (int i = 0; i < batch_size; i++) {
-      // <TRICKY-CLANG-FORMAT-PRAGMA-FIX>
-      // // <TRICKY-CLANG-FORMAT-PRAGMA-FIX>
       // #pragma omp parallel for
       for (int c = 0; c < output_channels; ++c) {
         for (int ph = 0; ph < output_height; ++ph) {
