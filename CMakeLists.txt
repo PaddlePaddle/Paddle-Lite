@@ -11,6 +11,10 @@ option(MALI_GPU "mali gpu" OFF)
 option(FPGA "fpga" OFF)
 set(DEBUGING ON)
 
+if (ARM_LINUX)
+include("${CMAKE_CURRENT_LIST_DIR}/tools/arm-platform.cmake")
+endif ()
+
 file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c)
 file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
 
