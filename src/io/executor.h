@@ -18,6 +18,7 @@ limitations under the License. */
 #include <memory>
 #include <string>
 #include <vector>
+
 #include "common/types.h"
 #include "framework/lod_tensor.h"
 #include "framework/operator.h"
@@ -31,31 +32,6 @@ limitations under the License. */
 #endif
 
 namespace paddle_mobile {
-
-template <typename Dtype = CPU, Precision P = Precision::FP32>
-class Loader {
- public:
-  /*
-   * @b load separate format fluid model
-   * @b 加载分开形式的 fluid 模型
-   * */
-  const framework::Program<Dtype, P> Load(const std::string &dirname,
-                                          bool optimize = false,
-                                          bool can_add_split = false);
-
-  /*
-   * @b load combine format fluid mode
-   * @b 加载结合在一起格式的模型
-   * */
-  const framework::Program<Dtype, P> Load(const std::string &model_path,
-                                          const std::string &para_path,
-                                          bool optimize = false);
-
- private:
-  const framework::Program<Dtype, P> LoadProgram(const std::string &model_path,
-                                                 bool optimize = false,
-                                                 bool can_add_split = false);
-};
 
 template <typename Dtype = CPU, Precision P = Precision::FP32>
 class Executor {
@@ -86,7 +62,7 @@ class Executor {
   Executor() = default;
   void InitMemory();
   void LoadMemory(const framework::VarDesc var_desc,
-                  framework::LoDTensor *tensor, char *&data);
+                  framework::LoDTensor *tensor, char **data);
   void InitCombineMemory();
   framework::Program<Dtype> program_;
   int batch_size_ = 1;
