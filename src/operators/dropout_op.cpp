@@ -28,7 +28,6 @@ template class DropoutOp<CPU, float>;
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(dropout);
 REGISTER_OPERATOR_CPU(dropout, ops::DropoutOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
