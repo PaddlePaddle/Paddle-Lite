@@ -103,4 +103,12 @@ static framework::FusionOpRegistrar fusion_conv_add_bn_relu_registrar(
 }  // namespace operators
 }  // namespace paddle_mobile
 
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(fusion_conv_add_bn_relu);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
+
 #endif

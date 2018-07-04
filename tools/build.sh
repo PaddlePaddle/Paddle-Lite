@@ -32,8 +32,8 @@ build_for_mac() {
 
 build_for_android() {
     #rm -rf "../build"
-    if [ -z "${ANDROID_NDK}" ]; then
-        echo "ANDROID_NDK not found!"
+    if [ -z "${NDK_ROOT}" ]; then
+        echo "NDK_ROOT not found!"
         exit -1
     fi
 
@@ -60,7 +60,6 @@ build_for_android() {
     TOOLCHAIN_FILE="./tools/android-cmake/android.toolchain.cmake"
     ANDROID_ARM_MODE="arm"
     if [ $# -eq 1 ]; then
-    NET=$1
     cmake .. \
         -B"../build/release/${PLATFORM}" \
         -DANDROID_ABI="${ABI}" \
@@ -70,7 +69,7 @@ build_for_android() {
         -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
         -DANDROID_STL=c++_static \
         -DANDROID=true \
-        -D"${NET}=true" \
+        -DNET=$1 \
         -D"${ARM_PLATFORM}"=true
     else
 
@@ -90,7 +89,7 @@ build_for_android() {
 }
 
 build_for_ios() {
-    rm -rf "../build"
+#    rm -rf "../build"
     PLATFORM="ios"
     MODE="Release"
     BUILD_DIR=../build/release/"${PLATFORM}"
@@ -99,7 +98,6 @@ build_for_ios() {
     CXX_FLAGS="-fobjc-abi-version=2 -fobjc-arc -std=gnu++14 -stdlib=libc++ -isysroot ${CMAKE_OSX_SYSROOT}"
     mkdir -p "${BUILD_DIR}"
     if [ $# -eq 1 ]; then
-        NET=$1
         cmake .. \
             -B"${BUILD_DIR}" \
             -DCMAKE_BUILD_TYPE="${MODE}" \
@@ -107,7 +105,7 @@ build_for_ios() {
             -DIOS_PLATFORM=OS \
             -DCMAKE_C_FLAGS="${C_FLAGS}" \
             -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
-            -D"${NET}"=true \
+            -DNET=$1 \
             -DIS_IOS="true"
     else
         cmake .. \
@@ -121,6 +119,9 @@ build_for_ios() {
     fi
     cd "${BUILD_DIR}"
     make -j 8
+    cd ./build
+    # 生成符号表
+    ranlib *.a
 }
 
 build_error() {
@@ -129,16 +130,12 @@ build_error() {
 
 if [ $# -lt 1 ]; then
 	echo "error: target missing!"
-    echo "available targets: mac|linux|ios|android"
-    echo "sample usage: ./build.sh mac"
+    echo "available targets: ios|android"
+    echo "sample usage: ./build.sh android"
 else
     if [ $# -eq 2 ]; then
         if [ $2 != "googlenet" -a $2 != "mobilenet" -a $2 != "yolo" -a $2 != "squeezenet" -a $2 != "resnet" ]; then
-            if [ $1 = "mac" ]; then
-		        build_for_mac
-	        elif [ $1 = "linux" ]; then
-		        build_for_linux
-	        elif [ $1 = "android" ]; then
+	        if [ $1 = "android" ]; then
 		        build_for_android
 	        elif [ $1 = "ios" ]; then
 		        build_for_ios
@@ -146,11 +143,7 @@ else
 		        build_error
 	        fi
         else
-            if [ $1 = "mac" ]; then
-		        build_for_mac $2
-	        elif [ $1 = "linux" ]; then
-		        build_for_linux $2
-	        elif [ $1 = "android" ]; then
+	        if [ $1 = "android" ]; then
 		        build_for_android $2
 	        elif [ $1 = "ios" ]; then
 		        build_for_ios $2
@@ -159,11 +152,7 @@ else
 	        fi
         fi
     else
-        if [ $1 = "mac" ]; then
-		    build_for_mac
-	    elif [ $1 = "linux" ]; then
-		    build_for_linux
-	    elif [ $1 = "android" ]; then
+	    if [ $1 = "android" ]; then
 		    build_for_android
 	    elif [ $1 = "ios" ]; then
 		    build_for_ios

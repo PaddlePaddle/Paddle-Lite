@@ -48,4 +48,13 @@ class ElementwiseAddOp : public framework::OperatorWithKernel<
 }  // namespace operators
 }  // namespace paddle_mobile
 
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(elementwise_add);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(elementwise_add);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
+
 #endif

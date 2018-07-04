@@ -50,8 +50,6 @@ class AclConcatOp : public acl::ACLOperator {
     T type;
 
     for (int i = 0; i < input_data->size(); i++) {
-      const T* idata = (*input_data)[i]->data<T>();
-      const T* pdata = (*input_data)[i]->data<T>();
       int in_batch = (*input_data)[i]->dims()[0];
       int in_channels = (*input_data)[i]->dims()[1];
       int in_width = (*input_data)[i]->dims()[2];
@@ -75,6 +73,7 @@ class AclConcatOp : public acl::ACLOperator {
   bool Bypass_acl(const ConcatParam& param) {
     bool bypass_acl = false;
     AclParametersByContext(param);
+    InitAclLayer(param);
     // for performance, more groups impact GPU performance
     if (this->force_bypass_acl_path_ || !args.is_channel_concat) {
       bypass_acl = true;
@@ -103,12 +102,16 @@ class AclConcatOp : public acl::ACLOperator {
 };
 
 template <>
-bool ConcatKernel<GPU_MALI, float>::Init(const ConcatParam& param) const {
+bool ConcatKernel<GPU_MALI, float>::Init(ConcatParam* param) {
   AclConcatOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclConcatOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {
     acl_op = new AclConcatOp<GPU_MALI, float>();
     this->SetAclOp((void*)acl_op, (void*)this);
+  }
+  if (acl_op->Bypass_acl(*param)) {
+    std::cout << "init acl failed" << std::endl;
+    return false;
   }
   return true;
 }
@@ -121,15 +124,8 @@ void ConcatKernel<GPU_MALI, float>::Compute(const ConcatParam& param) const {
   if (acl_op == nullptr) {
     return;
   }
-  if (acl_op->Bypass_acl(param)) {
-    std::cout << "init acl failed" << std::endl;
-    return;
-  }
   acl::AclParameters& args = acl_op->getargs();
-  std::vector<framework::LoDTensor*> temp_data = args.in_tensor;
-  const float* output_data = (const float*)args.output_data;
-  acl_op->InitAclLayer(param);
-  acl_op->RunAcl(temp_data, (void*)output_data);
+  acl_op->RunAcl(args.in_tensor, args.output_data);
 }
 
 template class ConcatKernel<GPU_MALI, float>;

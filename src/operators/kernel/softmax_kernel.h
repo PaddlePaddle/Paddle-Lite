@@ -23,8 +23,6 @@ namespace paddle_mobile {
 namespace operators {
 using framework::OpKernelBase;
 
-void simoid(Tensor *X, Tensor *Y);
-
 template <typename DeviceType, typename T>
 class SoftmaxKernel : public OpKernelBase<DeviceType, SoftmaxParam> {
  public:
