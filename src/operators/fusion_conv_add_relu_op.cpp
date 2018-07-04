@@ -49,7 +49,6 @@ void FusionConvAddReluOp<Dtype, T>::InferShape() const {
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(fusion_conv_add_relu);
 REGISTER_OPERATOR_CPU(fusion_conv_add_relu, ops::FusionConvAddReluOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU

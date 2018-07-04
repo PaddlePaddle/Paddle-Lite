@@ -16,6 +16,7 @@ limitations under the License. */
 
 #pragma once
 
+#include <cmath>
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
@@ -52,6 +53,8 @@ void BatchnormCompute(const BatchNormParam &param) {
                         "C must equal to variance.numel()");
 
   int HXW = H * W;
+
+#ifdef ARMV7
   if (HXW > 32) {
     int NXC = N * C;
     float *inv_std_ptr = new float[NXC * 4];
@@ -226,6 +229,37 @@ void BatchnormCompute(const BatchNormParam &param) {
 
     delete[] inv_std_ptr;
   }
+#endif
+  float *inv_std_ptr = new float[C];
+  for (int i = 0; i < C; i++) {
+    inv_std_ptr[i] =
+        1 / static_cast<float>(pow((variance_ptr[i] + epsilon), 0.5));
+  }
+
+  Tensor new_scale;
+  auto new_scale_ptr = new_scale.mutable_data<float>(framework::make_ddim({C}));
+  Tensor new_bias;
+  auto new_bias_ptr = new_bias.mutable_data<float>(framework::make_ddim({C}));
+
+  /// ((x - est_mean) * (inv_var) * scale + bias equal to
+  /// (x * inv_var * scale) + (bias - est_mean * inv_var * scale)
+  for (int i = 0; i < C; i++) {
+    new_scale_ptr[i] = inv_std_ptr[i] * scale_ptr[i];
+    new_bias_ptr[i] = bias_ptr[i] - mean_ptr[i] * inv_std_ptr[i] * scale_ptr[i];
+    {
+      for (int n = 0; n < N; n++) {
+        for (int h = 0; h < H; h++) {
+          int tmp_index = n * stride0 + i * stride1 + h * stride2;
+          for (int w = 0; w < W; w++) {
+            int index = tmp_index + w;
+            out_ptr[index] =
+                input_x_ptr[index] * new_scale_ptr[i] + new_bias_ptr[i];
+          }
+        }
+      }
+    }
+  }
+  delete[] inv_std_ptr;
 }
 
 }  // namespace operators

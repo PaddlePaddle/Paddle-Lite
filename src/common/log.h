@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include <vector>
 #ifdef PADDLE_MOBILE_DEBUG
+#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -115,26 +116,29 @@ struct ToLog {
   Print printer_;
 };
 
-#define LOG(level)                                                             \
-  if (level > paddle_mobile::log_level) {                                      \
-  } else                                                                       \
-    paddle_mobile::ToLog(                                                      \
-        level,                                                                 \
-        (std::stringstream()                                                   \
-         << "[file: "                                                          \
-         << (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1) : __FILE__) \
-         << "] [line: " << __LINE__ << "] ")                                   \
-            .str())
+#define LOG(level)                                                           \
+  if (level > paddle_mobile::log_level) {                                    \
+  } else                                                                     \
+    paddle_mobile::ToLog(                                                    \
+        level, static_cast<const std::stringstream &>(                       \
+                   std::stringstream()                                       \
+                   << "[file: "                                              \
+                   << (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1) \
+                                              : __FILE__)                    \
+                   << "] [line: " << __LINE__ << "] ")                       \
+                   .str())
 
-#define DLOG                                                                   \
-  if (paddle_mobile::kLOG_DEBUG > paddle_mobile::log_level) {                  \
-  } else                                                                       \
-    paddle_mobile::ToLog(                                                      \
-        paddle_mobile::kLOG_DEBUG,                                             \
-        (std::stringstream()                                                   \
-         << "[file: "                                                          \
-         << (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1) : __FILE__) \
-         << "] [line: " << __LINE__ << "] ")                                   \
+#define DLOG                                                          \
+  if (paddle_mobile::kLOG_DEBUG > paddle_mobile::log_level) {         \
+  } else                                                              \
+    paddle_mobile::ToLog(                                             \
+        paddle_mobile::kLOG_DEBUG,                                    \
+        static_cast<const std::stringstream &>(                       \
+            std::stringstream()                                       \
+            << "[file: "                                              \
+            << (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1) \
+                                       : __FILE__)                    \
+            << "] [line: " << __LINE__ << "] ")                       \
             .str())
 
 #define LOGF(level, format, ...)          \
@@ -170,7 +174,10 @@ struct ToLog;
 struct Print {
   friend struct ToLog;
   template <typename T>
-  Print &operator<<(T const &value) {}
+  Print &operator<<(T const &value) {
+    Print p = Print();
+    return p;
+  }
 
  private:
 };

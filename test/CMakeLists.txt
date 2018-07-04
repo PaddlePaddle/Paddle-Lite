@@ -1,23 +1,23 @@
 set(dir ${CMAKE_CURRENT_SOURCE_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${dir}/build")
 
-if (googlenet)
+if (NET STREQUAL "googlenet")
     # gen test
     ADD_EXECUTABLE(test-googlenet net/test_googlenet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-googlenet paddle-mobile)
-elseif (mobilenet)
+elseif (NET STREQUAL "mobilenet")
     # gen test
     ADD_EXECUTABLE(test-mobilenet net/test_mobilenet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-mobilenet paddle-mobile)
-elseif (yolo)
+elseif (NET STREQUAL "yolo")
     # gen test
     ADD_EXECUTABLE(test-yolo net/test_yolo.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-yolo paddle-mobile)
-elseif (squeezenet)
+elseif (NET STREQUAL "squeezenet")
     # gen test
     ADD_EXECUTABLE(test-squeezenet net/test_squeezenet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-squeezenet paddle-mobile)
-elseif(resnet)
+elseif(NET STREQUAL "resnet")
     # gen test
     ADD_EXECUTABLE(test-resnet net/test_resnet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-resnet paddle-mobile)

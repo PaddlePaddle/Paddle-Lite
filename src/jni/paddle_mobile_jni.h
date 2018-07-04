@@ -15,9 +15,6 @@ limitations under the License. */
 #pragma once
 #ifdef ANDROID
 #include <jni.h>
-#include "common/log.h"
-#include "framework/tensor.h"
-#include "io/io.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,8 +31,8 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_load(JNIEnv *env,
 /**
  * object detection for anroid
  */
-JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictImage(
-    JNIEnv *env, jclass thiz, jfloatArray buf);
+JNIEXPORT jfloatArray JNICALL
+Java_com_baidu_paddle_PML_predict(JNIEnv *env, jclass thiz, jfloatArray buf);
 
 /**
  * clear data of the net when destroy for android

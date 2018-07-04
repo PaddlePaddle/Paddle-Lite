@@ -14,8 +14,6 @@ limitations under the License. */
 
 #ifdef BATCHNORM_OP
 
-#pragma once
-
 #include "operators/kernel/batchnorm_kernel.h"
 #include "operators/kernel/central-arm-func/batchnorm_arm_func.h"
 
@@ -23,7 +21,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool BatchNormKernel<CPU, float>::Init(const BatchNormParam &para) const {
+bool BatchNormKernel<CPU, float>::Init(BatchNormParam *param) {
   return true;
 }
 
