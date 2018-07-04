@@ -203,7 +203,7 @@ bool ConvKernel<GPU_MALI, float>::Init(ConvParam* param) {
     acl_op = new AclConvOp<GPU_MALI, float>();
     this->SetAclOp((void*)acl_op, (void*)this);
   }
-  if (acl_op->Bypass_acl(param)) {
+  if (acl_op->Bypass_acl(*param)) {
     std::cout << "init acl failed" << std::endl;
     return false;
   }

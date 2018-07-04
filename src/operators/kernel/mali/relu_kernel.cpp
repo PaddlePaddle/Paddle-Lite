@@ -100,14 +100,14 @@ class AclReluOp : public acl::ACLOperator {
 };
 
 template <>
-bool ReluKernel<GPU_MALI, float>::Init(const ReluParam& param) const {
+bool ReluKernel<GPU_MALI, float>::Init(ReluParam* param) {
   AclReluOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclReluOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {
     acl_op = new AclReluOp<GPU_MALI, float>();
     this->SetAclOp((void*)acl_op, (void*)this);
   }
-  if (acl_op->Bypass_acl(param)) {
+  if (acl_op->Bypass_acl(*param)) {
     std::cout << "init acl failed" << std::endl;
     return false;
   }

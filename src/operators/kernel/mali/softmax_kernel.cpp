@@ -97,14 +97,14 @@ class AclSoftmaxOp : public acl::ACLOperator {
 };
 
 template <>
-bool SoftmaxKernel<GPU_MALI, float>::Init(const SoftmaxParam& param) const {
+bool SoftmaxKernel<GPU_MALI, float>::Init(SoftmaxParam* param) {
   AclSoftmaxOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclSoftmaxOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {
     acl_op = new AclSoftmaxOp<GPU_MALI, float>();
     this->SetAclOp((void*)acl_op, (void*)this);
   }
-  if (acl_op->Bypass_acl(param)) {
+  if (acl_op->Bypass_acl(*param)) {
     std::cout << "init acl failed" << std::endl;
     return false;
   }

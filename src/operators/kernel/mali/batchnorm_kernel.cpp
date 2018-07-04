@@ -136,7 +136,7 @@ bool BatchNormKernel<GPU_MALI, float>::Init(BatchNormParam* param) {
     acl_op = new AclBatchNormOp<GPU_MALI, float>();
     this->SetAclOp((void*)acl_op, (void*)this);
   }
-  if (acl_op->Bypass_acl(param)) {
+  if (acl_op->Bypass_acl(*param)) {
     std::cout << "init acl failed" << std::endl;
     return false;
   }
