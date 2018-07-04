@@ -45,7 +45,6 @@ struct OperatorRegistrar : public Registrar {
           << "OperatorRegistrar should be invoked at least by OpClass";
       return;
     }
-    printf(" regis ting %s \n", op_type.c_str());
     OpInfo<Dtype> info;
     OperatorRegistrarRecursive<Dtype, 0, false, ARGS...>(op_type, &info);
     OpInfoMap<Dtype>::Instance()->Insert(op_type, info);
@@ -108,7 +107,6 @@ class OpRegistry {
       __op_registrar_##op_type##_##device_name(#op_type);                  \
   int TouchOpRegistrar_##op_type##_##device_name() {                       \
     __op_registrar_##op_type##_##device_name.Touch();                      \
-    printf(" registering !! \n");                                          \
     return 0;                                                              \
   }
 
