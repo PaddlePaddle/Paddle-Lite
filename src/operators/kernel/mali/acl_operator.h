@@ -225,6 +225,7 @@ class AclParameters {
 
   bool is_global_pool;
   bool is_channel_concat;
+  bool is_bypass;
 
   std::vector<framework::LoDTensor *> in_tensor;
 };

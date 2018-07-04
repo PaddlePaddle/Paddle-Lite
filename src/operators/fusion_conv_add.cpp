@@ -76,7 +76,7 @@ namespace ops = paddle_mobile::operators;
 REGISTER_OPERATOR_CPU(fusion_conv_add, ops::FusionConvAddOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
-REGISTER_OPERATOR_MALI_GPU(conv_add, ops::FusionConvAddOp);
+REGISTER_OPERATOR_MALI_GPU(fusion_conv_add, ops::FusionConvAddOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 #endif

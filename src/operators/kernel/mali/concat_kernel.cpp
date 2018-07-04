@@ -102,14 +102,14 @@ class AclConcatOp : public acl::ACLOperator {
 };
 
 template <>
-bool ConcatKernel<GPU_MALI, float>::Init(const ConcatParam& param) const {
+bool ConcatKernel<GPU_MALI, float>::Init(ConcatParam* param) {
   AclConcatOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclConcatOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {
     acl_op = new AclConcatOp<GPU_MALI, float>();
     this->SetAclOp((void*)acl_op, (void*)this);
   }
-  if (acl_op->Bypass_acl(param)) {
+  if (acl_op->Bypass_acl(*param)) {
     std::cout << "init acl failed" << std::endl;
     return false;
   }
