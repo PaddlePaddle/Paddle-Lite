@@ -511,14 +511,11 @@ void DepthwiseConv3x3s1p1(const Tensor *input, const Tensor *filter,
 }
 
 void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
-                                   Tensor *output, Tensor *bias, bool if_bias,
-                                   const Tensor *new_scale,
-                                   const Tensor *new_bias, bool if_bn,
-                                   bool if_relu) {
+                                   Tensor *output, const Tensor *new_scale,
+                                   const Tensor *new_bias, bool if_relu) {
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
   float *output_data = output->data<float>();
-  const float *bias_data = bias->data<float>();
   const float *newscale_data = new_scale->data<float>();
   const float *newbias_data = new_bias->data<float>();
 
@@ -529,7 +526,6 @@ void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
   const int batch_size = static_cast<int>(input->dims()[0]);
   const int c = static_cast<int>(input->dims()[1]);
   const int hxw = h * w;
-  float32x4_t vbias = vdupq_n_f32(0.0);
   float32x4_t vnewbias = vdupq_n_f32(0.0);
   float32x4_t vnewscale = vdupq_n_f32(1.0);
   float32x4_t vzero = vdupq_n_f32(0);
@@ -538,13 +534,9 @@ void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
     const float *filter_data_tmp = filter_data;
 
     for (int j = 0; j < c; ++j) {
-      if (if_bias) {
-        vbias = vdupq_n_f32(bias_data[j]);
-      }
-      if (if_bn) {
-        vnewbias = vdupq_n_f32(newbias_data[j]);
-        vnewscale = vdupq_n_f32(newscale_data[j]);
-      }
+      vnewbias = vdupq_n_f32(newbias_data[j]);
+      vnewscale = vdupq_n_f32(newscale_data[j]);
+
       int l_mid = l - 2;  // l=1->l_mid=-1,l=2->l_mid=0
       float w00 = filter_data_tmp[0];
       float w01 = filter_data_tmp[1];
@@ -570,21 +562,14 @@ void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
                                w01 * input_data[(l - 2) * (l + 1) + 1] +
                                w10 * input_data[l * l - 2] +
                                w11 * input_data[l * l - 1];
-      if (if_bias) {
-        output_data[0] += bias_data[j];
-        output_data[l - 1] += bias_data[j];
-        output_data[(l - 1) * l] += bias_data[j];
-        output_data[l * l - 1] += bias_data[j];
-      }
-      if (if_bn) {
-        output_data[0] = output_data[0] * newscale_data[j] + newbias_data[j];
-        output_data[l - 1] =
-            output_data[l - 1] * newscale_data[j] + newbias_data[j];
-        output_data[(l - 1) * l] =
-            output_data[(l - 1) * l] * newscale_data[j] + newbias_data[j];
-        output_data[l * l - 1] =
-            output_data[l * l - 1] * newscale_data[j] + newbias_data[j];
-      }
+      output_data[0] = output_data[0] * newscale_data[j] + newbias_data[j];
+      output_data[l - 1] =
+          output_data[l - 1] * newscale_data[j] + newbias_data[j];
+      output_data[(l - 1) * l] =
+          output_data[(l - 1) * l] * newscale_data[j] + newbias_data[j];
+      output_data[l * l - 1] =
+          output_data[l * l - 1] * newscale_data[j] + newbias_data[j];
+
       if (if_relu) {
         output_data[0] = output_data[0] < 0 ? 0 : output_data[0];
         output_data[l - 1] = output_data[l - 1] < 0 ? 0 : output_data[l - 1];
@@ -604,16 +589,11 @@ void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
                                      w11 * input_data[i * l + l - 1] +
                                      w20 * input_data[i * l + l - 1 + l - 1] +
                                      w21 * input_data[i * l + l - 1 + l];
-        if (if_bias) {
-          output_data[i * l] += bias_data[j];
-          output_data[i * l + l - 1] += bias_data[j];
-        }
-        if (if_bn) {
-          output_data[i * l] =
-              output_data[i * l] * newscale_data[j] + newbias_data[j];
-          output_data[i * l + l - 1] =
-              output_data[i * l + l - 1] * newscale_data[j] + newbias_data[j];
-        }
+        output_data[i * l] =
+            output_data[i * l] * newscale_data[j] + newbias_data[j];
+        output_data[i * l + l - 1] =
+            output_data[i * l + l - 1] * newscale_data[j] + newbias_data[j];
+
         if (if_relu) {
           output_data[i * l] = output_data[i * l] < 0 ? 0 : output_data[i * l];
           output_data[i * l + l - 1] =
@@ -649,7 +629,6 @@ void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
         out0 = vmlaq_n_f32(out0, in2, w20);
         out0 = vmlaq_n_f32(out0, tmp2, w21);
         out0 = vmlaq_n_f32(out0, tmp3, w22);
-        out0 = vaddq_f32(out0, vbias);
         out0 = vmlaq_f32(vnewbias, vnewscale, out0);
         if (if_relu) {
           out0 = vmaxq_f32(out0, vzero);
@@ -670,7 +649,6 @@ void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
         out0 = vmlaq_n_f32(out0, in6, w10);
         out0 = vmlaq_n_f32(out0, tmp2, w11);
         out0 = vmlaq_n_f32(out0, tmp3, w12);
-        out0 = vaddq_f32(out0, vbias);
         out0 = vmlaq_f32(vnewbias, vnewscale, out0);
         if (if_relu) {
           out0 = vmaxq_f32(out0, vzero);
@@ -702,7 +680,6 @@ void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
       out0 = vmlaq_n_f32(out0, in2, w20);
       out0 = vmlaq_n_f32(out0, tmp2, w21);
       out0 = vmlaq_n_f32(out0, tmp3, w22);
-      out0 = vaddq_f32(out0, vbias);
       out0 = vmlaq_f32(vnewbias, vnewscale, out0);
       if (if_relu) {
         out0 = vmaxq_f32(out0, vzero);
@@ -734,7 +711,6 @@ void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
       out0 = vmlaq_n_f32(out0, in6, w10);
       out0 = vmlaq_n_f32(out0, tmp2, w11);
       out0 = vmlaq_n_f32(out0, tmp3, w12);
-      out0 = vaddq_f32(out0, vbias);
       out0 = vmlaq_f32(vnewbias, vnewscale, out0);
       if (if_relu) {
         out0 = vmaxq_f32(out0, vzero);
@@ -780,7 +756,6 @@ void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
           out0 = vmlaq_n_f32(out0, in4_tmp, w20);
           out0 = vmlaq_n_f32(out0, tmp4, w21);
           out0 = vmlaq_n_f32(out0, tmp5, w22);
-          out0 = vaddq_f32(out0, vbias);
           out0 = vmlaq_f32(vnewbias, vnewscale, out0);
           if (if_relu) {
             out0 = vmaxq_f32(out0, vzero);
@@ -814,7 +789,6 @@ void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
         out0 = vmlaq_n_f32(out0, in4_tmp, w20);
         out0 = vmlaq_n_f32(out0, tmp4, w21);
         out0 = vmlaq_n_f32(out0, tmp5, w22);
-        out0 = vaddq_f32(out0, vbias);
         out0 = vmlaq_f32(vnewbias, vnewscale, out0);
         if (if_relu) {
           out0 = vmaxq_f32(out0, vzero);
@@ -835,6 +809,202 @@ void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
       input_data += hxw;
       filter_data_tmp += 9;
     }
+  }
+}
+
+void DepthwiseConvAddBNRelu3x3s2p1(const Tensor *input, const Tensor *filter,
+                                   Tensor *output, const Tensor *new_scale,
+                                   const Tensor *new_bias, bool if_relu) {
+  const int batch_size = input->dims()[0];
+
+  const int input_height = input->dims()[2];
+
+  const int input_width = input->dims()[3];
+
+  const int output_channels = output->dims()[1];
+
+  const int output_height = output->dims()[2];
+  const int output_width = output->dims()[3];
+  const int _kernel_size = 3;
+  const int stride_height = 2;
+  const int stride_width = 2;
+  const int padding_height = 1;
+  const int padding_width = 1;
+  const float zero = 0;
+  const int input_channel_stride = input_height * input_width;
+  const int output_channel_stride = output_height * output_width;
+  const int filter_channel_stride = 9;
+  const float *newscale_data = new_scale->data<float>();
+  const float *newbias_data = new_bias->data<float>();
+
+  const float *input_data = input->data<float>();
+  const float *filter_data = filter->data<float>();
+
+  float *output_data = output->mutable_data<float>();
+
+  const int input_batch_stride = output_channels * input_channel_stride;
+  const int output_batch_stride = output_channels * output_channel_stride;
+  const int filter_batch_stride = output_channels * output_channel_stride;
+  const float *pos1, *pos2, *pos3, *filter1, *filter2, *filter3, *output_ptr;
+  int hstart, wstart, hend, wend;
+  float result;
+  for (int i = 0; i < batch_size; ++i) {
+    for (int c = 0; c < output_channels; ++c) {
+      filter1 = filter_data;
+      filter2 = filter1 + 3;
+      filter3 = filter2 + 3;
+
+      for (int ph = 0; ph < output_height; ph++) {
+        for (int pw = 0; pw < output_width; pw++) {
+          hstart = ph * stride_height - padding_height;
+          wstart = pw * stride_width - padding_width;
+          hend = min(hstart + _kernel_size, input_height + padding_height);
+          wend = min(wstart + _kernel_size, input_width + padding_width);
+          hstart = max(hstart, 0);
+          wstart = max(wstart, 0);
+          hend = min(hend, input_height);
+          wend = min(wend, input_width);
+          pos1 = input_data + hstart * input_width + wstart;
+          pos2 = input_data + (hstart + 1) * input_width + wstart;
+          pos3 = input_data + (hstart + 2) * input_width + wstart;
+          output_ptr = output_data + ph * output_width + pw;
+
+          if (hend - hstart != 3 || wend - wstart != 3) {
+            result = 0;
+            float fake_input[9] = {0};
+            if (hstart == 0 && wstart == 0) {
+              // 左上角
+              for (int j = 0; j < 3; ++j) {
+                for (int k = 0; k < 3; ++k) {
+                  if (j >= 3 - hend && k >= 3 - wend) {
+                    fake_input[3 * j + k] =
+                        input_data[(j - (3 - hend)) * input_width + k -
+                                   (3 - wend)];
+                  }
+                }
+              }
+            } else if (hstart == 0 && wend == input_width) {
+              // 右上角
+              for (int j = 0; j < 3; ++j) {
+                for (int k = 0; k < 3; ++k) {
+                  if (j >= 3 - hend && k <= input_width - wstart - 1) {
+                    fake_input[3 * j + k] =
+                        input_data[(j - (3 - hend)) * input_width + k + wstart];
+                  }
+                }
+              }
+
+            } else if (hend == input_height && wstart == 0) {
+              // 左下角
+
+              for (int j = 0; j < 3; ++j) {
+                for (int k = 0; k < 3; ++k) {
+                  if (j <= input_height - 1 - hstart && k >= 3 - wend) {
+                    fake_input[3 * j + k] =
+                        input_data[(j + hstart) * input_width + k - (3 - wend)];
+                  }
+                }
+              }
+            } else if (hend == input_height && wend == input_width) {
+              // 右下角
+              for (int j = 0; j < 3; ++j) {
+                for (int k = 0; k < 3; ++k) {
+                  if (j <= input_height - hstart - 1 &&
+                      k <= input_width - wstart - 1) {
+                    fake_input[3 * j + k] =
+                        input_data[(j + hstart) * input_width + k + wstart];
+                  }
+                }
+              }
+            } else if (hstart == 0) {
+              // 顶部
+              for (int j = 0; j < 3; ++j) {
+                for (int k = 0; k < 3; ++k) {
+                  if (j >= 3 - hend) {
+                    fake_input[3 * j + k] =
+                        input_data[(j - (3 - hend)) * input_width + k + wstart];
+                  }
+                }
+              }
+
+            } else if (hend == input_height) {
+              // 底部
+              for (int j = 0; j < 3; ++j) {
+                for (int k = 0; k < 3; ++k) {
+                  if (j <= input_height - hstart - 1) {
+                    fake_input[3 * j + k] =
+                        input_data[(j + hstart) * input_width + k + wstart];
+                  }
+                }
+              }
+
+            } else if (wstart == 0) {
+              // 左侧
+              for (int j = 0; j < 3; ++j) {
+                for (int k = 0; k < 3; ++k) {
+                  if (k >= 3 - wend) {
+                    fake_input[3 * j + k] =
+                        input_data[(j + hstart) * input_width +
+                                   (k - (3 - wend))];
+                  }
+                }
+              }
+
+            } else if (wend == input_width) {
+              // 右侧
+              for (int j = 0; j < 3; ++j) {
+                for (int k = 0; k < 3; ++k) {
+                  if (k <= input_width - wstart - 1) {
+                    fake_input[3 * j + k] =
+                        input_data[(j + hstart) * input_width + k + wstart];
+                  }
+                }
+              }
+            }
+            for (int l = 0; l < 9; ++l) {
+              result += fake_input[l] * filter1[l];
+            }
+            output_data[ph * output_width + pw] =
+                newscale_data[c] * result + newbias_data[c];
+
+            if (if_relu) {
+              output_data[ph * output_width + pw] =
+                  output_data[ph * output_width + pw] < 0
+                      ? 0
+                      : output_data[ph * output_width + pw];
+            }
+          } else {
+            const float32x4_t data1 = vld1q_f32(pos1);
+            const float32x4_t data2 = vld1q_f32(pos2);
+            const float32x4_t data3 = vld1q_f32(pos3);
+
+            const float32x4_t v_filter1 = vld1q_f32(filter1);
+            const float32x4_t v_filter2 = vld1q_f32(filter2);
+            const float32x4_t v_filter3 = vld1q_f32(filter3);
+            float32x4_t mula = vmulq_f32(data1, v_filter1);
+            mula = vmlaq_f32(mula, data2, v_filter2);
+            mula = vmlaq_f32(mula, data3, v_filter3);
+            float32x2_t res = vpadd_f32(
+                vget_high_f32(vsetq_lane_f32(0, mula, 3)), vget_low_f32(mula));
+            res = vpadd_f32(res, res);
+            output_data[ph * output_width + pw] =
+                vget_lane_f32(res, 0) * newscale_data[c] + newbias_data[c];
+
+            if (if_relu) {
+              output_data[ph * output_width + pw] =
+                  output_data[ph * output_width + pw] < 0
+                      ? 0
+                      : output_data[ph * output_width + pw];
+            }
+          }
+        }
+      }
+      input_data += input_channel_stride;
+      output_data += output_channel_stride;
+      filter_data += filter_channel_stride;
+    }
+    input_data += input_batch_stride;
+    output_data += output_batch_stride;
   }
 }
 }  // namespace math
