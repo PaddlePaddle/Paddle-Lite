@@ -11,15 +11,19 @@ option(MALI_GPU "mali gpu" OFF)
 option(FPGA "fpga" OFF)
 set(DEBUGING ON)
 
-file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c)
+if (ARM_LINUX)
+include("${CMAKE_CURRENT_LIST_DIR}/tools/arm-platform.cmake")
+endif ()
+
+file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c src/*.mm)
 file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
 
 if (CPU)
   add_definitions(-DPADDLE_MOBILE_CPU)
 else()
-    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/kernel/arm/*.h)
-    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/kernel/arm/*.cc)
-    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/kernel/arm/*.cpp)
+    list(REMOVE_ITEM PADDLE_MOBILE_CC ./src/operators/kernel/arm/*.h)
+    list(REMOVE_ITEM PADDLE_MOBILE_CC ./src/operators/kernel/arm/*.cc)
+    list(REMOVE_ITEM PADDLE_MOBILE_CC ./src/operators/kernel/arm/*.cpp)
 
 endif()
 
@@ -37,11 +41,15 @@ if (MALI_GPU)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lOpenCL")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_ACL=1")
 else()
-    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/kernel/mali/*.h)
-    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/kernel/mali/*.cc)
-    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/kernel/mali/*.cpp)
+    file(GLOB_RECURSE _tmp_list src/operators/kernel/mali/*.cpp src/operators/kernel/mali/*.cc)
+    foreach(f ${_tmp_list})
+        list(REMOVE_ITEM PADDLE_MOBILE_CC ${f})
+    endforeach()
 
-
+    file(GLOB_RECURSE _tmp_list_h src/operators/kernel/mali/*.h)
+    foreach(f ${_tmp_list_h})
+        list(REMOVE_ITEM PADDLE_MOBILE_H ${f})
+    endforeach()
 endif()
 
 if(FPGA)
@@ -90,9 +98,9 @@ endif()
 
 
 if (NOT ANDROID_NDK_TOOLCHAIN_INCLUDED)
-  list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/jni/*.cpp)
-  list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/jni/*.h)
-  list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/math/math_func_neon.h)
+    list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/jni/paddle_mobile_jni.h)
+    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/jni/paddle_mobile_jni.cpp)
+    list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/math/math_func_neon.h)
 endif ()
 
 include_directories(src/)
@@ -103,13 +111,24 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY build)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY build)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 
+# NET default
+set(NET "defult" CACHE STRING "select net type")
+set_property(CACHE NET PROPERTY STRINGS "defult" "googlenet" "mobilenet" "yolo" "squeezenet")
+
 include("${CMAKE_CURRENT_LIST_DIR}/tools/op.cmake")
 
-# if (IS_IOS)
-#     add_library(paddle-mobile STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+if (IS_IOS)
+    add_library(paddle-mobile STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+else()
+    list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/ios_io/PaddleMobile.h)
+    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/ios_io/PaddleMobile.mm)
+    list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/ios_io/op_symbols.h)
+endif ()
+
 if (ANDROID_NDK_TOOLCHAIN_INCLUDED)
     list(REMOVE_DUPLICATES CMAKE_CXX_FLAGS)
     add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+elseif(IS_IOS)
 else ()
     add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 endif ()
@@ -117,5 +136,4 @@ endif ()
 if(DEBUGING)
     add_subdirectory(test)
 endif()
-
 

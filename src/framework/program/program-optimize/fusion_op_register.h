@@ -34,6 +34,10 @@ class FusionOpRegister {
   }
 
   void regist(FusionOpMatcher* matcher) {
+    if (matchers_.find(matcher->Type()) != matchers_.end()) {
+      return;
+    }
+
     std::shared_ptr<FusionOpMatcher> shared_matcher(matcher);
     matchers_[matcher->Type()] = shared_matcher;
   }
