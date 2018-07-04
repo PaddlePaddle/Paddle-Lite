@@ -78,7 +78,7 @@ extern framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
 
 #ifndef CONV_CPU_REGISTER
 #define CONV_CPU_REGISTER
-static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
+extern framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
 #endif
 
 #endif
@@ -93,7 +93,7 @@ static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
 USE_OP_CPU(fusion_fc);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(fc);
+USE_OP_MALI_GPU(fusion_fc);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 #endif
