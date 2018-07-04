@@ -229,7 +229,7 @@ void BatchnormCompute(const BatchNormParam &param) {
 
     delete[] inv_std_ptr;
   }
-#endif
+#else
   float *inv_std_ptr = new float[C];
   for (int i = 0; i < C; i++) {
     inv_std_ptr[i] =
@@ -260,6 +260,7 @@ void BatchnormCompute(const BatchNormParam &param) {
     }
   }
   delete[] inv_std_ptr;
+#endif
 }
 
 }  // namespace operators
