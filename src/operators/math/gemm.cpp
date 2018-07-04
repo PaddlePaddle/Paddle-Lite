@@ -116,6 +116,8 @@ void PackMatrixB_(int k, int n, int n_tail, const float *B, int ldb,
   int i, j;
   const float *Bij;
   for (j = 0; j < n - n_tail; j += NR) {
+#ifdef ARMV7
+
     for (i = 0; i < k; ++i) {
       Bij = &B(i, j);
       asm volatile(
@@ -125,6 +127,15 @@ void PackMatrixB_(int k, int n, int n_tail, const float *B, int ldb,
           : [Bij] "r"(Bij)
           : "memory", "q0");
     }
+#else
+    for (i = 0; i < k; ++i) {
+      Bij = &B(i, j);
+      *buffer++ = *Bij;
+      *buffer++ = *(Bij + 1);
+      *buffer++ = *(Bij + 2);
+      *buffer++ = *(Bij + 3);
+    }
+#endif
   }
   if (n_tail != 0) {
     for (i = 0; i < k; ++i) {
@@ -747,10 +758,14 @@ void sgemm(int m, int n, int k, float alpha, const float *A, int lda,
            const float *B, int ldb, float beta, float *C, int ldc) {
   int i, j, p, mc, nc, kc;
   float beta_;
+
+#ifdef ARMV7
   if (m == 1) {
     VectorKernel(1, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
     return;
   }
+#endif
+
   for (j = 0; j < n; j += NC) {
     nc = s_min(n - j, NC);
     for (p = 0; p < k; p += KC) {
@@ -797,6 +812,7 @@ void sgemm_relu(int m, int n, int k, float alpha, const float *A, int lda,
   }
 }
 
+#ifdef ARMV7
 void VectorKernel(int m, int n, int k, float alpha, const float *A, int lda,
                   const float *B, int ldb, float beta, float *C, int ldc) {
   float *bufferC = static_cast<float *>(memory::Alloc(sizeof(float) * n));
@@ -1010,6 +1026,7 @@ void VectorKernel(int m, int n, int k, float alpha, const float *A, int lda,
     }
   }
 }
+#endif
 
 }  // namespace math
 }  // namespace operators

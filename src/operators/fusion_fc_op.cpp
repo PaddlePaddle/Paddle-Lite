@@ -49,17 +49,37 @@ void FusionFcOp<Dtype, T>::InferShape() const {
   framework::DDim ddim = framework::make_ddim(output_dims);
   this->param_.Out()->Resize(ddim);
 }
+
+#ifdef PADDLE_MOBILE_CPU
+
+#ifndef CONV_CPU_REGISTER
+#define CONV_CPU_REGISTER
+framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
+#endif
+
+#endif
+
+#ifdef PADDLE_MOBILE_MALI_GPU
+
+#ifndef CONV_CPU_REGISTER
+#define CONV_CPU_REGISTER
+framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
+#endif
+
+#endif
+
+#ifdef PADDLE_MOBILE_FPGA
+#endif
+
 template class FusionFcOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(fc);
-REGISTER_OPERATOR_CPU(fc, ops::FusionFcOp);
+REGISTER_OPERATOR_CPU(fusion_fc, ops::FusionFcOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(fc);
 REGISTER_OPERATOR_MALI_GPU(fc, ops::FusionFcOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA

@@ -17,7 +17,6 @@ limitations under the License. */
 #pragma once
 
 #include "framework/operator.h"
-#include "operators/math/pooling.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
@@ -28,7 +27,7 @@ template <typename DeviceType, typename T>
 class PoolKernel : public OpKernelBase<DeviceType, PoolParam> {
  public:
   void Compute(const PoolParam &param) const override;
-  bool Init(const PoolParam &para) const;
+  bool Init(PoolParam *param);
 };
 }  // namespace operators
 }  // namespace paddle_mobile
