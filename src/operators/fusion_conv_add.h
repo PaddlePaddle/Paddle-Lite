@@ -96,7 +96,7 @@ static framework::FusionOpRegistrar convadd_registrar(
 USE_OP_CPU(fusion_conv_add);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(conv_add);
+USE_OP_MALI_GPU(fusion_conv_add);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 #endif
