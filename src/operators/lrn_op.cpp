@@ -30,11 +30,9 @@ template class LrnOp<CPU, float>;
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(lrn);
 REGISTER_OPERATOR_CPU(lrn, ops::LrnOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(lrn);
 REGISTER_OPERATOR_MALI_GPU(lrn, ops::LrnOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA

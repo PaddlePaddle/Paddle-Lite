@@ -56,7 +56,6 @@ template class DepthwiseConvOp<CPU, float>;
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(depthwise_conv2d);
 REGISTER_OPERATOR_CPU(depthwise_conv2d, ops::DepthwiseConvOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
