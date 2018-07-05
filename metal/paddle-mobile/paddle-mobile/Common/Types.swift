@@ -14,14 +14,22 @@
 
 import Foundation
 
-//typealias Float16 = Int16
-//extension Float16: PrecisionType {
-//}
-
-public protocol PrecisionType {
+public typealias Float16 = Int16
+extension Float16: PrecisionType {
+    public init(inFloat: Float32) {
+        self = Int16(inFloat)
+    }
 }
 
+public protocol PrecisionType {
+    init(inFloat: Float32)
+}
+
+
 extension Float32: PrecisionType {
+    public init(inFloat: Float32) {
+        self = inFloat
+    }
 }
 
 public enum DataLayout {

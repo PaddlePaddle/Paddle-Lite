@@ -38,7 +38,7 @@ extension InputTexture {
     }
 }
 
-public class Texture: Tensorial {
+public class Texture<P: PrecisionType>: Tensorial {
     var dim: Dim
     let textureDesc: MTLTextureDescriptor
     var metalTexture: MTLTexture
@@ -61,7 +61,15 @@ public class Texture: Tensorial {
         } else {
             fatalError(" didn't support yet")
         }
-        tmpTextureDes.pixelFormat = .r32Float
+        if MemoryLayout<P>.size == 1 {
+            tmpTextureDes.pixelFormat = .r8Sint
+        } else if MemoryLayout<P>.size == 2 {
+            tmpTextureDes.pixelFormat = .r16Float
+        } else if MemoryLayout<P>.size == 4 {
+            tmpTextureDes.pixelFormat = .r32Float
+        }
+        
+        tmpTextureDes.usage = .unknown
         tmpTextureDes.storageMode = .shared
         textureDesc = tmpTextureDes
         metalTexture = device.makeTexture(descriptor: tmpTextureDes) ?! " texture nil "

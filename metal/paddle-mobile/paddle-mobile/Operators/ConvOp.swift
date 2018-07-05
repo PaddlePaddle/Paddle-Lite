@@ -30,8 +30,8 @@ struct ConvParam<P: PrecisionType>: OpParam {
         }
     }
     
-    let input: Texture
-    var output: Texture
+    let input: Texture<P>
+    var output: Texture<P>
     let filter: Tensor<ParamPrecisionType>
     let stride: [Int32]
     let paddings: [Int32]
@@ -39,7 +39,7 @@ struct ConvParam<P: PrecisionType>: OpParam {
     let groups: Int
 }
 
-class ConvOp<P: PrecisionType>: Operator<ConvParam<P>>, Runable, Creator, InferShaperable {
+class ConvOp<P: PrecisionType>: Operator<ConvParam<P>, ConvKernel<P>>, Runable, Creator, InferShaperable {
     func inferShape() {
         let inDims = para.input.dim
         let filterDim = para.filter.dim
@@ -63,7 +63,7 @@ class ConvOp<P: PrecisionType>: Operator<ConvParam<P>>, Runable, Creator, InferS
     }
     
     typealias OpType = ConvOp<P>
-    func runImpl() {
+    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
         print("this is conv")
     }
 }
