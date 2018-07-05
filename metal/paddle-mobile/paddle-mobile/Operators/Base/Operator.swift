@@ -82,7 +82,7 @@ class Operator <ParameterType: OpParam>: OperatorProtocol{
         attrs =  opDesc.attrs
         paraInputs = opDesc.paraInputs
         do {
-            para = try ParamType.init(opDesc:opDesc, scope: inScope)
+            para = try ParamType.init(opDesc:opDesc, inScope: inScope)
         } catch let error {
             throw error
         }

@@ -16,14 +16,14 @@ import Foundation
 
 struct BatchNormParam<P: PrecisionType>: OpParam {
     typealias ParamPrecisionType = P
-    init(opDesc: OpDesc, scope: Scope) throws {
+    init(opDesc: OpDesc, inScope: Scope) throws {
         do {
-            input = try BatchNormParam.inputX(inputs: opDesc.inputs, from: scope)
-            output = try BatchNormParam.outputY(outputs: opDesc.outputs, from: scope)
-            inputBias = try BatchNormParam.inputBiase(inputs: opDesc.paraInputs, from: scope)
-            inputMean = try BatchNormParam.inputMean(inputs: opDesc.paraInputs, from: scope)
-            inputScale = try BatchNormParam.inputScale(inputs: opDesc.paraInputs, from: scope)
-            inputVariance = try BatchNormParam.inputVariance(inputs: opDesc.paraInputs, from: scope)
+            input = try BatchNormParam.inputX(inputs: opDesc.inputs, from: inScope)
+            output = try BatchNormParam.outputY(outputs: opDesc.outputs, from: inScope)
+            inputBias = try BatchNormParam.inputBiase(inputs: opDesc.paraInputs, from: inScope)
+            inputMean = try BatchNormParam.inputMean(inputs: opDesc.paraInputs, from: inScope)
+            inputScale = try BatchNormParam.inputScale(inputs: opDesc.paraInputs, from: inScope)
+            inputVariance = try BatchNormParam.inputVariance(inputs: opDesc.paraInputs, from: inScope)
             epsilon = try BatchNormParam.getAttr(key: "epsilon", attrs: opDesc.attrs)
             momentum = try BatchNormParam.getAttr(key: "momentum", attrs: opDesc.attrs)
             is_test = try BatchNormParam.getAttr(key: "is_test", attrs: opDesc.attrs)
@@ -32,7 +32,7 @@ struct BatchNormParam<P: PrecisionType>: OpParam {
         }
     }
     let input: Texture
-    let output: Texture
+    var output: Texture
     let inputBias: Tensor<ParamPrecisionType>
     let inputMean: Tensor<ParamPrecisionType>
     let inputScale: Tensor<ParamPrecisionType>

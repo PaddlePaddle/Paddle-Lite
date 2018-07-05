@@ -40,3 +40,10 @@ extension Texture: Variant {
 
 extension ResultHolder: Variant {
 }
+
+extension InputTexture: Variant {
+}
+
+extension MTLTexture where Self: Variant {
+    
+}

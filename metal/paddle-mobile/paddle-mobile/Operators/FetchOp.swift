@@ -15,13 +15,13 @@
 import Foundation
 
 struct FetchParam<P: PrecisionType>: OpParam{
-    let output: ResultHolder<P>
+    var output: ResultHolder<P> = ResultHolder.init(inDim: [], inResult: [])
     let input: Texture
-    
-    init(opDesc: OpDesc, scope: Scope) throws {
+    let scope: Scope
+    init(opDesc: OpDesc, inScope: Scope) throws {
+        scope = inScope
         do {
-            input = try FetchParam.inputX(inputs: opDesc.inputs, from: scope)
-            output = try FetchParam.outputOut(outputs: opDesc.outputs, from: scope)
+            input = try FetchParam.inputX(inputs: opDesc.inputs, from: inScope)
         } catch let error {
             throw error
         }
@@ -32,6 +32,7 @@ struct FetchParam<P: PrecisionType>: OpParam{
 
 class FetchOp<P: PrecisionType>: Operator<FetchParam<P>>, Runable, Creator, InferShaperable{
     func inferShape() {
+        
         print(para.input.dim)
     }
     
