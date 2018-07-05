@@ -17,15 +17,15 @@ limitations under the License. */
 #include "operators/resize_op.h"
 #include <vector>
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        template <typename Dtype, typename T>
-        void ResizeOp<Dtype, T>::InferShape() const {
-            auto out_dims = CalOutputShape(this->param_);
-            this->param_.Out()->Resize(out_dims);
-        }
-        template class ResizeOp<CPU, float>;
-    }  // namespace operators
+template <typename Dtype, typename T>
+void ResizeOp<Dtype, T>::InferShape() const {
+  auto out_dims = CalOutputShape(this->param_);
+  this->param_.Out()->Resize(out_dims);
+}
+template class ResizeOp<CPU, float>;
+}  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;

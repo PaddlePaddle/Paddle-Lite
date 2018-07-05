@@ -17,7 +17,6 @@ limitations under the License. */
 #include "operators/kernel/slice_kernel.h"
 
 namespace paddle_mobile {
-    namespace operators {
-    }
-}
+namespace operators {}
+}  // namespace paddle_mobile
 #endif

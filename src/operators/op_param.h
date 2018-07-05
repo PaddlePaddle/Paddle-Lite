@@ -730,122 +730,121 @@ class ReshapeParam : public OpParam {
 #endif
 
 #ifdef SCALE_OP
-    class ScaleParam : public OpParam {
-    public:
-        ScaleParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-                     const AttributeMap &attrs, const Scope &scope) {
-            input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-            input_bias_ = InputBiasFrom<framework::LoDTensor>(inputs, scope);
-            out_ = OutFrom<LoDTensor>(outputs, scope);
-            inplace_ = GetAttr<bool>("inplace", attrs);
-            has_bias_ = GetAttr<bool>("has_bias", attrs);
-            scales_ = GetAttr<vector<float>>("scales", attrs);
-            biases_ = GetAttr<vector<float>>("biases", attrs);
-        }
+class ScaleParam : public OpParam {
+ public:
+  ScaleParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+             const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    input_bias_ = InputBiasFrom<framework::LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
+    inplace_ = GetAttr<bool>("inplace", attrs);
+    has_bias_ = GetAttr<bool>("has_bias", attrs);
+    scales_ = GetAttr<vector<float>>("scales", attrs);
+    biases_ = GetAttr<vector<float>>("biases", attrs);
+  }
 
-        const Tensor *InputX() const { return input_x_; }
+  const Tensor *InputX() const { return input_x_; }
 
-        const Tensor *InputBias() const { return input_bias_; }
+  const Tensor *InputBias() const { return input_bias_; }
 
-        Tensor *Out() const { return out_; }
+  Tensor *Out() const { return out_; }
 
-        const bool &Inplace() const { return inplace_; }
+  const bool &Inplace() const { return inplace_; }
 
-        const bool &HasBias() const { return has_bias_; }
+  const bool &HasBias() const { return has_bias_; }
 
-        const vector<float> &Scales() const { return scales_; }
+  const vector<float> &Scales() const { return scales_; }
 
-        const vector<float> &Biases() const { return biases_; }
+  const vector<float> &Biases() const { return biases_; }
 
-    private:
-        Tensor *input_x_;
-        Tensor *input_bias_;
-        Tensor *out_;
-        bool inplace_;
-        bool has_bias_;
-        vector<float> scales_;
-        vector<float> biases_;
-    };
+ private:
+  Tensor *input_x_;
+  Tensor *input_bias_;
+  Tensor *out_;
+  bool inplace_;
+  bool has_bias_;
+  vector<float> scales_;
+  vector<float> biases_;
+};
 #endif
 
 #ifdef SLICE_OP
-    class SliceParam : public OpParam {
-    public:
-        SliceParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-                     const AttributeMap &attrs, const Scope &scope) {
-            input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-            input_shape_ = InputShapeFrom<LoDTensor>(inputs, scope);
-            out_ = OutFrom<LoDTensor>(outputs, scope);
-            axis_ = GetAttr<int>("axis", attrs);
-            slice_points_ = GetAttr<vector<int>>("slice_points", attrs);
-            inplace_ = GetAttr<bool>("inplace", attrs);
-        }
+class SliceParam : public OpParam {
+ public:
+  SliceParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+             const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    input_shape_ = InputShapeFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
+    axis_ = GetAttr<int>("axis", attrs);
+    slice_points_ = GetAttr<vector<int>>("slice_points", attrs);
+    inplace_ = GetAttr<bool>("inplace", attrs);
+  }
 
-        const Tensor *InputX() const { return input_x_; }
+  const Tensor *InputX() const { return input_x_; }
 
-        const Tensor *InputShape() const { return input_shape_; }
+  const Tensor *InputShape() const { return input_shape_; }
 
-        Tensor *Out() const { return out_; }
+  Tensor *Out() const { return out_; }
 
-        const int &Axis() const { return axis_; }
+  const int &Axis() const { return axis_; }
 
-        const vector<int> &SlicePoints() const { return slice_points_; }
+  const vector<int> &SlicePoints() const { return slice_points_; }
 
-        const bool &Inplace() const { return inplace_; }
+  const bool &Inplace() const { return inplace_; }
 
-    private:
-        Tensor *input_x_;
-        Tensor *input_shape_;
-        Tensor *out_;
-        int axis_;
-        vector<int> slice_points_;
-        bool inplace_;
-    };
+ private:
+  Tensor *input_x_;
+  Tensor *input_shape_;
+  Tensor *out_;
+  int axis_;
+  vector<int> slice_points_;
+  bool inplace_;
+};
 #endif
 
 #ifdef RESIZE_OP
 class ResizeParam : public OpParam {
-public:
-    ResizeParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-                 const AttributeMap &attrs, const Scope &scope) {
-        input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-        input_shape_ = InputShapeFrom<LoDTensor>(inputs, scope);
-        out_ = OutFrom<LoDTensor>(outputs, scope);
-        is_pyramid_test_ = GetAttr<bool>("is_pyramid_test", attrs);
-        height_ = GetAttr<int>("height", attrs);
-        width_ = GetAttr<int>("width", attrs);
-        out_height_scale_ = GetAttr<float>("out_height_scale", attrs);
-        out_width_scale_ = GetAttr<float>("out_width_scale", attrs);
-    }
+ public:
+  ResizeParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+              const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    input_shape_ = InputShapeFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
+    is_pyramid_test_ = GetAttr<bool>("is_pyramid_test", attrs);
+    height_ = GetAttr<int>("height", attrs);
+    width_ = GetAttr<int>("width", attrs);
+    out_height_scale_ = GetAttr<float>("out_height_scale", attrs);
+    out_width_scale_ = GetAttr<float>("out_width_scale", attrs);
+  }
 
-    const Tensor *InputX() const { return input_x_; }
+  const Tensor *InputX() const { return input_x_; }
 
-    const Tensor *InputShape() const { return input_shape_; }
+  const Tensor *InputShape() const { return input_shape_; }
 
-    Tensor *Out() const { return out_; }
+  Tensor *Out() const { return out_; }
 
-    const bool &IsPyramidTest() const { return is_pyramid_test_; }
+  const bool &IsPyramidTest() const { return is_pyramid_test_; }
 
-    const int &Height() const { return height_; }
+  const int &Height() const { return height_; }
 
-    const int &Width() const { return width_; }
+  const int &Width() const { return width_; }
 
-    const float &OutHeightScale() const { return out_height_scale_; }
+  const float &OutHeightScale() const { return out_height_scale_; }
 
-    const float &OutWidthScale() const { return out_width_scale_; }
+  const float &OutWidthScale() const { return out_width_scale_; }
 
-private:
-    Tensor *input_x_;
-    Tensor *input_shape_;
-    Tensor *out_;
-    bool is_pyramid_test_;
-    int height_;
-	int width_;
-	float out_height_scale_;
-	float out_width_scale_;
+ private:
+  Tensor *input_x_;
+  Tensor *input_shape_;
+  Tensor *out_;
+  bool is_pyramid_test_;
+  int height_;
+  int width_;
+  float out_height_scale_;
+  float out_width_scale_;
 };
 #endif
-
 
 #ifdef RELU_OP
 /*
@@ -871,22 +870,22 @@ class ReluParam : public OpParam {
 
 #ifdef PRELU_OP
 class PReluParam : public OpParam {
-public:
-    PReluParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-               const AttributeMap &attrs, const Scope &scope) {
-        input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-        out_ = OutFrom<LoDTensor>(outputs, scope);
-        slopes_ = GetAttr<vector<float>>("slopes", attrs);
-    }
+ public:
+  PReluParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+             const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
+    slopes_ = GetAttr<vector<float>>("slopes", attrs);
+  }
 
-    const Tensor *InputX() const { return input_x_; }
-    Tensor *Out() const { return out_; }
-    const vector<float> &Slopes() const { return slopes_; }
+  const Tensor *InputX() const { return input_x_; }
+  Tensor *Out() const { return out_; }
+  const vector<float> &Slopes() const { return slopes_; }
 
-private:
-    Tensor *input_x_;
-    Tensor *out_;
-    vector<float> slopes_;
+ private:
+  Tensor *input_x_;
+  Tensor *out_;
+  vector<float> slopes_;
 };
 #endif
 

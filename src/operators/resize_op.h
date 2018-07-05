@@ -23,30 +23,30 @@ limitations under the License. */
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        using paddle_mobile::framework::Tensor;
+using paddle_mobile::framework::Tensor;
 
-        template <typename DeviceType, typename T>
-        class ResizeOp
-            : public framework::OperatorWithKernel<
-            DeviceType, ResizeParam, operators::ResizeKernel<DeviceType, T>> {
-        public:
-            ResizeOp(const std::string &type, const VariableNameMap &inputs,
-                      const VariableNameMap &outputs, const framework::AttributeMap attrs,
-                      std::shared_ptr<framework::Scope> scope)
-                        : framework::OperatorWithKernel<DeviceType, ResizeParam,
-                                      operators::ResizeKernel<DeviceType, T>>
-                                      (type, inputs, outputs, attrs, scope){}
+template <typename DeviceType, typename T>
+class ResizeOp
+    : public framework::OperatorWithKernel<
+          DeviceType, ResizeParam, operators::ResizeKernel<DeviceType, T>> {
+ public:
+  ResizeOp(const std::string &type, const VariableNameMap &inputs,
+           const VariableNameMap &outputs, const framework::AttributeMap attrs,
+           std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<DeviceType, ResizeParam,
+                                      operators::ResizeKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
 
-            using framework::OperatorWithKernel<
-                DeviceType, ResizeParam,
-                operators::ResizeKernel<DeviceType, T>>::OperatorWithKernel;
-            void InferShape() const override;
+  using framework::OperatorWithKernel<
+      DeviceType, ResizeParam,
+      operators::ResizeKernel<DeviceType, T>>::OperatorWithKernel;
+  void InferShape() const override;
 
-        protected:
-        };
-    }  // namespace operators
+ protected:
+};
+}  // namespace operators
 }  // namespace paddle_mobile
 
 #endif

@@ -15,4 +15,4 @@ limitations under the License. */
 #include "../test_include.h"
 #include "operators/slice_op.h"
 
-int main() { }
+int main() {}

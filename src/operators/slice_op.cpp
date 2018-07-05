@@ -17,15 +17,14 @@ limitations under the License. */
 #include "operators/slice_op.h"
 #include <vector>
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        template <typename Dtype, typename T>
-        void SliceOp<Dtype, T>::InferShape() const {
-            /// todo: add InputShape() detection.
-
-        }
-        template class SliceOp<CPU, float>;
-    }  // namespace operators
+template <typename Dtype, typename T>
+void SliceOp<Dtype, T>::InferShape() const {
+  /// todo: add InputShape() detection.
+}
+template class SliceOp<CPU, float>;
+}  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;

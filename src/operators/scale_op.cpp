@@ -17,15 +17,15 @@ limitations under the License. */
 #include "operators/scale_op.h"
 #include <vector>
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        template <typename Dtype, typename T>
-        void ScaleOp<Dtype, T>::InferShape() const {
-            auto input_dims = this->param_.InputX()->dims();
-            this->param_.Out()->Resize(input_dims);
-        }
-        template class ScaleOp<CPU, float>;
-    }  // namespace operators
+template <typename Dtype, typename T>
+void ScaleOp<Dtype, T>::InferShape() const {
+  auto input_dims = this->param_.InputX()->dims();
+  this->param_.Out()->Resize(input_dims);
+}
+template class ScaleOp<CPU, float>;
+}  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;

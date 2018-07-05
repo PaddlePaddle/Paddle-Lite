@@ -16,32 +16,32 @@ limitations under the License. */
 #include "operators/resize_op.h"
 
 int main() {
-    paddle_mobile::Loader<paddle_mobile::CPU> loader;
-    auto program = loader.Load(std::string(g_mobilenet_ssd));
-    if (program.originProgram == nullptr) {
-        DLOG << "program read file";
-    }
-    Executor4Test<paddle_mobile::CPU,
-            paddle_mobile::operators::ResizeOp<paddle_mobile::CPU, float>>
-            executor(program, "resize");
-    paddle_mobile::framework::Tensor input;
-    SetupTensor<float>(&input, {2, 3, 3, 2}, static_cast<float>(0),
-                       static_cast<float>(1));
-    auto input_ptr = input.data<float>();
-    auto out_ddim = paddle_mobile::framework::make_ddim({2, 9, 2});
-    auto output =
-            executor.Predict(input, "transpose_0.tmp_0", "reshape_0.tmp_0", out_ddim);
-    auto *output_ptr = output->data<float>();
+  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  auto program = loader.Load(std::string(g_mobilenet_ssd));
+  if (program.originProgram == nullptr) {
+    DLOG << "program read file";
+  }
+  Executor4Test<paddle_mobile::CPU,
+                paddle_mobile::operators::ResizeOp<paddle_mobile::CPU, float>>
+      executor(program, "resize");
+  paddle_mobile::framework::Tensor input;
+  SetupTensor<float>(&input, {2, 3, 3, 2}, static_cast<float>(0),
+                     static_cast<float>(1));
+  auto input_ptr = input.data<float>();
+  auto out_ddim = paddle_mobile::framework::make_ddim({2, 9, 2});
+  auto output =
+      executor.Predict(input, "transpose_0.tmp_0", "reshape_0.tmp_0", out_ddim);
+  auto *output_ptr = output->data<float>();
 
-    DLOG << "input : ";
-    for (int j = 0; j < input.numel(); ++j) {
-        DLOG << " index " << j << " : " << input_ptr[j];
-    }
+  DLOG << "input : ";
+  for (int j = 0; j < input.numel(); ++j) {
+    DLOG << " index " << j << " : " << input_ptr[j];
+  }
 
-    DLOG << "output : ";
-    for (int j = 0; j < output->numel(); ++j) {
-        DLOG << " index " << j << " : " << output_ptr[j];
-    }
+  DLOG << "output : ";
+  for (int j = 0; j < output->numel(); ++j) {
+    DLOG << " index " << j << " : " << output_ptr[j];
+  }
 
-    return 0;
+  return 0;
 }
