@@ -69,7 +69,7 @@ class FusionConvAddOp : public framework::OperatorWithKernel<
 #ifdef PADDLE_MOBILE_CPU
 
 #ifndef CONV_ADD_REGISTER
-static framework::FusionOpRegistrar convadd_registrar(
+extern framework::FusionOpRegistrar convadd_registrar(
     new FusionConvAddMatcher());
 #define CONV_ADD_REGISTER
 #endif
@@ -91,5 +91,14 @@ static framework::FusionOpRegistrar convadd_registrar(
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(fusion_conv_add);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(fusion_conv_add);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
 
 #endif
