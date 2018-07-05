@@ -18,12 +18,12 @@ limitations under the License. */
 #pragma once;
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        template <typename DeviceType, typename T>
-        class PReluKernel : public framework::OpKernelBase<DeviceType, PReluParam> {
-        public:
-            void Compute(const PReluParam& param) const;
-        };
-    }  // namespace operators
+template <typename DeviceType, typename T>
+class PReluKernel : public framework::OpKernelBase<DeviceType, PReluParam> {
+ public:
+  void Compute(const PReluParam& param) const;
+};
+}  // namespace operators
 }  // namespace paddle_mobile

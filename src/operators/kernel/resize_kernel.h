@@ -22,60 +22,58 @@ limitations under the License. */
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        inline framework::DDim CalOutputShape(const ResizeParam& param) {
-            const auto *input_x = param.InputX();
-            const auto &input_x_dims = input_x->dims();
-            auto *out = param.Out();
-            framework::DDim out_dims = out->dims();
-            const auto *input_shape = param.InputShape();
+inline framework::DDim CalOutputShape(const ResizeParam &param) {
+  const auto *input_x = param.InputX();
+  const auto &input_x_dims = input_x->dims();
+  auto *out = param.Out();
+  framework::DDim out_dims = out->dims();
+  const auto *input_shape = param.InputShape();
 
-            if (input_shape) {
-                auto *shape_data = input_shape->data<int>();
-                framework::Tensor cpu_shape_tensor;
-                auto shape = std::vector<int>(shape_data, shape_data + input_shape->numel());
-                const int in_batch_size = input_x->dims()[0];
-                const int in_chan_size  = input_x->dims()[1];
-                const int in_height     = input_x->dims()[2];
-                const int in_width      = input_x->dims()[3];
+  if (input_shape) {
+    auto *shape_data = input_shape->data<int>();
+    framework::Tensor cpu_shape_tensor;
+    auto shape =
+        std::vector<int>(shape_data, shape_data + input_shape->numel());
+    const int in_batch_size = input_x->dims()[0];
+    const int in_chan_size = input_x->dims()[1];
+    const int in_height = input_x->dims()[2];
+    const int in_width = input_x->dims()[3];
 
-                int out_height = 0;
-                int out_width  = 0;
-                bool is_pyramid_test = param.IsPyramidTest();
-                if(is_pyramid_test == false) {
-                    out_height = param.Height();
-                    out_width  = param.Width();
-                    PADDLE_MOBILE_ENFORCE(out_height > 0,
-                        "output height is required");
-                    PADDLE_MOBILE_ENFORCE(out_width > 0,
-                        "output width is required");
+    int out_height = 0;
+    int out_width = 0;
+    bool is_pyramid_test = param.IsPyramidTest();
+    if (is_pyramid_test == false) {
+      out_height = param.Height();
+      out_width = param.Width();
+      PADDLE_MOBILE_ENFORCE(out_height > 0, "output height is required");
+      PADDLE_MOBILE_ENFORCE(out_width > 0, "output width is required");
 
-                } else {
-                    float out_height_scale = param.OutHeightScale();
-                    float out_width_scale  = param.OutWidthScale();
-                    PADDLE_MOBILE_ENFORCE(out_height_scale > 0,
-                        "output height scale is required");
-                    PADDLE_MOBILE_ENFORCE(out_width_scale > 0,
-                        "output width scale is required");
+    } else {
+      float out_height_scale = param.OutHeightScale();
+      float out_width_scale = param.OutWidthScale();
+      PADDLE_MOBILE_ENFORCE(out_height_scale > 0,
+                            "output height scale is required");
+      PADDLE_MOBILE_ENFORCE(out_width_scale > 0,
+                            "output width scale is required");
 
-                    out_height = int (out_height_scale * in_height);
-                    out_width  = int (out_width_scale  * in_width);
-                }
+      out_height = int(out_height_scale * in_height);
+      out_width = int(out_width_scale * in_width);
+    }
 
-                out_dims = framework::make_ddim(
-                        { in_batch_size, in_chan_size, in_height, in_width }
-                );
-            }
-            return out_dims;
-        }
+    out_dims = framework::make_ddim(
+        {in_batch_size, in_chan_size, in_height, in_width});
+  }
+  return out_dims;
+}
 
-        template <typename DeviceType, typename T>
-        class ResizeKernel : public framework::OpKernelBase<DeviceType, ResizeParam> {
-        public:
-            void Compute(const ResizeParam& param) const;
-        };
-    }  // namespace operators
+template <typename DeviceType, typename T>
+class ResizeKernel : public framework::OpKernelBase<DeviceType, ResizeParam> {
+ public:
+  void Compute(const ResizeParam &param) const;
+};
+}  // namespace operators
 }  // namespace paddle_mobile
 
 #endif

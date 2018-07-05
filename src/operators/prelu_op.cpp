@@ -16,15 +16,15 @@ limitations under the License. */
 
 #include "operators/prelu_op.h"
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        template <typename Dtype, typename T>
-        void PReluOp<Dtype, T>::InferShape() const {
-            auto input_dims = this->param_.InputX()->dims();
-            this->param_.Out()->Resize(input_dims);
-        }
-        template class PReluOp<CPU, float>;
-    }  // namespace operators
+template <typename Dtype, typename T>
+void PReluOp<Dtype, T>::InferShape() const {
+  auto input_dims = this->param_.InputX()->dims();
+  this->param_.Out()->Resize(input_dims);
+}
+template class PReluOp<CPU, float>;
+}  // namespace operators
 }  // namespace paddle_mobile
 
 /*

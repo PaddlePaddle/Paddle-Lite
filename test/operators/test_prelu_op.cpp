@@ -17,42 +17,42 @@ limitations under the License. */
 #include "operators/prelu_op.h"
 
 int main() {
-    paddle_mobile::Loader<paddle_mobile::CPU> loader;
-    auto program = loader.Load(g_resnet);
-    PADDLE_MOBILE_ENFORCE(program.originProgram != nullptr,
-                          "program file read fail");
+  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  auto program = loader.Load(g_resnet);
+  PADDLE_MOBILE_ENFORCE(program.originProgram != nullptr,
+                        "program file read fail");
 
-    Executor4Test<paddle_mobile::CPU,
-            paddle_mobile::operators::PReluOp<paddle_mobile::CPU, float>>
-            executor(program, "prelu");
+  Executor4Test<paddle_mobile::CPU,
+                paddle_mobile::operators::PReluOp<paddle_mobile::CPU, float>>
+      executor(program, "prelu");
 
-    // 1. input_tensors;
-    vector<Tensor> input_tensors;
+  // 1. input_tensors;
+  vector<Tensor> input_tensors;
 
-    Tensor input1;
-    auto input1_data = CreateInput<float>(&input1, {1, 2, 3, 4}, -1, 1);
-    input_tensors.push_back(input1);
+  Tensor input1;
+  auto input1_data = CreateInput<float>(&input1, {1, 2, 3, 4}, -1, 1);
+  input_tensors.push_back(input1);
 
-    // 2. input_names
-    vector<string> input_names({
-                                       "batch_norm_0.tmp_2",
-                               });
+  // 2. input_names
+  vector<string> input_names({
+      "batch_norm_0.tmp_2",
+  });
 
-    // 3. output_names
-    vector<string> output_names({"batch_norm_0.tmp_3"});
+  // 3. output_names
+  vector<string> output_names({"batch_norm_0.tmp_3"});
 
-    // 4. out_dims;
-    vector<DDim> out_ddims;
-    auto out_ddim = paddle_mobile::framework::make_ddim({1, 2, 3, 4});
-    out_ddims.push_back(out_ddim);
+  // 4. out_dims;
+  vector<DDim> out_ddims;
+  auto out_ddim = paddle_mobile::framework::make_ddim({1, 2, 3, 4});
+  out_ddims.push_back(out_ddim);
 
-    auto output = executor.Predict<LoDTensor>(input_tensors, input_names,
-                                              output_names, out_ddims);
+  auto output = executor.Predict<LoDTensor>(input_tensors, input_names,
+                                            output_names, out_ddims);
 
-    auto output0_data = output[0]->data<float>();
+  auto output0_data = output[0]->data<float>();
 
-    for (int j = 0; j < output[0]->numel(); ++j) {
-        DLOG << " value of output: " << output0_data[j];
-    }
-    return 0;
+  for (int j = 0; j < output[0]->numel(); ++j) {
+    DLOG << " value of output: " << output0_data[j];
+  }
+  return 0;
 }
