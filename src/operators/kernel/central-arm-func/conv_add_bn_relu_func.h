@@ -108,7 +108,7 @@ void ConvAddBNReluBasic(const FusionConvAddBNReluParam &param) {
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
       math::matmul<float>(filter_slice, false, col_matrix, false,
                           static_cast<float>(1), &out_slice,
-                          static_cast<float>(1));
+                          static_cast<float>(0));
     }
   }
   /// todo : use neon in special case instead of 2for(300ms)
@@ -131,15 +131,16 @@ void ConvAddBNReluCompute(const FusionConvAddBNReluParam &param) {
       param.Input()->dims()[1] == param.Output()->dims()[1] &&
       param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
       param.Filter()->dims()[2] == 3 && param.Strides()[0] == 1) {
-    math::DepthwiseConvAddBNRelu3x3s1p1(
-        param.Input(), param.Filter(), param.Output(), &Bias, 1,
-        param.NewScale(), param.NewBias(), 1, 1);
-  } else if (0 && param.Groups() == param.Input()->dims()[1] &&
+    math::DepthwiseConvAddBNRelu3x3s1p1(param.Input(), param.Filter(),
+                                        param.Output(), param.NewScale(),
+                                        param.NewBias(), 1);
+  } else if (param.Groups() == param.Input()->dims()[1] &&
              param.Input()->dims()[1] == param.Output()->dims()[1] &&
              param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
              param.Filter()->dims()[2] == 3 && param.Strides()[0] == 2) {
-    math::DepthwiseConv3x3(param.Input(), param.Strides(), param.Paddings(),
-                           param.Filter(), &Bias, param.Output(), false);
+    math::DepthwiseConvAddBNRelu3x3s2p1(param.Input(), param.Filter(),
+                                        param.Output(), param.NewScale(),
+                                        param.NewBias(), 1);
   } else {
     ConvAddBNReluBasic(param);
   }
