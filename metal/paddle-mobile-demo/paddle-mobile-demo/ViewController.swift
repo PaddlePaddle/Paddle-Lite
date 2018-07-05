@@ -13,19 +13,36 @@
  limitations under the License. */
 
 import UIKit
+import MetalKit
 import paddle_mobile
 
 class ViewController: UIViewController {
-
+    let device: MTLDevice! = MTLCreateSystemDefaultDevice()
+    var textureLoader: MTKTextureLoader!
+//    let queue: MTLCommandQueue
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        let queue = device.makeCommandQueue()
+        
+        textureLoader = MTKTextureLoader.init(device: device)
+        guard let appleImage = UIImage.init(named: "apple.jpg"), let cgImage = appleImage.cgImage else {
+            fatalError(" image nil !")
+        }
+        
+        let texture = try? textureLoader.newTexture(cgImage: cgImage, options: [:]) ?! " texture loader error"
+        
+        guard let inTexture = texture else {
+            fatalError(" texture is nil !")
+        }
+    
         let loader = Loader<Float>.init()
         do {
             let modelPath = Bundle.main.path(forResource: "model", ofType: nil) ?! "model null"
             let paraPath = Bundle.main.path(forResource: "params", ofType: nil) ?! "para null"
-            let program = try loader.load(modelPath: modelPath, paraPath: paraPath)
+            let program = try loader.load(device: device, modelPath: modelPath, paraPath: paraPath)
             let executor = try Executor<Float>.init(inProgram: program)
-            let output = try executor.predict(input: Texture.init())
+            let output = try executor.predict(input: inTexture, expect: [1, 224, 224, 3])
             print(output)
         } catch let error {
             print(error)

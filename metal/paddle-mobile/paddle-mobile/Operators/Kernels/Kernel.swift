@@ -12,15 +12,20 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
+import Metal
 import Foundation
 
-public struct Program {
-    let paramPath: String
-    let programDesc: ProgramDesc
-    let scope: Scope
-    init(protoProgramDesc: PaddleMobile_Framework_Proto_ProgramDesc, inParamPath: String, inScope: Scope) {
-        programDesc = ProgramDesc.init(protoProgram: protoProgramDesc)
-        paramPath = inParamPath
-        scope = inScope
+protocol Computable {
+    associatedtype ParamType
+    func compute(commandBuffer: MTLCommandBuffer, param: ParamType) throws
+}
+
+class Kernel {
+    let pipline: MTLComputePipelineState
+    let functionName: String
+    init(device: MTLDevice, inFunctionName: String) {
+        pipline = device.pipeLine(funcName: inFunctionName)
+        functionName = inFunctionName
     }
 }
+
