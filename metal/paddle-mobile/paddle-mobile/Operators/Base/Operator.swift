@@ -12,29 +12,35 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
+import Metal
 import Foundation
 
 protocol Runable {
-    func run()
-    func runImpl()
+    func run(device: MTLDevice, buffer: MTLCommandBuffer) throws
+    func runImpl(device: MTLDevice,buffer: MTLCommandBuffer) throws
 }
 
 extension Runable where Self: OperatorProtocol{
-    func run() {
-        runImpl()
+    func run(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+        do {
+            try runImpl(device: device, buffer: buffer)
+        } catch let error {
+            throw error
+        }
+        
         print(type + ": " + para.outputDesc())
     }
 }
 
 protocol Creator where Self: OperatorProtocol{
     associatedtype OpType: OperatorProtocol & Runable & InferShaperable
-    static func creat(opDesc: OpDesc, inScope: Scope) throws -> OpType
+    static func creat(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws -> OpType
 }
 
 extension Creator where Self: OperatorProtocol {
-    static func creat(opDesc: OpDesc, inScope: Scope) throws -> OpType {
+    static func creat(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws -> OpType {
         do {
-            return try OpType.provide(opDesc: opDesc, inScope: inScope)
+            return try OpType.provide(device:device, opDesc: opDesc, inScope: inScope)
         } catch let error {
             throw error
         }
@@ -47,19 +53,21 @@ protocol InferShaperable {
 
 protocol OperatorProtocol {
     associatedtype ParamType: OpParam
+    associatedtype KerType:  Computable
     var type: String { get }
     var inputs: [String : [String]] { get }
     var paraInputs: [String : [String]] { get }
     var outpus: [String : [String]] { get }
     var attrs: [String : Attr] { get }
     var para: ParamType { get }
-    init(opDesc: OpDesc, inScope: Scope) throws
+    var kernel: KerType { get }
+    init(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws
 }
 
 extension OperatorProtocol {
-    static func provide(opDesc: OpDesc, inScope: Scope) throws -> Self {
+    static func provide(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws -> Self {
         do {
-            return try Self.init(opDesc: opDesc, inScope: inScope)
+            return try Self.init(device: device, opDesc: opDesc, inScope: inScope)
         } catch let error {
             throw error
         }
@@ -67,20 +75,23 @@ extension OperatorProtocol {
 }
 
 
-class Operator <ParameterType: OpParam>: OperatorProtocol{
-   typealias ParamType = ParameterType
+class Operator <ParameterType: OpParam, KernelType:  Computable>: OperatorProtocol{
+    typealias ParamType = ParameterType
+    typealias KerType = KernelType
     let type: String
     let inputs: [String : [String]]
     let paraInputs: [String : [String]]
     let outpus: [String : [String]]
     let attrs: [String : Attr]
     let para: ParamType
-    required init(opDesc: OpDesc, inScope: Scope) throws {
+    var kernel: KerType
+    required init(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws {
         type = opDesc.type
         inputs = opDesc.inputs
         outpus = opDesc.outputs
         attrs =  opDesc.attrs
         paraInputs = opDesc.paraInputs
+        kernel = KerType.init(device: device)
         do {
             para = try ParamType.init(opDesc:opDesc, inScope: inScope)
         } catch let error {

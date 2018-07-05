@@ -31,8 +31,8 @@ struct BatchNormParam<P: PrecisionType>: OpParam {
             throw error
         }
     }
-    let input: Texture
-    var output: Texture
+    let input: Texture<P>
+    var output: Texture<P>
     let inputBias: Tensor<ParamPrecisionType>
     let inputMean: Tensor<ParamPrecisionType>
     let inputScale: Tensor<ParamPrecisionType>
@@ -42,12 +42,12 @@ struct BatchNormParam<P: PrecisionType>: OpParam {
     let is_test: Bool
 }
 
-class BatchNormOp<P: PrecisionType>: Operator<BatchNormParam<P>>, Runable, Creator, InferShaperable{
+class BatchNormOp<P: PrecisionType>: Operator<BatchNormParam<P>, BatchNormKernel<P>>, Runable, Creator, InferShaperable{
     func inferShape() {
         para.output.dim = para.input.dim
     }
     typealias OpType = BatchNormOp<P>
-    func runImpl() {
+    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
         print("this is BatchNormOp")
     }
 }
