@@ -18,6 +18,9 @@ Paddle-Moible是PaddlePaddle组织下的项目，是一个致力于嵌入式平�
 
 ![ezgif-1-050a733dfb](http://otkwwi4x8.bkt.clouddn.com/2018-07-05-ezgif-1-050a733dfb.gif)
 
+## Demo目录
+
+[点我](https://github.com/PaddlePaddle/paddle-mobile/tree/develop/demo)
 
 ## Features
 
