@@ -15,29 +15,96 @@
 import Metal
 import Foundation
 
+class InputTexture {
+    let mtlTexture: MTLTexture
+    let expectDim: Dim
+    init(inMTLTexture: MTLTexture, inExpectDim: Dim) {
+        mtlTexture = inMTLTexture
+        expectDim = inExpectDim
+    }
+}
+
+extension InputTexture {
+    var description: String {
+        get{
+            return mtlTexture.description
+        }
+    }
+    
+    var debugDescription: String {
+        get {
+            return mtlTexture.debugDescription ?? " MetalTexture "
+        }
+    }
+}
+
 public class Texture: Tensorial {
     var dim: Dim
+    let textureDesc: MTLTextureDescriptor
+    var metalTexture: MTLTexture
     
-    required public init(inDim: Dim, inLayout: DataLayout = .NHWC) {
+    init(device: MTLDevice, inDim: Dim, inLayout: DataLayout = .NHWC) {
         dim = inDim
         layout = inLayout
+        let tmpTextureDes = MTLTextureDescriptor.init()
+        if inDim.cout() == 1 {
+            tmpTextureDes.width = inDim[0]
+            tmpTextureDes.textureType = .type1D
+        } else if inDim.cout() == 4 {
+            tmpTextureDes.height = inDim[1]
+            tmpTextureDes.width = inDim[2]
+//            print("n : \(inDim[0])")
+//            print(inDim[3] * inDim[0])
+            tmpTextureDes.depth = 1
+            tmpTextureDes.arrayLength = (inDim[3] * inDim[0] + 3)/4
+            tmpTextureDes.textureType = .type2DArray
+        } else {
+            fatalError(" didn't support yet")
+        }
+        tmpTextureDes.pixelFormat = .r32Float
+        tmpTextureDes.storageMode = .shared
+        textureDesc = tmpTextureDes
+        metalTexture = device.makeTexture(descriptor: tmpTextureDes) ?! " texture nil "
     }
+    
+//    required public init(inDim: Dim, inLayout: DataLayout = .NHWC, inTexture: MTLTexture) {
+//        dim = inDim
+//        layout = inLayout
+//        metalTexture = inTexture
+//        let tmpTextureDes = MTLTextureDescriptor.init()
+//        
+//        if inDim.cout() == 1 {
+//            tmpTextureDes.width = inDim[0]
+//            tmpTextureDes.textureType = .type1D
+//        } else if inDim.cout() == 2 {
+//            tmpTextureDes.height = inDim[0]
+//            tmpTextureDes.width = inDim[1]
+//            tmpTextureDes.textureType = .type2D
+//        } else if inDim.cout() == 3 {
+//            fatalError(" not support texture dim 3")
+//        } else if inDim.cout() == 4 {
+//            tmpTextureDes.height = inDim[1]
+//            tmpTextureDes.width = inDim[2]
+//            tmpTextureDes.depth = inDim[3] * inDim[1]
+//            tmpTextureDes.textureType = .type2DArray
+//        }
+//        
+//        tmpTextureDes.pixelFormat = .r32Float
+//        tmpTextureDes.storageMode = .shared
+//        textureDesc = tmpTextureDes
+//        let device = MTLCreateSystemDefaultDevice()
+//        metalTexture = device!.makeTexture(descriptor: tmpTextureDes)!
+//    }
+    
+//    init() {
+//        dim = Dim.init(inDim: [])
+//        layout = .NCHW
+//        let device = MTLCreateSystemDefaultDevice()
+//        textureDesc = MTLTextureDescriptor.init()
+//        metalTexture = device!.makeTexture(descriptor: textureDesc)!
+//    }
     
     private(set) var layout: DataLayout
-    
-    //    let texture: MTLTexture
-    
-    public init(inTexture: MTLTexture, inDim: Dim) {
-        //        texture = inTexture
-        dim = inDim
-        layout = .NHWC
-    }
-    
-    public init(inLayout: DataLayout = .NHWC) {
-        dim = Dim.init(inDim: [])
-        layout = inLayout
-    }
-    
 }
 
 extension Texture {

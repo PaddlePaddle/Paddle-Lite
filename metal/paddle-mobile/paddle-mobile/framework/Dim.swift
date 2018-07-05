@@ -15,7 +15,7 @@
 import Foundation
 
 public struct Dim {
-    init(inDim: [Int]) {
+    public init(inDim: [Int]) {
         dims = inDim
     }
     

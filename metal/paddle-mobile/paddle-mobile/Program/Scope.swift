@@ -15,6 +15,29 @@
 import Foundation
 
 class Scope {
+    let feedKey: String
+    let fetchKey: String
+    func setInput(input: Variant) {
+        vars[feedKey] = input
+    }
+    
+    func setOutput(output: Variant) {
+        vars[fetchKey] = output
+    }
+    
+    func input() -> Variant? {
+        return vars[feedKey];
+    }
+    
+    func output() -> Variant? {
+        return vars[fetchKey];
+    }
+    
+    init(inFeedKey: String, inFetchKey: String) {
+        feedKey = inFeedKey
+        fetchKey = inFetchKey
+    }
+    
     var vars: [String : Variant] = [:]
     subscript(key: String) -> Variant?{
         get {

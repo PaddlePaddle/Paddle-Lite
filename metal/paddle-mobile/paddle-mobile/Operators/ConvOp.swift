@@ -16,11 +16,11 @@ import Foundation
 
 struct ConvParam<P: PrecisionType>: OpParam {
     typealias ParamPrecisionType = P
-    init(opDesc: OpDesc, scope: Scope) throws {
+    init(opDesc: OpDesc, inScope: Scope) throws {
         do {
-            filter = try ConvParam.inputFilter(paraInputs: opDesc.paraInputs, from: scope)
-            input = try ConvParam.input(inputs: opDesc.inputs, from: scope)
-            output = try ConvParam.output(outputs: opDesc.outputs, from: scope)
+            filter = try ConvParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
+            input = try ConvParam.input(inputs: opDesc.inputs, from: inScope)
+            output = try ConvParam.output(outputs: opDesc.outputs, from: inScope)
             stride = try ConvParam.getAttr(key: "strides", attrs: opDesc.attrs)
             paddings = try ConvParam.getAttr(key: "paddings", attrs: opDesc.attrs)
             dilations = try ConvParam.getAttr(key: "dilations", attrs: opDesc.attrs)
@@ -31,7 +31,7 @@ struct ConvParam<P: PrecisionType>: OpParam {
     }
     
     let input: Texture
-    let output: Texture
+    var output: Texture
     let filter: Tensor<ParamPrecisionType>
     let stride: [Int32]
     let paddings: [Int32]

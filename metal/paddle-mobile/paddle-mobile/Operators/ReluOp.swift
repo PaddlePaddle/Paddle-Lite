@@ -16,16 +16,16 @@ import Foundation
 
 struct ReluParam<P: PrecisionType>: OpParam {
     typealias ParamPrecisionType = P
-    init(opDesc: OpDesc, scope: Scope) throws {
+    init(opDesc: OpDesc, inScope: Scope) throws {
         do {
-            input = try ReluParam.inputX(inputs: opDesc.inputs, from: scope)
-            output = try ReluParam.outputOut(outputs: opDesc.outputs, from: scope)
+            input = try ReluParam.inputX(inputs: opDesc.inputs, from: inScope)
+            output = try ReluParam.outputOut(outputs: opDesc.outputs, from: inScope)
         } catch let error {
             throw error
         }
     }
     let input: Texture
-    let output: Texture
+    var output: Texture
 }
 
 class ReluOp<P: PrecisionType>: Operator<ReluParam<P>>, Runable, Creator, InferShaperable{

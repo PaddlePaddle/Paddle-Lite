@@ -81,7 +81,7 @@ public class Loader<P: PrecisionType> {
         }
     }
     public init(){}
-    public func load(modelPath: String, paraPath: String) throws -> Program{
+    public func load(device: MTLDevice, modelPath: String, paraPath: String) throws -> Program{
         guard let modelData = try? Data.init(contentsOf: URL.init(fileURLWithPath: modelPath)) else {
             throw PaddleMobileError.loaderError(message: "load " + modelPath + " failed !")
         }
@@ -89,7 +89,6 @@ public class Loader<P: PrecisionType> {
         do {
             let protoProgram = try PaddleMobile_Framework_Proto_ProgramDesc.init(
                 serializedData: modelData)
-            let scope = Scope.init()
             let programDesc = ProgramDesc.init(protoProgram: protoProgram)
             
             guard let paraLoader = try? ParaLoader.init(paramPath: paraPath) else {
@@ -115,6 +114,8 @@ public class Loader<P: PrecisionType> {
             guard let feedKey = firstOp.inputs[inputKey]?.first, let fetchKey = lastOp.outputs[outKey]?.first else {
                 throw PaddleMobileError.loaderError(message: "feed key or fetch key not found")
             }
+            
+            let scope = Scope.init(inFeedKey: feedKey, inFetchKey: fetchKey)
             
             // to load memory
             for block in programDesc.blocks {
@@ -148,19 +149,18 @@ public class Loader<P: PrecisionType> {
                             scope[varDesc.name] = tensor
                         } else {
                             let dim = Dim.init(inDim: tensorDesc.NHWCDim)
-                            scope[varDesc.name] = Texture.init(inDim: dim, inLayout: .NHWC)
+                            scope[varDesc.name] = Texture.init(device: device, inDim: dim)
                         }
                     } else {
                         if varDesc.name == fetchKey {
                             scope[varDesc.name] = ResultHolder<P>.init(inDim: [], inResult: [])
                         } else if varDesc.name == feedKey {
-                            scope[varDesc.name] = Texture.init()
                         }
                     }
                 }
             }
             
-            let program = Program.init(protoProgramDesc: protoProgram, inParamPath: paraPath, inScope: scope, inFeedKey: feedKey, inFetchKey: fetchKey)
+            let program = Program.init(protoProgramDesc: protoProgram, inParamPath: paraPath, inScope: scope)
             
             return program
         } catch _ {
