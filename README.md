@@ -8,10 +8,19 @@
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)-->
 
 
-
 欢迎来到 Paddle-Mobile GitHub 项目。
 
 Paddle-Moible是PaddlePaddle组织下的项目，是一个致力于嵌入式平台的深度学习的框架。Paddle-Moible设计思想和PaddlePaddle的最新版fluid版本保持了高度一致，同时针对嵌入式做了大量优化。设计之初就对嵌入式的性能、体积、能耗、硬件平台覆盖等方面做了考虑。
+
+## 简单搜索线上效果
+
+如下gif是简单搜索app的线上主体检测应用效果
+
+![ezgif-1-050a733dfb](http://otkwwi4x8.bkt.clouddn.com/2018-07-05-ezgif-1-050a733dfb.gif)
+
+## Demo目录
+
+[点我](https://github.com/PaddlePaddle/paddle-mobile/tree/develop/demo)
 
 ## Features
 
