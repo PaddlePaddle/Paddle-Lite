@@ -68,11 +68,24 @@ public class Loader<P: PrecisionType> {
             /*
              这里没有根据 Data Type 去判断, 而是从外部泛型直接指定了精度
              */
-
-            let bytesRead = fread(tensor.data.pointer, 1, tensor.data.size, file)
-            guard bytesRead == tensor.data.size else {
-                throw PaddleMobileError.loaderError(message: "param read size error")
+            
+            //现在模型传入模型为  Float 类型, 这块应该根据模型来
+            let tmpCapacity = MemoryLayout<Float>.size * tensor.numel()
+            let tmpPointer = UnsafeMutablePointer<Float>.allocate(capacity: tmpCapacity);
+            
+//            let bytesRead = fread(tensor.data.pointer, 1, tensor.data.size, file)
+//            guard bytesRead == tensor.data.size else {
+//                throw PaddleMobileError.loaderError(message: "param read size error")
+//            }
+            
+            // TODO: use script to convert
+            let bytesRead = fread(tmpPointer, 1, tmpCapacity, file)
+            for i in 0..<tensor.numel() {
+                tensor.data[i] = P.init(inFloat: tmpPointer[i])
             }
+            tmpPointer.deinitialize(count: tmpCapacity)
+            tmpPointer.deallocate()
+            
             nowIndex += bytesRead
         }
         
@@ -125,9 +138,9 @@ public class Loader<P: PrecisionType> {
                             throw PaddleMobileError.loaderError(message: "get tensor desc failed")
                         }
                         
-                        guard (try? tensorDesc.dataType.dataTypeSize()) == MemoryLayout<P>.size else {
-                            throw PaddleMobileError.memoryError(message: "PrecisionType not support")
-                        }
+//                        guard (try? tensorDesc.dataType.dataTypeSize()) == MemoryLayout<P>.size else {
+//                            throw PaddleMobileError.memoryError(message: "PrecisionType not support")
+//                        }
                         
                         if (varDesc.persistable
                             && varDesc.type != .FeedMiniBatch
@@ -149,7 +162,7 @@ public class Loader<P: PrecisionType> {
                             scope[varDesc.name] = tensor
                         } else {
                             let dim = Dim.init(inDim: tensorDesc.NHWCDim)
-                            scope[varDesc.name] = Texture.init(device: device, inDim: dim)
+                            scope[varDesc.name] = Texture<P>.init(device: device, inDim: dim)
                         }
                     } else {
                         if varDesc.name == fetchKey {

@@ -1,10 +1,16 @@
-//
-//  ResizeKernel.swift
-//  paddle-mobile
-//
-//  Created by liuRuiLong on 2018/7/4.
-//  Copyright © 2018年 orange. All rights reserved.
-//
+/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+ 
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ 
+ http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License. */
 
 import Foundation
 
@@ -22,15 +28,14 @@ struct OutputDim {
     let strideY: UInt16
 }
 
-class ResizeKernel: Kernel, Computable{
+class ResizeKernel<P: PrecisionType>: Kernel, Computable{
     func compute(commandBuffer: MTLCommandBuffer, param: ResizeParam) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
             throw PaddleMobileError.predictError(message: " encode is nil")
         }
         
         encoder.setTexture(param.input, index: 0)
-        encoder.setTexture(param.output, index: 1)
-        
+        encoder.setTexture(param.output, index: 1)        
         let strideX = param.input.width/param.expectDim[2]
         let strideY = param.input.height/param.expectDim[1]
         var outputDim = OutputDim.init(width: UInt16(param.expectDim[1]), height: UInt16(param.expectDim[2]), strideX: UInt16(strideX), strideY: UInt16(strideY))
@@ -39,7 +44,7 @@ class ResizeKernel: Kernel, Computable{
         encoder.endEncoding()
     }
     
-    init(device: MTLDevice) {
+    required init(device: MTLDevice) {
         super.init(device: device, inFunctionName: "resize")
     }
 }

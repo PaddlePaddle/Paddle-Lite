@@ -1,10 +1,16 @@
-//
-//  Kernels.metal
-//  paddle-mobile
-//
-//  Created by liuRuiLong on 2018/7/4.
-//  Copyright © 2018年 orange. All rights reserved.
-//
+/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+ 
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ 
+ http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License. */
 
 #include <metal_stdlib>
 using namespace metal;
@@ -16,19 +22,70 @@ struct OutputDim {
     ushort strideY;
 };
 
-kernel void resize(
-                    texture2d<half, access::read> inTexture [[texture(0)]],
-                    texture2d<half, access::write> outTexture [[texture(1)]],
-                    constant OutputDim &params [[buffer(0)]],
-                    uint2 gid [[thread_position_in_grid]]) {
+kernel void resize(texture2d<half, access::read> inTexture [[texture(0)]],
+                   texture2d_array<half, access::write> outTexture [[texture(1)]],
+                   constant OutputDim &params [[buffer(0)]],
+                   uint3 gid [[thread_position_in_grid]]) {
     if (gid.x >= outTexture.get_width() ||
-        gid.y >= outTexture.get_height()) {
-        return;
-    }
+        gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size()) return;
     
     constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
     const uint2 pos = gid.xy * uint2(params.strideX, params.strideY);
     const half4 input = inTexture.read(pos);
-    outTexture.write(half4(input.x, input.y, input.z, 0.0h), gid);
+    outTexture.write(half4(input.x, input.y, input.z, input.w), gid.xy, gid.z);
 }
+
+
+kernel void relu(texture2d_array<half, access::sample> inTexture [[texture(0)]],
+                texture2d_array<half, access::write> outTexture [[texture(1)]],
+                uint3 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() ||
+        gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size()) return;
+    constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
+    const half4 input = inTexture.read(gid.xy, gid.z);
+    const float4 relu = fmax((float4)input, 0.0);
+    outTexture.write(half4(relu), gid.xy, gid.z);
+}
+
+
+kernel void elementwise_add(texture2d_array<half, access::read> inTexture [[texture(0)]],
+                            texture2d_array<half, access::write> outTexture [[texture(1)]],
+                            const device half4 *biasTerms [[buffer(0)]],
+                            uint3 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() ||
+        gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size()) return;
+    constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
+    const half4 input = inTexture.read(gid.xy, gid.z);
+    outTexture.write(input, gid.xy, gid.z);
+}
+
+
+kernel void conv(texture2d_array<half, access::read> inTexture [[texture(0)]],
+                 texture2d_array<half, access::write> outTexture [[texture(1)]],
+                 const device half4 *biasTerms [[buffer(0)]],
+                 uint3 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() ||
+        gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size()) return;
+    constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
+    const half4 input = inTexture.read(gid.xy, gid.z);
+    outTexture.write(input, gid.xy, gid.z);
+}
+
+kernel void batchnorm(texture2d_array<half, access::read> inTexture [[texture(0)]],
+                 texture2d_array<half, access::write> outTexture [[texture(1)]],
+                 uint3 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() ||
+        gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size()) return;
+    constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
+    const half4 input = inTexture.read(gid.xy, gid.z);
+    outTexture.write(input, gid.xy, gid.z);
+}
+
+
+
 

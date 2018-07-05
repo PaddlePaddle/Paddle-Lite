@@ -15,7 +15,7 @@
 import Foundation
 
 struct FeedParam<P: PrecisionType>: OpParam{
-    var output: Texture
+    var output: Texture<P>
     var input: InputTexture {
         return scope.input() as! InputTexture
     }
@@ -33,19 +33,26 @@ struct FeedParam<P: PrecisionType>: OpParam{
     typealias ParamPrecisionType = P
 }
 
-class FeedOp<P: PrecisionType>: Operator<FeedParam<P>>, Runable, Creator, InferShaperable {
+class FeedOp<P: PrecisionType>: Operator<FeedParam<P>, ResizeKernel<P>>, Runable, Creator, InferShaperable {
     typealias OpType = FeedOp<P>
     
     func inferShape() {
 //        print("feed  input: \(para.input.expectDim)")
         print("feed output: \(para.output.dim)")
-        
-//        para.ou/tput.dim = para.input.expectDim
+        //        para.output.dim =
+//        para.output.dim = para.input.expectDim
     }
     
-    func runImpl() {
-        print("feed op")
-//        let resizeKernel = ResizeKernel.init(device: <#T##MTLDevice#>)
+    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+        let resizeKernel = ResizeKernel<P>.init(device: device)
+        let resizeParam = ResizeParam.init(input: para.input.mtlTexture, output: para.output.metalTexture, expectDim: para.input.expectDim)
+        do {
+            print("feed op to compute ")
+            try resizeKernel.compute(commandBuffer: buffer, param: resizeParam)
+            print("feed op end compute ")
+        } catch let error {
+            throw error
+        }
     }
 }
 

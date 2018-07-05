@@ -48,13 +48,16 @@ extension ResultHolder: CustomDebugStringConvertible, CustomStringConvertible {
 public class Executor<P: PrecisionType> {
     var ops: [Runable & InferShaperable] = []
     let program: Program
-    
-    public init(inProgram: Program) throws {
+    let device: MTLDevice
+    let queue: MTLCommandQueue
+    public init(inDevice:MTLDevice, inQueue: MTLCommandQueue, inProgram: Program) throws {
         program = inProgram
+        device = inDevice
+        queue = inQueue
         for block in inProgram.programDesc.blocks {
             for op in block.ops {
                 do {
-                    let op = try OpCreator<P>.shared.creat(opDesc: op, scope: inProgram.scope)
+                    let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
                     op.inferShape()
                     ops.append(op)
                 } catch let error {
@@ -65,11 +68,28 @@ public class Executor<P: PrecisionType> {
     }
     
     public func predict(input: MTLTexture, expect: [Int]) throws -> ResultHolder<P> {
+        let beforeDate = Date.init()
         let inputTexture = InputTexture.init(inMTLTexture: input, inExpectDim: Dim.init(inDim: expect))
         program.scope.setInput(input: inputTexture)
-        for op in ops {
-            op.run()
+        guard let buffer = queue.makeCommandBuffer() else {
+            throw PaddleMobileError.predictError(message: "CommandBuffer is nil")
         }
+        
+        for op in ops {
+            do {
+                try op.run(device: device, buffer: buffer)
+            } catch let error {
+                throw error
+            }
+        }
+        
+        buffer.addCompletedHandler { (commandbuffer) in
+            let afterDate = Date.init()
+            print(afterDate.timeIntervalSince(beforeDate))
+            print(" encoder end ! ")
+        }
+        
+        buffer.commit()
         
         guard let outputVar = program.scope.output() else {
             throw PaddleMobileError.netError(message: "output nil")
@@ -78,6 +98,8 @@ public class Executor<P: PrecisionType> {
         guard let output = outputVar as? ResultHolder<P> else {
             throw PaddleMobileError.netError(message: "output var type error")
         }
+        
+        
         return output
     }
     

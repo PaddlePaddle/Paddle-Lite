@@ -29,11 +29,11 @@ extension MTLDevice {
                 fatalError("Counld't find paddle mobile library")
             }
             do {
+                print(path)
                 paddleMobileMetalLibrary = try makeLibrary(filepath: path)
             } catch _ {
                 fatalError("Counld't load paddle mobile library")
             }
-            paddleMobileMetalLibrary = makeDefaultLibrary()
         }
         
         if let inPaddleMobileLib = paddleMobileMetalLibrary {
@@ -67,10 +67,16 @@ extension MTLComputeCommandEncoder {
         let height = computePipline.maxTotalThreadsPerThreadgroup/width
         let threadsPerGroup = MTLSize.init(width: width, height: height, depth: 1)
     
+        print(" threads per group: \(threadsPerGroup) ")
+        
+        print(" out texture width: \(outTexture.width) , out texture height: \(outTexture.height)")
+        
         let groupWidth = (outTexture.width + width - 1)/width
         let groupHeight = (outTexture.height + height - 1)/height
         let groupDepth = slices
         let groups = MTLSize.init(width: groupWidth, height: groupHeight, depth: groupDepth)
+        
+        print("groups: \(groups) ")
         
         setComputePipelineState(computePipline)
         dispatchThreadgroups(groups, threadsPerThreadgroup: threadsPerGroup)

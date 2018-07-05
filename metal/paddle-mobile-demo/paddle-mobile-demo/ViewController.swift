@@ -36,13 +36,13 @@ class ViewController: UIViewController {
             fatalError(" texture is nil !")
         }
     
-        let loader = Loader<Float>.init()
+        let loader = Loader<Float16>.init()
         do {
             let modelPath = Bundle.main.path(forResource: "model", ofType: nil) ?! "model null"
             let paraPath = Bundle.main.path(forResource: "params", ofType: nil) ?! "para null"
             let program = try loader.load(device: device, modelPath: modelPath, paraPath: paraPath)
-            let executor = try Executor<Float>.init(inProgram: program)
-            let output = try executor.predict(input: inTexture, expect: [1, 224, 224, 3])
+            let executor = try Executor<Float16>.init(inDevice: device, inQueue: queue!, inProgram: program)
+            let output = try executor.predict(input: inTexture, expect: [1, 227, 227, 3])
             print(output)
         } catch let error {
             print(error)

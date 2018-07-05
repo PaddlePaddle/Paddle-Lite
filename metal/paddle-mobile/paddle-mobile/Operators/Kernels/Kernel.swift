@@ -18,6 +18,12 @@ import Foundation
 protocol Computable {
     associatedtype ParamType
     func compute(commandBuffer: MTLCommandBuffer, param: ParamType) throws
+    init(device: MTLDevice)
+}
+
+protocol KernelProtocol {
+    var pipline: MTLComputePipelineState { get set }
+    var functionName: String { get set }
 }
 
 class Kernel {
