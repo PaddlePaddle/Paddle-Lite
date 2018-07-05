@@ -22,11 +22,11 @@ namespace operators {
 
 template <>
 bool ConvAddBNReluKernel<CPU, float>::Init(FusionConvAddBNReluParam *param) {
-  const Tensor *mean = (*param).InputMean();
-  const Tensor *variance = (*param).InputVariance();
-  const Tensor *scale = (*param).InputScale();
-  const Tensor *bias = (*param).InputBias();
-  const float epsilon = (*param).Epsilon();
+  const Tensor *mean = param->InputMean();
+  const Tensor *variance = param->InputVariance();
+  const Tensor *scale = param->InputScale();
+  const Tensor *bias = param->InputBias();
+  const float epsilon = param->Epsilon();
 
   auto mean_ptr = mean->data<float>();
   auto variance_ptr = variance->data<float>();
@@ -47,8 +47,8 @@ bool ConvAddBNReluKernel<CPU, float>::Init(FusionConvAddBNReluParam *param) {
     new_scale_ptr[i] = inv_std_ptr[i] * scale_ptr[i];
     new_bias_ptr[i] = bias_ptr[i] - mean_ptr[i] * inv_std_ptr[i] * scale_ptr[i];
   }
-  (*param).SetNewScale(new_scale);
-  (*param).SetNewBias(new_bias);
+  param->SetNewScale(new_scale);
+  param->SetNewBias(new_bias);
   return true;
 }
 
