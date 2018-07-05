@@ -23,11 +23,11 @@ import Foundation
 
 protocol OpParam {
     associatedtype OutputType: Variant
-    var output: OutputType { get }
+    var output: OutputType { get set }
     func outputDesc() -> String
     
     associatedtype ParamPrecisionType: PrecisionType
-    init(opDesc: OpDesc, scope: Scope) throws
+    init(opDesc: OpDesc, inScope: Scope) throws
     static func getFirstTensor<VarType: Variant>(key: String, map: [String : [String]], from: Scope) throws -> VarType
     static func inputX<VarType: Variant>(inputs: [String : [String]], from: Scope) throws -> VarType
     static func inputBiase<VarType: Variant>(inputs: [String : [String]], from: Scope) throws -> VarType

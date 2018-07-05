@@ -18,9 +18,7 @@ protocol Tensorial: CustomStringConvertible, CustomDebugStringConvertible{
     var dim: Dim { get set }
     func numel() -> Int
     var layout: DataLayout { get }
-    init(inDim: Dim, inLayout: DataLayout)
 }
-
 
 extension Tensorial {
     func numel() -> Int {

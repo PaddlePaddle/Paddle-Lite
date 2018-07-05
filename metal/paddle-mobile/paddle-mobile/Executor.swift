@@ -64,17 +64,23 @@ public class Executor<P: PrecisionType> {
         }
     }
     
-    public func predict(input: Texture) throws -> ResultHolder<P> {
-        program.scope[program.feedKey] = input
+    public func predict(input: MTLTexture, expect: [Int]) throws -> ResultHolder<P> {
+        let inputTexture = InputTexture.init(inMTLTexture: input, inExpectDim: Dim.init(inDim: expect))
+        program.scope.setInput(input: inputTexture)
         for op in ops {
             op.run()
         }
-        let outputVar = program.scope[program.fetchKey]
+        
+        guard let outputVar = program.scope.output() else {
+            throw PaddleMobileError.netError(message: "output nil")
+        }
+        
         guard let output = outputVar as? ResultHolder<P> else {
             throw PaddleMobileError.netError(message: "output var type error")
         }
         return output
     }
+    
 }
 
 //public let paddle_executor: Executor = Executor.init()

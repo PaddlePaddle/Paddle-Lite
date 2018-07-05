@@ -20,4 +20,5 @@ public enum PaddleMobileError: Error{
     case memoryError(message: String)
     case paramError(message: String)
     case opError(message: String)
+    case predictError(message: String)
 }
