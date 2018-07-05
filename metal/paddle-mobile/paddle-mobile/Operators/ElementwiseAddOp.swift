@@ -26,20 +26,20 @@ struct ElementwiseAddParam<P: PrecisionType>: OpParam {
             throw error
         }
     }
-    let input: Texture
+    let input: Texture<P>
     let inputY: Tensor<P>
-    var output: Texture
+    var output: Texture<P>
     let axis: Int
 }
 
-class ElementwiseAddOp<P: PrecisionType>: Operator<ElementwiseAddParam<P>>, Runable, Creator, InferShaperable{
+class ElementwiseAddOp<P: PrecisionType>: Operator<ElementwiseAddParam<P>, ElementwiseAddKernel<P>>, Runable, Creator, InferShaperable{
     
     func inferShape() {
         para.output.dim = para.input.dim
     }
     
     typealias OpType = ElementwiseAddOp<P>
-    func runImpl() {
+    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
         print("this is ElementwiseAddOp")
     }
 }

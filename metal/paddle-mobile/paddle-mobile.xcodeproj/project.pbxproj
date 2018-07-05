@@ -30,6 +30,10 @@
 		FC039BBE20E11CC20081E9F8 /* OpDesc.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039BB520E11CC20081E9F8 /* OpDesc.swift */; };
 		FC039BBF20E11CC20081E9F8 /* Attribute.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039BB620E11CC20081E9F8 /* Attribute.swift */; };
 		FC039BC020E11CC20081E9F8 /* BlockDesc.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039BB720E11CC20081E9F8 /* BlockDesc.swift */; };
+		FC0E2DBA20EE3B8D009C1FAC /* ReluKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC0E2DB920EE3B8D009C1FAC /* ReluKernel.swift */; };
+		FC0E2DBC20EE45FE009C1FAC /* ConvKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC0E2DBB20EE45FE009C1FAC /* ConvKernel.swift */; };
+		FC0E2DBE20EE460D009C1FAC /* BatchNormKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC0E2DBD20EE460D009C1FAC /* BatchNormKernel.swift */; };
+		FC0E2DC020EE461F009C1FAC /* ElementwiseAddKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC0E2DBF20EE461F009C1FAC /* ElementwiseAddKernel.swift */; };
 		FC1B16B320EC9A4F00678B91 /* Kernels.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC1B16B220EC9A4F00678B91 /* Kernels.metal */; };
 		FC1B186620ECF1C600678B91 /* ResizeKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC1B186520ECF1C600678B91 /* ResizeKernel.swift */; };
 		FC60DB8920E9AAA500FF203F /* MetalExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC60DB8820E9AAA500FF203F /* MetalExtension.swift */; };
@@ -69,6 +73,10 @@
 		FC039BB520E11CC20081E9F8 /* OpDesc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OpDesc.swift; sourceTree = "<group>"; };
 		FC039BB620E11CC20081E9F8 /* Attribute.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Attribute.swift; sourceTree = "<group>"; };
 		FC039BB720E11CC20081E9F8 /* BlockDesc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BlockDesc.swift; sourceTree = "<group>"; };
+		FC0E2DB920EE3B8D009C1FAC /* ReluKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReluKernel.swift; sourceTree = "<group>"; };
+		FC0E2DBB20EE45FE009C1FAC /* ConvKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvKernel.swift; sourceTree = "<group>"; };
+		FC0E2DBD20EE460D009C1FAC /* BatchNormKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchNormKernel.swift; sourceTree = "<group>"; };
+		FC0E2DBF20EE461F009C1FAC /* ElementwiseAddKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElementwiseAddKernel.swift; sourceTree = "<group>"; };
 		FC1B16B220EC9A4F00678B91 /* Kernels.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Kernels.metal; sourceTree = "<group>"; };
 		FC1B186520ECF1C600678B91 /* ResizeKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizeKernel.swift; sourceTree = "<group>"; };
 		FC60DB8820E9AAA500FF203F /* MetalExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalExtension.swift; sourceTree = "<group>"; };
@@ -197,9 +205,13 @@
 		FC086BA520E67E8500D85EF7 /* Kernels */ = {
 			isa = PBXGroup;
 			children = (
+				FC0E2DBB20EE45FE009C1FAC /* ConvKernel.swift */,
 				FCF2D73720E64E70007AC5F5 /* Kernel.swift */,
 				FC1B16B220EC9A4F00678B91 /* Kernels.metal */,
 				FC1B186520ECF1C600678B91 /* ResizeKernel.swift */,
+				FC0E2DB920EE3B8D009C1FAC /* ReluKernel.swift */,
+				FC0E2DBD20EE460D009C1FAC /* BatchNormKernel.swift */,
+				FC0E2DBF20EE461F009C1FAC /* ElementwiseAddKernel.swift */,
 			);
 			path = Kernels;
 			sourceTree = "<group>";
@@ -316,12 +328,14 @@
 			files = (
 				FC9D038020E22FBB000F735A /* FeedOp.swift in Sources */,
 				FC039B9F20E11CB20081E9F8 /* Tensor.swift in Sources */,
+				FC0E2DBC20EE45FE009C1FAC /* ConvKernel.swift in Sources */,
 				FC039BAA20E11CBC0081E9F8 /* ElementwiseAddOp.swift in Sources */,
 				FC039B9B20E11CA00081E9F8 /* Executor.swift in Sources */,
 				FC039BBB20E11CC20081E9F8 /* ProgramDesc.swift in Sources */,
 				FC9D037920E229E4000F735A /* OpParam.swift in Sources */,
 				FC1B186620ECF1C600678B91 /* ResizeKernel.swift in Sources */,
 				FCF2D73820E64E70007AC5F5 /* Kernel.swift in Sources */,
+				FC0E2DC020EE461F009C1FAC /* ElementwiseAddKernel.swift in Sources */,
 				FC60DB8920E9AAA500FF203F /* MetalExtension.swift in Sources */,
 				FC1B16B320EC9A4F00678B91 /* Kernels.metal in Sources */,
 				FC039BBA20E11CC20081E9F8 /* TensorDesc.swift in Sources */,
@@ -335,7 +349,9 @@
 				FC039BB920E11CC20081E9F8 /* Scope.swift in Sources */,
 				FC039BAC20E11CBC0081E9F8 /* BatchNormOp.swift in Sources */,
 				FC039BBC20E11CC20081E9F8 /* VarDesc.swift in Sources */,
+				FC0E2DBA20EE3B8D009C1FAC /* ReluKernel.swift in Sources */,
 				FC82735920E3C04200BE430A /* OpCreator.swift in Sources */,
+				FC0E2DBE20EE460D009C1FAC /* BatchNormKernel.swift in Sources */,
 				FC039BAB20E11CBC0081E9F8 /* Operator.swift in Sources */,
 				FC9D038220E2312E000F735A /* FetchOp.swift in Sources */,
 				FC039BBD20E11CC20081E9F8 /* Program.swift in Sources */,

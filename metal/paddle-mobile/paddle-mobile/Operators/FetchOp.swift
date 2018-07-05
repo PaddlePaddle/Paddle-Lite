@@ -16,7 +16,7 @@ import Foundation
 
 struct FetchParam<P: PrecisionType>: OpParam{
     var output: ResultHolder<P> = ResultHolder.init(inDim: [], inResult: [])
-    let input: Texture
+    let input: Texture<P>
     let scope: Scope
     init(opDesc: OpDesc, inScope: Scope) throws {
         scope = inScope
@@ -30,14 +30,14 @@ struct FetchParam<P: PrecisionType>: OpParam{
     typealias ParamPrecisionType = P
 }
 
-class FetchOp<P: PrecisionType>: Operator<FetchParam<P>>, Runable, Creator, InferShaperable{
+class FetchOp<P: PrecisionType>: Operator<FetchParam<P>, ResizeKernel<P>>, Runable, Creator, InferShaperable{
     func inferShape() {
         
         print(para.input.dim)
     }
     
     typealias OpType = FetchOp<P>
-    func runImpl() {
+    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
         print("fetch op")
     }
 }

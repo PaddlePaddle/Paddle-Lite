@@ -24,19 +24,23 @@ struct ReluParam<P: PrecisionType>: OpParam {
             throw error
         }
     }
-    let input: Texture
-    var output: Texture
+    let input: Texture<P>
+    var output: Texture<P>
 }
 
-class ReluOp<P: PrecisionType>: Operator<ReluParam<P>>, Runable, Creator, InferShaperable{
+class ReluOp<P: PrecisionType>: Operator<ReluParam<P>, ReluKernel<P>>, Runable, Creator, InferShaperable{
     
     func inferShape() {
         para.output.dim = para.input.dim
     }
     
     typealias OpType = ReluOp<P>
-    func runImpl() {
-        print("this is ReluOp")
+    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+        do {
+            try kernel.compute(commandBuffer: buffer, param: para)
+        } catch let error {
+            throw error
+        }
     }
 }
 
