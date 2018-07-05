@@ -66,7 +66,7 @@ Paddle-Moible是PaddlePaddle组织下的项目，是一个致力于嵌入式平�
 ### 开发文档
 
 开发文档主要是关于编译、运行等问题。做为开发者，它可以和贡献文档共同结合使用。
-[开发文档]()https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_doc.md
+[开发文档链接](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_doc.md)
 
 ### 贡献文档
 - [贡献文档链接](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/CONTRIBUTING.md)
