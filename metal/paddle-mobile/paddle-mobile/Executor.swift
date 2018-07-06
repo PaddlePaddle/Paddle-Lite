@@ -84,9 +84,14 @@ public class Executor<P: PrecisionType> {
         }
         
         buffer.addCompletedHandler { (commandbuffer) in
+            
+//            for op in self.ops {
+//                op.delogOutput()
+//            }
+            
             let afterDate = Date.init()
-            print(afterDate.timeIntervalSince(beforeDate))
-            print(" encoder end ! ")
+            print(" encoder end ! time: \(afterDate.timeIntervalSince(beforeDate))")
+            
         }
         
         buffer.commit()

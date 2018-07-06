@@ -48,7 +48,6 @@ class BatchNormOp<P: PrecisionType>: Operator<BatchNormParam<P>, BatchNormKernel
     }
     typealias OpType = BatchNormOp<P>
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        print("this is BatchNormOp")
     }
 }
 

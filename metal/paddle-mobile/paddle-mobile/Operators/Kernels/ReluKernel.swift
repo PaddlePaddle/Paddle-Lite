@@ -19,7 +19,6 @@ class ReluKernel<P: PrecisionType>: Kernel, Computable{
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
             throw PaddleMobileError.predictError(message: " encode is nil")
         }
-        print(" the usage of input of relu \(param.input.metalTexture.usage)")
         encoder.setTexture(param.input.metalTexture, index: 0)
         encoder.setTexture(param.output.metalTexture, index: 1)
         encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)

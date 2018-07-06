@@ -62,14 +62,16 @@ public class Texture<P: PrecisionType>: Tensorial {
             fatalError(" didn't support yet")
         }
         if MemoryLayout<P>.size == 1 {
-            tmpTextureDes.pixelFormat = .r8Sint
+            tmpTextureDes.pixelFormat = .rgba8Unorm
         } else if MemoryLayout<P>.size == 2 {
-            tmpTextureDes.pixelFormat = .r16Float
+            tmpTextureDes.pixelFormat = .rgba16Float
         } else if MemoryLayout<P>.size == 4 {
-            tmpTextureDes.pixelFormat = .r32Float
+//            tmpTextureDes.pixelFormat = .r32Float
+            tmpTextureDes.pixelFormat = .rgba32Float
+
         }
         
-        tmpTextureDes.usage = .unknown
+        tmpTextureDes.usage = [.shaderRead, .shaderWrite]
         tmpTextureDes.storageMode = .shared
         textureDesc = tmpTextureDes
         metalTexture = device.makeTexture(descriptor: tmpTextureDes) ?! " texture nil "
@@ -123,6 +125,7 @@ extension Texture {
     public var debugDescription: String{
         var str = ""
         str += "Dim: \(dim) \n value:[ "
+//        str += "\(metalTexture)"
         str += " ]"
         return str
     }

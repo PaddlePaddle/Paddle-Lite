@@ -33,26 +33,37 @@ struct FeedParam<P: PrecisionType>: OpParam{
     typealias ParamPrecisionType = P
 }
 
-class FeedOp<P: PrecisionType>: Operator<FeedParam<P>, ResizeKernel<P>>, Runable, Creator, InferShaperable {
+class FeedOp<P: PrecisionType>: Operator<FeedParam<P>, Texture2DTo2DArrayKernel<P>>, Runable, Creator, InferShaperable {
     typealias OpType = FeedOp<P>
     
     func inferShape() {
-//        print("feed  input: \(para.input.expectDim)")
+        //        print("feed  input: \(para.input.expectDim)")
         print("feed output: \(para.output.dim)")
         //        para.output.dim =
-//        para.output.dim = para.input.expectDim
+        //        para.output.dim = para.input.expectDim
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        let resizeKernel = ResizeKernel<P>.init(device: device)
-        let resizeParam = ResizeParam.init(input: para.input.mtlTexture, output: para.output.metalTexture, expectDim: para.input.expectDim)
+        let locPara = Texture2DTo2DArrayParam.init(input: para.input.mtlTexture, output: para.output.metalTexture, expectDim: para.input.expectDim)
         do {
-            print("feed op to compute ")
-            try resizeKernel.compute(commandBuffer: buffer, param: resizeParam)
-            print("feed op end compute ")
+            try kernel.compute(commandBuffer: buffer, param: locPara)
         } catch let error {
             throw error
         }
+        
+//        let resizeKernel = ResizeKernel<P>.init(device: device)
+//        let resizeParam = ResizeParam.init(input: para.input.mtlTexture, output: para.output.metalTexture, expectDim: para.input.expectDim)
+//        do {
+//            try resizeKernel.compute(commandBuffer: buffer, param: resizeParam)
+//        } catch let error {
+//            throw error
+//        }
+    }
+    
+    func delogOutput() {
+//        para.input.mtlTexture.logDesc()
+        let _: Float16? = para.input.mtlTexture.logDesc(header: "feed input: ")
+        let _: Float16? = para.output.metalTexture.logDesc(header: "feed output: ")
     }
 }
 
