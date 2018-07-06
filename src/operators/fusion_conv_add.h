@@ -69,7 +69,7 @@ class FusionConvAddOp : public framework::OperatorWithKernel<
 #ifdef PADDLE_MOBILE_CPU
 
 #ifndef CONV_ADD_REGISTER
-extern framework::FusionOpRegistrar convadd_registrar(
+static framework::FusionOpRegistrar convadd_registrar(
     new FusionConvAddMatcher());
 #define CONV_ADD_REGISTER
 #endif
@@ -82,6 +82,7 @@ extern framework::FusionOpRegistrar convadd_registrar(
 static framework::FusionOpRegistrar convadd_registrar(
     new FusionConvAddMatcher());
 #define CONV_ADD_REGISTER
+
 #endif
 
 #endif
