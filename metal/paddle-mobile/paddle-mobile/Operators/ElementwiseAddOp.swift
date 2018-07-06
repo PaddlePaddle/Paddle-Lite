@@ -40,7 +40,6 @@ class ElementwiseAddOp<P: PrecisionType>: Operator<ElementwiseAddParam<P>, Eleme
     
     typealias OpType = ElementwiseAddOp<P>
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        print("this is ElementwiseAddOp")
     }
 }
 

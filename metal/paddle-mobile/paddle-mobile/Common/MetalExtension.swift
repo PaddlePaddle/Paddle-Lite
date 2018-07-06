@@ -29,7 +29,6 @@ extension MTLDevice {
                 fatalError("Counld't find paddle mobile library")
             }
             do {
-                print(path)
                 paddleMobileMetalLibrary = try makeLibrary(filepath: path)
             } catch _ {
                 fatalError("Counld't load paddle mobile library")
@@ -61,28 +60,81 @@ extension MTLDevice {
 
 extension MTLComputeCommandEncoder {
     func dispatch(computePipline: MTLComputePipelineState, outTexture: MTLTexture) {
-        let slices = (outTexture.depth + 3)/4
+        let slices = (outTexture.arrayLength * 4 + 3)/4
         
         let width = computePipline.threadExecutionWidth
         let height = computePipline.maxTotalThreadsPerThreadgroup/width
         let threadsPerGroup = MTLSize.init(width: width, height: height, depth: 1)
     
-        print(" threads per group: \(threadsPerGroup) ")
-        
-        print(" out texture width: \(outTexture.width) , out texture height: \(outTexture.height)")
+//        print(" thread: threads per group: \(threadsPerGroup) ")
+//        print(" thread: out texture width: \(outTexture.width) , out texture height: \(outTexture.height)")
         
         let groupWidth = (outTexture.width + width - 1)/width
         let groupHeight = (outTexture.height + height - 1)/height
         let groupDepth = slices
         let groups = MTLSize.init(width: groupWidth, height: groupHeight, depth: groupDepth)
         
-        print("groups: \(groups) ")
+//        print("groups: \(groups) ")
         
         setComputePipelineState(computePipline)
         dispatchThreadgroups(groups, threadsPerThreadgroup: threadsPerGroup)
     }
 }
 
+
+public extension MTLTexture {
+    func logDesc<T>(header: String = "", stridable: Bool = true) -> T? {
+        print(header)
+        print("texture: \(self)")
+        if textureType == .type2DArray {
+            for i in 0..<arrayLength{
+                var str: String = "slice: \(i): "
+                let bytes = UnsafeMutableRawPointer.allocate(byteCount: width * height * 4 * MemoryLayout<T>.size, alignment: MemoryLayout<T>.alignment)
+                let bytesPerRow = width * depth * 4 * MemoryLayout<T>.size
+                let bytesPerImage = width * height * depth * 4 * MemoryLayout<T>.size
+                let region = MTLRegion.init(origin: MTLOrigin.init(x: 0, y: 0, z: 0), size: MTLSize.init(width: width, height: height, depth: depth))
+                getBytes(bytes, bytesPerRow: bytesPerRow, bytesPerImage: bytesPerImage, from: region, mipmapLevel: 0, slice: i)
+                let p = bytes.assumingMemoryBound(to: T.self)
+                str += "2d array count : \(width * height * depth * 4) \n"
+                if stridable {
+                    for j in stride(from: 0, to: width * height * depth * 4 , by: width * height * depth * 4 / 100){
+                        str += " \(p[j])"
+                    }
+                } else {
+                    for j in 0..<width * height * depth * 4 {
+                        str += " \(p[j])"
+                    }
+                }
+                
+                bytes.deallocate()
+                print(str)
+            }
+        } else if textureType == .type2D {
+            var str: String = "texture 2D: "
+            let bytes = UnsafeMutableRawPointer.allocate(byteCount: width * height * 4 * MemoryLayout<T>.size, alignment: MemoryLayout<T>.alignment)
+            let bytesPerRow = width * depth * 4 * MemoryLayout<T>.size
+            let region = MTLRegion.init(origin: MTLOrigin.init(x: 0, y: 0, z: 0), size: MTLSize.init(width: width, height: height, depth: depth))
+            getBytes(bytes, bytesPerRow: bytesPerRow, from: region, mipmapLevel: 0)
+            let p = bytes.assumingMemoryBound(to: T.self)
+            str += "2d count : \(width * width * 4) \n"
+            
+            if stridable {
+                for j in stride(from: 0, to: width * height * 4, by: width * height * 4 / 100){
+                    str += " \(p[j])"
+                }
+            } else {
+                for j in 0..<width * height * 4 {
+                    str += " \(p[j])"
+                }
+            }
+            
+            print(str)
+            bytes.deallocate()
+        }
+        return nil
+           
+    }
+}
 
 
 

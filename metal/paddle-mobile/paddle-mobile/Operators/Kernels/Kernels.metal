@@ -36,7 +36,6 @@ kernel void resize(texture2d<half, access::read> inTexture [[texture(0)]],
     outTexture.write(half4(input.x, input.y, input.z, input.w), gid.xy, gid.z);
 }
 
-
 kernel void relu(texture2d_array<half, access::sample> inTexture [[texture(0)]],
                 texture2d_array<half, access::write> outTexture [[texture(1)]],
                 uint3 gid [[thread_position_in_grid]]) {
@@ -48,7 +47,6 @@ kernel void relu(texture2d_array<half, access::sample> inTexture [[texture(0)]],
     const float4 relu = fmax((float4)input, 0.0);
     outTexture.write(half4(relu), gid.xy, gid.z);
 }
-
 
 kernel void elementwise_add(texture2d_array<half, access::read> inTexture [[texture(0)]],
                             texture2d_array<half, access::write> outTexture [[texture(1)]],
@@ -62,10 +60,8 @@ kernel void elementwise_add(texture2d_array<half, access::read> inTexture [[text
     outTexture.write(input, gid.xy, gid.z);
 }
 
-
 kernel void conv(texture2d_array<half, access::read> inTexture [[texture(0)]],
                  texture2d_array<half, access::write> outTexture [[texture(1)]],
-                 const device half4 *biasTerms [[buffer(0)]],
                  uint3 gid [[thread_position_in_grid]]) {
     if (gid.x >= outTexture.get_width() ||
         gid.y >= outTexture.get_height() ||
@@ -74,6 +70,7 @@ kernel void conv(texture2d_array<half, access::read> inTexture [[texture(0)]],
     const half4 input = inTexture.read(gid.xy, gid.z);
     outTexture.write(input, gid.xy, gid.z);
 }
+
 
 kernel void batchnorm(texture2d_array<half, access::read> inTexture [[texture(0)]],
                  texture2d_array<half, access::write> outTexture [[texture(1)]],
@@ -81,11 +78,20 @@ kernel void batchnorm(texture2d_array<half, access::read> inTexture [[texture(0)
     if (gid.x >= outTexture.get_width() ||
         gid.y >= outTexture.get_height() ||
         gid.z >= outTexture.get_array_size()) return;
-    constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
     const half4 input = inTexture.read(gid.xy, gid.z);
     outTexture.write(input, gid.xy, gid.z);
 }
 
+kernel void texture2d_to_2d_array(texture2d<half, access::read> inTexture [[texture(0)]],
+                               texture2d_array<half, access::write> outTexture [[texture(1)]],
+                               uint3 gid [[thread_position_in_grid]]) {
+    if (gid.x >= inTexture.get_width() ||
+        gid.y >= inTexture.get_height()){
+        return;
+    }
+    const half4 input = inTexture.read(gid.xy);
+    outTexture.write(input, gid.xy, 0);
+}
 
 
 

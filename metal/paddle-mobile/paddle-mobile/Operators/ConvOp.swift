@@ -64,6 +64,17 @@ class ConvOp<P: PrecisionType>: Operator<ConvParam<P>, ConvKernel<P>>, Runable, 
     
     typealias OpType = ConvOp<P>
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        print("this is conv")
+        do {
+            try kernel.compute(commandBuffer: buffer, param: para)
+        } catch let error {
+            throw error
+        }
+        
+    }
+    
+    func delogOutput() {
+        print("conv output : ")
+        print(para.output.metalTexture)
+//        let _: Float16? = para.output.metalTexture.logDesc()
     }
 }
