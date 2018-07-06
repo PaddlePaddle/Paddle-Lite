@@ -7,6 +7,10 @@
 ### 一. 使用 build.sh 编译
 
 ```sh
+
+# 在 paddle-mobile 目录下:
+cd tools
+
 sh build.sh ios
 
 # 如果只想编译某个特定模型的 op, 则需执行以下命令
