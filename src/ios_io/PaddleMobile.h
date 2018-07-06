@@ -30,6 +30,11 @@
 - (BOOL)load:(NSString *)modelPath andWeightsPath:(NSString *)weighsPath;
 
 /*
+  加载散开形式的模型, 需传入模型的目录
+*/
+- (BOOL)load:(NSString *)modelAndWeightPath;
+
+/*
 	进行预测, means 和 scale 为训练模型时的预处理参数, 如训练时没有做这些预处理则直接使用 predict
 */
 - (NSArray *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim means:(NSArray<NSNumber *> *)means scale:(float)scale;
