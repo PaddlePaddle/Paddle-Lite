@@ -20,12 +20,12 @@
 @interface PaddleMobile : NSObject
 
 /*
-	创建对象
+    创建对象
 */
 - (instancetype)init;
 
 /*
-	load 模型, 开辟内存
+    load 模型, 开辟内存
 */
 - (BOOL)load:(NSString *)modelPath andWeightsPath:(NSString *)weighsPath;
 
@@ -35,17 +35,17 @@
 - (BOOL)load:(NSString *)modelAndWeightPath;
 
 /*
-	进行预测, means 和 scale 为训练模型时的预处理参数, 如训练时没有做这些预处理则直接使用 predict
+    进行预测, means 和 scale 为训练模型时的预处理参数, 如训练时没有做这些预处理则直接使用 predict
 */
 - (NSArray *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim means:(NSArray<NSNumber *> *)means scale:(float)scale;
 
 /*
-	进行预测
+    进行预测
 */
 - (NSArray *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim;
 
 /*
-	清理内存
+    清理内存
 */
 - (void)clear;
 
