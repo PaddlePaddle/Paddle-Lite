@@ -30,6 +30,7 @@ class BoxCoderKernel
     : public framework::OpKernelBase<DeviceType, BoxCoderParam> {
  public:
   void Compute(const BoxCoderParam& param) const;
+  bool Init(BoxCoderParam* param);
 };
 }  // namespace operators
 }  // namespace paddle_mobile

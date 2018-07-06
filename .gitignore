@@ -69,3 +69,10 @@ build
 # clion building directories
 cmake-build-debug
 cmake-build-release
+
+
+#ios demo
+demo/ios/PaddleMobileDemo/PaddleMobileDemo/googlenet_combine/
+demo/ios/PaddleMobileDemo/PaddleMobileDemo/*.jpg
+demo/ios/PaddleMobileDemo/PaddleMobileDemo/PaddleMobile/*.a
+*.xcuserstate

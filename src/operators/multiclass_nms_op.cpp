@@ -40,7 +40,6 @@ template class MultiClassNMSOp<CPU, float>;
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(multiclass_nms);
 REGISTER_OPERATOR_CPU(multiclass_nms, ops::MultiClassNMSOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU

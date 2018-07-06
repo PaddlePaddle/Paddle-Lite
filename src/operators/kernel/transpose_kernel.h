@@ -29,6 +29,7 @@ class TransposeKernel
     : public framework::OpKernelBase<DeviceType, TransposeParam> {
  public:
   void Compute(const TransposeParam& param) const;
+  bool Init(TransposeParam* param);
 };
 }  // namespace operators
 }  // namespace paddle_mobile

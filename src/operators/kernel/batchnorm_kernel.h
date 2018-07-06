@@ -29,6 +29,7 @@ class BatchNormKernel
     : public framework::OpKernelBase<DeviceType, BatchNormParam> {
  public:
   void Compute(const BatchNormParam &param) const;
+  bool Init(BatchNormParam *param);
 };
 
 }  // namespace operators

@@ -30,10 +30,10 @@ template class ElementwiseAddOp<CPU, float>;
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(elementwise_add);
 REGISTER_OPERATOR_CPU(elementwise_add, ops::ElementwiseAddOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
+REGISTER_OPERATOR_MALI_GPU(elementwise_add, ops::ElementwiseAddOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 #endif
