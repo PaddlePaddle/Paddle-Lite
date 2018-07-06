@@ -15,7 +15,8 @@ limitations under the License. */
 #ifdef POOL_OP
 
 #pragma once
-
+#include <algorithm>
+#include <vector>
 #include "framework/tensor.h"
 #if __ARM_NEON
 #include <arm_neon.h>
@@ -26,7 +27,8 @@ namespace operators {
 namespace math {
 using framework::Tensor;
 using std::vector;
-
+void Pool3x3Avgs1p1(const Tensor *input, Tensor *output);
+void Pool3x3Maxs1p1(const Tensor *input, Tensor *output);
 void Pool3x3Max(vector<int> strides, vector<int> paddings, const Tensor *input,
                 Tensor *output);
 

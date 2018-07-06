@@ -34,10 +34,10 @@ template class ReluOp<CPU, float>;
  * */
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(relu);
 REGISTER_OPERATOR_CPU(relu, ops::ReluOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
+REGISTER_OPERATOR_MALI_GPU(relu, ops::ReluOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 #endif

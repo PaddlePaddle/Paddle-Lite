@@ -12,10 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once;
+#pragma once
 
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace paddle_mobile {
 enum class Precision : int { FP32 = 0 };
@@ -78,7 +79,9 @@ extern const std::string G_OP_TYPE_CONCAT;
 extern const std::string G_OP_TYPE_ELEMENTWISE_ADD;
 extern const std::string G_OP_TYPE_FUSION_CONV_ADD_RELU;
 extern const std::string G_OP_TYPE_FC;
-extern const std::string G_OP_TYPE_CONV_ADD;
+extern const std::string G_OP_TYPE_FUSION_CONV_ADD;
+extern const std::string G_OP_TYPE_FUSION_CONV_ADD_BN_RELU;
+
 extern const std::string G_OP_TYPE_LRN;
 extern const std::string G_OP_TYPE_MUL;
 extern const std::string G_OP_TYPE_MULTICLASS_NMS;
@@ -93,6 +96,8 @@ extern const std::string G_OP_TYPE_SPLIT;
 extern const std::string G_OP_TYPE_FEED;
 extern const std::string G_OP_TYPE_FETCH;
 extern const std::string G_OP_TYPE_DEPTHWISE_CONV;
+extern const std::string G_OP_TYPE_IM2SEQUENCE;
+extern const std::string G_OP_TYPE_DROPOUT;
 
 extern std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>

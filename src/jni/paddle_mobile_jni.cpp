@@ -15,6 +15,10 @@ limitations under the License. */
 #ifdef ANDROID
 
 #include "paddle_mobile_jni.h"
+#include "common/log.h"
+#include "framework/tensor.h"
+#include "io/paddle_mobile.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -28,17 +32,16 @@ using std::string;
 
 extern const char *ANDROID_LOG_TAG =
     "paddle_mobile LOG built on " __DATE__ " " __TIME__;
-static Executor<CPU> *shared_executor_instance = nullptr;
+static PaddleMobile<CPU> *shared_paddle_mobile_instance = nullptr;
 
 // toDo mutex lock
 // static std::mutex shared_mutex;
 
-Executor<CPU> *getExecutorInstance(const Program<CPU> p, int batch_size,
-                                   bool use_optimize) {
-  if (nullptr == shared_executor_instance) {
-    shared_executor_instance = new Executor<CPU>(p, batch_size, use_optimize);
+PaddleMobile<CPU> *getPaddleMobileInstance() {
+  if (nullptr == shared_paddle_mobile_instance) {
+    shared_paddle_mobile_instance = new PaddleMobile<CPU>();
   }
-  return shared_executor_instance;
+  return shared_paddle_mobile_instance;
 }
 
 string jstring2cppstring(JNIEnv *env, jstring jstr) {
@@ -51,15 +54,14 @@ string jstring2cppstring(JNIEnv *env, jstring jstr) {
 JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_load(JNIEnv *env,
                                                           jclass thiz,
                                                           jstring modelPath) {
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  ANDROIDLOGI("load invoked");
   bool optimize = true;
-  auto program = loader.Load(jstring2cppstring(env, modelPath), optimize);
-  shared_executor_instance = getExecutorInstance(program, 1, optimize);
-  return shared_executor_instance != nullptr ? JNI_TRUE : JNI_FALSE;
+  return getPaddleMobileInstance()->Load(jstring2cppstring(env, modelPath),
+                                         optimize);
 }
 
-JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictImage(
-    JNIEnv *env, jclass thiz, jfloatArray buf) {
+JNIEXPORT jfloatArray JNICALL
+Java_com_baidu_paddle_PML_predict(JNIEnv *env, jclass thiz, jfloatArray buf) {
   jfloatArray result = NULL;
   int count = 0;
   float *dataPointer = nullptr;
@@ -73,15 +75,18 @@ JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictImage(
   for (int i = 0; i < framework::product(ddim); i++) {
     input_ptr[i] = dataPointer[i];
   }
-  auto output = shared_executor_instance->Predict(input);
+  auto output = shared_paddle_mobile_instance->Predict(input);
   count = output->numel();
   result = env->NewFloatArray(count);
   env->SetFloatArrayRegion(result, 0, count, output->data<float>());
+  ANDROIDLOGI("predict finished");
   return result;
 }
 
 JNIEXPORT void JNICALL Java_com_baidu_paddle_PML_clear(JNIEnv *env,
-                                                       jclass thiz) {}
+                                                       jclass thiz) {
+  getPaddleMobileInstance()->Clear();
+}
 
 }  // namespace jni
 }  // namespace paddle_mobile

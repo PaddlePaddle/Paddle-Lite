@@ -32,10 +32,10 @@ template class BatchNormOp<CPU, float>;
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(batch_norm);
 REGISTER_OPERATOR_CPU(batch_norm, ops::BatchNormOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
+REGISTER_OPERATOR_MALI_GPU(batch_norm, ops::BatchNormOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 #endif

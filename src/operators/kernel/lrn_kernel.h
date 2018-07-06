@@ -14,9 +14,10 @@ limitations under the License. */
 
 #ifdef LRN_OP
 
-#pragma once
 #include "framework/operator.h"
 #include "operators/op_param.h"
+
+#include <cmath>
 
 #ifdef __ARM_NEON
 #include "arm_neon.h"
@@ -169,6 +170,7 @@ template <typename DeviceType, typename T>
 class LrnKernel : public framework::OpKernelBase<DeviceType, LrnParam> {
  public:
   void Compute(const LrnParam &param) const;
+  bool Init(LrnParam *param);
 };
 }  // namespace operators
 }  // namespace paddle_mobile

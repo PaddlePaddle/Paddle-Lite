@@ -29,6 +29,7 @@ template <typename DeviceType, typename T>
 class MulKernel : public framework::OpKernelBase<DeviceType, MulParam> {
  public:
   void Compute(const MulParam &param) const;
+  bool Init(MulParam *param);
 };
 }  // namespace operators
 }  // namespace paddle_mobile

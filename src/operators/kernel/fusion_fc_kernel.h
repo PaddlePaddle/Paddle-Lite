@@ -28,6 +28,7 @@ class FusionFcKernel
     : public framework::OpKernelBase<DeviceType, FusionFcParam> {
  public:
   void Compute(const FusionFcParam& param) const;
+  bool Init(FusionFcParam* param);
 };
 }  // namespace operators
 }  // namespace paddle_mobile
