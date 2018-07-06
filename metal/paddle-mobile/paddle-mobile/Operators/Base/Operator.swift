@@ -18,6 +18,7 @@ import Foundation
 protocol Runable {
     func run(device: MTLDevice, buffer: MTLCommandBuffer) throws
     func runImpl(device: MTLDevice,buffer: MTLCommandBuffer) throws
+    func delogOutput()
 }
 
 extension Runable where Self: OperatorProtocol{
@@ -27,8 +28,11 @@ extension Runable where Self: OperatorProtocol{
         } catch let error {
             throw error
         }
-        
-        print(type + ": " + para.outputDesc())
+//        print(type + ": " + para.outputDesc())
+    }
+    
+    func delogOutput() {
+        print(type + ": has no implementation" )
     }
 }
 

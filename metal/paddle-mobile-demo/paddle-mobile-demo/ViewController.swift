@@ -15,14 +15,41 @@
 import UIKit
 import MetalKit
 import paddle_mobile
+import MetalPerformanceShaders
+
+
+
+func Test<T>() -> T? {
+    return nil
+}
 
 class ViewController: UIViewController {
     let device: MTLDevice! = MTLCreateSystemDefaultDevice()
     var textureLoader: MTKTextureLoader!
 //    let queue: MTLCommandQueue
+    func scaleTexture(queue: MTLCommandQueue, input: MTLTexture, complete: @escaping (MTLTexture) -> Void) {        
+        let tmpTextureDes = MTLTextureDescriptor.init()
+        tmpTextureDes.width = 227
+        tmpTextureDes.height = 227
+        tmpTextureDes.depth = 1
+        tmpTextureDes.usage = [.shaderRead, .shaderWrite]
+        tmpTextureDes.pixelFormat = .rgba16Float
+        tmpTextureDes.textureType = .type2D
+        tmpTextureDes.storageMode = .shared
+        tmpTextureDes.cpuCacheMode = .defaultCache
+        let dest = device.makeTexture(descriptor: tmpTextureDes)
+        
+        let scale = MPSImageLanczosScale.init(device: device)
+        let buffer = queue.makeCommandBuffer()
+        scale.encode(commandBuffer: buffer!, sourceTexture: input, destinationTexture: dest!)
+        buffer?.addCompletedHandler({ (buffer) in
+            complete(dest!)
+        })
+        buffer?.commit()
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         let queue = device.makeCommandQueue()
         
         textureLoader = MTKTextureLoader.init(device: device)
@@ -35,18 +62,24 @@ class ViewController: UIViewController {
         guard let inTexture = texture else {
             fatalError(" texture is nil !")
         }
-    
-        let loader = Loader<Float16>.init()
-        do {
-            let modelPath = Bundle.main.path(forResource: "model", ofType: nil) ?! "model null"
-            let paraPath = Bundle.main.path(forResource: "params", ofType: nil) ?! "para null"
-            let program = try loader.load(device: device, modelPath: modelPath, paraPath: paraPath)
-            let executor = try Executor<Float16>.init(inDevice: device, inQueue: queue!, inProgram: program)
-            let output = try executor.predict(input: inTexture, expect: [1, 227, 227, 3])
-            print(output)
-        } catch let error {
-            print(error)
+       
+        scaleTexture(queue: queue!, input: inTexture) { (inputTexture) in
+            let loader = Loader<Float16>.init()
+            do {
+                let modelPath = Bundle.main.path(forResource: "model", ofType: nil) ?! "model null"
+                let paraPath = Bundle.main.path(forResource: "params", ofType: nil) ?! "para null"
+                let program = try loader.load(device: self.device, modelPath: modelPath, paraPath: paraPath)
+                let executor = try Executor<Float16>.init(inDevice: self.device, inQueue: queue!, inProgram: program)
+                let output = try executor.predict(input: inputTexture, expect: [1, 227, 227, 3])
+                //            print(output)
+            } catch let error {
+                print(error)
+            }
         }
+        
+        
+        
+       
     }
 
 }

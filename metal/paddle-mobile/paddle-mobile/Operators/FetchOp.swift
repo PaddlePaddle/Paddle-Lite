@@ -32,13 +32,11 @@ struct FetchParam<P: PrecisionType>: OpParam{
 
 class FetchOp<P: PrecisionType>: Operator<FetchParam<P>, ResizeKernel<P>>, Runable, Creator, InferShaperable{
     func inferShape() {
-        
         print(para.input.dim)
     }
     
     typealias OpType = FetchOp<P>
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        print("fetch op")
     }
 }
 
