@@ -30,7 +30,17 @@ struct FetchParam<P: PrecisionType>: OpParam{
     typealias ParamPrecisionType = P
 }
 
-class FetchOp<P: PrecisionType>: Operator<FetchParam<P>, ResizeKernel<P>>, Runable, Creator, InferShaperable{
+class FetchKernel<P: PrecisionType>: Kernel, Computable {
+    
+    func compute(commandBuffer: MTLCommandBuffer, param: FetchParam<P>) throws {
+    }
+    
+    required init(device: MTLDevice, param: FetchParam<P>) {
+        super.init(device: device, inFunctionName: "texture2d_to_2d_array")
+    }
+}
+
+class FetchOp<P: PrecisionType>: Operator< FetchKernel<P>, FetchParam<P>>, Runable, Creator, InferShaperable{
     func inferShape() {
         print(para.input.dim)
     }

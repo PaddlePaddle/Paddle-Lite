@@ -58,8 +58,13 @@ public class Texture<P: PrecisionType>: Tensorial {
             tmpTextureDes.depth = 1
             tmpTextureDes.arrayLength = (inDim[3] * inDim[0] + 3)/4
             tmpTextureDes.textureType = .type2DArray
+        } else if inDim.cout() == 2 {
+            tmpTextureDes.height = inDim[0]
+            tmpTextureDes.width = inDim[1]
+            tmpTextureDes.depth = 1
+            tmpTextureDes.textureType = .type2D
         } else {
-            fatalError(" didn't support yet")
+            fatalError(" not suuprt ")
         }
         if MemoryLayout<P>.size == 1 {
             tmpTextureDes.pixelFormat = .rgba8Unorm

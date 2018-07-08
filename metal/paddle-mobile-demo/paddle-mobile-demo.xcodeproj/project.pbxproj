@@ -14,8 +14,6 @@
 		FC039B8920E11C560081E9F8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FC039B8820E11C560081E9F8 /* Assets.xcassets */; };
 		FC039B8C20E11C560081E9F8 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = FC039B8A20E11C560081E9F8 /* LaunchScreen.storyboard */; };
 		FC0E2C1F20EDC030009C1FAC /* apple.jpg in Resources */ = {isa = PBXBuildFile; fileRef = FC0E2C1E20EDC030009C1FAC /* apple.jpg */; };
-		FC0E2CED20EDC03B009C1FAC /* params in Resources */ = {isa = PBXBuildFile; fileRef = FC0E2C2220EDC03B009C1FAC /* params */; };
-		FC0E2CEE20EDC03B009C1FAC /* model in Resources */ = {isa = PBXBuildFile; fileRef = FC0E2C2320EDC03B009C1FAC /* model */; };
 		FC0E2CEF20EDC03B009C1FAC /* batch_norm_7.w_0 in Resources */ = {isa = PBXBuildFile; fileRef = FC0E2C2520EDC03B009C1FAC /* batch_norm_7.w_0 */; };
 		FC0E2CF020EDC03B009C1FAC /* batch_norm_26.b_0 in Resources */ = {isa = PBXBuildFile; fileRef = FC0E2C2620EDC03B009C1FAC /* batch_norm_26.b_0 */; };
 		FC0E2CF120EDC03B009C1FAC /* batch_norm_32.b_0 in Resources */ = {isa = PBXBuildFile; fileRef = FC0E2C2720EDC03B009C1FAC /* batch_norm_32.b_0 */; };
@@ -216,6 +214,10 @@
 		FC0E2DB420EDC03C009C1FAC /* conv2d_27.w_0 in Resources */ = {isa = PBXBuildFile; fileRef = FC0E2CEA20EDC03B009C1FAC /* conv2d_27.w_0 */; };
 		FC0E2DB520EDC03C009C1FAC /* conv2d_33.w_0 in Resources */ = {isa = PBXBuildFile; fileRef = FC0E2CEB20EDC03B009C1FAC /* conv2d_33.w_0 */; };
 		FC0E2DB620EDC03C009C1FAC /* depthwise_conv2d_7.w_0 in Resources */ = {isa = PBXBuildFile; fileRef = FC0E2CEC20EDC03B009C1FAC /* depthwise_conv2d_7.w_0 */; };
+		FCEBC0FC20F227C60099DBAF /* mobilenet in Resources */ = {isa = PBXBuildFile; fileRef = FCEBC0F820F227C60099DBAF /* mobilenet */; };
+		FCEBC0FD20F227C60099DBAF /* params in Resources */ = {isa = PBXBuildFile; fileRef = FCEBC0F920F227C60099DBAF /* params */; };
+		FCEBC0FE20F227C60099DBAF /* model in Resources */ = {isa = PBXBuildFile; fileRef = FCEBC0FA20F227C60099DBAF /* model */; };
+		FCEBC0FF20F227C60099DBAF /* yolo in Resources */ = {isa = PBXBuildFile; fileRef = FCEBC0FB20F227C60099DBAF /* yolo */; };
 		FCEBEC2C20E1391F00C0B14D /* paddle_mobile.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */; };
 		FCEBEC2D20E1391F00C0B14D /* paddle_mobile.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
@@ -246,8 +248,6 @@
 		FC039B8B20E11C560081E9F8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		FC039B8D20E11C560081E9F8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		FC0E2C1E20EDC030009C1FAC /* apple.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = apple.jpg; sourceTree = "<group>"; };
-		FC0E2C2220EDC03B009C1FAC /* params */ = {isa = PBXFileReference; lastKnownFileType = file; path = params; sourceTree = "<group>"; };
-		FC0E2C2320EDC03B009C1FAC /* model */ = {isa = PBXFileReference; lastKnownFileType = file; path = model; sourceTree = "<group>"; };
 		FC0E2C2520EDC03B009C1FAC /* batch_norm_7.w_0 */ = {isa = PBXFileReference; lastKnownFileType = file; path = batch_norm_7.w_0; sourceTree = "<group>"; };
 		FC0E2C2620EDC03B009C1FAC /* batch_norm_26.b_0 */ = {isa = PBXFileReference; lastKnownFileType = file; path = batch_norm_26.b_0; sourceTree = "<group>"; };
 		FC0E2C2720EDC03B009C1FAC /* batch_norm_32.b_0 */ = {isa = PBXFileReference; lastKnownFileType = file; path = batch_norm_32.b_0; sourceTree = "<group>"; };
@@ -448,6 +448,10 @@
 		FC0E2CEA20EDC03B009C1FAC /* conv2d_27.w_0 */ = {isa = PBXFileReference; lastKnownFileType = file; path = conv2d_27.w_0; sourceTree = "<group>"; };
 		FC0E2CEB20EDC03B009C1FAC /* conv2d_33.w_0 */ = {isa = PBXFileReference; lastKnownFileType = file; path = conv2d_33.w_0; sourceTree = "<group>"; };
 		FC0E2CEC20EDC03B009C1FAC /* depthwise_conv2d_7.w_0 */ = {isa = PBXFileReference; lastKnownFileType = file; path = depthwise_conv2d_7.w_0; sourceTree = "<group>"; };
+		FCEBC0F820F227C60099DBAF /* mobilenet */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = mobilenet; sourceTree = "<group>"; };
+		FCEBC0F920F227C60099DBAF /* params */ = {isa = PBXFileReference; lastKnownFileType = file; path = params; sourceTree = "<group>"; };
+		FCEBC0FA20F227C60099DBAF /* model */ = {isa = PBXFileReference; lastKnownFileType = file; path = model; sourceTree = "<group>"; };
+		FCEBC0FB20F227C60099DBAF /* yolo */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = yolo; sourceTree = "<group>"; };
 		FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = paddle_mobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -527,20 +531,11 @@
 		FC0E2C2020EDC03B009C1FAC /* models */ = {
 			isa = PBXGroup;
 			children = (
-				FC0E2C2120EDC03B009C1FAC /* yolo */,
+				FCEBC0F720F227C60099DBAF /* yolo */,
 				FC0E2C2420EDC03B009C1FAC /* mobilenetssd */,
 			);
 			name = models;
 			path = ../../models;
-			sourceTree = "<group>";
-		};
-		FC0E2C2120EDC03B009C1FAC /* yolo */ = {
-			isa = PBXGroup;
-			children = (
-				FC0E2C2220EDC03B009C1FAC /* params */,
-				FC0E2C2320EDC03B009C1FAC /* model */,
-			);
-			path = yolo;
 			sourceTree = "<group>";
 		};
 		FC0E2C2420EDC03B009C1FAC /* mobilenetssd */ = {
@@ -750,6 +745,17 @@
 			path = mobilenetssd;
 			sourceTree = "<group>";
 		};
+		FCEBC0F720F227C60099DBAF /* yolo */ = {
+			isa = PBXGroup;
+			children = (
+				FCEBC0F820F227C60099DBAF /* mobilenet */,
+				FCEBC0F920F227C60099DBAF /* params */,
+				FCEBC0FA20F227C60099DBAF /* model */,
+				FCEBC0FB20F227C60099DBAF /* yolo */,
+			);
+			path = yolo;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -811,7 +817,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FC0E2CEE20EDC03B009C1FAC /* model in Resources */,
 				FC0E2D8520EDC03C009C1FAC /* batch_norm_13.b_0 in Resources */,
 				FC0E2D2020EDC03B009C1FAC /* batch_norm_0.w_1 in Resources */,
 				FC0E2D6F20EDC03C009C1FAC /* batch_norm_12.w_1 in Resources */,
@@ -821,9 +826,9 @@
 				FC0E2DA420EDC03C009C1FAC /* batch_norm_28.b_0 in Resources */,
 				FC0E2D9F20EDC03C009C1FAC /* batch_norm_33.w_2 in Resources */,
 				FC0E2D2920EDC03B009C1FAC /* batch_norm_2.b_0 in Resources */,
-				FC0E2CED20EDC03B009C1FAC /* params in Resources */,
 				FC0E2DA920EDC03C009C1FAC /* conv2d_26.w_0 in Resources */,
 				FC0E2D0420EDC03B009C1FAC /* batch_norm_16.w_2 in Resources */,
+				FCEBC0FE20F227C60099DBAF /* model in Resources */,
 				FC0E2D0720EDC03B009C1FAC /* batch_norm_6.w_1 in Resources */,
 				FC0E2DB020EDC03C009C1FAC /* batch_norm_30.w_2 in Resources */,
 				FC0E2D9720EDC03C009C1FAC /* conv2d_25.w_0 in Resources */,
@@ -839,9 +844,11 @@
 				FC0E2DA620EDC03C009C1FAC /* depthwise_conv2d_4.w_0 in Resources */,
 				FC0E2D6920EDC03C009C1FAC /* conv2d_6.w_0 in Resources */,
 				FC0E2D6520EDC03C009C1FAC /* conv2d_7.w_0 in Resources */,
+				FCEBC0FD20F227C60099DBAF /* params in Resources */,
 				FC0E2DAB20EDC03C009C1FAC /* batch_norm_19.w_2 in Resources */,
 				FC0E2D9920EDC03C009C1FAC /* conv2d_31.w_0 in Resources */,
 				FC0E2D3020EDC03B009C1FAC /* batch_norm_34.w_0 in Resources */,
+				FCEBC0FC20F227C60099DBAF /* mobilenet in Resources */,
 				FC0E2D1220EDC03B009C1FAC /* batch_norm_34.b_0 in Resources */,
 				FC0E2D4D20EDC03C009C1FAC /* batch_norm_7.b_0 in Resources */,
 				FC0E2D2520EDC03B009C1FAC /* batch_norm_21.w_1 in Resources */,
@@ -942,6 +949,7 @@
 				FC0E2D0F20EDC03B009C1FAC /* batch_norm_5.w_0 in Resources */,
 				FC0E2D4520EDC03C009C1FAC /* batch_norm_9.w_2 in Resources */,
 				FC0E2D9020EDC03C009C1FAC /* batch_norm_23.w_2 in Resources */,
+				FCEBC0FF20F227C60099DBAF /* yolo in Resources */,
 				FC0E2D6720EDC03C009C1FAC /* conv2d_31.b_0 in Resources */,
 				FC0E2DA020EDC03C009C1FAC /* conv2d_18.w_0 in Resources */,
 				FC0E2D1C20EDC03B009C1FAC /* conv2d_13.w_0 in Resources */,

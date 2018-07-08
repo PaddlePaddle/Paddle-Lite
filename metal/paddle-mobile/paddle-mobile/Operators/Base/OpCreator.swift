@@ -45,7 +45,8 @@ class OpCreator<P: PrecisionType> {
          gReluType         :     ReluOp<P>.creat,
          gElementwiseAdd   :     ElementwiseAddOp<P>.creat,
          gFeedType         :     FeedOp<P>.creat,
-         gFetchType        :     FetchOp<P>.creat]
+         gFetchType        :     FetchOp<P>.creat,
+         gConvAddBatchNormReluType : ConvAddBatchNormReluOp<P>.creat]
     
     private init(){}
 }
