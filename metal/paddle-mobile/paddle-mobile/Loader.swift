@@ -102,8 +102,14 @@ public class Loader<P: PrecisionType> {
         do {
             let protoProgram = try PaddleMobile_Framework_Proto_ProgramDesc.init(
                 serializedData: modelData)
-            let programDesc = ProgramDesc.init(protoProgram: protoProgram)
             
+            let originProgramDesc = ProgramDesc.init(protoProgram: protoProgram)
+
+
+            let programDesc = ProgramOptimize<P>.init().optimize(originProgramDesc: originProgramDesc)
+            print(programDesc)
+            
+            fatalError()
             guard let paraLoader = try? ParaLoader.init(paramPath: paraPath) else {
                 throw PaddleMobileError.loaderError(message: "load para error")
             }
@@ -159,6 +165,7 @@ public class Loader<P: PrecisionType> {
                                 throw error
                             }
                             tensor.convert(to: .NHWC)
+                            tensor.initBuffer(device: device)
                             scope[varDesc.name] = tensor
                         } else {
                             let dim = Dim.init(inDim: tensorDesc.NHWCDim)

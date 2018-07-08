@@ -21,4 +21,24 @@ public struct ProgramDesc {
             self.blocks.append(BlockDesc.init(block: block))
         }
     }
+    
+    init() {
+    }
+}
+
+extension ProgramDesc: CustomStringConvertible, CustomDebugStringConvertible {
+    public var description: String {
+        var str: String = ""
+        for i in 0..<blocks.count {
+            str += "block - \(i): \n"
+            str += blocks[i].description
+        }
+        return str
+    }
+    
+    public var debugDescription: String {
+        return description
+    }
+    
+    
 }

@@ -16,14 +16,15 @@ import Metal
 import Foundation
 
 protocol Computable {
-    associatedtype ParamType
+    associatedtype ParamType: OpParam
     func compute(commandBuffer: MTLCommandBuffer, param: ParamType) throws
-    init(device: MTLDevice)
+    init(device: MTLDevice, param: ParamType)
 }
 
 protocol KernelProtocol {
     var pipline: MTLComputePipelineState { get set }
     var functionName: String { get set }
+   
 }
 
 class Kernel {

@@ -16,7 +16,7 @@ import Foundation
 
 struct OpDesc {
     let inputs: [String : [String]]
-    let paraInputs: [String : [String]]
+    var paraInputs: [String : [String]]
     let outputs: [String : [String]]
     let unusedOutputs: [String : [String]]
     var attrs: [String : Attr] = [:]
@@ -55,4 +55,27 @@ struct OpDesc {
             }
         }
     }
+}
+
+extension OpDesc: CustomStringConvertible, CustomDebugStringConvertible {
+    var description: String {
+        var str = ""
+        str += "op type: \(type): \n"
+        str += "    op inputs: \n"
+        str += "        \(inputs) \n"
+        str += "    op para inputs: \n"
+        str += "        \(paraInputs) \n"
+        str += "    op para outputs: \n"
+        str += "        \(outputs) \n"
+        str += "    op attrs: \n"
+        str += "        \(attrs) \n"
+        
+        return str
+    }
+    
+    var debugDescription: String {
+        return description
+    }
+    
+    
 }

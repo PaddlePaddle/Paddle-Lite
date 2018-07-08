@@ -29,6 +29,7 @@ extension Tensorial {
 class Tensor<P: PrecisionType>: Tensorial {
     var data: Data
     var dim: Dim
+    var buffer: MTLBuffer!
     private(set) var layout: DataLayout
     
     class Data {
@@ -37,7 +38,7 @@ class Tensor<P: PrecisionType>: Tensorial {
             pointer = inPointer
         }
         let size: Int
-        var pointer: UnsafeMutablePointer<P>
+        fileprivate var pointer: UnsafeMutablePointer<P>
         subscript(index: Int) -> P{
             get {
                 return pointer[index]
@@ -51,7 +52,7 @@ class Tensor<P: PrecisionType>: Tensorial {
             pointer.deallocate()
         }
         deinit {
-            release()
+//            release()
         }
     }
  
@@ -85,6 +86,39 @@ class Tensor<P: PrecisionType>: Tensorial {
         data.release()
         data.pointer = newPointer
         layout = to
+    }
+    
+    func initBuffer(device: MTLDevice) {
+        if dim.cout() == 4 {
+            if layout == .NHWC {
+                let C = dim[3]
+                let cSlices = (C + 3) / 4
+                let paddedC = cSlices * 4
+                let count = paddedC * dim[0] * dim[1] * dim[2]
+                buffer = device.makeBuffer(length: count * MemoryLayout<P>.stride)
+                if C == paddedC {
+                    buffer?.contents().copyMemory(from: data.pointer, byteCount: count * MemoryLayout<P>.stride)
+                } else {
+                    var tmpPointer = data.pointer
+                    var dstPtr = buffer?.contents().bindMemory(to: P.self, capacity: count)
+                    for _ in 0..<dim[0] * dim[1] * dim[2] {
+                        for j in 0..<paddedC {
+                            if j < C {
+                                dstPtr?[j] = data.pointer[j]
+                            }
+                        }
+                        tmpPointer += C
+                        dstPtr! += paddedC
+                    }
+                }
+            }
+        } else if dim.cout() == 1 {
+            buffer = device.makeBuffer(length: numel() * MemoryLayout<P>.stride)
+            buffer?.contents().copyMemory(from: data.pointer, byteCount: numel() * MemoryLayout<P>.stride)
+        } else {
+            fatalError(" not support !")
+        }
+        data.release()
     }
     
     func NCHW2NHWC(newPtr: UnsafeMutablePointer<P>) {
