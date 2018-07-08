@@ -28,7 +28,7 @@ struct ReluParam<P: PrecisionType>: OpParam {
     var output: Texture<P>
 }
 
-class ReluOp<P: PrecisionType>: Operator<ReluParam<P>, ReluKernel<P>>, Runable, Creator, InferShaperable{
+class ReluOp<P: PrecisionType>: Operator<ReluKernel<P>, ReluParam<P>>, Runable, Creator, InferShaperable{
     
     func inferShape() {
         para.output.dim = para.input.dim

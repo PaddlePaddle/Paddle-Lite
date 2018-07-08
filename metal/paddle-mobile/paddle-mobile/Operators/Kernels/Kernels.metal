@@ -60,16 +60,7 @@ kernel void elementwise_add(texture2d_array<half, access::read> inTexture [[text
     outTexture.write(input, gid.xy, gid.z);
 }
 
-kernel void conv(texture2d_array<half, access::read> inTexture [[texture(0)]],
-                 texture2d_array<half, access::write> outTexture [[texture(1)]],
-                 uint3 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() ||
-        gid.y >= outTexture.get_height() ||
-        gid.z >= outTexture.get_array_size()) return;
-    constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
-    const half4 input = inTexture.read(gid.xy, gid.z);
-    outTexture.write(input, gid.xy, gid.z);
-}
+
 
 
 kernel void batchnorm(texture2d_array<half, access::read> inTexture [[texture(0)]],

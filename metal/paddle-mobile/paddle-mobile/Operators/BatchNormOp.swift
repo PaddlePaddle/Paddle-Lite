@@ -42,7 +42,7 @@ struct BatchNormParam<P: PrecisionType>: OpParam {
     let is_test: Bool
 }
 
-class BatchNormOp<P: PrecisionType>: Operator<BatchNormParam<P>, BatchNormKernel<P>>, Runable, Creator, InferShaperable{
+class BatchNormOp<P: PrecisionType>: Operator<BatchNormKernel<P>, BatchNormParam<P>>, Runable, Creator, InferShaperable{
     func inferShape() {
         para.output.dim = para.input.dim
     }

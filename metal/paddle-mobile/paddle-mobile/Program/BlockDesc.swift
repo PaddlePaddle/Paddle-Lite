@@ -35,4 +35,33 @@ struct BlockDesc {
         self.ops = ops
     }
     
+    init(inVars: [VarDesc], inOps: [OpDesc]) {
+        vars = inVars
+        ops = inOps
+        index = 0
+        parentIndex = 0
+    }
+    
+}
+
+extension BlockDesc: CustomStringConvertible, CustomDebugStringConvertible {
+    var description: String {
+        var str = ""
+        
+        for op in ops {
+            str += op.description
+        }
+        
+        for varDesc in vars {
+            str += varDesc.description
+        }
+        
+        return str
+    }
+    
+    var debugDescription: String {
+        return description
+    }
+    
+    
 }
