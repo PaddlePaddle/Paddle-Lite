@@ -10,8 +10,8 @@ import Foundation
 
 
 class ElementwiseAddKernel<P: PrecisionType>: Kernel, Computable {
-    required init(device: MTLDevice) {
-        super.init(device: device, inFunctionName: "conv")
+    required init(device: MTLDevice, param: ElementwiseAddParam<P>) {
+        super.init(device: device, inFunctionName: "elementwise_add")
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: ElementwiseAddParam<P>) throws {

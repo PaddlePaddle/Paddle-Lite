@@ -39,7 +39,15 @@ struct ConvParam<P: PrecisionType>: OpParam {
     let groups: Int
 }
 
-class ConvOp<P: PrecisionType>: Operator<ConvParam<P>, ConvKernel<P>>, Runable, Creator, InferShaperable {
+class ConvOp<P: PrecisionType>: Operator<ConvKernel<P>, ConvParam<P>>, Runable, Creator, InferShaperable {
+    required init(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws {
+        do {
+            try super.init(device: device, opDesc: opDesc, inScope: inScope)
+        } catch let error {
+            throw error
+        }
+        
+    }
     func inferShape() {
         let inDims = para.input.dim
         let filterDim = para.filter.dim
@@ -69,7 +77,6 @@ class ConvOp<P: PrecisionType>: Operator<ConvParam<P>, ConvKernel<P>>, Runable, 
         } catch let error {
             throw error
         }
-        
     }
     
     func delogOutput() {

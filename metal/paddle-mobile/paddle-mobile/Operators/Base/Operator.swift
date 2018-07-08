@@ -15,6 +15,12 @@
 import Metal
 import Foundation
 
+protocol Fusion {
+    static func fusionNode() -> Node
+    static func change() -> [String : [(from: String, to: String)]]
+}
+
+
 protocol Runable {
     func run(device: MTLDevice, buffer: MTLCommandBuffer) throws
     func runImpl(device: MTLDevice,buffer: MTLCommandBuffer) throws
@@ -56,11 +62,11 @@ protocol InferShaperable {
 }
 
 protocol OperatorProtocol {
-    associatedtype ParamType: OpParam
-    associatedtype KerType:  Computable
+    associatedtype ParamType
+    associatedtype KerType:  Computable where Self.KerType.ParamType == ParamType
     var type: String { get }
     var inputs: [String : [String]] { get }
-    var paraInputs: [String : [String]] { get }
+    var paraInputs: [String : [String]] { get set }
     var outpus: [String : [String]] { get }
     var attrs: [String : Attr] { get }
     var para: ParamType { get }
@@ -78,13 +84,12 @@ extension OperatorProtocol {
     }
 }
 
-
-class Operator <ParameterType: OpParam, KernelType:  Computable>: OperatorProtocol{
+class Operator <KernelType:  Computable , ParameterType>: OperatorProtocol where KernelType.ParamType == ParameterType {
     typealias ParamType = ParameterType
     typealias KerType = KernelType
     let type: String
     let inputs: [String : [String]]
-    let paraInputs: [String : [String]]
+    var paraInputs: [String : [String]]
     let outpus: [String : [String]]
     let attrs: [String : Attr]
     let para: ParamType
@@ -95,27 +100,37 @@ class Operator <ParameterType: OpParam, KernelType:  Computable>: OperatorProtoc
         outpus = opDesc.outputs
         attrs =  opDesc.attrs
         paraInputs = opDesc.paraInputs
-        kernel = KerType.init(device: device)
         do {
             para = try ParamType.init(opDesc:opDesc, inScope: inScope)
         } catch let error {
             throw error
         }
+        kernel = KernelType.init(device: device, param: para)
     }
 }
 
 // op infos
-let gFetchType          = "fetch"
-let gFeedType           = "feed"
-let gConvType           = "conv2d"
-let gBatchNormType      = "batch_norm"
-let gReluType           = "relu"
-let gElementwiseAdd     = "elementwise_add"
+let gFetchType                  = "fetch"
+let gFeedType                   = "feed"
+let gConvType                   = "conv2d"
+let gBatchNormType              = "batch_norm"
+let gReluType                   = "relu"
+let gElementwiseAdd             = "elementwise_add"
+let gConvAddBatchNormReluType   = "conv_add_batchnorm_relu"
 
-let opInfos = [gConvType         : (inputs: ["Input"], outputs: ["Output"]),
-               gBatchNormType    : (inputs: ["X"], outputs: ["Y"]),
-               gReluType         : (inputs: ["X"], outputs: ["Out"]),
-               gElementwiseAdd   : (inputs: ["X", "Y"], outputs: ["Out"]),
-               gFeedType         : (inputs: ["X"], outputs: ["Out"]),
-               gFetchType        : (inputs: ["X"], outputs: ["Out"])]
+let opInfos = [gConvType                    : (inputs: ["Input"], outputs: ["Output"]),
+               gBatchNormType               : (inputs: ["X"], outputs: ["Y"]),
+               gReluType                    : (inputs: ["X"], outputs: ["Out"]),
+               gElementwiseAdd              : (inputs: ["X", "Y"], outputs: ["Out"]),
+               gFeedType                    : (inputs: ["X"], outputs: ["Out"]),
+               gFetchType                   : (inputs: ["X"], outputs: ["Out"]),
+               gConvAddBatchNormReluType    : (inputs: ["Input"], outputs: ["Out"])]
+
+
+
+
+
+
+
+
 

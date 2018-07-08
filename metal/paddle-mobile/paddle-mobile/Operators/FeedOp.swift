@@ -33,7 +33,7 @@ struct FeedParam<P: PrecisionType>: OpParam{
     typealias ParamPrecisionType = P
 }
 
-class FeedOp<P: PrecisionType>: Operator<FeedParam<P>, Texture2DTo2DArrayKernel<P>>, Runable, Creator, InferShaperable {
+class FeedOp<P: PrecisionType>: Operator<Texture2DTo2DArrayKernel<P>, FeedParam<P>>, Runable, Creator, InferShaperable {
     typealias OpType = FeedOp<P>
     
     func inferShape() {
@@ -44,9 +44,8 @@ class FeedOp<P: PrecisionType>: Operator<FeedParam<P>, Texture2DTo2DArrayKernel<
     }
     
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        let locPara = Texture2DTo2DArrayParam.init(input: para.input.mtlTexture, output: para.output.metalTexture, expectDim: para.input.expectDim)
         do {
-            try kernel.compute(commandBuffer: buffer, param: locPara)
+            try kernel.compute(commandBuffer: buffer, param: para)
         } catch let error {
             throw error
         }

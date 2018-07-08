@@ -76,5 +76,23 @@ struct VarDesc {
             tensorDesc = .none
         }
     }
+}
+
+extension VarDesc: CustomStringConvertible, CustomDebugStringConvertible {
+    var description: String {
+        var str = ""
+        str += "var name \(name): \n"
+        if let inTensorDesc = tensorDesc {
+            str += " dim size: \(inTensorDesc.dims.count) \n"
+            str += "    dim: \(inTensorDesc.dims) \n"
+        } else {
+            str += " no dim info"
+        }
+        
+        return str
+    }
     
+    var debugDescription: String {
+        return description
+    }
 }

@@ -25,7 +25,7 @@ class ReluKernel<P: PrecisionType>: Kernel, Computable{
         encoder.endEncoding()
     }
     
-    required init(device: MTLDevice) {
+    required init(device: MTLDevice, param: ReluParam<P>) {
         super.init(device: device, inFunctionName: "relu")
     }
 }

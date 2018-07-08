@@ -9,7 +9,7 @@
 import Foundation
 
 class BatchNormKernel<P: PrecisionType>: Kernel, Computable {
-    required init(device: MTLDevice) {
+    required init(device: MTLDevice, param: BatchNormParam<P>) {
         super.init(device: device, inFunctionName: "batchnorm")
     }
     

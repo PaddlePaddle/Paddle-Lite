@@ -16,17 +16,17 @@ struct Texture2DTo2DArrayParam {
 
 
 class Texture2DTo2DArrayKernel<P: PrecisionType>: Kernel, Computable{
-    func compute(commandBuffer: MTLCommandBuffer, param: Texture2DTo2DArrayParam) throws {
+    func compute(commandBuffer: MTLCommandBuffer, param: FeedParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
             throw PaddleMobileError.predictError(message: " encode is nil")
         }
-        encoder.setTexture(param.input, index: 0)
-        encoder.setTexture(param.output, index: 1)
-        encoder.dispatch(computePipline: pipline, outTexture: param.input)
+        encoder.setTexture(param.input.mtlTexture, index: 0)
+        encoder.setTexture(param.output.metalTexture, index: 1)
+        encoder.dispatch(computePipline: pipline, outTexture: param.input.mtlTexture)
         encoder.endEncoding()
     }
     
-    required init(device: MTLDevice) {
+    required init(device: MTLDevice, param: FeedParam<P>) {
         super.init(device: device, inFunctionName: "texture2d_to_2d_array")
     }
 }

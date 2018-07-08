@@ -32,7 +32,7 @@ struct ElementwiseAddParam<P: PrecisionType>: OpParam {
     let axis: Int
 }
 
-class ElementwiseAddOp<P: PrecisionType>: Operator<ElementwiseAddParam<P>, ElementwiseAddKernel<P>>, Runable, Creator, InferShaperable{
+class ElementwiseAddOp<P: PrecisionType>: Operator<ElementwiseAddKernel<P>, ElementwiseAddParam<P>>, Runable, Creator, InferShaperable{
     
     func inferShape() {
         para.output.dim = para.input.dim
