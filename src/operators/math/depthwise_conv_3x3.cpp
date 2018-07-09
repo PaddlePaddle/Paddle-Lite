@@ -14,7 +14,6 @@ limitations under the License. */
 #include "operators/math/depthwise_conv_3x3.h"
 #include <arm_neon.h>
 #include <vector>
-#define UNLIKELY(condition) __builtin_expect(static_cast<bool>(condition), 0)
 
 namespace paddle_mobile {
 namespace operators {
@@ -1241,8 +1240,7 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
 
   const int w_times = (out_w - 2) / 3;
 
-  float32x4x2_t input_buff_mid{}, input_buff_bottom[w_times + 1],
-      input_buff_top[w_times + 1];
+  float32x4x2_t input_buff_mid{}, input_buff_bottom[w_times + 1];
   float32x4_t elewise_res0, elewise_res1, elewise_res2, res3;
   int out2in_mid;
   float32x4_t zero = vdupq_n_f32(0.0);
