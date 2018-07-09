@@ -4,9 +4,11 @@
 
 ## 编译
 
-### 一. 使用 build.sh 编译
-
 ```sh
+
+# 在 paddle-mobile 目录下:
+cd tools
+
 sh build.sh ios
 
 # 如果只想编译某个特定模型的 op, 则需执行以下命令
@@ -17,9 +19,7 @@ cd ../build/release/ios/build
 
 ```
 
-### 二. 集成
-
-#### 如使用 oc 接口
+## 集成
 
 ```
 将上一步生成的:
@@ -28,7 +28,11 @@ libpaddle-mobile.a
 /src/ios_io/ 下的
 PaddleMobile.h
 ```
-拖入工程, 接口如下:
+拖入工程
+
+#### oc 接口
+
+接口如下:
 
 ```
 /*
