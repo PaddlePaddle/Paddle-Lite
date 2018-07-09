@@ -124,9 +124,29 @@ void ConvAddCompute(const FusionConvAddParam &param) {
   } else if (param.Groups() == param.Input()->dims()[1] &&
              param.Input()->dims()[1] == param.Output()->dims()[1] &&
              param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
-             param.Filter()->dims()[2] == 3) {
-    math::DepthwiseConv3x3(param.Input(), param.Strides(), param.Paddings(),
-                           param.Filter(), param.Bias(), param.Output(), true);
+             param.Filter()->dims()[2] == 3 && param.Strides()[0] == 2) {
+    //    Tensor in,out,filter;
+    //    auto inptr = in.mutable_data<float>({1,2,10,10});
+    //    auto filterptr = filter.mutable_data<float>({2,1,3,3});
+    //    auto outputptr= out.mutable_data<float>({1,2,5,5});
+    //    for(int i = 0; i < in.numel(); ++i)
+    //    {
+    //      inptr[i] = i;
+    //    }
+    //    for (int i = 0; i < filter.numel(); ++i)
+    //    {
+    //      filterptr[i] = i;
+    //    }
+    //    math::DepthwiseConv3x3(param.Input(), param.Strides(),
+    //    param.Paddings(),
+    //                           param.Filter(), param.Bias(), param.Output(),
+    //                           false);
+    //    math::DepthwiseConv3x3(&in, param.Strides(), param.Paddings(),
+    //                           &filter, param.Bias(), &out, false);
+
+    math::DepthwiseConv3x3s2p1v2(param.Input(), param.Filter(), param.Output(),
+                                 *param.Bias(), true);
+
   } else {
     ConvAddBasic(param);
   }
