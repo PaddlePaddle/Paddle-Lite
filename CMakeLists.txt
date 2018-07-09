@@ -134,6 +134,9 @@ else ()
 endif ()
 
 if(DEBUGING)
-    add_subdirectory(test)
+    if(IS_IOS)
+    else()
+        add_subdirectory(test)
+    endif()
 endif()
 
