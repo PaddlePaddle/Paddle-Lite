@@ -60,6 +60,15 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_load(JNIEnv *env,
                                          optimize);
 }
 
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadCombined(
+    JNIEnv *env, jclass thiz, jstring modelPath, jstring paramPath) {
+  ANDROIDLOGI("load invoked");
+  bool optimize = true;
+  return getPaddleMobileInstance()->Load(jstring2cppstring(env, modelPath),
+                                         jstring2cppstring(env, paramPath),
+                                         optimize);
+}
+
 JNIEXPORT jfloatArray JNICALL
 Java_com_baidu_paddle_PML_predict(JNIEnv *env, jclass thiz, jfloatArray buf) {
   jfloatArray result = NULL;
