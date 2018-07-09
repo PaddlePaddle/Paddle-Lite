@@ -121,7 +121,14 @@ public class MainActivity extends Activity {
                 String assetPath = "pml_demo";
                 String sdcardPath = Environment.getExternalStorageDirectory()
                         + File.separator + assetPath + File.separator + type;
-                PML.load(sdcardPath);
+                //PML.load(sdcardPath);
+                String modelPath = Environment.getExternalStorageDirectory()
+                                                           + File.separator + assetPath +
+                                                           File.separator + "googlenet_combine" + File.separator + "model";
+                String paramPath = Environment.getExternalStorageDirectory()
+                                                           + File.separator + assetPath +
+                                                           File.separator + "googlenet_combine" + File.separator + "params";
+                PML.loadCombined(modelPath, paramPath);
 
             }
         });
