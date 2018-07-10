@@ -17,7 +17,7 @@ import Foundation
 struct OpDesc {
     let inputs: [String : [String]]
     var paraInputs: [String : [String]]
-    let outputs: [String : [String]]
+    var outputs: [String : [String]]
     let unusedOutputs: [String : [String]]
     var attrs: [String : Attr] = [:]
     var type: String

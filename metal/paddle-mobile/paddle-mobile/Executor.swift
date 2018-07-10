@@ -55,17 +55,8 @@ public class Executor<P: PrecisionType> {
         device = inDevice
         queue = inQueue
         for block in inProgram.programDesc.blocks {
-            for i in 0..<7 {
-                let op = block.ops[i]
-                do {
-                    let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
-                    op.inferShape()
-                    ops.append(op)
-                } catch let error {
-                    throw error
-                }
-            }
-//            for op in block.ops {
+//            for i in 0..<2 {
+//                let op = block.ops[i]
 //                do {
 //                    let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
 //                    op.inferShape()
@@ -74,6 +65,15 @@ public class Executor<P: PrecisionType> {
 //                    throw error
 //                }
 //            }
+            for op in block.ops {
+                do {
+                    let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
+                    op.inferShape()
+                    ops.append(op)
+                } catch let error {
+                    throw error
+                }
+            }
         }
     }
     

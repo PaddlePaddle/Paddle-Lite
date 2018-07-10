@@ -148,18 +148,25 @@ class Tensor<P: PrecisionType>: Tensorial {
 extension Tensor {
     var debugDescription: String {
         var str = ""
-        str += "Dim: \(dim) \n value:[ "
-        if data.size < 20 {
-            for d in 0..<data.size {
-                str += " \(data[d]) "
-            }
-        } else {
-            for d in stride(from: 0, to: data.size, by: data.size/20) {
-                str += " \(data[d]) "
-            }
-        }
-        str += " ]"
+        
+//        for i in 0..<buffer.length/MemoryLayout<P>.stride {
+//            str += " \(buffer.contents().assumingMemoryBound(to: P.self)[i])"
+//        }
         return str
+        
+//        var str = ""
+//        str += "Dim: \(dim) \n value:[ "
+//        if data.size < 20 {
+//            for d in 0..<data.size {
+//                str += " \(data[d]) "
+//            }
+//        } else {
+//            for d in stride(from: 0, to: data.size, by: data.size/20) {
+//                str += " \(data[d]) "
+//            }
+//        }
+//        str += " ]"
+//        return str
     }
     
     var description: String {
