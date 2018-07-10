@@ -8,6 +8,14 @@ public class PML {
      */
     public static native boolean load(String modelPath);
 
+    /**
+     * Load
+     * @param modelPath
+     * @param paramPath
+     * @return
+     */
+    public static native boolean loadCombined(String modelPath,String paramPath);
+
 
     /**
      * object detection
