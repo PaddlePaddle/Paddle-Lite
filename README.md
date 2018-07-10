@@ -26,8 +26,11 @@ Paddle-Moible是PaddlePaddle组织下的项目，是一个致力于嵌入式平�
 
 - **ARM CPU**
 
+
+![](http://7xop3k.com1.z0.glb.clouddn.com/15312108766575.jpg)
+
     arm cpu是paddle-mobile的主要支持方向，cpu的通用性一直是其优势。嵌入式深度学习，需要大量的cpu汇编实现。我们正在紧锣密鼓的编码，为的是能充分硬件的每一点加速能力。
-    arm cpu的优化工作还在进行中，现在使用了常规的cpu优化。在arm a73上paddle-mobile现在单核运行一次mobilenet 1.0是160+ms，显然这不是我们的最终目标，我们正在用大量的汇编改写，后续性能仍会有巨大提升空间。
+    arm cpu的优化工作还在进行中，现在使用了常规的cpu优化。在arm a73上paddle-mobile arm-v7现在单核运行一次mobilenet1.0是120+ms，显然这不是我们的最终目标，我们正在用大量的汇编改写，后续性能仍会有巨大提升空间。
     
 - **Mali GPU**
 
@@ -66,7 +69,7 @@ Paddle-Moible是PaddlePaddle组织下的项目，是一个致力于嵌入式平�
 ### 开发文档
 
 开发文档主要是关于编译、运行等问题。做为开发者，它可以和贡献文档共同结合使用。
-[开发文档]()https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_doc.md
+[开发文档链接](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_doc.md)
 
 ### 贡献文档
 - [贡献文档链接](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/CONTRIBUTING.md)
@@ -86,7 +89,7 @@ ONNX全称为“Open Neural Network Exchange”，即“开放的神经网络切
 
 目前，百度也在做onnx支持工作。相关转换项目在这里：[paddle-onnx](https://github.com/PaddlePaddle/paddle-onnx)。
 
-![](http://otkwwi4x8.bkt.clouddn.com/2018-07-03-15305875853057.jpg)
+![](http://7xop3k.com1.z0.glb.clouddn.com/15311951836000.jpg)
 
 ### 4. 部分测试模型下载
 [下载链接](https://mms-mis.cdn.bcebos.com/paddle-mobile/models.zip)
