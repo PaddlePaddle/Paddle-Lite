@@ -48,6 +48,11 @@ class BatchNormOp<P: PrecisionType>: Operator<BatchNormKernel<P>, BatchNormParam
     }
     typealias OpType = BatchNormOp<P>
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+        do {
+            try kernel.compute(commandBuffer: buffer, param: para)
+        } catch let error {
+            throw error
+        }
     }
 }
 
