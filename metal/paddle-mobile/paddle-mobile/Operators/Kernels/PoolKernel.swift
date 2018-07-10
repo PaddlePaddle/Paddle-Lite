@@ -14,13 +14,12 @@
 
 import Foundation
 
-public struct Program {
-    let paramPath: String
-    let programDesc: ProgramDesc
-    let scope: Scope
-    init(inProgramDesc: ProgramDesc, inParamPath: String, inScope: Scope) {
-        programDesc = inProgramDesc
-        paramPath = inParamPath
-        scope = inScope
+class PoolKernel<P: PrecisionType>: Kernel, Computable{
+    
+    func compute(commandBuffer: MTLCommandBuffer, param: PoolParam<P>) throws {
+    }
+    
+    required init(device: MTLDevice, param: PoolParam<P>) {
+        super.init(device: device, inFunctionName: "relu")
     }
 }

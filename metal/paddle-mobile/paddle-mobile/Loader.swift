@@ -104,12 +104,9 @@ public class Loader<P: PrecisionType> {
                 serializedData: modelData)
             
             let originProgramDesc = ProgramDesc.init(protoProgram: protoProgram)
-
-
             let programDesc = ProgramOptimize<P>.init().optimize(originProgramDesc: originProgramDesc)
             print(programDesc)
-            
-            fatalError()
+
             guard let paraLoader = try? ParaLoader.init(paramPath: paraPath) else {
                 throw PaddleMobileError.loaderError(message: "load para error")
             }
@@ -180,7 +177,7 @@ public class Loader<P: PrecisionType> {
                 }
             }
             
-            let program = Program.init(protoProgramDesc: protoProgram, inParamPath: paraPath, inScope: scope)
+            let program = Program.init(inProgramDesc: programDesc, inParamPath: paraPath, inScope: scope)
             
             return program
         } catch _ {

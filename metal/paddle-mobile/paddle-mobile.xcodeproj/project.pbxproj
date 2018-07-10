@@ -45,6 +45,14 @@
 		FC9D038020E22FBB000F735A /* FeedOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9D037F20E22FBB000F735A /* FeedOp.swift */; };
 		FC9D038220E2312E000F735A /* FetchOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9D038120E2312E000F735A /* FetchOp.swift */; };
 		FC9D038420E23B01000F735A /* Texture.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9D038320E23B01000F735A /* Texture.swift */; };
+		FCD04E6620F314C50007374F /* PoolOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCD04E6520F314C50007374F /* PoolOp.swift */; };
+		FCD04E6820F315020007374F /* PoolKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCD04E6720F315020007374F /* PoolKernel.swift */; };
+		FCD04E6A20F319EC0007374F /* SoftmaxOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCD04E6920F319EC0007374F /* SoftmaxOp.swift */; };
+		FCD04E6C20F31A280007374F /* SoftmaxKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCD04E6B20F31A280007374F /* SoftmaxKernel.swift */; };
+		FCD04E6E20F31B4B0007374F /* ReshapeOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCD04E6D20F31B4B0007374F /* ReshapeOp.swift */; };
+		FCD04E7020F31B720007374F /* ReshapeKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCD04E6F20F31B720007374F /* ReshapeKernel.swift */; };
+		FCD04E7220F343420007374F /* ConvAddOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCD04E7120F343420007374F /* ConvAddOp.swift */; };
+		FCD04E7420F3437E0007374F /* ConvAddKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCD04E7320F3437E0007374F /* ConvAddKernel.swift */; };
 		FCEBC0F420F1FDD90099DBAF /* ConvAddBatchNormReluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCEBC0F320F1FDD90099DBAF /* ConvAddBatchNormReluOp.swift */; };
 		FCEBC0F620F1FE120099DBAF /* ConvAddBatchNormReluKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCEBC0F520F1FE120099DBAF /* ConvAddBatchNormReluKernel.swift */; };
 		FCF2D73820E64E70007AC5F5 /* Kernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF2D73720E64E70007AC5F5 /* Kernel.swift */; };
@@ -93,6 +101,14 @@
 		FC9D037F20E22FBB000F735A /* FeedOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedOp.swift; sourceTree = "<group>"; };
 		FC9D038120E2312E000F735A /* FetchOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchOp.swift; sourceTree = "<group>"; };
 		FC9D038320E23B01000F735A /* Texture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Texture.swift; sourceTree = "<group>"; };
+		FCD04E6520F314C50007374F /* PoolOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoolOp.swift; sourceTree = "<group>"; };
+		FCD04E6720F315020007374F /* PoolKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoolKernel.swift; sourceTree = "<group>"; };
+		FCD04E6920F319EC0007374F /* SoftmaxOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoftmaxOp.swift; sourceTree = "<group>"; };
+		FCD04E6B20F31A280007374F /* SoftmaxKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoftmaxKernel.swift; sourceTree = "<group>"; };
+		FCD04E6D20F31B4B0007374F /* ReshapeOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReshapeOp.swift; sourceTree = "<group>"; };
+		FCD04E6F20F31B720007374F /* ReshapeKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReshapeKernel.swift; sourceTree = "<group>"; };
+		FCD04E7120F343420007374F /* ConvAddOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvAddOp.swift; sourceTree = "<group>"; };
+		FCD04E7320F3437E0007374F /* ConvAddKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvAddKernel.swift; sourceTree = "<group>"; };
 		FCEBC0F320F1FDD90099DBAF /* ConvAddBatchNormReluOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ConvAddBatchNormReluOp.swift; path = "paddle-mobile/Operators/ConvAddBatchNormReluOp.swift"; sourceTree = SOURCE_ROOT; };
 		FCEBC0F520F1FE120099DBAF /* ConvAddBatchNormReluKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvAddBatchNormReluKernel.swift; sourceTree = "<group>"; };
 		FCF2D73720E64E70007AC5F5 /* Kernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Kernel.swift; path = "paddle-mobile/Operators/Kernels/Kernel.swift"; sourceTree = SOURCE_ROOT; };
@@ -193,6 +209,10 @@
 				FC039BA820E11CBC0081E9F8 /* ReluOp.swift */,
 				FC9D037F20E22FBB000F735A /* FeedOp.swift */,
 				FC9D038120E2312E000F735A /* FetchOp.swift */,
+				FCD04E6520F314C50007374F /* PoolOp.swift */,
+				FCD04E6920F319EC0007374F /* SoftmaxOp.swift */,
+				FCD04E6D20F31B4B0007374F /* ReshapeOp.swift */,
+				FCD04E7120F343420007374F /* ConvAddOp.swift */,
 			);
 			path = Operators;
 			sourceTree = "<group>";
@@ -227,6 +247,10 @@
 				FC5163F520EF556E00636C28 /* Texture2DTo2DArrayKernel.swift */,
 				FC4CB74820F0B954007C0C6D /* ConvKernel.metal */,
 				FCEBC0F520F1FE120099DBAF /* ConvAddBatchNormReluKernel.swift */,
+				FCD04E6720F315020007374F /* PoolKernel.swift */,
+				FCD04E6B20F31A280007374F /* SoftmaxKernel.swift */,
+				FCD04E6F20F31B720007374F /* ReshapeKernel.swift */,
+				FCD04E7320F3437E0007374F /* ConvAddKernel.swift */,
 			);
 			path = Kernels;
 			sourceTree = "<group>";
@@ -346,6 +370,8 @@
 				FC0E2DBC20EE45FE009C1FAC /* ConvKernel.swift in Sources */,
 				FC039BAA20E11CBC0081E9F8 /* ElementwiseAddOp.swift in Sources */,
 				FC039B9B20E11CA00081E9F8 /* Executor.swift in Sources */,
+				FCD04E7020F31B720007374F /* ReshapeKernel.swift in Sources */,
+				FCD04E7220F343420007374F /* ConvAddOp.swift in Sources */,
 				FC039BBB20E11CC20081E9F8 /* ProgramDesc.swift in Sources */,
 				FC9D037920E229E4000F735A /* OpParam.swift in Sources */,
 				FC1B186620ECF1C600678B91 /* ResizeKernel.swift in Sources */,
@@ -362,21 +388,27 @@
 				FC4CB74920F0B954007C0C6D /* ConvKernel.metal in Sources */,
 				FC039BA920E11CBC0081E9F8 /* ConvOp.swift in Sources */,
 				FC9D038420E23B01000F735A /* Texture.swift in Sources */,
+				FCD04E6E20F31B4B0007374F /* ReshapeOp.swift in Sources */,
 				FC039B9820E11C9A0081E9F8 /* Errors.swift in Sources */,
 				FC039BBF20E11CC20081E9F8 /* Attribute.swift in Sources */,
+				FCD04E7420F3437E0007374F /* ConvAddKernel.swift in Sources */,
 				FC039BB920E11CC20081E9F8 /* Scope.swift in Sources */,
+				FCD04E6620F314C50007374F /* PoolOp.swift in Sources */,
 				FC039BAC20E11CBC0081E9F8 /* BatchNormOp.swift in Sources */,
 				FC039BBC20E11CC20081E9F8 /* VarDesc.swift in Sources */,
 				FC0E2DBA20EE3B8D009C1FAC /* ReluKernel.swift in Sources */,
 				FC82735920E3C04200BE430A /* OpCreator.swift in Sources */,
 				FC0E2DBE20EE460D009C1FAC /* BatchNormKernel.swift in Sources */,
 				FC039BAB20E11CBC0081E9F8 /* Operator.swift in Sources */,
+				FCD04E6A20F319EC0007374F /* SoftmaxOp.swift in Sources */,
 				FC9D038220E2312E000F735A /* FetchOp.swift in Sources */,
 				FC039BBD20E11CC20081E9F8 /* Program.swift in Sources */,
 				FC039BA220E11CB70081E9F8 /* Loader.swift in Sources */,
+				FCD04E6C20F31A280007374F /* SoftmaxKernel.swift in Sources */,
 				FC4CB74B20F12C30007C0C6D /* ProgramOptimize.swift in Sources */,
 				FC5163F620EF556E00636C28 /* Texture2DTo2DArrayKernel.swift in Sources */,
 				FC039BC020E11CC20081E9F8 /* BlockDesc.swift in Sources */,
+				FCD04E6820F315020007374F /* PoolKernel.swift in Sources */,
 				FC039BAD20E11CBC0081E9F8 /* ReluOp.swift in Sources */,
 				FC039BBE20E11CC20081E9F8 /* OpDesc.swift in Sources */,
 				FC039B9720E11C9A0081E9F8 /* Extensions.swift in Sources */,

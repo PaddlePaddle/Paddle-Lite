@@ -14,12 +14,13 @@
 
 import Foundation
 
-struct ElementwiseAddParam<P: PrecisionType>: OpParam {
+class ElementwiseAddParam<P: PrecisionType>: OpParam {
     typealias ParamPrecisionType = P
-    init(opDesc: OpDesc, inScope: Scope) throws {
+    required init(opDesc: OpDesc, inScope: Scope) throws {
         do {
             input = try ElementwiseAddParam.inputX(inputs: opDesc.inputs, from: inScope)
-            inputY = try ElementwiseAddParam.inputY(inputs: opDesc.inputs, from: inScope)
+            inputY = try ElementwiseAddParam.inputY(inputs: opDesc.paraInputs, from: inScope)
+            
             output = try ElementwiseAddParam.outputOut(outputs: opDesc.outputs, from: inScope)
             axis = try ElementwiseAddParam.getAttr(key: "axis", attrs: opDesc.attrs)
         } catch let error {

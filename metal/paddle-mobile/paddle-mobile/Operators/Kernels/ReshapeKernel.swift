@@ -14,13 +14,13 @@
 
 import Foundation
 
-public struct Program {
-    let paramPath: String
-    let programDesc: ProgramDesc
-    let scope: Scope
-    init(inProgramDesc: ProgramDesc, inParamPath: String, inScope: Scope) {
-        programDesc = inProgramDesc
-        paramPath = inParamPath
-        scope = inScope
+class ReshapeKernel<P: PrecisionType>: Kernel, Computable{
+    required init(device: MTLDevice, param: ReshapeParam<P>) {
+        super.init(device: device, inFunctionName: "relu")
     }
+    
+    func compute(commandBuffer: MTLCommandBuffer, param: ReshapeParam<P>) throws {
+    }
+    
+    
 }
