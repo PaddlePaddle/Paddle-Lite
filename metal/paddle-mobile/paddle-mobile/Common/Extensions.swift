@@ -72,6 +72,16 @@ extension Array: CIntIndex{
     }
 }
 
+extension Array where Element: AnyObject{
+    mutating func remove(element: Element) {
+        if let index = index(where: { (node) -> Bool in
+            return unsafeBitCast(element, to: Int.self) == unsafeBitCast(node, to: Int.self)
+        }) {
+            remove(at: index)
+        }
+    }
+    
+}
 
 //MARK: Array extension
 extension Array where Element: Comparable{
@@ -91,5 +101,11 @@ extension String{
         return (self as NSString).utf8String
     }
 }
+
+func address<T: AnyObject>(o: T) -> String {
+    return String.init(format: "%018p", unsafeBitCast(o, to: Int.self))
+}
+
+
 
 

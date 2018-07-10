@@ -14,13 +14,12 @@
 
 import Foundation
 
-public struct Program {
-    let paramPath: String
-    let programDesc: ProgramDesc
-    let scope: Scope
-    init(inProgramDesc: ProgramDesc, inParamPath: String, inScope: Scope) {
-        programDesc = inProgramDesc
-        paramPath = inParamPath
-        scope = inScope
+class SoftmaxKernel<P: PrecisionType>: Kernel, Computable{
+    
+    func compute(commandBuffer: MTLCommandBuffer, param: SoftmaxParam<P>) throws {
+    }
+    
+    required init(device: MTLDevice, param: SoftmaxParam<P>) {
+        super.init(device: device, inFunctionName: "relu")
     }
 }

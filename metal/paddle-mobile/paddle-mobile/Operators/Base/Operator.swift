@@ -18,8 +18,8 @@ import Foundation
 protocol Fusion {
     static func fusionNode() -> Node
     static func change() -> [String : [(from: String, to: String)]]
+    static func fusionType() -> String
 }
-
 
 protocol Runable {
     func run(device: MTLDevice, buffer: MTLCommandBuffer) throws
@@ -117,20 +117,20 @@ let gBatchNormType              = "batch_norm"
 let gReluType                   = "relu"
 let gElementwiseAdd             = "elementwise_add"
 let gConvAddBatchNormReluType   = "conv_add_batchnorm_relu"
+let gPooType                    = "pool2d"
+let gSoftmaxType                = "softmax"
+let gReshapeType                = "reshape"
+let gConvAddType                = "conv_add"
+
 
 let opInfos = [gConvType                    : (inputs: ["Input"], outputs: ["Output"]),
                gBatchNormType               : (inputs: ["X"], outputs: ["Y"]),
                gReluType                    : (inputs: ["X"], outputs: ["Out"]),
-               gElementwiseAdd              : (inputs: ["X", "Y"], outputs: ["Out"]),
+               gElementwiseAdd              : (inputs: ["X"], outputs: ["Out"]),
                gFeedType                    : (inputs: ["X"], outputs: ["Out"]),
                gFetchType                   : (inputs: ["X"], outputs: ["Out"]),
-               gConvAddBatchNormReluType    : (inputs: ["Input"], outputs: ["Out"])]
-
-
-
-
-
-
-
-
-
+               gConvAddBatchNormReluType    : (inputs: ["Input"], outputs: ["Out"]),
+               gPooType                     : (inputs: ["X"], outputs: ["Out"]),
+               gSoftmaxType                 : (inputs: ["X"], outputs: ["Out"]),
+               gReshapeType                 : (inputs: ["X"], outputs: ["Out"]),
+               gConvAddType                 : (inputs: ["Input"], outputs: ["Out"])]

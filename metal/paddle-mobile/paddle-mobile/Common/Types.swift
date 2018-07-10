@@ -14,21 +14,70 @@
 
 import Foundation
 
+public protocol SummableMultipliable: Equatable {
+    static func +(lhs: Self, rhs: Self) -> Self
+    static func *(lhs: Self, rhs: Self) -> Self
+    static func -(lhs: Self, rhs: Self) -> Self
+}
+public protocol PrecisionType: SummableMultipliable{
+    init(inFloat: Float32)
+    init(inFloat16: Float16)
+    init<P: PrecisionType>(_ inP: P)
+    static var bitSize: UInt { get }
+}
+
 public typealias Float16 = Int16
 extension Float16: PrecisionType {
+    public static func * (prefix: Float16, postfix: Float16) {
+        return prefix * postfix
+    }
+    
+    public init<P>(_ inP: P) where P : PrecisionType {
+        if P.bitSize == Float32.bitSize {
+            self = Float16(inFloat: inP as! Float32)
+        } else if P.bitSize == Float16.bitSize {
+            self = inP as! Float16
+        } else {
+            fatalError()
+        }
+    }
+    
+    public static var bitSize: UInt {
+        return 16
+    }
+    
+    public init(inFloat16: Float16) {
+        self = inFloat16
+    }
     public init(inFloat: Float32) {
         self = Int16(inFloat)
     }
+    
+    
+    
 }
-
-public protocol PrecisionType {
-    init(inFloat: Float32)
-}
-
 
 extension Float32: PrecisionType {
+    public init<P>(_ inP: P) where P : PrecisionType {
+        if P.bitSize == Float32.bitSize {
+            self = inP as! Float32
+        } else if P.bitSize == Float16.bitSize {
+            self = Float32.init(inP as! Float16)
+        } else {
+            fatalError()
+        }
+    }
+    
     public init(inFloat: Float32) {
         self = inFloat
+    }
+    
+    public init(inFloat16: Float16) {
+        self = Float32.init(inFloat16)
+    }
+    
+    public static var bitSize: UInt {
+        return 32
     }
 }
 
