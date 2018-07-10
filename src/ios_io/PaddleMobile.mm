@@ -62,6 +62,15 @@ static std::mutex shared_mutex;
   }
 }
 
+- (BOOL)load:(NSString *)modelAndWeightPath{
+  std::string model_path_str = std::string([modelAndWeightPath UTF8String]);
+  if (loaded_ = pam_->Load(model_path_str)) {
+    return YES;
+  } else {
+    return NO;
+  }
+}
+
 -(void)preprocess:(const UInt8 *)input output:(float *)output imageWidth:(int)imageWidth imageHeight:(int)imageHeight imageChannels:(int)imageChannels means:(NSArray<NSNumber *> *)means scale:(float)scale dim:(std::vector<int64_t>)dim{
   if (means == nil) {
     means = @[@0, @0, @0];

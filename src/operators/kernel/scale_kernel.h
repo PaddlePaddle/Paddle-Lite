@@ -12,26 +12,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+#include "framework/operator.h"
+#include "operators/op_param.h"
 
-#include <cmath>
-#include "framework/tensor.h"
+#pragma once;
 
 namespace paddle_mobile {
 namespace operators {
-namespace math {
 
-// matrix multiply with continuous memory
-template <typename T>
-void matmul(const framework::Tensor &matrix_a, bool trans_a,
-            const framework::Tensor &matrix_b, bool trans_b, T alpha,
-            framework::Tensor *matrix_out, T beta, bool relu = false);
-
-template <typename T>
-void matmulWithBn(const framework::Tensor &matrix_a, bool trans_a,
-                  const framework::Tensor &matrix_b, bool trans_b, T alpha,
-                  framework::Tensor *matrix_out, T beta, bool relu,
-                  framework::Tensor *new_scale, framework::Tensor *new_bias);
-}  // namespace math
+template <typename DeviceType, typename T>
+class ScaleKernel : public framework::OpKernelBase<DeviceType, ScaleParam> {
+ public:
+  void Compute(const ScaleParam& param) const;
+};
 }  // namespace operators
 }  // namespace paddle_mobile

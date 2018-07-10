@@ -12,26 +12,31 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+#ifdef SLICE_OP
 
-#include <cmath>
-#include "framework/tensor.h"
-
+#include "operators/slice_op.h"
+#include <vector>
 namespace paddle_mobile {
 namespace operators {
-namespace math {
 
-// matrix multiply with continuous memory
-template <typename T>
-void matmul(const framework::Tensor &matrix_a, bool trans_a,
-            const framework::Tensor &matrix_b, bool trans_b, T alpha,
-            framework::Tensor *matrix_out, T beta, bool relu = false);
-
-template <typename T>
-void matmulWithBn(const framework::Tensor &matrix_a, bool trans_a,
-                  const framework::Tensor &matrix_b, bool trans_b, T alpha,
-                  framework::Tensor *matrix_out, T beta, bool relu,
-                  framework::Tensor *new_scale, framework::Tensor *new_bias);
-}  // namespace math
+template <typename Dtype, typename T>
+void SliceOp<Dtype, T>::InferShape() const {
+  /// todo: add InputShape() detection.
+}
+template class SliceOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(slice);
+REGISTER_OPERATOR_CPU(slice, ops::SliceOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(slice);
+REGISTER_OPERATOR_MALI_GPU(slice, ops::SliceOp);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
+
+#endif
