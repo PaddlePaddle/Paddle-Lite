@@ -60,16 +60,16 @@ kernel void elementwise_add(texture2d_array<half, access::read> inTexture [[text
     outTexture.write(input, gid.xy, gid.z);
 }
 
-
-
-
 kernel void batchnorm(texture2d_array<half, access::read> inTexture [[texture(0)]],
-                 texture2d_array<half, access::write> outTexture [[texture(1)]],
-                 uint3 gid [[thread_position_in_grid]]) {
+                      texture2d_array<half, access::write> outTexture [[texture(1)]],
+                      const device half4 * newScale [[buffer(0)]],
+                      const device half4 * newBias [[buffer(1)]],
+                      uint3 gid [[thread_position_in_grid]]) {
     if (gid.x >= outTexture.get_width() ||
         gid.y >= outTexture.get_height() ||
         gid.z >= outTexture.get_array_size()) return;
     const half4 input = inTexture.read(gid.xy, gid.z);
+    half4 output = input * newScale[gid.z] + newBias[gid.z];
     outTexture.write(input, gid.xy, gid.z);
 }
 
@@ -83,6 +83,5 @@ kernel void texture2d_to_2d_array(texture2d<half, access::read> inTexture [[text
     const half4 input = inTexture.read(gid.xy);
     outTexture.write(input, gid.xy, 0);
 }
-
 
 
