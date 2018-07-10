@@ -1,10 +1,16 @@
-//
-//  ConvAddBatchNormReluOp.swift
-//  paddle-mobile
-//
-//  Created by liuRuiLong on 2018/7/8.
-//  Copyright © 2018年 orange. All rights reserved.
-//
+/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+ 
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ 
+ http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License. */
 
 import Foundation
 
@@ -14,7 +20,7 @@ class ConvAddParam<P: PrecisionType>: OpParam {
         do {
             filter = try ConvAddParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
             input = try ConvAddParam.input(inputs: opDesc.inputs, from: inScope)
-            output = try ConvAddParam.output(outputs: opDesc.outputs, from: inScope)
+            output = try ConvAddParam.outputOut(outputs: opDesc.outputs, from: inScope)
             stride = try ConvAddParam.getAttr(key: "strides", attrs: opDesc.attrs)
             paddings = try ConvAddParam.getAttr(key: "paddings", attrs: opDesc.attrs)
             dilations = try ConvAddParam.getAttr(key: "dilations", attrs: opDesc.attrs)
