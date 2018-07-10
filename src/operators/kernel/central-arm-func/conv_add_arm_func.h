@@ -125,10 +125,10 @@ void ConvAddCompute(const FusionConvAddParam &param) {
              param.Input()->dims()[1] == param.Output()->dims()[1] &&
              param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
              param.Filter()->dims()[2] == 3 && param.Strides()[0] == 2) {
-//        math::DepthwiseConv3x3(param.Input(), param.Strides(),
-//        param.Paddings(),
-//                               param.Filter(), param.Bias(), param.Output(),
-//                               false);
+    //        math::DepthwiseConv3x3(param.Input(), param.Strides(),
+    //        param.Paddings(),
+    //                               param.Filter(), param.Bias(),
+    //                               param.Output(), false);
 
     math::DepthwiseConv3x3s2p1v2(param.Input(), param.Filter(), param.Output(),
                                  *param.Bias(), true);

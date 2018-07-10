@@ -52,8 +52,9 @@ int main() {
   }
 
   auto time1 = time();
-//  paddle_mobile::operators::math::Sgemm(m, n, k, 0.9, a, lda, b, ldb, 0.3, c,
-//                                        ldc);
+  //  paddle_mobile::operators::math::Sgemm(m, n, k, 0.9, a, lda, b, ldb, 0.3,
+  //  c,
+  //                                        ldc);
   auto time2 = time();
   DLOG << "gemm cost :" << time_diff(time1, time2) << "ms\n";
   for (int i = 0; i < m * n; ++i) {
