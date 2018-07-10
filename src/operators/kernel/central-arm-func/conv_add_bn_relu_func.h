@@ -26,8 +26,6 @@ void ConvAddBNReluBasic(const FusionConvAddBNReluParam &param) {
   Tensor bias = *param.Bias();
   Tensor new_bias = *param.NewBias();
   Tensor new_scale = *param.NewScale();
-  auto new_bias_ptr = new_bias.data<float>();
-  auto new_scale_ptr = new_scale.data<float>();
   int axis = param.Axis();
   Tensor *output = param.Output();
   math::expand_bias(bias, axis, output->dims());
@@ -106,25 +104,12 @@ void ConvAddBNReluBasic(const FusionConvAddBNReluParam &param) {
       // gemm
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
-//      math::matmul<float>(filter_slice, false, col_matrix, false,
-//                          static_cast<float>(1), &out_slice,
-//                          static_cast<float>(0));
-        math::matmulWithBn<float>(filter_slice, false, col_matrix, false,
-                          static_cast<float>(1), &out_slice,
-                          static_cast<float>(0),true, &new_scale,&new_bias);
+
+      math::matmulWithBn<float>(
+          filter_slice, false, col_matrix, false, static_cast<float>(1),
+          &out_slice, static_cast<float>(0), true, &new_scale, &new_bias);
     }
   }
-  /// todo : use neon in special case instead of 2for(300ms)
-//  auto output_ptr = output->data<float>();
-//  for (int c = 0; c < output_matrix_shape[0]; c++) {
-//    int start = c * output_matrix_shape[1];
-//    for (int j = 0; j < output_matrix_shape[1]; j++) {
-//      output_ptr[start + j] =
-//          output_ptr[start + j] * new_scale_ptr[c] + new_bias_ptr[c];
-//      output_ptr[start + j] =
-//          output_ptr[start + j] < 0 ? 0 : output_ptr[start + j];
-//    }
-//  }
 }
 template <typename P>
 void ConvAddBNReluCompute(const FusionConvAddBNReluParam &param) {
