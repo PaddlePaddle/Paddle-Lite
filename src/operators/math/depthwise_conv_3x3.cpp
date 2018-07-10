@@ -1036,8 +1036,7 @@ void DepthwiseConv3x3s2p1v2(const Tensor *input, const Tensor *filter,
 
   float32x4_t vbias = vdupq_n_f32(0.0);
 
-  float32x4x2_t input_buff_mid{}, input_buff_bottom[w_times + 1],
-      input_buff_top[w_times + 1];
+  float32x4x2_t input_buff_mid{}, input_buff_bottom[w_times + 1];
   float32x4_t elewise_res0, elewise_res1, elewise_res2, res3;
   int out2in_mid;
   float32x4_t zero = vdupq_n_f32(0.0);
