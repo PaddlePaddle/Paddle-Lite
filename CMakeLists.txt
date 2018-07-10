@@ -9,7 +9,6 @@ option(LOG_PROFILE "log profile" ON)
 option(CPU "armv7 with neon" ON)
 option(MALI_GPU "mali gpu" OFF)
 option(FPGA "fpga" OFF)
-set(DEBUGING ON)
 
 if (ARM_LINUX)
 include("${CMAKE_CURRENT_LIST_DIR}/tools/arm-platform.cmake")
@@ -134,6 +133,9 @@ else ()
 endif ()
 
 if(DEBUGING)
-    add_subdirectory(test)
+    if(IS_IOS)
+    else()
+        add_subdirectory(test)
+    endif()
 endif()
 

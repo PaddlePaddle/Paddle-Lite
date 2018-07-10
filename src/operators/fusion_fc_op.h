@@ -69,7 +69,7 @@ class FusionFcOp
 
 #ifndef CONV_CPU_REGISTER
 #define CONV_CPU_REGISTER
-extern framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
+static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
 #endif
 
 #endif
@@ -78,7 +78,7 @@ extern framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
 
 #ifndef CONV_CPU_REGISTER
 #define CONV_CPU_REGISTER
-extern framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
+static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
 #endif
 
 #endif

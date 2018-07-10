@@ -15,9 +15,9 @@
 		FC12E94120EB6B2900807EF4 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = FC12E94020EB6B2900807EF4 /* main.m */; };
 		FC12E94A20EB6B6800807EF4 /* libpaddle-mobile.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FC12E94820EB6B6800807EF4 /* libpaddle-mobile.a */; };
 		FC12E94D20EB6BBB00807EF4 /* libstdc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = FC12E94C20EB6BBB00807EF4 /* libstdc++.tbd */; };
-		FC12E95120EB6BED00807EF4 /* params in Resources */ = {isa = PBXBuildFile; fileRef = FC12E94F20EB6BED00807EF4 /* params */; };
-		FC12E95220EB6BED00807EF4 /* model in Resources */ = {isa = PBXBuildFile; fileRef = FC12E95020EB6BED00807EF4 /* model */; };
 		FC12E95420EB6C0D00807EF4 /* apple.jpg in Resources */ = {isa = PBXBuildFile; fileRef = FC12E95320EB6C0D00807EF4 /* apple.jpg */; };
+		FC51640120EF758D00636C28 /* params in Resources */ = {isa = PBXBuildFile; fileRef = FC5163FF20EF758D00636C28 /* params */; };
+		FC51640220EF758D00636C28 /* model in Resources */ = {isa = PBXBuildFile; fileRef = FC51640020EF758D00636C28 /* model */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,9 +34,9 @@
 		FC12E94820EB6B6800807EF4 /* libpaddle-mobile.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libpaddle-mobile.a"; sourceTree = "<group>"; };
 		FC12E94920EB6B6800807EF4 /* PaddleMobile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PaddleMobile.h; sourceTree = "<group>"; };
 		FC12E94C20EB6BBB00807EF4 /* libstdc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libstdc++.tbd"; path = "usr/lib/libstdc++.tbd"; sourceTree = SDKROOT; };
-		FC12E94F20EB6BED00807EF4 /* params */ = {isa = PBXFileReference; lastKnownFileType = file; path = params; sourceTree = "<group>"; };
-		FC12E95020EB6BED00807EF4 /* model */ = {isa = PBXFileReference; lastKnownFileType = file; path = model; sourceTree = "<group>"; };
 		FC12E95320EB6C0D00807EF4 /* apple.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = apple.jpg; sourceTree = "<group>"; };
+		FC5163FF20EF758D00636C28 /* params */ = {isa = PBXFileReference; lastKnownFileType = file; path = params; sourceTree = "<group>"; };
+		FC51640020EF758D00636C28 /* model */ = {isa = PBXFileReference; lastKnownFileType = file; path = model; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -72,9 +72,9 @@
 		FC12E93020EB6B2800807EF4 /* PaddleMobileDemo */ = {
 			isa = PBXGroup;
 			children = (
-				FC12E95320EB6C0D00807EF4 /* apple.jpg */,
-				FC12E94E20EB6BED00807EF4 /* googlenet_combine */,
 				FC12E94720EB6B6800807EF4 /* PaddleMobile */,
+				FC5163FE20EF758D00636C28 /* googlenet_combine */,
+				FC12E95320EB6C0D00807EF4 /* apple.jpg */,
 				FC12E93120EB6B2800807EF4 /* AppDelegate.h */,
 				FC12E93220EB6B2800807EF4 /* AppDelegate.m */,
 				FC12E93420EB6B2800807EF4 /* ViewController.h */,
@@ -105,11 +105,11 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		FC12E94E20EB6BED00807EF4 /* googlenet_combine */ = {
+		FC5163FE20EF758D00636C28 /* googlenet_combine */ = {
 			isa = PBXGroup;
 			children = (
-				FC12E94F20EB6BED00807EF4 /* params */,
-				FC12E95020EB6BED00807EF4 /* model */,
+				FC5163FF20EF758D00636C28 /* params */,
+				FC51640020EF758D00636C28 /* model */,
 			);
 			path = googlenet_combine;
 			sourceTree = "<group>";
@@ -171,10 +171,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FC51640220EF758D00636C28 /* model in Resources */,
+				FC51640120EF758D00636C28 /* params in Resources */,
 				FC12E93E20EB6B2900807EF4 /* LaunchScreen.storyboard in Resources */,
-				FC12E95220EB6BED00807EF4 /* model in Resources */,
 				FC12E93B20EB6B2900807EF4 /* Assets.xcassets in Resources */,
-				FC12E95120EB6BED00807EF4 /* params in Resources */,
 				FC12E95420EB6C0D00807EF4 /* apple.jpg in Resources */,
 				FC12E93920EB6B2800807EF4 /* Main.storyboard in Resources */,
 			);
