@@ -86,7 +86,7 @@ ONNX全称为“Open Neural Network Exchange”，即“开放的神经网络切
 
 目前，百度也在做onnx支持工作。相关转换项目在这里：[paddle-onnx](https://github.com/PaddlePaddle/paddle-onnx)。
 
-![](http://otkwwi4x8.bkt.clouddn.com/2018-07-03-15305875853057.jpg)
+![](http://7xop3k.com1.z0.glb.clouddn.com/15311951836000.jpg)
 
 ### 4. 部分测试模型下载
 [下载链接](https://mms-mis.cdn.bcebos.com/paddle-mobile/models.zip)
