@@ -14,6 +14,7 @@ limitations under the License. */
 
 #pragma once
 
+#include <cstdlib>
 #include "common/enforce.h"
 namespace paddle_mobile {
 namespace framework {

@@ -17,7 +17,7 @@ limitations under the License. */
 #pragma once
 
 #include <vector>
-#if __ARM_NEON
+#ifdef __ARM_NEON
 #include <arm_neon.h>
 #endif
 #include "common/common.h"

@@ -17,6 +17,8 @@ limitations under the License. */
 #include <initializer_list>
 #include <typeinfo>
 #include <vector>
+#include <cstdlib>
+
 #include "common/enforce.h"
 #include "common/variant.h"
 #include "dim.h"

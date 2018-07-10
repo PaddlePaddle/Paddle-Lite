@@ -21,7 +21,7 @@ namespace math {
 
 void Pool2x2Max(vector<int> strides, vector<int> paddings, const Tensor *input,
                 Tensor *output) {
-#if __ARM_NEON
+#ifdef __ARM_NEON
 
 #ifdef ARMV7
 
@@ -99,7 +99,7 @@ void Pool2x2Max(vector<int> strides, vector<int> paddings, const Tensor *input,
 
 void Pool2x2Avg(vector<int> strides, vector<int> paddings, const Tensor *input,
                 Tensor *output) {
-#if __ARM_NEON
+#ifdef __ARM_NEON
 
 #ifdef ARMV7
   const int batch_size = input->dims()[0];
