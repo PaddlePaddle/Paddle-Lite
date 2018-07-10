@@ -152,7 +152,7 @@ class Tensor {
     if (holder_ != nullptr) {
       holder_->set_type(type);
     }
-    PADDLE_MOBILE_ENFORCE(numel() >= 0, "the Tensor'snumel must >=0.")
+    PADDLE_MOBILE_ENFORCE(numel() >= 0, "the Tensor's numel must >=0.")
     int64_t size = numel() * SizeOfType(type);
     if (holder_ == nullptr || holder_->size() < size + offset_) {
       holder_.reset(new PlaceholderImpl(size, type));

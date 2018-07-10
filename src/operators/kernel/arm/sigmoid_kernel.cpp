@@ -16,7 +16,7 @@ limitations under the License. */
 
 #include "../sigmoid_kernel.h"
 #include "../central-arm-func/sigmoid_arm_func.h"
-#if __ARM_NEON
+#ifdef __ARM_NEON
 #include "../../math/math_func_neon.h"
 #endif
 #include <cmath>
