@@ -214,10 +214,8 @@
 		FC0E2DB420EDC03C009C1FAC /* conv2d_27.w_0 in Resources */ = {isa = PBXBuildFile; fileRef = FC0E2CEA20EDC03B009C1FAC /* conv2d_27.w_0 */; };
 		FC0E2DB520EDC03C009C1FAC /* conv2d_33.w_0 in Resources */ = {isa = PBXBuildFile; fileRef = FC0E2CEB20EDC03B009C1FAC /* conv2d_33.w_0 */; };
 		FC0E2DB620EDC03C009C1FAC /* depthwise_conv2d_7.w_0 in Resources */ = {isa = PBXBuildFile; fileRef = FC0E2CEC20EDC03B009C1FAC /* depthwise_conv2d_7.w_0 */; };
-		FCEBC0FC20F227C60099DBAF /* mobilenet in Resources */ = {isa = PBXBuildFile; fileRef = FCEBC0F820F227C60099DBAF /* mobilenet */; };
-		FCEBC0FD20F227C60099DBAF /* params in Resources */ = {isa = PBXBuildFile; fileRef = FCEBC0F920F227C60099DBAF /* params */; };
-		FCEBC0FE20F227C60099DBAF /* model in Resources */ = {isa = PBXBuildFile; fileRef = FCEBC0FA20F227C60099DBAF /* model */; };
-		FCEBC0FF20F227C60099DBAF /* yolo in Resources */ = {isa = PBXBuildFile; fileRef = FCEBC0FB20F227C60099DBAF /* yolo */; };
+		FCD04E6320F3146B0007374F /* params in Resources */ = {isa = PBXBuildFile; fileRef = FCD04E6120F3146A0007374F /* params */; };
+		FCD04E6420F3146B0007374F /* model in Resources */ = {isa = PBXBuildFile; fileRef = FCD04E6220F3146A0007374F /* model */; };
 		FCEBEC2C20E1391F00C0B14D /* paddle_mobile.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */; };
 		FCEBEC2D20E1391F00C0B14D /* paddle_mobile.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
@@ -448,10 +446,8 @@
 		FC0E2CEA20EDC03B009C1FAC /* conv2d_27.w_0 */ = {isa = PBXFileReference; lastKnownFileType = file; path = conv2d_27.w_0; sourceTree = "<group>"; };
 		FC0E2CEB20EDC03B009C1FAC /* conv2d_33.w_0 */ = {isa = PBXFileReference; lastKnownFileType = file; path = conv2d_33.w_0; sourceTree = "<group>"; };
 		FC0E2CEC20EDC03B009C1FAC /* depthwise_conv2d_7.w_0 */ = {isa = PBXFileReference; lastKnownFileType = file; path = depthwise_conv2d_7.w_0; sourceTree = "<group>"; };
-		FCEBC0F820F227C60099DBAF /* mobilenet */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = mobilenet; sourceTree = "<group>"; };
-		FCEBC0F920F227C60099DBAF /* params */ = {isa = PBXFileReference; lastKnownFileType = file; path = params; sourceTree = "<group>"; };
-		FCEBC0FA20F227C60099DBAF /* model */ = {isa = PBXFileReference; lastKnownFileType = file; path = model; sourceTree = "<group>"; };
-		FCEBC0FB20F227C60099DBAF /* yolo */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = yolo; sourceTree = "<group>"; };
+		FCD04E6120F3146A0007374F /* params */ = {isa = PBXFileReference; lastKnownFileType = file; path = params; sourceTree = "<group>"; };
+		FCD04E6220F3146A0007374F /* model */ = {isa = PBXFileReference; lastKnownFileType = file; path = model; sourceTree = "<group>"; };
 		FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = paddle_mobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -531,7 +527,7 @@
 		FC0E2C2020EDC03B009C1FAC /* models */ = {
 			isa = PBXGroup;
 			children = (
-				FCEBC0F720F227C60099DBAF /* yolo */,
+				FCD04E6020F3146A0007374F /* mobilenet */,
 				FC0E2C2420EDC03B009C1FAC /* mobilenetssd */,
 			);
 			name = models;
@@ -745,15 +741,13 @@
 			path = mobilenetssd;
 			sourceTree = "<group>";
 		};
-		FCEBC0F720F227C60099DBAF /* yolo */ = {
+		FCD04E6020F3146A0007374F /* mobilenet */ = {
 			isa = PBXGroup;
 			children = (
-				FCEBC0F820F227C60099DBAF /* mobilenet */,
-				FCEBC0F920F227C60099DBAF /* params */,
-				FCEBC0FA20F227C60099DBAF /* model */,
-				FCEBC0FB20F227C60099DBAF /* yolo */,
+				FCD04E6120F3146A0007374F /* params */,
+				FCD04E6220F3146A0007374F /* model */,
 			);
-			path = yolo;
+			path = mobilenet;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -828,7 +822,6 @@
 				FC0E2D2920EDC03B009C1FAC /* batch_norm_2.b_0 in Resources */,
 				FC0E2DA920EDC03C009C1FAC /* conv2d_26.w_0 in Resources */,
 				FC0E2D0420EDC03B009C1FAC /* batch_norm_16.w_2 in Resources */,
-				FCEBC0FE20F227C60099DBAF /* model in Resources */,
 				FC0E2D0720EDC03B009C1FAC /* batch_norm_6.w_1 in Resources */,
 				FC0E2DB020EDC03C009C1FAC /* batch_norm_30.w_2 in Resources */,
 				FC0E2D9720EDC03C009C1FAC /* conv2d_25.w_0 in Resources */,
@@ -844,11 +837,9 @@
 				FC0E2DA620EDC03C009C1FAC /* depthwise_conv2d_4.w_0 in Resources */,
 				FC0E2D6920EDC03C009C1FAC /* conv2d_6.w_0 in Resources */,
 				FC0E2D6520EDC03C009C1FAC /* conv2d_7.w_0 in Resources */,
-				FCEBC0FD20F227C60099DBAF /* params in Resources */,
 				FC0E2DAB20EDC03C009C1FAC /* batch_norm_19.w_2 in Resources */,
 				FC0E2D9920EDC03C009C1FAC /* conv2d_31.w_0 in Resources */,
 				FC0E2D3020EDC03B009C1FAC /* batch_norm_34.w_0 in Resources */,
-				FCEBC0FC20F227C60099DBAF /* mobilenet in Resources */,
 				FC0E2D1220EDC03B009C1FAC /* batch_norm_34.b_0 in Resources */,
 				FC0E2D4D20EDC03C009C1FAC /* batch_norm_7.b_0 in Resources */,
 				FC0E2D2520EDC03B009C1FAC /* batch_norm_21.w_1 in Resources */,
@@ -857,6 +848,7 @@
 				FC0E2D8620EDC03C009C1FAC /* conv2d_23.w_0 in Resources */,
 				FC0E2CFE20EDC03B009C1FAC /* depthwise_conv2d_9.w_0 in Resources */,
 				FC0E2D4C20EDC03C009C1FAC /* batch_norm_8.w_2 in Resources */,
+				FCD04E6320F3146B0007374F /* params in Resources */,
 				FC0E2D5820EDC03C009C1FAC /* conv2d_5.w_0 in Resources */,
 				FC0E2D1620EDC03B009C1FAC /* batch_norm_3.w_1 in Resources */,
 				FC0E2DB120EDC03C009C1FAC /* batch_norm_24.w_2 in Resources */,
@@ -949,7 +941,6 @@
 				FC0E2D0F20EDC03B009C1FAC /* batch_norm_5.w_0 in Resources */,
 				FC0E2D4520EDC03C009C1FAC /* batch_norm_9.w_2 in Resources */,
 				FC0E2D9020EDC03C009C1FAC /* batch_norm_23.w_2 in Resources */,
-				FCEBC0FF20F227C60099DBAF /* yolo in Resources */,
 				FC0E2D6720EDC03C009C1FAC /* conv2d_31.b_0 in Resources */,
 				FC0E2DA020EDC03C009C1FAC /* conv2d_18.w_0 in Resources */,
 				FC0E2D1C20EDC03B009C1FAC /* conv2d_13.w_0 in Resources */,
@@ -972,6 +963,7 @@
 				FC0E2D0920EDC03B009C1FAC /* conv2d_14.w_0 in Resources */,
 				FC0E2CF720EDC03B009C1FAC /* batch_norm_28.w_2 in Resources */,
 				FC0E2D9520EDC03C009C1FAC /* depthwise_conv2d_5.w_0 in Resources */,
+				FCD04E6420F3146B0007374F /* model in Resources */,
 				FC0E2D4A20EDC03C009C1FAC /* conv2d_9.w_0 in Resources */,
 				FC0E2D4E20EDC03C009C1FAC /* batch_norm_19.w_1 in Resources */,
 				FC0E2D3620EDC03C009C1FAC /* batch_norm_18.w_0 in Resources */,

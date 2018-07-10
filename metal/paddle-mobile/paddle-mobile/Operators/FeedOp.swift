@@ -14,14 +14,14 @@
 
 import Foundation
 
-struct FeedParam<P: PrecisionType>: OpParam{
+class FeedParam<P: PrecisionType>: OpParam{
     var output: Texture<P>
     var input: InputTexture {
         return scope.input() as! InputTexture
     }
     let scope: Scope
     
-    init(opDesc: OpDesc, inScope: Scope) throws {
+    required init(opDesc: OpDesc, inScope: Scope) throws {
         scope = inScope
         do {
             output = try FeedParam.outputOut(outputs: opDesc.outputs, from: inScope)

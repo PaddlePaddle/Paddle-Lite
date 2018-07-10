@@ -14,11 +14,11 @@
 
 import Foundation
 
-struct FetchParam<P: PrecisionType>: OpParam{
+class FetchParam<P: PrecisionType>: OpParam{
     var output: ResultHolder<P> = ResultHolder.init(inDim: [], inResult: [])
     let input: Texture<P>
     let scope: Scope
-    init(opDesc: OpDesc, inScope: Scope) throws {
+    required init(opDesc: OpDesc, inScope: Scope) throws {
         scope = inScope
         do {
             input = try FetchParam.inputX(inputs: opDesc.inputs, from: inScope)

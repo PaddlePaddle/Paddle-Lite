@@ -18,7 +18,7 @@ infix operator --> : ChainNode
 class Node {
     var inputs: [Node] = []
     var outputs: [Node] = []
-    let type: String
+    var type: String
     var opDesc: OpDesc?
     init(inOpDesc: OpDesc) {
         type = inOpDesc.type
@@ -36,11 +36,12 @@ class Node {
     }
     
     func depth(begin: UInt = 1) -> UInt {
-        var beginMax: UInt = 0
+        var beginMax: UInt = 1
         for output in outputs {
             let subDepth = output.depth(begin: begin + 1)
             beginMax = max(begin, subDepth)
         }
+        beginMax = max(begin, beginMax)
         return beginMax
     }
     
@@ -50,23 +51,26 @@ class Node {
         return beginNode
     }
     
-    func folderWith(fusion: Fusion.Type) {
+    func folderWith(fusion: Fusion.Type, removedNodes: inout [Node]) {
         let fusionNode = fusion.fusionNode()
         let change = fusion.change()
         let inOutputs = outputs
         outputs.removeAll()
         for i in 0..<inOutputs.count {
-            inOutputs[i].folderWith(beginNode: self, matchNode: fusionNode.outputs[i], change: change)
+            inOutputs[i].folderWith(beginNode: self, matchNode: fusionNode.outputs[i], change: change, removedNodes: &removedNodes)
         }
+        opDesc?.type = fusion.fusionType()
+        type = fusion.fusionType()
     }
     
-    private func folderWith(beginNode: Node, matchNode: Node, change: [String : [(from: String, to: String)]]) {
+    private func folderWith(beginNode: Node, matchNode: Node, change: [String : [(from: String, to: String)]], removedNodes: inout [Node]) {
         guard let inOpdesc = opDesc else {
             fatalError()
         }
         
         for attr in inOpdesc.attrs {
             beginNode.opDesc?.attrs[attr.key] = attr.value
+//            print(beginNode.opDesc?.attrs)
         }
         
         for paraInput in inOpdesc.paraInputs {
@@ -85,6 +89,11 @@ class Node {
         
         if matchNode.outputs.count == 0 {
             beginNode.outputs.append(contentsOf: outputs)
+        }
+        removedNodes.append(self)
+        
+        for i in 0..<matchNode.outputs.count {
+            outputs[i].folderWith(beginNode: beginNode, matchNode: matchNode.outputs[i], change: change, removedNodes: &removedNodes)
         }
         
     }
@@ -122,11 +131,10 @@ extension Node: Equatable {
         return true
     }
     
-    
 }
 
 class ProgramOptimize<P: PrecisionType> {
-    let fusionOps: [Fusion.Type] = [ConvAddBatchNormReluOp<P>.self]
+    let fusionOps: [Fusion.Type] = [ConvAddBatchNormReluOp<P>.self, ConvAddOp<P>.self]
     func optimize(originProgramDesc: ProgramDesc) -> ProgramDesc {
         
         guard originProgramDesc.blocks.count == 1 else {
@@ -141,7 +149,7 @@ class ProgramOptimize<P: PrecisionType> {
                 guard let opInputKeys = opInfos[opDesc.type]?.inputs, let outputKeys = opInfos[opDesc.type]?.outputs else {
                     fatalError()
                 }
-
+                
                 let node = Node.init(inOpDesc: opDesc)
                 for inputKey in opInputKeys {
                     if let inputs = opDesc.inputs[inputKey] {
@@ -164,28 +172,32 @@ class ProgramOptimize<P: PrecisionType> {
                 
                 nodes.append(node)
                 
-                if var nodes = typeMapNodes[opDesc.type] {
-                    nodes.append(node)
-                    typeMapNodes[opDesc.type] = nodes
+                if var inNodes = typeMapNodes[opDesc.type] {
+                    inNodes.append(node)
+                    typeMapNodes[opDesc.type] = inNodes
                 } else {
-                    typeMapNodes[opDesc.type] = []
+                    typeMapNodes[opDesc.type] = [node]
                 }
             }
             
             for fusion in fusionOps {
                 let fusionNode = fusion.fusionNode()
                 let depth = fusionNode.depth()
-                print(depth)
-                if let nodes = typeMapNodes[fusionNode.type] {
-                    for node in nodes {
-                        let toNode = node.to(depth: 4)
+                if let toMatchNodes = typeMapNodes[fusionNode.type] {
+                    for node in toMatchNodes {
+                        let toNode = node.to(depth: depth)
                         if toNode == fusionNode {   // match
-                            node.folderWith(fusion: fusion)
+                            var removeNodes: [Node] = []
+                            node.folderWith(fusion: fusion, removedNodes: &removeNodes)
+                            for removeNode in removeNodes {
+                                nodes.remove(element: removeNode)
+                            }
                         }
+                        
                     }
                 }
             }
-            
+        
         var ops: [OpDesc] = []
         for node in nodes {
             ops.append(node.opDesc!)
