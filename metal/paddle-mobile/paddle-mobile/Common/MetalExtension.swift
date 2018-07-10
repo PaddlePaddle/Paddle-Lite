@@ -42,7 +42,6 @@ extension MTLDevice {
         }
     }
     
-    
     func pipeLine(funcName: String, inPaddleMobileLib: Bool = true) -> MTLComputePipelineState {
         let useLib = inPaddleMobileLib ? paddleMobileLibrary() : defaultLibrary()
         guard let function = useLib.makeFunction(name: funcName) else {
@@ -65,7 +64,7 @@ extension MTLComputeCommandEncoder {
         let width = computePipline.threadExecutionWidth
         let height = computePipline.maxTotalThreadsPerThreadgroup/width
         let threadsPerGroup = MTLSize.init(width: width, height: height, depth: 1)
-    
+        
 //        print(" thread: threads per group: \(threadsPerGroup) ")
 //        print(" thread: out texture width: \(outTexture.width) , out texture height: \(outTexture.height)")
         

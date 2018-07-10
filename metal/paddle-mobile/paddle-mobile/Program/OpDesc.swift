@@ -20,7 +20,7 @@ struct OpDesc {
     let outputs: [String : [String]]
     let unusedOutputs: [String : [String]]
     var attrs: [String : Attr] = [:]
-    let type: String
+    var type: String
     init(protoOpDesc: PaddleMobile_Framework_Proto_OpDesc) {
         type = protoOpDesc.type
         let creator = { (vars: [PaddleMobile_Framework_Proto_OpDesc.Var], canAdd: (String) -> Bool) -> [String : [String]] in

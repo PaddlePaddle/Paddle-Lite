@@ -14,9 +14,9 @@
 
 import Foundation
 
-struct BatchNormParam<P: PrecisionType>: OpParam {
+class BatchNormParam<P: PrecisionType>: OpParam {
     typealias ParamPrecisionType = P
-    init(opDesc: OpDesc, inScope: Scope) throws {
+    required init(opDesc: OpDesc, inScope: Scope) throws {
         do {
             input = try BatchNormParam.inputX(inputs: opDesc.inputs, from: inScope)
             output = try BatchNormParam.outputY(outputs: opDesc.outputs, from: inScope)

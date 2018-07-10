@@ -14,9 +14,9 @@
 
 import Foundation
 
-struct ReluParam<P: PrecisionType>: OpParam {
+class ReluParam<P: PrecisionType>: OpParam {
     typealias ParamPrecisionType = P
-    init(opDesc: OpDesc, inScope: Scope) throws {
+    required init(opDesc: OpDesc, inScope: Scope) throws {
         do {
             input = try ReluParam.inputX(inputs: opDesc.inputs, from: inScope)
             output = try ReluParam.outputOut(outputs: opDesc.outputs, from: inScope)

@@ -40,13 +40,17 @@ class OpCreator<P: PrecisionType> {
     }
     
     let opCreators: [String : (MTLDevice, OpDesc, Scope) throws -> Runable & InferShaperable] =
-        [gConvType        :     ConvOp<P>.creat,
-         gBatchNormType    :     BatchNormOp<P>.creat,
-         gReluType         :     ReluOp<P>.creat,
-         gElementwiseAdd   :     ElementwiseAddOp<P>.creat,
-         gFeedType         :     FeedOp<P>.creat,
-         gFetchType        :     FetchOp<P>.creat,
-         gConvAddBatchNormReluType : ConvAddBatchNormReluOp<P>.creat]
+        [gConvType                  :     ConvOp<P>.creat,
+         gBatchNormType             :     BatchNormOp<P>.creat,
+         gReluType                  :     ReluOp<P>.creat,
+         gElementwiseAdd            :     ElementwiseAddOp<P>.creat,
+         gFeedType                  :     FeedOp<P>.creat,
+         gFetchType                 :     FetchOp<P>.creat,
+         gConvAddBatchNormReluType  :     ConvAddBatchNormReluOp<P>.creat,
+         gPooType                   :     PoolOp<P>.creat,
+         gSoftmaxType               :     SoftmaxOp<P>.creat,
+         gReshapeType               :     ReshapeOp<P>.creat,
+         gConvAddType               :     ConvAddOp<P>.creat]
     
     private init(){}
 }
