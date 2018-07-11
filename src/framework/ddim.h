@@ -14,9 +14,11 @@ limitations under the License. */
 
 #pragma once
 
+#include <cstdlib>
 #include <initializer_list>
 #include <typeinfo>
 #include <vector>
+
 #include "common/enforce.h"
 #include "common/variant.h"
 #include "dim.h"
