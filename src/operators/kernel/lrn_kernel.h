@@ -12,19 +12,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+#ifdef LRN_OP
 
-#include <cmath>
 #include "framework/operator.h"
 #include "operators/op_param.h"
 
+#include <cmath>
+
 #ifdef __ARM_NEON
-#include <arm_neon.h>
+#include "arm_neon.h"
 #include "operators/math/math_func_neon.h"
 #endif
 
 namespace paddle_mobile {
 namespace operators {
+
+using namespace framework;
 
 template <typename T>
 struct LRNFunctor {
