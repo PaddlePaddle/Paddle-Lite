@@ -22,11 +22,17 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 namespace math {
+int MC = 0;
+int KC = 0;
+int NC = 0;
 
-std::vector<Gemmer *> Gemmer::gemmers;
+float *packedA;
+float *packedB;
+float *packedC;
+float *zero;
 // 将A矩阵分块复制到连续内存(ColMajor)
-void Gemmer::PackMatrixA(int m, int k, int m_tail, const float *A, int lda,
-                         float *buffer) {
+void PackMatrixA(int m, int k, int m_tail, const float *A, int lda,
+                 float *buffer) {
   int i, j;
   const float *Aij;
   for (i = 0; i < m - m_tail; i += MR) {
@@ -52,8 +58,8 @@ void Gemmer::PackMatrixA(int m, int k, int m_tail, const float *A, int lda,
 }
 
 // 将A矩阵分块复制到连续内存(RowMajor)
-void Gemmer::PackMatrixA_(int m, int k, int m_tail, const float *A, int lda,
-                          float *buffer) {
+void PackMatrixA_(int m, int k, int m_tail, const float *A, int lda,
+                  float *buffer) {
   const float *a0, *a1, *a2, *a3;
   for (int i = 0; i < m - m_tail; i += MR) {
     a0 = A + i * lda;
@@ -92,8 +98,8 @@ void Gemmer::PackMatrixA_(int m, int k, int m_tail, const float *A, int lda,
 }
 
 // 将B矩阵分块复制到连续内存(ColMajor)
-void Gemmer::PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
-                         float *buffer) {
+void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
+                 float *buffer) {
   int i, j;
   const float *Bj, *Bj1, *Bj2, *Bj3;
   for (j = 0; j < n - n_tail; j += NR) {
@@ -121,8 +127,8 @@ void Gemmer::PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
 }
 
 // 将B矩阵分块复制到连续内存(RowMajor)
-void Gemmer::PackMatrixB_(int k, int n, int n_tail, const float *B, int ldb,
-                          float *buffer) {
+void PackMatrixB_(int k, int n, int n_tail, const float *B, int ldb,
+                  float *buffer) {
   const float *b0;
   for (int j = 0; j < n - n_tail; j += NR) {
     for (int i = 0; i < k; ++i) {
@@ -150,9 +156,8 @@ void Gemmer::PackMatrixB_(int k, int n, int n_tail, const float *B, int ldb,
 }
 
 // 分块矩阵乘法
-void Gemmer::InnerKernel(int mc, int nc, float alpha, const float *a,
-                         const float *b, float beta, float *c, float *C,
-                         int ldc, bool relu) {
+void InnerKernel(int mc, int nc, float alpha, const float *a, const float *b,
+                 float beta, float *c, float *C, int ldc, bool relu) {
   for (int j = 0; j < nc; j += NR) {
     for (int i = 0; i < mc; i += MR) {
       // AddDot4x4(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
@@ -179,10 +184,9 @@ void Gemmer::InnerKernel(int mc, int nc, float alpha, const float *a,
 }
 
 // 分块矩阵乘法
-void Gemmer::InnerKernelWithBn(int mc, int nc, float alpha, const float *a,
-                               const float *b, float beta, float *c, float *C,
-                               int ldc, bool relu, float *new_scale,
-                               float *new_bias) {
+void InnerKernelWithBn(int mc, int nc, float alpha, const float *a,
+                       const float *b, float beta, float *c, float *C, int ldc,
+                       bool relu, float *new_scale, float *new_bias) {
   for (int j = 0; j < nc; j += NR) {
     for (int i = 0; i < mc; i += MR) {
       // AddDot4x4(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
@@ -198,8 +202,7 @@ void Gemmer::InnerKernelWithBn(int mc, int nc, float alpha, const float *a,
 }
 
 #if defined(IOS)
-void Gemmer::AddDot4x4(int k, const float *a, const float *b, float *C,
-                       int ldc) {
+void AddDot4x4(int k, const float *a, const float *b, float *C, int ldc) {
   // init C
   float32x4_t cv0 = vdupq_n_f32(0.0);
   float32x4_t cv1 = vdupq_n_f32(0.0);
@@ -250,8 +253,7 @@ void Gemmer::AddDot4x4(int k, const float *a, const float *b, float *C,
 }  // namespace math
 
 #elif defined(ARMV7)
-void Gemmer::AddDot4x4(int k, const float *a, const float *b, float *c,
-                       int ldc) {
+void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
   const float *a_ptr, *b_ptr;
   a_ptr = a;
   b_ptr = b;
@@ -322,8 +324,7 @@ void Gemmer::AddDot4x4(int k, const float *a, const float *b, float *c,
 }
 
 #else
-void Gemmer::AddDot4x4(int k, const float *a, const float *b, float *c,
-                       int ldc) {
+void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
   float *c0, *c1, *c2, *c3;
   c0 = c;
   c1 = c + ldc;
@@ -362,9 +363,8 @@ void Gemmer::AddDot4x4(int k, const float *a, const float *b, float *c,
 #endif
 
 // 32位 float 矩阵乘法
-void Gemmer::Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
-                   const float *B, int ldb, float beta, float *C, int ldc,
-                   bool relu) {
+void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
+           const float *B, int ldb, float beta, float *C, int ldc, bool relu) {
   // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
   // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
   int L1 = 30 * 1024;
@@ -415,10 +415,9 @@ void Gemmer::Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
   paddle_mobile::memory::Free(zero);
 }
 
-void Gemmer::SgemmWithBn(int m, int n, int k, float alpha, const float *A,
-                         int lda, const float *B, int ldb, float beta, float *C,
-                         int ldc, bool relu, float *new_scale,
-                         float *new_bias) {
+void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
+                 const float *B, int ldb, float beta, float *C, int ldc,
+                 bool relu, float *new_scale, float *new_bias) {
   // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
   // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
   int L1 = 30 * 1024;
@@ -469,9 +468,9 @@ void Gemmer::SgemmWithBn(int m, int n, int k, float alpha, const float *A,
   paddle_mobile::memory::Free(zero);
 }
 
-void Gemmer::VectorKernel(int m, int n, int k, float alpha, const float *A,
-                          int lda, const float *B, int ldb, float beta,
-                          float *C, int ldc, bool relu) {
+void VectorKernel(int m, int n, int k, float alpha, const float *A, int lda,
+                  const float *B, int ldb, float beta, float *C, int ldc,
+                  bool relu) {
   float *bufferC = static_cast<float *>(memory::Alloc(sizeof(float) * n));
 
   const float *a0, *b0, *b1, *b2, *b3;
@@ -691,10 +690,9 @@ void Gemmer::VectorKernel(int m, int n, int k, float alpha, const float *A,
   }
 }
 
-void Gemmer::VectorKernelWithBn(int m, int n, int k, float alpha,
-                                const float *A, int lda, const float *B,
-                                int ldb, float beta, float *C, int ldc,
-                                bool relu, float *new_scale, float *new_bias) {
+void VectorKernelWithBn(int m, int n, int k, float alpha, const float *A,
+                        int lda, const float *B, int ldb, float beta, float *C,
+                        int ldc, bool relu, float *new_scale, float *new_bias) {
   float *bufferC = static_cast<float *>(memory::Alloc(sizeof(float) * n));
 
   const float *a0, *b0, *b1, *b2, *b3;
@@ -903,8 +901,7 @@ void Gemmer::VectorKernelWithBn(int m, int n, int k, float alpha,
   }
 }
 
-void Gemmer::AddDot4x8(int k, const float *a, const float *b, float *c,
-                       int ldc) {
+void AddDot4x8(int k, const float *a, const float *b, float *c, int ldc) {
   const float *a_ptr, *b_ptr;
   a_ptr = a;
   b_ptr = b;
@@ -1012,7 +1009,7 @@ void Gemmer::AddDot4x8(int k, const float *a, const float *b, float *c,
 }
 
 // C = A * B
-void Gemmer::WriteBasic(int mc, int nc, float *c, float *C, int ldc) {
+void WriteBasic(int mc, int nc, float *c, float *C, int ldc) {
   int nc1 = nc / 16;
   int _nc1 = nc % 16;
   int step = 4 * ldc;
@@ -1069,10 +1066,10 @@ void Gemmer::WriteBasic(int mc, int nc, float *c, float *C, int ldc) {
 }
 
 // C = alpha * A * B + beta * C
-void Gemmer::WriteWithAlphaBeta(int mc, int nc, float *c, float *C, int ldc) {}
+void WriteWithAlphaBeta(int mc, int nc, float *c, float *C, int ldc) {}
 
 // C = A * B + C
-void Gemmer::WriteWithAdd(int mc, int nc, float *c, float *C, int ldc) {
+void WriteWithAdd(int mc, int nc, float *c, float *C, int ldc) {
   int nc1 = nc / 16;
   int _nc1 = nc % 16;
   int step = 4 * ldc;
@@ -1136,7 +1133,7 @@ void Gemmer::WriteWithAdd(int mc, int nc, float *c, float *C, int ldc) {
 }
 
 // C = A * B + C, relu(C)
-void Gemmer::WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc) {
+void WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc) {
   int nc1 = nc / 16;
   int _nc1 = nc % 16;
   int step = 4 * ldc;
@@ -1210,8 +1207,8 @@ void Gemmer::WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc) {
 }
 
 // C = A * B, batchnorm(C)
-void Gemmer::WriteWithBn(int mc, int nc, float *c, float *C, int ldc,
-                         float *scale, float *bias) {
+void WriteWithBn(int mc, int nc, float *c, float *C, int ldc, float *scale,
+                 float *bias) {
   int nc1 = nc / 16;
   int _nc1 = nc % 16;
   int nc2 = _nc1 / 4;
@@ -1296,8 +1293,8 @@ void Gemmer::WriteWithBn(int mc, int nc, float *c, float *C, int ldc,
 }
 
 // C = A * B, batchnorm(C), relu(C)
-void Gemmer::WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc,
-                             float *scale, float *bias) {
+void WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc, float *scale,
+                     float *bias) {
   int nc1 = nc / 16;
   int _nc1 = nc % 16;
   int nc2 = _nc1 / 4;
@@ -1389,7 +1386,7 @@ void Gemmer::WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc,
 }
 
 // C = A * B
-void Gemmer::VecWriteBasic(int n, float *c, float *C, int ldc) {
+void VecWriteBasic(int n, float *c, float *C, int ldc) {
   int nc1 = n / 16;
   int _nc1 = n % 16;
   int nc2 = _nc1 / 4;
@@ -1435,10 +1432,10 @@ void Gemmer::VecWriteBasic(int n, float *c, float *C, int ldc) {
 }
 
 // C = alpha * A * B + beta * C
-void Gemmer::VecWriteWithAlphaBeta(int n, float *c, float *C, int ldc) {}
+void VecWriteWithAlphaBeta(int n, float *c, float *C, int ldc) {}
 
 // C = A * B + C
-void Gemmer::VecWriteWithAdd(int n, float *c, float *C, int ldc) {
+void VecWriteWithAdd(int n, float *c, float *C, int ldc) {
   int nc1 = n / 16;
   int _nc1 = n % 16;
 
@@ -1476,7 +1473,7 @@ void Gemmer::VecWriteWithAdd(int n, float *c, float *C, int ldc) {
 }
 
 // C = A * B + C, relu(C)
-void Gemmer::VecWriteWithAddRelu(int n, float *c, float *C, int ldc) {
+void VecWriteWithAddRelu(int n, float *c, float *C, int ldc) {
   int nc1 = n / 16;
   int _nc1 = n % 16;
 
@@ -1524,8 +1521,8 @@ void Gemmer::VecWriteWithAddRelu(int n, float *c, float *C, int ldc) {
 }
 
 // C = A * B, batchnorm(C)
-void Gemmer::VecWriteWithBn(int n, float *c, float *C, int ldc, float *scale,
-                            float *bias) {
+void VecWriteWithBn(int n, float *c, float *C, int ldc, float *scale,
+                    float *bias) {
   int nc1 = n / 16;
   int _nc1 = n % 16;
   int nc2 = _nc1 / 4;
@@ -1591,8 +1588,8 @@ void Gemmer::VecWriteWithBn(int n, float *c, float *C, int ldc, float *scale,
 }
 
 // C = A * B, batchnorm(C), relu(C)
-void Gemmer::VecWriteWithBnRelu(int n, float *c, float *C, int ldc,
-                                float *scale, float *bias) {
+void VecWriteWithBnRelu(int n, float *c, float *C, int ldc, float *scale,
+                        float *bias) {
   int nc1 = n / 16;
   int _nc1 = n % 16;
   int nc2 = _nc1 / 4;
