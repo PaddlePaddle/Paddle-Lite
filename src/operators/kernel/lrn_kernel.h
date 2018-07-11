@@ -13,9 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #ifdef LRN_OP
-#ifdef _OPENMP
-#include <omp.h>
-#endif
+
 #include "framework/operator.h"
 #include "operators/op_param.h"
 
@@ -49,7 +47,6 @@ struct LRNFunctor {
     std::fill(sqr_buffer_ptr, sqr_buffer_ptr + sqr_buffer.numel(), 0.0);
 
     for (int a = 0; a < N; a++) {
-#pragma parallel for
       for (int b = 0; b < C; b++) {
         for (int index = start; index < end; index++) {
           int channel = b + index;

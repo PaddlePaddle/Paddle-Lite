@@ -26,17 +26,16 @@ int main() {
   auto time2 = time();
   DLOG << "load cost :" << time_diff(time1, time2) << "ms\n";
   paddle_mobile::Executor<paddle_mobile::CPU> executor(program, 1, optimize);
-  executor.SetThreadNum(4);
   std::vector<float> input;
   std::vector<int64_t> dims{1, 3, 224, 224};
   GetInput<float>(g_test_image_1x3x224x224, &input, dims);
   auto time3 = time();
-  int count = 1;
-  for (int i = 0; i < count; ++i) {
+
+  for (int i = 0; i < 10; ++i) {
     executor.Predict(input, dims);
   }
 
   auto time4 = time();
-  DLOG << "predict cost :" << time_diff(time3, time4) / count << "ms\n";
+  DLOG << "predict cost :" << time_diff(time3, time4) << "ms\n";
   return 0;
 }
