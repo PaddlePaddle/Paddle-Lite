@@ -12,7 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 #include "operators/math/depthwise_conv_3x3.h"
+#ifdef __ARM_NEON
 #include <arm_neon.h>
+#endif
 #include <vector>
 
 namespace paddle_mobile {
@@ -21,7 +23,7 @@ namespace math {
 void DepthwiseConv3x3(const Tensor *input, vector<int> strides,
                       vector<int> paddings, const Tensor *filter, Tensor *bias,
                       Tensor *output, bool if_bias) {
-#if __ARM_NEON
+#ifdef __ARM_NEON
   const int batch_size = input->dims()[0];
 
   const int input_height = input->dims()[2];
@@ -242,6 +244,7 @@ void DepthwiseConv3x3(const Tensor *input, vector<int> strides,
 
 void DepthwiseConv3x3s1p1(const Tensor *input, const Tensor *filter,
                           Tensor *output, Tensor *bias, bool if_bias) {
+#ifdef __ARM_NEON
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
   float *output_data = output->data<float>();
@@ -511,11 +514,13 @@ void DepthwiseConv3x3s1p1(const Tensor *input, const Tensor *filter,
       filter_data_tmp += 9;
     }
   }
+#endif
 }
 
 void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
                                    Tensor *output, const Tensor *new_scale,
                                    const Tensor *new_bias, bool if_relu) {
+#ifdef __ARM_NEON
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
   float *output_data = output->data<float>();
@@ -813,11 +818,14 @@ void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
       filter_data_tmp += 9;
     }
   }
+#endif
 }
 
 void DepthwiseConvAddBNRelu3x3s2p1(const Tensor *input, const Tensor *filter,
                                    Tensor *output, const Tensor *new_scale,
                                    const Tensor *new_bias, bool if_relu) {
+#ifdef __ARM_NEON
+
   const int batch_size = input->dims()[0];
 
   const int input_height = input->dims()[2];
@@ -1009,10 +1017,12 @@ void DepthwiseConvAddBNRelu3x3s2p1(const Tensor *input, const Tensor *filter,
     input_data += input_batch_stride;
     output_data += output_batch_stride;
   }
+#endif
 }
 
 void DepthwiseConv3x3s2p1v2(const Tensor *input, const Tensor *filter,
                             Tensor *output, Tensor bias, bool if_bias) {
+#ifdef __ARM_NEON
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
   float *output_data = output->data<float>();
@@ -1209,11 +1219,13 @@ void DepthwiseConv3x3s2p1v2(const Tensor *input, const Tensor *filter,
     input_data += inhxw * c;
     output_data += outhxw * c;
   }
+#endif
 }
 
 void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
                                      Tensor *output, const Tensor *new_scale,
                                      const Tensor *new_bias, bool if_relu) {
+#ifdef __ARM_NEON
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
   float *output_data = output->data<float>();
@@ -1444,6 +1456,7 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
     input_data += inhxw * c;
     output_data += outhxw * c;
   }
+#endif
 }
 
 }  // namespace math
