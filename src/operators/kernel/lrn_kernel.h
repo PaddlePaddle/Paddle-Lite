@@ -12,24 +12,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef LRN_OP
-#ifdef _OPENMP
-#include <omp.h>
-#endif
+#pragma once
+
+#include <cmath>
 #include "framework/operator.h"
 #include "operators/op_param.h"
 
-#include <cmath>
-
 #ifdef __ARM_NEON
-#include "arm_neon.h"
+#include <arm_neon.h>
 #include "operators/math/math_func_neon.h"
 #endif
 
 namespace paddle_mobile {
 namespace operators {
-
-using namespace framework;
 
 template <typename T>
 struct LRNFunctor {
@@ -49,7 +44,6 @@ struct LRNFunctor {
     std::fill(sqr_buffer_ptr, sqr_buffer_ptr + sqr_buffer.numel(), 0.0);
 
     for (int a = 0; a < N; a++) {
-#pragma parallel for
       for (int b = 0; b < C; b++) {
         for (int index = start; index < end; index++) {
           int channel = b + index;
