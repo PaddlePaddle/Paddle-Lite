@@ -15,10 +15,13 @@ limitations under the License. */
 #ifdef POOL_OP
 
 #pragma once
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 #include <algorithm>
 #include <vector>
 #include "framework/tensor.h"
-#ifdef __ARM_NEON
+#if __ARM_NEON
 #include <arm_neon.h>
 #endif  // __ARM_NEON
 
