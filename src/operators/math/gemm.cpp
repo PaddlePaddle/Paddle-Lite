@@ -1209,12 +1209,12 @@ void WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc) {
 // C = A * B, batchnorm(C)
 void WriteWithBn(int mc, int nc, float *c, float *C, int ldc, float *scale,
                  float *bias) {
-  int nc1 = nc / 16;
+  int volatile nc1 = nc / 16;
   int _nc1 = nc % 16;
-  int nc2 = _nc1 / 4;
-  int nc3 = 16 - 4 * (_nc1 % 4);
-  int step = 4 * (ldc - nc);
-  int step1 = 4 * (NC - nc);
+  int volatile nc2 = _nc1 / 4;
+  int volatile nc3 = 16 - 4 * (_nc1 % 4);
+  int volatile step = 4 * (ldc - nc);
+  int volatile step1 = 4 * (NC - nc);
 
   asm volatile(
       "subs       %[mc], %[mc], #1        \n\t"
