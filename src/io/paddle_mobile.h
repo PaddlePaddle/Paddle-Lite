@@ -60,6 +60,8 @@ class PaddleMobile {
 
   void Clear();
 
+  ~PaddleMobile();
+
  private:
   std::shared_ptr<Loader<Dtype, P>> loader_;
   std::shared_ptr<Executor<Dtype, P>> executor_;

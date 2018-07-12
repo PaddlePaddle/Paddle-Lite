@@ -15,6 +15,7 @@ limitations under the License. */
 #pragma once
 
 #include <cctype>
+#include <cstdlib>
 #include <string>
 
 namespace paddle_mobile {

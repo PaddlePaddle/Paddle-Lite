@@ -46,4 +46,13 @@ class ConcatOp
 }  // namespace operators
 }  // namespace paddle_mobile
 
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(concat);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(concat);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
+
 #endif

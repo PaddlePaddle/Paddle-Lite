@@ -58,6 +58,8 @@ class Executor {
   std::vector<Ptype> Predict(const std::vector<Ptype> &input,
                              const std::vector<int64_t> &dims);
 
+  void SetThreadNum(int num);
+
  protected:
   Executor() = default;
   void InitMemory();

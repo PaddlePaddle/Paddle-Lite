@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "io/executor.h"
+#include <operators/math/gemm.h>
 #include <algorithm>
 #include <vector>
 #include "common/enforce.h"
@@ -25,6 +26,9 @@ limitations under the License. */
 #include "framework/program/var_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
+#ifdef _OPENMP
+#include <omp.h>
+#endif  // _OPENMP
 #ifdef PADDLE_EXECUTOR_MULTITHREAD
 #include <queue>
 #include <utility>
@@ -348,16 +352,19 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
   fprintf(df, "}\n");
   fclose(df);
 #endif
-  FILE *pf = fopen("profile.out", "w");
+
+  //  FILE *pf = fopen("profile.out", "w");
   std::unordered_map<std::string, uint64_t> _tp;
   for (int i = 0; i < profile.size(); i++) {
     const auto &pInfo = profile[i];
     uint64_t timeCost = pInfo.runEnd - pInfo.runBegin;
     _tp[ops[i]->Type()] += timeCost;
-    fprintf(pf, "%d\t%s\t%d\t%llu\t%llu\t%llu\n", i, ops[i]->Type().c_str(),
-            pInfo.tid, pInfo.runBegin, pInfo.runEnd, timeCost);
+    //    fprintf(pf, "%d\t%s\t%d\t%llu\t%llu\t%llu\n", i,
+    //    ops[i]->Type().c_str(),
+    //            pInfo.tid, pInfo.runBegin, pInfo.runEnd, timeCost);
   }
-  fclose(pf);
+  //  fclose(pf);
+
   printf("====================[ profile ]======================\n");
   using prof_t = std::pair<std::string, uint64_t>;
   std::vector<prof_t> _tv(_tp.begin(), _tp.end());
@@ -398,6 +405,14 @@ std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::Predict(
     result_vector.push_back(output_ptr[j]);
   }
   return result_vector;
+}
+
+template <typename Dtype, Precision P>
+void Executor<Dtype, P>::SetThreadNum(int num) {
+#ifdef _OPENMP
+  //  omp_set_dynamic(0);
+  omp_set_num_threads(num);
+#endif
 }
 
 template class Executor<CPU, Precision::FP32>;

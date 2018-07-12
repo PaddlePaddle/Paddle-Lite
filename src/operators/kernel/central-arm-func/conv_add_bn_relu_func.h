@@ -26,8 +26,6 @@ void ConvAddBNReluBasic(const FusionConvAddBNReluParam &param) {
   Tensor bias = *param.Bias();
   Tensor new_bias = *param.NewBias();
   Tensor new_scale = *param.NewScale();
-  auto new_bias_ptr = new_bias.data<float>();
-  auto new_scale_ptr = new_scale.data<float>();
   int axis = param.Axis();
   Tensor *output = param.Output();
   math::expand_bias(bias, axis, output->dims());
@@ -106,20 +104,10 @@ void ConvAddBNReluBasic(const FusionConvAddBNReluParam &param) {
       // gemm
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
-      math::matmul<float>(filter_slice, false, col_matrix, false,
-                          static_cast<float>(1), &out_slice,
-                          static_cast<float>(1));
-    }
-  }
-  /// todo : use neon in special case instead of 2for(300ms)
-  auto output_ptr = output->data<float>();
-  for (int c = 0; c < output_matrix_shape[0]; c++) {
-    int start = c * output_matrix_shape[1];
-    for (int j = 0; j < output_matrix_shape[1]; j++) {
-      output_ptr[start + j] =
-          output_ptr[start + j] * new_scale_ptr[c] + new_bias_ptr[c];
-      output_ptr[start + j] =
-          output_ptr[start + j] < 0 ? 0 : output_ptr[start + j];
+
+      math::matmulWithBn<float>(
+          filter_slice, false, col_matrix, false, static_cast<float>(1),
+          &out_slice, static_cast<float>(0), true, &new_scale, &new_bias);
     }
   }
 }
@@ -131,15 +119,19 @@ void ConvAddBNReluCompute(const FusionConvAddBNReluParam &param) {
       param.Input()->dims()[1] == param.Output()->dims()[1] &&
       param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
       param.Filter()->dims()[2] == 3 && param.Strides()[0] == 1) {
-    math::DepthwiseConvAddBNRelu3x3s1p1(
-        param.Input(), param.Filter(), param.Output(), &Bias, 1,
-        param.NewScale(), param.NewBias(), 1, 1);
-  } else if (0 && param.Groups() == param.Input()->dims()[1] &&
+    math::DepthwiseConvAddBNRelu3x3s1p1(param.Input(), param.Filter(),
+                                        param.Output(), param.NewScale(),
+                                        param.NewBias(), 1);
+  } else if (param.Groups() == param.Input()->dims()[1] &&
              param.Input()->dims()[1] == param.Output()->dims()[1] &&
              param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
              param.Filter()->dims()[2] == 3 && param.Strides()[0] == 2) {
-    math::DepthwiseConv3x3(param.Input(), param.Strides(), param.Paddings(),
-                           param.Filter(), &Bias, param.Output(), false);
+    //    math::DepthwiseConvAddBNRelu3x3s2p1(param.Input(), param.Filter(),
+    //                                        param.Output(), param.NewScale(),
+    //                                        param.NewBias(), 1);
+    math::DepthwiseConvAddBNRelu3x3s2p1v2(param.Input(), param.Filter(),
+                                          param.Output(), param.NewScale(),
+                                          param.NewBias(), true);
   } else {
     ConvAddBNReluBasic(param);
   }

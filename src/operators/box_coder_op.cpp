@@ -53,7 +53,6 @@ template class BoxCoderOp<CPU, float>;
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(box_coder);
 REGISTER_OPERATOR_CPU(box_coder, ops::BoxCoderOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
