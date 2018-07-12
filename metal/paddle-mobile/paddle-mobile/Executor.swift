@@ -55,17 +55,8 @@ public class Executor<P: PrecisionType> {
         device = inDevice
         queue = inQueue
         for block in inProgram.programDesc.blocks {
-//            for i in 0..<2 {
-//                let op = block.ops[i]
-//                do {
-//                    let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
-//                    op.inferShape()
-//                    ops.append(op)
-//                } catch let error {
-//                    throw error
-//                }
-//            }
-            for op in block.ops {
+            for i in 0..<2 {
+                let op = block.ops[i]
                 do {
                     let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
                     op.inferShape()
@@ -74,6 +65,15 @@ public class Executor<P: PrecisionType> {
                     throw error
                 }
             }
+//            for op in block.ops {
+//                do {
+//                    let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
+//                    op.inferShape()
+//                    ops.append(op)
+//                } catch let error {
+//                    throw error
+//                }
+//            }
         }
     }
     
@@ -95,9 +95,9 @@ public class Executor<P: PrecisionType> {
         
         buffer.addCompletedHandler { (commandbuffer) in
             
-//            for op in self.ops {
-//                op.delogOutput()
-//            }
+            for op in self.ops {
+                op.delogOutput()
+            }
             
             let afterDate = Date.init()
             print(" encoder end ! time: \(afterDate.timeIntervalSince(beforeDate))")
@@ -113,7 +113,6 @@ public class Executor<P: PrecisionType> {
         guard let output = outputVar as? ResultHolder<P> else {
             throw PaddleMobileError.netError(message: "output var type error")
         }
-        
         
         return output
     }
