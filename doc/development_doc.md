@@ -18,6 +18,12 @@ sh build.sh ios googlenet
 cd ../build/release/ios/build
 
 ```
+#### 常见问题:
+
+1. No iOS SDK's found in default search path ...
+
+    这个问题是因为 tools/ios-cmake/ios.toolchain.cmake 找不到你最近使用的 iOS SDK 路径, 所以需要自己进行指定, 
+    以我当前的环境为例: 在 tools/ios-cmake/ios.toolchain.cmake 143行前添加我本地的 iOS SDK 路径: set(CMAKE_IOS_SDK_ROOT "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk")
 
 ## 集成
 
