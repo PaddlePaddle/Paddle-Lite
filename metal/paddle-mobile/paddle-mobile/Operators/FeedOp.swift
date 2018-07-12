@@ -61,8 +61,8 @@ class FeedOp<P: PrecisionType>: Operator<Texture2DTo2DArrayKernel<P>, FeedParam<
     
     func delogOutput() {
 //        para.input.mtlTexture.logDesc()
-        let _: Float16? = para.input.mtlTexture.logDesc(header: "feed input: ")
-        let _: Float16? = para.output.metalTexture.logDesc(header: "feed output: ")
+//        let _: P? = para.input.mtlTexture.logDesc(header: "feed input: ", stridable: true)
+//        let _: P? = para.output.metalTexture.logDesc(header: "feed output: ", stridable: true)
     }
 }
 

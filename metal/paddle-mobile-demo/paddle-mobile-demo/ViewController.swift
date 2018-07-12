@@ -29,11 +29,11 @@ class ViewController: UIViewController {
 //    let queue: MTLCommandQueue
     func scaleTexture(queue: MTLCommandQueue, input: MTLTexture, complete: @escaping (MTLTexture) -> Void) {        
         let tmpTextureDes = MTLTextureDescriptor.init()
-        tmpTextureDes.width = 227
-        tmpTextureDes.height = 227
+        tmpTextureDes.width = 224
+        tmpTextureDes.height = 224
         tmpTextureDes.depth = 1
         tmpTextureDes.usage = [.shaderRead, .shaderWrite]
-        tmpTextureDes.pixelFormat = .rgba16Float
+        tmpTextureDes.pixelFormat = .rgba32Float
         tmpTextureDes.textureType = .type2D
         tmpTextureDes.storageMode = .shared
         tmpTextureDes.cpuCacheMode = .defaultCache
@@ -64,23 +64,18 @@ class ViewController: UIViewController {
         }
        
         scaleTexture(queue: queue!, input: inTexture) { (inputTexture) in
-            let loader = Loader<Float16>.init()
+            let loader = Loader<Float32>.init()
             do {
                 let modelPath = Bundle.main.path(forResource: "model", ofType: nil) ?! "model null"
                 let paraPath = Bundle.main.path(forResource: "params", ofType: nil) ?! "para null"
                 let program = try loader.load(device: self.device, modelPath: modelPath, paraPath: paraPath)
-                let executor = try Executor<Float16>.init(inDevice: self.device, inQueue: queue!, inProgram: program)
-                let output = try executor.predict(input: inputTexture, expect: [1, 227, 227, 3])
+                let executor = try Executor<Float32>.init(inDevice: self.device, inQueue: queue!, inProgram: program)
+                let output = try executor.predict(input: inputTexture, expect: [1, 224, 224, 3])
                 //            print(output)
             } catch let error {
                 print(error)
             }
         }
-        
-        
-        
-       
     }
-
 }
 

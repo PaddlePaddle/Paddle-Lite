@@ -73,16 +73,28 @@ kernel void batchnorm(texture2d_array<half, access::read> inTexture [[texture(0)
     outTexture.write(input, gid.xy, gid.z);
 }
 
-kernel void texture2d_to_2d_array(texture2d<half, access::read> inTexture [[texture(0)]],
-                               texture2d_array<half, access::write> outTexture [[texture(1)]],
-                               uint3 gid [[thread_position_in_grid]]) {
+//kernel void texture2d_to_2d_array(texture2d<half, access::read> inTexture [[texture(0)]],
+//                               texture2d_array<half, access::write> outTexture [[texture(1)]],
+//                               uint3 gid [[thread_position_in_grid]]) {
+//    if (gid.x >= inTexture.get_width() ||
+//        gid.y >= inTexture.get_height()){
+//        return;
+//    }
+//    const half4 input = inTexture.read(gid.xy);
+//    outTexture.write(input, gid.xy, 0);
+//}
+
+kernel void texture2d_to_2d_array(texture2d<float, access::read> inTexture [[texture(0)]],
+                                  texture2d_array<float, access::write> outTexture [[texture(1)]],
+                                  uint3 gid [[thread_position_in_grid]]) {
     if (gid.x >= inTexture.get_width() ||
         gid.y >= inTexture.get_height()){
         return;
     }
-    const half4 input = inTexture.read(gid.xy);
+    const float4 input = inTexture.read(gid.xy);
     outTexture.write(input, gid.xy, 0);
 }
+
 
 
 
