@@ -19,9 +19,14 @@ paddle-mobile   dev     33b146787711   45 hours ago    372MB
 ```
 $ docker run -it --mount type=bind,source=$PWD,target=/paddle-mobile paddle-mobile:dev
 root@5affd29d4fc5:/ # cd /paddle-mobile
+###
+### paddle-mobile 支持 arm 架构下的各种平台，包括 android 以及 linux 等，可以使用不同的
+### toolchain 文件生成满足需要的 makefile
+###
 # 生成构建 android 产出的 Makefile
 root@5affd29d4fc5:/ # rm CMakeCache.txt
 root@5affd29d4fc5:/ # cmake -DCMAKE_TOOLCHAIN_FILE=tools/toolchains/arm-android-neon.cmake
+
 # 生成构建 linux 产出的 Makefile
 root@5affd29d4fc5:/ # rm CMakeCache.txt
 root@5affd29d4fc5:/ # cmake -DCMAKE_TOOLCHAIN_FILE=tools/toolchains/arm-linux-gnueabi.cmake
