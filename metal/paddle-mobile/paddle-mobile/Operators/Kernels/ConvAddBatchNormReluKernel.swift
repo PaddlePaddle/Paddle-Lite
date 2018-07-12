@@ -29,7 +29,7 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable {
         let varianceContents = param.variance.buffer.contents().assumingMemoryBound(to: P.self)
         
         for i in 0..<param.variance.buffer.length/MemoryLayout<P>.stride {
-            let inv = pow(Float32.init(varianceContents[i]) + param.epsilon, 0.5)
+            let inv = 1.0/pow(Float32.init(varianceContents[i]) + param.epsilon, 0.5)
             invs.append(P(inv))
         }
         
@@ -59,7 +59,6 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable {
         }
         
         print("ConvAddBatchNormReluKernel compute")
-        
         encoder.setTexture(param.input.metalTexture, index: 0)
         encoder.setTexture(param.output.metalTexture, index: 1)
         encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)

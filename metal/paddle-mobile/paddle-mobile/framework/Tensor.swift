@@ -38,7 +38,7 @@ class Tensor<P: PrecisionType>: Tensorial {
             pointer = inPointer
         }
         let size: Int
-        fileprivate var pointer: UnsafeMutablePointer<P>
+        var pointer: UnsafeMutablePointer<P>
         subscript(index: Int) -> P{
             get {
                 return pointer[index]
@@ -104,7 +104,7 @@ class Tensor<P: PrecisionType>: Tensorial {
                     for _ in 0..<dim[0] * dim[1] * dim[2] {
                         for j in 0..<paddedC {
                             if j < C {
-                                dstPtr?[j] = data.pointer[j]
+                                dstPtr?[j] = tmpPointer[j]
                             }
                         }
                         tmpPointer += C
@@ -134,7 +134,7 @@ class Tensor<P: PrecisionType>: Tensorial {
             for h in 0..<H{
                 for w in 0..<W{
                     for c in 0..<C{
-                        newPtr[index] = data.pointer[n * CXHXW + c * HXW + h * w + w]
+                        newPtr[index] = data.pointer[n * CXHXW + c * HXW + h * W + w]
                         index += 1
                     }
                 }
@@ -146,27 +146,25 @@ class Tensor<P: PrecisionType>: Tensorial {
 
 
 extension Tensor {
+    
     var debugDescription: String {
-        var str = ""
-        
-//        for i in 0..<buffer.length/MemoryLayout<P>.stride {
-//            str += " \(buffer.contents().assumingMemoryBound(to: P.self)[i])"
-//        }
+        var str = "dim: \(dim) \n"
+        str += "MTLBuffer: \(self.buffer) \n"
+        for i in 0..<buffer.length/MemoryLayout<P>.size {
+            str += " \(buffer.contents().assumingMemoryBound(to: P.self)[i])"
+        }
         return str
-        
-//        var str = ""
-//        str += "Dim: \(dim) \n value:[ "
-//        if data.size < 20 {
-//            for d in 0..<data.size {
-//                str += " \(data[d]) "
-//            }
-//        } else {
-//            for d in stride(from: 0, to: data.size, by: data.size/20) {
-//                str += " \(data[d]) "
-//            }
-//        }
-//        str += " ]"
-//        return str
+    }
+    
+    func logDataPointer(header: String = "") {
+        print(header)
+        var str = ""
+        str += "data size: \(data.size) \n"
+        str += "dim: \(dim) \n"
+        for i in 0..<numel() {
+            str += " \(data.pointer[i])"
+        }
+        print(str)
     }
     
     var description: String {

@@ -93,7 +93,7 @@ public extension MTLTexture {
         print("texture: \(self)")
         if textureType == .type2DArray {
             for i in 0..<arrayLength{
-                var str: String = "slice: \(i): "
+                var str: String = "slice: \(i): \n"
                 let bytes = UnsafeMutableRawPointer.allocate(byteCount: width * height * 4 * MemoryLayout<T>.size, alignment: MemoryLayout<T>.alignment)
                 let bytesPerRow = width * depth * 4 * MemoryLayout<T>.size
                 let bytesPerImage = width * height * depth * 4 * MemoryLayout<T>.size
@@ -142,8 +142,25 @@ public extension MTLTexture {
 }
 
 
+public extension MTLBuffer {
+    func logDesc<T>(header: String = "", stridable: Bool = true) -> T? {
+        print(header)
+        print("MTLBuffer: \(self) ")
+        var str = ""
+        if stridable && length/MemoryLayout<T>.stride > 1000{
+            for j in stride(from: 0, to: length, by: length/MemoryLayout<T>.stride / 100){
+                str += " \(contents().assumingMemoryBound(to: T.self)[j])"
+            }
+        } else {
+            for i in 0..<length/MemoryLayout<T>.size {
+                str += " \(contents().assumingMemoryBound(to: T.self)[i])"
+            }
+        }
+        print(str)
+        return nil
+}
 
-
+}
 
 
 

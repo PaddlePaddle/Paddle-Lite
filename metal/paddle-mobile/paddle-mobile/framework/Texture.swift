@@ -69,7 +69,7 @@ public class Texture<P: PrecisionType>: Tensorial {
         if MemoryLayout<P>.size == 1 {
             tmpTextureDes.pixelFormat = .rgba8Unorm
         } else if MemoryLayout<P>.size == 2 {
-            tmpTextureDes.pixelFormat = .rgba16Float
+            tmpTextureDes.pixelFormat = .rgba32Float
         } else if MemoryLayout<P>.size == 4 {
 //            tmpTextureDes.pixelFormat = .r32Float
             tmpTextureDes.pixelFormat = .rgba32Float
@@ -130,7 +130,7 @@ extension Texture {
     public var debugDescription: String{
         var str = ""
         str += "Dim: \(dim) \n value:[ "
-//        str += "\(metalTexture)"
+        str += "\(metalTexture)"
         str += " ]"
         return str
     }
