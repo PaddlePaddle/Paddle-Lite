@@ -50,7 +50,7 @@ public class Loader<P: PrecisionType> {
                 return pointee
             }
             
-            _ = pointerReader(type: UInt32.self)
+            let _ = pointerReader(type: UInt32.self)
             let lodLevel = pointerReader(type: UInt64.self)
             for _ in 0..<lodLevel {
                 let size = pointerReader(type: UInt64.self)
@@ -62,6 +62,7 @@ public class Loader<P: PrecisionType> {
             let _ = pointerReader(type: UInt32.self)
             
             let tensorDescSize = pointerReader(type: Int32.self)
+            
             fseek(file, Int(tensorDescSize), SEEK_CUR)
             nowIndex += Int(tensorDescSize)
             
@@ -70,21 +71,21 @@ public class Loader<P: PrecisionType> {
              */
             
             //现在模型传入模型为  Float 类型, 这块应该根据模型来
-            let tmpCapacity = MemoryLayout<Float>.size * tensor.numel()
-            let tmpPointer = UnsafeMutablePointer<Float>.allocate(capacity: tmpCapacity);
+//            let tmpCapacity = MemoryLayout<Float>.size * tensor.numel()
+//            let tmpPointer = UnsafeMutablePointer<Float>.allocate(capacity: tmpCapacity);
+            let bytesRead = fread(tensor.data.pointer, 1, tensor.data.size, file)
             
-//            let bytesRead = fread(tensor.data.pointer, 1, tensor.data.size, file)
-//            guard bytesRead == tensor.data.size else {
-//                throw PaddleMobileError.loaderError(message: "param read size error")
-//            }
+            guard bytesRead == tensor.data.size else {
+                throw PaddleMobileError.loaderError(message: "param read size error")
+            }
             
             // TODO: use script to convert
-            let bytesRead = fread(tmpPointer, 1, tmpCapacity, file)
-            for i in 0..<tensor.numel() {
-                tensor.data[i] = P.init(inFloat: tmpPointer[i])
-            }
-            tmpPointer.deinitialize(count: tmpCapacity)
-            tmpPointer.deallocate()
+//            let bytesRead = fread(tmpPointer, 1, tmpCapacity, file)
+//            for i in 0..<tensor.numel() {
+//                tensor.data[i] = P.init(inFloat: tmpPointer[i])
+//            }
+//            tmpPointer.deinitialize(count: tmpCapacity)
+//            tmpPointer.deallocate()
             
             nowIndex += bytesRead
         }

@@ -32,6 +32,9 @@ extension Int64: Attr {
 extension Array: Attr {
 }
 
+extension String: Attr {
+}
+
 func attrWithProtoDesc(attrDesc: PaddleMobile_Framework_Proto_OpDesc.Attr) -> Attr {
     switch attrDesc.type {
     case .boolean:
@@ -39,7 +42,7 @@ func attrWithProtoDesc(attrDesc: PaddleMobile_Framework_Proto_OpDesc.Attr) -> At
     case .int:
         return Int(attrDesc.i)
     case .string:
-        return attrDesc.strings
+        return attrDesc.s
     case .long:
         return attrDesc.l
     case .float:
