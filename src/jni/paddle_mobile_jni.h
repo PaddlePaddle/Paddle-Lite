@@ -37,6 +37,18 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadCombined(
  * object detection for anroid
  */
 JNIEXPORT jfloatArray JNICALL
+Java_com_baidu_paddle_PML_predictImage(JNIEnv *env, jclass thiz, jfloatArray buf, jintArray ddims);
+
+/**
+ * object detection for anroid
+ */
+JNIEXPORT jfloatArray JNICALL
+Java_com_baidu_paddle_PML_predictYuv(JNIEnv *env, jclass thiz, jbyteArray yuv, jint imgwidth, jint imgHeight, jintArray ddims, jfloatArray meanValues);
+
+/**
+ * object detection for anroid
+ */
+JNIEXPORT jfloatArray JNICALL
 Java_com_baidu_paddle_PML_predict(JNIEnv *env, jclass thiz, jfloatArray buf);
 
 /**

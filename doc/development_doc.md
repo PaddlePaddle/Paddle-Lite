@@ -186,26 +186,50 @@ which to test :
 ##部署
 Android应用可通过JNI接口调用底层C/C++，paddle-mobile对外提供的JNI接口如下：
 
-##### 1 load接口 加载模型参数
+##### 1 load接口  加载模型参数
+- 用于加载参数文件分散的模型
+```
+/**
+     * Load seperated parameters
+     * @param modelDir
+     * @return
+     */
+    public static native boolean load(String modelDir);
+```
+- 用于加载参数文件合并的模型文件
+```
+/**
+     * Load combined parameters
+     * @param modelPath
+     * @param paramPath
+     * @return
+     */
+    public static native boolean loadCombined(String modelPath,String paramPath);
 
 ```
-/*
-*@param modelPath 模型文件路径
-*@return jboolean
-*/
-JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_load(JNIEnv *env,
-                                                          jclass thiz,
-                                                          jstring modelPath);
-```
-
 ##### 2 predict接口 执行预测
-
+- 接受预处理过的RGB数组的predict接口
 ```
 /**
 *@param buf 输入数据
 *@return 输出数据
-JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predict(
+JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictImage(
     JNIEnv *env, jclass thiz, jfloatArray buf);
+```
+- 接受原始yuv数据的predict接口
+```
+ /**
+     *
+     * @param buf yuv420格式的字节数组
+     * @param imgWidth yuv数据的宽
+     * @param imgHeight yuv数据的高
+     * @param ddims 输入数据的形状
+     * @param meanValues 模型训练时各通道的均值
+     * @return
+     */
+
+    public static native float[] predictYuv(byte[] buf, int imgWidth, int imgHeight, int[] ddims, float[]meanValues);
+
 ```
 ##### 3 clear接口 销毁实例、清理内存操作
 
