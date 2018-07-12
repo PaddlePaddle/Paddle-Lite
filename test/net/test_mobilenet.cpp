@@ -19,7 +19,10 @@ limitations under the License. */
 int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
   auto time1 = time();
-  auto program = loader.Load(g_mobilenet, true);
+//  auto program = loader.Load(g_mobilenet_combine, true);
+  auto program = loader.Load(g_mobilenet_combine + "/model",
+                               g_mobilenet_combine + "/params", true);
+
   auto time2 = time();
   DLOG << "load cost :" << time_diff(time1, time1) << "ms";
   paddle_mobile::Executor<paddle_mobile::CPU> executor(program, 1, true);
