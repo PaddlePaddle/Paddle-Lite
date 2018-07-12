@@ -143,11 +143,16 @@ root@5affd29d4fc5:/ # make
 ##### 下载Android NDK
 
 从源码交叉编译paddle-mobile,用户需要提前准备好交叉编译环境。Android平台使用的C/C++交叉编译工具链是[Android NDK](https://developer.android.com/ndk/)，用户可以自行前往下载，也可以通过以下命令获取：
-
+- Mac平台
 ```
 wget https://dl.google.com/android/repository/android-ndk-r17b-darwin-x86_64.zip
 unzip android-ndk-r17b-darwin-x86_64.zip
 
+```
+- Linux平台
+```
+wget https://dl.google.com/android/repository/android-ndk-r17b-linux-x86_64.zip
+unzip android-ndk-r17b-linux-x86_64.zip
 ```
 
 ##### 设置环境变量
