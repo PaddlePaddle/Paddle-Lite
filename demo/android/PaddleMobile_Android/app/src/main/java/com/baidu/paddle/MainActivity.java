@@ -58,6 +58,7 @@ public class MainActivity extends Activity {
     private Context mContext = null;
 
     private int inputSize = 224;
+    private int[] ddims = {1, 3, 224, 224};
 
     enum TYPE {
         googlenet
@@ -121,14 +122,14 @@ public class MainActivity extends Activity {
                 String assetPath = "pml_demo";
                 String sdcardPath = Environment.getExternalStorageDirectory()
                         + File.separator + assetPath + File.separator + type;
-                //PML.load(sdcardPath);
+                PML.load(sdcardPath);
                 String modelPath = Environment.getExternalStorageDirectory()
                                                            + File.separator + assetPath +
                                                            File.separator + "googlenet_combine" + File.separator + "model";
                 String paramPath = Environment.getExternalStorageDirectory()
                                                            + File.separator + assetPath +
                                                            File.separator + "googlenet_combine" + File.separator + "params";
-                PML.loadCombined(modelPath, paramPath);
+//                PML.loadCombined(modelPath, paramPath);
 
             }
         });
@@ -351,8 +352,8 @@ public class MainActivity extends Activity {
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-            Log.d("mdl", "mdl clear");
-            // clear mdl
+            Log.d("pml", "pml clear");
+            // clear pml
             PML.clear();
 
     }
@@ -402,7 +403,7 @@ public class MainActivity extends Activity {
             float[] result = null;
             try {
                 long start = System.currentTimeMillis();
-                result = PML.predict(inputData);
+                result = PML.predictImage(inputData, ddims);
                 long end = System.currentTimeMillis();
                 time = end - start;
 
