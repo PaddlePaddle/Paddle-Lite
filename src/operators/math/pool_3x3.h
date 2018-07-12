@@ -15,6 +15,9 @@ limitations under the License. */
 #ifdef POOL_OP
 
 #pragma once
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 #include <algorithm>
 #include <vector>
 #include "framework/tensor.h"

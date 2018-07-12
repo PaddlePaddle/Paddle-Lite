@@ -21,7 +21,10 @@ namespace math {
 
 void Pool2x2Max(vector<int> strides, vector<int> paddings, const Tensor *input,
                 Tensor *output) {
-#if __ARM_NEON
+#ifdef __ARM_NEON
+
+#ifdef ARMV7
+
   const int batch_size = input->dims()[0];
 
   const int input_height = input->dims()[2];
@@ -90,11 +93,15 @@ void Pool2x2Max(vector<int> strides, vector<int> paddings, const Tensor *input,
     output_data += output_batch_stride;
   }
 #endif
+
+#endif
 }
 
 void Pool2x2Avg(vector<int> strides, vector<int> paddings, const Tensor *input,
                 Tensor *output) {
-#if __ARM_NEON
+#ifdef __ARM_NEON
+
+#ifdef ARMV7
   const int batch_size = input->dims()[0];
 
   const int input_height = input->dims()[2];
@@ -164,6 +171,12 @@ void Pool2x2Avg(vector<int> strides, vector<int> paddings, const Tensor *input,
     input_data += input_batch_stride;
     output_data += output_batch_stride;
   }
+#else
+
+// TODO(): to imp other asm
+
+#endif
+
 #endif
 }
 

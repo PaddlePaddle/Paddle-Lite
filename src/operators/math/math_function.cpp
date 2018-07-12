@@ -39,22 +39,18 @@ void matmul<float>(const framework::Tensor &matrix_a, bool trans_a,
 
   int M = dim_out[0];
   int N = dim_out[1];
-  int K = (trans_a == false) ? dim_a[1] : dim_a[0];
+  int K = (!trans_a) ? dim_a[1] : dim_a[0];
 
-  if (relu) {
-    sgemm_relu(M, N, K, alpha, matrix_a.data<float>(), K,
-               matrix_b.data<float>(), N, beta, matrix_out->data<float>(), N);
-  } else {
-    sgemm(M, N, K, alpha, matrix_a.data<float>(), K, matrix_b.data<float>(), N,
-          beta, matrix_out->data<float>(), N);
-  }
+  Sgemm(M, N, K, alpha, matrix_a.data<float>(), K, matrix_b.data<float>(), N,
+        beta, matrix_out->data<float>(), N, relu);
 }
 
 template <>
-void matmul<double>(const framework::Tensor &matrix_a, bool trans_a,
-                    const framework::Tensor &matrix_b, bool trans_b,
-                    double alpha, framework::Tensor *matrix_out, double beta,
-                    bool relu) {
+void matmulWithBn<float>(const framework::Tensor &matrix_a, bool trans_a,
+                         const framework::Tensor &matrix_b, bool trans_b,
+                         float alpha, framework::Tensor *matrix_out, float beta,
+                         bool relu, framework::Tensor *new_scale,
+                         framework::Tensor *new_bias) {
   auto dim_a = matrix_a.dims();
   auto dim_b = matrix_b.dims();
   auto dim_out = matrix_out->dims();
@@ -71,7 +67,11 @@ void matmul<double>(const framework::Tensor &matrix_a, bool trans_a,
 
   int M = dim_out[0];
   int N = dim_out[1];
-  int K = (trans_a == false) ? dim_a[1] : dim_a[0];
+  int K = (!trans_a) ? dim_a[1] : dim_a[0];
+
+  SgemmWithBn(M, N, K, alpha, matrix_a.data<float>(), K, matrix_b.data<float>(),
+              N, beta, matrix_out->data<float>(), N, relu,
+              new_scale->data<float>(), new_bias->data<float>());
 }
 
 }  // namespace math

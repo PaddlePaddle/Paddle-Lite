@@ -21,7 +21,6 @@ namespace paddle_mobile {
 using framework::Variable;
 
 static size_t ReadBuffer(const char *file_name, uint8_t **out) {
-  printf("%s \n", file_name);
   FILE *fp;
   fp = fopen(file_name, "rb");
   PADDLE_MOBILE_ENFORCE(fp != NULL, " %s open failed !", file_name);
