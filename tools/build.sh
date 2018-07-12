@@ -94,8 +94,6 @@ build_for_ios() {
     MODE="Release"
     BUILD_DIR=../build/release/"${PLATFORM}"
     TOOLCHAIN_FILE="./tools/ios-cmake/ios.toolchain.cmake"
-    C_FLAGS="-fobjc-abi-version=2 -fobjc-arc -isysroot ${CMAKE_OSX_SYSROOT}"
-    CXX_FLAGS="-fobjc-abi-version=2 -fobjc-arc -std=gnu++14 -stdlib=libc++ -isysroot ${CMAKE_OSX_SYSROOT}"
     mkdir -p "${BUILD_DIR}"
     if [ $# -eq 1 ]; then
         cmake .. \
@@ -103,8 +101,6 @@ build_for_ios() {
             -DCMAKE_BUILD_TYPE="${MODE}" \
             -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
             -DIOS_PLATFORM=OS \
-            -DCMAKE_C_FLAGS="${C_FLAGS}" \
-            -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
             -DNET=$1 \
             -DIS_IOS="true"
     else
@@ -113,8 +109,6 @@ build_for_ios() {
             -DCMAKE_BUILD_TYPE="${MODE}" \
             -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
             -DIOS_PLATFORM=OS \
-            -DCMAKE_C_FLAGS="${C_FLAGS}" \
-            -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
             -DIS_IOS="true"
     fi
     cd "${BUILD_DIR}"
