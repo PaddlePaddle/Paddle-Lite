@@ -409,9 +409,6 @@ std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::Predict(
 
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::SetThreadNum(int num) {
-  for (int k = 0; k < std::max(num, 3); ++k) {
-    operators::math::Gemmer::gemmers.push_back(new operators::math::Gemmer());
-  }
 #ifdef _OPENMP
   //  omp_set_dynamic(0);
   omp_set_num_threads(num);

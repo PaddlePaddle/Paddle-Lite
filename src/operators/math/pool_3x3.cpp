@@ -18,7 +18,7 @@ limitations under the License. */
 #endif
 #include "framework/tensor.h"
 #include "pool_3x3.h"
-#ifdef __ARM_NEON
+#if __ARM_NEON
 #include <arm_neon.h>
 #endif  // __ARM_NEON
 #include <climits>
@@ -30,7 +30,7 @@ using std::max;
 using std::min;
 using std::vector;
 void Pool3x3Avgs1p1(const Tensor *input, Tensor *output) {
-#ifdef __ARM_NEON
+#if __ARM_NEON
   const int batch_size = input->dims()[0];
 
   const int h_in = input->dims()[2];
@@ -280,7 +280,7 @@ void Pool3x3Avgs1p1(const Tensor *input, Tensor *output) {
 }
 
 void Pool3x3Maxs1p1(const Tensor *input, Tensor *output) {
-#ifdef __ARM_NEON
+#if __ARM_NEON
   const int batch_size = input->dims()[0];
 
   const int h_in = input->dims()[2];
@@ -523,7 +523,7 @@ void Pool3x3Maxs1p1(const Tensor *input, Tensor *output) {
 
 void Pool3x3Max(vector<int> strides, vector<int> paddings, const Tensor *input,
                 Tensor *output) {
-#ifdef __ARM_NEON
+#if __ARM_NEON
   const int batch_size = input->dims()[0];
 
   const int input_height = input->dims()[2];
@@ -582,7 +582,7 @@ void Pool3x3Max(vector<int> strides, vector<int> paddings, const Tensor *input,
             }
             output_seg[ph * output_width + pw] = max_value;
           } else {
-#ifdef ARMV7
+#if defined(ARMV7)
             asm volatile(
                 "vld1.32  {q1}, [%[pos1]]        \n\t"
                 "vld1.32  {q2}, [%[pos2]]        \n\t"
@@ -622,7 +622,7 @@ void Pool3x3Max(vector<int> strides, vector<int> paddings, const Tensor *input,
 
 void Pool3x3Avg(vector<int> strides, vector<int> paddings, const Tensor *input,
                 Tensor *output) {
-#ifdef __ARM_NEON
+#if __ARM_NEON
   const int batch_size = input->dims()[0];
 
   const int input_height = input->dims()[2];
@@ -676,7 +676,7 @@ void Pool3x3Avg(vector<int> strides, vector<int> paddings, const Tensor *input,
             }
             output_seg[ph * output_width + pw] = sum / 9.0;
           } else {
-#ifdef ARMV7
+#if defined(ARMV7)
 
             asm volatile(
                 "vld1.32  {q1}, [%[pos1]]        \n\t"

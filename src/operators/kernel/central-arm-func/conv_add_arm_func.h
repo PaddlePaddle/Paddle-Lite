@@ -14,14 +14,10 @@ limitations under the License. */
 
 #ifdef FUSION_CONVADD_OP
 #pragma once
-#if _OPENMP
-#include <omp.h>
-#endif
 
 #include <vector>
 #include "operators/math/conv_func.h"
 #include "operators/math/depthwise_conv_3x3.h"
-#include "operators/math/gemm.h"
 #include "operators/math/im2col.h"
 #include "operators/math/math_function.h"
 #include "operators/math/vol2col.h"
@@ -110,33 +106,9 @@ void ConvAddBasic(const FusionConvAddParam &param) {
       // gemm
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
-
-      auto dim_a = filter_slice.dims();
-      auto dim_b = col_matrix.dims();
-
-      auto dim_out = out_slice.dims();
-
-      int m = dim_out[0];
-      int n = dim_out[1];
-      int k = dim_a[1];
-
-      float *output_data = out_slice.data<float>();
-      int thread_num = 4;
-      int m1 = m / thread_num;
-      int m2 = m % thread_num;
-#pragma omp parallel for
-      for (int j = 0; j < thread_num; ++j) {
-        int row_count = m1;
-        if (j == thread_num - 1) {
-          row_count = m1 + m2;
-        }
-        math::Gemmer::gemmers[j]->Sgemm(
-            row_count, n, k, 1, filter_slice.data<float>() + j * m1 * k, k,
-            col_matrix.data<float>(), n, 1, output_data + j * m1 * n, n, false);
-      }
-      //        math::matmul<float>(filter_slice, false, col_matrix, false,
-      //                            static_cast<float>(1), &out_slice,
-      //                            static_cast<float>(1));
+      math::matmul<float>(filter_slice, false, col_matrix, false,
+                          static_cast<float>(1), &out_slice,
+                          static_cast<float>(1));
     }
   }
 }
