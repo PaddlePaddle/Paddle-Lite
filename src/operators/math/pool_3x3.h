@@ -21,7 +21,7 @@ limitations under the License. */
 #include <algorithm>
 #include <vector>
 #include "framework/tensor.h"
-#ifdef __ARM_NEON
+#if __ARM_NEON
 #include <arm_neon.h>
 #endif  // __ARM_NEON
 
