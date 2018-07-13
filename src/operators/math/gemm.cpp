@@ -18,6 +18,9 @@ limitations under the License. */
 #ifndef X86
 #include <arm_neon.h>
 #endif
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 namespace paddle_mobile {
 namespace operators {
@@ -158,6 +161,7 @@ void PackMatrixB_(int k, int n, int n_tail, const float *B, int ldb,
 // 分块矩阵乘法
 void InnerKernel(int mc, int nc, float alpha, const float *a, const float *b,
                  float beta, float *c, float *C, int ldc, bool relu) {
+#pragma omp parallel for
   for (int j = 0; j < nc; j += NR) {
     for (int i = 0; i < mc; i += MR) {
       // AddDot4x4(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
@@ -187,6 +191,7 @@ void InnerKernel(int mc, int nc, float alpha, const float *a, const float *b,
 void InnerKernelWithBn(int mc, int nc, float alpha, const float *a,
                        const float *b, float beta, float *c, float *C, int ldc,
                        bool relu, float *new_scale, float *new_bias) {
+#pragma omp parallel for
   for (int j = 0; j < nc; j += NR) {
     for (int i = 0; i < mc; i += MR) {
       // AddDot4x4(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
