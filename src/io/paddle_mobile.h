@@ -17,6 +17,9 @@ limitations under the License. */
 #include <memory>
 #include <string>
 #include <vector>
+#ifdef _OPENMP
+#include <omp.h>
+#endif  // _OPENMP
 
 #include "common/types.h"
 #include "framework/tensor.h"
@@ -44,6 +47,7 @@ class PaddleMobile {
    * */
   bool Load(const std::string &model_path, const std::string &para_path,
             bool optimize = false, int batch_size = 1);
+  void SetThreadNum(int num);
 
   /*
    * @b to predict

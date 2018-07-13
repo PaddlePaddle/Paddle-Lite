@@ -26,9 +26,6 @@ limitations under the License. */
 #include "framework/program/var_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
-#ifdef _OPENMP
-#include <omp.h>
-#endif  // _OPENMP
 #ifdef PADDLE_EXECUTOR_MULTITHREAD
 #include <queue>
 #include <utility>
@@ -405,14 +402,6 @@ std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::Predict(
     result_vector.push_back(output_ptr[j]);
   }
   return result_vector;
-}
-
-template <typename Dtype, Precision P>
-void Executor<Dtype, P>::SetThreadNum(int num) {
-#ifdef _OPENMP
-  //  omp_set_dynamic(0);
-  omp_set_num_threads(num);
-#endif
 }
 
 template class Executor<CPU, Precision::FP32>;
