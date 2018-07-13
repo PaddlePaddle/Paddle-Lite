@@ -18,6 +18,7 @@ limitations under the License. */
 
 int main() {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
+  paddle_mobile.SetThreadNum(4);
   auto time1 = time();
   if (paddle_mobile.Load(g_mobilenet, true)) {
     auto time2 = time();
