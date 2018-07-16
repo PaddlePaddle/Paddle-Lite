@@ -52,10 +52,10 @@ void ProgramDesc::Description(std::string header) {
           LOG(kLOG_DEBUG3) << "argument - " << n;
         }
       }
-      for (auto &attr : op->GetAttrMap()) {
-        LOG(kLOG_DEBUG2) << "attr name:: " << attr.first;
-        LOG(kLOG_DEBUG3) << "argument - " << attr.second;
-      }
+      //      for (auto &attr : op->GetAttrMap()) {
+      //        LOG(kLOG_DEBUG2) << "attr name:: " << attr.first;
+      //        LOG(kLOG_DEBUG3) << "argument - " << attr.second;
+      //      }
     }
 
     for (const auto &var_desc : block->Vars()) {

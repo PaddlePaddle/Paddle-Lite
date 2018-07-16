@@ -12,16 +12,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVADDBNRELU_OP
+#ifdef FUSION_DWCONVBNRELU_OP
 
-#include "operators/kernel/conv_add_bn_relu_kernel.h"
-#include "operators/kernel/central-arm-func/conv_add_bn_relu_arm_func.h"
+#include "operators/kernel/dwconv_bn_relu_kernel.h"
+#include "operators/kernel/central-arm-func/dwconv_bn_relu_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ConvAddBNReluKernel<CPU, float>::Init(FusionConvAddBNReluParam *param) {
+bool DWConvBNReluKernel<CPU, float>::Init(FusionDWConvBNReluParam *param) {
   const Tensor *mean = param->InputMean();
   const Tensor *variance = param->InputVariance();
   const Tensor *scale = param->InputScale();
@@ -53,11 +53,11 @@ bool ConvAddBNReluKernel<CPU, float>::Init(FusionConvAddBNReluParam *param) {
 }
 
 template <>
-void ConvAddBNReluKernel<CPU, float>::Compute(
-    const FusionConvAddBNReluParam &param) const {
-  ConvAddBNReluCompute<float>(param);
+void DWConvBNReluKernel<CPU, float>::Compute(
+    const FusionDWConvBNReluParam &param) const {
+  DWConvBNReluCompute<float>(param);
 }
-template class ConvAddBNReluKernel<CPU, float>;
+template class DWConvBNReluKernel<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
