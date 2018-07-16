@@ -34,7 +34,7 @@ void MultiClassNMSOp<Dtype, T>::InferShape() const {
   // pre size, will change in Compute.
   this->param_.Out()->Resize(framework::make_ddim({input_bboxes_dims[1], 6}));
 }
-template class MultiClassNMSOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 

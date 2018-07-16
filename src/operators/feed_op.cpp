@@ -16,7 +16,6 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-template class FeedOp<CPU, float>;
 }
 }  // namespace paddle_mobile
 
