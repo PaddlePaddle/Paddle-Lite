@@ -12,24 +12,21 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVADDBNRELU_OP
+#ifdef FUSION_DWCONVBNRELU_OP
 
 #pragma once
+#include <vector>
 #include "operators/math/depthwise_conv_3x3.h"
 #include "operators/op_param.h"
-
 namespace paddle_mobile {
 namespace operators {
-void ConvAddBNReluBasic(const FusionConvAddBNReluParam &param) {
+void DWConvBNReluBasic(const FusionDWConvBNReluParam &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
-  Tensor bias = *param.Bias();
   Tensor new_bias = *param.NewBias();
   Tensor new_scale = *param.NewScale();
-  int axis = param.Axis();
+
   Tensor *output = param.Output();
-  math::expand_bias(bias, axis, output->dims());
-  output->ShareDataWith(bias);
 
   int groups = param.Groups();
   std::vector<int> strides = param.Strides();
@@ -104,24 +101,22 @@ void ConvAddBNReluBasic(const FusionConvAddBNReluParam &param) {
       // gemm
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
-
+      std::cout << "***************" << std::endl;
       math::matmulWithBn<float>(
           filter_slice, false, col_matrix, false, static_cast<float>(1),
-          &out_slice, static_cast<float>(0), true, &new_scale, &new_bias);
+          &out_slice, static_cast<float>(0), false, &new_scale, &new_bias);
     }
   }
 }
 template <typename P>
-void ConvAddBNReluCompute(const FusionConvAddBNReluParam &param) {
-  Tensor Bias;
-  Bias.mutable_data<float>({param.Groups()});
+void DWConvBNReluCompute(const FusionDWConvBNReluParam &param) {
   if (param.Groups() == param.Input()->dims()[1] &&
       param.Input()->dims()[1] == param.Output()->dims()[1] &&
       param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
       param.Filter()->dims()[2] == 3 && param.Strides()[0] == 1) {
     math::DepthwiseConvAddBNRelu3x3s1p1(param.Input(), param.Filter(),
                                         param.Output(), param.NewScale(),
-                                        param.NewBias(), 1);
+                                        param.NewBias(), true);
   } else if (param.Groups() == param.Input()->dims()[1] &&
              param.Input()->dims()[1] == param.Output()->dims()[1] &&
              param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
@@ -133,7 +128,7 @@ void ConvAddBNReluCompute(const FusionConvAddBNReluParam &param) {
                                           param.Output(), param.NewScale(),
                                           param.NewBias(), true);
   } else {
-    ConvAddBNReluBasic(param);
+    DWConvBNReluBasic(param);
   }
 }
 
