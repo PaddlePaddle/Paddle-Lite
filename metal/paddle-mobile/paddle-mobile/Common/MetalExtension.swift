@@ -103,11 +103,11 @@ public extension MTLTexture {
                 str += "2d array count : \(width * height * depth * 4) \n"
                 if stridable {
                     for j in stride(from: 0, to: width * height * depth * 4 , by: width * height * depth * 4 / 100){
-                        str += " \(p[j])"
+                        str += " index \(j): \(p[j])"
                     }
                 } else {
                     for j in 0..<width * height * depth * 4 {
-                        str += " \(p[j])"
+                        str += " index \(j): \(p[j])"
                     }
                 }
                 
