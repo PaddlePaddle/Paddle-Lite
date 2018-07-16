@@ -104,7 +104,7 @@ void ConvAddBNReluBasic(const FusionConvAddBNReluParam &param) {
 
       math::matmulWithBn<float>(
           filter_slice, false, col_matrix, false, static_cast<float>(1),
-          &out_slice, static_cast<float>(0), true, &new_scale, &new_bias);
+          &out_slice, static_cast<float>(0), true, &new_scale, &new_bias, g);
     }
   }
 }
