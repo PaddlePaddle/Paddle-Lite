@@ -109,14 +109,14 @@ void DWConvBNReluBasic(const FusionDWConvBNReluParam &param) {
 }
 template <typename P>
 void DWConvBNReluCompute(const FusionDWConvBNReluParam &param) {
-  if (0&&param.Groups() == param.Input()->dims()[1] &&
+  if (param.Groups() == param.Input()->dims()[1] &&
       param.Input()->dims()[1] == param.Output()->dims()[1] &&
       param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
       param.Filter()->dims()[2] == 3 && param.Strides()[0] == 1) {
     math::DepthwiseConvAddBNRelu3x3s1p1(param.Input(), param.Filter(),
                                         param.Output(), param.NewScale(),
                                         param.NewBias(), true);
-  } else if (0&&param.Groups() == param.Input()->dims()[1] &&
+  } else if (param.Groups() == param.Input()->dims()[1] &&
              param.Input()->dims()[1] == param.Output()->dims()[1] &&
              param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
              param.Filter()->dims()[2] == 3 && param.Strides()[0] == 2) {

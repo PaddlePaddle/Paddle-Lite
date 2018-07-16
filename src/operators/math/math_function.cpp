@@ -71,7 +71,8 @@ void matmulWithBn<float>(const framework::Tensor &matrix_a, bool trans_a,
 
   SgemmWithBn(M, N, K, alpha, matrix_a.data<float>(), K, matrix_b.data<float>(),
               N, beta, matrix_out->data<float>(), N, relu,
-              new_scale->data<float>()+group, new_bias->data<float>()+group);
+              new_scale->data<float>() + group,
+              new_bias->data<float>() + group);
 }
 
 }  // namespace math
