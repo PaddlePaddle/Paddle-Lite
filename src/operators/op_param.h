@@ -371,7 +371,7 @@ class BatchNormParam : OpParam {
     input_variance_ = InputVarianceFrom<LoDTensor>(inputs, scope);
     epsilon_ = GetAttr<float>("epsilon", attrs);
     momentum_ = GetAttr<float>("momentum", attrs);
-//    is_test_ = GetAttr<bool>("is_test", attrs);
+    //    is_test_ = GetAttr<bool>("is_test", attrs);
   }
 
   const Tensor *InputX() const { return input_x_; }
