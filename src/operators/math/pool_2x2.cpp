@@ -173,7 +173,7 @@ void Pool2x2Avg(vector<int> strides, vector<int> paddings, const Tensor *input,
   }
 #else
 
-  // TODO(): to imp other asm
+// TODO(): to imp other asm
 
 #endif
 
