@@ -50,7 +50,7 @@ void matmulWithBn<float>(const framework::Tensor &matrix_a, bool trans_a,
                          const framework::Tensor &matrix_b, bool trans_b,
                          float alpha, framework::Tensor *matrix_out, float beta,
                          bool relu, framework::Tensor *new_scale,
-                         framework::Tensor *new_bias) {
+                         framework::Tensor *new_bias, int group) {
   auto dim_a = matrix_a.dims();
   auto dim_b = matrix_b.dims();
   auto dim_out = matrix_out->dims();
@@ -71,7 +71,8 @@ void matmulWithBn<float>(const framework::Tensor &matrix_a, bool trans_a,
 
   SgemmWithBn(M, N, K, alpha, matrix_a.data<float>(), K, matrix_b.data<float>(),
               N, beta, matrix_out->data<float>(), N, relu,
-              new_scale->data<float>(), new_bias->data<float>());
+              new_scale->data<float>() + group,
+              new_bias->data<float>() + group);
 }
 
 }  // namespace math
