@@ -78,9 +78,8 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FusionOptimize(
     }
 
     for (auto &registed : FusionOpRegister::Instance()->Matchers()) {
-      std::string fusion_type = registed.first;
-      std::shared_ptr<FusionOpMatcher> matcher = registed.second;
-      //      DLOG << " registed node \n " << matcher->BeginNode();
+      std::string fusion_type = registed->Type();
+      std::shared_ptr<FusionOpMatcher> matcher = registed;
 
       auto match_vector = type_map[matcher->BeginType()];
 
