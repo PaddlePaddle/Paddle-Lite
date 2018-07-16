@@ -16,7 +16,7 @@ import Foundation
 
 class ConvAddKernel<P: PrecisionType>: Kernel, Computable {
     required init(device: MTLDevice, param: ConvAddParam<P>) {
-        super.init(device: device, inFunctionName: "conv3x3")
+        super.init(device: device, inFunctionName: "conv_add_1x1")
         
     }
     

@@ -18,10 +18,22 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable {
     var metalParam: MetalConvParam!
 
     required init(device: MTLDevice, param: ConvAddBatchNormReluParam<P>) {
-        super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_3x3")
         
-        let offsetX = param.filter.dim[2]/2 - Int(param.paddings[0])
-        let offsetY = param.filter.dim[1]/2 - Int(param.paddings[1])
+        if param.filter.width == 1 && param.filter.height == 1 {
+            super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_1x1")
+        } else if param.filter.channel == 1 {
+            super.init(device: device, inFunctionName: "depthwise_conv_add_batch_norm_relu_1x1")
+        } else {
+            super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_3x3")
+        }
+        
+        
+        let offsetX = param.filter.width/2 - Int(param.paddings[0])
+        let offsetY = param.filter.height/2 - Int(param.paddings[1])
+        
+        print("offset x: \(offsetX)")
+        print("offset y: \(offsetY)")
+        
         let offsetZ = 0.0
         metalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: Int16(offsetZ), strideX: UInt16(param.stride[0]), strideY: UInt16(param.stride[1]), paddedZ: UInt16(param.input.metalTexture.arrayLength * 4 - param.input.dim[3]))
         
@@ -69,6 +81,4 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable {
         encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
         encoder.endEncoding()
     }
-    
-    
 }
