@@ -27,7 +27,7 @@ void ReshapeOp<Dtype, T>::InferShape() const {
   auto out_dims = ValidateShape(shape, input_x_dims);
   this->param_.Out()->Resize(out_dims);
 }
-template class ReshapeOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 

@@ -56,7 +56,6 @@ void ConcatOp<Dtype, T>::InferShape() const {
 
   this->param_.Out()->Resize(out_dims);
 }
-template class ConcatOp<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile

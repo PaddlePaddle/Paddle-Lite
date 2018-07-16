@@ -50,7 +50,6 @@ void FusionFcOp<Dtype, T>::InferShape() const {
   this->param_.Out()->Resize(ddim);
 }
 
-template class FusionFcOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
 
