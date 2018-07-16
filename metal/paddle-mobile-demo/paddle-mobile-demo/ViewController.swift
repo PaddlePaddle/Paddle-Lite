@@ -40,6 +40,7 @@ class ViewController: UIViewController {
         let dest = device.makeTexture(descriptor: tmpTextureDes)
         
         let scale = MPSImageLanczosScale.init(device: device)
+        
         let buffer = queue.makeCommandBuffer()
         scale.encode(commandBuffer: buffer!, sourceTexture: input, destinationTexture: dest!)
         buffer?.addCompletedHandler({ (buffer) in
