@@ -101,23 +101,22 @@ void DWConvBNReluBasic(const FusionDWConvBNReluParam &param) {
       // gemm
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
-      std::cout << "***************" << std::endl;
       math::matmulWithBn<float>(
           filter_slice, false, col_matrix, false, static_cast<float>(1),
-          &out_slice, static_cast<float>(0), false, &new_scale, &new_bias);
+          &out_slice, static_cast<float>(0), true, &new_scale, &new_bias, g);
     }
   }
 }
 template <typename P>
 void DWConvBNReluCompute(const FusionDWConvBNReluParam &param) {
-  if (param.Groups() == param.Input()->dims()[1] &&
+  if (0&&param.Groups() == param.Input()->dims()[1] &&
       param.Input()->dims()[1] == param.Output()->dims()[1] &&
       param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
       param.Filter()->dims()[2] == 3 && param.Strides()[0] == 1) {
     math::DepthwiseConvAddBNRelu3x3s1p1(param.Input(), param.Filter(),
                                         param.Output(), param.NewScale(),
                                         param.NewBias(), true);
-  } else if (param.Groups() == param.Input()->dims()[1] &&
+  } else if (0&&param.Groups() == param.Input()->dims()[1] &&
              param.Input()->dims()[1] == param.Output()->dims()[1] &&
              param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
              param.Filter()->dims()[2] == 3 && param.Strides()[0] == 2) {
