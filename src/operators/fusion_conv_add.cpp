@@ -45,7 +45,6 @@ void FusionConvAddOp<Dtype, T>::InferShape() const {
   this->param_.Output()->Resize(ddim);
 }
 
-template class FusionConvAddOp<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
 

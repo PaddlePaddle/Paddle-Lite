@@ -47,7 +47,7 @@ void TransposeOp<Dtype, T>::InferShape() const {
   }
   this->param_.Out()->Resize(out_dims);
 }
-template class TransposeOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 

@@ -48,8 +48,6 @@ void ConvOp<Dtype, T>::InferShape() const {
   this->param_.Output()->Resize(ddim);
 }
 
-template class ConvOp<CPU, float>;
-
 }  // namespace operators
 }  // namespace paddle_mobile
 

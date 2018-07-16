@@ -49,8 +49,6 @@ void DepthwiseConvOp<Dtype, T>::InferShape() const {
   this->param_.Output()->Resize(ddim);
 }
 
-template class DepthwiseConvOp<CPU, float>;
-
 }  // namespace operators
 }  // namespace paddle_mobile
 

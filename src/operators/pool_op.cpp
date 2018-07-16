@@ -54,7 +54,7 @@ void PoolOp<DeviceType, T>::InferShape() const {
   }
   this->param_.Output()->Resize(framework::make_ddim(output_shape));
 }
-template class PoolOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
