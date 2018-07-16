@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef ANDROID
 
 #include "paddle_mobile_jni.h"
+#include <cmath>
 #include "common/log.h"
 #include "framework/tensor.h"
 #include "io/paddle_mobile.h"
