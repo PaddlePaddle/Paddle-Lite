@@ -22,7 +22,7 @@ template <typename DeviceType, typename T>
 void SigmoidOp<DeviceType, T>::InferShape() const {
   this->param_.Out()->Resize(this->param_.InputX()->dims());
 }
-template class SigmoidOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
