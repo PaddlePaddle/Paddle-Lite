@@ -55,7 +55,7 @@ public class Executor<P: PrecisionType> {
         device = inDevice
         queue = inQueue
         for block in inProgram.programDesc.blocks {
-            for i in 0..<2 {
+            for i in 0..<block.ops.count {
                 let op = block.ops[i]
                 do {
                     let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
