@@ -24,7 +24,7 @@ void LrnOp<Dtype, T>::InferShape() const {
   auto x_dims = this->param_.InputX()->dims();
   this->param_.Out()->Resize(x_dims);
 }
-template class LrnOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
