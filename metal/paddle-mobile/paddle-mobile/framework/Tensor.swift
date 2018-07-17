@@ -98,6 +98,8 @@ class Tensor<P: PrecisionType>: Tensorial {
                 buffer = device.makeBuffer(length: count * MemoryLayout<P>.stride)
                 if C == paddedC {
                     buffer?.contents().copyMemory(from: data.pointer, byteCount: count * MemoryLayout<P>.stride)
+                } else if C == 1 {
+                    buffer?.contents().copyMemory(from: data.pointer, byteCount: count * MemoryLayout<P>.stride)
                 } else {
                     var tmpPointer = data.pointer
                     var dstPtr = buffer?.contents().bindMemory(to: P.self, capacity: count)
@@ -120,6 +122,37 @@ class Tensor<P: PrecisionType>: Tensorial {
         }
         data.release()
     }
+    
+    var width: Int {
+        get {
+            if dim.cout() == 4 {
+                return dim[1]
+            } else {
+                fatalError()
+            }
+        }
+    }
+    
+    var height: Int {
+        get {
+            if dim.cout() == 4 {
+                return dim[2]
+            } else {
+                fatalError()
+            }
+        }
+    }
+    
+    var channel: Int {
+        get {
+            if dim.cout() == 4 {
+                return dim[3]
+            } else {
+                fatalError()
+            }
+        }
+    }
+
     
     func NCHW2NHWC(newPtr: UnsafeMutablePointer<P>) {
         let N = dim[0]

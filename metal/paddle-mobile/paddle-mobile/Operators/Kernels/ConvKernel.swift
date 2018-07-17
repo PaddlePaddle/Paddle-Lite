@@ -27,7 +27,7 @@ struct MetalConvParam {
 class ConvKernel<P: PrecisionType>: Kernel, Computable {
     var metalParam: MetalConvParam!
     required init(device: MTLDevice, param: ConvParam<P>) {
-        super.init(device: device, inFunctionName: "conv3x3")
+        super.init(device: device, inFunctionName: "conv_add_1x1")
         let offsetX = param.filter.dim[2]/2 - Int(param.paddings[0])
         let offsetY = param.filter.dim[1]/2 - Int(param.paddings[1])
         let offsetZ = 0.0
