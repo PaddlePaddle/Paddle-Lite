@@ -44,7 +44,7 @@ void FusionDWConvBNReluOp<Dtype, T>::InferShape() const {
   framework::DDim ddim = framework::make_ddim(output_shape);
   this->param_.Output()->Resize(ddim);
 }
-template class FusionDWConvBNReluOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 

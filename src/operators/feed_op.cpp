@@ -14,10 +14,7 @@ limitations under the License. */
 
 #include "feed_op.h"
 namespace paddle_mobile {
-namespace operators {
-
-template class FeedOp<CPU, float>;
-}
+namespace operators {}
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;

@@ -84,7 +84,7 @@ struct Variant {
     if (type_id == typeid(T).hash_code()) {
       return *const_cast<T *>(reinterpret_cast<const T *>(&data));
     } else {
-      PADDLE_MOBILE_THROW_EXCEPTION(" bad cast in variant ");
+      PADDLE_MOBILE_THROW_EXCEPTION(" bad cast in variant");
       exit(0);
     }
   }

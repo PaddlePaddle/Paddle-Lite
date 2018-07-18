@@ -42,8 +42,17 @@ class FusionOpRegister {
     matchers_[matcher->Type()] = shared_matcher;
   }
 
-  const std::map<std::string, std::shared_ptr<FusionOpMatcher>> Matchers() {
-    return matchers_;
+  const std::vector<std::shared_ptr<FusionOpMatcher>> Matchers() {
+    std::vector<std::shared_ptr<FusionOpMatcher>> matchers;
+    for (const auto& match : matchers_) {
+      matchers.push_back(match.second);
+    }
+    std::sort(matchers.begin(), matchers.end(),
+              [](std::shared_ptr<FusionOpMatcher> first,
+                 std::shared_ptr<FusionOpMatcher> second) {
+                return first->BeginNode().Depth() > second->BeginNode().Depth();
+              });
+    return matchers;
   }
 
  private:
