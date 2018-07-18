@@ -135,6 +135,7 @@ class SoftmaxFuntor<CPU, T> {
       }
     }
   }
+#else
 #endif  // ARM_NEON
 
  public:
