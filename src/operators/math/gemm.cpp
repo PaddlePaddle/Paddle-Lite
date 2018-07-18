@@ -15,7 +15,7 @@ limitations under the License. */
 #include "operators/math/gemm.h"
 #include "common/log.h"
 #include "memory/t_malloc.h"
-#ifndef X86
+#if __ARM_NEON
 #include <arm_neon.h>
 #endif
 #ifdef _OPENMP
@@ -136,6 +136,10 @@ void PackMatrixB_(int k, int n, int n_tail, const float *B, int ldb,
   for (int j = 0; j < n - n_tail; j += NR) {
     for (int i = 0; i < k; ++i) {
       b0 = &B(i, j);
+#if __ARM_NEON
+#if __aarch64__
+
+#else
       asm volatile(
           "pld        [%[b0]]               \n\t"
           "vld1.32    {q0, q1}, [%[b0]]         \n\t"
@@ -143,6 +147,10 @@ void PackMatrixB_(int k, int n, int n_tail, const float *B, int ldb,
           : [buffer] "+r"(buffer)
           : [b0] "r"(b0)
           : "memory", "q0", "q0");
+#endif  // __aarch64__
+#else
+
+#endif  // __ARM_NEON
     }
   }
   if (n_tail != 0) {
@@ -206,7 +214,9 @@ void InnerKernelWithBn(int mc, int nc, float alpha, const float *a,
   }
 }
 
-#if defined(IOS)
+#if __ARM_NEON
+#if __aarch64__
+
 void AddDot4x4(int k, const float *a, const float *b, float *C, int ldc) {
   // init C
   float32x4_t cv0 = vdupq_n_f32(0.0);
@@ -255,9 +265,9 @@ void AddDot4x4(int k, const float *a, const float *b, float *C, int ldc) {
     }
   }
 }
-}  // namespace math
 
-#elif defined(ARMV7)
+#else
+
 void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
   const float *a_ptr, *b_ptr;
   a_ptr = a;
@@ -326,151 +336,6 @@ void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
         [kc2] "r"(kc2), [step] "r"(step)
       : "memory", "r5", "r6", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
         "q10", "q11", "q12", "q13");
-}
-
-#else
-void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
-  float *c0, *c1, *c2, *c3;
-  c0 = c;
-  c1 = c + ldc;
-  c2 = c + 2 * ldc;
-  c3 = c + 3 * ldc;
-  for (int p = 0; p < k; p += 1) {
-    // first row
-    c0[0] += a[0] * b[0];
-    c0[1] += a[0] * b[1];
-    c0[2] += a[0] * b[2];
-    c0[3] += a[0] * b[3];
-
-    // second row
-    c1[0] += a[1] * b[0];
-    c1[1] += a[1] * b[1];
-    c1[2] += a[1] * b[2];
-    c1[3] += a[1] * b[3];
-
-    // third row
-    c2[0] += a[2] * b[0];
-    c2[1] += a[2] * b[1];
-    c2[2] += a[2] * b[2];
-    c2[3] += a[2] * b[3];
-
-    // fourth row
-    c3[0] += a[3] * b[0];
-    c3[1] += a[3] * b[1];
-    c3[2] += a[3] * b[2];
-    c3[3] += a[3] * b[3];
-
-    a += 4;
-    b += 4;
-  }
-}
-
-#endif
-
-// 32位 float 矩阵乘法
-void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
-           const float *B, int ldb, float beta, float *C, int ldc, bool relu) {
-  // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
-  // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
-  int L1 = 30 * 1024;
-  int L2 = 1 * 1024 * 1024;
-
-  KC = k;
-  MC = L2 / (2 * KC * sizeof(float));
-  NC = MC;
-
-  // make sure MC is multiple of 4, and NC is multiple of 8
-  int mblock_num = (m + MC - 1) / MC;
-  MC = (m + mblock_num - 1) / mblock_num;
-  MC = (MC + 4 - 1) / 4 * 4;
-  //  DLOG << "mblock_num = " << mblock_num << ", MC = " << MC << "\n";
-
-  int nblock_num = (n + NC - 1) / NC;
-  NC = (n + nblock_num - 1) / nblock_num;
-  NC = (NC + 8 - 1) / 8 * 8;
-  //  DLOG << "nblock_num = " << nblock_num << ", NC = " << NC << "\n";
-
-  packedA = static_cast<float *>(
-      paddle_mobile::memory::Alloc(sizeof(float) * MC * KC));
-  packedB = static_cast<float *>(
-      paddle_mobile::memory::Alloc(sizeof(float) * KC * NC));
-  packedC = static_cast<float *>(
-      paddle_mobile::memory::Alloc(sizeof(float) * MC * NC));
-  zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
-
-  for (int l = 0; l < KC; ++l) {
-    zero[l] = 0;
-  }
-
-  int mc, nc;
-  for (int j = 0; j < n; j += NC) {
-    nc = s_min(n - j, NC);
-    PackMatrixB_(KC, nc, nc % NR, &B(0, j), ldb, packedB);
-    for (int i = 0; i < m; i += MC) {
-      mc = s_min(m - i, MC);
-      PackMatrixA_(mc, KC, mc % MR, &A(i, 0), lda, packedA);
-      InnerKernel(mc, nc, alpha, packedA, packedB, beta, packedC, &C(i, j), ldc,
-                  relu);
-    }
-  }
-
-  paddle_mobile::memory::Free(packedA);
-  paddle_mobile::memory::Free(packedB);
-  paddle_mobile::memory::Free(packedC);
-  paddle_mobile::memory::Free(zero);
-}
-
-void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
-                 const float *B, int ldb, float beta, float *C, int ldc,
-                 bool relu, float *new_scale, float *new_bias) {
-  // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
-  // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
-  int L1 = 30 * 1024;
-  int L2 = 1 * 1024 * 1024;
-
-  KC = k;
-  MC = L2 / (2 * KC * sizeof(float));
-  NC = MC;
-
-  // make sure MC is multiple of 4, and NC is multiple of 8
-  int mblock_num = (m + MC - 1) / MC;
-  MC = (m + mblock_num - 1) / mblock_num;
-  MC = (MC + 4 - 1) / 4 * 4;
-  //  DLOG << "mblock_num = " << mblock_num << ", MC = " << MC << "\n";
-
-  int nblock_num = (n + NC - 1) / NC;
-  NC = (n + nblock_num - 1) / nblock_num;
-  NC = (NC + 8 - 1) / 8 * 8;
-  //  DLOG << "nblock_num = " << nblock_num << ", NC = " << NC << "\n";
-
-  packedA = static_cast<float *>(
-      paddle_mobile::memory::Alloc(sizeof(float) * MC * KC));
-  packedB = static_cast<float *>(
-      paddle_mobile::memory::Alloc(sizeof(float) * KC * NC));
-  packedC = static_cast<float *>(
-      paddle_mobile::memory::Alloc(sizeof(float) * MC * NC));
-  zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
-
-  for (int l = 0; l < KC; ++l) {
-    zero[l] = 0;
-  }
-
-  int mc, nc;
-  for (int j = 0; j < n; j += NC) {
-    nc = s_min(n - j, NC);
-    PackMatrixB_(KC, nc, nc % NR, &B(0, j), ldb, packedB);
-    for (int i = 0; i < m; i += MC) {
-      mc = s_min(m - i, MC);
-      PackMatrixA_(mc, KC, mc % MR, &A(i, 0), lda, packedA);
-      InnerKernelWithBn(mc, nc, alpha, packedA, packedB, beta, packedC,
-                        &C(i, j), ldc, relu, new_scale + i, new_bias + i);
-    }
-  }
-
-  paddle_mobile::memory::Free(packedA);
-  paddle_mobile::memory::Free(packedB);
-  paddle_mobile::memory::Free(packedC);
-  paddle_mobile::memory::Free(zero);
 }
 
 void VectorKernel(int m, int n, int k, float alpha, const float *A, int lda,
@@ -1699,6 +1564,153 @@ void VecWriteWithBnRelu(int n, float *c, float *C, int ldc, float *scale,
         "q12", "q13", "q14");
 }
 
+#endif  // __aarch64__
+#else
+
+void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
+  float *c0, *c1, *c2, *c3;
+  c0 = c;
+  c1 = c + ldc;
+  c2 = c + 2 * ldc;
+  c3 = c + 3 * ldc;
+  for (int p = 0; p < k; p += 1) {
+    // first row
+    c0[0] += a[0] * b[0];
+    c0[1] += a[0] * b[1];
+    c0[2] += a[0] * b[2];
+    c0[3] += a[0] * b[3];
+
+    // second row
+    c1[0] += a[1] * b[0];
+    c1[1] += a[1] * b[1];
+    c1[2] += a[1] * b[2];
+    c1[3] += a[1] * b[3];
+
+    // third row
+    c2[0] += a[2] * b[0];
+    c2[1] += a[2] * b[1];
+    c2[2] += a[2] * b[2];
+    c2[3] += a[2] * b[3];
+
+    // fourth row
+    c3[0] += a[3] * b[0];
+    c3[1] += a[3] * b[1];
+    c3[2] += a[3] * b[2];
+    c3[3] += a[3] * b[3];
+
+    a += 4;
+    b += 4;
+  }
+}
+
+#endif  // __ARM_NEON
+
+// 32位 float 矩阵乘法
+void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
+           const float *B, int ldb, float beta, float *C, int ldc, bool relu) {
+  // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
+  // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
+  int L1 = 30 * 1024;
+  int L2 = 1 * 1024 * 1024;
+
+  KC = k;
+  MC = L2 / (2 * KC * sizeof(float));
+  NC = MC;
+
+  // make sure MC is multiple of 4, and NC is multiple of 8
+  int mblock_num = (m + MC - 1) / MC;
+  MC = (m + mblock_num - 1) / mblock_num;
+  MC = (MC + 4 - 1) / 4 * 4;
+  //  DLOG << "mblock_num = " << mblock_num << ", MC = " << MC << "\n";
+
+  int nblock_num = (n + NC - 1) / NC;
+  NC = (n + nblock_num - 1) / nblock_num;
+  NC = (NC + 8 - 1) / 8 * 8;
+  //  DLOG << "nblock_num = " << nblock_num << ", NC = " << NC << "\n";
+
+  packedA = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * MC * KC));
+  packedB = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * KC * NC));
+  packedC = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * MC * NC));
+  zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
+
+  for (int l = 0; l < KC; ++l) {
+    zero[l] = 0;
+  }
+
+  int mc, nc;
+  for (int j = 0; j < n; j += NC) {
+    nc = s_min(n - j, NC);
+    PackMatrixB_(KC, nc, nc % NR, &B(0, j), ldb, packedB);
+    for (int i = 0; i < m; i += MC) {
+      mc = s_min(m - i, MC);
+      PackMatrixA_(mc, KC, mc % MR, &A(i, 0), lda, packedA);
+      InnerKernel(mc, nc, alpha, packedA, packedB, beta, packedC, &C(i, j), ldc,
+                  relu);
+    }
+  }
+
+  paddle_mobile::memory::Free(packedA);
+  paddle_mobile::memory::Free(packedB);
+  paddle_mobile::memory::Free(packedC);
+  paddle_mobile::memory::Free(zero);
+}
+
+void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
+                 const float *B, int ldb, float beta, float *C, int ldc,
+                 bool relu, float *new_scale, float *new_bias) {
+  // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
+  // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
+  int L1 = 30 * 1024;
+  int L2 = 1 * 1024 * 1024;
+
+  KC = k;
+  MC = L2 / (2 * KC * sizeof(float));
+  NC = MC;
+
+  // make sure MC is multiple of 4, and NC is multiple of 8
+  int mblock_num = (m + MC - 1) / MC;
+  MC = (m + mblock_num - 1) / mblock_num;
+  MC = (MC + 4 - 1) / 4 * 4;
+  //  DLOG << "mblock_num = " << mblock_num << ", MC = " << MC << "\n";
+
+  int nblock_num = (n + NC - 1) / NC;
+  NC = (n + nblock_num - 1) / nblock_num;
+  NC = (NC + 8 - 1) / 8 * 8;
+  //  DLOG << "nblock_num = " << nblock_num << ", NC = " << NC << "\n";
+
+  packedA = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * MC * KC));
+  packedB = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * KC * NC));
+  packedC = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * MC * NC));
+  zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
+
+  for (int l = 0; l < KC; ++l) {
+    zero[l] = 0;
+  }
+
+  int mc, nc;
+  for (int j = 0; j < n; j += NC) {
+    nc = s_min(n - j, NC);
+    PackMatrixB_(KC, nc, nc % NR, &B(0, j), ldb, packedB);
+    for (int i = 0; i < m; i += MC) {
+      mc = s_min(m - i, MC);
+      PackMatrixA_(mc, KC, mc % MR, &A(i, 0), lda, packedA);
+      InnerKernelWithBn(mc, nc, alpha, packedA, packedB, beta, packedC,
+                        &C(i, j), ldc, relu, new_scale + i, new_bias + i);
+    }
+  }
+
+  paddle_mobile::memory::Free(packedA);
+  paddle_mobile::memory::Free(packedB);
+  paddle_mobile::memory::Free(packedC);
+  paddle_mobile::memory::Free(zero);
+}
+
+}  // namespace math
 }  // namespace operators
-}  // namespace paddle_mobile
 }  // namespace paddle_mobile
