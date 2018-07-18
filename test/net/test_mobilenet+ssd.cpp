@@ -19,8 +19,8 @@ limitations under the License. */
 int main() {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
   auto time1 = time();
-//  auto isok = paddle_mobile.Load(g_mobilenet_ssd_gesture + "/model",
-//                                 g_mobilenet_ssd_gesture + "/params", true);
+  //  auto isok = paddle_mobile.Load(g_mobilenet_ssd_gesture + "/model",
+  //                                 g_mobilenet_ssd_gesture + "/params", true);
   auto isok = paddle_mobile.Load(g_mobilenet_ssd, false);
   if (isok) {
     auto time2 = time();
