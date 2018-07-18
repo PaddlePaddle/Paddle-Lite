@@ -47,6 +47,10 @@ class PaddleMobile {
    * */
   bool Load(const std::string &model_path, const std::string &para_path,
             bool optimize = false, int batch_size = 1);
+
+  /*
+   * @b 设置线程数, 当 cmake 中开启 openmp 时生效
+   * */
   void SetThreadNum(int num);
 
   /*
