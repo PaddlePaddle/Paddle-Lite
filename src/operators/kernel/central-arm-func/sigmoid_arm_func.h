@@ -43,7 +43,7 @@ void sigmoid(const Tensor *X, Tensor *Y) {
 
   DLOG << "outsize=" << out_size;
   DLOG << "innersize=" << inner_size;
-  // <TRICKY-CLANG-FORMAT-PRAGMA-FIX> #pragma omp parallel for
+  #pragma omp parallel for
   for (int i = 0; i < out_size; ++i) {
     const float *input_outer_ptr = input + i * inner_size;
     float *output_outer_ptr = output + i * inner_size;
@@ -68,6 +68,7 @@ void sigmoid(const Tensor *X, Tensor *Y) {
       input_outer_ptr++;
     }
   }
+#else
 #endif
 }
 
