@@ -630,7 +630,7 @@ class MultiClassNMSParam : public OpParam {
 class FeedParam : public OpParam {
  public:
   FeedParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-            const AttributeMap &attrs, Scope scope) {
+            const AttributeMap &attrs, Scope &scope) {
     input_x_ = InputXFrom<LoDTensor>(inputs, scope);
     out_ = OutFrom<LoDTensor>(outputs, scope);
     auto var = scope.Var("batch_size");
