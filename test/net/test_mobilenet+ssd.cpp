@@ -19,8 +19,9 @@ limitations under the License. */
 int main() {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
   auto time1 = time();
-//    auto isok = paddle_mobile.Load(g_mobilenet_ssd_gesture + "/model",
-//                                   g_mobilenet_ssd_gesture + "/params", true);
+  //    auto isok = paddle_mobile.Load(g_mobilenet_ssd_gesture + "/model",
+  //                                   g_mobilenet_ssd_gesture + "/params",
+  //                                   true);
   auto isok = paddle_mobile.Load(g_mobilenet_ssd, false);
   if (isok) {
     auto time2 = time();
@@ -36,7 +37,8 @@ int main() {
     auto time3 = time();
     paddle_mobile.Predict(input, dims);
     auto time4 = time();
-    std::cout << "predict cost :" << time_diff(time3, time4) << "ms" << std::endl;
+    std::cout << "predict cost :" << time_diff(time3, time4) << "ms"
+              << std::endl;
   }
   return 0;
 }
