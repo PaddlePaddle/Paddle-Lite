@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 #include "operators/math/depthwise_conv_3x3.h"
-#ifdef __ARM_NEON
+#if __ARM_NEON
 #include <arm_neon.h>
 #endif
 #include <vector>
@@ -23,7 +23,6 @@ namespace math {
 void DepthwiseConv3x3(const Tensor *input, vector<int> strides,
                       vector<int> paddings, const Tensor *filter, Tensor *bias,
                       Tensor *output, bool if_bias) {
-#ifdef __ARM_NEON
   const int batch_size = input->dims()[0];
 
   const int input_height = input->dims()[2];
@@ -181,7 +180,27 @@ void DepthwiseConv3x3(const Tensor *input, vector<int> strides,
             }
 
           } else {
-#if defined(ARMV17)
+#if __ARM_NEON
+#if __aarch64__
+            const float32x4_t data1 = vld1q_f32(pos1);
+            const float32x4_t data2 = vld1q_f32(pos2);
+            const float32x4_t data3 = vld1q_f32(pos3);
+
+            const float32x4_t v_filter1 = vld1q_f32(filter1);
+            const float32x4_t v_filter2 = vld1q_f32(filter2);
+            const float32x4_t v_filter3 = vld1q_f32(filter3);
+            float32x4_t mula = vmulq_f32(data1, v_filter1);
+            mula = vmlaq_f32(mula, data2, v_filter2);
+            mula = vmlaq_f32(mula, data3, v_filter3);
+            float32x2_t res = vpadd_f32(
+                vget_high_f32(vsetq_lane_f32(0, mula, 3)), vget_low_f32(mula));
+            res = vpadd_f32(res, res);
+            if (if_bias) {
+              output_data[ph * output_width + pw] += vget_lane_f32(res, 0);
+            } else {
+              output_data[ph * output_width + pw] = vget_lane_f32(res, 0);
+            }
+#else
             asm volatile(
 
                 "vld1.32  {q1}, [%[pos1]]        \n\t"
@@ -209,26 +228,10 @@ void DepthwiseConv3x3(const Tensor *input, vector<int> strides,
                   [filter2] "r"(filter2), [filter3] "r"(filter3),
                   [output_ptr] "r"(output_ptr), [zero] "r"(zero)
                 : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6");
+#endif  // __aarch64__
 #else
-            const float32x4_t data1 = vld1q_f32(pos1);
-            const float32x4_t data2 = vld1q_f32(pos2);
-            const float32x4_t data3 = vld1q_f32(pos3);
 
-            const float32x4_t v_filter1 = vld1q_f32(filter1);
-            const float32x4_t v_filter2 = vld1q_f32(filter2);
-            const float32x4_t v_filter3 = vld1q_f32(filter3);
-            float32x4_t mula = vmulq_f32(data1, v_filter1);
-            mula = vmlaq_f32(mula, data2, v_filter2);
-            mula = vmlaq_f32(mula, data3, v_filter3);
-            float32x2_t res = vpadd_f32(
-                vget_high_f32(vsetq_lane_f32(0, mula, 3)), vget_low_f32(mula));
-            res = vpadd_f32(res, res);
-            if (if_bias) {
-              output_data[ph * output_width + pw] += vget_lane_f32(res, 0);
-            } else {
-              output_data[ph * output_width + pw] = vget_lane_f32(res, 0);
-            }
-#endif
+#endif  // __ARM_NEON
           }
         }
       }
@@ -239,12 +242,11 @@ void DepthwiseConv3x3(const Tensor *input, vector<int> strides,
     input_data += input_batch_stride;
     output_data += output_batch_stride;
   }
-#endif
 }
 
 void DepthwiseConv3x3s1p1(const Tensor *input, const Tensor *filter,
                           Tensor *output, Tensor *bias, bool if_bias) {
-#ifdef __ARM_NEON
+#if __ARM_NEON
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
   float *output_data = output->data<float>();
@@ -520,7 +522,7 @@ void DepthwiseConv3x3s1p1(const Tensor *input, const Tensor *filter,
 void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
                                    Tensor *output, const Tensor *new_scale,
                                    const Tensor *new_bias, bool if_relu) {
-#ifdef __ARM_NEON
+#if __ARM_NEON
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
   float *output_data = output->data<float>();
@@ -824,7 +826,7 @@ void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
 void DepthwiseConvAddBNRelu3x3s2p1(const Tensor *input, const Tensor *filter,
                                    Tensor *output, const Tensor *new_scale,
                                    const Tensor *new_bias, bool if_relu) {
-#ifdef __ARM_NEON
+#if __ARM_NEON
 
   const int batch_size = input->dims()[0];
 
@@ -1022,7 +1024,7 @@ void DepthwiseConvAddBNRelu3x3s2p1(const Tensor *input, const Tensor *filter,
 
 void DepthwiseConv3x3s2p1v2(const Tensor *input, const Tensor *filter,
                             Tensor *output, Tensor bias, bool if_bias) {
-#ifdef __ARM_NEON
+#if __ARM_NEON
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
   float *output_data = output->data<float>();
@@ -1225,7 +1227,7 @@ void DepthwiseConv3x3s2p1v2(const Tensor *input, const Tensor *filter,
 void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
                                      Tensor *output, const Tensor *new_scale,
                                      const Tensor *new_bias, bool if_relu) {
-#ifdef __ARM_NEON
+#if __ARM_NEON
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
   float *output_data = output->data<float>();
