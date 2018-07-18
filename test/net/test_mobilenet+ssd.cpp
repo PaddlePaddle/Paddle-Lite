@@ -19,7 +19,8 @@ limitations under the License. */
 int main() {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
   auto time1 = time();
-  if (paddle_mobile.Load(g_mobilenet_ssd, true)) {
+
+  if (paddle_mobile.Load(g_mobilenet_ssd, false)) {
     auto time2 = time();
     DLOG << "load cost :" << time_diff(time1, time1) << "ms";
 
