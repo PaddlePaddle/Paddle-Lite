@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace paddle_mobile {
@@ -82,6 +83,7 @@ extern const std::string G_OP_TYPE_FC;
 extern const std::string G_OP_TYPE_FUSION_CONV_ADD;
 extern const std::string G_OP_TYPE_FUSION_CONV_ADD_BN_RELU;
 extern const std::string G_OP_TYPE_FUSION_DWCONV_BN_RELU;
+extern const std::string G_OP_TYPE_FUSION_CONV_BN_RELU;
 
 extern const std::string G_OP_TYPE_LRN;
 extern const std::string G_OP_TYPE_MUL;

@@ -17,7 +17,7 @@ limitations under the License. */
 #include <omp.h>
 #endif
 #include "framework/tensor.h"
-#include "pool_3x3.h"
+#include "operators/math/pool_3x3.h"
 #if __ARM_NEON
 #include <arm_neon.h>
 #endif  // __ARM_NEON
@@ -518,6 +518,8 @@ void Pool3x3Maxs1p1(const Tensor *input, Tensor *output) {
     input_data += input_batch_stride;
     out_data += output_batch_stride;
   }
+#else
+
 #endif
 }
 
@@ -582,7 +584,18 @@ void Pool3x3Max(vector<int> strides, vector<int> paddings, const Tensor *input,
             }
             output_seg[ph * output_width + pw] = max_value;
           } else {
-#if defined(ARMV7)
+#if __aarch64__
+            const float32x4_t data1 = vld1q_f32(pos1);
+            const float32x4_t data2 = vld1q_f32(pos1 + input_width);
+            const float32x4_t data3 = vld1q_f32(pos1 + 2 * input_width);
+            const float32x4_t max_data =
+                vmaxq_f32(vmaxq_f32(data1, data2), data3);
+            float32x2_t res =
+                vpmax_f32(vget_high_f32(vsetq_lane_f32(-INT_MAX, max_data, 3)),
+                          vget_low_f32(max_data));
+            res = vpmax_f32(res, res);
+            output_seg[ph * output_width + pw] = vget_lane_f32(res, 0);
+#else
             asm volatile(
                 "vld1.32  {q1}, [%[pos1]]        \n\t"
                 "vld1.32  {q2}, [%[pos2]]        \n\t"
@@ -598,17 +611,6 @@ void Pool3x3Max(vector<int> strides, vector<int> paddings, const Tensor *input,
                   [pos2] "r"(pos2), [pos3] "r"(pos3),
                   [output_ptr] "r"(output_ptr), [negative_max] "r"(negative_max)
                 : "memory", "q1", "q2", "q3", "q4");
-#else
-            const float32x4_t data1 = vld1q_f32(pos1);
-            const float32x4_t data2 = vld1q_f32(pos1 + input_width);
-            const float32x4_t data3 = vld1q_f32(pos1 + 2 * input_width);
-            const float32x4_t max_data =
-                vmaxq_f32(vmaxq_f32(data1, data2), data3);
-            float32x2_t res =
-                vpmax_f32(vget_high_f32(vsetq_lane_f32(-INT_MAX, max_data, 3)),
-                          vget_low_f32(max_data));
-            res = vpmax_f32(res, res);
-            output_seg[ph * output_width + pw] = vget_lane_f32(res, 0);
 #endif
           }
         }
@@ -676,8 +678,8 @@ void Pool3x3Avg(vector<int> strides, vector<int> paddings, const Tensor *input,
             }
             output_seg[ph * output_width + pw] = sum / 9.0;
           } else {
-#if defined(ARMV7)
-
+#if __aarch64__
+#else
             asm volatile(
                 "vld1.32  {q1}, [%[pos1]]        \n\t"
                 "vld1.32  {q2}, [%[pos2]]        \n\t"
@@ -696,7 +698,7 @@ void Pool3x3Avg(vector<int> strides, vector<int> paddings, const Tensor *input,
                   [output_ptr] "r"(output_ptr), [zero] "r"(zero),
                   [nine_ptr] "r"(nine_ptr)
                 : "memory", "r6", "q1", "q2", "q3", "q4");
-#else
+#endif
             const float32x4_t data1 = vld1q_f32(pos1);
             const float32x4_t data2 = vld1q_f32(pos2);
             const float32x4_t data3 = vld1q_f32(pos3);
@@ -707,7 +709,6 @@ void Pool3x3Avg(vector<int> strides, vector<int> paddings, const Tensor *input,
                           vget_low_f32(sum_data));
             res = vpadd_f32(res, res);
             output_seg[ph * output_width + pw] = vget_lane_f32(res, 0) / 9.0;
-#endif
           }
         }
       }
@@ -715,6 +716,7 @@ void Pool3x3Avg(vector<int> strides, vector<int> paddings, const Tensor *input,
     input_data += input_batch_stride;
     output_data += output_batch_stride;
   }
+#else
 #endif
 }
 }  // namespace math
