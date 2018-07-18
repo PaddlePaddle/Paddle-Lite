@@ -15,7 +15,7 @@ file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
 include_directories(src/)
 
 if(IS_IOS)
-    set(CMAKE_CXX_FLAGS "-fobjc-abi-version=2 -fobjc-arc -std=gnu++11 -stdlib=libc++ -O3 -s -isysroot ${CMAKE_OSX_SYSROOT} ${CMAKE_CXX_FLAGS}")
+    set(CMAKE_CXX_FLAGS "-mfpu=neon -fobjc-abi-version=2 -fobjc-arc -std=gnu++11 -stdlib=libc++ -O3 -s -isysroot ${CMAKE_OSX_SYSROOT} ${CMAKE_CXX_FLAGS}")
 else()
     set(CMAKE_CXX_FLAGS "-std=c++14 -O3 -s ${CMAKE_CXX_FLAGS}")
 endif()
