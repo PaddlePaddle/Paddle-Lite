@@ -15,7 +15,7 @@ limitations under the License. */
 #include "operators/math/im2col.h"
 #include <vector>
 #ifdef __ARM_NEON
-#include <arm_neon>
+#include <arm_neon.h>
 #endif
 #include "common/types.h"
 namespace paddle_mobile {
