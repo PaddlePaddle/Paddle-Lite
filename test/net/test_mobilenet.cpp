@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include <fstream>
+#include <iostream>
 #include "../test_helper.h"
 #include "../test_include.h"
 
@@ -22,7 +22,7 @@ int main() {
   auto time1 = time();
   if (paddle_mobile.Load(g_mobilenet, true)) {
     auto time2 = time();
-    DLOG << "load cost :" << time_diff(time1, time1) << "ms";
+    std::cout << "load cost :" << time_diff(time1, time1) << "ms" << std::endl;
 
     std::vector<int64_t> dims{1, 3, 224, 224};
     Tensor input_tensor;
@@ -35,7 +35,8 @@ int main() {
     auto vec_result = paddle_mobile.Predict(input, dims);
     auto time4 = time();
 
-    DLOG << "predict cost :" << time_diff(time3, time4) << "ms";
+    std::cout << "predict cost :" << time_diff(time3, time4) << "ms"
+              << std::endl;
   }
 
   return 0;
