@@ -47,8 +47,6 @@ void Im2SequenceOp<Dtype, T>::InferShape() const {
   this->param_.Output()->Resize(ddim);
 }
 
-template class Im2SequenceOp<CPU, float>;
-
 }  // namespace operators
 }  // namespace paddle_mobile
 

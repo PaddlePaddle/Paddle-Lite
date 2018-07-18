@@ -47,13 +47,10 @@ class Node {
       std::map<std::string, std::vector<std::pair<std::string, std::string>>>
           change,
       std::vector<std::shared_ptr<Node>> *removed_nodes);
-  std::vector<std::shared_ptr<framework::OpDesc>> OpDescs(int size);
   std::shared_ptr<framework::OpDesc> OpDescOfNode() { return op_desc_; }
   std::string Type() { return type_; }
 
  private:
-  void OpDescs(int size,
-               std::vector<std::shared_ptr<framework::OpDesc>> *op_desc);
   void To(int index, std::shared_ptr<Node>);
   void Folder(
       std::shared_ptr<framework::OpDesc> op_desc,
