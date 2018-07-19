@@ -70,7 +70,7 @@ kernel void batchnorm(texture2d_array<half, access::read> inTexture [[texture(0)
         gid.z >= outTexture.get_array_size()) return;
     const half4 input = inTexture.read(gid.xy, gid.z);
     half4 output = input * newScale[gid.z] + newBias[gid.z];
-    outTexture.write(input, gid.xy, gid.z);
+    outTexture.write(output, gid.xy, gid.z);
 }
 
 //kernel void texture2d_to_2d_array(texture2d<half, access::read> inTexture [[texture(0)]],

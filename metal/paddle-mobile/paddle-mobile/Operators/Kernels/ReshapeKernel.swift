@@ -16,11 +16,16 @@ import Foundation
 
 class ReshapeKernel<P: PrecisionType>: Kernel, Computable{
     required init(device: MTLDevice, param: ReshapeParam<P>) {
-        super.init(device: device, inFunctionName: "relu")
+        super.init(device: device, inFunctionName: "reshape")
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: ReshapeParam<P>) throws {
+        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+            throw PaddleMobileError.predictError(message: " encoder is nil")
+        }
+        print("Reshape compute")
+        encoder.setTexture(param.input.metalTexture, index: 0)
+        encoder.setTexture(param.output.metalTexture, index: 1)
+        encoder.endEncoding()
     }
-    
-    
 }
