@@ -31,7 +31,7 @@ class ReshapeParam<P: PrecisionType>: OpParam {
 class ReshapeOp<P: PrecisionType>: Operator<ReshapeKernel<P>, ReshapeParam<P>>, Runable, Creator, InferShaperable{
     
     func inferShape() {
-        para.output.dim = para.input.dim
+        // para.output.dim = para.input.dim
     }
     
     typealias OpType = ReshapeOp<P>
