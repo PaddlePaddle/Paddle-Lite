@@ -22,7 +22,7 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable {
         if param.filter.width == 1 && param.filter.height == 1 {
             super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_1x1")
         } else if param.filter.channel == 1 {
-            super.init(device: device, inFunctionName: "depthwise_conv_add_batch_norm_relu_1x1")
+            super.init(device: device, inFunctionName: "depthwise_conv_add_batch_norm_relu_3x3")
         } else {
             super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_3x3")
         }
@@ -75,7 +75,7 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable {
         encoder.setTexture(param.output.metalTexture, index: 1)
         encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
         encoder.setBuffer(param.filter.buffer, offset: 0, index: 1)
-        encoder.setBuffer(param.bias.buffer, offset: 0, index: 2)
+        encoder.setBuffer(param.y.buffer, offset: 0, index: 2)
         encoder.setBuffer(param.newScale!, offset: 0, index: 3)
         encoder.setBuffer(param.newBiase!, offset: 0, index: 4)
         encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
