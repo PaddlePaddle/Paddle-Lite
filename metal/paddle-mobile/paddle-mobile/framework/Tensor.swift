@@ -95,12 +95,14 @@ class Tensor<P: PrecisionType>: Tensorial {
                 let cSlices = (C + 3) / 4
                 let paddedC = cSlices * 4
                 let count = paddedC * dim[0] * dim[1] * dim[2]
-                buffer = device.makeBuffer(length: count * MemoryLayout<P>.stride)
                 if C == paddedC {
+                    buffer = device.makeBuffer(length: count * MemoryLayout<P>.stride)
                     buffer?.contents().copyMemory(from: data.pointer, byteCount: count * MemoryLayout<P>.stride)
                 } else if C == 1 {
-                    buffer?.contents().copyMemory(from: data.pointer, byteCount: count * MemoryLayout<P>.stride)
+                    buffer = device.makeBuffer(length: numel() * MemoryLayout<P>.stride)
+                    buffer?.contents().copyMemory(from: data.pointer, byteCount: numel() * MemoryLayout<P>.stride)
                 } else {
+                    buffer = device.makeBuffer(length: count * MemoryLayout<P>.stride)
                     var tmpPointer = data.pointer
                     var dstPtr = buffer?.contents().bindMemory(to: P.self, capacity: count)
                     for _ in 0..<dim[0] * dim[1] * dim[2] {
@@ -120,7 +122,8 @@ class Tensor<P: PrecisionType>: Tensorial {
         } else {
             fatalError(" not support !")
         }
-        data.release()
+        //TODO: release
+//        data.release()
     }
     
     var width: Int {
