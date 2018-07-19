@@ -15,11 +15,30 @@
 import Foundation
 
 class PoolKernel<P: PrecisionType>: Kernel, Computable{
-    
     func compute(commandBuffer: MTLCommandBuffer, param: PoolParam<P>) throws {
+        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+            throw PaddleMobileError.predictError(message: " encoder is nil")
+        }
+        print("Pool compute")
+        encoder.setTexture(param.input.metalTexture, index: 0)
+        encoder.setTexture(param.output.metalTexture, index: 1)
+        encoder.setBytes(UnsafeRawPointer(param.ksize), length: param.ksize.count * 4, index: 0)
+        encoder.setBytes(UnsafeRawPointer(param.stride), length: param.stride.count * 4, index: 1)
+        encoder.setBytes(UnsafeRawPointer(param.padding), length: param.padding.count * 4, index: 2)
+        var poolType: Int32
+        switch param.poolType {
+        case "max":
+            poolType = 0
+        case "avg":
+            poolType = 1
+        default:
+            throw PaddleMobileError.predictError(message: " unknown pooltype " + param.poolType)
+        }
+        encoder.setBytes(&poolType, length: 4, index: 3)
+        encoder.endEncoding()
     }
     
     required init(device: MTLDevice, param: PoolParam<P>) {
-        super.init(device: device, inFunctionName: "relu")
+        super.init(device: device, inFunctionName: "pool")
     }
 }

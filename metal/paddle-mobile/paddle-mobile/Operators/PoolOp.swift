@@ -20,18 +20,31 @@ class PoolParam<P: PrecisionType>: OpParam {
         do {
             input = try PoolParam.inputX(inputs: opDesc.inputs, from: inScope)
             output = try PoolParam.outputOut(outputs: opDesc.outputs, from: inScope)
+            poolType = try PoolParam.getAttr(key: "pooling_type", attrs: opDesc.attrs)
+            ksize = try PoolParam.getAttr(key: "ksize", attrs: opDesc.attrs)
+            stride = try PoolParam.getAttr(key: "strides", attrs: opDesc.attrs)
+            padding = try PoolParam.getAttr(key: "paddings", attrs: opDesc.attrs)
+            ceilMode = try PoolParam.getAttr(key: "ceil_mode", attrs: opDesc.attrs)
+            globalPooling = try PoolParam.getAttr(key: "global_pooling", attrs: opDesc.attrs)
         } catch let error {
             throw error
         }
+//        let buffer = input.metalTexture.buffer.contents().assumingMemoryBound(to: P.self)
     }
     let input: Texture<P>
     var output: Texture<P>
+    var ksize: [Int32]
+    var stride: [Int32]
+    var padding: [Int32]
+    var poolType: String
+    var ceilMode: Bool
+    var globalPooling: Bool
 }
 
 class PoolOp<P: PrecisionType>: Operator<PoolKernel<P>, PoolParam<P>>, Runable, Creator, InferShaperable{
     
     func inferShape() {
-        para.output.dim = para.input.dim
+        // para.output.dim = para.input.dim
     }
     
     typealias OpType = PoolOp<P>
@@ -41,5 +54,15 @@ class PoolOp<P: PrecisionType>: Operator<PoolKernel<P>, PoolParam<P>>, Runable, 
         } catch let error {
             throw error
         }
+    }
+    
+    func delogOutput() {
+        print("pool2d delog")
+        let _: P? = para.input.metalTexture.logDesc(header: "pool2d input: ", stridable: false)
+        print(para.ksize)
+        print(para.stride)
+        print(para.padding)
+        print(para.poolType)
+        let _: P? = para.output.metalTexture.logDesc(header: "pool2d output: ", stridable: false)
     }
 }
