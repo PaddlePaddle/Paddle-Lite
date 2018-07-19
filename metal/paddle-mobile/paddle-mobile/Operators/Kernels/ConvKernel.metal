@@ -66,7 +66,6 @@ struct MetalConvParam {
 //
 //}
 
-
 kernel void conv_add_batch_norm_relu_3x3(texture2d_array<float, access::sample> inTexture [[texture(0)]],
                                          texture2d_array<float, access::write> outTexture [[texture(1)]],
                                          constant MetalConvParam &param [[buffer(0)]],
@@ -120,8 +119,6 @@ kernel void conv_add_batch_norm_relu_3x3(texture2d_array<float, access::sample> 
     outTexture.write(output, gid.xy, gid.z);
 }
 
-
-
 kernel void conv_add_batch_norm_relu_1x1(texture2d_array<float, access::sample> inTexture [[texture(0)]],
                                          texture2d_array<float, access::write> outTexture [[texture(1)]],
                                          constant MetalConvParam &param [[buffer(0)]],
@@ -165,14 +162,11 @@ kernel void conv_add_batch_norm_relu_1x1(texture2d_array<float, access::sample> 
     outTexture.write(output, gid.xy, gid.z);
 }
 
-
 kernel void conv_add_1x1(texture2d_array<float, access::sample> inTexture [[texture(0)]],
                                          texture2d_array<float, access::write> outTexture [[texture(1)]],
                                          constant MetalConvParam &param [[buffer(0)]],
                                          const device float4 *weights [[buffer(1)]],
                                          const device float4 *biase [[buffer(2)]],
-                                         const device float4 *new_scale [[buffer(3)]],
-                                         const device float4 *new_biase [[buffer(4)]],
                                          uint3 gid [[thread_position_in_grid]]) {
     
     if (gid.x >= outTexture.get_width() ||
@@ -210,10 +204,10 @@ kernel void conv_add_1x1(texture2d_array<float, access::sample> inTexture [[text
 }
 
 
-kernel void depthwise_conv_add_batch_norm_relu_1x1(texture2d_array<float, access::sample> inTexture [[texture(0)]],
+kernel void depthwise_conv_add_batch_norm_relu_3x3(texture2d_array<float, access::sample> inTexture [[texture(0)]],
                                          texture2d_array<float, access::write> outTexture [[texture(1)]],
                                          constant MetalConvParam &param [[buffer(0)]],
-                                         const device float4 *weights [[buffer(1)]],
+                                         const device float *weights [[buffer(1)]],
                                          const device float4 *biase [[buffer(2)]],
                                          const device float4 *new_scale [[buffer(3)]],
                                          const device float4 *new_biase [[buffer(4)]],
@@ -225,11 +219,10 @@ kernel void depthwise_conv_add_batch_norm_relu_1x1(texture2d_array<float, access
         return;
     }
     uint output_slice = gid.z;
-    
     short2 posInInput = short2(gid.xy) + short2(param.offsetX, param.offsetY);
     constexpr sampler sample(coord::pixel, filter::nearest, address::clamp_to_zero);
     const uint kernelHXW = 9;
-    uint weithTo = gid.z * kernelHXW;
+    uint weithTo = gid.z * kernelHXW * 4;
     float4 output = float4(0.0);
     float4 inputs[9];
     inputs[0] = inTexture.sample(sample, float2(posInInput.x - 1,    posInInput.y - 1), output_slice);
@@ -243,13 +236,12 @@ kernel void depthwise_conv_add_batch_norm_relu_1x1(texture2d_array<float, access
     inputs[8] = inTexture.sample(sample, float2(posInInput.x + 1,    posInInput.y + 1), output_slice);
     for (int j = 0; j < 9; ++j) {
         float4 input = inputs[j];
-        float4 weight = weights[weithTo + j];
-        output.x += input.x * weight.x;
-        output.y += input.y * weight.y;
-        output.z += input.z * weight.z;
-        output.w += input.w * weight.w;
+        output.x += input.x * weights[weithTo + 0 * kernelHXW + j];
+        output.y += input.y * weights[weithTo + 1 * kernelHXW + j];
+        output.z += input.z * weights[weithTo + 2 * kernelHXW + j];
+        output.w += input.w * weights[weithTo + 3 * kernelHXW + j];
     }
-    output = fmax((output + biase[gid.z]) * new_scale[gid.z] + new_biase[gid.z], 0.0);
+    output = (output + biase[gid.z]) * new_scale[gid.z] + new_biase[gid.z];
     outTexture.write(output, gid.xy, gid.z);
 }
 

@@ -55,6 +55,7 @@ public class Executor<P: PrecisionType> {
         device = inDevice
         queue = inQueue
         for block in inProgram.programDesc.blocks {
+            //block.ops.count
             for i in 0..<block.ops.count {
                 let op = block.ops[i]
                 do {
@@ -65,6 +66,7 @@ public class Executor<P: PrecisionType> {
                     throw error
                 }
             }
+            
 //            for op in block.ops {
 //                do {
 //                    let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
@@ -94,16 +96,14 @@ public class Executor<P: PrecisionType> {
         }
         
         buffer.addCompletedHandler { (commandbuffer) in
-            
             for op in self.ops {
                 op.delogOutput()
             }
             
+
             let afterDate = Date.init()
             print(" encoder end ! time: \(afterDate.timeIntervalSince(beforeDate))")
-            
         }
-        
         buffer.commit()
         
         guard let outputVar = program.scope.output() else {
