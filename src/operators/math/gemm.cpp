@@ -1546,283 +1546,281 @@ void WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc, float *scale,
         "q8", "q10", "q11", "q12", "q13", "q14");
 }
 
-/*
-// C = A * B
-void VecWriteBasic(int n, float *c, float *C, int ldc) {
-  int nc1 = n / 16;
-  int _nc1 = n % 16;
-  int nc2 = _nc1 / 4;
-  int nc3 = 16 - 4 * (_nc1 % 4);
+  /*
+  // C = A * B
+  void VecWriteBasic(int n, float *c, float *C, int ldc) {
+    int nc1 = n / 16;
+    int _nc1 = n % 16;
+    int nc2 = _nc1 / 4;
+    int nc3 = 16 - 4 * (_nc1 % 4);
 
-  asm volatile(
-      "subs       %[nc1],   %[nc1],   #1  \n\t"
-      "blt        end_nc1_%=              \n\t"
-      "loop_nc1_%=:                       \n\t"
+    asm volatile(
+        "subs       %[nc1],   %[nc1],   #1  \n\t"
+        "blt        end_nc1_%=              \n\t"
+        "loop_nc1_%=:                       \n\t"
 
-      "vld1.32    {q0, q1}, [%[c]]!       \n\t"
-      "vst1.32    {q0, q1}, [%[C]]!       \n\t"
+        "vld1.32    {q0, q1}, [%[c]]!       \n\t"
+        "vst1.32    {q0, q1}, [%[C]]!       \n\t"
 
-      "vld1.32    {q2, q3}, [%[c]]!       \n\t"
-      "vst1.32    {q2, q3}, [%[C]]!       \n\t"
+        "vld1.32    {q2, q3}, [%[c]]!       \n\t"
+        "vst1.32    {q2, q3}, [%[C]]!       \n\t"
 
-      "subs       %[nc1],   %[nc1],   #1  \n\t"
-      "bge        loop_nc1_%=             \n\t"
-      "end_nc1_%=:                        \n\t"
+        "subs       %[nc1],   %[nc1],   #1  \n\t"
+        "bge        loop_nc1_%=             \n\t"
+        "end_nc1_%=:                        \n\t"
 
-      "subs       %[nc2],   %[nc2],   #1  \n\t"
-      "blt        end_nc2_%=              \n\t"
-      "loop_nc2_%=:                       \n\t"
+        "subs       %[nc2],   %[nc2],   #1  \n\t"
+        "blt        end_nc2_%=              \n\t"
+        "loop_nc2_%=:                       \n\t"
 
-      "vld1.32    {q4},     [%[c]]!       \n\t"
-      "vst1.32    {q4},     [%[C]]!       \n\t"
+        "vld1.32    {q4},     [%[c]]!       \n\t"
+        "vst1.32    {q4},     [%[C]]!       \n\t"
 
-      "subs       %[nc2],   %[nc2],   #1  \n\t"
-      "bge        loop_nc2_%=             \n\t"
-      "end_nc2_%=:                        \n\t"
+        "subs       %[nc2],   %[nc2],   #1  \n\t"
+        "bge        loop_nc2_%=             \n\t"
+        "end_nc2_%=:                        \n\t"
 
-      "cmp        %[nc3],    #16          \n\t"
-      "beq        end_nc3_%=              \n\t"
-      "sub        %[c],     %[c],   %[nc3]    \n\t"
-      "sub        %[C],     %[C],   %[nc3]    \n\t"
-      "vld1.32    {q5},     [%[c]]!       \n\t"
-      "vst1.32    {q5},     [%[C]]!       \n\t"
-      "end_nc3_%=:                        \n\t"
+        "cmp        %[nc3],    #16          \n\t"
+        "beq        end_nc3_%=              \n\t"
+        "sub        %[c],     %[c],   %[nc3]    \n\t"
+        "sub        %[C],     %[C],   %[nc3]    \n\t"
+        "vld1.32    {q5},     [%[c]]!       \n\t"
+        "vst1.32    {q5},     [%[C]]!       \n\t"
+        "end_nc3_%=:                        \n\t"
 
-      :
-      : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3] "r"(nc3)
-      : "memory", "q0", "q1", "q2", "q3", "q4", "q5");
-}
-
-// C = alpha * A * B + beta * C
-void VecWriteWithAlphaBeta(int n, float *c, float *C, int ldc) {}
-
-// C = A * B + C
-void VecWriteWithAdd(int n, float *c, float *C, int ldc) {
-  int nc1 = n / 16;
-  int _nc1 = n % 16;
-
-  asm volatile(
-      "subs       %[nc1],   %[nc1],   #1  \n\t"
-      "blt        end_nc1_%=              \n\t"
-      "loop_nc1_%=:                       \n\t"
-
-      "vld1.32    {q0, q1},   [%[c]]!     \n\t"
-      "vld1.32    {q2, q3},   [%[C]]      \n\t"
-      "vadd.f32   q10,  q0,   q2          \n\t"
-      "vadd.f32   q11,  q1,   q3          \n\t"
-      "vst1.32    {q10, q11}, [%[C]]!     \n\t"
-
-      "vld1.32    {q4, q5},   [%[c]]!     \n\t"
-      "vld1.32    {q6, q7},   [%[C]]      \n\t"
-      "vadd.f32   q12,  q4,   q6          \n\t"
-      "vadd.f32   q13,  q5,   q7          \n\t"
-      "vst1.32    {q12, q13}, [%[C]]!     \n\t"
-
-      "subs       %[nc1],   %[nc1],   #1  \n\t"
-      "bge        loop_nc1_%=             \n\t"
-      "end_nc1_%=:                        \n\t"
-
-      : [C] "+r"(C), [c] "+r"(c)
-      : [nc1] "r"(nc1)
-      : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q10", "q11",
-        "q12", "q13");
-
-  if (_nc1 != 0) {
-    for (int j = 0; j < _nc1; j++) {
-      *C++ += *c++;
-    }
+        :
+        : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3] "r"(nc3)
+        : "memory", "q0", "q1", "q2", "q3", "q4", "q5");
   }
-}
 
-// C = A * B + C, relu(C)
-void VecWriteWithAddRelu(int n, float *c, float *C, int ldc) {
-  int nc1 = n / 16;
-  int _nc1 = n % 16;
+  // C = alpha * A * B + beta * C
+  void VecWriteWithAlphaBeta(int n, float *c, float *C, int ldc) {}
 
-  asm volatile(
-      "vmov.f32   q14,      #0.0          \n\t"
-      "subs       %[nc1],   %[nc1],   #1  \n\t"
-      "blt        end_nc1_%=              \n\t"
-      "loop_nc1_%=:                       \n\t"
+  // C = A * B + C
+  void VecWriteWithAdd(int n, float *c, float *C, int ldc) {
+    int nc1 = n / 16;
+    int _nc1 = n % 16;
 
-      "vld1.32    {q0, q1},   [%[c]]!     \n\t"
-      "vld1.32    {q2, q3},   [%[C]]      \n\t"
-      "vadd.f32   q10,  q0,   q2          \n\t"
-      "vadd.f32   q11,  q1,   q3          \n\t"
-      "vmax.f32   q10,  q10,  q14         \n\t"
-      "vmax.f32   q11,  q11,  q14         \n\t"
-      "vst1.32    {q10, q11}, [%[C]]!     \n\t"
+    asm volatile(
+        "subs       %[nc1],   %[nc1],   #1  \n\t"
+        "blt        end_nc1_%=              \n\t"
+        "loop_nc1_%=:                       \n\t"
 
-      "vld1.32    {q4, q5},   [%[c]]!     \n\t"
-      "vld1.32    {q6, q7},   [%[C]]      \n\t"
-      "vadd.f32   q12,  q4,   q6          \n\t"
-      "vadd.f32   q13,  q5,   q7          \n\t"
-      "vmax.f32   q12,  q12,  q14         \n\t"
-      "vmax.f32   q13,  q13,  q14         \n\t"
-      "vst1.32    {q12, q13}, [%[C]]!     \n\t"
+        "vld1.32    {q0, q1},   [%[c]]!     \n\t"
+        "vld1.32    {q2, q3},   [%[C]]      \n\t"
+        "vadd.f32   q10,  q0,   q2          \n\t"
+        "vadd.f32   q11,  q1,   q3          \n\t"
+        "vst1.32    {q10, q11}, [%[C]]!     \n\t"
 
-      "subs       %[nc1],   %[nc1],   #1  \n\t"
-      "bge        loop_nc1_%=             \n\t"
-      "end_nc1_%=:                        \n\t"
+        "vld1.32    {q4, q5},   [%[c]]!     \n\t"
+        "vld1.32    {q6, q7},   [%[C]]      \n\t"
+        "vadd.f32   q12,  q4,   q6          \n\t"
+        "vadd.f32   q13,  q5,   q7          \n\t"
+        "vst1.32    {q12, q13}, [%[C]]!     \n\t"
 
-      : [C] "+r"(C), [c] "+r"(c)
-      : [nc1] "r"(nc1)
-      : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q10", "q11",
-        "q12", "q13");
+        "subs       %[nc1],   %[nc1],   #1  \n\t"
+        "bge        loop_nc1_%=             \n\t"
+        "end_nc1_%=:                        \n\t"
 
-  if (_nc1 != 0) {
-    for (int j = 0; j < _nc1; j++) {
-      *C += *c;
-      if (*C < 0) {
-        *C = 0;
+        : [C] "+r"(C), [c] "+r"(c)
+        : [nc1] "r"(nc1)
+        : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q10",
+  "q11", "q12", "q13");
+
+    if (_nc1 != 0) {
+      for (int j = 0; j < _nc1; j++) {
+        *C++ += *c++;
       }
-      C++;
-      c++;
     }
   }
-}
 
-// C = A * B, batchnorm(C)
-void VecWriteWithBn(int n, float *c, float *C, int ldc, float *scale,
-                    float *bias) {
-  int nc1 = n / 16;
-  int _nc1 = n % 16;
-  int nc2 = _nc1 / 4;
-  int nc3 = 16 - 4 * (_nc1 % 4);
+  // C = A * B + C, relu(C)
+  void VecWriteWithAddRelu(int n, float *c, float *C, int ldc) {
+    int nc1 = n / 16;
+    int _nc1 = n % 16;
 
-  asm volatile(
-      "subs       %[nc1],   %[nc1],   #1  \n\t"
-      "blt        end_nc1_%=              \n\t"
-      "loop_nc1_%=:                       \n\t"
+    asm volatile(
+        "vmov.f32   q14,      #0.0          \n\t"
+        "subs       %[nc1],   %[nc1],   #1  \n\t"
+        "blt        end_nc1_%=              \n\t"
+        "loop_nc1_%=:                       \n\t"
 
-      "vld1.32    {q0, q1},   [%[c]]!     \n\t"
-      "vld1.32    {q2, q3},   [%[scale]]! \n\t"
-      "vld1.32    {q10, q11}, [%[bias]]!  \n\t"
-      "vmla.f32   q10,  q0,   q2          \n\t"
-      "vmla.f32   q11,  q1,   q3          \n\t"
-      "vst1.32    {q10, q11}, [%[C]]!     \n\t"
+        "vld1.32    {q0, q1},   [%[c]]!     \n\t"
+        "vld1.32    {q2, q3},   [%[C]]      \n\t"
+        "vadd.f32   q10,  q0,   q2          \n\t"
+        "vadd.f32   q11,  q1,   q3          \n\t"
+        "vmax.f32   q10,  q10,  q14         \n\t"
+        "vmax.f32   q11,  q11,  q14         \n\t"
+        "vst1.32    {q10, q11}, [%[C]]!     \n\t"
 
-      "vld1.32    {q4, q5},   [%[c]]!     \n\t"
-      "vld1.32    {q6, q7},   [%[scale]]! \n\t"
-      "vld1.32    {q12, q13}, [%[bias]]!  \n\t"
-      "vmla.f32   q12,  q4,   q6          \n\t"
-      "vmla.f32   q13,  q5,   q7          \n\t"
-      "vst1.32    {q12, q13}, [%[C]]!     \n\t"
+        "vld1.32    {q4, q5},   [%[c]]!     \n\t"
+        "vld1.32    {q6, q7},   [%[C]]      \n\t"
+        "vadd.f32   q12,  q4,   q6          \n\t"
+        "vadd.f32   q13,  q5,   q7          \n\t"
+        "vmax.f32   q12,  q12,  q14         \n\t"
+        "vmax.f32   q13,  q13,  q14         \n\t"
+        "vst1.32    {q12, q13}, [%[C]]!     \n\t"
 
-      "subs       %[nc1],   %[nc1],   #1  \n\t"
-      "bge        loop_nc1_%=             \n\t"
-      "end_nc1_%=:                        \n\t"
+        "subs       %[nc1],   %[nc1],   #1  \n\t"
+        "bge        loop_nc1_%=             \n\t"
+        "end_nc1_%=:                        \n\t"
 
-      "subs       %[nc2],   %[nc2],   #1  \n\t"
-      "blt        end_nc2_%=              \n\t"
-      "loop_nc2_%=:                       \n\t"
+        : [C] "+r"(C), [c] "+r"(c)
+        : [nc1] "r"(nc1)
+        : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q10",
+  "q11", "q12", "q13");
 
-      "vld1.32    {q0},   [%[c]]!         \n\t"
-      "vld1.32    {q1},   [%[scale]]!     \n\t"
-      "vld1.32    {q10},  [%[bias]]!      \n\t"
-      "vmla.f32   q10,    q0,   q1        \n\t"
-      "vst1.32    {q10},  [%[C]]!         \n\t"
+    if (_nc1 != 0) {
+      for (int j = 0; j < _nc1; j++) {
+        *C += *c;
+        if (*C < 0) {
+          *C = 0;
+        }
+        C++;
+        c++;
+      }
+    }
+  }
 
-      "subs       %[nc2],   %[nc2],   #1  \n\t"
-      "bge        loop_nc2_%=             \n\t"
-      "end_nc2_%=:                        \n\t"
+  // C = A * B, batchnorm(C)
+  void VecWriteWithBn(int n, float *c, float *C, int ldc, float *scale,
+                      float *bias) {
+    int nc1 = n / 16;
+    int _nc1 = n % 16;
+    int nc2 = _nc1 / 4;
+    int nc3 = 16 - 4 * (_nc1 % 4);
 
-      "cmp        %[nc3],    #16          \n\t"
-      "beq        end_nc3_%=              \n\t"
+    asm volatile(
+        "subs       %[nc1],   %[nc1],   #1  \n\t"
+        "blt        end_nc1_%=              \n\t"
+        "loop_nc1_%=:                       \n\t"
 
-      "sub        %[c],     %[c],   %[nc3]      \n\t"
-      "sub        %[scale], %[scale],  %[nc3]   \n\t"
-      "sub        %[bias],  %[bias],   %[nc3]   \n\t"
-      "sub        %[C],     %[C],   %[nc3]      \n\t"
+        "vld1.32    {q0, q1},   [%[c]]!     \n\t"
+        "vld1.32    {q2, q3},   [%[scale]]! \n\t"
+        "vld1.32    {q10, q11}, [%[bias]]!  \n\t"
+        "vmla.f32   q10,  q0,   q2          \n\t"
+        "vmla.f32   q11,  q1,   q3          \n\t"
+        "vst1.32    {q10, q11}, [%[C]]!     \n\t"
 
-      "vld1.32    {q0},   [%[c]]!         \n\t"
-      "vld1.32    {q1},   [%[scale]]!     \n\t"
-      "vld1.32    {q10},  [%[bias]]!      \n\t"
-      "vmla.f32   q10,    q0,   q1        \n\t"
-      "vst1.32    {q10},  [%[C]]!         \n\t"
-      "end_nc3_%=:                        \n\t"
+        "vld1.32    {q4, q5},   [%[c]]!     \n\t"
+        "vld1.32    {q6, q7},   [%[scale]]! \n\t"
+        "vld1.32    {q12, q13}, [%[bias]]!  \n\t"
+        "vmla.f32   q12,  q4,   q6          \n\t"
+        "vmla.f32   q13,  q5,   q7          \n\t"
+        "vst1.32    {q12, q13}, [%[C]]!     \n\t"
 
-      :
-      : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3] "r"(nc3),
-        [scale] "r"(scale), [bias] "r"(bias)
-      : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q10", "q11",
-        "q12", "q13");
-}
+        "subs       %[nc1],   %[nc1],   #1  \n\t"
+        "bge        loop_nc1_%=             \n\t"
+        "end_nc1_%=:                        \n\t"
 
-// C = A * B, batchnorm(C), relu(C)
-void VecWriteWithBnRelu(int n, float *c, float *C, int ldc, float *scale,
-                        float *bias) {
-  int nc1 = n / 16;
-  int _nc1 = n % 16;
-  int nc2 = _nc1 / 4;
-  int nc3 = 16 - 4 * (_nc1 % 4);
+        "subs       %[nc2],   %[nc2],   #1  \n\t"
+        "blt        end_nc2_%=              \n\t"
+        "loop_nc2_%=:                       \n\t"
 
-  asm volatile(
-      "vmov.f32   q14,      #0.0          \n\t"
-      "subs       %[nc1],   %[nc1],   #1  \n\t"
-      "blt        end_nc1_%=              \n\t"
-      "loop_nc1_%=:                       \n\t"
+        "vld1.32    {q0},   [%[c]]!         \n\t"
+        "vld1.32    {q1},   [%[scale]]!     \n\t"
+        "vld1.32    {q10},  [%[bias]]!      \n\t"
+        "vmla.f32   q10,    q0,   q1        \n\t"
+        "vst1.32    {q10},  [%[C]]!         \n\t"
 
-      "vld1.32    {q0, q1},   [%[c]]!     \n\t"
-      "vld1.32    {q2, q3},   [%[scale]]! \n\t"
-      "vld1.32    {q10, q11}, [%[bias]]!  \n\t"
-      "vmla.f32   q10,  q0,   q2          \n\t"
-      "vmla.f32   q11,  q1,   q3          \n\t"
-      "vmax.f32   q10,  q10,  q14         \n\t"
-      "vmax.f32   q11,  q11,  q14         \n\t"
-      "vst1.32    {q10, q11}, [%[C]]!     \n\t"
+        "subs       %[nc2],   %[nc2],   #1  \n\t"
+        "bge        loop_nc2_%=             \n\t"
+        "end_nc2_%=:                        \n\t"
 
-      "vld1.32    {q4, q5},   [%[c]]!     \n\t"
-      "vld1.32    {q6, q7},   [%[scale]]! \n\t"
-      "vld1.32    {q12, q13}, [%[bias]]!  \n\t"
-      "vmla.f32   q12,  q4,   q6          \n\t"
-      "vmla.f32   q13,  q5,   q7          \n\t"
-      "vmax.f32   q12,  q12,  q14         \n\t"
-      "vmax.f32   q13,  q13,  q14         \n\t"
-      "vst1.32    {q12, q13}, [%[C]]!     \n\t"
+        "cmp        %[nc3],    #16          \n\t"
+        "beq        end_nc3_%=              \n\t"
 
-      "subs       %[nc1],   %[nc1],   #1  \n\t"
-      "bge        loop_nc1_%=             \n\t"
-      "end_nc1_%=:                        \n\t"
+        "sub        %[c],     %[c],   %[nc3]      \n\t"
+        "sub        %[scale], %[scale],  %[nc3]   \n\t"
+        "sub        %[bias],  %[bias],   %[nc3]   \n\t"
+        "sub        %[C],     %[C],   %[nc3]      \n\t"
 
-      "subs       %[nc2],   %[nc2],   #1  \n\t"
-      "blt        end_nc2_%=              \n\t"
-      "loop_nc2_%=:                       \n\t"
+        "vld1.32    {q0},   [%[c]]!         \n\t"
+        "vld1.32    {q1},   [%[scale]]!     \n\t"
+        "vld1.32    {q10},  [%[bias]]!      \n\t"
+        "vmla.f32   q10,    q0,   q1        \n\t"
+        "vst1.32    {q10},  [%[C]]!         \n\t"
+        "end_nc3_%=:                        \n\t"
 
-      "vld1.32    {q0},   [%[c]]!         \n\t"
-      "vld1.32    {q1},   [%[scale]]!     \n\t"
-      "vld1.32    {q10},  [%[bias]]!      \n\t"
-      "vmla.f32   q10,    q0,   q1        \n\t"
-      "vmax.f32   q10,    q10,  q14       \n\t"
-      "vst1.32    {q10},  [%[C]]!         \n\t"
+        :
+        : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3]
+  "r"(nc3), [scale] "r"(scale), [bias] "r"(bias) : "memory", "q0", "q1", "q2",
+  "q3", "q4", "q5", "q6", "q7", "q10", "q11", "q12", "q13");
+  }
 
-      "subs       %[nc2],   %[nc2],   #1  \n\t"
-      "bge        loop_nc2_%=             \n\t"
-      "end_nc2_%=:                        \n\t"
+  // C = A * B, batchnorm(C), relu(C)
+  void VecWriteWithBnRelu(int n, float *c, float *C, int ldc, float *scale,
+                          float *bias) {
+    int nc1 = n / 16;
+    int _nc1 = n % 16;
+    int nc2 = _nc1 / 4;
+    int nc3 = 16 - 4 * (_nc1 % 4);
 
-      "cmp        %[nc3],    #16          \n\t"
-      "beq        end_nc3_%=              \n\t"
+    asm volatile(
+        "vmov.f32   q14,      #0.0          \n\t"
+        "subs       %[nc1],   %[nc1],   #1  \n\t"
+        "blt        end_nc1_%=              \n\t"
+        "loop_nc1_%=:                       \n\t"
 
-      "sub        %[c],     %[c],   %[nc3]      \n\t"
-      "sub        %[scale], %[scale],  %[nc3]   \n\t"
-      "sub        %[bias],  %[bias],   %[nc3]   \n\t"
-      "sub        %[C],     %[C],   %[nc3]      \n\t"
+        "vld1.32    {q0, q1},   [%[c]]!     \n\t"
+        "vld1.32    {q2, q3},   [%[scale]]! \n\t"
+        "vld1.32    {q10, q11}, [%[bias]]!  \n\t"
+        "vmla.f32   q10,  q0,   q2          \n\t"
+        "vmla.f32   q11,  q1,   q3          \n\t"
+        "vmax.f32   q10,  q10,  q14         \n\t"
+        "vmax.f32   q11,  q11,  q14         \n\t"
+        "vst1.32    {q10, q11}, [%[C]]!     \n\t"
 
-      "vld1.32    {q0},   [%[c]]!         \n\t"
-      "vld1.32    {q1},   [%[scale]]!     \n\t"
-      "vld1.32    {q10},  [%[bias]]!      \n\t"
-      "vmla.f32   q10,    q0,   q1        \n\t"
-      "vmax.f32   q10,    q10,  q14       \n\t"
-      "vst1.32    {q10},  [%[C]]!         \n\t"
-      "end_nc3_%=:                        \n\t"
+        "vld1.32    {q4, q5},   [%[c]]!     \n\t"
+        "vld1.32    {q6, q7},   [%[scale]]! \n\t"
+        "vld1.32    {q12, q13}, [%[bias]]!  \n\t"
+        "vmla.f32   q12,  q4,   q6          \n\t"
+        "vmla.f32   q13,  q5,   q7          \n\t"
+        "vmax.f32   q12,  q12,  q14         \n\t"
+        "vmax.f32   q13,  q13,  q14         \n\t"
+        "vst1.32    {q12, q13}, [%[C]]!     \n\t"
 
-      :
-      : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3] "r"(nc3),
-        [scale] "r"(scale), [bias] "r"(bias)
-      : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q10", "q11",
-        "q12", "q13", "q14");
-}
-*/
+        "subs       %[nc1],   %[nc1],   #1  \n\t"
+        "bge        loop_nc1_%=             \n\t"
+        "end_nc1_%=:                        \n\t"
+
+        "subs       %[nc2],   %[nc2],   #1  \n\t"
+        "blt        end_nc2_%=              \n\t"
+        "loop_nc2_%=:                       \n\t"
+
+        "vld1.32    {q0},   [%[c]]!         \n\t"
+        "vld1.32    {q1},   [%[scale]]!     \n\t"
+        "vld1.32    {q10},  [%[bias]]!      \n\t"
+        "vmla.f32   q10,    q0,   q1        \n\t"
+        "vmax.f32   q10,    q10,  q14       \n\t"
+        "vst1.32    {q10},  [%[C]]!         \n\t"
+
+        "subs       %[nc2],   %[nc2],   #1  \n\t"
+        "bge        loop_nc2_%=             \n\t"
+        "end_nc2_%=:                        \n\t"
+
+        "cmp        %[nc3],    #16          \n\t"
+        "beq        end_nc3_%=              \n\t"
+
+        "sub        %[c],     %[c],   %[nc3]      \n\t"
+        "sub        %[scale], %[scale],  %[nc3]   \n\t"
+        "sub        %[bias],  %[bias],   %[nc3]   \n\t"
+        "sub        %[C],     %[C],   %[nc3]      \n\t"
+
+        "vld1.32    {q0},   [%[c]]!         \n\t"
+        "vld1.32    {q1},   [%[scale]]!     \n\t"
+        "vld1.32    {q10},  [%[bias]]!      \n\t"
+        "vmla.f32   q10,    q0,   q1        \n\t"
+        "vmax.f32   q10,    q10,  q14       \n\t"
+        "vst1.32    {q10},  [%[C]]!         \n\t"
+        "end_nc3_%=:                        \n\t"
+
+        :
+        : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3]
+  "r"(nc3), [scale] "r"(scale), [bias] "r"(bias) : "memory", "q0", "q1", "q2",
+  "q3", "q4", "q5", "q6", "q7", "q10", "q11", "q12", "q13", "q14");
+  }
+  */
 
 #endif  // __aarch64__
 #else
