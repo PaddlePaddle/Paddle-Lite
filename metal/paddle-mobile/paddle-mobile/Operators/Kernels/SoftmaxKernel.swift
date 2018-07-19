@@ -17,9 +17,16 @@ import Foundation
 class SoftmaxKernel<P: PrecisionType>: Kernel, Computable{
     
     func compute(commandBuffer: MTLCommandBuffer, param: SoftmaxParam<P>) throws {
+        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+            throw PaddleMobileError.predictError(message: " encoder is nil")
+        }
+        print("softmax compute")
+        encoder.setTexture(param.input.metalTexture, index: 0)
+        encoder.setTexture(param.output.metalTexture, index: 1)
+        encoder.endEncoding()
     }
     
     required init(device: MTLDevice, param: SoftmaxParam<P>) {
-        super.init(device: device, inFunctionName: "relu")
+        super.init(device: device, inFunctionName: "softmax")
     }
 }
