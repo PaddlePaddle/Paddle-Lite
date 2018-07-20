@@ -21,7 +21,7 @@ int main() {
   paddle_mobile.SetThreadNum(4);
   bool optimize = true;
   auto time1 = time();
-  if (paddle_mobile.Load(g_googlenet, optimize)) {
+  if (paddle_mobile.Load(g_googlenet, optimize, true)) {
     auto time2 = time();
     DLOG << "load cost: " << time_diff(time1, time1) << "ms";
     std::vector<float> input;
