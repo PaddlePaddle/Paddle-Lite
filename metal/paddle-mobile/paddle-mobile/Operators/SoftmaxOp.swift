@@ -31,7 +31,7 @@ class SoftmaxParam<P: PrecisionType>: OpParam {
 class SoftmaxOp<P: PrecisionType>: Operator<SoftmaxKernel<P>, SoftmaxParam<P>>, Runable, Creator, InferShaperable{
     
     func inferShape() {
-        para.output.dim = para.input.dim
+        // para.output.dim = para.input.dim
     }
     
     typealias OpType = SoftmaxOp<P>
@@ -41,5 +41,10 @@ class SoftmaxOp<P: PrecisionType>: Operator<SoftmaxKernel<P>, SoftmaxParam<P>>, 
         } catch let error {
             throw error
         }
+    }
+    func delogOutput() {
+        print("softmax delog")
+        let _: P? = para.input.metalTexture.logDesc(header: "softmax input: ", stridable: false)
+        let _: P? = para.output.metalTexture.logDesc(header: "softmax output: ", stridable: false)
     }
 }

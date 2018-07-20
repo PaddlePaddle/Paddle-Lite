@@ -23,6 +23,7 @@ class SoftmaxKernel<P: PrecisionType>: Kernel, Computable{
         print("softmax compute")
         encoder.setTexture(param.input.metalTexture, index: 0)
         encoder.setTexture(param.output.metalTexture, index: 1)
+        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
         encoder.endEncoding()
     }
     
