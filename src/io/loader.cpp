@@ -44,17 +44,18 @@ static size_t ReadBuffer(const char *file_name, uint8_t **out) {
 
 template <typename Dtype, Precision P>
 const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
-    const std::string &dirname, bool optimize,bool quantification, bool can_add_split) {
-  auto program =
-      this->LoadProgram(dirname + "/__model__", optimize,quantification, can_add_split);
+    const std::string &dirname, bool optimize, bool quantification,
+    bool can_add_split) {
+  auto program = this->LoadProgram(dirname + "/__model__", optimize,
+                                   quantification, can_add_split);
   program.model_path = dirname;
   return program;
 }
 
 template <typename Dtype, Precision P>
 const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
-    const std::string &model_path, const std::string &para_path,
-    bool optimize, bool quantification) {
+    const std::string &model_path, const std::string &para_path, bool optimize,
+    bool quantification) {
   auto program = this->LoadProgram(model_path, optimize);
   program.para_path = para_path;
   program.combined = true;
@@ -64,7 +65,8 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
 
 template <typename Dtype, Precision P>
 const framework::Program<Dtype, P> Loader<Dtype, P>::LoadProgram(
-    const std::string &model_path, bool optimize, bool quantification, bool can_add_split) {
+    const std::string &model_path, bool optimize, bool quantification,
+    bool can_add_split) {
   std::string model_filename = model_path;
   PaddleMobile__Framework__Proto__ProgramDesc *c_program;
   uint8_t *buf = NULL;
