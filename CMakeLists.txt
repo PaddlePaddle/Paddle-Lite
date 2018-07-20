@@ -109,7 +109,6 @@ endif()
 
 if (ANDROID_NDK_TOOLCHAIN_INCLUDED)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -llog")
-    add_definitions(-DARMV7)
 else()
     list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/jni/paddle_mobile_jni.h)
     list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/jni/paddle_mobile_jni.cpp)
