@@ -17,6 +17,9 @@ limitations under the License. */
 #include <memory>
 #include <string>
 #include <vector>
+#ifdef _OPENMP
+#include <omp.h>
+#endif  // _OPENMP
 
 #include "common/types.h"
 #include "framework/tensor.h"
@@ -36,14 +39,19 @@ class PaddleMobile {
    * @b 加载分开形式的 fluid 模型
    * */
   bool Load(const std::string &dirname, bool optimize = false,
-            int batch_size = 1);
+            bool quantification = false, int batch_size = 1);
 
   /*
    * @b load combine format fluid mode
    * @b 加载结合在一起格式的模型
    * */
   bool Load(const std::string &model_path, const std::string &para_path,
-            bool optimize = false, int batch_size = 1);
+            bool optimize = false, bool quantification = false,
+            int batch_size = 1);
+  /*
+   * @b 设置线程数, 当 cmake 中开启 openmp 时生效
+   * */
+  void SetThreadNum(int num);
 
   /*
    * @b to predict

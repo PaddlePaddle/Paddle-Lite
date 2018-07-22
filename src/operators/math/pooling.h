@@ -65,7 +65,7 @@ class PoolFunctor {
                   const std::vector<int> &paddings, PoolProcess pool_compute,
                   framework::Tensor *output);
 };
-}
+}  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile
 

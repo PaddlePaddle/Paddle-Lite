@@ -50,7 +50,7 @@ void MulOp<Dtype, T>::InferShape() const {
   framework::DDim ddim = framework::make_ddim(output_dims);
   this->param_.Out()->Resize(ddim);
 }
-template class MulOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 

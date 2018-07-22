@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include <cstdlib>
+
 #include "common/enforce.h"
 #include "common/log.h"
 
@@ -82,7 +84,7 @@ struct Variant {
     if (type_id == typeid(T).hash_code()) {
       return *const_cast<T *>(reinterpret_cast<const T *>(&data));
     } else {
-      PADDLE_MOBILE_THROW_EXCEPTION(" bad cast in variant ");
+      PADDLE_MOBILE_THROW_EXCEPTION(" bad cast in variant");
       exit(0);
     }
   }

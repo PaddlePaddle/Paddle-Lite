@@ -19,12 +19,8 @@ limitations under the License. */
 #define B(i, j) B[(i)*ldb + (j)]
 #define C(i, j) C[(i)*ldc + (j)]
 
-// 分块计算的块大小，mc 与 kc 分别对应分块计算时的 m 与 k
-#define MC 128
-#define KC 128
-#define NC 1024
 #define MR 4
-#define NR 4
+#define NR 8
 
 #define s_min(i, j) ((i) < (j) ? (i) : (j))
 
@@ -32,6 +28,7 @@ namespace paddle_mobile {
 namespace operators {
 namespace math {
 
+/*
 // 将 A 矩阵分块复制到连续内存(ColMajor)
 void PackMatrixA(int m, int k, int m_tail, const float *A, int lda,
                  float *buffer);
@@ -39,6 +36,7 @@ void PackMatrixA(int m, int k, int m_tail, const float *A, int lda,
 // 将 B 矩阵分块复制到连续内存(ColMajor)
 void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
                  float *buffer);
+*/
 
 // 将 A 矩阵分块复制到连续内存(RowMajor)
 void PackMatrixA_(int m, int k, int m_tail, const float *A, int lda,
@@ -49,28 +47,69 @@ void PackMatrixB_(int k, int n, int n_tail, const float *B, int ldb,
                   float *buffer);
 
 // 分块矩阵乘法
-void InnerKernel(int m, int n, int k, float alpha, const float *A, int lda,
-                 const float *B, int ldb, float beta, float *C, int ldc,
-                 int first_time);
+void InnerKernel(int mc, int nc, float alpha, const float *a, const float *b,
+                 float beta, float *c, float *C, int ldc, bool relu);
 
+void InnerKernelWithBn(int mc, int nc, float alpha, const float *a,
+                       const float *b, float beta, float *c, float *C, int ldc,
+                       bool relu, float *new_scale, float *new_bias);
+/*
 // 向量矩阵乘法 (M = 1)
 void VectorKernel(int m, int n, int k, float alpha, const float *A, int lda,
-                  const float *B, int ldb, float beta, float *C, int ldc);
+                  const float *B, int ldb, float beta, float *C, int ldc,
+                  bool relu);
 
-// 计算一个更小的 4 * 4 的 C 矩阵分块
-void AddDot4x4(int k, float alpha, const float *A, int lda, const float *B,
-               int ldb, float beta, float *C, int ldc, int mc, int nc);
+void VectorKernelWithBn(int m, int n, int k, float alpha, const float *A,
+                        int lda, const float *B, int ldb, float beta, float *C,
+                        int ldc, bool relu, float *new_scale, float *new_bias);
+*/
 
-void AddDot4x4_relu(int k, float alpha, const float *a, int lda, const float *b,
-                    int ldb, float beta, float *C, int ldc, int mc, int nc,
-                    bool relu);
+// 计算一个更小的 C 矩阵分块
+void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc);
+void AddDot4x8(int k, const float *a, const float *b, float *c, int ldc);
+
+// 分块矩阵乘法结果回写
+// C = A * B
+void WriteBasic(int mc, int nc, float *c, float *C, int ldc);
+// C = alpha * A * B + beta * C
+void WriteWithAlphaBeta(int mc, int nc, float *c, float *C, int ldc);
+// C = A * B + C
+void WriteWithAdd(int mc, int nc, float *c, float *C, int ldc);
+// C = A * B + C, relu(C)
+void WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc);
+// C = A * B, batchnorm(C)
+void WriteWithBn(int mc, int nc, float *c, float *C, int ldc, float *new_scale,
+                 float *new_bias);
+// C = A * B, batchnorm(C), relu(C)
+void WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc,
+                     float *new_scale, float *new_bias);
+
+/*
+// 向量矩阵乘法结果回写
+// C = A * B
+void VecWriteBasic(int n, float *c, float *C, int ldc);
+// C = alpha * A * B + beta * C
+void VecWriteWithAlphaBeta(int n, float *c, float *C, int ldc);
+// C = A * B + C
+void VecWriteWithAdd(int n, float *c, float *C, int ldc);
+// C = A * B + C, relu(C)
+void VecWriteWithAddRelu(int n, float *c, float *C, int ldc);
+// C = A * B, batchnorm(C)
+void VecWriteWithBn(int n, float *c, float *C, int ldc, float *new_scale,
+                    float *new_bias);
+// C = A * B, batchnorm(C), relu(C)
+void VecWriteWithBnRelu(int n, float *c, float *C, int ldc, float *new_scale,
+                        float *new_bias);
+*/
 
 // 32位 float 矩阵乘法
-void sgemm(int m, int n, int k, float alpha, const float *A, int lda,
-           const float *B, int ldb, float beta, float *C, int ldc);
+void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
+           const float *B, int ldb, float beta, float *C, int ldc, bool relu);
 
-void sgemm_relu(int m, int n, int k, float alpha, const float *A, int lda,
-                const float *B, int ldb, float beta, float *C, int ldc);
+// 32位 float 矩阵乘法, 并对结果进行 batchnrom
+void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
+                 const float *B, int ldb, float beta, float *C, int ldc,
+                 bool relu, float *new_scale, float *new_bias);
 
 // 64位 double 矩阵乘法
 void dgemm(int m, int n, int k, float alpha, const double *A, int lda,

@@ -44,7 +44,7 @@ void PriorBoxOp<Dtype, T>::InferShape() const {
   this->param_.OutputBoxes()->Resize(framework::make_ddim(dim_vec));
   this->param_.OutputVariances()->Resize(framework::make_ddim(dim_vec));
 }
-template class PriorBoxOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 

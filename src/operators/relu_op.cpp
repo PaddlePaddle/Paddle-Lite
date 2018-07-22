@@ -23,7 +23,7 @@ void ReluOp<Dtype, T>::InferShape() const {
   auto input_dims = this->param_.InputX()->dims();
   this->param_.Out()->Resize(input_dims);
 }
-template class ReluOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 

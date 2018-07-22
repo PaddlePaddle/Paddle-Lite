@@ -44,23 +44,6 @@ bool Node::operator==(const Node &in) {
   return true;
 }
 
-std::vector<std::shared_ptr<framework::OpDesc>> Node::OpDescs(int size) {
-  std::vector<std::shared_ptr<framework::OpDesc>> op_descs;
-  OpDescs(size - 1, &op_descs);
-  return op_descs;
-}
-
-void Node::OpDescs(int index,
-                   std::vector<std::shared_ptr<framework::OpDesc>> *op_desc) {
-  if (index == 0) {
-    return;
-  }
-  op_desc->push_back(this->op_desc_);
-  for (auto &output : outputs_) {
-    output->OpDescs(index, op_desc);
-  }
-}
-
 std::shared_ptr<Node> Node::To(int size) {
   std::shared_ptr<Node> node = std::make_shared<Node>();
   this->To(size - 1, node);

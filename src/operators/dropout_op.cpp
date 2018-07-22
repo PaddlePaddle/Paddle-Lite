@@ -22,7 +22,7 @@ void DropoutOp<Dtype, T>::InferShape() const {
   auto input_dims = this->param_.InputX()->dims();
   this->param_.Out()->Resize(input_dims);
 }
-template class DropoutOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
