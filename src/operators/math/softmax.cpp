@@ -16,7 +16,7 @@ limitations under the License. */
 
 #include "operators/math/softmax.h"
 #include "common/types.h"
-#if __ARM_NEON
+#ifdef __ARM_NEON
 #include <math.h>
 #include <algorithm>
 #include "operators/math/math_func_neon.h"
@@ -29,7 +29,7 @@ using framework::DDim;
 using framework::Tensor;
 template <typename T>
 class SoftmaxFuntor<CPU, T> {
-#if __ARM_NEON
+#ifdef __ARM_NEON
   void sum(float *input, float *sumptr, int inner_size, int outter_size) {
     float32x4_t acc = vdupq_n_f32(0);
     float sum_ = 0;
@@ -135,6 +135,7 @@ class SoftmaxFuntor<CPU, T> {
       }
     }
   }
+#else
 #endif  // ARM_NEON
 
  public:
@@ -144,7 +145,7 @@ class SoftmaxFuntor<CPU, T> {
       framework::Tensor sub_X = X->Slice(i, i + 1);
       framework::Tensor sub_Y = Y->Slice(i, i + 1);
 
-#if __ARM_NEON
+#ifdef __ARM_NEON
       SoftmaxCacl(&sub_X, &sub_Y);
 #endif
     }

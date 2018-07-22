@@ -22,11 +22,29 @@ extern "C" {
 namespace paddle_mobile {
 namespace jni {
 /**
- * load model & params of the net for android
+ * load separated model for android
  */
 JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_load(JNIEnv *env,
                                                           jclass thiz,
                                                           jstring modelPath);
+/**
+ * load combined model  for android
+ */
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadCombined(
+    JNIEnv *env, jclass thiz, jstring modelPath, jstring paramPath);
+
+/**
+ * object detection for anroid
+ */
+JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictImage(
+    JNIEnv *env, jclass thiz, jfloatArray buf, jintArray ddims);
+
+/**
+ * object detection for anroid
+ */
+JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictYuv(
+    JNIEnv *env, jclass thiz, jbyteArray yuv, jint imgwidth, jint imgHeight,
+    jintArray ddims, jfloatArray meanValues);
 
 /**
  * object detection for anroid

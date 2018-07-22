@@ -12,7 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 #include "operators/math/depthwise_conv_3x3.h"
+#if __ARM_NEON
 #include <arm_neon.h>
+#endif
 #include <vector>
 
 namespace paddle_mobile {
@@ -21,7 +23,6 @@ namespace math {
 void DepthwiseConv3x3(const Tensor *input, vector<int> strides,
                       vector<int> paddings, const Tensor *filter, Tensor *bias,
                       Tensor *output, bool if_bias) {
-#if __ARM_NEON
   const int batch_size = input->dims()[0];
 
   const int input_height = input->dims()[2];
@@ -179,7 +180,27 @@ void DepthwiseConv3x3(const Tensor *input, vector<int> strides,
             }
 
           } else {
-#if defined(ARMV17)
+#if __ARM_NEON
+#if __aarch64__
+            const float32x4_t data1 = vld1q_f32(pos1);
+            const float32x4_t data2 = vld1q_f32(pos2);
+            const float32x4_t data3 = vld1q_f32(pos3);
+
+            const float32x4_t v_filter1 = vld1q_f32(filter1);
+            const float32x4_t v_filter2 = vld1q_f32(filter2);
+            const float32x4_t v_filter3 = vld1q_f32(filter3);
+            float32x4_t mula = vmulq_f32(data1, v_filter1);
+            mula = vmlaq_f32(mula, data2, v_filter2);
+            mula = vmlaq_f32(mula, data3, v_filter3);
+            float32x2_t res = vpadd_f32(
+                vget_high_f32(vsetq_lane_f32(0, mula, 3)), vget_low_f32(mula));
+            res = vpadd_f32(res, res);
+            if (if_bias) {
+              output_data[ph * output_width + pw] += vget_lane_f32(res, 0);
+            } else {
+              output_data[ph * output_width + pw] = vget_lane_f32(res, 0);
+            }
+#else
             asm volatile(
 
                 "vld1.32  {q1}, [%[pos1]]        \n\t"
@@ -207,26 +228,10 @@ void DepthwiseConv3x3(const Tensor *input, vector<int> strides,
                   [filter2] "r"(filter2), [filter3] "r"(filter3),
                   [output_ptr] "r"(output_ptr), [zero] "r"(zero)
                 : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6");
+#endif  // __aarch64__
 #else
-            const float32x4_t data1 = vld1q_f32(pos1);
-            const float32x4_t data2 = vld1q_f32(pos2);
-            const float32x4_t data3 = vld1q_f32(pos3);
 
-            const float32x4_t v_filter1 = vld1q_f32(filter1);
-            const float32x4_t v_filter2 = vld1q_f32(filter2);
-            const float32x4_t v_filter3 = vld1q_f32(filter3);
-            float32x4_t mula = vmulq_f32(data1, v_filter1);
-            mula = vmlaq_f32(mula, data2, v_filter2);
-            mula = vmlaq_f32(mula, data3, v_filter3);
-            float32x2_t res = vpadd_f32(
-                vget_high_f32(vsetq_lane_f32(0, mula, 3)), vget_low_f32(mula));
-            res = vpadd_f32(res, res);
-            if (if_bias) {
-              output_data[ph * output_width + pw] += vget_lane_f32(res, 0);
-            } else {
-              output_data[ph * output_width + pw] = vget_lane_f32(res, 0);
-            }
-#endif
+#endif  // __ARM_NEON
           }
         }
       }
@@ -237,11 +242,11 @@ void DepthwiseConv3x3(const Tensor *input, vector<int> strides,
     input_data += input_batch_stride;
     output_data += output_batch_stride;
   }
-#endif
 }
 
 void DepthwiseConv3x3s1p1(const Tensor *input, const Tensor *filter,
                           Tensor *output, Tensor *bias, bool if_bias) {
+#if __ARM_NEON
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
   float *output_data = output->data<float>();
@@ -511,11 +516,13 @@ void DepthwiseConv3x3s1p1(const Tensor *input, const Tensor *filter,
       filter_data_tmp += 9;
     }
   }
+#endif
 }
 
 void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
                                    Tensor *output, const Tensor *new_scale,
                                    const Tensor *new_bias, bool if_relu) {
+#if __ARM_NEON
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
   float *output_data = output->data<float>();
@@ -813,11 +820,14 @@ void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
       filter_data_tmp += 9;
     }
   }
+#endif
 }
 
 void DepthwiseConvAddBNRelu3x3s2p1(const Tensor *input, const Tensor *filter,
                                    Tensor *output, const Tensor *new_scale,
                                    const Tensor *new_bias, bool if_relu) {
+#if __ARM_NEON
+
   const int batch_size = input->dims()[0];
 
   const int input_height = input->dims()[2];
@@ -1009,7 +1019,448 @@ void DepthwiseConvAddBNRelu3x3s2p1(const Tensor *input, const Tensor *filter,
     input_data += input_batch_stride;
     output_data += output_batch_stride;
   }
+#endif
 }
+
+void DepthwiseConv3x3s2p1v2(const Tensor *input, const Tensor *filter,
+                            Tensor *output, Tensor bias, bool if_bias) {
+#if __ARM_NEON
+  const float *input_data = input->data<float>();
+  const float *filter_data = filter->data<float>();
+  float *output_data = output->data<float>();
+  const float *bias_data = bias.data<float>();
+
+  const int in_h = static_cast<int>(input->dims()[2]);
+  const int in_w = static_cast<int>(input->dims()[3]);
+  const int out_h = static_cast<int>(output->dims()[2]);
+  const int out_w = static_cast<int>(output->dims()[3]);
+  const int out_l = out_h;
+  const int in_l = in_h;
+  const int inhxw = in_h * in_w;
+  const int outhxw = out_h * out_w;
+  const int if_pad = in_l - 1 == (out_l - 1) * 2 ? 1 : 0;
+  const int batch_size = static_cast<int>(input->dims()[0]);
+  const int c = static_cast<int>(input->dims()[1]);
+  const float *input_row_ptr;
+  float *output_row_ptr;
+
+  const int w_times = (out_w - 2) / 3;
+
+  float32x4_t vbias = vdupq_n_f32(0.0);
+
+  float32x4x2_t input_buff_mid{}, input_buff_bottom[w_times + 1];
+  float32x4_t elewise_res0, elewise_res1, elewise_res2, res3;
+  int out2in_mid;
+  float32x4_t zero = vdupq_n_f32(0.0);
+  for (int b = batch_size; b > 0; --b) {
+    const float *filter_data_tmp = filter_data;
+    for (int j = 0; j < c; ++j) {
+      auto output_data_tmp = output_data + j * out_h * out_w;
+      auto input_data_tmp = input_data + j * in_h * in_w;
+      auto input_const = input_data_tmp;
+
+      if (if_bias) {
+        vbias = vdupq_n_f32(bias_data[j]);
+      }
+
+      float w00 = filter_data_tmp[0];
+      float w01 = filter_data_tmp[1];
+      float w02 = filter_data_tmp[2];
+      float w10 = filter_data_tmp[3];
+      float w11 = filter_data_tmp[4];
+      float w12 = filter_data_tmp[5];
+      float w20 = filter_data_tmp[6];
+      float w21 = filter_data_tmp[7];
+      float w22 = filter_data_tmp[8];
+
+      int h_mid = 0;
+
+      for (; h_mid < out_h - 1; h_mid++) {
+        input_row_ptr = input_data_tmp + 1 + h_mid * 2 * in_w;
+        output_row_ptr = output_data_tmp + 1 + h_mid * out_w;
+
+        for (int w4 = 0; w4 < w_times + 1; w4++) {
+          if (h_mid == 0) {
+            elewise_res1 = zero;
+            elewise_res0 = zero;
+            elewise_res2 = zero;
+          } else {
+            elewise_res1 = vmulq_n_f32(input_buff_bottom[w4].val[1], w01);
+            elewise_res0 = vmulq_n_f32(input_buff_bottom[w4].val[0], w00);
+            elewise_res2 = vmulq_n_f32(input_buff_bottom[w4].val[0], w02);
+          }
+          input_buff_mid = vld2q_f32(input_row_ptr);
+          input_buff_bottom[w4] = vld2q_f32(input_row_ptr + in_w);
+
+          elewise_res1 = vmlaq_n_f32(elewise_res1, input_buff_mid.val[1], w11);
+          elewise_res0 = vmlaq_n_f32(elewise_res0, input_buff_mid.val[0], w10);
+          elewise_res2 = vmlaq_n_f32(elewise_res2, input_buff_mid.val[0], w12);
+
+          elewise_res1 =
+              vmlaq_n_f32(elewise_res1, input_buff_bottom[w4].val[1], w21);
+          elewise_res0 =
+              vmlaq_n_f32(elewise_res0, input_buff_bottom[w4].val[0], w20);
+          elewise_res2 =
+              vmlaq_n_f32(elewise_res2, input_buff_bottom[w4].val[0], w22);
+
+          res3 = vaddq_f32(vextq_f32(elewise_res2, zero, 1),
+                           vaddq_f32(elewise_res0, elewise_res1));
+          res3 = vaddq_f32(res3, vbias);
+          vst1q_f32(output_row_ptr, res3);
+
+          input_row_ptr += 6;
+          output_row_ptr += 3;
+        }
+      }
+      clock();
+
+      input_row_ptr = input_data_tmp + 1 + h_mid * 2 * in_w;
+      output_row_ptr = output_data_tmp + 1 + h_mid * out_w;
+
+      for (int w4 = 0; w4 < w_times + 1; w4++) {
+        elewise_res1 = vmulq_n_f32(input_buff_bottom[w4].val[1], w01);
+        elewise_res0 = vmulq_n_f32(input_buff_bottom[w4].val[0], w00);
+        elewise_res2 = vmulq_n_f32(input_buff_bottom[w4].val[0], w02);
+
+        input_buff_mid = vld2q_f32(input_row_ptr);
+        input_buff_bottom[w4] = vld2q_f32(input_row_ptr + in_w);
+
+        elewise_res1 = vmlaq_n_f32(elewise_res1, input_buff_mid.val[1], w11);
+        elewise_res0 = vmlaq_n_f32(elewise_res0, input_buff_mid.val[0], w10);
+        elewise_res2 = vmlaq_n_f32(elewise_res2, input_buff_mid.val[0], w12);
+
+        if (!if_pad) {
+          elewise_res1 =
+              vmlaq_n_f32(elewise_res1, input_buff_bottom[w4].val[1], w21);
+          elewise_res0 =
+              vmlaq_n_f32(elewise_res0, input_buff_bottom[w4].val[0], w20);
+          elewise_res2 =
+              vmlaq_n_f32(elewise_res2, input_buff_bottom[w4].val[0], w22);
+        }
+        res3 = vaddq_f32(vextq_f32(elewise_res2, zero, 1),
+                         vaddq_f32(elewise_res0, elewise_res1));
+        res3 = vaddq_f32(res3, vbias);
+
+        if ((w4 != w_times)) {
+          vst1q_f32(output_row_ptr, res3);
+        } else {
+          if (out_l - 2 - w_times * 3 == 1) {
+            vst1q_lane_f32(output_row_ptr, res3, 0);
+          } else if (out_l - 2 - w_times * 3 == 2) {
+            vst1q_lane_f32(output_row_ptr, res3, 0);
+            vst1q_lane_f32(output_row_ptr + 1, res3, 1);
+          }
+        }
+        input_row_ptr += 6;
+        output_row_ptr += 3;
+      }
+
+      output_data_tmp[0] = input_const[0] * w11 + input_const[1] * w12 +
+                           input_const[in_l] * w21 +
+                           input_const[in_l + 1] * w22;
+
+      out2in_mid = (out_l - 1) * 2;
+      output_data_tmp[out_l - 1] =
+          w10 * input_const[out2in_mid - 1] + w11 * input_const[out2in_mid] +
+          w20 * input_const[out2in_mid + in_w - 1] +
+          w21 * input_const[out2in_mid + in_w] +
+          (1 - if_pad) * (w12 * input_const[out2in_mid + 1] +
+                          w22 * input_const[out2in_mid + in_w + 1]);
+
+      out2in_mid = (out_l - 1) * 2 * in_w;
+
+      output_data_tmp[out_l * (out_l - 1)] =
+          w01 * input_const[out2in_mid - in_w] +
+          w02 * input_const[out2in_mid - in_w + 1] +
+          w11 * input_const[out2in_mid] + w12 * input_const[out2in_mid + 1] +
+          (1 - if_pad) * (w21 * input_const[out2in_mid + in_w] +
+                          w22 * input_const[out2in_mid + in_w + 1]);
+      out2in_mid = (out_l - 1) * 2 * in_w + (out_l - 1) * 2;
+
+      output_data_tmp[out_l * out_l - 1] =
+          w00 * input_const[out2in_mid - in_w - 1] +
+          w01 * input_const[out2in_mid - in_w] +
+          w10 * input_const[out2in_mid - 1] + w11 * input_const[out2in_mid] +
+          (1 - if_pad) * (w20 * input_const[out2in_mid + in_w - 1] +
+                          w21 * input_const[out2in_mid + in_w] +
+                          w02 * input_const[out2in_mid - in_w + 1] +
+                          w12 * input_const[out2in_mid + 1] +
+                          w22 * input_const[out2in_mid + in_w + 1]);
+      if (if_bias) {
+        output_data_tmp[0] += bias_data[j];
+        output_data_tmp[out_l - 1] += bias_data[j];
+        output_data_tmp[out_l * (out_l - 1)] += bias_data[j];
+        output_data_tmp[out_l * out_l - 1] += bias_data[j];
+      }
+      for (int i = 1; i < out_h - 1; i++) {
+        out2in_mid = i * 2 * in_w;
+        output_data_tmp[i * out_l] = w01 * input_const[out2in_mid - in_w] +
+                                     w02 * input_const[out2in_mid - in_w + 1] +
+                                     w11 * input_const[out2in_mid] +
+                                     w12 * input_const[out2in_mid + 1] +
+                                     w21 * input_const[out2in_mid + in_w] +
+                                     w22 * input_const[out2in_mid + in_w + 1];
+
+        out2in_mid = i * 2 * in_w + (out_l - 1) * 2;
+        output_data_tmp[i * out_l + out_l - 1] =
+            w00 * input_const[out2in_mid - in_w - 1] +
+            w01 * input_const[out2in_mid - in_w] +
+            w10 * input_const[out2in_mid - 1] + w11 * input_const[out2in_mid] +
+            w20 * input_const[out2in_mid + in_w - 1] +
+            w21 * input_const[out2in_mid + in_w] +
+            (1 - if_pad) * (w02 * input_const[out2in_mid - in_w + 1] +
+                            w12 * input_const[out2in_mid + 1] +
+                            w22 * input_const[out2in_mid + in_w + 1]);
+        if (if_bias) {
+          output_data_tmp[i * out_l] += bias_data[j];
+          output_data_tmp[i * out_l + out_l - 1] += bias_data[j];
+        }
+      }
+      filter_data_tmp += 9;
+    }
+    input_data += inhxw * c;
+    output_data += outhxw * c;
+  }
+#endif
+}
+
+void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
+                                     Tensor *output, const Tensor *new_scale,
+                                     const Tensor *new_bias, bool if_relu) {
+#if __ARM_NEON
+  const float *input_data = input->data<float>();
+  const float *filter_data = filter->data<float>();
+  float *output_data = output->data<float>();
+  const float *newscale_data = new_scale->data<float>();
+  const float *newbias_data = new_bias->data<float>();
+
+  float32x4_t vnewbias = vdupq_n_f32(0.0);
+  float32x4_t vnewscale = vdupq_n_f32(1.0);
+
+  const int in_h = static_cast<int>(input->dims()[2]);
+  const int in_w = static_cast<int>(input->dims()[3]);
+  const int out_h = static_cast<int>(output->dims()[2]);
+  const int out_w = static_cast<int>(output->dims()[3]);
+  const int out_l = out_h;
+  const int in_l = in_h;
+  const int inhxw = in_h * in_w;
+  const int outhxw = out_h * out_w;
+  const int if_pad = in_l - 1 == (out_l - 1) * 2 ? 1 : 0;
+  const int batch_size = static_cast<int>(input->dims()[0]);
+  const int c = static_cast<int>(input->dims()[1]);
+  const float *input_row_ptr;
+  float *output_row_ptr;
+
+  const int w_times = (out_w - 2) / 3;
+
+  float32x4x2_t input_buff_mid{}, input_buff_bottom[w_times + 1];
+  float32x4_t elewise_res0, elewise_res1, elewise_res2, res3;
+  int out2in_mid;
+  float32x4_t zero = vdupq_n_f32(0.0);
+  for (int b = batch_size; b > 0; --b) {
+    const float *filter_data_tmp = filter_data;
+    for (int j = 0; j < c; ++j) {
+      auto output_data_tmp = output_data + j * out_h * out_w;
+      auto input_data_tmp = input_data + j * in_h * in_w;
+      auto input_const = input_data_tmp;
+
+      vnewbias = vdupq_n_f32(newbias_data[j]);
+      vnewscale = vdupq_n_f32(newscale_data[j]);
+
+      float w00 = filter_data_tmp[0];
+      float w01 = filter_data_tmp[1];
+      float w02 = filter_data_tmp[2];
+      float w10 = filter_data_tmp[3];
+      float w11 = filter_data_tmp[4];
+      float w12 = filter_data_tmp[5];
+      float w20 = filter_data_tmp[6];
+      float w21 = filter_data_tmp[7];
+      float w22 = filter_data_tmp[8];
+
+      int h_mid = 0;
+
+      for (; h_mid < out_h - 1; h_mid++) {
+        input_row_ptr = input_data_tmp + 1 + h_mid * 2 * in_w;
+        output_row_ptr = output_data_tmp + 1 + h_mid * out_w;
+
+        for (int w4 = 0; w4 < w_times + 1; w4++) {
+          if (h_mid == 0) {
+            elewise_res1 = zero;
+            elewise_res0 = zero;
+            elewise_res2 = zero;
+          } else {
+            elewise_res1 = vmulq_n_f32(input_buff_bottom[w4].val[1], w01);
+            elewise_res0 = vmulq_n_f32(input_buff_bottom[w4].val[0], w00);
+            elewise_res2 = vmulq_n_f32(input_buff_bottom[w4].val[0], w02);
+          }
+          input_buff_mid = vld2q_f32(input_row_ptr);
+          input_buff_bottom[w4] = vld2q_f32(input_row_ptr + in_w);
+
+          elewise_res1 = vmlaq_n_f32(elewise_res1, input_buff_mid.val[1], w11);
+          elewise_res0 = vmlaq_n_f32(elewise_res0, input_buff_mid.val[0], w10);
+          elewise_res2 = vmlaq_n_f32(elewise_res2, input_buff_mid.val[0], w12);
+
+          elewise_res1 =
+              vmlaq_n_f32(elewise_res1, input_buff_bottom[w4].val[1], w21);
+          elewise_res0 =
+              vmlaq_n_f32(elewise_res0, input_buff_bottom[w4].val[0], w20);
+          elewise_res2 =
+              vmlaq_n_f32(elewise_res2, input_buff_bottom[w4].val[0], w22);
+
+          res3 = vaddq_f32(vextq_f32(elewise_res2, zero, 1),
+                           vaddq_f32(elewise_res0, elewise_res1));
+          res3 = vmlaq_f32(vnewbias, vnewscale, res3);
+
+          if (if_relu) {
+            res3 = vmaxq_f32(res3, zero);
+          }
+          vst1q_f32(output_row_ptr, res3);
+
+          input_row_ptr += 6;
+          output_row_ptr += 3;
+        }
+      }
+      clock();
+
+      input_row_ptr = input_data_tmp + 1 + h_mid * 2 * in_w;
+      output_row_ptr = output_data_tmp + 1 + h_mid * out_w;
+
+      for (int w4 = 0; w4 < w_times + 1; w4++) {
+        elewise_res1 = vmulq_n_f32(input_buff_bottom[w4].val[1], w01);
+        elewise_res0 = vmulq_n_f32(input_buff_bottom[w4].val[0], w00);
+        elewise_res2 = vmulq_n_f32(input_buff_bottom[w4].val[0], w02);
+
+        input_buff_mid = vld2q_f32(input_row_ptr);
+        input_buff_bottom[w4] = vld2q_f32(input_row_ptr + in_w);
+
+        elewise_res1 = vmlaq_n_f32(elewise_res1, input_buff_mid.val[1], w11);
+        elewise_res0 = vmlaq_n_f32(elewise_res0, input_buff_mid.val[0], w10);
+        elewise_res2 = vmlaq_n_f32(elewise_res2, input_buff_mid.val[0], w12);
+
+        if (!if_pad) {
+          elewise_res1 =
+              vmlaq_n_f32(elewise_res1, input_buff_bottom[w4].val[1], w21);
+          elewise_res0 =
+              vmlaq_n_f32(elewise_res0, input_buff_bottom[w4].val[0], w20);
+          elewise_res2 =
+              vmlaq_n_f32(elewise_res2, input_buff_bottom[w4].val[0], w22);
+        }
+        res3 = vaddq_f32(vextq_f32(elewise_res2, zero, 1),
+                         vaddq_f32(elewise_res0, elewise_res1));
+        res3 = vmlaq_f32(vnewbias, vnewscale, res3);
+
+        if (if_relu) {
+          res3 = vmaxq_f32(res3, zero);
+        }
+        if ((w4 != w_times)) {
+          vst1q_f32(output_row_ptr, res3);
+        } else {
+          if (out_l - 2 - w_times * 3 == 1) {
+            vst1q_lane_f32(output_row_ptr, res3, 0);
+          } else if (out_l - 2 - w_times * 3 == 2) {
+            vst1q_lane_f32(output_row_ptr, res3, 0);
+            vst1q_lane_f32(output_row_ptr + 1, res3, 1);
+          }
+        }
+        input_row_ptr += 6;
+        output_row_ptr += 3;
+      }
+
+      output_data_tmp[0] = input_const[0] * w11 + input_const[1] * w12 +
+                           input_const[in_l] * w21 +
+                           input_const[in_l + 1] * w22;
+
+      out2in_mid = (out_l - 1) * 2;
+      output_data_tmp[out_l - 1] =
+          w10 * input_const[out2in_mid - 1] + w11 * input_const[out2in_mid] +
+          w20 * input_const[out2in_mid + in_w - 1] +
+          w21 * input_const[out2in_mid + in_w] +
+          (1 - if_pad) * (w12 * input_const[out2in_mid + 1] +
+                          w22 * input_const[out2in_mid + in_w + 1]);
+
+      out2in_mid = (out_l - 1) * 2 * in_w;
+
+      output_data_tmp[out_l * (out_l - 1)] =
+          w01 * input_const[out2in_mid - in_w] +
+          w02 * input_const[out2in_mid - in_w + 1] +
+          w11 * input_const[out2in_mid] + w12 * input_const[out2in_mid + 1] +
+          (1 - if_pad) * (w21 * input_const[out2in_mid + in_w] +
+                          w22 * input_const[out2in_mid + in_w + 1]);
+      out2in_mid = (out_l - 1) * 2 * in_w + (out_l - 1) * 2;
+
+      output_data_tmp[out_l * out_l - 1] =
+          w00 * input_const[out2in_mid - in_w - 1] +
+          w01 * input_const[out2in_mid - in_w] +
+          w10 * input_const[out2in_mid - 1] + w11 * input_const[out2in_mid] +
+          (1 - if_pad) * (w20 * input_const[out2in_mid + in_w - 1] +
+                          w21 * input_const[out2in_mid + in_w] +
+                          w02 * input_const[out2in_mid - in_w + 1] +
+                          w12 * input_const[out2in_mid + 1] +
+                          w22 * input_const[out2in_mid + in_w + 1]);
+      output_data_tmp[0] =
+          output_data_tmp[0] * newscale_data[j] + newbias_data[j];
+      output_data_tmp[out_l - 1] =
+          output_data_tmp[out_l - 1] * newscale_data[j] + newbias_data[j];
+      output_data_tmp[out_l * (out_l - 1)] =
+          output_data_tmp[out_l * (out_l - 1)] * newscale_data[j] +
+          newbias_data[j];
+      output_data_tmp[out_l * out_l - 1] =
+          output_data_tmp[out_l * out_l - 1] * newscale_data[j] +
+          newbias_data[j];
+      if (if_relu) {
+        output_data_tmp[0] = output_data_tmp[0] < 0 ? 0 : output_data_tmp[0];
+        output_data_tmp[out_l - 1] =
+            output_data_tmp[out_l - 1] < 0 ? 0 : output_data_tmp[out_l - 1];
+        output_data_tmp[out_l * (out_l - 1)] =
+            output_data_tmp[out_l * (out_l - 1)] < 0
+                ? 0
+                : output_data_tmp[out_l * (out_l - 1)];
+        output_data_tmp[out_l * out_l - 1] =
+            output_data_tmp[out_l * out_l - 1] < 0
+                ? 0
+                : output_data_tmp[out_l * out_l - 1];
+      }
+      for (int i = 1; i < out_h - 1; i++) {
+        out2in_mid = i * 2 * in_w;
+        output_data_tmp[i * out_l] = w01 * input_const[out2in_mid - in_w] +
+                                     w02 * input_const[out2in_mid - in_w + 1] +
+                                     w11 * input_const[out2in_mid] +
+                                     w12 * input_const[out2in_mid + 1] +
+                                     w21 * input_const[out2in_mid + in_w] +
+                                     w22 * input_const[out2in_mid + in_w + 1];
+
+        out2in_mid = i * 2 * in_w + (out_l - 1) * 2;
+        output_data_tmp[i * out_l + out_l - 1] =
+            w00 * input_const[out2in_mid - in_w - 1] +
+            w01 * input_const[out2in_mid - in_w] +
+            w10 * input_const[out2in_mid - 1] + w11 * input_const[out2in_mid] +
+            w20 * input_const[out2in_mid + in_w - 1] +
+            w21 * input_const[out2in_mid + in_w] +
+            (1 - if_pad) * (w02 * input_const[out2in_mid - in_w + 1] +
+                            w12 * input_const[out2in_mid + 1] +
+                            w22 * input_const[out2in_mid + in_w + 1]);
+        output_data_tmp[i * out_l] =
+            output_data_tmp[i * out_l] * newscale_data[j] + newbias_data[j];
+        output_data_tmp[i * out_l + out_l - 1] =
+            output_data_tmp[i * out_l + out_l - 1] * newscale_data[j] +
+            newbias_data[j];
+        if (if_relu) {
+          output_data_tmp[i * out_l] =
+              output_data_tmp[i * out_l] < 0 ? 0 : output_data_tmp[i * out_l];
+          output_data_tmp[i * out_l + out_l - 1] =
+              output_data_tmp[i * out_l + out_l - 1] < 0
+                  ? 0
+                  : output_data_tmp[i * out_l + out_l - 1];
+        }
+      }
+      filter_data_tmp += 9;
+    }
+    input_data += inhxw * c;
+    output_data += outhxw * c;
+  }
+#endif
+}
+
 }  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile

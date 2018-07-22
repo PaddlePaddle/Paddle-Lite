@@ -38,7 +38,8 @@ build_for_android() {
     fi
 
     if [ -z "$PLATFORM" ]; then
-        PLATFORM="arm-v7a"  # Users could choose "arm-v8a" or other platforms from the command line.
+        PLATFORM="arm-v7a"  # Users could choose "arm-v8a" platform.
+#        PLATFORM="arm-v8a"
     fi
 
     if [ "${PLATFORM}" = "arm-v7a" ]; then
@@ -92,33 +93,33 @@ build_for_ios() {
 #    rm -rf "../build"
     PLATFORM="ios"
     MODE="Release"
-    BUILD_DIR=../build/release/"${PLATFORM}"
+#    IOS_ARCH="armv7"
+#    IOS_ARCH="armv7s"
+    IOS_ARCH="arm64"    # Users could choose "armv7" or "armv7s" platforms.
+    BUILD_DIR=../build/release/"${PLATFORM}"/"${IOS_ARCH}"
     TOOLCHAIN_FILE="./tools/ios-cmake/ios.toolchain.cmake"
-    C_FLAGS="-fobjc-abi-version=2 -fobjc-arc -isysroot ${CMAKE_OSX_SYSROOT}"
-    CXX_FLAGS="-fobjc-abi-version=2 -fobjc-arc -std=gnu++14 -stdlib=libc++ -isysroot ${CMAKE_OSX_SYSROOT}"
     mkdir -p "${BUILD_DIR}"
     if [ $# -eq 1 ]; then
         cmake .. \
             -B"${BUILD_DIR}" \
             -DCMAKE_BUILD_TYPE="${MODE}" \
-            -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
             -DIOS_PLATFORM=OS \
-            -DCMAKE_C_FLAGS="${C_FLAGS}" \
-            -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
+            -DIOS_ARCH="${IOS_ARCH}" \
+            -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
             -DNET=$1 \
             -DIS_IOS="true"
     else
         cmake .. \
             -B"${BUILD_DIR}" \
             -DCMAKE_BUILD_TYPE="${MODE}" \
-            -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
             -DIOS_PLATFORM=OS \
-            -DCMAKE_C_FLAGS="${C_FLAGS}" \
-            -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
+            -DIOS_ARCH="${IOS_ARCH}" \
+            -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
             -DIS_IOS="true"
     fi
     cd "${BUILD_DIR}"
     make -j 8
+    cp ../../../src/ios_io/PaddleMobile.h ./build/PaddleMobile.h
     cd ./build
     # 生成符号表
     ranlib *.a

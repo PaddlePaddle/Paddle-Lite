@@ -14,8 +14,10 @@ limitations under the License. */
 #ifdef SIGMOID_OP
 #pragma once
 
+#include <cmath>
+
 #include "operators/op_param.h"
-#if __ARM_NEON
+#ifdef __ARM_NEON
 #include <arm_neon.h>
 #include "operators/math/math_func_neon.h"
 #endif
@@ -24,7 +26,7 @@ namespace paddle_mobile {
 namespace operators {
 using framework::DDim;
 void sigmoid(const Tensor *X, Tensor *Y) {
-#if __ARM_NEON
+#ifdef __ARM_NEON
   const float *input = X->data<float>();
   float *output = Y->mutable_data<float>();
   const DDim &dDim = X->dims();
@@ -66,6 +68,7 @@ void sigmoid(const Tensor *X, Tensor *Y) {
       input_outer_ptr++;
     }
   }
+#else
 #endif
 }
 

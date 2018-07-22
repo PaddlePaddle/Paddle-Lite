@@ -17,8 +17,16 @@ limitations under the License. */
 namespace paddle_mobile {
 
 template <typename Dtype, Precision P>
+void PaddleMobile<Dtype, P>::SetThreadNum(int num) {
+#ifdef _OPENMP
+  //  omp_set_dynamic(0);
+  omp_set_num_threads(num);
+#endif
+};
+
+template <typename Dtype, Precision P>
 bool PaddleMobile<Dtype, P>::Load(const std::string &dirname, bool optimize,
-                                  int batch_size) {
+                                  bool quantification, int batch_size) {
   if (loader_.get() == nullptr) {
     loader_ = std::make_shared<Loader<Dtype, P>>();
   } else {
@@ -27,7 +35,7 @@ bool PaddleMobile<Dtype, P>::Load(const std::string &dirname, bool optimize,
 
   if (executor_.get() == nullptr) {
     executor_ = std::make_shared<Executor<Dtype, P>>(
-        loader_->Load(dirname, optimize), batch_size, optimize);
+        loader_->Load(dirname, optimize, quantification), batch_size, optimize);
   } else {
     LOG(kLOG_INFO) << "executor inited";
   }
@@ -38,7 +46,7 @@ bool PaddleMobile<Dtype, P>::Load(const std::string &dirname, bool optimize,
 template <typename Dtype, Precision P>
 bool PaddleMobile<Dtype, P>::Load(const std::string &model_path,
                                   const std::string &para_path, bool optimize,
-                                  int batch_size) {
+                                  bool quantification, int batch_size) {
   if (loader_.get() == nullptr) {
     loader_ = std::make_shared<Loader<Dtype, P>>();
   } else {
@@ -47,7 +55,8 @@ bool PaddleMobile<Dtype, P>::Load(const std::string &model_path,
 
   if (executor_.get() == nullptr) {
     executor_ = std::make_shared<Executor<Dtype, P>>(
-        loader_->Load(model_path, para_path, optimize), batch_size, optimize);
+        loader_->Load(model_path, para_path, optimize, quantification),
+        batch_size, optimize);
   } else {
     LOG(kLOG_INFO) << "executor inited";
   }
@@ -81,7 +90,9 @@ PaddleMobile<Dtype, P>::~PaddleMobile() {
 }
 
 template class PaddleMobile<CPU, Precision::FP32>;
+
 template class PaddleMobile<FPGA, Precision::FP32>;
+
 template class PaddleMobile<GPU_MALI, Precision::FP32>;
 
 }  // namespace paddle_mobile
