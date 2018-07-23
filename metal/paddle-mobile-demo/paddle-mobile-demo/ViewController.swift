@@ -17,11 +17,13 @@ import MetalKit
 import paddle_mobile
 import MetalPerformanceShaders
 
-
-
-func Test<T>() -> T? {
-    return nil
+class PreProccess: CusomKernel {
+    init(device: MTLDevice) {
+        let s = CusomKernel.Shape.init(inWidth: 224, inHeight: 224, inChannel: 3)
+        super.init(device: device, inFunctionName: "preprocess", outputDim: s, usePaddleMobileLib: false)
+    }
 }
+
 
 class ViewController: UIViewController {
     let device: MTLDevice! = MTLCreateSystemDefaultDevice()
@@ -63,6 +65,8 @@ class ViewController: UIViewController {
         guard let inTexture = texture else {
             fatalError(" texture is nil !")
         }
+        
+        
        
         scaleTexture(queue: queue!, input: inTexture) { (inputTexture) in
             let loader = Loader<Float32>.init()
@@ -71,7 +75,8 @@ class ViewController: UIViewController {
                 let paraPath = Bundle.main.path(forResource: "params", ofType: nil) ?! "para null"
                 let program = try loader.load(device: self.device, modelPath: modelPath, paraPath: paraPath)
                 let executor = try Executor<Float32>.init(inDevice: self.device, inQueue: queue!, inProgram: program)
-                let output = try executor.predict(input: inputTexture, expect: [1, 224, 224, 3])
+                let preprocessKernel = PreProccess.init(device: self.device)
+                let output = try executor.predict(input: inputTexture, expect: [1, 224, 224, 3], preProcessKernle: preprocessKernel)
                 //            print(output)
             } catch let error {
                 print(error)
