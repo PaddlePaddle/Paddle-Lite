@@ -58,11 +58,11 @@ class PoolOp<P: PrecisionType>: Operator<PoolKernel<P>, PoolParam<P>>, Runable, 
     
     func delogOutput() {
         print("pool2d delog")
-        let _: P? = para.input.metalTexture.logDesc(header: "pool2d input: ", stridable: false)
+        let _: P? = para.input.metalTexture.logDesc(header: "pool2d input: ", stridable: true)
         print(para.ksize)
         print(para.stride)
         print(para.padding)
         print(para.poolType)
-        let _: P? = para.output.metalTexture.logDesc(header: "pool2d output: ", stridable: false)
+        let _: P? = para.output.metalTexture.logDesc(header: "pool2d output: ", stridable: true)
     }
 }

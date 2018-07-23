@@ -101,7 +101,7 @@ public extension MTLTexture {
                 getBytes(bytes, bytesPerRow: bytesPerRow, bytesPerImage: bytesPerImage, from: region, mipmapLevel: 0, slice: i)
                 let p = bytes.assumingMemoryBound(to: T.self)
                 str += "2d array count : \(width * height * depth * 4) \n"
-                if stridable {
+                if stridable && width * height * depth * 4 > 100 {
                     for j in stride(from: 0, to: width * height * depth * 4 , by: width * height * depth * 4 / 100){
                         str += " index \(j): \(p[j])"
                     }

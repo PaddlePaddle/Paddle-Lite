@@ -59,10 +59,11 @@ public class Texture<P: PrecisionType>: Tensorial {
             tmpTextureDes.arrayLength = (inDim[3] * inDim[0] + 3)/4
             tmpTextureDes.textureType = .type2DArray
         } else if inDim.cout() == 2 {
-            tmpTextureDes.height = inDim[0]
-            tmpTextureDes.width = inDim[1]
+            tmpTextureDes.height = 1
+            tmpTextureDes.width = 1
             tmpTextureDes.depth = 1
-            tmpTextureDes.textureType = .type2D
+            tmpTextureDes.arrayLength = (inDim[0] * inDim[1] + 3)/4
+            tmpTextureDes.textureType = .type2DArray
         } else {
             fatalError(" not suuprt ")
         }
