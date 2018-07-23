@@ -68,6 +68,7 @@ void sigmoid(const Tensor *X, Tensor *Y) {
       input_outer_ptr++;
     }
   }
+#else
 #endif
 }
 

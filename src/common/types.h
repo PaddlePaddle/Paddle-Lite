@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace paddle_mobile {
@@ -81,6 +82,8 @@ extern const std::string G_OP_TYPE_FUSION_CONV_ADD_RELU;
 extern const std::string G_OP_TYPE_FC;
 extern const std::string G_OP_TYPE_FUSION_CONV_ADD;
 extern const std::string G_OP_TYPE_FUSION_CONV_ADD_BN_RELU;
+extern const std::string G_OP_TYPE_FUSION_DWCONV_BN_RELU;
+extern const std::string G_OP_TYPE_FUSION_CONV_BN_RELU;
 
 extern const std::string G_OP_TYPE_LRN;
 extern const std::string G_OP_TYPE_MUL;
@@ -98,6 +101,13 @@ extern const std::string G_OP_TYPE_FETCH;
 extern const std::string G_OP_TYPE_DEPTHWISE_CONV;
 extern const std::string G_OP_TYPE_IM2SEQUENCE;
 extern const std::string G_OP_TYPE_DROPOUT;
+
+extern const std::string G_OP_TYPE_FUSION_CONV_RELU;
+extern const std::string G_OP_TYPE_FUSION_CONV_BN_SCALE;
+extern const std::string G_OP_TYPE_FUSION_CONV_BN_SCALE_RELU;
+extern const std::string G_OP_TYPE_FUSION_POOL_BN;
+extern const std::string G_OP_TYPE_FUSION_ELEMENTWISE_ADD_RELU;
+extern const std::string G_OP_TYPE_REGION;
 
 extern std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
