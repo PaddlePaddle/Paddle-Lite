@@ -15,7 +15,7 @@ limitations under the License. */
 #include "operators/math/gemm.h"
 #include "common/log.h"
 #include "memory/t_malloc.h"
-#ifndef X86
+#if __ARM_NEON
 #include <arm_neon.h>
 #endif
 #ifdef _OPENMP
@@ -33,6 +33,7 @@ float *packedA;
 float *packedB;
 float *packedC;
 float *zero;
+/*
 // 将A矩阵分块复制到连续内存(ColMajor)
 void PackMatrixA(int m, int k, int m_tail, const float *A, int lda,
                  float *buffer) {
@@ -59,6 +60,36 @@ void PackMatrixA(int m, int k, int m_tail, const float *A, int lda,
     }
   }
 }
+
+// 将B矩阵分块复制到连续内存(ColMajor)
+void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
+                 float *buffer) {
+  int i, j;
+  const float *Bj, *Bj1, *Bj2, *Bj3;
+  for (j = 0; j < n - n_tail; j += NR) {
+    Bj = &B(0, j);
+    Bj1 = &B(0, j + 1);
+    Bj2 = &B(0, j + 2);
+    Bj3 = &B(0, j + 3);
+    for (i = 0; i < k; ++i) {
+      *buffer++ = *Bj++;
+      *buffer++ = *Bj1++;
+      *buffer++ = *Bj2++;
+      *buffer++ = *Bj3++;
+    }
+  }
+  if (n_tail != 0) {
+    for (i = 0; i < k; ++i) {
+      for (int j = n - n_tail; j < n; ++j) {
+        *buffer++ = B(i, j);
+      }
+      for (int j = n; j < n + (NR - n_tail); ++j) {
+        *buffer++ = 0;
+      }
+    }
+  }
+}
+*/
 
 // 将A矩阵分块复制到连续内存(RowMajor)
 void PackMatrixA_(int m, int k, int m_tail, const float *A, int lda,
@@ -100,35 +131,6 @@ void PackMatrixA_(int m, int k, int m_tail, const float *A, int lda,
   }
 }
 
-// 将B矩阵分块复制到连续内存(ColMajor)
-void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
-                 float *buffer) {
-  int i, j;
-  const float *Bj, *Bj1, *Bj2, *Bj3;
-  for (j = 0; j < n - n_tail; j += NR) {
-    Bj = &B(0, j);
-    Bj1 = &B(0, j + 1);
-    Bj2 = &B(0, j + 2);
-    Bj3 = &B(0, j + 3);
-    for (i = 0; i < k; ++i) {
-      *buffer++ = *Bj++;
-      *buffer++ = *Bj1++;
-      *buffer++ = *Bj2++;
-      *buffer++ = *Bj3++;
-    }
-  }
-  if (n_tail != 0) {
-    for (i = 0; i < k; ++i) {
-      for (int j = n - n_tail; j < n; ++j) {
-        *buffer++ = B(i, j);
-      }
-      for (int j = n; j < n + (NR - n_tail); ++j) {
-        *buffer++ = 0;
-      }
-    }
-  }
-}
-
 // 将B矩阵分块复制到连续内存(RowMajor)
 void PackMatrixB_(int k, int n, int n_tail, const float *B, int ldb,
                   float *buffer) {
@@ -136,13 +138,34 @@ void PackMatrixB_(int k, int n, int n_tail, const float *B, int ldb,
   for (int j = 0; j < n - n_tail; j += NR) {
     for (int i = 0; i < k; ++i) {
       b0 = &B(i, j);
+#if __ARM_NEON
+#if __aarch64__
       asm volatile(
-          "pld        [%[b0]]               \n\t"
-          "vld1.32    {q0, q1}, [%[b0]]         \n\t"
-          "vst1.32    {q0, q1}, [%[buffer]]!    \n\t"
+          "prfm   pldl1keep,        [%[b0]]           \n\t"
+          "ld1    {v0.4s, v1.4s},   [%[b0]]           \n\t"
+          "st1    {v0.4s, v1.4s},   [%[buffer]],  #32 \n\t"
           : [buffer] "+r"(buffer)
           : [b0] "r"(b0)
-          : "memory", "q0", "q0");
+          : "memory", "v0", "v1");
+#else
+      asm volatile(
+          "pld        [%[b0]]                     \n\t"
+          "vld1.32    {q0, q1},   [%[b0]]         \n\t"
+          "vst1.32    {q0, q1},   [%[buffer]]!    \n\t"
+          : [buffer] "+r"(buffer)
+          : [b0] "r"(b0)
+          : "memory", "q0", "q1");
+#endif  // __aarch64__
+#else
+      *buffer++ = *b0++;
+      *buffer++ = *b0++;
+      *buffer++ = *b0++;
+      *buffer++ = *b0++;
+      *buffer++ = *b0++;
+      *buffer++ = *b0++;
+      *buffer++ = *b0++;
+      *buffer++ = *b0++;
+#endif  // __ARM_NEON
     }
   }
   if (n_tail != 0) {
@@ -206,8 +229,10 @@ void InnerKernelWithBn(int mc, int nc, float alpha, const float *a,
   }
 }
 
-#if defined(IOS)
-void AddDot4x4(int k, const float *a, const float *b, float *C, int ldc) {
+#if __ARM_NEON
+#if __aarch64__
+
+void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
   // init C
   float32x4_t cv0 = vdupq_n_f32(0.0);
   float32x4_t cv1 = vdupq_n_f32(0.0);
@@ -234,30 +259,271 @@ void AddDot4x4(int k, const float *a, const float *b, float *C, int ldc) {
     a += MR;
     b += NR;
   }
-  float32x4x4_t cv = {cv0, cv1, cv2, cv3};
-  int i, j;
-  for (i = 0; i < mc; ++i) {
-    for (j = 0; j < nc; ++j) {
-      if (beta == 0.0) {
-        C(i, j) = 0.0;
-      } else if (beta != 1.0) {
-        C(i, j) *= beta;
+
+  vst1q_f32(c, cv0);
+  vst1q_f32(c + ldc, cv1);
+  vst1q_f32(c + 2 * ldc, cv2);
+  vst1q_f32(c + 3 * ldc, cv3);
+  //  float32x4x4_t cv = {cv0, cv1, cv2, cv3};
+}
+
+void AddDot4x8(int k, const float *a, const float *b, float *c, int ldc) {
+  // init C
+  float32x4_t cv0 = vdupq_n_f32(0.0);
+  float32x4_t cv1 = vdupq_n_f32(0.0);
+  float32x4_t cv2 = vdupq_n_f32(0.0);
+  float32x4_t cv3 = vdupq_n_f32(0.0);
+  float32x4_t cv4 = vdupq_n_f32(0.0);
+  float32x4_t cv5 = vdupq_n_f32(0.0);
+  float32x4_t cv6 = vdupq_n_f32(0.0);
+  float32x4_t cv7 = vdupq_n_f32(0.0);
+
+  float32x4_t av;
+  float32x4_t bv0;
+  float32x4_t bv1;
+
+  float32x2_t av01;
+  float32x2_t av23;
+
+  for (int p = 0; p < k; p += 1) {
+    av = vld1q_f32(a);
+    bv0 = vld1q_f32(b);
+    bv1 = vld1q_f32(b + 4);
+
+    av01 = vget_low_f32(av);
+    cv0 = vmlaq_lane_f32(cv0, bv0, av01, 0);
+    cv1 = vmlaq_lane_f32(cv1, bv1, av01, 0);
+    cv2 = vmlaq_lane_f32(cv2, bv0, av01, 1);
+    cv3 = vmlaq_lane_f32(cv3, bv1, av01, 1);
+    av23 = vget_high_f32(av);
+    cv4 = vmlaq_lane_f32(cv4, bv0, av23, 0);
+    cv5 = vmlaq_lane_f32(cv5, bv1, av23, 0);
+    cv6 = vmlaq_lane_f32(cv6, bv0, av23, 1);
+    cv7 = vmlaq_lane_f32(cv7, bv1, av23, 1);
+
+    a += MR;
+    b += NR;
+  }
+
+  vst1q_f32(c, cv0);
+  vst1q_f32(c + 4, cv1);
+  vst1q_f32(c + ldc, cv2);
+  vst1q_f32(c + ldc + 4, cv3);
+  vst1q_f32(c + 2 * ldc, cv4);
+  vst1q_f32(c + 2 * ldc + 4, cv5);
+  vst1q_f32(c + 3 * ldc, cv6);
+  vst1q_f32(c + 3 * ldc + 4, cv7);
+}
+
+// 分块矩阵乘法结果回写
+// C = A * B
+void WriteBasic(int mc, int nc, float *c, float *C, int ldc) {
+  int nc1 = nc / 4;
+  int _nc1 = nc % 4;
+
+  float *c_ptr, *C_ptr;
+  float32x4_t cv;
+  for (int i = 0; i < mc; ++i) {
+    c_ptr = c + i * NC;
+    C_ptr = C + i * ldc;
+    for (int j = 0; j < nc1; ++j) {
+      cv = vld1q_f32(c_ptr);
+      vst1q_f32(C_ptr, cv);
+      c_ptr += 4;
+      C_ptr += 4;
+    }
+    if (_nc1 != 0) {
+      cv = vld1q_f32(c_ptr);
+      if (_nc1 >= 1) {
+        vst1q_lane_f32(C_ptr, cv, 0);
+        C_ptr++;
       }
-      if (j == 0) {
-        C(i, j) += alpha * vgetq_lane_f32(cv.val[i], 0);
-      } else if (j == 1) {
-        C(i, j) += alpha * vgetq_lane_f32(cv.val[i], 1);
-      } else if (j == 2) {
-        C(i, j) += alpha * vgetq_lane_f32(cv.val[i], 2);
-      } else if (j == 3) {
-        C(i, j) += alpha * vgetq_lane_f32(cv.val[i], 3);
+      if (_nc1 >= 2) {
+        vst1q_lane_f32(C_ptr, cv, 1);
+        C_ptr++;
+      }
+      if (_nc1 >= 3) {
+        vst1q_lane_f32(C_ptr, cv, 2);
       }
     }
   }
 }
-}  // namespace math
 
-#elif defined(ARMV7)
+// C = alpha * A * B + beta * C
+void WriteWithAlphaBeta(int mc, int nc, float *c, float *C, int ldc) {}
+
+// C = A * B + C
+void WriteWithAdd(int mc, int nc, float *c, float *C, int ldc) {
+  int nc1 = nc / 4;
+  int _nc1 = nc % 4;
+
+  float *c_ptr, *C_ptr;
+  float32x4_t cv;
+  float32x4_t cv1;
+  for (int i = 0; i < mc; ++i) {
+    c_ptr = c + i * NC;
+    C_ptr = C + i * ldc;
+    for (int j = 0; j < nc1; ++j) {
+      cv = vld1q_f32(c_ptr);
+      cv1 = vld1q_f32(C_ptr);
+      cv = vaddq_f32(cv, cv1);
+      vst1q_f32(C_ptr, cv);
+      c_ptr += 4;
+      C_ptr += 4;
+    }
+    if (_nc1 != 0) {
+      cv = vld1q_f32(c_ptr);
+      cv1 = vld1q_f32(C_ptr);
+      cv = vaddq_f32(cv, cv1);
+      if (_nc1 >= 1) {
+        vst1q_lane_f32(C_ptr, cv, 0);
+        C_ptr++;
+      }
+      if (_nc1 >= 2) {
+        vst1q_lane_f32(C_ptr, cv, 1);
+        C_ptr++;
+      }
+      if (_nc1 >= 3) {
+        vst1q_lane_f32(C_ptr, cv, 2);
+      }
+    }
+  }
+}
+
+// C = A * B + C, relu(C)
+void WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc) {
+  int nc1 = nc / 4;
+  int _nc1 = nc % 4;
+
+  float *c_ptr, *C_ptr;
+  float32x4_t cv;
+  float32x4_t cv1;
+  float32x4_t zero = vdupq_n_f32(0.0);
+  for (int i = 0; i < mc; ++i) {
+    c_ptr = c + i * NC;
+    C_ptr = C + i * ldc;
+    for (int j = 0; j < nc1; ++j) {
+      cv = vld1q_f32(c_ptr);
+      cv1 = vld1q_f32(C_ptr);
+      cv = vaddq_f32(cv, cv1);
+      cv = vmaxq_f32(cv, zero);
+      vst1q_f32(C_ptr, cv);
+      c_ptr += 4;
+      C_ptr += 4;
+    }
+    if (_nc1 != 0) {
+      cv = vld1q_f32(c_ptr);
+      cv1 = vld1q_f32(C_ptr);
+      cv = vaddq_f32(cv, cv1);
+      cv = vmaxq_f32(cv, zero);
+      if (_nc1 >= 1) {
+        vst1q_lane_f32(C_ptr, cv, 0);
+        C_ptr++;
+      }
+      if (_nc1 >= 2) {
+        vst1q_lane_f32(C_ptr, cv, 1);
+        C_ptr++;
+      }
+      if (_nc1 >= 3) {
+        vst1q_lane_f32(C_ptr, cv, 2);
+      }
+    }
+  }
+}
+
+// C = A * B, batchnorm(C)
+void WriteWithBn(int mc, int nc, float *c, float *C, int ldc, float *new_scale,
+                 float *new_bias) {
+  int nc1 = nc / 4;
+  int _nc1 = nc % 4;
+
+  float *c_ptr, *C_ptr;
+  float32x4_t cv;
+  float32x4_t cv1;
+  float32x4_t bias;
+  float32x2_t scale;
+  for (int i = 0; i < mc; ++i) {
+    c_ptr = c + i * NC;
+    C_ptr = C + i * ldc;
+    bias = vld1q_dup_f32(new_bias);
+    scale = vld1_dup_f32(new_scale);
+    new_bias++;
+    new_scale++;
+    float scale0 = vget_lane_f32(scale, 0);
+    for (int j = 0; j < nc1; ++j) {
+      cv = vld1q_f32(c_ptr);
+      cv = vmlaq_n_f32(bias, cv, scale0);
+      vst1q_f32(C_ptr, cv);
+      c_ptr += 4;
+      C_ptr += 4;
+    }
+    if (_nc1 != 0) {
+      cv = vld1q_f32(c_ptr);
+      cv = vmlaq_n_f32(bias, cv, scale0);
+      if (_nc1 >= 1) {
+        vst1q_lane_f32(C_ptr, cv, 0);
+        C_ptr++;
+      }
+      if (_nc1 >= 2) {
+        vst1q_lane_f32(C_ptr, cv, 1);
+        C_ptr++;
+      }
+      if (_nc1 >= 3) {
+        vst1q_lane_f32(C_ptr, cv, 2);
+        C_ptr++;
+      }
+    }
+  }
+}
+
+// C = A * B, batchnorm(C), relu(C)
+void WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc,
+                     float *new_scale, float *new_bias) {
+  int nc1 = nc / 4;
+  int _nc1 = nc % 4;
+
+  float *c_ptr, *C_ptr;
+  float32x4_t cv;
+  float32x4_t bias;
+  float32x2_t scale;
+  float32x4_t zero = vdupq_n_f32(0.0);
+  for (int i = 0; i < mc; ++i) {
+    c_ptr = c + i * NC;
+    C_ptr = C + i * ldc;
+    bias = vld1q_dup_f32(new_bias);
+    scale = vld1_dup_f32(new_scale);
+    new_bias++;
+    new_scale++;
+    float scale0 = vget_lane_f32(scale, 0);
+    for (int j = 0; j < nc1; ++j) {
+      cv = vld1q_f32(c_ptr);
+      cv = vmlaq_n_f32(bias, cv, scale0);
+      cv = vmaxq_f32(cv, zero);
+      vst1q_f32(C_ptr, cv);
+      c_ptr += 4;
+      C_ptr += 4;
+    }
+    if (_nc1 != 0) {
+      cv = vld1q_f32(c_ptr);
+      cv = vmlaq_n_f32(bias, cv, scale0);
+      cv = vmaxq_f32(cv, zero);
+      if (_nc1 >= 1) {
+        vst1q_lane_f32(C_ptr, cv, 0);
+        C_ptr++;
+      }
+      if (_nc1 >= 2) {
+        vst1q_lane_f32(C_ptr, cv, 1);
+        C_ptr++;
+      }
+      if (_nc1 >= 3) {
+        vst1q_lane_f32(C_ptr, cv, 2);
+      }
+    }
+  }
+}
+
+#else
+
 void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
   const float *a_ptr, *b_ptr;
   a_ptr = a;
@@ -328,151 +594,7 @@ void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
         "q10", "q11", "q12", "q13");
 }
 
-#else
-void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
-  float *c0, *c1, *c2, *c3;
-  c0 = c;
-  c1 = c + ldc;
-  c2 = c + 2 * ldc;
-  c3 = c + 3 * ldc;
-  for (int p = 0; p < k; p += 1) {
-    // first row
-    c0[0] += a[0] * b[0];
-    c0[1] += a[0] * b[1];
-    c0[2] += a[0] * b[2];
-    c0[3] += a[0] * b[3];
-
-    // second row
-    c1[0] += a[1] * b[0];
-    c1[1] += a[1] * b[1];
-    c1[2] += a[1] * b[2];
-    c1[3] += a[1] * b[3];
-
-    // third row
-    c2[0] += a[2] * b[0];
-    c2[1] += a[2] * b[1];
-    c2[2] += a[2] * b[2];
-    c2[3] += a[2] * b[3];
-
-    // fourth row
-    c3[0] += a[3] * b[0];
-    c3[1] += a[3] * b[1];
-    c3[2] += a[3] * b[2];
-    c3[3] += a[3] * b[3];
-
-    a += 4;
-    b += 4;
-  }
-}
-
-#endif
-
-// 32位 float 矩阵乘法
-void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
-           const float *B, int ldb, float beta, float *C, int ldc, bool relu) {
-  // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
-  // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
-  int L1 = 30 * 1024;
-  int L2 = 1 * 1024 * 1024;
-
-  KC = k;
-  MC = L2 / (2 * KC * sizeof(float));
-  NC = MC;
-
-  // make sure MC is multiple of 4, and NC is multiple of 8
-  int mblock_num = (m + MC - 1) / MC;
-  MC = (m + mblock_num - 1) / mblock_num;
-  MC = (MC + 4 - 1) / 4 * 4;
-  //  DLOG << "mblock_num = " << mblock_num << ", MC = " << MC << "\n";
-
-  int nblock_num = (n + NC - 1) / NC;
-  NC = (n + nblock_num - 1) / nblock_num;
-  NC = (NC + 8 - 1) / 8 * 8;
-  //  DLOG << "nblock_num = " << nblock_num << ", NC = " << NC << "\n";
-
-  packedA = static_cast<float *>(
-      paddle_mobile::memory::Alloc(sizeof(float) * MC * KC));
-  packedB = static_cast<float *>(
-      paddle_mobile::memory::Alloc(sizeof(float) * KC * NC));
-  packedC = static_cast<float *>(
-      paddle_mobile::memory::Alloc(sizeof(float) * MC * NC));
-  zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
-
-  for (int l = 0; l < KC; ++l) {
-    zero[l] = 0;
-  }
-
-  int mc, nc;
-  for (int j = 0; j < n; j += NC) {
-    nc = s_min(n - j, NC);
-    PackMatrixB_(KC, nc, nc % NR, &B(0, j), ldb, packedB);
-    for (int i = 0; i < m; i += MC) {
-      mc = s_min(m - i, MC);
-      PackMatrixA_(mc, KC, mc % MR, &A(i, 0), lda, packedA);
-      InnerKernel(mc, nc, alpha, packedA, packedB, beta, packedC, &C(i, j), ldc,
-                  relu);
-    }
-  }
-
-  paddle_mobile::memory::Free(packedA);
-  paddle_mobile::memory::Free(packedB);
-  paddle_mobile::memory::Free(packedC);
-  paddle_mobile::memory::Free(zero);
-}
-
-void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
-                 const float *B, int ldb, float beta, float *C, int ldc,
-                 bool relu, float *new_scale, float *new_bias) {
-  // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
-  // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
-  int L1 = 30 * 1024;
-  int L2 = 1 * 1024 * 1024;
-
-  KC = k;
-  MC = L2 / (2 * KC * sizeof(float));
-  NC = MC;
-
-  // make sure MC is multiple of 4, and NC is multiple of 8
-  int mblock_num = (m + MC - 1) / MC;
-  MC = (m + mblock_num - 1) / mblock_num;
-  MC = (MC + 4 - 1) / 4 * 4;
-  //  DLOG << "mblock_num = " << mblock_num << ", MC = " << MC << "\n";
-
-  int nblock_num = (n + NC - 1) / NC;
-  NC = (n + nblock_num - 1) / nblock_num;
-  NC = (NC + 8 - 1) / 8 * 8;
-  //  DLOG << "nblock_num = " << nblock_num << ", NC = " << NC << "\n";
-
-  packedA = static_cast<float *>(
-      paddle_mobile::memory::Alloc(sizeof(float) * MC * KC));
-  packedB = static_cast<float *>(
-      paddle_mobile::memory::Alloc(sizeof(float) * KC * NC));
-  packedC = static_cast<float *>(
-      paddle_mobile::memory::Alloc(sizeof(float) * MC * NC));
-  zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
-
-  for (int l = 0; l < KC; ++l) {
-    zero[l] = 0;
-  }
-
-  int mc, nc;
-  for (int j = 0; j < n; j += NC) {
-    nc = s_min(n - j, NC);
-    PackMatrixB_(KC, nc, nc % NR, &B(0, j), ldb, packedB);
-    for (int i = 0; i < m; i += MC) {
-      mc = s_min(m - i, MC);
-      PackMatrixA_(mc, KC, mc % MR, &A(i, 0), lda, packedA);
-      InnerKernelWithBn(mc, nc, alpha, packedA, packedB, beta, packedC,
-                        &C(i, j), ldc, relu, new_scale + i, new_bias + i);
-    }
-  }
-
-  paddle_mobile::memory::Free(packedA);
-  paddle_mobile::memory::Free(packedB);
-  paddle_mobile::memory::Free(packedC);
-  paddle_mobile::memory::Free(zero);
-}
-
+/*
 void VectorKernel(int m, int n, int k, float alpha, const float *A, int lda,
                   const float *B, int ldb, float beta, float *C, int ldc,
                   bool relu) {
@@ -905,6 +1027,7 @@ void VectorKernelWithBn(int m, int n, int k, float alpha, const float *A,
     VecWriteWithBn(n, bufferC, C, ldc, new_scale, new_bias);
   }
 }
+*/
 
 void AddDot4x8(int k, const float *a, const float *b, float *c, int ldc) {
   const float *a_ptr, *b_ptr;
@@ -1214,6 +1337,21 @@ void WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc) {
 // C = A * B, batchnorm(C)
 void WriteWithBn(int mc, int nc, float *c, float *C, int ldc, float *scale,
                  float *bias) {
+  if (nc < 4) {
+    for (int i = 0; i < mc; ++i) {
+      for (int j = 0; j < nc; ++j) {
+        *C = (*c) * (*scale) + (*bias);
+        C++;
+        c++;
+      }
+      C += (ldc - nc);
+      c += (NC - nc);
+      scale++;
+      bias++;
+    }
+    return;
+  }
+
   int volatile nc1 = nc / 16;
   int _nc1 = nc % 16;
   int volatile nc2 = _nc1 / 4;
@@ -1300,6 +1438,24 @@ void WriteWithBn(int mc, int nc, float *c, float *C, int ldc, float *scale,
 // C = A * B, batchnorm(C), relu(C)
 void WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc, float *scale,
                      float *bias) {
+  if (nc < 4) {
+    for (int i = 0; i < mc; ++i) {
+      for (int j = 0; j < nc; ++j) {
+        *C = (*c) * (*scale) + (*bias);
+        if (*C < 0) {
+          *C = 0;
+        }
+        C++;
+        c++;
+      }
+      C += (ldc - nc);
+      c += (NC - nc);
+      scale++;
+      bias++;
+    }
+    return;
+  }
+
   int nc1 = nc / 16;
   int _nc1 = nc % 16;
   int nc2 = _nc1 / 4;
@@ -1390,282 +1546,429 @@ void WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc, float *scale,
         "q8", "q10", "q11", "q12", "q13", "q14");
 }
 
-// C = A * B
-void VecWriteBasic(int n, float *c, float *C, int ldc) {
-  int nc1 = n / 16;
-  int _nc1 = n % 16;
-  int nc2 = _nc1 / 4;
-  int nc3 = 16 - 4 * (_nc1 % 4);
+  /*
+  // C = A * B
+  void VecWriteBasic(int n, float *c, float *C, int ldc) {
+    int nc1 = n / 16;
+    int _nc1 = n % 16;
+    int nc2 = _nc1 / 4;
+    int nc3 = 16 - 4 * (_nc1 % 4);
 
-  asm volatile(
-      "subs       %[nc1],   %[nc1],   #1  \n\t"
-      "blt        end_nc1_%=              \n\t"
-      "loop_nc1_%=:                       \n\t"
+    asm volatile(
+        "subs       %[nc1],   %[nc1],   #1  \n\t"
+        "blt        end_nc1_%=              \n\t"
+        "loop_nc1_%=:                       \n\t"
 
-      "vld1.32    {q0, q1}, [%[c]]!       \n\t"
-      "vst1.32    {q0, q1}, [%[C]]!       \n\t"
+        "vld1.32    {q0, q1}, [%[c]]!       \n\t"
+        "vst1.32    {q0, q1}, [%[C]]!       \n\t"
 
-      "vld1.32    {q2, q3}, [%[c]]!       \n\t"
-      "vst1.32    {q2, q3}, [%[C]]!       \n\t"
+        "vld1.32    {q2, q3}, [%[c]]!       \n\t"
+        "vst1.32    {q2, q3}, [%[C]]!       \n\t"
 
-      "subs       %[nc1],   %[nc1],   #1  \n\t"
-      "bge        loop_nc1_%=             \n\t"
-      "end_nc1_%=:                        \n\t"
+        "subs       %[nc1],   %[nc1],   #1  \n\t"
+        "bge        loop_nc1_%=             \n\t"
+        "end_nc1_%=:                        \n\t"
 
-      "subs       %[nc2],   %[nc2],   #1  \n\t"
-      "blt        end_nc2_%=              \n\t"
-      "loop_nc2_%=:                       \n\t"
+        "subs       %[nc2],   %[nc2],   #1  \n\t"
+        "blt        end_nc2_%=              \n\t"
+        "loop_nc2_%=:                       \n\t"
 
-      "vld1.32    {q4},     [%[c]]!       \n\t"
-      "vst1.32    {q4},     [%[C]]!       \n\t"
+        "vld1.32    {q4},     [%[c]]!       \n\t"
+        "vst1.32    {q4},     [%[C]]!       \n\t"
 
-      "subs       %[nc2],   %[nc2],   #1  \n\t"
-      "bge        loop_nc2_%=             \n\t"
-      "end_nc2_%=:                        \n\t"
+        "subs       %[nc2],   %[nc2],   #1  \n\t"
+        "bge        loop_nc2_%=             \n\t"
+        "end_nc2_%=:                        \n\t"
 
-      "cmp        %[nc3],    #16          \n\t"
-      "beq        end_nc3_%=              \n\t"
-      "sub        %[c],     %[c],   %[nc3]    \n\t"
-      "sub        %[C],     %[C],   %[nc3]    \n\t"
-      "vld1.32    {q5},     [%[c]]!       \n\t"
-      "vst1.32    {q5},     [%[C]]!       \n\t"
-      "end_nc3_%=:                        \n\t"
+        "cmp        %[nc3],    #16          \n\t"
+        "beq        end_nc3_%=              \n\t"
+        "sub        %[c],     %[c],   %[nc3]    \n\t"
+        "sub        %[C],     %[C],   %[nc3]    \n\t"
+        "vld1.32    {q5},     [%[c]]!       \n\t"
+        "vst1.32    {q5},     [%[C]]!       \n\t"
+        "end_nc3_%=:                        \n\t"
 
-      :
-      : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3] "r"(nc3)
-      : "memory", "q0", "q1", "q2", "q3", "q4", "q5");
-}
-
-// C = alpha * A * B + beta * C
-void VecWriteWithAlphaBeta(int n, float *c, float *C, int ldc) {}
-
-// C = A * B + C
-void VecWriteWithAdd(int n, float *c, float *C, int ldc) {
-  int nc1 = n / 16;
-  int _nc1 = n % 16;
-
-  asm volatile(
-      "subs       %[nc1],   %[nc1],   #1  \n\t"
-      "blt        end_nc1_%=              \n\t"
-      "loop_nc1_%=:                       \n\t"
-
-      "vld1.32    {q0, q1},   [%[c]]!     \n\t"
-      "vld1.32    {q2, q3},   [%[C]]      \n\t"
-      "vadd.f32   q10,  q0,   q2          \n\t"
-      "vadd.f32   q11,  q1,   q3          \n\t"
-      "vst1.32    {q10, q11}, [%[C]]!     \n\t"
-
-      "vld1.32    {q4, q5},   [%[c]]!     \n\t"
-      "vld1.32    {q6, q7},   [%[C]]      \n\t"
-      "vadd.f32   q12,  q4,   q6          \n\t"
-      "vadd.f32   q13,  q5,   q7          \n\t"
-      "vst1.32    {q12, q13}, [%[C]]!     \n\t"
-
-      "subs       %[nc1],   %[nc1],   #1  \n\t"
-      "bge        loop_nc1_%=             \n\t"
-      "end_nc1_%=:                        \n\t"
-
-      : [C] "+r"(C), [c] "+r"(c)
-      : [nc1] "r"(nc1)
-      : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q10", "q11",
-        "q12", "q13");
-
-  if (_nc1 != 0) {
-    for (int j = 0; j < _nc1; j++) {
-      *C++ += *c++;
-    }
+        :
+        : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3] "r"(nc3)
+        : "memory", "q0", "q1", "q2", "q3", "q4", "q5");
   }
-}
 
-// C = A * B + C, relu(C)
-void VecWriteWithAddRelu(int n, float *c, float *C, int ldc) {
-  int nc1 = n / 16;
-  int _nc1 = n % 16;
+  // C = alpha * A * B + beta * C
+  void VecWriteWithAlphaBeta(int n, float *c, float *C, int ldc) {}
 
-  asm volatile(
-      "vmov.f32   q14,      #0.0          \n\t"
-      "subs       %[nc1],   %[nc1],   #1  \n\t"
-      "blt        end_nc1_%=              \n\t"
-      "loop_nc1_%=:                       \n\t"
+  // C = A * B + C
+  void VecWriteWithAdd(int n, float *c, float *C, int ldc) {
+    int nc1 = n / 16;
+    int _nc1 = n % 16;
 
-      "vld1.32    {q0, q1},   [%[c]]!     \n\t"
-      "vld1.32    {q2, q3},   [%[C]]      \n\t"
-      "vadd.f32   q10,  q0,   q2          \n\t"
-      "vadd.f32   q11,  q1,   q3          \n\t"
-      "vmax.f32   q10,  q10,  q14         \n\t"
-      "vmax.f32   q11,  q11,  q14         \n\t"
-      "vst1.32    {q10, q11}, [%[C]]!     \n\t"
+    asm volatile(
+        "subs       %[nc1],   %[nc1],   #1  \n\t"
+        "blt        end_nc1_%=              \n\t"
+        "loop_nc1_%=:                       \n\t"
 
-      "vld1.32    {q4, q5},   [%[c]]!     \n\t"
-      "vld1.32    {q6, q7},   [%[C]]      \n\t"
-      "vadd.f32   q12,  q4,   q6          \n\t"
-      "vadd.f32   q13,  q5,   q7          \n\t"
-      "vmax.f32   q12,  q12,  q14         \n\t"
-      "vmax.f32   q13,  q13,  q14         \n\t"
-      "vst1.32    {q12, q13}, [%[C]]!     \n\t"
+        "vld1.32    {q0, q1},   [%[c]]!     \n\t"
+        "vld1.32    {q2, q3},   [%[C]]      \n\t"
+        "vadd.f32   q10,  q0,   q2          \n\t"
+        "vadd.f32   q11,  q1,   q3          \n\t"
+        "vst1.32    {q10, q11}, [%[C]]!     \n\t"
 
-      "subs       %[nc1],   %[nc1],   #1  \n\t"
-      "bge        loop_nc1_%=             \n\t"
-      "end_nc1_%=:                        \n\t"
+        "vld1.32    {q4, q5},   [%[c]]!     \n\t"
+        "vld1.32    {q6, q7},   [%[C]]      \n\t"
+        "vadd.f32   q12,  q4,   q6          \n\t"
+        "vadd.f32   q13,  q5,   q7          \n\t"
+        "vst1.32    {q12, q13}, [%[C]]!     \n\t"
 
-      : [C] "+r"(C), [c] "+r"(c)
-      : [nc1] "r"(nc1)
-      : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q10", "q11",
-        "q12", "q13");
+        "subs       %[nc1],   %[nc1],   #1  \n\t"
+        "bge        loop_nc1_%=             \n\t"
+        "end_nc1_%=:                        \n\t"
 
-  if (_nc1 != 0) {
-    for (int j = 0; j < _nc1; j++) {
-      *C += *c;
-      if (*C < 0) {
-        *C = 0;
+        : [C] "+r"(C), [c] "+r"(c)
+        : [nc1] "r"(nc1)
+        : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q10",
+  "q11", "q12", "q13");
+
+    if (_nc1 != 0) {
+      for (int j = 0; j < _nc1; j++) {
+        *C++ += *c++;
       }
-      C++;
-      c++;
     }
+  }
+
+  // C = A * B + C, relu(C)
+  void VecWriteWithAddRelu(int n, float *c, float *C, int ldc) {
+    int nc1 = n / 16;
+    int _nc1 = n % 16;
+
+    asm volatile(
+        "vmov.f32   q14,      #0.0          \n\t"
+        "subs       %[nc1],   %[nc1],   #1  \n\t"
+        "blt        end_nc1_%=              \n\t"
+        "loop_nc1_%=:                       \n\t"
+
+        "vld1.32    {q0, q1},   [%[c]]!     \n\t"
+        "vld1.32    {q2, q3},   [%[C]]      \n\t"
+        "vadd.f32   q10,  q0,   q2          \n\t"
+        "vadd.f32   q11,  q1,   q3          \n\t"
+        "vmax.f32   q10,  q10,  q14         \n\t"
+        "vmax.f32   q11,  q11,  q14         \n\t"
+        "vst1.32    {q10, q11}, [%[C]]!     \n\t"
+
+        "vld1.32    {q4, q5},   [%[c]]!     \n\t"
+        "vld1.32    {q6, q7},   [%[C]]      \n\t"
+        "vadd.f32   q12,  q4,   q6          \n\t"
+        "vadd.f32   q13,  q5,   q7          \n\t"
+        "vmax.f32   q12,  q12,  q14         \n\t"
+        "vmax.f32   q13,  q13,  q14         \n\t"
+        "vst1.32    {q12, q13}, [%[C]]!     \n\t"
+
+        "subs       %[nc1],   %[nc1],   #1  \n\t"
+        "bge        loop_nc1_%=             \n\t"
+        "end_nc1_%=:                        \n\t"
+
+        : [C] "+r"(C), [c] "+r"(c)
+        : [nc1] "r"(nc1)
+        : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q10",
+  "q11", "q12", "q13");
+
+    if (_nc1 != 0) {
+      for (int j = 0; j < _nc1; j++) {
+        *C += *c;
+        if (*C < 0) {
+          *C = 0;
+        }
+        C++;
+        c++;
+      }
+    }
+  }
+
+  // C = A * B, batchnorm(C)
+  void VecWriteWithBn(int n, float *c, float *C, int ldc, float *scale,
+                      float *bias) {
+    int nc1 = n / 16;
+    int _nc1 = n % 16;
+    int nc2 = _nc1 / 4;
+    int nc3 = 16 - 4 * (_nc1 % 4);
+
+    asm volatile(
+        "subs       %[nc1],   %[nc1],   #1  \n\t"
+        "blt        end_nc1_%=              \n\t"
+        "loop_nc1_%=:                       \n\t"
+
+        "vld1.32    {q0, q1},   [%[c]]!     \n\t"
+        "vld1.32    {q2, q3},   [%[scale]]! \n\t"
+        "vld1.32    {q10, q11}, [%[bias]]!  \n\t"
+        "vmla.f32   q10,  q0,   q2          \n\t"
+        "vmla.f32   q11,  q1,   q3          \n\t"
+        "vst1.32    {q10, q11}, [%[C]]!     \n\t"
+
+        "vld1.32    {q4, q5},   [%[c]]!     \n\t"
+        "vld1.32    {q6, q7},   [%[scale]]! \n\t"
+        "vld1.32    {q12, q13}, [%[bias]]!  \n\t"
+        "vmla.f32   q12,  q4,   q6          \n\t"
+        "vmla.f32   q13,  q5,   q7          \n\t"
+        "vst1.32    {q12, q13}, [%[C]]!     \n\t"
+
+        "subs       %[nc1],   %[nc1],   #1  \n\t"
+        "bge        loop_nc1_%=             \n\t"
+        "end_nc1_%=:                        \n\t"
+
+        "subs       %[nc2],   %[nc2],   #1  \n\t"
+        "blt        end_nc2_%=              \n\t"
+        "loop_nc2_%=:                       \n\t"
+
+        "vld1.32    {q0},   [%[c]]!         \n\t"
+        "vld1.32    {q1},   [%[scale]]!     \n\t"
+        "vld1.32    {q10},  [%[bias]]!      \n\t"
+        "vmla.f32   q10,    q0,   q1        \n\t"
+        "vst1.32    {q10},  [%[C]]!         \n\t"
+
+        "subs       %[nc2],   %[nc2],   #1  \n\t"
+        "bge        loop_nc2_%=             \n\t"
+        "end_nc2_%=:                        \n\t"
+
+        "cmp        %[nc3],    #16          \n\t"
+        "beq        end_nc3_%=              \n\t"
+
+        "sub        %[c],     %[c],   %[nc3]      \n\t"
+        "sub        %[scale], %[scale],  %[nc3]   \n\t"
+        "sub        %[bias],  %[bias],   %[nc3]   \n\t"
+        "sub        %[C],     %[C],   %[nc3]      \n\t"
+
+        "vld1.32    {q0},   [%[c]]!         \n\t"
+        "vld1.32    {q1},   [%[scale]]!     \n\t"
+        "vld1.32    {q10},  [%[bias]]!      \n\t"
+        "vmla.f32   q10,    q0,   q1        \n\t"
+        "vst1.32    {q10},  [%[C]]!         \n\t"
+        "end_nc3_%=:                        \n\t"
+
+        :
+        : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3]
+  "r"(nc3), [scale] "r"(scale), [bias] "r"(bias) : "memory", "q0", "q1", "q2",
+  "q3", "q4", "q5", "q6", "q7", "q10", "q11", "q12", "q13");
+  }
+
+  // C = A * B, batchnorm(C), relu(C)
+  void VecWriteWithBnRelu(int n, float *c, float *C, int ldc, float *scale,
+                          float *bias) {
+    int nc1 = n / 16;
+    int _nc1 = n % 16;
+    int nc2 = _nc1 / 4;
+    int nc3 = 16 - 4 * (_nc1 % 4);
+
+    asm volatile(
+        "vmov.f32   q14,      #0.0          \n\t"
+        "subs       %[nc1],   %[nc1],   #1  \n\t"
+        "blt        end_nc1_%=              \n\t"
+        "loop_nc1_%=:                       \n\t"
+
+        "vld1.32    {q0, q1},   [%[c]]!     \n\t"
+        "vld1.32    {q2, q3},   [%[scale]]! \n\t"
+        "vld1.32    {q10, q11}, [%[bias]]!  \n\t"
+        "vmla.f32   q10,  q0,   q2          \n\t"
+        "vmla.f32   q11,  q1,   q3          \n\t"
+        "vmax.f32   q10,  q10,  q14         \n\t"
+        "vmax.f32   q11,  q11,  q14         \n\t"
+        "vst1.32    {q10, q11}, [%[C]]!     \n\t"
+
+        "vld1.32    {q4, q5},   [%[c]]!     \n\t"
+        "vld1.32    {q6, q7},   [%[scale]]! \n\t"
+        "vld1.32    {q12, q13}, [%[bias]]!  \n\t"
+        "vmla.f32   q12,  q4,   q6          \n\t"
+        "vmla.f32   q13,  q5,   q7          \n\t"
+        "vmax.f32   q12,  q12,  q14         \n\t"
+        "vmax.f32   q13,  q13,  q14         \n\t"
+        "vst1.32    {q12, q13}, [%[C]]!     \n\t"
+
+        "subs       %[nc1],   %[nc1],   #1  \n\t"
+        "bge        loop_nc1_%=             \n\t"
+        "end_nc1_%=:                        \n\t"
+
+        "subs       %[nc2],   %[nc2],   #1  \n\t"
+        "blt        end_nc2_%=              \n\t"
+        "loop_nc2_%=:                       \n\t"
+
+        "vld1.32    {q0},   [%[c]]!         \n\t"
+        "vld1.32    {q1},   [%[scale]]!     \n\t"
+        "vld1.32    {q10},  [%[bias]]!      \n\t"
+        "vmla.f32   q10,    q0,   q1        \n\t"
+        "vmax.f32   q10,    q10,  q14       \n\t"
+        "vst1.32    {q10},  [%[C]]!         \n\t"
+
+        "subs       %[nc2],   %[nc2],   #1  \n\t"
+        "bge        loop_nc2_%=             \n\t"
+        "end_nc2_%=:                        \n\t"
+
+        "cmp        %[nc3],    #16          \n\t"
+        "beq        end_nc3_%=              \n\t"
+
+        "sub        %[c],     %[c],   %[nc3]      \n\t"
+        "sub        %[scale], %[scale],  %[nc3]   \n\t"
+        "sub        %[bias],  %[bias],   %[nc3]   \n\t"
+        "sub        %[C],     %[C],   %[nc3]      \n\t"
+
+        "vld1.32    {q0},   [%[c]]!         \n\t"
+        "vld1.32    {q1},   [%[scale]]!     \n\t"
+        "vld1.32    {q10},  [%[bias]]!      \n\t"
+        "vmla.f32   q10,    q0,   q1        \n\t"
+        "vmax.f32   q10,    q10,  q14       \n\t"
+        "vst1.32    {q10},  [%[C]]!         \n\t"
+        "end_nc3_%=:                        \n\t"
+
+        :
+        : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3]
+  "r"(nc3), [scale] "r"(scale), [bias] "r"(bias) : "memory", "q0", "q1", "q2",
+  "q3", "q4", "q5", "q6", "q7", "q10", "q11", "q12", "q13", "q14");
+  }
+  */
+
+#endif  // __aarch64__
+#else
+
+void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
+  float *c0, *c1, *c2, *c3;
+  c0 = c;
+  c1 = c + ldc;
+  c2 = c + 2 * ldc;
+  c3 = c + 3 * ldc;
+  for (int p = 0; p < k; p += 1) {
+    // first row
+    c0[0] += a[0] * b[0];
+    c0[1] += a[0] * b[1];
+    c0[2] += a[0] * b[2];
+    c0[3] += a[0] * b[3];
+
+    // second row
+    c1[0] += a[1] * b[0];
+    c1[1] += a[1] * b[1];
+    c1[2] += a[1] * b[2];
+    c1[3] += a[1] * b[3];
+
+    // third row
+    c2[0] += a[2] * b[0];
+    c2[1] += a[2] * b[1];
+    c2[2] += a[2] * b[2];
+    c2[3] += a[2] * b[3];
+
+    // fourth row
+    c3[0] += a[3] * b[0];
+    c3[1] += a[3] * b[1];
+    c3[2] += a[3] * b[2];
+    c3[3] += a[3] * b[3];
+
+    a += 4;
+    b += 4;
   }
 }
 
-// C = A * B, batchnorm(C)
-void VecWriteWithBn(int n, float *c, float *C, int ldc, float *scale,
-                    float *bias) {
-  int nc1 = n / 16;
-  int _nc1 = n % 16;
-  int nc2 = _nc1 / 4;
-  int nc3 = 16 - 4 * (_nc1 % 4);
+#endif  // __ARM_NEON
 
-  asm volatile(
-      "subs       %[nc1],   %[nc1],   #1  \n\t"
-      "blt        end_nc1_%=              \n\t"
-      "loop_nc1_%=:                       \n\t"
+// 32位 float 矩阵乘法
+void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
+           const float *B, int ldb, float beta, float *C, int ldc, bool relu) {
+  // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
+  // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
+  int L1 = 30 * 1024;
+  int L2 = 1 * 1024 * 1024;
 
-      "vld1.32    {q0, q1},   [%[c]]!     \n\t"
-      "vld1.32    {q2, q3},   [%[scale]]! \n\t"
-      "vld1.32    {q10, q11}, [%[bias]]!  \n\t"
-      "vmla.f32   q10,  q0,   q2          \n\t"
-      "vmla.f32   q11,  q1,   q3          \n\t"
-      "vst1.32    {q10, q11}, [%[C]]!     \n\t"
+  KC = k;
+  MC = L2 / (2 * KC * sizeof(float));
+  NC = MC;
 
-      "vld1.32    {q4, q5},   [%[c]]!     \n\t"
-      "vld1.32    {q6, q7},   [%[scale]]! \n\t"
-      "vld1.32    {q12, q13}, [%[bias]]!  \n\t"
-      "vmla.f32   q12,  q4,   q6          \n\t"
-      "vmla.f32   q13,  q5,   q7          \n\t"
-      "vst1.32    {q12, q13}, [%[C]]!     \n\t"
+  // make sure MC is multiple of 4, and NC is multiple of 8
+  int mblock_num = (m + MC - 1) / MC;
+  MC = (m + mblock_num - 1) / mblock_num;
+  MC = (MC + 4 - 1) / 4 * 4;
+  //  DLOG << "mblock_num = " << mblock_num << ", MC = " << MC << "\n";
 
-      "subs       %[nc1],   %[nc1],   #1  \n\t"
-      "bge        loop_nc1_%=             \n\t"
-      "end_nc1_%=:                        \n\t"
+  int nblock_num = (n + NC - 1) / NC;
+  NC = (n + nblock_num - 1) / nblock_num;
+  NC = (NC + 8 - 1) / 8 * 8;
+  //  DLOG << "nblock_num = " << nblock_num << ", NC = " << NC << "\n";
 
-      "subs       %[nc2],   %[nc2],   #1  \n\t"
-      "blt        end_nc2_%=              \n\t"
-      "loop_nc2_%=:                       \n\t"
+  packedA = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * MC * KC));
+  packedB = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * KC * NC));
+  packedC = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * MC * NC));
+  zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
 
-      "vld1.32    {q0},   [%[c]]!         \n\t"
-      "vld1.32    {q1},   [%[scale]]!     \n\t"
-      "vld1.32    {q10},  [%[bias]]!      \n\t"
-      "vmla.f32   q10,    q0,   q1        \n\t"
-      "vst1.32    {q10},  [%[C]]!         \n\t"
+  for (int l = 0; l < KC; ++l) {
+    zero[l] = 0;
+  }
 
-      "subs       %[nc2],   %[nc2],   #1  \n\t"
-      "bge        loop_nc2_%=             \n\t"
-      "end_nc2_%=:                        \n\t"
+  int mc, nc;
+  for (int j = 0; j < n; j += NC) {
+    nc = s_min(n - j, NC);
+    PackMatrixB_(KC, nc, nc % NR, &B(0, j), ldb, packedB);
+    for (int i = 0; i < m; i += MC) {
+      mc = s_min(m - i, MC);
+      PackMatrixA_(mc, KC, mc % MR, &A(i, 0), lda, packedA);
+      InnerKernel(mc, nc, alpha, packedA, packedB, beta, packedC, &C(i, j), ldc,
+                  relu);
+    }
+  }
 
-      "cmp        %[nc3],    #16          \n\t"
-      "beq        end_nc3_%=              \n\t"
-
-      "sub        %[c],     %[c],   %[nc3]      \n\t"
-      "sub        %[scale], %[scale],  %[nc3]   \n\t"
-      "sub        %[bias],  %[bias],   %[nc3]   \n\t"
-      "sub        %[C],     %[C],   %[nc3]      \n\t"
-
-      "vld1.32    {q0},   [%[c]]!         \n\t"
-      "vld1.32    {q1},   [%[scale]]!     \n\t"
-      "vld1.32    {q10},  [%[bias]]!      \n\t"
-      "vmla.f32   q10,    q0,   q1        \n\t"
-      "vst1.32    {q10},  [%[C]]!         \n\t"
-      "end_nc3_%=:                        \n\t"
-
-      :
-      : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3] "r"(nc3),
-        [scale] "r"(scale), [bias] "r"(bias)
-      : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q10", "q11",
-        "q12", "q13");
+  paddle_mobile::memory::Free(packedA);
+  paddle_mobile::memory::Free(packedB);
+  paddle_mobile::memory::Free(packedC);
+  paddle_mobile::memory::Free(zero);
 }
 
-// C = A * B, batchnorm(C), relu(C)
-void VecWriteWithBnRelu(int n, float *c, float *C, int ldc, float *scale,
-                        float *bias) {
-  int nc1 = n / 16;
-  int _nc1 = n % 16;
-  int nc2 = _nc1 / 4;
-  int nc3 = 16 - 4 * (_nc1 % 4);
+void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
+                 const float *B, int ldb, float beta, float *C, int ldc,
+                 bool relu, float *new_scale, float *new_bias) {
+  // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
+  // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
+  int L1 = 30 * 1024;
+  int L2 = 1 * 1024 * 1024;
 
-  asm volatile(
-      "vmov.f32   q14,      #0.0          \n\t"
-      "subs       %[nc1],   %[nc1],   #1  \n\t"
-      "blt        end_nc1_%=              \n\t"
-      "loop_nc1_%=:                       \n\t"
+  KC = k;
+  MC = L2 / (2 * KC * sizeof(float));
+  NC = MC;
 
-      "vld1.32    {q0, q1},   [%[c]]!     \n\t"
-      "vld1.32    {q2, q3},   [%[scale]]! \n\t"
-      "vld1.32    {q10, q11}, [%[bias]]!  \n\t"
-      "vmla.f32   q10,  q0,   q2          \n\t"
-      "vmla.f32   q11,  q1,   q3          \n\t"
-      "vmax.f32   q10,  q10,  q14         \n\t"
-      "vmax.f32   q11,  q11,  q14         \n\t"
-      "vst1.32    {q10, q11}, [%[C]]!     \n\t"
+  // make sure MC is multiple of 4, and NC is multiple of 8
+  int mblock_num = (m + MC - 1) / MC;
+  MC = (m + mblock_num - 1) / mblock_num;
+  MC = (MC + 4 - 1) / 4 * 4;
+  //  DLOG << "mblock_num = " << mblock_num << ", MC = " << MC << "\n";
 
-      "vld1.32    {q4, q5},   [%[c]]!     \n\t"
-      "vld1.32    {q6, q7},   [%[scale]]! \n\t"
-      "vld1.32    {q12, q13}, [%[bias]]!  \n\t"
-      "vmla.f32   q12,  q4,   q6          \n\t"
-      "vmla.f32   q13,  q5,   q7          \n\t"
-      "vmax.f32   q12,  q12,  q14         \n\t"
-      "vmax.f32   q13,  q13,  q14         \n\t"
-      "vst1.32    {q12, q13}, [%[C]]!     \n\t"
+  int nblock_num = (n + NC - 1) / NC;
+  NC = (n + nblock_num - 1) / nblock_num;
+  NC = (NC + 8 - 1) / 8 * 8;
+  //  DLOG << "nblock_num = " << nblock_num << ", NC = " << NC << "\n";
 
-      "subs       %[nc1],   %[nc1],   #1  \n\t"
-      "bge        loop_nc1_%=             \n\t"
-      "end_nc1_%=:                        \n\t"
+  packedA = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * MC * KC));
+  packedB = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * KC * NC));
+  packedC = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * MC * NC));
+  zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
 
-      "subs       %[nc2],   %[nc2],   #1  \n\t"
-      "blt        end_nc2_%=              \n\t"
-      "loop_nc2_%=:                       \n\t"
+  for (int l = 0; l < KC; ++l) {
+    zero[l] = 0;
+  }
 
-      "vld1.32    {q0},   [%[c]]!         \n\t"
-      "vld1.32    {q1},   [%[scale]]!     \n\t"
-      "vld1.32    {q10},  [%[bias]]!      \n\t"
-      "vmla.f32   q10,    q0,   q1        \n\t"
-      "vmax.f32   q10,    q10,  q14       \n\t"
-      "vst1.32    {q10},  [%[C]]!         \n\t"
+  int mc, nc;
+  for (int j = 0; j < n; j += NC) {
+    nc = s_min(n - j, NC);
+    PackMatrixB_(KC, nc, nc % NR, &B(0, j), ldb, packedB);
+    for (int i = 0; i < m; i += MC) {
+      mc = s_min(m - i, MC);
+      PackMatrixA_(mc, KC, mc % MR, &A(i, 0), lda, packedA);
+      InnerKernelWithBn(mc, nc, alpha, packedA, packedB, beta, packedC,
+                        &C(i, j), ldc, relu, new_scale + i, new_bias + i);
+    }
+  }
 
-      "subs       %[nc2],   %[nc2],   #1  \n\t"
-      "bge        loop_nc2_%=             \n\t"
-      "end_nc2_%=:                        \n\t"
-
-      "cmp        %[nc3],    #16          \n\t"
-      "beq        end_nc3_%=              \n\t"
-
-      "sub        %[c],     %[c],   %[nc3]      \n\t"
-      "sub        %[scale], %[scale],  %[nc3]   \n\t"
-      "sub        %[bias],  %[bias],   %[nc3]   \n\t"
-      "sub        %[C],     %[C],   %[nc3]      \n\t"
-
-      "vld1.32    {q0},   [%[c]]!         \n\t"
-      "vld1.32    {q1},   [%[scale]]!     \n\t"
-      "vld1.32    {q10},  [%[bias]]!      \n\t"
-      "vmla.f32   q10,    q0,   q1        \n\t"
-      "vmax.f32   q10,    q10,  q14       \n\t"
-      "vst1.32    {q10},  [%[C]]!         \n\t"
-      "end_nc3_%=:                        \n\t"
-
-      :
-      : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3] "r"(nc3),
-        [scale] "r"(scale), [bias] "r"(bias)
-      : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q10", "q11",
-        "q12", "q13", "q14");
+  paddle_mobile::memory::Free(packedA);
+  paddle_mobile::memory::Free(packedB);
+  paddle_mobile::memory::Free(packedC);
+  paddle_mobile::memory::Free(zero);
 }
 
+}  // namespace math
 }  // namespace operators
-}  // namespace paddle_mobile
 }  // namespace paddle_mobile

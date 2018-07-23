@@ -24,7 +24,7 @@ void ResizeOp<Dtype, T>::InferShape() const {
   auto out_dims = CalOutputShape(this->param_);
   this->param_.Out()->Resize(out_dims);
 }
-template class ResizeOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 

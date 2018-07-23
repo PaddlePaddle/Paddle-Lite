@@ -154,7 +154,7 @@ void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
 
   tensor->Resize(framework::make_ddim(desc.Dims()));
 
-  void *memory = tensor;
+  void *memory = nullptr;
   int type_size = 0;
   switch (desc.DataType()) {
     case framework::VARTYPE_TYPE_FP16:
@@ -179,11 +179,25 @@ void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
     default:
       break;
   }
+  if (program_.quantification) {
+    float min_value;
+    float max_value;
 
-  for (int n = 0; n < memory_size * type_size; ++n) {
-    static_cast<char *>(memory)[n] = (*data)[n];
+    memcpy(&min_value, *data, sizeof(float));
+    memcpy(&max_value, *data + sizeof(float), sizeof(float));
+    *data += 2 * sizeof(float);
+    const float factor = (max_value - min_value) / 255.0;
+    uint8_t *uint8_data = (uint8_t *)(*data);
+    for (int k = 0; k < memory_size; ++k) {
+      static_cast<float *>(memory)[k] = uint8_data[k] * factor + min_value;
+    }
+    *data += (memory_size * sizeof(uint8_t));
+  } else {
+    for (int n = 0; n < memory_size * type_size; ++n) {
+      static_cast<char *>(memory)[n] = (*data)[n];
+    }
+    (*data) += (sizeof(char) * memory_size * type_size);
   }
-  (*data) += (sizeof(char) * memory_size * type_size);
 }
 
 template <typename Dtype, Precision P>

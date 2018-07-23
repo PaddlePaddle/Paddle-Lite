@@ -15,7 +15,7 @@ limitations under the License. */
 #include "operators/math/im2col.h"
 #include <vector>
 #ifdef __ARM_NEON
-#include "arm_neon.h"
+#include <arm_neon.h>
 #endif
 #include "common/types.h"
 namespace paddle_mobile {
@@ -69,7 +69,7 @@ class Im2ColFunctor<ColFormat::kCFO, CPU, T> {
     int channels_col = im_channels * filter_height * filter_width;
     const T *im_data = im.data<T>();
     T *col_data = col->data<T>();
-#ifdef __ARM_NEON
+#if __ARM_NEON
     const int osize = col_height;
     const int isize = im_height;
     bool pad1 = padding[0] > 0;
