@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.6)
 project(paddle-mobile)
 
 option(DEBUGING "enable debug mode" ON)
-option(USE_OPENMP "openmp support" ON)
+option(USE_OPENMP "openmp support" OFF)
 option(USE_EXCEPTION "use std exception" ON)
 option(LOG_PROFILE "log profile" ON)
 # select the platform to build
@@ -105,8 +105,18 @@ else()
     foreach(f ${_tmp_list_h})
         list(REMOVE_ITEM PADDLE_MOBILE_H ${f})
     endforeach()
-endif()
 
+
+    file(GLOB_RECURSE _tmp_list src/fpga/*.cpp src/fpga/*.cc)
+    foreach(f ${_tmp_list})
+        list(REMOVE_ITEM PADDLE_MOBILE_CC ${f})
+    endforeach()
+
+    file(GLOB_RECURSE _tmp_list_h src/fpga/*.h)
+    foreach(f ${_tmp_list_h})
+        list(REMOVE_ITEM PADDLE_MOBILE_H ${f})
+    endforeach()
+endif()
 
 if (ANDROID_NDK_TOOLCHAIN_INCLUDED)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -llog")
