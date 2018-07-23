@@ -27,12 +27,50 @@ protocol KernelProtocol {
    
 }
 
-class Kernel {
+open class Kernel {
     let pipline: MTLComputePipelineState
     let functionName: String
-    init(device: MTLDevice, inFunctionName: String) {
-        pipline = device.pipeLine(funcName: inFunctionName)
+    public init(device: MTLDevice, inFunctionName: String, usePaddleMobileLib: Bool = true) {
+        pipline = device.pipeLine(funcName: inFunctionName, inPaddleMobileLib: usePaddleMobileLib)
         functionName = inFunctionName
     }
+}
+
+open class CusomKernel: Kernel {
+    public struct Shape {
+        public let width: Int
+        public let height: Int
+        public let channel: Int
+        public init(inWidth: Int, inHeight: Int, inChannel: Int){
+            width = inWidth
+            height = inHeight
+            channel = inChannel
+        }
+    }
+    let outputTexture: MTLTexture
+    public init(device: MTLDevice, inFunctionName: String, outputDim: Shape, usePaddleMobileLib: Bool = false) {
+        let textureDesc = MTLTextureDescriptor.init()
+        textureDesc.textureType = .type2D
+        textureDesc.width = outputDim.width
+        textureDesc.height = outputDim.height
+        textureDesc.depth = (outputDim.channel + 3) / 4
+        textureDesc.pixelFormat = .rgba32Float
+        textureDesc.usage = [.shaderRead, .shaderWrite]
+        textureDesc.storageMode = .shared
+        outputTexture = device.makeTexture(descriptor: textureDesc) ?! " make texture error "
+
+        super.init(device: device, inFunctionName: inFunctionName, usePaddleMobileLib: usePaddleMobileLib)
+    }
+    
+    func compute(inputTexuture: MTLTexture, commandBuffer: MTLCommandBuffer) throws {
+        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+            throw PaddleMobileError.predictError(message: " encode is nil")
+        }
+        encoder.setTexture(inputTexuture, index: 0)
+        encoder.setTexture(outputTexture, index: 1)
+        encoder.dispatch(computePipline: pipline, outTexture: outputTexture)
+        encoder.endEncoding()
+    }
+    
 }
 

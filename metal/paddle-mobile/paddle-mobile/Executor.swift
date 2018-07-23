@@ -79,14 +79,27 @@ public class Executor<P: PrecisionType> {
         }
     }
     
-    public func predict(input: MTLTexture, expect: [Int]) throws -> ResultHolder<P> {
-        let beforeDate = Date.init()
-        let inputTexture = InputTexture.init(inMTLTexture: input, inExpectDim: Dim.init(inDim: expect))
-        program.scope.setInput(input: inputTexture)
+    public func predict(input: MTLTexture, expect: [Int], preProcessKernle: CusomKernel? = nil) throws -> ResultHolder<P> {
         guard let buffer = queue.makeCommandBuffer() else {
             throw PaddleMobileError.predictError(message: "CommandBuffer is nil")
         }
+        let resInput: MTLTexture
         
+        if let inPre = preProcessKernle {
+            do {
+                try inPre.compute(inputTexuture: input, commandBuffer: buffer)
+                resInput = inPre.outputTexture
+            } catch let error {
+                throw error
+            }
+        } else {
+            resInput = input
+        }
+        
+        let beforeDate = Date.init()
+        let inputTexture = InputTexture.init(inMTLTexture: resInput, inExpectDim: Dim.init(inDim: expect))
+        program.scope.setInput(input: inputTexture)
+ 
         for op in ops {
             do {
                 try op.run(device: device, buffer: buffer)
@@ -100,7 +113,6 @@ public class Executor<P: PrecisionType> {
                 op.delogOutput()
             }
             
-
             let afterDate = Date.init()
             print(" encoder end ! time: \(afterDate.timeIntervalSince(beforeDate))")
         }
