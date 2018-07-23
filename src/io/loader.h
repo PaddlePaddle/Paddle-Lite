@@ -30,6 +30,7 @@ class Loader {
    * */
   const framework::Program<Dtype, P> Load(const std::string &dirname,
                                           bool optimize = false,
+                                          bool quantification = false,
                                           bool can_add_split = false);
 
   /*
@@ -38,11 +39,13 @@ class Loader {
    * */
   const framework::Program<Dtype, P> Load(const std::string &model_path,
                                           const std::string &para_path,
-                                          bool optimize = false);
+                                          bool optimize = false,
+                                          bool quantification = false);
 
  private:
   const framework::Program<Dtype, P> LoadProgram(const std::string &model_path,
                                                  bool optimize = false,
+                                                 bool quantification = false,
                                                  bool can_add_split = false);
 };
 
