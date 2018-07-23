@@ -44,6 +44,14 @@ const std::string G_OP_TYPE_FETCH = "fetch";
 const std::string G_OP_TYPE_DEPTHWISE_CONV = "depthwise_conv2d";
 const std::string G_OP_TYPE_IM2SEQUENCE = "im2sequence";
 const std::string G_OP_TYPE_DROPOUT = "dropout";
+const std::string G_OP_TYPE_FUSION_CONV_RELU = "fusion_conv_relu";
+const std::string G_OP_TYPE_FUSION_CONV_BN_SCALE = "fusion_conv_bn_scale";
+const std::string G_OP_TYPE_FUSION_CONV_BN_SCALE_RELU =
+    "fusion_conv_bn_scale_relu";
+const std::string G_OP_TYPE_FUSION_POOL_BN = "fusion_pool_bn";
+const std::string G_OP_TYPE_FUSION_ELEMENTWISE_ADD_RELU =
+    "fusion_elementwise_add_relu";
+const std::string G_OP_TYPE_REGION = "region";
 
 std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
@@ -74,6 +82,12 @@ std::unordered_map<
         {G_OP_TYPE_DEPTHWISE_CONV, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_RELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_IM2SEQUENCE, {{"X"}, {"Out"}}},
-        {G_OP_TYPE_DROPOUT, {{"X"}, {"Out"}}}};
+        {G_OP_TYPE_DROPOUT, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_CONV_RELU, {{"Input"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_CONV_BN_SCALE, {{"Input"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_CONV_BN_SCALE_RELU, {{"Input"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_POOL_BN, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_ELEMENTWISE_ADD_RELU, {{"X", "Y"}, {"Out"}}},
+        {G_OP_TYPE_REGION, {{"X"}, {"Out"}}}};
 
 }  // namespace paddle_mobile
