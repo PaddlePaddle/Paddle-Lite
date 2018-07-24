@@ -140,8 +140,8 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY build)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 
 # NET default
-set(NET "defult" CACHE STRING "select net type")
-set_property(CACHE NET PROPERTY STRINGS "defult" "googlenet" "mobilenet" "yolo" "squeezenet" "FPGAnets")
+set(NET "default" CACHE STRING "select net type")
+set_property(CACHE NET PROPERTY STRINGS "default" "googlenet" "mobilenet" "yolo" "squeezenet" "FPGAnets")
 include("${CMAKE_CURRENT_LIST_DIR}/tools/op.cmake")
 
 
