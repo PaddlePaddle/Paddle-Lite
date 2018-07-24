@@ -93,10 +93,7 @@ build_for_ios() {
 #    rm -rf "../build"
     PLATFORM="ios"
     MODE="Release"
-#    IOS_ARCH="armv7"
-#    IOS_ARCH="armv7s"
-    IOS_ARCH="arm64"    # Users could choose "armv7" or "armv7s" platforms.
-    BUILD_DIR=../build/release/"${PLATFORM}"/"${IOS_ARCH}"
+    BUILD_DIR=../build/release/"${PLATFORM}"/
     TOOLCHAIN_FILE="./tools/ios-cmake/ios.toolchain.cmake"
     mkdir -p "${BUILD_DIR}"
     if [ $# -eq 1 ]; then
