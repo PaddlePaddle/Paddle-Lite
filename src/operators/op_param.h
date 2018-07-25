@@ -439,7 +439,7 @@ class PoolParam : public OpParam {
 
   bool isCeilMode() const { return ceil_mode_; }
 
-  bool isGlobalPooling() const { return gloabal_pooling_; }
+  bool isGlobalPooling() const { return global_pooling_; }
 
  private:
   Tensor *input_;
@@ -454,9 +454,9 @@ class PoolParam : public OpParam {
 #endif
 
 #ifdef FUSION_POOLBN_OP
-class PoolBNParam : OpParam {
+class FusionPoolBNParam : OpParam {
  public:
-  PoolBNParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+  FusionPoolBNParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
               const AttributeMap &attrs, const Scope &scope) {
     input_ = InputXFrom<LoDTensor>(inputs, scope);
     pooling_type_ = GetAttr<string>("pooling_type", attrs);
@@ -486,7 +486,7 @@ class PoolBNParam : OpParam {
 
   bool isCeilMode() const { return ceil_mode_; }
 
-  bool isGlobalPooling() const { return gloabal_pooling_; }
+  bool isGlobalPooling() const { return global_pooling_; }
 
   Tensor *OutputY() const { return output_y_; }
 
