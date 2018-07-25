@@ -14,7 +14,7 @@ limitations under the License. */
 
 #pragma once
 
-#ifdef FUSION_CONVADD_RELU_OP
+#ifdef FUSION_CONVADDRELU_OP
 
 #include <vector>
 #include "framework/ddim.h"
