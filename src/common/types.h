@@ -102,11 +102,10 @@ extern const std::string G_OP_TYPE_DEPTHWISE_CONV;
 extern const std::string G_OP_TYPE_IM2SEQUENCE;
 extern const std::string G_OP_TYPE_DROPOUT;
 
-extern const std::string G_OP_TYPE_FUSION_CONV_RELU;
-extern const std::string G_OP_TYPE_FUSION_CONV_BN_SCALE;
-extern const std::string G_OP_TYPE_FUSION_CONV_BN_SCALE_RELU;
+extern const std::string G_OP_TYPE_FUSION_CONV_ADD_BN;
 extern const std::string G_OP_TYPE_FUSION_POOL_BN;
 extern const std::string G_OP_TYPE_FUSION_ELEMENTWISE_ADD_RELU;
+extern const std::string G_OP_TYPE_FUSION_FC_RELU;
 extern const std::string G_OP_TYPE_REGION;
 
 extern std::unordered_map<
