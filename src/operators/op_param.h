@@ -962,7 +962,7 @@ class FusionConvAddParam : public OpParam {
 Print &operator<<(Print &printer, const FusionConvAddParam &conv_param);
 #endif
 
-#ifdef FUSION_CONVADD_RELU_OP
+#ifdef FUSION_CONVADDRELU_OP
 class FusionConvAddReluParam : public FusionConvAddParam {
  public:
   FusionConvAddReluParam(const VariableNameMap &inputs,
