@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+NETS=""
+declare -a supportedNets=("googlenet" "mobilenet" "yolo" "squeezenet" "resnet")
 
 build_for_mac() {
     if [ ! `which brew` ]; then
@@ -60,7 +62,8 @@ build_for_android() {
     ANDROID_PLATFORM_VERSION="android-22"
     TOOLCHAIN_FILE="./tools/android-cmake/android.toolchain.cmake"
     ANDROID_ARM_MODE="arm"
-    if [ $# -eq 1 ]; then
+
+    if [ "${#NETS}" > 1 ]; then
     cmake .. \
         -B"../build/release/${PLATFORM}" \
         -DANDROID_ABI="${ABI}" \
@@ -70,7 +73,7 @@ build_for_android() {
         -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
         -DANDROID_STL=c++_static \
         -DANDROID=true \
-        -DNET=$1 \
+        -DNET="${NETS}" \
         -D"${ARM_PLATFORM}"=true
     else
 
@@ -96,14 +99,14 @@ build_for_ios() {
     BUILD_DIR=../build/release/"${PLATFORM}"/
     TOOLCHAIN_FILE="./tools/ios-cmake/ios.toolchain.cmake"
     mkdir -p "${BUILD_DIR}"
-    if [ $# -eq 1 ]; then
+    if [ "${#NETS}" > 1 ]; then
         cmake .. \
             -B"${BUILD_DIR}" \
             -DCMAKE_BUILD_TYPE="${MODE}" \
             -DIOS_PLATFORM=OS \
             -DIOS_ARCH="${IOS_ARCH}" \
             -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
-            -DNET=$1 \
+            -DNET="${NETS}" \
             -DIS_IOS="true"
     else
         cmake .. \
@@ -123,7 +126,7 @@ build_for_ios() {
 }
 
 build_error() {
-    echo "unknown argument"
+    echo "unknown target : $1"
 }
 
 if [ $# -lt 1 ]; then
@@ -131,31 +134,37 @@ if [ $# -lt 1 ]; then
     echo "available targets: ios|android"
     echo "sample usage: ./build.sh android"
 else
-    if [ $# -eq 2 ]; then
-        if [ $2 != "googlenet" -a $2 != "mobilenet" -a $2 != "yolo" -a $2 != "squeezenet" -a $2 != "resnet" ]; then
-	        if [ $1 = "android" ]; then
-		        build_for_android
-	        elif [ $1 = "ios" ]; then
-		        build_for_ios
-	        else
-		        build_error
-	        fi
-        else
-	        if [ $1 = "android" ]; then
-		        build_for_android $2
-	        elif [ $1 = "ios" ]; then
-		        build_for_ios $2
-	        else
-		        build_error
-	        fi
+    params=($@)
+    for(( i=1; i<$#; i++ )); do  
+        if [ ${i} != 1 ]; then
+            NETS=$NETS$";"
         fi
+        NETS=$NETS$"${params[i]}"
+    done
+    params=${@:2}
+
+    supported=false
+    for name in ${params[@]}; do
+        for net in ${supportedNets[@]}; do
+            match=false
+            if [ "$name"x = "$net"x ];then
+                supported=true
+                match=true
+                break 1
+            fi
+        done
+        if [ "$match" = false ];then
+            echo "${name} not supported!"
+            echo "supported nets are: ${supportedNets[@]}"
+            exit -1
+        fi
+    done
+
+    if [ $1 = "android" ]; then
+        build_for_android
+    elif [ $1 = "ios" ]; then
+        build_for_ios
     else
-	    if [ $1 = "android" ]; then
-		    build_for_android
-	    elif [ $1 = "ios" ]; then
-		    build_for_ios
-	    else
-		    build_error
-	    fi
-	fi
+        build_error "$1"
+    fi
 fi
