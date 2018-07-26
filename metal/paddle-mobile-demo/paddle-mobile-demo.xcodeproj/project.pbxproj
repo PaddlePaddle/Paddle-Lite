@@ -215,10 +215,12 @@
 		FC0E2DB420EDC03C009C1FAC /* conv2d_27.w_0 in Resources */ = {isa = PBXBuildFile; fileRef = FC0E2CEA20EDC03B009C1FAC /* conv2d_27.w_0 */; };
 		FC0E2DB520EDC03C009C1FAC /* conv2d_33.w_0 in Resources */ = {isa = PBXBuildFile; fileRef = FC0E2CEB20EDC03B009C1FAC /* conv2d_33.w_0 */; };
 		FC0E2DB620EDC03C009C1FAC /* depthwise_conv2d_7.w_0 in Resources */ = {isa = PBXBuildFile; fileRef = FC0E2CEC20EDC03B009C1FAC /* depthwise_conv2d_7.w_0 */; };
+		FC3602C82108580600FACB58 /* MetalHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC3602C72108580600FACB58 /* MetalHelper.swift */; };
 		FCD04E6320F3146B0007374F /* params in Resources */ = {isa = PBXBuildFile; fileRef = FCD04E6120F3146A0007374F /* params */; };
 		FCD04E6420F3146B0007374F /* model in Resources */ = {isa = PBXBuildFile; fileRef = FCD04E6220F3146A0007374F /* model */; };
 		FCEBEC2C20E1391F00C0B14D /* paddle_mobile.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */; };
 		FCEBEC2D20E1391F00C0B14D /* paddle_mobile.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		FCEEE7D4210627A000444BEC /* banana.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = FCEEE7D3210627A000444BEC /* banana.jpeg */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -448,9 +450,11 @@
 		FC0E2CEA20EDC03B009C1FAC /* conv2d_27.w_0 */ = {isa = PBXFileReference; lastKnownFileType = file; path = conv2d_27.w_0; sourceTree = "<group>"; };
 		FC0E2CEB20EDC03B009C1FAC /* conv2d_33.w_0 */ = {isa = PBXFileReference; lastKnownFileType = file; path = conv2d_33.w_0; sourceTree = "<group>"; };
 		FC0E2CEC20EDC03B009C1FAC /* depthwise_conv2d_7.w_0 */ = {isa = PBXFileReference; lastKnownFileType = file; path = depthwise_conv2d_7.w_0; sourceTree = "<group>"; };
+		FC3602C72108580600FACB58 /* MetalHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalHelper.swift; sourceTree = "<group>"; };
 		FCD04E6120F3146A0007374F /* params */ = {isa = PBXFileReference; lastKnownFileType = file; path = params; sourceTree = "<group>"; };
 		FCD04E6220F3146A0007374F /* model */ = {isa = PBXFileReference; lastKnownFileType = file; path = model; sourceTree = "<group>"; };
 		FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = paddle_mobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		FCEEE7D3210627A000444BEC /* banana.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = banana.jpeg; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -514,6 +518,7 @@
 				FC039B8820E11C560081E9F8 /* Assets.xcassets */,
 				FC039B8A20E11C560081E9F8 /* LaunchScreen.storyboard */,
 				FC039B8D20E11C560081E9F8 /* Info.plist */,
+				FC3602C72108580600FACB58 /* MetalHelper.swift */,
 			);
 			path = "paddle-mobile-demo";
 			sourceTree = "<group>";
@@ -521,6 +526,7 @@
 		FC0E2C1D20EDC030009C1FAC /* images */ = {
 			isa = PBXGroup;
 			children = (
+				FCEEE7D3210627A000444BEC /* banana.jpeg */,
 				FC0E2C1E20EDC030009C1FAC /* apple.jpg */,
 			);
 			name = images;
@@ -900,6 +906,7 @@
 				FC0E2D1120EDC03B009C1FAC /* conv2d_10.w_0 in Resources */,
 				FC0E2D7120EDC03C009C1FAC /* conv2d_2.w_0 in Resources */,
 				FC039B8920E11C560081E9F8 /* Assets.xcassets in Resources */,
+				FCEEE7D4210627A000444BEC /* banana.jpeg in Resources */,
 				FC0E2D5020EDC03C009C1FAC /* batch_norm_31.w_1 in Resources */,
 				FC0E2D2B20EDC03B009C1FAC /* batch_norm_34.w_1 in Resources */,
 				FC0E2D8F20EDC03C009C1FAC /* conv2d_20.w_0 in Resources */,
@@ -1072,6 +1079,7 @@
 				FC039B8420E11C550081E9F8 /* ViewController.swift in Sources */,
 				FC013928210204A3008100E3 /* PreProcessKernel.metal in Sources */,
 				FC039B8220E11C550081E9F8 /* AppDelegate.swift in Sources */,
+				FC3602C82108580600FACB58 /* MetalHelper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

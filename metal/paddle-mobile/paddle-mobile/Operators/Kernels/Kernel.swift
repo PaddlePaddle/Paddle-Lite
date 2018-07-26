@@ -15,6 +15,16 @@
 import Metal
 import Foundation
 
+public protocol TestParam {
+}
+
+public protocol Testable {
+    associatedtype TestParamType: TestParam
+    func test(commandBuffer: MTLCommandBuffer, param: TestParamType)
+    init(device: MTLDevice, testParam: TestParamType)
+}
+
+
 protocol Computable {
     associatedtype ParamType: OpParam
     func compute(commandBuffer: MTLCommandBuffer, param: ParamType) throws

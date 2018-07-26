@@ -65,6 +65,7 @@ protocol OperatorProtocol {
     associatedtype ParamType
     associatedtype KerType:  Computable where Self.KerType.ParamType == ParamType
     var type: String { get }
+    var scope: Scope { get }
     var inputs: [String : [String]] { get }
     var paraInputs: [String : [String]] { get set }
     var outpus: [String : [String]] { get }
@@ -93,9 +94,11 @@ class Operator <KernelType:  Computable , ParameterType>: OperatorProtocol where
     let outpus: [String : [String]]
     let attrs: [String : Attr]
     let para: ParamType
+    let scope: Scope
     var kernel: KerType
     required init(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws {
         type = opDesc.type
+        scope = inScope
         inputs = opDesc.inputs
         outpus = opDesc.outputs
         attrs =  opDesc.attrs

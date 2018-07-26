@@ -22,6 +22,7 @@ class InputTexture {
         mtlTexture = inMTLTexture
         expectDim = inExpectDim
     }
+    
 }
 
 extension InputTexture {
