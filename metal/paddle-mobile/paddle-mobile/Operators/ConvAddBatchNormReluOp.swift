@@ -112,12 +112,13 @@ class ConvAddBatchNormReluOp<P: PrecisionType>: Operator<ConvAddBatchNormReluKer
 //        para.filter.logDataPointer(header: "filter data pointer: ")
 //        print("filter: \(para.filter)")
         
-        print("biase: \(para.y)")
-        print("padding: \(para.paddings)")
-        print("stride: \(para.stride)")
+//        print("biase: \(para.y)")
+//        print("padding: \(para.paddings)")
+//        print("stride: \(para.stride)")
         
-        let _: P? = para.newBiase?.logDesc(header: "new biase: ", stridable: true)
-        let _: P? = para.newScale?.logDesc(header: "new scale: ", stridable: true)
+        let _: P? = para.y.buffer?.logDesc(header: " biase: ", stridable: false)
+        let _: P? = para.newBiase?.logDesc(header: "new biase: ", stridable: false)
+        let _: P? = para.newScale?.logDesc(header: "new scale: ", stridable: false)
 //        let _: P? = para.output.metalTexture.logDesc(header: "conv add batchnorm relu output: ", stridable: false)
     }
 }

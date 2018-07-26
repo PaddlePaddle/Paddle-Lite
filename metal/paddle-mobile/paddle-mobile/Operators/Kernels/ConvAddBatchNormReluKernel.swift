@@ -14,7 +14,38 @@
 
 import Foundation
 
-class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable {
+struct ConvAddBatchNormReluTestParam: TestParam {
+    let inputTexture: MTLTexture
+    let outputTexture: MTLTexture
+    var metalParam: MetalConvParam
+    let filterBuffer: MTLBuffer
+    let biaseBuffer: MTLBuffer
+    let newScaleBuffer: MTLBuffer
+    let newBiaseBuffer: MTLBuffer
+    let filterSize: (width: Int, height: Int, channel: Int)
+    init(inInputTexture: MTLTexture, inOutputTexture: MTLTexture, inMetalParam: MetalConvParam, inFilterBuffer: MTLBuffer, inBiaseBuffer: MTLBuffer, inNewScaleBuffer: MTLBuffer, inNewBiaseBuffer: MTLBuffer, inFilterSize: (width: Int, height: Int, channel: Int)) {
+        inputTexture = inInputTexture
+        outputTexture = inOutputTexture
+        metalParam = inMetalParam
+        filterBuffer = inFilterBuffer
+        biaseBuffer = inBiaseBuffer
+        newScaleBuffer = inNewScaleBuffer
+        newBiaseBuffer = inNewBiaseBuffer
+        filterSize = inFilterSize
+    }
+}
+
+class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable, Testable {
+    required init(device: MTLDevice, testParam: ConvAddBatchNormReluTestParam) {
+        if testParam.filterSize.width == 1 && testParam.filterSize.height == 1 {
+            super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_1x1")
+        } else if testParam.filterSize.channel == 1 {
+            super.init(device: device, inFunctionName: "depthwise_conv_add_batch_norm_relu_3x3")
+        } else {
+            super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_3x3")
+        }
+    }
+    
     var metalParam: MetalConvParam!
 
     required init(device: MTLDevice, param: ConvAddBatchNormReluParam<P>) {
@@ -26,7 +57,6 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable {
         } else {
             super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_3x3")
         }
-        
         
         let offsetX = param.filter.width/2 - Int(param.paddings[0])
         let offsetY = param.filter.height/2 - Int(param.paddings[1])
@@ -69,7 +99,7 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
             throw PaddleMobileError.predictError(message: " encode is nil")
         }
-        
+
         print("ConvAddBatchNormReluKernel compute")
         encoder.setTexture(param.input.metalTexture, index: 0)
         encoder.setTexture(param.output.metalTexture, index: 1)
@@ -79,6 +109,24 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable {
         encoder.setBuffer(param.newScale!, offset: 0, index: 3)
         encoder.setBuffer(param.newBiase!, offset: 0, index: 4)
         encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
+        encoder.endEncoding()
+    }
+    
+    public func test(commandBuffer: MTLCommandBuffer, param: ConvAddBatchNormReluTestParam) {
+        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+            fatalError()
+        }
+        
+        print("ConvAddBatchNormReluKernel compute")
+        encoder.setTexture(param.inputTexture, index: 0)
+        encoder.setTexture(param.outputTexture, index: 1)
+        var inMetalParam = param.metalParam
+        encoder.setBytes(&inMetalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
+        encoder.setBuffer(param.filterBuffer, offset: 0, index: 1)
+        encoder.setBuffer(param.biaseBuffer, offset: 0, index: 2)
+        encoder.setBuffer(param.newScaleBuffer, offset: 0, index: 3)
+        encoder.setBuffer(param.newBiaseBuffer, offset: 0, index: 4)
+        encoder.dispatch(computePipline: pipline, outTexture: param.outputTexture)
         encoder.endEncoding()
     }
 }

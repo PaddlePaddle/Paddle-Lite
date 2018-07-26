@@ -36,6 +36,7 @@
 		FC0E2DC020EE461F009C1FAC /* ElementwiseAddKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC0E2DBF20EE461F009C1FAC /* ElementwiseAddKernel.swift */; };
 		FC1B16B320EC9A4F00678B91 /* Kernels.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC1B16B220EC9A4F00678B91 /* Kernels.metal */; };
 		FC1B186620ECF1C600678B91 /* ResizeKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC1B186520ECF1C600678B91 /* ResizeKernel.swift */; };
+		FC3602CC2108819F00FACB58 /* PaddleMobileUnitTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC3602CB2108819F00FACB58 /* PaddleMobileUnitTest.swift */; };
 		FC4CB74920F0B954007C0C6D /* ConvKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC4CB74820F0B954007C0C6D /* ConvKernel.metal */; };
 		FC4CB74B20F12C30007C0C6D /* ProgramOptimize.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC4CB74A20F12C30007C0C6D /* ProgramOptimize.swift */; };
 		FC5163F620EF556E00636C28 /* Texture2DTo2DArrayKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC5163F520EF556E00636C28 /* Texture2DTo2DArrayKernel.swift */; };
@@ -53,6 +54,7 @@
 		FCD04E7020F31B720007374F /* ReshapeKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCD04E6F20F31B720007374F /* ReshapeKernel.swift */; };
 		FCD04E7220F343420007374F /* ConvAddOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCD04E7120F343420007374F /* ConvAddOp.swift */; };
 		FCD04E7420F3437E0007374F /* ConvAddKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCD04E7320F3437E0007374F /* ConvAddKernel.swift */; };
+		FCDC0FEB21099A1D00DC9EFB /* Tools.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCDC0FEA21099A1D00DC9EFB /* Tools.swift */; };
 		FCEBC0F420F1FDD90099DBAF /* ConvAddBatchNormReluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCEBC0F320F1FDD90099DBAF /* ConvAddBatchNormReluOp.swift */; };
 		FCEBC0F620F1FE120099DBAF /* ConvAddBatchNormReluKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCEBC0F520F1FE120099DBAF /* ConvAddBatchNormReluKernel.swift */; };
 		FCF2D73820E64E70007AC5F5 /* Kernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF2D73720E64E70007AC5F5 /* Kernel.swift */; };
@@ -92,6 +94,7 @@
 		FC0E2DBF20EE461F009C1FAC /* ElementwiseAddKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElementwiseAddKernel.swift; sourceTree = "<group>"; };
 		FC1B16B220EC9A4F00678B91 /* Kernels.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Kernels.metal; sourceTree = "<group>"; };
 		FC1B186520ECF1C600678B91 /* ResizeKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizeKernel.swift; sourceTree = "<group>"; };
+		FC3602CB2108819F00FACB58 /* PaddleMobileUnitTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaddleMobileUnitTest.swift; sourceTree = "<group>"; };
 		FC4CB74820F0B954007C0C6D /* ConvKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ConvKernel.metal; sourceTree = "<group>"; };
 		FC4CB74A20F12C30007C0C6D /* ProgramOptimize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramOptimize.swift; sourceTree = "<group>"; };
 		FC5163F520EF556E00636C28 /* Texture2DTo2DArrayKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Texture2DTo2DArrayKernel.swift; sourceTree = "<group>"; };
@@ -109,6 +112,7 @@
 		FCD04E6F20F31B720007374F /* ReshapeKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReshapeKernel.swift; sourceTree = "<group>"; };
 		FCD04E7120F343420007374F /* ConvAddOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvAddOp.swift; sourceTree = "<group>"; };
 		FCD04E7320F3437E0007374F /* ConvAddKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvAddKernel.swift; sourceTree = "<group>"; };
+		FCDC0FEA21099A1D00DC9EFB /* Tools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tools.swift; sourceTree = "<group>"; };
 		FCEBC0F320F1FDD90099DBAF /* ConvAddBatchNormReluOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ConvAddBatchNormReluOp.swift; path = "paddle-mobile/Operators/ConvAddBatchNormReluOp.swift"; sourceTree = SOURCE_ROOT; };
 		FCEBC0F520F1FE120099DBAF /* ConvAddBatchNormReluKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvAddBatchNormReluKernel.swift; sourceTree = "<group>"; };
 		FCF2D73720E64E70007AC5F5 /* Kernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Kernel.swift; path = "paddle-mobile/Operators/Kernels/Kernel.swift"; sourceTree = SOURCE_ROOT; };
@@ -182,7 +186,9 @@
 				FC039B9420E11C9A0081E9F8 /* Extensions.swift */,
 				FC039B9520E11C9A0081E9F8 /* Errors.swift */,
 				FC039B9620E11C9A0081E9F8 /* Types.swift */,
+				FC3602CB2108819F00FACB58 /* PaddleMobileUnitTest.swift */,
 				FC60DB8820E9AAA500FF203F /* MetalExtension.swift */,
+				FCDC0FEA21099A1D00DC9EFB /* Tools.swift */,
 			);
 			path = Common;
 			sourceTree = "<group>";
@@ -374,6 +380,7 @@
 				FCD04E7220F343420007374F /* ConvAddOp.swift in Sources */,
 				FC039BBB20E11CC20081E9F8 /* ProgramDesc.swift in Sources */,
 				FC9D037920E229E4000F735A /* OpParam.swift in Sources */,
+				FC3602CC2108819F00FACB58 /* PaddleMobileUnitTest.swift in Sources */,
 				FC1B186620ECF1C600678B91 /* ResizeKernel.swift in Sources */,
 				FCF2D73820E64E70007AC5F5 /* Kernel.swift in Sources */,
 				FCEBC0F420F1FDD90099DBAF /* ConvAddBatchNormReluOp.swift in Sources */,
@@ -396,6 +403,7 @@
 				FCD04E6620F314C50007374F /* PoolOp.swift in Sources */,
 				FC039BAC20E11CBC0081E9F8 /* BatchNormOp.swift in Sources */,
 				FC039BBC20E11CC20081E9F8 /* VarDesc.swift in Sources */,
+				FCDC0FEB21099A1D00DC9EFB /* Tools.swift in Sources */,
 				FC0E2DBA20EE3B8D009C1FAC /* ReluKernel.swift in Sources */,
 				FC82735920E3C04200BE430A /* OpCreator.swift in Sources */,
 				FC0E2DBE20EE460D009C1FAC /* BatchNormKernel.swift in Sources */,
