@@ -15,7 +15,7 @@
 import Foundation
 
 
-struct MetalConvParam {
+public struct MetalConvParam {
     let offsetX: Int16
     let offsetY: Int16
     let offsetZ: Int16
