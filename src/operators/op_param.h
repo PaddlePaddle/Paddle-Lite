@@ -456,8 +456,9 @@ class PoolParam : public OpParam {
 #ifdef FUSION_POOLBN_OP
 class FusionPoolBNParam : OpParam {
  public:
-  FusionPoolBNParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-              const AttributeMap &attrs, const Scope &scope) {
+  FusionPoolBNParam(const VariableNameMap &inputs,
+                    const VariableNameMap &outputs, const AttributeMap &attrs,
+                    const Scope &scope) {
     input_ = InputXFrom<LoDTensor>(inputs, scope);
     pooling_type_ = GetAttr<string>("pooling_type", attrs);
     ksize_ = GetAttr<vector<int>>("ksize", attrs);
