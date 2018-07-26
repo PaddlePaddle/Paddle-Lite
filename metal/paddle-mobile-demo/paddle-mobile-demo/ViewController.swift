@@ -17,6 +17,8 @@ import MetalKit
 import paddle_mobile
 import MetalPerformanceShaders
 
+let openTest: Bool = false
+
 class PreProccess: CusomKernel {
     init(device: MTLDevice) {
         let s = CusomKernel.Shape.init(inWidth: 224, inHeight: 224, inChannel: 3)
@@ -26,7 +28,6 @@ class PreProccess: CusomKernel {
 
 
 class ViewController: UIViewController {
-    let device: MTLDevice! = MTLCreateSystemDefaultDevice()
     var textureLoader: MTKTextureLoader!
 //    let queue: MTLCommandQueue
     func scaleTexture(queue: MTLCommandQueue, input: MTLTexture, complete: @escaping (MTLTexture) -> Void) {        
@@ -39,9 +40,9 @@ class ViewController: UIViewController {
         tmpTextureDes.textureType = .type2D
         tmpTextureDes.storageMode = .shared
         tmpTextureDes.cpuCacheMode = .defaultCache
-        let dest = device.makeTexture(descriptor: tmpTextureDes)
+        let dest = MetalHelper.shared.device.makeTexture(descriptor: tmpTextureDes)
         
-        let scale = MPSImageLanczosScale.init(device: device)
+        let scale = MPSImageLanczosScale.init(device: MetalHelper.shared.device)
         
         let buffer = queue.makeCommandBuffer()
         scale.encode(commandBuffer: buffer!, sourceTexture: input, destinationTexture: dest!)
@@ -51,12 +52,27 @@ class ViewController: UIViewController {
         buffer?.commit()
     }
     
+    func unitTest() {
+        let unitTest = PaddleMobileUnitTest.init(inDevice: MetalHelper.shared.device, inQueue: MetalHelper.shared.queue)
+        unitTest.testConvAddBnRelu()
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        let queue = device.makeCommandQueue()
         
-        textureLoader = MTKTextureLoader.init(device: device)
-        guard let appleImage = UIImage.init(named: "apple.jpg"), let cgImage = appleImage.cgImage else {
+        if openTest {
+            print(" - testing - ")
+            unitTest()
+            return
+        }
+
+        
+        
+//        return
+        let queue = MetalHelper.shared.queue
+        
+        textureLoader = MTKTextureLoader.init(device: MetalHelper.shared.device)
+        guard let appleImage = UIImage.init(named: "banana.jpeg"), let cgImage = appleImage.cgImage else {
             fatalError(" image nil !")
         }
         
@@ -65,19 +81,18 @@ class ViewController: UIViewController {
         guard let inTexture = texture else {
             fatalError(" texture is nil !")
         }
-        
-        
        
-        scaleTexture(queue: queue!, input: inTexture) { (inputTexture) in
+        scaleTexture(queue: queue, input: inTexture) { (inputTexture) in
             let loader = Loader<Float32>.init()
             do {
                 let modelPath = Bundle.main.path(forResource: "model", ofType: nil) ?! "model null"
                 let paraPath = Bundle.main.path(forResource: "params", ofType: nil) ?! "para null"
-                let program = try loader.load(device: self.device, modelPath: modelPath, paraPath: paraPath)
-                let executor = try Executor<Float32>.init(inDevice: self.device, inQueue: queue!, inProgram: program)
-                let preprocessKernel = PreProccess.init(device: self.device)
-                let output = try executor.predict(input: inputTexture, expect: [1, 224, 224, 3], preProcessKernle: preprocessKernel)
-                //            print(output)
+                let program = try loader.load(device: MetalHelper.shared.device, modelPath: modelPath, paraPath: paraPath)
+                let executor = try Executor<Float32>.init(inDevice: MetalHelper.shared.device, inQueue: queue, inProgram: program)
+                let preprocessKernel = PreProccess.init(device: MetalHelper.shared.device)
+                try executor.predict(input: inputTexture, expect: [1, 224, 224, 3], completionHandle: { (result) in
+                    print(result.resultArr.top(r: 5))
+                }, preProcessKernle: preprocessKernel)
             } catch let error {
                 print(error)
             }

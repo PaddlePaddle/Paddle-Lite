@@ -37,8 +37,8 @@ kernel void resize(texture2d<half, access::read> inTexture [[texture(0)]],
 }
 
 kernel void relu(texture2d_array<half, access::sample> inTexture [[texture(0)]],
-                texture2d_array<half, access::write> outTexture [[texture(1)]],
-                uint3 gid [[thread_position_in_grid]]) {
+                 texture2d_array<half, access::write> outTexture [[texture(1)]],
+                 uint3 gid [[thread_position_in_grid]]) {
     if (gid.x >= outTexture.get_width() ||
         gid.y >= outTexture.get_height() ||
         gid.z >= outTexture.get_array_size()) return;
@@ -119,7 +119,7 @@ kernel void pool(texture2d_array<float, access::read> inTexture [[texture(0)]],
     int ymin = gid.y * pm.strideX - pm.paddingX;
     int ymax = min(ymin + pm.ksizeX, int(inTexture.get_height()));
     ymin = max(ymin, 0);
-
+    
     float4 r = 0;
     if (pm.poolType == 0) {
         r = inTexture.read(uint2(xmin, ymin), gid.z);
@@ -136,11 +136,6 @@ kernel void pool(texture2d_array<float, access::read> inTexture [[texture(0)]],
         }
         r /= pm.ksizeX * pm.ksizeY;
     }
-//    float4 r;
-//    r[0] = 1.0 * pm.ksizeX;
-//    r[1] = 2.0;
-//    r[2] = 3.0;
-//    r[3] = 4.0;
     outTexture.write(r, gid.xy, gid.z);
 }
 
@@ -151,7 +146,7 @@ kernel void reshape(texture2d_array<float, access::read> inTexture [[texture(0)]
     if (gid.x >= outTexture.get_width() ||
         gid.y >= outTexture.get_height() ||
         gid.z >= outTexture.get_array_size()) return;
-
+    
     float4 r = inTexture.read(uint2(0, 0), gid.z);
     outTexture.write(r, gid.xy, gid.z);
 }

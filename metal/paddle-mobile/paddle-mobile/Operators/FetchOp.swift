@@ -15,13 +15,14 @@
 import Foundation
 
 class FetchParam<P: PrecisionType>: OpParam{
-    var output: ResultHolder<P> = ResultHolder.init(inDim: [], inResult: [])
+    var output: Texture<P>
     let input: Texture<P>
     let scope: Scope
     required init(opDesc: OpDesc, inScope: Scope) throws {
         scope = inScope
         do {
             input = try FetchParam.inputX(inputs: opDesc.inputs, from: inScope)
+            output = input
         } catch let error {
             throw error
         }
@@ -47,6 +48,7 @@ class FetchOp<P: PrecisionType>: Operator< FetchKernel<P>, FetchParam<P>>, Runab
     
     typealias OpType = FetchOp<P>
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+        scope.setOutput(output: para.output)
     }
 }
 

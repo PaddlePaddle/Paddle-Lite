@@ -81,10 +81,11 @@ kernel void conv_add_batch_norm_relu_3x3(texture2d_array<float, access::sample> 
         return;
     }
     
-    short2 posInInput = short2(gid.xy) + short2(param.offsetX, param.offsetY);
+    ushort2 stride = ushort2(param.strideX, param.strideY);
+    const ushort2 posInInput = ushort2(gid.xy) * stride + ushort2(param.offsetX, param.offsetY);
+    
     constexpr sampler sample(coord::pixel, filter::nearest, address::clamp_to_zero);
     const uint kernelHXW = 9;
-    
     uint input_arr_size = inTexture.get_array_size();
     uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
     
@@ -134,7 +135,9 @@ kernel void conv_add_batch_norm_relu_1x1(texture2d_array<float, access::sample> 
         return;
     }
     
-    short2 posInInput = short2(gid.xy) + short2(param.offsetX, param.offsetY);
+    ushort2 stride = ushort2(param.strideX, param.strideY);
+    ushort2 posInInput = ushort2(gid.xy) * stride + ushort2(param.offsetX, param.offsetY);
+    
     constexpr sampler sample(coord::pixel, filter::nearest, address::clamp_to_zero);
     const uint kernelHXW = 1;
     
@@ -175,7 +178,9 @@ kernel void conv_add_1x1(texture2d_array<float, access::sample> inTexture [[text
         return;
     }
     
-    short2 posInInput = short2(gid.xy) + short2(param.offsetX, param.offsetY);
+    ushort2 stride = ushort2(param.strideX, param.strideY);
+    ushort2 posInInput = ushort2(gid.xy) * stride + ushort2(param.offsetX, param.offsetY);
+    
     constexpr sampler sample(coord::pixel, filter::nearest, address::clamp_to_zero);
     const uint kernelHXW = 1;
     
@@ -219,7 +224,9 @@ kernel void depthwise_conv_add_batch_norm_relu_3x3(texture2d_array<float, access
         return;
     }
     uint output_slice = gid.z;
-    short2 posInInput = short2(gid.xy) + short2(param.offsetX, param.offsetY);
+    
+    ushort2 stride = ushort2(param.strideX, param.strideY);
+    ushort2 posInInput = ushort2(gid.xy) * stride + ushort2(param.offsetX, param.offsetY);
     constexpr sampler sample(coord::pixel, filter::nearest, address::clamp_to_zero);
     const uint kernelHXW = 9;
     uint weithTo = gid.z * kernelHXW * 4;

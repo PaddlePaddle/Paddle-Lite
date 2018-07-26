@@ -17,6 +17,7 @@ import Foundation
 public class ResultHolder<P: PrecisionType> {
     public let dim: [Int]
     public let resultArr: [P]
+    
     public init(inDim: [Int], inResult: [P]) {
         dim = inDim
         resultArr = inResult
@@ -56,7 +57,7 @@ public class Executor<P: PrecisionType> {
         queue = inQueue
         for block in inProgram.programDesc.blocks {
             //block.ops.count
-            for i in 0..<block.ops.count {
+            for i in 0..<2 {
                 let op = block.ops[i]
                 do {
                     let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
@@ -79,12 +80,11 @@ public class Executor<P: PrecisionType> {
         }
     }
     
-    public func predict(input: MTLTexture, expect: [Int], preProcessKernle: CusomKernel? = nil) throws -> ResultHolder<P> {
+    public func predict(input: MTLTexture, expect: [Int], completionHandle: @escaping (ResultHolder<P>) -> Void, preProcessKernle: CusomKernel? = nil) throws {
         guard let buffer = queue.makeCommandBuffer() else {
             throw PaddleMobileError.predictError(message: "CommandBuffer is nil")
         }
         let resInput: MTLTexture
-        
         if let inPre = preProcessKernle {
             do {
                 try inPre.compute(inputTexuture: input, commandBuffer: buffer)
@@ -109,26 +109,36 @@ public class Executor<P: PrecisionType> {
         }
         
         buffer.addCompletedHandler { (commandbuffer) in
+            let inputArr = resInput.floatArray(res: { (p:P) -> P in
+                return p
+            })
+//            print(inputArr)
+            
+//            let stridableInput: [(index: Int, value: Float)] = input.stridableFloatArray()
+//            print(stridableInput)
+            
+//            let _: Flo? = input.logDesc(header: "input: ", stridable: true)
             for op in self.ops {
                 op.delogOutput()
             }
+            return
             
+            guard let outputVar = self.program.scope.output() else {
+                fatalError("output nil")
+            }
+
+            guard let output = outputVar as? Texture<P> else {
+                fatalError("output var type error")
+            }
+            let resultHodlder = ResultHolder<P>.init(inDim: output.dim.dims, inResult: output.metalTexture.floatArray(res: { (p:P) -> P in
+                return p
+            }))
+            completionHandle(resultHodlder)
             let afterDate = Date.init()
             print(" encoder end ! time: \(afterDate.timeIntervalSince(beforeDate))")
         }
         buffer.commit()
-        
-        guard let outputVar = program.scope.output() else {
-            throw PaddleMobileError.netError(message: "output nil")
-        }
-        
-        guard let output = outputVar as? ResultHolder<P> else {
-            throw PaddleMobileError.netError(message: "output var type error")
-        }
-        
-        return output
     }
-    
 }
 
 //public let paddle_executor: Executor = Executor.init()

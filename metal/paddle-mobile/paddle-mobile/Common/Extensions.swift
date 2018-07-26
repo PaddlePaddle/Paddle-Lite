@@ -24,6 +24,7 @@ public func ?!<T>(option: T?, excuteOrError: @autoclosure () -> String) -> T{
     if let inOpt = option {
         return inOpt
     }else{
+        print(excuteOrError())
         fatalError(excuteOrError())
     }
 }
@@ -90,7 +91,7 @@ extension Array where Element: Comparable{
     ///
     /// - Parameter r: 前 r 个元素
     /// - Returns: [(原有位置, 排好位置的元素)]
-    func top(r: Int) -> [(Int, Element)] {
+    public func top(r: Int) -> [(Int, Element)] {
         precondition(r <= self.count)
         return Array<(Int, Element)>(zip(0..<self.count, self).sorted{ $0.1 > $1.1 }.prefix(through: r - 1))
     }

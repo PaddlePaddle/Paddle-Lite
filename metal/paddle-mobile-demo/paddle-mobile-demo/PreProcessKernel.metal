@@ -19,10 +19,12 @@ kernel void preprocess(
         gid.y >= outTexture.get_height()) {
         return;
     }
-    // Subtract mean values, scale by 0.017, convert to BGR.
-    
-    const auto means = float4(103.94f, 116.78f, 123.68f, 0.0f);
-    const float4 inColor = (float4(inTexture.read(gid)) * 255.0f - means) * 0.017f;
-    outTexture.write(float4(inColor.x, inColor.y, inColor.z, 0.0f), gid);
+    const auto means = float4(123.68f, 116.78f, 103.94f, 0.0f);
+    const float4 inColor = (float4(float4(inTexture.read(gid))) * 255.0f - means) * 0.017f;
+    outTexture.write(float4(inColor.z, inColor.y, inColor.x, 0.0f), gid);
 }
+
+
+
+
 
