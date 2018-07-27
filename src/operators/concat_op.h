@@ -53,6 +53,7 @@ USE_OP_CPU(concat);
 USE_OP_MALI_GPU(concat);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+USE_OP_FPGA(concat);
 #endif
 
 #endif
