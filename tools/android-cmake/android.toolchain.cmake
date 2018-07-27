@@ -65,6 +65,8 @@ endif()
 file(TO_CMAKE_PATH "${ANDROID_NDK}" ANDROID_NDK)
 
 # Android NDK revision
+message("${ANDROID_NDK}")
+
 file(READ "${ANDROID_NDK}/source.properties" ANDROID_NDK_SOURCE_PROPERTIES)
 set(ANDROID_NDK_SOURCE_PROPERTIES_REGEX
   "^Pkg\\.Desc = Android NDK\nPkg\\.Revision = ([0-9]+)\\.")

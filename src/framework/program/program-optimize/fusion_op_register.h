@@ -14,11 +14,13 @@ limitations under the License. */
 
 #pragma once
 
+#include <algorithm>
 #include <map>
 #include <string>
+#include <vector>
 
 #include "framework/operator.h"
-#include "node.h"
+#include "framework/program/program-optimize/node.h"
 
 namespace paddle_mobile {
 namespace framework {
