@@ -19,7 +19,7 @@ limitations under the License. */
 #define B(i, j) B[(i)*ldb + (j)]
 #define C(i, j) C[(i)*ldc + (j)]
 
-#define MR 4
+#define MR 6
 #define NR 8
 
 #define s_min(i, j) ((i) < (j) ? (i) : (j))
@@ -39,12 +39,14 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
 */
 
 // 将 A 矩阵分块复制到连续内存(RowMajor)
-void PackMatrixA_(int m, int k, int m_tail, const float *A, int lda,
-                  float *buffer);
+void PackMatrixA_4r(int m, int k, int m_tail, const float *A, int lda,
+                    float *buffer);
+void PackMatrixA_6r(int m, int k, int m_tail, const float *A, int lda,
+                    float *buffer);
 
 // 将 B 矩阵分块复制到连续内存(RowMajor)
-void PackMatrixB_(int k, int n, int n_tail, const float *B, int ldb,
-                  float *buffer);
+void PackMatrixB_8c(int k, int n, int n_tail, const float *B, int ldb,
+                    float *buffer);
 
 // 分块矩阵乘法
 void InnerKernel(int mc, int nc, float alpha, const float *a, const float *b,
@@ -67,6 +69,7 @@ void VectorKernelWithBn(int m, int n, int k, float alpha, const float *A,
 // 计算一个更小的 C 矩阵分块
 void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc);
 void AddDot4x8(int k, const float *a, const float *b, float *c, int ldc);
+void AddDot6x8(int k, const float *a, const float *b, float *c, int ldc);
 
 // 分块矩阵乘法结果回写
 // C = A * B
