@@ -58,6 +58,14 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable, Testable
             super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_3x3")
         }
         
+        param.filter.initBuffer(device: device, precision: Tensor.BufferPrecision.Float32)
+        param.y.initBuffer(device: device, precision: Tensor.BufferPrecision.Float32)
+
+        param.variance.initBuffer(device: device)
+        param.mean.initBuffer(device: device)
+        param.scale.initBuffer(device: device)
+        param.bias.initBuffer(device: device)
+        
         let offsetX = param.filter.width/2 - Int(param.paddings[0])
         let offsetY = param.filter.height/2 - Int(param.paddings[1])
         
@@ -70,7 +78,7 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable, Testable
         var invs: [P] = []
         let varianceContents = param.variance.buffer.contents().assumingMemoryBound(to: P.self)
         
-        for i in 0..<param.variance.buffer.length/MemoryLayout<P>.stride {
+        for i in 0..<param.variance.buffer.length/MemoryLayout<P>.stride {            
             let inv = 1.0/pow(Float32.init(varianceContents[i]) + param.epsilon, 0.5)
             invs.append(P(inv))
         }
@@ -78,7 +86,7 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable, Testable
         let newScale: UnsafeMutablePointer<P> = UnsafeMutablePointer<P>.allocate(capacity: param.scale.buffer.length)
         let newBiase: UnsafeMutablePointer<P> = UnsafeMutablePointer<P>.allocate(capacity: param.bias.buffer.length)
         
-        let scaleContents = param.variance.buffer.contents().assumingMemoryBound(to: P.self)
+        let scaleContents = param.scale.buffer.contents().assumingMemoryBound(to: P.self)
         let biaseContents = param.bias.buffer.contents().assumingMemoryBound(to: P.self)
         let meanContents = param.mean.buffer.contents().assumingMemoryBound(to: P.self)
         for i in 0..<param.scale.buffer.length/MemoryLayout<P>.stride {
@@ -100,7 +108,6 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable, Testable
             throw PaddleMobileError.predictError(message: " encode is nil")
         }
 
-        print("ConvAddBatchNormReluKernel compute")
         encoder.setTexture(param.input.metalTexture, index: 0)
         encoder.setTexture(param.output.metalTexture, index: 1)
         encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
@@ -117,7 +124,6 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable, Testable
             fatalError()
         }
         
-        print("ConvAddBatchNormReluKernel compute")
         encoder.setTexture(param.inputTexture, index: 0)
         encoder.setTexture(param.outputTexture, index: 1)
         var inMetalParam = param.metalParam

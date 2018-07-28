@@ -57,7 +57,7 @@ public class Executor<P: PrecisionType> {
         queue = inQueue
         for block in inProgram.programDesc.blocks {
             //block.ops.count
-            for i in 0..<2 {
+            for i in 0..<block.ops.count {
                 let op = block.ops[i]
                 do {
                     let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
@@ -109,20 +109,26 @@ public class Executor<P: PrecisionType> {
         }
         
         buffer.addCompletedHandler { (commandbuffer) in
-            let inputArr = resInput.floatArray(res: { (p:P) -> P in
-                return p
-            })
+//            let inputArr = resInput.floatArray(res: { (p:P) -> P in
+//                return p
+//            })
 //            print(inputArr)
             
 //            let stridableInput: [(index: Int, value: Float)] = input.stridableFloatArray()
 //            print(stridableInput)
             
 //            let _: Flo? = input.logDesc(header: "input: ", stridable: true)
-            for op in self.ops {
-                op.delogOutput()
-            }
-            return
+//            for op in self.ops {
+//                op.delogOutput()
+//            }
+//            return
             
+//            self.ops[2].delogOutput()
+            
+            
+            let afterDate = Date.init()
+            print(" encoder end ! time: \(afterDate.timeIntervalSince(beforeDate))")
+
             guard let outputVar = self.program.scope.output() else {
                 fatalError("output nil")
             }
@@ -134,8 +140,6 @@ public class Executor<P: PrecisionType> {
                 return p
             }))
             completionHandle(resultHodlder)
-            let afterDate = Date.init()
-            print(" encoder end ! time: \(afterDate.timeIntervalSince(beforeDate))")
         }
         buffer.commit()
     }
