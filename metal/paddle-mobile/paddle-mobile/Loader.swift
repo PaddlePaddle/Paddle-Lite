@@ -15,7 +15,6 @@
 import Foundation
 import SwiftProtobuf
 
-
 public class Loader<P: PrecisionType> {
     class ParaLoader {
         let file: UnsafeMutablePointer<FILE>
@@ -163,7 +162,7 @@ public class Loader<P: PrecisionType> {
                                 throw error
                             }
                             tensor.convert(to: .NHWC)
-                            tensor.initBuffer(device: device)
+//                            tensor.initBuffer(device: device)
                             scope[varDesc.name] = tensor
                         } else {
                             let dim = Dim.init(inDim: tensorDesc.NHWCDim)

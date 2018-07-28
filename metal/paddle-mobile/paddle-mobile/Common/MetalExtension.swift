@@ -120,8 +120,8 @@ extension MTLComputeCommandEncoder {
         let groupDepth = slices
         let groups = MTLSize.init(width: groupWidth, height: groupHeight, depth: groupDepth)
         
-        print("groups: \(groups) ")
-        print("threads per group: \(threadsPerGroup)")
+//        print("groups: \(groups) ")
+//        print("threads per group: \(threadsPerGroup)")
         
         setComputePipelineState(computePipline)
         

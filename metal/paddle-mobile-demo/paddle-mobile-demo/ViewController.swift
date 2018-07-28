@@ -26,9 +26,12 @@ class PreProccess: CusomKernel {
     }
 }
 
-
 class ViewController: UIViewController {
     var textureLoader: MTKTextureLoader!
+    var program: Program!
+    var executor: Executor<Float32>!
+    var preprocessKernel: PreProccess!
+    
 //    let queue: MTLCommandQueue
     func scaleTexture(queue: MTLCommandQueue, input: MTLTexture, complete: @escaping (MTLTexture) -> Void) {        
         let tmpTextureDes = MTLTextureDescriptor.init()
@@ -57,18 +60,9 @@ class ViewController: UIViewController {
         unitTest.testConvAddBnRelu()
     }
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        if openTest {
-            print(" - testing - ")
-            unitTest()
-            return
-        }
-
-        
-        
-//        return
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
+        //        return
         let queue = MetalHelper.shared.queue
         
         textureLoader = MTKTextureLoader.init(device: MetalHelper.shared.device)
@@ -81,21 +75,32 @@ class ViewController: UIViewController {
         guard let inTexture = texture else {
             fatalError(" texture is nil !")
         }
-       
+        
         scaleTexture(queue: queue, input: inTexture) { (inputTexture) in
-            let loader = Loader<Float32>.init()
             do {
-                let modelPath = Bundle.main.path(forResource: "model", ofType: nil) ?! "model null"
-                let paraPath = Bundle.main.path(forResource: "params", ofType: nil) ?! "para null"
-                let program = try loader.load(device: MetalHelper.shared.device, modelPath: modelPath, paraPath: paraPath)
-                let executor = try Executor<Float32>.init(inDevice: MetalHelper.shared.device, inQueue: queue, inProgram: program)
-                let preprocessKernel = PreProccess.init(device: MetalHelper.shared.device)
-                try executor.predict(input: inputTexture, expect: [1, 224, 224, 3], completionHandle: { (result) in
+                try self.executor.predict(input: inputTexture, expect: [1, 224, 224, 3], completionHandle: { (result) in
                     print(result.resultArr.top(r: 5))
-                }, preProcessKernle: preprocessKernel)
+                }, preProcessKernle: self.preprocessKernel)
             } catch let error {
                 print(error)
             }
+        }
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        let queue = MetalHelper.shared.queue
+        let loader = Loader<Float32>.init()
+        preprocessKernel = PreProccess.init(device: MetalHelper.shared.device)
+
+        do {
+            let modelPath = Bundle.main.path(forResource: "model", ofType: nil) ?! "model null"
+            let paraPath = Bundle.main.path(forResource: "params", ofType: nil) ?! "para null"
+            program = try loader.load(device: MetalHelper.shared.device, modelPath: modelPath, paraPath: paraPath)
+            executor = try Executor<Float32>.init(inDevice: MetalHelper.shared.device, inQueue: queue, inProgram: program)
+        } catch let error {
+            print(error)
         }
     }
 }
