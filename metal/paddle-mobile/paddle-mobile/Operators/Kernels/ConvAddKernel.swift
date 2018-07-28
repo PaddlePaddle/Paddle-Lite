@@ -21,6 +21,9 @@ class ConvAddKernel<P: PrecisionType>: Kernel, Computable {
         let offsetX = param.filter.width/2 - Int(param.paddings[0])
         let offsetY = param.filter.height/2 - Int(param.paddings[1])
         
+        param.filter.initBuffer(device: device, precision: Tensor.BufferPrecision.Float32)
+        param.y.initBuffer(device: device, precision: Tensor.BufferPrecision.Float32)
+        
         print("offset x: \(offsetX)")
         print("offset y: \(offsetY)")
         

@@ -20,7 +20,6 @@ struct Texture2DTo2DArrayParam {
     let expectDim: Dim
 }
 
-
 class Texture2DTo2DArrayKernel<P: PrecisionType>: Kernel, Computable{
     func compute(commandBuffer: MTLCommandBuffer, param: FeedParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
@@ -36,4 +35,3 @@ class Texture2DTo2DArrayKernel<P: PrecisionType>: Kernel, Computable{
         super.init(device: device, inFunctionName: "texture2d_to_2d_array")
     }
 }
-
