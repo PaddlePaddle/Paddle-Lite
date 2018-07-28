@@ -12,6 +12,7 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
+import Accelerate
 import Foundation
 
 protocol Tensorial: CustomStringConvertible, CustomDebugStringConvertible{
@@ -27,6 +28,10 @@ extension Tensorial {
 }
 
 class Tensor<P: PrecisionType>: Tensorial {
+    enum BufferPrecision {
+        case Float32, Float16
+    }
+    
     var data: Data
     var dim: Dim
     var buffer: MTLBuffer!
@@ -88,7 +93,28 @@ class Tensor<P: PrecisionType>: Tensorial {
         layout = to
     }
     
-    func initBuffer(device: MTLDevice) {
+    func float32ToFloat16(input: UnsafeMutablePointer<Float32>, output: UnsafeMutableRawPointer, count: Int) {
+        var float32Buffer = vImage_Buffer(data: input,  height: 1, width: UInt(count), rowBytes: count * 4)
+        var float16buffer = vImage_Buffer(data: output, height: 1, width: UInt(count), rowBytes: count * 2)
+        guard vImageConvert_PlanarFtoPlanar16F(&float32Buffer, &float16buffer, 0) == kvImageNoError else {
+            fatalError(" float 32 to float 16 error ! ")
+        }
+    }
+    
+    func initBuffer(device: MTLDevice, precision: BufferPrecision = .Float32) {
+        guard let floatPointer = data.pointer as? UnsafeMutablePointer<Float32> else {
+            fatalError(" not support yet ")
+        }
+        
+        
+        let precisionSize: Int
+        switch precision {
+        case .Float32:
+            precisionSize = 4
+        case .Float16:
+            precisionSize = 2
+        }
+        
         if dim.cout() == 4 {
             if layout == .NHWC {
                 let C = dim[3]
@@ -96,29 +122,55 @@ class Tensor<P: PrecisionType>: Tensorial {
                 let paddedC = cSlices * 4
                 let count = paddedC * dim[0] * dim[1] * dim[2]
                 if C == paddedC {
-                    buffer = device.makeBuffer(length: count * MemoryLayout<P>.stride)
-                    buffer?.contents().copyMemory(from: data.pointer, byteCount: count * MemoryLayout<P>.stride)
+                    buffer = device.makeBuffer(length: count * precisionSize)
+                    switch precision {
+                    case .Float32:
+                        buffer?.contents().copyMemory(from: data.pointer, byteCount: count * MemoryLayout<P>.stride)
+                    case .Float16:
+                        float32ToFloat16(input: floatPointer, output: buffer.contents(), count: count)
+                    }
                 } else if C == 1 {
-                    buffer = device.makeBuffer(length: numel() * MemoryLayout<P>.stride)
-                    buffer?.contents().copyMemory(from: data.pointer, byteCount: numel() * MemoryLayout<P>.stride)
+                    buffer = device.makeBuffer(length: numel() * precisionSize)
+                    switch precision {
+                    case .Float32:
+                        buffer?.contents().copyMemory(from: data.pointer, byteCount: numel() * MemoryLayout<P>.stride)
+                    case .Float16:
+                        float32ToFloat16(input: floatPointer, output: buffer.contents(), count: numel())
+                    }
                 } else {
-                    buffer = device.makeBuffer(length: count * MemoryLayout<P>.stride)
-                    var tmpPointer = data.pointer
-                    var dstPtr = buffer?.contents().bindMemory(to: P.self, capacity: count)
+                    buffer = device.makeBuffer(length: count * precisionSize)
+                    let convertedPointer = UnsafeMutablePointer<Float32>.allocate(capacity: count)
+                    var tmpPointer = floatPointer
+                    var dstPtr = convertedPointer
                     for _ in 0..<dim[0] * dim[1] * dim[2] {
                         for j in 0..<paddedC {
                             if j < C {
-                                dstPtr?[j] = tmpPointer[j]
+                                dstPtr[j] = tmpPointer[j]
                             }
                         }
                         tmpPointer += C
-                        dstPtr! += paddedC
+                        dstPtr += paddedC
                     }
+                    
+                    switch precision {
+                    case .Float32:
+                        buffer?.contents().copyMemory(from: convertedPointer, byteCount: count * MemoryLayout<P>.stride)
+                    case .Float16:
+                        float32ToFloat16(input: convertedPointer, output: buffer.contents(), count: count)
+                    }
+                    
+                    convertedPointer.deinitialize(count: count)
+                    convertedPointer.deallocate()
                 }
             }
         } else if dim.cout() == 1 {
-            buffer = device.makeBuffer(length: numel() * MemoryLayout<P>.stride)
-            buffer?.contents().copyMemory(from: data.pointer, byteCount: numel() * MemoryLayout<P>.stride)
+            buffer = device.makeBuffer(length: numel() * precisionSize)
+            switch precision {
+            case .Float32:
+                buffer?.contents().copyMemory(from: data.pointer, byteCount: numel() * MemoryLayout<P>.stride)
+            case .Float16:
+                float32ToFloat16(input: floatPointer, output: buffer.contents(), count: numel())
+            }
         } else {
             fatalError(" not support !")
         }

@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 func writeToLibrary<P: PrecisionType>(fileName: String, array: [P]) {
     let libraryPath = NSSearchPathForDirectoriesInDomains(.libraryDirectory, .userDomainMask, true).last ?! " library path get error "
     let filePath = libraryPath + "/" + fileName
@@ -19,3 +18,4 @@ func writeToLibrary<P: PrecisionType>(fileName: String, array: [P]) {
     fileHandler.write(data)
     fileHandler.closeFile()
 }
+

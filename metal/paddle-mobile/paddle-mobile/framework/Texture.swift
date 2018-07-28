@@ -68,16 +68,18 @@ public class Texture<P: PrecisionType>: Tensorial {
         } else {
             fatalError(" not suuprt ")
         }
+        
         if MemoryLayout<P>.size == 1 {
             tmpTextureDes.pixelFormat = .rgba8Unorm
         } else if MemoryLayout<P>.size == 2 {
-            tmpTextureDes.pixelFormat = .rgba32Float
+            tmpTextureDes.pixelFormat = .rgba16Float
         } else if MemoryLayout<P>.size == 4 {
 //            tmpTextureDes.pixelFormat = .r32Float
             tmpTextureDes.pixelFormat = .rgba32Float
 
         }
-        
+//        tmpTextureDes.pixelFormat = .rgba16Float
+
         tmpTextureDes.usage = [.shaderRead, .shaderWrite]
         tmpTextureDes.storageMode = .shared
         textureDesc = tmpTextureDes
