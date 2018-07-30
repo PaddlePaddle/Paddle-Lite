@@ -9,7 +9,6 @@ option(LOG_PROFILE "log profile" ON)
 option(CPU "armv7 with neon" ON)
 option(MALI_GPU "mali gpu" OFF)
 option(FPGA "fpga" OFF)
-option(QUANTI "quantification" OFF)
 
 file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c src/*.mm)
 file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
@@ -163,7 +162,4 @@ if(DEBUGING)
     endif()
 endif()
 
-if (QUANTI)
-    add_subdirectory(tools/quantification)
-endif ()
 
