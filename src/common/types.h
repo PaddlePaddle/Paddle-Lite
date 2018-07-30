@@ -20,7 +20,9 @@ limitations under the License. */
 #include <vector>
 
 namespace paddle_mobile {
-enum class Precision : int { FP32 = 0 };
+enum class Precision : int { FP32 = 0, FP16 = 1 };
+
+typedef int16_t half;
 
 template <Precision p>
 struct PrecisionTrait {
@@ -30,6 +32,10 @@ struct PrecisionTrait {
 template <>
 struct PrecisionTrait<Precision::FP32> {
   typedef float ptype;
+};
+template <>
+struct PrecisionTrait<Precision::FP16> {
+  typedef half ptype;
 };
 
 //! device type
