@@ -24,19 +24,21 @@ int main() {
     auto time2 = time();
     std::cout << "load cost :" << time_diff(time1, time1) << "ms" << std::endl;
 
+    std::vector<float> input;
     std::vector<int64_t> dims{1, 3, 224, 224};
-    Tensor input_tensor;
-    SetupTensor<float>(&input_tensor, {1, 3, 224, 224}, static_cast<float>(0),
-                       static_cast<float>(1));
+    GetInput<float>(g_test_image_1x3x224x224, &input, dims);
 
-    std::vector<float> input(input_tensor.data<float>(),
-                             input_tensor.data<float>() + input_tensor.numel());
-    auto time3 = time();
-    auto vec_result = paddle_mobile.Predict(input, dims);
-    auto time4 = time();
-
-    std::cout << "predict cost :" << time_diff(time3, time4) << "ms"
-              << std::endl;
+    for (int i = 0; i < 10; ++i) {
+      auto time3 = time();
+      auto vec_result = paddle_mobile.Predict(input, dims);
+      auto time4 = time();
+      std::vector<float>::iterator biggest =
+          std::max_element(std::begin(vec_result), std::end(vec_result));
+      std::cout << " Max element is " << *biggest << " at position "
+                << std::distance(std::begin(vec_result), biggest) << std::endl;
+      std::cout << "predict cost :" << time_diff(time3, time4) << "ms"
+                << std::endl;
+    }
   }
 
   return 0;
