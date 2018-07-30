@@ -50,16 +50,16 @@ int do_sgemm(int m, int n, int k, bool relu, int t1, int t2, int pr) {
 
   srand(unsigned(time(0)));
   for (int i = 0; i < m * k; ++i) {
-    a[i] = t1 + rand() % t2; 
+    a[i] = t1 + rand() % t2;
   }
   for (int i = 0; i < k * n; ++i) {
-    b[i] = t1 + rand() % t2; 
+    b[i] = t1 + rand() % t2;
   }
   for (int i = 0; i < m; ++i) {
-    scale[i] = t1 + rand() % t2; 
+    scale[i] = t1 + rand() % t2;
   }
   for (int i = 0; i < m; ++i) {
-    bias[i] = t1 + rand() % t2; 
+    bias[i] = t1 + rand() % t2;
   }
 
   for (int i = 0; i < m; ++i) {
