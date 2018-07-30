@@ -63,7 +63,7 @@ struct FpgaKernelArgs {
   uint32_t height;
   uint32_t stride_h;
   uint32_t stride_w;
-}
+};
 
 struct FpgaImageArgs {
   uint32_t width;
@@ -71,7 +71,7 @@ struct FpgaImageArgs {
   uint32_t channels;
   uint32_t pad_h;
   uint32_t pad_w;
-}
+};
 
 struct FpgaConvArgs {
   bool relu_enabled;
