@@ -12,9 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include <iostream>
 #include <cstdlib>
 #include <ctime>
+#include <iostream>
 #include "../test_helper.h"
 #include "common/log.h"
 #include "memory/t_malloc.h"
@@ -26,14 +26,14 @@ limitations under the License. */
 #define c1(i, j) c1[(i)*ldc + (j)]
 
 void print_matirx(int m, int n, int ldc, float *c) {
-    for (int i = 0; i < m; ++i) {
-        std::cout << c(i, 0);
-        for (int j = 1; j < n; ++j) {
-            std::cout << " | " << c(i, j);
-        }
-        std::cout << std::endl;
+  for (int i = 0; i < m; ++i) {
+    std::cout << c(i, 0);
+    for (int j = 1; j < n; ++j) {
+      std::cout << " | " << c(i, j);
     }
     std::cout << std::endl;
+  }
+  std::cout << std::endl;
 }
 
 int do_sgemm(int m, int n, int k, bool relu, int t1, int t2, int pr) {
@@ -41,12 +41,18 @@ int do_sgemm(int m, int n, int k, bool relu, int t1, int t2, int pr) {
   int ldb = n;
   int ldc = n;
 
-  float *a = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m * k));
-  float *b = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * k * n));
-  float *c = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m * n));
-  float *c1 = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m * n));
-  float* scale = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m));
-  float* bias = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m));
+  float *a =
+      static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m * k));
+  float *b =
+      static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * k * n));
+  float *c =
+      static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m * n));
+  float *c1 =
+      static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m * n));
+  float *scale =
+      static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m));
+  float *bias =
+      static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m));
 
   srand(unsigned(time(0)));
   for (int i = 0; i < m * k; ++i) {
@@ -77,15 +83,15 @@ int do_sgemm(int m, int n, int k, bool relu, int t1, int t2, int pr) {
     }
   }
 
-  paddle_mobile::operators::math::SgemmWithBn(m, n, k, 0.9, a, lda,
-                 b, ldb, 0.3, c, ldc, relu, scale, bias);
+  paddle_mobile::operators::math::SgemmWithBn(m, n, k, 0.9, a, lda, b, ldb, 0.3,
+                                              c, ldc, relu, scale, bias);
   int eq = 0;
   int neq = 0;
   for (int i = 0; i < m * n; ++i) {
     if (static_cast<int>(c[i]) == static_cast<int>(c1[i])) {
-        ++eq;
+      ++eq;
     } else {
-        ++neq;
+      ++neq;
     }
   }
 
@@ -100,9 +106,8 @@ int do_sgemm(int m, int n, int k, bool relu, int t1, int t2, int pr) {
     print_matirx(m, n, ldc, c1);
   }
 
-  std::cout << "mnk=" << m << " " << n << " " << k <<
-    " relu=" << relu <<
-    "   eq=" << eq << " neq=" << neq << std::endl;
+  std::cout << "mnk=" << m << " " << n << " " << k << " relu=" << relu
+            << "   eq=" << eq << " neq=" << neq << std::endl;
 
   paddle_mobile::memory::Free(a);
   paddle_mobile::memory::Free(b);
@@ -115,7 +120,6 @@ int do_sgemm(int m, int n, int k, bool relu, int t1, int t2, int pr) {
 }
 
 int main() {
-
   do_sgemm(9, 9, 9, true, 10, 10, 10);
   do_sgemm(10, 6, 12, false, 10, 10, 0);
   do_sgemm(512, 256, 384, false, 10, 10, 0);
