@@ -38,10 +38,10 @@ namespace operators {
 // 那么就需要借助x_num_col_dims和y_num_col_dims将x和y的维度转换为2维
 // 从模型中读到参数，x_num_col_dims = 2，y_num_col_dims = 1，左开右闭
 // (1) 将x = (2,3,4)的index [0,x_num_col_dims)部分2,3相乘，得到6，
-//     [x_num_col_dims,x.size())部分4相乘，得到4，
+//     [x_num_col_dims,xdim.size())部分4相乘，得到4，
 //     将Tensor x的dims重写成(6,4)
 // (2) 将y = (4,1,2)的index [0,y_num_col_dims)部分4相乘，得到4，
-//     [y_num_col_dims,y.xize())部分1,2相乘，得到2,
+//     [y_num_col_dims,ydim.size())部分1,2相乘，得到2,
 //     将Tensor y的dims重写成(4,2)
 // 并不影响x,y在内存中的分布。
 // x = [[1,2,3,4],             y = [[1,2],
