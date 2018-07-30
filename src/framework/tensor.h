@@ -16,14 +16,15 @@ limitations under the License. */
 
 #include <cstdint>
 #include <cstring>
+#include <fstream>
 #include <memory>
+#include <string>
 #include <type_traits>
 #include <typeindex>
 #include <vector>
-#include "common/enforce.h"
 
-#include <fstream>
 #include "common/enforce.h"
+#include "common/types.h"
 #include "framework/data_layout.h"
 #include "framework/ddim.h"
 #include "memory/t_malloc.h"
@@ -63,7 +64,8 @@ struct SizeOfTypeFunctor<HEAD, TAIL...> {
 };
 
 static inline size_t SizeOfType(std::type_index type) {
-  SizeOfTypeFunctor<int, float, double, int16_t, int64_t, bool, size_t> functor;
+  SizeOfTypeFunctor<int, half, float, double, int16_t, int64_t, bool, size_t>
+      functor;
   size_t size = functor(type);
 
   PADDLE_MOBILE_ENFORCE(size != 0UL, "Cannot get size of type %s", type.name());
