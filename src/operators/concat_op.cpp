@@ -14,7 +14,9 @@ limitations under the License. */
 
 #ifdef CONCAT_OP
 
-#include "concat_op.h"
+#include <vector>
+
+#include "operators/concat_op.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -68,6 +70,7 @@ REGISTER_OPERATOR_CPU(concat, ops::ConcatOp);
 REGISTER_OPERATOR_MALI_GPU(concat, ops::ConcatOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(concat, ops::ConcatOp);
 #endif
 
 #endif
