@@ -1,23 +1,23 @@
 set(dir ${CMAKE_CURRENT_SOURCE_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${dir}/build")
 
-if (NET STREQUAL "googlenet")
+if ("googlenet" IN_LIST NET)
     # gen test
     ADD_EXECUTABLE(test-googlenet net/test_googlenet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-googlenet paddle-mobile)
-elseif (NET STREQUAL "mobilenet")
+elseif ("mobilenet" IN_LIST NET)
     # gen test
     ADD_EXECUTABLE(test-mobilenet net/test_mobilenet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-mobilenet paddle-mobile)
-elseif (NET STREQUAL "yolo")
+elseif ("yolo" IN_LIST NET)
     # gen test
     ADD_EXECUTABLE(test-yolo net/test_yolo.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-yolo paddle-mobile)
-elseif (NET STREQUAL "squeezenet")
+elseif ("squeezenet" IN_LIST NET)
     # gen test
     ADD_EXECUTABLE(test-squeezenet net/test_squeezenet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-squeezenet paddle-mobile)
-elseif(NET STREQUAL "resnet")
+elseif("resnet" IN_LIST NET)
     # gen test
     ADD_EXECUTABLE(test-resnet net/test_resnet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-resnet paddle-mobile)
@@ -144,6 +144,10 @@ else ()
     # gen test
     ADD_EXECUTABLE(test-conv-add-relu-op operators/test_conv_add_relu_op.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-conv-add-relu-op paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-conv-add-bn-relu-op operators/test_fusion_conv_add_bn_relu_op.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-conv-add-bn-relu-op paddle-mobile)
 
     #add_library(test-lib-size SHARED common/test_lib_size.h common/test_lib_size.cpp)
 

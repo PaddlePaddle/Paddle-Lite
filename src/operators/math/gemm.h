@@ -19,7 +19,7 @@ limitations under the License. */
 #define B(i, j) B[(i)*ldb + (j)]
 #define C(i, j) C[(i)*ldc + (j)]
 
-#define MR 4
+#define MR 6
 #define NR 8
 
 #define s_min(i, j) ((i) < (j) ? (i) : (j))
@@ -28,6 +28,7 @@ namespace paddle_mobile {
 namespace operators {
 namespace math {
 
+/*
 // 将 A 矩阵分块复制到连续内存(ColMajor)
 void PackMatrixA(int m, int k, int m_tail, const float *A, int lda,
                  float *buffer);
@@ -35,14 +36,17 @@ void PackMatrixA(int m, int k, int m_tail, const float *A, int lda,
 // 将 B 矩阵分块复制到连续内存(ColMajor)
 void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
                  float *buffer);
+*/
 
 // 将 A 矩阵分块复制到连续内存(RowMajor)
-void PackMatrixA_(int m, int k, int m_tail, const float *A, int lda,
-                  float *buffer);
+void PackMatrixA_4r(int m, int k, int m_tail, const float *A, int lda,
+                    float *buffer);
+void PackMatrixA_6r(int m, int k, int m_tail, const float *A, int lda,
+                    float *buffer);
 
 // 将 B 矩阵分块复制到连续内存(RowMajor)
-void PackMatrixB_(int k, int n, int n_tail, const float *B, int ldb,
-                  float *buffer);
+void PackMatrixB_8c(int k, int n, int n_tail, const float *B, int ldb,
+                    float *buffer);
 
 // 分块矩阵乘法
 void InnerKernel(int mc, int nc, float alpha, const float *a, const float *b,
@@ -51,7 +55,7 @@ void InnerKernel(int mc, int nc, float alpha, const float *a, const float *b,
 void InnerKernelWithBn(int mc, int nc, float alpha, const float *a,
                        const float *b, float beta, float *c, float *C, int ldc,
                        bool relu, float *new_scale, float *new_bias);
-
+/*
 // 向量矩阵乘法 (M = 1)
 void VectorKernel(int m, int n, int k, float alpha, const float *A, int lda,
                   const float *B, int ldb, float beta, float *C, int ldc,
@@ -60,10 +64,12 @@ void VectorKernel(int m, int n, int k, float alpha, const float *A, int lda,
 void VectorKernelWithBn(int m, int n, int k, float alpha, const float *A,
                         int lda, const float *B, int ldb, float beta, float *C,
                         int ldc, bool relu, float *new_scale, float *new_bias);
+*/
 
 // 计算一个更小的 C 矩阵分块
 void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc);
 void AddDot4x8(int k, const float *a, const float *b, float *c, int ldc);
+void AddDot6x8(int k, const float *a, const float *b, float *c, int ldc);
 
 // 分块矩阵乘法结果回写
 // C = A * B
@@ -81,6 +87,7 @@ void WriteWithBn(int mc, int nc, float *c, float *C, int ldc, float *new_scale,
 void WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc,
                      float *new_scale, float *new_bias);
 
+/*
 // 向量矩阵乘法结果回写
 // C = A * B
 void VecWriteBasic(int n, float *c, float *C, int ldc);
@@ -96,6 +103,7 @@ void VecWriteWithBn(int n, float *c, float *C, int ldc, float *new_scale,
 // C = A * B, batchnorm(C), relu(C)
 void VecWriteWithBnRelu(int n, float *c, float *C, int ldc, float *new_scale,
                         float *new_bias);
+*/
 
 // 32位 float 矩阵乘法
 void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
