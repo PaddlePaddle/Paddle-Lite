@@ -32,24 +32,55 @@ void *fpga_malloc(size_t size);
 void fpga_free(void *ptr);
 void fpga_copy(void *dst, const void *src, size_t num);
 
-struct CnnVersionArgs {
+struct FpgaVersionArgs {
   void *buf;
 };
 
-struct QuantArgs {
+struct MemoryToPhysicalArgs {
+  const void *src;
+  uint64_t physical;
+};
+
+struct MemoryCopyArgs {
+  void *src;
+  void *dst;
+  size_t size;
+};
+
+struct FpgaQuantArgs {
   float scale;
 };
 
-struct BatchNormalizationArgs {
-  bool enable;
+struct FpgaBNArgs {};
+
+struct FpgaConvArgs {
+  bool enable_BN = false;
+  bool enable_Relu = false;
+  struct FpgaBNParam bn_parm;
 };
 
-struct ScaleArgs {};
+struct FpgaPoolArgs {
+  bool enable_BN = false;
+  struct FpgaBNParam bn_parm;
+};
 
-#define IOCTL_CNN_MAGIC 'CNN'
-#define IOCTL_VERSION _IOW(IOCTL_CNN_MAGIC, 1, struct CnnVersionArgs)
-#define IOCTL_GET_QUANT _IOW(IOCTL_CNN_MAGIC, 2, struct QuantArgs)
-#define IOCTL_SET_QUANT _IOW(IOCTL_CNN_MAGIC, 3, struct QuantArgs)
+struct FpgaEWAddArgs {  // only support X + Y
+  bool enable_Relu = false;
+};
+
+int ComputeFpgaConv(struct FpgaConvArgs);
+int ComputeFpgaPool(struct FpgaPoolArgs);
+int ComputeFpgaEWAdd(struct FpgaEWAddArgs);
+
+#define IOCTL_FPGA_MAGIC 'FPGA'
+#define IOCTL_VERSION _IOW(IOCTL_FPGA_MAGIC, 1, struct FpgaVersionArgs)
+#define IOCTL_GET_QUANT _IOW(IOCTL_FPGA_MAGIC, 2, struct FpgaQuantArgs)
+#define IOCTL_SET_QUANT _IOW(IOCTL_FPGA_MAGIC, 3, struct FpgaArgs)
+#define IOCTL_MEM_COPY _IOW(IOCTL_FPGA_MAGIC, 11, struct MemoryCopyArgs)
+#define IOCTL_MEM_TOPHY _IOW(IOCTL_FPGA_MAGIC, 12, struct MemoryToPhysicalArgs)
+#define IOCTL_CONFIG_CONV _IOW(IOCTL_FPGA_MAGIC, 21, struct FpgaConvArgs)
+#define IOCTL_CONFIG_POOLING _IOW(IOCTL_FPGA_MAGIC, 22, struct FpgaPoolArgs)
+#define IOCTL_CONFIG_EW _IOW(IOCTL_FPGA_MAGIC, 23, struct FpgaEWAddArgs)
 
 }  // namespace api
 }  // namespace fpga

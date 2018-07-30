@@ -58,6 +58,10 @@ void fpga_copy(void *dest, const void *src, size_t num) {
   memcpy(dest, src, num);
 }
 
+int ComputeFpgaConv(struct FpgaConvArgs) {}
+int ComputeFpgaPool(struct FpgaPoolArgs) {}
+int ComputeFpgaEWAdd(struct FpgaEWAddArgs) {}
+
 }  // namespace api
 }  // namespace fpga
 }  // namespace mobile
