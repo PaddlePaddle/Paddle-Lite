@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.6)
 project(paddle-mobile)
 
 option(DEBUGING "enable debug mode" ON)
-option(USE_OPENMP "openmp support" ON)
+option(USE_OPENMP "openmp support" OFF)
 option(USE_EXCEPTION "use std exception" ON)
 option(LOG_PROFILE "log profile" ON)
 # select the platform to build
@@ -15,7 +15,7 @@ file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
 include_directories(src/)
 
 if(IS_IOS)
-    set(CMAKE_CXX_FLAGS "-fobjc-abi-version=2 -fobjc-arc -std=gnu++11 -stdlib=libc++ -O3 -s -isysroot ${CMAKE_OSX_SYSROOT} ${CMAKE_CXX_FLAGS}")
+    set(CMAKE_CXX_FLAGS "-mfpu=neon -marm -fobjc-abi-version=2 -fobjc-arc -std=gnu++11 -stdlib=libc++ -O3 -s -isysroot ${CMAKE_OSX_SYSROOT} ${CMAKE_CXX_FLAGS}")
 else()
     set(CMAKE_CXX_FLAGS "-std=c++14 -O3 -s ${CMAKE_CXX_FLAGS}")
 endif()
@@ -43,7 +43,7 @@ if (LOG_PROFILE)
     add_definitions(-DPADDLE_MOBILE_PROFILE)
 endif()
 
-if(USE_OPENMP)
+if(USE_OPENMP AND NOT IS_IOS)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
     add_definitions(-DPADDLE_MOBILE_USE_OPENMP)
 endif()
@@ -104,12 +104,21 @@ else()
     foreach(f ${_tmp_list_h})
         list(REMOVE_ITEM PADDLE_MOBILE_H ${f})
     endforeach()
-endif()
 
+
+    file(GLOB_RECURSE _tmp_list src/fpga/*.cpp src/fpga/*.cc)
+    foreach(f ${_tmp_list})
+        list(REMOVE_ITEM PADDLE_MOBILE_CC ${f})
+    endforeach()
+
+    file(GLOB_RECURSE _tmp_list_h src/fpga/*.h)
+    foreach(f ${_tmp_list_h})
+        list(REMOVE_ITEM PADDLE_MOBILE_H ${f})
+    endforeach()
+endif()
 
 if (ANDROID_NDK_TOOLCHAIN_INCLUDED)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -llog")
-    add_definitions(-DARMV7)
 else()
     list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/jni/paddle_mobile_jni.h)
     list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/jni/paddle_mobile_jni.cpp)
@@ -130,8 +139,8 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY build)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 
 # NET default
-set(NET "defult" CACHE STRING "select net type")
-set_property(CACHE NET PROPERTY STRINGS "defult" "googlenet" "mobilenet" "yolo" "squeezenet")
+set(NET "default" CACHE STRING "select net type")
+set_property(CACHE NET PROPERTY STRINGS "default" "googlenet" "mobilenet" "yolo" "squeezenet" "FPGAnets")
 include("${CMAKE_CURRENT_LIST_DIR}/tools/op.cmake")
 
 
@@ -152,4 +161,5 @@ if(DEBUGING)
         add_subdirectory(test)
     endif()
 endif()
+
 

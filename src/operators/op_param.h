@@ -232,7 +232,6 @@ class ConvParam : OpParam {
 Print &operator<<(Print &printer, const ConvParam &conv_param);
 #endif
 
-#ifdef ELEMENTWISEADD_OP
 class ElementwiseAddParam : OpParam {
  public:
   ElementwiseAddParam(const VariableNameMap &inputs,
@@ -259,6 +258,8 @@ class ElementwiseAddParam : OpParam {
   int axis_;
 };
 
+#ifdef FUSION_ELEMENTWISEADDRELU_OP
+using ElementwiseAddReluParam = ElementwiseAddParam;
 #endif
 
 #ifdef MUL_OP
@@ -371,7 +372,7 @@ class BatchNormParam : OpParam {
     input_variance_ = InputVarianceFrom<LoDTensor>(inputs, scope);
     epsilon_ = GetAttr<float>("epsilon", attrs);
     momentum_ = GetAttr<float>("momentum", attrs);
-    is_test_ = GetAttr<bool>("is_test", attrs);
+    //    is_test_ = GetAttr<bool>("is_test", attrs);
   }
 
   const Tensor *InputX() const { return input_x_; }
@@ -421,7 +422,7 @@ class PoolParam : public OpParam {
     strides_ = GetAttr<vector<int>>("strides", attrs);
     paddings_ = GetAttr<vector<int>>("paddings", attrs);
     ceil_mode_ = GetAttr<bool>("ceil_mode", attrs);
-    gloabal_pooling_ = GetAttr<bool>("global_pooling", attrs);
+    global_pooling_ = GetAttr<bool>("global_pooling", attrs);
   }
 
   const Tensor *Input() const { return input_; }
@@ -438,7 +439,7 @@ class PoolParam : public OpParam {
 
   bool isCeilMode() const { return ceil_mode_; }
 
-  bool isGlobalPooling() const { return gloabal_pooling_; }
+  bool isGlobalPooling() const { return global_pooling_; }
 
  private:
   Tensor *input_;
@@ -448,9 +449,82 @@ class PoolParam : public OpParam {
   vector<int> strides_;
   vector<int> paddings_;
   bool ceil_mode_;
-  bool gloabal_pooling_ = false;
+  bool global_pooling_ = false;
 };
+#endif
 
+#ifdef FUSION_POOLBN_OP
+class FusionPoolBNParam : OpParam {
+ public:
+  FusionPoolBNParam(const VariableNameMap &inputs,
+                    const VariableNameMap &outputs, const AttributeMap &attrs,
+                    const Scope &scope) {
+    input_ = InputXFrom<LoDTensor>(inputs, scope);
+    pooling_type_ = GetAttr<string>("pooling_type", attrs);
+    ksize_ = GetAttr<vector<int>>("ksize", attrs);
+    strides_ = GetAttr<vector<int>>("strides", attrs);
+    paddings_ = GetAttr<vector<int>>("paddings", attrs);
+    ceil_mode_ = GetAttr<bool>("ceil_mode", attrs);
+    global_pooling_ = GetAttr<bool>("global_pooling", attrs);
+    output_y_ = OutputYFrom<LoDTensor>(outputs, scope);
+    input_bias_ = InputBiasFrom<LoDTensor>(inputs, scope);
+    input_mean_ = InputMeanFrom<LoDTensor>(inputs, scope);
+    input_scale_ = InputScaleFrom<LoDTensor>(inputs, scope);
+    input_variance_ = InputVarianceFrom<LoDTensor>(inputs, scope);
+    epsilon_ = GetAttr<float>("epsilon", attrs);
+    momentum_ = GetAttr<float>("momentum", attrs);
+    //    is_test_ = GetAttr<bool>("is_test", attrs);
+  }
+  const Tensor *Input() const { return input_; }
+
+  const string &PoolingType() const { return pooling_type_; }
+
+  const vector<int> &Ksize() const { return ksize_; }
+
+  const vector<int> &Strides() const { return strides_; }
+
+  const vector<int> &Paddings() const { return paddings_; }
+
+  bool isCeilMode() const { return ceil_mode_; }
+
+  bool isGlobalPooling() const { return global_pooling_; }
+
+  Tensor *OutputY() const { return output_y_; }
+
+  const Tensor *InputBias() const { return input_bias_; }
+
+  const Tensor *InputMean() const { return input_mean_; }
+
+  const Tensor *InputScale() const { return input_scale_; }
+
+  const Tensor *InputVariance() const { return input_variance_; }
+
+  const float &Epsilon() const { return epsilon_; }
+
+  const float &Momentum() const { return momentum_; }
+
+  const bool &IsTest() const { return is_test_; }
+
+  const string &DataFormat() const { return data_format_; }
+
+ private:
+  Tensor *input_;
+  string pooling_type_;
+  vector<int> ksize_;
+  vector<int> strides_;
+  vector<int> paddings_;
+  bool ceil_mode_;
+  bool global_pooling_ = false;
+  Tensor *output_y_;
+  Tensor *input_bias_;
+  Tensor *input_mean_;
+  Tensor *input_scale_;
+  Tensor *input_variance_;
+  float epsilon_;
+  float momentum_;
+  bool is_test_;
+  string data_format_;
+};
 #endif
 
 #ifdef PRIORBOX_OP
@@ -875,7 +949,6 @@ class PReluParam : public OpParam {
 };
 #endif
 
-#ifdef FUSION_FC_OP
 class FusionFcParam : public OpParam {
  public:
   FusionFcParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
@@ -911,9 +984,11 @@ class FusionFcParam : public OpParam {
   int y_num_col_dims_;
   int axis_;
 };
+
+#ifdef FUSION_FCRELU_OP
+using FusionFcReluParam = FusionFcParam;
 #endif
 
-#ifdef FUSION_CONVADD_OP
 class FusionConvAddParam : public OpParam {
  public:
   FusionConvAddParam(const VariableNameMap &inputs,
@@ -960,9 +1035,8 @@ class FusionConvAddParam : public OpParam {
 };
 
 Print &operator<<(Print &printer, const FusionConvAddParam &conv_param);
-#endif
 
-#ifdef FUSION_CONVADD_RELU_OP
+#ifdef FUSION_CONVADDRELU_OP
 class FusionConvAddReluParam : public FusionConvAddParam {
  public:
   FusionConvAddReluParam(const VariableNameMap &inputs,
@@ -993,7 +1067,7 @@ class FusionConvAddBNReluParam : public OpParam {
     input_variance_ = InputVarianceFrom<LoDTensor>(inputs, scope);
     epsilon_ = GetAttr<float>("epsilon", attrs);
     momentum_ = GetAttr<float>("momentum", attrs);
-    is_test_ = GetAttr<bool>("is_test", attrs);
+    //    is_test_ = GetAttr<bool>("is_test", attrs);
   }
   Tensor *Bias() const { return bias_; }
 
@@ -1055,8 +1129,91 @@ class FusionConvAddBNReluParam : public OpParam {
   Tensor *new_bias_;
   Tensor *new_scale_;
 };
+#endif
 
-Print &operator<<(Print &printer, const FusionConvAddParam &conv_param);
+#ifdef FUSION_CONVADDBN_OP
+class FusionConvAddBNParam : public OpParam {
+ public:
+  FusionConvAddBNParam(const VariableNameMap &inputs,
+                       const VariableNameMap &outputs,
+                       const AttributeMap &attrs, const Scope &scope) {
+    bias_ = InputYFrom<LoDTensor>(inputs, scope);
+    axis_ = GetAttr<int>("axis", attrs);
+    filter_ = FilterFrom<LoDTensor>(inputs, scope);
+    input_ = InputFrom<LoDTensor>(inputs, scope);
+    output_y_ = OutputYFrom<LoDTensor>(outputs, scope);
+    strides_ = GetAttr<vector<int>>("strides", attrs);
+    paddings_ = GetAttr<vector<int>>("paddings", attrs);
+    dilations_ = GetAttr<vector<int>>("dilations", attrs);
+    groups = GetAttr<int>("groups", attrs);
+    input_bias_ = InputBiasFrom<LoDTensor>(inputs, scope);
+    input_mean_ = InputMeanFrom<LoDTensor>(inputs, scope);
+    input_scale_ = InputScaleFrom<LoDTensor>(inputs, scope);
+    input_variance_ = InputVarianceFrom<LoDTensor>(inputs, scope);
+    epsilon_ = GetAttr<float>("epsilon", attrs);
+    momentum_ = GetAttr<float>("momentum", attrs);
+    //    is_test_ = GetAttr<bool>("is_test", attrs);
+  }
+  Tensor *Bias() const { return bias_; }
+
+  const int &Axis() const { return axis_; }
+
+  const Tensor *Input() const { return input_; }
+
+  const Tensor *Filter() const { return filter_; }
+
+  Tensor *OutputY() const { return output_y_; }
+
+  const vector<int> &Strides() const { return strides_; }
+
+  const vector<int> &Paddings() const { return paddings_; }
+
+  const vector<int> &Dilations() const { return dilations_; }
+
+  const int &Groups() const { return groups; }
+
+  const Tensor *InputBias() const { return input_bias_; }
+
+  const Tensor *InputMean() const { return input_mean_; }
+
+  const Tensor *InputScale() const { return input_scale_; }
+
+  const Tensor *InputVariance() const { return input_variance_; }
+
+  const float &Epsilon() const { return epsilon_; }
+
+  const float &Momentum() const { return momentum_; }
+
+  const bool &IsTest() const { return is_test_; }
+
+  void SetNewScale(Tensor *new_scale) { new_scale_ = new_scale; }
+
+  void SetNewBias(Tensor *new_bias) { new_bias_ = new_bias; }
+
+  const Tensor *NewScale() const { return new_scale_; }
+
+  const Tensor *NewBias() const { return new_bias_; }
+
+ protected:
+  Tensor *bias_;
+  int axis_;
+  Tensor *input_;
+  Tensor *output_y_;
+  Tensor *filter_;
+  vector<int> strides_;
+  vector<int> paddings_;
+  vector<int> dilations_;
+  int groups;
+  Tensor *input_bias_;
+  Tensor *input_mean_;
+  Tensor *input_scale_;
+  Tensor *input_variance_;
+  float epsilon_;
+  float momentum_;
+  bool is_test_;
+  Tensor *new_bias_;
+  Tensor *new_scale_;
+};
 #endif
 
 #ifdef FUSION_DWCONVBNRELU_OP
@@ -1078,7 +1235,7 @@ class FusionDWConvBNReluParam : public OpParam {
     input_variance_ = InputVarianceFrom<LoDTensor>(inputs, scope);
     epsilon_ = GetAttr<float>("epsilon", attrs);
     momentum_ = GetAttr<float>("momentum", attrs);
-    is_test_ = GetAttr<bool>("is_test", attrs);
+    //    is_test_ = GetAttr<bool>("is_test", attrs);
   }
 
   const Tensor *Input() const { return input_; }
@@ -1137,6 +1294,85 @@ class FusionDWConvBNReluParam : public OpParam {
 };
 
 Print &operator<<(Print &printer, const FusionConvAddParam &conv_param);
+#endif
+
+#ifdef FUSION_CONVBNRELU_OP
+class FusionConvBNReluParam : public OpParam {
+ public:
+  FusionConvBNReluParam(const VariableNameMap &inputs,
+                        const VariableNameMap &outputs,
+                        const AttributeMap &attrs, const Scope &scope) {
+    filter_ = FilterFrom<LoDTensor>(inputs, scope);
+    input_ = InputFrom<LoDTensor>(inputs, scope);
+    output_ = OutFrom<LoDTensor>(outputs, scope);
+
+    strides_ = GetAttr<vector<int>>("strides", attrs);
+    paddings_ = GetAttr<vector<int>>("paddings", attrs);
+    dilations_ = GetAttr<vector<int>>("dilations", attrs);
+    groups = GetAttr<int>("groups", attrs);
+    input_bias_ = InputBiasFrom<LoDTensor>(inputs, scope);
+    input_mean_ = InputMeanFrom<LoDTensor>(inputs, scope);
+    input_scale_ = InputScaleFrom<LoDTensor>(inputs, scope);
+    input_variance_ = InputVarianceFrom<LoDTensor>(inputs, scope);
+    epsilon_ = GetAttr<float>("epsilon", attrs);
+    momentum_ = GetAttr<float>("momentum", attrs);
+    //    is_test_ = GetAttr<bool>("is_test", attrs);
+  }
+
+  const Tensor *Input() const { return input_; }
+
+  const Tensor *Filter() const { return filter_; }
+
+  Tensor *Output() const { return output_; }
+
+  const vector<int> &Strides() const { return strides_; }
+
+  const vector<int> &Paddings() const { return paddings_; }
+
+  const vector<int> &Dilations() const { return dilations_; }
+
+  const int &Groups() const { return groups; }
+
+  const Tensor *InputBias() const { return input_bias_; }
+
+  const Tensor *InputMean() const { return input_mean_; }
+
+  const Tensor *InputScale() const { return input_scale_; }
+
+  const Tensor *InputVariance() const { return input_variance_; }
+
+  const float &Epsilon() const { return epsilon_; }
+
+  const float &Momentum() const { return momentum_; }
+
+  const bool &IsTest() const { return is_test_; }
+
+  void SetNewScale(Tensor *new_scale) { new_scale_ = new_scale; }
+
+  void SetNewBias(Tensor *new_bias) { new_bias_ = new_bias; }
+
+  const Tensor *NewScale() const { return new_scale_; }
+
+  const Tensor *NewBias() const { return new_bias_; }
+
+ protected:
+  Tensor *input_;
+  Tensor *output_;
+  Tensor *filter_;
+  vector<int> strides_;
+  vector<int> paddings_;
+  vector<int> dilations_;
+  int groups;
+  Tensor *input_bias_;
+  Tensor *input_mean_;
+  Tensor *input_scale_;
+  Tensor *input_variance_;
+  float epsilon_;
+  float momentum_;
+  bool is_test_;
+  Tensor *new_bias_;
+  Tensor *new_scale_;
+};
 #endif
 
 #ifdef IM2SEQUENCE_OP
@@ -1188,6 +1424,10 @@ class DropoutParam : public OpParam {
   Tensor *input_x_;
   Tensor *out_;
 };
+#endif
+
+#ifdef REGION_OP
+class RegionParam : public OpParam {};
 #endif
 
 }  // namespace operators

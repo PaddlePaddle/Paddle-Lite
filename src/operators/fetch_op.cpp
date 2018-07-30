@@ -14,10 +14,7 @@ limitations under the License. */
 
 #include "fetch_op.h"
 namespace paddle_mobile {
-namespace operators {
-
-template class FetchOp<CPU, float>;
-}
+namespace operators {}
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;

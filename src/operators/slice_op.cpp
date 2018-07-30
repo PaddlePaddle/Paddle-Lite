@@ -23,7 +23,7 @@ template <typename Dtype, typename T>
 void SliceOp<Dtype, T>::InferShape() const {
   /// todo: add InputShape() detection.
 }
-template class SliceOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 

@@ -16,22 +16,29 @@ limitations under the License. */
 
 #include <fstream>
 #include <random>
+#include <string>
+#include <vector>
 
 #include "common/common.h"
 #include "common/log.h"
 #include "framework/ddim.h"
 #include "framework/tensor.h"
 
-static const std::string g_mobilenet_ssd = "../models/mobilenet+ssd";
-static const std::string g_squeezenet = "../models/squeezenet";
-static const std::string g_googlenet = "../models/googlenet";
-static const std::string g_mobilenet = "../models/mobilenet";
-static const std::string g_resnet_50 = "../models/resnet_50";
-static const std::string g_resnet = "../models/resnet";
-static const std::string g_googlenet_combine = "../models/googlenet_combine";
-static const std::string g_yolo = "../models/yolo";
-static const std::string g_test_image_1x3x224x224 =
+static const char *g_mobilenet_ssd = "../models/mobilenet+ssd";
+static const char *g_mobilenet_ssd_gesture = "../models/mobilenet+ssd_gesture";
+static const char *g_squeezenet = "../models/squeezenet";
+static const char *g_googlenet = "../models/googlenet";
+static const char *g_mobilenet = "../models/mobilenet";
+static const char *g_resnet_50 = "../models/resnet_50";
+static const char *g_resnet = "../models/resnet";
+static const char *g_googlenet_combine = "../models/googlenet_combine";
+static const char *g_yolo = "../models/yolo";
+static const char *g_test_image_1x3x224x224 =
     "../images/test_image_1x3x224x224_float";
+static const char *g_test_image_1x3x224x224_banana =
+    "../images/input_3x224x224_banana";
+static const char *g_hand = "../images/hand_image";
+
 using paddle_mobile::framework::DDim;
 using paddle_mobile::framework::Tensor;
 
@@ -62,9 +69,9 @@ void GetInput(const std::string &input_name, std::vector<T> *input,
     size *= dim;
   }
 
-  T *input_ptr = (T *)malloc(sizeof(T) * size);
+  T *input_ptr = reinterpret_cast<T *>(malloc(sizeof(T) * size));
   std::ifstream in(input_name, std::ios::in | std::ios::binary);
-  in.read((char *)(input_ptr), size * sizeof(T));
+  in.read(reinterpret_cast<char *>(input_ptr), size * sizeof(T));
   in.close();
   for (int i = 0; i < size; ++i) {
     input->push_back(input_ptr[i]);
@@ -79,6 +86,6 @@ void GetInput(const std::string &input_name,
   T *input_ptr = input->mutable_data<T>(dims);
 
   std::ifstream in(input_name, std::ios::in | std::ios::binary);
-  in.read((char *)(input_ptr), input->numel() * sizeof(T));
+  in.read(reinterpret_cast<char *>(input_ptr), input->numel() * sizeof(T));
   in.close();
 }
