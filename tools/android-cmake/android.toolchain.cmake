@@ -159,7 +159,7 @@ endif()
 
 # Default values for configurable variables.
 if(NOT ANDROID_TOOLCHAIN)
-  set(ANDROID_TOOLCHAIN clang)
+  set(ANDROID_TOOLCHAIN gcc)
 endif()
 if(NOT ANDROID_ABI)
   set(ANDROID_ABI armeabi-v7a)
