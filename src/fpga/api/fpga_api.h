@@ -81,6 +81,7 @@ struct ConvArgs {
 
   struct BNArgs bn;
   struct ImageInputArgs image;  // input image;
+  struct ImageOutputArgs output;
   struct KernelArgs kernel;
 };
 
