@@ -15,7 +15,7 @@ limitations under the License. */
 #include "framework/operator.h"
 #include "operators/op_param.h"
 
-#pragma once;
+#pragma once
 
 namespace paddle_mobile {
 namespace operators {
