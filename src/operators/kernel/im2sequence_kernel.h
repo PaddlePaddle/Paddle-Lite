@@ -20,12 +20,10 @@ limitations under the License. */
 #include "operators/math/vol2col.h"
 #include "operators/op_param.h"
 
-#pragma once;
+#pragma once
 
 namespace paddle_mobile {
 namespace operators {
-
-using namespace framework;
 
 template <typename DeviceType, typename T>
 class Im2SequenceKernel
