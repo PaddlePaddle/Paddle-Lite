@@ -22,6 +22,9 @@ limitations under the License. */
 #include "framework/scope.h"
 #include "framework/tensor.h"
 #include "framework/variable.h"
+#ifdef PADDLE_MOBILE_FPGA
+#include "fpga/api/fpga_api.h"
+#endif
 
 namespace paddle_mobile {
 namespace operators {
@@ -256,6 +259,15 @@ class ElementwiseAddParam : OpParam {
   Tensor *input_y_;
   Tensor *out_;
   int axis_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::FpgaEWAddArgs fpga_EW_add_args;
+
+ public:
+  const fpga::FpgaEWAddArgs &FpgaArgs() const { return fpga_EW_add_args; }
+  void SetFpgaArgs(const fpga::FpgaEWAddArgs &args) { fpga_EW_add_args = args; }
+#endif
 };
 
 #ifdef FUSION_ELEMENTWISEADDRELU_OP
@@ -450,80 +462,15 @@ class PoolParam : public OpParam {
   vector<int> paddings_;
   bool ceil_mode_;
   bool global_pooling_ = false;
-};
-#endif
-
-#ifdef FUSION_POOLBN_OP
-class FusionPoolBNParam : OpParam {
- public:
-  FusionPoolBNParam(const VariableNameMap &inputs,
-                    const VariableNameMap &outputs, const AttributeMap &attrs,
-                    const Scope &scope) {
-    input_ = InputXFrom<LoDTensor>(inputs, scope);
-    pooling_type_ = GetAttr<string>("pooling_type", attrs);
-    ksize_ = GetAttr<vector<int>>("ksize", attrs);
-    strides_ = GetAttr<vector<int>>("strides", attrs);
-    paddings_ = GetAttr<vector<int>>("paddings", attrs);
-    ceil_mode_ = GetAttr<bool>("ceil_mode", attrs);
-    global_pooling_ = GetAttr<bool>("global_pooling", attrs);
-    output_y_ = OutputYFrom<LoDTensor>(outputs, scope);
-    input_bias_ = InputBiasFrom<LoDTensor>(inputs, scope);
-    input_mean_ = InputMeanFrom<LoDTensor>(inputs, scope);
-    input_scale_ = InputScaleFrom<LoDTensor>(inputs, scope);
-    input_variance_ = InputVarianceFrom<LoDTensor>(inputs, scope);
-    epsilon_ = GetAttr<float>("epsilon", attrs);
-    momentum_ = GetAttr<float>("momentum", attrs);
-    //    is_test_ = GetAttr<bool>("is_test", attrs);
-  }
-  const Tensor *Input() const { return input_; }
-
-  const string &PoolingType() const { return pooling_type_; }
-
-  const vector<int> &Ksize() const { return ksize_; }
-
-  const vector<int> &Strides() const { return strides_; }
-
-  const vector<int> &Paddings() const { return paddings_; }
-
-  bool isCeilMode() const { return ceil_mode_; }
-
-  bool isGlobalPooling() const { return global_pooling_; }
-
-  Tensor *OutputY() const { return output_y_; }
-
-  const Tensor *InputBias() const { return input_bias_; }
-
-  const Tensor *InputMean() const { return input_mean_; }
-
-  const Tensor *InputScale() const { return input_scale_; }
-
-  const Tensor *InputVariance() const { return input_variance_; }
-
-  const float &Epsilon() const { return epsilon_; }
-
-  const float &Momentum() const { return momentum_; }
-
-  const bool &IsTest() const { return is_test_; }
-
-  const string &DataFormat() const { return data_format_; }
+#ifdef PADDLE_MOBILE_FPGA
 
  private:
-  Tensor *input_;
-  string pooling_type_;
-  vector<int> ksize_;
-  vector<int> strides_;
-  vector<int> paddings_;
-  bool ceil_mode_;
-  bool global_pooling_ = false;
-  Tensor *output_y_;
-  Tensor *input_bias_;
-  Tensor *input_mean_;
-  Tensor *input_scale_;
-  Tensor *input_variance_;
-  float epsilon_;
-  float momentum_;
-  bool is_test_;
-  string data_format_;
+  fpga::FpgaPoolArgs fpga_pool_args;
+
+ public:
+  const fpga::FpgaPoolArgs &FpgaArgs() const { return fpga_pool_args; }
+  void SetFpgaArgs(const fpga::FpgaPoolArgs &args) { fpga_pool_args = args; }
+#endif
 };
 #endif
 
@@ -704,10 +651,10 @@ class MultiClassNMSParam : public OpParam {
 class FeedParam : public OpParam {
  public:
   FeedParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-            const AttributeMap &attrs, Scope &scope) {
-    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-    out_ = OutFrom<LoDTensor>(outputs, scope);
-    auto var = scope.Var("batch_size");
+            const AttributeMap &attrs, Scope *scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, *scope);
+    out_ = OutFrom<LoDTensor>(outputs, *scope);
+    auto var = scope->Var("batch_size");
     batch_size = var->GetValue<int>();
   }
   const Tensor *InputX() const { return input_x_; }
@@ -983,6 +930,15 @@ class FusionFcParam : public OpParam {
   int x_num_col_dims_;
   int y_num_col_dims_;
   int axis_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::FpgaConvArgs fpga_conv_args;
+
+ public:
+  const fpga::FpgaConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::FpgaConvArgs &args) { fpga_conv_args = args; }
+#endif
 };
 
 #ifdef FUSION_FCRELU_OP
@@ -1032,6 +988,15 @@ class FusionConvAddParam : public OpParam {
   vector<int> paddings_;
   vector<int> dilations_;
   int groups;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::FpgaConvArgs fpga_conv_args;
+
+ public:
+  const fpga::FpgaConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::FpgaConvArgs &args) { fpga_conv_args = args; }
+#endif
 };
 
 Print &operator<<(Print &printer, const FusionConvAddParam &conv_param);
@@ -1128,6 +1093,15 @@ class FusionConvAddBNReluParam : public OpParam {
   bool is_test_;
   Tensor *new_bias_;
   Tensor *new_scale_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::FpgaConvArgs fpga_conv_args;
+
+ public:
+  const fpga::FpgaConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::FpgaConvArgs &args) { fpga_conv_args = args; }
+#endif
 };
 #endif
 
@@ -1213,6 +1187,15 @@ class FusionConvAddBNParam : public OpParam {
   bool is_test_;
   Tensor *new_bias_;
   Tensor *new_scale_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::FpgaConvArgs fpga_conv_args;
+
+ public:
+  const fpga::FpgaConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::FpgaConvArgs &args) { fpga_conv_args = args; }
+#endif
 };
 #endif
 
@@ -1424,10 +1407,6 @@ class DropoutParam : public OpParam {
   Tensor *input_x_;
   Tensor *out_;
 };
-#endif
-
-#ifdef REGION_OP
-class RegionParam : public OpParam {};
 #endif
 
 }  // namespace operators

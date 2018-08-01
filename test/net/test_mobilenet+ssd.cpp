@@ -20,22 +20,20 @@ int main() {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
   paddle_mobile.SetThreadNum(4);
   auto time1 = time();
-  auto isok = paddle_mobile.Load(g_mobilenet_ssd_gesture + "/model",
-                                 g_mobilenet_ssd_gesture + "/params", true);
+  auto isok = paddle_mobile.Load(
+      std::string(g_mobilenet_ssd_gesture) + "/model",
+      std::string(g_mobilenet_ssd_gesture) + "/params", true);
   //  auto isok = paddle_mobile.Load(g_mobilenet_ssd, false);
   if (isok) {
     auto time2 = time();
     std::cout << "load cost :" << time_diff(time1, time2) << "ms" << std::endl;
 
+    std::vector<float> input;
     std::vector<int64_t> dims{1, 3, 300, 300};
-    Tensor input_tensor;
-    SetupTensor<float>(&input_tensor, {1, 3, 300, 300}, static_cast<float>(0),
-                       static_cast<float>(1));
+    GetInput<float>(g_hand, &input, dims);
 
-    std::vector<float> input(input_tensor.data<float>(),
-                             input_tensor.data<float>() + input_tensor.numel());
     auto time3 = time();
-    paddle_mobile.Predict(input, dims);
+    auto output = paddle_mobile.Predict(input, dims);
     auto time4 = time();
     std::cout << "predict cost :" << time_diff(time3, time4) << "ms"
               << std::endl;

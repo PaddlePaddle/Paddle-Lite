@@ -187,7 +187,7 @@ void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
     memcpy(&max_value, *data + sizeof(float), sizeof(float));
     *data += 2 * sizeof(float);
     const float factor = (max_value - min_value) / 255.0;
-    uint8_t *uint8_data = (uint8_t *)(*data);
+    uint8_t *uint8_data = reinterpret_cast<uint8_t *>(*data);
     for (int k = 0; k < memory_size; ++k) {
       static_cast<float *>(memory)[k] = uint8_data[k] * factor + min_value;
     }
@@ -419,7 +419,7 @@ std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::Predict(
 }
 
 template class Executor<CPU, Precision::FP32>;
-template class Executor<FPGA, Precision::FP32>;
 template class Executor<GPU_MALI, Precision::FP32>;
+template class Executor<FPGA, Precision::FP32>;
 
 }  // namespace paddle_mobile

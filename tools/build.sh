@@ -63,7 +63,7 @@ build_for_android() {
     TOOLCHAIN_FILE="./tools/android-cmake/android.toolchain.cmake"
     ANDROID_ARM_MODE="arm"
 
-    if [ "${#NETS}" > 1 ]; then
+    if [ "${#NETS}" -gt 1 ]; then
     cmake .. \
         -B"../build/release/${PLATFORM}" \
         -DANDROID_ABI="${ABI}" \
@@ -99,7 +99,7 @@ build_for_ios() {
     BUILD_DIR=../build/release/"${PLATFORM}"/
     TOOLCHAIN_FILE="./tools/ios-cmake/ios.toolchain.cmake"
     mkdir -p "${BUILD_DIR}"
-    if [ "${#NETS}" > 1 ]; then
+    if [ "${#NETS}" -gt 1 ]; then
         cmake .. \
             -B"${BUILD_DIR}" \
             -DCMAKE_BUILD_TYPE="${MODE}" \
