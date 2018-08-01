@@ -3,8 +3,8 @@
 #include "src/enforce.h"
 #include "src/var_desc.h"
 #include "src/program_desc.h"
+#include <cstring>
 #include <cstdlib>
-#include <string.h>
 #include <cmath>
 #include <iostream>
 #include <utility>
@@ -13,6 +13,7 @@
 #include "src/protobuf-c.h"
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <limits>
 
 
