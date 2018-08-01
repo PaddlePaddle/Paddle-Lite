@@ -19,6 +19,7 @@ limitations under the License. */
 #ifndef TOOLS_QUANTIFICATION_SRC_BLOCK_DESC_LOCAL_H_
 #define TOOLS_QUANTIFICATION_SRC_BLOCK_DESC_LOCAL_H_
 
+#include <memory>
 #include <vector>
 #include "src/var_desc.h"
 
