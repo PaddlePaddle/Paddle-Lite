@@ -14,8 +14,6 @@ limitations under the License. */
 
 #ifdef FUSION_FC_OP
 
-#pragma once
-
 #include "operators/kernel/fusion_fc_kernel.h"
 
 namespace paddle_mobile {
