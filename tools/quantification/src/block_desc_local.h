@@ -20,6 +20,7 @@ limitations under the License. */
 #define TOOLS_QUANTIFICATION_SRC_BLOCK_DESC_LOCAL_H_
 
 #include <vector>
+#include <memory>
 #include "src/var_desc.h"
 
 class BlockDesc {

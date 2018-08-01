@@ -3,8 +3,8 @@
 #include "src/enforce.h"
 #include "src/var_desc.h"
 #include "src/program_desc.h"
+#include <cstring>
 #include <cstdlib>
-#include <string>
 #include <cmath>
 #include <iostream>
 #include <utility>
@@ -13,7 +13,7 @@
 #include "src/protobuf-c.h"
 #include <fstream>
 #include <iostream>
-
+#include <limits>
 
 const size_t kSize64 = sizeof(uint64_t);
 const size_t kSize32 = sizeof(uint32_t);
