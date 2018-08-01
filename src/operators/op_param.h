@@ -262,11 +262,11 @@ class ElementwiseAddParam : OpParam {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::FpgaEWAddArgs fpga_EW_add_args;
+  fpga::EWAddArgs fpga_EW_add_args;
 
  public:
-  const fpga::FpgaEWAddArgs &FpgaArgs() const { return fpga_EW_add_args; }
-  void SetFpgaArgs(const fpga::FpgaEWAddArgs &args) { fpga_EW_add_args = args; }
+  const fpga::EWAddArgs &FpgaArgs() const { return fpga_EW_add_args; }
+  void SetFpgaArgs(const fpga::EWAddArgs &args) { fpga_EW_add_args = args; }
 #endif
 };
 
@@ -465,11 +465,11 @@ class PoolParam : public OpParam {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::FpgaPoolArgs fpga_pool_args;
+  fpga::PoolingArgs fpga_pool_args;
 
  public:
-  const fpga::FpgaPoolArgs &FpgaArgs() const { return fpga_pool_args; }
-  void SetFpgaArgs(const fpga::FpgaPoolArgs &args) { fpga_pool_args = args; }
+  const fpga::PoolingArgs &FpgaArgs() const { return fpga_pool_args; }
+  void SetFpgaArgs(const fpga::PoolingArgs &args) { fpga_pool_args = args; }
 #endif
 };
 #endif
@@ -933,11 +933,11 @@ class FusionFcParam : public OpParam {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::FpgaConvArgs fpga_conv_args;
+  fpga::ConvArgs fpga_conv_args;
 
  public:
-  const fpga::FpgaConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::FpgaConvArgs &args) { fpga_conv_args = args; }
+  const fpga::ConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::ConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 
@@ -991,11 +991,11 @@ class FusionConvAddParam : public OpParam {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::FpgaConvArgs fpga_conv_args;
+  fpga::ConvArgs fpga_conv_args;
 
  public:
-  const fpga::FpgaConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::FpgaConvArgs &args) { fpga_conv_args = args; }
+  const fpga::ConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::ConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 
@@ -1096,11 +1096,11 @@ class FusionConvAddBNReluParam : public OpParam {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::FpgaConvArgs fpga_conv_args;
+  fpga::ConvArgs fpga_conv_args;
 
  public:
-  const fpga::FpgaConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::FpgaConvArgs &args) { fpga_conv_args = args; }
+  const fpga::ConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::ConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 #endif
@@ -1190,11 +1190,11 @@ class FusionConvAddBNParam : public OpParam {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::FpgaConvArgs fpga_conv_args;
+  fpga::ConvArgs fpga_conv_args;
 
  public:
-  const fpga::FpgaConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::FpgaConvArgs &args) { fpga_conv_args = args; }
+  const fpga::ConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::ConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 #endif
