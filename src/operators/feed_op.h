@@ -29,7 +29,7 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
          std::shared_ptr<framework::Scope> scope)
       : framework::OperatorBase<DeviceType>(type, inputs, outputs, attrs,
                                             scope),
-        param_(inputs, outputs, attrs, *scope) {}
+        param_(inputs, outputs, attrs, scope.get()) {}
   void RunImpl() const { param_.Out()->ShareDataWith(*param_.InputX()); }
 
   void Init() {}

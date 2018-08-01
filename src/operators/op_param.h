@@ -651,10 +651,10 @@ class MultiClassNMSParam : public OpParam {
 class FeedParam : public OpParam {
  public:
   FeedParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-            const AttributeMap &attrs, Scope const &scope) {
-    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-    out_ = OutFrom<LoDTensor>(outputs, scope);
-    auto var = scope.Var("batch_size");
+            const AttributeMap &attrs, Scope *scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, *scope);
+    out_ = OutFrom<LoDTensor>(outputs, *scope);
+    auto var = scope->Var("batch_size");
     batch_size = var->GetValue<int>();
   }
   const Tensor *InputX() const { return input_x_; }
