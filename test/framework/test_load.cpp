@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include <string>
+
 #include "../test_helper.h"
 #include "io/loader.h"
 
@@ -20,12 +22,10 @@ int main() {
   //  ../../../test/models/googlenet
   //  ../../../test/models/mobilenet
   //  auto program = loader.Load(g_googlenet, true);
+  //  auto program = loader.Load(g_mobilenet_ssd, true);
 
-  auto program = loader.Load(g_mobilenet_ssd, true);
-  //  auto program = loader.Load(g_googlenet_combine + "/model",
-  //  g_googlenet_combine +
-  //    "/params", true);
-
+  auto program = loader.Load(std::string(g_ocr) + "/model",
+                             std::string(g_ocr) + "/params", false);
   //  program.originProgram->Description("program desc: ");
   return 0;
 }

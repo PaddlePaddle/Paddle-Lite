@@ -12,35 +12,43 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef DROPOUT_OP
+#ifdef CONCAT_OP
 
-#include "operators/kernel/dropout_kernel.h"
-#include <operators/math/transform.h>
+#include "operators/kernel/concat_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool DropoutKernel<CPU, float>::Init(DropoutParam *para) {
+bool ConcatKernel<FPGA, half>::Init(ConcatParam *param) {
   return true;
 }
 
-template <typename T>
-struct DropoutFunctor {
-  inline T operator()(T in) const { return in; }
-};
-
 template <>
-void DropoutKernel<CPU, float>::Compute(const DropoutParam &param) const {
-  const auto *input_x = param.InputX();
-  auto *input_x_ptr = input_x->data<float>();
+void ConcatKernel<FPGA, half>::Compute(const ConcatParam &param) const {
+  auto inputs = param.Inputs();
   auto *out = param.Out();
-  auto *out_ptr = out->mutable_data<float>();
+  int64_t axis = param.Axis();
+  out->mutable_data<half>();
 
-  DropoutFunctor<float> func_;
-  math::Transform trans;
-  trans(input_x_ptr, input_x_ptr + input_x->numel(), out_ptr, func_);
+  DDim out_dim = out->dims();
+  int pixels = out_dim[1] * out_dim[2];
+  auto out_channel = out_dim[3];
+
+  auto out_offset = 0;
+
+  for (int i = 0; i < inputs.size(); ++i) {
+    auto input = inputs[i];
+    auto channels = input[3];
+    out_offset += channels;
+    auto src = input->data<half>();
+    for (int j = 0; j < pixels; ++j) {
+      auto dst = out->data<half>() + out_offset;
+      memory::Copy(dst, src, sizeof(half));
+    }
+  }
 }
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
