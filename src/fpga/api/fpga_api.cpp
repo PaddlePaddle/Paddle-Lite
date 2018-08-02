@@ -58,9 +58,9 @@ void fpga_copy(void *dest, const void *src, size_t num) {
   memcpy(dest, src, num);
 }
 
-int ComputeFpgaConv(struct FpgaConvArgs args) {}
-int ComputeFpgaPool(struct FpgaPoolArgs args) {}
-int ComputeFpgaEWAdd(struct FpgaEWAddArgs args) {}
+int ComputeFpgaConv(struct ConvArgs args) {}
+int ComputeFpgaPool(struct PoolingArgs args) {}
+int ComputeFpgaEWAdd(struct EWAddArgs args) {}
 
 }  // namespace fpga
 }  // namespace paddle_mobile
