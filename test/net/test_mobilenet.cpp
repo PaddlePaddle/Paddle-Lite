@@ -31,7 +31,7 @@ int main() {
     // 预热一次
     auto vec_result = paddle_mobile.Predict(input, dims);
     std::vector<float>::iterator biggest =
-            std::max_element(std::begin(vec_result), std::end(vec_result));
+        std::max_element(std::begin(vec_result), std::end(vec_result));
     std::cout << " Max element is " << *biggest << " at position "
               << std::distance(std::begin(vec_result), biggest) << std::endl;
 
