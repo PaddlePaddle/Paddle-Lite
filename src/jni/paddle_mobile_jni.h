@@ -27,10 +27,22 @@ namespace jni {
 JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_load(JNIEnv *env,
                                                           jclass thiz,
                                                           jstring modelPath);
+
+/**
+ * load separated qualified model for android
+ */
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadQualified(
+    JNIEnv *env, jclass thiz, jstring modelPath);
 /**
  * load combined model  for android
  */
 JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadCombined(
+    JNIEnv *env, jclass thiz, jstring modelPath, jstring paramPath);
+
+/**
+ * load combined qualified model for android
+ */
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadCombinedQualified(
     JNIEnv *env, jclass thiz, jstring modelPath, jstring paramPath);
 
 /**
