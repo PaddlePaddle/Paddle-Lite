@@ -39,7 +39,7 @@ void ConcatKernel<FPGA, half>::Compute(const ConcatParam &param) const {
 
   for (int i = 0; i < inputs.size(); ++i) {
     auto input = inputs[i];
-    auto channels = input[3];
+    auto channels = input->dims()[3];
     out_offset += channels;
     auto src = input->data<half>();
     for (int j = 0; j < pixels; ++j) {
