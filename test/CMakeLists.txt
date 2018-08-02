@@ -114,8 +114,12 @@ else ()
     target_link_libraries(test-softmax paddle-mobile)
 
     # gen test
-    ADD_EXECUTABLE(test-gemm common/test_gemm.cpp)
-    target_link_libraries(test-gemm paddle-mobile)
+    ADD_EXECUTABLE(test-gemm-accuracy common/test_gemm_accuracy.cpp)
+    target_link_libraries(test-gemm-accuracy paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-gemm-perf common/test_gemm_perf.cpp)
+    target_link_libraries(test-gemm-perf paddle-mobile)
 
     # gen test
     ADD_EXECUTABLE(test-enforce common/test_enforce.cpp)
