@@ -31,90 +31,110 @@ void* fpga_malloc(size_t size);
 void fpga_free(void* ptr);
 void fpga_copy(void* dst, const void* src, size_t num);
 
-struct FpgaVersionArgs {
-  void* buf;
-};
-
-struct MemoryToPhysicalArgs {
-  const void* src;
-  uint64_t physical;
+struct VersionArgs {
+  void* buffer;
 };
 
 struct MemoryCopyArgs {
   void* src;
-  void* dst;
+  void* dest;
   size_t size;
 };
 
-struct FpgaQuantArgs {
-  float scale;
+struct BNArgs {
+  bool enabled;
+  void* bias_address;
+  void* scale_address;
 };
 
-struct FpgaBNArgs {
-  bool enabled = false;
-  void* bias_addr;
-  void* scale_addr;
-};
-
-struct FpgaKernelArgs {
+/**
+Conv and Pooling kernel
+*/
+struct KernelArgs {
   uint32_t width;
   uint32_t height;
-  uint32_t stride_h;
   uint32_t stride_w;
+  uint32_t stride_h;
 };
 
-struct FpgaImageArgs {
-  uint32_t width;
-  uint32_t height;
+struct ImageInputArgs {
+  void* address;  // input featuremap virtual address
   uint32_t channels;
-  uint32_t pad_h;
-  uint32_t pad_w;
+  uint32_t width;  // featuremap width
+  uint32_t height;
+  uint32_t pad_width;  // padding width;
+  uint32_t pad_height;
 };
 
-struct FpgaConvArgs {
+struct ImageOutputArgs {
+  void* address;         // output result address;
+  float* scale_address;  // output scale address;
+};
+
+struct ConvArgs {
   bool relu_enabled;
-  struct FpgaBNArgs BNargs;
-  void* image_addr;
-  void* filter_addr;
-  void* bias_addr;
-  void* output_addr;
-  float quant_scale;
-  struct FpgaImageArgs image;
+  float scale;  // input scale;
+  void* bias_address;
+  void* filter_address;
   uint32_t filter_num;
   uint32_t group_num;
 
-  struct FpgaKernelArgs kernel;
+  struct BNArgs bn;
+  struct ImageInputArgs image;  // input image;
+  struct ImageOutputArgs output;
+  struct KernelArgs kernel;
 };
 
-struct FpgaPoolArgs {
-  void* image_addr;
-  void* output_addr;
-  struct FpgaImageArgs image;
-  struct FpgaKernelArgs kernel;
+struct PoolingArgs {
+  float scale;
+  struct ImageInputArgs image;  // input image;
+  struct ImageOutputArgs output;
+  struct KernelArgs kernel;
 };
 
-struct FpgaEWAddArgs {
+// elementwise add arguments
+struct EWAddArgs {
   bool relu_enabled;
-  void* image0_addr;
-  void* image1_addr;
-  void* result_addr;
-  uint32_t const0;
-  uint32_t const1;
-  uint32_t data_len;  // aligned element count
+  float scale;
+
+  float const0;  // output0 = const0 x input0 + const1 x input1;
+  float const1;
+  struct ImageInputArgs image0;
+  struct ImageInputArgs image1;
+  struct ImageOutputArgs output;
 };
+
+struct FpgaRegWriteArgs {
+  uint64_t address;  //
+  uint64_t value;
+};
+
+struct FpgaRegReadArgs {
+  uint64_t address;
+  uint64_t value;
+};
+
+#define IOCTL_FPGA_MAGIC 'FPGA'
+
+#define IOCTL_VERSION _IOW(IOCTL_FPGA_MAGIC, 01, struct VersionArgs)
+#define IOCTL_FPGA_REG_READ _IOW(IOCTL_FPGA_MAGIC, 02, struct FpgaRegReadArgs)
+#define IOCTL_FPGA_REG_WRITE _IOW(IOCTL_FPGA_MAGIC, 03, struct FpgaRegWriteArgs)
+
+#define IOCTL_SEPARATOR_0 10
+
+#define IOCTL_MEM_COPY _IOW(IOCTL_FPGA_MAGIC, 11, struct MemoryCopyArgs)
+
+#define IOCTL_SEPARATOR_1 20
+
+#define IOCTL_CONFIG_CONV _IOW(IOCTL_FPGA_MAGIC, 21, struct ConvArgs)
+#define IOCTL_CONFIG_POOLING _IOW(IOCTL_FPGA_MAGIC, 22, struct PoolingArgs)
+#define IOCTL_CONFIG_EW _IOW(IOCTL_FPGA_MAGIC, 23, struct EWAddArgs)
+
+//============================== API =============================
 
 int ComputeFpgaConv(struct FpgaConvArgs args);
 int ComputeFpgaPool(struct FpgaPoolArgs args);
 int ComputeFpgaEWAdd(struct FpgaEWAddArgs args);
-
-#define IOCTL_FPGA_MAGIC 'CNN'
-#define IOCTL_VERSION _IOW(IOCTL_FPGA_MAGIC, 1, struct FpgaVersionArgs)
-#define IOCTL_GET_QUANT _IOW(IOCTL_FPGA_MAGIC, 2, struct FpgaQuantArgs)
-#define IOCTL_SET_QUANT _IOW(IOCTL_FPGA_MAGIC, 3, struct FpgaQuantArgs)
-#define IOCTL_MEM_COPY _IOW(IOCTL_FPGA_MAGIC, 11, struct MemoryCopyArgs)
-#define IOCTL_CONFIG_CONV _IOW(IOCTL_FPGA_MAGIC, 21, struct FpgaConvArgs)
-#define IOCTL_CONFIG_POOLING _IOW(IOCTL_FPGA_MAGIC, 22, struct FpgaPoolArgs)
-#define IOCTL_CONFIG_EW _IOW(IOCTL_FPGA_MAGIC, 23, struct FpgaEWAddArgs)
 
 }  // namespace fpga
 }  // namespace paddle_mobile
