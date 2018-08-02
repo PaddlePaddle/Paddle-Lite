@@ -61,6 +61,15 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_load(JNIEnv *env,
                                          optimize);
 }
 
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadQualified(
+    JNIEnv *env, jclass thiz, jstring modelPath) {
+  ANDROIDLOGI("loadQualified invoked");
+  bool optimize = true;
+  bool qualified = true;
+  return getPaddleMobileInstance()->Load(jstring2cppstring(env, modelPath),
+                                         optimize, qualified);
+}
+
 JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadCombined(
     JNIEnv *env, jclass thiz, jstring modelPath, jstring paramPath) {
   ANDROIDLOGI("loadCombined invoked");
@@ -68,6 +77,16 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadCombined(
   return getPaddleMobileInstance()->Load(jstring2cppstring(env, modelPath),
                                          jstring2cppstring(env, paramPath),
                                          optimize);
+}
+
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadCombinedQualified(
+    JNIEnv *env, jclass thiz, jstring modelPath, jstring paramPath) {
+  ANDROIDLOGI("loadCombinedQualified invoked");
+  bool optimize = true;
+  bool qualified = true;
+  return getPaddleMobileInstance()->Load(jstring2cppstring(env, modelPath),
+                                         jstring2cppstring(env, paramPath),
+                                         optimize, qualified);
 }
 
 JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictImage(
