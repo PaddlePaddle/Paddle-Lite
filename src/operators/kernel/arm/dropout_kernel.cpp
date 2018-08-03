@@ -14,8 +14,6 @@ limitations under the License. */
 
 #ifdef DROPOUT_OP
 
-#pragma once
-
 #include "operators/kernel/dropout_kernel.h"
 #include <operators/math/transform.h>
 

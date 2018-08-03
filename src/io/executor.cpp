@@ -32,6 +32,10 @@ limitations under the License. */
 #include "common/threadpool.h"
 #endif
 
+#ifdef PADDLE_MOBILE_FPGA
+#include "fpga/fpga_quantilization.h"
+#endif
+
 namespace paddle_mobile {
 using framework::Variable;
 
@@ -96,6 +100,11 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
   for (const auto &op : ops) {
     op->Init();
   }
+#ifdef PADDLE_MOBILE_FPGA
+  for (const auto &op : ops) {
+    quantilize_op(op, program_.scope);
+  }
+#endif
 }
 
 template <typename Dtype, Precision P>
@@ -420,6 +429,6 @@ std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::Predict(
 
 template class Executor<CPU, Precision::FP32>;
 template class Executor<GPU_MALI, Precision::FP32>;
-template class Executor<FPGA, Precision::FP16>;
+template class Executor<FPGA, Precision::FP32>;
 
 }  // namespace paddle_mobile

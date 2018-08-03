@@ -56,7 +56,8 @@ template <typename Dtype, Precision P>
 const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
     const std::string &model_path, const std::string &para_path, bool optimize,
     bool quantification) {
-  auto program = this->LoadProgram(model_path, optimize);
+  auto program = this->LoadProgram(model_path, optimize, quantification);
+
   program.para_path = para_path;
   program.combined = true;
   program.quantification = quantification;

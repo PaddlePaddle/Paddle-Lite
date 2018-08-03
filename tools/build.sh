@@ -40,8 +40,8 @@ build_for_android() {
     fi
 
     if [ -z "$PLATFORM" ]; then
-#        PLATFORM="arm-v7a"  # Users could choose "arm-v8a" platform.
-        PLATFORM="arm-v8a"
+        PLATFORM="arm-v7a"  # Users could choose "arm-v8a" platform.
+#        PLATFORM="arm-v8a"
     fi
 
     if [ "${PLATFORM}" = "arm-v7a" ]; then

@@ -253,6 +253,18 @@ class Tensor {
                           "Tensor's dims_ is out of bound. ");
   }
 
+#ifdef PADDLE_MOBILE_FPGA
+  struct FPGAArgs {
+    float scale;
+
+    inline float *scale_pointer() { return &scale; }
+  };
+
+  struct FPGAArgs &fpga_args() {
+    return fpgaArgs_;
+  }
+#endif
+
  private:
   /**
    * @note    Placeholder hides type T, so it doesn't appear as a
@@ -319,6 +331,10 @@ class Tensor {
    * begins.
    */
   size_t offset_;
+
+#ifdef PADDLE_MOBILE_FPGA
+  FPGAArgs fpgaArgs_;
+#endif
 };
 
 #ifdef PADDLE_MOBILE_DEBUG

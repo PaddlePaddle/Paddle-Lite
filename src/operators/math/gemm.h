@@ -19,8 +19,13 @@ limitations under the License. */
 #define B(i, j) B[(i)*ldb + (j)]
 #define C(i, j) C[(i)*ldc + (j)]
 
+#if __aarch64__
+#define MR 6
+#define NR 16
+#else
 #define MR 6
 #define NR 8
+#endif
 
 #define s_min(i, j) ((i) < (j) ? (i) : (j))
 
@@ -43,10 +48,16 @@ void PackMatrixA_4r(int m, int k, int m_tail, const float *A, int lda,
                     float *buffer);
 void PackMatrixA_6r(int m, int k, int m_tail, const float *A, int lda,
                     float *buffer);
+void PackMatrixA_8r(int m, int k, int m_tail, const float *A, int lda,
+                    float *buffer);
 
 // 将 B 矩阵分块复制到连续内存(RowMajor)
 void PackMatrixB_8c(int k, int n, int n_tail, const float *B, int ldb,
                     float *buffer);
+void PackMatrixB_12c(int k, int n, int n_tail, const float *B, int ldb,
+                     float *buffer);
+void PackMatrixB_16c(int k, int n, int n_tail, const float *B, int ldb,
+                     float *buffer);
 
 // 分块矩阵乘法
 void InnerKernel(int mc, int nc, float alpha, const float *a, const float *b,
@@ -70,6 +81,8 @@ void VectorKernelWithBn(int m, int n, int k, float alpha, const float *A,
 void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc);
 void AddDot4x8(int k, const float *a, const float *b, float *c, int ldc);
 void AddDot6x8(int k, const float *a, const float *b, float *c, int ldc);
+void AddDot8x12(int k, const float *a, const float *b, float *c, int ldc);
+void AddDot6x16(int k, const float *a, const float *b, float *c, int ldc);
 
 // 分块矩阵乘法结果回写
 // C = A * B
@@ -113,10 +126,6 @@ void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
 void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
                  const float *B, int ldb, float beta, float *C, int ldc,
                  bool relu, float *new_scale, float *new_bias);
-
-// 64位 double 矩阵乘法
-void dgemm(int m, int n, int k, float alpha, const double *A, int lda,
-           const double *B, int ldb, float beta, double *C, int ldc);
 
 }  // namespace math
 }  // namespace operators

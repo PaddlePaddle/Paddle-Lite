@@ -3,8 +3,8 @@
 #include "src/enforce.h"
 #include "src/var_desc.h"
 #include "src/program_desc.h"
+#include <cstring>
 #include <cstdlib>
-#include <string>
 #include <cmath>
 #include <iostream>
 #include <utility>
@@ -13,7 +13,7 @@
 #include "src/protobuf-c.h"
 #include <fstream>
 #include <iostream>
-
+#include <limits>
 
 const size_t kSize64 = sizeof(uint64_t);
 const size_t kSize32 = sizeof(uint32_t);
@@ -68,60 +68,60 @@ std::shared_ptr<ProgramDesc> loadParams(const std::string &model_path) {
 
 }
 
-void LoadWithDump(const paddle_mobile::framework::VarDesc &var_desc, char *dataP, FILE *out_file) {
+void LoadWithDump(const paddle_mobile::framework::VarDesc &var_desc, char **dataP, FILE *out_file) {
     // 1. version
-    uint32_t version = *reinterpret_cast<uint32_t *>(dataP);
+    uint32_t version = *reinterpret_cast<uint32_t *>(*dataP);
 
     // write version
     fwrite(&version, kSize32, 1, out_file);
 
-    dataP += kSize32;
+    *dataP += kSize32;
 
     // 2 Lod information
     auto *lod_level_ptr = new uint64_t();
-    memcpy(lod_level_ptr, dataP, kSize64);
+    memcpy(lod_level_ptr, *dataP, kSize64);
 
     uint64_t lod_level = 0;
     // write lod Information
     fwrite(&lod_level, kSize64, 1, out_file);
     delete lod_level_ptr;
 
-    dataP += kSize64;
+    *dataP += kSize64;
 
     for (uint64_t i = 0; i < lod_level; ++i) {
-        uint64_t size = *reinterpret_cast<uint64_t *>(dataP);
+        uint64_t size = *reinterpret_cast<uint64_t *>(*dataP);
         // write lod size
         fwrite(&size, kSize64, 1, out_file);
-        (dataP) += kSize64;
+        (*dataP) += kSize64;
 
         std::vector<size_t> tmp(size / sizeof(size_t));
         for (unsigned long &k : tmp) {
-            k = *reinterpret_cast<size_t *>(dataP);
-            (dataP) += sizeof(size_t);
+            k = *reinterpret_cast<size_t *>(*dataP);
+            (*dataP) += sizeof(size_t);
         }
         // write lod size vector
         fwrite(&tmp, sizeof(size_t), tmp.size(), out_file);
     }
 
     // 3. tensor version
-    uint32_t tensor_version = *reinterpret_cast<uint32_t *>(dataP);
+    uint32_t tensor_version = *reinterpret_cast<uint32_t *>(*dataP);
     // write tensor version
     fwrite(&tensor_version, kSize32, 1, out_file);
-    (dataP) += kSize32;
+    (*dataP) += kSize32;
 
     // 4. tensor desc
-    int32_t size = *reinterpret_cast<int32_t *>(dataP);
+    int32_t size = *reinterpret_cast<int32_t *>(*dataP);
     // write tensor desc
     fwrite(&size, sizeof(int32_t), 1, out_file);
-    (dataP) += sizeof(int32_t);
+    (*dataP) += sizeof(int32_t);
 
     std::unique_ptr<char[]> buf(new char[size]);
     for (int m = 0; m < size; ++m) {
-        buf.get()[m] = (dataP)[m];
+        buf.get()[m] = (*dataP)[m];
     }
 
     fwrite(buf.get(), sizeof(char), static_cast<size_t>(size), out_file);
-    (dataP) += (sizeof(char) * size);
+    (*dataP) += (sizeof(char) * size);
 
     const paddle_mobile::framework::TensorDesc &desc = var_desc.Tensor_desc();
     int memory_size = 1;
@@ -158,9 +158,9 @@ void LoadWithDump(const paddle_mobile::framework::VarDesc &var_desc, char *dataP
     memory = new char[tensorSize];
 
     for (int n = 0; n < tensorSize; ++n) {
-        static_cast<char *>(memory)[n] = (dataP)[n];
+        static_cast<char *>(memory)[n] = (*dataP)[n];
     }
-    dataP += tensorSize;
+    *dataP += tensorSize;
 
     // for float 32
     float min_value = std::numeric_limits<float>::max();
@@ -194,7 +194,7 @@ quantificate_combined(const std::string &model_path, const std::string &param_pa
                 if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
                     continue;
                 }
-                LoadWithDump(*var_desc, data, out_file);
+                LoadWithDump(*var_desc, &data, out_file);
             }
         }
     }
@@ -220,7 +220,7 @@ void quantificate_seperated(const std::string model_dir, const std::string param
                 FILE *out_file = fopen(file_name.c_str(), "wb");
                 char *origin_data = Get_binary_data(model_dir + "/" + var_desc->Name());
                 char *data = origin_data;
-                LoadWithDump(*var_desc, data, out_file);
+                LoadWithDump(*var_desc, &data, out_file);
                 delete origin_data;
                 fclose(out_file);
             }
