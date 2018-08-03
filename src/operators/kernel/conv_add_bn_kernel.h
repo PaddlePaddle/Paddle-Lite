@@ -12,21 +12,32 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef CONV_OP
+#pragma once
 
-#include "operators/kernel/conv_kernel.h"
+#ifdef FUSION_CONVADDBN_OP
+
+#include <vector>
+#include "framework/ddim.h"
+#include "framework/operator.h"
+#include "operators/math/conv_func.h"
+#include "operators/math/im2col.h"
+#include "operators/math/math_function.h"
+#include "operators/math/vol2col.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <>
-bool ConvKernel<FPGA, float>::Init(ConvParam *param) {
-  return true;
-}
+using framework::DDim;
+using framework::OpKernelBase;
 
-template <>
-void ConvKernel<FPGA, float>::Compute(const ConvParam &param) const {}
-template class ConvKernel<FPGA, float>;
+template <typename DeviceType, typename T>
+class ConvAddBNKernel
+    : public OpKernelBase<DeviceType, FusionConvAddBNParam> {
+ public:
+  void Compute(const FusionConvAddBNParam &param) const;
+  bool Init(FusionConvAddBNParam *param);
+};
 
 }  // namespace operators
 }  // namespace paddle_mobile

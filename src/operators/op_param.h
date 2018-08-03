@@ -1136,7 +1136,7 @@ class FusionConvAddBNParam : public OpParam {
 
   const Tensor *Filter() const { return filter_; }
 
-  Tensor *OutputY() const { return output_y_; }
+  Tensor *Output() const { return output_y_; }
 
   const vector<int> &Strides() const { return strides_; }
 
