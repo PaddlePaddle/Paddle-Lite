@@ -36,7 +36,7 @@ static int fd = -1;
 static const char *device_path = "/dev/fpgadrv0";
 
 static inline int do_ioctl(int req, void *arg) {
-  return ioctl(req, (long unsigned int)arg);
+  return ioctl(req, (unsigned int64_t)arg);
 }
 
 int open_device() {
@@ -58,9 +58,13 @@ void fpga_copy(void *dest, const void *src, size_t num) {
   memcpy(dest, src, num);
 }
 
-int ComputeFpgaConv(struct ConvArgs args) {}
-int ComputeFpgaPool(struct PoolingArgs args) {}
-int ComputeFpgaEWAdd(struct EWAddArgs args) {}
+int ComputeFpgaConv(const struct ConvArgs &args) { return do_ioctl(21, &args); }
+int ComputeFpgaPool(const struct PoolingArgs &args) {
+  return do_ioctl(22, &args);
+}
+int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
+  return do_ioctl(23, &args);
+}
 
 }  // namespace fpga
 }  // namespace paddle_mobile
