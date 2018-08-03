@@ -17,24 +17,24 @@ limitations under the License. */
 #include "operators/kernel/dropout_kernel.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        template <>
-        bool DropoutKernel<FPGA, float>::Init(DropoutParam *param) {
-            param->Out()->ShareDataWith(*param->InputX());
-            return true;
-        }
+template <>
+bool DropoutKernel<FPGA, float>::Init(DropoutParam *param) {
+  param->Out()->ShareDataWith(*param->InputX());
+  return true;
+}
 
-        template <>
-        void DropoutKernel<FPGA, float>::Compute(const DropoutParam &param) const {
-            //auto *input_x = param.InputX();
-            //auto *out = param.Out();
-            //auto input_x_ptr = input_x->data<float>();
-            //auto out_ptr = out->mutable_data<float>();
-            //out_ptr = const_cast<float *>(input_x_ptr);
-        }
+template <>
+void DropoutKernel<FPGA, float>::Compute(const DropoutParam &param) const {
+  // auto *input_x = param.InputX();
+  // auto *out = param.Out();
+  // auto input_x_ptr = input_x->data<float>();
+  // auto out_ptr = out->mutable_data<float>();
+  // out_ptr = const_cast<float *>(input_x_ptr);
+}
 
-    }  // namespace operators
+}  // namespace operators
 }  // namespace paddle_mobile
 
 #endif

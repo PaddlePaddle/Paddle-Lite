@@ -22,30 +22,31 @@ limitations under the License. */
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
-    namespace operators {
-        using std::string;
-        template <typename DeviceType, typename T>
-        class FusionElementwiseAddReluOp : public framework::OperatorWithKernel<
-                DeviceType, ElementwiseAddReluParam,
-                operators::ElementwiseAddReluKernel<DeviceType, T>> {
-        public:
-            FusionElementwiseAddReluOp(const string &type, const VariableNameMap &inputs,
+namespace operators {
+using std::string;
+template <typename DeviceType, typename T>
+class FusionElementwiseAddReluOp
+    : public framework::OperatorWithKernel<
+          DeviceType, ElementwiseAddReluParam,
+          operators::ElementwiseAddReluKernel<DeviceType, T>> {
+ public:
+  FusionElementwiseAddReluOp(const string &type, const VariableNameMap &inputs,
                              const VariableNameMap &outputs,
                              const framework::AttributeMap &attrs,
                              std::shared_ptr<framework::Scope> scope)
-                    : framework::OperatorWithKernel<
-                    DeviceType, ElementwiseAddReluParam,
-                    operators::ElementwiseAddReluKernel<DeviceType, T>>(
-                    type, inputs, outputs, attrs, scope) {}
+      : framework::OperatorWithKernel<
+            DeviceType, ElementwiseAddReluParam,
+            operators::ElementwiseAddReluKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
 
-            using framework::OperatorWithKernel<
-                    DeviceType, ElementwiseAddReluParam,
-                    operators::ElementwiseAddReluKernel<DeviceType, T>>::OperatorWithKernel;
-            void InferShape() const override;
+  using framework::OperatorWithKernel<
+      DeviceType, ElementwiseAddReluParam,
+      operators::ElementwiseAddReluKernel<DeviceType, T>>::OperatorWithKernel;
+  void InferShape() const override;
 
-        protected:
-        };
-    }  // namespace operators
+ protected:
+};
+}  // namespace operators
 }  // namespace paddle_mobile
 
 #ifdef PADDLE_MOBILE_CPU
