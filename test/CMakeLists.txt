@@ -21,6 +21,7 @@ elseif("resnet" IN_LIST NET)
     # gen test
     ADD_EXECUTABLE(test-resnet net/test_resnet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-resnet paddle-mobile)
+elseif("FPGAnets" IN_LIST NET)
 else ()
 
     # gen test

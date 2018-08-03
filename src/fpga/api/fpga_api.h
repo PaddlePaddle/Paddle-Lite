@@ -86,12 +86,12 @@ struct ImageOutputArgs {
 
 struct ConvArgs {
   bool relu_enabled;
-  void* bias_address;
+  void* sb_address;  // scale and bias are interlaced;
   void* filter_address;
+  float* filter_scale_address;
   uint32_t filter_num;
   uint32_t group_num;
 
-  void* sb_address;  // scale and bias are interlaced;
   struct KernelArgs kernel;
   struct ImageInputArgs image;  // input image;
   struct ImageOutputArgs output;
@@ -116,17 +116,13 @@ struct EWAddArgs {
 
 struct BypassArgs {
   enum DataConvertType convert_type;
+  enum LayoutConvertType layout_type;
   struct ImageInputArgs image;
   struct ImageOutputArgs output;
 };
 
 struct FpgaRegWriteArgs {
   uint64_t address;  //
-  uint64_t value;
-};
-
-struct FpgaRegReadArgs {
-  uint64_t address;
   uint64_t value;
 };
 
@@ -143,6 +139,7 @@ struct FpgaRegReadArgs {
 #define IOCTL_CONFIG_CONV _IOW(IOCTL_FPGA_MAGIC, 21, struct ConvArgs)
 #define IOCTL_CONFIG_POOLING _IOW(IOCTL_FPGA_MAGIC, 22, struct PoolingArgs)
 #define IOCTL_CONFIG_EW _IOW(IOCTL_FPGA_MAGIC, 23, struct EWAddArgs)
+#define IOCTL_CONFIG_BYPASS _IOW(IOCTL_FPGA_MAGIC, 24, struct BypassArgs)
 #define IOCTL_FPGA_REG_READ _IOW(IOCTL_FPGA_MAGIC, 28, struct FpgaRegReadArgs)
 #define IOCTL_FPGA_REG_WRITE _IOW(IOCTL_FPGA_MAGIC, 29, struct FpgaRegWriteArgs)
 
@@ -172,6 +169,7 @@ enum FPGA_ERR_TYPE {
 
 //============================== API =============================
 
+int PerformBypass(const struct BypassArgs& args);
 int ComputeFpgaConv(const struct ConvArgs& args);
 int ComputeFpgaPool(const struct PoolingArgs& args);
 int ComputeFpgaEWAdd(const struct EWAddArgs& args);

@@ -35,7 +35,7 @@ namespace fpga {
 static int fd = -1;
 static const char *device_path = "/dev/fpgadrv0";
 
-static inline int do_ioctl(int req, void *arg) {
+static inline int do_ioctl(int req, const void *arg) {
   return ioctl(req, (unsigned int64_t)arg);
 }
 
@@ -58,12 +58,17 @@ void fpga_copy(void *dest, const void *src, size_t num) {
   memcpy(dest, src, num);
 }
 
-int ComputeFpgaConv(const struct ConvArgs &args) { return do_ioctl(21, &args); }
+int ComputeFpgaConv(const struct ConvArgs &args) {
+  return do_ioctl(IOCTL_CONFIG_CONV, &args);
+}
 int ComputeFpgaPool(const struct PoolingArgs &args) {
-  return do_ioctl(22, &args);
+  return do_ioctl(IOCTL_CONFIG_POOLING, &args);
 }
 int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
-  return do_ioctl(23, &args);
+  return do_ioctl(IOCTL_CONFIG_EW, &args);
+}
+int PerformBypass(const struct BypassArgs &args) {
+  return do_ioctl(IOCTL_CONFIG_BYPASS, &args);
 }
 
 }  // namespace fpga
