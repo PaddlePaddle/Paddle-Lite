@@ -55,6 +55,7 @@ USE_OP_CPU(pool2d);
 USE_OP_MALI_GPU(pool2d);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+USE_OP_FPGA(pool2d);
 #endif
 
 #endif

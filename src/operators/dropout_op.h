@@ -56,6 +56,7 @@ USE_OP_CPU(dropout);
 #ifdef PADDLE_MOBILE_MALI_GPU
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+USE_OP_FPGA(dropout);
 #endif
 
 #endif

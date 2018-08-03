@@ -81,8 +81,8 @@ std::unordered_map<
         {G_OP_TYPE_FUSION_CONV_ADD_RELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_IM2SEQUENCE, {{"X"}, {"Out"}}},
         {G_OP_TYPE_DROPOUT, {{"X"}, {"Out"}}},
-        {G_OP_TYPE_FUSION_CONV_ADD_BN, {{"Input"}, {"Out"}}},
-        {G_OP_TYPE_FUSION_POOL_BN, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_CONV_ADD_BN, {{"Input"}, {"Y"}}},
+        {G_OP_TYPE_FUSION_POOL_BN, {{"X"}, {"Y"}}},
         {G_OP_TYPE_FUSION_ELEMENTWISE_ADD_RELU, {{"X", "Y"}, {"Out"}}},
         {G_OP_TYPE_FUSION_FC_RELU, {{"X", "Y", "Z"}, {"Out"}}},
         {G_OP_TYPE_REGION, {{"X"}, {"Out"}}}};

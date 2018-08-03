@@ -12,28 +12,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef DROPOUT_OP
-#include "operators/dropout_op.h"
+#ifdef FUSION_ELEMENTWISEADDRELU_OP
+
+#pragma once
+
+#include "framework/operator.h"
+#include "operators/op_param.h"
+
 namespace paddle_mobile {
 namespace operators {
 
-template <typename Dtype, typename T>
-void DropoutOp<Dtype, T>::InferShape() const {
-  auto input_dims = this->param_.InputX()->dims();
-  this->param_.Out()->Resize(input_dims);
-}
+using namespace framework;
 
+template <typename DeviceType, typename T>
+class ElementwiseAddReluKernel
+    : public framework::OpKernelBase<DeviceType, ElementwiseAddReluParam> {
+ public:
+  void Compute(const ElementwiseAddReluParam &param) const;
+  bool Init(ElementwiseAddReluParam *param);
+};
 }  // namespace operators
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(dropout, ops::DropoutOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(dropout, ops::DropoutOp);
-#endif
 
 #endif
