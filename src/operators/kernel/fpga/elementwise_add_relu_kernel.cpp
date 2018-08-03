@@ -14,7 +14,6 @@ limitations under the License. */
 #ifdef FUSION_ELEMENTWISEADDRELU_OP
 
 #include "operators/kernel/elementwise_add_relu_kernel.h"
-#include "fpga/api/fpga_api.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -28,7 +27,7 @@ bool ElementwiseAddReluKernel<FPGA, float>::Init(
   Tensor *out = param->Out();
   auto input_x_ptr = input_x->data<float>();
   auto input_y_ptr = input_y->data<float>();
-  auto out_ptr = out->data<float>();
+  auto out_ptr = out->mutable_data<float>();
 
   fpga::EWAddArgs ewaddArgs;
   ewaddArgs.relu_enabled = relu_enabled;
@@ -40,16 +39,16 @@ bool ElementwiseAddReluKernel<FPGA, float>::Init(
       input_x->fpga_args().scale_pointer();  // ew has scale attribute??
   ewaddArgs.image0.height = input_x->dims()[2];
   ewaddArgs.image0.width = input_x->dims()[3];
-  ewaddArgs.image0.pad_height = 1;
-  ewaddArgs.image0.pad_width = 1;
+  ewaddArgs.image0.pad_height = 0;
+  ewaddArgs.image0.pad_width = 0;
   ewaddArgs.image1.address = (void *)input_y_ptr;
   ewaddArgs.image1.channels = input_y->dims()[1];
   ewaddArgs.image1.scale_address =
       input_y->fpga_args().scale_pointer();  // ew has scale attribute??
   ewaddArgs.image1.height = input_y->dims()[2];
   ewaddArgs.image1.width = input_y->dims()[3];
-  ewaddArgs.image1.pad_height = 1;
-  ewaddArgs.image1.pad_width = 1;
+  ewaddArgs.image1.pad_height = 0;
+  ewaddArgs.image1.pad_width = 0;
   ewaddArgs.output.scale_address = out->fpga_args().scale_pointer();
   ewaddArgs.output.address = (void *)out_ptr;
   param->SetFpgaArgs(ewaddArgs);

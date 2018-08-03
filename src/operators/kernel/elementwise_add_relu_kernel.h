@@ -17,7 +17,6 @@ limitations under the License. */
 #pragma once
 
 #include "framework/operator.h"
-#include "operators/math/elementwise_op_function.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {

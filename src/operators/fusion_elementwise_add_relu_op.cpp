@@ -30,12 +30,12 @@ void FusionElementwiseAddReluOp<Dtype, T>::InferShape() const {
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(fusion_elementwise_add_relu,
-                      ops::FusionElementwiseAddReluOp);
+// REGISTER_OPERATOR_CPU(fusion_elementwise_add_relu,
+//                      ops::FusionElementwiseAddReluOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
-REGISTER_OPERATOR_MALI_GPU(fusion_elementwise_add_relu,
-                           ops::FusionElementwiseAddReluOp);
+// REGISTER_OPERATOR_MALI_GPU(fusion_elementwise_add_relu,
+//                           ops::FusionElementwiseAddReluOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(fusion_elementwise_add_relu,

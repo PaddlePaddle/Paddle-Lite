@@ -67,8 +67,8 @@ class FusionFcOp
 
 #ifdef PADDLE_MOBILE_CPU
 
-#ifndef CONV_CPU_REGISTER
-#define CONV_CPU_REGISTER
+#ifndef FUSION_FC_CPU_REGISTER
+#define FUSION_FC_CPU_REGISTER
 static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
 #endif
 
@@ -84,6 +84,10 @@ static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
 #endif
 
 #ifdef PADDLE_MOBILE_FPGA
+#ifndef FUSION_FC_CPU_REGISTER
+#define FUSION_FC_CPU_REGISTER
+static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
+#endif
 #endif
 
 }  // namespace operators
