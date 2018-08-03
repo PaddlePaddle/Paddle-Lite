@@ -52,21 +52,20 @@ class FusionConvAddBNMatcher : public framework::FusionOpMatcher {
 };
 
 template <typename DeviceType, typename T>
-class FusionConvAddBNOp
-    : public framework::OperatorWithKernel<
-          DeviceType, FusionConvAddBNParam,
-          operators::ConvAddBNKernel<DeviceType, T>> {
+class FusionConvAddBNOp : public framework::OperatorWithKernel<
+                              DeviceType, FusionConvAddBNParam,
+                              operators::ConvAddBNKernel<DeviceType, T>> {
  public:
   FusionConvAddBNOp(const string &type, const VariableNameMap &inputs,
-                        const VariableNameMap &outputs,
-                        const framework::AttributeMap &attrs,
-                        std::shared_ptr<framework::Scope> scope)
+                    const VariableNameMap &outputs,
+                    const framework::AttributeMap &attrs,
+                    std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<
             DeviceType, FusionConvAddBNParam,
-            operators::ConvAddBNKernel<DeviceType, T>>(
-            type, inputs, outputs, attrs, scope) {}
+            operators::ConvAddBNKernel<DeviceType, T>>(type, inputs, outputs,
+                                                       attrs, scope) {}
 
-   void InferShape() const override;
+  void InferShape() const override;
 
  protected:
 };
