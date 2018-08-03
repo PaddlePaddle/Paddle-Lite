@@ -32,10 +32,14 @@ int main() {
     std::vector<int64_t> dims{1, 3, 300, 300};
     GetInput<float>(g_hand, &input, dims);
 
-    auto time3 = time();
+    // 预热一次
     auto output = paddle_mobile.Predict(input, dims);
+    auto time3 = time();
+    for (int i = 0; i < 10; ++i) {
+      auto output = paddle_mobile.Predict(input, dims);
+    }
     auto time4 = time();
-    std::cout << "predict cost :" << time_diff(time3, time4) << "ms"
+    std::cout << "predict cost :" << time_diff(time3, time4) / 10 << "ms"
               << std::endl;
   }
   return 0;
