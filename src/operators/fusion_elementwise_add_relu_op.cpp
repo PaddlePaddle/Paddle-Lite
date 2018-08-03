@@ -17,26 +17,29 @@ limitations under the License. */
 #include "fusion_elementwise_add_relu_op.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        template <typename Dtype, typename T>
-        void FusionElementwiseAddReluOp<Dtype, T>::InferShape() const {
-            auto x_dim = this->param_.InputX()->dims();
-            this->param_.Out()->Resize(x_dim);
-        }
+template <typename Dtype, typename T>
+void FusionElementwiseAddReluOp<Dtype, T>::InferShape() const {
+  auto x_dim = this->param_.InputX()->dims();
+  this->param_.Out()->Resize(x_dim);
+}
 
-    }  // namespace operators
+}  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(fusion_elementwise_add_relu, ops::FusionElementwiseAddReluOp);
+REGISTER_OPERATOR_CPU(fusion_elementwise_add_relu,
+                      ops::FusionElementwiseAddReluOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
-REGISTER_OPERATOR_MALI_GPU(fusion_elementwise_add_relu, ops::FusionElementwiseAddReluOp);
+REGISTER_OPERATOR_MALI_GPU(fusion_elementwise_add_relu,
+                           ops::FusionElementwiseAddReluOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(fusion_elementwise_add_relu, ops::FusionElementwiseAddReluOp);
+REGISTER_OPERATOR_FPGA(fusion_elementwise_add_relu,
+                       ops::FusionElementwiseAddReluOp);
 #endif
 
 #endif

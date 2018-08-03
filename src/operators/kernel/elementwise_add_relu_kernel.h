@@ -21,18 +21,18 @@ limitations under the License. */
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        using namespace framework;
+using namespace framework;
 
-        template <typename DeviceType, typename T>
-        class ElementwiseAddReluKernel
-                : public framework::OpKernelBase<DeviceType, ElementwiseAddReluParam> {
-        public:
-            void Compute(const ElementwiseAddReluParam &param) const;
-            bool Init(ElementwiseAddReluParam *param);
-        };
-    }  // namespace operators
+template <typename DeviceType, typename T>
+class ElementwiseAddReluKernel
+    : public framework::OpKernelBase<DeviceType, ElementwiseAddReluParam> {
+ public:
+  void Compute(const ElementwiseAddReluParam &param) const;
+  bool Init(ElementwiseAddReluParam *param);
+};
+}  // namespace operators
 }  // namespace paddle_mobile
 
 #endif

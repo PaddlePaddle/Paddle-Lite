@@ -18,40 +18,40 @@ limitations under the License. */
 
 class PoolingArgs;
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        template <>
-        bool PoolKernel<FPGA, float>::Init(PoolParam *param) {
-            const Tensor *input = param->Input();
-            auto input_ptr = input->data<float>();
-            Tensor *output = param->Output();
-            auto output_ptr = output->data<float>();
-            vector<int> ksize = param->Ksize();
-            vector<int> strides = param->Strides();
-            vector<int> paddings = param->Paddings();
-            fpga::PoolingArgs poolArgs;
-            poolArgs.image.address = (void*)input_ptr;
-            poolArgs.image.channels = input->dims()[1];
-            poolArgs.image.height = input->dims()[2];
-            poolArgs.image.width = input->dims()[3];
-            poolArgs.image.pad_height = paddings[0];
-            poolArgs.image.pad_width = paddings[1];
-            poolArgs.output.address = output_ptr;
-            poolArgs.kernel.height = ksize[0];
-            poolArgs.kernel.width = ksize[1];
-            poolArgs.kernel.stride_h = strides[0];
-            poolArgs.kernel.stride_w = strides[1];
-            param->SetFpgaArgs(poolArgs);
-            return true;
-        }
+template <>
+bool PoolKernel<FPGA, float>::Init(PoolParam *param) {
+  const Tensor *input = param->Input();
+  auto input_ptr = input->data<float>();
+  Tensor *output = param->Output();
+  auto output_ptr = output->data<float>();
+  vector<int> ksize = param->Ksize();
+  vector<int> strides = param->Strides();
+  vector<int> paddings = param->Paddings();
+  fpga::PoolingArgs poolArgs;
+  poolArgs.image.address = (void *)input_ptr;
+  poolArgs.image.channels = input->dims()[1];
+  poolArgs.image.height = input->dims()[2];
+  poolArgs.image.width = input->dims()[3];
+  poolArgs.image.pad_height = paddings[0];
+  poolArgs.image.pad_width = paddings[1];
+  poolArgs.output.address = output_ptr;
+  poolArgs.kernel.height = ksize[0];
+  poolArgs.kernel.width = ksize[1];
+  poolArgs.kernel.stride_h = strides[0];
+  poolArgs.kernel.stride_w = strides[1];
+  param->SetFpgaArgs(poolArgs);
+  return true;
+}
 
-        template <>
-        void PoolKernel<FPGA, float>::Compute(const PoolParam &param) const {
+template <>
+void PoolKernel<FPGA, float>::Compute(const PoolParam &param) const {
 #ifdef PADDLE_MOBILE_FPGA
-            fpga::ComputeFpgaPool(param.FpgaArgs());
+  fpga::ComputeFpgaPool(param.FpgaArgs());
 #endif
-        }
-    }  // namespace operators
+}
+}  // namespace operators
 }  // namespace paddle_mobile
 
 #endif
