@@ -12,16 +12,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVADDBNRELU_OP
+#ifdef FUSION_CONVADDBN_OP
 
-#include "operators/fusion_conv_add_bn_relu_op.h"
+#include "operators/fusion_conv_add_bn_op.h"
 #include "operators/math/conv_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
-void FusionConvAddBNReluOp<Dtype, T>::InferShape() const {
+void FusionConvAddBNOp<Dtype, T>::InferShape() const {
   auto in_dims = this->param_.Input()->dims();
   auto filter_dims = this->param_.Filter()->dims();
   const std::vector<int> &strides = this->param_.Strides();
@@ -50,12 +50,12 @@ void FusionConvAddBNReluOp<Dtype, T>::InferShape() const {
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(fusion_conv_add_bn_relu, ops::FusionConvAddBNReluOp);
+REGISTER_OPERATOR_CPU(fusion_conv_add_bn, ops::FusionConvAddBNOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
 #endif
 #ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(fusion_conv_add_bn_relu, ops::FusionConvAddBNReluOp);
+REGISTER_OPERATOR_FPGA(fusion_conv_add_bn, ops::FusionConvAddBNOp);
 #endif
 
 #endif
