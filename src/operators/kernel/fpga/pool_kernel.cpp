@@ -14,7 +14,6 @@ limitations under the License. */
 #ifdef POOL_OP
 
 #include "operators/kernel/pool_kernel.h"
-#include "fpga/api/fpga_api.h"
 
 class PoolingArgs;
 namespace paddle_mobile {
@@ -25,7 +24,7 @@ bool PoolKernel<FPGA, float>::Init(PoolParam *param) {
   const Tensor *input = param->Input();
   auto input_ptr = input->data<float>();
   Tensor *output = param->Output();
-  auto output_ptr = output->data<float>();
+  auto output_ptr = output->mutable_data<float>();
   vector<int> ksize = param->Ksize();
   vector<int> strides = param->Strides();
   vector<int> paddings = param->Paddings();

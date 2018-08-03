@@ -18,7 +18,7 @@ limitations under the License. */
 
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
-#include "operators/kernel/fusion_fc_relu_kernel.h"
+#include "operators/kernel/fc_relu_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {

@@ -6,9 +6,15 @@ option(USE_OPENMP "openmp support" OFF)
 option(USE_EXCEPTION "use std exception" ON)
 option(LOG_PROFILE "log profile" ON)
 # select the platform to build
-option(CPU "armv7 with neon" ON)
+option(CPU "armv7 with neon" OFF)
 option(MALI_GPU "mali gpu" OFF)
-option(FPGA "fpga" OFF)
+option(FPGA "fpga" ON)
+SET(FPGA ON)
+SET(FUSION_ELEMENTWISEADDRELU_OP ON)
+SET(FUSION_FC_OP ON)
+SET(FUSION_FCRELU_OP ON)
+SET(POOL_OP ON)
+SET(DROPOUT_OP ON)
 
 file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c src/*.mm)
 file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
@@ -139,7 +145,8 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY build)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 
 # NET default
-set(NET "default" CACHE STRING "select net type")
+#set(NET "default" CACHE STRING "select net type")
+set(NET "FPGAnets" CACHE STRING "select net type")
 set_property(CACHE NET PROPERTY STRINGS "default" "googlenet" "mobilenet" "yolo" "squeezenet" "FPGAnets")
 include("${CMAKE_CURRENT_LIST_DIR}/tools/op.cmake")
 
@@ -151,7 +158,7 @@ if (ANDROID_NDK_TOOLCHAIN_INCLUDED)
 elseif(IS_IOS)
     add_library(paddle-mobile STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 else ()
-    add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+    add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H} src/operators/kernel/fc_relu_kernel.h src/operators/kernel/fc_relu_kernel.h src/operators/kernel/fpga/fusion_fc_kernel.cpp src/operators/kernel/fpga/fc_relu_kernel.cpp src/operators/fusion_elementwise_add_relu_op.h src/operators/fusion_elementwise_add_relu_op.cpp src/operators/kernel/elementwise_add_relu_kernel.h src/operators/kernel/fpga/pool_kernel.cpp src/operators/kernel/fpga/elementwise_add_relu_kernel.cpp src/operators/kernel/fpga/dropout_kernel.cpp)
 endif ()
 
 # unit test
