@@ -13,27 +13,28 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #ifdef DROPOUT_OP
-#include "operators/dropout_op.h"
+
+#include "operators/kernel/dropout_kernel.h"
+
 namespace paddle_mobile {
 namespace operators {
 
-template <typename Dtype, typename T>
-void DropoutOp<Dtype, T>::InferShape() const {
-  auto input_dims = this->param_.InputX()->dims();
-  this->param_.Out()->Resize(input_dims);
+template <>
+bool DropoutKernel<FPGA, float>::Init(DropoutParam *param) {
+  param->Out()->ShareDataWith(*param->InputX());
+  return true;
+}
+
+template <>
+void DropoutKernel<FPGA, float>::Compute(const DropoutParam &param) const {
+  // auto *input_x = param.InputX();
+  // auto *out = param.Out();
+  // auto input_x_ptr = input_x->data<float>();
+  // auto out_ptr = out->mutable_data<float>();
+  // out_ptr = const_cast<float *>(input_x_ptr);
 }
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(dropout, ops::DropoutOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(dropout, ops::DropoutOp);
-#endif
 
 #endif

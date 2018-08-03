@@ -12,15 +12,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef DROPOUT_OP
-#include "operators/dropout_op.h"
+#ifdef FUSION_ELEMENTWISEADDRELU_OP
+
+#include "fusion_elementwise_add_relu_op.h"
+
 namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
-void DropoutOp<Dtype, T>::InferShape() const {
-  auto input_dims = this->param_.InputX()->dims();
-  this->param_.Out()->Resize(input_dims);
+void FusionElementwiseAddReluOp<Dtype, T>::InferShape() const {
+  auto x_dim = this->param_.InputX()->dims();
+  this->param_.Out()->Resize(x_dim);
 }
 
 }  // namespace operators
@@ -28,12 +30,16 @@ void DropoutOp<Dtype, T>::InferShape() const {
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(dropout, ops::DropoutOp);
+// REGISTER_OPERATOR_CPU(fusion_elementwise_add_relu,
+//                      ops::FusionElementwiseAddReluOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
+// REGISTER_OPERATOR_MALI_GPU(fusion_elementwise_add_relu,
+//                           ops::FusionElementwiseAddReluOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(dropout, ops::DropoutOp);
+REGISTER_OPERATOR_FPGA(fusion_elementwise_add_relu,
+                       ops::FusionElementwiseAddReluOp);
 #endif
 
 #endif

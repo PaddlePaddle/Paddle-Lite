@@ -12,14 +12,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_FC_OP
+#ifdef FUSION_FC_RELU_OP
 
-#include "operators/fusion_fc_op.h"
+#include "operators/fusion_fc_relu_op.h"
 namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
-void FusionFcOp<Dtype, T>::InferShape() const {
+void FusionFcReluOp<Dtype, T>::InferShape() const {
   auto x_dims = this->param_.InputX()->dims();
   auto y_dims = this->param_.InputY()->dims();
   int x_num_col_dims = this->param_.XNumColDims();
@@ -55,13 +55,13 @@ void FusionFcOp<Dtype, T>::InferShape() const {
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(fusion_fc, ops::FusionFcOp);
+REGISTER_OPERATOR_CPU(fusion_fc_relu, ops::FusionFcReluOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
-REGISTER_OPERATOR_MALI_GPU(fusion_fc, ops::FusionFcOp);
+REGISTER_OPERATOR_MALI_GPU(fusion_fc_relu, ops::FusionFcReluOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(fusion_fc, ops::FusionFcOp);
+REGISTER_OPERATOR_FPGA(fusion_fc_relu, ops::FusionFcReluOp);
 #endif
 
 #endif
