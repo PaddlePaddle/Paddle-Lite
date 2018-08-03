@@ -10,7 +10,6 @@ option(CPU "armv7 with neon" ON)
 option(MALI_GPU "mali gpu" OFF)
 option(FPGA "fpga" OFF)
 
-
 file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c src/*.mm)
 file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
 include_directories(src/)
