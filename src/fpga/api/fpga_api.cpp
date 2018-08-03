@@ -29,15 +29,15 @@ limitations under the License. */
 
 #include "fpga/api/fpga_api.h"
 
-namespace paddle {
-namespace mobile {
+namespace paddle_mobile {
 namespace fpga {
-namespace api {
 
 static int fd = -1;
 static const char *device_path = "/dev/fpgadrv0";
 
-static inline int do_ioctl(int req, void *arg) { return ioctl(req, arg); }
+static inline int do_ioctl(int req, void *arg) {
+  return ioctl(req, (unsigned int64_t)arg);
+}
 
 int open_device() {
   if (fd == -1) {
@@ -48,8 +48,8 @@ int open_device() {
 
 // memory management;
 void *fpga_malloc(size_t size) {
-  return reinterpret_cast<(void *)> mmap64(NULL, size, PROT_READ | PROT_WRITE,
-                                           MAP_SHARED, fd, 0);
+  return reinterpret_cast<void *>(
+      mmap64(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
 }
 
 void fpga_free(void *ptr) { munmap(ptr, 0); }
@@ -58,11 +58,13 @@ void fpga_copy(void *dest, const void *src, size_t num) {
   memcpy(dest, src, num);
 }
 
-int ComputeFpgaConv(struct FpgaConvArgs) {}
-int ComputeFpgaPool(struct FpgaPoolArgs) {}
-int ComputeFpgaEWAdd(struct FpgaEWAddArgs) {}
+int ComputeFpgaConv(const struct ConvArgs &args) { return do_ioctl(21, &args); }
+int ComputeFpgaPool(const struct PoolingArgs &args) {
+  return do_ioctl(22, &args);
+}
+int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
+  return do_ioctl(23, &args);
+}
 
-}  // namespace api
 }  // namespace fpga
-}  // namespace mobile
-}  // namespace paddle
+}  // namespace paddle_mobile

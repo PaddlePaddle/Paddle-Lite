@@ -27,17 +27,17 @@ namespace memory {
 const int MALLOC_ALIGN = 64;
 
 #ifdef PADDLE_MOBILE_FPGA
-namespace api = paddle::mobile::fpga::api;
+namespace fpga = paddle_mobile::fpga;
 
 void Copy(void *dst, const void *src, size_t num) {
   std::memcpy(dst, src, num);
 }
 
-void *Alloc(size_t size) { return api::malloc(size); }
+void *Alloc(size_t size) { return fpga::fpga_malloc(size); }
 
 void Free(void *ptr) {
   if (ptr) {
-    api::fpga_free(ptr);
+    fpga::fpga_free(ptr);
   }
 }
 
