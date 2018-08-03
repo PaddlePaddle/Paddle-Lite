@@ -22,7 +22,7 @@ namespace operators {
 
 template <>
 bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam *param) {
-  bool relu_enabled = true;
+  bool relu_enabled = false;
   const Tensor *input = param->Input();
   auto input_ptr = input->data<float>();
   const Tensor *bias = param->Bias();
