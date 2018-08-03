@@ -16,41 +16,41 @@ limitations under the License. */
 
 #include "operators/fusion_fc_relu_op.h"
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        template <typename Dtype, typename T>
-        void FusionFcReluOp<Dtype, T>::InferShape() const {
-            auto x_dims = this->param_.InputX()->dims();
-            auto y_dims = this->param_.InputY()->dims();
-            int x_num_col_dims = this->param_.XNumColDims();
-            int y_num_col_dims = this->param_.YNumColDims();
+template <typename Dtype, typename T>
+void FusionFcReluOp<Dtype, T>::InferShape() const {
+  auto x_dims = this->param_.InputX()->dims();
+  auto y_dims = this->param_.InputY()->dims();
+  int x_num_col_dims = this->param_.XNumColDims();
+  int y_num_col_dims = this->param_.YNumColDims();
 
-            assert(x_dims.size() > x_num_col_dims);
-            assert(y_dims.size() > y_num_col_dims);
+  assert(x_dims.size() > x_num_col_dims);
+  assert(y_dims.size() > y_num_col_dims);
 
-            /// (1,2,3,4) , x_num_col_dims = 2  -> (2,12)
-            auto x_mat_dims = framework::flatten_to_2d(x_dims, x_num_col_dims);
-            auto y_mat_dims = framework::flatten_to_2d(y_dims, y_num_col_dims);
+  /// (1,2,3,4) , x_num_col_dims = 2  -> (2,12)
+  auto x_mat_dims = framework::flatten_to_2d(x_dims, x_num_col_dims);
+  auto y_mat_dims = framework::flatten_to_2d(y_dims, y_num_col_dims);
 
-            assert(x_mat_dims[1] == y_mat_dims[0]);
+  assert(x_mat_dims[1] == y_mat_dims[0]);
 
-            std::vector<int64_t> output_dims;
-            output_dims.reserve(
-                    static_cast<size_t>(x_num_col_dims + y_dims.size() - y_num_col_dims));
+  std::vector<int64_t> output_dims;
+  output_dims.reserve(
+      static_cast<size_t>(x_num_col_dims + y_dims.size() - y_num_col_dims));
 
-            for (int i = 0; i < x_num_col_dims; ++i) {
-                output_dims.push_back(x_dims[i]);
-            }
+  for (int i = 0; i < x_num_col_dims; ++i) {
+    output_dims.push_back(x_dims[i]);
+  }
 
-            for (int i = y_num_col_dims; i < y_dims.size(); ++i) {
-                output_dims.push_back(y_dims[i]);
-            }
+  for (int i = y_num_col_dims; i < y_dims.size(); ++i) {
+    output_dims.push_back(y_dims[i]);
+  }
 
-            framework::DDim ddim = framework::make_ddim(output_dims);
-            this->param_.Out()->Resize(ddim);
-        }
+  framework::DDim ddim = framework::make_ddim(output_dims);
+  this->param_.Out()->Resize(ddim);
+}
 
-    }  // namespace operators
+}  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
@@ -61,8 +61,7 @@ REGISTER_OPERATOR_CPU(fusion_fc_relu, ops::FusionFcReluOp);
 REGISTER_OPERATOR_MALI_GPU(fusion_fc_relu, ops::FusionFcReluOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(fusion_fc_relu, ops::FusionFcReluOp);
 #endif
 
 #endif
-
-
