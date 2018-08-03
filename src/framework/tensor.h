@@ -257,12 +257,10 @@ class Tensor {
   struct FPGAArgs {
     float scale;
 
-    inline float *scale_pointer() { return &scale; }
+    inline const float *scale_pointer() const { return &scale; }
   };
 
-  struct FPGAArgs fpga_args() const {
-    return fpgaArgs_;
-  }
+  const struct FPGAArgs fpga_args() const { return fpgaArgs_; }
 #endif
 
  private:
