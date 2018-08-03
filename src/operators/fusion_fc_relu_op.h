@@ -11,7 +11,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#ifdef FUSION_FC_RELU_OP
+#ifdef FUSION_FCRELU_OP
 #pragma once
 #include <string>
 #include <vector>
@@ -43,17 +43,18 @@ class FusionFcReluMatcher : public framework::FusionOpMatcher {
 };
 
 template <typename DeviceType, typename T>
-class FusionFcReluOp
-    : public framework::OperatorWithKernel<
-          DeviceType, FusionFcReluParam, operators::FusionFcReluKernel<DeviceType, T>> {
+class FusionFcReluOp : public framework::OperatorWithKernel<
+                           DeviceType, FusionFcReluParam,
+                           operators::FusionFcReluKernel<DeviceType, T>> {
  public:
   FusionFcReluOp(const string &type, const VariableNameMap &inputs,
-             const VariableNameMap &outputs,
-             const framework::AttributeMap &attrs,
-             std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, FusionFcReluParam,
-                                      operators::FusionFcReluKernel<DeviceType, T>>(
-            type, inputs, outputs, attrs, scope) {}
+                 const VariableNameMap &outputs,
+                 const framework::AttributeMap &attrs,
+                 std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<
+            DeviceType, FusionFcReluParam,
+            operators::FusionFcReluKernel<DeviceType, T>>(type, inputs, outputs,
+                                                          attrs, scope) {}
 
   using framework::OperatorWithKernel<
       DeviceType, FusionFcReluParam,
@@ -67,7 +68,8 @@ class FusionFcReluOp
 
 #ifndef FUSION_FC_RELU_REGISTER
 #define FUSION_FC_RELU_REGISTER
-static framework::FusionOpRegistrar fc_relu_registrar(new FusionFcReluMatcher());
+static framework::FusionOpRegistrar fc_relu_registrar(
+    new FusionFcReluMatcher());
 #endif
 
 #endif
@@ -76,12 +78,18 @@ static framework::FusionOpRegistrar fc_relu_registrar(new FusionFcReluMatcher())
 
 #ifndef FUSION_FC_RELU_REGISTER
 #define FUSION_FC_RELU_REGISTER
-static framework::FusionOpRegistrar fc_relu_registrar(new FusionFcReluMatcher());
+static framework::FusionOpRegistrar fc_relu_registrar(
+    new FusionFcReluMatcher());
 #endif
 
 #endif
 
 #ifdef PADDLE_MOBILE_FPGA
+#ifndef FUSION_FC_RELU_REGISTER
+#define FUSION_FC_RELU_REGISTER
+static framework::FusionOpRegistrar fc_relu_registrar(
+    new FusionFcReluMatcher());
+#endif
 #endif
 
 }  // namespace operators
@@ -94,5 +102,6 @@ USE_OP_CPU(fusion_fc_relu);
 USE_OP_MALI_GPU(fusion_fc_relu);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+USE_OP_FPGA(fusion_fc_relu);
 #endif
-#endif //FUSION_FC_RELU_OP
+#endif  // FUSION_FC_RELU_OP

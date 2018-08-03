@@ -96,6 +96,7 @@ USE_OP_CPU(fusion_fc);
 USE_OP_MALI_GPU(fusion_fc);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+USE_OP_FPGA(fusion_fc);
 #endif
 
 #endif
