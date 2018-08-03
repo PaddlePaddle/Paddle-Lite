@@ -31,13 +31,22 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam *param) {
   Tensor *out = param->Out();
   auto out_ptr = out->mutable_data<float>();
 
+  PADDLE_MOBILE_ENFORCE(input_x->dims()[1] == input_z->dims()[0],
+                        "Image channel should be equal to bias number");
+  int channel = input_x->dims()[1];
+  float *bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sizeof(float));
+  for (int i = 0; i < channel; i++) {
+    bs_ptr[i * 2] = 1;
+    bs_ptr[i * 2 + 1] = input_z_ptr[i];
+  }
+
   fpga::ConvArgs convArgs;
   convArgs.relu_enabled = relu_enabled;
   convArgs.bias_address = (void *)input_z_ptr;
   convArgs.filter_address = (void *)input_y_ptr;
   convArgs.filter_num = out->dims()[1];
   convArgs.group_num = 1;
-  convArgs.bn.enabled = bn_enabled;
+  convArgs.sb_address = (void *)bs_ptr;
   convArgs.kernel.stride_w = 1;
   convArgs.kernel.stride_h = 1;
   convArgs.kernel.height = input_x->dims()[2];
@@ -48,9 +57,11 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam *param) {
   convArgs.image.width = input_x->dims()[3];
   convArgs.image.pad_height = 1;
   convArgs.image.pad_width = 1;
-  convArgs.image.scale_address = nullptr;  // fc input has scale attribute??
+  convArgs.image.scale_address =
+      input_x->fpga_args().scale_pointer();  // fc input has scale attribute??
   convArgs.output.address = (void *)out_ptr;
-  convArgs.output.scale_address = nullptr;  // fc output has scale attribute??
+  convArgs.output.scale_address =
+      out->fpga_args().scale_pointer();  // fc output has scale attribute??
   param->SetFpgaArgs(convArgs);
 
   return true;
