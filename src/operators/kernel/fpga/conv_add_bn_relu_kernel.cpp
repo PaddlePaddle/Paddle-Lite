@@ -36,7 +36,8 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(FusionConvAddBNReluParam *param) {
   auto bn_scale_ptr = param->InputScale()->data<float>();
   auto bn_bias_ptr = param->InputBias()->data<float>();
   const float epsilon = param->Epsilon();
-  PADDLE_MOBILE_ENFORCE(input->dims()[1] == bias->dims()[0] && bias->dims()[0] == param->InputBias()->dims()[0],
+  PADDLE_MOBILE_ENFORCE(input->dims()[1] == bias->dims()[0] &&
+                            bias->dims()[0] == param->InputBias()->dims()[0],
                         "Image channel should be equal to bias number");
 
   const int channel = input->dims()[1];
@@ -47,39 +48,42 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(FusionConvAddBNReluParam *param) {
   auto new_bias_ptr = new_bias->mutable_data<float>({channel});
 
   for (int i = 0; i < channel; i++) {
-    new_scale_ptr[i] =  bn_scale_ptr[i] / static_cast<float>(pow((bn_var_ptr[i] + epsilon), 0.5));
-    new_bias_ptr[i] = bn_bias_ptr[i] +(bias_ptr[i] - bn_mean_ptr[i]) * new_scale_ptr[i];
-    bs_ptr[i*2] = new_scale_ptr[i];
-    bs_ptr[i*2 + 1] = new_bias_ptr[i];
+    new_scale_ptr[i] = bn_scale_ptr[i] /
+                       static_cast<float>(pow((bn_var_ptr[i] + epsilon), 0.5));
+    new_bias_ptr[i] =
+        bn_bias_ptr[i] + (bias_ptr[i] - bn_mean_ptr[i]) * new_scale_ptr[i];
+    bs_ptr[i * 2] = new_scale_ptr[i];
+    bs_ptr[i * 2 + 1] = new_bias_ptr[i];
   }
   param->SetNewScale(new_scale);
   param->SetNewBias(new_bias);
 
   fpga::ConvArgs convArgs;
   convArgs.relu_enabled = relu_enabled;
-  convArgs.filter_address = (void*)filter_ptr;
+  convArgs.filter_address = (void *)filter_ptr;
   convArgs.filter_num = filter->dims()[0];
   convArgs.group_num = param->Groups();
-  convArgs.sb_address = (void*)bs_ptr;
+  convArgs.sb_address = (void *)bs_ptr;
   convArgs.kernel.stride_h = param->Strides()[0];
   convArgs.kernel.stride_w = param->Strides()[1];
   convArgs.kernel.height = filter->dims()[2];
   convArgs.kernel.width = filter->dims()[3];
-  convArgs.image.address = (void*)input_ptr;
+  convArgs.image.address = (void *)input_ptr;
   convArgs.image.channels = input->dims()[1];
   convArgs.image.height = input->dims()[2];
   convArgs.image.width = input->dims()[3];
   convArgs.image.pad_height = param->Paddings()[0];
   convArgs.image.pad_width = param->Paddings()[1];
   convArgs.image.scale_address = input->fpga_args().scale_pointer();
-  convArgs.output.address = (void*)out_ptr;
+  convArgs.output.address = (void *)out_ptr;
   convArgs.output.scale_address = out->fpga_args().scale_pointer();
   param->SetFpgaArgs(convArgs);
   return true;
 }
 
 template <>
-void ConvAddBNReluKernel<FPGA, float>::Compute(const FusionConvAddBNReluParam &param) const {
+void ConvAddBNReluKernel<FPGA, float>::Compute(
+    const FusionConvAddBNReluParam &param) const {
   fpga::ComputeFpgaConv(param.FpgaArgs());
 }
 template class ConvAddBNReluKernel<FPGA, float>;

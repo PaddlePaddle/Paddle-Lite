@@ -32,25 +32,26 @@ bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam *param) {
   Tensor *out = param->Output();
   auto out_ptr = out->mutable_data<float>();
 
-  PADDLE_MOBILE_ENFORCE(input->dims()[1] == bias->dims()[0], "Image channel should be equal to bias number");
+  PADDLE_MOBILE_ENFORCE(input->dims()[1] == bias->dims()[0],
+                        "Image channel should be equal to bias number");
   int channel = input->dims()[1];
   float *bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sizeof(float));
-  for (int i=0; i<channel; i++){
-    bs_ptr[i*2] = 1;
-    bs_ptr[i*2 + 1] = bias_ptr[i];
+  for (int i = 0; i < channel; i++) {
+    bs_ptr[i * 2] = 1;
+    bs_ptr[i * 2 + 1] = bias_ptr[i];
   }
 
   fpga::ConvArgs convArgs;
   convArgs.relu_enabled = relu_enabled;
-  convArgs.filter_address = (void*)filter_ptr;
+  convArgs.filter_address = (void *)filter_ptr;
   convArgs.filter_num = filter->dims()[0];
   convArgs.group_num = param->Groups();
-  convArgs.sb_address = (void*)bs_ptr;
+  convArgs.sb_address = (void *)bs_ptr;
   convArgs.kernel.stride_h = param->Strides()[0];
   convArgs.kernel.stride_w = param->Strides()[1];
   convArgs.kernel.height = filter->dims()[2];
   convArgs.kernel.width = filter->dims()[3];
-  convArgs.image.address = (void*)input_ptr;
+  convArgs.image.address = (void *)input_ptr;
   convArgs.image.channels = input->dims()[1];
   convArgs.image.height = input->dims()[2];
   convArgs.image.width = input->dims()[3];
@@ -58,14 +59,15 @@ bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam *param) {
   convArgs.image.pad_height = param->Paddings()[0];
   convArgs.image.pad_width = param->Paddings()[1];
   convArgs.image.scale_address = input->fpga_args().scale_pointer();
-  convArgs.output.address = (void*)out_ptr;
+  convArgs.output.address = (void *)out_ptr;
   convArgs.output.scale_address = out->fpga_args().scale_pointer();
   param->SetFpgaArgs(convArgs);
   return true;
 }
 
 template <>
-void ConvAddReluKernel<FPGA, float>::Compute(const FusionConvAddReluParam &param) const {
+void ConvAddReluKernel<FPGA, float>::Compute(
+    const FusionConvAddReluParam &param) const {
   fpga::ComputeFpgaConv(param.FpgaArgs());
 }
 template class ConvAddReluKernel<FPGA, float>;
