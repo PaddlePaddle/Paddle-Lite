@@ -31,6 +31,18 @@ void* fpga_malloc(size_t size);
 void fpga_free(void* ptr);
 void fpga_copy(void* dst, const void* src, size_t num);
 
+enum DataConvertType {
+  DATA_NO_CONVERT = 0,
+  DATA_FP32_TO_FP16 = 1,
+  DATA_FP16_TO_FP32 = 2,
+};
+
+enum LayoutConvertType {
+  LAYOUT_NO_CONVERT = 0,
+  LAYOUT_CHW_TO_HWC = 1,
+  LAYOUT_HWC_TO_CHW = 2,
+};
+
 struct VersionArgs {
   void* buffer;
 };
@@ -79,7 +91,7 @@ struct ConvArgs {
   uint32_t filter_num;
   uint32_t group_num;
 
-  struct BNArgs bn;
+  void* sb_address;  // scale and bias are interlaced;
   struct KernelArgs kernel;
   struct ImageInputArgs image;  // input image;
   struct ImageOutputArgs output;
@@ -102,6 +114,12 @@ struct EWAddArgs {
   struct ImageOutputArgs output;
 };
 
+struct BypassArgs {
+  enum DataConvertType convert_type;
+  struct ImageInputArgs image;
+  struct ImageOutputArgs output;
+};
+
 struct FpgaRegWriteArgs {
   uint64_t address;  //
   uint64_t value;
@@ -115,8 +133,6 @@ struct FpgaRegReadArgs {
 #define IOCTL_FPGA_MAGIC 'FPGA'
 
 #define IOCTL_VERSION _IOW(IOCTL_FPGA_MAGIC, 01, struct VersionArgs)
-#define IOCTL_FPGA_REG_READ _IOW(IOCTL_FPGA_MAGIC, 02, struct FpgaRegReadArgs)
-#define IOCTL_FPGA_REG_WRITE _IOW(IOCTL_FPGA_MAGIC, 03, struct FpgaRegWriteArgs)
 
 #define IOCTL_SEPARATOR_0 10
 
@@ -127,6 +143,8 @@ struct FpgaRegReadArgs {
 #define IOCTL_CONFIG_CONV _IOW(IOCTL_FPGA_MAGIC, 21, struct ConvArgs)
 #define IOCTL_CONFIG_POOLING _IOW(IOCTL_FPGA_MAGIC, 22, struct PoolingArgs)
 #define IOCTL_CONFIG_EW _IOW(IOCTL_FPGA_MAGIC, 23, struct EWAddArgs)
+#define IOCTL_FPGA_REG_READ _IOW(IOCTL_FPGA_MAGIC, 28, struct FpgaRegReadArgs)
+#define IOCTL_FPGA_REG_WRITE _IOW(IOCTL_FPGA_MAGIC, 29, struct FpgaRegWriteArgs)
 
 enum FPGA_ERR_TYPE {
   ERR_IOCTL_CMD = -1,
@@ -154,9 +172,9 @@ enum FPGA_ERR_TYPE {
 
 //============================== API =============================
 
-int ComputeFpgaConv(struct ConvArgs args);
-int ComputeFpgaPool(struct PoolingArgs args);
-int ComputeFpgaEWAdd(struct EWAddArgs args);
+int ComputeFpgaConv(const struct ConvArgs& args);
+int ComputeFpgaPool(const struct PoolingArgs& args);
+int ComputeFpgaEWAdd(const struct EWAddArgs& args);
 
 }  // namespace fpga
 }  // namespace paddle_mobile
