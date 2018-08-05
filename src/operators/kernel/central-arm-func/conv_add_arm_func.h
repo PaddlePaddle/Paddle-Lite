@@ -32,7 +32,12 @@ void ConvAddBasic(const FusionConvAddParam &param) {
   int axis = param.Axis();
   Tensor *output = param.Output();
   math::expand_bias(bias, axis, output->dims());
-  output->ShareDataWith(bias);
+  float *output_data = output->data<float>();
+  float *biase_data = bias.data<float>();
+  for (int k = 0; k < output->numel(); ++k) {
+      output_data[k] = biase_data[k];
+  }
+
   int groups = param.Groups();
   std::vector<int> strides = param.Strides();
   std::vector<int> paddings = param.Paddings();
