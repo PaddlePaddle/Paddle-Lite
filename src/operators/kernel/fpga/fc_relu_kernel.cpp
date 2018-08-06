@@ -41,7 +41,6 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam *param) {
 
   fpga::ConvArgs convArgs;
   convArgs.relu_enabled = relu_enabled;
-  convArgs.bias_address = (void *)input_z_ptr;
   convArgs.filter_address = (void *)input_y_ptr;
   convArgs.filter_num = out->dims()[1];
   convArgs.group_num = 1;
