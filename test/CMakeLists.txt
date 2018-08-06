@@ -100,6 +100,10 @@ else ()
     ADD_EXECUTABLE(test-load framework/test_load.cpp)
     target_link_libraries(test-load paddle-mobile)
 
+    ADD_EXECUTABLE(test-inference-api framework/test_inference_api.cpp)
+    target_link_libraries(test-inference-api paddle-mobile)
+
+
     # gen test log
     # gen test
     ADD_EXECUTABLE(test-optimize framework/test_optimize.cpp)
