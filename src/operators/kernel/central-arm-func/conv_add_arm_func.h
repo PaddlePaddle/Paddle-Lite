@@ -35,7 +35,7 @@ void ConvAddBasic(const FusionConvAddParam &param) {
   float *output_data = output->data<float>();
   float *biase_data = bias.data<float>();
   for (int k = 0; k < output->numel(); ++k) {
-      output_data[k] = biase_data[k];
+    output_data[k] = biase_data[k];
   }
 
   int groups = param.Groups();
