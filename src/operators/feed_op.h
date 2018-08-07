@@ -30,6 +30,36 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
       : framework::OperatorBase<DeviceType>(type, inputs, outputs, attrs,
                                             scope),
         param_(inputs, outputs, attrs, scope.get()) {}
+
+ protected:
+  FeedParam param_;
+
+#ifdef PADDLE_MOBILE_FPGA
+  void RunImpl() const { fpga::PerformBypass(param_.FpgaArgs()); }
+
+  void Init() {
+    const Tensor *input = param_.InputX();
+    auto input_ptr = input->data<float>();
+    Tensor *output = param_.Out();
+    auto output_ptr = output->mutable_data<half>();
+    fpga::BypassArgs args;
+    args.convert_type = fpga::DATA_FP32_TO_FP16;
+    args.layout_type = fpga::LAYOUT_CHW_TO_HWC;
+    args.image.address = (void *)input_ptr;
+    args.image.channels = input->dims()[1];
+    args.image.height = input->dims()[2];
+    args.image.width = input->dims()[3];
+    args.output.address = output_ptr;
+    param_.SetFpgaArgs(args);
+  }
+
+  void InferShape() const {
+    auto out_dims = param_.Out()->dims();
+    out_dims[0] = param_.BatchSize();
+    param_.Out()->Resize(out_dims);
+    param_.Out()->ShareDataWith(*param_.InputX());  // TODO How to handle fp16
+  }
+#else
   void RunImpl() const { param_.Out()->ShareDataWith(*param_.InputX()); }
 
   void Init() {}
@@ -38,10 +68,7 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
     auto out_dims = param_.Out()->dims();
     out_dims[0] = param_.BatchSize();
     param_.Out()->Resize(out_dims);
-  }
-
- protected:
-  FeedParam param_;
+#endif
 };
 
 }  // namespace operators
