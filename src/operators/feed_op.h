@@ -31,12 +31,14 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
                                             scope),
         param_(inputs, outputs, attrs, scope.get()) {}
 
- protected:
-  FeedParam param_;
+  void InferShape() const {
+    auto out_dims = param_.Out()->dims();
+    out_dims[0] = param_.BatchSize();
+    param_.Out()->Resize(out_dims);
+  }
 
 #ifdef PADDLE_MOBILE_FPGA
   void RunImpl() const { fpga::PerformBypass(param_.FpgaArgs()); }
-
   void Init() {
     const Tensor *input = param_.InputX();
     auto input_ptr = input->data<float>();
@@ -53,22 +55,13 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
     param_.SetFpgaArgs(args);
   }
 
-  void InferShape() const {
-    auto out_dims = param_.Out()->dims();
-    out_dims[0] = param_.BatchSize();
-    param_.Out()->Resize(out_dims);
-    param_.Out()->ShareDataWith(*param_.InputX());  // TODO How to handle fp16
-  }
 #else
   void RunImpl() const { param_.Out()->ShareDataWith(*param_.InputX()); }
-
   void Init() {}
-
-  void InferShape() const {
-    auto out_dims = param_.Out()->dims();
-    out_dims[0] = param_.BatchSize();
-    param_.Out()->Resize(out_dims);
 #endif
+
+ protected:
+  FeedParam param_;
 };
 
 }  // namespace operators
