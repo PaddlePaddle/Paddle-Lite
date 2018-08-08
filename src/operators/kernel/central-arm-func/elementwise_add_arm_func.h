@@ -15,6 +15,8 @@ limitations under the License. */
 #ifdef ELEMENTWISEADD_OP
 
 #pragma once
+#include "operators/math/elementwise_op_function.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
