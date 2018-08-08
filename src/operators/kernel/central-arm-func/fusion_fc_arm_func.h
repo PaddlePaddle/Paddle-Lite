@@ -45,16 +45,16 @@ void FusionFcCompute(const FusionFcParam &param) {
   PADDLE_MOBILE_ENFORCE(out_dim[1] == input_z->dims()[0],
                         " out_dim.size must be 2.");
   axis = (axis == -1 ? out_dim.size() - input_z->dims().size() : axis);
-  PADDLE_MOBILE_ENFORCE(axis == 1, " to fit broadcast, axis = 1. ")
+  PADDLE_MOBILE_ENFORCE(axis == 1, " to fit broadcast, axis = 1. ");
 
   int64_t classes = input_z->numel();
   for (int i = 0; i < out_dim[0]; i++) {
     memory::Copy(out_data + i * classes, input_z_data, sizeof(float) * classes);
   }
 
-  for (int i = 0; i < out->numel(); i++) {
-    DLOG << out_data[i];
-  }
+  //  for (int i = 0; i < out->numel(); i++) {
+  //    DLOG << out_data[i];
+  //  }
   math::matmul<float>(x_matrix, false, y_matrix, false, static_cast<float>(1),
                       out, static_cast<float>(1));
   PADDLE_MOBILE_ENFORCE(out_dim.size() == 2, " out_dim.size must be 2.");

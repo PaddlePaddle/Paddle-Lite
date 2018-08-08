@@ -44,6 +44,33 @@ void matmul<float>(const framework::Tensor &matrix_a, bool trans_a,
   Sgemm(M, N, K, alpha, matrix_a.data<float>(), K, matrix_b.data<float>(), N,
         beta, matrix_out->data<float>(), N, relu);
 }
+template <>
+void matmulWithBias<float>(const framework::Tensor &matrix_a, bool trans_a,
+                           const framework::Tensor &matrix_b, bool trans_b,
+                           float alpha, framework::Tensor *matrix_out,
+                           float beta, bool relu, float *bias) {
+  auto dim_a = matrix_a.dims();
+  auto dim_b = matrix_b.dims();
+  auto dim_out = matrix_out->dims();
+  //  PADDLE_ENFORCE(dim_a.size() == 2 && dim_b.size() == 2 &&
+  //  dim_out.size() ==
+  //  2,
+  //                 "The input and output of matmul be matrix");
+  //
+  //  PADDLE_ENFORCE(platform::is_cpu_place(matrix_a.place()) &&
+  //                     platform::is_cpu_place(matrix_b.place())
+  //                     &&
+  //                     platform::is_cpu_place(matrix_out->place()),
+  //                 "Matrix must all be in CPUPlace");
+
+  int M = dim_out[0];
+  int N = dim_out[1];
+  int K = (!trans_a) ? dim_a[1] : dim_a[0];
+
+  SgemmWithBias(M, N, K, alpha, matrix_a.data<float>(), K,
+                matrix_b.data<float>(), N, beta, matrix_out->data<float>(), N,
+                relu, bias);
+}
 
 template <>
 void matmulWithBn<float>(const framework::Tensor &matrix_a, bool trans_a,
