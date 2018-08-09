@@ -24,13 +24,13 @@ template <>
 bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam *param) {
   bool relu_enabled = false;
   const Tensor *input = param->Input();
-  auto input_ptr = input->data<float>();
+  auto input_ptr = input->data<half>();
   const Tensor *bias = param->Bias();
   auto bias_ptr = bias->data<float>();
   const Tensor *filter = param->Filter();
   auto filter_ptr = filter->data<float>();
   Tensor *out = param->Output();
-  auto out_ptr = out->mutable_data<float>();
+  auto out_ptr = out->mutable_data<half>();
   auto bn_mean_ptr = param->InputMean()->data<float>();
   auto bn_var_ptr = param->InputVariance()->data<float>();
   auto bn_scale_ptr = param->InputScale()->data<float>();
