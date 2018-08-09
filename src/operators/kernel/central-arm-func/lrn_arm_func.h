@@ -15,7 +15,7 @@ limitations under the License. */
 #ifdef LRN_OP
 
 #pragma once
-
+#include "operators/op_param.h"
 namespace paddle_mobile {
 namespace operators {
 

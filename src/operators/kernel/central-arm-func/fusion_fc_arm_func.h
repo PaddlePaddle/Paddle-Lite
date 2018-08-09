@@ -15,6 +15,8 @@ limitations under the License. */
 #ifdef FUSION_FC_OP
 
 #pragma once
+#include "operators/math/math_function.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
