@@ -128,10 +128,8 @@ void VecWriteWithBnRelu(int n, float *c, float *C, int ldc, float *new_scale,
 
 // 32位 float 矩阵乘法
 void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
-           const float *B, int ldb, float beta, float *C, int ldc, bool relu);
-void SgemmWithBias(int m, int n, int k, float alpha, const float *A, int lda,
-                   const float *B, int ldb, float beta, float *C, int ldc,
-                   bool relu, float *bias);
+           const float *B, int ldb, float beta, float *C, int ldc, bool relu,
+           float *bias);
 
 // 32位 float 矩阵乘法, 并对结果进行 batchnrom
 void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
