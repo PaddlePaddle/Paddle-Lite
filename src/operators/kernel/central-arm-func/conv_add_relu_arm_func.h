@@ -109,9 +109,9 @@ void ConvAddReluCompute(const FusionConvAddReluParam &param) {
       // gemm
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
-      math::matmulWithBias<float>(filter_slice, false, col_matrix, false,
-                                  static_cast<float>(1), &out_slice,
-                                  static_cast<float>(1), true, biase_data);
+      math::matmul<float>(filter_slice, false, col_matrix, false,
+                          static_cast<float>(1), &out_slice,
+                          static_cast<float>(1), true, biase_data);
     }
   }
 }

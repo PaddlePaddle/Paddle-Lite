@@ -2248,69 +2248,8 @@ void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
 
 // 32位 float 矩阵乘法
 void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
-           const float *B, int ldb, float beta, float *C, int ldc, bool relu) {
-  // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
-  // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
-  int L1 = 32 * 1024;
-  int L2 = 0.5 * 1024 * 1024;
-
-  KC = k;
-  MC = L1 / (KC * sizeof(float));
-  NC = L2 / (KC * sizeof(float));
-
-  // make sure MC is multiple of MR, and NC is multiple of NR
-  int mblock_num = (m + MC - 1) / MC;
-  MC = (m + mblock_num - 1) / mblock_num;
-  MC = (MC + MR - 1) / MR * MR;
-  //  DLOG << "mblock_num = " << mblock_num << ", MC = " << MC << "\n";
-
-  int nblock_num = (n + NC - 1) / NC;
-  NC = (n + nblock_num - 1) / nblock_num;
-  NC = (NC + NR - 1) / NR * NR;
-  //  DLOG << "nblock_num = " << nblock_num << ", NC = " << NC << "\n";
-
-  packedA = static_cast<float *>(
-      paddle_mobile::memory::Alloc(sizeof(float) * MC * KC));
-  packedB = static_cast<float *>(
-      paddle_mobile::memory::Alloc(sizeof(float) * KC * NC));
-  packedC = static_cast<float *>(
-      paddle_mobile::memory::Alloc(sizeof(float) * MC * NC));
-  zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
-
-  for (int l = 0; l < KC; ++l) {
-    zero[l] = 0;
-  }
-
-  int mc, nc;
-  for (int j = 0; j < n; j += NC) {
-    nc = s_min(n - j, NC);
-#if __aarch64__
-    // PackMatrixB_12c(KC, nc, nc % NR, &B(0, j), ldb, packedB);
-    PackMatrixB_16c(KC, nc, nc % NR, &B(0, j), ldb, packedB);
-#else
-    PackMatrixB_8c(KC, nc, nc % NR, &B(0, j), ldb, packedB);
-#endif
-    for (int i = 0; i < m; i += MC) {
-      mc = s_min(m - i, MC);
-#if __aarch64__
-      PackMatrixA_6r(mc, KC, mc % MR, &A(i, 0), lda, packedA);
-      // PackMatrixA_8r(mc, KC, mc % MR, &A(i, 0), lda, packedA);
-#else
-      PackMatrixA_6r(mc, KC, mc % MR, &A(i, 0), lda, packedA);
-#endif
-      InnerKernel(mc, nc, alpha, packedA, packedB, beta, packedC, &C(i, j), ldc,
-                  relu);
-    }
-  }
-
-  paddle_mobile::memory::Free(packedA);
-  paddle_mobile::memory::Free(packedB);
-  paddle_mobile::memory::Free(packedC);
-  paddle_mobile::memory::Free(zero);
-}
-void SgemmWithBias(int m, int n, int k, float alpha, const float *A, int lda,
-                   const float *B, int ldb, float beta, float *C, int ldc,
-                   bool relu, float *bias) {
+           const float *B, int ldb, float beta, float *C, int ldc, bool relu,
+           float *bias) {
   // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
   // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
   int L1 = 32 * 1024;
