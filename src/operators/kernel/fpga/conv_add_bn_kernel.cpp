@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include "operators/kernel/conv_add_bn_kernel.h"
 #include "fpga/api/fpga_api.h"
+#include "fpga/quantilization.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -28,7 +29,7 @@ bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam *param) {
   const Tensor *bias = param->Bias();
   auto bias_ptr = bias->data<float>();
   const Tensor *filter = param->Filter();
-  auto filter_ptr = filter->data<float>();
+
   Tensor *out = param->Output();
   auto out_ptr = out->mutable_data<half>();
   auto bn_mean_ptr = param->InputMean()->data<float>();
@@ -41,7 +42,8 @@ bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam *param) {
                         "Image channel should be equal to bias number");
 
   const int channel = input->dims()[1];
-  float *bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sizeof(float));
+  float *bs_ptr =
+      reinterpret_cast<float *>(fpga::fpga_malloc(2 * channel * sizeof(float)));
   Tensor *new_scale = new Tensor();
   Tensor *new_bias = new Tensor();
   auto new_scale_ptr = new_scale->mutable_data<float>({channel});
@@ -58,26 +60,33 @@ bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam *param) {
   param->SetNewScale(new_scale);
   param->SetNewBias(new_bias);
 
+  const Tensor *quant_filter = quantilize_filter(filter);
+
+  // delete original filter?
+  filter = quant_filter;
+
+  auto filter_ptr = filter->data<float>();
   fpga::ConvArgs convArgs;
   convArgs.relu_enabled = relu_enabled;
-  convArgs.filter_address = (void *)filter_ptr;
+  convArgs.filter_address = reinterpret_cast<void *> filter_ptr;
   convArgs.filter_num = filter->dims()[0];
   convArgs.group_num = param->Groups();
-  convArgs.sb_address = (void *)bs_ptr;
+  convArgs.sb_address = reinterpret_cast<void *> bs_ptr;
   convArgs.kernel.stride_h = param->Strides()[0];
   convArgs.kernel.stride_w = param->Strides()[1];
   convArgs.kernel.height = filter->dims()[2];
   convArgs.kernel.width = filter->dims()[3];
-  convArgs.image.address = (void *)input_ptr;
+  convArgs.image.address = reinterpret_cast<void *> input_ptr;
   convArgs.image.channels = input->dims()[1];
   convArgs.image.height = input->dims()[2];
   convArgs.image.width = input->dims()[3];
   convArgs.image.pad_height = param->Paddings()[0];
   convArgs.image.pad_width = param->Paddings()[1];
   convArgs.image.scale_address = input->fpga_args().scale_pointer();
-  convArgs.output.address = (void *)out_ptr;
+  convArgs.output.address = reinterpret_cast<void *> out_ptr;
   convArgs.output.scale_address = out->fpga_args().scale_pointer();
   param->SetFpgaArgs(convArgs);
+
   return true;
 }
 
