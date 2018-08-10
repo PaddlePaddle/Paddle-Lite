@@ -55,9 +55,9 @@ void FusionFcCompute(const FusionFcParam &param) {
     memory::Copy(out_data + i * classes, input_z_data, sizeof(float) * classes);
   }
 
-  //  for (int i = 0; i < out->numel(); i++) {
-  //    DLOG << out_data[i];
-  //  }
+  for (int i = 0; i < out->numel(); i++) {
+    DLOG << out_data[i];
+  }
   math::matmul<float>(x_matrix, false, y_matrix, false, static_cast<float>(1),
                       out, static_cast<float>(1), false, bias_data);
   PADDLE_MOBILE_ENFORCE(out_dim.size() == 2, " out_dim.size must be 2.");

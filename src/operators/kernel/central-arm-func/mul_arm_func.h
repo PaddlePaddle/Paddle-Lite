@@ -59,7 +59,6 @@ void MulCompute(const MulParam &param) {
   const Tensor *input_y = param.InputY();
   Tensor *out = param.Out();
   out->mutable_data<float>();
-  float *bias_data = out->mutable_data<float>();
   const Tensor x_matrix =
       input_x->dims().size() > 2
           ? framework::ReshapeToMatrix(*input_x, param.XNumColDims())
@@ -73,7 +72,7 @@ void MulCompute(const MulParam &param) {
     out->Resize({x_matrix.dims()[0], y_matrix.dims()[1]});
   }
   math::matmul<float>(x_matrix, false, y_matrix, false, static_cast<float>(1),
-                      out, static_cast<float>(0), false, bias_data);
+                      out, static_cast<float>(0));
   if (out_dim.size() != 2) {
     out->Resize(out_dim);
   }
