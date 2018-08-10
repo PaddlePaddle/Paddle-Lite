@@ -25,9 +25,9 @@ bool ElementwiseAddReluKernel<FPGA, float>::Init(
   const Tensor *input_x = param->InputX();
   const Tensor *input_y = param->InputY();
   Tensor *out = param->Out();
-  auto input_x_ptr = input_x->data<float>();
-  auto input_y_ptr = input_y->data<float>();
-  auto out_ptr = out->mutable_data<float>();
+  auto input_x_ptr = input_x->data<half>();
+  auto input_y_ptr = input_y->data<half>();
+  auto out_ptr = out->mutable_data<half>();
 
   fpga::EWAddArgs ewaddArgs;
   ewaddArgs.relu_enabled = relu_enabled;

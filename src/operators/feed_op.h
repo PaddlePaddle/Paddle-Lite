@@ -74,4 +74,5 @@ USE_OP_CPU(feed);
 USE_OP_MALI_GPU(feed);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+USE_OP_FPGA(feed);
 #endif
