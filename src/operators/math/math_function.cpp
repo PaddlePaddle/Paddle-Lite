@@ -22,7 +22,8 @@ namespace math {
 template <>
 void matmul<float>(const framework::Tensor &matrix_a, bool trans_a,
                    const framework::Tensor &matrix_b, bool trans_b, float alpha,
-                   framework::Tensor *matrix_out, float beta, bool relu) {
+                   framework::Tensor *matrix_out, float beta, bool relu,
+                   float *bias) {
   auto dim_a = matrix_a.dims();
   auto dim_b = matrix_b.dims();
   auto dim_out = matrix_out->dims();
@@ -42,7 +43,7 @@ void matmul<float>(const framework::Tensor &matrix_a, bool trans_a,
   int K = (!trans_a) ? dim_a[1] : dim_a[0];
 
   Sgemm(M, N, K, alpha, matrix_a.data<float>(), K, matrix_b.data<float>(), N,
-        beta, matrix_out->data<float>(), N, relu);
+        beta, matrix_out->data<float>(), N, relu, bias);
 }
 
 template <>
