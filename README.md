@@ -27,7 +27,7 @@ Paddle-Moible是PaddlePaddle组织下的项目，是一个致力于嵌入式平�
 - **ARM CPU**
 
 
-![](http://mms-graph.bj.bcebos.com/paddle-mobile%2F2018_07_29.png)
+![](http://mms-graph.bj.bcebos.com/paddle-mobile%2F2018_08_10.png)
 
     arm cpu是paddle-mobile的主要支持方向，cpu的通用性一直是其优势。嵌入式深度学习，需要大量的cpu汇编实现。我们正在紧锣密鼓的编码，为的是能充分硬件的每一点加速能力。
     arm cpu的优化工作还在进行中，现在使用了常规的cpu优化。在arm a73上paddle-mobile arm-v7现在单核运行一次mobilenet1.0是110+ms，显然这不是我们的最终目标，我们正在用大量的汇编改写，后续性能仍会有巨大提升空间, 目前只支持armv7, 未来我们也会支持armv8。
