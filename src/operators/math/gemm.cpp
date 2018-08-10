@@ -2244,6 +2244,27 @@ void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
   }
 }
 
+void AddDot4x8(int k, const float *a, const float *b, float *c, int ldc) {}
+
+void WriteBasic(int mc, int nc, float *c, float *C, int ldc) {}
+
+void WriteWithAlphaBeta(int mc, int nc, float *c, float *C, int ldc) {}
+
+void WriteWithAdd(int mc, int nc, float *c, float *C, int ldc) {}
+
+void WriteWithAddV1(int mc, int nc, float *c, float *C, int ldc, float *bias) {}
+
+void WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc) {}
+
+void WriteWithAddReluV1(int mc, int nc, float *c, float *C, int ldc,
+                        float *bias) {}
+
+void WriteWithBn(int mc, int nc, float *c, float *C, int ldc, float *new_scale,
+                 float *new_bias) {}
+
+void WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc,
+                     float *new_scale, float *new_bias) {}
+
 #endif  // __ARM_NEON
 
 // 32位 float 矩阵乘法
