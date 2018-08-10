@@ -17,10 +17,11 @@ import Foundation
 public class ResultHolder<P: PrecisionType> {
     public let dim: [Int]
     public let resultArr: [P]
-    
-    public init(inDim: [Int], inResult: [P]) {
+    public let elapsedTime: Double
+    public init(inDim: [Int], inResult: [P], inElapsedTime: Double) {
         dim = inDim
         resultArr = inResult
+        elapsedTime = inElapsedTime
     }
 }
 
@@ -127,8 +128,7 @@ public class Executor<P: PrecisionType> {
             
             
             let afterDate = Date.init()
-            print(" encoder end ! time: \(afterDate.timeIntervalSince(beforeDate))")
-
+            
             guard let outputVar = self.program.scope.output() else {
                 fatalError("output nil")
             }
@@ -138,11 +138,16 @@ public class Executor<P: PrecisionType> {
             }
             let resultHodlder = ResultHolder<P>.init(inDim: output.dim.dims, inResult: output.metalTexture.floatArray(res: { (p:P) -> P in
                 return p
-            }))
+            }), inElapsedTime: afterDate.timeIntervalSince(beforeDate))
             completionHandle(resultHodlder)
         }
         buffer.commit()
     }
+    
+    public func clear() {
+        program.scope.clear()
+    }
+    
 }
 
 //public let paddle_executor: Executor = Executor.init()

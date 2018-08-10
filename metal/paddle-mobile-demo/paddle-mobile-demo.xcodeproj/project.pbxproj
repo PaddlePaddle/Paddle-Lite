@@ -218,6 +218,8 @@
 		FC3602C82108580600FACB58 /* MetalHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC3602C72108580600FACB58 /* MetalHelper.swift */; };
 		FCD04E6320F3146B0007374F /* params in Resources */ = {isa = PBXBuildFile; fileRef = FCD04E6120F3146A0007374F /* params */; };
 		FCD04E6420F3146B0007374F /* model in Resources */ = {isa = PBXBuildFile; fileRef = FCD04E6220F3146A0007374F /* model */; };
+		FCDFD3FB211D72C3005AB38B /* ModelHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCDFD3FA211D72C3005AB38B /* ModelHelper.swift */; };
+		FCDFD41B211D91C7005AB38B /* synset.txt in Resources */ = {isa = PBXBuildFile; fileRef = FCDFD41A211D91C7005AB38B /* synset.txt */; };
 		FCEBEC2C20E1391F00C0B14D /* paddle_mobile.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */; };
 		FCEBEC2D20E1391F00C0B14D /* paddle_mobile.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		FCEEE7D4210627A000444BEC /* banana.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = FCEEE7D3210627A000444BEC /* banana.jpeg */; };
@@ -453,6 +455,8 @@
 		FC3602C72108580600FACB58 /* MetalHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalHelper.swift; sourceTree = "<group>"; };
 		FCD04E6120F3146A0007374F /* params */ = {isa = PBXFileReference; lastKnownFileType = file; path = params; sourceTree = "<group>"; };
 		FCD04E6220F3146A0007374F /* model */ = {isa = PBXFileReference; lastKnownFileType = file; path = model; sourceTree = "<group>"; };
+		FCDFD3FA211D72C3005AB38B /* ModelHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelHelper.swift; sourceTree = "<group>"; };
+		FCDFD41A211D91C7005AB38B /* synset.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = synset.txt; sourceTree = "<group>"; };
 		FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = paddle_mobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		FCEEE7D3210627A000444BEC /* banana.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = banana.jpeg; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -519,6 +523,7 @@
 				FC039B8A20E11C560081E9F8 /* LaunchScreen.storyboard */,
 				FC039B8D20E11C560081E9F8 /* Info.plist */,
 				FC3602C72108580600FACB58 /* MetalHelper.swift */,
+				FCDFD3FA211D72C3005AB38B /* ModelHelper.swift */,
 			);
 			path = "paddle-mobile-demo";
 			sourceTree = "<group>";
@@ -526,6 +531,7 @@
 		FC0E2C1D20EDC030009C1FAC /* images */ = {
 			isa = PBXGroup;
 			children = (
+				FCDFD41A211D91C7005AB38B /* synset.txt */,
 				FCEEE7D3210627A000444BEC /* banana.jpeg */,
 				FC0E2C1E20EDC030009C1FAC /* apple.jpg */,
 			);
@@ -946,6 +952,7 @@
 				FC0E2D5D20EDC03C009C1FAC /* batch_norm_15.w_1 in Resources */,
 				FC0E2D2820EDC03B009C1FAC /* batch_norm_23.w_0 in Resources */,
 				FC0E2D3B20EDC03C009C1FAC /* conv2d_29.b_0 in Resources */,
+				FCDFD41B211D91C7005AB38B /* synset.txt in Resources */,
 				FC0E2D4120EDC03C009C1FAC /* batch_norm_30.w_1 in Resources */,
 				FC0E2D1E20EDC03B009C1FAC /* batch_norm_10.w_2 in Resources */,
 				FC0E2D0F20EDC03B009C1FAC /* batch_norm_5.w_0 in Resources */,
@@ -1077,6 +1084,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FC039B8420E11C550081E9F8 /* ViewController.swift in Sources */,
+				FCDFD3FB211D72C3005AB38B /* ModelHelper.swift in Sources */,
 				FC013928210204A3008100E3 /* PreProcessKernel.metal in Sources */,
 				FC039B8220E11C550081E9F8 /* AppDelegate.swift in Sources */,
 				FC3602C82108580600FACB58 /* MetalHelper.swift in Sources */,

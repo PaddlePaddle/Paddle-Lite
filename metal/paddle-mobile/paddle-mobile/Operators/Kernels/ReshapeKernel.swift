@@ -23,7 +23,6 @@ class ReshapeKernel<P: PrecisionType>: Kernel, Computable{
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
             throw PaddleMobileError.predictError(message: " encoder is nil")
         }
-        print("Reshape compute")
         encoder.setTexture(param.input.metalTexture, index: 0)
         encoder.setTexture(param.output.metalTexture, index: 1)
         encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)

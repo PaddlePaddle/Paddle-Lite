@@ -29,7 +29,6 @@ class PoolKernel<P: PrecisionType>: Kernel, Computable{
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
             throw PaddleMobileError.predictError(message: " encoder is nil")
         }
-        print("Pool compute")
         encoder.setTexture(param.input.metalTexture, index: 0)
         encoder.setTexture(param.output.metalTexture, index: 1)
         var poolType: Int32
