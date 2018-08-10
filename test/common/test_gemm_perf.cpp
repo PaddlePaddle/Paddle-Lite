@@ -51,7 +51,7 @@ int main() {
   for (int j = 0; j < 10; ++j) {
     paddle_mobile::operators::math::matmul<float>(
         aa, false, bb, false, static_cast<float>(1), &cc, static_cast<float>(0),
-        false, ccptr);
+        false, biasptr);
 
     //    paddle_mobile::operators::math::matmulWithBn<float>(
     //        aa, false, bb, false, static_cast<float>(1), &cc,
