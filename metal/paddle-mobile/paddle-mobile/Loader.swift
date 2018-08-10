@@ -170,7 +170,7 @@ public class Loader<P: PrecisionType> {
                         }
                     } else {
                         if varDesc.name == fetchKey {
-                            scope[varDesc.name] = ResultHolder<P>.init(inDim: [], inResult: [])
+                            scope[varDesc.name] = ResultHolder<P>.init(inDim: [], inResult: [], inElapsedTime: 0.0)
                         } else if varDesc.name == feedKey {
                         }
                     }

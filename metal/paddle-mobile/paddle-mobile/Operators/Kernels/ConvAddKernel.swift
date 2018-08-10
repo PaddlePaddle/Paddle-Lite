@@ -36,7 +36,6 @@ class ConvAddKernel<P: PrecisionType>: Kernel, Computable {
             throw PaddleMobileError.predictError(message: " encode is nil")
         }
         
-        print("Conv add compute")
         encoder.setTexture(param.input.metalTexture, index: 0)
         encoder.setTexture(param.output.metalTexture, index: 1)
         encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
