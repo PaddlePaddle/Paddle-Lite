@@ -62,6 +62,9 @@ void PackMatrixB_16c(int k, int n, int n_tail, const float *B, int ldb,
 // 分块矩阵乘法
 void InnerKernel(int mc, int nc, float alpha, const float *a, const float *b,
                  float beta, float *c, float *C, int ldc, bool relu);
+void InnerKernelWithBias(int mc, int nc, float alpha, const float *a,
+                         const float *b, float beta, float *c, float *C,
+                         int ldc, bool relu, float *bias);
 
 void InnerKernelWithBn(int mc, int nc, float alpha, const float *a,
                        const float *b, float beta, float *c, float *C, int ldc,
@@ -91,8 +94,13 @@ void WriteBasic(int mc, int nc, float *c, float *C, int ldc);
 void WriteWithAlphaBeta(int mc, int nc, float *c, float *C, int ldc);
 // C = A * B + C
 void WriteWithAdd(int mc, int nc, float *c, float *C, int ldc);
+// C = A * B + bias
+void WriteWithAddV1(int mc, int nc, float *c, float *C, int ldc, float *bias);
 // C = A * B + C, relu(C)
 void WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc);
+// C = A * B + bias ,relu(C)
+void WriteWithAddReluV1(int mc, int nc, float *c, float *C, int ldc,
+                        float *bias);
 // C = A * B, batchnorm(C)
 void WriteWithBn(int mc, int nc, float *c, float *C, int ldc, float *new_scale,
                  float *new_bias);
@@ -120,7 +128,8 @@ void VecWriteWithBnRelu(int n, float *c, float *C, int ldc, float *new_scale,
 
 // 32位 float 矩阵乘法
 void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
-           const float *B, int ldb, float beta, float *C, int ldc, bool relu);
+           const float *B, int ldb, float beta, float *C, int ldc, bool relu,
+           float *bias);
 
 // 32位 float 矩阵乘法, 并对结果进行 batchnrom
 void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,

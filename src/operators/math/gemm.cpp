@@ -373,9 +373,9 @@ void InnerKernel(int mc, int nc, float alpha, const float *a, const float *b,
 #endif
     }
   }
-
   if (alpha != 1) {
     WriteWithAlphaBeta(mc, nc, c, C, ldc);
+
     return;
   }
   if (beta == 0) {
@@ -388,6 +388,42 @@ void InnerKernel(int mc, int nc, float alpha, const float *a, const float *b,
   }
   if (beta == 1 && relu) {
     WriteWithAddRelu(mc, nc, c, C, ldc);
+    return;
+  }
+}
+
+// 分块矩阵乘法
+void InnerKernelWithBias(int mc, int nc, float alpha, const float *a,
+                         const float *b, float beta, float *c, float *C,
+                         int ldc, bool relu, float *bias) {
+#pragma omp parallel for
+  for (int j = 0; j < nc; j += NR) {
+    for (int i = 0; i < mc; i += MR) {
+#if __aarch64__
+      // AddDot8x12(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+      AddDot6x16(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+#else
+      // AddDot4x4(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+      // AddDot4x8(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+      AddDot6x8(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+#endif
+    }
+  }
+
+  if (alpha != 1) {
+    WriteWithAlphaBeta(mc, nc, c, C, ldc);
+    return;
+  }
+  if (beta == 0) {
+    WriteBasic(mc, nc, c, C, ldc);
+    return;
+  }
+  if (beta == 1 && !relu) {
+    WriteWithAddV1(mc, nc, c, C, ldc, bias);
+    return;
+  }
+  if (beta == 1 && relu) {
+    WriteWithAddReluV1(mc, nc, c, C, ldc, bias);
     return;
   }
 }
@@ -577,6 +613,43 @@ void WriteWithAdd(int mc, int nc, float *c, float *C, int ldc) {
     }
   }
 }
+// C = A * B + bias
+void WriteWithAddV1(int mc, int nc, float *c, float *C, int ldc, float *bias) {
+  int nc1 = nc / 4;
+  int _nc1 = nc % 4;
+
+  float *c_ptr, *C_ptr;
+  float32x4_t cv;
+  float32x4_t biasv;
+  for (int i = 0; i < mc; ++i) {
+    c_ptr = c + i * NC;
+    C_ptr = C + i * ldc;
+    biasv = vld1q_dup_f32(bias + i);
+    for (int j = 0; j < nc1; ++j) {
+      cv = vld1q_f32(c_ptr);
+      cv = vaddq_f32(cv, biasv);
+      vst1q_f32(C_ptr, cv);
+      c_ptr += 4;
+      C_ptr += 4;
+    }
+    if (_nc1 != 0) {
+      cv = vld1q_f32(c_ptr);
+      cv = vaddq_f32(cv, biasv);
+      if (_nc1 >= 1) {
+        vst1q_lane_f32(C_ptr, cv, 0);
+        C_ptr++;
+      }
+      if (_nc1 >= 2) {
+        vst1q_lane_f32(C_ptr, cv, 1);
+        C_ptr++;
+      }
+      if (_nc1 >= 3) {
+        vst1q_lane_f32(C_ptr, cv, 2);
+        C_ptr++;
+      }
+    }
+  }
+}
 
 // C = A * B + C, relu(C)
 void WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc) {
@@ -614,6 +687,48 @@ void WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc) {
       }
       if (_nc1 >= 3) {
         vst1q_lane_f32(C_ptr, cv, 2);
+      }
+    }
+  }
+}
+
+// C = A * B + bias, relu(C)
+void WriteWithAddReluV1(int mc, int nc, float *c, float *C, int ldc,
+                        float *bias) {
+  int nc1 = nc / 4;
+  int _nc1 = nc % 4;
+
+  float *c_ptr, *C_ptr;
+  float32x4_t cv;
+  float32x4_t biasv;
+  float32x4_t zero = vdupq_n_f32(0.0);
+  for (int i = 0; i < mc; ++i) {
+    c_ptr = c + i * NC;
+    C_ptr = C + i * ldc;
+    biasv = vld1q_dup_f32(bias + i);
+    for (int j = 0; j < nc1; ++j) {
+      cv = vld1q_f32(c_ptr);
+      cv = vaddq_f32(cv, biasv);
+      cv = vmaxq_f32(cv, zero);
+      vst1q_f32(C_ptr, cv);
+      c_ptr += 4;
+      C_ptr += 4;
+    }
+    if (_nc1 != 0) {
+      cv = vld1q_f32(c_ptr);
+      cv = vaddq_f32(cv, biasv);
+      cv = vmaxq_f32(cv, zero);
+      if (_nc1 >= 1) {
+        vst1q_lane_f32(C_ptr, cv, 0);
+        C_ptr++;
+      }
+      if (_nc1 >= 2) {
+        vst1q_lane_f32(C_ptr, cv, 1);
+        C_ptr++;
+      }
+      if (_nc1 >= 3) {
+        vst1q_lane_f32(C_ptr, cv, 2);
+        C_ptr++;
       }
     }
   }
@@ -1448,6 +1563,44 @@ void WriteWithAdd(int mc, int nc, float *c, float *C, int ldc) {
   }
 }
 
+// C = A * B + bias
+void WriteWithAddV1(int mc, int nc, float *c, float *C, int ldc, float *bias) {
+  int nc1 = nc / 4;
+  int _nc1 = nc % 4;
+
+  float *c_ptr, *C_ptr;
+  float32x4_t cv;
+  float32x4_t biasv;
+  for (int i = 0; i < mc; ++i) {
+    c_ptr = c + i * NC;
+    C_ptr = C + i * ldc;
+    biasv = vld1q_dup_f32(bias + i);
+    for (int j = 0; j < nc1; ++j) {
+      cv = vld1q_f32(c_ptr);
+      cv = vaddq_f32(cv, biasv);
+      vst1q_f32(C_ptr, cv);
+      c_ptr += 4;
+      C_ptr += 4;
+    }
+    if (_nc1 != 0) {
+      cv = vld1q_f32(c_ptr);
+      cv = vaddq_f32(cv, biasv);
+      if (_nc1 >= 1) {
+        vst1q_lane_f32(C_ptr, cv, 0);
+        C_ptr++;
+      }
+      if (_nc1 >= 2) {
+        vst1q_lane_f32(C_ptr, cv, 1);
+        C_ptr++;
+      }
+      if (_nc1 >= 3) {
+        vst1q_lane_f32(C_ptr, cv, 2);
+        C_ptr++;
+      }
+    }
+  }
+}
+
 // C = A * B + C, relu(C)
 void WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc) {
   int nc1 = nc / 16;
@@ -1517,6 +1670,48 @@ void WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc) {
         }
         C0++;
         c0++;
+      }
+    }
+  }
+}
+
+// C = A * B + bias, relu(C)
+void WriteWithAddReluV1(int mc, int nc, float *c, float *C, int ldc,
+                        float *bias) {
+  int nc1 = nc / 4;
+  int _nc1 = nc % 4;
+
+  float *c_ptr, *C_ptr;
+  float32x4_t cv;
+  float32x4_t biasv;
+  float32x4_t zero = vdupq_n_f32(0.0);
+  for (int i = 0; i < mc; ++i) {
+    c_ptr = c + i * NC;
+    C_ptr = C + i * ldc;
+    biasv = vld1q_dup_f32(bias + i);
+    for (int j = 0; j < nc1; ++j) {
+      cv = vld1q_f32(c_ptr);
+      cv = vaddq_f32(cv, biasv);
+      cv = vmaxq_f32(cv, zero);
+      vst1q_f32(C_ptr, cv);
+      c_ptr += 4;
+      C_ptr += 4;
+    }
+    if (_nc1 != 0) {
+      cv = vld1q_f32(c_ptr);
+      cv = vaddq_f32(cv, biasv);
+      cv = vmaxq_f32(cv, zero);
+      if (_nc1 >= 1) {
+        vst1q_lane_f32(C_ptr, cv, 0);
+        C_ptr++;
+      }
+      if (_nc1 >= 2) {
+        vst1q_lane_f32(C_ptr, cv, 1);
+        C_ptr++;
+      }
+      if (_nc1 >= 3) {
+        vst1q_lane_f32(C_ptr, cv, 2);
+        C_ptr++;
       }
     }
   }
@@ -2053,7 +2248,8 @@ void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
 
 // 32位 float 矩阵乘法
 void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
-           const float *B, int ldb, float beta, float *C, int ldc, bool relu) {
+           const float *B, int ldb, float beta, float *C, int ldc, bool relu,
+           float *bias) {
   // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
   // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
   int L1 = 32 * 1024;
@@ -2103,8 +2299,8 @@ void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
 #else
       PackMatrixA_6r(mc, KC, mc % MR, &A(i, 0), lda, packedA);
 #endif
-      InnerKernel(mc, nc, alpha, packedA, packedB, beta, packedC, &C(i, j), ldc,
-                  relu);
+      InnerKernelWithBias(mc, nc, alpha, packedA, packedB, beta, packedC,
+                          &C(i, j), ldc, relu, bias + i);
     }
   }
 
