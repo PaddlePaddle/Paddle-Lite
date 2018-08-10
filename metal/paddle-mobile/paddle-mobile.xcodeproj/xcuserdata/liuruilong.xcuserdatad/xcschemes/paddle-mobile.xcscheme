@@ -14,10 +14,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "FC039B7D20E11C550081E9F8"
-               BuildableName = "paddle-mobile-demo.app"
-               BlueprintName = "paddle-mobile-demo"
-               ReferencedContainer = "container:paddle-mobile-demo.xcodeproj">
+               BlueprintIdentifier = "FC039B6920E11C3C0081E9F8"
+               BuildableName = "paddle_mobile.framework"
+               BlueprintName = "paddle-mobile"
+               ReferencedContainer = "container:paddle-mobile.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -29,15 +29,6 @@
       shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
       </Testables>
-      <MacroExpansion>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "FC039B7D20E11C550081E9F8"
-            BuildableName = "paddle-mobile-demo.app"
-            BlueprintName = "paddle-mobile-demo"
-            ReferencedContainer = "container:paddle-mobile-demo.xcodeproj">
-         </BuildableReference>
-      </MacroExpansion>
       <AdditionalOptions>
       </AdditionalOptions>
    </TestAction>
@@ -51,16 +42,15 @@
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
       allowLocationSimulation = "YES">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
+      <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "FC039B7D20E11C550081E9F8"
-            BuildableName = "paddle-mobile-demo.app"
-            BlueprintName = "paddle-mobile-demo"
-            ReferencedContainer = "container:paddle-mobile-demo.xcodeproj">
+            BlueprintIdentifier = "FC039B6920E11C3C0081E9F8"
+            BuildableName = "paddle_mobile.framework"
+            BlueprintName = "paddle-mobile"
+            ReferencedContainer = "container:paddle-mobile.xcodeproj">
          </BuildableReference>
-      </BuildableProductRunnable>
+      </MacroExpansion>
       <AdditionalOptions>
       </AdditionalOptions>
    </LaunchAction>
@@ -70,16 +60,15 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
+      <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "FC039B7D20E11C550081E9F8"
-            BuildableName = "paddle-mobile-demo.app"
-            BlueprintName = "paddle-mobile-demo"
-            ReferencedContainer = "container:paddle-mobile-demo.xcodeproj">
+            BlueprintIdentifier = "FC039B6920E11C3C0081E9F8"
+            BuildableName = "paddle_mobile.framework"
+            BlueprintName = "paddle-mobile"
+            ReferencedContainer = "container:paddle-mobile.xcodeproj">
          </BuildableReference>
-      </BuildableProductRunnable>
+      </MacroExpansion>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

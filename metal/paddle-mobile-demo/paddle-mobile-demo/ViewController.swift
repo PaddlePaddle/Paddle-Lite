@@ -17,91 +17,154 @@ import MetalKit
 import paddle_mobile
 import MetalPerformanceShaders
 
-let openTest: Bool = false
-
-class PreProccess: CusomKernel {
-    init(device: MTLDevice) {
-        let s = CusomKernel.Shape.init(inWidth: 224, inHeight: 224, inChannel: 3)
-        super.init(device: device, inFunctionName: "preprocess", outputDim: s, usePaddleMobileLib: false)
-    }
-}
+let threadSupport = [1]
 
 class ViewController: UIViewController {
-    var textureLoader: MTKTextureLoader!
-    var program: Program!
-    var executor: Executor<Float32>!
-    var preprocessKernel: PreProccess!
-    
-//    let queue: MTLCommandQueue
-    func scaleTexture(queue: MTLCommandQueue, input: MTLTexture, complete: @escaping (MTLTexture) -> Void) {        
-        let tmpTextureDes = MTLTextureDescriptor.init()
-        tmpTextureDes.width = 224
-        tmpTextureDes.height = 224
-        tmpTextureDes.depth = 1
-        tmpTextureDes.usage = [.shaderRead, .shaderWrite]
-        tmpTextureDes.pixelFormat = .rgba32Float
-        tmpTextureDes.textureType = .type2D
-        tmpTextureDes.storageMode = .shared
-        tmpTextureDes.cpuCacheMode = .defaultCache
-        let dest = MetalHelper.shared.device.makeTexture(descriptor: tmpTextureDes)
-        
-        let scale = MPSImageLanczosScale.init(device: MetalHelper.shared.device)
-        
-        let buffer = queue.makeCommandBuffer()
-        scale.encode(commandBuffer: buffer!, sourceTexture: input, destinationTexture: dest!)
-        buffer?.addCompletedHandler({ (buffer) in
-            complete(dest!)
-        })
-        buffer?.commit()
+    @IBOutlet weak var selectImageView: UIImageView!
+    @IBOutlet weak var elapsedTimeLabel: UILabel!
+    @IBOutlet weak var resultLabel: UILabel!
+    @IBOutlet weak var modelPickerView: UIPickerView!
+    @IBOutlet weak var threadPickerView: UIPickerView!
+    var selectImage: UIImage?
+
+    var program: Program?
+    var executor: Executor<Float32>?
+    var modelType: SupportModel = .mobilenet
+    var modelHelper: ModelHelper {
+        return modelHelperMap[modelType] ?! " has no this type "
     }
+    var threadNum = 1
     
-    func unitTest() {
-        let unitTest = PaddleMobileUnitTest.init(inDevice: MetalHelper.shared.device, inQueue: MetalHelper.shared.queue)
-        unitTest.testConvAddBnRelu()
-    }
-    
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        super.touchesBegan(touches, with: event)
-        //        return
+    @IBAction func loadAct(_ sender: Any) {
+        let inModelHelper = modelHelper
         let queue = MetalHelper.shared.queue
+        let loader = Loader<Float32>.init()
+        do {
+            let modelPath = inModelHelper.modelPath
+            let paraPath = inModelHelper.paramPath
+            
+            program = try loader.load(device: MetalHelper.shared.device, modelPath: modelPath, paraPath: paraPath)
+            executor = try Executor<Float32>.init(inDevice: MetalHelper.shared.device, inQueue: queue, inProgram: program!)
+        } catch let error {
+            print(error)
+        }
+    }
+    
+    @IBAction func selectImageAct(_ sender: Any) {
+        let imagePicker = UIImagePickerController()
+        imagePicker.sourceType = .camera
+        imagePicker.delegate = self
+        self.present(imagePicker, animated: true, completion: nil)
+    }
+    
+    @IBAction func clearAct(_ sender: Any) {
+        executor?.clear()
+        program = nil
+        executor = nil
         
-        textureLoader = MTKTextureLoader.init(device: MetalHelper.shared.device)
-        guard let appleImage = UIImage.init(named: "banana.jpeg"), let cgImage = appleImage.cgImage else {
-            fatalError(" image nil !")
+    }
+    
+    @IBAction func predictAct(_ sender: Any) {        
+        guard let inImage = selectImage, let cgImage = inImage.cgImage else {
+            resultLabel.text = "请选择图片 ! "
+            return
         }
         
-        let texture = try? textureLoader.newTexture(cgImage: cgImage, options: [:]) ?! " texture loader error"
-        
-        guard let inTexture = texture else {
-            fatalError(" texture is nil !")
+        guard let inExecutor = executor else {
+            resultLabel.text = "请先 load ! "
+            return
         }
         
-        scaleTexture(queue: queue, input: inTexture) { (inputTexture) in
+        modelHelper.getTexture(image: cgImage) { [weak self] (texture) in
+            guard let sSelf = self else {
+                fatalError()
+            }
             do {
-                try self.executor.predict(input: inputTexture, expect: [1, 224, 224, 3], completionHandle: { (result) in
-                    print(result.resultArr.top(r: 5))
-                }, preProcessKernle: self.preprocessKernel)
+                try inExecutor.predict(input: texture, expect: [1, 224, 224, 3], completionHandle: { (result) in
+                }, preProcessKernle: sSelf.modelHelper.preprocessKernel)
+                
+                let startDate = Date.init()
+                for i in 0..<10 {
+                    try inExecutor.predict(input: texture, expect: [1, 224, 224, 3], completionHandle: { (result) in
+                        if i == 9 {
+                            let time = Date.init().timeIntervalSince(startDate)
+                            DispatchQueue.main.async {
+                                sSelf.resultLabel.text = sSelf.modelHelper.resultStr(res: result.resultArr)
+                                sSelf.elapsedTimeLabel.text = "平均耗时: \(time/10.0) ms"
+                            }
+                        }
+                    }, preProcessKernle: sSelf.modelHelper.preprocessKernel)
+                }
             } catch let error {
                 print(error)
             }
         }
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
+        modelPickerView.delegate = self
+        modelPickerView.dataSource = self
+        threadPickerView.delegate = self
+        threadPickerView.dataSource = self
         
-        let queue = MetalHelper.shared.queue
-        let loader = Loader<Float32>.init()
-        preprocessKernel = PreProccess.init(device: MetalHelper.shared.device)
+        selectImage = UIImage.init(named: "banana.jpeg")
+        selectImageView.image = selectImage
+    }
+}
 
-        do {
-            let modelPath = Bundle.main.path(forResource: "model", ofType: nil) ?! "model null"
-            let paraPath = Bundle.main.path(forResource: "params", ofType: nil) ?! "para null"
-            program = try loader.load(device: MetalHelper.shared.device, modelPath: modelPath, paraPath: paraPath)
-            executor = try Executor<Float32>.init(inDevice: MetalHelper.shared.device, inQueue: queue, inProgram: program)
-        } catch let error {
-            print(error)
+extension ViewController: UIPickerViewDataSource, UIPickerViewDelegate{
+    func numberOfComponents(in pickerView: UIPickerView) -> Int {
+        if pickerView == modelPickerView {
+            return 1
+        } else if pickerView == threadPickerView {
+            return 1
+        } else {
+            fatalError()
+        }
+    }
+    
+    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+        if pickerView == modelPickerView {
+            return SupportModel.supportedModels().count
+        } else if pickerView == threadPickerView {
+            return threadSupport.count
+        } else {
+            fatalError()
+        }
+    }
+    
+    public func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+        if pickerView == modelPickerView {
+            return SupportModel.supportedModels()[row].rawValue
+        } else if pickerView == threadPickerView {
+            return "\(threadSupport[row])"
+        } else {
+            fatalError()
+        }
+    }
+    
+    public func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+        if pickerView == modelPickerView {
+            self.modelType = SupportModel.supportedModels()[row]
+        } else if pickerView == threadPickerView {
+            self.threadNum = threadSupport[row]
+        } else {
+            fatalError()
         }
     }
 }
+
+extension ViewController:  UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
+        picker.dismiss(animated: true){[weak self] in
+            guard let sSelf = self, let image =  info["UIImagePickerControllerOriginalImage"] as? UIImage else{
+                fatalError("no image")
+            }
+            sSelf.selectImage = image
+            sSelf.selectImageView.image = image
+        }
+    }
+}
+
 
