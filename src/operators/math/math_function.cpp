@@ -42,8 +42,13 @@ void matmul<float>(const framework::Tensor &matrix_a, bool trans_a,
   int N = dim_out[1];
   int K = (!trans_a) ? dim_a[1] : dim_a[0];
 
+#ifdef _OPENMP
+  Sgemm_omp(M, N, K, alpha, matrix_a.data<float>(), K, matrix_b.data<float>(),
+            N, beta, matrix_out->data<float>(), N, relu, bias);
+#else
   Sgemm(M, N, K, alpha, matrix_a.data<float>(), K, matrix_b.data<float>(), N,
         beta, matrix_out->data<float>(), N, relu, bias);
+#endif
 }
 
 template <>
@@ -70,10 +75,17 @@ void matmulWithBn<float>(const framework::Tensor &matrix_a, bool trans_a,
   int N = dim_out[1];
   int K = (!trans_a) ? dim_a[1] : dim_a[0];
 
+#ifdef _OPENMP
+  SgemmWithBn_omp(M, N, K, alpha, matrix_a.data<float>(), K,
+                  matrix_b.data<float>(), N, beta, matrix_out->data<float>(), N,
+                  relu, new_scale->data<float>() + group,
+                  new_bias->data<float>() + group);
+#else
   SgemmWithBn(M, N, K, alpha, matrix_a.data<float>(), K, matrix_b.data<float>(),
               N, beta, matrix_out->data<float>(), N, relu,
               new_scale->data<float>() + group,
               new_bias->data<float>() + group);
+#endif
 }
 
 }  // namespace math
