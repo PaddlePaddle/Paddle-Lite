@@ -32,12 +32,7 @@ void ConvAddReluCompute(const FusionConvAddReluParam &param) {
   Tensor bias = *param.Bias();
   int axis = param.Axis();
   Tensor *output = param.Output();
-  math::expand_bias(bias, axis, output->dims());
-  float *output_data = output->data<float>();
   float *biase_data = bias.data<float>();
-  for (int k = 0; k < output->numel(); ++k) {
-    output_data[k] = biase_data[k];
-  }
 
   int groups = param.Groups();
   std::vector<int> strides = param.Strides();
@@ -115,7 +110,7 @@ void ConvAddReluCompute(const FusionConvAddReluParam &param) {
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
       math::matmul<float>(filter_slice, false, col_matrix, false,
                           static_cast<float>(1), &out_slice,
-                          static_cast<float>(1), true);
+                          static_cast<float>(1), true, biase_data);
     }
   }
 }
