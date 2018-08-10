@@ -54,4 +54,5 @@ USE_OP_CPU(fetch);
 USE_OP_MALI_GPU(fetch);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+USE_OP_FPGA(fetch);
 #endif
