@@ -175,7 +175,7 @@ class Tensor<P: PrecisionType>: Tensorial {
             fatalError(" not support !")
         }
         //TODO: release
-//        data.release()
+        data.release()
     }
     
     var width: Int {
