@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma oncenki
+#pragma once
 
 #include <cmath>
 #include "framework/tensor.h"
@@ -24,7 +24,7 @@ namespace math {
 template <typename T>
 void matmul(const framework::Tensor &matrix_a, bool trans_a,
             const framework::Tensor &matrix_b, bool trans_b, T alpha,
-            framework::Tensor *matrix_out, T beta, bool relu, float *bias);
+            framework::Tensor *matrix_out, T beta, bool relu = false, float *bias = nullptr);
 
 template <typename T>
 void matmulWithBn(const framework::Tensor &matrix_a, bool trans_a,
