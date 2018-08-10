@@ -665,6 +665,16 @@ class FeedParam : public OpParam {
   Tensor *input_x_;
   Tensor *out_;
   int batch_size;
+
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::BypassArgs fpga_bypass_args;
+
+ public:
+  const fpga::BypassArgs &FpgaArgs() const { return fpga_bypass_args; }
+  void SetFpgaArgs(const fpga::BypassArgs &args) { fpga_bypass_args = args; }
+#endif
 };
 
 class FetchParam : public OpParam {

@@ -50,6 +50,10 @@ void PackMatrixA_6r(int m, int k, int m_tail, const float *A, int lda,
                     float *buffer);
 void PackMatrixA_8r(int m, int k, int m_tail, const float *A, int lda,
                     float *buffer);
+void PackMatrixA_omp_6r(int m, int k, int m_tail, const float *A, int lda,
+                        float *buffer);
+void PackMatrixA_omp_8r(int m, int k, int m_tail, const float *A, int lda,
+                        float *buffer);
 
 // 将 B 矩阵分块复制到连续内存(RowMajor)
 void PackMatrixB_8c(int k, int n, int n_tail, const float *B, int ldb,
@@ -58,10 +62,19 @@ void PackMatrixB_12c(int k, int n, int n_tail, const float *B, int ldb,
                      float *buffer);
 void PackMatrixB_16c(int k, int n, int n_tail, const float *B, int ldb,
                      float *buffer);
+void PackMatrixB_omp_8c(int k, int n, int n_tail, const float *B, int ldb,
+                        float *buffer);
+void PackMatrixB_omp_12c(int k, int n, int n_tail, const float *B, int ldb,
+                         float *buffer);
+void PackMatrixB_omp_16c(int k, int n, int n_tail, const float *B, int ldb,
+                         float *buffer);
 
 // 分块矩阵乘法
 void InnerKernel(int mc, int nc, float alpha, const float *a, const float *b,
                  float beta, float *c, float *C, int ldc, bool relu);
+void InnerKernelWithBias(int mc, int nc, float alpha, const float *a,
+                         const float *b, float beta, float *c, float *C,
+                         int ldc, bool relu, float *bias);
 
 void InnerKernelWithBn(int mc, int nc, float alpha, const float *a,
                        const float *b, float beta, float *c, float *C, int ldc,
@@ -91,8 +104,13 @@ void WriteBasic(int mc, int nc, float *c, float *C, int ldc);
 void WriteWithAlphaBeta(int mc, int nc, float *c, float *C, int ldc);
 // C = A * B + C
 void WriteWithAdd(int mc, int nc, float *c, float *C, int ldc);
+// C = A * B + bias
+void WriteWithAddV1(int mc, int nc, float *c, float *C, int ldc, float *bias);
 // C = A * B + C, relu(C)
 void WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc);
+// C = A * B + bias ,relu(C)
+void WriteWithAddReluV1(int mc, int nc, float *c, float *C, int ldc,
+                        float *bias);
 // C = A * B, batchnorm(C)
 void WriteWithBn(int mc, int nc, float *c, float *C, int ldc, float *new_scale,
                  float *new_bias);
@@ -120,12 +138,23 @@ void VecWriteWithBnRelu(int n, float *c, float *C, int ldc, float *new_scale,
 
 // 32位 float 矩阵乘法
 void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
-           const float *B, int ldb, float beta, float *C, int ldc, bool relu);
+           const float *B, int ldb, float beta, float *C, int ldc, bool relu,
+           float *bias);
 
 // 32位 float 矩阵乘法, 并对结果进行 batchnrom
 void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
                  const float *B, int ldb, float beta, float *C, int ldc,
                  bool relu, float *new_scale, float *new_bias);
+
+// 32位 float 矩阵乘法（openmp 多线程版本）
+void Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
+               const float *B, int ldb, float beta, float *C, int ldc,
+               bool relu, float *bias);
+
+// 32位 float 矩阵乘法, 并对结果进行 batchnrom（openmp 多线程版本）
+void SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A, int lda,
+                     const float *B, int ldb, float beta, float *C, int ldc,
+                     bool relu, float *new_scale, float *new_bias);
 
 }  // namespace math
 }  // namespace operators

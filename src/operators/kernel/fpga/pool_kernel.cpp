@@ -22,9 +22,9 @@ namespace operators {
 template <>
 bool PoolKernel<FPGA, float>::Init(PoolParam *param) {
   const Tensor *input = param->Input();
-  auto input_ptr = input->data<float>();
+  auto input_ptr = input->data<half>();
   Tensor *output = param->Output();
-  auto output_ptr = output->mutable_data<float>();
+  auto output_ptr = output->mutable_data<half>();
   vector<int> ksize = param->Ksize();
   vector<int> strides = param->Strides();
   vector<int> paddings = param->Paddings();

@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef SOFTMAX_OP
 #pragma once
 #include "../../math/softmax.h"
+#include "operators/op_param.h"
 namespace paddle_mobile {
 namespace operators {
 template <typename P>

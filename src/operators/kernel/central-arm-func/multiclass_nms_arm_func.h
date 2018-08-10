@@ -19,6 +19,8 @@ limitations under the License. */
 #include <map>
 #include <utility>
 #include <vector>
+#include "framework/tensor.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -89,7 +91,8 @@ static inline T JaccardOverlap(const T* box1, const T* box2,
 }
 
 template <typename T>
-static inline void NMSFast(const Tensor& bbox, const Tensor& scores,
+static inline void NMSFast(const framework::Tensor& bbox,
+                           const framework::Tensor& scores,
                            const T score_threshold, const T nms_threshold,
                            const T eta, const int64_t top_k,
                            std::vector<int>* selected_indices) {
@@ -131,7 +134,8 @@ static inline void NMSFast(const Tensor& bbox, const Tensor& scores,
 }
 
 template <typename T>
-void MultiClassNMS(const Tensor& scores, const Tensor& bboxes,
+void MultiClassNMS(const framework::Tensor& scores,
+                   const framework::Tensor& bboxes,
                    std::map<int, std::vector<int>>* indices, int* num_nmsed_out,
                    const int& background_label, const int& nms_top_k,
                    const int& keep_top_k, const T& nms_threshold,
@@ -141,7 +145,7 @@ void MultiClassNMS(const Tensor& scores, const Tensor& bboxes,
   int num_det = 0;
   for (int64_t c = 0; c < class_num; ++c) {
     if (c == background_label) continue;
-    Tensor score = scores.Slice(c, c + 1);
+    framework::Tensor score = scores.Slice(c, c + 1);
     /// [c] is key
     NMSFast<float>(bboxes, score, score_threshold, nms_threshold, nms_eta,
                    nms_top_k, &((*indices)[c]));
@@ -181,9 +185,10 @@ void MultiClassNMS(const Tensor& scores, const Tensor& bboxes,
 }
 
 template <typename T>
-void MultiClassOutput(const Tensor& scores, const Tensor& bboxes,
+void MultiClassOutput(const framework::Tensor& scores,
+                      const framework::Tensor& bboxes,
                       const std::map<int, std::vector<int>>& selected_indices,
-                      Tensor* outs) {
+                      framework::Tensor* outs) {
   int predict_dim = scores.dims()[1];
   auto* scores_data = scores.data<T>();
   auto* bboxes_data = bboxes.data<T>();
@@ -231,10 +236,10 @@ void MultiClassNMSCompute(const MultiClassNMSParam& param) {
   std::vector<std::map<int, std::vector<int>>> all_indices;
   std::vector<size_t> batch_starts = {0};
   for (int64_t i = 0; i < batch_size; ++i) {
-    Tensor ins_score = input_scores->Slice(i, i + 1);
+    framework::Tensor ins_score = input_scores->Slice(i, i + 1);
     ins_score.Resize({class_num, predict_dim});
 
-    Tensor ins_boxes = input_bboxes->Slice(i, i + 1);
+    framework::Tensor ins_boxes = input_bboxes->Slice(i, i + 1);
     ins_boxes.Resize({predict_dim, box_dim});
 
     std::map<int, std::vector<int>> indices;
@@ -253,16 +258,16 @@ void MultiClassNMSCompute(const MultiClassNMSParam& param) {
   } else {
     outs->mutable_data<float>({num_kept, kOutputDim});
     for (int64_t i = 0; i < batch_size; ++i) {
-      Tensor ins_score = input_scores->Slice(i, i + 1);
+      framework::Tensor ins_score = input_scores->Slice(i, i + 1);
       ins_score.Resize({class_num, predict_dim});
 
-      Tensor ins_boxes = input_bboxes->Slice(i, i + 1);
+      framework::Tensor ins_boxes = input_bboxes->Slice(i, i + 1);
       ins_boxes.Resize({predict_dim, box_dim});
 
       int64_t s = batch_starts[i];
       int64_t e = batch_starts[i + 1];
       if (e > s) {
-        Tensor out = outs->Slice(s, e);
+        framework::Tensor out = outs->Slice(s, e);
         MultiClassOutput<float>(ins_score, ins_boxes, all_indices[i], &out);
       }
     }

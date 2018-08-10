@@ -18,6 +18,9 @@ limitations under the License. */
 
 #include <vector>
 #include "operators/math/depthwise_conv_3x3.h"
+#include "operators/math/im2col.h"
+#include "operators/math/math_function.h"
+#include "operators/math/vol2col.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
