@@ -30,7 +30,6 @@ inline void ConvBasic(const ConvParam &param) {
   Tensor filter = *param.Filter();
   Tensor *output = param.Output();
   output->mutable_data<float>();
-  float *bias_data = output->mutable_data<float>();
   int groups = param.Groups();
   std::vector<int> strides = param.Strides();
   std::vector<int> paddings = param.Paddings();
@@ -107,7 +106,7 @@ inline void ConvBasic(const ConvParam &param) {
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
       math::matmul<float>(filter_slice, false, col_matrix, false,
                           static_cast<float>(1), &out_slice,
-                          static_cast<float>(0), false, bias_data);
+                          static_cast<float>(0));
     }
   }
 }
