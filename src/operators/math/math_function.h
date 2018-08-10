@@ -21,11 +21,11 @@ namespace paddle_mobile {
 namespace operators {
 namespace math {
 
-// matrix multiply with continuous memory
 template <typename T>
 void matmul(const framework::Tensor &matrix_a, bool trans_a,
             const framework::Tensor &matrix_b, bool trans_b, T alpha,
-            framework::Tensor *matrix_out, T beta, bool relu = false);
+            framework::Tensor *matrix_out, T beta, bool relu = false,
+            float *bias = nullptr);
 
 template <typename T>
 void matmulWithBn(const framework::Tensor &matrix_a, bool trans_a,

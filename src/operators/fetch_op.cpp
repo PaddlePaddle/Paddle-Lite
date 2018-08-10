@@ -25,4 +25,5 @@ REGISTER_OPERATOR_CPU(fetch, ops::FetchOp);
 REGISTER_OPERATOR_MALI_GPU(fetch, ops::FetchOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(fetch, ops::FetchOp);
 #endif

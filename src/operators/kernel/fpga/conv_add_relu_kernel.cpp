@@ -24,13 +24,13 @@ template <>
 bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam *param) {
   bool relu_enabled = true;
   const Tensor *input = param->Input();
-  auto input_ptr = input->data<float>();
+  auto input_ptr = input->data<half>();
   const Tensor *bias = param->Bias();
   auto bias_ptr = bias->data<float>();
   const Tensor *filter = param->Filter();
   auto filter_ptr = filter->data<float>();
   Tensor *out = param->Output();
-  auto out_ptr = out->mutable_data<float>();
+  auto out_ptr = out->mutable_data<half>();
 
   PADDLE_MOBILE_ENFORCE(input->dims()[1] == bias->dims()[0],
                         "Image channel should be equal to bias number");
