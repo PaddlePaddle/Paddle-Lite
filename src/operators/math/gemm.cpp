@@ -373,9 +373,9 @@ void InnerKernel(int mc, int nc, float alpha, const float *a, const float *b,
 #endif
     }
   }
+
   if (alpha != 1) {
     WriteWithAlphaBeta(mc, nc, c, C, ldc);
-
     return;
   }
   if (beta == 0) {
