@@ -38,44 +38,56 @@ static void chw_to_hwc(Dtype* data_in, Dtype* data_out, int num, int channel,
 }
 
 template <typename Dtype>
+static Dtype find_max(Dtype* data, int num) {
+  Dtype max = 0;
+  for (int i = 0; i < num; ++i) {
+    max = std::max(max, data[i]);
+  }
+  return max;
+}
+
+template <typename Dtype>
 framework::Tensor* quantilize_filter(framework::Tensor* filter) {
   float scale = 0;
-  float max = 0f;
+  float fix_range = static_cast<float>((1 << (8 - 1)) - 1);
 
   const int batch_size = filter->dims()[0];
   const int channel = filter->dims()[1];
   const int height = filter->dims()[2];
   const int width = filter->dims()[3];
 
+  int8_t* int_data = nullptr;
+  int8_t* tmp_data = new int[filter->numel()];
+
   // 32bit filter -> 8bit filter;
   if (filter->type() == typeid(float)) {
     float* float_data = filter->data<float>();
-    for (int i = 0; i < filter->numel(); ++i) {
-      max = std::max(max, float_data[i]);
-    }
+    float max = find_max(float_data, filter->numel());
 
-    float fix_range = static_cast<float>((1 << (8 - 1)) - 1);
-    float float_range = max;
-    scale = (float_range / fix_range);
+    scale = (max / fix_range);
 
     framework::Tensor* filter = filter;
     framework::Tensor* quant_filter = new framework::Tensor();
-    int8_t* temp = new int8_t[filter->numel()];
-    int8_t* int_data = quant_filter->mutable_data<int8_t>();
+
+    int_data = quant_filter->mutable_data<int8_t>();
     for (int i = 0; i < filter->numel(); ++i) {
-      temp[i] = (int8_t)float_data[i] * scale;
+      tmp_data[i] = (int8_t)float_data[i] * scale;
     }
-    quant_filter.scale = scale;
-    // NCHW -> NHWC;
-    chw_to_hwc<int8_t>(temp, int_data, in_batch_size, channel, height, width);
-    return quantFilter;
-  } else if (filter->type() == typeid(int8_t)) {
-    // model is already quantilized
-    int8_t* int_data = filter->data<int8_t>();
+    filter = quant_filter;
+  } else {
+    int8_t max = find_max(filter->data<int8_t>(), filter->numel());
+    scale = (max / fix_range);
+
+    int_data = filter->data<int8_t>();
     for (int i = 0; i < filter->numel(); ++i) {
-      max = std::max(max, int_data[i]);
+      tmp_data[i] = int_data[i];
     }
+    int_data = filter->mutable_data<int8_t>();
   }
+  // NCHW -> NHWC;
+  chw_to_hwc<int8_t>(tmp_data, int_data, batch_size, channel, height, width);
+  delete tmp_data;
+  *(filter->fpga_args().scale_pointer()) = scale;
   return filter;
 }
 

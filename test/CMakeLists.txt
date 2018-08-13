@@ -160,4 +160,12 @@ else ()
 
     #add_library(test-lib-size SHARED common/test_lib_size.h common/test_lib_size.cpp)
 
+
+
+endif()
+
+if(FPGA)
+    ADD_EXECUTABLE(test-tensor-quant fpga/test_tensor_quant.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-tensor-quant paddle-mobile)
+
 endif()
