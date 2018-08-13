@@ -22,13 +22,13 @@ template <>
 bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam *param) {
   bool relu_enabled = true;
   const Tensor *input_x = param->InputX();
-  auto input_x_ptr = input_x->data<float>();
+  auto input_x_ptr = input_x->data<half>();
   const Tensor *input_y = param->InputY();
   auto input_y_ptr = input_y->data<float>();
   const Tensor *input_z = param->InputZ();
   auto input_z_ptr = input_z->data<float>();
   Tensor *out = param->Out();
-  auto out_ptr = out->mutable_data<float>();
+  auto out_ptr = out->mutable_data<half>();
 
   PADDLE_MOBILE_ENFORCE(input_x->dims()[1] == input_y->dims()[0],
                         "Image channel should be equal to weight number");
