@@ -87,6 +87,7 @@ static framework::FusionOpRegistrar fusion_elementwise_relu_registrar(
     new FusioneElementwiseAddReluMatcher());
 #define FUSION_ELEMENTWISE_ADD_RELU_REGISTER
 #endif
+#endif
 
 }  // namespace operators
 }  // namespace paddle_mobile
