@@ -20,12 +20,12 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ConcatKernel<FPGA, half>::Init(ConcatParam *param) {
+bool ConcatKernel<FPGA, float>::Init(ConcatParam *param) {
   return true;
 }
 
 template <>
-void ConcatKernel<FPGA, half>::Compute(const ConcatParam &param) const {
+void ConcatKernel<FPGA, float>::Compute(const ConcatParam &param) const {
   auto inputs = param.Inputs();
   auto *out = param.Out();
   int64_t axis = param.Axis();
