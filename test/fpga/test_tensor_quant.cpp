@@ -20,7 +20,7 @@ int main() {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
   bool optimize = false;
   if (paddle_mobile.Load(g_googlenet, optimize)) {
-    auto time2 = time();
+    auto time1 = time();
     DLOG << "load cost: " << time_diff(time1, time1) << "ms";
     std::vector<float> input;
     std::vector<int64_t> dims{1, 3, 224, 224};
