@@ -36,18 +36,18 @@ void ConcatKernel<FPGA, float>::Compute(const ConcatParam &param) const {
   auto out_channel = out_dim[3];
 
   auto out_offset = 0;
-
   for (int i = 0; i < inputs.size(); ++i) {
     auto input = inputs[i];
     auto channels = input->dims()[3];
     out_offset += channels;
     auto src = input->data<half>();
     for (int j = 0; j < pixels; ++j) {
-      auto dst = out->data<half>() + out_offset;
+      auto dst = out->mutable_data<half>() + out_offset;
       memory::Copy(dst, src, sizeof(half));
     }
   }
 }
+template class ConcatKernel<FPGA, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
