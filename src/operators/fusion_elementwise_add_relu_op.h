@@ -102,4 +102,3 @@ USE_OP_FPGA(fusion_elementwise_add_relu);
 #endif
 
 #endif
-#endif
