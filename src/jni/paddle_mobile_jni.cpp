@@ -206,6 +206,13 @@ JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictYuv(
   return result;
 }
 
+JNIEXPORT void JNICALL Java_com_baidu_paddle_PML_setThread(JNIEnv *env,
+                                                           jclass thiz,
+                                                           jint threadCount) {
+  ANDROIDLOGI("setThreadCount %d", threadCount);
+  getPaddleMobileInstance()->SetThreadNum((int)threadCount);
+}
+
 JNIEXPORT void JNICALL Java_com_baidu_paddle_PML_clear(JNIEnv *env,
                                                        jclass thiz) {
   getPaddleMobileInstance()->Clear();

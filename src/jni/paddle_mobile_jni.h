@@ -65,6 +65,12 @@ JNIEXPORT jfloatArray JNICALL
 Java_com_baidu_paddle_PML_predict(JNIEnv *env, jclass thiz, jfloatArray buf);
 
 /**
+ * setThreadCount for multithread
+ */
+JNIEXPORT void JNICALL Java_com_baidu_paddle_PML_setThread(JNIEnv *env,
+                                                           jclass thiz,
+                                                           jint threadCount);
+/**
  * clear data of the net when destroy for android
  */
 JNIEXPORT void JNICALL Java_com_baidu_paddle_PMLL_clear(JNIEnv *env,
