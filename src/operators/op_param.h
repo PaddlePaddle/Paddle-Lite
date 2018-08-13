@@ -1419,5 +1419,45 @@ class DropoutParam : public OpParam {
 };
 #endif
 
+#ifdef CONV_TRANSPOSE
+class ConvTransposeParam : public OpParam {
+ public:
+  ConvTransposeParam(const VariableNameMap &inputs,
+                     const VariableNameMap &outputs, const AttributeMap &attrs,
+                     const Scope &scope) {
+    filter_ = FilterFrom<LoDTensor>(inputs, scope);
+    input_ = InputFrom<LoDTensor>(inputs, scope);
+    output_ = OutputFrom<LoDTensor>(outputs, scope);
+    strides_ = GetAttr<vector<int>>("strides", attrs);
+    paddings_ = GetAttr<vector<int>>("paddings", attrs);
+    dilations_ = GetAttr<vector<int>>("dilations", attrs);
+    groups = GetAttr<int>("groups", attrs);
+  }
+
+  const Tensor *Input() const { return input_; }
+
+  const Tensor *Filter() const { return filter_; }
+
+  Tensor *Output() const { return output_; }
+
+  const vector<int> &Strides() const { return strides_; }
+
+  const vector<int> &Paddings() const { return paddings_; }
+
+  const vector<int> &Dilations() const { return dilations_; }
+
+  const int &Groups() const { return groups; }
+
+ private:
+  Tensor *input_;
+  Tensor *output_;
+  Tensor *filter_;
+  vector<int> strides_;
+  vector<int> paddings_;
+  vector<int> dilations_;
+  int groups;
+};
+#endif
+
 }  // namespace operators
 }  // namespace paddle_mobile
