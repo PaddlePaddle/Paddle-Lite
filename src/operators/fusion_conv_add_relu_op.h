@@ -16,6 +16,8 @@ limitations under the License. */
 
 #pragma once
 
+#include <string>
+#include <vector>
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
 #include "operators/kernel/conv_add_relu_kernel.h"
@@ -65,11 +67,11 @@ class FusionConvAddReluOp : public framework::OperatorWithKernel<
 
 #ifdef PADDLE_MOBILE_CPU
 
-//#ifndef CONV_ADD_RELU_REGISTER
-//#define CONV_ADD_RELU_REGISTER
-// static framework::FusionOpRegistrar fusion_conv_add_relu_registrar(new
-// FusionConvAddReluOpMatcher());
-//#endif
+#ifndef CONV_ADD_RELU_REGISTER
+#define CONV_ADD_RELU_REGISTER
+static framework::FusionOpRegistrar fusion_conv_add_relu_registrar(
+    new FusionConvAddReluOpMatcher());
+#endif
 
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
