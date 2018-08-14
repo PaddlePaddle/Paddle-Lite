@@ -27,6 +27,7 @@ limitations under the License. */
 static const char *g_ocr = "../models/ocr";
 static const char *g_mobilenet_ssd = "../models/mobilenet+ssd";
 static const char *g_mobilenet_ssd_gesture = "../models/mobilenet+ssd_gesture";
+static const char *g_mobilenet_combined = "../models/mobilenet_combine";
 static const char *g_squeezenet = "../models/squeezenet";
 static const char *g_googlenet = "../models/googlenet";
 static const char *g_mobilenet = "../models/mobilenet";
