@@ -46,8 +46,8 @@ static Dtype find_max(Dtype* data, int num) {
   return max;
 }
 
-template <typename Dtype>
-framework::Tensor* quantilize_filter(framework::Tensor* filter) {
+// template <typename Dtype>
+framework::Tensor* quantify_filter(framework::Tensor* filter) {
   float scale = 0;
   float fix_range = static_cast<float>((1 << (8 - 1)) - 1);
 
@@ -57,7 +57,7 @@ framework::Tensor* quantilize_filter(framework::Tensor* filter) {
   const int width = filter->dims()[3];
 
   int8_t* int_data = nullptr;
-  int8_t* tmp_data = new int[filter->numel()];
+  int8_t* tmp_data = new int8_t[filter->numel()];
 
   // 32bit filter -> 8bit filter;
   if (filter->type() == typeid(float)) {
