@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include <iostream>
 #include "../test_helper.h"
+#include "../test_include.h"
 #include "operators/math/gemm.h"
 #include "operators/math/math_function.h"
 
@@ -26,6 +27,8 @@ limitations under the License. */
 #define k 1024
 
 int main() {
+  paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
+  paddle_mobile.SetThreadNum(4);
   Tensor aa, bb, cc, scale, bias;
   auto aaptr = aa.mutable_data<float>({m, k});
   auto bbptr = bb.mutable_data<float>({k, n});
