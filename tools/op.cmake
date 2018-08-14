@@ -82,6 +82,8 @@ if ("FPGAnets" IN_LIST NET)
   set(CONCAT_OP ON)
   set(SOFTMAX_OP ON)
   set(DROPOUT_OP ON)
+  set(FUSION_CONVADD_OP ON)
+  # set(CONV_OP ON)
 
   set(FOUND_MATCH ON)   
 endif()
