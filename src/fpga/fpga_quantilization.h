@@ -24,7 +24,7 @@ template <typename Dtype>
 static void chw_to_hwc(Dtype* data_in, Dtype* data_out, int num, int channel,
                        int height, int width);
 
-template <typename Dtype>
-framework::Tensor* quantilize_filter(framework::Tensor* filter);
+// template <typename Dtype>
+framework::Tensor* quantify_filter(framework::Tensor* filter);
 }  // namespace fpga
 }  // namespace paddle_mobile
