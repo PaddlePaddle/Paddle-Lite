@@ -9,6 +9,11 @@ elseif ("mobilenet" IN_LIST NET)
     # gen test
     ADD_EXECUTABLE(test-mobilenet net/test_mobilenet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-mobilenet paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-mobilenet-combine net/test_mobilenet_combine.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-mobilenet-combine paddle-mobile)
+
 elseif ("yolo" IN_LIST NET)
     # gen test
     ADD_EXECUTABLE(test-yolo net/test_yolo.cpp test_helper.h  test_include.h executor_for_test.h)
@@ -137,6 +142,10 @@ else ()
     # gen test
     ADD_EXECUTABLE(test-mobilenetssd net/test_mobilenet+ssd.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-mobilenetssd paddle-mobile)
+
+     # gen test
+    ADD_EXECUTABLE(test-mobilenet-combine net/test_mobilenet_combine.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-mobilenet-combine paddle-mobile)
 
     # gen test
     ADD_EXECUTABLE(test-sigmoid operators/test_sigmoid_op.cpp  test_include.h)
