@@ -20,7 +20,8 @@ int main() {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
   paddle_mobile.SetThreadNum(4);
   auto time1 = time();
-  if (paddle_mobile.Load(g_mobilenet, true)) {
+  if (paddle_mobile.Load(std::string(g_mobilenet_combined) + "/model",
+                         std::string(g_mobilenet_combined) + "/params", true)) {
     auto time2 = time();
     std::cout << "load cost :" << time_diff(time1, time1) << "ms" << std::endl;
 
@@ -43,7 +44,6 @@ int main() {
     std::cout << "predict cost :" << time_diff(time3, time4) / 10 << "ms"
               << std::endl;
   }
-
   std::cout
       << "如果结果Nan请查看: test/images/test_image_1x3x224x224_float 是否存在?"
       << std::endl;
