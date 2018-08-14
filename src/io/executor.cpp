@@ -77,7 +77,6 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
       auto op_base = framework::OpRegistry<Dtype>::CreateOp(
           op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(),
           program_.scope);
-      DLOG << "InferShape: ";
       op_base->InferShape();
       ops_of_block_[*block_desc.get()].push_back(op_base);
 #ifdef PADDLE_EXECUTOR_MULTITHREAD
@@ -85,19 +84,15 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
 #endif
     }
   }
-   DLOG << "InitMemory: ";
-
   if (program_.combined) {
     InitCombineMemory();
   } else {
     InitMemory();
   }
-  DLOG << "InitMemory end ";
   std::shared_ptr<framework::BlockDesc> to_predict_block =
       to_predict_program_->Block(0);
   auto &ops = ops_of_block_[*to_predict_block.get()];
   for (const auto &op : ops) {
-     DLOG << "Init op " << op->Type();
     op->Init();
   }
 }
