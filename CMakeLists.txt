@@ -6,9 +6,9 @@ option(USE_OPENMP "openmp support" OFF)
 option(USE_EXCEPTION "use std exception" ON)
 option(LOG_PROFILE "log profile" ON)
 # select the platform to build
-option(CPU "armv7 with neon" OFF)
+option(CPU "armv7 with neon" ON)
 option(MALI_GPU "mali gpu" OFF)
-option(FPGA "fpga" ON)
+option(FPGA "fpga" OFF)
 
 file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c src/*.mm)
 file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
@@ -139,7 +139,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY build)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 
 # NET default
-set(NET "FPGAnets" CACHE STRING "select net type")
+set(NET "default" CACHE STRING "select net type")
 set_property(CACHE NET PROPERTY STRINGS "default" "googlenet" "mobilenet" "yolo" "squeezenet" "FPGAnets")
 include("${CMAKE_CURRENT_LIST_DIR}/tools/op.cmake")
 

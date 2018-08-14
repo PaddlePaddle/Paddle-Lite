@@ -37,11 +37,11 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
     param_.Out()->Resize(out_dims);
   }
 
-#ifdef PADDLE_MOBILE_FPGA__VV
+#ifdef PADDLE_MOBILE_FPGA
   void RunImpl() const { fpga::PerformBypass(param_.FpgaArgs()); }
   void Init() {
     const Tensor *input = param_.InputX();
-    auto input_ptr = input->data<float>();
+    auto input_ptr = input->mutable_data<float>();
     Tensor *output = param_.Out();
     auto output_ptr = output->mutable_data<half>();
     fpga::BypassArgs args;
