@@ -8,6 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		168DA950D7D6CF91EBF70A17 /* Pods_paddle_mobile_unit_test.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8BCD4792E483BFEE9F5523DE /* Pods_paddle_mobile_unit_test.framework */; };
+		FC607427211DF3B100B17547 /* synset.txt in Resources */ = {isa = PBXBuildFile; fileRef = FC60734E211DF3B000B17547 /* synset.txt */; };
+		FC607428211DF3B100B17547 /* banana.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = FC60734F211DF3B000B17547 /* banana.jpeg */; };
+		FC607429211DF3B100B17547 /* iphone.JPG in Resources */ = {isa = PBXBuildFile; fileRef = FC607350211DF3B000B17547 /* iphone.JPG */; };
+		FC60742A211DF3B100B17547 /* paddle-mobile.png in Resources */ = {isa = PBXBuildFile; fileRef = FC607351211DF3B000B17547 /* paddle-mobile.png */; };
+		FC60742B211DF3B100B17547 /* params in Resources */ = {isa = PBXBuildFile; fileRef = FC607354211DF3B000B17547 /* params */; };
+		FC60742C211DF3B100B17547 /* model in Resources */ = {isa = PBXBuildFile; fileRef = FC607355211DF3B000B17547 /* model */; };
 		FC91818D211DAE9A00B6F354 /* paddle_mobile.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FC91818C211DAE9A00B6F354 /* paddle_mobile.framework */; };
 		FC91818E211DAE9A00B6F354 /* paddle_mobile.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = FC91818C211DAE9A00B6F354 /* paddle_mobile.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		FCDFD409211D9185005AB38B /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCDFD408211D9185005AB38B /* AppDelegate.swift */; };
@@ -35,6 +41,12 @@
 		5CC132C848027BE970FB2637 /* Pods-paddle-mobile-unit-test.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-paddle-mobile-unit-test.debug.xcconfig"; path = "../Pods/Target Support Files/Pods-paddle-mobile-unit-test/Pods-paddle-mobile-unit-test.debug.xcconfig"; sourceTree = "<group>"; };
 		72F34AE9677943FC580DE7F4 /* Pods-paddle-mobile-unit-test.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-paddle-mobile-unit-test.release.xcconfig"; path = "../Pods/Target Support Files/Pods-paddle-mobile-unit-test/Pods-paddle-mobile-unit-test.release.xcconfig"; sourceTree = "<group>"; };
 		8BCD4792E483BFEE9F5523DE /* Pods_paddle_mobile_unit_test.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_paddle_mobile_unit_test.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		FC60734E211DF3B000B17547 /* synset.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = synset.txt; sourceTree = "<group>"; };
+		FC60734F211DF3B000B17547 /* banana.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = banana.jpeg; sourceTree = "<group>"; };
+		FC607350211DF3B000B17547 /* iphone.JPG */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = iphone.JPG; sourceTree = "<group>"; };
+		FC607351211DF3B000B17547 /* paddle-mobile.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "paddle-mobile.png"; sourceTree = "<group>"; };
+		FC607354211DF3B000B17547 /* params */ = {isa = PBXFileReference; lastKnownFileType = file; path = params; sourceTree = "<group>"; };
+		FC607355211DF3B000B17547 /* model */ = {isa = PBXFileReference; lastKnownFileType = file; path = model; sourceTree = "<group>"; };
 		FC91818C211DAE9A00B6F354 /* paddle_mobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = paddle_mobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		FCDFD405211D9185005AB38B /* paddle-mobile-unit-test.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "paddle-mobile-unit-test.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		FCDFD408211D9185005AB38B /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -75,6 +87,36 @@
 			name = Pods;
 			sourceTree = "<group>";
 		};
+		FC60734D211DF3B000B17547 /* images */ = {
+			isa = PBXGroup;
+			children = (
+				FC60734E211DF3B000B17547 /* synset.txt */,
+				FC60734F211DF3B000B17547 /* banana.jpeg */,
+				FC607350211DF3B000B17547 /* iphone.JPG */,
+				FC607351211DF3B000B17547 /* paddle-mobile.png */,
+			);
+			name = images;
+			path = ../../images;
+			sourceTree = "<group>";
+		};
+		FC607352211DF3B000B17547 /* models */ = {
+			isa = PBXGroup;
+			children = (
+				FC607353211DF3B000B17547 /* mobilenet */,
+			);
+			name = models;
+			path = ../../models;
+			sourceTree = "<group>";
+		};
+		FC607353211DF3B000B17547 /* mobilenet */ = {
+			isa = PBXGroup;
+			children = (
+				FC607354211DF3B000B17547 /* params */,
+				FC607355211DF3B000B17547 /* model */,
+			);
+			path = mobilenet;
+			sourceTree = "<group>";
+		};
 		FCDFD3FC211D9185005AB38B = {
 			isa = PBXGroup;
 			children = (
@@ -97,6 +139,8 @@
 		FCDFD407211D9185005AB38B /* paddle-mobile-unit-test */ = {
 			isa = PBXGroup;
 			children = (
+				FC60734D211DF3B000B17547 /* images */,
+				FC607352211DF3B000B17547 /* models */,
 				FCDFD408211D9185005AB38B /* AppDelegate.swift */,
 				FCDFD40A211D9185005AB38B /* ViewController.swift */,
 				FCDFD40C211D9185005AB38B /* Main.storyboard */,
@@ -168,6 +212,12 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FC607427211DF3B100B17547 /* synset.txt in Resources */,
+				FC60742B211DF3B100B17547 /* params in Resources */,
+				FC607428211DF3B100B17547 /* banana.jpeg in Resources */,
+				FC60742A211DF3B100B17547 /* paddle-mobile.png in Resources */,
+				FC607429211DF3B100B17547 /* iphone.JPG in Resources */,
+				FC60742C211DF3B100B17547 /* model in Resources */,
 				FCDFD413211D9187005AB38B /* LaunchScreen.storyboard in Resources */,
 				FCDFD410211D9187005AB38B /* Assets.xcassets in Resources */,
 				FCDFD40E211D9185005AB38B /* Main.storyboard in Resources */,
