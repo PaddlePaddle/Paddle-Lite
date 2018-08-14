@@ -920,7 +920,11 @@ class FusionFcParam : public OpParam {
   }
   const Tensor *InputX() const { return input_x_; }
 
+#ifdef PADDLE_MOBILE_FPGA
+  Tensor *InputY() const { return input_y_; }
+#else
   const Tensor *InputY() const { return input_y_; }
+#endif
 
   const Tensor *InputZ() const { return input_z_; }
 
@@ -976,7 +980,11 @@ class FusionConvAddParam : public OpParam {
 
   const Tensor *Input() const { return input_; }
 
+#ifdef PADDLE_MOBILE_FPGA
+  Tensor *Filter() const { return filter_; }
+#else
   const Tensor *Filter() const { return filter_; }
+#endif
 
   Tensor *Output() const { return output_; }
 
@@ -1050,7 +1058,11 @@ class FusionConvAddBNReluParam : public OpParam {
 
   const Tensor *Input() const { return input_; }
 
+#ifdef PADDLE_MOBILE_FPGA
+  Tensor *Filter() const { return filter_; }
+#else
   const Tensor *Filter() const { return filter_; }
+#endif
 
   Tensor *Output() const { return output_; }
 
@@ -1144,8 +1156,11 @@ class FusionConvAddBNParam : public OpParam {
 
   const Tensor *Input() const { return input_; }
 
+#ifdef PADDLE_MOBILE_FPGA
+  Tensor *Filter() const { return filter_; }
+#else
   const Tensor *Filter() const { return filter_; }
-
+#endif
   Tensor *Output() const { return output_y_; }
 
   const vector<int> &Strides() const { return strides_; }
