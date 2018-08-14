@@ -28,7 +28,7 @@ bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam *param) {
   auto input_ptr = input->data<half>();
   const Tensor *bias = param->Bias();
   auto bias_ptr = bias->data<float>();
-  const Tensor *filter = param->Filter();
+  Tensor *filter = param->Filter();
 
   Tensor *out = param->Output();
   auto out_ptr = out->mutable_data<half>();
@@ -60,7 +60,7 @@ bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam *param) {
   param->SetNewScale(new_scale);
   param->SetNewBias(new_bias);
 
-  const Tensor *quant_filter = quantilize_filter(filter);
+  Tensor *quant_filter = fpga::quantify_filter(filter);
 
   // delete original filter?
   filter = quant_filter;
@@ -68,22 +68,22 @@ bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam *param) {
   auto filter_ptr = filter->data<float>();
   fpga::ConvArgs convArgs;
   convArgs.relu_enabled = relu_enabled;
-  convArgs.filter_address = reinterpret_cast<void *> filter_ptr;
+  convArgs.filter_address = (void *)filter_ptr;
   convArgs.filter_num = filter->dims()[0];
   convArgs.group_num = param->Groups();
-  convArgs.sb_address = reinterpret_cast<void *> bs_ptr;
+  convArgs.sb_address = (void *)bs_ptr;
   convArgs.kernel.stride_h = param->Strides()[0];
   convArgs.kernel.stride_w = param->Strides()[1];
   convArgs.kernel.height = filter->dims()[2];
   convArgs.kernel.width = filter->dims()[3];
-  convArgs.image.address = reinterpret_cast<void *> input_ptr;
+  convArgs.image.address = (void *)input_ptr;
   convArgs.image.channels = input->dims()[1];
   convArgs.image.height = input->dims()[2];
   convArgs.image.width = input->dims()[3];
   convArgs.image.pad_height = param->Paddings()[0];
   convArgs.image.pad_width = param->Paddings()[1];
   convArgs.image.scale_address = input->fpga_args().scale_pointer();
-  convArgs.output.address = reinterpret_cast<void *> out_ptr;
+  convArgs.output.address = (void *)out_ptr;
   convArgs.output.scale_address = out->fpga_args().scale_pointer();
   param->SetFpgaArgs(convArgs);
 
