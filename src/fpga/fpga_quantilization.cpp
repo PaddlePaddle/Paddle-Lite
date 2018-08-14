@@ -46,10 +46,8 @@ static Dtype find_max(Dtype* data, int num) {
   return max;
 }
 
-
 // template <typename Dtype>
 void quantify_filter(framework::Tensor* filter) {
-
   DLOG << "quantilize_filter........";
 
   float scale = 0;
@@ -87,7 +85,6 @@ void quantify_filter(framework::Tensor* filter) {
   chw_to_hwc<int8_t>(tmp_data, int_data, batch_size, channel, height, width);
   delete tmp_data;
   *(filter->fpga_args().scale_pointer()) = scale;
-
 }
 
 }  // namespace fpga
