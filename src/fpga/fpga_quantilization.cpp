@@ -46,8 +46,12 @@ static Dtype find_max(Dtype* data, int num) {
   return max;
 }
 
+
 // template <typename Dtype>
-framework::Tensor* quantify_filter(framework::Tensor* filter) {
+void quantify_filter(framework::Tensor* filter) {
+
+  DLOG << "quantilize_filter........";
+
   float scale = 0;
   float fix_range = static_cast<float>((1 << (8 - 1)) - 1);
 
@@ -62,25 +66,20 @@ framework::Tensor* quantify_filter(framework::Tensor* filter) {
   // 32bit filter -> 8bit filter;
   if (filter->type() == typeid(float)) {
     float* float_data = filter->data<float>();
-    float max = find_max(float_data, filter->numel());
+    float max = find_max<float>(float_data, filter->numel());
 
     scale = (max / fix_range);
 
-    framework::Tensor* filter = filter;
-    framework::Tensor* quant_filter = new framework::Tensor();
-
-    int_data = quant_filter->mutable_data<int8_t>();
     for (int i = 0; i < filter->numel(); ++i) {
       tmp_data[i] = (int8_t)float_data[i] * scale;
     }
-    filter = quant_filter;
+    int_data = filter->mutable_data<int8_t>();
   } else {
-    int8_t max = find_max(filter->data<int8_t>(), filter->numel());
+    int8_t max = find_max<int8_t>(filter->data<int8_t>(), filter->numel());
     scale = (max / fix_range);
 
-    int_data = filter->data<int8_t>();
     for (int i = 0; i < filter->numel(); ++i) {
-      tmp_data[i] = int_data[i];
+      tmp_data[i] = filter->data<int8_t>()[i];
     }
     int_data = filter->mutable_data<int8_t>();
   }
@@ -88,7 +87,7 @@ framework::Tensor* quantify_filter(framework::Tensor* filter) {
   chw_to_hwc<int8_t>(tmp_data, int_data, batch_size, channel, height, width);
   delete tmp_data;
   *(filter->fpga_args().scale_pointer()) = scale;
-  return filter;
+
 }
 
 }  // namespace fpga
