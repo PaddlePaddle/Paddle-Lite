@@ -16,7 +16,7 @@ limitations under the License. */
 
 #include "operators/kernel/conv_add_bn_kernel.h"
 #include "fpga/api/fpga_api.h"
-#include "fpga/quantilization.h"
+#include "fpga/fpga_quantilization.h"
 
 namespace paddle_mobile {
 namespace operators {
