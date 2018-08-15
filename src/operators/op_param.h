@@ -210,7 +210,7 @@ class ConvParam : OpParam {
 
   const Tensor *Input() const { return input_; }
 
-  const Tensor *Filter() const { return filter_; }
+  Tensor *Filter() const { return filter_; }
 
   Tensor *Output() const { return output_; }
 

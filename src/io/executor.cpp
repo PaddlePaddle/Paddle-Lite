@@ -89,7 +89,6 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
   } else {
     InitMemory();
   }
-
   std::shared_ptr<framework::BlockDesc> to_predict_block =
       to_predict_program_->Block(0);
   auto &ops = ops_of_block_[*to_predict_block.get()];
