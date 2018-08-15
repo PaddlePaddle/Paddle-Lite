@@ -118,22 +118,37 @@ let gFeedType                   = "feed"
 let gConvType                   = "conv2d"
 let gBatchNormType              = "batch_norm"
 let gReluType                   = "relu"
-let gElementwiseAdd             = "elementwise_add"
+let gElementwiseAddType         = "elementwise_add"
 let gConvAddBatchNormReluType   = "conv_add_batchnorm_relu"
 let gPooType                    = "pool2d"
 let gSoftmaxType                = "softmax"
 let gReshapeType                = "reshape"
 let gConvAddType                = "conv_add"
-
+let gDepthConvType              = "depthwise_conv2d"
+let gPriorBoxType               = "prior_box"
+let gTransposeType              = "transpose"
+let gConcatType                 = "concat"
+let gBoxcoderType               = "box_coder"
+let gMulticlassNMSType          = "multiclass_nms"
+let gConvBnReluType             = "conv_bn_relu"
+let gDwConvBnReluType           = "depth_conv_bn_relu"
 
 let opInfos = [gConvType                    : (inputs: ["Input"], outputs: ["Output"]),
                gBatchNormType               : (inputs: ["X"], outputs: ["Y"]),
                gReluType                    : (inputs: ["X"], outputs: ["Out"]),
-               gElementwiseAdd              : (inputs: ["X"], outputs: ["Out"]),
+               gElementwiseAddType          : (inputs: ["X"], outputs: ["Out"]),
                gFeedType                    : (inputs: ["X"], outputs: ["Out"]),
                gFetchType                   : (inputs: ["X"], outputs: ["Out"]),
                gConvAddBatchNormReluType    : (inputs: ["Input"], outputs: ["Out"]),
                gPooType                     : (inputs: ["X"], outputs: ["Out"]),
                gSoftmaxType                 : (inputs: ["X"], outputs: ["Out"]),
                gReshapeType                 : (inputs: ["X"], outputs: ["Out"]),
-               gConvAddType                 : (inputs: ["Input"], outputs: ["Out"])]
+               gConvAddType                 : (inputs: ["Input"], outputs: ["Out"]),
+               gDepthConvType               : (inputs: ["Input"], outputs: ["Output"]),
+               gConcatType                  : (inputs: ["X"], outputs: ["Out"]),
+               gBoxcoderType                : (inputs: ["PriorBox", "PriorBoxVar", "TargetBox"], outputs: ["OutputBox"]),
+               gTransposeType               : (inputs: ["X"], outputs: ["Out"]),
+               gConvBnReluType              : (inputs: ["Input"], outputs: ["Out"]),
+               gDwConvBnReluType            : (inputs: ["Input"], outputs: ["Out"]),
+               gMulticlassNMSType           : (inputs: ["BBoxes", "Scores"], outputs: ["Out"]),
+               gPriorBoxType                : (inputs: ["Input", "Image"], outputs: ["Boxes", "Variances"])]

@@ -12,23 +12,17 @@ import Foundation
 import paddle_mobile
 import MetalPerformanceShaders
 
-class PreProccess: CusomKernel {
-    init(device: MTLDevice) {
-        let s = CusomKernel.Shape.init(inWidth: 224, inHeight: 224, inChannel: 3)
-        super.init(device: device, inFunctionName: "preprocess", outputDim: s, usePaddleMobileLib: false)
-    }
-}
-
-let modelHelperMap: [SupportModel : ModelHelper] = [.mobilenet : MobileNetHelper.init()]
+let modelHelperMap: [SupportModel : Net] = [.mobilenet : MobileNet.init(), .mobilenet_ssd : MobileNet_ssd_hand.init()]
 
 enum SupportModel: String{
     case mobilenet = "mobilenet"
+    case mobilenet_ssd = "mobilenetssd"
     static func supportedModels() -> [SupportModel] {
-        return [.mobilenet]
+        return [.mobilenet, .mobilenet_ssd]
     }
 }
 
-protocol ModelHelper {
+protocol Net {
     var dim: [Int] { get }
     var modelPath: String { get }
     var paramPath: String { get }
@@ -38,7 +32,7 @@ protocol ModelHelper {
     func resultStr(res: [Float]) -> String
 }
 
-extension ModelHelper {
+extension Net {
     func getTexture(image: CGImage, getTexture: @escaping (MTLTexture) -> Void) {
         let texture = try? MetalHelper.shared.textureLoader.newTexture(cgImage: image, options: [:]) ?! " texture loader error"
         MetalHelper.scaleTexture(queue: MetalHelper.shared.queue, input: texture!, size: (224, 224)) { (resTexture) in
@@ -47,7 +41,15 @@ extension ModelHelper {
     }
 }
 
-struct MobileNetHelper: ModelHelper{
+struct MobileNet: Net{
+    
+    class MobilenetPreProccess: CusomKernel {
+        init(device: MTLDevice) {
+            let s = CusomKernel.Shape.init(inWidth: 224, inHeight: 224, inChannel: 3)
+            super.init(device: device, inFunctionName: "preprocess", outputDim: s, usePaddleMobileLib: false)
+        }
+    }
+    
     class PreWords {
         var contents: [String] = []
         init(fileName: String, type: String = "txt", inBundle: Bundle = Bundle.main) {
@@ -84,6 +86,33 @@ struct MobileNetHelper: ModelHelper{
         modelPath = Bundle.main.path(forResource: "model", ofType: nil) ?! "model null"
         paramPath = Bundle.main.path(forResource: "params", ofType: nil) ?! "para null"
         modelDir = ""
-        preprocessKernel = PreProccess.init(device: MetalHelper.shared.device)
+        preprocessKernel = MobilenetPreProccess.init(device: MetalHelper.shared.device)
     }
 }
+
+struct MobileNet_ssd_hand: Net{
+    class MobilenetssdPreProccess: CusomKernel {
+        init(device: MTLDevice) {
+            let s = CusomKernel.Shape.init(inWidth: 300, inHeight: 300, inChannel: 3)
+            super.init(device: device, inFunctionName: "mobilenet_ssd_preprocess", outputDim: s, usePaddleMobileLib: false)
+        }
+    }
+    
+    func resultStr(res: [Float]) -> String {
+       fatalError()
+    }
+    
+    var preprocessKernel: CusomKernel
+    let dim = [1, 300, 300, 3]
+    let modelPath: String
+    let paramPath: String
+    let modelDir: String
+    
+    init() {
+        modelPath = Bundle.main.path(forResource: "ssd_hand_model", ofType: nil) ?! "model null"
+        paramPath = Bundle.main.path(forResource: "ssd_hand_params", ofType: nil) ?! "para null"
+        modelDir = ""
+        preprocessKernel = MobilenetssdPreProccess.init(device: MetalHelper.shared.device)
+    }
+}
+

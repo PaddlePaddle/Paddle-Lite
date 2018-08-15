@@ -22,7 +22,6 @@ class InputTexture {
         mtlTexture = inMTLTexture
         expectDim = inExpectDim
     }
-    
 }
 
 extension InputTexture {
@@ -54,19 +53,34 @@ public class Texture<P: PrecisionType>: Tensorial {
         } else if inDim.cout() == 4 {
             tmpTextureDes.height = inDim[1]
             tmpTextureDes.width = inDim[2]
-//            print("n : \(inDim[0])")
-//            print(inDim[3] * inDim[0])
             tmpTextureDes.depth = 1
             tmpTextureDes.arrayLength = (inDim[3] * inDim[0] + 3)/4
             tmpTextureDes.textureType = .type2DArray
         } else if inDim.cout() == 2 {
-            tmpTextureDes.height = 1
-            tmpTextureDes.width = 1
+//            tmpTextureDes.height = 1
+//            tmpTextureDes.width = 1
+//            tmpTextureDes.depth = 1
+//            tmpTextureDes.arrayLength = (inDim[0] * inDim[1] + 3)/4
+
+            tmpTextureDes.width = inDim[0]
+            tmpTextureDes.height = inDim[1]
             tmpTextureDes.depth = 1
-            tmpTextureDes.arrayLength = (inDim[0] * inDim[1] + 3)/4
+            tmpTextureDes.arrayLength = 1
             tmpTextureDes.textureType = .type2DArray
         } else {
-            fatalError(" not suuprt ")
+            /*
+             var name: box_coder_0.tmp_0
+             in var tensor desc dims size: 3
+                var tensor desc dim 0 value: -1
+                var tensor desc dim 1 value: 1917
+                var tensor desc dim 2 value: 4
+             */
+            
+            tmpTextureDes.height = inDim[1]
+            tmpTextureDes.width = inDim[2]
+            tmpTextureDes.depth = 1
+            tmpTextureDes.arrayLength = 1
+            tmpTextureDes.textureType = .type2DArray
         }
         
         if MemoryLayout<P>.size == 1 {
@@ -79,7 +93,7 @@ public class Texture<P: PrecisionType>: Tensorial {
 
         }
 //        tmpTextureDes.pixelFormat = .rgba16Float
-
+        
         tmpTextureDes.usage = [.shaderRead, .shaderWrite]
         tmpTextureDes.storageMode = .shared
         textureDesc = tmpTextureDes
