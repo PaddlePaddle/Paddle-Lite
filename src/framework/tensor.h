@@ -16,13 +16,15 @@ limitations under the License. */
 
 #include <cstdint>
 #include <cstring>
+#include <fstream>
 #include <memory>
+#include <string>
 #include <type_traits>
 #include <typeindex>
 #include <vector>
-#include "common/enforce.h"
 
 #include "common/enforce.h"
+#include "common/types.h"
 #include "framework/data_layout.h"
 #include "framework/ddim.h"
 #include "memory/t_malloc.h"
@@ -62,7 +64,8 @@ struct SizeOfTypeFunctor<HEAD, TAIL...> {
 };
 
 static inline size_t SizeOfType(std::type_index type) {
-  SizeOfTypeFunctor<int, float, double, int16_t, int64_t, bool, size_t> functor;
+  SizeOfTypeFunctor<int, half, float, double, int16_t, int64_t, bool, size_t>
+      functor;
   size_t size = functor(type);
 
   PADDLE_MOBILE_ENFORCE(size != 0UL, "Cannot get size of type %s", type.name());
@@ -131,11 +134,27 @@ class Tensor {
     return reinterpret_cast<T *>(mutable_data(typeid(T)));
   }
 
+#ifdef PADDLE_MOBILE_DEBUG
+  template <typename T>
+  inline void dump(std::string filename) const {
+    const T *dataptr = data<T>();
+    std::ofstream out(filename.c_str());
+    for (int i = 0; i < numel(); ++i) {
+      out << dataptr[i] << " ";
+    }
+    out << "形状：";
+    for (int j = 0; j < dims_.size(); ++j) {
+      out << dims_[j] << " ";
+    }
+    out.close();
+  }
+#endif
+
   inline void *mutable_data(std::type_index type) {
     if (holder_ != nullptr) {
       holder_->set_type(type);
     }
-    PADDLE_MOBILE_ENFORCE(numel() >= 0, "the Tensor'snumel must >=0.")
+    PADDLE_MOBILE_ENFORCE(numel() >= 0, "the Tensor's numel must >=0.")
     int64_t size = numel() * SizeOfType(type);
     if (holder_ == nullptr || holder_->size() < size + offset_) {
       holder_.reset(new PlaceholderImpl(size, type));
@@ -234,6 +253,18 @@ class Tensor {
                           "Tensor's dims_ is out of bound. ");
   }
 
+#ifdef PADDLE_MOBILE_FPGA
+  struct FPGAArgs {
+    float scale;
+
+    inline float *scale_pointer() { return &scale; }
+  };
+
+  struct FPGAArgs fpga_args() const {
+    return fpgaArgs_;
+  }
+#endif
+
  private:
   /**
    * @note    Placeholder hides type T, so it doesn't appear as a
@@ -300,6 +331,10 @@ class Tensor {
    * begins.
    */
   size_t offset_;
+
+#ifdef PADDLE_MOBILE_FPGA
+  FPGAArgs fpgaArgs_;
+#endif
 };
 
 #ifdef PADDLE_MOBILE_DEBUG

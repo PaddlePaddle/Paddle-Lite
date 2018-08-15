@@ -14,6 +14,10 @@ fi
 
 # https://medicineyeh.wordpress.com/2017/07/13/clang-format-with-pragma/
 shift
-perl -i -pe 's|#pragma\s+omp|// <TRICKY-CLANG-FORMAT-PRAGMA-FIX> #pragma omp|' "$@"
-clang-format -i $@
+perl -i -pe 's|^\s+#pragma\s+omp|// <TRICKY-CLANG-FORMAT-PRAGMA-FIX> #pragma omp|' "$@"
+(
+# remove clang format ios_io folder
+flist=$(echo "$@" | perl -pe 's|src/ios_io/[^ ]*||')
+clang-format -i $flist
+)
 perl -i -pe 's|// <TRICKY-CLANG-FORMAT-PRAGMA-FIX> ||' "$@"

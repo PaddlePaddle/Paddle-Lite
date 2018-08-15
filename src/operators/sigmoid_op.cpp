@@ -22,13 +22,12 @@ template <typename DeviceType, typename T>
 void SigmoidOp<DeviceType, T>::InferShape() const {
   this->param_.Out()->Resize(this->param_.InputX()->dims());
 }
-template class SigmoidOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(sigmoid);
 REGISTER_OPERATOR_CPU(sigmoid, ops::SigmoidOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU

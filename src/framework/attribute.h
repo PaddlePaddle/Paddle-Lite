@@ -14,7 +14,9 @@ limitations under the License. */
 
 #pragma once
 
+#include <cstdlib>
 #include <string>
+#include <typeinfo>
 #include <unordered_map>
 #include <vector>
 
@@ -128,6 +130,7 @@ class Attribute {
       return vistor(attr.variant_.Get<int64_t>());
     } else {
       PADDLE_MOBILE_THROW_EXCEPTION("type not support");
+      exit(0);
     }
   }
 

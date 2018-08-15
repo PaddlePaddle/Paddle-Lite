@@ -13,7 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #ifdef POOL_OP
-#include "pool_2x2.h"
+#include "operators/math/pool_2x2.h"
+#include <algorithm>
+#include <vector>
 
 namespace paddle_mobile {
 namespace operators {
@@ -22,6 +24,9 @@ namespace math {
 void Pool2x2Max(vector<int> strides, vector<int> paddings, const Tensor *input,
                 Tensor *output) {
 #if __ARM_NEON
+
+#if __aarch64__
+#else
   const int batch_size = input->dims()[0];
 
   const int input_height = input->dims()[2];
@@ -90,11 +95,16 @@ void Pool2x2Max(vector<int> strides, vector<int> paddings, const Tensor *input,
     output_data += output_batch_stride;
   }
 #endif
+#else
+#endif
 }
 
 void Pool2x2Avg(vector<int> strides, vector<int> paddings, const Tensor *input,
                 Tensor *output) {
 #if __ARM_NEON
+
+#if __aarch64__
+#else
   const int batch_size = input->dims()[0];
 
   const int input_height = input->dims()[2];
@@ -164,6 +174,9 @@ void Pool2x2Avg(vector<int> strides, vector<int> paddings, const Tensor *input,
     input_data += input_batch_stride;
     output_data += output_batch_stride;
   }
+
+#endif
+#else
 #endif
 }
 
