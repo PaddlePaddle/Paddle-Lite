@@ -54,18 +54,19 @@ void PoolOp<DeviceType, T>::InferShape() const {
   }
   this->param_.Output()->Resize(framework::make_ddim(output_shape));
 }
-template class PoolOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(pool2d);
 REGISTER_OPERATOR_CPU(pool2d, ops::PoolOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
+REGISTER_OPERATOR_MALI_GPU(pool2d, ops::PoolOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(pool2d, ops::PoolOp);
 #endif
 
 #endif

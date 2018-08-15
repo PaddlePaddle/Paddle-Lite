@@ -22,6 +22,9 @@ limitations under the License. */
 #include "framework/scope.h"
 #include "framework/tensor.h"
 #include "framework/variable.h"
+#ifdef PADDLE_MOBILE_FPGA
+#include "fpga/api/fpga_api.h"
+#endif
 
 namespace paddle_mobile {
 namespace operators {
@@ -195,8 +198,7 @@ class OpParam {
 class ConvParam : OpParam {
  public:
   ConvParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-            const framework::AttributeMap &attrs,
-            const framework::Scope &scope) {
+            const AttributeMap &attrs, const Scope &scope) {
     filter_ = FilterFrom<LoDTensor>(inputs, scope);
     input_ = InputFrom<LoDTensor>(inputs, scope);
     output_ = OutputFrom<LoDTensor>(outputs, scope);
@@ -233,16 +235,14 @@ class ConvParam : OpParam {
 Print &operator<<(Print &printer, const ConvParam &conv_param);
 #endif
 
-#ifdef ELEMENTWISEADD_OP
 class ElementwiseAddParam : OpParam {
  public:
   ElementwiseAddParam(const VariableNameMap &inputs,
-                      const VariableNameMap &outputs,
-                      const framework::AttributeMap &attrs,
-                      const framework::Scope &scope) {
-    input_x_ = InputXFrom<framework::LoDTensor>(inputs, scope);
-    input_y_ = InputYFrom<framework::LoDTensor>(inputs, scope);
-    out_ = OutFrom<framework::LoDTensor>(outputs, scope);
+                      const VariableNameMap &outputs, const AttributeMap &attrs,
+                      const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    input_y_ = InputYFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
     axis_ = GetAttr<int>("axis", attrs);
   }
 
@@ -259,19 +259,29 @@ class ElementwiseAddParam : OpParam {
   Tensor *input_y_;
   Tensor *out_;
   int axis_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::EWAddArgs fpga_EW_add_args;
+
+ public:
+  const fpga::EWAddArgs &FpgaArgs() const { return fpga_EW_add_args; }
+  void SetFpgaArgs(const fpga::EWAddArgs &args) { fpga_EW_add_args = args; }
+#endif
 };
 
+#ifdef FUSION_ELEMENTWISEADDRELU_OP
+using ElementwiseAddReluParam = ElementwiseAddParam;
 #endif
 
 #ifdef MUL_OP
 class MulParam : OpParam {
  public:
   MulParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-           const framework::AttributeMap &attrs,
-           const framework::Scope &scope) {
-    input_x_ = InputXFrom<framework::LoDTensor>(inputs, scope);
-    input_y_ = InputYFrom<framework::LoDTensor>(inputs, scope);
-    out_ = OutFrom<framework::LoDTensor>(outputs, scope);
+           const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    input_y_ = InputYFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
     x_num_col_dims_ = GetAttr<int>("x_num_col_dims", attrs);
     y_num_col_dims_ = GetAttr<int>("y_num_col_dims", attrs);
   }
@@ -299,10 +309,9 @@ class MulParam : OpParam {
 class ConcatParam : public OpParam {
  public:
   ConcatParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-              const framework::AttributeMap &attrs,
-              const framework::Scope &scope) {
+              const AttributeMap &attrs, const Scope &scope) {
     inputs_ = InputMultiFrom<LoDTensor>(inputs, scope);
-    out_ = OutFrom<framework::LoDTensor>(outputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
     axis_ = GetAttr<int>("axis", attrs);
   }
 
@@ -323,11 +332,10 @@ class ConcatParam : public OpParam {
 class LrnParam : public OpParam {
  public:
   LrnParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-           const framework::AttributeMap &attrs,
-           const framework::Scope &scope) {
-    input_x_ = InputXFrom<framework::LoDTensor>(inputs, scope);
-    out_ = OutFrom<framework::LoDTensor>(outputs, scope);
-    mid_out_ = MidOutFrom<framework::LoDTensor>(outputs, scope);
+           const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
+    mid_out_ = MidOutFrom<LoDTensor>(outputs, scope);
     n_ = GetAttr<int>("n", attrs);
     alpha_ = GetAttr<float>("alpha", attrs);
     beta_ = GetAttr<float>("beta", attrs);
@@ -367,17 +375,16 @@ class LrnParam : public OpParam {
 class BatchNormParam : OpParam {
  public:
   BatchNormParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-                 const framework::AttributeMap &attrs,
-                 const framework::Scope &scope) {
-    input_x_ = InputXFrom<framework::LoDTensor>(inputs, scope);
-    output_y_ = OutputYFrom<framework::LoDTensor>(outputs, scope);
-    input_bias_ = InputBiasFrom<framework::LoDTensor>(inputs, scope);
-    input_mean_ = InputMeanFrom<framework::LoDTensor>(inputs, scope);
-    input_scale_ = InputScaleFrom<framework::LoDTensor>(inputs, scope);
-    input_variance_ = InputVarianceFrom<framework::LoDTensor>(inputs, scope);
+                 const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    output_y_ = OutputYFrom<LoDTensor>(outputs, scope);
+    input_bias_ = InputBiasFrom<LoDTensor>(inputs, scope);
+    input_mean_ = InputMeanFrom<LoDTensor>(inputs, scope);
+    input_scale_ = InputScaleFrom<LoDTensor>(inputs, scope);
+    input_variance_ = InputVarianceFrom<LoDTensor>(inputs, scope);
     epsilon_ = GetAttr<float>("epsilon", attrs);
     momentum_ = GetAttr<float>("momentum", attrs);
-    is_test_ = GetAttr<bool>("is_test", attrs);
+    //    is_test_ = GetAttr<bool>("is_test", attrs);
   }
 
   const Tensor *InputX() const { return input_x_; }
@@ -418,17 +425,16 @@ class BatchNormParam : OpParam {
 class PoolParam : public OpParam {
  public:
   PoolParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-            const framework::AttributeMap &attrs,
-            const framework::Scope &scope) {
-    input_ = InputXFrom<framework::LoDTensor>(inputs, scope);
+            const AttributeMap &attrs, const Scope &scope) {
+    input_ = InputXFrom<LoDTensor>(inputs, scope);
 
-    output_ = OutFrom<framework::LoDTensor>(outputs, scope);
+    output_ = OutFrom<LoDTensor>(outputs, scope);
     pooling_type_ = GetAttr<string>("pooling_type", attrs);
     ksize_ = GetAttr<vector<int>>("ksize", attrs);
     strides_ = GetAttr<vector<int>>("strides", attrs);
     paddings_ = GetAttr<vector<int>>("paddings", attrs);
     ceil_mode_ = GetAttr<bool>("ceil_mode", attrs);
-    gloabal_pooling_ = GetAttr<bool>("global_pooling", attrs);
+    global_pooling_ = GetAttr<bool>("global_pooling", attrs);
   }
 
   const Tensor *Input() const { return input_; }
@@ -445,7 +451,7 @@ class PoolParam : public OpParam {
 
   bool isCeilMode() const { return ceil_mode_; }
 
-  bool isGlobalPooling() const { return gloabal_pooling_; }
+  bool isGlobalPooling() const { return global_pooling_; }
 
  private:
   Tensor *input_;
@@ -455,22 +461,28 @@ class PoolParam : public OpParam {
   vector<int> strides_;
   vector<int> paddings_;
   bool ceil_mode_;
-  bool gloabal_pooling_ = false;
-};
+  bool global_pooling_ = false;
+#ifdef PADDLE_MOBILE_FPGA
 
+ private:
+  fpga::PoolingArgs fpga_pool_args;
+
+ public:
+  const fpga::PoolingArgs &FpgaArgs() const { return fpga_pool_args; }
+  void SetFpgaArgs(const fpga::PoolingArgs &args) { fpga_pool_args = args; }
+#endif
+};
 #endif
 
 #ifdef PRIORBOX_OP
 class PriorBoxParam : public OpParam {
  public:
   PriorBoxParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-                const framework::AttributeMap &attrs,
-                const framework::Scope &scope) {
-    input_ = InputFrom<framework::LoDTensor>(inputs, scope);
-    input_image_ = InputImageFrom<framework::LoDTensor>(inputs, scope);
-    output_boxes_ = OutputBoxesFrom<framework::LoDTensor>(outputs, scope);
-    output_variances_ =
-        OutputVariancesFrom<framework::LoDTensor>(outputs, scope);
+                const AttributeMap &attrs, const Scope &scope) {
+    input_ = InputFrom<LoDTensor>(inputs, scope);
+    input_image_ = InputImageFrom<LoDTensor>(inputs, scope);
+    output_boxes_ = OutputBoxesFrom<LoDTensor>(outputs, scope);
+    output_variances_ = OutputVariancesFrom<LoDTensor>(outputs, scope);
     min_sizes_ = GetAttr<vector<float>>("min_sizes", attrs);
     max_sizes_ = GetAttr<vector<float>>("max_sizes", attrs);
     aspect_ratios_ = GetAttr<vector<float>>("aspect_ratios", attrs);
@@ -528,13 +540,11 @@ class PriorBoxParam : public OpParam {
 class BoxCoderParam : public OpParam {
  public:
   BoxCoderParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-                const framework::AttributeMap &attrs,
-                const framework::Scope &scope) {
-    input_priorbox_ = InputPriorBoxFrom<framework::LoDTensor>(inputs, scope);
-    input_priorboxvar_ =
-        InputPriorBoxVarFrom<framework::LoDTensor>(inputs, scope);
-    input_targetbox_ = InputTargetBoxFrom<framework::LoDTensor>(inputs, scope);
-    output_box_ = OutputBoxFrom<framework::LoDTensor>(outputs, scope);
+                const AttributeMap &attrs, const Scope &scope) {
+    input_priorbox_ = InputPriorBoxFrom<LoDTensor>(inputs, scope);
+    input_priorboxvar_ = InputPriorBoxVarFrom<LoDTensor>(inputs, scope);
+    input_targetbox_ = InputTargetBoxFrom<LoDTensor>(inputs, scope);
+    output_box_ = OutputBoxFrom<LoDTensor>(outputs, scope);
     code_type_ = GetAttr<std::string>("code_type", attrs);
   }
   const Tensor *InputPriorBox() const { return input_priorbox_; }
@@ -560,10 +570,9 @@ class BoxCoderParam : public OpParam {
 class SoftmaxParam : public OpParam {
  public:
   SoftmaxParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-               const framework::AttributeMap &attrs,
-               const framework::Scope &scope) {
-    input_x_ = InputXFrom<framework::LoDTensor>(inputs, scope);
-    out_ = OutFrom<framework::LoDTensor>(outputs, scope);
+               const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
   }
   const Tensor *InputX() const { return input_x_; }
   Tensor *Out() const { return out_; }
@@ -578,10 +587,9 @@ class SoftmaxParam : public OpParam {
 class SigmoidParam : public OpParam {
  public:
   SigmoidParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-               const framework::AttributeMap &attrs,
-               const framework::Scope &scope) {
-    input_x_ = InputXFrom<framework::LoDTensor>(inputs, scope);
-    out_ = OutFrom<framework::LoDTensor>(outputs, scope);
+               const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
   }
   const Tensor *InputX() const { return input_x_; }
   Tensor *Out() const { return out_; }
@@ -643,10 +651,10 @@ class MultiClassNMSParam : public OpParam {
 class FeedParam : public OpParam {
  public:
   FeedParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-            const framework::AttributeMap &attrs, framework::Scope &scope) {
-    input_x_ = InputXFrom<framework::LoDTensor>(inputs, scope);
-    out_ = OutFrom<framework::LoDTensor>(outputs, scope);
-    auto var = scope.Var("batch_size");
+            const AttributeMap &attrs, Scope *scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, *scope);
+    out_ = OutFrom<LoDTensor>(outputs, *scope);
+    auto var = scope->Var("batch_size");
     batch_size = var->GetValue<int>();
   }
   const Tensor *InputX() const { return input_x_; }
@@ -657,15 +665,24 @@ class FeedParam : public OpParam {
   Tensor *input_x_;
   Tensor *out_;
   int batch_size;
+
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::BypassArgs fpga_bypass_args;
+
+ public:
+  const fpga::BypassArgs &FpgaArgs() const { return fpga_bypass_args; }
+  void SetFpgaArgs(const fpga::BypassArgs &args) { fpga_bypass_args = args; }
+#endif
 };
 
 class FetchParam : public OpParam {
  public:
   FetchParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-             const framework::AttributeMap &attrs,
-             const framework::Scope &scope) {
-    input_x_ = InputXFrom<framework::LoDTensor>(inputs, scope);
-    out_ = OutFrom<framework::LoDTensor>(outputs, scope);
+             const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
   }
   const Tensor *InputX() const { return input_x_; }
   Tensor *Out() const { return out_; }
@@ -729,6 +746,123 @@ class ReshapeParam : public OpParam {
 };
 #endif
 
+#ifdef SCALE_OP
+class ScaleParam : public OpParam {
+ public:
+  ScaleParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+             const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    input_bias_ = InputBiasFrom<framework::LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
+    inplace_ = GetAttr<bool>("inplace", attrs);
+    has_bias_ = GetAttr<bool>("has_bias", attrs);
+    scales_ = GetAttr<vector<float>>("scales", attrs);
+    biases_ = GetAttr<vector<float>>("biases", attrs);
+  }
+
+  const Tensor *InputX() const { return input_x_; }
+
+  const Tensor *InputBias() const { return input_bias_; }
+
+  Tensor *Out() const { return out_; }
+
+  const bool &Inplace() const { return inplace_; }
+
+  const bool &HasBias() const { return has_bias_; }
+
+  const vector<float> &Scales() const { return scales_; }
+
+  const vector<float> &Biases() const { return biases_; }
+
+ private:
+  Tensor *input_x_;
+  Tensor *input_bias_;
+  Tensor *out_;
+  bool inplace_;
+  bool has_bias_;
+  vector<float> scales_;
+  vector<float> biases_;
+};
+#endif
+
+#ifdef SLICE_OP
+class SliceParam : public OpParam {
+ public:
+  SliceParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+             const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    input_shape_ = InputShapeFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
+    axis_ = GetAttr<int>("axis", attrs);
+    slice_points_ = GetAttr<vector<int>>("slice_points", attrs);
+    inplace_ = GetAttr<bool>("inplace", attrs);
+  }
+
+  const Tensor *InputX() const { return input_x_; }
+
+  const Tensor *InputShape() const { return input_shape_; }
+
+  Tensor *Out() const { return out_; }
+
+  const int &Axis() const { return axis_; }
+
+  const vector<int> &SlicePoints() const { return slice_points_; }
+
+  const bool &Inplace() const { return inplace_; }
+
+ private:
+  Tensor *input_x_;
+  Tensor *input_shape_;
+  Tensor *out_;
+  int axis_;
+  vector<int> slice_points_;
+  bool inplace_;
+};
+#endif
+
+#ifdef RESIZE_OP
+class ResizeParam : public OpParam {
+ public:
+  ResizeParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+              const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    input_shape_ = InputShapeFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
+    is_pyramid_test_ = GetAttr<bool>("is_pyramid_test", attrs);
+    height_ = GetAttr<int>("height", attrs);
+    width_ = GetAttr<int>("width", attrs);
+    out_height_scale_ = GetAttr<float>("out_height_scale", attrs);
+    out_width_scale_ = GetAttr<float>("out_width_scale", attrs);
+  }
+
+  const Tensor *InputX() const { return input_x_; }
+
+  const Tensor *InputShape() const { return input_shape_; }
+
+  Tensor *Out() const { return out_; }
+
+  const bool &IsPyramidTest() const { return is_pyramid_test_; }
+
+  const int &Height() const { return height_; }
+
+  const int &Width() const { return width_; }
+
+  const float &OutHeightScale() const { return out_height_scale_; }
+
+  const float &OutWidthScale() const { return out_width_scale_; }
+
+ private:
+  Tensor *input_x_;
+  Tensor *input_shape_;
+  Tensor *out_;
+  bool is_pyramid_test_;
+  int height_;
+  int width_;
+  float out_height_scale_;
+  float out_width_scale_;
+};
+#endif
+
 #ifdef RELU_OP
 /*
  * @b op 层实例化好这个 param 传递给 kernel 层使用
@@ -751,7 +885,27 @@ class ReluParam : public OpParam {
 };
 #endif
 
-#ifdef FUSION_FC_OP
+#ifdef PRELU_OP
+class PReluParam : public OpParam {
+ public:
+  PReluParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+             const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
+    slopes_ = GetAttr<vector<float>>("slopes", attrs);
+  }
+
+  const Tensor *InputX() const { return input_x_; }
+  Tensor *Out() const { return out_; }
+  const vector<float> &Slopes() const { return slopes_; }
+
+ private:
+  Tensor *input_x_;
+  Tensor *out_;
+  vector<float> slopes_;
+};
+#endif
+
 class FusionFcParam : public OpParam {
  public:
   FusionFcParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
@@ -766,7 +920,11 @@ class FusionFcParam : public OpParam {
   }
   const Tensor *InputX() const { return input_x_; }
 
+#ifdef PADDLE_MOBILE_FPGA
+  Tensor *InputY() const { return input_y_; }
+#else
   const Tensor *InputY() const { return input_y_; }
+#endif
 
   const Tensor *InputZ() const { return input_z_; }
 
@@ -786,10 +944,21 @@ class FusionFcParam : public OpParam {
   int x_num_col_dims_;
   int y_num_col_dims_;
   int axis_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::ConvArgs fpga_conv_args;
+
+ public:
+  const fpga::ConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::ConvArgs &args) { fpga_conv_args = args; }
+#endif
 };
+
+#ifdef FUSION_FCRELU_OP
+using FusionFcReluParam = FusionFcParam;
 #endif
 
-#ifdef FUSION_CONVADD_OP
 class FusionConvAddParam : public OpParam {
  public:
   FusionConvAddParam(const VariableNameMap &inputs,
@@ -811,7 +980,11 @@ class FusionConvAddParam : public OpParam {
 
   const Tensor *Input() const { return input_; }
 
+#ifdef PADDLE_MOBILE_FPGA
+  Tensor *Filter() const { return filter_; }
+#else
   const Tensor *Filter() const { return filter_; }
+#endif
 
   Tensor *Output() const { return output_; }
 
@@ -833,18 +1006,471 @@ class FusionConvAddParam : public OpParam {
   vector<int> paddings_;
   vector<int> dilations_;
   int groups;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::ConvArgs fpga_conv_args;
+
+ public:
+  const fpga::ConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::ConvArgs &args) { fpga_conv_args = args; }
+#endif
 };
 
 Print &operator<<(Print &printer, const FusionConvAddParam &conv_param);
-#endif
 
-#ifdef FUSION_CONVADD_RELU_OP
+#ifdef FUSION_CONVADDRELU_OP
 class FusionConvAddReluParam : public FusionConvAddParam {
  public:
   FusionConvAddReluParam(const VariableNameMap &inputs,
                          const VariableNameMap &outputs,
                          const AttributeMap &attrs, const Scope &scope)
       : FusionConvAddParam(inputs, outputs, attrs, scope) {}
+};
+#endif
+
+#ifdef FUSION_CONVADDBNRELU_OP
+class FusionConvAddBNReluParam : public OpParam {
+ public:
+  FusionConvAddBNReluParam(const VariableNameMap &inputs,
+                           const VariableNameMap &outputs,
+                           const AttributeMap &attrs, const Scope &scope) {
+    bias_ = InputYFrom<LoDTensor>(inputs, scope);
+    axis_ = GetAttr<int>("axis", attrs);
+    filter_ = FilterFrom<LoDTensor>(inputs, scope);
+    input_ = InputFrom<LoDTensor>(inputs, scope);
+    output_ = OutFrom<LoDTensor>(outputs, scope);
+    strides_ = GetAttr<vector<int>>("strides", attrs);
+    paddings_ = GetAttr<vector<int>>("paddings", attrs);
+    dilations_ = GetAttr<vector<int>>("dilations", attrs);
+    groups = GetAttr<int>("groups", attrs);
+    input_bias_ = InputBiasFrom<LoDTensor>(inputs, scope);
+    input_mean_ = InputMeanFrom<LoDTensor>(inputs, scope);
+    input_scale_ = InputScaleFrom<LoDTensor>(inputs, scope);
+    input_variance_ = InputVarianceFrom<LoDTensor>(inputs, scope);
+    epsilon_ = GetAttr<float>("epsilon", attrs);
+    momentum_ = GetAttr<float>("momentum", attrs);
+    //    is_test_ = GetAttr<bool>("is_test", attrs);
+  }
+  Tensor *Bias() const { return bias_; }
+
+  const int &Axis() const { return axis_; }
+
+  const Tensor *Input() const { return input_; }
+
+#ifdef PADDLE_MOBILE_FPGA
+  Tensor *Filter() const { return filter_; }
+#else
+  const Tensor *Filter() const { return filter_; }
+#endif
+
+  Tensor *Output() const { return output_; }
+
+  const vector<int> &Strides() const { return strides_; }
+
+  const vector<int> &Paddings() const { return paddings_; }
+
+  const vector<int> &Dilations() const { return dilations_; }
+
+  const int &Groups() const { return groups; }
+
+  const Tensor *InputBias() const { return input_bias_; }
+
+  const Tensor *InputMean() const { return input_mean_; }
+
+  const Tensor *InputScale() const { return input_scale_; }
+
+  const Tensor *InputVariance() const { return input_variance_; }
+
+  const float &Epsilon() const { return epsilon_; }
+
+  const float &Momentum() const { return momentum_; }
+
+  const bool &IsTest() const { return is_test_; }
+
+  void SetNewScale(Tensor *new_scale) { new_scale_ = new_scale; }
+
+  void SetNewBias(Tensor *new_bias) { new_bias_ = new_bias; }
+
+  const Tensor *NewScale() const { return new_scale_; }
+
+  const Tensor *NewBias() const { return new_bias_; }
+
+ protected:
+  Tensor *bias_;
+  int axis_;
+  Tensor *input_;
+  Tensor *output_;
+  Tensor *filter_;
+  vector<int> strides_;
+  vector<int> paddings_;
+  vector<int> dilations_;
+  int groups;
+  Tensor *input_bias_;
+  Tensor *input_mean_;
+  Tensor *input_scale_;
+  Tensor *input_variance_;
+  float epsilon_;
+  float momentum_;
+  bool is_test_;
+  Tensor *new_bias_;
+  Tensor *new_scale_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::ConvArgs fpga_conv_args;
+
+ public:
+  const fpga::ConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::ConvArgs &args) { fpga_conv_args = args; }
+#endif
+};
+#endif
+
+#ifdef FUSION_CONVADDBN_OP
+class FusionConvAddBNParam : public OpParam {
+ public:
+  FusionConvAddBNParam(const VariableNameMap &inputs,
+                       const VariableNameMap &outputs,
+                       const AttributeMap &attrs, const Scope &scope) {
+    bias_ = InputYFrom<LoDTensor>(inputs, scope);
+    axis_ = GetAttr<int>("axis", attrs);
+    filter_ = FilterFrom<LoDTensor>(inputs, scope);
+    input_ = InputFrom<LoDTensor>(inputs, scope);
+    output_y_ = OutputYFrom<LoDTensor>(outputs, scope);
+    strides_ = GetAttr<vector<int>>("strides", attrs);
+    paddings_ = GetAttr<vector<int>>("paddings", attrs);
+    dilations_ = GetAttr<vector<int>>("dilations", attrs);
+    groups = GetAttr<int>("groups", attrs);
+    input_bias_ = InputBiasFrom<LoDTensor>(inputs, scope);
+    input_mean_ = InputMeanFrom<LoDTensor>(inputs, scope);
+    input_scale_ = InputScaleFrom<LoDTensor>(inputs, scope);
+    input_variance_ = InputVarianceFrom<LoDTensor>(inputs, scope);
+    epsilon_ = GetAttr<float>("epsilon", attrs);
+    momentum_ = GetAttr<float>("momentum", attrs);
+    //    is_test_ = GetAttr<bool>("is_test", attrs);
+  }
+  Tensor *Bias() const { return bias_; }
+
+  const int &Axis() const { return axis_; }
+
+  const Tensor *Input() const { return input_; }
+
+#ifdef PADDLE_MOBILE_FPGA
+  Tensor *Filter() const { return filter_; }
+#else
+  const Tensor *Filter() const { return filter_; }
+#endif
+  Tensor *Output() const { return output_y_; }
+
+  const vector<int> &Strides() const { return strides_; }
+
+  const vector<int> &Paddings() const { return paddings_; }
+
+  const vector<int> &Dilations() const { return dilations_; }
+
+  const int &Groups() const { return groups; }
+
+  const Tensor *InputBias() const { return input_bias_; }
+
+  const Tensor *InputMean() const { return input_mean_; }
+
+  const Tensor *InputScale() const { return input_scale_; }
+
+  const Tensor *InputVariance() const { return input_variance_; }
+
+  const float &Epsilon() const { return epsilon_; }
+
+  const float &Momentum() const { return momentum_; }
+
+  const bool &IsTest() const { return is_test_; }
+
+  void SetNewScale(Tensor *new_scale) { new_scale_ = new_scale; }
+
+  void SetNewBias(Tensor *new_bias) { new_bias_ = new_bias; }
+
+  const Tensor *NewScale() const { return new_scale_; }
+
+  const Tensor *NewBias() const { return new_bias_; }
+
+ protected:
+  Tensor *bias_;
+  int axis_;
+  Tensor *input_;
+  Tensor *output_y_;
+  Tensor *filter_;
+  vector<int> strides_;
+  vector<int> paddings_;
+  vector<int> dilations_;
+  int groups;
+  Tensor *input_bias_;
+  Tensor *input_mean_;
+  Tensor *input_scale_;
+  Tensor *input_variance_;
+  float epsilon_;
+  float momentum_;
+  bool is_test_;
+  Tensor *new_bias_;
+  Tensor *new_scale_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::ConvArgs fpga_conv_args;
+
+ public:
+  const fpga::ConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::ConvArgs &args) { fpga_conv_args = args; }
+#endif
+};
+#endif
+
+#ifdef FUSION_DWCONVBNRELU_OP
+class FusionDWConvBNReluParam : public OpParam {
+ public:
+  FusionDWConvBNReluParam(const VariableNameMap &inputs,
+                          const VariableNameMap &outputs,
+                          const AttributeMap &attrs, const Scope &scope) {
+    filter_ = FilterFrom<LoDTensor>(inputs, scope);
+    input_ = InputFrom<LoDTensor>(inputs, scope);
+    output_ = OutFrom<LoDTensor>(outputs, scope);
+    strides_ = GetAttr<vector<int>>("strides", attrs);
+    paddings_ = GetAttr<vector<int>>("paddings", attrs);
+    dilations_ = GetAttr<vector<int>>("dilations", attrs);
+    groups = GetAttr<int>("groups", attrs);
+    input_bias_ = InputBiasFrom<LoDTensor>(inputs, scope);
+    input_mean_ = InputMeanFrom<LoDTensor>(inputs, scope);
+    input_scale_ = InputScaleFrom<LoDTensor>(inputs, scope);
+    input_variance_ = InputVarianceFrom<LoDTensor>(inputs, scope);
+    epsilon_ = GetAttr<float>("epsilon", attrs);
+    momentum_ = GetAttr<float>("momentum", attrs);
+    //    is_test_ = GetAttr<bool>("is_test", attrs);
+  }
+
+  const Tensor *Input() const { return input_; }
+
+  const Tensor *Filter() const { return filter_; }
+
+  Tensor *Output() const { return output_; }
+
+  const vector<int> &Strides() const { return strides_; }
+
+  const vector<int> &Paddings() const { return paddings_; }
+
+  const vector<int> &Dilations() const { return dilations_; }
+
+  const int &Groups() const { return groups; }
+
+  const Tensor *InputBias() const { return input_bias_; }
+
+  const Tensor *InputMean() const { return input_mean_; }
+
+  const Tensor *InputScale() const { return input_scale_; }
+
+  const Tensor *InputVariance() const { return input_variance_; }
+
+  const float &Epsilon() const { return epsilon_; }
+
+  const float &Momentum() const { return momentum_; }
+
+  const bool &IsTest() const { return is_test_; }
+
+  void SetNewScale(Tensor *new_scale) { new_scale_ = new_scale; }
+
+  void SetNewBias(Tensor *new_bias) { new_bias_ = new_bias; }
+
+  const Tensor *NewScale() const { return new_scale_; }
+
+  const Tensor *NewBias() const { return new_bias_; }
+
+ protected:
+  Tensor *input_;
+  Tensor *output_;
+  Tensor *filter_;
+  vector<int> strides_;
+  vector<int> paddings_;
+  vector<int> dilations_;
+  int groups;
+  Tensor *input_bias_;
+  Tensor *input_mean_;
+  Tensor *input_scale_;
+  Tensor *input_variance_;
+  float epsilon_;
+  float momentum_;
+  bool is_test_;
+  Tensor *new_bias_;
+  Tensor *new_scale_;
+};
+
+Print &operator<<(Print &printer, const FusionConvAddParam &conv_param);
+#endif
+
+#ifdef FUSION_CONVBNRELU_OP
+class FusionConvBNReluParam : public OpParam {
+ public:
+  FusionConvBNReluParam(const VariableNameMap &inputs,
+                        const VariableNameMap &outputs,
+                        const AttributeMap &attrs, const Scope &scope) {
+    filter_ = FilterFrom<LoDTensor>(inputs, scope);
+    input_ = InputFrom<LoDTensor>(inputs, scope);
+    output_ = OutFrom<LoDTensor>(outputs, scope);
+
+    strides_ = GetAttr<vector<int>>("strides", attrs);
+    paddings_ = GetAttr<vector<int>>("paddings", attrs);
+    dilations_ = GetAttr<vector<int>>("dilations", attrs);
+    groups = GetAttr<int>("groups", attrs);
+    input_bias_ = InputBiasFrom<LoDTensor>(inputs, scope);
+    input_mean_ = InputMeanFrom<LoDTensor>(inputs, scope);
+    input_scale_ = InputScaleFrom<LoDTensor>(inputs, scope);
+    input_variance_ = InputVarianceFrom<LoDTensor>(inputs, scope);
+    epsilon_ = GetAttr<float>("epsilon", attrs);
+    momentum_ = GetAttr<float>("momentum", attrs);
+    //    is_test_ = GetAttr<bool>("is_test", attrs);
+  }
+
+  const Tensor *Input() const { return input_; }
+
+  const Tensor *Filter() const { return filter_; }
+
+  Tensor *Output() const { return output_; }
+
+  const vector<int> &Strides() const { return strides_; }
+
+  const vector<int> &Paddings() const { return paddings_; }
+
+  const vector<int> &Dilations() const { return dilations_; }
+
+  const int &Groups() const { return groups; }
+
+  const Tensor *InputBias() const { return input_bias_; }
+
+  const Tensor *InputMean() const { return input_mean_; }
+
+  const Tensor *InputScale() const { return input_scale_; }
+
+  const Tensor *InputVariance() const { return input_variance_; }
+
+  const float &Epsilon() const { return epsilon_; }
+
+  const float &Momentum() const { return momentum_; }
+
+  const bool &IsTest() const { return is_test_; }
+
+  void SetNewScale(Tensor *new_scale) { new_scale_ = new_scale; }
+
+  void SetNewBias(Tensor *new_bias) { new_bias_ = new_bias; }
+
+  const Tensor *NewScale() const { return new_scale_; }
+
+  const Tensor *NewBias() const { return new_bias_; }
+
+ protected:
+  Tensor *input_;
+  Tensor *output_;
+  Tensor *filter_;
+  vector<int> strides_;
+  vector<int> paddings_;
+  vector<int> dilations_;
+  int groups;
+  Tensor *input_bias_;
+  Tensor *input_mean_;
+  Tensor *input_scale_;
+  Tensor *input_variance_;
+  float epsilon_;
+  float momentum_;
+  bool is_test_;
+  Tensor *new_bias_;
+  Tensor *new_scale_;
+};
+#endif
+
+#ifdef IM2SEQUENCE_OP
+class Im2SequenceParam : public OpParam {
+ public:
+  Im2SequenceParam(const VariableNameMap &inputs,
+                   const VariableNameMap &outputs, const AttributeMap &attrs,
+                   const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
+    kernels_ = GetAttr<vector<int>>("kernels", attrs);
+    strides_ = GetAttr<vector<int>>("strides", attrs);
+    paddings_ = GetAttr<vector<int>>("paddings", attrs);
+  }
+
+  const Tensor *Input() const { return input_x_; }
+
+  Tensor *Output() const { return out_; }
+
+  const vector<int> &Kernels() const { return kernels_; }
+
+  const vector<int> &Strides() const { return strides_; }
+
+  const vector<int> &Paddings() const { return paddings_; }
+
+ private:
+  Tensor *input_x_;
+  Tensor *out_;
+  vector<int> kernels_;
+  vector<int> strides_;
+  vector<int> paddings_;
+};
+#endif
+
+#ifdef DROPOUT_OP
+class DropoutParam : public OpParam {
+ public:
+  DropoutParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+               const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
+  }
+
+  const Tensor *InputX() const { return input_x_; }
+
+  Tensor *Out() const { return out_; }
+
+ private:
+  Tensor *input_x_;
+  Tensor *out_;
+};
+#endif
+
+#ifdef CONV_TRANSPOSE
+class ConvTransposeParam : public OpParam {
+ public:
+  ConvTransposeParam(const VariableNameMap &inputs,
+                     const VariableNameMap &outputs, const AttributeMap &attrs,
+                     const Scope &scope) {
+    filter_ = FilterFrom<LoDTensor>(inputs, scope);
+    input_ = InputFrom<LoDTensor>(inputs, scope);
+    output_ = OutputFrom<LoDTensor>(outputs, scope);
+    strides_ = GetAttr<vector<int>>("strides", attrs);
+    paddings_ = GetAttr<vector<int>>("paddings", attrs);
+    dilations_ = GetAttr<vector<int>>("dilations", attrs);
+    groups = GetAttr<int>("groups", attrs);
+  }
+
+  const Tensor *Input() const { return input_; }
+
+  const Tensor *Filter() const { return filter_; }
+
+  Tensor *Output() const { return output_; }
+
+  const vector<int> &Strides() const { return strides_; }
+
+  const vector<int> &Paddings() const { return paddings_; }
+
+  const vector<int> &Dilations() const { return dilations_; }
+
+  const int &Groups() const { return groups; }
+
+ private:
+  Tensor *input_;
+  Tensor *output_;
+  Tensor *filter_;
+  vector<int> strides_;
+  vector<int> paddings_;
+  vector<int> dilations_;
+  int groups;
 };
 #endif
 

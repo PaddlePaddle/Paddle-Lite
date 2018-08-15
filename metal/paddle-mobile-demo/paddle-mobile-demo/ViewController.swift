@@ -20,17 +20,17 @@ import MetalPerformanceShaders
 let threadSupport = [1]
 
 class ViewController: UIViewController {
+    @IBOutlet weak var resultTextView: UITextView!
     @IBOutlet weak var selectImageView: UIImageView!
     @IBOutlet weak var elapsedTimeLabel: UILabel!
-    @IBOutlet weak var resultLabel: UILabel!
     @IBOutlet weak var modelPickerView: UIPickerView!
     @IBOutlet weak var threadPickerView: UIPickerView!
     var selectImage: UIImage?
-
     var program: Program?
     var executor: Executor<Float32>?
     var modelType: SupportModel = .mobilenet
-    var modelHelper: ModelHelper {
+    var toPredictTexture: MTLTexture?
+    var modelHelper: Net {
         return modelHelperMap[modelType] ?! " has no this type "
     }
     var threadNum = 1
@@ -65,39 +65,40 @@ class ViewController: UIViewController {
     }
     
     @IBAction func predictAct(_ sender: Any) {        
-        guard let inImage = selectImage, let cgImage = inImage.cgImage else {
-            resultLabel.text = "请选择图片 ! "
+        guard let inTexture = toPredictTexture else {
+            resultTextView.text = "请选择图片 ! "
             return
         }
         
         guard let inExecutor = executor else {
-            resultLabel.text = "请先 load ! "
+            resultTextView.text = "请先 load ! "
             return
         }
-        
-        modelHelper.getTexture(image: cgImage) { [weak self] (texture) in
-            guard let sSelf = self else {
-                fatalError()
-            }
-            do {
-                try inExecutor.predict(input: texture, expect: [1, 224, 224, 3], completionHandle: { (result) in
-                }, preProcessKernle: sSelf.modelHelper.preprocessKernel)
-                
-                let startDate = Date.init()
-                for i in 0..<10 {
-                    try inExecutor.predict(input: texture, expect: [1, 224, 224, 3], completionHandle: { (result) in
-                        if i == 9 {
-                            let time = Date.init().timeIntervalSince(startDate)
-                            DispatchQueue.main.async {
-                                sSelf.resultLabel.text = sSelf.modelHelper.resultStr(res: result.resultArr)
-                                sSelf.elapsedTimeLabel.text = "平均耗时: \(time/10.0) ms"
-                            }
+
+        do {
+            let max = 10
+            var startDate = Date.init()
+            for i in 0..<max {
+                try inExecutor.predict(input: inTexture, expect: modelHelper.dim, completionHandle: { [weak self] (result) in
+                    guard let sSelf = self else {
+                        fatalError()
+                    }
+                    
+                    if i == (max / 2 - 1) {
+                        startDate = Date.init()
+                    }
+                    
+                    if i == max - 1 {
+                        let time = Date.init().timeIntervalSince(startDate)
+                        DispatchQueue.main.async {
+                            sSelf.resultTextView.text = sSelf.modelHelper.resultStr(res: result.resultArr)
+                            sSelf.elapsedTimeLabel.text = "平均耗时: \(time/Double(max/2) * 1000.0) ms"
                         }
-                    }, preProcessKernle: sSelf.modelHelper.preprocessKernel)
-                }
-            } catch let error {
-                print(error)
+                    }
+                }, preProcessKernle: self.modelHelper.preprocessKernel)
             }
+        } catch let error {
+            print(error)
         }
     }
 
@@ -110,6 +111,9 @@ class ViewController: UIViewController {
         
         selectImage = UIImage.init(named: "banana.jpeg")
         selectImageView.image = selectImage
+        modelHelper.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
+            self?.toPredictTexture = texture
+        }
     }
 }
 
@@ -163,6 +167,9 @@ extension ViewController:  UIImagePickerControllerDelegate, UINavigationControll
             }
             sSelf.selectImage = image
             sSelf.selectImageView.image = image
+            sSelf.modelHelper.getTexture(image: image.cgImage!, getTexture: { (texture) in
+                sSelf.toPredictTexture = texture
+            })
         }
     }
 }

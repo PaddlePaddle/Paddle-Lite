@@ -92,7 +92,7 @@ class ConvAddBatchNormReluOp<P: PrecisionType>: Operator<ConvAddBatchNormReluKer
     static func fusionNode() -> Node {
         let beginNode = Node.init(inType: gConvType)
         _ = beginNode
-            --> Node.init(inType: gElementwiseAdd)
+            --> Node.init(inType: gElementwiseAddType)
             --> Node.init(inType: gBatchNormType)
             --> Node.init(inType: gReluType)
         return beginNode

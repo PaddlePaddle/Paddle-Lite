@@ -29,8 +29,7 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
          std::shared_ptr<framework::Scope> scope)
       : framework::OperatorBase<DeviceType>(type, inputs, outputs, attrs,
                                             scope),
-        param_(inputs, outputs, attrs, *scope) {}
-  void RunImpl() const { param_.Out()->ShareDataWith(*param_.InputX()); }
+        param_(inputs, outputs, attrs, scope.get()) {}
 
   void InferShape() const {
     auto out_dims = param_.Out()->dims();
@@ -38,19 +37,42 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
     param_.Out()->Resize(out_dims);
   }
 
+#ifdef PADDLE_MOBILE_FPGA
+  void RunImpl() const { fpga::PerformBypass(param_.FpgaArgs()); }
+  void Init() {
+    const Tensor *input = param_.InputX();
+    auto input_ptr = input->data<float>();
+    Tensor *output = param_.Out();
+    auto output_ptr = output->mutable_data<half>();
+    fpga::BypassArgs args;
+    args.convert_type = fpga::DATA_FP32_TO_FP16;
+    args.layout_type = fpga::LAYOUT_CHW_TO_HWC;
+    args.image.address = (void *)input_ptr;
+    args.image.channels = input->dims()[1];
+    args.image.height = input->dims()[2];
+    args.image.width = input->dims()[3];
+    args.output.address = output_ptr;
+    param_.SetFpgaArgs(args);
+  }
+
+#else
+  void RunImpl() const { param_.Out()->ShareDataWith(*param_.InputX()); }
+  void Init() {}
+#endif
+
  protected:
   FeedParam param_;
 };
 
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(feed);
-REGISTER_OPERATOR_CPU(feed, ops::FeedOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-#endif
-
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(feed);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(feed);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+USE_OP_FPGA(feed);
+#endif

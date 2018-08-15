@@ -17,7 +17,7 @@ limitations under the License. */
 #pragma once
 
 #include "framework/tensor.h"
-#if __ARM_NEON
+#ifdef __ARM_NEON
 #include <arm_neon.h>
 #endif  // __ARM_NEON
 namespace paddle_mobile {

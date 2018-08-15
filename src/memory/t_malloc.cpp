@@ -12,16 +12,36 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
-
 #include "memory/t_malloc.h"
 #include <cstdlib>
 #include <cstring>
+
+#ifdef PADDLE_MOBILE_FPGA
+
+#include "fpga/api/fpga_api.h"
+
+#endif
 
 namespace paddle_mobile {
 namespace memory {
 const int MALLOC_ALIGN = 64;
 
+#ifdef PADDLE_MOBILE_FPGA
+namespace fpga = paddle_mobile::fpga;
+
+void Copy(void *dst, const void *src, size_t num) {
+  std::memcpy(dst, src, num);
+}
+
+void *Alloc(size_t size) { return fpga::fpga_malloc(size); }
+
+void Free(void *ptr) {
+  if (ptr) {
+    fpga::fpga_free(ptr);
+  }
+}
+
+#else
 void Copy(void *dst, const void *src, size_t num) {
   std::memcpy(dst, src, num);
 }
@@ -43,6 +63,8 @@ void Free(void *ptr) {
     free(static_cast<void **>(ptr)[-1]);
   }
 }
+
+#endif
 
 }  // namespace memory
 }  // namespace paddle_mobile

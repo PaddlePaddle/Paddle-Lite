@@ -46,7 +46,7 @@ class ConvAddOp<P: PrecisionType>: Operator<ConvAddKernel<P>, ConvAddParam<P>>, 
     static func fusionNode() -> Node {
         let beginNode = Node.init(inType: gConvType)
         _ = beginNode
-            --> Node.init(inType: gElementwiseAdd)
+            --> Node.init(inType: gElementwiseAddType)
         return beginNode
     }
     

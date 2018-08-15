@@ -14,7 +14,7 @@ limitations under the License. */
 
 #pragma once
 
-#ifdef FUSION_CONVADD_RELU_OP
+#ifdef FUSION_CONVADDRELU_OP
 
 #include <vector>
 #include "framework/ddim.h"
@@ -36,6 +36,7 @@ class ConvAddReluKernel
     : public OpKernelBase<DeviceType, FusionConvAddReluParam> {
  public:
   void Compute(const FusionConvAddReluParam &param) const;
+  bool Init(FusionConvAddReluParam *param);
 };
 
 }  // namespace operators
