@@ -47,7 +47,7 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
     fpga::BypassArgs args;
     args.convert_type = fpga::DATA_FP32_TO_FP16;
     args.layout_type = fpga::LAYOUT_CHW_TO_HWC;
-    args.image.address = nullptr;
+    args.image.address = (void *)input_ptr;
     args.image.channels = input->dims()[1];
     args.image.height = input->dims()[2];
     args.image.width = input->dims()[3];
