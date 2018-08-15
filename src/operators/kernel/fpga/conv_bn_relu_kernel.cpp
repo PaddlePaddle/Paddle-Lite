@@ -46,8 +46,7 @@ bool ConvBNReluKernel<FPGA, float>::Init(FusionConvBNReluParam *param) {
   for (int i = 0; i < channel; i++) {
     new_scale_ptr[i] = bn_scale_ptr[i] /
                        static_cast<float>(pow((bn_var_ptr[i] + epsilon), 0.5));
-    new_bias_ptr[i] =
-        bn_bias_ptr[i] + (0 - bn_mean_ptr[i]) * new_scale_ptr[i];
+    new_bias_ptr[i] = bn_bias_ptr[i] + (0 - bn_mean_ptr[i]) * new_scale_ptr[i];
     bs_ptr[i * 2] = new_scale_ptr[i];
     bs_ptr[i * 2 + 1] = new_bias_ptr[i];
   }
