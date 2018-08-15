@@ -12,16 +12,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVBNRELU_OP
+#ifdef FUSION_CONVBN_OP
 
-#include "operators/fusion_conv_bn_relu_op.h"
-#include "operators/math/conv_func.h"
+#include "operators/fusion_conv_bn_op.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
-void FusionConvBNReluOp<Dtype, T>::InferShape() const {
+void FusionConvBNOp<Dtype, T>::InferShape() const {
   auto in_dims = this->param_.Input()->dims();
   auto filter_dims = this->param_.Filter()->dims();
   const std::vector<int> &strides = this->param_.Strides();
@@ -50,12 +49,12 @@ void FusionConvBNReluOp<Dtype, T>::InferShape() const {
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(fusion_conv_bn_relu, ops::FusionConvBNReluOp);
+REGISTER_OPERATOR_CPU(fusion_conv_bn, ops::FusionConvBNOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
 #endif
 #ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(fusion_conv_bn_relu, ops::FusionConvBNReluOp);
+REGISTER_OPERATOR_FPGA(fusion_conv_bn, ops::FusionConvBNOp);
 #endif
 
 #endif

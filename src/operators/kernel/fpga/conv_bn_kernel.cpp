@@ -12,34 +12,50 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVADDRELU_OP
+#ifdef FUSION_CONVBN_OP
 
-#include "operators/kernel/conv_add_relu_kernel.h"
+#include "operators/kernel/conv_bn_kernel.h"
+#include "fpga/api/fpga_api.h"
 #include "fpga/fpga_quantilization.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam *param) {
-  bool relu_enabled = true;
+bool ConvBNKernel<FPGA, float>::Init(FusionConvBNParam *param) {
+  bool relu_enabled = false;
   const Tensor *input = param->Input();
   auto input_ptr = input->data<half>();
-  const Tensor *bias = param->Bias();
-  auto bias_ptr = bias->data<float>();
   Tensor *filter = param->Filter();
+
   Tensor *out = param->Output();
   auto out_ptr = out->mutable_data<half>();
-
-  PADDLE_MOBILE_ENFORCE(input->dims()[1] == bias->dims()[0],
+  auto bn_mean_ptr = param->InputMean()->data<float>();
+  auto bn_var_ptr = param->InputVariance()->data<float>();
+  auto bn_scale_ptr = param->InputScale()->data<float>();
+  auto bn_bias_ptr = param->InputBias()->data<float>();
+  const float epsilon = param->Epsilon();
+  PADDLE_MOBILE_ENFORCE(input->dims()[1] == param->InputBias()->dims()[0],
                         "Image channel should be equal to bias number");
-  int channel = input->dims()[1];
-  float *bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sizeof(float));
-  for (int i = 0; i < channel; i++) {
-    bs_ptr[i * 2] = 1;
-    bs_ptr[i * 2 + 1] = bias_ptr[i];
-  }
 
+  const int channel = input->dims()[1];
+  float *bs_ptr =
+      reinterpret_cast<float *>(fpga::fpga_malloc(2 * channel * sizeof(float)));
+  Tensor *new_scale = new Tensor();
+  Tensor *new_bias = new Tensor();
+  auto new_scale_ptr = new_scale->mutable_data<float>({channel});
+  auto new_bias_ptr = new_bias->mutable_data<float>({channel});
+
+  for (int i = 0; i < channel; i++) {
+    new_scale_ptr[i] = bn_scale_ptr[i] /
+                       static_cast<float>(pow((bn_var_ptr[i] + epsilon), 0.5));
+    new_bias_ptr[i] =
+        bn_bias_ptr[i] + (0 - bn_mean_ptr[i]) * new_scale_ptr[i];
+    bs_ptr[i * 2] = new_scale_ptr[i];
+    bs_ptr[i * 2 + 1] = new_bias_ptr[i];
+  }
+  param->SetNewScale(new_scale);
+  param->SetNewBias(new_bias);
   fpga::quantify_filter(filter);
   auto filter_ptr = filter->data<float>();
 
@@ -57,22 +73,22 @@ bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam *param) {
   convArgs.image.channels = input->dims()[1];
   convArgs.image.height = input->dims()[2];
   convArgs.image.width = input->dims()[3];
-
   convArgs.image.pad_height = param->Paddings()[0];
   convArgs.image.pad_width = param->Paddings()[1];
   convArgs.image.scale_address = input->fpga_args().scale_pointer();
   convArgs.output.address = (void *)out_ptr;
   convArgs.output.scale_address = out->fpga_args().scale_pointer();
   param->SetFpgaArgs(convArgs);
+
   return true;
 }
 
 template <>
-void ConvAddReluKernel<FPGA, float>::Compute(
-    const FusionConvAddReluParam &param) const {
+void ConvBNKernel<FPGA, float>::Compute(
+    const FusionConvBNParam &param) const {
   fpga::ComputeFpgaConv(param.FpgaArgs());
 }
-template class ConvAddReluKernel<FPGA, float>;
+template class ConvBNKernel<FPGA, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
