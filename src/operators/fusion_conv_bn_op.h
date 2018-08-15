@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVBNRELU_OP
+#ifdef FUSION_CONVBN_OP
 
 #pragma once
 
@@ -20,19 +20,18 @@ limitations under the License. */
 #include <vector>
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
-#include "operators/kernel/conv_bn_relu_kernel.h"
+#include "operators/kernel/conv_bn_kernel.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 using std::string;
 using std::vector;
-class FusionConvBNReluMatcher : public framework::FusionOpMatcher {
+class FusionConvBNMatcher : public framework::FusionOpMatcher {
  public:
-  FusionConvBNReluMatcher() {
+  FusionConvBNMatcher() {
     node_ = framework::Node(G_OP_TYPE_CONV);
-    node_ > std::make_shared<framework::Node>(G_OP_TYPE_BATCHNORM) >
-        std::make_shared<framework::Node>(G_OP_TYPE_RELU);
+    node_ > std::make_shared<framework::Node>(G_OP_TYPE_BATCHNORM);
   }
 
   void FolderNodes(
@@ -47,26 +46,23 @@ class FusionConvBNReluMatcher : public framework::FusionOpMatcher {
                  removed_nodes);
   }
 
-  std::string Type() { return G_OP_TYPE_FUSION_CONV_BN_RELU; }
+  std::string Type() { return G_OP_TYPE_FUSION_CONV_BN; }
 };
 
 template <typename DeviceType, typename T>
-class FusionConvBNReluOp : public framework::OperatorWithKernel<
-                               DeviceType, FusionConvBNReluParam,
-                               operators::ConvBNReluKernel<DeviceType, T>> {
+class FusionConvBNOp : public framework::OperatorWithKernel<
+                               DeviceType, FusionConvBNParam,
+                               operators::ConvBNKernel<DeviceType, T>> {
  public:
-  FusionConvBNReluOp(const string &type, const VariableNameMap &inputs,
+  FusionConvBNOp(const string &type, const VariableNameMap &inputs,
                      const VariableNameMap &outputs,
                      const framework::AttributeMap &attrs,
                      std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<
-            DeviceType, FusionConvBNReluParam,
-            operators::ConvBNReluKernel<DeviceType, T>>(type, inputs, outputs,
+            DeviceType, FusionConvBNParam,
+            operators::ConvBNKernel<DeviceType, T>>(type, inputs, outputs,
                                                         attrs, scope) {}
 
-  using framework::OperatorWithKernel<
-      DeviceType, FusionConvBNReluParam,
-      operators::ConvBNReluKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:
@@ -74,10 +70,10 @@ class FusionConvBNReluOp : public framework::OperatorWithKernel<
 
 #ifdef PADDLE_MOBILE_CPU
 
-#ifndef FUSION_CONV_BN_RELU_REGISTER
-static framework::FusionOpRegistrar fusion_conv_bn_relu_registrar(
-    new FusionConvBNReluMatcher());
-#define FUSION_CONV_BN_RELU_REGISTER
+#ifndef FUSION_CONV_BN_REGISTER
+static framework::FusionOpRegistrar fusion_conv_bn_registrar(
+    new FusionConvBNMatcher());
+#define FUSION_CONV_BN_REGISTER
 #endif
 
 #endif
@@ -88,10 +84,10 @@ static framework::FusionOpRegistrar fusion_conv_bn_relu_registrar(
 
 #ifdef PADDLE_MOBILE_FPGA
 
-#ifndef FUSION_CONV_BN_RELU_REGISTER
-static framework::FusionOpRegistrar fusion_conv_bn_relu_registrar(
-    new FusionConvBNReluMatcher());
-#define FUSION_CONV_BN_RELU_REGISTER
+#ifndef FUSION_CONV_BN_REGISTER
+static framework::FusionOpRegistrar fusion_conv_bn_registrar(
+    new FusionConvBNMatcher());
+#define FUSION_CONV_BN_REGISTER
 #endif
 #endif
 
@@ -99,12 +95,12 @@ static framework::FusionOpRegistrar fusion_conv_bn_relu_registrar(
 }  // namespace paddle_mobile
 
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(fusion_conv_bn_relu);
+USE_OP_CPU(fusion_conv_bn);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
 #endif
 #ifdef PADDLE_MOBILE_FPGA
-USE_OP_FPGA(fusion_conv_bn_relu);
+USE_OP_FPGA(fusion_conv_bn);
 #endif
 
 #endif

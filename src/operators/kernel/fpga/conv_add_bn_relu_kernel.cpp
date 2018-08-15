@@ -15,7 +15,7 @@ limitations under the License. */
 #ifdef FUSION_CONVADDBNRELU_OP
 
 #include "operators/kernel/conv_add_bn_relu_kernel.h"
-#include "memory/t_malloc.h"
+#include "fpga/fpga_quantilization.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -27,8 +27,7 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(FusionConvAddBNReluParam *param) {
   auto input_ptr = input->data<half>();
   const Tensor *bias = param->Bias();
   auto bias_ptr = bias->data<float>();
-  const Tensor *filter = param->Filter();
-  auto filter_ptr = filter->data<float>();
+  Tensor *filter = param->Filter();
   Tensor *out = param->Output();
   auto out_ptr = out->mutable_data<half>();
   auto bn_mean_ptr = param->InputMean()->data<float>();
@@ -57,6 +56,8 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(FusionConvAddBNReluParam *param) {
   }
   param->SetNewScale(new_scale);
   param->SetNewBias(new_bias);
+  fpga::quantify_filter(filter);
+  auto filter_ptr = filter->data<float>();
 
   fpga::ConvArgs convArgs;
   convArgs.relu_enabled = relu_enabled;
