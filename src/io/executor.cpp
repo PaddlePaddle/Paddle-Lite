@@ -192,8 +192,14 @@ void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
     }
     *data += (memory_size * sizeof(uint8_t));
   } else {
-    for (int n = 0; n < memory_size * type_size; ++n) {
-      static_cast<char *>(memory)[n] = (*data)[n];
+    for (int n = 0; n < memory_size; n++) {
+      float value;
+      memcpy(&value, *data + n * type_size, type_size);
+      if (value < 1e-30 && value > -1e-30) {
+        static_cast<float *>(memory)[n] = 0.0;
+      } else {
+        static_cast<float *>(memory)[n] = value;
+      }
     }
     (*data) += (sizeof(char) * memory_size * type_size);
   }
