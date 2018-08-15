@@ -43,14 +43,20 @@ class OpCreator<P: PrecisionType> {
         [gConvType                  :     ConvOp<P>.creat,
          gBatchNormType             :     BatchNormOp<P>.creat,
          gReluType                  :     ReluOp<P>.creat,
-         gElementwiseAdd            :     ElementwiseAddOp<P>.creat,
+         gElementwiseAddType        :     ElementwiseAddOp<P>.creat,
          gFeedType                  :     FeedOp<P>.creat,
          gFetchType                 :     FetchOp<P>.creat,
          gConvAddBatchNormReluType  :     ConvAddBatchNormReluOp<P>.creat,
          gPooType                   :     PoolOp<P>.creat,
          gSoftmaxType               :     SoftmaxOp<P>.creat,
          gReshapeType               :     ReshapeOp<P>.creat,
-         gConvAddType               :     ConvAddOp<P>.creat]
+         gConvAddType               :     ConvAddOp<P>.creat,
+         gDepthConvType             :     DepthConvOp<P>.creat,
+         gConcatType                :     ConcatOp<P>.creat,
+         gBoxcoderType              :     BoxcoderOp<P>.creat,
+         gConvBnReluType            :     ConvBNReluOp<P>.creat,
+         gDwConvBnReluType          :     DwConvBNReluOp<P>.creat,
+         gMulticlassNMSType         :     MulticlassNMSOp<P>.creat]
     
     private init(){}
 }

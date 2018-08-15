@@ -14,51 +14,14 @@
 
 import Foundation
 
-class ConvAddParam<P: PrecisionType>: OpParam {
-    typealias ParamPrecisionType = P
-    required init(opDesc: OpDesc, inScope: Scope) throws {
+class DepthConvOp<P: PrecisionType>: Operator<ConvKernel<P>, ConvParam<P>>, Runable, Creator, InferShaperable {
+    required init(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws {
         do {
-            filter = try ConvAddParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
-            input = try ConvAddParam.input(inputs: opDesc.inputs, from: inScope)
-            output = try ConvAddParam.outputOut(outputs: opDesc.outputs, from: inScope)
-            stride = try ConvAddParam.getAttr(key: "strides", attrs: opDesc.attrs)
-            paddings = try ConvAddParam.getAttr(key: "paddings", attrs: opDesc.attrs)
-            dilations = try ConvAddParam.getAttr(key: "dilations", attrs: opDesc.attrs)
-            groups = try ConvAddParam.getAttr(key: "groups", attrs: opDesc.attrs)
-            y = try ConvAddParam.inputY(inputs: opDesc.paraInputs, from: inScope)
+            try super.init(device: device, opDesc: opDesc, inScope: inScope)
         } catch let error {
             throw error
         }
     }
-    
-    let input: Texture<P>
-    let y: Tensor<ParamPrecisionType>
-    let filter: Tensor<ParamPrecisionType>
-    
-    var output: Texture<P>
-    let stride: [Int32]
-    let paddings: [Int32]
-    let dilations: [Int32]
-    let groups: Int
-}
-
-class ConvAddOp<P: PrecisionType>: Operator<ConvAddKernel<P>, ConvAddParam<P>>, Runable, Creator, InferShaperable, Fusion{
-    static func fusionNode() -> Node {
-        let beginNode = Node.init(inType: gConvType)
-        _ = beginNode
-            --> Node.init(inType: gElementwiseAddType)
-        return beginNode
-    }
-    
-    static func change() -> [String : [(from: String, to: String)]] {
-        return [:]
-    }
-    
-    static func fusionType() -> String {
-        return gConvAddType
-    }
-    
-    typealias OpType = ConvAddOp<P>
     
     func inferShape() {
         let inDims = para.input.dim
@@ -82,6 +45,8 @@ class ConvAddOp<P: PrecisionType>: Operator<ConvAddKernel<P>, ConvAddParam<P>>, 
         para.output.dim = Dim.init(inDim: outDim)
     }
     
+    typealias OpType = DepthConvOp<P>
+    
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
         do {
             try kernel.compute(commandBuffer: buffer, param: para)
@@ -90,4 +55,9 @@ class ConvAddOp<P: PrecisionType>: Operator<ConvAddKernel<P>, ConvAddParam<P>>, 
         }
     }
     
+    func delogOutput() {
+        print("conv output : ")
+        print(para.output.metalTexture)
+        //        let _: Float16? = para.output.metalTexture.logDesc()
+    }
 }

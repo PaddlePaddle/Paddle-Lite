@@ -30,7 +30,7 @@ class ViewController: UIViewController {
     var executor: Executor<Float32>?
     var modelType: SupportModel = .mobilenet
     var toPredictTexture: MTLTexture?
-    var modelHelper: ModelHelper {
+    var modelHelper: Net {
         return modelHelperMap[modelType] ?! " has no this type "
     }
     var threadNum = 1
@@ -76,7 +76,7 @@ class ViewController: UIViewController {
         }
 
         do {
-            let max = 100
+            let max = 10
             var startDate = Date.init()
             for i in 0..<max {
                 try inExecutor.predict(input: inTexture, expect: modelHelper.dim, completionHandle: { [weak self] (result) in
