@@ -15,12 +15,21 @@ limitations under the License. */
 #ifdef CONV_OP
 
 #include "operators/kernel/conv_kernel.h"
+#include "operators/kernel/central-arm-func/conv_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-void ConvKernel<FPGA, float>::Compute(const ConvParam &param) const {}
+bool ConvKernel<FPGA, float>::Init(ConvParam *param) {
+  return true;
+}
+
+template <>
+void ConvKernel<FPGA, float>::Compute(const ConvParam &param) const {
+  // ConvCompute<float>(param);
+}
+
 template class ConvKernel<FPGA, float>;
 
 }  // namespace operators

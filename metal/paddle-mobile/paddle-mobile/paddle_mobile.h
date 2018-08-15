@@ -12,6 +12,8 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
+#pragma once
+
 #import <UIKit/UIKit.h>
 
 //! Project version number for paddle_mobile.
@@ -19,7 +21,5 @@ FOUNDATION_EXPORT double paddle_mobileVersionNumber;
 
 //! Project version string for paddle_mobile.
 FOUNDATION_EXPORT const unsigned char paddle_mobileVersionString[];
-
-// In this header, you should import all the public headers of your framework using statements like #import <paddle_mobile/PublicHeader.h>
 
 

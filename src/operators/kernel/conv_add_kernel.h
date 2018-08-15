@@ -17,12 +17,14 @@ limitations under the License. */
 #pragma once
 
 #include <vector>
-#if __ARM_NEON
+#ifdef __ARM_NEON
 #include <arm_neon.h>
 #endif
+#include "common/common.h"
 #include "framework/ddim.h"
 #include "framework/operator.h"
 #include "operators/math/conv_func.h"
+#include "operators/math/depthwise_conv_3x3.h"
 #include "operators/math/im2col.h"
 #include "operators/math/math_function.h"
 #include "operators/math/vol2col.h"
@@ -38,6 +40,7 @@ template <typename DeviceType, typename T>
 class ConvAddKernel : public OpKernelBase<DeviceType, FusionConvAddParam> {
  public:
   void Compute(const FusionConvAddParam &param) const;
+  bool Init(FusionConvAddParam *param);
 };
 
 }  // namespace operators

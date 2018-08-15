@@ -1,26 +1,32 @@
 set(dir ${CMAKE_CURRENT_SOURCE_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${dir}/build")
 
-if (googlenet)
+if ("googlenet" IN_LIST NET)
     # gen test
     ADD_EXECUTABLE(test-googlenet net/test_googlenet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-googlenet paddle-mobile)
-elseif (mobilenet)
+elseif ("mobilenet" IN_LIST NET)
     # gen test
     ADD_EXECUTABLE(test-mobilenet net/test_mobilenet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-mobilenet paddle-mobile)
-elseif (yolo)
+
+    # gen test
+    ADD_EXECUTABLE(test-mobilenet-combine net/test_mobilenet_combine.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-mobilenet-combine paddle-mobile)
+
+elseif ("yolo" IN_LIST NET)
     # gen test
     ADD_EXECUTABLE(test-yolo net/test_yolo.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-yolo paddle-mobile)
-elseif (squeezenet)
+elseif ("squeezenet" IN_LIST NET)
     # gen test
     ADD_EXECUTABLE(test-squeezenet net/test_squeezenet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-squeezenet paddle-mobile)
-elseif(resnet)
+elseif("resnet" IN_LIST NET)
     # gen test
     ADD_EXECUTABLE(test-resnet net/test_resnet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-resnet paddle-mobile)
+elseif("FPGAnets" IN_LIST NET)
 else ()
 
     # gen test
@@ -99,6 +105,10 @@ else ()
     ADD_EXECUTABLE(test-load framework/test_load.cpp)
     target_link_libraries(test-load paddle-mobile)
 
+    ADD_EXECUTABLE(test-inference-api framework/test_inference_api.cpp)
+    target_link_libraries(test-inference-api paddle-mobile)
+
+
     # gen test log
     # gen test
     ADD_EXECUTABLE(test-optimize framework/test_optimize.cpp)
@@ -114,8 +124,12 @@ else ()
     target_link_libraries(test-softmax paddle-mobile)
 
     # gen test
-    ADD_EXECUTABLE(test-gemm common/test_gemm.cpp)
-    target_link_libraries(test-gemm paddle-mobile)
+    ADD_EXECUTABLE(test-gemm-accuracy common/test_gemm_accuracy.cpp)
+    target_link_libraries(test-gemm-accuracy paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-gemm-perf common/test_gemm_perf.cpp)
+    target_link_libraries(test-gemm-perf paddle-mobile)
 
     # gen test
     ADD_EXECUTABLE(test-enforce common/test_enforce.cpp)
@@ -128,6 +142,10 @@ else ()
     # gen test
     ADD_EXECUTABLE(test-mobilenetssd net/test_mobilenet+ssd.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-mobilenetssd paddle-mobile)
+
+     # gen test
+    ADD_EXECUTABLE(test-mobilenet-combine net/test_mobilenet_combine.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-mobilenet-combine paddle-mobile)
 
     # gen test
     ADD_EXECUTABLE(test-sigmoid operators/test_sigmoid_op.cpp  test_include.h)
@@ -145,6 +163,18 @@ else ()
     ADD_EXECUTABLE(test-conv-add-relu-op operators/test_conv_add_relu_op.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-conv-add-relu-op paddle-mobile)
 
+    # gen test
+    ADD_EXECUTABLE(test-conv-add-bn-relu-op operators/test_fusion_conv_add_bn_relu_op.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-conv-add-bn-relu-op paddle-mobile)
+
     #add_library(test-lib-size SHARED common/test_lib_size.h common/test_lib_size.cpp)
+
+
+
+endif()
+
+if(FPGA)
+    ADD_EXECUTABLE(test-tensor-quant fpga/test_tensor_quant.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-tensor-quant paddle-mobile)
 
 endif()

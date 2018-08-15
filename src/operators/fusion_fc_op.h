@@ -38,7 +38,7 @@ class FusionFcMatcher : public framework::FusionOpMatcher {
       framework::Node *node,
       std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
     node->Folder(node_.Depth(), Type(),
-                 {{G_OP_TYPE_ELEMENTWISE_ADD, {"Y", "Z"}}}, removed_nodes);
+                 {{G_OP_TYPE_ELEMENTWISE_ADD, {{"Y", "Z"}}}}, removed_nodes);
   }
 
   std::string Type() { return G_OP_TYPE_FC; }
@@ -66,15 +66,41 @@ class FusionFcOp
 };
 
 #ifdef PADDLE_MOBILE_CPU
+
+#ifndef FUSION_FC_CPU_REGISTER
+#define FUSION_FC_CPU_REGISTER
 static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
 #endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-// static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
+
 #endif
+
+#ifdef PADDLE_MOBILE_MALI_GPU
+
+#ifndef CONV_CPU_REGISTER
+#define CONV_CPU_REGISTER
+static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
+#endif
+
+#endif
+
 #ifdef PADDLE_MOBILE_FPGA
+#ifndef FUSION_FC_CPU_REGISTER
+#define FUSION_FC_CPU_REGISTER
+static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
+#endif
 #endif
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(fusion_fc);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(fusion_fc);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+USE_OP_FPGA(fusion_fc);
+#endif
 
 #endif

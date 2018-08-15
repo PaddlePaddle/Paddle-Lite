@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "framework/program/program-optimize/node.h"
+#include <algorithm>
 #include "framework/operator.h"
 
 namespace paddle_mobile {
@@ -41,23 +42,6 @@ bool Node::operator==(const Node &in) {
     return false;
   }
   return true;
-}
-
-std::vector<std::shared_ptr<framework::OpDesc>> Node::OpDescs(int size) {
-  std::vector<std::shared_ptr<framework::OpDesc>> op_descs;
-  OpDescs(size - 1, &op_descs);
-  return op_descs;
-}
-
-void Node::OpDescs(int index,
-                   std::vector<std::shared_ptr<framework::OpDesc>> *op_desc) {
-  if (index == 0) {
-    return;
-  }
-  op_desc->push_back(this->op_desc_);
-  for (auto &output : outputs_) {
-    output->OpDescs(index, op_desc);
-  }
 }
 
 std::shared_ptr<Node> Node::To(int size) {
@@ -92,7 +76,8 @@ int Node::Depth(int begin) {
 
 Node &Node::Folder(
     int size, std::string type,
-    std::map<std::string, std::pair<std::string, std::string>> change,
+    std::map<std::string, std::vector<std::pair<std::string, std::string>>>
+        change,
     std::vector<std::shared_ptr<Node>> *removed_nodes) {
   std::shared_ptr<framework::OpDesc> op_desc =
       std::make_shared<framework::OpDesc>();
@@ -109,12 +94,15 @@ Node &Node::Folder(
 void Node::Folder(
     std::shared_ptr<framework::OpDesc> op_desc,
     std::vector<std::shared_ptr<Node>> *outputs, int index,
-    std::map<std::string, std::pair<std::string, std::string>> *change,
+    std::map<std::string, std::vector<std::pair<std::string, std::string>>>
+        *change,
     Node *begin_node, std::vector<std::shared_ptr<Node>> *removed_nodes) {
   if (change->find(this->type_) != change->end()) {
-    auto change_pair = (*change)[this->type_];
-    op_desc->GetInputs()[change_pair.second] =
-        this->op_desc_->GetInputs()[change_pair.first];
+    auto change_pairs = (*change)[this->type_];
+    for (const auto &change_pair : change_pairs) {
+      op_desc->GetInputs()[change_pair.second] =
+          this->op_desc_->GetInputs()[change_pair.first];
+    }
   }
 
   for (auto &attr_pair : this->op_desc_->attrs_) {

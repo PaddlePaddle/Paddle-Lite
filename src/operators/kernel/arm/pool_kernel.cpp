@@ -14,65 +14,19 @@ limitations under the License. */
 
 #ifdef POOL_OP
 
-#include <operators/kernel/pool_kernel.h>
-#include "common/log.h"
-
+#include "operators/kernel/pool_kernel.h"
+#include "../central-arm-func/pool_arm_func.h"
 namespace paddle_mobile {
 namespace operators {
 
-inline void PoolBasic(std::string pooling_type, std::vector<int> ksize,
-                      std::vector<int> strides, std::vector<int> paddings,
-                      const Tensor *in_x, Tensor *out) {
-  if (pooling_type == "max") {
-    math::PoolFunctor<CPU, math::MaxPool<float>, float> pool2d_forward;
-    math::MaxPool<float> pool_process;
-    pool2d_forward(*in_x, ksize, strides, paddings, pool_process, out);
-
-  } else if (pooling_type == "avg") {
-    math::PoolFunctor<CPU, math::AvgPool<float>, float> pool2d_forward;
-    math::AvgPool<float> pool_process;
-    pool2d_forward(*in_x, ksize, strides, paddings, pool_process, out);
-  }
+template <>
+bool PoolKernel<CPU, float>::Init(PoolParam *param) {
+  return true;
 }
 
 template <>
 void PoolKernel<CPU, float>::Compute(const PoolParam &param) const {
-  const Tensor *in_x = param.Input();
-  Tensor *out = param.Output();
-  std::string pooling_type = param.PoolingType();
-
-  std::vector<int> ksize = param.Ksize();
-
-  std::vector<int> strides = param.Strides();
-
-  std::vector<int> paddings = param.Paddings();
-  if (ksize.size() != 2) {
-    LOG(paddle_mobile::LogLevel::kLOG_ERROR)
-        << "Pool op only supports 2D and 3D input.";
-  }
-
-  if (param.isGlobalPooling()) {
-    for (size_t i = 0; i < ksize.size(); ++i) {
-      paddings[i] = 0;
-      ksize[i] = static_cast<int>(in_x->dims()[i + 2]);
-    }
-  } else if (ksize[0] == 3 && ksize[0] == ksize[1]) {
-    if (pooling_type == "max") {
-      math::Pool3x3Max(strides, paddings, in_x, out);
-    } else if (pooling_type == "avg") {
-      math::Pool3x3Avg(strides, paddings, in_x, out);
-    }
-
-  } else if (ksize[0] == 2 && ksize[0] == ksize[1]) {
-    if (pooling_type == "max") {
-      math::Pool2x2Max(strides, paddings, in_x, out);
-    } else if (pooling_type == "avg") {
-      math::Pool2x2Avg(strides, paddings, in_x, out);
-    }
-
-  } else {
-    PoolBasic(pooling_type, ksize, strides, paddings, in_x, out);
-  }
+  PoolCompute<float>(param);
 }
 }  // namespace operators
 }  // namespace paddle_mobile

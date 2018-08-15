@@ -14,31 +14,22 @@ limitations under the License. */
 
 #ifdef ELEMENTWISEADD_OP
 
-#pragma once
-
 #include "operators/kernel/elementwise_add_kernel.h"
+#include "operators/kernel/central-arm-func/elementwise_add_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename T>
-struct AddFunctor {
-  inline T operator()(T a, T b) const { return a + b; }
-};
+template <>
+bool ElementwiseAddKernel<CPU, float>::Init(ElementwiseAddParam *param) {
+  return true;
+}
 
 template <>
 void ElementwiseAddKernel<CPU, float>::Compute(
     const ElementwiseAddParam &param) const {
-  const Tensor *input_x = param.InputX();
-  const Tensor *input_y = param.InputY();
-  Tensor *Out = param.Out();
-  Out->mutable_data<float>();
-  int axis = param.Axis();
-  ElementwiseComputeEx<AddFunctor<float>, float>(input_x, input_y, axis,
-                                                 AddFunctor<float>(), Out);
+  ElementwiseAddCompute<float>(param);
 }
-
-template class ElementwiseAddKernel<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
