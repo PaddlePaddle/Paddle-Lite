@@ -33,6 +33,28 @@ if ("mobilenet" IN_LIST NET)
 endif()
 
 
+if ("mobilenetssd" IN_LIST NET)
+  message("mobilenetssd enabled")
+  set(FUSION_CONVBNRELU_OP ON)
+  set(FUSION_CONVBNRELU_OP ON)
+  set(FUSION_DWCONVBNRELU_OP ON)
+  set(FUSION_CONVADD_OP ON)
+  set(MULTICLASSNMS_OP ON)
+  set(SOFTMAX_OP ON)
+  set(TRANSPOSE_OP ON)
+    #feed
+  set(PRIORBOX_OP ON)
+  set(CONCAT_OP ON)
+  set(BOXCODER_OP ON)
+  set(RESHAPE_OP ON)
+#fetch
+  #total
+
+  set(FOUND_MATCH ON)
+
+endif()
+
+
 if ("yolo" IN_LIST NET)
   message("yolo enabled")
   set(BATCHNORM_OP ON)
