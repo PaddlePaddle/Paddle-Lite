@@ -29,6 +29,16 @@ vector<string> OperatorBase<Dtype>::GetOutKeys() const {
 }
 
 template <typename Dtype>
+vector<string> OperatorBase<Dtype>::GetInputKeys() const {
+  auto it = op_input_output_key.find(type_);
+  if (it == op_input_output_key.end()) {
+    DLOG << type_ << " has no outputs";
+    return {};
+  }
+  return it->second.first;
+}
+
+template <typename Dtype>
 OperatorBase<Dtype>::OperatorBase(const std::string &type,
                                   const VariableNameMap &inputs,
                                   const VariableNameMap &outputs,
@@ -49,6 +59,11 @@ template <typename Dtype>
 void OperatorBase<Dtype>::Run() const {
   RunImpl();
 #ifdef PADDLE_MOBILE_DEBUG
+  vector<string> input_keys = GetInputKeys();
+  for (const auto key : input_keys) {
+    Tensor *input = GetVarValue<framework::LoDTensor>(key, inputs_, *scope_);
+    DLOG << type_ << " input- " << key << "=" << *input;
+  }
   vector<string> output_keys = GetOutKeys();
   for (const auto key : output_keys) {
     Tensor *out_ = GetVarValue<framework::LoDTensor>(key, outputs_, *scope_);

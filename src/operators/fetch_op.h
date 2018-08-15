@@ -33,6 +33,8 @@ class FetchOp : public framework::OperatorBase<DeviceType> {
         param_(inputs, outputs, attrs, *scope) {}
   void RunImpl() const { param_.Out()->ShareDataWith(*param_.InputX()); }
 
+  void Init() {}
+
   void InferShape() const {
     auto x_dims = param_.InputX()->dims();
     param_.Out()->Resize(x_dims);
@@ -42,15 +44,15 @@ class FetchOp : public framework::OperatorBase<DeviceType> {
   FetchParam param_;
 };
 
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(fetch);
-REGISTER_OPERATOR_CPU(fetch, ops::FetchOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-#endif
-
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(fetch);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(fetch);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+USE_OP_FPGA(fetch);
+#endif

@@ -14,39 +14,21 @@ limitations under the License. */
 
 #ifdef MUL_OP
 
-#pragma once
-
 #include "operators/kernel/mul_kernel.h"
+#include "operators/kernel/central-arm-func/mul_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-void MulKernel<CPU, float>::Compute(const MulParam &param) const {
-  const Tensor *input_x = param.InputX();
-  const Tensor *input_y = param.InputY();
-  Tensor *out = param.Out();
-  out->mutable_data<float>();
-  const Tensor x_matrix =
-      input_x->dims().size() > 2
-          ? framework::ReshapeToMatrix(*input_x, param.XNumColDims())
-          : *input_x;
-  const Tensor y_matrix =
-      input_y->dims().size() > 2
-          ? framework::ReshapeToMatrix(*input_y, param.YNumColDims())
-          : *input_y;
-  auto out_dim = out->dims();
-  if (out_dim.size() != 2) {
-    out->Resize({x_matrix.dims()[0], y_matrix.dims()[1]});
-  }
-  math::matmul<float>(x_matrix, false, y_matrix, false, static_cast<float>(1),
-                      out, static_cast<float>(0));
-  if (out_dim.size() != 2) {
-    out->Resize(out_dim);
-  }
+bool MulKernel<CPU, float>::Init(MulParam *param) {
+  return true;
 }
 
-template class MulKernel<CPU, float>;
+template <>
+void MulKernel<CPU, float>::Compute(const MulParam &param) const {
+  MulCompute<float>(param);
+}
 
 }  // namespace operators
 }  // namespace paddle_mobile

@@ -14,39 +14,20 @@ limitations under the License. */
 
 #ifdef RESHAPE_OP
 
-#pragma once
-
 #include "operators/kernel/reshape_kernel.h"
+#include "operators/kernel/central-arm-func/reshape_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
+bool ReshapeKernel<CPU, float>::Init(ReshapeParam *param) {
+  return true;
+}
+
+template <>
 void ReshapeKernel<CPU, float>::Compute(const ReshapeParam &param) const {
-  const auto *input_x = param.InputX();
-  const auto &input_x_dims = input_x->dims();
-  auto *out = param.Out();
-  framework::DDim out_dims = out->dims();
-  const auto *input_shape = param.InputShape();
-
-  if (input_shape) {
-    auto *shape_data = input_shape->data<int>();
-    framework::Tensor cpu_shape_tensor;
-    auto shape =
-        std::vector<int>(shape_data, shape_data + input_shape->numel());
-    out_dims = ValidateShape(shape, input_x->dims());
-  }
-
-  bool inplace = param.Inplace();
-  out->Resize(out_dims);
-  if (!inplace) {
-    out->mutable_data<float>();
-    framework::TensorCopy(*input_x, out);
-    out->Resize(out_dims);
-  } else {
-    out->ShareDataWith(*input_x);
-    out->Resize(out_dims);
-  }
+  ReshapeCompute<float>(param);
 }
 
 }  // namespace operators

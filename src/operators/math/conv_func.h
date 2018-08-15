@@ -14,7 +14,7 @@ limitations under the License. */
 
 #pragma once
 
-#if __ARM_NEON
+#ifdef __ARM_NEON
 #include <arm_neon.h>
 #endif
 
@@ -49,7 +49,7 @@ inline void expand_bias(Tensor &bias, int axis, const DDim &dDim) {
   auto new_ptr = bias.mutable_data<float>();
   int axis_size = dDim[axis];
 
-#if __ARM_NEON
+#ifdef __ARM_NEON
   for (int i = 0; i < outer_size; ++i) {
     int inner_num = inner_size >> 4;
     int remain = inner_size - (inner_num << 4);

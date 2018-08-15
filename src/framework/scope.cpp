@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include "framework/scope.h"
 
+#include <algorithm>
 #include <set>
 #include <string>
 #include <vector>

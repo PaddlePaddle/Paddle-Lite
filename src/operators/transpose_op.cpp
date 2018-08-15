@@ -47,13 +47,12 @@ void TransposeOp<Dtype, T>::InferShape() const {
   }
   this->param_.Out()->Resize(out_dims);
 }
-template class TransposeOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(transpose);
 REGISTER_OPERATOR_CPU(transpose, ops::TransposeOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU

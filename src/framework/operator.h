@@ -61,8 +61,10 @@ class OperatorBase {
   virtual ~OperatorBase() {}
   void Run() const;
   std::vector<string> GetOutKeys() const;
+  std::vector<string> GetInputKeys() const;
   virtual void RunImpl() const = 0;
 
+  virtual void Init() = 0;
   /*
    * @b op 运算所需的输入, 如上一层的输出结果、卷积核
    * */
@@ -110,14 +112,20 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
                      const VariableNameMap &outputs, const AttributeMap &attrs,
                      std::shared_ptr<Scope> scope)
       : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope),
-        param_(inputs, outputs, attrs, *scope) {
-    PADDLE_MOBILE_ENFORCE(kernel_.Init(param_), "  %s kernel init failed",
-                          this->type_.c_str());
-  }
+        param_(inputs, outputs, attrs, *scope) {}
 
   virtual void RunImpl() const { this->kernel_.Compute(this->param_); }
 
   virtual void InferShape() const = 0;
+
+  void Init() {
+    //    for (auto i : this->inputs_) {
+    //      DLOG << i.first;
+    //      DLOG << i.second;
+    //    }
+    PADDLE_MOBILE_ENFORCE(kernel_.Init(&param_), "  %s kernel init failed",
+                          this->type_.c_str());
+  }
 
  protected:
   KernelType kernel_;
@@ -135,9 +143,21 @@ class OpKernelBase {
    * @p para 这个参数为 kernel 运算时所需要用到参数组成的一个结构体,
    *    所有结构体存在与: paddle-mobile/src/operators/op_param.h
    * */
+#ifdef PADDLE_MOBILE_MALI_GPU
+  OpKernelBase() { acl_op_ = nullptr; }
+  void *GetAclOp() const { return acl_op_; }
+  void SetAclOp(void *op, void *ob) const {
+    reinterpret_cast<OpKernelBase<Dtype, P> *>(ob)->acl_op_ = op;
+  }
+#endif
   virtual void Compute(const P &para) const = 0;
-  virtual bool Init(const P &para) const { return true; };
+  virtual bool Init(P *para) { return true; }
   virtual ~OpKernelBase() = default;
+
+ private:
+#ifdef PADDLE_MOBILE_MALI_GPU
+  void *acl_op_;
+#endif
 };
 
 #define DEFINE_OP_CONSTRUCTOR(cls, parent_cls)                                 \

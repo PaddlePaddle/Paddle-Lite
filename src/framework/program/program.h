@@ -29,7 +29,8 @@ class Program {
   std::shared_ptr<Scope> scope;
   std::string model_path;
   std::string para_path;
-  bool is_commbine = false;
+  bool combined = false;
+  bool quantification = false;
 
  private:
 };
