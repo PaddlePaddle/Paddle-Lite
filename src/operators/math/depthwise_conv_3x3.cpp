@@ -1466,9 +1466,6 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
                                      const Tensor *new_bias, bool if_relu) {
 #if __ARM_NEON
 #ifdef _OPENMP
-  const float *input_data = input->data<float>();
-  const float *filter_data = filter->data<float>();
-  float *output_data = output->data<float>();
   const float *newscale_data = new_scale->data<float>();
   const float *newbias_data = new_bias->data<float>();
 
@@ -1482,14 +1479,15 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
   const int inhxw = input_height * input_width;
   const int outhxw = output_height * output_width;
 
-  float32x4_t vnewbias = vdupq_n_f32(0.0);
-  float32x4_t vnewscale = vdupq_n_f32(1.0);
   float32x4_t zero = vdupq_n_f32(0.0);
   for (int b = 0; b < batch_size; b++) {
-    filter_data = filter->data<float>();
+    #pragma omp parallel for
     for (int c = 0; c < input_channel; c++) {
-      vnewbias = vdupq_n_f32(newbias_data[c]);
-      vnewscale = vdupq_n_f32(newscale_data[c]);
+      const float *filter_data = filter->data<float>() + c * 9;
+      const float *input_data = input->data<float>() + c * inhxw;
+      float *output_data = output->data<float>() + c * outhxw;
+      float32x4_t vnewbias = vdupq_n_f32(newbias_data[c]);
+      float32x4_t vnewscale = vdupq_n_f32(newscale_data[c]);
 
       float w00 = filter_data[0];
       float w01 = filter_data[1];
@@ -1527,7 +1525,9 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
         if (if_relu) {
           out0 = vmaxq_f32(out0, zero);
         }
-        vst1q_f32(output_ptr, out0);
+        vst1q_lane_f32(output_ptr, out0, 0);
+        vst1q_lane_f32(output_ptr + 1, out0, 1);
+        vst1q_lane_f32(output_ptr + 2, out0, 2);
       }
       for (m = 1; m < output_width - 2; m += 3) {
       }
@@ -1542,8 +1542,6 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
           output_data[j] = output_data[j] < 0 ? 0 : output_data[j];
         }
       }
-
-#pragma omp parallel for
 
       for (int i = 1; i < output_height; i += 1) {
         for (int m = 1; m < output_width - 2; m += 3) {
@@ -1583,7 +1581,9 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
           if (if_relu) {
             out0 = vmaxq_f32(out0, zero);
           }
-          vst1q_f32(output_ptr, out0);
+          vst1q_lane_f32(output_ptr, out0, 0);
+          vst1q_lane_f32(output_ptr + 1, out0, 1);
+          vst1q_lane_f32(output_ptr + 2, out0, 2);
         }
         int m;
         for (m = 1; m < output_width - 2; m += 3) {
@@ -1635,10 +1635,6 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
                                               : output_data[i * output_width];
         }
       }
-
-      input_data = input_data + inhxw;
-      output_data = output_data + outhxw;
-      filter_data = filter_data + 9;
     }
   }
 
