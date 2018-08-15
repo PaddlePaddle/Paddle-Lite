@@ -61,8 +61,8 @@ bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam *param) {
   param->SetNewBias(new_bias);
 
   fpga::quantify_filter(filter);
-
   auto filter_ptr = filter->data<float>();
+
   fpga::ConvArgs convArgs;
   convArgs.relu_enabled = relu_enabled;
   convArgs.filter_address = (void *)filter_ptr;
