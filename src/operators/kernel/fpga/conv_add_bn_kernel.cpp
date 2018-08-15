@@ -60,10 +60,7 @@ bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam *param) {
   param->SetNewScale(new_scale);
   param->SetNewBias(new_bias);
 
-  Tensor *quant_filter = fpga::quantify_filter(filter);
-
-  // delete original filter?
-  filter = quant_filter;
+  fpga::quantify_filter(filter);
 
   auto filter_ptr = filter->data<float>();
   fpga::ConvArgs convArgs;

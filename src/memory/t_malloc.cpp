@@ -26,7 +26,7 @@ namespace paddle_mobile {
 namespace memory {
 const int MALLOC_ALIGN = 64;
 
-#ifdef PADDLE_MOBILE_FPGA
+#ifdef PADDLE_MOBILE_FPGA__VV
 namespace fpga = paddle_mobile::fpga;
 
 void Copy(void *dst, const void *src, size_t num) {
