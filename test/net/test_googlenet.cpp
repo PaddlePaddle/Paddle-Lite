@@ -28,16 +28,16 @@ int main() {
   paddle_mobile.SetThreadNum(4);
   bool optimize = true;
   auto time1 = time();
-  if (paddle_mobile.Load(g_resnet, optimize)) {
+  if (paddle_mobile.Load(g_googlenet, optimize)) {
     auto time2 = time();
     std::cout << "load cost :" << time_diff(time1, time2) << "ms" << std::endl;
     std::vector<float> input;
     std::vector<int64_t> dims{1, 3, 224, 224};
-    // GetInput<float>(g_test_image_1x3x224x224, &input, dims);
+    GetInput<float>(g_test_image_1x3x224x224, &input, dims);
     // 预热一次
     auto vec_result = paddle_mobile.Predict(input, dims);
     auto time3 = time();
-    for (int i = 0; i < 1; ++i) {
+    for (int i = 0; i < 10; ++i) {
       auto vec_result = paddle_mobile.Predict(input, dims);
     }
     auto time4 = time();
