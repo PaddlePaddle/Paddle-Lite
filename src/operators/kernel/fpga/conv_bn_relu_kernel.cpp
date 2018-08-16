@@ -15,7 +15,7 @@ limitations under the License. */
 #ifdef FUSION_CONVBNRELU_OP
 
 #include "operators/kernel/conv_bn_relu_kernel.h"
-#include "fpga/fpga_quantilization.h"
+#include "fpga/quantization.h"
 
 namespace paddle_mobile {
 namespace operators {
