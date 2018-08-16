@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "fpga/fpga_quantilization.h"
+#include "fpga/quantization.h"
 #include <algorithm>
 
 namespace paddle_mobile {
@@ -47,7 +47,7 @@ static Dtype find_max(Dtype* data, int64_t num) {
 }
 
 // template <typename Dtype>
-void quantify_filter(framework::Tensor* filter) {
+void quantize_filter(framework::Tensor* filter) {
   DLOG << "quantilize_filter........";
 
   float scale = 0;

@@ -15,8 +15,8 @@ limitations under the License. */
 #ifdef FUSION_CONVADDBN_OP
 
 #include "operators/kernel/conv_add_bn_kernel.h"
-#include "fpga/api/fpga_api.h"
-#include "fpga/fpga_quantilization.h"
+#include "fpga/api.h"
+#include "fpga/quantization.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -60,7 +60,7 @@ bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam *param) {
   param->SetNewScale(new_scale);
   param->SetNewBias(new_bias);
 
-  fpga::quantify_filter(filter);
+  fpga::quantize_filter(filter);
   auto filter_ptr = filter->data<int8_t>();
 
   fpga::ConvArgs convArgs;

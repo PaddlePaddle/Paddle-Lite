@@ -27,7 +27,7 @@ limitations under the License. */
 #include <cstdio>
 #include <cstring>
 
-#include "fpga/api/fpga_api.h"
+#include "api.h"
 
 namespace paddle_mobile {
 namespace fpga {
