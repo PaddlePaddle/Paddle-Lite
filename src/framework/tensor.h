@@ -29,6 +29,8 @@ limitations under the License. */
 #include "framework/ddim.h"
 #include "memory/t_malloc.h"
 
+#include "common/stack_trace.h"
+
 namespace paddle_mobile {
 namespace framework {
 template <typename... T>
@@ -116,8 +118,8 @@ class Tensor {
     PADDLE_MOBILE_ENFORCE(
         (std::is_same<T, void>::value ||
          holder_->type().hash_code() == typeid(T).hash_code()),
-        "Tensor holds the wrong type, it holds %s",
-        this->holder_->type().name());
+        "Tensor holds the wrong type, it holds %s ,requested:%s",
+        this->holder_->type().name(), typeid(T).name());
 
     return reinterpret_cast<const T *>(
         reinterpret_cast<uintptr_t>(holder_->ptr()) + offset_);
