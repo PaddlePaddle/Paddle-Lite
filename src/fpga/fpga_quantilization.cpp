@@ -19,15 +19,13 @@ namespace paddle_mobile {
 namespace fpga {
 
 template <typename Dtype>
-static void chw_to_hwc(Dtype* data_in, Dtype* data_out, int num, int channel,
-                       int height, int width) {
-  int offset_height = 0;
-
+static void chw_to_hwc(Dtype* data_in, Dtype* data_out, int64_t num,
+                       int64_t channel, int64_t height, int64_t width) {
   for (int n = 0; n < num; n++) {
-    int amount_per_row = width * channel;
+    int64_t amount_per_row = width * channel;
     for (int c = 0; c < channel; c++) {
       for (int h = 0; h < height; h++) {
-        int offset_height = h * amount_per_row;
+        int64_t offset_height = h * amount_per_row;
         for (int w = 0; w < width; w++) {
           *(data_out + offset_height + w * channel + c) = *(data_in++);
         }
@@ -38,10 +36,12 @@ static void chw_to_hwc(Dtype* data_in, Dtype* data_out, int num, int channel,
 }
 
 template <typename Dtype>
-static Dtype find_max(Dtype* data, int num) {
+static Dtype find_max(Dtype* data, int64_t num) {
   Dtype max = 0;
   for (int i = 0; i < num; ++i) {
-    max = std::max(max, data[i]);
+    Dtype value = data[i];
+    Dtype abs = value > 0 ? value : -value;
+    max = std::max(max, abs);
   }
   return max;
 }
@@ -51,40 +51,36 @@ void quantify_filter(framework::Tensor* filter) {
   DLOG << "quantilize_filter........";
 
   float scale = 0;
-  float fix_range = static_cast<float>((1 << (8 - 1)) - 1);
+  auto fix_range = static_cast<float>(std::pow(2, 8 - 1) - 1);
 
-  const int batch_size = filter->dims()[0];
-  const int channel = filter->dims()[1];
-  const int height = filter->dims()[2];
-  const int width = filter->dims()[3];
+  const auto batch_size = filter->dims()[0];
+  const auto channel = filter->dims()[1];
+  const auto height = filter->dims()[2];
+  const auto width = filter->dims()[3];
 
-  int8_t* int_data = nullptr;
-  int8_t* tmp_data = new int8_t[filter->numel()];
+  auto* tmp_data = new int8_t[filter->numel()];
 
   // 32bit filter -> 8bit filter;
   if (filter->type() == typeid(float)) {
-    float* float_data = filter->data<float>();
-    float max = find_max<float>(float_data, filter->numel());
+    auto* float_data = filter->data<float>();
+    auto max = find_max<float>(float_data, filter->numel());
 
-    scale = (max / fix_range);
+    scale = (fix_range / max);
+    DLOG << "scale:" << scale;
 
     for (int i = 0; i < filter->numel(); ++i) {
-      tmp_data[i] = (int8_t)float_data[i] * scale;
+      tmp_data[i] = (int8_t)(float_data[i] * scale);
     }
-    int_data = filter->mutable_data<int8_t>();
   } else {
-    int8_t max = find_max<int8_t>(filter->data<int8_t>(), filter->numel());
-    scale = (max / fix_range);
-
-    for (int i = 0; i < filter->numel(); ++i) {
-      tmp_data[i] = filter->data<int8_t>()[i];
-    }
-    int_data = filter->mutable_data<int8_t>();
+    auto max = find_max<int8_t>(filter->data<int8_t>(), filter->numel());
+    scale = (fix_range / max);
+    std::memcpy(tmp_data, filter->data<int8_t>(), (size_t)filter->numel());
   }
   // NCHW -> NHWC;
-  chw_to_hwc<int8_t>(tmp_data, int_data, batch_size, channel, height, width);
+  chw_to_hwc<int8_t>(tmp_data, filter->mutable_data<int8_t>(), batch_size,
+                     channel, height, width);
   delete tmp_data;
-  *(filter->fpga_args().scale_pointer()) = scale;
+  filter->SetFpgaScale(scale);
 }
 
 }  // namespace fpga
