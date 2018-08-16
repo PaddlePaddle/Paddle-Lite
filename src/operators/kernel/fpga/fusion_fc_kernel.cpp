@@ -58,11 +58,9 @@ bool FusionFcKernel<FPGA, float>::Init(FusionFcParam *param) {
   convArgs.image.width = input_x->dims()[3];
   convArgs.image.pad_height = 0;
   convArgs.image.pad_width = 0;
-  convArgs.image.scale_address =
-      input_x->fpga_args().scale_pointer();
+  convArgs.image.scale_address = input_x->fpga_args().scale_pointer();
   convArgs.output.address = (void *)out_ptr;
-  convArgs.output.scale_address =
-      out->fpga_args().scale_pointer();
+  convArgs.output.scale_address = out->fpga_args().scale_pointer();
   param->SetFpgaArgs(convArgs);
   return true;
 }
