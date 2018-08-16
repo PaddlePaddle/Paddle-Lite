@@ -47,7 +47,7 @@ static Dtype find_max(Dtype* data, int64_t num) {
 }
 
 // template <typename Dtype>
-void quantize_filter(framework::Tensor *filter) {
+void quantize_filter(framework::Tensor* filter) {
   DLOG << "quantilize_filter........";
 
   float scale = 0;
