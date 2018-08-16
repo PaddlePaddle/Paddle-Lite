@@ -29,8 +29,6 @@ limitations under the License. */
 #include "framework/ddim.h"
 #include "memory/t_malloc.h"
 
-#include "common/stack_trace.h"
-
 namespace paddle_mobile {
 namespace framework {
 template <typename... T>
