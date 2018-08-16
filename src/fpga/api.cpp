@@ -56,11 +56,17 @@ void *fpga_malloc(size_t size) {
   return reinterpret_cast<void *>(
       mmap64(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
 #else
-  return NULL;
+  return malloc(size);
 #endif
 }
 
-void fpga_free(void *ptr) { munmap(ptr, 0); }
+void fpga_free(void *ptr) {
+#ifdef PADDLE_MOBILE_OS_LINUX
+  munmap(ptr, 0);
+#else
+  free(ptr);
+#endif
+}
 
 void fpga_copy(void *dest, const void *src, size_t num) {
   memcpy(dest, src, num);
