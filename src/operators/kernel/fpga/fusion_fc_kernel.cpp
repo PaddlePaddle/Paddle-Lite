@@ -14,7 +14,7 @@ limitations under the License. */
 #ifdef FUSION_FC_OP
 
 #include "operators/kernel/fusion_fc_kernel.h"
-#include "fpga/fpga_quantilization.h"
+#include "fpga/quantization.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -39,7 +39,7 @@ bool FusionFcKernel<FPGA, float>::Init(FusionFcParam *param) {
     bs_ptr[i * 2 + 1] = input_z_ptr[i];
   }
 
-  fpga::quantify_filter(input_y);
+  fpga::quantize_filter(input_y);
   auto input_y_ptr = input_y->data<int8_t>();
 
   fpga::ConvArgs convArgs;

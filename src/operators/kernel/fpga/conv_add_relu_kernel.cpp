@@ -15,7 +15,7 @@ limitations under the License. */
 #ifdef FUSION_CONVADDRELU_OP
 
 #include "operators/kernel/conv_add_relu_kernel.h"
-#include "fpga/fpga_quantilization.h"
+#include "fpga/quantization.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -40,7 +40,7 @@ bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam *param) {
     bs_ptr[i * 2 + 1] = bias_ptr[i];
   }
 
-  fpga::quantify_filter(filter);
+  fpga::quantize_filter(filter);
   auto filter_ptr = filter->data<int8_t>();
 
   fpga::ConvArgs convArgs;

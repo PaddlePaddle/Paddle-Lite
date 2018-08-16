@@ -23,7 +23,7 @@ limitations under the License. */
 #include "framework/tensor.h"
 #include "framework/variable.h"
 #ifdef PADDLE_MOBILE_FPGA
-#include "fpga/api/fpga_api.h"
+#include "fpga/api.h"
 #endif
 
 namespace paddle_mobile {
