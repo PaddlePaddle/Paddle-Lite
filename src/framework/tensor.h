@@ -64,7 +64,8 @@ struct SizeOfTypeFunctor<HEAD, TAIL...> {
 };
 
 static inline size_t SizeOfType(std::type_index type) {
-  SizeOfTypeFunctor<int, half, float, double, int16_t, int64_t, bool, size_t>
+  SizeOfTypeFunctor<int8_t, int, half, float, double, int16_t, int64_t, bool,
+                    size_t>
       functor;
   size_t size = functor(type);
 
@@ -255,14 +256,26 @@ class Tensor {
 
 #ifdef PADDLE_MOBILE_FPGA
   struct FPGAArgs {
-    float scale;
+    friend class Tensor;
 
-    inline float *scale_pointer() { return &scale; }
+    inline float *scale_pointer() { return scale_; }
+    inline float scale() { return *scale_; }
+
+   private:
+    float *scale_;
   };
 
   struct FPGAArgs fpga_args() const {
-    return fpgaArgs_;
+    FPGAArgs args;
+    args.scale_ = scale.get();
+    return args;
   }
+
+  void SetFpgaScale(float s) { *(scale.get()) = s; }
+
+ private:
+  std::shared_ptr<float> scale = std::make_shared<float>(0);
+
 #endif
 
  private:
@@ -331,10 +344,6 @@ class Tensor {
    * begins.
    */
   size_t offset_;
-
-#ifdef PADDLE_MOBILE_FPGA
-  FPGAArgs fpgaArgs_;
-#endif
 };
 
 #ifdef PADDLE_MOBILE_DEBUG

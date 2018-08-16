@@ -34,6 +34,7 @@ REGISTER_OPERATOR_CPU(softmax, ops::SoftmaxOp);
 REGISTER_OPERATOR_MALI_GPU(softmax, ops::SoftmaxOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(softmax, ops::SoftmaxOp);
 #endif
 
 #endif
