@@ -40,7 +40,7 @@ bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam *param) {
     bs_ptr[i * 2 + 1] = bias_ptr[i];
   }
 
-  fpga::quantify_filter(filter);
+    fpga::quantize_filter(filter);
   auto filter_ptr = filter->data<int8_t>();
 
   fpga::ConvArgs convArgs;
