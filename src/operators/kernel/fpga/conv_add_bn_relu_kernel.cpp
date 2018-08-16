@@ -35,11 +35,11 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(FusionConvAddBNReluParam *param) {
   auto bn_scale_ptr = param->InputScale()->data<float>();
   auto bn_bias_ptr = param->InputBias()->data<float>();
   const float epsilon = param->Epsilon();
-  PADDLE_MOBILE_ENFORCE(input->dims()[1] == bias->dims()[0] &&
+  PADDLE_MOBILE_ENFORCE(out->dims()[1] == bias->dims()[0] &&
                             bias->dims()[0] == param->InputBias()->dims()[0],
-                        "Image channel should be equal to bias number");
+                        "Output channel should be equal to bias number");
 
-  const int channel = input->dims()[1];
+  const int channel = out->dims()[1];
   float *bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sizeof(float));
   Tensor *new_scale = new Tensor();
   Tensor *new_bias = new Tensor();
