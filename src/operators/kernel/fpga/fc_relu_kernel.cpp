@@ -40,7 +40,7 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam *param) {
     bs_ptr[i * 2 + 1] = input_z_ptr[i];
   }
 
-    fpga::quantize_filter(input_y);
+  fpga::quantize_filter(input_y);
   auto input_y_ptr = input_y->data<int8_t>();
 
   fpga::ConvArgs convArgs;
