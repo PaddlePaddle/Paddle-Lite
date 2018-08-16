@@ -665,16 +665,6 @@ class FeedParam : public OpParam {
   Tensor *input_x_;
   Tensor *out_;
   int batch_size;
-
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::BypassArgs fpga_bypass_args;
-
- public:
-  const fpga::BypassArgs &FpgaArgs() const { return fpga_bypass_args; }
-  void SetFpgaArgs(const fpga::BypassArgs &args) { fpga_bypass_args = args; }
-#endif
 };
 
 class FetchParam : public OpParam {
@@ -1133,7 +1123,6 @@ class FusionConvBNParam : public OpParam {
   FusionConvBNParam(const VariableNameMap &inputs,
                     const VariableNameMap &outputs, const AttributeMap &attrs,
                     const Scope &scope) {
-    axis_ = GetAttr<int>("axis", attrs);
     filter_ = FilterFrom<LoDTensor>(inputs, scope);
     input_ = InputFrom<LoDTensor>(inputs, scope);
     output_y_ = OutputYFrom<LoDTensor>(outputs, scope);
@@ -1149,8 +1138,6 @@ class FusionConvBNParam : public OpParam {
     momentum_ = GetAttr<float>("momentum", attrs);
     //    is_test_ = GetAttr<bool>("is_test", attrs);
   }
-
-  const int &Axis() const { return axis_; }
 
   const Tensor *Input() const { return input_; }
 
@@ -1192,7 +1179,6 @@ class FusionConvBNParam : public OpParam {
   const Tensor *NewBias() const { return new_bias_; }
 
  protected:
-  int axis_;
   Tensor *input_;
   Tensor *output_y_;
   Tensor *filter_;
