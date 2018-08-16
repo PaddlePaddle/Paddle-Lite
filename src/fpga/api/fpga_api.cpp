@@ -36,7 +36,11 @@ static int fd = -1;
 static const char *device_path = "/dev/fpgadrv0";
 
 static inline int do_ioctl(int req, const void *arg) {
+#ifdef PADDLE_MOBILE_OS_LINUX
   return ioctl(req, (unsigned int64_t)arg);
+#else
+  return -1;
+#endif
 }
 
 int open_device() {
@@ -48,8 +52,12 @@ int open_device() {
 
 // memory management;
 void *fpga_malloc(size_t size) {
+#ifdef PADDLE_MOBILE_OS_LINUX
   return reinterpret_cast<void *>(
       mmap64(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
+#else
+  return NULL;
+#endif
 }
 
 void fpga_free(void *ptr) { munmap(ptr, 0); }
