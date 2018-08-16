@@ -14,6 +14,7 @@ limitations under the License. */
 #ifdef FUSION_FC_OP
 
 #include "operators/kernel/fusion_fc_kernel.h"
+#include "fpga/fpga_quantilization.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -23,8 +24,7 @@ bool FusionFcKernel<FPGA, float>::Init(FusionFcParam *param) {
   bool relu_enabled = false;
   const Tensor *input_x = param->InputX();
   auto input_x_ptr = input_x->data<half>();
-  const Tensor *input_y = param->InputY();
-  auto input_y_ptr = input_y->data<float>();
+  Tensor *input_y = param->InputY();
   const Tensor *input_z = param->InputZ();
   auto input_z_ptr = input_z->data<float>();
   Tensor *out = param->Out();
@@ -38,6 +38,9 @@ bool FusionFcKernel<FPGA, float>::Init(FusionFcParam *param) {
     bs_ptr[i * 2] = 1;
     bs_ptr[i * 2 + 1] = input_z_ptr[i];
   }
+
+  fpga::quantify_filter(input_y);
+  auto input_y_ptr = input_y->data<int8_t>();
 
   fpga::ConvArgs convArgs;
   convArgs.relu_enabled = relu_enabled;
@@ -56,10 +59,10 @@ bool FusionFcKernel<FPGA, float>::Init(FusionFcParam *param) {
   convArgs.image.pad_height = 0;
   convArgs.image.pad_width = 0;
   convArgs.image.scale_address =
-      input_x->fpga_args().scale_pointer();  // fc input has scale attribute??
+      input_x->fpga_args().scale_pointer();
   convArgs.output.address = (void *)out_ptr;
   convArgs.output.scale_address =
-      out->fpga_args().scale_pointer();  // fc output has scale attribute??
+      out->fpga_args().scale_pointer();
   param->SetFpgaArgs(convArgs);
   return true;
 }

@@ -14,6 +14,7 @@ limitations under the License. */
 #ifdef FUSION_FCRELU_OP
 #include "operators/kernel/fc_relu_kernel.h"
 #include "fpga/api/fpga_api.h"
+#include "fpga/fpga_quantilization.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -23,8 +24,7 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam *param) {
   bool relu_enabled = true;
   const Tensor *input_x = param->InputX();
   auto input_x_ptr = input_x->data<half>();
-  const Tensor *input_y = param->InputY();
-  auto input_y_ptr = input_y->data<float>();
+  Tensor *input_y = param->InputY();
   const Tensor *input_z = param->InputZ();
   auto input_z_ptr = input_z->data<float>();
   Tensor *out = param->Out();
@@ -38,6 +38,9 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam *param) {
     bs_ptr[i * 2] = 1;
     bs_ptr[i * 2 + 1] = input_z_ptr[i];
   }
+
+  fpga::quantify_filter(input_y);
+  auto input_y_ptr = input_y->data<int8_t>();
 
   fpga::ConvArgs convArgs;
   convArgs.relu_enabled = relu_enabled;
