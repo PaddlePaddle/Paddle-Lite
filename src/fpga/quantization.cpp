@@ -48,15 +48,10 @@ static Dtype find_max(Dtype* data, int64_t num) {
 
 // template <typename Dtype>
 void quantize_filter(framework::Tensor* filter) {
-  DLOG << "quantilize_filter........";
+  DLOG << "quantilize_filter........" << filter->dims();
 
   float scale = 0;
   auto fix_range = static_cast<float>(std::pow(2, 8 - 1) - 1);
-
-  const auto batch_size = filter->dims()[0];
-  const auto channel = filter->dims()[1];
-  const auto height = filter->dims()[2];
-  const auto width = filter->dims()[3];
 
   auto* tmp_data = new int8_t[filter->numel()];
 
@@ -76,9 +71,19 @@ void quantize_filter(framework::Tensor* filter) {
     scale = (fix_range / max);
     std::memcpy(tmp_data, filter->data<int8_t>(), (size_t)filter->numel());
   }
-  // NCHW -> NHWC;
-  chw_to_hwc<int8_t>(tmp_data, filter->mutable_data<int8_t>(), batch_size,
-                     channel, height, width);
+
+  if (filter->dims().size() == 4) {
+    const auto batch_size = filter->dims()[0];
+    const auto channel = filter->dims()[1];
+    const auto height = filter->dims()[2];
+    const auto width = filter->dims()[3];
+    chw_to_hwc<int8_t>(tmp_data, filter->mutable_data<int8_t>(), batch_size,
+                       channel, height, width);
+  } else if (filter->dims().size() == 2) {
+    std::memcpy(filter->mutable_data<int8_t>(), tmp_data,
+                (size_t)filter->numel());
+  }
+
   delete tmp_data;
   filter->SetFpgaScale(scale);
 }
