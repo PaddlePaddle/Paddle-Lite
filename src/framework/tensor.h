@@ -351,9 +351,12 @@ inline Print &operator<<(Print &printer, const Tensor &tensor) {
   printer << " dims: " << tensor.dims() << "\n";
   int stride = tensor.numel() / 20;
   stride = stride > 0 ? stride : 1;
+#ifndef PADDLE_MOBILE_FPGA
   for (int i = 0; i < tensor.numel(); i += stride) {
     printer << tensor.data<float>()[i] << " ";
   }
+#endif
+
   return printer;
 }
 
