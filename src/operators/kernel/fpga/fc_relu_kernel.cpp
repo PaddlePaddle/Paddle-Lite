@@ -13,8 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 #ifdef FUSION_FCRELU_OP
 #include "operators/kernel/fc_relu_kernel.h"
-#include "fpga/api/fpga_api.h"
-#include "fpga/fpga_quantilization.h"
+
+#include "fpga/api.h"
+#include "fpga/quantization.h"
 
 namespace paddle_mobile {
 namespace operators {
