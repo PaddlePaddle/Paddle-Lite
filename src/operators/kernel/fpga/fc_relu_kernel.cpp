@@ -33,7 +33,7 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam *param) {
 
   PADDLE_MOBILE_ENFORCE(input_x->dims()[1] == input_y->dims()[0],
                         "Image channel should be equal to weight number");
-  int channel = input_x->dims()[1];
+  int channel = out->dims()[1];
   float *bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sizeof(float));
   for (int i = 0; i < channel; i++) {
     bs_ptr[i * 2] = 1;
