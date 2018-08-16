@@ -36,9 +36,14 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
     out_dims[0] = param_.BatchSize();
     param_.Out()->Resize(out_dims);
   }
-  void Init() {}
 
 #ifdef PADDLE_MOBILE_FPGA
+
+  void Init() {
+    Tensor *output = param_.Out();
+    output->mutable_data<half>();
+  }
+
   void RunImpl() const {
     const Tensor *input = param_.InputX();
     auto input_ptr = input->data<float>();
@@ -56,6 +61,7 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
   }
 
 #else
+  void Init() {}
   void RunImpl() const { param_.Out()->ShareDataWith(*param_.InputX()); }
 #endif
 
