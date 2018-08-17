@@ -134,7 +134,7 @@ int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
        << "   pad0_height:" << args.image0.pad_height
        << "   pad0_width:" << args.image0.pad_width;
   DLOG << "   image1_address:" << args.image1.address
-       << "   image_scale_address:" << args.image1.scale_address
+       << "   image1_scale_address:" << args.image1.scale_address
        << "   image1_channels:" << args.image1.channels
        << "   image1_height:" << args.image1.height
        << "   image1_width:" << args.image1.width
