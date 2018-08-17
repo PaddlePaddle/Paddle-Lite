@@ -29,6 +29,11 @@ limitations under the License. */
 
 #include "api.h"
 
+#define FPGA_TEST_MODE
+#ifdef FPGA_TEST_MODE
+#include "common/log.h"
+#endif
+
 namespace paddle_mobile {
 namespace fpga {
 
@@ -73,15 +78,89 @@ void fpga_copy(void *dest, const void *src, size_t num) {
 }
 
 int ComputeFpgaConv(const struct ConvArgs &args) {
+#ifdef FPGA_TEST_MODE
+  DLOG << "   relu_enabled:" << args.relu_enabled
+       << "   sb_address:" << args.sb_address
+       << "   filter_address:" << args.filter_address
+       << "   filter_num:" << args.filter_num
+       << "   group_num:" << args.group_num;
+  DLOG << "   image_address:" << args.image.address
+       << "   image_scale_address:" << args.image.scale_address
+       << "   image_channels:" << args.image.channels
+       << "   image_height:" << args.image.height
+       << "   image_width:" << args.image.width
+       << "   pad_height:" << args.image.pad_height
+       << "   pad_width:" << args.image.pad_width;
+  DLOG << "   kernel_height:" << args.kernel.height
+       << "   kernel_width:" << args.kernel.width
+       << "   stride_h:" << args.kernel.stride_h
+       << "   stride_w:" << args.kernel.stride_w;
+  DLOG << "   out_address:" << args.output.address
+       << "   out_scale_address:" << args.output.scale_address;
+#endif
+
   return do_ioctl(IOCTL_CONFIG_CONV, &args);
 }
+
 int ComputeFpgaPool(const struct PoolingArgs &args) {
+#ifdef FPGA_TEST_MODE
+  DLOG << "   image_address:" << args.image.address
+       << "   image_scale_address:" << args.image.scale_address
+       << "   image_channels:" << args.image.channels
+       << "   image_height:" << args.image.height
+       << "   image_width:" << args.image.width
+       << "   pad_height:" << args.image.pad_height
+       << "   pad_width:" << args.image.pad_width;
+  DLOG << "   kernel_height:" << args.kernel.height
+       << "   kernel_width:" << args.kernel.width
+       << "   stride_h:" << args.kernel.stride_h
+       << "   stride_w:" << args.kernel.stride_w;
+  DLOG << "   out_address:" << args.output.address
+       << "   out_scale_address:" << args.output.scale_address;
+#endif
+
   return do_ioctl(IOCTL_CONFIG_POOLING, &args);
 }
+
 int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
+#ifdef FPGA_TEST_MODE
+  DLOG << "   relu_enabled:" << args.relu_enabled << "   const0:" << args.const0
+       << "   const1:" << args.const1;
+  DLOG << "   image0_address:" << args.image0.address
+       << "   image0_scale_address:" << args.image0.scale_address
+       << "   image0_channels:" << args.image0.channels
+       << "   image0_height:" << args.image0.height
+       << "   image0_width:" << args.image0.width
+       << "   pad0_height:" << args.image0.pad_height
+       << "   pad0_width:" << args.image0.pad_width;
+  DLOG << "   image1_address:" << args.image1.address
+       << "   image_scale_address:" << args.image1.scale_address
+       << "   image1_channels:" << args.image1.channels
+       << "   image1_height:" << args.image1.height
+       << "   image1_width:" << args.image1.width
+       << "   pad1_height:" << args.image1.pad_height
+       << "   pad_width:" << args.image1.pad_width;
+  DLOG << "   out_address:" << args.output.address
+       << "   out_scale_address:" << args.output.scale_address;
+#endif
+
   return do_ioctl(IOCTL_CONFIG_EW, &args);
 }
 int PerformBypass(const struct BypassArgs &args) {
+#ifdef FPGA_TEST_MODE
+  DLOG << "   layout_type:" << args.layout_type
+       << "   convert_type:" << args.convert_type;
+  DLOG << "   image_address:" << args.image.address
+       << "   image_scale_address:" << args.image.scale_address
+       << "   image_channels:" << args.image.channels
+       << "   image_height:" << args.image.height
+       << "   image_width:" << args.image.width
+       << "   pad_height:" << args.image.pad_height
+       << "   pad_width:" << args.image.pad_width;
+  DLOG << "   out_address:" << args.output.address
+       << "   out_scale_address:" << args.output.scale_address;
+#endif
+
   return do_ioctl(IOCTL_CONFIG_BYPASS, &args);
 }
 
