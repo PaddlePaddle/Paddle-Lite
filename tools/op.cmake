@@ -86,6 +86,8 @@ if ("resnet" IN_LIST NET)
   set(RELU_OP ON)
   set(ELEMENTWISEADD_OP ON)
   set(POOL_OP ON)
+  set(BATCHNORM_OP ON)
+  set(MUL_OP ON)
   set(RESHAPE_OP ON)
   set(SOFTMAX_OP ON)
 

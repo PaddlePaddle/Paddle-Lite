@@ -21,11 +21,10 @@ namespace paddle_mobile {
 namespace fpga {
 
 template <typename Dtype>
-static void chw_to_hwc(Dtype* data_in, Dtype* data_out, int num, int channel,
-                       int height, int width);
+static void chw_to_hwc(Dtype* data_in, Dtype* data_out, int64_t num,
+                       int64_t channel, int64_t height, int64_t width);
 
-// template <typename Dtype>
-void quantify_filter(framework::Tensor* filter);
+void quantize_filter(framework::Tensor* filter);
 
 }  // namespace fpga
 }  // namespace paddle_mobile
