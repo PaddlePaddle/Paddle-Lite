@@ -161,11 +161,11 @@ public class Loader<P: PrecisionType> {
                             } catch let error {
                                 throw error
                             }
-                            tensor.convert(to: .NHWC)
+                            tensor.convert(to: DataLayout.NHWC())
 //                            tensor.initBuffer(device: device)
                             scope[varDesc.name] = tensor
                         } else {
-                            let dim = Dim.init(inDim: tensorDesc.NHWCDim)
+                            let dim = Dim.init(inDim: tensorDesc.dims)
                             scope[varDesc.name] = Texture<P>.init(device: device, inDim: dim)
                         }
                     } else {
