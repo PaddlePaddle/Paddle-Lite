@@ -50,6 +50,8 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable, Testable
 
     required init(device: MTLDevice, param: ConvAddBatchNormReluParam<P>) {
         
+        param.output.initTexture(device: device, transpose: [0, 2, 3, 1])
+        
         if param.filter.width == 1 && param.filter.height == 1 {
             super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_1x1")
         } else if param.filter.channel == 1 {
@@ -60,11 +62,11 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable, Testable
         
         param.filter.initBuffer(device: device, precision: Tensor.BufferPrecision.Float32)
         param.y.initBuffer(device: device, precision: Tensor.BufferPrecision.Float32)
-
         param.variance.initBuffer(device: device)
         param.mean.initBuffer(device: device)
         param.scale.initBuffer(device: device)
         param.bias.initBuffer(device: device)
+        
         
         let offsetX = param.filter.width/2 - Int(param.paddings[0])
         let offsetY = param.filter.height/2 - Int(param.paddings[1])

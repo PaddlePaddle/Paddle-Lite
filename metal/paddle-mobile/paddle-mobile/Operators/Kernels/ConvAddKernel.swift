@@ -13,6 +13,7 @@
  limitations under the License. */
 
 import Foundation
+import MetalPerformanceShaders
 
 class ConvAddKernel<P: PrecisionType>: Kernel, Computable {
     var metalParam: MetalConvParam!
@@ -32,6 +33,8 @@ class ConvAddKernel<P: PrecisionType>: Kernel, Computable {
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: ConvAddParam<P>) throws {
+        
+        
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
             throw PaddleMobileError.predictError(message: " encode is nil")
         }
