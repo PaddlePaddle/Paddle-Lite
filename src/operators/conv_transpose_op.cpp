@@ -20,4 +20,13 @@ namespace paddle_mobile {
 namespace operators {}
 }  // namespace paddle_mobile
 
+namespace ops = paddle_mobile::operators;
+#ifdef PADDLE_MOBILE_CPU
+REGISTER_OPERATOR_CPU(conv2d_transpose, ops::ConvOpTranspose);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
+
 #endif
