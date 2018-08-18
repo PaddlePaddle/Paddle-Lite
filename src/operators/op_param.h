@@ -40,6 +40,11 @@ using std::vector;
 class OpParam {
  protected:
   template <typename T>
+  static T *InputAlphaFrom(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("Alpha", inputs, scope);
+  }
+
+  template <typename T>
   static T *InputFrom(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue<T>("Input", inputs, scope);
   }
@@ -895,19 +900,24 @@ class PReluParam : public OpParam {
  public:
   PReluParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
              const AttributeMap &attrs, const Scope &scope) {
+    DLOG << "PReluParam inputs before";
     input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    alpha_ = InputAlphaFrom<LoDTensor>(inputs, scope);
+    framework::DDim dims = alpha_->dims();
     out_ = OutFrom<LoDTensor>(outputs, scope);
-    slopes_ = GetAttr<vector<float>>("slopes", attrs);
+    mode_ = GetAttr<std::string>("mode", attrs);
+    DLOG << "PReluParam mode after" << mode_;
   }
-
   const Tensor *InputX() const { return input_x_; }
+  const Tensor *InputAlpha() const { return alpha_; }
   Tensor *Out() const { return out_; }
-  const vector<float> &Slopes() const { return slopes_; }
+  const std::string &Mode() const { return mode_; }
 
  private:
   Tensor *input_x_;
   Tensor *out_;
-  vector<float> slopes_;
+  Tensor *alpha_;
+  std::string mode_;
 };
 #endif
 

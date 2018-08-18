@@ -33,77 +33,36 @@ struct PReluFunctor {
  * */
 template <>
 void PReluKernel<CPU, float>::Compute(const PReluParam &param) const {
-  const auto *input_x = param.InputX();
-  auto *input_x_ptr = input_x->data<float>();
+  DLOG << "PReluKernel :Compute";
+
+  auto *x = param.InputX();
+  auto *alpha = param.InputAlpha();
   auto *out = param.Out();
-  auto *out_ptr = out->mutable_data<float>();
-
-  if (param.Slopes().size() == 1) {
-    PReluFunctor<float> func_(param.Slopes()[0]);
-    math::Transform trans;
-    trans(input_x_ptr, input_x_ptr + input_x->numel(), out_ptr, func_);
-  } else if (param.Slopes().size() > 1) {
-    const int dim_size = input_x->dims().size();
-    switch (dim_size) {
-      case 0:
-        break;
-      case 1: {
-        const int input_width = input_x->dims()[0];
-        math::Transform trans;
-
-        #pragma omp parallel for
-        for (int w = 0; w < input_width; ++w) {
-          out_ptr[w] = input_x_ptr[w] * param.Slopes()[w];
-        }
-      } break;
-      case 2: {
-        const int input_height = input_x->dims()[0];
-        const int input_width = input_x->dims()[1];
-
-        math::Transform trans;
-        #pragma omp parallel for
-        for (int h = 0; h < input_height; ++h) {
-          PReluFunctor<float> func_(param.Slopes()[h]);
-          const float *ptr = input_x_ptr + h * input_width;
-          float *optr = out_ptr + +h * input_width;
-          trans(ptr, ptr + input_width, optr, func_);
-        }
-      } break;
-      case 3: {
-        const int chan_size = input_x->dims()[0];
-        const int input_height = input_x->dims()[1];
-        const int input_width = input_x->dims()[2];
-
-        math::Transform trans;
-        #pragma omp parallel for
-        for (int c = 0; c < chan_size; ++c) {
-          PReluFunctor<float> func_(param.Slopes()[c]);
-          int size = input_height * input_width;
-          const float *ptr = input_x_ptr + c * size;
-          float *optr = out_ptr + c * size;
-          trans(ptr, ptr + size, optr, func_);
-        }
-      } break;
-      case 4:
-      default: {
-        const int batch_size = input_x->dims()[0];
-        const int chan_size = input_x->dims()[1];
-        const int input_height = input_x->dims()[2];
-        const int input_width = input_x->dims()[3];
-        math::Transform trans;
-
-        #pragma omp parallel for
-        for (int b = 0; b < batch_size; ++b) {
-          for (int c = 0; c < chan_size; ++c) {
-            PReluFunctor<float> func_(param.Slopes()[c]);
-            int size = input_height * input_width;
-            const float *ptr = input_x_ptr + b * c * size;
-            float *optr = out_ptr + +b * c * size;
-            trans(ptr, ptr + size, optr, func_);
-          }
-        }
-      }  // case 3,default
-      break;
+  std::string mode = param.Mode();
+  const auto *x_ptr = x->data<float>();
+  auto *o_ptr = out->mutable_data<float>();
+  const auto *alpha_ptr = alpha->data<float>();
+  int numel = x->numel();
+  auto dim = x->dims();
+  int index = 0;
+  int i = 0;
+  int temp = 0;
+  if (mode == "channel") {
+    #pragma omp parallel for
+    for (i = 0; i < numel; i++) {
+      temp = numel / (dim[0] * dim[1]);
+      index = (i / temp) % dim[1];
+      o_ptr[i] = x_ptr[i] > 0 ? x_ptr[i] : alpha_ptr[index] * x_ptr[i];
+    }
+  } else if (mode == "element") {
+    #pragma omp parallel for
+    for (i = 0; i < numel; i++) {
+      o_ptr[i] = x_ptr[i] > 0 ? x_ptr[i] : alpha_ptr[i] * x_ptr[i];
+    }
+  } else {
+    #pragma omp parallel for
+    for (i = 0; i < numel; i++) {
+      o_ptr[i] = x_ptr[i] > 0 ? x_ptr[i] : alpha_ptr[0] * x_ptr[i];
     }
   }
 }
