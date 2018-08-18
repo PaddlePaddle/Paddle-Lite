@@ -38,10 +38,15 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
   }
 
 #ifdef PADDLE_MOBILE_FPGA
-  void RunImpl() const { fpga::PerformBypass(param_.FpgaArgs()); }
+
   void Init() {
+    Tensor *output = param_.Out();
+    output->mutable_data<half>();
+  }
+
+  void RunImpl() const {
     const Tensor *input = param_.InputX();
-    auto input_ptr = (const_cast<Tensor *>(input))->mutable_data<float>();
+    auto input_ptr = input->data<float>();
     Tensor *output = param_.Out();
     auto output_ptr = output->mutable_data<half>();
     fpga::BypassArgs args;
@@ -52,12 +57,12 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
     args.image.height = input->dims()[2];
     args.image.width = input->dims()[3];
     args.output.address = output_ptr;
-    param_.SetFpgaArgs(args);
+    fpga::PerformBypass(args);
   }
 
 #else
-  void RunImpl() const { param_.Out()->ShareDataWith(*param_.InputX()); }
   void Init() {}
+  void RunImpl() const { param_.Out()->ShareDataWith(*param_.InputX()); }
 #endif
 
  protected:

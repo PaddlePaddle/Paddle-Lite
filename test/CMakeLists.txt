@@ -27,10 +27,14 @@ elseif("resnet" IN_LIST NET)
     ADD_EXECUTABLE(test-resnet net/test_resnet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-resnet paddle-mobile)
 elseif("FPGAnets" IN_LIST NET)
-    # ADD_EXECUTABLE(test-resnet net/test_resnet.cpp test_helper.h  test_include.h executor_for_test.h)
-    # target_link_libraries(test-resnet paddle-mobile)
+    ADD_EXECUTABLE(test-resnet net/test_resnet.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-resnet paddle-mobile)
+
     ADD_EXECUTABLE(test-tensor-quant fpga/test_tensor_quant.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-tensor-quant paddle-mobile)
+
+    ADD_EXECUTABLE(test-fpga-concat-op fpga/test_concat_op.cpp test_helper.h  test_include.h)
+    target_link_libraries(test-fpga-concat-op paddle-mobile)
 elseif("mobilenetssd" IN_LIST NET)
     # gen test
     ADD_EXECUTABLE(test-mobilenetssd net/test_mobilenet+ssd.cpp test_helper.h  test_include.h executor_for_test.h)
