@@ -10,7 +10,6 @@ import UIKit
 import paddle_mobile
 
 class ViewController: UIViewController {
-
     override func viewDidLoad() {
         super.viewDidLoad()
         print(" done ")

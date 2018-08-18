@@ -61,7 +61,7 @@ class Tensor<P: PrecisionType>: Tensorial {
         }
     }
  
-    required init(inDim: Dim, inLayout: DataLayout = .NCHW) {
+    required init(inDim: Dim, inLayout: DataLayout = DataLayout.NCHW()) {
         dim = inDim
         let size = inDim.numel() * MemoryLayout<P>.size
         let pointer = UnsafeMutablePointer<P>.allocate(capacity: size)
@@ -78,13 +78,13 @@ class Tensor<P: PrecisionType>: Tensorial {
             return
         }
         
-        guard layout == .NCHW && to == .NHWC else {
+        guard layout == DataLayout.NCHW() && to == DataLayout.NHWC() else {
             // other not support
             return
         }
         let newPointer = UnsafeMutablePointer<P>.allocate(capacity: data.size)
         
-        if layout == .NCHW {
+        if layout == DataLayout.NCHW() {
             NCHW2NHWC(newPtr: newPointer)
         }
         
@@ -106,7 +106,6 @@ class Tensor<P: PrecisionType>: Tensorial {
             fatalError(" not support yet ")
         }
         
-        
         let precisionSize: Int
         switch precision {
         case .Float32:
@@ -116,7 +115,7 @@ class Tensor<P: PrecisionType>: Tensorial {
         }
         
         if dim.cout() == 4 {
-            if layout == .NHWC {
+            if layout == DataLayout.NHWC() {
                 let C = dim[3]
                 let cSlices = (C + 3) / 4
                 let paddedC = cSlices * 4
@@ -231,7 +230,6 @@ class Tensor<P: PrecisionType>: Tensorial {
         dim.swapeDimAt(index1: 1, index2: 3)
     }
 }
-
 
 extension Tensor {
     
