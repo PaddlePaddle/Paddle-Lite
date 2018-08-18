@@ -17,15 +17,15 @@ import Foundation
 struct TensorDesc {
     let dims: [Int]
     let dataType: VarTypeType
-    let dataLayout: DataLayout = .NCHW
+    let dataLayout: DataLayout = DataLayout.NHWC()
     var NCHWDim: [Int] {
         get {
             if dims.count != 4 {
                 return dims
             }
-            if dataLayout == .NCHW {
+            if dataLayout == DataLayout.NCHW() {
                 return dims
-            } else if dataLayout == .NHWC{
+            } else if dataLayout == DataLayout.NHWC() {
                 var resultDims = dims
                 resultDims.swapAt(1, 3)
                 return resultDims
@@ -40,9 +40,9 @@ struct TensorDesc {
             if dims.count != 4 {
                 return dims
             }
-            if dataLayout == .NHWC {
+            if dataLayout == DataLayout.NHWC() {
                 return dims
-            } else if dataLayout == .NCHW{
+            } else if dataLayout == DataLayout.NCHW() {
                 var resultDims = dims
                 resultDims.swapAt(1, 3)
                 return resultDims

@@ -40,64 +40,59 @@ extension InputTexture {
 
 public class Texture<P: PrecisionType>: Tensorial {
     var dim: Dim
-    let textureDesc: MTLTextureDescriptor
-    var metalTexture: MTLTexture
+    private(set) var originDim: Dim
+    private var textureDesc: MTLTextureDescriptor!
+    var metalTexture: MTLTexture!
+    var transpose: [Int] = [0, 1, 2, 3]
     
-    init(device: MTLDevice, inDim: Dim, inLayout: DataLayout = .NHWC) {
-        dim = inDim
-        layout = inLayout
+    func initTexture(device: MTLDevice, transpose: [Int]) {
+        let newDim = transpose.map { originDim[$0] }
+        
+        let newLayout = transpose.map {layout.layoutWithDim[$0] }
+        
+        layout = DataLayout.init(newLayout)
+        dim = Dim.init(inDim: newDim)
+        
         let tmpTextureDes = MTLTextureDescriptor.init()
-        if inDim.cout() == 1 {
-            tmpTextureDes.width = inDim[0]
-            tmpTextureDes.textureType = .type1D
-        } else if inDim.cout() == 4 {
-            tmpTextureDes.height = inDim[1]
-            tmpTextureDes.width = inDim[2]
-            tmpTextureDes.depth = 1
-            tmpTextureDes.arrayLength = (inDim[3] * inDim[0] + 3)/4
-            tmpTextureDes.textureType = .type2DArray
-        } else if inDim.cout() == 2 {
-//            tmpTextureDes.height = 1
-//            tmpTextureDes.width = 1
-//            tmpTextureDes.depth = 1
-//            tmpTextureDes.arrayLength = (inDim[0] * inDim[1] + 3)/4
-
-            tmpTextureDes.width = inDim[0]
-            tmpTextureDes.height = inDim[1]
-            tmpTextureDes.depth = 1
-            tmpTextureDes.arrayLength = 1
-            tmpTextureDes.textureType = .type2DArray
-        } else {
-            /*
-             var name: box_coder_0.tmp_0
-             in var tensor desc dims size: 3
-                var tensor desc dim 0 value: -1
-                var tensor desc dim 1 value: 1917
-                var tensor desc dim 2 value: 4
-             */
-            
-            tmpTextureDes.height = inDim[1]
-            tmpTextureDes.width = inDim[2]
-            tmpTextureDes.depth = 1
-            tmpTextureDes.arrayLength = 1
-            tmpTextureDes.textureType = .type2DArray
-        }
+        
+        tmpTextureDes.width = layout.W ?? 1
+        tmpTextureDes.height = layout.H ?? 1
+        tmpTextureDes.depth = 1
+        tmpTextureDes.arrayLength = ((layout.N ?? 1) * (layout.C ?? 1) + 3) / 4
+        tmpTextureDes.textureType = .type2DArray
         
         if MemoryLayout<P>.size == 1 {
             tmpTextureDes.pixelFormat = .rgba8Unorm
         } else if MemoryLayout<P>.size == 2 {
             tmpTextureDes.pixelFormat = .rgba16Float
         } else if MemoryLayout<P>.size == 4 {
-//            tmpTextureDes.pixelFormat = .r32Float
             tmpTextureDes.pixelFormat = .rgba32Float
-
         }
-//        tmpTextureDes.pixelFormat = .rgba16Float
         
         tmpTextureDes.usage = [.shaderRead, .shaderWrite]
         tmpTextureDes.storageMode = .shared
         textureDesc = tmpTextureDes
         metalTexture = device.makeTexture(descriptor: tmpTextureDes) ?! " texture nil "
+    }
+    
+    init(device: MTLDevice, inDim: Dim) {
+        var fourDim: Dim
+        if inDim.cout() == 4 {
+            fourDim = inDim
+        } else if inDim.cout() < 4 {
+            var fourDimNum: [Int] = []
+            for _ in 0..<(4 - inDim.cout()) {
+                fourDimNum.append(1)
+            }
+            fourDimNum.append(contentsOf: inDim.dims)
+            fourDim = Dim.init(inDim: fourDimNum)
+        } else {
+            fatalError(" not support ")
+        }
+        
+        dim = fourDim
+        originDim = fourDim
+        layout = DataLayout.init([(.N, fourDim[0]), (.C, fourDim[1]), (.H, fourDim[2]), (.W, fourDim[3])])
     }
     
 //    required public init(inDim: Dim, inLayout: DataLayout = .NHWC, inTexture: MTLTexture) {

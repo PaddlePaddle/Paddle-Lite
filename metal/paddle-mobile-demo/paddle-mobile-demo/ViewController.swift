@@ -28,7 +28,7 @@ class ViewController: UIViewController {
     var selectImage: UIImage?
     var program: Program?
     var executor: Executor<Float32>?
-    var modelType: SupportModel = .mobilenet
+    var modelType: SupportModel = SupportModel.supportedModels()[0]
     var toPredictTexture: MTLTexture?
     var modelHelper: Net {
         return modelHelperMap[modelType] ?! " has no this type "
