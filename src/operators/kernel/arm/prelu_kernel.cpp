@@ -33,8 +33,6 @@ struct PReluFunctor {
  * */
 template <>
 void PReluKernel<CPU, float>::Compute(const PReluParam &param) const {
-  DLOG << "PReluKernel :Compute";
-
   auto *x = param.InputX();
   auto *alpha = param.InputAlpha();
   auto *out = param.Out();
@@ -48,9 +46,9 @@ void PReluKernel<CPU, float>::Compute(const PReluParam &param) const {
   int i = 0;
   int temp = 0;
   if (mode == "channel") {
+    temp = numel / (dim[0] * dim[1]);
     #pragma omp parallel for
     for (i = 0; i < numel; i++) {
-      temp = numel / (dim[0] * dim[1]);
       index = (i / temp) % dim[1];
       o_ptr[i] = x_ptr[i] > 0 ? x_ptr[i] : alpha_ptr[index] * x_ptr[i];
     }
