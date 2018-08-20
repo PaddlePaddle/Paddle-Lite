@@ -18,7 +18,10 @@ limitations under the License. */
 
 #include "common/types.h"
 #include "framework/program/program.h"
-
+#ifdef ENABLE_CRYPT
+#include "model-decrypt/include/model_decrypt.h"
+//#include "model-decrypt/include/model_crypt_android.h"
+#endif
 namespace paddle_mobile {
 
 template <typename Dtype = CPU, Precision P = Precision::FP32>
