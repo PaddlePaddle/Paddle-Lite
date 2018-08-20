@@ -18,19 +18,28 @@ class BoxcoderParam<P: PrecisionType>: OpParam {
     typealias ParamPrecisionType = P
     required init(opDesc: OpDesc, inScope: Scope) throws {
         do {
-            fatalError()
+            priorBox = try BoxcoderParam.getFirstTensor(key: "PriorBox", map: opDesc.inputs, from: inScope)
+            priorBoxVar = try BoxcoderParam.getFirstTensor(key: "PriorBoxVar", map: opDesc.inputs, from: inScope)
+            targetBox = try BoxcoderParam.getFirstTensor(key: "TargetBox", map: opDesc.inputs, from: inScope)
+            output = try BoxcoderParam.getFirstTensor(key: "OutputBox", map: opDesc.outputs, from: inScope)
+            codeType = try BoxcoderParam.getAttr(key: "code_type", attrs: opDesc.attrs)
+            boxNormalized = try BoxcoderParam.getAttr(key: "box_normalized", attrs: opDesc.attrs)
         } catch let error {
             throw error
         }
     }
-    let input: Texture<P>
+    let priorBox: Texture<P>
+    let priorBoxVar: Texture<P>
+    let targetBox: Texture<P>
     var output: Texture<P>
+    let codeType: String
+    let boxNormalized: Bool
 }
 
 class BoxcoderOp<P: PrecisionType>: Operator<BoxcoderKernel<P>, BoxcoderParam<P>>, Runable, Creator, InferShaperable{
     
     func inferShape() {
-        para.output.dim = para.input.dim
+//        para.output.dim = para.input.dim
     }
     
     typealias OpType = BoxcoderOp<P>

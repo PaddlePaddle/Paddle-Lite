@@ -18,19 +18,22 @@ class MulticlassNMSParam<P: PrecisionType>: OpParam {
     typealias ParamPrecisionType = P
     required init(opDesc: OpDesc, inScope: Scope) throws {
         do {
-            fatalError()
+            scores = try MulticlassNMSParam.getFirstTensor(key: "Scores", map: opDesc.inputs, from: inScope)
+            bboxes = try MulticlassNMSParam.getFirstTensor(key: "BBoxes", map: opDesc.inputs, from: inScope)
+            output = try MulticlassNMSParam.outputOut(outputs: opDesc.outputs, from: inScope)
         } catch let error {
             throw error
         }
     }
-    let input: Texture<P>
+    let scores: Texture<P>
+    let bboxes: Texture<P>
     var output: Texture<P>
 }
 
 class MulticlassNMSOp<P: PrecisionType>: Operator<MulticlassNMSKernel<P>, MulticlassNMSParam<P>>, Runable, Creator, InferShaperable{
     
     func inferShape() {
-        para.output.dim = para.input.dim
+//        para.output.dim = para.input.dim
     }
     
     typealias OpType =  MulticlassNMSOp<P>

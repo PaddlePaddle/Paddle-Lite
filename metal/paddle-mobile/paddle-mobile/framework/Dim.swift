@@ -39,7 +39,6 @@ public struct Dim {
         return dims[index];
     }
     
-    
     private(set) var dims: [Int]
     private init(){
         fatalError()
