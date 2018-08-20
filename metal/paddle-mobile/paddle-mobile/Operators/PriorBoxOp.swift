@@ -18,13 +18,16 @@ class PriorBoxParam<P: PrecisionType>: OpParam {
     typealias ParamPrecisionType = P
     required init(opDesc: OpDesc, inScope: Scope) throws {
         do {
-            fatalError()
+            input = try PriorBoxParam.input(inputs: opDesc.inputs, from: inScope)
+            output = try PriorBoxParam.getFirstTensor(key: "Boxes", map: opDesc.outputs, from: inScope)
+            variances = try PriorBoxParam.getFirstTensor(key: "Variances", map: opDesc.outputs, from: inScope)
         } catch let error {
             throw error
         }
     }
     let input: Texture<P>
     var output: Texture<P>
+    let variances: Texture<P>
 }
 
 class PriorBoxOp<P: PrecisionType>: Operator<PriorBoxKernel<P>, PriorBoxParam<P>>, Runable, Creator, InferShaperable{
@@ -36,7 +39,7 @@ class PriorBoxOp<P: PrecisionType>: Operator<PriorBoxKernel<P>, PriorBoxParam<P>
     typealias OpType = PriorBoxOp<P>
     func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
         do {
-            try kernel.compute(commandBuffer: buffer, param: para)
+            // try kernel.compute(commandBuffer: buffer, param: para)
         } catch let error {
             throw error
         }

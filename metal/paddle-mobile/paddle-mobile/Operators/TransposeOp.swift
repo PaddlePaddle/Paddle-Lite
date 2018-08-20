@@ -18,13 +18,16 @@ class TransposeParam<P: PrecisionType>: OpParam {
     typealias ParamPrecisionType = P
     required init(opDesc: OpDesc, inScope: Scope) throws {
         do {
-            fatalError()
+            input = try TransposeParam.inputX(inputs: opDesc.inputs, from: inScope)
+            output = try TransposeParam.outputOut(outputs: opDesc.outputs, from: inScope)
+            axis = try TransposeParam.getAttr(key: "axis", attrs: opDesc.attrs)
         } catch let error {
             throw error
         }
     }
     let input: Texture<P>
     var output: Texture<P>
+    let axis: [Int32]
 }
 
 class TransposeOp<P: PrecisionType>: Operator<TransposeKernel<P>, TransposeParam<P>>, Runable, Creator, InferShaperable{

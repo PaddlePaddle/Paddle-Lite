@@ -57,7 +57,7 @@ class ConvBNReluKernel<P: PrecisionType>: Kernel, Computable, Testable {
         } else {
             super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_3x3")
         }
-        
+        param.output.initTexture(device: device, transpose: [0, 2, 3, 1])
         param.filter.initBuffer(device: device, precision: Tensor.BufferPrecision.Float32)
         
         param.variance.initBuffer(device: device)

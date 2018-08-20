@@ -56,7 +56,9 @@ class OpCreator<P: PrecisionType> {
          gBoxcoderType              :     BoxcoderOp<P>.creat,
          gConvBnReluType            :     ConvBNReluOp<P>.creat,
          gDwConvBnReluType          :     DwConvBNReluOp<P>.creat,
-         gMulticlassNMSType         :     MulticlassNMSOp<P>.creat]
+         gMulticlassNMSType         :     MulticlassNMSOp<P>.creat,
+         gTransposeType             :     TransposeOp<P>.creat,
+         gPriorBoxType              :     PriorBoxOp<P>.creat]
     
     private init(){}
 }
