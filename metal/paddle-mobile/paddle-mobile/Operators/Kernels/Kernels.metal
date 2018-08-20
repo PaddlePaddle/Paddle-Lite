@@ -202,7 +202,7 @@ kernel void reshape_half(texture2d_array<half, access::read> inTexture [[texture
         gid.y >= outTexture.get_height() ||
         gid.z >= outTexture.get_array_size()) return;
     
-    half4 r = inTexture.read(uint2(0, 0), gid.z);
+    half4 r = inTexture.read(uint2(0, 0), gid.x);
     outTexture.write(r, gid.xy, gid.z);
 }
 
@@ -321,8 +321,53 @@ kernel void prior_box(texture2d_array<float, access::read> inTexture [[texture(0
     }
 }
 
+void xyzn2abcd(uint C, uint xyzn[4], uint abcd[4]) {
+    abcd[1] = xyzn[0];
+    abcd[2] = xyzn[1];
+    uint t = xyzn[2] * 4 + xyzn[3];
+    abcd[0] = t / C;
+    abcd[3] = t % C;
+    return;
+}
 
+void abcd2xyzn(uint C, uint abcd[4], uint xyzn[4]) {
+    xyzn[0] = abcd[1];
+    xyzn[1] = abcd[2];
+    uint t = abcd[0] * C + abcd[3];
+    xyzn[2] = t / 4;
+    xyzn[3] = t % 4;
+    return;
+}
 
+struct TransposeParam {
+    int iC;
+    int oC;
+    int axis[4];
+};
 
-
-
+kernel void transpose(texture2d_array<float, access::read> inTexture [[texture(0)]],
+                 texture2d_array<float, access::write> outTexture [[texture(1)]],
+                 constant TransposeParam &pm [[buffer(0)]],
+                 uint3 gid [[thread_position_in_grid]]) {
+    
+    if ((pm.axis[0] == 0) && (pm.axis[1] == 1) && (pm.axis[2] == 2) && (pm.axis[3] == 3)) {
+        // do nothing
+        float4 r = inTexture.read(gid.xy, gid.z);
+        outTexture.write(r, gid.xy, gid.z);
+    } else {
+        float4 r;
+        for (uint i = 0; i < 4; i++) {
+            uint ixyzn[] = {gid.x, gid.y, gid.z, i};
+            uint iabcd[4], oabcd[4], oxyzn[4];
+            xyzn2abcd(pm.oC, ixyzn, iabcd);
+            oabcd[pm.axis[0]] = iabcd[0];
+            oabcd[pm.axis[1]] = iabcd[1];
+            oabcd[pm.axis[2]] = iabcd[2];
+            oabcd[pm.axis[3]] = iabcd[3];
+            abcd2xyzn(pm.iC, oabcd, oxyzn);
+            float4 rt = inTexture.read(uint2(oxyzn[0], oxyzn[1]), oxyzn[2]);
+            r[i] = rt[oxyzn[3]];
+        }
+        outTexture.write(r, gid.xy, gid.z);
+    }
+}

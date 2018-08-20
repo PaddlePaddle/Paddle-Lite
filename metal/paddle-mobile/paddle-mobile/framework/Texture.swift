@@ -95,43 +95,6 @@ public class Texture<P: PrecisionType>: Tensorial {
         layout = DataLayout.init([(.N, fourDim[0]), (.C, fourDim[1]), (.H, fourDim[2]), (.W, fourDim[3])])
     }
     
-//    required public init(inDim: Dim, inLayout: DataLayout = .NHWC, inTexture: MTLTexture) {
-//        dim = inDim
-//        layout = inLayout
-//        metalTexture = inTexture
-//        let tmpTextureDes = MTLTextureDescriptor.init()
-//        
-//        if inDim.cout() == 1 {
-//            tmpTextureDes.width = inDim[0]
-//            tmpTextureDes.textureType = .type1D
-//        } else if inDim.cout() == 2 {
-//            tmpTextureDes.height = inDim[0]
-//            tmpTextureDes.width = inDim[1]
-//            tmpTextureDes.textureType = .type2D
-//        } else if inDim.cout() == 3 {
-//            fatalError(" not support texture dim 3")
-//        } else if inDim.cout() == 4 {
-//            tmpTextureDes.height = inDim[1]
-//            tmpTextureDes.width = inDim[2]
-//            tmpTextureDes.depth = inDim[3] * inDim[1]
-//            tmpTextureDes.textureType = .type2DArray
-//        }
-//        
-//        tmpTextureDes.pixelFormat = .r32Float
-//        tmpTextureDes.storageMode = .shared
-//        textureDesc = tmpTextureDes
-//        let device = MTLCreateSystemDefaultDevice()
-//        metalTexture = device!.makeTexture(descriptor: tmpTextureDes)!
-//    }
-    
-//    init() {
-//        dim = Dim.init(inDim: [])
-//        layout = .NCHW
-//        let device = MTLCreateSystemDefaultDevice()
-//        textureDesc = MTLTextureDescriptor.init()
-//        metalTexture = device!.makeTexture(descriptor: textureDesc)!
-//    }
-    
     private(set) var layout: DataLayout
 }
 

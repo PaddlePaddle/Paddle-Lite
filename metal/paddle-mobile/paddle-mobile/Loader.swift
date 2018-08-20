@@ -141,10 +141,6 @@ public class Loader<P: PrecisionType> {
                             throw PaddleMobileError.loaderError(message: "get tensor desc failed")
                         }
                         
-//                        guard (try? tensorDesc.dataType.dataTypeSize()) == MemoryLayout<P>.size else {
-//                            throw PaddleMobileError.memoryError(message: "PrecisionType not support")
-//                        }
-                        
                         if (varDesc.persistable
                             && varDesc.type != .FeedMiniBatch
                             && varDesc.type != .FetchList) {
