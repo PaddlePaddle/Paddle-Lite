@@ -160,6 +160,10 @@ else ()
     target_link_libraries(test-mobilenet-combine paddle-mobile)
 
     # gen test
+    ADD_EXECUTABLE(test-genet net/test_genet_combine.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-genet paddle-mobile)
+
+    # gen test
     ADD_EXECUTABLE(test-sigmoid operators/test_sigmoid_op.cpp  test_include.h)
     target_link_libraries(test-sigmoid paddle-mobile)
 
