@@ -14,18 +14,18 @@
 
 import Foundation
 
-class BoxcoderKernel<P: PrecisionType>: Kernel, Computable{
-    func compute(commandBuffer: MTLCommandBuffer, param: BoxcoderParam<P>) throws {
+class ConcatKernel<P: PrecisionType>: Kernel, Computable{
+    func compute(commandBuffer: MTLCommandBuffer, param: ConcatParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encode is nil")
+            throw PaddleMobileError.predictError(message: " encoder is nil")
         }
-//        encoder.setTexture(param.input.metalTexture, index: 0)
+        encoder.setTexture(param.input.metalTexture, index: 0)
         encoder.setTexture(param.output.metalTexture, index: 1)
         encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
         encoder.endEncoding()
     }
     
-    required init(device: MTLDevice, param: BoxcoderParam<P>) {
-        super.init(device: device, inFunctionName: "priorbox")
+    required init(device: MTLDevice, param: ConcatParam<P>) {
+        super.init(device: device, inFunctionName: "concat")
     }
 }

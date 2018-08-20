@@ -18,19 +18,31 @@ class ConcatParam<P: PrecisionType>: OpParam {
     typealias ParamPrecisionType = P
     required init(opDesc: OpDesc, inScope: Scope) throws {
         do {
-            fatalError()
+            guard let xlist = opDesc.inputs["X"] else {
+                fatalError()
+            }
+            for x in xlist {
+                guard let variant = inScope[x], let v = variant as? Texture<P> else {
+                    fatalError()
+                }
+                input.append(v)
+            }
+            axis = try ConcatParam.getAttr(key: "axis", attrs: opDesc.attrs)
+            output = try ConcatParam.outputOut(outputs: opDesc.outputs, from: inScope)
         } catch let error {
             throw error
         }
     }
-    let input: Texture<P>
+    var input: [Texture<P>] = []
     var output: Texture<P>
+    let axis: Int
 }
 
 class ConcatOp<P: PrecisionType>: Operator<ConcatKernel<P>, ConcatParam<P>>, Runable, Creator, InferShaperable{
     
     func inferShape() {
-        para.output.dim = para.input.dim
+        let dim = para.input.reduce([0, 0]) {[$0[0] + $1.dim[0], $1.dim[1]]}
+        para.output.dim = Dim.init(inDim: dim)
     }
     
     typealias OpType = ConcatOp<P>

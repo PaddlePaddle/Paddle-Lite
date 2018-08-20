@@ -68,16 +68,6 @@ public class Executor<P: PrecisionType> {
                     throw error
                 }
             }
-            
-//            for op in block.ops {
-//                do {
-//                    let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
-//                    op.inferShape()
-//                    ops.append(op)
-//                } catch let error {
-//                    throw error
-//                }
-//            }
         }
     }
     
