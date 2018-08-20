@@ -56,6 +56,8 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
     args.image.channels = input->dims()[1];
     args.image.height = input->dims()[2];
     args.image.width = input->dims()[3];
+    args.image.pad_height = 0;
+    args.image.pad_width = 0;
     args.output.address = output_ptr;
     fpga::PerformBypass(args);
   }
