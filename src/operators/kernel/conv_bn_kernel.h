@@ -32,7 +32,8 @@ using framework::DDim;
 using framework::OpKernelBase;
 
 template <typename DeviceType, typename T>
-class ConvBNKernel : public OpKernelBase<DeviceType, FusionConvBNParam<DeviceType>> {
+class ConvBNKernel
+    : public OpKernelBase<DeviceType, FusionConvBNParam<DeviceType>> {
  public:
   void Compute(const FusionConvBNParam<DeviceType> &param) const;
   bool Init(FusionConvBNParam<DeviceType> *param);

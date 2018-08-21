@@ -1279,8 +1279,9 @@ class FusionConvAddBNReluParam : public OpParam {
 #ifdef FUSION_CONVBN_OP
 template <typename Dtype>
 class FusionConvBNParam : public OpParam {
- typedef typename DtypeTensorTrait<Dtype>::gtype GType;
- typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   FusionConvBNParam(const VariableNameMap &inputs,
                     const VariableNameMap &outputs, const AttributeMap &attrs,
