@@ -24,10 +24,11 @@ namespace operators {
 using namespace framework;
 
 template <typename DeviceType, typename T>
-class ConcatKernel : public framework::OpKernelBase<DeviceType, ConcatParam> {
+class ConcatKernel
+    : public framework::OpKernelBase<DeviceType, ConcatParam<DeviceType>> {
  public:
-  void Compute(const ConcatParam &param) const;
-  bool Init(ConcatParam *param);
+  void Compute(const ConcatParam<DeviceType> &param) const;
+  bool Init(ConcatParam<DeviceType> *param);
 };
 
 }  // namespace operators

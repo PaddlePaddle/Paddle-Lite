@@ -27,12 +27,12 @@ using framework::DDim;
 using framework::Tensor;
 
 template <>
-bool SigmoidKernel<CPU, float>::Init(SigmoidParam *param) {
+bool SigmoidKernel<CPU, float>::Init(SigmoidParam<CPU> *param) {
   return true;
 }
 
 template <>
-void SigmoidKernel<CPU, float>::Compute(const SigmoidParam &param) const {
+void SigmoidKernel<CPU, float>::Compute(const SigmoidParam<CPU> &param) const {
   SigmoidCompute<float>(param);
 }
 

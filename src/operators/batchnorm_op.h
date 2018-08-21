@@ -26,14 +26,15 @@ namespace operators {
 using std::string;
 template <typename DeviceType, typename T>
 class BatchNormOp
-    : public framework::OperatorWithKernel<DeviceType, BatchNormParam,
+    : public framework::OperatorWithKernel<DeviceType,
+                                           BatchNormParam<DeviceType>,
                                            BatchNormKernel<DeviceType, T>> {
  public:
   BatchNormOp(const string &type, const VariableNameMap &inputs,
               const VariableNameMap &outputs,
               const framework::AttributeMap &attrs,
               std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, BatchNormParam,
+      : framework::OperatorWithKernel<DeviceType, BatchNormParam<DeviceType>,
                                       BatchNormKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 

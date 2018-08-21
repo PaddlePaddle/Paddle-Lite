@@ -26,10 +26,10 @@ namespace operators {
 
 template <typename DeviceType, typename T>
 class TransposeKernel
-    : public framework::OpKernelBase<DeviceType, TransposeParam> {
+    : public framework::OpKernelBase<DeviceType, TransposeParam<DeviceType>> {
  public:
-  void Compute(const TransposeParam& param) const;
-  bool Init(TransposeParam* param);
+  void Compute(const TransposeParam<DeviceType>& param) const;
+  bool Init(TransposeParam<DeviceType>* param);
 };
 }  // namespace operators
 }  // namespace paddle_mobile

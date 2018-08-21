@@ -36,7 +36,7 @@ class AclBatchNormOp : public acl::ACLOperator {
   AclBatchNormOp& operator=(AclBatchNormOp&&) = delete;
 
   acl::AclParameters& getargs() { return args; }
-  void InitAclLayer(const BatchNormParam& param) {
+  void InitAclLayer(const BatchNormParam<DeviceType>& param) {
     setTargetHint(acl::TargetHint::OPENCL);
     arm_compute::TensorShape input_shape(args.in_cols, args.in_rows,
                                          args.in_depth, args.batch);
@@ -68,7 +68,7 @@ class AclBatchNormOp : public acl::ACLOperator {
   void RunAcl(void* input, void* output) {
     acl::ACLOperator::acl_run(input, output);
   }
-  bool Bypass_acl(const BatchNormParam& param) {
+  bool Bypass_acl(const BatchNormParam<DeviceType>& param) {
     bool bypass_acl = false;
     AclParametersByContext(param);
     InitAclLayer(param);
@@ -81,7 +81,7 @@ class AclBatchNormOp : public acl::ACLOperator {
   }
 
  private:
-  void AclParametersByContext(const BatchNormParam& param) {
+  void AclParametersByContext(const BatchNormParam<DeviceType>& param) {
     const Tensor* in_x = param.InputX();
     Tensor* out = param.OutputY();
     const Tensor* scale = param.InputScale();
@@ -129,7 +129,7 @@ class AclBatchNormOp : public acl::ACLOperator {
 };
 
 template <>
-bool BatchNormKernel<GPU_MALI, float>::Init(BatchNormParam* param) {
+bool BatchNormKernel<GPU_MALI, float>::Init(BatchNormParam<GPU_MALI>* param) {
   AclBatchNormOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclBatchNormOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {
@@ -145,7 +145,7 @@ bool BatchNormKernel<GPU_MALI, float>::Init(BatchNormParam* param) {
 
 template <>
 void BatchNormKernel<GPU_MALI, float>::Compute(
-    const BatchNormParam& param) const {
+    const BatchNormParam<GPU_MALI>& param) const {
   std::cout << "init acl" << std::endl;
   AclBatchNormOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclBatchNormOp<GPU_MALI, float>*>(this->GetAclOp());

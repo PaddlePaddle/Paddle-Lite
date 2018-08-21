@@ -25,10 +25,11 @@ namespace operators {
 
 template <typename DeviceType, typename T>
 class FusionFcReluKernel
-    : public framework::OpKernelBase<DeviceType, FusionFcReluParam> {
+    : public framework::OpKernelBase<DeviceType,
+                                     FusionFcReluParam<DeviceType>> {
  public:
-  void Compute(const FusionFcReluParam& param) const;
-  bool Init(FusionFcReluParam* param);
+  void Compute(const FusionFcReluParam<DeviceType>& param) const;
+  bool Init(FusionFcReluParam<DeviceType>* param);
 };
 }  // namespace operators
 }  // namespace paddle_mobile

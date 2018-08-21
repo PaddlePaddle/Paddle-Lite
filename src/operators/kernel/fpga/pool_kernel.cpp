@@ -20,7 +20,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool PoolKernel<FPGA, float>::Init(PoolParam *param) {
+bool PoolKernel<FPGA, float>::Init(PoolParam<FPGA> *param) {
   const Tensor *input = param->Input();
   auto input_ptr = input->data<half>();
   Tensor *output = param->Output();
@@ -46,7 +46,7 @@ bool PoolKernel<FPGA, float>::Init(PoolParam *param) {
 }
 
 template <>
-void PoolKernel<FPGA, float>::Compute(const PoolParam &param) const {
+void PoolKernel<FPGA, float>::Compute(const PoolParam<FPGA> &param) const {
 #ifdef PADDLE_MOBILE_FPGA
   fpga::ComputeFpgaPool(param.FpgaArgs());
 #endif

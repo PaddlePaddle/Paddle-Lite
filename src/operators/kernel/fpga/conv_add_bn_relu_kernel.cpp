@@ -21,7 +21,8 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ConvAddBNReluKernel<FPGA, float>::Init(FusionConvAddBNReluParam *param) {
+bool ConvAddBNReluKernel<FPGA, float>::Init(
+    FusionConvAddBNReluParam<FPGA> *param) {
   bool relu_enabled = true;
   const Tensor *input = param->Input();
   auto input_ptr = input->data<half>();
@@ -84,7 +85,7 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(FusionConvAddBNReluParam *param) {
 
 template <>
 void ConvAddBNReluKernel<FPGA, float>::Compute(
-    const FusionConvAddBNReluParam &param) const {
+    const FusionConvAddBNReluParam<FPGA> &param) const {
   fpga::ComputeFpgaConv(param.FpgaArgs());
 }
 template class ConvAddBNReluKernel<FPGA, float>;

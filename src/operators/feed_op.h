@@ -70,7 +70,7 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
 #endif
 
  protected:
-  FeedParam param_;
+  FeedParam<DeviceType> param_;
 };
 
 }  // namespace operators

@@ -23,7 +23,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename P>
-void BatchnormCompute(const BatchNormParam &param) {
+void BatchnormCompute(const BatchNormParam<CPU> &param) {
   const Tensor *input_x = param.InputX();
   auto input_x_ptr = input_x->data<float>();
   const auto &x_dims = input_x->dims();
