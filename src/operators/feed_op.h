@@ -49,7 +49,7 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
     auto input_ptr = input->data<float>();
     Tensor *output = param_.Out();
     auto output_ptr = output->mutable_data<half>();
-    auto out_address = output->fpga_args().scale_pointer();
+    auto output_scale_address = output->fpga_args().scale_pointer();
     fpga::BypassArgs args;
     args.convert_type = fpga::DATA_FP32_TO_FP16;
     args.layout_type = fpga::LAYOUT_CHW_TO_HWC;
@@ -60,7 +60,7 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
     args.image.pad_height = 0;
     args.image.pad_width = 0;
     args.output.address = output_ptr;
-    args.output.scale_address = out_address;
+    args.output.scale_address = output_scale_address;
     fpga::PerformBypass(args);
   }
 
