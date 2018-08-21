@@ -21,7 +21,7 @@ if ("mobilenet" IN_LIST NET)
   set(ELEMENTWISEADD_OP ON)
   set(RELU_OP ON)
   set(SOFTMAX_OP ON)
-  set(SOFTMAX_OP ON)
+  set(MUL_OP ON)
   set(DEPTHWISECONV_OP ON)
   set(BATCHNORM_OP ON)
   set(POOL_OP ON)
@@ -30,6 +30,28 @@ if ("mobilenet" IN_LIST NET)
   set(FUSION_CONVADD_OP ON)
 
   set(FOUND_MATCH ON)
+endif()
+
+
+if ("mobilenetssd" IN_LIST NET)
+  message("mobilenetssd enabled")
+  set(FUSION_CONVBNRELU_OP ON)
+  set(FUSION_CONVBNRELU_OP ON)
+  set(FUSION_DWCONVBNRELU_OP ON)
+  set(FUSION_CONVADD_OP ON)
+  set(MULTICLASSNMS_OP ON)
+  set(SOFTMAX_OP ON)
+  set(TRANSPOSE_OP ON)
+    #feed
+  set(PRIORBOX_OP ON)
+  set(CONCAT_OP ON)
+  set(BOXCODER_OP ON)
+  set(RESHAPE_OP ON)
+#fetch
+  #total
+
+  set(FOUND_MATCH ON)
+
 endif()
 
 
@@ -64,6 +86,8 @@ if ("resnet" IN_LIST NET)
   set(RELU_OP ON)
   set(ELEMENTWISEADD_OP ON)
   set(POOL_OP ON)
+  set(BATCHNORM_OP ON)
+  set(MUL_OP ON)
   set(RESHAPE_OP ON)
   set(SOFTMAX_OP ON)
 
@@ -82,6 +106,9 @@ if ("FPGAnets" IN_LIST NET)
   set(CONCAT_OP ON)
   set(SOFTMAX_OP ON)
   set(DROPOUT_OP ON)
+  set(FUSION_CONVBNRELU_OP ON)
+  set(FUSION_CONVBN_OP ON)
+  set(FUSION_CONVADD_OP ON)
 
   set(FOUND_MATCH ON)   
 endif()
@@ -240,8 +267,8 @@ endif()
 if (FUSION_ELEMENTWISEADDRELU_OP)
   add_definitions(-DFUSION_ELEMENTWISEADDRELU_OP)
 endif()
-if (REGION_OP)
-  add_definitions(-DREGION_OP)
+if (FUSION_CONVBN_OP)
+  add_definitions(-DFUSION_CONVBN_OP)
 endif()
 
 if (CONV_TRANSPOSE_OP)

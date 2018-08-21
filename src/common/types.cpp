@@ -50,6 +50,9 @@ const char *G_OP_TYPE_FUSION_ELEMENTWISE_ADD_RELU =
     "fusion_elementwise_add_relu";
 const char *G_OP_TYPE_FUSION_FC_RELU = "fusion_fc_relu";
 const char *G_OP_TYPE_REGION = "region";
+const char *G_OP_TYPE_FUSION_CONV_BN = "fusion_conv_bn";
+const char *G_OP_TYPE_CONV_TRANSPOSE = "conv2d_transpose";
+const char *G_OP_TYPE_PRELU = "prelu";
 
 std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
@@ -57,6 +60,7 @@ std::unordered_map<
         {G_OP_TYPE_CONV, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_FUSION_DWCONV_BN_RELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_BN_RELU, {{"Input"}, {"Out"}}},
+        {G_OP_TYPE_PRELU, {{"X", "Alpha"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_ADD, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_RELU, {{"X"}, {"Out"}}},
         {G_OP_TYPE_SOFTMAX, {{"X"}, {"Out"}}},
@@ -85,6 +89,8 @@ std::unordered_map<
         {G_OP_TYPE_FUSION_POOL_BN, {{"X"}, {"Y"}}},
         {G_OP_TYPE_FUSION_ELEMENTWISE_ADD_RELU, {{"X", "Y"}, {"Out"}}},
         {G_OP_TYPE_FUSION_FC_RELU, {{"X", "Y", "Z"}, {"Out"}}},
-        {G_OP_TYPE_REGION, {{"X"}, {"Out"}}}};
+        {G_OP_TYPE_REGION, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_CONV_BN, {{"Input"}, {"Y"}}},
+        {G_OP_TYPE_CONV_TRANSPOSE, {{"Input"}, {"Output"}}}};
 
 }  // namespace paddle_mobile

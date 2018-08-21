@@ -15,7 +15,7 @@ limitations under the License. */
 #ifdef FUSION_CONVADDRELU_OP
 
 #include "operators/kernel/conv_add_relu_kernel.h"
-#include "common/enforce.h"
+#include "fpga/quantization.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -27,19 +27,21 @@ bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam<FPGA> *param) {
   auto input_ptr = input->data<half>();
   const Tensor *bias = param->Bias();
   auto bias_ptr = bias->data<float>();
-  const Tensor *filter = param->Filter();
-  auto filter_ptr = filter->data<float>();
+  Tensor *filter = param->Filter();
   Tensor *out = param->Output();
   auto out_ptr = out->mutable_data<half>();
 
-  PADDLE_MOBILE_ENFORCE(input->dims()[1] == bias->dims()[0],
-                        "Image channel should be equal to bias number");
-  int channel = input->dims()[1];
+  PADDLE_MOBILE_ENFORCE(out->dims()[1] == bias->dims()[0],
+                        "Output channel should be equal to bias number");
+  int channel = out->dims()[1];
   float *bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sizeof(float));
   for (int i = 0; i < channel; i++) {
     bs_ptr[i * 2] = 1;
     bs_ptr[i * 2 + 1] = bias_ptr[i];
   }
+
+  fpga::quantize_filter(filter);
+  auto filter_ptr = filter->data<int8_t>();
 
   fpga::ConvArgs convArgs;
   convArgs.relu_enabled = relu_enabled;

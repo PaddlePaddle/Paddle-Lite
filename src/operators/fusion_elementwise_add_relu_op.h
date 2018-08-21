@@ -28,7 +28,7 @@ using std::vector;
 class FusioneElementwiseAddReluMatcher : public framework::FusionOpMatcher {
  public:
   FusioneElementwiseAddReluMatcher() {
-    node_ = framework::Node(G_OP_TYPE_FUSION_ELEMENTWISE_ADD_RELU);
+    node_ = framework::Node(G_OP_TYPE_ELEMENTWISE_ADD);
     node_ > std::make_shared<framework::Node>(G_OP_TYPE_RELU);
   }
 

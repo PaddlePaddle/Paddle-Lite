@@ -15,7 +15,7 @@ limitations under the License. */
 #ifdef FUSION_CONVADDBNRELU_OP
 
 #include "operators/kernel/conv_add_bn_relu_kernel.h"
-#include "memory/t_malloc.h"
+#include "fpga/quantization.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -28,8 +28,7 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
   auto input_ptr = input->data<half>();
   const Tensor *bias = param->Bias();
   auto bias_ptr = bias->data<float>();
-  const Tensor *filter = param->Filter();
-  auto filter_ptr = filter->data<float>();
+  Tensor *filter = param->Filter();
   Tensor *out = param->Output();
   auto out_ptr = out->mutable_data<half>();
   auto bn_mean_ptr = param->InputMean()->data<float>();
@@ -37,11 +36,11 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
   auto bn_scale_ptr = param->InputScale()->data<float>();
   auto bn_bias_ptr = param->InputBias()->data<float>();
   const float epsilon = param->Epsilon();
-  PADDLE_MOBILE_ENFORCE(input->dims()[1] == bias->dims()[0] &&
+  PADDLE_MOBILE_ENFORCE(out->dims()[1] == bias->dims()[0] &&
                             bias->dims()[0] == param->InputBias()->dims()[0],
-                        "Image channel should be equal to bias number");
+                        "Output channel should be equal to bias number");
 
-  const int channel = input->dims()[1];
+  const int channel = out->dims()[1];
   float *bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sizeof(float));
   Tensor *new_scale = new Tensor();
   Tensor *new_bias = new Tensor();
@@ -58,6 +57,8 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
   }
   param->SetNewScale(new_scale);
   param->SetNewBias(new_bias);
+  fpga::quantize_filter(filter);
+  auto filter_ptr = filter->data<int8_t>();
 
   fpga::ConvArgs convArgs;
   convArgs.relu_enabled = relu_enabled;

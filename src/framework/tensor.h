@@ -64,7 +64,8 @@ struct SizeOfTypeFunctor<HEAD, TAIL...> {
 };
 
 static inline size_t SizeOfType(std::type_index type) {
-  SizeOfTypeFunctor<int, half, float, double, int16_t, int64_t, bool, size_t>
+  SizeOfTypeFunctor<int8_t, int, half, float, double, int16_t, int64_t, bool,
+                    size_t>
       functor;
   size_t size = functor(type);
 
@@ -115,8 +116,8 @@ class Tensor {
     PADDLE_MOBILE_ENFORCE(
         (std::is_same<T, void>::value ||
          holder_->type().hash_code() == typeid(T).hash_code()),
-        "Tensor holds the wrong type, it holds %s",
-        this->holder_->type().name());
+        "Tensor holds the wrong type, it holds %s ,requested:%s",
+        this->holder_->type().name(), typeid(T).name());
 
     return reinterpret_cast<const T *>(
         reinterpret_cast<uintptr_t>(holder_->ptr()) + offset_);
@@ -255,14 +256,26 @@ class Tensor {
 
 #ifdef PADDLE_MOBILE_FPGA
   struct FPGAArgs {
-    float scale;
+    friend class Tensor;
 
-    inline float *scale_pointer() { return &scale; }
+    inline float *scale_pointer() { return scale_; }
+    inline float scale() { return *scale_; }
+
+   private:
+    float *scale_;
   };
 
   struct FPGAArgs fpga_args() const {
-    return fpgaArgs_;
+    FPGAArgs args;
+    args.scale_ = scale.get();
+    return args;
   }
+
+  void SetFpgaScale(float s) { *(scale.get()) = s; }
+
+ private:
+  std::shared_ptr<float> scale = std::make_shared<float>(0);
+
 #endif
 
  private:
@@ -331,10 +344,6 @@ class Tensor {
    * begins.
    */
   size_t offset_;
-
-#ifdef PADDLE_MOBILE_FPGA
-  FPGAArgs fpgaArgs_;
-#endif
 };
 
 #ifdef PADDLE_MOBILE_DEBUG
@@ -342,9 +351,12 @@ inline Print &operator<<(Print &printer, const Tensor &tensor) {
   printer << " dims: " << tensor.dims() << "\n";
   int stride = tensor.numel() / 20;
   stride = stride > 0 ? stride : 1;
+#ifndef PADDLE_MOBILE_FPGA
   for (int i = 0; i < tensor.numel(); i += stride) {
     printer << tensor.data<float>()[i] << " ";
   }
+#endif
+
   return printer;
 }
 

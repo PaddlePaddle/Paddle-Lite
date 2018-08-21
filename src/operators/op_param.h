@@ -24,7 +24,7 @@ limitations under the License. */
 #include "framework/tensor.h"
 #include "framework/variable.h"
 #ifdef PADDLE_MOBILE_FPGA
-#include "fpga/api/fpga_api.h"
+#include "fpga/api.h"
 #endif
 
 namespace paddle_mobile {
@@ -73,6 +73,11 @@ struct DtypeTensorTrait<GPU_MALI> {
 
 class OpParam {
  protected:
+  template <typename T>
+  static T *InputAlphaFrom(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("Alpha", inputs, scope);
+  }
+
   template <typename T>
   static T *InputFrom(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue<T>("Input", inputs, scope);
@@ -248,7 +253,7 @@ class ConvParam : OpParam {
 
   const RType *Input() const { return input_; }
 
-  const RType *Filter() const { return filter_; }
+  RType *Filter() const { return filter_; }
 
   RType *Output() const { return output_; }
 
@@ -655,6 +660,21 @@ class SoftmaxParam : public OpParam {
  private:
   RType *input_x_;
   RType *out_;
+
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  std::shared_ptr<RType> float_input_x_;
+  fpga::BypassArgs fpga_bypass_args;
+
+ public:
+  RType *FloatInput() {
+    return float_input_x_ == nullptr ? input_x_ : float_input_x_.get();
+  }
+  void SetFloatInput(Tensor *input) { float_input_x_.reset(input); }
+  const fpga::BypassArgs &FpgaArgs() const { return fpga_bypass_args; }
+  void SetFpgaArgs(const fpga::BypassArgs &args) { fpga_bypass_args = args; }
+#endif
 };
 #endif
 
@@ -752,16 +772,6 @@ class FeedParam : public OpParam {
   RType *input_x_;
   RType *out_;
   int batch_size;
-
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::BypassArgs fpga_bypass_args;
-
- public:
-  const fpga::BypassArgs &FpgaArgs() const { return fpga_bypass_args; }
-  void SetFpgaArgs(const fpga::BypassArgs &args) { fpga_bypass_args = args; }
-#endif
 };
 
 template <typename Dtype>
@@ -1009,19 +1019,24 @@ class PReluParam : public OpParam {
  public:
   PReluParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
              const AttributeMap &attrs, const Scope &scope) {
+    DLOG << "PReluParam inputs before";
     input_x_ = InputXFrom<GType>(inputs, scope);
+    alpha_ = InputAlphaFrom<GType>(inputs, scope);
+    framework::DDim dims = alpha_->dims();
     out_ = OutFrom<GType>(outputs, scope);
-    slopes_ = GetAttr<vector<float>>("slopes", attrs);
+    mode_ = GetAttr<std::string>("mode", attrs);
+    DLOG << "PReluParam mode after" << mode_;
   }
-
   const RType *InputX() const { return input_x_; }
+  const RType *InputAlpha() const { return alpha_; }
   RType *Out() const { return out_; }
-  const vector<float> &Slopes() const { return slopes_; }
+  const std::string &Mode() const { return mode_; }
 
  private:
   RType *input_x_;
   RType *out_;
-  vector<float> slopes_;
+  RType *alpha_;
+  std::string mode_;
 };
 #endif
 
@@ -1043,7 +1058,11 @@ class FusionFcParam : public OpParam {
   }
   const RType *InputX() const { return input_x_; }
 
+#ifdef PADDLE_MOBILE_FPGA
+  RType *InputY() const { return input_y_; }
+#else
   const RType *InputY() const { return input_y_; }
+#endif
 
   const RType *InputZ() const { return input_z_; }
 
@@ -1104,7 +1123,11 @@ class FusionConvAddParam : public OpParam {
 
   const RType *Input() const { return input_; }
 
+#ifdef PADDLE_MOBILE_FPGA
+  RType *Filter() const { return filter_; }
+#else
   const RType *Filter() const { return filter_; }
+#endif
 
   RType *Output() const { return output_; }
 
@@ -1184,7 +1207,11 @@ class FusionConvAddBNReluParam : public OpParam {
 
   const RType *Input() const { return input_; }
 
+#ifdef PADDLE_MOBILE_FPGA
+  RType *Filter() const { return filter_; }
+#else
   const RType *Filter() const { return filter_; }
+#endif
 
   RType *Output() const { return output_; }
 
@@ -1249,6 +1276,99 @@ class FusionConvAddBNReluParam : public OpParam {
 };
 #endif
 
+#ifdef FUSION_CONVBN_OP
+template <typename Dtype>
+class FusionConvBNParam : public OpParam {
+ typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+ typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+ public:
+  FusionConvBNParam(const VariableNameMap &inputs,
+                    const VariableNameMap &outputs, const AttributeMap &attrs,
+                    const Scope &scope) {
+    filter_ = FilterFrom<GType>(inputs, scope);
+    input_ = InputFrom<GType>(inputs, scope);
+    output_y_ = OutputYFrom<GType>(outputs, scope);
+    strides_ = GetAttr<vector<int>>("strides", attrs);
+    paddings_ = GetAttr<vector<int>>("paddings", attrs);
+    dilations_ = GetAttr<vector<int>>("dilations", attrs);
+    groups = GetAttr<int>("groups", attrs);
+    input_bias_ = InputBiasFrom<GType>(inputs, scope);
+    input_mean_ = InputMeanFrom<GType>(inputs, scope);
+    input_scale_ = InputScaleFrom<GType>(inputs, scope);
+    input_variance_ = InputVarianceFrom<GType>(inputs, scope);
+    epsilon_ = GetAttr<float>("epsilon", attrs);
+    momentum_ = GetAttr<float>("momentum", attrs);
+    //    is_test_ = GetAttr<bool>("is_test", attrs);
+  }
+
+  const RType *Input() const { return input_; }
+
+#ifdef PADDLE_MOBILE_FPGA
+  RType *Filter() const { return filter_; }
+#else
+  const RType *Filter() const { return filter_; }
+#endif
+  RType *Output() const { return output_y_; }
+
+  const vector<int> &Strides() const { return strides_; }
+
+  const vector<int> &Paddings() const { return paddings_; }
+
+  const vector<int> &Dilations() const { return dilations_; }
+
+  const int &Groups() const { return groups; }
+
+  const RType *InputBias() const { return input_bias_; }
+
+  const RType *InputMean() const { return input_mean_; }
+
+  const RType *InputScale() const { return input_scale_; }
+
+  const RType *InputVariance() const { return input_variance_; }
+
+  const float &Epsilon() const { return epsilon_; }
+
+  const float &Momentum() const { return momentum_; }
+
+  const bool &IsTest() const { return is_test_; }
+
+  void SetNewScale(RType *new_scale) { new_scale_ = new_scale; }
+
+  void SetNewBias(RType *new_bias) { new_bias_ = new_bias; }
+
+  const RType *NewScale() const { return new_scale_; }
+
+  const RType *NewBias() const { return new_bias_; }
+
+ protected:
+  RType *input_;
+  RType *output_y_;
+  RType *filter_;
+  vector<int> strides_;
+  vector<int> paddings_;
+  vector<int> dilations_;
+  int groups;
+  RType *input_bias_;
+  RType *input_mean_;
+  RType *input_scale_;
+  RType *input_variance_;
+  float epsilon_;
+  float momentum_;
+  bool is_test_;
+  RType *new_bias_;
+  RType *new_scale_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::ConvArgs fpga_conv_args;
+
+ public:
+  const fpga::ConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::ConvArgs &args) { fpga_conv_args = args; }
+#endif
+};
+#endif
+
 #ifdef FUSION_CONVADDBN_OP
 template <typename Dtype>
 class FusionConvAddBNParam : public OpParam {
@@ -1282,8 +1402,11 @@ class FusionConvAddBNParam : public OpParam {
 
   const RType *Input() const { return input_; }
 
+#ifdef PADDLE_MOBILE_FPGA
+  RType *Filter() const { return filter_; }
+#else
   const RType *Filter() const { return filter_; }
-
+#endif
   RType *Output() const { return output_y_; }
 
   const vector<int> &Strides() const { return strides_; }
@@ -1459,7 +1582,11 @@ class FusionConvBNReluParam : public OpParam {
 
   const RType *Input() const { return input_; }
 
+#ifdef PADDLE_MOBILE_FPGA
+  RType *Filter() const { return filter_; }
+#else
   const RType *Filter() const { return filter_; }
+#endif
 
   RType *Output() const { return output_; }
 
@@ -1510,6 +1637,15 @@ class FusionConvBNReluParam : public OpParam {
   bool is_test_;
   RType *new_bias_;
   RType *new_scale_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::ConvArgs fpga_conv_args;
+
+ public:
+  const fpga::ConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::ConvArgs &args) { fpga_conv_args = args; }
+#endif
 };
 #endif
 

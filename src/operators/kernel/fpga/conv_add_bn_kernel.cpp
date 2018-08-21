@@ -15,8 +15,8 @@ limitations under the License. */
 #ifdef FUSION_CONVADDBN_OP
 
 #include "operators/kernel/conv_add_bn_kernel.h"
-#include "fpga/api/fpga_api.h"
-#include "fpga/quantilization.h"
+#include "fpga/api.h"
+#include "fpga/quantization.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -28,7 +28,7 @@ bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam<FPGA> *param) {
   auto input_ptr = input->data<half>();
   const Tensor *bias = param->Bias();
   auto bias_ptr = bias->data<float>();
-  const Tensor *filter = param->Filter();
+  Tensor *filter = param->Filter();
 
   Tensor *out = param->Output();
   auto out_ptr = out->mutable_data<half>();
@@ -37,11 +37,11 @@ bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam<FPGA> *param) {
   auto bn_scale_ptr = param->InputScale()->data<float>();
   auto bn_bias_ptr = param->InputBias()->data<float>();
   const float epsilon = param->Epsilon();
-  PADDLE_MOBILE_ENFORCE(input->dims()[1] == bias->dims()[0] &&
+  PADDLE_MOBILE_ENFORCE(out->dims()[1] == bias->dims()[0] &&
                             bias->dims()[0] == param->InputBias()->dims()[0],
-                        "Image channel should be equal to bias number");
+                        "Output channel should be equal to bias number");
 
-  const int channel = input->dims()[1];
+  const int channel = out->dims()[1];
   float *bs_ptr =
       reinterpret_cast<float *>(fpga::fpga_malloc(2 * channel * sizeof(float)));
   Tensor *new_scale = new Tensor();
@@ -60,30 +60,27 @@ bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam<FPGA> *param) {
   param->SetNewScale(new_scale);
   param->SetNewBias(new_bias);
 
-  const Tensor *quant_filter = quantilize_filter(filter);
+  fpga::quantize_filter(filter);
+  auto filter_ptr = filter->data<int8_t>();
 
-  // delete original filter?
-  filter = quant_filter;
-
-  auto filter_ptr = filter->data<float>();
   fpga::ConvArgs convArgs;
   convArgs.relu_enabled = relu_enabled;
-  convArgs.filter_address = reinterpret_cast<void *> filter_ptr;
+  convArgs.filter_address = (void *)filter_ptr;
   convArgs.filter_num = filter->dims()[0];
   convArgs.group_num = param->Groups();
-  convArgs.sb_address = reinterpret_cast<void *> bs_ptr;
+  convArgs.sb_address = (void *)bs_ptr;
   convArgs.kernel.stride_h = param->Strides()[0];
   convArgs.kernel.stride_w = param->Strides()[1];
   convArgs.kernel.height = filter->dims()[2];
   convArgs.kernel.width = filter->dims()[3];
-  convArgs.image.address = reinterpret_cast<void *> input_ptr;
+  convArgs.image.address = (void *)input_ptr;
   convArgs.image.channels = input->dims()[1];
   convArgs.image.height = input->dims()[2];
   convArgs.image.width = input->dims()[3];
   convArgs.image.pad_height = param->Paddings()[0];
   convArgs.image.pad_width = param->Paddings()[1];
   convArgs.image.scale_address = input->fpga_args().scale_pointer();
-  convArgs.output.address = reinterpret_cast<void *> out_ptr;
+  convArgs.output.address = (void *)out_ptr;
   convArgs.output.scale_address = out->fpga_args().scale_pointer();
   param->SetFpgaArgs(convArgs);
 

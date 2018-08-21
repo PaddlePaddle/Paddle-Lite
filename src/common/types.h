@@ -113,6 +113,9 @@ extern const char *G_OP_TYPE_FUSION_POOL_BN;
 extern const char *G_OP_TYPE_FUSION_ELEMENTWISE_ADD_RELU;
 extern const char *G_OP_TYPE_FUSION_FC_RELU;
 extern const char *G_OP_TYPE_REGION;
+extern const char *G_OP_TYPE_FUSION_CONV_BN;
+extern const char *G_OP_TYPE_CONV_TRANSPOSE;
+extern const char *G_OP_TYPE_PRELU;
 
 extern std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>

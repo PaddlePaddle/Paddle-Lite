@@ -55,6 +55,7 @@ REGISTER_OPERATOR_CPU(fusion_conv_bn_relu, ops::FusionConvBNReluOp);
 #ifdef PADDLE_MOBILE_MALI_GPU
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(fusion_conv_bn_relu, ops::FusionConvBNReluOp);
 #endif
 
 #endif
