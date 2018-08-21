@@ -82,23 +82,93 @@ public class PaddleMobileUnitTest {
         indentPrintTensor(tensor: tensor, dim: ndim, ix: dim.map { $0 * 0 }, indentLevel: 0)
     }
     
+    public func testReshape() {
+        let buffer = queue.makeCommandBuffer() ?! "buffer is nil"
+//        let input: [Float32] = (0..<24).map { Float32($0) }
+//        let inTexture = device.tensor2texture(value: input, dim: [2, 3, 4])
+//        let outTexture = device.tensor2texture(value: [Float32](), dim: [4, 6])
+//        let mp = ReshapeMetalParam.init(
+//            idim: (1, 2, 3, 4),
+//            itrans: (0, 1, 2, 3),
+//            odim: (1, 1, 4, 6),
+//            otrans: (0, 1, 2, 3)
+//        )
+//        let param = ReshapeTestParam.init(
+//            inputTexture: inTexture,
+//            outputTexture: outTexture,
+//            param: mp
+//        )
+//        let reshapeKernel = ReshapeKernel<Float32>.init(device: device, testParam: param)
+//        reshapeKernel.test(commandBuffer: buffer, testParam: param)
+//        buffer.addCompletedHandler { (buffer) in
+//            let _: Float32? = inTexture.logDesc()
+//            let _: Float32? = outTexture.logDesc()
+//            self.tensorPrint(tensor: input, dim: [2, 3, 4])
+//            let tx: [Float32] = self.device.texture2tensor(texture: outTexture, dim: [4, 6])
+//            self.tensorPrint(tensor: tx, dim: [4, 6])
+//        }
+        
+        let input: [Float32] = (0..<24).map { Float32($0) }
+        let inTexture = device.tensor2texture(value: input, dim: [2, 3, 4])
+        let outTexture = device.tensor2texture(value: [Float32](), dim: [24])
+        let mp = ReshapeMetalParam.init(
+            idim: (1, 2, 3, 4),
+            itrans: (0, 1, 2, 3),
+            odim: (1, 1, 1, 24),
+            otrans: (0, 1, 2, 3)
+        )
+        let param = ReshapeTestParam.init(
+            inputTexture: inTexture,
+            outputTexture: outTexture,
+            param: mp
+        )
+        let reshapeKernel = ReshapeKernel<Float32>.init(device: device, testParam: param)
+        reshapeKernel.test(commandBuffer: buffer, testParam: param)
+        buffer.addCompletedHandler { (buffer) in
+            let _: Float32? = inTexture.logDesc()
+            let _: Float32? = outTexture.logDesc()
+            self.tensorPrint(tensor: input, dim: [2, 3, 4])
+            let tx: [Float32] = self.device.texture2tensor(texture: outTexture, dim: [24])
+            self.tensorPrint(tensor: tx, dim: [24])
+        }
+
+        
+        buffer.commit()
+    }
+    
     public func testTranspose() {
 
         let buffer = queue.makeCommandBuffer() ?! "buffer is nil"
-        var input: [Float32] = []
-        for i in 0..<72 {
-            input.append(Float32(i))
-        }
-//        let inputTexture = device.makeFloatTexture(value: input, textureWidth: 3, textureHeight: 2, arrayLength: 3)
-        let inputTexture = device.tensor2texture(value: input, dim: [4, 3, 2, 3]);
-        // group 1
-        let outputTexture = device.tensor2texture(value: [Float32](), dim: [3, 3, 2, 4])
-        let param = TransposeTestParam.init(inputTexture: inputTexture, outputTexture: outputTexture, iC: 3, oC: 4, axis: [3, 1, 2, 0])
-//        let param = TransposeTestParam.init(inputTexture: inputTexture, outputTexture: outputTexture, iC: 4, oC: 2, axis: [3, 0, 2, 1])
-//        // group 2
-//        let outputTexture = device.makeFloatTexture(value: [Float32](), textureWidth: 3, textureHeight: 3, arrayLength: 6)
-//        let param = TransposeTestParam.init(inputTexture: inputTexture, outputTexture: outputTexture, iC: 4, oC: 4, axis: [3, 0, 2, 1])
+//        var input: [Float32] = []
+//        for i in 0..<72 {
+//            input.append(Float32(i))
+//        }
+////        let inputTexture = device.makeFloatTexture(value: input, textureWidth: 3, textureHeight: 2, arrayLength: 3)
+//        let inputTexture = device.tensor2texture(value: input, dim: [4, 3, 2, 3]);
+//        // group 1
+//        let outputTexture = device.tensor2texture(value: [Float32](), dim: [3, 3, 2, 4])
+//        let param = TransposeTestParam.init(inputTexture: inputTexture, outputTexture: outputTexture, iC: 3, oC: 4, axis: [3, 1, 2, 0])
+////        let param = TransposeTestParam.init(inputTexture: inputTexture, outputTexture: outputTexture, iC: 4, oC: 2, axis: [3, 0, 2, 1])
+////        // group 2
+////        let outputTexture = device.makeFloatTexture(value: [Float32](), textureWidth: 3, textureHeight: 3, arrayLength: 6)
+////        let param = TransposeTestParam.init(inputTexture: inputTexture, outputTexture: outputTexture, iC: 4, oC: 4, axis: [3, 0, 2, 1])
+////
+//        let transposeKernel = TransposeKernel<Float32>.init(device: device, testParam: param)
 //
+//        transposeKernel.test(commandBuffer: buffer, param: param)
+//
+//        buffer.addCompletedHandler { (buffer) in
+//            let _: Float32? = inputTexture.logDesc(header: "input texture", stridable: false)
+//            let _: Float32? = outputTexture.logDesc(header: "output texture", stridable: false)
+//            self.tensorPrint(tensor: input, dim: [4, 3, 2, 3])
+//            let tx: [Float32] = self.device.texture2tensor(texture: outputTexture, dim: [3, 3, 2, 4])
+//            self.tensorPrint(tensor: tx, dim: [3, 3, 2, 4])
+//        }
+
+        let input: [Float32] = (0..<24).map { Float32($0) }
+        let inputTexture = device.tensor2texture(value: input, dim: [2, 3, 4])
+        let outputTexture = device.tensor2texture(value: [Float](), dim: [3, 4, 2])
+        let param = TransposeTestParam.init(inputTexture: inputTexture, outputTexture: outputTexture, iC: 4, oC: 2, axis: [0, 2, 3, 1])
         let transposeKernel = TransposeKernel<Float32>.init(device: device, testParam: param)
 
         transposeKernel.test(commandBuffer: buffer, param: param)
@@ -106,11 +176,11 @@ public class PaddleMobileUnitTest {
         buffer.addCompletedHandler { (buffer) in
             let _: Float32? = inputTexture.logDesc(header: "input texture", stridable: false)
             let _: Float32? = outputTexture.logDesc(header: "output texture", stridable: false)
-            self.tensorPrint(tensor: input, dim: [4, 3, 2, 3])
-            let tx: [Float32] = self.device.texture2tensor(texture: outputTexture, dim: [3, 3, 2, 4])
-            self.tensorPrint(tensor: tx, dim: [3, 3, 2, 4])
+            self.tensorPrint(tensor: input, dim: [2, 3, 4])
+            let tx: [Float32] = self.device.texture2tensor(texture: outputTexture, dim: [3, 4, 2])
+            self.tensorPrint(tensor: tx, dim: [3, 4, 2])
         }
-
+        
         buffer.commit()
     }
     
