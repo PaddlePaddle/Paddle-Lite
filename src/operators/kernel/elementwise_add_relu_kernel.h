@@ -26,10 +26,11 @@ using namespace framework;
 
 template <typename DeviceType, typename T>
 class ElementwiseAddReluKernel
-    : public framework::OpKernelBase<DeviceType, ElementwiseAddReluParam> {
+    : public framework::OpKernelBase<DeviceType,
+                                     ElementwiseAddReluParam<DeviceType>> {
  public:
-  void Compute(const ElementwiseAddReluParam &param) const;
-  bool Init(ElementwiseAddReluParam *param);
+  void Compute(const ElementwiseAddReluParam<DeviceType> &param) const;
+  bool Init(ElementwiseAddReluParam<DeviceType> *param);
 };
 }  // namespace operators
 }  // namespace paddle_mobile

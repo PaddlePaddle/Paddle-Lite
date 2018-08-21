@@ -24,19 +24,19 @@ namespace paddle_mobile {
 namespace operators {
 using std::string;
 template <typename DeviceType, typename T>
-class ConcatOp
-    : public framework::OperatorWithKernel<
-          DeviceType, ConcatParam, operators::ConcatKernel<DeviceType, T>> {
+class ConcatOp : public framework::OperatorWithKernel<
+                     DeviceType, ConcatParam<DeviceType>,
+                     operators::ConcatKernel<DeviceType, T>> {
  public:
   ConcatOp(const string &type, const VariableNameMap &inputs,
            const VariableNameMap &outputs, const framework::AttributeMap &attrs,
            std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, ConcatParam,
+      : framework::OperatorWithKernel<DeviceType, ConcatParam<DeviceType>,
                                       operators::ConcatKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 
   using framework::OperatorWithKernel<
-      DeviceType, ConcatParam,
+      DeviceType, ConcatParam<DeviceType>,
       operators::ConcatKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 

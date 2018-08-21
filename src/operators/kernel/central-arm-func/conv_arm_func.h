@@ -25,7 +25,7 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
-inline void ConvBasic(const ConvParam &param) {
+inline void ConvBasic(const ConvParam<CPU> &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
   Tensor *output = param.Output();
@@ -112,7 +112,7 @@ inline void ConvBasic(const ConvParam &param) {
 }
 
 template <typename P>
-void ConvCompute(const ConvParam &param) {
+void ConvCompute(const ConvParam<CPU> &param) {
   if (param.Groups() == param.Input()->dims()[1] &&
       param.Input()->dims()[1] == param.Output()->dims()[1] &&
       param.Filter()->dims()[2] == param.Filter()->dims()[3] &&

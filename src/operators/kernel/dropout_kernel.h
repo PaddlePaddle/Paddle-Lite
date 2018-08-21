@@ -23,10 +23,11 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename DeviceType, typename T>
-class DropoutKernel : public framework::OpKernelBase<DeviceType, DropoutParam> {
+class DropoutKernel
+    : public framework::OpKernelBase<DeviceType, DropoutParam<DeviceType>> {
  public:
-  void Compute(const DropoutParam& param) const;
-  bool Init(DropoutParam* para);
+  void Compute(const DropoutParam<DeviceType>& param) const;
+  bool Init(DropoutParam<DeviceType>* para);
 };
 }  // namespace operators
 }  // namespace paddle_mobile

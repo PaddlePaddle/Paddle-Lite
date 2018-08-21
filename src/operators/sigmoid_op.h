@@ -25,20 +25,20 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 template <typename DeviceType, typename T>
-class SigmoidOp
-    : public framework::OperatorWithKernel<
-          DeviceType, SigmoidParam, operators::SigmoidKernel<DeviceType, T>> {
+class SigmoidOp : public framework::OperatorWithKernel<
+                      DeviceType, SigmoidParam<DeviceType>,
+                      operators::SigmoidKernel<DeviceType, T>> {
  public:
   SigmoidOp(const std::string &type, const VariableNameMap &inputs,
             const VariableNameMap &outputs,
             const framework::AttributeMap &attrs,
             std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, SigmoidParam,
+      : framework::OperatorWithKernel<DeviceType, SigmoidParam<DeviceType>,
                                       operators::SigmoidKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 
   using framework::OperatorWithKernel<
-      DeviceType, SigmoidParam,
+      DeviceType, SigmoidParam<DeviceType>,
       operators::SigmoidKernel<DeviceType, T>>::OperatorWithKernel;
 
   void InferShape() const override;

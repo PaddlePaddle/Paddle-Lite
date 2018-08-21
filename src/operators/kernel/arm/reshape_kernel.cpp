@@ -21,12 +21,12 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ReshapeKernel<CPU, float>::Init(ReshapeParam *param) {
+bool ReshapeKernel<CPU, float>::Init(ReshapeParam<CPU> *param) {
   return true;
 }
 
 template <>
-void ReshapeKernel<CPU, float>::Compute(const ReshapeParam &param) const {
+void ReshapeKernel<CPU, float>::Compute(const ReshapeParam<CPU> &param) const {
   ReshapeCompute<float>(param);
 }
 

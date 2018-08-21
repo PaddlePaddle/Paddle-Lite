@@ -20,13 +20,13 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool FusionFcKernel<GPU_MALI, float>::Init(FusionFcParam *param) {
+bool FusionFcKernel<GPU_MALI, float>::Init(FusionFcParam<GPU_MALI> *param) {
   return true;
 }
 
 template <>
 void FusionFcKernel<GPU_MALI, float>::Compute(
-    const FusionFcParam &param) const {
+    const FusionFcParam<GPU_MALI> &param) const {
   const Tensor *input_x = param.InputX();
   const Tensor *input_y = param.InputY();
   const Tensor *input_z = param.InputZ();

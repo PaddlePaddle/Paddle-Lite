@@ -28,19 +28,19 @@ namespace operators {
 using paddle_mobile::framework::Tensor;
 
 template <typename DeviceType, typename T>
-class ScaleOp
-    : public framework::OperatorWithKernel<
-          DeviceType, ScaleParam, operators::ScaleKernel<DeviceType, T>> {
+class ScaleOp : public framework::OperatorWithKernel<
+                    DeviceType, ScaleParam<DeviceType>,
+                    operators::ScaleKernel<DeviceType, T>> {
  public:
   ScaleOp(const std::string &type, const VariableNameMap &inputs,
           const VariableNameMap &outputs, const framework::AttributeMap &attrs,
           std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, ScaleParam,
+      : framework::OperatorWithKernel<DeviceType, ScaleParam<DeviceType>,
                                       operators::ScaleKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 
   using framework::OperatorWithKernel<
-      DeviceType, ScaleParam,
+      DeviceType, ScaleParam<DeviceType>,
       operators::ScaleKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 

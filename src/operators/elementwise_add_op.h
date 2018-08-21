@@ -26,7 +26,7 @@ namespace operators {
 using std::string;
 template <typename DeviceType, typename T>
 class ElementwiseAddOp : public framework::OperatorWithKernel<
-                             DeviceType, ElementwiseAddParam,
+                             DeviceType, ElementwiseAddParam<DeviceType>,
                              operators::ElementwiseAddKernel<DeviceType, T>> {
  public:
   ElementwiseAddOp(const string &type, const VariableNameMap &inputs,
@@ -34,12 +34,12 @@ class ElementwiseAddOp : public framework::OperatorWithKernel<
                    const framework::AttributeMap &attrs,
                    std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<
-            DeviceType, ElementwiseAddParam,
+            DeviceType, ElementwiseAddParam<DeviceType>,
             operators::ElementwiseAddKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 
   using framework::OperatorWithKernel<
-      DeviceType, ElementwiseAddParam,
+      DeviceType, ElementwiseAddParam<DeviceType>,
       operators::ElementwiseAddKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 

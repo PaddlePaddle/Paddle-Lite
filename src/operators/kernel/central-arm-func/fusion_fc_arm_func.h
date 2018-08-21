@@ -22,7 +22,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename P>
-void FusionFcCompute(const FusionFcParam &param) {
+void FusionFcCompute(const FusionFcParam<CPU> &param) {
   const Tensor *input_x = param.InputX();
   const Tensor *input_y = param.InputY();
   const Tensor *input_z = param.InputZ();

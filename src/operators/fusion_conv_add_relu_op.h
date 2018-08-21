@@ -43,7 +43,7 @@ class FusionConvAddReluOpMatcher : public framework::FusionOpMatcher {
 
 template <typename DeviceType, typename T>
 class FusionConvAddReluOp : public framework::OperatorWithKernel<
-                                DeviceType, FusionConvAddReluParam,
+                                DeviceType, FusionConvAddReluParam<DeviceType>,
                                 operators::ConvAddReluKernel<DeviceType, T>> {
  public:
   FusionConvAddReluOp(const string &type, const VariableNameMap &inputs,
@@ -51,12 +51,12 @@ class FusionConvAddReluOp : public framework::OperatorWithKernel<
                       const framework::AttributeMap &attrs,
                       std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<
-            DeviceType, FusionConvAddReluParam,
+            DeviceType, FusionConvAddReluParam<DeviceType>,
             operators::ConvAddReluKernel<DeviceType, T>>(type, inputs, outputs,
                                                          attrs, scope) {}
 
   using framework::OperatorWithKernel<
-      DeviceType, FusionConvAddReluParam,
+      DeviceType, FusionConvAddReluParam<DeviceType>,
       operators::ConvAddReluKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 

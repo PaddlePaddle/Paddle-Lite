@@ -28,7 +28,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename P>
-void ConvTransposeCompute(const ConvTransposeParam &param) {
+void ConvTransposeCompute(const ConvTransposeParam<CPU> &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
   Tensor *output = param.Output();
