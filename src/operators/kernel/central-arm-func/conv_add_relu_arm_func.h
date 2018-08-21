@@ -26,7 +26,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename P>
-void ConvAddReluCompute(const FusionConvAddReluParam &param) {
+void ConvAddReluCompute(const FusionConvAddReluParam<CPU> &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
   Tensor bias = *param.Bias();

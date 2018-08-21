@@ -44,7 +44,7 @@ class FusioneElementwiseAddReluMatcher : public framework::FusionOpMatcher {
 template <typename DeviceType, typename T>
 class FusionElementwiseAddReluOp
     : public framework::OperatorWithKernel<
-          DeviceType, ElementwiseAddReluParam,
+          DeviceType, ElementwiseAddReluParam<DeviceType>,
           operators::ElementwiseAddReluKernel<DeviceType, T>> {
  public:
   FusionElementwiseAddReluOp(const string &type, const VariableNameMap &inputs,
@@ -52,7 +52,7 @@ class FusionElementwiseAddReluOp
                              const framework::AttributeMap &attrs,
                              std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<
-            DeviceType, ElementwiseAddReluParam,
+            DeviceType, ElementwiseAddReluParam<DeviceType>,
             operators::ElementwiseAddReluKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 

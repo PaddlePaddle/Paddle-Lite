@@ -25,7 +25,7 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
-void ConvAddBNReluBasic(const FusionConvAddBNReluParam &param) {
+void ConvAddBNReluBasic(const FusionConvAddBNReluParam<CPU> &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
   Tensor new_bias = *param.NewBias();
@@ -112,7 +112,7 @@ void ConvAddBNReluBasic(const FusionConvAddBNReluParam &param) {
   }
 }
 template <typename P>
-void ConvAddBNReluCompute(const FusionConvAddBNReluParam &param) {
+void ConvAddBNReluCompute(const FusionConvAddBNReluParam<CPU> &param) {
   Tensor Bias;
   Bias.mutable_data<float>({param.Groups()});
   if (param.Groups() == param.Input()->dims()[1] &&

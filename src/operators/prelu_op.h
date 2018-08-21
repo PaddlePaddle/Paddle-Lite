@@ -28,19 +28,19 @@ namespace operators {
 using paddle_mobile::framework::Tensor;
 
 template <typename DeviceType, typename T>
-class PReluOp
-    : public framework::OperatorWithKernel<
-          DeviceType, PReluParam, operators::PReluKernel<DeviceType, T>> {
+class PReluOp : public framework::OperatorWithKernel<
+                    DeviceType, PReluParam<DeviceType>,
+                    operators::PReluKernel<DeviceType, T>> {
  public:
   PReluOp(const std::string &type, const VariableNameMap &inputs,
           const VariableNameMap &outputs, const framework::AttributeMap &attrs,
           std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, PReluParam,
+      : framework::OperatorWithKernel<DeviceType, PReluParam<DeviceType>,
                                       operators::PReluKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 
   using framework::OperatorWithKernel<
-      DeviceType, PReluParam,
+      DeviceType, PReluParam<DeviceType>,
       operators::PReluKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 

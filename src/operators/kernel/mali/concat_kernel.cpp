@@ -38,7 +38,7 @@ class AclConcatOp : public acl::ACLOperator {
 
   acl::AclParameters& getargs() { return args; }
 
-  void InitAclLayer(const ConcatParam& param) {
+  void InitAclLayer(const ConcatParam<DeviceType>& param) {
     setTargetHint(acl::TargetHint::OPENCL);
     const std::vector<framework::LoDTensor*>* input_data = &args.in_tensor;
     arm_compute::TensorShape output_shape(args.out_cols, args.out_rows,
@@ -70,7 +70,7 @@ class AclConcatOp : public acl::ACLOperator {
     T type;
     acl::acl_run(this, input, output, type);
   }
-  bool Bypass_acl(const ConcatParam& param) {
+  bool Bypass_acl(const ConcatParam<DeviceType>& param) {
     bool bypass_acl = false;
     AclParametersByContext(param);
     InitAclLayer(param);
@@ -82,7 +82,7 @@ class AclConcatOp : public acl::ACLOperator {
   }
 
  private:
-  void AclParametersByContext(const ConcatParam& param) {
+  void AclParametersByContext(const ConcatParam<DeviceType>& param) {
     auto inputs = param.Inputs();
     auto* output = param.Out();
     int64_t axis = param.Axis();
@@ -102,7 +102,7 @@ class AclConcatOp : public acl::ACLOperator {
 };
 
 template <>
-bool ConcatKernel<GPU_MALI, float>::Init(ConcatParam* param) {
+bool ConcatKernel<GPU_MALI, float>::Init(ConcatParam<GPU_MALI>* param) {
   AclConcatOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclConcatOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {
@@ -117,7 +117,8 @@ bool ConcatKernel<GPU_MALI, float>::Init(ConcatParam* param) {
 }
 
 template <>
-void ConcatKernel<GPU_MALI, float>::Compute(const ConcatParam& param) const {
+void ConcatKernel<GPU_MALI, float>::Compute(
+    const ConcatParam<GPU_MALI>& param) const {
   std::cout << "init acl" << std::endl;
   AclConcatOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclConcatOp<GPU_MALI, float>*>(this->GetAclOp());

@@ -39,7 +39,7 @@ class AclReluOp : public acl::ACLOperator {
   AclReluOp& operator=(AclReluOp&&) = delete;
 
   acl::AclParameters& getargs() { return args; }
-  void InitAclLayer(const ReluParam& param) {
+  void InitAclLayer(const ReluParam<DeviceType>& param) {
     setTargetHint(acl::TargetHint::OPENCL);
     arm_compute::TensorShape input_shape(args.in_cols, args.in_rows,
                                          args.in_depth, args.batch);
@@ -68,7 +68,7 @@ class AclReluOp : public acl::ACLOperator {
   void RunAcl(void* input, void* output) {
     acl::ACLOperator::acl_run(input, output);
   }
-  bool Bypass_acl(const ReluParam& param) {
+  bool Bypass_acl(const ReluParam<DeviceType>& param) {
     bool bypass_acl = false;
     AclParametersByContext(param);
     InitAclLayer(param);
@@ -80,7 +80,7 @@ class AclReluOp : public acl::ACLOperator {
   }
 
  private:
-  void AclParametersByContext(const ReluParam& param) {
+  void AclParametersByContext(const ReluParam<DeviceType>& param) {
     const auto* input_x = param.InputX();
     auto* out = param.Out();
 
@@ -100,7 +100,7 @@ class AclReluOp : public acl::ACLOperator {
 };
 
 template <>
-bool ReluKernel<GPU_MALI, float>::Init(ReluParam* param) {
+bool ReluKernel<GPU_MALI, float>::Init(ReluParam<GPU_MALI>* param) {
   AclReluOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclReluOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {
@@ -115,7 +115,8 @@ bool ReluKernel<GPU_MALI, float>::Init(ReluParam* param) {
 }
 
 template <>
-void ReluKernel<GPU_MALI, float>::Compute(const ReluParam& param) const {
+void ReluKernel<GPU_MALI, float>::Compute(
+    const ReluParam<GPU_MALI>& param) const {
   std::cout << "init acl" << std::endl;
   AclReluOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclReluOp<GPU_MALI, float>*>(this->GetAclOp());
