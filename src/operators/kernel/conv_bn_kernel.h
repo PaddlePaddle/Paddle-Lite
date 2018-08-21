@@ -11,20 +11,34 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
+
 #pragma once
 
-#include "common/types.h"
-#include "framework/lod_tensor.h"
-#include "framework/tensor.h"
+#ifdef FUSION_CONVBN_OP
+
+#include <vector>
+#include "framework/ddim.h"
+#include "framework/operator.h"
+#include "operators/math/conv_func.h"
+#include "operators/math/im2col.h"
+#include "operators/math/math_function.h"
+#include "operators/math/vol2col.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
-namespace fpga {
+namespace operators {
 
-template <typename Dtype>
-static void chw_to_hwc(Dtype* data_in, Dtype* data_out, int num, int channel,
-                       int height, int width);
+using framework::DDim;
+using framework::OpKernelBase;
 
-template <typename Dtype>
-framework::Tensor* quantilize_filter(framework::Tensor* filter);
-}  // namespace fpga
+template <typename DeviceType, typename T>
+class ConvBNKernel : public OpKernelBase<DeviceType, FusionConvBNParam<DeviceType>> {
+ public:
+  void Compute(const FusionConvBNParam<DeviceType> &param) const;
+  bool Init(FusionConvBNParam<DeviceType> *param);
+};
+
+}  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

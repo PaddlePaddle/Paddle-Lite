@@ -55,6 +55,7 @@ USE_OP_CPU(softmax);
 USE_OP_MALI_GPU(softmax);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+USE_OP_FPGA(softmax);
 #endif
 
 #endif

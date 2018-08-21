@@ -11,28 +11,20 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
+#pragma once
 
-#ifdef CONV_OP
-
-#include "operators/kernel/conv_kernel.h"
-#include "operators/kernel/central-arm-func/conv_arm_func.h"
+#include "common/types.h"
+#include "framework/lod_tensor.h"
+#include "framework/tensor.h"
 
 namespace paddle_mobile {
-namespace operators {
+namespace fpga {
 
-template <>
-bool ConvKernel<FPGA, float>::Init(ConvParam<FPGA> *param) {
-  return true;
-}
+template <typename Dtype>
+static void chw_to_hwc(Dtype* data_in, Dtype* data_out, int64_t num,
+                       int64_t channel, int64_t height, int64_t width);
 
-template <>
-void ConvKernel<FPGA, float>::Compute(const ConvParam<FPGA> &param) const {
-  // ConvCompute<float>(param);
-}
+void quantize_filter(framework::Tensor* filter);
 
-template class ConvKernel<FPGA, float>;
-
-}  // namespace operators
+}  // namespace fpga
 }  // namespace paddle_mobile
-
-#endif

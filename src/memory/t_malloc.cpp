@@ -18,7 +18,7 @@ limitations under the License. */
 
 #ifdef PADDLE_MOBILE_FPGA
 
-#include "fpga/api/fpga_api.h"
+#include "fpga/api.h"
 
 #endif
 

@@ -13,7 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 #ifdef FUSION_FCRELU_OP
 #include "operators/kernel/fc_relu_kernel.h"
-#include "fpga/api/fpga_api.h"
+
+#include "fpga/api.h"
+#include "fpga/quantization.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -23,8 +25,7 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA> *param) {
   bool relu_enabled = true;
   const Tensor *input_x = param->InputX();
   auto input_x_ptr = input_x->data<half>();
-  const Tensor *input_y = param->InputY();
-  auto input_y_ptr = input_y->data<float>();
+  Tensor *input_y = param->InputY();
   const Tensor *input_z = param->InputZ();
   auto input_z_ptr = input_z->data<float>();
   Tensor *out = param->Out();
@@ -32,12 +33,15 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA> *param) {
 
   PADDLE_MOBILE_ENFORCE(input_x->dims()[1] == input_y->dims()[0],
                         "Image channel should be equal to weight number");
-  int channel = input_x->dims()[1];
+  int channel = out->dims()[1];
   float *bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sizeof(float));
   for (int i = 0; i < channel; i++) {
     bs_ptr[i * 2] = 1;
     bs_ptr[i * 2 + 1] = input_z_ptr[i];
   }
+
+  fpga::quantize_filter(input_y);
+  auto input_y_ptr = input_y->data<int8_t>();
 
   fpga::ConvArgs convArgs;
   convArgs.relu_enabled = relu_enabled;

@@ -2957,8 +2957,8 @@ void AddDot6x8(int k, const float *a, const float *b, float *c, int ldc) {
       "vmov.f32   q15,    #0.0          \n\t"
 
       "subs       %[kc1], %[kc1], #1    \n\t"
-      "blt        end_kc1_%=            \n\t"
-      "loop_kc1_%=:                     \n\t"
+      "blt        2f                    \n\t"
+      "1:                               \n\t"
 
       //      "pld        [%[a_ptr], #128]       \n\t"
       //      "pld        [%[b_ptr], #128]       \n\t"
@@ -3030,12 +3030,12 @@ void AddDot6x8(int k, const float *a, const float *b, float *c, int ldc) {
       "vmla.f32   q15,  q3,   d2[1]       \n\t"
 
       "subs       %[kc1], %[kc1], #1      \n\t"
-      "bge        loop_kc1_%=             \n\t"
-      "end_kc1_%=:                        \n\t"
+      "bge        1b                      \n\t"
+      "2:                                 \n\t"
 
       "subs       %[kc2], %[kc2], #1      \n\t"
-      "blt        end_kc2_%=              \n\t"
-      "loop_kc2_%=:                       \n\t"
+      "blt        4f                      \n\t"
+      "3:                                 \n\t"
 
       "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
       "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
@@ -3054,8 +3054,8 @@ void AddDot6x8(int k, const float *a, const float *b, float *c, int ldc) {
       "vmla.f32   q15,  q3,   d2[1]       \n\t"
 
       "subs       %[kc2], %[kc2], #1      \n\t"
-      "bge        loop_kc2_%=             \n\t"
-      "end_kc2_%=:                        \n\t"
+      "bge        3b                      \n\t"
+      "4:                                 \n\t"
 
       "mov        r5,     %[c]            \n\t"
       "mov        r6,     %[step]         \n\t"
@@ -3113,8 +3113,8 @@ void AddDot8x12(int k, const float *a, const float *b, float *c, int ldc) {
       "dup      v28.4s,    wzr     \n\t"
 
       "subs       %[kc1], %[kc1], #1    \n\t"
-      "blt        end_kc1_%=            \n\t"
-      "loop_kc1_%=:                     \n\t"
+      "blt        2f                    \n\t"
+      "1:                               \n\t"
 
       "prfm     pldl1keep,         [%[a_ptr],   #32]  \n\t"
       "prfm     pldl1keep,         [%[b_ptr],   #48]  \n\t"
@@ -3149,8 +3149,8 @@ void AddDot8x12(int k, const float *a, const float *b, float *c, int ldc) {
       "fmla     v28.4s,   v4.4s,   v1.s[3]       \n\t"
 
       "subs       %[kc1], %[kc1], #1      \n\t"
-      "bge        loop_kc1_%=             \n\t"
-      "end_kc1_%=:                        \n\t"
+      "bge        1b                      \n\t"
+      "2:                                 \n\t"
 
       "st1      {v5.4s,   v6.4s,  v7.4s},    [%[c]],   %[step]   \n\t"
       "st1      {v8.4s,   v9.4s,  v10.4s},   [%[c]],   %[step]   \n\t"
@@ -3205,8 +3205,8 @@ void AddDot6x16(int k, const float *a, const float *b, float *c, int ldc) {
       "dup      v29.4s,    wzr     \n\t"
 
       "subs       %[kc1], %[kc1], #1    \n\t"
-      "blt        end_kc1_%=            \n\t"
-      "loop_kc1_%=:                     \n\t"
+      "blt        2f                    \n\t"
+      "1:                               \n\t"
 
       "prfm   pldl1keep,  [%[a_ptr],  #24]  \n\t"
       "prfm   pldl1keep,  [%[b_ptr],  #64]  \n\t"
@@ -3245,8 +3245,8 @@ void AddDot6x16(int k, const float *a, const float *b, float *c, int ldc) {
       "fmla     v29.4s,   v5.4s,   v1.s[1]       \n\t"
 
       "subs       %[kc1], %[kc1], #1      \n\t"
-      "bge        loop_kc1_%=             \n\t"
-      "end_kc1_%=:                        \n\t"
+      "bge        1b                      \n\t"
+      "2:                                 \n\t"
 
       "st1      {v6.4s,  v7.4s,  v8.4s,  v9.4s},    [%[c]],   %[step]   \n\t"
       "st1      {v10.4s, v11.4s, v12.4s, v13.4s},   [%[c]],   %[step]   \n\t"
