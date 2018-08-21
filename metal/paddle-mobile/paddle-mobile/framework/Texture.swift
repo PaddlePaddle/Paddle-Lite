@@ -45,7 +45,7 @@ public class Texture<P: PrecisionType>: Tensorial {
     var metalTexture: MTLTexture!
     var transpose: [Int] = [0, 1, 2, 3]
     
-    func initTexture(device: MTLDevice, transpose: [Int]) {
+    func initTexture(device: MTLDevice, transpose: [Int] = [0, 1, 2, 3]) {
         let newDim = transpose.map { originDim[$0] }
         
         let newLayout = transpose.map {layout.layoutWithDim[$0] }

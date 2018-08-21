@@ -184,27 +184,6 @@ kernel void pool_half(texture2d_array<half, access::read> inTexture [[texture(0)
     outTexture.write(r, gid.xy, gid.z);
 }
 
-kernel void reshape(texture2d_array<float, access::read> inTexture [[texture(0)]],
-                    texture2d_array<float, access::write> outTexture [[texture(1)]],
-                    uint3 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() ||
-        gid.y >= outTexture.get_height() ||
-        gid.z >= outTexture.get_array_size()) return;
-    
-    float4 r = inTexture.read(uint2(0, 0), gid.z);
-    outTexture.write(r, gid.xy, gid.z);
-}
-
-kernel void reshape_half(texture2d_array<half, access::read> inTexture [[texture(0)]],
-                    texture2d_array<half, access::write> outTexture [[texture(1)]],
-                    uint3 gid [[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() ||
-        gid.y >= outTexture.get_height() ||
-        gid.z >= outTexture.get_array_size()) return;
-    
-    half4 r = inTexture.read(uint2(0, 0), gid.x);
-    outTexture.write(r, gid.xy, gid.z);
-}
 
 kernel void softmax(texture2d_array<float, access::read> inTexture [[texture(0)]],
                     texture2d_array<float, access::write> outTexture [[texture(1)]],
@@ -321,22 +300,47 @@ kernel void prior_box(texture2d_array<float, access::read> inTexture [[texture(0
     }
 }
 
-void xyzn2abcd(uint C, uint xyzn[4], uint abcd[4]) {
-    abcd[1] = xyzn[0];
-    abcd[2] = xyzn[1];
+inline void xyzn2abcd(int C, int xyzn[4], int abcd[4]) {
+    abcd[2] = xyzn[0];
+    abcd[1] = xyzn[1];
     uint t = xyzn[2] * 4 + xyzn[3];
     abcd[0] = t / C;
     abcd[3] = t % C;
-    return;
 }
 
-void abcd2xyzn(uint C, uint abcd[4], uint xyzn[4]) {
-    xyzn[0] = abcd[1];
-    xyzn[1] = abcd[2];
+inline void abcd2xyzn(int C, int abcd[4], int xyzn[4]) {
+    xyzn[0] = abcd[2];
+    xyzn[1] = abcd[1];
     uint t = abcd[0] * C + abcd[3];
     xyzn[2] = t / 4;
     xyzn[3] = t % 4;
-    return;
+}
+
+inline int32_t abcd2index(int32_t dim[4], int32_t abcd[4]) {
+    int32_t r = abcd[0];
+    r = r * dim[1] + abcd[1];
+    r = r * dim[2] + abcd[2];
+    r = r * dim[3] + abcd[3];
+    return r;
+}
+
+inline void index2abcd(int32_t dim[4], int32_t ind, int32_t abcd[4]) {
+    abcd[3] = ind % dim[3]; ind /= dim[3];
+    abcd[2] = ind % dim[2]; ind /= dim[2];
+    abcd[1] = ind % dim[1]; ind /= dim[1];
+    abcd[0] = ind;
+}
+
+inline void trans(int32_t trans[4], int32_t ipos[4], int32_t opos[4]) {
+    for (int i = 0; i < 4; i++) {
+        opos[i] = ipos[trans[i]];
+    }
+}
+
+inline void invtrans(int32_t trans[4], int32_t ipos[4], int32_t opos[4]) {
+    for (int i = 0; i < 4; i++) {
+        opos[trans[i]] = ipos[i];
+    }
 }
 
 struct TransposeParam {
@@ -356,9 +360,9 @@ kernel void transpose(texture2d_array<float, access::read> inTexture [[texture(0
         outTexture.write(r, gid.xy, gid.z);
     } else {
         float4 r;
-        for (uint i = 0; i < 4; i++) {
-            uint ixyzn[] = {gid.x, gid.y, gid.z, i};
-            uint iabcd[4], oabcd[4], oxyzn[4];
+        for (int n = 0; n < 4; n++) {
+            int ixyzn[] = {int(gid.x), int(gid.y), int(gid.z), n};
+            int iabcd[4], oabcd[4], oxyzn[4];
             xyzn2abcd(pm.oC, ixyzn, iabcd);
             oabcd[pm.axis[0]] = iabcd[0];
             oabcd[pm.axis[1]] = iabcd[1];
@@ -366,8 +370,58 @@ kernel void transpose(texture2d_array<float, access::read> inTexture [[texture(0
             oabcd[pm.axis[3]] = iabcd[3];
             abcd2xyzn(pm.iC, oabcd, oxyzn);
             float4 rt = inTexture.read(uint2(oxyzn[0], oxyzn[1]), oxyzn[2]);
-            r[i] = rt[oxyzn[3]];
+            r[n] = rt[oxyzn[3]];
         }
         outTexture.write(r, gid.xy, gid.z);
     }
 }
+
+struct ReshapeParam {
+    int32_t idim[4];
+    int32_t itrans[4];
+    int32_t odim[4];
+    int32_t otrans[4];
+};
+
+kernel void reshape(texture2d_array<float, access::read> inTexture [[texture(0)]],
+                    texture2d_array<float, access::write> outTexture [[texture(1)]],
+                    constant ReshapeParam &rp [[buffer(0)]],
+                    uint3 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() ||
+        gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size()) return;
+    
+    int oxyzn[4] = {int(gid.x), int(gid.y), int(gid.z), 0}, oabcd[4], ixyzn[4], iabcd[4];
+    ReshapeParam lrp = rp;
+    int oC = lrp.odim[lrp.otrans[3]];
+    int iC = lrp.idim[lrp.itrans[3]];
+    int count = lrp.odim[0] * lrp.odim[1] * lrp.odim[2] * lrp.odim[3];
+    float4 r;
+    for (int n = 0; n < 4; n++) {
+        oxyzn[3] = n;
+        xyzn2abcd(oC, oxyzn, oabcd);
+        int tabcd[4];
+        invtrans(lrp.otrans, oabcd, tabcd);
+        int index = abcd2index(lrp.odim, tabcd);
+        if (index < count) {
+            index2abcd(lrp.idim, index, tabcd);
+            trans(lrp.itrans, tabcd, iabcd);
+            abcd2xyzn(iC, tabcd, ixyzn);
+            r[n] = inTexture.read(uint2(ixyzn[0], ixyzn[1]), ixyzn[2])[ixyzn[3]];
+        } else {
+            r[n] = 0;
+        }
+    }
+    outTexture.write(r, gid.xy, gid.z);
+}
+//
+//kernel void reshape_half(texture2d_array<half, access::read> inTexture [[texture(0)]],
+//                         texture2d_array<half, access::write> outTexture [[texture(1)]],
+//                         uint3 gid [[thread_position_in_grid]]) {
+//    if (gid.x >= outTexture.get_width() ||
+//        gid.y >= outTexture.get_height() ||
+//        gid.z >= outTexture.get_array_size()) return;
+//
+//    half4 r = inTexture.read(uint2(0, 0), gid.x);
+//    outTexture.write(r, gid.xy, gid.z);
+//}
