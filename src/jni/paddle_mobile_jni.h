@@ -73,8 +73,8 @@ JNIEXPORT void JNICALL Java_com_baidu_paddle_PML_setThread(JNIEnv *env,
 /**
  * clear data of the net when destroy for android
  */
-JNIEXPORT void JNICALL Java_com_baidu_paddle_PMLL_clear(JNIEnv *env,
-                                                        jclass thiz);
+JNIEXPORT void JNICALL Java_com_baidu_paddle_PML_clear(JNIEnv *env,
+                                                       jclass thiz);
 }  // namespace jni
 }  // namespace paddle_mobile
 #ifdef __cplusplus
