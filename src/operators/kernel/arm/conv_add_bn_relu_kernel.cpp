@@ -21,7 +21,8 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ConvAddBNReluKernel<CPU, float>::Init(FusionConvAddBNReluParam *param) {
+bool ConvAddBNReluKernel<CPU, float>::Init(
+    FusionConvAddBNReluParam<CPU> *param) {
   const Tensor *mean = param->InputMean();
   const Tensor *variance = param->InputVariance();
   const Tensor *scale = param->InputScale();
@@ -54,7 +55,7 @@ bool ConvAddBNReluKernel<CPU, float>::Init(FusionConvAddBNReluParam *param) {
 
 template <>
 void ConvAddBNReluKernel<CPU, float>::Compute(
-    const FusionConvAddBNReluParam &param) const {
+    const FusionConvAddBNReluParam<CPU> &param) const {
   ConvAddBNReluCompute<float>(param);
 }
 template class ConvAddBNReluKernel<CPU, float>;

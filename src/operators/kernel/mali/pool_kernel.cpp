@@ -39,7 +39,7 @@ class AclPoolOp : public acl::ACLOperator {
   AclPoolOp& operator=(AclPoolOp&&) = delete;
 
   acl::AclParameters& getargs() { return args; }
-  void InitAclLayer(const PoolParam& param) {
+  void InitAclLayer(const PoolParam<DeviceType>& param) {
     setTargetHint(acl::TargetHint::OPENCL);
     arm_compute::TensorShape input_shape(args.in_cols, args.in_rows,
                                          args.in_depth);
@@ -79,7 +79,7 @@ class AclPoolOp : public acl::ACLOperator {
   void RunAcl(void* input, void* output) {
     acl::ACLOperator::acl_run(input, output);
   }
-  bool Bypass_acl(const PoolParam& param) {
+  bool Bypass_acl(const PoolParam<DeviceType>& param) {
     bool bypass_acl = false;
     AclParametersByContext(param);
     InitAclLayer(param);
@@ -100,7 +100,7 @@ class AclPoolOp : public acl::ACLOperator {
   }
 
  private:
-  void AclParametersByContext(const PoolParam& param) {
+  void AclParametersByContext(const PoolParam<DeviceType>& param) {
     const Tensor* in_x = param.Input();
     Tensor* out = param.Output();
     std::string pooling_type = param.PoolingType();
@@ -180,7 +180,7 @@ class AclPoolOp : public acl::ACLOperator {
 };
 
 template <>
-bool PoolKernel<GPU_MALI, float>::Init(PoolParam* param) {
+bool PoolKernel<GPU_MALI, float>::Init(PoolParam<GPU_MALI>* param) {
   AclPoolOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclPoolOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {
@@ -195,7 +195,8 @@ bool PoolKernel<GPU_MALI, float>::Init(PoolParam* param) {
 }
 
 template <>
-void PoolKernel<GPU_MALI, float>::Compute(const PoolParam& param) const {
+void PoolKernel<GPU_MALI, float>::Compute(
+    const PoolParam<GPU_MALI>& param) const {
   std::cout << "init acl" << std::endl;
   AclPoolOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclPoolOp<GPU_MALI, float>*>(this->GetAclOp());

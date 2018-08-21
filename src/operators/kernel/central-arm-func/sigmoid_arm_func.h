@@ -73,7 +73,7 @@ void sigmoid(const Tensor *X, Tensor *Y) {
 }
 
 template <typename P>
-void SigmoidCompute(const SigmoidParam &param) {
+void SigmoidCompute(const SigmoidParam<CPU> &param) {
   const Tensor *in_x = param.InputX();
   Tensor *out = param.Out();
   auto x_dims = in_x->dims();

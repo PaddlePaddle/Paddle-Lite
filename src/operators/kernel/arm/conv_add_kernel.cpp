@@ -20,12 +20,13 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ConvAddKernel<CPU, float>::Init(FusionConvAddParam *param) {
+bool ConvAddKernel<CPU, float>::Init(FusionConvAddParam<CPU> *param) {
   return true;
 }
 
 template <>
-void ConvAddKernel<CPU, float>::Compute(const FusionConvAddParam &param) const {
+void ConvAddKernel<CPU, float>::Compute(
+    const FusionConvAddParam<CPU> &param) const {
   ConvAddCompute<float>(param);
 }
 

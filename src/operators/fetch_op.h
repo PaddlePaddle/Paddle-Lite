@@ -41,7 +41,7 @@ class FetchOp : public framework::OperatorBase<DeviceType> {
   }
 
  protected:
-  FetchParam param_;
+  FetchParam<DeviceType> param_;
 };
 
 }  // namespace operators

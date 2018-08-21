@@ -23,10 +23,11 @@ namespace operators {
 using framework::OpKernelBase;
 void sigmoid(const Tensor* X, Tensor* Y);
 template <typename DeviceType, typename T>
-class SigmoidKernel : public OpKernelBase<DeviceType, SigmoidParam> {
+class SigmoidKernel
+    : public OpKernelBase<DeviceType, SigmoidParam<DeviceType>> {
  public:
-  void Compute(const SigmoidParam& param) const override;
-  bool Init(SigmoidParam* param);
+  void Compute(const SigmoidParam<DeviceType>& param) const override;
+  bool Init(SigmoidParam<DeviceType>* param);
 };
 }  // namespace operators
 }  // namespace paddle_mobile

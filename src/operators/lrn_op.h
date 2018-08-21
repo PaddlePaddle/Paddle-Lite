@@ -26,17 +26,18 @@ namespace operators {
 using std::string;
 template <typename DeviceType, typename T>
 class LrnOp : public framework::OperatorWithKernel<
-                  DeviceType, LrnParam, operators::LrnKernel<DeviceType, T>> {
+                  DeviceType, LrnParam<DeviceType>,
+                  operators::LrnKernel<DeviceType, T>> {
  public:
   LrnOp(const string &type, const VariableNameMap &inputs,
         const VariableNameMap &outputs, const framework::AttributeMap &attrs,
         std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, LrnParam,
+      : framework::OperatorWithKernel<DeviceType, LrnParam<DeviceType>,
                                       operators::LrnKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 
   using framework::OperatorWithKernel<
-      DeviceType, LrnParam,
+      DeviceType, LrnParam<DeviceType>,
       operators::LrnKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 

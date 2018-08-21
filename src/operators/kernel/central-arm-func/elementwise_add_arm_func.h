@@ -27,7 +27,7 @@ struct AddFunctor {
 };
 
 template <typename P>
-void ElementwiseAddCompute(const ElementwiseAddParam &param) {
+void ElementwiseAddCompute(const ElementwiseAddParam<CPU> &param) {
   const Tensor *input_x = param.InputX();
   const Tensor *input_y = param.InputY();
   Tensor *Out = param.Out();

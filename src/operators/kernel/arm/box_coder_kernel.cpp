@@ -21,12 +21,13 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool BoxCoderKernel<CPU, float>::Init(BoxCoderParam *param) {
+bool BoxCoderKernel<CPU, float>::Init(BoxCoderParam<CPU> *param) {
   return true;
 }
 
 template <>
-void BoxCoderKernel<CPU, float>::Compute(const BoxCoderParam &param) const {
+void BoxCoderKernel<CPU, float>::Compute(
+    const BoxCoderParam<CPU> &param) const {
   BoxCoderCompute<float>(param);
 }
 
