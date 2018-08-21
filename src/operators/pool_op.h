@@ -29,17 +29,17 @@ using framework::OperatorWithKernel;
 using framework::Scope;
 using std::string;
 template <typename DeviceType, typename T>
-class PoolOp : public OperatorWithKernel<DeviceType, PoolParam,
+class PoolOp : public OperatorWithKernel<DeviceType, PoolParam<DeviceType>,
                                          operators::PoolKernel<DeviceType, T>> {
  public:
   PoolOp(const string &type, const VariableNameMap &inputs,
          const VariableNameMap &outputs, const AttributeMap &attrs,
          std::shared_ptr<Scope> scope)
-      : OperatorWithKernel<DeviceType, PoolParam,
+      : OperatorWithKernel<DeviceType, PoolParam<DeviceType>,
                            operators::PoolKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
   using OperatorWithKernel<
-      DeviceType, PoolParam,
+      DeviceType, PoolParam<DeviceType>,
       operators::PoolKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 

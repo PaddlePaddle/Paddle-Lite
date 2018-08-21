@@ -23,7 +23,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam *param) {
+bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
   const Tensor *input = param->InputX();
   if (input->type() == typeid(half)) {
     auto input_ptr = input->data<half>();
@@ -43,7 +43,8 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam *param) {
 }
 
 template <>
-void SoftmaxKernel<FPGA, float>::Compute(const SoftmaxParam &param) const {
+void SoftmaxKernel<FPGA, float>::Compute(
+    const SoftmaxParam<FPGA> &param) const {
   // SoftmaxCompute<float>(param);
 }
 

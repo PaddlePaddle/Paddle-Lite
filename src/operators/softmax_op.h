@@ -25,20 +25,20 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 template <typename DeviceType, typename T>
-class SoftmaxOp
-    : public framework::OperatorWithKernel<
-          DeviceType, SoftmaxParam, operators::SoftmaxKernel<DeviceType, T>> {
+class SoftmaxOp : public framework::OperatorWithKernel<
+                      DeviceType, SoftmaxParam<DeviceType>,
+                      operators::SoftmaxKernel<DeviceType, T>> {
  public:
   SoftmaxOp(const std::string &type, const VariableNameMap &inputs,
             const VariableNameMap &outputs,
             const framework::AttributeMap &attrs,
             std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, SoftmaxParam,
+      : framework::OperatorWithKernel<DeviceType, SoftmaxParam<DeviceType>,
                                       operators::SoftmaxKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 
   using framework::OperatorWithKernel<
-      DeviceType, SoftmaxParam,
+      DeviceType, SoftmaxParam<DeviceType>,
       operators::SoftmaxKernel<DeviceType, T>>::OperatorWithKernel;
 
   void InferShape() const override;

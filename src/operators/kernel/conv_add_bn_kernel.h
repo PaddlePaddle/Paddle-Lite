@@ -32,10 +32,11 @@ using framework::DDim;
 using framework::OpKernelBase;
 
 template <typename DeviceType, typename T>
-class ConvAddBNKernel : public OpKernelBase<DeviceType, FusionConvAddBNParam> {
+class ConvAddBNKernel
+    : public OpKernelBase<DeviceType, FusionConvAddBNParam<DeviceType>> {
  public:
-  void Compute(const FusionConvAddBNParam &param) const;
-  bool Init(FusionConvAddBNParam *param);
+  void Compute(const FusionConvAddBNParam<DeviceType> &param) const;
+  bool Init(FusionConvAddBNParam<DeviceType> *param);
 };
 
 }  // namespace operators

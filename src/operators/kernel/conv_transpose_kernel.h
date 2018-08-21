@@ -26,11 +26,11 @@ using framework::OpKernelBase;
 
 template <typename DeviceType, typename T>
 class ConvTransposeKernel
-    : public OpKernelBase<DeviceType, ConvTransposeParam> {
+    : public OpKernelBase<DeviceType, ConvTransposeParam<DeviceType>> {
  public:
-  void Compute(const ConvTransposeParam &param) const;
+  void Compute(const ConvTransposeParam<DeviceType> &param) const;
 
-  bool Init(ConvTransposeParam *param);
+  bool Init(ConvTransposeParam<DeviceType> *param);
 };
 
 }  // namespace operators

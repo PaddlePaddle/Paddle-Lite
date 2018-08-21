@@ -20,13 +20,14 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool DropoutKernel<FPGA, float>::Init(DropoutParam *param) {
+bool DropoutKernel<FPGA, float>::Init(DropoutParam<FPGA> *param) {
   param->Out()->ShareDataWith(*param->InputX());
   return true;
 }
 
 template <>
-void DropoutKernel<FPGA, float>::Compute(const DropoutParam &param) const {
+void DropoutKernel<FPGA, float>::Compute(
+    const DropoutParam<FPGA> &param) const {
   // auto *input_x = param.InputX();
   // auto *out = param.Out();
   // auto input_x_ptr = input_x->data<float>();

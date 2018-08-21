@@ -17,7 +17,8 @@ namespace paddle_mobile {
 namespace operators {
 
 #ifdef CONV_OP
-Print &operator<<(Print &printer, const ConvParam &conv_param) {
+template <>
+Print &operator<<(Print &printer, const ConvParam<CPU> &conv_param) {
   printer << "parameter of conv: "
           << "\n";
   printer << "  stride: "
@@ -37,11 +38,37 @@ Print &operator<<(Print &printer, const ConvParam &conv_param) {
   printer << "  output dims: " << conv_param.Output()->dims();
   return printer;
 }
+
+template class ConvParam<CPU>;
+template class ConvParam<FPGA>;
+template class ConvParam<GPU_MALI>;
+#endif
+
+template class ElementwiseAddParam<CPU>;
+template class ElementwiseAddParam<FPGA>;
+template class ElementwiseAddParam<GPU_MALI>;
+
+#ifdef MUL_OP
+template class MulParam<CPU>;
+template class MulParam<FPGA>;
+template class MulParam<GPU_MALI>;
+#endif
+
+#ifdef CONCAT_OP
+template class ConcatParam<CPU>;
+template class ConcatParam<FPGA>;
+template class ConcatParam<GPU_MALI>;
+#endif
+
+#ifdef LRN_OP
+template class LrnParam<CPU>;
+template class LrnParam<FPGA>;
+template class LrnParam<GPU_MALI>;
 #endif
 
 #ifdef FUSION_CONVADD_OP
 
-Print &operator<<(Print &printer, const FusionConvAddParam &conv_param) {
+Print &operator<<(Print &printer, const FusionConvAddParam<CPU> &conv_param) {
   printer << "parameter of conv_add: "
           << "\n";
   printer << "  stride: "

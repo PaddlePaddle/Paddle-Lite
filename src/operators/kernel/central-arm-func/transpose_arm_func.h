@@ -39,7 +39,7 @@ namespace operators {
 // }
 
 template <typename P>
-void TransposeCompute(const TransposeParam& param) {
+void TransposeCompute(const TransposeParam<CPU>& param) {
   const auto* input_x = param.InputX();
   const auto input_x_dims = input_x->dims();
   auto* out = param.Out();

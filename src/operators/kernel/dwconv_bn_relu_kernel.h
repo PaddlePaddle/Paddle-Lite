@@ -33,10 +33,10 @@ using framework::OpKernelBase;
 
 template <typename DeviceType, typename T>
 class DWConvBNReluKernel
-    : public OpKernelBase<DeviceType, FusionDWConvBNReluParam> {
+    : public OpKernelBase<DeviceType, FusionDWConvBNReluParam<DeviceType>> {
  public:
-  void Compute(const FusionDWConvBNReluParam &param) const;
-  bool Init(FusionDWConvBNReluParam *param);
+  void Compute(const FusionDWConvBNReluParam<DeviceType> &param) const;
+  bool Init(FusionDWConvBNReluParam<DeviceType> *param);
 };
 
 }  // namespace operators

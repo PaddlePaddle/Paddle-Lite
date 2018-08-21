@@ -25,10 +25,11 @@ namespace operators {
 
 template <typename DeviceType, typename T>
 class MultiClassNMSKernel
-    : public framework::OpKernelBase<DeviceType, MultiClassNMSParam> {
+    : public framework::OpKernelBase<DeviceType,
+                                     MultiClassNMSParam<DeviceType>> {
  public:
-  void Compute(const MultiClassNMSParam& param) const;
-  bool Init(MultiClassNMSParam* param);
+  void Compute(const MultiClassNMSParam<DeviceType>& param) const;
+  bool Init(MultiClassNMSParam<DeviceType>* param);
 };
 }  // namespace operators
 }  // namespace paddle_mobile

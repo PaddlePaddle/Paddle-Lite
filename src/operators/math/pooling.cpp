@@ -58,7 +58,6 @@ class PoolFunctor<CPU, PoolProcess, T> {
 
     const T *input_data = input.data<T>();
     T *output_data = output->mutable_data<T>();
-
     for (int i = 0; i < batch_size; i++) {
       for (int c = 0; c < output_channels; ++c) {
 #pragma omp parallel for

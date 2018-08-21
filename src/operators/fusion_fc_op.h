@@ -45,20 +45,20 @@ class FusionFcMatcher : public framework::FusionOpMatcher {
 };
 
 template <typename DeviceType, typename T>
-class FusionFcOp
-    : public framework::OperatorWithKernel<
-          DeviceType, FusionFcParam, operators::FusionFcKernel<DeviceType, T>> {
+class FusionFcOp : public framework::OperatorWithKernel<
+                       DeviceType, FusionFcParam<DeviceType>,
+                       operators::FusionFcKernel<DeviceType, T>> {
  public:
   FusionFcOp(const string &type, const VariableNameMap &inputs,
              const VariableNameMap &outputs,
              const framework::AttributeMap &attrs,
              std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, FusionFcParam,
+      : framework::OperatorWithKernel<DeviceType, FusionFcParam<DeviceType>,
                                       operators::FusionFcKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 
   using framework::OperatorWithKernel<
-      DeviceType, FusionFcParam,
+      DeviceType, FusionFcParam<DeviceType>,
       operators::FusionFcKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 

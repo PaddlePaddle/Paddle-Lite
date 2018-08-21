@@ -20,7 +20,7 @@ namespace operators {
 
 template <>
 bool ElementwiseAddReluKernel<FPGA, float>::Init(
-    ElementwiseAddReluParam *param) {
+    ElementwiseAddReluParam<FPGA> *param) {
   bool relu_enabled = true;
   const Tensor *input_x = param->InputX();
   const Tensor *input_y = param->InputY();
@@ -57,7 +57,7 @@ bool ElementwiseAddReluKernel<FPGA, float>::Init(
 
 template <>
 void ElementwiseAddReluKernel<FPGA, float>::Compute(
-    const ElementwiseAddReluParam &param) const {
+    const ElementwiseAddReluParam<FPGA> &param) const {
   fpga::ComputeFpgaEWAdd(param.FpgaArgs());
 }
 }  // namespace operators

@@ -21,9 +21,10 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename DeviceType, typename T>
-class PReluKernel : public framework::OpKernelBase<DeviceType, PReluParam> {
+class PReluKernel
+    : public framework::OpKernelBase<DeviceType, PReluParam<DeviceType>> {
  public:
-  void Compute(const PReluParam& param) const;
+  void Compute(const PReluParam<DeviceType>& param) const;
 };
 }  // namespace operators
 }  // namespace paddle_mobile
