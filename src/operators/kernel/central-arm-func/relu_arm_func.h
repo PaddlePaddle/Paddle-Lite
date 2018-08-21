@@ -30,7 +30,7 @@ struct ReluFunctor {
  * @b 特化到具体平台的实现, param 从 op 层传入
  * */
 template <typename P>
-void ReluCompute(const ReluParam &param) {
+void ReluCompute(const ReluParam<CPU> &param) {
   const auto *input_x = param.InputX();
   auto *input_x_ptr = input_x->data<float>();
   auto *out = param.Out();

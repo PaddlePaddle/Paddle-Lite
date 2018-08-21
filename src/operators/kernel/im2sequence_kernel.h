@@ -27,10 +27,10 @@ namespace operators {
 
 template <typename DeviceType, typename T>
 class Im2SequenceKernel
-    : public framework::OpKernelBase<DeviceType, Im2SequenceParam> {
+    : public framework::OpKernelBase<DeviceType, Im2SequenceParam<DeviceType>> {
  public:
-  void Compute(const Im2SequenceParam& param) const;
-  bool Init(Im2SequenceParam* para);
+  void Compute(const Im2SequenceParam<DeviceType>& param) const;
+  bool Init(Im2SequenceParam<DeviceType>* para);
 };
 }  // namespace operators
 }  // namespace paddle_mobile

@@ -19,7 +19,7 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 template <typename P>
-void SoftmaxCompute(const SoftmaxParam &param) {
+void SoftmaxCompute(const SoftmaxParam<CPU> &param) {
   const Tensor *in_x = param.InputX();
   Tensor *out = param.Out();
   auto x_dims = in_x->dims();

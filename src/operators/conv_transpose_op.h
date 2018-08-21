@@ -26,7 +26,7 @@ namespace paddle_mobile {
 namespace operators {
 template <typename DeviceType, typename T>
 class ConvOpTranspose : public framework::OperatorWithKernel<
-                            DeviceType, ConvTransposeParam,
+                            DeviceType, ConvTransposeParam<DeviceType>,
                             operators::ConvTransposeKernel<DeviceType, T>> {
  public:
   ConvOpTranspose(const std::string &type, const VariableNameMap &inputs,
@@ -34,7 +34,7 @@ class ConvOpTranspose : public framework::OperatorWithKernel<
                   const framework::AttributeMap &attrs,
                   std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<
-            DeviceType, ConvTransposeParam,
+            DeviceType, ConvTransposeParam<DeviceType>,
             operators::ConvTransposeKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 

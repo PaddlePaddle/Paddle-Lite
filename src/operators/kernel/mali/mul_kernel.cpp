@@ -22,12 +22,13 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool MulKernel<GPU_MALI, float>::Init(MulParam *param) {
+bool MulKernel<GPU_MALI, float>::Init(MulParam<GPU_MALI> *param) {
   return true;
 }
 
 template <>
-void MulKernel<GPU_MALI, float>::Compute(const MulParam &param) const {
+void MulKernel<GPU_MALI, float>::Compute(
+    const MulParam<GPU_MALI> &param) const {
   const Tensor *input_x = param.InputX();
   const Tensor *input_y = param.InputY();
   Tensor *out = param.Out();

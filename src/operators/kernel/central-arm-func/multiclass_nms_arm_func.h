@@ -213,7 +213,7 @@ void MultiClassOutput(const framework::Tensor& scores,
 }
 
 template <typename P>
-void MultiClassNMSCompute(const MultiClassNMSParam& param) {
+void MultiClassNMSCompute(const MultiClassNMSParam<CPU>& param) {
   const auto* input_bboxes = param.InputBBoxes();
   const auto& input_bboxes_dims = input_bboxes->dims();
 

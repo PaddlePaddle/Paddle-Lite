@@ -51,14 +51,14 @@ class FusionConvBNMatcher : public framework::FusionOpMatcher {
 
 template <typename DeviceType, typename T>
 class FusionConvBNOp : public framework::OperatorWithKernel<
-                           DeviceType, FusionConvBNParam,
+                           DeviceType, FusionConvBNParam<DeviceType>,
                            operators::ConvBNKernel<DeviceType, T>> {
  public:
   FusionConvBNOp(const string &type, const VariableNameMap &inputs,
                  const VariableNameMap &outputs,
                  const framework::AttributeMap &attrs,
                  std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, FusionConvBNParam,
+      : framework::OperatorWithKernel<DeviceType, FusionConvBNParam<DeviceType>,
                                       operators::ConvBNKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 

@@ -24,10 +24,10 @@ namespace operators {
 using framework::OpKernelBase;
 
 template <typename DeviceType, typename T>
-class PoolKernel : public OpKernelBase<DeviceType, PoolParam> {
+class PoolKernel : public OpKernelBase<DeviceType, PoolParam<DeviceType>> {
  public:
-  void Compute(const PoolParam &param) const override;
-  bool Init(PoolParam *param);
+  void Compute(const PoolParam<DeviceType> &param) const override;
+  bool Init(PoolParam<DeviceType> *param);
 };
 }  // namespace operators
 }  // namespace paddle_mobile

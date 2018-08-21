@@ -18,6 +18,7 @@ limitations under the License. */
 #include <vector>
 #include "common/log.h"
 #include "common/type_define.h"
+#include "common/types.h"
 #include "framework/lod_tensor.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
@@ -36,6 +37,39 @@ using framework::Scope;
 using framework::Tensor;
 using std::string;
 using std::vector;
+
+template <typename Dtype>
+struct DtypeTensorTrait {
+  typedef void ptype;
+  typedef void rtype;
+};
+
+template <>
+struct DtypeTensorTrait<CPU> {
+  // This is the type we obtained in variable.
+  typedef framework::LoDTensor gtype;
+  // This type will be the parent class type
+  // or the same type.
+  typedef framework::Tensor rtype;
+};
+
+template <>
+struct DtypeTensorTrait<FPGA> {
+  // This is the type we obtained in variable.
+  typedef framework::LoDTensor gtype;
+  // This type will be the parent class type
+  // or the same type.
+  typedef framework::Tensor rtype;
+};
+
+template <>
+struct DtypeTensorTrait<GPU_MALI> {
+  // This is the type we obtained in variable.
+  typedef framework::LoDTensor gtype;
+  // This type will be the parent class type
+  // or the same type.
+  typedef framework::Tensor rtype;
+};
 
 class OpParam {
  protected:
@@ -200,24 +234,28 @@ class OpParam {
 };
 
 #ifdef CONV_OP
+template <typename Dtype>
 class ConvParam : OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   ConvParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
             const AttributeMap &attrs, const Scope &scope) {
-    filter_ = FilterFrom<LoDTensor>(inputs, scope);
-    input_ = InputFrom<LoDTensor>(inputs, scope);
-    output_ = OutputFrom<LoDTensor>(outputs, scope);
+    filter_ = FilterFrom<GType>(inputs, scope);
+    input_ = InputFrom<GType>(inputs, scope);
+    output_ = OutputFrom<GType>(outputs, scope);
     strides_ = GetAttr<vector<int>>("strides", attrs);
     paddings_ = GetAttr<vector<int>>("paddings", attrs);
     dilations_ = GetAttr<vector<int>>("dilations", attrs);
     groups = GetAttr<int>("groups", attrs);
   }
 
-  const Tensor *Input() const { return input_; }
+  const RType *Input() const { return input_; }
 
-  Tensor *Filter() const { return filter_; }
+  RType *Filter() const { return filter_; }
 
-  Tensor *Output() const { return output_; }
+  RType *Output() const { return output_; }
 
   const vector<int> &Strides() const { return strides_; }
 
@@ -228,41 +266,45 @@ class ConvParam : OpParam {
   const int &Groups() const { return groups; }
 
  private:
-  Tensor *input_;
-  Tensor *output_;
-  Tensor *filter_;
+  RType *input_;
+  RType *output_;
+  RType *filter_;
   vector<int> strides_;
   vector<int> paddings_;
   vector<int> dilations_;
   int groups;
 };
-
-Print &operator<<(Print &printer, const ConvParam &conv_param);
+template <typename Dtype>
+Print &operator<<(Print &printer, const ConvParam<Dtype> &conv_param);
 #endif
 
+template <typename Dtype>
 class ElementwiseAddParam : OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   ElementwiseAddParam(const VariableNameMap &inputs,
                       const VariableNameMap &outputs, const AttributeMap &attrs,
                       const Scope &scope) {
-    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-    input_y_ = InputYFrom<LoDTensor>(inputs, scope);
-    out_ = OutFrom<LoDTensor>(outputs, scope);
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    input_y_ = InputYFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
     axis_ = GetAttr<int>("axis", attrs);
   }
 
-  const Tensor *InputX() const { return input_x_; }
+  const RType *InputX() const { return input_x_; }
 
-  const Tensor *InputY() const { return input_y_; }
+  const RType *InputY() const { return input_y_; }
 
-  Tensor *Out() const { return out_; }
+  RType *Out() const { return out_; }
 
   const int &Axis() const { return axis_; }
 
  private:
-  Tensor *input_x_;
-  Tensor *input_y_;
-  Tensor *out_;
+  RType *input_x_;
+  RType *input_y_;
+  RType *out_;
   int axis_;
 #ifdef PADDLE_MOBILE_FPGA
 
@@ -276,71 +318,84 @@ class ElementwiseAddParam : OpParam {
 };
 
 #ifdef FUSION_ELEMENTWISEADDRELU_OP
-using ElementwiseAddReluParam = ElementwiseAddParam;
+template <typename Dtype>
+using ElementwiseAddReluParam = ElementwiseAddParam<Dtype>;
 #endif
 
 #ifdef MUL_OP
+template <typename Dtype>
 class MulParam : OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   MulParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
            const AttributeMap &attrs, const Scope &scope) {
-    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-    input_y_ = InputYFrom<LoDTensor>(inputs, scope);
-    out_ = OutFrom<LoDTensor>(outputs, scope);
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    input_y_ = InputYFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
     x_num_col_dims_ = GetAttr<int>("x_num_col_dims", attrs);
     y_num_col_dims_ = GetAttr<int>("y_num_col_dims", attrs);
   }
 
-  const Tensor *InputX() const { return input_x_; }
+  const RType *InputX() const { return input_x_; }
 
-  const Tensor *InputY() const { return input_y_; }
+  const RType *InputY() const { return input_y_; }
 
-  Tensor *Out() const { return out_; }
+  RType *Out() const { return out_; }
 
   const int &XNumColDims() const { return x_num_col_dims_; }
 
   const int &YNumColDims() const { return y_num_col_dims_; }
 
  private:
-  Tensor *input_x_;
-  Tensor *input_y_;
-  Tensor *out_;
+  RType *input_x_;
+  RType *input_y_;
+  RType *out_;
   int x_num_col_dims_;
   int y_num_col_dims_;
 };
 #endif
 
 #ifdef CONCAT_OP
+template <typename Dtype>
 class ConcatParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   ConcatParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
               const AttributeMap &attrs, const Scope &scope) {
-    inputs_ = InputMultiFrom<LoDTensor>(inputs, scope);
-    out_ = OutFrom<LoDTensor>(outputs, scope);
+    inputs_ = InputMultiFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
     axis_ = GetAttr<int>("axis", attrs);
   }
 
-  vector<LoDTensor *> Inputs() const { return inputs_; }
+  vector<GType *> Inputs() const { return inputs_; }
 
-  Tensor *Out() const { return out_; }
+  RType *Out() const { return out_; }
 
   const int &Axis() const { return axis_; }
 
  private:
-  vector<LoDTensor *> inputs_;
-  Tensor *out_;
+  vector<GType *> inputs_;
+  RType *out_;
   int axis_;
 };
 #endif
 
 #ifdef LRN_OP
+template <typename Dtype>
 class LrnParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   LrnParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
            const AttributeMap &attrs, const Scope &scope) {
-    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-    out_ = OutFrom<LoDTensor>(outputs, scope);
-    mid_out_ = MidOutFrom<LoDTensor>(outputs, scope);
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+    mid_out_ = MidOutFrom<GType>(outputs, scope);
     n_ = GetAttr<int>("n", attrs);
     alpha_ = GetAttr<float>("alpha", attrs);
     beta_ = GetAttr<float>("beta", attrs);
@@ -348,11 +403,11 @@ class LrnParam : public OpParam {
     data_format_ = GetAttr<string>("data_format", attrs);
   }
 
-  const Tensor *InputX() const { return input_x_; }
+  const RType *InputX() const { return input_x_; }
 
-  Tensor *Out() const { return out_; }
+  RType *Out() const { return out_; }
 
-  Tensor *MidOut() const { return mid_out_; }
+  RType *MidOut() const { return mid_out_; }
 
   const int &N() const { return n_; }
 
@@ -365,9 +420,9 @@ class LrnParam : public OpParam {
   const string &DataFormat() const { return data_format_; }
 
  private:
-  Tensor *input_x_;
-  Tensor *out_;
-  Tensor *mid_out_;
+  RType *input_x_;
+  RType *out_;
+  RType *mid_out_;
   int n_;
   float alpha_;
   float beta_;
@@ -377,32 +432,36 @@ class LrnParam : public OpParam {
 #endif
 
 #ifdef BATCHNORM_OP
+template <typename Dtype>
 class BatchNormParam : OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   BatchNormParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
                  const AttributeMap &attrs, const Scope &scope) {
-    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-    output_y_ = OutputYFrom<LoDTensor>(outputs, scope);
-    input_bias_ = InputBiasFrom<LoDTensor>(inputs, scope);
-    input_mean_ = InputMeanFrom<LoDTensor>(inputs, scope);
-    input_scale_ = InputScaleFrom<LoDTensor>(inputs, scope);
-    input_variance_ = InputVarianceFrom<LoDTensor>(inputs, scope);
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    output_y_ = OutputYFrom<GType>(outputs, scope);
+    input_bias_ = InputBiasFrom<GType>(inputs, scope);
+    input_mean_ = InputMeanFrom<GType>(inputs, scope);
+    input_scale_ = InputScaleFrom<GType>(inputs, scope);
+    input_variance_ = InputVarianceFrom<GType>(inputs, scope);
     epsilon_ = GetAttr<float>("epsilon", attrs);
     momentum_ = GetAttr<float>("momentum", attrs);
     //    is_test_ = GetAttr<bool>("is_test", attrs);
   }
 
-  const Tensor *InputX() const { return input_x_; }
+  const RType *InputX() const { return input_x_; }
 
-  Tensor *OutputY() const { return output_y_; }
+  RType *OutputY() const { return output_y_; }
 
-  const Tensor *InputBias() const { return input_bias_; }
+  const RType *InputBias() const { return input_bias_; }
 
-  const Tensor *InputMean() const { return input_mean_; }
+  const RType *InputMean() const { return input_mean_; }
 
-  const Tensor *InputScale() const { return input_scale_; }
+  const RType *InputScale() const { return input_scale_; }
 
-  const Tensor *InputVariance() const { return input_variance_; }
+  const RType *InputVariance() const { return input_variance_; }
 
   const float &Epsilon() const { return epsilon_; }
 
@@ -413,12 +472,12 @@ class BatchNormParam : OpParam {
   const string &DataFormat() const { return data_format_; }
 
  private:
-  Tensor *input_x_;
-  Tensor *output_y_;
-  Tensor *input_bias_;
-  Tensor *input_mean_;
-  Tensor *input_scale_;
-  Tensor *input_variance_;
+  RType *input_x_;
+  RType *output_y_;
+  RType *input_bias_;
+  RType *input_mean_;
+  RType *input_scale_;
+  RType *input_variance_;
   float epsilon_;
   float momentum_;
   bool is_test_;
@@ -427,13 +486,17 @@ class BatchNormParam : OpParam {
 #endif
 
 #ifdef POOL_OP
+template <typename Dtype>
 class PoolParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   PoolParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
             const AttributeMap &attrs, const Scope &scope) {
-    input_ = InputXFrom<LoDTensor>(inputs, scope);
+    input_ = InputXFrom<GType>(inputs, scope);
 
-    output_ = OutFrom<LoDTensor>(outputs, scope);
+    output_ = OutFrom<GType>(outputs, scope);
     pooling_type_ = GetAttr<string>("pooling_type", attrs);
     ksize_ = GetAttr<vector<int>>("ksize", attrs);
     strides_ = GetAttr<vector<int>>("strides", attrs);
@@ -442,9 +505,9 @@ class PoolParam : public OpParam {
     global_pooling_ = GetAttr<bool>("global_pooling", attrs);
   }
 
-  const Tensor *Input() const { return input_; }
+  const RType *Input() const { return input_; }
 
-  Tensor *Output() const { return output_; }
+  RType *Output() const { return output_; }
 
   const string &PoolingType() const { return pooling_type_; }
 
@@ -459,8 +522,8 @@ class PoolParam : public OpParam {
   bool isGlobalPooling() const { return global_pooling_; }
 
  private:
-  Tensor *input_;
-  Tensor *output_;
+  RType *input_;
+  RType *output_;
   string pooling_type_;
   vector<int> ksize_;
   vector<int> strides_;
@@ -480,14 +543,18 @@ class PoolParam : public OpParam {
 #endif
 
 #ifdef PRIORBOX_OP
+template <typename Dtype>
 class PriorBoxParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   PriorBoxParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
                 const AttributeMap &attrs, const Scope &scope) {
-    input_ = InputFrom<LoDTensor>(inputs, scope);
-    input_image_ = InputImageFrom<LoDTensor>(inputs, scope);
-    output_boxes_ = OutputBoxesFrom<LoDTensor>(outputs, scope);
-    output_variances_ = OutputVariancesFrom<LoDTensor>(outputs, scope);
+    input_ = InputFrom<GType>(inputs, scope);
+    input_image_ = InputImageFrom<GType>(inputs, scope);
+    output_boxes_ = OutputBoxesFrom<GType>(outputs, scope);
+    output_variances_ = OutputVariancesFrom<GType>(outputs, scope);
     min_sizes_ = GetAttr<vector<float>>("min_sizes", attrs);
     max_sizes_ = GetAttr<vector<float>>("max_sizes", attrs);
     aspect_ratios_ = GetAttr<vector<float>>("aspect_ratios", attrs);
@@ -498,13 +565,13 @@ class PriorBoxParam : public OpParam {
     step_h_ = GetAttr<float>("step_h", attrs);
     offset_ = GetAttr<float>("offset", attrs);
   }
-  const Tensor *Input() const { return input_; }
+  const RType *Input() const { return input_; }
 
-  const Tensor *InputImage() const { return input_image_; }
+  const RType *InputImage() const { return input_image_; }
 
-  Tensor *OutputBoxes() const { return output_boxes_; }
+  RType *OutputBoxes() const { return output_boxes_; }
 
-  Tensor *OutputVariances() const { return output_variances_; }
+  RType *OutputVariances() const { return output_variances_; }
 
   const vector<float> &MinSizes() const { return min_sizes_; }
 
@@ -525,10 +592,10 @@ class PriorBoxParam : public OpParam {
   const float &Offset() const { return offset_; }
 
  private:
-  Tensor *input_;
-  Tensor *input_image_;
-  Tensor *output_boxes_;
-  Tensor *output_variances_;
+  RType *input_;
+  RType *input_image_;
+  RType *output_boxes_;
+  RType *output_variances_;
   vector<float> min_sizes_;
   vector<float> max_sizes_;
   vector<float> aspect_ratios_;
@@ -542,58 +609,66 @@ class PriorBoxParam : public OpParam {
 #endif
 
 #ifdef BOXCODER_OP
+template <typename Dtype>
 class BoxCoderParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   BoxCoderParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
                 const AttributeMap &attrs, const Scope &scope) {
-    input_priorbox_ = InputPriorBoxFrom<LoDTensor>(inputs, scope);
-    input_priorboxvar_ = InputPriorBoxVarFrom<LoDTensor>(inputs, scope);
-    input_targetbox_ = InputTargetBoxFrom<LoDTensor>(inputs, scope);
-    output_box_ = OutputBoxFrom<LoDTensor>(outputs, scope);
+    input_priorbox_ = InputPriorBoxFrom<GType>(inputs, scope);
+    input_priorboxvar_ = InputPriorBoxVarFrom<GType>(inputs, scope);
+    input_targetbox_ = InputTargetBoxFrom<GType>(inputs, scope);
+    output_box_ = OutputBoxFrom<GType>(outputs, scope);
     code_type_ = GetAttr<std::string>("code_type", attrs);
   }
-  const Tensor *InputPriorBox() const { return input_priorbox_; }
+  const RType *InputPriorBox() const { return input_priorbox_; }
 
-  const Tensor *InputPriorBoxVar() const { return input_priorboxvar_; }
+  const RType *InputPriorBoxVar() const { return input_priorboxvar_; }
 
-  const Tensor *InputTargetBox() const { return input_targetbox_; }
+  const RType *InputTargetBox() const { return input_targetbox_; }
 
-  Tensor *OutputBox() const { return output_box_; }
+  RType *OutputBox() const { return output_box_; }
 
   const std::string &CodeType() const { return code_type_; }
 
  private:
-  Tensor *input_priorbox_;
-  Tensor *input_priorboxvar_;
-  Tensor *input_targetbox_;
-  Tensor *output_box_;
+  RType *input_priorbox_;
+  RType *input_priorboxvar_;
+  RType *input_targetbox_;
+  RType *output_box_;
   std::string code_type_;
 };
 #endif
 
 #ifdef SOFTMAX_OP
+template <typename Dtype>
 class SoftmaxParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   SoftmaxParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
                const AttributeMap &attrs, const Scope &scope) {
-    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-    out_ = OutFrom<LoDTensor>(outputs, scope);
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
   }
-  const Tensor *InputX() const { return input_x_; }
-  Tensor *Out() const { return out_; }
+  const RType *InputX() const { return input_x_; }
+  RType *Out() const { return out_; }
 
  private:
-  Tensor *input_x_;
-  Tensor *out_;
+  RType *input_x_;
+  RType *out_;
 
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  std::shared_ptr<Tensor> float_input_x_;
+  std::shared_ptr<RType> float_input_x_;
   fpga::BypassArgs fpga_bypass_args;
 
  public:
-  Tensor *FloatInput() {
+  RType *FloatInput() {
     return float_input_x_ == nullptr ? input_x_ : float_input_x_.get();
   }
   void SetFloatInput(Tensor *input) { float_input_x_.reset(input); }
@@ -604,31 +679,39 @@ class SoftmaxParam : public OpParam {
 #endif
 
 #ifdef SIGMOID_OP
+template <typename Dtype>
 class SigmoidParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   SigmoidParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
                const AttributeMap &attrs, const Scope &scope) {
-    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-    out_ = OutFrom<LoDTensor>(outputs, scope);
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
   }
-  const Tensor *InputX() const { return input_x_; }
-  Tensor *Out() const { return out_; }
+  const RType *InputX() const { return input_x_; }
+  RType *Out() const { return out_; }
 
  private:
-  Tensor *input_x_;
-  Tensor *out_;
+  RType *input_x_;
+  RType *out_;
 };
 #endif
 
 #ifdef MULTICLASSNMS_OP
+template <typename Dtype>
 class MultiClassNMSParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   MultiClassNMSParam(const VariableNameMap &inputs,
                      const VariableNameMap &outputs, const AttributeMap &attrs,
                      const Scope &scope) {
-    input_bboxes_ = InputBBoxesFrom<LoDTensor>(inputs, scope);
-    input_scores_ = InputScoresFrom<LoDTensor>(inputs, scope);
-    out_ = OutFrom<LoDTensor>(outputs, scope);
+    input_bboxes_ = InputBBoxesFrom<GType>(inputs, scope);
+    input_scores_ = InputScoresFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
     background_label_ = GetAttr<int>("background_label", attrs);
     nms_top_k_ = GetAttr<int>("nms_top_k", attrs);
     keep_top_k_ = GetAttr<int>("keep_top_k", attrs);
@@ -637,11 +720,11 @@ class MultiClassNMSParam : public OpParam {
     score_threshold_ = GetAttr<float>("score_threshold", attrs);
   }
 
-  const Tensor *InputBBoxes() const { return input_bboxes_; }
+  const RType *InputBBoxes() const { return input_bboxes_; }
 
-  const Tensor *InputScores() const { return input_scores_; }
+  const RType *InputScores() const { return input_scores_; }
 
-  Tensor *Out() const { return out_; }
+  RType *Out() const { return out_; }
 
   const int &BackGroundLabel() const { return background_label_; }
 
@@ -656,9 +739,9 @@ class MultiClassNMSParam : public OpParam {
   const float &ScoreThreshold() const { return score_threshold_; }
 
  private:
-  Tensor *input_bboxes_;
-  Tensor *input_scores_;
-  Tensor *out_;
+  RType *input_bboxes_;
+  RType *input_scores_;
+  RType *out_;
   int background_label_;
   int nms_top_k_;
   int keep_top_k_;
@@ -668,113 +751,133 @@ class MultiClassNMSParam : public OpParam {
 };
 #endif
 
+template <typename Dtype>
 class FeedParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   FeedParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
             const AttributeMap &attrs, Scope *scope) {
-    input_x_ = InputXFrom<LoDTensor>(inputs, *scope);
-    out_ = OutFrom<LoDTensor>(outputs, *scope);
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    out_ = OutFrom<GType>(outputs, *scope);
     auto var = scope->Var("batch_size");
     batch_size = var->GetValue<int>();
   }
-  const Tensor *InputX() const { return input_x_; }
-  Tensor *Out() const { return out_; }
+  const RType *InputX() const { return input_x_; }
+  RType *Out() const { return out_; }
   const int BatchSize() const { return batch_size; }
 
  private:
-  Tensor *input_x_;
-  Tensor *out_;
+  RType *input_x_;
+  RType *out_;
   int batch_size;
 };
 
+template <typename Dtype>
 class FetchParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   FetchParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
              const AttributeMap &attrs, const Scope &scope) {
-    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-    out_ = OutFrom<LoDTensor>(outputs, scope);
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
   }
-  const Tensor *InputX() const { return input_x_; }
-  Tensor *Out() const { return out_; }
+  const RType *InputX() const { return input_x_; }
+  RType *Out() const { return out_; }
 
  private:
-  Tensor *input_x_;
-  Tensor *out_;
+  RType *input_x_;
+  RType *out_;
 };
 
 #ifdef TRANSPOSE_OP
+template <typename Dtype>
 class TransposeParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   TransposeParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
                  const AttributeMap &attrs, const Scope &scope) {
-    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-    out_ = OutFrom<LoDTensor>(outputs, scope);
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
     axis_ = GetAttr<vector<int>>("axis", attrs);
   }
 
-  const Tensor *InputX() const { return input_x_; }
+  const RType *InputX() const { return input_x_; }
 
-  Tensor *Out() const { return out_; }
+  RType *Out() const { return out_; }
 
   const vector<int> &Axis() const { return axis_; }
 
  private:
-  Tensor *input_x_;
-  Tensor *out_;
+  RType *input_x_;
+  RType *out_;
   vector<int> axis_;
 };
 #endif
 
 #ifdef RESHAPE_OP
+template <typename Dtype>
 class ReshapeParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   ReshapeParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
                const AttributeMap &attrs, const Scope &scope) {
-    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-    input_shape_ = InputShapeFrom<LoDTensor>(inputs, scope);
-    out_ = OutFrom<LoDTensor>(outputs, scope);
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    input_shape_ = InputShapeFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
     shape_ = GetAttr<vector<int>>("shape", attrs);
     inplace_ = GetAttr<bool>("inplace", attrs);
   }
 
-  const Tensor *InputX() const { return input_x_; }
+  const RType *InputX() const { return input_x_; }
 
-  const Tensor *InputShape() const { return input_shape_; }
+  const RType *InputShape() const { return input_shape_; }
 
-  Tensor *Out() const { return out_; }
+  RType *Out() const { return out_; }
 
   const vector<int> &Shape() const { return shape_; }
 
   const bool &Inplace() const { return inplace_; }
 
  private:
-  Tensor *input_x_;
-  Tensor *input_shape_;
-  Tensor *out_;
+  RType *input_x_;
+  RType *input_shape_;
+  RType *out_;
   vector<int> shape_;
   bool inplace_;
 };
 #endif
 
 #ifdef SCALE_OP
+template <typename Dtype>
 class ScaleParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   ScaleParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
              const AttributeMap &attrs, const Scope &scope) {
-    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-    input_bias_ = InputBiasFrom<framework::LoDTensor>(inputs, scope);
-    out_ = OutFrom<LoDTensor>(outputs, scope);
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    input_bias_ = InputBiasFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
     inplace_ = GetAttr<bool>("inplace", attrs);
     has_bias_ = GetAttr<bool>("has_bias", attrs);
     scales_ = GetAttr<vector<float>>("scales", attrs);
     biases_ = GetAttr<vector<float>>("biases", attrs);
   }
 
-  const Tensor *InputX() const { return input_x_; }
+  const RType *InputX() const { return input_x_; }
 
-  const Tensor *InputBias() const { return input_bias_; }
+  const RType *InputBias() const { return input_bias_; }
 
-  Tensor *Out() const { return out_; }
+  RType *Out() const { return out_; }
 
   const bool &Inplace() const { return inplace_; }
 
@@ -785,9 +888,9 @@ class ScaleParam : public OpParam {
   const vector<float> &Biases() const { return biases_; }
 
  private:
-  Tensor *input_x_;
-  Tensor *input_bias_;
-  Tensor *out_;
+  RType *input_x_;
+  RType *input_bias_;
+  RType *out_;
   bool inplace_;
   bool has_bias_;
   vector<float> scales_;
@@ -796,23 +899,27 @@ class ScaleParam : public OpParam {
 #endif
 
 #ifdef SLICE_OP
+template <typename Dtype>
 class SliceParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   SliceParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
              const AttributeMap &attrs, const Scope &scope) {
-    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-    input_shape_ = InputShapeFrom<LoDTensor>(inputs, scope);
-    out_ = OutFrom<LoDTensor>(outputs, scope);
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    input_shape_ = InputShapeFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
     axis_ = GetAttr<int>("axis", attrs);
     slice_points_ = GetAttr<vector<int>>("slice_points", attrs);
     inplace_ = GetAttr<bool>("inplace", attrs);
   }
 
-  const Tensor *InputX() const { return input_x_; }
+  const RType *InputX() const { return input_x_; }
 
-  const Tensor *InputShape() const { return input_shape_; }
+  const RType *InputShape() const { return input_shape_; }
 
-  Tensor *Out() const { return out_; }
+  RType *Out() const { return out_; }
 
   const int &Axis() const { return axis_; }
 
@@ -821,9 +928,9 @@ class SliceParam : public OpParam {
   const bool &Inplace() const { return inplace_; }
 
  private:
-  Tensor *input_x_;
-  Tensor *input_shape_;
-  Tensor *out_;
+  RType *input_x_;
+  RType *input_shape_;
+  RType *out_;
   int axis_;
   vector<int> slice_points_;
   bool inplace_;
@@ -831,13 +938,17 @@ class SliceParam : public OpParam {
 #endif
 
 #ifdef RESIZE_OP
+template <typename Dtype>
 class ResizeParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   ResizeParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
               const AttributeMap &attrs, const Scope &scope) {
-    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-    input_shape_ = InputShapeFrom<LoDTensor>(inputs, scope);
-    out_ = OutFrom<LoDTensor>(outputs, scope);
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    input_shape_ = InputShapeFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
     is_pyramid_test_ = GetAttr<bool>("is_pyramid_test", attrs);
     height_ = GetAttr<int>("height", attrs);
     width_ = GetAttr<int>("width", attrs);
@@ -845,11 +956,11 @@ class ResizeParam : public OpParam {
     out_width_scale_ = GetAttr<float>("out_width_scale", attrs);
   }
 
-  const Tensor *InputX() const { return input_x_; }
+  const RType *InputX() const { return input_x_; }
 
-  const Tensor *InputShape() const { return input_shape_; }
+  const RType *InputShape() const { return input_shape_; }
 
-  Tensor *Out() const { return out_; }
+  RType *Out() const { return out_; }
 
   const bool &IsPyramidTest() const { return is_pyramid_test_; }
 
@@ -862,9 +973,9 @@ class ResizeParam : public OpParam {
   const float &OutWidthScale() const { return out_width_scale_; }
 
  private:
-  Tensor *input_x_;
-  Tensor *input_shape_;
-  Tensor *out_;
+  RType *input_x_;
+  RType *input_shape_;
+  RType *out_;
   bool is_pyramid_test_;
   int height_;
   int width_;
@@ -877,73 +988,85 @@ class ResizeParam : public OpParam {
 /*
  * @b op 层实例化好这个 param 传递给 kernel 层使用
  * */
+template <typename Dtype>
 class ReluParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   ReluParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
             const AttributeMap &attrs, const Scope &scope) {
-    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-    out_ = OutFrom<LoDTensor>(outputs, scope);
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
   }
 
-  const Tensor *InputX() const { return input_x_; }
+  const RType *InputX() const { return input_x_; }
 
-  Tensor *Out() const { return out_; }
+  RType *Out() const { return out_; }
 
  private:
-  Tensor *input_x_;
-  Tensor *out_;
+  RType *input_x_;
+  RType *out_;
 };
 #endif
 
 #ifdef PRELU_OP
+template <typename Dtype>
 class PReluParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   PReluParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
              const AttributeMap &attrs, const Scope &scope) {
     DLOG << "PReluParam inputs before";
-    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-    alpha_ = InputAlphaFrom<LoDTensor>(inputs, scope);
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    alpha_ = InputAlphaFrom<GType>(inputs, scope);
     framework::DDim dims = alpha_->dims();
-    out_ = OutFrom<LoDTensor>(outputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
     mode_ = GetAttr<std::string>("mode", attrs);
     DLOG << "PReluParam mode after" << mode_;
   }
-  const Tensor *InputX() const { return input_x_; }
-  const Tensor *InputAlpha() const { return alpha_; }
-  Tensor *Out() const { return out_; }
+  const RType *InputX() const { return input_x_; }
+  const RType *InputAlpha() const { return alpha_; }
+  RType *Out() const { return out_; }
   const std::string &Mode() const { return mode_; }
 
  private:
-  Tensor *input_x_;
-  Tensor *out_;
-  Tensor *alpha_;
+  RType *input_x_;
+  RType *out_;
+  RType *alpha_;
   std::string mode_;
 };
 #endif
 
+template <typename Dtype>
 class FusionFcParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   FusionFcParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
                 const AttributeMap &attrs, const Scope &scope) {
-    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-    input_y_ = InputYFrom<LoDTensor>(inputs, scope);
-    input_z_ = InputZFrom<LoDTensor>(inputs, scope);
-    out_ = OutFrom<LoDTensor>(outputs, scope);
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    input_y_ = InputYFrom<GType>(inputs, scope);
+    input_z_ = InputZFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
     x_num_col_dims_ = GetAttr<int>("x_num_col_dims", attrs);
     y_num_col_dims_ = GetAttr<int>("y_num_col_dims", attrs);
     axis_ = GetAttr<int>("axis", attrs);
   }
-  const Tensor *InputX() const { return input_x_; }
+  const RType *InputX() const { return input_x_; }
 
 #ifdef PADDLE_MOBILE_FPGA
-  Tensor *InputY() const { return input_y_; }
+  RType *InputY() const { return input_y_; }
 #else
-  const Tensor *InputY() const { return input_y_; }
+  const RType *InputY() const { return input_y_; }
 #endif
 
-  const Tensor *InputZ() const { return input_z_; }
+  const RType *InputZ() const { return input_z_; }
 
-  Tensor *Out() const { return out_; }
+  RType *Out() const { return out_; }
 
   const int &XNumColDims() const { return x_num_col_dims_; }
 
@@ -952,10 +1075,10 @@ class FusionFcParam : public OpParam {
   const int &Axis() const { return axis_; }
 
  private:
-  Tensor *input_x_;
-  Tensor *input_y_;
-  Tensor *input_z_;
-  Tensor *out_;
+  RType *input_x_;
+  RType *input_y_;
+  RType *input_z_;
+  RType *out_;
   int x_num_col_dims_;
   int y_num_col_dims_;
   int axis_;
@@ -971,37 +1094,42 @@ class FusionFcParam : public OpParam {
 };
 
 #ifdef FUSION_FCRELU_OP
-using FusionFcReluParam = FusionFcParam;
+template <typename DeviceType>
+using FusionFcReluParam = FusionFcParam<DeviceType>;
 #endif
 
+template <typename Dtype>
 class FusionConvAddParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   FusionConvAddParam(const VariableNameMap &inputs,
                      const VariableNameMap &outputs, const AttributeMap &attrs,
                      const Scope &scope) {
-    bias_ = InputYFrom<LoDTensor>(inputs, scope);
+    bias_ = InputYFrom<GType>(inputs, scope);
     axis_ = GetAttr<int>("axis", attrs);
-    filter_ = FilterFrom<LoDTensor>(inputs, scope);
-    input_ = InputFrom<LoDTensor>(inputs, scope);
-    output_ = OutFrom<LoDTensor>(outputs, scope);
+    filter_ = FilterFrom<GType>(inputs, scope);
+    input_ = InputFrom<GType>(inputs, scope);
+    output_ = OutFrom<GType>(outputs, scope);
     strides_ = GetAttr<vector<int>>("strides", attrs);
     paddings_ = GetAttr<vector<int>>("paddings", attrs);
     dilations_ = GetAttr<vector<int>>("dilations", attrs);
     groups = GetAttr<int>("groups", attrs);
   }
-  Tensor *Bias() const { return bias_; }
+  RType *Bias() const { return bias_; }
 
   const int &Axis() const { return axis_; }
 
-  const Tensor *Input() const { return input_; }
+  const RType *Input() const { return input_; }
 
 #ifdef PADDLE_MOBILE_FPGA
-  Tensor *Filter() const { return filter_; }
+  RType *Filter() const { return filter_; }
 #else
-  const Tensor *Filter() const { return filter_; }
+  const RType *Filter() const { return filter_; }
 #endif
 
-  Tensor *Output() const { return output_; }
+  RType *Output() const { return output_; }
 
   const vector<int> &Strides() const { return strides_; }
 
@@ -1012,11 +1140,11 @@ class FusionConvAddParam : public OpParam {
   const int &Groups() const { return groups; }
 
  protected:
-  Tensor *bias_;
+  RType *bias_;
   int axis_;
-  Tensor *input_;
-  Tensor *output_;
-  Tensor *filter_;
+  RType *input_;
+  RType *output_;
+  RType *filter_;
   vector<int> strides_;
   vector<int> paddings_;
   vector<int> dilations_;
@@ -1032,54 +1160,60 @@ class FusionConvAddParam : public OpParam {
 #endif
 };
 
-Print &operator<<(Print &printer, const FusionConvAddParam &conv_param);
+template <typename Dtype>
+Print &operator<<(Print &printer, const FusionConvAddParam<Dtype> &conv_param);
 
 #ifdef FUSION_CONVADDRELU_OP
-class FusionConvAddReluParam : public FusionConvAddParam {
+template <typename DeviceType>
+class FusionConvAddReluParam : public FusionConvAddParam<DeviceType> {
  public:
   FusionConvAddReluParam(const VariableNameMap &inputs,
                          const VariableNameMap &outputs,
                          const AttributeMap &attrs, const Scope &scope)
-      : FusionConvAddParam(inputs, outputs, attrs, scope) {}
+      : FusionConvAddParam<DeviceType>(inputs, outputs, attrs, scope) {}
 };
 #endif
 
 #ifdef FUSION_CONVADDBNRELU_OP
+template <typename Dtype>
 class FusionConvAddBNReluParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   FusionConvAddBNReluParam(const VariableNameMap &inputs,
                            const VariableNameMap &outputs,
                            const AttributeMap &attrs, const Scope &scope) {
-    bias_ = InputYFrom<LoDTensor>(inputs, scope);
+    bias_ = InputYFrom<GType>(inputs, scope);
     axis_ = GetAttr<int>("axis", attrs);
-    filter_ = FilterFrom<LoDTensor>(inputs, scope);
-    input_ = InputFrom<LoDTensor>(inputs, scope);
-    output_ = OutFrom<LoDTensor>(outputs, scope);
+    filter_ = FilterFrom<GType>(inputs, scope);
+    input_ = InputFrom<GType>(inputs, scope);
+    output_ = OutFrom<GType>(outputs, scope);
     strides_ = GetAttr<vector<int>>("strides", attrs);
     paddings_ = GetAttr<vector<int>>("paddings", attrs);
     dilations_ = GetAttr<vector<int>>("dilations", attrs);
     groups = GetAttr<int>("groups", attrs);
-    input_bias_ = InputBiasFrom<LoDTensor>(inputs, scope);
-    input_mean_ = InputMeanFrom<LoDTensor>(inputs, scope);
-    input_scale_ = InputScaleFrom<LoDTensor>(inputs, scope);
-    input_variance_ = InputVarianceFrom<LoDTensor>(inputs, scope);
+    input_bias_ = InputBiasFrom<GType>(inputs, scope);
+    input_mean_ = InputMeanFrom<GType>(inputs, scope);
+    input_scale_ = InputScaleFrom<GType>(inputs, scope);
+    input_variance_ = InputVarianceFrom<GType>(inputs, scope);
     epsilon_ = GetAttr<float>("epsilon", attrs);
     momentum_ = GetAttr<float>("momentum", attrs);
     //    is_test_ = GetAttr<bool>("is_test", attrs);
   }
-  Tensor *Bias() const { return bias_; }
+  RType *Bias() const { return bias_; }
 
   const int &Axis() const { return axis_; }
 
-  const Tensor *Input() const { return input_; }
+  const RType *Input() const { return input_; }
 
 #ifdef PADDLE_MOBILE_FPGA
-  Tensor *Filter() const { return filter_; }
+  RType *Filter() const { return filter_; }
 #else
-  const Tensor *Filter() const { return filter_; }
+  const RType *Filter() const { return filter_; }
 #endif
 
-  Tensor *Output() const { return output_; }
+  RType *Output() const { return output_; }
 
   const vector<int> &Strides() const { return strides_; }
 
@@ -1089,13 +1223,13 @@ class FusionConvAddBNReluParam : public OpParam {
 
   const int &Groups() const { return groups; }
 
-  const Tensor *InputBias() const { return input_bias_; }
+  const RType *InputBias() const { return input_bias_; }
 
-  const Tensor *InputMean() const { return input_mean_; }
+  const RType *InputMean() const { return input_mean_; }
 
-  const Tensor *InputScale() const { return input_scale_; }
+  const RType *InputScale() const { return input_scale_; }
 
-  const Tensor *InputVariance() const { return input_variance_; }
+  const RType *InputVariance() const { return input_variance_; }
 
   const float &Epsilon() const { return epsilon_; }
 
@@ -1103,33 +1237,33 @@ class FusionConvAddBNReluParam : public OpParam {
 
   const bool &IsTest() const { return is_test_; }
 
-  void SetNewScale(Tensor *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(RType *new_scale) { new_scale_ = new_scale; }
 
-  void SetNewBias(Tensor *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(RType *new_bias) { new_bias_ = new_bias; }
 
-  const Tensor *NewScale() const { return new_scale_; }
+  const RType *NewScale() const { return new_scale_; }
 
-  const Tensor *NewBias() const { return new_bias_; }
+  const RType *NewBias() const { return new_bias_; }
 
  protected:
-  Tensor *bias_;
+  RType *bias_;
   int axis_;
-  Tensor *input_;
-  Tensor *output_;
-  Tensor *filter_;
+  RType *input_;
+  RType *output_;
+  RType *filter_;
   vector<int> strides_;
   vector<int> paddings_;
   vector<int> dilations_;
   int groups;
-  Tensor *input_bias_;
-  Tensor *input_mean_;
-  Tensor *input_scale_;
-  Tensor *input_variance_;
+  RType *input_bias_;
+  RType *input_mean_;
+  RType *input_scale_;
+  RType *input_variance_;
   float epsilon_;
   float momentum_;
   bool is_test_;
-  Tensor *new_bias_;
-  Tensor *new_scale_;
+  RType *new_bias_;
+  RType *new_scale_;
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
@@ -1143,35 +1277,39 @@ class FusionConvAddBNReluParam : public OpParam {
 #endif
 
 #ifdef FUSION_CONVBN_OP
+template <typename Dtype>
 class FusionConvBNParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   FusionConvBNParam(const VariableNameMap &inputs,
                     const VariableNameMap &outputs, const AttributeMap &attrs,
                     const Scope &scope) {
-    filter_ = FilterFrom<LoDTensor>(inputs, scope);
-    input_ = InputFrom<LoDTensor>(inputs, scope);
-    output_y_ = OutputYFrom<LoDTensor>(outputs, scope);
+    filter_ = FilterFrom<GType>(inputs, scope);
+    input_ = InputFrom<GType>(inputs, scope);
+    output_y_ = OutputYFrom<GType>(outputs, scope);
     strides_ = GetAttr<vector<int>>("strides", attrs);
     paddings_ = GetAttr<vector<int>>("paddings", attrs);
     dilations_ = GetAttr<vector<int>>("dilations", attrs);
     groups = GetAttr<int>("groups", attrs);
-    input_bias_ = InputBiasFrom<LoDTensor>(inputs, scope);
-    input_mean_ = InputMeanFrom<LoDTensor>(inputs, scope);
-    input_scale_ = InputScaleFrom<LoDTensor>(inputs, scope);
-    input_variance_ = InputVarianceFrom<LoDTensor>(inputs, scope);
+    input_bias_ = InputBiasFrom<GType>(inputs, scope);
+    input_mean_ = InputMeanFrom<GType>(inputs, scope);
+    input_scale_ = InputScaleFrom<GType>(inputs, scope);
+    input_variance_ = InputVarianceFrom<GType>(inputs, scope);
     epsilon_ = GetAttr<float>("epsilon", attrs);
     momentum_ = GetAttr<float>("momentum", attrs);
     //    is_test_ = GetAttr<bool>("is_test", attrs);
   }
 
-  const Tensor *Input() const { return input_; }
+  const RType *Input() const { return input_; }
 
 #ifdef PADDLE_MOBILE_FPGA
-  Tensor *Filter() const { return filter_; }
+  RType *Filter() const { return filter_; }
 #else
-  const Tensor *Filter() const { return filter_; }
+  const RType *Filter() const { return filter_; }
 #endif
-  Tensor *Output() const { return output_y_; }
+  RType *Output() const { return output_y_; }
 
   const vector<int> &Strides() const { return strides_; }
 
@@ -1181,13 +1319,13 @@ class FusionConvBNParam : public OpParam {
 
   const int &Groups() const { return groups; }
 
-  const Tensor *InputBias() const { return input_bias_; }
+  const RType *InputBias() const { return input_bias_; }
 
-  const Tensor *InputMean() const { return input_mean_; }
+  const RType *InputMean() const { return input_mean_; }
 
-  const Tensor *InputScale() const { return input_scale_; }
+  const RType *InputScale() const { return input_scale_; }
 
-  const Tensor *InputVariance() const { return input_variance_; }
+  const RType *InputVariance() const { return input_variance_; }
 
   const float &Epsilon() const { return epsilon_; }
 
@@ -1195,31 +1333,31 @@ class FusionConvBNParam : public OpParam {
 
   const bool &IsTest() const { return is_test_; }
 
-  void SetNewScale(Tensor *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(RType *new_scale) { new_scale_ = new_scale; }
 
-  void SetNewBias(Tensor *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(RType *new_bias) { new_bias_ = new_bias; }
 
-  const Tensor *NewScale() const { return new_scale_; }
+  const RType *NewScale() const { return new_scale_; }
 
-  const Tensor *NewBias() const { return new_bias_; }
+  const RType *NewBias() const { return new_bias_; }
 
  protected:
-  Tensor *input_;
-  Tensor *output_y_;
-  Tensor *filter_;
+  RType *input_;
+  RType *output_y_;
+  RType *filter_;
   vector<int> strides_;
   vector<int> paddings_;
   vector<int> dilations_;
   int groups;
-  Tensor *input_bias_;
-  Tensor *input_mean_;
-  Tensor *input_scale_;
-  Tensor *input_variance_;
+  RType *input_bias_;
+  RType *input_mean_;
+  RType *input_scale_;
+  RType *input_variance_;
   float epsilon_;
   float momentum_;
   bool is_test_;
-  Tensor *new_bias_;
-  Tensor *new_scale_;
+  RType *new_bias_;
+  RType *new_scale_;
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
@@ -1233,40 +1371,44 @@ class FusionConvBNParam : public OpParam {
 #endif
 
 #ifdef FUSION_CONVADDBN_OP
+template <typename Dtype>
 class FusionConvAddBNParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   FusionConvAddBNParam(const VariableNameMap &inputs,
                        const VariableNameMap &outputs,
                        const AttributeMap &attrs, const Scope &scope) {
-    bias_ = InputYFrom<LoDTensor>(inputs, scope);
+    bias_ = InputYFrom<GType>(inputs, scope);
     axis_ = GetAttr<int>("axis", attrs);
-    filter_ = FilterFrom<LoDTensor>(inputs, scope);
-    input_ = InputFrom<LoDTensor>(inputs, scope);
-    output_y_ = OutputYFrom<LoDTensor>(outputs, scope);
+    filter_ = FilterFrom<GType>(inputs, scope);
+    input_ = InputFrom<GType>(inputs, scope);
+    output_y_ = OutputYFrom<GType>(outputs, scope);
     strides_ = GetAttr<vector<int>>("strides", attrs);
     paddings_ = GetAttr<vector<int>>("paddings", attrs);
     dilations_ = GetAttr<vector<int>>("dilations", attrs);
     groups = GetAttr<int>("groups", attrs);
-    input_bias_ = InputBiasFrom<LoDTensor>(inputs, scope);
-    input_mean_ = InputMeanFrom<LoDTensor>(inputs, scope);
-    input_scale_ = InputScaleFrom<LoDTensor>(inputs, scope);
-    input_variance_ = InputVarianceFrom<LoDTensor>(inputs, scope);
+    input_bias_ = InputBiasFrom<GType>(inputs, scope);
+    input_mean_ = InputMeanFrom<GType>(inputs, scope);
+    input_scale_ = InputScaleFrom<GType>(inputs, scope);
+    input_variance_ = InputVarianceFrom<GType>(inputs, scope);
     epsilon_ = GetAttr<float>("epsilon", attrs);
     momentum_ = GetAttr<float>("momentum", attrs);
     //    is_test_ = GetAttr<bool>("is_test", attrs);
   }
-  Tensor *Bias() const { return bias_; }
+  RType *Bias() const { return bias_; }
 
   const int &Axis() const { return axis_; }
 
-  const Tensor *Input() const { return input_; }
+  const RType *Input() const { return input_; }
 
 #ifdef PADDLE_MOBILE_FPGA
-  Tensor *Filter() const { return filter_; }
+  RType *Filter() const { return filter_; }
 #else
-  const Tensor *Filter() const { return filter_; }
+  const RType *Filter() const { return filter_; }
 #endif
-  Tensor *Output() const { return output_y_; }
+  RType *Output() const { return output_y_; }
 
   const vector<int> &Strides() const { return strides_; }
 
@@ -1276,13 +1418,13 @@ class FusionConvAddBNParam : public OpParam {
 
   const int &Groups() const { return groups; }
 
-  const Tensor *InputBias() const { return input_bias_; }
+  const RType *InputBias() const { return input_bias_; }
 
-  const Tensor *InputMean() const { return input_mean_; }
+  const RType *InputMean() const { return input_mean_; }
 
-  const Tensor *InputScale() const { return input_scale_; }
+  const RType *InputScale() const { return input_scale_; }
 
-  const Tensor *InputVariance() const { return input_variance_; }
+  const RType *InputVariance() const { return input_variance_; }
 
   const float &Epsilon() const { return epsilon_; }
 
@@ -1290,33 +1432,33 @@ class FusionConvAddBNParam : public OpParam {
 
   const bool &IsTest() const { return is_test_; }
 
-  void SetNewScale(Tensor *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(RType *new_scale) { new_scale_ = new_scale; }
 
-  void SetNewBias(Tensor *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(RType *new_bias) { new_bias_ = new_bias; }
 
-  const Tensor *NewScale() const { return new_scale_; }
+  const RType *NewScale() const { return new_scale_; }
 
-  const Tensor *NewBias() const { return new_bias_; }
+  const RType *NewBias() const { return new_bias_; }
 
  protected:
-  Tensor *bias_;
+  RType *bias_;
   int axis_;
-  Tensor *input_;
-  Tensor *output_y_;
-  Tensor *filter_;
+  RType *input_;
+  RType *output_y_;
+  RType *filter_;
   vector<int> strides_;
   vector<int> paddings_;
   vector<int> dilations_;
   int groups;
-  Tensor *input_bias_;
-  Tensor *input_mean_;
-  Tensor *input_scale_;
-  Tensor *input_variance_;
+  RType *input_bias_;
+  RType *input_mean_;
+  RType *input_scale_;
+  RType *input_variance_;
   float epsilon_;
   float momentum_;
   bool is_test_;
-  Tensor *new_bias_;
-  Tensor *new_scale_;
+  RType *new_bias_;
+  RType *new_scale_;
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
@@ -1330,32 +1472,36 @@ class FusionConvAddBNParam : public OpParam {
 #endif
 
 #ifdef FUSION_DWCONVBNRELU_OP
+template <typename Dtype>
 class FusionDWConvBNReluParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   FusionDWConvBNReluParam(const VariableNameMap &inputs,
                           const VariableNameMap &outputs,
                           const AttributeMap &attrs, const Scope &scope) {
-    filter_ = FilterFrom<LoDTensor>(inputs, scope);
-    input_ = InputFrom<LoDTensor>(inputs, scope);
-    output_ = OutFrom<LoDTensor>(outputs, scope);
+    filter_ = FilterFrom<GType>(inputs, scope);
+    input_ = InputFrom<GType>(inputs, scope);
+    output_ = OutFrom<GType>(outputs, scope);
     strides_ = GetAttr<vector<int>>("strides", attrs);
     paddings_ = GetAttr<vector<int>>("paddings", attrs);
     dilations_ = GetAttr<vector<int>>("dilations", attrs);
     groups = GetAttr<int>("groups", attrs);
-    input_bias_ = InputBiasFrom<LoDTensor>(inputs, scope);
-    input_mean_ = InputMeanFrom<LoDTensor>(inputs, scope);
-    input_scale_ = InputScaleFrom<LoDTensor>(inputs, scope);
-    input_variance_ = InputVarianceFrom<LoDTensor>(inputs, scope);
+    input_bias_ = InputBiasFrom<GType>(inputs, scope);
+    input_mean_ = InputMeanFrom<GType>(inputs, scope);
+    input_scale_ = InputScaleFrom<GType>(inputs, scope);
+    input_variance_ = InputVarianceFrom<GType>(inputs, scope);
     epsilon_ = GetAttr<float>("epsilon", attrs);
     momentum_ = GetAttr<float>("momentum", attrs);
     //    is_test_ = GetAttr<bool>("is_test", attrs);
   }
 
-  const Tensor *Input() const { return input_; }
+  const RType *Input() const { return input_; }
 
-  const Tensor *Filter() const { return filter_; }
+  const RType *Filter() const { return filter_; }
 
-  Tensor *Output() const { return output_; }
+  RType *Output() const { return output_; }
 
   const vector<int> &Strides() const { return strides_; }
 
@@ -1365,13 +1511,13 @@ class FusionDWConvBNReluParam : public OpParam {
 
   const int &Groups() const { return groups; }
 
-  const Tensor *InputBias() const { return input_bias_; }
+  const RType *InputBias() const { return input_bias_; }
 
-  const Tensor *InputMean() const { return input_mean_; }
+  const RType *InputMean() const { return input_mean_; }
 
-  const Tensor *InputScale() const { return input_scale_; }
+  const RType *InputScale() const { return input_scale_; }
 
-  const Tensor *InputVariance() const { return input_variance_; }
+  const RType *InputVariance() const { return input_variance_; }
 
   const float &Epsilon() const { return epsilon_; }
 
@@ -1379,68 +1525,71 @@ class FusionDWConvBNReluParam : public OpParam {
 
   const bool &IsTest() const { return is_test_; }
 
-  void SetNewScale(Tensor *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(RType *new_scale) { new_scale_ = new_scale; }
 
-  void SetNewBias(Tensor *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(RType *new_bias) { new_bias_ = new_bias; }
 
-  const Tensor *NewScale() const { return new_scale_; }
+  const RType *NewScale() const { return new_scale_; }
 
-  const Tensor *NewBias() const { return new_bias_; }
+  const RType *NewBias() const { return new_bias_; }
 
  protected:
-  Tensor *input_;
-  Tensor *output_;
-  Tensor *filter_;
+  RType *input_;
+  RType *output_;
+  RType *filter_;
   vector<int> strides_;
   vector<int> paddings_;
   vector<int> dilations_;
   int groups;
-  Tensor *input_bias_;
-  Tensor *input_mean_;
-  Tensor *input_scale_;
-  Tensor *input_variance_;
+  RType *input_bias_;
+  RType *input_mean_;
+  RType *input_scale_;
+  RType *input_variance_;
   float epsilon_;
   float momentum_;
   bool is_test_;
-  Tensor *new_bias_;
-  Tensor *new_scale_;
+  RType *new_bias_;
+  RType *new_scale_;
 };
 
-Print &operator<<(Print &printer, const FusionConvAddParam &conv_param);
 #endif
 
 #ifdef FUSION_CONVBNRELU_OP
+template <typename Dtype>
 class FusionConvBNReluParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   FusionConvBNReluParam(const VariableNameMap &inputs,
                         const VariableNameMap &outputs,
                         const AttributeMap &attrs, const Scope &scope) {
-    filter_ = FilterFrom<LoDTensor>(inputs, scope);
-    input_ = InputFrom<LoDTensor>(inputs, scope);
-    output_ = OutFrom<LoDTensor>(outputs, scope);
+    filter_ = FilterFrom<GType>(inputs, scope);
+    input_ = InputFrom<GType>(inputs, scope);
+    output_ = OutFrom<GType>(outputs, scope);
 
     strides_ = GetAttr<vector<int>>("strides", attrs);
     paddings_ = GetAttr<vector<int>>("paddings", attrs);
     dilations_ = GetAttr<vector<int>>("dilations", attrs);
     groups = GetAttr<int>("groups", attrs);
-    input_bias_ = InputBiasFrom<LoDTensor>(inputs, scope);
-    input_mean_ = InputMeanFrom<LoDTensor>(inputs, scope);
-    input_scale_ = InputScaleFrom<LoDTensor>(inputs, scope);
-    input_variance_ = InputVarianceFrom<LoDTensor>(inputs, scope);
+    input_bias_ = InputBiasFrom<GType>(inputs, scope);
+    input_mean_ = InputMeanFrom<GType>(inputs, scope);
+    input_scale_ = InputScaleFrom<GType>(inputs, scope);
+    input_variance_ = InputVarianceFrom<GType>(inputs, scope);
     epsilon_ = GetAttr<float>("epsilon", attrs);
     momentum_ = GetAttr<float>("momentum", attrs);
     //    is_test_ = GetAttr<bool>("is_test", attrs);
   }
 
-  const Tensor *Input() const { return input_; }
+  const RType *Input() const { return input_; }
 
 #ifdef PADDLE_MOBILE_FPGA
-  Tensor *Filter() const { return filter_; }
+  RType *Filter() const { return filter_; }
 #else
-  const Tensor *Filter() const { return filter_; }
+  const RType *Filter() const { return filter_; }
 #endif
 
-  Tensor *Output() const { return output_; }
+  RType *Output() const { return output_; }
 
   const vector<int> &Strides() const { return strides_; }
 
@@ -1450,13 +1599,13 @@ class FusionConvBNReluParam : public OpParam {
 
   const int &Groups() const { return groups; }
 
-  const Tensor *InputBias() const { return input_bias_; }
+  const RType *InputBias() const { return input_bias_; }
 
-  const Tensor *InputMean() const { return input_mean_; }
+  const RType *InputMean() const { return input_mean_; }
 
-  const Tensor *InputScale() const { return input_scale_; }
+  const RType *InputScale() const { return input_scale_; }
 
-  const Tensor *InputVariance() const { return input_variance_; }
+  const RType *InputVariance() const { return input_variance_; }
 
   const float &Epsilon() const { return epsilon_; }
 
@@ -1464,31 +1613,31 @@ class FusionConvBNReluParam : public OpParam {
 
   const bool &IsTest() const { return is_test_; }
 
-  void SetNewScale(Tensor *new_scale) { new_scale_ = new_scale; }
+  void SetNewScale(RType *new_scale) { new_scale_ = new_scale; }
 
-  void SetNewBias(Tensor *new_bias) { new_bias_ = new_bias; }
+  void SetNewBias(RType *new_bias) { new_bias_ = new_bias; }
 
-  const Tensor *NewScale() const { return new_scale_; }
+  const RType *NewScale() const { return new_scale_; }
 
-  const Tensor *NewBias() const { return new_bias_; }
+  const RType *NewBias() const { return new_bias_; }
 
  protected:
-  Tensor *input_;
-  Tensor *output_;
-  Tensor *filter_;
+  RType *input_;
+  RType *output_;
+  RType *filter_;
   vector<int> strides_;
   vector<int> paddings_;
   vector<int> dilations_;
   int groups;
-  Tensor *input_bias_;
-  Tensor *input_mean_;
-  Tensor *input_scale_;
-  Tensor *input_variance_;
+  RType *input_bias_;
+  RType *input_mean_;
+  RType *input_scale_;
+  RType *input_variance_;
   float epsilon_;
   float momentum_;
   bool is_test_;
-  Tensor *new_bias_;
-  Tensor *new_scale_;
+  RType *new_bias_;
+  RType *new_scale_;
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
@@ -1502,21 +1651,25 @@ class FusionConvBNReluParam : public OpParam {
 #endif
 
 #ifdef IM2SEQUENCE_OP
+template <typename Dtype>
 class Im2SequenceParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   Im2SequenceParam(const VariableNameMap &inputs,
                    const VariableNameMap &outputs, const AttributeMap &attrs,
                    const Scope &scope) {
-    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-    out_ = OutFrom<LoDTensor>(outputs, scope);
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
     kernels_ = GetAttr<vector<int>>("kernels", attrs);
     strides_ = GetAttr<vector<int>>("strides", attrs);
     paddings_ = GetAttr<vector<int>>("paddings", attrs);
   }
 
-  const Tensor *Input() const { return input_x_; }
+  const RType *Input() const { return input_x_; }
 
-  Tensor *Output() const { return out_; }
+  RType *Output() const { return out_; }
 
   const vector<int> &Kernels() const { return kernels_; }
 
@@ -1525,8 +1678,8 @@ class Im2SequenceParam : public OpParam {
   const vector<int> &Paddings() const { return paddings_; }
 
  private:
-  Tensor *input_x_;
-  Tensor *out_;
+  RType *input_x_;
+  RType *out_;
   vector<int> kernels_;
   vector<int> strides_;
   vector<int> paddings_;
@@ -1534,44 +1687,52 @@ class Im2SequenceParam : public OpParam {
 #endif
 
 #ifdef DROPOUT_OP
+template <typename Dtype>
 class DropoutParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   DropoutParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
                const AttributeMap &attrs, const Scope &scope) {
-    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
-    out_ = OutFrom<LoDTensor>(outputs, scope);
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
   }
 
-  const Tensor *InputX() const { return input_x_; }
+  const RType *InputX() const { return input_x_; }
 
-  Tensor *Out() const { return out_; }
+  RType *Out() const { return out_; }
 
  private:
-  Tensor *input_x_;
-  Tensor *out_;
+  RType *input_x_;
+  RType *out_;
 };
 #endif
 
 #ifdef CONV_TRANSPOSE
+template <typename Dtype>
 class ConvTransposeParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   ConvTransposeParam(const VariableNameMap &inputs,
                      const VariableNameMap &outputs, const AttributeMap &attrs,
                      const Scope &scope) {
-    filter_ = FilterFrom<LoDTensor>(inputs, scope);
-    input_ = InputFrom<LoDTensor>(inputs, scope);
-    output_ = OutputFrom<LoDTensor>(outputs, scope);
+    filter_ = FilterFrom<GType>(inputs, scope);
+    input_ = InputFrom<GType>(inputs, scope);
+    output_ = OutputFrom<GType>(outputs, scope);
     strides_ = GetAttr<vector<int>>("strides", attrs);
     paddings_ = GetAttr<vector<int>>("paddings", attrs);
     dilations_ = GetAttr<vector<int>>("dilations", attrs);
     groups = GetAttr<int>("groups", attrs);
   }
 
-  const Tensor *Input() const { return input_; }
+  const RType *Input() const { return input_; }
 
-  const Tensor *Filter() const { return filter_; }
+  const RType *Filter() const { return filter_; }
 
-  Tensor *Output() const { return output_; }
+  RType *Output() const { return output_; }
 
   const vector<int> &Strides() const { return strides_; }
 
@@ -1582,9 +1743,9 @@ class ConvTransposeParam : public OpParam {
   const int &Groups() const { return groups; }
 
  private:
-  Tensor *input_;
-  Tensor *output_;
-  Tensor *filter_;
+  RType *input_;
+  RType *output_;
+  RType *filter_;
   vector<int> strides_;
   vector<int> paddings_;
   vector<int> dilations_;

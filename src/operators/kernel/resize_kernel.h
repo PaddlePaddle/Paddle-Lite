@@ -23,8 +23,8 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
-
-inline framework::DDim CalOutputShape(const ResizeParam &param) {
+template <typename DeviceType>
+inline framework::DDim CalOutputShape(const ResizeParam<DeviceType> &param) {
   const auto *input_x = param.InputX();
   const auto &input_x_dims = input_x->dims();
   auto *out = param.Out();
@@ -32,7 +32,8 @@ inline framework::DDim CalOutputShape(const ResizeParam &param) {
   const auto *input_shape = param.InputShape();
 
   if (input_shape) {
-    auto *shape_data = input_shape->data<int>();
+    input_x->dims()[0];
+    auto *shape_data = input_shape->template data<int>();
     framework::Tensor cpu_shape_tensor;
     auto shape =
         std::vector<int>(shape_data, shape_data + input_shape->numel());
@@ -69,9 +70,10 @@ inline framework::DDim CalOutputShape(const ResizeParam &param) {
 }
 
 template <typename DeviceType, typename T>
-class ResizeKernel : public framework::OpKernelBase<DeviceType, ResizeParam> {
+class ResizeKernel
+    : public framework::OpKernelBase<DeviceType, ResizeParam<DeviceType>> {
  public:
-  void Compute(const ResizeParam &param) const;
+  void Compute(const ResizeParam<DeviceType> &param) const;
 };
 }  // namespace operators
 }  // namespace paddle_mobile

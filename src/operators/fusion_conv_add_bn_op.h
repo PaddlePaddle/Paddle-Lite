@@ -53,7 +53,7 @@ class FusionConvAddBNMatcher : public framework::FusionOpMatcher {
 
 template <typename DeviceType, typename T>
 class FusionConvAddBNOp : public framework::OperatorWithKernel<
-                              DeviceType, FusionConvAddBNParam,
+                              DeviceType, FusionConvAddBNParam<DeviceType>,
                               operators::ConvAddBNKernel<DeviceType, T>> {
  public:
   FusionConvAddBNOp(const string &type, const VariableNameMap &inputs,
@@ -61,7 +61,7 @@ class FusionConvAddBNOp : public framework::OperatorWithKernel<
                     const framework::AttributeMap &attrs,
                     std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<
-            DeviceType, FusionConvAddBNParam,
+            DeviceType, FusionConvAddBNParam<DeviceType>,
             operators::ConvAddBNKernel<DeviceType, T>>(type, inputs, outputs,
                                                        attrs, scope) {}
 

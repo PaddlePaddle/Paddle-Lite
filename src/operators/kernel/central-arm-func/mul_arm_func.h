@@ -54,7 +54,7 @@ namespace operators {
 // 结果x(6行4列)乘y(4行2列)，按1中矩阵相乘，结果out(6行2列)
 
 template <typename P>
-void MulCompute(const MulParam &param) {
+void MulCompute(const MulParam<CPU> &param) {
   const Tensor *input_x = param.InputX();
   const Tensor *input_y = param.InputY();
   Tensor *out = param.Out();

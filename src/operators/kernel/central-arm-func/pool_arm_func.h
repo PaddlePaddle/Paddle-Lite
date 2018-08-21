@@ -38,7 +38,7 @@ inline void PoolBasic(std::string pooling_type, std::vector<int> ksize,
   }
 }
 template <typename P>
-void PoolCompute(const PoolParam &param) {
+void PoolCompute(const PoolParam<CPU> &param) {
   const Tensor *in_x = param.Input();
   Tensor *out = param.Output();
   std::string pooling_type = param.PoolingType();
@@ -59,7 +59,6 @@ void PoolCompute(const PoolParam &param) {
       ksize[i] = static_cast<int>(in_x->dims()[i + 2]);
     }
   }
-
   if (ksize[0] == 3 && ksize[0] == ksize[1]) {
     if (pooling_type == "max") {
       if (strides[0] == strides[1] && strides[0] == 1 &&

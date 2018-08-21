@@ -52,10 +52,10 @@ inline void ExpandAspectRatios(const std::vector<float>& input_aspect_ratior,
 
 template <typename DeviceType, typename T>
 class PriorBoxKernel
-    : public framework::OpKernelBase<DeviceType, PriorBoxParam> {
+    : public framework::OpKernelBase<DeviceType, PriorBoxParam<DeviceType>> {
  public:
-  void Compute(const PriorBoxParam& param) const;
-  bool Init(PriorBoxParam* param);
+  void Compute(const PriorBoxParam<DeviceType>& param) const;
+  bool Init(PriorBoxParam<DeviceType>* param);
 };
 }  // namespace operators
 }  // namespace paddle_mobile

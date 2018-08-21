@@ -25,7 +25,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename P>
-void DepthwiseConvCompute(const ConvParam &param) {
+void DepthwiseConvCompute(const ConvParam<CPU> &param) {
   Tensor Bias;
   Bias.mutable_data<float>({param.Groups()});
   if (param.Groups() == param.Input()->dims()[1] &&
