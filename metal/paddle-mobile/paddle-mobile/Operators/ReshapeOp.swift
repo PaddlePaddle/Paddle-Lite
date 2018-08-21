@@ -20,11 +20,15 @@ class ReshapeParam<P: PrecisionType>: OpParam {
         do {
             input = try ReshapeParam.inputX(inputs: opDesc.inputs, from: inScope)
             output = try ReshapeParam.outputOut(outputs: opDesc.outputs, from: inScope)
+//            shape = output.dim
+            inplace = try ReshapeParam.getAttr(key: "inplace", attrs: opDesc.attrs)
         } catch let error {
             throw error
         }
     }
     let input: Texture<P>
+//    let shape: [Int]
+    let inplace: Bool
     var output: Texture<P>
 }
 

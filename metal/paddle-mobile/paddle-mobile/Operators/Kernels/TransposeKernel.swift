@@ -53,7 +53,11 @@ class TransposeKernel<P: PrecisionType>: Kernel, Computable, Testable {
         var tmp = TransposeMetalParam.init(realAxis)
         tmp.iC = Int32(param.input.dim[param.input.transpose[3]])
         tmp.oC = Int32(param.output.dim[3])
-
+        if realAxis == [0, 1, 2, 3] {
+            print("====> transpose! FAST :)")
+        } else {
+            print("====> transpose! SLOW :(")
+        }
         encoder.setTexture(param.input.metalTexture, index: 0)
         encoder.setTexture(param.output.metalTexture, index: 1)
         encoder.setBytes(&tmp, length: MemoryLayout<TransposeMetalParam>.size, index: 0)

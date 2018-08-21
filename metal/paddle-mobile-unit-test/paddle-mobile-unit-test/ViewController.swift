@@ -7,11 +7,21 @@
 //
 
 import UIKit
+import Metal
+//import MetalKit
 import paddle_mobile
 
 class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
+        let device = Metal.MTLCreateSystemDefaultDevice()!
+        let queue = device.makeCommandQueue()!
+        let test = PaddleMobileUnitTest.init(
+            inDevice: device,
+            inQueue: queue
+        )
+        test.testReshape()
+//        test.testTranspose()
         print(" done ")
     }
 
