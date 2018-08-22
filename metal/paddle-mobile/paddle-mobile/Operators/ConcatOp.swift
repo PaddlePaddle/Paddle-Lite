@@ -41,8 +41,8 @@ class ConcatParam<P: PrecisionType>: OpParam {
 class ConcatOp<P: PrecisionType>: Operator<ConcatKernel<P>, ConcatParam<P>>, Runable, Creator, InferShaperable{
     
     func inferShape() {
-        let dim = para.input.reduce([0, 0]) {[$0[0] + $1.dim[0], $1.dim[1]]}
-        para.output.dim = Dim.init(inDim: dim)
+//        let dim = para.input.reduce([0, 0]) {[$0[0] + $1.dim[0], $1.dim[1]]}
+//        para.output.dim = Dim.init(inDim: dim)
     }
     
     typealias OpType = ConcatOp<P>

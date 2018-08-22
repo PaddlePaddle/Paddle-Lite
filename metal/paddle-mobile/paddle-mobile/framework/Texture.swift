@@ -40,6 +40,7 @@ extension InputTexture {
 
 public class Texture<P: PrecisionType>: Tensorial {
     var dim: Dim
+    var tensorDim: Dim
     private(set) var originDim: Dim
     private var textureDesc: MTLTextureDescriptor!
     var metalTexture: MTLTexture!
@@ -89,7 +90,7 @@ public class Texture<P: PrecisionType>: Tensorial {
         } else {
             fatalError(" not support ")
         }
-        
+        tensorDim = inDim
         dim = fourDim
         originDim = fourDim
         layout = DataLayout.init([(.N, fourDim[0]), (.C, fourDim[1]), (.H, fourDim[2]), (.W, fourDim[3])])
