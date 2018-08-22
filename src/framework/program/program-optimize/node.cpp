@@ -100,8 +100,16 @@ void Node::Folder(
   if (change->find(this->type_) != change->end()) {
     auto change_pairs = (*change)[this->type_];
     for (const auto &change_pair : change_pairs) {
-      op_desc->GetInputs()[change_pair.second] =
-          this->op_desc_->GetInputs()[change_pair.first];
+      std::map<std::string, int> f;
+      if (op_desc->GetInputs().find(change_pair.second) !=
+          op_desc->GetInputs().end()) {
+        for (auto value : this->op_desc_->GetInputs()[change_pair.first]) {
+          op_desc->GetInputs()[change_pair.second].push_back(value);
+        }
+      } else {
+        op_desc->GetInputs()[change_pair.second] =
+            this->op_desc_->GetInputs()[change_pair.first];
+      }
     }
   }
 

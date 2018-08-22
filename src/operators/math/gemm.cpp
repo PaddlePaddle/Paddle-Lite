@@ -707,6 +707,26 @@ void InnerKernelWithBn(int mc, int nc, float alpha, const float *a,
   }
 }
 
+// 分块矩阵乘法
+void InnerKernelWithPRelu(int mc, int nc, const float *a, const float *b,
+                          float *c, float *C, int ldc, float *p,
+                          std::string mode, float *bias, float *bias1) {
+#pragma omp parallel for
+  for (int j = 0; j < nc; j += NR) {
+    for (int i = 0; i < mc; i += MR) {
+#if __aarch64__
+      // AddDot8x12(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+      AddDot6x16(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+#else
+      // AddDot4x4(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+      // AddDot4x8(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+      AddDot6x8(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+#endif
+    }
+  }
+  WriteWithAddPRelu(mc, nc, c, C, ldc, p, mode, bias, bias1);
+}
+
 #if __ARM_NEON
 #if __aarch64__
 
@@ -972,6 +992,81 @@ void WriteWithAddReluV1(int mc, int nc, float *c, float *C, int ldc,
       cv = vld1q_f32(c_ptr);
       cv = vaddq_f32(cv, biasv);
       cv = vmaxq_f32(cv, zero);
+      if (_nc1 >= 1) {
+        vst1q_lane_f32(C_ptr, cv, 0);
+        C_ptr++;
+      }
+      if (_nc1 >= 2) {
+        vst1q_lane_f32(C_ptr, cv, 1);
+        C_ptr++;
+      }
+      if (_nc1 >= 3) {
+        vst1q_lane_f32(C_ptr, cv, 2);
+        C_ptr++;
+      }
+    }
+  }
+}
+// C = A * B + C,prelu(C)
+void WriteWithAddPRelu(int mc, int nc, float *c, float *C, int ldc, float *p,
+                       std::string mode, float *bias, float *bias1) {
+  int nc1 = nc / 4;
+  int _nc1 = nc % 4;
+
+  float *c_ptr, *C_ptr;
+  float32x4_t cv;
+  float32x4_t cv1;
+  float32x4_t biasv;
+  float32x4_t biasv1;
+  float32x4_t zero = vdupq_n_f32(0.0);
+  float32x4_t pv;
+  float *ptr = p;
+  for (int i = 0; i < mc; ++i) {
+    c_ptr = c + i * NC;
+    C_ptr = C + i * ldc;
+    biasv = vld1q_dup_f32(bias + i);
+    if (bias1 == nullptr) {
+      biasv1 = zero;
+    } else {
+      biasv1 = vld1q_dup_f32(bias1 + i);
+    }
+
+    for (int j = 0; j < nc1; ++j) {
+      cv = vld1q_f32(c_ptr);
+      cv = vaddq_f32(cv, biasv);
+      cv = vaddq_f32(cv, biasv1);
+      cv = vmaxq_f32(cv, zero);
+      cv1 = vminq_f32(cv, zero);
+      if (mode == "channel") {
+        cv1 = vmulq_n_f32(cv1, ptr[i]);
+      } else if (mode == "element") {
+        pv = vld1q_f32(ptr);
+        cv1 = vmulq_f32(cv1, pv);
+        ptr = ptr + 4;
+      } else {
+        cv1 = vmulq_n_f32(cv1, ptr[0]);
+      }
+      cv = vaddq_f32(cv, cv1);
+      vst1q_f32(C_ptr, cv);
+      c_ptr += 4;
+      C_ptr += 4;
+    }
+    if (_nc1 != 0) {
+      cv = vld1q_f32(c_ptr);
+      cv = vaddq_f32(cv, biasv);
+      cv = vaddq_f32(cv, biasv1);
+      cv = vmaxq_f32(cv, zero);
+      cv1 = vminq_f32(cv, zero);
+      if (mode == "channel") {
+        cv1 = vmulq_n_f32(cv1, ptr[i]);
+      } else if (mode == "element") {
+        pv = vld1q_f32(ptr);
+        cv1 = vmulq_f32(cv1, pv);
+        ptr = ptr + 4;
+      } else {
+        cv1 = vmulq_n_f32(cv1, ptr[0]);
+      }
+      cv = vaddq_f32(cv, cv1);
       if (_nc1 >= 1) {
         vst1q_lane_f32(C_ptr, cv, 0);
         C_ptr++;
@@ -1971,6 +2066,162 @@ void WriteWithAddReluV1(int mc, int nc, float *c, float *C, int ldc,
   }
 }
 
+// C = A * B + C,prelu(C)
+void WriteWithAddPRelu(int mc, int nc, float *c, float *C, int ldc, float *p,
+                       std::string mode, float *bias, float *bias1) {
+  int nc1 = nc / 4;
+  int _nc1 = nc % 4;
+
+  float *c_ptr, *C_ptr;
+  float32x4_t cv;
+  float32x4_t cv1;
+  float32x4_t cv2;
+  float32x4_t biasv;
+  float32x4_t biasv1;
+  float32x4_t zero = vdupq_n_f32(0.0);
+  float32x4_t pv;
+  float *ptr = p;
+  float *tmp;
+  if (bias1 == nullptr) {
+    for (int i = 0; i < mc; ++i) {
+      c_ptr = c + i * NC;
+      C_ptr = C + i * ldc;
+      biasv = vld1q_dup_f32(bias + i);
+      for (int j = 0; j < nc1; ++j) {
+        cv = vld1q_f32(c_ptr);
+        cv = vaddq_f32(cv, biasv);
+        cv1 = vmaxq_f32(cv, zero);
+        cv2 = vminq_f32(cv, zero);
+        if (mode == "channel") {
+          cv2 = vmulq_n_f32(cv2, ptr[i]);
+        } else if (mode == "element") {
+          pv = vld1q_f32(ptr);
+          cv2 = vmulq_f32(cv2, pv);
+          ptr = ptr + 4;
+        } else {
+          cv1 = vmulq_n_f32(cv2, ptr[0]);
+        }
+        cv = vaddq_f32(cv1, cv2);
+        vst1q_f32(C_ptr, cv);
+        c_ptr += 4;
+        C_ptr += 4;
+      }
+      if (_nc1 != 0) {
+        cv = vld1q_f32(c_ptr);
+        cv = vaddq_f32(cv, biasv);
+        cv1 = vmaxq_f32(cv, zero);
+        cv2 = vminq_f32(cv, zero);
+        if (mode == "channel") {
+          cv2 = vmulq_n_f32(cv2, ptr[i]);
+        } else if (mode == "element") {
+          pv = vld1q_f32(ptr);
+          cv2 = vmulq_f32(cv2, pv);
+          ptr = ptr + 4;
+        } else {
+          cv2 = vmulq_n_f32(cv2, ptr[0]);
+        }
+        cv = vaddq_f32(cv1, cv2);
+
+        if (_nc1 >= 1) {
+          vst1q_lane_f32(C_ptr, cv, 0);
+          if (mode == "element") {
+            ptr++;
+          }
+          C_ptr++;
+        }
+        if (_nc1 >= 2) {
+          vst1q_lane_f32(C_ptr, cv, 1);
+          if (mode == "element") {
+            ptr++;
+          }
+          C_ptr++;
+        }
+        if (_nc1 >= 3) {
+          vst1q_lane_f32(C_ptr, cv, 2);
+          if (mode == "element") {
+            ptr++;
+          }
+          C_ptr++;
+        }
+      }
+    }
+  } else {
+    for (int i = 0; i < mc; ++i) {
+      c_ptr = c + i * NC;
+      C_ptr = C + i * ldc;
+      tmp = bias1 + i * ldc;
+      biasv = vld1q_dup_f32(bias + i);
+      for (int j = 0; j < nc1; ++j) {
+        biasv1 = vld1q_f32(tmp);
+        tmp += 4;
+
+        cv = vld1q_f32(c_ptr);
+        cv = vaddq_f32(cv, biasv);
+        cv = vaddq_f32(cv, biasv1);
+        cv1 = vmaxq_f32(cv, zero);
+        cv2 = vminq_f32(cv, zero);
+        if (mode == "channel") {
+          cv2 = vmulq_n_f32(cv2, ptr[i]);
+        } else if (mode == "element") {
+          pv = vld1q_f32(ptr);
+          cv2 = vmulq_f32(cv2, pv);
+          ptr = ptr + 4;
+        } else {
+          cv2 = vmulq_n_f32(cv2, ptr[0]);
+        }
+        cv = vaddq_f32(cv1, cv2);
+        vst1q_f32(C_ptr, cv);
+        c_ptr += 4;
+        C_ptr += 4;
+      }
+      if (_nc1 != 0) {
+        biasv1 = vld1q_f32(tmp);
+        tmp += 4;
+
+        cv = vld1q_f32(c_ptr);
+        cv = vaddq_f32(cv, biasv);
+        cv = vaddq_f32(cv, biasv1);
+        cv1 = vmaxq_f32(cv, zero);
+        cv2 = vminq_f32(cv, zero);
+        if (mode == "channel") {
+          cv2 = vmulq_n_f32(cv2, ptr[i]);
+        } else if (mode == "element") {
+          pv = vld1q_f32(ptr);
+          cv2 = vmulq_f32(cv2, pv);
+        } else {
+          cv2 = vmulq_n_f32(cv2, ptr[0]);
+        }
+        cv = vaddq_f32(cv1, cv2);
+
+        if (_nc1 >= 1) {
+          vst1q_lane_f32(C_ptr, cv, 0);
+          C_ptr++;
+          tmp++;
+          if (mode == "element") {
+            ptr++;
+          }
+        }
+        if (_nc1 >= 2) {
+          vst1q_lane_f32(C_ptr, cv, 1);
+          C_ptr++;
+          tmp++;
+          if (mode == "element") {
+            ptr++;
+          }
+        }
+        if (_nc1 >= 3) {
+          vst1q_lane_f32(C_ptr, cv, 2);
+          C_ptr++;
+          tmp++;
+          if (mode == "element") {
+            ptr++;
+          }
+        }
+      }
+    }
+  }
+}
+
 // C = A * B, batchnorm(C)
 void WriteWithBn(int mc, int nc, float *c, float *C, int ldc, float *scale,
                  float *bias) {
@@ -2512,6 +2763,8 @@ void WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc) {}
 
 void WriteWithAddReluV1(int mc, int nc, float *c, float *C, int ldc,
                         float *bias) {}
+void WriteWithAddPRelu(int mc, int nc, float *c, float *C, int ldc, float *p,
+                       std::string mode, float *bias, float *bias1) {}
 
 void WriteWithBn(int mc, int nc, float *c, float *C, int ldc, float *new_scale,
                  float *new_bias) {}
@@ -2639,6 +2892,74 @@ void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
 #endif
       InnerKernelWithBn(mc, nc, alpha, packedA, packedB, beta, packedC,
                         &C(i, j), ldc, relu, new_scale + i, new_bias + i);
+    }
+  }
+
+  paddle_mobile::memory::Free(packedA);
+  paddle_mobile::memory::Free(packedB);
+  paddle_mobile::memory::Free(packedC);
+  paddle_mobile::memory::Free(zero);
+}
+
+void SgemmWithPRelu(int m, int n, int k, const float *A, int lda,
+                    const float *B, int ldb, float *C, int ldc, float *p,
+                    std::string mode, float *bias, float *bias1) {
+  // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
+  // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
+  int L1 = 32 * 1024;
+  int L2 = 0.5 * 1024 * 1024;
+
+  KC = k;
+  MC = L1 / (KC * sizeof(float));
+  NC = L2 / (KC * sizeof(float));
+
+  // make sure MC is multiple of MR, and NC is multiple of NR
+  int mblock_num = (m + MC - 1) / MC;
+  MC = (m + mblock_num - 1) / mblock_num;
+  MC = (MC + MR - 1) / MR * MR;
+  //  DLOG << "mblock_num = " << mblock_num << ", MC = " << MC << "\n";
+
+  int nblock_num = (n + NC - 1) / NC;
+  NC = (n + nblock_num - 1) / nblock_num;
+  NC = (NC + NR - 1) / NR * NR;
+  //  DLOG << "nblock_num = " << nblock_num << ", NC = " << NC << "\n";
+
+  packedA = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * MC * KC));
+  packedB = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * KC * NC));
+  packedC = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * MC * NC));
+  zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
+
+  for (int l = 0; l < KC; ++l) {
+    zero[l] = 0;
+  }
+
+  int mc, nc;
+  for (int j = 0; j < n; j += NC) {
+    nc = s_min(n - j, NC);
+#if __aarch64__
+    // PackMatrixB_12c(KC, nc, nc % NR, &B(0, j), ldb, packedB);
+    PackMatrixB_16c(KC, nc, nc % NR, &B(0, j), ldb, packedB);
+#else
+    PackMatrixB_8c(KC, nc, nc % NR, &B(0, j), ldb, packedB);
+#endif
+    for (int i = 0; i < m; i += MC) {
+      mc = s_min(m - i, MC);
+#if __aarch64__
+      PackMatrixA_6r(mc, KC, mc % MR, &A(i, 0), lda, packedA);
+      // PackMatrixA_8r(mc, KC, mc % MR, &A(i, 0), lda, packedA);
+#else
+      PackMatrixA_6r(mc, KC, mc % MR, &A(i, 0), lda, packedA);
+#endif
+      if (bias1 == nullptr) {
+        InnerKernelWithPRelu(mc, nc, packedA, packedB, packedC, &C(i, j), ldc,
+                             p + i, mode, bias + i, nullptr);
+      } else {
+        InnerKernelWithPRelu(mc, nc, packedA, packedB, packedC, &C(i, j), ldc,
+                             p + i, mode, bias + i, bias1 + i * ldc + j);
+      }
     }
   }
 

@@ -92,6 +92,10 @@ class OpParam {
   static T *InputYFrom(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue<T>("Y", inputs, scope);
   }
+  template <typename T>
+  static T *InputYFrom1(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue1<T>("Y", inputs, scope);
+  }
 
   template <typename T>
   static T *InputZFrom(const VariableNameMap &inputs, const Scope &scope) {
@@ -212,6 +216,19 @@ class OpParam {
     auto var_vec = var_map.at(key);
     if (!var_vec.empty()) {
       auto var = scope.FindVar(var_vec[0]);
+      return var->GetMutable<T>();
+    } else {
+      return nullptr;
+    }
+  }
+  template <typename T>
+  static T *GetVarValue1(const string &key, const VariableNameMap &var_map,
+                         const Scope &scope) {
+    PADDLE_MOBILE_ENFORCE(var_map.count(key) > 0,
+                          "%s is not contained in var_map", key.c_str())
+    auto var_vec = var_map.at(key);
+    if (!var_vec.empty()) {
+      auto var = scope.FindVar(var_vec[1]);
       return var->GetMutable<T>();
     } else {
       return nullptr;
@@ -1171,6 +1188,48 @@ class FusionConvAddReluParam : public FusionConvAddParam<DeviceType> {
                          const VariableNameMap &outputs,
                          const AttributeMap &attrs, const Scope &scope)
       : FusionConvAddParam<DeviceType>(inputs, outputs, attrs, scope) {}
+};
+#endif
+
+#ifdef FUSION_CONVADDPRELU_OP
+class FusionConvAddPReluParam : public FusionConvAddParam {
+ public:
+  FusionConvAddPReluParam(const VariableNameMap &inputs,
+                          const VariableNameMap &outputs,
+                          const AttributeMap &attrs, const Scope &scope)
+      : FusionConvAddParam(inputs, outputs, attrs, scope) {
+    alpha_ = InputAlphaFrom<LoDTensor>(inputs, scope);
+    mode_ = GetAttr<std::string>("mode", attrs);
+    framework::DDim dims = alpha_->dims();
+  }
+  const Tensor *InputAlpha() const { return alpha_; }
+  const std::string &Mode() const { return mode_; }
+
+ private:
+  Tensor *alpha_;
+  std::string mode_;
+};
+#endif
+#ifdef FUSION_CONVADDADDPRELU_OP
+class FusionConvAddAddPReluParam : public FusionConvAddParam {
+ public:
+  FusionConvAddAddPReluParam(const VariableNameMap &inputs,
+                             const VariableNameMap &outputs,
+                             const AttributeMap &attrs, const Scope &scope)
+      : FusionConvAddParam(inputs, outputs, attrs, scope) {
+    bias1_ = InputYFrom1<LoDTensor>(inputs, scope);
+    alpha_ = InputAlphaFrom<LoDTensor>(inputs, scope);
+    mode_ = GetAttr<std::string>("mode", attrs);
+    framework::DDim dims = alpha_->dims();
+  }
+  const Tensor *InputAlpha() const { return alpha_; }
+  const std::string &Mode() const { return mode_; }
+  const Tensor *Bias1() const { return bias1_; }
+
+ private:
+  Tensor *alpha_;
+  std::string mode_;
+  Tensor *bias1_;
 };
 #endif
 

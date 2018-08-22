@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma once
+#include "common/log.h"
 
 // 矩阵取值运算宏，假设矩阵按行存储
 #define A(i, j) A[(i)*lda + (j)]
@@ -79,6 +80,9 @@ void InnerKernelWithBias(int mc, int nc, float alpha, const float *a,
 void InnerKernelWithBn(int mc, int nc, float alpha, const float *a,
                        const float *b, float beta, float *c, float *C, int ldc,
                        bool relu, float *new_scale, float *new_bias);
+void InnerKernelWithPRelu(int mc, int nc, const float *a, const float *b,
+                          float *c, float *C, int ldc, float *p,
+                          std::string mode, float *bias, float *bias1);
 /*
 // 向量矩阵乘法 (M = 1)
 void VectorKernel(int m, int n, int k, float alpha, const float *A, int lda,
@@ -108,6 +112,9 @@ void WriteWithAdd(int mc, int nc, float *c, float *C, int ldc);
 void WriteWithAddV1(int mc, int nc, float *c, float *C, int ldc, float *bias);
 // C = A * B + C, relu(C)
 void WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc);
+// C = A * B + C,prelu(C)
+void WriteWithAddPRelu(int mc, int nc, float *c, float *C, int ldc, float *p,
+                       std::string mode, float *bias, float *bias1);
 // C = A * B + bias ,relu(C)
 void WriteWithAddReluV1(int mc, int nc, float *c, float *C, int ldc,
                         float *bias);
@@ -145,6 +152,10 @@ void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
 void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
                  const float *B, int ldb, float beta, float *C, int ldc,
                  bool relu, float *new_scale, float *new_bias);
+
+void SgemmWithPRelu(int m, int n, int k, const float *A, int lda,
+                    const float *B, int ldb, float *C, int ldc, float *p,
+                    std::string mode, float *bias, float *bias1);
 
 // 32位 float 矩阵乘法（openmp 多线程版本）
 void Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
