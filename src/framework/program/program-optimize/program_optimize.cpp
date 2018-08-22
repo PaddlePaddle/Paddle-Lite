@@ -95,11 +95,13 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FusionOptimize(
           std::vector<std::shared_ptr<Node>> removed_nodes;
           matcher->FolderNodes(match_node.get(), &removed_nodes);
 
-          for (int j = 0; j < removed_nodes.size(); ++j) {
-            auto removed_node = removed_nodes[j];
+          for (int k = removed_nodes.size() - 1; k >= 0; --k) {
+            auto removed_node = removed_nodes[k];
             auto removed_ite =
                 std::find(nodes.begin(), nodes.end(), removed_node);
-            nodes.erase(removed_ite);
+            if (removed_ite != nodes.end()) {
+              nodes.erase(removed_ite);
+            }
           }
         }
       }
