@@ -20,7 +20,8 @@ class ViewController: UIViewController {
             inDevice: device,
             inQueue: queue
         )
-        test.testReshape()
+        test.testConcat()
+//        test.testReshape()
 //        test.testTranspose()
         print(" done ")
     }
