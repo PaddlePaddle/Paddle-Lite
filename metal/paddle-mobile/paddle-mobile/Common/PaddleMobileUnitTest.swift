@@ -82,6 +82,37 @@ public class PaddleMobileUnitTest {
         indentPrintTensor(tensor: tensor, dim: ndim, ix: dim.map { $0 * 0 }, indentLevel: 0)
     }
     
+    public func testConcat() {
+        let buffer = queue.makeCommandBuffer() ?! "buffer is nil"
+        var it: [[Float32]] = []
+        for _ in 0..<7 {
+            it.append((0..<12).map { Float32($0) })
+        }
+        let input = it.map { device.tensor2texture(value: $0, dim: [3, 4]) }
+        let output = device.tensor2texture(value: [Float32](), dim: [3, 28])
+        
+        let param = ConcatTestParam.init(
+            input: input,
+            output: output,
+            dims: [[3, 4], [3, 4], [3, 4], [3, 4], [3, 4], [3, 4], [3, 4]],
+            axis: 1,
+            odim: [3, 28]
+        )
+        let concatKernel = ConcatKernel<Float32>.init(device: device, testParam: param)
+        concatKernel.test(cmdBuffer: buffer, param: param)
+        buffer.addCompletedHandler { (buffer) in
+            for i in 0..<it.count {
+                let _: Float32? = input[i].logDesc()
+                self.tensorPrint(tensor: it[i], dim: [3, 4])
+            }
+            let _: Float32? = output.logDesc()
+            let tx: [Float32] = self.device.texture2tensor(texture: output, dim: [3, 28])
+            self.tensorPrint(tensor: tx, dim: [3, 28])
+        }
+
+        buffer.commit()
+    }
+    
     public func testReshape() {
         let buffer = queue.makeCommandBuffer() ?! "buffer is nil"
 //        let input: [Float32] = (0..<24).map { Float32($0) }
