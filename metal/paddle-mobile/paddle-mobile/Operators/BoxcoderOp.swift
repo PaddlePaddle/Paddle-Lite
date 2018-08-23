@@ -27,6 +27,11 @@ class BoxcoderParam<P: PrecisionType>: OpParam {
         } catch let error {
             throw error
         }
+        assert(priorBox.transpose == [0, 1, 2, 3])
+        assert(priorBoxVar.transpose == [0, 1, 2, 3])
+        assert(targetBox.transpose == [0, 1, 2, 3])
+        assert(codeType == "decode_center_size") // encode_center_size is not implemented
+        assert((targetBox.tensorDim.cout() == 3) && (targetBox.tensorDim[0] == 1)) // N must be 1 (only handle batch size = 1)
     }
     let priorBox: Texture<P>
     let priorBoxVar: Texture<P>
