@@ -33,7 +33,9 @@ int main() {
     GetInput<float>(g_hand, &input, dims);
 
     // 预热一次
-    auto output = paddle_mobile.Predict(input, dims);
+	  for (int i = 0; i < 10; ++i) {
+		  auto output = paddle_mobile.Predict(input, dims);
+	  }
     auto time3 = time();
     for (int i = 0; i < 10; ++i) {
       auto output = paddle_mobile.Predict(input, dims);

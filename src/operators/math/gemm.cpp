@@ -402,7 +402,7 @@ void PackMatrixB_8c(int k, int n, int n_tail, const float *B, int ldb,
           : "memory", "v0", "v1");
 #else
       asm volatile(
-          "pld        [%[b0]]                     \n\t"
+          //          "pld        [%[b0]]                     \n\t"
           "vld1.32    {q0, q1},   [%[b0]]         \n\t"
           "vst1.32    {q0, q1},   [%[local_buffer]]!    \n\t"
           : [local_buffer] "+r"(local_buffer)
@@ -454,7 +454,7 @@ void PackMatrixB_omp_8c(int k, int n, int n_tail, const float *B, int ldb,
           : "memory", "v0", "v1");
 #else
       asm volatile(
-          "pld        [%[b0]]                     \n\t"
+          //          "pld        [%[b0]]                     \n\t"
           "vld1.32    {q0, q1},   [%[b0]]         \n\t"
           "vst1.32    {q0, q1},   [%[local_buffer]]!    \n\t"
           : [local_buffer] "+r"(local_buffer)
@@ -2528,7 +2528,7 @@ void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
   // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
   // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
   int L1 = 32 * 1024;
-  int L2 = 0.5 * 1024 * 1024;
+  int L2 = 512 * 1024;
 
   KC = k;
   MC = L1 / (KC * sizeof(float));
@@ -2552,10 +2552,7 @@ void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
   packedC = static_cast<float *>(
       paddle_mobile::memory::Alloc(sizeof(float) * MC * NC));
   zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
-
-  for (int l = 0; l < KC; ++l) {
-    zero[l] = 0;
-  }
+  memset(static_cast<void *>(zero), 0, sizeof(float) * KC);
 
   int mc, nc;
   for (int j = 0; j < n; j += NC) {
@@ -2591,7 +2588,7 @@ void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
   // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
   // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
   int L1 = 32 * 1024;
-  int L2 = 0.5 * 1024 * 1024;
+  int L2 = 512 * 1024;
 
   KC = k;
   MC = L1 / (KC * sizeof(float));
@@ -2615,10 +2612,7 @@ void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
   packedC = static_cast<float *>(
       paddle_mobile::memory::Alloc(sizeof(float) * MC * NC));
   zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
-
-  for (int l = 0; l < KC; ++l) {
-    zero[l] = 0;
-  }
+  memset(static_cast<void *>(zero), 0, sizeof(float) * KC);
 
   int mc, nc;
   for (int j = 0; j < n; j += NC) {
@@ -2658,7 +2652,7 @@ void Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
   int max_threads = 1;
 #endif
 
-  int L1 = 32 * 1024;
+  int L1 = 64 / max_threads * 1024;
   KC = k;
   if (m > n) {
     // 对 A 分块
@@ -2765,7 +2759,7 @@ void SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A, int lda,
   int max_threads = 1;
 #endif
 
-  int L1 = 32 * 1024;
+  int L1 = 64 / max_threads * 1024;
   KC = k;
   if (m > n) {
     // 对 A 分块
@@ -2934,14 +2928,14 @@ void AddDot6x8(int k, const float *a, const float *b, float *c, int ldc) {
   const float *a_ptr, *b_ptr;
   a_ptr = a;
   b_ptr = b;
-  int kc1 = k / 4;
-  int kc2 = k % 4;
+  int kc1 = k / 8;
+  int kc2 = k % 8;
   int step = 4 * ldc;
   asm volatile(
       "pld        [%[a_ptr]]            \n\t"
+      "pld        [%[a_ptr],  #64]      \n\t"
       "pld        [%[b_ptr]]            \n\t"
-      "pld        [%[a_ptr],  #64]            \n\t"
-      "pld        [%[b_ptr],  #64]            \n\t"
+      "pld        [%[b_ptr],  #64]      \n\t"
 
       "vmov.f32   q4,     #0.0          \n\t"
       "vmov.f32   q5,     #0.0          \n\t"
@@ -2960,10 +2954,8 @@ void AddDot6x8(int k, const float *a, const float *b, float *c, int ldc) {
       "blt        2f                    \n\t"
       "1:                               \n\t"
 
-      //      "pld        [%[a_ptr], #128]       \n\t"
-      //      "pld        [%[b_ptr], #128]       \n\t"
-      //      "pld        [%[a_ptr], #192]       \n\t"
-      //      "pld        [%[b_ptr], #192]       \n\t"
+      "pld        [%[a_ptr], #128]       \n\t"
+      "pld        [%[b_ptr], #128]       \n\t"
 
       "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
       "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
@@ -2996,6 +2988,79 @@ void AddDot6x8(int k, const float *a, const float *b, float *c, int ldc) {
       "vmla.f32   q13,  q3,   d2[0]       \n\t"
       "vmla.f32   q14,  q2,   d2[1]       \n\t"
       "vmla.f32   q15,  q3,   d2[1]       \n\t"
+
+      "pld        [%[a_ptr], #128]       \n\t"
+      "pld        [%[b_ptr], #128]       \n\t"
+
+      "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
+      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
+
+      "vmla.f32   q4,   q2,   d0[0]       \n\t"
+      "vmla.f32   q5,   q3,   d0[0]       \n\t"
+      "vmla.f32   q6,   q2,   d0[1]       \n\t"
+      "vmla.f32   q7,   q3,   d0[1]       \n\t"
+      "vmla.f32   q8,   q2,   d1[0]       \n\t"
+      "vmla.f32   q9,   q3,   d1[0]       \n\t"
+      "vmla.f32   q10,  q2,   d1[1]       \n\t"
+      "vmla.f32   q11,  q3,   d1[1]       \n\t"
+      "vmla.f32   q12,  q2,   d2[0]       \n\t"
+      "vmla.f32   q13,  q3,   d2[0]       \n\t"
+      "vmla.f32   q14,  q2,   d2[1]       \n\t"
+      "vmla.f32   q15,  q3,   d2[1]       \n\t"
+
+      "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
+      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
+
+      "vmla.f32   q4,   q2,   d0[0]       \n\t"
+      "vmla.f32   q5,   q3,   d0[0]       \n\t"
+      "vmla.f32   q6,   q2,   d0[1]       \n\t"
+      "vmla.f32   q7,   q3,   d0[1]       \n\t"
+      "vmla.f32   q8,   q2,   d1[0]       \n\t"
+      "vmla.f32   q9,   q3,   d1[0]       \n\t"
+      "vmla.f32   q10,  q2,   d1[1]       \n\t"
+      "vmla.f32   q11,  q3,   d1[1]       \n\t"
+      "vmla.f32   q12,  q2,   d2[0]       \n\t"
+      "vmla.f32   q13,  q3,   d2[0]       \n\t"
+      "vmla.f32   q14,  q2,   d2[1]       \n\t"
+      "vmla.f32   q15,  q3,   d2[1]       \n\t"
+
+      "pld        [%[a_ptr], #128]       \n\t"
+      "pld        [%[b_ptr], #128]       \n\t"
+
+      "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
+      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
+
+      "vmla.f32   q4,   q2,   d0[0]       \n\t"
+      "vmla.f32   q5,   q3,   d0[0]       \n\t"
+      "vmla.f32   q6,   q2,   d0[1]       \n\t"
+      "vmla.f32   q7,   q3,   d0[1]       \n\t"
+      "vmla.f32   q8,   q2,   d1[0]       \n\t"
+      "vmla.f32   q9,   q3,   d1[0]       \n\t"
+      "vmla.f32   q10,  q2,   d1[1]       \n\t"
+      "vmla.f32   q11,  q3,   d1[1]       \n\t"
+      "vmla.f32   q12,  q2,   d2[0]       \n\t"
+      "vmla.f32   q13,  q3,   d2[0]       \n\t"
+      "vmla.f32   q14,  q2,   d2[1]       \n\t"
+      "vmla.f32   q15,  q3,   d2[1]       \n\t"
+
+      "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
+      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
+
+      "vmla.f32   q4,   q2,   d0[0]       \n\t"
+      "vmla.f32   q5,   q3,   d0[0]       \n\t"
+      "vmla.f32   q6,   q2,   d0[1]       \n\t"
+      "vmla.f32   q7,   q3,   d0[1]       \n\t"
+      "vmla.f32   q8,   q2,   d1[0]       \n\t"
+      "vmla.f32   q9,   q3,   d1[0]       \n\t"
+      "vmla.f32   q10,  q2,   d1[1]       \n\t"
+      "vmla.f32   q11,  q3,   d1[1]       \n\t"
+      "vmla.f32   q12,  q2,   d2[0]       \n\t"
+      "vmla.f32   q13,  q3,   d2[0]       \n\t"
+      "vmla.f32   q14,  q2,   d2[1]       \n\t"
+      "vmla.f32   q15,  q3,   d2[1]       \n\t"
+
+      "pld        [%[a_ptr], #128]       \n\t"
+      "pld        [%[b_ptr], #128]       \n\t"
 
       "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
       "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
