@@ -14,18 +14,26 @@
 
 import Foundation
 
+struct BoxcoderMetalParam {
+}
+
 class BoxcoderKernel<P: PrecisionType>: Kernel, Computable{
     func compute(commandBuffer: MTLCommandBuffer, param: BoxcoderParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
             throw PaddleMobileError.predictError(message: " encode is nil")
         }
-//        encoder.setTexture(param.input.metalTexture, index: 0)
-        encoder.setTexture(param.output.metalTexture, index: 1)
+        encoder.setTexture(param.priorBox.metalTexture, index: 0)
+        encoder.setTexture(param.priorBoxVar.metalTexture, index: 1)
+        encoder.setTexture(param.targetBox.metalTexture, index: 2)
+        encoder.setTexture(param.output.metalTexture, index: 3)
+        var bmp = BoxcoderMetalParam.init()
+        encoder.setBytes(&bmp, length: MemoryLayout<BoxcoderMetalParam>.size, index: 0)
         encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
         encoder.endEncoding()
     }
     
     required init(device: MTLDevice, param: BoxcoderParam<P>) {
+        param.output.initTexture(device: device)
         super.init(device: device, inFunctionName: "priorbox")
     }
 }
