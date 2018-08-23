@@ -39,9 +39,9 @@ int main() {
     std::cout << " Max element is " << *biggest << " at position "
               << std::distance(std::begin(vec_result), biggest) << std::endl;
 
-	  for (int i = 0; i < 10; ++i) {
-		  auto vec_result = paddle_mobile.Predict(input, dims);
-	  }
+    for (int i = 0; i < 10; ++i) {
+      auto vec_result = paddle_mobile.Predict(input, dims);
+    }
     auto time3 = time();
     for (int i = 0; i < 10; ++i) {
       auto vec_result = paddle_mobile.Predict(input, dims);
