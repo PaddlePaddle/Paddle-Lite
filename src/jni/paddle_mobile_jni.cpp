@@ -219,7 +219,7 @@ JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictImage(
   env->DeleteLocalRef(ddims);
   env->ReleaseFloatArrayElements(buf, dataPointer, 0);
   env->DeleteLocalRef(buf);
-  env->DeleteLocalRef(dataPointer);
+//  env->DeleteLocalRef(dataPointer);
 #endif
 
   ANDROIDLOGI("predictImage finished");
