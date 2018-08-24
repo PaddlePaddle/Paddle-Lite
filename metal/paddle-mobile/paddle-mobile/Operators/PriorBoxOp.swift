@@ -27,7 +27,7 @@ class PriorBoxParam<P: PrecisionType>: OpParam {
             aspectRatios = try PriorBoxParam.getAttr(key: "aspect_ratios", attrs: opDesc.attrs)
             variances = try PriorBoxParam.getAttr(key: "variances", attrs: opDesc.attrs)
             flip = try PriorBoxParam.getAttr(key: "flip", attrs: opDesc.attrs)
-            clip = try PriorBoxParam.getAttr(key: "clop", attrs: opDesc.attrs)
+            clip = try PriorBoxParam.getAttr(key: "clip", attrs: opDesc.attrs)
             stepW = try PriorBoxParam.getAttr(key: "step_w", attrs: opDesc.attrs)
             stepH = try PriorBoxParam.getAttr(key: "step_h", attrs: opDesc.attrs)
             offset = try PriorBoxParam.getAttr(key: "offset", attrs: opDesc.attrs)

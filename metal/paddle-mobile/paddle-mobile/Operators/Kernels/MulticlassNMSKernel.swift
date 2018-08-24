@@ -26,6 +26,6 @@ class MulticlassNMSKernel<P: PrecisionType>: Kernel, Computable{
     }
     
     required init(device: MTLDevice, param: MulticlassNMSParam<P>) {
-        super.init(device: device, inFunctionName: "priorbox")
+        super.init(device: device, inFunctionName: "prior_box")
     }
 }
