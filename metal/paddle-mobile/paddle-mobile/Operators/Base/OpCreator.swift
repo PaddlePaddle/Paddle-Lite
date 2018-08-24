@@ -52,7 +52,8 @@ class OpCreator<P: PrecisionType> {
          gSoftmaxType               :     SoftmaxOp<P>.creat,
          gReshapeType               :     ReshapeOp<P>.creat,
          gConvAddType               :     ConvAddOp<P>.creat,
-         gMPSCNNConvType            :     CNNConvAddBatchNormReluOp<P>.creat]
+         gMPSCNNConvType            :     CNNConvAddBatchNormReluOp<P>.creat,
+         gBatchNormReluType         :     BatchNormReluOp<P>.creat]
     
     private init(){}
 }
