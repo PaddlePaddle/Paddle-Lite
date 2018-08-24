@@ -24,62 +24,64 @@ limitations under the License. */
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        class FusionConvAddAddPReluOpMatcher : public framework::FusionOpMatcher {
-        public:
-            FusionConvAddAddPReluOpMatcher() {
-                node_ = framework::Node(G_OP_TYPE_CONV);
-                node_ > std::make_shared<framework::Node>(G_OP_TYPE_ELEMENTWISE_ADD) >
-                std::make_shared<framework::Node>(G_OP_TYPE_ELEMENTWISE_ADD)
-                > std::make_shared<framework::Node>(G_OP_TYPE_PRELU);
-            }
+class FusionConvAddAddPReluOpMatcher : public framework::FusionOpMatcher {
+ public:
+  FusionConvAddAddPReluOpMatcher() {
+    node_ = framework::Node(G_OP_TYPE_CONV);
+    node_ > std::make_shared<framework::Node>(G_OP_TYPE_ELEMENTWISE_ADD) >
+        std::make_shared<framework::Node>(G_OP_TYPE_ELEMENTWISE_ADD) >
+        std::make_shared<framework::Node>(G_OP_TYPE_PRELU);
+  }
 
-            void FolderNodes(
-                    framework::Node *node,
-                    std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
-                node->Folder(node_.Depth(), Type(),
-                             {{G_OP_TYPE_ELEMENTWISE_ADD, {{"Y", "Y"}, {"Out", "addOut"},{"X", "addX"}}},
-                              {G_OP_TYPE_PRELU, {{"Alpha", "Alpha"}}}
-                             },
+  void FolderNodes(
+      framework::Node *node,
+      std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
+    node->Folder(node_.Depth(), Type(),
+                 {{G_OP_TYPE_ELEMENTWISE_ADD,
+                   {{"Y", "Y"}, {"Out", "addOut"}, {"X", "addX"}}},
+                  {G_OP_TYPE_PRELU, {{"Alpha", "Alpha"}}}},
 
-                             removed_nodes);
-            }
-            std::string Type() { return G_OP_TYPE_FUSION_CONV_ADD_ADD_PRELU; }
+                 removed_nodes);
+  }
+  std::string Type() { return G_OP_TYPE_FUSION_CONV_ADD_ADD_PRELU; }
 
-          std::vector<std::pair<int, std::string>> NeedCheck() {
-              DLOG << " conv add add prelu check add X ";
-            return {{2, "Y"}, {2, "X"}};
-          }
-        };
+  std::vector<std::pair<int, std::string>> NeedCheck() {
+    DLOG << " conv add add prelu check add X ";
+    return {{2, "Y"}, {2, "X"}};
+  }
+};
 
-        template <typename DeviceType, typename T>
-        class FusionConvAddAddPReluOp : public framework::OperatorWithKernel<
-                DeviceType, FusionConvAddAddPReluParam<DeviceType>,
-                operators::ConvAddAddPReluKernel<DeviceType, T>> {
-        public:
-            FusionConvAddAddPReluOp(const string &type, const VariableNameMap &inputs,
-                                 const VariableNameMap &outputs,
-                                 const framework::AttributeMap &attrs,
-                                 std::shared_ptr<framework::Scope> scope)
-                    : framework::OperatorWithKernel<
-                    DeviceType, FusionConvAddAddPReluParam<DeviceType>,
-                    operators::ConvAddAddPReluKernel<DeviceType, T>>(type, inputs, outputs,
-                                                                  attrs, scope) {}
+template <typename DeviceType, typename T>
+class FusionConvAddAddPReluOp
+    : public framework::OperatorWithKernel<
+          DeviceType, FusionConvAddAddPReluParam<DeviceType>,
+          operators::ConvAddAddPReluKernel<DeviceType, T>> {
+ public:
+  FusionConvAddAddPReluOp(const string &type, const VariableNameMap &inputs,
+                          const VariableNameMap &outputs,
+                          const framework::AttributeMap &attrs,
+                          std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<
+            DeviceType, FusionConvAddAddPReluParam<DeviceType>,
+            operators::ConvAddAddPReluKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
 
-            using framework::OperatorWithKernel<
-                    DeviceType, FusionConvAddAddPReluParam<DeviceType>,
-                    operators::ConvAddAddPReluKernel<DeviceType, T>>::OperatorWithKernel;
-            void InferShape() const override;
-        protected:
-        };
+  using framework::OperatorWithKernel<
+      DeviceType, FusionConvAddAddPReluParam<DeviceType>,
+      operators::ConvAddAddPReluKernel<DeviceType, T>>::OperatorWithKernel;
+  void InferShape() const override;
+
+ protected:
+};
 
 #ifdef PADDLE_MOBILE_CPU
 
 #ifndef CONV_ADD_ADD_PRELU_REGISTER
 #define CONV_ADD_ADD_PRELU_REGISTER
-        static framework::FusionOpRegistrar fusion_conv_add_add_prelu_registrar(
-                new FusionConvAddAddPReluOpMatcher());
+static framework::FusionOpRegistrar fusion_conv_add_add_prelu_registrar(
+    new FusionConvAddAddPReluOpMatcher());
 #endif
 
 #endif
@@ -87,7 +89,7 @@ namespace paddle_mobile {
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 
-        #ifndef CONV_ADD_ADD_PRELU_REGISTER
+#ifndef CONV_ADD_ADD_PRELU_REGISTER
 #define CONV_ADD_ADD_PRELU_REGISTER
 static framework::FusionOpRegistrar fusion_conv_add_add_prelu_registrar(
     new FusionConvAddAddPReluOpMatcher());
@@ -95,7 +97,7 @@ static framework::FusionOpRegistrar fusion_conv_add_add_prelu_registrar(
 
 #endif
 
-    }  // namespace operators
+}  // namespace operators
 }  // namespace paddle_mobile
 
 #ifdef PADDLE_MOBILE_CPU

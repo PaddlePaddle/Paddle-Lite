@@ -3172,7 +3172,7 @@ void SgemmWithPRelu_omp(int m, int n, int k, const float *A, int lda,
   int max_threads = 1;
 #endif
 
-  int L1 = 16 / max_threads * 1024;
+  int L1 = 32 * 1024;
   KC = k;
   if (m > n) {
     // 对 A 分块

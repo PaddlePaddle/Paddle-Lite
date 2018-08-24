@@ -26,20 +26,20 @@ limitations under the License. */
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        using framework::DDim;
-        using framework::OpKernelBase;
+using framework::DDim;
+using framework::OpKernelBase;
 
-        template <typename DeviceType, typename T>
-        class ConvAddAddPReluKernel
-                : public OpKernelBase<DeviceType, FusionConvAddAddPReluParam<DeviceType>> {
-        public:
-            void Compute(const FusionConvAddAddPReluParam<DeviceType> &param) const;
-            bool Init(FusionConvAddAddPReluParam<DeviceType> *param);
-        };
+template <typename DeviceType, typename T>
+class ConvAddAddPReluKernel
+    : public OpKernelBase<DeviceType, FusionConvAddAddPReluParam<DeviceType>> {
+ public:
+  void Compute(const FusionConvAddAddPReluParam<DeviceType> &param) const;
+  bool Init(FusionConvAddAddPReluParam<DeviceType> *param);
+};
 
-    }  // namespace operators
+}  // namespace operators
 }  // namespace paddle_mobile
 
 #endif

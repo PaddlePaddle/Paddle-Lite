@@ -18,33 +18,33 @@ limitations under the License. */
 #include "operators/math/conv_func.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        template <typename Dtype, typename T>
-        void FusionConvAddAddPReluOp<Dtype, T>::InferShape() const {
-            auto in_dims = this->param_.Input()->dims();
-            auto filter_dims = this->param_.Filter()->dims();
-            const std::vector<int> &strides = this->param_.Strides();
-            std::vector<int> paddings = this->param_.Paddings();
-            int groups = this->param_.Groups();
-            std::vector<int> dilations = this->param_.Dilations();
+template <typename Dtype, typename T>
+void FusionConvAddAddPReluOp<Dtype, T>::InferShape() const {
+  auto in_dims = this->param_.Input()->dims();
+  auto filter_dims = this->param_.Filter()->dims();
+  const std::vector<int> &strides = this->param_.Strides();
+  std::vector<int> paddings = this->param_.Paddings();
+  int groups = this->param_.Groups();
+  std::vector<int> dilations = this->param_.Dilations();
 
-            PADDLE_MOBILE_ENFORCE((in_dims.size() == filter_dims.size() &&
-                                   dilations.size() == paddings.size() &&
-                                   paddings.size() == strides.size()),
-                                  "ConvParam is not suitable");
+  PADDLE_MOBILE_ENFORCE((in_dims.size() == filter_dims.size() &&
+                         dilations.size() == paddings.size() &&
+                         paddings.size() == strides.size()),
+                        "ConvParam is not suitable");
 
-            std::vector<int64_t> output_shape({in_dims[0], filter_dims[0]});
-            for (size_t i = 0; i < strides.size(); ++i) {
-                output_shape.push_back(
-                        math::ConvOutputSize(in_dims[i + 2], filter_dims[i + 2], dilations[i],
-                                             paddings[i], strides[i]));
-            }
-            framework::DDim ddim = framework::make_ddim(output_shape);
-            this->param_.Output()->Resize(ddim);
-        }
+  std::vector<int64_t> output_shape({in_dims[0], filter_dims[0]});
+  for (size_t i = 0; i < strides.size(); ++i) {
+    output_shape.push_back(
+        math::ConvOutputSize(in_dims[i + 2], filter_dims[i + 2], dilations[i],
+                             paddings[i], strides[i]));
+  }
+  framework::DDim ddim = framework::make_ddim(output_shape);
+  this->param_.Output()->Resize(ddim);
+}
 
-    }  // namespace operators
+}  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
