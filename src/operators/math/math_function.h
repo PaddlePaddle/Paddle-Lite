@@ -33,6 +33,11 @@ void matmulWithBn(const framework::Tensor &matrix_a, bool trans_a,
                   framework::Tensor *matrix_out, T beta, bool relu,
                   framework::Tensor *new_scale, framework::Tensor *new_bias,
                   int group);
+
+void matmulWithPRelu(const framework::Tensor &matrix_a, bool trans_a,
+                     const framework::Tensor &matrix_b, bool trans_b,
+                     framework::Tensor *matrix_out, float *p, std::string mode,
+                     float *bias, float *bias1);
 }  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile
