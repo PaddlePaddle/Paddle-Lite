@@ -23,6 +23,8 @@ const char *G_OP_TYPE_BOX_CODER = "box_coder";
 const char *G_OP_TYPE_CONCAT = "concat";
 const char *G_OP_TYPE_ELEMENTWISE_ADD = "elementwise_add";
 const char *G_OP_TYPE_FUSION_CONV_ADD_RELU = "fusion_conv_add_relu";
+const char *G_OP_TYPE_FUSION_CONV_ADD_PRELU = "fusion_conv_add_prelu";
+const char *G_OP_TYPE_FUSION_CONV_ADD_ADD_PRELU = "fusion_conv_add_add_prelu";
 const char *G_OP_TYPE_FUSION_CONV_ADD_BN_RELU = "fusion_conv_add_bn_relu";
 const char *G_OP_TYPE_FUSION_DWCONV_BN_RELU = "fusion_dwconv_bn_relu";
 const char *G_OP_TYPE_FUSION_CONV_BN_RELU = "fusion_conv_bn_relu";
@@ -83,6 +85,8 @@ std::unordered_map<
         {G_OP_TYPE_RESHAPE, {{"X"}, {"Out"}}},
         {G_OP_TYPE_DEPTHWISE_CONV, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_RELU, {{"Input"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_CONV_ADD_PRELU, {{"Input"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_CONV_ADD_ADD_PRELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_IM2SEQUENCE, {{"X"}, {"Out"}}},
         {G_OP_TYPE_DROPOUT, {{"X"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_BN, {{"Input"}, {"Y"}}},
