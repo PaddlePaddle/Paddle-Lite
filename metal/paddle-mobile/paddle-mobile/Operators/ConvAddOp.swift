@@ -61,6 +61,7 @@ class ConvAddOp<P: PrecisionType>: Operator<ConvAddKernel<P>, ConvAddParam<P>>, 
     typealias OpType = ConvAddOp<P>
     
     func inferShape() {
+        
         let inDims = para.input.dim
         let filterDim = para.filter.dim
         let strides = para.stride

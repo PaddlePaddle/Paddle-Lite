@@ -41,15 +41,15 @@ extension InputTexture {
 public class Texture<P: PrecisionType>: Tensorial {
     var dim: Dim
     var tensorDim: Dim
-    private(set) var originDim: Dim
+    private(set) public var originDim: Dim
     private var textureDesc: MTLTextureDescriptor!
-    var metalTexture: MTLTexture!
+    public var metalTexture: MTLTexture!
     var transpose: [Int] = [0, 1, 2, 3]
     
     func initTexture(device: MTLDevice, transpose: [Int] = [0, 1, 2, 3]) {
         let newDim = transpose.map { originDim[$0] }
         
-        let newLayout = transpose.map {layout.layoutWithDim[$0] }
+        let newLayout = transpose.map { layout.layoutWithDim[$0] }
         
         layout = DataLayout.init(newLayout)
         dim = Dim.init(inDim: newDim)

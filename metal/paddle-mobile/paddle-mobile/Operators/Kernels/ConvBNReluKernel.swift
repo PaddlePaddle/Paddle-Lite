@@ -13,6 +13,7 @@
  limitations under the License. */
 
 import Foundation
+import MetalPerformanceShaders
 
 struct ConvBNReluTestParam: TestParam {
     let inputTexture: MTLTexture
@@ -24,6 +25,7 @@ struct ConvBNReluTestParam: TestParam {
     let newBiaseBuffer: MTLBuffer
     let filterSize: (width: Int, height: Int, channel: Int)
     init(inInputTexture: MTLTexture, inOutputTexture: MTLTexture, inMetalParam: MetalConvParam, inFilterBuffer: MTLBuffer, inBiaseBuffer: MTLBuffer, inNewScaleBuffer: MTLBuffer, inNewBiaseBuffer: MTLBuffer, inFilterSize: (width: Int, height: Int, channel: Int)) {
+        
         inputTexture = inInputTexture
         outputTexture = inOutputTexture
         metalParam = inMetalParam
