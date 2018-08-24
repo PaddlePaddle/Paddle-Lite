@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "operators/math/gemm.h"
+#include <string>
 #include "common/log.h"
 #include "memory/t_malloc.h"
 #if __ARM_NEON
@@ -707,6 +708,25 @@ void InnerKernelWithBn(int mc, int nc, float alpha, const float *a,
   }
 }
 
+void InnerKernelWithPRelu(int mc, int nc, const float *a, const float *b,
+                          float *c, float *C, int ldc, float *p,
+                          std::string mode, float *bias, float *bias1) {
+#pragma omp parallel for
+  for (int j = 0; j < nc; j += NR) {
+    for (int i = 0; i < mc; i += MR) {
+#if __aarch64__
+      // AddDot8x12(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+      AddDot6x16(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+#else
+      // AddDot4x4(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+      // AddDot4x8(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+      AddDot6x8(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+#endif
+    }
+  }
+  WriteWithAddPRelu(mc, nc, c, C, ldc, p, mode, bias, bias1);
+}
+
 #if __ARM_NEON
 #if __aarch64__
 
@@ -972,6 +992,82 @@ void WriteWithAddReluV1(int mc, int nc, float *c, float *C, int ldc,
       cv = vld1q_f32(c_ptr);
       cv = vaddq_f32(cv, biasv);
       cv = vmaxq_f32(cv, zero);
+      if (_nc1 >= 1) {
+        vst1q_lane_f32(C_ptr, cv, 0);
+        C_ptr++;
+      }
+      if (_nc1 >= 2) {
+        vst1q_lane_f32(C_ptr, cv, 1);
+        C_ptr++;
+      }
+      if (_nc1 >= 3) {
+        vst1q_lane_f32(C_ptr, cv, 2);
+        C_ptr++;
+      }
+    }
+  }
+}
+
+// C = A * B + C,prelu(C)
+void WriteWithAddPRelu(int mc, int nc, float *c, float *C, int ldc, float *p,
+                       std::string mode, float *bias, float *bias1) {
+  int nc1 = nc / 4;
+  int _nc1 = nc % 4;
+
+  float *c_ptr, *C_ptr;
+  float32x4_t cv;
+  float32x4_t cv1;
+  float32x4_t biasv;
+  float32x4_t biasv1;
+  float32x4_t zero = vdupq_n_f32(0.0);
+  float32x4_t pv;
+  float *ptr = p;
+  for (int i = 0; i < mc; ++i) {
+    c_ptr = c + i * NC;
+    C_ptr = C + i * ldc;
+    biasv = vld1q_dup_f32(bias + i);
+    if (bias1 == nullptr) {
+      biasv1 = zero;
+    } else {
+      biasv1 = vld1q_dup_f32(bias1 + i);
+    }
+
+    for (int j = 0; j < nc1; ++j) {
+      cv = vld1q_f32(c_ptr);
+      cv = vaddq_f32(cv, biasv);
+      cv = vaddq_f32(cv, biasv1);
+      cv = vmaxq_f32(cv, zero);
+      cv1 = vminq_f32(cv, zero);
+      if (mode == "channel") {
+        cv1 = vmulq_n_f32(cv1, ptr[i]);
+      } else if (mode == "element") {
+        pv = vld1q_f32(ptr);
+        cv1 = vmulq_f32(cv1, pv);
+        ptr = ptr + 4;
+      } else {
+        cv1 = vmulq_n_f32(cv1, ptr[0]);
+      }
+      cv = vaddq_f32(cv, cv1);
+      vst1q_f32(C_ptr, cv);
+      c_ptr += 4;
+      C_ptr += 4;
+    }
+    if (_nc1 != 0) {
+      cv = vld1q_f32(c_ptr);
+      cv = vaddq_f32(cv, biasv);
+      cv = vaddq_f32(cv, biasv1);
+      cv = vmaxq_f32(cv, zero);
+      cv1 = vminq_f32(cv, zero);
+      if (mode == "channel") {
+        cv1 = vmulq_n_f32(cv1, ptr[i]);
+      } else if (mode == "element") {
+        pv = vld1q_f32(ptr);
+        cv1 = vmulq_f32(cv1, pv);
+        ptr = ptr + 4;
+      } else {
+        cv1 = vmulq_n_f32(cv1, ptr[0]);
+      }
+      cv = vaddq_f32(cv, cv1);
       if (_nc1 >= 1) {
         vst1q_lane_f32(C_ptr, cv, 0);
         C_ptr++;
@@ -1971,6 +2067,145 @@ void WriteWithAddReluV1(int mc, int nc, float *c, float *C, int ldc,
   }
 }
 
+void WriteWithAddPRelu(int mc, int nc, float *c, float *C, int ldc, float *p,
+                       std::string mode, float *bias, float *bias1) {
+  if (nc < 4) {
+    if (bias1 == nullptr) {
+      for (int i = 0; i < mc; ++i) {
+        for (int j = 0; j < nc; ++j) {
+          float r = *c + *bias;
+          if (r < 0) {
+            r = *p;
+          }
+          c++;
+        }
+        bias++;
+        p++;
+      }
+    } else {
+      for (int i = 0; i < mc; ++i) {
+        for (int j = 0; j < nc; ++j) {
+          float r = *c + *bias;
+          r += *bias1;
+          if (r < 0) {
+            r *= *p;
+          }
+          c++;
+          bias1++;
+        }
+        bias++;
+        p++;
+      }
+    }
+    return;
+  }
+
+  int nc1 = nc / 8;
+  int step = 4 * (ldc - nc);
+  int step1 = 4 * (NC - nc);
+
+  if (bias1 == nullptr) {
+    asm volatile(
+        "vmov.f32   q14,    #0.0            \n\t"
+        "subs       %[mc], %[mc], #1        \n\t"
+        "blt        end_mc_%=               \n\t"
+        "loop_mc_%=:                        \n\t"
+
+        "mov        r5,     %[nc1]          \n\t"
+        "vld1.32    {d0},   [%[bias]]       \n\t"
+        "vld1.32    {d1},   [%[p]]          \n\t"
+        "vdup.32    q1,     d0[0]           \n\t"
+        "vdup.32    q2,     d1[0]           \n\t"
+
+        "subs       r5,   r5,   #1          \n\t"
+        "blt        end_nc1_%=              \n\t"
+        "loop_nc1_%=:                       \n\t"
+
+        "pld        [%[c], #32]             \n\t"
+        "vld1.32    {q3, q4},   [%[c]]!     \n\t"
+        "vadd.f32   q3,   q3,   q1          \n\t"
+        "vadd.f32   q4,   q4,   q1          \n\t"
+        "vmax.f32   q5,   q3,   q14         \n\t"
+        "vmin.f32   q7,   q3,   q14         \n\t"
+        "vmax.f32   q6,   q4,   q14         \n\t"
+        "vmin.f32   q8,   q4,   q14         \n\t"
+        "vmla.f32   q5,   q7,   q2          \n\t"
+        "vmla.f32   q6,   q8,   q2          \n\t"
+        "vst1.32    {q5, q6},   [%[C]]!     \n\t"
+
+        "subs       r5,   r5,   #1          \n\t"
+        "bge        loop_nc1_%=             \n\t"
+        "end_nc1_%=:                        \n\t"
+
+        "add        %[p],     %[p],     #4        \n\t"
+        "add        %[bias],  %[bias],  #4        \n\t"
+        "add        %[c],     %[c],     %[step1]  \n\t"
+        "add        %[C],     %[C],     %[step]   \n\t"
+
+        "subs       %[mc], %[mc], #1        \n\t"
+        "bge        loop_mc_%=              \n\t"
+        "end_mc_%=:                         \n\t"
+
+        :
+        : [C] "r"(C), [c] "r"(c), [mc] "r"(mc), [nc1] "r"(nc1),
+          [step] "r"(step), [step1] "r"(step1), [p] "r"(p), [bias] "r"(bias),
+          [bias1] "r"(bias1)
+        : "memory", "r5", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8");
+  } else {
+    asm volatile(
+        "vmov.f32   q14,    #0.0            \n\t"
+        "subs       %[mc], %[mc], #1        \n\t"
+        "blt        end_mc_%=               \n\t"
+        "loop_mc_%=:                        \n\t"
+
+        "mov        r5,     %[nc1]          \n\t"
+        "vld1.32    {d0},   [%[bias]]       \n\t"
+        "vld1.32    {d1},   [%[p]]          \n\t"
+        "vdup.32    q1,     d0[0]           \n\t"
+        "vdup.32    q2,     d1[0]           \n\t"
+
+        "subs       r5,   r5,   #1          \n\t"
+        "blt        end_nc1_%=              \n\t"
+        "loop_nc1_%=:                       \n\t"
+
+        "pld        [%[c], #32]             \n\t"
+        "pld        [%[bias1], #32]         \n\t"
+        "vld1.32    {q3, q4},   [%[c]]!     \n\t"
+        "vld1.32    {q9, q10},  [%[bias1]]! \n\t"
+        "vadd.f32   q3,   q3,   q1          \n\t"
+        "vadd.f32   q4,   q4,   q1          \n\t"
+        "vadd.f32   q3,   q3,   q9          \n\t"
+        "vadd.f32   q4,   q4,   q10         \n\t"
+        "vmax.f32   q5,   q3,   q14         \n\t"
+        "vmin.f32   q7,   q3,   q14         \n\t"
+        "vmax.f32   q6,   q4,   q14         \n\t"
+        "vmin.f32   q8,   q4,   q14         \n\t"
+        "vmla.f32   q5,   q7,   q2          \n\t"
+        "vmla.f32   q6,   q8,   q2          \n\t"
+        "vst1.32    {q5, q6},   [%[C]]!     \n\t"
+
+        "subs       r5,   r5,   #1          \n\t"
+        "bge        loop_nc1_%=             \n\t"
+        "end_nc1_%=:                        \n\t"
+
+        "add        %[p],     %[p],     #4        \n\t"
+        "add        %[bias],  %[bias],  #4        \n\t"
+        "add        %[c],     %[c],     %[step1]  \n\t"
+        "add        %[C],     %[C],     %[step]   \n\t"
+
+        "subs       %[mc], %[mc], #1        \n\t"
+        "bge        loop_mc_%=              \n\t"
+        "end_mc_%=:                         \n\t"
+
+        :
+        : [C] "r"(C), [c] "r"(c), [mc] "r"(mc), [nc1] "r"(nc1),
+          [step] "r"(step), [step1] "r"(step1), [p] "r"(p), [bias] "r"(bias),
+          [bias1] "r"(bias1)
+        : "memory", "r5", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8",
+          "q9", "q10");
+  }
+}
+
 // C = A * B, batchnorm(C)
 void WriteWithBn(int mc, int nc, float *c, float *C, int ldc, float *scale,
                  float *bias) {
@@ -2513,6 +2748,9 @@ void WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc) {}
 void WriteWithAddReluV1(int mc, int nc, float *c, float *C, int ldc,
                         float *bias) {}
 
+void WriteWithAddPRelu(int mc, int nc, float *c, float *C, int ldc, float *p,
+                       std::string mode, float *bias, float *bias1) {}
+
 void WriteWithBn(int mc, int nc, float *c, float *C, int ldc, float *new_scale,
                  float *new_bias) {}
 
@@ -2633,6 +2871,74 @@ void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
 #endif
       InnerKernelWithBn(mc, nc, alpha, packedA, packedB, beta, packedC,
                         &C(i, j), ldc, relu, new_scale + i, new_bias + i);
+    }
+  }
+
+  paddle_mobile::memory::Free(packedA);
+  paddle_mobile::memory::Free(packedB);
+  paddle_mobile::memory::Free(packedC);
+  paddle_mobile::memory::Free(zero);
+}
+
+void SgemmWithPRelu(int m, int n, int k, const float *A, int lda,
+                    const float *B, int ldb, float *C, int ldc, float *p,
+                    std::string mode, float *bias, float *bias1) {
+  // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
+  // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
+  int L1 = 32 * 1024;
+  int L2 = 0.5 * 1024 * 1024;
+
+  KC = k;
+  MC = L1 / (KC * sizeof(float));
+  NC = L2 / (KC * sizeof(float));
+
+  // make sure MC is multiple of MR, and NC is multiple of NR
+  int mblock_num = (m + MC - 1) / MC;
+  MC = (m + mblock_num - 1) / mblock_num;
+  MC = (MC + MR - 1) / MR * MR;
+  //  DLOG << "mblock_num = " << mblock_num << ", MC = " << MC << "\n";
+
+  int nblock_num = (n + NC - 1) / NC;
+  NC = (n + nblock_num - 1) / nblock_num;
+  NC = (NC + NR - 1) / NR * NR;
+  //  DLOG << "nblock_num = " << nblock_num << ", NC = " << NC << "\n";
+
+  packedA = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * MC * KC));
+  packedB = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * KC * NC));
+  packedC = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * MC * NC));
+  zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
+
+  for (int l = 0; l < KC; ++l) {
+    zero[l] = 0;
+  }
+
+  int mc, nc;
+  for (int j = 0; j < n; j += NC) {
+    nc = s_min(n - j, NC);
+#if __aarch64__
+    // PackMatrixB_12c(KC, nc, nc % NR, &B(0, j), ldb, packedB);
+    PackMatrixB_16c(KC, nc, nc % NR, &B(0, j), ldb, packedB);
+#else
+    PackMatrixB_8c(KC, nc, nc % NR, &B(0, j), ldb, packedB);
+#endif
+    for (int i = 0; i < m; i += MC) {
+      mc = s_min(m - i, MC);
+#if __aarch64__
+      PackMatrixA_6r(mc, KC, mc % MR, &A(i, 0), lda, packedA);
+      // PackMatrixA_8r(mc, KC, mc % MR, &A(i, 0), lda, packedA);
+#else
+      PackMatrixA_6r(mc, KC, mc % MR, &A(i, 0), lda, packedA);
+#endif
+      if (bias1 == nullptr) {
+        InnerKernelWithPRelu(mc, nc, packedA, packedB, packedC, &C(i, j), ldc,
+                             p + i, mode, bias + i, nullptr);
+      } else {
+        InnerKernelWithPRelu(mc, nc, packedA, packedB, packedC, &C(i, j), ldc,
+                             p + i, mode, bias + i, bias1 + i * ldc + j);
+      }
     }
   }
 
@@ -2848,6 +3154,123 @@ void SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A, int lda,
       procPackB(KC, nc, nc % NR, &B(0, j), ldb, local_B);
       InnerKernelWithBn(m, nc, alpha, packedA, local_B, beta, local_C, &C(0, j),
                         ldc, relu, new_scale, new_bias);
+    }
+  }
+
+  paddle_mobile::memory::Free(packedA);
+  paddle_mobile::memory::Free(packedB);
+  paddle_mobile::memory::Free(packedC);
+  paddle_mobile::memory::Free(zero);
+}
+
+void SgemmWithPRelu_omp(int m, int n, int k, const float *A, int lda,
+                        const float *B, int ldb, float *C, int ldc, float *p,
+                        std::string mode, float *bias, float *bias1) {
+#ifdef _OPENMP
+  int max_threads = omp_get_max_threads();
+#else
+  int max_threads = 1;
+#endif
+
+  int L1 = 32 * 1024;
+  KC = k;
+  if (m > n) {
+    // 对 A 分块
+    MC = L1 / (KC * sizeof(float));
+    int mblock_num = (m + MC - 1) / MC;
+    MC = (m + mblock_num - 1) / mblock_num;
+    MC = (MC + MR - 1) / MR * MR;
+    // 补齐 B
+    NC = (n + NR - 1) / NR * NR;
+
+#if __aarch64__
+    procPackA = PackMatrixA_6r;
+    procPackB = PackMatrixB_omp_16c;
+    procAddDot = AddDot6x16;
+#else
+    procPackA = PackMatrixA_6r;
+    procPackB = PackMatrixB_omp_8c;
+    procAddDot = AddDot6x8;
+#endif
+
+    packedB = static_cast<float *>(
+        paddle_mobile::memory::Alloc(sizeof(float) * KC * NC));
+    procPackB(KC, NC, NC % NR, B, ldb, packedB);
+    packedA = static_cast<float *>(
+        paddle_mobile::memory::Alloc(sizeof(float) * MC * KC * max_threads));
+  } else {
+    // 对 B 分块
+    NC = L1 / (KC * sizeof(float));
+    int nblock_num = (n + NC - 1) / NC;
+    NC = (n + nblock_num - 1) / nblock_num;
+    NC = (NC + NR - 1) / NR * NR;
+    // 补齐 A
+    MC = (m + MR - 1) / MR * MR;
+
+#if __aarch64__
+    procPackA = PackMatrixA_omp_6r;
+    procPackB = PackMatrixB_16c;
+    procAddDot = AddDot6x16;
+#else
+    procPackA = PackMatrixA_omp_6r;
+    procPackB = PackMatrixB_8c;
+    procAddDot = AddDot6x8;
+#endif
+
+    packedA = static_cast<float *>(
+        paddle_mobile::memory::Alloc(sizeof(float) * MC * KC));
+    procPackA(MC, KC, MC % MR, A, lda, packedA);
+    packedB = static_cast<float *>(
+        paddle_mobile::memory::Alloc(sizeof(float) * KC * NC * max_threads));
+  }
+  zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
+  memset(static_cast<void *>(zero), 0, sizeof(float) * KC);
+  packedC = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * MC * NC * max_threads));
+
+  if (m > n) {
+#pragma omp parallel for
+    for (int i = 0; i < m; i += MC) {
+#ifdef _OPENMP
+      int local_threads = omp_get_thread_num();
+#else
+      int local_threads = 0;
+#endif
+
+      int mc;
+      mc = s_min(m - i, MC);
+      float *local_A = packedA + MC * KC * local_threads;
+      float *local_C = packedC + MC * NC * local_threads;
+      procPackA(mc, KC, mc % MR, &A(i, 0), lda, local_A);
+      if (bias1 == nullptr) {
+        InnerKernelWithPRelu(mc, n, local_A, packedB, local_C, &C(i, 0), ldc,
+                             p + i, mode, bias + i, nullptr);
+      } else {
+        InnerKernelWithPRelu(mc, n, local_A, packedB, local_C, &C(i, 0), ldc,
+                             p + i, mode, bias + i, bias1 + i * ldc);
+      }
+    }
+  } else {
+#pragma omp parallel for
+    for (int j = 0; j < n; j += NC) {
+#ifdef _OPENMP
+      int local_threads = omp_get_thread_num();
+#else
+      int local_threads = 0;
+#endif
+
+      int nc;
+      nc = s_min(n - j, NC);
+      float *local_B = packedB + KC * NC * local_threads;
+      float *local_C = packedC + MC * NC * local_threads;
+      procPackB(KC, nc, nc % NR, &B(0, j), ldb, local_B);
+      if (bias1 == nullptr) {
+        InnerKernelWithPRelu(m, nc, packedA, local_B, local_C, &C(0, j), ldc, p,
+                             mode, bias, nullptr);
+      } else {
+        InnerKernelWithPRelu(m, nc, packedA, local_B, local_C, &C(0, j), ldc, p,
+                             mode, bias, bias1 + j);
+      }
     }
   }
 

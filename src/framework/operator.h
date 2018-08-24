@@ -183,6 +183,8 @@ class FusionOpMatcher {
 
   std::string BeginType() { return node_.Type(); }
 
+  virtual std::vector<std::pair<int, std::string>> NeedCheck() { return {}; }
+
   //  virtual  bool Fusion();
  protected:
   Node node_;
