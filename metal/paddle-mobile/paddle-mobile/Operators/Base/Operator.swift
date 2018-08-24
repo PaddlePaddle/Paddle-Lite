@@ -124,6 +124,8 @@ let gPooType                    = "pool2d"
 let gSoftmaxType                = "softmax"
 let gReshapeType                = "reshape"
 let gConvAddType                = "conv_add"
+let gMPSCNNConvType             = "mps_cnn_conv"
+let gBatchNormReluType          = "batch_norm_relu"
 
 
 let opInfos = [gConvType                    : (inputs: ["Input"], outputs: ["Output"]),
@@ -136,4 +138,6 @@ let opInfos = [gConvType                    : (inputs: ["Input"], outputs: ["Out
                gPooType                     : (inputs: ["X"], outputs: ["Out"]),
                gSoftmaxType                 : (inputs: ["X"], outputs: ["Out"]),
                gReshapeType                 : (inputs: ["X"], outputs: ["Out"]),
-               gConvAddType                 : (inputs: ["Input"], outputs: ["Out"])]
+               gConvAddType                 : (inputs: ["Input"], outputs: ["Out"]),
+               gMPSCNNConvType              : (inputs: ["Input"], outputs: ["Out"]),
+               gBatchNormReluType           : (inputs: ["X"], outputs: ["Out"])]

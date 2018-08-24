@@ -15,6 +15,7 @@
 import Foundation
 
 fileprivate var singletons : [String : Any] = [:]
+@available(iOS 10.0, *)
 class OpCreator<P: PrecisionType> {
     static var shared : OpCreator<P> {
         let key = String(describing: P.self)
@@ -50,7 +51,9 @@ class OpCreator<P: PrecisionType> {
          gPooType                   :     PoolOp<P>.creat,
          gSoftmaxType               :     SoftmaxOp<P>.creat,
          gReshapeType               :     ReshapeOp<P>.creat,
-         gConvAddType               :     ConvAddOp<P>.creat]
+         gConvAddType               :     ConvAddOp<P>.creat,
+         gMPSCNNConvType            :     CNNConvAddBatchNormReluOp<P>.creat,
+         gBatchNormReluType         :     BatchNormReluOp<P>.creat]
     
     private init(){}
 }

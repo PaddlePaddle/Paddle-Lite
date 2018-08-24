@@ -1,25 +1,26 @@
-/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License. */
+//
+//  BatchNormRelu.swift
+//  paddle-mobile
+//
+//  Created by zhangxinjun on 2018/8/23.
+//  Copyright © 2018年 orange. All rights reserved.
+//
 
 import Foundation
 
-class BatchNormKernel<P: PrecisionType>: Kernel, Computable {
+
+class BatchNormReluParam<P: PrecisionType>: BatchNormParam<P> {
+    
+}
+
+class BatchNormReluKernel<P: PrecisionType>: Kernel, Computable{
+    
+    
+    typealias ParamType = BatchNormReluParam<P>
     var newScale: MTLBuffer
     var newBias: MTLBuffer
     
-    
-    required init(device: MTLDevice, param: BatchNormParam<P>) {
+    required init(device: MTLDevice, param: BatchNormReluParam<P>) {
         guard let newScale = device.makeBuffer(length: param.inputScale.buffer.length) else {
             fatalError()
         }
@@ -29,7 +30,8 @@ class BatchNormKernel<P: PrecisionType>: Kernel, Computable {
         self.newScale = newScale
         self.newBias = newBias
         
-        super.init(device: device, inFunctionName: "batchnorm")
+        super.init(device: device, inFunctionName: "batch_norm_relu_3x3")
+        
         
         let varianceBuffer : MTLBuffer = param.inputVariance.buffer
         
@@ -53,16 +55,15 @@ class BatchNormKernel<P: PrecisionType>: Kernel, Computable {
         }
     }
     
-    func compute(commandBuffer: MTLCommandBuffer, param: BatchNormParam<P>) throws {
+    func compute(commandBuffer: MTLCommandBuffer, param: BatchNormReluParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encoder is nil")
+            fatalError()
         }
-        print("BatchNorm compute")
-        encoder.setTexture(param.input.metalTexture, index: 0)
-        encoder.setTexture(param.output.metalTexture, index: 1)
-        encoder.setBuffer(newScale, offset: 0, index: 0)
+        encoder.setTexture(param.output as! MTLTexture, index: 0)
+        encoder.setTexture(param.output as? MTLTexture, index: 1)
+        encoder.setBuffer(newScale, offset: 0, index: 1)
         encoder.setBuffer(newBias, offset: 0, index: 1)
-        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
+        encoder.dispatch(computePipline: pipline, outTexture: param.output as! MTLTexture)
         encoder.endEncoding()
     }
 }
