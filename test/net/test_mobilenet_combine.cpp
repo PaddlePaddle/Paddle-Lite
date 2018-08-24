@@ -29,13 +29,16 @@ int main() {
     std::vector<int64_t> dims{1, 3, 224, 224};
     GetInput<float>(g_test_image_1x3x224x224_banana, &input, dims);
 
-    // 预热一次
     auto vec_result = paddle_mobile.Predict(input, dims);
     std::vector<float>::iterator biggest =
         std::max_element(std::begin(vec_result), std::end(vec_result));
     std::cout << " Max element is " << *biggest << " at position "
               << std::distance(std::begin(vec_result), biggest) << std::endl;
 
+    // 预热十次
+    for (int i = 0; i < 10; ++i) {
+      auto vec_result = paddle_mobile.Predict(input, dims);
+    }
     auto time3 = time();
     for (int i = 0; i < 10; ++i) {
       auto vec_result = paddle_mobile.Predict(input, dims);
