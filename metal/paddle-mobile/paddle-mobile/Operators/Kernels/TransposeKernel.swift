@@ -49,7 +49,11 @@ class TransposeKernel<P: PrecisionType>: Kernel, Computable, Testable {
         for (i, v) in param.input.transpose.enumerated() {
             invT[v] = i
         }
-        let realAxis = param.axis.map {invT[$0]}
+        var axis: [Int] = [0, 1, 2, 3]
+        for i in 0..<param.axis.count {
+            axis[4-param.axis.count+i] = 4 - param.axis.count + Int(param.axis[i])
+        }
+        let realAxis = axis.map {invT[$0]}
         var tmp = TransposeMetalParam.init(realAxis)
         tmp.iC = Int32(param.input.dim[param.input.transpose[3]])
         tmp.oC = Int32(param.output.dim[3])
