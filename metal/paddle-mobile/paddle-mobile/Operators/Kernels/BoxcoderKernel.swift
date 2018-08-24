@@ -34,6 +34,6 @@ class BoxcoderKernel<P: PrecisionType>: Kernel, Computable{
     
     required init(device: MTLDevice, param: BoxcoderParam<P>) {
         param.output.initTexture(device: device)
-        super.init(device: device, inFunctionName: "priorbox")
+        super.init(device: device, inFunctionName: "boxcoder")
     }
 }
