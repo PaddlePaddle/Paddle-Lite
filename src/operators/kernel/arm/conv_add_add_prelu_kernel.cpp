@@ -18,21 +18,22 @@ limitations under the License. */
 #include "operators/kernel/central-arm-func/conv_add_add_prelu_arm_func.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        template <>
-        bool ConvAddAddPReluKernel<CPU, float>::Init(FusionConvAddAddPReluParam<CPU> *param) {
-            return true;
-        }
+template <>
+bool ConvAddAddPReluKernel<CPU, float>::Init(
+    FusionConvAddAddPReluParam<CPU> *param) {
+  return true;
+}
 
-        template <>
-        void ConvAddAddPReluKernel<CPU, float>::Compute(
-                const FusionConvAddAddPReluParam<CPU> &param) const {
-            ConvAddAddPReluCompute<float>(param);
-        }
-        template class ConvAddAddPReluKernel<CPU, float>;
+template <>
+void ConvAddAddPReluKernel<CPU, float>::Compute(
+    const FusionConvAddAddPReluParam<CPU> &param) const {
+  ConvAddAddPReluCompute<float>(param);
+}
+template class ConvAddAddPReluKernel<CPU, float>;
 
-    }  // namespace operators
+}  // namespace operators
 }  // namespace paddle_mobile
 
 #endif

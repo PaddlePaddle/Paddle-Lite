@@ -110,9 +110,8 @@ void matmulWithPRelu(const framework::Tensor &matrix_a, bool trans_a,
   int K = (!trans_a) ? dim_a[1] : dim_a[0];
 
 #ifdef _OPENMP
-  xsSgemmWithPRelu_omp(M, N, K, matrix_a.data<float>(), K,
-                       matrix_b.data<float>(), N, matrix_out->data<float>(), N,
-                       p, mode, bias, bias1);
+  SgemmWithPRelu_omp(M, N, K, matrix_a.data<float>(), K, matrix_b.data<float>(),
+                     N, matrix_out->data<float>(), N, p, mode, bias, bias1);
 #else
   SgemmWithPRelu(M, N, K, matrix_a.data<float>(), K, matrix_b.data<float>(), N,
                  matrix_out->data<float>(), N, p, mode, bias, bias1);
