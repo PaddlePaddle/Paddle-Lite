@@ -69,6 +69,14 @@
 		FCD04E7220F343420007374F /* ConvAddOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCD04E7120F343420007374F /* ConvAddOp.swift */; };
 		FCD04E7420F3437E0007374F /* ConvAddKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCD04E7320F3437E0007374F /* ConvAddKernel.swift */; };
 		FCDC0FEB21099A1D00DC9EFB /* Tools.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCDC0FEA21099A1D00DC9EFB /* Tools.swift */; };
+		FCDDC6C6212F9FB800E5EF74 /* PreluKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCDDC6C5212F9FB800E5EF74 /* PreluKernel.swift */; };
+		FCDDC6C8212FA3CA00E5EF74 /* ConvTransposeKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCDDC6C7212FA3CA00E5EF74 /* ConvTransposeKernel.swift */; };
+		FCDDC6CA212FDF6800E5EF74 /* BatchNormKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCDDC6C9212FDF6800E5EF74 /* BatchNormKernel.metal */; };
+		FCDDC6CC212FDFDB00E5EF74 /* ReluKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCDDC6CB212FDFDB00E5EF74 /* ReluKernel.metal */; };
+		FCDDC6CF212FE14700E5EF74 /* PriorBoxKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCDDC6CE212FE14700E5EF74 /* PriorBoxKernel.metal */; };
+		FCDE8A33212A917900F4A8F6 /* ConvTransposeOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCDE8A32212A917900F4A8F6 /* ConvTransposeOp.swift */; };
+		FCEB684A212F00DB00D2448E /* PreluKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCEB6849212F00DB00D2448E /* PreluKernel.metal */; };
+		FCEB684C212F093800D2448E /* PreluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCEB684B212F093800D2448E /* PreluOp.swift */; };
 		FCEBC0F420F1FDD90099DBAF /* ConvAddBatchNormReluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCEBC0F320F1FDD90099DBAF /* ConvAddBatchNormReluOp.swift */; };
 		FCEBC0F620F1FE120099DBAF /* ConvAddBatchNormReluKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCEBC0F520F1FE120099DBAF /* ConvAddBatchNormReluKernel.swift */; };
 		FCF2D73820E64E70007AC5F5 /* Kernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF2D73720E64E70007AC5F5 /* Kernel.swift */; };
@@ -141,9 +149,17 @@
 		FCD04E7120F343420007374F /* ConvAddOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvAddOp.swift; sourceTree = "<group>"; };
 		FCD04E7320F3437E0007374F /* ConvAddKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvAddKernel.swift; sourceTree = "<group>"; };
 		FCDC0FEA21099A1D00DC9EFB /* Tools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tools.swift; sourceTree = "<group>"; };
+		FCDDC6C5212F9FB800E5EF74 /* PreluKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreluKernel.swift; sourceTree = "<group>"; };
+		FCDDC6C7212FA3CA00E5EF74 /* ConvTransposeKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvTransposeKernel.swift; sourceTree = "<group>"; };
+		FCDDC6C9212FDF6800E5EF74 /* BatchNormKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = BatchNormKernel.metal; sourceTree = "<group>"; };
+		FCDDC6CB212FDFDB00E5EF74 /* ReluKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ReluKernel.metal; sourceTree = "<group>"; };
+		FCDDC6CE212FE14700E5EF74 /* PriorBoxKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = PriorBoxKernel.metal; sourceTree = "<group>"; };
+		FCDE8A32212A917900F4A8F6 /* ConvTransposeOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvTransposeOp.swift; sourceTree = "<group>"; };
+		FCEB6849212F00DB00D2448E /* PreluKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = PreluKernel.metal; sourceTree = "<group>"; };
+		FCEB684B212F093800D2448E /* PreluOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreluOp.swift; sourceTree = "<group>"; };
 		FCEBC0F320F1FDD90099DBAF /* ConvAddBatchNormReluOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ConvAddBatchNormReluOp.swift; path = "paddle-mobile/Operators/ConvAddBatchNormReluOp.swift"; sourceTree = SOURCE_ROOT; };
 		FCEBC0F520F1FE120099DBAF /* ConvAddBatchNormReluKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvAddBatchNormReluKernel.swift; sourceTree = "<group>"; };
-		FCF2D73720E64E70007AC5F5 /* Kernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Kernel.swift; path = "paddle-mobile/Operators/Kernels/Kernel.swift"; sourceTree = SOURCE_ROOT; };
+		FCF2D73720E64E70007AC5F5 /* Kernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Kernel.swift; path = "paddle-mobile/Operators/Kernels/Base/Kernel.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -255,6 +271,8 @@
 				FCBCCC66212306B000D94F7E /* ConcatOp.swift */,
 				FCBCCC6A2123071700D94F7E /* BoxcoderOp.swift */,
 				FCBCCC6E2123097100D94F7E /* MulticlassNMSOp.swift */,
+				FCDE8A32212A917900F4A8F6 /* ConvTransposeOp.swift */,
+				FCEB684B212F093800D2448E /* PreluOp.swift */,
 			);
 			path = Operators;
 			sourceTree = "<group>";
@@ -279,15 +297,15 @@
 		FC086BA520E67E8500D85EF7 /* Kernels */ = {
 			isa = PBXGroup;
 			children = (
+				FCDDC6CD212FE02100E5EF74 /* Base */,
+				FCEB6837212F00B100D2448E /* metal */,
+				FCDDC6C7212FA3CA00E5EF74 /* ConvTransposeKernel.swift */,
 				FC0E2DBB20EE45FE009C1FAC /* ConvKernel.swift */,
-				FCF2D73720E64E70007AC5F5 /* Kernel.swift */,
-				FC1B16B220EC9A4F00678B91 /* Kernels.metal */,
 				FC1B186520ECF1C600678B91 /* ResizeKernel.swift */,
 				FC0E2DB920EE3B8D009C1FAC /* ReluKernel.swift */,
 				FC0E2DBD20EE460D009C1FAC /* BatchNormKernel.swift */,
 				FC0E2DBF20EE461F009C1FAC /* ElementwiseAddKernel.swift */,
 				FC5163F520EF556E00636C28 /* Texture2DTo2DArrayKernel.swift */,
-				FC4CB74820F0B954007C0C6D /* ConvKernel.metal */,
 				FCEBC0F520F1FE120099DBAF /* ConvAddBatchNormReluKernel.swift */,
 				FCD04E6720F315020007374F /* PoolKernel.swift */,
 				FCD04E6B20F31A280007374F /* SoftmaxKernel.swift */,
@@ -299,6 +317,7 @@
 				FCBCCC68212306D300D94F7E /* ConcatKernel.swift */,
 				FCBCCC6C2123073A00D94F7E /* BoxcoderKernel.swift */,
 				FCBCCC70212309A700D94F7E /* MulticlassNMSKernel.swift */,
+				FCDDC6C5212F9FB800E5EF74 /* PreluKernel.swift */,
 			);
 			path = Kernels;
 			sourceTree = "<group>";
@@ -311,6 +330,27 @@
 				FC82735820E3C04200BE430A /* OpCreator.swift */,
 			);
 			path = Base;
+			sourceTree = "<group>";
+		};
+		FCDDC6CD212FE02100E5EF74 /* Base */ = {
+			isa = PBXGroup;
+			children = (
+				FCF2D73720E64E70007AC5F5 /* Kernel.swift */,
+			);
+			path = Base;
+			sourceTree = "<group>";
+		};
+		FCEB6837212F00B100D2448E /* metal */ = {
+			isa = PBXGroup;
+			children = (
+				FC1B16B220EC9A4F00678B91 /* Kernels.metal */,
+				FC4CB74820F0B954007C0C6D /* ConvKernel.metal */,
+				FCEB6849212F00DB00D2448E /* PreluKernel.metal */,
+				FCDDC6C9212FDF6800E5EF74 /* BatchNormKernel.metal */,
+				FCDDC6CB212FDFDB00E5EF74 /* ReluKernel.metal */,
+				FCDDC6CE212FE14700E5EF74 /* PriorBoxKernel.metal */,
+			);
+			path = metal;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -417,6 +457,7 @@
 				FC039B9F20E11CB20081E9F8 /* Tensor.swift in Sources */,
 				FC0E2DBC20EE45FE009C1FAC /* ConvKernel.swift in Sources */,
 				FC039BAA20E11CBC0081E9F8 /* ElementwiseAddOp.swift in Sources */,
+				FCDE8A33212A917900F4A8F6 /* ConvTransposeOp.swift in Sources */,
 				FCBCCC6B2123071700D94F7E /* BoxcoderOp.swift in Sources */,
 				FC039B9B20E11CA00081E9F8 /* Executor.swift in Sources */,
 				FCD04E7020F31B720007374F /* ReshapeKernel.swift in Sources */,
@@ -426,11 +467,15 @@
 				FC3602CC2108819F00FACB58 /* PaddleMobileUnitTest.swift in Sources */,
 				FC1B186620ECF1C600678B91 /* ResizeKernel.swift in Sources */,
 				FCF2D73820E64E70007AC5F5 /* Kernel.swift in Sources */,
+				FCDDC6CC212FDFDB00E5EF74 /* ReluKernel.metal in Sources */,
+				FCDDC6C6212F9FB800E5EF74 /* PreluKernel.swift in Sources */,
 				FCBCCC5B2122F66F00D94F7E /* ConvBNReluKernel.swift in Sources */,
 				FCEBC0F420F1FDD90099DBAF /* ConvAddBatchNormReluOp.swift in Sources */,
 				FC0E2DC020EE461F009C1FAC /* ElementwiseAddKernel.swift in Sources */,
+				FCEB684C212F093800D2448E /* PreluOp.swift in Sources */,
 				FC60DB8920E9AAA500FF203F /* MetalExtension.swift in Sources */,
 				FCEBC0F620F1FE120099DBAF /* ConvAddBatchNormReluKernel.swift in Sources */,
+				FCDDC6CA212FDF6800E5EF74 /* BatchNormKernel.metal in Sources */,
 				FC1B16B320EC9A4F00678B91 /* Kernels.metal in Sources */,
 				FC039BBA20E11CC20081E9F8 /* TensorDesc.swift in Sources */,
 				FC039BA020E11CB20081E9F8 /* Dim.swift in Sources */,
@@ -456,6 +501,7 @@
 				FC0E2DBA20EE3B8D009C1FAC /* ReluKernel.swift in Sources */,
 				FCBCCC6D2123073A00D94F7E /* BoxcoderKernel.swift in Sources */,
 				FCBCCC69212306D300D94F7E /* ConcatKernel.swift in Sources */,
+				FCDDC6C8212FA3CA00E5EF74 /* ConvTransposeKernel.swift in Sources */,
 				FC82735920E3C04200BE430A /* OpCreator.swift in Sources */,
 				FCBCCC5D2122F8A100D94F7E /* DepthwiseConvOp.swift in Sources */,
 				FC0E2DBE20EE460D009C1FAC /* BatchNormKernel.swift in Sources */,
@@ -468,6 +514,8 @@
 				FC039BA220E11CB70081E9F8 /* Loader.swift in Sources */,
 				FCBCCC67212306B000D94F7E /* ConcatOp.swift in Sources */,
 				FCD04E6C20F31A280007374F /* SoftmaxKernel.swift in Sources */,
+				FCEB684A212F00DB00D2448E /* PreluKernel.metal in Sources */,
+				FCDDC6CF212FE14700E5EF74 /* PriorBoxKernel.metal in Sources */,
 				FC4CB74B20F12C30007C0C6D /* ProgramOptimize.swift in Sources */,
 				FC5163F620EF556E00636C28 /* Texture2DTo2DArrayKernel.swift in Sources */,
 				FC039BC020E11CC20081E9F8 /* BlockDesc.swift in Sources */,

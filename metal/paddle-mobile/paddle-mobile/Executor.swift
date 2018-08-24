@@ -17,11 +17,13 @@ import Foundation
 public class ResultHolder<P: PrecisionType> {
     public let dim: [Int]
     public let resultArr: [P]
+    public var intermediateResults: [Texture<P>]?
     public let elapsedTime: Double
-    public init(inDim: [Int], inResult: [P], inElapsedTime: Double) {
+    public init(inDim: [Int], inResult: [P], inElapsedTime: Double, inIntermediateResults: [Texture<P>]? = nil) {
         dim = inDim
         resultArr = inResult
         elapsedTime = inElapsedTime
+        intermediateResults = inIntermediateResults
     }
 }
 
@@ -69,7 +71,7 @@ public class Executor<P: PrecisionType> {
                 }
             }
         }
-    }
+    }   
     
     public func predict(input: MTLTexture, expect: [Int], completionHandle: @escaping (ResultHolder<P>) -> Void, preProcessKernle: CusomKernel? = nil) throws {
         guard let buffer = queue.makeCommandBuffer() else {
@@ -115,7 +117,6 @@ public class Executor<P: PrecisionType> {
 //            return
             
 //            self.ops[2].delogOutput()
-            
             
             let afterDate = Date.init()
             

@@ -31,11 +31,11 @@ public struct Dim {
         return dims.reduce(1) { $0 * $1 }
     }
     
-    static func ==(left: Dim, right: Dim) -> Bool {
+    public static func ==(left: Dim, right: Dim) -> Bool {
         return left.dims == right.dims;
     }
     
-    subscript(index: Int) -> Int {
+    public subscript(index: Int) -> Int {
         return dims[index];
     }
     
