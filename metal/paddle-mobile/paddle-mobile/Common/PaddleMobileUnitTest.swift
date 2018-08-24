@@ -8,14 +8,22 @@
 
 import Metal
 import Foundation
+import MetalPerformanceShaders
 
+@available(iOS 10.0, *)
 public class PaddleMobileUnitTest {
     let device: MTLDevice
     let queue: MTLCommandQueue
+//    var imageDes:MPSImageDescriptor
+//    var image: MPSImage
+    
+    
+    
     public init(inDevice: MTLDevice, inQueue: MTLCommandQueue) {
         device = inDevice
         queue = inQueue
     }
+    
     
     public func testConvAddBnRelu() {
         let buffer = queue.makeCommandBuffer() ?! " buffer is nil "
@@ -119,7 +127,6 @@ public class PaddleMobileUnitTest {
         let metalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: 0, strideX: UInt16(stride.0), strideY: UInt16(stride.1), paddedZ: UInt16(paddings.0))
         
         let param = ConvAddBatchNormReluTestParam.init(inInputTexture: inputeTexture, inOutputTexture: outputTexture, inMetalParam: metalParam, inFilterBuffer: filterBuffer, inBiaseBuffer: biaseBuffer, inNewScaleBuffer: newScalueBuffer, inNewBiaseBuffer: newBiaseBuffer, inFilterSize: filterSize)
-        
         
         
         let convAddBnReluKernel = ConvAddBatchNormReluKernel<Float32>.init(device: device, testParam: param)

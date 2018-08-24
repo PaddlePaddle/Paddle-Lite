@@ -8,6 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		D3831F70E7E0B565B9AC22DA /* Pods_paddle_mobile.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD2E06330A1E7129C918DB46 /* Pods_paddle_mobile.framework */; };
+		E4649A1C2127D54200895421 /* CNNConvKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4649A1B2127D54200895421 /* CNNConvKernel.swift */; };
+		E46C5D88212D474D001DB20E /* CNNConvAddBatchNormReluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E46C5D87212D474D001DB20E /* CNNConvAddBatchNormReluOp.swift */; };
+		E46C5D8A212D9FCC001DB20E /* BatchNormRelu.metal in Sources */ = {isa = PBXBuildFile; fileRef = E46C5D89212D9FCC001DB20E /* BatchNormRelu.metal */; };
+		E4DFB69F212EFD1A00E3EA48 /* BatchNormReluKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4DFB69E212EFD1A00E3EA48 /* BatchNormReluKernel.swift */; };
+		E4FB3D66212F29D100BCFA4E /* BatchNormReluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4FB3D65212F29D100BCFA4E /* BatchNormReluOp.swift */; };
 		FC039B6F20E11C3C0081E9F8 /* paddle_mobile.h in Headers */ = {isa = PBXBuildFile; fileRef = FC039B6D20E11C3C0081E9F8 /* paddle_mobile.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		FC039B9720E11C9A0081E9F8 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039B9420E11C9A0081E9F8 /* Extensions.swift */; };
 		FC039B9820E11C9A0081E9F8 /* Errors.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039B9520E11C9A0081E9F8 /* Errors.swift */; };
@@ -64,6 +69,11 @@
 		CDF58151D902A1CBAE56A0C2 /* Pods-paddle-mobile.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-paddle-mobile.debug.xcconfig"; path = "../Pods/Target Support Files/Pods-paddle-mobile/Pods-paddle-mobile.debug.xcconfig"; sourceTree = "<group>"; };
 		DD2E06330A1E7129C918DB46 /* Pods_paddle_mobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_paddle_mobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2A7957C92EDA5C3BEC0FFC2 /* Pods-paddle-mobile.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-paddle-mobile.release.xcconfig"; path = "../Pods/Target Support Files/Pods-paddle-mobile/Pods-paddle-mobile.release.xcconfig"; sourceTree = "<group>"; };
+		E4649A1B2127D54200895421 /* CNNConvKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CNNConvKernel.swift; sourceTree = "<group>"; };
+		E46C5D87212D474D001DB20E /* CNNConvAddBatchNormReluOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CNNConvAddBatchNormReluOp.swift; sourceTree = "<group>"; };
+		E46C5D89212D9FCC001DB20E /* BatchNormRelu.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = BatchNormRelu.metal; sourceTree = "<group>"; };
+		E4DFB69E212EFD1A00E3EA48 /* BatchNormReluKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchNormReluKernel.swift; sourceTree = "<group>"; };
+		E4FB3D65212F29D100BCFA4E /* BatchNormReluOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchNormReluOp.swift; sourceTree = "<group>"; };
 		FC039B6A20E11C3C0081E9F8 /* paddle_mobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = paddle_mobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		FC039B6D20E11C3C0081E9F8 /* paddle_mobile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = paddle_mobile.h; sourceTree = "<group>"; };
 		FC039B6E20E11C3C0081E9F8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -219,6 +229,8 @@
 				FCD04E6920F319EC0007374F /* SoftmaxOp.swift */,
 				FCD04E6D20F31B4B0007374F /* ReshapeOp.swift */,
 				FCD04E7120F343420007374F /* ConvAddOp.swift */,
+				E46C5D87212D474D001DB20E /* CNNConvAddBatchNormReluOp.swift */,
+				E4FB3D65212F29D100BCFA4E /* BatchNormReluOp.swift */,
 			);
 			path = Operators;
 			sourceTree = "<group>";
@@ -257,6 +269,9 @@
 				FCD04E6B20F31A280007374F /* SoftmaxKernel.swift */,
 				FCD04E6F20F31B720007374F /* ReshapeKernel.swift */,
 				FCD04E7320F3437E0007374F /* ConvAddKernel.swift */,
+				E4649A1B2127D54200895421 /* CNNConvKernel.swift */,
+				E46C5D89212D9FCC001DB20E /* BatchNormRelu.metal */,
+				E4DFB69E212EFD1A00E3EA48 /* BatchNormReluKernel.swift */,
 			);
 			path = Kernels;
 			sourceTree = "<group>";
@@ -383,11 +398,14 @@
 				FC3602CC2108819F00FACB58 /* PaddleMobileUnitTest.swift in Sources */,
 				FC1B186620ECF1C600678B91 /* ResizeKernel.swift in Sources */,
 				FCF2D73820E64E70007AC5F5 /* Kernel.swift in Sources */,
+				E4649A1C2127D54200895421 /* CNNConvKernel.swift in Sources */,
 				FCEBC0F420F1FDD90099DBAF /* ConvAddBatchNormReluOp.swift in Sources */,
 				FC0E2DC020EE461F009C1FAC /* ElementwiseAddKernel.swift in Sources */,
 				FC60DB8920E9AAA500FF203F /* MetalExtension.swift in Sources */,
 				FCEBC0F620F1FE120099DBAF /* ConvAddBatchNormReluKernel.swift in Sources */,
 				FC1B16B320EC9A4F00678B91 /* Kernels.metal in Sources */,
+				E46C5D8A212D9FCC001DB20E /* BatchNormRelu.metal in Sources */,
+				E4FB3D66212F29D100BCFA4E /* BatchNormReluOp.swift in Sources */,
 				FC039BBA20E11CC20081E9F8 /* TensorDesc.swift in Sources */,
 				FC039BA020E11CB20081E9F8 /* Dim.swift in Sources */,
 				FC039BB820E11CC20081E9F8 /* framework.pb.swift in Sources */,
@@ -401,11 +419,13 @@
 				FCD04E7420F3437E0007374F /* ConvAddKernel.swift in Sources */,
 				FC039BB920E11CC20081E9F8 /* Scope.swift in Sources */,
 				FCD04E6620F314C50007374F /* PoolOp.swift in Sources */,
+				E46C5D88212D474D001DB20E /* CNNConvAddBatchNormReluOp.swift in Sources */,
 				FC039BAC20E11CBC0081E9F8 /* BatchNormOp.swift in Sources */,
 				FC039BBC20E11CC20081E9F8 /* VarDesc.swift in Sources */,
 				FCDC0FEB21099A1D00DC9EFB /* Tools.swift in Sources */,
 				FC0E2DBA20EE3B8D009C1FAC /* ReluKernel.swift in Sources */,
 				FC82735920E3C04200BE430A /* OpCreator.swift in Sources */,
+				E4DFB69F212EFD1A00E3EA48 /* BatchNormReluKernel.swift in Sources */,
 				FC0E2DBE20EE460D009C1FAC /* BatchNormKernel.swift in Sources */,
 				FC039BAB20E11CBC0081E9F8 /* Operator.swift in Sources */,
 				FCD04E6A20F319EC0007374F /* SoftmaxOp.swift in Sources */,
@@ -553,13 +573,13 @@
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = A798K58VVL;
+				DEVELOPMENT_TEAM = 95N6NQ4464;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				INFOPLIST_FILE = "paddle-mobile/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -581,13 +601,13 @@
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = A798K58VVL;
+				DEVELOPMENT_TEAM = 95N6NQ4464;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				INFOPLIST_FILE = "paddle-mobile/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

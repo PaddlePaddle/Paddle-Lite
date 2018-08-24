@@ -58,9 +58,10 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable, Testable
             super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_3x3")
         }
         
+        
         param.filter.initBuffer(device: device, precision: Tensor.BufferPrecision.Float32)
         param.y.initBuffer(device: device, precision: Tensor.BufferPrecision.Float32)
-
+        
         param.variance.initBuffer(device: device)
         param.mean.initBuffer(device: device)
         param.scale.initBuffer(device: device)

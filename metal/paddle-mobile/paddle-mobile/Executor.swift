@@ -61,9 +61,14 @@ public class Executor<P: PrecisionType> {
             for i in 0..<block.ops.count {
                 let op = block.ops[i]
                 do {
-                    let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
-                    op.inferShape()
-                    ops.append(op)
+                    if #available(iOS 10.0, *) {
+                        let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
+                        op.inferShape()
+                        ops.append(op)
+                    } else {
+                        // Fallback on earlier versions
+                    }
+                    
                 } catch let error {
                     throw error
                 }

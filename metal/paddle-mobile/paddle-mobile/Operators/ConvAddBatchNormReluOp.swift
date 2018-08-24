@@ -23,14 +23,20 @@ class ConvAddBatchNormReluParam<P: PrecisionType>: OpParam {
             output = try ConvAddBatchNormReluParam.outputOut(outputs: opDesc.outputs, from: inScope)
             stride = try ConvAddBatchNormReluParam.getAttr(key: "strides", attrs: opDesc.attrs)
             paddings = try ConvAddBatchNormReluParam.getAttr(key: "paddings", attrs: opDesc.attrs)
+            // 暂时不用关心
             dilations = try ConvAddBatchNormReluParam.getAttr(key: "dilations", attrs: opDesc.attrs)
             epsilon = try ConvAddBatchNormReluParam.getAttr(key: "epsilon", attrs: opDesc.attrs)
             
+            // 暂时不用关心
             groups = try ConvAddBatchNormReluParam.getAttr(key: "groups", attrs: opDesc.attrs)
+            
             variance = try ConvAddBatchNormReluParam.inputVariance(inputs: opDesc.paraInputs, from: inScope)
+            // batchnorm de bias
             bias = try ConvAddBatchNormReluParam.inputBiase(inputs: opDesc.paraInputs, from: inScope)
+            //
             scale = try ConvAddBatchNormReluParam.inputScale(inputs: opDesc.paraInputs, from: inScope)
             mean = try ConvAddBatchNormReluParam.inputMean(inputs: opDesc.paraInputs, from: inScope)
+            // bias
             y = try ConvAddBatchNormReluParam.inputY(inputs: opDesc.paraInputs, from: inScope)
         } catch let error {
             throw error
