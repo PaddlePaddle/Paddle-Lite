@@ -204,6 +204,10 @@ class OpParam {
     return ((Attribute)map.at(key)).Get<T>();
   }
 
+  static const bool HasAttr(const string &key, const AttributeMap &map) {
+    return map.count(key) > 0;
+  }
+
   template <typename T>
   static T *GetVarValue(const string &key, const VariableNameMap &var_map,
                         const Scope &scope) {
@@ -833,7 +837,13 @@ class ReshapeParam : public OpParam {
     input_shape_ = InputShapeFrom<GType>(inputs, scope);
     out_ = OutFrom<GType>(outputs, scope);
     shape_ = GetAttr<vector<int>>("shape", attrs);
-    inplace_ = GetAttr<bool>("inplace", attrs);
+
+    if (HasAttr("inplace", attrs)) {
+      inplace_ = GetAttr<bool>("inplace", attrs);
+    } else {
+      inplace_ = false;
+      DLOG << "ReshapeParam lost inplace params. maybe fluid updated";
+    }
   }
 
   const RType *InputX() const { return input_x_; }
