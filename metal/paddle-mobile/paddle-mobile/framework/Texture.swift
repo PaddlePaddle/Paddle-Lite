@@ -14,6 +14,8 @@
 
 import Metal
 import Foundation
+import MetalPerformanceShaders
+
 
 class InputTexture {
     let mtlTexture: MTLTexture
@@ -52,6 +54,7 @@ public class Texture<P: PrecisionType>: Tensorial {
             tmpTextureDes.width = inDim[0]
             tmpTextureDes.textureType = .type1D
         } else if inDim.cout() == 4 {
+            // n h w c
             tmpTextureDes.height = inDim[1]
             tmpTextureDes.width = inDim[2]
 //            print("n : \(inDim[0])")
@@ -76,7 +79,6 @@ public class Texture<P: PrecisionType>: Tensorial {
         } else if MemoryLayout<P>.size == 4 {
 //            tmpTextureDes.pixelFormat = .r32Float
             tmpTextureDes.pixelFormat = .rgba32Float
-
         }
 //        tmpTextureDes.pixelFormat = .rgba16Float
 
@@ -124,6 +126,54 @@ public class Texture<P: PrecisionType>: Tensorial {
 //    }
     
     private(set) var layout: DataLayout
+}
+@available(iOS 10.0, *)
+public class MpsImageCreator<P: PrecisionType>: Tensorial {
+    var layout: DataLayout
+    public var description: String
+    public var debugDescription: String
+
+    var dim: Dim
+    var width: Int?
+    var height: Int?
+    var channels: Int?
+    var mpsImage:MPSImage?
+
+    init(device: MTLDevice, inDim: Dim) {
+        layout = DataLayout.NHWC
+        description = ""
+        debugDescription = ""
+
+        dim = inDim
+        if dim.cout() == 2 {
+            width = inDim[0]
+            channels = inDim[1]
+        } else if dim.cout() == 4 {
+            width = inDim[2]
+            height = inDim[1]
+            channels = inDim[3]
+        }
+    }
+    
+    func createMPSImageDes() -> MPSImageDescriptor? {
+        
+        let mpsImageDes = MPSImageDescriptor(channelFormat: .float16, width: width!, height: height!, featureChannels: channels!)
+        mpsImageDes.storageMode = .shared
+        return mpsImageDes
+    }
+    
+    
+    func createMPSImage(device: MTLDevice) -> MPSImage? {
+        let desc = self.createMPSImageDes()
+        guard desc != nil else {
+            return nil
+        }
+        mpsImage = MPSImage(device: device, imageDescriptor: desc!)
+
+        return mpsImage
+    }
+
+
 }
 
 extension Texture {
