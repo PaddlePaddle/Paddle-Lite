@@ -33,7 +33,7 @@ class PriorBoxKernel<P: PrecisionType>: Kernel, Computable{
     var metalParam: PriorBoxMetalParam!
     
     required init(device: MTLDevice, param: PriorBoxParam<P>) {
-        super.init(device: device, inFunctionName: "priorbox")
+        super.init(device: device, inFunctionName: "prior_box")
         param.output.initTexture(device: device, transpose: [2, 0, 1, 3])
         param.outputVariances.initTexture(device: device, transpose: [2, 0, 1, 3])
         
