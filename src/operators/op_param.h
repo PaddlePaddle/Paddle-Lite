@@ -87,10 +87,19 @@ class OpParam {
   static T *InputXFrom(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue<T>("X", inputs, scope);
   }
+  template <typename T>
+  static T *InputXFrom1(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue1<T>("addX", inputs, scope);
+  }
 
   template <typename T>
   static T *InputYFrom(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue<T>("Y", inputs, scope);
+  }
+
+  template <typename T>
+  static T *InputYFrom1(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue1<T>("Y", inputs, scope);
   }
 
   template <typename T>
@@ -212,6 +221,26 @@ class OpParam {
     auto var_vec = var_map.at(key);
     if (!var_vec.empty()) {
       auto var = scope.FindVar(var_vec[0]);
+      return var->GetMutable<T>();
+    } else {
+      return nullptr;
+    }
+  }
+
+  static std::string getkey(const string &key, const VariableNameMap &var_map,
+                            int index) {
+    auto var_vec = var_map.at(key);
+    return var_vec[index];
+  }
+
+  template <typename T>
+  static T *GetVarValue1(const string &key, const VariableNameMap &var_map,
+                         const Scope &scope) {
+    PADDLE_MOBILE_ENFORCE(var_map.count(key) > 0,
+                          "%s is not contained in var_map", key.c_str())
+    auto var_vec = var_map.at(key);
+    if (!var_vec.empty()) {
+      auto var = scope.FindVar(var_vec[1]);
       return var->GetMutable<T>();
     } else {
       return nullptr;
@@ -1171,6 +1200,163 @@ class FusionConvAddReluParam : public FusionConvAddParam<DeviceType> {
                          const VariableNameMap &outputs,
                          const AttributeMap &attrs, const Scope &scope)
       : FusionConvAddParam<DeviceType>(inputs, outputs, attrs, scope) {}
+};
+#endif
+
+#ifdef FUSION_CONVADDPRELU_OP
+template <typename DeviceType>
+class FusionConvAddPReluParam : public OpParam {
+  typedef typename DtypeTensorTrait<DeviceType>::gtype GType;
+  typedef typename DtypeTensorTrait<DeviceType>::rtype RType;
+
+ public:
+  FusionConvAddPReluParam(const VariableNameMap &inputs,
+                          const VariableNameMap &outputs,
+                          const AttributeMap &attrs, const Scope &scope) {
+    alpha_ = InputAlphaFrom<GType>(inputs, scope);
+    mode_ = GetAttr<std::string>("mode", attrs);
+    framework::DDim dims = alpha_->dims();
+    bias_ = InputYFrom<GType>(inputs, scope);
+    axis_ = GetAttr<int>("axis", attrs);
+    filter_ = FilterFrom<GType>(inputs, scope);
+    input_ = InputFrom<GType>(inputs, scope);
+    output_ = OutFrom<GType>(outputs, scope);
+    strides_ = GetAttr<vector<int>>("strides", attrs);
+    paddings_ = GetAttr<vector<int>>("paddings", attrs);
+    dilations_ = GetAttr<vector<int>>("dilations", attrs);
+    groups = GetAttr<int>("groups", attrs);
+  }
+  const RType *InputAlpha() const { return alpha_; }
+  const std::string &Mode() const { return mode_; }
+  RType *Bias() const { return bias_; }
+
+  const int &Axis() const { return axis_; }
+
+  const RType *Input() const { return input_; }
+
+#ifdef PADDLE_MOBILE_FPGA
+  RType *Filter() const { return filter_; }
+#else
+  const RType *Filter() const { return filter_; }
+#endif
+
+  RType *Output() const { return output_; }
+
+  const vector<int> &Strides() const { return strides_; }
+
+  const vector<int> &Paddings() const { return paddings_; }
+
+  const vector<int> &Dilations() const { return dilations_; }
+
+  const int &Groups() const { return groups; }
+
+ protected:
+  RType *bias_;
+  int axis_;
+  RType *input_;
+  RType *output_;
+  RType *filter_;
+  vector<int> strides_;
+  vector<int> paddings_;
+  vector<int> dilations_;
+  int groups;
+  RType *alpha_;
+  std::string mode_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::ConvArgs fpga_conv_args;
+
+ public:
+  const fpga::ConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::ConvArgs &args) { fpga_conv_args = args; }
+#endif
+};
+#endif
+
+#ifdef FUSION_CONVADDADDPRELU_OP
+template <typename DeviceType>
+class FusionConvAddAddPReluParam : public OpParam {
+  typedef typename DtypeTensorTrait<DeviceType>::gtype GType;
+  typedef typename DtypeTensorTrait<DeviceType>::rtype RType;
+
+ public:
+  FusionConvAddAddPReluParam(const VariableNameMap &inputs,
+                             const VariableNameMap &outputs,
+                             const AttributeMap &attrs, const Scope &scope) {
+    bias1_ = InputYFrom1<GType>(inputs, scope);
+    alpha_ = InputAlphaFrom<GType>(inputs, scope);
+    mode_ = GetAttr<std::string>("mode", attrs);
+    framework::DDim dims = alpha_->dims();
+    bias_ = InputYFrom<GType>(inputs, scope);
+    axis_ = GetAttr<int>("axis", attrs);
+    filter_ = FilterFrom<GType>(inputs, scope);
+    input_ = InputFrom<GType>(inputs, scope);
+    output_ = OutFrom<GType>(outputs, scope);
+    strides_ = GetAttr<vector<int>>("strides", attrs);
+    paddings_ = GetAttr<vector<int>>("paddings", attrs);
+    dilations_ = GetAttr<vector<int>>("dilations", attrs);
+    groups = GetAttr<int>("groups", attrs);
+    keyOutput_ = getkey("addOut", inputs, 0);
+    keyX1_ = getkey("addX", inputs, 1);
+    keyY1_ = getkey("Y", inputs, 1);
+    if (keyX1_ == keyOutput_) {
+      bias1_ = InputYFrom1<GType>(inputs, scope);
+    } else if (keyY1_ == keyOutput_) {
+      bias1_ = InputXFrom1<GType>(inputs, scope);
+    }
+  }
+  const RType *InputAlpha() const { return alpha_; }
+  const std::string &Mode() const { return mode_; }
+  const RType *Bias1() const { return bias1_; }
+
+  RType *Bias() const { return bias_; }
+
+  const int &Axis() const { return axis_; }
+
+  const RType *Input() const { return input_; }
+
+#ifdef PADDLE_MOBILE_FPGA
+  RType *Filter() const { return filter_; }
+#else
+  const RType *Filter() const { return filter_; }
+#endif
+
+  RType *Output() const { return output_; }
+
+  const vector<int> &Strides() const { return strides_; }
+
+  const vector<int> &Paddings() const { return paddings_; }
+
+  const vector<int> &Dilations() const { return dilations_; }
+
+  const int &Groups() const { return groups; }
+
+ protected:
+  RType *bias_;
+  int axis_;
+  RType *input_;
+  RType *output_;
+  RType *filter_;
+  vector<int> strides_;
+  vector<int> paddings_;
+  vector<int> dilations_;
+  int groups;
+  RType *alpha_;
+  std::string mode_;
+  RType *bias1_;
+  std::string keyOutput_;
+  std::string keyX1_;
+  std::string keyY1_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::ConvArgs fpga_conv_args;
+
+ public:
+  const fpga::ConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::ConvArgs &args) { fpga_conv_args = args; }
+#endif
 };
 #endif
 
