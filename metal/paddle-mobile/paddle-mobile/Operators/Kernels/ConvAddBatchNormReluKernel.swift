@@ -109,6 +109,7 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable, Testable
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
             throw PaddleMobileError.predictError(message: " encode is nil")
         }
+      
 
         encoder.setTexture(param.input.metalTexture, index: 0)
         encoder.setTexture(param.output.metalTexture, index: 1)

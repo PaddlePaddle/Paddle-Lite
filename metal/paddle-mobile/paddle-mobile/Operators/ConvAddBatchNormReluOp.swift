@@ -14,10 +14,12 @@
 
 import Foundation
 
+
 class ConvAddBatchNormReluParam<P: PrecisionType>: OpParam {
     typealias ParamPrecisionType = P
     required init(opDesc: OpDesc, inScope: Scope) throws {
         do {
+          
             filter = try ConvAddBatchNormReluParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
             input = try ConvAddBatchNormReluParam.input(inputs: opDesc.inputs, from: inScope)
             output = try ConvAddBatchNormReluParam.outputOut(outputs: opDesc.outputs, from: inScope)
@@ -29,6 +31,7 @@ class ConvAddBatchNormReluParam<P: PrecisionType>: OpParam {
             groups = try ConvAddBatchNormReluParam.getAttr(key: "groups", attrs: opDesc.attrs)
             variance = try ConvAddBatchNormReluParam.inputVariance(inputs: opDesc.paraInputs, from: inScope)
             bias = try ConvAddBatchNormReluParam.inputBiase(inputs: opDesc.paraInputs, from: inScope)
+          
             scale = try ConvAddBatchNormReluParam.inputScale(inputs: opDesc.paraInputs, from: inScope)
             mean = try ConvAddBatchNormReluParam.inputMean(inputs: opDesc.paraInputs, from: inScope)
             y = try ConvAddBatchNormReluParam.inputY(inputs: opDesc.paraInputs, from: inScope)
