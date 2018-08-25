@@ -24,77 +24,199 @@ public class PaddleMobileUnitTest {
         queue = inQueue
     }
     
+    public func testMps() {
+        let buffer = queue.makeCommandBuffer() ?! " buffer is nil "
+        
+        let input: [Float] = [
+            1.0, 2.0, 3.0, 4.0,
+            1.0, 2.0, 3.0, 4.0,
+            1.0, 2.0, 3.0, 4.0,
+            
+            1.0, 2.0, 3.0, 4.0,
+            1.0, 2.0, 3.0, 4.0,
+            1.0, 2.0, 3.0, 4.0,
+            
+            1.0, 2.0, 3.0, 4.0,
+            1.0, 2.0, 3.0, 4.0,
+            1.0, 2.0, 3.0, 4.0,
+            ]
+        
+        let filter: [Float] = [
+            //1.0
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            
+            //2.0
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            
+            //3.0
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            
+            //4.0
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            ]
+        
+        let biase: [Float] = [1.0, 1.0, 1.0, 100.0]
+        let newScalue: [Float] = [1.0, 1.0, 1.0, 1.0]
+        let newBiase: [Float] = [1.0, 1.0, 1.0, 1.0]
+        
+        
+        
+        let filterSize: (width: Int, height: Int, channel: Int) = (3, 3, 4)
+        let paddings: (Int, Int) = (1, 1)
+        let stride: (Int, Int) = (2, 2)
+        
+        let offsetX = filterSize.width/2 - paddings.0
+        let offsetY = filterSize.height/2 - paddings.1
+        
+        let metalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: 0, strideX: UInt16(stride.0), strideY: UInt16(stride.1), paddedZ: UInt16(paddings.0))
+        
+        let mpsParam = CNNMPSConvTestParam.init(inMetalParam: metalParam, inFilter: filter, inBiase: biase, inFilterSize: filterSize)
+        
+        let mpsConvKernel = CNNConvKernel<Float>.init(device: device, testParam: mpsParam)
+        
+        do {
+            try mpsConvKernel.testCompute(commandBuffer: buffer, testParam: mpsParam)
+        } catch _ {
+            fatalError()
+        }
+    
+        // new scale
+        let newScalueBuffer = device.makeBuffer(value: newScalue)
+        
+        // new biase
+        let newBiaseBuffer = device.makeBuffer(value: newBiase)
+        
+        //output
+        let outputTexture = device.makeFloatTexture(value: [Float](), textureWidth: 2, textureHeight: 2, arrayLength: 1)
+        
+        let batchNormReluParam = BatchNormReluTestParam.init(inInputTexture: mpsParam.outputTexture!, inOutputTexture: outputTexture, inNewScaleBuffer: newScalueBuffer, inNewBiaseBuffer: newBiaseBuffer)
+        
+        let batchNormReluKernel = BatchNormReluKernel<Float>.init(device: device, testParam: batchNormReluParam)
+        
+        do {
+            try batchNormReluKernel.testCompute(commandBuffer: buffer, testParam: batchNormReluParam)
+        } catch _ {
+            fatalError()
+        }
+        
+        buffer.addCompletedHandler { (buffer) in
+            let _: Float32? = outputTexture.logDesc(header: "output texture", stridable: false)
+        }
+        
+        buffer.commit()
+    }
+    
     
     public func testConvAddBnRelu() {
         let buffer = queue.makeCommandBuffer() ?! " buffer is nil "
         
         let input: [Float32] = [
-         1.0, 2.0, 3.0, 4.0,
-         1.0, 2.0, 3.0, 4.0,
-         1.0, 2.0, 3.0, 4.0,
-         
-         1.0, 2.0, 3.0, 4.0,
-         1.0, 2.0, 3.0, 4.0,
-         1.0, 2.0, 3.0, 4.0,
-         
-         1.0, 2.0, 3.0, 4.0,
-         1.0, 2.0, 3.0, 4.0,
-         1.0, 2.0, 3.0, 4.0,
-        ]
+            1.0, 2.0, 3.0, 4.0,
+            1.0, 2.0, 3.0, 4.0,
+            1.0, 2.0, 3.0, 4.0,
+            
+            1.0, 2.0, 3.0, 4.0,
+            1.0, 2.0, 3.0, 4.0,
+            1.0, 2.0, 3.0, 4.0,
+            
+            1.0, 2.0, 3.0, 4.0,
+            1.0, 2.0, 3.0, 4.0,
+            1.0, 2.0, 3.0, 4.0,
+            ]
         
         let filter: [Float32] = [
-        //1.0
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        
-        //2.0
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        
-        //3.0
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        
-        //4.0
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        1.0, 1.0, 1.0, 1.0,
-        ]
+            //1.0
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            
+            //2.0
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            
+            //3.0
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            
+            //4.0
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0,
+            ]
         
         let biase: [Float32] = [1.0, 1.0, 1.0, 100.0]
         let newScalue: [Float32] = [1.0, 1.0, 1.0, 1.0]

@@ -20,6 +20,14 @@ class BatchNormReluKernel<P: PrecisionType>: Kernel, Computable{
     var newScale: MTLBuffer
     var newBias: MTLBuffer
     
+    required init(device: MTLDevice, testParam: BatchNormReluTestParam) {
+        
+        newScale = testParam.newScaleBuffer
+        newBias = testParam.newBiaseBuffer
+        
+        super.init(device: device, inFunctionName: "batch_norm_relu_3x3")
+    }
+    
     required init(device: MTLDevice, param: BatchNormReluParam<P>) {
         guard let newScale = device.makeBuffer(length: param.inputScale.buffer.length) else {
             fatalError()
@@ -59,11 +67,25 @@ class BatchNormReluKernel<P: PrecisionType>: Kernel, Computable{
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
             fatalError()
         }
-        encoder.setTexture(param.output as! MTLTexture, index: 0)
+        encoder.setTexture(param.input as? MTLTexture, index: 0)
         encoder.setTexture(param.output as? MTLTexture, index: 1)
         encoder.setBuffer(newScale, offset: 0, index: 1)
         encoder.setBuffer(newBias, offset: 0, index: 1)
         encoder.dispatch(computePipline: pipline, outTexture: param.output as! MTLTexture)
         encoder.endEncoding()
     }
+    
+    func testCompute(commandBuffer: MTLCommandBuffer, testParam: BatchNormReluTestParam) throws {
+        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+            fatalError()
+        }
+        encoder.setTexture(testParam.inputTexture, index: 0)
+        encoder.setTexture(testParam.outputTexture, index: 1)
+        encoder.setBuffer(newScale, offset: 0, index: 1)
+        encoder.setBuffer(newBias, offset: 0, index: 1)
+        encoder.dispatch(computePipline: pipline, outTexture: testParam.outputTexture)
+        encoder.endEncoding()
+    }
+    
+    
 }

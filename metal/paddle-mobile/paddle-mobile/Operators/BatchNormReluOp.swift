@@ -4,6 +4,19 @@
 //
 import Foundation
 
+class BatchNormReluTestParam: TestParam {
+    var inputTexture:MTLTexture
+    let outputTexture: MTLTexture
+    let newScaleBuffer: MTLBuffer
+    let newBiaseBuffer: MTLBuffer
+    init(inInputTexture:MTLTexture, inOutputTexture: MTLTexture, inNewScaleBuffer: MTLBuffer, inNewBiaseBuffer: MTLBuffer) {
+        inputTexture = inInputTexture
+        outputTexture = inOutputTexture
+        newScaleBuffer = inNewScaleBuffer
+        newBiaseBuffer = inNewBiaseBuffer
+    }
+}
+
 class BatchNormReluOp<P: PrecisionType>: Operator<BatchNormReluKernel<P>, BatchNormReluParam<P>>, Runable, Creator, InferShaperable, Fusion {
     
     typealias OpType = BatchNormReluOp<P>

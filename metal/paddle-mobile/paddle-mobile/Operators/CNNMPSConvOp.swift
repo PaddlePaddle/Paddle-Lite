@@ -4,10 +4,24 @@
 
 import Foundation
 
+class CNNMPSConvTestParam: TestParam {
+    var outputTexture: MTLTexture?
+    var metalParam: MetalConvParam
+    let filterPointer: UnsafeMutableRawPointer
+    let biasePointer: UnsafeMutablePointer<Float>
+    let filterSize: (width: Int, height: Int, channel: Int)
+    init(inMetalParam: MetalConvParam, inFilter: [Float], inBiase: [Float], inFilterSize: (width: Int, height: Int, channel: Int)) {
+        metalParam = inMetalParam
+        filterPointer = UnsafeMutableRawPointer.init(mutating: inFilter)
+        biasePointer = UnsafeMutablePointer.init(mutating: inBiase)
+        filterSize = inFilterSize
+    }
+}
+
 @available(iOS 10.0, *)
-class CNNConvAddBatchNormReluOp<P: PrecisionType>: Operator<CNNConvKernel<P>, CNNConvParam<P>>, Runable, Creator, InferShaperable, Fusion {
+class CNNMPSConvOp<P: PrecisionType>: Operator<CNNConvKernel<P>, CNNConvParam<P>>, Runable, Creator, InferShaperable, Fusion {
     
-    typealias OpType = CNNConvAddBatchNormReluOp<P>
+    typealias OpType = CNNMPSConvOp<P>
 
     required init(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws {
         fatalError()

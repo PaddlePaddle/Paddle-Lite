@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		D3831F70E7E0B565B9AC22DA /* Pods_paddle_mobile.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD2E06330A1E7129C918DB46 /* Pods_paddle_mobile.framework */; };
 		E4649A1C2127D54200895421 /* CNNConvKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4649A1B2127D54200895421 /* CNNConvKernel.swift */; };
-		E46C5D88212D474D001DB20E /* CNNConvAddBatchNormReluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E46C5D87212D474D001DB20E /* CNNConvAddBatchNormReluOp.swift */; };
+		E46C5D88212D474D001DB20E /* CNNMPSConvOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E46C5D87212D474D001DB20E /* CNNMPSConvOp.swift */; };
 		E46C5D8A212D9FCC001DB20E /* BatchNormRelu.metal in Sources */ = {isa = PBXBuildFile; fileRef = E46C5D89212D9FCC001DB20E /* BatchNormRelu.metal */; };
 		E4DFB69F212EFD1A00E3EA48 /* BatchNormReluKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4DFB69E212EFD1A00E3EA48 /* BatchNormReluKernel.swift */; };
 		E4FB3D66212F29D100BCFA4E /* BatchNormReluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4FB3D65212F29D100BCFA4E /* BatchNormReluOp.swift */; };
@@ -70,7 +70,7 @@
 		DD2E06330A1E7129C918DB46 /* Pods_paddle_mobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_paddle_mobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2A7957C92EDA5C3BEC0FFC2 /* Pods-paddle-mobile.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-paddle-mobile.release.xcconfig"; path = "../Pods/Target Support Files/Pods-paddle-mobile/Pods-paddle-mobile.release.xcconfig"; sourceTree = "<group>"; };
 		E4649A1B2127D54200895421 /* CNNConvKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CNNConvKernel.swift; sourceTree = "<group>"; };
-		E46C5D87212D474D001DB20E /* CNNConvAddBatchNormReluOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CNNConvAddBatchNormReluOp.swift; sourceTree = "<group>"; };
+		E46C5D87212D474D001DB20E /* CNNMPSConvOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CNNMPSConvOp.swift; sourceTree = "<group>"; };
 		E46C5D89212D9FCC001DB20E /* BatchNormRelu.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = BatchNormRelu.metal; sourceTree = "<group>"; };
 		E4DFB69E212EFD1A00E3EA48 /* BatchNormReluKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchNormReluKernel.swift; sourceTree = "<group>"; };
 		E4FB3D65212F29D100BCFA4E /* BatchNormReluOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchNormReluOp.swift; sourceTree = "<group>"; };
@@ -229,7 +229,7 @@
 				FCD04E6920F319EC0007374F /* SoftmaxOp.swift */,
 				FCD04E6D20F31B4B0007374F /* ReshapeOp.swift */,
 				FCD04E7120F343420007374F /* ConvAddOp.swift */,
-				E46C5D87212D474D001DB20E /* CNNConvAddBatchNormReluOp.swift */,
+				E46C5D87212D474D001DB20E /* CNNMPSConvOp.swift */,
 				E4FB3D65212F29D100BCFA4E /* BatchNormReluOp.swift */,
 			);
 			path = Operators;
@@ -419,7 +419,7 @@
 				FCD04E7420F3437E0007374F /* ConvAddKernel.swift in Sources */,
 				FC039BB920E11CC20081E9F8 /* Scope.swift in Sources */,
 				FCD04E6620F314C50007374F /* PoolOp.swift in Sources */,
-				E46C5D88212D474D001DB20E /* CNNConvAddBatchNormReluOp.swift in Sources */,
+				E46C5D88212D474D001DB20E /* CNNMPSConvOp.swift in Sources */,
 				FC039BAC20E11CBC0081E9F8 /* BatchNormOp.swift in Sources */,
 				FC039BBC20E11CC20081E9F8 /* VarDesc.swift in Sources */,
 				FCDC0FEB21099A1D00DC9EFB /* Tools.swift in Sources */,
