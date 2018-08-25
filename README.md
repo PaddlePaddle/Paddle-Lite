@@ -10,7 +10,7 @@
 
 欢迎来到 Paddle-Mobile GitHub 项目。
 
-Paddle-Moible是PaddlePaddle组织下的项目，是一个致力于嵌入式平台的深度学习的框架。Paddle-Moible设计思想和PaddlePaddle的最新版fluid版本保持了高度一致，同时针对嵌入式做了大量优化。设计之初就对嵌入式的性能、体积、能耗、硬件平台覆盖等方面做了考虑。
+Paddle-Mobile是PaddlePaddle组织下的项目，是一个致力于嵌入式平台的深度学习的框架。Paddle-Mobile设计思想和PaddlePaddle的最新版fluid版本保持了高度一致，同时针对嵌入式做了大量优化。设计之初就对嵌入式的性能、体积、能耗、硬件平台覆盖等方面做了考虑。
 
 ## 简单搜索线上效果
 
