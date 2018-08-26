@@ -87,6 +87,17 @@ class OpParam {
   static T *InputXFrom(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue<T>("X", inputs, scope);
   }
+
+  template <typename T>
+  static T *InputWFrom(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("W", inputs, scope);
+  }
+
+  template <typename T>
+  static T *InputIdsFrom(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("Ids", inputs, scope);
+  }
+
   template <typename T>
   static T *InputXFrom1(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue1<T>("addX", inputs, scope);
@@ -850,6 +861,34 @@ class TransposeParam : public OpParam {
   RType *input_x_;
   RType *out_;
   vector<int> axis_;
+};
+#endif
+
+#ifdef LOOKUP_OP
+template <typename Dtype>
+class LookupParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  LookupParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+              const AttributeMap &attrs, const Scope &scope) {
+    input_w_ = InputWFrom<GType>(inputs, scope);
+    input_ids_ = InputIdsFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+    padding_idx_ = GetAttr<int64_t>("padding_idx", attrs);
+  }
+
+  const RType *InputW() const { return input_w_; }
+  const RType *InputIds() const { return input_ids_; }
+  RType *Out() const { return out_; }
+  int64_t PaddingIdx() const { return padding_idx_; }
+
+ private:
+  RType *input_w_;
+  RType *input_ids_;
+  RType *out_;
+  int64_t padding_idx_;
 };
 #endif
 
