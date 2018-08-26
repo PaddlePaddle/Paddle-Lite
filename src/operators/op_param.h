@@ -892,6 +892,64 @@ class LookupParam : public OpParam {
 };
 #endif
 
+#ifdef GRU_OP
+template <typename Dtype>
+class GruParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  GruParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+           const AttributeMap &attrs, const Scope &scope) {
+    // todo gru params
+    input_w_ = InputWFrom<GType>(inputs, scope);
+    input_ids_ = InputIdsFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+    padding_idx_ = GetAttr<int64_t>("padding_idx", attrs);
+  }
+
+  const RType *InputW() const { return input_w_; }
+  const RType *InputIds() const { return input_ids_; }
+  RType *Out() const { return out_; }
+  int64_t PaddingIdx() const { return padding_idx_; }
+
+ private:
+  RType *input_w_;
+  RType *input_ids_;
+  RType *out_;
+  int64_t padding_idx_;
+};
+#endif
+
+#ifdef CRF_OP
+template <typename Dtype>
+class CrfParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  CrfParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+           const AttributeMap &attrs, const Scope &scope) {
+    // todo crf params
+    input_w_ = InputWFrom<GType>(inputs, scope);
+    input_ids_ = InputIdsFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+    padding_idx_ = GetAttr<int64_t>("padding_idx", attrs);
+  }
+
+  const RType *InputW() const { return input_w_; }
+  const RType *InputIds() const { return input_ids_; }
+  RType *Out() const { return out_; }
+  int64_t PaddingIdx() const { return padding_idx_; }
+
+ private:
+  RType *input_w_;
+  RType *input_ids_;
+  RType *out_;
+  int64_t padding_idx_;
+};
+#endif
+
 #ifdef RESHAPE_OP
 template <typename Dtype>
 class ReshapeParam : public OpParam {
