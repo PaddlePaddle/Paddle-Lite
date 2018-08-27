@@ -15,35 +15,54 @@
 import Foundation
 
 class TransposeParam<P: PrecisionType>: OpParam {
-    typealias ParamPrecisionType = P
-    required init(opDesc: OpDesc, inScope: Scope) throws {
-        do {
-            input = try TransposeParam.inputX(inputs: opDesc.inputs, from: inScope)
-            output = try TransposeParam.outputOut(outputs: opDesc.outputs, from: inScope)
-            axis = try TransposeParam.getAttr(key: "axis", attrs: opDesc.attrs)
-        } catch let error {
-            throw error
-        }
+  typealias ParamPrecisionType = P
+  required init(opDesc: OpDesc, inScope: Scope) throws {
+    do {
+      input = try TransposeParam.inputX(inputs: opDesc.inputs, from: inScope)
+      output = try TransposeParam.outputOut(outputs: opDesc.outputs, from: inScope)
+      axis = try TransposeParam.getAttr(key: "axis", attrs: opDesc.attrs)
+    } catch let error {
+      throw error
     }
-    let input: Texture<P>
-    var output: Texture<P>
-    let axis: [Int32]
+  }
+  let input: Texture<P>
+  var output: Texture<P>
+  let axis: [Int32]
 }
 
 class TransposeOp<P: PrecisionType>: Operator<TransposeKernel<P>, TransposeParam<P>>, Runable, Creator, InferShaperable{
-    
-    func inferShape() {
-        para.output.dim = para.input.dim
+  
+  func inputs() -> [Variant] {
+    return [para.input]
+  }
+  
+  func inferShape() {
+    //para.output.dim = para.input.dim
+  }
+  
+  typealias OpType = TransposeOp<P>
+  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+    do {
+      try kernel.compute(commandBuffer: buffer, param: para)
+    } catch let error {
+      throw error
+    }
+  }
+  func delogOutput() {
+    let inputArray: [Float32] = para.input.metalTexture.floatArray { (ele: Float32) -> Float32 in
+      return ele
     }
     
-    typealias OpType = TransposeOp<P>
-    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+    print(inputArray.strideArray())
+    
+    let outputArray: [Float32] = para.output.metalTexture.floatArray { (ele: Float32) -> Float32 in
+      return ele
     }
+  
+    print(outputArray.strideArray())
+//    writeToLibrary(fileName: "transpose_ouput", array: outputArray)
+  }
+  
 }
 
 

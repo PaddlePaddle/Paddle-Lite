@@ -15,44 +15,67 @@
 import Foundation
 
 class ConcatParam<P: PrecisionType>: OpParam {
-    typealias ParamPrecisionType = P
-    required init(opDesc: OpDesc, inScope: Scope) throws {
-        do {
-            guard let xlist = opDesc.inputs["X"] else {
-                fatalError()
-            }
-            for x in xlist {
-                guard let variant = inScope[x], let v = variant as? Texture<P> else {
-                    fatalError()
-                }
-                input.append(v)
-            }
-            axis = try ConcatParam.getAttr(key: "axis", attrs: opDesc.attrs)
-            output = try ConcatParam.outputOut(outputs: opDesc.outputs, from: inScope)
-        } catch let error {
-            throw error
+  typealias ParamPrecisionType = P
+  required init(opDesc: OpDesc, inScope: Scope) throws {
+    do {
+      guard let xlist = opDesc.inputs["X"] else {
+        fatalError()
+      }
+      for x in xlist {
+        guard let variant = inScope[x], let v = variant as? Texture<P> else {
+          fatalError()
         }
+        input.append(v)
+      }
+      axis = try ConcatParam.getAttr(key: "axis", attrs: opDesc.attrs)
+      output = try ConcatParam.outputOut(outputs: opDesc.outputs, from: inScope)
+    } catch let error {
+      throw error
     }
-    var input: [Texture<P>] = []
-    var output: Texture<P>
-    let axis: Int
+  }
+  var input: [Texture<P>] = []
+  var output: Texture<P>
+  let axis: Int
 }
 
 class ConcatOp<P: PrecisionType>: Operator<ConcatKernel<P>, ConcatParam<P>>, Runable, Creator, InferShaperable{
-    
-    func inferShape() {
-//        let dim = para.input.reduce([0, 0]) {[$0[0] + $1.dim[0], $1.dim[1]]}
-//        para.output.dim = Dim.init(inDim: dim)
+  
+  func inputs() -> [Variant] {
+    return para.input
+  }
+  
+  func inferShape() {
+    //        let dim = para.input.reduce([0, 0]) {[$0[0] + $1.dim[0], $1.dim[1]]}
+    //        para.output.dim = Dim.init(inDim: dim)
+  }
+  
+  typealias OpType = ConcatOp<P>
+  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+    do {
+      try kernel.compute(commandBuffer: buffer, param: para)
+    } catch let error {
+      throw error
     }
-    
-    typealias OpType = ConcatOp<P>
-    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
+  }
+  
+  func delogOutput() {
+    let outputArray = para.output.metalTexture.floatArray { (o: Float32) -> Float32 in
+      return o
     }
+    print(outputArray.strideArray())
+    let device: MTLDevice = MTLCreateSystemDefaultDevice()!
+    
+//    let tensorArray: [P] = device.texture2tensor(texture: para.output.metalTexture, dim: [1917, 4])
+    
+//    print(tensorArray.strideArray())
+    
+//    print(para.output.metalTexture)
+    
+//    writeToLibrary(fileName: "concat_out", array: outputArray)
+//    print(" write done ")
+    
+//    print(outputArray.strideArray())
+  }
 }
 
 

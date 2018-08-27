@@ -16,100 +16,101 @@ import Metal
 import Foundation
 
 protocol Fusion {
-    static func fusionNode() -> Node
-    static func change() -> [String : [(from: String, to: String)]]
-    static func fusionType() -> String
+  static func fusionNode() -> Node
+  static func change() -> [String : [(from: String, to: String)]]
+  static func fusionType() -> String
 }
 
 protocol Runable {
-    func run(device: MTLDevice, buffer: MTLCommandBuffer) throws
-    func runImpl(device: MTLDevice,buffer: MTLCommandBuffer) throws
-    func delogOutput()
+  func run(device: MTLDevice, buffer: MTLCommandBuffer) throws
+  func runImpl(device: MTLDevice,buffer: MTLCommandBuffer) throws
+  func delogOutput()
+  func inputs() -> [Variant]
 }
 
 extension Runable where Self: OperatorProtocol{
-    func run(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try runImpl(device: device, buffer: buffer)
-        } catch let error {
-            throw error
-        }
-//        print(type + ": " + para.outputDesc())
+  func run(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+    do {
+      try runImpl(device: device, buffer: buffer)
+    } catch let error {
+      throw error
     }
-    
-    func delogOutput() {
-        print(type + ": has no implementation" )
-    }
+//    print(type + ": " + para.outputDesc())
+  }
+  
+  func delogOutput() {
+    print(type + ": has no implementation" )
+  }
 }
 
 protocol Creator where Self: OperatorProtocol{
-    associatedtype OpType: OperatorProtocol & Runable & InferShaperable
-    static func creat(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws -> OpType
+  associatedtype OpType: OperatorProtocol & Runable & InferShaperable
+  static func creat(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws -> OpType
 }
 
 extension Creator where Self: OperatorProtocol {
-    static func creat(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws -> OpType {
-        do {
-            return try OpType.provide(device:device, opDesc: opDesc, inScope: inScope)
-        } catch let error {
-            throw error
-        }
+  static func creat(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws -> OpType {
+    do {
+      return try OpType.provide(device:device, opDesc: opDesc, inScope: inScope)
+    } catch let error {
+      throw error
     }
+  }
 }
 
 protocol InferShaperable {
-    func inferShape()
+  func inferShape()
 }
 
 protocol OperatorProtocol {
-    associatedtype ParamType
-    associatedtype KerType:  Computable where Self.KerType.ParamType == ParamType
-    var type: String { get }
-    var scope: Scope { get }
-    var inputs: [String : [String]] { get }
-    var paraInputs: [String : [String]] { get set }
-    var outpus: [String : [String]] { get }
-    var attrs: [String : Attr] { get }
-    var para: ParamType { get }
-    var kernel: KerType { get }
-    init(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws
+  associatedtype ParamType
+  associatedtype KerType:  Computable where Self.KerType.ParamType == ParamType
+  var type: String { get }
+  var scope: Scope { get }
+  var inputs: [String : [String]] { get }
+  var paraInputs: [String : [String]] { get set }
+  var outpus: [String : [String]] { get }
+  var attrs: [String : Attr] { get }
+  var para: ParamType { get }
+  var kernel: KerType { get }
+  init(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws
 }
 
 extension OperatorProtocol {
-    static func provide(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws -> Self {
-        do {
-            return try Self.init(device: device, opDesc: opDesc, inScope: inScope)
-        } catch let error {
-            throw error
-        }
+  static func provide(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws -> Self {
+    do {
+      return try Self.init(device: device, opDesc: opDesc, inScope: inScope)
+    } catch let error {
+      throw error
     }
+  }
 }
 
 class Operator <KernelType:  Computable , ParameterType>: OperatorProtocol where KernelType.ParamType == ParameterType {
-    typealias ParamType = ParameterType
-    typealias KerType = KernelType
-    let type: String
-    let inputs: [String : [String]]
-    var paraInputs: [String : [String]]
-    let outpus: [String : [String]]
-    let attrs: [String : Attr]
-    let para: ParamType
-    let scope: Scope
-    var kernel: KerType
-    required init(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws {
-        type = opDesc.type
-        scope = inScope
-        inputs = opDesc.inputs
-        outpus = opDesc.outputs
-        attrs =  opDesc.attrs
-        paraInputs = opDesc.paraInputs
-        do {
-            para = try ParamType.init(opDesc:opDesc, inScope: inScope)
-        } catch let error {
-            throw error
-        }
-        kernel = KernelType.init(device: device, param: para)
+  typealias ParamType = ParameterType
+  typealias KerType = KernelType
+  let type: String
+  let inputs: [String : [String]]
+  var paraInputs: [String : [String]]
+  let outpus: [String : [String]]
+  let attrs: [String : Attr]
+  let para: ParamType
+  let scope: Scope
+  var kernel: KerType
+  required init(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws {
+    type = opDesc.type
+    scope = inScope
+    inputs = opDesc.inputs
+    outpus = opDesc.outputs
+    attrs =  opDesc.attrs
+    paraInputs = opDesc.paraInputs
+    do {
+      para = try ParamType.init(opDesc:opDesc, inScope: inScope)
+    } catch let error {
+      throw error
     }
+    kernel = KernelType.init(device: device, param: para)
+  }
 }
 
 // op infos

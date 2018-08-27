@@ -75,7 +75,7 @@ class ViewController: UIViewController {
     }
     
     do {
-      let max = 10
+      let max = 1
       var startDate = Date.init()
       for i in 0..<max {
         try inExecutor.predict(input: inTexture, expect: modelHelper.dim, completionHandle: { [weak self] (result) in
@@ -87,14 +87,16 @@ class ViewController: UIViewController {
             startDate = Date.init()
           }
           
+          let resultArr = sSelf.modelHelper.fetchResult(paddleMobileRes: result)
+          
           if i == max - 1 {
             let time = Date.init().timeIntervalSince(startDate)
             DispatchQueue.main.async {
-              sSelf.resultTextView.text = sSelf.modelHelper.resultStr(res: result.resultArr)
+              sSelf.resultTextView.text = sSelf.modelHelper.resultStr(res: resultArr)
               sSelf.elapsedTimeLabel.text = "平均耗时: \(time/Double(max/2) * 1000.0) ms"
             }
           }
-          }, preProcessKernle: self.modelHelper.preprocessKernel)
+          }, preProcessKernle: self.modelHelper.preprocessKernel, except: 2)
       }
     } catch let error {
       print(error)
@@ -108,7 +110,7 @@ class ViewController: UIViewController {
     threadPickerView.delegate = self
     threadPickerView.dataSource = self
     
-    selectImage = UIImage.init(named: "banana.jpeg")
+    selectImage = UIImage.init(named: "hand.jpg")
     selectImageView.image = selectImage
     modelHelper.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
       self?.toPredictTexture = texture

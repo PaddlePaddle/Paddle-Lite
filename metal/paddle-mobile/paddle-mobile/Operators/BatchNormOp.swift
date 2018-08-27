@@ -15,45 +15,50 @@
 import Foundation
 
 class BatchNormParam<P: PrecisionType>: OpParam {
-    typealias ParamPrecisionType = P
-    required init(opDesc: OpDesc, inScope: Scope) throws {
-        do {
-            input = try BatchNormParam.inputX(inputs: opDesc.inputs, from: inScope)
-            output = try BatchNormParam.outputY(outputs: opDesc.outputs, from: inScope)
-            inputBias = try BatchNormParam.inputBiase(inputs: opDesc.paraInputs, from: inScope)
-            inputMean = try BatchNormParam.inputMean(inputs: opDesc.paraInputs, from: inScope)
-            inputScale = try BatchNormParam.inputScale(inputs: opDesc.paraInputs, from: inScope)
-            inputVariance = try BatchNormParam.inputVariance(inputs: opDesc.paraInputs, from: inScope)
-            epsilon = try BatchNormParam.getAttr(key: "epsilon", attrs: opDesc.attrs)
-            momentum = try BatchNormParam.getAttr(key: "momentum", attrs: opDesc.attrs)
-            is_test = try BatchNormParam.getAttr(key: "is_test", attrs: opDesc.attrs)
-        } catch let error {
-            throw error
-        }
+  typealias ParamPrecisionType = P
+  required init(opDesc: OpDesc, inScope: Scope) throws {
+    do {
+      input = try BatchNormParam.inputX(inputs: opDesc.inputs, from: inScope)
+      output = try BatchNormParam.outputY(outputs: opDesc.outputs, from: inScope)
+      inputBias = try BatchNormParam.inputBiase(inputs: opDesc.paraInputs, from: inScope)
+      inputMean = try BatchNormParam.inputMean(inputs: opDesc.paraInputs, from: inScope)
+      inputScale = try BatchNormParam.inputScale(inputs: opDesc.paraInputs, from: inScope)
+      inputVariance = try BatchNormParam.inputVariance(inputs: opDesc.paraInputs, from: inScope)
+      epsilon = try BatchNormParam.getAttr(key: "epsilon", attrs: opDesc.attrs)
+      momentum = try BatchNormParam.getAttr(key: "momentum", attrs: opDesc.attrs)
+      is_test = try BatchNormParam.getAttr(key: "is_test", attrs: opDesc.attrs)
+    } catch let error {
+      throw error
     }
-    let input: Texture<P>
-    var output: Texture<P>
-    let inputBias: Tensor<ParamPrecisionType>
-    let inputMean: Tensor<ParamPrecisionType>
-    let inputScale: Tensor<ParamPrecisionType>
-    let inputVariance: Tensor<ParamPrecisionType>
-    let epsilon: Float
-    let momentum: Float
-    let is_test: Bool
+  }
+  let input: Texture<P>
+  var output: Texture<P>
+  let inputBias: Tensor<ParamPrecisionType>
+  let inputMean: Tensor<ParamPrecisionType>
+  let inputScale: Tensor<ParamPrecisionType>
+  let inputVariance: Tensor<ParamPrecisionType>
+  let epsilon: Float
+  let momentum: Float
+  let is_test: Bool
 }
 
 class BatchNormOp<P: PrecisionType>: Operator<BatchNormKernel<P>, BatchNormParam<P>>, Runable, Creator, InferShaperable{
-    func inferShape() {
-        para.output.dim = para.input.dim
+  
+  func inputs() -> [Variant] {
+    return [para.input, para.inputBias, para.inputMean, para.inputScale, para.inputVariance]
+  }
+  
+  func inferShape() {
+    para.output.dim = para.input.dim
+  }
+  typealias OpType = BatchNormOp<P>
+  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+    do {
+      try kernel.compute(commandBuffer: buffer, param: para)
+    } catch let error {
+      throw error
     }
-    typealias OpType = BatchNormOp<P>
-    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
-    }
+  }
 }
 
 

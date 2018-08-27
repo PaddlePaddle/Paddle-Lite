@@ -704,9 +704,8 @@ kernel void conv_batch_norm_relu_1x1(texture2d_array<float, access::sample> inTe
                                          texture2d_array<float, access::write> outTexture [[texture(1)]],
                                          constant MetalConvParam &param [[buffer(0)]],
                                          const device float4 *weights [[buffer(1)]],
-                                         const device float4 *biase [[buffer(2)]],
-                                         const device float4 *new_scale [[buffer(3)]],
-                                         const device float4 *new_biase [[buffer(4)]],
+                                         const device float4 *new_scale [[buffer(2)]],
+                                         const device float4 *new_biase [[buffer(3)]],
                                          uint3 gid [[thread_position_in_grid]]) {
   
   if (gid.x >= outTexture.get_width() ||
@@ -749,9 +748,8 @@ kernel void conv_batch_norm_relu_3x3(texture2d_array<float, access::sample> inTe
                                          texture2d_array<float, access::write> outTexture [[texture(1)]],
                                          constant MetalConvParam &param [[buffer(0)]],
                                          const device float4 *weights [[buffer(1)]],
-                                         const device float4 *biase [[buffer(2)]],
-                                         const device float4 *new_scale [[buffer(3)]],
-                                         const device float4 *new_biase [[buffer(4)]],
+                                         const device float4 *new_scale [[buffer(2)]],
+                                         const device float4 *new_biase [[buffer(3)]],
                                          uint3 gid [[thread_position_in_grid]]) {
   
   if (gid.x >= outTexture.get_width() ||
@@ -803,8 +801,8 @@ kernel void depthwise_conv_batch_norm_relu_3x3(texture2d_array<float, access::sa
                                                    texture2d_array<float, access::write> outTexture [[texture(1)]],
                                                    constant MetalConvParam &param [[buffer(0)]],
                                                    const device float *weights [[buffer(1)]],
-                                                   const device float4 *new_scale [[buffer(3)]],
-                                                   const device float4 *new_biase [[buffer(4)]],
+                                                   const device float4 *new_scale [[buffer(2)]],
+                                                   const device float4 *new_biase [[buffer(3)]],
                                                    uint3 gid [[thread_position_in_grid]]) {
   
   if (gid.x >= outTexture.get_width() ||

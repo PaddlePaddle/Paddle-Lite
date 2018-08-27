@@ -17,7 +17,7 @@ import Foundation
 struct TensorDesc {
     let dims: [Int]
     let dataType: VarTypeType
-    let dataLayout: DataLayout = DataLayout.NHWC()
+    let dataLayout: DataLayout = DataLayout.NCHW()
     var NCHWDim: [Int] {
         get {
             if dims.count != 4 {
@@ -53,7 +53,7 @@ struct TensorDesc {
     }
     
     init(protoTensorDesc: PaddleMobile_Framework_Proto_VarType.TensorDesc) {
-        dims = protoTensorDesc.dims.map{ Int($0) > 0 ? Int($0) : 1 }
+        dims = protoTensorDesc.dims.map{ Int($0) > 0 ? Int($0) : abs(Int($0)) }
         dataType = VarTypeType.init(rawValue: protoTensorDesc.dataType.rawValue) ?? .ErrorType
     }
     

@@ -15,54 +15,58 @@
 import Foundation
 
 class FeedParam<P: PrecisionType>: OpParam{
-    var output: Texture<P>
-    var input: InputTexture {
-        return scope.input() as! InputTexture
+  var output: Texture<P>
+  var input: InputTexture {
+    return scope.input() as! InputTexture
+  }
+  let scope: Scope
+  
+  required init(opDesc: OpDesc, inScope: Scope) throws {
+    scope = inScope
+    do {
+      output = try FeedParam.outputOut(outputs: opDesc.outputs, from: inScope)
+    } catch let error {
+      throw error
     }
-    let scope: Scope
-    
-    required init(opDesc: OpDesc, inScope: Scope) throws {
-        scope = inScope
-        do {
-            output = try FeedParam.outputOut(outputs: opDesc.outputs, from: inScope)
-        } catch let error {
-            throw error
-        }
-    }
-    
-    typealias ParamPrecisionType = P
+  }
+  
+  typealias ParamPrecisionType = P
 }
 
 class FeedOp<P: PrecisionType>: Operator<Texture2DTo2DArrayKernel<P>, FeedParam<P>>, Runable, Creator, InferShaperable {
-    typealias OpType = FeedOp<P>
-    
-    func inferShape() {
-        //        print("feed  input: \(para.input.expectDim)")
-        print("feed output: \(para.output.dim)")
-        //        para.output.dim =
-        //        para.output.dim = para.input.expectDim
+  typealias OpType = FeedOp<P>
+  
+  func inputs() -> [Variant] {
+    return [para.input]
+  }
+  
+  func inferShape() {
+    //        print("feed  input: \(para.input.expectDim)")
+    print("feed output: \(para.output.dim)")
+    //        para.output.dim =
+    //        para.output.dim = para.input.expectDim
+  }
+  
+  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+    do {
+      try kernel.compute(commandBuffer: buffer, param: para)
+    } catch let error {
+      throw error
     }
     
-    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
-        
-//        let resizeKernel = ResizeKernel<P>.init(device: device)
-//        let resizeParam = ResizeParam.init(input: para.input.mtlTexture, output: para.output.metalTexture, expectDim: para.input.expectDim)
-//        do {
-//            try resizeKernel.compute(commandBuffer: buffer, param: resizeParam)
-//        } catch let error {
-//            throw error
-//        }
-    }
-    
-    func delogOutput() {
-//        para.input.mtlTexture.logDesc()
-//        let _: P? = para.input.mtlTexture.logDesc(header: "feed input: ", stridable: true)
-//        let _: P? = para.output.metalTexture.logDesc(header: "feed output: ", stridable: false)
-    }
+    //        let resizeKernel = ResizeKernel<P>.init(device: device)
+    //        let resizeParam = ResizeParam.init(input: para.input.mtlTexture, output: para.output.metalTexture, expectDim: para.input.expectDim)
+    //        do {
+    //            try resizeKernel.compute(commandBuffer: buffer, param: resizeParam)
+    //        } catch let error {
+    //            throw error
+    //        }
+  }
+  
+  func delogOutput() {
+    //        para.input.mtlTexture.logDesc()
+    //        let _: P? = para.input.mtlTexture.logDesc(header: "feed input: ", stridable: true)
+    //        let _: P? = para.output.metalTexture.logDesc(header: "feed output: ", stridable: false)
+  }
 }
 
