@@ -26,25 +26,21 @@ class ViewController: UIViewController {
   @IBOutlet weak var modelPickerView: UIPickerView!
   @IBOutlet weak var threadPickerView: UIPickerView!
   var selectImage: UIImage?
-  var program: Program?
-  var executor: Executor<Float32>?
   var modelType: SupportModel = SupportModel.supportedModels()[0]
   var toPredictTexture: MTLTexture?
-  var modelHelper: Net {
-    return modelHelperMap[modelType] ?! " has no this type "
+  var net: Net {
+    get {
+      return modelHelperMap[modelType] ?! " has no this type "
+    }
+    set {
+    }
   }
   var threadNum = 1
   
   @IBAction func loadAct(_ sender: Any) {
-    let inModelHelper = modelHelper
-    let queue = MetalHelper.shared.queue
-    let loader = Loader<Float32>.init()
+    
     do {
-      let modelPath = inModelHelper.modelPath
-      let paraPath = inModelHelper.paramPath
-      
-      program = try loader.load(device: MetalHelper.shared.device, modelPath: modelPath, paraPath: paraPath)
-      executor = try Executor<Float32>.init(inDevice: MetalHelper.shared.device, inQueue: queue, inProgram: program!)
+      try self.net.load()
     } catch let error {
       print(error)
     }
@@ -58,9 +54,7 @@ class ViewController: UIViewController {
   }
   
   @IBAction func clearAct(_ sender: Any) {
-    executor?.clear()
-    program = nil
-    executor = nil
+    net.clear()
   }
   
   @IBAction func predictAct(_ sender: Any) {
@@ -68,39 +62,53 @@ class ViewController: UIViewController {
       resultTextView.text = "请选择图片 ! "
       return
     }
-    
-    guard let inExecutor = executor else {
-      resultTextView.text = "请先 load ! "
-      return
-    }
-    
     do {
-      let max = 1
-      var startDate = Date.init()
-      for i in 0..<max {
-        try inExecutor.predict(input: inTexture, expect: modelHelper.dim, completionHandle: { [weak self] (result) in
-          guard let sSelf = self else {
-            fatalError()
-          }
-          
-          if i == (max / 2 - 1) {
-            startDate = Date.init()
-          }
-          
-          let resultArr = sSelf.modelHelper.fetchResult(paddleMobileRes: result)
-          
-          if i == max - 1 {
-            let time = Date.init().timeIntervalSince(startDate)
-            DispatchQueue.main.async {
-              sSelf.resultTextView.text = sSelf.modelHelper.resultStr(res: resultArr)
-              sSelf.elapsedTimeLabel.text = "平均耗时: \(time/Double(max/2) * 1000.0) ms"
-            }
-          }
-          }, preProcessKernle: self.modelHelper.preprocessKernel, except: 2)
+      try  net.predict(inTexture: inTexture) { [weak self] (result) in
+        guard let sSelf = self else {
+          fatalError()
+        }
+        let resultStr = sSelf.net.resultStr(res: result)
+        DispatchQueue.main.async {
+            sSelf.resultTextView.text = resultStr
+        }
       }
     } catch let error {
       print(error)
     }
+   
+    
+//    guard let inExecutor = executor else {
+//      resultTextView.text = "请先 load ! "
+//      return
+//    }
+//
+//    do {
+//      let max = 1
+//      var startDate = Date.init()
+//      for i in 0..<max {
+//        try inExecutor.predict(input: inTexture, dim: modelHelper.dim, completionHandle: { [weak self] (result) in
+//          guard let sSelf = self else {
+//            fatalError()
+//          }
+//
+//          if i == (max / 2 - 1) {
+//            startDate = Date.init()
+//          }
+//
+//          let resultArr = sSelf.modelHelper.fetchResult(paddleMobileRes: result)
+//
+//          if i == max - 1 {
+//            let time = Date.init().timeIntervalSince(startDate)
+//            DispatchQueue.main.async {
+//              sSelf.resultTextView.text = sSelf.modelHelper.resultStr(res: resultArr)
+//              sSelf.elapsedTimeLabel.text = "平均耗时: \(time/Double(max/2) * 1000.0) ms"
+//            }
+//          }
+//          }, preProcessKernle: self.modelHelper.preprocessKernel, except: modelHelper.except)
+//      }
+//    } catch let error {
+//      print(error)
+//    }
   }
   
   override func viewDidLoad() {
@@ -112,7 +120,7 @@ class ViewController: UIViewController {
     
     selectImage = UIImage.init(named: "hand.jpg")
     selectImageView.image = selectImage
-    modelHelper.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
+    net.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
       self?.toPredictTexture = texture
     }
   }
@@ -168,7 +176,7 @@ extension ViewController:  UIImagePickerControllerDelegate, UINavigationControll
       }
       sSelf.selectImage = image
       sSelf.selectImageView.image = image
-      sSelf.modelHelper.getTexture(image: image.cgImage!, getTexture: { (texture) in
+      sSelf.net.getTexture(image: image.cgImage!, getTexture: { (texture) in
         sSelf.toPredictTexture = texture
       })
     }

@@ -109,74 +109,8 @@ class ConvBNReluOp<P: PrecisionType>: Operator<ConvBNReluKernel<P>, ConvBNReluPa
   }
   
   func delogOutput() {
-    
-    //        let _: P? = para.input.metalTexture.logDesc(header: "conv add batchnorm relu input: ", stridable: false)
-    //        para.filter.logDataPointer(header: "filter data pointer: ")
-    //        print("filter: \(para.filter)")
-    
-    //        print("biase: \(para.y)")
-    //        print("padding: \(para.paddings)")
-    //        print("stride: \(para.stride)")
-    
-    //        let _: P? = para.y.buffer?.logDesc(header: " biase: ", stridable: false)
-    //        let _: P? = para.newBiase?.logDesc(header: "new biase: ", stridable: false)
-    //        let _: P? = para.newScale?.logDesc(header: "new scale: ", stridable: false)
-
-    
-    
-//    print("input: ")
-//    print(para.input.metalTexture)
-//    
-//    let input = para.input.metalTexture.floatArray { (p: P) -> P in
-//      return p
-//    }
-//    for i in 0..<input.count {
-//      print(" index \(i) : \(input[i])")
-//    }
-//    print(input)
-    
-//    writeToLibrary(fileName: "input35", array: input)
-    
-//    print(input)
-    
-    print(para.newBiase?.length)
-    print(para.newScale?.length)
-//    let newScale = para.newScale?.contents().bindMemory(to: P.self, capacity: para.newScale!.length)
-//    let newBiase = para.newBiase?.contents().bindMemory(to: P.self, capacity: para.newBiase!.length)
-//
-//    let filterArray: [Float32] = para.filter.buffer.array();
-////    writeToLibrary(fileName: "filter35", array: filterArray)
-//
-//    print(filterArray)
-//
-//    print("new scale: ")
-//    for i in 0..<(para.newScale!.length / MemoryLayout<P>.size) {
-//      print("index: \(i) \(newScale![i]) ")
-//    }
-//
-//    print("new biase: ")
-//    for i in 0..<(para.newBiase!.length / MemoryLayout<P>.size) {
-//      print("index: \(i) \(newBiase![i]) ")
-//    }
-    
-//    print(para.output.metalTexture)
-//
-//
-//
-//    let output = para.output.metalTexture.floatArray { (p: P) -> P in
-//      return p
-//    }
-//    print(output)
-//
-    
-//
-//    writeToLibrary(fileName: "batch_norm_34.tmp_2", array: output)
-//    print(" write done")
-//
-    
-    
-    print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
-    
-    //        let _: P? = para.output.metalTexture.logDesc(header: "conv add batchnorm relu output: ", stridable: true)
+    print(" \(type) output: ")
+    print(para.output.metalTexture.toTensor(dim: (n: para.output.originDim[0], c: para.output.originDim[1], h: para.output.originDim[2], w: para.output.originDim[3])).strideArray())
   }
+  
 }

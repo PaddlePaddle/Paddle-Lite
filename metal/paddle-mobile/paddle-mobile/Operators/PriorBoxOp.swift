@@ -55,15 +55,11 @@ class PriorBoxParam<P: PrecisionType>: OpParam {
 
 class PriorBoxOp<P: PrecisionType>: Operator<PriorBoxKernel<P>, PriorBoxParam<P>>, Runable, Creator, InferShaperable{
   
-  func inputs() -> [Variant] {
-    return [para.input, para.inputImage]
-  }
-  
-  
+  typealias OpType = PriorBoxOp<P>
+
   func inferShape() {
   }
   
-  typealias OpType = PriorBoxOp<P>
   func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
     do {
       try kernel.compute(commandBuffer: buffer, param: para)
@@ -73,8 +69,8 @@ class PriorBoxOp<P: PrecisionType>: Operator<PriorBoxKernel<P>, PriorBoxParam<P>
   }
   
   func delogOutput() {
-    print("pribox: ")
-    print("output: ")
+    print(" \(type) output: ")
+
     // output
     let outputArray = para.output.metalTexture.floatArray { (o: Float32) -> Float32 in
       return o
@@ -92,9 +88,6 @@ class PriorBoxOp<P: PrecisionType>: Operator<PriorBoxKernel<P>, PriorBoxParam<P>
 //    print(" output variance: \(outputVarianceArray)")
     
 //    writeToLibrary(fileName: "variance_out", array: outputVarianceArray)
-    
-    print("pribox write done ")
-    
     
   }
 }

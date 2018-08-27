@@ -15,39 +15,39 @@
 import Foundation
 
 class MulticlassNMSParam<P: PrecisionType>: OpParam {
-    typealias ParamPrecisionType = P
-    required init(opDesc: OpDesc, inScope: Scope) throws {
-        do {
-            scores = try MulticlassNMSParam.getFirstTensor(key: "Scores", map: opDesc.inputs, from: inScope)
-            bboxes = try MulticlassNMSParam.getFirstTensor(key: "BBoxes", map: opDesc.inputs, from: inScope)
-            output = try MulticlassNMSParam.outputOut(outputs: opDesc.outputs, from: inScope)
-        } catch let error {
-            throw error
-        }
+  typealias ParamPrecisionType = P
+  required init(opDesc: OpDesc, inScope: Scope) throws {
+    do {
+      scores = try MulticlassNMSParam.getFirstTensor(key: "Scores", map: opDesc.inputs, from: inScope)
+      bboxes = try MulticlassNMSParam.getFirstTensor(key: "BBoxes", map: opDesc.inputs, from: inScope)
+      output = try MulticlassNMSParam.outputOut(outputs: opDesc.outputs, from: inScope)
+    } catch let error {
+      throw error
     }
-    let scores: Texture<P>
-    let bboxes: Texture<P>
-    var output: Texture<P>
+  }
+  let scores: Texture<P>
+  let bboxes: Texture<P>
+  var output: Texture<P>
 }
 
 class MulticlassNMSOp<P: PrecisionType>: Operator<MulticlassNMSKernel<P>, MulticlassNMSParam<P>>, Runable, Creator, InferShaperable{
-  
-  func inputs() -> [Variant] {
-    return [para.scores,para.bboxes]
+
+  func inputVariant() -> [String : [Variant]] {
+    return ["Scores" : [para.scores], "BBoxes" : [para.bboxes]]
   }
   
-    func inferShape() {
-//        para.output.dim = para.input.dim
+  func inferShape() {
+    // para.output.dim = para.input.dim
+  }
+  
+  typealias OpType =  MulticlassNMSOp<P>
+  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+    do {
+      try kernel.compute(commandBuffer: buffer, param: para)
+    } catch let error {
+      throw error
     }
-    
-    typealias OpType =  MulticlassNMSOp<P>
-    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
-    }
+  }
 }
 
 

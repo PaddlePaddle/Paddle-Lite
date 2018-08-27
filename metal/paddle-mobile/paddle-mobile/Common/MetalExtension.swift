@@ -442,10 +442,5 @@ public extension MTLBuffer {
     }
     return array;
   }
-  
 }
-
-
-
-
 

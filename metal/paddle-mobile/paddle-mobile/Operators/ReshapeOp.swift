@@ -56,15 +56,12 @@ class ReshapeParam<P: PrecisionType>: OpParam {
 
 class ReshapeOp<P: PrecisionType>: Operator<ReshapeKernel<P>, ReshapeParam<P>>, Runable, Creator, InferShaperable{
   
-  func inputs() -> [Variant] {
-    return [para.input]
-  }
-  
+  typealias OpType = ReshapeOp<P>
+
   func inferShape() {
     // para.output.dim = para.input.dim
   }
   
-  typealias OpType = ReshapeOp<P>
   func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
     do {
       try kernel.compute(commandBuffer: buffer, param: para)

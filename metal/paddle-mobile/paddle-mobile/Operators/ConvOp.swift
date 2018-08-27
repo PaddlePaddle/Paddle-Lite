@@ -41,19 +41,8 @@ class ConvParam<P: PrecisionType>: OpParam {
 }
 
 class ConvOp<P: PrecisionType>: Operator<ConvKernel<P>, ConvParam<P>>, Runable, Creator, InferShaperable {
-  
-  func inputs() -> [Variant] {
-    return [para.input, para.filter]
-  }
-  
-  required init(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws {
-    do {
-      try super.init(device: device, opDesc: opDesc, inScope: inScope)
-    } catch let error {
-      throw error
-    }
-    
-  }
+  typealias OpType = ConvOp<P>
+
   func inferShape() {
     let inDims = para.input.dim
     let filterDim = para.filter.dim
@@ -76,7 +65,6 @@ class ConvOp<P: PrecisionType>: Operator<ConvKernel<P>, ConvParam<P>>, Runable, 
     para.output.dim = Dim.init(inDim: outDim)
   }
   
-  typealias OpType = ConvOp<P>
   func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
     do {
       try kernel.compute(commandBuffer: buffer, param: para)
@@ -87,7 +75,7 @@ class ConvOp<P: PrecisionType>: Operator<ConvKernel<P>, ConvParam<P>>, Runable, 
   
   func delogOutput() {
     print("conv output : ")
-    print(para.output.metalTexture)
+    print(para.output.metalTexture.toTensor(dim: (n: para.output.originDim[0], c: para.output.originDim[1], h: para.output.originDim[2], w: para.output.originDim[3])).strideArray())
     //        let _: Float16? = para.output.metalTexture.logDesc()
   }
 }
