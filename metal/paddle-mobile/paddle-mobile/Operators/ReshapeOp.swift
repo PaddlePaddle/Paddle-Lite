@@ -53,6 +53,7 @@ class ReshapeOp<P: PrecisionType>: Operator<ReshapeKernel<P>, ReshapeParam<P>>, 
   func delogOutput() {
     print("reshape delog")
 //    let _: P? = para.input.metalTexture.logDesc(header: "reshape input: ", stridable: false)
-    let _: P? = para.output.metalTexture.logDesc(header: "reshape output: ", stridable: false)
+    let _: P? = para.output.metalTexture.logDesc(header: "reshape output: ", stridable: true)
+    
   }
 }

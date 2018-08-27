@@ -62,6 +62,7 @@ class ConcatOp<P: PrecisionType>: Operator<ConcatKernel<P>, ConcatParam<P>>, Run
     let outputArray = para.output.metalTexture.floatArray { (o: Float32) -> Float32 in
       return o
     }
+    
     print(outputArray.strideArray())
     let device: MTLDevice = MTLCreateSystemDefaultDevice()!
     

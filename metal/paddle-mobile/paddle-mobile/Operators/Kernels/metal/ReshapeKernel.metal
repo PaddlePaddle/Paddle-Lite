@@ -47,20 +47,19 @@ kernel void reshape(texture2d_array<float, access::read> inTexture [[texture(0)]
     invtrans(lrp.otrans, oabcd, tabcd);
     int index = abcd2index(lrp.odim, tabcd);
     if (index < count) {
-      int c = index % 4;
+//      int c = index % 4;
+//
+//      int temp0 = index % (inTexture.get_array_size() * 4);
+//      int slice = temp0 / 4;
+//
+//      int temp1 = index % (inTexture.get_array_size() * 4 * lrp.idim[2]);
+//      int w = temp1 / (inTexture.get_array_size() * 4);
+//
+//      int h = index / (inTexture.get_array_size() * 4 * lrp.idim[2]);
       
-      int temp0 = index % (inTexture.get_array_size() * 4);
-      int slice = temp0 / 4;
-      
-      int temp1 = index % (inTexture.get_array_size() * 4 * lrp.idim[2]);
-      int w = temp1 / (inTexture.get_array_size() * 4);
-      
-      int h = index / (inTexture.get_array_size() * 4 * lrp.idim[2]);
-      
-      
-//      index2abcd(lrp.idim, index, tabcd);
-//      abcd2xyzn(iC, tabcd, ixyzn);
-      r[n] = inTexture.read(uint2(w, h), slice)[c];
+      index2abcd(lrp.idim, index, tabcd);
+      abcd2xyzn(iC, tabcd, ixyzn);
+      r[n] = inTexture.read(uint2(ixyzn[0], ixyzn[1]), ixyzn[2])[ixyzn[3]];
     } else {
       r[n] = 0;
     }
