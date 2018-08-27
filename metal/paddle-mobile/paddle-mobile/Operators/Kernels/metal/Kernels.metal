@@ -16,6 +16,12 @@
 #include "Common.metal"
 using namespace metal;
 
+// 占位函数, 啥也没干
+kernel void place_holder(texture2d<half, access::read> inTexture [[texture(0)]],
+                         texture2d_array<half, access::write> outTexture [[texture(1)]],
+                         uint3 gid [[thread_position_in_grid]]) {
+}
+
 struct OutputDim {
   ushort width;
   ushort height;
@@ -206,8 +212,6 @@ kernel void softmax_half(texture2d_array<half, access::read> inTexture [[texture
   rr = exp(rr - maxv) / sum;
   outTexture.write(rr, gid.xy, gid.z);
 }
-
-
 
 struct TransposeParam {
   int iC;

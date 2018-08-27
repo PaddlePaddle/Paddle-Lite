@@ -25,7 +25,7 @@ protocol Runable {
   func run(device: MTLDevice, buffer: MTLCommandBuffer) throws
   func runImpl(device: MTLDevice,buffer: MTLCommandBuffer) throws
   func delogOutput()
-  func inputs() -> [Variant]
+  func inputVariant() -> [String : [Variant]]
 }
 
 extension Runable where Self: OperatorProtocol{
@@ -35,7 +35,10 @@ extension Runable where Self: OperatorProtocol{
     } catch let error {
       throw error
     }
-//    print(type + ": " + para.outputDesc())
+  }
+  
+  func inputVariant() -> [String : [Variant]] {
+    fatalError(" op \(type) need implement inputVariant")
   }
   
   func delogOutput() {
@@ -98,6 +101,7 @@ class Operator <KernelType:  Computable , ParameterType>: OperatorProtocol where
   let scope: Scope
   var kernel: KerType
   required init(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws {
+    print("create op: \(opDesc.type)")
     type = opDesc.type
     scope = inScope
     inputs = opDesc.inputs

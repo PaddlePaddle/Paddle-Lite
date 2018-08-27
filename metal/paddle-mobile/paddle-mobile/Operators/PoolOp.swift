@@ -43,15 +43,12 @@ class PoolParam<P: PrecisionType>: OpParam {
 
 class PoolOp<P: PrecisionType>: Operator<PoolKernel<P>, PoolParam<P>>, Runable, Creator, InferShaperable{
   
-  func inputs() -> [Variant] {
-    return [para.input]
-  }
-  
+  typealias OpType = PoolOp<P>
+
   func inferShape() {
     // para.output.dim = para.input.dim
   }
   
-  typealias OpType = PoolOp<P>
   func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
     do {
       try kernel.compute(commandBuffer: buffer, param: para)

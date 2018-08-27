@@ -17,10 +17,6 @@ import Foundation
 class DwConvBNReluOp<P: PrecisionType>: Operator<ConvBNReluKernel<P>, ConvBNReluParam<P>>, Runable, Creator, InferShaperable, Fusion{
   typealias OpType = ConvBNReluOp<P>
   
-  func inputs() -> [Variant] {
-    return [para.input, para.bias, para.mean, para.filter, para.variance, para.scale]
-  }
-  
   func inferShape() {
     let inDims = para.input.dim
     let filterDim = para.filter.dim
@@ -68,26 +64,7 @@ class DwConvBNReluOp<P: PrecisionType>: Operator<ConvBNReluKernel<P>, ConvBNRelu
   }
   
   func delogOutput() {
-    
-    //        let _: P? = para.input.metalTexture.logDesc(header: "conv add batchnorm relu input: ", stridable: false)
-    //        para.filter.logDataPointer(header: "filter data pointer: ")
-    //        print("filter: \(para.filter)")
-    
-    //        print("biase: \(para.y)")
-    //        print("padding: \(para.paddings)")
-    //        print("stride: \(para.stride)")
-    
-    //        let _: P? = para.y.buffer?.logDesc(header: " biase: ", stridable: false)
-    //        let _: P? = para.newBiase?.logDesc(header: "new biase: ", stridable: false)
-    //        let _: P? = para.newScale?.logDesc(header: "new scale: ", stridable: false)
-    
-//    let output = para.output.metalTexture.floatArray { (p: P) -> P in
-//      return p
-//    }
-//    
-//    writeToLibrary(fileName: "batch_norm_19.tmp_2", array: output)
-//    print(" write done")
-    
-    //        let _: P? = para.output.metalTexture.logDesc(header: "conv add batchnorm relu output: ", stridable: false)
+    print(" \(type) output: ")
+    print(para.output.metalTexture.toTensor(dim: (n: para.output.originDim[0], c: para.output.originDim[1], h: para.output.originDim[2], w: para.output.originDim[3])).strideArray())
   }
 }

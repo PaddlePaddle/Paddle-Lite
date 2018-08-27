@@ -35,15 +35,12 @@ class PreluParam<P: PrecisionType>: OpParam {
 
 class PreluOp<P: PrecisionType>: Operator<PreluKernel<P>, PreluParam<P>>, Runable, Creator, InferShaperable{
   
-  func inputs() -> [Variant] {
-    return [para.alpha, para.input]
-  }
-  
+  typealias OpType = PreluOp<P>
+
   func inferShape() {
     // para.output.dim = para.input.dim
   }
   
-  typealias OpType = PreluOp<P>
   func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
     do {
       try kernel.compute(commandBuffer: buffer, param: para)
@@ -51,6 +48,7 @@ class PreluOp<P: PrecisionType>: Operator<PreluKernel<P>, PreluParam<P>>, Runabl
       throw error
     }
   }
+  
   func delogOutput() {
     print("softmax delog")
     let _: P? = para.input.metalTexture.logDesc(header: "softmax input: ", stridable: false)

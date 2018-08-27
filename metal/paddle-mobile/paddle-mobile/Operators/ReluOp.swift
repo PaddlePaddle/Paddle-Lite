@@ -30,15 +30,12 @@ class ReluParam<P: PrecisionType>: OpParam {
 
 class ReluOp<P: PrecisionType>: Operator<ReluKernel<P>, ReluParam<P>>, Runable, Creator, InferShaperable{
   
-  func inputs() -> [Variant] {
-    return [para.input]
-  }
+  typealias OpType = ReluOp<P>
   
   func inferShape() {
     para.output.dim = para.input.dim
   }
   
-  typealias OpType = ReluOp<P>
   func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
     do {
       try kernel.compute(commandBuffer: buffer, param: para)
