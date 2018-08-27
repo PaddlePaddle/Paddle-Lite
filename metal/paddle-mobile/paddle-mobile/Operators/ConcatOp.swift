@@ -59,15 +59,21 @@ class ConcatOp<P: PrecisionType>: Operator<ConcatKernel<P>, ConcatParam<P>>, Run
   }
   
   func delogOutput() {
-    let outputArray = para.output.metalTexture.floatArray { (o: Float32) -> Float32 in
-      return o
-    }
     
-//    print(outputArray.strideArray())
+    let originDim = para.output.originDim
+    let outputArray = para.output.metalTexture.realNHWC(dim: (n: originDim[0], h: originDim[1], w: originDim[2], c: originDim[3]))
+    print(outputArray.strideArray())
     
-    writeToLibrary(fileName: "concat_out", array: outputArray)
     
-    let device: MTLDevice = MTLCreateSystemDefaultDevice()!
+//    let outputArray = para.output.metalTexture.floatArray { (o: Float32) -> Float32 in
+//      return o
+//    }
+//
+////    print(outputArray.strideArray())
+//
+//    writeToLibrary(fileName: "concat_out", array: outputArray)
+//
+//    let device: MTLDevice = MTLCreateSystemDefaultDevice()!
     
 //    let tensorArray: [P] = device.texture2tensor(texture: para.output.metalTexture, dim: [1917, 4])
     
