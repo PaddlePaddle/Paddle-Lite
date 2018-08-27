@@ -25,23 +25,14 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace fpga {
 
-int open_device();
-int close_device();
-
-void* fpga_malloc(size_t size);
-void fpga_free(void* ptr);
-void fpga_copy(void* dst, const void* src, size_t num);
-
-enum DataConvertType {
-  DATA_NO_CONVERT = 0,
-  DATA_FP32_TO_FP16 = 1,
-  DATA_FP16_TO_FP32 = 2,
+enum DataType {
+  DATA_TYPE_FP32 = 1,
+  DATA_TYPE_FP16 = 0,
 };
 
-enum LayoutConvertType {
-  LAYOUT_NO_CONVERT = 0,
-  LAYOUT_CHW_TO_HWC = 1,
-  LAYOUT_HWC_TO_CHW = 2,
+enum LayoutType {
+  LAYOUT_CHW = 1,
+  LAYOUT_HWC = 0,
 };
 
 struct VersionArgs {
@@ -83,7 +74,6 @@ struct ConvArgs {
   bool relu_enabled;
   void* sb_address;  // scale and bias are interlaced;
   void* filter_address;
-  float* filter_scale_address;
   uint32_t filter_num;
   uint32_t group_num;
 
@@ -122,22 +112,29 @@ struct PoolingArgs {
 struct EWAddArgs {
   bool relu_enabled;
 
-  float const0;  // output0 = const0 x input0 + const1 x input1;
-  float const1;
+  uint32_t const0;  // output0 = const0 x input0 + const1 x input1;
+  uint32_t const1;
   struct ImageInputArgs image0;
   struct ImageInputArgs image1;
   struct ImageOutputArgs output;
 };
 
 struct BypassArgs {
-  enum DataConvertType convert_type;
-  enum LayoutConvertType layout_type;
+  enum DataType input_data_type;
+  enum DataType output_data_type;
+  enum LayoutType input_layout_type;
+  enum LayoutType output_layout_type;
   struct ImageInputArgs image;
   struct ImageOutputArgs output;
 };
 
 struct FpgaRegWriteArgs {
   uint64_t address;  //
+  uint64_t value;
+};
+
+struct FpgaRegReadArgs {
+  uint64_t address;
   uint64_t value;
 };
 
@@ -183,6 +180,13 @@ enum FPGA_ERR_TYPE {
 };
 
 //============================== API =============================
+
+int open_device();
+int close_device();
+
+void* fpga_malloc(size_t size);
+void fpga_free(void* ptr);
+void fpga_copy(void* dst, const void* src, size_t num);
 
 int PerformBypass(const struct BypassArgs& args);
 int ComputeFpgaConv(const struct WrapperConvArgs& args);

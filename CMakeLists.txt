@@ -7,9 +7,9 @@ option(DEBUGING "enable debug mode" ON)
 option(USE_EXCEPTION "use std exception" OFF)
 option(LOG_PROFILE "log profile" OFF)
 # select the platform to build
-option(CPU "armv7 with neon" ON)
+option(CPU "armv7 with neon" OFF)
 option(MALI_GPU "mali gpu" OFF)
-option(FPGA "fpga" OFF)
+option(FPGA "fpga" ON)
 
 file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c src/*.mm)
 file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
