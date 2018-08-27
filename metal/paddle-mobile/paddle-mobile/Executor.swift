@@ -14,7 +14,7 @@
 
 import Foundation
 
-let testTo = 41
+let testTo = 48
 
 public class ResultHolder<P: PrecisionType> {
   public let dim: [Int]
