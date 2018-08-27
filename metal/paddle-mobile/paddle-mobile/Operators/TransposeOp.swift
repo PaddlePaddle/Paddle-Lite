@@ -49,8 +49,12 @@ class TransposeOp<P: PrecisionType>: Operator<TransposeKernel<P>, TransposeParam
     }
   }
   func delogOutput() {
+    print(para.input.metalTexture.toTensor(dim: (n: para.input.tensorDim[0], c: para.input.tensorDim[1], h: para.input.tensorDim[2], w: para.input.tensorDim[3])).strideArray())
     
-    print(para.output.metalTexture.toTensor(dim: (n: 1, c: 21, h: 19, w: 19)).strideArray())
+    
+    let originDim = para.output.tensorDim
+    let outputArray = para.output.metalTexture.realNHWC(dim: (n: originDim[0], h: originDim[1], w: originDim[2], c: originDim[3]))
+    print(outputArray.strideArray())
     
     
 //    let inputArray: [Float32] = para.input.metalTexture.floatArray { (ele: Float32) -> Float32 in
