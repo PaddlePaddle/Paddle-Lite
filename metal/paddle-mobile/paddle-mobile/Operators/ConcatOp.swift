@@ -60,6 +60,8 @@ class ConcatOp<P: PrecisionType>: Operator<ConcatKernel<P>, ConcatParam<P>>, Run
   
   func delogOutput() {
     
+    
+    
     let originDim = para.output.originDim
     let outputArray = para.output.metalTexture.realNHWC(dim: (n: originDim[0], h: originDim[1], w: originDim[2], c: originDim[3]))
     print(outputArray.strideArray())
