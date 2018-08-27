@@ -43,30 +43,9 @@ class ConvAddParam<P: PrecisionType>: OpParam {
 }
 
 class ConvAddOp<P: PrecisionType>: Operator<ConvAddKernel<P>, ConvAddParam<P>>, Runable, Creator, InferShaperable, Fusion{
-  
-  func delogOutput() {
-    print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
+  typealias OpType = ConvAddOp<P>
 
-//    print(" conv add: ")
-    
-    
-//    print(para.input.metalTexture)
-    
-//    print(" filter array: ")
-//    let filterArray: [P] = para.filter.buffer.array()
-//    print(filterArray)
-    
-//    let input = para.input.metalTexture.floatArray { (p: P) -> P in
-//      return p
-//    }
-//    print(input)
-    
-//    let output = para.output.metalTexture.floatArray { (p: P) -> P in
-//      return p
-//    }
-//    print(para.output.metalTexture)
-//    print(output)
-  }
+ 
   
   
   static func fusionNode() -> Node {
@@ -80,16 +59,10 @@ class ConvAddOp<P: PrecisionType>: Operator<ConvAddKernel<P>, ConvAddParam<P>>, 
     return [:]
   }
   
-  func inputs() -> [Variant] {
-    return [para.input, para.y, para.filter]
-  }
-  
-  
   static func fusionType() -> String {
     return gConvAddType
   }
   
-  typealias OpType = ConvAddOp<P>
   
   func inferShape() {
     
@@ -122,4 +95,7 @@ class ConvAddOp<P: PrecisionType>: Operator<ConvAddKernel<P>, ConvAddParam<P>>, 
     }
   }
   
+  func delogOutput() {
+    print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
+  }
 }

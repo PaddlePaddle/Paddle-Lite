@@ -40,16 +40,13 @@ class ConcatParam<P: PrecisionType>: OpParam {
 
 class ConcatOp<P: PrecisionType>: Operator<ConcatKernel<P>, ConcatParam<P>>, Runable, Creator, InferShaperable{
   
-  func inputs() -> [Variant] {
-    return para.input
-  }
-  
+  typealias OpType = ConcatOp<P>
+
   func inferShape() {
     //        let dim = para.input.reduce([0, 0]) {[$0[0] + $1.dim[0], $1.dim[1]]}
     //        para.output.dim = Dim.init(inDim: dim)
   }
   
-  typealias OpType = ConcatOp<P>
   func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
     do {
       try kernel.compute(commandBuffer: buffer, param: para)
@@ -59,34 +56,10 @@ class ConcatOp<P: PrecisionType>: Operator<ConcatKernel<P>, ConcatParam<P>>, Run
   }
   
   func delogOutput() {
-    
-    
-    
+    print(" \(type) output: ")
     let originDim = para.output.originDim
     let outputArray = para.output.metalTexture.realNHWC(dim: (n: originDim[0], h: originDim[1], w: originDim[2], c: originDim[3]))
     print(outputArray.strideArray())
-    
-    
-//    let outputArray = para.output.metalTexture.floatArray { (o: Float32) -> Float32 in
-//      return o
-//    }
-//
-////    print(outputArray.strideArray())
-//
-//    writeToLibrary(fileName: "concat_out", array: outputArray)
-//
-//    let device: MTLDevice = MTLCreateSystemDefaultDevice()!
-    
-//    let tensorArray: [P] = device.texture2tensor(texture: para.output.metalTexture, dim: [1917, 4])
-    
-//    print(tensorArray.strideArray())
-    
-//    print(para.output.metalTexture)
-    
-//    writeToLibrary(fileName: "concat_out", array: outputArray)
-//    print(" write done ")
-    
-//    print(outputArray.strideArray())
   }
 }
 

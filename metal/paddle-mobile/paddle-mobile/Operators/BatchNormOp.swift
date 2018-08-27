@@ -43,15 +43,11 @@ class BatchNormParam<P: PrecisionType>: OpParam {
 }
 
 class BatchNormOp<P: PrecisionType>: Operator<BatchNormKernel<P>, BatchNormParam<P>>, Runable, Creator, InferShaperable{
-  
-  func inputs() -> [Variant] {
-    return [para.input, para.inputBias, para.inputMean, para.inputScale, para.inputVariance]
-  }
-  
+  typealias OpType = BatchNormOp<P>
+
   func inferShape() {
     para.output.dim = para.input.dim
   }
-  typealias OpType = BatchNormOp<P>
   func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
     do {
       try kernel.compute(commandBuffer: buffer, param: para)

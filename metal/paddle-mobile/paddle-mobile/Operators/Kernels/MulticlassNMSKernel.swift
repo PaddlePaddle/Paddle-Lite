@@ -15,17 +15,11 @@
 import Foundation
 
 class MulticlassNMSKernel<P: PrecisionType>: Kernel, Computable{
-    func compute(commandBuffer: MTLCommandBuffer, param: MulticlassNMSParam<P>) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encode is nil")
-        }
-//        encoder.setTexture(param.input.metalTexture, index: 0)
-//        encoder.setTexture(param.output.metalTexture, index: 1)
-        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
-        encoder.endEncoding()
-    }
-    
-    required init(device: MTLDevice, param: MulticlassNMSParam<P>) {
-        super.init(device: device, inFunctionName: "prior_box")
-    }
+  
+  required init(device: MTLDevice, param: MulticlassNMSParam<P>) {
+    super.init(device: device, inFunctionName: "place_holder")
+  }
+  
+  func compute(commandBuffer: MTLCommandBuffer, param: MulticlassNMSParam<P>) throws {
+  }
 }
