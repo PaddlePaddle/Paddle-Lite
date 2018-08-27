@@ -25,7 +25,7 @@ class ConvAddKernel<P: PrecisionType>: Kernel, Computable {
       super.init(device: device, inFunctionName: "conv_add_3x3")
     }
     
-    param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1])
+    param.output.initTexture(device: device, inTranspose: [0, 3, 1, 2])
     
     let offsetX = param.filter.width/2 - Int(param.paddings[0])
     let offsetY = param.filter.height/2 - Int(param.paddings[1])

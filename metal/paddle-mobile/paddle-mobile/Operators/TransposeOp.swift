@@ -49,17 +49,21 @@ class TransposeOp<P: PrecisionType>: Operator<TransposeKernel<P>, TransposeParam
     }
   }
   func delogOutput() {
-    let inputArray: [Float32] = para.input.metalTexture.floatArray { (ele: Float32) -> Float32 in
-      return ele
-    }
     
-    print(inputArray.strideArray())
+    print(para.output.metalTexture.toTensor(dim: (n: 1, c: 21, h: 19, w: 19)).strideArray())
     
-    let outputArray: [Float32] = para.output.metalTexture.floatArray { (ele: Float32) -> Float32 in
-      return ele
-    }
-  
-    print(outputArray.strideArray())
+    
+//    let inputArray: [Float32] = para.input.metalTexture.floatArray { (ele: Float32) -> Float32 in
+//      return ele
+//    }
+//
+//    print(inputArray.strideArray())
+//
+//    let outputArray: [Float32] = para.output.metalTexture.floatArray { (ele: Float32) -> Float32 in
+//      return ele
+//    }
+//
+//    print(outputArray.strideArray())
     
 //    writeToLibrary(fileName: "transpose_ouput", array: outputArray)
   }

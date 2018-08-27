@@ -159,19 +159,23 @@ class ConvBNReluOp<P: PrecisionType>: Operator<ConvBNReluKernel<P>, ConvBNReluPa
 //      print("index: \(i) \(newBiase![i]) ")
 //    }
     
-    print(para.output.metalTexture)
-    
-    let output = para.output.metalTexture.floatArray { (p: P) -> P in
-      return p
-    }
-    print(output)
+//    print(para.output.metalTexture)
 //
-    writeToLibrary(fileName: "batch_norm_34.tmp_2", array: output)
-    print(" write done")
+//
+//
+//    let output = para.output.metalTexture.floatArray { (p: P) -> P in
+//      return p
+//    }
+//    print(output)
+//
+    
+//
+//    writeToLibrary(fileName: "batch_norm_34.tmp_2", array: output)
+//    print(" write done")
 //
     
     
-    
+    print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
     
     //        let _: P? = para.output.metalTexture.logDesc(header: "conv add batchnorm relu output: ", stridable: true)
   }
