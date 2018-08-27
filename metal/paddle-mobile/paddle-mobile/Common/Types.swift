@@ -52,9 +52,6 @@ extension Float16: PrecisionType {
   public init(inFloat: Float32) {
     self = Int16(inFloat)
   }
-  
-  
-  
 }
 
 extension Float32: PrecisionType {
@@ -213,10 +210,6 @@ extension DataLayout: Equatable {
     }
   }
 }
-
-
-
-
 
 public protocol Variant: CustomStringConvertible, CustomDebugStringConvertible {
 }

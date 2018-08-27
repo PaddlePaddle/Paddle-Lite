@@ -19,9 +19,9 @@ let testTo = 94
 public class ResultHolder<P: PrecisionType> {
   public let dim: [Int]
   public let resultArr: [P]
-  public var intermediateResults: [Variant]?
+  public var intermediateResults: [String : [Variant]]?
   public let elapsedTime: Double
-  public init(inDim: [Int], inResult: [P], inElapsedTime: Double, inIntermediateResults: [Variant]? = nil) {
+  public init(inDim: [Int], inResult: [P], inElapsedTime: Double, inIntermediateResults: [String : [Variant]]? = nil) {
     dim = inDim
     resultArr = inResult
     elapsedTime = inElapsedTime
@@ -62,7 +62,7 @@ public class Executor<P: PrecisionType> {
     queue = inQueue
     for block in inProgram.programDesc.blocks {
       //block.ops.count
-      for i in 0..<(testTo + 1) {
+      for i in 0..<block.ops.count {
         let op = block.ops[i]
         do {
           let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
@@ -75,7 +75,7 @@ public class Executor<P: PrecisionType> {
     }
   }
   
-  public func predict(input: MTLTexture, expect: [Int], completionHandle: @escaping (ResultHolder<P>) -> Void, preProcessKernle: CusomKernel? = nil, except: Int = 0) throws {
+  public func predict(input: MTLTexture, dim: [Int], completionHandle: @escaping (ResultHolder<P>) -> Void, preProcessKernle: CusomKernel? = nil, except: Int = 0) throws {
     guard let buffer = queue.makeCommandBuffer() else {
       throw PaddleMobileError.predictError(message: "CommandBuffer is nil")
     }
@@ -92,7 +92,7 @@ public class Executor<P: PrecisionType> {
     }
     
     let beforeDate = Date.init()
-    let inputTexture = InputTexture.init(inMTLTexture: resInput, inExpectDim: Dim.init(inDim: expect))
+    let inputTexture = InputTexture.init(inMTLTexture: resInput, inExpectDim: Dim.init(inDim: dim))
     program.scope.setInput(input: inputTexture)
     //(ops.count - except)
     for i in 0..<ops.count {
@@ -104,9 +104,9 @@ public class Executor<P: PrecisionType> {
       }
     }
     
-    var outputTextures: [Variant]?
+    var outputTextures: [String : [Variant]]?
     if except > 0 {
-      outputTextures = ops[ops.count - except].inputs()
+      outputTextures = ops[ops.count - except].inputVariant()
     }
     
     buffer.addCompletedHandler { (commandbuffer) in
@@ -130,12 +130,10 @@ public class Executor<P: PrecisionType> {
       }
 //                  return
       
-      self.ops[testTo].delogOutput()
+//      self.ops[testTo].delogOutput()
 //      self.ops[91].delogOutput()
 //      self.ops[92].delogOutput()
 //      self.ops[93].delogOutput()
-      
-      return;
       
       let afterDate = Date.init()
      

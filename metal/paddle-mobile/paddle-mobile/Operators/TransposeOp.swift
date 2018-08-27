@@ -32,15 +32,12 @@ class TransposeParam<P: PrecisionType>: OpParam {
 
 class TransposeOp<P: PrecisionType>: Operator<TransposeKernel<P>, TransposeParam<P>>, Runable, Creator, InferShaperable{
   
-  func inputs() -> [Variant] {
-    return [para.input]
-  }
-  
+  typealias OpType = TransposeOp<P>
+
   func inferShape() {
     //para.output.dim = para.input.dim
   }
   
-  typealias OpType = TransposeOp<P>
   func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
     do {
       try kernel.compute(commandBuffer: buffer, param: para)
@@ -48,30 +45,13 @@ class TransposeOp<P: PrecisionType>: Operator<TransposeKernel<P>, TransposeParam
       throw error
     }
   }
+  
   func delogOutput() {
-    print(para.input.metalTexture.toTensor(dim: (n: para.input.tensorDim[0], c: para.input.tensorDim[1], h: para.input.tensorDim[2], w: para.input.tensorDim[3])).strideArray())
-    
-    
+    print(" \(type) output: ")
     let originDim = para.output.tensorDim
     let outputArray = para.output.metalTexture.realNHWC(dim: (n: originDim[0], h: originDim[1], w: originDim[2], c: originDim[3]))
     print(outputArray.strideArray())
-    
-    
-//    let inputArray: [Float32] = para.input.metalTexture.floatArray { (ele: Float32) -> Float32 in
-//      return ele
-//    }
-//
-//    print(inputArray.strideArray())
-//
-//    let outputArray: [Float32] = para.output.metalTexture.floatArray { (ele: Float32) -> Float32 in
-//      return ele
-//    }
-//
-//    print(outputArray.strideArray())
-    
-//    writeToLibrary(fileName: "transpose_ouput", array: outputArray)
   }
-  
 }
 
 

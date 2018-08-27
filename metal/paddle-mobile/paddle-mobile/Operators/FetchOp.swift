@@ -37,20 +37,18 @@ class FetchKernel<P: PrecisionType>: Kernel, Computable {
   }
   
   required init(device: MTLDevice, param: FetchParam<P>) {
-    super.init(device: device, inFunctionName: "texture2d_to_2d_array")
+    super.init(device: device, inFunctionName: "place_holder")
   }
 }
 
 class FetchOp<P: PrecisionType>: Operator< FetchKernel<P>, FetchParam<P>>, Runable, Creator, InferShaperable{
-  func inputs() -> [Variant] {
-    return [para.input]
-  }
   
+  typealias OpType = FetchOp<P>
+
   func inferShape() {
     print(para.input.dim)
   }
   
-  typealias OpType = FetchOp<P>
   func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
     scope.setOutput(output: para.output)
   }

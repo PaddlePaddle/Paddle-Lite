@@ -34,16 +34,12 @@ class ElementwiseAddParam<P: PrecisionType>: OpParam {
 }
 
 class ElementwiseAddOp<P: PrecisionType>: Operator<ElementwiseAddKernel<P>, ElementwiseAddParam<P>>, Runable, Creator, InferShaperable{
-  
-  func inputs() -> [Variant] {
-    return [para.input, para.inputY]
-  }
+  typealias OpType = ElementwiseAddOp<P>
   
   func inferShape() {
     para.output.dim = para.input.dim
   }
   
-  typealias OpType = ElementwiseAddOp<P>
   func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
   }
 }

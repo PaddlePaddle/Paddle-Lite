@@ -28,15 +28,12 @@ class ConvTransposeParam<P: PrecisionType>: ConvParam<P> {
 
 class ConvTransposeOp<P: PrecisionType>: Operator<ConvTransposeKernel<P>, ConvTransposeParam<P>>, Runable, Creator, InferShaperable{
   
-  func inputs() -> [Variant] {
-    return [para.input, para.filter]
-  }
+  typealias OpType = ConvTransposeOp<P>
   
   func inferShape() {
     // para.output.dim = para.input.dim
   }
   
-  typealias OpType = ConvTransposeOp<P>
   func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
     do {
       try kernel.compute(commandBuffer: buffer, param: para)
@@ -44,6 +41,7 @@ class ConvTransposeOp<P: PrecisionType>: Operator<ConvTransposeKernel<P>, ConvTr
       throw error
     }
   }
+  
   func delogOutput() {
     print("conv transpose delog")
     let _: P? = para.input.metalTexture.logDesc(header: "conv transpose input: ", stridable: true)
