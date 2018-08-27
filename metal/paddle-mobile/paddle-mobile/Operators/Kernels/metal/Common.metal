@@ -9,8 +9,6 @@
 #include <metal_stdlib>
 using namespace metal;
 
-
-
 inline void xyzn2abcd(int C, int xyzn[4], int abcd[4]) {
   abcd[2] = xyzn[0];
   abcd[1] = xyzn[1];

@@ -162,51 +162,6 @@ kernel void pool_half(texture2d_array<half, access::read> inTexture [[texture(0)
 }
 
 
-kernel void softmax(texture2d_array<float, access::read> inTexture [[texture(0)]],
-                    texture2d_array<float, access::write> outTexture [[texture(1)]],
-                    uint3 gid [[thread_position_in_grid]]) {
-  if (gid.x >= outTexture.get_width() ||
-      gid.y >= outTexture.get_height() ||
-      gid.z >= outTexture.get_array_size()) return;
-  int zsize = inTexture.get_array_size();
-  float maxv = inTexture.read(uint2(0, 0), 0)[0];
-  for (int z = 0; z < zsize; z++) {
-    float4 r = inTexture.read(uint2(0, 0), z);
-    maxv = max(maxv, max(max(r[0], r[1]), max(r[2], r[3])));
-  }
-  float sum = 0;
-  for (int z = 0; z < zsize; z++) {
-    float4 r = inTexture.read(uint2(0, 0), z);
-    sum += exp(r[0] - maxv) + exp(r[1] - maxv) + exp(r[2] - maxv) + exp(r[3] - maxv);
-  }
-  float4 rr = inTexture.read(gid.xy, gid.z);
-  rr = exp(rr - maxv) / sum;
-  outTexture.write(rr, gid.xy, gid.z);
-}
-
-
-kernel void softmax_half(texture2d_array<half, access::read> inTexture [[texture(0)]],
-                         texture2d_array<half, access::write> outTexture [[texture(1)]],
-                         uint3 gid [[thread_position_in_grid]]) {
-  if (gid.x >= outTexture.get_width() ||
-      gid.y >= outTexture.get_height() ||
-      gid.z >= outTexture.get_array_size()) return;
-  int zsize = inTexture.get_array_size();
-  half maxv = inTexture.read(uint2(0, 0), 0)[0];
-  for (int z = 0; z < zsize; z++) {
-    half4 r = inTexture.read(uint2(0, 0), z);
-    maxv = max(maxv, max(max(r[0], r[1]), max(r[2], r[3])));
-  }
-  float sum = 0;
-  for (int z = 0; z < zsize; z++) {
-    half4 r = inTexture.read(uint2(0, 0), z);
-    sum += exp(r[0] - maxv) + exp(r[1] - maxv) + exp(r[2] - maxv) + exp(r[3] - maxv);
-  }
-  half4 rr = inTexture.read(gid.xy, gid.z);
-  rr = exp(rr - maxv) / sum;
-  outTexture.write(rr, gid.xy, gid.z);
-}
-
 
 
 struct TransposeParam {
