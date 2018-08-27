@@ -381,7 +381,7 @@ public extension MTLTexture {
       for w in 0..<dim.w {
         for sliceIndex in 0..<arrayLength {
           if sliceIndex * 4 + 4 > dim.c {
-            for i in 0..<((sliceIndex * 4 + 4) - dim.c) {
+            for i in 0..<(4 - ((sliceIndex * 4 + 4) - dim.c)) {
               let value = textureArray[sliceIndex * numOfASlice + h * dim.w * 4 + w * 4 + i]
               output.append(value)
             }

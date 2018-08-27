@@ -53,10 +53,11 @@ class ReshapeOp<P: PrecisionType>: Operator<ReshapeKernel<P>, ReshapeParam<P>>, 
   func delogOutput() {
     print("reshape delog")
 //    let _: P? = para.input.metalTexture.logDesc(header: "reshape input: ", stridable: false)
-    let _: P? = para.output.metalTexture.logDesc(header: "reshape output: ", stridable: true)
     
-    let deivice = MTLCreateSystemDefaultDevice()!
-    let array: [Float32] = deivice.texture2tensor(texture: para.output.metalTexture, dim: [1, 1, 600, 7])
-    print(array.strideArray())
+    let originDim = para.output.originDim
+    
+    let outputArray = para.output.metalTexture.realNHWC(dim: (n: originDim[0], h: originDim[1], w: originDim[2], c: originDim[3]))
+    print(outputArray.strideArray())
+
   }
 }
