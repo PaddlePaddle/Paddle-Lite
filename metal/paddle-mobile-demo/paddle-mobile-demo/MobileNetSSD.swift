@@ -179,7 +179,6 @@ class MobileNet_ssd_hand: Net{
       }
     }
     print(" fuck success !")
-    print(outputArr)
     return outputArr
   }
   

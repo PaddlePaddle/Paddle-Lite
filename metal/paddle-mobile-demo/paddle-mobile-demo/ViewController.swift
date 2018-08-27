@@ -67,6 +67,7 @@ class ViewController: UIViewController {
         guard let sSelf = self else {
           fatalError()
         }
+        print(result)
         let resultStr = sSelf.net.resultStr(res: result)
         DispatchQueue.main.async {
             sSelf.resultTextView.text = resultStr
