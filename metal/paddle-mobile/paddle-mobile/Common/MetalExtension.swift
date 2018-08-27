@@ -339,6 +339,27 @@ public extension MTLTexture {
     return nil
     
   }
+  
+  // n c h w - dim
+  func toTensor(dim: (n: Int, c: Int, h: Int, w: Int)) -> [Float32] {
+    let textureArray = floatArray { (i : Float32) -> Float32 in
+      return i
+    }
+    var output: [Float32] = []
+    for s in 0..<arrayLength {
+      for c in 0..<4{
+        for h in 0..<dim.h {
+          for w in 0..<dim.w {
+            if (s * 4 + c) < dim.c {
+              let textureValue = textureArray[dim.w * dim.h * 4 * s + h * dim.w * 4 + w * 4 + c]
+              output.append(textureValue)
+            }
+          }
+        }
+      }
+    }
+    return output
+  }
 }
 
 
