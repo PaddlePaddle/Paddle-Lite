@@ -60,6 +60,7 @@ class TransposeOp<P: PrecisionType>: Operator<TransposeKernel<P>, TransposeParam
     }
   
     print(outputArray.strideArray())
+    
 //    writeToLibrary(fileName: "transpose_ouput", array: outputArray)
   }
   

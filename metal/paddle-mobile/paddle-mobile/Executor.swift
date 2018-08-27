@@ -14,6 +14,8 @@
 
 import Foundation
 
+let testTo = 41
+
 public class ResultHolder<P: PrecisionType> {
   public let dim: [Int]
   public let resultArr: [P]
@@ -60,7 +62,7 @@ public class Executor<P: PrecisionType> {
     queue = inQueue
     for block in inProgram.programDesc.blocks {
       //block.ops.count
-      for i in 0..<91 {
+      for i in 0..<(testTo + 1) {
         let op = block.ops[i]
         do {
           let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
@@ -128,7 +130,7 @@ public class Executor<P: PrecisionType> {
       }
 //                  return
       
-      self.ops[90].delogOutput()
+      self.ops[testTo].delogOutput()
 //      self.ops[91].delogOutput()
 //      self.ops[92].delogOutput()
 //      self.ops[93].delogOutput()
