@@ -17,8 +17,8 @@ limitations under the License. */
 #pragma once
 
 #include <string>
-#include "operators/kernel/crf_kernel.h"
 #include "framework/operator.h"
+#include "operators/kernel/crf_kernel.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
@@ -28,12 +28,12 @@ using paddle_mobile::framework::Tensor;
 
 template <typename DeviceType, typename T>
 class CrfOp : public framework::OperatorWithKernel<
-                     DeviceType, CrfParam<DeviceType>,
-                     operators::CrfKernel<DeviceType, T>> {
+                  DeviceType, CrfParam<DeviceType>,
+                  operators::CrfKernel<DeviceType, T>> {
  public:
   CrfOp(const std::string &type, const VariableNameMap &inputs,
-           const VariableNameMap &outputs, const framework::AttributeMap &attrs,
-           std::shared_ptr<framework::Scope> scope)
+        const VariableNameMap &outputs, const framework::AttributeMap &attrs,
+        std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<DeviceType, CrfParam<DeviceType>,
                                       operators::CrfKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}

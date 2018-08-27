@@ -74,6 +74,10 @@ struct DtypeTensorTrait<GPU_MALI> {
 class OpParam {
  protected:
   template <typename T>
+  static T *InputH0From(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("H0", inputs, scope);
+  }
+  template <typename T>
   static T *InputAlphaFrom(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue<T>("Alpha", inputs, scope);
   }
@@ -99,6 +103,22 @@ class OpParam {
   }
 
   template <typename T>
+  static T *InputEmissionFrom(const VariableNameMap &inputs,
+                              const Scope &scope) {
+    return GetVarValue<T>("Emission", inputs, scope);
+  }
+
+  template <typename T>
+  static T *InputTransitionFrom(const VariableNameMap &inputs,
+                                const Scope &scope) {
+    return GetVarValue<T>("Transition", inputs, scope);
+  }
+  template <typename T>
+  static T *InputLabelFrom(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("Label", inputs, scope);
+  }
+
+  template <typename T>
   static T *InputXFrom1(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue1<T>("addX", inputs, scope);
   }
@@ -121,6 +141,10 @@ class OpParam {
   template <typename T>
   static T *InputBiasFrom(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue<T>("Bias", inputs, scope);
+  }
+  template <typename T>
+  static T *InputWeightFrom(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("Weight", inputs, scope);
   }
   template <typename T>
   static T *InputVarianceFrom(const VariableNameMap &inputs,
@@ -175,6 +199,35 @@ class OpParam {
   static vector<T *> InputMultiFrom(const VariableNameMap &inputs,
                                     const Scope &scope) {
     return GetMultiVarValue<T>("X", inputs, scope);
+  }
+
+  template <typename T>
+  static T *OutputBatchGateFrom(const VariableNameMap &outputs,
+                                const Scope &scope) {
+    return GetVarValue<T>("BatchGate", outputs, scope);
+  }
+
+  template <typename T>
+  static T *OutputViterbiPathFrom(const VariableNameMap &outputs,
+                                  const Scope &scope) {
+    return GetVarValue<T>("ViterbiPath", outputs, scope);
+  }
+  template <typename T>
+  static T *OutputBatchResetHiddenPrevFrom(const VariableNameMap &outputs,
+                                           const Scope &scope) {
+    return GetVarValue<T>("BatchResetHiddenPrev", outputs, scope);
+  }
+
+  template <typename T>
+  static T *OutputBatchHiddenFrom(const VariableNameMap &outputs,
+                                  const Scope &scope) {
+    return GetVarValue<T>("BatchHidden", outputs, scope);
+  }
+
+  template <typename T>
+  static T *OutputHiddenFrom(const VariableNameMap &outputs,
+                             const Scope &scope) {
+    return GetVarValue<T>("Hidden", outputs, scope);
   }
 
   template <typename T>
@@ -897,27 +950,52 @@ template <typename Dtype>
 class GruParam : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
   typedef typename DtypeTensorTrait<Dtype>::rtype RType;
-
+  //    {G_OP_TYPE_GRU,
+  //                {{"Input", "H0", "Weight", "Bias"},
+  //                 {"BatchGate", "BatchResetHiddenPrev", "BatchHidden",
+  //                 "Hidden"}}},
+  //    {G_OP_TYPE_CRF, {{"Emission", "Transition", "Label"}, {"ViterbiPath"}}},
  public:
+  /**
+   *
+   * @param inputs
+   * @param outputs
+   * @param attrs
+   * @param scope
+   * */
   GruParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
            const AttributeMap &attrs, const Scope &scope) {
-    // todo gru params
-    input_w_ = InputWFrom<GType>(inputs, scope);
-    input_ids_ = InputIdsFrom<GType>(inputs, scope);
-    out_ = OutFrom<GType>(outputs, scope);
-    padding_idx_ = GetAttr<int64_t>("padding_idx", attrs);
+    input_input_ = InputFrom<GType>(inputs, scope);
+    input_h0_ = InputH0From<GType>(inputs, scope);
+    input_bias_ = InputBiasFrom<GType>(inputs, scope);
+    input_weight_ = InputWeightFrom<GType>(inputs, scope);
+
+    output_batchgate_ = OutputBatchGateFrom<GType>(outputs, scope);
+    output_batch_reset_hidden_prev_ =
+        OutputBatchResetHiddenPrevFrom<GType>(outputs, scope);
+    output_batchhidden_ = OutputBatchHiddenFrom<GType>(outputs, scope);
+    output_hidden_ = OutputHiddenFrom<GType>(outputs, scope);
   }
 
-  const RType *InputW() const { return input_w_; }
-  const RType *InputIds() const { return input_ids_; }
-  RType *Out() const { return out_; }
-  int64_t PaddingIdx() const { return padding_idx_; }
+  //  const RType *InputW() const { return input_w_; }
+  //  const RType *InputIds() const { return input_ids_; }
+  //  RType *Out() const { return out_; }
+  //  int64_t PaddingIdx() const { return padding_idx_; }
 
  private:
-  RType *input_w_;
-  RType *input_ids_;
-  RType *out_;
-  int64_t padding_idx_;
+  RType *input_input_;
+  RType *input_h0_;
+  RType *input_bias_;
+  RType *input_weight_;
+
+  RType *output_batchgate_;
+  RType *output_batch_reset_hidden_prev_;
+  RType *output_batchhidden_;
+  RType *output_hidden_;
+
+  //  RType *input_ids_;
+  //  RType *out_;
+  //  int64_t padding_idx_;
 };
 #endif
 
@@ -928,25 +1006,32 @@ class CrfParam : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::rtype RType;
 
  public:
+  //    {G_OP_TYPE_CRF, {{"Emission", "Transition", "Label"}, {"ViterbiPath"}}},
+
   CrfParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
            const AttributeMap &attrs, const Scope &scope) {
     // todo crf params
-    input_w_ = InputWFrom<GType>(inputs, scope);
-    input_ids_ = InputIdsFrom<GType>(inputs, scope);
-    out_ = OutFrom<GType>(outputs, scope);
-    padding_idx_ = GetAttr<int64_t>("padding_idx", attrs);
+    input_emission_ = InputEmissionFrom<GType>(inputs, scope);
+    input_transition_ = InputTransitionFrom<GType>(inputs, scope);
+    input_label_ = InputLabelFrom<GType>(inputs, scope);
+    output_viterbipath_ = OutputViterbiPathFrom<GType>(outputs, scope);
+    //    padding_idx_ = GetAttr<int64_t>("padding_idx", attrs);
   }
 
-  const RType *InputW() const { return input_w_; }
-  const RType *InputIds() const { return input_ids_; }
-  RType *Out() const { return out_; }
-  int64_t PaddingIdx() const { return padding_idx_; }
+  //  const RType *InputW() const { return input_w_; }
+  //  const RType *InputIds() const { return input_ids_; }
+  //  RType *Out() const { return out_; }
+  //  int64_t PaddingIdx() const { return padding_idx_; }
 
  private:
-  RType *input_w_;
-  RType *input_ids_;
-  RType *out_;
-  int64_t padding_idx_;
+  RType *input_emission_;
+  RType *input_transition_;
+  RType *input_label_;
+  RType *output_viterbipath_;
+
+  //  RType *input_ids_;
+  //  RType *out_;
+  //  int64_t padding_idx_;
 };
 #endif
 

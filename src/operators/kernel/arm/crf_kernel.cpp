@@ -14,8 +14,8 @@ limitations under the License. */
 
 #ifdef CRF_OP
 
-#include "common/types.h"
 #include "operators/kernel/crf_kernel.h"
+#include "common/types.h"
 #include "operators/kernel/central-arm-func/crf_arm_func.h"
 
 namespace paddle_mobile {
