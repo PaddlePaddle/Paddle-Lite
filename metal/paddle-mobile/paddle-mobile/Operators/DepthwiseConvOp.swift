@@ -15,11 +15,9 @@
 import Foundation
 
 class DepthConvOp<P: PrecisionType>: Operator<ConvKernel<P>, ConvParam<P>>, Runable, Creator, InferShaperable {
-  
-  func inputs() -> [Variant] {
-    return [para.input, para.filter]
-  }
-  
+
+  typealias OpType = DepthConvOp<P>
+
   required init(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws {
     do {
       try super.init(device: device, opDesc: opDesc, inScope: inScope)
@@ -50,8 +48,6 @@ class DepthConvOp<P: PrecisionType>: Operator<ConvKernel<P>, ConvParam<P>>, Runa
     para.output.dim = Dim.init(inDim: outDim)
   }
   
-  typealias OpType = DepthConvOp<P>
-  
   func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
     do {
       try kernel.compute(commandBuffer: buffer, param: para)
@@ -61,8 +57,7 @@ class DepthConvOp<P: PrecisionType>: Operator<ConvKernel<P>, ConvParam<P>>, Runa
   }
   
   func delogOutput() {
-    print("conv output : ")
-    print(para.output.metalTexture)
-    //        let _: Float16? = para.output.metalTexture.logDesc()
+    print(" \(type) output: ")
+    print(para.output.metalTexture.toTensor(dim: (n: para.output.originDim[0], c: para.output.originDim[1], h: para.output.originDim[2], w: para.output.originDim[3])).strideArray())
   }
 }

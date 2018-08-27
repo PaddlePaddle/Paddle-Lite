@@ -1,101 +1,27 @@
-//
-//  ModelHelper.swift
-//  paddle-mobile-demo
-//
-//  Created by liuRuiLong on 2018/8/10.
-//  Copyright © 2018年 orange. All rights reserved.
-//
+/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+ 
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ 
+ http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License. */
 
-import UIKit
-import MetalKit
 import Foundation
 import paddle_mobile
-import MetalPerformanceShaders
 
-let modelHelperMap: [SupportModel : Net] = [.mobilenet : MobileNet.init(), .mobilenet_ssd : MobileNet_ssd_hand.init()]
-
-enum SupportModel: String{
-  case mobilenet = "mobilenet"
-  case mobilenet_ssd = "mobilenetssd"
-  static func supportedModels() -> [SupportModel] {
-    return [.mobilenet, .mobilenet_ssd]
-  }
-}
-
-protocol Net {
-  var dim: [Int] { get }
-  var modelPath: String { get }
-  var paramPath: String { get }
-  var modelDir: String { get }
-  var preprocessKernel: CusomKernel { get }
-  func getTexture(image: CGImage, getTexture: @escaping (MTLTexture) -> Void)
-  func resultStr(res: [Float]) -> String
-  func fetchResult(paddleMobileRes: ResultHolder<Float32>) -> [Float32]
-}
-
-extension Net {
-  func getTexture(image: CGImage, getTexture: @escaping (MTLTexture) -> Void) {
-    let texture = try? MetalHelper.shared.textureLoader.newTexture(cgImage: image, options: [:]) ?! " texture loader error"
-    MetalHelper.scaleTexture(queue: MetalHelper.shared.queue, input: texture!, size: (224, 224)) { (resTexture) in
-      getTexture(resTexture)
-    }
-  }
+class MobileNet_ssd_hand: Net{
   
-  func fetchResult(paddleMobileRes: ResultHolder<Float32>) -> [Float32] {
-    return paddleMobileRes.resultArr
-  }
-}
-
-struct MobileNet: Net{
-  class MobilenetPreProccess: CusomKernel {
-    init(device: MTLDevice) {
-      let s = CusomKernel.Shape.init(inWidth: 224, inHeight: 224, inChannel: 3)
-      super.init(device: device, inFunctionName: "preprocess", outputDim: s, usePaddleMobileLib: false)
-    }
-  }
+  var program: Program?
   
-  class PreWords {
-    var contents: [String] = []
-    init(fileName: String, type: String = "txt", inBundle: Bundle = Bundle.main) {
-      if let filePath = inBundle.path(forResource: fileName, ofType: type) {
-        let string = try! String.init(contentsOfFile: filePath)
-        contents = string.components(separatedBy: CharacterSet.newlines).filter{$0.count > 10}.map{
-          String($0[$0.index($0.startIndex, offsetBy: 10)...])
-        }
-      }else{
-        fatalError("no file call \(fileName)")
-      }
-    }
-    subscript(index: Int) -> String {
-      return contents[index]
-    }
-  }
+  var executor: Executor<Float32>?
   
-  let labels = PreWords.init(fileName: "synset")
-  
-  func resultStr(res: [Float]) -> String {
-    var s: [String] = []
-    res.top(r: 5).enumerated().forEach{
-      s.append(String(format: "%d: %@ (%3.2f%%)", $0 + 1, labels[$1.0], $1.1 * 100))
-    }
-    return s.joined(separator: "\n")
-  }
-  
-  var preprocessKernel: CusomKernel
-  let dim = [1, 224, 224, 3]
-  let modelPath: String
-  let paramPath: String
-  let modelDir: String
-  
-  init() {
-    modelPath = Bundle.main.path(forResource: "model", ofType: nil) ?! "model null"
-    paramPath = Bundle.main.path(forResource: "params", ofType: nil) ?! "para null"
-    modelDir = ""
-    preprocessKernel = MobilenetPreProccess.init(device: MetalHelper.shared.device)
-  }
-}
-
-struct MobileNet_ssd_hand: Net{
+  let except: Int = 2
   class MobilenetssdPreProccess: CusomKernel {
     init(device: MTLDevice) {
       let s = CusomKernel.Shape.init(inWidth: 300, inHeight: 300, inChannel: 3)
@@ -105,7 +31,6 @@ struct MobileNet_ssd_hand: Net{
   
   func resultStr(res: [Float]) -> String {
     return "哈哈哈, 还没好"
-//    fatalError()
   }
   
   func bboxArea(box: [Float32], normalized: Bool) -> Float32 {
@@ -141,10 +66,18 @@ struct MobileNet_ssd_hand: Net{
   }
   
   func fetchResult(paddleMobileRes: ResultHolder<Float32>) -> [Float32]{
-    let scores = paddleMobileRes.intermediateResults![0] as! Texture<Float32>
-    let bbox = paddleMobileRes.intermediateResults![1] as! Texture<Float32>
-//    let bbox = paddleMobileRes["box_coder_0.tmp_0"] ?! " no bbox "
-//    let scores = paddleMobileRes["transpose_12.tmp_0"] ?! " no scores "
+    guard let interRes = paddleMobileRes.intermediateResults else {
+      fatalError(" need have inter result ")
+    }
+    
+    guard let scores = interRes["Scores"], scores.count > 0, let score = scores[0] as?  Texture<Float32> else {
+      fatalError(" need score ")
+    }
+    
+    guard let bboxs = interRes["BBoxes"], bboxs.count > 0, let bbox = bboxs[0] as? Texture<Float32> else {
+      fatalError()
+    }
+    
     let score_thredshold: Float32 = 0.01
     let nms_top_k = 400
     let keep_top_k = 200
@@ -155,43 +88,14 @@ struct MobileNet_ssd_hand: Net{
       return f
     }
     
-    let scoresArr = scores.metalTexture.floatArray { (f) -> Float32 in
-      return f
-    }
-    
-    var scoreFormatArr: [Float32] = []
+    let scoreFormatArr: [Float32] = score.metalTexture.realNHWC(dim: (n: score.originDim[0], h: score.originDim[1], w: score.originDim[2], c: score.originDim[3]))
     var outputArr: [Float32] = []
-    
-    let numOfOneC = (scores.tensorDim[2] + 3) / 4   // 480
-    
-    let cNumOfOneClass = scores.tensorDim[2]        // 1917
-
-    let cPaddedNumOfOneClass = numOfOneC * 4              // 1920
-    
+    let cNumOfOneClass = score.tensorDim[2]        // 1917
     let boxSize = bbox.tensorDim[2]                 // 4
-    let classNum = scores.tensorDim[1]              // 7
-    let classNumOneTexture = classNum * 4           // 28
-    
-    for c in 0..<classNum {
-      for n in 0..<numOfOneC {
-        let to = n * classNumOneTexture + c * 4
-        if n == numOfOneC - 1 {
-          for i in 0..<(4 - (cPaddedNumOfOneClass - cNumOfOneClass)) {
-            scoreFormatArr.append(scoresArr[to + i])
-          }
-        } else {
-          scoreFormatArr.append(scoresArr[to])
-          scoreFormatArr.append(scoresArr[to + 1])
-          scoreFormatArr.append(scoresArr[to + 2])
-          scoreFormatArr.append(scoresArr[to + 3])
-        }
-      }
-    }
+    let classNum = score.tensorDim[1]              // 7
     
     var selectedIndexs: [Int : [(Int, Float32)]] = [:]
-    
     var numDet: Int = 0
-    
     for i in 0..<classNum {
       var sliceScore = Array<Float32>(scoreFormatArr[(i * cNumOfOneClass)..<((i + 1) * cNumOfOneClass)])
       
@@ -249,7 +153,7 @@ struct MobileNet_ssd_hand: Net{
     }
     
     scoreIndexPairs.sort { $0.0 > $1.0 }
-  
+    
     if scoreIndexPairs.count > keep_top_k {
       scoreIndexPairs.removeLast(scoreIndexPairs.count - keep_top_k)
     }
@@ -259,9 +163,9 @@ struct MobileNet_ssd_hand: Net{
       // label: scoreIndexPair.1.0
       let label = scoreIndexPair.1.0
       if newIndices[label] != nil {
-        newIndices[label]?.append((scoreIndexPair.1.0, scoreIndexPair.0))
+        newIndices[label]?.append((scoreIndexPair.1.1, scoreIndexPair.0))
       } else {
-        newIndices[label] = [(scoreIndexPair.1.0, scoreIndexPair.0)]
+        newIndices[label] = [(scoreIndexPair.1.1, scoreIndexPair.0)]
       }
     }
     
@@ -275,7 +179,6 @@ struct MobileNet_ssd_hand: Net{
       }
     }
     print(" fuck success !")
-    print(outputArr)
     return outputArr
   }
   
@@ -292,4 +195,3 @@ struct MobileNet_ssd_hand: Net{
     preprocessKernel = MobilenetssdPreProccess.init(device: MetalHelper.shared.device)
   }
 }
-
