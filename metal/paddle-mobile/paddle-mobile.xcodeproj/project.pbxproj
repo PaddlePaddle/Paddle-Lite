@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4AF928772133F1DB005B6C3A /* BoxCoder.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AF928762133F1DB005B6C3A /* BoxCoder.metal */; };
+		4AF9287921341661005B6C3A /* Softmax.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AF9287821341661005B6C3A /* Softmax.metal */; };
 		D3831F70E7E0B565B9AC22DA /* Pods_paddle_mobile.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD2E06330A1E7129C918DB46 /* Pods_paddle_mobile.framework */; };
 		FC039B6F20E11C3C0081E9F8 /* paddle_mobile.h in Headers */ = {isa = PBXBuildFile; fileRef = FC039B6D20E11C3C0081E9F8 /* paddle_mobile.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		FC039B9720E11C9A0081E9F8 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039B9420E11C9A0081E9F8 /* Extensions.swift */; };
@@ -86,6 +88,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4AF928762133F1DB005B6C3A /* BoxCoder.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = BoxCoder.metal; sourceTree = "<group>"; };
+		4AF9287821341661005B6C3A /* Softmax.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Softmax.metal; sourceTree = "<group>"; };
 		CDF58151D902A1CBAE56A0C2 /* Pods-paddle-mobile.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-paddle-mobile.debug.xcconfig"; path = "../Pods/Target Support Files/Pods-paddle-mobile/Pods-paddle-mobile.debug.xcconfig"; sourceTree = "<group>"; };
 		DD2E06330A1E7129C918DB46 /* Pods_paddle_mobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_paddle_mobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2A7957C92EDA5C3BEC0FFC2 /* Pods-paddle-mobile.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-paddle-mobile.release.xcconfig"; path = "../Pods/Target Support Files/Pods-paddle-mobile/Pods-paddle-mobile.release.xcconfig"; sourceTree = "<group>"; };
@@ -352,6 +356,8 @@
 				FC27990D21341016000B6BAD /* BoxCoder.metal */,
 				FC1B16B220EC9A4F00678B91 /* Kernels.metal */,
 				FC4CB74820F0B954007C0C6D /* ConvKernel.metal */,
+				4AF928762133F1DB005B6C3A /* BoxCoder.metal */,
+				4AF9287821341661005B6C3A /* Softmax.metal */,
 				FCEB6849212F00DB00D2448E /* PreluKernel.metal */,
 				FCDDC6C9212FDF6800E5EF74 /* BatchNormKernel.metal */,
 				FCDDC6CB212FDFDB00E5EF74 /* ReluKernel.metal */,
@@ -464,6 +470,7 @@
 			files = (
 				FC9D038020E22FBB000F735A /* FeedOp.swift in Sources */,
 				FC039B9F20E11CB20081E9F8 /* Tensor.swift in Sources */,
+				4AF9287921341661005B6C3A /* Softmax.metal in Sources */,
 				FC0E2DBC20EE45FE009C1FAC /* ConvKernel.swift in Sources */,
 				FC039BAA20E11CBC0081E9F8 /* ElementwiseAddOp.swift in Sources */,
 				FCDE8A33212A917900F4A8F6 /* ConvTransposeOp.swift in Sources */,
@@ -481,7 +488,7 @@
 				FCBCCC5B2122F66F00D94F7E /* ConvBNReluKernel.swift in Sources */,
 				FCEBC0F420F1FDD90099DBAF /* ConvAddBatchNormReluOp.swift in Sources */,
 				FC0E2DC020EE461F009C1FAC /* ElementwiseAddKernel.swift in Sources */,
-				FC27990E21341016000B6BAD /* BoxCoder.metal in Sources */,
+				4AF928772133F1DB005B6C3A /* BoxCoder.metal in Sources */,
 				FCEB684C212F093800D2448E /* PreluOp.swift in Sources */,
 				FC60DB8920E9AAA500FF203F /* MetalExtension.swift in Sources */,
 				FCEBC0F620F1FE120099DBAF /* ConvAddBatchNormReluKernel.swift in Sources */,

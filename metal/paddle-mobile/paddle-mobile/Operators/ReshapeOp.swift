@@ -23,6 +23,7 @@ class ReshapeParam<P: PrecisionType>: OpParam {
       shape = try ReshapeParam.getAttr(key: "shape", attrs: opDesc.attrs)
         
       var s: [Int] = shape.map { Int($0) }
+      
       var di = -1
       var ml = 1
       for i in 0..<s.count {
