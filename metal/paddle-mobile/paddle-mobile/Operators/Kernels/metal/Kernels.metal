@@ -294,18 +294,3 @@ kernel void concat(texture2d_array<float, access::read> in0 [[texture(0)]],
   }
   out.write(r, gid.xy, gid.z);
 }
-
-kernel void boxcoder(texture2d_array<float, access::read> priorBox [[texture(0)]],
-                     texture2d_array<float, access::read> priorBoxVar [[texture(1)]],
-                     texture2d_array<float, access::read> targetBox [[texture(2)]],
-                     texture2d_array<float, access::write> output[[texture(3)]],
-                     uint3 gid [[thread_position_in_grid]]) {
-  float4 t = targetBox.read(gid.xy, gid.z);
-  float4 p = priorBox.read(gid.xy, gid.z);
-  float4 pv = priorBoxVar.read(gid.xy, gid.z);
-  float ox = (p.z * pv.x * t.x + p.x) - t.z / 2;
-  float oy = (p.w * pv.y * t.y + p.y) - t.w / 2;
-  float ow = exp(pv.z * t.z) * p.z + t.z / 2;
-  float oh = exp(pv.w * t.w) * p.w + t.w / 2;
-  output.write(float4(ox, oy, ow, oh), gid.xy, gid.z);
-}
