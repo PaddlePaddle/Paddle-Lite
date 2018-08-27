@@ -60,7 +60,7 @@ public class Executor<P: PrecisionType> {
     queue = inQueue
     for block in inProgram.programDesc.blocks {
       //block.ops.count
-      for i in 0..<39 {
+      for i in 0..<91 {
         let op = block.ops[i]
         do {
           let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
@@ -128,7 +128,7 @@ public class Executor<P: PrecisionType> {
       }
 //                  return
       
-      self.ops[38].delogOutput()
+      self.ops[90].delogOutput()
 //      self.ops[91].delogOutput()
 //      self.ops[92].delogOutput()
 //      self.ops[93].delogOutput()

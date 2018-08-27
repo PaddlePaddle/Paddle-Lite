@@ -98,14 +98,14 @@ extension Array where Element: Comparable{
 }
 
 extension Array {
-  func strideArray(inCount: Int = 20) -> Array<Element> {
+  func strideArray(inCount: Int = 20) -> [(Int, Element)] {
     if count < inCount {
-      return self
+      return (0..<count).map{ ($0, self[$0]) }
     } else {
       let stride = count / inCount
-      var newArray: [Element] = []
+      var newArray: [(Int, Element)] = []
       for i in 0..<inCount {
-        newArray.append(self[i * stride])
+        newArray.append((i * stride, self[i * stride]))
       }
       return newArray
     }
