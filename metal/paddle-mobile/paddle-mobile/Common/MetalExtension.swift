@@ -342,6 +342,10 @@ public extension MTLTexture {
   
   // n c h w - dim
   func toTensor(dim: (n: Int, c: Int, h: Int, w: Int)) -> [Float32] {
+    print("origin dim: \(dim)")
+    print("texture: ")
+    print(self)
+    
     let textureArray = floatArray { (i : Float32) -> Float32 in
       return i
     }
@@ -358,8 +362,42 @@ public extension MTLTexture {
         }
       }
     }
+    print(" tensor count -- \(output.count)")
     return output
   }
+  
+  func realNHWC(dim: (n: Int, h: Int, w: Int, c: Int)) -> [Float32] {
+    print("origin dim: \(dim)")
+    print("texture: ")
+    print(self)
+    
+    let textureArray = floatArray { (i : Float32) -> Float32 in
+      return i
+    }
+    var output: [Float32] = []
+
+    let numOfASlice = dim.h * dim.w * 4
+    for h in 0..<dim.h {
+      for w in 0..<dim.w {
+        for sliceIndex in 0..<arrayLength {
+          if sliceIndex * 4 + 4 > dim.c {
+            for i in 0..<((sliceIndex * 4 + 4) - dim.c) {
+              let value = textureArray[sliceIndex * numOfASlice + h * dim.w * 4 + w * 4 + i]
+              output.append(value)
+            }
+          } else {
+            for i in 0..<4 {
+              let value = textureArray[sliceIndex * numOfASlice + h * dim.w * 4 + w * 4 + i]
+              output.append(value)
+            }
+          }
+        }
+      }
+    }
+    print(" tensor count -- \(output.count)")
+    return output
+  }
+  
 }
 
 
