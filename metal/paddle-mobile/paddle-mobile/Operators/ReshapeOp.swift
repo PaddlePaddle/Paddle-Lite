@@ -55,5 +55,8 @@ class ReshapeOp<P: PrecisionType>: Operator<ReshapeKernel<P>, ReshapeParam<P>>, 
 //    let _: P? = para.input.metalTexture.logDesc(header: "reshape input: ", stridable: false)
     let _: P? = para.output.metalTexture.logDesc(header: "reshape output: ", stridable: true)
     
+    let deivice = MTLCreateSystemDefaultDevice()!
+    let array: [Float32] = deivice.texture2tensor(texture: para.output.metalTexture, dim: [1, 1, 600, 7])
+    print(array.strideArray())
   }
 }

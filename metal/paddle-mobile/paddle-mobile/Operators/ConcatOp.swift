@@ -63,7 +63,10 @@ class ConcatOp<P: PrecisionType>: Operator<ConcatKernel<P>, ConcatParam<P>>, Run
       return o
     }
     
-    print(outputArray.strideArray())
+//    print(outputArray.strideArray())
+    
+    writeToLibrary(fileName: "concat_out", array: outputArray)
+    
     let device: MTLDevice = MTLCreateSystemDefaultDevice()!
     
 //    let tensorArray: [P] = device.texture2tensor(texture: para.output.metalTexture, dim: [1917, 4])
