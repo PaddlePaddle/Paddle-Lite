@@ -31,7 +31,11 @@ class MulticlassNMSParam<P: PrecisionType>: OpParam {
 }
 
 class MulticlassNMSOp<P: PrecisionType>: Operator<MulticlassNMSKernel<P>, MulticlassNMSParam<P>>, Runable, Creator, InferShaperable{
-    
+  
+  func inputs() -> [Variant] {
+    return [para.scores,para.bboxes]
+  }
+  
     func inferShape() {
 //        para.output.dim = para.input.dim
     }

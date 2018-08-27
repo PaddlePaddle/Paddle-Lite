@@ -15,130 +15,150 @@
 import Foundation
 
 public class ResultHolder<P: PrecisionType> {
-    public let dim: [Int]
-    public let resultArr: [P]
-    public var intermediateResults: [Texture<P>]?
-    public let elapsedTime: Double
-    public init(inDim: [Int], inResult: [P], inElapsedTime: Double, inIntermediateResults: [Texture<P>]? = nil) {
-        dim = inDim
-        resultArr = inResult
-        elapsedTime = inElapsedTime
-        intermediateResults = inIntermediateResults
-    }
+  public let dim: [Int]
+  public let resultArr: [P]
+  public var intermediateResults: [Variant]?
+  public let elapsedTime: Double
+  public init(inDim: [Int], inResult: [P], inElapsedTime: Double, inIntermediateResults: [Variant]? = nil) {
+    dim = inDim
+    resultArr = inResult
+    elapsedTime = inElapsedTime
+    intermediateResults = inIntermediateResults
+  }
 }
 
 extension ResultHolder: CustomDebugStringConvertible, CustomStringConvertible {
-    public var debugDescription: String {
-        var str = ""
-        str += "Dim: \(dim) \n value:[ "
-        if resultArr.count < 20 {
-            for d in resultArr {
-                str += " \(d) "
-            }
-        } else {
-            for d in stride(from: 0, to: resultArr.count, by: resultArr.count/20) {
-                str += " \(resultArr[d]) "
-            }
-        }
-        str += " ]"
-        return str
+  public var debugDescription: String {
+    var str = ""
+    str += "Dim: \(dim) \n value:[ "
+    if resultArr.count < 20 {
+      for d in resultArr {
+        str += " \(d) "
+      }
+    } else {
+      for d in stride(from: 0, to: resultArr.count, by: resultArr.count/20) {
+        str += " \(resultArr[d]) "
+      }
     }
-    
-    public var description: String {
-        return debugDescription
-    }
+    str += " ]"
+    return str
+  }
+  
+  public var description: String {
+    return debugDescription
+  }
 }
 
 public class Executor<P: PrecisionType> {
-    var ops: [Runable & InferShaperable] = []
-    let program: Program
-    let device: MTLDevice
-    let queue: MTLCommandQueue
-    public init(inDevice:MTLDevice, inQueue: MTLCommandQueue, inProgram: Program) throws {
-        program = inProgram
-        device = inDevice
-        queue = inQueue
-        for block in inProgram.programDesc.blocks {
-            //block.ops.count
-            for i in 0..<block.ops.count {
-                let op = block.ops[i]
-                do {
-                    let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
-                    op.inferShape()
-                    ops.append(op)
-                } catch let error {
-                    throw error
-                }
-            }
+  var ops: [Runable & InferShaperable] = []
+  let program: Program
+  let device: MTLDevice
+  let queue: MTLCommandQueue
+  public init(inDevice:MTLDevice, inQueue: MTLCommandQueue, inProgram: Program) throws {
+    program = inProgram
+    device = inDevice
+    queue = inQueue
+    for block in inProgram.programDesc.blocks {
+      //block.ops.count
+      for i in 0..<39 {
+        let op = block.ops[i]
+        do {
+          let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
+//          op.inferShape()
+          ops.append(op)
+        } catch let error {
+          throw error
         }
-    }   
+      }
+    }
+  }
+  
+  public func predict(input: MTLTexture, expect: [Int], completionHandle: @escaping (ResultHolder<P>) -> Void, preProcessKernle: CusomKernel? = nil, except: Int = 0) throws {
+    guard let buffer = queue.makeCommandBuffer() else {
+      throw PaddleMobileError.predictError(message: "CommandBuffer is nil")
+    }
+    let resInput: MTLTexture
+    if let inPre = preProcessKernle {
+      do {
+        try inPre.compute(inputTexuture: input, commandBuffer: buffer)
+        resInput = inPre.outputTexture
+      } catch let error {
+        throw error
+      }
+    } else {
+      resInput = input
+    }
     
-    public func predict(input: MTLTexture, expect: [Int], completionHandle: @escaping (ResultHolder<P>) -> Void, preProcessKernle: CusomKernel? = nil) throws {
-        guard let buffer = queue.makeCommandBuffer() else {
-            throw PaddleMobileError.predictError(message: "CommandBuffer is nil")
-        }
-        let resInput: MTLTexture
-        if let inPre = preProcessKernle {
-            do {
-                try inPre.compute(inputTexuture: input, commandBuffer: buffer)
-                resInput = inPre.outputTexture
-            } catch let error {
-                throw error
-            }
-        } else {
-            resInput = input
-        }
+    let beforeDate = Date.init()
+    let inputTexture = InputTexture.init(inMTLTexture: resInput, inExpectDim: Dim.init(inDim: expect))
+    program.scope.setInput(input: inputTexture)
+    //(ops.count - except)
+    for i in 0..<ops.count {
+      let op = ops[i]
+      do {
+        try op.run(device: device, buffer: buffer)
+      } catch let error {
+        throw error
+      }
+    }
+    
+    var outputTextures: [Variant]?
+    if except > 0 {
+      outputTextures = ops[ops.count - except].inputs()
+    }
+    
+    buffer.addCompletedHandler { (commandbuffer) in
+//      return;
+    
+//      let inputArr = resInput.floatArray(res: { (p:P) -> P in
+//        return p
+//      })
+      
+//      writeToLibrary(fileName: "input_hand", array: inputArr)
+//      print("write to library done")
+//      return
+      //            print(inputArr)
+      
+      //            let stridableInput: [(index: Int, value: Float)] = input.stridableFloatArray()
+      //            print(stridableInput)
+      
+      //            let _: Flo? = input.logDesc(header: "input: ", stridable: true)
+      for op in self.ops {
+//          op.delogOutput()
+      }
+//                  return
+      
+      self.ops[38].delogOutput()
+//      self.ops[91].delogOutput()
+//      self.ops[92].delogOutput()
+//      self.ops[93].delogOutput()
+      
+      return;
+      
+      let afterDate = Date.init()
+     
+      var resultHolder: ResultHolder<P>
+      if except > 0 {
+        resultHolder = ResultHolder<P>.init(inDim: [], inResult: [], inElapsedTime: afterDate.timeIntervalSince(beforeDate), inIntermediateResults: outputTextures)
+      } else {
+        let outputVar: Variant = self.program.scope.output()!
+        let output: Texture<P> = outputVar as! Texture<P>
         
-        let beforeDate = Date.init()
-        let inputTexture = InputTexture.init(inMTLTexture: resInput, inExpectDim: Dim.init(inDim: expect))
-        program.scope.setInput(input: inputTexture)
- 
-        for op in ops {
-            do {
-                try op.run(device: device, buffer: buffer)
-            } catch let error {
-                throw error
-            }
-        }
-        
-        buffer.addCompletedHandler { (commandbuffer) in
-//            let inputArr = resInput.floatArray(res: { (p:P) -> P in
-//                return p
-//            })
-//            print(inputArr)
-            
-//            let stridableInput: [(index: Int, value: Float)] = input.stridableFloatArray()
-//            print(stridableInput)
-            
-//            let _: Flo? = input.logDesc(header: "input: ", stridable: true)
-//            for op in self.ops {
-//                op.delogOutput()
-//            }
-//            return
-            
-//            self.ops[2].delogOutput()
-            
-            let afterDate = Date.init()
-            
-            guard let outputVar = self.program.scope.output() else {
-                fatalError("output nil")
-            }
+        resultHolder = ResultHolder<P>.init(inDim: output.dim.dims, inResult: output.metalTexture.floatArray(res: { (p:P) -> P in
+          return p
+        }), inElapsedTime: afterDate.timeIntervalSince(beforeDate))
+      }
+      
 
-            guard let output = outputVar as? Texture<P> else {
-                fatalError("output var type error")
-            }
-            let resultHodlder = ResultHolder<P>.init(inDim: output.dim.dims, inResult: output.metalTexture.floatArray(res: { (p:P) -> P in
-                return p
-            }), inElapsedTime: afterDate.timeIntervalSince(beforeDate))
-            completionHandle(resultHodlder)
-        }
-        buffer.commit()
+      completionHandle(resultHolder)
     }
-    
-    public func clear() {
-        program.scope.clear()
-    }
-    
+    buffer.commit()
+  }
+  
+  public func clear() {
+    program.scope.clear()
+  }
+  
 }
 
 //public let paddle_executor: Executor = Executor.init()

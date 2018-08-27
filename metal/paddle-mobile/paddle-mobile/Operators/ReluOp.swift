@@ -15,33 +15,37 @@
 import Foundation
 
 class ReluParam<P: PrecisionType>: OpParam {
-    typealias ParamPrecisionType = P
-    required init(opDesc: OpDesc, inScope: Scope) throws {
-        do {
-            input = try ReluParam.inputX(inputs: opDesc.inputs, from: inScope)
-            output = try ReluParam.outputOut(outputs: opDesc.outputs, from: inScope)
-        } catch let error {
-            throw error
-        }
+  typealias ParamPrecisionType = P
+  required init(opDesc: OpDesc, inScope: Scope) throws {
+    do {
+      input = try ReluParam.inputX(inputs: opDesc.inputs, from: inScope)
+      output = try ReluParam.outputOut(outputs: opDesc.outputs, from: inScope)
+    } catch let error {
+      throw error
     }
-    let input: Texture<P>
-    var output: Texture<P>
+  }
+  let input: Texture<P>
+  var output: Texture<P>
 }
 
 class ReluOp<P: PrecisionType>: Operator<ReluKernel<P>, ReluParam<P>>, Runable, Creator, InferShaperable{
-    
-    func inferShape() {
-        para.output.dim = para.input.dim
+  
+  func inputs() -> [Variant] {
+    return [para.input]
+  }
+  
+  func inferShape() {
+    para.output.dim = para.input.dim
+  }
+  
+  typealias OpType = ReluOp<P>
+  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+    do {
+      try kernel.compute(commandBuffer: buffer, param: para)
+    } catch let error {
+      throw error
     }
-    
-    typealias OpType = ReluOp<P>
-    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
-    }
+  }
 }
 
 

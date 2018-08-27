@@ -46,6 +46,8 @@
 		FC9D038020E22FBB000F735A /* FeedOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9D037F20E22FBB000F735A /* FeedOp.swift */; };
 		FC9D038220E2312E000F735A /* FetchOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9D038120E2312E000F735A /* FetchOp.swift */; };
 		FC9D038420E23B01000F735A /* Texture.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9D038320E23B01000F735A /* Texture.swift */; };
+		FCA3A1632132A4AC00084FE5 /* ReshapeKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCA3A1622132A4AC00084FE5 /* ReshapeKernel.metal */; };
+		FCA3A1652132A5EB00084FE5 /* Common.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCA3A1642132A5EB00084FE5 /* Common.metal */; };
 		FCBCCC572122F41300D94F7E /* DwConvBNReluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCBCCC562122F41300D94F7E /* DwConvBNReluOp.swift */; };
 		FCBCCC592122F42700D94F7E /* ConvBNReluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCBCCC582122F42700D94F7E /* ConvBNReluOp.swift */; };
 		FCBCCC5B2122F66F00D94F7E /* ConvBNReluKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCBCCC5A2122F66F00D94F7E /* ConvBNReluKernel.swift */; };
@@ -126,6 +128,8 @@
 		FC9D037F20E22FBB000F735A /* FeedOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedOp.swift; sourceTree = "<group>"; };
 		FC9D038120E2312E000F735A /* FetchOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchOp.swift; sourceTree = "<group>"; };
 		FC9D038320E23B01000F735A /* Texture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Texture.swift; sourceTree = "<group>"; };
+		FCA3A1622132A4AC00084FE5 /* ReshapeKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ReshapeKernel.metal; sourceTree = "<group>"; };
+		FCA3A1642132A5EB00084FE5 /* Common.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Common.metal; sourceTree = "<group>"; };
 		FCBCCC562122F41300D94F7E /* DwConvBNReluOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DwConvBNReluOp.swift; sourceTree = "<group>"; };
 		FCBCCC582122F42700D94F7E /* ConvBNReluOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvBNReluOp.swift; sourceTree = "<group>"; };
 		FCBCCC5A2122F66F00D94F7E /* ConvBNReluKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvBNReluKernel.swift; sourceTree = "<group>"; };
@@ -349,6 +353,8 @@
 				FCDDC6C9212FDF6800E5EF74 /* BatchNormKernel.metal */,
 				FCDDC6CB212FDFDB00E5EF74 /* ReluKernel.metal */,
 				FCDDC6CE212FE14700E5EF74 /* PriorBoxKernel.metal */,
+				FCA3A1622132A4AC00084FE5 /* ReshapeKernel.metal */,
+				FCA3A1642132A5EB00084FE5 /* Common.metal */,
 			);
 			path = metal;
 			sourceTree = "<group>";
@@ -482,6 +488,7 @@
 				FC039BB820E11CC20081E9F8 /* framework.pb.swift in Sources */,
 				FC039B9920E11C9A0081E9F8 /* Types.swift in Sources */,
 				FC4CB74920F0B954007C0C6D /* ConvKernel.metal in Sources */,
+				FCA3A1632132A4AC00084FE5 /* ReshapeKernel.metal in Sources */,
 				FCBCCC592122F42700D94F7E /* ConvBNReluOp.swift in Sources */,
 				FC039BA920E11CBC0081E9F8 /* ConvOp.swift in Sources */,
 				FC9D038420E23B01000F735A /* Texture.swift in Sources */,
@@ -503,6 +510,7 @@
 				FCBCCC69212306D300D94F7E /* ConcatKernel.swift in Sources */,
 				FCDDC6C8212FA3CA00E5EF74 /* ConvTransposeKernel.swift in Sources */,
 				FC82735920E3C04200BE430A /* OpCreator.swift in Sources */,
+				FCA3A1652132A5EB00084FE5 /* Common.metal in Sources */,
 				FCBCCC5D2122F8A100D94F7E /* DepthwiseConvOp.swift in Sources */,
 				FC0E2DBE20EE460D009C1FAC /* BatchNormKernel.swift in Sources */,
 				FC039BAB20E11CBC0081E9F8 /* Operator.swift in Sources */,

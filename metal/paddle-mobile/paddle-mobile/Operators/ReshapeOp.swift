@@ -15,40 +15,44 @@
 import Foundation
 
 class ReshapeParam<P: PrecisionType>: OpParam {
-    typealias ParamPrecisionType = P
-    required init(opDesc: OpDesc, inScope: Scope) throws {
-        do {
-            input = try ReshapeParam.inputX(inputs: opDesc.inputs, from: inScope)
-            output = try ReshapeParam.outputOut(outputs: opDesc.outputs, from: inScope)
-//            shape = output.dim
-            inplace = try ReshapeParam.getAttr(key: "inplace", attrs: opDesc.attrs)
-        } catch let error {
-            throw error
-        }
+  typealias ParamPrecisionType = P
+  required init(opDesc: OpDesc, inScope: Scope) throws {
+    do {
+      input = try ReshapeParam.inputX(inputs: opDesc.inputs, from: inScope)
+      output = try ReshapeParam.outputOut(outputs: opDesc.outputs, from: inScope)
+      //            shape = output.dim
+      inplace = try ReshapeParam.getAttr(key: "inplace", attrs: opDesc.attrs)
+    } catch let error {
+      throw error
     }
-    let input: Texture<P>
-//    let shape: [Int]
-    let inplace: Bool
-    var output: Texture<P>
+  }
+  let input: Texture<P>
+  //    let shape: [Int]
+  let inplace: Bool
+  var output: Texture<P>
 }
 
 class ReshapeOp<P: PrecisionType>: Operator<ReshapeKernel<P>, ReshapeParam<P>>, Runable, Creator, InferShaperable{
-    
-    func inferShape() {
-        // para.output.dim = para.input.dim
+  
+  func inputs() -> [Variant] {
+    return [para.input]
+  }
+  
+  func inferShape() {
+    // para.output.dim = para.input.dim
+  }
+  
+  typealias OpType = ReshapeOp<P>
+  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+    do {
+      try kernel.compute(commandBuffer: buffer, param: para)
+    } catch let error {
+      throw error
     }
-    
-    typealias OpType = ReshapeOp<P>
-    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
-    }
-    func delogOutput() {
-        print("reshape delog")
-        let _: P? = para.input.metalTexture.logDesc(header: "reshape input: ", stridable: false)
-        let _: P? = para.output.metalTexture.logDesc(header: "reshape output: ", stridable: false)
-    }
+  }
+  func delogOutput() {
+    print("reshape delog")
+//    let _: P? = para.input.metalTexture.logDesc(header: "reshape input: ", stridable: false)
+    let _: P? = para.output.metalTexture.logDesc(header: "reshape output: ", stridable: false)
+  }
 }
