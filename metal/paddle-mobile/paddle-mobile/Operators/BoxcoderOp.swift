@@ -61,14 +61,38 @@
     }
     
     func delogOutput() {
-      let outputArray = para.output.metalTexture.floatArray { (o: Float32) -> Float32 in
-        return o
-      }
+//      let outputArray = para.output.metalTexture.floatArray { (o: Float32) -> Float32 in
+//        return o
+//      }
+      
+      let priorBoxOriginDim = para.priorBox.originDim
+      let priorBoxArray = para.priorBox.metalTexture.realNHWC(dim: (n: priorBoxOriginDim[0], h: priorBoxOriginDim[1], w: priorBoxOriginDim[2], c: priorBoxOriginDim[3]))
+      print(" prior box ")
+      print(priorBoxArray.strideArray())
+      
+      
+      let priorBoxVarOriginDim = para.priorBoxVar.originDim
+      let priorBoxVarArray = para.priorBoxVar.metalTexture.realNHWC(dim: (n: priorBoxVarOriginDim[0], h: priorBoxVarOriginDim[1], w: priorBoxVarOriginDim[2], c: priorBoxVarOriginDim[3]))
+      print(" prior box var ")
+      print(priorBoxVarArray.strideArray())
+      
+      let targetBoxOriginDim = para.targetBox.originDim
+      let targetBoxArray = para.targetBox.metalTexture.realNHWC(dim: (n: targetBoxOriginDim[0], h: targetBoxOriginDim[1], w: targetBoxOriginDim[2], c: targetBoxOriginDim[3]))
+      print(" target box ")
+      print(targetBoxArray.strideArray())
+      
+      
+      let originDim = para.output.originDim
+      
+      let outputArray = para.output.metalTexture.realNHWC(dim: (n: originDim[0], h: originDim[1], w: originDim[2], c: originDim[3]))
       print(outputArray.strideArray())
+      
+      
+//      print(outputArray.strideArray())
       //box_coder_0.tmp_0
 //      writeToLibrary(fileName: "boxcoder_output", array: outputArray)
-      print(para.output.metalTexture)
-      print(" write done ")
+//      print(para.output.metalTexture)
+//      print(" write done ")
     }
     
   }

@@ -77,7 +77,7 @@ kernel void reshape(texture2d_array<float, access::read> inTexture [[texture(0)]
   if (gid.x >= outTexture.get_width() ||
       gid.y >= outTexture.get_height() ||
       gid.z >= outTexture.get_array_size()) return;
-  
+
   int oxyzn[4] = {int(gid.x), int(gid.y), int(gid.z), 0}, oabcd[4], ixyzn[4], iabcd[4];
   ReshapeParam lrp = rp;
   int oC = lrp.odim[lrp.otrans[3]];
@@ -102,16 +102,14 @@ kernel void reshape(texture2d_array<float, access::read> inTexture [[texture(0)]
   outTexture.write(r, gid.xy, gid.z);
 }
 
-//
-//kernel void reshape_half(texture2d_array<half, access::read> inTexture [[texture(0)]],
-//                         texture2d_array<half, access::write> outTexture [[texture(1)]],
-//                         uint3 gid [[thread_position_in_grid]]) {
-//    if (gid.x >= outTexture.get_width() ||
-//        gid.y >= outTexture.get_height() ||
-//        gid.z >= outTexture.get_array_size()) return;
-//
-//    half4 r = inTexture.read(uint2(0, 0), gid.x);
-//    outTexture.write(r, gid.xy, gid.z);
-//}
+kernel void reshape_half(texture2d_array<half, access::read> inTexture [[texture(0)]],
+                         texture2d_array<half, access::write> outTexture [[texture(1)]],
+                         uint3 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() ||
+        gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size()) return;
 
+    half4 r = inTexture.read(uint2(0, 0), gid.x);
+    outTexture.write(r, gid.xy, gid.z);
+}
 
