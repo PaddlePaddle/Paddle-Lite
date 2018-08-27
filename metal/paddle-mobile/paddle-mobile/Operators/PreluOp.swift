@@ -35,6 +35,10 @@ class PreluParam<P: PrecisionType>: OpParam {
 
 class PreluOp<P: PrecisionType>: Operator<PreluKernel<P>, PreluParam<P>>, Runable, Creator, InferShaperable{
   
+  func inputs() -> [Variant] {
+    return [para.alpha, para.input]
+  }
+  
   func inferShape() {
     // para.output.dim = para.input.dim
   }

@@ -30,6 +30,7 @@ protocol Net {
   var preprocessKernel: CusomKernel { get }
   func getTexture(image: CGImage, getTexture: @escaping (MTLTexture) -> Void)
   func resultStr(res: [Float]) -> String
+  func fetchResult(paddleMobileRes: ResultHolder<Float32>) -> [Float32]
 }
 
 extension Net {
@@ -39,10 +40,13 @@ extension Net {
       getTexture(resTexture)
     }
   }
+  
+  func fetchResult(paddleMobileRes: ResultHolder<Float32>) -> [Float32] {
+    return paddleMobileRes.resultArr
+  }
 }
 
 struct MobileNet: Net{
-  
   class MobilenetPreProccess: CusomKernel {
     init(device: MTLDevice) {
       let s = CusomKernel.Shape.init(inWidth: 224, inHeight: 224, inChannel: 3)
@@ -100,7 +104,8 @@ struct MobileNet_ssd_hand: Net{
   }
   
   func resultStr(res: [Float]) -> String {
-    fatalError()
+    return "哈哈哈, 还没好"
+//    fatalError()
   }
   
   func bboxArea(box: [Float32], normalized: Bool) -> Float32 {
@@ -116,7 +121,6 @@ struct MobileNet_ssd_hand: Net{
       }
     }
   }
-  
   
   func jaccardOverLap(box1: [Float32], box2: [Float32], normalized: Bool) -> Float32 {
     if box2[0] > box1[2] || box2[2] < box1[0] || box2[1] > box1[3] ||
@@ -136,9 +140,11 @@ struct MobileNet_ssd_hand: Net{
     }
   }
   
-  func fetchResult(paddleMobileRes: [String : Texture<Float32>]) -> [Float32]{
-    let bbox = paddleMobileRes["box_coder_0.tmp_0"] ?! " no bbox "
-    let scores = paddleMobileRes["transpose_12.tmp_0"] ?! " no scores "
+  func fetchResult(paddleMobileRes: ResultHolder<Float32>) -> [Float32]{
+    let scores = paddleMobileRes.intermediateResults![0] as! Texture<Float32>
+    let bbox = paddleMobileRes.intermediateResults![1] as! Texture<Float32>
+//    let bbox = paddleMobileRes["box_coder_0.tmp_0"] ?! " no bbox "
+//    let scores = paddleMobileRes["transpose_12.tmp_0"] ?! " no scores "
     let score_thredshold: Float32 = 0.01
     let nms_top_k = 400
     let keep_top_k = 200
@@ -156,20 +162,29 @@ struct MobileNet_ssd_hand: Net{
     var scoreFormatArr: [Float32] = []
     var outputArr: [Float32] = []
     
-    let numOfOneC = (scores.originDim[2] + 3) / 4   // 480
-    let cNumOfOneClass = numOfOneC * 4              // 1920
+    let numOfOneC = (scores.tensorDim[2] + 3) / 4   // 480
     
-    let boxSize = bbox.originDim[2]                 // 4
-    let classNum = scores.originDim[1]              // 7
+    let cNumOfOneClass = scores.tensorDim[2]        // 1917
+
+    let cPaddedNumOfOneClass = numOfOneC * 4              // 1920
+    
+    let boxSize = bbox.tensorDim[2]                 // 4
+    let classNum = scores.tensorDim[1]              // 7
     let classNumOneTexture = classNum * 4           // 28
     
     for c in 0..<classNum {
       for n in 0..<numOfOneC {
         let to = n * classNumOneTexture + c * 4
-        scoreFormatArr.append(scoresArr[to])
-        scoreFormatArr.append(scoresArr[to + 1])
-        scoreFormatArr.append(scoresArr[to + 2])
-        scoreFormatArr.append(scoresArr[to + 3])
+        if n == numOfOneC - 1 {
+          for i in 0..<(4 - (cPaddedNumOfOneClass - cNumOfOneClass)) {
+            scoreFormatArr.append(scoresArr[to + i])
+          }
+        } else {
+          scoreFormatArr.append(scoresArr[to])
+          scoreFormatArr.append(scoresArr[to + 1])
+          scoreFormatArr.append(scoresArr[to + 2])
+          scoreFormatArr.append(scoresArr[to + 3])
+        }
       }
     }
     
@@ -178,13 +193,13 @@ struct MobileNet_ssd_hand: Net{
     var numDet: Int = 0
     
     for i in 0..<classNum {
-      var sliceScore = scoreFormatArr[(i * cNumOfOneClass)..<((i + 1) * cNumOfOneClass)]
+      var sliceScore = Array<Float32>(scoreFormatArr[(i * cNumOfOneClass)..<((i + 1) * cNumOfOneClass)])
       
       var scoreThresholdArr: [(Float32, Int)] = []
       
-      for i in 0..<cNumOfOneClass {
-        if sliceScore[i] > score_thredshold {
-          scoreThresholdArr.append((sliceScore[i], i))
+      for j in 0..<cNumOfOneClass {
+        if sliceScore[j] > score_thredshold {
+          scoreThresholdArr.append((sliceScore[j], j))
         }
       }
       
@@ -204,7 +219,7 @@ struct MobileNet_ssd_hand: Net{
           if keep {
             let keptIdx = selectedIndex[j].0
             let box1 = Array<Float32>(bboxArr[(idx * boxSize)..<(idx * boxSize + 4)])
-            let box2 = Array<Float32>(bboxArr[(idx * boxSize)..<(keptIdx * boxSize + 4)])
+            let box2 = Array<Float32>(bboxArr[(keptIdx * boxSize)..<(keptIdx * boxSize + 4)])
             
             let overlap = jaccardOverLap(box1: box1, box2: box2, normalized: true)
             keep = (overlap <= nms_threshold)
@@ -259,7 +274,8 @@ struct MobileNet_ssd_hand: Net{
         outputArr.append(contentsOf: subBox)
       }
     }
-    
+    print(" fuck success !")
+    print(outputArr)
     return outputArr
   }
   

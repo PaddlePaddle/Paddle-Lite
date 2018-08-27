@@ -15,36 +15,40 @@
 import Foundation
 
 class SoftmaxParam<P: PrecisionType>: OpParam {
-    typealias ParamPrecisionType = P
-    required init(opDesc: OpDesc, inScope: Scope) throws {
-        do {
-            input = try SoftmaxParam.inputX(inputs: opDesc.inputs, from: inScope)
-            output = try SoftmaxParam.outputOut(outputs: opDesc.outputs, from: inScope)
-        } catch let error {
-            throw error
-        }
+  typealias ParamPrecisionType = P
+  required init(opDesc: OpDesc, inScope: Scope) throws {
+    do {
+      input = try SoftmaxParam.inputX(inputs: opDesc.inputs, from: inScope)
+      output = try SoftmaxParam.outputOut(outputs: opDesc.outputs, from: inScope)
+    } catch let error {
+      throw error
     }
-    let input: Texture<P>
-    var output: Texture<P>
+  }
+  let input: Texture<P>
+  var output: Texture<P>
 }
 
 class SoftmaxOp<P: PrecisionType>: Operator<SoftmaxKernel<P>, SoftmaxParam<P>>, Runable, Creator, InferShaperable{
-    
-    func inferShape() {
-        // para.output.dim = para.input.dim
+  
+  func inputs() -> [Variant] {
+    return [para.input]
+  }
+  
+  func inferShape() {
+    // para.output.dim = para.input.dim
+  }
+  
+  typealias OpType = SoftmaxOp<P>
+  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+    do {
+      try kernel.compute(commandBuffer: buffer, param: para)
+    } catch let error {
+      throw error
     }
-    
-    typealias OpType = SoftmaxOp<P>
-    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
-    }
-    func delogOutput() {
-        print("softmax delog")
-        let _: P? = para.input.metalTexture.logDesc(header: "softmax input: ", stridable: false)
-        let _: P? = para.output.metalTexture.logDesc(header: "softmax output: ", stridable: false)
-    }
+  }
+  func delogOutput() {
+    print("softmax delog")
+    let _: P? = para.input.metalTexture.logDesc(header: "softmax input: ", stridable: false)
+    let _: P? = para.output.metalTexture.logDesc(header: "softmax output: ", stridable: false)
+  }
 }

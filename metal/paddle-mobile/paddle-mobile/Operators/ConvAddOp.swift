@@ -15,80 +15,108 @@
 import Foundation
 
 class ConvAddParam<P: PrecisionType>: OpParam {
-    typealias ParamPrecisionType = P
-    required init(opDesc: OpDesc, inScope: Scope) throws {
-        do {
-            filter = try ConvAddParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
-            input = try ConvAddParam.input(inputs: opDesc.inputs, from: inScope)
-            output = try ConvAddParam.outputOut(outputs: opDesc.outputs, from: inScope)
-            stride = try ConvAddParam.getAttr(key: "strides", attrs: opDesc.attrs)
-            paddings = try ConvAddParam.getAttr(key: "paddings", attrs: opDesc.attrs)
-            dilations = try ConvAddParam.getAttr(key: "dilations", attrs: opDesc.attrs)
-            groups = try ConvAddParam.getAttr(key: "groups", attrs: opDesc.attrs)
-            y = try ConvAddParam.inputY(inputs: opDesc.paraInputs, from: inScope)
-        } catch let error {
-            throw error
-        }
+  typealias ParamPrecisionType = P
+  required init(opDesc: OpDesc, inScope: Scope) throws {
+    do {
+      filter = try ConvAddParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
+      input = try ConvAddParam.input(inputs: opDesc.inputs, from: inScope)
+      output = try ConvAddParam.outputOut(outputs: opDesc.outputs, from: inScope)
+      stride = try ConvAddParam.getAttr(key: "strides", attrs: opDesc.attrs)
+      paddings = try ConvAddParam.getAttr(key: "paddings", attrs: opDesc.attrs)
+      dilations = try ConvAddParam.getAttr(key: "dilations", attrs: opDesc.attrs)
+      groups = try ConvAddParam.getAttr(key: "groups", attrs: opDesc.attrs)
+      y = try ConvAddParam.inputY(inputs: opDesc.paraInputs, from: inScope)
+    } catch let error {
+      throw error
     }
-    
-    let input: Texture<P>
-    let y: Tensor<ParamPrecisionType>
-    let filter: Tensor<ParamPrecisionType>
-    
-    var output: Texture<P>
-    let stride: [Int32]
-    let paddings: [Int32]
-    let dilations: [Int32]
-    let groups: Int
+  }
+  
+  let input: Texture<P>
+  let y: Tensor<ParamPrecisionType>
+  let filter: Tensor<ParamPrecisionType>
+  
+  var output: Texture<P>
+  let stride: [Int32]
+  let paddings: [Int32]
+  let dilations: [Int32]
+  let groups: Int
 }
 
 class ConvAddOp<P: PrecisionType>: Operator<ConvAddKernel<P>, ConvAddParam<P>>, Runable, Creator, InferShaperable, Fusion{
-    static func fusionNode() -> Node {
-        let beginNode = Node.init(inType: gConvType)
-        _ = beginNode
-            --> Node.init(inType: gElementwiseAddType)
-        return beginNode
+  
+  func delogOutput() {
+    print(" conv add: ")
+    
+//    print(para.input.metalTexture)
+    
+//    print(" filter array: ")
+//    let filterArray: [P] = para.filter.buffer.array()
+//    print(filterArray)
+    
+    let input = para.input.metalTexture.floatArray { (p: P) -> P in
+      return p
     }
+//    print(input)
     
-    static func change() -> [String : [(from: String, to: String)]] {
-        return [:]
+    let output = para.output.metalTexture.floatArray { (p: P) -> P in
+      return p
     }
+//    print(para.output.metalTexture)
+    print(output)
+  }
+  
+  
+  static func fusionNode() -> Node {
+    let beginNode = Node.init(inType: gConvType)
+    _ = beginNode
+      --> Node.init(inType: gElementwiseAddType)
+    return beginNode
+  }
+  
+  static func change() -> [String : [(from: String, to: String)]] {
+    return [:]
+  }
+  
+  func inputs() -> [Variant] {
+    return [para.input, para.y, para.filter]
+  }
+  
+  
+  static func fusionType() -> String {
+    return gConvAddType
+  }
+  
+  typealias OpType = ConvAddOp<P>
+  
+  func inferShape() {
     
-    static func fusionType() -> String {
-        return gConvAddType
+    let inDims = para.input.dim
+    let filterDim = para.filter.dim
+    let strides = para.stride
+    let paddings = para.paddings
+    let dilations = para.dilations
+    
+    var outDim = [inDims[0]]
+    for i in 0..<strides.count {
+      let dilation: Int = Int(dilations[i])
+      let filterSize: Int = filterDim[i + 1]
+      let inputSize: Int = inDims[i + 1]
+      let padding: Int = Int(paddings[i])
+      let stride: Int = Int(strides[i])
+      let dKernel = dilation * (filterSize - 1) + 1
+      let outputSize = (inputSize + 2 * padding - dKernel) / stride + 1
+      outDim.append(outputSize)
     }
-    
-    typealias OpType = ConvAddOp<P>
-    
-    func inferShape() {
-        
-        let inDims = para.input.dim
-        let filterDim = para.filter.dim
-        let strides = para.stride
-        let paddings = para.paddings
-        let dilations = para.dilations
-        
-        var outDim = [inDims[0]]
-        for i in 0..<strides.count {
-            let dilation: Int = Int(dilations[i])
-            let filterSize: Int = filterDim[i + 1]
-            let inputSize: Int = inDims[i + 1]
-            let padding: Int = Int(paddings[i])
-            let stride: Int = Int(strides[i])
-            let dKernel = dilation * (filterSize - 1) + 1
-            let outputSize = (inputSize + 2 * padding - dKernel) / stride + 1
-            outDim.append(outputSize)
-        }
-        outDim.append(filterDim[0])
-        para.output.dim = Dim.init(inDim: outDim)
+    outDim.append(filterDim[0])
+    para.output.dim = Dim.init(inDim: outDim)
+  }
+  
+  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+    do {
+      try kernel.compute(commandBuffer: buffer, param: para)
+    } catch let error {
+      throw error
     }
-    
-    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
-    }
-    
+  }
+  
 }

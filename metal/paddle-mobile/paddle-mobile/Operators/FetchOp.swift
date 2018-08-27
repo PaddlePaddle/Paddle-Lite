@@ -15,40 +15,44 @@
 import Foundation
 
 class FetchParam<P: PrecisionType>: OpParam{
-    var output: Texture<P>
-    let input: Texture<P>
-    let scope: Scope
-    required init(opDesc: OpDesc, inScope: Scope) throws {
-        scope = inScope
-        do {
-            input = try FetchParam.inputX(inputs: opDesc.inputs, from: inScope)
-            output = input
-        } catch let error {
-            throw error
-        }
+  var output: Texture<P>
+  let input: Texture<P>
+  let scope: Scope
+  required init(opDesc: OpDesc, inScope: Scope) throws {
+    scope = inScope
+    do {
+      input = try FetchParam.inputX(inputs: opDesc.inputs, from: inScope)
+      output = input
+    } catch let error {
+      throw error
     }
-    
-    typealias ParamPrecisionType = P
+  }
+  
+  typealias ParamPrecisionType = P
 }
 
 class FetchKernel<P: PrecisionType>: Kernel, Computable {
-    
-    func compute(commandBuffer: MTLCommandBuffer, param: FetchParam<P>) throws {
-    }
-    
-    required init(device: MTLDevice, param: FetchParam<P>) {
-        super.init(device: device, inFunctionName: "texture2d_to_2d_array")
-    }
+  
+  func compute(commandBuffer: MTLCommandBuffer, param: FetchParam<P>) throws {
+  }
+  
+  required init(device: MTLDevice, param: FetchParam<P>) {
+    super.init(device: device, inFunctionName: "texture2d_to_2d_array")
+  }
 }
 
 class FetchOp<P: PrecisionType>: Operator< FetchKernel<P>, FetchParam<P>>, Runable, Creator, InferShaperable{
-    func inferShape() {
-        print(para.input.dim)
-    }
-    
-    typealias OpType = FetchOp<P>
-    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        scope.setOutput(output: para.output)
-    }
+  func inputs() -> [Variant] {
+    return [para.input]
+  }
+  
+  func inferShape() {
+    print(para.input.dim)
+  }
+  
+  typealias OpType = FetchOp<P>
+  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+    scope.setOutput(output: para.output)
+  }
 }
 

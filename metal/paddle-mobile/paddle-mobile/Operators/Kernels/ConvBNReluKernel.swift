@@ -59,7 +59,7 @@ class ConvBNReluKernel<P: PrecisionType>: Kernel, Computable, Testable {
     } else {
       super.init(device: device, inFunctionName: "conv_batch_norm_relu_3x3")
     }
-    param.output.initTexture(device: device, transpose: [0, 2, 3, 1])
+    param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1])
     param.filter.initBuffer(device: device, precision: Tensor.BufferPrecision.Float32)
     
     param.variance.initBuffer(device: device)
@@ -70,8 +70,13 @@ class ConvBNReluKernel<P: PrecisionType>: Kernel, Computable, Testable {
     let offsetX = param.filter.width/2 - Int(param.paddings[0])
     let offsetY = param.filter.height/2 - Int(param.paddings[1])
     
-    print("offset x: \(offsetX)")
-    print("offset y: \(offsetY)")
+    print(" param filter width: \(param.filter.width)")
+    print(" param filter height: \(param.filter.height)")
+    
+    print(" param paddings: \(param.paddings)")
+    
+    print("ConvBNReluKernel offset x: \(offsetX)")
+    print("ConvBNReluKernel offset y: \(offsetY)")
     
     let offsetZ = 0.0
     
@@ -116,8 +121,8 @@ class ConvBNReluKernel<P: PrecisionType>: Kernel, Computable, Testable {
     encoder.setTexture(param.output.metalTexture, index: 1)
     encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
     encoder.setBuffer(param.filter.buffer, offset: 0, index: 1)
-    encoder.setBuffer(param.newScale!, offset: 0, index: 3)
-    encoder.setBuffer(param.newBiase!, offset: 0, index: 4)
+    encoder.setBuffer(param.newScale!, offset: 0, index: 2)
+    encoder.setBuffer(param.newBiase!, offset: 0, index: 3)
     encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
     encoder.endEncoding()
   }
@@ -132,9 +137,8 @@ class ConvBNReluKernel<P: PrecisionType>: Kernel, Computable, Testable {
     var inMetalParam = param.metalParam
     encoder.setBytes(&inMetalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
     encoder.setBuffer(param.filterBuffer, offset: 0, index: 1)
-    encoder.setBuffer(param.biaseBuffer, offset: 0, index: 2)
-    encoder.setBuffer(param.newScaleBuffer, offset: 0, index: 3)
-    encoder.setBuffer(param.newBiaseBuffer, offset: 0, index: 4)
+    encoder.setBuffer(param.newScaleBuffer, offset: 0, index: 2)
+    encoder.setBuffer(param.newBiaseBuffer, offset: 0, index: 3)
     encoder.dispatch(computePipline: pipline, outTexture: param.outputTexture)
     encoder.endEncoding()
   }
