@@ -28,6 +28,10 @@ class ConvTransposeParam<P: PrecisionType>: ConvParam<P> {
 
 class ConvTransposeOp<P: PrecisionType>: Operator<ConvTransposeKernel<P>, ConvTransposeParam<P>>, Runable, Creator, InferShaperable{
   
+  func inputs() -> [Variant] {
+    return [para.input, para.filter]
+  }
+  
   func inferShape() {
     // para.output.dim = para.input.dim
   }

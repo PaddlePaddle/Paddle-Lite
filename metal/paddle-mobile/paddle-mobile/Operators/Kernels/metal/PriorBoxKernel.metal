@@ -60,7 +60,7 @@ kernel void prior_box(texture2d_array<float, access::read> inTexture [[texture(0
     
     float4 res;
     if (param.clip) {
-      res = min(max(box, 0.0), 1.0);
+      res = fmin(fmax(box, 0.0), 1.0);
     } else {
       res = box;
     }
@@ -74,7 +74,7 @@ kernel void prior_box(texture2d_array<float, access::read> inTexture [[texture(0
       max_box.y = (center_y - box_height) / param.imageHeight;
       max_box.z = (center_x + box_width) / param.imageWidth;
       max_box.w = (center_y + box_height) / param.imageHeight;
-      
+
       float4 res;
       if (param.clip) {
         res = min(max(max_box, 0.0), 1.0);
@@ -92,6 +92,7 @@ kernel void prior_box(texture2d_array<float, access::read> inTexture [[texture(0
     variances_output.y = variance.y;
     variances_output.z = variance.z;
     variances_output.w = variance.w;
+    varianceTexture.write(variances_output, gid.xy, gid.z);
   }
 }
 

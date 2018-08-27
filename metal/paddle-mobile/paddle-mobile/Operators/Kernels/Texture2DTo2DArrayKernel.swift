@@ -32,7 +32,7 @@ class Texture2DTo2DArrayKernel<P: PrecisionType>: Kernel, Computable{
   }
   
   required init(device: MTLDevice, param: FeedParam<P>) {
-    param.output.initTexture(device: device, transpose: [0, 2, 3, 1])
+    param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1])
     super.init(device: device, inFunctionName: "texture2d_to_2d_array")
   }
 }

@@ -15,115 +15,164 @@
 import Foundation
 
 class ConvBNReluParam<P: PrecisionType>: OpParam {
-    typealias ParamPrecisionType = P
-    required init(opDesc: OpDesc, inScope: Scope) throws {
-        do {
-            filter = try ConvBNReluParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
-            input = try ConvBNReluParam.input(inputs: opDesc.inputs, from: inScope)
-            output = try ConvBNReluParam.outputOut(outputs: opDesc.outputs, from: inScope)
-            stride = try ConvBNReluParam.getAttr(key: "strides", attrs: opDesc.attrs)
-            paddings = try ConvBNReluParam.getAttr(key: "paddings", attrs: opDesc.attrs)
-            dilations = try ConvBNReluParam.getAttr(key: "dilations", attrs: opDesc.attrs)
-            epsilon = try ConvBNReluParam.getAttr(key: "epsilon", attrs: opDesc.attrs)
-            
-            groups = try ConvBNReluParam.getAttr(key: "groups", attrs: opDesc.attrs)
-            variance = try ConvBNReluParam.inputVariance(inputs: opDesc.paraInputs, from: inScope)
-            bias = try ConvBNReluParam.inputBiase(inputs: opDesc.paraInputs, from: inScope)
-            scale = try ConvBNReluParam.inputScale(inputs: opDesc.paraInputs, from: inScope)
-            mean = try ConvBNReluParam.inputMean(inputs: opDesc.paraInputs, from: inScope)
-        } catch let error {
-            throw error
-        }
+  typealias ParamPrecisionType = P
+  required init(opDesc: OpDesc, inScope: Scope) throws {
+    do {
+      filter = try ConvBNReluParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
+      input = try ConvBNReluParam.input(inputs: opDesc.inputs, from: inScope)
+      output = try ConvBNReluParam.outputOut(outputs: opDesc.outputs, from: inScope)
+      stride = try ConvBNReluParam.getAttr(key: "strides", attrs: opDesc.attrs)
+      paddings = try ConvBNReluParam.getAttr(key: "paddings", attrs: opDesc.attrs)
+      dilations = try ConvBNReluParam.getAttr(key: "dilations", attrs: opDesc.attrs)
+      epsilon = try ConvBNReluParam.getAttr(key: "epsilon", attrs: opDesc.attrs)
+      
+      groups = try ConvBNReluParam.getAttr(key: "groups", attrs: opDesc.attrs)
+      variance = try ConvBNReluParam.inputVariance(inputs: opDesc.paraInputs, from: inScope)
+      bias = try ConvBNReluParam.inputBiase(inputs: opDesc.paraInputs, from: inScope)
+      scale = try ConvBNReluParam.inputScale(inputs: opDesc.paraInputs, from: inScope)
+      mean = try ConvBNReluParam.inputMean(inputs: opDesc.paraInputs, from: inScope)
+    } catch let error {
+      throw error
     }
-    
-    let input: Texture<P>
-    
-    let variance: Tensor<ParamPrecisionType>
-    let bias: Tensor<ParamPrecisionType>
-    let mean: Tensor<ParamPrecisionType>
-    let scale: Tensor<ParamPrecisionType>
-    let filter: Tensor<ParamPrecisionType>
-    let epsilon: Float32
-    var newScale: MTLBuffer?
-    var newBiase: MTLBuffer?
-    
-    var output: Texture<P>
-    let stride: [Int32]
-    let paddings: [Int32]
-    let dilations: [Int32]
-    let groups: Int
+  }
+  
+  let input: Texture<P>
+  
+  let variance: Tensor<ParamPrecisionType>
+  let bias: Tensor<ParamPrecisionType>
+  let mean: Tensor<ParamPrecisionType>
+  let scale: Tensor<ParamPrecisionType>
+  let filter: Tensor<ParamPrecisionType>
+  let epsilon: Float32
+  var newScale: MTLBuffer?
+  var newBiase: MTLBuffer?
+  
+  var output: Texture<P>
+  let stride: [Int32]
+  let paddings: [Int32]
+  let dilations: [Int32]
+  let groups: Int
 }
 
 class ConvBNReluOp<P: PrecisionType>: Operator<ConvBNReluKernel<P>, ConvBNReluParam<P>>, Runable, Creator, InferShaperable, Fusion{
-    typealias OpType = ConvBNReluOp<P>
+  typealias OpType = ConvBNReluOp<P>
+  
+  func inputs() -> [Variant] {
+    return [para.input, para.variance, para.bias, para.mean, para.scale, para.filter]
+  }
+  
+  
+  func inferShape() {
+    let inDims = para.input.dim
+    let filterDim = para.filter.dim
+    let strides = para.stride
+    let paddings = para.paddings
+    let dilations = para.dilations
     
-    func inferShape() {
-        let inDims = para.input.dim
-        let filterDim = para.filter.dim
-        let strides = para.stride
-        let paddings = para.paddings
-        let dilations = para.dilations
-        
-        var outDim = [inDims[0]]
-        for i in 0..<strides.count {
-            let dilation: Int = Int(dilations[i])
-            let filterSize: Int = filterDim[i + 1]
-            let inputSize: Int = inDims[i + 1]
-            let padding: Int = Int(paddings[i])
-            let stride: Int = Int(strides[i])
-            let dKernel = dilation * (filterSize - 1) + 1
-            let outputSize = (inputSize + 2 * padding - dKernel) / stride + 1
-            outDim.append(outputSize)
-        }
-        outDim.append(filterDim[0])
-        para.output.dim = Dim.init(inDim: outDim)
+    var outDim = [inDims[0]]
+    for i in 0..<strides.count {
+      let dilation: Int = Int(dilations[i])
+      let filterSize: Int = filterDim[i + 1]
+      let inputSize: Int = inDims[i + 1]
+      let padding: Int = Int(paddings[i])
+      let stride: Int = Int(strides[i])
+      let dKernel = dilation * (filterSize - 1) + 1
+      let outputSize = (inputSize + 2 * padding - dKernel) / stride + 1
+      outDim.append(outputSize)
     }
+    outDim.append(filterDim[0])
+    para.output.dim = Dim.init(inDim: outDim)
+  }
+  
+  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+    do {
+      try kernel.compute(commandBuffer: buffer, param: para)
+    } catch let error {
+      throw error
+    }
+  }
+  
+  static func fusionNode() -> Node {
+    let beginNode = Node.init(inType: gConvType)
+    _ = beginNode
+      --> Node.init(inType: gBatchNormType)
+      --> Node.init(inType: gReluType)
+    return beginNode
+  }
+  
+  static func change() -> [String : [(from: String, to: String)]] {
+    return [:]
+  }
+  
+  static func fusionType() -> String {
+    return gConvBnReluType
+  }
+  
+  func delogOutput() {
     
-    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
-    }
+    //        let _: P? = para.input.metalTexture.logDesc(header: "conv add batchnorm relu input: ", stridable: false)
+    //        para.filter.logDataPointer(header: "filter data pointer: ")
+    //        print("filter: \(para.filter)")
     
-    static func fusionNode() -> Node {
-        let beginNode = Node.init(inType: gConvType)
-        _ = beginNode
-            --> Node.init(inType: gBatchNormType)
-            --> Node.init(inType: gReluType)
-        return beginNode
-    }
+    //        print("biase: \(para.y)")
+    //        print("padding: \(para.paddings)")
+    //        print("stride: \(para.stride)")
     
-    static func change() -> [String : [(from: String, to: String)]] {
-        return [:]
-    }
+    //        let _: P? = para.y.buffer?.logDesc(header: " biase: ", stridable: false)
+    //        let _: P? = para.newBiase?.logDesc(header: "new biase: ", stridable: false)
+    //        let _: P? = para.newScale?.logDesc(header: "new scale: ", stridable: false)
+
     
-    static func fusionType() -> String {
-        return gConvBnReluType
-    }
     
-    func delogOutput() {
-        
-        //        let _: P? = para.input.metalTexture.logDesc(header: "conv add batchnorm relu input: ", stridable: false)
-        //        para.filter.logDataPointer(header: "filter data pointer: ")
-        //        print("filter: \(para.filter)")
-        
-        //        print("biase: \(para.y)")
-        //        print("padding: \(para.paddings)")
-        //        print("stride: \(para.stride)")
-        
-        //        let _: P? = para.y.buffer?.logDesc(header: " biase: ", stridable: false)
-        //        let _: P? = para.newBiase?.logDesc(header: "new biase: ", stridable: false)
-        //        let _: P? = para.newScale?.logDesc(header: "new scale: ", stridable: false)
-        
-        let output = para.output.metalTexture.floatArray { (p: P) -> P in
-            return p
-        }
-        //
-        writeToLibrary(fileName: "output_112x112x32_2", array: output)
-        print(" write done")
-        
-        //        let _: P? = para.output.metalTexture.logDesc(header: "conv add batchnorm relu output: ", stridable: false)
+//    print("input: ")
+//    print(para.input.metalTexture)
+//    
+//    let input = para.input.metalTexture.floatArray { (p: P) -> P in
+//      return p
+//    }
+//    for i in 0..<input.count {
+//      print(" index \(i) : \(input[i])")
+//    }
+//    print(input)
+    
+//    writeToLibrary(fileName: "input35", array: input)
+    
+//    print(input)
+    
+    print(para.newBiase?.length)
+    print(para.newScale?.length)
+//    let newScale = para.newScale?.contents().bindMemory(to: P.self, capacity: para.newScale!.length)
+//    let newBiase = para.newBiase?.contents().bindMemory(to: P.self, capacity: para.newBiase!.length)
+//
+//    let filterArray: [Float32] = para.filter.buffer.array();
+////    writeToLibrary(fileName: "filter35", array: filterArray)
+//
+//    print(filterArray)
+//
+//    print("new scale: ")
+//    for i in 0..<(para.newScale!.length / MemoryLayout<P>.size) {
+//      print("index: \(i) \(newScale![i]) ")
+//    }
+//
+//    print("new biase: ")
+//    for i in 0..<(para.newBiase!.length / MemoryLayout<P>.size) {
+//      print("index: \(i) \(newBiase![i]) ")
+//    }
+    
+    print(para.output.metalTexture)
+    
+    let output = para.output.metalTexture.floatArray { (p: P) -> P in
+      return p
     }
+    print(output)
+//
+    writeToLibrary(fileName: "batch_norm_34.tmp_2", array: output)
+    print(" write done")
+//
+    
+    
+    
+    
+    //        let _: P? = para.output.metalTexture.logDesc(header: "conv add batchnorm relu output: ", stridable: true)
+  }
 }

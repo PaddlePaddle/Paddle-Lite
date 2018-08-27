@@ -50,7 +50,7 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable, Testable
 
     required init(device: MTLDevice, param: ConvAddBatchNormReluParam<P>) {
         
-        param.output.initTexture(device: device, transpose: [0, 2, 3, 1])
+        param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1])
         
         if param.filter.width == 1 && param.filter.height == 1 {
             super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_1x1")
