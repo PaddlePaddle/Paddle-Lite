@@ -35,11 +35,7 @@ class FeedParam<P: PrecisionType>: OpParam{
 
 class FeedOp<P: PrecisionType>: Operator<Texture2DTo2DArrayKernel<P>, FeedParam<P>>, Runable, Creator, InferShaperable {
   typealias OpType = FeedOp<P>
-  
-  func inputs() -> [Variant] {
-    return [para.input]
-  }
-  
+
   func inferShape() {
     //        print("feed  input: \(para.input.expectDim)")
     print("feed output: \(para.output.dim)")
