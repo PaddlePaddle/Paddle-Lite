@@ -40,8 +40,8 @@ extension InputTexture {
 
 public class Texture<P: PrecisionType>: Tensorial {
   var dim: Dim
-  private(set) public var tensorDim: Dim
-  private(set) public var originDim: Dim
+  public var tensorDim: Dim
+  public var originDim: Dim
   private var textureDesc: MTLTextureDescriptor!
   public var metalTexture: MTLTexture!
   var transpose: [Int] = [0, 1, 2, 3]
