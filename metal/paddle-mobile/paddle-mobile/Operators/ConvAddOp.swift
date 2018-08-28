@@ -25,6 +25,7 @@ class ConvAddParam<P: PrecisionType>: OpParam {
       paddings = try ConvAddParam.getAttr(key: "paddings", attrs: opDesc.attrs)
       dilations = try ConvAddParam.getAttr(key: "dilations", attrs: opDesc.attrs)
       groups = try ConvAddParam.getAttr(key: "groups", attrs: opDesc.attrs)
+      
       y = try ConvAddParam.inputY(inputs: opDesc.paraInputs, from: inScope)
     } catch let error {
       throw error
