@@ -15,8 +15,11 @@
 		FC039B8920E11C560081E9F8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FC039B8820E11C560081E9F8 /* Assets.xcassets */; };
 		FC039B8C20E11C560081E9F8 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = FC039B8A20E11C560081E9F8 /* LaunchScreen.storyboard */; };
 		FC27991021341CE5000B6BAD /* Net.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC27990F21341CE5000B6BAD /* Net.swift */; };
+		FC27991321343A3A000B6BAD /* CPUCompute.mm in Sources */ = {isa = PBXBuildFile; fileRef = FC27991221343A3A000B6BAD /* CPUCompute.mm */; };
 		FC3C800F2133F46600D1295E /* MobileNetSSD.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC3C800E2133F46600D1295E /* MobileNetSSD.swift */; };
 		FC3C80112133F4AB00D1295E /* MobileNet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC3C80102133F4AB00D1295E /* MobileNet.swift */; };
+		FC8CFEDB21351F5D0094D569 /* params in Resources */ = {isa = PBXBuildFile; fileRef = FC8CFED921351F5D0094D569 /* params */; };
+		FC8CFEDC21351F5D0094D569 /* model in Resources */ = {isa = PBXBuildFile; fileRef = FC8CFEDA21351F5D0094D569 /* model */; };
 		FC918191211DBC3500B6F354 /* paddle-mobile.png in Resources */ = {isa = PBXBuildFile; fileRef = FC918190211DBC3500B6F354 /* paddle-mobile.png */; };
 		FC918193211DC70500B6F354 /* iphone.JPG in Resources */ = {isa = PBXBuildFile; fileRef = FC918192211DC70500B6F354 /* iphone.JPG */; };
 		FCA3A16121313E1F00084FE5 /* hand.jpg in Resources */ = {isa = PBXBuildFile; fileRef = FCA3A16021313E1F00084FE5 /* hand.jpg */; };
@@ -58,8 +61,13 @@
 		FC039B8B20E11C560081E9F8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		FC039B8D20E11C560081E9F8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		FC27990F21341CE5000B6BAD /* Net.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Net.swift; sourceTree = "<group>"; };
+		FC27991121343A39000B6BAD /* paddle-mobile-demo-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "paddle-mobile-demo-Bridging-Header.h"; sourceTree = "<group>"; };
+		FC27991221343A3A000B6BAD /* CPUCompute.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = CPUCompute.mm; sourceTree = "<group>"; };
+		FC27991421343A46000B6BAD /* CPUCompute.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CPUCompute.h; sourceTree = "<group>"; };
 		FC3C800E2133F46600D1295E /* MobileNetSSD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileNetSSD.swift; sourceTree = "<group>"; };
 		FC3C80102133F4AB00D1295E /* MobileNet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileNet.swift; sourceTree = "<group>"; };
+		FC8CFED921351F5D0094D569 /* params */ = {isa = PBXFileReference; lastKnownFileType = file; path = params; sourceTree = "<group>"; };
+		FC8CFEDA21351F5D0094D569 /* model */ = {isa = PBXFileReference; lastKnownFileType = file; path = model; sourceTree = "<group>"; };
 		FC918190211DBC3500B6F354 /* paddle-mobile.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "paddle-mobile.png"; sourceTree = "<group>"; };
 		FC918192211DC70500B6F354 /* iphone.JPG */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = iphone.JPG; sourceTree = "<group>"; };
 		FCA3A16021313E1F00084FE5 /* hand.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = hand.jpg; sourceTree = "<group>"; };
@@ -125,6 +133,7 @@
 		FC039B8020E11C550081E9F8 /* paddle-mobile-demo */ = {
 			isa = PBXGroup;
 			children = (
+				FC8CFED2213519540094D569 /* Net */,
 				FC0E2C2020EDC03B009C1FAC /* models */,
 				FC0E2C1D20EDC030009C1FAC /* images */,
 				FC039B8120E11C550081E9F8 /* AppDelegate.swift */,
@@ -134,10 +143,7 @@
 				FC039B8820E11C560081E9F8 /* Assets.xcassets */,
 				FC039B8A20E11C560081E9F8 /* LaunchScreen.storyboard */,
 				FC039B8D20E11C560081E9F8 /* Info.plist */,
-				FCBCCC542122EF5400D94F7E /* MetalHelper.swift */,
-				FC3C800E2133F46600D1295E /* MobileNetSSD.swift */,
-				FC3C80102133F4AB00D1295E /* MobileNet.swift */,
-				FC27990F21341CE5000B6BAD /* Net.swift */,
+				FC27991121343A39000B6BAD /* paddle-mobile-demo-Bridging-Header.h */,
 			);
 			path = "paddle-mobile-demo";
 			sourceTree = "<group>";
@@ -158,11 +164,34 @@
 		FC0E2C2020EDC03B009C1FAC /* models */ = {
 			isa = PBXGroup;
 			children = (
+				FC8CFED821351F5D0094D569 /* enet */,
 				FCBCCC4F2122EEDC00D94F7E /* mobilenet_ssd_hand */,
 				FCD04E6020F3146A0007374F /* mobilenet */,
 			);
 			name = models;
 			path = ../../models;
+			sourceTree = "<group>";
+		};
+		FC8CFED2213519540094D569 /* Net */ = {
+			isa = PBXGroup;
+			children = (
+				FCBCCC542122EF5400D94F7E /* MetalHelper.swift */,
+				FC3C800E2133F46600D1295E /* MobileNetSSD.swift */,
+				FC3C80102133F4AB00D1295E /* MobileNet.swift */,
+				FC27990F21341CE5000B6BAD /* Net.swift */,
+				FC27991221343A3A000B6BAD /* CPUCompute.mm */,
+				FC27991421343A46000B6BAD /* CPUCompute.h */,
+			);
+			path = Net;
+			sourceTree = "<group>";
+		};
+		FC8CFED821351F5D0094D569 /* enet */ = {
+			isa = PBXGroup;
+			children = (
+				FC8CFED921351F5D0094D569 /* params */,
+				FC8CFEDA21351F5D0094D569 /* model */,
+			);
+			path = enet;
 			sourceTree = "<group>";
 		};
 		FCBCCC4F2122EEDC00D94F7E /* mobilenet_ssd_hand */ = {
@@ -218,6 +247,7 @@
 				TargetAttributes = {
 					FC039B7D20E11C550081E9F8 = {
 						CreatedOnToolsVersion = 9.3.1;
+						LastSwiftMigration = 0940;
 					};
 				};
 			};
@@ -244,7 +274,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FC8CFEDB21351F5D0094D569 /* params in Resources */,
 				FCD04E6320F3146B0007374F /* params in Resources */,
+				FC8CFEDC21351F5D0094D569 /* model in Resources */,
 				FC039B8C20E11C560081E9F8 /* LaunchScreen.storyboard in Resources */,
 				FC918191211DBC3500B6F354 /* paddle-mobile.png in Resources */,
 				FC039B8920E11C560081E9F8 /* Assets.xcassets in Resources */,
@@ -309,6 +341,7 @@
 				FC013928210204A3008100E3 /* PreProcessKernel.metal in Sources */,
 				FC27991021341CE5000B6BAD /* Net.swift in Sources */,
 				FCBCCC552122EF5500D94F7E /* MetalHelper.swift in Sources */,
+				FC27991321343A3A000B6BAD /* CPUCompute.mm in Sources */,
 				FC3C80112133F4AB00D1295E /* MobileNet.swift in Sources */,
 				FC3C800F2133F46600D1295E /* MobileNetSSD.swift in Sources */,
 				FC039B8220E11C550081E9F8 /* AppDelegate.swift in Sources */,
@@ -456,19 +489,22 @@
 			baseConfigurationReference = 878829884E1A14D7044721D5 /* Pods-paddle-mobile-demo.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = A798K58VVL;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = 6T9LLJKSM4;
 				INFOPLIST_FILE = "paddle-mobile-demo/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.paddlemobile.metal;
+				PRODUCT_BUNDLE_IDENTIFIER = com.baidu.mms.qa;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "";
-				PROVISIONING_PROFILE_SPECIFIER = "";
+				PROVISIONING_PROFILE = "ba9c4b24-7bd0-49c5-93cd-e3051e775d6c";
+				PROVISIONING_PROFILE_SPECIFIER = Distribution_MMS;
+				SWIFT_OBJC_BRIDGING_HEADER = "paddle-mobile-demo/paddle-mobile-demo-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -479,19 +515,21 @@
 			baseConfigurationReference = 081C9CF10DB06C58B8B6B039 /* Pods-paddle-mobile-demo.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = A798K58VVL;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = 6T9LLJKSM4;
 				INFOPLIST_FILE = "paddle-mobile-demo/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.paddlemobile.metal;
+				PRODUCT_BUNDLE_IDENTIFIER = com.baidu.mms.qa;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "";
-				PROVISIONING_PROFILE_SPECIFIER = "";
+				PROVISIONING_PROFILE = "ba9c4b24-7bd0-49c5-93cd-e3051e775d6c";
+				PROVISIONING_PROFILE_SPECIFIER = Distribution_MMS;
+				SWIFT_OBJC_BRIDGING_HEADER = "paddle-mobile-demo/paddle-mobile-demo-Bridging-Header.h";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
