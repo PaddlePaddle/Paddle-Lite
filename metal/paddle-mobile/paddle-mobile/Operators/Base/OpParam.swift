@@ -50,7 +50,7 @@ protocol OpParam {
   
   static func getAttr<T>(key: String, attrs: [String : Attr]) throws -> T
   
-  static func inputAlpha<VarType: Variant>(inputs: [String : [String]], from: Scope) throws -> VarType
+  static func paramInputAlpha<VarType: Variant>(inputs: [String : [String]], from: Scope) throws -> VarType
   
 }
 
@@ -63,8 +63,13 @@ extension OpParam {
     guard let mapKeys = map[key], mapKeys.count > 0 else {
       throw PaddleMobileError.paramError(message: key + " not found in \(map) or maped values is empty")
     }
-    guard let variant = from[mapKeys[0]], let v = variant as? VarType else {
+    guard let variant = from[mapKeys[0]] else {
       throw PaddleMobileError.paramError(message: mapKeys[0] + " not found in scope")
+    }
+    
+    guard let v = variant as? VarType else {
+      throw PaddleMobileError.paramError(message: " type error")
+
     }
     return v
   }
@@ -78,7 +83,7 @@ extension OpParam {
     }
   }
   
-  static func inputAlpha<VarType: Variant>(inputs: [String : [String]], from: Scope) throws -> VarType {
+  static func paramInputAlpha<VarType: Variant>(inputs: [String : [String]], from: Scope) throws -> VarType {
     do {
       let alphaTensor: VarType = try getFirstTensor(key: "Alpha", map: inputs, from: from)
       return alphaTensor

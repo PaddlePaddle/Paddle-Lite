@@ -310,6 +310,7 @@ void MultiClassNMSCompute(NMSParam *param) {
   for (int i = 0; i < param.output_size; ++i) {
     [output addObject:[NSNumber numberWithFloat:param.output[i]]];
   }
+  delete param.output;
   return output;
 }
 

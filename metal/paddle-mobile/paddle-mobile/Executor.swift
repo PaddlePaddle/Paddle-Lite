@@ -130,11 +130,6 @@ public class Executor<P: PrecisionType> {
 //      }
 //                  return
       
-//      self.ops[testTo].delogOutput()
-//      self.ops[91].delogOutput()
-//      self.ops[92].delogOutput()
-//      self.ops[93].delogOutput()
-      
       let afterDate = Date.init()
      
       var resultHolder: ResultHolder<P>

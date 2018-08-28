@@ -69,7 +69,6 @@ class MobileNet_ssd_hand: Net{
 
     let output: [Float32] = result.map { $0.floatValue }
     
-    
     return output
   }
   

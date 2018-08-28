@@ -21,18 +21,6 @@ import paddle_mobile
 import MetalPerformanceShaders
 
 
-let modelHelperMap: [SupportModel : Net] = [.mobilenet_ssd : MobileNet_ssd_hand.init()]
-//let modelHelperMap: [SupportModel : Net] = [.mobilenet : MobileNet.init(), .mobilenet_ssd : MobileNet_ssd_hand.init()]
-
-enum SupportModel: String{
-//  case mobilenet = "mobilenet"
-  case mobilenet_ssd = "mobilenetssd"
-  static func supportedModels() -> [SupportModel] {
-    //.mobilenet,
-    return [.mobilenet_ssd]
-  }
-}
-
 protocol Net {
   var program: Program? { get set }
   var executor: Executor<Float32>? { get set }

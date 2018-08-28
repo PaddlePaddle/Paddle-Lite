@@ -16,11 +16,12 @@ import Foundation
 
 
 class ElementwiseAddKernel<P: PrecisionType>: Kernel, Computable {
-    required init(device: MTLDevice, param: ElementwiseAddParam<P>) {
-        super.init(device: device, inFunctionName: "elementwise_add")
-    }
+  required init(device: MTLDevice, param: ElementwiseAddParam<P>) {
+    super.init(device: device, inFunctionName: "elementwise_add")
+    param.output.initTexture(device: device, inTranspose: param.input.transpose)
+  }
+  
+  func compute(commandBuffer: MTLCommandBuffer, param: ElementwiseAddParam<P>) throws {
     
-    func compute(commandBuffer: MTLCommandBuffer, param: ElementwiseAddParam<P>) throws {
-        
-    }
+  }
 }
