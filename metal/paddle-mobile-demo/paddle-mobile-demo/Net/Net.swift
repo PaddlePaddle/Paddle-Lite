@@ -1,10 +1,16 @@
-//
-//  Net.swift
-//  paddle-mobile-demo
-//
-//  Created by liuRuiLong on 2018/8/27.
-//  Copyright © 2018年 orange. All rights reserved.
-//
+/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+ 
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ 
+ http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License. */
 
 import Foundation
 
@@ -14,13 +20,16 @@ import Foundation
 import paddle_mobile
 import MetalPerformanceShaders
 
-let modelHelperMap: [SupportModel : Net] = [.mobilenet : MobileNet.init(), .mobilenet_ssd : MobileNet_ssd_hand.init()]
+
+let modelHelperMap: [SupportModel : Net] = [.mobilenet_ssd : MobileNet_ssd_hand.init()]
+//let modelHelperMap: [SupportModel : Net] = [.mobilenet : MobileNet.init(), .mobilenet_ssd : MobileNet_ssd_hand.init()]
 
 enum SupportModel: String{
-  case mobilenet = "mobilenet"
+//  case mobilenet = "mobilenet"
   case mobilenet_ssd = "mobilenetssd"
   static func supportedModels() -> [SupportModel] {
-    return [.mobilenet, .mobilenet_ssd]
+    //.mobilenet,
+    return [.mobilenet_ssd]
   }
 }
 
@@ -37,7 +46,8 @@ protocol Net {
   func resultStr(res: [Float]) -> String
   func fetchResult(paddleMobileRes: ResultHolder<Float32>) -> [Float32]
   mutating func load() throws
-  func predict(inTexture: MTLTexture, completion: @escaping ([Float32]) -> Void) throws
+  
+  func predict(inTexture: MTLTexture, completion: @escaping ((time:TimeInterval, resultArray: [Float32])) -> Void) throws
   mutating func clear()
 }
 
@@ -54,13 +64,16 @@ extension Net {
     }
   }
   
-  func predict(inTexture: MTLTexture, completion: @escaping ([Float32]) -> Void) throws {
+  func predict(inTexture: MTLTexture, completion: @escaping ((time:TimeInterval, resultArray: [Float32])) -> Void) throws {
     guard let inExecutor = executor else {
       fatalError(" 请先 load ")
     }
     try inExecutor.predict(input: inTexture, dim: dim, completionHandle: { (result) in
-      let resultArr = self.fetchResult(paddleMobileRes: result)
-      completion(resultArr)
+      
+      var resultArr:[Float32] = []
+      resultArr = self.fetchResult(paddleMobileRes: result)
+      completion((time: TimeInterval(result.elapsedTime), resultArray: resultArr))
+
     }, preProcessKernle: preprocessKernel, except: except)
   }
   
@@ -80,7 +93,5 @@ extension Net {
   func fetchResult(paddleMobileRes: ResultHolder<Float32>) -> [Float32] {
     return paddleMobileRes.resultArr
   }
-  
-  //  func predict()
   
 }
