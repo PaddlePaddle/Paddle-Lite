@@ -98,7 +98,7 @@ extension Array where Element: Comparable{
 }
 
 extension Array {
-  func strideArray(inCount: Int = 20) -> [(Int, Element)] {
+  public func strideArray(inCount: Int = 20) -> [(Int, Element)] {
     if count < inCount {
       return (0..<count).map{ ($0, self[$0]) }
     } else {

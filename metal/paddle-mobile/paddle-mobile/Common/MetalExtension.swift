@@ -217,16 +217,16 @@ extension MTLComputeCommandEncoder {
     let height = computePipline.maxTotalThreadsPerThreadgroup/width
     let threadsPerGroup = MTLSize.init(width: width, height: height, depth: 1)
     
-    print(" thread: threads per group: \(threadsPerGroup) ")
-    print(" thread: out texture width: \(outTexture.width) , out texture height: \(outTexture.height)")
+//    print(" thread: threads per group: \(threadsPerGroup) ")
+//    print(" thread: out texture width: \(outTexture.width) , out texture height: \(outTexture.height)")
     
     let groupWidth = (outTexture.width + width - 1)/width
     let groupHeight = (outTexture.height + height - 1)/height
     let groupDepth = slices
     let groups = MTLSize.init(width: groupWidth, height: groupHeight, depth: groupDepth)
     
-    print("groups: \(groups) ")
-    print("threads per group: \(threadsPerGroup)")
+//    print("groups: \(groups) ")
+//    print("threads per group: \(threadsPerGroup)")
     
     setComputePipelineState(computePipline)
     
@@ -367,9 +367,9 @@ public extension MTLTexture {
   }
   
   func realNHWC(dim: (n: Int, h: Int, w: Int, c: Int)) -> [Float32] {
-    print("origin dim: \(dim)")
-    print("texture: ")
-    print(self)
+//    print("origin dim: \(dim)")
+//    print("texture: ")
+//    print(self)
     
     let textureArray = floatArray { (i : Float32) -> Float32 in
       return i
@@ -394,7 +394,7 @@ public extension MTLTexture {
         }
       }
     }
-    print(" tensor count -- \(output.count)")
+//    print(" tensor count -- \(output.count)")
     return output
   }
   

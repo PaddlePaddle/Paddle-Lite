@@ -28,6 +28,7 @@ class ViewController: UIViewController {
   var selectImage: UIImage?
   var modelType: SupportModel = SupportModel.supportedModels()[0]
   var toPredictTexture: MTLTexture?
+  
   var net: Net {
     get {
       return modelHelperMap[modelType] ?! " has no this type "
@@ -35,6 +36,7 @@ class ViewController: UIViewController {
     set {
     }
   }
+  
   var threadNum = 1
   
   @IBAction func loadAct(_ sender: Any) {
@@ -63,53 +65,26 @@ class ViewController: UIViewController {
       return
     }
     do {
-      try  net.predict(inTexture: inTexture) { [weak self] (result) in
-        guard let sSelf = self else {
-          fatalError()
-        }
-        print(result)
-        let resultStr = sSelf.net.resultStr(res: result)
-        DispatchQueue.main.async {
-            sSelf.resultTextView.text = resultStr
+      let max = 1
+      let startDate = Date.init()
+      for i in 0..<max {
+        try net.predict(inTexture: inTexture) { [weak self] (result) in
+          guard let sSelf = self else {
+            fatalError()
+          }
+          
+          if i == max - 1 {
+            let time = Date.init().timeIntervalSince(startDate)
+            DispatchQueue.main.async {
+              sSelf.resultTextView.text = sSelf.net.resultStr(res: result.resultArray)
+              sSelf.elapsedTimeLabel.text = "平均耗时: \(time/Double(max) * 1000.0) ms"
+            }
+          }
         }
       }
     } catch let error {
       print(error)
     }
-   
-    
-//    guard let inExecutor = executor else {
-//      resultTextView.text = "请先 load ! "
-//      return
-//    }
-//
-//    do {
-//      let max = 1
-//      var startDate = Date.init()
-//      for i in 0..<max {
-//        try inExecutor.predict(input: inTexture, dim: modelHelper.dim, completionHandle: { [weak self] (result) in
-//          guard let sSelf = self else {
-//            fatalError()
-//          }
-//
-//          if i == (max / 2 - 1) {
-//            startDate = Date.init()
-//          }
-//
-//          let resultArr = sSelf.modelHelper.fetchResult(paddleMobileRes: result)
-//
-//          if i == max - 1 {
-//            let time = Date.init().timeIntervalSince(startDate)
-//            DispatchQueue.main.async {
-//              sSelf.resultTextView.text = sSelf.modelHelper.resultStr(res: resultArr)
-//              sSelf.elapsedTimeLabel.text = "平均耗时: \(time/Double(max/2) * 1000.0) ms"
-//            }
-//          }
-//          }, preProcessKernle: self.modelHelper.preprocessKernel, except: modelHelper.except)
-//      }
-//    } catch let error {
-//      print(error)
-//    }
   }
   
   override func viewDidLoad() {

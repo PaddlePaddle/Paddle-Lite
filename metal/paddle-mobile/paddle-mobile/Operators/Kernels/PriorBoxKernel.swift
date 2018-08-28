@@ -98,16 +98,6 @@ class PriorBoxKernel<P: PrecisionType>: Kernel, Computable{
     guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
       throw PaddleMobileError.predictError(message: " encode is nil")
     }
-    print("metalParam: \(metalParam)")
-    
-    print(" newAspectRatios ")
-    print(param.newAspectRatios!)
-    
-    print(" clip: \(metalParam.clip)")
-    
-    print(" metalParam.numPriors: \(metalParam.numPriors)")
-    
-    print(" aspecRatiosSize: \(metalParam.aspecRatiosSize)")
     
     encoder.setTexture(param.input.metalTexture, index: 0)
     encoder.setTexture(param.output.metalTexture, index: 1)
