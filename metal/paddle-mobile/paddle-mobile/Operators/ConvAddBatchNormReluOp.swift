@@ -34,7 +34,7 @@ class ConvAddBatchNormReluParam<P: PrecisionType>: OpParam {
       
       scale = try ConvAddBatchNormReluParam.inputScale(inputs: opDesc.paraInputs, from: inScope)
       mean = try ConvAddBatchNormReluParam.inputMean(inputs: opDesc.paraInputs, from: inScope)
-      y = try ConvAddBatchNormReluParam.inputY(inputs: opDesc.paraInputs, from: inScope)
+      y = try ConvAddBatchNormReluParam.inputY(inputs: opDesc.inputs, from: inScope)
     } catch let error {
       throw error
     }

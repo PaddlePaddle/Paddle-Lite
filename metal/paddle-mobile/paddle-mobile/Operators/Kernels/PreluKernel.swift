@@ -17,6 +17,7 @@ class PreluKernel<P: PrecisionType>: Kernel, Computable{
     } else {
       super.init(device: device, inFunctionName: "prelu_other")
     }
+    param.output.initTexture(device: device, inTranspose: param.input.transpose)
   }
   
   func compute(commandBuffer: MTLCommandBuffer, param: PreluParam<P>) throws {

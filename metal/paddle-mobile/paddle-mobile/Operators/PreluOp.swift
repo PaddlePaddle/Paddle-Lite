@@ -21,7 +21,7 @@ class PreluParam<P: PrecisionType>: OpParam {
     do {
       input = try PreluParam.inputX(inputs: opDesc.inputs, from: inScope)
       output = try PreluParam.outputOut(outputs: opDesc.outputs, from: inScope)
-      alpha = try PreluParam.inputAlpha(inputs: opDesc.inputs, from: inScope)
+      alpha = try PreluParam.paramInputAlpha(inputs: opDesc.paraInputs, from: inScope)
       mode = try PreluParam.getAttr(key: "mode", attrs: opDesc.attrs)
     } catch let error {
       throw error
