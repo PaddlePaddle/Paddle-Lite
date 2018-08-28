@@ -15,36 +15,46 @@
 import Foundation
 
 class SoftmaxParam<P: PrecisionType>: OpParam {
-    typealias ParamPrecisionType = P
-    required init(opDesc: OpDesc, inScope: Scope) throws {
-        do {
-            input = try SoftmaxParam.inputX(inputs: opDesc.inputs, from: inScope)
-            output = try SoftmaxParam.outputOut(outputs: opDesc.outputs, from: inScope)
-        } catch let error {
-            throw error
-        }
+  typealias ParamPrecisionType = P
+  required init(opDesc: OpDesc, inScope: Scope) throws {
+    do {
+      input = try SoftmaxParam.inputX(inputs: opDesc.inputs, from: inScope)
+      output = try SoftmaxParam.outputOut(outputs: opDesc.outputs, from: inScope)
+      
+      assert(input.tensorDim.dims.count == 2)
+      assert(input.transpose == [0, 1, 2, 3])
+      
+      output.dim = input.dim
+      output.tensorDim = input.tensorDim
+      output.originDim = input.originDim
+    } catch let error {
+      throw error
     }
-    let input: Texture<P>
-    var output: Texture<P>
+  }
+  let input: Texture<P>
+  var output: Texture<P>
 }
 
 class SoftmaxOp<P: PrecisionType>: Operator<SoftmaxKernel<P>, SoftmaxParam<P>>, Runable, Creator, InferShaperable{
+  typealias OpType = SoftmaxOp<P>
+
+  func inferShape() {
+    // para.output.dim = para.input.dim
+  }
+  
+  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+    do {
+      try kernel.compute(commandBuffer: buffer, param: para)
+    } catch let error {
+      throw error
+    }
+  }
+  
+  func delogOutput() {
+    print("softmax delog")
     
-    func inferShape() {
-        // para.output.dim = para.input.dim
-    }
-    
-    typealias OpType = SoftmaxOp<P>
-    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
-    }
-    func delogOutput() {
-        print("softmax delog")
-        let _: P? = para.input.metalTexture.logDesc(header: "softmax input: ", stridable: false)
-        let _: P? = para.output.metalTexture.logDesc(header: "softmax output: ", stridable: false)
-    }
+    let originDim = para.output.originDim
+    let outputArray = para.output.metalTexture.realNHWC(dim: (n: originDim[0], h: originDim[1], w: originDim[2], c: originDim[3]))
+    print(outputArray.strideArray())
+  }
 }

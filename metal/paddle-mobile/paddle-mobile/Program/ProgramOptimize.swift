@@ -143,7 +143,12 @@ extension Node: Equatable {
 }
 
 class ProgramOptimize<P: PrecisionType> {
-    let fusionOps: [Fusion.Type] = [ConvAddBatchNormReluOp<P>.self, ConvAddOp<P>.self]
+    // register fusion
+    let fusionOps: [Fusion.Type] = [ConvAddBatchNormReluOp<P>.self,
+                                    ConvAddOp<P>.self,
+                                    ConvBNReluOp<P>.self,
+                                    DwConvBNReluOp<P>.self]
+    
     func optimize(originProgramDesc: ProgramDesc) -> ProgramDesc {
         
         guard originProgramDesc.blocks.count == 1 else {

@@ -57,7 +57,7 @@ open class CusomKernel: Kernel {
             channel = inChannel
         }
     }
-    let outputTexture: MTLTexture
+    public let outputTexture: MTLTexture
     public init(device: MTLDevice, inFunctionName: String, outputDim: Shape, usePaddleMobileLib: Bool = false) {
         let textureDesc = MTLTextureDescriptor.init()
         textureDesc.textureType = .type2D
@@ -72,7 +72,7 @@ open class CusomKernel: Kernel {
         super.init(device: device, inFunctionName: inFunctionName, usePaddleMobileLib: usePaddleMobileLib)
     }
     
-    func compute(inputTexuture: MTLTexture, commandBuffer: MTLCommandBuffer) throws {
+    public func compute(inputTexuture: MTLTexture, commandBuffer: MTLCommandBuffer) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
             throw PaddleMobileError.predictError(message: " encode is nil")
         }

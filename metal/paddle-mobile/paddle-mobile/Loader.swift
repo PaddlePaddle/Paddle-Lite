@@ -141,10 +141,6 @@ public class Loader<P: PrecisionType> {
                             throw PaddleMobileError.loaderError(message: "get tensor desc failed")
                         }
                         
-//                        guard (try? tensorDesc.dataType.dataTypeSize()) == MemoryLayout<P>.size else {
-//                            throw PaddleMobileError.memoryError(message: "PrecisionType not support")
-//                        }
-                        
                         if (varDesc.persistable
                             && varDesc.type != .FeedMiniBatch
                             && varDesc.type != .FetchList) {
@@ -161,11 +157,11 @@ public class Loader<P: PrecisionType> {
                             } catch let error {
                                 throw error
                             }
-                            tensor.convert(to: .NHWC)
+                            tensor.convert(to: DataLayout.NHWC())
 //                            tensor.initBuffer(device: device)
                             scope[varDesc.name] = tensor
                         } else {
-                            let dim = Dim.init(inDim: tensorDesc.NHWCDim)
+                            let dim = Dim.init(inDim: tensorDesc.dims)
                             scope[varDesc.name] = Texture<P>.init(device: device, inDim: dim)
                         }
                     } else {
