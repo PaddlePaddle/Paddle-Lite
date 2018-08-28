@@ -125,9 +125,9 @@ public class Executor<P: PrecisionType> {
       //            print(stridableInput)
       
       //            let _: Flo? = input.logDesc(header: "input: ", stridable: true)
-      for op in self.ops {
+//      for op in self.ops {
 //          op.delogOutput()
-      }
+//      }
 //                  return
       
 //      self.ops[testTo].delogOutput()
