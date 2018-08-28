@@ -137,6 +137,9 @@ let gBoxcoderType               = "box_coder"
 let gMulticlassNMSType          = "multiclass_nms"
 let gConvBnReluType             = "conv_bn_relu"
 let gDwConvBnReluType           = "depth_conv_bn_relu"
+let gPreluType                  = "prelu"
+let gConv2dTransposeType        = "conv2d_transpose"
+
 
 let opInfos = [gConvType                    : (inputs: ["Input"], outputs: ["Output"]),
                gBatchNormType               : (inputs: ["X"], outputs: ["Y"]),
@@ -156,4 +159,7 @@ let opInfos = [gConvType                    : (inputs: ["Input"], outputs: ["Out
                gConvBnReluType              : (inputs: ["Input"], outputs: ["Out"]),
                gDwConvBnReluType            : (inputs: ["Input"], outputs: ["Out"]),
                gMulticlassNMSType           : (inputs: ["BBoxes", "Scores"], outputs: ["Out"]),
-               gPriorBoxType                : (inputs: ["Input", "Image"], outputs: ["Boxes", "Variances"])]
+               gPriorBoxType                : (inputs: ["Input", "Image"], outputs: ["Boxes", "Variances"]),
+               gPreluType                   : (inputs: ["X"], outputs: ["Out"]),
+               gConv2dTransposeType         : (inputs: ["Input"], outputs: ["Output"])
+              ]
