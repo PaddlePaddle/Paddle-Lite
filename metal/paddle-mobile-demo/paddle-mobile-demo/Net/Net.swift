@@ -20,12 +20,17 @@ import Foundation
 import paddle_mobile
 import MetalPerformanceShaders
 
+class ScaleKernel: CusomKernel {
+  init(device: MTLDevice, shape: Shape) {
+    super.init(device: device, inFunctionName: "scale", outputDim: shape, usePaddleMobileLib: false)
+  }
+}
 
 protocol Net {
   var program: Program? { get set }
   var executor: Executor<Float32>? { get set }
   var except: Int { get }
-  var dim: [Int] { get }
+  var dim: (n: Int, h: Int, w: Int, c: Int) { get }
   var modelPath: String { get }
   var paramPath: String { get }
   var modelDir: String { get }
@@ -56,7 +61,7 @@ extension Net {
     guard let inExecutor = executor else {
       fatalError(" 请先 load ")
     }
-    try inExecutor.predict(input: inTexture, dim: dim, completionHandle: { (result) in
+    try inExecutor.predict(input: inTexture, dim: [dim.n, dim.h, dim.w, dim.c], completionHandle: { (result) in
       
       var resultArr:[Float32] = []
       resultArr = self.fetchResult(paddleMobileRes: result)
@@ -73,7 +78,7 @@ extension Net {
   
   func getTexture(image: CGImage, getTexture: @escaping (MTLTexture) -> Void) {
     let texture = try? MetalHelper.shared.textureLoader.newTexture(cgImage: image, options: [:]) ?! " texture loader error"
-    MetalHelper.scaleTexture(queue: MetalHelper.shared.queue, input: texture!, size: (224, 224)) { (resTexture) in
+    MetalHelper.scaleTexture(queue: MetalHelper.shared.queue, input: texture!, size: (dim.w, dim.h)) { (resTexture) in
       getTexture(resTexture)
     }
   }
