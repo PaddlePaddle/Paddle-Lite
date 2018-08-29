@@ -674,11 +674,19 @@ void InnerKernelWithBias(int mc, int nc, float alpha, const float *a,
     return;
   }
   if (beta == 1 && !relu) {
-    WriteWithAddV1(mc, nc, c, C, ldc, bias);
+    if (bias == nullptr) {
+      WriteWithAdd(mc, nc, c, C, ldc);
+    } else {
+      WriteWithAddV1(mc, nc, c, C, ldc, bias);
+    }
     return;
   }
   if (beta == 1 && relu) {
-    WriteWithAddReluV1(mc, nc, c, C, ldc, bias);
+    if (bias == nullptr) {
+      WriteWithAddRelu(mc, nc, c, C, ldc);
+    } else {
+      WriteWithAddReluV1(mc, nc, c, C, ldc, bias);
+    }
     return;
   }
 }
