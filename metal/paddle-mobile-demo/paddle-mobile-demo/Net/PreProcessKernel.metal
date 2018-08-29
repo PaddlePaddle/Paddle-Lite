@@ -80,7 +80,7 @@ kernel void genet_preprocess(texture2d<float, access::read> inTexture [[texture(
       gid.y >= outTexture.get_height()) {
     return;
   }
-  const auto means = float4(123.68f, 116.78f, 103.94f, 0.0f);
+  const auto means = float4(128.0f, 128.0f, 128.0f, 0.0f);
   const float4 inColor = (inTexture.read(gid) * 255.0 - means) * 0.017;
   outTexture.write(float4(inColor.z, inColor.y, inColor.x, 0.0f), gid);
 }
