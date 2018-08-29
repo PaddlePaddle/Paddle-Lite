@@ -58,12 +58,16 @@ class PoolOp<P: PrecisionType>: Operator<PoolKernel<P>, PoolParam<P>>, Runable, 
   }
   
   func delogOutput() {
-    print("pool2d delog")
-    let _: P? = para.input.metalTexture.logDesc(header: "pool2d input: ", stridable: true)
-    print(para.ksize)
-    print(para.stride)
-    print(para.padding)
-    print(para.poolType)
-    let _: P? = para.output.metalTexture.logDesc(header: "pool2d output: ", stridable: true)
+    print(" \(type) output: ")
+    print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
+
+    
+//    print("pool2d delog")
+//    let _: P? = para.input.metalTexture.logDesc(header: "pool2d input: ", stridable: true)
+//    print(para.ksize)
+//    print(para.stride)
+//    print(para.padding)
+//    print(para.poolType)
+//    let _: P? = para.output.metalTexture.logDesc(header: "pool2d output: ", stridable: true)
   }
 }
