@@ -35,7 +35,7 @@ class Genet: Net {
   }
   
   var preprocessKernel: CusomKernel
-  let dim = [1, 128, 128, 3]
+  let dim = (n: 1, h: 128, w: 128, c: 3)
   let modelPath: String
   let paramPath: String
   let modelDir: String
