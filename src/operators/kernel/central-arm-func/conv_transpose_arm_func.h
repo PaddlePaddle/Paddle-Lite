@@ -96,6 +96,10 @@ void ConvTransposeCompute(const ConvTransposeParam<CPU> &param) {
 
       math::matmul(filter_slice, true, in_slice, false, static_cast<P>(1.0),
                    &col_matrix, static_cast<P>(0.0));
+      //初始化out_slice的值为0
+      float *tmp = out_slice.data<float>();
+      int numel = out_slice.numel();
+      memset(static_cast<void *>(tmp), 0, sizeof(float) * numel);
       if (data_dim == 2U) {
         col2im(col, dilations, strides,
                std::vector<int>{paddings[0], paddings[1], paddings[0],
