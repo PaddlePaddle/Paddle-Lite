@@ -30,30 +30,31 @@ int main() {
   if (isok) {
     auto time2 = time();
     std::cout << "load cost :" << time_diff(time1, time1) << "ms" << std::endl;
+    //    1064 1603 644 699 2878 1219 867 1352 8 1 13 312 479
 
-    std::vector<float> input;
-    std::vector<int64_t> dims{1, 3, 224, 224};
-    GetInput<float>(g_test_image_1x3x224x224_banana, &input, dims);
+    std::vector<int64_t> ids{1064, 1603, 644, 699, 2878, 1219, 867,
+                             1352, 8,    1,   13,  312,  479};
 
-    // 预热一次
-    auto vec_result = paddle_mobile.Predict(input, dims);
-    std::vector<float>::iterator biggest =
-        std::max_element(std::begin(vec_result), std::end(vec_result));
-    std::cout << " Max element is " << *biggest << " at position "
-              << std::distance(std::begin(vec_result), biggest) << std::endl;
-
+    paddle_mobile::framework::LoDTensor words;
+    auto size = static_cast<int>(ids.size());
+    paddle_mobile::framework::LoD lod{{0, ids.size()}};
+    DDim dims{size, 1};
+    words.Resize(dims);
+    words.set_lod(lod);
+    DLOG << "words lod : " << words.lod();
+    auto *pdata = words.mutable_data<int64_t>();
+    size_t n = words.numel() * sizeof(int64_t);
+    DLOG << "n :" << n;
+    memcpy(pdata, ids.data(), n);
+    DLOG << "words lod 22: " << words.lod();
     auto time3 = time();
-    for (int i = 0; i < 10; ++i) {
-      auto vec_result = paddle_mobile.Predict(input, dims);
+    for (int i = 0; i < 1; ++i) {
+      auto vec_result = paddle_mobile.PredictLod(words);
+      DLOG << vec_result;
     }
-    DLOG << vec_result;
     auto time4 = time();
-    std::cout << "predict cost :" << time_diff(time3, time4) / 10 << "ms"
+    std::cout << "predict cost :" << time_diff(time3, time4) /*/ 10*/ << "ms"
               << std::endl;
   }
-
-  std::cout << "如果结果Nan请查看: test/images/g_test_image_1x3x224x224_banana "
-               "是否存在?"
-            << std::endl;
   return 0;
 }

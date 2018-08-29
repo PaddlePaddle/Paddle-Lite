@@ -95,6 +95,8 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::LoadProgram(
     for (auto var_desc : block->Vars()) {
       auto var = scope->Var(var_desc->Name());
 
+      DLOG << "var_desc->Name():  " << var_desc->Name();
+      DLOG << "var_desc->Type():  " << var_desc->Type();
       if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
         if (var_desc->Persistable() &&
             var_desc->Type() != framework::VARTYPE_TYPE_FEED_MINIBATCH &&

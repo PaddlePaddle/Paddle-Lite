@@ -861,13 +861,13 @@ class FeedParam : public OpParam {
     auto var = scope->Var("batch_size");
     batch_size = var->GetValue<int>();
   }
-  const RType *InputX() const { return input_x_; }
-  RType *Out() const { return out_; }
+  const GType *InputX() const { return input_x_; }
+  GType *Out() const { return out_; }
   const int BatchSize() const { return batch_size; }
 
  private:
-  RType *input_x_;
-  RType *out_;
+  GType *input_x_;
+  GType *out_;
   int batch_size;
 };
 
@@ -932,15 +932,15 @@ class LookupParam : public OpParam {
     padding_idx_ = GetAttr<int64_t>("padding_idx", attrs);
   }
 
-  const RType *InputW() const { return input_w_; }
-  const RType *InputIds() const { return input_ids_; }
-  RType *Out() const { return out_; }
+  const GType *InputW() const { return input_w_; }
+  const GType *InputIds() const { return input_ids_; }
+  GType *Out() const { return out_; }
   int64_t PaddingIdx() const { return padding_idx_; }
 
  private:
-  RType *input_w_;
-  RType *input_ids_;
-  RType *out_;
+  GType *input_w_;
+  GType *input_ids_;
+  GType *out_;
   int64_t padding_idx_;
 };
 #endif
@@ -1279,7 +1279,7 @@ class FusionFcParam : public OpParam {
     y_num_col_dims_ = GetAttr<int>("y_num_col_dims", attrs);
     axis_ = GetAttr<int>("axis", attrs);
   }
-  const RType *InputX() const { return input_x_; }
+  const GType *InputX() const { return input_x_; }
 
 #ifdef PADDLE_MOBILE_FPGA
   RType *InputY() const { return input_y_; }
@@ -1289,7 +1289,7 @@ class FusionFcParam : public OpParam {
 
   const RType *InputZ() const { return input_z_; }
 
-  RType *Out() const { return out_; }
+  GType *Out() const { return out_; }
 
   const int &XNumColDims() const { return x_num_col_dims_; }
 
@@ -1298,10 +1298,10 @@ class FusionFcParam : public OpParam {
   const int &Axis() const { return axis_; }
 
  private:
-  RType *input_x_;
+  GType *input_x_;
   RType *input_y_;
   RType *input_z_;
-  RType *out_;
+  GType *out_;
   int x_num_col_dims_;
   int y_num_col_dims_;
   int axis_;

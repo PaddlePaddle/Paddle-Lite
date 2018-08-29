@@ -35,6 +35,10 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
     auto out_dims = param_.Out()->dims();
     out_dims[0] = param_.BatchSize();
     param_.Out()->Resize(out_dims);
+
+    //  note : mobile infershape iscalled when executer is created.  so  do not
+    //  pass lod here .
+    // it is empty
   }
 
 #ifdef PADDLE_MOBILE_FPGA
@@ -66,7 +70,10 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
 
 #else
   void Init() {}
-  void RunImpl() const { param_.Out()->ShareDataWith(*param_.InputX()); }
+  void RunImpl() const {
+    param_.Out()->ShareDataWith(*param_.InputX());
+    param_.Out()->set_lod(param_.InputX()->lod());
+  }
 #endif
 
  protected:

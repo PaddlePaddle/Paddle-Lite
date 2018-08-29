@@ -353,7 +353,12 @@ inline Print &operator<<(Print &printer, const Tensor &tensor) {
   stride = stride > 0 ? stride : 1;
 #ifndef PADDLE_MOBILE_FPGA
   for (int i = 0; i < tensor.numel(); i += stride) {
-    printer << tensor.data<float>()[i] << " ";
+    //  这不一定是float的
+    if (tensor.type() == typeid(float)) {
+      printer << tensor.data<float>()[i] << " ";
+    } else if (tensor.type() == typeid(int64_t)) {
+      printer << tensor.data<int64_t>()[i] << " ";
+    }
   }
 #endif
 
