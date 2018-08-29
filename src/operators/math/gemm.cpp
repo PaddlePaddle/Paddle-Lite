@@ -2809,8 +2809,13 @@ void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
 #else
       PackMatrixA_6r(mc, KC, mc % MR, &A(i, 0), lda, packedA);
 #endif
-      InnerKernelWithBias(mc, nc, alpha, packedA, packedB, beta, packedC,
-                          &C(i, j), ldc, relu, bias + i);
+      if (bias == nullptr) {
+        InnerKernelWithBias(mc, nc, alpha, packedA, packedB, beta, packedC,
+                            &C(i, j), ldc, relu, nullptr);
+      } else {
+        InnerKernelWithBias(mc, nc, alpha, packedA, packedB, beta, packedC,
+                            &C(i, j), ldc, relu, bias + i);
+      }
     }
   }
 
