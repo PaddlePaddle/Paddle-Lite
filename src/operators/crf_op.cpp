@@ -24,21 +24,21 @@ namespace operators {
 
 template <typename Dtype, typename T>
 void CrfOp<Dtype, T>::InferShape() const {
+  PADDLE_MOBILE_ENFORCE(this->param_.InputEmission(),
+                        "Input(Emission) should be not null.");
+  PADDLE_MOBILE_ENFORCE(this->param_.InputTransition(),
+                        "Input(Transition) should be not null.");
+  PADDLE_MOBILE_ENFORCE(this->param_.outputVBP(),
+                        "Input(ViterbiPath) should be not null.");
 
-    PADDLE_MOBILE_ENFORCE(this->param_.InputEmission(),
-                   "Input(Emission) should be not null.");
-    PADDLE_MOBILE_ENFORCE(this->param_.InputTransition(),
-                          "Input(Transition) should be not null.");
-    PADDLE_MOBILE_ENFORCE(this->param_.outputVBP(),
-                          "Input(ViterbiPath) should be not null.");
+  auto emission_dims = this->param_.InputEmission()->dims();
+  PADDLE_MOBILE_ENFORCE(emission_dims.size() == 2U,
+                        "The Input(Emission) should be a 2-D tensor.");
+  PADDLE_MOBILE_ENFORCE(emission_dims[0],
+                        "An empty mini-batch is not allowed.");
 
-    auto emission_dims = this->param_.InputEmission()->dims();
-    PADDLE_MOBILE_ENFORCE(emission_dims.size()==2U,
-                          "The Input(Emission) should be a 2-D tensor.");
-    PADDLE_MOBILE_ENFORCE(emission_dims[0],
-                          "An empty mini-batch is not allowed.");
-
-    this->param_.outputVBP()->Resize({this->param_.InputEmission()->dims()[0],1});
+  this->param_.outputVBP()->Resize(
+      {this->param_.InputEmission()->dims()[0], 1});
 }
 
 }  // namespace operators
