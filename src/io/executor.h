@@ -49,7 +49,11 @@ class Executor {
    * @b to predict
    * */
   std::shared_ptr<framework::Tensor> Predict(const framework::Tensor &t);
-
+  /*
+   * @b to predict
+   * */
+  std::shared_ptr<framework::LoDTensor> PredictLod(
+      const framework::LoDTensor &t);
   /*
    * @b to predict with vector and dim
    *

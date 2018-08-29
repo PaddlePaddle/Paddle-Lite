@@ -71,6 +71,12 @@ std::shared_ptr<framework::Tensor> PaddleMobile<Dtype, P>::Predict(
 }
 
 template <typename Dtype, Precision P>
+std::shared_ptr<framework::Tensor> PaddleMobile<Dtype, P>::PredictLod(
+    const framework::LoDTensor &t) {
+  return executor_->PredictLod(t);
+}
+
+template <typename Dtype, Precision P>
 std::vector<typename PaddleMobile<Dtype, P>::Ptype>
 PaddleMobile<Dtype, P>::Predict(const std::vector<Ptype> &input,
                                 const std::vector<int64_t> &dims) {

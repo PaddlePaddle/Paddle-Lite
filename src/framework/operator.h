@@ -114,13 +114,7 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
       : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope),
         param_(inputs, outputs, attrs, *scope) {}
 
-  virtual void RunImpl() const {
-    DLOG<<"OperatorWithKernel: RunImpl in";
-    this->kernel_.Compute(this->param_);
-    DLOG<<"OperatorWithKernel: RunImpl out";
-
-
-  }
+  virtual void RunImpl() const { this->kernel_.Compute(this->param_); }
 
   virtual void InferShape() const = 0;
 

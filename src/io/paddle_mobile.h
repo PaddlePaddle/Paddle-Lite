@@ -59,6 +59,11 @@ class PaddleMobile {
   std::shared_ptr<framework::Tensor> Predict(const framework::Tensor &t);
 
   /*
+   * @b to predict
+   * */
+  std::shared_ptr<framework::Tensor> PredictLod(const framework::LoDTensor &t);
+
+  /*
    * @b to predict with vector and dim
    *
    * @b 使用 输入 和 输入的维度信息 进行预测

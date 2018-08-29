@@ -38,26 +38,23 @@ int main() {
     paddle_mobile::framework::LoDTensor words;
     auto size = static_cast<int>(ids.size());
     paddle_mobile::framework::LoD lod{{0, ids.size()}};
-//    DDim dims{size, 1};
     DDim dims{size, 1};
     words.Resize(dims);
     words.set_lod(lod);
-
+    DLOG << "words lod : " << words.lod();
     auto *pdata = words.mutable_data<int64_t>();
-    memcpy(pdata, ids.data(), words.numel() * sizeof(int64_t));
-
+    size_t n = words.numel() * sizeof(int64_t);
+    DLOG << "n :" << n;
+    memcpy(pdata, ids.data(), n);
+    DLOG << "words lod 22: " << words.lod();
     auto time3 = time();
     for (int i = 0; i < 1; ++i) {
-      auto vec_result = paddle_mobile.Predict(words);
+      auto vec_result = paddle_mobile.PredictLod(words);
       DLOG << vec_result;
     }
     auto time4 = time();
-    std::cout << "predict cost :" << time_diff(time3, time4) / 10 << "ms"
+    std::cout << "predict cost :" << time_diff(time3, time4) /*/ 10*/ << "ms"
               << std::endl;
   }
-
-  std::cout << "如果结果Nan请查看: test/images/g_test_image_1x3x224x224_banana "
-               "是否存在?"
-            << std::endl;
   return 0;
 }

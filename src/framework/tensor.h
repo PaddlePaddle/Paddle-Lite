@@ -357,7 +357,7 @@ inline Print &operator<<(Print &printer, const Tensor &tensor) {
     if (tensor.type() == typeid(float)) {
       printer << tensor.data<float>()[i] << " ";
     } else if (tensor.type() == typeid(int64_t)) {
-      printer << tensor.data<int64_t >()[i] << " ";
+      printer << tensor.data<int64_t>()[i] << " ";
     }
   }
 #endif

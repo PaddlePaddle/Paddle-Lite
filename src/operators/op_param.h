@@ -1277,7 +1277,7 @@ class FusionFcParam : public OpParam {
     y_num_col_dims_ = GetAttr<int>("y_num_col_dims", attrs);
     axis_ = GetAttr<int>("axis", attrs);
   }
-  const RType *InputX() const { return input_x_; }
+  const GType *InputX() const { return input_x_; }
 
 #ifdef PADDLE_MOBILE_FPGA
   RType *InputY() const { return input_y_; }
@@ -1287,7 +1287,7 @@ class FusionFcParam : public OpParam {
 
   const RType *InputZ() const { return input_z_; }
 
-  RType *Out() const { return out_; }
+  GType *Out() const { return out_; }
 
   const int &XNumColDims() const { return x_num_col_dims_; }
 
@@ -1296,10 +1296,10 @@ class FusionFcParam : public OpParam {
   const int &Axis() const { return axis_; }
 
  private:
-  RType *input_x_;
+  GType *input_x_;
   RType *input_y_;
   RType *input_z_;
-  RType *out_;
+  GType *out_;
   int x_num_col_dims_;
   int y_num_col_dims_;
   int axis_;

@@ -29,6 +29,7 @@ template <>
 void FusionFcKernel<CPU, float>::Compute(
     const FusionFcParam<CPU> &param) const {
   FusionFcCompute<float>(param);
+  param.Out()->set_lod(param.InputX()->lod());
 }
 
 }  // namespace operators
