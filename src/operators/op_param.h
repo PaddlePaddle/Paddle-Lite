@@ -93,6 +93,32 @@ class OpParam {
   }
 
   template <typename T>
+  static T *InputWFrom(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("W", inputs, scope);
+  }
+
+  template <typename T>
+  static T *InputIdsFrom(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("Ids", inputs, scope);
+  }
+
+  template <typename T>
+  static T *InputEmissionFrom(const VariableNameMap &inputs,
+                              const Scope &scope) {
+    return GetVarValue<T>("Emission", inputs, scope);
+  }
+
+  template <typename T>
+  static T *InputTransitionFrom(const VariableNameMap &inputs,
+                                const Scope &scope) {
+    return GetVarValue<T>("Transition", inputs, scope);
+  }
+  template <typename T>
+  static T *InputLabelFrom(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("Label", inputs, scope);
+  }
+
+  template <typename T>
   static T *InputXFrom1(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue1<T>("addX", inputs, scope);
   }
@@ -181,6 +207,11 @@ class OpParam {
     return GetVarValue<T>("BatchGate", outputs, scope);
   }
 
+  template <typename T>
+  static T *OutputViterbiPathFrom(const VariableNameMap &outputs,
+                                  const Scope &scope) {
+    return GetVarValue<T>("ViterbiPath", outputs, scope);
+  }
   template <typename T>
   static T *OutputBatchResetHiddenPrevFrom(const VariableNameMap &outputs,
                                            const Scope &scope) {
@@ -439,13 +470,13 @@ class ConcatParam : public OpParam {
 
   vector<GType *> Inputs() const { return inputs_; }
 
-  RType *Out() const { return out_; }
+  GType *Out() const { return out_; }
 
   const int &Axis() const { return axis_; }
 
  private:
   vector<GType *> inputs_;
-  RType *out_;
+  GType *out_;
   int axis_;
 };
 #endif
@@ -830,13 +861,13 @@ class FeedParam : public OpParam {
     auto var = scope->Var("batch_size");
     batch_size = var->GetValue<int>();
   }
-  const RType *InputX() const { return input_x_; }
-  RType *Out() const { return out_; }
+  const GType *InputX() const { return input_x_; }
+  GType *Out() const { return out_; }
   const int BatchSize() const { return batch_size; }
 
  private:
-  RType *input_x_;
-  RType *out_;
+  GType *input_x_;
+  GType *out_;
   int batch_size;
 };
 
@@ -883,6 +914,126 @@ class TransposeParam : public OpParam {
   RType *input_x_;
   RType *out_;
   vector<int> axis_;
+};
+#endif
+
+#ifdef LOOKUP_OP
+template <typename Dtype>
+class LookupParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  LookupParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+              const AttributeMap &attrs, const Scope &scope) {
+    input_w_ = InputWFrom<GType>(inputs, scope);
+    input_ids_ = InputIdsFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+    padding_idx_ = GetAttr<int64_t>("padding_idx", attrs);
+  }
+
+  const GType *InputW() const { return input_w_; }
+  const GType *InputIds() const { return input_ids_; }
+  GType *Out() const { return out_; }
+  int64_t PaddingIdx() const { return padding_idx_; }
+
+ private:
+  GType *input_w_;
+  GType *input_ids_;
+  GType *out_;
+  int64_t padding_idx_;
+};
+#endif
+
+#ifdef GRU_OP
+template <typename Dtype>
+class GruParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+  //    {G_OP_TYPE_GRU,
+  //                {{"Input", "H0", "Weight", "Bias"},
+  //                 {"BatchGate", "BatchResetHiddenPrev", "BatchHidden",
+  //                 "Hidden"}}},
+  //    {G_OP_TYPE_CRF, {{"Emission", "Transition", "Label"}, {"ViterbiPath"}}},
+ public:
+  /**
+   *
+   * @param inputs
+   * @param outputs
+   * @param attrs
+   * @param scope
+   * */
+  GruParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+           const AttributeMap &attrs, const Scope &scope) {
+    input_input_ = InputFrom<GType>(inputs, scope);
+    input_h0_ = InputH0From<GType>(inputs, scope);
+    input_bias_ = InputBiasFrom<GType>(inputs, scope);
+    input_weight_ = InputWeightFrom<GType>(inputs, scope);
+
+    output_batchgate_ = OutputBatchGateFrom<GType>(outputs, scope);
+    output_batch_reset_hidden_prev_ =
+        OutputBatchResetHiddenPrevFrom<GType>(outputs, scope);
+    output_batchhidden_ = OutputBatchHiddenFrom<GType>(outputs, scope);
+    output_hidden_ = OutputHiddenFrom<GType>(outputs, scope);
+  }
+
+  //  const RType *InputW() const { return input_w_; }
+  //  const RType *InputIds() const { return input_ids_; }
+  //  RType *Out() const { return out_; }
+  //  int64_t PaddingIdx() const { return padding_idx_; }
+
+ private:
+  RType *input_input_;
+  RType *input_h0_;
+  RType *input_bias_;
+  RType *input_weight_;
+
+  RType *output_batchgate_;
+  RType *output_batch_reset_hidden_prev_;
+  RType *output_batchhidden_;
+  RType *output_hidden_;
+
+  //  RType *input_ids_;
+  //  RType *out_;
+  //  int64_t padding_idx_;
+};
+#endif
+
+#ifdef CRF_OP
+template <typename Dtype>
+class CrfParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  //    {G_OP_TYPE_CRF, {{"Emission", "Transition", "Label"}, {"ViterbiPath"}}},
+
+  CrfParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+           const AttributeMap &attrs, const Scope &scope) {
+    // todo crf params
+    input_emission_ = InputEmissionFrom<GType>(inputs, scope);
+    input_transition_ = InputTransitionFrom<GType>(inputs, scope);
+    input_label_ = InputLabelFrom<GType>(inputs, scope);
+    output_viterbipath_ = OutputViterbiPathFrom<GType>(outputs, scope);
+    //    padding_idx_ = GetAttr<int64_t>("padding_idx", attrs);
+  }
+  const GType *InputEmission() const { return input_emission_; }
+  const GType *InputTransition() const { return input_transition_; }
+  const GType *InputLabel() const { return input_label_; }
+  GType *outputVBP() const { return output_viterbipath_; }
+  //  const RType *InputIds() const { return input_ids_; }
+  //  RType *Out() const { return out_; }
+  //  int64_t PaddingIdx() const { return padding_idx_; }
+
+ private:
+  GType *input_emission_;
+  GType *input_transition_;
+  GType *input_label_;
+  GType *output_viterbipath_;
+
+  //  RType *input_ids_;
+  //  RType *out_;
+  //  int64_t padding_idx_;
 };
 #endif
 
@@ -1128,7 +1279,7 @@ class FusionFcParam : public OpParam {
     y_num_col_dims_ = GetAttr<int>("y_num_col_dims", attrs);
     axis_ = GetAttr<int>("axis", attrs);
   }
-  const RType *InputX() const { return input_x_; }
+  const GType *InputX() const { return input_x_; }
 
 #ifdef PADDLE_MOBILE_FPGA
   RType *InputY() const { return input_y_; }
@@ -1138,7 +1289,7 @@ class FusionFcParam : public OpParam {
 
   const RType *InputZ() const { return input_z_; }
 
-  RType *Out() const { return out_; }
+  GType *Out() const { return out_; }
 
   const int &XNumColDims() const { return x_num_col_dims_; }
 
@@ -1147,10 +1298,10 @@ class FusionFcParam : public OpParam {
   const int &Axis() const { return axis_; }
 
  private:
-  RType *input_x_;
+  GType *input_x_;
   RType *input_y_;
   RType *input_z_;
-  RType *out_;
+  GType *out_;
   int x_num_col_dims_;
   int y_num_col_dims_;
   int axis_;

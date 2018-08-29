@@ -49,7 +49,11 @@ class Executor {
    * @b to predict
    * */
   std::shared_ptr<framework::Tensor> Predict(const framework::Tensor &t);
-
+  /*
+   * @b to predict
+   * */
+  std::shared_ptr<framework::LoDTensor> PredictLod(
+      const framework::LoDTensor &t);
   /*
    * @b to predict with vector and dim
    *
@@ -83,6 +87,10 @@ class Executor {
     uint64_t runEnd = 0UL;
   };
 #endif
+
+  bool varInputMemory(const std::shared_ptr<framework::VarDesc> &var_desc,
+                      framework::Variable *var,
+                      framework::LoDTensor *tensor) const;
 };
 
 }  // namespace paddle_mobile

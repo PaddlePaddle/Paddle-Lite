@@ -23,9 +23,10 @@ int main() {
   //  ../../../test/models/mobilenet
   //  auto program = loader.Load(g_googlenet, true);
   //  auto program = loader.Load(g_mobilenet_ssd, true);
-
-  auto program = loader.Load(std::string(g_ocr) + "/model",
-                             std::string(g_ocr) + "/params", false);
+  auto params = loader.Load(g_nlp, true);
+  params.originProgram->Description("program desc: ");
+  //  auto program = loader.Load(std::string(g_nlp) + "/model",
+  //                             std::string(g_nlp) + "/params", false);
   //  program.originProgram->Description("program desc: ");
   return 0;
 }
