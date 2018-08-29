@@ -24,29 +24,21 @@ namespace operators {
 
 template <typename Dtype, typename T>
 void CrfOp<Dtype, T>::InferShape() const {
-  //  auto input_x_dims = this->param_.InputX()->dims();
-  //  auto axis = this->param_.Axis();
-  //
-  //  size_t x_dims_size = input_x_dims.size();
-  //  size_t axis_size = axis.size();
-  //
-  //  PADDLE_MOBILE_ENFORCE((x_dims_size == axis_size),
-  //                        "input_dims must "
-  //                        "be equal to the axis_size. ")
-  //
-  //  std::vector<int> count(axis_size, 0);
-  //  for (size_t i = 0; i < axis_size; i++) {
-  //    PADDLE_MOBILE_ENFORCE(
-  //        axis[i] < static_cast<int>(axis_size) && ++count[axis[i]] == 1,
-  //        "Each element of Attribute axis should be a unique value "
-  //        "range from 0 to (dims - 1), "
-  //        "where the dims is the axis's size");
-  //  }
-  //  framework::DDim out_dims(input_x_dims);
-  //  for (size_t i = 0; i < axis_size; i++) {
-  //    out_dims[i] = input_x_dims[axis[i]];
-  //  }
-  //  this->param_.Out()->Resize(out_dims);
+
+    PADDLE_MOBILE_ENFORCE(this->param_.InputEmission(),
+                   "Input(Emission) should be not null.");
+    PADDLE_MOBILE_ENFORCE(this->param_.InputTransition(),
+                          "Input(Transition) should be not null.");
+    PADDLE_MOBILE_ENFORCE(this->param_.outputVBP(),
+                          "Input(ViterbiPath) should be not null.");
+
+    auto emission_dims = this->param_.InputEmission()->dims();
+    PADDLE_MOBILE_ENFORCE(emission_dims.size()==2U,
+                          "The Input(Emission) should be a 2-D tensor.");
+    PADDLE_MOBILE_ENFORCE(emission_dims[0],
+                          "An empty mini-batch is not allowed.");
+
+    this->param_.outputVBP()->Resize({this->param_.InputEmission()->dims()[0],1});
 }
 
 }  // namespace operators

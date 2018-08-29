@@ -20,128 +20,93 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
-
-// vector<int> pos;
-// template <typename T>
-// void TransposeFunc(const int numel, const T* input, const vector<int> axis,
-//                    const vector<int> old_strides, const vector<int>
-//                    new_strides, T* output) {
-//   for (int i = 0; i < numel; ++i) {
-//     int old_idx = 0;
-//     int idx = i;
-//     for (int j = 0; j < axis.size(); ++j) {
-//       int order = axis[j];
-//       old_idx += (idx / new_strides[j]) * old_strides[order];
-//       idx %= new_strides[j];
-//     }
-//     output[i] = input[old_idx];
-//   }
-// }
-
 template <typename P>
-void CrfCompute(const CrfParam<CPU> &param) {
-  //  const auto* input_x = param.InputX();
-  //  const auto input_x_dims = input_x->dims();
-  //  auto* out = param.Out();
-  //  const auto axis = param.Axis();
-  //  const auto* input_x_data = input_x->data<float>();
-  //  auto* out_data = out->mutable_data<float>();
-  //
-  //  size_t ndim = axis.size();
-  //  std::vector<int> xdim(ndim);
-  //  std::vector<int> xstride(ndim);
-  //  std::vector<int> xout(ndim);
-  //  for (int i = 0; i < ndim; i++) {
-  //    int j = ndim - 1 - i;
-  //    xdim[j] = input_x_dims[axis[i]];
-  //    xstride[j] = 1;
-  //    for (int k = axis[i] + 1; k < ndim; k++) {
-  //      xstride[j] *= input_x_dims[k];
-  //    }
-  //    xout[j] = xstride[j] * xdim[j];
-  //  }
-  //
-  //  auto numel = input_x->numel();
-  //  size_t pind = 0;
-  //  std::vector<int> ind(ndim);
-  //  for (int i = 0; i < numel; i++) {
-  //    out_data[i] = input_x_data[pind];
-  //    ind[0]++;
-  //    pind += xstride[0];
-  //    for (int j = 0; j < ndim - 1; j++) {
-  //      if (ind[j] == xdim[j]) {
-  //        ind[j + 1]++;
-  //        ind[j] = 0;
-  //        pind += xstride[j + 1];
-  //        pind -= xout[j];
-  //      } else {
-  //        break;
-  //      }
-  //    }
-  //  }
-  /*  auto *ids_t = param.InputIds();
-    auto *output_t = param.Out();
-    auto *table_var = param.InputW();
-    auto padding_idx = param.PaddingIdx();
+void Decode(const Tensor& emission_weights, const Tensor& transition_weights, Tensor* decoded_path){
+    auto emission_dims = emission_weights.dims();
+    const size_t seq_len = emission_dims[0];
+    const size_t tag_num = emission_dims[1];
 
-    //    auto *ids_t = context.Input<LoDTensor>("Ids");      // int tensor
-    //    auto *output_t = context.Output<LoDTensor>("Out");  // float tensor
-    //    auto *table_var = context.InputVar("W");
-    //
-    //    int64_t padding_idx = context.Attr<int64_t>("padding_idx");
+    const size_t state_trans_base_idx = 2;
 
+    const P* x = emission_weights.data<P>();
+    const P* w = transition_weights.data<P>();
+    int64_t* path = decoded_path->data<int64_t>();
 
+    // alpha is a memo table. An element alpha(k, v) records the score of the
+    // best sequence of tags from position 1 to position k with v being the end
+    // tag.
+    Tensor alpha;
+    P* alpha_value = alpha.mutable_data<P>(emission_dims);
+    Tensor track;
+    int* track_value =
+            track.mutable_data<int>(emission_dims);
+    for (size_t i = 0; i < tag_num; ++i) alpha_value[i] = w[i] + x[i];
 
-    int64_t *ids = const_cast<int64_t *>(ids_t->data<int64_t>());
-    int64_t ids_numel = ids_t->numel();
-    DLOG << "table_var->type()" << table_var->type();
-    if (true) {
-      int64_t row_number = table_var->dims()[0];
-      int64_t row_width = table_var->dims()[1];
+    for (size_t k = 1; k < seq_len; ++k) {
+        for (size_t i = 0; i < tag_num; ++i) {
+            P max_score = -std::numeric_limits<P>::max();
+            int max_j = 0;
+            for (size_t j = 0; j < tag_num; ++j) {
+                P score = alpha_value[(k - 1) * tag_num + j] +
+                          w[(j + state_trans_base_idx) * tag_num + i];
+                if (score > max_score) {
+                    max_score = score;
+                    max_j = j;
+                }
+            }
 
-      auto *table = table_var->data<LoDTensor>();
-      auto *output = output_t->mutable_data<float>();
-
-      for (int64_t i = 0; i < ids_numel; ++i) {
-        if (padding_idx != kNoPadding && ids[i] == padding_idx) {
-          memset(output + i * row_width, 0, row_width * sizeof(float));
-        } else {
-          PADDLE_MOBILE_ENFORCE(ids[i] < row_number,
-                                "LookupCompute ,ids[i]<row_number");
-          PADDLE_MOBILE_ENFORCE(ids[i] >= 0, "LookupCompute ,iids[i]>=0");
-          memcpy(output + i * row_width, table + ids[i] * row_width,
-                 row_width * sizeof(float));
+            alpha_value[k * tag_num + i] = max_score + x[k * tag_num + i];
+            track_value[k * tag_num + i] = max_j;
         }
-      }
-    } else {
-      PADDLE_MOBILE_ENFORCE(false,
-                            "LookupCompute got unsupported table_var type!")
+    }
+    P max_score = -std::numeric_limits<P>::max();
+    int max_i = 0;
+    for (size_t i = 0; i < tag_num; ++i) {
+        P score = alpha_value[(seq_len - 1) * tag_num + i] + w[tag_num + i];
+        if (score > max_score) {
+            max_score = score;
+            max_i = i;
+        }
+    }
+    path[seq_len - 1] = max_i;
+    for (int k = seq_len - 1; k >= 1; --k) {
+        path[k - 1] = max_i = track_value[k * tag_num + max_i];
+    }
+}template <typename P>
+void CrfCompute(const CrfParam<CPU> &param) {
+  DLOG<<"yangfeicrf";
+  auto* emission = param.InputEmission();
+  auto* transition = param.InputTransition();
+  auto* label = param.InputLabel();
+  auto* decoded_path  = param.outputVBP();
+//  DLOG<<*emission;
+//  DLOG<<*transition;
+//  DLOG<<*label;
+
+  PADDLE_MOBILE_ENFORCE(emission->NumLevels() == 1U,"The Input(Emission) should be a sequence.");
+    auto lod = emission->lod();
+    PADDLE_MOBILE_ENFORCE(lod.size(),"The Input(Emission) should be a sequence.");
+    const size_t level = 0;
+    const size_t seq_num = lod[level].size() - 1;
+    int64_t* path = decoded_path->mutable_data<int64_t>();
+    int numel = decoded_path->numel();
+    memset(static_cast<void *>(path), 0, sizeof(int64_t) * numel);
+    for (size_t i = 0; i < seq_num; ++i) {
+        int start_pos = static_cast<int>(lod[level][i]);
+        int end_pos = static_cast<int>(lod[level][i + 1]);
+        Tensor decoded_path_one_seq = decoded_path->Slice(start_pos, end_pos);
+        Decode<P>(emission->Slice(start_pos, end_pos), *transition, &decoded_path_one_seq);
+    }
+    if (label) {
+        PADDLE_MOBILE_ENFORCE(label->NumLevels() == 1U,"The Input(Label) should be a sequence.");
+        const int64_t* label_value = label->data<int64_t>();
+        size_t batch_size = emission->dims()[0];
+        for (size_t i = 0; i < batch_size; ++i) {
+            path[i] = label_value[i] == path[i] ? 1 : 0;
+        }
     }
 
-
-      */
-
-  //    } else if (table_var->IsType<SelectedRows>()) {
-  //        const auto &table_t = table_var->Get<SelectedRows>();
-  //        int64_t row_width = table_t.value().dims()[1];
-  //        const auto *table = table_t.value().data<T>();
-  //        auto *output = output_t->mutable_data<T>(context.GetPlace());
-  //
-  //        for (int64_t i = 0; i < ids_numel; ++i) {
-  //            if (padding_idx != kNoPadding && ids[i] == padding_idx) {
-  //                memset(output + i * row_width, 0, row_width * sizeof(T));
-  //            } else {
-  //                PADDLE_ENFORCE_GE(ids[i], 0);
-  //                auto id_index = table_t.Index(ids[i]);
-  //                PADDLE_ENFORCE_GE(id_index, 0, "the input key should be
-  //                exists."); memcpy(output + i * row_width, table + id_index *
-  //                row_width,
-  //                       row_width * sizeof(T));
-  //            }
-  //        }
-  //    }
 }
-
 }  // namespace operators
 
 }  // namespace paddle_mobile

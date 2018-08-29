@@ -1017,17 +1017,19 @@ class CrfParam : public OpParam {
     output_viterbipath_ = OutputViterbiPathFrom<GType>(outputs, scope);
     //    padding_idx_ = GetAttr<int64_t>("padding_idx", attrs);
   }
-
-  //  const RType *InputW() const { return input_w_; }
+    const GType *InputEmission() const { return input_emission_; }
+    const GType *InputTransition() const { return input_transition_; }
+    const GType *InputLabel() const { return input_label_; }
+    GType *outputVBP() const { return output_viterbipath_; }
   //  const RType *InputIds() const { return input_ids_; }
   //  RType *Out() const { return out_; }
   //  int64_t PaddingIdx() const { return padding_idx_; }
 
  private:
-  RType *input_emission_;
-  RType *input_transition_;
-  RType *input_label_;
-  RType *output_viterbipath_;
+  GType *input_emission_;
+  GType *input_transition_;
+  GType *input_label_;
+  GType *output_viterbipath_;
 
   //  RType *input_ids_;
   //  RType *out_;
