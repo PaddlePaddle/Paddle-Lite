@@ -56,7 +56,24 @@ class ElementwiseAddOp<P: PrecisionType>: Operator<ElementwiseAddKernel<P>, Elem
 //    para.output.dim = para.input.dim
   }
   
+  func delogOutput() {
+    print(" \(type) inputX: ")
+    print(para.inputX.metalTexture.toTensor(dim: (n: para.inputX.tensorDim[0], c: para.inputX.tensorDim[1], h: para.inputX.tensorDim[2], w: para.inputX.tensorDim[3])).strideArray())
+    print(" \(type) inputY: ")
+    print(para.inputY.metalTexture.toTensor(dim: (n: para.inputY.tensorDim[0], c: para.inputY.tensorDim[1], h: para.inputY.tensorDim[2], w: para.inputY.tensorDim[3])).strideArray())
+    print(" \(type) output: ")
+    let originDim = para.output.originDim
+    let outputArray = para.output.metalTexture.realNHWC(dim: (n: originDim[0], h: originDim[1], w: originDim[2], c: originDim[3]))
+    print(outputArray.strideArray())
+    print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
+  }
+  
   func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+    do {
+      try kernel.compute(commandBuffer: buffer, param: para)
+    } catch let error {
+      throw error
+    }
   }
 }
 
