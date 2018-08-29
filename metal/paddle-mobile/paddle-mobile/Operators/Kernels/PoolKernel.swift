@@ -28,7 +28,7 @@ class PoolKernel<P: PrecisionType>: Kernel, Computable{
   
   required init(device: MTLDevice, param: PoolParam<P>) {
     super.init(device: device, inFunctionName: "pool")
-    param.output.initTexture(device: device)
+    param.output.initTexture(device: device, inTranspose: param.input.transpose)
   }
   
   func compute(commandBuffer: MTLCommandBuffer, param: PoolParam<P>) throws {

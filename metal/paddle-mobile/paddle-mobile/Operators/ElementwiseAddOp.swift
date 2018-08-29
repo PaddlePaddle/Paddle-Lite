@@ -18,36 +18,42 @@ class ElementwiseAddParam<P: PrecisionType>: OpParam {
   typealias ParamPrecisionType = P
   required init(opDesc: OpDesc, inScope: Scope) throws {
     do {
-      inputY = try ElementwiseAddParam.inputY(inputs: opDesc.paraInputs, from: inScope)
-    } catch _ {
-      do {
-        inputYTexture = try ElementwiseAddParam.inputX(inputs: opDesc.inputs, from: inScope)
-      } catch let error {
-        throw error
-      }
-    }
-    do {
-      input = try ElementwiseAddParam.inputX(inputs: opDesc.inputs, from: inScope)
+      inputX = try ElementwiseAddParam.inputX(inputs: opDesc.inputs, from: inScope)
       output = try ElementwiseAddParam.outputOut(outputs: opDesc.outputs, from: inScope)
       axis = try ElementwiseAddParam.getAttr(key: "axis", attrs: opDesc.attrs)
     } catch let error {
       throw error
     }
+    do {
+      inputY = try ElementwiseAddParam.inputY(inputs: opDesc.paraInputs, from: inScope)
+    } catch _ {
+      let tensorY: Tensor<P> = try ElementwiseAddParam.inputY(inputs: opDesc.paraInputs, from: inScope)
+      let device = inputX.metalTexture!.device
+      inputY = Texture.init(device: device, inDim: tensorY.dim)
+      let value: [P] = Array(UnsafeBufferPointer(start: tensorY.data.pointer, count: tensorY.dim.numel()))
+      inputY.metalTexture = device.tensor2texture(value: value, dim: tensorY.dim.dims)
+    }
+    
+    var offset = axis
+    if axis == -1 {
+      offset = inputX.tensorDim.cout() - inputY.tensorDim.cout()
+    }
+    for i in 0..<(inputY.tensorDim.cout()) {
+      assert(inputX.tensorDim[offset + i] == inputY.tensorDim[i])
+    }
   }
   
-  var inputYTexture: Texture<P>?
-  var inputY: Tensor<P>?
-  var input: Texture<P>
-  
+  var inputX: Texture<P>
+  var inputY: Texture<P>
   var output: Texture<P>
-  let axis: Int
+  var axis: Int
 }
 
 class ElementwiseAddOp<P: PrecisionType>: Operator<ElementwiseAddKernel<P>, ElementwiseAddParam<P>>, Runable, Creator, InferShaperable{
   typealias OpType = ElementwiseAddOp<P>
   
   func inferShape() {
-    para.output.dim = para.input.dim
+//    para.output.dim = para.input.dim
   }
   
   func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {

@@ -25,6 +25,13 @@ class ConcatParam<P: PrecisionType>: OpParam {
         guard let variant = inScope[x], let v = variant as? Texture<P> else {
           fatalError()
         }
+        if transpose.count == 0 {
+          transpose = v.transpose
+        }
+        if v.transpose != transpose {
+          fatalError()
+        }
+       
         input.append(v)
       }
       axis = try ConcatParam.getAttr(key: "axis", attrs: opDesc.attrs)
@@ -35,6 +42,7 @@ class ConcatParam<P: PrecisionType>: OpParam {
   }
   var input: [Texture<P>] = []
   var output: Texture<P>
+  var transpose: [Int] = []
   let axis: Int
 }
 
