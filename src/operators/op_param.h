@@ -470,13 +470,13 @@ class ConcatParam : public OpParam {
 
   vector<GType *> Inputs() const { return inputs_; }
 
-  RType *Out() const { return out_; }
+  GType *Out() const { return out_; }
 
   const int &Axis() const { return axis_; }
 
  private:
   vector<GType *> inputs_;
-  RType *out_;
+  GType *out_;
   int axis_;
 };
 #endif
