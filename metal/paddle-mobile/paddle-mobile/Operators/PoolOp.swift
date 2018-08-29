@@ -26,6 +26,7 @@ class PoolParam<P: PrecisionType>: OpParam {
       padding = try PoolParam.getAttr(key: "paddings", attrs: opDesc.attrs)
       ceilMode = try PoolParam.getAttr(key: "ceil_mode", attrs: opDesc.attrs)
       globalPooling = try PoolParam.getAttr(key: "global_pooling", attrs: opDesc.attrs)
+      assert(input.transpose == [0, 2, 3, 1])
     } catch let error {
       throw error
     }
