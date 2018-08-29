@@ -83,6 +83,10 @@ class Executor {
     uint64_t runEnd = 0UL;
   };
 #endif
+
+  bool varInputMemory(const std::shared_ptr<framework::VarDesc> &var_desc,
+                      framework::Variable *var,
+                      framework::LoDTensor *tensor) const;
 };
 
 }  // namespace paddle_mobile

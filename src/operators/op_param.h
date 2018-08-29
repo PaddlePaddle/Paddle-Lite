@@ -861,13 +861,13 @@ class FeedParam : public OpParam {
     auto var = scope->Var("batch_size");
     batch_size = var->GetValue<int>();
   }
-  const RType *InputX() const { return input_x_; }
-  RType *Out() const { return out_; }
+  const GType *InputX() const { return input_x_; }
+  GType *Out() const { return out_; }
   const int BatchSize() const { return batch_size; }
 
  private:
-  RType *input_x_;
-  RType *out_;
+  GType *input_x_;
+  GType *out_;
   int batch_size;
 };
 
@@ -932,15 +932,15 @@ class LookupParam : public OpParam {
     padding_idx_ = GetAttr<int64_t>("padding_idx", attrs);
   }
 
-  const RType *InputW() const { return input_w_; }
-  const RType *InputIds() const { return input_ids_; }
-  RType *Out() const { return out_; }
+  const GType *InputW() const { return input_w_; }
+  const GType *InputIds() const { return input_ids_; }
+  GType *Out() const { return out_; }
   int64_t PaddingIdx() const { return padding_idx_; }
 
  private:
-  RType *input_w_;
-  RType *input_ids_;
-  RType *out_;
+  GType *input_w_;
+  GType *input_ids_;
+  GType *out_;
   int64_t padding_idx_;
 };
 #endif
