@@ -110,7 +110,7 @@ if ("FPGAnets" IN_LIST NET)
   set(FUSION_CONVBN_OP ON)
   set(FUSION_CONVADD_OP ON)
 
-  set(FOUND_MATCH ON)   
+  set(FOUND_MATCH ON)
 endif()
 
 
@@ -147,6 +147,7 @@ if(NOT FOUND_MATCH)
   set(SLICE_OP ON)
   set(DROPOUT_OP ON)
   set(IM2SEQUENCE_OP ON)
+  set(GRU_OP ON)
 endif()
 
   # option(BATCHNORM_OP "" ON)
@@ -281,4 +282,8 @@ endif()
 
 if (CONV_TRANSPOSE_OP)
   add_definitions(-DCONV_TRANSPOSE)
+endif()
+
+if (GRU_OP)
+  add_definitions(-DGRU_OP)
 endif()

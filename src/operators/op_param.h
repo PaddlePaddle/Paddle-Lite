@@ -74,6 +74,10 @@ struct DtypeTensorTrait<GPU_MALI> {
 class OpParam {
  protected:
   template <typename T>
+  static T *InputH0From(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("H0", inputs, scope);
+  }
+  template <typename T>
   static T *InputAlphaFrom(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue<T>("Alpha", inputs, scope);
   }
@@ -87,6 +91,7 @@ class OpParam {
   static T *InputXFrom(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue<T>("X", inputs, scope);
   }
+
   template <typename T>
   static T *InputXFrom1(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue1<T>("addX", inputs, scope);
@@ -110,6 +115,10 @@ class OpParam {
   template <typename T>
   static T *InputBiasFrom(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue<T>("Bias", inputs, scope);
+  }
+  template <typename T>
+  static T *InputWeightFrom(const VariableNameMap &inputs, const Scope &scope) {
+    return GetVarValue<T>("Weight", inputs, scope);
   }
   template <typename T>
   static T *InputVarianceFrom(const VariableNameMap &inputs,
@@ -164,6 +173,30 @@ class OpParam {
   static vector<T *> InputMultiFrom(const VariableNameMap &inputs,
                                     const Scope &scope) {
     return GetMultiVarValue<T>("X", inputs, scope);
+  }
+
+  template <typename T>
+  static T *OutputBatchGateFrom(const VariableNameMap &outputs,
+                                const Scope &scope) {
+    return GetVarValue<T>("BatchGate", outputs, scope);
+  }
+
+  template <typename T>
+  static T *OutputBatchResetHiddenPrevFrom(const VariableNameMap &outputs,
+                                           const Scope &scope) {
+    return GetVarValue<T>("BatchResetHiddenPrev", outputs, scope);
+  }
+
+  template <typename T>
+  static T *OutputBatchHiddenFrom(const VariableNameMap &outputs,
+                                  const Scope &scope) {
+    return GetVarValue<T>("BatchHidden", outputs, scope);
+  }
+
+  template <typename T>
+  static T *OutputHiddenFrom(const VariableNameMap &outputs,
+                             const Scope &scope) {
+    return GetVarValue<T>("Hidden", outputs, scope);
   }
 
   template <typename T>
@@ -1946,6 +1979,66 @@ class ConvTransposeParam : public OpParam {
   vector<int> paddings_;
   vector<int> dilations_;
   int groups;
+};
+#endif
+
+#ifdef GRU_OP
+template <typename Dtype>
+class GruParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+
+ public:
+  /**
+   *
+   * @param inputs
+   * @param outputs
+   * @param attrs
+   * @param scope
+   * */
+  GruParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+           const AttributeMap &attrs, const Scope &scope) {
+    input_input_ = InputFrom<GType>(inputs, scope);
+    input_h0_ = InputH0From<GType>(inputs, scope);
+    input_bias_ = InputBiasFrom<GType>(inputs, scope);
+    input_weight_ = InputWeightFrom<GType>(inputs, scope);
+
+    output_batch_gate_ = OutputBatchGateFrom<GType>(outputs, scope);
+    output_batch_reset_hidden_prev_ =
+        OutputBatchResetHiddenPrevFrom<GType>(outputs, scope);
+    output_batch_hidden_ = OutputBatchHiddenFrom<GType>(outputs, scope);
+    output_hidden_ = OutputHiddenFrom<GType>(outputs, scope);
+    activation_ = GetAttr<std::string>("activation", attrs);
+    gate_activation_ = GetAttr<std::string>("gate_activation", attrs);
+    is_reverse_ = GetAttr<bool>("is_reverse", attrs);
+  }
+  const GType *InputInput() const { return input_input_; }
+  const GType *InputWeight() const { return input_weight_; }
+  const GType *InputH0() const { return input_h0_; }
+  const GType *InputBias() const { return input_bias_; }
+  const std::string &Activation() const { return activation_; }
+  const std::string &GateActivation() const { return gate_activation_; }
+  const bool &IsReverse() const { return is_reverse_; }
+
+  GType *OutBatchGate() const { return output_batch_gate_; }
+  GType *OutBatchResetHiddenPrev() const {
+    return output_batch_reset_hidden_prev_;
+  }
+  GType *OutBatchHidden() const { return output_batch_hidden_; }
+  GType *OutHidden() const { return output_hidden_; }
+
+ private:
+  GType *input_input_;
+  GType *input_h0_;
+  GType *input_bias_;
+  GType *input_weight_;
+
+  GType *output_batch_gate_;
+  GType *output_batch_reset_hidden_prev_;
+  GType *output_batch_hidden_;
+  GType *output_hidden_;
+  std::string activation_;
+  std::string gate_activation_;
+  bool is_reverse_;
 };
 #endif
 

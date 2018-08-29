@@ -55,6 +55,7 @@ const char *G_OP_TYPE_REGION = "region";
 const char *G_OP_TYPE_FUSION_CONV_BN = "fusion_conv_bn";
 const char *G_OP_TYPE_CONV_TRANSPOSE = "conv2d_transpose";
 const char *G_OP_TYPE_PRELU = "prelu";
+const char *G_OP_TYPE_GRU = "gru";
 
 std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
@@ -95,6 +96,9 @@ std::unordered_map<
         {G_OP_TYPE_FUSION_FC_RELU, {{"X", "Y", "Z"}, {"Out"}}},
         {G_OP_TYPE_REGION, {{"X"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_BN, {{"Input"}, {"Y"}}},
+        {G_OP_TYPE_GRU,
+         {{"Input", "H0", "Weight", "Bias"},
+          {"BatchGate", "BatchResetHiddenPrev", "BatchHidden", "Hidden"}}},
         {G_OP_TYPE_CONV_TRANSPOSE, {{"Input"}, {"Output"}}}};
 
 }  // namespace paddle_mobile
