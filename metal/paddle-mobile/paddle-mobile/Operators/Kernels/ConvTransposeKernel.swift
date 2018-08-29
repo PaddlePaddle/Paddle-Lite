@@ -43,6 +43,8 @@ class ConvTransposeKernel<P: PrecisionType>: Kernel, Computable{
     let dilationY = UInt16(param.dilations[1])
     
     metalParam = MetalConvTransposeParam.init(kernelW: kernelWidth, kernelH: kernelHeight, strideX: strideX, strideY: strideY, paddingX: paddingX, paddingY: paddingY, dilationX: dilationX, dilationY: dilationY)
+    
+    param.output.initTexture(device: device, inTranspose: param.input.transpose)
   }
   
   func compute(commandBuffer: MTLCommandBuffer, param: ConvTransposeParam<P>) throws {
