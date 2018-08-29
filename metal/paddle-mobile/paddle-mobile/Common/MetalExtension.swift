@@ -210,7 +210,7 @@ extension MTLDevice {
 }
 
 extension MTLComputeCommandEncoder {
-  func dispatch(computePipline: MTLComputePipelineState, outTexture: MTLTexture) {
+  public func dispatch(computePipline: MTLComputePipelineState, outTexture: MTLTexture) {
     let slices = (outTexture.arrayLength * 4 + 3)/4
     
     let width = computePipline.threadExecutionWidth

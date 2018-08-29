@@ -73,7 +73,7 @@ class MobileNet_ssd_hand: Net{
   }
   
   var preprocessKernel: CusomKernel
-  let dim = [1, 300, 300, 3]
+  let dim: (n: Int, h: Int, w: Int, c: Int) = (n: 1, h: 300, w: 300, c: 3)
   let modelPath: String
   let paramPath: String
   let modelDir: String

@@ -20,6 +20,7 @@ import MetalPerformanceShaders
 let threadSupport = [1]
 
 let modelHelperMap: [SupportModel : Net] = [.mobilenet_ssd : MobileNet_ssd_hand.init(), .genet : Genet.init()]
+//, .genet : Genet.init()
 //let modelHelperMap: [SupportModel : Net] = [.mobilenet : MobileNet.init(), .mobilenet_ssd : MobileNet_ssd_hand.init()]
 
 enum SupportModel: String{
@@ -28,10 +29,9 @@ enum SupportModel: String{
   case genet          = "enet"
   static func supportedModels() -> [SupportModel] {
     //.mobilenet,
-    return [.mobilenet_ssd, .genet]
+    return [.mobilenet_ssd ,.genet]
   }
 }
-
 
 class ViewController: UIViewController {
   @IBOutlet weak var resultTextView: UITextView!

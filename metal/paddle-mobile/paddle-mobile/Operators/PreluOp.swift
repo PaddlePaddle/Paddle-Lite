@@ -50,8 +50,8 @@ class PreluOp<P: PrecisionType>: Operator<PreluKernel<P>, PreluParam<P>>, Runabl
   }
   
   func delogOutput() {
-    print("softmax delog")
-    let _: P? = para.input.metalTexture.logDesc(header: "softmax input: ", stridable: false)
-    let _: P? = para.output.metalTexture.logDesc(header: "softmax output: ", stridable: false)
+//    print("softmax delog")
+//    let _: P? = para.input.metalTexture.logDesc(header: "softmax input: ", stridable: false)
+//    let _: P? = para.output.metalTexture.logDesc(header: "softmax output: ", stridable: false)
   }
 }

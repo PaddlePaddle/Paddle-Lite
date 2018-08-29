@@ -58,7 +58,7 @@ class MobileNet: Net{
   }
   
   var preprocessKernel: CusomKernel
-  let dim = [1, 224, 224, 3]
+  let dim = (n: 1, h: 224, w: 224, c: 3)
   let modelPath: String
   let paramPath: String
   let modelDir: String
