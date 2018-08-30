@@ -28,6 +28,35 @@ bool FusionFcKernel<CPU, float>::Init(FusionFcParam<CPU> *param) {
 template <>
 void FusionFcKernel<CPU, float>::Compute(
     const FusionFcParam<CPU> &param) const {
+  auto x_dims = param.InputX()->dims();
+  auto y_dims = param.InputY()->dims();
+  int x_num_col_dims = param.XNumColDims();
+  int y_num_col_dims = param.YNumColDims();
+
+  assert(x_dims.size() > x_num_col_dims);
+  assert(y_dims.size() > y_num_col_dims);
+
+  /// (1,2,3,4) , x_num_col_dims = 2  -> (2,12)
+  auto x_mat_dims = framework::flatten_to_2d(x_dims, x_num_col_dims);
+  auto y_mat_dims = framework::flatten_to_2d(y_dims, y_num_col_dims);
+
+  assert(x_mat_dims[1] == y_mat_dims[0]);
+
+  std::vector<int64_t> output_dims;
+  output_dims.reserve(
+      static_cast<size_t>(x_num_col_dims + y_dims.size() - y_num_col_dims));
+
+  for (int i = 0; i < x_num_col_dims; ++i) {
+    output_dims.push_back(x_dims[i]);
+  }
+
+  for (int i = y_num_col_dims; i < y_dims.size(); ++i) {
+    output_dims.push_back(y_dims[i]);
+  }
+
+  framework::DDim ddim = framework::make_ddim(output_dims);
+  param.Out()->Resize(ddim);
+
   FusionFcCompute<float>(param);
   param.Out()->set_lod(param.InputX()->lod());
 }

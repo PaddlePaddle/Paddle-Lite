@@ -54,8 +54,18 @@ void GruKernel<CPU, float>::Compute(const GruParam<CPU> &param) const {
     PADDLE_MOBILE_ENFORCE((bias_width == frame_size * 3),
                           "The shape of Bias must be [1, frame_size * 3].");
   }
+  param.OutBatchGate()->Resize(input_dims);
+  param.OutBatchResetHiddenPrev()->Resize({input_dims[0], frame_size});
+  param.OutBatchHidden()->Resize({input_dims[0], frame_size});
+  param.OutHidden()->Resize({input_dims[0], frame_size});
   GruCompute<float>(param);
   param.OutHidden()->set_lod(param.InputInput()->lod());
+  DLOG << "________________" << param.OutHidden()->dims();
+  DLOG << "________________" << param.OutHidden()->numel();
+  auto *hiden_data = param.OutHidden()->data<float>();
+  for (int64_t i = 0; i < 10; i++) {
+    DLOG << "****************" << hiden_data[i];
+  }
 }
 
 template class GruKernel<CPU, float>;

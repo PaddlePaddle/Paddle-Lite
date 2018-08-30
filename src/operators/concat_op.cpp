@@ -22,42 +22,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
-void ConcatOp<Dtype, T>::InferShape() const {
-  auto inputs = this->param_.Inputs();
-  const size_t n = inputs.size();
-
-  std::vector<DDim> inputs_dims;
-  inputs_dims.reserve(n);
-  for (int i = 0; i < n; i++) {
-    inputs_dims.push_back(inputs[i]->dims());
-  }
-
-  auto axis = static_cast<size_t>(this->param_.Axis());
-
-  if (n == 1) {
-    DLOG << "Warning: concat op have only one input, "
-            "may waste memory";
-  }
-
-  /// add all dim[axis] and check other dims if equal.
-  auto out_dims = inputs_dims[0];
-  int in_zero_dims_size = out_dims.size();
-  for (size_t i = 1; i < n; i++) {
-    for (size_t j = 0; j < in_zero_dims_size; j++) {
-      if (j == axis) {
-        out_dims[axis] += inputs_dims[i][j];
-      } else {
-        assert(out_dims[j] == inputs_dims[i][j]);
-      }
-    }
-  }
-
-  if (out_dims[axis] < 0) {
-    out_dims[axis] = -1;
-  }
-
-  this->param_.Out()->Resize(out_dims);
-}
+void ConcatOp<Dtype, T>::InferShape() const {}
 
 }  // namespace operators
 }  // namespace paddle_mobile

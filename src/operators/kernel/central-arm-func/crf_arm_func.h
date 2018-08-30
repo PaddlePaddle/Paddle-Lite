@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef CRF_OP
 #pragma once
 
+#include <limits>
 #include <vector>
 #include "operators/op_param.h"
 
@@ -75,6 +76,20 @@ void Decode(const Tensor& emission_weights, const Tensor& transition_weights,
 }
 template <typename P>
 void CrfCompute(const CrfParam<CPU>& param) {
+  PADDLE_MOBILE_ENFORCE(param.InputEmission(),
+                        "Input(Emission) should be not null.");
+  PADDLE_MOBILE_ENFORCE(param.InputTransition(),
+                        "Input(Transition) should be not null.");
+  PADDLE_MOBILE_ENFORCE(param.outputVBP(),
+                        "Input(ViterbiPath) should be not null.");
+
+  auto emission_dims = param.InputEmission()->dims();
+  PADDLE_MOBILE_ENFORCE(emission_dims.size() == 2U,
+                        "The Input(Emission) should be a 2-D tensor.");
+  PADDLE_MOBILE_ENFORCE(emission_dims[0],
+                        "An empty mini-batch is not allowed.");
+
+  param.outputVBP()->Resize({param.InputEmission()->dims()[0], 1});
   DLOG << "yangfeicrf";
   auto* emission = param.InputEmission();
   auto* transition = param.InputTransition();
