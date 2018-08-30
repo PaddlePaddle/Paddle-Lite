@@ -26,6 +26,32 @@ bool LookupKernel<CPU, float>::Init(LookupParam<CPU> *param) {
 
 template <>
 void LookupKernel<CPU, float>::Compute(const LookupParam<CPU> &param) const {
+  PADDLE_MOBILE_ENFORCE(param.InputW() != nullptr,
+                        "Input(W) of LookupTableOp should not be null.");
+  auto *ids_t = param.InputIds();
+
+  PADDLE_MOBILE_ENFORCE(ids_t != nullptr,
+                        "Input(Ids) of LookupTableOp should not be null.");
+  PADDLE_MOBILE_ENFORCE(param.Out() != nullptr,
+                        "Output(Out) of LookupTableOp should not be null.");
+  //    param_.InputW()->
+
+  auto table_dims = param.InputW()->dims();
+  auto ids_dims = ids_t->dims();
+
+  int ids_rank = ids_dims.size();
+
+  PADDLE_MOBILE_ENFORCE(table_dims.size() == 2,
+                        "table_dims.size()==2 check failed");
+
+  PADDLE_MOBILE_ENFORCE(ids_dims[ids_rank - 1] == 1,
+                        "The last dimension of the 'Ids' tensor must be 1.");
+
+  auto output_dims =
+      framework::vectorize(framework::slice_ddim(ids_dims, 0, ids_rank - 1));
+  output_dims.push_back(table_dims[1]);
+
+  param.Out()->Resize(framework::make_ddim(output_dims));
   LookupCompute<float>(param);
   param.Out()->set_lod(param.InputIds()->lod());
 }

@@ -58,11 +58,12 @@ void OperatorBase<Dtype>::CheckAllInputOutputSet() const {}
 template <typename Dtype>
 void OperatorBase<Dtype>::Run() const {
   RunImpl();
+  DLOG << "******************fuck1";
 #ifdef PADDLE_MOBILE_DEBUG
   vector<string> input_keys = GetInputKeys();
   for (const auto key : input_keys) {
     Tensor *input = GetVarValue<framework::LoDTensor>(key, inputs_, *scope_);
-    DLOG << type_ << " input- " << key << "=" << *input;
+    if (input) DLOG << type_ << " input- " << key << "=" << *input;
   }
   vector<string> output_keys = GetOutKeys();
   for (const auto key : output_keys) {

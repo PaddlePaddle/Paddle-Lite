@@ -349,10 +349,20 @@ class Tensor {
 #ifdef PADDLE_MOBILE_DEBUG
 inline Print &operator<<(Print &printer, const Tensor &tensor) {
   printer << " dims: " << tensor.dims() << "\n";
-  int stride = tensor.numel() / 20;
-  stride = stride > 0 ? stride : 1;
-#ifndef PADDLE_MOBILE_FPGA
-  for (int i = 0; i < tensor.numel(); i += stride) {
+  //  int stride = tensor.numel() / 20;
+  //  stride = stride > 0 ? stride : 1;
+  // #ifndef PADDLE_MOBILE_FPGA
+  //  for (int i = 0; i < tensor.numel(); i += stride) {
+  //    //  这不一定是float的
+  //    if (tensor.type() == typeid(float)) {
+  //      printer << tensor.data<float>()[i] << " ";
+  //    } else if (tensor.type() == typeid(int64_t)) {
+  //      printer << tensor.data<int64_t>()[i] << " ";
+  //    }
+  //  }
+  // #endif
+
+  for (int i = 0; i < 10; i++) {
     //  这不一定是float的
     if (tensor.type() == typeid(float)) {
       printer << tensor.data<float>()[i] << " ";
@@ -360,7 +370,6 @@ inline Print &operator<<(Print &printer, const Tensor &tensor) {
       printer << tensor.data<int64_t>()[i] << " ";
     }
   }
-#endif
 
   return printer;
 }

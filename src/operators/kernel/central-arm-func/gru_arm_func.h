@@ -51,7 +51,9 @@ void GruCompute(const GruParam<CPU>& param) {
   batch_hidden->mutable_data<float>();
   auto* hidden = param.OutHidden();
   hidden->mutable_data<float>();
+
   auto hidden_dims = hidden->dims();
+
   bool is_reverse = param.IsReverse();
   math::LoDTensor2BatchFunctor<CPU, float> to_batch;
   to_batch(*input, batch_gate, true, is_reverse);
@@ -61,7 +63,6 @@ void GruCompute(const GruParam<CPU>& param) {
     math::RowwiseAdd<CPU, float> add_bias;
     add_bias(*batch_gate, *bias, batch_gate);
   }
-
   int frame_size = hidden_dims[1];
   math::GRUMetaValue<float> gru_value;
   gru_value.gate_weight = const_cast<float*>(weight_data);
@@ -82,13 +83,11 @@ void GruCompute(const GruParam<CPU>& param) {
   size_t seq_len = batch_starts.size() - 1;
   auto active_node = math::GetActivationType(param.Activation());
   auto active_gate = math::GetActivationType(param.GateActivation());
-
   for (size_t n = 0; n < seq_len; n++) {
     int bstart = static_cast<int>(batch_starts[n]);
     int bend = static_cast<int>(batch_starts[n + 1]);
     int cur_batch_size = bend - bstart;
-
-    Tensor gate_t = batch_gate->Slice(bstart, bend);
+    Tensor gate_t = batch_gate->Slice(bstart, bend);  // BUG
     Tensor reset_hidden_prev_t = batch_reset_hidden_prev->Slice(bstart, bend);
     Tensor hidden_t = batch_hidden->Slice(bstart, bend);
     gru_value.output_value = hidden_t.data<float>();
