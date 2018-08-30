@@ -342,7 +342,7 @@ public extension MTLTexture {
   
   // n c h w - dim
   func toTensor(dim: (n: Int, c: Int, h: Int, w: Int)) -> [Float32] {
-    print("origin dim: \(dim)")
+//    print("origin dim: \(dim)")
     print("texture: ")
     print(self)
     

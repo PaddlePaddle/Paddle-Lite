@@ -55,7 +55,7 @@ class ElementwiseAddKernel<P: PrecisionType>: Kernel, Computable {
     }
     emp.yoff = 4 - Int32(param.inputY.tensorDim.cout())
     if (param.inputX.dim == param.inputY.dim) && (param.inputX.transpose == param.inputY.transpose) {
-      print("===> elementwise_add fast!!!")
+//      print("===> elementwise_add fast!!!")
       emp.fast = 1
     }
     

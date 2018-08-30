@@ -61,11 +61,18 @@ class ElementwiseAddOp<P: PrecisionType>: Operator<ElementwiseAddKernel<P>, Elem
     print(para.inputX.metalTexture.toTensor(dim: (n: para.inputX.tensorDim[0], c: para.inputX.tensorDim[1], h: para.inputX.tensorDim[2], w: para.inputX.tensorDim[3])).strideArray())
     print(" \(type) inputY: ")
     print(para.inputY.metalTexture.toTensor(dim: (n: para.inputY.tensorDim[0], c: para.inputY.tensorDim[1], h: para.inputY.tensorDim[2], w: para.inputY.tensorDim[3])).strideArray())
+    
     print(" \(type) output: ")
     let originDim = para.output.originDim
-    let outputArray = para.output.metalTexture.realNHWC(dim: (n: originDim[0], h: originDim[1], w: originDim[2], c: originDim[3]))
-    print(outputArray.strideArray())
-    print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
+    if para.output.transpose == [0, 1, 2, 3] {
+      let outputArray = para.output.metalTexture.realNHWC(dim: (n: originDim[0], h: originDim[1], w: originDim[2], c: originDim[3]))
+      print(outputArray.strideArray())
+    } else if para.output.transpose == [0, 2, 3, 1] {
+      print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
+    } else {
+      print(" not implement")
+    }
+    
   }
   
   func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
