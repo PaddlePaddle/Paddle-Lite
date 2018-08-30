@@ -78,10 +78,36 @@ class MobileNet_ssd_hand: Net{
   let paramPath: String
   let modelDir: String
   
+  
+//  let paramPointer: UnsafeMutableRawPointer
+//
+//  let paramSize: Int
+//
+//  let modelPointer: UnsafeMutableRawPointer
+//
+//  let modelSize: Int
+//
+//  /**
+//   * inParamPointer: 参数文件内存地址
+//   * inParamSize:    参数文件大小(字节数)
+//   * inModelPointer: 模型文件内存地址
+//   *  inModelSize:   模型文件大小(字节数)
+//   */
+//  init(inParamPointer: UnsafeMutableRawPointer, inParamSize: Int, inModelPointer: UnsafeMutableRawPointer, inModelSize: Int) {
+//    paramPointer = inParamPointer
+//    paramSize = inParamSize
+//    modelPointer = inModelPointer
+//    modelSize = inModelSize
+////    fatalError()
+//  }
+  
+  
   init() {
     modelPath = Bundle.main.path(forResource: "ssd_hand_model", ofType: nil) ?! "model null"
     paramPath = Bundle.main.path(forResource: "ssd_hand_params", ofType: nil) ?! "para null"
     modelDir = ""
     preprocessKernel = MobilenetssdPreProccess.init(device: MetalHelper.shared.device)
+//    fatalError()
+
   }
 }
