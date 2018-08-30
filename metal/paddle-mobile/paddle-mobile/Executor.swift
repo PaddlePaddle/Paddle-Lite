@@ -14,7 +14,7 @@
 
 import Foundation
 
-let testTo = 12
+let testTo = 54
 
 public class ResultHolder<P: PrecisionType> {
   public let dim: [Int]
@@ -62,7 +62,7 @@ public class Executor<P: PrecisionType> {
     queue = inQueue
     for block in inProgram.programDesc.blocks {
       //block.ops.count
-      for i in 0..<testTo {
+      for i in 0..<block.ops.count {
         let op = block.ops[i]
         do {
           let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
@@ -124,13 +124,13 @@ public class Executor<P: PrecisionType> {
       //            print(stridableInput)
       
       //            let _: Flo? = input.logDesc(header: "input: ", stridable: true)
-      for i in 0..<self.ops.count {
-        let op = self.ops[i]
-        print(" 第 \(i) 个 op: ")
-        op.delogOutput()
-      }
-      
-      return
+//      for i in 0..<self.ops.count {
+//        let op = self.ops[i]
+//        print(" 第 \(i) 个 op: ")
+//        op.delogOutput()
+//      }
+//      
+//      return
       
       let afterDate = Date.init()
      
@@ -145,7 +145,6 @@ public class Executor<P: PrecisionType> {
           return p
         }), inElapsedTime: afterDate.timeIntervalSince(beforeDate))
       }
-      
 
       completionHandle(resultHolder)
     }

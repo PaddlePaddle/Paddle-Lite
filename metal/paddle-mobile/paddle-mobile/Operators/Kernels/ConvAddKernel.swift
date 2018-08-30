@@ -27,9 +27,10 @@ class ConvAddKernel<P: PrecisionType>: Kernel, Computable {
     
     param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1])
     
-    let offsetX = param.filter.width/2 - Int(param.paddings[0])
-    let offsetY = param.filter.height/2 - Int(param.paddings[1])
+    let offsetX = (Int(param.dilations[0]) * (param.filter.width - 1) + 1)/2 - Int(param.paddings[0])
     
+    let offsetY = (Int(param.dilations[1]) * (param.filter.height - 1) + 1)/2 - Int(param.paddings[1])
+
     param.filter.initBuffer(device: device, precision: Tensor.BufferPrecision.Float32)
     param.y.initBuffer(device: device, precision: Tensor.BufferPrecision.Float32)
     
@@ -37,7 +38,11 @@ class ConvAddKernel<P: PrecisionType>: Kernel, Computable {
     print("offset y: \(offsetY)")
     
     let offsetZ = 0.0
-    metalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: Int16(offsetZ), strideX: UInt16(param.stride[0]), strideY: UInt16(param.stride[1]), paddedZ: UInt16(param.input.metalTexture.arrayLength * 4 - param.input.dim[3]))
+    let inMetalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: Int16(offsetZ), strideX: UInt16(param.stride[0]), strideY: UInt16(param.stride[1]), paddedZ: UInt16(param.input.metalTexture.arrayLength * 4 - param.input.dim[3]), dilationX: UInt16(param.dilations[0]), dilationY: UInt16(param.dilations[1]))
+    print("metal param: ")
+    print(inMetalParam)
+    
+    metalParam = inMetalParam
   }
   
   func compute(commandBuffer: MTLCommandBuffer, param: ConvAddParam<P>) throws {
