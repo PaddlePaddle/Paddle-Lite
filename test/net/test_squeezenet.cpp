@@ -32,7 +32,7 @@ int main() {
 
     std::vector<float> input(input_tensor.data<float>(),
                              input_tensor.data<float>() + input_tensor.numel());
-    // 预热一次
+    // 预热十次
     for (int i = 0; i < 10; ++i) {
       paddle_mobile.Predict(input, dims);
     }

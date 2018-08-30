@@ -24,29 +24,37 @@ namespace operators {
 
 template <typename Dtype, typename T>
 void GruOp<Dtype, T>::InferShape() const {
-  //  auto input_x_dims = this->param_.InputX()->dims();
-  //  auto axis = this->param_.Axis();
-  //
-  //  size_t x_dims_size = input_x_dims.size();
-  //  size_t axis_size = axis.size();
-  //
-  //  PADDLE_MOBILE_ENFORCE((x_dims_size == axis_size),
-  //                        "input_dims must "
-  //                        "be equal to the axis_size. ")
-  //
-  //  std::vector<int> count(axis_size, 0);
-  //  for (size_t i = 0; i < axis_size; i++) {
-  //    PADDLE_MOBILE_ENFORCE(
-  //        axis[i] < static_cast<int>(axis_size) && ++count[axis[i]] == 1,
-  //        "Each element of Attribute axis should be a unique value "
-  //        "range from 0 to (dims - 1), "
-  //        "where the dims is the axis's size");
+  auto input_dims = this->param_.InputInput()->dims();
+  auto weight_dims = this->param_.InputWeight()->dims();
+  //  int input_size = input_dims[1];
+  int frame_size = weight_dims[0];
+  //  PADDLE_MOBILE_ENFORCE(
+  //      (input_size == frame_size * 3),
+  //      "The input_size must be 3 times of frame_size in GRUOp.");
+  //  PADDLE_MOBILE_ENFORCE(
+  //      (weight_dims[1] == frame_size * 3),
+  //      "The shape of Weight matrix must be [frame_size, frame_size * 3].");
+  //  if (this->param_.InputH0()) {
+  //    auto h0_dims = this->param_.InputH0()->dims();
+  //    PADDLE_MOBILE_ENFORCE((h0_dims[1] == frame_size),
+  //                          "The width of H0 must be equal to frame_size.");
   //  }
-  //  framework::DDim out_dims(input_x_dims);
-  //  for (size_t i = 0; i < axis_size; i++) {
-  //    out_dims[i] = input_x_dims[axis[i]];
+  //  if (this->param_.InputBias()) {
+  //    auto bias_dims = this->param_.InputBias()->dims();
+  //    int bias_height = bias_dims[0];
+  //    int bias_width = bias_dims[1];
+  //    PADDLE_MOBILE_ENFORCE((bias_height == 1),
+  //                          "The shape of Bias must be [1, frame_size * 3].");
+  //    PADDLE_MOBILE_ENFORCE((bias_width == frame_size * 3),
+  //                          "The shape of Bias must be [1, frame_size * 3].");
   //  }
-  //  this->param_.Out()->Resize(out_dims);
+  this->param_.OutBatchGate()->Resize(input_dims);
+  this->param_.OutBatchResetHiddenPrev()->Resize({input_dims[0], frame_size});
+  this->param_.OutBatchHidden()->Resize({input_dims[0], frame_size});
+  this->param_.OutHidden()->Resize({input_dims[0], frame_size});
+
+  // share LoD
+  this->param_.OutHidden()->set_lod(this->param_.InputInput()->lod());
 }
 
 }  // namespace operators
