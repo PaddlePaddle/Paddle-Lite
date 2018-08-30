@@ -18,24 +18,24 @@ limitations under the License. */
 #include <operators/math/sequence2batch.h>
 #include <vector>
 #include "common/types.h"
-#include "operators/op_param.h"
-#include "operators/math/math_function.h"
 #include "operators/math/gru_compute.h"
+#include "operators/math/math_function.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-  using LoDTensor = framework::LoDTensor;
-  using Tensor = framework::Tensor;
+using LoDTensor = framework::LoDTensor;
+using Tensor = framework::Tensor;
 
-  template <typename DeviceType, typename T>
-  inline void ReorderInitState(const framework::Tensor& src,
-                               std::vector<size_t> index_lod,
-                               framework::Tensor* dst, bool indexed_src) {
-    math::CopyMatrixRowsFunctor<DeviceType, T> row_shuffle;
-    dst->mutable_data<T>(src.dims());
-    row_shuffle(src, index_lod, dst, indexed_src);
-  }
+template <typename DeviceType, typename T>
+inline void ReorderInitState(const framework::Tensor& src,
+                             std::vector<size_t> index_lod,
+                             framework::Tensor* dst, bool indexed_src) {
+  math::CopyMatrixRowsFunctor<DeviceType, T> row_shuffle;
+  dst->mutable_data<T>(src.dims());
+  row_shuffle(src, index_lod, dst, indexed_src);
+}
 template <typename P>
 void GruCompute(const GruParam<CPU>& param) {
   auto* input = param.InputInput();
@@ -55,25 +55,25 @@ void GruCompute(const GruParam<CPU>& param) {
   bool is_reverse = param.IsReverse();
   math::LoDTensor2BatchFunctor<CPU, float> to_batch;
   to_batch(*input, batch_gate, true, is_reverse);
-  math::ClearTensor<CPU,float> clearTensor;
+  math::ClearTensor<CPU, float> clearTensor;
   clearTensor(batch_gate);
   if (bias) {
-    math::RowwiseAdd<CPU,float> add_bias;
+    math::RowwiseAdd<CPU, float> add_bias;
     add_bias(*batch_gate, *bias, batch_gate);
   }
 
   int frame_size = hidden_dims[1];
   math::GRUMetaValue<float> gru_value;
   gru_value.gate_weight = const_cast<float*>(weight_data);
-  gru_value.state_weight = const_cast<float*>(weight_data+2*frame_size*frame_size);
+  gru_value.state_weight =
+      const_cast<float*>(weight_data + 2 * frame_size * frame_size);
   Tensor ordered_h0;
   std::vector<size_t> order(batch_gate->lod()[2]);
   if (h0) {
     // Since the batch computing for GRU reorders the input sequences
     // according to their length. The initialized cell state also needs
     // to reorder.
-    ReorderInitState<CPU, float>(*h0, order,
-        &ordered_h0, true);
+    ReorderInitState<CPU, float>(*h0, order, &ordered_h0, true);
     gru_value.prev_out_value = ordered_h0.data<float>();
   } else {
     gru_value.prev_out_value = nullptr;
@@ -89,18 +89,17 @@ void GruCompute(const GruParam<CPU>& param) {
     int cur_batch_size = bend - bstart;
 
     Tensor gate_t = batch_gate->Slice(bstart, bend);
-    Tensor reset_hidden_prev_t =
-        batch_reset_hidden_prev->Slice(bstart, bend);
+    Tensor reset_hidden_prev_t = batch_reset_hidden_prev->Slice(bstart, bend);
     Tensor hidden_t = batch_hidden->Slice(bstart, bend);
     gru_value.output_value = hidden_t.data<float>();
     gru_value.gate_value = gate_t.data<float>();
     gru_value.reset_output_value = reset_hidden_prev_t.data<float>();
 
-    math::GRUUnitFunctor<CPU,float>::compute(gru_value, frame_size, cur_batch_size, active_node,
-        active_gate);
+    math::GRUUnitFunctor<CPU, float>::compute(
+        gru_value, frame_size, cur_batch_size, active_node, active_gate);
 
     gru_value.prev_out_value = gru_value.output_value;
-    math::Batch2LoDTensorFunctor<CPU,float> to_seq;
+    math::Batch2LoDTensorFunctor<CPU, float> to_seq;
     batch_hidden->set_lod(batch_gate->lod());
     to_seq(*batch_hidden, hidden);
   }

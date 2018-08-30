@@ -945,60 +945,6 @@ class LookupParam : public OpParam {
 };
 #endif
 
-#ifdef GRU_OP
-template <typename Dtype>
-class GruParam : public OpParam {
-  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
-  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
-  //    {G_OP_TYPE_GRU,
-  //                {{"Input", "H0", "Weight", "Bias"},
-  //                 {"BatchGate", "BatchResetHiddenPrev", "BatchHidden",
-  //                 "Hidden"}}},
-  //    {G_OP_TYPE_CRF, {{"Emission", "Transition", "Label"}, {"ViterbiPath"}}},
- public:
-  /**
-   *
-   * @param inputs
-   * @param outputs
-   * @param attrs
-   * @param scope
-   * */
-  GruParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-           const AttributeMap &attrs, const Scope &scope) {
-    input_input_ = InputFrom<GType>(inputs, scope);
-    input_h0_ = InputH0From<GType>(inputs, scope);
-    input_bias_ = InputBiasFrom<GType>(inputs, scope);
-    input_weight_ = InputWeightFrom<GType>(inputs, scope);
-
-    output_batchgate_ = OutputBatchGateFrom<GType>(outputs, scope);
-    output_batch_reset_hidden_prev_ =
-        OutputBatchResetHiddenPrevFrom<GType>(outputs, scope);
-    output_batchhidden_ = OutputBatchHiddenFrom<GType>(outputs, scope);
-    output_hidden_ = OutputHiddenFrom<GType>(outputs, scope);
-  }
-
-  //  const RType *InputW() const { return input_w_; }
-  //  const RType *InputIds() const { return input_ids_; }
-  //  RType *Out() const { return out_; }
-  //  int64_t PaddingIdx() const { return padding_idx_; }
-
- private:
-  RType *input_input_;
-  RType *input_h0_;
-  RType *input_bias_;
-  RType *input_weight_;
-
-  RType *output_batchgate_;
-  RType *output_batch_reset_hidden_prev_;
-  RType *output_batchhidden_;
-  RType *output_hidden_;
-
-  //  RType *input_ids_;
-  //  RType *out_;
-  //  int64_t padding_idx_;
-};
-#endif
-
 #ifdef CRF_OP
 template <typename Dtype>
 class CrfParam : public OpParam {
