@@ -15,131 +15,95 @@ limitations under the License. */
 #ifdef GRU_OP
 #pragma once
 
+#include <operators/math/sequence2batch.h>
 #include <vector>
+#include "common/types.h"
 #include "operators/op_param.h"
+#include "operators/math/math_function.h"
+#include "operators/math/gru_compute.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-// vector<int> pos;
-// template <typename T>
-// void TransposeFunc(const int numel, const T* input, const vector<int> axis,
-//                    const vector<int> old_strides, const vector<int>
-//                    new_strides, T* output) {
-//   for (int i = 0; i < numel; ++i) {
-//     int old_idx = 0;
-//     int idx = i;
-//     for (int j = 0; j < axis.size(); ++j) {
-//       int order = axis[j];
-//       old_idx += (idx / new_strides[j]) * old_strides[order];
-//       idx %= new_strides[j];
-//     }
-//     output[i] = input[old_idx];
-//   }
-// }
+  using LoDTensor = framework::LoDTensor;
+  using Tensor = framework::Tensor;
 
+  template <typename DeviceType, typename T>
+  inline void ReorderInitState(const framework::Tensor& src,
+                               std::vector<size_t> index_lod,
+                               framework::Tensor* dst, bool indexed_src) {
+    math::CopyMatrixRowsFunctor<DeviceType, T> row_shuffle;
+    dst->mutable_data<T>(src.dims());
+    row_shuffle(src, index_lod, dst, indexed_src);
+  }
 template <typename P>
-void GruCompute(const GruParam<CPU> &param) {
-  //  const auto* input_x = param.InputX();
-  //  const auto input_x_dims = input_x->dims();
-  //  auto* out = param.Out();
-  //  const auto axis = param.Axis();
-  //  const auto* input_x_data = input_x->data<float>();
-  //  auto* out_data = out->mutable_data<float>();
-  //
-  //  size_t ndim = axis.size();
-  //  std::vector<int> xdim(ndim);
-  //  std::vector<int> xstride(ndim);
-  //  std::vector<int> xout(ndim);
-  //  for (int i = 0; i < ndim; i++) {
-  //    int j = ndim - 1 - i;
-  //    xdim[j] = input_x_dims[axis[i]];
-  //    xstride[j] = 1;
-  //    for (int k = axis[i] + 1; k < ndim; k++) {
-  //      xstride[j] *= input_x_dims[k];
-  //    }
-  //    xout[j] = xstride[j] * xdim[j];
-  //  }
-  //
-  //  auto numel = input_x->numel();
-  //  size_t pind = 0;
-  //  std::vector<int> ind(ndim);
-  //  for (int i = 0; i < numel; i++) {
-  //    out_data[i] = input_x_data[pind];
-  //    ind[0]++;
-  //    pind += xstride[0];
-  //    for (int j = 0; j < ndim - 1; j++) {
-  //      if (ind[j] == xdim[j]) {
-  //        ind[j + 1]++;
-  //        ind[j] = 0;
-  //        pind += xstride[j + 1];
-  //        pind -= xout[j];
-  //      } else {
-  //        break;
-  //      }
-  //    }
-  //  }
-  /*  auto *ids_t = param.InputIds();
-    auto *output_t = param.Out();
-    auto *table_var = param.InputW();
-    auto padding_idx = param.PaddingIdx();
+void GruCompute(const GruParam<CPU>& param) {
+  auto* input = param.InputInput();
+  auto* h0 = param.InputH0();
+  auto* weight = param.InputWeight();
+  const auto* weight_data = weight->data<float>();
+  auto* bias = param.InputBias();
+  auto* batch_gate = param.OutBatchGate();
+  batch_gate->mutable_data<float>();
+  auto* batch_reset_hidden_prev = param.OutBatchResetHiddenPrev();
+  batch_reset_hidden_prev->mutable_data<float>();
+  auto* batch_hidden = param.OutBatchHidden();
+  batch_hidden->mutable_data<float>();
+  auto* hidden = param.OutHidden();
+  hidden->mutable_data<float>();
+  auto hidden_dims = hidden->dims();
+  bool is_reverse = param.IsReverse();
+  math::LoDTensor2BatchFunctor<CPU, float> to_batch;
+  to_batch(*input, batch_gate, true, is_reverse);
+  math::ClearTensor<CPU,float> clearTensor;
+  clearTensor(batch_gate);
+  if (bias) {
+    math::RowwiseAdd<CPU,float> add_bias;
+    add_bias(*batch_gate, *bias, batch_gate);
+  }
 
-    //    auto *ids_t = context.Input<LoDTensor>("Ids");      // int tensor
-    //    auto *output_t = context.Output<LoDTensor>("Out");  // float tensor
-    //    auto *table_var = context.InputVar("W");
-    //
-    //    int64_t padding_idx = context.Attr<int64_t>("padding_idx");
+  int frame_size = hidden_dims[1];
+  math::GRUMetaValue<float> gru_value;
+  gru_value.gate_weight = const_cast<float*>(weight_data);
+  gru_value.state_weight = const_cast<float*>(weight_data+2*frame_size*frame_size);
+  Tensor ordered_h0;
+  std::vector<size_t> order(batch_gate->lod()[2]);
+  if (h0) {
+    // Since the batch computing for GRU reorders the input sequences
+    // according to their length. The initialized cell state also needs
+    // to reorder.
+    ReorderInitState<CPU, float>(*h0, order,
+        &ordered_h0, true);
+    gru_value.prev_out_value = ordered_h0.data<float>();
+  } else {
+    gru_value.prev_out_value = nullptr;
+  }
+  auto batch_starts = batch_gate->lod()[0];
+  size_t seq_len = batch_starts.size() - 1;
+  auto active_node = math::GetActivationType(param.Activation());
+  auto active_gate = math::GetActivationType(param.GateActivation());
 
+  for (size_t n = 0; n < seq_len; n++) {
+    int bstart = static_cast<int>(batch_starts[n]);
+    int bend = static_cast<int>(batch_starts[n + 1]);
+    int cur_batch_size = bend - bstart;
 
+    Tensor gate_t = batch_gate->Slice(bstart, bend);
+    Tensor reset_hidden_prev_t =
+        batch_reset_hidden_prev->Slice(bstart, bend);
+    Tensor hidden_t = batch_hidden->Slice(bstart, bend);
+    gru_value.output_value = hidden_t.data<float>();
+    gru_value.gate_value = gate_t.data<float>();
+    gru_value.reset_output_value = reset_hidden_prev_t.data<float>();
 
-    int64_t *ids = const_cast<int64_t *>(ids_t->data<int64_t>());
-    int64_t ids_numel = ids_t->numel();
-    DLOG << "table_var->type()" << table_var->type();
-    if (true) {
-      int64_t row_number = table_var->dims()[0];
-      int64_t row_width = table_var->dims()[1];
+    math::GRUUnitFunctor<CPU,float>::compute(gru_value, frame_size, cur_batch_size, active_node,
+        active_gate);
 
-      auto *table = table_var->data<LoDTensor>();
-      auto *output = output_t->mutable_data<float>();
-
-      for (int64_t i = 0; i < ids_numel; ++i) {
-        if (padding_idx != kNoPadding && ids[i] == padding_idx) {
-          memset(output + i * row_width, 0, row_width * sizeof(float));
-        } else {
-          PADDLE_MOBILE_ENFORCE(ids[i] < row_number,
-                                "LookupCompute ,ids[i]<row_number");
-          PADDLE_MOBILE_ENFORCE(ids[i] >= 0, "LookupCompute ,iids[i]>=0");
-          memcpy(output + i * row_width, table + ids[i] * row_width,
-                 row_width * sizeof(float));
-        }
-      }
-    } else {
-      PADDLE_MOBILE_ENFORCE(false,
-                            "LookupCompute got unsupported table_var type!")
-    }
-
-
-      */
-
-  //    } else if (table_var->IsType<SelectedRows>()) {
-  //        const auto &table_t = table_var->Get<SelectedRows>();
-  //        int64_t row_width = table_t.value().dims()[1];
-  //        const auto *table = table_t.value().data<T>();
-  //        auto *output = output_t->mutable_data<T>(context.GetPlace());
-  //
-  //        for (int64_t i = 0; i < ids_numel; ++i) {
-  //            if (padding_idx != kNoPadding && ids[i] == padding_idx) {
-  //                memset(output + i * row_width, 0, row_width * sizeof(T));
-  //            } else {
-  //                PADDLE_ENFORCE_GE(ids[i], 0);
-  //                auto id_index = table_t.Index(ids[i]);
-  //                PADDLE_ENFORCE_GE(id_index, 0, "the input key should be
-  //                exists."); memcpy(output + i * row_width, table + id_index *
-  //                row_width,
-  //                       row_width * sizeof(T));
-  //            }
-  //        }
-  //    }
+    gru_value.prev_out_value = gru_value.output_value;
+    math::Batch2LoDTensorFunctor<CPU,float> to_seq;
+    batch_hidden->set_lod(batch_gate->lod());
+    to_seq(*batch_hidden, hidden);
+  }
 }
 
 }  // namespace operators

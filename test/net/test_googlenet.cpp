@@ -34,7 +34,7 @@ int main() {
     std::vector<float> input;
     std::vector<int64_t> dims{1, 3, 224, 224};
     GetInput<float>(g_test_image_1x3x224x224, &input, dims);
-    // 预热一次
+    // 预热十次
     for (int i = 0; i < 10; ++i) {
       auto vec_result = paddle_mobile.Predict(input, dims);
     }

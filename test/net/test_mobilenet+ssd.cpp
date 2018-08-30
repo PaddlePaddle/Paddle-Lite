@@ -32,7 +32,7 @@ int main() {
     std::vector<int64_t> dims{1, 3, 300, 300};
     GetInput<float>(g_hand, &input, dims);
 
-    // 预热一次
+    // 预热十次
     for (int i = 0; i < 10; ++i) {
       auto output = paddle_mobile.Predict(input, dims);
     }

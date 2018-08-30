@@ -674,11 +674,19 @@ void InnerKernelWithBias(int mc, int nc, float alpha, const float *a,
     return;
   }
   if (beta == 1 && !relu) {
-    WriteWithAddV1(mc, nc, c, C, ldc, bias);
+    if (bias == nullptr) {
+      WriteWithAdd(mc, nc, c, C, ldc);
+    } else {
+      WriteWithAddV1(mc, nc, c, C, ldc, bias);
+    }
     return;
   }
   if (beta == 1 && relu) {
-    WriteWithAddReluV1(mc, nc, c, C, ldc, bias);
+    if (bias == nullptr) {
+      WriteWithAddRelu(mc, nc, c, C, ldc);
+    } else {
+      WriteWithAddReluV1(mc, nc, c, C, ldc, bias);
+    }
     return;
   }
 }
@@ -2809,8 +2817,13 @@ void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
 #else
       PackMatrixA_6r(mc, KC, mc % MR, &A(i, 0), lda, packedA);
 #endif
-      InnerKernelWithBias(mc, nc, alpha, packedA, packedB, beta, packedC,
-                          &C(i, j), ldc, relu, bias + i);
+      if (bias == nullptr) {
+        InnerKernelWithBias(mc, nc, alpha, packedA, packedB, beta, packedC,
+                            &C(i, j), ldc, relu, nullptr);
+      } else {
+        InnerKernelWithBias(mc, nc, alpha, packedA, packedB, beta, packedC,
+                            &C(i, j), ldc, relu, bias + i);
+      }
     }
   }
 
