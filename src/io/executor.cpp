@@ -63,6 +63,8 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
   }
   Variable *variable_ptr = program_.scope->Var("batch_size");
   variable_ptr[0].SetValue<int>(batch_size);
+  PADDLE_MOBILE_ENFORCE(to_predict_program_ != nullptr,
+                        "to_predict_program_ == NULL!");
   const std::vector<std::shared_ptr<framework::BlockDesc>> blocks =
       to_predict_program_->Blocks();
 #ifdef PADDLE_EXECUTOR_MULTITHREAD
@@ -234,8 +236,15 @@ void Executor<Dtype, P>::InitMemory() {
 
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::InitCombineMemory() {
-  LOG(kLOG_INFO) << " begin init combine memory";
-  char *origin_data = Get_binary_data(program_.para_path);
+  char *origin_data;
+  if (program_.combined_params_buf && program_.combined_params_len) {
+    LOG(kLOG_INFO) << "use outter memory";
+    origin_data = (char *)program_.combined_params_buf;
+  } else {
+    LOG(kLOG_INFO) << " begin init combine memory";
+    origin_data = Get_binary_data(program_.para_path);
+  }
+  PADDLE_MOBILE_ENFORCE(origin_data != nullptr, "origin_data==nullptr!!!");
   char *data = origin_data;
   for (const auto &block : to_predict_program_->Blocks()) {
     for (const auto &var_desc : block->Vars()) {
