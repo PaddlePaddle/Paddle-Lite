@@ -39,7 +39,7 @@ class PriorBoxParam<P: PrecisionType>: OpParam {
   let minSizes: [Float32]
   let maxSizes: [Float32]
   let aspectRatios: [Float32]
-  var newAspectRatios: [Float32]?
+  var newAspectRatios: MTLBuffer?
   let variances: [Float32]
   let flip: Bool
   let clip: Bool
@@ -69,14 +69,18 @@ class PriorBoxOp<P: PrecisionType>: Operator<PriorBoxKernel<P>, PriorBoxParam<P>
   }
   
   func delogOutput() {
-    print(" \(type) output: ")
 
     // output
-    let outputArray = para.output.metalTexture.floatArray { (o: Float32) -> Float32 in
-      return o
+    print(" \(type) output: ")
+    let originDim = para.output.originDim
+    if para.output.transpose == [0, 1, 2, 3] {
+      let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: originDim[0], h: originDim[1], w: originDim[2], c: originDim[3]), texturePrecision: computePrecision)
+      print(outputArray.strideArray())
+    } else if para.output.transpose == [0, 2, 3, 1] {
+      print(para.output.metalTexture.toTensor(dim: (n: originDim[0], c: originDim[1], h: originDim[2], w: originDim[3]), texturePrecision: computePrecision).strideArray())
+    } else {
+      print(" not implement")
     }
-    
-    print(outputArray)
     
 //    writeToLibrary(fileName: "box_out", array: outputArray)
     

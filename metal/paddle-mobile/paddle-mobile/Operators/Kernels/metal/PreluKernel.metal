@@ -15,8 +15,6 @@
 #include <metal_stdlib>
 using namespace metal;
 
-
-
 kernel void prelu_channel(texture2d_array<float, access::sample> inTexture [[texture(0)]],
                            texture2d_array<float, access::write> outTexture [[texture(1)]],
                            const device float4 *alpha [[buffer(0)]],
@@ -82,3 +80,4 @@ kernel void prelu_other(texture2d_array<float, access::sample> inTexture [[textu
   output.w = input.w > 0 ? input.w : (alpha_value * input.w);
   outTexture.write(output, gid.xy, gid.z);
 }
+

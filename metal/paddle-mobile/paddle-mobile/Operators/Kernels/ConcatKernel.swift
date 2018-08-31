@@ -121,8 +121,14 @@ class ConcatKernel<P: PrecisionType>: Kernel, Computable{
   }
   
   required init(device: MTLDevice, param: ConcatParam<P>) {
-    param.output.initTexture(device: device, inTranspose: param.transpose)
-    super.init(device: device, inFunctionName: "concat")
+    param.output.initTexture(device: device, inTranspose: param.transpose, computePrecision: computePrecision)
+    if computePrecision == .Float32 {
+      super.init(device: device, inFunctionName: "concat")
+    } else if computePrecision == .Float16 {
+      super.init(device: device, inFunctionName: "concat_half")
+    } else {
+      fatalError()
+    }
   }
   
   required init(device: MTLDevice, testParam: ConcatTestParam) {

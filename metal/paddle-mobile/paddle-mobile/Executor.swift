@@ -16,6 +16,8 @@ import Foundation
 
 let testTo = 54
 
+let computePrecision: ComputePrecision = .Float32
+
 public class ResultHolder<P: PrecisionType> {
   public let dim: [Int]
   public let resultArr: [P]
@@ -66,7 +68,6 @@ public class Executor<P: PrecisionType> {
         let op = block.ops[i]
         do {
           let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
-//          op.inferShape()
           ops.append(op)
         } catch let error {
           throw error
