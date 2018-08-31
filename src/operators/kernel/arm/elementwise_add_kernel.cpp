@@ -28,7 +28,10 @@ bool ElementwiseAddKernel<CPU, float>::Init(ElementwiseAddParam<CPU> *param) {
 template <>
 void ElementwiseAddKernel<CPU, float>::Compute(
     const ElementwiseAddParam<CPU> &param) const {
+  auto x_dim = param.InputX()->dims();
+  param.Out()->Resize(x_dim);
   ElementwiseAddCompute<float>(param);
+  param.Out()->set_lod(param.InputX()->lod());
 }
 
 }  // namespace operators

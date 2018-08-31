@@ -390,18 +390,18 @@ class ElementwiseAddParam : OpParam {
     axis_ = GetAttr<int>("axis", attrs);
   }
 
-  const RType *InputX() const { return input_x_; }
+  const GType *InputX() const { return input_x_; }
 
-  const RType *InputY() const { return input_y_; }
+  const GType *InputY() const { return input_y_; }
 
-  RType *Out() const { return out_; }
+  GType *Out() const { return out_; }
 
   const int &Axis() const { return axis_; }
 
  private:
-  RType *input_x_;
-  RType *input_y_;
-  RType *out_;
+  GType *input_x_;
+  GType *input_y_;
+  GType *out_;
   int axis_;
 #ifdef PADDLE_MOBILE_FPGA
 
@@ -435,20 +435,20 @@ class MulParam : OpParam {
     y_num_col_dims_ = GetAttr<int>("y_num_col_dims", attrs);
   }
 
-  const RType *InputX() const { return input_x_; }
+  const GType *InputX() const { return input_x_; }
 
-  const RType *InputY() const { return input_y_; }
+  const GType *InputY() const { return input_y_; }
 
-  RType *Out() const { return out_; }
+  GType *Out() const { return out_; }
 
   const int &XNumColDims() const { return x_num_col_dims_; }
 
   const int &YNumColDims() const { return y_num_col_dims_; }
 
  private:
-  RType *input_x_;
-  RType *input_y_;
-  RType *out_;
+  GType *input_x_;
+  GType *input_y_;
+  GType *out_;
   int x_num_col_dims_;
   int y_num_col_dims_;
 };
