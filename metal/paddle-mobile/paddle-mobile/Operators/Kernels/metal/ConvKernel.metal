@@ -769,3 +769,4 @@ kernel void depthwise_conv_batch_norm_relu_3x3(texture2d_array<float, access::sa
   outTexture.write(output, gid.xy, gid.z);
 }
 
+

@@ -79,7 +79,7 @@ class ViewController: UIViewController {
       return
     }
     do {
-      let max = 10
+      let max = 1
       let startDate = Date.init()
       for i in 0..<max {
         try net.predict(inTexture: inTexture) { [weak self] (result) in
