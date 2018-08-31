@@ -57,8 +57,8 @@ void GruCompute(const GruParam<CPU>& param) {
   bool is_reverse = param.IsReverse();
   math::LoDTensor2BatchFunctor<CPU, float> to_batch;
   to_batch(*input, batch_gate, true, is_reverse);
-  math::ClearTensor<CPU, float> clearTensor;
-  clearTensor(batch_gate);
+  //  math::ClearTensor<CPU, float> clearTensor;
+  //  clearTensor(batch_gate);
   if (bias) {
     math::RowwiseAdd<CPU, float> add_bias;
     add_bias(*batch_gate, *bias, batch_gate);
@@ -98,10 +98,10 @@ void GruCompute(const GruParam<CPU>& param) {
         gru_value, frame_size, cur_batch_size, active_node, active_gate);
 
     gru_value.prev_out_value = gru_value.output_value;
-    math::Batch2LoDTensorFunctor<CPU, float> to_seq;
-    batch_hidden->set_lod(batch_gate->lod());
-    to_seq(*batch_hidden, hidden);
   }
+  math::Batch2LoDTensorFunctor<CPU, float> to_seq;
+  batch_hidden->set_lod(batch_gate->lod());
+  to_seq(*batch_hidden, hidden);
 }
 
 }  // namespace operators
