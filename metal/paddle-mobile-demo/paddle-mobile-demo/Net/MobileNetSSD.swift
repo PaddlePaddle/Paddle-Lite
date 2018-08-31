@@ -25,7 +25,7 @@ class MobileNet_ssd_hand: Net{
   class MobilenetssdPreProccess: CusomKernel {
     init(device: MTLDevice) {
       let s = CusomKernel.Shape.init(inWidth: 300, inHeight: 300, inChannel: 3)
-      super.init(device: device, inFunctionName: "mobilenet_ssd_preprocess", outputDim: s, usePaddleMobileLib: false)
+      super.init(device: device, inFunctionName: "mobilenet_ssd_preprocess_half", outputDim: s, usePaddleMobileLib: false)
     }
   }
   
@@ -49,9 +49,7 @@ class MobileNet_ssd_hand: Net{
     
     var scoreFormatArr: [Float32] = score.metalTexture.realNHWC(dim: (n: score.originDim[0], h: score.originDim[1], w: score.originDim[2], c: score.originDim[3]))
     
-    var bboxArr = bbox.metalTexture.floatArray { (f) -> Float32 in
-      return f
-    }
+    var bboxArr = bbox.metalTexture.float32Array()
     
     let nmsCompute = NMSCompute.init()
     nmsCompute.scoreThredshold = 0.01

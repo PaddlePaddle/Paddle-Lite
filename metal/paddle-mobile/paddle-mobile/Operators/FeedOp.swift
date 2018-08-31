@@ -60,9 +60,8 @@ class FeedOp<P: PrecisionType>: Operator<Texture2DTo2DArrayKernel<P>, FeedParam<
   }
   
   func delogOutput() {
-    //        para.input.mtlTexture.logDesc()
-    //        let _: P? = para.input.mtlTexture.logDesc(header: "feed input: ", stridable: true)
-    //        let _: P? = para.output.metalTexture.logDesc(header: "feed output: ", stridable: false)
+    print(" \(type) output: ")
+    print(para.output.metalTexture.toTensor(dim: (n: para.output.originDim[0], c: para.output.originDim[1], h: para.output.originDim[2], w: para.output.originDim[3]), texturePrecision: computePrecision).strideArray())
   }
 }
 

@@ -16,7 +16,7 @@ import Foundation
 
 let testTo = 54
 
-let computePrecision: ComputePrecision = .Float32
+let computePrecision: ComputePrecision = .Float16
 
 public class ResultHolder<P: PrecisionType> {
   public let dim: [Int]
@@ -111,10 +111,11 @@ public class Executor<P: PrecisionType> {
     }
     
     buffer.addCompletedHandler { (commandbuffer) in
-    
+      
 //      let inputArr = resInput.floatArray(res: { (p:P) -> P in
 //        return p
 //      })
+//      print(inputArr.strideArray())
 //
 //      writeToLibrary(fileName: "genet_input_hand", array: inputArr)
 //      print("write to library done")
@@ -130,7 +131,7 @@ public class Executor<P: PrecisionType> {
 //        print(" 第 \(i) 个 op: ")
 //        op.delogOutput()
 //      }
-//      
+//
 //      return
       
       let afterDate = Date.init()

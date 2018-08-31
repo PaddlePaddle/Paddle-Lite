@@ -100,8 +100,8 @@ kernel void prior_box(texture2d_array<float, access::read> inTexture [[texture(0
 kernel void prior_box_half(texture2d_array<half, access::read> inTexture [[texture(0)]],
                       texture2d_array<half, access::write> outBoxTexture [[texture(1)]],
                       texture2d_array<half, access::write> varianceTexture [[texture(2)]],
-                      constant PriorBoxMetalParam &param [[buffer(0)]],
-                      const device half *aspect_ratios [[buffer(1)]],
+                      const device half *aspect_ratios [[buffer(0)]],
+                      constant PriorBoxMetalParam &param [[buffer(1)]],
                       const device float4 *variances [[buffer(2)]],
                       uint3 gid [[thread_position_in_grid]]) {
   if (gid.x >= outBoxTexture.get_width() ||

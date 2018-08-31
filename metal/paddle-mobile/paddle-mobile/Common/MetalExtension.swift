@@ -285,6 +285,23 @@ public extension MTLTexture {
     return fArr
   }
   
+  func float32Array() -> [Float32] {
+    if pixelFormat == .rgba32Float {
+      let float32Array = floatArray { (f: Float32) -> Float32 in
+        return f
+      }
+      return float32Array
+    } else if pixelFormat == .rgba16Float {
+      
+      var float16Array = floatArray { (f: Float16) -> Float16 in
+        return f
+      }
+      return float16To32(input: &float16Array, count: float16Array.count)
+    } else {
+      fatalError()
+    }
+  }
+  
   func logDesc<T>(header: String = "", stridable: Bool = true) -> T? {
     print(header)
     print("texture: \(self)")
@@ -385,7 +402,6 @@ public extension MTLTexture {
 //    print(self)
     
     var textureArray: [Float32]
-    //    if texturePrecision == .Float16
     if pixelFormat == .rgba32Float {
       textureArray = floatArray { (i : Float32) -> Float32 in
         return i
