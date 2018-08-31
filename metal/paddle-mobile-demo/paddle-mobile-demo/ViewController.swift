@@ -79,7 +79,7 @@ class ViewController: UIViewController {
       return
     }
     do {
-      let max = 10
+      let max = 50
       let startDate = Date.init()
       for i in 0..<max {
         try net.predict(inTexture: inTexture) { [weak self] (result) in
@@ -87,7 +87,7 @@ class ViewController: UIViewController {
             fatalError()
           }
           
-          print(result.resultArray)
+//          print(result.resultArray)
           if i == max - 1 {
             let time = Date.init().timeIntervalSince(startDate)
             DispatchQueue.main.async {

@@ -33,11 +33,16 @@ class PriorBoxKernel<P: PrecisionType>: Kernel, Computable{
   var metalParam: PriorBoxMetalParam!
   
   required init(device: MTLDevice, param: PriorBoxParam<P>) {
-    super.init(device: device, inFunctionName: "prior_box")
-    param.output.initTexture(device: device, inTranspose: [2, 0, 1, 3])
+    if computePrecision == .Float32 {
+      super.init(device: device, inFunctionName: "prior_box")
+    } else if computePrecision == .Float16 {
+      super.init(device: device, inFunctionName: "prior_box_half")
+    } else {
+      fatalError()
+    }
     
-
-    param.outputVariances.initTexture(device: device, inTranspose: [2, 0, 1, 3])
+    param.output.initTexture(device: device, inTranspose: [2, 0, 1, 3], computePrecision: computePrecision)
+    param.outputVariances.initTexture(device: device, inTranspose: [2, 0, 1, 3], computePrecision: computePrecision)
     
     let n = 1
     let h = param.output.dim[1]
@@ -79,7 +84,18 @@ class PriorBoxKernel<P: PrecisionType>: Kernel, Computable{
       }
     }
     
-    param.newAspectRatios = outputAspectRatior
+    if computePrecision == .Float16 {
+      let buffer = device.makeBuffer(length: outputAspectRatior.count)
+      float32ToFloat16(input: &outputAspectRatior, output:(buffer?.contents())!, count: outputAspectRatior.count)
+      param.newAspectRatios = buffer
+
+    } else if computePrecision == .Float32 {
+      let buffer = device.makeBuffer(bytes: outputAspectRatior, length: outputAspectRatior.count * MemoryLayout<Float32>.size, options: [])
+      param.newAspectRatios = buffer
+    } else {
+      fatalError()
+    }
+    
     let aspectRatiosSize = uint(outputAspectRatior.count)
     
     let maxSizeSize: uint = uint(param.maxSizes.count)
@@ -102,12 +118,13 @@ class PriorBoxKernel<P: PrecisionType>: Kernel, Computable{
     encoder.setTexture(param.input.metalTexture, index: 0)
     encoder.setTexture(param.output.metalTexture, index: 1)
     encoder.setTexture(param.outputVariances.metalTexture, index: 2)
-    encoder.setBytes(&metalParam, length: MemoryLayout<PriorBoxMetalParam>.size, index: 0)
-    encoder.setBytes(param.newAspectRatios!, length: MemoryLayout<Float32>.size * param.newAspectRatios!.count, index: 1)
+    
+    encoder.setBuffer(param.newAspectRatios!, offset: 0, index: 0)
+    
+    encoder.setBytes(&metalParam, length: MemoryLayout<PriorBoxMetalParam>.size, index: 1)
+    
     encoder.setBytes(param.variances, length: MemoryLayout<Float32>.size * param.variances.count, index: 2)
     encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
     encoder.endEncoding()
   }
-  
-  
 }

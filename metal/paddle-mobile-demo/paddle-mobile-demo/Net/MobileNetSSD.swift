@@ -33,7 +33,7 @@ class MobileNet_ssd_hand: Net{
     return " \(res)"
   }
 
-  func fetchResult(paddleMobileRes: ResultHolder<Float32>) -> [Float32]{
+  func fetchResult(paddleMobileRes: ResultHolder<Float32>) -> [Float32] {
 
     guard let interRes = paddleMobileRes.intermediateResults else {
       fatalError(" need have inter result ")
@@ -46,12 +46,13 @@ class MobileNet_ssd_hand: Net{
     guard let bboxs = interRes["BBoxes"], bboxs.count > 0, let bbox = bboxs[0] as? Texture<Float32> else {
       fatalError()
     }
-
+    
     var scoreFormatArr: [Float32] = score.metalTexture.realNHWC(dim: (n: score.originDim[0], h: score.originDim[1], w: score.originDim[2], c: score.originDim[3]))
+    
     var bboxArr = bbox.metalTexture.floatArray { (f) -> Float32 in
       return f
     }
-
+    
     let nmsCompute = NMSCompute.init()
     nmsCompute.scoreThredshold = 0.01
     nmsCompute.nmsTopK = 200
@@ -77,6 +78,7 @@ class MobileNet_ssd_hand: Net{
   let modelPath: String
   let paramPath: String
   let modelDir: String
+  
   
   
 //  let paramPointer: UnsafeMutableRawPointer

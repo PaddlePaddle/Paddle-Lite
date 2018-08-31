@@ -341,14 +341,27 @@ public extension MTLTexture {
   }
   
   // n c h w - dim
-  func toTensor(dim: (n: Int, c: Int, h: Int, w: Int)) -> [Float32] {
+  func toTensor(dim: (n: Int, c: Int, h: Int, w: Int), texturePrecision: ComputePrecision = .Float16) -> [Float32] {
 //    print("origin dim: \(dim)")
     print("texture: ")
     print(self)
+    var textureArray: [Float32]
+//    if texturePrecision == .Float16
     
-    let textureArray = floatArray { (i : Float32) -> Float32 in
-      return i
+    if pixelFormat == .rgba32Float {
+      textureArray = floatArray { (i : Float32) -> Float32 in
+        return i
+      }
+    } else if pixelFormat == .rgba16Float {
+      
+      var textureFloat16Array = floatArray { (i : Float16) -> Float16 in
+        return i
+      }
+      textureArray = float16To32(input: &textureFloat16Array, count: textureFloat16Array.count)
+    } else {
+      fatalError(" 目前还不支持其他类型 ")
     }
+    
     var output: [Float32] = []
     for s in 0..<arrayLength {
       for c in 0..<4{
@@ -366,16 +379,27 @@ public extension MTLTexture {
     return output
   }
   
-  func realNHWC(dim: (n: Int, h: Int, w: Int, c: Int)) -> [Float32] {
+  func realNHWC(dim: (n: Int, h: Int, w: Int, c: Int), texturePrecision: ComputePrecision = .Float16) -> [Float32] {
 //    print("origin dim: \(dim)")
 //    print("texture: ")
 //    print(self)
     
-    let textureArray = floatArray { (i : Float32) -> Float32 in
-      return i
+    var textureArray: [Float32]
+    //    if texturePrecision == .Float16
+    if pixelFormat == .rgba32Float {
+      textureArray = floatArray { (i : Float32) -> Float32 in
+        return i
+      }
+    } else if pixelFormat == .rgba16Float {
+      var textureFloat16Array = floatArray { (i : Float16) -> Float16 in
+        return i
+      }
+      textureArray = float16To32(input: &textureFloat16Array, count: textureFloat16Array.count)
+    } else {
+      fatalError(" 目前还不支持其他类型 ")
     }
+    
     var output: [Float32] = []
-
     let numOfASlice = dim.h * dim.w * 4
     for h in 0..<dim.h {
       for w in 0..<dim.w {
@@ -394,7 +418,6 @@ public extension MTLTexture {
         }
       }
     }
-//    print(" tensor count -- \(output.count)")
     return output
   }
   

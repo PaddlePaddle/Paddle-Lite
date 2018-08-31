@@ -46,9 +46,6 @@ class ConvAddParam<P: PrecisionType>: OpParam {
 class ConvAddOp<P: PrecisionType>: Operator<ConvAddKernel<P>, ConvAddParam<P>>, Runable, Creator, InferShaperable, Fusion{
   typealias OpType = ConvAddOp<P>
 
- 
-  
-  
   static func fusionNode() -> Node {
     let beginNode = Node.init(inType: gConvType)
     _ = beginNode
@@ -63,7 +60,6 @@ class ConvAddOp<P: PrecisionType>: Operator<ConvAddKernel<P>, ConvAddParam<P>>, 
   static func fusionType() -> String {
     return gConvAddType
   }
-  
   
   func inferShape() {
     
@@ -101,10 +97,8 @@ class ConvAddOp<P: PrecisionType>: Operator<ConvAddKernel<P>, ConvAddParam<P>>, 
     print(para.stride)
     print("dilations: ")
     print(para.dilations)
-    
-    
-    
     print(" \(type) output: ")
-    print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
+    
+    print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3]), texturePrecision: computePrecision).strideArray())
   }
 }
