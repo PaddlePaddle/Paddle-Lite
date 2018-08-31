@@ -12,7 +12,6 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
-import Accelerate
 import Foundation
 
 protocol Tensorial: CustomStringConvertible, CustomDebugStringConvertible{
@@ -27,10 +26,11 @@ extension Tensorial {
   }
 }
 
+public enum ComputePrecision {
+  case Float32, Float16
+}
+
 class Tensor<P: PrecisionType>: Tensorial {
-  enum BufferPrecision {
-    case Float32, Float16
-  }
   
   var data: Data
   var dim: Dim
@@ -93,15 +93,9 @@ class Tensor<P: PrecisionType>: Tensorial {
     layout = to
   }
   
-  func float32ToFloat16(input: UnsafeMutablePointer<Float32>, output: UnsafeMutableRawPointer, count: Int) {
-    var float32Buffer = vImage_Buffer(data: input,  height: 1, width: UInt(count), rowBytes: count * 4)
-    var float16buffer = vImage_Buffer(data: output, height: 1, width: UInt(count), rowBytes: count * 2)
-    guard vImageConvert_PlanarFtoPlanar16F(&float32Buffer, &float16buffer, 0) == kvImageNoError else {
-      fatalError(" float 32 to float 16 error ! ")
-    }
-  }
+
   
-  func initBuffer(device: MTLDevice, precision: BufferPrecision = .Float32) {
+  func initBuffer(device: MTLDevice, precision: ComputePrecision = .Float16) {
     guard let floatPointer = data.pointer as? UnsafeMutablePointer<Float32> else {
       fatalError(" not support yet ")
     }

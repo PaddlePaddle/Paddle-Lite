@@ -38,7 +38,13 @@ class SoftmaxKernel<P: PrecisionType>: Kernel, Computable{
   }
   
   required init(device: MTLDevice, param: SoftmaxParam<P>) {
-    param.output.initTexture(device: device)
-    super.init(device: device, inFunctionName: "softmax")
+    param.output.initTexture(device: device, computePrecision: computePrecision)
+    if computePrecision == .Float32 {
+      super.init(device: device, inFunctionName: "softmax")
+    } else if computePrecision == .Float16 {
+      super.init(device: device, inFunctionName: "softmax_half")
+    } else {
+      fatalError()
+    }
   }
 }
