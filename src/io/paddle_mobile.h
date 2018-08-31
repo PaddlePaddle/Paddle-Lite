@@ -66,6 +66,19 @@ class PaddleMobile {
   std::vector<Ptype> Predict(const std::vector<Ptype> &input,
                              const std::vector<int64_t> &dims);
 
+  /**
+   * 从内存加载model 以及 combinedparams的接口
+   *
+   * @param model_len model 文件的内存大小
+   * @param model_buf model文件的内存
+   * @param combined_params_len  params文件的内存大小
+   * @param combined_params_buf  params文件的内存
+   * @return
+   */
+  bool LoadCombinedMemory(size_t model_len, const uint8_t *model_buf,
+                          size_t combined_params_len,
+                          const uint8_t *combined_params_buf);
+
   void Clear();
 
   ~PaddleMobile();

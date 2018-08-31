@@ -31,6 +31,8 @@ class Program {
   std::string para_path;
   bool combined = false;
   bool quantification = false;
+  size_t combined_params_len;
+  const uint8_t *combined_params_buf;
 
  private:
 };

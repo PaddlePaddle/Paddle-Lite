@@ -117,6 +117,10 @@ else ()
     ADD_EXECUTABLE(test-load framework/test_load.cpp)
     target_link_libraries(test-load paddle-mobile)
 
+    # gen test log
+    ADD_EXECUTABLE(test-loadmemory framework/test_load_memory.cpp)
+    target_link_libraries(test-loadmemory paddle-mobile)
+
     ADD_EXECUTABLE(test-inference-api framework/test_inference_api.cpp)
     target_link_libraries(test-inference-api paddle-mobile)
 
