@@ -87,7 +87,7 @@ class ViewController: UIViewController {
             fatalError()
           }
           
-          print(result.resultArray)
+//          print(result.resultArray)
           if i == max - 1 {
             let time = Date.init().timeIntervalSince(startDate)
             DispatchQueue.main.async {

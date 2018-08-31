@@ -16,6 +16,8 @@ import Foundation
 
 let testTo = 54
 
+let computePrecision: ComputePrecision = .Float32
+
 public class ResultHolder<P: PrecisionType> {
   public let dim: [Int]
   public let resultArr: [P]
@@ -66,7 +68,6 @@ public class Executor<P: PrecisionType> {
         let op = block.ops[i]
         do {
           let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
-//          op.inferShape()
           ops.append(op)
         } catch let error {
           throw error
@@ -110,15 +111,11 @@ public class Executor<P: PrecisionType> {
     }
     
     buffer.addCompletedHandler { (commandbuffer) in
-    
+      
 //      let inputArr = resInput.floatArray(res: { (p:P) -> P in
 //        return p
 //      })
 //      print(inputArr.strideArray())
-//
-//      let inputArr = resInput.floatArray(res: { (p:P) -> P in
-//        return p
-//      })
 //
 //      writeToLibrary(fileName: "genet_input_hand", array: inputArr)
 //      print("write to library done")
@@ -134,7 +131,7 @@ public class Executor<P: PrecisionType> {
         print(" 第 \(i) 个 op: ")
         op.delogOutput()
       }
-//
+
 //      return
       
       let afterDate = Date.init()
