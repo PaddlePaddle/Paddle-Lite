@@ -22,7 +22,7 @@ import MetalPerformanceShaders
 
 class ScaleKernel: CusomKernel {
   init(device: MTLDevice, shape: Shape) {
-    super.init(device: device, inFunctionName: "scale", outputDim: shape, usePaddleMobileLib: false)
+    super.init(device: device, inFunctionName: "scale_half", outputDim: shape, usePaddleMobileLib: false)
   }
 }
 
@@ -79,6 +79,8 @@ extension Net {
   func getTexture(image: CGImage, getTexture: @escaping (MTLTexture) -> Void) {
     let texture = try? MetalHelper.shared.textureLoader.newTexture(cgImage: image, options: [:]) ?! " texture loader error"
     MetalHelper.scaleTexture(queue: MetalHelper.shared.queue, input: texture!, size: (dim.w, dim.h)) { (resTexture) in
+      print("after scale")
+      print(resTexture.float32Array().strideArray())
       getTexture(resTexture)
     }
   }

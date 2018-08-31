@@ -112,6 +112,7 @@ class ViewController: UIViewController {
     selectImage = UIImage.init(named: "hand.jpg")
     selectImageView.image = selectImage
     net.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
+      
       self?.toPredictTexture = texture
     }
   }

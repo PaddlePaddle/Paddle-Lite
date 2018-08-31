@@ -85,7 +85,7 @@ class PriorBoxKernel<P: PrecisionType>: Kernel, Computable{
     }
     
     if computePrecision == .Float16 {
-      let buffer = device.makeBuffer(length: outputAspectRatior.count)
+      let buffer = device.makeBuffer(length: outputAspectRatior.count * MemoryLayout<Float16>.size)
       float32ToFloat16(input: &outputAspectRatior, output:(buffer?.contents())!, count: outputAspectRatior.count)
       param.newAspectRatios = buffer
 

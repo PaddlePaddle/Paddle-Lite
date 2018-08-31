@@ -117,10 +117,10 @@ class ConvBNReluKernel<P: PrecisionType>: Kernel, Computable, Testable {
     var newBiaseBuffer: MTLBuffer
     var newScaleBuffer: MTLBuffer
     
-    if computePrecision == .Float16 {
+    if computePrecision == .Float32 {
       newBiaseBuffer = device.makeBuffer(bytes: newBiase, length: param.bias.buffer.length)!
       newScaleBuffer = device.makeBuffer(bytes: newScale, length: param.scale.buffer.length)!
-    } else if computePrecision == .Float32 {
+    } else if computePrecision == .Float16 {
       
       newBiaseBuffer = device.makeBuffer(length: param.bias.buffer.length / 2)!
       newScaleBuffer = device.makeBuffer(length: param.bias.buffer.length / 2)!
