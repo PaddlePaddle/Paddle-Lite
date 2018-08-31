@@ -481,6 +481,7 @@ class Col2ImFunctor<ColFormat::kCFO, CPU, T> {
 
     T *im_data = im->data<T>();
     const T *col_data = col.data<T>();
+    memset(static_cast<void *>(im_data), 0, sizeof(T) * im->numel());
 
     for (int c = 0; c < channels_col; ++c) {
       int w_offset = c % filter_width;
