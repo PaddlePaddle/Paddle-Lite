@@ -15,6 +15,8 @@
 import Foundation
 
 let testTo = 54
+var isTest = false
+
 
 let computePrecision: ComputePrecision = .Float32
 
@@ -131,8 +133,9 @@ public class Executor<P: PrecisionType> {
         print(" 第 \(i) 个 op: ")
         op.delogOutput()
       }
+//      self.ops[53].delogOutput()
 
-//      return
+      return
       
       let afterDate = Date.init()
      

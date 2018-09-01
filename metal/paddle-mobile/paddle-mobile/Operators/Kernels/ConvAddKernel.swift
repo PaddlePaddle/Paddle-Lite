@@ -17,7 +17,6 @@ import Foundation
 class ConvAddKernel<P: PrecisionType>: Kernel, Computable {
   var metalParam: MetalConvParam!
   required init(device: MTLDevice, param: ConvAddParam<P>) {
-    
     if computePrecision == .Float16 {
       if param.filter.width == 1 && param.filter.height == 1 {
         super.init(device: device, inFunctionName: "conv_add_1x1_half")
@@ -47,11 +46,12 @@ class ConvAddKernel<P: PrecisionType>: Kernel, Computable {
     param.filter.initBuffer(device: device, precision: computePrecision)
     param.y.initBuffer(device: device, precision: computePrecision)
     
+    print(" function: \(functionName)")
     print("offset x: \(offsetX)")
     print("offset y: \(offsetY)")
     
     let offsetZ = 0.0
-    let inMetalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: Int16(offsetZ), strideX: UInt16(param.stride[0]), strideY: UInt16(param.stride[1]), paddedZ: UInt16(param.input.metalTexture.arrayLength * 4 - param.input.dim[3]), dilationX: UInt16(param.dilations[0]), dilationY: UInt16(param.dilations[1]))
+    let inMetalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: Int16(offsetZ), strideX: UInt16(param.stride[0]), strideY: UInt16(param.stride[1]), dilationX: UInt16(param.dilations[0]), dilationY: UInt16(param.dilations[1]))
     print("metal param: ")
     print(inMetalParam)
     
