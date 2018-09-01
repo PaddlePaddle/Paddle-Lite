@@ -45,7 +45,6 @@ protocol Net {
 }
 
 extension Net {
-  
   mutating func load() throws {
     let queue = MetalHelper.shared.queue
     let loader = Loader<Float32>.init()
