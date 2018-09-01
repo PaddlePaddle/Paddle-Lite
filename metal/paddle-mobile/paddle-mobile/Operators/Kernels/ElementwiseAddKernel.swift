@@ -27,7 +27,7 @@ struct ElementwiseAddMetalParam {
 class ElementwiseAddKernel<P: PrecisionType>: Kernel, Computable {
   required init(device: MTLDevice, param: ElementwiseAddParam<P>) {
     super.init(device: device, inFunctionName: "elementwise_add")
-    param.output.initTexture(device: device, inTranspose: param.inputX.transpose)
+    param.output.initTexture(device: device, inTranspose: param.inputX.transpose, computePrecision: computePrecision)
   }
   
   func compute(commandBuffer: MTLCommandBuffer, param: ElementwiseAddParam<P>) throws {
