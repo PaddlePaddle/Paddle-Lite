@@ -57,3 +57,14 @@ inline void invtrans(int32_t trans[4], int32_t ipos[4], int32_t opos[4]) {
     opos[trans[i]] = ipos[i];
   }
 }
+
+
+struct MetalConvParam {
+  short offsetX;
+  short offsetY;
+  short offsetZ;
+  ushort strideX;
+  ushort strideY;
+  ushort dilationX;
+  ushort dilationY;
+};

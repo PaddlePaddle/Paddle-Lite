@@ -51,21 +51,33 @@ class ConvBNReluKernel<P: PrecisionType>: Kernel, Computable, Testable {
   var metalParam: MetalConvParam!
   
   required init(device: MTLDevice, param: ConvBNReluParam<P>) {
-    
-    if param.filter.width == 1 && param.filter.height == 1 {
-      super.init(device: device, inFunctionName: "conv_batch_norm_relu_1x1")
-    } else if param.filter.channel == 1 {
-      super.init(device: device, inFunctionName: "depthwise_conv_batch_norm_relu_3x3")
+    if computePrecision == .Float32 {
+      if param.filter.width == 1 && param.filter.height == 1 {
+        super.init(device: device, inFunctionName: "conv_batch_norm_relu_1x1")
+      } else if param.filter.channel == 1 {
+        super.init(device: device, inFunctionName: "depthwise_conv_batch_norm_relu_3x3")
+      } else {
+        super.init(device: device, inFunctionName: "conv_batch_norm_relu_3x3")
+      }
+    } else if computePrecision == .Float16 {
+      if param.filter.width == 1 && param.filter.height == 1 {
+        super.init(device: device, inFunctionName: "conv_batch_norm_relu_1x1_half")
+      } else if param.filter.channel == 1 {
+        super.init(device: device, inFunctionName: "depthwise_conv_batch_norm_relu_3x3_half")
+      } else {
+        super.init(device: device, inFunctionName: "conv_batch_norm_relu_3x3_half")
+      }
     } else {
-      super.init(device: device, inFunctionName: "conv_batch_norm_relu_3x3")
+      fatalError()
     }
-    param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1])
-    param.filter.initBuffer(device: device, precision: Tensor.BufferPrecision.Float32)
     
-    param.variance.initBuffer(device: device)
-    param.mean.initBuffer(device: device)
-    param.scale.initBuffer(device: device)
-    param.bias.initBuffer(device: device)
+    param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1], computePrecision: computePrecision)
+    param.filter.initBuffer(device: device, precision: computePrecision)
+    
+    param.variance.initBuffer(device: device, precision: .Float32)
+    param.mean.initBuffer(device: device, precision: .Float32)
+    param.scale.initBuffer(device: device, precision: .Float32)
+    param.bias.initBuffer(device: device, precision: .Float32)
     
     let offsetX = param.filter.width/2 - Int(param.paddings[0])
     let offsetY = param.filter.height/2 - Int(param.paddings[1])
@@ -81,7 +93,7 @@ class ConvBNReluKernel<P: PrecisionType>: Kernel, Computable, Testable {
     let offsetZ = 0.0
     
     print(" fuck ")
-    metalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: Int16(offsetZ), strideX: UInt16(param.stride[0]), strideY: UInt16(param.stride[1]), paddedZ: UInt16(param.input.metalTexture.arrayLength * 4 - param.input.dim[3]))
+    metalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: Int16(offsetZ), strideX: UInt16(param.stride[0]), strideY: UInt16(param.stride[1]), paddedZ: UInt16(param.input.metalTexture.arrayLength * 4 - param.input.dim[3]), dilationX: UInt16(param.dilations[0]), dilationY: UInt16(param.dilations[1]))
     
     var invs: [P] = []
     let varianceContents = param.variance.buffer.contents().assumingMemoryBound(to: P.self)
@@ -102,8 +114,26 @@ class ConvBNReluKernel<P: PrecisionType>: Kernel, Computable, Testable {
       newBiase[i] = biaseContents[i] - meanContents[i] * invs[i] * scaleContents[i]
     }
     
-    param.newBiase = device.makeBuffer(bytes: newBiase, length: param.bias.buffer.length)
-    param.newScale = device.makeBuffer(bytes: newScale, length: param.scale.buffer.length)
+    var newBiaseBuffer: MTLBuffer
+    var newScaleBuffer: MTLBuffer
+    
+    if computePrecision == .Float32 {
+      newBiaseBuffer = device.makeBuffer(bytes: newBiase, length: param.bias.buffer.length)!
+      newScaleBuffer = device.makeBuffer(bytes: newScale, length: param.scale.buffer.length)!
+    } else if computePrecision == .Float16 {
+      
+      newBiaseBuffer = device.makeBuffer(length: param.bias.buffer.length / 2)!
+      newScaleBuffer = device.makeBuffer(length: param.bias.buffer.length / 2)!
+      
+      float32ToFloat16(input: newBiase as! UnsafeMutablePointer<Float32>, output: newBiaseBuffer.contents(), count: param.bias.buffer.length / MemoryLayout<P>.size)
+      
+      float32ToFloat16(input: newScale as! UnsafeMutablePointer<Float32>, output: newScaleBuffer.contents(), count: param.scale.buffer.length / MemoryLayout<P>.size)
+    } else {
+      fatalError(" unsupport ")
+    }
+    
+    param.newBiase = newBiaseBuffer
+    param.newScale = newScaleBuffer
     
     newScale.deinitialize(count: param.scale.buffer.length)
     newScale.deallocate()

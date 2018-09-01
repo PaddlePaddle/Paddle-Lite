@@ -85,6 +85,17 @@ kernel void genet_preprocess(texture2d<float, access::read> inTexture [[texture(
   outTexture.write(float4(inColor.z, inColor.y, inColor.x, 0.0f), gid);
 }
 
+kernel void genet_preprocess_half(texture2d<half, access::read> inTexture [[texture(0)]], texture2d<half, access::write> outTexture [[texture(1)]], uint2 gid [[thread_position_in_grid]])
+{
+  if (gid.x >= outTexture.get_width() ||
+      gid.y >= outTexture.get_height()) {
+    return;
+  }
+  const auto means = half4(128.0f, 128.0f, 128.0f, 0.0f);
+  const half4 inColor = (inTexture.read(gid) * 255.0 - means) * 0.017;
+  outTexture.write(half4(inColor.z, inColor.y, inColor.x, 0.0f), gid);
+}
+
 kernel void scale(texture2d<float, access::sample> inTexture [[texture(0)]], texture2d<float, access::write> outTexture [[texture(1)]], uint2 gid [[thread_position_in_grid]]) {
   if (gid.x >= outTexture.get_width() ||
       gid.y >= outTexture.get_height()) return;
@@ -95,12 +106,13 @@ kernel void scale(texture2d<float, access::sample> inTexture [[texture(0)]], tex
   outTexture.write(input, gid);
 }
 
-
-
-
-
-
-
-
-
+kernel void scale_half(texture2d<float, access::sample> inTexture [[texture(0)]], texture2d<half, access::write> outTexture [[texture(1)]], uint2 gid [[thread_position_in_grid]]) {
+  if (gid.x >= outTexture.get_width() ||
+      gid.y >= outTexture.get_height()) return;
+  float w_stride = inTexture.get_width() / outTexture.get_width();
+  float h_stride = inTexture.get_height() / outTexture.get_height();
+  constexpr sampler sample(coord::pixel, filter::nearest, address::clamp_to_zero);
+  float4 input = inTexture.sample(sample, float2(gid.x * w_stride,    gid.y * h_stride), 0);
+  outTexture.write(half4(input), gid);
+}
 

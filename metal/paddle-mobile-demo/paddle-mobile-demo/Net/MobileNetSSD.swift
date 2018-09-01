@@ -33,7 +33,7 @@ class MobileNet_ssd_hand: Net{
     return " \(res)"
   }
 
-  func fetchResult(paddleMobileRes: ResultHolder<Float32>) -> [Float32]{
+  func fetchResult(paddleMobileRes: ResultHolder<Float32>) -> [Float32] {
 
     guard let interRes = paddleMobileRes.intermediateResults else {
       fatalError(" need have inter result ")
@@ -46,12 +46,11 @@ class MobileNet_ssd_hand: Net{
     guard let bboxs = interRes["BBoxes"], bboxs.count > 0, let bbox = bboxs[0] as? Texture<Float32> else {
       fatalError()
     }
-
+    
     var scoreFormatArr: [Float32] = score.metalTexture.realNHWC(dim: (n: score.originDim[0], h: score.originDim[1], w: score.originDim[2], c: score.originDim[3]))
-    var bboxArr = bbox.metalTexture.floatArray { (f) -> Float32 in
-      return f
-    }
-
+    
+    var bboxArr = bbox.metalTexture.float32Array()
+    
     let nmsCompute = NMSCompute.init()
     nmsCompute.scoreThredshold = 0.01
     nmsCompute.nmsTopK = 200
@@ -78,10 +77,37 @@ class MobileNet_ssd_hand: Net{
   let paramPath: String
   let modelDir: String
   
+  
+  
+//  let paramPointer: UnsafeMutableRawPointer
+//
+//  let paramSize: Int
+//
+//  let modelPointer: UnsafeMutableRawPointer
+//
+//  let modelSize: Int
+//
+//  /**
+//   * inParamPointer: 参数文件内存地址
+//   * inParamSize:    参数文件大小(字节数)
+//   * inModelPointer: 模型文件内存地址
+//   *  inModelSize:   模型文件大小(字节数)
+//   */
+//  init(inParamPointer: UnsafeMutableRawPointer, inParamSize: Int, inModelPointer: UnsafeMutableRawPointer, inModelSize: Int) {
+//    paramPointer = inParamPointer
+//    paramSize = inParamSize
+//    modelPointer = inModelPointer
+//    modelSize = inModelSize
+////    fatalError()
+//  }
+  
+  
   init() {
     modelPath = Bundle.main.path(forResource: "ssd_hand_model", ofType: nil) ?! "model null"
     paramPath = Bundle.main.path(forResource: "ssd_hand_params", ofType: nil) ?! "para null"
     modelDir = ""
     preprocessKernel = MobilenetssdPreProccess.init(device: MetalHelper.shared.device)
+//    fatalError()
+
   }
 }

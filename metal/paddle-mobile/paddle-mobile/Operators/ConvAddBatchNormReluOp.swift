@@ -125,13 +125,6 @@ class ConvAddBatchNormReluOp<P: PrecisionType>: Operator<ConvAddBatchNormReluKer
     //        let _: P? = para.newBiase?.logDesc(header: "new biase: ", stridable: false)
     //        let _: P? = para.newScale?.logDesc(header: "new scale: ", stridable: false)
     
-    let output = para.output.metalTexture.floatArray { (p: P) -> P in
-      return p
-    }
-    //
-    writeToLibrary(fileName: "output_112x112x32_2", array: output)
-    print(" write done")
-    
     //        let _: P? = para.output.metalTexture.logDesc(header: "conv add batchnorm relu output: ", stridable: false)
   }
 }

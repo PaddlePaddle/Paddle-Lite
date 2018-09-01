@@ -46,7 +46,7 @@ public class Texture<P: PrecisionType>: Tensorial {
   public var metalTexture: MTLTexture!
   var transpose: [Int] = [0, 1, 2, 3]
   
-  func initTexture(device: MTLDevice, inTranspose: [Int] = [0, 1, 2, 3]) {
+  func initTexture(device: MTLDevice, inTranspose: [Int] = [0, 1, 2, 3], computePrecision: ComputePrecision = .Float16) {
     transpose = inTranspose
     let newDim = transpose.map { originDim[$0] }
     
@@ -64,12 +64,10 @@ public class Texture<P: PrecisionType>: Tensorial {
     tmpTextureDes.depth = 1
     tmpTextureDes.arrayLength = ((newDim[0]) * (newDim[3]) + 3) / 4
     tmpTextureDes.textureType = .type2DArray
-    
-    if MemoryLayout<P>.size == 1 {
-      tmpTextureDes.pixelFormat = .rgba8Unorm
-    } else if MemoryLayout<P>.size == 2 {
+   
+    if computePrecision == .Float16 {
       tmpTextureDes.pixelFormat = .rgba16Float
-    } else if MemoryLayout<P>.size == 4 {
+    } else if computePrecision == .Float32 {
       tmpTextureDes.pixelFormat = .rgba32Float
     }
     

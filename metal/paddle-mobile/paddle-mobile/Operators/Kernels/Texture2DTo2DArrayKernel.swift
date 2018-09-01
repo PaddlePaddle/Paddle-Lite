@@ -32,7 +32,14 @@ class Texture2DTo2DArrayKernel<P: PrecisionType>: Kernel, Computable{
   }
   
   required init(device: MTLDevice, param: FeedParam<P>) {
-    param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1])
-    super.init(device: device, inFunctionName: "texture2d_to_2d_array")
+    param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1], computePrecision: computePrecision)
+    if computePrecision == .Float16 {
+      super.init(device: device, inFunctionName: "texture2d_to_2d_array_half")
+    } else if computePrecision == .Float32 {
+      super.init(device: device, inFunctionName: "texture2d_to_2d_array")
+    } else {
+      fatalError()
+    }
+    
   }
 }

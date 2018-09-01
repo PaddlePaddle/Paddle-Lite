@@ -13,6 +13,7 @@
  limitations under the License. */
 
 import Foundation
+import Accelerate
 
 public protocol SummableMultipliable: Equatable {
   static func +(lhs: Self, rhs: Self) -> Self
@@ -75,6 +76,28 @@ extension Float32: PrecisionType {
   
   public static var bitSize: UInt {
     return 32
+  }
+}
+
+public func float32ToFloat16(input: UnsafeMutablePointer<Float32>, output: UnsafeMutableRawPointer, count: Int) {
+  var float32Buffer = vImage_Buffer(data: input,  height: 1, width: UInt(count), rowBytes: count * 4)
+  var float16buffer = vImage_Buffer(data: output, height: 1, width: UInt(count), rowBytes: count * 2)
+  guard vImageConvert_PlanarFtoPlanar16F(&float32Buffer, &float16buffer, 0) == kvImageNoError else {
+    fatalError(" float 32 to float 16 error ! ")
+  }
+}
+
+public func float16To32(input: UnsafeMutablePointer<Float16>, count: Int) -> [Float32] {
+  var output = Array<Float>.init(repeating: 0.0, count: count)
+  float16to32(input: input, output: &output, count: count)
+  return output
+}
+
+public func float16to32(input: UnsafeMutablePointer<Float16>, output: UnsafeMutablePointer<Float32>, count: Int) {
+  var bufferFloat16 = vImage_Buffer(data: input,  height: 1, width: UInt(count), rowBytes: count * 2)
+  var bufferFloat32 = vImage_Buffer(data: output, height: 1, width: UInt(count), rowBytes: count * 4)
+  if vImageConvert_Planar16FtoPlanarF(&bufferFloat16, &bufferFloat32, 0) != kvImageNoError {
+    fatalError(" convert float16 to float32 error")
   }
 }
 
