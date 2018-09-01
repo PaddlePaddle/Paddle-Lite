@@ -14,7 +14,7 @@
 
 import Foundation
 
-let testTo = 54
+let testTo = 61
 var isTest = false
 
 
@@ -133,7 +133,8 @@ public class Executor<P: PrecisionType> {
         print(" 第 \(i) 个 op: ")
         op.delogOutput()
       }
-//      self.ops[53].delogOutput()
+//      self.ops[59].delogOutput()
+//      self.ops[60].delogOutput()
 
       return
       
