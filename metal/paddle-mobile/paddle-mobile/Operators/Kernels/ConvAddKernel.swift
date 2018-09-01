@@ -33,6 +33,8 @@ class ConvAddKernel<P: PrecisionType>: Kernel, Computable {
         super.init(device: device, inFunctionName: "depthwise_conv_add_3x3")
       } else if param.filter.width == 1 && param.filter.height == 5 {
         super.init(device: device, inFunctionName: "conv_add_5x1")
+      } else if param.filter.width == 5 && param.filter.height == 1 {
+        super.init(device: device, inFunctionName: "conv_add_1x5")
       } else {
         super.init(device: device, inFunctionName: "conv_add_3x3")
       }
