@@ -41,33 +41,27 @@ struct TransposeTestParam: TestParam {
 }
 
 class TransposeKernel<P: PrecisionType>: Kernel, Computable, Testable {
-  var metalParam: TransposeMetalParam!
-  func compute(commandBuffer: MTLCommandBuffer, param: TransposeParam<P>) throws {
-    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-      throw PaddleMobileError.predictError(message: " encode is nil")
-    }
-  
-    encoder.setTexture(param.input.metalTexture, index: 0)
-    encoder.setTexture(param.output.metalTexture, index: 1)
-    encoder.setBytes(&metalParam, length: MemoryLayout<TransposeMetalParam>.size, index: 0)
-    encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
-    encoder.endEncoding()
-  }
   
   required init(device: MTLDevice, param: TransposeParam<P>) {
-    param.output.initTexture(device: device, inTranspose: [0, 1, 2, 3])
-    super.init(device: device, inFunctionName: "transpose")
+    param.output.initTexture(device: device, inTranspose: [0, 1, 2, 3], computePrecision: computePrecision)
     
+    if computePrecision == .Float16 {
+      super.init(device: device, inFunctionName: "transpose_half")
+    } else if computePrecision == .Float32 {
+      super.init(device: device, inFunctionName: "transpose")
+    } else {
+      fatalError()
+    }
     var invT: [Int] = [0, 1, 2, 3]
     for (i, v) in param.input.transpose.enumerated() {
       invT[v] = i
     }
     var axis: [Int] = [0, 1, 2, 3]
     
-//    var doNothing = false
-//    if param.axis.count == param.input.transpose.count {
-//      doNothing = param.axis == param.input.transpose.map { Int32($0) }
-//    }
+    //    var doNothing = false
+    //    if param.axis.count == param.input.transpose.count {
+    //      doNothing = param.axis == param.input.transpose.map { Int32($0) }
+    //    }
     
     
     for i in 0..<param.axis.count {
@@ -84,10 +78,30 @@ class TransposeKernel<P: PrecisionType>: Kernel, Computable, Testable {
     }
     metalParam = tmp
   }
+  
   required init(device: MTLDevice, testParam: TransposeTestParam) {
-    super.init(device: device, inFunctionName: "transpose")
-    fatalError()
+    if computePrecision == .Float16 {
+      super.init(device: device, inFunctionName: "transpose_half")
+    } else if computePrecision == .Float32 {
+      super.init(device: device, inFunctionName: "transpose")
+    } else {
+      fatalError()
+    }
   }
+  
+  var metalParam: TransposeMetalParam!
+  func compute(commandBuffer: MTLCommandBuffer, param: TransposeParam<P>) throws {
+    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+      throw PaddleMobileError.predictError(message: " encode is nil")
+    }
+  
+    encoder.setTexture(param.input.metalTexture, index: 0)
+    encoder.setTexture(param.output.metalTexture, index: 1)
+    encoder.setBytes(&metalParam, length: MemoryLayout<TransposeMetalParam>.size, index: 0)
+    encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
+    encoder.endEncoding()
+  }
+
   
   public func test(commandBuffer: MTLCommandBuffer, param: TransposeTestParam) {
     guard let encoder = commandBuffer.makeComputeCommandEncoder() else {

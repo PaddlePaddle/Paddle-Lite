@@ -314,7 +314,7 @@ public class PaddleMobileUnitTest {
         let offsetX = filterSize.width/2 - paddings.0
         let offsetY = filterSize.height/2 - paddings.1
         
-        let metalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: 0, strideX: UInt16(stride.0), strideY: UInt16(stride.1), paddedZ: UInt16(paddings.0))
+        let metalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: 0, strideX: UInt16(stride.0), strideY: UInt16(stride.1), paddedZ: UInt16(paddings.0), dilationX: UInt16(1), dilationY: UInt16(1))
         
         let param = ConvAddBatchNormReluTestParam.init(inInputTexture: inputeTexture, inOutputTexture: outputTexture, inMetalParam: metalParam, inFilterBuffer: filterBuffer, inBiaseBuffer: biaseBuffer, inNewScaleBuffer: newScalueBuffer, inNewBiaseBuffer: newBiaseBuffer, inFilterSize: filterSize)
         
