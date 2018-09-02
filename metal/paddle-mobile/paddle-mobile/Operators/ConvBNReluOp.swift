@@ -110,7 +110,7 @@ class ConvBNReluOp<P: PrecisionType>: Operator<ConvBNReluKernel<P>, ConvBNReluPa
   
   func delogOutput() {
     print(" \(type) output: ")
-    print(para.output.metalTexture.toTensor(dim: (n: para.output.originDim[0], c: para.output.originDim[1], h: para.output.originDim[2], w: para.output.originDim[3]), texturePrecision: computePrecision).strideArray())
+    print(para.output.metalTexture.toTensor(dim: (n: para.output.padToFourDim[0], c: para.output.padToFourDim[1], h: para.output.padToFourDim[2], w: para.output.padToFourDim[3])).strideArray())
   }
   
 }

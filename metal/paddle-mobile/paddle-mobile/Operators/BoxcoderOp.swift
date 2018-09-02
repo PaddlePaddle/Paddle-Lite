@@ -59,28 +59,28 @@ class BoxcoderOp<P: PrecisionType>: Operator<BoxcoderKernel<P>, BoxcoderParam<P>
   
   func delogOutput() {
     print(" \(type) output: ")
-//    let priorBoxOriginDim = para.priorBox.originDim
-//    let priorBoxArray: [Float32] = para.priorBox.metalTexture.realNHWC(dim: (n: priorBoxOriginDim[0], h: priorBoxOriginDim[1], w: priorBoxOriginDim[2], c: priorBoxOriginDim[3]))
+//    let priorBoxpadToFourDim = para.priorBox.padToFourDim
+//    let priorBoxArray: [Float32] = para.priorBox.metalTexture.realNHWC(dim: (n: priorBoxpadToFourDim[0], h: priorBoxpadToFourDim[1], w: priorBoxpadToFourDim[2], c: priorBoxpadToFourDim[3]))
 //    print(" prior box ")
 //    print(priorBoxArray.strideArray())
 //
-//    let priorBoxVarOriginDim = para.priorBoxVar.originDim
-//    let priorBoxVarArray: [Float32] = para.priorBoxVar.metalTexture.realNHWC(dim: (n: priorBoxVarOriginDim[0], h: priorBoxVarOriginDim[1], w: priorBoxVarOriginDim[2], c: priorBoxVarOriginDim[3]))
+//    let priorBoxVarpadToFourDim = para.priorBoxVar.padToFourDim
+//    let priorBoxVarArray: [Float32] = para.priorBoxVar.metalTexture.realNHWC(dim: (n: priorBoxVarpadToFourDim[0], h: priorBoxVarpadToFourDim[1], w: priorBoxVarpadToFourDim[2], c: priorBoxVarpadToFourDim[3]))
 //    print(" prior box var ")
 //    print(priorBoxVarArray.strideArray())
 //
-//    let targetBoxOriginDim = para.targetBox.originDim
-//    let targetBoxArray: [Float32] = para.targetBox.metalTexture.realNHWC(dim: (n: targetBoxOriginDim[0], h: targetBoxOriginDim[1], w: targetBoxOriginDim[2], c: targetBoxOriginDim[3]))
+//    let targetBoxpadToFourDim = para.targetBox.padToFourDim
+//    let targetBoxArray: [Float32] = para.targetBox.metalTexture.realNHWC(dim: (n: targetBoxpadToFourDim[0], h: targetBoxpadToFourDim[1], w: targetBoxpadToFourDim[2], c: targetBoxpadToFourDim[3]))
 //    print(" target box ")
 //    print(targetBoxArray.strideArray())
     
-    let targetBoxOriginDim = para.targetBox.originDim
-    let targetBoxArray = para.targetBox.metalTexture.realNHWC(dim: (n: targetBoxOriginDim[0], h: targetBoxOriginDim[1], w: targetBoxOriginDim[2], c: targetBoxOriginDim[3]), texturePrecision: computePrecision)
+    let targetBoxpadToFourDim = para.targetBox.padToFourDim
+    let targetBoxArray = para.targetBox.metalTexture.realNHWC(dim: (n: targetBoxpadToFourDim[0], h: targetBoxpadToFourDim[1], w: targetBoxpadToFourDim[2], c: targetBoxpadToFourDim[3]))
     print(" target box ")
     print(targetBoxArray.strideArray())
     
-    let originDim = para.output.originDim
-    let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: originDim[0], h: originDim[1], w: originDim[2], c: originDim[3]), texturePrecision: computePrecision)
+    let padToFourDim = para.output.padToFourDim
+    let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
     print(" output ")
     print(outputArray.strideArray())
   }

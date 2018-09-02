@@ -10,15 +10,27 @@ import Foundation
 
 class PreluKernel<P: PrecisionType>: Kernel, Computable{
   required init(device: MTLDevice, param: PreluParam<P>) {
-    if param.mode == "channel" {
-      super.init(device: device, inFunctionName: "prelu_channel")
-    } else if param.mode == "element" {
-      super.init(device: device, inFunctionName: "prelu_element")
-    } else {
-      super.init(device: device, inFunctionName: "prelu_other")
-    }
     param.alpha.initBuffer(device: device, precision: computePrecision)
     param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: computePrecision)
+    if computePrecision == .Float32 {
+      if param.mode == "channel" {
+        super.init(device: device, inFunctionName: "prelu_channel")
+      } else if param.mode == "element" {
+        super.init(device: device, inFunctionName: "prelu_element")
+      } else {
+        super.init(device: device, inFunctionName: "prelu_other")
+      }
+    } else if computePrecision == .Float16 {
+      if param.mode == "channel" {
+        super.init(device: device, inFunctionName: "prelu_channel_half")
+      } else if param.mode == "element" {
+        super.init(device: device, inFunctionName: "prelu_element_half")
+      } else {
+        super.init(device: device, inFunctionName: "prelu_other_half")
+      }
+    } else {
+      fatalError()
+    }
   }
   
   func compute(commandBuffer: MTLCommandBuffer, param: PreluParam<P>) throws {

@@ -31,7 +31,27 @@ struct MetalConvTransposeParam {
 class ConvTransposeKernel<P: PrecisionType>: Kernel, Computable{
   var metalParam: MetalConvTransposeParam!
   required init(device: MTLDevice, param: ConvTransposeParam<P>) {
-    super.init(device: device, inFunctionName: "conv_transpose")
+    param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: computePrecision)
+    param.filter.initBuffer(device: device, precision: computePrecision, convertToNHWC: false, withTranspose: true)
+    if computePrecision == .Float32 {
+      if param.stride == [2, 2] && param.stride == [2, 2] {
+        super.init(device: device, inFunctionName: "conv_transpose2x2_stride2")
+      } else {
+        fatalError(" -- conv transpose unsupported yet -- ")
+      }
+    } else if computePrecision == .Float16 {
+      if param.stride == [2, 2] && param.stride == [2, 2] {
+        super.init(device: device, inFunctionName: "conv_transpose2x2_stride2_half")
+      } else {
+        fatalError(" -- conv transpose unsupported yet -- ")
+      }
+    } else {
+      fatalError()
+    }
+    
+//    let filter: [Float32] = param.filter.buffer.array()
+//    print(" conv transpose filter")
+//    print(filter)
     let kernelWidth = UInt16(param.filter.width)
     let kernelHeight = UInt16(param.filter.height)
     
@@ -43,9 +63,7 @@ class ConvTransposeKernel<P: PrecisionType>: Kernel, Computable{
     let dilationY = UInt16(param.dilations[1])
     
     metalParam = MetalConvTransposeParam.init(kernelW: kernelWidth, kernelH: kernelHeight, strideX: strideX, strideY: strideY, paddingX: paddingX, paddingY: paddingY, dilationX: dilationX, dilationY: dilationY)
-    
-    param.output.initTexture(device: device, inTranspose: param.input.transpose)
-    param.filter.initBuffer(device: device)
+
   }
   
   func compute(commandBuffer: MTLCommandBuffer, param: ConvTransposeParam<P>) throws {

@@ -93,24 +93,24 @@ class ConvAddOp<P: PrecisionType>: Operator<ConvAddKernel<P>, ConvAddParam<P>>, 
   }
   
   func delogOutput() {
+//    print("op \(type): ")
+//    print(" padding: ")
+//    print(para.paddings)
+//    print("stride: ")
+//    print(para.stride)
+//    print("dilations: ")
+//    print(para.dilations)
+//    print(" para input dim: ")
+//    print(para.input.dim)
+//    print(" para filter dim: ")
+//    print(para.filter.dim)
+//    print(" para output dim: ")
+//    print(para.output.dim)
+//    print(" biase: ")
+//    let biase: [Float32] = para.y.buffer.array()
+//    print(biase)
     
-    print(" padding: ")
-    print(para.paddings)
-    print("stride: ")
-    print(para.stride)
-    print("dilations: ")
-    print(para.dilations)
     print(" \(type) output: ")
-    print(" para input dim: ")
-    print(para.input.dim)
-    print(" para filter dim: ")
-    print(para.filter.dim)
-    print(" para output dim: ")
-    print(para.output.dim)
-    print(" biase: ")
-    let biase: [Float32] = para.y.buffer.array()
-    print(biase)
-    
-    print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3]), texturePrecision: computePrecision).strideArray())
+    print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
   }
 }

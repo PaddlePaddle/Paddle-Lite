@@ -27,18 +27,20 @@ public struct MetalConvParam {
 class ConvKernel<P: PrecisionType>: Kernel, Computable {
   var metalParam: MetalConvParam!
   required init(device: MTLDevice, param: ConvParam<P>) {
+    param.filter.initBuffer(device: device, precision: ComputePrecision.Float32)
     if param.filter.width == 1 && param.filter.height == 1 {
       super.init(device: device, inFunctionName: "conv_1x1")
     } else if param.filter.channel == 1 {
       super.init(device: device, inFunctionName: "depthwise_conv_3x3")
-    } else {
+    } else if param.filter.width == 3 && param.filter.height == 3 {
       super.init(device: device, inFunctionName: "conv_3x3")
+    } else {
+      fatalError(" unsupport ")
     }
-    
+
     let offsetX = param.filter.dim[2]/2 - Int(param.paddings[0])
     let offsetY = param.filter.dim[1]/2 - Int(param.paddings[1])
     let offsetZ = 0.0
-    param.filter.initBuffer(device: device, precision: ComputePrecision.Float32)
     
     metalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: Int16(offsetZ), strideX: UInt16(param.stride[0]), strideY: UInt16(param.stride[1]), dilationX: UInt16(param.dilations[0]), dilationY: UInt16(param.dilations[1]))
   }
