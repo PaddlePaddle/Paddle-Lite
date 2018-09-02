@@ -41,8 +41,8 @@ class ReshapeParam<P: PrecisionType>: OpParam {
       for i in 0..<s.count {
         dim[4-s.count+i] = s[i]
       }
-      output.originDim = Dim.init(inDim: dim)
-      output.dim = output.originDim
+      output.padToFourDim = Dim.init(inDim: dim)
+      output.dim = output.padToFourDim
     
       inplace = try ReshapeParam.getAttr(key: "inplace", attrs: opDesc.attrs)
     } catch let error {
@@ -74,9 +74,9 @@ class ReshapeOp<P: PrecisionType>: Operator<ReshapeKernel<P>, ReshapeParam<P>>, 
     print("reshape delog")
 //    let _: P? = para.input.metalTexture.logDesc(header: "reshape input: ", stridable: false)
     
-    let originDim = para.output.originDim
+    let padToFourDim = para.output.padToFourDim
     
-    let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: originDim[0], h: originDim[1], w: originDim[2], c: originDim[3]))
+    let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
     print(outputArray.strideArray())
 
   }

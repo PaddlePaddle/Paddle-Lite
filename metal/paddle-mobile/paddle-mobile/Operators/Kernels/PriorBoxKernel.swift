@@ -53,11 +53,11 @@ class PriorBoxKernel<P: PrecisionType>: Kernel, Computable{
     param.output.dim = Dim.init(inDim: [n, h, w, c])
     param.output.transpose = [0, 1, 2, 3]
     
-    let imageWidth = Float32(param.inputImage.originDim[3])
-    let imageHeight = Float32(param.inputImage.originDim[2])
+    let imageWidth = Float32(param.inputImage.padToFourDim[3])
+    let imageHeight = Float32(param.inputImage.padToFourDim[2])
     
-    let featureWidth = param.input.originDim[3]
-    let featureHeight = param.input.originDim[2]
+    let featureWidth = param.input.padToFourDim[3]
+    let featureHeight = param.input.padToFourDim[2]
     
     if param.stepW == 0 || param.stepH == 0 {
       param.stepW = Float32(imageWidth) / Float32(featureWidth)
