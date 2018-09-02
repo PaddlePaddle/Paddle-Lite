@@ -109,7 +109,7 @@ class ViewController: UIViewController {
     threadPickerView.delegate = self
     threadPickerView.dataSource = self
     
-    selectImage = UIImage.init(named: "hand.jpg")
+    selectImage = UIImage.init(named: "banana.jpeg")
     selectImageView.image = selectImage
     net.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
       self?.toPredictTexture = texture

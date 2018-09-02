@@ -81,8 +81,6 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable, Testable
       fatalError()
     }
     
-   
-    
     let offsetX = param.filter.width/2 - Int(param.paddings[0])
     let offsetY = param.filter.height/2 - Int(param.paddings[1])
     
@@ -121,10 +119,10 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable, Testable
     var newBiaseBuffer: MTLBuffer
     var newScaleBuffer: MTLBuffer
     
-    if computePrecision == .Float16 {
+    if computePrecision == .Float32 {
       newBiaseBuffer = device.makeBuffer(bytes: newBiase, length: param.bias.buffer.length)!
       newScaleBuffer = device.makeBuffer(bytes: newScale, length: param.scale.buffer.length)!
-    } else if computePrecision == .Float32 {
+    } else if computePrecision == .Float16 {
       
       newBiaseBuffer = device.makeBuffer(length: param.bias.buffer.length / 2)!
       newScaleBuffer = device.makeBuffer(length: param.bias.buffer.length / 2)!
@@ -150,7 +148,6 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable, Testable
     guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
       throw PaddleMobileError.predictError(message: " encode is nil")
     }
-    
     
     encoder.setTexture(param.input.metalTexture, index: 0)
     encoder.setTexture(param.output.metalTexture, index: 1)

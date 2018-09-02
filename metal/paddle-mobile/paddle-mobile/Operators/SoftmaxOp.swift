@@ -52,7 +52,9 @@ class SoftmaxOp<P: PrecisionType>: Operator<SoftmaxKernel<P>, SoftmaxParam<P>>, 
   
   func delogOutput() {
     print("softmax delog")
-
+    print(para.input)
+    
+    print(para.output)
     let originDim = para.output.originDim
     let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: originDim[0], h: originDim[1], w: originDim[2], c: originDim[3]))
     print(outputArray.strideArray())
