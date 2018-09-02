@@ -41,14 +41,28 @@ extension InputTexture {
 public class Texture<P: PrecisionType>: Tensorial {
   var dim: Dim
   public var tensorDim: Dim
-  public var originDim: Dim
+  public var padToFourDim: Dim
   private var textureDesc: MTLTextureDescriptor!
   public var metalTexture: MTLTexture!
   var transpose: [Int] = [0, 1, 2, 3]
   
+  func toTensor() -> [Float32] {
+    guard  padToFourDim.cout() == 4 else {
+      fatalError("- not support -")
+    }
+    return metalTexture.toTensor(dim: (n: padToFourDim[0], c: padToFourDim[1], h: padToFourDim[2], w: padToFourDim[3]))
+  }
+  
+  func realNHWC() -> [Float32] {
+    guard padToFourDim.cout() == 4 else {
+      fatalError(" - not support - ")
+    }
+    return metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
+  }
+  
   func initTexture(device: MTLDevice, inTranspose: [Int] = [0, 1, 2, 3], computePrecision: ComputePrecision = .Float16) {
     transpose = inTranspose
-    let newDim = transpose.map { originDim[$0] }
+    let newDim = transpose.map { padToFourDim[$0] }
     
     let newLayout = transpose.map { layout.layoutWithDim[$0] }
     
@@ -93,7 +107,7 @@ public class Texture<P: PrecisionType>: Tensorial {
     }
     tensorDim = inDim
     dim = fourDim
-    originDim = fourDim
+    padToFourDim = fourDim
     layout = DataLayout.init([(.N, fourDim[0]), (.C, fourDim[1]), (.H, fourDim[2]), (.W, fourDim[3])])
   }
   

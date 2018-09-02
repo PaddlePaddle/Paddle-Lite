@@ -34,7 +34,7 @@ class ConvAddBatchNormReluParam<P: PrecisionType>: OpParam {
       
       scale = try ConvAddBatchNormReluParam.inputScale(inputs: opDesc.paraInputs, from: inScope)
       mean = try ConvAddBatchNormReluParam.inputMean(inputs: opDesc.paraInputs, from: inScope)
-      y = try ConvAddBatchNormReluParam.inputY(inputs: opDesc.inputs, from: inScope)
+      y = try ConvAddBatchNormReluParam.inputY(inputs: opDesc.paraInputs, from: inScope)
     } catch let error {
       throw error
     }
@@ -112,7 +112,7 @@ class ConvAddBatchNormReluOp<P: PrecisionType>: Operator<ConvAddBatchNormReluKer
   
   func delogOutput() {
     print(" conv add batchnorm relu output ")
-    print(para.output.metalTexture.toTensor(dim: (n: para.output.originDim[0], c: para.output.originDim[1], h: para.output.originDim[2], w: para.output.originDim[3])).strideArray())
+    print(para.output.toTensor().strideArray())
     //        let _: P? = para.input.metalTexture.logDesc(header: "conv add batchnorm relu input: ", stridable: false)
     //        para.filter.logDataPointer(header: "filter data pointer: ")
     //        print("filter: \(para.filter)")

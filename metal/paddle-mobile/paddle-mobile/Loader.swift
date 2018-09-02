@@ -159,7 +159,7 @@ public class Loader<P: PrecisionType> {
               } catch let error {
                 throw error
               }
-              tensor.convert(to: DataLayout.NHWC())
+//              tensor.convert(to: DataLayout.NHWC())
               //                            tensor.initBuffer(device: device)
               scope[varDesc.name] = tensor
             } else {
@@ -168,7 +168,7 @@ public class Loader<P: PrecisionType> {
             }
           } else {
             if varDesc.name == fetchKey {
-              scope[varDesc.name] = ResultHolder<P>.init(inDim: [], inResult: [], inElapsedTime: 0.0)
+              scope[varDesc.name] = ResultHolder.init(inDim: [], inResult: [], inElapsedTime: 0.0)
             } else if varDesc.name == feedKey {
             }
           }

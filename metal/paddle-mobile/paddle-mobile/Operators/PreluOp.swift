@@ -51,13 +51,13 @@ class PreluOp<P: PrecisionType>: Operator<PreluKernel<P>, PreluParam<P>>, Runabl
   
   func delogOutput() {
     print(" \(type) input: ")
-    print(para.input.metalTexture.toTensor(dim: (n: para.input.originDim[0], c: para.input.originDim[1], h: para.input.originDim[2], w: para.input.originDim[3]), texturePrecision: computePrecision).strideArray())
+    print(para.input.metalTexture.toTensor(dim: (n: para.input.padToFourDim[0], c: para.input.padToFourDim[1], h: para.input.padToFourDim[2], w: para.input.padToFourDim[3])).strideArray())
     
     print(" \(type) Alpha: ")
     let _: Float32? = para.alpha.buffer.logDesc(header: " alpha: ", stridable: false)
     
     print(" \(type) output: ")
-    print(para.output.metalTexture.toTensor(dim: (n: para.output.originDim[0], c: para.output.originDim[1], h: para.output.originDim[2], w: para.output.originDim[3]), texturePrecision: computePrecision).strideArray())
+    print(para.output.metalTexture.toTensor(dim: (n: para.output.padToFourDim[0], c: para.output.padToFourDim[1], h: para.output.padToFourDim[2], w: para.output.padToFourDim[3])).strideArray())
   }
   
 //    print("softmax delog")

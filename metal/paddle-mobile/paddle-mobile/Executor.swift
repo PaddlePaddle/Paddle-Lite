@@ -14,18 +14,18 @@
 
 import Foundation
 
-let testTo = 61
+let testTo = 161
 var isTest = false
 
 
-let computePrecision: ComputePrecision = .Float32
+let computePrecision: ComputePrecision = .Float16
 
-public class ResultHolder<P: PrecisionType> {
+public class ResultHolder {
   public let dim: [Int]
-  public let resultArr: [P]
+  public let resultArr: [Float32]
   public var intermediateResults: [String : [Variant]]?
   public let elapsedTime: Double
-  public init(inDim: [Int], inResult: [P], inElapsedTime: Double, inIntermediateResults: [String : [Variant]]? = nil) {
+  public init(inDim: [Int], inResult: [Float32], inElapsedTime: Double, inIntermediateResults: [String : [Variant]]? = nil) {
     dim = inDim
     resultArr = inResult
     elapsedTime = inElapsedTime
@@ -78,7 +78,7 @@ public class Executor<P: PrecisionType> {
     }
   }
   
-  public func predict(input: MTLTexture, dim: [Int], completionHandle: @escaping (ResultHolder<P>) -> Void, preProcessKernle: CusomKernel? = nil, except: Int = 0) throws {
+  public func predict(input: MTLTexture, dim: [Int], completionHandle: @escaping (ResultHolder) -> Void, preProcessKernle: CusomKernel? = nil, except: Int = 0) throws {
     guard let buffer = queue.makeCommandBuffer() else {
       throw PaddleMobileError.predictError(message: "CommandBuffer is nil")
     }
@@ -114,12 +114,10 @@ public class Executor<P: PrecisionType> {
     
     buffer.addCompletedHandler { (commandbuffer) in
       
-//      let inputArr = resInput.floatArray(res: { (p:P) -> P in
-//        return p
-//      })
-//      print(inputArr.strideArray())
+//      let inputArr = resInput.toTensor(dim: (n: dim[0], c: dim[3], h: dim[1], w: dim[2]))
+////      print(inputArr.strideArray())
 //
-//      writeToLibrary(fileName: "genet_input_hand", array: inputArr)
+//      writeToLibrary(fileName: "test_image_ssd", array: inputArr)
 //      print("write to library done")
 //      return
       //            print(inputArr)
@@ -133,23 +131,23 @@ public class Executor<P: PrecisionType> {
         print(" 第 \(i) 个 op: ")
         op.delogOutput()
       }
-//      self.ops[59].delogOutput()
+      
+//      return;
+//      self.ops[testTo - 2].delogOutput()
+//      self.ops[testTo - 1].delogOutput()
 //      self.ops[60].delogOutput()
 
-      return
+//      return
       
       let afterDate = Date.init()
-     
-      var resultHolder: ResultHolder<P>
+      var resultHolder: ResultHolder
       if except > 0 {
-        resultHolder = ResultHolder<P>.init(inDim: [], inResult: [], inElapsedTime: afterDate.timeIntervalSince(beforeDate), inIntermediateResults: outputTextures)
+        resultHolder = ResultHolder.init(inDim: [], inResult: [], inElapsedTime: afterDate.timeIntervalSince(beforeDate), inIntermediateResults: outputTextures)
       } else {
         let outputVar: Variant = self.program.scope.output()!
         let output: Texture<P> = outputVar as! Texture<P>
         
-        resultHolder = ResultHolder<P>.init(inDim: output.dim.dims, inResult: output.metalTexture.floatArray(res: { (p:P) -> P in
-          return p
-        }), inElapsedTime: afterDate.timeIntervalSince(beforeDate))
+        resultHolder = ResultHolder.init(inDim: output.dim.dims, inResult: output.toTensor(), inElapsedTime: afterDate.timeIntervalSince(beforeDate))
       }
 
       completionHandle(resultHolder)

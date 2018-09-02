@@ -33,6 +33,10 @@ class PriorBoxKernel<P: PrecisionType>: Kernel, Computable{
   var metalParam: PriorBoxMetalParam!
   
   required init(device: MTLDevice, param: PriorBoxParam<P>) {
+    
+    param.output.initTexture(device: device, inTranspose: [2, 0, 1, 3], computePrecision: computePrecision)
+    param.outputVariances.initTexture(device: device, inTranspose: [2, 0, 1, 3], computePrecision: computePrecision)
+    
     if computePrecision == .Float32 {
       super.init(device: device, inFunctionName: "prior_box")
     } else if computePrecision == .Float16 {
@@ -40,9 +44,6 @@ class PriorBoxKernel<P: PrecisionType>: Kernel, Computable{
     } else {
       fatalError()
     }
-    
-    param.output.initTexture(device: device, inTranspose: [2, 0, 1, 3], computePrecision: computePrecision)
-    param.outputVariances.initTexture(device: device, inTranspose: [2, 0, 1, 3], computePrecision: computePrecision)
     
     let n = 1
     let h = param.output.dim[1]
@@ -52,11 +53,11 @@ class PriorBoxKernel<P: PrecisionType>: Kernel, Computable{
     param.output.dim = Dim.init(inDim: [n, h, w, c])
     param.output.transpose = [0, 1, 2, 3]
     
-    let imageWidth = Float32(param.inputImage.originDim[3])
-    let imageHeight = Float32(param.inputImage.originDim[2])
+    let imageWidth = Float32(param.inputImage.padToFourDim[3])
+    let imageHeight = Float32(param.inputImage.padToFourDim[2])
     
-    let featureWidth = param.input.originDim[3]
-    let featureHeight = param.input.originDim[2]
+    let featureWidth = param.input.padToFourDim[3]
+    let featureHeight = param.input.padToFourDim[2]
     
     if param.stepW == 0 || param.stepH == 0 {
       param.stepW = Float32(imageWidth) / Float32(featureWidth)

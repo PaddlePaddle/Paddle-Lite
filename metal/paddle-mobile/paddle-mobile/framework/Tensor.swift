@@ -95,7 +95,28 @@ class Tensor<P: PrecisionType>: Tensorial {
   
 
   
-  func initBuffer(device: MTLDevice, precision: ComputePrecision = .Float16) {
+  func initBuffer(device: MTLDevice, precision: ComputePrecision = .Float16, convertToNHWC: Bool = true, withTranspose: Bool = false) {
+    if convertToNHWC {
+//      print(layout)
+      convert(to: DataLayout.NHWC())
+    }
+    
+    if withTranspose {
+      let transposePointer = UnsafeMutablePointer<P>.allocate(capacity: numel())
+      let n = dim[0]
+      let hwc = numel()/n
+      for j in 0..<hwc {
+        for i in 0..<n {
+          //data[i * hwc + j]
+          transposePointer[j * n + i] = data[i * hwc + j]
+        }
+      }
+
+      dim.swapeDimAt(index1: 0, index2: 3)
+      data.release()
+      data.pointer = transposePointer
+    }
+    
     guard let floatPointer = data.pointer as? UnsafeMutablePointer<Float32> else {
       fatalError(" not support yet ")
     }
@@ -139,6 +160,8 @@ class Tensor<P: PrecisionType>: Tensorial {
             for j in 0..<paddedC {
               if j < C {
                 dstPtr[j] = tmpPointer[j]
+              } else {
+                dstPtr[j] = 0
               }
             }
             tmpPointer += C
@@ -152,6 +175,47 @@ class Tensor<P: PrecisionType>: Tensorial {
             float32ToFloat16(input: convertedPointer, output: buffer.contents(), count: count)
           }
           
+          convertedPointer.deinitialize(count: count)
+          convertedPointer.deallocate()
+        }
+      } else {
+        let C = dim[3]
+        let cSlices = (C + 3) / 4
+        let paddedC = cSlices * 4
+        let count = paddedC * dim[0] * dim[1] * dim[2]
+        if C == paddedC {
+          buffer = device.makeBuffer(length: count * precisionSize)
+          switch precision {
+          case .Float32:
+            buffer?.contents().copyMemory(from: data.pointer, byteCount: count * MemoryLayout<P>.stride)
+          case .Float16:
+            float32ToFloat16(input: floatPointer, output: buffer.contents(), count: count)
+          }
+        } else if C == 1 {
+          fatalError(" not support ")
+        } else {
+          buffer = device.makeBuffer(length: count * precisionSize)
+          let convertedPointer = UnsafeMutablePointer<Float32>.allocate(capacity: count)
+          var tmpPointer = floatPointer
+          var dstPtr = convertedPointer
+          for _ in 0..<dim[0] * dim[1] * dim[2] {
+            for j in 0..<paddedC {
+              if j < C {
+                dstPtr[j] = tmpPointer[j]
+              } else {
+                dstPtr[j] = 0
+              }
+            }
+            tmpPointer += C
+            dstPtr += paddedC
+          }
+          
+          switch precision {
+          case .Float32:
+            buffer?.contents().copyMemory(from: convertedPointer, byteCount: count * MemoryLayout<P>.stride)
+          case .Float16:
+            float32ToFloat16(input: convertedPointer, output: buffer.contents(), count: count)
+          }
           convertedPointer.deinitialize(count: count)
           convertedPointer.deallocate()
         }

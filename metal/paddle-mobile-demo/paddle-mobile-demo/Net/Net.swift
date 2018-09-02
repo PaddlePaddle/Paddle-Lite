@@ -37,7 +37,7 @@ protocol Net {
   var preprocessKernel: CusomKernel { get }
   func getTexture(image: CGImage, getTexture: @escaping (MTLTexture) -> Void)
   func resultStr(res: [Float]) -> String
-  func fetchResult(paddleMobileRes: ResultHolder<Float32>) -> [Float32]
+  func fetchResult(paddleMobileRes: ResultHolder) -> [Float32]
   mutating func load() throws
   
   func predict(inTexture: MTLTexture, completion: @escaping ((time:TimeInterval, resultArray: [Float32])) -> Void) throws
@@ -82,7 +82,7 @@ extension Net {
     }
   }
   
-  func fetchResult(paddleMobileRes: ResultHolder<Float32>) -> [Float32] {
+  func fetchResult(paddleMobileRes: ResultHolder) -> [Float32] {
     return paddleMobileRes.resultArr
   }
   

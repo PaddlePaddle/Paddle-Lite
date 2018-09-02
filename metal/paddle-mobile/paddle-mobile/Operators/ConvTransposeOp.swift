@@ -43,13 +43,15 @@ class ConvTransposeOp<P: PrecisionType>: Operator<ConvTransposeKernel<P>, ConvTr
   }
   
   func delogOutput() {
+  
     print(" \(type) output: ")
-    let originDim = para.output.originDim
+    let padToFourDim = para.output.padToFourDim
     if para.output.transpose == [0, 1, 2, 3] {
-      let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: originDim[0], h: originDim[1], w: originDim[2], c: originDim[3]), texturePrecision: computePrecision)
+      let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
       print(outputArray.strideArray())
     } else if para.output.transpose == [0, 2, 3, 1] {
-      print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3]), texturePrecision: computePrecision).strideArray())
+      let output = para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3]))
+      print(output.strideArray())
     } else {
       print(" not implement")
     }

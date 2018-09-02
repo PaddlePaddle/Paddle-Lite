@@ -27,8 +27,14 @@ struct PoolMetalParam {
 class PoolKernel<P: PrecisionType>: Kernel, Computable{
   
   required init(device: MTLDevice, param: PoolParam<P>) {
-    super.init(device: device, inFunctionName: "pool")
     param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: computePrecision)
+    if computePrecision == .Float32 {
+      super.init(device: device, inFunctionName: "pool")
+    } else if computePrecision == .Float16 {
+      super.init(device: device, inFunctionName: "pool_half")
+    } else {
+      fatalError()
+    }
   }
   
   func compute(commandBuffer: MTLCommandBuffer, param: PoolParam<P>) throws {
