@@ -14,7 +14,7 @@
 
 import Foundation
 
-let testTo = 61
+let testTo = 161
 var isTest = false
 
 
@@ -128,18 +128,18 @@ public class Executor<P: PrecisionType> {
       //            print(stridableInput)
       
       //            let _: Flo? = input.logDesc(header: "input: ", stridable: true)
-      for i in 0..<self.ops.count {
-        let op = self.ops[i]
-        print(" 第 \(i) 个 op: ")
-        op.delogOutput()
-      }
-//      self.ops[59].delogOutput()
+//      for i in 0..<self.ops.count {
+//        let op = self.ops[i]
+//        print(" 第 \(i) 个 op: ")
+//        op.delogOutput()
+//      }
+//      self.ops[testTo - 2].delogOutput()
+//      self.ops[testTo - 1].delogOutput()
 //      self.ops[60].delogOutput()
 
-      return
+//      return
       
       let afterDate = Date.init()
-     
       var resultHolder: ResultHolder<P>
       if except > 0 {
         resultHolder = ResultHolder<P>.init(inDim: [], inResult: [], inElapsedTime: afterDate.timeIntervalSince(beforeDate), inIntermediateResults: outputTextures)

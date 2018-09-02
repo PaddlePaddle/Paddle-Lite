@@ -15,6 +15,7 @@
 import Foundation
 
 struct ElementwiseAddMetalParam {
+  var unsafe_one_dim: Int32 = 0
   var fast: Int32 = 0
   var axis: Int32 = 0
   var yoff: Int32 = 0
@@ -26,8 +27,14 @@ struct ElementwiseAddMetalParam {
 
 class ElementwiseAddKernel<P: PrecisionType>: Kernel, Computable {
   required init(device: MTLDevice, param: ElementwiseAddParam<P>) {
-    super.init(device: device, inFunctionName: "elementwise_add")
     param.output.initTexture(device: device, inTranspose: param.inputX.transpose, computePrecision: computePrecision)
+    if computePrecision == .Float32 {
+      super.init(device: device, inFunctionName: "elementwise_add")
+    } else if computePrecision == .Float16 {
+      super.init(device: device, inFunctionName: "elementwise_add_half")
+    } else {
+      fatalError()
+    }
   }
   
   func compute(commandBuffer: MTLCommandBuffer, param: ElementwiseAddParam<P>) throws {
@@ -57,6 +64,11 @@ class ElementwiseAddKernel<P: PrecisionType>: Kernel, Computable {
     if (param.inputX.dim == param.inputY.dim) && (param.inputX.transpose == param.inputY.transpose) {
 //      print("===> elementwise_add fast!!!")
       emp.fast = 1
+    }
+    
+    // TODO: 
+    if param.inputY.tensorDim.cout() == 1 {
+      emp.unsafe_one_dim = 1;
     }
     
     encoder.setBytes(&emp, length: MemoryLayout<ElementwiseAddMetalParam>.size, index: 0)

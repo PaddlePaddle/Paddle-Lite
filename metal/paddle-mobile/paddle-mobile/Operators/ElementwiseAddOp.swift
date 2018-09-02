@@ -71,12 +71,15 @@ class ElementwiseAddOp<P: PrecisionType>: Operator<ElementwiseAddKernel<P>, Elem
 //    print(para.inputY.metalTexture.toTensor(dim: (n: para.inputY.tensorDim[0], c: para.inputY.tensorDim[1], h: para.inputY.tensorDim[2], w: para.inputY.tensorDim[3])).strideArray())
     
     print(" \(type) output: ")
+    
+    print(para.inputY)
+    
     let originDim = para.output.originDim
     if para.output.transpose == [0, 1, 2, 3] {
-      let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: originDim[0], h: originDim[1], w: originDim[2], c: originDim[3]), texturePrecision: computePrecision)
+      let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: originDim[0], h: originDim[1], w: originDim[2], c: originDim[3]))
       print(outputArray.strideArray())
     } else if para.output.transpose == [0, 2, 3, 1] {
-      print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3]), texturePrecision: computePrecision).strideArray())
+      print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
     } else {
       print(" not implement")
     }

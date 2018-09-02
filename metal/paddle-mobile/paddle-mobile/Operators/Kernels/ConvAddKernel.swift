@@ -17,14 +17,23 @@ import Foundation
 class ConvAddKernel<P: PrecisionType>: Kernel, Computable {
   var metalParam: MetalConvParam!
   required init(device: MTLDevice, param: ConvAddParam<P>) {
-  
+    param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1], computePrecision: computePrecision)
+    param.filter.initBuffer(device: device, precision: computePrecision)
+    param.y.initBuffer(device: device, precision: computePrecision)
+    
     if computePrecision == .Float16 {
       if param.filter.width == 1 && param.filter.height == 1 {
         super.init(device: device, inFunctionName: "conv_add_1x1_half")
       } else if param.filter.channel == 1 {
         super.init(device: device, inFunctionName: "depthwise_conv_add_3x3_half")
-      } else {
+      } else if param.filter.width == 3 && param.filter.height == 3 {
         super.init(device: device, inFunctionName: "conv_add_3x3_half")
+      } else if param.filter.width == 1 && param.filter.height == 5 {
+        super.init(device: device, inFunctionName: "conv_add_5x1_half")
+      } else if param.filter.width == 5 && param.filter.height == 1 {
+        super.init(device: device, inFunctionName: "conv_add_1x5_half")
+      } else {
+        fatalError(" unsupport yet ")
       }
     } else if computePrecision == .Float32 {
       if param.filter.width == 1 && param.filter.height == 1 {
@@ -35,21 +44,20 @@ class ConvAddKernel<P: PrecisionType>: Kernel, Computable {
         super.init(device: device, inFunctionName: "conv_add_5x1")
       } else if param.filter.width == 5 && param.filter.height == 1 {
         super.init(device: device, inFunctionName: "conv_add_1x5")
-      } else {
+      } else if param.filter.width == 3 && param.filter.height == 3 {
         super.init(device: device, inFunctionName: "conv_add_3x3")
+      } else {
+        fatalError(" unsupport yet ")
       }
     } else {
       fatalError()
     }
     
+
+    
     let offsetY = (Int(param.dilations[1]) * (param.filter.height - 1) + 1)/2 - Int(param.paddings[1])
     
     let offsetX = (Int(param.dilations[0]) * (param.filter.width - 1) + 1)/2 - Int(param.paddings[0])
-    
-    param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1], computePrecision: computePrecision)
-    
-    param.filter.initBuffer(device: device, precision: computePrecision)
-    param.y.initBuffer(device: device, precision: computePrecision)
     
     print(" function: \(functionName)")
     print("offset x: \(offsetX)")

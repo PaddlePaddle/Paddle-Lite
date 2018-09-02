@@ -19,17 +19,17 @@ import MetalPerformanceShaders
 
 let threadSupport = [1]
 
-let modelHelperMap: [SupportModel : Net] = [.mobilenet_ssd : MobileNet_ssd_hand.init(), .genet : Genet.init()]
+let modelHelperMap: [SupportModel : Net] = [ .mobilenet : MobileNet.init(), .mobilenet_ssd : MobileNet_ssd_hand.init(), .genet : Genet.init()]
 //, .genet : Genet.init()
 //let modelHelperMap: [SupportModel : Net] = [.mobilenet : MobileNet.init(), .mobilenet_ssd : MobileNet_ssd_hand.init()]
 
 enum SupportModel: String{
-  //  case mobilenet = "mobilenet"
+  case mobilenet = "mobilenet"
   case mobilenet_ssd = "mobilenetssd"
   case genet          = "genet"
   static func supportedModels() -> [SupportModel] {
-    //.mobilenet,
-    return [.mobilenet_ssd ,.genet]
+    //
+    return [.mobilenet, .mobilenet_ssd ,.genet]
   }
 }
 

@@ -354,7 +354,7 @@ public extension MTLTexture {
   }
   
   // n c h w - dim
-  func toTensor(dim: (n: Int, c: Int, h: Int, w: Int), texturePrecision: ComputePrecision = .Float16) -> [Float32] {
+  func toTensor(dim: (n: Int, c: Int, h: Int, w: Int)) -> [Float32] {
 //    print("origin dim: \(dim)")
     print("texture: ")
     print(self)
@@ -392,7 +392,7 @@ public extension MTLTexture {
     return output
   }
   
-  func realNHWC(dim: (n: Int, h: Int, w: Int, c: Int), texturePrecision: ComputePrecision = .Float16) -> [Float32] {
+  func realNHWC(dim: (n: Int, h: Int, w: Int, c: Int)) -> [Float32] {
 //    print("origin dim: \(dim)")
 //    print("texture: ")
 //    print(self)

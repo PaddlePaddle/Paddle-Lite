@@ -75,12 +75,12 @@ class BoxcoderOp<P: PrecisionType>: Operator<BoxcoderKernel<P>, BoxcoderParam<P>
 //    print(targetBoxArray.strideArray())
     
     let targetBoxOriginDim = para.targetBox.originDim
-    let targetBoxArray = para.targetBox.metalTexture.realNHWC(dim: (n: targetBoxOriginDim[0], h: targetBoxOriginDim[1], w: targetBoxOriginDim[2], c: targetBoxOriginDim[3]), texturePrecision: computePrecision)
+    let targetBoxArray = para.targetBox.metalTexture.realNHWC(dim: (n: targetBoxOriginDim[0], h: targetBoxOriginDim[1], w: targetBoxOriginDim[2], c: targetBoxOriginDim[3]))
     print(" target box ")
     print(targetBoxArray.strideArray())
     
     let originDim = para.output.originDim
-    let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: originDim[0], h: originDim[1], w: originDim[2], c: originDim[3]), texturePrecision: computePrecision)
+    let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: originDim[0], h: originDim[1], w: originDim[2], c: originDim[3]))
     print(" output ")
     print(outputArray.strideArray())
   }

@@ -159,7 +159,7 @@ public class Loader<P: PrecisionType> {
               } catch let error {
                 throw error
               }
-              tensor.convert(to: DataLayout.NHWC())
+//              tensor.convert(to: DataLayout.NHWC())
               //                            tensor.initBuffer(device: device)
               scope[varDesc.name] = tensor
             } else {
