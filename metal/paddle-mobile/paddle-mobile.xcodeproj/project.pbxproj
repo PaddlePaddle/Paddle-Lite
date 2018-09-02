@@ -41,7 +41,6 @@
 		FC0E2DBE20EE460D009C1FAC /* BatchNormKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC0E2DBD20EE460D009C1FAC /* BatchNormKernel.swift */; };
 		FC0E2DC020EE461F009C1FAC /* ElementwiseAddKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC0E2DBF20EE461F009C1FAC /* ElementwiseAddKernel.swift */; };
 		FC1B16B320EC9A4F00678B91 /* Kernels.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC1B16B220EC9A4F00678B91 /* Kernels.metal */; };
-		FC1B186620ECF1C600678B91 /* ResizeKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC1B186520ECF1C600678B91 /* ResizeKernel.swift */; };
 		FC3602CC2108819F00FACB58 /* PaddleMobileUnitTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC3602CB2108819F00FACB58 /* PaddleMobileUnitTest.swift */; };
 		FC4CB74920F0B954007C0C6D /* ConvKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC4CB74820F0B954007C0C6D /* ConvKernel.metal */; };
 		FC4CB74B20F12C30007C0C6D /* ProgramOptimize.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC4CB74A20F12C30007C0C6D /* ProgramOptimize.swift */; };
@@ -133,7 +132,6 @@
 		FC0E2DBD20EE460D009C1FAC /* BatchNormKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchNormKernel.swift; sourceTree = "<group>"; };
 		FC0E2DBF20EE461F009C1FAC /* ElementwiseAddKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElementwiseAddKernel.swift; sourceTree = "<group>"; };
 		FC1B16B220EC9A4F00678B91 /* Kernels.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Kernels.metal; sourceTree = "<group>"; };
-		FC1B186520ECF1C600678B91 /* ResizeKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizeKernel.swift; sourceTree = "<group>"; };
 		FC27990D21341016000B6BAD /* BoxCoder.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = BoxCoder.metal; sourceTree = "<group>"; };
 		FC3602CB2108819F00FACB58 /* PaddleMobileUnitTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaddleMobileUnitTest.swift; sourceTree = "<group>"; };
 		FC4CB74820F0B954007C0C6D /* ConvKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ConvKernel.metal; sourceTree = "<group>"; };
@@ -326,7 +324,6 @@
 				FCEB6837212F00B100D2448E /* metal */,
 				FCDDC6C7212FA3CA00E5EF74 /* ConvTransposeKernel.swift */,
 				FC0E2DBB20EE45FE009C1FAC /* ConvKernel.swift */,
-				FC1B186520ECF1C600678B91 /* ResizeKernel.swift */,
 				FC0E2DB920EE3B8D009C1FAC /* ReluKernel.swift */,
 				FC0E2DBD20EE460D009C1FAC /* BatchNormKernel.swift */,
 				FC0E2DBF20EE461F009C1FAC /* ElementwiseAddKernel.swift */,
@@ -506,7 +503,6 @@
 				FC039BBB20E11CC20081E9F8 /* ProgramDesc.swift in Sources */,
 				FC9D037920E229E4000F735A /* OpParam.swift in Sources */,
 				FC3602CC2108819F00FACB58 /* PaddleMobileUnitTest.swift in Sources */,
-				FC1B186620ECF1C600678B91 /* ResizeKernel.swift in Sources */,
 				FCF2D73820E64E70007AC5F5 /* Kernel.swift in Sources */,
 				FCDDC6CC212FDFDB00E5EF74 /* ReluKernel.metal in Sources */,
 				FC0226562138F33800F395E2 /* TransposeKernel.metal in Sources */,

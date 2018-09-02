@@ -33,6 +33,10 @@ class PriorBoxKernel<P: PrecisionType>: Kernel, Computable{
   var metalParam: PriorBoxMetalParam!
   
   required init(device: MTLDevice, param: PriorBoxParam<P>) {
+    
+    param.output.initTexture(device: device, inTranspose: [2, 0, 1, 3], computePrecision: computePrecision)
+    param.outputVariances.initTexture(device: device, inTranspose: [2, 0, 1, 3], computePrecision: computePrecision)
+    
     if computePrecision == .Float32 {
       super.init(device: device, inFunctionName: "prior_box")
     } else if computePrecision == .Float16 {
@@ -40,9 +44,6 @@ class PriorBoxKernel<P: PrecisionType>: Kernel, Computable{
     } else {
       fatalError()
     }
-    
-    param.output.initTexture(device: device, inTranspose: [2, 0, 1, 3], computePrecision: computePrecision)
-    param.outputVariances.initTexture(device: device, inTranspose: [2, 0, 1, 3], computePrecision: computePrecision)
     
     let n = 1
     let h = param.output.dim[1]

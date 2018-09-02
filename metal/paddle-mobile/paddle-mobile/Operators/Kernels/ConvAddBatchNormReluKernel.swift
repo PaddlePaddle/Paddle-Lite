@@ -49,26 +49,39 @@ class ConvAddBatchNormReluKernel<P: PrecisionType>: Kernel, Computable, Testable
   var metalParam: MetalConvParam!
   
   required init(device: MTLDevice, param: ConvAddBatchNormReluParam<P>) {
-    
     param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1], computePrecision: computePrecision)
-    
-    if param.filter.width == 1 && param.filter.height == 1 {
-      super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_1x1")
-    } else if param.filter.channel == 1 {
-      super.init(device: device, inFunctionName: "depthwise_conv_add_batch_norm_relu_3x3")
-    } else {
-      super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_3x3")
-    }
-    
     param.filter.initBuffer(device: device, precision: computePrecision)
-    
     param.y.initBuffer(device: device, precision: computePrecision)
-    
     param.variance.initBuffer(device: device, precision: .Float32)
     param.mean.initBuffer(device: device, precision: .Float32)
     param.scale.initBuffer(device: device, precision: .Float32)
     param.bias.initBuffer(device: device, precision: .Float32)
     
+    if computePrecision == .Float32 {
+      if param.filter.width == 1 && param.filter.height == 1 {
+        super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_1x1")
+      } else if param.filter.channel == 1 {
+        super.init(device: device, inFunctionName: "depthwise_conv_add_batch_norm_relu_3x3")
+      } else if param.filter.width == 3 && param.filter.height == 3 {
+        super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_3x3")
+      } else {
+        fatalError(" unsupport ")
+      }
+    } else if computePrecision == .Float16 {
+      if param.filter.width == 1 && param.filter.height == 1 {
+        super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_1x1_half")
+      } else if param.filter.channel == 1 {
+        super.init(device: device, inFunctionName: "depthwise_conv_add_batch_norm_relu_3x3_half")
+      } else if param.filter.width == 3 && param.filter.height == 3 {
+        super.init(device: device, inFunctionName: "conv_add_batch_norm_relu_3x3_half")
+      } else {
+        fatalError(" unsupport ")
+      }
+    } else {
+      fatalError()
+    }
+    
+   
     
     let offsetX = param.filter.width/2 - Int(param.paddings[0])
     let offsetY = param.filter.height/2 - Int(param.paddings[1])
