@@ -76,12 +76,12 @@ class PriorBoxOp<P: PrecisionType>: Operator<PriorBoxKernel<P>, PriorBoxParam<P>
     print(outputArray)
     // output
 //    print(" \(type) output: ")
-//    let originDim = para.output.originDim
+//    let padToFourDim = para.output.padToFourDim
 //    if para.output.transpose == [0, 1, 2, 3] {
-//      let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: originDim[0], h: originDim[1], w: originDim[2], c: originDim[3]), texturePrecision: computePrecision)
+//      let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]), texturePrecision: computePrecision)
 //      print(outputArray.strideArray())
 //    } else if para.output.transpose == [0, 2, 3, 1] {
-//      print(para.output.metalTexture.toTensor(dim: (n: originDim[0], c: originDim[1], h: originDim[2], w: originDim[3]), texturePrecision: computePrecision).strideArray())
+//      print(para.output.metalTexture.toTensor(dim: (n: padToFourDim[0], c: padToFourDim[1], h: padToFourDim[2], w: padToFourDim[3]), texturePrecision: computePrecision).strideArray())
 //    } else {
 //      print(" not implement")
 //    }

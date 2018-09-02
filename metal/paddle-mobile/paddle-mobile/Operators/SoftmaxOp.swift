@@ -26,7 +26,7 @@ class SoftmaxParam<P: PrecisionType>: OpParam {
       
       output.dim = input.dim
       output.tensorDim = input.tensorDim
-      output.originDim = input.originDim
+      output.padToFourDim = input.padToFourDim
     } catch let error {
       throw error
     }
@@ -55,8 +55,8 @@ class SoftmaxOp<P: PrecisionType>: Operator<SoftmaxKernel<P>, SoftmaxParam<P>>, 
     print(para.input)
     
     print(para.output)
-    let originDim = para.output.originDim
-    let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: originDim[0], h: originDim[1], w: originDim[2], c: originDim[3]))
+    let padToFourDim = para.output.padToFourDim
+    let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
     print(outputArray.strideArray())
   }
 }

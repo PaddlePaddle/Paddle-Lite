@@ -87,7 +87,7 @@ class ViewController: UIViewController {
             fatalError()
           }
           
-//          print(result.resultArray)
+          print(result.resultArray.strideArray())
           if i == max - 1 {
             let time = Date.init().timeIntervalSince(startDate)
             DispatchQueue.main.async {
@@ -109,7 +109,7 @@ class ViewController: UIViewController {
     threadPickerView.delegate = self
     threadPickerView.dataSource = self
     
-    selectImage = UIImage.init(named: "banana.jpeg")
+    selectImage = UIImage.init(named: "hand.jpg")
     selectImageView.image = selectImage
     net.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
       self?.toPredictTexture = texture

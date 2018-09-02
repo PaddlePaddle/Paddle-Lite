@@ -113,7 +113,7 @@ extension MTLDevice {
     return tensor
   }
   
-  func tensor2texture<P>(value: [P], dim: [Int], transpose: [Int] = [0, 1, 2, 3]) -> MTLTexture {
+  func tensor2texture<P>(value: [P], dim: [Int], transpose: [Int] = [0, 1, 2, 3], inComputePrecision: ComputePrecision = .Float32) -> MTLTexture {
     if value.count > 0 {
       assert(value.count == dim.reduce(1) { $0 * $1 })
     }
@@ -129,7 +129,13 @@ extension MTLDevice {
     textureDesc.height = ndim[1]
     textureDesc.depth = 1
     textureDesc.usage = [.shaderRead, .shaderWrite]
-    textureDesc.pixelFormat = .rgba32Float
+    
+    if inComputePrecision == .Float16 {
+      textureDesc.pixelFormat = .rgba16Float
+    } else if inComputePrecision == .Float32 {
+      textureDesc.pixelFormat = .rgba32Float
+    }
+    
     textureDesc.textureType = .type2DArray
     textureDesc.storageMode = .shared
     textureDesc.cpuCacheMode = .defaultCache
@@ -355,12 +361,7 @@ public extension MTLTexture {
   
   // n c h w - dim
   func toTensor(dim: (n: Int, c: Int, h: Int, w: Int)) -> [Float32] {
-//    print("origin dim: \(dim)")
-    print("texture: ")
-    print(self)
     var textureArray: [Float32]
-//    if texturePrecision == .Float16
-    
     if pixelFormat == .rgba32Float {
       textureArray = floatArray { (i : Float32) -> Float32 in
         return i
@@ -388,7 +389,6 @@ public extension MTLTexture {
         }
       }
     }
-    print(" tensor count -- \(output.count)")
     return output
   }
   
