@@ -119,7 +119,7 @@ public class Executor<P: PrecisionType> {
 //      })
 //      print(inputArr.strideArray())
 //
-//      writeToLibrary(fileName: "genet_input_hand", array: inputArr)
+//      writeToLibrary(fileName: "banana", array: inputArr)
 //      print("write to library done")
 //      return
       //            print(inputArr)
@@ -128,11 +128,13 @@ public class Executor<P: PrecisionType> {
       //            print(stridableInput)
       
       //            let _: Flo? = input.logDesc(header: "input: ", stridable: true)
-//      for i in 0..<self.ops.count {
-//        let op = self.ops[i]
-//        print(" 第 \(i) 个 op: ")
-//        op.delogOutput()
-//      }
+      for i in 0..<self.ops.count {
+        let op = self.ops[i]
+        print(" 第 \(i) 个 op: ")
+        op.delogOutput()
+      }
+      
+//      return;
 //      self.ops[testTo - 2].delogOutput()
 //      self.ops[testTo - 1].delogOutput()
 //      self.ops[60].delogOutput()
