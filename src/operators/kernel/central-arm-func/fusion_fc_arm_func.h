@@ -30,7 +30,6 @@ void FusionFcCompute(const FusionFcParam<CPU> &param) {
   int axis = param.Axis();
   Tensor *out = param.Out();
   auto *out_data = out->mutable_data<float>();
-  float *bias_data = out->mutable_data<float>();
   const Tensor x_matrix =
       input_x->dims().size() > 2
           ? framework::ReshapeToMatrix(*input_x, param.XNumColDims())
@@ -59,7 +58,7 @@ void FusionFcCompute(const FusionFcParam<CPU> &param) {
   //    DLOG << out_data[i];
   //  }
   math::matmul<float>(x_matrix, false, y_matrix, false, static_cast<float>(1),
-                      out, static_cast<float>(1), false, bias_data);
+                      out, static_cast<float>(1), false);
   PADDLE_MOBILE_ENFORCE(out_dim.size() == 2, " out_dim.size must be 2.");
   //            if (out_dim.size() != 2) {
   //                out->Resize(out_dim);
