@@ -20,21 +20,15 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 namespace math {
+#define FLT_MAX __FLT_MAX__
 
-void Pool2x2Max(vector<int> strides, vector<int> paddings, const Tensor *input,
-                Tensor *output) {
-#if __ARM_NEON
-
-#if __aarch64__
-#else
+void Pool2x2Maxs2p0(vector<int> strides, vector<int> paddings,
+                    const Tensor *input, Tensor *output) {
   const int batch_size = input->dims()[0];
-
   const int input_height = input->dims()[2];
-
   const int input_width = input->dims()[3];
 
   const int output_channels = output->dims()[1];
-
   int output_height = output->dims()[2];
   const int output_width = output->dims()[3];
   const int ksize_height = 2;
@@ -47,72 +41,110 @@ void Pool2x2Max(vector<int> strides, vector<int> paddings, const Tensor *input,
   const int input_channel_stride = input_height * input_width;
   const int output_channel_stride = output_height * output_width;
 
+  const int input_batch_stride = output_channels * input_channel_stride;
+  const int output_batch_stride = output_channels * output_channel_stride;
+
   const float *input_data = input->data<float>();
   float *output_data = output->mutable_data<float>();
 
-  int out_w_num = output_width >> 2;
-  const int in_h_num = output_height >> 1;
-  const int input_batch_stride = output_channels * input_channel_stride;
-  const int output_batch_stride = output_channels * output_channel_stride;
-  int remain = output_width - out_w_num << 2;
+  int w1 = input_width / 16;
+  int _w1 = input_width % 16;
+  int w2 = _w1 / 4;
+  int _w2 = _w1 % 4;
+
   for (int i = 0; i < batch_size; ++i) {
     for (int c = 0; c < output_channels; ++c) {
-      const float *input_data_chanel_row_next = input_data + input_width;
-      for (; output_height > 0; output_height--) {
-        if (out_w_num > 0) {
-          asm volatile(
-              "max_loop:                            \n\t"
-              "vld1.f32  {q0,q1},  [%[in_ptr1]]!         \n\t"
-              "vld1.f32  {q2,q3},  [%[in_ptr2]]!         \n\t"
-              "vmax.f32  q0,  q0,  q2                 \n\t"
-              "vmax.f32  q1,  q1,  q3                 \n\t"
-              "vpmax.f32  d4,  d0, d1                  \n\t"
-              "vpmax.f32  d5,  d2, d3                  \n\t"
-              "subs %[out_w_num],  #1                  \n\t"
-              "vst1.32  {q2},  [%[out_ptr]]!                 \n\t"
-              "bne  max_loop                            \n\t"
-              : [in_ptr1] "+r"(input_data),
-                [in_ptr2] "+r"(input_data_chanel_row_next),
-                [out_ptr] "+r"(output_data), [out_w_num] "+r"(out_w_num)
-              :
-              : "memory", "q0", "q1", "q2", "q3");
+      for (int ph = 0; ph < input_height; ph += 2) {
+        const float *in_ptr1 = input_data + i * input_batch_stride +
+                               c * input_channel_stride + ph * input_width;
+        const float *in_ptr2 = in_ptr1 + input_width;
+        if (ph + 1 >= input_height) {
+          in_ptr2 = static_cast<float *>(
+              paddle_mobile::memory::Alloc(sizeof(float) * input_width));
+          memset(static_cast<void *>(const_cast<float *>(in_ptr2)), -FLT_MAX,
+                 sizeof(float) * input_width);
         }
+        float *out_ptr = output_data + i * output_batch_stride +
+                         c * output_channel_stride + ph / 2 * output_width;
+        asm volatile(
+            "subs       %[w1], %[w1], #1        \n\t"
+            "blt        end_w1_%=               \n\t"
+            "loop_w1_%=:                        \n\t"
 
-        for (; remain > 0; remain--) {
-          float max_row1 = std::max(input_data[0], input_data[1]);
-          float max_row2 = std::max(input_data_chanel_row_next[0],
-                                    input_data_chanel_row_next[1]);
-          *output_data = std::max(max_row1, max_row2);
-          input_data += 2;
-          input_data_chanel_row_next += 2;
-          output_data++;
+            "pld        [%[in_ptr1], #64]       \n\t"
+            "pld        [%[in_ptr2], #64]       \n\t"
+
+            "vld1.f32   {q0, q1},   [%[in_ptr1]]!   \n\t"
+            "vld1.f32   {q2, q3},   [%[in_ptr2]]!   \n\t"
+            "vld1.f32   {q6, q7},   [%[in_ptr1]]!   \n\t"
+            "vld1.f32   {q8, q9},   [%[in_ptr2]]!   \n\t"
+
+            "vmax.f32   q0,     q0,   q2        \n\t"
+            "vmax.f32   q1,     q1,   q3        \n\t"
+
+            "vmax.f32   q6,     q6,   q8        \n\t"
+            "vmax.f32   q7,     q7,   q9        \n\t"
+
+            "vpmax.f32  d8,     d0,   d1        \n\t"
+            "vpmax.f32  d9,     d2,   d3        \n\t"
+
+            "vpmax.f32  d10,    d12,  d13       \n\t"
+            "vpmax.f32  d11,    d14,  d15       \n\t"
+
+            "vst1.32  {q4, q5},  [%[out_ptr]]!  \n\t"
+
+            "subs       %[w1], %[w1], #1        \n\t"
+            "bge        loop_w1_%=              \n\t"
+            "end_w1_%=:                         \n\t"
+
+            "subs       %[w2], %[w2], #1        \n\t"
+            "blt        end_w2_%=               \n\t"
+            "loop_w2_%=:                        \n\t"
+
+            "vld1.f32   {q0},   [%[in_ptr1]]!   \n\t"
+            "vld1.f32   {q1},   [%[in_ptr2]]!   \n\t"
+            "vmax.f32   q0,     q0,   q1        \n\t"
+            "vpmax.f32  d4,     d0,   d1        \n\t"
+            "vst1.32    {d4},   [%[out_ptr]]!   \n\t"
+
+            "subs       %[w2], %[w2], #1        \n\t"
+            "bge        loop_w2_%=              \n\t"
+            "end_w2_%=:                         \n\t"
+            :
+            : [w1] "r"(w1), [w2] "r"(w2), [in_ptr1] "r"(in_ptr1),
+              [in_ptr2] "r"(in_ptr2), [out_ptr] "r"(out_ptr)
+            : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8",
+              "q9");
+
+        if (_w2 != 0) {
+          in_ptr1 += 16 * w1 + 4 * w2;
+          in_ptr2 += 16 * w1 + 4 * w2;
+          out_ptr += 8 * w1 + 2 * w2;
+          if (_w2 == 1) {
+            *out_ptr = (*in_ptr1 > *in_ptr2) ? *in_ptr1 : *in_ptr2;
+          } else if (_w2 == 2) {
+            float temp = (*in_ptr1++ > *in_ptr2++) ? *in_ptr1++ : *in_ptr2++;
+            float temp1 = (*in_ptr1 > *in_ptr2) ? *in_ptr1 : *in_ptr2;
+            *out_ptr = (temp > temp1) ? temp : temp1;
+          } else if (_w2 == 3) {
+            float temp = (*in_ptr1++ > *in_ptr2++) ? *in_ptr1++ : *in_ptr2++;
+            float temp1 = (*in_ptr1++ > *in_ptr2++) ? *in_ptr1++ : *in_ptr2++;
+            *out_ptr++ = (temp > temp1) ? temp : temp1;
+            *out_ptr = (*in_ptr1 > *in_ptr2) ? *in_ptr1 : *in_ptr2;
+          }
         }
       }
-      input_data += input_channel_stride;
-      output_data += output_channel_stride;
     }
-    input_data += input_batch_stride;
-    output_data += output_batch_stride;
   }
-#endif
-#else
-#endif
 }
 
-void Pool2x2Avg(vector<int> strides, vector<int> paddings, const Tensor *input,
-                Tensor *output) {
-#if __ARM_NEON
-
-#if __aarch64__
-#else
+void Pool2x2Avgs2p0(vector<int> strides, vector<int> paddings,
+                    const Tensor *input, Tensor *output) {
   const int batch_size = input->dims()[0];
-
   const int input_height = input->dims()[2];
-
   const int input_width = input->dims()[3];
 
   const int output_channels = output->dims()[1];
-
   int output_height = output->dims()[2];
   const int output_width = output->dims()[3];
   const int ksize_height = 2;
@@ -125,59 +157,114 @@ void Pool2x2Avg(vector<int> strides, vector<int> paddings, const Tensor *input,
   const int input_channel_stride = input_height * input_width;
   const int output_channel_stride = output_height * output_width;
 
+  const int input_batch_stride = output_channels * input_channel_stride;
+  const int output_batch_stride = output_channels * output_channel_stride;
+
   const float *input_data = input->data<float>();
   float *output_data = output->mutable_data<float>();
 
-  int out_w_num = output_width >> 2;
-  const int input_batch_stride = output_channels * input_channel_stride;
-  const int output_batch_stride = output_channels * output_channel_stride;
-  float vqua[] = {0.25f, 0.25f, 0.25f, 0.25f};
-  int remain = output_width - out_w_num << 2;
+  int w1 = input_width / 16;
+  int _w1 = input_width % 16;
+  int w2 = _w1 / 4;
+  int _w2 = _w1 % 4;
+
+  float quarter = 1 / 4;
   for (int i = 0; i < batch_size; ++i) {
     for (int c = 0; c < output_channels; ++c) {
-      const float *input_data_chanel_row_next = input_data + input_width;
-      for (; output_height > 0; output_height--) {
-        if (out_w_num > 0) {
-          asm volatile(
-              "avg_loop:                            \n\t"
-              "vld1.32  {q0,q1},  [%[in_ptr1]]!         \n\t"
-              "vld1.32  {q2,q3},  [%[in_ptr2]]!         \n\t"
-              "vadd.f32  q0,  q0,  q2                 \n\t"
-              "vadd.f32  q1,  q1,  q3                 \n\t"
-              "vpadd.f32  d4,  d0, d1                  \n\t"
-              "vpadd.f32  d5,  d2, d3                  \n\t"
-              "vld1.32  {q4}, [%[vqua]]!                  \n\t"
-              "vmul.f32  q2,  q2,  q4                          \n\t"
-              "subs %[out_w_num],  #1                  \n\t"
-              "vst1.32  {q2},  [%[out_ptr]]!                 \n\t"
-              "bne  avg_loop                            \n\t"
-              : [in_ptr1] "+r"(input_data),
-                [in_ptr2] "+r"(input_data_chanel_row_next),
-                [out_ptr] "+r"(output_data), [out_w_num] "+r"(out_w_num)
-              : [vqua] "r"(vqua)
-              : "memory", "q0", "q1", "q2", "q3", "q4");
+      for (int ph = 0; ph < input_height; ph += 2) {
+        const float *in_ptr1 = input_data + i * input_batch_stride +
+                               c * input_channel_stride + ph * input_width;
+        const float *in_ptr2 = in_ptr1 + input_width;
+        if (ph + 1 >= input_height) {
+          in_ptr2 = static_cast<float *>(
+              paddle_mobile::memory::Alloc(sizeof(float) * input_width));
+          memset(static_cast<void *>(const_cast<float *>(in_ptr2)), 0,
+                 sizeof(float) * input_width);
         }
+        float *out_ptr = output_data + i * output_batch_stride +
+                         c * output_channel_stride + ph / 2 * output_width;
+        asm volatile(
+            "subs       %[w1], %[w1], #1        \n\t"
+            "blt        end_w1_%=               \n\t"
+            "loop_w1_%=:                        \n\t"
 
-        for (; remain > 0; remain--) {
-          float max_row1 = std::max(input_data[0], input_data[1]);
-          float max_row2 = std::max(input_data_chanel_row_next[0],
-                                    input_data_chanel_row_next[1]);
-          *output_data = std::max(max_row1, max_row2);
-          input_data += 2;
-          input_data_chanel_row_next += 2;
-          output_data++;
+            "pld        [%[in_ptr1], #64]       \n\t"
+            "pld        [%[in_ptr2], #64]       \n\t"
+
+            "vmov.f32   d0[0],      %[quarter]      \n\t"
+            "vld1.f32   {q1, q2},   [%[in_ptr1]]!   \n\t"
+            "vld1.f32   {q3, q4},   [%[in_ptr2]]!   \n\t"
+            "vld1.f32   {q7, q8},   [%[in_ptr1]]!   \n\t"
+            "vld1.f32   {q9, q10},  [%[in_ptr2]]!   \n\t"
+
+            "vadd.f32   q1,     q1,   q3        \n\t"
+            "vadd.f32   q2,     q2,   q4        \n\t"
+
+            "vadd.f32   q7,     q7,   q9        \n\t"
+            "vadd.f32   q8,     q8,   q10       \n\t"
+
+            "vpadd.f32  d10,    d2,   d3        \n\t"
+            "vpadd.f32  d11,    d4,   d5        \n\t"
+
+            "vpadd.f32  d12,    d14,  d15       \n\t"
+            "vpadd.f32  d13,    d16,  d17       \n\t"
+
+            "vmul.f32   q5,     q5,   d0[0]     \n\t"
+            "vmul.f32   q6,     q6,   d0[0]     \n\t"
+
+            "vst1.32  {q5, q6},  [%[out_ptr]]!  \n\t"
+
+            "subs       %[w1], %[w1], #1        \n\t"
+            "bge        loop_w1_%=              \n\t"
+            "end_w1_%=:                         \n\t"
+
+            "subs       %[w2], %[w2], #1        \n\t"
+            "blt        end_w2_%=               \n\t"
+            "loop_w2_%=:                        \n\t"
+
+            "vld1.f32   {q1},   [%[in_ptr1]]!   \n\t"
+            "vld1.f32   {q2},   [%[in_ptr2]]!   \n\t"
+            "vadd.f32   q1,     q1,   q2        \n\t"
+            "vpadd.f32  d4,     d2,   d3        \n\t"
+            "vmul.f32   d4,     d4,   d0[0]     \n\t"
+            "vst1.32    {d4},   [%[out_ptr]]!   \n\t"
+
+            "subs       %[w2], %[w2], #1        \n\t"
+            "bge        loop_w2_%=              \n\t"
+            "end_w2_%=:                         \n\t"
+            :
+            : [w1] "r"(w1), [w2] "r"(w2), [in_ptr1] "r"(in_ptr1),
+              [in_ptr2] "r"(in_ptr2), [out_ptr] "r"(out_ptr),
+              [quarter] "r"(quarter)
+            : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8",
+              "q9", "q10");
+
+        if (_w2 != 0) {
+          in_ptr1 += 16 * w1 + 4 * w2;
+          in_ptr2 += 16 * w1 + 4 * w2;
+          out_ptr += 8 * w1 + 2 * w2;
+          if (_w2 == 1) {
+            *out_ptr = 0.5 * (*in_ptr1 + *in_ptr2);
+          } else if (_w2 == 2) {
+            float temp = 0;
+            temp += *in_ptr1++;
+            temp += *in_ptr2++;
+            temp += *in_ptr1;
+            temp += *in_ptr2;
+            *out_ptr = 0.5 * temp;
+          } else if (_w2 == 3) {
+            float temp = 0;
+            temp += *in_ptr1++;
+            temp += *in_ptr2++;
+            temp += *in_ptr1++;
+            temp += *in_ptr2++;
+            *out_ptr++ = 0.5 * temp;
+            *out_ptr = 0.5 * (*in_ptr1 + *in_ptr2);
+          }
         }
       }
-      input_data += input_channel_stride;
-      output_data += output_channel_stride;
     }
-    input_data += input_batch_stride;
-    output_data += output_batch_stride;
   }
-
-#endif
-#else
-#endif
 }
 
 //}
