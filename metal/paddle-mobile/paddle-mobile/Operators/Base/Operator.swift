@@ -101,7 +101,7 @@ class Operator <KernelType:  Computable , ParameterType>: OperatorProtocol where
   let scope: Scope
   var kernel: KerType
   required init(device: MTLDevice, opDesc: OpDesc, inScope: Scope) throws {
-    print("create op: \(opDesc.type)")
+//    print("create op: \(opDesc.type)")
     type = opDesc.type
     scope = inScope
     inputs = opDesc.inputs
