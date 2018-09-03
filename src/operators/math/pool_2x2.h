@@ -26,11 +26,11 @@ namespace math {
 using framework::Tensor;
 using std::vector;
 
-void Pool2x2Max(vector<int> strides, vector<int> paddings, const Tensor *input,
-                Tensor *output);
+void Pool2x2Maxs2p0(vector<int> strides, vector<int> paddings,
+                    const Tensor *input, Tensor *output);
 
-void Pool2x2Avg(vector<int> strides, vector<int> paddings, const Tensor *in_x,
-                Tensor *out);
+void Pool2x2Avgs2p0(vector<int> strides, vector<int> paddings,
+                    const Tensor *in_x, Tensor *out);
 }  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile
