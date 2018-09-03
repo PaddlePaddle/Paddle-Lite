@@ -84,6 +84,7 @@ kernel void elementwise_add_half(texture2d_array<half, access::read> inputX [[te
     int32_t ytrans[4] = {pm.ytrans[0], pm.ytrans[1], pm.ytrans[2], pm.ytrans[3]};
     int32_t yshift = 4 - pm.ylen - pm.axis;
     for (int n = 0; n < 4; n++) {
+      x_xyzn[3] = n;
       xyzn2abcd(pm.xdim[3], x_xyzn, x_abcd);
       invtrans(xtrans, x_abcd, t_abcd);
       for (int k = pm.axis; k < (pm.axis + pm.ylen); k++) {
