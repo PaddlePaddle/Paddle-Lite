@@ -76,15 +76,17 @@ void PoolCompute(const PoolParam<CPU> &param) {
       }
     }
 
-  } else if (ksize[0] == 2 && ksize[0] == ksize[1]) {
+  } else if (ksize[0] == 2 && ksize[0] == ksize[1] && strides[0] == 2 &&
+             strides[0] == strides[1] && paddings[0] == paddings[1] &&
+             paddings[1] == 0) {
 #if __ARM_NEON
 #if __aarch64__
     PoolBasic(pooling_type, ksize, strides, paddings, in_x, out);
 #else
     if (pooling_type == "max") {
-      math::Pool2x2Max(strides, paddings, in_x, out);
+      math::Pool2x2Maxs2p0(strides, paddings, in_x, out);
     } else if (pooling_type == "avg") {
-      math::Pool2x2Avg(strides, paddings, in_x, out);
+      math::Pool2x2Avgs2p0(strides, paddings, in_x, out);
     }
 #endif
 #else
