@@ -88,17 +88,16 @@ class ConvBNReluKernel<P: PrecisionType>: Kernel, Computable, Testable {
     let offsetX = param.filter.width/2 - Int(param.paddings[0])
     let offsetY = param.filter.height/2 - Int(param.paddings[1])
     
-    print(" param filter width: \(param.filter.width)")
-    print(" param filter height: \(param.filter.height)")
-    
-    print(" param paddings: \(param.paddings)")
-    
-    print("ConvBNReluKernel offset x: \(offsetX)")
-    print("ConvBNReluKernel offset y: \(offsetY)")
+//    print(" param filter width: \(param.filter.width)")
+//    print(" param filter height: \(param.filter.height)")
+//
+//    print(" param paddings: \(param.paddings)")
+//
+//    print("ConvBNReluKernel offset x: \(offsetX)")
+//    print("ConvBNReluKernel offset y: \(offsetY)")
     
     let offsetZ = 0.0
     
-    print(" fuck ")
     metalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: Int16(offsetZ), strideX: UInt16(param.stride[0]), strideY: UInt16(param.stride[1]), dilationX: UInt16(param.dilations[0]), dilationY: UInt16(param.dilations[1]))
     
     var invs: [P] = []

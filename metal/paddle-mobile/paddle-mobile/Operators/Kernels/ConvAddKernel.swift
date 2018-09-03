@@ -59,14 +59,14 @@ class ConvAddKernel<P: PrecisionType>: Kernel, Computable {
     
     let offsetX = (Int(param.dilations[0]) * (param.filter.width - 1) + 1)/2 - Int(param.paddings[0])
     
-    print(" function: \(functionName)")
-    print("offset x: \(offsetX)")
-    print("offset y: \(offsetY)")
+//    print(" function: \(functionName)")
+//    print("offset x: \(offsetX)")
+//    print("offset y: \(offsetY)")
     
     let offsetZ = 0.0
     let inMetalParam = MetalConvParam.init(offsetX: Int16(offsetX), offsetY: Int16(offsetY), offsetZ: Int16(offsetZ), strideX: UInt16(param.stride[0]), strideY: UInt16(param.stride[1]), dilationX: UInt16(param.dilations[0]), dilationY: UInt16(param.dilations[1]))
-    print("metal param: ")
-    print(inMetalParam)
+//    print("metal param: ")
+//    print(inMetalParam)
     
     metalParam = inMetalParam
   }
