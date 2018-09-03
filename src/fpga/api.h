@@ -174,5 +174,7 @@ int ComputeFpgaConv(const struct ConvArgs& args);
 int ComputeFpgaPool(const struct PoolingArgs& args);
 int ComputeFpgaEWAdd(const struct EWAddArgs& args);
 
+static inline int align_to_x(int num, int x) { return (num + x - 1) / x * x; }
+
 }  // namespace fpga
 }  // namespace paddle_mobile
