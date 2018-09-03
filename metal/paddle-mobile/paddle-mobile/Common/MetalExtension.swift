@@ -145,7 +145,7 @@ extension MTLDevice {
     if value.count > 0 {
       var rcount: Int = (ndim[0] * ndim[3] + 3) / 4
       rcount = rcount * 4 * ndim[1] * ndim[2]
-      var nvalue: [P] = .init(repeating: Float32(0.0) as! P, count: rcount)
+      var nvalue: [Float32] = .init(repeating: 0.0, count: rcount)
       
       for i0 in 0..<tdim[0] {
         for i1 in 0..<tdim[1] {
@@ -158,19 +158,32 @@ extension MTLDevice {
               let k = jg[0] * ndim[3] + jg[3]
               let jx = ((k / 4) * ndim[1] * ndim[2] * 4) + (jg[1] * ndim[2] * 4) + (jg[2] * 4) + (k % 4)
               
-              nvalue[jx] = value[ix]
+              nvalue[jx] = value[ix] as! Float32
             }
           }
         }
       }
       
-      let pointer: UnsafeMutablePointer<P> = UnsafeMutablePointer(mutating: nvalue)
       let region = MTLRegion.init(origin: MTLOrigin.init(x: 0, y: 0, z: 0), size: MTLSize.init(width: ndim[2], height: ndim[1], depth: 1))
-      let bpR = ndim[2] * 4 * MemoryLayout<P>.size
-      let bpI = ndim[1] * bpR
-      for i in 0..<textureDesc.arrayLength {
-        let p = pointer + texture.width * texture.height * 4 * i
-        texture.replace(region: region, mipmapLevel: 0, slice: i, withBytes: p, bytesPerRow: bpR, bytesPerImage: bpI)
+      if inComputePrecision == .Float16 {
+        let xvalue: [UInt16] = .init(repeating: 0, count: rcount)
+        let pointer: UnsafeMutablePointer<Float32> = UnsafeMutablePointer(mutating: nvalue)
+        let outputP: UnsafeMutablePointer<UInt16> = UnsafeMutablePointer(mutating: xvalue)
+        float32ToFloat16(input: pointer, output: outputP, count: rcount)
+        let bpR = ndim[2] * 4 * 2
+        let bpI = ndim[1] * bpR
+        for i in 0..<textureDesc.arrayLength {
+          let p = outputP + texture.width * texture.height * 4 * i
+          texture.replace(region: region, mipmapLevel: 0, slice: i, withBytes: p, bytesPerRow: bpR, bytesPerImage: bpI)
+        }
+      } else {
+        let pointer: UnsafeMutablePointer<Float32> = UnsafeMutablePointer(mutating: nvalue)
+        let bpR = ndim[2] * 4 * MemoryLayout<P>.size
+        let bpI = ndim[1] * bpR
+        for i in 0..<textureDesc.arrayLength {
+          let p = pointer + texture.width * texture.height * 4 * i
+          texture.replace(region: region, mipmapLevel: 0, slice: i, withBytes: p, bytesPerRow: bpR, bytesPerImage: bpI)
+        }
       }
     }
     return texture

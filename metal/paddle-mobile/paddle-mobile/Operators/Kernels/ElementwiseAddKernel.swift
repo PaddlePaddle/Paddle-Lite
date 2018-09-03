@@ -15,10 +15,9 @@
 import Foundation
 
 struct ElementwiseAddMetalParam {
-  var unsafe_one_dim: Int32 = 0
   var fast: Int32 = 0
   var axis: Int32 = 0
-  var yoff: Int32 = 0
+  var ylen: Int32 = 0
   var xdim: (Int32, Int32, Int32, Int32) = (0, 0, 0, 0)
   var xtrans: (Int32, Int32, Int32, Int32) = (0, 1, 2, 3)
   var ydim: (Int32, Int32, Int32, Int32) = (0, 0, 0, 0)
@@ -60,15 +59,10 @@ class ElementwiseAddKernel<P: PrecisionType>: Kernel, Computable {
     } else {
       emp.axis = 4 - Int32(param.inputX.tensorDim.cout()) + Int32(param.axis)
     }
-    emp.yoff = 4 - Int32(param.inputY.tensorDim.cout())
+    emp.ylen = Int32(param.inputY.tensorDim.cout())
     if (param.inputX.dim == param.inputY.dim) && (param.inputX.transpose == param.inputY.transpose) {
 //      print("===> elementwise_add fast!!!")
       emp.fast = 1
-    }
-    
-    // TODO: 
-    if param.inputY.tensorDim.cout() == 1 {
-      emp.unsafe_one_dim = 1;
     }
     
     encoder.setBytes(&emp, length: MemoryLayout<ElementwiseAddMetalParam>.size, index: 0)

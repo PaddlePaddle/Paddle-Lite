@@ -50,9 +50,15 @@ class ReshapeKernel<P: PrecisionType>: Kernel, Computable{
     
     encoder.setTexture(param.input.metalTexture, index: 0)
     encoder.setTexture(param.output.metalTexture, index: 1)
-    let id: [Int32] = (0..<4).map { Int32(param.input.dim[$0]) }
+    var id: [Int32] = [1, 1, 1, 1]
+    for i in 0..<param.input.tensorDim.cout() {
+      id[4-param.input.tensorDim.cout()+i] = Int32(param.input.tensorDim[i])
+    }
     let it: [Int32] = param.input.transpose.map { Int32($0) }
-    let od: [Int32] = (0..<4).map { Int32(param.output.dim[$0]) }
+    var od: [Int32] = [1, 1, 1, 1]
+    for i in 0..<param.output.tensorDim.cout() {
+      od[4-param.output.tensorDim.cout()+i] = Int32(param.output.tensorDim[i])
+    }
     let ot: [Int32] = param.output.transpose.map { Int32($0) }
     var rmp = ReshapeMetalParam.init(
       idim: (id[0], id[1], id[2], id[3]),
