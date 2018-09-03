@@ -14,16 +14,14 @@ limitations under the License. */
 
 #pragma once
 
-
 #define BS_NUM_ALIGNMENT 8
 
 namespace paddle_mobile {
 namespace fpga {
-namespace bias_scale{
+namespace bias_scale {
 
-  void align_element(float** data_in, int num_per_div_before_alignment, int num);
-  void interleave(float** data_in, int num_after_alignment);
-
+void align_element(float** data_in, int num_per_div_before_alignment, int num);
+void interleave(float** data_in, int num_after_alignment);
 
 }  // namespace bias_scale
 }  // namespace fpga
