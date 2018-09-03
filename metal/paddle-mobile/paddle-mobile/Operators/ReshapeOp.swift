@@ -73,10 +73,13 @@ class ReshapeOp<P: PrecisionType>: Operator<ReshapeKernel<P>, ReshapeParam<P>>, 
   func delogOutput() {
     print("reshape delog")
 //    let _: P? = para.input.metalTexture.logDesc(header: "reshape input: ", stridable: false)
-    
+//
+//    let _: P? = para.output.metalTexture.logDesc(header: "reshape output: ", stridable: false)
     let padToFourDim = para.output.padToFourDim
     
     let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
+//    print(para.output.metalTexture.toTensor(dim: (n: padToFourDim[0], c: padToFourDim[1], h: padToFourDim[2], w: padToFourDim[3])).strideArray())
+
     print(outputArray.strideArray())
 
   }

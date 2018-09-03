@@ -31,8 +31,19 @@ class ElementwiseAddParam<P: PrecisionType>: OpParam {
       let device = inputX.metalTexture!.device
       inputY = Texture.init(device: device, inDim: tensorY.dim)
       let value: [P] = Array(UnsafeBufferPointer(start: tensorY.data.pointer, count: tensorY.dim.numel()))
-      inputY.metalTexture = device.tensor2texture(value: value, dim: tensorY.dim.dims)
+      inputY.metalTexture = device.tensor2texture(value: value, dim: tensorY.dim.dims, transpose: [0, 1, 2, 3], inComputePrecision: computePrecision)
     }
+    
+//    required init(device: MTLDevice, param: ElementwiseAddParam<P>) {
+//      param.output.initTexture(device: device, inTranspose: param.inputX.transpose, computePrecision: computePrecision)
+//      if computePrecision == .Float32 {
+//        super.init(device: device, inFunctionName: "elementwise_add")
+//      } else if computePrecision == .Float16 {
+//        super.init(device: device, inFunctionName: "elementwise_add_half")
+//      } else {
+//        fatalError()
+//      }
+//    }
     
     var offset = axis
     if axis == -1 {
@@ -65,14 +76,8 @@ class ElementwiseAddOp<P: PrecisionType>: Operator<ElementwiseAddKernel<P>, Elem
   }
   
   func delogOutput() {
-//    print(" \(type) inputX: ")
-//    print(para.inputX.metalTexture.toTensor(dim: (n: para.inputX.tensorDim[0], c: para.inputX.tensorDim[1], h: para.inputX.tensorDim[2], w: para.inputX.tensorDim[3])).strideArray())
-//    print(" \(type) inputY: ")
-//    print(para.inputY.metalTexture.toTensor(dim: (n: para.inputY.tensorDim[0], c: para.inputY.tensorDim[1], h: para.inputY.tensorDim[2], w: para.inputY.tensorDim[3])).strideArray())
-    
     print(" \(type) output: ")
-    
-    print(para.inputY)
+    print(para.output)
     
     let padToFourDim = para.output.padToFourDim
     if para.output.transpose == [0, 1, 2, 3] {
