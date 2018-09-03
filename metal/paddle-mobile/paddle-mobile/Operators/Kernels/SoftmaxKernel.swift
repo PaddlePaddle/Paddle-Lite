@@ -43,9 +43,7 @@ class SoftmaxKernel<P: PrecisionType>: Kernel, Computable{
       N: Int32(param.input.tensorDim[0]),
       K: Int32(param.input.tensorDim[1])
     )
-    
-    print(" soft max param: ")
-    print(smp)
+
     encoder.setBytes(&smp, length: MemoryLayout<SoftmaxMetalParam>.size, index: 0)
     encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
     encoder.endEncoding()

@@ -50,7 +50,7 @@ public class Texture<P: PrecisionType>: Tensorial {
     guard  padToFourDim.cout() == 4 else {
       fatalError("- not support -")
     }
-    return metalTexture.toTensor(dim: (n: padToFourDim[0], c: padToFourDim[1], h: padToFourDim[2], w: padToFourDim[3]))
+    return metalTexture.toTensor(dim: (n: dim[0], c: dim[3], h: dim[1], w: dim[2]))
   }
   
   func realNHWC() -> [Float32] {
