@@ -11,51 +11,30 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#include <memory.h>
 #include "filter.h"
+#include <memory.h>
 #include "api.h"
 
 namespace paddle_mobile {
-  namespace fpga {
-    namespace filter{
+namespace fpga {
+namespace filter {
 
-      void convert_to_hwc(float** data_in, int num, int channel, int height, int width){
+void convert_to_hwc(float** data_in, int num, int channel, int height,
+                    int width) {}
 
-      }
+float find_max(float* data_in, int num) { return 0; }
 
+void quantize(float* data_in, int num) {}
 
-      float find_max(float* data_in, int num){
+void align_element(float** data_in, int num, int chw) {}
 
-        return 0;
+void align_num(float** data_in, int num_per_div_before_alignment, int num,
+               int chw) {}
 
+void reorder(float** data_in, int num_after_alignment, int chw) {}
 
-      }
+void interleave(float** data_in, int num_after_alignment, int chw) {}
 
-
-      void quantize(float* data_in, int num){
-
-      }
-
-
-      void align_element(float** data_in, int num, int chw){
-
-      }
-
-
-      void align_num(float** data_in, int num_per_div_before_alignment, int num, int chw){
-
-      }
-
-
-      void reorder(float** data_in, int num_after_alignment, int chw){
-
-      }
-
-
-      void interleave(float** data_in, int num_after_alignment, int chw){
-
-      }
-
-    }  // namespace filter
-  }  // namespace fpga
+}  // namespace filter
+}  // namespace fpga
 }  // namespace paddle_mobile

@@ -14,21 +14,22 @@ limitations under the License. */
 
 #pragma once
 
-
-#define FILTER_NUM_ALIGNMENT 32  //Filter number aligned to 32
-#define FILTER_ELEMENT_ALIGNMENT 16  //Filter element number aligned to 16
+#define FILTER_NUM_ALIGNMENT 32      // Filter number aligned to 32
+#define FILTER_ELEMENT_ALIGNMENT 16  // Filter element number aligned to 16
 
 namespace paddle_mobile {
-  namespace fpga {
-    namespace filter{
-      void convert_to_hwc(float** data_in, int num, int channel, int height, int width);
-      float find_max(float* data_in, int num);
-      void quantize(float* data_in, int num);
-      void align_element(float** data_in, int num, int chw);
-      void align_num(float** data_in, int num_per_div_before_alignment, int num, int chw);
-      void reorder(float** data_in, int num_after_alignment, int chw);
-      void interleave(float** data_in, int num_after_alignment, int chw);
+namespace fpga {
+namespace filter {
+void convert_to_hwc(float** data_in, int num, int channel, int height,
+                    int width);
+float find_max(float* data_in, int num);
+void quantize(float* data_in, int num);
+void align_element(float** data_in, int num, int chw);
+void align_num(float** data_in, int num_per_div_before_alignment, int num,
+               int chw);
+void reorder(float** data_in, int num_after_alignment, int chw);
+void interleave(float** data_in, int num_after_alignment, int chw);
 
-    }  // namespace filter
-  }  // namespace fpga
+}  // namespace filter
+}  // namespace fpga
 }  // namespace paddle_mobile
