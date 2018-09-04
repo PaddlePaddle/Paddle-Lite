@@ -81,6 +81,10 @@ void InnerKernelWithBias(int mc, int nc, float alpha, const float *a,
 void InnerKernelWithBn(int mc, int nc, float alpha, const float *a,
                        const float *b, float beta, float *c, float *C, int ldc,
                        bool relu, float *new_scale, float *new_bias);
+void InnerKernelWithBnAdd(int mc, int nc, float alpha, const float *a,
+                          const float *b, float beta, float *c, float *C,
+                          int ldc, bool relu, float *new_scale, float *new_bias,
+                          float *bias);
 void InnerKernelWithPRelu(int mc, int nc, const float *a, const float *b,
                           float *c, float *C, int ldc, float *p,
                           std::string mode, float *bias, float *bias1);
@@ -125,7 +129,8 @@ void WriteWithBn(int mc, int nc, float *c, float *C, int ldc, float *new_scale,
 // C = A * B, batchnorm(C), relu(C)
 void WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc,
                      float *new_scale, float *new_bias);
-
+void WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
+                        float *new_scale, float *new_bias, float *bias1);
 /*
 // 向量矩阵乘法结果回写
 // C = A * B
@@ -152,8 +157,7 @@ void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
 // 32位 float 矩阵乘法, 并对结果进行 batchnrom
 void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
                  const float *B, int ldb, float beta, float *C, int ldc,
-                 bool relu, float *new_scale, float *new_bias);
-
+                 bool relu, float *new_scale, float *new_bias, float *bias);
 void SgemmWithPRelu(int m, int n, int k, const float *A, int lda,
                     const float *B, int ldb, float *C, int ldc, float *p,
                     std::string mode, float *bias, float *bias1);
@@ -166,7 +170,7 @@ void Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
 // 32位 float 矩阵乘法, 并对结果进行 batchnrom（openmp 多线程版本）
 void SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A, int lda,
                      const float *B, int ldb, float beta, float *C, int ldc,
-                     bool relu, float *new_scale, float *new_bias);
+                     bool relu, float *new_scale, float *new_bias, float *bias);
 
 void SgemmWithPRelu_omp(int m, int n, int k, const float *A, int lda,
                         const float *B, int ldb, float *C, int ldc, float *p,

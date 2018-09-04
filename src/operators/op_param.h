@@ -1472,6 +1472,119 @@ class FusionConvAddBNReluParam : public OpParam {
 };
 #endif
 
+#ifdef FUSION_CONVBNADDRELU_OP
+template <typename Dtype>
+class FusionConvBNAddReluParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  FusionConvBNAddReluParam(const VariableNameMap &inputs,
+                           const VariableNameMap &outputs,
+                           const AttributeMap &attrs, const Scope &scope) {
+    bias_ = InputYFrom<GType>(inputs, scope);
+    axis_ = GetAttr<int>("axis", attrs);
+    filter_ = FilterFrom<GType>(inputs, scope);
+    input_ = InputFrom<GType>(inputs, scope);
+    output_ = OutFrom<GType>(outputs, scope);
+    strides_ = GetAttr<vector<int>>("strides", attrs);
+    paddings_ = GetAttr<vector<int>>("paddings", attrs);
+    dilations_ = GetAttr<vector<int>>("dilations", attrs);
+    groups = GetAttr<int>("groups", attrs);
+    input_bias_ = InputBiasFrom<GType>(inputs, scope);
+    input_mean_ = InputMeanFrom<GType>(inputs, scope);
+    input_scale_ = InputScaleFrom<GType>(inputs, scope);
+    input_variance_ = InputVarianceFrom<GType>(inputs, scope);
+    epsilon_ = GetAttr<float>("epsilon", attrs);
+    momentum_ = GetAttr<float>("momentum", attrs);
+    keyBNY_ = getkey("BNY", inputs, 0);
+    keyX_ = getkey("X", inputs, 0);
+    keyY_ = getkey("Y", inputs, 0);
+    if (keyX_ == keyBNY_) {
+      bias_ = InputYFrom<GType>(inputs, scope);
+    } else if (keyY_ == keyBNY_) {
+      bias_ = InputXFrom<GType>(inputs, scope);
+    }
+    //    is_test_ = GetAttr<bool>("is_test", attrs);
+  }
+  RType *Bias() const { return bias_; }
+
+  const int &Axis() const { return axis_; }
+
+  const RType *Input() const { return input_; }
+
+#ifdef PADDLE_MOBILE_FPGA
+  RType *Filter() const { return filter_; }
+#else
+  const RType *Filter() const { return filter_; }
+#endif
+
+  RType *Output() const { return output_; }
+
+  const vector<int> &Strides() const { return strides_; }
+
+  const vector<int> &Paddings() const { return paddings_; }
+
+  const vector<int> &Dilations() const { return dilations_; }
+
+  const int &Groups() const { return groups; }
+
+  const RType *InputBias() const { return input_bias_; }
+
+  const RType *InputMean() const { return input_mean_; }
+
+  const RType *InputScale() const { return input_scale_; }
+
+  const RType *InputVariance() const { return input_variance_; }
+
+  const float &Epsilon() const { return epsilon_; }
+
+  const float &Momentum() const { return momentum_; }
+
+  const bool &IsTest() const { return is_test_; }
+
+  void SetNewScale(RType *new_scale) { new_scale_ = new_scale; }
+
+  void SetNewBias(RType *new_bias) { new_bias_ = new_bias; }
+
+  const RType *NewScale() const { return new_scale_; }
+
+  const RType *NewBias() const { return new_bias_; }
+
+ protected:
+  RType *bias_;
+  int axis_;
+  RType *input_;
+  RType *output_;
+  RType *filter_;
+  vector<int> strides_;
+  vector<int> paddings_;
+  vector<int> dilations_;
+  int groups;
+  RType *input_bias_;
+  RType *input_mean_;
+  RType *input_scale_;
+  RType *input_variance_;
+  float epsilon_;
+  float momentum_;
+  bool is_test_;
+  RType *new_bias_;
+  RType *new_scale_;
+  std::string keyBNY_;
+  std::string keyX_;
+  std::string keyY_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::ConvArgs fpga_conv_args;
+
+ public:
+  const fpga::ConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::ConvArgs &args) { fpga_conv_args = args; }
+#endif
+};
+#endif
+
 #ifdef FUSION_CONVBN_OP
 template <typename Dtype>
 class FusionConvBNParam : public OpParam {
