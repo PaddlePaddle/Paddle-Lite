@@ -42,6 +42,15 @@ elseif("mobilenetssd" IN_LIST NET)
     # gen test
     ADD_EXECUTABLE(test-mobilenetssd net/test_mobilenet+ssd.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-mobilenetssd paddle-mobile)
+
+elseif("nlp" IN_LIST NET)
+    # gen test
+    ADD_EXECUTABLE(test-nlp net/test_nlp.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-nlp paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-gru-op  operators/test_gru_op.cpp test_helper.h  test_include.h)
+    target_link_libraries(test-gru-op paddle-mobile)
 else ()
 
     # gen test
