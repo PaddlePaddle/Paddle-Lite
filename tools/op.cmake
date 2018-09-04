@@ -114,6 +114,19 @@ if ("FPGAnets" IN_LIST NET)
   set(FOUND_MATCH ON)
 endif()
 
+if ("nlp" IN_LIST NET)
+  message("nlp enabled")
+  set(FUSION_FC_OP ON)
+  set(LOOKUP_OP ON)
+  set(GRU_OP ON)
+  set(CRF_OP ON)
+  set(CONCAT_OP ON)
+  set(ELEMENTWISEADD_OP ON)
+
+
+  set(FOUND_MATCH ON)
+endif()
+
 
 if(NOT FOUND_MATCH)
   message("--default--")
