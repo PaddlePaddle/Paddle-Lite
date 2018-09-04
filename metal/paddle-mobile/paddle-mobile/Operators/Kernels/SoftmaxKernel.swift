@@ -21,8 +21,13 @@ struct SoftmaxMetalParam {
 
 class SoftmaxKernel<P: PrecisionType>: Kernel, Computable{
   
+  var metalParam: SoftmaxMetalParam
   required init(device: MTLDevice, param: SoftmaxParam<P>) {
     param.output.initTexture(device: device, computePrecision: computePrecision)
+    metalParam = SoftmaxMetalParam.init(
+      N: Int32(param.input.tensorDim[0]),
+      K: Int32(param.input.tensorDim[1])
+    )
     if computePrecision == .Float32 {
       super.init(device: device, inFunctionName: "softmax")
     } else if computePrecision == .Float16 {
@@ -39,14 +44,7 @@ class SoftmaxKernel<P: PrecisionType>: Kernel, Computable{
     encoder.setTexture(param.input.metalTexture, index: 0)
     encoder.setTexture(param.output.metalTexture, index: 1)
     
-    var smp = SoftmaxMetalParam.init(
-      N: Int32(param.input.tensorDim[0]),
-      K: Int32(param.input.tensorDim[1])
-    )
-    
-    print(" soft max param: ")
-    print(smp)
-    encoder.setBytes(&smp, length: MemoryLayout<SoftmaxMetalParam>.size, index: 0)
+    encoder.setBytes(&metalParam, length: MemoryLayout<SoftmaxMetalParam>.size, index: 0)
     encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
     encoder.endEncoding()
   }
