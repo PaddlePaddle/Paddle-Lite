@@ -12,26 +12,34 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef POOL_OP
-
 #pragma once
 
-#include "framework/tensor.h"
-#ifdef __ARM_NEON
-#include <arm_neon.h>
-#endif  // __ARM_NEON
+#ifdef FUSION_CONVBNADDRELU_OP
+
+#include <vector>
+#include "framework/ddim.h"
+#include "framework/operator.h"
+#include "operators/math/conv_func.h"
+#include "operators/math/im2col.h"
+#include "operators/math/math_function.h"
+#include "operators/math/vol2col.h"
+#include "operators/op_param.h"
+
 namespace paddle_mobile {
 namespace operators {
-namespace math {
-using framework::Tensor;
-using std::vector;
 
-void Pool2x2Maxs2p0(vector<int> strides, vector<int> paddings,
-                    const Tensor *input, Tensor *output);
+using framework::DDim;
+using framework::OpKernelBase;
 
-void Pool2x2Avgs2p0(vector<int> strides, vector<int> paddings,
-                    const Tensor *in_x, Tensor *out);
-}  // namespace math
+template <typename DeviceType, typename T>
+class ConvBNAddReluKernel
+    : public OpKernelBase<DeviceType, FusionConvBNAddReluParam<DeviceType>> {
+ public:
+  void Compute(const FusionConvBNAddReluParam<DeviceType> &param) const;
+  bool Init(FusionConvBNAddReluParam<DeviceType> *param);
+};
+
 }  // namespace operators
 }  // namespace paddle_mobile
+
 #endif

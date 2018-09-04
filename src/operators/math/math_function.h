@@ -32,7 +32,7 @@ void matmulWithBn(const framework::Tensor &matrix_a, bool trans_a,
                   const framework::Tensor &matrix_b, bool trans_b, T alpha,
                   framework::Tensor *matrix_out, T beta, bool relu,
                   framework::Tensor *new_scale, framework::Tensor *new_bias,
-                  int group);
+                  int group, float *bias = nullptr);
 
 void matmulWithPRelu(const framework::Tensor &matrix_a, bool trans_a,
                      const framework::Tensor &matrix_b, bool trans_b,

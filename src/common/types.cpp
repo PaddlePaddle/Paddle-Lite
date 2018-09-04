@@ -26,6 +26,7 @@ const char *G_OP_TYPE_FUSION_CONV_ADD_RELU = "fusion_conv_add_relu";
 const char *G_OP_TYPE_FUSION_CONV_ADD_PRELU = "fusion_conv_add_prelu";
 const char *G_OP_TYPE_FUSION_CONV_ADD_ADD_PRELU = "fusion_conv_add_add_prelu";
 const char *G_OP_TYPE_FUSION_CONV_ADD_BN_RELU = "fusion_conv_add_bn_relu";
+const char *G_OP_TYPE_FUSION_CONV_BN_ADD_RELU = "fusion_conv_bn_add_relu";
 const char *G_OP_TYPE_FUSION_DWCONV_BN_RELU = "fusion_dwconv_bn_relu";
 const char *G_OP_TYPE_FUSION_CONV_BN_RELU = "fusion_conv_bn_relu";
 const char *G_OP_TYPE_FC = "fusion_fc";
@@ -79,6 +80,7 @@ std::unordered_map<
         {G_OP_TYPE_BOX_CODER,
          {{"PriorBox", "PriorBoxVar", "TargetBox"}, {"OutputBox"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_BN_RELU, {{"Input"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_CONV_BN_ADD_RELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_PRIOR_BOX, {{"Image", "Input"}, {"Boxes", "Variances"}}},
         {G_OP_TYPE_MULTICLASS_NMS, {{"BBoxes", "Scores"}, {"Out"}}},
         {G_OP_TYPE_FC, {{"X", "Y", "Z"}, {"Out"}}},
