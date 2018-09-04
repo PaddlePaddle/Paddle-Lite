@@ -24,67 +24,67 @@ limitations under the License. */
 #include "operators/kernel/conv_bn_add_relu_kernel.h"
 
 namespace paddle_mobile {
-    namespace operators {
-        using std::string;
-        using std::vector;
-        class FusionConvBNAddReluMatcher : public framework::FusionOpMatcher {
-        public:
-            FusionConvBNAddReluMatcher() {
-                node_ = framework::Node(G_OP_TYPE_CONV);
-                node_ > std::make_shared<framework::Node>(G_OP_TYPE_BATCHNORM) >
-                std::make_shared<framework::Node>(G_OP_TYPE_ELEMENTWISE_ADD) >
-                std::make_shared<framework::Node>(G_OP_TYPE_RELU);
-            }
+namespace operators {
+using std::string;
+using std::vector;
+class FusionConvBNAddReluMatcher : public framework::FusionOpMatcher {
+ public:
+  FusionConvBNAddReluMatcher() {
+    node_ = framework::Node(G_OP_TYPE_CONV);
+    node_ > std::make_shared<framework::Node>(G_OP_TYPE_BATCHNORM) >
+        std::make_shared<framework::Node>(G_OP_TYPE_ELEMENTWISE_ADD) >
+        std::make_shared<framework::Node>(G_OP_TYPE_RELU);
+  }
 
-            void FolderNodes(
-                    framework::Node *node,
-                    std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
-                node->Folder(node_.Depth(), Type(),
-                             {{G_OP_TYPE_ELEMENTWISE_ADD, {{"Y", "Y"},{"X","X"}}},
-                              {G_OP_TYPE_BATCHNORM,
-                                                          {{"Scale", "Scale"},
-                                                                  {"Mean", "Mean"},
-                                                                  {"Bias", "Bias"},
-                                                                  {"Variance", "Variance"},
-                                                                  {"Y","BNY"}}}},
-                             removed_nodes);
-            }
+  void FolderNodes(
+      framework::Node *node,
+      std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
+    node->Folder(node_.Depth(), Type(),
+                 {{G_OP_TYPE_ELEMENTWISE_ADD, {{"Y", "Y"}, {"X", "X"}}},
+                  {G_OP_TYPE_BATCHNORM,
+                   {{"Scale", "Scale"},
+                    {"Mean", "Mean"},
+                    {"Bias", "Bias"},
+                    {"Variance", "Variance"},
+                    {"Y", "BNY"}}}},
+                 removed_nodes);
+  }
 
-            std::string Type() { return G_OP_TYPE_FUSION_CONV_BN_ADD_RELU; }
-            std::vector<std::pair<int, std::string>> NeedCheck() {
-                DLOG << " conv bn add relu check add X ";
-                return {{2, "Y"}, {2, "X"}};
-            }
-        };
+  std::string Type() { return G_OP_TYPE_FUSION_CONV_BN_ADD_RELU; }
+  std::vector<std::pair<int, std::string>> NeedCheck() {
+    DLOG << " conv bn add relu check add X ";
+    return {{2, "Y"}, {2, "X"}};
+  }
+};
 
-        template <typename DeviceType, typename T>
-        class FusionConvBNAddReluOp
-                : public framework::OperatorWithKernel<
-                        DeviceType, FusionConvBNAddReluParam<DeviceType>,
-                        operators::ConvBNAddReluKernel<DeviceType, T>> {
-        public:
-            FusionConvBNAddReluOp(const string &type, const VariableNameMap &inputs,
-                                  const VariableNameMap &outputs,
-                                  const framework::AttributeMap &attrs,
-                                  std::shared_ptr<framework::Scope> scope)
-                    : framework::OperatorWithKernel<
-                    DeviceType, FusionConvBNAddReluParam<DeviceType>,
-                    operators::ConvBNAddReluKernel<DeviceType, T>>(
-                    type, inputs, outputs, attrs, scope) {}
+template <typename DeviceType, typename T>
+class FusionConvBNAddReluOp
+    : public framework::OperatorWithKernel<
+          DeviceType, FusionConvBNAddReluParam<DeviceType>,
+          operators::ConvBNAddReluKernel<DeviceType, T>> {
+ public:
+  FusionConvBNAddReluOp(const string &type, const VariableNameMap &inputs,
+                        const VariableNameMap &outputs,
+                        const framework::AttributeMap &attrs,
+                        std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<
+            DeviceType, FusionConvBNAddReluParam<DeviceType>,
+            operators::ConvBNAddReluKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
 
-            using framework::OperatorWithKernel<
-                    DeviceType, FusionConvBNAddReluParam<DeviceType>,
-                    operators::ConvBNAddReluKernel<DeviceType, T>>::OperatorWithKernel;
-            void InferShape() const override;
+  using framework::OperatorWithKernel<
+      DeviceType, FusionConvBNAddReluParam<DeviceType>,
+      operators::ConvBNAddReluKernel<DeviceType, T>>::OperatorWithKernel;
+  void InferShape() const override;
 
-        protected:
-        };
+ protected:
+};
 
 #ifdef PADDLE_MOBILE_CPU
 
 #ifndef FUSION_CONV_BN_ADD_RELU_REGISTER
-        static framework::FusionOpRegistrar fusion_conv_bn_add_relu_registrar(
-                new FusionConvBNAddReluMatcher());
+static framework::FusionOpRegistrar fusion_conv_bn_add_relu_registrar(
+    new FusionConvBNAddReluMatcher());
 #define FUSION_CONV_BN_ADD_RELU_REGISTER
 #endif
 
@@ -92,7 +92,7 @@ namespace paddle_mobile {
 
 #ifdef PADDLE_MOBILE_MALI_GPU
 
-        #ifndef FUSION_CONV_BN_ADD_RELU_REGISTER
+#ifndef FUSION_CONV_BN_ADD_RELU_REGISTER
 static framework::FusionOpRegistrar fusion_conv_bn_add_relu_registrar(
     new FusionConvBNAddReluMatcher());
 #define FUSION_CONV_BN_ADD_RELU_REGISTER
@@ -102,7 +102,7 @@ static framework::FusionOpRegistrar fusion_conv_bn_add_relu_registrar(
 
 #ifdef PADDLE_MOBILE_FPGA
 
-        #ifndef FUSION_CONV_BN_ADD_RELU_REGISTER
+#ifndef FUSION_CONV_BN_ADD_RELU_REGISTER
 static framework::FusionOpRegistrar fusion_conv_bn_add_relu_registrar(
     new FusionConvBNAddReluMatcher());
 #define FUSION_CONV_BN_ADD_RELU_REGISTER
@@ -110,7 +110,7 @@ static framework::FusionOpRegistrar fusion_conv_bn_add_relu_registrar(
 
 #endif
 
-    }  // namespace operators
+}  // namespace operators
 }  // namespace paddle_mobile
 
 #ifdef PADDLE_MOBILE_CPU

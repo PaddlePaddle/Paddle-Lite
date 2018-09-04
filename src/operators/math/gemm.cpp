@@ -716,6 +716,27 @@ void InnerKernelWithBn(int mc, int nc, float alpha, const float *a,
   }
 }
 
+// 分块矩阵乘法
+void InnerKernelWithBnAdd(int mc, int nc, float alpha, const float *a,
+                          const float *b, float beta, float *c, float *C,
+                          int ldc, bool relu, float *new_scale, float *new_bias,
+                          float *bias) {
+#pragma omp parallel for
+  for (int j = 0; j < nc; j += NR) {
+    for (int i = 0; i < mc; i += MR) {
+#if __aarch64__
+      // AddDot8x12(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+      AddDot6x16(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+#else
+      // AddDot4x4(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+      // AddDot4x8(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+      AddDot6x8(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+#endif
+    }
+  }
+  WriteWithBnAddRelu(mc, nc, c, C, ldc, new_scale, new_bias, bias);
+}
+
 void InnerKernelWithPRelu(int mc, int nc, const float *a, const float *b,
                           float *c, float *C, int ldc, float *p,
                           std::string mode, float *bias, float *bias1) {
@@ -1167,6 +1188,59 @@ void WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc,
     if (_nc1 != 0) {
       cv = vld1q_f32(c_ptr);
       cv = vmlaq_n_f32(bias, cv, scale0);
+      cv = vmaxq_f32(cv, zero);
+      if (_nc1 >= 1) {
+        vst1q_lane_f32(C_ptr, cv, 0);
+        C_ptr++;
+      }
+      if (_nc1 >= 2) {
+        vst1q_lane_f32(C_ptr, cv, 1);
+        C_ptr++;
+      }
+      if (_nc1 >= 3) {
+        vst1q_lane_f32(C_ptr, cv, 2);
+      }
+    }
+  }
+}
+
+// C = A * B, batchnorm(C),C = C + bias; relu(C)
+void WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
+                        float *new_scale, float *new_bias, float *bias) {
+  int nc1 = nc / 4;
+  int _nc1 = nc % 4;
+
+  float *c_ptr, *C_ptr, *bias_ptr;
+  float32x4_t cv;
+  float32x4_t nbias;
+  float32x2_t scale;
+  float32x4_t biasv;
+  float32x4_t zero = vdupq_n_f32(0.0);
+  for (int i = 0; i < mc; ++i) {
+    c_ptr = c + i * NC;
+    C_ptr = C + i * ldc;
+    bias_ptr = bias + i * ldc;
+    nbias = vld1q_dup_f32(new_bias);
+    scale = vld1_dup_f32(new_scale);
+    new_bias++;
+    new_scale++;
+    float scale0 = vget_lane_f32(scale, 0);
+    for (int j = 0; j < nc1; ++j) {
+      cv = vld1q_f32(c_ptr);
+      biasv = vld1q_f32(bias_ptr);
+      cv = vmlaq_n_f32(nbias, cv, scale0);
+      cv = vaddq_f32(cv, biasv);
+      cv = vmaxq_f32(cv, zero);
+      vst1q_f32(C_ptr, cv);
+      c_ptr += 4;
+      C_ptr += 4;
+      bias_ptr += 4;
+    }
+    if (_nc1 != 0) {
+      cv = vld1q_f32(c_ptr);
+      biasv = vld1q_f32(bias_ptr);
+      cv = vmlaq_n_f32(nbias, cv, scale0);
+      cv = vaddq_f32(cv, biasv);
       cv = vmaxq_f32(cv, zero);
       if (_nc1 >= 1) {
         vst1q_lane_f32(C_ptr, cv, 0);
@@ -2426,6 +2500,59 @@ void WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc, float *scale,
         "q8", "q10", "q11", "q12", "q13", "q14");
 }
 
+// C = A * B, batchnorm(C),C = C + bias; relu(C)
+void WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
+                        float *new_scale, float *new_bias, float *bias) {
+  int nc1 = nc / 4;
+  int _nc1 = nc % 4;
+
+  float *c_ptr, *C_ptr, *bias_ptr;
+  float32x4_t cv;
+  float32x4_t nbias;
+  float32x2_t scale;
+  float32x4_t biasv;
+  float32x4_t zero = vdupq_n_f32(0.0);
+  for (int i = 0; i < mc; ++i) {
+    c_ptr = c + i * NC;
+    C_ptr = C + i * ldc;
+    bias_ptr = bias + i * ldc;
+    nbias = vld1q_dup_f32(new_bias);
+    scale = vld1_dup_f32(new_scale);
+    new_bias++;
+    new_scale++;
+    float scale0 = vget_lane_f32(scale, 0);
+    for (int j = 0; j < nc1; ++j) {
+      cv = vld1q_f32(c_ptr);
+      biasv = vld1q_f32(bias_ptr);
+      cv = vmlaq_n_f32(nbias, cv, scale0);
+      cv = vaddq_f32(cv, biasv);
+      cv = vmaxq_f32(cv, zero);
+      vst1q_f32(C_ptr, cv);
+      c_ptr += 4;
+      C_ptr += 4;
+      bias_ptr += 4;
+    }
+    if (_nc1 != 0) {
+      cv = vld1q_f32(c_ptr);
+      biasv = vld1q_f32(bias_ptr);
+      cv = vmlaq_n_f32(nbias, cv, scale0);
+      cv = vaddq_f32(cv, biasv);
+      cv = vmaxq_f32(cv, zero);
+      if (_nc1 >= 1) {
+        vst1q_lane_f32(C_ptr, cv, 0);
+        C_ptr++;
+      }
+      if (_nc1 >= 2) {
+        vst1q_lane_f32(C_ptr, cv, 1);
+        C_ptr++;
+      }
+      if (_nc1 >= 3) {
+        vst1q_lane_f32(C_ptr, cv, 2);
+      }
+    }
+  }
+}
+
   /*
   // C = A * B
   void VecWriteBasic(int n, float *c, float *C, int ldc) {
@@ -2893,6 +3020,68 @@ void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
   paddle_mobile::memory::Free(zero);
 }
 
+void SgemmWithBnAdd(int m, int n, int k, float alpha, const float *A, int lda,
+                    const float *B, int ldb, float beta, float *C, int ldc,
+                    bool relu, float *new_scale, float *new_bias, float *bias) {
+  // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
+  // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
+  int L1 = 32 * 1024;
+  int L2 = 512 * 1024;
+
+  KC = k;
+  MC = L1 / (KC * sizeof(float));
+  NC = L2 / (KC * sizeof(float));
+
+  // make sure MC is multiple of MR, and NC is multiple of NR
+  int mblock_num = (m + MC - 1) / MC;
+  MC = (m + mblock_num - 1) / mblock_num;
+  MC = (MC + MR - 1) / MR * MR;
+  //  DLOG << "mblock_num = " << mblock_num << ", MC = " << MC << "\n";
+
+  int nblock_num = (n + NC - 1) / NC;
+  NC = (n + nblock_num - 1) / nblock_num;
+  NC = (NC + NR - 1) / NR * NR;
+  //  DLOG << "nblock_num = " << nblock_num << ", NC = " << NC << "\n";
+
+  packedA = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * MC * KC));
+  packedB = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * KC * NC));
+  packedC = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * MC * NC));
+  zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
+  memset(static_cast<void *>(zero), 0, sizeof(float) * KC);
+
+  int mc, nc;
+  for (int j = 0; j < n; j += NC) {
+    nc = s_min(n - j, NC);
+#if __aarch64__
+    // PackMatrixB_12c(KC, nc, nc % NR, &B(0, j), ldb, packedB);
+    PackMatrixB_16c(KC, nc, nc % NR, &B(0, j), ldb, packedB);
+#else
+    PackMatrixB_8c(KC, nc, nc % NR, &B(0, j), ldb, packedB);
+#endif
+    for (int i = 0; i < m; i += MC) {
+      mc = s_min(m - i, MC);
+#if __aarch64__
+      PackMatrixA_6r(mc, KC, mc % MR, &A(i, 0), lda, packedA);
+      // PackMatrixA_8r(mc, KC, mc % MR, &A(i, 0), lda, packedA);
+#else
+      PackMatrixA_6r(mc, KC, mc % MR, &A(i, 0), lda, packedA);
+#endif
+
+      InnerKernelWithBnAdd(mc, nc, alpha, packedA, packedB, beta, packedC,
+                           &C(i, j), ldc, relu, new_scale + i, new_bias + i,
+                           bias + i * ldc + j);
+    }
+  }
+
+  paddle_mobile::memory::Free(packedA);
+  paddle_mobile::memory::Free(packedB);
+  paddle_mobile::memory::Free(packedC);
+  paddle_mobile::memory::Free(zero);
+}
+
 void SgemmWithPRelu(int m, int n, int k, const float *A, int lda,
                     const float *B, int ldb, float *C, int ldc, float *p,
                     std::string mode, float *bias, float *bias1) {
@@ -3167,6 +3356,115 @@ void SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A, int lda,
       procPackB(KC, nc, nc % NR, &B(0, j), ldb, local_B);
       InnerKernelWithBn(m, nc, alpha, packedA, local_B, beta, local_C, &C(0, j),
                         ldc, relu, new_scale, new_bias);
+    }
+  }
+
+  paddle_mobile::memory::Free(packedA);
+  paddle_mobile::memory::Free(packedB);
+  paddle_mobile::memory::Free(packedC);
+  paddle_mobile::memory::Free(zero);
+}
+
+void SgemmWithBnAdd_omp(int m, int n, int k, float alpha, const float *A,
+                        int lda, const float *B, int ldb, float beta, float *C,
+                        int ldc, bool relu, float *new_scale, float *new_bias,
+                        float *bias) {
+#ifdef _OPENMP
+  int max_threads = omp_get_max_threads();
+#else
+  int max_threads = 1;
+#endif
+
+  int L1 = 64 / max_threads * 1024;
+  KC = k;
+  if (m > n) {
+    // 对 A 分块
+    MC = L1 / (KC * sizeof(float));
+    int mblock_num = (m + MC - 1) / MC;
+    MC = (m + mblock_num - 1) / mblock_num;
+    MC = (MC + MR - 1) / MR * MR;
+    // 补齐 B
+    NC = (n + NR - 1) / NR * NR;
+
+#if __aarch64__
+    procPackA = PackMatrixA_6r;
+    procPackB = PackMatrixB_omp_16c;
+    procAddDot = AddDot6x16;
+#else
+    procPackA = PackMatrixA_6r;
+    procPackB = PackMatrixB_omp_8c;
+    procAddDot = AddDot6x8;
+#endif
+
+    packedB = static_cast<float *>(
+        paddle_mobile::memory::Alloc(sizeof(float) * KC * NC));
+    procPackB(KC, NC, NC % NR, B, ldb, packedB);
+    packedA = static_cast<float *>(
+        paddle_mobile::memory::Alloc(sizeof(float) * MC * KC * max_threads));
+  } else {
+    // 对 B 分块
+    NC = L1 / (KC * sizeof(float));
+    int nblock_num = (n + NC - 1) / NC;
+    NC = (n + nblock_num - 1) / nblock_num;
+    NC = (NC + NR - 1) / NR * NR;
+    // 补齐 A
+    MC = (m + MR - 1) / MR * MR;
+
+#if __aarch64__
+    procPackA = PackMatrixA_omp_6r;
+    procPackB = PackMatrixB_16c;
+    procAddDot = AddDot6x16;
+#else
+    procPackA = PackMatrixA_omp_6r;
+    procPackB = PackMatrixB_8c;
+    procAddDot = AddDot6x8;
+#endif
+
+    packedA = static_cast<float *>(
+        paddle_mobile::memory::Alloc(sizeof(float) * MC * KC));
+    procPackA(MC, KC, MC % MR, A, lda, packedA);
+    packedB = static_cast<float *>(
+        paddle_mobile::memory::Alloc(sizeof(float) * KC * NC * max_threads));
+  }
+  zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
+  memset(static_cast<void *>(zero), 0, sizeof(float) * KC);
+  packedC = static_cast<float *>(
+      paddle_mobile::memory::Alloc(sizeof(float) * MC * NC * max_threads));
+
+  if (m > n) {
+#pragma omp parallel for
+    for (int i = 0; i < m; i += MC) {
+#ifdef _OPENMP
+      int local_threads = omp_get_thread_num();
+#else
+      int local_threads = 0;
+#endif
+
+      int mc;
+      mc = s_min(m - i, MC);
+      float *local_A = packedA + MC * KC * local_threads;
+      float *local_C = packedC + MC * NC * local_threads;
+      procPackA(mc, KC, mc % MR, &A(i, 0), lda, local_A);
+      InnerKernelWithBnAdd(mc, n, alpha, local_A, packedB, beta, local_C,
+                           &C(i, 0), ldc, relu, new_scale + i, new_bias + i,
+                           bias + i * ldc);
+    }
+  } else {
+#pragma omp parallel for
+    for (int j = 0; j < n; j += NC) {
+#ifdef _OPENMP
+      int local_threads = omp_get_thread_num();
+#else
+      int local_threads = 0;
+#endif
+
+      int nc;
+      nc = s_min(n - j, NC);
+      float *local_B = packedB + KC * NC * local_threads;
+      float *local_C = packedC + MC * NC * local_threads;
+      procPackB(KC, nc, nc % NR, &B(0, j), ldb, local_B);
+      InnerKernelWithBnAdd(m, nc, alpha, packedA, local_B, beta, local_C,
+                           &C(0, j), ldc, relu, new_scale, new_bias, bias + j);
     }
   }
 
