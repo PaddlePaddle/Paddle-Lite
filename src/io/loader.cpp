@@ -33,9 +33,7 @@ void InitMemoryFromProgram(
     for (const auto &var_desc : block->Vars()) {
       auto var = scope.get()->Var(var_desc->Name());
       if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
-        if (var_desc->Persistable() &&
-            var_desc->Type() != framework::VARTYPE_TYPE_FEED_MINIBATCH &&
-            var_desc->Type() != framework::VARTYPE_TYPE_FETCH_LIST) {
+        if (var_desc->Persistable()) {
           auto dim = var_desc->Tensor_desc().Dims();
           auto tensor = var->GetMutable<framework::LoDTensor>();
           tensor->Resize(framework::make_ddim(dim));
