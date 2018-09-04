@@ -25,9 +25,29 @@ struct PoolMetalParam {
 }
 
 class PoolKernel<P: PrecisionType>: Kernel, Computable{
-  
+  var metalParam: PoolMetalParam
   required init(device: MTLDevice, param: PoolParam<P>) {
     param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: computePrecision)
+    
+    var poolType: Int32
+    switch param.poolType {
+    case "max":
+      poolType = 0
+    case "avg":
+      poolType = 1
+    default:
+      fatalError()
+    }
+    metalParam = PoolMetalParam.init(
+      ksizeX: param.ksize[0],
+      ksizeY: param.ksize[1],
+      strideX: param.stride[0],
+      strideY: param.stride[1],
+      paddingX: param.padding[0],
+      paddingY: param.padding[1],
+      poolType: poolType
+    )
+    
     if computePrecision == .Float32 {
       super.init(device: device, inFunctionName: "pool")
     } else if computePrecision == .Float16 {
@@ -43,25 +63,8 @@ class PoolKernel<P: PrecisionType>: Kernel, Computable{
     }
     encoder.setTexture(param.input.metalTexture, index: 0)
     encoder.setTexture(param.output.metalTexture, index: 1)
-    var poolType: Int32
-    switch param.poolType {
-    case "max":
-      poolType = 0
-    case "avg":
-      poolType = 1
-    default:
-      throw PaddleMobileError.predictError(message: " unknown pooltype " + param.poolType)
-    }
-    var pmp = PoolMetalParam.init(
-      ksizeX: param.ksize[0],
-      ksizeY: param.ksize[1],
-      strideX: param.stride[0],
-      strideY: param.stride[1],
-      paddingX: param.padding[0],
-      paddingY: param.padding[1],
-      poolType: poolType
-    )
-    encoder.setBytes(&pmp, length: MemoryLayout<PoolMetalParam>.size, index: 0)
+
+    encoder.setBytes(&metalParam, length: MemoryLayout<PoolMetalParam>.size, index: 0)
     encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
     encoder.endEncoding()
   }
