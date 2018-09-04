@@ -26,8 +26,14 @@ limitations under the License. */
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <vector>
 
 #include "api.h"
+#include "bias_scale.h"
+#include "common/enforce.h"
+#include "common/types.h"
+#include "filter.h"
+#include "image.h"
 
 #define FPGA_TEST_MODE
 #ifdef FPGA_TEST_MODE
@@ -162,6 +168,60 @@ int PerformBypass(const struct BypassArgs &args) {
 #endif
 
   return do_ioctl(IOCTL_CONFIG_BYPASS, &args);
+}
+
+void format_image(framework::Tensor *image_tensor) {
+  auto dims = image_tensor->dims();
+  int channel = dims[1], height = dims[2], width = dims[3];
+  auto data_ptr = image_tensor->mutable_data<float>();
+  size_t memory_size = channel * height * width * sizeof(float);
+  float *new_data = (float *)fpga_malloc(memory_size);
+  fpga_copy(new_data, data_ptr, memory_size);
+  image::format_image(&new_data, channel, height, width);
+  image_tensor->reset_data_ptr(new_data);
+}
+
+void format_ofm(framework::Tensor *ofm_tensor) {
+  auto dims = ofm_tensor->dims();
+  int channel = dims[1], height = dims[2], width = dims[3];
+  size_t memory_size =
+      height * align_to_x(channel * width, IMAGE_ALIGNMENT) * sizeof(half);
+  ofm_tensor->reset_data_ptr(fpga_malloc(memory_size));
+}
+
+void format_filter(framework::Tensor *filter_tensor, int group_num) {
+  auto dims = filter_tensor->dims();
+  int num = dims[0], channel = dims[1], height = dims[2], width = dims[3];
+  auto data_ptr = filter_tensor->mutable_data<float>();
+  size_t memory_size = num * channel * height * width * sizeof(float);
+  float *new_data = (float *)fpga_malloc(memory_size);
+  fpga_copy(new_data, data_ptr, memory_size);
+  float max_value = filter::find_max(new_data, num * channel * height * width);
+  filter::format_filter(&new_data, num, channel, height, width, group_num,
+                        max_value);
+  filter_tensor->reset_data_ptr(new_data);
+}
+
+void format_fc_matrix(framework::Tensor *filter_tensor, int group_num,
+                      int height, int width) {
+  auto dims = filter_tensor->dims();
+  PADDLE_MOBILE_ENFORCE(dims[0] % (height * width) == 0,
+                        "Filter number should be divisible by group number");
+  int num = dims[1], channel = dims[0] / height / width;
+  auto data_ptr = filter_tensor->mutable_data<float>();
+  size_t memory_size = num * channel * height * width * sizeof(float);
+  float *new_data = (float *)fpga_malloc(memory_size);
+  fpga_copy(new_data, data_ptr, memory_size);
+  float max_value = filter::find_max(new_data, num * channel * height * width);
+  filter::format_filter(&new_data, num, channel, height, width, group_num,
+                        max_value);
+  filter_tensor->reset_data_ptr(new_data);
+}
+
+void format_bias_scale_array(float **bias_scale_array,
+                             int element_num_per_division, int num) {
+  bias_scale::format_bias_scale_array(bias_scale_array,
+                                      element_num_per_division, num);
 }
 
 }  // namespace fpga
