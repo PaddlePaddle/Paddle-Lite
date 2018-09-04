@@ -157,10 +157,7 @@ void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
 // 32位 float 矩阵乘法, 并对结果进行 batchnrom
 void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
                  const float *B, int ldb, float beta, float *C, int ldc,
-                 bool relu, float *new_scale, float *new_bias);
-void SgemmWithBnAdd(int m, int n, int k, float alpha, const float *A, int lda,
-                    const float *B, int ldb, float beta, float *C, int ldc,
-                    bool relu, float *new_scale, float *new_bias, float *bias);
+                 bool relu, float *new_scale, float *new_bias, float *bias);
 void SgemmWithPRelu(int m, int n, int k, const float *A, int lda,
                     const float *B, int ldb, float *C, int ldc, float *p,
                     std::string mode, float *bias, float *bias1);
@@ -173,12 +170,7 @@ void Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
 // 32位 float 矩阵乘法, 并对结果进行 batchnrom（openmp 多线程版本）
 void SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A, int lda,
                      const float *B, int ldb, float beta, float *C, int ldc,
-                     bool relu, float *new_scale, float *new_bias);
-// 32位 float 矩阵乘法, 并对结果进行 batchnorm和add（openmp 多线程版本）
-void SgemmWithBnAdd_omp(int m, int n, int k, float alpha, const float *A,
-                        int lda, const float *B, int ldb, float beta, float *C,
-                        int ldc, bool relu, float *new_scale, float *new_bias,
-                        float *bias);
+                     bool relu, float *new_scale, float *new_bias, float *bias);
 
 void SgemmWithPRelu_omp(int m, int n, int k, const float *A, int lda,
                         const float *B, int ldb, float *C, int ldc, float *p,
