@@ -11,24 +11,23 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
+#ifdef LOOKUP_OP
 
-#ifdef CONCAT_OP
-
-#include "operators/kernel/concat_kernel.h"
-#include "operators/kernel/central-arm-func/concat_arm_func.h"
+#include "operators/kernel/lookup_kernel.h"
+#include "operators/kernel/central-arm-func/lookup_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ConcatKernel<CPU, float>::Init(ConcatParam<CPU> *param) {
+bool LookupKernel<CPU, float>::Init(LookupParam<CPU> *param) {
   return true;
 }
 
 template <>
-void ConcatKernel<CPU, float>::Compute(const ConcatParam<CPU> &param) const {
-  ConcatCompute<float>(param);
-  param.Out()->set_lod(param.Inputs()[0]->lod());
+void LookupKernel<CPU, float>::Compute(const LookupParam<CPU> &param) const {
+  LookupCompute<float>(param);
+  param.Out()->set_lod(param.InputIds()->lod());
 }
 
 }  // namespace operators

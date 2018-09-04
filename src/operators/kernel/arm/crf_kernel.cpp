@@ -12,24 +12,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef CONCAT_OP
+#ifdef CRF_OP
 
-#include "operators/kernel/concat_kernel.h"
-#include "operators/kernel/central-arm-func/concat_arm_func.h"
+#include "operators/kernel/crf_kernel.h"
+#include "common/types.h"
+#include "operators/kernel/central-arm-func/crf_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ConcatKernel<CPU, float>::Init(ConcatParam<CPU> *param) {
+bool CrfKernel<CPU, float>::Init(CrfParam<CPU> *param) {
   return true;
 }
 
 template <>
-void ConcatKernel<CPU, float>::Compute(const ConcatParam<CPU> &param) const {
-  ConcatCompute<float>(param);
-  param.Out()->set_lod(param.Inputs()[0]->lod());
+void CrfKernel<CPU, float>::Compute(const CrfParam<CPU> &param) const {
+  CrfCompute<float>(param);
 }
+
+template class CrfKernel<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile

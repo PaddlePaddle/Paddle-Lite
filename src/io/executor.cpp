@@ -54,8 +54,11 @@ char *Get_binary_data(std::string filename) {
 #pragma mark - executor
 template <typename Dtype, Precision P>
 Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
-                             bool use_optimize)
-    : program_(p), batch_size_(batch_size), use_optimize_(use_optimize) {
+                             bool use_optimize, bool loddable)
+    : program_(p),
+      batch_size_(batch_size),
+      use_optimize_(use_optimize),
+      loddable_(loddable) {
   if (use_optimize_) {
     to_predict_program_ = program_.optimizeProgram;
   } else {
@@ -79,7 +82,12 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
       auto op_base = framework::OpRegistry<Dtype>::CreateOp(
           op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(),
           program_.scope);
-      op_base->InferShape();
+      DLOG << "executer in loaddable mode: " << loddable_;
+      // use pre_infershape to pre resize , but if u use an lod mode tensor u
+      // need to resize in runtime
+      if (!loddable_) {
+        op_base->InferShape();
+      }
       ops_of_block_[*block_desc.get()].push_back(op_base);
 #ifdef PADDLE_EXECUTOR_MULTITHREAD
       depManager[i].analysisDep(ops_of_block_[*block_desc.get()]);
@@ -225,9 +233,18 @@ void Executor<Dtype, P>::InitMemory() {
         delete origin_data;
       } else {
         if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
-          auto tensor = var->template GetMutable<framework::LoDTensor>();
+          DLOG << "var_desc->Name():  " << var_desc->Name();
+          DLOG << "var_desc->Tensor_desc().DataType():  "
+               << var_desc->Tensor_desc().DataType();
+          bool is_mute_match;
+          framework::LoDTensor *tensor = nullptr;
 
-          tensor->template mutable_data<Ptype>();
+          is_mute_match = varInputMemory(var_desc, var, tensor);
+
+          PADDLE_MOBILE_ENFORCE(
+              is_mute_match,
+              "got unhandled var_desc->Tensor_desc().DataType(): %d",
+              var_desc->Tensor_desc().DataType());
         }
       }
     }
@@ -257,14 +274,64 @@ void Executor<Dtype, P>::InitCombineMemory() {
         LoadMemory(*var_desc, tensor, &data);
       } else {
         if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
-          auto tensor = var->template GetMutable<framework::LoDTensor>();
-          tensor->template mutable_data<Ptype>();
+          DLOG << "var_desc->Name():  " << var_desc->Name();
+          DLOG << "var_desc->Tensor_desc().DataType():  "
+               << var_desc->Tensor_desc().DataType();
+          bool is_mute_match = false;
+          framework::LoDTensor *tensor;
+
+          is_mute_match = varInputMemory(var_desc, var, tensor);
+
+          PADDLE_MOBILE_ENFORCE(
+              is_mute_match,
+              "got unhandled var_desc->Tensor_desc().DataType(): %d",
+              var_desc->Tensor_desc().DataType());
         }
       }
     }
   }
   delete origin_data;
   LOG(kLOG_INFO) << " end init combine memory ";
+}
+template <typename Dtype, Precision P>
+bool Executor<Dtype, P>::varInputMemory(
+    const std::shared_ptr<framework::VarDesc> &var_desc, Variable *var,
+    framework::LoDTensor *tensor) const {
+  bool is_mute_match = false;
+  switch (var_desc->Tensor_desc().DataType()) {
+    case framework::VARTYPE_TYPE_FP16: {
+      break;
+    }
+
+    case framework::VARTYPE_TYPE_FP32: {
+      tensor = var->template GetMutable<framework::LoDTensor>();
+      tensor->template mutable_data<Ptype>();
+      is_mute_match = true;
+      break;
+    }
+
+    case framework::VARTYPE_TYPE_FP64: {
+      break;
+    }
+
+    case framework::VARTYPE_TYPE_INT32: {
+      break;
+    }
+
+    case framework::VARTYPE_TYPE_INT64: {
+      tensor = var->template GetMutable<framework::LoDTensor>();
+      tensor->template mutable_data<int64_t>();
+      is_mute_match = true;
+      break;
+    }
+    case framework::VARTYPE_TYPE_BOOL: {
+      break;
+    }
+
+    default: { break; }
+  }
+
+  return is_mute_match;
 }
 
 template <typename Dtype, Precision P>
@@ -278,6 +345,7 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
   std::shared_ptr<framework::BlockDesc> to_predict_block =
       to_predict_program_->Block(0);
   auto &ops = ops_of_block_[*to_predict_block.get()];
+
 #ifdef PADDLE_MOBILE_PROFILE
   std::vector<ProfInfo> profile(ops.size());
 #endif
@@ -342,6 +410,7 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
     clock_gettime(CLOCK_MONOTONIC, &ts);
     profile[i].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
 #endif
+    DLOG << "executer Predict in3.3";
 
     // to Run
     ops[i]->Run();
@@ -351,6 +420,8 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
 #endif
   }
 #endif
+  DLOG << "executer Predict in4";
+
   auto last_op = ops.rbegin();
 
   auto output_map = (*last_op)->Outputs();
@@ -377,6 +448,7 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
   fprintf(df, "}\n");
   fclose(df);
 #endif
+  DLOG << "executer Predict in5";
 
   //  FILE *pf = fopen("profile.out", "w");
   std::unordered_map<std::string, uint64_t> _tp;
@@ -389,6 +461,7 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
     //            pInfo.tid, pInfo.runBegin, pInfo.runEnd, timeCost);
   }
   //  fclose(pf);
+  DLOG << "executer Predict in6";
 
   printf("====================[ profile ]======================\n");
   using prof_t = std::pair<std::string, uint64_t>;
@@ -409,9 +482,184 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
   }
   printf("====================[---------]======================\n");
 #endif
+  DLOG << "executer Predict out";
 
   return std::make_shared<framework::Tensor>(framework::Tensor(*output_tensor));
 }
+
+template <typename Dtype, Precision P>
+std::shared_ptr<framework::LoDTensor> Executor<Dtype, P>::PredictLod(
+    const framework::LoDTensor &t) {
+  DLOG << "execute  PredictLod :lod" << t.lod();
+
+  DLOG << "executer Predict in";
+  framework::Variable *g_feed_value = program_.scope->Var("feed");
+  framework::LoDTensor *feed_tensor =
+      g_feed_value->GetMutable<framework::LoDTensor>();
+
+  DLOG << "executer Predict in2";
+
+  feed_tensor->Resize(t.dims());
+  feed_tensor->ShareDataWith(t);
+  feed_tensor->set_lod(t.lod());
+  DLOG << "feed_tensor .lod : " << feed_tensor->lod();
+
+  DLOG << "executer Predict in3";
+
+  std::shared_ptr<framework::BlockDesc> to_predict_block =
+      to_predict_program_->Block(0);
+  DLOG << "executer Predict in3.1";
+
+  auto &ops = ops_of_block_[*to_predict_block.get()];
+  DLOG << "executer Predict in3.2";
+
+#ifdef PADDLE_MOBILE_PROFILE
+  std::vector<ProfInfo> profile(ops.size());
+#endif
+#ifdef PADDLE_EXECUTOR_MULTITHREAD
+  std::mutex m;
+  std::condition_variable cv;
+  std::queue<int> next;
+  next.push(0);
+  int rsize = ops.size();
+  std::vector<int> status(rsize, 0);
+  auto &threadPool = ThreadPool::getThreadPool();
+  auto &dep = depManager[0];
+  auto finishF = [&ops, &m, &cv, &next, &status, &rsize, &dep](int opi) {
+    std::lock_guard<std::mutex> lk(m);
+    rsize--;
+    status[opi] = 2;
+    for (int i : dep.getNext(opi)) {
+      bool ok = true;
+      for (int j : dep.getDeps(i)) {
+        if (status[j] != 2) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok && (status[i] == 0)) {
+        next.push(i);
+      }
+    }
+    cv.notify_one();
+  };
+  for (;;) {
+    std::unique_lock<std::mutex> lk(m);
+    cv.wait(lk, [&next, &rsize] { return rsize == 0 || !next.empty(); });
+    if (rsize == 0) {
+      break;
+    }
+    while (next.size() > 0) {
+      int opi = next.front();
+      next.pop();
+      status[opi] = 1;
+      threadPool.enqueue([opi, &ops, &finishF, &profile] {
+        auto &op = ops[opi];
+#ifdef PADDLE_MOBILE_PROFILE
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        profile[opi].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+        profile[opi].tid = ThreadPool::getThreadPoolThreadId();
+#endif
+        ops[opi]->Run();
+#ifdef PADDLE_MOBILE_PROFILE
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        profile[opi].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+#endif
+        finishF(opi);
+      });
+    }
+  }
+#else
+  for (int i = 0; i < ops.size(); i++) {
+#ifdef PADDLE_MOBILE_PROFILE
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    profile[i].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+#endif
+    DLOG << "executer Predict in3.3 infer";
+    if (loddable_) {
+      ops[i]->InferShape();
+    }
+
+    DLOG << "executer Predict in3.3 after infer";
+
+    // to Run
+    ops[i]->Run();
+#ifdef PADDLE_MOBILE_PROFILE
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    profile[i].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+#endif
+  }
+#endif
+  DLOG << "executer Predict in4";
+
+  auto last_op = ops.rbegin();
+
+  auto output_map = (*last_op)->Outputs();
+  std::vector<std::string> out_keys = (*last_op)->GetOutKeys();
+  PADDLE_MOBILE_ENFORCE(out_keys.size() > 0, "the last op contains no output");
+  framework::LoDTensor *output_tensor =
+      framework::GetVarValue<framework::LoDTensor>(out_keys[0], output_map,
+                                                   *(program_.scope));
+#ifdef PADDLE_MOBILE_PROFILE
+#ifdef PADDLE_EXECUTOR_MULTITHREAD
+  // TODO(haipeng): expose profile info as an interface, user can get them to
+  // analysis
+  //      the performance of their deepnet.
+  FILE *df = fopen("net.dot", "w");
+  fprintf(df, "digraph {\n");
+  for (int i = 0; i < ops.size(); i++) {
+    for (int j : dep.getNext(i)) {
+      fprintf(df, "op_%d -> op_%d\n", i, j);
+    }
+  }
+  for (int i = 0; i < ops.size(); i++) {
+    fprintf(df, "op_%d[label=\"%s (%d)\"]\n", i, ops[i]->Type().c_str(), i);
+  }
+  fprintf(df, "}\n");
+  fclose(df);
+#endif
+  DLOG << "executer Predict in5";
+
+  //  FILE *pf = fopen("profile.out", "w");
+  std::unordered_map<std::string, uint64_t> _tp;
+  for (int i = 0; i < profile.size(); i++) {
+    const auto &pInfo = profile[i];
+    uint64_t timeCost = pInfo.runEnd - pInfo.runBegin;
+    _tp[ops[i]->Type()] += timeCost;
+    //    fprintf(pf, "%d\t%s\t%d\t%llu\t%llu\t%llu\n", i,
+    //    ops[i]->Type().c_str(),
+    //            pInfo.tid, pInfo.runBegin, pInfo.runEnd, timeCost);
+  }
+  //  fclose(pf);
+  DLOG << "executer Predict in6";
+
+  printf("====================[ profile ]======================\n");
+  using prof_t = std::pair<std::string, uint64_t>;
+  std::vector<prof_t> _tv(_tp.begin(), _tp.end());
+  uint64_t _ptotal = 0;
+  for (auto const &p : _tv) {
+    _ptotal += p.second;
+  }
+  auto compf = [](const prof_t &a, const prof_t &b) {
+    return a.second > b.second;
+  };
+  std::sort(_tv.begin(), _tv.end(), compf);
+  _tv.push_back(std::make_pair("total", _ptotal));
+  for (auto const &p : _tv) {
+    printf("%-16s\t%-10.0f\t%-2.4f\n", p.first.c_str(),
+           static_cast<float>(p.second),
+           static_cast<float>(p.second) / _ptotal * 100.0);
+  }
+  printf("====================[---------]======================\n");
+#endif
+  DLOG << "executer Predict out";
+
+  return std::make_shared<framework::LoDTensor>(
+      framework::LoDTensor(*output_tensor));
+}
+
 template <typename Dtype, Precision P>
 std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
     const framework::Tensor &t, int block_id) {
