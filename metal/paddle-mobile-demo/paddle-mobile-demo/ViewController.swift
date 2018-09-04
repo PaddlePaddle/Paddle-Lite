@@ -19,17 +19,18 @@ import MetalPerformanceShaders
 
 let threadSupport = [1]
 
-let modelHelperMap: [SupportModel : Net] = [ .mobilenet : MobileNet.init(), .mobilenet_ssd : MobileNet_ssd_hand.init(), .genet : Genet.init()]
+//.mobilenet : MobileNet.init(),
+let modelHelperMap: [SupportModel : Net] = [.mobilenet_ssd : MobileNet_ssd_hand.init(), .genet : Genet.init()]
 //, .genet : Genet.init()
 //let modelHelperMap: [SupportModel : Net] = [.mobilenet : MobileNet.init(), .mobilenet_ssd : MobileNet_ssd_hand.init()]
 
 enum SupportModel: String{
-  case mobilenet = "mobilenet"
+//  case mobilenet = "mobilenet"
   case mobilenet_ssd = "mobilenetssd"
   case genet          = "genet"
   static func supportedModels() -> [SupportModel] {
-    //
-    return [.mobilenet, .mobilenet_ssd ,.genet]
+    //.mobilenet,
+    return [.mobilenet_ssd ,.genet]
   }
 }
 
@@ -79,7 +80,7 @@ class ViewController: UIViewController {
       return
     }
     do {
-      let max = 1
+      let max = 50
       let startDate = Date.init()
       for i in 0..<max {
         try net.predict(inTexture: inTexture) { [weak self] (result) in
@@ -87,7 +88,6 @@ class ViewController: UIViewController {
             fatalError()
           }
           
-          print(result.resultArray.strideArray())
           if i == max - 1 {
             let time = Date.init().timeIntervalSince(startDate)
             DispatchQueue.main.async {

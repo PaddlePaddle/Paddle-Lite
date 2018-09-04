@@ -31,7 +31,7 @@ class Genet: Net {
   }
   
   func resultStr(res: [Float]) -> String {
-    return " 哈哈  还没好 genet !";
+    return " \(Array<Float>(res.suffix(10))) ... "
   }
   
   var preprocessKernel: CusomKernel
