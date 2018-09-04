@@ -57,13 +57,7 @@ class TransposeKernel<P: PrecisionType>: Kernel, Computable, Testable {
       invT[v] = i
     }
     var axis: [Int] = [0, 1, 2, 3]
-    
-    //    var doNothing = false
-    //    if param.axis.count == param.input.transpose.count {
-    //      doNothing = param.axis == param.input.transpose.map { Int32($0) }
-    //    }
-    
-    
+      
     for i in 0..<param.axis.count {
       axis[4-param.axis.count+i] = 4 - param.axis.count + Int(param.axis[i])
     }
@@ -72,9 +66,9 @@ class TransposeKernel<P: PrecisionType>: Kernel, Computable, Testable {
     tmp.iC = Int32(param.input.dim[param.input.transpose[3]])
     tmp.oC = Int32(param.output.dim[3])
     if realAxis == [0, 1, 2, 3] {
-      print("====> transpose! FAST :)")
+//      print("====> transpose! FAST :)")
     } else {
-      print("====> transpose! SLOW :(")
+//      print("====> transpose! SLOW :(")
     }
     metalParam = tmp
   }

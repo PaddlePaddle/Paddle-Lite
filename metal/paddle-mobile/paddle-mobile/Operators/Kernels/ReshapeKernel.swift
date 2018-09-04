@@ -28,28 +28,11 @@ struct ReshapeTestParam: TestParam {
 }
 
 class ReshapeKernel<P: PrecisionType>: Kernel, Computable{
+  
+  var metalParam: ReshapeMetalParam
+  
   required init(device: MTLDevice, param: ReshapeParam<P>) {
     param.output.initTexture(device: device, computePrecision: computePrecision)
-    if computePrecision == .Float32 {
-      super.init(device: device, inFunctionName: "reshape")
-    } else if computePrecision == .Float16 {
-      super.init(device: device, inFunctionName: "reshape_half")
-    } else {
-      fatalError()
-    }
-  }
-  
-  required init(device: MTLDevice, testParam: ReshapeTestParam) {
-    super.init(device: device, inFunctionName: "reshape")
-  }
-  
-  func compute(commandBuffer: MTLCommandBuffer, param: ReshapeParam<P>) throws {
-    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-      throw PaddleMobileError.predictError(message: " encoder is nil")
-    }
-    
-    encoder.setTexture(param.input.metalTexture, index: 0)
-    encoder.setTexture(param.output.metalTexture, index: 1)
     var id: [Int32] = [1, 1, 1, 1]
     for i in 0..<param.input.tensorDim.cout() {
       id[4-param.input.tensorDim.cout()+i] = Int32(param.input.tensorDim[i])
@@ -60,13 +43,40 @@ class ReshapeKernel<P: PrecisionType>: Kernel, Computable{
       od[4-param.output.tensorDim.cout()+i] = Int32(param.output.tensorDim[i])
     }
     let ot: [Int32] = param.output.transpose.map { Int32($0) }
-    var rmp = ReshapeMetalParam.init(
+    metalParam = ReshapeMetalParam.init(
       idim: (id[0], id[1], id[2], id[3]),
       itrans: (it[0], it[1], it[2], it[3]),
       odim: (od[0], od[1], od[2], od[3]),
       otrans: (ot[0], ot[1], ot[2], ot[3])
     )
-    encoder.setBytes(&rmp, length: MemoryLayout<ReshapeMetalParam>.size, index: 0)
+    if computePrecision == .Float32 {
+      super.init(device: device, inFunctionName: "reshape")
+    } else if computePrecision == .Float16 {
+      super.init(device: device, inFunctionName: "reshape_half")
+    } else {
+      fatalError()
+    }
+  }
+  
+  required init(device: MTLDevice, testParam: ReshapeTestParam) {
+    metalParam = ReshapeMetalParam.init(
+    idim: (0, 0, 0, 0),
+    itrans: (0, 0, 0, 0),
+    odim: (0, 0, 0, 0),
+    otrans: (0, 0, 0, 0)
+    )
+    super.init(device: device, inFunctionName: "reshape")
+  }
+  
+  func compute(commandBuffer: MTLCommandBuffer, param: ReshapeParam<P>) throws {
+    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+      throw PaddleMobileError.predictError(message: " encoder is nil")
+    }
+    
+    encoder.setTexture(param.input.metalTexture, index: 0)
+    encoder.setTexture(param.output.metalTexture, index: 1)
+
+    encoder.setBytes(&metalParam, length: MemoryLayout<ReshapeMetalParam>.size, index: 0)
     encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
     encoder.endEncoding()
   }
