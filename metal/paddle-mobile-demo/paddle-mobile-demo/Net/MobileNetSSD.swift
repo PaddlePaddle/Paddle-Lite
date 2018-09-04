@@ -48,12 +48,12 @@ class MobileNet_ssd_hand: Net{
     }
     
     var scoreFormatArr: [Float32] = score.metalTexture.realNHWC(dim: (n: score.padToFourDim[0], h: score.padToFourDim[1], w: score.padToFourDim[2], c: score.padToFourDim[3]))
-    print("score: ")
-    print(scoreFormatArr.strideArray())
-    
+//    print("score: ")
+//    print(scoreFormatArr.strideArray())
+//
     var bboxArr = bbox.metalTexture.float32Array()
-    print("bbox: ")
-    print(bboxArr.strideArray())
+//    print("bbox: ")
+//    print(bboxArr.strideArray())
     
     let nmsCompute = NMSCompute.init()
     nmsCompute.scoreThredshold = 0.01

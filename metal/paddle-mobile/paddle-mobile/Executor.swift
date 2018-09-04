@@ -126,11 +126,11 @@ public class Executor<P: PrecisionType> {
       //            print(stridableInput)
       
       //            let _: Flo? = input.logDesc(header: "input: ", stridable: true)
-      for i in 0..<self.ops.count {
-        let op = self.ops[i]
-        print(" 第 \(i) 个 op: ")
-        op.delogOutput()
-      }
+//      for i in 0..<self.ops.count {
+//        let op = self.ops[i]
+//        print(" 第 \(i) 个 op: ")
+//        op.delogOutput()
+//      }
       
 //      return;
 //      self.ops[testTo - 2].delogOutput()
