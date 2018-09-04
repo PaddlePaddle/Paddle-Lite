@@ -254,30 +254,6 @@ class Tensor {
                           "Tensor's dims_ is out of bound. ");
   }
 
-#ifdef PADDLE_MOBILE_FPGA
-  struct FPGAArgs {
-    friend class Tensor;
-
-    inline float *scale_pointer() { return scale_; }
-    inline float scale() { return *scale_; }
-
-   private:
-    float *scale_;
-  };
-
-  struct FPGAArgs fpga_args() const {
-    FPGAArgs args;
-    args.scale_ = scale.get();
-    return args;
-  }
-
-  void SetFpgaScale(float s) { *(scale.get()) = s; }
-
- private:
-  std::shared_ptr<float> scale = std::make_shared<float>(0);
-
-#endif
-
  private:
   /**
    * @note    Placeholder hides type T, so it doesn't appear as a
@@ -313,9 +289,12 @@ class Tensor {
     virtual std::type_index type() const { return type_; }
 
     virtual void set_type(std::type_index type) { type_ = type; }
-
+#ifndef PADDLE_MOBILE_FPGA
     /*! the pointer of memory block. */
     std::unique_ptr<uint8_t, memory::PODDeleter<uint8_t>> ptr_;
+#else
+    std::shared_ptr<uint8_t> ptr_;
+#endif
 
     /*! the size of memory block. */
     size_t size_;
@@ -344,6 +323,34 @@ class Tensor {
    * begins.
    */
   size_t offset_;
+#ifdef PADDLE_MOBILE_FPGA
+ public:
+  inline void reset_data_ptr(void *p) {
+    ((PlaceholderImpl *)(holder_.get()))->ptr_.reset((uint8_t *)p);
+  }
+
+  struct FPGAArgs {
+    friend class Tensor;
+
+    inline float *scale_pointer() { return scale_; }
+    inline float scale() { return *scale_; }
+
+   private:
+    float *scale_;
+  };
+
+  struct FPGAArgs fpga_args() const {
+    FPGAArgs args;
+    args.scale_ = scale.get();
+    return args;
+  }
+
+  void SetFpgaScale(float s) { *(scale.get()) = s; }
+
+ private:
+  std::shared_ptr<float> scale = std::make_shared<float>(0);
+
+#endif
 };
 
 #ifdef PADDLE_MOBILE_DEBUG
