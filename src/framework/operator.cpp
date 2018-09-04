@@ -62,7 +62,7 @@ void OperatorBase<Dtype>::Run() const {
   vector<string> input_keys = GetInputKeys();
   for (const auto key : input_keys) {
     Tensor *input = GetVarValue<framework::LoDTensor>(key, inputs_, *scope_);
-    DLOG << type_ << " input- " << key << "=" << *input;
+    if (input) DLOG << type_ << " input- " << key << "=" << *input;
   }
   vector<string> output_keys = GetOutKeys();
   for (const auto key : output_keys) {

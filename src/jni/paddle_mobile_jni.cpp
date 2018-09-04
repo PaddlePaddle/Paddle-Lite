@@ -353,6 +353,41 @@ JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictYuv(
 
   return result;
 }
+JNIEXPORT jlongArray JNICALL
+Java_com_baidu_paddle_PML_predictLod(JNIEnv *env, jclass thiz, jlongArray buf) {
+  std::lock_guard<std::mutex> lock(shared_mutex);
+
+  jlong *ddim_ptr = env->GetLongArrayElements(buf, NULL);
+  jsize ddim_size = env->GetArrayLength(buf);
+  std::vector<int64_t> ids;
+
+  for (int i = 0; i < ddim_size; ++i) {
+    jlong x = ddim_ptr[i];
+    ids.push_back((int64_t)x);
+  }
+
+  paddle_mobile::framework::LoDTensor words;
+
+  auto size = static_cast<int>(ids.size());
+
+  paddle_mobile::framework::LoD lod{{0, ids.size()}};
+  DDim dims{size, 1};
+  words.Resize(dims);
+  words.set_lod(lod);
+  auto *pdata = words.mutable_data<int64_t>();
+  size_t n = words.numel() * sizeof(int64_t);
+  memcpy(pdata, ids.data(), n);
+  auto vec_result = paddle_mobile.PredictLod(words);
+  int count = vec_result->numel();
+  jlongArray result = NULL;
+  ANDROIDLOGE("predict nlp size %d", count);
+
+  result = env->NewLongArray(count);
+
+  env->SetLongArrayRegion(result, 0, count, vec_result->data<int64_t>());
+
+  return result;
+}
 
 JNIEXPORT void JNICALL Java_com_baidu_paddle_PML_setThread(JNIEnv *env,
                                                            jclass thiz,

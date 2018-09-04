@@ -12,26 +12,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef CONCAT_OP
+#include "../test_include.h"
+#include "operators/gru_op.h"
 
-#include "operators/kernel/concat_kernel.h"
-#include "operators/kernel/central-arm-func/concat_arm_func.h"
+int main() {
+  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  auto program = loader.Load(g_nlp);
+  PADDLE_MOBILE_ENFORCE(program.originProgram != nullptr,
+                        "program file read fail");
 
-namespace paddle_mobile {
-namespace operators {
+  Executor4Test<paddle_mobile::CPU,
+                paddle_mobile::operators::GruOp<paddle_mobile::CPU, float>>
+      executor(program, "gru");
 
-template <>
-bool ConcatKernel<CPU, float>::Init(ConcatParam<CPU> *param) {
-  return true;
+  return 0;
 }
-
-template <>
-void ConcatKernel<CPU, float>::Compute(const ConcatParam<CPU> &param) const {
-  ConcatCompute<float>(param);
-  param.Out()->set_lod(param.Inputs()[0]->lod());
-}
-
-}  // namespace operators
-}  // namespace paddle_mobile
-
-#endif

@@ -190,6 +190,14 @@ else ()
     ADD_EXECUTABLE(test-conv-add-bn-relu-op operators/test_fusion_conv_add_bn_relu_op.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-conv-add-bn-relu-op paddle-mobile)
 
+    # gen test
+    ADD_EXECUTABLE(test-nlp net/test_nlp.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-nlp paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-gru-op  operators/test_gru_op.cpp test_helper.h  test_include.h)
+    target_link_libraries(test-gru-op paddle-mobile)
+
     #add_library(test-lib-size SHARED common/test_lib_size.h common/test_lib_size.cpp)
 
 
