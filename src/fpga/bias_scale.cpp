@@ -21,6 +21,7 @@ namespace fpga {
 namespace bias_scale {
 
 void align_element(float **data_in, int num_per_div_before_alignment, int num) {
+  int copynum = 0;
   float *ptr_unaligned = *data_in;
   int div_num =
       (num + num_per_div_before_alignment - 1) / num_per_div_before_alignment;
@@ -33,8 +34,20 @@ void align_element(float **data_in, int num_per_div_before_alignment, int num) {
   memset(ptr_aligned, 0, num_element * sizeof(float));
 
   for (int i = 0; i < div_num; i++) {
-    memcpy(ptr_aligned + i * num_per_div_after_alignment, ptr_unaligned,
-           num_per_div_before_alignment * sizeof(float));
+    if (i == div_num - 1) {
+      copynum = (num_per_div_after_alignment * div_num > num)
+                    ? (num % num_per_div_after_alignment)
+                    : (num_per_div_before_alignment);
+    } else {
+      copynum = num_per_div_before_alignment;
+    }
+
+    memcpy(ptr_aligned + i * num_per_div_after_alignment,
+           ptr_unaligned + num_per_div_before_alignment * i,
+           copynum * sizeof(float));
+    memcpy(ptr_aligned + (div_num + i) * num_per_div_after_alignment,
+           ptr_unaligned + num_per_div_before_alignment * i + num,
+           copynum * sizeof(float));
   }
 
   fpga_free(ptr_unaligned);
@@ -52,12 +65,20 @@ void interleave(float **data_in, int num_after_alignment) {
     memcpy(ptr_interleaved + 8 * i, ptr_uninterleaved + 4 * i,
            4 * sizeof(float));
     memcpy(ptr_interleaved + 8 * i + 4,
-           ptr_uninterleaved + num_after_alignment * sizeof(float) + 4 * i,
-           4 * sizeof(float));
+           ptr_uninterleaved + num_after_alignment + 4 * i, 4 * sizeof(float));
   }
 
   fpga_free(ptr_uninterleaved);
   *data_in = ptr_interleaved;
+}
+
+void format_bias_scale_array(float **bias_scale_array,
+                             int element_num_per_division, int num) {
+  align_element(bias_scale_array, element_num_per_division, num);
+  int div_num = (num + element_num_per_division - 1) / element_num_per_division;
+  int element_num_after_division =
+      align_to_x(element_num_per_division, BS_NUM_ALIGNMENT);
+  interleave(bias_scale_array, div_num * element_num_after_division);
 }
 
 }  // namespace bias_scale

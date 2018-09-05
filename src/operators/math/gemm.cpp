@@ -716,6 +716,27 @@ void InnerKernelWithBn(int mc, int nc, float alpha, const float *a,
   }
 }
 
+// 分块矩阵乘法
+void InnerKernelWithBnAdd(int mc, int nc, float alpha, const float *a,
+                          const float *b, float beta, float *c, float *C,
+                          int ldc, bool relu, float *new_scale, float *new_bias,
+                          float *bias) {
+#pragma omp parallel for
+  for (int j = 0; j < nc; j += NR) {
+    for (int i = 0; i < mc; i += MR) {
+#if __aarch64__
+      // AddDot8x12(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+      AddDot6x16(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+#else
+      // AddDot4x4(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+      // AddDot4x8(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+      AddDot6x8(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+#endif
+    }
+  }
+  WriteWithBnAddRelu(mc, nc, c, C, ldc, new_scale, new_bias, bias);
+}
+
 void InnerKernelWithPRelu(int mc, int nc, const float *a, const float *b,
                           float *c, float *C, int ldc, float *p,
                           std::string mode, float *bias, float *bias1) {
@@ -1167,6 +1188,59 @@ void WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc,
     if (_nc1 != 0) {
       cv = vld1q_f32(c_ptr);
       cv = vmlaq_n_f32(bias, cv, scale0);
+      cv = vmaxq_f32(cv, zero);
+      if (_nc1 >= 1) {
+        vst1q_lane_f32(C_ptr, cv, 0);
+        C_ptr++;
+      }
+      if (_nc1 >= 2) {
+        vst1q_lane_f32(C_ptr, cv, 1);
+        C_ptr++;
+      }
+      if (_nc1 >= 3) {
+        vst1q_lane_f32(C_ptr, cv, 2);
+      }
+    }
+  }
+}
+
+// C = A * B, batchnorm(C),C = C + bias; relu(C)
+void WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
+                        float *new_scale, float *new_bias, float *bias) {
+  int nc1 = nc / 4;
+  int _nc1 = nc % 4;
+
+  float *c_ptr, *C_ptr, *bias_ptr;
+  float32x4_t cv;
+  float32x4_t nbias;
+  float32x2_t scale;
+  float32x4_t biasv;
+  float32x4_t zero = vdupq_n_f32(0.0);
+  for (int i = 0; i < mc; ++i) {
+    c_ptr = c + i * NC;
+    C_ptr = C + i * ldc;
+    bias_ptr = bias + i * ldc;
+    nbias = vld1q_dup_f32(new_bias);
+    scale = vld1_dup_f32(new_scale);
+    new_bias++;
+    new_scale++;
+    float scale0 = vget_lane_f32(scale, 0);
+    for (int j = 0; j < nc1; ++j) {
+      cv = vld1q_f32(c_ptr);
+      biasv = vld1q_f32(bias_ptr);
+      cv = vmlaq_n_f32(nbias, cv, scale0);
+      cv = vaddq_f32(cv, biasv);
+      cv = vmaxq_f32(cv, zero);
+      vst1q_f32(C_ptr, cv);
+      c_ptr += 4;
+      C_ptr += 4;
+      bias_ptr += 4;
+    }
+    if (_nc1 != 0) {
+      cv = vld1q_f32(c_ptr);
+      biasv = vld1q_f32(bias_ptr);
+      cv = vmlaq_n_f32(nbias, cv, scale0);
+      cv = vaddq_f32(cv, biasv);
       cv = vmaxq_f32(cv, zero);
       if (_nc1 >= 1) {
         vst1q_lane_f32(C_ptr, cv, 0);
@@ -2081,34 +2155,32 @@ void WriteWithAddPRelu(int mc, int nc, float *c, float *C, int ldc, float *p,
     if (bias1 == nullptr) {
       for (int i = 0; i < mc; ++i) {
         for (int j = 0; j < nc; ++j) {
-          float r = *c + *bias;
+          float r = c[i * NC + j] + bias[i];
           if (r < 0) {
-            r = *p;
+            r *= p[i];
           }
-          c++;
+          C[i * ldc + j] = r;
         }
-        bias++;
-        p++;
       }
     } else {
       for (int i = 0; i < mc; ++i) {
         for (int j = 0; j < nc; ++j) {
-          float r = *c + *bias;
-          r += *bias1;
+          float r = c[i * NC + j] + bias[i];
+          r += bias1[i * ldc + j];
           if (r < 0) {
-            r *= *p;
+            r *= p[i];
           }
-          c++;
-          bias1++;
+          C[i * ldc + j] = r;
         }
-        bias++;
-        p++;
       }
     }
     return;
   }
 
-  int nc1 = nc / 8;
+  int nc1 = nc / 16;
+  int _nc1 = nc % 16;
+  int nc2 = _nc1 / 4;
+  int nc3 = 16 - 4 * (_nc1 % 4);
   int step = 4 * (ldc - nc);
   int step1 = 4 * (NC - nc);
 
@@ -2120,6 +2192,7 @@ void WriteWithAddPRelu(int mc, int nc, float *c, float *C, int ldc, float *p,
         "loop_mc_%=:                        \n\t"
 
         "mov        r5,     %[nc1]          \n\t"
+        "mov        r6,     %[nc2]          \n\t"
         "vld1.32    {d0},   [%[bias]]       \n\t"
         "vld1.32    {d1},   [%[p]]          \n\t"
         "vdup.32    q1,     d0[0]           \n\t"
@@ -2131,19 +2204,63 @@ void WriteWithAddPRelu(int mc, int nc, float *c, float *C, int ldc, float *p,
 
         "pld        [%[c], #32]             \n\t"
         "vld1.32    {q3, q4},   [%[c]]!     \n\t"
+        "vld1.32    {q9, q10},  [%[c]]!     \n\t"
+
         "vadd.f32   q3,   q3,   q1          \n\t"
         "vadd.f32   q4,   q4,   q1          \n\t"
+        "vadd.f32   q9,   q9,   q1          \n\t"
+        "vadd.f32   q10,  q10,  q1          \n\t"
+
         "vmax.f32   q5,   q3,   q14         \n\t"
         "vmin.f32   q7,   q3,   q14         \n\t"
         "vmax.f32   q6,   q4,   q14         \n\t"
         "vmin.f32   q8,   q4,   q14         \n\t"
+
+        "vmax.f32   q11,  q9,   q14         \n\t"
+        "vmin.f32   q13,  q9,   q14         \n\t"
+        "vmax.f32   q12,  q10,  q14         \n\t"
+        "vmin.f32   q15,  q10,  q14         \n\t"
+
         "vmla.f32   q5,   q7,   q2          \n\t"
         "vmla.f32   q6,   q8,   q2          \n\t"
+        "vmla.f32   q11,  q13,  q2          \n\t"
+        "vmla.f32   q12,  q15,  q2          \n\t"
+
         "vst1.32    {q5, q6},   [%[C]]!     \n\t"
+        "vst1.32    {q11, q12}, [%[C]]!     \n\t"
 
         "subs       r5,   r5,   #1          \n\t"
         "bge        loop_nc1_%=             \n\t"
         "end_nc1_%=:                        \n\t"
+
+        "subs       r6,  r6,   #1           \n\t"
+        "blt        end_nc2_%=              \n\t"
+        "loop_nc2_%=:                       \n\t"
+
+        "vld1.32    {q3},       [%[c]]!     \n\t"
+        "vadd.f32   q3,   q3,   q1          \n\t"
+        "vmax.f32   q5,   q3,   q14         \n\t"
+        "vmin.f32   q7,   q3,   q14         \n\t"
+        "vmla.f32   q5,   q7,   q2          \n\t"
+        "vst1.32    {q5},       [%[C]]!     \n\t"
+
+        "subs       r6,   r6,   #1          \n\t"
+        "bge        loop_nc2_%=             \n\t"
+        "end_nc2_%=:                        \n\t"
+
+        "cmp        %[nc3],    #16          \n\t"
+        "beq        end_nc3_%=              \n\t"
+
+        "sub        %[c],     %[c],   %[nc3]      \n\t"
+        "sub        %[C],     %[C],   %[nc3]      \n\t"
+
+        "vld1.32    {q4},       [%[c]]!     \n\t"
+        "vadd.f32   q4,   q4,   q1          \n\t"
+        "vmax.f32   q6,   q4,   q14         \n\t"
+        "vmin.f32   q8,   q4,   q14         \n\t"
+        "vmla.f32   q6,   q8,   q2          \n\t"
+        "vst1.32    {q6},       [%[C]]!     \n\t"
+        "end_nc3_%=:                        \n\t"
 
         "add        %[p],     %[p],     #4        \n\t"
         "add        %[bias],  %[bias],  #4        \n\t"
@@ -2155,10 +2272,11 @@ void WriteWithAddPRelu(int mc, int nc, float *c, float *C, int ldc, float *p,
         "end_mc_%=:                         \n\t"
 
         :
-        : [C] "r"(C), [c] "r"(c), [mc] "r"(mc), [nc1] "r"(nc1),
-          [step] "r"(step), [step1] "r"(step1), [p] "r"(p), [bias] "r"(bias),
-          [bias1] "r"(bias1)
-        : "memory", "r5", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8");
+        : [C] "r"(C), [c] "r"(c), [mc] "r"(mc), [nc1] "r"(nc1), [nc2] "r"(nc2),
+          [nc3] "r"(nc3), [step] "r"(step), [step1] "r"(step1), [p] "r"(p),
+          [bias] "r"(bias), [bias1] "r"(bias1)
+        : "memory", "r5", "r6", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+          "q8");
   } else {
     asm volatile(
         "vmov.f32   q14,    #0.0            \n\t"
@@ -2167,6 +2285,7 @@ void WriteWithAddPRelu(int mc, int nc, float *c, float *C, int ldc, float *p,
         "loop_mc_%=:                        \n\t"
 
         "mov        r5,     %[nc1]          \n\t"
+        "mov        r6,     %[nc2]          \n\t"
         "vld1.32    {d0},   [%[bias]]       \n\t"
         "vld1.32    {d1},   [%[p]]          \n\t"
         "vdup.32    q1,     d0[0]           \n\t"
@@ -2192,25 +2311,74 @@ void WriteWithAddPRelu(int mc, int nc, float *c, float *C, int ldc, float *p,
         "vmla.f32   q6,   q8,   q2          \n\t"
         "vst1.32    {q5, q6},   [%[C]]!     \n\t"
 
+        "vld1.32    {q3, q4},   [%[c]]!     \n\t"
+        "vld1.32    {q9, q10},  [%[bias1]]! \n\t"
+        "vadd.f32   q3,   q3,   q1          \n\t"
+        "vadd.f32   q4,   q4,   q1          \n\t"
+        "vadd.f32   q3,   q3,   q9          \n\t"
+        "vadd.f32   q4,   q4,   q10         \n\t"
+        "vmax.f32   q5,   q3,   q14         \n\t"
+        "vmin.f32   q7,   q3,   q14         \n\t"
+        "vmax.f32   q6,   q4,   q14         \n\t"
+        "vmin.f32   q8,   q4,   q14         \n\t"
+        "vmla.f32   q5,   q7,   q2          \n\t"
+        "vmla.f32   q6,   q8,   q2          \n\t"
+        "vst1.32    {q5, q6},   [%[C]]!     \n\t"
+
         "subs       r5,   r5,   #1          \n\t"
         "bge        loop_nc1_%=             \n\t"
         "end_nc1_%=:                        \n\t"
+
+        "subs       r6,  r6,   #1           \n\t"
+        "blt        end_nc2_%=              \n\t"
+        "loop_nc2_%=:                       \n\t"
+
+        "vld1.32    {q3},       [%[c]]!     \n\t"
+        "vld1.32    {q9},       [%[bias1]]! \n\t"
+        "vadd.f32   q3,   q3,   q1          \n\t"
+        "vadd.f32   q3,   q3,   q9          \n\t"
+        "vmax.f32   q5,   q3,   q14         \n\t"
+        "vmin.f32   q7,   q3,   q14         \n\t"
+        "vmla.f32   q5,   q7,   q2          \n\t"
+        "vst1.32    {q5},      [%[C]]!      \n\t"
+
+        "subs       r6,   r6,   #1          \n\t"
+        "bge        loop_nc2_%=             \n\t"
+        "end_nc2_%=:                        \n\t"
+
+        "cmp        %[nc3],    #16          \n\t"
+        "beq        end_nc3_%=              \n\t"
+
+        "sub        %[c],     %[c],     %[nc3]    \n\t"
+        "sub        %[C],     %[C],     %[nc3]    \n\t"
+        "sub        %[bias1], %[bias1], %[nc3]    \n\t"
+
+        "vld1.32    {q4},       [%[c]]!     \n\t"
+        "vld1.32    {q10},      [%[bias1]]! \n\t"
+        "vadd.f32   q4,   q4,   q1          \n\t"
+        "vadd.f32   q4,   q4,   q10         \n\t"
+        "vmax.f32   q6,   q4,   q14         \n\t"
+        "vmin.f32   q8,   q4,   q14         \n\t"
+        "vmla.f32   q6,   q8,   q2          \n\t"
+        "vst1.32    {q6},       [%[C]]!     \n\t"
+        "end_nc3_%=:                        \n\t"
 
         "add        %[p],     %[p],     #4        \n\t"
         "add        %[bias],  %[bias],  #4        \n\t"
         "add        %[c],     %[c],     %[step1]  \n\t"
         "add        %[C],     %[C],     %[step]   \n\t"
+        "add        %[bias1], %[bias1], %[step]   \n\t"
 
         "subs       %[mc], %[mc], #1        \n\t"
         "bge        loop_mc_%=              \n\t"
         "end_mc_%=:                         \n\t"
 
         :
-        : [C] "r"(C), [c] "r"(c), [mc] "r"(mc), [nc1] "r"(nc1),
-          [step] "r"(step), [step1] "r"(step1), [p] "r"(p), [bias] "r"(bias),
-          [bias1] "r"(bias1)
-        : "memory", "r5", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8",
-          "q9", "q10");
+        : [C] "r"(C), [c] "r"(c), [mc] "r"(mc), [nc1] "r"(nc1), [nc2] "r"(nc2),
+          [nc3] "r"(nc3), [step] "r"(step), [step1] "r"(step1), [p] "r"(p),
+          [bias] "r"(bias), [bias1] "r"(bias1)
+        : "memory", "r5", "r6", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+          "q8", "q9", "q10");
   }
 }
 
@@ -2424,6 +2592,59 @@ void WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc, float *scale,
         [scale] "r"(scale), [bias] "r"(bias)
       : "memory", "r5", "r6", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
         "q8", "q10", "q11", "q12", "q13", "q14");
+}
+
+// C = A * B, batchnorm(C),C = C + bias; relu(C)
+void WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
+                        float *new_scale, float *new_bias, float *bias) {
+  int nc1 = nc / 4;
+  int _nc1 = nc % 4;
+
+  float *c_ptr, *C_ptr, *bias_ptr;
+  float32x4_t cv;
+  float32x4_t nbias;
+  float32x2_t scale;
+  float32x4_t biasv;
+  float32x4_t zero = vdupq_n_f32(0.0);
+  for (int i = 0; i < mc; ++i) {
+    c_ptr = c + i * NC;
+    C_ptr = C + i * ldc;
+    bias_ptr = bias + i * ldc;
+    nbias = vld1q_dup_f32(new_bias);
+    scale = vld1_dup_f32(new_scale);
+    new_bias++;
+    new_scale++;
+    float scale0 = vget_lane_f32(scale, 0);
+    for (int j = 0; j < nc1; ++j) {
+      cv = vld1q_f32(c_ptr);
+      biasv = vld1q_f32(bias_ptr);
+      cv = vmlaq_n_f32(nbias, cv, scale0);
+      cv = vaddq_f32(cv, biasv);
+      cv = vmaxq_f32(cv, zero);
+      vst1q_f32(C_ptr, cv);
+      c_ptr += 4;
+      C_ptr += 4;
+      bias_ptr += 4;
+    }
+    if (_nc1 != 0) {
+      cv = vld1q_f32(c_ptr);
+      biasv = vld1q_f32(bias_ptr);
+      cv = vmlaq_n_f32(nbias, cv, scale0);
+      cv = vaddq_f32(cv, biasv);
+      cv = vmaxq_f32(cv, zero);
+      if (_nc1 >= 1) {
+        vst1q_lane_f32(C_ptr, cv, 0);
+        C_ptr++;
+      }
+      if (_nc1 >= 2) {
+        vst1q_lane_f32(C_ptr, cv, 1);
+        C_ptr++;
+      }
+      if (_nc1 >= 3) {
+        vst1q_lane_f32(C_ptr, cv, 2);
+      }
+    }
+  }
 }
 
   /*
@@ -2835,7 +3056,7 @@ void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
 
 void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
                  const float *B, int ldb, float beta, float *C, int ldc,
-                 bool relu, float *new_scale, float *new_bias) {
+                 bool relu, float *new_scale, float *new_bias, float *bias) {
   // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
   // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
   int L1 = 32 * 1024;
@@ -2882,8 +3103,14 @@ void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
 #else
       PackMatrixA_6r(mc, KC, mc % MR, &A(i, 0), lda, packedA);
 #endif
-      InnerKernelWithBn(mc, nc, alpha, packedA, packedB, beta, packedC,
-                        &C(i, j), ldc, relu, new_scale + i, new_bias + i);
+      if (bias == nullptr) {
+        InnerKernelWithBn(mc, nc, alpha, packedA, packedB, beta, packedC,
+                          &C(i, j), ldc, relu, new_scale + i, new_bias + i);
+      } else {
+        InnerKernelWithBnAdd(mc, nc, alpha, packedA, packedB, beta, packedC,
+                             &C(i, j), ldc, relu, new_scale + i, new_bias + i,
+                             bias + i * ldc + j);
+      }
     }
   }
 
@@ -3071,7 +3298,8 @@ void Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
 
 void SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A, int lda,
                      const float *B, int ldb, float beta, float *C, int ldc,
-                     bool relu, float *new_scale, float *new_bias) {
+                     bool relu, float *new_scale, float *new_bias,
+                     float *bias) {
 #ifdef _OPENMP
   int max_threads = omp_get_max_threads();
 #else
@@ -3148,8 +3376,14 @@ void SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A, int lda,
       float *local_A = packedA + MC * KC * local_threads;
       float *local_C = packedC + MC * NC * local_threads;
       procPackA(mc, KC, mc % MR, &A(i, 0), lda, local_A);
-      InnerKernelWithBn(mc, n, alpha, local_A, packedB, beta, local_C, &C(i, 0),
-                        ldc, relu, new_scale + i, new_bias + i);
+      if (bias == nullptr) {
+        InnerKernelWithBn(mc, n, alpha, local_A, packedB, beta, local_C,
+                          &C(i, 0), ldc, relu, new_scale + i, new_bias + i);
+      } else {
+        InnerKernelWithBnAdd(mc, n, alpha, local_A, packedB, beta, local_C,
+                             &C(i, 0), ldc, relu, new_scale + i, new_bias + i,
+                             bias + i * ldc);
+      }
     }
   } else {
 #pragma omp parallel for
@@ -3165,8 +3399,14 @@ void SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A, int lda,
       float *local_B = packedB + KC * NC * local_threads;
       float *local_C = packedC + MC * NC * local_threads;
       procPackB(KC, nc, nc % NR, &B(0, j), ldb, local_B);
-      InnerKernelWithBn(m, nc, alpha, packedA, local_B, beta, local_C, &C(0, j),
-                        ldc, relu, new_scale, new_bias);
+      if (bias == nullptr) {
+        InnerKernelWithBn(m, nc, alpha, packedA, local_B, beta, local_C,
+                          &C(0, j), ldc, relu, new_scale, new_bias);
+      } else {
+        InnerKernelWithBnAdd(m, nc, alpha, packedA, local_B, beta, local_C,
+                             &C(0, j), ldc, relu, new_scale, new_bias,
+                             bias + j);
+      }
     }
   }
 
@@ -3185,7 +3425,7 @@ void SgemmWithPRelu_omp(int m, int n, int k, const float *A, int lda,
   int max_threads = 1;
 #endif
 
-  int L1 = 32 * 1024;
+  int L1 = 8 * 1024;
   KC = k;
   if (m > n) {
     // 对 A 分块

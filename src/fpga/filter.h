@@ -22,14 +22,15 @@ namespace fpga {
 namespace filter {
 void convert_to_hwc(float** data_in, int num, int channel, int height,
                     int width);
-float find_max(float* data_in, int num);
-void quantize(float* data_in, int num);
+float find_max(float* data_in, int data_size);
+void quantize(float** data_in, int data_size, float max);
 void align_element(float** data_in, int num, int chw);
-void align_num(float** data_in, int num_per_div_before_alignment, int num,
+void align_num(char** data_in, int num_per_div_before_alignment, int num,
                int chw);
 void reorder(float** data_in, int num_after_alignment, int chw);
 void interleave(float** data_in, int num_after_alignment, int chw);
-
+void format_filter(float** data_in, int num, int channel, int height, int width,
+                   int group_num, float max);
 }  // namespace filter
 }  // namespace fpga
 }  // namespace paddle_mobile
