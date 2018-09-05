@@ -25,6 +25,8 @@
 #include "operators/fetch_op.h"
 #include "operators/fusion_conv_add.h"
 #include "operators/fusion_conv_add_bn_relu_op.h"
+#include "operators/fusion_conv_bn_relu_op.h"
+#include "operators/fusion_dwconv_bn_relu_op.h"
 #include "operators/fusion_fc_op.h"
 #include "operators/im2sequence_op.h"
 #include "operators/lrn_op.h"
