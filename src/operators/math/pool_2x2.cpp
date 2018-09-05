@@ -69,7 +69,7 @@ void Pool2x2Maxs2p0(vector<int> strides, vector<int> paddings,
 #if __ARM_NEON
 #if __aarch64__
 #else
-         asm volatile(
+        asm volatile(
             "subs       %[w1], %[w1], #1        \n\t"
             "blt        end_w1_%=               \n\t"
             "loop_w1_%=:                        \n\t"
