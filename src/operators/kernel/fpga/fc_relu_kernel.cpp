@@ -15,7 +15,6 @@ limitations under the License. */
 #include "operators/kernel/fc_relu_kernel.h"
 
 #include "fpga/api.h"
-#include "fpga/quantization.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -23,25 +22,41 @@ namespace operators {
 template <>
 bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA> *param) {
   bool relu_enabled = true;
-  const Tensor *input_x = param->InputX();
+  Tensor *input_x = const_cast<Tensor *>(param->InputX());
   auto input_x_ptr = input_x->data<half>();
   Tensor *input_y = param->InputY();
   const Tensor *input_z = param->InputZ();
   auto input_z_ptr = input_z->data<float>();
   Tensor *out = param->Out();
-  auto out_ptr = out->mutable_data<half>();
 
   PADDLE_MOBILE_ENFORCE(input_x->dims()[1] == input_y->dims()[0],
                         "Image channel should be equal to weight number");
   int channel = out->dims()[1];
   float *bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sizeof(float));
   for (int i = 0; i < channel; i++) {
-    bs_ptr[i * 2] = 1;
-    bs_ptr[i * 2 + 1] = input_z_ptr[i];
+    bs_ptr[i + channel] = 1;
+    bs_ptr[i] = input_z_ptr[i];
   }
 
-  fpga::quantize_filter(input_y);
+  int num = input_y->dims()[1];
+  int chw = input_y->dims()[0];
+  PADDLE_MOBILE_ENFORCE(
+      chw == input_x->numel(),
+      "Filter element num should be equal to IFM element num");
+  int height = input_x->dims()[2];
+  int width = input_x->dims()[3];
+  int filter_channel = chw / height / width;
+
+  input_y->Resize(framework::make_ddim({num, filter_channel, height, width}));
+  float max_value = fpga::filter_find_max(input_y);
+  fpga::format_filter(input_y, max_value, 1);
   auto input_y_ptr = input_y->data<int8_t>();
+
+  int element_num_per_div = fpga::get_element_num_per_div(input_y, 1);
+  fpga::format_bias_scale_array(&bs_ptr, element_num_per_div, channel);
+
+  fpga::format_ofm(out);
+  auto out_ptr = out->mutable_data<half>();
 
   fpga::ConvArgs convArgs;
   convArgs.relu_enabled = relu_enabled;
@@ -59,11 +74,9 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA> *param) {
   convArgs.image.width = input_x->dims()[3];
   convArgs.image.pad_height = 0;
   convArgs.image.pad_width = 0;
-  convArgs.image.scale_address =
-      input_x->fpga_args().scale_pointer();  // fc input has scale attribute??
+  convArgs.image.scale_address = input_x->scale;
   convArgs.output.address = (void *)out_ptr;
-  convArgs.output.scale_address =
-      out->fpga_args().scale_pointer();  // fc output has scale attribute??
+  convArgs.output.scale_address = out->scale;
   param->SetFpgaArgs(convArgs);
 
   return true;
