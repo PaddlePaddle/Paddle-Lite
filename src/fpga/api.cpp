@@ -174,30 +174,43 @@ void format_ofm(framework::Tensor *ofm_tensor) {
   ofm_tensor->reset_data_ptr(fpga_malloc(memory_size));
 }
 
-void format_filter(framework::Tensor *filter_tensor, int group_num) {
+float filter_find_max(framework::Tensor *filter_tensor) {
+  auto filter_ptr = filter_tensor->data<float>();
+  return filter::find_max(filter_ptr, filter_tensor->numel());
+}
+int get_element_num_per_div(framework::Tensor *filter_tensor, int group_num) {
+  auto dims = filter_tensor->dims();
+  PADDLE_MOBILE_ENFORCE(dims.size() == 4 || dims.size() == 2,
+                        "Filter order should be 4 or 2");
+  int chw = dims.size() == 4 ? dims[1] * dims[2] * dims[3] : dims[1];
+  int num = dims.size() == 4 ? dims[0] : dims[1];
+  int div_capacity = filter::calc_division_capacity(chw);
+  return filter::calc_num_per_div(num, group_num, div_capacity);
+}
+
+void format_filter(framework::Tensor *filter_tensor, float max_value,
+                   int group_num) {
   auto dims = filter_tensor->dims();
   int num = dims[0], channel = dims[1], height = dims[2], width = dims[3];
   auto data_ptr = filter_tensor->mutable_data<float>();
   size_t memory_size = num * channel * height * width * sizeof(float);
   float *new_data = (float *)fpga_malloc(memory_size);
   fpga_copy(new_data, data_ptr, memory_size);
-  float max_value = filter::find_max(new_data, num * channel * height * width);
   filter::format_filter(&new_data, num, channel, height, width, group_num,
                         max_value);
   filter_tensor->reset_data_ptr(new_data);
 }
 
-void format_fc_matrix(framework::Tensor *filter_tensor, int group_num,
-                      int height, int width) {
+void format_fc_matrix(framework::Tensor *filter_tensor, float max_value,
+                      int group_num, int height, int width) {
   auto dims = filter_tensor->dims();
-  PADDLE_MOBILE_ENFORCE(dims[0] % (height * width) == 0,
-                        "Filter number should be divisible by group number");
+  PADDLE_MOBILE_ENFORCE(height == 1 && width == 1,
+                        "IFM should be flattened for FC");
   int num = dims[1], channel = dims[0] / height / width;
   auto data_ptr = filter_tensor->mutable_data<float>();
   size_t memory_size = num * channel * height * width * sizeof(float);
   float *new_data = (float *)fpga_malloc(memory_size);
   fpga_copy(new_data, data_ptr, memory_size);
-  float max_value = filter::find_max(new_data, num * channel * height * width);
   filter::format_filter(&new_data, num, channel, height, width, group_num,
                         max_value);
   filter_tensor->reset_data_ptr(new_data);

@@ -20,6 +20,11 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace fpga {
 namespace filter {
+
+int calc_division_capacity(int chw);
+int calc_split_num(int num, int division_capacity);
+int calc_division_number(int num, int group_num, int division_capacity);
+int calc_num_per_div(int num, int group_num, int division_capacity);
 void convert_to_hwc(float** data_in, int num, int channel, int height,
                     int width);
 float find_max(float* data_in, int data_size);
