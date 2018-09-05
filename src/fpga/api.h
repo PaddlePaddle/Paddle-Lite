@@ -54,12 +54,6 @@ struct MemoryCopyArgs {
   size_t size;
 };
 
-struct BNArgs {
-  bool enabled;
-  void* bias_address;
-  void* scale_address;
-};
-
 /**
 Conv and Pooling kernel
 */
@@ -178,9 +172,12 @@ int ComputeFpgaEWAdd(const struct EWAddArgs& args);
 static inline int align_to_x(int num, int x) { return (num + x - 1) / x * x; }
 void format_image(framework::Tensor* image_tensor);
 void format_ofm(framework::Tensor* ofm_tensor);  // only allocate memory
-void format_filter(framework::Tensor* filter_tensor, int group_num);
-void format_fc_matrix(framework::Tensor* filter_tensor, int group_num,
-                      int height = 1, int width = 1);
+float filter_find_max(framework::Tensor* filter_tensor);
+int get_element_num_per_div(framework::Tensor* filter_tensor, int group_num);
+void format_filter(framework::Tensor* filter_tensor, float max_value,
+                   int group_num);
+void format_fc_matrix(framework::Tensor* filter_tensor, float max_value,
+                      int group_num, int height = 1, int width = 1);
 void format_bias_scale_array(float** bias_scale_array,
                              int element_num_per_division, int num);
 

@@ -22,11 +22,12 @@ template <>
 bool ElementwiseAddReluKernel<FPGA, float>::Init(
     ElementwiseAddReluParam<FPGA> *param) {
   bool relu_enabled = true;
-  const Tensor *input_x = param->InputX();
-  const Tensor *input_y = param->InputY();
+  Tensor *input_x = const_cast<Tensor *>(param->InputX());
+  Tensor *input_y = const_cast<Tensor *>(param->InputY());
   Tensor *out = param->Out();
   auto input_x_ptr = input_x->data<half>();
   auto input_y_ptr = input_y->data<half>();
+  fpga::format_ofm(out);
   auto out_ptr = out->mutable_data<half>();
 
   fpga::EWAddArgs ewaddArgs;
@@ -35,21 +36,19 @@ bool ElementwiseAddReluKernel<FPGA, float>::Init(
   ewaddArgs.const1 = 1;
   ewaddArgs.image0.address = (void *)input_x_ptr;
   ewaddArgs.image0.channels = input_x->dims()[1];
-  ewaddArgs.image0.scale_address =
-      input_x->fpga_args().scale_pointer();  // ew has scale attribute??
+  ewaddArgs.image0.scale_address = input_x->scale;
   ewaddArgs.image0.height = input_x->dims()[2];
   ewaddArgs.image0.width = input_x->dims()[3];
   ewaddArgs.image0.pad_height = 0;
   ewaddArgs.image0.pad_width = 0;
   ewaddArgs.image1.address = (void *)input_y_ptr;
   ewaddArgs.image1.channels = input_y->dims()[1];
-  ewaddArgs.image1.scale_address =
-      input_y->fpga_args().scale_pointer();  // ew has scale attribute??
+  ewaddArgs.image1.scale_address = input_y->scale;
   ewaddArgs.image1.height = input_y->dims()[2];
   ewaddArgs.image1.width = input_y->dims()[3];
   ewaddArgs.image1.pad_height = 0;
   ewaddArgs.image1.pad_width = 0;
-  ewaddArgs.output.scale_address = out->fpga_args().scale_pointer();
+  ewaddArgs.output.scale_address = out->scale;
   ewaddArgs.output.address = (void *)out_ptr;
   param->SetFpgaArgs(ewaddArgs);
   return true;
