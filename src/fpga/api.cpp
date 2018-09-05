@@ -12,33 +12,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include <errno.h>
+#include "api.h"
 #include <fcntl.h>
-#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/ioctl.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/types.h>
 #include <algorithm>
-#include <cmath>
-#include <cstdio>
 #include <cstring>
-#include <vector>
-
-#include "api.h"
 #include "bias_scale.h"
-#include "common/enforce.h"
-#include "common/types.h"
 #include "filter.h"
 #include "image.h"
 
 #define FPGA_TEST_MODE
-#ifdef FPGA_TEST_MODE
-#include "common/log.h"
-#endif
 
 namespace paddle_mobile {
 namespace fpga {
