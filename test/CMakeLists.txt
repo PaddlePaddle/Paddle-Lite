@@ -35,6 +35,9 @@ elseif("FPGAnets" IN_LIST NET)
 
     ADD_EXECUTABLE(test-fpga-concat-op fpga/test_concat_op.cpp test_helper.h  test_include.h)
     target_link_libraries(test-fpga-concat-op paddle-mobile)
+
+    ADD_EXECUTABLE(test-format-data fpga/test_format_data.cpp test_helper.h  test_include.h)
+    target_link_libraries(test-format-data paddle-mobile)
 elseif("mobilenetssd" IN_LIST NET)
     # gen test
     ADD_EXECUTABLE(test-mobilenetssd net/test_mobilenet+ssd.cpp test_helper.h  test_include.h executor_for_test.h)
