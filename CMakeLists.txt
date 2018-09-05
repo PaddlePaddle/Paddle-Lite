@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.6)
 project(paddle-mobile)
 
-option(DEBUGING "enable debug mode" ON)
+option(DEBUGING "enable debug mode" OFF)
 option(USE_OPENMP "openmp support" OFF)
-option(USE_EXCEPTION "use std exception" ON)
-option(LOG_PROFILE "log profile" ON)
+option(USE_EXCEPTION "use std exception" OFF)
+option(LOG_PROFILE "log profile" OFF)
 # select the platform to build
 option(CPU "armv7 with neon" ON)
 option(MALI_GPU "mali gpu" OFF)
