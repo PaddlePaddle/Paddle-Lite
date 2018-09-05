@@ -66,7 +66,10 @@ void Pool2x2Maxs2p0(vector<int> strides, vector<int> paddings,
         }
         float *out_ptr = output_data + i * output_batch_stride +
                          c * output_channel_stride + ph / 2 * output_width;
-        asm volatile(
+#if __ARM_NEON
+#if __aarch64__
+#else
+         asm volatile(
             "subs       %[w1], %[w1], #1        \n\t"
             "blt        end_w1_%=               \n\t"
             "loop_w1_%=:                        \n\t"
@@ -115,6 +118,8 @@ void Pool2x2Maxs2p0(vector<int> strides, vector<int> paddings,
               [in_ptr2] "r"(in_ptr2), [out_ptr] "r"(out_ptr)
             : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8",
               "q9");
+#endif
+#endif
 
         if (_w2 != 0) {
           in_ptr1 += 16 * w1 + 4 * w2;
@@ -183,6 +188,9 @@ void Pool2x2Avgs2p0(vector<int> strides, vector<int> paddings,
         }
         float *out_ptr = output_data + i * output_batch_stride +
                          c * output_channel_stride + ph / 2 * output_width;
+#if __ARM_NEON
+#if __aarch64__
+#else
         asm volatile(
             "subs       %[w1], %[w1], #1        \n\t"
             "blt        end_w1_%=               \n\t"
@@ -238,6 +246,8 @@ void Pool2x2Avgs2p0(vector<int> strides, vector<int> paddings,
               [quarter] "r"(quarter)
             : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8",
               "q9", "q10");
+#endif
+#endif
 
         if (_w2 != 0) {
           in_ptr1 += 16 * w1 + 4 * w2;

@@ -13,6 +13,7 @@
  limitations under the License. */
 
 #import "PaddleMobile.h"
+
 #import "op_symbols.h"
 #import "io/paddle_mobile.h"
 
@@ -23,6 +24,8 @@
 {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU, paddle_mobile::Precision::FP32> *pam_;
   BOOL loaded_;
+  std::vector<float> *predict_input_;
+
 }
 @end
 
@@ -55,7 +58,7 @@ static std::mutex shared_mutex;
 - (BOOL)load:(NSString *)modelPath andWeightsPath:(NSString *)weighsPath{
   std::string model_path_str = std::string([modelPath UTF8String]);
   std::string weights_path_str = std::string([weighsPath UTF8String]);
-  if (loaded_ = pam_->Load(model_path_str, weights_path_str, false)) {
+  if (loaded_ = pam_->Load(model_path_str, weights_path_str, true)) {
     return YES;
   } else {
     return NO;
@@ -102,7 +105,26 @@ static std::mutex shared_mutex;
 }
 
 - (NSArray *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim means:(NSArray<NSNumber *> *)means scale:(float)scale{
-  std::lock_guard<std::mutex> lock(shared_mutex);
+//  printf(" hi i am here");
+  if (predict_input_) {
+//    printf(" fukc -- ");
+//    printf(" %d \n", predict_input_->size());
+    // dim to c++ vector, get numel
+    std::vector<int64_t > dim_vec = {1, 3, 300, 300};
+//    int numel = 1;
+//    for (int k = 0; k < dim.count; ++k) {
+//      int d = dim[k].intValue;
+//      numel *= d;
+//      dim_vec.push_back(d);
+//    }
+
+
+    std::vector<float> cpp_result = pam_->Predict(*predict_input_, dim_vec);
+    return nil;
+  }
+//  printf(" predict one ");
+
+//  std::lock_guard<std::mutex> lock(shared_mutex);
   if (!loaded_) {
     printf("PaddleMobile doesn't be loaded yet");
     return nil;
@@ -141,13 +163,15 @@ static std::mutex shared_mutex;
   }
 
   // input
-  std::vector<float> predict_input;
+  std::vector<float> *predict_input = new std::vector<float>();
   for (int j = 0; j < numel; ++j) {
-    predict_input.push_back(dataPointer[j]);
+    predict_input->push_back(dataPointer[j]);
   }
 
+  predict_input_ = predict_input;
+
   // predict
-  std::vector<float> cpp_result = pam_->Predict(predict_input, dim_vec);
+  std::vector<float> cpp_result = pam_->Predict(*predict_input, dim_vec);
 
   // result
   long count = 0;
@@ -156,6 +180,7 @@ static std::mutex shared_mutex;
   for (int i = 0; i < count; i++) {
     [result addObject:[NSNumber numberWithFloat:cpp_result[i]]];
   }
+
 
   free(output);
 
