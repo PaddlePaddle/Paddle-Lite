@@ -12,24 +12,32 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef CONCAT_OP
+#ifdef GRU_OP
 
-#include "operators/kernel/concat_kernel.h"
-#include "operators/kernel/central-arm-func/concat_arm_func.h"
+#include "operators/kernel/gru_kernel.h"
+#include "operators/kernel/central-arm-func/gru_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ConcatKernel<CPU, float>::Init(ConcatParam<CPU> *param) {
+bool GruKernel<CPU, float>::Init(GruParam<CPU> *param) {
   return true;
 }
 
 template <>
-void ConcatKernel<CPU, float>::Compute(const ConcatParam<CPU> &param) const {
-  ConcatCompute<float>(param);
-  param.Out()->set_lod(param.Inputs()[0]->lod());
+void GruKernel<CPU, float>::Compute(const GruParam<CPU> &param) const {
+  GruCompute<float>(param);
+  param.OutHidden()->set_lod(param.InputInput()->lod());
+  //  DLOG << "________________" << param.OutHidden()->dims();
+  //  DLOG << "________________" << param.OutHidden()->numel();
+  //  auto *hiden_data = param.OutHidden()->data<float>();
+  //  for (int64_t i = 0; i < 10; i++) {
+  //    DLOG << "****************" << hiden_data[i];
+  //  }
 }
+
+template class GruKernel<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile

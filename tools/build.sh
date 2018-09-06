@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 NETS=""
-declare -a supportedNets=("googlenet" "mobilenet" "yolo" "squeezenet" "resnet" "mobilenetssd")
+declare -a supportedNets=("googlenet" "mobilenet" "yolo" "squeezenet" "resnet" "mobilenetssd" "nlp")
 
 build_for_mac() {
     if [ ! `which brew` ]; then
