@@ -11,20 +11,19 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#pragma once
 
-#include "common/types.h"
-#include "framework/lod_tensor.h"
-#include "framework/tensor.h"
+#include "../test_include.h"
+#include "operators/gru_op.h"
 
-namespace paddle_mobile {
-namespace fpga {
+int main() {
+  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  auto program = loader.Load(g_nlp);
+  PADDLE_MOBILE_ENFORCE(program.originProgram != nullptr,
+                        "program file read fail");
 
-template <typename Dtype>
-static void chw_to_hwc(Dtype* data_in, Dtype* data_out, int64_t num,
-                       int64_t channel, int64_t height, int64_t width);
+  Executor4Test<paddle_mobile::CPU,
+                paddle_mobile::operators::GruOp<paddle_mobile::CPU, float>>
+      executor(program, "gru");
 
-void quantize_filter(framework::Tensor* filter);
-
-}  // namespace fpga
-}  // namespace paddle_mobile
+  return 0;
+}
