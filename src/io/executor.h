@@ -43,13 +43,17 @@ class Executor {
    * @b 用 loader load 的 program 实例化 executor
    * */
   Executor(const framework::Program<Dtype> p, int batch_size = 1,
-           bool use_optimize = true);
+           bool use_optimize = true, bool loddable = false);
 
   /*
    * @b to predict
    * */
   std::shared_ptr<framework::Tensor> Predict(const framework::Tensor &t);
-
+  /*
+   * @b to predict
+   * */
+  std::shared_ptr<framework::LoDTensor> PredictLod(
+      const framework::LoDTensor &t);
   /*
    * @b to predict with vector and dim
    *
@@ -73,6 +77,7 @@ class Executor {
            std::vector<std::shared_ptr<framework::OperatorBase<Dtype>>>>
       ops_of_block_;
   bool use_optimize_ = false;
+  bool loddable_ = false;
 #ifdef PADDLE_EXECUTOR_MULTITHREAD
   std::vector<depCore> depManager;
 #endif
@@ -83,6 +88,10 @@ class Executor {
     uint64_t runEnd = 0UL;
   };
 #endif
+
+  bool varInputMemory(const std::shared_ptr<framework::VarDesc> &var_desc,
+                      framework::Variable *var,
+                      framework::LoDTensor *tensor) const;
 };
 
 }  // namespace paddle_mobile
