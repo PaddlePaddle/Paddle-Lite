@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.6)
+option(USE_OPENMP "openmp support" ON)
+
 project(paddle-mobile)
 
 option(DEBUGING "enable debug mode" OFF)
-option(USE_OPENMP "openmp support" OFF)
 option(USE_EXCEPTION "use std exception" OFF)
 option(LOG_PROFILE "log profile" OFF)
 # select the platform to build
