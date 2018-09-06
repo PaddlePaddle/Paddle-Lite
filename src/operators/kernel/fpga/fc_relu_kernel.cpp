@@ -23,7 +23,7 @@ template <>
 bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA> *param) {
   bool relu_enabled = true;
   Tensor *input_x = const_cast<Tensor *>(param->InputX());
-  auto input_x_ptr = input_x->data<half>();
+  auto input_x_ptr = input_x->data<float>();
   Tensor *input_y = param->InputY();
   const Tensor *input_z = param->InputZ();
   auto input_z_ptr = input_z->data<float>();
@@ -50,13 +50,13 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA> *param) {
   input_y->Resize(framework::make_ddim({num, filter_channel, height, width}));
   float max_value = fpga::filter_find_max(input_y);
   fpga::format_filter(input_y, max_value, 1);
-  auto input_y_ptr = input_y->data<int8_t>();
+  auto input_y_ptr = input_y->data<float>();
 
   int element_num_per_div = fpga::get_element_num_per_div(input_y, 1);
   fpga::format_bias_scale_array(&bs_ptr, element_num_per_div, channel);
 
   fpga::format_ofm(out);
-  auto out_ptr = out->mutable_data<half>();
+  auto out_ptr = out->mutable_data<float>();
 
   fpga::ConvArgs convArgs;
   convArgs.relu_enabled = relu_enabled;
