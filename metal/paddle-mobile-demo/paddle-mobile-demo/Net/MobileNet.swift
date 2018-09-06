@@ -15,12 +15,10 @@
 import Foundation
 import paddle_mobile
 
+
+
 class MobileNet: Net{
 
-  var program: Program?
-  
-  var executor: Executor<Float32>?
-  
   let except: Int = 0
   
   class MobilenetPreProccess: CusomKernel {

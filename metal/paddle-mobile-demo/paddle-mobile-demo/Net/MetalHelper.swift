@@ -28,25 +28,6 @@ class MetalHelper {
     textureLoader = MTKTextureLoader.init(device: device)
   }
   
-  static func scaleTexture(queue: MTLCommandQueue, input: MTLTexture, size:(width: Int, height: Int), complete: @escaping (MTLTexture) -> Void) {
 
-    guard let buffer = queue.makeCommandBuffer() else {
-      fatalError()
-    }
-    
-    let scaleKernel = ScaleKernel.init(device: MetalHelper.shared.device, shape: CusomKernel.Shape.init(inWidth: size.width, inHeight: size.height, inChannel: 3))
-    
-    do {
-      try scaleKernel.compute(inputTexuture: input, commandBuffer: buffer)
-    } catch let error {
-      print(error)
-      fatalError()
-    }
-    
-    buffer.addCompletedHandler { (buffer) in
-      complete(scaleKernel.outputTexture)
-    }
-    buffer.commit()
-  }
 }
 
