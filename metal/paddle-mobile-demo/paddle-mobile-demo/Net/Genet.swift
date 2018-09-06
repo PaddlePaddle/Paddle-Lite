@@ -17,10 +17,6 @@ import paddle_mobile
 
 class Genet: Net {
   
-  var program: Program?
-  
-  var executor: Executor<Float32>?
-  
   let except: Int = 0
   
   class GenetPreProccess: CusomKernel {

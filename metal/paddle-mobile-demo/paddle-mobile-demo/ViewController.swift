@@ -25,7 +25,7 @@ let modelHelperMap: [SupportModel : Net] = [.mobilenet_ssd : MobileNet_ssd_hand.
 //let modelHelperMap: [SupportModel : Net] = [.mobilenet : MobileNet.init(), .mobilenet_ssd : MobileNet_ssd_hand.init()]
 
 enum SupportModel: String{
-//  case mobilenet = "mobilenet"
+  //  case mobilenet = "mobilenet"
   case mobilenet_ssd = "mobilenetssd"
   case genet          = "genet"
   static func supportedModels() -> [SupportModel] {
@@ -40,6 +40,7 @@ class ViewController: UIViewController {
   @IBOutlet weak var elapsedTimeLabel: UILabel!
   @IBOutlet weak var modelPickerView: UIPickerView!
   @IBOutlet weak var threadPickerView: UIPickerView!
+  var runnner: Runner!
   var selectImage: UIImage?
   var modelType: SupportModel = SupportModel.supportedModels()[0]
   var toPredictTexture: MTLTexture?
@@ -56,10 +57,10 @@ class ViewController: UIViewController {
   
   @IBAction func loadAct(_ sender: Any) {
     
-    do {
-      try self.net.load()
-    } catch let error {
-      print(error)
+    if runnner.load() {
+      print(" load success ! ")
+    } else {
+      print(" load error ! ")
     }
   }
   
@@ -71,7 +72,7 @@ class ViewController: UIViewController {
   }
   
   @IBAction func clearAct(_ sender: Any) {
-    net.clear()
+    runnner.clear()
   }
   
   @IBAction func predictAct(_ sender: Any) {
@@ -79,26 +80,22 @@ class ViewController: UIViewController {
       resultTextView.text = "请选择图片 ! "
       return
     }
-    do {
-      let max = 50
-      let startDate = Date.init()
-      for i in 0..<max {
-        try net.predict(inTexture: inTexture) { [weak self] (result) in
-          guard let sSelf = self else {
-            fatalError()
-          }
-          
-          if i == max - 1 {
-            let time = Date.init().timeIntervalSince(startDate)
-            DispatchQueue.main.async {
-              sSelf.resultTextView.text = sSelf.net.resultStr(res: result.resultArray)
-              sSelf.elapsedTimeLabel.text = "平均耗时: \(time/Double(max) * 1000.0) ms"
-            }
+    let max = 50
+    let startDate = Date.init()
+    for i in 0..<max {
+      runnner.predict(texture: inTexture) { [weak self] (success, time, result) in
+        guard let sSelf = self else {
+          fatalError()
+        }
+        
+        if i == max - 1 {
+          let time = Date.init().timeIntervalSince(startDate)
+          DispatchQueue.main.async {
+            sSelf.resultTextView.text = sSelf.net.resultStr(res: result)
+            sSelf.elapsedTimeLabel.text = "平均耗时: \(time/Double(max) * 1000.0) ms"
           }
         }
       }
-    } catch let error {
-      print(error)
     }
   }
   
@@ -111,7 +108,9 @@ class ViewController: UIViewController {
     
     selectImage = UIImage.init(named: "hand.jpg")
     selectImageView.image = selectImage
-    net.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
+    
+    runnner = Runner.init(inNet: net, commandQueue: MetalHelper.shared.queue, inPlatform: .GPU)
+    runnner.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
       self?.toPredictTexture = texture
     }
   }
@@ -167,7 +166,7 @@ extension ViewController:  UIImagePickerControllerDelegate, UINavigationControll
       }
       sSelf.selectImage = image
       sSelf.selectImageView.image = image
-      sSelf.net.getTexture(image: image.cgImage!, getTexture: { (texture) in
+      sSelf.runnner.getTexture(image: image.cgImage!, getTexture: { (texture) in
         sSelf.toPredictTexture = texture
       })
     }
