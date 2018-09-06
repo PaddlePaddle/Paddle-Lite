@@ -33,6 +33,7 @@ static const char *g_mobilenet_detect = "../models/mobilenet-detect";
 static const char *g_squeezenet = "../models/squeezenet";
 static const char *g_googlenet = "../models/googlenet";
 static const char *g_mobilenet = "../models/mobilenet";
+static const char *g_nlp = "../models/nlp";
 static const char *g_resnet_50 = "../models/resnet_50";
 static const char *g_resnet = "../models/resnet";
 static const char *g_googlenet_combine = "../models/googlenet_combine";

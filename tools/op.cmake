@@ -111,7 +111,20 @@ if ("FPGAnets" IN_LIST NET)
   set(FUSION_CONVBN_OP ON)
   set(FUSION_CONVADD_OP ON)
 
-  set(FOUND_MATCH ON)   
+  set(FOUND_MATCH ON)
+endif()
+
+if ("nlp" IN_LIST NET)
+  message("nlp enabled")
+  set(FUSION_FC_OP ON)
+  set(LOOKUP_OP ON)
+  set(GRU_OP ON)
+  set(CRF_OP ON)
+  set(CONCAT_OP ON)
+  set(ELEMENTWISEADD_OP ON)
+
+
+  set(FOUND_MATCH ON)
 endif()
 
 
@@ -149,6 +162,9 @@ if(NOT FOUND_MATCH)
   set(SLICE_OP ON)
   set(DROPOUT_OP ON)
   set(IM2SEQUENCE_OP ON)
+  set(LOOKUP_OP ON)
+  set(GRU_OP ON)
+  set(CRF_OP ON)
 endif()
 
   # option(BATCHNORM_OP "" ON)
@@ -287,4 +303,16 @@ endif()
 
 if (CONV_TRANSPOSE_OP)
   add_definitions(-DCONV_TRANSPOSE)
+endif()
+
+if (LOOKUP_OP)
+  add_definitions(-DLOOKUP_OP)
+endif()
+
+if (GRU_OP)
+  add_definitions(-DGRU_OP)
+endif()
+
+if (CRF_OP)
+  add_definitions(-DCRF_OP)
 endif()
