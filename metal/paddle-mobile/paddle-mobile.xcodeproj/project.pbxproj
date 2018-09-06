@@ -44,6 +44,7 @@
 		FC3602CC2108819F00FACB58 /* PaddleMobileUnitTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC3602CB2108819F00FACB58 /* PaddleMobileUnitTest.swift */; };
 		FC4CB74920F0B954007C0C6D /* ConvKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC4CB74820F0B954007C0C6D /* ConvKernel.metal */; };
 		FC4CB74B20F12C30007C0C6D /* ProgramOptimize.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC4CB74A20F12C30007C0C6D /* ProgramOptimize.swift */; };
+		FC4FD9752140E1DE0073E130 /* PaddleMobile.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC4FD9742140E1DE0073E130 /* PaddleMobile.swift */; };
 		FC5163F620EF556E00636C28 /* Texture2DTo2DArrayKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC5163F520EF556E00636C28 /* Texture2DTo2DArrayKernel.swift */; };
 		FC60DB8920E9AAA500FF203F /* MetalExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC60DB8820E9AAA500FF203F /* MetalExtension.swift */; };
 		FC82735920E3C04200BE430A /* OpCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC82735820E3C04200BE430A /* OpCreator.swift */; };
@@ -136,6 +137,7 @@
 		FC3602CB2108819F00FACB58 /* PaddleMobileUnitTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaddleMobileUnitTest.swift; sourceTree = "<group>"; };
 		FC4CB74820F0B954007C0C6D /* ConvKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ConvKernel.metal; sourceTree = "<group>"; };
 		FC4CB74A20F12C30007C0C6D /* ProgramOptimize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramOptimize.swift; sourceTree = "<group>"; };
+		FC4FD9742140E1DE0073E130 /* PaddleMobile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PaddleMobile.swift; sourceTree = "<group>"; };
 		FC5163F520EF556E00636C28 /* Texture2DTo2DArrayKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Texture2DTo2DArrayKernel.swift; sourceTree = "<group>"; };
 		FC60DB8820E9AAA500FF203F /* MetalExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalExtension.swift; sourceTree = "<group>"; };
 		FC82735820E3C04200BE430A /* OpCreator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpCreator.swift; sourceTree = "<group>"; };
@@ -235,10 +237,9 @@
 		FC039B6C20E11C3C0081E9F8 /* paddle-mobile */ = {
 			isa = PBXGroup;
 			children = (
+				FC4FD9742140E1DE0073E130 /* PaddleMobile.swift */,
 				FC039BAE20E11CC20081E9F8 /* Program */,
 				FC039BA320E11CBC0081E9F8 /* Operators */,
-				FC039BA120E11CB70081E9F8 /* Loader.swift */,
-				FC039B9A20E11CA00081E9F8 /* Executor.swift */,
 				FC039B9C20E11CB20081E9F8 /* framework */,
 				FC039B9320E11C9A0081E9F8 /* Common */,
 				FC039B6D20E11C3C0081E9F8 /* paddle_mobile.h */,
@@ -263,6 +264,8 @@
 		FC039B9C20E11CB20081E9F8 /* framework */ = {
 			isa = PBXGroup;
 			children = (
+				FC039BA120E11CB70081E9F8 /* Loader.swift */,
+				FC039B9A20E11CA00081E9F8 /* Executor.swift */,
 				FC039B9D20E11CB20081E9F8 /* Tensor.swift */,
 				FC039B9E20E11CB20081E9F8 /* Dim.swift */,
 				FC9D038320E23B01000F735A /* Texture.swift */,
@@ -524,6 +527,7 @@
 				FC039B9920E11C9A0081E9F8 /* Types.swift in Sources */,
 				FC4CB74920F0B954007C0C6D /* ConvKernel.metal in Sources */,
 				FCA3A1632132A4AC00084FE5 /* ReshapeKernel.metal in Sources */,
+				FC4FD9752140E1DE0073E130 /* PaddleMobile.swift in Sources */,
 				FCBCCC592122F42700D94F7E /* ConvBNReluOp.swift in Sources */,
 				FC039BA920E11CBC0081E9F8 /* ConvOp.swift in Sources */,
 				FC9D038420E23B01000F735A /* Texture.swift in Sources */,
