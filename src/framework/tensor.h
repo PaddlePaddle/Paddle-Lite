@@ -328,28 +328,7 @@ class Tensor {
   inline void reset_data_ptr(void *p) {
     ((PlaceholderImpl *)(holder_.get()))->ptr_.reset((uint8_t *)p);
   }
-
-  struct FPGAArgs {
-    friend class Tensor;
-
-    inline float *scale_pointer() { return scale_; }
-    inline float scale() { return *scale_; }
-
-   private:
-    float *scale_;
-  };
-
-  struct FPGAArgs fpga_args() const {
-    FPGAArgs args;
-    args.scale_ = scale.get();
-    return args;
-  }
-
-  void SetFpgaScale(float s) { *(scale.get()) = s; }
-
- private:
-  std::shared_ptr<float> scale = std::make_shared<float>(0);
-
+  float scale[2];  // scale[0]= MAX/127.0, scale[1]= 127.0/MAX
 #endif
 };
 
@@ -360,7 +339,12 @@ inline Print &operator<<(Print &printer, const Tensor &tensor) {
   stride = stride > 0 ? stride : 1;
 #ifndef PADDLE_MOBILE_FPGA
   for (int i = 0; i < tensor.numel(); i += stride) {
-    printer << tensor.data<float>()[i] << " ";
+    //  这不一定是float的
+    if (tensor.type() == typeid(float)) {
+      printer << tensor.data<float>()[i] << " ";
+    } else if (tensor.type() == typeid(int64_t)) {
+      printer << tensor.data<int64_t>()[i] << " ";
+    }
   }
 #endif
 

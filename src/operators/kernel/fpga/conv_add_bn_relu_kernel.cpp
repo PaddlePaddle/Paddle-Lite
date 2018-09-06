@@ -15,7 +15,6 @@ limitations under the License. */
 #ifdef FUSION_CONVADDBNRELU_OP
 
 #include "operators/kernel/conv_add_bn_relu_kernel.h"
-#include "fpga/quantization.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -24,13 +23,12 @@ template <>
 bool ConvAddBNReluKernel<FPGA, float>::Init(
     FusionConvAddBNReluParam<FPGA> *param) {
   bool relu_enabled = true;
-  const Tensor *input = param->Input();
-  auto input_ptr = input->data<half>();
+  Tensor *input = const_cast<Tensor *>(param->Input());
+  auto input_ptr = input->data<float>();
   const Tensor *bias = param->Bias();
   auto bias_ptr = bias->data<float>();
   Tensor *filter = param->Filter();
   Tensor *out = param->Output();
-  auto out_ptr = out->mutable_data<half>();
   auto bn_mean_ptr = param->InputMean()->data<float>();
   auto bn_var_ptr = param->InputVariance()->data<float>();
   auto bn_scale_ptr = param->InputScale()->data<float>();
@@ -52,13 +50,22 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
                        static_cast<float>(pow((bn_var_ptr[i] + epsilon), 0.5));
     new_bias_ptr[i] =
         bn_bias_ptr[i] + (bias_ptr[i] - bn_mean_ptr[i]) * new_scale_ptr[i];
-    bs_ptr[i * 2] = new_scale_ptr[i];
-    bs_ptr[i * 2 + 1] = new_bias_ptr[i];
+    bs_ptr[i + 2] = new_scale_ptr[i];
+    bs_ptr[i] = new_bias_ptr[i];
   }
   param->SetNewScale(new_scale);
   param->SetNewBias(new_bias);
-  fpga::quantize_filter(filter);
-  auto filter_ptr = filter->data<int8_t>();
+
+  float max_value = fpga::filter_find_max(filter);
+  fpga::format_filter(filter, max_value, param->Groups());
+  auto filter_ptr = filter->data<float>();
+
+  int element_num_per_div =
+      fpga::get_element_num_per_div(filter, param->Groups());
+  fpga::format_bias_scale_array(&bs_ptr, element_num_per_div, channel);
+
+  fpga::format_ofm(out);
+  auto out_ptr = out->mutable_data<float>();
 
   fpga::ConvArgs convArgs;
   convArgs.relu_enabled = relu_enabled;
@@ -76,9 +83,9 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
   convArgs.image.width = input->dims()[3];
   convArgs.image.pad_height = param->Paddings()[0];
   convArgs.image.pad_width = param->Paddings()[1];
-  convArgs.image.scale_address = input->fpga_args().scale_pointer();
+  convArgs.image.scale_address = input->scale;
   convArgs.output.address = (void *)out_ptr;
-  convArgs.output.scale_address = out->fpga_args().scale_pointer();
+  convArgs.output.scale_address = out->scale;
   param->SetFpgaArgs(convArgs);
   return true;
 }
