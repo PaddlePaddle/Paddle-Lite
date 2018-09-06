@@ -28,16 +28,9 @@ void matmul<float>(const framework::Tensor &matrix_a, bool trans_a,
   auto dim_a = matrix_a.dims();
   auto dim_b = matrix_b.dims();
   auto dim_out = matrix_out->dims();
-  //  PADDLE_ENFORCE(dim_a.size() == 2 && dim_b.size() == 2 &&
-  //  dim_out.size() ==
-  //  2,
-  //                 "The input and output of matmul be matrix");
-  //
-  //  PADDLE_ENFORCE(platform::is_cpu_place(matrix_a.place()) &&
-  //                     platform::is_cpu_place(matrix_b.place())
-  //                     &&
-  //                     platform::is_cpu_place(matrix_out->place()),
-  //                 "Matrix must all be in CPUPlace");
+  PADDLE_MOBILE_ENFORCE(
+      dim_a.size() == 2 && dim_b.size() == 2 && dim_out.size() == 2,
+      "The input and output of matmul be matrix");
 
   int M = dim_out[0];
   int N = dim_out[1];
@@ -61,16 +54,9 @@ void matmulWithBn<float>(const framework::Tensor &matrix_a, bool trans_a,
   auto dim_a = matrix_a.dims();
   auto dim_b = matrix_b.dims();
   auto dim_out = matrix_out->dims();
-  //  PADDLE_ENFORCE(dim_a.size() == 2 && dim_b.size() == 2 &&
-  //  dim_out.size() ==
-  //  2,
-  //                 "The input and output of matmul be matrix");
-  //
-  //  PADDLE_ENFORCE(platform::is_cpu_place(matrix_a.place()) &&
-  //                     platform::is_cpu_place(matrix_b.place())
-  //                     &&
-  //                     platform::is_cpu_place(matrix_out->place()),
-  //                 "Matrix must all be in CPUPlace");
+  PADDLE_MOBILE_ENFORCE(
+      dim_a.size() == 2 && dim_b.size() == 2 && dim_out.size() == 2,
+      "The input and output of matmul be matrix");
 
   int M = dim_out[0];
   int N = dim_out[1];
@@ -95,16 +81,9 @@ void matmulWithPRelu(const framework::Tensor &matrix_a, bool trans_a,
   auto dim_a = matrix_a.dims();
   auto dim_b = matrix_b.dims();
   auto dim_out = matrix_out->dims();
-  //  PADDLE_ENFORCE(dim_a.size() == 2 && dim_b.size() == 2 &&
-  //  dim_out.size() ==
-  //  2,
-  //                 "The input and output of matmul be matrix");
-  //
-  //  PADDLE_ENFORCE(platform::is_cpu_place(matrix_a.place()) &&
-  //                     platform::is_cpu_place(matrix_b.place())
-  //                     &&
-  //                     platform::is_cpu_place(matrix_out->place()),
-  //                 "Matrix must all be in CPUPlace");
+  PADDLE_MOBILE_ENFORCE(
+      dim_a.size() == 2 && dim_b.size() == 2 && dim_out.size() == 2,
+      "The input and output of matmul be matrix");
 
   int M = dim_out[0];
   int N = dim_out[1];
