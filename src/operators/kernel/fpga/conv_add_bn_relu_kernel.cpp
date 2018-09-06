@@ -24,7 +24,7 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
     FusionConvAddBNReluParam<FPGA> *param) {
   bool relu_enabled = true;
   Tensor *input = const_cast<Tensor *>(param->Input());
-  auto input_ptr = input->data<half>();
+  auto input_ptr = input->data<float>();
   const Tensor *bias = param->Bias();
   auto bias_ptr = bias->data<float>();
   Tensor *filter = param->Filter();
@@ -58,14 +58,14 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
 
   float max_value = fpga::filter_find_max(filter);
   fpga::format_filter(filter, max_value, param->Groups());
-  auto filter_ptr = filter->data<int8_t>();
+  auto filter_ptr = filter->data<float>();
 
   int element_num_per_div =
       fpga::get_element_num_per_div(filter, param->Groups());
   fpga::format_bias_scale_array(&bs_ptr, element_num_per_div, channel);
 
   fpga::format_ofm(out);
-  auto out_ptr = out->mutable_data<half>();
+  auto out_ptr = out->mutable_data<float>();
 
   fpga::ConvArgs convArgs;
   convArgs.relu_enabled = relu_enabled;

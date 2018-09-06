@@ -25,19 +25,19 @@ namespace operators {
 template <>
 bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
   const Tensor *input = param->InputX();
-  if (input->type() == typeid(half)) {
-    auto input_ptr = input->data<half>();
-    auto output_ptr = param->Out();
-    fpga::BypassArgs args;
-    args.convert_type = fpga::DATA_FP16_TO_FP32;
-    args.layout_type = fpga::LAYOUT_HWC_TO_CHW;
-    args.image.address = (void *)(input_ptr);
-    args.image.height = input->dims()[0];
-    args.image.width = input->dims()[1];
-    args.image.channels = 1;
-    args.output.address = output_ptr;
-    param->SetFpgaArgs(args);
-  }
+
+  auto input_ptr = input->data<float>();
+  auto output = param->Out();
+  auto output_ptr = output->mutable_data<float>();
+  fpga::BypassArgs args;
+  args.convert_type = fpga::DATA_FP16_TO_FP32;
+  args.layout_type = fpga::LAYOUT_NO_CONVERT;
+  args.image.address = (void *)(input_ptr);
+  args.image.height = input->dims()[0];
+  args.image.width = input->dims()[1];
+  args.image.channels = 1;
+  args.output.address = output_ptr;
+  param->SetFpgaArgs(args);
 
   return true;
 }
