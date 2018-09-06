@@ -26,7 +26,8 @@ void PaddleMobile<Dtype, P>::SetThreadNum(int num) {
 
 template <typename Dtype, Precision P>
 bool PaddleMobile<Dtype, P>::Load(const std::string &dirname, bool optimize,
-                                  bool quantification, int batch_size) {
+                                  bool quantification, int batch_size,
+                                  bool loddable) {
   if (loader_.get() == nullptr) {
     loader_ = std::make_shared<Loader<Dtype, P>>();
   } else {
@@ -35,7 +36,8 @@ bool PaddleMobile<Dtype, P>::Load(const std::string &dirname, bool optimize,
 
   if (executor_.get() == nullptr) {
     executor_ = std::make_shared<Executor<Dtype, P>>(
-        loader_->Load(dirname, optimize, quantification), batch_size, optimize);
+        loader_->Load(dirname, optimize, quantification), batch_size, optimize,
+        loddable);
   } else {
     LOG(kLOG_INFO) << "executor inited";
   }
@@ -46,7 +48,8 @@ bool PaddleMobile<Dtype, P>::Load(const std::string &dirname, bool optimize,
 template <typename Dtype, Precision P>
 bool PaddleMobile<Dtype, P>::Load(const std::string &model_path,
                                   const std::string &para_path, bool optimize,
-                                  bool quantification, int batch_size) {
+                                  bool quantification, int batch_size,
+                                  bool loddable) {
   if (loader_.get() == nullptr) {
     loader_ = std::make_shared<Loader<Dtype, P>>();
   } else {
@@ -56,7 +59,7 @@ bool PaddleMobile<Dtype, P>::Load(const std::string &model_path,
   if (executor_.get() == nullptr) {
     executor_ = std::make_shared<Executor<Dtype, P>>(
         loader_->Load(model_path, para_path, optimize, quantification),
-        batch_size, optimize);
+        batch_size, optimize, loddable);
   } else {
     LOG(kLOG_INFO) << "executor inited";
   }
@@ -94,6 +97,12 @@ template <typename Dtype, Precision P>
 std::shared_ptr<framework::Tensor> PaddleMobile<Dtype, P>::Predict(
     const framework::Tensor &t) {
   return executor_->Predict(t);
+}
+
+template <typename Dtype, Precision P>
+std::shared_ptr<framework::Tensor> PaddleMobile<Dtype, P>::PredictLod(
+    const framework::LoDTensor &t) {
+  return executor_->PredictLod(t);
 }
 
 template <typename Dtype, Precision P>

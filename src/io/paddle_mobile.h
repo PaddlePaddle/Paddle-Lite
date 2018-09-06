@@ -39,7 +39,8 @@ class PaddleMobile {
    * @b 加载分开形式的 fluid 模型
    * */
   bool Load(const std::string &dirname, bool optimize = false,
-            bool quantification = false, int batch_size = 1);
+            bool quantification = false, int batch_size = 1,
+            bool loddable = false);
 
   /*
    * @b load combine format fluid mode
@@ -47,7 +48,7 @@ class PaddleMobile {
    * */
   bool Load(const std::string &model_path, const std::string &para_path,
             bool optimize = false, bool quantification = false,
-            int batch_size = 1);
+            int batch_size = 1, bool loddable = false);
   /*
    * @b 设置线程数, 当 cmake 中开启 openmp 时生效
    * */
@@ -57,6 +58,11 @@ class PaddleMobile {
    * @b to predict
    * */
   std::shared_ptr<framework::Tensor> Predict(const framework::Tensor &t);
+
+  /*
+   * @b to predict
+   * */
+  std::shared_ptr<framework::Tensor> PredictLod(const framework::LoDTensor &t);
 
   /*
    * @b to predict with vector and dim
