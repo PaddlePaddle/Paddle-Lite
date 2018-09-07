@@ -19,7 +19,7 @@ typedef enum : NSUInteger {
   MobileNet,
   MobileNetSSD,
   Genet,
-} Net;
+} NetType;
 
 @interface ModelConfig: NSObject
 
@@ -64,7 +64,7 @@ typedef enum : NSUInteger {
 /*
  * 初始化
  */
--(instancetype)initWithCommandQueue:(id<MTLCommandQueue>)queue net:(Net)netType modelConfig:(ModelConfig *)config;
+-(instancetype)initWithCommandQueue:(id<MTLCommandQueue>)queue net:(NetType)netType modelConfig:(ModelConfig *)config;
 
 /*
  * paramPointer 模型参数内存地址

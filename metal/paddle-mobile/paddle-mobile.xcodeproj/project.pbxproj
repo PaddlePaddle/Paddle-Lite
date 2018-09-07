@@ -41,8 +41,11 @@
 		FC0E2DBE20EE460D009C1FAC /* BatchNormKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC0E2DBD20EE460D009C1FAC /* BatchNormKernel.swift */; };
 		FC0E2DC020EE461F009C1FAC /* ElementwiseAddKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC0E2DBF20EE461F009C1FAC /* ElementwiseAddKernel.swift */; };
 		FC1B16B320EC9A4F00678B91 /* Kernels.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC1B16B220EC9A4F00678B91 /* Kernels.metal */; };
-		FC292C5421421B2F00CF622F /* PaddleMobileGPU.h in Headers */ = {isa = PBXBuildFile; fileRef = FC292C5321421B2E00CF622F /* PaddleMobileGPU.h */; };
+		FC292C5421421B2F00CF622F /* PaddleMobileGPU.h in Headers */ = {isa = PBXBuildFile; fileRef = FC292C5321421B2E00CF622F /* PaddleMobileGPU.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		FC292C5621421B4600CF622F /* PaddleMobileGPU.m in Sources */ = {isa = PBXBuildFile; fileRef = FC292C5521421B4600CF622F /* PaddleMobileGPU.m */; };
+		FC292C81214255BD00CF622F /* CPUCompute.mm in Sources */ = {isa = PBXBuildFile; fileRef = FC292C7C214255BC00CF622F /* CPUCompute.mm */; };
+		FC292C82214255BD00CF622F /* MobileNetSSD.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC292C7E214255BC00CF622F /* MobileNetSSD.swift */; };
+		FC292C85214257CB00CF622F /* CPUCompute.h in Headers */ = {isa = PBXBuildFile; fileRef = FC292C7D214255BC00CF622F /* CPUCompute.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		FC3602CC2108819F00FACB58 /* PaddleMobileUnitTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC3602CB2108819F00FACB58 /* PaddleMobileUnitTest.swift */; };
 		FC4CB74920F0B954007C0C6D /* ConvKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC4CB74820F0B954007C0C6D /* ConvKernel.metal */; };
 		FC4CB74B20F12C30007C0C6D /* ProgramOptimize.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC4CB74A20F12C30007C0C6D /* ProgramOptimize.swift */; };
@@ -141,6 +144,9 @@
 		FC27990D21341016000B6BAD /* BoxCoder.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = BoxCoder.metal; sourceTree = "<group>"; };
 		FC292C5321421B2E00CF622F /* PaddleMobileGPU.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PaddleMobileGPU.h; sourceTree = "<group>"; };
 		FC292C5521421B4600CF622F /* PaddleMobileGPU.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PaddleMobileGPU.m; sourceTree = "<group>"; };
+		FC292C7C214255BC00CF622F /* CPUCompute.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = CPUCompute.mm; sourceTree = "<group>"; };
+		FC292C7D214255BC00CF622F /* CPUCompute.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CPUCompute.h; sourceTree = "<group>"; };
+		FC292C7E214255BC00CF622F /* MobileNetSSD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileNetSSD.swift; sourceTree = "<group>"; };
 		FC3602CB2108819F00FACB58 /* PaddleMobileUnitTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaddleMobileUnitTest.swift; sourceTree = "<group>"; };
 		FC4CB74820F0B954007C0C6D /* ConvKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ConvKernel.metal; sourceTree = "<group>"; };
 		FC4CB74A20F12C30007C0C6D /* ProgramOptimize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramOptimize.swift; sourceTree = "<group>"; };
@@ -250,6 +256,9 @@
 		FC039B6C20E11C3C0081E9F8 /* paddle-mobile */ = {
 			isa = PBXGroup;
 			children = (
+				FC292C7E214255BC00CF622F /* MobileNetSSD.swift */,
+				FC292C7C214255BC00CF622F /* CPUCompute.mm */,
+				FC292C7D214255BC00CF622F /* CPUCompute.h */,
 				FC292C5521421B4600CF622F /* PaddleMobileGPU.m */,
 				FC292C5321421B2E00CF622F /* PaddleMobileGPU.h */,
 				FC4FD9762140E4920073E130 /* CPU */,
@@ -424,6 +433,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FC4FD9792140E4980073E130 /* PaddleMobile.h in Headers */,
+				FC292C85214257CB00CF622F /* CPUCompute.h in Headers */,
 				FC292C5421421B2F00CF622F /* PaddleMobileGPU.h in Headers */,
 				FC039B6F20E11C3C0081E9F8 /* paddle_mobile.h in Headers */,
 			);
@@ -540,6 +550,7 @@
 				FCDDC6C6212F9FB800E5EF74 /* PreluKernel.swift in Sources */,
 				FCA67CD52138272900BD58AA /* ConvAddMetal.metal in Sources */,
 				FCBCCC5B2122F66F00D94F7E /* ConvBNReluKernel.swift in Sources */,
+				FC292C81214255BD00CF622F /* CPUCompute.mm in Sources */,
 				FCEBC0F420F1FDD90099DBAF /* ConvAddBatchNormReluOp.swift in Sources */,
 				FC0E2DC020EE461F009C1FAC /* ElementwiseAddKernel.swift in Sources */,
 				4AF928772133F1DB005B6C3A /* BoxCoder.metal in Sources */,
@@ -584,6 +595,7 @@
 				FC0E2DBE20EE460D009C1FAC /* BatchNormKernel.swift in Sources */,
 				FC039BAB20E11CBC0081E9F8 /* Operator.swift in Sources */,
 				FCD04E6A20F319EC0007374F /* SoftmaxOp.swift in Sources */,
+				FC292C82214255BD00CF622F /* MobileNetSSD.swift in Sources */,
 				FCBCCC612122FBDF00D94F7E /* PriorBoxKernel.swift in Sources */,
 				FCBCCC5F2122FB3B00D94F7E /* PriorBoxOp.swift in Sources */,
 				FC9D038220E2312E000F735A /* FetchOp.swift in Sources */,
