@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "operators/math/gemm.h"
-#include <string>
+#include <string.h>
 #include "common/log.h"
 #include "memory/t_malloc.h"
 #if __ARM_NEON
