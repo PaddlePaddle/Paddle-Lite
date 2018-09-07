@@ -91,6 +91,11 @@ class OpParam {
   static T *InputXFrom(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue<T>("X", inputs, scope);
   }
+  template <typename T>
+  static T *InputOutSizeFrom(const VariableNameMap &inputs,
+                             const Scope &scope) {
+    return GetVarValue<T>("OutSize", inputs, scope);
+  }
 
   template <typename T>
   static T *InputWFrom(const VariableNameMap &inputs, const Scope &scope) {
@@ -2254,6 +2259,93 @@ class GruParam : public OpParam {
   std::string activation_;
   std::string gate_activation_;
   bool is_reverse_;
+};
+#endif
+
+#ifdef FLATTEN_OP
+template <typename Dtype>
+class FlattenParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  FlattenParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+               const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+  }
+  const RType *InputX() const { return input_x_; }
+  RType *Out() const { return out_; }
+
+ private:
+  RType *input_x_;
+  RType *out_;
+};
+#endif
+
+#ifdef SPLIT_OP
+template <typename Dtype>
+class SplitParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  SplitParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+             const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+  }
+  const RType *InputX() const { return input_x_; }
+  RType *Out() const { return out_; }
+
+ private:
+  RType *input_x_;
+  RType *out_;
+};
+#endif
+
+#ifdef BILINEAR_INTERP_OP
+template <typename Dtype>
+class BilinearInterpParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  BilinearInterpParam(const VariableNameMap &inputs,
+                      const VariableNameMap &outputs, const AttributeMap &attrs,
+                      const Scope &scope) {
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    input_outsize_ = InputOutSizeFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+  }
+  const RType *InputX() const { return input_x_; }
+  RType *Out() const { return out_; }
+
+ private:
+  RType *input_x_;
+  RType *input_outsize_;
+  RType *out_;
+};
+#endif
+
+#ifdef SHAPE_OP
+template <typename Dtype>
+class ShapeParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  ShapeParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+             const AttributeMap &attrs, const Scope &scope) {
+    input_ = InputFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+  }
+  const RType *InputX() const { return input_; }
+  RType *Out() const { return out_; }
+
+ private:
+  RType *input_;
+  RType *out_;
 };
 #endif
 
