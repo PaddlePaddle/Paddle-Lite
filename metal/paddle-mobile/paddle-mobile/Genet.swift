@@ -13,17 +13,20 @@
  limitations under the License. */
 
 import Foundation
-import paddle_mobile
 
 class Genet: Net {
-  
-  
-//  var means: [Float] = [128.0, 128.0, 128.0]
-//  
-//  var scale: Float = 0.017
-//  
-//  let except: Int = 0
-//  
+  @objc override init(device: MTLDevice) {
+    super.init(device: device)
+    means = [128.0, 128.0, 128.0]
+    scale = 0.017
+    except = 0
+    modelPath = Bundle.main.path(forResource: "genet_model", ofType: nil) ?! "model null"
+    paramPath = Bundle.main.path(forResource: "genet_params", ofType: nil) ?! "para null"
+    modelDir = ""
+    preprocessKernel = GenetPreProccess.init(device: device)
+    dim = (n: 1, h: 128, w: 128, c: 3)
+  }
+
   class GenetPreProccess: CusomKernel {
     init(device: MTLDevice) {
       let s = CusomKernel.Shape.init(inWidth: 128, inHeight: 128, inChannel: 3)
@@ -32,21 +35,7 @@ class Genet: Net {
   }
   
   override func resultStr(res: [Float]) -> String {
-    
     return " \(Array<Float>(res.suffix(10))) ... "
-  }
-  
-//  var preprocessKernel: CusomKernel
-//  let dim = (n: 1, h: 128, w: 128, c: 3)
-//  let modelPath: String
-//  let paramPath: String
-//  let modelDir: String
-  
-  init(device: MTLDevice) {
-    modelPath = Bundle.main.path(forResource: "genet_model", ofType: nil) ?! "model null"
-    paramPath = Bundle.main.path(forResource: "genet_params", ofType: nil) ?! "para null"
-    modelDir = ""
-    preprocessKernel = GenetPreProccess.init(device: device)
   }
   
 }
