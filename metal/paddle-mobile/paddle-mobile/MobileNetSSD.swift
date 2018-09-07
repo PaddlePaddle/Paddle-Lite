@@ -13,15 +13,24 @@
  limitations under the License. */
 
 import Foundation
-import paddle_mobile
+//import 
+//import pad
+
 
 class MobileNet_ssd_hand: Net{
   
-  var means: [Float] = [123.68, 116.78, 103.94]
+  @objc override init(device: MTLDevice) {
+    super.init(device: device)
+    means = [123.68, 116.78, 103.94]
+    scale = 0.017
+    except = 2
+    modelPath = Bundle.main.path(forResource: "ssd_hand_model", ofType: nil) ?! "model null"
+    paramPath = Bundle.main.path(forResource: "ssd_hand_params", ofType: nil) ?! "para null"
+    modelDir = ""
+    preprocessKernel = MobilenetssdPreProccess.init(device: device)
+    dim = (n: 1, h: 300, w: 300, c: 3)
+  }
   
-  var scale: Float = 0.017
-  
-  let except: Int = 2
   class MobilenetssdPreProccess: CusomKernel {
     init(device: MTLDevice) {
       let s = CusomKernel.Shape.init(inWidth: 300, inHeight: 300, inChannel: 3)
@@ -29,11 +38,11 @@ class MobileNet_ssd_hand: Net{
     }
   }
   
-  func resultStr(res: [Float]) -> String {
+  override func resultStr(res: [Float]) -> String {
     return " \(res)"
   }
   
-  func fetchResult(paddleMobileRes: ResultHolder) -> [Float32] {
+  override func fetchResult(paddleMobileRes: ResultHolder) -> [Float32] {
 
     guard let interRes = paddleMobileRes.intermediateResults else {
       fatalError(" need have inter result ")
@@ -76,18 +85,7 @@ class MobileNet_ssd_hand: Net{
     return output
   }
   
-  var preprocessKernel: CusomKernel
-  let dim: (n: Int, h: Int, w: Int, c: Int) = (n: 1, h: 300, w: 300, c: 3)
-  let modelPath: String
-  let paramPath: String
-  let modelDir: String
-  
-  
-  init() {
-    modelPath = Bundle.main.path(forResource: "ssd_hand_model", ofType: nil) ?! "model null"
-    paramPath = Bundle.main.path(forResource: "ssd_hand_params", ofType: nil) ?! "para null"
-    modelDir = ""
-    preprocessKernel = MobilenetssdPreProccess.init(device: MetalHelper.shared.device)
 
-  }
+  
+ 
 }

@@ -15,8 +15,6 @@
 import Foundation
 import paddle_mobile
 
-
-
 class MobileNet: Net{
   
   var means: [Float] = [123.68, 116.78, 103.94]
@@ -65,11 +63,11 @@ class MobileNet: Net{
   let paramPath: String
   let modelDir: String
   
-  init() {
+  init(device: MTLDevice) {
     modelPath = Bundle.main.path(forResource: "model", ofType: nil) ?! "model null"
     paramPath = Bundle.main.path(forResource: "params", ofType: nil) ?! "para null"
     modelDir = ""
-    preprocessKernel = MobilenetPreProccess.init(device: MetalHelper.shared.device)
+    preprocessKernel = MobilenetPreProccess.init(device: device)
   }
 }
 
