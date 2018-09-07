@@ -176,6 +176,7 @@ void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
       type_size = 8;
       break;
     case framework::VARTYPE_TYPE_INT32:
+      memory = tensor->mutable_data<int32_t>();
       type_size = 4;
       break;
     case framework::VARTYPE_TYPE_INT64:
@@ -308,6 +309,9 @@ bool Executor<Dtype, P>::varInputMemory(
     }
 
     case framework::VARTYPE_TYPE_INT32: {
+      tensor = var->template GetMutable<framework::LoDTensor>();
+      tensor->template mutable_data<int32_t>();
+      is_mute_match = true;
       break;
     }
 
