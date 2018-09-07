@@ -10,7 +10,7 @@ import Metal
 import MetalKit
 import Foundation
 
-public enum Platform{
+@objc public enum Platform: Int{
   case CPU, GPU
 }
 
@@ -20,30 +20,31 @@ class ScaleKernel: CusomKernel {
   }
 }
 
-public protocol Net {
-  var except: Int { get }
-  var means: [Float] { get }
-  var scale: Float { get }
-  var dim: (n: Int, h: Int, w: Int, c: Int) { get }
-  var preprocessKernel: CusomKernel { get }
-//  var paramPointer: UnsafeMutableRawPointer { get }
-//  var paramSize: Int { get }
-//  var modelPointer: UnsafeMutableRawPointer { get }
-//  var modelSize: Int { get }
-  var modelPath: String { get }
-  var paramPath: String { get }
-  var modelDir: String { get }
-  func resultStr(res: [Float]) -> String
-  func fetchResult(paddleMobileRes: ResultHolder) -> [Float32]
-}
-
-extension Net {
-  public func fetchResult(paddleMobileRes: ResultHolder) -> [Float32] {
-    return paddleMobileRes.resultArr
+public class Net: NSObject {
+  var except: Int = 0
+  var means: [Float] = []
+  var scale: Float = 0.0
+  var dim: (n: Int, h: Int, w: Int, c: Int) = (n: 0, h: 0, w: 0, c: 0)
+  var preprocessKernel: CusomKernel? = nil
+  var paramPointer: UnsafeMutableRawPointer? = nil
+  var paramSize: Int = 0
+  var modelPointer: UnsafeMutableRawPointer? = nil
+  var modelSize: Int = 0
+  var modelPath: String = ""
+  var paramPath: String = ""
+  var modelDir: String = ""
+  func resultStr(res: [Float]) -> String {
+    fatalError()
+  }
+  func fetchResult(paddleMobileRes: ResultHolder) -> [Float32] {
+    fatalError()
+  }
+  @objc public init(device: MTLDevice) {
+    super.init()
   }
 }
 
-public class Runner {
+public class Runner: NSObject {
   var program: Program?
   var executor: Executor<Float32>?
   var queue: MTLCommandQueue?
@@ -62,7 +63,7 @@ public class Runner {
    * commandQueue: GPU 是需要传入
    * inPlatform:   需要使用的平台, GPU or CPU
    */
-  public init(inNet: Net, commandQueue: MTLCommandQueue?, inPlatform: Platform) {
+  @objc public init(inNet: Net, commandQueue: MTLCommandQueue?, inPlatform: Platform) {
     net = inNet
     queue = commandQueue
     device = queue?.device
@@ -84,7 +85,7 @@ public class Runner {
   /**
    * load 模型, 返回 true 可进行预测
    */
-  public func load() -> Bool {
+  @objc public func load() -> Bool {
     if platform == .GPU {
       guard let inDevice = device, let inQueue = queue else {
         print(" paddle mobile gpu load error, need MTLCommandQueue")
@@ -104,7 +105,7 @@ public class Runner {
     return true
   }
   
-  public func predict(inputPointer: UnsafeMutablePointer<Float32>, completion: @escaping ( _ success: Bool, _ resultArray: [Float32]) -> Void) {
+  @objc public func predict(inputPointer: UnsafeMutablePointer<Float32>, completion: @escaping ( _ success: Bool, _ resultArray: [Float32]) -> Void) {
     guard let res = cpuPaddleMobile?.predictInput(inputPointer, dim: dimsNum, means: meansNumber, scale: net.scale) else {
       completion(false, [])
       return
@@ -117,7 +118,7 @@ public class Runner {
    * texture: 需要预测的 texture 需要做过预处理
    * ( _ success: Bool, _ time:TimeInterval, _ resultArray: [Float32]) -> Void : 回调闭包, 三个参数分别为: 是否成功, 预测耗时, 结果数组
    */
-  public func predict(texture: MTLTexture, completion: @escaping ( _ success: Bool, _ resultArray: [Float32]) -> Void) {
+  @objc public func predict(texture: MTLTexture, completion: @escaping ( _ success: Bool, _ resultArray: [Float32]) -> Void) {
     do {
       try self.executor?.predict(input: texture, dim: [self.net.dim.n, self.net.dim.h, self.net.dim.w, self.net.dim.c], completionHandle: { [weak self] (res) in
         guard let SSelf = self else {
@@ -138,7 +139,7 @@ public class Runner {
    * cgImage: 需要预测的图片
    * ( _ success: Bool, _ time:TimeInterval, _ resultArray: [Float32]) -> Void : 回调闭包, 三个参数分别为: 是否成功, 预测耗时, 结果数组
    */
-  public func predict(cgImage: CGImage, completion: @escaping ( _ success: Bool, _ resultArray: [Float32]) -> Void) {
+  @objc public func predict(cgImage: CGImage, completion: @escaping ( _ success: Bool, _ resultArray: [Float32]) -> Void) {
     if platform == .GPU {
       getTexture(image: cgImage) { [weak self] (texture) in
         guard let SSelf = self else {
@@ -157,7 +158,7 @@ public class Runner {
   /*
    * 清理内存, 调用此函数后, 不能再使用, 需重新 load
    */
-  public func clear() {
+  @objc public func clear() {
     if platform == .GPU {
       executor?.clear()
       executor = nil
@@ -167,7 +168,7 @@ public class Runner {
     }
   }
   
-  public func preproccess(image: CGImage) -> UnsafeMutablePointer<Float> {
+  @objc public func preproccess(image: CGImage) -> UnsafeMutablePointer<Float> {
     let output = UnsafeMutablePointer<Float>.allocate(capacity: numel)
     let means = net.means.map { NSNumber.init(value: $0) }
     let dims = [NSNumber.init(value: net.dim.n),
@@ -181,7 +182,7 @@ public class Runner {
   /*
    * 获取 texture, 对 texture 进行预处理, GPU 预测时使用
    */
-  public func getTexture(image: CGImage, getTexture: @escaping (MTLTexture) -> Void) {
+  @objc public func getTexture(image: CGImage, getTexture: @escaping (MTLTexture) -> Void) {
     let texture = try? textureLoader?.newTexture(cgImage: image, options: [:]) ?! " texture loader error"
     scaleTexture(input: texture!, size: (net.dim.w, net.dim.h), complete: getTexture)
   }
