@@ -58,6 +58,7 @@ static std::mutex shared_mutex;
 - (BOOL)load:(NSString *)modelPath andWeightsPath:(NSString *)weighsPath{
   std::string model_path_str = std::string([modelPath UTF8String]);
   std::string weights_path_str = std::string([weighsPath UTF8String]);
+  pam_->SetThreadNum(2);
   if (loaded_ = pam_->Load(model_path_str, weights_path_str, true)) {
     return YES;
   } else {

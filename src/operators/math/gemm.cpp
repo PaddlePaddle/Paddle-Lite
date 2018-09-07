@@ -3002,14 +3002,21 @@ void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
   NC = L2 / (KC * sizeof(float));
 
   // make sure MC is multiple of MR, and NC is multiple of NR
-  int mblock_num = (m + MC - 1) / MC;
-  MC = (m + mblock_num - 1) / mblock_num;
-  MC = (MC + MR - 1) / MR * MR;
+  if (MC == 0) {
+    MC = MR;
+  } else {
+    int mblock_num = (m + MC - 1) / MC;
+    MC = (m + mblock_num - 1) / mblock_num;
+    MC = (MC + MR - 1) / MR * MR;
+  }
   //  DLOG << "mblock_num = " << mblock_num << ", MC = " << MC << "\n";
-
-  int nblock_num = (n + NC - 1) / NC;
-  NC = (n + nblock_num - 1) / nblock_num;
-  NC = (NC + NR - 1) / NR * NR;
+  if (NC == 0) {
+    NC = NR;
+  } else {
+    int nblock_num = (n + NC - 1) / NC;
+    NC = (n + nblock_num - 1) / nblock_num;
+    NC = (NC + NR - 1) / NR * NR;
+  }
   //  DLOG << "nblock_num = " << nblock_num << ", NC = " << NC << "\n";
 
   packedA = static_cast<float *>(
@@ -3067,14 +3074,21 @@ void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
   NC = L2 / (KC * sizeof(float));
 
   // make sure MC is multiple of MR, and NC is multiple of NR
-  int mblock_num = (m + MC - 1) / MC;
-  MC = (m + mblock_num - 1) / mblock_num;
-  MC = (MC + MR - 1) / MR * MR;
+  if (MC == 0) {
+    MC = MR;
+  } else {
+    int mblock_num = (m + MC - 1) / MC;
+    MC = (m + mblock_num - 1) / mblock_num;
+    MC = (MC + MR - 1) / MR * MR;
+  }
   //  DLOG << "mblock_num = " << mblock_num << ", MC = " << MC << "\n";
-
-  int nblock_num = (n + NC - 1) / NC;
-  NC = (n + nblock_num - 1) / nblock_num;
-  NC = (NC + NR - 1) / NR * NR;
+  if (NC == 0) {
+    NC = NR;
+  } else {
+    int nblock_num = (n + NC - 1) / NC;
+    NC = (n + nblock_num - 1) / nblock_num;
+    NC = (NC + NR - 1) / NR * NR;
+  }
   //  DLOG << "nblock_num = " << nblock_num << ", NC = " << NC << "\n";
 
   packedA = static_cast<float *>(
@@ -3133,14 +3147,21 @@ void SgemmWithPRelu(int m, int n, int k, const float *A, int lda,
   NC = L2 / (KC * sizeof(float));
 
   // make sure MC is multiple of MR, and NC is multiple of NR
-  int mblock_num = (m + MC - 1) / MC;
-  MC = (m + mblock_num - 1) / mblock_num;
-  MC = (MC + MR - 1) / MR * MR;
+  if (MC == 0) {
+    MC = MR;
+  } else {
+    int mblock_num = (m + MC - 1) / MC;
+    MC = (m + mblock_num - 1) / mblock_num;
+    MC = (MC + MR - 1) / MR * MR;
+  }
   //  DLOG << "mblock_num = " << mblock_num << ", MC = " << MC << "\n";
-
-  int nblock_num = (n + NC - 1) / NC;
-  NC = (n + nblock_num - 1) / nblock_num;
-  NC = (NC + NR - 1) / NR * NR;
+  if (NC == 0) {
+    NC = NR;
+  } else {
+    int nblock_num = (n + NC - 1) / NC;
+    NC = (n + nblock_num - 1) / nblock_num;
+    NC = (NC + NR - 1) / NR * NR;
+  }
   //  DLOG << "nblock_num = " << nblock_num << ", NC = " << NC << "\n";
 
   packedA = static_cast<float *>(
@@ -3203,9 +3224,13 @@ void Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
   if (m > n) {
     // 对 A 分块
     MC = L1 / (KC * sizeof(float));
-    int mblock_num = (m + MC - 1) / MC;
-    MC = (m + mblock_num - 1) / mblock_num;
-    MC = (MC + MR - 1) / MR * MR;
+    if (MC == 0) {
+      MC = MR;
+    } else {
+      int mblock_num = (m + MC - 1) / MC;
+      MC = (m + mblock_num - 1) / mblock_num;
+      MC = (MC + MR - 1) / MR * MR;
+    }
     // 补齐 B
     NC = (n + NR - 1) / NR * NR;
 
@@ -3227,9 +3252,13 @@ void Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
   } else {
     // 对 B 分块
     NC = L1 / (KC * sizeof(float));
-    int nblock_num = (n + NC - 1) / NC;
-    NC = (n + nblock_num - 1) / nblock_num;
-    NC = (NC + NR - 1) / NR * NR;
+    if (NC == 0) {
+      NC = NR;
+    } else {
+      int nblock_num = (n + NC - 1) / NC;
+      NC = (n + nblock_num - 1) / nblock_num;
+      NC = (NC + NR - 1) / NR * NR;
+    }
     // 补齐 A
     MC = (m + MR - 1) / MR * MR;
 
@@ -3311,9 +3340,13 @@ void SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A, int lda,
   if (m > n) {
     // 对 A 分块
     MC = L1 / (KC * sizeof(float));
-    int mblock_num = (m + MC - 1) / MC;
-    MC = (m + mblock_num - 1) / mblock_num;
-    MC = (MC + MR - 1) / MR * MR;
+    if (MC == 0) {
+      MC = MR;
+    } else {
+      int mblock_num = (m + MC - 1) / MC;
+      MC = (m + mblock_num - 1) / mblock_num;
+      MC = (MC + MR - 1) / MR * MR;
+    }
     // 补齐 B
     NC = (n + NR - 1) / NR * NR;
 
@@ -3335,9 +3368,13 @@ void SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A, int lda,
   } else {
     // 对 B 分块
     NC = L1 / (KC * sizeof(float));
-    int nblock_num = (n + NC - 1) / NC;
-    NC = (n + nblock_num - 1) / nblock_num;
-    NC = (NC + NR - 1) / NR * NR;
+    if (NC == 0) {
+      NC == NR;
+    } else {
+      int nblock_num = (n + NC - 1) / NC;
+      NC = (n + nblock_num - 1) / nblock_num;
+      NC = (NC + NR - 1) / NR * NR;
+    }
     // 补齐 A
     MC = (m + MR - 1) / MR * MR;
 
@@ -3430,9 +3467,13 @@ void SgemmWithPRelu_omp(int m, int n, int k, const float *A, int lda,
   if (m > n) {
     // 对 A 分块
     MC = L1 / (KC * sizeof(float));
-    int mblock_num = (m + MC - 1) / MC;
-    MC = (m + mblock_num - 1) / mblock_num;
-    MC = (MC + MR - 1) / MR * MR;
+    if (MC == 0) {
+      MC = MR;
+    } else {
+      int mblock_num = (m + MC - 1) / MC;
+      MC = (m + mblock_num - 1) / mblock_num;
+      MC = (MC + MR - 1) / MR * MR;
+    }
     // 补齐 B
     NC = (n + NR - 1) / NR * NR;
 
@@ -3454,9 +3495,13 @@ void SgemmWithPRelu_omp(int m, int n, int k, const float *A, int lda,
   } else {
     // 对 B 分块
     NC = L1 / (KC * sizeof(float));
-    int nblock_num = (n + NC - 1) / NC;
-    NC = (n + nblock_num - 1) / nblock_num;
-    NC = (NC + NR - 1) / NR * NR;
+    if (NC == 0) {
+      NC = NR;
+    } else {
+      int nblock_num = (n + NC - 1) / NC;
+      NC = (n + nblock_num - 1) / nblock_num;
+      NC = (NC + NR - 1) / NR * NR;
+    }
     // 补齐 A
     MC = (m + MR - 1) / MR * MR;
 

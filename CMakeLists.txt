@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.6)
+option(USE_OPENMP "openmp support" ON)
+
 project(paddle-mobile)
 
 option(DEBUGING "enable debug mode" OFF)
-option(USE_OPENMP "openmp support" OFF)
 option(USE_EXCEPTION "use std exception" OFF)
 option(LOG_PROFILE "log profile" OFF)
 # select the platform to build
@@ -149,7 +150,17 @@ if (ANDROID_NDK_TOOLCHAIN_INCLUDED)
     list(REMOVE_DUPLICATES CMAKE_CXX_FLAGS)
     add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 elseif(IS_IOS)
-    add_library(paddle-mobile STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+    if(USE_OPENMP)
+        add_library(paddle-mobile-stage0 STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+        add_custom_target(paddle-mobile ALL
+            COMMAND libtool -static -o ${CMAKE_BINARY_DIR}/libpaddle-mobile.a ${CMAKE_CURRENT_LIST_DIR}/tools/libomp.a $<TARGET_FILE:paddle-mobile-stage0>
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            DEPENDS paddle-mobile
+        )
+        add_dependencies(paddle-mobile paddle-mobile-stage0)
+    else()
+        add_library(paddle-mobile STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+    endif()
 else ()
     add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 endif ()
