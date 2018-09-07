@@ -17,10 +17,11 @@ import MetalKit
 import paddle_mobile
 import MetalPerformanceShaders
 
+let platform: Platform = .CPU
 let threadSupport = [1]
 
-//.mobilenet : MobileNet.init(),
-let modelHelperMap: [SupportModel : Net] = [.mobilenet_ssd : MobileNet_ssd_hand.init(), .genet : Genet.init()]
+let modelHelperMap: [SupportModel : Runner] = [.mobilenet_ssd : Runner.init(inNet: MobileNet_ssd_hand.init(), commandQueue: MetalHelper.shared.queue, inPlatform: platform),
+                                               .genet : Runner.init(inNet: Genet.init(), commandQueue: MetalHelper.shared.queue, inPlatform: platform)]
 //, .genet : Genet.init()
 //let modelHelperMap: [SupportModel : Net] = [.mobilenet : MobileNet.init(), .mobilenet_ssd : MobileNet_ssd_hand.init()]
 
@@ -30,7 +31,7 @@ enum SupportModel: String{
   case genet          = "genet"
   static func supportedModels() -> [SupportModel] {
     //.mobilenet,
-    return [.mobilenet_ssd ,.genet]
+    return [.mobilenet_ssd, .genet]
   }
 }
 
@@ -40,12 +41,13 @@ class ViewController: UIViewController {
   @IBOutlet weak var elapsedTimeLabel: UILabel!
   @IBOutlet weak var modelPickerView: UIPickerView!
   @IBOutlet weak var threadPickerView: UIPickerView!
-  var runnner: Runner!
+  
   var selectImage: UIImage?
+  var inputPointer: UnsafeMutablePointer<Float32>?
   var modelType: SupportModel = SupportModel.supportedModels()[0]
   var toPredictTexture: MTLTexture?
   
-  var net: Net {
+  var runner: Runner {
     get {
       return modelHelperMap[modelType] ?! " has no this type "
     }
@@ -56,8 +58,7 @@ class ViewController: UIViewController {
   var threadNum = 1
   
   @IBAction func loadAct(_ sender: Any) {
-    
-    if runnner.load() {
+    if runner.load() {
       print(" load success ! ")
     } else {
       print(" load error ! ")
@@ -72,27 +73,61 @@ class ViewController: UIViewController {
   }
   
   @IBAction func clearAct(_ sender: Any) {
-    runnner.clear()
+    runner.clear()
   }
   
   @IBAction func predictAct(_ sender: Any) {
-    guard let inTexture = toPredictTexture else {
-      resultTextView.text = "请选择图片 ! "
-      return
-    }
     let max = 50
-    let startDate = Date.init()
-    for i in 0..<max {
-      runnner.predict(texture: inTexture) { [weak self] (success, time, result) in
-        guard let sSelf = self else {
-          fatalError()
+    switch platform {
+    case .GPU:
+      guard let inTexture = toPredictTexture else {
+        resultTextView.text = "请选择图片 ! "
+        return
+      }
+      
+      let startDate = Date.init()
+      for i in 0..<max {
+        runner.predict(texture: inTexture) { [weak self] (success, res) in
+          guard let sSelf = self else {
+            fatalError()
+          }
+          if success {
+            if i == max - 1 {
+              let time = Date.init().timeIntervalSince(startDate)
+              DispatchQueue.main.async {
+                sSelf.resultTextView.text = sSelf.runner.net.resultStr(res: res)
+                sSelf.elapsedTimeLabel.text = "平均耗时: \(time/Double(max) * 1000.0) ms"
+              }
+            }
+          }
         }
-        
-        if i == max - 1 {
-          let time = Date.init().timeIntervalSince(startDate)
-          DispatchQueue.main.async {
-            sSelf.resultTextView.text = sSelf.net.resultStr(res: result)
-            sSelf.elapsedTimeLabel.text = "平均耗时: \(time/Double(max) * 1000.0) ms"
+      }
+      
+      
+    case .CPU:
+      guard let inInputPointer = inputPointer else {
+        fatalError( " need input pointer " )
+      }
+      
+      for _ in 0..<10 {
+        runner.predict(inputPointer: inInputPointer) { (success, res) in
+        }
+      }
+      
+      let startDate = Date.init()
+      for i in 0..<max {
+        runner.predict(inputPointer: inInputPointer) { [weak self](success, res) in
+          guard let sSelf = self else {
+            fatalError()
+          }
+          if success {
+            if i == max - 1 {
+              let time = Date.init().timeIntervalSince(startDate)
+              DispatchQueue.main.async {
+                sSelf.resultTextView.text = sSelf.runner.net.resultStr(res: res)
+                sSelf.elapsedTimeLabel.text = "平均耗时: \(time/Double(max) * 1000.0) ms"
+              }
+            }
           }
         }
       }
@@ -109,9 +144,14 @@ class ViewController: UIViewController {
     selectImage = UIImage.init(named: "hand.jpg")
     selectImageView.image = selectImage
     
-    runnner = Runner.init(inNet: net, commandQueue: MetalHelper.shared.queue, inPlatform: .GPU)
-    runnner.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
-      self?.toPredictTexture = texture
+    if platform == .CPU {
+      inputPointer = runner.preproccess(image: selectImage!.cgImage!)
+    } else if platform == .GPU {
+      runner.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
+        self?.toPredictTexture = texture
+      }
+    } else {
+      fatalError( " unsupport " )
     }
   }
 }
@@ -166,7 +206,7 @@ extension ViewController:  UIImagePickerControllerDelegate, UINavigationControll
       }
       sSelf.selectImage = image
       sSelf.selectImageView.image = image
-      sSelf.runnner.getTexture(image: image.cgImage!, getTexture: { (texture) in
+      sSelf.runner.getTexture(image: image.cgImage!, getTexture: { (texture) in
         sSelf.toPredictTexture = texture
       })
     }
