@@ -41,6 +41,8 @@
 		FC0E2DBE20EE460D009C1FAC /* BatchNormKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC0E2DBD20EE460D009C1FAC /* BatchNormKernel.swift */; };
 		FC0E2DC020EE461F009C1FAC /* ElementwiseAddKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC0E2DBF20EE461F009C1FAC /* ElementwiseAddKernel.swift */; };
 		FC1B16B320EC9A4F00678B91 /* Kernels.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC1B16B220EC9A4F00678B91 /* Kernels.metal */; };
+		FC292C5421421B2F00CF622F /* PaddleMobileGPU.h in Headers */ = {isa = PBXBuildFile; fileRef = FC292C5321421B2E00CF622F /* PaddleMobileGPU.h */; };
+		FC292C5621421B4600CF622F /* PaddleMobileGPU.m in Sources */ = {isa = PBXBuildFile; fileRef = FC292C5521421B4600CF622F /* PaddleMobileGPU.m */; };
 		FC3602CC2108819F00FACB58 /* PaddleMobileUnitTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC3602CB2108819F00FACB58 /* PaddleMobileUnitTest.swift */; };
 		FC4CB74920F0B954007C0C6D /* ConvKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC4CB74820F0B954007C0C6D /* ConvKernel.metal */; };
 		FC4CB74B20F12C30007C0C6D /* ProgramOptimize.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC4CB74A20F12C30007C0C6D /* ProgramOptimize.swift */; };
@@ -137,6 +139,8 @@
 		FC0E2DBF20EE461F009C1FAC /* ElementwiseAddKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElementwiseAddKernel.swift; sourceTree = "<group>"; };
 		FC1B16B220EC9A4F00678B91 /* Kernels.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Kernels.metal; sourceTree = "<group>"; };
 		FC27990D21341016000B6BAD /* BoxCoder.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = BoxCoder.metal; sourceTree = "<group>"; };
+		FC292C5321421B2E00CF622F /* PaddleMobileGPU.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PaddleMobileGPU.h; sourceTree = "<group>"; };
+		FC292C5521421B4600CF622F /* PaddleMobileGPU.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PaddleMobileGPU.m; sourceTree = "<group>"; };
 		FC3602CB2108819F00FACB58 /* PaddleMobileUnitTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaddleMobileUnitTest.swift; sourceTree = "<group>"; };
 		FC4CB74820F0B954007C0C6D /* ConvKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ConvKernel.metal; sourceTree = "<group>"; };
 		FC4CB74A20F12C30007C0C6D /* ProgramOptimize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramOptimize.swift; sourceTree = "<group>"; };
@@ -246,6 +250,8 @@
 		FC039B6C20E11C3C0081E9F8 /* paddle-mobile */ = {
 			isa = PBXGroup;
 			children = (
+				FC292C5521421B4600CF622F /* PaddleMobileGPU.m */,
+				FC292C5321421B2E00CF622F /* PaddleMobileGPU.h */,
 				FC4FD9762140E4920073E130 /* CPU */,
 				FC4FD9742140E1DE0073E130 /* PaddleMobile.swift */,
 				FC039BAE20E11CC20081E9F8 /* Program */,
@@ -418,6 +424,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FC4FD9792140E4980073E130 /* PaddleMobile.h in Headers */,
+				FC292C5421421B2F00CF622F /* PaddleMobileGPU.h in Headers */,
 				FC039B6F20E11C3C0081E9F8 /* paddle_mobile.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -455,6 +462,7 @@
 				TargetAttributes = {
 					FC039B6920E11C3C0081E9F8 = {
 						CreatedOnToolsVersion = 9.3.1;
+						LastSwiftMigration = 0940;
 					};
 				};
 			};
@@ -557,6 +565,7 @@
 				FC039BBF20E11CC20081E9F8 /* Attribute.swift in Sources */,
 				FCD04E7420F3437E0007374F /* ConvAddKernel.swift in Sources */,
 				FC039BB920E11CC20081E9F8 /* Scope.swift in Sources */,
+				FC292C5621421B4600CF622F /* PaddleMobileGPU.m in Sources */,
 				FCD04E6620F314C50007374F /* PoolOp.swift in Sources */,
 				FC039BAC20E11CBC0081E9F8 /* BatchNormOp.swift in Sources */,
 				FCBCCC6F2123097100D94F7E /* MulticlassNMSOp.swift in Sources */,
@@ -724,6 +733,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = CDF58151D902A1CBAE56A0C2 /* Pods-paddle-mobile.debug.xcconfig */;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
@@ -749,6 +759,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "orange.paddle-mobile";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -758,6 +769,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = E2A7957C92EDA5C3BEC0FFC2 /* Pods-paddle-mobile.release.xcconfig */;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
