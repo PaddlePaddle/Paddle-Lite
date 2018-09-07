@@ -29,6 +29,7 @@ static const char *g_mobilenet_ssd = "../models/mobilenet+ssd";
 static const char *g_genet_combine = "../models/enet";
 static const char *g_mobilenet_ssd_gesture = "../models/mobilenet+ssd_gesture";
 static const char *g_mobilenet_combined = "../models/mobilenet_combine";
+static const char *g_googlenetv1_combined = "../models/googlenetv1_combine";
 static const char *g_mobilenet_detect = "../models/mobilenet-detect";
 static const char *g_squeezenet = "../models/squeezenet";
 static const char *g_googlenet = "../models/googlenet";
@@ -38,11 +39,14 @@ static const char *g_resnet_50 = "../models/resnet_50";
 static const char *g_resnet = "../models/resnet";
 static const char *g_googlenet_combine = "../models/googlenet_combine";
 static const char *g_yolo = "../models/yolo";
+static const char *g_fluid_fssd_new = "../models/fluid_fssd_new";
+
 static const char *g_test_image_1x3x224x224 =
     "../images/test_image_1x3x224x224_float";
 static const char *g_test_image_1x3x224x224_banana =
     "../images/input_3x224x224_banana";
 static const char *g_hand = "../images/hand_image";
+static const char *g_img = "../images/img.bin";
 
 using paddle_mobile::framework::DDim;
 using paddle_mobile::framework::Tensor;

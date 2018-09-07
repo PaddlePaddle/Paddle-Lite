@@ -59,6 +59,9 @@ const char *G_OP_TYPE_PRELU = "prelu";
 const char *G_OP_TYPE_LOOKUP_TABLE = "lookup_table";
 const char *G_OP_TYPE_GRU = "gru";
 const char *G_OP_TYPE_CRF = "crf_decoding";
+const char *G_OP_TYPE_BILINEAR_INTERP = "bilinear_interp";
+const char *G_OP_TYPE_FLATTEN = "flatten";
+const char *G_OP_TYPE_SHAPE = "shape";
 
 std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
@@ -105,6 +108,9 @@ std::unordered_map<
          {{"Input", "H0", "Weight", "Bias"},
           {"BatchGate", "BatchResetHiddenPrev", "BatchHidden", "Hidden"}}},
         {G_OP_TYPE_CRF, {{"Emission", "Transition", "Label"}, {"ViterbiPath"}}},
+        {G_OP_TYPE_BILINEAR_INTERP, {{"OutSize", "X"}, {"Out"}}},
+        {G_OP_TYPE_FLATTEN, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_SHAPE, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_CONV_TRANSPOSE, {{"Input"}, {"Output"}}}};
 
 }  // namespace paddle_mobile
