@@ -17,6 +17,10 @@ import paddle_mobile
 
 class Genet: Net {
   
+  var means: [Float] = [128.0, 128.0, 128.0]
+  
+  var scale: Float = 0.017
+  
   let except: Int = 0
   
   class GenetPreProccess: CusomKernel {
