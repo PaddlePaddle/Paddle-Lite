@@ -27,7 +27,11 @@ bool DropoutKernel<CPU, float>::Init(DropoutParam<CPU> *para) {
 
 template <typename T>
 struct DropoutFunctor {
-  inline T operator()(T in) const { return in; }
+  DropoutFunctor(T drop_pro) : dropout_pro_(drop_pro) {}
+  inline T operator()(T in) const { return (1 - dropout_pro_) * in; }
+
+ private:
+  T dropout_pro_;
 };
 
 template <>
@@ -36,8 +40,8 @@ void DropoutKernel<CPU, float>::Compute(const DropoutParam<CPU> &param) const {
   auto *input_x_ptr = input_x->data<float>();
   auto *out = param.Out();
   auto *out_ptr = out->mutable_data<float>();
-
-  DropoutFunctor<float> func_;
+  const float dropoutProb = param.DropoutProb();
+  DropoutFunctor<float> func_(dropoutProb);
   math::Transform trans;
   trans(input_x_ptr, input_x_ptr + input_x->numel(), out_ptr, func_);
 }
