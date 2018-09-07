@@ -165,6 +165,10 @@ if(NOT FOUND_MATCH)
   set(LOOKUP_OP ON)
   set(GRU_OP ON)
   set(CRF_OP ON)
+  set(BILINEAR_INTERP_OP ON)
+  set(SPLIT_OP ON)
+  set(FLATTEN_OP ON)
+  set(SHAPE_OP ON)
 endif()
 
   # option(BATCHNORM_OP "" ON)
@@ -315,4 +319,21 @@ endif()
 
 if (CRF_OP)
   add_definitions(-DCRF_OP)
+endif()
+
+
+if (FLATTEN_OP)
+  add_definitions(-DFLATTEN_OP)
+endif()
+
+if (SPLIT_OP)
+  add_definitions(-DSPLIT_OP)
+endif()
+
+if (BILINEAR_INTERP_OP)
+  add_definitions(-DBILINEAR_INTERP_OP)
+endif()
+
+if (SHAPE_OP)
+  add_definitions(-DSHAPE_OP)
 endif()
