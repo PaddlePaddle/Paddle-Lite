@@ -13,12 +13,8 @@
  limitations under the License. */
 
 import Foundation
-//import 
-//import pad
-
 
 class MobileNet_ssd_hand: Net{
-  
   @objc override init(device: MTLDevice) {
     super.init(device: device)
     means = [123.68, 116.78, 103.94]
