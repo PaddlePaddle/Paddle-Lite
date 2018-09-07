@@ -17,12 +17,13 @@ import paddle_mobile
 
 class Genet: Net {
   
-  var means: [Float] = [128.0, 128.0, 128.0]
   
-  var scale: Float = 0.017
-  
-  let except: Int = 0
-  
+//  var means: [Float] = [128.0, 128.0, 128.0]
+//  
+//  var scale: Float = 0.017
+//  
+//  let except: Int = 0
+//  
   class GenetPreProccess: CusomKernel {
     init(device: MTLDevice) {
       let s = CusomKernel.Shape.init(inWidth: 128, inHeight: 128, inChannel: 3)
@@ -30,21 +31,22 @@ class Genet: Net {
     }
   }
   
-  func resultStr(res: [Float]) -> String {
+  override func resultStr(res: [Float]) -> String {
+    
     return " \(Array<Float>(res.suffix(10))) ... "
   }
   
-  var preprocessKernel: CusomKernel
-  let dim = (n: 1, h: 128, w: 128, c: 3)
-  let modelPath: String
-  let paramPath: String
-  let modelDir: String
+//  var preprocessKernel: CusomKernel
+//  let dim = (n: 1, h: 128, w: 128, c: 3)
+//  let modelPath: String
+//  let paramPath: String
+//  let modelDir: String
   
-  init() {
+  init(device: MTLDevice) {
     modelPath = Bundle.main.path(forResource: "genet_model", ofType: nil) ?! "model null"
     paramPath = Bundle.main.path(forResource: "genet_params", ofType: nil) ?! "para null"
     modelDir = ""
-    preprocessKernel = GenetPreProccess.init(device: MetalHelper.shared.device)
+    preprocessKernel = GenetPreProccess.init(device: device)
   }
   
 }

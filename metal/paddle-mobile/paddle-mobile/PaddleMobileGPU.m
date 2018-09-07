@@ -7,3 +7,22 @@
 //
 
 #import <Foundation/Foundation.h>
+
+#import "PaddleMobileGPU.h"
+#import "paddle_mobile/paddle_mobile-Swift.h"
+
+@implementation PaddleMobileGPU
+
+-(void)clrear {
+  
+//  [[ResultHolder alloc] init];
+//  [[TestClass alloc] init];
+//  [[TestClass alloc] initWithI:<#(NSInteger)#>]
+//  ResultHolder;
+  
+}
+
+@end
+
+
+
