@@ -16,6 +16,11 @@ import Foundation
 import paddle_mobile
 
 class MobileNet_ssd_hand: Net{
+  
+  var means: [Float] = [123.68, 116.78, 103.94]
+  
+  var scale: Float = 0.017
+  
   let except: Int = 2
   class MobilenetssdPreProccess: CusomKernel {
     init(device: MTLDevice) {
@@ -27,7 +32,7 @@ class MobileNet_ssd_hand: Net{
   func resultStr(res: [Float]) -> String {
     return " \(res)"
   }
-
+  
   func fetchResult(paddleMobileRes: ResultHolder) -> [Float32] {
 
     guard let interRes = paddleMobileRes.intermediateResults else {

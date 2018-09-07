@@ -18,7 +18,11 @@ import paddle_mobile
 
 
 class MobileNet: Net{
-
+  
+  var means: [Float] = [123.68, 116.78, 103.94]
+  
+  var scale: Float = 0.017
+  
   let except: Int = 0
   
   class MobilenetPreProccess: CusomKernel {
