@@ -207,7 +207,17 @@ else ()
     ADD_EXECUTABLE(test-gru-op  operators/test_gru_op.cpp test_helper.h  test_include.h)
     target_link_libraries(test-gru-op paddle-mobile)
 
+    # gen test
+    ADD_EXECUTABLE(test-inceptionv4 net/test_inceptionv4.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-inceptionv4 paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-alexnet net/test_alexnet.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-alexnet paddle-mobile)
+
     #add_library(test-lib-size SHARED common/test_lib_size.h common/test_lib_size.cpp)
+
+
 
 
 

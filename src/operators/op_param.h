@@ -2136,15 +2136,20 @@ class DropoutParam : public OpParam {
                const AttributeMap &attrs, const Scope &scope) {
     input_x_ = InputXFrom<GType>(inputs, scope);
     out_ = OutFrom<GType>(outputs, scope);
+
+    dropout_prob_ = GetAttr<float>("dropout_prob", attrs);
   }
 
   const RType *InputX() const { return input_x_; }
 
   RType *Out() const { return out_; }
 
+  float DropoutProb() const { return dropout_prob_; }
+
  private:
   RType *input_x_;
   RType *out_;
+  float dropout_prob_;
 };
 #endif
 
