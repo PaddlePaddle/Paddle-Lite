@@ -56,7 +56,7 @@ struct DtypeTensorTrait<CPU> {
 template <>
 struct DtypeTensorTrait<FPGA> {
   // This is the type we obtained in variable.
-  typedef framework::LoDTensor gtype;
+  typedef framework::Tensor gtype;
   // This type will be the parent class type
   // or the same type.
   typedef framework::Tensor rtype;
@@ -1232,11 +1232,7 @@ class FusionFcParam : public OpParam {
   }
   const GType *InputX() const { return input_x_; }
 
-#ifdef PADDLE_MOBILE_FPGA
-  RType *InputY() const { return input_y_; }
-#else
   const RType *InputY() const { return input_y_; }
-#endif
 
   const RType *InputZ() const { return input_z_; }
 
@@ -1259,11 +1255,11 @@ class FusionFcParam : public OpParam {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::ConvArgs fpga_conv_args;
+  fpga::WrapperConvArgs fpga_conv_args;
 
  public:
-  const fpga::ConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::ConvArgs &args) { fpga_conv_args = args; }
+  const fpga::WrapperConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::WrapperConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 
@@ -1297,11 +1293,7 @@ class FusionConvAddParam : public OpParam {
 
   const RType *Input() const { return input_; }
 
-#ifdef PADDLE_MOBILE_FPGA
-  RType *Filter() const { return filter_; }
-#else
   const RType *Filter() const { return filter_; }
-#endif
 
   RType *Output() const { return output_; }
 
@@ -1326,11 +1318,11 @@ class FusionConvAddParam : public OpParam {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::ConvArgs fpga_conv_args;
+  fpga::WrapperConvArgs fpga_conv_args;
 
  public:
-  const fpga::ConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::ConvArgs &args) { fpga_conv_args = args; }
+  const fpga::WrapperConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::WrapperConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 
@@ -1379,11 +1371,7 @@ class FusionConvAddPReluParam : public OpParam {
 
   const RType *Input() const { return input_; }
 
-#ifdef PADDLE_MOBILE_FPGA
-  RType *Filter() const { return filter_; }
-#else
   const RType *Filter() const { return filter_; }
-#endif
 
   RType *Output() const { return output_; }
 
@@ -1410,11 +1398,11 @@ class FusionConvAddPReluParam : public OpParam {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::ConvArgs fpga_conv_args;
+  fpga::WrapperConvArgs fpga_conv_args;
 
  public:
-  const fpga::ConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::ConvArgs &args) { fpga_conv_args = args; }
+  const fpga::WrapperConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::WrapperConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 #endif
@@ -1461,11 +1449,7 @@ class FusionConvAddAddPReluParam : public OpParam {
 
   const RType *Input() const { return input_; }
 
-#ifdef PADDLE_MOBILE_FPGA
-  RType *Filter() const { return filter_; }
-#else
   const RType *Filter() const { return filter_; }
-#endif
 
   RType *Output() const { return output_; }
 
@@ -1496,11 +1480,11 @@ class FusionConvAddAddPReluParam : public OpParam {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::ConvArgs fpga_conv_args;
+  fpga::WrapperConvArgs fpga_conv_args;
 
  public:
-  const fpga::ConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::ConvArgs &args) { fpga_conv_args = args; }
+  const fpga::WrapperConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::WrapperConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 #endif
@@ -1538,11 +1522,7 @@ class FusionConvAddBNReluParam : public OpParam {
 
   const RType *Input() const { return input_; }
 
-#ifdef PADDLE_MOBILE_FPGA
-  RType *Filter() const { return filter_; }
-#else
   const RType *Filter() const { return filter_; }
-#endif
 
   RType *Output() const { return output_; }
 
@@ -1598,11 +1578,11 @@ class FusionConvAddBNReluParam : public OpParam {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::ConvArgs fpga_conv_args;
+  fpga::WrapperConvArgs fpga_conv_args;
 
  public:
-  const fpga::ConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::ConvArgs &args) { fpga_conv_args = args; }
+  const fpga::WrapperConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::WrapperConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 #endif
@@ -1648,11 +1628,7 @@ class FusionConvBNAddReluParam : public OpParam {
 
   const RType *Input() const { return input_; }
 
-#ifdef PADDLE_MOBILE_FPGA
-  RType *Filter() const { return filter_; }
-#else
   const RType *Filter() const { return filter_; }
-#endif
 
   RType *Output() const { return output_; }
 
@@ -1711,11 +1687,11 @@ class FusionConvBNAddReluParam : public OpParam {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::ConvArgs fpga_conv_args;
+  fpga::WrapperConvArgs fpga_conv_args;
 
  public:
-  const fpga::ConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::ConvArgs &args) { fpga_conv_args = args; }
+  const fpga::WrapperConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::WrapperConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 #endif
@@ -1748,11 +1724,8 @@ class FusionConvBNParam : public OpParam {
 
   const RType *Input() const { return input_; }
 
-#ifdef PADDLE_MOBILE_FPGA
-  RType *Filter() const { return filter_; }
-#else
   const RType *Filter() const { return filter_; }
-#endif
+
   RType *Output() const { return output_y_; }
 
   const vector<int> &Strides() const { return strides_; }
@@ -1805,11 +1778,11 @@ class FusionConvBNParam : public OpParam {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::ConvArgs fpga_conv_args;
+  fpga::WrapperConvArgs fpga_conv_args;
 
  public:
-  const fpga::ConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::ConvArgs &args) { fpga_conv_args = args; }
+  const fpga::WrapperConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::WrapperConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 #endif
@@ -1847,11 +1820,8 @@ class FusionConvAddBNParam : public OpParam {
 
   const RType *Input() const { return input_; }
 
-#ifdef PADDLE_MOBILE_FPGA
-  RType *Filter() const { return filter_; }
-#else
   const RType *Filter() const { return filter_; }
-#endif
+
   RType *Output() const { return output_y_; }
 
   const vector<int> &Strides() const { return strides_; }
@@ -1906,11 +1876,11 @@ class FusionConvAddBNParam : public OpParam {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::ConvArgs fpga_conv_args;
+  fpga::WrapperConvArgs fpga_conv_args;
 
  public:
-  const fpga::ConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::ConvArgs &args) { fpga_conv_args = args; }
+  const fpga::WrapperConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::WrapperConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 #endif
@@ -2027,11 +1997,7 @@ class FusionConvBNReluParam : public OpParam {
 
   const RType *Input() const { return input_; }
 
-#ifdef PADDLE_MOBILE_FPGA
-  RType *Filter() const { return filter_; }
-#else
   const RType *Filter() const { return filter_; }
-#endif
 
   RType *Output() const { return output_; }
 
@@ -2085,11 +2051,11 @@ class FusionConvBNReluParam : public OpParam {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::ConvArgs fpga_conv_args;
+  fpga::WrapperConvArgs fpga_conv_args;
 
  public:
-  const fpga::ConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::ConvArgs &args) { fpga_conv_args = args; }
+  const fpga::WrapperConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::WrapperConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 #endif

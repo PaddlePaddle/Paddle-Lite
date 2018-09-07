@@ -21,7 +21,7 @@ namespace operators {
 
 template <>
 bool PoolKernel<FPGA, float>::Init(PoolParam<FPGA> *param) {
-  Tensor *input = const_cast<Tensor *>(param->Input());
+  auto *input = const_cast<Tensor *>(param->Input());
   auto input_ptr = input->data<float>();
   Tensor *output = param->Output();
   fpga::format_ofm(output);
@@ -31,19 +31,19 @@ bool PoolKernel<FPGA, float>::Init(PoolParam<FPGA> *param) {
   vector<int> paddings = param->Paddings();
 
   fpga::PoolingArgs poolArgs;
-  poolArgs.image.address = (void *)input_ptr;
-  poolArgs.image.channels = input->dims()[1];
-  poolArgs.image.height = input->dims()[2];
-  poolArgs.image.width = input->dims()[3];
-  poolArgs.image.pad_height = paddings[0];
-  poolArgs.image.pad_width = paddings[1];
+  poolArgs.image.address = input_ptr;
+  poolArgs.image.channels = (uint32_t)input->dims()[1];
+  poolArgs.image.height = (uint32_t)input->dims()[2];
+  poolArgs.image.width = (uint32_t)input->dims()[3];
+  poolArgs.image.pad_height = (uint32_t)paddings[0];
+  poolArgs.image.pad_width = (uint32_t)paddings[1];
   poolArgs.image.scale_address = input->scale;
   poolArgs.output.address = output_ptr;
   poolArgs.output.scale_address = input->scale;
-  poolArgs.kernel.height = ksize[0];
-  poolArgs.kernel.width = ksize[1];
-  poolArgs.kernel.stride_h = strides[0];
-  poolArgs.kernel.stride_w = strides[1];
+  poolArgs.kernel.height = (uint32_t)ksize[0];
+  poolArgs.kernel.width = (uint32_t)ksize[1];
+  poolArgs.kernel.stride_h = (uint32_t)strides[0];
+  poolArgs.kernel.stride_w = (uint32_t)strides[1];
   param->SetFpgaArgs(poolArgs);
   return true;
 }
