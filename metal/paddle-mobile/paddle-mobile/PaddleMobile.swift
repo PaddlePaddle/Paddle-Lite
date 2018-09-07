@@ -22,6 +22,8 @@ class ScaleKernel: CusomKernel {
 
 public protocol Net {
   var except: Int { get }
+  var means: [Float] { get }
+  var scale: Float { get }
   var dim: (n: Int, h: Int, w: Int, c: Int) { get }
   var preprocessKernel: CusomKernel { get }
 //  var paramPointer: UnsafeMutableRawPointer { get }
@@ -36,7 +38,7 @@ public protocol Net {
 }
 
 extension Net {
-  func fetchResult(paddleMobileRes: ResultHolder) -> [Float32] {
+  public func fetchResult(paddleMobileRes: ResultHolder) -> [Float32] {
     return paddleMobileRes.resultArr
   }
 }
@@ -46,9 +48,15 @@ public class Runner {
   var executor: Executor<Float32>?
   var queue: MTLCommandQueue?
   var textureLoader: MTKTextureLoader?
-  let net: Net
+  public let net: Net
   let device: MTLDevice?
   let platform: Platform
+  var cpuPaddleMobile: PaddleMobile?
+  let numel: Int
+  let meansNumber: [NSNumber]
+  
+  // dims num nchw
+  let dimsNum: [NSNumber]
   /**
    * inNet:        需要运行的网络
    * commandQueue: GPU 是需要传入
@@ -62,6 +70,15 @@ public class Runner {
     if let inDevice = device {
       textureLoader = MTKTextureLoader.init(device: inDevice)
     }
+    if platform == .CPU {
+      cpuPaddleMobile = PaddleMobile.init()
+    }
+    numel = net.dim.n * net.dim.c * net.dim.h * net.dim.w
+    meansNumber = net.means.map { NSNumber.init(value: $0) }
+    dimsNum = [NSNumber.init(value: net.dim.n),
+               NSNumber.init(value: net.dim.c),
+               NSNumber.init(value: net.dim.h),
+               NSNumber.init(value: net.dim.w)]
   }
   
   /**
@@ -82,10 +99,38 @@ public class Runner {
         return false
       }
     } else {
-      print(" need implementation ")
-      return false
+      return cpuPaddleMobile?.load(net.modelPath, andWeightsPath: net.paramPath) ?? false
     }
     return true
+  }
+  
+  public func predict(inputPointer: UnsafeMutablePointer<Float32>, completion: @escaping ( _ success: Bool, _ resultArray: [Float32]) -> Void) {
+    guard let res = cpuPaddleMobile?.predictInput(inputPointer, dim: dimsNum, means: meansNumber, scale: net.scale) else {
+      completion(false, [])
+      return
+    }
+    completion(true, res.map { ($0 as! NSNumber).floatValue })
+  }
+  
+  /**
+   * GPU 版本 predict
+   * texture: 需要预测的 texture 需要做过预处理
+   * ( _ success: Bool, _ time:TimeInterval, _ resultArray: [Float32]) -> Void : 回调闭包, 三个参数分别为: 是否成功, 预测耗时, 结果数组
+   */
+  public func predict(texture: MTLTexture, completion: @escaping ( _ success: Bool, _ resultArray: [Float32]) -> Void) {
+    do {
+      try self.executor?.predict(input: texture, dim: [self.net.dim.n, self.net.dim.h, self.net.dim.w, self.net.dim.c], completionHandle: { [weak self] (res) in
+        guard let SSelf = self else {
+          fatalError( " self nil " )
+        }
+        let resultArray = SSelf.net.fetchResult(paddleMobileRes: res)
+        completion(true, resultArray)
+      }, preProcessKernle: self.net.preprocessKernel, except: self.net.except)
+    } catch let error {
+      print(error)
+      completion(false, [])
+      return
+    }
   }
   
   /**
@@ -93,45 +138,44 @@ public class Runner {
    * cgImage: 需要预测的图片
    * ( _ success: Bool, _ time:TimeInterval, _ resultArray: [Float32]) -> Void : 回调闭包, 三个参数分别为: 是否成功, 预测耗时, 结果数组
    */
-  public func predict(cgImage: CGImage, completion: @escaping ( _ success: Bool, _ time:TimeInterval, _ resultArray: [Float32]) -> Void) {
+  public func predict(cgImage: CGImage, completion: @escaping ( _ success: Bool, _ resultArray: [Float32]) -> Void) {
     if platform == .GPU {
       getTexture(image: cgImage) { [weak self] (texture) in
         guard let SSelf = self else {
-          fatalError()
+          fatalError( "" )
         }
         SSelf.predict(texture: texture, completion: completion)
       }
     } else if platform == .CPU {
-      
+      let input = preproccess(image: cgImage)
+      predict(inputPointer: input, completion: completion)
+      input.deinitialize(count: numel)
+      input.deallocate()
     }
   }
-  /**
-   * GPU 版本 predict
-   * texture: 需要预测的 texture 需要做过预处理
-   * ( _ success: Bool, _ time:TimeInterval, _ resultArray: [Float32]) -> Void : 回调闭包, 三个参数分别为: 是否成功, 预测耗时, 结果数组
-   */
-  public func predict(texture: MTLTexture, completion: @escaping ( _ success: Bool, _ time:TimeInterval, _ resultArray: [Float32]) -> Void) {
-    do {
-      try self.executor?.predict(input: texture, dim: [self.net.dim.n, self.net.dim.h, self.net.dim.w, self.net.dim.c], completionHandle: { [weak self] (res) in
-        guard let SSelf = self else {
-          fatalError( " self nil " )
-        }
-        let resultArray = SSelf.net.fetchResult(paddleMobileRes: res)
-        completion(true, res.elapsedTime, resultArray)
-      }, preProcessKernle: self.net.preprocessKernel, except: self.net.except)
-    } catch let error {
-      print(error)
-      completion(false, 0.0, [])
-      return
-    }
-  }
+  
   /*
    * 清理内存, 调用此函数后, 不能再使用, 需重新 load
    */
   public func clear() {
-    executor?.clear()
-    executor = nil
-    program = nil
+    if platform == .GPU {
+      executor?.clear()
+      executor = nil
+      program = nil
+    } else if platform == .CPU {
+      cpuPaddleMobile?.clear()
+    }
+  }
+  
+  public func preproccess(image: CGImage) -> UnsafeMutablePointer<Float> {
+    let output = UnsafeMutablePointer<Float>.allocate(capacity: numel)
+    let means = net.means.map { NSNumber.init(value: $0) }
+    let dims = [NSNumber.init(value: net.dim.n),
+                NSNumber.init(value: net.dim.c),
+                NSNumber.init(value: net.dim.h),
+                NSNumber.init(value: net.dim.w)]
+    cpuPaddleMobile?.preprocess(image, output: output, means: means, scale: net.scale, dim: dims)
+    return output
   }
   
   /*
@@ -167,9 +211,5 @@ public class Runner {
     buffer.commit()
   }
 }
-
-
-
-
 
 
