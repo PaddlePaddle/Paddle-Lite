@@ -92,6 +92,14 @@ struct ConvArgs {
   struct ImageOutputArgs output;
 };
 
+struct WrapperConvArgs {
+  uint32_t split_num;
+  uint32_t group_num;
+  uint32_t filter_num;
+  struct ImageOutputArgs output;
+  struct ConvArgs* args;
+};
+
 struct PoolingArgs {
   struct KernelArgs kernel;
   struct ImageInputArgs image;  // input image;
@@ -165,7 +173,7 @@ enum FPGA_ERR_TYPE {
 //============================== API =============================
 
 int PerformBypass(const struct BypassArgs& args);
-int ComputeFpgaConv(const struct ConvArgs& args);
+int ComputeFpgaConv(const struct WrapperConvArgs& args);
 int ComputeFpgaPool(const struct PoolingArgs& args);
 int ComputeFpgaEWAdd(const struct EWAddArgs& args);
 
@@ -174,6 +182,10 @@ void format_image(framework::Tensor* image_tensor);
 void format_ofm(framework::Tensor* ofm_tensor);  // only allocate memory
 float filter_find_max(framework::Tensor* filter_tensor);
 int get_element_num_per_div(framework::Tensor* filter_tensor, int group_num);
+int get_plit_num(framework::Tensor* filter_tensor);
+int get_aligned_filter_element_num(int chw);
+int get_aligned_filter_num(int num);
+
 void format_filter(framework::Tensor* filter_tensor, float max_value,
                    int group_num);
 void format_fc_matrix(framework::Tensor* filter_tensor, float max_value,
