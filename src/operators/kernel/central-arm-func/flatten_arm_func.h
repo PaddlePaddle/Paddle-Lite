@@ -22,7 +22,11 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename P>
-void FlattenCompute(const FlattenParam<CPU>& param) {}
+void FlattenCompute(const FlattenParam<CPU> &param) {
+  param.Out()->mutable_data<float>();
+  framework::TensorCopy(*param.InputX(), param.Out());
+  param.Out()->Resize(param.Out()->dims());
+}
 
 }  // namespace operators
 }  // namespace paddle_mobile

@@ -2268,13 +2268,16 @@ class FlattenParam : public OpParam {
                const AttributeMap &attrs, const Scope &scope) {
     input_x_ = InputXFrom<GType>(inputs, scope);
     out_ = OutFrom<GType>(outputs, scope);
+    axis = GetAttr<int>("axis", attrs);
   }
   const RType *InputX() const { return input_x_; }
   RType *Out() const { return out_; }
+  const int &Axis() const { return axis; }
 
  private:
   RType *input_x_;
   RType *out_;
+  int axis;
 };
 #endif
 
@@ -2289,6 +2292,7 @@ class SplitParam : public OpParam {
              const AttributeMap &attrs, const Scope &scope) {
     input_x_ = InputXFrom<GType>(inputs, scope);
     out_ = OutFrom<GType>(outputs, scope);
+    axis = GetAttr<int>("axis", attrs);
   }
   const RType *InputX() const { return input_x_; }
   RType *Out() const { return out_; }
@@ -2296,6 +2300,7 @@ class SplitParam : public OpParam {
  private:
   RType *input_x_;
   RType *out_;
+  int axis;
 };
 #endif
 
