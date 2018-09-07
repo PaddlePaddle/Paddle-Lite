@@ -45,6 +45,9 @@
 		FC4CB74920F0B954007C0C6D /* ConvKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC4CB74820F0B954007C0C6D /* ConvKernel.metal */; };
 		FC4CB74B20F12C30007C0C6D /* ProgramOptimize.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC4CB74A20F12C30007C0C6D /* ProgramOptimize.swift */; };
 		FC4FD9752140E1DE0073E130 /* PaddleMobile.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC4FD9742140E1DE0073E130 /* PaddleMobile.swift */; };
+		FC4FD9792140E4980073E130 /* PaddleMobile.h in Headers */ = {isa = PBXBuildFile; fileRef = FC4FD9772140E4980073E130 /* PaddleMobile.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		FC4FD97A2140E4980073E130 /* libpaddle-mobile.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FC4FD9782140E4980073E130 /* libpaddle-mobile.a */; };
+		FC4FD97E2140F2C30073E130 /* libstdc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = FC4FD97D2140F2C30073E130 /* libstdc++.tbd */; };
 		FC5163F620EF556E00636C28 /* Texture2DTo2DArrayKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC5163F520EF556E00636C28 /* Texture2DTo2DArrayKernel.swift */; };
 		FC60DB8920E9AAA500FF203F /* MetalExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC60DB8820E9AAA500FF203F /* MetalExtension.swift */; };
 		FC82735920E3C04200BE430A /* OpCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC82735820E3C04200BE430A /* OpCreator.swift */; };
@@ -138,6 +141,9 @@
 		FC4CB74820F0B954007C0C6D /* ConvKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ConvKernel.metal; sourceTree = "<group>"; };
 		FC4CB74A20F12C30007C0C6D /* ProgramOptimize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramOptimize.swift; sourceTree = "<group>"; };
 		FC4FD9742140E1DE0073E130 /* PaddleMobile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PaddleMobile.swift; sourceTree = "<group>"; };
+		FC4FD9772140E4980073E130 /* PaddleMobile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PaddleMobile.h; sourceTree = "<group>"; };
+		FC4FD9782140E4980073E130 /* libpaddle-mobile.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libpaddle-mobile.a"; sourceTree = "<group>"; };
+		FC4FD97D2140F2C30073E130 /* libstdc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libstdc++.tbd"; path = "usr/lib/libstdc++.tbd"; sourceTree = SDKROOT; };
 		FC5163F520EF556E00636C28 /* Texture2DTo2DArrayKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Texture2DTo2DArrayKernel.swift; sourceTree = "<group>"; };
 		FC60DB8820E9AAA500FF203F /* MetalExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalExtension.swift; sourceTree = "<group>"; };
 		FC82735820E3C04200BE430A /* OpCreator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpCreator.swift; sourceTree = "<group>"; };
@@ -192,7 +198,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FC4FD97E2140F2C30073E130 /* libstdc++.tbd in Frameworks */,
 				D3831F70E7E0B565B9AC22DA /* Pods_paddle_mobile.framework in Frameworks */,
+				FC4FD97A2140E4980073E130 /* libpaddle-mobile.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -202,6 +210,7 @@
 		336CBE234BF5DE48658DE65F /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				FC4FD97D2140F2C30073E130 /* libstdc++.tbd */,
 				DD2E06330A1E7129C918DB46 /* Pods_paddle_mobile.framework */,
 			);
 			name = Frameworks;
@@ -237,6 +246,7 @@
 		FC039B6C20E11C3C0081E9F8 /* paddle-mobile */ = {
 			isa = PBXGroup;
 			children = (
+				FC4FD9762140E4920073E130 /* CPU */,
 				FC4FD9742140E1DE0073E130 /* PaddleMobile.swift */,
 				FC039BAE20E11CC20081E9F8 /* Program */,
 				FC039BA320E11CBC0081E9F8 /* Operators */,
@@ -347,6 +357,15 @@
 			path = Kernels;
 			sourceTree = "<group>";
 		};
+		FC4FD9762140E4920073E130 /* CPU */ = {
+			isa = PBXGroup;
+			children = (
+				FC4FD9782140E4980073E130 /* libpaddle-mobile.a */,
+				FC4FD9772140E4980073E130 /* PaddleMobile.h */,
+			);
+			path = CPU;
+			sourceTree = "<group>";
+		};
 		FCD592FA20E248EC00252966 /* Base */ = {
 			isa = PBXGroup;
 			children = (
@@ -398,6 +417,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FC4FD9792140E4980073E130 /* PaddleMobile.h in Headers */,
 				FC039B6F20E11C3C0081E9F8 /* paddle_mobile.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -711,6 +731,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = "paddle-mobile/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
@@ -718,6 +739,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/paddle-mobile/CPU",
 				);
 				MACH_O_TYPE = mh_dylib;
 				MTL_LANGUAGE_REVISION = UseDeploymentTarget;
@@ -740,6 +765,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = "paddle-mobile/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
@@ -747,6 +773,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/paddle-mobile/CPU",
 				);
 				MACH_O_TYPE = mh_dylib;
 				MTL_LANGUAGE_REVISION = UseDeploymentTarget;
