@@ -46,6 +46,7 @@
 		FC292C81214255BD00CF622F /* CPUCompute.mm in Sources */ = {isa = PBXBuildFile; fileRef = FC292C7C214255BC00CF622F /* CPUCompute.mm */; };
 		FC292C82214255BD00CF622F /* MobileNetSSD.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC292C7E214255BC00CF622F /* MobileNetSSD.swift */; };
 		FC292C85214257CB00CF622F /* CPUCompute.h in Headers */ = {isa = PBXBuildFile; fileRef = FC292C7D214255BC00CF622F /* CPUCompute.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		FC292C872142624800CF622F /* Genet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC292C862142624800CF622F /* Genet.swift */; };
 		FC3602CC2108819F00FACB58 /* PaddleMobileUnitTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC3602CB2108819F00FACB58 /* PaddleMobileUnitTest.swift */; };
 		FC4CB74920F0B954007C0C6D /* ConvKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC4CB74820F0B954007C0C6D /* ConvKernel.metal */; };
 		FC4CB74B20F12C30007C0C6D /* ProgramOptimize.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC4CB74A20F12C30007C0C6D /* ProgramOptimize.swift */; };
@@ -147,6 +148,7 @@
 		FC292C7C214255BC00CF622F /* CPUCompute.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = CPUCompute.mm; sourceTree = "<group>"; };
 		FC292C7D214255BC00CF622F /* CPUCompute.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CPUCompute.h; sourceTree = "<group>"; };
 		FC292C7E214255BC00CF622F /* MobileNetSSD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileNetSSD.swift; sourceTree = "<group>"; };
+		FC292C862142624800CF622F /* Genet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Genet.swift; sourceTree = "<group>"; };
 		FC3602CB2108819F00FACB58 /* PaddleMobileUnitTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaddleMobileUnitTest.swift; sourceTree = "<group>"; };
 		FC4CB74820F0B954007C0C6D /* ConvKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ConvKernel.metal; sourceTree = "<group>"; };
 		FC4CB74A20F12C30007C0C6D /* ProgramOptimize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramOptimize.swift; sourceTree = "<group>"; };
@@ -256,6 +258,7 @@
 		FC039B6C20E11C3C0081E9F8 /* paddle-mobile */ = {
 			isa = PBXGroup;
 			children = (
+				FC292C862142624800CF622F /* Genet.swift */,
 				FC292C7E214255BC00CF622F /* MobileNetSSD.swift */,
 				FC292C7C214255BC00CF622F /* CPUCompute.mm */,
 				FC292C7D214255BC00CF622F /* CPUCompute.h */,
@@ -581,6 +584,7 @@
 				FC039BAC20E11CBC0081E9F8 /* BatchNormOp.swift in Sources */,
 				FCBCCC6F2123097100D94F7E /* MulticlassNMSOp.swift in Sources */,
 				FC039BBC20E11CC20081E9F8 /* VarDesc.swift in Sources */,
+				FC292C872142624800CF622F /* Genet.swift in Sources */,
 				4AF928822135673D005B6C3A /* Concat.metal in Sources */,
 				FCBCCC632122FCC000D94F7E /* TransposeKernel.swift in Sources */,
 				FCBCCC71212309A700D94F7E /* MulticlassNMSKernel.swift in Sources */,
