@@ -1,15 +1,15 @@
 cmake_minimum_required(VERSION 3.6)
-option(USE_OPENMP "openmp support" ON)
+option(USE_OPENMP "openmp support" OFF)
 
 project(paddle-mobile)
 
-option(DEBUGING "enable debug mode" OFF)
+option(DEBUGING "enable debug mode" ON)
 option(USE_EXCEPTION "use std exception" OFF)
 option(LOG_PROFILE "log profile" OFF)
 # select the platform to build
-option(CPU "armv7 with neon" ON)
+option(CPU "armv7 with neon" OFF)
 option(MALI_GPU "mali gpu" OFF)
-option(FPGA "fpga" OFF)
+option(FPGA "fpga" ON)
 
 file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c src/*.mm)
 file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
@@ -94,6 +94,8 @@ else()
 endif()
 
 if(FPGA)
+    set(DEBUGING ON)
+    add_definitions(-DPADDLE_MOBILE_DEBUG)
     add_definitions(-DPADDLE_MOBILE_FPGA)
 else()
     file(GLOB_RECURSE _tmp_list src/operators/kernel/fpga/*.cpp src/operators/kernel/fpga/*.cc)
@@ -140,7 +142,12 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY build)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
 
 # NET default
-set(NET "default" CACHE STRING "select net type")
+if (FPGA)
+    set(NET "FPGAnets" CACHE STRING "select net type")
+else()
+    set(NET "default" CACHE STRING "select net type")
+endif()
+
 set_property(CACHE NET PROPERTY STRINGS "default" "googlenet" "mobilenet" "yolo" "squeezenet" "FPGAnets" "NLP")
 include("${CMAKE_CURRENT_LIST_DIR}/tools/op.cmake")
 

@@ -35,6 +35,7 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
     auto out_dims = param_.Out()->dims();
     out_dims[0] = param_.BatchSize();
     param_.Out()->Resize(out_dims);
+    DLOG << "feed_op output dims size" << out_dims.size();
 
     //  note : mobile infershape iscalled when executer is created.  so  do not
     //  pass lod here .
@@ -49,7 +50,7 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
   }
 
   void RunImpl() const {
-    Tensor *input = const_cast<Tensor *>(param_.InputX());
+    auto input = (Tensor *)const_cast<LoDTensor *>(param_.InputX());
     auto input_ptr = input->data<float>();
     fpga::format_image(input);
     Tensor *output = param_.Out();
