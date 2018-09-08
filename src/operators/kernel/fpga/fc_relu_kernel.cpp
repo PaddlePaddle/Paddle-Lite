@@ -20,7 +20,7 @@ namespace operators {
 template <>
 bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA> *param) {
   bool relu_enabled = true;
-  auto *input_x = const_cast<Tensor *>(param->InputX());
+  auto *input_x = const_cast<LoDTensor *>(param->InputX());
   auto input_x_ptr = input_x->data<float>();
   auto *filter = const_cast<Tensor *>(param->InputY());
   const Tensor *input_z = param->InputZ();

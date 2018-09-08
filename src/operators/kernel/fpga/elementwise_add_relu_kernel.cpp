@@ -22,8 +22,8 @@ template <>
 bool ElementwiseAddReluKernel<FPGA, float>::Init(
     ElementwiseAddReluParam<FPGA> *param) {
   bool relu_enabled = true;
-  auto *input_x = const_cast<Tensor *>(param->InputX());
-  auto *input_y = const_cast<Tensor *>(param->InputY());
+  auto *input_x = const_cast<LoDTensor *>(param->InputX());
+  auto *input_y = const_cast<LoDTensor *>(param->InputY());
   auto *out = param->Out();
   auto input_x_ptr = input_x->data<float>();
   auto input_y_ptr = input_y->data<float>();
