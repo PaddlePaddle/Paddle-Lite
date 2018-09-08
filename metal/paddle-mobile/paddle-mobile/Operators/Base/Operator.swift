@@ -139,6 +139,7 @@ let gConvBnReluType             = "conv_bn_relu"
 let gDwConvBnReluType           = "depth_conv_bn_relu"
 let gPreluType                  = "prelu"
 let gConv2dTransposeType        = "conv2d_transpose"
+let gResizeBilinearType             = "resize_bilinear"
 
 
 let opInfos = [gConvType                    : (inputs: ["Input"], outputs: ["Output"]),
@@ -161,5 +162,6 @@ let opInfos = [gConvType                    : (inputs: ["Input"], outputs: ["Out
                gMulticlassNMSType           : (inputs: ["BBoxes", "Scores"], outputs: ["Out"]),
                gPriorBoxType                : (inputs: ["Input", "Image"], outputs: ["Boxes", "Variances"]),
                gPreluType                   : (inputs: ["X"], outputs: ["Out"]),
-               gConv2dTransposeType         : (inputs: ["Input"], outputs: ["Output"])
+               gConv2dTransposeType         : (inputs: ["Input"], outputs: ["Output"]),
+               gResizeBilinearType          : (inputs: ["X"], outputs: ["Out"])
               ]
