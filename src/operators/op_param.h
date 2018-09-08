@@ -56,7 +56,7 @@ struct DtypeTensorTrait<CPU> {
 template <>
 struct DtypeTensorTrait<FPGA> {
   // This is the type we obtained in variable.
-  typedef framework::Tensor gtype;
+  typedef framework::LoDTensor gtype;
   // This type will be the parent class type
   // or the same type.
   typedef framework::Tensor rtype;
