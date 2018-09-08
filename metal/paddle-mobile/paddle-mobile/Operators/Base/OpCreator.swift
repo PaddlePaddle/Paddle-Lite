@@ -60,7 +60,8 @@ class OpCreator<P: PrecisionType> {
          gTransposeType             :     TransposeOp<P>.creat,
          gPriorBoxType              :     PriorBoxOp<P>.creat,
          gPreluType                 :     PreluOp<P>.creat,
-         gConv2dTransposeType       :     ConvTransposeOp<P>.creat]
+         gConv2dTransposeType       :     ConvTransposeOp<P>.creat,
+         gResizeBilinearType        :     ResizeBilinearOp<P>.creat]
   
     private init(){}
 }
