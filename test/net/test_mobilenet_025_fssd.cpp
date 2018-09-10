@@ -23,7 +23,7 @@ int main() {
   //  ../../../test/models/mobilenet
   auto time1 = time();
   if (paddle_mobile.Load(std::string(g_fluid_fssd_new) + "/model",
-                         std::string(g_fluid_fssd_new) + "/params", false)) {
+                         std::string(g_fluid_fssd_new) + "/params", true)) {
     auto time2 = time();
     std::cout << "load cost :" << time_diff(time1, time1) << "ms" << std::endl;
 

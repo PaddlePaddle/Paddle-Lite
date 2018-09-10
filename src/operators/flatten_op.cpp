@@ -18,10 +18,32 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
+
 template <typename DeviceType, typename T>
 void FlattenOp<DeviceType, T>::InferShape() const {
-  // todo check
-  this->param_.Out()->Resize(this->param_.InputX()->dims());
+  PADDLE_MOBILE_ENFORCE(this->param_.InputX() != nullptr,
+                        "Input (X) of Flatten op should not be null.");
+  PADDLE_MOBILE_ENFORCE(this->param_.Out() != nullptr,
+                        "Output (Output) of Flatten op should not be null.");
+
+  auto &axis = this->param_.Axis();
+  PADDLE_MOBILE_ENFORCE(axis >= 0,
+                        "The axis should be greater than or equal to 0.");
+
+  auto &in_dims = this->param_.InputX()->dims();
+  //  const auto &in_dims = ctx->GetInputDim("X");
+  PADDLE_MOBILE_ENFORCE(
+      axis <= in_dims.size(),
+      "The axis should be less than or equal to input tensor's rank.");
+
+  const auto &out_dims = GetOutputShape(axis, in_dims);
+  this->param_.Out()->Resize(in_dims);
+  // todo supprot lodtensor
+  //  if (in_dims[0] == out_dims[0]) {
+  //    // Only pass LoD when the first dimension of output and Input(X)
+  //    // are the same.
+  //    ctx->ShareLoD("X", "Out");
+  //  }
 }
 
 }  // namespace operators
