@@ -14,8 +14,8 @@
 
 import Foundation
 
-class MobileNet_ssd_hand: Net{
-  @objc override init(device: MTLDevice) {
+public class MobileNet_ssd_hand: Net{
+  @objc public override init(device: MTLDevice) {
     super.init(device: device)
     means = [123.68, 116.78, 103.94]
     scale = 0.017
@@ -34,7 +34,7 @@ class MobileNet_ssd_hand: Net{
     }
   }
   
-  override func resultStr(res: [Float]) -> String {
+  override public func resultStr(res: [Float]) -> String {
     return " \(res)"
   }
   
