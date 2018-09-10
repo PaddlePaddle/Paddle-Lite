@@ -21,17 +21,17 @@ namespace operators {
 template <>
 bool FusionFcKernel<FPGA, float>::Init(FusionFcParam<FPGA> *param) {
   bool relu_enabled = false;
-  auto *input_x = const_cast<LoDTensor *>(param->InputX());
+  auto input_x = const_cast<LoDTensor *>(param->InputX());
   auto input_x_ptr = input_x->data<float>();
-  auto *filter = const_cast<Tensor *>(param->InputY());
+  auto filter = const_cast<Tensor *>(param->InputY());
   const Tensor *input_z = param->InputZ();
   auto input_z_ptr = input_z->data<float>();
-  Tensor *out = param->Out();
+  auto out = param->Out();
 
   PADDLE_MOBILE_ENFORCE(input_x->dims()[1] == filter->dims()[0],
                         "Image channel should be equal to weight number");
   int channel = (uint32_t)out->dims()[1];
-  auto *bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sizeof(float));
+  auto bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sizeof(float));
   for (int i = 0; i < channel; i++) {
     bs_ptr[i + channel] = 1;
     bs_ptr[i] = input_z_ptr[i];
@@ -61,8 +61,8 @@ bool FusionFcKernel<FPGA, float>::Init(FusionFcParam<FPGA> *param) {
   convArgs.filter_num = (uint32_t)filter->dims()[0];
   convArgs.output.address = out_ptr;
   convArgs.output.scale_address = out->scale;
-  convArgs.args = (fpga::ConvArgs *)fpga::fpga_malloc(convArgs.split_num *
-                                                      sizeof(fpga::ConvArgs));
+  convArgs.conv_args = (fpga::ConvArgs *)fpga::fpga_malloc(
+      convArgs.split_num * sizeof(fpga::ConvArgs));
   param->SetFpgaArgs(convArgs);
 
   int element_num = fpga::get_aligned_filter_element_num(
@@ -70,26 +70,28 @@ bool FusionFcKernel<FPGA, float>::Init(FusionFcParam<FPGA> *param) {
 
   int n = convArgs.split_num;
   for (int i = 0; i < n; i++) {
-    convArgs.args[i].relu_enabled = relu_enabled;
-    convArgs.args[i].group_num = 1;
-    convArgs.args[i].kernel.stride_h = 1;
-    convArgs.args[i].kernel.stride_w = 1;
-    convArgs.args[i].kernel.height = (uint32_t)filter->dims()[2];
-    convArgs.args[i].kernel.width = (uint32_t)filter->dims()[3];
-    convArgs.args[i].image.address = input_x_ptr;
-    convArgs.args[i].image.channels = (uint32_t)input_x->dims()[1];
-    convArgs.args[i].image.height = (uint32_t)input_x->dims()[2];
-    convArgs.args[i].image.width = (uint32_t)input_x->dims()[3];
-    convArgs.args[i].image.pad_height = 0;
-    convArgs.args[i].image.pad_width = 0;
-    convArgs.args[i].filter_address = &((int8_t *)filter_ptr)[i * element_num];
-    convArgs.args[i].sb_address = &((int8_t *)bs_ptr)[i * element_num];
-    convArgs.args[i].filter_num =
+    convArgs.conv_args[i].relu_enabled = relu_enabled;
+    convArgs.conv_args[i].group_num = 1;
+    convArgs.conv_args[i].kernel.stride_h = 1;
+    convArgs.conv_args[i].kernel.stride_w = 1;
+    convArgs.conv_args[i].kernel.height = (uint32_t)filter->dims()[2];
+    convArgs.conv_args[i].kernel.width = (uint32_t)filter->dims()[3];
+    convArgs.conv_args[i].image.address = input_x_ptr;
+    convArgs.conv_args[i].image.channels = (uint32_t)input_x->dims()[1];
+    convArgs.conv_args[i].image.height = (uint32_t)input_x->dims()[2];
+    convArgs.conv_args[i].image.width = (uint32_t)input_x->dims()[3];
+    convArgs.conv_args[i].image.pad_height = 0;
+    convArgs.conv_args[i].image.pad_width = 0;
+    convArgs.conv_args[i].filter_address =
+        &((int8_t *)filter_ptr)[i * element_num];
+    convArgs.conv_args[i].sb_address = &((int8_t *)bs_ptr)[i * element_num];
+    convArgs.conv_args[i].filter_num =
         (uint32_t)(i == n - 1 ? fpga::get_aligned_filter_num(
                                     channel - (n - 1) * element_num_per_div)
                               : element_num_per_div);
-    convArgs.args[i].image.scale_address =
+    convArgs.conv_args[i].output.scale_address =
         (float *)fpga::fpga_malloc(2 * sizeof(float));
+    convArgs.conv_args[i].image.scale_address = input_x->scale;
   }
   return true;
 }

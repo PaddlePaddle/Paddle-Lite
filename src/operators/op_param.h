@@ -483,6 +483,15 @@ class ConcatParam : public OpParam {
   vector<GType *> inputs_;
   GType *out_;
   int axis_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::ConcatArgs fpga_concat_args;
+
+ public:
+  const fpga::ConcatArgs &FpgaArgs() const { return fpga_concat_args; }
+  void SetFpgaArgs(const fpga::ConcatArgs &args) { fpga_concat_args = args; }
+#endif
 };
 #endif
 
