@@ -734,7 +734,7 @@ void InnerKernelWithBnAdd(int mc, int nc, float alpha, const float *a,
 #endif
     }
   }
-  // WriteWithBnAddRelu(mc, nc, c, C, ldc, new_scale, new_bias, bias);
+  WriteWithBnAddRelu(mc, nc, c, C, ldc, new_scale, new_bias, bias);
 }
 
 void InnerKernelWithPRelu(int mc, int nc, const float *a, const float *b,
@@ -2985,6 +2985,8 @@ void WriteWithBn(int mc, int nc, float *c, float *C, int ldc, float *new_scale,
 
 void WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc,
                      float *new_scale, float *new_bias) {}
+void WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
+                        float *new_scale, float *new_bias, float *bias1) {}
 
 #endif  // __ARM_NEON
 
