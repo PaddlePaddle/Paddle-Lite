@@ -92,6 +92,26 @@ struct ConvArgs {
   struct ImageOutputArgs output;
 };
 
+struct ConcatArgs {
+  uint32_t image_num;
+  half** images_in;
+  float** scales_in;
+  void* image_out;
+  float* scale_out;
+  uint32_t* channel_num;
+  uint32_t height;
+  uint32_t width;
+};
+
+struct WrapperConvArgs {
+  uint32_t split_num;
+  uint32_t group_num;
+  uint32_t filter_num;
+  struct ImageOutputArgs output;
+  struct ConvArgs* conv_args;
+  struct ConcatArgs concat_arg;
+};
+
 struct PoolingArgs {
   struct KernelArgs kernel;
   struct ImageInputArgs image;  // input image;
@@ -165,21 +185,26 @@ enum FPGA_ERR_TYPE {
 //============================== API =============================
 
 int PerformBypass(const struct BypassArgs& args);
-int ComputeFpgaConv(const struct ConvArgs& args);
+int ComputeFpgaConv(const struct WrapperConvArgs& args);
 int ComputeFpgaPool(const struct PoolingArgs& args);
 int ComputeFpgaEWAdd(const struct EWAddArgs& args);
+int ComputeFPGAConcat(const struct ConcatArgs& args);
 
 static inline int align_to_x(int num, int x) { return (num + x - 1) / x * x; }
 void format_image(framework::Tensor* image_tensor);
 void format_ofm(framework::Tensor* ofm_tensor);  // only allocate memory
 float filter_find_max(framework::Tensor* filter_tensor);
 int get_element_num_per_div(framework::Tensor* filter_tensor, int group_num);
+int get_plit_num(framework::Tensor* filter_tensor);
+int get_aligned_filter_element_num(int chw);
+int get_aligned_filter_num(int num);
+
 void format_filter(framework::Tensor* filter_tensor, float max_value,
                    int group_num);
-void format_fc_matrix(framework::Tensor* filter_tensor, float max_value,
-                      int group_num, int height = 1, int width = 1);
 void format_bias_scale_array(float** bias_scale_array,
                              int element_num_per_division, int num);
+void format_concat_output(framework::Tensor* out, int height, int width,
+                          int image_num, uint32_t* channel_num);
 
 }  // namespace fpga
 }  // namespace paddle_mobile

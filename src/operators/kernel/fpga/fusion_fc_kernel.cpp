@@ -21,58 +21,78 @@ namespace operators {
 template <>
 bool FusionFcKernel<FPGA, float>::Init(FusionFcParam<FPGA> *param) {
   bool relu_enabled = false;
-  Tensor *input_x = const_cast<Tensor *>(param->InputX());
+  auto input_x = const_cast<LoDTensor *>(param->InputX());
   auto input_x_ptr = input_x->data<float>();
-  Tensor *input_y = param->InputY();
+  auto filter = const_cast<Tensor *>(param->InputY());
   const Tensor *input_z = param->InputZ();
   auto input_z_ptr = input_z->data<float>();
-  Tensor *out = param->Out();
+  auto out = param->Out();
 
-  PADDLE_MOBILE_ENFORCE(input_x->dims()[1] == input_y->dims()[0],
+  PADDLE_MOBILE_ENFORCE(input_x->dims()[1] == filter->dims()[0],
                         "Image channel should be equal to weight number");
-  int channel = out->dims()[1];
-  float *bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sizeof(float));
+  int channel = (uint32_t)out->dims()[1];
+  auto bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sizeof(float));
   for (int i = 0; i < channel; i++) {
     bs_ptr[i + channel] = 1;
     bs_ptr[i] = input_z_ptr[i];
   }
-
-  int num = input_y->dims()[1];
-  int chw = input_y->dims()[0];
+  int num = (uint32_t)filter->dims()[1];
+  int chw = (uint32_t)filter->dims()[0];
   PADDLE_MOBILE_ENFORCE(
       chw == input_x->numel(),
       "Filter element num should be equal to IFM element num");
-  int height = input_x->dims()[2];
-  int width = input_x->dims()[3];
+  int height = (uint32_t)input_x->dims()[2];
+  int width = (uint32_t)input_x->dims()[3];
   int filter_channel = chw / height / width;
-  input_y->Resize(framework::make_ddim({num, filter_channel, height, width}));
-  float max_value = fpga::filter_find_max(input_y);
-  fpga::format_filter(input_y, max_value, 1);
-  auto input_y_ptr = input_y->data<float>();
-  int element_num_per_div = fpga::get_element_num_per_div(input_y, 1);
+
+  filter->Resize(framework::make_ddim({num, filter_channel, height, width}));
+  float max_value = fpga::filter_find_max(filter);
+  fpga::format_filter(filter, max_value, 1);
+  auto filter_ptr = filter->data<float>();
+
+  int element_num_per_div = fpga::get_element_num_per_div(filter, 1);
   fpga::format_bias_scale_array(&bs_ptr, element_num_per_div, channel);
+
   auto out_ptr = out->mutable_data<float>();
 
-  fpga::ConvArgs convArgs;
-  convArgs.relu_enabled = relu_enabled;
-  convArgs.filter_address = (void *)input_y_ptr;
-  convArgs.filter_num = out->dims()[1];
+  fpga::WrapperConvArgs convArgs;
   convArgs.group_num = 1;
-  convArgs.sb_address = (void *)bs_ptr;
-  convArgs.kernel.stride_w = 1;
-  convArgs.kernel.stride_h = 1;
-  convArgs.kernel.height = input_x->dims()[2];
-  convArgs.kernel.width = input_x->dims()[3];
-  convArgs.image.address = (void *)input_x_ptr;
-  convArgs.image.channels = input_x->dims()[1];
-  convArgs.image.height = input_x->dims()[2];
-  convArgs.image.width = input_x->dims()[3];
-  convArgs.image.pad_height = 0;
-  convArgs.image.pad_width = 0;
-  convArgs.image.scale_address = input_x->scale;
-  convArgs.output.address = (void *)out_ptr;
+  convArgs.split_num = (uint32_t)fpga::get_plit_num(filter);
+  convArgs.filter_num = (uint32_t)filter->dims()[0];
+  convArgs.output.address = out_ptr;
   convArgs.output.scale_address = out->scale;
+  convArgs.conv_args = (fpga::ConvArgs *)fpga::fpga_malloc(
+      convArgs.split_num * sizeof(fpga::ConvArgs));
   param->SetFpgaArgs(convArgs);
+
+  int element_num = fpga::get_aligned_filter_element_num(
+      filter->dims()[1] * filter->dims()[2] * filter->dims()[3]);
+
+  int n = convArgs.split_num;
+  for (int i = 0; i < n; i++) {
+    convArgs.conv_args[i].relu_enabled = relu_enabled;
+    convArgs.conv_args[i].group_num = 1;
+    convArgs.conv_args[i].kernel.stride_h = 1;
+    convArgs.conv_args[i].kernel.stride_w = 1;
+    convArgs.conv_args[i].kernel.height = (uint32_t)filter->dims()[2];
+    convArgs.conv_args[i].kernel.width = (uint32_t)filter->dims()[3];
+    convArgs.conv_args[i].image.address = input_x_ptr;
+    convArgs.conv_args[i].image.channels = (uint32_t)input_x->dims()[1];
+    convArgs.conv_args[i].image.height = (uint32_t)input_x->dims()[2];
+    convArgs.conv_args[i].image.width = (uint32_t)input_x->dims()[3];
+    convArgs.conv_args[i].image.pad_height = 0;
+    convArgs.conv_args[i].image.pad_width = 0;
+    convArgs.conv_args[i].filter_address =
+        &((int8_t *)filter_ptr)[i * element_num];
+    convArgs.conv_args[i].sb_address = &((int8_t *)bs_ptr)[i * element_num];
+    convArgs.conv_args[i].filter_num =
+        (uint32_t)(i == n - 1 ? fpga::get_aligned_filter_num(
+                                    channel - (n - 1) * element_num_per_div)
+                              : element_num_per_div);
+    convArgs.conv_args[i].output.scale_address =
+        (float *)fpga::fpga_malloc(2 * sizeof(float));
+    convArgs.conv_args[i].image.scale_address = input_x->scale;
+  }
   return true;
 }
 
