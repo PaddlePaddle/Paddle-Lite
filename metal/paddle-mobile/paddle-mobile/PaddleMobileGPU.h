@@ -16,9 +16,9 @@
 #import <Foundation/Foundation.h>
 
 typedef enum : NSUInteger {
-  MobileNet,
-  MobileNetSSD,
-  Genet,
+  MobileNetType,
+  MobileNetSSDType,
+  GenetType,
 } NetType;
 
 @interface ModelConfig: NSObject
