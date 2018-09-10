@@ -734,7 +734,7 @@ void InnerKernelWithBnAdd(int mc, int nc, float alpha, const float *a,
 #endif
     }
   }
-  WriteWithBnAddRelu(mc, nc, c, C, ldc, new_scale, new_bias, bias);
+  // WriteWithBnAddRelu(mc, nc, c, C, ldc, new_scale, new_bias, bias);
 }
 
 void InnerKernelWithPRelu(int mc, int nc, const float *a, const float *b,
