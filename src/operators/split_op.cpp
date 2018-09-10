@@ -64,7 +64,7 @@ void SplitOp<DeviceType, T>::InferShape() const {
   PADDLE_MOBILE_ENFORCE(outs_dims.size() == outs.size(),
                         "length==dims.size()  must be true!");
   for (int j = 0; j < outs_dims.size(); ++j) {
-      outs[j]->Resize(outs_dims[j]);
+    outs[j]->Resize(outs_dims[j]);
   }
 
   //  todo lod impl
