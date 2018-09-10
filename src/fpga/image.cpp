@@ -62,6 +62,10 @@ void format_image(float **data_in, int channel, int height, int width) {
   align_element_conv(data_in, height, channel * width);
 }
 
+void concat_images(int16_t **images_in, float **scales_in, void *image_out,
+                   float *scale_out, int image_num, uint32_t *channel_num,
+                   int height, int width) {}
+
 }  // namespace image
 }  // namespace fpga
 }  // namespace paddle_mobile
