@@ -33,7 +33,7 @@ public class Net: NSObject {
   var modelPath: String = ""
   var paramPath: String = ""
   var modelDir: String = ""
-  func resultStr(res: [Float]) -> String {
+  public func resultStr(res: [Float]) -> String {
     fatalError()
   }
   func fetchResult(paddleMobileRes: ResultHolder) -> [Float32] {

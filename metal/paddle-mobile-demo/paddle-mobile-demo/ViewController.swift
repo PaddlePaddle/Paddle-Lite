@@ -17,11 +17,11 @@ import MetalKit
 import paddle_mobile
 import MetalPerformanceShaders
 
-let platform: Platform = .CPU
+let platform: Platform = .GPU
 let threadSupport = [1]
 
-let modelHelperMap: [SupportModel : Runner] = [.mobilenet_ssd : Runner.init(inNet: MobileNet_ssd_hand.init(), commandQueue: MetalHelper.shared.queue, inPlatform: platform),
-                                               .genet : Runner.init(inNet: Genet.init(), commandQueue: MetalHelper.shared.queue, inPlatform: platform)]
+let modelHelperMap: [SupportModel : Runner] = [.mobilenet_ssd : Runner.init(inNet: MobileNet_ssd_hand.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform),
+                                               .genet : Runner.init(inNet: Genet.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform)]
 //, .genet : Genet.init()
 //let modelHelperMap: [SupportModel : Net] = [.mobilenet : MobileNet.init(), .mobilenet_ssd : MobileNet_ssd_hand.init()]
 
@@ -48,6 +48,7 @@ class ViewController: UIViewController {
   var toPredictTexture: MTLTexture?
   
   var runner: Runner {
+    
     get {
       return modelHelperMap[modelType] ?! " has no this type "
     }
