@@ -246,6 +246,12 @@ class OpParam {
   }
 
   template <typename T>
+  static vector<T *> OutMultiFrom(const VariableNameMap &outputs,
+                                  const Scope &scope) {
+    return GetMultiVarValue<T>("Out", outputs, scope);
+  }
+
+  template <typename T>
   static T *OutputYFrom(const VariableNameMap &outputs, const Scope &scope) {
     return GetVarValue<T>("Y", outputs, scope);
   }
@@ -2291,16 +2297,29 @@ class SplitParam : public OpParam {
   SplitParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
              const AttributeMap &attrs, const Scope &scope) {
     input_x_ = InputXFrom<GType>(inputs, scope);
-    out_ = OutFrom<GType>(outputs, scope);
+    outs_ = OutMultiFrom<GType>(outputs, scope);
     axis = GetAttr<int>("axis", attrs);
+    num = GetAttr<int>("num", attrs);
+    sections = GetAttr<std::vector<int>>("sections", attrs);
+
+    //    for (int i = 0; i < outs_.size(); ++i) {
+    //      out_ts_.push_back(*scope.FindVar(outs_[i])->GetMutable());
+    //    }
   }
   const RType *InputX() const { return input_x_; }
-  RType *Out() const { return out_; }
+  std::vector<GType *> Outs() const { return outs_; }
+  int Axis() const { return axis; }
+  int Num() const { return num; }
+  std::vector<int> Sections() const { return sections; }
+  //  std::vector<GType> OutTs() const { return out_ts_; }
 
  private:
   RType *input_x_;
-  RType *out_;
+  std::vector<GType *> outs_;
   int axis;
+  int num;
+  std::vector<int> sections;
+  //  std::vector<GType> out_ts_;
 };
 #endif
 
