@@ -23,7 +23,7 @@ namespace operators {
 
 template <typename P>
 void ShapeCompute(const ShapeParam<CPU>& param) {
-  auto* in_t = param.InputX();
+  auto* in_t = param.Input();
   auto* out_t = param.Out();
   auto out_data = out_t->mutable_data<int32_t>();
   auto in_dims = in_t->dims();

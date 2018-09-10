@@ -2366,7 +2366,7 @@ class ShapeParam : public OpParam {
     input_ = InputFrom<GType>(inputs, scope);
     out_ = OutFrom<GType>(outputs, scope);
   }
-  const RType *InputX() const { return input_; }
+  const RType *Input() const { return input_; }
   RType *Out() const { return out_; }
 
  private:

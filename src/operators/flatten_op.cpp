@@ -19,22 +19,6 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-static std::vector<int32_t> GetOutputShape(const int axis,
-                                           const framework::DDim &in_dims) {
-  int64_t outer = 1, inner = 1;
-  for (int i = 0; i < in_dims.size(); ++i) {
-    if (i < axis) {
-      outer *= in_dims[i];
-    } else {
-      inner *= in_dims[i];
-    }
-  }
-  std::vector<int32_t> out_shape(2);
-  out_shape[0] = static_cast<int>(outer);
-  out_shape[1] = static_cast<int>(inner);
-  return out_shape;
-}
-
 template <typename DeviceType, typename T>
 void FlattenOp<DeviceType, T>::InferShape() const {
   PADDLE_MOBILE_ENFORCE(this->param_.InputX() != nullptr,

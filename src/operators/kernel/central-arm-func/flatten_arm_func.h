@@ -15,7 +15,9 @@ limitations under the License. */
 #ifdef FLATTEN_OP
 #pragma once
 
+#include <operators/kernel/reshape_kernel.h>
 #include <vector>
+#include "operators/flatten_op.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
@@ -23,9 +25,18 @@ namespace operators {
 
 template <typename P>
 void FlattenCompute(const FlattenParam<CPU> &param) {
-  param.Out()->mutable_data<float>();
-  framework::TensorCopy(*param.InputX(), param.Out());
-  param.Out()->Resize(param.Out()->dims());
+  const auto *input_x = param.InputX();
+  const auto axis = param.Axis();
+  const auto &input_x_dims = input_x->dims();
+  auto *out = param.Out();
+
+  const auto &out_shape_v = GetOutputShape(axis, input_x_dims);
+  const framework::DDim &out_dim = ValidateShape(out_shape_v, input_x_dims);
+
+  out->Resize(out_dim);
+  out->mutable_data<float>();
+  framework::TensorCopy(*input_x, out);
+  out->Resize(out_dim);
 }
 
 }  // namespace operators

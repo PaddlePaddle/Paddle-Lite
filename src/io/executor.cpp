@@ -73,6 +73,7 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
 #ifdef PADDLE_EXECUTOR_MULTITHREAD
   depManager.resize(blocks.size());
 #endif
+  DLOG << "executer in loaddable mode: " << loddable_;
   for (int i = 0; i < blocks.size(); ++i) {
     std::shared_ptr<framework::BlockDesc> block_desc = blocks[i];
     std::vector<std::shared_ptr<framework::OpDesc>> ops = block_desc->Ops();
@@ -82,7 +83,6 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
       auto op_base = framework::OpRegistry<Dtype>::CreateOp(
           op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(),
           program_.scope);
-      DLOG << "executer in loaddable mode: " << loddable_;
       // use pre_infershape to pre resize , but if u use an lod mode tensor u
       // need to resize in runtime
       if (!loddable_) {
