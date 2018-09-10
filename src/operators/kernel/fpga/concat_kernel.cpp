@@ -21,31 +21,44 @@ namespace operators {
 
 template <>
 bool ConcatKernel<FPGA, float>::Init(ConcatParam<FPGA> *param) {
+  auto inputs = param->Inputs();
+  auto out = param->Out();
+  auto image_num = inputs.size();
+  auto images_in = (half **)fpga::fpga_malloc(image_num * sizeof(int *));
+  auto scales_in = (float **)fpga::fpga_malloc(image_num * sizeof(float *));
+  auto channel_num =
+      (uint32_t *)fpga::fpga_malloc(image_num * sizeof(uint32_t));
+
+  auto height = inputs[0]->dims()[2];
+  auto width = inputs[0]->dims()[3];
+  for (int i = 0; i < image_num; i++) {
+    auto input = inputs[i];
+    PADDLE_MOBILE_ENFORCE(
+        input->dims()[2] == height && input->dims()[3] == width,
+        "Image height & width should be unified");
+    images_in[i] = (half *)input->data<float>();
+    channel_num[i] = (uint32_t)inputs[i]->dims()[1];
+    scales_in[i] = input->scale;
+  }
+  fpga::format_concat_output(out, (int)height, (int)width, (int)image_num,
+                             channel_num);
+
+  fpga::ConcatArgs concatArgs;
+  concatArgs.image_num = (uint32_t)image_num;
+  concatArgs.images_in = images_in;
+  concatArgs.scales_in = scales_in;
+  concatArgs.image_out = (half *)out->mutable_data<float>();
+  concatArgs.scale_out = out->scale;
+  concatArgs.channel_num = channel_num;
+  concatArgs.height = (uint32_t)height;
+  concatArgs.width = (uint32_t)width;
+  param->SetFpgaArgs(concatArgs);
   return true;
 }
 
 template <>
 void ConcatKernel<FPGA, float>::Compute(const ConcatParam<FPGA> &param) const {
-  auto inputs = param.Inputs();
-  auto *out = param.Out();
-  int64_t axis = param.Axis();
-  out->mutable_data<half>();
-
-  DDim out_dim = out->dims();
-  int pixels = out_dim[1] * out_dim[2];
-  auto out_channel = out_dim[3];
-
-  auto out_offset = 0;
-  for (int i = 0; i < inputs.size(); ++i) {
-    auto input = inputs[i];
-    auto channels = input->dims()[3];
-    out_offset += channels;
-    auto src = input->data<half>();
-    for (int j = 0; j < pixels; ++j) {
-      auto dst = out->mutable_data<half>() + out_offset;
-      memory::Copy(dst, src, sizeof(half));
-    }
-  }
+  ComputeFPGAConcat(param.FpgaArgs());
 }
 template class ConcatKernel<FPGA, float>;
 

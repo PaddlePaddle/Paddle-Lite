@@ -68,29 +68,35 @@ void fpga_copy(void *dest, const void *src, size_t num) {
   memcpy(dest, src, num);
 }
 
-int ComputeFpgaConv(const struct ConvArgs &args) {
+int ComputeFpgaConv(const struct WrapperConvArgs &args) {
 #ifdef FPGA_TEST_MODE
-  DLOG << "   relu_enabled:" << args.relu_enabled
-       << "   sb_address:" << args.sb_address
-       << "   filter_address:" << args.filter_address
-       << "   filter_num:" << args.filter_num
-       << "   group_num:" << args.group_num;
-  DLOG << "   image_address:" << args.image.address
-       << "   image_scale_address:" << args.image.scale_address
-       << "   image_channels:" << args.image.channels
-       << "   image_height:" << args.image.height
-       << "   image_width:" << args.image.width
-       << "   pad_height:" << args.image.pad_height
-       << "   pad_width:" << args.image.pad_width;
-  DLOG << "   kernel_height:" << args.kernel.height
-       << "   kernel_width:" << args.kernel.width
-       << "   stride_h:" << args.kernel.stride_h
-       << "   stride_w:" << args.kernel.stride_w;
-  DLOG << "   out_address:" << args.output.address
-       << "   out_scale_address:" << args.output.scale_address;
+/*DLOG << "   relu_enabled:" << args.relu_enabled
+     << "   sb_address:" << args.sb_address
+     << "   filter_address:" << args.filter_address
+     << "   filter_num:" << args.filter_num
+     << "   group_num:" << args.group_num;
+DLOG << "   image_address:" << args.image.address
+     << "   image_scale_address:" << args.image.scale_address
+     << "   image_channels:" << args.image.channels
+     << "   image_height:" << args.image.height
+     << "   image_width:" << args.image.width
+     << "   pad_height:" << args.image.pad_height
+     << "   pad_width:" << args.image.pad_width;
+DLOG << "   kernel_height:" << args.kernel.height
+     << "   kernel_width:" << args.kernel.width
+     << "   stride_h:" << args.kernel.stride_h
+     << "   stride_w:" << args.kernel.stride_w;
+DLOG << "   out_address:" << args.output.address
+     << "   out_scale_address:" << args.output.scale_address;*/
 #endif
+  int split_num = args.split_num;
+  for (int i = 0; i < split_num; i++) {
+    do_ioctl(IOCTL_CONFIG_CONV, &args.conv_args[i]);
+  }
 
-  return do_ioctl(IOCTL_CONFIG_CONV, &args);
+  if (split_num > 1) {
+    ComputeFPGAConcat(args.concat_arg);
+  }
 }
 
 int ComputeFpgaPool(const struct PoolingArgs &args) {
@@ -155,9 +161,16 @@ int PerformBypass(const struct BypassArgs &args) {
   return do_ioctl(IOCTL_CONFIG_BYPASS, &args);
 }
 
+int ComputeFPGAConcat(const struct ConcatArgs &args) {
+  image::concat_images(args.images_in, args.scales_in, args.image_out,
+                       args.scale_out, args.image_num, args.channel_num,
+                       args.height, args.width);
+  return 0;
+}
+
 void format_image(framework::Tensor *image_tensor) {
   auto dims = image_tensor->dims();
-  int channel = dims[1], height = dims[2], width = dims[3];
+  auto channel = dims[1], height = dims[2], width = dims[3];
   auto data_ptr = image_tensor->mutable_data<float>();
   size_t memory_size = channel * height * width * sizeof(float);
   float *new_data = (float *)fpga_malloc(memory_size);
@@ -168,7 +181,7 @@ void format_image(framework::Tensor *image_tensor) {
 
 void format_ofm(framework::Tensor *ofm_tensor) {
   auto dims = ofm_tensor->dims();
-  int channel = dims[1], height = dims[2], width = dims[3];
+  auto channel = dims[1], height = dims[2], width = dims[3];
   size_t memory_size =
       height * align_to_x(channel * width, IMAGE_ALIGNMENT) * sizeof(half);
   ofm_tensor->reset_data_ptr(fpga_malloc(memory_size));
@@ -178,38 +191,38 @@ float filter_find_max(framework::Tensor *filter_tensor) {
   auto filter_ptr = filter_tensor->data<float>();
   return filter::find_max(filter_ptr, filter_tensor->numel());
 }
+
+int get_plit_num(framework::Tensor *filter_tensor) {
+  auto dims = filter_tensor->dims();
+  auto chw = dims[1] * dims[2] * dims[3];
+  auto num = dims[0];
+  int div_capacity = filter::calc_division_capacity(chw);
+  return filter::calc_split_num(num, div_capacity);
+}
+
 int get_element_num_per_div(framework::Tensor *filter_tensor, int group_num) {
   auto dims = filter_tensor->dims();
-  PADDLE_MOBILE_ENFORCE(dims.size() == 4 || dims.size() == 2,
-                        "Filter order should be 4 or 2");
-  int chw = dims.size() == 4 ? dims[1] * dims[2] * dims[3] : dims[1];
-  int num = dims.size() == 4 ? dims[0] : dims[1];
+  auto chw = dims[1] * dims[2] * dims[3];
+  auto num = dims[0];
   int div_capacity = filter::calc_division_capacity(chw);
   return filter::calc_num_per_div(num, group_num, div_capacity);
+}
+
+int get_aligned_filter_element_num(int chw) {
+  return align_to_x(chw, FILTER_ELEMENT_ALIGNMENT);
+}
+
+int get_aligned_filter_num(int num) {
+  return align_to_x(num, FILTER_NUM_ALIGNMENT);
 }
 
 void format_filter(framework::Tensor *filter_tensor, float max_value,
                    int group_num) {
   auto dims = filter_tensor->dims();
-  int num = dims[0], channel = dims[1], height = dims[2], width = dims[3];
+  auto num = dims[0], channel = dims[1], height = dims[2], width = dims[3];
   auto data_ptr = filter_tensor->mutable_data<float>();
   size_t memory_size = num * channel * height * width * sizeof(float);
-  float *new_data = (float *)fpga_malloc(memory_size);
-  fpga_copy(new_data, data_ptr, memory_size);
-  filter::format_filter(&new_data, num, channel, height, width, group_num,
-                        max_value);
-  filter_tensor->reset_data_ptr(new_data);
-}
-
-void format_fc_matrix(framework::Tensor *filter_tensor, float max_value,
-                      int group_num, int height, int width) {
-  auto dims = filter_tensor->dims();
-  PADDLE_MOBILE_ENFORCE(height == 1 && width == 1,
-                        "IFM should be flattened for FC");
-  int num = dims[1], channel = dims[0] / height / width;
-  auto data_ptr = filter_tensor->mutable_data<float>();
-  size_t memory_size = num * channel * height * width * sizeof(float);
-  float *new_data = (float *)fpga_malloc(memory_size);
+  auto new_data = (float *)fpga_malloc(memory_size);
   fpga_copy(new_data, data_ptr, memory_size);
   filter::format_filter(&new_data, num, channel, height, width, group_num,
                         max_value);
@@ -220,6 +233,20 @@ void format_bias_scale_array(float **bias_scale_array,
                              int element_num_per_division, int num) {
   bias_scale::format_bias_scale_array(bias_scale_array,
                                       element_num_per_division, num);
+}
+
+void format_concat_output(framework::Tensor *out, int height, int width,
+                          int image_num, uint32_t *channel_num) {
+  int sum_channel = 0, sum_cw = 0;
+  for (int i = 0; i < image_num; i++) {
+    sum_channel += channel_num[i];
+  }
+
+  sum_cw = align_to_x(width * sum_channel, IMAGE_ALIGNMENT);
+  auto data_ptr = fpga_malloc(height * sum_cw * sizeof(half));
+  auto ddim = framework::make_ddim({-1, sum_channel, height, width});
+  out->Resize(ddim);
+  out->reset_data_ptr(data_ptr);
 }
 
 }  // namespace fpga

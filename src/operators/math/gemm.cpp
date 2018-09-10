@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "operators/math/gemm.h"
-#include <string>
+#include <string.h>
 #include "common/log.h"
 #include "memory/t_malloc.h"
 #if __ARM_NEON
@@ -2985,6 +2985,8 @@ void WriteWithBn(int mc, int nc, float *c, float *C, int ldc, float *new_scale,
 
 void WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc,
                      float *new_scale, float *new_bias) {}
+void WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
+                        float *new_scale, float *new_bias, float *bias1) {}
 
 #endif  // __ARM_NEON
 
