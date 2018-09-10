@@ -20,7 +20,11 @@ namespace paddle_mobile {
 namespace operators {
 template <typename DeviceType, typename T>
 void ShapeOp<DeviceType, T>::InferShape() const {
-  this->param_.Out()->Resize(this->param_.InputX()->dims());
+  PADDLE_MOBILE_ENFORCE(this->param_.Input() != nullptr,
+                        "Input (Input) of get_shape op should not be null.");
+  PADDLE_MOBILE_ENFORCE(this->param_.Out() != nullptr,
+                        "Output (Out) of get_shape op should not be null.");
+  this->param_.Out()->Resize({this->param_.Input()->dims().size()});
 }
 
 }  // namespace operators

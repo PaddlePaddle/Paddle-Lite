@@ -59,6 +59,7 @@ template <typename Dtype>
 void OperatorBase<Dtype>::Run() const {
   RunImpl();
 #ifdef PADDLE_MOBILE_DEBUG
+  DLOG << "-------------" << type_ << "----------------------------";
   vector<string> input_keys = GetInputKeys();
   for (const auto key : input_keys) {
     Tensor *input = GetVarValue<framework::LoDTensor>(key, inputs_, *scope_);
