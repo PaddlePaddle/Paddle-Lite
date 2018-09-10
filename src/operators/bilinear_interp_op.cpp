@@ -20,8 +20,25 @@ namespace paddle_mobile {
 namespace operators {
 template <typename DeviceType, typename T>
 void BilinearOp<DeviceType, T>::InferShape() const {
-  // todo check
-  this->param_.Out()->Resize(this->param_.InputX()->dims());
+  PADDLE_MOBILE_ENFORCE(this->param_.InputX() != nullptr,
+                        "Input(X) of BilinearInterOp should not be null.");
+  PADDLE_MOBILE_ENFORCE(this->param_.Out() != nullptr,
+                        "Output(Out) of BilinearInterOp should not be null.");
+
+  auto dim_x = this->param_.InputX()->dims();  // NCHW format
+  int out_h = this->param_.OutH();
+  int out_w = this->param_.OutW();
+  PADDLE_MOBILE_ENFORCE(dim_x.size() == 4, "X's dimension must be 4");
+
+  if (this->param_.InputOutPutSize() != nullptr) {
+    auto out_size_dim = this->param_.InputOutPutSize()->dims();
+
+    PADDLE_MOBILE_ENFORCE(out_size_dim.size() == 1,
+                          "OutSize's dimension size must be 1");
+    PADDLE_MOBILE_ENFORCE(out_size_dim[0] == 2, "OutSize's dim[0] must be 2");
+  }
+  std::vector<int64_t> dim_out({dim_x[0], dim_x[1], out_h, out_w});
+  this->param_.Out()->Resize(framework::make_ddim(dim_out));
 }
 
 }  // namespace operators

@@ -2336,14 +2336,21 @@ class BilinearInterpParam : public OpParam {
     input_x_ = InputXFrom<GType>(inputs, scope);
     input_outsize_ = InputOutSizeFrom<GType>(inputs, scope);
     out_ = OutFrom<GType>(outputs, scope);
+    out_h_ = GetAttr<int>("out_h", attrs);
+    out_w_ = GetAttr<int>("out_w", attrs);
   }
   const RType *InputX() const { return input_x_; }
+  const RType *InputOutPutSize() const { return input_outsize_; }
   RType *Out() const { return out_; }
+  int OutH() const { return out_h_; }
+  int OutW() const { return out_w_; }
 
  private:
   RType *input_x_;
   RType *input_outsize_;
   RType *out_;
+  int out_h_;
+  int out_w_;
 };
 #endif
 
