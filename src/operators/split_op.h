@@ -44,7 +44,6 @@ class SplitOp : public framework::OperatorWithKernel<
       operators::SplitKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 };
-
 }  // namespace operators
 }  // namespace paddle_mobile
 

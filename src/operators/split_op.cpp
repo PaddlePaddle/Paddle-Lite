@@ -18,9 +18,62 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
+
 template <typename DeviceType, typename T>
 void SplitOp<DeviceType, T>::InferShape() const {
-  this->param_.Out()->Resize(this->param_.InputX()->dims());
+  PADDLE_MOBILE_ENFORCE(this->param_.InputX() != nullptr,
+                        "Input(X) of SplitOp should not be null.");
+  //  std::string str;
+  //  str.size()
+  const auto &outs = this->param_.Outs();
+  PADDLE_MOBILE_ENFORCE(outs.size() >= 1UL,
+                        "Outputs(Out) of SplitOp should not be empty.");
+
+  auto in_dims = this->param_.InputX()->dims();
+  size_t axis = static_cast<size_t>(this->param_.Axis());
+  size_t num = static_cast<size_t>(this->param_.Num());
+
+  const auto &sections = this->param_.Sections();
+
+  const size_t outs_number = outs.size();
+  std::vector<framework::DDim> outs_dims;
+  outs_dims.reserve(outs_number);
+
+  if (num > 0) {
+    int64_t in_axis_dim = in_dims[axis];
+    PADDLE_MOBILE_ENFORCE(in_axis_dim % num == 0,
+                          "tensor split does not result"
+                          " in an equal division");
+    size_t out_axis_dim = in_axis_dim / num;
+    for (size_t i = 0; i < outs_number; ++i) {
+      auto dim = in_dims;
+      dim[axis] = out_axis_dim;
+      outs_dims.push_back(dim);
+    }
+  } else if (sections.size() > 0) {
+    PADDLE_MOBILE_ENFORCE(sections.size() == outs_number,
+                          "tensor split sections size"
+                          "should be equal to output size.");
+    for (size_t i = 0; i < outs_number; ++i) {
+      auto dim = in_dims;
+      dim[axis] = sections[i];
+      outs_dims.push_back(dim);
+    }
+  }
+
+  PADDLE_MOBILE_ENFORCE(outs_dims.size() == outs.size(),
+                        "length==dims.size()  must be true!");
+  for (int j = 0; j < outs_dims.size(); ++j) {
+      outs[j]->Resize(outs_dims[j]);
+  }
+
+  //  todo lod impl
+  //  if (axis != 0) {
+  //    // Only pass LoD when not spliting along the first dim.
+  //    for (size_t i = 0; i < outs_number; ++i) {
+  //      ctx->ShareLoD("X", "Out", 0, i);
+  //    }
+  //  }
 }
 
 }  // namespace operators
