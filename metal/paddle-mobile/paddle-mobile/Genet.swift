@@ -14,8 +14,8 @@
 
 import Foundation
 
-class Genet: Net {
-  @objc override init(device: MTLDevice) {
+public class Genet: Net {
+  @objc public override init(device: MTLDevice) {
     super.init(device: device)
     means = [128.0, 128.0, 128.0]
     scale = 0.017
@@ -34,7 +34,7 @@ class Genet: Net {
     }
   }
   
-  override func resultStr(res: [Float]) -> String {
+  override  public func resultStr(res: [Float]) -> String {
     return " \(Array<Float>(res.suffix(10))) ... "
   }
   
