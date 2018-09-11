@@ -44,14 +44,14 @@ class ReshapeParam<P: PrecisionType>: OpParam {
       output.padToFourDim = Dim.init(inDim: dim)
       output.dim = output.padToFourDim
     
-      inplace = try ReshapeParam.getAttr(key: "inplace", attrs: opDesc.attrs)
+//      inplace = try ReshapeParam.getAttr(key: "inplace", attrs: opDesc.attrs)
     } catch let error {
       throw error
     }
   }
   let input: Texture<P>
   let shape: [Int32]
-  let inplace: Bool
+//  let inplace: Bool
   var output: Texture<P>
 }
 
