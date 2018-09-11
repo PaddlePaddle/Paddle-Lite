@@ -249,5 +249,79 @@ void format_concat_output(framework::Tensor *out, int height, int width,
   out->reset_data_ptr(data_ptr);
 }
 
+void fill_conv_arg(struct WrapperConvArgs *arg, framework::Tensor *input,
+                   framework::Tensor *out, framework::Tensor *filter,
+                   bool relu_enabled, int group_num, int stride_h, int stride_w,
+                   int padding_h, int padding_w, float *bs_ptr) {
+  auto input_ptr = input->data<float>();
+  auto filter_ptr = filter->data<float>();
+  auto out_ptr = out->mutable_data<float>();
+
+  arg->group_num = (uint32_t)group_num;
+  arg->split_num = (uint32_t)fpga::get_plit_num(filter);
+  arg->filter_num = (uint32_t)filter->dims()[0];
+  arg->output.address = out_ptr;
+  arg->output.scale_address = out->scale;
+  arg->conv_args = (fpga::ConvArgs *)fpga::fpga_malloc(arg->split_num *
+                                                       sizeof(fpga::ConvArgs));
+
+  arg->concat_arg.image_num = arg->split_num;
+  arg->concat_arg.image_out = out_ptr;
+  arg->concat_arg.scale_out = out->scale;
+  arg->concat_arg.height = (uint32_t)filter->dims()[2];
+  arg->concat_arg.width = (uint32_t)filter->dims()[3];
+
+  int n = arg->split_num;
+  arg->concat_arg.images_in = (half **)fpga::fpga_malloc(n * sizeof(int *));
+  arg->concat_arg.scales_in = (float **)fpga::fpga_malloc(n * sizeof(float *));
+  arg->concat_arg.channel_num =
+      (uint32_t *)fpga::fpga_malloc(n * sizeof(uint32_t));
+  arg->concat_arg.image_out = out_ptr;
+
+  const int channel = (int)out->dims()[1];
+  int element_num_per_div = fpga::get_element_num_per_div(filter, group_num);
+  int element_num = fpga::get_aligned_filter_element_num(
+      filter->dims()[1] * filter->dims()[2] * filter->dims()[3]);
+
+  for (int i = 0; i < n; i++) {
+    arg->conv_args[i].relu_enabled = relu_enabled;
+    arg->conv_args[i].group_num = (uint32_t)group_num;
+    arg->conv_args[i].kernel.stride_h = (uint32_t)stride_h;
+    arg->conv_args[i].kernel.stride_w = (uint32_t)stride_w;
+    arg->conv_args[i].kernel.height = (uint32_t)filter->dims()[2];
+    arg->conv_args[i].kernel.width = (uint32_t)filter->dims()[3];
+    arg->conv_args[i].image.address = input_ptr;
+    arg->conv_args[i].image.channels = (uint32_t)input->dims()[1];
+    arg->conv_args[i].image.height = (uint32_t)input->dims()[2];
+    arg->conv_args[i].image.width = (uint32_t)input->dims()[3];
+    arg->conv_args[i].image.scale_address = input->scale;
+    arg->conv_args[i].image.pad_height = (uint32_t)padding_h;
+    arg->conv_args[i].image.pad_width = (uint32_t)padding_w;
+    arg->conv_args[i].filter_address = &((int8_t *)filter_ptr)[i * element_num];
+    arg->conv_args[i].sb_address = &((int8_t *)bs_ptr)[i * element_num];
+    arg->conv_args[i].filter_num =
+        (uint32_t)(i == n - 1 ? fpga::get_aligned_filter_num(
+                                    channel - (n - 1) * element_num_per_div)
+                              : element_num_per_div);
+
+    if (n > 1) {
+      arg->conv_args[i].output.scale_address =
+          (float *)fpga::fpga_malloc(2 * sizeof(float));
+      arg->conv_args[i].output.address =
+          fpga::fpga_malloc(input->dims()[2] * input->dims()[3] *
+                            arg->conv_args[i].filter_num * sizeof(half));
+    }
+
+    else {
+      arg->conv_args[i].output.scale_address = out->scale;
+      arg->conv_args[i].output.address = out_ptr;
+    }
+
+    arg->concat_arg.images_in[i] = (half *)arg->conv_args[i].output.address;
+    arg->concat_arg.scales_in[i] = (float *)arg->conv_args[i].sb_address;
+    arg->concat_arg.channel_num[i] = arg->conv_args[i].filter_num;
+  }
+}
+
 }  // namespace fpga
 }  // namespace paddle_mobile
