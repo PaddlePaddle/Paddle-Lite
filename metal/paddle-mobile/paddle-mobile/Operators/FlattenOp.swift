@@ -14,30 +14,21 @@
 
 import Foundation
 
-class ResizeBilinearParam<P: PrecisionType>: OpParam {
+class FlattenParam<P: PrecisionType>: OpParam {
   typealias ParamPrecisionType = P
   required init(opDesc: OpDesc, inScope: Scope) throws {
     do {
-      input = try ResizeBilinearParam.inputX(inputs: opDesc.inputs, from: inScope)
-//      if (input.transpose != [0, 2, 3, 1]) || (input.tensorDim.cout() != 4) {
-//        fatalError()
-//      }
-      output = try ResizeBilinearParam.outputOut(outputs: opDesc.outputs, from: inScope)
-      out_h = try ResizeBilinearParam.getAttr(key: "out_h", attrs: opDesc.attrs)
-      out_w = try ResizeBilinearParam.getAttr(key: "out_w", attrs: opDesc.attrs)
+      output = try FlattenParam.output(outputs: opDesc.outputs, from: inScope)
     } catch let error {
       throw error
     }
   }
-  let input: Texture<P>
   var output: Texture<P>
-  let out_h: Int32
-  let out_w: Int32
 }
 
-class ResizeBilinearOp<P: PrecisionType>: Operator<ResizeBilinearKernel<P>, ResizeBilinearParam<P>>, Runable, Creator, InferShaperable{
+class FlattenOp<P: PrecisionType>: Operator<FlattenKernel<P>, FlattenParam<P>>, Runable, Creator, InferShaperable{
   
-  typealias OpType = ResizeBilinearOp<P>
+  typealias OpType = SplitOp<P>
 
   func inferShape() {
     //        para.output.dim = para.input.dim

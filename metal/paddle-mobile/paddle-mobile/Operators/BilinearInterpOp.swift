@@ -14,30 +14,30 @@
 
 import Foundation
 
-class ResizeBilinearParam<P: PrecisionType>: OpParam {
+class BilinearInterpParam<P: PrecisionType>: OpParam {
   typealias ParamPrecisionType = P
   required init(opDesc: OpDesc, inScope: Scope) throws {
     do {
-      input = try ResizeBilinearParam.inputX(inputs: opDesc.inputs, from: inScope)
+      input = try BilinearInterpParam.inputX(inputs: opDesc.inputs, from: inScope)
 //      if (input.transpose != [0, 2, 3, 1]) || (input.tensorDim.cout() != 4) {
 //        fatalError()
 //      }
-      output = try ResizeBilinearParam.outputOut(outputs: opDesc.outputs, from: inScope)
-      out_h = try ResizeBilinearParam.getAttr(key: "out_h", attrs: opDesc.attrs)
-      out_w = try ResizeBilinearParam.getAttr(key: "out_w", attrs: opDesc.attrs)
+      output = try BilinearInterpParam.outputOut(outputs: opDesc.outputs, from: inScope)
+      out_h = try BilinearInterpParam.getAttr(key: "out_h", attrs: opDesc.attrs)
+      out_w = try BilinearInterpParam.getAttr(key: "out_w", attrs: opDesc.attrs)
     } catch let error {
       throw error
     }
   }
   let input: Texture<P>
   var output: Texture<P>
-  let out_h: Int32
-  let out_w: Int32
+  let out_h: Int
+  let out_w: Int
 }
 
-class ResizeBilinearOp<P: PrecisionType>: Operator<ResizeBilinearKernel<P>, ResizeBilinearParam<P>>, Runable, Creator, InferShaperable{
+class BilinearInterpOp<P: PrecisionType>: Operator<BilinearInterpKernel<P>, BilinearInterpParam<P>>, Runable, Creator, InferShaperable{
   
-  typealias OpType = ResizeBilinearOp<P>
+  typealias OpType = BilinearInterpOp<P>
 
   func inferShape() {
     //        para.output.dim = para.input.dim

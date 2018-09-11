@@ -26,7 +26,6 @@ class BatchNormParam<P: PrecisionType>: OpParam {
       inputVariance = try BatchNormParam.inputVariance(inputs: opDesc.paraInputs, from: inScope)
       epsilon = try BatchNormParam.getAttr(key: "epsilon", attrs: opDesc.attrs)
       momentum = try BatchNormParam.getAttr(key: "momentum", attrs: opDesc.attrs)
-      is_test = try BatchNormParam.getAttr(key: "is_test", attrs: opDesc.attrs)
     } catch let error {
       throw error
     }
@@ -39,7 +38,6 @@ class BatchNormParam<P: PrecisionType>: OpParam {
   let inputVariance: Tensor<ParamPrecisionType>
   let epsilon: Float
   let momentum: Float
-  let is_test: Bool
 }
 
 class BatchNormOp<P: PrecisionType>: Operator<BatchNormKernel<P>, BatchNormParam<P>>, Runable, Creator, InferShaperable{
