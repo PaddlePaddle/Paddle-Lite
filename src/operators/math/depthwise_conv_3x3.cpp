@@ -1465,189 +1465,193 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
                                      Tensor *output, const Tensor *new_scale,
                                      const Tensor *new_bias, bool if_relu) {
 #if __ARM_NEON
-#ifdef _OPENMP
-  const float *newscale_data = new_scale->data<float>();
-  const float *newbias_data = new_bias->data<float>();
-
-  const int batch_size = static_cast<int>(input->dims()[0]);
-  const int input_channel = static_cast<int>(input->dims()[1]);
-
-  const int input_height = static_cast<int>(input->dims()[2]);
-  const int input_width = static_cast<int>(input->dims()[3]);
-  const int output_height = static_cast<int>(output->dims()[2]);
-  const int output_width = static_cast<int>(output->dims()[3]);
-  const int inhxw = input_height * input_width;
-  const int outhxw = output_height * output_width;
-
-  float32x4_t zero = vdupq_n_f32(0.0);
-  for (int b = 0; b < batch_size; b++) {
-    #pragma omp parallel for
-    for (int c = 0; c < input_channel; c++) {
-      const float *filter_data = filter->data<float>() + c * 9;
-      const float *input_data = input->data<float>() + c * inhxw;
-      float *output_data = output->data<float>() + c * outhxw;
-      float32x4_t vnewbias = vdupq_n_f32(newbias_data[c]);
-      float32x4_t vnewscale = vdupq_n_f32(newscale_data[c]);
-
-      float w00 = filter_data[0];
-      float w01 = filter_data[1];
-      float w02 = filter_data[2];
-      float w10 = filter_data[3];
-      float w11 = filter_data[4];
-      float w12 = filter_data[5];
-      float w20 = filter_data[6];
-      float w21 = filter_data[7];
-      float w22 = filter_data[8];
-
-      int m;
-      for (m = 1; m < output_width - 2; m = m + 3) {
-        float *output_ptr = output_data + m;
-        float32x4x2_t input_buff_mid{}, input_buff_bottom{};
-        float32x4_t in0, in1, in2, in3, tmp0, tmp1, tmp2, tmp3, out0;
-        input_buff_mid = vld2q_f32(input_data + (2 * m - 1));
-        input_buff_bottom = vld2q_f32(input_data + input_width + (2 * m - 1));
-
-        in0 = input_buff_mid.val[0];
-        tmp0 = input_buff_mid.val[1];
-        tmp1 = vextq_f32(in0, zero, 1);
-
-        in2 = input_buff_bottom.val[0];
-        tmp2 = input_buff_bottom.val[1];
-        tmp3 = vextq_f32(in2, zero, 1);
-
-        out0 = vmulq_n_f32(in0, w10);
-        out0 = vmlaq_n_f32(out0, tmp0, w11);
-        out0 = vmlaq_n_f32(out0, tmp1, w12);
-        out0 = vmlaq_n_f32(out0, in2, w20);
-        out0 = vmlaq_n_f32(out0, tmp2, w21);
-        out0 = vmlaq_n_f32(out0, tmp3, w22);
-        out0 = vmlaq_f32(vnewbias, vnewscale, out0);
-        if (if_relu) {
-          out0 = vmaxq_f32(out0, zero);
-        }
-        vst1q_lane_f32(output_ptr, out0, 0);
-        vst1q_lane_f32(output_ptr + 1, out0, 1);
-        vst1q_lane_f32(output_ptr + 2, out0, 2);
-      }
-      for (m = 1; m < output_width - 2; m += 3) {
-      }
-      for (int j = m; j < output_width; j++) {
-        output_data[j] = input_data[2 * j - 1] * w10 + input_data[2 * j] * w11 +
-                         input_data[2 * j + 1] * w12 +
-                         input_data[2 * j - 1 + input_width] * w20 +
-                         input_data[2 * j + input_width] * w21 +
-                         input_data[2 * j + 1 + input_width] * w22;
-        output_data[j] = newscale_data[c] * output_data[j] + newbias_data[c];
-        if (if_relu) {
-          output_data[j] = output_data[j] < 0 ? 0 : output_data[j];
-        }
-      }
-
-      for (int i = 1; i < output_height; i += 1) {
-        for (int m = 1; m < output_width - 2; m += 3) {
-          float *output_ptr = output_data + i * output_width + m;
-          float32x4x2_t input_buff_top{}, input_buff_mid{}, input_buff_bottom{};
-          float32x4_t in0, in1, in2, in3, in4, in5, tmp0, tmp1, tmp2, tmp3,
-              tmp4, tmp5, out0;
-          input_buff_top =
-              vld2q_f32(input_data + (2 * i - 1) * input_width + (2 * m - 1));
-          input_buff_mid =
-              vld2q_f32(input_data + (2 * i) * input_width + (2 * m - 1));
-          input_buff_bottom =
-              vld2q_f32(input_data + (2 * i + 1) * input_width + (2 * m - 1));
-
-          in0 = input_buff_top.val[0];
-          tmp0 = input_buff_top.val[1];
-          tmp1 = vextq_f32(in0, zero, 1);
-
-          in2 = input_buff_mid.val[0];
-          tmp2 = input_buff_mid.val[1];
-          tmp3 = vextq_f32(in2, zero, 1);
-
-          in4 = input_buff_bottom.val[0];
-          tmp4 = input_buff_bottom.val[1];
-          tmp5 = vextq_f32(in4, zero, 1);
-
-          out0 = vmulq_n_f32(in0, w00);
-          out0 = vmlaq_n_f32(out0, tmp0, w01);
-          out0 = vmlaq_n_f32(out0, tmp1, w02);
-          out0 = vmlaq_n_f32(out0, in2, w10);
-          out0 = vmlaq_n_f32(out0, tmp2, w11);
-          out0 = vmlaq_n_f32(out0, tmp3, w12);
-          out0 = vmlaq_n_f32(out0, in4, w20);
-          out0 = vmlaq_n_f32(out0, tmp4, w21);
-          out0 = vmlaq_n_f32(out0, tmp5, w22);
-          out0 = vmlaq_f32(vnewbias, vnewscale, out0);
-          if (if_relu) {
-            out0 = vmaxq_f32(out0, zero);
-          }
-          vst1q_lane_f32(output_ptr, out0, 0);
-          vst1q_lane_f32(output_ptr + 1, out0, 1);
-          vst1q_lane_f32(output_ptr + 2, out0, 2);
-        }
-        int m;
-        for (m = 1; m < output_width - 2; m += 3) {
-        }
-        for (int j = m; j < output_width; j++) {
-          output_data[i * output_width + j] =
-              input_data[(2 * i - 1) * input_width + 2 * j - 1] * w00 +
-              input_data[(2 * i - 1) * input_width + 2 * j] * w01 +
-              input_data[(2 * i - 1) * input_width + 2 * j + 1] * w02 +
-              input_data[(2 * i) * input_width + 2 * j - 1] * w10 +
-              input_data[(2 * i) * input_width + 2 * j] * w11 +
-              input_data[(2 * i) * input_width + 2 * j + 1] * w12 +
-              input_data[(2 * i + 1) * input_width + 2 * j - 1] * w20 +
-              input_data[(2 * i + 1) * input_width + 2 * j] * w21 +
-              input_data[(2 * i + 1) * input_width + 2 * j + 1] * w22;
-          output_data[i * output_width + j] =
-              newscale_data[c] * output_data[i * output_width + j] +
-              newbias_data[c];
-          if (if_relu) {
-            output_data[i * output_width + j] =
-                output_data[i * output_width + j] < 0
-                    ? 0
-                    : output_data[i * output_width + j];
-          }
-        }
-      }
-      output_data[0] = input_data[0] * w11 + input_data[1] * w12 +
-                       input_data[input_height] * w21 +
-                       input_data[input_height + 1] * w22;
-
-      output_data[0] = newscale_data[c] * output_data[0] + newbias_data[c];
-      if (if_relu) {
-        output_data[0] = output_data[0] < 0 ? 0 : output_data[0];
-      }
-      for (int i = 1; i < output_height; i++) {
-        output_data[i * output_width] =
-            input_data[(2 * i - 1) * input_width] * w01 +
-            input_data[(2 * i - 1) * input_width + 1] * w02 +
-            input_data[(2 * i) * input_width] * w11 +
-            input_data[(2 * i) * input_width + 1] * w12 +
-            input_data[(2 * i + 1) * input_width] * w21 +
-            input_data[(2 * i + 1) * input_width + 1] * w22;
-
-        output_data[i * output_width] =
-            newscale_data[c] * output_data[i * output_width] + newbias_data[c];
-        if (if_relu) {
-          output_data[i * output_width] = output_data[i * output_width] < 0
-                                              ? 0
-                                              : output_data[i * output_width];
-        }
-      }
-    }
-  }
-
-#else
+  //#ifdef _OPENMP
+  //  const float *newscale_data = new_scale->data<float>();
+  //  const float *newbias_data = new_bias->data<float>();
+  //
+  //  const int batch_size = static_cast<int>(input->dims()[0]);
+  //  const int input_channel = static_cast<int>(input->dims()[1]);
+  //
+  //  const int input_height = static_cast<int>(input->dims()[2]);
+  //  const int input_width = static_cast<int>(input->dims()[3]);
+  //  const int output_height = static_cast<int>(output->dims()[2]);
+  //  const int output_width = static_cast<int>(output->dims()[3]);
+  //  const int inhxw = input_height * input_width;
+  //  const int outhxw = output_height * output_width;
+  //
+  //  float32x4_t zero = vdupq_n_f32(0.0);
+  //  for (int b = 0; b < batch_size; b++) {
+  //    #pragma omp parallel for
+  //    for (int c = 0; c < input_channel; c++) {
+  //      const float *filter_data = filter->data<float>() + c * 9;
+  //      const float *input_data = input->data<float>() + c * inhxw;
+  //      float *output_data = output->data<float>() + c * outhxw;
+  //      float32x4_t vnewbias = vdupq_n_f32(newbias_data[c]);
+  //      float32x4_t vnewscale = vdupq_n_f32(newscale_data[c]);
+  //
+  //      float w00 = filter_data[0];
+  //      float w01 = filter_data[1];
+  //      float w02 = filter_data[2];
+  //      float w10 = filter_data[3];
+  //      float w11 = filter_data[4];
+  //      float w12 = filter_data[5];
+  //      float w20 = filter_data[6];
+  //      float w21 = filter_data[7];
+  //      float w22 = filter_data[8];
+  //
+  //      int m;
+  //      for (m = 1; m < output_width - 2; m = m + 3) {
+  //        float *output_ptr = output_data + m;
+  //        float32x4x2_t input_buff_mid{}, input_buff_bottom{};
+  //        float32x4_t in0, in1, in2, in3, tmp0, tmp1, tmp2, tmp3, out0;
+  //        input_buff_mid = vld2q_f32(input_data + (2 * m - 1));
+  //        input_buff_bottom = vld2q_f32(input_data + input_width + (2 * m -
+  //        1));
+  //
+  //        in0 = input_buff_mid.val[0];
+  //        tmp0 = input_buff_mid.val[1];
+  //        tmp1 = vextq_f32(in0, zero, 1);
+  //
+  //        in2 = input_buff_bottom.val[0];
+  //        tmp2 = input_buff_bottom.val[1];
+  //        tmp3 = vextq_f32(in2, zero, 1);
+  //
+  //        out0 = vmulq_n_f32(in0, w10);
+  //        out0 = vmlaq_n_f32(out0, tmp0, w11);
+  //        out0 = vmlaq_n_f32(out0, tmp1, w12);
+  //        out0 = vmlaq_n_f32(out0, in2, w20);
+  //        out0 = vmlaq_n_f32(out0, tmp2, w21);
+  //        out0 = vmlaq_n_f32(out0, tmp3, w22);
+  //        out0 = vmlaq_f32(vnewbias, vnewscale, out0);
+  //        if (if_relu) {
+  //          out0 = vmaxq_f32(out0, zero);
+  //        }
+  //        vst1q_lane_f32(output_ptr, out0, 0);
+  //        vst1q_lane_f32(output_ptr + 1, out0, 1);
+  //        vst1q_lane_f32(output_ptr + 2, out0, 2);
+  //      }
+  //      for (m = 1; m < output_width - 2; m += 3) {
+  //      }
+  //      for (int j = m; j < output_width; j++) {
+  //        output_data[j] = input_data[2 * j - 1] * w10 + input_data[2 * j] *
+  //        w11 +
+  //                         input_data[2 * j + 1] * w12 +
+  //                         input_data[2 * j - 1 + input_width] * w20 +
+  //                         input_data[2 * j + input_width] * w21 +
+  //                         input_data[2 * j + 1 + input_width] * w22;
+  //        output_data[j] = newscale_data[c] * output_data[j] +
+  //        newbias_data[c]; if (if_relu) {
+  //          output_data[j] = output_data[j] < 0 ? 0 : output_data[j];
+  //        }
+  //      }
+  //
+  //      for (int i = 1; i < output_height; i += 1) {
+  //        for (int m = 1; m < output_width - 2; m += 3) {
+  //          float *output_ptr = output_data + i * output_width + m;
+  //          float32x4x2_t input_buff_top{}, input_buff_mid{},
+  //          input_buff_bottom{}; float32x4_t in0, in1, in2, in3, in4, in5,
+  //          tmp0, tmp1, tmp2, tmp3,
+  //              tmp4, tmp5, out0;
+  //          input_buff_top =
+  //              vld2q_f32(input_data + (2 * i - 1) * input_width + (2 * m -
+  //              1));
+  //          input_buff_mid =
+  //              vld2q_f32(input_data + (2 * i) * input_width + (2 * m - 1));
+  //          input_buff_bottom =
+  //              vld2q_f32(input_data + (2 * i + 1) * input_width + (2 * m -
+  //              1));
+  //
+  //          in0 = input_buff_top.val[0];
+  //          tmp0 = input_buff_top.val[1];
+  //          tmp1 = vextq_f32(in0, zero, 1);
+  //
+  //          in2 = input_buff_mid.val[0];
+  //          tmp2 = input_buff_mid.val[1];
+  //          tmp3 = vextq_f32(in2, zero, 1);
+  //
+  //          in4 = input_buff_bottom.val[0];
+  //          tmp4 = input_buff_bottom.val[1];
+  //          tmp5 = vextq_f32(in4, zero, 1);
+  //
+  //          out0 = vmulq_n_f32(in0, w00);
+  //          out0 = vmlaq_n_f32(out0, tmp0, w01);
+  //          out0 = vmlaq_n_f32(out0, tmp1, w02);
+  //          out0 = vmlaq_n_f32(out0, in2, w10);
+  //          out0 = vmlaq_n_f32(out0, tmp2, w11);
+  //          out0 = vmlaq_n_f32(out0, tmp3, w12);
+  //          out0 = vmlaq_n_f32(out0, in4, w20);
+  //          out0 = vmlaq_n_f32(out0, tmp4, w21);
+  //          out0 = vmlaq_n_f32(out0, tmp5, w22);
+  //          out0 = vmlaq_f32(vnewbias, vnewscale, out0);
+  //          if (if_relu) {
+  //            out0 = vmaxq_f32(out0, zero);
+  //          }
+  //          vst1q_lane_f32(output_ptr, out0, 0);
+  //          vst1q_lane_f32(output_ptr + 1, out0, 1);
+  //          vst1q_lane_f32(output_ptr + 2, out0, 2);
+  //        }
+  //        int m;
+  //        for (m = 1; m < output_width - 2; m += 3) {
+  //        }
+  //        for (int j = m; j < output_width; j++) {
+  //          output_data[i * output_width + j] =
+  //              input_data[(2 * i - 1) * input_width + 2 * j - 1] * w00 +
+  //              input_data[(2 * i - 1) * input_width + 2 * j] * w01 +
+  //              input_data[(2 * i - 1) * input_width + 2 * j + 1] * w02 +
+  //              input_data[(2 * i) * input_width + 2 * j - 1] * w10 +
+  //              input_data[(2 * i) * input_width + 2 * j] * w11 +
+  //              input_data[(2 * i) * input_width + 2 * j + 1] * w12 +
+  //              input_data[(2 * i + 1) * input_width + 2 * j - 1] * w20 +
+  //              input_data[(2 * i + 1) * input_width + 2 * j] * w21 +
+  //              input_data[(2 * i + 1) * input_width + 2 * j + 1] * w22;
+  //          output_data[i * output_width + j] =
+  //              newscale_data[c] * output_data[i * output_width + j] +
+  //              newbias_data[c];
+  //          if (if_relu) {
+  //            output_data[i * output_width + j] =
+  //                output_data[i * output_width + j] < 0
+  //                    ? 0
+  //                    : output_data[i * output_width + j];
+  //          }
+  //        }
+  //      }
+  //      output_data[0] = input_data[0] * w11 + input_data[1] * w12 +
+  //                       input_data[input_height] * w21 +
+  //                       input_data[input_height + 1] * w22;
+  //
+  //      output_data[0] = newscale_data[c] * output_data[0] + newbias_data[c];
+  //      if (if_relu) {
+  //        output_data[0] = output_data[0] < 0 ? 0 : output_data[0];
+  //      }
+  //      for (int i = 1; i < output_height; i++) {
+  //        output_data[i * output_width] =
+  //            input_data[(2 * i - 1) * input_width] * w01 +
+  //            input_data[(2 * i - 1) * input_width + 1] * w02 +
+  //            input_data[(2 * i) * input_width] * w11 +
+  //            input_data[(2 * i) * input_width + 1] * w12 +
+  //            input_data[(2 * i + 1) * input_width] * w21 +
+  //            input_data[(2 * i + 1) * input_width + 1] * w22;
+  //
+  //        output_data[i * output_width] =
+  //            newscale_data[c] * output_data[i * output_width] +
+  //            newbias_data[c];
+  //        if (if_relu) {
+  //          output_data[i * output_width] = output_data[i * output_width] < 0
+  //                                              ? 0
+  //                                              : output_data[i *
+  //                                              output_width];
+  //        }
+  //      }
+  //    }
+  //  }
+  //
+  //#else
 
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
   float *output_data = output->data<float>();
   const float *newscale_data = new_scale->data<float>();
   const float *newbias_data = new_bias->data<float>();
-
-  float32x4_t vnewbias = vdupq_n_f32(0.0);
-  float32x4_t vnewscale = vdupq_n_f32(1.0);
 
   const int in_h = static_cast<int>(input->dims()[2]);
   const int in_w = static_cast<int>(input->dims()[3]);
@@ -1660,22 +1664,22 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
   const int if_pad = in_l - 1 == (out_l - 1) * 2 ? 1 : 0;
   const int batch_size = static_cast<int>(input->dims()[0]);
   const int c = static_cast<int>(input->dims()[1]);
-  const float *input_row_ptr;
-  float *output_row_ptr;
-
   const int w_times = (out_w - 2) / 3;
-
-  float32x4x2_t input_buff_mid{}, input_buff_bottom[w_times + 1];
-  float32x4_t elewise_res0, elewise_res1, elewise_res2, res3;
-  int out2in_mid;
   float32x4_t zero = vdupq_n_f32(0.0);
   for (int b = batch_size; b > 0; --b) {
-    const float *filter_data_tmp = filter_data;
-    for (int j = 0; j < c; ++j) {
+    #pragma omp parallel for
+    for (int j = 0; j < c; j++) {
+      const float *input_row_ptr;
+      float *output_row_ptr;
+      float32x4x2_t input_buff_mid{}, input_buff_bottom[w_times + 1];
+      float32x4_t elewise_res0, elewise_res1, elewise_res2, res3;
+      int out2in_mid;
+      float32x4_t vnewbias = vdupq_n_f32(0.0);
+      float32x4_t vnewscale = vdupq_n_f32(1.0);
       auto output_data_tmp = output_data + j * out_h * out_w;
       auto input_data_tmp = input_data + j * in_h * in_w;
       auto input_const = input_data_tmp;
-
+      const float *filter_data_tmp = filter_data + 9 * j;
       vnewbias = vdupq_n_f32(newbias_data[j]);
       vnewscale = vdupq_n_f32(newscale_data[j]);
 
@@ -1726,7 +1730,9 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
           if (if_relu) {
             res3 = vmaxq_f32(res3, zero);
           }
-          vst1q_f32(output_row_ptr, res3);
+          vst1q_lane_f32(output_row_ptr, res3, 0);
+          vst1q_lane_f32(output_row_ptr + 1, res3, 1);
+          vst1q_lane_f32(output_row_ptr + 2, res3, 2);
 
           input_row_ptr += 6;
           output_row_ptr += 3;
@@ -1765,7 +1771,9 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
           res3 = vmaxq_f32(res3, zero);
         }
         if ((w4 != w_times)) {
-          vst1q_f32(output_row_ptr, res3);
+          vst1q_lane_f32(output_row_ptr, res3, 0);
+          vst1q_lane_f32(output_row_ptr + 1, res3, 1);
+          vst1q_lane_f32(output_row_ptr + 2, res3, 2);
         } else {
           if (out_l - 2 - w_times * 3 == 1) {
             vst1q_lane_f32(output_row_ptr, res3, 0);
@@ -1865,12 +1873,11 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
                   : output_data_tmp[i * out_l + out_l - 1];
         }
       }
-      filter_data_tmp += 9;
     }
     input_data += inhxw * c;
     output_data += outhxw * c;
   }
-#endif
+//#endif
 #endif
 }
 
