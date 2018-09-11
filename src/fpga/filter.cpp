@@ -101,7 +101,6 @@ void align_element(char **data_in, int num, int chw) {
   int j = 0;
   int align_chw = align_to_x(chw, FILTER_ELEMENT_ALIGNMENT);
   if (align_chw != chw) {
-    printf("align %d \n", align_chw);
     char *tmp = *data_in;
     char *data_tmp = (char *)fpga_malloc(num * align_chw * sizeof(char));
 
