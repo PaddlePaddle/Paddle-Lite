@@ -139,8 +139,10 @@ let gConvBnReluType             = "conv_bn_relu"
 let gDwConvBnReluType           = "depth_conv_bn_relu"
 let gPreluType                  = "prelu"
 let gConv2dTransposeType        = "conv2d_transpose"
-let gResizeBilinearType             = "resize_bilinear"
-
+let gBilinearInterpType         = "bilinear_interp"
+let gSplit                      = "split"
+let gShape                      = "shape"
+let gFlatten                    = "flatten"
 
 let opInfos = [gConvType                    : (inputs: ["Input"], outputs: ["Output"]),
                gBatchNormType               : (inputs: ["X"], outputs: ["Y"]),
@@ -163,5 +165,8 @@ let opInfos = [gConvType                    : (inputs: ["Input"], outputs: ["Out
                gPriorBoxType                : (inputs: ["Input", "Image"], outputs: ["Boxes", "Variances"]),
                gPreluType                   : (inputs: ["X"], outputs: ["Out"]),
                gConv2dTransposeType         : (inputs: ["Input"], outputs: ["Output"]),
-               gResizeBilinearType          : (inputs: ["X"], outputs: ["Out"])
+               gBilinearInterpType          : (inputs: ["X"], outputs: ["Out"]),
+               gSplit                       : (inputs: ["Input"], outputs: ["Out"]),
+               gShape                       : (inputs: ["Input"], outputs: ["Out"]),
+               gFlatten                     : (inputs: ["Input"], outputs: ["Out"])
               ]

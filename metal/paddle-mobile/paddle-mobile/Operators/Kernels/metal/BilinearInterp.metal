@@ -15,16 +15,16 @@
 #include <metal_stdlib>
 using namespace metal;
 
-struct resize_bilinear_param {
+struct bilinear_interp_param {
 //  int32_t out_h;
 //  int32_t out_w;
   float ratio_h;
   float ratio_w;
 };
 
-kernel void resize_bilinear(texture2d_array<float, access::read> input [[texture(0)]],
+kernel void bilinear_interp(texture2d_array<float, access::read> input [[texture(0)]],
                      texture2d_array<float, access::write> output [[texture(2)]],
-                     constant resize_bilinear_param & pm [[buffer(0)]],
+                     constant bilinear_interp_param & pm [[buffer(0)]],
                      uint3 gid [[thread_position_in_grid]]) {
   float4 r;
   if ((input.get_width() == output.get_width()) && (input.get_height() == output.get_height())) {
@@ -47,9 +47,9 @@ kernel void resize_bilinear(texture2d_array<float, access::read> input [[texture
   output.write(r, gid.xy, gid.z);
 }
 
-kernel void resize_bilinear_half(texture2d_array<half, access::read> input [[texture(0)]],
+kernel void bilinear_interp_half(texture2d_array<half, access::read> input [[texture(0)]],
                             texture2d_array<half, access::write> output [[texture(2)]],
-                            constant resize_bilinear_param & pm [[buffer(0)]],
+                            constant bilinear_interp_param & pm [[buffer(0)]],
                             uint3 gid [[thread_position_in_grid]]) {
   
   half4 r;
