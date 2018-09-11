@@ -25,27 +25,34 @@ namespace operators {
 template <>
 bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
   const Tensor *input = param->InputX();
-
-  auto input_ptr = input->data<float>();
-  auto output = param->Out();
-  auto output_ptr = output->mutable_data<float>();
-  fpga::BypassArgs args;
-  args.convert_type = fpga::DATA_FP16_TO_FP32;
-  args.layout_type = fpga::LAYOUT_NO_CONVERT;
-  args.image.address = (void *)(input_ptr);
-  args.image.height = (uint32_t)input->dims()[0];
-  args.image.width = (uint32_t)input->dims()[1];
-  args.image.channels = 1;
-  args.output.address = output_ptr;
-  param->SetFpgaArgs(args);
-
+  if (input->type() == typeid(half)) {
+    auto input_ptr = input->data<half>();
+    auto output_ptr = param->Out();
+    fpga::BypassArgs args;
+    args.input_layout_type = fpga::LAYOUT_HWC;
+    args.output_layout_type = fpga::LAYOUT_CHW;
+    args.input_data_type = fpga::DATA_TYPE_FP16;
+    args.output_data_type = fpga::DATA_TYPE_FP32;
+    args.image.address = (void *)(input_ptr);
+    args.image.height = (uint32_t)input->dims()[0];
+    args.image.width = (uint32_t)input->dims()[1];
+    args.image.channels = 1;
+    args.output.address = output_ptr;
+    param->SetFpgaArgs(args);
+  }
   return true;
 }
 
 template <>
 void SoftmaxKernel<FPGA, float>::Compute(
     const SoftmaxParam<FPGA> &param) const {
-  // SoftmaxCompute<float>(param);
+  DLOG << "======================================= FPGA SoftMAX "
+          "===============================================";
+  const Tensor *in_x = param.InputX();
+  Tensor *out = param.Out();
+  auto x_dims = in_x->dims();
+  out->Resize(x_dims);
+  math::SoftmaxFuntor<CPU, float>()(in_x, out);
 }
 
 template class SoftmaxKernel<FPGA, float>;

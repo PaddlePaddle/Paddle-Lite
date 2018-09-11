@@ -145,8 +145,8 @@ int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
 }
 int PerformBypass(const struct BypassArgs &args) {
 #ifdef FPGA_TEST_MODE
-  DLOG << "   layout_type:" << args.layout_type
-       << "   convert_type:" << args.convert_type;
+  DLOG << "   input_type:" << args.input_data_type
+       << "   input_layout_type:" << args.input_layout_type;
   DLOG << "   image_address:" << args.image.address
        << "   image_scale_address:" << args.image.scale_address
        << "   image_channels:" << args.image.channels
