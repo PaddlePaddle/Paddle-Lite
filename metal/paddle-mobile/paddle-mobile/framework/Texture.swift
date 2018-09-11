@@ -38,6 +38,38 @@ extension InputTexture {
   }
 }
 
+
+/*
+ 4 维 tensor 存储 texture，要考虑 transpose
+ transpose 之后的维度是 [a, b, c, d]，对应的texture_2darray
+ .width = c
+ .height = b
+ .len = a * d + 3 / 4
+ 
+低于 4 维的 tensor，transpose 必须为 [0, 1, 2, 3] 既不考虑 transpose
+ 
+// TODO transpose 对于低维 tensor 的扩展原则。。。
+// [a, b] -> [1, 1, a, b] transpose 必须为 [0, 1, x, x]
+// [a] -> [1, 1, 1, a] transpose 必须为 [0, 1, 2, 3]
+// [a, b, c] -> [1, a, b, c] tranpose 必须为 [0, x, x, x]
+
+3 维 tensor [a, b, c] 对应的 texture_2darray,
+.width = c
+.height = b
+.len = a + 3 / 4
+ 
+ 2 维 tensor [a, b] 对应的 texture_2darray
+ .width = b + 3 / 4
+ .height = a
+ .len = 1
+ 
+ 1 维 tensor [a] 对应的 texture_2darray
+ .width = a + 3 / 4
+ .height = 1
+ .len = 1
+ */
+
+
 public class Texture<P: PrecisionType>: Tensorial {
   var dim: Dim
   public var tensorDim: Dim
@@ -62,6 +94,11 @@ public class Texture<P: PrecisionType>: Tensorial {
   
   func initTexture(device: MTLDevice, inTranspose: [Int] = [0, 1, 2, 3], computePrecision: ComputePrecision = .Float16) {
     transpose = inTranspose
+    for i in 0..<(4 - tensorDim.cout()) {
+      if i != inTranspose[i] {
+        fatalError()
+      }
+    }
     let newDim = transpose.map { padToFourDim[$0] }
     
     let newLayout = transpose.map { layout.layoutWithDim[$0] }
@@ -70,14 +107,25 @@ public class Texture<P: PrecisionType>: Tensorial {
     dim = Dim.init(inDim: newDim)
     
     let tmpTextureDes = MTLTextureDescriptor.init()
-    
-    tmpTextureDes.width = newDim[2]
-    //          layout.W ?? 1
-    tmpTextureDes.height = newDim[1]
-    //          layout.H ?? 1
-    tmpTextureDes.depth = 1
-    tmpTextureDes.arrayLength = ((newDim[0]) * (newDim[3]) + 3) / 4
     tmpTextureDes.textureType = .type2DArray
+    tmpTextureDes.depth = 1
+    
+    switch tensorDim.cout() {
+    case 4:
+      tmpTextureDes.width = newDim[2]
+      tmpTextureDes.height = newDim[1]
+      tmpTextureDes.arrayLength = ((newDim[0]) * (newDim[3]) + 3) / 4
+    case 3:
+      tmpTextureDes.width = newDim[3]
+      tmpTextureDes.height = newDim[2]
+      tmpTextureDes.arrayLength = (newDim[1] + 3) / 4
+    case 2, 1:
+      tmpTextureDes.width = (newDim[3] + 3) / 4
+      tmpTextureDes.height = newDim[2]
+      tmpTextureDes.arrayLength = 1
+    default:
+      fatalError("unreachable")
+    }
    
     if computePrecision == .Float16 {
       tmpTextureDes.pixelFormat = .rgba16Float
