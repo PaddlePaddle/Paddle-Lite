@@ -14,11 +14,9 @@ limitations under the License. */
 
 #include "api.h"
 #include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/ioctl.h>
 #include <algorithm>
-#include <cstring>
+#include <memory>
 #include "bias_scale.h"
 #include "filter.h"
 #include "image.h"
@@ -48,6 +46,7 @@ int open_device() {
 
 // memory management;
 void *fpga_malloc(size_t size) {
+  DLOG << size << " bytes allocated";
 #ifdef PADDLE_MOBILE_OS_LINUX
   return reinterpret_cast<void *>(
       mmap64(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
@@ -181,10 +180,19 @@ void format_image(framework::Tensor *image_tensor) {
 
 void format_ofm(framework::Tensor *ofm_tensor) {
   auto dims = ofm_tensor->dims();
-  auto channel = dims[1], height = dims[2], width = dims[3];
-  size_t memory_size =
-      height * align_to_x(channel * width, IMAGE_ALIGNMENT) * sizeof(half);
-  ofm_tensor->reset_data_ptr(fpga_malloc(memory_size));
+  size_t memory_size = 0;
+  if (dims.size() == 4) {
+    auto channel = dims[1], height = dims[2], width = dims[3];
+    memory_size =
+        height * align_to_x(channel * width, IMAGE_ALIGNMENT) * sizeof(half);
+  } else if (dims.size() == 2) {
+    memory_size = align_to_x(dims[1], IMAGE_ALIGNMENT) * sizeof(half);
+  } else {
+    DLOG << "Wrong ofm dimension";
+  }
+  auto p = fpga_malloc(memory_size);
+  memset(p, 0, memory_size);
+  ofm_tensor->reset_data_ptr(p);
 }
 
 float filter_find_max(framework::Tensor *filter_tensor) {
@@ -200,7 +208,7 @@ int get_plit_num(framework::Tensor *filter_tensor) {
   return filter::calc_split_num(num, div_capacity);
 }
 
-int get_element_num_per_div(framework::Tensor *filter_tensor, int group_num) {
+int get_filter_num_per_div(framework::Tensor *filter_tensor, int group_num) {
   auto dims = filter_tensor->dims();
   auto chw = dims[1] * dims[2] * dims[3];
   auto num = dims[0];
@@ -279,7 +287,7 @@ void fill_conv_arg(struct WrapperConvArgs *arg, framework::Tensor *input,
   arg->concat_arg.image_out = out_ptr;
 
   const int channel = (int)out->dims()[1];
-  int element_num_per_div = fpga::get_element_num_per_div(filter, group_num);
+  int filter_num_per_div = fpga::get_filter_num_per_div(filter, group_num);
   int element_num = fpga::get_aligned_filter_element_num(
       filter->dims()[1] * filter->dims()[2] * filter->dims()[3]);
 
@@ -297,12 +305,14 @@ void fill_conv_arg(struct WrapperConvArgs *arg, framework::Tensor *input,
     arg->conv_args[i].image.scale_address = input->scale;
     arg->conv_args[i].image.pad_height = (uint32_t)padding_h;
     arg->conv_args[i].image.pad_width = (uint32_t)padding_w;
-    arg->conv_args[i].filter_address = &((int8_t *)filter_ptr)[i * element_num];
-    arg->conv_args[i].sb_address = &((int8_t *)bs_ptr)[i * element_num];
+    arg->conv_args[i].filter_scale_address = filter->scale;
+    arg->conv_args[i].filter_address =
+        &((int8_t *)filter_ptr)[i * element_num * filter_num_per_div];
+    arg->conv_args[i].sb_address = &bs_ptr[i * filter_num_per_div * 2];
     arg->conv_args[i].filter_num =
         (uint32_t)(i == n - 1 ? fpga::get_aligned_filter_num(
-                                    channel - (n - 1) * element_num_per_div)
-                              : element_num_per_div);
+                                    channel - (n - 1) * filter_num_per_div)
+                              : filter_num_per_div);
 
     if (n > 1) {
       arg->conv_args[i].output.scale_address =

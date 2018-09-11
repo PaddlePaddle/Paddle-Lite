@@ -22,7 +22,6 @@ template <>
 bool FusionFcKernel<FPGA, float>::Init(FusionFcParam<FPGA> *param) {
   bool relu_enabled = false;
   auto input_x = const_cast<LoDTensor *>(param->InputX());
-  auto input_x_ptr = input_x->data<float>();
   auto filter = const_cast<Tensor *>(param->InputY());
   const Tensor *input_z = param->InputZ();
   auto input_z_ptr = input_z->data<float>();
@@ -48,12 +47,10 @@ bool FusionFcKernel<FPGA, float>::Init(FusionFcParam<FPGA> *param) {
   filter->Resize(framework::make_ddim({num, filter_channel, height, width}));
   float max_value = fpga::filter_find_max(filter);
   fpga::format_filter(filter, max_value, 1);
-  auto filter_ptr = filter->data<float>();
 
-  int element_num_per_div = fpga::get_element_num_per_div(filter, 1);
+  int element_num_per_div = fpga::get_filter_num_per_div(filter, 1);
   fpga::format_bias_scale_array(&bs_ptr, element_num_per_div, channel);
-
-  auto out_ptr = out->mutable_data<float>();
+  fpga::format_ofm(out);
 
   fpga::WrapperConvArgs conv_arg;
   fpga::fill_conv_arg(&conv_arg, input_x, out, filter, relu_enabled, 1, 1, 1, 0,
