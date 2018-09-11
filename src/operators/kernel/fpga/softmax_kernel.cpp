@@ -55,7 +55,6 @@ void SoftmaxKernel<FPGA, float>::Compute(
   math::SoftmaxFuntor<CPU, float>()(in_x, out);
 }
 
-template class SoftmaxKernel<FPGA, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
 
