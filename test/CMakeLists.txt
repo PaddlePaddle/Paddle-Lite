@@ -55,6 +55,11 @@ elseif("mobilenetfssd" IN_LIST NET)
     # gen test
     ADD_EXECUTABLE(test-fssd  net/test_mobilenet_025_fssd.cpp test_helper.h  test_include.h)
     target_link_libraries(test-fssd paddle-mobile)
+
+elseif("genet" IN_LIST NET)
+    # gen test
+    ADD_EXECUTABLE(test-genet net/test_genet_combine.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-genet paddle-mobile)
 else ()
 
     # gen test

@@ -148,6 +148,21 @@ if ("mobilenetfssd" IN_LIST NET)
   set(FOUND_MATCH ON)
 endif()
 
+if ("genet" IN_LIST NET)
+  message("genet enabled")
+  set(FUSION_CONVADDPRELU_OP ON)
+  set(FUSION_CONVADDADDPRELU_OP ON)
+  set(FUSION_CONVADD_OP ON)
+  set(CONV_TRANSPOSE_OP ON)
+  set(FUSION_CONVADDRELU_OP ON)
+  set(ELEMENTWISEADD_OP ON)
+  set(PRELU_OP ON)
+  set(POOL_OP ON)
+  set(CONCAT_OP ON)
+
+  set(FOUND_MATCH ON)
+endif()
+
 
 if(NOT FOUND_MATCH)
   message("--default--")
