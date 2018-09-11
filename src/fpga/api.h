@@ -191,20 +191,26 @@ int ComputeFpgaEWAdd(const struct EWAddArgs& args);
 int ComputeFPGAConcat(const struct ConcatArgs& args);
 
 static inline int align_to_x(int num, int x) { return (num + x - 1) / x * x; }
+
 void format_image(framework::Tensor* image_tensor);
 void format_ofm(framework::Tensor* ofm_tensor);  // only allocate memory
+
 float filter_find_max(framework::Tensor* filter_tensor);
 int get_element_num_per_div(framework::Tensor* filter_tensor, int group_num);
 int get_plit_num(framework::Tensor* filter_tensor);
 int get_aligned_filter_element_num(int chw);
 int get_aligned_filter_num(int num);
-
 void format_filter(framework::Tensor* filter_tensor, float max_value,
                    int group_num);
 void format_bias_scale_array(float** bias_scale_array,
                              int element_num_per_division, int num);
 void format_concat_output(framework::Tensor* out, int height, int width,
                           int image_num, uint32_t* channel_num);
+
+void fill_conv_arg(struct WrapperConvArgs* arg, framework::Tensor* input,
+                   framework::Tensor* out, framework::Tensor* filter,
+                   bool relu_enabled, int group_num, int stride_h, int stride_w,
+                   int padding_h, int padding_w, float* bs_ptr);
 
 }  // namespace fpga
 }  // namespace paddle_mobile

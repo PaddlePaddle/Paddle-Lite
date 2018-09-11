@@ -67,45 +67,11 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
   fpga::format_ofm(out);
   auto out_ptr = out->mutable_data<float>();
 
-  fpga::WrapperConvArgs convArgs;
-  convArgs.group_num = (uint32_t)param->Groups();
-  convArgs.split_num = (uint32_t)fpga::get_plit_num(filter);
-  convArgs.filter_num = (uint32_t)filter->dims()[0];
-  convArgs.output.address = out_ptr;
-  convArgs.output.scale_address = out->scale;
-  convArgs.conv_args = (fpga::ConvArgs *)fpga::fpga_malloc(
-      convArgs.split_num * sizeof(fpga::ConvArgs));
-  param->SetFpgaArgs(convArgs);
-
-  int element_num = fpga::get_aligned_filter_element_num(
-      filter->dims()[1] * filter->dims()[2] * filter->dims()[3]);
-
-  int n = convArgs.split_num;
-  for (int i = 0; i < n; i++) {
-    convArgs.conv_args[i].relu_enabled = relu_enabled;
-    convArgs.conv_args[i].group_num = (uint32_t)param->Groups();
-    convArgs.conv_args[i].kernel.stride_h = (uint32_t)param->Strides()[0];
-    convArgs.conv_args[i].kernel.stride_w = (uint32_t)param->Strides()[1];
-    convArgs.conv_args[i].kernel.height = (uint32_t)filter->dims()[2];
-    convArgs.conv_args[i].kernel.width = (uint32_t)filter->dims()[3];
-    convArgs.conv_args[i].image.address = input_ptr;
-    convArgs.conv_args[i].image.channels = (uint32_t)input->dims()[1];
-    convArgs.conv_args[i].image.height = (uint32_t)input->dims()[2];
-    convArgs.conv_args[i].image.width = (uint32_t)input->dims()[3];
-    convArgs.conv_args[i].image.pad_height = (uint32_t)param->Paddings()[0];
-    convArgs.conv_args[i].image.pad_width = (uint32_t)param->Paddings()[1];
-    convArgs.conv_args[i].filter_address =
-        &((int8_t *)filter_ptr)[i * element_num];
-    convArgs.conv_args[i].sb_address = &((int8_t *)bs_ptr)[i * element_num];
-    convArgs.conv_args[i].filter_num =
-        (uint32_t)(i == n - 1 ? fpga::get_aligned_filter_num(
-                                    channel - (n - 1) * element_num_per_div)
-                              : element_num_per_div);
-    convArgs.conv_args[i].output.scale_address =
-        (float *)fpga::fpga_malloc(2 * sizeof(float));
-    convArgs.conv_args[i].image.scale_address = input->scale;
-  }
-  return true;
+  fpga::WrapperConvArgs conv_arg;
+  fpga::fill_conv_arg(&conv_arg, input, out, filter, relu_enabled,
+                      param->Groups(), param->Strides()[0], param->Strides()[1],
+                      param->Paddings()[0], param->Paddings()[1], bs_ptr);
+  param->SetFpgaArgs(conv_arg);
   return true;
 }
 
