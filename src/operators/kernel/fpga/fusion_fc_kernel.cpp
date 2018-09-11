@@ -55,44 +55,10 @@ bool FusionFcKernel<FPGA, float>::Init(FusionFcParam<FPGA> *param) {
 
   auto out_ptr = out->mutable_data<float>();
 
-  fpga::WrapperConvArgs convArgs;
-  convArgs.group_num = 1;
-  convArgs.split_num = (uint32_t)fpga::get_plit_num(filter);
-  convArgs.filter_num = (uint32_t)filter->dims()[0];
-  convArgs.output.address = out_ptr;
-  convArgs.output.scale_address = out->scale;
-  convArgs.conv_args = (fpga::ConvArgs *)fpga::fpga_malloc(
-      convArgs.split_num * sizeof(fpga::ConvArgs));
-  param->SetFpgaArgs(convArgs);
-
-  int element_num = fpga::get_aligned_filter_element_num(
-      filter->dims()[1] * filter->dims()[2] * filter->dims()[3]);
-
-  int n = convArgs.split_num;
-  for (int i = 0; i < n; i++) {
-    convArgs.conv_args[i].relu_enabled = relu_enabled;
-    convArgs.conv_args[i].group_num = 1;
-    convArgs.conv_args[i].kernel.stride_h = 1;
-    convArgs.conv_args[i].kernel.stride_w = 1;
-    convArgs.conv_args[i].kernel.height = (uint32_t)filter->dims()[2];
-    convArgs.conv_args[i].kernel.width = (uint32_t)filter->dims()[3];
-    convArgs.conv_args[i].image.address = input_x_ptr;
-    convArgs.conv_args[i].image.channels = (uint32_t)input_x->dims()[1];
-    convArgs.conv_args[i].image.height = (uint32_t)input_x->dims()[2];
-    convArgs.conv_args[i].image.width = (uint32_t)input_x->dims()[3];
-    convArgs.conv_args[i].image.pad_height = 0;
-    convArgs.conv_args[i].image.pad_width = 0;
-    convArgs.conv_args[i].filter_address =
-        &((int8_t *)filter_ptr)[i * element_num];
-    convArgs.conv_args[i].sb_address = &((int8_t *)bs_ptr)[i * element_num];
-    convArgs.conv_args[i].filter_num =
-        (uint32_t)(i == n - 1 ? fpga::get_aligned_filter_num(
-                                    channel - (n - 1) * element_num_per_div)
-                              : element_num_per_div);
-    convArgs.conv_args[i].output.scale_address =
-        (float *)fpga::fpga_malloc(2 * sizeof(float));
-    convArgs.conv_args[i].image.scale_address = input_x->scale;
-  }
+  fpga::WrapperConvArgs conv_arg;
+  fpga::fill_conv_arg(&conv_arg, input_x, out, filter, relu_enabled, 1, 1, 1, 0,
+                      0, bs_ptr);
+  param->SetFpgaArgs(conv_arg);
   return true;
 }
 
