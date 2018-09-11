@@ -64,7 +64,40 @@ void format_image(float **data_in, int channel, int height, int width) {
 
 void concat_images(int16_t **images_in, float **scales_in, void *image_out,
                    float *scale_out, int image_num, uint32_t *channel_num,
-                   int height, int width) {}
+                   int height, int width) {
+  int i = 0;
+  int j = 0;
+  int k = 0;
+  int each_out_line_channel = 0;
+  int align_each_out_area_cw = 0;
+  int align_each_in_area_cw = 0;
+  int align_each_out_area_cw_differ = 0;
+  int tmp_channel = 0;
+  *scale_out = 0;
+  for (i = 0; i < image_num; i++) {
+    each_out_line_channel += channel_num[i];
+    *scale_out = std::max(*scale_out, scales_in[i][0]);
+  }
+  align_each_out_area_cw =
+      align_to_x(each_out_line_channel * width, IMAGE_ALIGNMENT);
+  align_each_out_area_cw_differ =
+      align_each_out_area_cw - each_out_line_channel * width;
+
+  for (k = 0; k < height; k++) {
+    for (j = 0; j < width; j++) {
+      for (i = 0; i < image_num; i++) {
+        align_each_in_area_cw =
+            align_to_x(channel_num[i] * width, IMAGE_ALIGNMENT);
+        memcpy((int16_t *)image_out + tmp_channel +
+                   k * align_each_out_area_cw_differ,
+               images_in[i] + j * channel_num[i] + k * align_each_in_area_cw,
+               channel_num[i] * sizeof(int16_t));
+
+        tmp_channel += channel_num[i];
+      }
+    }
+  }
+}
 
 }  // namespace image
 }  // namespace fpga
