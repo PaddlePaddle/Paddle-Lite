@@ -23,7 +23,6 @@ template <>
 bool ConvBNReluKernel<FPGA, float>::Init(FusionConvBNReluParam<FPGA> *param) {
   bool relu_enabled = true;
   auto input = const_cast<Tensor *>(param->Input());
-  auto input_ptr = input->data<float>();
   auto filter = const_cast<Tensor *>(param->Filter());
   auto out = param->Output();
   auto bn_mean_ptr = param->InputMean()->data<float>();
@@ -52,27 +51,12 @@ bool ConvBNReluKernel<FPGA, float>::Init(FusionConvBNReluParam<FPGA> *param) {
 
   float max_value = fpga::filter_find_max(filter);
   fpga::format_filter(filter, max_value, param->Groups());
-  auto filter_ptr = filter->data<float>();
 
   int element_num_per_div =
-      fpga::get_element_num_per_div(filter, param->Groups());
+      fpga::get_filter_num_per_div(filter, param->Groups());
   fpga::format_bias_scale_array(&bs_ptr, element_num_per_div, channel);
 
   fpga::format_ofm(out);
-  auto out_ptr = out->mutable_data<float>();
-
-  fpga::WrapperConvArgs convArgs;
-  convArgs.group_num = (uint32_t)param->Groups();
-  convArgs.split_num = (uint32_t)fpga::get_plit_num(filter);
-  convArgs.filter_num = (uint32_t)filter->dims()[0];
-  convArgs.output.address = out_ptr;
-  convArgs.output.scale_address = out->scale;
-  convArgs.conv_args = (fpga::ConvArgs *)fpga::fpga_malloc(
-      convArgs.split_num * sizeof(fpga::ConvArgs));
-  param->SetFpgaArgs(convArgs);
-
-  int element_num = fpga::get_aligned_filter_element_num(
-      filter->dims()[1] * filter->dims()[2] * filter->dims()[3]);
 
   fpga::WrapperConvArgs conv_arg;
   fpga::fill_conv_arg(&conv_arg, input, out, filter, relu_enabled,
@@ -87,7 +71,6 @@ void ConvBNReluKernel<FPGA, float>::Compute(
     const FusionConvBNReluParam<FPGA> &param) const {
   fpga::ComputeFpgaConv(param.FpgaArgs());
 }
-template class ConvBNReluKernel<FPGA, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile

@@ -50,9 +50,7 @@ bool PoolKernel<FPGA, float>::Init(PoolParam<FPGA> *param) {
 
 template <>
 void PoolKernel<FPGA, float>::Compute(const PoolParam<FPGA> &param) const {
-#ifdef PADDLE_MOBILE_FPGA
   fpga::ComputeFpgaPool(param.FpgaArgs());
-#endif
 }
 }  // namespace operators
 }  // namespace paddle_mobile

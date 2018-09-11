@@ -74,6 +74,7 @@ struct ConvArgs {
   bool relu_enabled;
   void* sb_address;  // scale and bias are interlaced;
   void* filter_address;
+  float* filter_scale_address;
   uint32_t filter_num;
   uint32_t group_num;
 
@@ -200,7 +201,7 @@ void format_image(framework::Tensor* image_tensor);
 void format_ofm(framework::Tensor* ofm_tensor);  // only allocate memory
 
 float filter_find_max(framework::Tensor* filter_tensor);
-int get_element_num_per_div(framework::Tensor* filter_tensor, int group_num);
+int get_filter_num_per_div(framework::Tensor* filter_tensor, int group_num);
 int get_plit_num(framework::Tensor* filter_tensor);
 int get_aligned_filter_element_num(int chw);
 int get_aligned_filter_num(int num);
