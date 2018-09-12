@@ -14,21 +14,9 @@
 
 import Foundation
 
-class FlattenParam<P: PrecisionType>: OpParam {
-  typealias ParamPrecisionType = P
-  required init(opDesc: OpDesc, inScope: Scope) throws {
-    do {
-      output = try FlattenParam.output(outputs: opDesc.outputs, from: inScope)
-    } catch let error {
-      throw error
-    }
-  }
-  var output: Texture<P>
-}
-
-class FlattenOp<P: PrecisionType>: Operator<FlattenKernel<P>, FlattenParam<P>>, Runable, Creator, InferShaperable{
+class FlattenOp<P: PrecisionType>: Operator<ReshapeKernel<P>, ReshapeParam<P>>, Runable, Creator, InferShaperable{
   
-  typealias OpType = SplitOp<P>
+  typealias OpType = FlattenOp<P>
 
   func inferShape() {
     //        para.output.dim = para.input.dim
