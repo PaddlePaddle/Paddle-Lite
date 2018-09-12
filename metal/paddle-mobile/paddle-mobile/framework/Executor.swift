@@ -14,9 +14,8 @@
 
 import Foundation
 
-let testTo = 161
+let testTo = 3
 var isTest = false
-
 
 let computePrecision: ComputePrecision = .Float16
 
@@ -85,7 +84,6 @@ public class Executor<P: PrecisionType> {
       throw PaddleMobileError.predictError(message: "CommandBuffer is nil")
     }
     inflightSemaphore.wait()
-
     
     let resInput: MTLTexture
     if let inPre = preProcessKernle {
@@ -118,11 +116,13 @@ public class Executor<P: PrecisionType> {
     }
     
     buffer.addCompletedHandler { [weak self] (commandbuffer) in
-//      return
+      
 //      let inputArr = resInput.toTensor(dim: (n: dim[0], c: dim[3], h: dim[1], w: dim[2]))
 ////      print(inputArr.strideArray())
-//
-//      writeToLibrary(fileName: "test_image_ssd", array: inputArr)
+
+//      print(dim)
+//      writeToLibrary(fileName: "test_image_ssd_ar", array: inputArr)
+      
 //      print("write to library done")
 //      return
       //            print(inputArr)
