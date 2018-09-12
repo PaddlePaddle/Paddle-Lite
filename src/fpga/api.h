@@ -139,6 +139,11 @@ struct FpgaRegReadArgs {
   uint64_t value;
 };
 
+struct MemoryCacheArgs {
+  void* address;
+  size_t size;
+};
+
 #define IOCTL_FPGA_MAGIC 'FPGA'
 
 #define IOCTL_VERSION _IOW(IOCTL_FPGA_MAGIC, 01, struct VersionArgs)
@@ -146,6 +151,8 @@ struct FpgaRegReadArgs {
 #define IOCTL_SEPARATOR_0 10
 
 #define IOCTL_MEM_COPY _IOW(IOCTL_FPGA_MAGIC, 11, struct MemoryCopyArgs)
+#define IOCTL_MEMCACHE_INVAL _IOW(IOCTL_FPGA_MAGIC, 12, struct MemoryCacheArgs)
+#define IOCTL_MEMCACHE_FLUSH _IOW(IOCTL_FPGA_MAGIC, 13, struct MemoryCacheArgs)
 
 #define IOCTL_SEPARATOR_1 20
 
@@ -188,6 +195,8 @@ int close_device();
 void* fpga_malloc(size_t size);
 void fpga_free(void* ptr);
 void fpga_copy(void* dst, const void* src, size_t num);
+int fpga_flush(void* address, size_t size);
+int fpga_invalidate(void* address, size_t size);
 
 int PerformBypass(const struct BypassArgs& args);
 int ComputeFpgaConv(const struct WrapperConvArgs& args);
