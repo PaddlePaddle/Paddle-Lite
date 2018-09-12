@@ -33,12 +33,11 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
   args.output_layout_type = fpga::LAYOUT_CHW;
   args.input_data_type = fpga::DATA_TYPE_FP16;
   args.output_data_type = fpga::DATA_TYPE_FP32;
-  args.image.address = reinterpret_cast<void *>(input_ptr);
+  args.image.address = (void *)(input_ptr);
   args.image.height = (uint32_t)input->dims()[0];
   args.image.width = (uint32_t)input->dims()[1];
   args.image.channels = 1;
-  args.output.address =
-      reinterpret_cast<void *> floatInput->mutable_data<float>();
+  args.output.address = (void *)floatInput->mutable_data<float>();
 
   param->SetFloatInput(floatInput);
   param->SetFpgaArgs(args);
@@ -52,8 +51,7 @@ void SoftmaxKernel<FPGA, float>::Compute(
           "===============================================";
   const Tensor *in_x = param.FloatInput();
   Tensor *out = param.Out();
-  fpga::fpga_flush(reinterpret_cast<void *> in_x->data<float>(),
-                   in_x->memory_size());
+  fpga::fpga_flush((void *)in_x->data<float>(), in_x->memory_size());
   fpga::PerformBypass(param.FpgaArgs());
   fpga::fpga_invalidate(out->data<float>(), out->memory_size());
 
