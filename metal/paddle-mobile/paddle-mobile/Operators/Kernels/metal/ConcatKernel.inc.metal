@@ -1,20 +1,14 @@
-#ifndef D
-#define D 4
-#endif
-
-#ifndef P
-#define P float
-#endif
+#ifdef P
 
 #define CONCAT2(a, b) a ## b
 #define CONCAT2_(a, b) a ## _ ## b
 #define CONCAT3_(a, b, c) a ## _ ## b ## _ ## c
 
-#define FUNC(f, d, p) CONCAT3_(f, d, p)
+#define FUNC(f, r, p) CONCAT3_(f, r, p)
 #define VECTOR(p, n) CONCAT2(p, n)
-#define FUNC_D(f, d) CONCAT2_(f, d)
+#define FUNC_R(f, r) CONCAT2_(f, r)
 
-kernel void FUNC(concat, D, P)(texture2d_array<P, access::read> in0 [[texture(0)]],
+kernel void FUNC(concat, R, P)(texture2d_array<P, access::read> in0 [[texture(0)]],
                    texture2d_array<P, access::read> in1 [[texture(1)]],
                    texture2d_array<P, access::read> in2 [[texture(2)]],
                    texture2d_array<P, access::read> in3 [[texture(3)]],
@@ -29,10 +23,10 @@ kernel void FUNC(concat, D, P)(texture2d_array<P, access::read> in0 [[texture(0)
    VECTOR(P, 4) r;
    for (int i = 0; i < 4; i++) {
      xyzn[3] = i;
-#if D == 4
+#if R == 4
      xyzn2abcd_4(cp.odim[3], xyzn, abcd);
 #else
-     FUNC_D(xyzn2abcd, D)(xyzn, abcd);
+     FUNC_R(xyzn2abcd, R)(xyzn, abcd);
 #endif
      int k = abcd[cp.axis] - cp.offset;
      int j = 0;
@@ -48,10 +42,10 @@ kernel void FUNC(concat, D, P)(texture2d_array<P, access::read> in0 [[texture(0)
        int ta = cp.odim[cp.axis];
        abcd[cp.axis] = k;
        cp.odim[cp.axis] = cp.vdim[j];
-#if D == 4
+#if R == 4
        abcd2xyzn_4(cp.odim[3], abcd, oxyzn);
 #else
-       FUNC_D(abcd2xyzn, D)(abcd, oxyzn);
+       FUNC_R(abcd2xyzn, R)(abcd, oxyzn);
 #endif
        cp.odim[cp.axis] = ta;
        switch (j) {
@@ -66,3 +60,4 @@ kernel void FUNC(concat, D, P)(texture2d_array<P, access::read> in0 [[texture(0)
    }
    out.write(r, gid.xy, gid.z);
 }
+#endif

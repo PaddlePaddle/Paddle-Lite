@@ -26,31 +26,31 @@ struct ConcatParam {
 };
 
 #define P float
-#define D 4
-#include "ConcatKernel.metal.inc"
-#undef D
-#define D 3
-#include "ConcatKernel.metal.inc"
-#undef D
-#define D 2
-#include "ConcatKernel.metal.inc"
-#undef D
-#define D 1
-#include "ConcatKernel.metal.inc"
-#undef D
+#define R 4
+#include "ConcatKernel.inc.metal"
+#undef R
+#define R 3
+#include "ConcatKernel.inc.metal"
+#undef R
+#define R 2
+#include "ConcatKernel.inc.metal"
+#undef R
+#define R 1
+#include "ConcatKernel.inc.metal"
+#undef R
 #undef P
 
 #define P half
-#define D 4
-#include "ConcatKernel.metal.inc"
-#undef D
-#define D 3
-#include "ConcatKernel.metal.inc"
-#undef D
-#define D 2
-#include "ConcatKernel.metal.inc"
-#undef D
-#define D 1
-#include "ConcatKernel.metal.inc"
-#undef D
+#define R 4
+#include "ConcatKernel.inc.metal"
+#undef R
+#define R 3
+#include "ConcatKernel.inc.metal"
+#undef R
+#define R 2
+#include "ConcatKernel.inc.metal"
+#undef R
+#define R 1
+#include "ConcatKernel.inc.metal"
+#undef R
 #undef P
