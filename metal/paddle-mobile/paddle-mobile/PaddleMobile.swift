@@ -16,7 +16,7 @@ import Foundation
 
 class ScaleKernel: CusomKernel {
   init(device: MTLDevice, shape: Shape) {
-    super.init(device: device, inFunctionName: "scale", outputDim: shape, usePaddleMobileLib: false)
+    super.init(device: device, inFunctionName: "scale_half", outputDim: shape, usePaddleMobileLib: false)
   }
 }
 
@@ -37,7 +37,7 @@ public class Net: NSObject {
     fatalError()
   }
   func fetchResult(paddleMobileRes: ResultHolder) -> [Float32] {
-    fatalError()
+    return paddleMobileRes.resultArr
   }
   @objc public init(device: MTLDevice) {
     super.init()
