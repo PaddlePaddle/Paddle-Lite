@@ -25,33 +25,32 @@ struct ConcatParam {
   int32_t vdim[6];
 };
 
-
 #define P float
 #define D 4
-#include "Concat.metal.inc"
+#include "ConcatKernel.metal.inc"
 #undef D
 #define D 3
-#include "Concat.metal.inc"
+#include "ConcatKernel.metal.inc"
 #undef D
 #define D 2
-#include "Concat.metal.inc"
+#include "ConcatKernel.metal.inc"
 #undef D
 #define D 1
-#include "Concat.metal.inc"
+#include "ConcatKernel.metal.inc"
 #undef D
 #undef P
 
 #define P half
 #define D 4
-#include "Concat.metal.inc"
+#include "ConcatKernel.metal.inc"
 #undef D
 #define D 3
-#include "Concat.metal.inc"
+#include "ConcatKernel.metal.inc"
 #undef D
 #define D 2
-#include "Concat.metal.inc"
+#include "ConcatKernel.metal.inc"
 #undef D
 #define D 1
-#include "Concat.metal.inc"
+#include "ConcatKernel.metal.inc"
 #undef D
 #undef P
