@@ -59,8 +59,10 @@ public class Executor<P: PrecisionType> {
   var ops: [Runable & InferShaperable] = []
   let program: Program
   let device: MTLDevice
+  let inflightSemaphore: DispatchSemaphore
   let queue: MTLCommandQueue
   public init(inDevice:MTLDevice, inQueue: MTLCommandQueue, inProgram: Program) throws {
+    self.inflightSemaphore = DispatchSemaphore(value: 3)
     program = inProgram
     device = inDevice
     queue = inQueue
@@ -82,6 +84,9 @@ public class Executor<P: PrecisionType> {
     guard let buffer = queue.makeCommandBuffer() else {
       throw PaddleMobileError.predictError(message: "CommandBuffer is nil")
     }
+    inflightSemaphore.wait()
+
+    
     let resInput: MTLTexture
     if let inPre = preProcessKernle {
       do {
@@ -112,8 +117,8 @@ public class Executor<P: PrecisionType> {
       outputTextures = ops[ops.count - except].inputVariant()
     }
     
-    buffer.addCompletedHandler { (commandbuffer) in
-      
+    buffer.addCompletedHandler { [weak self] (commandbuffer) in
+//      return
 //      let inputArr = resInput.toTensor(dim: (n: dim[0], c: dim[3], h: dim[1], w: dim[2]))
 ////      print(inputArr.strideArray())
 //
@@ -139,18 +144,23 @@ public class Executor<P: PrecisionType> {
 
 //      return
       
+      guard let SSelf = self else {
+        fatalError()
+      }
+      
       let afterDate = Date.init()
       var resultHolder: ResultHolder
       if except > 0 {
         resultHolder = ResultHolder.init(inDim: [], inResult: [], inElapsedTime: afterDate.timeIntervalSince(beforeDate), inIntermediateResults: outputTextures)
       } else {
-        let outputVar: Variant = self.program.scope.output()!
+        let outputVar: Variant = SSelf.program.scope.output()!
         let output: Texture<P> = outputVar as! Texture<P>
         
         resultHolder = ResultHolder.init(inDim: output.dim.dims, inResult: output.toTensor(), inElapsedTime: afterDate.timeIntervalSince(beforeDate))
       }
 
       completionHandle(resultHolder)
+      SSelf.inflightSemaphore.signal()
     }
     buffer.commit()
   }
