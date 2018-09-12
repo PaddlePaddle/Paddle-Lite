@@ -102,9 +102,10 @@ class ViewController: UIViewController {
             }
           }
         }
+        print("sleep before ")
+        usleep(33000)
+        print("sleep after ")
       }
-      
-      
     case .CPU:
       guard let inInputPointer = inputPointer else {
         fatalError( " need input pointer " )
