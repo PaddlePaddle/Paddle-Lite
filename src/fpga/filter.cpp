@@ -206,6 +206,8 @@ void format_filter(float **data_in, int num, int channel, int height, int width,
   align_num(quantize_data, num_per_div_before_alignment, num, chw);
   reorder(quantize_data, num_after_alignment, chw);
   interleave(quantize_data, num_after_alignment, chw);
+  fpga_flush(*quantize_data, align_to_x(chw, FILTER_ELEMENT_ALIGNMENT) *
+                                 num_after_alignment * sizeof(char));
 }
 
 }  // namespace filter
