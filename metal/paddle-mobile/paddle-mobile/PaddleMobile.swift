@@ -42,6 +42,14 @@ public class Net: NSObject {
   @objc public init(device: MTLDevice) {
     super.init()
   }
+  
+  @objc public init(device: MTLDevice,paramPointer: UnsafeMutableRawPointer, paramSize:Int, modePointer: UnsafeMutableRawPointer, modelSize: Int) {
+    self.paramPointer = paramPointer
+    self.paramSize = paramSize
+    self.modelPointer = modePointer
+    self.modelSize = modelSize
+    super.init()
+  }
 }
 
 public class Runner: NSObject {
@@ -93,7 +101,8 @@ public class Runner: NSObject {
       }
       let loader = Loader<Float32>.init()
       do {
-        program = try loader.load(device: inDevice, modelPath: net.modelPath, paraPath: net.paramPath)
+        //program = try loader.load(device: inDevice, modelPath: net.modelPath, paraPath: net.paramPath)
+        program = try loader.load(device: inDevice, paramPointer: net.paramPointer!, paramSize: net.paramSize,modePointer:net.modelPointer!,modelSize:net.modelSize)
         executor = try Executor<Float32>.init(inDevice: inDevice, inQueue: inQueue, inProgram: program!)
       } catch let error {
         print(error)
