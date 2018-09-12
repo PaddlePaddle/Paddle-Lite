@@ -27,7 +27,10 @@ class SplitKernel<P: PrecisionType>: Kernel, Computable{
   }
   
   required init(device: MTLDevice, param: SplitParam<P>) {
-    param.output.initTexture(device: device, computePrecision: computePrecision)
+    // param.output.initTexture(device: device, computePrecision: computePrecision)
+    for output in param.outputList {
+      output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: computePrecision)
+    }
     if computePrecision == .Float32 {
       super.init(device: device, inFunctionName: "split")
     } else if computePrecision == .Float16 {

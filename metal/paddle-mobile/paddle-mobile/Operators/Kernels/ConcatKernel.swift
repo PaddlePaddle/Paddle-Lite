@@ -122,10 +122,11 @@ class ConcatKernel<P: PrecisionType>: Kernel, Computable{
   
   required init(device: MTLDevice, param: ConcatParam<P>) {
     param.output.initTexture(device: device, inTranspose: param.transpose, computePrecision: computePrecision)
+    let orank = param.output.tensorDim.cout()
     if computePrecision == .Float32 {
-      super.init(device: device, inFunctionName: "concat")
+      super.init(device: device, inFunctionName: "concat_\(orank)_float")
     } else if computePrecision == .Float16 {
-      super.init(device: device, inFunctionName: "concat_half")
+      super.init(device: device, inFunctionName: "concat_\(orank)_half")
     } else {
       fatalError()
     }
