@@ -17,12 +17,6 @@ import paddle_mobile
 
 class MobileNet: Net{
   
-  var means: [Float] = [123.68, 116.78, 103.94]
-  
-  var scale: Float = 0.017
-  
-  let except: Int = 0
-  
   class MobilenetPreProccess: CusomKernel {
     init(device: MTLDevice) {
       let s = CusomKernel.Shape.init(inWidth: 224, inHeight: 224, inChannel: 3)
@@ -49,7 +43,7 @@ class MobileNet: Net{
   
   let labels = PreWords.init(fileName: "synset")
   
-  func resultStr(res: [Float]) -> String {
+  override public func resultStr(res: [Float]) -> String {
     var s: [String] = []
     res.top(r: 5).enumerated().forEach{
       s.append(String(format: "%d: %@ (%3.2f%%)", $0 + 1, labels[$1.0], $1.1 * 100))
@@ -57,17 +51,18 @@ class MobileNet: Net{
     return s.joined(separator: "\n")
   }
   
-  var preprocessKernel: CusomKernel
-  let dim = (n: 1, h: 224, w: 224, c: 3)
-  let modelPath: String
-  let paramPath: String
-  let modelDir: String
+
   
-  init(device: MTLDevice) {
+  override init(device: MTLDevice) {
+    super.init(device: device)
+    means = [123.68, 116.78, 103.94]
+    scale = 0.017
+    except = 0
     modelPath = Bundle.main.path(forResource: "model", ofType: nil) ?! "model null"
     paramPath = Bundle.main.path(forResource: "params", ofType: nil) ?! "para null"
     modelDir = ""
     preprocessKernel = MobilenetPreProccess.init(device: device)
+    dim = (n: 1, h: 224, w: 224, c: 3)
   }
 }
 
