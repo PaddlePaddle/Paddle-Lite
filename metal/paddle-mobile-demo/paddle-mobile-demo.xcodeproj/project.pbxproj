@@ -20,6 +20,8 @@
 		FC8CFEF9213551D10094D569 /* model in Resources */ = {isa = PBXBuildFile; fileRef = FC8CFEF7213551D00094D569 /* model */; };
 		FC918191211DBC3500B6F354 /* paddle-mobile.png in Resources */ = {isa = PBXBuildFile; fileRef = FC918190211DBC3500B6F354 /* paddle-mobile.png */; };
 		FC918193211DC70500B6F354 /* iphone.JPG in Resources */ = {isa = PBXBuildFile; fileRef = FC918192211DC70500B6F354 /* iphone.JPG */; };
+		FC9A19E72148C38400CD9CBF /* ar_model in Resources */ = {isa = PBXBuildFile; fileRef = FC9A19E52148C38400CD9CBF /* ar_model */; };
+		FC9A19E82148C38400CD9CBF /* ar_params in Resources */ = {isa = PBXBuildFile; fileRef = FC9A19E62148C38400CD9CBF /* ar_params */; };
 		FCA3A16121313E1F00084FE5 /* hand.jpg in Resources */ = {isa = PBXBuildFile; fileRef = FCA3A16021313E1F00084FE5 /* hand.jpg */; };
 		FCBCCC522122EEDC00D94F7E /* ssd_hand_params in Resources */ = {isa = PBXBuildFile; fileRef = FCBCCC502122EEDC00D94F7E /* ssd_hand_params */; };
 		FCBCCC532122EEDC00D94F7E /* ssd_hand_model in Resources */ = {isa = PBXBuildFile; fileRef = FCBCCC512122EEDC00D94F7E /* ssd_hand_model */; };
@@ -64,6 +66,8 @@
 		FC8CFEF7213551D00094D569 /* model */ = {isa = PBXFileReference; lastKnownFileType = file; path = model; sourceTree = "<group>"; };
 		FC918190211DBC3500B6F354 /* paddle-mobile.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "paddle-mobile.png"; sourceTree = "<group>"; };
 		FC918192211DC70500B6F354 /* iphone.JPG */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = iphone.JPG; sourceTree = "<group>"; };
+		FC9A19E52148C38400CD9CBF /* ar_model */ = {isa = PBXFileReference; lastKnownFileType = file; path = ar_model; sourceTree = "<group>"; };
+		FC9A19E62148C38400CD9CBF /* ar_params */ = {isa = PBXFileReference; lastKnownFileType = file; path = ar_params; sourceTree = "<group>"; };
 		FCA3A16021313E1F00084FE5 /* hand.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = hand.jpg; sourceTree = "<group>"; };
 		FCBCCC502122EEDC00D94F7E /* ssd_hand_params */ = {isa = PBXFileReference; lastKnownFileType = file; path = ssd_hand_params; sourceTree = "<group>"; };
 		FCBCCC512122EEDC00D94F7E /* ssd_hand_model */ = {isa = PBXFileReference; lastKnownFileType = file; path = ssd_hand_model; sourceTree = "<group>"; };
@@ -156,6 +160,7 @@
 		FC0E2C2020EDC03B009C1FAC /* models */ = {
 			isa = PBXGroup;
 			children = (
+				FC9A19E42148C38400CD9CBF /* fluid_fssd_new_ar */,
 				FC8CFEF5213551D00094D569 /* mobilenet */,
 				FC8CFEE32135452B0094D569 /* genet */,
 				FCBCCC4F2122EEDC00D94F7E /* mobilenet_ssd_hand */,
@@ -189,6 +194,15 @@
 				FC8CFEF7213551D00094D569 /* model */,
 			);
 			path = mobilenet;
+			sourceTree = "<group>";
+		};
+		FC9A19E42148C38400CD9CBF /* fluid_fssd_new_ar */ = {
+			isa = PBXGroup;
+			children = (
+				FC9A19E52148C38400CD9CBF /* ar_model */,
+				FC9A19E62148C38400CD9CBF /* ar_params */,
+			);
+			path = fluid_fssd_new_ar;
 			sourceTree = "<group>";
 		};
 		FCBCCC4F2122EEDC00D94F7E /* mobilenet_ssd_hand */ = {
@@ -276,6 +290,8 @@
 				FCA3A16121313E1F00084FE5 /* hand.jpg in Resources */,
 				FC8CFEE62135452C0094D569 /* genet_params in Resources */,
 				FCBCCC532122EEDC00D94F7E /* ssd_hand_model in Resources */,
+				FC9A19E72148C38400CD9CBF /* ar_model in Resources */,
+				FC9A19E82148C38400CD9CBF /* ar_params in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
