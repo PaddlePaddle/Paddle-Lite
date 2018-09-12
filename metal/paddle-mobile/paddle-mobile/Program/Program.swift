@@ -23,4 +23,9 @@ public struct Program {
         paramPath = inParamPath
         scope = inScope
     }
+    init(inProgramDesc: ProgramDesc, inScope: Scope) {
+        programDesc = inProgramDesc
+        scope = inScope
+        paramPath = ""
+    }
 }

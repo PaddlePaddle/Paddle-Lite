@@ -93,13 +93,57 @@ public class Loader<P: PrecisionType> {
       fclose(file)
     }
   }
-  public init(){}
-  public func load(device: MTLDevice, modelPath: String, paraPath: String) throws -> Program{
+  class ParaLoaderWithPointer {
+    var paramPointer: UnsafeMutableRawPointer
+      let paramSize: Int
+      var nowIndex: Int
+      init(pPointer: UnsafeMutableRawPointer,pSize:Int) throws {
+          paramPointer = UnsafeMutableRawPointer.init(pPointer)
+          paramSize = pSize
+          nowIndex = 0
+      }
     
-    guard let modelData = try? Data.init(contentsOf: URL.init(fileURLWithPath: modelPath)) else {
-      throw PaddleMobileError.loaderError(message: "load " + modelPath + " failed !")
+      func read(tensor: Tensor<P>) throws {
+        guard nowIndex <= paramSize else {
+          throw PaddleMobileError.loaderError(message: "out of the file range")
+        }
+        var readerIndex: Int = 0
+        func pointerReader<T>(type: T.Type) -> T {
+          let ptr = UnsafeMutablePointer<T>.allocate(capacity: MemoryLayout<T>.size)
+          memcpy(ptr, paramPointer.advanced(by: Int(readerIndex)), MemoryLayout<T>.size)
+          nowIndex += MemoryLayout<T>.size
+          readerIndex += MemoryLayout<T>.size
+          let pointee = ptr.pointee
+          ptr.deinitialize(count: MemoryLayout<UInt32>.size)
+          ptr.deallocate()
+          
+          return pointee
+        }
+        let _ = pointerReader(type: UInt32.self)
+        let lodLevel = pointerReader(type: UInt64.self)
+        for _ in 0..<lodLevel {
+          let size = pointerReader(type: UInt64.self)
+          for _ in 0..<Int(size/UInt64(MemoryLayout<size_t>.size)){
+            _ = pointerReader(type: size_t.self)
+          }
+        }
+        
+        let _ = pointerReader(type: UInt32.self)
+        let tensorDescSize = pointerReader(type: Int32.self)
+        
+        paramPointer = paramPointer.advanced(by: Int(readerIndex))
+        paramPointer = paramPointer.advanced(by: Int(tensorDescSize))
+        nowIndex += Int(tensorDescSize)
+        
+        let _ = memcpy(tensor.data.pointer, paramPointer, tensor.data.size)
+        paramPointer = paramPointer.advanced(by: Int(tensor.data.size))
+        nowIndex += tensor.data.size
     }
-    
+    deinit {
+    }
+  }
+  public init(){}
+  func loadModelandParam(_ device:MTLDevice,_ modelData:Data, _ paraLoaderPointer:ParaLoaderWithPointer?, _ paraLoader:ParaLoader?) throws -> Program {
     do {
       let protoProgram = try PaddleMobile_Framework_Proto_ProgramDesc.init(
         serializedData: modelData)
@@ -107,10 +151,6 @@ public class Loader<P: PrecisionType> {
       let originProgramDesc = ProgramDesc.init(protoProgram: protoProgram)
       let programDesc = ProgramOptimize<P>.init().optimize(originProgramDesc: originProgramDesc)
       print(programDesc)
-      
-      guard let paraLoader = try? ParaLoader.init(paramPath: paraPath) else {
-        throw PaddleMobileError.loaderError(message: "load para error")
-      }
       
       guard programDesc.blocks.count > 0 else {
         throw PaddleMobileError.loaderError(message: "count of blocks must greater than 0")
@@ -155,11 +195,17 @@ public class Loader<P: PrecisionType> {
               let dim = Dim.init(inDim: dimArr)
               let tensor = Tensor<P>.init(inDim: dim, inLayout: tensorDesc.dataLayout)
               do {
-                try paraLoader.read(tensor: tensor)
+                if paraLoaderPointer != nil {
+                  try paraLoaderPointer!.read(tensor: tensor)
+                }
+                
+                if paraLoader != nil {
+                  try paraLoader!.read(tensor: tensor)
+                }
               } catch let error {
                 throw error
               }
-//              tensor.convert(to: DataLayout.NHWC())
+              //              tensor.convert(to: DataLayout.NHWC())
               //                            tensor.initBuffer(device: device)
               scope[varDesc.name] = tensor
             } else {
@@ -175,11 +221,39 @@ public class Loader<P: PrecisionType> {
         }
       }
       
-      let program = Program.init(inProgramDesc: programDesc, inParamPath: paraPath, inScope: scope)
+      let program = Program.init(inProgramDesc: programDesc, inScope: scope)
       
       return program
     } catch _ {
       throw PaddleMobileError.loaderError(message: "protobuf decoder error")
+    }
+  }
+  public func load(device:MTLDevice, paramPointer: UnsafeMutableRawPointer, paramSize:Int, modePointer: UnsafeMutableRawPointer, modelSize: Int) throws -> Program {
+    let modelData = Data.init(bytes:modePointer, count:modelSize)
+    guard let paraLoader = try? ParaLoaderWithPointer.init(pPointer: paramPointer,pSize: paramSize) else {
+      throw PaddleMobileError.loaderError(message: "load para error")
+    }
+    do {
+      let program = try loadModelandParam(device,modelData,paraLoader,nil)
+      return program
+    } catch let error {
+      throw error
+    }
+  }
+    
+  public func load(device: MTLDevice, modelPath: String, paraPath: String) throws -> Program{
+    guard let modelData = try? Data.init(contentsOf: URL.init(fileURLWithPath: modelPath)) else {
+      throw PaddleMobileError.loaderError(message: "load " + modelPath + " failed !")
+    }
+    guard let paraLoader = try? ParaLoader.init(paramPath: paraPath) else {
+      throw PaddleMobileError.loaderError(message: "load para error")
+    }
+    
+    do {
+      let program = try loadModelandParam(device,modelData,nil,paraLoader)
+      return program
+    } catch let error {
+      throw error
     }
   }
 }

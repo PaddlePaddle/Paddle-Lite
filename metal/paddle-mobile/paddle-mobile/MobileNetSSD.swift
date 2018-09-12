@@ -27,6 +27,18 @@ public class MobileNet_ssd_hand: Net{
     dim = (n: 1, h: 300, w: 300, c: 3)
   }
   
+  @objc override public init(device: MTLDevice,paramPointer: UnsafeMutableRawPointer, paramSize:Int, modePointer: UnsafeMutableRawPointer, modelSize: Int) {
+    super.init(device:device,paramPointer:paramPointer,paramSize:paramSize,modePointer:modePointer,modelSize:modelSize)
+    means = [123.68, 116.78, 103.94]
+    scale = 0.017
+    except = 2
+    modelPath = ""
+    paramPath = ""
+    modelDir = ""
+    preprocessKernel = MobilenetssdPreProccess.init(device: device)
+    dim = (n: 1, h: 300, w: 300, c: 3)
+  }
+  
   class MobilenetssdPreProccess: CusomKernel {
     init(device: MTLDevice) {
       let s = CusomKernel.Shape.init(inWidth: 300, inHeight: 300, inChannel: 3)
