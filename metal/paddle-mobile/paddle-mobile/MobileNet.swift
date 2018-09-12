@@ -13,7 +13,6 @@
  limitations under the License. */
 
 import Foundation
-import paddle_mobile
 
 class MobileNet: Net{
   

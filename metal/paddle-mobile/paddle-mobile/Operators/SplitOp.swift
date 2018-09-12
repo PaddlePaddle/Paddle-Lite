@@ -18,7 +18,8 @@ class SplitParam<P: PrecisionType>: OpParam {
   typealias ParamPrecisionType = P
   required init(opDesc: OpDesc, inScope: Scope) throws {
     do {
-      output = try SplitParam.output(outputs: opDesc.outputs, from: inScope)
+//      output = try SplitParam.output(outputs: opDesc.outputs, from: inScope)
+      output = try SplitParam.outputOut(outputs: opDesc.outputs, from: inScope)
     } catch let error {
       throw error
     }
