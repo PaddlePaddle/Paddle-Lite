@@ -21,17 +21,20 @@ let platform: Platform = .GPU
 let threadSupport = [1]
 
 let modelHelperMap: [SupportModel : Runner] = [.mobilenet_ssd : Runner.init(inNet: MobileNet_ssd_hand.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform),
-                                               .genet : Runner.init(inNet: Genet.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform)]
+                                               .genet : Runner.init(inNet: Genet.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform),
+                                               .mobilenet_ssd_ar : Runner.init(inNet: MobileNet_ssd_AR.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform)]
 //, .genet : Genet.init()
 //let modelHelperMap: [SupportModel : Net] = [.mobilenet : MobileNet.init(), .mobilenet_ssd : MobileNet_ssd_hand.init()]
 
 enum SupportModel: String{
   //  case mobilenet = "mobilenet"
-  case mobilenet_ssd = "mobilenetssd"
-  case genet          = "genet"
+  case mobilenet_ssd    = "mobilenetssd"
+  case genet            = "genet"
+  case mobilenet_ssd_ar = "mobilenetssd_ar"
+  
   static func supportedModels() -> [SupportModel] {
     //.mobilenet,
-    return [.mobilenet_ssd, .genet]
+    return [.mobilenet_ssd, .genet, .mobilenet_ssd_ar]
   }
 }
 
@@ -78,7 +81,7 @@ class ViewController: UIViewController {
   }
   
   @IBAction func predictAct(_ sender: Any) {
-    let max = 50
+    let max = 1
     switch platform {
     case .GPU:
       guard let inTexture = toPredictTexture else {
@@ -102,9 +105,9 @@ class ViewController: UIViewController {
             }
           }
         }
-        print("sleep before ")
-        usleep(33000)
-        print("sleep after ")
+//        print("sleep before ")
+//        usleep(33000)
+//        print("sleep after ")
       }
     case .CPU:
       guard let inInputPointer = inputPointer else {
