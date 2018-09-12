@@ -18,13 +18,32 @@ class SplitParam<P: PrecisionType>: OpParam {
   typealias ParamPrecisionType = P
   required init(opDesc: OpDesc, inScope: Scope) throws {
     do {
-//      output = try SplitParam.output(outputs: opDesc.outputs, from: inScope)
-      output = try SplitParam.outputOut(outputs: opDesc.outputs, from: inScope)
+      input = try SplitParam.inputX(inputs: opDesc.inputs, from: inScope)
+      output = Texture<P>.init(device: input.metalTexture!.device, inDim: input.dim)
+      axis = try SplitParam.getAttr(key: "axis", attrs: opDesc.attrs)
+      sections = try SplitParam.getAttr(key: "sections", attrs: opDesc.attrs)
+      if axis < 0 {
+        axis = input.tensorDim.cout() + axis
+      }
+      guard let outlist = opDesc.outputs["Out"] else {
+        fatalError()
+      }
+      for out in outlist {
+        guard let variant = inScope[out], let v = variant as? Texture<P> else {
+          fatalError()
+        }
+        outputList.append(v)
+        sections.append(Int32(v.tensorDim.dims[axis]))
+      }
     } catch let error {
       throw error
     }
   }
+  var axis: Int
+  let input: Texture<P>
   var output: Texture<P>
+  var outputList: [Texture<P>] = []
+  var sections: [Int32] = []
 }
 
 class SplitOp<P: PrecisionType>: Operator<SplitKernel<P>, SplitParam<P>>, Runable, Creator, InferShaperable{

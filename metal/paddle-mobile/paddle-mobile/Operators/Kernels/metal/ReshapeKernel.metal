@@ -8,7 +8,7 @@
  
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ WITHOUT WARRANTIES OR CONRITIONS OF ANY KINR, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License. */
 
@@ -25,127 +25,126 @@ struct ReshapeParam {
 };
 
 #define P float
-#define DIN 4
-#define DOUT 4
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 3
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 2
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 1
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#undef DIN
+#define RIN 4
+#define ROUT 4
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 3
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 2
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 1
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#undef RIN
 
-#define DIN 3
-#define DOUT 4
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 3
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 2
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 1
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#undef DIN
+#define RIN 3
+#define ROUT 4
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 3
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 2
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 1
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#undef RIN
 
-#define DIN 2
-#define DOUT 4
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 3
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 2
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 1
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#undef DIN
+#define RIN 2
+#define ROUT 4
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 3
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 2
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 1
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#undef RIN
 
-#define DIN 1
-#define DOUT 4
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 3
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 2
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 1
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#undef DIN
+#define RIN 1
+#define ROUT 4
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 3
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 2
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 1
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#undef RIN
 
 #undef P
 
 #define P half
-#define DIN 4
-#define DOUT 4
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 3
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 2
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 1
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#undef DIN
+#define RIN 4
+#define ROUT 4
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 3
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 2
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 1
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#undef RIN
 
-#define DIN 3
-#define DOUT 4
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 3
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 2
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 1
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#undef DIN
+#define RIN 3
+#define ROUT 4
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 3
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 2
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 1
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#undef RIN
 
-#define DIN 2
-#define DOUT 4
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 3
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 2
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 1
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#undef DIN
+#define RIN 2
+#define ROUT 4
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 3
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 2
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 1
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#undef RIN
 
-#define DIN 1
-#define DOUT 4
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 3
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 2
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#define DOUT 1
-#include "ReshapeKernel.metal.inc"
-#undef DOUT
-#undef DIN
-
+#define RIN 1
+#define ROUT 4
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 3
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 2
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#define ROUT 1
+#include "ReshapeKernel.inc.metal"
+#undef ROUT
+#undef RIN
 #undef P
