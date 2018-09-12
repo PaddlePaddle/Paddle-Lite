@@ -67,6 +67,20 @@ void fpga_copy(void *dest, const void *src, size_t num) {
   memcpy(dest, src, num);
 }
 
+int fpga_flush(void *address, size_t size) {
+  struct MemoryCacheArgs args;
+  args.address = address;
+  args.size = size;
+  return do_ioctl(IOCTL_MEMCACHE_FLUSH, &args);
+}
+
+int fpga_invalidate(void *address, size_t size) {
+  struct MemoryCacheArgs args;
+  args.address = address;
+  args.size = size;
+  return do_ioctl(IOCTL_MEMCACHE_INVAL, &args);
+}
+
 int ComputeFpgaConv(const struct WrapperConvArgs &args) {
 #ifdef FPGA_TEST_MODE
 /*DLOG << "   relu_enabled:" << args.relu_enabled
