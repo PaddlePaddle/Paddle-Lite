@@ -74,7 +74,7 @@ class Im2ColFunctor<ColFormat::kCFO, CPU, T> {
     const int isize = im_height;
     bool pad1 = padding[0] > 0;
     bool pad2 =
-        (pad1 &&
+        (pad1 && padding[1] &&
          (((isize - 2 * padding[0] + filter_height) % stride[0] == 0) ? 1 : 0));
     int fill = isize % 2;
     if (stride[0] == 1 && filter_height == 3 && pad1 && pad2 &&
