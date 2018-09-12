@@ -38,7 +38,8 @@ extension Runable where Self: OperatorProtocol{
   }
   
   func inputVariant() -> [String : [Variant]] {
-    fatalError(" op \(type) need implement inputVariant")
+    return [:]
+//    fatalError(" op \(type) need implement inputVariant")
   }
   
   func delogOutput() {
@@ -166,7 +167,7 @@ let opInfos = [gConvType                    : (inputs: ["Input"], outputs: ["Out
                gPreluType                   : (inputs: ["X"], outputs: ["Out"]),
                gConv2dTransposeType         : (inputs: ["Input"], outputs: ["Output"]),
                gBilinearInterpType          : (inputs: ["X"], outputs: ["Out"]),
-               gSplit                       : (inputs: ["Input"], outputs: ["Out"]),
+               gSplit                       : (inputs: ["X"], outputs: ["Out"]),
                gShape                       : (inputs: ["Input"], outputs: ["Out"]),
-               gFlatten                     : (inputs: ["Input"], outputs: ["Out"])
+               gFlatten                     : (inputs: ["X"], outputs: ["Out"])
               ]
