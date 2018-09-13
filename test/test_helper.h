@@ -48,6 +48,8 @@ static const char *g_test_image_1x3x224x224 =
 static const char *g_test_image_1x3x224x224_banana =
     "../images/input_3x224x224_banana";
 static const char *g_hand = "../images/hand_image";
+static const char *g_imgfssd_ar = "../images/test_image_ssd_ar";
+static const char *g_imgfssd_ar1 = "../images/003_0001.txt";
 static const char *g_img = "../images/img.bin";
 
 using paddle_mobile::framework::DDim;
