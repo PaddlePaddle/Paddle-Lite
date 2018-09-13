@@ -23,7 +23,7 @@ template <>
 bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam<FPGA> *param) {
   bool relu_enabled = false;
   auto input = const_cast<Tensor *>(param->Input());
-  auto input_ptr = input->data<float>();
+
   auto bias = param->Bias();
   auto bias_ptr = bias->data<float>();
   auto filter = const_cast<Tensor *>(param->Filter());
@@ -62,7 +62,7 @@ bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam<FPGA> *param) {
   fpga::format_filter(filter, max_value, param->Groups());
 
   int element_num_per_div =
-      fpga::get_element_num_per_div(filter, param->Groups());
+      fpga::get_filter_num_per_div(filter, param->Groups());
   fpga::format_bias_scale_array(&bs_ptr, element_num_per_div, channel);
   fpga::format_ofm(out);
 
@@ -80,7 +80,6 @@ void ConvAddBNKernel<FPGA, float>::Compute(
     const FusionConvAddBNParam<FPGA> &param) const {
   fpga::ComputeFpgaConv(param.FpgaArgs());
 }
-template class ConvAddBNKernel<FPGA, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile

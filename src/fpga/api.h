@@ -25,23 +25,14 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace fpga {
 
-int open_device();
-int close_device();
-
-void* fpga_malloc(size_t size);
-void fpga_free(void* ptr);
-void fpga_copy(void* dst, const void* src, size_t num);
-
-enum DataConvertType {
-  DATA_NO_CONVERT = 0,
-  DATA_FP32_TO_FP16 = 1,
-  DATA_FP16_TO_FP32 = 2,
+enum DataType {
+  DATA_TYPE_FP32 = 1,
+  DATA_TYPE_FP16 = 0,
 };
 
-enum LayoutConvertType {
-  LAYOUT_NO_CONVERT = 0,
-  LAYOUT_CHW_TO_HWC = 1,
-  LAYOUT_HWC_TO_CHW = 2,
+enum LayoutType {
+  LAYOUT_CHW = 1,
+  LAYOUT_HWC = 0,
 };
 
 struct VersionArgs {
@@ -122,16 +113,18 @@ struct PoolingArgs {
 struct EWAddArgs {
   bool relu_enabled;
 
-  float const0;  // output0 = const0 x input0 + const1 x input1;
-  float const1;
+  uint32_t const0;  // output0 = const0 x input0 + const1 x input1;
+  uint32_t const1;
   struct ImageInputArgs image0;
   struct ImageInputArgs image1;
   struct ImageOutputArgs output;
 };
 
 struct BypassArgs {
-  enum DataConvertType convert_type;
-  enum LayoutConvertType layout_type;
+  enum DataType input_data_type;
+  enum DataType output_data_type;
+  enum LayoutType input_layout_type;
+  enum LayoutType output_layout_type;
   struct ImageInputArgs image;
   struct ImageOutputArgs output;
 };
@@ -141,6 +134,16 @@ struct FpgaRegWriteArgs {
   uint64_t value;
 };
 
+struct FpgaRegReadArgs {
+  uint64_t address;
+  uint64_t value;
+};
+
+struct MemoryCacheArgs {
+  void* address;
+  size_t size;
+};
+
 #define IOCTL_FPGA_MAGIC 'FPGA'
 
 #define IOCTL_VERSION _IOW(IOCTL_FPGA_MAGIC, 01, struct VersionArgs)
@@ -148,6 +151,8 @@ struct FpgaRegWriteArgs {
 #define IOCTL_SEPARATOR_0 10
 
 #define IOCTL_MEM_COPY _IOW(IOCTL_FPGA_MAGIC, 11, struct MemoryCopyArgs)
+#define IOCTL_MEMCACHE_INVAL _IOW(IOCTL_FPGA_MAGIC, 12, struct MemoryCacheArgs)
+#define IOCTL_MEMCACHE_FLUSH _IOW(IOCTL_FPGA_MAGIC, 13, struct MemoryCacheArgs)
 
 #define IOCTL_SEPARATOR_1 20
 
@@ -184,6 +189,15 @@ enum FPGA_ERR_TYPE {
 
 //============================== API =============================
 
+int open_device();
+int close_device();
+
+void* fpga_malloc(size_t size);
+void fpga_free(void* ptr);
+void fpga_copy(void* dst, const void* src, size_t num);
+int fpga_flush(void* address, size_t size);
+int fpga_invalidate(void* address, size_t size);
+
 int PerformBypass(const struct BypassArgs& args);
 int ComputeFpgaConv(const struct WrapperConvArgs& args);
 int ComputeFpgaPool(const struct PoolingArgs& args);
@@ -196,7 +210,7 @@ void format_image(framework::Tensor* image_tensor);
 void format_ofm(framework::Tensor* ofm_tensor);  // only allocate memory
 
 float filter_find_max(framework::Tensor* filter_tensor);
-int get_element_num_per_div(framework::Tensor* filter_tensor, int group_num);
+int get_filter_num_per_div(framework::Tensor* filter_tensor, int group_num);
 int get_plit_num(framework::Tensor* filter_tensor);
 int get_aligned_filter_element_num(int chw);
 int get_aligned_filter_num(int num);
