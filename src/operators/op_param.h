@@ -676,6 +676,11 @@ class PriorBoxParam : public OpParam {
     max_sizes_ = GetAttr<vector<float>>("max_sizes", attrs);
     aspect_ratios_ = GetAttr<vector<float>>("aspect_ratios", attrs);
     variances_ = GetAttr<vector<float>>("variances", attrs);
+
+    if (HasAttr("min_max_aspect_ratios_order", attrs)) {
+      min_max_aspect_ratios_order_ =
+          GetAttr<bool>("min_max_aspect_ratios_order", attrs);
+    }
     flip_ = GetAttr<bool>("flip", attrs);
     clip_ = GetAttr<bool>("clip", attrs);
     step_w_ = GetAttr<float>("step_w", attrs);
@@ -708,6 +713,10 @@ class PriorBoxParam : public OpParam {
 
   const float &Offset() const { return offset_; }
 
+  const bool &MinMaxAspectRatiosOrder() const {
+    return min_max_aspect_ratios_order_;
+  }
+
  private:
   RType *input_;
   RType *input_image_;
@@ -722,6 +731,7 @@ class PriorBoxParam : public OpParam {
   float step_w_;
   float step_h_;
   float offset_;
+  bool min_max_aspect_ratios_order_;
 };
 #endif
 
