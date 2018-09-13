@@ -25,30 +25,41 @@ namespace operators {
 template <>
 bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
   const Tensor *input = param->InputX();
-
   auto input_ptr = input->data<float>();
-  auto output = param->Out();
-  auto output_ptr = output->mutable_data<float>();
+  auto output_ptr = param->Out();
+  Tensor *floatInput = new Tensor(*input);
   fpga::BypassArgs args;
-  args.convert_type = fpga::DATA_FP16_TO_FP32;
-  args.layout_type = fpga::LAYOUT_NO_CONVERT;
+  args.input_layout_type = fpga::LAYOUT_HWC;
+  args.output_layout_type = fpga::LAYOUT_CHW;
+  args.input_data_type = fpga::DATA_TYPE_FP16;
+  args.output_data_type = fpga::DATA_TYPE_FP32;
   args.image.address = (void *)(input_ptr);
   args.image.height = (uint32_t)input->dims()[0];
   args.image.width = (uint32_t)input->dims()[1];
   args.image.channels = 1;
-  args.output.address = output_ptr;
-  param->SetFpgaArgs(args);
+  args.output.address = (void *)floatInput->mutable_data<float>();
 
+  param->SetFloatInput(floatInput);
+  param->SetFpgaArgs(args);
   return true;
 }
 
 template <>
 void SoftmaxKernel<FPGA, float>::Compute(
     const SoftmaxParam<FPGA> &param) const {
-  // SoftmaxCompute<float>(param);
+  DLOG << "======================================= FPGA SoftMAX "
+          "===============================================";
+  const Tensor *in_x = param.FloatInput();
+  Tensor *out = param.Out();
+  fpga::fpga_flush((void *)in_x->data<float>(), in_x->memory_size());
+  fpga::PerformBypass(param.FpgaArgs());
+  fpga::fpga_invalidate(out->data<float>(), out->memory_size());
+
+  auto x_dims = in_x->dims();
+  out->Resize(x_dims);
+  math::SoftmaxFuntor<CPU, float>()(in_x, out);
 }
 
-template class SoftmaxKernel<FPGA, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
 
