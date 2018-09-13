@@ -206,8 +206,10 @@ int ComputeFPGAConcat(const struct ConcatArgs& args);
 
 static inline int align_to_x(int num, int x) { return (num + x - 1) / x * x; }
 
+int get_align_image_cw(int cw);
 void format_image(framework::Tensor* image_tensor);
-void format_ofm(framework::Tensor* ofm_tensor);  // only allocate memory
+void format_fp16_ofm(framework::Tensor* ofm_tensor);  // only allocate memory
+void format_fp32_ofm(framework::Tensor* ofm_tensor);
 
 float filter_find_max(framework::Tensor* filter_tensor);
 int get_filter_num_per_div(framework::Tensor* filter_tensor, int group_num);

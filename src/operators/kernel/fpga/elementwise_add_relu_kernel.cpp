@@ -27,7 +27,7 @@ bool ElementwiseAddReluKernel<FPGA, float>::Init(
   auto *out = param->Out();
   auto input_x_ptr = input_x->data<float>();
   auto input_y_ptr = input_y->data<float>();
-  fpga::format_ofm(out);
+  fpga::format_fp16_ofm(out);
   auto out_ptr = out->mutable_data<float>();
 
   fpga::EWAddArgs ewaddArgs;
