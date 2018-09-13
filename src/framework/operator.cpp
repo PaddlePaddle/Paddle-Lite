@@ -65,16 +65,20 @@ void OperatorBase<Dtype>::Run() const {
     auto var_vec_in = inputs_.at(key);
     for (int i = 0; i < var_vec_in.size(); ++i) {
       auto vari = scope_->FindVar(var_vec_in[i]);
-      Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
-      if (tensor) DLOG << type_ << " input- " << key << "=" << *tensor;
+      if (vari->IsInitialized()) {
+        Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
+        if (tensor) DLOG << type_ << " input- " << key << "=" << *tensor;
+      }
     }
   }
   for (const auto key : GetOutKeys()) {
     auto var_vec_out = outputs_.at(key);
     for (int i = 0; i < var_vec_out.size(); ++i) {
       auto vari = scope_->FindVar(var_vec_out[i]);
-      Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
-      if (tensor) DLOG << type_ << " output- " << key << "=" << *tensor;
+      if (vari->IsInitialized()) {
+        Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
+        if (tensor) DLOG << type_ << " output- " << key << "=" << *tensor;
+      }
     }
   }
 #endif
