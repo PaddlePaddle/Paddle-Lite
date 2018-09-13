@@ -14,10 +14,10 @@
 
 import Foundation
 
-let testTo = 3
+let testTo = 114
 var isTest = false
 
-let computePrecision: ComputePrecision = .Float16
+let computePrecision: ComputePrecision = .Float32
 
 public class ResultHolder {
   public let dim: [Int]
@@ -101,7 +101,7 @@ public class Executor<P: PrecisionType> {
     let inputTexture = InputTexture.init(inMTLTexture: resInput, inExpectDim: Dim.init(inDim: dim))
     program.scope.setInput(input: inputTexture)
     //(ops.count - except)
-    for i in 0..<ops.count {
+    for i in 0..<testTo {
       let op = ops[i]
       do {
         try op.run(device: device, buffer: buffer)
@@ -112,35 +112,35 @@ public class Executor<P: PrecisionType> {
     
     var outputTextures: [String : [Variant]]?
     if except > 0 {
-      outputTextures = ops[ops.count - except].inputVariant()
+      outputTextures = ops[testTo-1].inputVariant()
     }
     
     buffer.addCompletedHandler { [weak self] (commandbuffer) in
       
-//      let inputArr = resInput.toTensor(dim: (n: dim[0], c: dim[3], h: dim[1], w: dim[2]))
-////      print(inputArr.strideArray())
+      let inputArr = resInput.toTensor(dim: (n: dim[0], c: dim[3], h: dim[1], w: dim[2]))
+      print(inputArr.strideArray())
 
 //      print(dim)
 //      writeToLibrary(fileName: "test_image_ssd_ar", array: inputArr)
-      
+//
 //      print("write to library done")
 //      return
-      //            print(inputArr)
-      
-      //            let stridableInput: [(index: Int, value: Float)] = input.stridableFloatArray()
-      //            print(stridableInput)
-      
-      //            let _: Flo? = input.logDesc(header: "input: ", stridable: true)
-//      for i in 0..<self.ops.count {
-//        let op = self.ops[i]
-//        print(" 第 \(i) 个 op: ")
-//        op.delogOutput()
-//      }
+//                  print(inputArr)
+//
+//                  let stridableInput: [(index: Int, value: Float)] = input.stridableFloatArray()
+//                  print(stridableInput)
+//
+//                  let _: Flo? = input.logDesc(header: "input: ", stridable: true)
+      for i in 0..<testTo {
+        let op = self!.ops[i]
+        print(" 第 \(i) 个 op: ")
+        op.delogOutput()
+      }
       
 //      return;
-//      self.ops[testTo - 2].delogOutput()
-//      self.ops[testTo - 1].delogOutput()
-//      self.ops[60].delogOutput()
+//      self!.ops[testTo - 2].delogOutput()
+//      self!.ops[testTo - 1].delogOutput()
+//      self!.ops[60].delogOutput()
 
 //      return
       

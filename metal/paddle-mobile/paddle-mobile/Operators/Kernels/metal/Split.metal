@@ -13,18 +13,60 @@
  limitations under the License. */
 
 #include <metal_stdlib>
+#include "Common.metal"
+
 using namespace metal;
 
-kernel void split(texture2d_array<float, access::write> output[[texture(0)]],
-                  uint3 gid [[thread_position_in_grid]]) {
-  float4 r;
+struct SplitParam {
+  int32_t idim[4];
+  int32_t axis;
+  int32_t offset;
+  int32_t trans[4];
+  int32_t vdim[4];
+};
 
-  output.write(r, gid.xy, gid.z);
-}
+// only support split_{2, 3, 4}_{2, 3, 4}_y_{float, half}
+// only support split_{3, 4}_{2, 3, 4}_x_{float, half}
 
-kernel void split_half(texture2d_array<half, access::write> output[[texture(0)]],
-                       uint3 gid [[thread_position_in_grid]]) {
-  float4 r;
-  
-  output.write(half4(r), gid.xy, gid.z);
-}
+#define V y
+// for R in 2..4
+#define R 3
+
+// for N in 2..4
+#define N 2
+
+#define P float
+#include "Split.inc.metal"
+#undef P
+#define P half
+#include "Split.inc.metal"
+#undef P
+
+#undef N
+// end for N
+
+#undef R
+// end for R
+#undef V
+
+#define V x
+// for R in 3..4
+#define R 3
+
+// for N in 2..4
+#define N 2
+
+#define P float
+#include "Split.inc.metal"
+#undef P
+#define P half
+#include "Split.inc.metal"
+#undef P
+
+#undef N
+// end for N
+
+#undef R
+// end for R
+#undef V
+

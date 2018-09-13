@@ -25,32 +25,116 @@ struct ConcatParam {
   int32_t vdim[6];
 };
 
-#define P float
-#define R 4
-#include "ConcatKernel.inc.metal"
-#undef R
-#define R 3
-#include "ConcatKernel.inc.metal"
-#undef R
-#define R 2
-#include "ConcatKernel.inc.metal"
-#undef R
-#define R 1
-#include "ConcatKernel.inc.metal"
-#undef R
-#undef P
+#define VNORMAL 1
+#define VX 2
+#define VY 3
+#define VZ 4
 
-#define P half
-#define R 4
-#include "ConcatKernel.inc.metal"
-#undef R
-#define R 3
-#include "ConcatKernel.inc.metal"
-#undef R
-#define R 2
-#include "ConcatKernel.inc.metal"
-#undef R
-#define R 1
-#include "ConcatKernel.inc.metal"
-#undef R
-#undef P
+// >> fast mode
+// only support concat_{2,3,4}_{2,3,4,5,6}_y_{float,half}
+// only support concat_{3,4}_{2,3,4,5,6}_x_{float,half}
+// only support concat_{1,2,3,4}_{2,3,4,5,6}_z_{float,half}
+// >> normal mode (loop mode)
+// ssd-ar: (R=4, N=3, V=z), (R=3, N=2, V=y), (R=2, N=5, V=x), (R=3, N=5, V=x)
+// ssd: (R=2, N=6, V=y), (R=3, N=6, V=y)
+// genet: (R=4, N=2, V=normal)
+
+// ssd-ar: (R=3, N=5, V=x)
+#define V VX
+  #define R 3
+    #define N 5
+      #define P float
+        #include "ConcatKernel.inc.metal"
+      #undef P
+      #define P half
+        #include "ConcatKernel.inc.metal"
+      #undef P
+    #undef N
+  #undef R
+#undef V
+
+// ssd-ar: (R=2, N=5, V=x)
+#define V VX
+  #define R 2
+    #define N 5
+      #define P float
+        #include "ConcatKernel.inc.metal"
+      #undef P
+      #define P half
+        #include "ConcatKernel.inc.metal"
+      #undef P
+    #undef N
+  #undef R
+#undef V
+
+
+// ssd-ar: (R=3, N=2, V=y)
+#define V VY
+  #define R 3
+    #define N 2
+      #define P float
+        #include "ConcatKernel.inc.metal"
+      #undef P
+      #define P half
+        #include "ConcatKernel.inc.metal"
+      #undef P
+    #undef N
+  #undef R
+#undef V
+
+// ssd-ar: (R=4, N=3, V=z)
+#define V VZ
+  #define R 4
+    #define N 3
+      #define P float
+        #include "ConcatKernel.inc.metal"
+      #undef P
+      #define P half
+        #include "ConcatKernel.inc.metal"
+      #undef P
+    #undef N
+  #undef R
+#undef V
+
+
+// ssd: (R=2, N=6, V=y)
+#define V VY
+  #define R 2
+    #define N 6
+      #define P float
+        #include "ConcatKernel.inc.metal"
+      #undef P
+      #define P half
+        #include "ConcatKernel.inc.metal"
+      #undef P
+    #undef N
+  #undef R
+#undef V
+
+// ssd: (R=3, N=6, V=y)
+#define V VY
+  #define R 3
+    #define N 6
+      #define P float
+        #include "ConcatKernel.inc.metal"
+      #undef P
+      #define P half
+        #include "ConcatKernel.inc.metal"
+      #undef P
+    #undef N
+  #undef R
+#undef V
+
+
+#define V VNORMAL
+  #define R 4
+    #define N 2
+      #define P float
+        #include "ConcatKernel.inc.metal"
+      #undef P
+      #define P half
+        #include "ConcatKernel.inc.metal"
+      #undef P
+    #undef N
+  #undef R
+#undef V
