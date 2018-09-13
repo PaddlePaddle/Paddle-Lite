@@ -56,7 +56,7 @@ bool ConvBNReluKernel<FPGA, float>::Init(FusionConvBNReluParam<FPGA> *param) {
       fpga::get_filter_num_per_div(filter, param->Groups());
   fpga::format_bias_scale_array(&bs_ptr, element_num_per_div, channel);
 
-  fpga::format_ofm(out);
+  fpga::format_fp16_ofm(out);
 
   fpga::WrapperConvArgs conv_arg;
   fpga::fill_conv_arg(&conv_arg, input, out, filter, relu_enabled,

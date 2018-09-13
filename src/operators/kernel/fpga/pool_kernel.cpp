@@ -24,7 +24,7 @@ bool PoolKernel<FPGA, float>::Init(PoolParam<FPGA> *param) {
   auto *input = const_cast<Tensor *>(param->Input());
   auto input_ptr = input->data<float>();
   Tensor *output = param->Output();
-  fpga::format_ofm(output);
+  fpga::format_fp16_ofm(output);
   auto output_ptr = output->mutable_data<float>();
   vector<int> ksize = param->Ksize();
   vector<int> strides = param->Strides();

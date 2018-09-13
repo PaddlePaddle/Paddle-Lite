@@ -181,10 +181,12 @@ int ComputeFPGAConcat(const struct ConcatArgs &args) {
   return 0;
 }
 
+int get_align_image_cw(int cw) { return align_to_x(cw, IMAGE_ALIGNMENT); }
+
 void format_image(framework::Tensor *image_tensor) {
   auto dims = image_tensor->dims();
   auto channel = dims[1], height = dims[2], width = dims[3];
-  auto data_ptr = image_tensor->mutable_data<float>();
+  auto data_ptr = image_tensor->data<float>();
   size_t memory_size = channel * height * width * sizeof(float);
   float *new_data = (float *)fpga_malloc(memory_size);
   fpga_copy(new_data, data_ptr, memory_size);
@@ -192,7 +194,7 @@ void format_image(framework::Tensor *image_tensor) {
   image_tensor->reset_data_ptr(new_data);
 }
 
-void format_ofm(framework::Tensor *ofm_tensor) {
+void format_fp16_ofm(framework::Tensor *ofm_tensor) {
   auto dims = ofm_tensor->dims();
   size_t memory_size = 0;
   if (dims.size() == 4) {
@@ -201,6 +203,23 @@ void format_ofm(framework::Tensor *ofm_tensor) {
         height * align_to_x(channel * width, IMAGE_ALIGNMENT) * sizeof(half);
   } else if (dims.size() == 2) {
     memory_size = align_to_x(dims[1], IMAGE_ALIGNMENT) * sizeof(half);
+  } else {
+    DLOG << "Wrong ofm dimension";
+  }
+  auto p = fpga_malloc(memory_size);
+  memset(p, 0, memory_size);
+  ofm_tensor->reset_data_ptr(p);
+}
+
+void format_fp32_ofm(framework::Tensor *ofm_tensor) {
+  auto dims = ofm_tensor->dims();
+  size_t memory_size = 0;
+  if (dims.size() == 4) {
+    auto channel = dims[1], height = dims[2], width = dims[3];
+    memory_size =
+        height * align_to_x(channel * width, IMAGE_ALIGNMENT) * sizeof(float);
+  } else if (dims.size() == 2) {
+    memory_size = align_to_x(dims[1], IMAGE_ALIGNMENT) * sizeof(float);
   } else {
     DLOG << "Wrong ofm dimension";
   }
@@ -242,7 +261,7 @@ void format_filter(framework::Tensor *filter_tensor, float max_value,
                    int group_num) {
   auto dims = filter_tensor->dims();
   auto num = dims[0], channel = dims[1], height = dims[2], width = dims[3];
-  auto data_ptr = filter_tensor->mutable_data<float>();
+  auto data_ptr = filter_tensor->data<float>();
   size_t memory_size = num * channel * height * width * sizeof(float);
   auto new_data = (float *)fpga_malloc(memory_size);
   fpga_copy(new_data, data_ptr, memory_size);
@@ -277,7 +296,7 @@ void fill_conv_arg(struct WrapperConvArgs *arg, framework::Tensor *input,
                    int padding_h, int padding_w, float *bs_ptr) {
   auto input_ptr = input->data<float>();
   auto filter_ptr = filter->data<float>();
-  auto out_ptr = out->mutable_data<float>();
+  auto out_ptr = out->data<float>();
 
   arg->group_num = (uint32_t)group_num;
   arg->split_num = (uint32_t)fpga::get_plit_num(filter);
@@ -300,7 +319,7 @@ void fill_conv_arg(struct WrapperConvArgs *arg, framework::Tensor *input,
       (uint32_t *)fpga::fpga_malloc(n * sizeof(uint32_t));
   arg->concat_arg.image_out = out_ptr;
 
-  const int channel = (int)out->dims()[1];
+  auto channel = (int)out->dims()[1];
   int filter_num_per_div = fpga::get_filter_num_per_div(filter, group_num);
   int element_num = fpga::get_aligned_filter_element_num(
       filter->dims()[1] * filter->dims()[2] * filter->dims()[3]);

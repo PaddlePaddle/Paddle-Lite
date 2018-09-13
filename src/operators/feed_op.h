@@ -45,7 +45,7 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
 
   void Init() {
     Tensor *output = param_.Out();
-    fpga::format_ofm(output);
+    fpga::format_fp16_ofm(output);
   }
 
   void RunImpl() const {
@@ -53,7 +53,7 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
     auto input_ptr = input->data<float>();
     fpga::format_image(input);
     Tensor *output = param_.Out();
-    auto output_ptr = output->mutable_data<half>();
+    auto output_ptr = output->data<half>();
 
     fpga::BypassArgs args;
 
@@ -62,9 +62,9 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
     args.input_layout_type = fpga::LAYOUT_CHW;
     args.output_layout_type = fpga::LAYOUT_HWC;
     args.image.address = (void *)input_ptr;
-    args.image.channels = input->dims()[1];
-    args.image.height = input->dims()[2];
-    args.image.width = input->dims()[3];
+    args.image.channels = (uint32_t)input->dims()[1];
+    args.image.height = (uint32_t)input->dims()[2];
+    args.image.width = (uint32_t)input->dims()[3];
     args.image.pad_height = 0;
     args.image.pad_width = 0;
     args.output.address = output_ptr;

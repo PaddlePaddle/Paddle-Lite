@@ -71,7 +71,7 @@ void test_fill_conv_arg() {
   fpga::format_bias_scale_array(&bs_ptr, element_num_per_div, 1001);
 
   DLOG << "format ofm";
-  fpga::format_ofm(&out);
+  fpga::format_fp16_ofm(&out);
   DLOG << "Build arg";
 
   fpga::WrapperConvArgs arg;
