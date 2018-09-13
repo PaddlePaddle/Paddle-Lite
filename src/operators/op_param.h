@@ -785,7 +785,7 @@ class SoftmaxParam : public OpParam {
   fpga::BypassArgs fpga_bypass_args;
 
  public:
-  RType *FloatInput() {
+  RType *FloatInput() const {
     return float_input_x_ == nullptr ? input_x_ : float_input_x_.get();
   }
   void SetFloatInput(Tensor *input) { float_input_x_.reset(input); }
