@@ -19,14 +19,14 @@ class BilinearInterpParam<P: PrecisionType>: OpParam {
   required init(opDesc: OpDesc, inScope: Scope) throws {
     do {
       input = try BilinearInterpParam.inputX(inputs: opDesc.inputs, from: inScope)
-//      if (input.transpose != [0, 2, 3, 1]) || (input.tensorDim.cout() != 4) {
-//        fatalError()
-//      }
       output = try BilinearInterpParam.outputOut(outputs: opDesc.outputs, from: inScope)
       out_h = try BilinearInterpParam.getAttr(key: "out_h", attrs: opDesc.attrs)
       out_w = try BilinearInterpParam.getAttr(key: "out_w", attrs: opDesc.attrs)
     } catch let error {
       throw error
+    }
+    if (input.transpose != [0, 2, 3, 1]) || (input.tensorDim.cout() != 4) {
+      fatalError()
     }
   }
   let input: Texture<P>
@@ -53,6 +53,15 @@ class BilinearInterpOp<P: PrecisionType>: Operator<BilinearInterpKernel<P>, Bili
   
   func delogOutput() {
     print(" \(type) output: ")
+    let padToFourDim = para.output.padToFourDim
+    if para.output.transpose == [0, 1, 2, 3] {
+      let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
+      print(outputArray.strideArray())
+    } else if para.output.transpose == [0, 2, 3, 1] {
+      print(para.output.metalTexture.toTensor(dim: (n: padToFourDim[0], c: padToFourDim[1], h: padToFourDim[2], w: padToFourDim[3])).strideArray())
+    } else {
+      fatalError(" not implemet")
+    }
   }
   
 }
