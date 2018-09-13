@@ -71,10 +71,11 @@ class ReshapeKernel<P: PrecisionType>: Kernel, Computable{
   }
   
   func compute(commandBuffer: MTLCommandBuffer, param: ReshapeParam<P>) throws {
+    print("reshape compute")
     guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
       throw PaddleMobileError.predictError(message: " encoder is nil")
     }
-    
+
     encoder.setTexture(param.input.metalTexture, index: 0)
     encoder.setTexture(param.output.metalTexture, index: 1)
 
@@ -83,15 +84,15 @@ class ReshapeKernel<P: PrecisionType>: Kernel, Computable{
     encoder.endEncoding()
   }
   
-  func test(commandBuffer: MTLCommandBuffer, testParam: ReshapeTestParam) {
-    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-      fatalError()
-    }
-    encoder.setTexture(testParam.inputTexture, index: 0)
-    encoder.setTexture(testParam.outputTexture, index: 1)
-    var pm: ReshapeMetalParam = testParam.param
-    encoder.setBytes(&pm, length: MemoryLayout<ReshapeMetalParam>.size, index: 0)
-    encoder.dispatch(computePipline: pipline, outTexture: testParam.outputTexture)
-    encoder.endEncoding()
-  }
+//  func test(commandBuffer: MTLCommandBuffer, testParam: ReshapeTestParam) {
+//    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+//      fatalError()
+//    }
+//    encoder.setTexture(testParam.inputTexture, index: 0)
+//    encoder.setTexture(testParam.outputTexture, index: 1)
+//    var pm: ReshapeMetalParam = testParam.param
+//    encoder.setBytes(&pm, length: MemoryLayout<ReshapeMetalParam>.size, index: 0)
+//    encoder.dispatch(computePipline: pipline, outTexture: testParam.outputTexture)
+//    encoder.endEncoding()
+//  }
 }
