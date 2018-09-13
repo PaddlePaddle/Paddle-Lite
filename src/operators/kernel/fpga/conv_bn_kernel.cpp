@@ -15,7 +15,6 @@ limitations under the License. */
 #ifdef FUSION_CONVBN_OP
 
 #include "operators/kernel/conv_bn_kernel.h"
-#include "fpga/api.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -33,10 +32,8 @@ bool ConvBNKernel<FPGA, float>::Init(FusionConvBNParam<FPGA> *param) {
   const float epsilon = param->Epsilon();
   PADDLE_MOBILE_ENFORCE(out->dims()[1] == param->InputBias()->dims()[0],
                         "Output channel should be equal to bias number");
-
   const int channel = out->dims()[1];
-  auto bs_ptr =
-      reinterpret_cast<float *>(fpga::fpga_malloc(2 * channel * sizeof(float)));
+  auto bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sizeof(float));
   auto new_scale = new Tensor();
   auto new_bias = new Tensor();
   auto new_scale_ptr = new_scale->mutable_data<float>({channel});
@@ -59,7 +56,7 @@ bool ConvBNKernel<FPGA, float>::Init(FusionConvBNParam<FPGA> *param) {
       fpga::get_filter_num_per_div(filter, param->Groups());
   fpga::format_bias_scale_array(&bs_ptr, element_num_per_div, channel);
 
-  fpga::format_ofm(out);
+  fpga::format_fp16_ofm(out);
 
   fpga::WrapperConvArgs conv_arg;
   fpga::fill_conv_arg(&conv_arg, input, out, filter, relu_enabled,
