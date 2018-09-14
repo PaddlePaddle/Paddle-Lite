@@ -13,38 +13,9 @@
  limitations under the License. */
 
 #include <metal_stdlib>
-#include "Common.metal"
-
 using namespace metal;
 
-struct SplitParam {
-  int32_t idim[4];
-  int32_t axis;
-  int32_t offset;
-  int32_t trans[4];
-  int32_t vdim[4];
-};
-
-#define VNORMAL 1
-#define VX 2
-#define VY 3
-#define VZ 4
-
-// only support split_{2, 3, 4}_{2, 3, 4}_y_{float, half}
-// only support split_{3, 4}_{2, 3, 4}_x_{float, half}
-
-
-//// ssd-ar: (R=3, N=2, V=y)
-#define V VY
-  #define R 3
-    #define N 2
-      #define P float
-        #include "Split.inc.metal"
-      #undef P
-      #define P half
-        #include "Split.inc.metal"
-      #undef P
-    #undef N
-  #undef R
-#undef V
-
+kernel void shape() {
+}
+kernel void shape_half() {
+}

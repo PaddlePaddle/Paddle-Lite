@@ -10,7 +10,17 @@
 #define VECTOR(p, n) CONCAT2(p, n)
 #define FUNC_R(f, r) CONCAT2_(f, r)
 
-kernel void FUNC(split, R, N, V, P)(texture2d_array<P, access::read> input [[texture(0)]],
+#if V == VX
+#define VV x
+#elif V == VY
+#define VV y
+#elif V == VZ
+#define VV z
+#else
+#define VV normal
+#endif
+
+kernel void FUNC(split, R, N, VV, P)(texture2d_array<P, access::read> input [[texture(0)]],
                                  texture2d_array<P, access::write> out1 [[texture(1)]],
                                  texture2d_array<P, access::write> out2 [[texture(2)]],
 #if N >= 3
@@ -23,7 +33,7 @@ kernel void FUNC(split, R, N, V, P)(texture2d_array<P, access::read> input [[tex
                                  uint3 gid [[thread_position_in_grid]]) {
 
   VECTOR(P, 4) r = input.read(gid.xy, gid.z);
-#if V == y
+#if V == VY
   int y = gid.y - sp.offset;
   if (y < sp.vdim[0]) {
     out1.write(r, gid.xy, gid.z);
@@ -47,7 +57,7 @@ kernel void FUNC(split, R, N, V, P)(texture2d_array<P, access::read> input [[tex
 #endif
     }
   }
-#elif V == x
+#elif V == VX
   int x = gid.x;
   if (x < sp.vdim[0]) {
     out1.write(r, gid.xy, gid.z);
@@ -75,4 +85,5 @@ kernel void FUNC(split, R, N, V, P)(texture2d_array<P, access::read> input [[tex
 #endif
 }
 
+#undef VV
 #endif
