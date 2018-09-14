@@ -14,10 +14,10 @@
 
 import Foundation
 
-let testTo = 114
+let testTo = 2
 var isTest = false
 
-let computePrecision: ComputePrecision = .Float32
+let computePrecision: ComputePrecision = .Float16
 
 public class ResultHolder {
   public let dim: [Int]
@@ -67,7 +67,7 @@ public class Executor<P: PrecisionType> {
     queue = inQueue
     for block in inProgram.programDesc.blocks {
       //block.ops.count
-      for i in 0..<block.ops.count {
+      for i in 0..<testTo {
         let op = block.ops[i]
         do {
           let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
