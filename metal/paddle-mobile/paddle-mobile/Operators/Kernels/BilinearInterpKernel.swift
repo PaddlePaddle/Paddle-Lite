@@ -38,7 +38,7 @@ class BilinearInterpKernel<P: PrecisionType>: Kernel, Computable{
   required init(device: MTLDevice, param: BilinearInterpParam<P>) {
     param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: computePrecision)
     if computePrecision == .Float32 {
-      super.init(device: device, inFunctionName: "bilinear_interp")
+      super.init(device: device, inFunctionName: "bilinear_interp_float")
     } else if computePrecision == .Float16 {
       super.init(device: device, inFunctionName: "bilinear_interp_half")
     } else {
