@@ -15,14 +15,13 @@ limitations under the License. */
 #include "api.h"
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <unistd.h>
+#include <sys/mman.h>
 #include <algorithm>
-#include <memory>
 #include "bias_scale.h"
 #include "filter.h"
 #include "image.h"
-
 #define FPGA_TEST_MODE
+//#define PADDLE_MOBILE_OS_LINUX
 
 namespace paddle_mobile {
 namespace fpga {
@@ -32,7 +31,9 @@ static const char *device_path = "/dev/fpgadrv0";
 
 static inline int do_ioctl(int req, const void *arg) {
 #ifdef PADDLE_MOBILE_OS_LINUX
-  return ioctl(fd, req, (unsigned int64_t)arg);
+  int result = ioctl(fd, req, (uint64_t)arg);
+  PADDLE_MOBILE_ENFORCE(result == 0, "ioctl didn't return correctly");
+  return result;
 #else
   return -1;
 #endif
@@ -82,30 +83,41 @@ int fpga_invalidate(void *address, size_t size) {
   return do_ioctl(IOCTL_MEMCACHE_INVAL, &args);
 }
 
+int ComputeBasicConv(const struct ConvArgs &args) {
+  DLOG << "======Compute Basic Conv======";
+  DLOG << "   relu_enabled:" << args.relu_enabled
+       << "   sb_address:" << args.sb_address
+       << "   filter_address:" << args.filter_address
+       << "   filter_num:" << args.filter_num
+       << "   group_num:" << args.group_num;
+  DLOG << "   image_address:" << args.image.address
+       << "   image_scale_address:" << args.image.scale_address
+       << "   image_channels:" << args.image.channels
+       << "   image_height:" << args.image.height
+       << "   image_width:" << args.image.width
+       << "   pad_height:" << args.image.pad_height
+       << "   pad_width:" << args.image.pad_width;
+  DLOG << "   kernel_height:" << args.kernel.height
+       << "   kernel_width:" << args.kernel.width
+       << "   stride_h:" << args.kernel.stride_h
+       << "   stride_w:" << args.kernel.stride_w;
+  DLOG << "   out_address:" << args.output.address
+       << "   out_scale_address:" << args.output.scale_address;
+
+  return do_ioctl(IOCTL_CONFIG_CONV, &args);
+}
+
 int ComputeFpgaConv(const struct WrapperConvArgs &args) {
 #ifdef FPGA_TEST_MODE
-/*DLOG << "   relu_enabled:" << args.relu_enabled
-     << "   sb_address:" << args.sb_address
-     << "   filter_address:" << args.filter_address
-     << "   filter_num:" << args.filter_num
-     << "   group_num:" << args.group_num;
-DLOG << "   image_address:" << args.image.address
-     << "   image_scale_address:" << args.image.scale_address
-     << "   image_channels:" << args.image.channels
-     << "   image_height:" << args.image.height
-     << "   image_width:" << args.image.width
-     << "   pad_height:" << args.image.pad_height
-     << "   pad_width:" << args.image.pad_width;
-DLOG << "   kernel_height:" << args.kernel.height
-     << "   kernel_width:" << args.kernel.width
-     << "   stride_h:" << args.kernel.stride_h
-     << "   stride_w:" << args.kernel.stride_w;
-DLOG << "   out_address:" << args.output.address
-     << "   out_scale_address:" << args.output.scale_address;*/
+  DLOG << "=============ComputeFPGAConv===========";
+  DLOG << "   filter_num:" << args.filter_num
+       << "   group_num:" << args.group_num
+       << "   split_num:" << args.split_num;
 #endif
+
   int split_num = args.split_num;
   for (int i = 0; i < split_num; i++) {
-    do_ioctl(IOCTL_CONFIG_CONV, &args.conv_args[i]);
+    ComputeBasicConv(args.conv_args[i]);
   }
 
   if (split_num > 1) {
@@ -115,6 +127,7 @@ DLOG << "   out_address:" << args.output.address
 
 int ComputeFpgaPool(const struct PoolingArgs &args) {
 #ifdef FPGA_TEST_MODE
+  DLOG << "=============ComputeFpgaPool===========";
   DLOG << "   image_address:" << args.image.address
        << "   image_scale_address:" << args.image.scale_address
        << "   image_channels:" << args.image.channels
@@ -135,6 +148,7 @@ int ComputeFpgaPool(const struct PoolingArgs &args) {
 
 int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
 #ifdef FPGA_TEST_MODE
+  DLOG << "=============ComputeFpgaEWAdd===========";
   DLOG << "   relu_enabled:" << args.relu_enabled << "   const0:" << args.const0
        << "   const1:" << args.const1;
   DLOG << "   image0_address:" << args.image0.address
@@ -159,8 +173,11 @@ int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
 }
 int PerformBypass(const struct BypassArgs &args) {
 #ifdef FPGA_TEST_MODE
+  DLOG << "=============ComputeFpgaBypass===========";
   DLOG << "   input_type:" << args.input_data_type
-       << "   input_layout_type:" << args.input_layout_type;
+       << "   output_type:" << args.output_data_type
+       << "   input_layout_type:" << args.input_layout_type
+       << "   output_layout_type:" << args.output_layout_type;
   DLOG << "   image_address:" << args.image.address
        << "   image_scale_address:" << args.image.scale_address
        << "   image_channels:" << args.image.channels
@@ -176,6 +193,19 @@ int PerformBypass(const struct BypassArgs &args) {
 }
 
 int ComputeFPGAConcat(const struct ConcatArgs &args) {
+#ifdef FPGA_TEST_MODE
+  DLOG << "=============ComputeFpgaConcat===========";
+  DLOG << "   out_address:" << args.image_out
+       << "   out_scale_address:" << args.scale_out;
+  DLOG << "   image_height:" << args.height << "   image_width:" << args.width;
+  for (int i = 0; i < args.image_num; i++) {
+    DLOG << "   " << i << "th:        ";
+    DLOG << "   channel_num:" << args.channel_num[i]
+         << "   image_address:" << args.images_in[i]
+         << "   image_scale_address:" << args.scales_in[i];
+  }
+#endif
+
   image::concat_images(args.images_in, args.scales_in, args.image_out,
                        args.scale_out, args.image_num, args.channel_num,
                        args.height, args.width);
