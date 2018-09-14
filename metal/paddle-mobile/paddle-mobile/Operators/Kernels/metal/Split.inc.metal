@@ -20,70 +20,89 @@
 #define VV normal
 #endif
 
+#if V == VY
 kernel void FUNC(split, R, N, VV, P)(texture2d_array<P, access::read> input [[texture(0)]],
                                  texture2d_array<P, access::write> out1 [[texture(1)]],
                                  texture2d_array<P, access::write> out2 [[texture(2)]],
 #if N >= 3
                                  texture2d_array<P, access::write> out3 [[texture(3)]],
-#endif
+#endif // N >= 3
 #if N >= 4
                                  texture2d_array<P, access::write> out4 [[texture(4)]],
-#endif
+#endif // N >= 4
                                  constant SplitParam &sp [[buffer(0)]],
                                  uint3 gid [[thread_position_in_grid]]) {
 
   VECTOR(P, 4) r = input.read(gid.xy, gid.z);
-#if V == VY
   int y = gid.y - sp.offset;
   if (y < sp.vdim[0]) {
     out1.write(r, gid.xy, gid.z);
-  } else {
-    y -= sp.vdim[0];
-    if (y < sp.vdim[1]) {
-      out2.write(r, uint2(gid.x, y), gid.z);
-    } else {
-#if N >= 3
-      y -= sp.vdim[1];
-      if (y < sp.vdim[2]) {
-        out3.write(r, uint2(gid.x, y), gid.z);
-      } else {
-#if N >= 4
-        y -= sp.vdim[2];
-        if (y < sp.vdim[3]) {
-          out4.write(r, uint2(gid.x, y), gid.z);
-        }
-#endif
-      }
-#endif
-    }
+    return;
   }
-#elif V == VX
+  y -= sp.vdim[0];
+  if (y < sp.vdim[1]) {
+    out2.write(r, uint2(gid.x, y), gid.z);
+    return;
+  }
+#if N >= 3
+  y -= sp.vdim[1];
+  if (y < sp.vdim[2]) {
+    out3.write(r, uint2(gid.x, y), gid.z);
+    return;
+  }
+#endif // N >= 3
+#if N >= 4
+  y -= sp.vdim[2];
+  if (y < sp.vdim[3]) {
+    out4.write(r, uint2(gid.x, y), gid.z);
+    return;
+  }
+#endif // N >= 4
+}
+#endif // V == VY
+
+
+#if V == VX
+kernel void FUNC(split, R, N, VV, P)(texture2d_array<P, access::read> input [[texture(0)]],
+                                     texture2d_array<P, access::write> out1 [[texture(1)]],
+                                     texture2d_array<P, access::write> out2 [[texture(2)]],
+#if N >= 3
+                                     texture2d_array<P, access::write> out3 [[texture(3)]],
+#endif // N >= 3
+#if N >= 4
+                                     texture2d_array<P, access::write> out4 [[texture(4)]],
+#endif // N >= 4
+                                     constant SplitParam &sp [[buffer(0)]],
+                                     uint3 gid [[thread_position_in_grid]]) {
+  VECTOR(P, 4) r = input.read(gid.xy, gid.z);
   int x = gid.x;
   if (x < sp.vdim[0]) {
     out1.write(r, gid.xy, gid.z);
-  } else {
-    x -= sp.vdim[0];
-    if (x < sp.vdim[1]) {
-      out2.write(r, uint2(x, gid.y), gid.z);
-    } else {
-#if N >= 3
-      x -= sp.vdim[1];
-      if (x < sp.vdim[2]) {
-        out3.write(r, uint2(x, gid.y), gid.z);
-      } else {
-#if N >= 4
-        x -= sp.vdim[2];
-        if (x < sp.vdim[3]) {
-          out4.write(r, uint2(x, gid.y), gid.z);
-        }
-#endif
-      }
-#endif
-    }
+    return;
   }
-#else
-#endif
+  x -= sp.vdim[0];
+  if (x < sp.vdim[1]) {
+    out2.write(r, uint2(x, gid.y), gid.z);
+    return;
+  }
+#if N >= 3
+  x -= sp.vdim[1];
+  if (x < sp.vdim[2]) {
+    out3.write(r, uint2(x, gid.y), gid.z);
+    return;
+  }
+#endif // N >= 3
+#if N >= 4
+  x -= sp.vdim[2];
+  if (x < sp.vdim[3]) {
+    out4.write(r, uint2(x, gid.y), gid.z);
+    return;
+  }
+#endif // N >= 4
 }
+#endif // V == VX
+
+
 
 #undef VV
 #endif

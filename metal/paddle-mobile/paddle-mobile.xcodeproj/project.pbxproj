@@ -21,6 +21,7 @@
 		4AA1EAA2214912CD00D0F791 /* FlattenKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AA1EAA1214912CC00D0F791 /* FlattenKernel.swift */; };
 		4AA1EAA4214A295C00D0F791 /* Split.inc.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AA1EAA3214A295C00D0F791 /* Split.inc.metal */; };
 		4AA1EAA6214B5F6800D0F791 /* Shape.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AA1EAA5214B5F6800D0F791 /* Shape.metal */; };
+		4AA1EAA8214B7AFB00D0F791 /* BilinearInterp.inc.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AA1EAA7214B7AFB00D0F791 /* BilinearInterp.inc.metal */; };
 		4AF928772133F1DB005B6C3A /* BoxCoder.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AF928762133F1DB005B6C3A /* BoxCoder.metal */; };
 		4AF9287921341661005B6C3A /* Softmax.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AF9287821341661005B6C3A /* Softmax.metal */; };
 		4AF928822135673D005B6C3A /* ConcatKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AF928812135673D005B6C3A /* ConcatKernel.metal */; };
@@ -134,6 +135,7 @@
 		4AA1EAA1214912CC00D0F791 /* FlattenKernel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FlattenKernel.swift; sourceTree = "<group>"; };
 		4AA1EAA3214A295C00D0F791 /* Split.inc.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Split.inc.metal; sourceTree = "<group>"; };
 		4AA1EAA5214B5F6800D0F791 /* Shape.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Shape.metal; sourceTree = "<group>"; };
+		4AA1EAA7214B7AFB00D0F791 /* BilinearInterp.inc.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = BilinearInterp.inc.metal; sourceTree = "<group>"; };
 		4AF928762133F1DB005B6C3A /* BoxCoder.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = BoxCoder.metal; sourceTree = "<group>"; };
 		4AF9287821341661005B6C3A /* Softmax.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Softmax.metal; sourceTree = "<group>"; };
 		4AF928812135673D005B6C3A /* ConcatKernel.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = ConcatKernel.metal; sourceTree = "<group>"; };
@@ -456,6 +458,7 @@
 				4AA1EA8F214664CD00D0F791 /* Split.metal */,
 				4AA1EAA3214A295C00D0F791 /* Split.inc.metal */,
 				4AA1EA892146631C00D0F791 /* BilinearInterp.metal */,
+				4AA1EAA7214B7AFB00D0F791 /* BilinearInterp.inc.metal */,
 				4AF9287821341661005B6C3A /* Softmax.metal */,
 				FCEB6849212F00DB00D2448E /* PreluKernel.metal */,
 				FCDDC6C9212FDF6800E5EF74 /* BatchNormKernel.metal */,
@@ -609,6 +612,7 @@
 				4AF928772133F1DB005B6C3A /* BoxCoder.metal in Sources */,
 				FC33B0F02147659000714A93 /* MobileNet.swift in Sources */,
 				FCEB684C212F093800D2448E /* PreluOp.swift in Sources */,
+				4AA1EAA8214B7AFB00D0F791 /* BilinearInterp.inc.metal in Sources */,
 				FCA67CD92138287B00BD58AA /* ConvBNReluKernel.metal in Sources */,
 				FC60DB8920E9AAA500FF203F /* MetalExtension.swift in Sources */,
 				FCEBC0F620F1FE120099DBAF /* ConvAddBatchNormReluKernel.swift in Sources */,
@@ -833,7 +837,7 @@
 					"$(PROJECT_DIR)/paddle-mobile/CPU",
 				);
 				MACH_O_TYPE = mh_dylib;
-				MTL_LANGUAGE_REVISION = UseDeploymentTarget;
+				MTL_LANGUAGE_REVISION = Metal12;
 				PRODUCT_BUNDLE_IDENTIFIER = "orange.paddle-mobile";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
@@ -869,7 +873,7 @@
 					"$(PROJECT_DIR)/paddle-mobile/CPU",
 				);
 				MACH_O_TYPE = mh_dylib;
-				MTL_LANGUAGE_REVISION = UseDeploymentTarget;
+				MTL_LANGUAGE_REVISION = Metal12;
 				PRODUCT_BUNDLE_IDENTIFIER = "orange.paddle-mobile";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
