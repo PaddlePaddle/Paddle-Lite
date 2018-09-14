@@ -15,6 +15,7 @@ limitations under the License. */
 #include "api.h"
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <unistd.h>
 #include <algorithm>
 #include <memory>
 #include "bias_scale.h"
@@ -31,7 +32,7 @@ static const char *device_path = "/dev/fpgadrv0";
 
 static inline int do_ioctl(int req, const void *arg) {
 #ifdef PADDLE_MOBILE_OS_LINUX
-  return ioctl(req, (unsigned int64_t)arg);
+  return ioctl(fd, req, (unsigned int64_t)arg);
 #else
   return -1;
 #endif
