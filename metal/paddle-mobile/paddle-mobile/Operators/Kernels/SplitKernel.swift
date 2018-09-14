@@ -82,7 +82,7 @@ class SplitKernel<P: PrecisionType>: Kernel, Computable{
       fatalError("split unsupported")
     }
     if computePrecision == .Float32 {
-      super.init(device: device, inFunctionName: "split_\(rank)_\(num)_\(v)")
+      super.init(device: device, inFunctionName: "split_\(rank)_\(num)_\(v)_float")
     } else if computePrecision == .Float16 {
       super.init(device: device, inFunctionName: "split_\(rank)_\(num)_\(v)_half")
     } else {
