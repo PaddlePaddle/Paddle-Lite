@@ -16,7 +16,7 @@ import Foundation
 
 class ScaleKernel: CusomKernel {
   init(device: MTLDevice, shape: Shape) {
-    super.init(device: device, inFunctionName: "scale", outputDim: shape, usePaddleMobileLib: false)
+    super.init(device: device, inFunctionName: "scale_half", outputDim: shape, usePaddleMobileLib: false)
   }
 }
 
