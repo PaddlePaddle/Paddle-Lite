@@ -14,24 +14,19 @@
 
 import Foundation
 
-struct ReshapeMetalParam {
+struct FlattenMetalParam {
   var idim: (Int32, Int32, Int32, Int32)
   var itrans: (Int32, Int32, Int32, Int32)
   var odim: (Int32, Int32, Int32, Int32)
   var otrans: (Int32, Int32, Int32, Int32)
 }
 
-struct ReshapeTestParam: TestParam {
-  let inputTexture: MTLTexture
-  let outputTexture: MTLTexture
-  let param: ReshapeMetalParam
-}
 
-class ReshapeKernel<P: PrecisionType>: Kernel, Computable{
+class FlattenKernel<P: PrecisionType>: Kernel, Computable{
   
-  var metalParam: ReshapeMetalParam
+  var metalParam: FlattenMetalParam
   
-  required init(device: MTLDevice, param: ReshapeParam<P>) {
+  required init(device: MTLDevice, param: FlattenParam<P>) {
     param.output.initTexture(device: device, computePrecision: computePrecision)
     var id: [Int32] = [1, 1, 1, 1]
     for i in 0..<param.input.tensorDim.cout() {
@@ -43,7 +38,7 @@ class ReshapeKernel<P: PrecisionType>: Kernel, Computable{
       od[4-param.output.tensorDim.cout()+i] = Int32(param.output.tensorDim[i])
     }
     let ot: [Int32] = param.output.transpose.map { Int32($0) }
-    metalParam = ReshapeMetalParam.init(
+    metalParam = FlattenMetalParam.init(
       idim: (id[0], id[1], id[2], id[3]),
       itrans: (it[0], it[1], it[2], it[3]),
       odim: (od[0], od[1], od[2], od[3]),
@@ -51,31 +46,21 @@ class ReshapeKernel<P: PrecisionType>: Kernel, Computable{
     )
     let irank = param.input.tensorDim.cout()
     let orank = param.output.tensorDim.cout()
+    assert(orank == 2)
     if computePrecision == .Float32 {
-      super.init(device: device, inFunctionName: "reshape_\(irank)_\(orank)_float")
+      super.init(device: device, inFunctionName: "reshape_\(irank)_2_float")
     } else if computePrecision == .Float16 {
-      super.init(device: device, inFunctionName: "reshape_\(irank)_\(orank)_half")
+      super.init(device: device, inFunctionName: "reshape_\(irank)_2_half")
     } else {
       fatalError()
     }
   }
   
-  required init(device: MTLDevice, testParam: ReshapeTestParam) {
-    metalParam = ReshapeMetalParam.init(
-    idim: (0, 0, 0, 0),
-    itrans: (0, 0, 0, 0),
-    odim: (0, 0, 0, 0),
-    otrans: (0, 0, 0, 0)
-    )
-    super.init(device: device, inFunctionName: "reshape")
-  }
-  
-  func compute(commandBuffer: MTLCommandBuffer, param: ReshapeParam<P>) throws {
-    print("reshape compute")
+  func compute(commandBuffer: MTLCommandBuffer, param: FlattenParam<P>) throws {
     guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
       throw PaddleMobileError.predictError(message: " encoder is nil")
     }
-
+    
     encoder.setTexture(param.input.metalTexture, index: 0)
     encoder.setTexture(param.output.metalTexture, index: 1)
 
@@ -83,16 +68,4 @@ class ReshapeKernel<P: PrecisionType>: Kernel, Computable{
     encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
     encoder.endEncoding()
   }
-  
-//  func test(commandBuffer: MTLCommandBuffer, testParam: ReshapeTestParam) {
-//    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-//      fatalError()
-//    }
-//    encoder.setTexture(testParam.inputTexture, index: 0)
-//    encoder.setTexture(testParam.outputTexture, index: 1)
-//    var pm: ReshapeMetalParam = testParam.param
-//    encoder.setBytes(&pm, length: MemoryLayout<ReshapeMetalParam>.size, index: 0)
-//    encoder.dispatch(computePipline: pipline, outTexture: testParam.outputTexture)
-//    encoder.endEncoding()
-//  }
 }
