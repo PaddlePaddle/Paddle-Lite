@@ -30,9 +30,9 @@ class ShapeKernel<P: PrecisionType>: Kernel, Computable{
   required init(device: MTLDevice, param: ShapeParam<P>) {
     param.output.initTexture(device: device, computePrecision: computePrecision)
     if computePrecision == .Float32 {
-      super.init(device: device, inFunctionName: "split")
+      super.init(device: device, inFunctionName: "shape")
     } else if computePrecision == .Float16 {
-      super.init(device: device, inFunctionName: "split_half")
+      super.init(device: device, inFunctionName: "shape_half")
     } else {
       fatalError()
     }
