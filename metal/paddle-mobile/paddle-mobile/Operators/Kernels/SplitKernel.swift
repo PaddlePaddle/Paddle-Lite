@@ -32,7 +32,7 @@ class SplitKernel<P: PrecisionType>: Kernel, Computable{
     for i in 0..<param.outputList.count {
       encoder.setTexture(param.outputList[i].metalTexture, index: i + 1)
     }
-    encoder.setBytes(&smp, length: MemoryLayout<BoxcoderMetalParam>.size, index: 0)
+    encoder.setBytes(&smp, length: MemoryLayout<SplitMetalParam>.size, index: 0)
     encoder.dispatch(computePipline: pipline, outTexture: param.input.metalTexture)
     encoder.endEncoding()
   }

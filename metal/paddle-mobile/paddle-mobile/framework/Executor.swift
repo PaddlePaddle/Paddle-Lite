@@ -17,7 +17,7 @@ import Foundation
 let testTo = 114
 var isTest = false
 
-let computePrecision: ComputePrecision = .Float32
+let computePrecision: ComputePrecision = .Float16
 
 public class ResultHolder {
   public let dim: [Int]
