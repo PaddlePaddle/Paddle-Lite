@@ -19,11 +19,14 @@ class BatchNormParam<P: PrecisionType>: OpParam {
   required init(opDesc: OpDesc, inScope: Scope) throws {
     do {
       input = try BatchNormParam.inputX(inputs: opDesc.inputs, from: inScope)
+      if input.transpose != [0, 2, 3, 1] {
+        fatalError("batch norm only accepts NHWC")
+      }
       output = try BatchNormParam.outputY(outputs: opDesc.outputs, from: inScope)
-      inputBias = try BatchNormParam.inputBiase(inputs: opDesc.paraInputs, from: inScope)
-      inputMean = try BatchNormParam.inputMean(inputs: opDesc.paraInputs, from: inScope)
-      inputScale = try BatchNormParam.inputScale(inputs: opDesc.paraInputs, from: inScope)
-      inputVariance = try BatchNormParam.inputVariance(inputs: opDesc.paraInputs, from: inScope)
+      bias = try BatchNormParam.getFirstTensor(key: "Bias", map: opDesc.paraInputs, from: inScope)
+      mean = try BatchNormParam.getFirstTensor(key: "Mean", map: opDesc.paraInputs, from: inScope)
+      scale = try BatchNormParam.getFirstTensor(key: "Scale", map: opDesc.paraInputs, from: inScope)
+      variance = try BatchNormParam.getFirstTensor(key: "Variance", map: opDesc.paraInputs, from: inScope)
       epsilon = try BatchNormParam.getAttr(key: "epsilon", attrs: opDesc.attrs)
       momentum = try BatchNormParam.getAttr(key: "momentum", attrs: opDesc.attrs)
     } catch let error {
@@ -32,10 +35,10 @@ class BatchNormParam<P: PrecisionType>: OpParam {
   }
   let input: Texture<P>
   var output: Texture<P>
-  let inputBias: Tensor<ParamPrecisionType>
-  let inputMean: Tensor<ParamPrecisionType>
-  let inputScale: Tensor<ParamPrecisionType>
-  let inputVariance: Tensor<ParamPrecisionType>
+  let bias: Tensor<P>
+  let mean: Tensor<P>
+  let scale: Tensor<P>
+  let variance: Tensor<P>
   let epsilon: Float
   let momentum: Float
 }
