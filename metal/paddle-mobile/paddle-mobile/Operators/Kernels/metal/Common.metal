@@ -17,16 +17,16 @@ using namespace metal;
 
 
 inline void xyzn2abcd_1(int xyzn[4], int abcd[4]) {
-  abcd[0] = abcd[1] = abcd[2] = 1;
+  abcd[0] = abcd[1] = abcd[2] = 0;
   abcd[3] = xyzn[0] * 4 + xyzn[3];
 }
 inline void xyzn2abcd_2(int xyzn[4], int abcd[4]) {
-  abcd[0] = abcd[1] = 1;
+  abcd[0] = abcd[1] = 0;
   abcd[2] = xyzn[1];
   abcd[3] = xyzn[0] * 4 + xyzn[3];
 }
 inline void xyzn2abcd_3(int xyzn[4], int abcd[4]) {
-  abcd[0] = 1;
+  abcd[0] = 0;
   abcd[3] = xyzn[0];
   abcd[2] = xyzn[1];
   abcd[1] = xyzn[2] * 4 + xyzn[3];
@@ -40,15 +40,15 @@ inline void xyzn2abcd_4(int C, int xyzn[4], int abcd[4]) {
 }
 
 inline void abcd2xyzn_1(int abcd[4], int xyzn[4]) {
-  xyzn[1] = xyzn[2] = 1;
+  xyzn[1] = xyzn[2] = 0;
   xyzn[0] = abcd[3] / 4;
   xyzn[1] = abcd[3] % 4;
 }
 inline void abcd2xyzn_2(int abcd[4], int xyzn[4]) {
-  xyzn[2] = 1;
+  xyzn[2] = 0;
   xyzn[1] = abcd[2];
   xyzn[0] = abcd[3] / 4;
-  xyzn[1] = abcd[3] % 4;
+  xyzn[3] = abcd[3] % 4;
 }
 inline void abcd2xyzn_3(int abcd[4], int xyzn[4]) {
   xyzn[0] = abcd[3];
