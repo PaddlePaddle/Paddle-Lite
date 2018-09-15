@@ -30,6 +30,7 @@ limitations under the License. */
 #include <thread>
 #include "common/dep_core.h"
 #endif
+using std::string;
 
 namespace paddle_mobile {
 
@@ -92,6 +93,17 @@ class Executor {
   bool varInputMemory(const std::shared_ptr<framework::VarDesc> &var_desc,
                       framework::Variable *var,
                       framework::LoDTensor *tensor) const;
+
+#ifdef PADDLE_MOBILE_FPGA
+
+ public:
+  void InjectVariable(const framework::Tensor &t, string var_name);
+  void FeedData(const framework::Tensor &t);
+  std::shared_ptr<framework::Tensor> FetchResult();
+  void Predict_From_To(int start = 0, int end = -1);
+  void Predict_From(int start);
+  void Predict_To(int end);
+#endif
 };
 
 }  // namespace paddle_mobile

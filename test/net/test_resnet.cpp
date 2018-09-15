@@ -36,7 +36,8 @@ int main() {
 
     std::vector<float> input(input_tensor.data<float>(),
                              input_tensor.data<float>() + input_tensor.numel());
-    // 预热十次
+#ifndef PADDLE_MOBILE_FPGA
+    //   预热十次
     for (int i = 0; i < 10; ++i) {
       paddle_mobile.Predict(input, dims);
     }
@@ -47,7 +48,17 @@ int main() {
     auto time4 = time();
     std::cout << "predict cost :" << time_diff(time3, time4) << "ms"
               << std::endl;
-  }
 
+#else
+    auto time3 = time();
+    paddle_mobile.FeedData(input_tensor);
+    paddle_mobile.Predict_To(10);
+    paddle_mobile.Predict_From(10);
+    paddle_mobile.FetchResult();
+    auto time4 = time();
+    std::cout << "predict cost :" << time_diff(time3, time4) << "ms"
+              << std::endl;
+#endif
+  }
   return 0;
 }
