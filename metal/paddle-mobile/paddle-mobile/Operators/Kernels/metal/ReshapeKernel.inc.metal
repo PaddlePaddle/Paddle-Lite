@@ -36,7 +36,6 @@ kernel void FUNC(reshape, RIN, ROUT, P)(texture2d_array<P, access::read> inTextu
     if (index < count) {
       index2abcd(lrp.idim, index, tabcd);
       trans(lrp.itrans, tabcd, iabcd);
-      abcd2xyzn(iC, iabcd, ixyzn);
 #if RIN == 4
       abcd2xyzn_4(iC, iabcd, ixyzn);
 #else

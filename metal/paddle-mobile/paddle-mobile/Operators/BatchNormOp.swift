@@ -56,9 +56,11 @@ class BatchNormOp<P: PrecisionType>: Operator<BatchNormKernel<P>, BatchNormParam
       throw error
     }
   }
+  
+  func delogOutput() {
+    print(" \(type) output: ")
+    let device = para.output.metalTexture!.device
+    let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
+    print(outputArray.strideArray())
+  }
 }
-
-
-
-
-
