@@ -124,6 +124,33 @@ PaddleMobile<Dtype, P>::~PaddleMobile() {
   loader_ = nullptr;
 }
 
+#ifdef PADDLE_MOBILE_FPGA
+template <typename Dtype, Precision P>
+void PaddleMobile<Dtype, P>::FeedData(const framework::Tensor &t) {
+  return executor_->FeedData(t);
+};
+
+template <typename Dtype, Precision P>
+std::shared_ptr<framework::Tensor> PaddleMobile<Dtype, P>::FetchResult() {
+  return executor_->FetchResult();
+};
+
+template <typename Dtype, Precision P>
+void PaddleMobile<Dtype, P>::Predict_From_To(int start, int end) {
+  executor_->Predict_From_To(start, end);
+};
+
+template <typename Dtype, Precision P>
+void PaddleMobile<Dtype, P>::Predict_From(int start) {
+  executor_->Predict_From(start);
+};
+
+template <typename Dtype, Precision P>
+void PaddleMobile<Dtype, P>::Predict_To(int end) {
+  executor_->Predict_To(end);
+};
+#endif
+
 template class PaddleMobile<CPU, Precision::FP32>;
 
 template class PaddleMobile<FPGA, Precision::FP32>;
