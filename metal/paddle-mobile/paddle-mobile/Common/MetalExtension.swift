@@ -71,7 +71,128 @@ extension MTLDevice {
     return buffer!
   }
   
+  func texture2tensor_loop<P>(texture: MTLTexture, cb: ([Int], P)->Void) -> Void {
+    let bpR = texture.width * 4 * MemoryLayout<P>.size
+    let bpI = texture.height * bpR
+    let region = MTLRegion.init(origin: MTLOrigin.init(x: 0, y: 0, z: 0), size: MTLSize.init(width: texture.width, height: texture.height, depth: 1))
+    for i in 0..<texture.arrayLength {
+      let pointer: UnsafeMutablePointer<P> = UnsafeMutablePointer<P>.allocate(capacity: bpI)
+      texture.getBytes(pointer, bytesPerRow: bpR, bytesPerImage: bpI, from: region, mipmapLevel: 0, slice: i)
+      for tx in 0..<texture.width * texture.height * 4 {
+        var k = tx
+        var xyzn: [Int] = [0, 0, 0, 0]
+        xyzn[1] = k / (texture.width * 4)
+        k %= (texture.width * 4)
+        xyzn[3] = k % 4
+        xyzn[0] = k / 4
+        xyzn[2] = i
+        cb(xyzn, pointer[tx])
+      }
+    }
+  }
+  
+  func texture2tensor_3<P>(texture: MTLTexture, dim: [Int],  transpose: [Int] = [0, 1, 2, 3]) -> [P] {
+    var tdim: [Int] = [1, 1, 1, 1]
+    for i in 0..<dim.count {
+      tdim[4 - dim.count + i] = dim[i]
+    }
+    let count = dim.reduce(1) { $0 * $1 }
+    var tensor: [P] = .init(repeating: Float32(0.0) as! P, count: count)
+    let ndim: [Int] = transpose.map { tdim[$0] }
+    assert(dim.count == 3)
+    assert(texture.width == ndim[3])
+    assert(texture.height == ndim[2])
+    assert(ndim[0] == 1)
+    assert(texture.arrayLength == (ndim[1] + 3) / 4)
+    texture2tensor_loop(texture: texture) { (xyzn: [Int], v: P) in
+      var tg: [Int] = [0, 0, 0, 0]
+      tg[1] = xyzn[2] * 4 + xyzn[3]
+      tg[2] = xyzn[1]
+      tg[3] = xyzn[0]
+      var ig: [Int] = [0, 0, 0, 0]
+      for k in 0..<4 {
+        ig[transpose[k]] = tg[k]
+      }
+      let ix = ig[0] * tdim[1] * tdim[2] * tdim[3] + ig[1] * tdim[2] * tdim[3] + ig[2] * tdim[3] + ig[3]
+      if ix < count {
+        tensor[ix] = v
+      }
+    }
+    return tensor
+  }
+  
+  func texture2tensor_2<P>(texture: MTLTexture, dim: [Int],  transpose: [Int] = [0, 1, 2, 3]) -> [P] {
+    var tdim: [Int] = [1, 1, 1, 1]
+    for i in 0..<dim.count {
+      tdim[4 - dim.count + i] = dim[i]
+    }
+    let count = dim.reduce(1) { $0 * $1 }
+    var tensor: [P] = .init(repeating: Float32(0.0) as! P, count: count)
+    let ndim: [Int] = transpose.map { tdim[$0] }
+    assert(dim.count == 2)
+    let w = (ndim[3] + 3) / 4
+    assert(texture.width == w)
+    assert(texture.height == ndim[2])
+    assert(ndim[0] == 1)
+    assert(ndim[1] == 1)
+    assert(texture.arrayLength == 1)
+    
+    texture2tensor_loop(texture: texture) { (xyzn: [Int], v: P) in
+      var tg: [Int] = [0, 0, 0, 0]
+      tg[2] = xyzn[1]
+      tg[3] = xyzn[0] * 4 + xyzn[3]
+      var ig: [Int] = [0, 0, 0, 0]
+      for k in 0..<4 {
+        ig[transpose[k]] = tg[k]
+      }
+      let ix = ig[0] * tdim[1] * tdim[2] * tdim[3] + ig[1] * tdim[2] * tdim[3] + ig[2] * tdim[3] + ig[3]
+      if ix < count {
+        tensor[ix] = v
+      }
+    }
+    return tensor
+  }
+  
+  func texture2tensor_1<P>(texture: MTLTexture, dim: [Int],  transpose: [Int] = [0, 1, 2, 3]) -> [P] {
+    var tdim: [Int] = [1, 1, 1, 1]
+    for i in 0..<dim.count {
+      tdim[4 - dim.count + i] = dim[i]
+    }
+    let count = dim.reduce(1) { $0 * $1 }
+    var tensor: [P] = .init(repeating: Float32(0.0) as! P, count: count)
+    let ndim: [Int] = transpose.map { tdim[$0] }
+    assert(dim.count == 1)
+    let w = (ndim[3] + 3) / 4
+    assert(texture.width == w)
+    assert(texture.height == 1)
+    assert(ndim[0] == 1)
+    assert(ndim[1] == 1)
+    assert(ndim[2] == 1)
+    assert(texture.arrayLength == 1)
+    
+    texture2tensor_loop(texture: texture) { (xyzn: [Int], v: P) in
+      var tg: [Int] = [0, 0, 0, 0]
+      tg[3] = xyzn[0] * 4 + xyzn[3]
+      var ig: [Int] = [0, 0, 0, 0]
+      for k in 0..<4 {
+        ig[transpose[k]] = tg[k]
+      }
+      let ix = ig[0] * tdim[1] * tdim[2] * tdim[3] + ig[1] * tdim[2] * tdim[3] + ig[2] * tdim[3] + ig[3]
+      if ix < count {
+        tensor[ix] = v
+      }
+    }
+    return tensor
+  }
+  
   func texture2tensor<P>(texture: MTLTexture, dim: [Int], transpose: [Int] = [0, 1, 2, 3]) -> [P] {
+    if dim.count == 3 {
+      return texture2tensor_3(texture: texture, dim: dim, transpose: transpose)
+    } else if dim.count == 2 {
+      return texture2tensor_2(texture: texture, dim: dim, transpose: transpose)
+    } else if dim.count == 1 {
+      return texture2tensor_1(texture: texture, dim: dim, transpose: transpose)
+    }
     var tdim: [Int] = [1, 1, 1, 1]
     for i in 0..<dim.count {
       tdim[4 - dim.count + i] = dim[i]
@@ -84,30 +205,19 @@ extension MTLDevice {
     assert(texture.height == ndim[1])
     assert(texture.arrayLength == (ndim[0] * ndim[3] + 3) / 4)
     
-    let bpR = ndim[2] * 4 * MemoryLayout<P>.size
-    let bpI = ndim[1] * bpR
-    let region = MTLRegion.init(origin: MTLOrigin.init(x: 0, y: 0, z: 0), size: MTLSize.init(width: ndim[2], height: ndim[1], depth: 1))
-    for i in 0..<texture.arrayLength {
-      let pointer: UnsafeMutablePointer<P> = UnsafeMutablePointer<P>.allocate(capacity: ndim[1] * ndim[2] * 4 * MemoryLayout<P>.size)
-      texture.getBytes(pointer, bytesPerRow: bpR, bytesPerImage: bpI, from: region, mipmapLevel: 0, slice: i)
-      
-      for h in 0..<ndim[1] {
-        for w in 0..<ndim[2] {
-          for k in 0..<4 {
-            let tx = (h * ndim[2] + w) * 4 + k
-            let n = (i * 4 + k) / ndim[3]
-            let c = (i * 4 + k) % ndim[3]
-            let jg = [n, h, w, c]
-            var ig = [0, 0, 0, 0]
-            for d in 0..<4 {
-              ig[transpose[d]] = jg[d]
-            }
-            let ix = ig[0] * tdim[1] * tdim[2] * tdim[3] + ig[1] * tdim[2] * tdim[3] + ig[2] * tdim[3] + ig[3]
-            if ix < count {
-              tensor[ix] = pointer[tx]
-            }
-          }
-        }
+    texture2tensor_loop(texture: texture) { (xyzn: [Int], v: P) in
+      var tg: [Int] = [0, 0, 0, 0]
+      tg[1] = xyzn[1]
+      tg[2] = xyzn[0]
+      tg[0] = (xyzn[2] * 4 + xyzn[3]) / ndim[3]
+      tg[3] = (xyzn[2] * 4 + xyzn[3]) % ndim[3]
+      var ig: [Int] = [0, 0, 0, 0]
+      for k in 0..<4 {
+        ig[transpose[k]] = tg[k]
+      }
+      let ix = ig[0] * tdim[1] * tdim[2] * tdim[3] + ig[1] * tdim[2] * tdim[3] + ig[2] * tdim[3] + ig[3]
+      if ix < count {
+        tensor[ix] = v
       }
     }
     return tensor

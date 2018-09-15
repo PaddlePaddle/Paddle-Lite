@@ -14,10 +14,10 @@
 
 import Foundation
 
-let testTo = 2
+let testTo = 113
 var isTest = false
 
-let computePrecision: ComputePrecision = .Float16
+let computePrecision: ComputePrecision = .Float32
 
 public class ResultHolder {
   public let dim: [Int]
@@ -120,10 +120,10 @@ public class Executor<P: PrecisionType> {
       let inputArr = resInput.toTensor(dim: (n: dim[0], c: dim[3], h: dim[1], w: dim[2]))
       print(inputArr.strideArray())
 
-//      print(dim)
-//      writeToLibrary(fileName: "test_image_ssd_ar", array: inputArr)
-//
-//      print("write to library done")
+      print(dim)
+      writeToLibrary(fileName: "test_image_ssd_ar", array: inputArr)
+
+      print("write to library done")
 //      return
 //                  print(inputArr)
 //

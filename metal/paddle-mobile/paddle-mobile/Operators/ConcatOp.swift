@@ -65,15 +65,10 @@ class ConcatOp<P: PrecisionType>: Operator<ConcatKernel<P>, ConcatParam<P>>, Run
   
   func delogOutput() {
     print(" \(type) output: ")
-    let padToFourDim = para.output.padToFourDim
-    if para.output.transpose == [0, 1, 2, 3] {
-      let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
-      print(outputArray.strideArray())
-    } else if para.output.transpose == [0, 2, 3, 1] {
-      print(para.output.metalTexture.toTensor(dim: (n: padToFourDim[0], c: padToFourDim[1], h: padToFourDim[2], w: padToFourDim[3])).strideArray())
-    } else {
-      fatalError(" not implemet")
-    }
+    
+    let device = para.output.metalTexture!.device
+    let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
+    print(outputArray.strideArray())
   }
   
 }

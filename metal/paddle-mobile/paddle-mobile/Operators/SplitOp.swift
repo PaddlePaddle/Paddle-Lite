@@ -64,6 +64,11 @@ class SplitOp<P: PrecisionType>: Operator<SplitKernel<P>, SplitParam<P>>, Runabl
   
   func delogOutput() {
     print(" \(type) output: ")
+    let device = para.input.metalTexture!.device
+    for out in para.outputList {
+      let arr: [Float32] = device.texture2tensor(texture: out.metalTexture, dim: out.tensorDim.dims, transpose: out.transpose)
+      print(arr.strideArray())
+    }
   }
   
 }
