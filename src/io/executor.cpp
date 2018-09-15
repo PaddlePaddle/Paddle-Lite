@@ -93,6 +93,7 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
       depManager[i].analysisDep(ops_of_block_[*block_desc.get()]);
 #endif
     }
+    DLOG << "Total " << ops.size() << " ops have been created ";
   }
   if (program_.combined) {
     InitCombineMemory();
@@ -642,6 +643,75 @@ std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::Predict(
   }
   return result_vector;
 }
+
+#ifdef PADDLE_MOBILE_FPGA
+
+template <typename Dtype, Precision P>
+void Executor<Dtype, P>::InjectVariable(const framework::Tensor &t,
+                                        string var_name) {
+  framework::Variable *g_feed_value = program_.scope->Var(var_name);
+  framework::Tensor *feed_tensor =
+      g_feed_value->GetMutable<framework::LoDTensor>();
+  feed_tensor->Resize(t.dims());
+  feed_tensor->ShareDataWith(t);
+};
+
+template <typename Dtype, Precision P>
+void Executor<Dtype, P>::FeedData(const framework::Tensor &t) {
+  InjectVariable(t, "feed");
+};
+
+template <typename Dtype, Precision P>
+std::shared_ptr<framework::Tensor> Executor<Dtype, P>::FetchResult() {
+  std::shared_ptr<framework::BlockDesc> to_predict_block =
+      to_predict_program_->Block(0);
+  auto &ops = ops_of_block_[*to_predict_block.get()];
+  auto last_op = ops.rbegin();
+  auto output_map = (*last_op)->Outputs();
+  std::vector<std::string> out_keys = (*last_op)->GetOutKeys();
+  PADDLE_MOBILE_ENFORCE(!out_keys.empty(), "the last op contains no output");
+  auto *output_tensor = framework::GetVarValue<framework::LoDTensor>(
+      out_keys[0], output_map, *(program_.scope));
+  return std::make_shared<framework::Tensor>(framework::Tensor(*output_tensor));
+};
+
+template <typename Dtype, Precision P>
+void Executor<Dtype, P>::Predict_From_To(int start, int end) {
+  std::shared_ptr<framework::BlockDesc> to_predict_block =
+      to_predict_program_->Block(0);
+  auto &ops = ops_of_block_[*to_predict_block.get()];
+  end = end < 0 ? (int)ops.size() : end;
+  PADDLE_MOBILE_ENFORCE(start >= 0 && start < end && end <= ops.size(),
+                        "start or end parameter is wrong");
+
+#ifdef PADDLE_MOBILE_PROFILE
+  std::vector<ProfInfo> profile(ops.size());
+#endif
+  for (int i = start; i < end; i++) {
+#ifdef PADDLE_MOBILE_PROFILE
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    profile[i].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+#endif
+    ops[i]->Run();
+
+#ifdef PADDLE_MOBILE_PROFILE
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    profile[i].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+#endif
+  }
+};
+
+template <typename Dtype, Precision P>
+void Executor<Dtype, P>::Predict_From(int start) {
+  Predict_From_To(start);
+};
+
+template <typename Dtype, Precision P>
+void Executor<Dtype, P>::Predict_To(int end) {
+  Predict_From_To(0, end);
+};
+#endif
 
 template class Executor<CPU, Precision::FP32>;
 template class Executor<GPU_MALI, Precision::FP32>;

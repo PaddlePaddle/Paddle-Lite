@@ -39,7 +39,7 @@ bool PoolKernel<FPGA, float>::Init(PoolParam<FPGA> *param) {
   poolArgs.image.pad_width = (uint32_t)paddings[1];
   poolArgs.image.scale_address = input->scale;
   poolArgs.output.address = output_ptr;
-  poolArgs.output.scale_address = input->scale;
+  poolArgs.output.scale_address = output->scale;
   poolArgs.kernel.height = (uint32_t)ksize[0];
   poolArgs.kernel.width = (uint32_t)ksize[1];
   poolArgs.kernel.stride_h = (uint32_t)strides[0];
