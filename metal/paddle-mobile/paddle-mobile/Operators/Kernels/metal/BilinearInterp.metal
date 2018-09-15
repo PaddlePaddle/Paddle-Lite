@@ -16,8 +16,6 @@
 using namespace metal;
 
 struct bilinear_interp_param {
-//  int32_t out_h;
-//  int32_t out_w;
   float ratio_h;
   float ratio_w;
 };
