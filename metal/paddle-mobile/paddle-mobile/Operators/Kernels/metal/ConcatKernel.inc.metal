@@ -122,20 +122,20 @@ kernel void FUNC(concat, R, N, VV, P)(texture2d_array<P, access::read> in0 [[tex
   int x = gid.x - pm.offset;
   if (x < 0) return;
   if (x < pm.vdim[0]) {
-    VECTOR(P, 4)  r = in0.read(gid.xy, gid.z);
+    VECTOR(P, 4) r = in0.read(gid.xy, gid.z);
     out.write(r, gid.xy, gid.z);
     return;
   }
   x -= pm.vdim[0];
   if (x < pm.vdim[1]) {
-    VECTOR(P, 4)  r = in1.read(uint2(x, gid.y), gid.z);
+    VECTOR(P, 4) r = in1.read(uint2(x, gid.y), gid.z);
     out.write(r, gid.xy, gid.z);
     return;
   }
 #if N >= 3
   x -= pm.vdim[1];
   if (x < pm.vdim[2]) {
-    VECTOR(P, 4)  r = in2.read(uint2(x, gid.y), gid.z);
+    VECTOR(P, 4) r = in2.read(uint2(x, gid.y), gid.z);
     out.write(r, gid.xy, gid.z);
     return;
   }
@@ -143,7 +143,7 @@ kernel void FUNC(concat, R, N, VV, P)(texture2d_array<P, access::read> in0 [[tex
 #if N >= 4
   x -= pm.vdim[2];
   if (x < pm.vdim[3]) {
-    VECTOR(P, 4)  r = in3.read(uint2(x, gid.y), gid.z);
+    VECTOR(P, 4) r = in3.read(uint2(x, gid.y), gid.z);
     out.write(r, gid.xy, gid.z);
     return;
   }
@@ -151,7 +151,7 @@ kernel void FUNC(concat, R, N, VV, P)(texture2d_array<P, access::read> in0 [[tex
 #if N >= 5
   x -= pm.vdim[3];
   if (x < pm.vdim[4]) {
-    VECTOR(P, 4)  r = in4.read(uint2(x, gid.y), gid.z);
+    VECTOR(P, 4) r = in4.read(uint2(x, gid.y), gid.z);
     out.write(r, gid.xy, gid.z);
     return;
   }
@@ -159,7 +159,7 @@ kernel void FUNC(concat, R, N, VV, P)(texture2d_array<P, access::read> in0 [[tex
 #if N >= 6
   x -= pm.vdim[4];
   if (x < pm.vdim[5]) {
-    VECTOR(P, 4)  r = in5.read(uint2(x, gid.y), gid.z);
+    VECTOR(P, 4) r = in5.read(uint2(x, gid.y), gid.z);
     out.write(r, gid.xy, gid.z);
     return;
   }

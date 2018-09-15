@@ -20,12 +20,13 @@ class BatchNormKernel<P: PrecisionType>: Kernel, Computable {
     let varianceP = param.variance.data.pointer
     let meanP = param.mean.data.pointer
     let scaleP = param.scale.data.pointer
-    let biasP = param.scale.data.pointer
+    let biasP = param.bias.data.pointer
     for i in 0..<count {
       let invStd = P(1 / (Float32(varianceP[i]) + param.epsilon).squareRoot())
       biasP[i] = biasP[i] - meanP[i] * invStd * scaleP[i]
       scaleP[i] = invStd * scaleP[i]
     }
+
     param.bias.initBuffer(device: device, precision: computePrecision)
     param.scale.initBuffer(device: device, precision: computePrecision)
     param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: computePrecision)
