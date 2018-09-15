@@ -14,8 +14,8 @@ kernel void FUNC(bilinear_interp, P)(texture2d_array<P, access::read> input [[te
   if ((input.get_width() == output.get_width()) && (input.get_height() == output.get_height())) {
     r = input.read(gid.xy, gid.z);
   } else {
-    float w = gid.x * pm.ratio_w;
-    float h = gid.y * pm.ratio_h;
+    P w = gid.x * pm.ratio_w;
+    P h = gid.y * pm.ratio_h;
     uint w0 = w, h0 = h;
     uint w1 = w0 + 1, h1 = h0 + 1;
     P w1lambda = w - w0, h1lambda = h - h0;
@@ -26,7 +26,8 @@ kernel void FUNC(bilinear_interp, P)(texture2d_array<P, access::read> input [[te
     VECTOR(P, 4) r1 = input.read(uint2(w1, h0), gid.z);
     VECTOR(P, 4) r2 = input.read(uint2(w0, h1), gid.z);
     VECTOR(P, 4) r3 = input.read(uint2(w1, h1), gid.z);
-    r = h2lambda * (w2lambda * r0 + w1lambda * r1) + h1lambda * (w2lambda * r2 + w1lambda * r3);
+    r = h2lambda * (w2lambda * r0 + w1lambda * r1)
+      + h1lambda * (w2lambda * r2 + w1lambda * r3);
   }
   output.write(r, gid.xy, gid.z);
 }

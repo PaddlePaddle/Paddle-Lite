@@ -72,10 +72,21 @@ class PriorBoxOp<P: PrecisionType>: Operator<PriorBoxKernel<P>, PriorBoxParam<P>
 
     print(" \(type) output: ")
     // output
-    let outputArray = para.output.metalTexture.float32Array()
-    print(outputArray)
+//    let outputArray = para.output.metalTexture.float32Array()
+//    print(outputArray.strideArray())
+    let device = para.input.metalTexture!.device
+    let boxes:[Float32] = device.texture2tensor(texture: para.output.metalTexture!, dim: para.output.tensorDim.dims, transpose: [2,0,1,3])
+    let variances:[Float32] = device.texture2tensor(texture: para.outputVariances.metalTexture!, dim: para.outputVariances.tensorDim.dims, transpose: [2,0,1,3])
+    print("boxes: ")
+    print(boxes.strideArray())
+    print("variances: ")
+    print(variances.strideArray())
     // output
-//    print(" \(type) output: ")
+    print(" \(type) output: ")
+    
+    print(para.output.metalTexture.realNHWC(dim: (para.output.dim[0], para.output.dim[1], para.output.dim[2], para.output.dim[3])).strideArray())
+//    print(para.output.realNHWC().strideArray())
+    
 //    let padToFourDim = para.output.padToFourDim
 //    if para.output.transpose == [0, 1, 2, 3] {
 //      let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]), texturePrecision: computePrecision)
