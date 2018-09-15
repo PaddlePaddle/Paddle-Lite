@@ -645,13 +645,20 @@ std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::Predict(
 }
 
 #ifdef PADDLE_MOBILE_FPGA
+
 template <typename Dtype, Precision P>
-void Executor<Dtype, P>::FeedData(const framework::Tensor &t) {
-  framework::Variable *g_feed_value = program_.scope->Var("feed");
+void Executor<Dtype, P>::InjectVariable(const framework::Tensor &t,
+                                        string var_name) {
+  framework::Variable *g_feed_value = program_.scope->Var(var_name);
   framework::Tensor *feed_tensor =
       g_feed_value->GetMutable<framework::LoDTensor>();
   feed_tensor->Resize(t.dims());
   feed_tensor->ShareDataWith(t);
+};
+
+template <typename Dtype, Precision P>
+void Executor<Dtype, P>::FeedData(const framework::Tensor &t) {
+  InjectVariable(t, "feed");
 };
 
 template <typename Dtype, Precision P>

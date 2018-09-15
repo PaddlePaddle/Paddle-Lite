@@ -125,9 +125,16 @@ PaddleMobile<Dtype, P>::~PaddleMobile() {
 }
 
 #ifdef PADDLE_MOBILE_FPGA
+
+template <typename Dtype, Precision P>
+void PaddleMobile<Dtype, P>::InjectVariable(const framework::Tensor &t,
+                                            string var_name) {
+  executor_->InjectVariable(t, var_name);
+}
+
 template <typename Dtype, Precision P>
 void PaddleMobile<Dtype, P>::FeedData(const framework::Tensor &t) {
-  return executor_->FeedData(t);
+  executor_->FeedData(t);
 };
 
 template <typename Dtype, Precision P>
