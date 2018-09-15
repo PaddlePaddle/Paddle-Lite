@@ -38,11 +38,25 @@ class PriorBoxKernel<P: PrecisionType>: Kernel, Computable{
     param.outputVariances.initTexture(device: device, inTranspose: [2, 0, 1, 3], computePrecision: computePrecision)
     
     if computePrecision == .Float32 {
-      super.init(device: device, inFunctionName: "prior_box")
+      if param.min_max_aspect_ratios_order {
+        super.init(device: device, inFunctionName: "prior_box_MinMaxAspectRatiosOrder")
+      } else {
+        super.init(device: device, inFunctionName: "prior_box")
+      }
+      
     } else if computePrecision == .Float16 {
-      super.init(device: device, inFunctionName: "prior_box_half")
+      if param.min_max_aspect_ratios_order {
+        super.init(device: device, inFunctionName: "prior_box_MinMaxAspectRatiosOrder_half")
+      } else {
+        super.init(device: device, inFunctionName: "prior_box_half")
+      }
     } else {
       fatalError()
+    }
+    
+    
+    guard param.minSizes.count == 1 else {
+      fatalError(" need implement ")
     }
     
     let n = 1
