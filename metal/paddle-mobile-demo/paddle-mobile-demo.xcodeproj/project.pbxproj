@@ -14,6 +14,8 @@
 		FC039B8720E11C550081E9F8 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = FC039B8520E11C550081E9F8 /* Main.storyboard */; };
 		FC039B8920E11C560081E9F8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FC039B8820E11C560081E9F8 /* Assets.xcassets */; };
 		FC039B8C20E11C560081E9F8 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = FC039B8A20E11C560081E9F8 /* LaunchScreen.storyboard */; };
+		FC803BCD214D27930094B8E5 /* FPSCounter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC803BCB214D27920094B8E5 /* FPSCounter.swift */; };
+		FC803BCE214D27930094B8E5 /* VideoCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC803BCC214D27920094B8E5 /* VideoCapture.swift */; };
 		FC8CFEE62135452C0094D569 /* genet_params in Resources */ = {isa = PBXBuildFile; fileRef = FC8CFEE42135452B0094D569 /* genet_params */; };
 		FC8CFEE72135452C0094D569 /* genet_model in Resources */ = {isa = PBXBuildFile; fileRef = FC8CFEE52135452B0094D569 /* genet_model */; };
 		FC8CFEF8213551D10094D569 /* params in Resources */ = {isa = PBXBuildFile; fileRef = FC8CFEF6213551D00094D569 /* params */; };
@@ -61,6 +63,8 @@
 		FC039B8D20E11C560081E9F8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		FC27991121343A39000B6BAD /* paddle-mobile-demo-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "paddle-mobile-demo-Bridging-Header.h"; sourceTree = "<group>"; };
 		FC4FD97B2140EE250073E130 /* libc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libc++.tbd"; path = "usr/lib/libc++.tbd"; sourceTree = SDKROOT; };
+		FC803BCB214D27920094B8E5 /* FPSCounter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FPSCounter.swift; sourceTree = "<group>"; };
+		FC803BCC214D27920094B8E5 /* VideoCapture.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VideoCapture.swift; sourceTree = "<group>"; };
 		FC8CFEE42135452B0094D569 /* genet_params */ = {isa = PBXFileReference; lastKnownFileType = file; path = genet_params; sourceTree = "<group>"; };
 		FC8CFEE52135452B0094D569 /* genet_model */ = {isa = PBXFileReference; lastKnownFileType = file; path = genet_model; sourceTree = "<group>"; };
 		FC8CFEF6213551D00094D569 /* params */ = {isa = PBXFileReference; lastKnownFileType = file; path = params; sourceTree = "<group>"; };
@@ -132,6 +136,7 @@
 		FC039B8020E11C550081E9F8 /* paddle-mobile-demo */ = {
 			isa = PBXGroup;
 			children = (
+				FC803BCA214D27920094B8E5 /* VideoCapture */,
 				FC8CFED2213519540094D569 /* Net */,
 				FC0E2C2020EDC03B009C1FAC /* models */,
 				FC0E2C1D20EDC030009C1FAC /* images */,
@@ -170,6 +175,15 @@
 			);
 			name = models;
 			path = ../../models;
+			sourceTree = "<group>";
+		};
+		FC803BCA214D27920094B8E5 /* VideoCapture */ = {
+			isa = PBXGroup;
+			children = (
+				FC803BCB214D27920094B8E5 /* FPSCounter.swift */,
+				FC803BCC214D27920094B8E5 /* VideoCapture.swift */,
+			);
+			path = VideoCapture;
 			sourceTree = "<group>";
 		};
 		FC8CFED2213519540094D569 /* Net */ = {
@@ -345,9 +359,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				FC039B8420E11C550081E9F8 /* ViewController.swift in Sources */,
+				FC803BCE214D27930094B8E5 /* VideoCapture.swift in Sources */,
 				FC013928210204A3008100E3 /* PreProcessKernel.metal in Sources */,
 				FCF437E8214B6DDB00943429 /* Multi-Predict-ViewController.swift in Sources */,
 				FCBCCC552122EF5500D94F7E /* MetalHelper.swift in Sources */,
+				FC803BCD214D27930094B8E5 /* FPSCounter.swift in Sources */,
 				FC039B8220E11C550081E9F8 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -499,7 +515,7 @@
 				DEVELOPMENT_TEAM = A798K58VVL;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = "paddle-mobile-demo/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -526,7 +542,7 @@
 				DEVELOPMENT_TEAM = A798K58VVL;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = "paddle-mobile-demo/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

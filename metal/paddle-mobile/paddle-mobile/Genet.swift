@@ -34,8 +34,9 @@ public class Genet: Net {
     }
   }
   
-  override  public func resultStr(res: [Float]) -> String {
-    return " \(Array<Float>(res.suffix(10))) ... "
+  override  public func resultStr(res: ResultHolder) -> String {
+    fatalError()
+//    return " \(Array<Float>(res.suffix(10))) ... "
   }
   
 }
