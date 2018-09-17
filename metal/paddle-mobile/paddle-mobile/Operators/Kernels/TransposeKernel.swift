@@ -17,73 +17,52 @@ import Foundation
 struct TransposeMetalParam {
   var iC: Int32 = 0
   var oC: Int32 = 0
-  var i0: Int32
-  var i1: Int32
-  var i2: Int32
-  var i3: Int32
-  init(_ i0: Int32, _ i1: Int32, _ i2: Int32, _ i3: Int32) {
-    self.i0 = i0
-    self.i1 = i1
-    self.i2 = i2
-    self.i3 = i3
-  }
-  init(_ axis: [Int]) {
-    self.init(Int32(axis[0]), Int32(axis[1]), Int32(axis[2]), Int32(axis[3]))
-  }
+  var axis: (Int32, Int32, Int32, Int32) = (0, 1, 2, 3)
 }
 
-struct TransposeTestParam: TestParam {
-  let inputTexture: MTLTexture
-  let outputTexture: MTLTexture
-  let iC: Int
-  let oC: Int
-  let axis: [Int]
-}
-
-class TransposeKernel<P: PrecisionType>: Kernel, Computable, Testable {
-  
+class TransposeKernel<P: PrecisionType>: Kernel, Computable {
+  var metalParam: TransposeMetalParam = TransposeMetalParam.init()
   required init(device: MTLDevice, param: TransposeParam<P>) {
-    param.output.initTexture(device: device, inTranspose: [0, 1, 2, 3], computePrecision: computePrecision)
-    
-    if computePrecision == .Float16 {
-      super.init(device: device, inFunctionName: "transpose_half")
-    } else if computePrecision == .Float32 {
-      super.init(device: device, inFunctionName: "transpose")
-    } else {
-      fatalError()
-    }
-    var invT: [Int] = [0, 1, 2, 3]
-    for (i, v) in param.input.transpose.enumerated() {
-      invT[v] = i
-    }
+    param.output.initTexture(device: device, computePrecision: computePrecision)
+    let rank = param.input.tensorDim.cout()
     var axis: [Int] = [0, 1, 2, 3]
-      
     for i in 0..<param.axis.count {
-      axis[4-param.axis.count+i] = 4 - param.axis.count + Int(param.axis[i])
+      axis[4-rank+i] = 4 - rank + Int(param.axis[i])
     }
-    let realAxis = axis.map {invT[$0]}
-    var tmp = TransposeMetalParam.init(realAxis)
-    tmp.iC = Int32(param.input.dim[param.input.transpose[3]])
-    tmp.oC = Int32(param.output.dim[3])
-    if realAxis == [0, 1, 2, 3] {
-//      print("====> transpose! FAST :)")
-    } else {
-//      print("====> transpose! SLOW :(")
+
+    var naxis: [Int] = [0, 0, 0, 0]
+    for i in 0..<4 {
+      for j in 0..<4 {
+        if param.input.transpose[j] == axis[i] {
+          naxis[i] = j
+          break
+        }
+      }
     }
-    metalParam = tmp
-  }
-  
-  required init(device: MTLDevice, testParam: TransposeTestParam) {
+    metalParam.iC = Int32(param.input.dim[param.input.transpose[3]])
+    metalParam.oC = Int32(param.output.dim[3])
+    metalParam.axis = (Int32(naxis[0]), Int32(naxis[1]), Int32(naxis[2]), Int32(naxis[3]))
+    var kernelFunc = "transpose_undefined"
     if computePrecision == .Float16 {
-      super.init(device: device, inFunctionName: "transpose_half")
+      if param.input.transpose == axis {
+        kernelFunc = "transpose_copy_half"
+      } else {
+        kernelFunc = "transpose_\(rank)_half"
+      }
     } else if computePrecision == .Float32 {
-      super.init(device: device, inFunctionName: "transpose")
+      if param.input.transpose == axis {
+        kernelFunc = "transpose_copy_float"
+      } else {
+        kernelFunc = "transpose_\(rank)_float"
+      }
     } else {
       fatalError()
     }
+    print("===========>", kernelFunc)
+    print(metalParam)
+    super.init(device: device, inFunctionName: kernelFunc)
   }
   
-  var metalParam: TransposeMetalParam!
   func compute(commandBuffer: MTLCommandBuffer, param: TransposeParam<P>) throws {
     guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
       throw PaddleMobileError.predictError(message: " encode is nil")
@@ -95,20 +74,4 @@ class TransposeKernel<P: PrecisionType>: Kernel, Computable, Testable {
     encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
     encoder.endEncoding()
   }
-
-  
-  public func test(commandBuffer: MTLCommandBuffer, param: TransposeTestParam) {
-    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-      fatalError()
-    }
-    
-    encoder.setTexture(param.inputTexture, index: 0)
-    encoder.setTexture(param.outputTexture, index: 1)
-    var tmp = TransposeMetalParam.init(param.axis)
-    tmp.iC = Int32(param.iC)
-    tmp.oC = Int32(param.oC)
-    
-    encoder.setBytes(&tmp, length: MemoryLayout<TransposeMetalParam>.size, index: 0)
-    encoder.dispatch(computePipline: pipline, outTexture: param.outputTexture)
-    encoder.endEncoding()
-  }}
+}

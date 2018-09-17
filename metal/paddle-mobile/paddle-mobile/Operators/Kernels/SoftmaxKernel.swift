@@ -29,7 +29,7 @@ class SoftmaxKernel<P: PrecisionType>: Kernel, Computable{
       K: Int32(param.input.tensorDim[1])
     )
     if computePrecision == .Float32 {
-      super.init(device: device, inFunctionName: "softmax")
+      super.init(device: device, inFunctionName: "softmax_float")
     } else if computePrecision == .Float16 {
       super.init(device: device, inFunctionName: "softmax_half")
     } else {
