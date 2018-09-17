@@ -71,7 +71,6 @@ class ReshapeKernel<P: PrecisionType>: Kernel, Computable{
   }
   
   func compute(commandBuffer: MTLCommandBuffer, param: ReshapeParam<P>) throws {
-    print("reshape compute")
     guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
       throw PaddleMobileError.predictError(message: " encoder is nil")
     }

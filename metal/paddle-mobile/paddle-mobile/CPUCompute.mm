@@ -21,6 +21,8 @@
 #import <algorithm>
 
 
+
+
 struct NMSParam {
   
   float *score_data;
@@ -282,9 +284,12 @@ void MultiClassNMSCompute(NMSParam *param) {
   param->output_size = output_size;
 }
 
+@implementation CPUResult
+@end
+
 @implementation NMSCompute
 
--(NSArray<NSNumber *> *)computeWithScore:(float *)score andBBoxs:(float *)bbox {
+-(CPUResult *)computeWithScore:(float *)score andBBoxs:(float *)bbox {
   NMSParam param;
   param.box_data = bbox;
   param.score_data = score;
@@ -306,12 +311,10 @@ void MultiClassNMSCompute(NMSParam *param) {
   }
   param.box_dim = box_dim;
   MultiClassNMSCompute(&param);
-  NSMutableArray<NSNumber *> *output = [NSMutableArray arrayWithCapacity:param.output_size];
-  for (int i = 0; i < param.output_size; ++i) {
-    [output addObject:[NSNumber numberWithFloat:param.output[i]]];
-  }
-  delete param.output;
-  return output;
+  CPUResult *cr = [[CPUResult alloc] init];
+  cr.output = param.output;
+  cr.outputSize = param.output_size;
+  return cr;
 }
 
 @end

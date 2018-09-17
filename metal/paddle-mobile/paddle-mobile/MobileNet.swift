@@ -42,9 +42,12 @@ class MobileNet: Net{
   
   let labels = PreWords.init(fileName: "synset")
   
-  override public func resultStr(res: [Float]) -> String {
+  override public func resultStr(res: ResultHolder) -> String {
+    guard let resPointer = res.result else {
+      fatalError()
+    }
     var s: [String] = []
-    res.top(r: 5).enumerated().forEach{
+    (0..<res.capacity).map { resPointer[$0] }.top(r: 5).enumerated().forEach{
       s.append(String(format: "%d: %@ (%3.2f%%)", $0 + 1, labels[$1.0], $1.1 * 100))
     }
     return s.joined(separator: "\n")

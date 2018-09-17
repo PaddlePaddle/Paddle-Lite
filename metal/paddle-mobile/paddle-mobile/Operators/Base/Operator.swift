@@ -19,6 +19,12 @@ protocol Fusion {
   static func fusionNode() -> Node
   static func change() -> [String : [(from: String, to: String)]]
   static func fusionType() -> String
+  static func needCheck() -> [(Int, String)]
+}
+extension Fusion {
+  static func needCheck() -> [(Int, String)] {
+    return []
+  }
 }
 
 protocol Runable {
@@ -26,6 +32,7 @@ protocol Runable {
   func runImpl(device: MTLDevice,buffer: MTLCommandBuffer) throws
   func delogOutput()
   func inputVariant() -> [String : [Variant]]
+  func computeMiddleResult(device: MTLDevice, buffer: MTLCommandBuffer)
 }
 
 extension Runable where Self: OperatorProtocol{
@@ -38,11 +45,16 @@ extension Runable where Self: OperatorProtocol{
   }
   
   func inputVariant() -> [String : [Variant]] {
-    return [:]
-//    fatalError(" op \(type) need implement inputVariant")
+//    return [:]
+    fatalError(" op \(type) need implement inputVariant")
+  }
+  
+  func computeMiddleResult(device: MTLDevice, buffer: MTLCommandBuffer) {
+    fatalError(" need implement ")
   }
   
   func delogOutput() {
+    
     print(type + ": has no implementation" )
   }
 }
@@ -144,6 +156,7 @@ let gBilinearInterpType         = "bilinear_interp"
 let gSplit                      = "split"
 let gShape                      = "shape"
 let gFlatten                    = "flatten"
+let gConvAddPreluType           = "conv_add_prelu"
 
 let opInfos = [gConvType                    : (inputs: ["Input"], outputs: ["Output"]),
                gBatchNormType               : (inputs: ["X"], outputs: ["Y"]),
@@ -169,5 +182,7 @@ let opInfos = [gConvType                    : (inputs: ["Input"], outputs: ["Out
                gBilinearInterpType          : (inputs: ["X"], outputs: ["Out"]),
                gSplit                       : (inputs: ["X"], outputs: ["Out"]),
                gShape                       : (inputs: ["Input"], outputs: ["Out"]),
-               gFlatten                     : (inputs: ["X"], outputs: ["Out"])
+               gFlatten                     : (inputs: ["X"], outputs: ["Out"]),
+               gConvAddPreluType            : (inputs: ["Input"], outputs: ["Out"])
+
               ]
