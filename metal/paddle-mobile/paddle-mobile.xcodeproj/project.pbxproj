@@ -23,6 +23,8 @@
 		4AA1EAA6214B5F6800D0F791 /* Shape.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AA1EAA5214B5F6800D0F791 /* Shape.metal */; };
 		4AA1EAA8214B7AFB00D0F791 /* BilinearInterp.inc.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AA1EAA7214B7AFB00D0F791 /* BilinearInterp.inc.metal */; };
 		4AA1EAAA214F53D800D0F791 /* BoxCoder.inc.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AA1EAA9214F53D800D0F791 /* BoxCoder.inc.metal */; };
+		4AA1EAAC214F55C800D0F791 /* Softmax.inc.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AA1EAAB214F55C800D0F791 /* Softmax.inc.metal */; };
+		4AA1EAAE214F5FD900D0F791 /* TransposeKernel.inc.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AA1EAAD214F5FD900D0F791 /* TransposeKernel.inc.metal */; };
 		4AF928772133F1DB005B6C3A /* BoxCoder.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AF928762133F1DB005B6C3A /* BoxCoder.metal */; };
 		4AF9287921341661005B6C3A /* Softmax.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AF9287821341661005B6C3A /* Softmax.metal */; };
 		4AF928822135673D005B6C3A /* ConcatKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AF928812135673D005B6C3A /* ConcatKernel.metal */; };
@@ -138,6 +140,8 @@
 		4AA1EAA5214B5F6800D0F791 /* Shape.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Shape.metal; sourceTree = "<group>"; };
 		4AA1EAA7214B7AFB00D0F791 /* BilinearInterp.inc.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = BilinearInterp.inc.metal; sourceTree = "<group>"; };
 		4AA1EAA9214F53D800D0F791 /* BoxCoder.inc.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = BoxCoder.inc.metal; sourceTree = "<group>"; };
+		4AA1EAAB214F55C800D0F791 /* Softmax.inc.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Softmax.inc.metal; sourceTree = "<group>"; };
+		4AA1EAAD214F5FD900D0F791 /* TransposeKernel.inc.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = TransposeKernel.inc.metal; sourceTree = "<group>"; };
 		4AF928762133F1DB005B6C3A /* BoxCoder.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = BoxCoder.metal; sourceTree = "<group>"; };
 		4AF9287821341661005B6C3A /* Softmax.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Softmax.metal; sourceTree = "<group>"; };
 		4AF928812135673D005B6C3A /* ConcatKernel.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = ConcatKernel.metal; sourceTree = "<group>"; };
@@ -463,6 +467,7 @@
 				4AA1EA892146631C00D0F791 /* BilinearInterp.metal */,
 				4AA1EAA7214B7AFB00D0F791 /* BilinearInterp.inc.metal */,
 				4AF9287821341661005B6C3A /* Softmax.metal */,
+				4AA1EAAB214F55C800D0F791 /* Softmax.inc.metal */,
 				FCEB6849212F00DB00D2448E /* PreluKernel.metal */,
 				FCDDC6C9212FDF6800E5EF74 /* BatchNormKernel.metal */,
 				FCDDC6CB212FDFDB00E5EF74 /* ReluKernel.metal */,
@@ -475,6 +480,7 @@
 				FCA67CD6213827AC00BD58AA /* ConvAddBNReluKernel.metal */,
 				FCA67CD82138287B00BD58AA /* ConvBNReluKernel.metal */,
 				FC0226552138F33800F395E2 /* TransposeKernel.metal */,
+				4AA1EAAD214F5FD900D0F791 /* TransposeKernel.inc.metal */,
 				FC0226572138F38D00F395E2 /* PoolKernel.metal */,
 			);
 			path = metal;
@@ -595,6 +601,7 @@
 				FC039BAA20E11CBC0081E9F8 /* ElementwiseAddOp.swift in Sources */,
 				FCDE8A33212A917900F4A8F6 /* ConvTransposeOp.swift in Sources */,
 				FCBCCC6B2123071700D94F7E /* BoxcoderOp.swift in Sources */,
+				4AA1EAAE214F5FD900D0F791 /* TransposeKernel.inc.metal in Sources */,
 				4AA1EAA4214A295C00D0F791 /* Split.inc.metal in Sources */,
 				FC039B9B20E11CA00081E9F8 /* Executor.swift in Sources */,
 				4AF9288421357BE3005B6C3A /* Elementwise.metal in Sources */,
@@ -612,6 +619,7 @@
 				4AA1EA8C2146640900D0F791 /* SplitOp.swift in Sources */,
 				FC292C81214255BD00CF622F /* CPUCompute.mm in Sources */,
 				FCEBC0F420F1FDD90099DBAF /* ConvAddBatchNormReluOp.swift in Sources */,
+				4AA1EAAC214F55C800D0F791 /* Softmax.inc.metal in Sources */,
 				FC0E2DC020EE461F009C1FAC /* ElementwiseAddKernel.swift in Sources */,
 				4AF928772133F1DB005B6C3A /* BoxCoder.metal in Sources */,
 				FC33B0F02147659000714A93 /* MobileNet.swift in Sources */,
