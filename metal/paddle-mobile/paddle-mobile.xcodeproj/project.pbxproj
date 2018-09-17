@@ -22,6 +22,7 @@
 		4AA1EAA4214A295C00D0F791 /* Split.inc.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AA1EAA3214A295C00D0F791 /* Split.inc.metal */; };
 		4AA1EAA6214B5F6800D0F791 /* Shape.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AA1EAA5214B5F6800D0F791 /* Shape.metal */; };
 		4AA1EAA8214B7AFB00D0F791 /* BilinearInterp.inc.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AA1EAA7214B7AFB00D0F791 /* BilinearInterp.inc.metal */; };
+		4AA1EAAA214F53D800D0F791 /* BoxCoder.inc.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AA1EAA9214F53D800D0F791 /* BoxCoder.inc.metal */; };
 		4AF928772133F1DB005B6C3A /* BoxCoder.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AF928762133F1DB005B6C3A /* BoxCoder.metal */; };
 		4AF9287921341661005B6C3A /* Softmax.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AF9287821341661005B6C3A /* Softmax.metal */; };
 		4AF928822135673D005B6C3A /* ConcatKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AF928812135673D005B6C3A /* ConcatKernel.metal */; };
@@ -136,6 +137,7 @@
 		4AA1EAA3214A295C00D0F791 /* Split.inc.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Split.inc.metal; sourceTree = "<group>"; };
 		4AA1EAA5214B5F6800D0F791 /* Shape.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Shape.metal; sourceTree = "<group>"; };
 		4AA1EAA7214B7AFB00D0F791 /* BilinearInterp.inc.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = BilinearInterp.inc.metal; sourceTree = "<group>"; };
+		4AA1EAA9214F53D800D0F791 /* BoxCoder.inc.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = BoxCoder.inc.metal; sourceTree = "<group>"; };
 		4AF928762133F1DB005B6C3A /* BoxCoder.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = BoxCoder.metal; sourceTree = "<group>"; };
 		4AF9287821341661005B6C3A /* Softmax.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Softmax.metal; sourceTree = "<group>"; };
 		4AF928812135673D005B6C3A /* ConcatKernel.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = ConcatKernel.metal; sourceTree = "<group>"; };
@@ -454,6 +456,7 @@
 				FC1B16B220EC9A4F00678B91 /* Kernels.metal */,
 				FC4CB74820F0B954007C0C6D /* ConvKernel.metal */,
 				4AF928762133F1DB005B6C3A /* BoxCoder.metal */,
+				4AA1EAA9214F53D800D0F791 /* BoxCoder.inc.metal */,
 				4AA1EAA5214B5F6800D0F791 /* Shape.metal */,
 				4AA1EA8F214664CD00D0F791 /* Split.metal */,
 				4AA1EAA3214A295C00D0F791 /* Split.inc.metal */,
@@ -583,6 +586,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FC9D038020E22FBB000F735A /* FeedOp.swift in Sources */,
+				4AA1EAAA214F53D800D0F791 /* BoxCoder.inc.metal in Sources */,
 				FC039B9F20E11CB20081E9F8 /* Tensor.swift in Sources */,
 				FCA67CD7213827AC00BD58AA /* ConvAddBNReluKernel.metal in Sources */,
 				4AF9287921341661005B6C3A /* Softmax.metal in Sources */,
