@@ -19,7 +19,7 @@ struct ShapeMetalParam {
 
 class ShapeKernel<P: PrecisionType>: Kernel, Computable{
   func compute(commandBuffer: MTLCommandBuffer, param: ShapeParam<P>) throws {
-    print("shape compute")
+//    print("shape compute")
 //    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
 //      throw PaddleMobileError.predictError(message: " encode is nil")
 //    }

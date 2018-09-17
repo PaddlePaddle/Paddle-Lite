@@ -17,14 +17,15 @@
 using namespace metal;
 
 
-kernel void conv_add_batch_norm_relu_1x1_half(texture2d_array<half, access::sample> inTexture [[texture(0)]],
-                                              texture2d_array<half, access::write> outTexture [[texture(1)]],
-                                              constant MetalConvParam &param [[buffer(0)]],
-                                              const device half4 *weights [[buffer(1)]],
-                                              const device half4 *biase [[buffer(2)]],
-                                              const device float4 *new_scale [[buffer(3)]],
-                                              const device float4 *new_biase [[buffer(4)]],
-                                              uint3 gid [[thread_position_in_grid]]) {
+kernel void conv_add_batch_norm_relu_1x1_half(
+            texture2d_array<half, access::sample> inTexture [[texture(0)]],
+            texture2d_array<half, access::write> outTexture [[texture(1)]],
+            constant MetalConvParam &param [[buffer(0)]],
+            const device half4 *weights [[buffer(1)]],
+            const device half4 *biase [[buffer(2)]],
+            const device half4 *new_scale [[buffer(3)]],
+            const device half4 *new_biase [[buffer(4)]],
+            uint3 gid [[thread_position_in_grid]]) {
   
   if (gid.x >= outTexture.get_width() ||
       gid.y >= outTexture.get_height() ||
@@ -41,7 +42,7 @@ kernel void conv_add_batch_norm_relu_1x1_half(texture2d_array<half, access::samp
   uint input_arr_size = inTexture.get_array_size();
   uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
   
-  half4 output = half4(0.0);
+  float4 output = float4(0.0);
   
   half4 input;
   for (uint i = 0; i < input_arr_size; ++i) {
@@ -58,19 +59,19 @@ kernel void conv_add_batch_norm_relu_1x1_half(texture2d_array<half, access::samp
     half4 weight_w = weights[weithTo + 3 * kernelHXW * input_arr_size + i];
     output.w += dot(input, weight_w);
   }
-  
-  output = half4(fmax((float4(output) + float4(biase[gid.z])) * new_scale[gid.z] + new_biase[gid.z], 0.0));
-  outTexture.write(output, gid.xy, gid.z);
+  output = fmax((output + float4(biase[gid.z])) * float4(new_scale[gid.z]) + float4(new_biase[gid.z]), 0.0);
+  outTexture.write(half4(output), gid.xy, gid.z);
 }
 
-kernel void conv_add_batch_norm_relu_3x3_half(texture2d_array<half, access::sample> inTexture [[texture(0)]],
-                                              texture2d_array<half, access::write> outTexture [[texture(1)]],
-                                              constant MetalConvParam &param [[buffer(0)]],
-                                              const device half4 *weights [[buffer(1)]],
-                                              const device half4 *biase [[buffer(2)]],
-                                              const device float4 *new_scale [[buffer(3)]],
-                                              const device float4 *new_biase [[buffer(4)]],
-                                              uint3 gid [[thread_position_in_grid]]) {
+kernel void conv_add_batch_norm_relu_3x3_half(
+            texture2d_array<half, access::sample> inTexture [[texture(0)]],
+            texture2d_array<half, access::write> outTexture [[texture(1)]],
+            constant MetalConvParam &param [[buffer(0)]],
+            const device half4 *weights [[buffer(1)]],
+            const device half4 *biase [[buffer(2)]],
+            const device half4 *new_scale [[buffer(3)]],
+            const device half4 *new_biase [[buffer(4)]],
+            uint3 gid [[thread_position_in_grid]]) {
   
   if (gid.x >= outTexture.get_width() ||
       gid.y >= outTexture.get_height() ||
@@ -86,7 +87,7 @@ kernel void conv_add_batch_norm_relu_3x3_half(texture2d_array<half, access::samp
   uint input_arr_size = inTexture.get_array_size();
   uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
   
-  half4 output = half4(0.0);
+  float4 output = float4(0.0);
   
   half4 input[9];
   for (uint i = 0; i < input_arr_size; ++i) {
@@ -113,19 +114,19 @@ kernel void conv_add_batch_norm_relu_3x3_half(texture2d_array<half, access::samp
       output.w += dot(input[j], weight_w);
     }
   }
-  output = half4(fmax((float4(output) + float4(biase[gid.z])) * new_scale[gid.z] + new_biase[gid.z], 0.0));
-  outTexture.write(output, gid.xy, gid.z);
+  output = fmax((output + float4(biase[gid.z])) * float4(new_scale[gid.z]) + float4(new_biase[gid.z]), 0.0);
+  outTexture.write(half4(output), gid.xy, gid.z);
 }
 
-
-kernel void depthwise_conv_add_batch_norm_relu_3x3_half(texture2d_array<half, access::sample> inTexture [[texture(0)]],
-                                                        texture2d_array<half, access::write> outTexture [[texture(1)]],
-                                                        constant MetalConvParam &param [[buffer(0)]],
-                                                        const device half *weights [[buffer(1)]],
-                                                        const device half4 *biase [[buffer(2)]],
-                                                        const device float4 *new_scale [[buffer(3)]],
-                                                        const device float4 *new_biase [[buffer(4)]],
-                                                        uint3 gid [[thread_position_in_grid]]) {
+kernel void depthwise_conv_add_batch_norm_relu_3x3_half(
+            texture2d_array<half, access::sample> inTexture [[texture(0)]],
+            texture2d_array<half, access::write> outTexture [[texture(1)]],
+            constant MetalConvParam &param [[buffer(0)]],
+            const device half *weights [[buffer(1)]],
+            const device half4 *biase [[buffer(2)]],
+            const device half4 *new_scale [[buffer(3)]],
+            const device half4 *new_biase [[buffer(4)]],
+            uint3 gid [[thread_position_in_grid]]) {
   
   if (gid.x >= outTexture.get_width() ||
       gid.y >= outTexture.get_height() ||
@@ -138,7 +139,7 @@ kernel void depthwise_conv_add_batch_norm_relu_3x3_half(texture2d_array<half, ac
   constexpr sampler sample(coord::pixel, filter::nearest, address::clamp_to_zero);
   const uint kernelHXW = 9;
   uint weithTo = gid.z * kernelHXW * 4;
-  half4 output = half4(0.0);
+  float4 output = float4(0.0);
   half4 inputs[9];
   inputs[0] = inTexture.sample(sample, float2(posInInput.x - 1,    posInInput.y - 1), output_slice);
   inputs[1] = inTexture.sample(sample, float2(posInInput.x,        posInInput.y - 1), output_slice);
@@ -156,9 +157,10 @@ kernel void depthwise_conv_add_batch_norm_relu_3x3_half(texture2d_array<half, ac
     output.z += input.z * weights[weithTo + 2 * kernelHXW + j];
     output.w += input.w * weights[weithTo + 3 * kernelHXW + j];
   }
-  output = half4(fmax((float4(output) + float4(biase[gid.z])) * new_scale[gid.z] + new_biase[gid.z], 0.0));
-  outTexture.write(output, gid.xy, gid.z);
+  output = fmax((output + float4(biase[gid.z])) * float4(new_scale[gid.z]) + float4(new_biase[gid.z]), 0.0);
+  outTexture.write(half4(output), gid.xy, gid.z);
 }
+
 
 
 /*---------------------------------------------*/

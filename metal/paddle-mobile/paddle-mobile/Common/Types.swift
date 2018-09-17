@@ -243,7 +243,7 @@ extension Tensor: Variant {
 extension Texture: Variant {
 }
 
-extension ResultHolder: Variant {
+extension GPUResultHolder: Variant {
 }
 
 extension InputTexture: Variant {
@@ -252,3 +252,43 @@ extension InputTexture: Variant {
 extension MTLTexture where Self: Variant {
   
 }
+
+class FetchHolder: Variant {
+  var resultBuffer: MTLBuffer?
+  var dim: [Int]
+  var capacity: Int
+  
+  init(inCapacity: Int, inDim: [Int]) {
+    capacity = inCapacity
+    dim = inDim
+  }
+  
+  func initBuffer(device: MTLDevice) {
+    resultBuffer = device.makeBuffer(length: capacity * 4, options: [])
+  }
+  
+  var result: UnsafeMutablePointer<Float32> {
+    guard let inResultBuffer = resultBuffer else {
+      fatalError()
+    }
+    return inResultBuffer.contents().bindMemory(to: Float32.self, capacity: capacity)
+  }
+  
+}
+
+extension FetchHolder: CustomStringConvertible, CustomDebugStringConvertible {
+  var description: String {
+    fatalError()
+//    return "\(result)"
+  }
+  
+  var debugDescription: String {
+    fatalError()
+//    return "\(result)"
+  }
+  
+  
+}
+
+
+

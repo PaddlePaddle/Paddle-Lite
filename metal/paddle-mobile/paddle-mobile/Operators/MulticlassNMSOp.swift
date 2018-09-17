@@ -21,10 +21,16 @@ class MulticlassNMSParam<P: PrecisionType>: OpParam {
       scores = try MulticlassNMSParam.getFirstTensor(key: "Scores", map: opDesc.inputs, from: inScope)
       bboxes = try MulticlassNMSParam.getFirstTensor(key: "BBoxes", map: opDesc.inputs, from: inScope)
       output = try MulticlassNMSParam.outputOut(outputs: opDesc.outputs, from: inScope)
+      
+      middleOutput = FetchHolder.init(inCapacity: scores.tensorDim.numel(), inDim: scores.tensorDim.dims)
+      
+      bboxOutput = FetchHolder.init(inCapacity: bboxes.tensorDim.numel(), inDim: bboxes.tensorDim.dims)
     } catch let error {
       throw error
     }
   }
+  var bboxOutput: FetchHolder
+  var middleOutput: FetchHolder
   let scores: Texture<P>
   let bboxes: Texture<P>
   var output: Texture<P>
@@ -33,7 +39,15 @@ class MulticlassNMSParam<P: PrecisionType>: OpParam {
 class MulticlassNMSOp<P: PrecisionType>: Operator<MulticlassNMSKernel<P>, MulticlassNMSParam<P>>, Runable, Creator, InferShaperable{
 
   func inputVariant() -> [String : [Variant]] {
-    return ["Scores" : [para.scores], "BBoxes" : [para.bboxes]]
+    return ["Scores" : [para.middleOutput], "BBoxes" : [para.bboxOutput]]
+  }
+  
+  func computeMiddleResult(device: MTLDevice, buffer: MTLCommandBuffer) {
+    do {
+      try kernel.compute(commandBuffer: buffer, param: para)
+    } catch let _ {
+      fatalError()
+    }
   }
   
   func inferShape() {
@@ -42,11 +56,12 @@ class MulticlassNMSOp<P: PrecisionType>: Operator<MulticlassNMSKernel<P>, Multic
   
   typealias OpType =  MulticlassNMSOp<P>
   func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-    do {
-      try kernel.compute(commandBuffer: buffer, param: para)
-    } catch let error {
-      throw error
-    }
+
+  }
+  
+  func delogOutput() {
+    print(" nms - output: ")
+    print(para.bboxes.metalTexture.float32Array().strideArray())
   }
 }
 
