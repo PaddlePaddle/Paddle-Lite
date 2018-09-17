@@ -14,39 +14,50 @@
 
 import Foundation
 
-let testTo = 113
+
+let testTo = 81
+
 var isTest = false
 
-let computePrecision: ComputePrecision = .Float32
+let computePrecision: ComputePrecision = .Float16
 
-public class ResultHolder {
+public class GPUResultHolder {
   public let dim: [Int]
-  public let resultArr: [Float32]
+  public let capacity: Int
+  public var resultPointer: UnsafeMutablePointer<Float32>?
   public var intermediateResults: [String : [Variant]]?
   public let elapsedTime: Double
-  public init(inDim: [Int], inResult: [Float32], inElapsedTime: Double, inIntermediateResults: [String : [Variant]]? = nil) {
+  public init(inDim: [Int], inPointer: UnsafeMutablePointer<Float32>?, inCapacity: Int, inElapsedTime: Double, inIntermediateResults: [String : [Variant]]? = nil) {
     dim = inDim
-    resultArr = inResult
+    capacity = inCapacity
+    
+    if let inInPointer = inPointer {
+      resultPointer = UnsafeMutablePointer<Float32>.allocate(capacity: inCapacity)
+      resultPointer?.initialize(from: inInPointer, count: inCapacity)
+    }
+    
     elapsedTime = inElapsedTime
     intermediateResults = inIntermediateResults
   }
+  
 }
 
-extension ResultHolder: CustomDebugStringConvertible, CustomStringConvertible {
+extension GPUResultHolder: CustomDebugStringConvertible, CustomStringConvertible {
   public var debugDescription: String {
-    var str = ""
-    str += "Dim: \(dim) \n value:[ "
-    if resultArr.count < 20 {
-      for d in resultArr {
-        str += " \(d) "
-      }
-    } else {
-      for d in stride(from: 0, to: resultArr.count, by: resultArr.count/20) {
-        str += " \(resultArr[d]) "
-      }
-    }
-    str += " ]"
-    return str
+//    var str = ""
+//    str += "Dim: \(dim) \n value:[ "
+//    if resultArr.count < 20 {
+//      for d in resultArr {
+//        str += " \(d) "
+//      }
+//    } else {
+//      for d in stride(from: 0, to: resultArr.count, by: resultArr.count/20) {
+//        str += " \(resultArr[d]) "
+//      }
+//    }
+//    str += " ]"
+//    return str
+    fatalError()
   }
   
   public var description: String {
@@ -67,7 +78,7 @@ public class Executor<P: PrecisionType> {
     queue = inQueue
     for block in inProgram.programDesc.blocks {
       //block.ops.count
-      for i in 0..<testTo {
+      for i in 0..<block.ops.count {
         let op = block.ops[i]
         do {
           let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
@@ -79,7 +90,7 @@ public class Executor<P: PrecisionType> {
     }
   }
   
-  public func predict(input: MTLTexture, dim: [Int], completionHandle: @escaping (ResultHolder) -> Void, preProcessKernle: CusomKernel? = nil, except: Int = 0) throws {
+  public func predict(input: MTLTexture, dim: [Int], completionHandle: @escaping (GPUResultHolder) -> Void, preProcessKernle: CusomKernel? = nil, except: Int = 0) throws {
     guard let buffer = queue.makeCommandBuffer() else {
       throw PaddleMobileError.predictError(message: "CommandBuffer is nil")
     }
@@ -101,7 +112,7 @@ public class Executor<P: PrecisionType> {
     let inputTexture = InputTexture.init(inMTLTexture: resInput, inExpectDim: Dim.init(inDim: dim))
     program.scope.setInput(input: inputTexture)
     //(ops.count - except)
-    for i in 0..<testTo {
+    for i in 0..<(ops.count - except) {
       let op = ops[i]
       do {
         try op.run(device: device, buffer: buffer)
@@ -112,18 +123,19 @@ public class Executor<P: PrecisionType> {
     
     var outputTextures: [String : [Variant]]?
     if except > 0 {
-      outputTextures = ops[testTo-1].inputVariant()
+      ops[ops.count - except].computeMiddleResult(device: device, buffer: buffer)
+      outputTextures = ops[ops.count - except].inputVariant()
     }
     
     buffer.addCompletedHandler { [weak self] (commandbuffer) in
-      
-      let inputArr = resInput.toTensor(dim: (n: dim[0], c: dim[3], h: dim[1], w: dim[2]))
-      print(inputArr.strideArray())
+//      let inputArr = resInput.toTensor(dim: (n: dim[0], c: dim[3], h: dim[1], w: dim[2]))
+//      print(inputArr.strideArray())
+//
+////      print(dim)
+//      writeToLibrary(fileName: "test_image_ssd_ar", array: inputArr)
+//      print(" write done ")
 
-      print(dim)
-      writeToLibrary(fileName: "test_image_ssd_ar", array: inputArr)
-
-      print("write to library done")
+//      print("write to library done")
 //      return
 //                  print(inputArr)
 //
@@ -131,11 +143,11 @@ public class Executor<P: PrecisionType> {
 //                  print(stridableInput)
 //
 //                  let _: Flo? = input.logDesc(header: "input: ", stridable: true)
-      for i in 0..<testTo {
-        let op = self!.ops[i]
-        print(" 第 \(i) 个 op: ")
-        op.delogOutput()
-      }
+//      for i in 0..<self!.ops.count {
+//        let op = self!.ops[i]
+//        print(" 第 \(i) 个 op: ")
+//        op.delogOutput()
+//      }
       
 //      return;
 //      self!.ops[testTo - 2].delogOutput()
@@ -145,18 +157,23 @@ public class Executor<P: PrecisionType> {
 //      return
       
       guard let SSelf = self else {
+//        return
         fatalError()
       }
       
       let afterDate = Date.init()
-      var resultHolder: ResultHolder
+      var resultHolder: GPUResultHolder
       if except > 0 {
-        resultHolder = ResultHolder.init(inDim: [], inResult: [], inElapsedTime: afterDate.timeIntervalSince(beforeDate), inIntermediateResults: outputTextures)
+        resultHolder = GPUResultHolder.init(inDim: [], inPointer: nil, inCapacity: 0, inElapsedTime: afterDate.timeIntervalSince(beforeDate), inIntermediateResults: outputTextures)
       } else {
         let outputVar: Variant = SSelf.program.scope.output()!
-        let output: Texture<P> = outputVar as! Texture<P>
+        let output: FetchHolder = outputVar as! FetchHolder
+//        let beforeToTensorDate = Date.init()
+
+        resultHolder = GPUResultHolder.init(inDim: output.dim, inPointer: output.result, inCapacity: output.capacity, inElapsedTime: afterDate.timeIntervalSince(beforeDate))
         
-        resultHolder = ResultHolder.init(inDim: output.dim.dims, inResult: output.toTensor(), inElapsedTime: afterDate.timeIntervalSince(beforeDate))
+//        let timeToTensor = Date.init().timeIntervalSince(beforeToTensorDate)
+//        print(timeToTensor)
       }
 
       completionHandle(resultHolder)

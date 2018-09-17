@@ -14,6 +14,7 @@
 
 import UIKit
 import MetalKit
+import CoreMedia
 import paddle_mobile
 import MetalPerformanceShaders
 
@@ -34,7 +35,7 @@ enum SupportModel: String{
   
   static func supportedModels() -> [SupportModel] {
     //.mobilenet,
-    return [.mobilenet_ssd, .genet, .mobilenet_ssd_ar]
+    return [.genet, .mobilenet_ssd, .mobilenet_ssd_ar]
   }
 }
 
@@ -44,14 +45,15 @@ class ViewController: UIViewController {
   @IBOutlet weak var elapsedTimeLabel: UILabel!
   @IBOutlet weak var modelPickerView: UIPickerView!
   @IBOutlet weak var threadPickerView: UIPickerView!
-  
+  @IBOutlet weak var videoView: UIView!
+  var videoCapture: VideoCapture!
+
   var selectImage: UIImage?
   var inputPointer: UnsafeMutablePointer<Float32>?
   var modelType: SupportModel = SupportModel.supportedModels()[0]
   var toPredictTexture: MTLTexture?
   
   var runner: Runner {
-    
     get {
       return modelHelperMap[modelType] ?! " has no this type "
     }
@@ -81,7 +83,7 @@ class ViewController: UIViewController {
   }
   
   @IBAction func predictAct(_ sender: Any) {
-    let max = 1
+    let max = 50
     switch platform {
     case .GPU:
       guard let inTexture = toPredictTexture else {
@@ -91,7 +93,7 @@ class ViewController: UIViewController {
       
       let startDate = Date.init()
       for i in 0..<max {
-        runner.predict(texture: inTexture) { [weak self] (success, res) in
+        runner.predict(texture: inTexture) { [weak self] (success, resultHolder)  in
           guard let sSelf = self else {
             fatalError()
           }
@@ -99,11 +101,18 @@ class ViewController: UIViewController {
             if i == max - 1 {
               let time = Date.init().timeIntervalSince(startDate)
               DispatchQueue.main.async {
-                sSelf.resultTextView.text = sSelf.runner.net.resultStr(res: res)
+//                print(resultHolder!.result![0])
+//                sSelf.resultTextView.text = sSelf.runner.net.resultStr(res: res)
                 sSelf.elapsedTimeLabel.text = "平均耗时: \(time/Double(max) * 1000.0) ms"
+               
               }
             }
           }
+          
+          DispatchQueue.main.async {
+            resultHolder?.releasePointer()
+          }
+//            print("释放")
         }
 //        print("sleep before ")
 //        usleep(33000)
@@ -129,7 +138,7 @@ class ViewController: UIViewController {
             if i == max - 1 {
               let time = Date.init().timeIntervalSince(startDate)
               DispatchQueue.main.async {
-                sSelf.resultTextView.text = sSelf.runner.net.resultStr(res: res)
+//                sSelf.resultTextView.text = sSelf.runner.net.resultStr(res: res)
                 sSelf.elapsedTimeLabel.text = "平均耗时: \(time/Double(max) * 1000.0) ms"
               }
             }
@@ -141,6 +150,13 @@ class ViewController: UIViewController {
   
   override func viewDidLoad() {
     super.viewDidLoad()
+    
+//    if runner.load() {
+//      print(" load success ! ")
+//    } else {
+//      print(" load error ! ")
+//    }
+//    
     modelPickerView.delegate = self
     modelPickerView.dataSource = self
     threadPickerView.delegate = self
@@ -158,6 +174,20 @@ class ViewController: UIViewController {
     } else {
       fatalError( " unsupport " )
     }
+    
+//    videoCapture = VideoCapture.init(device: MetalHelper.shared.device, orientation: .portrait, position: .back)
+//    videoCapture.fps = 30
+//    videoCapture.delegate = self
+//    videoCapture.setUp { (success) in
+//      DispatchQueue.main.async {
+//        if let preViewLayer = self.videoCapture.previewLayer {
+//          self.videoView.layer.addSublayer(preViewLayer)
+//          self.videoCapture.previewLayer?.frame = self.videoView.bounds
+//        }
+//        self.videoCapture.start()
+//      }
+//    }
+
   }
 }
 
@@ -217,5 +247,33 @@ extension ViewController:  UIImagePickerControllerDelegate, UINavigationControll
     }
   }
 }
+
+var bool1 = false
+extension ViewController: VideoCaptureDelegate{
+  func predictTexture(texture: MTLTexture){
+    runner.scaleTexture(input: texture) { (scaledTexture) in
+      self.runner.predict(texture: scaledTexture, completion: { (success, resultHolder) in
+//        print(resultHolder!.result![0])
+        resultHolder?.releasePointer()
+      })
+    }
+  }
+  
+  
+  func videoCapture(_ capture: VideoCapture, didCaptureVideoTexture texture: MTLTexture?, timestamp: CMTime) {
+//    if !bool1 {
+//      DispatchQueue.main.asyncAfter(deadline: DispatchTime.init(uptimeNanoseconds: 500000000)) {
+    self.predictTexture(texture: texture!)
+//      }
+
+      
+//      bool1 = true
+//    }
+    
+  }
+
+}
+
+
 
 

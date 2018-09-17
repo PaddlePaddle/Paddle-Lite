@@ -34,46 +34,52 @@ public class MobileNet_ssd_AR: Net{
     }
   }
   
-  override public func resultStr(res: [Float]) -> String {
+  override public func resultStr(res: ResultHolder) -> String {
     return " \(res)"
   }
   
-  override func fetchResult(paddleMobileRes: ResultHolder) -> [Float32] {
-    
+  override func fetchResult(paddleMobileRes: GPUResultHolder) -> ResultHolder {
     guard let interRes = paddleMobileRes.intermediateResults else {
       fatalError(" need have inter result ")
     }
     
-    guard let scores = interRes["Scores"], scores.count > 0, let score = scores[0] as?  Texture<Float32> else {
+    guard let scores = interRes["Scores"], scores.count > 0, let score = scores[0] as?  FetchHolder else {
       fatalError(" need score ")
     }
     
-    guard let bboxs = interRes["BBoxes"], bboxs.count > 0, let bbox = bboxs[0] as? Texture<Float32> else {
+    guard let bboxs = interRes["BBoxes"], bboxs.count > 0, let bbox = bboxs[0] as? FetchHolder else {
       fatalError()
     }
     
-    var scoreFormatArr: [Float32] = score.metalTexture.realNHWC(dim: (n: score.padToFourDim[0], h: score.padToFourDim[1], w: score.padToFourDim[2], c: score.padToFourDim[3]))
-    //    print("score: ")
-    //    print(scoreFormatArr.strideArray())
-    //
-    var bboxArr = bbox.metalTexture.float32Array()
-    //    print("bbox: ")
-    //    print(bboxArr.strideArray())
+//    let startDate = Date.init()
+    
+//    print("scoreFormatArr: ")
+//print((0..<score.capacity).map{ score.result[$0] }.strideArray())
+//
+//    print("bbox arr: ")
+//
+//    print((0..<bbox.capacity).map{ bbox.result[$0] }.strideArray())
     
     let nmsCompute = NMSCompute.init()
-    nmsCompute.scoreThredshold = 0.01
-    nmsCompute.nmsTopK = 400
-    nmsCompute.keepTopK = 200
+    nmsCompute.scoreThredshold = 0.25
+    nmsCompute.nmsTopK = 100
+    nmsCompute.keepTopK = 100
     nmsCompute.nmsEta = 1.0
-    nmsCompute.nmsThreshold = 0.45
+    nmsCompute.nmsThreshold = 0.449999988
     nmsCompute.background_label = 0;
-    nmsCompute.scoreDim = [NSNumber.init(value: score.tensorDim[0]), NSNumber.init(value: score.tensorDim[1]), NSNumber.init(value: score.tensorDim[2])]
-    nmsCompute.bboxDim = [NSNumber.init(value: bbox.tensorDim[0]), NSNumber.init(value: bbox.tensorDim[1]), NSNumber.init(value: bbox.tensorDim[2])]
-    guard let result = nmsCompute.compute(withScore: &scoreFormatArr, andBBoxs: &bboxArr) else {
+    nmsCompute.scoreDim = [NSNumber.init(value: score.dim[0]), NSNumber.init(value: score.dim[1]), NSNumber.init(value: score.dim[2])]
+    nmsCompute.bboxDim = [NSNumber.init(value: bbox.dim[0]), NSNumber.init(value: bbox.dim[1]), NSNumber.init(value: bbox.dim[2])]
+    guard let result = nmsCompute.compute(withScore: score.result, andBBoxs: bbox.result) else {
       fatalError( " result error " )
     }
-    
-    let output: [Float32] = result.map { $0.floatValue }
-    return output
+    let resultHolder = ResultHolder.init(inResult: result.output, inCapacity: Int(result.outputSize))
+//    for i in 0..<Int(result.outputSize) {
+//
+//      print("i \(i) : \(result.output[i])")
+//    }
+//    print(Date.init().timeIntervalSince(startDate))
+
+//    print(resultHolder.result![0])
+    return resultHolder
   }
 }
