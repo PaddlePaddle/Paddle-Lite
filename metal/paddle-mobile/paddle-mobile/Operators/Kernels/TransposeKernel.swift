@@ -74,4 +74,6 @@ class TransposeKernel<P: PrecisionType>: Kernel, Computable {
     encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
     encoder.endEncoding()
   }
+  
+
 }

@@ -64,7 +64,8 @@ class OpCreator<P: PrecisionType> {
          gBilinearInterpType        :     BilinearInterpOp<P>.creat,
          gSplit                     :     SplitOp<P>.creat,
          gShape                     :     ShapeOp<P>.creat,
-         gFlatten                   :     FlattenOp<P>.creat]
+         gFlatten                   :     FlattenOp<P>.creat,
+         gConvAddPreluType          :     ConvAddPreluOp<P>.creat]
   
     private init(){}
 }
