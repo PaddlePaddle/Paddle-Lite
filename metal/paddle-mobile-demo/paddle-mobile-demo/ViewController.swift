@@ -104,7 +104,8 @@ class ViewController: UIViewController {
               let time = Date.init().timeIntervalSince(startDate)
               DispatchQueue.main.async {
 //                print(resultHolder!.result![0])
-//                sSelf.resultTextView.text = sSelf.runner.net.resultStr(res: res)
+                sSelf.resultTextView.text = sSelf.runner.net.resultStr(res: resultHolder!)
+                
                 sSelf.elapsedTimeLabel.text = "平均耗时: \(time/Double(max) * 1000.0) ms"
                
               }
