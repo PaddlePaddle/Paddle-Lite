@@ -21,7 +21,8 @@ import MetalPerformanceShaders
 let platform: Platform = .GPU
 let threadSupport = [1]
 
-let modelHelperMap: [SupportModel : Runner] = [.mobilenet_ssd : Runner.init(inNet: MobileNet_ssd_hand.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform),
+//.mobilenet_ssd : Runner.init(inNet: MobileNet_ssd_hand.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform),
+let modelHelperMap: [SupportModel : Runner] = [
                                                .genet : Runner.init(inNet: Genet.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform),
                                                .mobilenet_ssd_ar : Runner.init(inNet: MobileNet_ssd_AR.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform)]
 //, .genet : Genet.init()
@@ -29,13 +30,14 @@ let modelHelperMap: [SupportModel : Runner] = [.mobilenet_ssd : Runner.init(inNe
 
 enum SupportModel: String{
   //  case mobilenet = "mobilenet"
-  case mobilenet_ssd    = "mobilenetssd"
+//  case mobilenet_ssd    = "mobilenetssd"
   case genet            = "genet"
   case mobilenet_ssd_ar = "mobilenetssd_ar"
   
   static func supportedModels() -> [SupportModel] {
-    //.mobilenet,
-    return [.genet, .mobilenet_ssd, .mobilenet_ssd_ar]
+    // .mobilenet,
+    // .mobilenet_ssd,
+    return [.genet, .mobilenet_ssd_ar]
   }
 }
 
