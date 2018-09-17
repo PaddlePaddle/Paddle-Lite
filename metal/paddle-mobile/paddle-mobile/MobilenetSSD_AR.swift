@@ -51,7 +51,7 @@ public class MobileNet_ssd_AR: Net{
       fatalError()
     }
     
-//    let startDate = Date.init()
+    let startDate = Date.init()
     
 //    print("scoreFormatArr: ")
 //print((0..<score.capacity).map{ score.result[$0] }.strideArray())
