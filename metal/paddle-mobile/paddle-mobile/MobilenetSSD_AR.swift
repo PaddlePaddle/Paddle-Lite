@@ -35,7 +35,7 @@ public class MobileNet_ssd_AR: Net{
   }
   
   override public func resultStr(res: ResultHolder) -> String {
-    return " \(res)"
+    return " \(res.result![0])"
   }
   
   override func fetchResult(paddleMobileRes: GPUResultHolder) -> ResultHolder {
@@ -51,7 +51,7 @@ public class MobileNet_ssd_AR: Net{
       fatalError()
     }
     
-    let startDate = Date.init()
+//    let startDate = Date.init()
     
 //    print("scoreFormatArr: ")
 //print((0..<score.capacity).map{ score.result[$0] }.strideArray())
