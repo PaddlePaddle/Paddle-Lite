@@ -34,8 +34,14 @@ class PriorBoxKernel<P: PrecisionType>: Kernel, Computable{
   
   required init(device: MTLDevice, param: PriorBoxParam<P>) {
     
-    param.output.initTexture(device: device, inTranspose: [2, 0, 1, 3], computePrecision: computePrecision)
+    let originDim = param.output.tensorDim;
+    
+    param.output.tensorDim = Dim.init(inDim: [1, originDim[0], originDim[1], originDim[2] * originDim[3]])
+    param.output.padToFourDim = Dim.init(inDim: [1, originDim[0], originDim[1], originDim[2] * originDim[3]])
+    
+    param.output.initTexture(device: device, inTranspose: [0, 1, 2, 3], computePrecision: computePrecision)
     param.outputVariances.initTexture(device: device, inTranspose: [2, 0, 1, 3], computePrecision: computePrecision)
+    
     
     if computePrecision == .Float32 {
       if param.min_max_aspect_ratios_order {
@@ -59,13 +65,13 @@ class PriorBoxKernel<P: PrecisionType>: Kernel, Computable{
       fatalError(" need implement ")
     }
     
-    let n = 1
-    let h = param.output.dim[1]
-    let w = param.output.dim[2]
-    let c = param.output.dim[3] * param.output.dim[0]
-    
-    param.output.dim = Dim.init(inDim: [n, h, w, c])
-    param.output.transpose = [0, 1, 2, 3]
+//    let n = 1
+//    let h = param.output.dim[1]
+//    let w = param.output.dim[2]
+//    let c = param.output.dim[3] * param.output.dim[0]
+//
+//    param.output.dim = Dim.init(inDim: [n, h, w, c])
+//    param.output.transpose = [0, 1, 2, 3]
     
     let imageWidth = Float32(param.inputImage.padToFourDim[3])
     let imageHeight = Float32(param.inputImage.padToFourDim[2])
