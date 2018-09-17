@@ -33,9 +33,9 @@ class BoxcoderKernel<P: PrecisionType>: Kernel, Computable{
   }
   
   required init(device: MTLDevice, param: BoxcoderParam<P>) {
-    param.output.initTexture(device: device, computePrecision: computePrecision)
+    param.output.initTexture(device: device, inTranspose: [0, 3, 1, 2], computePrecision: computePrecision)
     if computePrecision == .Float32 {
-      super.init(device: device, inFunctionName: "boxcoder")
+      super.init(device: device, inFunctionName: "boxcoder_float")
     } else if computePrecision == .Float16 {
       super.init(device: device, inFunctionName: "boxcoder_half")
     } else {
