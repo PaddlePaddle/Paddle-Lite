@@ -18,8 +18,8 @@ import CoreMedia
 import paddle_mobile
 import MetalPerformanceShaders
 
-let platform: Platform = .GPU
-let threadSupport = [1]
+var platform: Platform = .GPU
+let threadSupport: [(Platform, String)] = [(.GPU, "GPU"), (.CPU, "CPU")]
 
 //.mobilenet_ssd : Runner.init(inNet: MobileNet_ssd_hand.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform),
 let modelHelperMap: [SupportModel : Runner] = [
@@ -27,6 +27,8 @@ let modelHelperMap: [SupportModel : Runner] = [
                                                .mobilenet_ssd_ar : Runner.init(inNet: MobileNet_ssd_AR.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform)]
 //, .genet : Genet.init()
 //let modelHelperMap: [SupportModel : Net] = [.mobilenet : MobileNet.init(), .mobilenet_ssd : MobileNet_ssd_hand.init()]
+
+let netSupport: [SupportModel : Net] = [.genet : Genet.init(device: MetalHelper.shared.device), .mobilenet_ssd_ar : MobileNet_ssd_AR.init(device: MetalHelper.shared.device)]
 
 enum SupportModel: String{
   //  case mobilenet = "mobilenet"
@@ -55,17 +57,28 @@ class ViewController: UIViewController {
   var modelType: SupportModel = SupportModel.supportedModels()[0]
   var toPredictTexture: MTLTexture?
   
-  var runner: Runner {
-    get {
-      return modelHelperMap[modelType] ?! " has no this type "
-    }
-    set {
-    }
-  }
+  var runner: Runner!
   
   var threadNum = 1
   
   @IBAction func loadAct(_ sender: Any) {
+     runner = Runner.init(inNet: netSupport[modelType]!, commandQueue: MetalHelper.shared.queue, inPlatform: platform)
+    
+    if platform == .CPU {
+      if inputPointer == nil {
+        inputPointer = runner.preproccess(image: selectImage!.cgImage!)
+       
+      }
+    } else if platform == .GPU {
+      if self.toPredictTexture == nil {
+        runner.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
+          self?.toPredictTexture = texture
+        }
+      }
+    } else {
+      fatalError( " unsupport " )
+    }
+    
     if runner.load() {
       print(" load success ! ")
     } else {
@@ -128,6 +141,7 @@ class ViewController: UIViewController {
       
       for _ in 0..<10 {
         runner.predict(inputPointer: inInputPointer) { (success, res) in
+          res?.releaseOutput()
         }
       }
       
@@ -146,6 +160,7 @@ class ViewController: UIViewController {
               }
             }
           }
+          res?.releaseOutput()
         }
       }
     }
@@ -168,15 +183,15 @@ class ViewController: UIViewController {
     selectImage = UIImage.init(named: "hand.jpg")
     selectImageView.image = selectImage
     
-    if platform == .CPU {
-      inputPointer = runner.preproccess(image: selectImage!.cgImage!)
-    } else if platform == .GPU {
-      runner.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
-        self?.toPredictTexture = texture
-      }
-    } else {
-      fatalError( " unsupport " )
-    }
+//    if platform == .CPU {
+//      inputPointer = runner.preproccess(image: selectImage!.cgImage!)
+//    } else if platform == .GPU {
+//      runner.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
+//        self?.toPredictTexture = texture
+//      }
+//    } else {
+//      fatalError( " unsupport " )
+//    }
     
 //    videoCapture = VideoCapture.init(device: MetalHelper.shared.device, orientation: .portrait, position: .back)
 //    videoCapture.fps = 30
@@ -219,7 +234,7 @@ extension ViewController: UIPickerViewDataSource, UIPickerViewDelegate{
     if pickerView == modelPickerView {
       return SupportModel.supportedModels()[row].rawValue
     } else if pickerView == threadPickerView {
-      return "\(threadSupport[row])"
+      return threadSupport[row].1
     } else {
       fatalError()
     }
@@ -229,7 +244,8 @@ extension ViewController: UIPickerViewDataSource, UIPickerViewDelegate{
     if pickerView == modelPickerView {
       self.modelType = SupportModel.supportedModels()[row]
     } else if pickerView == threadPickerView {
-      self.threadNum = threadSupport[row]
+      
+      platform = threadSupport[row].0
     } else {
       fatalError()
     }

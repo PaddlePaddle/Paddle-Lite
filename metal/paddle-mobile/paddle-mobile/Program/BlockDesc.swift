@@ -14,7 +14,7 @@
 
 import Foundation
 
-struct BlockDesc {
+class BlockDesc {
     let index: Int
     let parentIndex: Int
     let vars: [VarDesc]

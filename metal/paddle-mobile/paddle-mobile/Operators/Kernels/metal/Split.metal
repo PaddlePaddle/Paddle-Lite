@@ -48,3 +48,17 @@ struct SplitParam {
   #undef R
 #undef V
 
+
+//// ssd-ar: (R=2, N=2, V=y)
+#define V VY
+  #define R 2
+    #define N 2
+      #define P float
+        #include "Split.inc.metal"
+      #undef P
+      #define P half
+        #include "Split.inc.metal"
+      #undef P
+    #undef N
+  #undef R
+#undef V
