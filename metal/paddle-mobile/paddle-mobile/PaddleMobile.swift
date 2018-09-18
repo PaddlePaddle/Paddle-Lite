@@ -34,7 +34,7 @@ public class Runner: NSObject {
   public let net: Net
   let device: MTLDevice?
   let platform: Platform
-  var cpuPaddleMobile: PaddleMobile?
+  var cpuPaddleMobile: PaddleMobileCPU?
   let numel: Int
   let meansNumber: [NSNumber]
   
@@ -54,7 +54,7 @@ public class Runner: NSObject {
       textureLoader = MTKTextureLoader.init(device: inDevice)
     }
     if platform == .CPU {
-      cpuPaddleMobile = PaddleMobile.init()
+      cpuPaddleMobile = PaddleMobileCPU.init()
     }
     numel = net.dim.n * net.dim.c * net.dim.h * net.dim.w
     meansNumber = net.means.map { NSNumber.init(value: $0) }
@@ -76,6 +76,7 @@ public class Runner: NSObject {
       let loader = Loader<Float32>.init()
       do {
         program = try loader.load(device: inDevice, modelPath: net.modelPath, paraPath: net.paramPath)
+        net.updateProgram(program: program!)
         executor = try Executor<Float32>.init(inDevice: inDevice, inQueue: inQueue, inProgram: program!)
       } catch let error {
         print(error)
@@ -87,12 +88,13 @@ public class Runner: NSObject {
     return true
   }
   
-  @objc public func predict(inputPointer: UnsafeMutablePointer<Float32>, completion: @escaping ( _ success: Bool, _ resultArray: [Float32]) -> Void) {
-    guard let res = cpuPaddleMobile?.predictInput(inputPointer, dim: dimsNum, means: meansNumber, scale: net.scale) else {
-      completion(false, [])
+  @objc public func predict(inputPointer: UnsafeMutablePointer<Float32>, completion: @escaping ( _ success: Bool, _ result: PaddleMobileCPUResult?) -> Void) {
+    
+    guard let res = cpuPaddleMobile?.predictInput(inputPointer, dim: dimsNum) else {
+      completion(false, nil)
       return
     }
-    completion(true, res.map { ($0 as! NSNumber).floatValue })
+    completion(true, res)
   }
   
   /**

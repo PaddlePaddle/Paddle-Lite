@@ -32,7 +32,7 @@
 		FCEBEC2C20E1391F00C0B14D /* paddle_mobile.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */; };
 		FCEBEC2D20E1391F00C0B14D /* paddle_mobile.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		FCEEE7D4210627A000444BEC /* banana.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = FCEEE7D3210627A000444BEC /* banana.jpeg */; };
-		FCF437E8214B6DDB00943429 /* Multi-Predict-ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF437E7214B6DDB00943429 /* Multi-Predict-ViewController.swift */; };
+		FCF437E8214B6DDB00943429 /* MultiPredictViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF437E7214B6DDB00943429 /* MultiPredictViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -80,7 +80,7 @@
 		FCDFD41A211D91C7005AB38B /* synset.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = synset.txt; sourceTree = "<group>"; };
 		FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = paddle_mobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		FCEEE7D3210627A000444BEC /* banana.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = banana.jpeg; sourceTree = "<group>"; };
-		FCF437E7214B6DDB00943429 /* Multi-Predict-ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Multi-Predict-ViewController.swift"; sourceTree = "<group>"; };
+		FCF437E7214B6DDB00943429 /* MultiPredictViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiPredictViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -147,7 +147,7 @@
 				FC039B8A20E11C560081E9F8 /* LaunchScreen.storyboard */,
 				FC039B8D20E11C560081E9F8 /* Info.plist */,
 				FC27991121343A39000B6BAD /* paddle-mobile-demo-Bridging-Header.h */,
-				FCF437E7214B6DDB00943429 /* Multi-Predict-ViewController.swift */,
+				FCF437E7214B6DDB00943429 /* MultiPredictViewController.swift */,
 			);
 			path = "paddle-mobile-demo";
 			sourceTree = "<group>";
@@ -361,7 +361,7 @@
 				FC039B8420E11C550081E9F8 /* ViewController.swift in Sources */,
 				FC803BCE214D27930094B8E5 /* VideoCapture.swift in Sources */,
 				FC013928210204A3008100E3 /* PreProcessKernel.metal in Sources */,
-				FCF437E8214B6DDB00943429 /* Multi-Predict-ViewController.swift in Sources */,
+				FCF437E8214B6DDB00943429 /* MultiPredictViewController.swift in Sources */,
 				FCBCCC552122EF5500D94F7E /* MetalHelper.swift in Sources */,
 				FC803BCD214D27930094B8E5 /* FPSCounter.swift in Sources */,
 				FC039B8220E11C550081E9F8 /* AppDelegate.swift in Sources */,
