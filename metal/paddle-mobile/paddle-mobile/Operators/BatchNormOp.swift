@@ -15,48 +15,52 @@
 import Foundation
 
 class BatchNormParam<P: PrecisionType>: OpParam {
-    typealias ParamPrecisionType = P
-    required init(opDesc: OpDesc, inScope: Scope) throws {
-        do {
-            input = try BatchNormParam.inputX(inputs: opDesc.inputs, from: inScope)
-            output = try BatchNormParam.outputY(outputs: opDesc.outputs, from: inScope)
-            inputBias = try BatchNormParam.inputBiase(inputs: opDesc.paraInputs, from: inScope)
-            inputMean = try BatchNormParam.inputMean(inputs: opDesc.paraInputs, from: inScope)
-            inputScale = try BatchNormParam.inputScale(inputs: opDesc.paraInputs, from: inScope)
-            inputVariance = try BatchNormParam.inputVariance(inputs: opDesc.paraInputs, from: inScope)
-            epsilon = try BatchNormParam.getAttr(key: "epsilon", attrs: opDesc.attrs)
-            momentum = try BatchNormParam.getAttr(key: "momentum", attrs: opDesc.attrs)
-            is_test = try BatchNormParam.getAttr(key: "is_test", attrs: opDesc.attrs)
-        } catch let error {
-            throw error
-        }
+  typealias ParamPrecisionType = P
+  required init(opDesc: OpDesc, inScope: Scope) throws {
+    do {
+      input = try BatchNormParam.inputX(inputs: opDesc.inputs, from: inScope)
+      if input.transpose != [0, 2, 3, 1] {
+        fatalError("batch norm only accepts NHWC")
+      }
+      output = try BatchNormParam.outputY(outputs: opDesc.outputs, from: inScope)
+      bias = try BatchNormParam.getFirstTensor(key: "Bias", map: opDesc.paraInputs, from: inScope)
+      mean = try BatchNormParam.getFirstTensor(key: "Mean", map: opDesc.paraInputs, from: inScope)
+      scale = try BatchNormParam.getFirstTensor(key: "Scale", map: opDesc.paraInputs, from: inScope)
+      variance = try BatchNormParam.getFirstTensor(key: "Variance", map: opDesc.paraInputs, from: inScope)
+      epsilon = try BatchNormParam.getAttr(key: "epsilon", attrs: opDesc.attrs)
+      momentum = try BatchNormParam.getAttr(key: "momentum", attrs: opDesc.attrs)
+    } catch let error {
+      throw error
     }
-    let input: Texture<P>
-    var output: Texture<P>
-    let inputBias: Tensor<ParamPrecisionType>
-    let inputMean: Tensor<ParamPrecisionType>
-    let inputScale: Tensor<ParamPrecisionType>
-    let inputVariance: Tensor<ParamPrecisionType>
-    let epsilon: Float
-    let momentum: Float
-    let is_test: Bool
+  }
+  let input: Texture<P>
+  var output: Texture<P>
+  let bias: Tensor<P>
+  let mean: Tensor<P>
+  let scale: Tensor<P>
+  let variance: Tensor<P>
+  let epsilon: Float
+  let momentum: Float
 }
 
 class BatchNormOp<P: PrecisionType>: Operator<BatchNormKernel<P>, BatchNormParam<P>>, Runable, Creator, InferShaperable{
-    func inferShape() {
-        para.output.dim = para.input.dim
+  typealias OpType = BatchNormOp<P>
+
+  func inferShape() {
+    para.output.dim = para.input.dim
+  }
+  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+    do {
+      try kernel.compute(commandBuffer: buffer, param: para)
+    } catch let error {
+      throw error
     }
-    typealias OpType = BatchNormOp<P>
-    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
-    }
+  }
+  
+  func delogOutput() {
+    print(" \(type) output: ")
+    let device = para.output.metalTexture!.device
+    let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
+    print(outputArray.strideArray())
+  }
 }
-
-
-
-
-

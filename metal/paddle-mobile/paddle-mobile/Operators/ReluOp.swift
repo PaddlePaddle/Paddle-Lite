@@ -15,33 +15,43 @@
 import Foundation
 
 class ReluParam<P: PrecisionType>: OpParam {
-    typealias ParamPrecisionType = P
-    required init(opDesc: OpDesc, inScope: Scope) throws {
-        do {
-            input = try ReluParam.inputX(inputs: opDesc.inputs, from: inScope)
-            output = try ReluParam.outputOut(outputs: opDesc.outputs, from: inScope)
-        } catch let error {
-            throw error
-        }
+  typealias ParamPrecisionType = P
+  required init(opDesc: OpDesc, inScope: Scope) throws {
+    do {
+      input = try ReluParam.inputX(inputs: opDesc.inputs, from: inScope)
+      output = try ReluParam.outputOut(outputs: opDesc.outputs, from: inScope)
+    } catch let error {
+      throw error
     }
-    let input: Texture<P>
-    var output: Texture<P>
+  }
+  let input: Texture<P>
+  var output: Texture<P>
 }
 
 class ReluOp<P: PrecisionType>: Operator<ReluKernel<P>, ReluParam<P>>, Runable, Creator, InferShaperable{
-    
-    func inferShape() {
-        para.output.dim = para.input.dim
+  
+  typealias OpType = ReluOp<P>
+  
+  func inferShape() {
+    para.output.dim = para.input.dim
+  }
+  
+  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+    do {
+      try kernel.compute(commandBuffer: buffer, param: para)
+    } catch let error {
+      throw error
     }
-    
-    typealias OpType = ReluOp<P>
-    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-        do {
-            try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let error {
-            throw error
-        }
-    }
+  }
+  
+  func delogOutput() {
+    print(" \(type) output: ")
+    print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
+    let device = para.output.metalTexture!.device
+    let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
+    print(outputArray.strideArray())
+  }
+  
 }
 
 
