@@ -30,6 +30,7 @@ class Converter:
         block_desc.idx = 0
         block_desc.parent_idx = -1
         self.package_ops(block_desc)
+        self.package_vars(block_desc)
         print 'blocks: '
         print self.program_desc.blocks
 
@@ -228,6 +229,20 @@ class Converter:
         # print l_type
         # print mdl2fluid_op_layer_dict.get(l_type)
         desc_ops_add.type = types.mdl2fluid_op_layer_dict.get(l_type)
+
+    def package_vars(self, block_desc):
+        json_matrix_ = self.mdl_json['matrix']
+        # print json_matrix_
+        for j in json_matrix_:
+            vars_add = block_desc.vars.add()
+            vars_add.name = j
+            vars_add.type.type = 7  # 7 is lodtensor
+            # print j
+            tensor = vars_add.type.lod_tensor.tensor
+            tensor.data_type = 5  # 5 is FP32
+            for dims in json_matrix_.get(j):
+                tensor.dims.append(dims)
+        pass
 
 
 # print mdl_path
