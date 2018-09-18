@@ -138,8 +138,8 @@ void PaddleMobile<Dtype, P>::FeedData(const framework::Tensor &t) {
 };
 
 template <typename Dtype, Precision P>
-std::shared_ptr<framework::Tensor> PaddleMobile<Dtype, P>::FetchResult() {
-  return executor_->FetchResult();
+std::shared_ptr<framework::Tensor> PaddleMobile<Dtype, P>::FetchResult(int id) {
+  return executor_->FetchResult(id);
 };
 
 template <typename Dtype, Precision P>
