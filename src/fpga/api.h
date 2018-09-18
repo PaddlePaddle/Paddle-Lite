@@ -20,8 +20,6 @@ limitations under the License. */
 #include <limits>
 #include "framework/tensor.h"
 
-// memory management;
-
 namespace paddle_mobile {
 namespace fpga {
 
@@ -45,9 +43,6 @@ struct MemoryCopyArgs {
   size_t size;
 };
 
-/**
-Conv and Pooling kernel
-*/
 struct KernelArgs {
   uint32_t width;
   uint32_t height;
@@ -109,7 +104,6 @@ struct PoolingArgs {
   struct ImageOutputArgs output;
 };
 
-// elementwise add arguments
 struct EWAddArgs {
   bool relu_enabled;
 
