@@ -26,5 +26,5 @@ def get_file_size(file_path):
     return round(fsize, 2)
 
 
-path = "/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/yolo/__model__"
+path = "newyolo/__model__"
 read_model(path)
