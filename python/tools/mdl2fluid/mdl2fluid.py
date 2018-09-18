@@ -47,47 +47,153 @@ class Converter:
                 if 'name' in layer:
                     l_name = layer['name']
                 if 'type' in layer:
-                    l_type = layer['type']
-                    # print l_type
-                    # print mdl2fluid_op_layer_dict.get(l_type)
-                    desc_ops_add.type = types.mdl2fluid_op_layer_dict.get(l_type)
+                    self.package_ops_type(desc_ops_add, layer)
                 if 'weight' in layer:
-                    l_weights = layer['weight']
-
-                    op_tup = types.op_io_dict.get(desc_ops_add.type).get(types.mdl_weight_key)
-                    # print len(op_tup)
-
-                    for i, val in enumerate(op_tup):
-                        print i
-                        print val
-                        inputs_add = desc_ops_add.inputs.add()
-                        # print w
-                        inputs_add.parameter = op_tup[i]
-                        inputs_add.arguments.append(l_weights[i])
-
-                    # for w in l_weights:
-                    #     inputs_add = desc_ops_add.inputs.add()
-                    #     # print w
-                    #     inputs_add.parameter = op_tup[0]
-                    #     inputs_add.arguments.append(w)
-                if 'param' in layer:
-                    l_params = layer['param']
+                    self.package_ops_weight2inputs(desc_ops_add, layer)
 
                 if 'output' in layer:
-                    l_outputs = layer['output']
-                    for o in l_outputs:
-                        # print o
-                        outputs_add = desc_ops_add.outputs.add()
-                        outputs_add.parameter = types.op_io_dict.get(desc_ops_add.type).get(types.mdl_outputs_key)
-                        outputs_add.arguments.append(o)
+                    self.package_ops_outputs(desc_ops_add, layer)
 
                 if 'input' in layer:
-                    l_inputs = layer['input']
-                    for i in l_inputs:
-                        inputs_add = desc_ops_add.inputs.add()
-                        # print i
-                        inputs_add.parameter = types.op_io_dict.get(desc_ops_add.type).get(types.mdl_inputs_key)
-                        inputs_add.arguments.append(i)
+                    self.package_ops_inputs(desc_ops_add, layer)
+
+                self.package_ops_attrs(desc_ops_add, layer)
+
+    @staticmethod
+    def package_ops_attrs(desc_ops_add, layer):
+        # print l_params
+        # print desc_ops_add.type
+        if desc_ops_add.type == types.op_fluid_fusion_conv_add:
+            Converter.pack_fusion_conv_add_attr(desc_ops_add, layer)
+        elif desc_ops_add.type == types.op_fluid_relu:
+            # fusion_conv_add : attrs
+            attrs_add = desc_ops_add.attrs.add()
+            attrs_add.name = 'use_mkldnn'
+            # boolean
+            attrs_add.type = 6
+            attrs_add.b = 0
+
+    @staticmethod
+    def pack_fusion_conv_add_attr(desc_ops_add, layer):
+
+        # fusion_conv_add : attrs
+        attrs_add = desc_ops_add.attrs.add()
+        attrs_add.name = 'workspace_size_MB'
+        # 0-->INT
+        attrs_add.type = 0
+        attrs_add.i = 4096
+
+        attrs_add = desc_ops_add.attrs.add()
+        attrs_add.name = 'data_format'
+        # 2-->STRING
+        attrs_add.type = 2
+        attrs_add.s = 'AnyLayout'
+
+        attrs_add = desc_ops_add.attrs.add()
+        attrs_add.name = 'use_mkldnn'
+        # boolean
+        attrs_add.type = 6
+        attrs_add.b = 0
+
+        attrs_add = desc_ops_add.attrs.add()
+        attrs_add.name = 'use_cudnn'
+        # boolean
+        attrs_add.type = 6
+        attrs_add.b = 1
+
+        attrs_add = desc_ops_add.attrs.add()
+        attrs_add.name = 'dilations'
+        # ints
+        attrs_add.type = 3
+        attrs_add.ints.append(1)
+        attrs_add.ints.append(1)
+
+        if 'param' in layer:
+            l_params = layer['param']
+
+            attrs_add = desc_ops_add.attrs.add()
+            attrs_add.name = 'paddings'
+            # ints
+            attrs_add.type = 6
+            attrs_add.ints.append(l_params[types.fusion_conv_add_attrs_dict.get('paddings')])
+            attrs_add.ints.append(l_params[types.fusion_conv_add_attrs_dict.get('paddings')])
+
+            attrs_add = desc_ops_add.attrs.add()
+            attrs_add.name = 'strides'
+            # ints
+            attrs_add.type = 6
+            attrs_add.ints.append(l_params[types.fusion_conv_add_attrs_dict.get('strides')])
+            attrs_add.ints.append(l_params[types.fusion_conv_add_attrs_dict.get('strides')])
+
+            attrs_add = desc_ops_add.attrs.add()
+            attrs_add.name = 'groups'
+            # int
+            attrs_add.type = 0
+            attrs_add.i = l_params[types.fusion_conv_add_attrs_dict.get('groups')]
+
+        #
+        # op_attrs_tupl = types.op_io_dict.get(desc_ops_add.type) \
+        #     .get(types.mdl_attrs_key)
+        #
+        #
+        #
+        #
+        # # group stride padding
+        # print '----------------------'
+        # for i, val in enumerate(op_attrs_tupl):
+        #     attrs_add = desc_ops_add.attrs.add()
+        #     attr_name = op_attrs_tupl[i]
+        #     print attr_name
+        #     attrs_add.name = attr_name
+        #     attrs_add.type = types.fluid_attrs_type_dict.get(attr_name)
+        #     attrs_add.
+        #     print l_params[types.fusion_conv_add_attrs_dict.get(attr_name)]
+
+        # for p in l_params:
+        #     attrs_add = desc_ops_add.attrs.add()
+
+    @staticmethod
+    def package_ops_inputs(desc_ops_add, layer):
+        l_inputs = layer['input']
+        for i in l_inputs:
+            inputs_add = desc_ops_add.inputs.add()
+            # print i
+            inputs_add.parameter = types.op_io_dict.get(desc_ops_add.type).get(types.mdl_inputs_key)
+            inputs_add.arguments.append(i)
+
+    @staticmethod
+    def package_ops_outputs(desc_ops_add, layer):
+        l_outputs = layer['output']
+        for o in l_outputs:
+            # print o
+            outputs_add = desc_ops_add.outputs.add()
+            outputs_add.parameter = types.op_io_dict.get(desc_ops_add.type).get(types.mdl_outputs_key)
+            outputs_add.arguments.append(o)
+
+    @staticmethod
+    def package_ops_weight2inputs(desc_ops_add, layer):
+        l_weights = layer['weight']
+        op_weight_tup = types.op_io_dict.get(desc_ops_add.type).get(types.mdl_weight_key)
+        # print len(op_weight_tup)
+        for i, val in enumerate(op_weight_tup):
+            # print i
+            # print val
+            inputs_add = desc_ops_add.inputs.add()
+            # print w
+            inputs_add.parameter = op_weight_tup[i]
+            inputs_add.arguments.append(l_weights[i])
+        # for w in l_weights:
+        #     inputs_add = desc_ops_add.inputs.add()
+        #     # print w
+        #     inputs_add.parameter = op_weight_tup[0]
+        #     inputs_add.arguments.append(w)
+
+    @staticmethod
+    def package_ops_type(desc_ops_add, layer):
+        l_type = layer['type']
+        # print l_type
+        # print mdl2fluid_op_layer_dict.get(l_type)
+        desc_ops_add.type = types.mdl2fluid_op_layer_dict.get(l_type)
 
 
 # print mdl_path
