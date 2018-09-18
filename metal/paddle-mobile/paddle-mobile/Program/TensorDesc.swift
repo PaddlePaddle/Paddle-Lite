@@ -14,7 +14,7 @@
 
 import Foundation
 
-struct TensorDesc {
+class TensorDesc {
     let dims: [Int]
     let dataType: VarTypeType
     let dataLayout: DataLayout = DataLayout.NCHW()
