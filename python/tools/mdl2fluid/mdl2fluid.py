@@ -34,6 +34,9 @@ class Converter:
         print self.program_desc.blocks
 
     def package_ops(self, block_desc):
+
+        self.add_op_feed(block_desc)
+
         # add ops with layer
         if 'layer' in self.mdl_json:
 
@@ -58,6 +61,37 @@ class Converter:
                     self.package_ops_inputs(desc_ops_add, layer)
 
                 self.package_ops_attrs(desc_ops_add, layer)
+        self.add_op_fetch(block_desc)
+
+    def add_op_feed(self, block_desc):
+        desc_ops_add = block_desc.ops.add()
+        inputs_add = desc_ops_add.inputs.add()
+        inputs_add.parameter = 'X'
+        inputs_add.arguments.append('feed')
+        desc_ops_add.type = 'feed'
+        outputs_add = desc_ops_add.outputs.add()
+        outputs_add.parameter = 'Out'
+        outputs_add.arguments.append('data')
+        attrs_add = desc_ops_add.attrs.add()
+        attrs_add.name = 'col'
+        # boolean
+        attrs_add.type = 0
+        attrs_add.i = 0
+
+    def add_op_fetch(self, block_desc):
+        desc_ops_add = block_desc.ops.add()
+        inputs_add = desc_ops_add.inputs.add()
+        inputs_add.parameter = 'X'
+        inputs_add.arguments.append('conv_pred_87')
+        desc_ops_add.type = 'fetch'
+        outputs_add = desc_ops_add.outputs.add()
+        outputs_add.parameter = 'Out'
+        outputs_add.arguments.append('fetch')
+        attrs_add = desc_ops_add.attrs.add()
+        attrs_add.name = 'col'
+        # boolean
+        attrs_add.type = 0
+        attrs_add.i = 0
 
     @staticmethod
     def package_ops_attrs(desc_ops_add, layer):
