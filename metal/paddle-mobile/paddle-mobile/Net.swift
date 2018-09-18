@@ -55,4 +55,8 @@ public class Net: NSObject {
   @objc public init(device: MTLDevice) {
     super.init()
   }
+  
+  func updateProgram(program: Program) {
+
+  }
 }

@@ -14,7 +14,7 @@
         <!--Multi Predict View Controller-->
         <scene sceneID="ec4-AW-9Vs">
             <objects>
-                <viewController id="Vwd-lt-764" customClass="Multi_Predict_ViewController" customModule="paddle_mobile_demo" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="Vwd-lt-764" customClass="MultiPredictViewController" customModule="paddle_mobile_demo" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="55D-rz-Ex6">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -50,7 +50,7 @@
                             <imageView userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="ZZh-fw-LwK">
                                 <rect key="frame" x="0.0" y="20" width="225" height="247"/>
                             </imageView>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Thread:" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="2EB-m2-a3L">
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Platform:" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="2EB-m2-a3L">
                                 <rect key="frame" x="10" y="538" width="68" height="24"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="68" id="Q5J-tq-JSX"/>
@@ -236,7 +236,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-1543.2" y="-147.07646176911544"/>
+            <point key="canvasLocation" x="-1127" y="-3"/>
         </scene>
     </scenes>
     <resources>
