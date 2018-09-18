@@ -125,7 +125,6 @@ struct ConcatParam {
   #undef R
 #undef V
 
-
 #define V VNORMAL
   #define R 4
     #define N 2
@@ -138,3 +137,35 @@ struct ConcatParam {
     #undef N
   #undef R
 #undef V
+
+
+#define V VY
+  #define R 2
+    #define N 2
+      #define P float
+        #include "ConcatKernel.inc.metal"
+      #undef P
+      #define P half
+        #include "ConcatKernel.inc.metal"
+      #undef P
+    #undef N
+  #undef R
+#undef V
+
+
+#define V VY
+  #define R 2
+    #define N 5
+      #define P float
+        #include "ConcatKernel.inc.metal"
+      #undef P
+      #define P half
+        #include "ConcatKernel.inc.metal"
+      #undef P
+    #undef N
+  #undef R
+#undef V
+
+
+
+

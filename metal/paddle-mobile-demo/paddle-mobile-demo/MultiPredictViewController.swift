@@ -9,7 +9,7 @@
 import UIKit
 import paddle_mobile
 
-class Multi_Predict_ViewController: UIViewController {
+class MultiPredictViewController: UIViewController {
   var runner1: Runner!
   var runner2: Runner!
   override func viewDidLoad() {

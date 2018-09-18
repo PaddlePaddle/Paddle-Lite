@@ -39,6 +39,7 @@ class SplitParam<P: PrecisionType>: OpParam {
       throw error
     }
   }
+  
   var axis: Int
   let input: Texture<P>
   var output: Texture<P>
