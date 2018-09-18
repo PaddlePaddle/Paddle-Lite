@@ -44,7 +44,7 @@ if (LOG_PROFILE)
     add_definitions(-DPADDLE_MOBILE_PROFILE)
 endif()
 
-if(USE_OPENMP AND NOT IS_IOS)
+if(USE_OPENMP)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
     add_definitions(-DPADDLE_MOBILE_USE_OPENMP)
 endif()
