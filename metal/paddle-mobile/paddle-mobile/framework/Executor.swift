@@ -76,11 +76,23 @@ public class Executor<P: PrecisionType> {
     program = inProgram
     device = inDevice
     queue = inQueue
+//    print("before for ")
+//print(program.scope.vars["fea_pyramid1_mbox_conf_flat.Flatten.output.1.tmp_0"])
+    
+    
     for block in inProgram.programDesc.blocks {
       //block.ops.count
       for i in 0..<block.ops.count {
         let op = block.ops[i]
         do {
+//          print("in for i \(i): ")
+//      print(program.scope.vars["fea_pyramid1_mbox_conf_flat.Flatten.output.1.tmp_0"])
+//
+//          if i == 56 {
+//          print(program.scope.vars["fea_pyramid1_mbox_conf_flat.Flatten.output.1.tmp_0"])
+//
+//          }
+          
           let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
           ops.append(op)
         } catch let error {
