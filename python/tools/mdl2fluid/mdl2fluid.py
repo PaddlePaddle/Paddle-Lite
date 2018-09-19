@@ -22,6 +22,7 @@ class Converter:
         self.mdl_json = load_mdl(self.mdl_json_path)
         self.program_desc = framework_pb2.ProgramDesc()
         self.weight_list_ = []
+        self.deepwise_weight_list_ = []
         # print(json_dick)
         # layers = (json_dick['layer'])
         # for layer in layers:
@@ -46,7 +47,6 @@ class Converter:
         f.write(desc_serialize_to_string)
         f.close()
 
-
     def package_ops(self, block_desc):
 
         self.add_op_feed(block_desc)
@@ -63,7 +63,6 @@ class Converter:
                 #     print i
                 if 'name' in layer:
                     l_name = layer['name']
-
                 if 'type' in layer:
                     self.package_ops_type(desc_ops_add, layer)
 
@@ -159,20 +158,26 @@ class Converter:
         attrs_add.ints.append(1)
         attrs_add.ints.append(1)
 
+        attrs_add = desc_ops_add.attrs.add()
+        attrs_add.name = 'axis'
+        # int
+        attrs_add.type = 0
+        attrs_add.i = 1
+
         if 'param' in layer:
             l_params = layer['param']
 
             attrs_add = desc_ops_add.attrs.add()
             attrs_add.name = 'paddings'
             # ints
-            attrs_add.type = 6
+            attrs_add.type = 3
             attrs_add.ints.append(l_params[types.fusion_conv_add_attrs_dict.get('paddings')])
             attrs_add.ints.append(l_params[types.fusion_conv_add_attrs_dict.get('paddings')])
 
             attrs_add = desc_ops_add.attrs.add()
             attrs_add.name = 'strides'
             # ints
-            attrs_add.type = 6
+            attrs_add.type = 3
             attrs_add.ints.append(l_params[types.fusion_conv_add_attrs_dict.get('strides')])
             attrs_add.ints.append(l_params[types.fusion_conv_add_attrs_dict.get('strides')])
 
@@ -181,6 +186,7 @@ class Converter:
             # int
             attrs_add.type = 0
             attrs_add.i = l_params[types.fusion_conv_add_attrs_dict.get('groups')]
+            # attrs_add.i = 1
 
         #
         # op_attrs_tupl = types.op_io_dict.get(desc_ops_add.type) \
@@ -225,6 +231,11 @@ class Converter:
         l_weights = layer['weight']
         for w in l_weights:
             self.weight_list_.append(w)
+
+        if layer['type'] == 'DepthwiseConvolutionLayer':
+            # print l_weights[0]
+            self.deepwise_weight_list_.append(l_weights[0])
+
         op_weight_tup = types.op_io_dict.get(desc_ops_add.type).get(types.mdl_weight_key)
         # print len(op_weight_tup)
         for i, val in enumerate(op_weight_tup):
@@ -264,7 +275,7 @@ class Converter:
             vars_add = block_desc.vars.add()
             vars_add.name = j
             vars_add.type.type = 7  # 7 is lodtensor
-            print j
+            # print j
             tensor = vars_add.type.lod_tensor.tensor
             tensor.data_type = 5  # 5 is FP32
 
@@ -280,13 +291,22 @@ class Converter:
             #     tensor.dims.append(dims_of_matrix[1])  # H
             #     tensor.dims.append(dims_of_matrix[2])  # W
             # else:
-            for dims in dims_of_matrix:
-                # print dims
-                tensor.dims.append(dims)
+
+            # issues in mdl model filter swich n and c
+            if j in self.deepwise_weight_list_ and len(dims_of_matrix) == 4:
+                print j
+                tensor.dims.append(dims_of_matrix[1])
+                tensor.dims.append(dims_of_matrix[0])
+                tensor.dims.append(dims_of_matrix[2])
+                tensor.dims.append(dims_of_matrix[3])
+                print tensor.dims
+            else:
+                for dims in dims_of_matrix:
+                    # print dims
+                    tensor.dims.append(dims)
 
             if j in self.weight_list_:
                 vars_add.persistable = 1
-                # todo parweight channel
                 dims_size = len(dims_of_matrix)
                 # print dims_size
                 if dims_size == 4:

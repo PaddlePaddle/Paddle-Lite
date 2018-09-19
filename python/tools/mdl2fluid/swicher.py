@@ -67,9 +67,9 @@ class Swichter:
     def read_head(self, head_file):
         from_file = open(head_file, "rb")
         read = from_file.read(20)
-        print read
+        # print read
         from_file.close()
-        print read
+        # print read
         return read
 
     def copy_add_head(self, from_file_name, to_file_name, tmp_file_name):
