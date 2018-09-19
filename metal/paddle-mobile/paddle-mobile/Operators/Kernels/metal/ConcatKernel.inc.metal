@@ -65,7 +65,7 @@ kernel void FUNC(concat, R, N, VV, P)(texture2d_array<P, access::read> in0 [[tex
        }
        k -= cp.vdim[j];
      }
-     if (k > cp.vdim[N-1]) {
+     if (j == N) {
        continue;
      }
      int ta = cp.odim[cp.axis];
