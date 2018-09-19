@@ -27,6 +27,10 @@ class BoxcoderParam<P: PrecisionType>: OpParam {
     } catch let error {
       throw error
     }
+    assert(priorBox.tensorDim.cout() == 2)
+    assert(priorBoxVar.tensorDim.cout() == 2)
+    assert(targetBox.tensorDim.cout() == 3)
+    assert(output.tensorDim.cout() == 3)
     assert(priorBox.transpose == [0, 1, 2, 3])
     assert(priorBoxVar.transpose == [0, 1, 2, 3])
     assert(targetBox.transpose == [0, 1, 2, 3])
@@ -59,30 +63,19 @@ class BoxcoderOp<P: PrecisionType>: Operator<BoxcoderKernel<P>, BoxcoderParam<P>
   
   func delogOutput() {
     print(" \(type) output: ")
-//    let priorBoxpadToFourDim = para.priorBox.padToFourDim
-//    let priorBoxArray: [Float32] = para.priorBox.metalTexture.realNHWC(dim: (n: priorBoxpadToFourDim[0], h: priorBoxpadToFourDim[1], w: priorBoxpadToFourDim[2], c: priorBoxpadToFourDim[3]))
-//    print(" prior box ")
-//    print(priorBoxArray.strideArray())
-//
-//    let priorBoxVarpadToFourDim = para.priorBoxVar.padToFourDim
-//    let priorBoxVarArray: [Float32] = para.priorBoxVar.metalTexture.realNHWC(dim: (n: priorBoxVarpadToFourDim[0], h: priorBoxVarpadToFourDim[1], w: priorBoxVarpadToFourDim[2], c: priorBoxVarpadToFourDim[3]))
-//    print(" prior box var ")
-//    print(priorBoxVarArray.strideArray())
-//
-//    let targetBoxpadToFourDim = para.targetBox.padToFourDim
-//    let targetBoxArray: [Float32] = para.targetBox.metalTexture.realNHWC(dim: (n: targetBoxpadToFourDim[0], h: targetBoxpadToFourDim[1], w: targetBoxpadToFourDim[2], c: targetBoxpadToFourDim[3]))
-//    print(" target box ")
-//    print(targetBoxArray.strideArray())
-    
-    let targetBoxpadToFourDim = para.targetBox.padToFourDim
-    let targetBoxArray = para.targetBox.metalTexture.realNHWC(dim: (n: targetBoxpadToFourDim[0], h: targetBoxpadToFourDim[1], w: targetBoxpadToFourDim[2], c: targetBoxpadToFourDim[3]))
+    let device = para.output.metalTexture!.device
+    let pbv : [Float32] = device.texture2tensor(texture: para.priorBoxVar.metalTexture!, dim: para.priorBoxVar.tensorDim.dims, transpose: para.priorBoxVar.transpose)
+    let pb : [Float32] = device.texture2tensor(texture: para.priorBox.metalTexture!, dim: para.priorBox.tensorDim.dims, transpose: para.priorBox.transpose)
+    let tb : [Float32] = device.texture2tensor(texture: para.targetBox.metalTexture!, dim: para.targetBox.tensorDim.dims, transpose: para.targetBox.transpose)
+    let out : [Float32] = device.texture2tensor(texture: para.output.metalTexture!, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
+    print(" prior box var ")
+    print(pbv.strideArray())
     print(" target box ")
-    print(targetBoxArray.strideArray())
-    
-    let padToFourDim = para.output.padToFourDim
-    let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
+    print(tb.strideArray())
+    print(" prior box ")
+    print(pb.strideArray())
     print(" output ")
-    print(outputArray.strideArray())
+    print(out.strideArray())
   }
   
 }

@@ -18,17 +18,19 @@ class ShapeParam<P: PrecisionType>: OpParam {
   typealias ParamPrecisionType = P
   required init(opDesc: OpDesc, inScope: Scope) throws {
     do {
-      output = try ShapeParam.output(outputs: opDesc.outputs, from: inScope)
+      input = try ShapeParam.input(inputs: opDesc.inputs, from: inScope)
+      output = try ShapeParam.outputOut(outputs: opDesc.outputs, from: inScope)
     } catch let error {
       throw error
     }
   }
   var output: Texture<P>
+  let input: Texture<P>
 }
 
-class ShapeOp<P: PrecisionType>: Operator<SplitKernel<P>, SplitParam<P>>, Runable, Creator, InferShaperable{
+class ShapeOp<P: PrecisionType>: Operator<ShapeKernel<P>, ShapeParam<P>>, Runable, Creator, InferShaperable{
   
-  typealias OpType = SplitOp<P>
+  typealias OpType = ShapeOp<P>
 
   func inferShape() {
     //        para.output.dim = para.input.dim

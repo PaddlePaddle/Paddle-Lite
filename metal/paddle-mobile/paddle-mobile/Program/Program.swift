@@ -14,7 +14,7 @@
 
 import Foundation
 
-public struct Program {
+public class Program {
     let paramPath: String
     let programDesc: ProgramDesc
     let scope: Scope

@@ -34,24 +34,44 @@ class PriorBoxKernel<P: PrecisionType>: Kernel, Computable{
   
   required init(device: MTLDevice, param: PriorBoxParam<P>) {
     
-    param.output.initTexture(device: device, inTranspose: [2, 0, 1, 3], computePrecision: computePrecision)
+    let originDim = param.output.tensorDim;
+    
+    param.output.tensorDim = Dim.init(inDim: [1, originDim[0], originDim[1], originDim[2] * originDim[3]])
+    param.output.padToFourDim = Dim.init(inDim: [1, originDim[0], originDim[1], originDim[2] * originDim[3]])
+    
+    param.output.initTexture(device: device, inTranspose: [0, 1, 2, 3], computePrecision: computePrecision)
     param.outputVariances.initTexture(device: device, inTranspose: [2, 0, 1, 3], computePrecision: computePrecision)
     
+    
     if computePrecision == .Float32 {
-      super.init(device: device, inFunctionName: "prior_box")
+      if param.min_max_aspect_ratios_order {
+        super.init(device: device, inFunctionName: "prior_box_MinMaxAspectRatiosOrder")
+      } else {
+        super.init(device: device, inFunctionName: "prior_box")
+      }
+      
     } else if computePrecision == .Float16 {
-      super.init(device: device, inFunctionName: "prior_box_half")
+      if param.min_max_aspect_ratios_order {
+        super.init(device: device, inFunctionName: "prior_box_MinMaxAspectRatiosOrder_half")
+      } else {
+        super.init(device: device, inFunctionName: "prior_box_half")
+      }
     } else {
       fatalError()
     }
     
-    let n = 1
-    let h = param.output.dim[1]
-    let w = param.output.dim[2]
-    let c = param.output.dim[3] * param.output.dim[0]
     
-    param.output.dim = Dim.init(inDim: [n, h, w, c])
-    param.output.transpose = [0, 1, 2, 3]
+    guard param.minSizes.count == 1 else {
+      fatalError(" need implement ")
+    }
+    
+//    let n = 1
+//    let h = param.output.dim[1]
+//    let w = param.output.dim[2]
+//    let c = param.output.dim[3] * param.output.dim[0]
+//
+//    param.output.dim = Dim.init(inDim: [n, h, w, c])
+//    param.output.transpose = [0, 1, 2, 3]
     
     let imageWidth = Float32(param.inputImage.padToFourDim[3])
     let imageHeight = Float32(param.inputImage.padToFourDim[2])

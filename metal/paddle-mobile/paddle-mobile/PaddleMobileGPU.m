@@ -43,7 +43,15 @@
 }
 
 -(void)predict:(id<MTLTexture>)texture withCompletion:(void (^)(BOOL, NSArray<NSNumber *> *))completion {
-  [runner predictWithTexture:texture completion:completion];
+  [runner predictWithTexture:texture completion:^(BOOL success, ResultHolder * _Nullable result) {
+    NSMutableArray<NSNumber *> *resultArray = [NSMutableArray arrayWithCapacity:result.capacity];
+    for (int i = 0; i < result.capacity; ++i) {
+      [resultArray addObject:[NSNumber numberWithFloat:result.result[i]]];
+    }
+    completion(success, resultArray);
+    
+  }];
+//  [runner predictWithTexture:texture completion:completion];
 }
 
 -(void)clear {

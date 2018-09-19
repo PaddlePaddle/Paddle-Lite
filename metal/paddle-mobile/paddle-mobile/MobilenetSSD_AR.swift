@@ -30,50 +30,112 @@ public class MobileNet_ssd_AR: Net{
   class MobilenetssdPreProccess: CusomKernel {
     init(device: MTLDevice) {
       let s = CusomKernel.Shape.init(inWidth: 160, inHeight: 160, inChannel: 3)
-      super.init(device: device, inFunctionName: "mobilent_ar_preprocess_half", outputDim: s, usePaddleMobileLib: false)
+      super.init(device: device, inFunctionName: "mobilent_ar_preprocess", outputDim: s, usePaddleMobileLib: false)
     }
   }
   
-  override public func resultStr(res: [Float]) -> String {
-    return " \(res)"
+  override public func resultStr(res: ResultHolder) -> String {
+    return " \(res.result![0])"
   }
   
-  override func fetchResult(paddleMobileRes: ResultHolder) -> [Float32] {
-    
+  override func fetchResult(paddleMobileRes: GPUResultHolder) -> ResultHolder {
     guard let interRes = paddleMobileRes.intermediateResults else {
       fatalError(" need have inter result ")
     }
     
-    guard let scores = interRes["Scores"], scores.count > 0, let score = scores[0] as?  Texture<Float32> else {
+    guard let scores = interRes["Scores"], scores.count > 0, let score = scores[0] as?  FetchHolder else {
       fatalError(" need score ")
     }
     
-    guard let bboxs = interRes["BBoxes"], bboxs.count > 0, let bbox = bboxs[0] as? Texture<Float32> else {
+    guard let bboxs = interRes["BBoxes"], bboxs.count > 0, let bbox = bboxs[0] as? FetchHolder else {
       fatalError()
     }
     
-    var scoreFormatArr: [Float32] = score.metalTexture.realNHWC(dim: (n: score.padToFourDim[0], h: score.padToFourDim[1], w: score.padToFourDim[2], c: score.padToFourDim[3]))
-    //    print("score: ")
-    //    print(scoreFormatArr.strideArray())
-    //
-    var bboxArr = bbox.metalTexture.float32Array()
-    //    print("bbox: ")
-    //    print(bboxArr.strideArray())
+//    let startDate = Date.init()
+    
+//    print("scoreFormatArr: ")
+//print((0..<score.capacity).map{ score.result[$0] }.strideArray())
+//
+//    print("bbox arr: ")
+//
+//    print((0..<bbox.capacity).map{ bbox.result[$0] }.strideArray())
     
     let nmsCompute = NMSCompute.init()
-    nmsCompute.scoreThredshold = 0.01
-    nmsCompute.nmsTopK = 400
-    nmsCompute.keepTopK = 200
+    nmsCompute.scoreThredshold = 0.25
+    nmsCompute.nmsTopK = 100
+    nmsCompute.keepTopK = 100
     nmsCompute.nmsEta = 1.0
-    nmsCompute.nmsThreshold = 0.45
+    nmsCompute.nmsThreshold = 0.449999988
     nmsCompute.background_label = 0;
-    nmsCompute.scoreDim = [NSNumber.init(value: score.tensorDim[0]), NSNumber.init(value: score.tensorDim[1]), NSNumber.init(value: score.tensorDim[2])]
-    nmsCompute.bboxDim = [NSNumber.init(value: bbox.tensorDim[0]), NSNumber.init(value: bbox.tensorDim[1]), NSNumber.init(value: bbox.tensorDim[2])]
-    guard let result = nmsCompute.compute(withScore: &scoreFormatArr, andBBoxs: &bboxArr) else {
+    nmsCompute.scoreDim = [NSNumber.init(value: score.dim[0]), NSNumber.init(value: score.dim[1]), NSNumber.init(value: score.dim[2])]
+    nmsCompute.bboxDim = [NSNumber.init(value: bbox.dim[0]), NSNumber.init(value: bbox.dim[1]), NSNumber.init(value: bbox.dim[2])]
+    guard let result = nmsCompute.compute(withScore: score.result, andBBoxs: bbox.result) else {
       fatalError( " result error " )
     }
-    
-    let output: [Float32] = result.map { $0.floatValue }
-    return output
+    let resultHolder = ResultHolder.init(inResult: result.output, inCapacity: Int(result.outputSize))
+//    for i in 0..<Int(result.outputSize) {
+//
+//      print("i \(i) : \(result.output[i])")
+//    }
+//    print(Date.init().timeIntervalSince(startDate))
+
+//    print(resultHolder.result![0])
+    return resultHolder
   }
+  
+  override func updateProgram(program: Program) {
+    for i in [56, 66, 76, 86, 93, 99] {
+      let opDesc = program.programDesc.blocks[0].ops[i]
+      let output = opDesc.outputs["Out"]!.first!
+      let v = program.scope[output]!
+      let originTexture = v as! Texture<Float32>
+      originTexture.tensorDim = Dim.init(inDim: [originTexture.tensorDim[1] / 7, originTexture.tensorDim[0] * 7])
+      
+      originTexture.dim = Dim.init(inDim: [1, 1, originTexture.dim[3] / 7, originTexture.dim[2] * 7])
+      
+      originTexture.padToFourDim = Dim.init(inDim: [1, 1, originTexture.padToFourDim[3] / 7, originTexture.padToFourDim[2] * 7])
+      
+      program.scope[output] = originTexture
+      
+      if i == 99 {
+        opDesc.attrs["axis"] = 0
+      } else {
+        opDesc.attrs["shape"] = originTexture.tensorDim.dims.map { Int32($0) }
+      }
+    }
+    
+    for i in [58, 59, 88, 89, 95, 96, 68, 69, 78, 79] {
+      let opDesc = program.programDesc.blocks[0].ops[i]
+      let output = opDesc.outputs["Out"]!.first!
+      let v = program.scope[output]!
+      
+      
+
+      let originTexture = v as! Texture<Float32>
+      originTexture.tensorDim = Dim.init(inDim: [originTexture.tensorDim[1], originTexture.tensorDim[2]])
+      opDesc.attrs["shape"] = originTexture.tensorDim.dims.map { Int32($0) }
+    }
+    
+    for i in [60, 101, 90, 97, 70, 80] {
+      let opDesc = program.programDesc.blocks[0].ops[i]
+      let output = opDesc.outputs["Out"]!.first!
+      let v = program.scope[output]!
+      let originTexture = v as! Texture<Float32>
+      originTexture.tensorDim = Dim.init(inDim: [originTexture.tensorDim[1], originTexture.tensorDim[2]])
+      opDesc.attrs["axis"] = (opDesc.attrs["axis"]! as! Int) - 1
+    }
+    
+    for i in [102] {
+      let opDesc = program.programDesc.blocks[0].ops[i]
+      for output in opDesc.outputs["Out"]! {
+        let v = program.scope[output]!
+        let originTexture = v as! Texture<Float32>
+        originTexture.tensorDim = Dim.init(inDim: [originTexture.tensorDim[1], originTexture.tensorDim[2]])
+      }
+      opDesc.attrs["axis"] = (opDesc.attrs["axis"]! as! Int) - 1
+      print(" split axis \(opDesc.attrs["axis"])")
+    }
+    // 99
+  }
+  
 }

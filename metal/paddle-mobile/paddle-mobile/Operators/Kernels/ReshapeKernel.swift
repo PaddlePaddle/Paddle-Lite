@@ -49,10 +49,12 @@ class ReshapeKernel<P: PrecisionType>: Kernel, Computable{
       odim: (od[0], od[1], od[2], od[3]),
       otrans: (ot[0], ot[1], ot[2], ot[3])
     )
+    let irank = param.input.tensorDim.cout()
+    let orank = param.output.tensorDim.cout()
     if computePrecision == .Float32 {
-      super.init(device: device, inFunctionName: "reshape")
+      super.init(device: device, inFunctionName: "reshape_\(irank)_\(orank)_float")
     } else if computePrecision == .Float16 {
-      super.init(device: device, inFunctionName: "reshape_half")
+      super.init(device: device, inFunctionName: "reshape_\(irank)_\(orank)_half")
     } else {
       fatalError()
     }
@@ -72,7 +74,7 @@ class ReshapeKernel<P: PrecisionType>: Kernel, Computable{
     guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
       throw PaddleMobileError.predictError(message: " encoder is nil")
     }
-    
+
     encoder.setTexture(param.input.metalTexture, index: 0)
     encoder.setTexture(param.output.metalTexture, index: 1)
 
@@ -81,15 +83,15 @@ class ReshapeKernel<P: PrecisionType>: Kernel, Computable{
     encoder.endEncoding()
   }
   
-  func test(commandBuffer: MTLCommandBuffer, testParam: ReshapeTestParam) {
-    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-      fatalError()
-    }
-    encoder.setTexture(testParam.inputTexture, index: 0)
-    encoder.setTexture(testParam.outputTexture, index: 1)
-    var pm: ReshapeMetalParam = testParam.param
-    encoder.setBytes(&pm, length: MemoryLayout<ReshapeMetalParam>.size, index: 0)
-    encoder.dispatch(computePipline: pipline, outTexture: testParam.outputTexture)
-    encoder.endEncoding()
-  }
+//  func test(commandBuffer: MTLCommandBuffer, testParam: ReshapeTestParam) {
+//    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+//      fatalError()
+//    }
+//    encoder.setTexture(testParam.inputTexture, index: 0)
+//    encoder.setTexture(testParam.outputTexture, index: 1)
+//    var pm: ReshapeMetalParam = testParam.param
+//    encoder.setBytes(&pm, length: MemoryLayout<ReshapeMetalParam>.size, index: 0)
+//    encoder.dispatch(computePipline: pipline, outTexture: testParam.outputTexture)
+//    encoder.endEncoding()
+//  }
 }

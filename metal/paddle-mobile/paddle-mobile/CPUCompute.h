@@ -16,6 +16,12 @@
 
 #import <Foundation/Foundation.h>
 
+
+@interface CPUResult: NSObject
+@property (assign, nonatomic) float *output;
+@property (assign, nonatomic) int outputSize;
+@end
+
 @interface NMSCompute: NSObject
 
 @property (assign, nonatomic) float scoreThredshold;
@@ -34,6 +40,6 @@
 
 @property (strong, nonatomic) NSArray<NSNumber *> *bboxDim;
 
--(NSArray<NSNumber *> *)computeWithScore:(float *)score andBBoxs:(float *)bbox;
+-(CPUResult *)computeWithScore:(float *)score andBBoxs:(float *)bbox;
 
 @end
