@@ -49,6 +49,7 @@
       [resultArray addObject:[NSNumber numberWithFloat:result.result[i]]];
     }
     completion(success, resultArray);
+    [result releasePointer];
     
   }];
 //  [runner predictWithTexture:texture completion:completion];

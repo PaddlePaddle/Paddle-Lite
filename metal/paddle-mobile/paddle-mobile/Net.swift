@@ -24,7 +24,7 @@ public class ResultHolder: NSObject {
     capacity = inCapacity
   }
   
-  public func releasePointer() {
+  @objc public func releasePointer() {
     result?.deinitialize(count: capacity)
     result?.deallocate()
   }
