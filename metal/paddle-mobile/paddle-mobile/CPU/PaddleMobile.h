@@ -17,7 +17,17 @@
 #import <CoreImage/CoreImage.h>
 #import <Foundation/Foundation.h>
 
-@interface PaddleMobile : NSObject
+@interface PaddleMobileCPUResult: NSObject
+
+@property (assign, nonatomic, readonly) float *output;
+
+@property (assign, nonatomic, readonly) int outputSize;
+
+-(void)releaseOutput;
+
+@end
+
+@interface PaddleMobileCPU : NSObject
 
 /*
     创建对象
@@ -42,31 +52,30 @@
          andModelParamsLen:(size_t)combinedParamsLen
       andCombinedParamsBuf:(const uint8_t *)combinedParamsBuf;
 
-
 /*
- *   进行预测, means 和 scale 为训练模型时的预处理参数, 如训练时没有做这些预处理则直接使用 predict
- */
-- (NSArray *)predict:(CGImageRef)image
-                 dim:(NSArray<NSNumber *> *)dim
-               means:(NSArray<NSNumber *> *)means
-               scale:(float)scale;
-
-/*
- *  预测输入
- * */
-- (NSArray *)predictInput:(float *)input
-                      dim:(NSArray<NSNumber *> *)dim
-                    means:(NSArray<NSNumber *> *)means
-                    scale:(float)scale;
-
-/*
- *  对图像进行预处理
+ *  对图像进行预处理, 需要外部开辟 output 内存, 外部释放 output 内存
  * */
 -(void)preprocess:(CGImageRef)image
            output:(float *)output
             means:(NSArray<NSNumber *> *)means
         scale:(float)scale
         dim:(NSArray<NSNumber *> *)dim;
+
+/*
+ * 预测预处理后的数据, 返回结果使用结束需要调用其 realseOutput 函数进行释放
+ * */
+- (PaddleMobileCPUResult *)predictInput:(float *)input
+                                    dim:(NSArray<NSNumber *> *)dim;
+
+/*
+    进行预测, means 和 scale 为训练模型时的预处理参数, 如训练时没有做这些预处理则直接使用 predict
+*/
+- (NSArray *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim means:(NSArray<NSNumber *> *)means scale:(float)scale;
+
+/*
+    进行预测, 默认 means 为 0, scale 为 1.0
+*/
+- (NSArray *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim;
 
 /*
     清理内存

@@ -14,7 +14,24 @@
 
 import Foundation
 
-class FlattenOp<P: PrecisionType>: Operator<ReshapeKernel<P>, ReshapeParam<P>>, Runable, Creator, InferShaperable{
+class FlattenParam<P: PrecisionType>: OpParam {
+  typealias ParamPrecisionType = P
+  required init(opDesc: OpDesc, inScope: Scope) throws {
+    do {
+      input = try FlattenParam.inputX(inputs: opDesc.inputs, from: inScope)
+      output = try FlattenParam.outputOut(outputs: opDesc.outputs, from: inScope)
+      axis = try FlattenParam.getAttr(key: "axis", attrs: opDesc.attrs)
+    } catch let error {
+      throw error
+    }
+  }
+  let input: Texture<P>
+  var output: Texture<P>
+  let axis: Int
+}
+
+
+class FlattenOp<P: PrecisionType>: Operator<FlattenKernel<P>, FlattenParam<P>>, Runable, Creator, InferShaperable{
   
   typealias OpType = FlattenOp<P>
 
@@ -32,6 +49,9 @@ class FlattenOp<P: PrecisionType>: Operator<ReshapeKernel<P>, ReshapeParam<P>>, 
   
   func delogOutput() {
     print(" \(type) output: ")
+    let device = para.output.metalTexture!.device
+    let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
+    print(outputArray.strideArray())
   }
   
 }

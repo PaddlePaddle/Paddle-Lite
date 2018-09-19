@@ -14,27 +14,32 @@
 
 import UIKit
 import MetalKit
+import CoreMedia
 import paddle_mobile
 import MetalPerformanceShaders
 
-let platform: Platform = .GPU
-let threadSupport = [1]
+var platform: Platform = .GPU
+let threadSupport: [(Platform, String)] = [(.GPU, "GPU"), (.CPU, "CPU")]
 
-let modelHelperMap: [SupportModel : Runner] = [.mobilenet_ssd : Runner.init(inNet: MobileNet_ssd_hand.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform),
+//.mobilenet_ssd : Runner.init(inNet: MobileNet_ssd_hand.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform),
+let modelHelperMap: [SupportModel : Runner] = [
                                                .genet : Runner.init(inNet: Genet.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform),
                                                .mobilenet_ssd_ar : Runner.init(inNet: MobileNet_ssd_AR.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform)]
 //, .genet : Genet.init()
 //let modelHelperMap: [SupportModel : Net] = [.mobilenet : MobileNet.init(), .mobilenet_ssd : MobileNet_ssd_hand.init()]
 
+let netSupport: [SupportModel : Net] = [.genet : Genet.init(device: MetalHelper.shared.device), .mobilenet_ssd_ar : MobileNet_ssd_AR.init(device: MetalHelper.shared.device)]
+
 enum SupportModel: String{
   //  case mobilenet = "mobilenet"
-  case mobilenet_ssd    = "mobilenetssd"
+//  case mobilenet_ssd    = "mobilenetssd"
   case genet            = "genet"
   case mobilenet_ssd_ar = "mobilenetssd_ar"
   
   static func supportedModels() -> [SupportModel] {
-    //.mobilenet,
-    return [.mobilenet_ssd, .genet, .mobilenet_ssd_ar]
+    // .mobilenet,
+    // .mobilenet_ssd,
+    return [.genet, .mobilenet_ssd_ar]
   }
 }
 
@@ -44,24 +49,36 @@ class ViewController: UIViewController {
   @IBOutlet weak var elapsedTimeLabel: UILabel!
   @IBOutlet weak var modelPickerView: UIPickerView!
   @IBOutlet weak var threadPickerView: UIPickerView!
-  
+  @IBOutlet weak var videoView: UIView!
+  var videoCapture: VideoCapture!
+
   var selectImage: UIImage?
   var inputPointer: UnsafeMutablePointer<Float32>?
   var modelType: SupportModel = SupportModel.supportedModels()[0]
   var toPredictTexture: MTLTexture?
   
-  var runner: Runner {
-    
-    get {
-      return modelHelperMap[modelType] ?! " has no this type "
-    }
-    set {
-    }
-  }
+  var runner: Runner!
   
   var threadNum = 1
   
   @IBAction func loadAct(_ sender: Any) {
+     runner = Runner.init(inNet: netSupport[modelType]!, commandQueue: MetalHelper.shared.queue, inPlatform: platform)
+    
+    if platform == .CPU {
+      if inputPointer == nil {
+        inputPointer = runner.preproccess(image: selectImage!.cgImage!)
+       
+      }
+    } else if platform == .GPU {
+      if self.toPredictTexture == nil {
+        runner.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
+          self?.toPredictTexture = texture
+        }
+      }
+    } else {
+      fatalError( " unsupport " )
+    }
+    
     if runner.load() {
       print(" load success ! ")
     } else {
@@ -81,7 +98,7 @@ class ViewController: UIViewController {
   }
   
   @IBAction func predictAct(_ sender: Any) {
-    let max = 1
+    let max = 50
     switch platform {
     case .GPU:
       guard let inTexture = toPredictTexture else {
@@ -91,7 +108,7 @@ class ViewController: UIViewController {
       
       let startDate = Date.init()
       for i in 0..<max {
-        runner.predict(texture: inTexture) { [weak self] (success, res) in
+        runner.predict(texture: inTexture) { [weak self] (success, resultHolder)  in
           guard let sSelf = self else {
             fatalError()
           }
@@ -99,11 +116,19 @@ class ViewController: UIViewController {
             if i == max - 1 {
               let time = Date.init().timeIntervalSince(startDate)
               DispatchQueue.main.async {
-                sSelf.resultTextView.text = sSelf.runner.net.resultStr(res: res)
+//                print(resultHolder!.result![0])
+                sSelf.resultTextView.text = sSelf.runner.net.resultStr(res: resultHolder!)
+                
                 sSelf.elapsedTimeLabel.text = "平均耗时: \(time/Double(max) * 1000.0) ms"
+               
               }
             }
           }
+          
+          DispatchQueue.main.async {
+            resultHolder?.releasePointer()
+          }
+//            print("释放")
         }
 //        print("sleep before ")
 //        usleep(33000)
@@ -116,6 +141,7 @@ class ViewController: UIViewController {
       
       for _ in 0..<10 {
         runner.predict(inputPointer: inInputPointer) { (success, res) in
+          res?.releaseOutput()
         }
       }
       
@@ -129,11 +155,12 @@ class ViewController: UIViewController {
             if i == max - 1 {
               let time = Date.init().timeIntervalSince(startDate)
               DispatchQueue.main.async {
-                sSelf.resultTextView.text = sSelf.runner.net.resultStr(res: res)
+//                sSelf.resultTextView.text = sSelf.runner.net.resultStr(res: res)
                 sSelf.elapsedTimeLabel.text = "平均耗时: \(time/Double(max) * 1000.0) ms"
               }
             }
           }
+          res?.releaseOutput()
         }
       }
     }
@@ -141,6 +168,13 @@ class ViewController: UIViewController {
   
   override func viewDidLoad() {
     super.viewDidLoad()
+    
+//    if runner.load() {
+//      print(" load success ! ")
+//    } else {
+//      print(" load error ! ")
+//    }
+//    
     modelPickerView.delegate = self
     modelPickerView.dataSource = self
     threadPickerView.delegate = self
@@ -149,15 +183,29 @@ class ViewController: UIViewController {
     selectImage = UIImage.init(named: "hand.jpg")
     selectImageView.image = selectImage
     
-    if platform == .CPU {
-      inputPointer = runner.preproccess(image: selectImage!.cgImage!)
-    } else if platform == .GPU {
-      runner.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
-        self?.toPredictTexture = texture
-      }
-    } else {
-      fatalError( " unsupport " )
-    }
+//    if platform == .CPU {
+//      inputPointer = runner.preproccess(image: selectImage!.cgImage!)
+//    } else if platform == .GPU {
+//      runner.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
+//        self?.toPredictTexture = texture
+//      }
+//    } else {
+//      fatalError( " unsupport " )
+//    }
+    
+//    videoCapture = VideoCapture.init(device: MetalHelper.shared.device, orientation: .portrait, position: .back)
+//    videoCapture.fps = 30
+//    videoCapture.delegate = self
+//    videoCapture.setUp { (success) in
+//      DispatchQueue.main.async {
+//        if let preViewLayer = self.videoCapture.previewLayer {
+//          self.videoView.layer.addSublayer(preViewLayer)
+//          self.videoCapture.previewLayer?.frame = self.videoView.bounds
+//        }
+//        self.videoCapture.start()
+//      }
+//    }
+
   }
 }
 
@@ -186,7 +234,7 @@ extension ViewController: UIPickerViewDataSource, UIPickerViewDelegate{
     if pickerView == modelPickerView {
       return SupportModel.supportedModels()[row].rawValue
     } else if pickerView == threadPickerView {
-      return "\(threadSupport[row])"
+      return threadSupport[row].1
     } else {
       fatalError()
     }
@@ -196,7 +244,8 @@ extension ViewController: UIPickerViewDataSource, UIPickerViewDelegate{
     if pickerView == modelPickerView {
       self.modelType = SupportModel.supportedModels()[row]
     } else if pickerView == threadPickerView {
-      self.threadNum = threadSupport[row]
+      
+      platform = threadSupport[row].0
     } else {
       fatalError()
     }
@@ -217,5 +266,33 @@ extension ViewController:  UIImagePickerControllerDelegate, UINavigationControll
     }
   }
 }
+
+var bool1 = false
+extension ViewController: VideoCaptureDelegate{
+  func predictTexture(texture: MTLTexture){
+    runner.scaleTexture(input: texture) { (scaledTexture) in
+      self.runner.predict(texture: scaledTexture, completion: { (success, resultHolder) in
+//        print(resultHolder!.result![0])
+        resultHolder?.releasePointer()
+      })
+    }
+  }
+  
+  
+  func videoCapture(_ capture: VideoCapture, didCaptureVideoTexture texture: MTLTexture?, timestamp: CMTime) {
+//    if !bool1 {
+//      DispatchQueue.main.asyncAfter(deadline: DispatchTime.init(uptimeNanoseconds: 500000000)) {
+    self.predictTexture(texture: texture!)
+//      }
+
+      
+//      bool1 = true
+//    }
+    
+  }
+
+}
+
+
 
 

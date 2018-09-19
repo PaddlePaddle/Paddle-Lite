@@ -27,10 +27,16 @@ class BilinearInterpKernel<P: PrecisionType>: Kernel, Computable{
     
     encoder.setTexture(param.input.metalTexture, index: 0)
     encoder.setTexture(param.output.metalTexture, index: 1)
-    let ratio_h: Float32 = Float32(param.input.tensorDim.dims[2]) / Float32(param.output.tensorDim.dims[2])
-    let ratio_w: Float32 = Float32(param.input.tensorDim.dims[3]) / Float32(param.output.tensorDim.dims[3])
+    var ratio_h: Float32 = 0
+    var ratio_w: Float32 = 0
+    if param.output.tensorDim.dims[2] > 1 {
+      ratio_h = Float32(param.input.tensorDim.dims[2]-1) / Float32(param.output.tensorDim.dims[2]-1)
+    }
+    if param.output.tensorDim.dims[3] > 1 {
+      ratio_w = Float32(param.input.tensorDim.dims[3]-1) / Float32(param.output.tensorDim.dims[3]-1)
+    }
     var p = BilinearInterpMetalParam.init(ratio_h: ratio_h, ratio_w: ratio_w)
-    encoder.setBytes(&p, length: MemoryLayout<ConcatMetalParam>.size, index: 0)
+    encoder.setBytes(&p, length: MemoryLayout<BilinearInterpMetalParam>.size, index: 0)
     encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
     encoder.endEncoding()
   }
@@ -38,7 +44,7 @@ class BilinearInterpKernel<P: PrecisionType>: Kernel, Computable{
   required init(device: MTLDevice, param: BilinearInterpParam<P>) {
     param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: computePrecision)
     if computePrecision == .Float32 {
-      super.init(device: device, inFunctionName: "bilinear_interp")
+      super.init(device: device, inFunctionName: "bilinear_interp_float")
     } else if computePrecision == .Float16 {
       super.init(device: device, inFunctionName: "bilinear_interp_half")
     } else {

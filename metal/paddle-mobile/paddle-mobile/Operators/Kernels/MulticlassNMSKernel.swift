@@ -15,11 +15,41 @@
 import Foundation
 
 class MulticlassNMSKernel<P: PrecisionType>: Kernel, Computable{
-  
+  let pipline1: MTLComputePipelineState
+
   required init(device: MTLDevice, param: MulticlassNMSParam<P>) {
-    super.init(device: device, inFunctionName: "place_holder")
+    
+    param.middleOutput.initBuffer(device: device)
+    param.bboxOutput.initBuffer(device: device)
+    if computePrecision == .Float32 {
+      pipline1 = device.pipeLine(funcName: "nms_fetch_bbox", inPaddleMobileLib: true)
+      super.init(device: device, inFunctionName: "nms_fetch_result")
+    } else if computePrecision == .Float16 {
+      pipline1 = device.pipeLine(funcName: "nms_fetch_bbox_half", inPaddleMobileLib: true)
+      super.init(device: device, inFunctionName: "nms_fetch_result_half")
+    } else {
+      fatalError( " unsupport precision " )
+    }
+    
   }
   
   func compute(commandBuffer: MTLCommandBuffer, param: MulticlassNMSParam<P>) throws {
+    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+      throw PaddleMobileError.predictError(message: " encode is nil")
+    }
+    
+    encoder.setTexture(param.scores.metalTexture, index: 0)
+    encoder.setBuffer(param.middleOutput.resultBuffer!, offset: 0, index: 0)
+    encoder.dispatch(computePipline: pipline, outTexture: param.scores.metalTexture)
+    encoder.endEncoding()
+    
+    guard let encoderBox = commandBuffer.makeComputeCommandEncoder() else {
+      throw PaddleMobileError.predictError(message: " encode is nil")
+    }
+    
+    encoderBox.setTexture(param.bboxes.metalTexture, index: 0)
+    encoderBox.setBuffer(param.bboxOutput.resultBuffer!, offset: 0, index: 0)
+    encoderBox.dispatch(computePipline: pipline1, outTexture: param.bboxes.metalTexture)
+    encoderBox.endEncoding()
   }
 }
