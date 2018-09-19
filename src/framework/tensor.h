@@ -289,12 +289,8 @@ class Tensor {
     virtual std::type_index type() const { return type_; }
 
     virtual void set_type(std::type_index type) { type_ = type; }
-#ifndef PADDLE_MOBILE_FPGA
-    /*! the pointer of memory block. */
+
     std::unique_ptr<uint8_t, memory::PODDeleter<uint8_t>> ptr_;
-#else
-    std::shared_ptr<uint8_t> ptr_;
-#endif
 
     /*! the size of memory block. */
     size_t size_;
