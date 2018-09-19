@@ -1,6 +1,10 @@
 import json
+import os
+
 import framework_pb2 as framework_pb2
 import op_types as types
+from swicher import Swichter
+import shutil
 
 
 def load_mdl(mdl_json_path):
@@ -35,10 +39,13 @@ class Converter:
         print self.program_desc.blocks
         print 'convert end.....'
         desc_serialize_to_string = self.program_desc.SerializeToString()
+        shutil.rmtree('newyolo/')
+        shutil.copytree('multiobjects/float32s_nchw_with_head', 'newyolo/')
 
         f = open("newyolo/__model__", "wb")
         f.write(desc_serialize_to_string)
         f.close()
+
 
     def package_ops(self, block_desc):
 
@@ -241,15 +248,6 @@ class Converter:
         desc_ops_add.type = types.mdl2fluid_op_layer_dict.get(l_type)
 
     def package_vars(self, block_desc):
-        # feed
-        # vars
-        # {
-        #     name: "feed"
-        #     type {
-        #         type: FEED_MINIBATCH
-        #     }
-        #     persistable: true
-        # }
         vars_add = block_desc.vars.add()
         vars_add.name = 'feed'
         vars_add.type.type = 9  # 9 is FEED_MINIBATCH
@@ -266,52 +264,51 @@ class Converter:
             vars_add = block_desc.vars.add()
             vars_add.name = j
             vars_add.type.type = 7  # 7 is lodtensor
-            # print j
+            print j
             tensor = vars_add.type.lod_tensor.tensor
             tensor.data_type = 5  # 5 is FP32
-            for dims in json_matrix_.get(j):
+
+            # print json_matrix_
+
+            dims_of_matrix = json_matrix_.get(j)
+            # dims_size = len(dims_of_matrix)
+            # print dims_size
+
+            # if dims_size == 4:
+            #     tensor.dims.append(dims_of_matrix[0])  # N
+            #     tensor.dims.append(dims_of_matrix[3])  # C
+            #     tensor.dims.append(dims_of_matrix[1])  # H
+            #     tensor.dims.append(dims_of_matrix[2])  # W
+            # else:
+            for dims in dims_of_matrix:
+                # print dims
                 tensor.dims.append(dims)
+
             if j in self.weight_list_:
                 vars_add.persistable = 1
+                # todo parweight channel
+                dims_size = len(dims_of_matrix)
+                # print dims_size
+                if dims_size == 4:
+                    # convert weight from nhwc to nchw
+                    Swichter().nhwc2nchw_one_slice_add_head(
+                        '/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/multiobjects/float32s_nhwc/' + j + '.bin',
+                        '/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/multiobjects/float32s_nchw_with_head/' + j,
+                        '/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/multiobjects/float32s_nchw/' + j + '.tmp',
+                        dims_of_matrix[0],
+                        dims_of_matrix[1],
+                        dims_of_matrix[2],
+                        dims_of_matrix[3]
+                    )
+                else:
+                    Swichter().copy_add_head(
+                        '/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/multiobjects/float32s_nhwc/' + j + '.bin',
+                        '/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/multiobjects/float32s_nchw_with_head/' + j,
+                        '/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/multiobjects/float32s_nchw/' + j + '.tmp'
+                    )
             else:
                 vars_add.persistable = 0
 
-
-# print mdl_path
-# # model
-# mdl_model = load_mdl(mdl_path)
-# for key in mdl_model:
-#     print key
-#
-# # layer
-# layers = mdl_model['layer']
-# print layers
-#
-# for layer in layers:
-#     print layer
-#     for i in layer:
-#         print i
-#     if 'name' in layer:
-#         l_name = layer['name']
-#
-#     if 'weight' in layer:
-#         l_weights = layer['weight']
-#
-#     if 'param' in layer:
-#         l_params = layer['param']
-#
-#     if 'output' in layer:
-#         l_outputs = layer['output']
-#
-#     if 'input' in layer:
-#         l_inputs = layer['input']
-#
-#     if 'type' in layer:
-#         l_type = layer['type']
-#
-# print mdl_model['matrix']
-#
-# package()
 
 mdl_path = "/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/multiobjects/YOLO_Universal.json"
 converter = Converter(mdl_path)
