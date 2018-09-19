@@ -662,13 +662,15 @@ void Executor<Dtype, P>::FeedData(const framework::Tensor &t) {
 };
 
 template <typename Dtype, Precision P>
-std::shared_ptr<framework::Tensor> Executor<Dtype, P>::FetchResult() {
+std::shared_ptr<framework::Tensor> Executor<Dtype, P>::FetchResult(int id) {
   std::shared_ptr<framework::BlockDesc> to_predict_block =
       to_predict_program_->Block(0);
   auto &ops = ops_of_block_[*to_predict_block.get()];
-  auto last_op = ops.rbegin();
-  auto output_map = (*last_op)->Outputs();
-  std::vector<std::string> out_keys = (*last_op)->GetOutKeys();
+
+  PADDLE_MOBILE_ENFORCE(id < ops.size(), "Index out of range");
+  auto last_op = id < 0 ? ops[ops.size() - 1] : ops[id];
+  auto output_map = last_op->Outputs();
+  std::vector<std::string> out_keys = last_op->GetOutKeys();
   PADDLE_MOBILE_ENFORCE(!out_keys.empty(), "the last op contains no output");
   auto *output_tensor = framework::GetVarValue<framework::LoDTensor>(
       out_keys[0], output_map, *(program_.scope));
