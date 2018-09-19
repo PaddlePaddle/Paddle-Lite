@@ -164,7 +164,7 @@ public class Executor<P: PrecisionType> {
 //      return;
 //      self!.ops[testTo - 2].delogOutput()
 //      self!.ops[testTo - 1].delogOutput()
-//      self!.ops[60].delogOutput()
+//      self!.ops[5].delogOutput()
 
 //      return
       
@@ -199,5 +199,3 @@ public class Executor<P: PrecisionType> {
   }
   
 }
-
-//public let paddle_executor: Executor = Executor.init()
