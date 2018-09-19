@@ -16,15 +16,15 @@
 import Foundation
 
 public class ResultHolder: NSObject {
-  public let result: UnsafeMutablePointer<Float32>?
-  public let capacity: Int
+  @objc public let result: UnsafeMutablePointer<Float32>?
+  @objc public let capacity: Int
 
   init(inResult: UnsafeMutablePointer<Float32>?, inCapacity: Int) {
     result = inResult
     capacity = inCapacity
   }
   
-  public func releasePointer() {
+  @objc public func releasePointer() {
     result?.deinitialize(count: capacity)
     result?.deallocate()
   }
@@ -43,6 +43,14 @@ public class Net: NSObject {
   var modelPath: String = ""
   var paramPath: String = ""
   var modelDir: String = ""
+  @objc public init(device: MTLDevice,paramPointer: UnsafeMutableRawPointer, paramSize:Int, modePointer: UnsafeMutableRawPointer, modelSize: Int) {
+      self.paramPointer = paramPointer
+      self.paramSize = paramSize
+      self.modelPointer = modePointer
+      self.modelSize = modelSize
+      super.init()
+  }
+
   
   public func resultStr(res: ResultHolder) -> String {
     fatalError()
