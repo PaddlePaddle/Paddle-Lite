@@ -26,6 +26,18 @@ public class Genet: Net {
     preprocessKernel = GenetPreProccess.init(device: device)
     dim = (n: 1, h: 128, w: 128, c: 3)
   }
+  
+  @objc override public init(device: MTLDevice,paramPointer: UnsafeMutableRawPointer, paramSize:Int, modePointer: UnsafeMutableRawPointer, modelSize: Int) {
+    super.init(device:device,paramPointer:paramPointer,paramSize:paramSize,modePointer:modePointer,modelSize:modelSize)
+    means = [128.0, 128.0, 128.0]
+    scale = 0.017
+    except = 0
+    modelPath = ""
+    paramPath = ""
+    modelDir = ""
+    preprocessKernel = GenetPreProccess.init(device: device)
+    dim = (n: 1, h: 128, w: 128, c: 3)
+  }
 
   class GenetPreProccess: CusomKernel {
     init(device: MTLDevice) {

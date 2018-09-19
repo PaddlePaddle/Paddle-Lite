@@ -16,6 +16,7 @@
 
 #import "PaddleMobile.h"
 #import "CPUCompute.h"
+#import "PaddleMobileGPU.h"
 #import <UIKit/UIKit.h>
 
 //! Project version number for paddle_mobile.
