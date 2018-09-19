@@ -14,7 +14,7 @@
 
 import Foundation
 
-struct OpDesc {
+class OpDesc {
   let inputs: [String : [String]]
   var paraInputs: [String : [String]]
   var outputs: [String : [String]]

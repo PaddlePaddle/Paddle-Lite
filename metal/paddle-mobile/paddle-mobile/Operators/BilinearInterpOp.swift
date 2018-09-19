@@ -19,14 +19,14 @@ class BilinearInterpParam<P: PrecisionType>: OpParam {
   required init(opDesc: OpDesc, inScope: Scope) throws {
     do {
       input = try BilinearInterpParam.inputX(inputs: opDesc.inputs, from: inScope)
-//      if (input.transpose != [0, 2, 3, 1]) || (input.tensorDim.cout() != 4) {
-//        fatalError()
-//      }
       output = try BilinearInterpParam.outputOut(outputs: opDesc.outputs, from: inScope)
       out_h = try BilinearInterpParam.getAttr(key: "out_h", attrs: opDesc.attrs)
       out_w = try BilinearInterpParam.getAttr(key: "out_w", attrs: opDesc.attrs)
     } catch let error {
       throw error
+    }
+    if (input.transpose != [0, 2, 3, 1]) || (input.tensorDim.cout() != 4) {
+      fatalError()
     }
   }
   let input: Texture<P>
@@ -53,6 +53,10 @@ class BilinearInterpOp<P: PrecisionType>: Operator<BilinearInterpKernel<P>, Bili
   
   func delogOutput() {
     print(" \(type) output: ")
+    let device = para.output.metalTexture!.device
+    let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
+//    print(outputArray)
+    print(outputArray.strideArray())
   }
   
 }

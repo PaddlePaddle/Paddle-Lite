@@ -48,15 +48,9 @@ class TransposeOp<P: PrecisionType>: Operator<TransposeKernel<P>, TransposeParam
   
   func delogOutput() {
     print(" \(type) output: ")
-    let padToFourDim = para.output.padToFourDim
-    if para.output.transpose == [0, 1, 2, 3] {
-      let outputArray = para.output.metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
-      print(outputArray.strideArray())
-    } else if para.output.transpose == [0, 2, 3, 1] {
-      print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
-    } else {
-      print(" not implement")
-    }
+    let device = para.output.metalTexture!.device
+    let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
+    print(outputArray.strideArray())
   }
 }
 

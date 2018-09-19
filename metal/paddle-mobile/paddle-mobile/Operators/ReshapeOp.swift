@@ -43,15 +43,12 @@ class ReshapeParam<P: PrecisionType>: OpParam {
       }
       output.padToFourDim = Dim.init(inDim: dim)
       output.dim = output.padToFourDim
-    
-//      inplace = try ReshapeParam.getAttr(key: "inplace", attrs: opDesc.attrs)
     } catch let error {
       throw error
     }
   }
   let input: Texture<P>
   let shape: [Int32]
-//  let inplace: Bool
   var output: Texture<P>
 }
 
@@ -72,15 +69,9 @@ class ReshapeOp<P: PrecisionType>: Operator<ReshapeKernel<P>, ReshapeParam<P>>, 
   }
   func delogOutput() {
     print("reshape delog")
-//    let _: P? = para.input.metalTexture.logDesc(header: "reshape input: ", stridable: false)
-//
-//    let _: P? = para.output.metalTexture.logDesc(header: "reshape output: ", stridable: false)
-    let padToFourDim = para.output.padToFourDim
-    
-    let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
-//    print(para.output.metalTexture.toTensor(dim: (n: padToFourDim[0], c: padToFourDim[1], h: padToFourDim[2], w: padToFourDim[3])).strideArray())
-
+    let device = para.output.metalTexture!.device
+    let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
     print(outputArray.strideArray())
-
+//    print(outputArray)
   }
 }

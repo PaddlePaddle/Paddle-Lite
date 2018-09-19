@@ -22,59 +22,42 @@ struct TransposeParam {
   int axis[4];
 };
 
-kernel void transpose(texture2d_array<float, access::read> inTexture [[texture(0)]],
-                      texture2d_array<float, access::write> outTexture [[texture(1)]],
-                      constant TransposeParam &pm [[buffer(0)]],
-                      uint3 gid [[thread_position_in_grid]]) {
-  
-  
-  if ((pm.axis[0] == 0) && (pm.axis[1] == 1) && (pm.axis[2] == 2) && (pm.axis[3] == 3)) {
-    // do nothing
-    float4 r = inTexture.read(gid.xy, gid.z);
-    outTexture.write(r, gid.xy, gid.z);
-  } else {
-    float4 r;
-    for (int n = 0; n < 4; n++) {
-      int ixyzn[] = {int(gid.x), int(gid.y), int(gid.z), n};
-      int iabcd[4], oabcd[4], oxyzn[4];
-      xyzn2abcd(pm.oC, ixyzn, iabcd);
-      oabcd[pm.axis[0]] = iabcd[0];
-      oabcd[pm.axis[1]] = iabcd[1];
-      oabcd[pm.axis[2]] = iabcd[2];
-      oabcd[pm.axis[3]] = iabcd[3];
-      abcd2xyzn(pm.iC, oabcd, oxyzn);
-      float4 rt = inTexture.read(uint2(oxyzn[0], oxyzn[1]), oxyzn[2]);
-      r[n] = rt[oxyzn[3]];
-    }
-    outTexture.write(r, gid.xy, gid.z);
-  }
+kernel void transpose_copy_float(texture2d_array<float, access::read> inTexture [[texture(0)]],
+                           texture2d_array<float, access::write> outTexture [[texture(1)]],
+                           constant TransposeParam &pm [[buffer(0)]],
+                           uint3 gid [[thread_position_in_grid]]) {
+  outTexture.write(inTexture.read(gid.xy, gid.z), gid.xy, gid.z);
 }
-
-kernel void transpose_half(texture2d_array<half, access::read> inTexture [[texture(0)]],
+kernel void transpose_copy_half(texture2d_array<half, access::read> inTexture [[texture(0)]],
                            texture2d_array<half, access::write> outTexture [[texture(1)]],
                            constant TransposeParam &pm [[buffer(0)]],
                            uint3 gid [[thread_position_in_grid]]) {
-  
-  
-  if ((pm.axis[0] == 0) && (pm.axis[1] == 1) && (pm.axis[2] == 2) && (pm.axis[3] == 3)) {
-    // do nothing
-    half4 r = inTexture.read(gid.xy, gid.z);
-    outTexture.write(r, gid.xy, gid.z);
-  } else {
-    half4 r;
-    for (int n = 0; n < 4; n++) {
-      int ixyzn[] = {int(gid.x), int(gid.y), int(gid.z), n};
-      int iabcd[4], oabcd[4], oxyzn[4];
-      xyzn2abcd(pm.oC, ixyzn, iabcd);
-      oabcd[pm.axis[0]] = iabcd[0];
-      oabcd[pm.axis[1]] = iabcd[1];
-      oabcd[pm.axis[2]] = iabcd[2];
-      oabcd[pm.axis[3]] = iabcd[3];
-      abcd2xyzn(pm.iC, oabcd, oxyzn);
-      half4 rt = inTexture.read(uint2(oxyzn[0], oxyzn[1]), oxyzn[2]);
-      r[n] = rt[oxyzn[3]];
-    }
-    outTexture.write(r, gid.xy, gid.z);
-  }
+  outTexture.write(inTexture.read(gid.xy, gid.z), gid.xy, gid.z);
 }
 
+#define R 4
+  #define P float
+    #include "TransposeKernel.inc.metal"
+  #undef P
+  #define P half
+    #include "TransposeKernel.inc.metal"
+  #undef P
+#undef R
+
+#define R 3
+  #define P float
+    #include "TransposeKernel.inc.metal"
+  #undef P
+  #define P half
+    #include "TransposeKernel.inc.metal"
+  #undef P
+#undef R
+
+#define R 2
+  #define P float
+    #include "TransposeKernel.inc.metal"
+  #undef P
+  #define P half
+    #include "TransposeKernel.inc.metal"
+  #undef P
+#undef R
