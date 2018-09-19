@@ -24,6 +24,7 @@ class ScaleKernel: CusomKernel {
       fatalError(" unsupport ")
     }
   }
+  
 }
 
 public class Runner: NSObject {
@@ -75,8 +76,10 @@ public class Runner: NSObject {
       }
       let loader = Loader<Float32>.init()
       do {
-        program = try loader.load(device: inDevice, modelPath: net.modelPath, paraPath: net.paramPath)
+        program = try loader.load(device: inDevice, paramPointer: net.paramPointer!, paramSize: net.paramSize,modePointer:net.modelPointer!,modelSize:net.modelSize)
+//        program = try loader.load(device: inDevice, modelPath: net.modelPath, paraPath: net.paramPath)
         net.updateProgram(program: program!)
+
         executor = try Executor<Float32>.init(inDevice: inDevice, inQueue: inQueue, inProgram: program!)
       } catch let error {
         print(error)

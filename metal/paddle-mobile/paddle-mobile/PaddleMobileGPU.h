@@ -37,6 +37,7 @@ typedef enum : NSUInteger {
  */
 @property (strong, nonatomic) NSArray<NSNumber *> *dims;
 
+
 /*
  * 模型参数内存地址
  */
@@ -83,7 +84,7 @@ typedef enum : NSUInteger {
 /*
  * 清理内存
  */
--(void)clrear;
+-(void)clear;
 
 @end
 
