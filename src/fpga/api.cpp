@@ -86,14 +86,14 @@ void fpga_copy(void *dest, const void *src, size_t num) {
 }
 
 int fpga_flush(void *address, size_t size) {
-  struct MemoryCacheArgs args;
+  struct MemoryCacheArgs args = {nullptr};
   args.address = address;
   args.size = size;
   return do_ioctl(IOCTL_MEMCACHE_FLUSH, &args);
 }
 
 int fpga_invalidate(void *address, size_t size) {
-  struct MemoryCacheArgs args;
+  struct MemoryCacheArgs args = {nullptr};
   args.address = address;
   args.size = size;
   return do_ioctl(IOCTL_MEMCACHE_INVAL, &args);
@@ -332,7 +332,7 @@ void format_concat_output(framework::Tensor *out, int height, int width,
 
   sum_cw = align_to_x(width * sum_channel, IMAGE_ALIGNMENT);
   auto data_ptr = fpga_malloc(height * sum_cw * sizeof(half));
-  auto ddim = framework::make_ddim({-1, sum_channel, height, width});
+  auto ddim = framework::make_ddim({1, sum_channel, height, width});
   out->Resize(ddim);
   out->reset_data_ptr(data_ptr);
 }
