@@ -12,24 +12,51 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
-#import "PaddleMobile.h"
+#import "PaddleMobileCPU.h"
 
 #import "op_symbols.h"
+#include "framework/tensor.h"
 #import "io/paddle_mobile.h"
 
 #import <memory>
 #import <vector>
 
-@interface  PaddleMobile()
+
+@interface PaddleMobileCPUResult()
+
+-(void)toSetOutput:(float *)output;
+
+-(void)toSetOutputSize:(int)outputSize;
+
+@end
+
+@implementation PaddleMobileCPUResult
+
+-(void)releaseOutput {
+  delete [] _output;
+  _output = nil;
+  _outputSize = 0;
+}
+
+-(void)toSetOutput:(float *)output {
+  _output = output;
+}
+
+-(void)toSetOutputSize:(int)outputSize {
+  _outputSize = outputSize;
+}
+
+@end
+
+
+@interface  PaddleMobileCPU()
 {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU, paddle_mobile::Precision::FP32> *pam_;
   BOOL loaded_;
-  std::vector<float> *predict_input_;
-
 }
 @end
 
-@implementation PaddleMobile
+@implementation PaddleMobileCPU
 
 static std::mutex shared_mutex;
 
@@ -66,6 +93,14 @@ static std::mutex shared_mutex;
   }
 }
 
+- (BOOL)LoadCombinedMemory:(size_t)modelLen
+               andModelBuf:(const uint8_t *)modelBuf
+         andModelParamsLen:(size_t)combinedParamsLen
+      andCombinedParamsBuf:(const uint8_t *)combinedParamsBuf {
+  pam_->SetThreadNum(2);
+  return loaded_ = pam_->LoadCombinedMemory(modelLen, modelBuf, combinedParamsLen, combinedParamsBuf);
+}
+
 - (BOOL)load:(NSString *)modelAndWeightPath{
   std::string model_path_str = std::string([modelAndWeightPath UTF8String]);
   if (loaded_ = pam_->Load(model_path_str)) {
@@ -73,6 +108,57 @@ static std::mutex shared_mutex;
   } else {
     return NO;
   }
+}
+
+
+-(void)preprocess:(CGImageRef)image
+           output:(float *)output
+            means:(NSArray<NSNumber *> *)means
+        scale:(float)scale
+        dim:(NSArray<NSNumber *> *)dim {
+  std::lock_guard<std::mutex> lock(shared_mutex);
+
+  // dim to c++ vector, get numel
+  std::vector<int64_t > dim_vec;
+  int numel = 1;
+  for (int k = 0; k < dim.count; ++k) {
+    int d = dim[k].intValue;
+    numel *= d;
+    dim_vec.push_back(d);
+  }
+
+  const int sourceRowBytes = CGImageGetBytesPerRow(image);
+  const int imageWidth = CGImageGetWidth(image);
+  const int imageHeight = CGImageGetHeight(image);
+  const int imageChannels = 4;
+  CGDataProviderRef provider = CGImageGetDataProvider(image);
+  CFDataRef cfData = CGDataProviderCopyData(provider);
+  const UInt8 *input = CFDataGetBytePtr(cfData);
+
+  int wanted_input_width = dim_vec[3];
+  int wanted_input_height = dim_vec[2];
+  int wanted_input_channels = dim_vec[1];
+
+  for (int c = 0; c < wanted_input_channels; ++c) {
+    float *out_channel = output + c * wanted_input_height * wanted_input_width;
+    for (int y = 0; y < wanted_input_height; ++y) {
+      float *out_row = out_channel + y * wanted_input_width;
+      for (int x = 0; x < wanted_input_width; ++x) {
+        int in_row = (y * imageHeight) / wanted_input_height;
+        int in_col = (x * imageWidth) / wanted_input_width;
+        const UInt8 *in_pixel = input + (in_row * imageWidth * imageChannels) + (in_col * imageChannels);
+        float *out_pos = out_row + x;
+        if (c == 0) {
+          *out_pos = (in_pixel[c] - means[c].floatValue) * scale;
+        }else if (c == 1){
+          *out_pos = (in_pixel[c] - means[c].floatValue) * scale;
+        }else if (c == 2){
+          *out_pos = (in_pixel[c] - means[c].floatValue) * scale;
+        }
+      }
+    }
+  }
+
 }
 
 -(void)preprocess:(const UInt8 *)input output:(float *)output imageWidth:(int)imageWidth imageHeight:(int)imageHeight imageChannels:(int)imageChannels means:(NSArray<NSNumber *> *)means scale:(float)scale dim:(std::vector<int64_t>)dim{
@@ -105,27 +191,54 @@ static std::mutex shared_mutex;
   }
 }
 
-- (NSArray *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim means:(NSArray<NSNumber *> *)means scale:(float)scale{
-//  printf(" hi i am here");
-  if (predict_input_) {
-//    printf(" fukc -- ");
-//    printf(" %d \n", predict_input_->size());
-    // dim to c++ vector, get numel
-    std::vector<int64_t > dim_vec = {1, 3, 300, 300};
-//    int numel = 1;
-//    for (int k = 0; k < dim.count; ++k) {
-//      int d = dim[k].intValue;
-//      numel *= d;
-//      dim_vec.push_back(d);
-//    }
-
-
-    std::vector<float> cpp_result = pam_->Predict(*predict_input_, dim_vec);
+- (PaddleMobileCPUResult *)predictInput:(float *)input
+                      dim:(NSArray<NSNumber *> *)dim {
+  std::lock_guard<std::mutex> lock(shared_mutex);
+  if (!loaded_) {
+    printf("PaddleMobile doesn't be loaded yet");
     return nil;
   }
-//  printf(" predict one ");
 
-//  std::lock_guard<std::mutex> lock(shared_mutex);
+  if (dim.count != 4) {
+    printf("dim must have 4 elements");
+    return nil;
+  }
+
+  // dim to c++ vector, get numel
+  std::vector<int64_t > dim_vec;
+  int numel = 1;
+  for (int k = 0; k < dim.count; ++k) {
+    int d = dim[k].intValue;
+    numel *= d;
+    dim_vec.push_back(d);
+  }
+
+  paddle_mobile::framework::Tensor input_tensor;
+
+  paddle_mobile::framework::DDim dims = paddle_mobile::framework::make_ddim(dim_vec);
+
+  float *input_ptr = input_tensor.mutable_data<float>(dims);
+
+  memcpy(input_ptr, input,
+         numel * sizeof(float));
+
+  std::shared_ptr<paddle_mobile::framework::Tensor> output = pam_->Predict(input_tensor);
+
+  float *output_pointer = new float[output->numel()];
+
+  memcpy(output_pointer, output->data<float>(),
+         output->numel() * sizeof(float));
+
+  PaddleMobileCPUResult *cpuResult = [[PaddleMobileCPUResult alloc] init];
+  [cpuResult toSetOutput: output_pointer];
+  [cpuResult toSetOutputSize: output->numel()];
+
+  return cpuResult;
+}
+
+- (NSArray *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim means:(NSArray<NSNumber *> *)means scale:(float)scale{
+//  printf(" predict one ");
+  std::lock_guard<std::mutex> lock(shared_mutex);
   if (!loaded_) {
     printf("PaddleMobile doesn't be loaded yet");
     return nil;
@@ -164,15 +277,13 @@ static std::mutex shared_mutex;
   }
 
   // input
-  std::vector<float> *predict_input = new std::vector<float>();
+  std::vector<float> predict_input;
   for (int j = 0; j < numel; ++j) {
-    predict_input->push_back(dataPointer[j]);
+    predict_input.push_back(dataPointer[j]);
   }
 
-  predict_input_ = predict_input;
-
   // predict
-  std::vector<float> cpp_result = pam_->Predict(*predict_input, dim_vec);
+  std::vector<float> cpp_result = pam_->Predict(predict_input, dim_vec);
 
   // result
   long count = 0;
