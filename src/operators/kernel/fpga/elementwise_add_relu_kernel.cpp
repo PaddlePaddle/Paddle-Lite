@@ -30,7 +30,7 @@ bool ElementwiseAddReluKernel<FPGA, float>::Init(
   fpga::format_fp16_ofm(out);
   auto out_ptr = out->mutable_data<float>();
 
-  fpga::EWAddArgs ewaddArgs;
+  fpga::EWAddArgs ewaddArgs = {0};
   ewaddArgs.relu_enabled = relu_enabled;
   ewaddArgs.const0 = 1;
   ewaddArgs.const1 = 1;
