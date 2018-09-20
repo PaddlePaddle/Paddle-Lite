@@ -17,17 +17,21 @@ limitations under the License. */
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <algorithm>
+#include <map>
 #include "bias_scale.h"
 #include "filter.h"
 #include "image.h"
 #define FPGA_TEST_MODE
-//#define PADDLE_MOBILE_OS_LINUX
+#define PADDLE_MOBILE_OS_LINUX
 
 namespace paddle_mobile {
 namespace fpga {
 
 static int fd = -1;
 static const char *device_path = "/dev/fpgadrv0";
+#ifdef PADDLE_MOBILE_OS_LINUX
+static std::map<void *, size_t> memory_map;
+#endif
 
 static inline int do_ioctl(int req, const void *arg) {
 #ifdef PADDLE_MOBILE_OS_LINUX
@@ -48,10 +52,13 @@ int open_device() {
 
 // memory management;
 void *fpga_malloc(size_t size) {
-  DLOG << size << " bytes allocated";
+  static uint64_t counter = 0;
+  counter += size;
+  DLOG << size << " bytes allocated. Total " << counter << " bytes";
 #ifdef PADDLE_MOBILE_OS_LINUX
-  return reinterpret_cast<void *>(
-      mmap64(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
+  auto ptr = mmap64(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+  memory_map.insert(std::make_pair(ptr, size));
+  return ptr;
 #else
   return malloc(size);
 #endif
@@ -59,7 +66,16 @@ void *fpga_malloc(size_t size) {
 
 void fpga_free(void *ptr) {
 #ifdef PADDLE_MOBILE_OS_LINUX
-  munmap(ptr, 0);
+  static uint64_t counter = 0;
+  size_t size = 0;
+  auto iter = memory_map.find(ptr);  // std::map<void *, size_t>::iterator
+  if (iter != memory_map.end()) {
+    size = iter->second;
+    munmap(ptr, size);
+    memory_map.erase(iter);
+  }
+  counter += size;
+  DLOG << size << " bytes freed. Total " << counter << " bytes";
 #else
   free(ptr);
 #endif
