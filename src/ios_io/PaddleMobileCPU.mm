@@ -12,7 +12,7 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
-#import "PaddleMobile.h"
+#import "PaddleMobileCPU.h"
 
 #import "op_symbols.h"
 #include "framework/tensor.h"
