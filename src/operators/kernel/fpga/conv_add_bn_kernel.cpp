@@ -66,7 +66,7 @@ bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam<FPGA> *param) {
   fpga::format_bias_scale_array(&bs_ptr, element_num_per_div, channel);
   fpga::format_fp16_ofm(out);
 
-  fpga::WrapperConvArgs conv_arg;
+  fpga::WrapperConvArgs conv_arg = {0};
   fpga::fill_conv_arg(&conv_arg, input, out, filter, relu_enabled,
                       param->Groups(), param->Strides()[0], param->Strides()[1],
                       param->Paddings()[0], param->Paddings()[1], bs_ptr);
