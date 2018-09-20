@@ -29,7 +29,7 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
   auto float_input = new Tensor(*input);
   fpga::format_fp32_ofm(float_input);
 
-  fpga::BypassArgs args;
+  fpga::BypassArgs args = {fpga::DATA_TYPE_FP16};
   args.input_layout_type = fpga::LAYOUT_HWC;
   args.output_layout_type = fpga::LAYOUT_CHW;
   args.input_data_type = fpga::DATA_TYPE_FP16;
