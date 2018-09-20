@@ -46,7 +46,7 @@ bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam<FPGA> *param) {
 
   fpga::format_fp16_ofm(out);
 
-  fpga::WrapperConvArgs conv_arg;
+  fpga::WrapperConvArgs conv_arg = {0};
   fpga::fill_conv_arg(&conv_arg, input, out, filter, relu_enabled,
                       param->Groups(), param->Strides()[0], param->Strides()[1],
                       param->Paddings()[0], param->Paddings()[1], bs_ptr);
