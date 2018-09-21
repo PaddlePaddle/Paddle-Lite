@@ -157,6 +157,9 @@ let gSplit                      = "split"
 let gShape                      = "shape"
 let gFlatten                    = "flatten"
 let gConvAddPreluType           = "conv_add_prelu"
+let gConvAddAddPreluType        = "conv_add_add_prelu"
+let gElementwiseAddPreluType = "elementwise_add_prelu"
+
 
 let opInfos = [gConvType                    : (inputs: ["Input"], outputs: ["Output"]),
                gBatchNormType               : (inputs: ["X"], outputs: ["Y"]),
@@ -183,6 +186,7 @@ let opInfos = [gConvType                    : (inputs: ["Input"], outputs: ["Out
                gSplit                       : (inputs: ["X"], outputs: ["Out"]),
                gShape                       : (inputs: ["Input"], outputs: ["Out"]),
                gFlatten                     : (inputs: ["X"], outputs: ["Out"]),
-               gConvAddPreluType            : (inputs: ["Input"], outputs: ["Out"])
-
+               gConvAddPreluType            : (inputs: ["Input"], outputs: ["Out"]),
+               gConvAddAddPreluType         : (inputs: ["Input"], outputs: ["Out"]),
+               gElementwiseAddPreluType  :  (inputs: ["X"], outputs: ["Out"])
               ]

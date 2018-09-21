@@ -65,7 +65,9 @@ class OpCreator<P: PrecisionType> {
          gSplit                     :     SplitOp<P>.creat,
          gShape                     :     ShapeOp<P>.creat,
          gFlatten                   :     FlattenOp<P>.creat,
-         gConvAddPreluType          :     ConvAddPreluOp<P>.creat]
+         gConvAddPreluType          :     ConvAddPreluOp<P>.creat,
+         gConvAddAddPreluType       :     ConvAddAddPreluOp<P>.creat,
+         gElementwiseAddPreluType:   ElementwiseAddPreluOp<P>.creat]
   
     private init(){}
 }

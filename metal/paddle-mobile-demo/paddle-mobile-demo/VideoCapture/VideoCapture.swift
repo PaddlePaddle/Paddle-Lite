@@ -169,6 +169,8 @@ public class VideoCapture: NSObject {
     }
 }
 
+
+@available(iOS 10.0, *)
 extension VideoCapture: AVCaptureVideoDataOutputSampleBufferDelegate {
   public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
     // Because lowering the capture device's FPS looks ugly in the preview,
@@ -191,6 +193,7 @@ extension VideoCapture: AVCaptureVideoDataOutputSampleBufferDelegate {
   }
 }
 
+@available(iOS 10.0, *)
 extension VideoCapture: AVCapturePhotoCaptureDelegate {
   public func photoOutput(_ captureOutput: AVCapturePhotoOutput,
                           didFinishProcessingPhoto photoSampleBuffer: CMSampleBuffer?,
