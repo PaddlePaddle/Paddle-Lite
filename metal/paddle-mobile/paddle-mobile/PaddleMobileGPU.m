@@ -14,6 +14,26 @@
 @implementation ModelConfig
 @end
 
+@interface PaddleMobileGPUResult ()
+
+@property (strong, nonatomic) ResultHolder *resultHolder;
+
+- (void)setOutputResult:(ResultHolder *)resultHolder;
+
+@end
+
+@implementation PaddleMobileGPUResult
+- (void)setOutputResult:(ResultHolder *)resultHolder {
+  self.resultHolder = resultHolder;
+  self.output = resultHolder.result;
+  self.outputSize = resultHolder.capacity;
+}
+
+-(void)releaseOutput {
+  [self.resultHolder releasePointer];
+}
+@end
+
 @interface PaddleMobileGPU ()
 {
   Runner *runner;
@@ -52,7 +72,14 @@
     [result releasePointer];
     
   }];
-//  [runner predictWithTexture:texture completion:completion];
+}
+
+-(void)predict:(id<MTLTexture>)texture withResultCompletion:(void (^)(BOOL, PaddleMobileGPUResult *))completion {
+  [runner predictWithTexture:texture completion:^(BOOL success, ResultHolder * _Nullable result) {
+    PaddleMobileGPUResult *gpuResult = [[PaddleMobileGPUResult alloc] init];
+    [gpuResult setOutputResult:result];
+    completion(success, gpuResult);
+  }];
 }
 
 -(void)clear {
