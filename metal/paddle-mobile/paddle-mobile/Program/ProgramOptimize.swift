@@ -69,6 +69,7 @@ class Node {
   
   func to(depth: UInt) -> Node {
     let beginNode = Node.init(inType: type)
+    beginNode.opDesc = opDesc
     to(depth: depth - 1, withNode: beginNode)
     return beginNode
   }
@@ -130,6 +131,7 @@ class Node {
     
     for output in outputs {
       let node = Node.init(inType: output.type)
+      node.opDesc = output.opDesc
       withNode.outputs.append(node)
       output.to(depth: depth - 1, withNode: node)
     }
@@ -182,10 +184,12 @@ extension Node: Equatable {
 class ProgramOptimize<P: PrecisionType> {
   // register fusion
   let fusionOps: [Fusion.Type] = [ConvAddBatchNormReluOp<P>.self,
+//                                  ConvAddAddPreluOp<P>.self,
                                   ConvAddPreluOp<P>.self,
                                   ConvAddOp<P>.self,
                                   ConvBNReluOp<P>.self,
-                                  DwConvBNReluOp<P>.self
+                                  DwConvBNReluOp<P>.self,
+//                                  ElementwiseAddPreluOp<P>.self
   ]
   
   func optimize(originProgramDesc: ProgramDesc) -> ProgramDesc {
@@ -252,6 +256,15 @@ class ProgramOptimize<P: PrecisionType> {
                 for inputToCheck in inputToChecks {
                   if node.output[inputToCheck] == nil {
                     if relationshipMap[inputToCheck] == nil {
+                      canFolder = false
+                    }
+                  }
+                }
+                
+                let paramInputToChecks = checkNode.opDesc?.paraInputs[toCheck.1] ?? []
+                for paramInputToCheck in paramInputToChecks {
+                  if node.output[paramInputToCheck] == nil {
+                    if relationshipMap[paramInputToCheck] == nil {
                       canFolder = false
                     }
                   }
