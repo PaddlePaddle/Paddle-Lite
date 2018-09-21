@@ -83,7 +83,7 @@ public class Executor<P: PrecisionType> {
     for block in inProgram.programDesc.blocks {
       //block.ops.count
       for i in 0..<block.ops.count {
-        let op = block.ops[i]
+        let opDesc = block.ops[i]
         do {
 //          print("in for i \(i): ")
 //      print(program.scope.vars["fea_pyramid1_mbox_conf_flat.Flatten.output.1.tmp_0"])
@@ -93,7 +93,7 @@ public class Executor<P: PrecisionType> {
 //
 //          }
           
-          let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: op, scope: inProgram.scope)
+          let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: opDesc, scope: inProgram.scope)
           ops.append(op)
         } catch let error {
           throw error
