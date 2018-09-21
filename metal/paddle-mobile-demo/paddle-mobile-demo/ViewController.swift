@@ -50,7 +50,7 @@ class ViewController: UIViewController {
   @IBOutlet weak var modelPickerView: UIPickerView!
   @IBOutlet weak var threadPickerView: UIPickerView!
   @IBOutlet weak var videoView: UIView!
-  var videoCapture: VideoCapture!
+//  var videoCapture: VideoCapture!
 
   var selectImage: UIImage?
   var inputPointer: UnsafeMutablePointer<Float32>?
@@ -105,6 +105,12 @@ class ViewController: UIViewController {
         resultTextView.text = "请选择图片 ! "
         return
       }
+      
+//      for _ in 0..<10{
+//        runner.predict(texture: inTexture) { (success, resultHolder)  in
+//          resultHolder?.releasePointer()
+//        }
+//      }
       
       let startDate = Date.init()
       for i in 0..<max {
@@ -279,17 +285,18 @@ extension ViewController: VideoCaptureDelegate{
   }
   
   
-  func videoCapture(_ capture: VideoCapture, didCaptureVideoTexture texture: MTLTexture?, timestamp: CMTime) {
-//    if !bool1 {
-//      DispatchQueue.main.asyncAfter(deadline: DispatchTime.init(uptimeNanoseconds: 500000000)) {
-    self.predictTexture(texture: texture!)
-//      }
-
-      
-//      bool1 = true
-//    }
-    
-  }
+//  @available(iOS 10.0, *)
+//  func videoCapture(_ capture: VideoCapture, didCaptureVideoTexture texture: MTLTexture?, timestamp: CMTime) {
+////    if !bool1 {
+////      DispatchQueue.main.asyncAfter(deadline: DispatchTime.init(uptimeNanoseconds: 500000000)) {
+//    self.predictTexture(texture: texture!)
+////      }
+//
+//
+////      bool1 = true
+////    }
+//
+//  }
 
 }
 

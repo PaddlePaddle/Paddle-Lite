@@ -20,12 +20,6 @@ class MultiPredictViewController: UIViewController {
     let queue2 = MetalHelper.shared.device.makeCommandQueue()
     
     runner2 = Runner.init(inNet: genet, commandQueue: MetalHelper.shared.queue, inPlatform: .GPU)
-    
-   
-    
-    
-    
-    
   }
 
   @IBAction func predictAct(_ sender: Any) {
