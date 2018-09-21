@@ -21,6 +21,16 @@ typedef enum : NSUInteger {
   GenetType,
 } NetType;
 
+@interface PaddleMobileGPUResult: NSObject
+
+@property (assign, nonatomic) float *output;
+
+@property (assign, nonatomic) int outputSize;
+
+-(void)releaseOutput;
+
+@end
+
 @interface ModelConfig: NSObject
 
 /*
@@ -80,6 +90,12 @@ typedef enum : NSUInteger {
  * completion:  预测完成回调
  */
 -(void)predict:(id<MTLTexture>)texture withCompletion:(void (^)(BOOL, NSArray<NSNumber *> *))completion;
+
+/*
+ * texture:     需要进行预测的图像转换的 texture
+ * completion:  预测完成回调
+ */
+-(void)predict:(id<MTLTexture>)texture withResultCompletion:(void (^)(BOOL, PaddleMobileGPUResult *))completion;
 
 /*
  * 清理内存
