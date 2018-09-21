@@ -49,7 +49,7 @@ kernel void FUNC3_(conv_add_1x1, PRELU_TYPE, P)(texture2d_array<P, access::sampl
   uint input_arr_size = inTexture.get_array_size();
   uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
   
-  float4 output = float4(0.0);
+  VECTOR(P, 4) output = biase[gid.z];
   
   VECTOR(P, 4) input;
   for (uint i = 0; i < input_arr_size; ++i) {
@@ -67,7 +67,7 @@ kernel void FUNC3_(conv_add_1x1, PRELU_TYPE, P)(texture2d_array<P, access::sampl
     output.w += dot(input, weight_w);
   }
   
-  output = output + float4(biase[gid.z]);
+//  output = output + float4(biase[gid.z]);
   
 #ifdef PRELU_CHANNEL
   VECTOR(P, 4) alpha_value = alpha[gid.z];
@@ -126,7 +126,7 @@ kernel void FUNC3_(conv_add_3x3, PRELU_TYPE, P)(texture2d_array<P, access::sampl
 
   uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
 
-  float4 output = float4(0.0);
+  VECTOR(P, 4) output = biase[gid.z];
 
   ushort dilation_x = param.dilationX;
   ushort dilation_y = param.dilationY;
@@ -166,7 +166,7 @@ kernel void FUNC3_(conv_add_3x3, PRELU_TYPE, P)(texture2d_array<P, access::sampl
       output.w += dot(input[j], weight_w);
     }
   }
-  output = output + float4(biase[gid.z]);
+//  output = output + float4(biase[gid.z]);
   
 #ifdef PRELU_CHANNEL
   VECTOR(P, 4) alpha_value = alpha[gid.z];
@@ -226,7 +226,7 @@ kernel void FUNC3_(conv_add_5x1, PRELU_TYPE, P)(texture2d_array<P, access::sampl
 
   uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
 
-  float4 output = float4(biase[gid.z]);;
+  VECTOR(P, 4) output = biase[gid.z];;
 
   ushort dilation_y = param.dilationY;
   VECTOR(P, 4) input[5];
@@ -316,7 +316,7 @@ kernel void FUNC3_(conv_add_1x5, PRELU_TYPE, P)(texture2d_array<P, access::sampl
 
   uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
 
-  float4 output = float4(biase[gid.z]);
+  VECTOR(P, 4) output = biase[gid.z];
 
   ushort dilation_x = param.dilationX;
   VECTOR(P, 4) input[5];
@@ -399,7 +399,7 @@ kernel void FUNC3_(depthwise_conv_add_3x3, PRELU_TYPE, P)(texture2d_array<P, acc
   constexpr sampler sample(coord::pixel, filter::nearest, address::clamp_to_zero);
   const uint kernelHXW = 9;
   uint weithTo = gid.z * kernelHXW * 4;
-  float4 output = float4(biase[gid.z]);
+  VECTOR(P, 4) output = biase[gid.z];
   VECTOR(P, 4) inputs[9];
   inputs[0] = inTexture.sample(sample, float2(posInInput.x - 1,    posInInput.y - 1), output_slice);
   inputs[1] = inTexture.sample(sample, float2(posInInput.x,        posInInput.y - 1), output_slice);
