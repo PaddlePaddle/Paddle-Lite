@@ -49,7 +49,7 @@
     if (netType == GenetType) {
       net = [[Genet alloc] initWithDevice:queue.device paramPointer:config.paramPointer paramSize:config.paramSize modePointer:config.modelPointer modelSize:config.modelSize];
     } else if (netType == MobileNetSSDType) {
-      net = [[MobileNet_ssd_hand alloc] initWithDevice:queue.device paramPointer:config.paramPointer paramSize:config.paramSize modePointer:config.modelPointer modelSize:config.modelSize];
+      net = [[MobileNet_ssd_AR alloc] initWithDevice:queue.device paramPointer:config.paramPointer paramSize:config.paramSize modePointer:config.modelPointer modelSize:config.modelSize];
     } else if (netType == MobileNetType) {
       
     }
