@@ -31,8 +31,11 @@
   self.queue = [self.device newCommandQueue];
   
     // Do any additional setup after loading the view.
-  NSString *modelPath = [[NSBundle mainBundle] URLForResource:@"genet_model" withExtension:nil].path;
-  NSString *paramPath = [[NSBundle mainBundle] URLForResource:@"genet_params" withExtension:nil].path;
+//  NSString *modelPath = [[NSBundle mainBundle] URLForResource:@"genet_model" withExtension:nil].path;
+//  NSString *paramPath = [[NSBundle mainBundle] URLForResource:@"genet_params" withExtension:nil].path;
+  
+  NSString *modelPath = [[NSBundle mainBundle] URLForResource:@"ar_model" withExtension:nil].path;
+  NSString *paramPath = [[NSBundle mainBundle] URLForResource:@"ar_params" withExtension:nil].path;
 
   long fileSize;
   FILE *fp;
@@ -55,16 +58,21 @@
   fclose(parmaFilePointer);
   
   _modelConfig = [[ModelConfig alloc] init];
-  _modelConfig.means = @[[NSNumber numberWithFloat:128.0], [NSNumber numberWithFloat:128.0], [NSNumber numberWithFloat:128.0]];
-  _modelConfig.scale = 0.017;
-  _modelConfig.dims = @[[NSNumber numberWithFloat:1], [NSNumber numberWithFloat:128.], [NSNumber numberWithFloat:128.0],[NSNumber numberWithFloat:3.0]];
+//  _modelConfig.means = @[[NSNumber numberWithFloat:128.0], [NSNumber numberWithFloat:128.0], [NSNumber numberWithFloat:128.0]];
+//  _modelConfig.scale = 0.017;
+//  _modelConfig.dims = @[[NSNumber numberWithFloat:1], [NSNumber numberWithFloat:128.], [NSNumber numberWithFloat:128.0],[NSNumber numberWithFloat:3.0]];
+  _modelConfig.means = @[[NSNumber numberWithFloat:103.94], [NSNumber numberWithFloat:116.78], [NSNumber numberWithFloat:123.68]];
+  _modelConfig.scale = 1;
+  _modelConfig.dims = @[[NSNumber numberWithFloat:1], [NSNumber numberWithFloat:160.], [NSNumber numberWithFloat:160.0],[NSNumber numberWithFloat:3.0]];
   _modelConfig.modelPointer = buffer;
   _modelConfig.modelSize = (int)fileSize;
   _modelConfig.paramPointer = parmaBuffer;
   _modelConfig.paramSize = (int)paramfileSize;
 }
 - (IBAction)loaderButtonPressed:(id)sender {
-  _runner = [[PaddleMobileGPU alloc] initWithCommandQueue:self.queue net:GenetType modelConfig:_modelConfig];
+//  _runner = [[PaddleMobileGPU alloc] initWithCommandQueue:self.queue net:GenetType modelConfig:_modelConfig];
+  _runner = [[PaddleMobileGPU alloc] initWithCommandQueue:self.queue net:MobileNetSSDType modelConfig:_modelConfig];
+  
   [_runner load];
 }
 - (IBAction)predictButtonPressed:(id)sender {
