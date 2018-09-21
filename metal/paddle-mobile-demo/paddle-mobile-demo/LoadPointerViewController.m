@@ -126,14 +126,23 @@
 
 - (void)predict {
   _texture = [self createTextureFromImage:[UIImage imageNamed:@"hand.jpg"] device:self.device];
-  [_runner predict:_texture withCompletion:^(BOOL success , NSArray<NSNumber *> *result) {
-    if (success) {
-      for (int i = 0; i < result.count; i ++) {
-        NSNumber *number = result[i];
-        NSLog(@"result %d = %f:",i, [number floatValue]);
+  NSTimeInterval startTime = [[NSDate date] timeIntervalSince1970];
+  NSInteger max = 428;
+  for (int i = 0;i < max; i ++) {
+    [_runner predict:_texture withCompletion:^(BOOL success , NSArray<NSNumber *> *result) {
+      if (success) {
+        if (i == max -1) {
+          double time = [[NSDate date] timeIntervalSince1970] - startTime;
+          time = (time/max)*1000;
+          NSLog(@"gap ==== %fms",time);
+        }
+//        for (int i = 0; i < result.count; i ++) {
+//          NSNumber *number = result[i];
+//          NSLog(@"result %d = %f:",i, [number floatValue]);
+//        }
       }
-    }
-  }];
+    }];
+  }
 }
 
 - (void)didReceiveMemoryWarning {
