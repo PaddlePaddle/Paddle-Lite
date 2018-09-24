@@ -341,7 +341,6 @@ class OpParam {
   }
 };
 
-#ifdef CONV_OP
 template <typename Dtype>
 class ConvParam : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
@@ -386,7 +385,6 @@ class ConvParam : public OpParam {
 };
 template <typename Dtype>
 Print &operator<<(Print &printer, const ConvParam<Dtype> &conv_param);
-#endif
 
 template <typename Dtype>
 class ElementwiseAddParam : OpParam {

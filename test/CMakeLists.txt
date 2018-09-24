@@ -30,6 +30,27 @@ elseif("FPGAnets" IN_LIST NET)
     ADD_EXECUTABLE(test-resnet net/test_resnet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-resnet paddle-mobile)
 
+    ADD_EXECUTABLE(test-resnet50 fpga/test_resnet50.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-resnet50 paddle-mobile)
+
+    ADD_EXECUTABLE(test-fpga-EW fpga/test_fpga_EW.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-fpga-EW paddle-mobile)
+
+    ADD_EXECUTABLE(test-fpga-conv fpga/test_fpga_conv.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-fpga-conv paddle-mobile)
+
+    ADD_EXECUTABLE(test-fpga-pooling fpga/test_fpga_pooling.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-fpga-pooling paddle-mobile)
+
+    ADD_EXECUTABLE(test-fpga-bypass fpga/test_fpga_bypass.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-fpga-bypass paddle-mobile)
+
+    ADD_EXECUTABLE(test-fpga-softmax fpga/test_fpga_softmax.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-fpga-softmax paddle-mobile)
+
+    ADD_EXECUTABLE(test-fpga-concat fpga/test_fpga_concat.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-fpga-concat paddle-mobile)
+
     ADD_EXECUTABLE(test-tensor-quant fpga/test_tensor_quant.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-tensor-quant paddle-mobile)
 
@@ -65,6 +86,9 @@ else ()
     # gen test
     ADD_EXECUTABLE(test-resnet net/test_resnet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-resnet paddle-mobile)
+
+    ADD_EXECUTABLE(test-resnet50 net/test_resnet50.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-resnet50 paddle-mobile)
 
     # gen test
     ADD_EXECUTABLE(test-squeezenet net/test_squeezenet.cpp test_helper.h  test_include.h executor_for_test.h)
@@ -235,13 +259,4 @@ else ()
 
     #add_library(test-lib-size SHARED common/test_lib_size.h common/test_lib_size.cpp)
 
-
-
-
-
 endif()
-
-# if(FPGA)
-#     ADD_EXECUTABLE(test-tensor-quant fpga/test_tensor_quant.cpp test_helper.h  test_include.h executor_for_test.h)
-#     target_link_libraries(test-tensor-quant paddle-mobile)
-# endif()
