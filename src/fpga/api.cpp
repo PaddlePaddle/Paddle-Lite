@@ -29,9 +29,7 @@ namespace fpga {
 
 static int fd = -1;
 static const char *device_path = "/dev/fpgadrv0";
-#ifdef PADDLE_MOBILE_OS_LINUX
 static std::map<void *, size_t> memory_map;
-#endif
 
 static inline int do_ioctl(int req, const void *arg) {
 #ifdef PADDLE_MOBILE_OS_LINUX
@@ -53,32 +51,38 @@ int open_device() {
 // memory management;
 void *fpga_malloc(size_t size) {
   static uint64_t counter = 0;
-  counter += size;
-  DLOG << size << " bytes allocated. Total " << counter << " bytes";
+
 #ifdef PADDLE_MOBILE_OS_LINUX
   auto ptr = mmap64(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-  memory_map.insert(std::make_pair(ptr, size));
-  return ptr;
 #else
-  return malloc(size);
+  auto ptr = malloc(size);
 #endif
+  counter += size;
+  memory_map.insert(std::make_pair(ptr, size));
+  DLOG << "Address: " << ptr << ", " << size << " bytes allocated. Total "
+       << counter << " bytes";
+  return ptr;
 }
 
 void fpga_free(void *ptr) {
-#ifdef PADDLE_MOBILE_OS_LINUX
   static uint64_t counter = 0;
   size_t size = 0;
+
   auto iter = memory_map.find(ptr);  // std::map<void *, size_t>::iterator
   if (iter != memory_map.end()) {
     size = iter->second;
-    munmap(ptr, size);
     memory_map.erase(iter);
-  }
-  counter += size;
-  DLOG << size << " bytes freed. Total " << counter << " bytes";
+#ifdef PADDLE_MOBILE_OS_LINUX
+    munmap(ptr, size);
 #else
-  free(ptr);
+    free(ptr);
 #endif
+    counter += size;
+    DLOG << "Address: " << ptr << ", " << size << " bytes freed. Total "
+         << counter << " bytes";
+  } else {
+    DLOG << "Invalid pointer";
+  }
 }
 
 void fpga_copy(void *dest, const void *src, size_t num) {
@@ -211,7 +215,8 @@ int PerformBypass(const struct BypassArgs &args) {
 int ComputeFPGAConcat(const struct ConcatArgs &args) {
 #ifdef FPGA_TEST_MODE
   DLOG << "=============ComputeFpgaConcat===========";
-  DLOG << "   out_address:" << args.image_out
+  DLOG << "   Image_num: " << args.image_num
+       << "   out_address:" << args.image_out
        << "   out_scale_address:" << args.scale_out;
   DLOG << "   image_height:" << args.height << "   image_width:" << args.width;
   for (int i = 0; i < args.image_num; i++) {
@@ -235,7 +240,7 @@ void format_image(framework::Tensor *image_tensor) {
   auto channel = dims[1], height = dims[2], width = dims[3];
   auto data_ptr = image_tensor->data<float>();
   size_t memory_size = channel * height * width * sizeof(float);
-  float *new_data = (float *)fpga_malloc(memory_size);
+  auto new_data = (float *)fpga_malloc(memory_size);
   fpga_copy(new_data, data_ptr, memory_size);
   image::format_image(&new_data, channel, height, width);
   image_tensor->reset_data_ptr(new_data);
@@ -346,12 +351,12 @@ void fill_conv_arg(struct WrapperConvArgs *arg, framework::Tensor *input,
   auto out_ptr = out->data<float>();
 
   arg->group_num = (uint32_t)group_num;
-  arg->split_num = (uint32_t)fpga::get_plit_num(filter);
+  // Either group_num or split_num = 1;
+  arg->split_num = group_num == 1 ? (uint32_t)get_plit_num(filter) : 1;
   arg->filter_num = (uint32_t)filter->dims()[0];
   arg->output.address = out_ptr;
   arg->output.scale_address = out->scale;
-  arg->conv_args = (fpga::ConvArgs *)fpga::fpga_malloc(arg->split_num *
-                                                       sizeof(fpga::ConvArgs));
+  arg->conv_args = (ConvArgs *)fpga_malloc(arg->split_num * sizeof(ConvArgs));
 
   arg->concat_arg.image_num = arg->split_num;
   arg->concat_arg.image_out = out_ptr;
@@ -360,15 +365,14 @@ void fill_conv_arg(struct WrapperConvArgs *arg, framework::Tensor *input,
   arg->concat_arg.width = (uint32_t)filter->dims()[3];
 
   int n = arg->split_num;
-  arg->concat_arg.images_in = (half **)fpga::fpga_malloc(n * sizeof(int *));
-  arg->concat_arg.scales_in = (float **)fpga::fpga_malloc(n * sizeof(float *));
-  arg->concat_arg.channel_num =
-      (uint32_t *)fpga::fpga_malloc(n * sizeof(uint32_t));
+  arg->concat_arg.images_in = (half **)fpga_malloc(n * sizeof(int *));
+  arg->concat_arg.scales_in = (float **)fpga_malloc(n * sizeof(float *));
+  arg->concat_arg.channel_num = (uint32_t *)fpga_malloc(n * sizeof(uint32_t));
   arg->concat_arg.image_out = out_ptr;
 
   auto channel = (int)out->dims()[1];
-  int filter_num_per_div = fpga::get_filter_num_per_div(filter, group_num);
-  int element_num = fpga::get_aligned_filter_element_num(
+  int filter_num_per_div = get_filter_num_per_div(filter, group_num);
+  int element_num = get_aligned_filter_element_num(
       filter->dims()[1] * filter->dims()[2] * filter->dims()[3]);
 
   for (int i = 0; i < n; i++) {
@@ -390,16 +394,17 @@ void fill_conv_arg(struct WrapperConvArgs *arg, framework::Tensor *input,
         &((int8_t *)filter_ptr)[i * element_num * filter_num_per_div];
     arg->conv_args[i].sb_address = &bs_ptr[i * filter_num_per_div * 2];
     arg->conv_args[i].filter_num =
-        (uint32_t)(i == n - 1 ? fpga::get_aligned_filter_num(
-                                    channel - (n - 1) * filter_num_per_div)
+        (uint32_t)(i == n - 1 ? channel - (n - 1) * filter_num_per_div
                               : filter_num_per_div);
 
     if (n > 1) {
       arg->conv_args[i].output.scale_address =
-          (float *)fpga::fpga_malloc(2 * sizeof(float));
-      arg->conv_args[i].output.address =
-          fpga::fpga_malloc(input->dims()[2] * input->dims()[3] *
-                            arg->conv_args[i].filter_num * sizeof(half));
+          (float *)fpga_malloc(2 * sizeof(float));
+      arg->conv_args[i].output.address = fpga_malloc(
+          input->dims()[2] *
+          align_to_x(input->dims()[3] * arg->conv_args[i].filter_num,
+                     IMAGE_ALIGNMENT) *
+          sizeof(half));
     }
 
     else {
@@ -408,7 +413,7 @@ void fill_conv_arg(struct WrapperConvArgs *arg, framework::Tensor *input,
     }
 
     arg->concat_arg.images_in[i] = (half *)arg->conv_args[i].output.address;
-    arg->concat_arg.scales_in[i] = (float *)arg->conv_args[i].sb_address;
+    arg->concat_arg.scales_in[i] = arg->conv_args[i].output.scale_address;
     arg->concat_arg.channel_num[i] = arg->conv_args[i].filter_num;
   }
 }
