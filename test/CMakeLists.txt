@@ -87,9 +87,6 @@ else ()
     ADD_EXECUTABLE(test-resnet net/test_resnet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-resnet paddle-mobile)
 
-    ADD_EXECUTABLE(test-resnet50 net/test_resnet50.cpp test_helper.h  test_include.h executor_for_test.h)
-    target_link_libraries(test-resnet50 paddle-mobile)
-
     # gen test
     ADD_EXECUTABLE(test-squeezenet net/test_squeezenet.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-squeezenet paddle-mobile)
