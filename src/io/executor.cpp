@@ -233,6 +233,13 @@ void Executor<Dtype, P>::InitMemory() {
             Get_binary_data(program_.model_path + "/" + var_desc->Name());
         char *data = origin_data;
         LoadMemory(*var_desc, tensor, &data);
+
+        //        DLOG << "-----      " << var_desc->Name();
+        //        DLOG << "-----      " << tensor->dims();
+        //        float *pDouble = tensor->template data<float>();
+        //        for (int i = 0; i < tensor->numel() && i < 30; ++i) {
+        //          std::cout << pDouble[i] << std::endl;
+        //        }
         delete origin_data;
       } else {
         if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
