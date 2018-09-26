@@ -905,7 +905,7 @@
 					"$(PROJECT_DIR)/paddle-mobile/CPU",
 				);
 				MACH_O_TYPE = mh_dylib;
-				MTL_LANGUAGE_REVISION = Metal12;
+				MTL_LANGUAGE_REVISION = UseDeploymentTarget;
 				PRODUCT_BUNDLE_IDENTIFIER = "orange.paddle-mobile";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
@@ -941,7 +941,7 @@
 					"$(PROJECT_DIR)/paddle-mobile/CPU",
 				);
 				MACH_O_TYPE = mh_dylib;
-				MTL_LANGUAGE_REVISION = Metal12;
+				MTL_LANGUAGE_REVISION = UseDeploymentTarget;
 				PRODUCT_BUNDLE_IDENTIFIER = "orange.paddle-mobile";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;

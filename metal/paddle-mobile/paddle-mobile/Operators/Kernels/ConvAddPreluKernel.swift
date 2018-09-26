@@ -134,17 +134,17 @@ class ConvAddPreluKernel<P: PrecisionType>: Kernel, Computable {
   }
   
   func compute(commandBuffer: MTLCommandBuffer, param: ConvAddPreluParam<P>) throws {
-//    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-//      throw PaddleMobileError.predictError(message: " encode is nil")
-//    }
-//    
-//    encoder.setTexture(param.input.metalTexture, index: 0)
-//    encoder.setTexture(param.output.metalTexture, index: 1)
-//    encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
-//    encoder.setBuffer(param.filter.buffer, offset: 0, index: 1)
-//    encoder.setBuffer(param.y.buffer, offset: 0, index: 2)
-//    encoder.setBuffer(param.alpha.buffer, offset: 0, index: 3)
-//    encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
-//    encoder.endEncoding()
+    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+      throw PaddleMobileError.predictError(message: " encode is nil")
+    }
+    
+    encoder.setTexture(param.input.metalTexture, index: 0)
+    encoder.setTexture(param.output.metalTexture, index: 1)
+    encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
+    encoder.setBuffer(param.filter.buffer, offset: 0, index: 1)
+    encoder.setBuffer(param.y.buffer, offset: 0, index: 2)
+    encoder.setBuffer(param.alpha.buffer, offset: 0, index: 3)
+    encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
+    encoder.endEncoding()
   }
 }
