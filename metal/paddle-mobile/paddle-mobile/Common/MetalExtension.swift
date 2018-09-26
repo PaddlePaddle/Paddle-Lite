@@ -56,8 +56,9 @@ extension MTLDevice {
     do {
       let pipLine = try makeComputePipelineState(function: function)
       return pipLine
-    } catch _ {
-      fatalError("make pip line error occured")
+    } catch let error {
+      print(error)
+      fatalError("make pip line error occured : \(error)")
     }
     
   }

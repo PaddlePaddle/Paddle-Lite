@@ -106,11 +106,11 @@ class ViewController: UIViewController {
         return
       }
       
-//      for _ in 0..<10{
-//        runner.predict(texture: inTexture) { (success, resultHolder)  in
-//          resultHolder?.releasePointer()
-//        }
-//      }
+      for _ in 0..<10{
+        runner.predict(texture: inTexture) { (success, resultHolder)  in
+          resultHolder?.releasePointer()
+        }
+      }
       
       let startDate = Date.init()
       for i in 0..<max {
