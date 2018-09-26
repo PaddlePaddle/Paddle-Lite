@@ -66,7 +66,7 @@ class Swichter:
 
     def read_head(self, head_file):
         from_file = open(head_file, "rb")
-        read = from_file.read(20)
+        read = from_file.read(24)
         # print read
         from_file.close()
         # print read
@@ -84,9 +84,32 @@ class Swichter:
         to_file.close()
         pass
 
+    def copy_padding_add_head(self, from_file_name, to_file_name, tmp_file_name, padding):
+        print'padding  = %d' % padding
+        from_file = open(from_file_name, "rb")
+        # print len(from_file.read())
+        from_file.seek(padding, 0)
 
-# Swichter().nhwc2nchw_one_slice(
-#     '/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/multiobjects/float32s_nhwc/conv5_6_dw_0.bin',
-#     '/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/multiobjects/float32s_nchw/conv5_6_dw_0', 1,
-#     512, 3, 3)
-Swichter().read_head('/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/yolo/conv1_biases')
+        read = from_file.read()
+        print len(read)
+
+        to_file = open(to_file_name, "wb")
+        # tmp_file = open(tmp_file_name, "wb")
+
+        head = self.read_head('/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/yolo/conv1_biases')
+        to_file.write(head)
+        to_file.write(read)
+        from_file.close()
+        to_file.close()
+        pass
+
+# Swichter().nhwc2nchw_one_slice_add_head(
+#     '/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/multiobjects/float32s_nhwc/conv1_0.bin',
+#     '/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/multiobjects/float32s_nchw_with_head/conv1_0',
+#     '/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/multiobjects/float32s_nchw/.tmp',
+#     32,
+#     3, 3, 3)
+
+# Swichter().read_head('/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/yolo/conv1_biases')
+
+# Swichter().copy_add_head('datas/model.0.0.weight', 'datas/conv1_0', '')
