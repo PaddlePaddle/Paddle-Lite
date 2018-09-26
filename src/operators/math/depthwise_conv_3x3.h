@@ -43,6 +43,9 @@ void DepthwiseConv3x3s2p1v2(const Tensor *input, const Tensor *filter,
 void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
                                      Tensor *output, const Tensor *new_scale,
                                      const Tensor *new_bias, bool if_relu);
+
+void DepthwiseConv3x3s2p0(const Tensor *input, const Tensor *filter,
+                          Tensor *output, Tensor bias, bool if_bias);
 }  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile

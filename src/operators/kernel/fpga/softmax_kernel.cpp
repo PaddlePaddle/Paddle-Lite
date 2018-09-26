@@ -26,7 +26,8 @@ template <>
 bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
   auto input = const_cast<Tensor *>(param->InputX());
   auto input_ptr = input->data<float>();
-  auto float_input = new Tensor(*input);
+  auto float_input = new Tensor;
+  float_input->mutable_data<float>(input->dims());
   fpga::format_fp32_ofm(float_input);
 
   fpga::BypassArgs args = {fpga::DATA_TYPE_FP16};

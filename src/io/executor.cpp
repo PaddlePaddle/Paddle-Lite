@@ -79,7 +79,7 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
     std::vector<std::shared_ptr<framework::OpDesc>> ops = block_desc->Ops();
     for (int j = 0; j < ops.size(); ++j) {
       std::shared_ptr<framework::OpDesc> op = ops[j];
-      DLOG << "create op: " << op->Type();
+      DLOG << "create op: " << j << "  " << op->Type();
       auto op_base = framework::OpRegistry<Dtype>::CreateOp(
           op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(),
           program_.scope);
@@ -103,7 +103,9 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
   std::shared_ptr<framework::BlockDesc> to_predict_block =
       to_predict_program_->Block(0);
   auto &ops = ops_of_block_[*to_predict_block.get()];
+  int i = 0;
   for (const auto &op : ops) {
+    DLOG << "Init op: " << i++ << "  " << op->Type();
     op->Init();
   }
 }
@@ -231,6 +233,13 @@ void Executor<Dtype, P>::InitMemory() {
             Get_binary_data(program_.model_path + "/" + var_desc->Name());
         char *data = origin_data;
         LoadMemory(*var_desc, tensor, &data);
+
+        //        DLOG << "-----      " << var_desc->Name();
+        //        DLOG << "-----      " << tensor->dims();
+        //        float *pDouble = tensor->template data<float>();
+        //        for (int i = 0; i < tensor->numel() && i < 30; ++i) {
+        //          std::cout << pDouble[i] << std::endl;
+        //        }
         delete origin_data;
       } else {
         if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
@@ -695,6 +704,7 @@ void Executor<Dtype, P>::Predict_From_To(int start, int end) {
     clock_gettime(CLOCK_MONOTONIC, &ts);
     profile[i].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
 #endif
+    DLOG << "Running op: " << i << "  " << ops[i]->Type();
     ops[i]->Run();
 
 #ifdef PADDLE_MOBILE_PROFILE
