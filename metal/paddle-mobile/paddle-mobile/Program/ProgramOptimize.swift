@@ -189,7 +189,7 @@ class ProgramOptimize<P: PrecisionType> {
                                   ConvAddOp<P>.self,
                                   ConvBNReluOp<P>.self,
                                   DwConvBNReluOp<P>.self,
-//                                  ElementwiseAddPreluOp<P>.self
+                                  ElementwiseAddPreluOp<P>.self
   ]
   
   func optimize(originProgramDesc: ProgramDesc) -> ProgramDesc {
