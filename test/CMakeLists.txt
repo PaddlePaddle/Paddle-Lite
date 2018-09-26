@@ -18,6 +18,9 @@ elseif ("yolo" IN_LIST NET)
     # gen test
     ADD_EXECUTABLE(test-yolo net/test_yolo.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-yolo paddle-mobile)
+    # gen test
+    ADD_EXECUTABLE(test_yolo_combined net/test_yolo_combined.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test_yolo_combined paddle-mobile)
 elseif ("squeezenet" IN_LIST NET)
     # gen test
     ADD_EXECUTABLE(test-squeezenet net/test_squeezenet.cpp test_helper.h  test_include.h executor_for_test.h)
@@ -94,6 +97,10 @@ else ()
     # gen test
     ADD_EXECUTABLE(test-yolo net/test_yolo.cpp test_helper.h  test_include.h executor_for_test.h)
     target_link_libraries(test-yolo paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test_yolo_combined net/test_yolo_combined.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test_yolo_combined paddle-mobile)
 
     # gen test
     ADD_EXECUTABLE(test-googlenet net/test_googlenet.cpp test_helper.h  test_include.h executor_for_test.h)
