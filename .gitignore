@@ -87,4 +87,5 @@ metal/models/
 metal/images/
 *.a
 metal/paddle-mobile/paddle-mobile/CPU/libpaddle-mobile.a
-*.xcuserdatad
+*.xcuserdatad/
+xcuserdata/
