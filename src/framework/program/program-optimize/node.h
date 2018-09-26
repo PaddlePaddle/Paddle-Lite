@@ -35,6 +35,7 @@ class Node {
       : op_desc_(op_desc), type_(op_desc->Type()) {}
   Node &operator>(std::shared_ptr<Node> node);
   bool operator==(const Node &in);
+  bool MedianEqual(const Node &in);
 
 #ifdef PADDLE_MOBILE_DEBUG
   std::string ToString() const;
@@ -47,13 +48,17 @@ class Node {
       std::map<std::string, std::vector<std::pair<std::string, std::string>>>
           change,
       std::vector<std::shared_ptr<Node>> *removed_nodes);
-  std::vector<std::shared_ptr<framework::OpDesc>> OpDescs(int size);
   std::shared_ptr<framework::OpDesc> OpDescOfNode() { return op_desc_; }
   std::string Type() { return type_; }
 
+  std::vector<Node *> operator[](int index);
+
+  std::map<std::string, Node *> Relationship();
+
  private:
-  void OpDescs(int size,
-               std::vector<std::shared_ptr<framework::OpDesc>> *op_desc);
+  void RelationshipPrivate(std::map<std::string, Node *> *map);
+  void GetNodesWithLocation(int index, int now_index,
+                            std::vector<Node *> *nodes);
   void To(int index, std::shared_ptr<Node>);
   void Folder(
       std::shared_ptr<framework::OpDesc> op_desc,

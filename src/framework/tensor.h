@@ -16,14 +16,15 @@ limitations under the License. */
 
 #include <cstdint>
 #include <cstring>
+#include <fstream>
 #include <memory>
+#include <string>
 #include <type_traits>
 #include <typeindex>
 #include <vector>
-#include "common/enforce.h"
 
-#include <fstream>
 #include "common/enforce.h"
+#include "common/types.h"
 #include "framework/data_layout.h"
 #include "framework/ddim.h"
 #include "memory/t_malloc.h"
@@ -63,7 +64,9 @@ struct SizeOfTypeFunctor<HEAD, TAIL...> {
 };
 
 static inline size_t SizeOfType(std::type_index type) {
-  SizeOfTypeFunctor<int, float, double, int16_t, int64_t, bool, size_t> functor;
+  SizeOfTypeFunctor<int8_t, int, half, float, double, int16_t, int64_t, bool,
+                    size_t>
+      functor;
   size_t size = functor(type);
 
   PADDLE_MOBILE_ENFORCE(size != 0UL, "Cannot get size of type %s", type.name());
@@ -113,8 +116,8 @@ class Tensor {
     PADDLE_MOBILE_ENFORCE(
         (std::is_same<T, void>::value ||
          holder_->type().hash_code() == typeid(T).hash_code()),
-        "Tensor holds the wrong type, it holds %s",
-        this->holder_->type().name());
+        "Tensor holds the wrong type, it holds %s ,requested:%s",
+        this->holder_->type().name(), typeid(T).name());
 
     return reinterpret_cast<const T *>(
         reinterpret_cast<uintptr_t>(holder_->ptr()) + offset_);
@@ -152,7 +155,7 @@ class Tensor {
     if (holder_ != nullptr) {
       holder_->set_type(type);
     }
-    PADDLE_MOBILE_ENFORCE(numel() >= 0, "the Tensor'snumel must >=0.")
+    PADDLE_MOBILE_ENFORCE(numel() >= 0, "the Tensor's numel must >=0.")
     int64_t size = numel() * SizeOfType(type);
     if (holder_ == nullptr || holder_->size() < size + offset_) {
       holder_.reset(new PlaceholderImpl(size, type));
@@ -287,7 +290,6 @@ class Tensor {
 
     virtual void set_type(std::type_index type) { type_ = type; }
 
-    /*! the pointer of memory block. */
     std::unique_ptr<uint8_t, memory::PODDeleter<uint8_t>> ptr_;
 
     /*! the size of memory block. */
@@ -317,6 +319,13 @@ class Tensor {
    * begins.
    */
   size_t offset_;
+#ifdef PADDLE_MOBILE_FPGA
+ public:
+  inline void reset_data_ptr(void *p) {
+    ((PlaceholderImpl *)(holder_.get()))->ptr_.reset((uint8_t *)p);
+  }
+  float scale[2];  // scale[0]= MAX/127.0, scale[1]= 127.0/MAX
+#endif
 };
 
 #ifdef PADDLE_MOBILE_DEBUG
@@ -324,9 +333,17 @@ inline Print &operator<<(Print &printer, const Tensor &tensor) {
   printer << " dims: " << tensor.dims() << "\n";
   int stride = tensor.numel() / 20;
   stride = stride > 0 ? stride : 1;
+#ifndef PADDLE_MOBILE_FPGA
   for (int i = 0; i < tensor.numel(); i += stride) {
-    printer << tensor.data<float>()[i] << " ";
+    //  这不一定是float的
+    if (tensor.type() == typeid(float)) {
+      printer << tensor.data<float>()[i] << " ";
+    } else if (tensor.type() == typeid(int64_t)) {
+      printer << tensor.data<int64_t>()[i] << " ";
+    }
   }
+#endif
+
   return printer;
 }
 

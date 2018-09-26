@@ -17,7 +17,7 @@ limitations under the License. */
 #pragma once
 
 #include "framework/tensor.h"
-#if __ARM_NEON
+#ifdef __ARM_NEON
 #include <arm_neon.h>
 #endif  // __ARM_NEON
 namespace paddle_mobile {
@@ -26,11 +26,11 @@ namespace math {
 using framework::Tensor;
 using std::vector;
 
-void Pool2x2Max(vector<int> strides, vector<int> paddings, const Tensor *input,
-                Tensor *output);
+void Pool2x2Maxs2p0(vector<int> strides, vector<int> paddings,
+                    const Tensor *input, Tensor *output);
 
-void Pool2x2Avg(vector<int> strides, vector<int> paddings, const Tensor *in_x,
-                Tensor *out);
+void Pool2x2Avgs2p0(vector<int> strides, vector<int> paddings,
+                    const Tensor *in_x, Tensor *out);
 }  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile

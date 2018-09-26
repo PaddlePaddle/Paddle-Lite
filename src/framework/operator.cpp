@@ -29,6 +29,16 @@ vector<string> OperatorBase<Dtype>::GetOutKeys() const {
 }
 
 template <typename Dtype>
+vector<string> OperatorBase<Dtype>::GetInputKeys() const {
+  auto it = op_input_output_key.find(type_);
+  if (it == op_input_output_key.end()) {
+    DLOG << type_ << " has no outputs";
+    return {};
+  }
+  return it->second.first;
+}
+
+template <typename Dtype>
 OperatorBase<Dtype>::OperatorBase(const std::string &type,
                                   const VariableNameMap &inputs,
                                   const VariableNameMap &outputs,
@@ -49,10 +59,27 @@ template <typename Dtype>
 void OperatorBase<Dtype>::Run() const {
   RunImpl();
 #ifdef PADDLE_MOBILE_DEBUG
-  vector<string> output_keys = GetOutKeys();
-  for (const auto key : output_keys) {
-    Tensor *out_ = GetVarValue<framework::LoDTensor>(key, outputs_, *scope_);
-    DLOG << type_ << " output- " << key << "=" << *out_;
+  DLOG << "-------------" << type_ << "----------------------------";
+  vector<string> input_keys = GetInputKeys();
+  for (const auto key : input_keys) {
+    auto var_vec_in = inputs_.at(key);
+    for (int i = 0; i < var_vec_in.size(); ++i) {
+      auto vari = scope_->FindVar(var_vec_in[i]);
+      if (vari->IsInitialized()) {
+        Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
+        if (tensor) DLOG << type_ << " input- " << key << "=" << *tensor;
+      }
+    }
+  }
+  for (const auto key : GetOutKeys()) {
+    auto var_vec_out = outputs_.at(key);
+    for (int i = 0; i < var_vec_out.size(); ++i) {
+      auto vari = scope_->FindVar(var_vec_out[i]);
+      if (vari->IsInitialized()) {
+        Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
+        if (tensor) DLOG << type_ << " output- " << key << "=" << *tensor;
+      }
+    }
   }
 #endif
 }

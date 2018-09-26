@@ -24,19 +24,19 @@ namespace paddle_mobile {
 namespace operators {
 using std::string;
 template <typename DeviceType, typename T>
-class ConvOp
-    : public framework::OperatorWithKernel<
-          DeviceType, ConvParam, operators::ConvKernel<DeviceType, T>> {
+class ConvOp : public framework::OperatorWithKernel<
+                   DeviceType, ConvParam<DeviceType>,
+                   operators::ConvKernel<DeviceType, T>> {
  public:
   ConvOp(const std::string &type, const VariableNameMap &inputs,
          const VariableNameMap &outputs, const framework::AttributeMap &attrs,
          std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, ConvParam,
+      : framework::OperatorWithKernel<DeviceType, ConvParam<DeviceType>,
                                       operators::ConvKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 
   using framework::OperatorWithKernel<
-      DeviceType, ConvParam,
+      DeviceType, ConvParam<DeviceType>,
       operators::ConvKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
@@ -45,5 +45,15 @@ class ConvOp
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(conv2d);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(conv2d);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+USE_OP_FPGA(conv2d);
+#endif
 
 #endif

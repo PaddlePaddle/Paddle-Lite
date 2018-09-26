@@ -61,6 +61,7 @@ class OperatorBase {
   virtual ~OperatorBase() {}
   void Run() const;
   std::vector<string> GetOutKeys() const;
+  std::vector<string> GetInputKeys() const;
   virtual void RunImpl() const = 0;
 
   virtual void Init() = 0;
@@ -118,6 +119,10 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
   virtual void InferShape() const = 0;
 
   void Init() {
+    //    for (auto i : this->inputs_) {
+    //      DLOG << i.first;
+    //      DLOG << i.second;
+    //    }
     PADDLE_MOBILE_ENFORCE(kernel_.Init(&param_), "  %s kernel init failed",
                           this->type_.c_str());
   }
@@ -146,7 +151,7 @@ class OpKernelBase {
   }
 #endif
   virtual void Compute(const P &para) const = 0;
-  virtual bool Init(P *para) { return true; };
+  virtual bool Init(P *para) { return true; }
   virtual ~OpKernelBase() = default;
 
  private:
@@ -177,6 +182,8 @@ class FusionOpMatcher {
   virtual Node &BeginNode() { return node_; }
 
   std::string BeginType() { return node_.Type(); }
+
+  virtual std::vector<std::pair<int, std::string>> NeedCheck() { return {}; }
 
   //  virtual  bool Fusion();
  protected:

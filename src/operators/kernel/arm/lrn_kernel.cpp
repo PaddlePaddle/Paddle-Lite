@@ -14,39 +14,21 @@ limitations under the License. */
 
 #ifdef LRN_OP
 
-#pragma once
-
 #include "operators/kernel/lrn_kernel.h"
+#include "operators/kernel/central-arm-func/lrn_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool LrnKernel<CPU, float>::Init(LrnParam *param) {
+bool LrnKernel<CPU, float>::Init(LrnParam<CPU> *param) {
   return true;
 }
 
 template <>
-void LrnKernel<CPU, float>::Compute(const LrnParam &param) const {
-  const Tensor *input_x = param.InputX();
-  auto x_dims = input_x->dims();
-  Tensor *out = param.Out();
-  out->mutable_data<float>();
-  /// data_format = NCHW
-  const int N = x_dims[0];
-  const int C = x_dims[1];
-  const int H = x_dims[2];
-  const int W = x_dims[3];
-
-  const int n = param.N();
-  const float alpha = param.Alpha();
-  const float beta = param.Beta();
-  const float k = param.K();
-  LRNFunctor<float> lrnFunctor;
-  lrnFunctor(*input_x, out, N, C, H, W, n, k, alpha, beta);
+void LrnKernel<CPU, float>::Compute(const LrnParam<CPU> &param) const {
+  LrnCompute<float>(param);
 }
-
-template class LrnKernel<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile

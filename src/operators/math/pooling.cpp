@@ -16,6 +16,9 @@ limitations under the License. */
 
 #include "pooling.h"
 #include "common/types.h"
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 namespace paddle_mobile {
 namespace operators {
@@ -55,10 +58,9 @@ class PoolFunctor<CPU, PoolProcess, T> {
 
     const T *input_data = input.data<T>();
     T *output_data = output->mutable_data<T>();
-
     for (int i = 0; i < batch_size; i++) {
-      #pragma omp parallel for
       for (int c = 0; c < output_channels; ++c) {
+#pragma omp parallel for
         for (int ph = 0; ph < output_height; ++ph) {
           int hstart = ph * stride_height - padding_height;
           int hend = std::min(hstart + ksize_height, input_height);

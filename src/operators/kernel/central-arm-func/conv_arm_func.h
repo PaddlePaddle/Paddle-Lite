@@ -17,13 +17,15 @@ limitations under the License. */
 #pragma once
 #include <vector>
 #include "operators/math/conv_func.h"
+#include "operators/math/depthwise_conv_3x3.h"
+#include "operators/math/im2col.h"
+#include "operators/math/math_function.h"
+#include "operators/math/vol2col.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
-
-template <typename P>
-void ConvCompute(const ConvParam &param) {
+inline void ConvBasic(const ConvParam<CPU> &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
   Tensor *output = param.Output();
@@ -106,6 +108,25 @@ void ConvCompute(const ConvParam &param) {
                           static_cast<float>(1), &out_slice,
                           static_cast<float>(0));
     }
+  }
+}
+
+template <typename P>
+void ConvCompute(const ConvParam<CPU> &param) {
+  if (param.Groups() == param.Input()->dims()[1] &&
+      param.Input()->dims()[1] == param.Output()->dims()[1] &&
+      param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
+      param.Filter()->dims()[2] == 3 && param.Strides()[0] == 1) {
+    math::DepthwiseConv3x3s1p1(param.Input(), param.Filter(), param.Output(),
+                               nullptr, false);
+  } else if (param.Groups() == param.Input()->dims()[1] &&
+             param.Input()->dims()[1] == param.Output()->dims()[1] &&
+             param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
+             param.Filter()->dims()[2] == 3) {
+    math::DepthwiseConv3x3(param.Input(), param.Strides(), param.Paddings(),
+                           param.Filter(), nullptr, param.Output(), false);
+  } else {
+    ConvBasic(param);
   }
 }
 

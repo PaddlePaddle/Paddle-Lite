@@ -47,13 +47,12 @@ void BoxCoderOp<Dtype, T>::InferShape() const {
   this->param_.OutputBox()->Resize(framework::make_ddim(
       {input_targetbox_dims[0], input_priorbox_dims[0], 4}));
 }
-template class BoxCoderOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(box_coder);
 REGISTER_OPERATOR_CPU(box_coder, ops::BoxCoderOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU

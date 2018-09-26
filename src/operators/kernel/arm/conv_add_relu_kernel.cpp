@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVADD_RELU_OP
+#ifdef FUSION_CONVADDRELU_OP
 
 #include "operators/kernel/conv_add_relu_kernel.h"
 #include "operators/kernel/central-arm-func/conv_add_relu_arm_func.h"
@@ -21,13 +21,13 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ConvAddReluKernel<CPU, float>::Init(FusionConvAddReluParam *param) {
+bool ConvAddReluKernel<CPU, float>::Init(FusionConvAddReluParam<CPU> *param) {
   return true;
 }
 
 template <>
 void ConvAddReluKernel<CPU, float>::Compute(
-    const FusionConvAddReluParam &param) const {
+    const FusionConvAddReluParam<CPU> &param) const {
   ConvAddReluCompute<float>(param);
 }
 template class ConvAddReluKernel<CPU, float>;

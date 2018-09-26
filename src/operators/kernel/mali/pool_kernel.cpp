@@ -39,7 +39,7 @@ class AclPoolOp : public acl::ACLOperator {
   AclPoolOp& operator=(AclPoolOp&&) = delete;
 
   acl::AclParameters& getargs() { return args; }
-  void InitAclLayer(const PoolParam& param) {
+  void InitAclLayer(const PoolParam<DeviceType>& param) {
     setTargetHint(acl::TargetHint::OPENCL);
     arm_compute::TensorShape input_shape(args.in_cols, args.in_rows,
                                          args.in_depth);
@@ -79,9 +79,10 @@ class AclPoolOp : public acl::ACLOperator {
   void RunAcl(void* input, void* output) {
     acl::ACLOperator::acl_run(input, output);
   }
-  bool Bypass_acl(const PoolParam& param) {
+  bool Bypass_acl(const PoolParam<DeviceType>& param) {
     bool bypass_acl = false;
     AclParametersByContext(param);
+    InitAclLayer(param);
     // for performance, more groups impact GPU performance
     if (this->force_bypass_acl_path_) {
       bypass_acl = true;
@@ -99,7 +100,7 @@ class AclPoolOp : public acl::ACLOperator {
   }
 
  private:
-  void AclParametersByContext(const PoolParam& param) {
+  void AclParametersByContext(const PoolParam<DeviceType>& param) {
     const Tensor* in_x = param.Input();
     Tensor* out = param.Output();
     std::string pooling_type = param.PoolingType();
@@ -179,32 +180,32 @@ class AclPoolOp : public acl::ACLOperator {
 };
 
 template <>
-bool PoolKernel<GPU_MALI, float>::Init(const PoolParam& param) const {
+bool PoolKernel<GPU_MALI, float>::Init(PoolParam<GPU_MALI>* param) {
   AclPoolOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclPoolOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {
     acl_op = new AclPoolOp<GPU_MALI, float>();
     this->SetAclOp((void*)acl_op, (void*)this);
   }
+  if (acl_op->Bypass_acl(*param)) {
+    std::cout << "init acl failed" << std::endl;
+    return false;
+  }
   return true;
 }
 
 template <>
-void PoolKernel<GPU_MALI, float>::Compute(const PoolParam& param) const {
+void PoolKernel<GPU_MALI, float>::Compute(
+    const PoolParam<GPU_MALI>& param) const {
   std::cout << "init acl" << std::endl;
   AclPoolOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclPoolOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {
     return;
   }
-  if (acl_op->Bypass_acl(param)) {
-    std::cout << "init acl failed" << std::endl;
-    return;
-  }
   acl::AclParameters& args = acl_op->getargs();
   const float* input_data = (const float*)args.input_data;
   const float* output_data = (const float*)args.output_data;
-  acl_op->InitAclLayer(param);
   for (int n = 0; n < args.batch; ++n) {
     acl_op->RunAcl((void*)input_data, (void*)output_data);
     input_data += args.in_depth * args.in_cols * args.in_rows;
