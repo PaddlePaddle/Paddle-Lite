@@ -84,3 +84,6 @@ SwiftProtobuf.framework
 paddle-mobile.xcworkspace
 metal/models/
 metal/images/
+
+
+tools/libomp.a

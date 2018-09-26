@@ -53,9 +53,9 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
     auto input_ptr = input->data<float>();
     fpga::format_image(input);
     Tensor *output = param_.Out();
-    auto output_ptr = output->data<half>();
+    auto output_ptr = output->data<float>();
 
-    fpga::BypassArgs args;
+    fpga::BypassArgs args = {fpga::DATA_TYPE_FP32};
 
     args.input_data_type = fpga::DATA_TYPE_FP32;
     args.output_data_type = fpga::DATA_TYPE_FP16;

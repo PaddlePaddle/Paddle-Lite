@@ -30,7 +30,7 @@ bool PoolKernel<FPGA, float>::Init(PoolParam<FPGA> *param) {
   vector<int> strides = param->Strides();
   vector<int> paddings = param->Paddings();
 
-  fpga::PoolingArgs poolArgs;
+  fpga::PoolingArgs poolArgs = {0};
   poolArgs.image.address = input_ptr;
   poolArgs.image.channels = (uint32_t)input->dims()[1];
   poolArgs.image.height = (uint32_t)input->dims()[2];
