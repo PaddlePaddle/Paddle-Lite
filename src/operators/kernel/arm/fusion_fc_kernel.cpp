@@ -14,60 +14,22 @@ limitations under the License. */
 
 #ifdef FUSION_FC_OP
 
-#pragma once
-
 #include "operators/kernel/fusion_fc_kernel.h"
+#include "operators/kernel/central-arm-func/fusion_fc_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool FusionFcKernel<CPU, float>::Init(FusionFcParam *param) {
+bool FusionFcKernel<CPU, float>::Init(FusionFcParam<CPU> *param) {
   return true;
 }
 
 template <>
-void FusionFcKernel<CPU, float>::Compute(const FusionFcParam &param) const {
-  const Tensor *input_x = param.InputX();
-  const Tensor *input_y = param.InputY();
-  const Tensor *input_z = param.InputZ();
-  auto *input_z_data = input_z->data<float>();
-  int axis = param.Axis();
-  Tensor *out = param.Out();
-  auto *out_data = out->mutable_data<float>();
-  const Tensor x_matrix =
-      input_x->dims().size() > 2
-          ? framework::ReshapeToMatrix(*input_x, param.XNumColDims())
-          : *input_x;
-  const Tensor y_matrix =
-      input_y->dims().size() > 2
-          ? framework::ReshapeToMatrix(*input_y, param.YNumColDims())
-          : *input_y;
-  auto out_dim = out->dims();
-  if (out_dim.size() != 2) {
-    out->Resize({x_matrix.dims()[0], y_matrix.dims()[1]});
-  }
-  PADDLE_MOBILE_ENFORCE(out_dim.size() == 2, " out_dim.size must be 2.");
-  PADDLE_MOBILE_ENFORCE(input_z->dims().size() == 1, "inpu_z size must be 1");
-  PADDLE_MOBILE_ENFORCE(out_dim[1] == input_z->dims()[0],
-                        " out_dim.size must be 2.");
-  axis = (axis == -1 ? out_dim.size() - input_z->dims().size() : axis);
-  PADDLE_MOBILE_ENFORCE(axis == 1, " to fit broadcast, axis = 1. ")
-
-  int64_t classes = input_z->numel();
-  for (int i = 0; i < out_dim[0]; i++) {
-    memory::Copy(out_data + i * classes, input_z_data, sizeof(float) * classes);
-  }
-
-  for (int i = 0; i < out->numel(); i++) {
-    DLOG << out_data[i];
-  }
-  math::matmul<float>(x_matrix, false, y_matrix, false, static_cast<float>(1),
-                      out, static_cast<float>(1));
-  PADDLE_MOBILE_ENFORCE(out_dim.size() == 2, " out_dim.size must be 2.");
-  //            if (out_dim.size() != 2) {
-  //                out->Resize(out_dim);
-  //            }
+void FusionFcKernel<CPU, float>::Compute(
+    const FusionFcParam<CPU> &param) const {
+  FusionFcCompute<float>(param);
+  param.Out()->set_lod(param.InputX()->lod());
 }
 
 }  // namespace operators

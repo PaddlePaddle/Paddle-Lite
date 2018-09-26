@@ -32,10 +32,17 @@ void DepthwiseConv3x3(const Tensor *input, vector<int> strides,
                       Tensor *output, bool if_bias);
 void DepthwiseConv3x3s1p1(const Tensor *input, const Tensor *filter,
                           Tensor *output, Tensor *bias, bool if_bias);
-void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, Tensor filter,
-                                   Tensor *output, Tensor *bias, bool if_bias,
-                                   Tensor *new_scale, Tensor *new_bias,
-                                   bool if_bn, bool if_relu);
+void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
+                                   Tensor *output, const Tensor *new_scale,
+                                   const Tensor *new_bias, bool if_relu);
+void DepthwiseConvAddBNRelu3x3s2p1(const Tensor *input, const Tensor *filter,
+                                   Tensor *output, const Tensor *new_scale,
+                                   const Tensor *new_bias, bool if_relu);
+void DepthwiseConv3x3s2p1v2(const Tensor *input, const Tensor *filter,
+                            Tensor *output, Tensor bias, bool if_bias);
+void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
+                                     Tensor *output, const Tensor *new_scale,
+                                     const Tensor *new_bias, bool if_relu);
 }  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile

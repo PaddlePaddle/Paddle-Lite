@@ -25,7 +25,7 @@ namespace operators {
 
 template <typename DeviceType, typename T>
 class DepthwiseConvOp : public framework::OperatorWithKernel<
-                            DeviceType, ConvParam,
+                            DeviceType, ConvParam<DeviceType>,
                             operators::DepthwiseConvKernel<DeviceType, T>> {
  public:
   DepthwiseConvOp(const std::string &type, const VariableNameMap &inputs,
@@ -33,12 +33,12 @@ class DepthwiseConvOp : public framework::OperatorWithKernel<
                   const framework::AttributeMap &attrs,
                   std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<
-            DeviceType, ConvParam,
+            DeviceType, ConvParam<DeviceType>,
             operators::DepthwiseConvKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 
   using framework::OperatorWithKernel<
-      DeviceType, ConvParam,
+      DeviceType, ConvParam<DeviceType>,
       operators::DepthwiseConvKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
@@ -47,5 +47,13 @@ class DepthwiseConvOp : public framework::OperatorWithKernel<
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(depthwise_conv2d);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
 
 #endif

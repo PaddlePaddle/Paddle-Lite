@@ -22,20 +22,19 @@ template <typename DeviceType, typename T>
 void SoftmaxOp<DeviceType, T>::InferShape() const {
   this->param_.Out()->Resize(this->param_.InputX()->dims());
 }
-template class SoftmaxOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(softmax);
 REGISTER_OPERATOR_CPU(softmax, ops::SoftmaxOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(softmax);
 REGISTER_OPERATOR_MALI_GPU(softmax, ops::SoftmaxOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(softmax, ops::SoftmaxOp);
 #endif
 
 #endif

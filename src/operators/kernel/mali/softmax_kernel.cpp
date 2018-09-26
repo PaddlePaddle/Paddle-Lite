@@ -39,7 +39,7 @@ class AclSoftmaxOp : public acl::ACLOperator {
   AclSoftmaxOp& operator=(AclSoftmaxOp&&) = delete;
 
   acl::AclParameters& getargs() { return args; }
-  void InitAclLayer(const SoftmaxParam& param) {
+  void InitAclLayer(const SoftmaxParam<DeviceType>& param) {
     setTargetHint(acl::TargetHint::OPENCL);
     arm_compute::TensorShape shape(args.in_depth, args.batch);
 
@@ -58,9 +58,10 @@ class AclSoftmaxOp : public acl::ACLOperator {
   void RunAcl(void* input, void* output) {
     acl::ACLOperator::acl_run(input, output);
   }
-  bool Bypass_acl(const SoftmaxParam& param) {
+  bool Bypass_acl(const SoftmaxParam<DeviceType>& param) {
     bool bypass_acl = false;
     AclParametersByContext(param);
+    InitAclLayer(param);
     // for performance, more groups impact GPU performance
     if (this->force_bypass_acl_path_) {
       bypass_acl = true;
@@ -70,7 +71,7 @@ class AclSoftmaxOp : public acl::ACLOperator {
   }
 
  private:
-  void AclParametersByContext(const SoftmaxParam& param) {
+  void AclParametersByContext(const SoftmaxParam<DeviceType>& param) {
     const framework::Tensor* in_x = param.InputX();
     framework::Tensor* out = param.Out();
     auto x_dims = in_x->dims();
@@ -96,32 +97,33 @@ class AclSoftmaxOp : public acl::ACLOperator {
 };
 
 template <>
-bool SoftmaxKernel<GPU_MALI, float>::Init(const SoftmaxParam& param) const {
+bool SoftmaxKernel<GPU_MALI, float>::Init(SoftmaxParam<GPU_MALI>* param) {
   AclSoftmaxOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclSoftmaxOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {
     acl_op = new AclSoftmaxOp<GPU_MALI, float>();
     this->SetAclOp((void*)acl_op, (void*)this);
   }
+  if (acl_op->Bypass_acl(*param)) {
+    std::cout << "init acl failed" << std::endl;
+    return false;
+  }
   return true;
 }
 
 template <>
-void SoftmaxKernel<GPU_MALI, float>::Compute(const SoftmaxParam& param) const {
+void SoftmaxKernel<GPU_MALI, float>::Compute(
+    const SoftmaxParam<GPU_MALI>& param) const {
   std::cout << "init acl" << std::endl;
   AclSoftmaxOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclSoftmaxOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {
     return;
   }
-  if (acl_op->Bypass_acl(param)) {
-    std::cout << "init acl failed" << std::endl;
-    return;
-  }
   acl::AclParameters& args = acl_op->getargs();
   const float* input_data = (const float*)args.input_data;
   const float* output_data = (const float*)args.output_data;
-  acl_op->InitAclLayer(param);
+
   for (int n = 0; n < args.out_num; ++n) {
     acl_op->RunAcl((void*)input_data, (void*)output_data);
     input_data += args.in_depth;

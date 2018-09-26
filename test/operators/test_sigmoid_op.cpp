@@ -14,7 +14,7 @@ limitations under the License. */
 
 #include "../../src/operators/kernel/sigmoid_kernel.h"
 #include "../test_helper.h"
-#include "io/io.h"
+#include "io/executor.h"
 
 int main() {
   paddle_mobile::framework::Tensor input;

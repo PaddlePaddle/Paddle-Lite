@@ -29,7 +29,7 @@ using paddle_mobile::framework::Tensor;
 
 template <typename DeviceType, typename T>
 class MultiClassNMSOp : public framework::OperatorWithKernel<
-                            DeviceType, MultiClassNMSParam,
+                            DeviceType, MultiClassNMSParam<DeviceType>,
                             operators::MultiClassNMSKernel<DeviceType, T>> {
  public:
   MultiClassNMSOp(const std::string &type, const VariableNameMap &inputs,
@@ -37,12 +37,12 @@ class MultiClassNMSOp : public framework::OperatorWithKernel<
                   const framework::AttributeMap &attrs,
                   std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<
-            DeviceType, MultiClassNMSParam,
+            DeviceType, MultiClassNMSParam<DeviceType>,
             operators::MultiClassNMSKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 
   using framework::OperatorWithKernel<
-      DeviceType, MultiClassNMSParam,
+      DeviceType, MultiClassNMSParam<DeviceType>,
       operators::MultiClassNMSKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
@@ -51,5 +51,13 @@ class MultiClassNMSOp : public framework::OperatorWithKernel<
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(multiclass_nms);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
 
 #endif

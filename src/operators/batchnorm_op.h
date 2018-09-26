@@ -26,14 +26,15 @@ namespace operators {
 using std::string;
 template <typename DeviceType, typename T>
 class BatchNormOp
-    : public framework::OperatorWithKernel<DeviceType, BatchNormParam,
+    : public framework::OperatorWithKernel<DeviceType,
+                                           BatchNormParam<DeviceType>,
                                            BatchNormKernel<DeviceType, T>> {
  public:
   BatchNormOp(const string &type, const VariableNameMap &inputs,
               const VariableNameMap &outputs,
               const framework::AttributeMap &attrs,
               std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, BatchNormParam,
+      : framework::OperatorWithKernel<DeviceType, BatchNormParam<DeviceType>,
                                       BatchNormKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 
@@ -44,5 +45,14 @@ class BatchNormOp
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(batch_norm);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(batch_norm);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
 
 #endif

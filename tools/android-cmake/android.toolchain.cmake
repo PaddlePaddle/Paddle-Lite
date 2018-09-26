@@ -65,6 +65,8 @@ endif()
 file(TO_CMAKE_PATH "${ANDROID_NDK}" ANDROID_NDK)
 
 # Android NDK revision
+message("${ANDROID_NDK}")
+
 file(READ "${ANDROID_NDK}/source.properties" ANDROID_NDK_SOURCE_PROPERTIES)
 set(ANDROID_NDK_SOURCE_PROPERTIES_REGEX
   "^Pkg\\.Desc = Android NDK\nPkg\\.Revision = ([0-9]+)\\.")
@@ -159,7 +161,7 @@ endif()
 
 # Default values for configurable variables.
 if(NOT ANDROID_TOOLCHAIN)
-  set(ANDROID_TOOLCHAIN clang)
+  set(ANDROID_TOOLCHAIN gcc)
 endif()
 if(NOT ANDROID_ABI)
   set(ANDROID_ABI armeabi-v7a)

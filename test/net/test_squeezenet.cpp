@@ -12,30 +12,38 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include <fstream>
+#include <iostream>
 #include "../test_helper.h"
 #include "../test_include.h"
 
 int main() {
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
+  paddle_mobile.SetThreadNum(4);
   //  ../../../test/models/googlenet
   //  ../../../test/models/mobilenet
   auto time1 = time();
-  auto program = loader.Load(g_squeezenet, false);
-  auto time2 = time();
-  DLOG << "load cost :" << time_diff(time1, time1) << "ms";
-  paddle_mobile::Executor<paddle_mobile::CPU> executor(program, 1, false);
+  if (paddle_mobile.Load(g_squeezenet, true)) {
+    auto time2 = time();
+    std::cout << "load cost :" << time_diff(time1, time1) << "ms" << std::endl;
+    std::vector<int64_t> dims{1, 3, 227, 227};
+    Tensor input_tensor;
+    SetupTensor<float>(&input_tensor, {1, 3, 227, 227}, static_cast<float>(0),
+                       static_cast<float>(1));
 
-  std::vector<int64_t> dims{1, 3, 227, 227};
-  Tensor input_tensor;
-  SetupTensor<float>(&input_tensor, {1, 3, 227, 227}, static_cast<float>(0),
-                     static_cast<float>(1));
+    std::vector<float> input(input_tensor.data<float>(),
+                             input_tensor.data<float>() + input_tensor.numel());
+    // 预热十次
+    for (int i = 0; i < 10; ++i) {
+      paddle_mobile.Predict(input, dims);
+    }
+    auto time3 = time();
+    for (int i = 0; i < 10; ++i) {
+      paddle_mobile.Predict(input, dims);
+    }
+    auto time4 = time();
+    std::cout << "predict cost :" << time_diff(time3, time4) / 10 << "ms"
+              << std::endl;
+  }
 
-  std::vector<float> input(input_tensor.data<float>(),
-                           input_tensor.data<float>() + input_tensor.numel());
-  auto time3 = time();
-  executor.Predict(input, dims);
-  auto time4 = time();
-  DLOG << "predict cost :" << time_diff(time3, time4) << "ms";
   return 0;
 }

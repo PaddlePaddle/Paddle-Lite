@@ -15,77 +15,20 @@ limitations under the License. */
 #ifdef CONCAT_OP
 
 #include "operators/kernel/concat_kernel.h"
+#include "operators/kernel/central-arm-func/concat_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
-template <typename T>
-class ConcatFunctor {
- public:
-  void operator()(const std::vector<framework::Tensor> &input, const int axis,
-                  framework::Tensor *output) {
-    size_t num = input.size();
-    int rows = 1;
-    auto dim_0 = input[0].dims();
-    for (int i = 0; i < axis; ++i) {
-      rows *= dim_0[i];
-    }
-    int out_rows = rows, out_cols = 0;
-
-    std::vector<int64_t> input_cols(input.size());
-    for (int i = 0; i < num; ++i) {
-      int t_cols = input[i].numel() / rows;
-      out_cols += t_cols;
-      input_cols[i] = t_cols;
-    }
-
-    // computation
-    for (int k = 0; k < out_rows; ++k) {
-      T *dst_ptr = output->data<T>() + k * out_cols;
-      int col_idx = 0;
-      for (int j = 0; j < num; ++j) {
-        int col_len = input_cols[j];
-        const T *src_prt = input[j].data<T>() + k * col_len;
-        memory::Copy(dst_ptr + col_idx, src_prt, sizeof(T) * col_len);
-        col_idx += col_len;
-      }
-    }
-  }
-};
 
 template <>
-bool ConcatKernel<CPU, float>::Init(ConcatParam *param) {
+bool ConcatKernel<CPU, float>::Init(ConcatParam<CPU> *param) {
   return true;
 }
 
 template <>
-void ConcatKernel<CPU, float>::Compute(const ConcatParam &param) const {
-  auto inputs = param.Inputs();
-  auto *out = param.Out();
-  int64_t axis = param.Axis();
-  out->mutable_data<float>();
-
-  /// Sometimes direct copies will be faster, this maybe need deeply analysis.
-  if (axis == 0 && inputs.size() < 10) {
-    size_t output_offset = 0;
-    for (auto *in : inputs) {
-      auto in_stride = framework::stride_numel(in->dims());
-      auto out_stride = framework::stride_numel(out->dims());
-      auto dst = out->data<float>() + output_offset;
-      auto src = in->data<float>();
-      PADDLE_MOBILE_ENFORCE(
-          in_stride.size() == out_stride.size(),
-          "src and dst tensor should have the same dims size.");
-      memory::Copy(dst, src, sizeof(float) * in_stride[0]);
-      output_offset += in_stride[0];
-    }
-  } else {
-    std::vector<framework::Tensor> inputs_concat(inputs.size());
-    for (int j = 0; j < inputs.size(); ++j) {
-      inputs_concat[j] = *inputs[j];
-    }
-    ConcatFunctor<float> concat_functor;
-    concat_functor(inputs_concat, static_cast<int>(axis), out);
-  }
+void ConcatKernel<CPU, float>::Compute(const ConcatParam<CPU> &param) const {
+  ConcatCompute<float>(param);
+  param.Out()->set_lod(param.Inputs()[0]->lod());
 }
 
 }  // namespace operators

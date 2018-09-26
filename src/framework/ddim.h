@@ -14,9 +14,11 @@ limitations under the License. */
 
 #pragma once
 
+#include <cstdlib>
 #include <initializer_list>
 #include <typeinfo>
 #include <vector>
+
 #include "common/enforce.h"
 #include "common/variant.h"
 #include "dim.h"
@@ -58,7 +60,8 @@ struct DDim {
     } else if (d.var.TypeId() == typeid(Dim<9>).hash_code()) {
       return vistor(d.var.Get<Dim<9>>());
     } else {
-      DLOG << " dim not support";
+      PADDLE_MOBILE_ENFORCE(false, " dim not support");
+      exit(0);
     }
   }
 

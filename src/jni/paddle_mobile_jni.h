@@ -15,9 +15,6 @@ limitations under the License. */
 #pragma once
 #ifdef ANDROID
 #include <jni.h>
-#include "common/log.h"
-#include "framework/tensor.h"
-#include "io/io.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,23 +22,59 @@ extern "C" {
 namespace paddle_mobile {
 namespace jni {
 /**
- * load model & params of the net for android
+ * load separated model for android
  */
 JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_load(JNIEnv *env,
                                                           jclass thiz,
                                                           jstring modelPath);
 
 /**
+ * load separated qualified model for android
+ */
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadQualified(
+    JNIEnv *env, jclass thiz, jstring modelPath);
+/**
+ * load combined model  for android
+ */
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadCombined(
+    JNIEnv *env, jclass thiz, jstring modelPath, jstring paramPath);
+
+/**
+ * load combined qualified model for android
+ */
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadCombinedQualified(
+    JNIEnv *env, jclass thiz, jstring modelPath, jstring paramPath);
+
+/**
  * object detection for anroid
  */
 JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictImage(
-    JNIEnv *env, jclass thiz, jfloatArray buf);
+    JNIEnv *env, jclass thiz, jfloatArray buf, jintArray ddims);
 
+/**
+ * object detection for anroid
+ */
+JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictYuv(
+    JNIEnv *env, jclass thiz, jbyteArray yuv, jint imgwidth, jint imgHeight,
+    jintArray ddims, jfloatArray meanValues);
+
+/**
+ * object detection for anroid
+ */
+JNIEXPORT jfloatArray JNICALL
+Java_com_baidu_paddle_PML_predict(JNIEnv *env, jclass thiz, jfloatArray buf);
+
+/**
+ * setThreadCount for multithread
+ */
+JNIEXPORT void JNICALL Java_com_baidu_paddle_PML_setThread(JNIEnv *env,
+                                                           jclass thiz,
+                                                           jint threadCount);
 /**
  * clear data of the net when destroy for android
  */
-JNIEXPORT void JNICALL Java_com_baidu_paddle_PMLL_clear(JNIEnv *env,
-                                                        jclass thiz);
+JNIEXPORT void JNICALL Java_com_baidu_paddle_PML_clear(JNIEnv *env,
+                                                       jclass thiz);
 }  // namespace jni
 }  // namespace paddle_mobile
 #ifdef __cplusplus

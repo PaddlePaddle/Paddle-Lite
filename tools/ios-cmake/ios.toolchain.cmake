@@ -34,6 +34,7 @@ set (CMAKE_SYSTEM_VERSION 1)
 set (UNIX True)
 set (APPLE True)
 set (IOS True)
+set (IOS_ARCH armv7 armv7s arm64)
 
 # Required as of cmake 2.8.10
 set (CMAKE_OSX_DEPLOYMENT_TARGET "" CACHE STRING "Force unset of the deployment target for iOS" FORCE)
@@ -49,8 +50,13 @@ endif (CMAKE_UNAME)
 #include (CMakeForceCompiler)
 #CMAKE_C_COMPILER (/usr/bin/gcc)
 #CMAKE_CXX_COMPILER (/usr/bin/g++)
-set(CMAKE_C_COMPILER /usr/bin/gcc)
-set(CMAKE_CXX_COMPILER /usr/bin/g++)
+if(USE_OPENMP)
+    set(CMAKE_C_COMPILER /usr/local/opt/llvm/bin/clang)
+    set(CMAKE_CXX_COMPILER /usr/local/opt/llvm/bin/clang++)
+else()
+    set(CMAKE_C_COMPILER /usr/bin/gcc)
+    set(CMAKE_CXX_COMPILER /usr/bin/g++)
+endif()
 set(CMAKE_AR ar CACHE FILEPATH "" FORCE)
 
 # Skip the platform compiler checks for cross compiling
@@ -159,7 +165,6 @@ set (CMAKE_OSX_SYSROOT ${CMAKE_IOS_SDK_ROOT} CACHE PATH "Sysroot used for iOS su
 
 # set the architecture for iOS
 if (${IOS_PLATFORM} STREQUAL "OS")
-  set (IOS_ARCH armv7 armv7s arm64)
 elseif (${IOS_PLATFORM} STREQUAL "SIMULATOR")
   set (IOS_ARCH i386)
 elseif (${IOS_PLATFORM} STREQUAL "SIMULATOR64")

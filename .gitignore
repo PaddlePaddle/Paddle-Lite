@@ -69,3 +69,21 @@ build
 # clion building directories
 cmake-build-debug
 cmake-build-release
+
+#ios demo
+demo/ios/PaddleMobileDemo/PaddleMobileDemo/googlenet_combine/
+demo/ios/PaddleMobileDemo/PaddleMobileDemo/*.jpg
+demo/ios/PaddleMobileDemo/PaddleMobileDemo/PaddleMobile/*.a
+*.xcuserstate
+/tools/quantification/quantify
+
+# metal
+Podfile.lock
+metal/Pods/
+SwiftProtobuf.framework
+paddle-mobile.xcworkspace
+metal/models/
+metal/images/
+
+
+tools/libomp.a

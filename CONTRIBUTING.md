@@ -183,6 +183,9 @@ upstream
 
 接下来等待 review，如果有需要修改的地方，参照上述步骤更新 origin 中的对应分支即可。
 
+![](http://otkwwi4x8.bkt.clouddn.com/2018-06-20-15294877166787.jpg)
+之后就可以提交代码了
+
 ## 删除远程分支
 
 在 PR 被 merge 进主仓库后，我们可以在 PR 的页面删除远程仓库的分支。
@@ -219,7 +222,7 @@ upstream
      - 原因：如果仅仅修改一个文件但提交了十几个commit，每个commit只做了少量的修改，这会给评审人带来很大困扰。评审人需要逐一查看每个commit才能知道做了哪些修改，且不排除commit之间的修改存在相互覆盖的情况。
      - 建议：每次提交时，保持尽量少的commit，可以通过`git commit --amend`补充上次的commit。对已经Push到远程仓库的多个commit，可以参考[squash commits after push](http://stackoverflow.com/questions/5667884/how-to-squash-commits-in-git-after-they-have-been-pushed)。
    - 请注意每个commit的名称：应能反映当前commit的内容，不能太随意。
-3. 如果解决了某个Issue的问题，请在该Pull Request的**第一个**评论框中加上：`fix #issue_number`，这样当该PUll Request被合并后，会自动关闭对应的Issue。关键词包括：close, closes, closed, fix, fixes, fixed, resolve, resolves, resolved，请选择合适的词汇。详细可参考[Closing issues via commit messages](https://help.github.com/articles/closing-issues-via-commit-messages)。
+3. 如果解决了某个Issue的问题，请在该Pull Request的**第一个**评论框中加上：`fix #issue_number`，这样当该Pull Request被合并后，会自动关闭对应的Issue。关键词包括：close, closes, closed, fix, fixes, fixed, resolve, resolves, resolved，请选择合适的词汇。详细可参考[Closing issues via commit messages](https://help.github.com/articles/closing-issues-via-commit-messages)。
 
 此外，在回复评审人意见时，请您遵守以下约定：
 

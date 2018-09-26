@@ -16,10 +16,32 @@ limitations under the License. */
 #include <cstdlib>
 #include <cstring>
 
+#ifdef PADDLE_MOBILE_FPGA
+
+#include "fpga/api.h"
+
+#endif
+
 namespace paddle_mobile {
 namespace memory {
 const int MALLOC_ALIGN = 64;
 
+#ifdef PADDLE_MOBILE_FPGA
+namespace fpga = paddle_mobile::fpga;
+
+void Copy(void *dst, const void *src, size_t num) {
+  std::memcpy(dst, src, num);
+}
+
+void *Alloc(size_t size) { return fpga::fpga_malloc(size); }
+
+void Free(void *ptr) {
+  if (ptr) {
+    fpga::fpga_free(ptr);
+  }
+}
+
+#else
 void Copy(void *dst, const void *src, size_t num) {
   std::memcpy(dst, src, num);
 }
@@ -41,6 +63,8 @@ void Free(void *ptr) {
     free(static_cast<void **>(ptr)[-1]);
   }
 }
+
+#endif
 
 }  // namespace memory
 }  // namespace paddle_mobile

@@ -23,7 +23,17 @@ namespace framework {
 class Scope {
  public:
   Scope() = default;
-  ~Scope() = default;
+
+  ~Scope() {
+    for (auto &var : vars_) {
+      delete var.second;
+    }
+    vars_.clear();
+    for (auto kid : kids_) {
+      delete kid;
+    }
+    kids_.clear();
+  }
 
   Scope &NewScope() const;
 
