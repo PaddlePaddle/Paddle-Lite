@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include "framework/cl/cl_tool.h"
 #include "framework/cl/cl_engine.h"
 
 #include <CL/cl.h>
@@ -25,11 +26,11 @@ bool CLEngine::Init() {
   cl_int status;
   setPlatform();
   setClDeviceId();
-  setClContext();
-  setClCommandQueue();
-  std::string filename = "./HelloWorld_Kernel.cl";
-  loadKernelFromFile(filename.c_str());
-  buildProgram();
+//  setClContext();
+//  setClCommandQueue();
+//  std::string filename = "./HelloWorld_Kernel.cl";
+//  loadKernelFromFile(filename.c_str());
+//  buildProgram();
   initialized_ = true;
 }
 
@@ -38,19 +39,19 @@ CLEngine *CLEngine::Instance() {
   return &cl_engine_;
 }
 
-std::unique_ptr<_cl_kernel, clKernel_deleter> CLEngine::GSetKernel(
-    const std::string &kernel_name) {
-  std::unique_ptr<_cl_kernel, clKernel_deleter> kernel(
-      clCreateKernel(program_.get(), kernel_name.c_str(), NULL));
-  return std::move(kernel);
-}
-
-bool CLEngine::SetClCommandQueue() {
-  cl_int status;
-  command_queue_.reset(
-      clCreateCommandQueue(context_.get(), devices_[0], 0, &status));
-  return true;
-}
+//std::unique_ptr<_cl_kernel, clKernel_deleter> CLEngine::GSetKernel(
+//    const std::string &kernel_name) {
+//  std::unique_ptr<_cl_kernel, clKernel_deleter> kernel(
+//      clCreateKernel(program_.get(), kernel_name.c_str(), NULL));
+//  return std::move(kernel);
+//}
+//
+//bool CLEngine::SetClCommandQueue() {
+//  cl_int status;
+//  command_queue_.reset(
+//          clCreateCommandQueue(context_.get(), devices_[0], 0, &status));
+//  return true;
+//}
 
 bool CLEngine::SetPlatform() {
   platform_ = NULL;      // the chosen platform
@@ -70,10 +71,10 @@ bool CLEngine::SetPlatform() {
   }
 }
 
-bool CLEngine::SetClContext() {
-  context_.reset(clCreateContext(NULL, 1, devices_, NULL, NULL, NULL));
-  return true;
-}
+//bool CLEngine::SetClContext() {
+//  context_.reset(clCreateContext(NULL, 1, devices_, NULL, NULL, NULL));
+//  return true;
+//}
 
 bool CLEngine::SetClDeviceId() {
   cl_uint numDevices = 0;
@@ -92,40 +93,35 @@ bool CLEngine::SetClDeviceId() {
   return false;
 }
 
-bool CLEngine::LoadKernelFromFile(const char *kernel_file) {
-  size_t size;
-  char *str;
-  std::fstream f(kernel_file, (std::fstream::in | std::fstream::binary));
+//bool CLEngine::LoadKernelFromFile(const char *kernel_file) {
+//  size_t size;
+//  char *str;
+//  std::fstream f(kernel_file, (std::fstream::in | std::fstream::binary));
+//
+//  if (!f.is_open()) {
+//    return false;
+//  }
+//
+//  size_t fileSize;
+//  f.seekg(0, std::fstream::end);
+//  size = fileSize = (size_t)f.tellg();
+//  f.seekg(0, std::fstream::beg);
+//  str = new char[size + 1];
+//  if (!str) {
+//    f.close();
+//    return 0;
+//  }
+//
+//  f.read(str, fileSize);
+//  f.close();
+//  str[size] = '\0';
+//  const char *source = str;
+//  size_t sourceSize[] = {strlen(source)};
+//  program_.reset(
+//      clCreateProgramWithSource(context_.get(), 1, &source, sourceSize, NULL));
+//  return true;
+//}
 
-  if (!f.is_open()) {
-    return false;
-  }
-
-  size_t fileSize;
-  f.seekg(0, std::fstream::end);
-  size = fileSize = (size_t)f.tellg();
-  f.seekg(0, std::fstream::beg);
-  str = new char[size + 1];
-  if (!str) {
-    f.close();
-    return 0;
-  }
-
-  f.read(str, fileSize);
-  f.close();
-  str[size] = '\0';
-  const char *source = str;
-  size_t sourceSize[] = {strlen(source)};
-  program_.reset(
-      clCreateProgramWithSource(context_.get(), 1, &source, sourceSize, NULL));
-  return true;
-}
-
-bool CLEngine::BuildProgram() {
-  cl_int status;
-  status = clBuildProgram(program_.get(), 0, 0, "-cl-fast-relaxed-math", 0, 0);
-  return true;
-}
 
 }  // namespace framework
 }  // namespace paddle_mobile
