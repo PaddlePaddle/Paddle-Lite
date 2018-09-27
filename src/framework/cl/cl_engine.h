@@ -21,45 +21,11 @@ limitations under the License. */
 #include <memory>
 #include <string>
 
+#include "common/enforce.h"
+#include "framework/cl/cl_deleter.h"
+
 namespace paddle_mobile {
 namespace framework {
-
-struct CLContext {};
-
-struct CLKernelDeleter {
-  template <class T>
-  void operator()(T *clKernelObj) {
-    clReleaseKernel(clKernelObj);
-  }
-};
-
-struct CLMemDeleter {
-  template <class T>
-  void operator()(T *clMemObj) {
-    clReleaseMemObject(clMemObj);
-  }
-};
-
-struct CLCommQueueDeleter {
-  template <class T>
-  void operator()(T *clQueueObj) {
-    clReleaseCommandQueue(clQueueObj);
-  }
-};
-
-struct CLContextDeleter {
-  template <class T>
-  void operator()(T *clContextObj) {
-    clReleaseContext(clContextObj);
-  }
-};
-
-struct CLProgramDeleter {
-  template <class T>
-  void operator()(T *clProgramObj) {
-    clReleaseProgram(clProgramObj);
-  }
-};
 
 class CLEngine {
  public:
@@ -67,14 +33,51 @@ class CLEngine {
 
   bool Init();
 
-  std::unique_ptr<_cl_kernel, clKernel_deleter> GetKernel(
-      const std::string &kernel_name);
+  std::unique_ptr<_cl_context, CLContextDeleter> CreateContext() {
+    cl_context c = clCreateContext(NULL, 1, devices_, NULL, NULL, NULL);
+    std::unique_ptr<_cl_context, CLContextDeleter> context_ptr(c);
+    return std::move(context_ptr);
+  }
 
-  const cl_context GetContext() { return context_.get(); }
+  std::unique_ptr<_cl_command_queue, CLContextDeleter> CreateClCommandQueue() {
+    cl_int status;
+    cl_command_queue = clCreateCommandQueue(context_.get(), devices_[0], 0, &status);
+    std::unique_ptr<_cl_command_queue, CLCommQueueDeleter> command_queue_ptr(cl_command_queue);
+    return std::move(command_queue_ptr);
+  }
 
-  const cl_program GetProgram() { return program_.get(); }
+  std::unique_ptr<_cl_program, CLProgramDeleter> CreateProgramWith(cl_context context, std::string file_name) {
+    const char *kernel_file = file_name.c_str();
+    size_t size;
+    char *str;
+    std::fstream f(kernel_file, (std::fstream::in | std::fstream::binary));
 
-  const cl_command_queue GetCommandQueue() { return command_queue_.get(); }
+    PADDLE_MOBILE_ENFORCE(f.is_open(), " file open failed")
+
+    size_t fileSize;
+    f.seekg(0, std::fstream::end);
+    size = fileSize = (size_t)f.tellg();
+    f.seekg(0, std::fstream::beg);
+    str = new char[size+1];
+
+    PADDLE_MOBILE_ENFORCE(str != NULL, " str null")
+
+    f.read(str, fileSize);
+    f.close();
+    str[size] = '\0';
+    const char *source = str;
+    size_t sourceSize[] = {strlen(source)};
+    cl_program p = clCreateProgramWithSource(context, 1, &source, sourceSize, NULL);
+    std::unique_ptr<_cl_program, CLProgramDeleter> program_ptr(p);
+    return std::move(program_ptr);
+  }
+
+  bool CLEngine::BuildProgram(cl_program program) {
+    cl_int status;
+    status = clBuildProgram(program, 0, 0, "-cl-fast-relaxed-math", 0, 0);
+    CL_CHECK_ERRORS(status);
+    return true;
+  }
 
  private:
   CLEngine() { initialized_ = false; }
@@ -83,20 +86,25 @@ class CLEngine {
 
   bool SetClDeviceId();
 
-  bool SetClContext();
+//  bool SetClContext();
 
-  bool SetClCommandQueue();
+//  bool SetClCommandQueue();
 
-  bool LoadKernelFromFile(const char *kernel_file);
+//  bool LoadKernelFromFile(const char *kernel_file);
 
-  bool BuildProgram();
+//  bool BuildProgram();
 
   bool initialized_;
+
   cl_platform_id platform_;
+
   cl_device_id *devices_;
+
   std::unique_ptr<_cl_context, CLContextDeleter> context_;
+
   std::unique_ptr<_cl_command_queue, CLCommQueueDeleter> command_queue_;
-  std::unique_ptr<_cl_program, clProgram_deleter> program_;
+
+  std::unique_ptr<_cl_program, CLProgramDeleter> program_;
 };
 
 }  // namespace framework
