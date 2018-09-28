@@ -117,6 +117,20 @@ build_for_arm_linux() {
 
     cd "../build/release/arm-linux"
     make -j 8
+    cd "../../../test/"
+    DIRECTORY="models"
+    if [ "`ls -A $DIRECTORY`" = "" ]; then
+        echo "$DIRECTORY is indeed empty pull images"
+        wget http://mms-graph.bj.bcebos.com/paddle-mobile%2FmodelsAndImages.zip
+        unzip paddle-mobile%2FmodelsAndImages.zip
+        mv modelsAndImages/images/ images
+        mv modelsAndImages/models/ models
+        rm -rf paddle-mobile%2FmodelsAndImages.zip
+        rm -rf __MACOS
+    else
+        echo "$DIRECTORY is indeed not empty, DONE!"
+    fi
+
 }
 
 build_for_ios() {
