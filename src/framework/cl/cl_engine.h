@@ -14,15 +14,13 @@ limitations under the License. */
 
 #pragma once
 
-#include <CL/cl.h>
-// #include "CL/cl.h"
-#include <fstream>
-#include <iostream>
 #include <memory>
 #include <string>
+#include <fstream>
 
 #include "common/enforce.h"
 #include "framework/cl/cl_deleter.h"
+#include "framework/cl/open_cl/cl.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -39,7 +37,7 @@ class CLEngine {
     return std::move(context_ptr);
   }
 
-  std::unique_ptr<_cl_command_queue, CLContextDeleter> CreateClCommandQueue() {
+  std::unique_ptr<_cl_command_queue, CLCommQueueDeleter> CreateClCommandQueue() {
     cl_int status;
     cl_command_queue = clCreateCommandQueue(context_.get(), devices_[0], 0, &status);
     std::unique_ptr<_cl_command_queue, CLCommQueueDeleter> command_queue_ptr(cl_command_queue);

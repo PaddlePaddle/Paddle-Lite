@@ -19,13 +19,16 @@ limitations under the License. */
 #include <vector>
 
 #include "framework/tensor_base.h"
+#include "framework/cl/cl_engine.h"
+#include "framework/cl/cl_deleter.h"
+#include "framework/cl/open_cl/cl.h"
 
 namespace paddle_mobile {
 namespace framework {
 
-class CLTensor {
+class CLTensor : TensorBase {
  public:
-  CLTensor() {}
+  CLTensor(cl_context context) : context_(context) {}
 
   /*! Resize the dimensions of the memory block. */
   inline CLTensor &Resize(const DDim &dims) {
@@ -81,6 +84,9 @@ class CLTensor {
   }
 
  private:
+
+  cl_context context_;
+
   /*
    *   virtual ~Placeholder() = default;
 
@@ -93,15 +99,17 @@ class CLTensor {
     virtual void set_type(std::type_index type) = 0;
    * */
   struct PlaceholderImpl : public Placeholder {
-    PlaceholderImpl(size_t size, void *input, std::type_index type)
-        : ptr_(clCreateBuffer(CLEngine::instance()->getContext(),
+    PlaceholderImpl(size_t size, void *input, std::type_index type, cl_context context)
+        : ptr_(clCreateBuffer(context,
                               CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, size,
                               reinterpret_cast<void *>(input), NULL)),
           size_(size),
-          type_(type) {}
+          type_(type) {
 
-    PlaceholderImpl(size_t size, std::type_index type)
-        : ptr_(clCreateBuffer(CLEngine::instance()->getContext(),
+    }
+
+    PlaceholderImpl(size_t size, std::type_index type, cl_context context)
+        : ptr_(clCreateBuffer(context,
                               CL_MEM_READ_WRITE, size, NULL, NULL)),
           size_(size),
           type_(type) {}
@@ -114,13 +122,15 @@ class CLTensor {
 
     virtual void set_type(std::type_index type) { type_ = type; }
 
-    std::unique_ptr<_cl_mem, clMem_deleter> ptr_;
+    std::unique_ptr<_cl_mem, CLMemDeleter> ptr_;
 
     size_t size_;
 
     /* the current type of memory */
     std::type_index type_;
+
   };
+
 };
 
 }  // namespace framework
