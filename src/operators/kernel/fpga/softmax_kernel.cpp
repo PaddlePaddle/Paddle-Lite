@@ -39,8 +39,8 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
   args.image.height = 1;
   args.image.width = 1;
   args.image.channels = (uint32_t)input->dims()[1];
-  args.output.address = float_input->mutable_data<float>();
-
+  args.output.address = float_input->data<float>();
+  args.output.scale_address = float_input->scale;
   param->SetFloatInput(float_input);
   param->SetFpgaArgs(args);
   return true;
