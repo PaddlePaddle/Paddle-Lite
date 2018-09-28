@@ -16,7 +16,6 @@ limitations under the License. */
 
 #include <memory>
 #include <string>
-#include <fstream>
 
 #include "common/enforce.h"
 #include "framework/cl/cl_deleter.h"
@@ -45,25 +44,23 @@ class CLEngine {
   }
 
   std::unique_ptr<_cl_program, CLProgramDeleter> CreateProgramWith(cl_context context, std::string file_name) {
-    const char *kernel_file = file_name.c_str();
-    size_t size;
-    char *str;
-    std::fstream f(kernel_file, (std::fstream::in | std::fstream::binary));
 
-    PADDLE_MOBILE_ENFORCE(f.is_open(), " file open failed")
 
-    size_t fileSize;
-    f.seekg(0, std::fstream::end);
-    size = fileSize = (size_t)f.tellg();
-    f.seekg(0, std::fstream::beg);
-    str = new char[size+1];
+    FILE *file = fopen(file_name.c_str(), "rb");
+    PADDLE_MOBILE_ENFORCE(file != nullptr, "can't open file: %s ",
+                          filename.c_str());
+    fseek(file, 0, SEEK_END);
+    int64_t size = ftell(file);
+    PADDLE_MOBILE_ENFORCE(size > 0, "size is too small");
+    rewind(file);
+    char *data = new char[size + 1];
+    size_t bytes_read = fread(data, 1, size, file);
+    data[size] = '\0';
+    PADDLE_MOBILE_ENFORCE(bytes_read == size,
+                          "read binary file bytes do not match with fseek");
+    fclose(file);
 
-    PADDLE_MOBILE_ENFORCE(str != NULL, " str null")
-
-    f.read(str, fileSize);
-    f.close();
-    str[size] = '\0';
-    const char *source = str;
+    const char *source = data;
     size_t sourceSize[] = {strlen(source)};
     cl_program p = clCreateProgramWithSource(context, 1, &source, sourceSize, NULL);
     std::unique_ptr<_cl_program, CLProgramDeleter> program_ptr(p);
@@ -84,13 +81,6 @@ class CLEngine {
 
   bool SetClDeviceId();
 
-//  bool SetClContext();
-
-//  bool SetClCommandQueue();
-
-//  bool LoadKernelFromFile(const char *kernel_file);
-
-//  bool BuildProgram();
 
   bool initialized_;
 
@@ -103,6 +93,15 @@ class CLEngine {
   std::unique_ptr<_cl_command_queue, CLCommQueueDeleter> command_queue_;
 
   std::unique_ptr<_cl_program, CLProgramDeleter> program_;
+
+//  bool SetClContext();
+
+//  bool SetClCommandQueue();
+
+//  bool LoadKernelFromFile(const char *kernel_file);
+
+//  bool BuildProgram();
+
 };
 
 }  // namespace framework
