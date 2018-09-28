@@ -297,6 +297,7 @@ void Executor<Dtype, P>::InitCombineMemory() {
   delete origin_data;
   LOG(kLOG_INFO) << " end init combine memory ";
 }
+
 template <typename Dtype, Precision P>
 bool Executor<Dtype, P>::varInputMemory(
     const std::shared_ptr<framework::VarDesc> &var_desc, Variable *var,
