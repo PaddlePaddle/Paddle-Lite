@@ -32,8 +32,7 @@ int main() {
     std::cout << "load cost :" << time_diff(time1, time1) << "ms" << std::endl;
     //    1064 1603 644 699 2878 1219 867 1352 8 1 13 312 479
 
-    std::vector<int64_t> ids{1064, 1603, 644, 699, 2878, 1219, 867,
-                             1352, 8,    1,   13,  312,  479};
+    std::vector<int64_t> ids{1918, 117, 55, 97, 1352, 4272, 1656, 903};
 
     paddle_mobile::framework::LoDTensor words;
     auto size = static_cast<int>(ids.size());
@@ -56,5 +55,32 @@ int main() {
     std::cout << "predict cost :" << time_diff(time3, time4) / 1 << "ms"
               << std::endl;
   }
+
+  auto time2 = time();
+  std::cout << "load cost :" << time_diff(time1, time1) << "ms" << std::endl;
+  //    1064 1603 644 699 2878 1219 867 1352 8 1 13 312 479
+
+  std::vector<int64_t> ids{1791, 656, 1549, 281, 96};
+
+  paddle_mobile::framework::LoDTensor words;
+  auto size = static_cast<int>(ids.size());
+  paddle_mobile::framework::LoD lod{{0, ids.size()}};
+  DDim dims{size, 1};
+  words.Resize(dims);
+  words.set_lod(lod);
+  DLOG << "words lod : " << words.lod();
+  auto *pdata = words.mutable_data<int64_t>();
+  size_t n = words.numel() * sizeof(int64_t);
+  DLOG << "n :" << n;
+  memcpy(pdata, ids.data(), n);
+  DLOG << "words lod 22: " << words.lod();
+  auto time3 = time();
+  for (int i = 0; i < 1; ++i) {
+    auto vec_result = paddle_mobile.PredictLod(words);
+    DLOG << *vec_result;
+  }
+  auto time4 = time();
+  std::cout << "predict cost :" << time_diff(time3, time4) / 1 << "ms"
+            << std::endl;
   return 0;
 }
