@@ -21,6 +21,7 @@ limitations under the License. */
 #include "framework/cl/cl_tool.h"
 #include "framework/cl/cl_engine.h"
 #include "framework/cl/cl_deleter.h"
+#include "framework/cl/open_cl/cl.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -55,7 +56,6 @@ class CLScope {
 
     auto program = CLEngine::Instance()->CreateProgramWith(context_.get(), file_name);
     programs_[file_name] = program;
-
 
     status_ =  clBuildProgram(program, 0, 0, 0, 0, 0);
     CL_CHECK_ERRORS(status_);
