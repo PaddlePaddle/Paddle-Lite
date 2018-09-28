@@ -12,9 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include "framework/cl/CL/cl.h"
 #include "framework/cl/cl_tool.h"
 #include "framework/cl/cl_engine.h"
-#include "framework/cl/cl_header/cl.h"
 
 #include <cstdlib>
 #include <cstring>
@@ -71,11 +71,6 @@ bool CLEngine::SetPlatform() {
   }
 }
 
-//bool CLEngine::SetClContext() {
-//  context_.reset(clCreateContext(NULL, 1, devices_, NULL, NULL, NULL));
-//  return true;
-//}
-
 bool CLEngine::SetClDeviceId() {
   cl_uint numDevices = 0;
   devices_ = NULL;
@@ -91,6 +86,11 @@ bool CLEngine::SetClDeviceId() {
   }
   return false;
 }
+
+//bool CLEngine::SetClContext() {
+//  context_.reset(clCreateContext(NULL, 1, devices_, NULL, NULL, NULL));
+//  return true;
+//}
 
 //bool CLEngine::LoadKernelFromFile(const char *kernel_file) {
 //  size_t size;
