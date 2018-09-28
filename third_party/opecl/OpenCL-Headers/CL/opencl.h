@@ -37,10 +37,10 @@ extern "C" {
 
 #ifdef __APPLE__
 
-#include <OpenCL/opencl.h>
-#include <OpenCL/opencl.h>
-#include <OpenCL/opencl.h>
-#include <OpenCL/opencl.h>
+#include <OpenCL/cl.h>
+#include <OpenCL/cl_gl.h>
+#include <OpenCL/cl_gl_ext.h>
+#include <OpenCL/cl_ext.h>
 
 #else
 

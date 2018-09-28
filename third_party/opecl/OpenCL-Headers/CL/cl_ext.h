@@ -37,7 +37,7 @@ extern "C" {
 #endif
 
 #ifdef __APPLE__
-    #include <OpenCL/opencl.h>
+    #include <OpenCL/cl.h>
     #include <AvailabilityMacros.h>
 #else
     #include <CL/cl.h>

@@ -53,8 +53,8 @@ Notes:
 #define __CL_EXT_INTEL_H
 
 #ifdef __APPLE__
-    #include <OpenCL/opencl.h>
-    #include <OpenCL/opencl.h>
+    #include <OpenCL/cl.h>
+    #include <OpenCL/cl_platform.h>
 #else
     #include <CL/cl.h>
     #include <CL/cl_platform.h>

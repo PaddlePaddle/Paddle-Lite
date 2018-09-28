@@ -15,6 +15,9 @@ file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c src/*.mm)
 file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
 include_directories(src/)
 
+include_directories(third_party/opecl/OpenCL-Headers)
+
+
 if(IS_IOS)
     set(CMAKE_CXX_FLAGS "-mfpu=neon -marm -fobjc-abi-version=2 -fobjc-arc -std=gnu++11 -stdlib=libc++ -O3 -s -isysroot ${CMAKE_OSX_SYSROOT} ${CMAKE_CXX_FLAGS}")
 else()
