@@ -31,6 +31,8 @@ limitations under the License. */
 #include "framework/scope.h"
 #include "framework/tensor.h"
 #include "framework/variable.h"
+#include "framework/cl/cl_scope.h"
+#include "framework/cl/cl_helper.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -112,7 +114,8 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
                      const VariableNameMap &outputs, const AttributeMap &attrs,
                      std::shared_ptr<Scope> scope)
       : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope),
-        param_(inputs, outputs, attrs, *scope) {}
+        param_(inputs, outputs, attrs, *scope),
+        kernel_(scope->GetCLScpoe()) {}
 
   virtual void RunImpl() const { this->kernel_.Compute(this->param_); }
 
@@ -138,6 +141,11 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
 template <typename Dtype, typename P>
 class OpKernelBase {
  public:
+  OpKernelBase() = default;
+
+  OpKernelBase(CLScope *clscope): cl_helper_(clscope) {
+  }
+
   /*
    * @b 所有kernel 需实现 Compute 方法
    * @p para 这个参数为 kernel 运算时所需要用到参数组成的一个结构体,
@@ -158,6 +166,9 @@ class OpKernelBase {
 #ifdef PADDLE_MOBILE_MALI_GPU
   void *acl_op_;
 #endif
+
+  CLHelper cl_helper_;
+
 };
 
 #define DEFINE_OP_CONSTRUCTOR(cls, parent_cls)                                 \
