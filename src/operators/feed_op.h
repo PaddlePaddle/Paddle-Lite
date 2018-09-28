@@ -50,8 +50,8 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
 
   void RunImpl() const {
     auto input = (Tensor *)const_cast<LoDTensor *>(param_.InputX());
-    auto input_ptr = input->data<float>();
     fpga::format_image(input);
+    auto input_ptr = input->data<float>();
     Tensor *output = param_.Out();
     auto output_ptr = output->data<float>();
 
