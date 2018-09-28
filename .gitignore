@@ -24,6 +24,7 @@
 *.lai
 *.la
 *.lib
+*.a
 
 # Executables
 *.exe
@@ -70,7 +71,10 @@ build
 cmake-build-debug
 cmake-build-release
 
-#ios demo
+# ios
+tools/libomp.a
+
+# ios demo
 demo/ios/PaddleMobileDemo/PaddleMobileDemo/googlenet_combine/
 demo/ios/PaddleMobileDemo/PaddleMobileDemo/*.jpg
 demo/ios/PaddleMobileDemo/PaddleMobileDemo/PaddleMobile/*.a
@@ -84,6 +88,7 @@ SwiftProtobuf.framework
 paddle-mobile.xcworkspace
 metal/models/
 metal/images/
-
-
-tools/libomp.a
+*.a
+metal/paddle-mobile/paddle-mobile/CPU/libpaddle-mobile.a
+*.xcuserdatad/
+*/xcuserdata/

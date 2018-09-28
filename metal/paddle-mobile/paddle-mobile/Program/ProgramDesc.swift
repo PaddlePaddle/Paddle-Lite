@@ -14,7 +14,7 @@
 
 import Foundation
 
-public struct ProgramDesc {
+public class ProgramDesc {
     var blocks: [BlockDesc] = []
     init(protoProgram: PaddleMobile_Framework_Proto_ProgramDesc) {
         for block in protoProgram.blocks {
