@@ -31,7 +31,7 @@
 
 #ifdef __APPLE__
 #include <OpenCL/cl_version.h>
-#include <OpenCL/opencl.h>
+#include <OpenCL/cl_platform.h>
 #else
 #include <CL/cl_version.h>
 #include <CL/cl_platform.h>
