@@ -21,7 +21,7 @@ limitations under the License. */
 #include "framework/tensor_base.h"
 #include "framework/cl/cl_engine.h"
 #include "framework/cl/cl_deleter.h"
-#include "framework/cl/CL/cl.h"
+#include "CL/cl.h"
 
 namespace paddle_mobile {
 namespace framework {

@@ -14,7 +14,7 @@ limitations under the License. */
 
 #pragma once
 
-#include "framework/cl/CL/cl.h"
+#include "CL/cl.h"
 
 namespace paddle_mobile {
 namespace framework {
