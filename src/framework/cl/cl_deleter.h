@@ -14,7 +14,7 @@ limitations under the License. */
 
 #pragma once
 
-#include <CL/cl.h>
+#include "framework/cl/open_cl/cl.h"
 
 struct CLKernelDeleter {
   template <class T>

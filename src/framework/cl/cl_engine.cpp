@@ -14,8 +14,8 @@ limitations under the License. */
 
 #include "framework/cl/cl_tool.h"
 #include "framework/cl/cl_engine.h"
+#include "framework/cl/cl_header/cl.h"
 
-#include <CL/cl.h>
 #include <cstdlib>
 #include <cstring>
 
@@ -24,8 +24,8 @@ namespace framework {
 
 bool CLEngine::Init() {
   cl_int status;
-  setPlatform();
-  setClDeviceId();
+  SetPlatform();
+  SetClDeviceId();
 //  setClContext();
 //  setClCommandQueue();
 //  std::string filename = "./HelloWorld_Kernel.cl";
@@ -83,7 +83,6 @@ bool CLEngine::SetClDeviceId() {
       clGetDeviceIDs(platform_, CL_DEVICE_TYPE_GPU, 0, NULL, &numDevices);
 
   if (numDevices > 0) {
-    std::cout << numDevices << std::endl;
     devices_ = reinterpret_cast<cl_platform_id *>(
         malloc(numDevices * sizeof(cl_device_id)));
     status = clGetDeviceIDs(platform_, CL_DEVICE_TYPE_GPU, numDevices, devices_,

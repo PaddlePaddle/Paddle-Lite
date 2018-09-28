@@ -14,6 +14,11 @@ limitations under the License. */
 
 #pragma once
 
+#include "framework/cl/cl_header/cl.h"
+
+namespace paddle_mobile {
+namespace framework {
+
 #define CL_CHECK_ERRORS(ERR)                                                          \
         if(ERR != CL_SUCCESS)                                                             \
         {                                                                                 \
@@ -23,3 +28,6 @@ limitations under the License. */
          );                                                                               \
         }
 #endif
+
+}
+}
