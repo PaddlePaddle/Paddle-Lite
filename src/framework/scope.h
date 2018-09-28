@@ -93,7 +93,7 @@ class Scope {
   mutable std::unordered_map<std::string, Variable *> vars_;
   mutable std::list<Scope *> kids_;
   Scope const *parent_{nullptr};
-//#ifdef  PADDLE_MOBILE_OCL
+//#ifdef  PADDLE_MOBILE_CL
   CLScope *cl_scope_ = new CLScope();
 //#endif
 };
