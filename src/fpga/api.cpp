@@ -311,6 +311,8 @@ int get_aligned_filter_num(int num) {
 
 void format_filter(framework::Tensor *filter_tensor, float max_value,
                    int group_num) {
+  filter_tensor->scale[0] = float(max_value / 127.0);
+  filter_tensor->scale[1] = float(127.0 / max_value);
   auto dims = filter_tensor->dims();
   auto num = dims[0], channel = dims[1], height = dims[2], width = dims[3];
   auto data_ptr = filter_tensor->data<float>();
