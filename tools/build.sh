@@ -111,6 +111,7 @@ build_for_arm_linux() {
             -DCMAKE_BUILD_TYPE="${MODE}" \
             -DCMAKE_TOOLCHAIN_FILE="./tools/toolchains/arm-linux-gnueabihf.cmake" \
             -DCMAKE_CXX_FLAGS="-std=c++14 -mcpu=cortex-a53 -mtune=cortex-a53 -mfpu=neon-vfpv4 -mfloat-abi=hard -ftree-vectorize -funsafe-math-optimizations  -pipe -mlittle-endian -munaligned-access" \
+            -DNET="${NETS}" \
             -D"V7"=true
     fi
 
