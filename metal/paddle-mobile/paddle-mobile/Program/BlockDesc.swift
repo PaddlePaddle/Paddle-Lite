@@ -14,7 +14,7 @@
 
 import Foundation
 
-struct BlockDesc {
+class BlockDesc {
     let index: Int
     let parentIndex: Int
     let vars: [VarDesc]
@@ -48,8 +48,10 @@ extension BlockDesc: CustomStringConvertible, CustomDebugStringConvertible {
     var description: String {
         var str = ""
         
-        for op in ops {
-            str += op.description
+        for i in 0..<ops.count {
+          str += " op \(i): "
+          let op = ops[i]
+          str += op.description
         }
         
         for varDesc in vars {
