@@ -14,10 +14,12 @@ limitations under the License. */
 
 #pragma once
 
-#include "framework/cl/cl_header/cl.h"
+#include "framework/cl/CL/cl.h"
 
 namespace paddle_mobile {
 namespace framework {
+
+const char* opencl_error_to_str (cl_int error);
 
 #define CL_CHECK_ERRORS(ERR)                                                          \
         if(ERR != CL_SUCCESS)                                                             \
