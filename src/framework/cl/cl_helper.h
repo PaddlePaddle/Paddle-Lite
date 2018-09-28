@@ -15,6 +15,7 @@ limitations under the License. */
 #pragma once
 
 #include <vector>
+#include <type_traits>
 
 #include "framework/cl/cl_scope.h"
 #include "framework/cl/cl_deleter.h"
@@ -30,7 +31,7 @@ class CLHelper {
 
   void AddKernel(const std::string &kernel_name, const std::string &file_name) {
     auto kernel = scope_->GetKernel(kernel_name, file_name);
-    kernels.emplace_back(kernel);
+    kernels.emplace_back(std::move(kernel));
   }
 
   cl_kernel KernelAt(const int index) {
