@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include "framework/ddim.h"
 #include "framework/tensor.h"
+#include "framework/cl/open_cl/cl.h"
 
 namespace paddle_mobile {
 namespace framework {
