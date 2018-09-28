@@ -7,15 +7,14 @@ option(DEBUGING "enable debug mode" ON)
 option(USE_EXCEPTION "use std exception" OFF)
 option(LOG_PROFILE "log profile" OFF)
 # select the platform to build
-option(CPU "armv7 with neon" ON)
-option(MALI_GPU "mali gpu" OFF)
+option(CPU "armv7 with neon" OFF)
+option(GPU_MALI "mali gpu" OFF)
+option(GPU_CL "opencl gpu" ON)
 option(FPGA "fpga" OFF)
 
 file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c src/*.mm)
 file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
 include_directories(src/)
-
-include_directories(third_party/opecl/OpenCL-Headers)
 
 
 if(IS_IOS)
@@ -71,7 +70,23 @@ else()
     endforeach()
 endif()
 
-if (MALI_GPU)
+if (GPU_CL)
+    add_definitions(-DPADDLE_MOBILE_CL)
+    include_directories(third_party/opecl/OpenCL-Headers)
+    link_libraries(third_party/opecl/libOpenCL.so)
+else()
+    file(GLOB_RECURSE _tmp_list src/framework/cl/*.cpp src/operators/kernel/cl/*.cpp)
+    foreach(f ${_tmp_list})
+        list(REMOVE_ITEM PADDLE_MOBILE_CC ${f})
+    endforeach()
+
+    file(GLOB_RECURSE _tmp_list_h src/framework/cl/*.h)
+    foreach(f ${_tmp_list_h})
+        list(REMOVE_ITEM PADDLE_MOBILE_H ${f})
+    endforeach()
+endif()
+
+if (GPU_MALI)
     add_definitions(-DPADDLE_MOBILE_MALI_GPU)
     add_definitions(-DUSE_ACL=1)
     add_definitions(-DUSE_OPENCL)
