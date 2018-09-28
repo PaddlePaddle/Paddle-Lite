@@ -26,32 +26,19 @@ bool CLEngine::Init() {
   cl_int status;
   SetPlatform();
   SetClDeviceId();
+  initialized_ = true;
+
 //  setClContext();
 //  setClCommandQueue();
 //  std::string filename = "./HelloWorld_Kernel.cl";
 //  loadKernelFromFile(filename.c_str());
 //  buildProgram();
-  initialized_ = true;
 }
 
 CLEngine *CLEngine::Instance() {
   static CLEngine cl_engine_;
   return &cl_engine_;
 }
-
-//std::unique_ptr<_cl_kernel, clKernel_deleter> CLEngine::GSetKernel(
-//    const std::string &kernel_name) {
-//  std::unique_ptr<_cl_kernel, clKernel_deleter> kernel(
-//      clCreateKernel(program_.get(), kernel_name.c_str(), NULL));
-//  return std::move(kernel);
-//}
-//
-//bool CLEngine::SetClCommandQueue() {
-//  cl_int status;
-//  command_queue_.reset(
-//          clCreateCommandQueue(context_.get(), devices_[0], 0, &status));
-//  return true;
-//}
 
 bool CLEngine::SetPlatform() {
   platform_ = NULL;      // the chosen platform
@@ -86,6 +73,20 @@ bool CLEngine::SetClDeviceId() {
   }
   return false;
 }
+
+//std::unique_ptr<_cl_kernel, clKernel_deleter> CLEngine::GSetKernel(
+//    const std::string &kernel_name) {
+//  std::unique_ptr<_cl_kernel, clKernel_deleter> kernel(
+//      clCreateKernel(program_.get(), kernel_name.c_str(), NULL));
+//  return std::move(kernel);
+//}
+//
+//bool CLEngine::SetClCommandQueue() {
+//  cl_int status;
+//  command_queue_.reset(
+//          clCreateCommandQueue(context_.get(), devices_[0], 0, &status));
+//  return true;
+//}
 
 //bool CLEngine::SetClContext() {
 //  context_.reset(clCreateContext(NULL, 1, devices_, NULL, NULL, NULL));
