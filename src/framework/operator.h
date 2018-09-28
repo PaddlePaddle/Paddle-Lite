@@ -18,7 +18,6 @@ limitations under the License. */
 #include <string>
 #include <vector>
 
-
 #include "common/enforce.h"
 #include "common/type_define.h"
 #include "common/types.h"
@@ -169,7 +168,6 @@ class OpKernelBase {
 #endif
 
   CLHelper cl_helper_;
-
 
 };
 
