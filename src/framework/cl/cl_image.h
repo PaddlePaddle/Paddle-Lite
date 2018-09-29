@@ -32,8 +32,13 @@ class CLImage {
 
   }
 
-  const DDim &TensorDim() {
-    return tensorDims_;
+  inline CLImage &Resize(const DDim &dims) {
+    tensorDims_ = dims;
+    return *this;
+  }
+
+  const DDim &dims() const {
+    return DDim();
   }
 
   std::vector<size_t> DefaultWorkSize() {
