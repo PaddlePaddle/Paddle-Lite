@@ -27,6 +27,10 @@ limitations under the License. */
 #include "fpga/api.h"
 #endif
 
+#ifdef PADDLE_MOBILE_CL
+#include "framework/cl/cl_image.h"
+#endif
+
 namespace paddle_mobile {
 namespace operators {
 
@@ -69,6 +73,16 @@ struct DtypeTensorTrait<GPU_MALI> {
   // This type will be the parent class type
   // or the same type.
   typedef framework::Tensor rtype;
+};
+
+
+template <>
+struct DtypeTensorTrait<GPU_CL> {
+  // This is the type we obtained in variable.
+  typedef framework::CLImage gtype;
+  // This type will be the parent class type
+  // or the same type.
+  typedef framework::CLImage rtype;
 };
 
 class OpParam {

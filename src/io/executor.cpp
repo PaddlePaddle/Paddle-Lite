@@ -16,6 +16,7 @@ limitations under the License. */
 #include <operators/math/gemm.h>
 #include <algorithm>
 #include <vector>
+#include <framework/cl/cl_image.h>
 #include "common/enforce.h"
 #include "common/log.h"
 #include "framework/framework.pb-c.h"
@@ -233,6 +234,7 @@ void Executor<Dtype, P>::InitMemory() {
             Get_binary_data(program_.model_path + "/" + var_desc->Name());
         char *data = origin_data;
         LoadMemory(*var_desc, tensor, &data);
+
         delete origin_data;
       } else {
         if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
