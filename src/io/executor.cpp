@@ -16,7 +16,6 @@ limitations under the License. */
 #include <operators/math/gemm.h>
 #include <algorithm>
 #include <vector>
-#include <framework/cl/cl_image.h>
 #include "common/enforce.h"
 #include "common/log.h"
 #include "framework/framework.pb-c.h"
@@ -27,10 +26,15 @@ limitations under the License. */
 #include "framework/program/var_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
+
 #ifdef PADDLE_EXECUTOR_MULTITHREAD
 #include <queue>
 #include <utility>
 #include "common/threadpool.h"
+#endif
+
+#ifdef PADDLE_MOBILE_CL
+#include "framework/cl/cl_image.h"
 #endif
 
 namespace paddle_mobile {
