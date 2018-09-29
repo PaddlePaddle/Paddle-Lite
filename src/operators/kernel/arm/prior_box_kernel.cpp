@@ -27,7 +27,7 @@ bool PriorBoxKernel<CPU, float>::Init(PriorBoxParam<CPU> *param) {
 
 template <>
 void PriorBoxKernel<CPU, float>::Compute(
-    const PriorBoxParam<CPU> &param) const {
+    const PriorBoxParam<CPU> &param) {
   PriorBoxCompute<float>(param);
 }
 

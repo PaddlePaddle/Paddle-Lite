@@ -31,7 +31,7 @@ class FetchOp : public framework::OperatorBase<DeviceType> {
       : framework::OperatorBase<DeviceType>(type, inputs, outputs, attrs,
                                             scope),
         param_(inputs, outputs, attrs, *scope) {}
-  void RunImpl() const { param_.Out()->ShareDataWith(*param_.InputX()); }
+  void RunImpl() { param_.Out()->ShareDataWith(*param_.InputX()); }
 
   void Init() {}
 

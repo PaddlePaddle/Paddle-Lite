@@ -26,7 +26,7 @@ bool GruKernel<CPU, float>::Init(GruParam<CPU> *param) {
 }
 
 template <>
-void GruKernel<CPU, float>::Compute(const GruParam<CPU> &param) const {
+void GruKernel<CPU, float>::Compute(const GruParam<CPU> &param) {
   GruCompute<float>(param);
   param.OutHidden()->set_lod(param.InputInput()->lod());
   //  DLOG << "________________" << param.OutHidden()->dims();

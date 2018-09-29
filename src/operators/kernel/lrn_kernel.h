@@ -173,7 +173,7 @@ template <typename DeviceType, typename T>
 class LrnKernel
     : public framework::OpKernelBase<DeviceType, LrnParam<DeviceType>> {
  public:
-  void Compute(const LrnParam<DeviceType> &param) const;
+  void Compute(const LrnParam<DeviceType> &param);
   bool Init(LrnParam<DeviceType> *param);
 };
 }  // namespace operators

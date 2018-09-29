@@ -54,7 +54,7 @@ template <typename DeviceType, typename T>
 class PriorBoxKernel
     : public framework::OpKernelBase<DeviceType, PriorBoxParam<DeviceType>> {
  public:
-  void Compute(const PriorBoxParam<DeviceType>& param) const;
+  void Compute(const PriorBoxParam<DeviceType>& param);
   bool Init(PriorBoxParam<DeviceType>* param);
 };
 }  // namespace operators

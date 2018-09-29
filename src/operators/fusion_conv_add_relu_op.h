@@ -57,9 +57,6 @@ class FusionConvAddReluOp : public framework::OperatorWithKernel<
             operators::ConvAddReluKernel<DeviceType, T>>(type, inputs, outputs,
                                                          attrs, scope) {}
 
-  using framework::OperatorWithKernel<
-      DeviceType, FusionConvAddReluParam<DeviceType>,
-      operators::ConvAddReluKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:
