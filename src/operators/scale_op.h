@@ -38,10 +38,6 @@ class ScaleOp : public framework::OperatorWithKernel<
       : framework::OperatorWithKernel<DeviceType, ScaleParam<DeviceType>,
                                       operators::ScaleKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, ScaleParam<DeviceType>,
-      operators::ScaleKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:

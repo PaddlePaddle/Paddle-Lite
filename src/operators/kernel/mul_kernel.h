@@ -29,7 +29,7 @@ template <typename DeviceType, typename T>
 class MulKernel
     : public framework::OpKernelBase<DeviceType, MulParam<DeviceType>> {
  public:
-  void Compute(const MulParam<DeviceType> &param) const;
+  void Compute(const MulParam<DeviceType> &param);
   bool Init(MulParam<DeviceType> *param);
 };
 }  // namespace operators

@@ -27,7 +27,7 @@ bool ConvAddReluKernel<CPU, float>::Init(FusionConvAddReluParam<CPU> *param) {
 
 template <>
 void ConvAddReluKernel<CPU, float>::Compute(
-    const FusionConvAddReluParam<CPU> &param) const {
+    const FusionConvAddReluParam<CPU> &param) {
   ConvAddReluCompute<float>(param);
 }
 template class ConvAddReluKernel<CPU, float>;

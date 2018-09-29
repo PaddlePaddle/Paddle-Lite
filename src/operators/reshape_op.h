@@ -39,10 +39,6 @@ class ReshapeOp : public framework::OperatorWithKernel<
       : framework::OperatorWithKernel<DeviceType, ReshapeParam<DeviceType>,
                                       operators::ReshapeKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, ReshapeParam<DeviceType>,
-      operators::ReshapeKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:

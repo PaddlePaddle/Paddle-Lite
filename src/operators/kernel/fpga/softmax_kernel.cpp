@@ -48,7 +48,7 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
 
 template <>
 void SoftmaxKernel<FPGA, float>::Compute(
-    const SoftmaxParam<FPGA> &param) const {
+    const SoftmaxParam<FPGA> &param) {
   Tensor *in_x = param.FloatInput();
   Tensor *out = param.Out();
 

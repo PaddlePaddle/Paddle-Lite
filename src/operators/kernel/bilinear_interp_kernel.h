@@ -29,7 +29,7 @@ class BilinearInterpKernel
     : public framework::OpKernelBase<DeviceType,
                                      BilinearInterpParam<DeviceType>> {
  public:
-  void Compute(const BilinearInterpParam<DeviceType>& param) const;
+  void Compute(const BilinearInterpParam<DeviceType>& param);
   bool Init(BilinearInterpParam<DeviceType>* param);
 };
 }  // namespace operators

@@ -35,7 +35,7 @@ struct DropoutFunctor {
 };
 
 template <>
-void DropoutKernel<CPU, float>::Compute(const DropoutParam<CPU> &param) const {
+void DropoutKernel<CPU, float>::Compute(const DropoutParam<CPU> &param) {
   const auto *input_x = param.InputX();
   auto *input_x_ptr = input_x->data<float>();
   auto *out = param.Out();

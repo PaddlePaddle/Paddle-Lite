@@ -26,7 +26,7 @@ bool TransposeKernel<CPU, float>::Init(TransposeParam<CPU> *param) {
 
 template <>
 void TransposeKernel<CPU, float>::Compute(
-    const TransposeParam<CPU> &param) const {
+    const TransposeParam<CPU> &param) {
   TransposeCompute<float>(param);
 }
 

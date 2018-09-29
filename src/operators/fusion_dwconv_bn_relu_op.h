@@ -65,9 +65,6 @@ class FusionDWConvBNReluOp
             operators::DWConvBNReluKernel<DeviceType, T>>(type, inputs, outputs,
                                                           attrs, scope) {}
 
-  using framework::OperatorWithKernel<
-      DeviceType, FusionDWConvBNReluParam<DeviceType>,
-      operators::DWConvBNReluKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:

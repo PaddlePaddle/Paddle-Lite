@@ -35,10 +35,6 @@ class MulOp : public framework::OperatorWithKernel<
       : framework::OperatorWithKernel<DeviceType, MulParam<DeviceType>,
                                       operators::MulKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, MulParam<DeviceType>,
-      operators::MulKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:
