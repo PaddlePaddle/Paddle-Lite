@@ -72,6 +72,10 @@ endif()
 
 if (GPU_CL)
     add_definitions(-DPADDLE_MOBILE_CL)
+
+    # opencl version
+    add_definitions(-DCL_TARGET_OPENCL_VERSION=220)
+
     link_libraries(/Users/liuruilong/GitHub/paddle-mobile/third_party/opencl/libOpenCL.so)
     include_directories(third_party/opencl/OpenCL-Headers)
 else()
@@ -82,7 +86,6 @@ else()
 
     file(GLOB_RECURSE _tmp_list_h src/framework/cl/*.h)
     foreach(f ${_tmp_list_h})
-        message(STATUS ${f})
         list(REMOVE_ITEM PADDLE_MOBILE_H ${f})
     endforeach()
 endif()
