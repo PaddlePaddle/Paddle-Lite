@@ -151,11 +151,9 @@ class OpKernelBase {
   OpKernelBase() = default;
 
 #ifdef PADDLE_MOBILE_CL
-
   virtual void InitCLHelper(CLScope *clScope) {
     cl_helper_ = CLHelper(clScope);
   }
-
 #endif
 
   /*

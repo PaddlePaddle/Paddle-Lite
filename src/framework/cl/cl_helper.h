@@ -47,6 +47,9 @@ class CLHelper {
     return scope_->Context();
   }
 
+
+
+
  private:
   CLScope *scope_;
   std::vector<std::unique_ptr<_cl_kernel, CLKernelDeleter>> kernels;
