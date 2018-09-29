@@ -38,10 +38,6 @@ class SplitOp : public framework::OperatorWithKernel<
       : framework::OperatorWithKernel<DeviceType, SplitParam<DeviceType>,
                                       operators::SplitKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, SplitParam<DeviceType>,
-      operators::SplitKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 };
 }  // namespace operators

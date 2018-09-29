@@ -28,7 +28,7 @@ class FusionFcReluKernel
     : public framework::OpKernelBase<DeviceType,
                                      FusionFcReluParam<DeviceType>> {
  public:
-  void Compute(const FusionFcReluParam<DeviceType>& param) const;
+  void Compute(const FusionFcReluParam<DeviceType>& param);
   bool Init(FusionFcReluParam<DeviceType>* param);
 };
 }  // namespace operators

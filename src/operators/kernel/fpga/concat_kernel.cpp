@@ -57,7 +57,7 @@ bool ConcatKernel<FPGA, float>::Init(ConcatParam<FPGA> *param) {
 }
 
 template <>
-void ConcatKernel<FPGA, float>::Compute(const ConcatParam<FPGA> &param) const {
+void ConcatKernel<FPGA, float>::Compute(const ConcatParam<FPGA> &param) {
   ComputeFPGAConcat(param.FpgaArgs());
 }
 template class ConcatKernel<FPGA, float>;

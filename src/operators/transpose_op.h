@@ -40,10 +40,6 @@ class TransposeOp : public framework::OperatorWithKernel<
             DeviceType, TransposeParam<DeviceType>,
             operators::TransposeKernel<DeviceType, T>>(type, inputs, outputs,
                                                        attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, TransposeParam<DeviceType>,
-      operators::TransposeKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 };
 

@@ -56,7 +56,7 @@ template <typename Dtype>
 void OperatorBase<Dtype>::CheckAllInputOutputSet() const {}
 
 template <typename Dtype>
-void OperatorBase<Dtype>::Run() const {
+void OperatorBase<Dtype>::Run() {
   RunImpl();
 #ifdef PADDLE_MOBILE_DEBUG
   DLOG << "-------------" << type_ << "----------------------------";
@@ -87,6 +87,7 @@ void OperatorBase<Dtype>::Run() const {
 template class OperatorBase<CPU>;
 template class OperatorBase<FPGA>;
 template class OperatorBase<GPU_MALI>;
+template class OperatorBase<GPU_CL>;
 
 }  // namespace framework
 }  // namespace paddle_mobile

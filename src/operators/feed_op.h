@@ -74,7 +74,7 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
 
 #else
   void Init() {}
-  void RunImpl() const {
+  void RunImpl() {
     param_.Out()->ShareDataWith(*param_.InputX());
     param_.Out()->set_lod(param_.InputX()->lod());
   }

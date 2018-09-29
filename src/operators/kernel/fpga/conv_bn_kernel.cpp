@@ -68,7 +68,7 @@ bool ConvBNKernel<FPGA, float>::Init(FusionConvBNParam<FPGA> *param) {
 
 template <>
 void ConvBNKernel<FPGA, float>::Compute(
-    const FusionConvBNParam<FPGA> &param) const {
+    const FusionConvBNParam<FPGA> &param) {
   fpga::ComputeFpgaConv(param.FpgaArgs());
 }
 

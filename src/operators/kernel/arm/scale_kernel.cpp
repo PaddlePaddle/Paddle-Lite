@@ -23,7 +23,7 @@ namespace operators {
  * @b 特化到具体平台的实现, param 从 op 层传入
  * */
 template <>
-void ScaleKernel<CPU, float>::Compute(const ScaleParam<CPU> &param) const {
+void ScaleKernel<CPU, float>::Compute(const ScaleParam<CPU> &param) {
   const auto *input_x = param.InputX();
   auto *input_x_ptr = input_x->data<float>();
   auto *out = param.Out();

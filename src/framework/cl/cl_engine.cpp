@@ -65,7 +65,7 @@ bool CLEngine::SetClDeviceId() {
       clGetDeviceIDs(platform_, CL_DEVICE_TYPE_GPU, 0, NULL, &numDevices);
 
   if (numDevices > 0) {
-    devices_ = reinterpret_cast<cl_platform_id *>(
+    devices_ = reinterpret_cast<cl_device_id *>(
         malloc(numDevices * sizeof(cl_device_id)));
     status = clGetDeviceIDs(platform_, CL_DEVICE_TYPE_GPU, numDevices, devices_,
                             NULL);
