@@ -32,7 +32,9 @@ class CLImage {
 
   }
 
-  const DDim &TensorDim();
+  const DDim &TensorDim() {
+    return tensorDims_;
+  }
 
   std::vector<size_t> DefaultWorkSize() {
     return {};
@@ -45,13 +47,13 @@ class CLImage {
   cl_context context_;
 };
 
-void TensorToCLImage(Tensor *tensor, CLImage *image) {
-
-}
-
-void CLImageToTensor(CLImage *image, Tensor *tensor) {
-
-}
+//void TensorToCLImage(Tensor *tensor, CLImage *image) {
+//
+//}
+//
+//void CLImageToTensor(CLImage *image, Tensor *tensor) {
+//
+//}
 
 }
 }
