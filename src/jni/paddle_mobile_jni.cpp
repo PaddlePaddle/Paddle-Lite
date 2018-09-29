@@ -74,6 +74,28 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_load(JNIEnv *env,
   return static_cast<jboolean>(isLoadOk);
 }
 
+JNIEXPORT jboolean JNICALL
+Java_com_baidu_paddle_PML_loadnlp(JNIEnv *env, jclass thiz, jstring modelPath) {
+  std::lock_guard<std::mutex> lock(shared_mutex);
+  ANDROIDLOGI("load invoked");
+  bool optimize = true;
+  bool isLoadOk = false;
+
+#ifdef ENABLE_EXCEPTION
+  try {
+    isLoadOk = getPaddleMobileInstance()->Load(
+        jstring2cppstring(env, modelPath), optimize, false, 1, true);
+  } catch (paddle_mobile::PaddleMobileException &e) {
+    ANDROIDLOGE("jni got an PaddleMobileException! ", e.what());
+    isLoadOk = false;
+  }
+#else
+  isLoadOk = getPaddleMobileInstance()->Load(jstring2cppstring(env, modelPath),
+                                             optimize, false, 1, true);
+#endif
+  return static_cast<jboolean>(isLoadOk);
+}
+
 JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadQualified(
     JNIEnv *env, jclass thiz, jstring modelPath) {
   std::lock_guard<std::mutex> lock(shared_mutex);

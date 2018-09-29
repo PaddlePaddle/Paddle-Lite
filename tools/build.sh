@@ -92,6 +92,47 @@ build_for_android() {
     make -j 8
 }
 
+
+build_for_arm_linux() {
+    MODE="Release"
+    ARM_LINUX="arm-linux"
+
+    if [ "${#NETS}" -gt 1 ]; then
+        cmake .. \
+            -B"../build/release/arm-linux" \
+            -DCMAKE_BUILD_TYPE="${MODE}" \
+            -DCMAKE_TOOLCHAIN_FILE="./tools/toolchains/arm-linux-gnueabihf.cmake" \
+            -DCMAKE_CXX_FLAGS="-std=c++14 -mcpu=cortex-a53 -mtune=cortex-a53 -mfpu=neon-vfpv4 -mfloat-abi=hard -ftree-vectorize -funsafe-math-optimizations  -pipe -mlittle-endian -munaligned-access" \
+            -DNET="${NETS}" \
+            -D"V7"=true
+    else
+        cmake .. \
+            -B"../build/release/arm-linux" \
+            -DCMAKE_BUILD_TYPE="${MODE}" \
+            -DCMAKE_TOOLCHAIN_FILE="./tools/toolchains/arm-linux-gnueabihf.cmake" \
+            -DCMAKE_CXX_FLAGS="-std=c++14 -mcpu=cortex-a53 -mtune=cortex-a53 -mfpu=neon-vfpv4 -mfloat-abi=hard -ftree-vectorize -funsafe-math-optimizations  -pipe -mlittle-endian -munaligned-access" \
+            -DNET="${NETS}" \
+            -D"V7"=true
+    fi
+
+    cd "../build/release/arm-linux"
+    make -j 8
+    cd "../../../test/"
+    DIRECTORY="models"
+    if [ "`ls -A $DIRECTORY`" = "" ]; then
+        echo "$DIRECTORY is indeed empty pull images"
+        wget http://mms-graph.bj.bcebos.com/paddle-mobile%2FmodelsAndImages.zip
+        unzip paddle-mobile%2FmodelsAndImages.zip
+        mv modelsAndImages/images/ images
+        mv modelsAndImages/models/ models
+        rm -rf paddle-mobile%2FmodelsAndImages.zip
+        rm -rf __MACOS
+    else
+        echo "$DIRECTORY is indeed not empty, DONE!"
+    fi
+
+}
+
 build_for_ios() {
 #    rm -rf "../build"
     PLATFORM="ios"
@@ -135,7 +176,7 @@ if [ $# -lt 1 ]; then
     echo "sample usage: ./build.sh android"
 else
     params=($@)
-    for(( i=1; i<$#; i++ )); do  
+    for(( i=1; i<$#; i++ )); do
         if [ ${i} != 1 ]; then
             NETS=$NETS$";"
         fi
@@ -162,6 +203,8 @@ else
 
     if [ $1 = "android" ]; then
         build_for_android
+    elif [ $1 = "arm_linux" ]; then
+        build_for_arm_linux
     elif [ $1 = "ios" ]; then
         build_for_ios
     else
