@@ -126,7 +126,7 @@ template class TestMultiClassNMSOp<CPU>;
 int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run MulticlassNMS Test";
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
   auto program = loader.Load(std::string("../../test/models/mobilenet+ssd"));
 
   /// input x (1,3,300,300)
