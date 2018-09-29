@@ -75,7 +75,7 @@ struct DtypeTensorTrait<GPU_MALI> {
   typedef framework::Tensor rtype;
 };
 
-
+#ifdef PADDLE_MOBILE_CL
 template <>
 struct DtypeTensorTrait<GPU_CL> {
   // This is the type we obtained in variable.
@@ -84,6 +84,7 @@ struct DtypeTensorTrait<GPU_CL> {
   // or the same type.
   typedef framework::CLImage rtype;
 };
+#endif
 
 class OpParam {
  protected:
