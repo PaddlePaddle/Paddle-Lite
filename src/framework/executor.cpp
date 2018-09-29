@@ -60,13 +60,13 @@ char *Get_binary_data(std::string filename) {
 
 #pragma mark - executor
 
-template<typename Dtype, Precision P>
+template <typename Dtype, Precision P>
 Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
                              bool use_optimize, bool loddable)
-        : program_(p),
-          batch_size_(batch_size),
-          use_optimize_(use_optimize),
-          loddable_(loddable) {
+    : program_(p),
+      batch_size_(batch_size),
+      use_optimize_(use_optimize),
+      loddable_(loddable) {
   if (use_optimize_) {
     to_predict_program_ = program_.optimizeProgram;
   } else {
@@ -77,7 +77,7 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
   PADDLE_MOBILE_ENFORCE(to_predict_program_ != nullptr,
                         "to_predict_program_ == NULL!");
   const std::vector<std::shared_ptr<framework::BlockDesc>> blocks =
-          to_predict_program_->Blocks();
+      to_predict_program_->Blocks();
 #ifdef PADDLE_EXECUTOR_MULTITHREAD
   depManager.resize(blocks.size());
 #endif
@@ -89,8 +89,8 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
       std::shared_ptr<framework::OpDesc> op = ops[j];
       DLOG << "create op: " << j << "  " << op->Type();
       auto op_base = framework::OpRegistry<Dtype>::CreateOp(
-              op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(),
-              program_.scope);
+          op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(),
+          program_.scope);
       // use pre_infershape to pre resize , but if u use an lod mode tensor u
       // need to resize in runtime
       if (!loddable_) {
@@ -109,7 +109,7 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
     InitMemory();
   }
   std::shared_ptr<framework::BlockDesc> to_predict_block =
-          to_predict_program_->Block(0);
+      to_predict_program_->Block(0);
   auto &ops = ops_of_block_[*to_predict_block.get()];
   int i = 0;
   for (const auto &op : ops) {
@@ -118,7 +118,7 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
   }
 }
 
-template<typename Dtype, Precision P>
+template <typename Dtype, Precision P>
 void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
                                     framework::LoDTensor *tensor, char **data) {
   // 1. version
@@ -226,7 +226,7 @@ void Executor<Dtype, P>::LoadMemory(const framework::VarDesc var_desc,
   }
 }
 
-template<typename Dtype, Precision P>
+template <typename Dtype, Precision P>
 void Executor<Dtype, P>::InitMemory() {
   for (const auto &block : to_predict_program_->Blocks()) {
     for (const auto &var_desc : block->Vars()) {
@@ -238,7 +238,7 @@ void Executor<Dtype, P>::InitMemory() {
         }
 
         char *origin_data =
-                Get_binary_data(program_.model_path + "/" + var_desc->Name());
+            Get_binary_data(program_.model_path + "/" + var_desc->Name());
         char *data = origin_data;
         LoadMemory(*var_desc, tensor, &data);
 
@@ -251,21 +251,21 @@ void Executor<Dtype, P>::InitMemory() {
           is_mute_match = varInputMemory(var_desc, var, tensor);
 
           PADDLE_MOBILE_ENFORCE(
-                  is_mute_match,
-                  "got unhandled var_desc->Tensor_desc().DataType(): %d",
-                  var_desc->Tensor_desc().DataType());
+              is_mute_match,
+              "got unhandled var_desc->Tensor_desc().DataType(): %d",
+              var_desc->Tensor_desc().DataType());
         }
       }
     }
   }
 }
 
-template<typename Dtype, Precision P>
+template <typename Dtype, Precision P>
 void Executor<Dtype, P>::InitCombineMemory() {
   char *origin_data;
   if (program_.combined_params_buf && program_.combined_params_len) {
     LOG(kLOG_INFO) << "use outter memory";
-    origin_data = (char *) program_.combined_params_buf;
+    origin_data = (char *)program_.combined_params_buf;
   } else {
     LOG(kLOG_INFO) << " begin init combine memory";
     origin_data = Get_binary_data(program_.para_path);
@@ -289,9 +289,9 @@ void Executor<Dtype, P>::InitCombineMemory() {
           is_mute_match = varInputMemory(var_desc, var, tensor);
 
           PADDLE_MOBILE_ENFORCE(
-                  is_mute_match,
-                  "got unhandled var_desc->Tensor_desc().DataType(): %d",
-                  var_desc->Tensor_desc().DataType());
+              is_mute_match,
+              "got unhandled var_desc->Tensor_desc().DataType(): %d",
+              var_desc->Tensor_desc().DataType());
         }
       }
     }
@@ -300,10 +300,10 @@ void Executor<Dtype, P>::InitCombineMemory() {
   LOG(kLOG_INFO) << " end init combine memory ";
 }
 
-template<typename Dtype, Precision P>
+template <typename Dtype, Precision P>
 bool Executor<Dtype, P>::varInputMemory(
-        const std::shared_ptr<framework::VarDesc> &var_desc, Variable *var,
-        framework::LoDTensor *tensor) const {
+    const std::shared_ptr<framework::VarDesc> &var_desc, Variable *var,
+    framework::LoDTensor *tensor) const {
   bool is_mute_match = false;
   switch (var_desc->Tensor_desc().DataType()) {
     case framework::VARTYPE_TYPE_FP16: {
@@ -338,24 +338,22 @@ bool Executor<Dtype, P>::varInputMemory(
       break;
     }
 
-    default: {
-      break;
-    }
+    default: { break; }
   }
 
   return is_mute_match;
 }
 
-template<typename Dtype, Precision P>
+template <typename Dtype, Precision P>
 std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
-        const framework::Tensor &t) {
+    const framework::Tensor &t) {
   framework::Variable *g_feed_value = program_.scope->Var("feed");
   framework::Tensor *feed_tensor =
-          g_feed_value->GetMutable<framework::LoDTensor>();
+      g_feed_value->GetMutable<framework::LoDTensor>();
   feed_tensor->Resize(t.dims());
   feed_tensor->ShareDataWith(t);
   std::shared_ptr<framework::BlockDesc> to_predict_block =
-          to_predict_program_->Block(0);
+      to_predict_program_->Block(0);
   auto &ops = ops_of_block_[*to_predict_block.get()];
 
 #ifdef PADDLE_MOBILE_PROFILE
@@ -435,8 +433,8 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
   std::vector<std::string> out_keys = (*last_op)->GetOutKeys();
   PADDLE_MOBILE_ENFORCE(out_keys.size() > 0, "the last op contains no output");
   framework::LoDTensor *output_tensor =
-          framework::GetVarValue<framework::LoDTensor>(out_keys[0], output_map,
-                                                       *(program_.scope));
+      framework::GetVarValue<framework::LoDTensor>(out_keys[0], output_map,
+                                                   *(program_.scope));
 #ifdef PADDLE_MOBILE_PROFILE
 #ifdef PADDLE_EXECUTOR_MULTITHREAD
   // TODO(haipeng): expose profile info as an interface, user can get them to
@@ -488,18 +486,18 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
   return std::make_shared<framework::Tensor>(framework::Tensor(*output_tensor));
 }
 
-template<typename Dtype, Precision P>
+template <typename Dtype, Precision P>
 std::shared_ptr<framework::LoDTensor> Executor<Dtype, P>::PredictLod(
-        const framework::LoDTensor &t) {
+    const framework::LoDTensor &t) {
   framework::Variable *g_feed_value = program_.scope->Var("feed");
   framework::LoDTensor *feed_tensor =
-          g_feed_value->GetMutable<framework::LoDTensor>();
+      g_feed_value->GetMutable<framework::LoDTensor>();
   feed_tensor->Resize(t.dims());
   feed_tensor->ShareDataWith(t);
   feed_tensor->set_lod(t.lod());
 
   std::shared_ptr<framework::BlockDesc> to_predict_block =
-          to_predict_program_->Block(0);
+      to_predict_program_->Block(0);
 
   auto &ops = ops_of_block_[*to_predict_block.get()];
 
@@ -584,8 +582,8 @@ std::shared_ptr<framework::LoDTensor> Executor<Dtype, P>::PredictLod(
   std::vector<std::string> out_keys = (*last_op)->GetOutKeys();
   PADDLE_MOBILE_ENFORCE(out_keys.size() > 0, "the last op contains no output");
   framework::LoDTensor *output_tensor =
-          framework::GetVarValue<framework::LoDTensor>(out_keys[0], output_map,
-                                                       *(program_.scope));
+      framework::GetVarValue<framework::LoDTensor>(out_keys[0], output_map,
+                                                   *(program_.scope));
 #ifdef PADDLE_MOBILE_PROFILE
 #ifdef PADDLE_EXECUTOR_MULTITHREAD
   // TODO(haipeng): expose profile info as an interface, user can get them to
@@ -635,22 +633,22 @@ std::shared_ptr<framework::LoDTensor> Executor<Dtype, P>::PredictLod(
   printf("====================[---------]======================\n");
 #endif
   return std::make_shared<framework::LoDTensor>(
-          framework::LoDTensor(*output_tensor));
+      framework::LoDTensor(*output_tensor));
 }
 
-template<typename Dtype, Precision P>
+template <typename Dtype, Precision P>
 std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
-        const framework::Tensor &t, int block_id) {
+    const framework::Tensor &t, int block_id) {
   return Predict(t);
 }
 
-template<typename Dtype, Precision P>
+template <typename Dtype, Precision P>
 std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::Predict(
-        const std::vector<Ptype> &input, const std::vector<int64_t> &dims) {
+    const std::vector<Ptype> &input, const std::vector<int64_t> &dims) {
   framework::Tensor tensor(input, framework::make_ddim(dims));
   std::shared_ptr<framework::Tensor> output_tensor = Predict(tensor, 0);
   Executor<Dtype, P>::Ptype *output_ptr =
-          output_tensor->data<typename Executor<Dtype, P>::Ptype>();
+      output_tensor->data<typename Executor<Dtype, P>::Ptype>();
   std::vector<typename Executor<Dtype, P>::Ptype> result_vector;
   for (int j = 0; j < output_tensor->numel(); ++j) {
     result_vector.push_back(output_ptr[j]);
@@ -730,17 +728,153 @@ void Executor<Dtype, P>::Predict_To(int end) {
 };
 #endif
 
-template
-class Executor<CPU, Precision::FP32>;
+#ifdef PADDLE_MOBILE_FPGA
 
-template
-class Executor<FPGA, Precision::FP32>;
+template <typename Dtype, Precision P>
+void Executor<Dtype, P>::InjectVariable(const framework::Tensor &t,
+                                        string var_name) {
+  framework::Variable *g_feed_value = program_.scope->Var(var_name);
+  framework::Tensor *feed_tensor =
+      g_feed_value->GetMutable<framework::LoDTensor>();
+  feed_tensor->Resize(t.dims());
+  feed_tensor->ShareDataWith(t);
+};
 
-template
-class Executor<GPU_CL, Precision::FP32>;
+template <typename Dtype, Precision P>
+void Executor<Dtype, P>::FeedData(const framework::Tensor &t) {
+  InjectVariable(t, "feed");
+};
 
-template
-class Executor<GPU_MALI, Precision::FP32>;
+template <typename Dtype, Precision P>
+std::shared_ptr<framework::Tensor> Executor<Dtype, P>::FetchResult(int id) {
+  std::shared_ptr<framework::BlockDesc> to_predict_block =
+      to_predict_program_->Block(0);
+  auto &ops = ops_of_block_[*to_predict_block.get()];
 
+  PADDLE_MOBILE_ENFORCE(id < ops.size(), "Index out of range");
+  auto last_op = id < 0 ? ops[ops.size() - 1] : ops[id];
+  auto output_map = last_op->Outputs();
+  std::vector<std::string> out_keys = last_op->GetOutKeys();
+  PADDLE_MOBILE_ENFORCE(!out_keys.empty(), "the last op contains no output");
+  auto *output_tensor = framework::GetVarValue<framework::LoDTensor>(
+      out_keys[0], output_map, *(program_.scope));
+  return std::make_shared<framework::Tensor>(framework::Tensor(*output_tensor));
+};
+
+template <typename Dtype, Precision P>
+void Executor<Dtype, P>::Predict_From_To(int start, int end) {
+  std::shared_ptr<framework::BlockDesc> to_predict_block =
+      to_predict_program_->Block(0);
+  auto &ops = ops_of_block_[*to_predict_block.get()];
+  end = end < 0 ? (int)ops.size() : end;
+  PADDLE_MOBILE_ENFORCE(start >= 0 && start < end && end <= ops.size(),
+                        "start or end parameter is wrong");
+
+#ifdef PADDLE_MOBILE_PROFILE
+  std::vector<ProfInfo> profile(ops.size());
+#endif
+  for (int i = start; i < end; i++) {
+#ifdef PADDLE_MOBILE_PROFILE
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    profile[i].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+#endif
+    DLOG << "Running op: " << i << "  " << ops[i]->Type();
+    ops[i]->Run();
+
+#ifdef PADDLE_MOBILE_PROFILE
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    profile[i].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+#endif
+  }
+};
+
+template <typename Dtype, Precision P>
+void Executor<Dtype, P>::Predict_From(int start) {
+  Predict_From_To(start);
+};
+
+template <typename Dtype, Precision P>
+void Executor<Dtype, P>::Predict_To(int end) {
+  Predict_From_To(0, end);
+};
+#endif
+
+#ifdef PADDLE_MOBILE_CL
+
+template <>
+void Executor<GPU_CL, Precision::FP32>::InitMemory() {
+  for (const auto &block : to_predict_program_->Blocks()) {
+    for (const auto &var_desc : block->Vars()) {
+      auto var = program_.scope->Var(var_desc->Name());
+      if (var_desc->Persistable()) {
+        auto cl_image = var->template GetMutable<framework::CLImage>();
+        if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
+          continue;
+        }
+
+        char *origin_data =
+            Get_binary_data(program_.model_path + "/" + var_desc->Name());
+        cl_context context = program_.scope->GetCLScpoe()->Context();
+
+        float *tensorInput = (float *)origin_data;
+        framework::DDim ddim = cl_image->dims();
+        cl_image->Init(context, tensorInput, ddim);
+        delete origin_data;
+      }
+    }
+  }
 }
+
+template <>
+void Executor<GPU_CL, Precision::FP32>::InitCombineMemory() {
+  char *origin_data;
+  if (program_.combined_params_buf && program_.combined_params_len) {
+    LOG(kLOG_INFO) << "use outter memory";
+    origin_data = (char *)program_.combined_params_buf;
+  } else {
+    LOG(kLOG_INFO) << " begin init combine memory";
+    origin_data = Get_binary_data(program_.para_path);
+  }
+  PADDLE_MOBILE_ENFORCE(origin_data != nullptr, "origin_data==nullptr!!!");
+  float *data = (float *)origin_data;
+
+  for (const auto &block : to_predict_program_->Blocks()) {
+    for (const auto &var_desc : block->Vars()) {
+      auto var = program_.scope->Var(var_desc->Name());
+      if (var_desc->Persistable()) {
+        auto cl_image = var->template GetMutable<framework::CLImage>();
+        if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
+          continue;
+        }
+
+        cl_context context = program_.scope->GetCLScpoe()->Context();
+
+        framework::DDim ddim = cl_image->dims();
+
+        int numel = 1;
+        for (int i = 0; i < ddim.size(); i++) {
+          numel = numel * ddim[i];
+        }
+        float *tensorInput = data;
+        data += numel;
+        cl_image->Init(context, tensorInput, ddim);
+      }
+    }
+  }
+  delete origin_data;
+  LOG(kLOG_INFO) << " end init combine memory ";
+}
+
+#endif
+
+template class Executor<CPU, Precision::FP32>;
+
+template class Executor<FPGA, Precision::FP32>;
+
+template class Executor<GPU_CL, Precision::FP32>;
+
+template class Executor<GPU_MALI, Precision::FP32>;
+
+}  // namespace framework
 }  // namespace paddle_mobile
