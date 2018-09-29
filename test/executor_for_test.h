@@ -19,7 +19,7 @@ limitations under the License. */
 
 #include "common/log.h"
 #include "framework/op_registry.h"
-#include "io/executor.h"
+#include "framework/executor.h"
 #include "operators/conv_op.h"
 #include "operators/elementwise_add_op.h"
 #include "operators/pool_op.h"
@@ -29,7 +29,7 @@ limitations under the License. */
 #include "operators/softmax_op.h"
 #include "operators/transpose_op.h"
 
-using paddle_mobile::Executor;
+using paddle_mobile::framework::Executor;
 using paddle_mobile::framework::BlockDesc;
 using paddle_mobile::framework::DDim;
 using paddle_mobile::framework::LoDTensor;

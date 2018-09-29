@@ -23,8 +23,8 @@ limitations under the License. */
 
 #include "common/types.h"
 #include "framework/tensor.h"
-#include "io/executor.h"
-#include "io/loader.h"
+#include "framework/executor.h"
+#include "framework/loader.h"
 
 namespace paddle_mobile {
 
@@ -90,8 +90,8 @@ class PaddleMobile {
   ~PaddleMobile();
 
  private:
-  std::shared_ptr<Loader<Dtype, P>> loader_;
-  std::shared_ptr<Executor<Dtype, P>> executor_;
+  std::shared_ptr<framework::Loader<Dtype, P>> loader_;
+  std::shared_ptr<framework::Executor<Dtype, P>> executor_;
 
 #ifdef PADDLE_MOBILE_FPGA
  public:

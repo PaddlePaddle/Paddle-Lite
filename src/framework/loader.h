@@ -20,6 +20,7 @@ limitations under the License. */
 #include "framework/program/program.h"
 
 namespace paddle_mobile {
+namespace framework{
 
 template <typename Dtype = CPU, Precision P = Precision::FP32>
 class Loader {
@@ -28,7 +29,7 @@ class Loader {
    * @b load separate format fluid model
    * @b 加载分开形式的 fluid 模型
    * */
-  const framework::Program<Dtype, P> Load(const std::string &dirname,
+  const Program<Dtype, P> Load(const std::string &dirname,
                                           bool optimize = false,
                                           bool quantification = false,
                                           bool can_add_split = false);
@@ -37,21 +38,22 @@ class Loader {
    * @b load combine format fluid mode
    * @b 加载结合在一起格式的模型
    * */
-  const framework::Program<Dtype, P> Load(const std::string &model_path,
+  const Program<Dtype, P> Load(const std::string &model_path,
                                           const std::string &para_path,
                                           bool optimize = false,
                                           bool quantification = false);
 
-  const framework::Program<Dtype, P> LoadCombinedMemory(
+  const Program<Dtype, P> LoadCombinedMemory(
       size_t model_len, const uint8_t *model_buf, size_t combined_params_len,
       const uint8_t *combined_params_buf, bool optimize = false,
       bool quantification = false);
 
  private:
-  const framework::Program<Dtype, P> LoadProgram(const std::string &model_path,
+  const Program<Dtype, P> LoadProgram(const std::string &model_path,
                                                  bool optimize = false,
                                                  bool quantification = false,
                                                  bool can_add_split = false);
 };
 
+}
 }  // namespace paddle_mobile
