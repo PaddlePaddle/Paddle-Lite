@@ -38,8 +38,8 @@ class CLEngine {
 
   std::unique_ptr<_cl_command_queue, CLCommQueueDeleter> CreateClCommandQueue() {
     cl_int status;
-    cl_command_queue = clCreateCommandQueue(context_.get(), devices_[0], 0, &status);
-    std::unique_ptr<_cl_command_queue, CLCommQueueDeleter> command_queue_ptr(cl_command_queue);
+    cl_command_queue queue = clCreateCommandQueue(context_.get(), devices_[0], 0, &status);
+    std::unique_ptr<_cl_command_queue, CLCommQueueDeleter> command_queue_ptr(queue);
     return std::move(command_queue_ptr);
   }
 
@@ -67,7 +67,7 @@ class CLEngine {
     return std::move(program_ptr);
   }
 
-  bool CLEngine::BuildProgram(cl_program program) {
+  bool BuildProgram(cl_program program) {
     cl_int status;
     status = clBuildProgram(program, 0, 0, "-cl-fast-relaxed-math", 0, 0);
     CL_CHECK_ERRORS(status);

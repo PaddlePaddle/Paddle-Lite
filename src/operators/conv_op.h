@@ -34,10 +34,6 @@ class ConvOp : public framework::OperatorWithKernel<
       : framework::OperatorWithKernel<DeviceType, ConvParam<DeviceType>,
                                       operators::ConvKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, ConvParam<DeviceType>,
-      operators::ConvKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  private:

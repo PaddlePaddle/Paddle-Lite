@@ -25,6 +25,7 @@ namespace framework {
 
 class CLHelper {
  public:
+  CLHelper() = default;
 
   CLHelper(CLScope *scope): scope_(scope) {
   }

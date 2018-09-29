@@ -59,7 +59,7 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA> *param) {
 }
 template <>
 void FusionFcReluKernel<FPGA, float>::Compute(
-    const FusionFcReluParam<FPGA> &param) const {
+    const FusionFcReluParam<FPGA> &param) {
   fpga::ComputeFpgaConv(param.FpgaArgs());
 };
 

@@ -56,7 +56,7 @@ bool ElementwiseAddReluKernel<FPGA, float>::Init(
 
 template <>
 void ElementwiseAddReluKernel<FPGA, float>::Compute(
-    const ElementwiseAddReluParam<FPGA> &param) const {
+    const ElementwiseAddReluParam<FPGA> &param) {
   fpga::ComputeFpgaEWAdd(param.FpgaArgs());
 }
 }  // namespace operators

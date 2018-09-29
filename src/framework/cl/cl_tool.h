@@ -29,7 +29,6 @@ const char* opencl_error_to_str (cl_int error);
           opencl_error_to_str(ERR), __FILE__, __LINE__                                    \
          );                                                                               \
         }
-#endif
 
 }
 }

@@ -33,7 +33,7 @@ inline int Im2SeqOutputSize(int input_size, int filter_size, int padding_0,
 
 template <>
 void Im2SequenceKernel<CPU, float>::Compute(
-    const Im2SequenceParam<CPU> &param) const {
+    const Im2SequenceParam<CPU> &param) {
   const Tensor *in_x = param.Input();
   Tensor *out = param.Output();
   out->mutable_data<float>();

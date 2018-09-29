@@ -720,7 +720,8 @@ void Executor<Dtype, P>::Predict_To(int end) {
 #endif
 
 template class Executor<CPU, Precision::FP32>;
-template class Executor<GPU_MALI, Precision::FP32>;
 template class Executor<FPGA, Precision::FP32>;
+template class Executor<GPU_CL, Precision::FP32>;
+template class Executor<GPU_MALI, Precision::FP32>;
 
 }  // namespace paddle_mobile

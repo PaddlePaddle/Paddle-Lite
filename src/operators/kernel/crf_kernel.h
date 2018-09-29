@@ -28,7 +28,7 @@ template <typename DeviceType, typename T>
 class CrfKernel
     : public framework::OpKernelBase<DeviceType, CrfParam<DeviceType>> {
  public:
-  void Compute(const CrfParam<DeviceType>& param) const;
+  void Compute(const CrfParam<DeviceType>& param);
   bool Init(CrfParam<DeviceType>* param);
 };
 }  // namespace operators

@@ -31,9 +31,10 @@ limitations under the License. */
 #include "framework/scope.h"
 #include "framework/tensor.h"
 #include "framework/variable.h"
+#ifdef PADDLE_MOBILE_CL
 #include "framework/cl/cl_scope.h"
 #include "framework/cl/cl_helper.h"
-
+#endif
 namespace paddle_mobile {
 namespace framework {
 using std::string;
@@ -61,10 +62,10 @@ class OperatorBase {
                const VariableNameMap &outputs, const AttributeMap &attrs,
                std::shared_ptr<Scope> scope);
   virtual ~OperatorBase() {}
-  void Run() const;
+  void Run();
   std::vector<string> GetOutKeys() const;
   std::vector<string> GetInputKeys() const;
-  virtual void RunImpl() const = 0;
+  virtual void RunImpl() = 0;
 
   virtual void Init() = 0;
   /*
@@ -114,10 +115,9 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
                      const VariableNameMap &outputs, const AttributeMap &attrs,
                      std::shared_ptr<Scope> scope)
       : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope),
-        param_(inputs, outputs, attrs, *scope),
-        kernel_(scope->GetCLScpoe()) {}
+        param_(inputs, outputs, attrs, *scope) {}
 
-  virtual void RunImpl() const { this->kernel_.Compute(this->param_); }
+  virtual void RunImpl() { this->kernel_.Compute(this->param_); }
 
   virtual void InferShape() const = 0;
 
@@ -143,31 +143,33 @@ class OpKernelBase {
  public:
   OpKernelBase() = default;
 
-  OpKernelBase(CLScope *clscope): cl_helper_(clscope) {
-  }
+//  OpKernelBase(CLScope *clscope): cl_helper_(CLHelper(clscope)) {
+//  }
 
   /*
    * @b 所有kernel 需实现 Compute 方法
    * @p para 这个参数为 kernel 运算时所需要用到参数组成的一个结构体,
    *    所有结构体存在与: paddle-mobile/src/operators/op_param.h
    * */
-#ifdef PADDLE_MOBILE_MALI_GPU
+#ifdef PADDLE_McOBILE_MALI_GPU
   OpKernelBase() { acl_op_ = nullptr; }
   void *GetAclOp() const { return acl_op_; }
   void SetAclOp(void *op, void *ob) const {
     reinterpret_cast<OpKernelBase<Dtype, P> *>(ob)->acl_op_ = op;
   }
 #endif
-  virtual void Compute(const P &para) const = 0;
+  virtual void Compute(const P &para) = 0;
   virtual bool Init(P *para) { return true; }
   virtual ~OpKernelBase() = default;
+
+ protected:
+//  CLHelper cl_helper_;
 
  private:
 #ifdef PADDLE_MOBILE_MALI_GPU
   void *acl_op_;
 #endif
 
-  CLHelper cl_helper_;
 
 };
 

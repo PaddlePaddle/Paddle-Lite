@@ -26,7 +26,7 @@ bool SoftmaxKernel<CPU, float>::Init(SoftmaxParam<CPU> *param) {
 }
 
 template <>
-void SoftmaxKernel<CPU, float>::Compute(const SoftmaxParam<CPU> &param) const {
+void SoftmaxKernel<CPU, float>::Compute(const SoftmaxParam<CPU> &param) {
   SoftmaxCompute<float>(param);
 }
 

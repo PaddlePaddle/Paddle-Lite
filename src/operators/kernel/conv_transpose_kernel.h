@@ -28,7 +28,7 @@ template <typename DeviceType, typename T>
 class ConvTransposeKernel
     : public OpKernelBase<DeviceType, ConvTransposeParam<DeviceType>> {
  public:
-  void Compute(const ConvTransposeParam<DeviceType> &param) const;
+  void Compute(const ConvTransposeParam<DeviceType> &param);
 
   bool Init(ConvTransposeParam<DeviceType> *param);
 };
