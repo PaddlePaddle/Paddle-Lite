@@ -23,13 +23,23 @@ namespace framework {
 
 class CLImage {
  public:
-  CLImage(cl_context context, float *tensorInput, DDim ddim) : tensorDims_(ddim), context_(context) {
+  CLImage() = default;
+
+  void Init(cl_context context, float *tensorInput, DDim ddim) {
+  }
+
+  void Init(cl_context context, DDim ddim) {
 
   }
 
   const DDim &TensorDim();
 
+  std::vector<size_t> DefaultWorkSize() {
+    return {};
+  }
+
  private:
+  bool initialized_ = false;
   cl_mem cl_image_;
   DDim tensorDims_;
   cl_context context_;
