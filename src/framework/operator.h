@@ -115,7 +115,11 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
                      const VariableNameMap &outputs, const AttributeMap &attrs,
                      std::shared_ptr<Scope> scope)
       : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope),
-        param_(inputs, outputs, attrs, *scope) {}
+        param_(inputs, outputs, attrs, *scope) {
+#ifdef PADDLE_MOBILE_CL
+    kernel_.InitCLHelper(scope->GetCLScpoe());
+#endif
+  }
 
   virtual void RunImpl() { this->kernel_.Compute(this->param_); }
 
@@ -126,6 +130,8 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
     //      DLOG << i.first;
     //      DLOG << i.second;
     //    }
+
+
     PADDLE_MOBILE_ENFORCE(kernel_.Init(&param_), "  %s kernel init failed",
                           this->type_.c_str());
   }
@@ -141,10 +147,16 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
 template <typename Dtype, typename P>
 class OpKernelBase {
  public:
+
   OpKernelBase() = default;
 
-//  OpKernelBase(CLScope *clscope): cl_helper_(CLHelper(clscope)) {
-//  }
+#ifdef PADDLE_MOBILE_CL
+
+  virtual void InitCLHelper(CLScope *clScope) {
+    cl_helper_ = CLHelper(clScope);
+  }
+
+#endif
 
   /*
    * @b 所有kernel 需实现 Compute 方法
@@ -163,7 +175,9 @@ class OpKernelBase {
   virtual ~OpKernelBase() = default;
 
  protected:
-//  CLHelper cl_helper_;
+#ifdef PADDLE_MOBILE_CL
+  CLHelper cl_helper_;
+#endif
 
  private:
 #ifdef PADDLE_MOBILE_MALI_GPU
