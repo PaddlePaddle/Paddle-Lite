@@ -45,6 +45,10 @@ class CLImage {
     return {};
   }
 
+  cl_mem GetCLImage() {
+    return cl_image_;
+  }
+
  private:
   bool initialized_ = false;
   cl_mem cl_image_;
