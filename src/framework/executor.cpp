@@ -818,9 +818,21 @@ void Executor<GPU_CL, Precision::FP32>::InitMemory() {
         cl_context context = program_.scope->GetCLScpoe()->Context();
 
         float *tensorInput = (float *)origin_data;
+
+        const framework::TensorDesc &desc = var_desc->Tensor_desc();
         framework::DDim ddim = cl_image->dims();
+
         cl_image->Init(context, tensorInput, ddim);
         delete origin_data;
+      }else{
+        auto cl_image = var->template GetMutable<framework::CLImage>();
+        cl_context context = program_.scope->GetCLScpoe()->Context();
+
+        const framework::TensorDesc &desc = var_desc->Tensor_desc();
+        framework::DDim ddim = cl_image->dims();
+
+        cl_image->Init(context, ddim);
+
       }
     }
   }
@@ -850,6 +862,7 @@ void Executor<GPU_CL, Precision::FP32>::InitCombineMemory() {
 
         cl_context context = program_.scope->GetCLScpoe()->Context();
 
+        const framework::TensorDesc &desc = var_desc->Tensor_desc();
         framework::DDim ddim = cl_image->dims();
 
         int numel = 1;
@@ -857,8 +870,16 @@ void Executor<GPU_CL, Precision::FP32>::InitCombineMemory() {
           numel = numel * ddim[i];
         }
         float *tensorInput = data;
-        data += numel;
         cl_image->Init(context, tensorInput, ddim);
+        data += numel;
+      }else{
+        auto cl_image = var->template GetMutable<framework::CLImage>();
+        cl_context context = program_.scope->GetCLScpoe()->Context();
+
+        const framework::TensorDesc &desc = var_desc->Tensor_desc();
+        framework::DDim ddim = cl_image->dims();
+
+        cl_image->Init(context, ddim);
       }
     }
   }
