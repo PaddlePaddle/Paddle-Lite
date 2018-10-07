@@ -14,26 +14,11 @@ limitations under the License. */
 
 #pragma once
 
-#include "common/types.h"
-#include "framework/program/program_desc.h"
-#include "framework/scope.h"
+#include "common/enforce.h"
+#include <string>
 
 namespace paddle_mobile {
-namespace framework {
 
-template <typename Dtype, Precision P = Precision::FP32>
-class Program {
- public:
-  std::shared_ptr<ProgramDesc> originProgram;
-  std::shared_ptr<ProgramDesc> optimizeProgram;
-  std::shared_ptr<Scope> scope;
-  std::string model_path;
-  std::string para_path;
-  bool combined = false;
-  bool quantification = false;
-  size_t combined_params_len;
-  const uint8_t *combined_params_buf;
-};
+char *ReadFileToBuff(std::string filename);
 
-}  // namespace framework
 }  // namespace paddle_mobile
