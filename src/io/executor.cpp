@@ -32,34 +32,15 @@ namespace paddle_mobile {
 
 using framework::Variable;
 
-char *Get_binary_data(std::string filename) {
-  FILE *file = fopen(filename.c_str(), "rb");
-  PADDLE_MOBILE_ENFORCE(file != nullptr, "can't open file: %s ",
-                        filename.c_str());
-  fseek(file, 0, SEEK_END);
-  int64_t size = ftell(file);
-  PADDLE_MOBILE_ENFORCE(size > 0, "size is too small");
-  rewind(file);
-  char *data = new char[size];
-  size_t bytes_read = fread(data, 1, size, file);
-  PADDLE_MOBILE_ENFORCE(bytes_read == size,
-                        "read binary file bytes do not match with fseek");
-  fclose(file);
-  return data;
-}
-
 template <typename Dtype, Precision P>
 Executor<Dtype, P>::Executor(const framework::Program<Dtype> p,
                              const bool use_optimize,
 			     const bool loddable)
       : program_(p), use_optimize_(use_optimize), loddable_(loddable) {
-  if (use_optimize_) {
-    to_predict_program_ = program_.optimizeProgram;
-  } else {
-    to_predict_program_ = program_.originProgram;
-  }
   Variable *variable_ptr = program_.scope->Var("batch_size");
   variable_ptr->SetValue<int>(1);
+  to_predict_program_ =
+      use_optimize_ ? program_.optimizeProgram : program_.originProgram;
   PADDLE_MOBILE_ENFORCE(to_predict_program_ != nullptr,
                         "to_predict_program_ == NULL!");
   const std::vector<std::shared_ptr<framework::BlockDesc>> &blocks =
@@ -75,8 +56,8 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p,
       auto op_base = framework::OpRegistry<Dtype>::CreateOp(
           op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(),
           program_.scope);
-      // use pre_infershape to pre resize , but if u use an lod mode tensor u
-      // need to resize in runtime
+      // infer shape to reshape tensor before predict,
+      // but for lod tensor, it will need to reshape in runtime
       if (!loddable_) {
         op_base->InferShape();
       }
@@ -96,75 +77,74 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p,
   }
 }
 
-// should use istream to keep offset for data
 template<typename Dtype>
-void LoadMemInternal(const void *data, framework::LoDTensor *tensor) {
-  const char *data_buf = static_cast<const char *>(data);
+void LoadMemInternal(void **data, framework::LoDTensor *tensor) {
+  char **data_buf = reinterpret_cast<char **>(data);
   int64_t size = tensor->numel();
   Dtype* tensor_data = tensor->mutable_data<Dtype>();
-  // stored as low precision, but compute with float
-  // TODO(hjchen2) must consider signed and unsigned
   if (0) {
+    // TODO should be moved into operator init function
     float min_value;
     float max_value;
     memcpy(&min_value, data_buf, sizeof(float));
     memcpy(&max_value, data_buf + sizeof(float), sizeof(float));
     data_buf += 2 * sizeof(float);
     const float factor = (max_value - min_value) / 255.0;
-    const uint8_t *uint8_data = reinterpret_cast<const uint8_t*>(data_buf);
+    const uint8_t *uint8_data = reinterpret_cast<uint8_t*>(data_buf);
     for (int k = 0; k < size; ++k) {
       tensor_data[k] = uint8_data[k] * factor + min_value;
     }
     data_buf += size * sizeof(uint8_t);
   } else {
-    memcpy(tensor_data, data_buf, size * sizeof(Dtype));
-    data_buf += size * sizeof(Dtype);
+    memcpy(tensor_data, *data_buf, size * sizeof(Dtype));
+    *data_buf += size * sizeof(Dtype);
   }
 }
 
 template <typename Dtype, Precision P>
-void Executor<Dtype, P>::LoadMemory(const void *data,
-		                    const framework::VarDesc var_desc,
-                                    framework::LoDTensor *tensor) {
-  const char *data_buf = static_cast<const char*>(data);
+void Executor<Dtype, P>::LoadMemory(
+                          void **data,
+                          const std::shared_ptr<framework::VarDesc> var_desc,
+                          framework::LoDTensor *tensor) {
+  char **data_buf = reinterpret_cast<char**>(data);
   // version
-  uint32_t version = *(reinterpret_cast<const uint32_t*>(data_buf));
-  data_buf += sizeof(uint32_t);
+  uint32_t version = *(reinterpret_cast<uint32_t*>(*data_buf));
+  *data_buf += sizeof(uint32_t);
   // lod information
-  uint64_t lod_level = *(reinterpret_cast<const uint64_t*>(data_buf));
-  data_buf += sizeof(uint64_t);
+  uint64_t lod_level = *(reinterpret_cast<uint64_t*>(*data_buf));
+  *data_buf += sizeof(uint64_t);
 
   auto *lod = tensor->mutable_lod();
   lod->resize(lod_level);
   for (uint64_t i = 0; i < lod_level; ++i) {
-    uint64_t size = *(reinterpret_cast<const uint64_t*>(data_buf));
-    data_buf += sizeof(uint64_t);
+    uint64_t size = *(reinterpret_cast<uint64_t*>(*data_buf));
+    *data_buf += sizeof(uint64_t);
     std::vector<size_t> tmp_dim(size / sizeof(size_t));
-    memcpy(tmp_dim.data(), data_buf, size);
+    memcpy(tmp_dim.data(), *data_buf, size);
     (*lod)[i] = std::move(tmp_dim);
-    data_buf += size;
+    *data_buf += size;
   }
   // tensor version
-  uint32_t tensor_version = *(reinterpret_cast<const uint32_t*>(data_buf));
-  data_buf += sizeof(uint32_t);
+  uint32_t tensor_version = *(reinterpret_cast<uint32_t*>(*data_buf));
+  *data_buf += sizeof(uint32_t);
   // tensor desc size
-  int32_t tensor_desc_size = *(reinterpret_cast<const int32_t*>(data_buf));
-  data_buf += sizeof(int32_t);
+  int32_t tensor_desc_size = *(reinterpret_cast<int32_t*>(*data_buf));
+  *data_buf += sizeof(int32_t);
   // skip tensor desc
-  data_buf += tensor_desc_size;
+  *data_buf += tensor_desc_size;
 
-  const framework::TensorDesc &tensor_desc = var_desc.Tensor_desc();
+  const framework::TensorDesc &tensor_desc = var_desc->Tensor_desc();
   tensor->Resize(framework::make_ddim(tensor_desc.Dims()));
   // parse tensor from stream
   switch (tensor_desc.DataType()) {
     case framework::VARTYPE_TYPE_FP32:
-      LoadMemInternal<float>(data_buf, tensor);
+      LoadMemInternal<float>((void**)data_buf, tensor);
       break;
     case framework::VARTYPE_TYPE_INT8:
-      LoadMemInternal<int8_t>(data_buf, tensor);
+      LoadMemInternal<int8_t>((void**)data_buf, tensor);
       break;
     case framework::VARTYPE_TYPE_INT32:
-      LoadMemInternal<int>(data_buf, tensor);
+      LoadMemInternal<int>((void**)data_buf, tensor);
       break;
     default:
       LOG(kLOG_ERROR) << "data type is not supported";
@@ -181,11 +161,10 @@ void Executor<Dtype, P>::InitMemory() {
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
           continue;
         }
-        char *origin_data =
-            Get_binary_data(program_.model_path + "/" + var_desc->Name());
-        char *data = origin_data;
-        LoadMemory(data, *var_desc, tensor);
-        delete[] origin_data;
+        char *data =
+            ReadFileToBuff(program_.model_path + "/" + var_desc->Name());
+        LoadMemory((void**)&data, var_desc, tensor);
+        delete [] data;
       } else {
         if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
           varInputMemory(var_desc, var, tensor);
@@ -197,16 +176,15 @@ void Executor<Dtype, P>::InitMemory() {
 
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::InitCombineMemory() {
-  char *origin_data;
+  char *data = nullptr;
+  bool self_alloc = false;
   if (program_.combined_params_buf && program_.combined_params_len) {
-    LOG(kLOG_INFO) << "use outter memory";
-    origin_data = (char *)program_.combined_params_buf;
+    data = (char *)program_.combined_params_buf;
   } else {
-    LOG(kLOG_INFO) << " begin init combine memory";
-    origin_data = Get_binary_data(program_.para_path);
+    self_alloc = true;
+    data = ReadFileToBuff(program_.para_path);
   }
-  PADDLE_MOBILE_ENFORCE(origin_data != nullptr, "origin_data==nullptr!!!");
-  char *data = origin_data;
+  PADDLE_MOBILE_ENFORCE(data != nullptr, "data == nullptr");
   for (const auto &block : to_predict_program_->Blocks()) {
     for (const auto &var_desc : block->Vars()) {
       auto var = program_.scope->Var(var_desc->Name());
@@ -215,7 +193,7 @@ void Executor<Dtype, P>::InitCombineMemory() {
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
           continue;
         }
-        LoadMemory(data, *var_desc, tensor);
+        LoadMemory((void**)&data, var_desc, tensor);
       } else {
         if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
           varInputMemory(var_desc, var, tensor);
@@ -223,9 +201,10 @@ void Executor<Dtype, P>::InitCombineMemory() {
       }
     }
   }
-
-  delete[] origin_data;
-  LOG(kLOG_INFO) << " end init combine memory ";
+  if (self_alloc) {
+    delete [] data;
+  }
+  LOG(kLOG_INFO) << "init combine memory finish";
 }
 
 template <typename Dtype, Precision P>
@@ -233,33 +212,27 @@ bool Executor<Dtype, P>::varInputMemory(
     const std::shared_ptr<framework::VarDesc> &var_desc, Variable *var,
     framework::LoDTensor *tensor) const {
   auto type = var_desc->Tensor_desc().DataType();
+  switch (type) {
+    case framework::VARTYPE_TYPE_FP32:
+      tensor->mutable_data<float>();
+      break;
+    case framework::VARTYPE_TYPE_INT8:
+      tensor->mutable_data<int8_t>();
+      break;
+    case framework::VARTYPE_TYPE_INT32:
+      tensor->mutable_data<int32_t>();
+      break;
+    case framework::VARTYPE_TYPE_INT64:
+      tensor->mutable_data<int64_t>();
+      break;
+    default:
+      break;
+  }
   bool is_mute_match = (type == framework::VARTYPE_TYPE_FP32) ||
 	               (type == framework::VARTYPE_TYPE_INT8) ||
 		       (type == framework::VARTYPE_TYPE_INT32) ||
 		       (type == framework::VARTYPE_TYPE_INT64);
   PADDLE_MOBILE_ENFORCE(is_mute_match, "got unhandled data type : %d", type);
-
-  switch (type) {
-    case framework::VARTYPE_TYPE_FP32: {
-      tensor->mutable_data<float>();
-      break;
-    }
-    case framework::VARTYPE_TYPE_INT8: {
-      tensor->mutable_data<int8_t>();
-      break; 
-    }
-    case framework::VARTYPE_TYPE_INT32: {
-      tensor->mutable_data<int32_t>();
-      break;
-    }
-    case framework::VARTYPE_TYPE_INT64: {
-      tensor->mutable_data<int64_t>();
-      break;
-    }
-    default: {
-      break;
-    }
-  }
   return is_mute_match;
 }
 
@@ -299,17 +272,12 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
       framework::GetVarValue<framework::LoDTensor>(out_keys[0], output_map,
                                                    *(program_.scope));
 #ifdef PADDLE_MOBILE_PROFILE
-  //  FILE *pf = fopen("profile.out", "w");
   std::unordered_map<std::string, uint64_t> _tp;
   for (int i = 0; i < profile.size(); i++) {
     const auto &pInfo = profile[i];
     uint64_t timeCost = pInfo.runEnd - pInfo.runBegin;
     _tp[ops[i]->Type()] += timeCost;
-    //    fprintf(pf, "%d\t%s\t%d\t%llu\t%llu\t%llu\n", i,
-    //    ops[i]->Type().c_str(),
-    //            pInfo.tid, pInfo.runBegin, pInfo.runEnd, timeCost);
   }
-  //  fclose(pf);
   printf("====================[ profile ]======================\n");
   using prof_t = std::pair<std::string, uint64_t>;
   std::vector<prof_t> _tv(_tp.begin(), _tp.end());
@@ -359,7 +327,6 @@ std::shared_ptr<framework::LoDTensor> Executor<Dtype, P>::PredictLod(
     if (loddable_) {
       ops[i]->InferShape();
     }
-    // to Run
     ops[i]->Run();
 #ifdef PADDLE_MOBILE_PROFILE
     clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -375,17 +342,12 @@ std::shared_ptr<framework::LoDTensor> Executor<Dtype, P>::PredictLod(
       framework::GetVarValue<framework::LoDTensor>(out_keys[0], output_map,
                                                    *(program_.scope));
 #ifdef PADDLE_MOBILE_PROFILE
-  //  FILE *pf = fopen("profile.out", "w");
   std::unordered_map<std::string, uint64_t> _tp;
   for (int i = 0; i < profile.size(); i++) {
     const auto &pInfo = profile[i];
     uint64_t timeCost = pInfo.runEnd - pInfo.runBegin;
     _tp[ops[i]->Type()] += timeCost;
-    //    fprintf(pf, "%d\t%s\t%d\t%llu\t%llu\t%llu\n", i,
-    //    ops[i]->Type().c_str(),
-    //            pInfo.tid, pInfo.runBegin, pInfo.runEnd, timeCost);
   }
-  //  fclose(pf);
   printf("====================[ profile ]======================\n");
   using prof_t = std::pair<std::string, uint64_t>;
   std::vector<prof_t> _tv(_tp.begin(), _tp.end());

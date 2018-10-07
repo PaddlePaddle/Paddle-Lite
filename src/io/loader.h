@@ -24,19 +24,11 @@ namespace paddle_mobile {
 template <typename Dtype = CPU, Precision P = Precision::FP32>
 class Loader {
  public:
-  /*
-   * @b load separate format fluid model
-   * @b 加载分开形式的 fluid 模型
-   * */
   const framework::Program<Dtype, P> Load(const std::string &dirname,
                                           bool optimize = false,
                                           bool quantification = false,
                                           bool can_add_split = false);
 
-  /*
-   * @b load combine format fluid mode
-   * @b 加载结合在一起格式的模型
-   * */
   const framework::Program<Dtype, P> Load(const std::string &model_path,
                                           const std::string &para_path,
                                           bool optimize = false,

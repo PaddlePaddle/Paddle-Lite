@@ -14,15 +14,16 @@ limitations under the License. */
 
 #pragma once
 
-#include <map>
-#include <memory>
-#include <string>
-#include <vector>
 #include "common/types.h"
+#include "common/util.h"
 #include "framework/lod_tensor.h"
 #include "framework/operator.h"
 #include "framework/program/program.h"
 #include "framework/tensor.h"
+#include <memory>
+#include <string>
+#include <vector>
+#include <map>
 
 namespace paddle_mobile {
 
@@ -37,15 +38,18 @@ class Executor {
   Executor(const framework::Program<Dtype> program,
            const bool use_optimize = true,
 	   const bool loddable = false);
-  // predict with tensor
-  // @param input input tensor to do prediction
+
+  // predict with tensor input
+  // @param t input tensor to do prediction
   // @return predicted tensor
   std::shared_ptr<framework::Tensor> Predict(const framework::Tensor &t);
-  // predict with lod tensor
-  // @param input input lod tensor to do prediction
+
+  // predict with lod tensor input
+  // @param t input lod tensor to do prediction
   // @return predicted lod tensor
   std::shared_ptr<framework::LoDTensor> PredictLod(
       const framework::LoDTensor &t);
+
   // predict with vector input and dims
   // @param input vector whose elements will be formed
   // @param       input lod tensor to do prediction
@@ -57,21 +61,22 @@ class Executor {
 
  protected:
   Executor() = default;
-  void InitMemory();
-  void LoadMemory(const void* data,
-		  const framework::VarDesc var_desc,
-                  framework::LoDTensor *tensor);
-  void InitCombineMemory();
-  framework::Program<Dtype> program_;
-  int batch_size_ = 1;
-  std::shared_ptr<framework::ProgramDesc> to_predict_program_;
   std::shared_ptr<framework::Tensor> Predict(const framework::Tensor &t,
                                              int block_id);
+  bool varInputMemory(const std::shared_ptr<framework::VarDesc> &var_desc,
+                      framework::Variable *var,
+                      framework::LoDTensor *tensor) const;
+  void InitMemory();
+  void InitCombineMemory();
+  void LoadMemory(void** data,
+		  const std::shared_ptr<framework::VarDesc> var_desc,
+                  framework::LoDTensor *tensor);
+
+  framework::Program<Dtype> program_;
+  std::shared_ptr<framework::ProgramDesc> to_predict_program_;
   std::map<framework::BlockDesc,
            std::vector<std::shared_ptr<framework::OperatorBase<Dtype>>>>
       ops_of_block_;
-  bool use_optimize_ = false;
-  bool loddable_ = false;
 #ifdef PADDLE_MOBILE_PROFILE
   struct ProfInfo {
     int tid = 0;
@@ -79,10 +84,9 @@ class Executor {
     uint64_t runEnd = 0UL;
   };
 #endif
-
-  bool varInputMemory(const std::shared_ptr<framework::VarDesc> &var_desc,
-                      framework::Variable *var,
-                      framework::LoDTensor *tensor) const;
+  int batch_size_ = 1;
+  bool use_optimize_ = false;
+  bool loddable_ = false;
 };
 
 }  // namespace paddle_mobile
