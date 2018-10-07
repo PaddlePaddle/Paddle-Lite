@@ -62,24 +62,13 @@ void OperatorBase<Dtype>::Run() const {
   DLOG << "-------------" << type_ << "----------------------------";
   vector<string> input_keys = GetInputKeys();
   for (const auto key : input_keys) {
-    auto var_vec_in = inputs_.at(key);
-    for (int i = 0; i < var_vec_in.size(); ++i) {
-      auto vari = scope_->FindVar(var_vec_in[i]);
-      if (vari->IsInitialized()) {
-        Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
-        if (tensor) DLOG << type_ << " input- " << key << "=" << *tensor;
-      }
-    }
+    Tensor *input = GetVarValue<framework::LoDTensor>(key, inputs_, *scope_);
+    if (input) DLOG << type_ << " input- " << key << "=" << *input;
   }
-  for (const auto key : GetOutKeys()) {
-    auto var_vec_out = outputs_.at(key);
-    for (int i = 0; i < var_vec_out.size(); ++i) {
-      auto vari = scope_->FindVar(var_vec_out[i]);
-      if (vari->IsInitialized()) {
-        Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
-        if (tensor) DLOG << type_ << " output- " << key << "=" << *tensor;
-      }
-    }
+  vector<string> output_keys = GetOutKeys();
+  for (const auto key : output_keys) {
+    Tensor *out_ = GetVarValue<framework::LoDTensor>(key, outputs_, *scope_);
+    DLOG << type_ << " output- " << key << "=" << *out_;
   }
 #endif
 }
@@ -87,6 +76,7 @@ void OperatorBase<Dtype>::Run() const {
 template class OperatorBase<CPU>;
 template class OperatorBase<FPGA>;
 template class OperatorBase<GPU_MALI>;
+template class OperatorBase<X86>;
 
 }  // namespace framework
 }  // namespace paddle_mobile

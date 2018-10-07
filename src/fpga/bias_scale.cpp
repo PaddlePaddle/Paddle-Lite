@@ -79,7 +79,6 @@ void format_bias_scale_array(float **bias_scale_array,
   int element_num_after_division =
       align_to_x(element_num_per_division, BS_NUM_ALIGNMENT);
   interleave(bias_scale_array, div_num * element_num_after_division);
-  fpga_flush(*bias_scale_array, 2 * element_num_after_division * sizeof(float));
 }
 
 }  // namespace bias_scale

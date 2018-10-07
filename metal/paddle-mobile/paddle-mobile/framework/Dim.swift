@@ -31,13 +31,14 @@ public struct Dim {
         return dims.reduce(1) { $0 * $1 }
     }
     
-    public static func ==(left: Dim, right: Dim) -> Bool {
+    static func ==(left: Dim, right: Dim) -> Bool {
         return left.dims == right.dims;
     }
     
-    public subscript(index: Int) -> Int {
+    subscript(index: Int) -> Int {
         return dims[index];
     }
+    
     
     private(set) var dims: [Int]
     private init(){

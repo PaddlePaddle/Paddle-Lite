@@ -13,11 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "feed_op.h"
-namespace paddle_mobile {
-namespace operators {}
-}  // namespace paddle_mobile
+
 
 namespace ops = paddle_mobile::operators;
+
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(feed, ops::FeedOp);
 #endif
@@ -26,4 +25,7 @@ REGISTER_OPERATOR_MALI_GPU(feed, ops::FeedOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(feed, ops::FeedOp);
+#endif
+#ifdef PADDLE_MOBILE_X86
+REGISTER_OPERATOR_X86(feed, ops::FeedOp);
 #endif

@@ -15,8 +15,11 @@ limitations under the License. */
 #ifdef FUSION_FC_OP
 
 #include "operators/fusion_fc_op.h"
+
 namespace paddle_mobile {
 namespace operators {
+
+static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
 
 template <typename Dtype, typename T>
 void FusionFcOp<Dtype, T>::InferShape() const {
@@ -54,14 +57,15 @@ void FusionFcOp<Dtype, T>::InferShape() const {
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
+
+#if defined(PADDLE_MOBILE_CPU)
 REGISTER_OPERATOR_CPU(fusion_fc, ops::FusionFcOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
+#elif defined(PADDLE_MOBILE_MALI_GPU)
 REGISTER_OPERATOR_MALI_GPU(fusion_fc, ops::FusionFcOp);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
+#elif defined(PADDLE_MOBILE_FPGA)
 REGISTER_OPERATOR_FPGA(fusion_fc, ops::FusionFcOp);
+#else
+REGISTER_OPERATOR_X86(fusion_fc, ops::FusionFcOp);
 #endif
 
-#endif
+#endif  // FUSION_FC_OP

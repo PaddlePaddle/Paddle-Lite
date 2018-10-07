@@ -39,12 +39,12 @@ void MultiClassNMSOp<Dtype, T>::InferShape() const {
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
+#if defined(PADDLE_MOBILE_CPU)
 REGISTER_OPERATOR_CPU(multiclass_nms, ops::MultiClassNMSOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-#endif
-#ifdef PADDLE_MOBILE_FPGA
+#elif defined(PADDLE_MOBILE_MALI_GPU)
+#elif defined(PADDLE_MOBILE_FPGA)
+#else
+REGISTER_OPERATOR_X86(multiclass_nms, ops::MultiClassNMSOp);
 #endif
 
 #endif

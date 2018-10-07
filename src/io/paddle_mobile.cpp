@@ -19,14 +19,14 @@ namespace paddle_mobile {
 template <typename Dtype, Precision P>
 void PaddleMobile<Dtype, P>::SetThreadNum(int num) {
 #ifdef _OPENMP
-  //  omp_set_dynamic(0);
   omp_set_num_threads(num);
 #endif
 };
 
 template <typename Dtype, Precision P>
-bool PaddleMobile<Dtype, P>::Load(const std::string &dirname, bool optimize,
-                                  bool quantification, int batch_size,
+bool PaddleMobile<Dtype, P>::Load(const std::string &dirname,
+                                  bool optimize,
+                                  bool quantification,
                                   bool loddable) {
   if (loader_.get() == nullptr) {
     loader_ = std::make_shared<Loader<Dtype, P>>();
@@ -36,8 +36,7 @@ bool PaddleMobile<Dtype, P>::Load(const std::string &dirname, bool optimize,
 
   if (executor_.get() == nullptr) {
     executor_ = std::make_shared<Executor<Dtype, P>>(
-        loader_->Load(dirname, optimize, quantification), batch_size, optimize,
-        loddable);
+        loader_->Load(dirname, optimize, quantification), optimize, loddable);
   } else {
     LOG(kLOG_INFO) << "executor inited";
   }
@@ -47,8 +46,9 @@ bool PaddleMobile<Dtype, P>::Load(const std::string &dirname, bool optimize,
 
 template <typename Dtype, Precision P>
 bool PaddleMobile<Dtype, P>::Load(const std::string &model_path,
-                                  const std::string &para_path, bool optimize,
-                                  bool quantification, int batch_size,
+                                  const std::string &para_path,
+                                  bool optimize,
+                                  bool quantification,
                                   bool loddable) {
   if (loader_.get() == nullptr) {
     loader_ = std::make_shared<Loader<Dtype, P>>();
@@ -59,7 +59,7 @@ bool PaddleMobile<Dtype, P>::Load(const std::string &model_path,
   if (executor_.get() == nullptr) {
     executor_ = std::make_shared<Executor<Dtype, P>>(
         loader_->Load(model_path, para_path, optimize, quantification),
-        batch_size, optimize, loddable);
+        optimize, loddable);
   } else {
     LOG(kLOG_INFO) << "executor inited";
   }
@@ -71,7 +71,6 @@ template <typename Dtype, Precision P>
 bool PaddleMobile<Dtype, P>::LoadCombinedMemory(
     size_t model_len, const uint8_t *model_buf, size_t combined_params_len,
     const uint8_t *combined_params_buf) {
-  int batch_size = 1;
   bool optimise = true;
   bool quantification = false;
 
@@ -85,8 +84,7 @@ bool PaddleMobile<Dtype, P>::LoadCombinedMemory(
     executor_ = std::make_shared<Executor<Dtype, P>>(
         loader_->LoadCombinedMemory(model_len, model_buf, combined_params_len,
                                     combined_params_buf, optimise,
-                                    quantification),
-        batch_size, optimise);
+                                    quantification), optimise);
   } else {
     LOG(kLOG_INFO) << "executor inited";
   }
@@ -124,44 +122,9 @@ PaddleMobile<Dtype, P>::~PaddleMobile() {
   loader_ = nullptr;
 }
 
-#ifdef PADDLE_MOBILE_FPGA
-
-template <typename Dtype, Precision P>
-void PaddleMobile<Dtype, P>::InjectVariable(const framework::Tensor &t,
-                                            string var_name) {
-  executor_->InjectVariable(t, var_name);
-}
-
-template <typename Dtype, Precision P>
-void PaddleMobile<Dtype, P>::FeedData(const framework::Tensor &t) {
-  executor_->FeedData(t);
-};
-
-template <typename Dtype, Precision P>
-std::shared_ptr<framework::Tensor> PaddleMobile<Dtype, P>::FetchResult(int id) {
-  return executor_->FetchResult(id);
-};
-
-template <typename Dtype, Precision P>
-void PaddleMobile<Dtype, P>::Predict_From_To(int start, int end) {
-  executor_->Predict_From_To(start, end);
-};
-
-template <typename Dtype, Precision P>
-void PaddleMobile<Dtype, P>::Predict_From(int start) {
-  executor_->Predict_From(start);
-};
-
-template <typename Dtype, Precision P>
-void PaddleMobile<Dtype, P>::Predict_To(int end) {
-  executor_->Predict_To(end);
-};
-#endif
-
 template class PaddleMobile<CPU, Precision::FP32>;
-
 template class PaddleMobile<FPGA, Precision::FP32>;
-
 template class PaddleMobile<GPU_MALI, Precision::FP32>;
+template class PaddleMobile<X86, Precision::FP32>;
 
 }  // namespace paddle_mobile

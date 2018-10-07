@@ -54,7 +54,8 @@ REGISTER_OPERATOR_CPU(prior_box, ops::PriorBoxOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
 #endif
-#ifdef PADDLE_MOBILE_FPGA
+#ifdef PADDLE_MOBILE_X86
+REGISTER_OPERATOR_X86(prior_box, ops::PriorBoxOp);
 #endif
 
 #endif

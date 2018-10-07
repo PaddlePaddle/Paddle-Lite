@@ -23,6 +23,7 @@ template <>
 bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam<FPGA> *param) {
   bool relu_enabled = true;
   auto input = const_cast<Tensor *>(param->Input());
+  auto input_ptr = input->data<float>();
   const Tensor *bias = param->Bias();
   auto bias_ptr = bias->data<float>();
   auto filter = const_cast<Tensor *>(param->Filter());
@@ -39,14 +40,16 @@ bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam<FPGA> *param) {
 
   float max_value = fpga::filter_find_max(filter);
   fpga::format_filter(filter, max_value, param->Groups());
+  auto filter_ptr = filter->data<float>();
 
   int element_num_per_div =
-      fpga::get_filter_num_per_div(filter, param->Groups());
+      fpga::get_element_num_per_div(filter, param->Groups());
   fpga::format_bias_scale_array(&bs_ptr, element_num_per_div, channel);
 
-  fpga::format_fp16_ofm(out);
+  fpga::format_ofm(out);
+  auto out_ptr = out->mutable_data<float>();
 
-  fpga::WrapperConvArgs conv_arg = {0};
+  fpga::WrapperConvArgs conv_arg;
   fpga::fill_conv_arg(&conv_arg, input, out, filter, relu_enabled,
                       param->Groups(), param->Strides()[0], param->Strides()[1],
                       param->Paddings()[0], param->Paddings()[1], bs_ptr);
@@ -59,6 +62,7 @@ void ConvAddReluKernel<FPGA, float>::Compute(
     const FusionConvAddReluParam<FPGA> &param) const {
   fpga::ComputeFpgaConv(param.FpgaArgs());
 }
+template class ConvAddReluKernel<FPGA, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile

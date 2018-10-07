@@ -38,6 +38,7 @@ void convert_to_hwc(float **data_in, int channel, int height, int width) {
 }
 
 void align_element_conv(float **data_in, int height, int cw) {
+  int i = 0;
   int h = 0;
   int align_cw = align_to_x(cw, IMAGE_ALIGNMENT);
   if (align_cw != cw) {
@@ -59,8 +60,6 @@ void align_element_conv(float **data_in, int height, int cw) {
 void format_image(float **data_in, int channel, int height, int width) {
   convert_to_hwc(data_in, channel, height, width);
   align_element_conv(data_in, height, channel * width);
-  fpga_flush(*data_in, align_to_x(channel * width, IMAGE_ALIGNMENT) * height *
-                           sizeof(float));
 }
 
 void concat_images(int16_t **images_in, float **scales_in, void *image_out,
@@ -74,17 +73,11 @@ void concat_images(int16_t **images_in, float **scales_in, void *image_out,
   int align_each_in_area_cw = 0;
   int align_each_out_area_cw_differ = 0;
   int tmp_channel = 0;
-  scale_out[0] = 0.0;
-  scale_out[1] = 0.0;
+  *scale_out = 0;
   for (i = 0; i < image_num; i++) {
     each_out_line_channel += channel_num[i];
-    scale_out[0] = std::max(*scale_out, scales_in[i][0]);
-    fpga_invalidate(images_in[i],
-                    height *
-                        align_to_x(channel_num[i] * width, IMAGE_ALIGNMENT) *
-                        sizeof(int16_t));
+    *scale_out = std::max(*scale_out, scales_in[i][0]);
   }
-  scale_out[1] = 1 / scale_out[0];
   align_each_out_area_cw =
       align_to_x(each_out_line_channel * width, IMAGE_ALIGNMENT);
   align_each_out_area_cw_differ =
@@ -104,8 +97,6 @@ void concat_images(int16_t **images_in, float **scales_in, void *image_out,
       }
     }
   }
-
-  fpga_flush(image_out, height * align_each_out_area_cw * sizeof(int16_t));
 }
 
 }  // namespace image

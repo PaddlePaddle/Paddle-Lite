@@ -53,4 +53,6 @@ REGISTER_OPERATOR_CPU(bilinear_interp, ops::BilinearOp);
 #ifdef PADDLE_MOBILE_FPGA
 #endif
 
+REGISTER_OPERATOR_X86(bilinear_interp, ops::BilinearOp);
+
 #endif

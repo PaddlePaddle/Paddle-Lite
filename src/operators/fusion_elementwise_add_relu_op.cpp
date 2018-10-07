@@ -25,6 +25,9 @@ void FusionElementwiseAddReluOp<Dtype, T>::InferShape() const {
   this->param_.Out()->Resize(x_dim);
 }
 
+static framework::FusionOpRegistrar fusion_elementwise_relu_registrar(
+    new FusioneElementwiseAddReluMatcher());
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
