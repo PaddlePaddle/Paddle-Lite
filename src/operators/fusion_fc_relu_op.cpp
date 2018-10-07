@@ -50,6 +50,9 @@ void FusionFcReluOp<Dtype, T>::InferShape() const {
   this->param_.Out()->Resize(ddim);
 }
 
+static framework::FusionOpRegistrar fc_relu_registrar(
+    new FusionFcReluMatcher());
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
@@ -62,6 +65,9 @@ REGISTER_OPERATOR_MALI_GPU(fusion_fc_relu, ops::FusionFcReluOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(fusion_fc_relu, ops::FusionFcReluOp);
+#endif
+#ifdef PADDLE_MOBILE_X86
+REGISTER_OPERATOR_X86(fusion_fc_relu, ops::FusionFcReluOp);
 #endif
 
 #endif

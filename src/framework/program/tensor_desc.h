@@ -40,7 +40,10 @@ enum VarType_Type {
   VARTYPE_TYPE_READER = 15,
   VARTYPE_TYPE_CHANNEL = 16,
   VARTYPE_TYPE_RAW = 17,
-  VARTYPE_TYPE_TUPLE = 18
+  VARTYPE_TYPE_TUPLE = 18,
+  VARTYPE_TYPE_SIZE_T = 19,
+  VARTYPE_TYPE_UINT8 = 20,
+  VARTYPE_TYPE_INT8 = 21,
 };
 
 class TensorDesc {
@@ -58,8 +61,9 @@ class TensorDesc {
     }
     data_type_ = (VarType_Type)desc->data_type;
   }
-
+  // return tensor dim as a vector
   std::vector<int64_t> Dims() const { return dims_; };
+  // return tensor data type
   VarType_Type DataType() const { return data_type_; }
 
  private:

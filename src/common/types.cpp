@@ -15,6 +15,7 @@ limitations under the License. */
 #include "common/types.h"
 #include <vector>
 
+
 namespace paddle_mobile {
 
 const char *G_OP_TYPE_CONV = "conv2d";

@@ -39,7 +39,7 @@ struct PrecisionTrait<Precision::FP16> {
 };
 
 //! device type
-enum DeviceTypeEnum { kINVALID = -1, kCPU = 0, kFPGA = 1, kGPU_MALI = 2 };
+enum DeviceTypeEnum { kINVALID = -1, kCPU = 0, kFPGA = 1, kGPU_MALI = 2, kX86 = 3 };
 
 template <DeviceTypeEnum T>
 struct DeviceType {};
@@ -47,6 +47,7 @@ struct DeviceType {};
 typedef DeviceType<kCPU> CPU;
 typedef DeviceType<kFPGA> FPGA;
 typedef DeviceType<kGPU_MALI> GPU_MALI;
+typedef DeviceType<kX86> X86;
 
 //! data type
 enum DataType {
@@ -77,6 +78,12 @@ enum PMStatus {
   PMOutOfMem = 0x06,       /*!< OOM error*/
   PMUnImplError = 0x07,    /*!< Unimplement error. */
   PMWrongDevice = 0x08     /*!< un-correct device. */
+};
+
+enum RoundType {
+  ROUND_UNK = 0,
+  ROUND_NEAREST_TOWARDS_ZERO = 1,
+  ROUND_NEAREST_TO_EVEN = 2
 };
 
 extern const char *G_OP_TYPE_CONV;

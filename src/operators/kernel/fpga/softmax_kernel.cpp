@@ -24,43 +24,31 @@ namespace operators {
 
 template <>
 bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
-  auto input = const_cast<Tensor *>(param->InputX());
+  const Tensor *input = param->InputX();
+
   auto input_ptr = input->data<float>();
-  auto float_input = new Tensor;
-  float_input->mutable_data<float>(input->dims());
-  fpga::format_fp32_ofm(float_input);
-
-  fpga::BypassArgs args = {fpga::DATA_TYPE_FP16};
-  args.input_layout_type = fpga::LAYOUT_HWC;
-  args.output_layout_type = fpga::LAYOUT_CHW;
-  args.input_data_type = fpga::DATA_TYPE_FP16;
-  args.output_data_type = fpga::DATA_TYPE_FP32;
-  args.image.address = input_ptr;
-  args.image.height = 1;
-  args.image.width = 1;
-  args.image.channels = (uint32_t)input->dims()[1];
-  args.output.address = float_input->mutable_data<float>();
-
-  param->SetFloatInput(float_input);
+  auto output = param->Out();
+  auto output_ptr = output->mutable_data<float>();
+  fpga::BypassArgs args;
+  args.convert_type = fpga::DATA_FP16_TO_FP32;
+  args.layout_type = fpga::LAYOUT_NO_CONVERT;
+  args.image.address = (void *)(input_ptr);
+  args.image.height = (uint32_t)input->dims()[0];
+  args.image.width = (uint32_t)input->dims()[1];
+  args.image.channels = 1;
+  args.output.address = output_ptr;
   param->SetFpgaArgs(args);
+
   return true;
 }
 
 template <>
 void SoftmaxKernel<FPGA, float>::Compute(
     const SoftmaxParam<FPGA> &param) const {
-  Tensor *in_x = param.FloatInput();
-  Tensor *out = param.Out();
-
-  fpga::PerformBypass(param.FpgaArgs());
-  fpga::fpga_invalidate(
-      (void *)in_x->data<float>(),
-      (size_t)fpga::get_align_image_cw((int)in_x->dims()[1]) * sizeof(float));
-
-  math::SoftmaxFuntor<CPU, float>()(in_x, out);
-  fpga::fpga_flush(out->data<float>(), out->memory_size());
+  // SoftmaxCompute<float>(param);
 }
 
+template class SoftmaxKernel<FPGA, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
 

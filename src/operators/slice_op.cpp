@@ -29,14 +29,13 @@ void SliceOp<Dtype, T>::InferShape() const {
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(slice);
 REGISTER_OPERATOR_CPU(slice, ops::SliceOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(slice);
 REGISTER_OPERATOR_MALI_GPU(slice, ops::SliceOp);
 #endif
-#ifdef PADDLE_MOBILE_FPGA
+#ifdef PADDLE_MOBILE_X86
+REGISTER_OPERATOR_X86(slice, ops::SliceOp);
 #endif
 
 #endif

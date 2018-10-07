@@ -44,6 +44,9 @@ void FusionConvAddPReluOp<Dtype, T>::InferShape() const {
   this->param_.Output()->Resize(ddim);
 }
 
+static framework::FusionOpRegistrar fusion_conv_add_prelu_registrar(
+    new FusionConvAddPReluOpMatcher());
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
@@ -51,7 +54,8 @@ namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(fusion_conv_add_prelu, ops::FusionConvAddPReluOp);
 #endif
-#ifdef PADDLE_MOBILE_MALI_GPU
+#ifdef PADDLE_MOBILE_X86
+REGISTER_OPERATOR_X86(fusion_conv_add_prelu, ops::FusionConvAddPReluOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(fusion_conv_add_prelu, ops::FusionConvAddPReluOp);

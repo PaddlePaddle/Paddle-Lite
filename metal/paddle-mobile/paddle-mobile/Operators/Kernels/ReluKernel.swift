@@ -15,23 +15,17 @@
 import Foundation
 
 class ReluKernel<P: PrecisionType>: Kernel, Computable{
-  func compute(commandBuffer: MTLCommandBuffer, param: ReluParam<P>) throws {
-    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-      throw PaddleMobileError.predictError(message: " encode is nil")
+    func compute(commandBuffer: MTLCommandBuffer, param: ReluParam<P>) throws {
+        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+            throw PaddleMobileError.predictError(message: " encode is nil")
+        }
+        encoder.setTexture(param.input.metalTexture, index: 0)
+        encoder.setTexture(param.output.metalTexture, index: 1)
+        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
+        encoder.endEncoding()
     }
-    encoder.setTexture(param.input.metalTexture, index: 0)
-    encoder.setTexture(param.output.metalTexture, index: 1)
-    encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
-    encoder.endEncoding()
-  }
-  
-  required init(device: MTLDevice, param: ReluParam<P>) {
-    if computePrecision == .Float32 {
-      super.init(device: device, inFunctionName: "relu")
-    } else if computePrecision == .Float16 {
-      super.init(device: device, inFunctionName: "relu_half")
-    } else {
-      fatalError()
+    
+    required init(device: MTLDevice, param: ReluParam<P>) {
+        super.init(device: device, inFunctionName: "relu")
     }
-  }
 }

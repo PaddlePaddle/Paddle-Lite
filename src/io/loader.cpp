@@ -45,6 +45,7 @@ void InitMemoryFromProgram(
           tensor->Resize(framework::make_ddim(dim));
         }
       } else {
+        // var_desc type is always lod tensor in any time?? (houjiang)
         // TODO(codeWorm): some.
       }
     }
@@ -67,6 +68,9 @@ void FusionAndPrintInfos(
     framework::ProgramOptimize program_optimize;
     program.optimizeProgram =
         program_optimize.FusionOptimize(originProgramDesc, can_add_split);
+    if (!program.optimizeProgram) {
+      program.optimizeProgram = originProgramDesc;
+    }
   }
   if (optimize) {
     program.optimizeProgram->Description("optimize: ");
@@ -193,5 +197,6 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::LoadCombinedMemory(
 template class Loader<CPU, Precision::FP32>;
 template class Loader<FPGA, Precision::FP32>;
 template class Loader<GPU_MALI, Precision::FP32>;
+template class Loader<X86, Precision::FP32>;
 
 }  // namespace paddle_mobile

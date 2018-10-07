@@ -20,7 +20,7 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
-using std::string;
+
 template <typename DeviceType, typename T>
 class FeedOp : public framework::OperatorBase<DeviceType> {
  public:
@@ -35,17 +35,13 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
     auto out_dims = param_.Out()->dims();
     out_dims[0] = param_.BatchSize();
     param_.Out()->Resize(out_dims);
-
-    //  note : mobile infershape iscalled when executer is created.  so  do not
-    //  pass lod here .
-    // it is empty
   }
 
 #ifdef PADDLE_MOBILE_FPGA
 
   void Init() {
     Tensor *output = param_.Out();
-    fpga::format_fp16_ofm(output);
+    fpga::format_ofm(output);
   }
 
   void RunImpl() const {
@@ -53,18 +49,15 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
     auto input_ptr = input->data<float>();
     fpga::format_image(input);
     Tensor *output = param_.Out();
-    auto output_ptr = output->data<float>();
+    auto output_ptr = output->mutable_data<half>();
 
-    fpga::BypassArgs args = {fpga::DATA_TYPE_FP32};
-
-    args.input_data_type = fpga::DATA_TYPE_FP32;
-    args.output_data_type = fpga::DATA_TYPE_FP16;
-    args.input_layout_type = fpga::LAYOUT_CHW;
-    args.output_layout_type = fpga::LAYOUT_HWC;
+    fpga::BypassArgs args;
+    args.convert_type = fpga::DATA_FP32_TO_FP16;
+    args.layout_type = fpga::LAYOUT_NO_CONVERT;
     args.image.address = (void *)input_ptr;
-    args.image.channels = (uint32_t)input->dims()[1];
-    args.image.height = (uint32_t)input->dims()[2];
-    args.image.width = (uint32_t)input->dims()[3];
+    args.image.channels = input->dims()[1];
+    args.image.height = input->dims()[2];
+    args.image.width = input->dims()[3];
     args.image.pad_height = 0;
     args.image.pad_width = 0;
     args.output.address = output_ptr;
@@ -87,12 +80,3 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(feed);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(feed);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-USE_OP_FPGA(feed);
-#endif

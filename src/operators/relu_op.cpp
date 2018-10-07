@@ -39,7 +39,8 @@ REGISTER_OPERATOR_CPU(relu, ops::ReluOp);
 #ifdef PADDLE_MOBILE_MALI_GPU
 REGISTER_OPERATOR_MALI_GPU(relu, ops::ReluOp);
 #endif
-#ifdef PADDLE_MOBILE_FPGA
+#ifdef PADDLE_MOBILE_X86
+REGISTER_OPERATOR_X86(relu, ops::ReluOp);
 #endif
 
 #endif

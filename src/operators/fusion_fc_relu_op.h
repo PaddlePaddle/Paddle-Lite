@@ -64,39 +64,7 @@ class FusionFcReluOp : public framework::OperatorWithKernel<
  protected:
 };
 
-#ifdef PADDLE_MOBILE_CPU
-#ifndef FUSION_FC_RELU_REGISTER
-static framework::FusionOpRegistrar fc_relu_registrar(
-    new FusionFcReluMatcher());
-#define FUSION_FC_RELU_REGISTER
-#endif
-#endif
-
-#ifdef PADDLE_MOBILE_MALI_GPU
-#ifndef FUSION_FC_RELU_REGISTER
-static framework::FusionOpRegistrar fc_relu_registrar(
-    new FusionFcReluMatcher());
-#define FUSION_FC_RELU_REGISTER
-#endif
-#endif
-
-#ifdef PADDLE_MOBILE_FPGA
-#ifndef FUSION_FC_RELU_REGISTER
-static framework::FusionOpRegistrar fc_relu_registrar(
-    new FusionFcReluMatcher());
-#define FUSION_FC_RELU_REGISTER
-#endif
-#endif
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(fusion_fc_relu);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(fusion_fc_relu);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-USE_OP_FPGA(fusion_fc_relu);
-#endif
 #endif  // FUSION_FC_RELU_OP
