@@ -14,6 +14,8 @@ limitations under the License. */
 
 #include "common/util.h"
 
+namespace paddle_mobile {
+
 char *ReadFileToBuff(std::string filename) {
   FILE *file = fopen(filename.c_str(), "rb");
   PADDLE_MOBILE_ENFORCE(file != nullptr, "can't open file: %s ",
@@ -29,3 +31,5 @@ char *ReadFileToBuff(std::string filename) {
   fclose(file);
   return data;
 }
+
+}  // namespace paddle_mobile

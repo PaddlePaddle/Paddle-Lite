@@ -161,10 +161,11 @@ void Executor<Dtype, P>::InitMemory() {
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
           continue;
         }
-        char *data =
+        char *origin_data =
             ReadFileToBuff(program_.model_path + "/" + var_desc->Name());
+        char *data = origin_data;
         LoadMemory((void**)&data, var_desc, tensor);
-        delete [] data;
+        delete [] origin_data;
       } else {
         if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
           varInputMemory(var_desc, var, tensor);
@@ -176,15 +177,16 @@ void Executor<Dtype, P>::InitMemory() {
 
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::InitCombineMemory() {
-  char *data = nullptr;
+  char *origin_data = nullptr;
   bool self_alloc = false;
   if (program_.combined_params_buf && program_.combined_params_len) {
-    data = (char *)program_.combined_params_buf;
+    origin_data = (char *)program_.combined_params_buf;
   } else {
     self_alloc = true;
-    data = ReadFileToBuff(program_.para_path);
+    origin_data = ReadFileToBuff(program_.para_path);
   }
-  PADDLE_MOBILE_ENFORCE(data != nullptr, "data == nullptr");
+  PADDLE_MOBILE_ENFORCE(origin_data != nullptr, "data == nullptr");
+  char *data = origin_data;
   for (const auto &block : to_predict_program_->Blocks()) {
     for (const auto &var_desc : block->Vars()) {
       auto var = program_.scope->Var(var_desc->Name());
@@ -202,7 +204,7 @@ void Executor<Dtype, P>::InitCombineMemory() {
     }
   }
   if (self_alloc) {
-    delete [] data;
+    delete [] origin_data;
   }
   LOG(kLOG_INFO) << "init combine memory finish";
 }
