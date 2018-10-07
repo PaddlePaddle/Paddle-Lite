@@ -50,14 +50,4 @@ class PReluOp : public framework::OperatorWithKernel<
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(prelu);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(prelu);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-USE_OP_FPGA(prelu);
-#endif
-
 #endif

@@ -15,53 +15,54 @@
 import Foundation
 
 class FeedParam<P: PrecisionType>: OpParam{
-  var output: Texture<P>
-  var input: InputTexture {
-    return scope.input() as! InputTexture
-  }
-  let scope: Scope
-  
-  required init(opDesc: OpDesc, inScope: Scope) throws {
-    scope = inScope
-    do {
-      output = try FeedParam.outputOut(outputs: opDesc.outputs, from: inScope)
-    } catch let error {
-      throw error
+    var output: Texture<P>
+    var input: InputTexture {
+        return scope.input() as! InputTexture
     }
-  }
-  
-  typealias ParamPrecisionType = P
+    let scope: Scope
+    
+    required init(opDesc: OpDesc, inScope: Scope) throws {
+        scope = inScope
+        do {
+            output = try FeedParam.outputOut(outputs: opDesc.outputs, from: inScope)
+        } catch let error {
+            throw error
+        }
+    }
+    
+    typealias ParamPrecisionType = P
 }
 
 class FeedOp<P: PrecisionType>: Operator<Texture2DTo2DArrayKernel<P>, FeedParam<P>>, Runable, Creator, InferShaperable {
-  typealias OpType = FeedOp<P>
-
-  func inferShape() {
-    //        print("feed  input: \(para.input.expectDim)")
-    print("feed output: \(para.output.dim)")
-    //        para.output.dim =
-    //        para.output.dim = para.input.expectDim
-  }
-  
-  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-    do {
-      try kernel.compute(commandBuffer: buffer, param: para)
-    } catch let error {
-      throw error
+    typealias OpType = FeedOp<P>
+    
+    func inferShape() {
+        //        print("feed  input: \(para.input.expectDim)")
+        print("feed output: \(para.output.dim)")
+        //        para.output.dim =
+        //        para.output.dim = para.input.expectDim
     }
     
-    //        let resizeKernel = ResizeKernel<P>.init(device: device)
-    //        let resizeParam = ResizeParam.init(input: para.input.mtlTexture, output: para.output.metalTexture, expectDim: para.input.expectDim)
-    //        do {
-    //            try resizeKernel.compute(commandBuffer: buffer, param: resizeParam)
-    //        } catch let error {
-    //            throw error
-    //        }
-  }
-  
-  func delogOutput() {
-    print(" \(type) output: ")
-    print(para.output.metalTexture.toTensor(dim: (n: para.output.padToFourDim[0], c: para.output.padToFourDim[1], h: para.output.padToFourDim[2], w: para.output.padToFourDim[3])).strideArray())
-  }
+    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+        do {
+            try kernel.compute(commandBuffer: buffer, param: para)
+        } catch let error {
+            throw error
+        }
+        
+//        let resizeKernel = ResizeKernel<P>.init(device: device)
+//        let resizeParam = ResizeParam.init(input: para.input.mtlTexture, output: para.output.metalTexture, expectDim: para.input.expectDim)
+//        do {
+//            try resizeKernel.compute(commandBuffer: buffer, param: resizeParam)
+//        } catch let error {
+//            throw error
+//        }
+    }
+    
+    func delogOutput() {
+//        para.input.mtlTexture.logDesc()
+//        let _: P? = para.input.mtlTexture.logDesc(header: "feed input: ", stridable: true)
+//        let _: P? = para.output.metalTexture.logDesc(header: "feed output: ", stridable: false)
+    }
 }
 

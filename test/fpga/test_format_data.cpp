@@ -22,7 +22,7 @@ namespace fpga = paddle_mobile::fpga;
 using std::cout;
 using std::endl;
 
-void test_format_image() {
+int main() {
   std::vector<int> dims{1, 1, 3, 3};
   std::vector<float> elements{1, 2, 3, 4, 5, 6, 7, 8, 9};
   frame::DDim ddim = frame::make_ddim(dims);
@@ -44,50 +44,6 @@ void test_format_image() {
   cout << endl;
   auto dd = image.dims();
   cout << dims[0] << dims[1] << dims[2] << dims[3] << endl;
-}
 
-void test_fill_conv_arg() {
-  Tensor input, out, filter;
-  DLOG << "Setup input";
-  SetupTensor<int16_t>(&input, {1, 250, 32, 30}, static_cast<int16_t>(0),
-                       static_cast<int16_t>(1));
-
-  DLOG << "Setup filter";
-  SetupTensor<float>(&filter, {1001, 250, 3, 3}, static_cast<float>(0),
-                     static_cast<float>(1));
-
-  DLOG << "Setup output";
-  SetupTensor<int16_t>(&out, {1, 1001, 32, 30}, static_cast<int16_t>(0),
-                       static_cast<int16_t>(1));
-  auto bs_ptr = (float *)fpga::fpga_malloc(2 * 1001 * sizeof(float));
-
-  DLOG << "find max";
-  float max_value = fpga::filter_find_max(&filter);
-  DLOG << "format filter";
-  fpga::format_filter(&filter, max_value, 1);
-
-  DLOG << "format bs_ptr";
-  int element_num_per_div = fpga::get_filter_num_per_div(&filter, 1);
-  fpga::format_bias_scale_array(&bs_ptr, element_num_per_div, 1001);
-
-  DLOG << "format ofm";
-  fpga::format_fp16_ofm(&out);
-  DLOG << "Build arg";
-
-  fpga::WrapperConvArgs arg;
-  fpga::fill_conv_arg(&arg, &input, &out, &filter, true, 1, 1, 1, 1, 1, bs_ptr);
-  DLOG << "splitNum: " << arg.split_num << "  group_num:" << arg.group_num
-       << "  filter_num:" << arg.filter_num;
-
-  for (int i = 0; i < arg.split_num; i++) {
-    DLOG << arg.conv_args[i].filter_num << "   " << arg.conv_args[i].sb_address
-         << "   " << arg.conv_args[i].filter_address << "   "
-         << arg.conv_args[i].filter_scale_address;
-  }
-}
-
-int main() {
-  test_format_image();
-  test_fill_conv_arg();
   return 0;
 }

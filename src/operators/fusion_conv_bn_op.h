@@ -67,39 +67,7 @@ class FusionConvBNOp : public framework::OperatorWithKernel<
  protected:
 };
 
-#ifdef PADDLE_MOBILE_CPU
-
-#ifndef FUSION_CONV_BN_REGISTER
-static framework::FusionOpRegistrar fusion_conv_bn_registrar(
-    new FusionConvBNMatcher());
-#define FUSION_CONV_BN_REGISTER
-#endif
-
-#endif
-
-#ifdef PADDLE_MOBILE_MALI_GPU
-
-#endif
-
-#ifdef PADDLE_MOBILE_FPGA
-
-#ifndef FUSION_CONV_BN_REGISTER
-static framework::FusionOpRegistrar fusion_conv_bn_registrar(
-    new FusionConvBNMatcher());
-#define FUSION_CONV_BN_REGISTER
-#endif
-#endif
-
 }  // namespace operators
 }  // namespace paddle_mobile
-
-#ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(fusion_conv_bn);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-USE_OP_FPGA(fusion_conv_bn);
-#endif
 
 #endif

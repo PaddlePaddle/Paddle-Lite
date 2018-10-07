@@ -60,4 +60,6 @@ REGISTER_OPERATOR_CPU(box_coder, ops::BoxCoderOp);
 #ifdef PADDLE_MOBILE_FPGA
 #endif
 
+REGISTER_OPERATOR_X86(box_coder, ops::BoxCoderOp);
+
 #endif

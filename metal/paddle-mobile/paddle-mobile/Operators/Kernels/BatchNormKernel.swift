@@ -15,39 +15,53 @@
 import Foundation
 
 class BatchNormKernel<P: PrecisionType>: Kernel, Computable {
-  required init(device: MTLDevice, param: BatchNormParam<P>) {
-    let count = param.variance.dim.numel()
-    let varianceP = param.variance.data.pointer
-    let meanP = param.mean.data.pointer
-    let scaleP = param.scale.data.pointer
-    let biasP = param.bias.data.pointer
-    for i in 0..<count {
-      let invStd = P(1 / (Float32(varianceP[i]) + param.epsilon).squareRoot())
-      biasP[i] = biasP[i] - meanP[i] * invStd * scaleP[i]
-      scaleP[i] = invStd * scaleP[i]
+    var newScale: MTLBuffer
+    var newBias: MTLBuffer
+    
+    required init(device: MTLDevice, param: BatchNormParam<P>) {
+        guard let newScale = device.makeBuffer(length: param.inputScale.buffer.length) else {
+            fatalError()
+        }
+        guard let newBias = device.makeBuffer(length: param.inputBias.buffer.length) else {
+            fatalError()
+        }
+        self.newScale = newScale
+        self.newBias = newBias
+        
+        super.init(device: device, inFunctionName: "batchnorm")
+        
+        let varianceBuffer : MTLBuffer = param.inputVariance.buffer
+        
+        var invStd: [Float32] = Array(repeating: 0, count: varianceBuffer.length)
+        let varianceContents = varianceBuffer.contents().assumingMemoryBound(to: P.self)
+        for i in 0..<(varianceBuffer.length / MemoryLayout<P>.stride) {
+            invStd[i] = 1 / (Float32(varianceContents[i]) + param.epsilon).squareRoot()
+        }
+        
+        let newScaleContents = newScale.contents().assumingMemoryBound(to: P.self)
+        let newBiasContents = newBias.contents().assumingMemoryBound(to: P.self)
+        let scale : MTLBuffer = param.inputScale.buffer
+        let scaleContents = scale.contents().assumingMemoryBound(to: P.self)
+        let bias : MTLBuffer = param.inputBias.buffer
+        let biasContents = bias.contents().assumingMemoryBound(to: P.self)
+        let meanContents = param.inputMean.buffer.contents().assumingMemoryBound(to: P.self)
+        
+        for i in 0..<(newScale.length / MemoryLayout<P>.stride) {
+            newScaleContents[i] = P(invStd[i] * Float32(scaleContents[i]))
+            newBiasContents[i] = P(Float32(biasContents[i]) - Float32(meanContents[i]) * invStd[i] * Float32(scaleContents[i]))
+        }
     }
-
-    param.bias.initBuffer(device: device, precision: computePrecision)
-    param.scale.initBuffer(device: device, precision: computePrecision)
-    param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: computePrecision)
-    if computePrecision == .Float32 {
-      super.init(device: device, inFunctionName: "batchnorm")
-    } else if computePrecision == .Float16 {
-      super.init(device: device, inFunctionName: "batchnorm_half")
-    } else {
-      fatalError()
+    
+    func compute(commandBuffer: MTLCommandBuffer, param: BatchNormParam<P>) throws {
+        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+            throw PaddleMobileError.predictError(message: " encoder is nil")
+        }
+        print("BatchNorm compute")
+        encoder.setTexture(param.input.metalTexture, index: 0)
+        encoder.setTexture(param.output.metalTexture, index: 1)
+        encoder.setBuffer(newScale, offset: 0, index: 0)
+        encoder.setBuffer(newBias, offset: 0, index: 1)
+        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
+        encoder.endEncoding()
     }
-  }
-  
-  func compute(commandBuffer: MTLCommandBuffer, param: BatchNormParam<P>) throws {
-    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-      throw PaddleMobileError.predictError(message: " encoder is nil")
-    }
-    encoder.setTexture(param.input.metalTexture, index: 0)
-    encoder.setTexture(param.output.metalTexture, index: 1)
-    encoder.setBuffer(param.scale.buffer, offset: 0, index: 0)
-    encoder.setBuffer(param.bias.buffer, offset: 0, index: 1)
-    encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
-    encoder.endEncoding()
-  }
 }

@@ -14,7 +14,7 @@
 
 import Foundation
 
-public class Program {
+public struct Program {
     let paramPath: String
     let programDesc: ProgramDesc
     let scope: Scope
@@ -22,10 +22,5 @@ public class Program {
         programDesc = inProgramDesc
         paramPath = inParamPath
         scope = inScope
-    }
-    init(inProgramDesc: ProgramDesc, inScope: Scope) {
-        programDesc = inProgramDesc
-        scope = inScope
-        paramPath = ""
     }
 }

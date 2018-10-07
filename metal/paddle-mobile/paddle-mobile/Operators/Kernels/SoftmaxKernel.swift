@@ -14,38 +14,19 @@
 
 import Foundation
 
-struct SoftmaxMetalParam {
-  let N: Int32
-  let K: Int32
-}
-
 class SoftmaxKernel<P: PrecisionType>: Kernel, Computable{
-  
-  var metalParam: SoftmaxMetalParam
-  required init(device: MTLDevice, param: SoftmaxParam<P>) {
-    param.output.initTexture(device: device, computePrecision: computePrecision)
-    metalParam = SoftmaxMetalParam.init(
-      N: Int32(param.input.tensorDim[0]),
-      K: Int32(param.input.tensorDim[1])
-    )
-    if computePrecision == .Float32 {
-      super.init(device: device, inFunctionName: "softmax_float")
-    } else if computePrecision == .Float16 {
-      super.init(device: device, inFunctionName: "softmax_half")
-    } else {
-      fatalError()
+    
+    func compute(commandBuffer: MTLCommandBuffer, param: SoftmaxParam<P>) throws {
+        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+            throw PaddleMobileError.predictError(message: " encoder is nil")
+        }
+        encoder.setTexture(param.input.metalTexture, index: 0)
+        encoder.setTexture(param.output.metalTexture, index: 1)
+        encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
+        encoder.endEncoding()
     }
-  }
-
-  func compute(commandBuffer: MTLCommandBuffer, param: SoftmaxParam<P>) throws {
-    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-      throw PaddleMobileError.predictError(message: " encoder is nil")
+    
+    required init(device: MTLDevice, param: SoftmaxParam<P>) {
+        super.init(device: device, inFunctionName: "softmax")
     }
-    encoder.setTexture(param.input.metalTexture, index: 0)
-    encoder.setTexture(param.output.metalTexture, index: 1)
-    encoder.setBytes(&metalParam, length: MemoryLayout<SoftmaxMetalParam>.size, index: 0)
-    encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
-    encoder.endEncoding()
-  }
-  
 }

@@ -27,7 +27,13 @@ bool DropoutKernel<FPGA, float>::Init(DropoutParam<FPGA> *param) {
 
 template <>
 void DropoutKernel<FPGA, float>::Compute(
-    const DropoutParam<FPGA> &param) const {}
+    const DropoutParam<FPGA> &param) const {
+  // auto *input_x = param.InputX();
+  // auto *out = param.Out();
+  // auto input_x_ptr = input_x->data<float>();
+  // auto out_ptr = out->mutable_data<float>();
+  // out_ptr = const_cast<float *>(input_x_ptr);
+}
 
 }  // namespace operators
 }  // namespace paddle_mobile

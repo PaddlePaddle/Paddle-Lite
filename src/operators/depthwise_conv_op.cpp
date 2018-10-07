@@ -56,9 +56,7 @@ namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(depthwise_conv2d, ops::DepthwiseConvOp);
 #endif
-#ifdef PADDLE_MOBILE_MALI_GPU
+#ifdef PADDLE_MOBILE_X86
+REGISTER_OPERATOR_X86(depthwise_conv2d, ops::DepthwiseConvOp);
 #endif
-#ifdef PADDLE_MOBILE_FPGA
-#endif
-
 #endif

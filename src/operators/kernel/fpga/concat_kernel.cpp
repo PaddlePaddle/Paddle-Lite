@@ -43,7 +43,7 @@ bool ConcatKernel<FPGA, float>::Init(ConcatParam<FPGA> *param) {
   fpga::format_concat_output(out, (int)height, (int)width, (int)image_num,
                              channel_num);
 
-  fpga::ConcatArgs concatArgs = {0};
+  fpga::ConcatArgs concatArgs;
   concatArgs.image_num = (uint32_t)image_num;
   concatArgs.images_in = images_in;
   concatArgs.scales_in = scales_in;
