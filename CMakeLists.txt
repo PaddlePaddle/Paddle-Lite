@@ -7,8 +7,8 @@ option(DEBUGING "enable debug mode" ON)
 option(USE_EXCEPTION "use std exception" OFF)
 option(LOG_PROFILE "log profile" OFF)
 # select the platform to build
-option(X86 "x86" OFF)
-option(CPU "armv7 with neon" ON)
+option(X86 "x86" ON)
+option(CPU "armv7 with neon" OFF)
 option(MALI_GPU "mali gpu" OFF)
 option(FPGA "fpga" OFF)
 
