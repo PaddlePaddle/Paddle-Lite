@@ -38,7 +38,6 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
   }
 
 #ifdef PADDLE_MOBILE_FPGA
-
   void Init() {
     Tensor *output = param_.Out();
     fpga::format_ofm(output);
