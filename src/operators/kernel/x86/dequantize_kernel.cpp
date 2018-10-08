@@ -26,6 +26,15 @@ template<>
 void DequantizeKernel<X86, float>::Compute(
     const DequantizeParam<X86> &param) const {
   // TODO
+  const Tensor *input = param.input_;
+  Tensor *output = param.out_; 
+  float activation_scale = param.activation_scale_->data<float>()[0];
+  float weight_scale = param.weight_scale_;
+  const int32_t *x = input->data<const int32_t>();
+  float *y = output->mutable_data<float>();
+  for (size_t i = 0; i < output->numel(); ++i) {
+    y[i] = x[i] / activation_scale / weight_scale;
+  }
 }
 
 }  // namespace paddle_mobile

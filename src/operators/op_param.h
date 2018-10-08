@@ -2349,12 +2349,6 @@ class QuantizeParam : public OpParam {
     // online
     // scale = max(abs(x))
     online_scale_ = GetVarValue<GType>("OutScale", outputs, scope);
-    if (HasAttr("is_signed", attrs)) {
-      is_signed_ = GetAttr<bool>("signed", attrs);
-    }
-    if (HasAttr("mantissa", attrs)) {
-      mantissa_bits_ = GetAttr<bool>("mantissa", attrs);
-    }
     // offline
     if (HasAttr("static_scale", attrs)) {
       static_scale_ = GetAttr<float>("static_scale", attrs);
@@ -2372,11 +2366,6 @@ class QuantizeParam : public OpParam {
   RType *out_;
   //
   RType *online_scale_;
-  // signed quantize or unsigned quantize
-  bool is_signed_ = true;
-  // mantissa bit width
-  // for int8, mantissa bits is 7
-  int mantissa_bits_ = 7;
   // if static scale or not
   bool is_static_ = false;
   // quantize scale
