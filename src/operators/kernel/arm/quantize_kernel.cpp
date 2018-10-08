@@ -18,13 +18,83 @@ limitations under the License. */
 #include <cmath>
 #include <limits>
 
+#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+#include <arm_neon.h>
+#ifndef __aarch64__
+float32_t vmaxvq_f32(float32x4_t r) {
+  float32x2_t v = vmax_f32(vget_high_f32(r), vget_low_f32(r));
+  return vget_lane_f32(vpmax_f32(v, v), 0);
+}
+#endif
+
+int32x4_t vrnd_towards_zero(float32x4_t r) {
+  return vcvtq_s32_f32(r);
+}
+
+int32x4_t vrnd_away_zero(float32x4_t r) {
+  float32x4_t plus  = vdupq_n_f32(0.5);
+  float32x4_t minus = vdupq_n_f32(-0.5);
+  float32x4_t zero  = vdupq_n_f32(0);
+  uint32x4_t more_than_zero = vcgtq_f32(r1, zero);
+  float32x4_t temp = vbslq_f32(more_than_zero, plus, minus);
+  temp = vaddq_f32(r1, add);
+  int32x4_t ret = vcvtq_s32_f32(temp);
+  return ret;
+}
+
+int32x4_t vrnd_to_even(float32x4_t r) {
+  int32x4_t ret;
+  for (int i = 0; i < 4; ++i) {
+    float v = round(r[i]);
+    int32_t q = (int32_t)v;
+    if (abs(abs(v - r[i]) - 0.5) > 0) {
+      ret[i] = q;
+    } else {
+      if (abs(q) % 2 == 0) {
+        ret[i] = q;
+      } else {
+        ret[i] = q + (q > 0) ? -1 : 1;
+      }
+    }
+  }
+  return ret;
+}
+
+#endif
+
 namespace paddle_mobile {
 namespace operators {
 
 static float find_abs_max(const Tensor *input) {
   float max_abs = float(0);
   const float *x = input->data<const float>();
-  for (size_t i = 0; i < input->numel(); ++i) {
+  size_t size = input->numel();
+#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+  size_t loop = size >> 4;
+  size_t remain = size & 0xF;
+  for (size_t i = 0; i < loop; ++i) {
+    float32x4_t max;
+    float32x4_t r1 = vld1q_f32(x);
+    float32x4_t r2 = vld1q_f32(x + 4);
+    float32x4_t r3 = vld1q_f32(x + 8);
+    float32x4_t r4 = vld1q_f32(x + 12);
+    r1 = vabsq_f32(r1);
+    r2 = vabsq_f32(r2);
+    r3 = vabsq_f32(r3);
+    r4 = vabsq_f32(r4);
+    max[0] = vmaxvq_f32(r1);
+    max[1] = vmaxvq_f32(r2);
+    max[2] = vmaxvq_f32(r3);
+    max[3] = vmaxvq_f32(r4);
+    max[0] = vmaxvq_f32(max);
+    if (max[0] > max_abs) {
+      max_abs = max[0];
+    }
+    x += 16;
+  }
+  size = remain;
+#endif
+  for (size_t i = 0; i < size; ++i) {
     float value = std::abs(x[i]);
     if (value > max_abs) {
       max_abs = value;
@@ -34,11 +104,43 @@ static float find_abs_max(const Tensor *input) {
 }
 
 static void quantize_round_to_even(const Tensor *input,
-                            const float scale,
-                            Tensor *output) {
+                                   const float scale,
+                                   Tensor *output) {
   const float *x = input->data<const float>();
   int8_t *y = output->data<int8_t>();
-  for (size_t i = 0; i < input->numel(); ++i) {
+  size_t size = input->numel();
+#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+  size_t loop = size >> 4;
+  size_t remain = size & 0xF;
+  for (size_t i = 0; i < loop; ++i) {
+    float32x4_t r0 = vld1q_f32(x);
+    float32x4_t r1 = vld1q_f32(x + 4);
+    float32x4_t r2 = vld1q_f32(x + 8);
+    float32x4_t r3 = vld1q_f32(x + 12);
+    r0 = vmulq_n_f32(r0, scale);
+    r1 = vmulq_n_f32(r1, scale);
+    r2 = vmulq_n_f32(r2, scale);
+    r3 = vmulq_n_f32(r3, scale);
+    int32x4_t q0 = vrnd_to_even(r0);
+    int32x4_t q1 = vrnd_to_even(r1);
+    int32x4_t q2 = vrnd_to_even(r2);
+    int32x4_t q3 = vrnd_to_even(r3);
+    int16x4_t d0 = vmovn_s32(q0);
+    int16x4_t d1 = vmovn_s32(q1);
+    int16x4_t d2 = vmovn_s32(q2);
+    int16x4_t d3 = vmovn_s32(q3);
+    int16x8_t q5 = vcombine_s16(d1, d0);
+    int16x8_t q6 = vcombine_s16(d3, d2);
+    int8x8_t d1 = vmovn_s16(q5);
+    int8x8_t d2 = vmovn_s16(q6);
+    vst1_s8(y, d1);
+    vst1_s8(y + 8, d2);
+    x += 16;
+    y += 16;
+  }
+  size = remain;
+#endif
+  for (size_t i = 0; i < size; ++i) {
     float value = x[i] * scale;
     long long quant = llround(value);
     if (abs(abs(round(value) - value) - 0.5) > 0) {
@@ -58,7 +160,39 @@ static void quantize_round_to_zero(const Tensor *input,
                             Tensor *output) {
   const float *x = input->data<const float>();
   int8_t *y = output->data<int8_t>();
-  for (size_t i = 0; i < input->numel(); ++i) {
+  size_t size = input->numel();
+#ifdef defined(__ARM_NEON__) || defined(__ARM_NEON)
+  size_t loop = size >> 4;
+  size_t remain = size & 0xF;
+  for (size_t i = 0; i < loop; ++i) {
+    float32x4_t r0 = vld1q_f32(x);
+    float32x4_t r1 = vld1q_f32(x + 4);
+    float32x4_t r2 = vld1q_f32(x + 8);
+    float32x4_t r3 = vld1q_f32(x + 12);
+    r0 = vmulq_n_f32(r0, scale);
+    r1 = vmulq_n_f32(r1, scale);
+    r2 = vmulq_n_f32(r2, scale);
+    r3 = vmulq_n_f32(r3, scale);
+    int32x4_t q0 = vrnd_towards_zero(r0);
+    int32x4_t q1 = vrnd_towards_zero(r1);
+    int32x4_t q2 = vrnd_towards_zero(r2);
+    int32x4_t q3 = vrnd_towards_zero(r3);
+    int16x4_t d0 = vmovn_s32(q0);
+    int16x4_t d1 = vmovn_s32(q1);
+    int16x4_t d2 = vmovn_s32(q2);
+    int16x4_t d3 = vmovn_s32(q3);
+    int16x8_t q5 = vcombine_s16(d1, d0);
+    int16x8_t q6 = vcombine_s16(d3, d2);
+    int8x8_t d1 = vmovn_s16(q5);
+    int8x8_t d2 = vmovn_s16(q6);
+    vst1_s8(y, d1);
+    vst1_s8(y + 8, d2);
+    x += 16;
+    y += 16;
+  }
+  size = remain;
+#endif
+  for (size_t i = 0; i < size; ++i) {
     y[i] = trunc(x[i] * scale);
   }
 }
@@ -68,8 +202,40 @@ static void quantize_round_to_nearest(const Tensor *input,
                                Tensor *output) {
   const float *x = input->data<const float>();
   int8_t *y = output->data<int8_t>();
-  for (size_t i = 0; i < input->numel(); ++i) {
-    y[i] = round(x[i] * scale);
+  size_t size = input->numel();
+#ifdef defined(__ARM_NEON__) || defined(__ARM_NEON)
+  size_t loop = size >> 4;
+  size_t remain = size & 0xF;
+  for (size_t i = 0; i < loop; ++i) {
+    float32x4_t r0 = vld1q_f32(x);
+    float32x4_t r1 = vld1q_f32(x + 4);
+    float32x4_t r2 = vld1q_f32(x + 8);
+    float32x4_t r3 = vld1q_f32(x + 12);
+    r0 = vmulq_n_f32(r0, scale);
+    r1 = vmulq_n_f32(r1, scale);
+    r2 = vmulq_n_f32(r2, scale);
+    r3 = vmulq_n_f32(r3, scale);
+    int32x4_t q0 = vrnd_away_zero(r0);
+    int32x4_t q1 = vrnd_away_zero(r1);
+    int32x4_t q2 = vrnd_away_zero(r2);
+    int32x4_t q3 = vrnd_away_zero(r3);
+    int16x4_t d0 = vmovn_s32(q0);
+    int16x4_t d1 = vmovn_s32(q1);
+    int16x4_t d2 = vmovn_s32(q2);
+    int16x4_t d3 = vmovn_s32(q3);
+    int16x8_t q5 = vcombine_s16(d1, d0);
+    int16x8_t q6 = vcombine_s16(d3, d2);
+    int8x8_t d1 = vmovn_s16(q5);
+    int8x8_t d2 = vmovn_s16(q6);
+    vst1_s8(y, d1);
+    vst1_s8(y + 8, d2);
+    x += 16;
+    y += 16;
+  }
+  size = remain;
+#endif
+  for (size_t i = 0; i < size; ++i) {
+    y[i] = trunc(x[i] * scale);
   }
 }
 
