@@ -64,6 +64,9 @@ const char *G_OP_TYPE_BILINEAR_INTERP = "bilinear_interp";
 const char *G_OP_TYPE_FLATTEN = "flatten";
 const char *G_OP_TYPE_SHAPE = "shape";
 
+const char *G_OP_TYPE_QUANTIZE = "quantize";
+const char *G_OP_TYPE_DEQUANTIZE = "dequantize";
+
 std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
     op_input_output_key = {
@@ -112,6 +115,9 @@ std::unordered_map<
         {G_OP_TYPE_BILINEAR_INTERP, {{"OutSize", "X"}, {"Out"}}},
         {G_OP_TYPE_FLATTEN, {{"X"}, {"Out"}}},
         {G_OP_TYPE_SHAPE, {{"Input"}, {"Out"}}},
-        {G_OP_TYPE_CONV_TRANSPOSE, {{"Input"}, {"Output"}}}};
+        {G_OP_TYPE_CONV_TRANSPOSE, {{"Input"}, {"Output"}}},
+        {G_OP_TYPE_QUANTIZE, {{"X"}, {"Out", "OutScale"}}},
+        {G_OP_TYPE_DEQUANTIZE, {{"X", "Scale"}, {"Out"}}}
+    };
 
 }  // namespace paddle_mobile
