@@ -20,6 +20,7 @@ limitations under the License. */
 
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
 #include <arm_neon.h>
+
 #ifndef __aarch64__
 float32_t vmaxvq_f32(float32x4_t r) {
   float32x2_t v = vmax_f32(vget_high_f32(r), vget_low_f32(r));
@@ -35,19 +36,21 @@ int32x4_t vrnd_away_zero(float32x4_t r) {
   float32x4_t plus  = vdupq_n_f32(0.5);
   float32x4_t minus = vdupq_n_f32(-0.5);
   float32x4_t zero  = vdupq_n_f32(0);
-  uint32x4_t more_than_zero = vcgtq_f32(r1, zero);
+  uint32x4_t more_than_zero = vcgtq_f32(r, zero);
   float32x4_t temp = vbslq_f32(more_than_zero, plus, minus);
-  temp = vaddq_f32(r1, add);
+  temp = vaddq_f32(r, temp);
   int32x4_t ret = vcvtq_s32_f32(temp);
   return ret;
 }
 
 int32x4_t vrnd_to_even(float32x4_t r) {
   int32x4_t ret;
+  float value[4];
+  vst1q_f32(value, r);
   for (int i = 0; i < 4; ++i) {
-    float v = round(r[i]);
+    float v = round(value[i]);
     int32_t q = (int32_t)v;
-    if (abs(abs(v - r[i]) - 0.5) > 0) {
+    if (abs(abs(v - value[i]) - 0.5) > 0) {
       ret[i] = q;
     } else {
       if (abs(q) % 2 == 0) {
@@ -59,7 +62,6 @@ int32x4_t vrnd_to_even(float32x4_t r) {
   }
   return ret;
 }
-
 #endif
 
 namespace paddle_mobile {
@@ -74,18 +76,18 @@ static float find_abs_max(const Tensor *input) {
   size_t remain = size & 0xF;
   for (size_t i = 0; i < loop; ++i) {
     float32x4_t max;
-    float32x4_t r1 = vld1q_f32(x);
-    float32x4_t r2 = vld1q_f32(x + 4);
-    float32x4_t r3 = vld1q_f32(x + 8);
-    float32x4_t r4 = vld1q_f32(x + 12);
+    float32x4_t r0 = vld1q_f32(x);
+    float32x4_t r1 = vld1q_f32(x + 4);
+    float32x4_t r2 = vld1q_f32(x + 8);
+    float32x4_t r3 = vld1q_f32(x + 12);
+    r0 = vabsq_f32(r0);
     r1 = vabsq_f32(r1);
     r2 = vabsq_f32(r2);
     r3 = vabsq_f32(r3);
-    r4 = vabsq_f32(r4);
-    max[0] = vmaxvq_f32(r1);
-    max[1] = vmaxvq_f32(r2);
-    max[2] = vmaxvq_f32(r3);
-    max[3] = vmaxvq_f32(r4);
+    max[0] = vmaxvq_f32(r0);
+    max[1] = vmaxvq_f32(r1);
+    max[2] = vmaxvq_f32(r2);
+    max[3] = vmaxvq_f32(r3);
     max[0] = vmaxvq_f32(max);
     if (max[0] > max_abs) {
       max_abs = max[0];
@@ -131,10 +133,10 @@ static void quantize_round_to_even(const Tensor *input,
     int16x4_t d3 = vmovn_s32(q3);
     int16x8_t q5 = vcombine_s16(d1, d0);
     int16x8_t q6 = vcombine_s16(d3, d2);
-    int8x8_t d1 = vmovn_s16(q5);
-    int8x8_t d2 = vmovn_s16(q6);
-    vst1_s8(y, d1);
-    vst1_s8(y + 8, d2);
+    int8x8_t d5 = vmovn_s16(q5);
+    int8x8_t d6 = vmovn_s16(q6);
+    vst1_s8(y, d5);
+    vst1_s8(y + 8, d6);
     x += 16;
     y += 16;
   }
@@ -142,14 +144,15 @@ static void quantize_round_to_even(const Tensor *input,
 #endif
   for (size_t i = 0; i < size; ++i) {
     float value = x[i] * scale;
-    long long quant = llround(value);
-    if (abs(abs(round(value) - value) - 0.5) > 0) {
-      y[i] = quant;
+    float v = round(value);
+    int32_t q = (int32_t)v;
+    if (abs(abs(q - value) - 0.5) > 0) {
+      y[i] = q;
     } else {
-      if (abs(quant) % 2 == 0) {
-        y[i] = quant;
+      if (abs(q) % 2 == 0) {
+        y[i] = q;
       } else {
-        y[i] = quant + (quant > 0) ? -1 : 1;
+        y[i] = q + (q > 0) ? -1 : 1;
       }
     }
   }
@@ -183,10 +186,10 @@ static void quantize_round_to_zero(const Tensor *input,
     int16x4_t d3 = vmovn_s32(q3);
     int16x8_t q5 = vcombine_s16(d1, d0);
     int16x8_t q6 = vcombine_s16(d3, d2);
-    int8x8_t d1 = vmovn_s16(q5);
-    int8x8_t d2 = vmovn_s16(q6);
-    vst1_s8(y, d1);
-    vst1_s8(y + 8, d2);
+    int8x8_t d5 = vmovn_s16(q5);
+    int8x8_t d6 = vmovn_s16(q6);
+    vst1_s8(y, d5);
+    vst1_s8(y + 8, d6);
     x += 16;
     y += 16;
   }
@@ -225,10 +228,10 @@ static void quantize_round_to_nearest(const Tensor *input,
     int16x4_t d3 = vmovn_s32(q3);
     int16x8_t q5 = vcombine_s16(d1, d0);
     int16x8_t q6 = vcombine_s16(d3, d2);
-    int8x8_t d1 = vmovn_s16(q5);
-    int8x8_t d2 = vmovn_s16(q6);
-    vst1_s8(y, d1);
-    vst1_s8(y + 8, d2);
+    int8x8_t d5 = vmovn_s16(q5);
+    int8x8_t d6 = vmovn_s16(q6);
+    vst1_s8(y, d5);
+    vst1_s8(y + 8, d6);
     x += 16;
     y += 16;
   }
