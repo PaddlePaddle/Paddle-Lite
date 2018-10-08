@@ -38,7 +38,7 @@ class CLImage {
     size_t W = tensorDims_[3];
     size_t width = W * ((C + 3) / 4);
     size_t height = H * N;
-    std::unique_ptr<half_t[]> imageData();
+    std::unique_ptr<half_t[]> imageData{};
     if (tensorInput != nullptr) {
       imageData.reset(new half_t[width * height * 4]);
       float *p = tensorInput;
@@ -76,7 +76,7 @@ class CLImage {
   }
 
   void Init(cl_context context, DDim ddim) {
-    Init(cl_context context, nullptr, DDim ddim);
+    Init(context, nullptr, ddim);
   }
 
   inline CLImage &Resize(const DDim &dims) {
