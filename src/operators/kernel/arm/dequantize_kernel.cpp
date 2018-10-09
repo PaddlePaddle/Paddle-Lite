@@ -23,16 +23,16 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-template<>
+template <>
 bool DequantizeKernel<CPU, float>::Init(DequantizeParam<CPU> *param) {
   return true;
 }
 
-template<>
+template <>
 void DequantizeKernel<CPU, float>::Compute(
     const DequantizeParam<CPU> &param) const {
   const Tensor *input = param.input_;
-  Tensor *output = param.out_; 
+  Tensor *output = param.out_;
   float activation_scale = param.activation_scale_->data<float>()[0];
   float weight_scale = param.weight_scale_;
   const int32_t *x = input->data<const int32_t>();
@@ -70,7 +70,7 @@ void DequantizeKernel<CPU, float>::Compute(
   }
 }
 
-}  // namespace paddle_mobile
 }  // namespace operators
+}  // namespace paddle_mobile
 
 #endif

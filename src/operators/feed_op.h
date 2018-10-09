@@ -44,7 +44,7 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
   }
 
   void RunImpl() const {
-    auto input = (Tensor *)const_cast<LoDTensor *>(param_.InputX());
+    auto input = reinterpret_cast<Tensor *>(param_.InputX());
     fpga::format_image(input);
     auto input_ptr = input->data<float>();
     Tensor *output = param_.Out();
@@ -53,7 +53,7 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
     fpga::BypassArgs args;
     args.convert_type = fpga::DATA_FP32_TO_FP16;
     args.layout_type = fpga::LAYOUT_NO_CONVERT;
-    args.image.address = (void *)input_ptr;
+    args.image.address = input_ptr;
     args.image.channels = input->dims()[1];
     args.image.height = input->dims()[2];
     args.image.width = input->dims()[3];
@@ -78,4 +78,3 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
