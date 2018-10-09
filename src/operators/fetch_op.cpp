@@ -12,10 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "fetch_op.h"
-namespace paddle_mobile {
-namespace operators {}
-}  // namespace paddle_mobile
+#include "operators/fetch_op.h"
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
@@ -27,4 +24,3 @@ REGISTER_OPERATOR_MALI_GPU(fetch, ops::FetchOp);
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(fetch, ops::FetchOp);
 #endif
-

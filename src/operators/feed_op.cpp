@@ -12,8 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "feed_op.h"
-
+#include "operators/feed_op.h"
 
 namespace ops = paddle_mobile::operators;
 
@@ -26,4 +25,3 @@ REGISTER_OPERATOR_MALI_GPU(feed, ops::FeedOp);
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(feed, ops::FeedOp);
 #endif
-

@@ -46,4 +46,3 @@ class FetchOp : public framework::OperatorBase<DeviceType> {
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
