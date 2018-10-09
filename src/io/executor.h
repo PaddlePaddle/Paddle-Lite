@@ -14,16 +14,16 @@ limitations under the License. */
 
 #pragma once
 
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
 #include "common/types.h"
 #include "common/util.h"
 #include "framework/lod_tensor.h"
 #include "framework/operator.h"
 #include "framework/program/program.h"
 #include "framework/tensor.h"
-#include <memory>
-#include <string>
-#include <vector>
-#include <map>
 
 namespace paddle_mobile {
 
@@ -36,8 +36,7 @@ class Executor {
   // @param use_optimize bool whether use operator fusion to speed up or not
   // @param loddable bool
   Executor(const framework::Program<Dtype> program,
-           const bool use_optimize = true,
-	   const bool loddable = false);
+           const bool use_optimize = true, const bool loddable = false);
 
   // predict with tensor input
   // @param t input tensor to do prediction
@@ -68,8 +67,8 @@ class Executor {
                       framework::LoDTensor *tensor) const;
   void InitMemory();
   void InitCombineMemory();
-  void LoadMemory(void** data,
-		  const std::shared_ptr<framework::VarDesc> var_desc,
+  void LoadMemory(void **data,
+                  const std::shared_ptr<framework::VarDesc> var_desc,
                   framework::LoDTensor *tensor);
 
   framework::Program<Dtype> program_;
