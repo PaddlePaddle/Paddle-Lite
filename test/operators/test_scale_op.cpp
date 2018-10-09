@@ -12,24 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef SIGMOID_OP
+#include "../test_include.h"
+#include "operators/scale_op.h"
 
-#include "operators/sigmoid_op.h"
-
-namespace paddle_mobile {
-namespace operators {
-
-template <typename DeviceType, typename T>
-void SigmoidOp<DeviceType, T>::InferShape() const {
-  this->param_.Out()->Resize(this->param_.InputX()->dims());
-}
-
-}  // namespace operators
-}  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(sigmoid, ops::SigmoidOp);
-#endif
-
-#endif
+int main() {}

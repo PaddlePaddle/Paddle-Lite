@@ -17,23 +17,24 @@ limitations under the License. */
 #include "../test_include.h"
 
 int main() {
-#ifdef PADDLE_MOBILE_FPGA
-  paddle_mobile::PaddleMobile<paddle_mobile::FPGA> paddle_mobile;
-#endif
-
-#ifdef PADDLE_MOBILE_CPU
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
-#endif
-
   paddle_mobile.SetThreadNum(4);
-  bool optimize = true;
   auto time1 = time();
-  if (paddle_mobile.Load(g_googlenet, optimize)) {
+  if (paddle_mobile.Load(std::string(g_mobilenet_combined) + "/model",
+                         std::string(g_mobilenet_combined) + "/params", true)) {
     auto time2 = time();
-    std::cout << "load cost :" << time_diff(time1, time2) << "ms" << std::endl;
+    std::cout << "load cost :" << time_diff(time1, time1) << "ms" << std::endl;
+
     std::vector<float> input;
     std::vector<int64_t> dims{1, 3, 224, 224};
-    GetInput<float>(g_test_image_1x3x224x224, &input, dims);
+    GetInput<float>(g_test_image_1x3x224x224_banana, &input, dims);
+
+    auto vec_result = paddle_mobile.Predict(input, dims);
+    std::vector<float>::iterator biggest =
+        std::max_element(std::begin(vec_result), std::end(vec_result));
+    std::cout << " Max element is " << *biggest << " at position "
+              << std::distance(std::begin(vec_result), biggest) << std::endl;
+
     // 预热十次
     for (int i = 0; i < 10; ++i) {
       auto vec_result = paddle_mobile.Predict(input, dims);
@@ -43,9 +44,11 @@ int main() {
       auto vec_result = paddle_mobile.Predict(input, dims);
     }
     auto time4 = time();
-
     std::cout << "predict cost :" << time_diff(time3, time4) / 10 << "ms"
               << std::endl;
   }
+  std::cout
+      << "如果结果Nan请查看: test/images/test_image_1x3x224x224_float 是否存在?"
+      << std::endl;
   return 0;
 }
