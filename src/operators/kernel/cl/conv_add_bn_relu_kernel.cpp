@@ -12,4 +12,27 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "conv_kernel.inc.cl"
+#ifdef FUSION_CONVADDBNRELU_OP
+
+#include "operators/kernel/conv_add_bn_relu_kernel.h"
+#include "operators/kernel/central-arm-func/conv_add_bn_relu_arm_func.h"
+
+namespace paddle_mobile {
+namespace operators {
+
+template <>
+bool ConvAddBNReluKernel<GPU_CL, float>::Init(
+        FusionConvAddBNReluParam<GPU_CL> *param) {
+  return true;
+}
+
+template <>
+void ConvAddBNReluKernel<GPU_CL, float>::Compute(
+        const FusionConvAddBNReluParam<GPU_CL> &param) {
+}
+template class ConvAddBNReluKernel<GPU_CL, float>;
+
+}  // namespace operators
+}  // namespace paddle_mobile
+
+#endif
