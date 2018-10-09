@@ -17,13 +17,13 @@ limitations under the License. */
 #pragma once
 
 #include <string>
-
 #include "framework/operator.h"
 #include "operators/kernel/sigmoid_kernel.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
+
 template <typename DeviceType, typename T>
 class SigmoidOp : public framework::OperatorWithKernel<
                       DeviceType, SigmoidParam<DeviceType>,
@@ -43,6 +43,7 @@ class SigmoidOp : public framework::OperatorWithKernel<
 
   void InferShape() const override;
 };
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
