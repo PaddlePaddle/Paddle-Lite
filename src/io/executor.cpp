@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "io/executor.h"
-#include <operators/math/gemm.h>
 #include <algorithm>
+#include <utility>
 #include <vector>
 #include "common/enforce.h"
 #include "common/log.h"
@@ -26,7 +26,7 @@ limitations under the License. */
 #include "framework/program/var_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
-
+#include "operators/math/gemm.h"
 
 namespace paddle_mobile {
 
@@ -34,9 +34,8 @@ using framework::Variable;
 
 template <typename Dtype, Precision P>
 Executor<Dtype, P>::Executor(const framework::Program<Dtype> p,
-                             const bool use_optimize,
-			     const bool loddable)
-      : program_(p), use_optimize_(use_optimize), loddable_(loddable) {
+                             const bool use_optimize, const bool loddable)
+    : program_(p), use_optimize_(use_optimize), loddable_(loddable) {
   Variable *variable_ptr = program_.scope->Var("batch_size");
   variable_ptr->SetValue<int>(1);
   to_predict_program_ =
@@ -77,20 +76,20 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p,
   }
 }
 
-template<typename Dtype>
+template <typename Dtype>
 void LoadMemInternal(void **data, framework::LoDTensor *tensor) {
   char **data_buf = reinterpret_cast<char **>(data);
   int64_t size = tensor->numel();
-  Dtype* tensor_data = tensor->mutable_data<Dtype>();
+  Dtype *tensor_data = tensor->mutable_data<Dtype>();
   if (0) {
-    // TODO should be moved into operator init function
+    // TODO(hjchen2) should be moved into operator init function
     float min_value;
     float max_value;
     memcpy(&min_value, data_buf, sizeof(float));
     memcpy(&max_value, data_buf + sizeof(float), sizeof(float));
     data_buf += 2 * sizeof(float);
     const float factor = (max_value - min_value) / 255.0;
-    const uint8_t *uint8_data = reinterpret_cast<uint8_t*>(data_buf);
+    const uint8_t *uint8_data = reinterpret_cast<uint8_t *>(data_buf);
     for (int k = 0; k < size; ++k) {
       tensor_data[k] = uint8_data[k] * factor + min_value;
     }
@@ -103,21 +102,20 @@ void LoadMemInternal(void **data, framework::LoDTensor *tensor) {
 
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::LoadMemory(
-                          void **data,
-                          const std::shared_ptr<framework::VarDesc> var_desc,
-                          framework::LoDTensor *tensor) {
-  char **data_buf = reinterpret_cast<char**>(data);
+    void **data, const std::shared_ptr<framework::VarDesc> var_desc,
+    framework::LoDTensor *tensor) {
+  char **data_buf = reinterpret_cast<char **>(data);
   // version
-  uint32_t version = *(reinterpret_cast<uint32_t*>(*data_buf));
+  uint32_t version = *(reinterpret_cast<uint32_t *>(*data_buf));
   *data_buf += sizeof(uint32_t);
   // lod information
-  uint64_t lod_level = *(reinterpret_cast<uint64_t*>(*data_buf));
+  uint64_t lod_level = *(reinterpret_cast<uint64_t *>(*data_buf));
   *data_buf += sizeof(uint64_t);
 
   auto *lod = tensor->mutable_lod();
   lod->resize(lod_level);
   for (uint64_t i = 0; i < lod_level; ++i) {
-    uint64_t size = *(reinterpret_cast<uint64_t*>(*data_buf));
+    uint64_t size = *(reinterpret_cast<uint64_t *>(*data_buf));
     *data_buf += sizeof(uint64_t);
     std::vector<size_t> tmp_dim(size / sizeof(size_t));
     memcpy(tmp_dim.data(), *data_buf, size);
@@ -125,10 +123,10 @@ void Executor<Dtype, P>::LoadMemory(
     *data_buf += size;
   }
   // tensor version
-  uint32_t tensor_version = *(reinterpret_cast<uint32_t*>(*data_buf));
+  uint32_t tensor_version = *(reinterpret_cast<uint32_t *>(*data_buf));
   *data_buf += sizeof(uint32_t);
   // tensor desc size
-  int32_t tensor_desc_size = *(reinterpret_cast<int32_t*>(*data_buf));
+  int32_t tensor_desc_size = *(reinterpret_cast<int32_t *>(*data_buf));
   *data_buf += sizeof(int32_t);
   // skip tensor desc
   *data_buf += tensor_desc_size;
@@ -138,13 +136,13 @@ void Executor<Dtype, P>::LoadMemory(
   // parse tensor from stream
   switch (tensor_desc.DataType()) {
     case framework::VARTYPE_TYPE_FP32:
-      LoadMemInternal<float>((void**)data_buf, tensor);
+      LoadMemInternal<float>(reinterpret_cast<void **>(data_buf), tensor);
       break;
     case framework::VARTYPE_TYPE_INT8:
-      LoadMemInternal<int8_t>((void**)data_buf, tensor);
+      LoadMemInternal<int8_t>(reinterpret_cast<void **>(data_buf), tensor);
       break;
     case framework::VARTYPE_TYPE_INT32:
-      LoadMemInternal<int>((void**)data_buf, tensor);
+      LoadMemInternal<int>(reinterpret_cast<void **>(data_buf), tensor);
       break;
     default:
       LOG(kLOG_ERROR) << "data type is not supported";
@@ -164,8 +162,8 @@ void Executor<Dtype, P>::InitMemory() {
         char *origin_data =
             ReadFileToBuff(program_.model_path + "/" + var_desc->Name());
         char *data = origin_data;
-        LoadMemory((void**)&data, var_desc, tensor);
-        delete [] origin_data;
+        LoadMemory(reinterpret_cast<void **>(&data), var_desc, tensor);
+        delete[] origin_data;
       } else {
         if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
           varInputMemory(var_desc, var, tensor);
@@ -180,7 +178,8 @@ void Executor<Dtype, P>::InitCombineMemory() {
   char *origin_data = nullptr;
   bool self_alloc = false;
   if (program_.combined_params_buf && program_.combined_params_len) {
-    origin_data = (char *)program_.combined_params_buf;
+    origin_data = reinterpret_cast<char *>(
+        const_cast<uint8_t *>(program_.combined_params_buf));
   } else {
     self_alloc = true;
     origin_data = ReadFileToBuff(program_.para_path);
@@ -195,7 +194,7 @@ void Executor<Dtype, P>::InitCombineMemory() {
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
           continue;
         }
-        LoadMemory((void**)&data, var_desc, tensor);
+        LoadMemory(reinterpret_cast<void **>(&data), var_desc, tensor);
       } else {
         if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
           varInputMemory(var_desc, var, tensor);
@@ -204,7 +203,7 @@ void Executor<Dtype, P>::InitCombineMemory() {
     }
   }
   if (self_alloc) {
-    delete [] origin_data;
+    delete[] origin_data;
   }
   LOG(kLOG_INFO) << "init combine memory finish";
 }
@@ -231,9 +230,9 @@ bool Executor<Dtype, P>::varInputMemory(
       break;
   }
   bool is_mute_match = (type == framework::VARTYPE_TYPE_FP32) ||
-	               (type == framework::VARTYPE_TYPE_INT8) ||
-		       (type == framework::VARTYPE_TYPE_INT32) ||
-		       (type == framework::VARTYPE_TYPE_INT64);
+                       (type == framework::VARTYPE_TYPE_INT8) ||
+                       (type == framework::VARTYPE_TYPE_INT32) ||
+                       (type == framework::VARTYPE_TYPE_INT64);
   PADDLE_MOBILE_ENFORCE(is_mute_match, "got unhandled data type : %d", type);
   return is_mute_match;
 }
@@ -402,12 +401,12 @@ void Executor<Dtype, P>::InjectVariable(const framework::Tensor &t,
       g_feed_value->GetMutable<framework::LoDTensor>();
   feed_tensor->Resize(t.dims());
   feed_tensor->ShareDataWith(t);
-};
+}
 
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::FeedData(const framework::Tensor &t) {
   InjectVariable(t, "feed");
-};
+}
 
 template <typename Dtype, Precision P>
 std::shared_ptr<framework::Tensor> Executor<Dtype, P>::FetchResult(int id) {
@@ -423,14 +422,14 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::FetchResult(int id) {
   auto *output_tensor = framework::GetVarValue<framework::LoDTensor>(
       out_keys[0], output_map, *(program_.scope));
   return std::make_shared<framework::Tensor>(framework::Tensor(*output_tensor));
-};
+}
 
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::Predict_From_To(int start, int end) {
   std::shared_ptr<framework::BlockDesc> to_predict_block =
       to_predict_program_->Block(0);
   auto &ops = ops_of_block_[*to_predict_block.get()];
-  end = end < 0 ? (int)ops.size() : end;
+  end = end < 0 ? static_cast<int>(ops.size()) : end;
   PADDLE_MOBILE_ENFORCE(start >= 0 && start < end && end <= ops.size(),
                         "start or end parameter is wrong");
 
@@ -451,17 +450,17 @@ void Executor<Dtype, P>::Predict_From_To(int start, int end) {
     profile[i].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
 #endif
   }
-};
+}
 
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::Predict_From(int start) {
   Predict_From_To(start);
-};
+}
 
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::Predict_To(int end) {
   Predict_From_To(0, end);
-};
+}
 #endif
 
 template class Executor<CPU, Precision::FP32>;

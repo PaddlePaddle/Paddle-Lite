@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "operators/quantize_op.h"
+#include <vector>
 
 namespace paddle_mobile {
 namespace operators {
@@ -32,4 +33,3 @@ namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(quantize, ops::QuantizeOp);
 #endif
-
