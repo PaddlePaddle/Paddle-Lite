@@ -76,7 +76,7 @@ if (GPU_CL)
     # opencl version
     add_definitions(-DCL_TARGET_OPENCL_VERSION=220)
 
-    link_libraries(/Users/liuruilong/GitHub/paddle-mobile/third_party/opencl/libOpenCL.so)
+    link_libraries(${CMAKE_CURRENT_LIST_DIR}/third_party/opencl/libOpenCL.so)
     include_directories(third_party/opencl/OpenCL-Headers)
 else()
     file(GLOB_RECURSE _tmp_list src/framework/cl/*.cpp src/operators/kernel/cl/*.cpp)
