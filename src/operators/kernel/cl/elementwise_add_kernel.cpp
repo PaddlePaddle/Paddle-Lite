@@ -12,21 +12,27 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "feed_op.h"
+#ifdef ELEMENTWISEADD_OP
+
+#include "operators/kernel/elementwise_add_kernel.h"
+
 namespace paddle_mobile {
-namespace operators {}
+    namespace operators {
+
+        template <>
+        bool ElementwiseAddKernel<GPU_CL, float>::Init(ElementwiseAddParam<GPU_CL> *param) {
+            this->cl_helper_.AddKernel("elementwise_add", "elementwise_add_kernel.cl");
+            return true;
+        }
+
+        template <>
+        void ElementwiseAddKernel<GPU_CL, float>::Compute(const ElementwiseAddParam<GPU_CL> &param) {
+
+        }
+
+        template class ElementwiseAddKernel<GPU_CL, float>;
+
+    }  // namespace operators
 }  // namespace paddle_mobile
 
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(feed, ops::FeedOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-REGISTER_OPERATOR_MALI_GPU(feed, ops::FeedOp);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(feed, ops::FeedOp);
-#endif
-#ifdef PADDLE_MOBILE_CL
-REGISTER_OPERATOR_CL(feed, ops::FeedOp);
 #endif

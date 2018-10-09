@@ -164,4 +164,6 @@ template class PaddleMobile<FPGA, Precision::FP32>;
 
 template class PaddleMobile<GPU_MALI, Precision::FP32>;
 
+template class PaddleMobile<GPU_CL, Precision::FP32>;
+
 }  // namespace paddle_mobile

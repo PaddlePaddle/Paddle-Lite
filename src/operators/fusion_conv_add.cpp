@@ -58,4 +58,8 @@ REGISTER_OPERATOR_MALI_GPU(fusion_conv_add, ops::FusionConvAddOp);
 #ifdef PADDLE_MOBILE_FPGA
 #endif
 
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(fusion_conv_add, ops::FusionConvAddOp);
+#endif
+
 #endif

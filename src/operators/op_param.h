@@ -901,7 +901,7 @@ class FeedParam : public OpParam {
  public:
   FeedParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
             const AttributeMap &attrs, Scope *scope) {
-    input_x_ = InputXFrom<GType>(inputs, *scope);
+    input_x_ = InputXFrom<LoDTensor>(inputs, *scope);
     out_ = OutFrom<GType>(outputs, *scope);
     auto var = scope->Var("batch_size");
     batch_size = var->GetValue<int>();
@@ -911,7 +911,7 @@ class FeedParam : public OpParam {
   const int BatchSize() const { return batch_size; }
 
  private:
-  GType *input_x_;
+  LoDTensor *input_x_;
   GType *out_;
   int batch_size;
 };

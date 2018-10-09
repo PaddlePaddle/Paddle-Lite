@@ -253,6 +253,10 @@ else ()
     ADD_EXECUTABLE(test-fssd  net/test_mobilenet_025_fssd.cpp test_helper.h  test_include.h)
     target_link_libraries(test-fssd paddle-mobile)
 
+    # gen test
+    ADD_EXECUTABLE(test-mobilenetgpu  net/test_mobilenet_GPU.cpp test_helper.h  test_include.h)
+    target_link_libraries(test-mobilenetgpu paddle-mobile)
+
 
     #add_library(test-lib-size SHARED common/test_lib_size.h common/test_lib_size.cpp)
 

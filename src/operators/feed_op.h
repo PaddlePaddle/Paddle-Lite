@@ -43,7 +43,7 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
 
 #ifdef PADDLE_MOBILE_FPGA
 
-  void Init() {
+    void Init() {
     Tensor *output = param_.Out();
     fpga::format_fp16_ofm(output);
   }
@@ -73,11 +73,19 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
   }
 
 #else
-  void Init() {}
+#ifdef PADDLE_MOBILE_CL
+    void Init() {}
+    void RunImpl() {
+
+
+    }
+#else
+    void Init() {}
   void RunImpl() {
     param_.Out()->ShareDataWith(*param_.InputX());
     param_.Out()->set_lod(param_.InputX()->lod());
   }
+#endif
 #endif
 
  protected:
@@ -95,4 +103,7 @@ USE_OP_MALI_GPU(feed);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 USE_OP_FPGA(feed);
+#endif
+#ifdef PADDLE_MOBILE_CL
+USE_OP_CL(feed);
 #endif

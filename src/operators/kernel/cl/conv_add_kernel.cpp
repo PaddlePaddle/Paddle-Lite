@@ -15,7 +15,6 @@ limitations under the License. */
 #ifdef FUSION_CONVADD_OP
 
 #include "operators/kernel/conv_add_kernel.h"
-#include "../central-arm-func/conv_add_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
