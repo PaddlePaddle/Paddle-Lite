@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.0)
 option(USE_OPENMP "openmp support" OFF)
 
 project(paddle-mobile)
@@ -30,6 +30,7 @@ else()
     set(CMAKE_BUILD_TYPE Release)
     set(CMAKE_CXX_FLAGS "-Os ${CMAKE_CXX_FLAGS}")
     set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG")
+    add_definitions(-fvisibility=hidden -fvisibility-inlines-hidden)
 endif()
 
 if(USE_EXCEPTION)

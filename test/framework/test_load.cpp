@@ -21,6 +21,7 @@ int main() {
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
   //  ../../../test/models/googlenet
   //  ../../../test/models/mobilenet
+
   //  auto program = loader.Load(g_googlenet, true);
   //  auto program = loader.Load(g_mobilenet_ssd, true);
 

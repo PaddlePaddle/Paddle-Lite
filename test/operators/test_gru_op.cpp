@@ -12,24 +12,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef SIGMOID_OP
+#include "../test_include.h"
+#include "operators/gru_op.h"
 
-#include "operators/sigmoid_op.h"
+int main() {
+  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  auto program = loader.Load(g_nlp);
+  PADDLE_MOBILE_ENFORCE(program.originProgram != nullptr,
+                        "program file read fail");
 
-namespace paddle_mobile {
-namespace operators {
+  Executor4Test<paddle_mobile::CPU,
+                paddle_mobile::operators::GruOp<paddle_mobile::CPU, float>>
+      executor(program, "gru");
 
-template <typename DeviceType, typename T>
-void SigmoidOp<DeviceType, T>::InferShape() const {
-  this->param_.Out()->Resize(this->param_.InputX()->dims());
+  return 0;
 }
-
-}  // namespace operators
-}  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(sigmoid, ops::SigmoidOp);
-#endif
-
-#endif

@@ -47,7 +47,7 @@ bool ConcatKernel<FPGA, float>::Init(ConcatParam<FPGA> *param) {
   concatArgs.image_num = (uint32_t)image_num;
   concatArgs.images_in = images_in;
   concatArgs.scales_in = scales_in;
-  concatArgs.image_out = (half *)out->mutable_data<float>();
+  concatArgs.image_out = (half *)out->data<float>();
   concatArgs.scale_out = out->scale;
   concatArgs.channel_num = channel_num;
   concatArgs.height = (uint32_t)height;
