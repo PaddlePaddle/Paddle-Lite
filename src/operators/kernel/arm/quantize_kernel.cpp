@@ -44,6 +44,7 @@ int32x4_t vrnd_away_zero(float32x4_t r) {
 }
 
 int32x4_t vrnd_to_even(float32x4_t r) {
+#if 0
   int32x4_t ret;
   float value[4];
   vst1q_f32(value, r);
@@ -61,6 +62,30 @@ int32x4_t vrnd_to_even(float32x4_t r) {
     }
   }
   return ret;
+#else 
+  float32x4_t point5 = vdupq_n_f32(0.5);
+  int32x4_t one = vdupq_n_s32(1);
+  int32x4_t zero = vdupq_n_s32(0);
+
+  int32x4_t rnd = vrnd_away_zero(r);
+  float32x4_t frnd = vcvtq_f32_s32(rnd);
+  frnd = vsubq_f32(frnd, r);
+  frnd = vabsq_f32(frnd);
+  uint32x4_t equal_point5 = vceqq_f32(frnd, point5);
+  int32x4_t abs_rnd = vabsq_s32(rnd);
+  abs_rnd = vandq_s32(abs_rnd, one);
+  uint32x4_t not_mod2 = vreinterpretq_u32_s32(abs_rnd);
+  uint32x4_t mask = vandq_u32(equal_point5, not_mod2);
+  uint32x4_t more_than_zero = vcgtq_s32(rnd, zero);
+  more_than_zero = vandq_u32(more_than_zero, vreinterpretq_u32_s32(one));
+  mask = veorq_u32(more_than_zero, mask);
+  more_than_zero = veorq_u32(more_than_zero, vreinterpretq_u32_s32(one));
+  mask = vaddq_u32(more_than_zero, mask);
+  int32x4_t smask = vreinterpretq_s32_u32(mask);
+  smask = vsubq_s32(smask, one);
+  rnd = vaddq_s32(rnd, smask); 
+  return rnd;
+ #endif
 }
 #endif
 
