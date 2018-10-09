@@ -12,34 +12,23 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "fetch_op.h"
+#pragma once
+
+#include "framework/operator.h"
+#include "operators/op_param.h"
+
 namespace paddle_mobile {
 namespace operators {
 
-template <typename DeviceType, typename T>
-void FetchOp<DeviceType, T>::InferShape() const {
-  auto x_dims = this->param_.InputX()->dims();
-  this->param_.Out()->Resize(x_dims);
-}
+using namespace framework;
 
 template <typename DeviceType, typename T>
-void FetchOp<DeviceType, T>::RunImpl() {
-#ifdef PADDLE_MOBILE_CL
-  this->kernel_.Compute(this->param_);
-#else
-  this->param_.Out()->ShareDataWith(*(this->param_.InputX()));
-#endif
-}
+class FetchKernel
+    : public framework::OpKernelBase<DeviceType, FetchParam<DeviceType>> {
+ public:
+  void Compute(const FetchParam<DeviceType> &param);
+  bool Init(FetchParam<DeviceType> *param);
+};
+
 }  // namespace operators
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(fetch, ops::FetchOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-REGISTER_OPERATOR_MALI_GPU(fetch, ops::FetchOp);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(fetch, ops::FetchOp);
-#endif
