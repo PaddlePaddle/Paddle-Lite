@@ -46,7 +46,7 @@ repos:
         entry: bash ./tools/pre-commit.hooks/cpplint.hook
         language: system
         files: (test/|src/).*\.(c|cc|cxx|cpp|h|hpp|hxx)$
-        exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$i | *\.pb\.cpp
+        exclude: (?!.*third_party)^.*$ | (?!.*book)^.*$i | *\.pb\.cpp | third_party/*
 
 
 #

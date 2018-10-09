@@ -28,14 +28,12 @@ float32_t vmaxvq_f32(float32x4_t r) {
 }
 #endif
 
-int32x4_t vrnd_towards_zero(float32x4_t r) {
-  return vcvtq_s32_f32(r);
-}
+int32x4_t vrnd_towards_zero(float32x4_t r) { return vcvtq_s32_f32(r); }
 
 int32x4_t vrnd_away_zero(float32x4_t r) {
-  float32x4_t plus  = vdupq_n_f32(0.5);
+  float32x4_t plus = vdupq_n_f32(0.5);
   float32x4_t minus = vdupq_n_f32(-0.5);
-  float32x4_t zero  = vdupq_n_f32(0);
+  float32x4_t zero = vdupq_n_f32(0);
   uint32x4_t more_than_zero = vcgtq_f32(r, zero);
   float32x4_t temp = vbslq_f32(more_than_zero, plus, minus);
   temp = vaddq_f32(r, temp);
@@ -62,7 +60,7 @@ int32x4_t vrnd_to_even(float32x4_t r) {
     }
   }
   return ret;
-#else 
+#else
   float32x4_t point5 = vdupq_n_f32(0.5);
   int32x4_t one = vdupq_n_s32(1);
   int32x4_t zero = vdupq_n_s32(0);
@@ -83,9 +81,9 @@ int32x4_t vrnd_to_even(float32x4_t r) {
   mask = vaddq_u32(more_than_zero, mask);
   int32x4_t smask = vreinterpretq_s32_u32(mask);
   smask = vsubq_s32(smask, one);
-  rnd = vaddq_s32(rnd, smask); 
+  rnd = vaddq_s32(rnd, smask);
   return rnd;
- #endif
+#endif
 }
 #endif
 
@@ -93,7 +91,7 @@ namespace paddle_mobile {
 namespace operators {
 
 static float find_abs_max(const Tensor *input) {
-  float max_abs = float(0);
+  float max_abs = 0.f;
   const float *x = input->data<const float>();
   size_t size = input->numel();
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
@@ -130,8 +128,7 @@ static float find_abs_max(const Tensor *input) {
   return max_abs;
 }
 
-static void quantize_round_to_even(const Tensor *input,
-                                   const float scale,
+static void quantize_round_to_even(const Tensor *input, const float scale,
                                    Tensor *output) {
   const float *x = input->data<const float>();
   int8_t *y = output->data<int8_t>();
@@ -183,9 +180,8 @@ static void quantize_round_to_even(const Tensor *input,
   }
 }
 
-static void quantize_round_to_zero(const Tensor *input,
-                            const float scale,
-                            Tensor *output) {
+static void quantize_round_to_zero(const Tensor *input, const float scale,
+                                   Tensor *output) {
   const float *x = input->data<const float>();
   int8_t *y = output->data<int8_t>();
   size_t size = input->numel();
@@ -225,9 +221,8 @@ static void quantize_round_to_zero(const Tensor *input,
   }
 }
 
-static void quantize_round_to_nearest(const Tensor *input,
-                               const float scale,
-                               Tensor *output) {
+static void quantize_round_to_nearest(const Tensor *input, const float scale,
+                                      Tensor *output) {
   const float *x = input->data<const float>();
   int8_t *y = output->data<int8_t>();
   size_t size = input->numel();
@@ -267,15 +262,14 @@ static void quantize_round_to_nearest(const Tensor *input,
   }
 }
 
-template<>
+template <>
 bool QuantizeKernel<CPU, float>::Init(QuantizeParam<CPU> *param) {
   return true;
 }
 
-template<>
+template <>
 void QuantizeKernel<CPU, float>::Compute(
     const QuantizeParam<CPU> &param) const {
-  // TODO
   float max_abs = 0.f;
   const Tensor *input = param.input_;
   Tensor *output = param.out_;
@@ -306,7 +300,7 @@ void QuantizeKernel<CPU, float>::Compute(
   }
 }
 
-}  // namespace paddle_mobile
 }  // namespace operators
+}  // namespace paddle_mobile
 
 #endif
