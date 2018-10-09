@@ -58,8 +58,5 @@ REGISTER_OPERATOR_CPU(fusion_conv_add, ops::FusionConvAddOp);
 #ifdef PADDLE_MOBILE_MALI_GPU
 REGISTER_OPERATOR_MALI_GPU(fusion_conv_add, ops::FusionConvAddOp);
 #endif
-#ifdef PADDLE_MOBILE_X86
-REGISTER_OPERATOR_X86(fusion_conv_add, ops::FusionConvAddOp);
-#endif
 
 #endif

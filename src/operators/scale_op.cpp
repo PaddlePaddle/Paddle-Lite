@@ -35,8 +35,5 @@ REGISTER_OPERATOR_CPU(scale, ops::ScaleOp);
 #ifdef PADDLE_MOBILE_MALI_GPU
 REGISTER_OPERATOR_MALI_GPU(scale, ops::ScaleOp);
 #endif
-#ifdef PADDLE_MOBILE_X86
-REGISTER_OPERATOR_X86(scale, ops::ScaleOp);
-#endif
 
 #endif

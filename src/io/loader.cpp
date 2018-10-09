@@ -197,6 +197,5 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::LoadCombinedMemory(
 template class Loader<CPU, Precision::FP32>;
 template class Loader<FPGA, Precision::FP32>;
 template class Loader<GPU_MALI, Precision::FP32>;
-template class Loader<X86, Precision::FP32>;
 
 }  // namespace paddle_mobile

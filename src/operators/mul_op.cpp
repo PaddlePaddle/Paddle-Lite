@@ -55,13 +55,11 @@ void MulOp<Dtype, T>::InferShape() const {
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-#if defined(PADDLE_MOBILE_CPU)
+#ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(mul, ops::MulOp);
-#elif defined(PADDLE_MOBILE_MALI_GPU)
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
 REGISTER_OPERATOR_MALI_GPU(mul, ops::MulOp);
-#elif defined(PADDLE_MOBILE_FPGA)
-#else
-REGISTER_OPERATOR_X86(mul, ops::MulOp);
 #endif
 
 #endif

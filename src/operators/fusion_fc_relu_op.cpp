@@ -66,8 +66,5 @@ REGISTER_OPERATOR_MALI_GPU(fusion_fc_relu, ops::FusionFcReluOp);
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(fusion_fc_relu, ops::FusionFcReluOp);
 #endif
-#ifdef PADDLE_MOBILE_X86
-REGISTER_OPERATOR_X86(fusion_fc_relu, ops::FusionFcReluOp);
-#endif
 
 #endif
