@@ -12,34 +12,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "fetch_op.h"
+#ifdef BATCHNORM_OP
+
+#include "operators/kernel/batchnorm_kernel.h"
+
 namespace paddle_mobile {
 namespace operators {
 
-template <typename DeviceType, typename T>
-void FetchOp<DeviceType, T>::InferShape() const {
-  auto x_dims = this->param_.InputX()->dims();
-  this->param_.Out()->Resize(x_dims);
+template <>
+bool BatchNormKernel<GPU_CL, float>::Init(BatchNormParam<GPU_CL> *param) {
+  return true;
 }
 
-template <typename DeviceType, typename T>
-void FetchOp<DeviceType, T>::RunImpl() {
-#ifdef PADDLE_MOBILE_CL
-  this->kernel_.Compute(this->param_);
-#else
-  this->param_.Out()->ShareDataWith(*(this->param_.InputX()));
-#endif
-}
+template <>
+void BatchNormKernel<GPU_CL, float>::Compute(
+    const BatchNormParam<GPU_CL> &param) {}
+
+template class BatchNormKernel<GPU_CL, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(fetch, ops::FetchOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-REGISTER_OPERATOR_MALI_GPU(fetch, ops::FetchOp);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(fetch, ops::FetchOp);
 #endif
