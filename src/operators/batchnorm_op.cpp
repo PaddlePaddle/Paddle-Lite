@@ -40,5 +40,4 @@ REGISTER_OPERATOR_MALI_GPU(batch_norm, ops::BatchNormOp);
 #ifdef PADDLE_MOBILE_FPGA
 #endif
 
-REGISTER_OPERATOR_X86(batch_norm, ops::BatchNormOp);
 #endif

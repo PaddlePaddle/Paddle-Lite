@@ -42,33 +42,28 @@ Print &operator<<(Print &printer, const ConvParam<CPU> &conv_param) {
 template class ConvParam<CPU>;
 template class ConvParam<FPGA>;
 template class ConvParam<GPU_MALI>;
-template class ConvParam<X86>;
 #endif
 
 template class ElementwiseAddParam<CPU>;
 template class ElementwiseAddParam<FPGA>;
 template class ElementwiseAddParam<GPU_MALI>;
-template class ElementwiseAddParam<X86>;
 
 #ifdef MUL_OP
 template class MulParam<CPU>;
 template class MulParam<FPGA>;
 template class MulParam<GPU_MALI>;
-template class MulParam<X86>;
 #endif
 
 #ifdef CONCAT_OP
 template class ConcatParam<CPU>;
 template class ConcatParam<FPGA>;
 template class ConcatParam<GPU_MALI>;
-template class ConcatParam<X86>;
 #endif
 
 #ifdef LRN_OP
 template class LrnParam<CPU>;
 template class LrnParam<FPGA>;
 template class LrnParam<GPU_MALI>;
-template class LrnParam<X86>;
 #endif
 
 #ifdef FUSION_CONVADD_OP

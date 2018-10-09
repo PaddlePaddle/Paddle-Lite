@@ -27,12 +27,8 @@ void SigmoidOp<DeviceType, T>::InferShape() const {
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-#if defined(PADDLE_MOBILE_CPU)
+#ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(sigmoid, ops::SigmoidOp);
-#elif defined(PADDLE_MOBILE_MALI_GPU)
-#elif defined(PADDLE_MOBILE_FPGA)
-#else
-REGISTER_OPERATOR_X86(sigmoid, ops::SigmoidOp);
 #endif
 
 #endif

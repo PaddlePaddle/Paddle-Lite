@@ -58,14 +58,14 @@ void FusionFcOp<Dtype, T>::InferShape() const {
 
 namespace ops = paddle_mobile::operators;
 
-#if defined(PADDLE_MOBILE_CPU)
+#ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(fusion_fc, ops::FusionFcOp);
-#elif defined(PADDLE_MOBILE_MALI_GPU)
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
 REGISTER_OPERATOR_MALI_GPU(fusion_fc, ops::FusionFcOp);
-#elif defined(PADDLE_MOBILE_FPGA)
+#endif
+#ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(fusion_fc, ops::FusionFcOp);
-#else
-REGISTER_OPERATOR_X86(fusion_fc, ops::FusionFcOp);
 #endif
 
 #endif  // FUSION_FC_OP

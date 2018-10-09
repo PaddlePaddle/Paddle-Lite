@@ -396,6 +396,5 @@ std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::Predict(
 template class Executor<CPU, Precision::FP32>;
 template class Executor<GPU_MALI, Precision::FP32>;
 template class Executor<FPGA, Precision::FP32>;
-template class Executor<X86, Precision::FP32>;
 
 }  // namespace paddle_mobile

@@ -51,13 +51,11 @@ static framework::FusionOpRegistrar fusion_conv_add_add_prelu_registrar(
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-#if defined(PADDLE_MOBILE_CPU)
+#ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(fusion_conv_add_add_prelu, ops::FusionConvAddAddPReluOp);
-#elif defined(PADDLE_MOBILE_MALI_GPU)
-#elif defined(PADDLE_MOBILE_FPGA)
+#endif
+#ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(fusion_conv_add_add_prelu, ops::FusionConvAddAddPReluOp);
-#else
-REGISTER_OPERATOR_X86(fusion_conv_add_add_prelu, ops::FusionConvAddAddPReluOp);
 #endif
 
 #endif  // FUSION_CONVADDADDPRELU_OP

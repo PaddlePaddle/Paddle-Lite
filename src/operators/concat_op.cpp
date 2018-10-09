@@ -73,6 +73,4 @@ REGISTER_OPERATOR_MALI_GPU(concat, ops::ConcatOp);
 REGISTER_OPERATOR_FPGA(concat, ops::ConcatOp);
 #endif
 
-REGISTER_OPERATOR_X86(concat, ops::ConcatOp);
-
 #endif

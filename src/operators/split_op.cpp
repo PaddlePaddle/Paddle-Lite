@@ -80,12 +80,8 @@ void SplitOp<DeviceType, T>::InferShape() const {
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-#if defined(PADDLE_MOBILE_CPU)
+#ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(split, ops::SplitOp);
-#elif defined(PADDLE_MOBILE_MALI_GPU)
-#elif defined(PADDLE_MOBILE_FPGA)
-#else
-REGISTER_OPERATOR_X86(split, ops::SplitOp);
 #endif
 
 #endif  // SPLIT_OP

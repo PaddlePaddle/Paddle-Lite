@@ -39,7 +39,7 @@ struct PrecisionTrait<Precision::FP16> {
 };
 
 //! device type
-enum DeviceTypeEnum { kINVALID = -1, kCPU = 0, kFPGA = 1, kGPU_MALI = 2, kX86 = 3 };
+enum DeviceTypeEnum { kINVALID = -1, kCPU = 0, kFPGA = 1, kGPU_MALI = 2 };
 
 template <DeviceTypeEnum T>
 struct DeviceType {};
@@ -47,7 +47,6 @@ struct DeviceType {};
 typedef DeviceType<kCPU> CPU;
 typedef DeviceType<kFPGA> FPGA;
 typedef DeviceType<kGPU_MALI> GPU_MALI;
-typedef DeviceType<kX86> X86;
 
 //! data type
 enum DataType {

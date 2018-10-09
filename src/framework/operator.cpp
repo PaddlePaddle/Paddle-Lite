@@ -76,7 +76,6 @@ void OperatorBase<Dtype>::Run() const {
 template class OperatorBase<CPU>;
 template class OperatorBase<FPGA>;
 template class OperatorBase<GPU_MALI>;
-template class OperatorBase<X86>;
 
 }  // namespace framework
 }  // namespace paddle_mobile
