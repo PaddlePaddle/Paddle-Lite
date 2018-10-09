@@ -30,9 +30,6 @@ namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(dropout, ops::DropoutOp);
 #endif
-#ifdef PADDLE_MOBILE_X86
-REGISTER_OPERATOR_X86(dropout, ops::DropoutOp);
-#endif
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(dropout, ops::DropoutOp);
 #endif

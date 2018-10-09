@@ -62,6 +62,4 @@ REGISTER_OPERATOR_MALI_GPU(conv2d, ops::ConvOp);
 REGISTER_OPERATOR_FPGA(conv2d, ops::ConvOp);
 #endif
 
-REGISTER_OPERATOR_X86(conv2d, ops::ConvOp);
-
 #endif

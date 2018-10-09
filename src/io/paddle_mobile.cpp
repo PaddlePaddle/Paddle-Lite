@@ -125,6 +125,5 @@ PaddleMobile<Dtype, P>::~PaddleMobile() {
 template class PaddleMobile<CPU, Precision::FP32>;
 template class PaddleMobile<FPGA, Precision::FP32>;
 template class PaddleMobile<GPU_MALI, Precision::FP32>;
-template class PaddleMobile<X86, Precision::FP32>;
 
 }  // namespace paddle_mobile

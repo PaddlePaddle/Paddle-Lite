@@ -52,6 +52,5 @@ REGISTER_OPERATOR_CPU(crf_decoding, ops::CrfOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 #endif
-REGISTER_OPERATOR_X86(crf_decoding, ops::CrfOp);
 
 #endif

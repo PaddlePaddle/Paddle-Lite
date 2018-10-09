@@ -17,11 +17,7 @@ limitations under the License. */
 #include "../test_include.h"
 
 int main() {
-#if defined(PADDLE_MOBILE_CPU)
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
-#elif defined(PADDLE_MOBILE_X86)
-  paddle_mobile::PaddleMobile<paddle_mobile::X86> paddle_mobile;
-#endif
   paddle_mobile.SetThreadNum(4);
   bool optimize = true;
   auto time1 = time();

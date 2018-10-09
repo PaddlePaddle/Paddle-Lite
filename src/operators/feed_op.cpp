@@ -26,6 +26,4 @@ REGISTER_OPERATOR_MALI_GPU(feed, ops::FeedOp);
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(feed, ops::FeedOp);
 #endif
-#ifdef PADDLE_MOBILE_X86
-REGISTER_OPERATOR_X86(feed, ops::FeedOp);
-#endif
+

@@ -32,7 +32,4 @@ namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(quantize, ops::QuantizeOp);
 #endif
-#ifdef PADDLE_MOBILE_X86
-REGISTER_OPERATOR_X86(quantize, ops::QuantizeOp);
-#endif
 

@@ -34,8 +34,5 @@ REGISTER_OPERATOR_CPU(slice, ops::SliceOp);
 #ifdef PADDLE_MOBILE_MALI_GPU
 REGISTER_OPERATOR_MALI_GPU(slice, ops::SliceOp);
 #endif
-#ifdef PADDLE_MOBILE_X86
-REGISTER_OPERATOR_X86(slice, ops::SliceOp);
-#endif
 
 #endif
