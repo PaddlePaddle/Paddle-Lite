@@ -30,6 +30,7 @@ class CLScope {
  public:
   CLScope() {
     CLEngine *engin = CLEngine::Instance();
+    engin->Init();
     context_ = engin->CreateContext();
     command_queue_ = engin->CreateClCommandQueue();
   }

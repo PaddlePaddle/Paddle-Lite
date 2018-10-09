@@ -12,10 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVADDBNRELU_OP
+#ifdef FUSION_CONVADDBN_OP
 
-#include "operators/kernel/conv_add_bn_relu_kernel.h"
-#include "operators/kernel/central-arm-func/conv_add_bn_relu_arm_func.h"
+#include "operators/kernel/conv_add_bn_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {

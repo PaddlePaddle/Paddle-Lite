@@ -53,4 +53,8 @@ USE_OP_MALI_GPU(elementwise_add);
 #ifdef PADDLE_MOBILE_FPGA
 #endif
 
+#ifdef PADDLE_MOBILE_CL
+USE_OP_CL(elementwise_add);
+#endif
+
 #endif

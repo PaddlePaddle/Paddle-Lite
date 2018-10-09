@@ -85,7 +85,7 @@ class CLImage {
   }
 
   const DDim &dims() const {
-    return DDim();
+    return tensorDims_;
   }
 
   std::vector<size_t> DefaultWorkSize() {
