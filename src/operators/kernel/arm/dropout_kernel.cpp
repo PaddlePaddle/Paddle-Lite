@@ -14,8 +14,6 @@ limitations under the License. */
 
 #ifdef DROPOUT_OP
 
-#pragma once
-
 #include "operators/kernel/dropout_kernel.h"
 #include <operators/math/transform.h>
 
@@ -23,23 +21,27 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool DropoutKernel<CPU, float>::Init(DropoutParam *para) {
+bool DropoutKernel<CPU, float>::Init(DropoutParam<CPU> *para) {
   return true;
 }
 
 template <typename T>
 struct DropoutFunctor {
-  inline T operator()(T in) const { return in; }
+  DropoutFunctor(T drop_pro) : dropout_pro_(drop_pro) {}
+  inline T operator()(T in) const { return (1 - dropout_pro_) * in; }
+
+ private:
+  T dropout_pro_;
 };
 
 template <>
-void DropoutKernel<CPU, float>::Compute(const DropoutParam &param) const {
+void DropoutKernel<CPU, float>::Compute(const DropoutParam<CPU> &param) const {
   const auto *input_x = param.InputX();
   auto *input_x_ptr = input_x->data<float>();
   auto *out = param.Out();
   auto *out_ptr = out->mutable_data<float>();
-
-  DropoutFunctor<float> func_;
+  const float dropoutProb = param.DropoutProb();
+  DropoutFunctor<float> func_(dropoutProb);
   math::Transform trans;
   trans(input_x_ptr, input_x_ptr + input_x->numel(), out_ptr, func_);
 }

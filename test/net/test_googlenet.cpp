@@ -12,30 +12,40 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include <fstream>
+#include <iostream>
 #include "../test_helper.h"
 #include "../test_include.h"
 
 int main() {
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+#ifdef PADDLE_MOBILE_FPGA
+  paddle_mobile::PaddleMobile<paddle_mobile::FPGA> paddle_mobile;
+#endif
+
+#ifdef PADDLE_MOBILE_CPU
+  paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
+#endif
+
+  paddle_mobile.SetThreadNum(4);
   bool optimize = true;
   auto time1 = time();
-  //  auto program = loader.Load(g_googlenet, optimize);
-  auto program = loader.Load(g_googlenet_combine + "/model",
-                             g_googlenet_combine + "/params", optimize);
-  auto time2 = time();
-  DLOG << "load cost :" << time_diff(time1, time2) << "ms\n";
-  paddle_mobile::Executor<paddle_mobile::CPU> executor(program, 1, optimize);
-  std::vector<float> input;
-  std::vector<int64_t> dims{1, 3, 224, 224};
-  GetInput<float>(g_test_image_1x3x224x224, &input, dims);
-  auto time3 = time();
+  if (paddle_mobile.Load(g_googlenet, optimize)) {
+    auto time2 = time();
+    std::cout << "load cost :" << time_diff(time1, time2) << "ms" << std::endl;
+    std::vector<float> input;
+    std::vector<int64_t> dims{1, 3, 224, 224};
+    GetInput<float>(g_test_image_1x3x224x224, &input, dims);
+    // 预热十次
+    for (int i = 0; i < 10; ++i) {
+      auto vec_result = paddle_mobile.Predict(input, dims);
+    }
+    auto time3 = time();
+    for (int i = 0; i < 10; ++i) {
+      auto vec_result = paddle_mobile.Predict(input, dims);
+    }
+    auto time4 = time();
 
-  for (int i = 0; i < 10; ++i) {
-    executor.Predict(input, dims);
+    std::cout << "predict cost :" << time_diff(time3, time4) / 10 << "ms"
+              << std::endl;
   }
-
-  auto time4 = time();
-  DLOG << "predict cost :" << time_diff(time3, time4) << "ms\n";
   return 0;
 }

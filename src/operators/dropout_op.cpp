@@ -22,18 +22,18 @@ void DropoutOp<Dtype, T>::InferShape() const {
   auto input_dims = this->param_.InputX()->dims();
   this->param_.Out()->Resize(input_dims);
 }
-template class DropoutOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(dropout);
 REGISTER_OPERATOR_CPU(dropout, ops::DropoutOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(dropout, ops::DropoutOp);
 #endif
 
 #endif

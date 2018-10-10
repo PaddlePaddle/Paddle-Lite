@@ -44,18 +44,18 @@ void FusionConvAddBNReluOp<Dtype, T>::InferShape() const {
   framework::DDim ddim = framework::make_ddim(output_shape);
   this->param_.Output()->Resize(ddim);
 }
-template class FusionConvAddBNReluOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(fusion_conv_add_bn_relu);
 REGISTER_OPERATOR_CPU(fusion_conv_add_bn_relu, ops::FusionConvAddBNReluOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(fusion_conv_add_bn_relu, ops::FusionConvAddBNReluOp);
 #endif
 
 #endif

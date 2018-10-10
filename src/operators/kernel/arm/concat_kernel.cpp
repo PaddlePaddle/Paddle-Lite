@@ -21,13 +21,14 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ConcatKernel<CPU, float>::Init(ConcatParam *param) {
+bool ConcatKernel<CPU, float>::Init(ConcatParam<CPU> *param) {
   return true;
 }
 
 template <>
-void ConcatKernel<CPU, float>::Compute(const ConcatParam &param) const {
+void ConcatKernel<CPU, float>::Compute(const ConcatParam<CPU> &param) const {
   ConcatCompute<float>(param);
+  param.Out()->set_lod(param.Inputs()[0]->lod());
 }
 
 }  // namespace operators

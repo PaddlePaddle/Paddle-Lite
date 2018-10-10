@@ -16,6 +16,7 @@ limitations under the License. */
 #pragma once
 
 #include <vector>
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -38,7 +39,7 @@ namespace operators {
 // }
 
 template <typename P>
-void TransposeCompute(const TransposeParam& param) {
+void TransposeCompute(const TransposeParam<CPU>& param) {
   const auto* input_x = param.InputX();
   const auto input_x_dims = input_x->dims();
   auto* out = param.Out();

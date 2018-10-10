@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+NETS=""
+declare -a supportedNets=("googlenet" "mobilenet" "yolo" "squeezenet" "resnet" "mobilenetssd" "nlp" "mobilenetfssd" "genet")
 
 build_for_mac() {
     if [ ! `which brew` ]; then
@@ -32,13 +34,14 @@ build_for_mac() {
 
 build_for_android() {
     #rm -rf "../build"
-    if [ -z "${ANDROID_NDK}" ]; then
-        echo "ANDROID_NDK not found!"
+    if [ -z "${NDK_ROOT}" ]; then
+        echo "NDK_ROOT not found!"
         exit -1
     fi
 
     if [ -z "$PLATFORM" ]; then
-        PLATFORM="arm-v7a"  # Users could choose "arm-v8a" or other platforms from the command line.
+        PLATFORM="arm-v7a"  # Users could choose "arm-v8a" platform.
+#        PLATFORM="arm-v8a"
     fi
 
     if [ "${PLATFORM}" = "arm-v7a" ]; then
@@ -59,8 +62,8 @@ build_for_android() {
     ANDROID_PLATFORM_VERSION="android-22"
     TOOLCHAIN_FILE="./tools/android-cmake/android.toolchain.cmake"
     ANDROID_ARM_MODE="arm"
-    if [ $# -eq 1 ]; then
-    NET=$1
+
+    if [ "${#NETS}" -gt 1 ]; then
     cmake .. \
         -B"../build/release/${PLATFORM}" \
         -DANDROID_ABI="${ABI}" \
@@ -70,7 +73,7 @@ build_for_android() {
         -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
         -DANDROID_STL=c++_static \
         -DANDROID=true \
-        -D"${NET}=true" \
+        -DNET="${NETS}" \
         -D"${ARM_PLATFORM}"=true
     else
 
@@ -89,86 +92,122 @@ build_for_android() {
     make -j 8
 }
 
+
+build_for_arm_linux() {
+    MODE="Release"
+    ARM_LINUX="arm-linux"
+
+    if [ "${#NETS}" -gt 1 ]; then
+        cmake .. \
+            -B"../build/release/arm-linux" \
+            -DCMAKE_BUILD_TYPE="${MODE}" \
+            -DCMAKE_TOOLCHAIN_FILE="./tools/toolchains/arm-linux-gnueabihf.cmake" \
+            -DCMAKE_CXX_FLAGS="-std=c++14 -mcpu=cortex-a53 -mtune=cortex-a53 -mfpu=neon-vfpv4 -mfloat-abi=hard -ftree-vectorize -funsafe-math-optimizations  -pipe -mlittle-endian -munaligned-access" \
+            -DNET="${NETS}" \
+            -D"V7"=true
+    else
+        cmake .. \
+            -B"../build/release/arm-linux" \
+            -DCMAKE_BUILD_TYPE="${MODE}" \
+            -DCMAKE_TOOLCHAIN_FILE="./tools/toolchains/arm-linux-gnueabihf.cmake" \
+            -DCMAKE_CXX_FLAGS="-std=c++14 -mcpu=cortex-a53 -mtune=cortex-a53 -mfpu=neon-vfpv4 -mfloat-abi=hard -ftree-vectorize -funsafe-math-optimizations  -pipe -mlittle-endian -munaligned-access" \
+            -DNET="${NETS}" \
+            -D"V7"=true
+    fi
+
+    cd "../build/release/arm-linux"
+    make -j 8
+    cd "../../../test/"
+    DIRECTORY="models"
+    if [ "`ls -A $DIRECTORY`" = "" ]; then
+        echo "$DIRECTORY is indeed empty pull images"
+        wget http://mms-graph.bj.bcebos.com/paddle-mobile%2FmodelsAndImages.zip
+        unzip paddle-mobile%2FmodelsAndImages.zip
+        mv modelsAndImages/images/ images
+        mv modelsAndImages/models/ models
+        rm -rf paddle-mobile%2FmodelsAndImages.zip
+        rm -rf __MACOS
+    else
+        echo "$DIRECTORY is indeed not empty, DONE!"
+    fi
+
+}
+
 build_for_ios() {
-    rm -rf "../build"
+#    rm -rf "../build"
     PLATFORM="ios"
     MODE="Release"
-    BUILD_DIR=../build/release/"${PLATFORM}"
+    BUILD_DIR=../build/release/"${PLATFORM}"/
     TOOLCHAIN_FILE="./tools/ios-cmake/ios.toolchain.cmake"
-    C_FLAGS="-fobjc-abi-version=2 -fobjc-arc -isysroot ${CMAKE_OSX_SYSROOT}"
-    CXX_FLAGS="-fobjc-abi-version=2 -fobjc-arc -std=gnu++14 -stdlib=libc++ -isysroot ${CMAKE_OSX_SYSROOT}"
     mkdir -p "${BUILD_DIR}"
-    if [ $# -eq 1 ]; then
-        NET=$1
+    if [ "${#NETS}" -gt 1 ]; then
         cmake .. \
             -B"${BUILD_DIR}" \
             -DCMAKE_BUILD_TYPE="${MODE}" \
-            -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
             -DIOS_PLATFORM=OS \
-            -DCMAKE_C_FLAGS="${C_FLAGS}" \
-            -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
-            -D"${NET}"=true \
+            -DIOS_ARCH="${IOS_ARCH}" \
+            -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
+            -DNET="${NETS}" \
             -DIS_IOS="true"
     else
         cmake .. \
             -B"${BUILD_DIR}" \
             -DCMAKE_BUILD_TYPE="${MODE}" \
-            -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
             -DIOS_PLATFORM=OS \
-            -DCMAKE_C_FLAGS="${C_FLAGS}" \
-            -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
+            -DIOS_ARCH="${IOS_ARCH}" \
+            -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
             -DIS_IOS="true"
     fi
     cd "${BUILD_DIR}"
     make -j 8
+    cp ../../../src/ios_io/PaddleMobile.h ./build/PaddleMobile.h
+    cd ./build
+    # 生成符号表
+    ranlib *.a
 }
 
 build_error() {
-    echo "unknown argument"
+    echo "unknown target : $1"
 }
 
 if [ $# -lt 1 ]; then
 	echo "error: target missing!"
-    echo "available targets: mac|linux|ios|android"
-    echo "sample usage: ./build.sh mac"
+    echo "available targets: ios|android"
+    echo "sample usage: ./build.sh android"
 else
-    if [ $# -eq 2 ]; then
-        if [ $2 != "googlenet" -a $2 != "mobilenet" -a $2 != "yolo" -a $2 != "squeezenet" -a $2 != "resnet" ]; then
-            if [ $1 = "mac" ]; then
-		        build_for_mac
-	        elif [ $1 = "linux" ]; then
-		        build_for_linux
-	        elif [ $1 = "android" ]; then
-		        build_for_android
-	        elif [ $1 = "ios" ]; then
-		        build_for_ios
-	        else
-		        build_error
-	        fi
-        else
-            if [ $1 = "mac" ]; then
-		        build_for_mac $2
-	        elif [ $1 = "linux" ]; then
-		        build_for_linux $2
-	        elif [ $1 = "android" ]; then
-		        build_for_android $2
-	        elif [ $1 = "ios" ]; then
-		        build_for_ios $2
-	        else
-		        build_error
-	        fi
+    params=($@)
+    for(( i=1; i<$#; i++ )); do
+        if [ ${i} != 1 ]; then
+            NETS=$NETS$";"
         fi
+        NETS=$NETS$"${params[i]}"
+    done
+    params=${@:2}
+
+    supported=false
+    for name in ${params[@]}; do
+        for net in ${supportedNets[@]}; do
+            match=false
+            if [ "$name"x = "$net"x ];then
+                supported=true
+                match=true
+                break 1
+            fi
+        done
+        if [ "$match" = false ];then
+            echo "${name} not supported!"
+            echo "supported nets are: ${supportedNets[@]}"
+            exit -1
+        fi
+    done
+
+    if [ $1 = "android" ]; then
+        build_for_android
+    elif [ $1 = "arm_linux" ]; then
+        build_for_arm_linux
+    elif [ $1 = "ios" ]; then
+        build_for_ios
     else
-        if [ $1 = "mac" ]; then
-		    build_for_mac
-	    elif [ $1 = "linux" ]; then
-		    build_for_linux
-	    elif [ $1 = "android" ]; then
-		    build_for_android
-	    elif [ $1 = "ios" ]; then
-		    build_for_ios
-	    else
-		    build_error
-	    fi
-	fi
+        build_error "$1"
+    fi
 fi

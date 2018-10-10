@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef CONVADDRELU_OP
+#ifdef FUSION_CONVADDRELU_OP
 
 #include "fusion_conv_add_relu_op.h"
 #include "operators/math/conv_func.h"
@@ -49,12 +49,12 @@ void FusionConvAddReluOp<Dtype, T>::InferShape() const {
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(fusion_conv_add_relu);
 REGISTER_OPERATOR_CPU(fusion_conv_add_relu, ops::FusionConvAddReluOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(fusion_conv_add_relu, ops::FusionConvAddReluOp);
 #endif
 
 #endif

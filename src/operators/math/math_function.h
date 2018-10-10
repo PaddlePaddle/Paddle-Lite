@@ -21,11 +21,34 @@ namespace paddle_mobile {
 namespace operators {
 namespace math {
 
-// matrix multiply with continuous memory
 template <typename T>
 void matmul(const framework::Tensor &matrix_a, bool trans_a,
             const framework::Tensor &matrix_b, bool trans_b, T alpha,
-            framework::Tensor *matrix_out, T beta, bool relu = false);
+            framework::Tensor *matrix_out, T beta, bool relu = false,
+            float *bias = nullptr);
+
+template <typename T>
+void matmulWithBn(const framework::Tensor &matrix_a, bool trans_a,
+                  const framework::Tensor &matrix_b, bool trans_b, T alpha,
+                  framework::Tensor *matrix_out, T beta, bool relu,
+                  framework::Tensor *new_scale, framework::Tensor *new_bias,
+                  int group, float *bias = nullptr);
+
+void matmulWithPRelu(const framework::Tensor &matrix_a, bool trans_a,
+                     const framework::Tensor &matrix_b, bool trans_b,
+                     framework::Tensor *matrix_out, float *p, std::string mode,
+                     float *bias, float *bias1);
+template <typename DeviceType, typename T>
+struct ClearTensor {
+  void operator()(framework::Tensor *tensor);
+};
+
+template <typename DeviceType, typename T>
+struct RowwiseAdd {
+  void operator()(const framework::Tensor &input, const framework::Tensor &vec,
+                  framework::Tensor *output);
+};
+
 }  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile

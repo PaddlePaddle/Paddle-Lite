@@ -20,19 +20,17 @@ limitations under the License. */
 #include "operators/math/vol2col.h"
 #include "operators/op_param.h"
 
-#pragma once;
+#pragma once
 
 namespace paddle_mobile {
 namespace operators {
 
-using namespace framework;
-
 template <typename DeviceType, typename T>
 class Im2SequenceKernel
-    : public framework::OpKernelBase<DeviceType, Im2SequenceParam> {
+    : public framework::OpKernelBase<DeviceType, Im2SequenceParam<DeviceType>> {
  public:
-  void Compute(const Im2SequenceParam& param) const;
-  bool Init(Im2SequenceParam* para);
+  void Compute(const Im2SequenceParam<DeviceType>& param) const;
+  bool Init(Im2SequenceParam<DeviceType>* para);
 };
 }  // namespace operators
 }  // namespace paddle_mobile

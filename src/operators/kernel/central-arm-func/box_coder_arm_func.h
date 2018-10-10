@@ -16,6 +16,8 @@ limitations under the License. */
 #pragma once
 
 #include <cmath>
+#include "framework/tensor.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -111,7 +113,7 @@ void DecodeCenterSize(const framework::Tensor& target_box,
 }
 
 template <typename P>
-void BoxCoderCompute(const BoxCoderParam& param) {
+void BoxCoderCompute(const BoxCoderParam<CPU>& param) {
   const auto* input_priorbox = param.InputPriorBox();
   const auto* input_priorboxvar = param.InputPriorBoxVar();
   const auto* input_targetbox = param.InputTargetBox();
@@ -122,7 +124,7 @@ void BoxCoderCompute(const BoxCoderParam& param) {
   auto col = input_priorbox->dims()[0];
   auto len = input_priorbox->dims()[1];
 
-  Tensor* output_box = param.OutputBox();
+  framework::Tensor* output_box = param.OutputBox();
   auto* output_box_dataptr = output_box->mutable_data<float>({row, col, len});
 
   if (code_type == "encode_center_size") {

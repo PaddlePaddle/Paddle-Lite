@@ -27,13 +27,14 @@ struct AddFunctor {
 };
 
 template <>
-bool ElementwiseAddKernel<GPU_MALI, float>::Init(ElementwiseAddParam *param) {
+bool ElementwiseAddKernel<GPU_MALI, float>::Init(
+    ElementwiseAddParam<GPU_MALI> *param) {
   return true;
 }
 
 template <>
 void ElementwiseAddKernel<GPU_MALI, float>::Compute(
-    const ElementwiseAddParam &param) const {
+    const ElementwiseAddParam<GPU_MALI> &param) const {
   const Tensor *input_x = param.InputX();
   const Tensor *input_y = param.InputY();
   Tensor *Out = param.Out();

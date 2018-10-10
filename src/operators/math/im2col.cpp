@@ -15,7 +15,7 @@ limitations under the License. */
 #include "operators/math/im2col.h"
 #include <vector>
 #ifdef __ARM_NEON
-#include "arm_neon.h"
+#include <arm_neon.h>
 #endif
 #include "common/types.h"
 namespace paddle_mobile {
@@ -69,16 +69,16 @@ class Im2ColFunctor<ColFormat::kCFO, CPU, T> {
     int channels_col = im_channels * filter_height * filter_width;
     const T *im_data = im.data<T>();
     T *col_data = col->data<T>();
-#ifdef __ARM_NEON
+#if __ARM_NEON
     const int osize = col_height;
     const int isize = im_height;
     bool pad1 = padding[0] > 0;
     bool pad2 =
-        (pad1 &&
+        (pad1 && padding[1] &&
          (((isize - 2 * padding[0] + filter_height) % stride[0] == 0) ? 1 : 0));
     int fill = isize % 2;
     if (stride[0] == 1 && filter_height == 3 && pad1 && pad2 &&
-        dilation[0] == 1) {
+        dilation[0] == 1 && im_height > 2) {
       for (int c = 0; c < im_channels; ++c) {
         int oosize = osize * osize;
         int nk4 = osize / 4;
@@ -250,7 +250,7 @@ class Im2ColFunctor<ColFormat::kCFO, CPU, T> {
         im_data += isize * isize;
       }
     } else if (stride[0] == 2 && filter_height == 3 && pad1 &&
-               dilation[0] == 1) {
+               dilation[0] == 1 && im_height > 2) {
       for (int c = 0; c < im_channels; ++c) {
         int oosize = osize * osize;
         int nk4 = osize / 4;
@@ -481,6 +481,7 @@ class Col2ImFunctor<ColFormat::kCFO, CPU, T> {
 
     T *im_data = im->data<T>();
     const T *col_data = col.data<T>();
+    memset(static_cast<void *>(im_data), 0, sizeof(T) * im->numel());
 
     for (int c = 0; c < channels_col; ++c) {
       int w_offset = c % filter_width;

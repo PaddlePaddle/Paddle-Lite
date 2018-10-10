@@ -15,12 +15,12 @@ limitations under the License. */
 #ifdef LRN_OP
 
 #pragma once
-
+#include "operators/op_param.h"
 namespace paddle_mobile {
 namespace operators {
 
 template <typename P>
-void LrnCompute(const LrnParam &param) {
+void LrnCompute(const LrnParam<CPU> &param) {
   const Tensor *input_x = param.InputX();
   auto x_dims = input_x->dims();
   Tensor *out = param.Out();

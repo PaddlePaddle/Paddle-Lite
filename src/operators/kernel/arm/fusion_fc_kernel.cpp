@@ -21,13 +21,15 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool FusionFcKernel<CPU, float>::Init(FusionFcParam *param) {
+bool FusionFcKernel<CPU, float>::Init(FusionFcParam<CPU> *param) {
   return true;
 }
 
 template <>
-void FusionFcKernel<CPU, float>::Compute(const FusionFcParam &param) const {
+void FusionFcKernel<CPU, float>::Compute(
+    const FusionFcParam<CPU> &param) const {
   FusionFcCompute<float>(param);
+  param.Out()->set_lod(param.InputX()->lod());
 }
 
 }  // namespace operators

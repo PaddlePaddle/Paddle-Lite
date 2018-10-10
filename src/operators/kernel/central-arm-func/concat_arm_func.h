@@ -54,7 +54,7 @@ class ConcatFunctor {
 };
 
 template <typename P>
-void ConcatCompute(const ConcatParam &param) {
+void ConcatCompute(const ConcatParam<CPU> &param) {
   auto inputs = param.Inputs();
   auto *out = param.Out();
   int64_t axis = param.Axis();
