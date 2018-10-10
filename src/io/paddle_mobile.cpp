@@ -21,13 +21,11 @@ void PaddleMobile<Dtype, P>::SetThreadNum(int num) {
 #ifdef _OPENMP
   omp_set_num_threads(num);
 #endif
-};
+}
 
 template <typename Dtype, Precision P>
-bool PaddleMobile<Dtype, P>::Load(const std::string &dirname,
-                                  bool optimize,
-                                  bool quantification,
-                                  bool loddable) {
+bool PaddleMobile<Dtype, P>::Load(const std::string &dirname, bool optimize,
+                                  bool quantification, bool loddable) {
   if (loader_.get() == nullptr) {
     loader_ = std::make_shared<Loader<Dtype, P>>();
   } else {
@@ -46,10 +44,8 @@ bool PaddleMobile<Dtype, P>::Load(const std::string &dirname,
 
 template <typename Dtype, Precision P>
 bool PaddleMobile<Dtype, P>::Load(const std::string &model_path,
-                                  const std::string &para_path,
-                                  bool optimize,
-                                  bool quantification,
-                                  bool loddable) {
+                                  const std::string &para_path, bool optimize,
+                                  bool quantification, bool loddable) {
   if (loader_.get() == nullptr) {
     loader_ = std::make_shared<Loader<Dtype, P>>();
   } else {
@@ -84,7 +80,8 @@ bool PaddleMobile<Dtype, P>::LoadCombinedMemory(
     executor_ = std::make_shared<Executor<Dtype, P>>(
         loader_->LoadCombinedMemory(model_len, model_buf, combined_params_len,
                                     combined_params_buf, optimise,
-                                    quantification), optimise);
+                                    quantification),
+        optimise);
   } else {
     LOG(kLOG_INFO) << "executor inited";
   }
@@ -121,6 +118,40 @@ PaddleMobile<Dtype, P>::~PaddleMobile() {
   executor_ = nullptr;
   loader_ = nullptr;
 }
+
+#ifdef PADDLE_MOBILE_FPGA
+
+template <typename Dtype, Precision P>
+void PaddleMobile<Dtype, P>::InjectVariable(const framework::Tensor &t,
+                                            string var_name) {
+  executor_->InjectVariable(t, var_name);
+}
+
+template <typename Dtype, Precision P>
+void PaddleMobile<Dtype, P>::FeedData(const framework::Tensor &t) {
+  executor_->FeedData(t);
+}
+
+template <typename Dtype, Precision P>
+std::shared_ptr<framework::Tensor> PaddleMobile<Dtype, P>::FetchResult(int id) {
+  return executor_->FetchResult(id);
+}
+
+template <typename Dtype, Precision P>
+void PaddleMobile<Dtype, P>::Predict_From_To(int start, int end) {
+  executor_->Predict_From_To(start, end);
+}
+
+template <typename Dtype, Precision P>
+void PaddleMobile<Dtype, P>::Predict_From(int start) {
+  executor_->Predict_From(start);
+}
+
+template <typename Dtype, Precision P>
+void PaddleMobile<Dtype, P>::Predict_To(int end) {
+  executor_->Predict_To(end);
+}
+#endif
 
 template class PaddleMobile<CPU, Precision::FP32>;
 template class PaddleMobile<FPGA, Precision::FP32>;

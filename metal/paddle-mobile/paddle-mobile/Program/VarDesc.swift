@@ -56,7 +56,7 @@ enum VarTypeType: Int {
     }
 }
 
-struct VarDesc {
+class VarDesc {
     let name: String
     let persistable: Bool
     let type: VarTypeType
