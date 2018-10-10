@@ -21,12 +21,13 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool BatchNormKernel<CPU, float>::Init(BatchNormParam *param) {
+bool BatchNormKernel<CPU, float>::Init(BatchNormParam<CPU> *param) {
   return true;
 }
 
 template <>
-void BatchNormKernel<CPU, float>::Compute(const BatchNormParam &param) const {
+void BatchNormKernel<CPU, float>::Compute(
+    const BatchNormParam<CPU> &param) const {
   BatchnormCompute<float>(param);
 }
 

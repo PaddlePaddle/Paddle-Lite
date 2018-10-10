@@ -37,7 +37,7 @@ class AclConvAddOp : public acl::ACLOperator {
   AclConvAddOp& operator=(AclConvAddOp&&) = delete;
 
   acl::AclParameters& getargs() { return args; }
-  void InitAclLayer(const FusionConvAddParam& param) {
+  void InitAclLayer(const FusionConvAddParam<DeviceType>& param) {
     setTargetHint(acl::TargetHint::OPENCL);
     arm_compute::TensorShape input_shape(args.in_cols, args.in_rows,
                                          args.in_depth, args.batch);
@@ -55,15 +55,14 @@ class AclConvAddOp : public acl::ACLOperator {
     set_operator_init_done();
     this->force_bypass_acl_path_ = false;
 
-    check_direct_conv();
+    // check_direct_conv();
+    group() = args.num_group;
     //[kernel_x, kernel_y, IFM, OFM]
     new_tensor(weights(), weights_shape, args.weight_data);
     //[OFM]
     if (args.biases_data) {
       new_tensor(biases(), biases_shape, args.biases_data);
     }
-
-    group() = args.num_group;
 
     //[width, height, IFM]
     new_tensor(input(), input_shape, args.input_data);
@@ -76,9 +75,10 @@ class AclConvAddOp : public acl::ACLOperator {
   void RunAcl(void* input, void* output) {
     acl::ACLOperator::acl_run(input, output);
   }
-  bool Bypass_acl(const FusionConvAddParam& param) {
+  bool Bypass_acl(const FusionConvAddParam<DeviceType>& param) {
     bool bypass_acl = false;
     AclParametersByContext(param);
+    InitAclLayer(param);
     // for performance, more groups impact GPU performance
     if (this->force_bypass_acl_path_ || args.num_group >= 5) {
       bypass_acl = true;
@@ -119,7 +119,7 @@ class AclConvAddOp : public acl::ACLOperator {
     }
   }
 
-  void AclParametersByContext(const FusionConvAddParam& param) {
+  void AclParametersByContext(const FusionConvAddParam<DeviceType>& param) {
     const Tensor* input = param.Input();
     Tensor filter = *param.Filter();
     Tensor* output = param.Output();
@@ -196,35 +196,32 @@ class AclConvAddOp : public acl::ACLOperator {
 };
 
 template <>
-bool ConvAddKernel<GPU_MALI, float>::Init(
-    const FusionConvAddParam& param) const {
+bool ConvAddKernel<GPU_MALI, float>::Init(FusionConvAddParam<GPU_MALI>* param) {
   AclConvAddOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclConvAddOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {
     acl_op = new AclConvAddOp<GPU_MALI, float>();
     this->SetAclOp((void*)acl_op, (void*)this);
   }
+  if (acl_op->Bypass_acl(*param)) {
+    std::cout << "init acl failed" << std::endl;
+    return false;
+  }
   return true;
 }
 
 template <>
 void ConvAddKernel<GPU_MALI, float>::Compute(
-    const FusionConvAddParam& param) const {
+    const FusionConvAddParam<GPU_MALI>& param) const {
   std::cout << "init acl" << std::endl;
   AclConvAddOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclConvAddOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {
     return;
   }
-  if (acl_op->Bypass_acl(param)) {
-    std::cout << "init acl failed" << std::endl;
-    return;
-  }
   acl::AclParameters& args = acl_op->getargs();
-  const float* input_data = (const float*)args.input_data;
-  const float* output_data = (const float*)args.output_data;
-  acl_op->InitAclLayer(param);
-  acl_op->RunAcl((void*)input_data, (void*)output_data);
+
+  acl_op->RunAcl(args.input_data, args.output_data);
 }
 
 template class ConvAddKernel<GPU_MALI, float>;

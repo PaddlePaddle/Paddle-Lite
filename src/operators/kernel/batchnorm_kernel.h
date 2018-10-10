@@ -26,10 +26,10 @@ using namespace framework;
 
 template <typename DeviceType, typename T>
 class BatchNormKernel
-    : public framework::OpKernelBase<DeviceType, BatchNormParam> {
+    : public framework::OpKernelBase<DeviceType, BatchNormParam<DeviceType>> {
  public:
-  void Compute(const BatchNormParam &param) const;
-  bool Init(BatchNormParam *param);
+  void Compute(const BatchNormParam<DeviceType> &param) const;
+  bool Init(BatchNormParam<DeviceType> *param);
 };
 
 }  // namespace operators

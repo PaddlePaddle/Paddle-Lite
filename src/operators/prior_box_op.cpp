@@ -44,13 +44,12 @@ void PriorBoxOp<Dtype, T>::InferShape() const {
   this->param_.OutputBoxes()->Resize(framework::make_ddim(dim_vec));
   this->param_.OutputVariances()->Resize(framework::make_ddim(dim_vec));
 }
-template class PriorBoxOp<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(prior_box);
 REGISTER_OPERATOR_CPU(prior_box, ops::PriorBoxOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU

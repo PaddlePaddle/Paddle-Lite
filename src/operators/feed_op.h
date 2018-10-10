@@ -29,32 +29,70 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
          std::shared_ptr<framework::Scope> scope)
       : framework::OperatorBase<DeviceType>(type, inputs, outputs, attrs,
                                             scope),
-        param_(inputs, outputs, attrs, *scope) {}
-  void RunImpl() const { param_.Out()->ShareDataWith(*param_.InputX()); }
-
-  void Init() {}
+        param_(inputs, outputs, attrs, scope.get()) {}
 
   void InferShape() const {
     auto out_dims = param_.Out()->dims();
     out_dims[0] = param_.BatchSize();
     param_.Out()->Resize(out_dims);
+
+    //  note : mobile infershape iscalled when executer is created.  so  do not
+    //  pass lod here .
+    // it is empty
   }
 
- protected:
-  FeedParam param_;
-};
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(feed);
-REGISTER_OPERATOR_CPU(feed, ops::FeedOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(feed);
-REGISTER_OPERATOR_MALI_GPU(feed, ops::FeedOp);
-#endif
 #ifdef PADDLE_MOBILE_FPGA
+
+  void Init() {
+    Tensor *output = param_.Out();
+    fpga::format_fp16_ofm(output);
+  }
+
+  void RunImpl() const {
+    auto input = (Tensor *)const_cast<LoDTensor *>(param_.InputX());
+    fpga::format_image(input);
+    auto input_ptr = input->data<float>();
+    Tensor *output = param_.Out();
+    auto output_ptr = output->data<float>();
+
+    fpga::BypassArgs args = {fpga::DATA_TYPE_FP32};
+
+    args.input_data_type = fpga::DATA_TYPE_FP32;
+    args.output_data_type = fpga::DATA_TYPE_FP16;
+    args.input_layout_type = fpga::LAYOUT_CHW;
+    args.output_layout_type = fpga::LAYOUT_HWC;
+    args.image.address = (void *)input_ptr;
+    args.image.channels = (uint32_t)input->dims()[1];
+    args.image.height = (uint32_t)input->dims()[2];
+    args.image.width = (uint32_t)input->dims()[3];
+    args.image.pad_height = 0;
+    args.image.pad_width = 0;
+    args.output.address = output_ptr;
+    args.output.scale_address = output->scale;
+    fpga::PerformBypass(args);
+  }
+
+#else
+  void Init() {}
+  void RunImpl() const {
+    param_.Out()->ShareDataWith(*param_.InputX());
+    param_.Out()->set_lod(param_.InputX()->lod());
+  }
 #endif
+
+ protected:
+  FeedParam<DeviceType> param_;
+};
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(feed);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(feed);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+USE_OP_FPGA(feed);
+#endif

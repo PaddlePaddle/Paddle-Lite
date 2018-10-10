@@ -16,12 +16,14 @@ limitations under the License. */
 #pragma once
 
 #include <vector>
+#include "operators/kernel/reshape_kernel.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <typename P>
-void ReshapeCompute(const ReshapeParam &param) {
+void ReshapeCompute(const ReshapeParam<CPU> &param) {
   const auto *input_x = param.InputX();
   const auto &input_x_dims = input_x->dims();
   auto *out = param.Out();

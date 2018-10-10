@@ -15,22 +15,19 @@ limitations under the License. */
 #ifdef SOFTMAX_OP
 
 #include "../softmax_kernel.h"
-#include "../../math/softmax.h"
+#include "../central-arm-func/softmax_arm_func.h"
+#include "operators/math/softmax.h"
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool SoftmaxKernel<CPU, float>::Init(SoftmaxParam *param) {
+bool SoftmaxKernel<CPU, float>::Init(SoftmaxParam<CPU> *param) {
   return true;
 }
 
 template <>
-void SoftmaxKernel<CPU, float>::Compute(const SoftmaxParam &param) const {
-  const Tensor *in_x = param.InputX();
-  Tensor *out = param.Out();
-  auto x_dims = in_x->dims();
-  out->Resize(x_dims);
-  math::SoftmaxFuntor<CPU, float>()(in_x, out);
+void SoftmaxKernel<CPU, float>::Compute(const SoftmaxParam<CPU> &param) const {
+  SoftmaxCompute<float>(param);
 }
 
 template class SoftmaxKernel<CPU, float>;

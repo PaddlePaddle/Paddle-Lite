@@ -27,7 +27,7 @@ using namespace framework;
 
 template <typename DeviceType, typename T>
 class Im2SequenceOp : public framework::OperatorWithKernel<
-                          DeviceType, Im2SequenceParam,
+                          DeviceType, Im2SequenceParam<DeviceType>,
                           operators::Im2SequenceKernel<DeviceType, T>> {
  public:
   Im2SequenceOp(const std::string &type, const VariableNameMap &inputs,
@@ -35,12 +35,12 @@ class Im2SequenceOp : public framework::OperatorWithKernel<
                 const framework::AttributeMap &attrs,
                 std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<
-            DeviceType, Im2SequenceParam,
+            DeviceType, Im2SequenceParam<DeviceType>,
             operators::Im2SequenceKernel<DeviceType, T>>(type, inputs, outputs,
                                                          attrs, scope) {}
 
   // using framework::OperatorWithKernel<
-  //    DeviceType, Im2SequenceParam,
+  //    DeviceType, Im2SequenceParam<DeviceType>,
   //    operators::Im2SequenceKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
@@ -49,5 +49,13 @@ class Im2SequenceOp : public framework::OperatorWithKernel<
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(im2sequence);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
 
 #endif

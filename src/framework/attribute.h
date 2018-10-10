@@ -14,6 +14,7 @@ limitations under the License. */
 
 #pragma once
 
+#include <cstdlib>
 #include <string>
 #include <typeinfo>
 #include <unordered_map>

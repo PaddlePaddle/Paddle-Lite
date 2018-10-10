@@ -26,17 +26,18 @@ namespace operators {
 
 template <typename DeviceType, typename T>
 class MulOp : public framework::OperatorWithKernel<
-                  DeviceType, MulParam, operators::MulKernel<DeviceType, T>> {
+                  DeviceType, MulParam<DeviceType>,
+                  operators::MulKernel<DeviceType, T>> {
  public:
   MulOp(const std::string &type, const VariableNameMap &inputs,
         const VariableNameMap &outputs, const framework::AttributeMap &attrs,
         std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, MulParam,
+      : framework::OperatorWithKernel<DeviceType, MulParam<DeviceType>,
                                       operators::MulKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 
   using framework::OperatorWithKernel<
-      DeviceType, MulParam,
+      DeviceType, MulParam<DeviceType>,
       operators::MulKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
@@ -45,5 +46,14 @@ class MulOp : public framework::OperatorWithKernel<
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(mul);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(mul);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
 
 #endif

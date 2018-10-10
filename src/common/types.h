@@ -16,10 +16,13 @@ limitations under the License. */
 
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace paddle_mobile {
-enum class Precision : int { FP32 = 0 };
+enum class Precision : int { FP32 = 0, FP16 = 1 };
+
+typedef int16_t half;
 
 template <Precision p>
 struct PrecisionTrait {
@@ -29,6 +32,10 @@ struct PrecisionTrait {
 template <>
 struct PrecisionTrait<Precision::FP32> {
   typedef float ptype;
+};
+template <>
+struct PrecisionTrait<Precision::FP16> {
+  typedef half ptype;
 };
 
 //! device type
@@ -72,32 +79,46 @@ enum PMStatus {
   PMWrongDevice = 0x08     /*!< un-correct device. */
 };
 
-extern const std::string G_OP_TYPE_CONV;
-extern const std::string G_OP_TYPE_BATCHNORM;
-extern const std::string G_OP_TYPE_BOX_CODER;
-extern const std::string G_OP_TYPE_CONCAT;
-extern const std::string G_OP_TYPE_ELEMENTWISE_ADD;
-extern const std::string G_OP_TYPE_FUSION_CONV_ADD_RELU;
-extern const std::string G_OP_TYPE_FC;
-extern const std::string G_OP_TYPE_FUSION_CONV_ADD;
-extern const std::string G_OP_TYPE_FUSION_CONV_ADD_BN_RELU;
+extern const char *G_OP_TYPE_CONV;
+extern const char *G_OP_TYPE_BATCHNORM;
+extern const char *G_OP_TYPE_BOX_CODER;
+extern const char *G_OP_TYPE_CONCAT;
+extern const char *G_OP_TYPE_ELEMENTWISE_ADD;
+extern const char *G_OP_TYPE_FUSION_CONV_ADD_RELU;
+extern const char *G_OP_TYPE_FUSION_CONV_ADD_PRELU;
+extern const char *G_OP_TYPE_FUSION_CONV_ADD_ADD_PRELU;
+extern const char *G_OP_TYPE_FC;
+extern const char *G_OP_TYPE_FUSION_CONV_ADD;
+extern const char *G_OP_TYPE_FUSION_CONV_ADD_BN_RELU;
+extern const char *G_OP_TYPE_FUSION_CONV_BN_ADD_RELU;
+extern const char *G_OP_TYPE_FUSION_DWCONV_BN_RELU;
+extern const char *G_OP_TYPE_FUSION_CONV_BN_RELU;
 
-extern const std::string G_OP_TYPE_LRN;
-extern const std::string G_OP_TYPE_MUL;
-extern const std::string G_OP_TYPE_MULTICLASS_NMS;
-extern const std::string G_OP_TYPE_POOL2D;
-extern const std::string G_OP_TYPE_PRIOR_BOX;
-extern const std::string G_OP_TYPE_RELU;
-extern const std::string G_OP_TYPE_RESHAPE;
-extern const std::string G_OP_TYPE_SIGMOID;
-extern const std::string G_OP_TYPE_SOFTMAX;
-extern const std::string G_OP_TYPE_TRANSPOSE;
-extern const std::string G_OP_TYPE_SPLIT;
-extern const std::string G_OP_TYPE_FEED;
-extern const std::string G_OP_TYPE_FETCH;
-extern const std::string G_OP_TYPE_DEPTHWISE_CONV;
-extern const std::string G_OP_TYPE_IM2SEQUENCE;
-extern const std::string G_OP_TYPE_DROPOUT;
+extern const char *G_OP_TYPE_LRN;
+extern const char *G_OP_TYPE_MUL;
+extern const char *G_OP_TYPE_MULTICLASS_NMS;
+extern const char *G_OP_TYPE_POOL2D;
+extern const char *G_OP_TYPE_PRIOR_BOX;
+extern const char *G_OP_TYPE_RELU;
+extern const char *G_OP_TYPE_RESHAPE;
+extern const char *G_OP_TYPE_SIGMOID;
+extern const char *G_OP_TYPE_SOFTMAX;
+extern const char *G_OP_TYPE_TRANSPOSE;
+extern const char *G_OP_TYPE_SPLIT;
+extern const char *G_OP_TYPE_FEED;
+extern const char *G_OP_TYPE_FETCH;
+extern const char *G_OP_TYPE_DEPTHWISE_CONV;
+extern const char *G_OP_TYPE_IM2SEQUENCE;
+extern const char *G_OP_TYPE_DROPOUT;
+
+extern const char *G_OP_TYPE_FUSION_CONV_ADD_BN;
+extern const char *G_OP_TYPE_FUSION_POOL_BN;
+extern const char *G_OP_TYPE_FUSION_ELEMENTWISE_ADD_RELU;
+extern const char *G_OP_TYPE_FUSION_FC_RELU;
+extern const char *G_OP_TYPE_REGION;
+extern const char *G_OP_TYPE_FUSION_CONV_BN;
+extern const char *G_OP_TYPE_CONV_TRANSPOSE;
+extern const char *G_OP_TYPE_PRELU;
 
 extern std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>

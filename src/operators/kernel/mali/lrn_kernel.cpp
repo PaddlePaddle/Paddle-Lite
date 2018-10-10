@@ -20,6 +20,7 @@ limitations under the License. */
 #ifdef PADDLE_MOBILE_MALI_GPU
 #include "acl_operator.h"
 #include "framework/operator.h"
+#include "operators/kernel/central-arm-func/lrn_arm_func.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
@@ -39,7 +40,7 @@ class AclLrnOp : public acl::ACLOperator {
   AclLrnOp& operator=(AclLrnOp&&) = delete;
 
   acl::AclParameters& getargs() { return args; }
-  void InitAclLayer(const LrnParam& param) {
+  void InitAclLayer(const LrnParam<DeviceType>& param) {
     setTargetHint(acl::TargetHint::OPENCL);
     arm_compute::TensorShape shape(args.in_cols, args.in_rows, args.in_depth);
 
@@ -59,12 +60,15 @@ class AclLrnOp : public acl::ACLOperator {
     acl_configure(lrn, this, norm_info);
   }
 
+  void Set_bypass(bool bypass) { args.is_bypass = bypass; }
+
   void RunAcl(void* input, void* output) {
     acl::ACLOperator::acl_run(input, output);
   }
-  bool Bypass_acl(const LrnParam& param) {
+  bool Bypass_acl(const LrnParam<DeviceType>& param) {
     bool bypass_acl = false;
     AclParametersByContext(param);
+    InitAclLayer(param);
     // for performance, more groups impact GPU performance
     if (this->force_bypass_acl_path_) {
       bypass_acl = true;
@@ -74,7 +78,7 @@ class AclLrnOp : public acl::ACLOperator {
   }
 
  private:
-  void AclParametersByContext(const LrnParam& param) {
+  void AclParametersByContext(const LrnParam<DeviceType>& param) {
     const Tensor* in_x = param.InputX();
     Tensor* out = param.Out();
 
@@ -107,32 +111,38 @@ class AclLrnOp : public acl::ACLOperator {
 };
 
 template <>
-bool LrnKernel<GPU_MALI, float>::Init(const LrnParam& param) const {
+bool LrnKernel<GPU_MALI, float>::Init(LrnParam<GPU_MALI>* param) {
   AclLrnOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclLrnOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {
     acl_op = new AclLrnOp<GPU_MALI, float>();
     this->SetAclOp((void*)acl_op, (void*)this);
   }
+  if (acl_op->Bypass_acl(*param)) {
+    acl_op->Set_bypass(true);
+    std::cout << "init acl failed" << std::endl;
+    return true;
+  }
   return true;
 }
 
 template <>
-void LrnKernel<GPU_MALI, float>::Compute(const LrnParam& param) const {
+void LrnKernel<GPU_MALI, float>::Compute(
+    const LrnParam<GPU_MALI>& param) const {
   std::cout << "init acl" << std::endl;
   AclLrnOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclLrnOp<GPU_MALI, float>*>(this->GetAclOp());
   if (acl_op == nullptr) {
     return;
   }
-  if (acl_op->Bypass_acl(param)) {
-    std::cout << "init acl failed" << std::endl;
+  acl::AclParameters& args = acl_op->getargs();
+  if (args.is_bypass) {
+    std::cout << "bypass op" << std::endl;
+    LrnCompute<float>(param);
     return;
   }
-  acl::AclParameters& args = acl_op->getargs();
   const float* input_data = (const float*)args.input_data;
   const float* output_data = (const float*)args.output_data;
-  acl_op->InitAclLayer(param);
   for (int n = 0; n < args.batch; ++n) {
     acl_op->RunAcl((void*)input_data, (void*)output_data);
     input_data += args.in_depth * args.in_cols * args.in_rows;

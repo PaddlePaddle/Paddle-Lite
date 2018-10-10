@@ -14,15 +14,33 @@ limitations under the License. */
 
 #include "framework/program/program-optimize/node.h"
 #include <algorithm>
+#include <map>
+#include <memory>
 #include "framework/operator.h"
 
 namespace paddle_mobile {
 
 namespace framework {
 
+std::vector<Node *> Node::operator[](int index) {
+  std::vector<Node *> nodes;
+  GetNodesWithLocation(index, 0, &nodes);
+  return nodes;
+}
+
+void Node::GetNodesWithLocation(int index, int now_index,
+                                std::vector<Node *> *nodes) {
+  if (index == now_index) {
+    nodes->push_back(this);
+  }
+
+  for (int i = 0; i < this->outputs_.size(); ++i) {
+    this->outputs_[i]->GetNodesWithLocation(index, now_index + 1, nodes);
+  }
+}
+
 Node &Node::operator>(std::shared_ptr<Node> node) {
   outputs_.push_back(node);
-  std::shared_ptr<Node> this_node;
   node->inputs_.push_back(this);
   return *node;
 }
@@ -31,7 +49,7 @@ bool Node::operator==(const Node &in) {
   if (in.type_ == this->type_) {
     if (this->outputs_.size() == in.outputs_.size()) {
       for (int i = 0; i < outputs_.size(); ++i) {
-        if (!(*outputs_[i] == *in.outputs_[i])) {
+        if (!(this->outputs_[i]->MedianEqual(*in.outputs_[i]))) {
           return false;
         }
       }
@@ -44,20 +62,54 @@ bool Node::operator==(const Node &in) {
   return true;
 }
 
-std::vector<std::shared_ptr<framework::OpDesc>> Node::OpDescs(int size) {
-  std::vector<std::shared_ptr<framework::OpDesc>> op_descs;
-  OpDescs(size - 1, &op_descs);
-  return op_descs;
+bool Node::MedianEqual(const Node &in) {
+  if (in.type_ == this->type_) {
+    if (this->outputs_.size() == in.outputs_.size()) {
+      //      if (this->inputs_.size() != in.inputs_.size()) {
+      //        DLOG << " == - this input size: " << this->inputs_.size();
+      //        DLOG << " == - ptr of this " << this;
+      //        DLOG << " == - in input size: " << in.inputs_.size();
+      //        DLOG << " == - input size not equal ";
+      //        return false;
+      //      } else {
+      //        for (int i = 0; i < this->inputs_.size(); ++i) {
+      //          if (this->inputs_[i]->type_ != in.inputs_[i]->type_) {
+      //            DLOG << " == - input type not equal ";
+      //            return false;
+      //          }
+      //        }
+      //      }
+
+      for (int i = 0; i < outputs_.size(); ++i) {
+        if (!((*outputs_[i]).MedianEqual(*in.outputs_[i]))) {
+          return false;
+        }
+      }
+    } else {
+      //      DLOG << " == - output size not equal ";
+      return false;
+    }
+  } else {
+    //    DLOG << " == - median type is not equal ";
+    return false;
+  }
+  return true;
 }
 
-void Node::OpDescs(int index,
-                   std::vector<std::shared_ptr<framework::OpDesc>> *op_desc) {
-  if (index == 0) {
-    return;
+std::map<std::string, Node *> Node::Relationship() {
+  std::map<std::string, Node *> map;
+  RelationshipPrivate(&map);
+  return map;
+}
+
+void Node::RelationshipPrivate(std::map<std::string, Node *> *map) {
+  for (auto output : op_desc_->outputs_) {
+    for (auto output_key : output.second) {
+      (*map)[output_key] = this;
+    }
   }
-  op_desc->push_back(this->op_desc_);
-  for (auto &output : outputs_) {
-    output->OpDescs(index, op_desc);
+  for (auto output : this->outputs_) {
+    output->RelationshipPrivate(map);
   }
 }
 
@@ -68,7 +120,9 @@ std::shared_ptr<Node> Node::To(int size) {
 }
 
 void Node::To(int index, std::shared_ptr<Node> node) {
+  node->op_desc_ = this->op_desc_;
   node->type_ = this->type_;
+  node->inputs_ = this->inputs_;
   if (index != 0) {
   } else {
     return;
@@ -117,8 +171,19 @@ void Node::Folder(
   if (change->find(this->type_) != change->end()) {
     auto change_pairs = (*change)[this->type_];
     for (const auto &change_pair : change_pairs) {
-      op_desc->GetInputs()[change_pair.second] =
-          this->op_desc_->GetInputs()[change_pair.first];
+      std::map<std::string, int> f;
+      if (this->op_desc_->GetInputs().find(change_pair.first) !=
+          this->op_desc_->GetInputs().end()) {
+        if (op_desc->GetInputs().find(change_pair.second) !=
+            op_desc->GetInputs().end()) {
+          for (auto value : this->op_desc_->GetInputs()[change_pair.first]) {
+            op_desc->GetInputs()[change_pair.second].push_back(value);
+          }
+        } else {
+          op_desc->GetInputs()[change_pair.second] =
+              this->op_desc_->GetInputs()[change_pair.first];
+        }
+      }
     }
   }
 
@@ -127,7 +192,28 @@ void Node::Folder(
   }
   if (index > 0) {
     --index;
+
     for (auto output : outputs_) {
+      if (change->find(this->type_) != change->end()) {
+        auto change_pairs = (*change)[this->type_];
+        for (const auto &change_pair : change_pairs) {
+          std::map<std::string, int> f;
+          if (this->op_desc_->GetOutputs().find(change_pair.first) !=
+              this->op_desc_->GetOutputs().end()) {
+            if (op_desc->GetInputs().find(change_pair.second) !=
+                op_desc->GetInputs().end()) {
+              for (auto value :
+                   this->op_desc_->GetOutputs()[change_pair.first]) {
+                op_desc->GetInputs()[change_pair.second].push_back(value);
+              }
+            } else {
+              op_desc->GetInputs()[change_pair.second] =
+                  this->op_desc_->GetOutputs()[change_pair.first];
+            }
+          }
+        }
+      }
+
       removed_nodes->push_back(output);
       output->Folder(op_desc, outputs, index, change, begin_node,
                      removed_nodes);
