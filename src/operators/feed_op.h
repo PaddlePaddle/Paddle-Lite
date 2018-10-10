@@ -77,7 +77,6 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
     void Init() {}
     void RunImpl() {
 
-
     }
 #else
     void Init() {}

@@ -53,6 +53,9 @@ class Loader {
                                                  bool optimize = false,
                                                  bool quantification = false,
                                                  bool can_add_split = false);
+
+  void InitMemoryFromProgram(std::shared_ptr<ProgramDesc> &originProgramDesc,
+                             std::shared_ptr<Scope> &scope);
 };
 
 }

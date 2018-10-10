@@ -73,6 +73,8 @@ class Executor {
 
   void LoadMemory(const framework::VarDesc var_desc,
                   framework::LoDTensor *tensor, char **data);
+  void LoadMemory(const framework::VarDesc var_desc,
+                    float * tensorInput, char **data);
 
   void InitCombineMemory();
 

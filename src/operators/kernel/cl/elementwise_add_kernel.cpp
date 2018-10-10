@@ -21,7 +21,7 @@ namespace paddle_mobile {
 
         template <>
         bool ElementwiseAddKernel<GPU_CL, float>::Init(ElementwiseAddParam<GPU_CL> *param) {
-            this->cl_helper_.AddKernel("elementwise_add", "elementwise_add_kernel.cl");
+//            this->cl_helper_.AddKernel("elementwise_add", "elementwise_add_kernel.cl");
             return true;
         }
 

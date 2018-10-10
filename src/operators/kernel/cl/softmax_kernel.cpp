@@ -12,22 +12,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef SOFTMAX_OP
 
-#include "operators/kernel/pool_kernel.h"
+#include "operators/kernel/softmax_kernel.h"
 
 namespace paddle_mobile {
-namespace operators {
+    namespace operators {
 
-template <>
-bool SoftmaxKernel<GPU_CL, float>::Init(SoftmaxParam<GPU_CL> *param) {
-  return true;
-}
+        template <>
+        bool SoftmaxKernel<GPU_CL, float>::Init(SoftmaxParam<GPU_CL> *param) {
+            return true;
+        }
 
-template <>
-void SoftmaxKernel<GPU_CL, float>::Compute(const SoftmaxParam<GPU_CL> &param) {}
+        template <>
+        void SoftmaxKernel<GPU_CL, float>::Compute(const SoftmaxParam<GPU_CL> &param) {}
 
-template class SoftmaxKernel<GPU_CL, float>;
+        template class SoftmaxKernel<GPU_CL, float>;
 
-}  // namespace operators
+    }  // namespace operators
 }  // namespace paddle_mobile
+#endif
+
 
