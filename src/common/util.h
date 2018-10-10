@@ -14,8 +14,8 @@ limitations under the License. */
 
 #pragma once
 
-#include "common/enforce.h"
 #include <string>
+#include "common/enforce.h"
 
 namespace paddle_mobile {
 

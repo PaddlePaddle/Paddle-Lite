@@ -212,6 +212,14 @@ if (NOT FOUND_MATCH)
     ADD_EXECUTABLE(test-fc-op operators/test_fusion_fc_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-fc-op paddle-mobile)
 
+    # test quantize op
+    ADD_EXECUTABLE(test-quantize-op operators/test_quantize_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-quantize-op paddle-mobile)
+
+    # test dequantize op
+    ADD_EXECUTABLE(test-dequantize-op operators/test_dequantize_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-dequantize-op paddle-mobile)
+
     # gen test log
     ADD_EXECUTABLE(test-log common/test_log.cpp)
     target_link_libraries(test-log paddle-mobile)

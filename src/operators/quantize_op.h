@@ -14,30 +14,29 @@ limitations under the License. */
 
 #pragma once
 
+#include <string>
 #include "framework/operator.h"
-#include "operators/op_param.h"
 #include "operators/kernel/quantize_kernel.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <typename DeviceType, typename T>
 class QuantizeOp : public framework::OperatorWithKernel<
-                        DeviceType, QuantizeParam<DeviceType>,
-                        operators::QuantizeKernel<DeviceType, T>> {
+                       DeviceType, QuantizeParam<DeviceType>,
+                       operators::QuantizeKernel<DeviceType, T>> {
  public:
-  QuantizeOp(const std::string &type,
-             const VariableNameMap &inputs,
+  QuantizeOp(const std::string &type, const VariableNameMap &inputs,
              const VariableNameMap &outputs,
              const framework::AttributeMap &attrs,
              std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType,
-                                      QuantizeParam<DeviceType>,
+      : framework::OperatorWithKernel<DeviceType, QuantizeParam<DeviceType>,
                                       operators::QuantizeKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
   // inference output shape
   void InferShape() const override;
 };
 
-}  // namespace paddle_mobile
 }  // namespace operators
+}  // namespace paddle_mobile
