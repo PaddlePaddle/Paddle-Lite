@@ -47,14 +47,11 @@ void Im2SequenceOp<Dtype, T>::InferShape() const {
   this->param_.Output()->Resize(ddim);
 }
 
-template class Im2SequenceOp<CPU, float>;
-
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(im2sequence);
 REGISTER_OPERATOR_CPU(im2sequence, ops::Im2SequenceOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU

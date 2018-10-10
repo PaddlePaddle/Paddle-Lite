@@ -16,6 +16,7 @@ limitations under the License. */
 #pragma once
 
 #include <algorithm>
+#include <cmath>
 #include <vector>
 
 namespace paddle_mobile {
@@ -29,7 +30,7 @@ struct ClipFunctor {
 };
 
 template <typename P>
-void PriorBoxCompute(const PriorBoxParam &param) {
+void PriorBoxCompute(const PriorBoxParam<CPU> &param) {
   const auto *input_ = param.Input();
   const auto &input_dims = input_->dims();
 
@@ -89,12 +90,8 @@ void PriorBoxCompute(const PriorBoxParam &param) {
       int idx = 0;
       for (size_t s = 0; s < min_sizes.size(); ++s) {
         auto min_size = min_sizes[s];
-        // priors with different aspect ratios
-        for (float ar : aspect_ratios) {
-          box_width = min_size * sqrt(ar) / 2.;
-          box_height = min_size / sqrt(ar) / 2.;
-          /// box_width/2 , / img_width 为了得到feature map 相对于
-          /// 原图的归一化位置的比例。
+        if (param.MinMaxAspectRatiosOrder()) {
+          box_width = box_height = min_size / 2.;
           output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 + 0] =
               (center_x - box_width) / img_width;
           output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 + 1] =
@@ -104,20 +101,73 @@ void PriorBoxCompute(const PriorBoxParam &param) {
           output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 + 3] =
               (center_y + box_height) / img_height;
           idx++;
-        }
-        if (!max_sizes.empty()) {
-          auto max_size = max_sizes[s];
-          // square prior with size sqrt(minSize * maxSize)
-          box_width = box_height = sqrt(min_size * max_size) / 2.;
-          output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 + 0] =
-              (center_x - box_width) / img_width;
-          output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 + 1] =
-              (center_y - box_height) / img_height;
-          output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 + 2] =
-              (center_x + box_width) / img_width;
-          output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 + 3] =
-              (center_y + box_height) / img_height;
-          idx++;
+
+          if (max_sizes.size() > 0) {
+            auto max_size = max_sizes[s];
+            // square prior with size sqrt(minSize * maxSize)
+            box_width = box_height = sqrt(min_size * max_size) / 2.;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 0] = (center_x - box_width) / img_width;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 1] = (center_y - box_height) / img_height;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 2] = (center_x + box_width) / img_width;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 3] = (center_y + box_height) / img_height;
+            idx++;
+          }
+
+          // priors with different aspect ratios
+          for (float ar : aspect_ratios) {
+            if (fabs(ar - 1.) < 1e-6) {
+              continue;
+            }
+            box_width = min_size * sqrt(ar) / 2.;
+            box_height = min_size / sqrt(ar) / 2.;
+            /// box_width/2 , / img_width 为了得到feature map 相对于
+            /// 原图的归一化位置的比例。
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 0] = (center_x - box_width) / img_width;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 1] = (center_y - box_height) / img_height;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 2] = (center_x + box_width) / img_width;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 3] = (center_y + box_height) / img_height;
+            idx++;
+          }
+
+        } else {
+          // priors with different aspect ratios
+          for (float ar : aspect_ratios) {
+            box_width = min_size * sqrt(ar) / 2.;
+            box_height = min_size / sqrt(ar) / 2.;
+            /// box_width/2 , / img_width 为了得到feature map 相对于
+            /// 原图的归一化位置的比例。
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 0] = (center_x - box_width) / img_width;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 1] = (center_y - box_height) / img_height;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 2] = (center_x + box_width) / img_width;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 3] = (center_y + box_height) / img_height;
+            idx++;
+          }
+          if (!max_sizes.empty()) {
+            auto max_size = max_sizes[s];
+            // square prior with size sqrt(minSize * maxSize)
+            box_width = box_height = sqrt(min_size * max_size) / 2.;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 0] = (center_x - box_width) / img_width;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 1] = (center_y - box_height) / img_height;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 2] = (center_x + box_width) / img_width;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 3] = (center_y + box_height) / img_height;
+            idx++;
+          }
         }
       }
     }

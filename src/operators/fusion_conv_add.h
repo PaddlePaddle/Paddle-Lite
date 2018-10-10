@@ -36,8 +36,6 @@ class FusionConvAddMatcher : public framework::FusionOpMatcher {
   void FolderNodes(
       framework::Node *node,
       std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
-    vector<std::shared_ptr<framework::OpDesc>> origin_descs =
-        node->OpDescs(node_.Depth());
     node->Folder(node_.Depth(), Type(),
                  {{G_OP_TYPE_ELEMENTWISE_ADD, {{"Y", "Y"}}}}, removed_nodes);
   }
@@ -47,19 +45,20 @@ class FusionConvAddMatcher : public framework::FusionOpMatcher {
 
 template <typename DeviceType, typename T>
 class FusionConvAddOp : public framework::OperatorWithKernel<
-                            DeviceType, FusionConvAddParam,
+                            DeviceType, FusionConvAddParam<DeviceType>,
                             operators::ConvAddKernel<DeviceType, T>> {
  public:
   FusionConvAddOp(const string &type, const VariableNameMap &inputs,
                   const VariableNameMap &outputs,
                   const framework::AttributeMap &attrs,
                   std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, FusionConvAddParam,
+      : framework::OperatorWithKernel<DeviceType,
+                                      FusionConvAddParam<DeviceType>,
                                       operators::ConvAddKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 
   using framework::OperatorWithKernel<
-      DeviceType, FusionConvAddParam,
+      DeviceType, FusionConvAddParam<DeviceType>,
       operators::ConvAddKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
@@ -82,6 +81,7 @@ static framework::FusionOpRegistrar convadd_registrar(
 static framework::FusionOpRegistrar convadd_registrar(
     new FusionConvAddMatcher());
 #define CONV_ADD_REGISTER
+
 #endif
 
 #endif
@@ -91,5 +91,14 @@ static framework::FusionOpRegistrar convadd_registrar(
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(fusion_conv_add);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(fusion_conv_add);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
 
 #endif

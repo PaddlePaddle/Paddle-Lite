@@ -41,20 +41,18 @@ class FetchOp : public framework::OperatorBase<DeviceType> {
   }
 
  protected:
-  FetchParam param_;
+  FetchParam<DeviceType> param_;
 };
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(fetch);
-REGISTER_OPERATOR_CPU(fetch, ops::FetchOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(fetch);
-REGISTER_OPERATOR_MALI_GPU(fetch, ops::FetchOp);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-#endif
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#ifdef PADDLE_MOBILE_CPU
+USE_OP_CPU(fetch);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+USE_OP_MALI_GPU(fetch);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+USE_OP_FPGA(fetch);
+#endif

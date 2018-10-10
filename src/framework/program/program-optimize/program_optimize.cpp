@@ -29,8 +29,14 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FusionOptimize(
 
   for (int i = 0; i < optimize_program->Blocks().size(); ++i) {
     std::unordered_map<std::string, std::shared_ptr<Node>> output_nodes;
-    std::unordered_map<std::string, std::vector<std::shared_ptr<Node>>>
+    std::unordered_map<
+        std::string,
+        std::vector<
+            std::pair<std::shared_ptr<Node>,
+                      std::unordered_map<std::string, std::shared_ptr<Node>>>>>
         type_map;
+
+    std::unordered_map<std::string, bool> output_has;
 
     std::vector<std::shared_ptr<Node>> nodes;
 
@@ -50,7 +56,7 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FusionOptimize(
       nodes.push_back(node);
 
       //
-      type_map[op->Type()].push_back(node);
+      type_map[op->Type()].push_back({node, output_nodes});
 
       if (j == 0) {
         begin_node = node;
@@ -69,6 +75,7 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FusionOptimize(
       }
 
       auto output_keys = op_input_output_key.at(op_type).second;
+
       for (auto output_key : output_keys) {
         auto op_outputs = op->Output(output_key);
         for (int k = 0; k < op_outputs.size(); ++k) {
@@ -78,17 +85,47 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FusionOptimize(
     }
 
     for (auto &registed : FusionOpRegister::Instance()->Matchers()) {
-      std::string fusion_type = registed.first;
-      std::shared_ptr<FusionOpMatcher> matcher = registed.second;
-      //      DLOG << " registed node \n " << matcher->BeginNode();
+      std::string fusion_type = registed->Type();
+      std::shared_ptr<FusionOpMatcher> matcher = registed;
 
       auto match_vector = type_map[matcher->BeginType()];
 
-      for (auto &match_node : match_vector) {
+      for (auto &match_node_pair : match_vector) {
+        auto match_node = match_node_pair.first;
+
+        auto node_has = match_node_pair.second;
+
         auto depth = matcher->BeginNode().Depth();
         auto sub_node = match_node->To(depth);
         //        DLOG << " sub node: " << *sub_node;
         if (*sub_node == matcher->BeginNode()) {
+          bool can_folder = true;
+
+          auto relationship_map = sub_node->Relationship();
+
+          for (auto to_check : matcher->NeedCheck()) {
+            //            if (node_has)
+            auto nodes = (*sub_node)[to_check.first];
+            for (auto node : nodes) {
+              auto inputs_to_check =
+                  node->OpDescOfNode()->Input(to_check.second);
+
+              for (auto input_to_check : inputs_to_check) {
+                if (node_has.find(input_to_check) == node_has.end()) {
+                  if (relationship_map.find(input_to_check) ==
+                      relationship_map.end()) {
+                    can_folder = false;
+                  } else {
+                  }
+                }
+              }
+            }
+          }
+
+          if (!can_folder) {
+            continue;
+          }
+
           //          DLOG << " match success " << " fusion node: \n" <<
           //          matcher->BeginNode() << "\nsub node: \n" << *sub_node;
           //          DLOG << "match node\n"<< *match_node;
@@ -96,11 +133,13 @@ std::shared_ptr<ProgramDesc> ProgramOptimize::FusionOptimize(
           std::vector<std::shared_ptr<Node>> removed_nodes;
           matcher->FolderNodes(match_node.get(), &removed_nodes);
 
-          for (int j = 0; j < removed_nodes.size(); ++j) {
-            auto removed_node = removed_nodes[j];
+          for (int k = removed_nodes.size() - 1; k >= 0; --k) {
+            auto removed_node = removed_nodes[k];
             auto removed_ite =
                 std::find(nodes.begin(), nodes.end(), removed_node);
-            nodes.erase(removed_ite);
+            if (removed_ite != nodes.end()) {
+              nodes.erase(removed_ite);
+            }
           }
         }
       }

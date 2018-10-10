@@ -27,10 +27,10 @@ namespace operators {
 
 template <typename DeviceType, typename T>
 class BoxCoderKernel
-    : public framework::OpKernelBase<DeviceType, BoxCoderParam> {
+    : public framework::OpKernelBase<DeviceType, BoxCoderParam<DeviceType>> {
  public:
-  void Compute(const BoxCoderParam& param) const;
-  bool Init(BoxCoderParam* param);
+  void Compute(const BoxCoderParam<DeviceType>& param) const;
+  bool Init(BoxCoderParam<DeviceType>* param);
 };
 }  // namespace operators
 }  // namespace paddle_mobile
