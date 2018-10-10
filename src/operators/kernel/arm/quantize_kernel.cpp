@@ -16,7 +16,6 @@ limitations under the License. */
 
 #include "operators/kernel/quantize_kernel.h"
 #include <cmath>
-#include <limits>
 
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
 #include <arm_neon.h>
@@ -55,7 +54,7 @@ int32x4_t vrnd_to_even(float32x4_t r) {
       if (abs(q) % 2 == 0) {
         ret[i] = q;
       } else {
-        ret[i] = q + (q > 0) ? -1 : 1;
+        ret[i] = q + ((q > 0) ? -1 : 1);
       }
     }
   }
@@ -131,7 +130,7 @@ static float find_abs_max(const Tensor *input) {
 static void quantize_round_to_even(const Tensor *input, const float scale,
                                    Tensor *output) {
   const float *x = input->data<const float>();
-  int8_t *y = output->data<int8_t>();
+  int8_t *y = output->mutable_data<int8_t>();
   size_t size = input->numel();
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
   size_t loop = size >> 4;
@@ -153,8 +152,8 @@ static void quantize_round_to_even(const Tensor *input, const float scale,
     int16x4_t d1 = vmovn_s32(q1);
     int16x4_t d2 = vmovn_s32(q2);
     int16x4_t d3 = vmovn_s32(q3);
-    int16x8_t q5 = vcombine_s16(d1, d0);
-    int16x8_t q6 = vcombine_s16(d3, d2);
+    int16x8_t q5 = vcombine_s16(d0, d1);
+    int16x8_t q6 = vcombine_s16(d2, d3);
     int8x8_t d5 = vmovn_s16(q5);
     int8x8_t d6 = vmovn_s16(q6);
     vst1_s8(y, d5);
@@ -174,7 +173,7 @@ static void quantize_round_to_even(const Tensor *input, const float scale,
       if (abs(q) % 2 == 0) {
         y[i] = q;
       } else {
-        y[i] = q + (q > 0) ? -1 : 1;
+        y[i] = q + ((q > 0) ? -1 : 1);
       }
     }
   }
@@ -183,7 +182,7 @@ static void quantize_round_to_even(const Tensor *input, const float scale,
 static void quantize_round_to_zero(const Tensor *input, const float scale,
                                    Tensor *output) {
   const float *x = input->data<const float>();
-  int8_t *y = output->data<int8_t>();
+  int8_t *y = output->mutable_data<int8_t>();
   size_t size = input->numel();
 #ifdef defined(__ARM_NEON__) || defined(__ARM_NEON)
   size_t loop = size >> 4;
@@ -205,8 +204,8 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
     int16x4_t d1 = vmovn_s32(q1);
     int16x4_t d2 = vmovn_s32(q2);
     int16x4_t d3 = vmovn_s32(q3);
-    int16x8_t q5 = vcombine_s16(d1, d0);
-    int16x8_t q6 = vcombine_s16(d3, d2);
+    int16x8_t q5 = vcombine_s16(d0, d1);
+    int16x8_t q6 = vcombine_s16(d2, d3);
     int8x8_t d5 = vmovn_s16(q5);
     int8x8_t d6 = vmovn_s16(q6);
     vst1_s8(y, d5);
@@ -224,7 +223,7 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
 static void quantize_round_to_nearest(const Tensor *input, const float scale,
                                       Tensor *output) {
   const float *x = input->data<const float>();
-  int8_t *y = output->data<int8_t>();
+  int8_t *y = output->mutable_data<int8_t>();
   size_t size = input->numel();
 #ifdef defined(__ARM_NEON__) || defined(__ARM_NEON)
   size_t loop = size >> 4;
@@ -246,8 +245,8 @@ static void quantize_round_to_nearest(const Tensor *input, const float scale,
     int16x4_t d1 = vmovn_s32(q1);
     int16x4_t d2 = vmovn_s32(q2);
     int16x4_t d3 = vmovn_s32(q3);
-    int16x8_t q5 = vcombine_s16(d1, d0);
-    int16x8_t q6 = vcombine_s16(d3, d2);
+    int16x8_t q5 = vcombine_s16(d0, d1);
+    int16x8_t q6 = vcombine_s16(d2, d3);
     int8x8_t d5 = vmovn_s16(q5);
     int8x8_t d6 = vmovn_s16(q6);
     vst1_s8(y, d5);
@@ -258,7 +257,7 @@ static void quantize_round_to_nearest(const Tensor *input, const float scale,
   size = remain;
 #endif
   for (size_t i = 0; i < size; ++i) {
-    y[i] = trunc(x[i] * scale);
+    y[i] = round(x[i] * scale);
   }
 }
 
@@ -279,9 +278,7 @@ void QuantizeKernel<CPU, float>::Compute(
   } else {
     max_abs = find_abs_max(input);
   }
-  if (max_abs < std::numeric_limits<float>::min()) {
-    max_abs = std::numeric_limits<float>::min();
-  }
+  max_abs = std::max(max_abs, 1e-6f);
   // only support int8 currently
   float online_scale = 127 / max_abs;
   param.online_scale_->mutable_data<float>()[0] = online_scale;
