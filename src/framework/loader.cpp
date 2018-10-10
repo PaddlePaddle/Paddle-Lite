@@ -16,6 +16,9 @@ limitations under the License. */
 
 #include "framework/lod_tensor.h"
 #include "framework/program/program-optimize/program_optimize.h"
+#ifdef PADDLE_MOBILE_CL
+#include "framework/cl/cl_image.h"
+#endif
 
 namespace paddle_mobile {
 namespace framework {
@@ -26,7 +29,8 @@ namespace framework {
  * @param originProgramDesc
  * @param scope
  */
-void InitMemoryFromProgram(
+template<typename Dtype, Precision P>
+void Loader<Dtype, P>::InitMemoryFromProgram(
         std::shared_ptr<ProgramDesc> &originProgramDesc,
         std::shared_ptr<Scope> &scope) {
   for (const auto &block : originProgramDesc.get()->Blocks()) {
@@ -50,6 +54,35 @@ void InitMemoryFromProgram(
     }
   }
 }
+
+#ifdef PADDLE_MOBILE_CL
+        template<>
+        void Loader<GPU_CL, Precision::FP32>::InitMemoryFromProgram(
+                std::shared_ptr<ProgramDesc> &originProgramDesc,
+                std::shared_ptr<Scope> &scope) {
+          for (const auto &block : originProgramDesc.get()->Blocks()) {
+            for (const auto &var_desc : block->Vars()) {
+              auto var = scope.get()->Var(var_desc->Name());
+              if (var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
+                if (var_desc->Persistable()) {
+                  auto dim = var_desc->Tensor_desc().Dims();
+//              auto tensor = var->GetMutable<LoDTensor>();
+                  auto cl_image = var->GetMutable<framework::CLImage>();
+                  cl_image->Resize(make_ddim(dim));
+                } else {
+                  auto dim = var_desc->Tensor_desc().Dims();
+                  PADDLE_MOBILE_ENFORCE(dim.size() > 0, "dim size is 0");
+                  dim[0] = 1;
+                  auto cl_image = var->GetMutable<framework::CLImage>();
+                  cl_image->Resize(make_ddim(dim));
+                }
+              } else {
+                // TODO(codeWorm): some.
+              }
+            }
+          }
+        }
+#endif
 
 /**
  * fusion and print someinfos
