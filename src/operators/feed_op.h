@@ -24,7 +24,7 @@ namespace operators {
 template <typename DeviceType, typename T>
 class FeedOp : public framework::OperatorBase<DeviceType> {
  public:
-  FeedOp(const string &type, const VariableNameMap &inputs,
+  FeedOp(const std::string &type, const VariableNameMap &inputs,
          const VariableNameMap &outputs, const framework::AttributeMap attrs,
          std::shared_ptr<framework::Scope> scope)
       : framework::OperatorBase<DeviceType>(type, inputs, outputs, attrs,
@@ -38,25 +38,29 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
   }
 
 #ifdef PADDLE_MOBILE_FPGA
+
   void Init() {
     Tensor *output = param_.Out();
-    fpga::format_ofm(output);
+    fpga::format_fp16_ofm(output);
   }
 
   void RunImpl() const {
-    auto input = reinterpret_cast<Tensor *>(param_.InputX());
+    auto input = (Tensor *)const_cast<LoDTensor *>(param_.InputX());  // NOLINT
     fpga::format_image(input);
     auto input_ptr = input->data<float>();
     Tensor *output = param_.Out();
-    auto output_ptr = output->mutable_data<half>();
+    auto output_ptr = output->data<float>();
 
-    fpga::BypassArgs args;
-    args.convert_type = fpga::DATA_FP32_TO_FP16;
-    args.layout_type = fpga::LAYOUT_NO_CONVERT;
-    args.image.address = input_ptr;
-    args.image.channels = input->dims()[1];
-    args.image.height = input->dims()[2];
-    args.image.width = input->dims()[3];
+    fpga::BypassArgs args = {fpga::DATA_TYPE_FP32};
+
+    args.input_data_type = fpga::DATA_TYPE_FP32;
+    args.output_data_type = fpga::DATA_TYPE_FP16;
+    args.input_layout_type = fpga::LAYOUT_CHW;
+    args.output_layout_type = fpga::LAYOUT_HWC;
+    args.image.address = (void *)input_ptr;  // NOLINT
+    args.image.channels = (uint32_t)input->dims()[1];
+    args.image.height = (uint32_t)input->dims()[2];
+    args.image.width = (uint32_t)input->dims()[3];
     args.image.pad_height = 0;
     args.image.pad_width = 0;
     args.output.address = output_ptr;

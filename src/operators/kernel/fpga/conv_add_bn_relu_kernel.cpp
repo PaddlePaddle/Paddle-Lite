@@ -24,7 +24,6 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
     FusionConvAddBNReluParam<FPGA> *param) {
   bool relu_enabled = true;
   auto input = const_cast<Tensor *>(param->Input());
-  auto input_ptr = input->data<float>();
   const Tensor *bias = param->Bias();
   auto bias_ptr = bias->data<float>();
   auto filter = const_cast<Tensor *>(param->Filter());
@@ -39,7 +38,8 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
                         "Output channel should be equal to bias number");
 
   const int channel = out->dims()[1];
-  auto bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sizeof(float));
+  auto bs_ptr =
+      (float *)fpga::fpga_malloc(2 * channel * sizeof(float));  // NOLINT
   auto new_scale = new Tensor();
   auto new_bias = new Tensor();
   auto new_scale_ptr = new_scale->mutable_data<float>({channel});
@@ -58,16 +58,14 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
 
   float max_value = fpga::filter_find_max(filter);
   fpga::format_filter(filter, max_value, param->Groups());
-  auto filter_ptr = filter->data<float>();
 
   int element_num_per_div =
-      fpga::get_element_num_per_div(filter, param->Groups());
+      fpga::get_filter_num_per_div(filter, param->Groups());
   fpga::format_bias_scale_array(&bs_ptr, element_num_per_div, channel);
 
-  fpga::format_ofm(out);
-  auto out_ptr = out->mutable_data<float>();
+  fpga::format_fp16_ofm(out);
 
-  fpga::WrapperConvArgs conv_arg;
+  fpga::WrapperConvArgs conv_arg = {0};
   fpga::fill_conv_arg(&conv_arg, input, out, filter, relu_enabled,
                       param->Groups(), param->Strides()[0], param->Strides()[1],
                       param->Paddings()[0], param->Paddings()[1], bs_ptr);
@@ -80,7 +78,6 @@ void ConvAddBNReluKernel<FPGA, float>::Compute(
     const FusionConvAddBNReluParam<FPGA> &param) const {
   fpga::ComputeFpgaConv(param.FpgaArgs());
 }
-template class ConvAddBNReluKernel<FPGA, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile

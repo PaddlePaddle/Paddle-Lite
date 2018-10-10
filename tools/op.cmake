@@ -177,6 +177,7 @@ if (CON GREATER -1)
   set(FOUND_MATCH ON)
 endif()
 
+
 if(NOT FOUND_MATCH)
   message("--default--")
   set(BATCHNORM_OP ON)

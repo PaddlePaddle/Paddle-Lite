@@ -289,12 +289,8 @@ class Tensor {
     virtual std::type_index type() const { return type_; }
 
     virtual void set_type(std::type_index type) { type_ = type; }
-#ifndef PADDLE_MOBILE_FPGA
-    /*! the pointer of memory block. */
+
     std::unique_ptr<uint8_t, memory::PODDeleter<uint8_t>> ptr_;
-#else
-    std::shared_ptr<uint8_t> ptr_;
-#endif
 
     /*! the size of memory block. */
     size_t size_;
@@ -323,10 +319,11 @@ class Tensor {
    * begins.
    */
   size_t offset_;
+
 #ifdef PADDLE_MOBILE_FPGA
- public:
+ public:  // NOLINT
   inline void reset_data_ptr(void *p) {
-    ((PlaceholderImpl *)(holder_.get()))->ptr_.reset((uint8_t *)p);
+    ((PlaceholderImpl *)(holder_.get()))->ptr_.reset((uint8_t *)p);  // NOLINT
   }
   float scale[2];  // scale[0]= MAX/127.0, scale[1]= 127.0/MAX
 #endif
