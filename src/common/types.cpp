@@ -15,7 +15,6 @@ limitations under the License. */
 #include "common/types.h"
 #include <vector>
 
-
 namespace paddle_mobile {
 
 const char *G_OP_TYPE_CONV = "conv2d";
@@ -117,7 +116,6 @@ std::unordered_map<
         {G_OP_TYPE_SHAPE, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_CONV_TRANSPOSE, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_QUANTIZE, {{"X"}, {"Out", "OutScale"}}},
-        {G_OP_TYPE_DEQUANTIZE, {{"X", "Scale"}, {"Out"}}}
-    };
+        {G_OP_TYPE_DEQUANTIZE, {{"X", "Scale"}, {"Out"}}}};
 
 }  // namespace paddle_mobile

@@ -20,9 +20,9 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-template<typename DeviceType, typename T>
-class QuantizeKernel : public
-    framework::OpKernelBase<DeviceType, QuantizeParam<DeviceType>> {
+template <typename DeviceType, typename T>
+class QuantizeKernel
+    : public framework::OpKernelBase<DeviceType, QuantizeParam<DeviceType>> {
  public:
   void Compute(const QuantizeParam<DeviceType> &param) const;
   bool Init(QuantizeParam<DeviceType> *param);

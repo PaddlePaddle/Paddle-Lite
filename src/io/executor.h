@@ -58,6 +58,15 @@ class Executor {
   std::vector<Ptype> Predict(const std::vector<Ptype> &input,
                              const std::vector<int64_t> &dims);
 
+#ifdef PADDLE_MOBILE_FPGA
+  void InjectVariable(const framework::Tensor &t, string var_name);
+  void FeedData(const framework::Tensor &t);
+  std::shared_ptr<framework::Tensor> FetchResult(int id = -1);
+  void Predict_From_To(int start = 0, int end = -1);
+  void Predict_From(int start);
+  void Predict_To(int end);
+#endif
+
  protected:
   Executor() = default;
   std::shared_ptr<framework::Tensor> Predict(const framework::Tensor &t,
@@ -83,7 +92,6 @@ class Executor {
     uint64_t runEnd = 0UL;
   };
 #endif
-  int batch_size_ = 1;
   bool use_optimize_ = false;
   bool loddable_ = false;
 };
