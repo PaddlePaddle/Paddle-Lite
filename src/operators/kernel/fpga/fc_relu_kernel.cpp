@@ -21,7 +21,6 @@ template <>
 bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA> *param) {
   bool relu_enabled = true;
   auto input_x = const_cast<LoDTensor *>(param->InputX());
-  auto input_x_ptr = input_x->data<float>();
   auto filter = const_cast<Tensor *>(param->InputY());
   auto input_z = param->InputZ();
   auto input_z_ptr = input_z->data<float>();
@@ -29,7 +28,8 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA> *param) {
   PADDLE_MOBILE_ENFORCE(input_x->dims()[1] == filter->dims()[0],
                         "Image channel should be equal to weight number");
   int channel = (uint32_t)out->dims()[1];
-  auto bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sizeof(float));
+  auto bs_ptr =
+      (float *)fpga::fpga_malloc(2 * channel * sizeof(float));  // NOLINT
   for (int i = 0; i < channel; i++) {
     bs_ptr[i + channel] = 1;
     bs_ptr[i] = input_z_ptr[i];
@@ -47,14 +47,12 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA> *param) {
   filter->Resize(framework::make_ddim({num, filter_channel, height, width}));
   float max_value = fpga::filter_find_max(filter);
   fpga::format_filter(filter, max_value, 1);
-  auto filter_ptr = filter->data<float>();
 
-  int element_num_per_div = fpga::get_element_num_per_div(filter, 1);
+  int element_num_per_div = fpga::get_filter_num_per_div(filter, 1);
   fpga::format_bias_scale_array(&bs_ptr, element_num_per_div, channel);
+  fpga::format_fp16_ofm(out);
 
-  auto out_ptr = out->mutable_data<float>();
-
-  fpga::WrapperConvArgs conv_arg;
+  fpga::WrapperConvArgs conv_arg = {0};
   fpga::fill_conv_arg(&conv_arg, input_x, out, filter, relu_enabled, 1, 1, 1, 0,
                       0, bs_ptr);
   param->SetFpgaArgs(conv_arg);
@@ -64,7 +62,7 @@ template <>
 void FusionFcReluKernel<FPGA, float>::Compute(
     const FusionFcReluParam<FPGA> &param) const {
   fpga::ComputeFpgaConv(param.FpgaArgs());
-};
+}
 
 }  // namespace operators
 }  // namespace paddle_mobile

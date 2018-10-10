@@ -43,17 +43,24 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
   args.output.scale_address = float_input->scale;
   param->SetFloatInput(float_input);
   param->SetFpgaArgs(args);
-
   return true;
 }
 
 template <>
 void SoftmaxKernel<FPGA, float>::Compute(
     const SoftmaxParam<FPGA> &param) const {
-  // SoftmaxCompute<float>(param);
+  Tensor *in_x = param.FloatInput();
+  Tensor *out = param.Out();
+
+  fpga::PerformBypass(param.FpgaArgs());
+  fpga::fpga_invalidate(
+      (void *)in_x->data<float>(),  // NOLINT
+      fpga::get_align_image_cw(in_x->dims()[1]) * sizeof(float));
+
+  math::SoftmaxFuntor<CPU, float>()(in_x, out);
+  fpga::fpga_flush(out->data<float>(), out->memory_size());
 }
 
-template class SoftmaxKernel<FPGA, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
 

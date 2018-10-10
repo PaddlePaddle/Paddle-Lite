@@ -24,13 +24,13 @@ bool PoolKernel<FPGA, float>::Init(PoolParam<FPGA> *param) {
   auto *input = const_cast<Tensor *>(param->Input());
   auto input_ptr = input->data<float>();
   Tensor *output = param->Output();
-  fpga::format_ofm(output);
+  fpga::format_fp16_ofm(output);
   auto output_ptr = output->mutable_data<float>();
   vector<int> ksize = param->Ksize();
   vector<int> strides = param->Strides();
   vector<int> paddings = param->Paddings();
 
-  fpga::PoolingArgs poolArgs;
+  fpga::PoolingArgs poolArgs = {0};
   poolArgs.image.address = input_ptr;
   poolArgs.image.channels = (uint32_t)input->dims()[1];
   poolArgs.image.height = (uint32_t)input->dims()[2];
@@ -39,7 +39,7 @@ bool PoolKernel<FPGA, float>::Init(PoolParam<FPGA> *param) {
   poolArgs.image.pad_width = (uint32_t)paddings[1];
   poolArgs.image.scale_address = input->scale;
   poolArgs.output.address = output_ptr;
-  poolArgs.output.scale_address = input->scale;
+  poolArgs.output.scale_address = output->scale;
   poolArgs.kernel.height = (uint32_t)ksize[0];
   poolArgs.kernel.width = (uint32_t)ksize[1];
   poolArgs.kernel.stride_h = (uint32_t)strides[0];
@@ -50,9 +50,7 @@ bool PoolKernel<FPGA, float>::Init(PoolParam<FPGA> *param) {
 
 template <>
 void PoolKernel<FPGA, float>::Compute(const PoolParam<FPGA> &param) const {
-#ifdef PADDLE_MOBILE_FPGA
   fpga::ComputeFpgaPool(param.FpgaArgs());
-#endif
 }
 }  // namespace operators
 }  // namespace paddle_mobile

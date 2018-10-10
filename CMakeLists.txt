@@ -131,8 +131,8 @@ endif()
 
 if(IS_IOS)
 else()
-    list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/ios_io/PaddleMobile.h)
-    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/ios_io/PaddleMobile.mm)
+    list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/ios_io/PaddleMobileCPU.h)
+    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/ios_io/PaddleMobileCPU.mm)
     list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/ios_io/op_symbols.h)
 endif()
 

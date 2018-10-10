@@ -12,9 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "bias_scale.h"
+#include "fpga/bias_scale.h"
 #include <memory.h>
-#include "api.h"
+#include "fpga/api.h"
 
 namespace paddle_mobile {
 namespace fpga {
@@ -29,7 +29,8 @@ void align_element(float **data_in, int num_per_div_before_alignment, int num) {
       align_to_x(num_per_div_before_alignment, BS_NUM_ALIGNMENT);
   int num_element =
       2 * div_num * num_per_div_after_alignment;  // including bias & scale
-  float *ptr_aligned = (float *)fpga_malloc(num_element * sizeof(float));
+  float *ptr_aligned =
+      (float *)fpga_malloc(num_element * sizeof(float));  // NOLINT
 
   memset(ptr_aligned, 0, num_element * sizeof(float));
 
@@ -59,7 +60,7 @@ void interleave(float **data_in, int num_after_alignment) {
 
   float *ptr_uninterleaved = *data_in;
   float *ptr_interleaved =
-      (float *)fpga_malloc(2 * num_after_alignment * sizeof(float));
+      (float *)fpga_malloc(2 * num_after_alignment * sizeof(float));  // NOLINT
   int num = num_after_alignment / 4;
   for (int i = 0; i < num; i++) {
     memcpy(ptr_interleaved + 8 * i, ptr_uninterleaved + 4 * i,
@@ -79,6 +80,7 @@ void format_bias_scale_array(float **bias_scale_array,
   int element_num_after_division =
       align_to_x(element_num_per_division, BS_NUM_ALIGNMENT);
   interleave(bias_scale_array, div_num * element_num_after_division);
+  fpga_flush(*bias_scale_array, 2 * element_num_after_division * sizeof(float));
 }
 
 }  // namespace bias_scale
