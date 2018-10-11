@@ -21,11 +21,10 @@ namespace operators {
 
 template <>
 bool ConvAddKernel<GPU_CL, float>::Init(FusionConvAddParam<GPU_CL> *param) {
-
   PADDLE_MOBILE_ENFORCE(
-          param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
+      param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
           param->Paddings()[0] == param->Paddings()[1],
-          "need equal");
+      "need equal");
   int offset = static_cast<int>(param->Filter()->dims()[2]) / 2 -
                static_cast<int>(param->Paddings()[1]);
   param->SetOffset(offset);

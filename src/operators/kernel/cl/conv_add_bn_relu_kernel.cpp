@@ -56,7 +56,8 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
 
   framework::CLImage *new_scale = new framework::CLImage();
 
-  new_scale->Init(this->cl_helper_.CLContext(), new_scale_ptr, variance->dims());
+  new_scale->Init(this->cl_helper_.CLContext(), new_scale_ptr,
+                  variance->dims());
 
   framework::CLImage *new_bias = new framework::CLImage();
 
