@@ -12,7 +12,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-
 #include "operators/kernel/relu_kernel.h"
 
 namespace paddle_mobile {
@@ -30,4 +29,3 @@ template class ReluKernel<GPU_CL, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
-

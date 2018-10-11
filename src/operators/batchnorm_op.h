@@ -54,5 +54,8 @@ USE_OP_MALI_GPU(batch_norm);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 #endif
+#ifdef PADDLE_MOBILE_CL
+USE_OP_CL(batch_norm);
+#endif
 
 #endif

@@ -35,7 +35,7 @@ using std::string;
 namespace paddle_mobile {
 namespace framework {
 
-template<typename Dtype = CPU, Precision P = Precision::FP32>
+template <typename Dtype = CPU, Precision P = Precision::FP32>
 class Executor {
  public:
   typedef typename PrecisionTrait<P>::ptype Ptype;
@@ -56,7 +56,7 @@ class Executor {
    * @b to predict
    * */
   std::shared_ptr<framework::LoDTensor> PredictLod(
-          const framework::LoDTensor &t);
+      const framework::LoDTensor &t);
 
   /*
    * @b to predict with vector and dim
@@ -73,6 +73,8 @@ class Executor {
 
   void LoadMemory(const framework::VarDesc var_desc,
                   framework::LoDTensor *tensor, char **data);
+  void LoadMemory(const framework::VarDesc var_desc, float *tensorInput,
+                  char **data);
 
   void InitCombineMemory();
 
@@ -84,8 +86,8 @@ class Executor {
                                              int block_id);
 
   std::map<framework::BlockDesc,
-          std::vector<std::shared_ptr<framework::OperatorBase<Dtype>>>>
-          ops_of_block_;
+           std::vector<std::shared_ptr<framework::OperatorBase<Dtype>>>>
+      ops_of_block_;
   bool use_optimize_ = false;
   bool loddable_ = false;
 #ifdef PADDLE_EXECUTOR_MULTITHREAD
@@ -105,15 +107,15 @@ class Executor {
 
 #ifdef PADDLE_MOBILE_FPGA
 
-  public:
-   void InjectVariable(const framework::Tensor &t, string var_name);
-   void FeedData(const framework::Tensor &t);
-   std::shared_ptr<framework::Tensor> FetchResult(int id = -1);
-   void Predict_From_To(int start = 0, int end = -1);
-   void Predict_From(int start);
-   void Predict_To(int end);
+ public:
+  void InjectVariable(const framework::Tensor &t, string var_name);
+  void FeedData(const framework::Tensor &t);
+  std::shared_ptr<framework::Tensor> FetchResult(int id = -1);
+  void Predict_From_To(int start = 0, int end = -1);
+  void Predict_From(int start);
+  void Predict_To(int end);
 #endif
 };
 
-}
+}  // namespace framework
 }  // namespace paddle_mobile

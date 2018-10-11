@@ -18,10 +18,10 @@ limitations under the License. */
 #include <string>
 #include <unordered_map>
 
-#include "framework/cl/cl_tool.h"
-#include "framework/cl/cl_engine.h"
-#include "framework/cl/cl_deleter.h"
 #include "CL/cl.h"
+#include "framework/cl/cl_deleter.h"
+#include "framework/cl/cl_engine.h"
+#include "framework/cl/cl_tool.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -35,19 +35,17 @@ class CLScope {
     command_queue_ = engin->CreateClCommandQueue();
   }
 
-  cl_command_queue CommandQueue() {
-    return command_queue_.get();
-  }
+  cl_command_queue CommandQueue() { return command_queue_.get(); }
 
-  std::unique_ptr<_cl_kernel, CLKernelDeleter> GetKernel(const std::string &kernel_name, const std::string &file_name) {
+  std::unique_ptr<_cl_kernel, CLKernelDeleter> GetKernel(
+      const std::string &kernel_name, const std::string &file_name) {
     auto program = Program(file_name);
-    std::unique_ptr<_cl_kernel, CLKernelDeleter> kernel(clCreateKernel(program, kernel_name.c_str(), NULL));
+    std::unique_ptr<_cl_kernel, CLKernelDeleter> kernel(
+        clCreateKernel(program, kernel_name.c_str(), NULL));
     return std::move(kernel);
   }
 
-  cl_context Context() {
-    return context_.get();
-  }
+  cl_context Context() { return context_.get(); }
 
   cl_program Program(const std::string &file_name) {
     auto it = programs_.find(file_name);
@@ -55,20 +53,23 @@ class CLScope {
       return it->second.get();
     }
 
-    auto program = CLEngine::Instance()->CreateProgramWith(context_.get(), file_name);
+    auto program =
+        CLEngine::Instance()->CreateProgramWith(context_.get(), file_name);
     programs_[file_name] = std::move(program);
 
-    status_ =  clBuildProgram(program.get(), 0, 0, 0, 0, 0);
+    status_ = clBuildProgram(program.get(), 0, 0, 0, 0, 0);
     CL_CHECK_ERRORS(status_);
     return program.get();
   }
 
  private:
-  cl_int    status_;
+  cl_int status_;
   std::unique_ptr<_cl_context, CLContextDeleter> context_;
   std::unique_ptr<_cl_command_queue, CLCommQueueDeleter> command_queue_;
-  std::unordered_map<std::string, std::unique_ptr<_cl_program, CLProgramDeleter>> programs_;
+  std::unordered_map<std::string,
+                     std::unique_ptr<_cl_program, CLProgramDeleter>>
+      programs_;
 };
 
-}
-}
+}  // namespace framework
+}  // namespace paddle_mobile

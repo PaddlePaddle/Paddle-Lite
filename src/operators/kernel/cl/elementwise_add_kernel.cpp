@@ -17,22 +17,23 @@ limitations under the License. */
 #include "operators/kernel/elementwise_add_kernel.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        template <>
-        bool ElementwiseAddKernel<GPU_CL, float>::Init(ElementwiseAddParam<GPU_CL> *param) {
-            this->cl_helper_.AddKernel("elementwise_add", "elementwise_add_kernel.cl");
-            return true;
-        }
+template <>
+bool ElementwiseAddKernel<GPU_CL, float>::Init(
+    ElementwiseAddParam<GPU_CL> *param) {
+  //            this->cl_helper_.AddKernel("elementwise_add",
+  //            "elementwise_add_kernel.cl");
+  return true;
+}
 
-        template <>
-        void ElementwiseAddKernel<GPU_CL, float>::Compute(const ElementwiseAddParam<GPU_CL> &param) {
+template <>
+void ElementwiseAddKernel<GPU_CL, float>::Compute(
+    const ElementwiseAddParam<GPU_CL> &param) {}
 
-        }
+template class ElementwiseAddKernel<GPU_CL, float>;
 
-        template class ElementwiseAddKernel<GPU_CL, float>;
-
-    }  // namespace operators
+}  // namespace operators
 }  // namespace paddle_mobile
 
 #endif

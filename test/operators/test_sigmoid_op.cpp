@@ -12,8 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "../../src/operators/kernel/sigmoid_kernel.h"
 #include "../../src/operators/kernel/central-arm-func/sigmoid_arm_func.h"
+#include "../../src/operators/kernel/sigmoid_kernel.h"
 #include "../test_helper.h"
 #include "framework/executor.h"
 

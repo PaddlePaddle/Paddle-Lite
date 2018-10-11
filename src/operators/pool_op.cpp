@@ -68,5 +68,8 @@ REGISTER_OPERATOR_MALI_GPU(pool2d, ops::PoolOp);
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(pool2d, ops::PoolOp);
 #endif
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(pool2d, ops::PoolOp);
+#endif
 
 #endif

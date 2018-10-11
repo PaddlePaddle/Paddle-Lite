@@ -14,8 +14,8 @@ limitations under the License. */
 
 #pragma once
 
-#include <string>
 #include <memory>
+#include <string>
 #include <tuple>
 
 #include "common/log.h"
@@ -92,7 +92,6 @@ class OpRegistry {
       const std::string& type, const VariableNameMap& inputs,
       const VariableNameMap& outputs, const AttributeMap attrs,
       std::shared_ptr<paddle_mobile::framework::Scope> scope) {
-
     auto& info = OpInfoMap<Dtype>::Instance()->Get(type);
     auto op = info.Creator()(type, inputs, outputs, attrs, scope);
     return std::shared_ptr<OperatorBase<Dtype>>(op);

@@ -20,8 +20,8 @@ limitations under the License. */
 #include <vector>
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
-#include "op_param.h"
 #include "operators/kernel/conv_add_bn_relu_kernel.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -103,7 +103,7 @@ static framework::FusionOpRegistrar fusion_conv_add_bn_relu_registrar(
 #ifdef PADDLE_MOBILE_CL
 
 #ifndef FUSION_CONV_ADD_BN_RELU_REGISTER
-        static framework::FusionOpRegistrar fusion_conv_add_bn_relu_registrar(
+static framework::FusionOpRegistrar fusion_conv_add_bn_relu_registrar(
     new FusionConvAddBNReluMatcher());
 #define FUSION_CONV_ADD_BN_RELU_REGISTER
 #endif

@@ -17,9 +17,10 @@ limitations under the License. */
 #include <memory>
 #include <string>
 
+#include "CL/cl.h"
 #include "common/enforce.h"
 #include "framework/cl/cl_deleter.h"
-#include "CL/cl.h"
+#include "framework/cl/cl_tool.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -36,16 +37,18 @@ class CLEngine {
     return std::move(context_ptr);
   }
 
-  std::unique_ptr<_cl_command_queue, CLCommQueueDeleter> CreateClCommandQueue() {
+  std::unique_ptr<_cl_command_queue, CLCommQueueDeleter>
+  CreateClCommandQueue() {
     cl_int status;
-    cl_command_queue queue = clCreateCommandQueue(context_.get(), devices_[0], 0, &status);
-    std::unique_ptr<_cl_command_queue, CLCommQueueDeleter> command_queue_ptr(queue);
+    cl_command_queue queue =
+        clCreateCommandQueue(context_.get(), devices_[0], 0, &status);
+    std::unique_ptr<_cl_command_queue, CLCommQueueDeleter> command_queue_ptr(
+        queue);
     return std::move(command_queue_ptr);
   }
 
-  std::unique_ptr<_cl_program, CLProgramDeleter> CreateProgramWith(cl_context context, std::string file_name) {
-
-
+  std::unique_ptr<_cl_program, CLProgramDeleter> CreateProgramWith(
+      cl_context context, std::string file_name) {
     FILE *file = fopen(file_name.c_str(), "rb");
     PADDLE_MOBILE_ENFORCE(file != nullptr, "can't open file: %s ",
                           filename.c_str());
@@ -62,7 +65,8 @@ class CLEngine {
 
     const char *source = data;
     size_t sourceSize[] = {strlen(source)};
-    cl_program p = clCreateProgramWithSource(context, 1, &source, sourceSize, NULL);
+    cl_program p =
+        clCreateProgramWithSource(context, 1, &source, sourceSize, NULL);
     std::unique_ptr<_cl_program, CLProgramDeleter> program_ptr(p);
     return std::move(program_ptr);
   }
@@ -81,7 +85,6 @@ class CLEngine {
 
   bool SetClDeviceId();
 
-
   bool initialized_;
 
   cl_platform_id platform_;
@@ -94,14 +97,13 @@ class CLEngine {
 
   std::unique_ptr<_cl_program, CLProgramDeleter> program_;
 
-//  bool SetClContext();
+  //  bool SetClContext();
 
-//  bool SetClCommandQueue();
+  //  bool SetClCommandQueue();
 
-//  bool LoadKernelFromFile(const char *kernel_file);
+  //  bool LoadKernelFromFile(const char *kernel_file);
 
-//  bool BuildProgram();
-
+  //  bool BuildProgram();
 };
 
 }  // namespace framework

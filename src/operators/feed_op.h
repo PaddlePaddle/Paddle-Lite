@@ -43,13 +43,14 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
 
 #ifdef PADDLE_MOBILE_FPGA
 
-    void Init() {
+  void Init() {
     Tensor *output = param_.Out();
     fpga::format_fp16_ofm(output);
   }
 
   void RunImpl() const {
-    auto input = (Tensor *)const_cast<LoDTensor *>(param_.InputX());
+    auto input =
+        reinterpret_cast<Tensor *>(const_cast<LoDTensor *>(param_.InputX()));
     auto input_ptr = input->data<float>();
     fpga::format_image(input);
     Tensor *output = param_.Out();
@@ -61,7 +62,7 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
     args.output_data_type = fpga::DATA_TYPE_FP16;
     args.input_layout_type = fpga::LAYOUT_CHW;
     args.output_layout_type = fpga::LAYOUT_HWC;
-    args.image.address = (void *)input_ptr;
+    args.image.address = reinterpret_cast<void *>(input_ptr);
     args.image.channels = (uint32_t)input->dims()[1];
     args.image.height = (uint32_t)input->dims()[2];
     args.image.width = (uint32_t)input->dims()[3];
@@ -74,13 +75,10 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
 
 #else
 #ifdef PADDLE_MOBILE_CL
-    void Init() {}
-    void RunImpl() {
-
-
-    }
+  void Init() {}
+  void RunImpl() {}
 #else
-    void Init() {}
+  void Init() {}
   void RunImpl() {
     param_.Out()->ShareDataWith(*param_.InputX());
     param_.Out()->set_lod(param_.InputX()->lod());

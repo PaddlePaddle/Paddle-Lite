@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "common/enforce.h"
@@ -32,8 +33,8 @@ limitations under the License. */
 #include "framework/tensor.h"
 #include "framework/variable.h"
 #ifdef PADDLE_MOBILE_CL
-#include "framework/cl/cl_scope.h"
 #include "framework/cl/cl_helper.h"
+#include "framework/cl/cl_scope.h"
 #endif
 namespace paddle_mobile {
 namespace framework {
@@ -131,7 +132,6 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
     //      DLOG << i.second;
     //    }
 
-
     PADDLE_MOBILE_ENFORCE(kernel_.Init(&param_), "  %s kernel init failed",
                           this->type_.c_str());
   }
@@ -147,7 +147,6 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
 template <typename Dtype, typename P>
 class OpKernelBase {
  public:
-
   OpKernelBase() = default;
 
 #ifdef PADDLE_MOBILE_CL
@@ -156,11 +155,11 @@ class OpKernelBase {
   }
 #endif
 
-  /*
-   * @b 所有kernel 需实现 Compute 方法
-   * @p para 这个参数为 kernel 运算时所需要用到参数组成的一个结构体,
-   *    所有结构体存在与: paddle-mobile/src/operators/op_param.h
-   * */
+    /*
+     * @b 所有kernel 需实现 Compute 方法
+     * @p para 这个参数为 kernel 运算时所需要用到参数组成的一个结构体,
+     *    所有结构体存在与: paddle-mobile/src/operators/op_param.h
+     * */
 #ifdef PADDLE_McOBILE_MALI_GPU
   OpKernelBase() { acl_op_ = nullptr; }
   void *GetAclOp() const { return acl_op_; }
@@ -181,8 +180,6 @@ class OpKernelBase {
 #ifdef PADDLE_MOBILE_MALI_GPU
   void *acl_op_;
 #endif
-
-
 };
 
 #define DEFINE_OP_CONSTRUCTOR(cls, parent_cls)                                 \
