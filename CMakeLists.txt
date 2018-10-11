@@ -152,7 +152,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/tools/op.cmake")
 # build library
 if(ANDROID_NDK_TOOLCHAIN_INCLUDED)
     list(REMOVE_DUPLICATES CMAKE_CXX_FLAGS)
-    add_library(paddle-mobile STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+    add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 elseif(IS_IOS)
     if(USE_OPENMP)
         add_library(paddle-mobile-stage0 STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
@@ -166,7 +166,7 @@ elseif(IS_IOS)
         add_library(paddle-mobile STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
     endif()
 else()
-  add_library(paddle-mobile STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+  add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 endif()
 
 # unit test
