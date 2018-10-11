@@ -43,17 +43,28 @@ class CLImage {
       C = tensor_dims_[1];
       H = tensor_dims_[2];
       W = tensor_dims_[3];
+
+      width_of_one_block_ = W;
+      height_of_one_block_ = H;
+
     } else if (tensor_dims_.size() == 1) {
       N = 1;
       C = tensor_dims_[0];
       H = 1;
       W = 1;
+
+      width_of_one_block_ = W;
+      height_of_one_block_ = H;
     }
 
     DLOG << "-------InitMemory-------";
 
     size_t width = W * ((C + 3) / 4);
     size_t height = H * N;
+
+    image_width_ = width;
+    image_height_ = height;
+
     std::unique_ptr<half_t[]> imageData{};
     int count = 0;
     if (tensorInput != nullptr) {
@@ -95,9 +106,13 @@ class CLImage {
         0,       // size_t image_row_pitch
         reinterpret_cast<void *>(imageData.get()),  // void *host_ptr
         &err);
+
     if (err != CL_SUCCESS) {
       // TODO(HaiPeng): error handling
+      PADDLE_MOBILE_THROW_EXCEPTION(" create image 2d error ");
     }
+
+    initialized_ = true;
   }
 
   void Init(cl_context context, DDim ddim) { Init(context, nullptr, ddim); }
@@ -109,8 +124,6 @@ class CLImage {
 
   const DDim &dims() const { return tensor_dims_; }
 
-  std::vector<size_t> DefaultWorkSize() { return {}; }
-
   cl_mem GetCLImage() const { return cl_image_; }
 
   template <typename T>
@@ -120,24 +133,24 @@ class CLImage {
 
   inline int64_t numel() const { return product(tensor_dims_); }
 
-  int ImageWidth() const { return image_width_; }
+  inline size_t ImageWidth() const { return image_width_; }
 
-  int ImageHeight() const { return image_height_; }
+  inline size_t ImageHeight() const { return image_height_; }
 
-  int CBlock() const { return c_block_; }
+  inline size_t CBlock() const { return c_block_; }
 
-  int WidthOfOneBlock() const { return width_of_one_block_; }
+  inline size_t WidthOfOneBlock() const { return width_of_one_block_; }
 
-  int HeightOfOneBlock() const { return height_of_one_block_; }
+  inline size_t HeightOfOneBlock() const { return height_of_one_block_; }
 
  private:
   bool initialized_ = false;
   cl_mem cl_image_;
-  int image_width_;
-  int width_of_one_block_;
-  int height_of_one_block_;
-  int image_height_;
-  int c_block_;
+  size_t image_width_;
+  size_t width_of_one_block_;
+  size_t height_of_one_block_;
+  size_t image_height_;
+  size_t c_block_;
   DDim tensor_dims_;
   float *tensor_input_;
   cl_context context_;
