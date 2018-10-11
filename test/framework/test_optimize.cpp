@@ -13,9 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "../test_helper.h"
+#include "framework/loader.h"
 #include "framework/program/program-optimize/node.h"
 #include "framework/program/program-optimize/program_optimize.h"
-#include "framework/loader.h"
 
 int main() {
   paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;

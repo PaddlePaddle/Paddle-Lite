@@ -12,9 +12,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-
-
-
 /*
 conv
 conv_bn
@@ -29,7 +26,6 @@ conv_add_bn_relu
 /*
 
 #include "common.h"
-
 
 __kernel void conv_1x1(__private const int global_size_dim0,
                        __private const int global_size_dim1,
