@@ -356,7 +356,7 @@ if (FUSION_CONVBN_OP)
 endif()
 
 if (CONV_TRANSPOSE_OP)
-  add_definitions(-DCONV_TRANSPOSE)
+  add_definitions(-DCONV_TRANSPOSE_OP)
 endif()
 
 if (LOOKUP_OP)

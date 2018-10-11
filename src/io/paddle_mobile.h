@@ -22,6 +22,7 @@ limitations under the License. */
 #endif  // _OPENMP
 
 #include "common/types.h"
+#include "framework/load_ops.h"
 #include "framework/tensor.h"
 #include "io/executor.h"
 #include "io/loader.h"

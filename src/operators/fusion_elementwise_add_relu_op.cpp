@@ -14,7 +14,7 @@ limitations under the License. */
 
 #ifdef FUSION_ELEMENTWISEADDRELU_OP
 
-#include "fusion_elementwise_add_relu_op.h"
+#include "operators/fusion_elementwise_add_relu_op.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -25,13 +25,13 @@ void FusionElementwiseAddReluOp<Dtype, T>::InferShape() const {
   this->param_.Out()->Resize(x_dim);
 }
 
-static framework::FusionOpRegistrar fusion_elementwise_relu_registrar(
-    new FusioneElementwiseAddReluMatcher());
-
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
+REGISTER_FUSION_MATCHER(fusion_elementwise_add_relu,
+                        ops::FusioneElementwiseAddReluMatcher);
+
 #ifdef PADDLE_MOBILE_CPU
 // REGISTER_OPERATOR_CPU(fusion_elementwise_add_relu,
 //                      ops::FusionElementwiseAddReluOp);

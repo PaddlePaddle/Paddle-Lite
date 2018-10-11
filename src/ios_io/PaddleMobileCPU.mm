@@ -13,14 +13,12 @@
  limitations under the License. */
 
 #import "PaddleMobileCPU.h"
-
 #import "op_symbols.h"
-#include "framework/tensor.h"
+#import "framework/load_ops.h"
+#import "framework/tensor.h"
 #import "io/paddle_mobile.h"
-
 #import <memory>
 #import <vector>
-
 
 @interface PaddleMobileCPUResult()
 
