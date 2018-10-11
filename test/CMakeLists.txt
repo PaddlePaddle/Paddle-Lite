@@ -324,6 +324,4 @@ if (NOT FOUND_MATCH)
 
 
     #add_library(test-lib-size SHARED common/test_lib_size.h common/test_lib_size.cpp)
-
-
 endif ()

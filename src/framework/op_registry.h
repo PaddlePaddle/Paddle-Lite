@@ -105,7 +105,11 @@ class OpRegistry {
   };                                                                       \
   static paddle_mobile::framework::OperatorRegistrar<                      \
       device_type, _OpClass_##op_type##_##device_name<device_type, float>> \
-      __op_registrar_##op_type##_##device_name(#op_type);
+      __op_registrar_##op_type##_##device_name(#op_type);                  \
+  int TouchOpRegistrar_##op_type##_##device_name() {                       \
+    __op_registrar_##op_type##_##device_name.Touch();                      \
+    return 0;                                                              \
+  }
 
 #define REGISTER_OPERATOR_CPU(op_type, op_class) \
   REGISTER_OPERATOR(op_type, op_class, cpu, paddle_mobile::CPU);

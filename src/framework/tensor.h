@@ -336,11 +336,12 @@ inline Print &operator<<(Print &printer, const Tensor &tensor) {
   stride = stride > 0 ? stride : 1;
 #ifndef PADDLE_MOBILE_FPGA
   for (int i = 0; i < tensor.numel(); i += stride) {
-    //  这不一定是float的
     if (tensor.type() == typeid(float)) {
       printer << tensor.data<float>()[i] << " ";
     } else if (tensor.type() == typeid(int64_t)) {
       printer << tensor.data<int64_t>()[i] << " ";
+    } else if (tensor.type() == typeid(int8_t)) {
+      printer << tensor.data<int8_t>()[i] << " ";
     }
   }
 #endif
