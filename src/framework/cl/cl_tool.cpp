@@ -12,13 +12,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "cl_tool.h"
+#include "framework/cl/cl_tool.h"
 
 namespace paddle_mobile {
 namespace framework {
 
 const char *opencl_error_to_str(cl_int error) {
-#define CASE_CL_CONSTANT(NAME) case NAME: return #NAME;
+#define CASE_CL_CONSTANT(NAME) \
+  case NAME:                   \
+    return #NAME;
   // Suppose that no combinations are possible.
   switch (error) {
     CASE_CL_CONSTANT(CL_SUCCESS)
@@ -78,5 +80,5 @@ const char *opencl_error_to_str(cl_int error) {
 #undef CASE_CL_CONSTANT
 }
 
-}
-}
+}  // namespace framework
+}  // namespace paddle_mobile

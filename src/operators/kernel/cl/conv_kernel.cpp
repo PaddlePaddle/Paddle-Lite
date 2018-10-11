@@ -21,15 +21,16 @@ namespace operators {
 
 template <>
 bool ConvKernel<GPU_CL, float>::Init(ConvParam<GPU_CL> *param) {
-//  this->cl_helper_.AddKernel("conv_3x3", "conv_kernel.cl");
+  //  this->cl_helper_.AddKernel("conv_3x3", "conv_kernel.cl");
   return true;
 }
 
 template <>
 void ConvKernel<GPU_CL, float>::Compute(const ConvParam<GPU_CL> &param) {
-//  auto kernel = this->cl_helper_.KernelAt(0);
-//  size_t global_work_size[3] = {1, 2, 3};
-//  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL, global_work_size, NULL, 0, NULL, NULL);
+  //  auto kernel = this->cl_helper_.KernelAt(0);
+  //  size_t global_work_size[3] = {1, 2, 3};
+  //  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
+  //  global_work_size, NULL, 0, NULL, NULL);
 }
 
 template class ConvKernel<GPU_CL, float>;
