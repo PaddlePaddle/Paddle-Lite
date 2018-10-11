@@ -99,6 +99,8 @@ struct WrapperConvArgs {
 };
 
 struct PoolingArgs {
+  int16_t mode;  // mode: 0:max, 1:avg
+  half kernel_reciprocal;
   struct KernelArgs kernel;
   struct ImageInputArgs image;  // input image;
   struct ImageOutputArgs output;
@@ -107,8 +109,8 @@ struct PoolingArgs {
 struct EWAddArgs {
   bool relu_enabled;
 
-  uint32_t const0;  // output0 = const0 x input0 + const1 x input1;
-  uint32_t const1;
+  half const0;  // output0 = const0 x input0 + const1 x input1;
+  half const1;
   struct ImageInputArgs image0;
   struct ImageInputArgs image1;
   struct ImageOutputArgs output;
@@ -221,6 +223,9 @@ void fill_conv_arg(struct WrapperConvArgs* arg, framework::Tensor* input,
                    framework::Tensor* out, framework::Tensor* filter,
                    bool relu_enabled, int group_num, int stride_h, int stride_w,
                    int padding_h, int padding_w, float* bs_ptr);
+
+half fp32_2_fp16(float fp32_num);
+float fp16_2_fp32(half fp16_num);
 
 }  // namespace fpga
 }  // namespace paddle_mobile
