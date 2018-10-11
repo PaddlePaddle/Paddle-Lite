@@ -56,5 +56,8 @@ USE_OP_MALI_GPU(reshape);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 #endif
+#ifdef PADDLE_MOBILE_CL
+USE_OP_CL(reshape);
+#endif
 
 #endif
