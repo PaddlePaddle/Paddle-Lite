@@ -70,7 +70,7 @@ bool PaddleMobile<Dtype, P>::Load(const std::string &model_path,
 template <typename Dtype, Precision P>
 bool PaddleMobile<Dtype, P>::LoadCombinedMemory(
     size_t model_len, const uint8_t *model_buf, size_t combined_params_len,
-    const uint8_t *combined_params_buf) {
+    uint8_t *combined_params_buf) {
   int batch_size = 1;
   bool optimise = true;
   bool quantification = false;

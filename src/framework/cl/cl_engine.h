@@ -19,6 +19,7 @@ limitations under the License. */
 
 #include "CL/cl.h"
 #include "common/enforce.h"
+#include "framework/cl/cl_tool.h"
 #include "framework/cl/cl_deleter.h"
 
 namespace paddle_mobile {

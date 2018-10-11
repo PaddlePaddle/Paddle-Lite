@@ -83,7 +83,7 @@ class PaddleMobile {
    */
   bool LoadCombinedMemory(size_t model_len, const uint8_t *model_buf,
                           size_t combined_params_len,
-                          const uint8_t *combined_params_buf);
+                          uint8_t *combined_params_buf);
 
   void Clear();
 
