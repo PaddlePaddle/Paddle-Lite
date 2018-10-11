@@ -22,9 +22,9 @@ limitations under the License. */
 #endif  // _OPENMP
 
 #include "common/types.h"
-#include "framework/tensor.h"
 #include "framework/executor.h"
 #include "framework/loader.h"
+#include "framework/tensor.h"
 
 namespace paddle_mobile {
 
@@ -94,6 +94,7 @@ class PaddleMobile {
   std::shared_ptr<framework::Executor<Dtype, P>> executor_;
 
 #ifdef PADDLE_MOBILE_FPGA
+
  public:
   void InjectVariable(const framework::Tensor &t, string var_name);
   void FeedData(const framework::Tensor &t);

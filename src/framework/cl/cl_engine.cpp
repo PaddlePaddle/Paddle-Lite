@@ -12,9 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include "framework/cl/cl_engine.h"
 #include "CL/cl.h"
 #include "framework/cl/cl_tool.h"
-#include "framework/cl/cl_engine.h"
 
 #include <cstdlib>
 #include <cstring>
@@ -28,11 +28,11 @@ bool CLEngine::Init() {
   SetClDeviceId();
   initialized_ = true;
 
-//  setClContext();
-//  setClCommandQueue();
-//  std::string filename = "./HelloWorld_Kernel.cl";
-//  loadKernelFromFile(filename.c_str());
-//  buildProgram();
+  //  setClContext();
+  //  setClCommandQueue();
+  //  std::string filename = "./HelloWorld_Kernel.cl";
+  //  loadKernelFromFile(filename.c_str());
+  //  buildProgram();
 }
 
 CLEngine *CLEngine::Instance() {
@@ -74,26 +74,26 @@ bool CLEngine::SetClDeviceId() {
   return false;
 }
 
-//std::unique_ptr<_cl_kernel, clKernel_deleter> CLEngine::GSetKernel(
+// std::unique_ptr<_cl_kernel, clKernel_deleter> CLEngine::GSetKernel(
 //    const std::string &kernel_name) {
 //  std::unique_ptr<_cl_kernel, clKernel_deleter> kernel(
 //      clCreateKernel(program_.get(), kernel_name.c_str(), NULL));
 //  return std::move(kernel);
 //}
 //
-//bool CLEngine::SetClCommandQueue() {
+// bool CLEngine::SetClCommandQueue() {
 //  cl_int status;
 //  command_queue_.reset(
 //          clCreateCommandQueue(context_.get(), devices_[0], 0, &status));
 //  return true;
 //}
 
-//bool CLEngine::SetClContext() {
+// bool CLEngine::SetClContext() {
 //  context_.reset(clCreateContext(NULL, 1, devices_, NULL, NULL, NULL));
 //  return true;
 //}
 
-//bool CLEngine::LoadKernelFromFile(const char *kernel_file) {
+// bool CLEngine::LoadKernelFromFile(const char *kernel_file) {
 //  size_t size;
 //  char *str;
 //  std::fstream f(kernel_file, (std::fstream::in | std::fstream::binary));
@@ -118,10 +118,10 @@ bool CLEngine::SetClDeviceId() {
 //  const char *source = str;
 //  size_t sourceSize[] = {strlen(source)};
 //  program_.reset(
-//      clCreateProgramWithSource(context_.get(), 1, &source, sourceSize, NULL));
+//      clCreateProgramWithSource(context_.get(), 1, &source, sourceSize,
+//      NULL));
 //  return true;
 //}
-
 
 }  // namespace framework
 }  // namespace paddle_mobile

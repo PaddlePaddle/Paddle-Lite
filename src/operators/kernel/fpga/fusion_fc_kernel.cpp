@@ -60,8 +60,7 @@ bool FusionFcKernel<FPGA, float>::Init(FusionFcParam<FPGA> *param) {
 }
 
 template <>
-void FusionFcKernel<FPGA, float>::Compute(
-    const FusionFcParam<FPGA> &param) {
+void FusionFcKernel<FPGA, float>::Compute(const FusionFcParam<FPGA> &param) {
   fpga::ComputeFpgaConv(param.FpgaArgs());
 }
 }  // namespace operators

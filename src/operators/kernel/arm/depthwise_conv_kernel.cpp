@@ -26,8 +26,7 @@ bool DepthwiseConvKernel<CPU, float>::Init(ConvParam<CPU> *param) {
 }
 
 template <>
-void DepthwiseConvKernel<CPU, float>::Compute(
-    const ConvParam<CPU> &param) {
+void DepthwiseConvKernel<CPU, float>::Compute(const ConvParam<CPU> &param) {
   DepthwiseConvCompute<float>(param);
 }
 
