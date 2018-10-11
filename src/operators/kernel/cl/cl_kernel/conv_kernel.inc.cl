@@ -23,9 +23,7 @@ conv_add_bn_relu
 
 */
 
-/*
-
-#include "common.h"
+#include "cl_common.h"
 
 __kernel void conv_1x1(__private const int global_size_dim0,
                        __private const int global_size_dim1,
@@ -305,5 +303,3 @@ __kernel void depth_conv_3x3(__private const int global_size_dim0,
     int2 output_pos(out_c * global_size_dim1 + out_w, out_nh);
     write_imageh(output_image, output_pos, output);
 }
-
-*/
