@@ -23,7 +23,7 @@ int main() {
   //  auto isok = paddle_mobile.Load(std::string(g_mobilenet_detect) + "/model",
   //                     std::string(g_mobilenet_detect) + "/params", true);
 
-  auto isok = paddle_mobile.Load(g_nlp, true, false, true);
+  auto isok = paddle_mobile.Load(g_nlp, true, false, 1, true);
 
   //  auto isok = paddle_mobile.Load(std::string(g_nlp) + "/model",
   //                                 std::string(g_nlp) + "/params", false);

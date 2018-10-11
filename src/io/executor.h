@@ -35,7 +35,7 @@ class Executor {
   // @param program program converted from proto program in PaddlePaddle
   // @param use_optimize bool whether use operator fusion to speed up or not
   // @param loddable bool
-  Executor(const framework::Program<Dtype> program,
+  Executor(const framework::Program<Dtype> program, int batch_size = 1,
            const bool use_optimize = true, const bool loddable = false);
 
   // predict with tensor input
@@ -81,6 +81,7 @@ class Executor {
                   framework::LoDTensor *tensor);
 
   framework::Program<Dtype> program_;
+  int batch_size_ = 1;
   std::shared_ptr<framework::ProgramDesc> to_predict_program_;
   std::map<framework::BlockDesc,
            std::vector<std::shared_ptr<framework::OperatorBase<Dtype>>>>
