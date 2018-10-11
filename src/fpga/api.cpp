@@ -22,7 +22,7 @@ limitations under the License. */
 #include "filter.h"
 #include "image.h"
 #define FPGA_TEST_MODE
-//#define PADDLE_MOBILE_OS_LINUX
+#define PADDLE_MOBILE_OS_LINUX
 
 namespace paddle_mobile {
 namespace fpga {
