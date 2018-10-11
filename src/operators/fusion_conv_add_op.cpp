@@ -45,13 +45,12 @@ void FusionConvAddOp<Dtype, T>::InferShape() const {
   this->param_.Output()->Resize(ddim);
 }
 
-static framework::FusionOpRegistrar convadd_registrar(
-    new FusionConvAddMatcher());
-
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
+REGISTER_FUSION_MATCHER(fusion_conv_add, ops::FusionConvAddMatcher);
+
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(fusion_conv_add, ops::FusionConvAddOp);
 #endif

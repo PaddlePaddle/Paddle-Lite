@@ -14,7 +14,7 @@ limitations under the License. */
 
 #ifdef FUSION_CONVADDADDPRELU_OP
 
-#include "fusion_conv_add_add_prelu_op.h"
+#include "operators/fusion_conv_add_add_prelu_op.h"
 #include "operators/math/conv_func.h"
 
 namespace paddle_mobile {
@@ -44,13 +44,13 @@ void FusionConvAddAddPReluOp<Dtype, T>::InferShape() const {
   this->param_.Output()->Resize(ddim);
 }
 
-static framework::FusionOpRegistrar fusion_conv_add_add_prelu_registrar(
-    new FusionConvAddAddPReluOpMatcher());
-
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
+REGISTER_FUSION_MATCHER(fusion_conv_add_add_prelu,
+                        ops::FusionConvAddAddPReluOpMatcher);
+
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(fusion_conv_add_add_prelu, ops::FusionConvAddAddPReluOp);
 #endif

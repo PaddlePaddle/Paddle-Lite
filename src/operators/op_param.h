@@ -1911,7 +1911,7 @@ class DropoutParam : public OpParam {
 };
 #endif
 
-#ifdef CONV_TRANSPOSE
+#ifdef CONV_TRANSPOSE_OP
 template <typename Dtype>
 class ConvTransposeParam : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
