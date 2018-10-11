@@ -32,7 +32,7 @@ class Program {
   bool combined = false;
   bool quantification = false;
   size_t combined_params_len;
-  const uint8_t *combined_params_buf;
+  uint8_t *combined_params_buf;
 
  private:
 };

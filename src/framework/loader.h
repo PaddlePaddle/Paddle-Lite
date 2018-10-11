@@ -46,7 +46,7 @@ class Loader {
   const Program<Dtype, P> LoadCombinedMemory(size_t model_len,
                                              const uint8_t *model_buf,
                                              size_t combined_params_len,
-                                             const uint8_t *combined_params_buf,
+                                             uint8_t *combined_params_buf,
                                              bool optimize = false,
                                              bool quantification = false);
 

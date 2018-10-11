@@ -37,6 +37,7 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
   auto bias_ptr = bias->data<float>();
 
   const int C = mean->numel();
+
   float inv_std_ptr[C];
   for (int i = 0; i < C; i++) {
     inv_std_ptr[i] =
@@ -55,7 +56,12 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
 
   framework::CLImage *new_scale = new framework::CLImage();
 
+  new_scale->Init(this->cl_helper_.CLContext(), new_scale_ptr,
+                  variance->dims());
+
   framework::CLImage *new_bias = new framework::CLImage();
+
+  new_bias->Init(this->cl_helper_.CLContext(), new_bias_ptr, variance->dims());
 
   param->SetNewScale(new_scale);
 
@@ -65,10 +71,23 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
       param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
           param->Paddings()[0] == param->Paddings()[1],
       "need equal");
-  param->SetOffset(param->Filter()->dims()[2] / 2 -
-                   static_cast<int>(param->Paddings()[1]));
 
-  this->cl_helper_.AddKernel("conv_3x3", "conv_add_bn_relu_kernel.cl");
+  int offset = static_cast<int>(param->Filter()->dims()[2]) / 2 -
+               static_cast<int>(param->Paddings()[1]);
+
+  param->SetOffset(offset);
+
+  if (param->Filter()->WidthOfOneBlock() == 1 &&
+      param->Filter()->HeightOfOneBlock() == 1) {
+    this->cl_helper_.AddKernel("conv_1x1", "conv_add_bn_relu_kernel.cl");
+  } else if (param->Filter()->dims()[1] == 1) {
+    this->cl_helper_.AddKernel("depth_conv_3x3", "conv_add_bn_relu_kernel.cl");
+  } else if (param->Filter()->WidthOfOneBlock() == 3 &&
+             param->Filter()->HeightOfOneBlock() == 3) {
+    this->cl_helper_.AddKernel("conv_3x3", "conv_add_bn_relu_kernel.cl");
+  } else {
+    PADDLE_MOBILE_THROW_EXCEPTION(" not support ");
+  }
 
   return true;
 }

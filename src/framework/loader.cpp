@@ -95,15 +95,15 @@ void Loader<GPU_CL, Precision::FP32>::InitMemoryFromProgram(
  */
 template <typename Dtype, Precision P>
 void FusionAndPrintInfos(
-    bool optimize, bool can_add_split, const Program<Dtype, P> &program,
+    bool optimize, bool can_add_split, Program<Dtype, P> *program,
     const std::shared_ptr<ProgramDesc> &originProgramDesc) {
   if (optimize) {
     ProgramOptimize program_optimize;
-    program.optimizeProgram =
+    program->optimizeProgram =
         program_optimize.FusionOptimize(originProgramDesc, can_add_split);
   }
   if (optimize) {
-    program.optimizeProgram->Description("optimize: ");
+    program->optimizeProgram->Description("optimize: ");
   } else {
     originProgramDesc->Description("program: ");
   }
@@ -186,7 +186,7 @@ const Program<Dtype, P> Loader<Dtype, P>::LoadProgram(
   // use  originProgramDesc and scope to init tensors
   InitMemoryFromProgram(originProgramDesc, scope);
   // perform fusion and print infos
-  FusionAndPrintInfos(optimize, can_add_split, program, originProgramDesc);
+  FusionAndPrintInfos(optimize, can_add_split, &program, originProgramDesc);
 
   paddle_mobile__framework__proto__program_desc__free_unpacked(c_program, NULL);
   return program;
@@ -195,7 +195,7 @@ const Program<Dtype, P> Loader<Dtype, P>::LoadProgram(
 template <typename Dtype, Precision P>
 const Program<Dtype, P> Loader<Dtype, P>::LoadCombinedMemory(
     size_t read_size, const uint8_t *buf, size_t combined_params_len,
-    const uint8_t *combined_params_buf, bool optimize, bool quantification) {
+    uint8_t *combined_params_buf, bool optimize, bool quantification) {
   bool can_add_split = false;
 
   PaddleMobile__Framework__Proto__ProgramDesc *c_program;
@@ -221,7 +221,7 @@ const Program<Dtype, P> Loader<Dtype, P>::LoadCombinedMemory(
   auto scope = std::make_shared<Scope>();
   program.scope = scope;
   InitMemoryFromProgram(originProgramDesc, scope);
-  FusionAndPrintInfos(optimize, can_add_split, program, originProgramDesc);
+  FusionAndPrintInfos(optimize, can_add_split, &program, originProgramDesc);
   paddle_mobile__framework__proto__program_desc__free_unpacked(c_program,
                                                                nullptr);
   return program;
