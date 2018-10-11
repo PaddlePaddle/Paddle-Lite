@@ -25,7 +25,8 @@ void PaddleMobile<Dtype, P>::SetThreadNum(int num) {
 
 template <typename Dtype, Precision P>
 bool PaddleMobile<Dtype, P>::Load(const std::string &dirname, bool optimize,
-                                  bool quantification, bool loddable) {
+                                  bool quantification, int batch_size,
+                                  bool loddable) {
   if (loader_.get() == nullptr) {
     loader_ = std::make_shared<Loader<Dtype, P>>();
   } else {
@@ -34,7 +35,8 @@ bool PaddleMobile<Dtype, P>::Load(const std::string &dirname, bool optimize,
 
   if (executor_.get() == nullptr) {
     executor_ = std::make_shared<Executor<Dtype, P>>(
-        loader_->Load(dirname, optimize, quantification), optimize, loddable);
+        loader_->Load(dirname, optimize, quantification), batch_size, optimize,
+        loddable);
   } else {
     LOG(kLOG_INFO) << "executor inited";
   }
@@ -45,7 +47,8 @@ bool PaddleMobile<Dtype, P>::Load(const std::string &dirname, bool optimize,
 template <typename Dtype, Precision P>
 bool PaddleMobile<Dtype, P>::Load(const std::string &model_path,
                                   const std::string &para_path, bool optimize,
-                                  bool quantification, bool loddable) {
+                                  bool quantification, int batch_size,
+                                  bool loddable) {
   if (loader_.get() == nullptr) {
     loader_ = std::make_shared<Loader<Dtype, P>>();
   } else {
@@ -55,7 +58,7 @@ bool PaddleMobile<Dtype, P>::Load(const std::string &model_path,
   if (executor_.get() == nullptr) {
     executor_ = std::make_shared<Executor<Dtype, P>>(
         loader_->Load(model_path, para_path, optimize, quantification),
-        optimize, loddable);
+        batch_size, optimize, loddable);
   } else {
     LOG(kLOG_INFO) << "executor inited";
   }
@@ -67,6 +70,7 @@ template <typename Dtype, Precision P>
 bool PaddleMobile<Dtype, P>::LoadCombinedMemory(
     size_t model_len, const uint8_t *model_buf, size_t combined_params_len,
     const uint8_t *combined_params_buf) {
+  int batch_size = 1;
   bool optimise = true;
   bool quantification = false;
 
@@ -81,7 +85,7 @@ bool PaddleMobile<Dtype, P>::LoadCombinedMemory(
         loader_->LoadCombinedMemory(model_len, model_buf, combined_params_len,
                                     combined_params_buf, optimise,
                                     quantification),
-        optimise);
+        batch_size, optimise);
   } else {
     LOG(kLOG_INFO) << "executor inited";
   }

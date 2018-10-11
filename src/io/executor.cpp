@@ -33,11 +33,14 @@ namespace paddle_mobile {
 using framework::Variable;
 
 template <typename Dtype, Precision P>
-Executor<Dtype, P>::Executor(const framework::Program<Dtype> p,
+Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
                              const bool use_optimize, const bool loddable)
-    : program_(p), use_optimize_(use_optimize), loddable_(loddable) {
+    : program_(p),
+      batch_size_(batch_size),
+      use_optimize_(use_optimize),
+      loddable_(loddable) {
   Variable *variable_ptr = program_.scope->Var("batch_size");
-  variable_ptr->SetValue<int>(1);
+  variable_ptr->SetValue<int>(batch_size);
   to_predict_program_ =
       use_optimize_ ? program_.optimizeProgram : program_.originProgram;
   PADDLE_MOBILE_ENFORCE(to_predict_program_ != nullptr,

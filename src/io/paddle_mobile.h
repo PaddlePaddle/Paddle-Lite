@@ -36,11 +36,12 @@ class PaddleMobile {
  public:
   PaddleMobile() {}
   bool Load(const std::string &dirname, bool optimize = false,
-            bool quantification = false, bool loddable = false);
+            bool quantification = false, int batch_size = 1,
+            bool loddable = false);
 
   bool Load(const std::string &model_path, const std::string &para_path,
             bool optimize = false, bool quantification = false,
-            bool loddable = false);
+            int batch_size = 1, bool loddable = false);
 
   std::shared_ptr<framework::Tensor> Predict(const framework::Tensor &t);
 
