@@ -59,8 +59,8 @@ void *fpga_malloc(size_t size) {
 #endif
   counter += size;
   memory_map.insert(std::make_pair(ptr, size));
-  DLOG << "Address: " << ptr << ", " << size << " bytes allocated. Total "
-       << counter << " bytes";
+  //  DLOG << "Address: " << ptr << ", " << size << " bytes allocated. Total "
+  //       << counter << " bytes";
   return ptr;
 }
 
@@ -78,8 +78,8 @@ void fpga_free(void *ptr) {
     free(ptr);
 #endif
     counter += size;
-    DLOG << "Address: " << ptr << ", " << size << " bytes freed. Total "
-         << counter << " bytes";
+    //    DLOG << "Address: " << ptr << ", " << size << " bytes freed. Total "
+    //         << counter << " bytes";
   } else {
     DLOG << "Invalid pointer";
   }
@@ -101,6 +101,27 @@ int fpga_invalidate(void *address, size_t size) {
   args.address = address;
   args.size = size;
   return do_ioctl(IOCTL_MEMCACHE_INVAL, &args);
+}
+
+half fp32_2_fp16(float fp32_num) {
+  unsigned long tmp = *(unsigned long *)(&fp32_num);
+  half t = ((tmp & 0x007fffff) >> 13) | ((tmp & 0x80000000) >> 16) |
+           (((tmp & 0x7f800000) >> 13) - (112 << 10));
+  if (tmp & 0x1000) {
+    t++;  // roundoff
+  }
+  return t;
+}
+
+float fp16_2_fp32(half fp16_num) {
+  int frac = (fp16_num & 0x3ff);
+  int exp = ((fp16_num & 0x7c00) >> 10) + 112;
+  int s = fp16_num & 0x8000;
+  int tmp = 0;
+  float fp32_num;
+  tmp = s << 16 | exp << 23 | frac << 13;
+  fp32_num = *(float *)&tmp;
+  return fp32_num;
 }
 
 int ComputeBasicConv(const struct ConvArgs &args) {
@@ -148,6 +169,8 @@ int ComputeFpgaConv(const struct WrapperConvArgs &args) {
 int ComputeFpgaPool(const struct PoolingArgs &args) {
 #ifdef FPGA_TEST_MODE
   DLOG << "=============ComputeFpgaPool===========";
+  DLOG << "   mode:" << args.mode
+       << "   kernel_reciprocal:" << fp16_2_fp32(args.kernel_reciprocal);
   DLOG << "   image_address:" << args.image.address
        << "   image_scale_address:" << args.image.scale_address
        << "   image_channels:" << args.image.channels

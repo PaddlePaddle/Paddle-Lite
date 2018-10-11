@@ -85,14 +85,24 @@ float find_max(float *data_in, int data_size) {
   return max;
 }
 
+signed char float_to_int8(float fdata) {
+  if (fdata < 0.0) {
+    fdata -= 0.5;
+  } else {
+    fdata += 0.5;
+  }
+  return (signed char)fdata;
+}
+
 void quantize(float **data_in, int data_size, float max) {
   float *tmp = *data_in;
   float fix_range = 127;
   float scale = fix_range / max;
 
-  char *tmp_data = (char *)fpga_malloc(data_size * sizeof(char));  // NOLINT
+  signed char *tmp_data = (signed char *)fpga_malloc(data_size * sizeof(char));
   for (int i = 0; i < data_size; i++) {
-    tmp_data[i] = (char)((*data_in)[i] * scale);  // NOLINT
+    tmp_data[i] = float_to_int8(
+        (*data_in)[i] * scale);  // (signed char)((*data_in)[i] * scale);
   }
   *data_in = (float *)tmp_data;  // NOLINT
   fpga_free(tmp);
