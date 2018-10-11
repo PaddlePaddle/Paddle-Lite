@@ -41,8 +41,11 @@ __kernel void conv_1x1(__private const int global_size_dim0,
                        __private const int stride,
                        __private const int offset,
                        __private const int input_c,
+                       __private const int dilation,
                        __private const int input_width,/* of one block */
-                       __private const int input_height/* of one block */) {
+                       __private const int input_height,/* of one block */
+                       __private const int output_width,
+                       __private const int output_height) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
@@ -112,7 +115,9 @@ __kernel void conv_3x3(__private const int global_size_dim0,
                                               __private const int input_c,
                                               __private const int dilation,
                                               __private const int input_width,/* of one block */
-                                              __private const int input_height/* of one block */) {
+                                              __private const int input_height,/* of one block */
+                                              __private const int output_width,
+                                              __private const int output_height) {
     int2 stride_xy = int2(stride, stride);
     int2 ouput_pos_in_one_block = int2(out_w, out_nh);
     int2 in_pos_in_one_block = ouput_pos_in_one_block * stride_xy + int2(offset, offset);
