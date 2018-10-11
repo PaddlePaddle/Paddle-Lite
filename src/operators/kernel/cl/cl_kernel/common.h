@@ -33,4 +33,3 @@ inline hafl4 activation(half4 in
 }
 
 */
-

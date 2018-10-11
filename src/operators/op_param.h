@@ -389,6 +389,13 @@ class ConvParam : public OpParam {
 
   const int &Groups() const { return groups; }
 
+#ifdef PADDLE_MOBILE_CL
+  int Offset() const { return offset_; }
+
+  int SetOffset(int in_offset) { offset_ = in_offset; }
+
+#endif
+
  private:
   RType *input_;
   RType *output_;
@@ -397,6 +404,10 @@ class ConvParam : public OpParam {
   vector<int> paddings_;
   vector<int> dilations_;
   int groups;
+
+#ifdef PADDLE_MOBILE_CL
+  int offset_;
+#endif
 };
 template <typename Dtype>
 Print &operator<<(Print &printer, const ConvParam<Dtype> &conv_param);
@@ -1520,6 +1531,7 @@ class FusionConvAddBNReluParam : public ConvParam<Dtype> {
   bool is_test_;
   RType *new_bias_;
   RType *new_scale_;
+
 #ifdef PADDLE_MOBILE_FPGA
 
  private:

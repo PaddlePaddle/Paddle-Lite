@@ -20,7 +20,7 @@ limitations under the License. */
 #include "framework/program/program.h"
 
 namespace paddle_mobile {
-namespace framework{
+namespace framework {
 
 template <typename Dtype = CPU, Precision P = Precision::FP32>
 class Loader {
@@ -30,33 +30,36 @@ class Loader {
    * @b 加载分开形式的 fluid 模型
    * */
   const Program<Dtype, P> Load(const std::string &dirname,
-                                          bool optimize = false,
-                                          bool quantification = false,
-                                          bool can_add_split = false);
+                               bool optimize = false,
+                               bool quantification = false,
+                               bool can_add_split = false);
 
   /*
    * @b load combine format fluid mode
    * @b 加载结合在一起格式的模型
    * */
   const Program<Dtype, P> Load(const std::string &model_path,
-                                          const std::string &para_path,
-                                          bool optimize = false,
-                                          bool quantification = false);
+                               const std::string &para_path,
+                               bool optimize = false,
+                               bool quantification = false);
 
-  const Program<Dtype, P> LoadCombinedMemory(
-      size_t model_len, const uint8_t *model_buf, size_t combined_params_len,
-      const uint8_t *combined_params_buf, bool optimize = false,
-      bool quantification = false);
+  const Program<Dtype, P> LoadCombinedMemory(size_t model_len,
+                                             const uint8_t *model_buf,
+                                             size_t combined_params_len,
+                                             const uint8_t *combined_params_buf,
+                                             bool optimize = false,
+                                             bool quantification = false);
 
  private:
   const Program<Dtype, P> LoadProgram(const std::string &model_path,
-                                                 bool optimize = false,
-                                                 bool quantification = false,
-                                                 bool can_add_split = false);
+                                      bool optimize = false,
+                                      bool quantification = false,
+                                      bool can_add_split = false);
 
-  void InitMemoryFromProgram(std::shared_ptr<ProgramDesc> &originProgramDesc,
-                             std::shared_ptr<Scope> &scope);
+  void InitMemoryFromProgram(
+      const std::shared_ptr<ProgramDesc> &originProgramDesc,
+      const std::shared_ptr<Scope> &scope);
 };
 
-}
+}  // namespace framework
 }  // namespace paddle_mobile

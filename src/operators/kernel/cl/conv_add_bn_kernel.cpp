@@ -21,14 +21,14 @@ namespace operators {
 
 template <>
 bool ConvAddBNReluKernel<GPU_CL, float>::Init(
-        FusionConvAddBNReluParam<GPU_CL> *param) {
+    FusionConvAddBNReluParam<GPU_CL> *param) {
   return true;
 }
 
 template <>
 void ConvAddBNReluKernel<GPU_CL, float>::Compute(
-        const FusionConvAddBNReluParam<GPU_CL> &param) {
-}
+    const FusionConvAddBNReluParam<GPU_CL> &param) {}
+
 template class ConvAddBNReluKernel<GPU_CL, float>;
 
 }  // namespace operators
