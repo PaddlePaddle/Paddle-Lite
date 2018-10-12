@@ -25,8 +25,7 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
-using std::string;
-using std::vector;
+
 class FusionFcMatcher : public framework::FusionOpMatcher {
  public:
   FusionFcMatcher() {
@@ -49,7 +48,7 @@ class FusionFcOp : public framework::OperatorWithKernel<
                        DeviceType, FusionFcParam<DeviceType>,
                        operators::FusionFcKernel<DeviceType, T>> {
  public:
-  FusionFcOp(const string &type, const VariableNameMap &inputs,
+  FusionFcOp(const std::string &type, const VariableNameMap &inputs,
              const VariableNameMap &outputs,
              const framework::AttributeMap &attrs,
              std::shared_ptr<framework::Scope> scope)
@@ -60,42 +59,11 @@ class FusionFcOp : public framework::OperatorWithKernel<
   using framework::OperatorWithKernel<
       DeviceType, FusionFcParam<DeviceType>,
       operators::FusionFcKernel<DeviceType, T>>::OperatorWithKernel;
-  void InferShape() const override;
 
- protected:
+  void InferShape() const override;
 };
 
-#ifdef PADDLE_MOBILE_CPU
-#ifndef FUSION_FC_REGISTER
-static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
-#define FUSION_FC_REGISTER
-#endif
-#endif
-
-#ifdef PADDLE_MOBILE_MALI_GPU
-#ifndef FUSION_FC_REGISTER
-static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
-#define FUSION_FC_REGISTER
-#endif
-#endif
-
-#ifdef PADDLE_MOBILE_FPGA
-#ifndef FUSION_FC_REGISTER
-static framework::FusionOpRegistrar fc_registrar(new FusionFcMatcher());
-#define FUSION_FC_REGISTER
-#endif
-#endif
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(fusion_fc);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(fusion_fc);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-USE_OP_FPGA(fusion_fc);
-#endif
-
-#endif
+#endif  // FUSION_FC_OP

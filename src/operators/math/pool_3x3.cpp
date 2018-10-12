@@ -225,7 +225,7 @@ void Pool3x3Avgs1p1(const Tensor *input, Tensor *output) {
 //
 //  const float coef = 1.0 / 9.0;
 //  for (int k = 0; k < batch_size; ++k) {
-//#pragma omp parallel for
+// #pragma omp parallel for
 //    for (int c = 0; c < output_channels; ++c) {
 //      const float *input_seg = input_data + c * inputdata_channel_stride;
 //      float *output_seg = out_data + c * outputdata_channel_stride;

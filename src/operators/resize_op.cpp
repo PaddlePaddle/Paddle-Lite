@@ -30,14 +30,10 @@ void ResizeOp<Dtype, T>::InferShape() const {
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(resize);
 REGISTER_OPERATOR_CPU(resize, ops::ResizeOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(resize);
 REGISTER_OPERATOR_MALI_GPU(resize, ops::ResizeOp);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
 #endif
 
 #endif

@@ -30,6 +30,7 @@ class FusionFcKernel
   void Compute(const FusionFcParam<DeviceType>& param) const;
   bool Init(FusionFcParam<DeviceType>* param);
 };
+
 }  // namespace operators
 }  // namespace paddle_mobile
 

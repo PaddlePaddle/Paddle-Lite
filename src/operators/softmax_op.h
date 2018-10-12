@@ -48,14 +48,4 @@ class SoftmaxOp : public framework::OperatorWithKernel<
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(softmax);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(softmax);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-USE_OP_FPGA(softmax);
-#endif
-
 #endif
