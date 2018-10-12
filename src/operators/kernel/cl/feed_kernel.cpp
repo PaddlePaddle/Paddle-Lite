@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-
+#include "common/log.h"
 #include "operators/kernel/feed_kernel.h"
 
 namespace paddle_mobile {
@@ -20,7 +20,7 @@ namespace paddle_mobile {
 
         template <>
         bool FeedKernel<GPU_CL, float>::Init(FeedParam<GPU_CL> *param) {
-            DLOG<<"Init feed";
+         DLOG<<"Init feed";
          this->cl_helper_.AddKernel("feed", "feed_kernel.cl");
             return true;
         }

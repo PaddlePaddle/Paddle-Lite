@@ -18,6 +18,7 @@ limitations under the License. */
 #include <string>
 
 #include "CL/cl.h"
+#include "common/log.h"
 #include "common/enforce.h"
 #include "framework/cl/cl_deleter.h"
 #include "framework/cl/cl_tool.h"
@@ -66,8 +67,14 @@ class CLEngine {
     const char *source = data;
     size_t sourceSize[] = {strlen(source)};
     cl_program p =
-        clCreateProgramWithSource(context, 1, &source, sourceSize, NULL);
+        clCreateProgramWithSource(context, 1, &source, sourceSize, &status_);
+
+    DLOG << " cl kernel file name: " << file_name;
+    DLOG << " source size: " << sourceSize[0];
+    CL_CHECK_ERRORS(status_);
+
     std::unique_ptr<_cl_program, CLProgramDeleter> program_ptr(p);
+
     return std::move(program_ptr);
   }
 
@@ -90,6 +97,8 @@ class CLEngine {
   cl_platform_id platform_;
 
   cl_device_id *devices_;
+
+  cl_int status_;
 
   std::unique_ptr<_cl_context, CLContextDeleter> context_;
 
