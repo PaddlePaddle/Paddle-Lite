@@ -55,10 +55,12 @@ class CLScope {
 
     auto program = CLEngine::Instance()->CreateProgramWith(
         context_.get(), "./cl_kernel/" + file_name);
+
+    status_ = clBuildProgram(program.get(), 0, 0, "-cl-fast-relaxed-math", 0, 0);
+    CL_CHECK_ERRORS(status_);
+
     programs_[file_name] = std::move(program);
 
-    status_ = clBuildProgram(program.get(), 0, 0, 0, 0, 0);
-    CL_CHECK_ERRORS(status_);
     return program.get();
   }
 
