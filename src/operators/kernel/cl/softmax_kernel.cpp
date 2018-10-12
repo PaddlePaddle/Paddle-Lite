@@ -21,11 +21,28 @@ namespace operators {
 
 template <>
 bool SoftmaxKernel<GPU_CL, float>::Init(SoftmaxParam<GPU_CL> *param) {
+  this->cl_helper_.AddKernel("softmax", "softmax.cl");
   return true;
 }
 
 template <>
-void SoftmaxKernel<GPU_CL, float>::Compute(const SoftmaxParam<GPU_CL> &param) {}
+void SoftmaxKernel<GPU_CL, float>::Compute(const SoftmaxParam<GPU_CL> &param) {
+  auto kernel = this->cl_helper_.KernelAt(0);
+  auto default_work_size = this->cl_helper_.DefaultWorkSize(*(param.Out()));
+  auto & input = param.InputX();
+  auto & output = param.Out();
+  clSetKernelArg(kernel, 0, sizeof(cl_mem), &input.getCLImage());
+  clSetKernelArg(kernel, 1, sizeof(cl_mem), &output.getCLImage());
+  const auto & inputDim = input.dims();
+  int dims[4] = {inputDim[0], inputDim[1], inputDim[2], inputDim[3]};
+  clSetKernelArg(kernel, 2, sizeof(int), dims);
+  clSetKernelArg(kernel, 3, sizeof(int), dims+1);
+  clSetKernelArg(kernel, 4, sizeof(int), dims+2);
+  clSetKernelArg(kernel, 5, sizeof(int), dims+3);
+
+  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
+                         default_work_size.data(), NULL, 0, NULL, NULL);
+}
 
 template class SoftmaxKernel<GPU_CL, float>;
 
