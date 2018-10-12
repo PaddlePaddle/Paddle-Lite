@@ -14,7 +14,7 @@ limitations under the License. */
 
 #pragma once;
 
-/*
+#pragma OPENCL EXTENSION cl_khr_fp16 : enable
 
 inline hafl4 activation(half4 in
 #ifdef PRELU
@@ -32,4 +32,3 @@ inline hafl4 activation(half4 in
   return output;
 }
 
-*/
