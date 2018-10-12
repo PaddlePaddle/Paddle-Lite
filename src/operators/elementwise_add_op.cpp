@@ -35,7 +35,5 @@ REGISTER_OPERATOR_CPU(elementwise_add, ops::ElementwiseAddOp);
 #ifdef PADDLE_MOBILE_MALI_GPU
 REGISTER_OPERATOR_MALI_GPU(elementwise_add, ops::ElementwiseAddOp);
 #endif
-#ifdef PADDLE_MOBILE_FPGA
-#endif
 
 #endif

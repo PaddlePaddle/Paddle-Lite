@@ -46,13 +46,4 @@ class BatchNormOp
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(batch_norm);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(batch_norm);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-#endif
-
 #endif

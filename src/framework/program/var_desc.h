@@ -31,6 +31,7 @@ class VarDesc {
     this->tensor_desc_ = var_desc.tensor_desc_;
     this->type_ = var_desc.type_;
   }
+
   VarDesc(PaddleMobile__Framework__Proto__VarDesc *desc) {
     type_ = (VarType_Type)desc->type->type;
     name_ = std::string(desc->name);
@@ -44,9 +45,7 @@ class VarDesc {
         tensor_desc_ = TensorDesc(desc->type->lod_tensor->tensor);
         break;
       case VARTYPE_TYPE_STEP_LOD_TENSOR_ARRAY:
-        desc->type->tensor_array->tensor->data_type;
         tensor_desc_ = TensorDesc(desc->type->tensor_array->tensor);
-
         break;
       default:
         break;
@@ -60,6 +59,7 @@ class VarDesc {
         break;
     }
   }
+
   std::string Name() const { return name_; }
 
   VarType_Type Type() const { return type_; }

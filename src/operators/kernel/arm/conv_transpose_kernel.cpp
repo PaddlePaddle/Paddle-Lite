@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef CONV_TRANSPOSE
+#ifdef CONV_TRANSPOSE_OP
 
 #include "operators/kernel/conv_transpose_kernel.h"
 #include "operators/kernel/central-arm-func/conv_transpose_arm_func.h"

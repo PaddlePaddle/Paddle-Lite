@@ -40,30 +40,6 @@ using std::vector;
 
 template <typename Dtype>
 struct DtypeTensorTrait {
-  typedef void ptype;
-  typedef void rtype;
-};
-
-template <>
-struct DtypeTensorTrait<CPU> {
-  // This is the type we obtained in variable.
-  typedef framework::LoDTensor gtype;
-  // This type will be the parent class type
-  // or the same type.
-  typedef framework::Tensor rtype;
-};
-
-template <>
-struct DtypeTensorTrait<FPGA> {
-  // This is the type we obtained in variable.
-  typedef framework::LoDTensor gtype;
-  // This type will be the parent class type
-  // or the same type.
-  typedef framework::Tensor rtype;
-};
-
-template <>
-struct DtypeTensorTrait<GPU_MALI> {
   // This is the type we obtained in variable.
   typedef framework::LoDTensor gtype;
   // This type will be the parent class type
@@ -1935,7 +1911,7 @@ class DropoutParam : public OpParam {
 };
 #endif
 
-#ifdef CONV_TRANSPOSE
+#ifdef CONV_TRANSPOSE_OP
 template <typename Dtype>
 class ConvTransposeParam : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
@@ -2150,6 +2126,76 @@ class ShapeParam : public OpParam {
   RType *out_;
 };
 #endif
+
+template <typename Dtype>
+class QuantizeParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  QuantizeParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+                const AttributeMap &attrs, const Scope &scope) {
+    input_ = InputXFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+    if (HasAttr("is_static", attrs)) {
+      is_static_ = GetAttr<bool>("is_static", attrs);
+    }
+    // online
+    // scale = max(abs(x))
+    online_scale_ = GetVarValue<GType>("OutScale", outputs, scope);
+    // offline
+    if (HasAttr("static_scale", attrs)) {
+      static_scale_ = GetAttr<float>("static_scale", attrs);
+    }
+    // x = round(scale * x)
+    if (HasAttr("round_type", attrs)) {
+      round_type_ = GetAttr<RoundType>("round_type", attrs);
+    }
+  }
+
+ public:
+  // op input
+  RType *input_;
+  // op output
+  RType *out_;
+  //
+  RType *online_scale_;
+  // if static scale or not
+  bool is_static_ = false;
+  // quantize scale
+  float static_scale_ = 1.0f;
+  // round method type
+  // nearest_zero and nearest_even is valid currently
+  RoundType round_type_ = ROUND_NEAREST_TO_EVEN;
+};
+
+template <typename Dtype>
+class DequantizeParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  DequantizeParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+                  const AttributeMap &attrs, const Scope &scope) {
+    input_ = InputXFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+    activation_scale_ = GetVarValue<GType>("Scale", inputs, scope);
+    // dequantization is performed as x = x / static_scale / online_scale
+    if (HasAttr("weight_scale", attrs)) {
+      weight_scale_ = GetAttr<float>("weight_scale", attrs);
+    } else {
+      weight_scale_ = GetAttr<float>("max_range", attrs);
+    }
+  }
+
+ public:
+  // op input
+  RType *input_;
+  // op output
+  RType *out_;
+  RType *activation_scale_;
+  float weight_scale_;
+};
 
 }  // namespace operators
 }  // namespace paddle_mobile

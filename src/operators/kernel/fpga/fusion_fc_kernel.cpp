@@ -30,7 +30,8 @@ bool FusionFcKernel<FPGA, float>::Init(FusionFcParam<FPGA> *param) {
   PADDLE_MOBILE_ENFORCE(input_x->dims()[1] == filter->dims()[0],
                         "Image channel should be equal to weight number");
   int channel = (uint32_t)out->dims()[1];
-  auto bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sizeof(float));
+  auto bs_ptr =
+      (float *)fpga::fpga_malloc(2 * channel * sizeof(float));  // NOLINT
   for (int i = 0; i < channel; i++) {
     bs_ptr[i + channel] = 1;
     bs_ptr[i] = input_z_ptr[i];

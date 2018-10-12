@@ -31,7 +31,8 @@ bool ConvAddReluKernel<FPGA, float>::Init(FusionConvAddReluParam<FPGA> *param) {
   PADDLE_MOBILE_ENFORCE(out->dims()[1] == bias->dims()[0],
                         "Output channel should be equal to bias number");
   int channel = out->dims()[1];
-  auto bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sizeof(float));
+  auto bs_ptr =
+      (float *)fpga::fpga_malloc(2 * channel * sizeof(float));  // NOLINT
   for (int i = 0; i < channel; i++) {
     bs_ptr[i + channel] = 1;
     bs_ptr[i] = bias_ptr[i];
