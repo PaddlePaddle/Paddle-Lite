@@ -127,7 +127,7 @@ PaddleMobile<Dtype, P>::~PaddleMobile() {
 
 template <typename Dtype, Precision P>
 void PaddleMobile<Dtype, P>::InjectVariable(const framework::Tensor &t,
-                                            string var_name) {
+                                            std::string var_name) {
   executor_->InjectVariable(t, var_name);
 }
 
