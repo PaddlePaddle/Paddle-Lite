@@ -84,14 +84,14 @@ Java_com_baidu_paddle_PML_loadnlp(JNIEnv *env, jclass thiz, jstring modelPath) {
 #ifdef ENABLE_EXCEPTION
   try {
     isLoadOk = getPaddleMobileInstance()->Load(
-        jstring2cppstring(env, modelPath), optimize, false, true);
+        jstring2cppstring(env, modelPath), optimize, false, 1, true);
   } catch (paddle_mobile::PaddleMobileException &e) {
     ANDROIDLOGE("jni got an PaddleMobileException! ", e.what());
     isLoadOk = false;
   }
 #else
   isLoadOk = getPaddleMobileInstance()->Load(jstring2cppstring(env, modelPath),
-                                             optimize, false, true);
+                                             optimize, false, 1, true);
 #endif
   return static_cast<jboolean>(isLoadOk);
 }
