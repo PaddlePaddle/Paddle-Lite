@@ -398,7 +398,7 @@ std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::Predict(
 #ifdef PADDLE_MOBILE_FPGA
 template <typename Dtype, Precision P>
 void Executor<Dtype, P>::InjectVariable(const framework::Tensor &t,
-                                        string var_name) {
+                                        std::string var_name) {
   framework::Variable *g_feed_value = program_.scope->Var(var_name);
   framework::Tensor *feed_tensor =
       g_feed_value->GetMutable<framework::LoDTensor>();
