@@ -53,8 +53,8 @@ class CLScope {
       return it->second.get();
     }
 
-    auto program =
-        CLEngine::Instance()->CreateProgramWith(context_.get(), "./cl_kernel/" + file_name);
+    auto program = CLEngine::Instance()->CreateProgramWith(
+        context_.get(), "./cl_kernel/" + file_name);
     programs_[file_name] = std::move(program);
 
     status_ = clBuildProgram(program.get(), 0, 0, 0, 0, 0);

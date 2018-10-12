@@ -66,8 +66,26 @@ void OperatorBase<Dtype>::Run() {
     for (int i = 0; i < var_vec_in.size(); ++i) {
       auto vari = scope_->FindVar(var_vec_in[i]);
       if (vari->IsInitialized()) {
+#ifdef PADDLE_MOBILE_CL
+        if (type_ == "feed") {
+          Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
+          if (tensor) DLOG << type_ << " input- " << key << "=" << *tensor;
+        } else {
+          CLImage *cl_image = vari->template GetMutable<framework::CLImage>();
+          //              cl_command_queue commandQueue =
+          //              scope_->GetCLScpoe()->CommandQueue(); Tensor *tmp ;
+          //              CLImageToTensor(cl_image,tmp,commandQueue);
+          //              tmp->Resize(cl_image->dims());
+          if (cl_image) {
+            //                  DLOG<<type_<<" input- "<<key<<"="<<*tmp;
+            DLOG << type_ << " input- " << key << "=" << cl_image->dims();
+          }
+        }
+
+#else
         Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
         if (tensor) DLOG << type_ << " input- " << key << "=" << *tensor;
+#endif
       }
     }
   }
@@ -76,8 +94,20 @@ void OperatorBase<Dtype>::Run() {
     for (int i = 0; i < var_vec_out.size(); ++i) {
       auto vari = scope_->FindVar(var_vec_out[i]);
       if (vari->IsInitialized()) {
+#ifdef PADDLE_MOBILE_CL
+        CLImage *cl_image = vari->template GetMutable<framework::CLImage>();
+        //          cl_command_queue commandQueue =
+        //          scope_->GetCLScpoe()->CommandQueue(); Tensor *tmp ;
+        //          CLImageToTensor(cl_image,tmp,commandQueue);
+        //          tmp->Resize(cl_image->dims());
+        if (cl_image) {
+          //              DLOG<<type_<<" output- "<<key<<"="<<*tmp;
+          DLOG << type_ << " output- " << key << "=" << cl_image->dims();
+        }
+#else
         Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
         if (tensor) DLOG << type_ << " output- " << key << "=" << *tensor;
+#endif
       }
     }
   }

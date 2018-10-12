@@ -57,8 +57,6 @@ class CLImage {
       height_of_one_block_ = H;
     }
 
-    DLOG << "-------InitMemory-------";
-
     size_t width = W * ((C + 3) / 4);
     size_t height = H * N;
 
@@ -95,7 +93,6 @@ class CLImage {
         i0 += width * H;
       }
     }
-    DLOG << "-------InitMemory-------";
     cl_int err;
     cl_image_ = clCreateImage2D(
         context,                                   // cl_context context
@@ -156,13 +153,9 @@ class CLImage {
   cl_context context_;
 };
 
-// void TensorToCLImage(Tensor *tensor, CLImage *image) {
-//
-//}
-//
-// void CLImageToTensor(CLImage *image, Tensor *tensor) {
-//
-//}
+void TensorToCLImage(Tensor *tensor, CLImage *image);
+
+void CLImageToTensor(CLImage *image, Tensor *tensor);
 
 }  // namespace framework
 }  // namespace paddle_mobile

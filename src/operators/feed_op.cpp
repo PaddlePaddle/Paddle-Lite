@@ -14,7 +14,21 @@ limitations under the License. */
 
 #include "feed_op.h"
 namespace paddle_mobile {
-namespace operators {}
+namespace operators {
+#ifdef PADDLE_MOBILE_CL
+template <typename DeviceType, typename T>
+void FeedOp<DeviceType, T>::InferShape() const {
+  auto out_dims = this->param_.Out()->dims();
+  out_dims[0] = this->param_.BatchSize();
+  this->param_.Out()->Resize(out_dims);
+}
+
+template <typename DeviceType, typename T>
+void FeedOp<DeviceType, T>::RunImpl() {
+  this->kernel_.Compute(this->param_);
+}
+#endif
+}
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
