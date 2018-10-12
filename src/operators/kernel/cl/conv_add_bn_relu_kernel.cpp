@@ -109,8 +109,11 @@ void ConvAddBNReluKernel<GPU_CL, float>::Compute(
   int stride = param.Strides()[0];
   int offset = param.Offset();
   int input_c = param.Input()->CBlock();
+  int dilation = param.Dilations()[0];
   int input_width = param.Input()->WidthOfOneBlock();
   int input_height = param.Input()->HeightOfOneBlock();
+  int output_width = param.Output()->WidthOfOneBlock();
+  int output_height = param.Output()->HeightOfOneBlock();
 
   clSetKernelArg(kernel, 0, sizeof(int), &c_block);
   clSetKernelArg(kernel, 1, sizeof(int), &w);
@@ -124,8 +127,11 @@ void ConvAddBNReluKernel<GPU_CL, float>::Compute(
   clSetKernelArg(kernel, 9, sizeof(int), &stride);
   clSetKernelArg(kernel, 10, sizeof(int), &offset);
   clSetKernelArg(kernel, 11, sizeof(int), &input_c);
-  clSetKernelArg(kernel, 12, sizeof(int), &input_width);
-  clSetKernelArg(kernel, 13, sizeof(int), &input_height);
+  clSetKernelArg(kernel, 12, sizeof(int), &dilation);
+  clSetKernelArg(kernel, 13, sizeof(int), &input_width);
+  clSetKernelArg(kernel, 14, sizeof(int), &input_height);
+  clSetKernelArg(kernel, 15, sizeof(int), &output_width);
+  clSetKernelArg(kernel, 16, sizeof(int), &output_height);
 
   clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
                          default_work_size.data(), NULL, 0, NULL, NULL);
