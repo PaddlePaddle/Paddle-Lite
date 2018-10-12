@@ -36,7 +36,7 @@ limitations under the License. */
 #define LOAD_FPGA_OP(op_type)                                           \
   extern int TouchOpRegistrar_##op_type##_##fpga();                     \
   static int use_op_itself_##op_type##_##fpga __attribute__((unused)) = \
-      TouchOpRegistrar_##op_type##_##mali_gpu()
+      TouchOpRegistrar_##op_type##_##fpga()
 #else
 #define LOAD_FPGA_OP(op_type)
 #endif
