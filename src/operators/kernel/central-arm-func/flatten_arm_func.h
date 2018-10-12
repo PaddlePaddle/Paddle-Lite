@@ -13,6 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #ifdef FLATTEN_OP
+
+#ifndef RESHAPE_OP
+#define RESHAPE_OP
+#endif
+
 #pragma once
 
 #include <operators/kernel/reshape_kernel.h>

@@ -20,20 +20,6 @@ size_t paddle_mobile__framework__proto__version__get_packed_size(
   return protobuf_c_message_get_packed_size(
       (const ProtobufCMessage *)(message));
 }
-size_t paddle_mobile__framework__proto__version__pack(
-    const PaddleMobile__Framework__Proto__Version *message, uint8_t *out) {
-  assert(message->base.descriptor ==
-         &paddle_mobile__framework__proto__version__descriptor);
-  return protobuf_c_message_pack((const ProtobufCMessage *)message, out);
-}
-size_t paddle_mobile__framework__proto__version__pack_to_buffer(
-    const PaddleMobile__Framework__Proto__Version *message,
-    ProtobufCBuffer *buffer) {
-  assert(message->base.descriptor ==
-         &paddle_mobile__framework__proto__version__descriptor);
-  return protobuf_c_message_pack_to_buffer((const ProtobufCMessage *)message,
-                                           buffer);
-}
 PaddleMobile__Framework__Proto__Version *
 paddle_mobile__framework__proto__version__unpack(ProtobufCAllocator *allocator,
                                                  size_t len,
@@ -75,20 +61,6 @@ size_t paddle_mobile__framework__proto__op_desc__get_packed_size(
   return protobuf_c_message_get_packed_size(
       (const ProtobufCMessage *)(message));
 }
-size_t paddle_mobile__framework__proto__op_desc__pack(
-    const PaddleMobile__Framework__Proto__OpDesc *message, uint8_t *out) {
-  assert(message->base.descriptor ==
-         &paddle_mobile__framework__proto__op_desc__descriptor);
-  return protobuf_c_message_pack((const ProtobufCMessage *)message, out);
-}
-size_t paddle_mobile__framework__proto__op_desc__pack_to_buffer(
-    const PaddleMobile__Framework__Proto__OpDesc *message,
-    ProtobufCBuffer *buffer) {
-  assert(message->base.descriptor ==
-         &paddle_mobile__framework__proto__op_desc__descriptor);
-  return protobuf_c_message_pack_to_buffer((const ProtobufCMessage *)message,
-                                           buffer);
-}
 PaddleMobile__Framework__Proto__OpDesc *
 paddle_mobile__framework__proto__op_desc__unpack(ProtobufCAllocator *allocator,
                                                  size_t len,
@@ -129,20 +101,6 @@ size_t paddle_mobile__framework__proto__op_proto__get_packed_size(
          &paddle_mobile__framework__proto__op_proto__descriptor);
   return protobuf_c_message_get_packed_size(
       (const ProtobufCMessage *)(message));
-}
-size_t paddle_mobile__framework__proto__op_proto__pack(
-    const PaddleMobile__Framework__Proto__OpProto *message, uint8_t *out) {
-  assert(message->base.descriptor ==
-         &paddle_mobile__framework__proto__op_proto__descriptor);
-  return protobuf_c_message_pack((const ProtobufCMessage *)message, out);
-}
-size_t paddle_mobile__framework__proto__op_proto__pack_to_buffer(
-    const PaddleMobile__Framework__Proto__OpProto *message,
-    ProtobufCBuffer *buffer) {
-  assert(message->base.descriptor ==
-         &paddle_mobile__framework__proto__op_proto__descriptor);
-  return protobuf_c_message_pack_to_buffer((const ProtobufCMessage *)message,
-                                           buffer);
 }
 PaddleMobile__Framework__Proto__OpProto *
 paddle_mobile__framework__proto__op_proto__unpack(ProtobufCAllocator *allocator,
@@ -211,20 +169,6 @@ size_t paddle_mobile__framework__proto__var_type__get_packed_size(
   return protobuf_c_message_get_packed_size(
       (const ProtobufCMessage *)(message));
 }
-size_t paddle_mobile__framework__proto__var_type__pack(
-    const PaddleMobile__Framework__Proto__VarType *message, uint8_t *out) {
-  assert(message->base.descriptor ==
-         &paddle_mobile__framework__proto__var_type__descriptor);
-  return protobuf_c_message_pack((const ProtobufCMessage *)message, out);
-}
-size_t paddle_mobile__framework__proto__var_type__pack_to_buffer(
-    const PaddleMobile__Framework__Proto__VarType *message,
-    ProtobufCBuffer *buffer) {
-  assert(message->base.descriptor ==
-         &paddle_mobile__framework__proto__var_type__descriptor);
-  return protobuf_c_message_pack_to_buffer((const ProtobufCMessage *)message,
-                                           buffer);
-}
 PaddleMobile__Framework__Proto__VarType *
 paddle_mobile__framework__proto__var_type__unpack(ProtobufCAllocator *allocator,
                                                   size_t len,
@@ -253,20 +197,6 @@ size_t paddle_mobile__framework__proto__var_desc__get_packed_size(
          &paddle_mobile__framework__proto__var_desc__descriptor);
   return protobuf_c_message_get_packed_size(
       (const ProtobufCMessage *)(message));
-}
-size_t paddle_mobile__framework__proto__var_desc__pack(
-    const PaddleMobile__Framework__Proto__VarDesc *message, uint8_t *out) {
-  assert(message->base.descriptor ==
-         &paddle_mobile__framework__proto__var_desc__descriptor);
-  return protobuf_c_message_pack((const ProtobufCMessage *)message, out);
-}
-size_t paddle_mobile__framework__proto__var_desc__pack_to_buffer(
-    const PaddleMobile__Framework__Proto__VarDesc *message,
-    ProtobufCBuffer *buffer) {
-  assert(message->base.descriptor ==
-         &paddle_mobile__framework__proto__var_desc__descriptor);
-  return protobuf_c_message_pack_to_buffer((const ProtobufCMessage *)message,
-                                           buffer);
 }
 PaddleMobile__Framework__Proto__VarDesc *
 paddle_mobile__framework__proto__var_desc__unpack(ProtobufCAllocator *allocator,
@@ -297,20 +227,6 @@ size_t paddle_mobile__framework__proto__block_desc__get_packed_size(
   return protobuf_c_message_get_packed_size(
       (const ProtobufCMessage *)(message));
 }
-size_t paddle_mobile__framework__proto__block_desc__pack(
-    const PaddleMobile__Framework__Proto__BlockDesc *message, uint8_t *out) {
-  assert(message->base.descriptor ==
-         &paddle_mobile__framework__proto__block_desc__descriptor);
-  return protobuf_c_message_pack((const ProtobufCMessage *)message, out);
-}
-size_t paddle_mobile__framework__proto__block_desc__pack_to_buffer(
-    const PaddleMobile__Framework__Proto__BlockDesc *message,
-    ProtobufCBuffer *buffer) {
-  assert(message->base.descriptor ==
-         &paddle_mobile__framework__proto__block_desc__descriptor);
-  return protobuf_c_message_pack_to_buffer((const ProtobufCMessage *)message,
-                                           buffer);
-}
 PaddleMobile__Framework__Proto__BlockDesc *
 paddle_mobile__framework__proto__block_desc__unpack(
     ProtobufCAllocator *allocator, size_t len, const uint8_t *data) {
@@ -338,20 +254,6 @@ size_t paddle_mobile__framework__proto__program_desc__get_packed_size(
          &paddle_mobile__framework__proto__program_desc__descriptor);
   return protobuf_c_message_get_packed_size(
       (const ProtobufCMessage *)(message));
-}
-size_t paddle_mobile__framework__proto__program_desc__pack(
-    const PaddleMobile__Framework__Proto__ProgramDesc *message, uint8_t *out) {
-  assert(message->base.descriptor ==
-         &paddle_mobile__framework__proto__program_desc__descriptor);
-  return protobuf_c_message_pack((const ProtobufCMessage *)message, out);
-}
-size_t paddle_mobile__framework__proto__program_desc__pack_to_buffer(
-    const PaddleMobile__Framework__Proto__ProgramDesc *message,
-    ProtobufCBuffer *buffer) {
-  assert(message->base.descriptor ==
-         &paddle_mobile__framework__proto__program_desc__descriptor);
-  return protobuf_c_message_pack_to_buffer((const ProtobufCMessage *)message,
-                                           buffer);
 }
 PaddleMobile__Framework__Proto__ProgramDesc *
 paddle_mobile__framework__proto__program_desc__unpack(
