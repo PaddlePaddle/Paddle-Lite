@@ -33,8 +33,6 @@ class Program {
   bool quantification = false;
   size_t combined_params_len;
   const uint8_t *combined_params_buf;
-
- private:
 };
 
 }  // namespace framework

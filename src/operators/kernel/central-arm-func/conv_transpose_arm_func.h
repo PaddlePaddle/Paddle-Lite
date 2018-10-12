@@ -12,17 +12,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef CONV_TRANSPOSE
+#pragma once
+
+#ifdef CONV_TRANSPOSE_OP
 
 #include <vector>
-
 #include "framework/ddim.h"
 #include "operators/math/im2col.h"
 #include "operators/math/math_function.h"
 #include "operators/math/vol2col.h"
 #include "operators/op_param.h"
-
-#pragma once
 
 namespace paddle_mobile {
 namespace operators {

@@ -83,9 +83,5 @@ namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(split, ops::SplitOp);
 #endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-#endif
 
-#endif
+#endif  // SPLIT_OP

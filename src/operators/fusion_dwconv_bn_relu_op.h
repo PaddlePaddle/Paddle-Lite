@@ -73,38 +73,7 @@ class FusionDWConvBNReluOp
  protected:
 };
 
-#ifdef PADDLE_MOBILE_CPU
-
-#ifndef FUSION_DWCONV_BN_RELU_REGISTER
-static framework::FusionOpRegistrar fusion_dwconv_bn_relu_registrar(
-    new FusionDWConvBNReluMatcher());
-#define FUSION_DWCONV_BN_RELU_REGISTER
-#endif
-
-#endif
-
-#ifdef PADDLE_MOBILE_MALI_GPU
-
-#ifndef FUSION_DWCONV_BN_RELU_REGISTER
-static framework::FusionOpRegistrar fusion_dwconv_bn_relu_registrar(
-    new FusionDWConvBNReluMatcher());
-#define FUSION_DWCONV_BN_RELU_REGISTER
-#endif
-
-#endif
-
-#ifdef PADDLE_MOBILE_FPGA
-#endif
-
 }  // namespace operators
 }  // namespace paddle_mobile
-
-#ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(fusion_dwconv_bn_relu);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-#endif
 
 #endif

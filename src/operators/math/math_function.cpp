@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include "operators/math/math_function.h"
 #include <cstring>
+#include <string>
 #include "operators/math/gemm.h"
 
 namespace paddle_mobile {
@@ -40,7 +41,7 @@ void matmul<float>(const framework::Tensor &matrix_a, bool trans_a,
     int numel = matrix_a.numel();
     int m = matrix_a.dims()[0];
     int n = matrix_a.dims()[1];
-    float *tmp = (float *)(matrix_a.data<float>());
+    float *tmp = (float *)(matrix_a.data<float>());  // NOLINT
     float *a = static_cast<float *>(
         paddle_mobile::memory::Alloc(sizeof(float) * numel));
     int index = 0;
@@ -126,7 +127,7 @@ struct ClearTensor<CPU, T> {
   void operator()(framework::Tensor *tensor) {
     auto size = tensor->numel();
     auto *tensor_data = tensor->data<float>();
-    memset((void *)tensor_data, 0, sizeof(T) * size);
+    memset((void *)tensor_data, 0, sizeof(T) * size);  // NOLINT
   }
 };
 

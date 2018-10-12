@@ -67,7 +67,16 @@ class FusionOpRegistrar {
   explicit FusionOpRegistrar(FusionOpMatcher* matcher) {
     FusionOpRegister::Instance()->regist(matcher);
   }
+  void Touch() {}
 };
 
 }  // namespace framework
 }  // namespace paddle_mobile
+
+#define REGISTER_FUSION_MATCHER(op_type, matcher)          \
+  static paddle_mobile::framework::FusionOpRegistrar       \
+      __fusion_matcher_registrar_##op_type(new matcher()); \
+  int TouchFusionMatcherRegistrar_##op_type() {            \
+    __fusion_matcher_registrar_##op_type.Touch();          \
+    return 0;                                              \
+  }

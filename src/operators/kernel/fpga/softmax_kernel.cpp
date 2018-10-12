@@ -54,8 +54,8 @@ void SoftmaxKernel<FPGA, float>::Compute(
 
   fpga::PerformBypass(param.FpgaArgs());
   fpga::fpga_invalidate(
-      (void *)in_x->data<float>(),
-      (size_t)fpga::get_align_image_cw((int)in_x->dims()[1]) * sizeof(float));
+      (void *)in_x->data<float>(),  // NOLINT
+      fpga::get_align_image_cw(in_x->dims()[1]) * sizeof(float));
 
   math::SoftmaxFuntor<CPU, float>()(in_x, out);
   fpga::fpga_flush(out->data<float>(), out->memory_size());
