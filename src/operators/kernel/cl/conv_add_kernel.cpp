@@ -55,7 +55,7 @@ void ConvAddKernel<GPU_CL, float>::Compute(
   auto input = param.Input()->GetCLImage();
   auto filter = param.Filter()->GetCLImage();
   auto biase = param.Bias()->GetCLImage();
-  auto output = param.Output();
+  auto output = param.Output()->GetCLImage();
   int stride = param.Strides()[0];
   int offset = param.Offset();
   int input_c = param.Input()->CBlock();
