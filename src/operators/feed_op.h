@@ -16,11 +16,32 @@ limitations under the License. */
 
 #include <string>
 #include "framework/operator.h"
+#include "operators/kernel/feed_kernel.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 using std::string;
+#ifdef PADDLE_MOBILE_CL
+template <typename DeviceType, typename T>
+class FeedOp
+    : public framework::OperatorWithKernel<DeviceType, FeedParam<DeviceType>,
+                                           FeedKernel<DeviceType, T>> {
+ public:
+  FeedOp(const string &type, const VariableNameMap &inputs,
+         const VariableNameMap &outputs, const framework::AttributeMap attrs,
+         std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<DeviceType, FeedParam<DeviceType>,
+                                      FeedKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
+
+  void InferShape() const override;
+
+  void RunImpl() override;
+
+ protected:
+};
+#else
 template <typename DeviceType, typename T>
 class FeedOp : public framework::OperatorBase<DeviceType> {
  public:
@@ -74,21 +95,19 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
   }
 
 #else
-#ifdef PADDLE_MOBILE_CL
-  void Init() {}
-  void RunImpl() {}
-#else
+
   void Init() {}
   void RunImpl() {
-    param_.Out()->ShareDataWith(*param_.InputX());
-    param_.Out()->set_lod(param_.InputX()->lod());
+                    param_.Out()->ShareDataWith(*param_.InputX());
+                    param_.Out()->set_lod(param_.InputX()->lod());
   }
-#endif
-#endif
 
  protected:
   FeedParam<DeviceType> param_;
 };
+
+#endif
+#endif
 
 }  // namespace operators
 }  // namespace paddle_mobile

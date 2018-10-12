@@ -911,13 +911,13 @@ class FeedParam : public OpParam {
 
  public:
   FeedParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-            const AttributeMap &attrs, Scope *scope) {
-    input_x_ = InputXFrom<LoDTensor>(inputs, *scope);
-    out_ = OutFrom<GType>(outputs, *scope);
-    auto var = scope->Var("batch_size");
+            const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+    auto var = scope.FindVar("batch_size");
     batch_size = var->GetValue<int>();
   }
-  const GType *InputX() const { return input_x_; }
+  const LoDTensor *InputX() const { return input_x_; }
   GType *Out() const { return out_; }
   const int BatchSize() const { return batch_size; }
 

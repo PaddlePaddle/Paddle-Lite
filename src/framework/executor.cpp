@@ -938,9 +938,9 @@ void Executor<GPU_CL, Precision::FP32>::InitMemory() {
           cl_context context = program_.scope->GetCLScpoe()->Context();
 
           const framework::TensorDesc &desc = var_desc->Tensor_desc();
-          framework::DDim ddim = framework::make_ddim(desc.Dims());
+          //          framework::DDim ddim = framework::make_ddim(desc.Dims());
+          framework::DDim ddim = cl_image->dims();
           DLOG << var_desc->Name();
-
           cl_image->Init(context, ddim);
         }
       }
@@ -989,7 +989,8 @@ void Executor<GPU_CL, Precision::FP32>::InitCombineMemory() {
         cl_context context = program_.scope->GetCLScpoe()->Context();
 
         const framework::TensorDesc &desc = var_desc->Tensor_desc();
-        framework::DDim ddim = framework::make_ddim(desc.Dims());
+        framework::DDim ddim = cl_image->dims();
+        //        framework::DDim ddim = framework::make_ddim(desc.Dims());
 
         cl_image->Init(context, ddim);
       }
