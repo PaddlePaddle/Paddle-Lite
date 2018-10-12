@@ -29,11 +29,13 @@ template <>
 void SoftmaxKernel<GPU_CL, float>::Compute(const SoftmaxParam<GPU_CL> &param) {
   auto kernel = this->cl_helper_.KernelAt(0);
   auto default_work_size = this->cl_helper_.DefaultWorkSize(*(param.Out()));
-  auto & input = param.InputX();
-  auto & output = param.Out();
-  clSetKernelArg(kernel, 0, sizeof(cl_mem), &input.getCLImage());
-  clSetKernelArg(kernel, 1, sizeof(cl_mem), &output.getCLImage());
-  const auto & inputDim = input.dims();
+  const auto * input = param.InputX();
+  auto * output = param.Out();
+  auto inputImage = input->GetCLImage();
+  auto outputImage = output->GetCLImage();
+  clSetKernelArg(kernel, 0, sizeof(cl_mem), &inputImage);
+  clSetKernelArg(kernel, 1, sizeof(cl_mem), &outputImage);
+  const auto & inputDim = input->dims();
   int dims[4] = {inputDim[0], inputDim[1], inputDim[2], inputDim[3]};
   clSetKernelArg(kernel, 2, sizeof(int), dims);
   clSetKernelArg(kernel, 3, sizeof(int), dims+1);
