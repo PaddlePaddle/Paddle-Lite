@@ -25,7 +25,7 @@ int calc_division_capacity(int chw);
 int calc_split_num(int num, int division_capacity);
 int calc_division_number(int num, int group_num, int division_capacity);
 int calc_num_per_div(int num, int group_num, int division_capacity);
-void convert_to_hwc(float** data_in, int num, int channel, int height,
+void convert_to_hwc(char** data_in, int num, int channel, int height,
                     int width);
 float find_max(float* data_in, int data_size);
 void quantize(float** data_in, int data_size, float max);
@@ -36,6 +36,11 @@ void reorder(float** data_in, int num_after_alignment, int chw);
 void interleave(float** data_in, int num_after_alignment, int chw);
 void format_filter(float** data_in, int num, int channel, int height, int width,
                    int group_num, float max);
+
+void convert_fc_filter(char** data_in, int num, int chw);
+void format_fc_filter(float** data_in, int num, int channel, int height,
+                      int width, int group_num, float max);
+
 }  // namespace filter
 }  // namespace fpga
 }  // namespace paddle_mobile

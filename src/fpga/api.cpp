@@ -104,7 +104,7 @@ int fpga_invalidate(void *address, size_t size) {
 }
 
 half fp32_2_fp16(float fp32_num) {
-  unsigned long tmp = *(unsigned long *)(&fp32_num);
+  unsigned long tmp = *(unsigned long *)(&fp32_num);  // NOLINT
   half t = ((tmp & 0x007fffff) >> 13) | ((tmp & 0x80000000) >> 16) |
            (((tmp & 0x7f800000) >> 13) - (112 << 10));
   if (tmp & 0x1000) {
@@ -120,7 +120,7 @@ float fp16_2_fp32(half fp16_num) {
   int tmp = 0;
   float fp32_num;
   tmp = s << 16 | exp << 23 | frac << 13;
-  fp32_num = *(float *)&tmp;
+  fp32_num = *(float *)&tmp;  // NOLINT
   return fp32_num;
 }
 
@@ -344,6 +344,20 @@ void format_filter(framework::Tensor *filter_tensor, float max_value,
   fpga_copy(new_data, data_ptr, memory_size);
   filter::format_filter(&new_data, num, channel, height, width, group_num,
                         max_value);
+  filter_tensor->reset_data_ptr(new_data);
+}
+
+void format_fc_filter(framework::Tensor *filter_tensor, float max_value) {
+  filter_tensor->scale[0] = float(max_value / 127.0);  // NOLINT
+  filter_tensor->scale[1] = float(127.0 / max_value);  // NOLINT
+  auto dims = filter_tensor->dims();
+  auto num = dims[0], channel = dims[1], height = dims[2], width = dims[3];
+  auto data_ptr = filter_tensor->data<float>();
+  size_t memory_size = num * channel * height * width * sizeof(float);
+  auto new_data = (float *)fpga_malloc(memory_size);  // NOLINT
+  fpga_copy(new_data, data_ptr, memory_size);
+  filter::format_fc_filter(&new_data, num, channel, height, width, 1,
+                           max_value);
   filter_tensor->reset_data_ptr(new_data);
 }
 

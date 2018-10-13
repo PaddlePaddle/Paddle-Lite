@@ -46,7 +46,7 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA> *param) {
 
   filter->Resize(framework::make_ddim({num, filter_channel, height, width}));
   float max_value = fpga::filter_find_max(filter);
-  fpga::format_filter(filter, max_value, 1);
+  fpga::format_fc_filter(filter, max_value);
 
   int element_num_per_div = fpga::get_filter_num_per_div(filter, 1);
   fpga::format_bias_scale_array(&bs_ptr, element_num_per_div, channel);

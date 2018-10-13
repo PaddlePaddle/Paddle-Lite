@@ -109,8 +109,8 @@ struct PoolingArgs {
 struct EWAddArgs {
   bool relu_enabled;
 
-  half const0;  // output0 = const0 x input0 + const1 x input1;
-  half const1;
+  uint32_t const0;  // output0 = const0 x input0 + const1 x input1;
+  uint32_t const1;
   struct ImageInputArgs image0;
   struct ImageInputArgs image1;
   struct ImageOutputArgs output;
@@ -214,6 +214,7 @@ int get_aligned_filter_element_num(int chw);
 int get_aligned_filter_num(int num);
 void format_filter(framework::Tensor* filter_tensor, float max_value,
                    int group_num);
+void format_fc_filter(framework::Tensor* filter_tensor, float max_value);
 void format_bias_scale_array(float** bias_scale_array,
                              int element_num_per_division, int num);
 void format_concat_output(framework::Tensor* out, int height, int width,
