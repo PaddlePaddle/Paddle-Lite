@@ -908,10 +908,14 @@ void Executor<GPU_CL, Precision::FP32>::InitMemory() {
     for (const auto &var_desc : block->Vars()) {
       auto var = program_.scope->Var(var_desc->Name());
       if (var_desc->Persistable()) {
-        auto cl_image = var->template GetMutable<framework::CLImage>();
+        CLImage *cl_image = nullptr;
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
+          var->template GetMutable<framework::LoDTensor>();
           continue;
+        } else {
+          cl_image = var->template GetMutable<framework::CLImage>();
         }
+
         char *origin_data =
             Get_binary_data(program_.model_path + "/" + var_desc->Name());
         char *data = origin_data;
@@ -966,9 +970,12 @@ void Executor<GPU_CL, Precision::FP32>::InitCombineMemory() {
     for (const auto &var_desc : block->Vars()) {
       auto var = program_.scope->Var(var_desc->Name());
       if (var_desc->Persistable()) {
-        auto cl_image = var->template GetMutable<framework::CLImage>();
+        CLImage *cl_image = nullptr;
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
+          var->template GetMutable<framework::LoDTensor>();
           continue;
+        } else {
+          cl_image = var->template GetMutable<framework::CLImage>();
         }
 
         cl_context context = program_.scope->GetCLScpoe()->Context();
