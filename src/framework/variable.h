@@ -33,6 +33,13 @@ class Variable {
 
   template <typename T>
   const T GetValue() const {
+    if (typeid(T) == typeid(std::string)) {
+      PADDLE_MOBILE_THROW_EXCEPTION(
+          "Please use getString to get an string (to avoid of an issue with "
+          "gcc "
+          "stl lib with string copy)");
+      exit(0);
+    }
     return variant.Get<T>();
   }
 
