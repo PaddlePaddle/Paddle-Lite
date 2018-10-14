@@ -18,9 +18,10 @@ limitations under the License. */
 
 inline hafl4 activation(half4 in
 #ifdef PRELU
-                ,half4 prelu_alpha
+                        ,
+                        half4 prelu_alpha
 #endif
-                ) {
+) {
   half4 output;
 #ifdef PRELU
   output = select(prelu_alpha * in, in, in >= (half4)0.0);
@@ -31,4 +32,3 @@ inline hafl4 activation(half4 in
 #endif
   return output;
 }
-

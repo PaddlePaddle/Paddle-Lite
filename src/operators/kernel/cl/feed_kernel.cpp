@@ -12,42 +12,43 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "common/log.h"
 #include "operators/kernel/feed_kernel.h"
+#include "common/log.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        template <>
-        bool FeedKernel<GPU_CL, float>::Init(FeedParam<GPU_CL> *param) {
-         DLOG<<"Init feed";
-         this->cl_helper_.AddKernel("feed", "feed_kernel.cl");
-            return true;
-        }
+template <>
+bool FeedKernel<GPU_CL, float>::Init(FeedParam<GPU_CL> *param) {
+  DLOG << "Init feed";
+  this->cl_helper_.AddKernel("feed", "feed_kernel.cl");
+  return true;
+}
 
-        template <>
-        void FeedKernel<GPU_CL, float>::Compute(const FeedParam<GPU_CL> &param) {
+template <>
+void FeedKernel<GPU_CL, float>::Compute(const FeedParam<GPU_CL> &param) {
+  DLOG << "feed_kernel";
+  auto kernel = this->cl_helper_.KernelAt(0);
+  cl_int status;
+  auto output = param.Out();
+  auto input = param.InputX();
+  DLOG << " input: " << input;
 
-         DLOG<<"feed_kernel";
-         auto kernel = this->cl_helper_.KernelAt(0);
-         cl_int status;
-         auto output = param.Out();
-         auto input = param.InputX();
-         const float *input_data = input->data<float>();
-         cl_mem cl_image = output->GetCLImage();
-         int height = output->dims()[2];
-         int width = output->dims()[3];
-         status = clSetKernelArg(kernel,0, sizeof(cl_mem),&input_data);
-         status = clSetKernelArg(kernel,0, sizeof(cl_mem),&cl_image);
-         status = clSetKernelArg(kernel,0, sizeof(cl_mem),&width);
-         status = clSetKernelArg(kernel,0, sizeof(cl_mem),&height);
+  const float *input_data = input->data<float>();
+  cl_mem cl_image = output->GetCLImage();
+  int height = output->dims()[2];
+  int width = output->dims()[3];
+  status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input_data);
+  status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &cl_image);
+  status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &width);
+  status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &height);
 
-         size_t global_work_size[2] = {height,width};
-         clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2, NULL, global_work_size, NULL, 0, NULL, NULL);
-        }
+  size_t global_work_size[2] = {height, width};
+  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2, NULL,
+                         global_work_size, NULL, 0, NULL, NULL);
+}
 
-        template class FeedKernel<GPU_CL, float>;
+template class FeedKernel<GPU_CL, float>;
 
-    }  // namespace operators
+}  // namespace operators
 }  // namespace paddle_mobile
-
