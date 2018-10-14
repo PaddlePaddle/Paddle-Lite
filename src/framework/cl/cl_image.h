@@ -28,8 +28,93 @@ class CLImage {
  public:
   CLImage() = default;
 
-  void Init(cl_context context, float *tensorInput, DDim ddim) {
-    tensor_dims_ = ddim;
+  /*
+   * will not hold input tensor data, memcpy in this method
+   * */
+  void SetTensorData(float *tensorData, const DDim &dim) {
+    int numel = product(dim);
+    if (tensor_data_ != nullptr) {
+      delete[](tensor_data_);
+    }
+    tensor_data_ = new float[numel];
+    memcpy(tensor_data_, tensorData, numel);
+    tensor_dims_ = dim;
+  }
+
+  /*
+   * need call SetTensorData first
+   * */
+  void InitCLImage(cl_context context) {
+    if (tensor_data_ == nullptr) {
+      PADDLE_MOBILE_THROW_EXCEPTION(" need call SetTensorData first");
+    }
+    InitCLImage(context, tensor_data_, tensor_dims_);
+    delete[](tensor_data_);
+    tensor_data_ = nullptr;
+    initialized_ = true;
+  }
+
+  void InitEmptyImage(cl_context context, const DDim &dim) {
+    if (tensor_data_ != nullptr) {
+      PADDLE_MOBILE_THROW_EXCEPTION(
+          " empty image tensor data shouldn't have value");
+    }
+    InitCLImage(context, nullptr, dim);
+    initialized_ = true;
+  }
+
+  cl_mem GetCLImage() const { return cl_image_; }
+
+  const DDim &ImageDims() { return image_dims_; }
+
+  inline size_t ImageWidth() const { return image_width_; }
+
+  inline size_t ImageHeight() const { return image_height_; }
+
+  /*
+   * block of channels, 4 channel one block
+   * */
+  inline size_t CBlock() const { return c_block_; }
+
+  /*
+   *  width of original tensor
+   * */
+  inline size_t WidthOfOneBlock() const { return width_of_one_block_; }
+
+  /*
+   *  height of original tensor
+   * */
+  inline size_t HeightOfOneBlock() const { return height_of_one_block_; }
+
+  /*
+   *  resize original tensor dim
+   * */
+  inline CLImage &Resize(const DDim &dims) {
+    tensor_dims_ = dims;
+    return *this;
+  }
+
+  template <typename T>
+  T *data() const {
+    if (initialized_) {
+      PADDLE_MOBILE_THROW_EXCEPTION(
+          " cl image has initialized, tensor data has been deleted ");
+    }
+    return reinterpret_cast<T *>(tensor_data_);
+  }
+
+  /*
+   *  numel of tensor dim
+   * */
+  inline int64_t numel() const { return product(tensor_dims_); }
+
+  /*
+   *  original tensor dim
+   * */
+  const DDim &dims() const { return tensor_dims_; }
+
+ private:
+  void InitCLImage(cl_context context, float *tensor_data, const DDim &dim) {
     cl_image_format cf = {.image_channel_order = CL_RGBA,
                           .image_channel_data_type = CL_HALF_FLOAT};
     // NCHW -> [W * (C+3)/4, H * N]
@@ -62,12 +147,13 @@ class CLImage {
 
     image_width_ = width;
     image_height_ = height;
+    image_dims_ = make_ddim({image_width_, image_height_});
 
     std::unique_ptr<half_t[]> imageData{};
     int count = 0;
-    if (tensorInput != nullptr) {
+    if (tensor_data != nullptr) {
       imageData.reset(new half_t[width * height * 4]);
-      float *p = tensorInput;
+      float *p = tensor_data;
       size_t i0 = 0;
       for (int n = 0; n < N; n++) {
         for (int c = 0; c < C; c++) {
@@ -108,39 +194,8 @@ class CLImage {
       // TODO(HaiPeng): error handling
       PADDLE_MOBILE_THROW_EXCEPTION(" create image 2d error ");
     }
-
-    initialized_ = true;
   }
 
-  void Init(cl_context context, DDim ddim) { Init(context, nullptr, ddim); }
-
-  inline CLImage &Resize(const DDim &dims) {
-    tensor_dims_ = dims;
-    return *this;
-  }
-
-  const DDim &dims() const { return tensor_dims_; }
-
-  cl_mem GetCLImage() const { return cl_image_; }
-
-  template <typename T>
-  T *data() const {
-    return reinterpret_cast<T *>(tensor_input_);
-  }
-
-  inline int64_t numel() const { return product(tensor_dims_); }
-
-  inline size_t ImageWidth() const { return image_width_; }
-
-  inline size_t ImageHeight() const { return image_height_; }
-
-  inline size_t CBlock() const { return c_block_; }
-
-  inline size_t WidthOfOneBlock() const { return width_of_one_block_; }
-
-  inline size_t HeightOfOneBlock() const { return height_of_one_block_; }
-
- private:
   bool initialized_ = false;
   cl_mem cl_image_;
   size_t image_width_;
@@ -149,7 +204,8 @@ class CLImage {
   size_t image_height_;
   size_t c_block_;
   DDim tensor_dims_;
-  float *tensor_input_;
+  DDim image_dims_;
+  float *tensor_data_;
   cl_context context_;
 };
 
