@@ -21,12 +21,13 @@ namespace framework {
 
 const char* opencl_error_to_str(cl_int error);
 
-#define CL_CHECK_ERRORS(ERR)                                         \
-  if (ERR != CL_SUCCESS) {                                           \
-    printf(                                                          \
-        "OpenCL error with code %s happened in file %s at line %d. " \
-        "Exiting.\n",                                                \
-        opencl_error_to_str(ERR), __FILE__, __LINE__);               \
+#define CL_CHECK_ERRORS(ERR)                                          \
+  if (ERR != CL_SUCCESS) {                                            \
+    printf(                                                           \
+        "OpenCL error with code %s happened in file %s at line %d. "  \
+        "Exiting.\n",                                                 \
+        paddle_mobile::framework::opencl_error_to_str(ERR), __FILE__, \
+        __LINE__);                                                    \
   }
 
 }  // namespace framework
