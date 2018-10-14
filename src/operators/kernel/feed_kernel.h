@@ -18,15 +18,15 @@ limitations under the License. */
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
-    namespace operators {
-        using namespace framework;
-        template <typename DeviceType, typename T>
-        class FeedKernel
-                : public framework::OpKernelBase<DeviceType, FeedParam<DeviceType>>{
-        public:
-            void Compute(const FeedParam<DeviceType> &param);
-            bool Init(FeedParam<DeviceType> *param);
-        };
+namespace operators {
+using namespace framework;
+template <typename DeviceType, typename T>
+class FeedKernel
+    : public framework::OpKernelBase<DeviceType, FeedParam<DeviceType>> {
+ public:
+  void Compute(const FeedParam<DeviceType> &param);
+  bool Init(FeedParam<DeviceType> *param);
+};
 
-    }  // namespace operators
+}  // namespace operators
 }  // namespace paddle_mobile
