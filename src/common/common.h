@@ -28,4 +28,4 @@ inline double time_diff(Time t1, Time t2) {
   return counter.count() / 1000.0;
 }
 
-}
+}  // namespace paddle_mobile

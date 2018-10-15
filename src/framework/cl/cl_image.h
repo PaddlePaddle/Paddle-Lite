@@ -118,7 +118,20 @@ class CLImage {
     cl_image_format cf = {.image_channel_order = CL_RGBA,
                           .image_channel_data_type = CL_HALF_FLOAT};
     // NCHW -> [W * (C+3)/4, H * N]
-    DLOG << tensor_dims_;
+    tensor_dims_ = dim;
+    if (tensor_data) {
+      tensor_data_ = tensor_data;
+    } else {
+      int numel = 1;
+      for (int i = 0; i < dim.size(); i++) {
+        numel *= dim[i];
+      }
+      tensor_data_ = static_cast<float *>(
+          paddle_mobile::memory::Alloc(sizeof(float) * numel));
+      for (int i = 0; i < numel; i++) {
+        tensor_data_[i] = 0;
+      }
+    }
     size_t N, C, H, W;
     if (tensor_dims_.size() == 4) {
       N = tensor_dims_[0];

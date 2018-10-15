@@ -72,13 +72,16 @@ void OperatorBase<Dtype>::Run() {
           if (tensor) DLOG << type_ << " input- " << key << "=" << *tensor;
         } else {
           CLImage *cl_image = vari->template GetMutable<framework::CLImage>();
-          //              cl_command_queue commandQueue =
-          //              scope_->GetCLScpoe()->CommandQueue(); Tensor *tmp ;
-          //              CLImageToTensor(cl_image,tmp,commandQueue);
-          //              tmp->Resize(cl_image->dims());
+          //                        cl_command_queue commandQueue =
+          //                        scope_->GetCLScpoe()->CommandQueue(); Tensor
+          //                        *tmp ;
+          //                        CLImageToTensor(cl_image,tmp,commandQueue);
+          //                        tmp->Resize(cl_image->dims());
+          const float *input = cl_image->data<float>();
           if (cl_image) {
-            //                  DLOG<<type_<<" input- "<<key<<"="<<*tmp;
             DLOG << type_ << " input- " << key << "=" << cl_image->dims();
+            //              if(input)
+            //              DLOG<<type_<<" input- "<<key<<"="<<*input;
           }
         }
 
@@ -95,15 +98,24 @@ void OperatorBase<Dtype>::Run() {
       auto vari = scope_->FindVar(var_vec_out[i]);
       if (vari->IsInitialized()) {
 #ifdef PADDLE_MOBILE_CL
-        CLImage *cl_image = vari->template GetMutable<framework::CLImage>();
-        //          cl_command_queue commandQueue =
-        //          scope_->GetCLScpoe()->CommandQueue(); Tensor *tmp ;
-        //          CLImageToTensor(cl_image,tmp,commandQueue);
-        //          tmp->Resize(cl_image->dims());
-        if (cl_image) {
-          //              DLOG<<type_<<" output- "<<key<<"="<<*tmp;
-          DLOG << type_ << " output- " << key << "=" << cl_image->dims();
+        if (type_ == "fetch") {
+          Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
+          if (tensor)
+            DLOG << type_ << " output- " << key << "=" << tensor->dims();
+        } else {
+          CLImage *cl_image = vari->template GetMutable<framework::CLImage>();
+          //          cl_command_queue commandQueue =
+          //          scope_->GetCLScpoe()->CommandQueue(); Tensor *tmp ;
+          //          CLImageToTensor(cl_image,tmp,commandQueue);
+          //          tmp->Resize(cl_image->dims());
+          if (cl_image) {
+            const float *output = cl_image->data<float>();
+            DLOG << type_ << " output- " << key << "=" << cl_image->dims();
+            //                  if(output)
+            //                  DLOG<<type_<<" output- "<<key<<"="<<*output;
+          }
         }
+
 #else
         Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
         if (tensor) DLOG << type_ << " output- " << key << "=" << *tensor;
