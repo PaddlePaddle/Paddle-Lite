@@ -37,7 +37,7 @@ limitations under the License. */
 #include "framework/cl/cl_image.h"
 #endif
 
-int debug_to = 2;
+int debug_to = 4;
 
 namespace paddle_mobile {
 namespace framework {

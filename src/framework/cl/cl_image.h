@@ -182,28 +182,25 @@ class CLImage {
     DLOG << " image width: " << width;
     DLOG << " image height: " << height;
 
-    cl_image_format cf = {
-      .image_channel_order = CL_RGBA,
-      .image_channel_data_type = CL_HALF_FLOAT
-    };
+    cl_image_format cf = {.image_channel_order = CL_RGBA,
+                          .image_channel_data_type = CL_HALF_FLOAT};
     cl_image_desc cid = {
-      .image_type = CL_MEM_OBJECT_IMAGE2D,
-      .image_width = width,
-      .image_height = height,
-      .image_depth = 1,
-      .image_array_size = 1,
-      .image_row_pitch = 0,
-      .image_slice_pitch = 0,
-      .num_mip_levels = 0,
-      .num_samples = 0,
-      // .buffer = nullptr
+        .image_type = CL_MEM_OBJECT_IMAGE2D,
+        .image_width = width,
+        .image_height = height,
+        .image_depth = 1,
+        .image_array_size = 1,
+        .image_row_pitch = 0,
+        .image_slice_pitch = 0,
+        .num_mip_levels = 0,
+        .num_samples = 0,
+        // .buffer = nullptr
     };
     cid.buffer = nullptr;
     cl_image_ = clCreateImage(
-        context,
-        CL_MEM_READ_WRITE | (imageData ? CL_MEM_COPY_HOST_PTR : 0),
-        &cf,     // const cl_image_format *image_format
-        &cid,    // const cl_image_desc *image_desc
+        context, CL_MEM_READ_WRITE | (imageData ? CL_MEM_COPY_HOST_PTR : 0),
+        &cf,   // const cl_image_format *image_format
+        &cid,  // const cl_image_desc *image_desc
         reinterpret_cast<void *>(imageData.get()),  // void *host_ptr
         &err);
 
