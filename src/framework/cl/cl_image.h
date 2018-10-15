@@ -226,5 +226,9 @@ void TensorToCLImage(Tensor *tensor, CLImage *image);
 
 void CLImageToTensor(CLImage *image, Tensor *tensor);
 
+#ifdef PADDLE_MOBILE_DEBUG
+Print &operator<<(Print &printer, const CLImage &image);
+#endif
+
 }  // namespace framework
 }  // namespace paddle_mobile
