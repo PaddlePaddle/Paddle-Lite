@@ -946,6 +946,12 @@ class FetchParam : public OpParam {
   FetchParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
              const AttributeMap &attrs, const Scope &scope) {
     input_x_ = InputXFrom<GType>(inputs, scope);
+<<<<<<< HEAD
+    out_ = OutFrom<LoDTensor>(outputs, scope);
+  }
+  const RType *InputX() const { return input_x_; }
+  Tensor *Out() const { return out_; }
+=======
     out_ = OutFrom(outputs, scope);
   }
   const RType *InputX() const { return input_x_; }
@@ -954,6 +960,7 @@ class FetchParam : public OpParam {
   static Tensor *OutFrom(const VariableNameMap &outputs, const Scope &scope) {
     return GetVarValue<Tensor>("Out", outputs, scope);
   }
+>>>>>>> df230944d11f0f09aea4c2c6bc0489d8667fa8ca
 
  private:
   RType *input_x_;
