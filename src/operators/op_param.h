@@ -263,7 +263,8 @@ class OpParam {
   static const T GetAttr(const string &key, const AttributeMap &map) {
     return ((Attribute)map.at(key)).Get<T>();
   }
-  static const std::string GetStringAttr(const string &key, const AttributeMap &map) {
+  static const std::string GetStringAttr(const string &key,
+                                         const AttributeMap &map) {
     return ((Attribute)map.at(key)).GetString();
   }
 
