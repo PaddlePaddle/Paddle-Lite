@@ -37,10 +37,10 @@ class CLTensor : TensorBase {
   }
 
   template <typename T>
-  inline T *mutable_with_data(void *data) {
+  inline T mutable_with_data(void *data) {
     int64_t size = numel() * sizeof(float);
     holder_.reset(new PlaceholderImpl(size, data, typeid(T), context_));
-    return reinterpret_cast<T *>(
+    return reinterpret_cast<T>(
         reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(holder_->ptr())));
   }
 
