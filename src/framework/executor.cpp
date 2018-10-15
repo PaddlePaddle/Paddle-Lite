@@ -656,7 +656,7 @@ std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::Predict(
   std::shared_ptr<framework::Tensor> output_tensor = Predict(tensor, 0);
   if (output_tensor != nullptr) {
     Executor<Dtype, P>::Ptype *output_ptr =
-            output_tensor->data<typename Executor<Dtype, P>::Ptype>();
+        output_tensor->data<typename Executor<Dtype, P>::Ptype>();
     std::vector<typename Executor<Dtype, P>::Ptype> result_vector;
     for (int j = 0; j < output_tensor->numel(); ++j) {
       result_vector.push_back(output_ptr[j]);

@@ -60,7 +60,7 @@ void OperatorBase<Dtype>::Run() {
   DLOG << " begin run " << type_;
   RunImpl();
   DLOG << " end run " << type_;
-
+  return;
 #ifdef PADDLE_MOBILE_DEBUG
   DLOG << "-------------" << type_ << "----------------------------";
   vector<string> input_keys = GetInputKeys();
@@ -103,7 +103,7 @@ void OperatorBase<Dtype>::Run() {
 #ifdef PADDLE_MOBILE_CL
         if (type_ == "fetch") {
           Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
-          if (tensor){
+          if (tensor) {
             DLOG << type_ << " output- " << key << "=" << tensor->dims();
           }
         } else {

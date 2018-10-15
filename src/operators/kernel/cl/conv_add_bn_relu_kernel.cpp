@@ -25,9 +25,9 @@ template <>
 bool ConvAddBNReluKernel<GPU_CL, float>::Init(
     FusionConvAddBNReluParam<GPU_CL> *param) {
   PADDLE_MOBILE_ENFORCE(
-          param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
+      param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
           param->Paddings()[0] == param->Paddings()[1],
-          "need equal");
+      "need equal");
 
   param->Filter()->InitCLImage(cl_helper_.CLContext());
   param->Bias()->InitCLImage(cl_helper_.CLContext());
