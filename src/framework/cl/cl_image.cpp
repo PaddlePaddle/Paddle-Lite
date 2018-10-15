@@ -52,7 +52,7 @@ void CLImageToTensor(CLImage *cl_image, Tensor *tensor,
       for (int h = 0; h < H; h++) {
         size_t i2 = (i1 << 2) + c % 4;
         for (int w = 0; w < W; w++) {
-          *p = half2float(imageData[i2]);
+          *p = Half2Float(imageData[i2]);
           i2 += 4;
           p++;
         }
@@ -106,7 +106,7 @@ void TensorToCLImage(const Tensor *tensor, CLImage *cl_image,
       for (int h = 0; h < H; h++) {
         size_t i2 = (i1 << 2) + c % 4;
         for (int w = 0; w < W; w++) {
-          imageData[i2] = float2half(*p);
+          imageData[i2] = Float2Half(*p);
           i2 += 4;
           p++;
         }
