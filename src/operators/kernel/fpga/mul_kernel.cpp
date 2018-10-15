@@ -11,20 +11,19 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#ifdef FUSION_FC_OP
 
-#include "operators/kernel/fusion_fc_kernel.h"
+#ifdef MUL_OP
+
+#include "operators/kernel/mul_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool FusionFcKernel<FPGA, float>::Init(FusionFcParam<FPGA> *param) {
+bool MulKernel<FPGA, float>::Init(MulParam<FPGA> *param) {
   bool relu_enabled = false;
   auto input_x = const_cast<LoDTensor *>(param->InputX());
-  auto filter = const_cast<Tensor *>(param->InputY());
-  const Tensor *input_z = param->InputZ();
-  auto input_z_ptr = input_z->data<float>();
+  auto filter = const_cast<LoDTensor *>(param->InputY());
   auto out = param->Out();
 
   PADDLE_MOBILE_ENFORCE(input_x->dims()[1] == filter->dims()[0],
@@ -34,7 +33,7 @@ bool FusionFcKernel<FPGA, float>::Init(FusionFcParam<FPGA> *param) {
       (float *)fpga::fpga_malloc(2 * channel * sizeof(float));  // NOLINT
   for (int i = 0; i < channel; i++) {
     bs_ptr[i + channel] = 1;
-    bs_ptr[i] = input_z_ptr[i];
+    bs_ptr[i] = 0;
   }
   int num = (uint32_t)filter->dims()[1];
   int chw = (uint32_t)filter->dims()[0];
@@ -61,10 +60,10 @@ bool FusionFcKernel<FPGA, float>::Init(FusionFcParam<FPGA> *param) {
 }
 
 template <>
-void FusionFcKernel<FPGA, float>::Compute(
-    const FusionFcParam<FPGA> &param) const {
+void MulKernel<FPGA, float>::Compute(const MulParam<FPGA> &param) const {
   fpga::ComputeFpgaConv(param.FpgaArgs());
 }
+
 }  // namespace operators
 }  // namespace paddle_mobile
 

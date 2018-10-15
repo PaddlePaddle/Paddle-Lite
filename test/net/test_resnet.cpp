@@ -52,8 +52,8 @@ int main() {
 #else
     auto time3 = time();
     paddle_mobile.FeedData(input_tensor);
-    paddle_mobile.Predict_To(10);
-    paddle_mobile.Predict_From(10);
+    paddle_mobile.Predict_To(-1);
+    /*paddle_mobile.Predict_From(10);
     auto tensor_ptr = paddle_mobile.FetchResult(9);
     std::cout << "Tensor element number for op[9]: " << tensor_ptr->numel()
               << std::endl;
@@ -63,7 +63,7 @@ int main() {
 
     auto time4 = time();
     std::cout << "predict cost :" << time_diff(time3, time4) << "ms"
-              << std::endl;
+              << std::endl;*/
 #endif
   }
   return 0;
