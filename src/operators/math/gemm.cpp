@@ -26,7 +26,7 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 namespace math {
-int MC = 0;
+/*int MC = 0;
 int KC = 0;
 int NC = 0;
 
@@ -40,7 +40,7 @@ typedef void (*FnAddDot)(int, const float *, const float *, float *, int);
 
 FnPack procPackA;
 FnPack procPackB;
-FnAddDot procAddDot;
+FnAddDot procAddDot;*/
 
 /*
 // 将A矩阵分块复制到连续内存(ColMajor)
@@ -101,8 +101,8 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
 */
 
 // 将A矩阵分块复制到连续内存(RowMajor)
-void PackMatrixA_4r(int m, int k, int m_tail, const float *A, int lda,
-                    float *buffer) {
+void Gemm::PackMatrixA_4r(int m, int k, int m_tail, const float *A, int lda,
+                          float *buffer) {
   const float *a0, *a1, *a2, *a3;
   for (int i = 0; i < m - m_tail; i += MR) {
     a0 = A + i * lda;
@@ -142,8 +142,8 @@ void PackMatrixA_4r(int m, int k, int m_tail, const float *A, int lda,
   }
 }
 
-void PackMatrixA_6r(int m, int k, int m_tail, const float *A, int lda,
-                    float *buffer) {
+void Gemm::PackMatrixA_6r(int m, int k, int m_tail, const float *A, int lda,
+                          float *buffer) {
   const int i_length = m - m_tail;
   for (int i = 0; i < i_length; i += MR) {
     const float *a0 = A + i * lda;
@@ -196,8 +196,8 @@ void PackMatrixA_6r(int m, int k, int m_tail, const float *A, int lda,
   }
 }
 
-void PackMatrixA_omp_6r(int m, int k, int m_tail, const float *A, int lda,
-                        float *buffer) {
+void Gemm::PackMatrixA_omp_6r(int m, int k, int m_tail, const float *A, int lda,
+                              float *buffer) {
   const int i_length = m - m_tail;
 #pragma omp parallel for
   for (int i = 0; i < i_length; i += MR) {
@@ -251,8 +251,8 @@ void PackMatrixA_omp_6r(int m, int k, int m_tail, const float *A, int lda,
   }
 }
 
-void PackMatrixA_8r(int m, int k, int m_tail, const float *A, int lda,
-                    float *buffer) {
+void Gemm::PackMatrixA_8r(int m, int k, int m_tail, const float *A, int lda,
+                          float *buffer) {
   const int i_length = m - m_tail;
   for (int i = 0; i < i_length; i += MR) {
     const float *a0 = A + i * lda;
@@ -317,8 +317,8 @@ void PackMatrixA_8r(int m, int k, int m_tail, const float *A, int lda,
   }
 }
 
-void PackMatrixA_omp_8r(int m, int k, int m_tail, const float *A, int lda,
-                        float *buffer) {
+void Gemm::PackMatrixA_omp_8r(int m, int k, int m_tail, const float *A, int lda,
+                              float *buffer) {
   const int i_length = m - m_tail;
 #pragma omp parallel for
   for (int i = 0; i < i_length; i += MR) {
@@ -385,8 +385,8 @@ void PackMatrixA_omp_8r(int m, int k, int m_tail, const float *A, int lda,
 }
 
 // 将B矩阵分块复制到连续内存(RowMajor)
-void PackMatrixB_8c(int k, int n, int n_tail, const float *B, int ldb,
-                    float *buffer) {
+void Gemm::PackMatrixB_8c(int k, int n, int n_tail, const float *B, int ldb,
+                          float *buffer) {
   const int j_length = n - n_tail;
   for (int j = 0; j < j_length; j += NR) {
     float *local_buffer = buffer + j * k;
@@ -436,8 +436,8 @@ void PackMatrixB_8c(int k, int n, int n_tail, const float *B, int ldb,
   }
 }
 
-void PackMatrixB_omp_8c(int k, int n, int n_tail, const float *B, int ldb,
-                        float *buffer) {
+void Gemm::PackMatrixB_omp_8c(int k, int n, int n_tail, const float *B, int ldb,
+                              float *buffer) {
   const int j_length = n - n_tail;
 #pragma omp parallel for
   for (int j = 0; j < j_length; j += NR) {
@@ -489,8 +489,8 @@ void PackMatrixB_omp_8c(int k, int n, int n_tail, const float *B, int ldb,
 }
 
 #if __aarch64__
-void PackMatrixB_12c(int k, int n, int n_tail, const float *B, int ldb,
-                     float *buffer) {
+void Gemm::PackMatrixB_12c(int k, int n, int n_tail, const float *B, int ldb,
+                           float *buffer) {
   const int j_length = n - n_tail;
   for (int j = 0; j < j_length; j += NR) {
     float *local_buffer = buffer + j * k;
@@ -519,8 +519,8 @@ void PackMatrixB_12c(int k, int n, int n_tail, const float *B, int ldb,
   }
 }
 
-void PackMatrixB_omp_12c(int k, int n, int n_tail, const float *B, int ldb,
-                         float *buffer) {
+void Gemm::PackMatrixB_omp_12c(int k, int n, int n_tail, const float *B,
+                               int ldb, float *buffer) {
   const int j_length = n - n_tail;
 #pragma omp parallel for
   for (int j = 0; j < j_length; j += NR) {
@@ -550,8 +550,8 @@ void PackMatrixB_omp_12c(int k, int n, int n_tail, const float *B, int ldb,
   }
 }
 
-void PackMatrixB_16c(int k, int n, int n_tail, const float *B, int ldb,
-                     float *buffer) {
+void Gemm::PackMatrixB_16c(int k, int n, int n_tail, const float *B, int ldb,
+                           float *buffer) {
   const int j_length = n - n_tail;
   for (int j = 0; j < n - n_tail; j += NR) {
     float *local_buffer = buffer + j * k;
@@ -580,8 +580,8 @@ void PackMatrixB_16c(int k, int n, int n_tail, const float *B, int ldb,
   }
 }
 
-void PackMatrixB_omp_16c(int k, int n, int n_tail, const float *B, int ldb,
-                         float *buffer) {
+void Gemm::PackMatrixB_omp_16c(int k, int n, int n_tail, const float *B,
+                               int ldb, float *buffer) {
   const int j_length = n - n_tail;
 #pragma omp parallel for
   for (int j = 0; j < n - n_tail; j += NR) {
@@ -613,8 +613,9 @@ void PackMatrixB_omp_16c(int k, int n, int n_tail, const float *B, int ldb,
 #endif  // __aarch64__
 
 // 分块矩阵乘法
-void InnerKernel(int mc, int nc, float alpha, const float *a, const float *b,
-                 float beta, float *c, float *C, int ldc, bool relu) {
+void Gemm::InnerKernel(int mc, int nc, float alpha, const float *a,
+                       const float *b, float beta, float *c, float *C, int ldc,
+                       bool relu) {
 #pragma omp parallel for
   for (int j = 0; j < nc; j += NR) {
     for (int i = 0; i < mc; i += MR) {
@@ -648,9 +649,9 @@ void InnerKernel(int mc, int nc, float alpha, const float *a, const float *b,
 }
 
 // 分块矩阵乘法
-void InnerKernelWithBias(int mc, int nc, float alpha, const float *a,
-                         const float *b, float beta, float *c, float *C,
-                         int ldc, bool relu, float *bias) {
+void Gemm::InnerKernelWithBias(int mc, int nc, float alpha, const float *a,
+                               const float *b, float beta, float *c, float *C,
+                               int ldc, bool relu, float *bias) {
 #pragma omp parallel for
   for (int j = 0; j < nc; j += NR) {
     for (int i = 0; i < mc; i += MR) {
@@ -692,9 +693,10 @@ void InnerKernelWithBias(int mc, int nc, float alpha, const float *a,
 }
 
 // 分块矩阵乘法
-void InnerKernelWithBn(int mc, int nc, float alpha, const float *a,
-                       const float *b, float beta, float *c, float *C, int ldc,
-                       bool relu, float *new_scale, float *new_bias) {
+void Gemm::InnerKernelWithBn(int mc, int nc, float alpha, const float *a,
+                             const float *b, float beta, float *c, float *C,
+                             int ldc, bool relu, float *new_scale,
+                             float *new_bias) {
 #pragma omp parallel for
   for (int j = 0; j < nc; j += NR) {
     for (int i = 0; i < mc; i += MR) {
@@ -717,10 +719,10 @@ void InnerKernelWithBn(int mc, int nc, float alpha, const float *a,
 }
 
 // 分块矩阵乘法
-void InnerKernelWithBnAdd(int mc, int nc, float alpha, const float *a,
-                          const float *b, float beta, float *c, float *C,
-                          int ldc, bool relu, float *new_scale, float *new_bias,
-                          float *bias) {
+void Gemm::InnerKernelWithBnAdd(int mc, int nc, float alpha, const float *a,
+                                const float *b, float beta, float *c, float *C,
+                                int ldc, bool relu, float *new_scale,
+                                float *new_bias, float *bias) {
 #pragma omp parallel for
   for (int j = 0; j < nc; j += NR) {
     for (int i = 0; i < mc; i += MR) {
@@ -737,9 +739,9 @@ void InnerKernelWithBnAdd(int mc, int nc, float alpha, const float *a,
   WriteWithBnAddRelu(mc, nc, c, C, ldc, new_scale, new_bias, bias);
 }
 
-void InnerKernelWithPRelu(int mc, int nc, const float *a, const float *b,
-                          float *c, float *C, int ldc, float *p,
-                          std::string mode, float *bias, float *bias1) {
+void Gemm::InnerKernelWithPRelu(int mc, int nc, const float *a, const float *b,
+                                float *c, float *C, int ldc, float *p,
+                                std::string mode, float *bias, float *bias1) {
 #pragma omp parallel for
   for (int j = 0; j < nc; j += NR) {
     for (int i = 0; i < mc; i += MR) {
@@ -759,7 +761,7 @@ void InnerKernelWithPRelu(int mc, int nc, const float *a, const float *b,
 #if __ARM_NEON
 #if __aarch64__
 
-void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
+void Gemm::AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
   // init C
   float32x4_t cv0 = vdupq_n_f32(0.0);
   float32x4_t cv1 = vdupq_n_f32(0.0);
@@ -794,7 +796,7 @@ void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
   //  float32x4x4_t cv = {cv0, cv1, cv2, cv3};
 }
 
-void AddDot4x8(int k, const float *a, const float *b, float *c, int ldc) {
+void Gemm::AddDot4x8(int k, const float *a, const float *b, float *c, int ldc) {
   // init C
   float32x4_t cv0 = vdupq_n_f32(0.0);
   float32x4_t cv1 = vdupq_n_f32(0.0);
@@ -844,7 +846,7 @@ void AddDot4x8(int k, const float *a, const float *b, float *c, int ldc) {
 
 // 分块矩阵乘法结果回写
 // C = A * B
-void WriteBasic(int mc, int nc, float *c, float *C, int ldc) {
+void Gemm::WriteBasic(int mc, int nc, float *c, float *C, int ldc) {
   int nc1 = nc / 4;
   int _nc1 = nc % 4;
 
@@ -877,10 +879,10 @@ void WriteBasic(int mc, int nc, float *c, float *C, int ldc) {
 }
 
 // C = alpha * A * B + beta * C
-void WriteWithAlphaBeta(int mc, int nc, float *c, float *C, int ldc) {}
+void Gemm::WriteWithAlphaBeta(int mc, int nc, float *c, float *C, int ldc) {}
 
 // C = A * B + C
-void WriteWithAdd(int mc, int nc, float *c, float *C, int ldc) {
+void Gemm::WriteWithAdd(int mc, int nc, float *c, float *C, int ldc) {
   int nc1 = nc / 4;
   int _nc1 = nc % 4;
 
@@ -917,7 +919,8 @@ void WriteWithAdd(int mc, int nc, float *c, float *C, int ldc) {
   }
 }
 // C = A * B + bias
-void WriteWithAddV1(int mc, int nc, float *c, float *C, int ldc, float *bias) {
+void Gemm::WriteWithAddV1(int mc, int nc, float *c, float *C, int ldc,
+                          float *bias) {
   int nc1 = nc / 4;
   int _nc1 = nc % 4;
 
@@ -955,7 +958,7 @@ void WriteWithAddV1(int mc, int nc, float *c, float *C, int ldc, float *bias) {
 }
 
 // C = A * B + C, relu(C)
-void WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc) {
+void Gemm::WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc) {
   int nc1 = nc / 4;
   int _nc1 = nc % 4;
 
@@ -996,8 +999,8 @@ void WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc) {
 }
 
 // C = A * B + bias, relu(C)
-void WriteWithAddReluV1(int mc, int nc, float *c, float *C, int ldc,
-                        float *bias) {
+void Gemm::WriteWithAddReluV1(int mc, int nc, float *c, float *C, int ldc,
+                              float *bias) {
   int nc1 = nc / 4;
   int _nc1 = nc % 4;
 
@@ -1038,8 +1041,9 @@ void WriteWithAddReluV1(int mc, int nc, float *c, float *C, int ldc,
 }
 
 // C = A * B + C,prelu(C)
-void WriteWithAddPRelu(int mc, int nc, float *c, float *C, int ldc, float *p,
-                       std::string mode, float *bias, float *bias1) {
+void Gemm::WriteWithAddPRelu(int mc, int nc, float *c, float *C, int ldc,
+                             float *p, std::string mode, float *bias,
+                             float *bias1) {
   int nc1 = nc / 4;
   int _nc1 = nc % 4;
 
@@ -1114,8 +1118,8 @@ void WriteWithAddPRelu(int mc, int nc, float *c, float *C, int ldc, float *p,
 }
 
 // C = A * B, batchnorm(C)
-void WriteWithBn(int mc, int nc, float *c, float *C, int ldc, float *new_scale,
-                 float *new_bias) {
+void Gemm::WriteWithBn(int mc, int nc, float *c, float *C, int ldc,
+                       float *new_scale, float *new_bias) {
   int nc1 = nc / 4;
   int _nc1 = nc % 4;
 
@@ -1159,8 +1163,8 @@ void WriteWithBn(int mc, int nc, float *c, float *C, int ldc, float *new_scale,
 }
 
 // C = A * B, batchnorm(C), relu(C)
-void WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc,
-                     float *new_scale, float *new_bias) {
+void Gemm::WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc,
+                           float *new_scale, float *new_bias) {
   int nc1 = nc / 4;
   int _nc1 = nc % 4;
 
@@ -1205,8 +1209,8 @@ void WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc,
 }
 
 // C = A * B, batchnorm(C),C = C + bias; relu(C)
-void WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
-                        float *new_scale, float *new_bias, float *bias) {
+void Gemm::WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
+                              float *new_scale, float *new_bias, float *bias) {
   int nc1 = nc / 4;
   int _nc1 = nc % 4;
 
@@ -1259,7 +1263,7 @@ void WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
 
 #else
 
-void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
+void Gemm::AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
   const float *a_ptr, *b_ptr;
   a_ptr = a;
   b_ptr = b;
@@ -1330,10 +1334,9 @@ void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
 }
 
 /*
-void VectorKernel(int m, int n, int k, float alpha, const float *A, int lda,
-                  const float *B, int ldb, float beta, float *C, int ldc,
-                  bool relu) {
-  float *bufferC = static_cast<float *>(memory::Alloc(sizeof(float) * n));
+void Gemm::VectorKernel(int m, int n, int k, float alpha, const float *A, int
+lda, const float *B, int ldb, float beta, float *C, int ldc, bool relu) { float
+*bufferC = static_cast<float *>(memory::Alloc(sizeof(float) * n));
 
   const float *a0, *b0, *b1, *b2, *b3;
   float *c0, *C0;
@@ -1552,7 +1555,7 @@ void VectorKernel(int m, int n, int k, float alpha, const float *A, int lda,
   }
 }
 
-void VectorKernelWithBn(int m, int n, int k, float alpha, const float *A,
+void Gemm::VectorKernelWithBn(int m, int n, int k, float alpha, const float *A,
                         int lda, const float *B, int ldb, float beta, float *C,
                         int ldc, bool relu, float *new_scale, float *new_bias) {
   float *bufferC = static_cast<float *>(memory::Alloc(sizeof(float) * n));
@@ -1764,7 +1767,7 @@ void VectorKernelWithBn(int m, int n, int k, float alpha, const float *A,
 }
 */
 
-void AddDot4x8(int k, const float *a, const float *b, float *c, int ldc) {
+void Gemm::AddDot4x8(int k, const float *a, const float *b, float *c, int ldc) {
   const float *a_ptr, *b_ptr;
   a_ptr = a;
   b_ptr = b;
@@ -1872,7 +1875,7 @@ void AddDot4x8(int k, const float *a, const float *b, float *c, int ldc) {
 }
 
 // C = A * B
-void WriteBasic(int mc, int nc, float *c, float *C, int ldc) {
+void Gemm::WriteBasic(int mc, int nc, float *c, float *C, int ldc) {
   int nc1 = nc / 16;
   int _nc1 = nc % 16;
   int step = 4 * ldc;
@@ -1929,10 +1932,10 @@ void WriteBasic(int mc, int nc, float *c, float *C, int ldc) {
 }
 
 // C = alpha * A * B + beta * C
-void WriteWithAlphaBeta(int mc, int nc, float *c, float *C, int ldc) {}
+void Gemm::WriteWithAlphaBeta(int mc, int nc, float *c, float *C, int ldc) {}
 
 // C = A * B + C
-void WriteWithAdd(int mc, int nc, float *c, float *C, int ldc) {
+void Gemm::WriteWithAdd(int mc, int nc, float *c, float *C, int ldc) {
   int nc1 = nc / 16;
   int _nc1 = nc % 16;
   int step = 4 * ldc;
@@ -1996,7 +1999,8 @@ void WriteWithAdd(int mc, int nc, float *c, float *C, int ldc) {
 }
 
 // C = A * B + bias
-void WriteWithAddV1(int mc, int nc, float *c, float *C, int ldc, float *bias) {
+void Gemm::WriteWithAddV1(int mc, int nc, float *c, float *C, int ldc,
+                          float *bias) {
   int nc1 = nc / 4;
   int _nc1 = nc % 4;
 
@@ -2034,7 +2038,7 @@ void WriteWithAddV1(int mc, int nc, float *c, float *C, int ldc, float *bias) {
 }
 
 // C = A * B + C, relu(C)
-void WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc) {
+void Gemm::WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc) {
   int nc1 = nc / 16;
   int _nc1 = nc % 16;
   int step = 4 * ldc;
@@ -2108,8 +2112,8 @@ void WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc) {
 }
 
 // C = A * B + bias, relu(C)
-void WriteWithAddReluV1(int mc, int nc, float *c, float *C, int ldc,
-                        float *bias) {
+void Gemm::WriteWithAddReluV1(int mc, int nc, float *c, float *C, int ldc,
+                              float *bias) {
   int nc1 = nc / 4;
   int _nc1 = nc % 4;
 
@@ -2149,8 +2153,9 @@ void WriteWithAddReluV1(int mc, int nc, float *c, float *C, int ldc,
   }
 }
 
-void WriteWithAddPRelu(int mc, int nc, float *c, float *C, int ldc, float *p,
-                       std::string mode, float *bias, float *bias1) {
+void Gemm::WriteWithAddPRelu(int mc, int nc, float *c, float *C, int ldc,
+                             float *p, std::string mode, float *bias,
+                             float *bias1) {
   if (nc < 4) {
     if (bias1 == nullptr) {
       for (int i = 0; i < mc; ++i) {
@@ -2383,8 +2388,8 @@ void WriteWithAddPRelu(int mc, int nc, float *c, float *C, int ldc, float *p,
 }
 
 // C = A * B, batchnorm(C)
-void WriteWithBn(int mc, int nc, float *c, float *C, int ldc, float *scale,
-                 float *bias) {
+void Gemm::WriteWithBn(int mc, int nc, float *c, float *C, int ldc,
+                       float *scale, float *bias) {
   if (nc < 4) {
     for (int i = 0; i < mc; ++i) {
       for (int j = 0; j < nc; ++j) {
@@ -2484,8 +2489,8 @@ void WriteWithBn(int mc, int nc, float *c, float *C, int ldc, float *scale,
 }
 
 // C = A * B, batchnorm(C), relu(C)
-void WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc, float *scale,
-                     float *bias) {
+void Gemm::WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc,
+                           float *scale, float *bias) {
   if (nc < 4) {
     for (int i = 0; i < mc; ++i) {
       for (int j = 0; j < nc; ++j) {
@@ -2595,8 +2600,8 @@ void WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc, float *scale,
 }
 
 // C = A * B, batchnorm(C),C = C + bias; relu(C)
-void WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
-                        float *new_scale, float *new_bias, float *bias) {
+void Gemm::WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
+                              float *new_scale, float *new_bias, float *bias) {
   int nc1 = nc / 4;
   int _nc1 = nc % 4;
 
@@ -2649,7 +2654,7 @@ void WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
 
   /*
   // C = A * B
-  void VecWriteBasic(int n, float *c, float *C, int ldc) {
+  void Gemm::VecWriteBasic(int n, float *c, float *C, int ldc) {
     int nc1 = n / 16;
     int _nc1 = n % 16;
     int nc2 = _nc1 / 4;
@@ -2695,10 +2700,10 @@ void WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
   }
 
   // C = alpha * A * B + beta * C
-  void VecWriteWithAlphaBeta(int n, float *c, float *C, int ldc) {}
+  void Gemm::VecWriteWithAlphaBeta(int n, float *c, float *C, int ldc) {}
 
   // C = A * B + C
-  void VecWriteWithAdd(int n, float *c, float *C, int ldc) {
+  void Gemm::VecWriteWithAdd(int n, float *c, float *C, int ldc) {
     int nc1 = n / 16;
     int _nc1 = n % 16;
 
@@ -2736,7 +2741,7 @@ void WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
   }
 
   // C = A * B + C, relu(C)
-  void VecWriteWithAddRelu(int n, float *c, float *C, int ldc) {
+  void Gemm::VecWriteWithAddRelu(int n, float *c, float *C, int ldc) {
     int nc1 = n / 16;
     int _nc1 = n % 16;
 
@@ -2784,7 +2789,7 @@ void WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
   }
 
   // C = A * B, batchnorm(C)
-  void VecWriteWithBn(int n, float *c, float *C, int ldc, float *scale,
+  void Gemm::VecWriteWithBn(int n, float *c, float *C, int ldc, float *scale,
                       float *bias) {
     int nc1 = n / 16;
     int _nc1 = n % 16;
@@ -2850,12 +2855,9 @@ void WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
   }
 
   // C = A * B, batchnorm(C), relu(C)
-  void VecWriteWithBnRelu(int n, float *c, float *C, int ldc, float *scale,
-                          float *bias) {
-    int nc1 = n / 16;
-    int _nc1 = n % 16;
-    int nc2 = _nc1 / 4;
-    int nc3 = 16 - 4 * (_nc1 % 4);
+  void Gemm::VecWriteWithBnRelu(int n, float *c, float *C, int ldc, float
+  *scale, float *bias) { int nc1 = n / 16; int _nc1 = n % 16; int nc2 = _nc1 /
+  4; int nc3 = 16 - 4 * (_nc1 % 4);
 
     asm volatile(
         "vmov.f32   q14,      #0.0          \n\t"
@@ -2926,7 +2928,7 @@ void WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
 #endif  // __aarch64__
 #else
 
-void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
+void Gemm::AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
   float *c0, *c1, *c2, *c3;
   c0 = c;
   c1 = c + ldc;
@@ -2962,38 +2964,42 @@ void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
   }
 }
 
-void AddDot4x8(int k, const float *a, const float *b, float *c, int ldc) {}
+void Gemm::AddDot4x8(int k, const float *a, const float *b, float *c, int ldc) {
+}
 
-void WriteBasic(int mc, int nc, float *c, float *C, int ldc) {}
+void Gemm::WriteBasic(int mc, int nc, float *c, float *C, int ldc) {}
 
-void WriteWithAlphaBeta(int mc, int nc, float *c, float *C, int ldc) {}
+void Gemm::WriteWithAlphaBeta(int mc, int nc, float *c, float *C, int ldc) {}
 
-void WriteWithAdd(int mc, int nc, float *c, float *C, int ldc) {}
+void Gemm::WriteWithAdd(int mc, int nc, float *c, float *C, int ldc) {}
 
-void WriteWithAddV1(int mc, int nc, float *c, float *C, int ldc, float *bias) {}
+void Gemm::WriteWithAddV1(int mc, int nc, float *c, float *C, int ldc,
+                          float *bias) {}
 
-void WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc) {}
+void Gemm::WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc) {}
 
-void WriteWithAddReluV1(int mc, int nc, float *c, float *C, int ldc,
-                        float *bias) {}
+void Gemm::WriteWithAddReluV1(int mc, int nc, float *c, float *C, int ldc,
+                              float *bias) {}
 
-void WriteWithAddPRelu(int mc, int nc, float *c, float *C, int ldc, float *p,
-                       std::string mode, float *bias, float *bias1) {}
+void Gemm::WriteWithAddPRelu(int mc, int nc, float *c, float *C, int ldc,
+                             float *p, std::string mode, float *bias,
+                             float *bias1) {}
 
-void WriteWithBn(int mc, int nc, float *c, float *C, int ldc, float *new_scale,
-                 float *new_bias) {}
+void Gemm::WriteWithBn(int mc, int nc, float *c, float *C, int ldc,
+                       float *new_scale, float *new_bias) {}
 
-void WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc,
-                     float *new_scale, float *new_bias) {}
-void WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
-                        float *new_scale, float *new_bias, float *bias1) {}
+void Gemm::WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc,
+                           float *new_scale, float *new_bias) {}
+void Gemm::WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
+                              float *new_scale, float *new_bias, float *bias1) {
+}
 
 #endif  // __ARM_NEON
 
 // 32位 float 矩阵乘法
-void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
-           const float *B, int ldb, float beta, float *C, int ldc, bool relu,
-           float *bias) {
+void Gemm::Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
+                 const float *B, int ldb, float beta, float *C, int ldc,
+                 bool relu, float *bias) {
   // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
   // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
   int L1 = 32 * 1024;
@@ -3063,9 +3069,10 @@ void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
   paddle_mobile::memory::Free(zero);
 }
 
-void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
-                 const float *B, int ldb, float beta, float *C, int ldc,
-                 bool relu, float *new_scale, float *new_bias, float *bias) {
+void Gemm::SgemmWithBn(int m, int n, int k, float alpha, const float *A,
+                       int lda, const float *B, int ldb, float beta, float *C,
+                       int ldc, bool relu, float *new_scale, float *new_bias,
+                       float *bias) {
   // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
   // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
   int L1 = 32 * 1024;
@@ -3136,9 +3143,9 @@ void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
   paddle_mobile::memory::Free(zero);
 }
 
-void SgemmWithPRelu(int m, int n, int k, const float *A, int lda,
-                    const float *B, int ldb, float *C, int ldc, float *p,
-                    std::string mode, float *bias, float *bias1) {
+void Gemm::SgemmWithPRelu(int m, int n, int k, const float *A, int lda,
+                          const float *B, int ldb, float *C, int ldc, float *p,
+                          std::string mode, float *bias, float *bias1) {
   // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
   // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
   int L1 = 32 * 1024;
@@ -3212,9 +3219,9 @@ void SgemmWithPRelu(int m, int n, int k, const float *A, int lda,
 }
 
 // 32位 float 矩阵乘法
-void Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
-               const float *B, int ldb, float beta, float *C, int ldc,
-               bool relu, float *bias) {
+void Gemm::Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
+                     const float *B, int ldb, float beta, float *C, int ldc,
+                     bool relu, float *bias) {
 #ifdef _OPENMP
   int max_threads = omp_get_max_threads();
 #else
@@ -3237,18 +3244,18 @@ void Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
     NC = (n + NR - 1) / NR * NR;
 
 #if __aarch64__
-    procPackA = PackMatrixA_6r;
-    procPackB = PackMatrixB_omp_16c;
-    procAddDot = AddDot6x16;
+    procPackA = &Gemm::PackMatrixA_6r;
+    procPackB = &Gemm::PackMatrixB_omp_16c;
+    procAddDot = &Gemm::AddDot6x16;
 #else
-    procPackA = PackMatrixA_6r;
-    procPackB = PackMatrixB_omp_8c;
-    procAddDot = AddDot6x8;
+    procPackA = &Gemm::PackMatrixA_6r;
+    procPackB = &Gemm::PackMatrixB_omp_8c;
+    procAddDot = &Gemm::AddDot6x8;
 #endif
 
     packedB = static_cast<float *>(
         paddle_mobile::memory::Alloc(sizeof(float) * KC * NC));
-    procPackB(KC, NC, NC % NR, B, ldb, packedB);
+    (*this.*procPackB)(KC, NC, NC % NR, B, ldb, packedB);
     packedA = static_cast<float *>(
         paddle_mobile::memory::Alloc(sizeof(float) * MC * KC * max_threads));
   } else {
@@ -3265,18 +3272,19 @@ void Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
     MC = (m + MR - 1) / MR * MR;
 
 #if __aarch64__
-    procPackA = PackMatrixA_omp_6r;
-    procPackB = PackMatrixB_16c;
-    procAddDot = AddDot6x16;
+    procPackA = &Gemm::PackMatrixA_omp_6r;
+    procPackB = &Gemm::PackMatrixB_16c;
+    procAddDot = &Gemm::AddDot6x16;
 #else
-    procPackA = PackMatrixA_omp_6r;
-    procPackB = PackMatrixB_8c;
-    procAddDot = AddDot6x8;
+
+    procPackA = &Gemm::PackMatrixA_omp_6r;
+    procPackB = &Gemm::PackMatrixB_8c;
+    procAddDot = &Gemm::AddDot6x8;
 #endif
 
     packedA = static_cast<float *>(
         paddle_mobile::memory::Alloc(sizeof(float) * MC * KC));
-    procPackA(MC, KC, MC % MR, A, lda, packedA);
+    (*this.*procPackA)(MC, KC, MC % MR, A, lda, packedA);
     packedB = static_cast<float *>(
         paddle_mobile::memory::Alloc(sizeof(float) * KC * NC * max_threads));
   }
@@ -3298,7 +3306,7 @@ void Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
       mc = s_min(m - i, MC);
       float *local_A = packedA + MC * KC * local_threads;
       float *local_C = packedC + MC * NC * local_threads;
-      procPackA(mc, KC, mc % MR, &A(i, 0), lda, local_A);
+      (*this.*procPackA)(mc, KC, mc % MR, &A(i, 0), lda, local_A);
       InnerKernelWithBias(mc, n, alpha, local_A, packedB, beta, local_C,
                           &C(i, 0), ldc, relu, bias + i);
     }
@@ -3315,7 +3323,7 @@ void Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
       nc = s_min(n - j, NC);
       float *local_B = packedB + KC * NC * local_threads;
       float *local_C = packedC + MC * NC * local_threads;
-      procPackB(KC, nc, nc % NR, &B(0, j), ldb, local_B);
+      (*this.*procPackB)(KC, nc, nc % NR, &B(0, j), ldb, local_B);
       InnerKernelWithBias(m, nc, alpha, packedA, local_B, beta, local_C,
                           &C(0, j), ldc, relu, bias);
     }
@@ -3327,10 +3335,10 @@ void Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
   paddle_mobile::memory::Free(zero);
 }
 
-void SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A, int lda,
-                     const float *B, int ldb, float beta, float *C, int ldc,
-                     bool relu, float *new_scale, float *new_bias,
-                     float *bias) {
+void Gemm::SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A,
+                           int lda, const float *B, int ldb, float beta,
+                           float *C, int ldc, bool relu, float *new_scale,
+                           float *new_bias, float *bias) {
 #ifdef _OPENMP
   int max_threads = omp_get_max_threads();
 #else
@@ -3353,18 +3361,18 @@ void SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A, int lda,
     NC = (n + NR - 1) / NR * NR;
 
 #if __aarch64__
-    procPackA = PackMatrixA_6r;
-    procPackB = PackMatrixB_omp_16c;
-    procAddDot = AddDot6x16;
+    procPackA = &Gemm::PackMatrixA_6r;
+    procPackB = &Gemm::PackMatrixB_omp_16c;
+    procAddDot = &Gemm::AddDot6x16;
 #else
-    procPackA = PackMatrixA_6r;
-    procPackB = PackMatrixB_omp_8c;
-    procAddDot = AddDot6x8;
+    procPackA = &Gemm::PackMatrixA_6r;
+    procPackB = &Gemm::PackMatrixB_omp_8c;
+    procAddDot = &Gemm::AddDot6x8;
 #endif
 
     packedB = static_cast<float *>(
         paddle_mobile::memory::Alloc(sizeof(float) * KC * NC));
-    procPackB(KC, NC, NC % NR, B, ldb, packedB);
+    (*this.*procPackB)(KC, NC, NC % NR, B, ldb, packedB);
     packedA = static_cast<float *>(
         paddle_mobile::memory::Alloc(sizeof(float) * MC * KC * max_threads));
   } else {
@@ -3381,18 +3389,18 @@ void SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A, int lda,
     MC = (m + MR - 1) / MR * MR;
 
 #if __aarch64__
-    procPackA = PackMatrixA_omp_6r;
-    procPackB = PackMatrixB_16c;
-    procAddDot = AddDot6x16;
+    procPackA = &Gemm::PackMatrixA_omp_6r;
+    procPackB = &Gemm::PackMatrixB_16c;
+    procAddDot = &Gemm::AddDot6x16;
 #else
-    procPackA = PackMatrixA_omp_6r;
-    procPackB = PackMatrixB_8c;
-    procAddDot = AddDot6x8;
+    procPackA = &Gemm::PackMatrixA_omp_6r;
+    procPackB = &Gemm::PackMatrixB_8c;
+    procAddDot = &Gemm::AddDot6x8;
 #endif
 
     packedA = static_cast<float *>(
         paddle_mobile::memory::Alloc(sizeof(float) * MC * KC));
-    procPackA(MC, KC, MC % MR, A, lda, packedA);
+    (*this.*procPackA)(MC, KC, MC % MR, A, lda, packedA);
     packedB = static_cast<float *>(
         paddle_mobile::memory::Alloc(sizeof(float) * KC * NC * max_threads));
   }
@@ -3414,7 +3422,7 @@ void SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A, int lda,
       mc = s_min(m - i, MC);
       float *local_A = packedA + MC * KC * local_threads;
       float *local_C = packedC + MC * NC * local_threads;
-      procPackA(mc, KC, mc % MR, &A(i, 0), lda, local_A);
+      (*this.*procPackA)(mc, KC, mc % MR, &A(i, 0), lda, local_A);
       if (bias == nullptr) {
         InnerKernelWithBn(mc, n, alpha, local_A, packedB, beta, local_C,
                           &C(i, 0), ldc, relu, new_scale + i, new_bias + i);
@@ -3437,7 +3445,7 @@ void SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A, int lda,
       nc = s_min(n - j, NC);
       float *local_B = packedB + KC * NC * local_threads;
       float *local_C = packedC + MC * NC * local_threads;
-      procPackB(KC, nc, nc % NR, &B(0, j), ldb, local_B);
+      (*this.*procPackB)(KC, nc, nc % NR, &B(0, j), ldb, local_B);
       if (bias == nullptr) {
         InnerKernelWithBn(m, nc, alpha, packedA, local_B, beta, local_C,
                           &C(0, j), ldc, relu, new_scale, new_bias);
@@ -3455,9 +3463,10 @@ void SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A, int lda,
   paddle_mobile::memory::Free(zero);
 }
 
-void SgemmWithPRelu_omp(int m, int n, int k, const float *A, int lda,
-                        const float *B, int ldb, float *C, int ldc, float *p,
-                        std::string mode, float *bias, float *bias1) {
+void Gemm::SgemmWithPRelu_omp(int m, int n, int k, const float *A, int lda,
+                              const float *B, int ldb, float *C, int ldc,
+                              float *p, std::string mode, float *bias,
+                              float *bias1) {
 #ifdef _OPENMP
   int max_threads = omp_get_max_threads();
 #else
@@ -3480,18 +3489,18 @@ void SgemmWithPRelu_omp(int m, int n, int k, const float *A, int lda,
     NC = (n + NR - 1) / NR * NR;
 
 #if __aarch64__
-    procPackA = PackMatrixA_6r;
-    procPackB = PackMatrixB_omp_16c;
-    procAddDot = AddDot6x16;
+    procPackA = &Gemm::PackMatrixA_6r;
+    procPackB = &Gemm::PackMatrixB_omp_16c;
+    procAddDot = &Gemm::AddDot6x16;
 #else
-    procPackA = PackMatrixA_6r;
-    procPackB = PackMatrixB_omp_8c;
-    procAddDot = AddDot6x8;
+    procPackA = &Gemm::PackMatrixA_6r;
+    procPackB = &Gemm::PackMatrixB_omp_8c;
+    procAddDot = &Gemm::AddDot6x8;
 #endif
 
     packedB = static_cast<float *>(
         paddle_mobile::memory::Alloc(sizeof(float) * KC * NC));
-    procPackB(KC, NC, NC % NR, B, ldb, packedB);
+    (*this.*procPackB)(KC, NC, NC % NR, B, ldb, packedB);
     packedA = static_cast<float *>(
         paddle_mobile::memory::Alloc(sizeof(float) * MC * KC * max_threads));
   } else {
@@ -3508,18 +3517,18 @@ void SgemmWithPRelu_omp(int m, int n, int k, const float *A, int lda,
     MC = (m + MR - 1) / MR * MR;
 
 #if __aarch64__
-    procPackA = PackMatrixA_omp_6r;
-    procPackB = PackMatrixB_16c;
-    procAddDot = AddDot6x16;
+    procPackA = &Gemm::PackMatrixA_omp_6r;
+    procPackB = &Gemm::PackMatrixB_16c;
+    procAddDot = &Gemm::AddDot6x16;
 #else
-    procPackA = PackMatrixA_omp_6r;
-    procPackB = PackMatrixB_8c;
-    procAddDot = AddDot6x8;
+    procPackA = &Gemm::PackMatrixA_omp_6r;
+    procPackB = &Gemm::PackMatrixB_8c;
+    procAddDot = &Gemm::AddDot6x8;
 #endif
 
     packedA = static_cast<float *>(
         paddle_mobile::memory::Alloc(sizeof(float) * MC * KC));
-    procPackA(MC, KC, MC % MR, A, lda, packedA);
+    (*this.*procPackA)(MC, KC, MC % MR, A, lda, packedA);
     packedB = static_cast<float *>(
         paddle_mobile::memory::Alloc(sizeof(float) * KC * NC * max_threads));
   }
@@ -3541,7 +3550,7 @@ void SgemmWithPRelu_omp(int m, int n, int k, const float *A, int lda,
       mc = s_min(m - i, MC);
       float *local_A = packedA + MC * KC * local_threads;
       float *local_C = packedC + MC * NC * local_threads;
-      procPackA(mc, KC, mc % MR, &A(i, 0), lda, local_A);
+      (*this.*procPackA)(mc, KC, mc % MR, &A(i, 0), lda, local_A);
       if (bias1 == nullptr) {
         InnerKernelWithPRelu(mc, n, local_A, packedB, local_C, &C(i, 0), ldc,
                              p + i, mode, bias + i, nullptr);
@@ -3563,7 +3572,7 @@ void SgemmWithPRelu_omp(int m, int n, int k, const float *A, int lda,
       nc = s_min(n - j, NC);
       float *local_B = packedB + KC * NC * local_threads;
       float *local_C = packedC + MC * NC * local_threads;
-      procPackB(KC, nc, nc % NR, &B(0, j), ldb, local_B);
+      (*this.*procPackB)(KC, nc, nc % NR, &B(0, j), ldb, local_B);
       if (bias1 == nullptr) {
         InnerKernelWithPRelu(m, nc, packedA, local_B, local_C, &C(0, j), ldc, p,
                              mode, bias, nullptr);
@@ -3580,7 +3589,7 @@ void SgemmWithPRelu_omp(int m, int n, int k, const float *A, int lda,
   paddle_mobile::memory::Free(zero);
 }
 
-void AddDot6x8(int k, const float *a, const float *b, float *c, int ldc) {
+void Gemm::AddDot6x8(int k, const float *a, const float *b, float *c, int ldc) {
 #if __ARM_NEON
 #if __aarch64__
 
@@ -3867,7 +3876,8 @@ void AddDot6x8(int k, const float *a, const float *b, float *c, int ldc) {
 }
 
 #if __aarch64__
-void AddDot8x12(int k, const float *a, const float *b, float *c, int ldc) {
+void Gemm::AddDot8x12(int k, const float *a, const float *b, float *c,
+                      int ldc) {
   const float *a_ptr, *b_ptr;
   a_ptr = a;
   b_ptr = b;
@@ -3956,7 +3966,8 @@ void AddDot8x12(int k, const float *a, const float *b, float *c, int ldc) {
         "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28");
 }
 
-void AddDot6x16(int k, const float *a, const float *b, float *c, int ldc) {
+void Gemm::AddDot6x16(int k, const float *a, const float *b, float *c,
+                      int ldc) {
   const float *a_ptr, *b_ptr;
   a_ptr = a;
   b_ptr = b;
