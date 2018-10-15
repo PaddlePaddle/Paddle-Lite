@@ -101,6 +101,11 @@ bool PaddleMobilePredictor<Dtype, P>::Run(
   return true;
 }
 
+template <typename Dtype, Precision P>
+PaddleMobilePredictor<Dtype, P>::~PaddleMobilePredictor() {
+  paddle_mobile_->Clear();
+}
+
 // A factory to help create difference predictor.
 template <>
 std::unique_ptr<PaddlePredictor>
