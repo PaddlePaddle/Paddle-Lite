@@ -61,6 +61,7 @@ class CLImage {
       PADDLE_MOBILE_THROW_EXCEPTION(
           " empty image tensor data shouldn't have value");
     }
+    DLOG << " init empty image ";
     InitCLImage(context, nullptr, dim);
     initialized_ = true;
   }

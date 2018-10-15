@@ -25,6 +25,9 @@ bool ConvAddKernel<GPU_CL, float>::Init(FusionConvAddParam<GPU_CL> *param) {
       param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
           param->Paddings()[0] == param->Paddings()[1],
       "need equal");
+  param->Filter()->InitCLImage(cl_helper_.CLContext());
+  param->Bias()->InitCLImage(cl_helper_.CLContext());
+
   int offset = static_cast<int>(param->Filter()->dims()[2]) / 2 -
                static_cast<int>(param->Paddings()[1]);
   param->SetOffset(offset);

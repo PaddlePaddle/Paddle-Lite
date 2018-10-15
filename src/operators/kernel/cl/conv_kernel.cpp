@@ -26,18 +26,17 @@ bool ConvKernel<GPU_CL, float>::Init(ConvParam<GPU_CL> *param) {
           param->Paddings()[0] == param->Paddings()[1],
       "need equal");
 
+  param->Filter()->InitCLImage(cl_helper_.CLContext());
+
   int offset = static_cast<int>(param->Filter()->dims()[2]) / 2 -
                static_cast<int>(param->Paddings()[1]);
   param->SetOffset(offset);
 
   DLOG << " init helper: " << &cl_helper_;
   DLOG << " conv kernel add kernel ~ ";
-
   DLOG << " width of one block: " << param->Filter()->WidthOfOneBlock();
   DLOG << " height of one block: " << param->Filter()->HeightOfOneBlock();
-
   DLOG << " filter dims: " << param->Filter()->dims();
-
 
   if (param->Filter()->WidthOfOneBlock() == 1 &&
       param->Filter()->HeightOfOneBlock() == 1) {
