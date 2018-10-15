@@ -222,9 +222,9 @@ class CLImage {
   cl_context context_;
 };
 
-void TensorToCLImage(Tensor *tensor, CLImage *image);
+void TensorToCLImage(Tensor *tensor, CLImage *image,cl_command_queue commandQueue);
 
-void CLImageToTensor(CLImage *image, Tensor *tensor);
+void CLImageToTensor(CLImage *image, Tensor *tensor,cl_command_queue commandQueue);
 
 }  // namespace framework
 }  // namespace paddle_mobile
