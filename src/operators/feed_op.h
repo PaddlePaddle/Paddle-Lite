@@ -98,8 +98,8 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
 
   void Init() {}
   void RunImpl() {
-                    param_.Out()->ShareDataWith(*param_.InputX());
-                    param_.Out()->set_lod(param_.InputX()->lod());
+    param_.Out()->ShareDataWith(*param_.InputX());
+    param_.Out()->set_lod(param_.InputX()->lod());
   }
 
  protected:

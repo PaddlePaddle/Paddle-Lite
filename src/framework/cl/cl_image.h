@@ -30,6 +30,20 @@ class CLImage {
 
   void Init(cl_context context, float *tensorInput, DDim ddim) {
     tensor_dims_ = ddim;
+    if (tensorInput) {
+      tensor_input_ = tensorInput;
+    } else {
+      int numel = 1;
+      for (int i = 0; i < ddim.size(); i++) {
+        numel *= ddim[i];
+      }
+      tensor_input_ = static_cast<float *>(
+          paddle_mobile::memory::Alloc(sizeof(float) * numel));
+      for (int i = 0; i < numel; i++) {
+        tensor_input_[i] = 0;
+      }
+    }
+
     cl_image_format cf = {.image_channel_order = CL_RGBA,
                           .image_channel_data_type = CL_HALF_FLOAT};
     // NCHW -> [W * (C+3)/4, H * N]
@@ -65,9 +79,9 @@ class CLImage {
 
     std::unique_ptr<half_t[]> imageData{};
     int count = 0;
-    if (tensorInput != nullptr) {
-      imageData.reset(new half_t[width * height * 4]);
-      float *p = tensorInput;
+    imageData.reset(new half_t[width * height * 4]);
+    if (tensor_input_ != nullptr) {
+      float *p = tensor_input_;
       size_t i0 = 0;
       for (int n = 0; n < N; n++) {
         for (int c = 0; c < C; c++) {
@@ -75,11 +89,13 @@ class CLImage {
           for (int h = 0; h < H; h++) {
             size_t i2 = (i1 << 2) + c % 4;
             for (int w = 0; w < W; w++) {
-              if (i2 >= width * height * 4) {
-                printf("%d > %d ----> %d, %d, %d, %d --- %d, %d, %d\n", i2,
-                       width * height * 4, n, c, h, w, i0, i1, i2);
-              }
-              assert(i2 < width * height * 4);
+              //              if (i2 >= width * height * 4) {
+              //                printf("%d > %d ----> %d, %d, %d, %d --- %d, %d,
+              //                %d\n", i2,
+              //                       width * height * 4, n, c, h, w, i0, i1,
+              //                       i2);
+              //              }
+              //              assert(i2 < width * height * 4);
 
               imageData[i2] = float2half(*p);
               i2 += 4;
@@ -153,9 +169,11 @@ class CLImage {
   cl_context context_;
 };
 
-void TensorToCLImage(Tensor *tensor, CLImage *image);
+void TensorToCLImage(Tensor *tensor, CLImage *image,
+                     cl_command_queue commandQueue);
 
-void CLImageToTensor(CLImage *image, Tensor *tensor);
+void CLImageToTensor(CLImage *image, Tensor *tensor,
+                     cl_command_queue commandQueue);
 
 }  // namespace framework
 }  // namespace paddle_mobile

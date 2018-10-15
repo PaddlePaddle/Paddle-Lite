@@ -24,9 +24,9 @@ template <>
 bool DepthwiseConvKernel<GPU_CL, float>::Init(ConvParam<GPU_CL> *param) {
   DLOG << " depthwise conv kernel init begin ";
   PADDLE_MOBILE_ENFORCE(
-          param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
+      param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
           param->Paddings()[0] == param->Paddings()[1],
-          "need equal");
+      "need equal");
   int offset = static_cast<int>(param->Filter()->dims()[2]) / 2 -
                static_cast<int>(param->Paddings()[1]);
   param->SetOffset(offset);
@@ -36,7 +36,8 @@ bool DepthwiseConvKernel<GPU_CL, float>::Init(ConvParam<GPU_CL> *param) {
 }
 
 template <>
-void DepthwiseConvKernel<GPU_CL, float>::Compute(const ConvParam<GPU_CL> &param) {
+void DepthwiseConvKernel<GPU_CL, float>::Compute(
+    const ConvParam<GPU_CL> &param) {
   auto kernel = this->cl_helper_.KernelAt(0);
   auto default_work_size = this->cl_helper_.DefaultWorkSize(*param.Output());
   int c_block = default_work_size[0];

@@ -936,14 +936,14 @@ class FetchParam : public OpParam {
   FetchParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
              const AttributeMap &attrs, const Scope &scope) {
     input_x_ = InputXFrom<GType>(inputs, scope);
-    out_ = OutFrom<GType>(outputs, scope);
+    out_ = OutFrom<LoDTensor>(outputs, scope);
   }
   const RType *InputX() const { return input_x_; }
-  RType *Out() const { return out_; }
+  Tensor *Out() const { return out_; }
 
  private:
   RType *input_x_;
-  RType *out_;
+  Tensor *out_;
 };
 
 #ifdef TRANSPOSE_OP
