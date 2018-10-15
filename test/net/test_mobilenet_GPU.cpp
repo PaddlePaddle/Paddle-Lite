@@ -34,23 +34,23 @@ int main() {
     GetInput<float>(g_test_image_1x3x224x224_banana, &input, dims);
 
     auto vec_result = paddle_mobile.Predict(input, dims);
-    std::vector<float>::iterator biggest =
-        std::max_element(std::begin(vec_result), std::end(vec_result));
-    std::cout << " Max element is " << *biggest << " at position "
-              << std::distance(std::begin(vec_result), biggest) << std::endl;
+//    std::vector<float>::iterator biggest =
+//        std::max_element(std::begin(vec_result), std::end(vec_result));
+//    std::cout << " Max element is " << *biggest << " at position "
+//              << std::distance(std::begin(vec_result), biggest) << std::endl;
 
-    // 预热十次
-    for (int i = 0; i < 10; ++i) {
-      auto vec_result = paddle_mobile.Predict(input, dims);
-    }
-    auto time3 = paddle_mobile::time();
-    for (int i = 0; i < 10; ++i) {
-      auto vec_result = paddle_mobile.Predict(input, dims);
-    }
-    DLOG << vec_result;
-    auto time4 = paddle_mobile::time();
-    std::cout << "predict cost :" << paddle_mobile::time_diff(time3, time4) / 10
-              << "ms" << std::endl;
+
+//    for (int i = 0; i < 10; ++i) {
+//      auto vec_result = paddle_mobile.Predict(input, dims);
+//    }
+//    auto time3 = paddle_mobile::time();
+//    for (int i = 0; i < 10; ++i) {
+//      auto vec_result = paddle_mobile.Predict(input, dims);
+//    }
+//    DLOG << vec_result;
+//    auto time4 = paddle_mobile::time();
+//    std::cout << "predict cost :" << paddle_mobile::time_diff(time3, time4) / 10 << "ms"
+//              << std::endl;
   }
 
   std::cout << "如果结果Nan请查看: test/images/g_test_image_1x3x224x224_banana "
