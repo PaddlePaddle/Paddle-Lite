@@ -52,7 +52,7 @@ class CLEngine {
       cl_context context, std::string file_name) {
     FILE *file = fopen(file_name.c_str(), "rb");
     PADDLE_MOBILE_ENFORCE(file != nullptr, "can't open file: %s ",
-                          filename.c_str());
+                          file_name.c_str());
     fseek(file, 0, SEEK_END);
     int64_t size = ftell(file);
     PADDLE_MOBILE_ENFORCE(size > 0, "size is too small");

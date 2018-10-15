@@ -18,6 +18,7 @@ limitations under the License. */
 #include <type_traits>
 #include <vector>
 
+#include "common/log.h"
 #include "framework/cl/cl_deleter.h"
 #include "framework/cl/cl_image.h"
 #include "framework/cl/cl_scope.h"
@@ -32,11 +33,16 @@ class CLHelper {
   explicit CLHelper(CLScope *scope) : scope_(scope) {}
 
   void AddKernel(const std::string &kernel_name, const std::string &file_name) {
+    DLOG << " begin add kernel ";
     auto kernel = scope_->GetKernel(kernel_name, file_name);
+    DLOG << " add kernel ing ";
     kernels.emplace_back(std::move(kernel));
   }
 
-  cl_kernel KernelAt(const int index) { return kernels[index].get(); }
+  cl_kernel KernelAt(const int index) {
+    DLOG << " kernel count: " << kernels.size();
+    return kernels[index].get();
+  }
 
   cl_command_queue CLCommandQueue() { return scope_->CommandQueue(); }
 
