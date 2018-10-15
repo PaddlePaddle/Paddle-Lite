@@ -27,17 +27,17 @@ bool FeedKernel<GPU_CL, float>::Init(FeedParam<GPU_CL> *param) {
 
 template <>
 void FeedKernel<GPU_CL, float>::Compute(const FeedParam<GPU_CL> &param) {
-  DLOG << "feed_kernel";
   auto kernel = this->cl_helper_.KernelAt(0);
   cl_int status;
   auto output = param.Out();
-  auto input = param.InputX();
-  DLOG << " input: " << input;
+  const Tensor *input = param.InputX();
+  const float *input_data = nullptr;
+  input_data = input->data<float>();
 
-  const float *input_data = input->data<float>();
   cl_mem cl_image = output->GetCLImage();
   int height = output->dims()[2];
   int width = output->dims()[3];
+  DLOG << output->dims();
   status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input_data);
   status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &cl_image);
   status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &width);
