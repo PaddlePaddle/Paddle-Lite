@@ -36,13 +36,13 @@ class CLTensor : TensorBase {
     return *this;
   }
 
-  //  template<typename T>
-  //  inline T *mutable_with_data(void *data) {
-  //    int64_t size = numel() * sizeof(float);
-  //    holder_.reset(new PlaceholderImpl(size, data, typeid(T)));
-  //    return reinterpret_cast<T *>(reinterpret_cast<void *>(
-  //            reinterpret_cast<uintptr_t>(holder_->ptr())));
-  //  }
+  template <typename T>
+  inline T *mutable_with_data(void *data) {
+    int64_t size = numel() * sizeof(float);
+    holder_.reset(new PlaceholderImpl(size, data, typeid(T), context_));
+    return reinterpret_cast<T *>(
+        reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(holder_->ptr())));
+  }
 
   inline void *mutable_data(std::type_index type) {
     if (holder_ != nullptr) {
@@ -51,7 +51,7 @@ class CLTensor : TensorBase {
     PADDLE_MOBILE_ENFORCE(numel() >= 0, "the Tensor's numel must >=0.")
     int64_t size = numel() * SizeOfType(type);
     if (holder_ == nullptr || holder_->size() < size + offset_) {
-      holder_.reset(new PlaceholderImpl(size, type));
+      holder_.reset(new PlaceholderImpl(size, type, context_));
       offset_ = 0;
     }
     return reinterpret_cast<void *>(
