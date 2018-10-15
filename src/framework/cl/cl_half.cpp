@@ -488,7 +488,7 @@ static const uint8_t shifttable[512] = {
     0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x0d};
 
 half_t float2half(float f) {
-  uint32_t v = *reinterpret_cast<uint32_t*>(&f);
+  uint32_t v = *reinterpret_cast<uint32_t *>(&f);
   return basetable[(v >> 23) & 0x1ff] +
          ((v & 0x007fffff) >> shifttable[(v >> 23) & 0x1ff]);
 }
@@ -496,7 +496,7 @@ half_t float2half(float f) {
 float half2float(half_t h) {
   uint32_t v = mantissatable[offsettable[h >> 10] + (h & 0x3ff)] +
                exponenttable[h >> 10];
-  return *reinterpret_cast<float*>(&v);
+  return *reinterpret_cast<float *>(&v);
 }
 
 void FloatArray2HalfArray(float *f_array, half_t *h_array, int count) {
