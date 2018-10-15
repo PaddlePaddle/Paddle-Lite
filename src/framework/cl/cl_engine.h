@@ -40,8 +40,8 @@ class CLEngine {
     return std::move(context_ptr);
   }
 
-  std::unique_ptr<_cl_command_queue, CLCommQueueDeleter>
-  CreateClCommandQueue(cl_context context) {
+  std::unique_ptr<_cl_command_queue, CLCommQueueDeleter> CreateClCommandQueue(
+      cl_context context) {
     cl_int status;
     cl_command_queue queue =
         clCreateCommandQueue(context, devices_[0], 0, &status);
