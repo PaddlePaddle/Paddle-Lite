@@ -498,3 +498,15 @@ float half2float(half_t h) {
                exponenttable[h >> 10];
   return *reinterpret_cast<float*>(&v);
 }
+
+void FloatArray2HalfArray(float *f_array, half_t *h_array, int count) {
+  for (int i = 0; i < count; ++i) {
+    h_array[i] = float2half(f_array[i]);
+  }
+}
+
+void HalfArray2FloatArray(half_t *h_array, float *f_array, int count) {
+  for (int i = 0; i < count; ++i) {
+    f_array[i] = float2half(h_array[i]);
+  }
+}

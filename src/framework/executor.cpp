@@ -414,7 +414,7 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
     }
   }
 #else
-  for (int i = 0; i < ops.size(); i++) {
+  for (int i = 0; i < 1; i++) {
 #ifdef PADDLE_MOBILE_PROFILE
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -428,6 +428,9 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
 #endif
   }
 #endif
+
+  DLOG << " predict return nullptr";
+  return nullptr;
   auto last_op = ops.rbegin();
   auto output_map = (*last_op)->Outputs();
   std::vector<std::string> out_keys = (*last_op)->GetOutKeys();
@@ -647,13 +650,18 @@ std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::Predict(
     const std::vector<Ptype> &input, const std::vector<int64_t> &dims) {
   framework::Tensor tensor(input, framework::make_ddim(dims));
   std::shared_ptr<framework::Tensor> output_tensor = Predict(tensor, 0);
-  Executor<Dtype, P>::Ptype *output_ptr =
-      output_tensor->data<typename Executor<Dtype, P>::Ptype>();
-  std::vector<typename Executor<Dtype, P>::Ptype> result_vector;
-  for (int j = 0; j < output_tensor->numel(); ++j) {
-    result_vector.push_back(output_ptr[j]);
+  if (output_tensor != nullptr) {
+    Executor<Dtype, P>::Ptype *output_ptr =
+            output_tensor->data<typename Executor<Dtype, P>::Ptype>();
+    std::vector<typename Executor<Dtype, P>::Ptype> result_vector;
+    for (int j = 0; j < output_tensor->numel(); ++j) {
+      result_vector.push_back(output_ptr[j]);
+    }
+    return result_vector;
+  } else {
+    DLOG << "return  empty vector";
+    return {};
   }
-  return result_vector;
 }
 
 #ifdef PADDLE_MOBILE_FPGA
