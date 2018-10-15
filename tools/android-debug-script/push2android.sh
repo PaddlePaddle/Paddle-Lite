@@ -1,6 +1,11 @@
 #!/usr/bin/env sh
 
 push_fn () {
+
+
+cp ../../src/operators/kernel/cl/cl_kernel/*  ../../build/release/arm-v7a/build/cl_kernel/
+
+
 MODELS_PATH="../../test/models/*"
 MODELS_SRC="../../test/models"
 IMAGE_PATH="../../test/images/*"
