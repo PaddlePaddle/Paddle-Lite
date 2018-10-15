@@ -47,14 +47,19 @@ bool BatchNormKernel<GPU_CL, float>::Init(BatchNormParam<GPU_CL> *param) {
     new_bias_ptr[i] = bias_ptr[i] - mean_ptr[i] * inv_std_ptr[i] * scale_ptr[i];
   }
 
-  delete[](new_scale_ptr);
-  delete[](new_bias_ptr);
-
   framework::CLImage *new_scale = new framework::CLImage();
+  new_scale->SetTensorData(new_scale_ptr, variance->dims());
+  new_scale->InitCLImage(this->cl_helper_.CLContext());
+
   framework::CLImage *new_bias = new framework::CLImage();
+  new_bias->SetTensorData(new_bias_ptr, variance->dims());
+  new_bias->InitCLImage(this->cl_helper_.CLContext());
 
   param->SetNewScale(new_scale);
   param->SetNewBias(new_bias);
+
+  delete[](new_scale_ptr);
+  delete[](new_bias_ptr);
 
   return true;
 }
