@@ -29,23 +29,39 @@ template <>
 void FeedKernel<GPU_CL, float>::Compute(const FeedParam<GPU_CL> &param) {
   auto kernel = this->cl_helper_.KernelAt(0);
   cl_int status;
+  DLOG << " feed 0";
   auto output = param.Out();
+  DLOG << " feed 1";
   const Tensor *input = param.InputX();
+  DLOG << " feed 2";
   const float *input_data = nullptr;
+  DLOG << " feed 3";
   input_data = input->data<float>();
+  DLOG << " feed 4";
 
   cl_mem cl_image = output->GetCLImage();
+  DLOG << " feed 5";
+
   int height = output->dims()[2];
   int width = output->dims()[3];
+
   DLOG << output->dims();
   status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input_data);
+  CL_CHECK_ERRORS(status);
+
   status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &cl_image);
+  CL_CHECK_ERRORS(status);
+
   status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &width);
+  CL_CHECK_ERRORS(status);
+
   status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &height);
+  CL_CHECK_ERRORS(status);
 
   size_t global_work_size[2] = {height, width};
-  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2, NULL,
-                         global_work_size, NULL, 0, NULL, NULL);
+  status = clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2,
+                                  NULL, global_work_size, NULL, 0, NULL, NULL);
+  CL_CHECK_ERRORS(status);
 }
 
 template class FeedKernel<GPU_CL, float>;

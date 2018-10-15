@@ -177,7 +177,7 @@ class CLImage {
               }
               assert(i2 < width * height * 4);
 
-              imageData[i2] = float2half(*p);
+              imageData[i2] = Float2Half(*p);
               i2 += 4;
               p++;
               //              count++;
@@ -219,7 +219,6 @@ class CLImage {
         &err);
 
     if (err != CL_SUCCESS) {
-      // TODO(HaiPeng): error handling
       CL_CHECK_ERRORS(err);
       PADDLE_MOBILE_THROW_EXCEPTION(" create image 2d error ");
     }
