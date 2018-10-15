@@ -32,7 +32,7 @@ namespace paddle_mobile {
 template <typename Dtype = CPU, Precision P = Precision::FP32>
 class PaddleMobilePredictor : public PaddlePredictor {
  public:
-  PaddleMobilePredictor() {}
+  PaddleMobilePredictor() = delete;
 
   explicit PaddleMobilePredictor(const PaddleMobileConfig& config);
 
@@ -40,7 +40,7 @@ class PaddleMobilePredictor : public PaddlePredictor {
            std::vector<PaddleTensor>* output_data,
            int batch_size = -1) override;
 
-  ~PaddleMobilePredictor() override{};
+  ~PaddleMobilePredictor() override;
 
  private:
   std::unique_ptr<PaddleMobile<Dtype, P>> paddle_mobile_;
