@@ -16,15 +16,18 @@ limitations under the License. */
 
 #pragma once
 #include <vector>
+#include "operators/kernel/central-arm-func/conv_arm_int8.h"
 #include "operators/math/conv_func.h"
 #include "operators/math/depthwise_conv_3x3.h"
 #include "operators/math/im2col.h"
 #include "operators/math/math_function.h"
+#include "operators/math/pad.h"
 #include "operators/math/vol2col.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
+
 inline void ConvBasic(const ConvParam<CPU> &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
@@ -111,6 +114,57 @@ inline void ConvBasic(const ConvParam<CPU> &param) {
   }
 }
 
+inline void ConvBasic_int8(const ConvParam<CPU> &param) {
+  typedef void (*ConvFunc)(const Tensor &input, const Tensor &kernel,
+                           Tensor *output);
+  static ConvFunc conv_funcs_table[7][5] = {
+      {0, 0, 0, 0, 0},                                // k = 1
+      {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},               // k = 3
+      {0, 0, 0, 0, 0}, {conv5x5s1_int8, 0, 0, 0, 0},  // k = 5
+      {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},               // k = 7
+  };
+
+  const Tensor *input = param.Input();
+  Tensor *filter = param.Filter();
+  Tensor *output = param.Output();
+  output->mutable_data<int32_t>();
+  int groups = param.Groups();
+  std::vector<int> strides = param.Strides();
+  std::vector<int> paddings = param.Paddings();
+  std::vector<int> dilations = param.Dilations();
+  int kernel_h = filter->dims()[2];
+  int kernel_w = filter->dims()[3];
+  const int batch_size = static_cast<int>(input->dims()[0]);
+  math::PadFunctor<CPU, int8_t> pad;
+
+  Tensor input_pad;
+  for (int i = 0; i < batch_size; ++i) {
+    Tensor in_batch = input->Slice(i, i + 1);
+    Tensor out_batch = output->Slice(i, i + 1);
+    if (paddings[0] == 0 && paddings[1] == 0) {
+      input_pad = in_batch;
+    } else {
+      framework::DDim pad_shape = in_batch.dims();
+      pad_shape[2] += 2 * paddings[0];
+      pad_shape[3] += 2 * paddings[1];
+      input_pad.mutable_data<int8_t>(pad_shape);
+      pad(in_batch, paddings[0], paddings[1], &input_pad);
+    }
+    // int8 only used while dilation==1 and groups==1
+    if (strides[1] == strides[0] && strides[1] < 6 && kernel_h == kernel_w &&
+        kernel_h < 8 && dilations[0] == 0 && dilations[1] == 0 && groups == 1) {
+      ConvFunc conv_func = conv_funcs_table[kernel_h - 1][strides[1] - 1];
+      if (!conv_func) {
+        conv_func(input_pad, *filter, &out_batch);
+      } else {
+        // TODO(hjchen2)
+      }
+    } else {
+      // TODO(hjchen2)
+    }
+  }
+}
+
 template <typename P>
 void ConvCompute(const ConvParam<CPU> &param) {
   if (param.Groups() == param.Input()->dims()[1] &&
@@ -126,7 +180,11 @@ void ConvCompute(const ConvParam<CPU> &param) {
     math::DepthwiseConv3x3(param.Input(), param.Strides(), param.Paddings(),
                            param.Filter(), nullptr, param.Output(), false);
   } else {
-    ConvBasic(param);
+    if (param.Input()->type() == typeid(int8_t)) {
+      ConvBasic_int8(param);
+    } else {
+      ConvBasic(param);
+    }
   }
 }
 
