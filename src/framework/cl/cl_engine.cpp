@@ -23,12 +23,15 @@ namespace paddle_mobile {
 namespace framework {
 
 bool CLEngine::Init() {
+  if (initialized_) {
+    return true;
+  }
   cl_int status;
   SetPlatform();
   SetClDeviceId();
-  initialized_ = true;
 
-  //  setClContext();
+  initialized_ = true;
+  return initialized_;
   //  setClCommandQueue();
   //  std::string filename = "./HelloWorld_Kernel.cl";
   //  loadKernelFromFile(filename.c_str());
@@ -37,6 +40,7 @@ bool CLEngine::Init() {
 
 CLEngine *CLEngine::Instance() {
   static CLEngine cl_engine_;
+  cl_engine_.Init();
   return &cl_engine_;
 }
 
