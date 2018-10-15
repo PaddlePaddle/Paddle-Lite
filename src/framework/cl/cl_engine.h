@@ -33,18 +33,21 @@ class CLEngine {
   bool Init();
 
   std::unique_ptr<_cl_context, CLContextDeleter> CreateContext() {
-    cl_context c = clCreateContext(NULL, 1, devices_, NULL, NULL, NULL);
+    cl_int status;
+    cl_context c = clCreateContext(NULL, 1, devices_, NULL, NULL, &status);
     std::unique_ptr<_cl_context, CLContextDeleter> context_ptr(c);
+    CL_CHECK_ERRORS(status);
     return std::move(context_ptr);
   }
 
   std::unique_ptr<_cl_command_queue, CLCommQueueDeleter>
-  CreateClCommandQueue() {
+  CreateClCommandQueue(cl_context context) {
     cl_int status;
     cl_command_queue queue =
-        clCreateCommandQueue(context_.get(), devices_[0], 0, &status);
+        clCreateCommandQueue(context, devices_[0], 0, &status);
     std::unique_ptr<_cl_command_queue, CLCommQueueDeleter> command_queue_ptr(
         queue);
+    CL_CHECK_ERRORS(status);
     return std::move(command_queue_ptr);
   }
 
@@ -99,10 +102,6 @@ class CLEngine {
   cl_device_id *devices_;
 
   cl_int status_;
-
-  std::unique_ptr<_cl_context, CLContextDeleter> context_;
-
-  std::unique_ptr<_cl_command_queue, CLCommQueueDeleter> command_queue_;
 
   std::unique_ptr<_cl_program, CLProgramDeleter> program_;
 
