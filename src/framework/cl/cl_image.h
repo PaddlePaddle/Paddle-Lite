@@ -223,9 +223,9 @@ class CLImage {
   cl_context context_;
 };
 
-void TensorToCLImage(Tensor *tensor, CLImage *image);
+void TensorToCLImage(Tensor *tensor, CLImage *image,cl_command_queue commandQueue);
 
-void CLImageToTensor(CLImage *image, Tensor *tensor);
+void CLImageToTensor(CLImage *image, Tensor *tensor,cl_command_queue commandQueue);
 
 #ifdef PADDLE_MOBILE_DEBUG
 Print &operator<<(Print &printer, const CLImage &image);
