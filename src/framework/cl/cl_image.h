@@ -17,7 +17,9 @@ limitations under the License. */
 #include <vector>
 
 #include "CL/cl.h"
+
 #include "framework/cl/cl_half.h"
+#include "framework/cl/cl_tool.h"
 #include "framework/ddim.h"
 #include "framework/tensor.h"
 
@@ -205,6 +207,7 @@ class CLImage {
 
     if (err != CL_SUCCESS) {
       // TODO(HaiPeng): error handling
+      CL_CHECK_ERRORS(err);
       PADDLE_MOBILE_THROW_EXCEPTION(" create image 2d error ");
     }
   }
