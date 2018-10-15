@@ -35,8 +35,8 @@ if (CON GREATER -1)
     ADD_EXECUTABLE(test-yolo net/test_yolo.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-yolo paddle-mobile)
     # gen test
-    ADD_EXECUTABLE(test_yolo_combined net/test_yolo_combined.cpp test_helper.h test_include.h executor_for_test.h)
-    target_link_libraries(test_yolo_combined paddle-mobile)
+    ADD_EXECUTABLE(test-yolo-combined net/test_yolo_combined.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test-yolo-combined paddle-mobile)
     set(FOUND_MATCH ON)
 
 endif ()
@@ -321,6 +321,11 @@ if (NOT FOUND_MATCH)
     # gen test
     ADD_EXECUTABLE(test-fssd net/test_mobilenet_025_fssd.cpp test_helper.h test_include.h)
     target_link_libraries(test-fssd paddle-mobile)
+
+
+    # gen test
+    ADD_EXECUTABLE(test-multi-process net/test_multi_inference_predict.cpp test_helper.h test_include.h)
+    target_link_libraries(test-multi-process paddle-mobile)
 
 
     #add_library(test-lib-size SHARED common/test_lib_size.h common/test_lib_size.cpp)
