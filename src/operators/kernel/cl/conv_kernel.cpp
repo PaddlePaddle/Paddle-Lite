@@ -42,18 +42,18 @@ bool ConvKernel<GPU_CL, float>::Init(ConvParam<GPU_CL> *param) {
       param->Filter()->HeightOfOneBlock() == 1) {
 
     DLOG << " here1 ";
-    this->cl_helper_.AddKernel("conv_1x1", "conv_add_bn_relu_kernel.cl");
+    this->cl_helper_.AddKernel("conv_1x1", "conv_kernel.cl");
 
   } else if (param->Filter()->dims()[1] == 1) {
 
     DLOG << " here2 ";
-    this->cl_helper_.AddKernel("depth_conv_3x3", "conv_add_bn_relu_kernel.cl");
+    this->cl_helper_.AddKernel("depth_conv_3x3", "conv_kernel.cl");
 
   } else if (param->Filter()->WidthOfOneBlock() == 3 &&
              param->Filter()->HeightOfOneBlock() == 3) {
 
     DLOG << " here3 ";
-    this->cl_helper_.AddKernel("conv_3x3", "conv_add_bn_relu_kernel.cl");
+    this->cl_helper_.AddKernel("conv_3x3", "conv_kernel.cl");
 
   } else {
     PADDLE_MOBILE_THROW_EXCEPTION(" not support ");
@@ -64,64 +64,64 @@ bool ConvKernel<GPU_CL, float>::Init(ConvParam<GPU_CL> *param) {
 
 template <>
 void ConvKernel<GPU_CL, float>::Compute(const ConvParam<GPU_CL> &param) {
-  DLOG << " Compute helper: " << &cl_helper_;
-  DLOG << " begin compute ";
-  auto kernel = this->cl_helper_.KernelAt(0);
-  DLOG << " get work size ";
-  auto default_work_size = this->cl_helper_.DefaultWorkSize(*param.Output());
-  DLOG << " end work size ";
-  int c_block = default_work_size[0];
-  int w = default_work_size[1];
-  int nh = default_work_size[2];
-  auto input = param.Input()->GetCLImage();
-
-  DLOG << " get Input ";
-
-  auto filter = param.Filter()->GetCLImage();
-
-  DLOG << " get Filter ";
-
-  auto output = param.Output();
-
-  DLOG << " get Output ";
-
-  int stride = param.Strides()[0];
-  int offset = param.Offset();
-  int input_c = param.Input()->CBlock();
-  int dilation = param.Dilations()[0];
-  int input_width = param.Input()->WidthOfOneBlock();
-  int input_height = param.Input()->HeightOfOneBlock();
-
-  cl_int status;
-
-  DLOG << " begin set kernel arg ";
-
-  status = clSetKernelArg(kernel, 0, sizeof(int), &c_block);
-  status = clSetKernelArg(kernel, 1, sizeof(int), &w);
-  status = clSetKernelArg(kernel, 2, sizeof(int), &nh);
-  status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &input);
-  status = clSetKernelArg(kernel, 4, sizeof(cl_mem), &filter);
-  status = clSetKernelArg(kernel, 5, sizeof(cl_mem), &output);
-  status = clSetKernelArg(kernel, 6, sizeof(int), &stride);
-  status = clSetKernelArg(kernel, 7, sizeof(int), &offset);
-  status = clSetKernelArg(kernel, 8, sizeof(int), &input_c);
-  status = clSetKernelArg(kernel, 9, sizeof(int), &dilation);
-  status = clSetKernelArg(kernel, 10, sizeof(int), &input_width);
-  status = clSetKernelArg(kernel, 11, sizeof(int), &input_height);
-
-  DLOG << " end set kernel arg ";
-
-  CL_CHECK_ERRORS(status);
-
-  DLOG << " begin enqueue ";
-
-  status =
-      clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
-                             default_work_size.data(), NULL, 0, NULL, NULL);
-
-  DLOG << " end enqueue ";
-
-  CL_CHECK_ERRORS(status);
+//  DLOG << " Compute helper: " << &cl_helper_;
+//  DLOG << " begin compute ";
+//  auto kernel = this->cl_helper_.KernelAt(0);
+//  DLOG << " get work size ";
+//  auto default_work_size = this->cl_helper_.DefaultWorkSize(*param.Output());
+//  DLOG << " end work size ";
+//  int c_block = default_work_size[0];
+//  int w = default_work_size[1];
+//  int nh = default_work_size[2];
+//  auto input = param.Input()->GetCLImage();
+//
+//  DLOG << " get Input ";
+//
+//  auto filter = param.Filter()->GetCLImage();
+//
+//  DLOG << " get Filter ";
+//
+//  auto output = param.Output();
+//
+//  DLOG << " get Output ";
+//
+//  int stride = param.Strides()[0];
+//  int offset = param.Offset();
+//  int input_c = param.Input()->CBlock();
+//  int dilation = param.Dilations()[0];
+//  int input_width = param.Input()->WidthOfOneBlock();
+//  int input_height = param.Input()->HeightOfOneBlock();
+//
+//  cl_int status;
+//
+//  DLOG << " begin set kernel arg ";
+//
+//  status = clSetKernelArg(kernel, 0, sizeof(int), &c_block);
+//  status = clSetKernelArg(kernel, 1, sizeof(int), &w);
+//  status = clSetKernelArg(kernel, 2, sizeof(int), &nh);
+//  status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &input);
+//  status = clSetKernelArg(kernel, 4, sizeof(cl_mem), &filter);
+//  status = clSetKernelArg(kernel, 5, sizeof(cl_mem), &output);
+//  status = clSetKernelArg(kernel, 6, sizeof(int), &stride);
+//  status = clSetKernelArg(kernel, 7, sizeof(int), &offset);
+//  status = clSetKernelArg(kernel, 8, sizeof(int), &input_c);
+//  status = clSetKernelArg(kernel, 9, sizeof(int), &dilation);
+//  status = clSetKernelArg(kernel, 10, sizeof(int), &input_width);
+//  status = clSetKernelArg(kernel, 11, sizeof(int), &input_height);
+//
+//  DLOG << " end set kernel arg ";
+//
+//  CL_CHECK_ERRORS(status);
+//
+//  DLOG << " begin enqueue ";
+//
+//  status =
+//      clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
+//                             default_work_size.data(), NULL, 0, NULL, NULL);
+//
+//  DLOG << " end enqueue ";
+//
+//  CL_CHECK_ERRORS(status);
 }
 
 template class ConvKernel<GPU_CL, float>;
