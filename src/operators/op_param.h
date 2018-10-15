@@ -614,6 +614,14 @@ class BatchNormParam : OpParam {
 
   const string &DataFormat() const { return data_format_; }
 
+  void SetNewScale(RType *new_scale) { new_scale_ = new_scale; }
+
+  void SetNewBias(RType *new_bias) { new_bias_ = new_bias; }
+
+  const RType *NewScale() const { return new_scale_; }
+
+  const RType *NewBias() const { return new_bias_; }
+
  private:
   RType *input_x_;
   RType *output_y_;
@@ -625,6 +633,8 @@ class BatchNormParam : OpParam {
   float momentum_;
   bool is_test_;
   string data_format_;
+  RType *new_bias_;
+  RType *new_scale_;
 };
 #endif
 
@@ -936,10 +946,21 @@ class FetchParam : public OpParam {
   FetchParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
              const AttributeMap &attrs, const Scope &scope) {
     input_x_ = InputXFrom<GType>(inputs, scope);
+<<<<<<< HEAD
     out_ = OutFrom<LoDTensor>(outputs, scope);
   }
   const RType *InputX() const { return input_x_; }
   Tensor *Out() const { return out_; }
+=======
+    out_ = OutFrom(outputs, scope);
+  }
+  const RType *InputX() const { return input_x_; }
+  Tensor *Out() const { return out_; }
+
+  static Tensor *OutFrom(const VariableNameMap &outputs, const Scope &scope) {
+    return GetVarValue<Tensor>("Out", outputs, scope);
+  }
+>>>>>>> df230944d11f0f09aea4c2c6bc0489d8667fa8ca
 
  private:
   RType *input_x_;

@@ -908,10 +908,14 @@ void Executor<GPU_CL, Precision::FP32>::InitMemory() {
     for (const auto &var_desc : block->Vars()) {
       auto var = program_.scope->Var(var_desc->Name());
       if (var_desc->Persistable()) {
-        auto cl_image = var->template GetMutable<framework::CLImage>();
+        CLImage *cl_image = nullptr;
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
+          var->template GetMutable<framework::LoDTensor>();
           continue;
+        } else {
+          cl_image = var->template GetMutable<framework::CLImage>();
         }
+
         char *origin_data =
             Get_binary_data(program_.model_path + "/" + var_desc->Name());
         char *data = origin_data;
@@ -928,7 +932,8 @@ void Executor<GPU_CL, Precision::FP32>::InitMemory() {
 
         framework::DDim ddim = framework::make_ddim(desc.Dims());
 
-        cl_image->Init(context, tensorInput, ddim);
+        // has not init
+        cl_image->SetTensorData(tensorInput, ddim);
 
         delete origin_data;
         //        paddle_mobile::memory::Free(tensorInput);
@@ -941,7 +946,7 @@ void Executor<GPU_CL, Precision::FP32>::InitMemory() {
           //          framework::DDim ddim = framework::make_ddim(desc.Dims());
           framework::DDim ddim = cl_image->dims();
           DLOG << var_desc->Name();
-          cl_image->Init(context, ddim);
+          cl_image->InitEmptyImage(context, ddim);
         }
       }
     }
@@ -965,9 +970,12 @@ void Executor<GPU_CL, Precision::FP32>::InitCombineMemory() {
     for (const auto &var_desc : block->Vars()) {
       auto var = program_.scope->Var(var_desc->Name());
       if (var_desc->Persistable()) {
-        auto cl_image = var->template GetMutable<framework::CLImage>();
+        CLImage *cl_image = nullptr;
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
+          var->template GetMutable<framework::LoDTensor>();
           continue;
+        } else {
+          cl_image = var->template GetMutable<framework::CLImage>();
         }
 
         cl_context context = program_.scope->GetCLScpoe()->Context();
@@ -982,7 +990,10 @@ void Executor<GPU_CL, Precision::FP32>::InitCombineMemory() {
         float *tensorInput = static_cast<float *>(
             paddle_mobile::memory::Alloc(sizeof(float) * numel));
         LoadMemory(*var_desc, tensorInput, &origin_data);
-        cl_image->Init(context, tensorInput, ddim);
+
+        // has not init
+        cl_image->SetTensorData(tensorInput, ddim);
+
         paddle_mobile::memory::Free(tensorInput);
       } else {
         auto cl_image = var->template GetMutable<framework::CLImage>();
@@ -991,8 +1002,7 @@ void Executor<GPU_CL, Precision::FP32>::InitCombineMemory() {
         const framework::TensorDesc &desc = var_desc->Tensor_desc();
         framework::DDim ddim = cl_image->dims();
         //        framework::DDim ddim = framework::make_ddim(desc.Dims());
-
-        cl_image->Init(context, ddim);
+        cl_image->InitEmptyImage(context, ddim);
       }
     }
   }
