@@ -12,20 +12,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
-#include <chrono>
-
-namespace paddle_mobile {
-
-using Time = decltype(std::chrono::high_resolution_clock::now());
-
-inline Time time() { return std::chrono::high_resolution_clock::now(); }
-
-inline double time_diff(Time t1, Time t2) {
-  typedef std::chrono::microseconds ms;
-  auto diff = t2 - t1;
-  ms counter = std::chrono::duration_cast<ms>(diff);
-  return counter.count() / 1000.0;
-}
-
+__kernel void relu(__read_only image2d_t input,
+                   __write_only image2d_t output)
+  const int x = get_global_id(0);
+  const int y = get_global_id(1);
+  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
+                            CLK_ADDRESS_CLAMP |
+                            CLK_FILTER_NEAREST;
+  half4 r = read_imageh(input, sampler, int2(x, y));
+  r = max(half4(0, 0, 0, 0), r);
+  write_imageh(output, int2(x, y), r);
 }

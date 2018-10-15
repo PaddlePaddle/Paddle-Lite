@@ -18,8 +18,8 @@ limitations under the License. */
 #include <string>
 
 #include "CL/cl.h"
-#include "common/log.h"
 #include "common/enforce.h"
+#include "common/log.h"
 #include "framework/cl/cl_deleter.h"
 #include "framework/cl/cl_tool.h"
 
