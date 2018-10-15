@@ -17,9 +17,9 @@ limitations under the License. */
 
 typedef uint16_t half_t;
 
-half_t float2half(float f);
+half_t Float2Half(float f);
 
-float half2float(half_t h);
+float Half2Float(half_t h);
 
 void FloatArray2HalfArray(float *f_array, half_t *h_array, int count);
 
