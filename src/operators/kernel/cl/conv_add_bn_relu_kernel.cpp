@@ -24,9 +24,16 @@ namespace operators {
 template <>
 bool ConvAddBNReluKernel<GPU_CL, float>::Init(
     FusionConvAddBNReluParam<GPU_CL> *param) {
+  PADDLE_MOBILE_ENFORCE(
+      param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
+          param->Paddings()[0] == param->Paddings()[1],
+      "need equal");
+
+  param->Filter()->InitCLImage(cl_helper_.CLContext());
+  param->Bias()->InitCLImage(cl_helper_.CLContext());
+
   //  const CL *mean = param->InputMean();
   const framework::CLImage *mean = param->InputMean();
-
   const framework::CLImage *variance = param->InputVariance();
   const framework::CLImage *scale = param->InputScale();
   const framework::CLImage *bias = param->InputBias();
@@ -52,9 +59,6 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
     new_bias_ptr[i] = bias_ptr[i] - mean_ptr[i] * inv_std_ptr[i] * scale_ptr[i];
   }
 
-  delete[](new_scale_ptr);
-  delete[](new_bias_ptr);
-
   framework::CLImage *new_scale = new framework::CLImage();
 
   new_scale->SetTensorData(new_scale_ptr, variance->dims());
@@ -67,6 +71,9 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
 
   param->SetNewScale(new_scale);
   param->SetNewBias(new_bias);
+
+  delete[](new_scale_ptr);
+  delete[](new_bias_ptr);
 
   PADDLE_MOBILE_ENFORCE(
       param->Filter()->dims()[2] == param->Filter()->dims()[3] &&

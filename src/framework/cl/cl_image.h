@@ -17,7 +17,9 @@ limitations under the License. */
 #include <vector>
 
 #include "CL/cl.h"
+
 #include "framework/cl/cl_half.h"
+#include "framework/cl/cl_tool.h"
 #include "framework/ddim.h"
 #include "framework/tensor.h"
 
@@ -59,6 +61,7 @@ class CLImage {
       PADDLE_MOBILE_THROW_EXCEPTION(
           " empty image tensor data shouldn't have value");
     }
+    DLOG << " init empty image ";
     InitCLImage(context, nullptr, dim);
     initialized_ = true;
   }
@@ -98,7 +101,8 @@ class CLImage {
   T *data() const {
     if (initialized_) {
       PADDLE_MOBILE_THROW_EXCEPTION(
-          " cl image has initialized, tensor data has been deleted ");
+          " cl image has initialized, tensor data has been deleted, can't use "
+          "tensor data");
     }
     return reinterpret_cast<T *>(tensor_data_);
   }
@@ -115,6 +119,7 @@ class CLImage {
 
  private:
   void InitCLImage(cl_context context, float *tensor_data, const DDim &dim) {
+    DLOG << " tensor dim: " << dim;
     cl_image_format cf = {.image_channel_order = CL_RGBA,
                           .image_channel_data_type = CL_HALF_FLOAT};
     // NCHW -> [W * (C+3)/4, H * N]
@@ -132,28 +137,22 @@ class CLImage {
         tensor_data_[i] = 0;
       }
     }
-    size_t N, C, H, W;
-    if (tensor_dims_.size() == 4) {
-      N = tensor_dims_[0];
-      if (N < 0) {
-        N = 1;
-      }
-      C = tensor_dims_[1];
-      H = tensor_dims_[2];
-      W = tensor_dims_[3];
 
-      width_of_one_block_ = W;
-      height_of_one_block_ = H;
+    size_t new_dims[] = {1, 1, 1, 1};
 
-    } else if (tensor_dims_.size() == 1) {
-      N = 1;
-      C = tensor_dims_[0];
-      H = 1;
-      W = 1;
-
-      width_of_one_block_ = W;
-      height_of_one_block_ = H;
+    for (int j = 0; j < dim.size(); ++j) {
+      new_dims[4 - dim.size() + j] = dim[j];
     }
+
+    size_t N, C, H, W;
+
+    N = new_dims[0];
+    C = new_dims[1];
+    H = new_dims[2];
+    W = new_dims[3];
+
+    width_of_one_block_ = W;
+    height_of_one_block_ = H;
 
     size_t width = W * ((C + 3) / 4);
     size_t height = H * N;
@@ -193,9 +192,12 @@ class CLImage {
       }
     }
     cl_int err;
+    DLOG << " image width: " << width;
+    DLOG << " image height: " << height;
     cl_image_ = clCreateImage2D(
-        context,                                   // cl_context context
-        CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,  // cl_mem_flags flags
+        context,  // cl_context context
+        CL_MEM_READ_WRITE |
+            (imageData ? CL_MEM_COPY_HOST_PTR : 0),  // cl_mem_flags flags
         &cf,     // const cl_image_format *image_format
         width,   // size_t image_width
         height,  // size_t image_height
@@ -205,6 +207,7 @@ class CLImage {
 
     if (err != CL_SUCCESS) {
       // TODO(HaiPeng): error handling
+      CL_CHECK_ERRORS(err);
       PADDLE_MOBILE_THROW_EXCEPTION(" create image 2d error ");
     }
   }
@@ -222,9 +225,15 @@ class CLImage {
   cl_context context_;
 };
 
-void TensorToCLImage(Tensor *tensor, CLImage *image,cl_command_queue commandQueue);
+void TensorToCLImage(Tensor *tensor, CLImage *image,
+                     cl_command_queue commandQueue);
 
-void CLImageToTensor(CLImage *image, Tensor *tensor,cl_command_queue commandQueue);
+void CLImageToTensor(CLImage *image, Tensor *tensor,
+                     cl_command_queue commandQueue);
+
+#ifdef PADDLE_MOBILE_DEBUG
+Print &operator<<(Print &printer, const CLImage &image);
+#endif
 
 }  // namespace framework
 }  // namespace paddle_mobile

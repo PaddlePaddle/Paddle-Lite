@@ -40,8 +40,11 @@ class CLScope {
   std::unique_ptr<_cl_kernel, CLKernelDeleter> GetKernel(
       const std::string &kernel_name, const std::string &file_name) {
     auto program = Program(file_name);
+    DLOG << " get program ~ ";
     std::unique_ptr<_cl_kernel, CLKernelDeleter> kernel(
-        clCreateKernel(program, kernel_name.c_str(), NULL));
+        clCreateKernel(program, kernel_name.c_str(), &status_));
+    CL_CHECK_ERRORS(status_);
+    DLOG << " create kernel ~ ";
     return std::move(kernel);
   }
 
@@ -58,11 +61,12 @@ class CLScope {
 
     status_ =
         clBuildProgram(program.get(), 0, 0, "-cl-fast-relaxed-math", 0, 0);
+
     CL_CHECK_ERRORS(status_);
 
     programs_[file_name] = std::move(program);
 
-    return program.get();
+    return programs_[file_name].get();
   }
 
  private:

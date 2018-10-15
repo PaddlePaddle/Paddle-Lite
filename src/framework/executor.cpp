@@ -37,6 +37,8 @@ limitations under the License. */
 #include "framework/cl/cl_image.h"
 #endif
 
+int debug_to = 2;
+
 namespace paddle_mobile {
 namespace framework {
 
@@ -85,7 +87,7 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
   for (int i = 0; i < blocks.size(); ++i) {
     std::shared_ptr<framework::BlockDesc> block_desc = blocks[i];
     std::vector<std::shared_ptr<framework::OpDesc>> ops = block_desc->Ops();
-    for (int j = 0; j < ops.size(); ++j) {
+    for (int j = 0; j < debug_to; ++j) {
       std::shared_ptr<framework::OpDesc> op = ops[j];
       DLOG << "create op: " << j << "  " << op->Type();
       auto op_base = framework::OpRegistry<Dtype>::CreateOp(
@@ -414,7 +416,7 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
     }
   }
 #else
-  for (int i = 0; i < ops.size(); i++) {
+  for (int i = 0; i < debug_to; i++) {
 #ifdef PADDLE_MOBILE_PROFILE
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -428,6 +430,11 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
 #endif
   }
 #endif
+
+  DLOG << " predict return nullptr";
+
+  return nullptr;
+
   auto last_op = ops.rbegin();
   auto output_map = (*last_op)->Outputs();
   std::vector<std::string> out_keys = (*last_op)->GetOutKeys();
@@ -647,13 +654,18 @@ std::vector<typename Executor<Dtype, P>::Ptype> Executor<Dtype, P>::Predict(
     const std::vector<Ptype> &input, const std::vector<int64_t> &dims) {
   framework::Tensor tensor(input, framework::make_ddim(dims));
   std::shared_ptr<framework::Tensor> output_tensor = Predict(tensor, 0);
-  Executor<Dtype, P>::Ptype *output_ptr =
-      output_tensor->data<typename Executor<Dtype, P>::Ptype>();
-  std::vector<typename Executor<Dtype, P>::Ptype> result_vector;
-  for (int j = 0; j < output_tensor->numel(); ++j) {
-    result_vector.push_back(output_ptr[j]);
+  if (output_tensor != nullptr) {
+    Executor<Dtype, P>::Ptype *output_ptr =
+        output_tensor->data<typename Executor<Dtype, P>::Ptype>();
+    std::vector<typename Executor<Dtype, P>::Ptype> result_vector;
+    for (int j = 0; j < output_tensor->numel(); ++j) {
+      result_vector.push_back(output_ptr[j]);
+    }
+    return result_vector;
+  } else {
+    DLOG << "return  empty vector";
+    return {};
   }
-  return result_vector;
 }
 
 #ifdef PADDLE_MOBILE_FPGA

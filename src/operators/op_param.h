@@ -948,6 +948,7 @@ class FetchParam : public OpParam {
     input_x_ = InputXFrom<GType>(inputs, scope);
     out_ = OutFrom(outputs, scope);
   }
+
   const RType *InputX() const { return input_x_; }
   Tensor *Out() const { return out_; }
 
