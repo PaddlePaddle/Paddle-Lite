@@ -120,8 +120,6 @@ class CLImage {
  private:
   void InitCLImage(cl_context context, float *tensor_data, const DDim &dim) {
     DLOG << " tensor dim: " << dim;
-    cl_image_format cf = {.image_channel_order = CL_RGBA,
-                          .image_channel_data_type = CL_HALF_FLOAT};
     // NCHW -> [W * (C+3)/4, H * N]
     tensor_dims_ = dim;
     if (tensor_data) {
@@ -194,14 +192,29 @@ class CLImage {
     cl_int err;
     DLOG << " image width: " << width;
     DLOG << " image height: " << height;
-    cl_image_ = clCreateImage2D(
-        context,  // cl_context context
-        CL_MEM_READ_WRITE |
-            (imageData ? CL_MEM_COPY_HOST_PTR : 0),  // cl_mem_flags flags
+
+    cl_image_format cf = {
+      .image_channel_order = CL_RGBA,
+      .image_channel_data_type = CL_HALF_FLOAT
+    };
+    cl_image_desc cid = {
+      .image_type = CL_MEM_OBJECT_IMAGE2D,
+      .image_width = width,
+      .image_height = height,
+      .image_depth = 1,
+      .image_array_size = 1,
+      .image_row_pitch = 0,
+      .image_slice_pitch = 0,
+      .num_mip_levels = 0,
+      .num_samples = 0,
+      // .buffer = nullptr
+    };
+    cid.buffer = nullptr;
+    cl_image_ = clCreateImage(
+        context,
+        CL_MEM_READ_WRITE | (imageData ? CL_MEM_COPY_HOST_PTR : 0),
         &cf,     // const cl_image_format *image_format
-        width,   // size_t image_width
-        height,  // size_t image_height
-        0,       // size_t image_row_pitch
+        &cid,    // const cl_image_desc *image_desc
         reinterpret_cast<void *>(imageData.get()),  // void *host_ptr
         &err);
 
