@@ -87,7 +87,6 @@ enum class PaddleEngineKind {
 class PaddlePredictor {
  public:
   struct Config;
-  PaddlePredictor() = default;
   PaddlePredictor(const PaddlePredictor&) = delete;
   PaddlePredictor& operator=(const PaddlePredictor&) = delete;
 
@@ -107,6 +106,9 @@ class PaddlePredictor {
   struct Config {
     std::string model_dir;  // path to the model directory.
   };
+
+ protected:
+  PaddlePredictor() = default;
 };
 
 struct PaddleMobileConfig : public PaddlePredictor::Config {

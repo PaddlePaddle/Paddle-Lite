@@ -46,7 +46,12 @@ int main() {
   tensor_out.dtype = PaddleDType::FLOAT32;
   std::vector<PaddleTensor> outputs(1, tensor_out);
 
-  assert(predictor->Run(paddle_tensor_feeds, &outputs));
+  std::cout << " before predict " << std::endl;
+
+  predictor->Run(paddle_tensor_feeds, &outputs);
+
+  std::cout << " after predict " << std::endl;
+  //  assert();
 
   float* data_o = static_cast<float*>(outputs[0].data.data());
   for (size_t j = 0; j < outputs[0].data.length() / sizeof(float); ++j) {
