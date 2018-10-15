@@ -441,6 +441,15 @@ class MulParam : OpParam {
   GType *out_;
   int x_num_col_dims_;
   int y_num_col_dims_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::WrapperConvArgs fpga_conv_args;
+
+ public:
+  const fpga::WrapperConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::WrapperConvArgs &args) { fpga_conv_args = args; }
+#endif
 };
 #endif
 
