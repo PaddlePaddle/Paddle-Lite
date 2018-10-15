@@ -197,7 +197,7 @@ class CLImage {
     cl_int err;
     cl_image_ = clCreateImage2D(
         context,                                   // cl_context context
-        CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,  // cl_mem_flags flags
+        CL_MEM_READ_WRITE | (imageData ? CL_MEM_COPY_HOST_PTR : 0),  // cl_mem_flags flags
         &cf,     // const cl_image_format *image_format
         width,   // size_t image_width
         height,  // size_t image_height
