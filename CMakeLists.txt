@@ -4,7 +4,7 @@ option(USE_OPENMP "openmp support" OFF)
 project(paddle-mobile)
 
 option(DEBUGING "enable debug mode" ON)
-option(USE_EXCEPTION "use std exception" OFF)
+option(USE_EXCEPTION "use std exception" ON)
 option(LOG_PROFILE "log profile" OFF)
 # select the platform to build
 option(CPU "armv7 with neon" OFF)
