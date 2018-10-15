@@ -18,8 +18,9 @@ static const char *g_resnet_combine = "../models/resnet50";
 int main() {
   DLOG << paddle_mobile::fpga::open_device();
   paddle_mobile::PaddleMobile<paddle_mobile::FPGA> paddle_mobile;
-  if (paddle_mobile.Load(std::string(g_resnet_combine) + "/model",
-                         std::string(g_resnet_combine) + "/params", true)) {
+  //  if (paddle_mobile.Load(std::string(g_resnet_combine) + "/model",
+  //                         std::string(g_resnet_combine) + "/params", true)) {
+  if (paddle_mobile.Load(std::string(g_resnet_combine), true)) {
     std::vector<int64_t> dims{1, 3, 224, 224};
     Tensor input_tensor;
     SetupTensor<float>(&input_tensor, {1, 3, 224, 224}, static_cast<float>(0),

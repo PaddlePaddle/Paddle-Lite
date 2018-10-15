@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include <cstdlib>
 #include <initializer_list>
+#include <string>
 #include <typeinfo>
 #include <vector>
 

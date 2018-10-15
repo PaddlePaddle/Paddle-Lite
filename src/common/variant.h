@@ -57,7 +57,12 @@ class RawData {
  public:
   char data[size];
   RawData() {}
-  RawData(const RawData &raw_data) { strcpy(data, raw_data.data); }
+  RawData(const RawData &raw_data) { memcpy(data, raw_data.data, size); }
+
+  RawData &operator=(const RawData &raw_data) {
+    memcpy(data, raw_data.data, size);
+    return *this;
+  }
 };
 
 template <typename... Ts>
@@ -74,14 +79,36 @@ struct Variant {
 
   template <typename T, typename... Args>
   void Set(Args &&... args) {
-    helper::Destroy(type_id, &data);
-    new (&data) T(std::forward<Args>(args)...);
+    helper::Destroy(type_id, &data.data);
+    new (&data.data) T(std::forward<Args>(args)...);
     type_id = typeid(T).hash_code();
+  }
+
+  void SetString(std::string &string) {
+    //    helper::Destroy(type_id, &data);
+    type_id = typeid(std::string).hash_code();
+    strcpy(data.data, string.c_str());
+  }
+
+  std::string GetString() const {
+    if (type_id == typeid(std::string).hash_code()) {
+      return std::string(data.data);
+    } else {
+      PADDLE_MOBILE_THROW_EXCEPTION(
+          " bad cast in variant data type not a string ");
+      exit(0);
+    }
   }
 
   template <typename T>
   T &Get() const {
-    if (type_id == typeid(T).hash_code()) {
+    if (type_id == typeid(std::string).hash_code()) {
+      PADDLE_MOBILE_THROW_EXCEPTION(
+          "Please use getString to get an string (to avoid of an issue with "
+          "gcc "
+          "stl lib with string copy)");
+      exit(0);
+    } else if (type_id == typeid(T).hash_code()) {
       return *const_cast<T *>(reinterpret_cast<const T *>(&data));
     } else {
       PADDLE_MOBILE_THROW_EXCEPTION(" bad cast in variant");
