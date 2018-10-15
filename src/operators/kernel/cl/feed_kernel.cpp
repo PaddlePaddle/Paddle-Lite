@@ -59,10 +59,9 @@ void FeedKernel<GPU_CL, float>::Compute(const FeedParam<GPU_CL> &param) {
   CL_CHECK_ERRORS(status);
 
   size_t global_work_size[2] = {height, width};
-  status = clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2, NULL,
-                         global_work_size, NULL, 0, NULL, NULL);
+  status = clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2,
+                                  NULL, global_work_size, NULL, 0, NULL, NULL);
   CL_CHECK_ERRORS(status);
-
 }
 
 template class FeedKernel<GPU_CL, float>;
