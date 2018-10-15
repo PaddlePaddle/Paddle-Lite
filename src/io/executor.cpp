@@ -112,7 +112,9 @@ void Executor<Dtype, P>::LoadMemory(
   uint32_t version = *(reinterpret_cast<uint32_t *>(*data_buf));
   *data_buf += sizeof(uint32_t);
   // lod information
-  uint64_t lod_level = *(reinterpret_cast<uint64_t *>(*data_buf));
+  // uint64_t lod_level = *(reinterpret_cast<uint64_t *>(*data_buf));
+  uint64_t lod_level = 0;
+  memcpy(&lod_level, *data_buf, sizeof(uint64_t));
   *data_buf += sizeof(uint64_t);
 
   auto *lod = tensor->mutable_lod();
