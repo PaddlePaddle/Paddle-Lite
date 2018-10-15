@@ -60,6 +60,7 @@ void OperatorBase<Dtype>::Run() {
   DLOG << " begin run " << type_;
   RunImpl();
   DLOG << " end run " << type_;
+
 #ifdef PADDLE_MOBILE_DEBUG
   DLOG << "-------------" << type_ << "----------------------------";
   vector<string> input_keys = GetInputKeys();

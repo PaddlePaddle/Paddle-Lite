@@ -101,7 +101,7 @@ class CLImage {
   T *data() const {
     if (initialized_) {
       PADDLE_MOBILE_THROW_EXCEPTION(
-          " cl image has initialized, tensor data has been deleted ");
+          " cl image has initialized, tensor data has been deleted, can't use tensor data");
     }
     return reinterpret_cast<T *>(tensor_data_);
   }
@@ -118,6 +118,7 @@ class CLImage {
 
  private:
   void InitCLImage(cl_context context, float *tensor_data, const DDim &dim) {
+    DLOG << " tensor dim: " << dim;
     cl_image_format cf = {.image_channel_order = CL_RGBA,
                           .image_channel_data_type = CL_HALF_FLOAT};
     // NCHW -> [W * (C+3)/4, H * N]
@@ -135,28 +136,22 @@ class CLImage {
         tensor_data_[i] = 0;
       }
     }
-    size_t N, C, H, W;
-    if (tensor_dims_.size() == 4) {
-      N = tensor_dims_[0];
-      if (N < 0) {
-        N = 1;
-      }
-      C = tensor_dims_[1];
-      H = tensor_dims_[2];
-      W = tensor_dims_[3];
 
-      width_of_one_block_ = W;
-      height_of_one_block_ = H;
+    size_t new_dims[] = {1, 1, 1, 1};
 
-    } else if (tensor_dims_.size() == 1) {
-      N = 1;
-      C = tensor_dims_[0];
-      H = 1;
-      W = 1;
-
-      width_of_one_block_ = W;
-      height_of_one_block_ = H;
+    for (int j = 0; j < dim.size(); ++j) {
+      new_dims[4 - dim.size() + j] = dim[j];
     }
+
+    size_t N, C, H, W;
+
+    N = new_dims[0];
+    C = new_dims[1];
+    H = new_dims[2];
+    W = new_dims[3];
+
+    width_of_one_block_ = W;
+    height_of_one_block_ = H;
 
     size_t width = W * ((C + 3) / 4);
     size_t height = H * N;
@@ -196,6 +191,8 @@ class CLImage {
       }
     }
     cl_int err;
+    DLOG << " image width: " << width;
+    DLOG << " image height: " << height;
     cl_image_ = clCreateImage2D(
         context,                                   // cl_context context
         CL_MEM_READ_WRITE | (imageData ? CL_MEM_COPY_HOST_PTR : 0),  // cl_mem_flags flags
