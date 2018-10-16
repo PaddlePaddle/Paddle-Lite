@@ -1,9 +1,4 @@
-import datetime
 import json
-import os
-
-import google.protobuf as pbg
-import framework_pb2 as framework_pb2
 
 
 def loadmdl(json_path):
