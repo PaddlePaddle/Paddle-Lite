@@ -38,7 +38,7 @@ void SoftmaxKernel<GPU_CL, float>::Compute(const SoftmaxParam<GPU_CL> &param) {
   const auto &inputDim = input->dims();
   int dims[4] = {1, 1, 1, 1};
   for (int i = 0; i < inputDim.size(); i++) {
-    dims[4-inputDim.size()+i] = inputDim[i];
+    dims[4 - inputDim.size() + i] = inputDim[i];
   }
   clSetKernelArg(kernel, 2, sizeof(int), &dims);
   clSetKernelArg(kernel, 3, sizeof(int), &dims[1]);
