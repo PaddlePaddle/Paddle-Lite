@@ -131,7 +131,6 @@ int64_t &indexer(Dim<D> &dim, int idx) {
 template <>
 int64_t &indexer<0>(Dim<0> &dim, int idx) {
   PADDLE_MOBILE_THROW_EXCEPTION("Invalid index")
-  exit(0);
 }
 
 template <int D>
@@ -148,7 +147,6 @@ int64_t indexer(const Dim<D> &dim, int idx) {
 template <>
 int64_t indexer<0>(const Dim<0> &dim, int idx) {
   PADDLE_MOBILE_THROW_EXCEPTION("Invalid index")
-  exit(0);
 }
 
 }  // namespace
