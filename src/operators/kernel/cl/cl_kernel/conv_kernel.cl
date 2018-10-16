@@ -37,7 +37,6 @@ __kernel void conv_3x3(__private const int global_size_dim0,
                                               __private const int input_height,/* of one block */
                                               __private const int output_width,
                                               __private const int output_height) {
-
     const int out_c = get_global_id(0);
     const int out_w = get_global_id(1);
     const int out_nh = get_global_id(2);
@@ -57,7 +56,7 @@ __kernel void conv_3x3(__private const int global_size_dim0,
  #ifdef BIASE
     half4 output = read_imageh(bias, sampler, int2(out_c, 0));
 #else
-    half4 output = 0.0;
+    half4 output = 0.0f;
 #endif
 
    half4 input[9];
@@ -70,47 +69,47 @@ __kernel void conv_3x3(__private const int global_size_dim0,
         int2 pos_in = (int2)(i * input_width + in_pos_in_one_block.x, in_pos_in_one_block.y);
         input[0] = select(read_imageh(input_image, sampler,
                             (int2)(pos_in.x - dilation, pos_in.y - dilation)),
-                            (half4)(0.0),
+                            (half4)(0.0f),
                             (ushort4)(in_pos_in_one_block.x - dilation < 0 || in_pos_in_one_block.y - dilation < 0 || in_pos_in_one_block.x - dilation >= input_width || in_pos_in_one_block.y - dilation >= input_height));
 
         input[1] = select(read_imageh(input_image, sampler,
                           (int2)(pos_in.x, pos_in.y - dilation)),
-                          (half4)(0.0),
+                          (half4)(0.0f),
                           (ushort4)(in_pos_in_one_block.x < 0 || in_pos_in_one_block.y - dilation < 0 || in_pos_in_one_block.x >= input_width || in_pos_in_one_block.y - dilation >= input_height));
 
         input[2] = select(read_imageh(input_image, sampler,
                           (int2)(pos_in.x + dilation, pos_in.y - dilation)),
-                          (half4)(0.0),
+                          (half4)(0.0f),
                           (ushort4)(in_pos_in_one_block.x + dilation < 0 || in_pos_in_one_block.y - dilation < 0 || in_pos_in_one_block.x + dilation >= input_width || in_pos_in_one_block.y - dilation >= input_height));
 
         input[3] = select(read_imageh(input_image, sampler,
                           (int2)(pos_in.x - dilation, pos_in.y)),
-                          (half4)(0.0),
+                          (half4)(0.0f),
                           (ushort4)(in_pos_in_one_block.x - dilation < 0 || in_pos_in_one_block.y < 0 || in_pos_in_one_block.x - dilation >= input_width || in_pos_in_one_block.y >= input_height));
 
         input[4] = select(read_imageh(input_image, sampler,
                           (int2)(pos_in.x, pos_in.y)),
-                          (half4)(0.0),
+                          (half4)(0.0f),
                           (ushort4)(in_pos_in_one_block.x < 0 || in_pos_in_one_block.y < 0 || in_pos_in_one_block.x >= input_width || in_pos_in_one_block.y >= input_height));
 
         input[5] = select(read_imageh(input_image, sampler,
                           (int2)(pos_in.x + dilation, pos_in.y)),
-                          (half4)(0.0),
+                          (half4)(0.0f),
                           (ushort4)(in_pos_in_one_block.x + dilation < 0 || in_pos_in_one_block.y < 0 || in_pos_in_one_block.x + dilation >= input_width || in_pos_in_one_block.y >= input_height));
 
         input[6] = select(read_imageh(input_image, sampler,
                           (int2)(pos_in.x - dilation, pos_in.y + dilation)),
-                          (half4)(0.0),
+                          (half4)(0.0f),
                           (ushort4)(in_pos_in_one_block.x - dilation < 0 || in_pos_in_one_block.y + dilation < 0 || in_pos_in_one_block.x - dilation >= input_width || in_pos_in_one_block.y + dilation >= input_height));
 
         input[7] = select(read_imageh(input_image, sampler,
                           (int2)(pos_in.x, pos_in.y + dilation)),
-                          (half4)(0.0),
+                          (half4)(0.0f),
                           (ushort4)(in_pos_in_one_block.x < 0 || in_pos_in_one_block.y + dilation < 0 || in_pos_in_one_block.x >= input_width || in_pos_in_one_block.y + dilation >= input_height));
 
         input[8] = select(read_imageh(input_image, sampler,
                           (int2)(pos_in.x + dilation, pos_in.y + dilation)),
-                          (half4)(0.0),
+                          (half4)(0.0f),
                           (ushort4)(pos_in.x + dilation < 0 || in_pos_in_one_block.y + dilation < 0 || pos_in.x + dilation >= input_width || in_pos_in_one_block.y + dilation >= input_height));
 
         for (int j = 0; j < 9; ++j) {
@@ -192,7 +191,7 @@ __kernel void depth_conv_3x3(__private const int global_size_dim0,
 #ifdef BIASE
     half4 output = read_imageh(bias, sampler, (int2)(out_c, 0));
 #else
-    half4 output = 0.0;
+    half4 output = 0.0f;
 #endif
 
     int2 pos_in_input_block = (int2)(out_c * input_width, batch_index * input_height);
@@ -201,39 +200,39 @@ __kernel void depth_conv_3x3(__private const int global_size_dim0,
     half4 inputs[9];
 
     inputs[0] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x - 1, pos_in_input_block.y + in_pos_in_one_block.y - 1)),
-                       (half4)(0.0),
+                       (half4)(0.0f),
                        (ushort4)(in_pos_in_one_block.x - 1 < 0 || in_pos_in_one_block.y - 1 < 0 || in_pos_in_one_block.x - 1 >= input_width || in_pos_in_one_block.y - 1 >= input_height));
 
     inputs[1] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x, pos_in_input_block.y + in_pos_in_one_block.y - 1)),
-                       (half4)(0.0),
+                       (half4)(0.0f),
                        (ushort4)(in_pos_in_one_block.x < 0 || in_pos_in_one_block.y - 1 < 0 || in_pos_in_one_block.x >= input_width || in_pos_in_one_block.y - 1 >= input_height));
 
     inputs[2] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x + 1, pos_in_input_block.y + in_pos_in_one_block.y - 1)),
-                       (half4)(0.0),
+                       (half4)(0.0f),
                        (ushort4)(in_pos_in_one_block.x + 1 < 0 || in_pos_in_one_block.y - 1 < 0 || in_pos_in_one_block.x + 1 >= input_width || in_pos_in_one_block.y - 1 >= input_height));
 
     inputs[3] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x - 1, pos_in_input_block.y + in_pos_in_one_block.y)),
-                       (half4)(0.0),
+                       (half4)(0.0f),
                        (ushort4)(in_pos_in_one_block.x - 1 < 0 || in_pos_in_one_block.y < 0 || in_pos_in_one_block.x - 1 >= input_width || in_pos_in_one_block.y >= input_height));
 
     inputs[4] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x, pos_in_input_block.y + in_pos_in_one_block.y)),
-                       (half4)(0.0),
+                       (half4)(0.0f),
                        (ushort4)(in_pos_in_one_block.x < 0 || in_pos_in_one_block.y < 0 || in_pos_in_one_block.x >= input_width || in_pos_in_one_block.y >= input_height));
 
     inputs[5] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x + 1, pos_in_input_block.y + in_pos_in_one_block.y)),
-                       (half4)(0.0),
+                       (half4)(0.0f),
                        (ushort4)(in_pos_in_one_block.x + 1 < 0 || in_pos_in_one_block.y < 0 || in_pos_in_one_block.x + 1 >= input_width || in_pos_in_one_block.y >= input_height));
 
     inputs[6] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x - 1, pos_in_input_block.y + in_pos_in_one_block.y + 1)),
-                       (half4)(0.0),
+                       (half4)(0.0f),
                        (ushort4)(in_pos_in_one_block.x - 1 < 0 || in_pos_in_one_block.y + 1 < 0 || in_pos_in_one_block.x - 1 >= input_width || in_pos_in_one_block.y + 1 >= input_height));
 
     inputs[7] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x, pos_in_input_block.y + in_pos_in_one_block.y + 1)),
-                       (half4)(0.0),
+                       (half4)(0.0f),
                        (ushort4)(in_pos_in_one_block.x < 0 || in_pos_in_one_block.y + 1 < 0 || in_pos_in_one_block.x >= input_width || in_pos_in_one_block.y + 1 >= input_height));
 
     inputs[8] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x + 1, pos_in_input_block.y + in_pos_in_one_block.y + 1)),
-                       (half4)(0.0),
+                       (half4)(0.0f),
                        (ushort4)(in_pos_in_one_block.x + 1 < 0 || in_pos_in_one_block.y + 1 < 0 || in_pos_in_one_block.x + 1 >= input_width || in_pos_in_one_block.y + 1 >= input_height));
 
     for (int j = 0; j < 9; ++j) {
@@ -293,7 +292,7 @@ __kernel void conv_1x1(__private const int global_size_dim0,
 #ifdef BIASE
     half4 output = read_imageh(bias, sampler, (int2)(out_c, 0));
 #else
-    half4 output = 0.0;
+    half4 output = 0.0f;
 #endif
 
    for (int i = 0; i < input_c; ++i) {
