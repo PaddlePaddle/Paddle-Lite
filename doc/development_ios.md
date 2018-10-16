@@ -1,6 +1,10 @@
 # iOS开发文档
 
-## 编译
+## CPU
+
+需要: xcode
+
+### 编译
 
 ```sh
 
@@ -23,7 +27,7 @@ cd ../build/release/ios/build
     这个问题是因为 tools/ios-cmake/ios.toolchain.cmake 找不到你最近使用的 iOS SDK 路径, 所以需要自己进行指定, 
     以我当前的环境为例: 在 tools/ios-cmake/ios.toolchain.cmake 143行前添加我本地的 iOS SDK 路径: set(CMAKE_IOS_SDK_ROOT "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk")
 
-## 集成
+### 集成
 
 ```
 将上一步生成的:
@@ -63,5 +67,19 @@ PaddleMobile.h
 	清理内存
 */
 - (void)clear;
+
+```
+
+## GPU
+
+需要: xcode、cocoapods  
+
+```
+# 在 paddle-mobile 目录下:
+cd metal
+
+pod install
+
+open paddle-mobile.xcworkspace
 
 ```
