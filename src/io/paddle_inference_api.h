@@ -111,7 +111,7 @@ class PaddlePredictor {
 
 struct PaddleMobileConfig : public PaddlePredictor::Config {
   enum Precision { FP32 = 0 };
-  enum Device { kCPU = 0, kFPGA = 1, kGPU_MALI = 2 };
+  enum Device { kCPU = 0, kFPGA = 1, kGPU_MALI = 2, kGPU_CL = 3 };
 
   enum Precision precision;
   enum Device device;
