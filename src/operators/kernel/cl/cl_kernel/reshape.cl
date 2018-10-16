@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#pragma OPENCL EXTENSION cl_khr_fp16 : enable
+
 __kernel void reshape(__read_only image2d_t input,
                       __write_only image2d_t output,
                       __private const int d0,
@@ -36,14 +38,14 @@ __kernel void reshape(__read_only image2d_t input,
     int t = obx * 4 + i;
     if (t > x1) break;
     int oindex = oby * x1 * x2 * x3 + t * x2 * x3 + ox * x3 + oy;
-    int i0, i1, i2, i3;
     int i3 = oindex % d3; oindex /= d3;
     int i2 = oindex % d2; oindex /= d2;
     int i1 = oindex % d1; oindex /= d1;
     int i0 = oindex;
     int ix = (i1 / 4) * d3 + i3;
     int iy = i0 * d2 + i2;
-    r[i] = read_imageh(input, sampler, int2(ix, iy))[i1%4];
+    half4 p = read_imageh(input, sampler, (int2)(ix, iy));
+    ((half*)&r)[i] = ((half*)&p)[i1%4];
   }
-  write_imageh(output, int2(x, y), r);
+  write_imageh(output, (int2)(x, y), r);
 }
