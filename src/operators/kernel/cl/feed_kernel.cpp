@@ -30,7 +30,7 @@ void FeedKernel<GPU_CL, float>::Compute(const FeedParam<GPU_CL> &param) {
   cl_int status;
   auto output = param.Out();
   const Tensor *input = param.InputX();
-    DLOG<<*input;
+  DLOG << *input;
   const float *input_data = input->data<float>();
   int numel = input->numel();
   cl_mem cl_image = output->GetCLImage();
