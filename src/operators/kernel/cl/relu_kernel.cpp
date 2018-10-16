@@ -20,23 +20,23 @@ namespace operators {
 
 template <>
 bool ReluKernel<GPU_CL, float>::Init(ReluParam<GPU_CL>* param) {
-//  this->cl_helper_.AddKernel("relu", "relu.cl");
+  //  this->cl_helper_.AddKernel("relu", "relu.cl");
   return true;
 }
 
 template <>
 void ReluKernel<GPU_CL, float>::Compute(const ReluParam<GPU_CL>& param) {
-//  auto kernel = this->cl_helper_.KernelAt(0);
-//  const auto* input = param.InputX();
-//  auto* output = param.Out();
-//  auto default_work_size = this->cl_helper_.DefaultWorkSize(*output);
-//  auto inputImage = input->GetCLImage();
-//  auto outputImage = output->GetCLImage();
-//  clSetKernelArg(kernel, 0, sizeof(cl_mem), &inputImage);
-//  clSetKernelArg(kernel, 1, sizeof(cl_mem), &outputImage);
-//  const size_t work_size[2] = {input->ImageWidth(), input->ImageHeight()};
-//  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
-//                         work_size, NULL, 0, NULL, NULL);
+  //  auto kernel = this->cl_helper_.KernelAt(0);
+  //  const auto* input = param.InputX();
+  //  auto* output = param.Out();
+  //  auto default_work_size = this->cl_helper_.DefaultWorkSize(*output);
+  //  auto inputImage = input->GetCLImage();
+  //  auto outputImage = output->GetCLImage();
+  //  clSetKernelArg(kernel, 0, sizeof(cl_mem), &inputImage);
+  //  clSetKernelArg(kernel, 1, sizeof(cl_mem), &outputImage);
+  //  const size_t work_size[2] = {input->ImageWidth(), input->ImageHeight()};
+  //  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
+  //                         work_size, NULL, 0, NULL, NULL);
 }
 
 template class ReluKernel<GPU_CL, float>;

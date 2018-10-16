@@ -65,8 +65,7 @@ class CLHelper {
       auto work_size_2 = n * h;
 
       return {work_size_0, work_size_1, work_size_2};
-    }else if(image_dim.size()==2){
-
+    } else if (image_dim.size() == 2) {
       auto image_width = image.ImageWidth();
 
       auto work_size_0 = image_width / image_dim[1];
