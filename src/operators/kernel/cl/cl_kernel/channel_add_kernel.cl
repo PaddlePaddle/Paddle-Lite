@@ -12,15 +12,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
-__kernel void elementwise_add(__global image2d_t input, __global image2d_t bias,__write_only image2d_t outputImage) {
+__kernel void channel_add(__global image2d_t input, __global image2d_t bias,__write_only image2d_t outputImage,int w) {
      int x = get_global_id(0);
      int y = get_global_id(1);
      const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
      int2 coords;
      coords.x = x;
      coords.y = y;
+     int2 coords_bias;
+     coords_bias.x = x/w;
+     coords_bias.y = 1;
      half4 in = read_imageh(input, sampler, coords);
-     half4 biase = read_imageh(bias, sampler, coords);
+     half4 biase = read_imageh(bias, sampler, coords_bias);
      half4 output = in + biase;
      write_imageh(outputImage,coords,output);
  }
