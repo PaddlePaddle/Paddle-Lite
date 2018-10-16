@@ -23,7 +23,7 @@ template <>
 bool ElementwiseAddKernel<GPU_CL, float>::Init(
     ElementwiseAddParam<GPU_CL> *param) {
     CLImage *bias = (CLImage*)param->InputY();
-    bias->InitCLImage(cl_helper_.CLContext());
+    bias->InitCLImage(cl_helper_.CLContext(),this->cl_helper_.CLCommandQueue());
    if(bias->dims().size()==4){
      this->cl_helper_.AddKernel("elementwise_add", "elementwise_add_kernel.cl");
    }else if(param->InputY()->dims().size()==1){

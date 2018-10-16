@@ -29,8 +29,8 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
           param->Paddings()[0] == param->Paddings()[1],
       "need equal");
 
-  param->Filter()->InitCLImage(cl_helper_.CLContext());
-  param->Bias()->InitCLImage(cl_helper_.CLContext());
+  param->Filter()->InitCLImage(cl_helper_.CLContext(),cl_helper_.CLCommandQueue());
+  param->Bias()->InitCLImage(cl_helper_.CLContext(),cl_helper_.CLCommandQueue());
 
   //  const CL *mean = param->InputMean();
   const framework::CLImage *mean = param->InputMean();
@@ -62,12 +62,12 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
   framework::CLImage *new_scale = new framework::CLImage();
 
   new_scale->SetTensorData(new_scale_ptr, variance->dims());
-  new_scale->InitCLImage(this->cl_helper_.CLContext());
+  new_scale->InitCLImage(this->cl_helper_.CLContext(),cl_helper_.CLCommandQueue());
 
   framework::CLImage *new_bias = new framework::CLImage();
 
   new_bias->SetTensorData(new_bias_ptr, variance->dims());
-  new_bias->InitCLImage(this->cl_helper_.CLContext());
+  new_bias->InitCLImage(this->cl_helper_.CLContext(),cl_helper_.CLCommandQueue());
 
   param->SetNewScale(new_scale);
   param->SetNewBias(new_bias);
