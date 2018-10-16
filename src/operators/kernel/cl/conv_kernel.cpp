@@ -26,7 +26,8 @@ bool ConvKernel<GPU_CL, float>::Init(ConvParam<GPU_CL> *param) {
           param->Paddings()[0] == param->Paddings()[1],
       "need equal");
 
-  param->Filter()->InitCLImage(cl_helper_.CLContext(),this->cl_helper_.CLCommandQueue());
+  param->Filter()->InitCLImage(cl_helper_.CLContext(),
+                               this->cl_helper_.CLCommandQueue());
 
   int offset = static_cast<int>(param->Filter()->dims()[2]) / 2 -
                static_cast<int>(param->Paddings()[1]);
@@ -95,6 +96,17 @@ void ConvKernel<GPU_CL, float>::Compute(const ConvParam<GPU_CL> &param) {
   cl_int status;
 
   DLOG << " begin set kernel arg ";
+  DLOG << " c block " << c_block;
+  DLOG << " w " << w;
+  DLOG << " nh " << nh;
+  DLOG << " stride " << stride;
+  DLOG << " offset " << offset;
+  DLOG << " input_c " << input_c;
+  DLOG << " dilation " << dilation;
+  DLOG << " input width " << input_width;
+  DLOG << " input height " << input_height;
+  DLOG << " output width " << output_width;
+  DLOG << " output height " << output_height;
 
   status = clSetKernelArg(kernel, 0, sizeof(int), &c_block);
   CL_CHECK_ERRORS(status);

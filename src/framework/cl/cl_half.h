@@ -15,6 +15,9 @@ limitations under the License. */
 #pragma once
 #include <cstdint>
 
+namespace paddle_mobile {
+namespace framework {
+
 typedef uint16_t half_t;
 
 half_t Float2Half(float f);
@@ -24,3 +27,6 @@ float Half2Float(half_t h);
 void FloatArray2HalfArray(float *f_array, half_t *h_array, int count);
 
 void HalfArray2FloatArray(half_t *h_array, float *f_array, int count);
+
+}  // namespace framework
+}  // namespace paddle_mobile
