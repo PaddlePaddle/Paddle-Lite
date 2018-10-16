@@ -114,6 +114,8 @@ CreatePaddlePredictor<PaddleMobileConfig, PaddleEngineKind::kPaddleMobile>(
       x.reset(new PaddleMobilePredictor<FPGA, Precision::FP32>(config));
     } else if (config.device == PaddleMobileConfig::kGPU_MALI) {
       x.reset(new PaddleMobilePredictor<GPU_MALI, Precision::FP32>(config));
+    } else if (config.device == PaddleMobileConfig::kGPU_CL) {
+      x.reset(new PaddleMobilePredictor<GPU_CL, Precision::FP32>(config));
     } else {
       LOG(kLOG_ERROR) << "unsupport device type!";
       return nullptr;
