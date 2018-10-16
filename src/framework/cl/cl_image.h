@@ -124,18 +124,7 @@ class CLImage {
     tensor_dims_ = dim;
     if (tensor_data) {
       tensor_data_ = tensor_data;
-    } else {
-      int numel = 1;
-      for (int i = 0; i < dim.size(); i++) {
-        numel *= dim[i];
-      }
-      tensor_data_ = static_cast<float *>(
-          paddle_mobile::memory::Alloc(sizeof(float) * numel));
-      for (int i = 0; i < numel; i++) {
-        tensor_data_[i] = 0;
-      }
     }
-
     size_t new_dims[] = {1, 1, 1, 1};
 
     for (int j = 0; j < dim.size(); ++j) {
