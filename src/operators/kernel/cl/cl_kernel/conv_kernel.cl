@@ -19,6 +19,7 @@ __kernel void conv_3x3(__private const int global_size_dim0,
                                               __private const int global_size_dim2,
                                               __read_only image2d_t input_image,
                                               __read_only image2d_t filter,
+
 #ifdef BIASE
                                               __read_only image2d_t bias,
 #endif

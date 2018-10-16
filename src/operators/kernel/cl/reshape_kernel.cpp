@@ -37,10 +37,10 @@ void ReshapeKernel<GPU_CL, float>::Compute(const ReshapeParam<GPU_CL> &param) {
   int dims[4] = {1, 1, 1, 1};
   int odims[4] = {1, 1, 1, 1};
   for (int i = 0; i < inputDim.size(); i++) {
-    dims[4-inputDim.size()+i] = inputDim[i];
+    dims[4 - inputDim.size() + i] = inputDim[i];
   }
   for (int i = 0; i < outputDim.size(); i++) {
-    odims[4-outputDim.size()+i] = outputDim[i];
+    odims[4 - outputDim.size() + i] = outputDim[i];
   }
   clSetKernelArg(kernel, 2, sizeof(cl_int), &dims);
   clSetKernelArg(kernel, 3, sizeof(cl_int), &dims[1]);
