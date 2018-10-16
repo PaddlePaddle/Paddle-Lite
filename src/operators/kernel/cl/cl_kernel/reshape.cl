@@ -43,7 +43,7 @@ __kernel void reshape(__read_only image2d_t input,
     int i0 = oindex;
     int ix = (i1 / 4) * d3 + i3;
     int iy = i0 * d2 + i2;
-    r[i] = read_imageh(input, sampler, int2(ix, iy))[i1%4];
+    r[i] = read_imageh(input, sampler, (int2)(ix, iy))[i1%4];
   }
-  write_imageh(output, int2(x, y), r);
+  write_imageh(output, (int2)(x, y), r);
 }

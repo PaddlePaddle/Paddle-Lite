@@ -58,10 +58,23 @@ class CLScope {
     auto program = CLEngine::Instance()->CreateProgramWith(
         context_.get(), "./cl_kernel/" + file_name);
 
+    DLOG << " --- begin build program -> " << file_name << " --- ";
     status_ =
         clBuildProgram(program.get(), 0, 0, "-cl-fast-relaxed-math", 0, 0);
 
     CL_CHECK_ERRORS(status_);
+
+    if (status_ == CL_BUILD_PROGRAM_FAILURE) {
+      size_t log_size;
+      clGetProgramBuildInfo(program.get(), CLEngine::Instance()->DeviceID(),
+                            CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+      char *log = (char *)malloc(log_size);
+      clGetProgramBuildInfo(program.get(), CLEngine::Instance()->DeviceID(),
+                            CL_PROGRAM_BUILD_LOG, log_size, log, NULL);
+      DLOG << " program build error: " << log;
+    }
+
+    DLOG << " --- end build program -> " << file_name << " --- ";
 
     programs_[file_name] = std::move(program);
 
