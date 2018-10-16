@@ -57,10 +57,7 @@ void OperatorBase<Dtype>::CheckAllInputOutputSet() const {}
 
 template <typename Dtype>
 void OperatorBase<Dtype>::Run() {
-  DLOG << " begin run " << type_;
   RunImpl();
-  DLOG << " end run " << type_;
-  return;
 #ifdef PADDLE_MOBILE_DEBUG
   DLOG << "-------------" << type_ << "----------------------------";
   vector<string> input_keys = GetInputKeys();
@@ -75,16 +72,8 @@ void OperatorBase<Dtype>::Run() {
           if (tensor) DLOG << type_ << " input- " << key << "=" << *tensor;
         } else {
           CLImage *cl_image = vari->template GetMutable<framework::CLImage>();
-          //                        cl_command_queue commandQueue =
-          //                        scope_->GetCLScpoe()->CommandQueue(); Tensor
-          //                        *tmp ;
-          //                        CLImageToTensor(cl_image,tmp,commandQueue);
-          //                        tmp->Resize(cl_image->dims());
-          const float *input = cl_image->data<float>();
           if (cl_image) {
-            DLOG << type_ << " input- " << key << "=" << cl_image->dims();
-            //              if(input)
-            //              DLOG<<type_<<" input- "<<key<<"="<<*input;
+            DLOG << type_ << " input- " << key << "="<<*cl_image;
           }
         }
 
@@ -108,15 +97,8 @@ void OperatorBase<Dtype>::Run() {
           }
         } else {
           CLImage *cl_image = vari->template GetMutable<framework::CLImage>();
-          //          cl_command_queue commandQueue =
-          //          scope_->GetCLScpoe()->CommandQueue(); Tensor *tmp ;
-          //          CLImageToTensor(cl_image,tmp,commandQueue);
-          //          tmp->Resize(cl_image->dims());
           if (cl_image) {
-            const float *output = cl_image->data<float>();
-            DLOG << type_ << " output- " << key << "=" << cl_image->dims();
-            //                  if(output)
-            //                  DLOG<<type_<<" output- "<<key<<"="<<*output;
+            DLOG << type_ << " output- " << key << "="<<*cl_image ;
           }
         }
 
