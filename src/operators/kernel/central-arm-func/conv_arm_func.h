@@ -114,16 +114,15 @@ inline void ConvBasic(const ConvParam<CPU> &param) {
   }
 }
 
-inline void ConvBasic_int8(const ConvParam<CPU> &param) {
+inline void ConvCompute_int8(const ConvParam<CPU> &param) {
   typedef void (*ConvFunc)(const Tensor &input, const Tensor &kernel,
                            Tensor *output);
   static ConvFunc conv_funcs_table[7][5] = {
       {0, 0, 0, 0, 0},                                // k = 1
-      {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},               // k = 3
+      {0, 0, 0, 0, 0}, {conv3x3s1_int8, 0, 0, 0, 0},  // k = 3
       {0, 0, 0, 0, 0}, {conv5x5s1_int8, 0, 0, 0, 0},  // k = 5
       {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},               // k = 7
   };
-
   const Tensor *input = param.Input();
   Tensor *filter = param.Filter();
   Tensor *output = param.Output();
@@ -150,11 +149,12 @@ inline void ConvBasic_int8(const ConvParam<CPU> &param) {
       input_pad.mutable_data<int8_t>(pad_shape);
       pad(in_batch, paddings[0], paddings[1], &input_pad);
     }
-    // int8 only used while dilation==1 and groups==1
+
     if (strides[1] == strides[0] && strides[1] < 6 && kernel_h == kernel_w &&
-        kernel_h < 8 && dilations[0] == 0 && dilations[1] == 0 && groups == 1) {
-      ConvFunc conv_func = conv_funcs_table[kernel_h - 1][strides[1] - 1];
-      if (!conv_func) {
+        kernel_h < 8 && groups == 1 && dilations[0] == dilations[1] &&
+        dilations[1] == 1) {
+      ConvFunc conv_func = conv_funcs_table[kernel_h - 1][strides[0] - 1];
+      if (conv_func) {
         conv_func(input_pad, *filter, &out_batch);
       } else {
         // TODO(hjchen2)
@@ -167,21 +167,21 @@ inline void ConvBasic_int8(const ConvParam<CPU> &param) {
 
 template <typename P>
 void ConvCompute(const ConvParam<CPU> &param) {
-  if (param.Groups() == param.Input()->dims()[1] &&
-      param.Input()->dims()[1] == param.Output()->dims()[1] &&
-      param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
-      param.Filter()->dims()[2] == 3 && param.Strides()[0] == 1) {
-    math::DepthwiseConv3x3s1p1(param.Input(), param.Filter(), param.Output(),
-                               nullptr, false);
-  } else if (param.Groups() == param.Input()->dims()[1] &&
-             param.Input()->dims()[1] == param.Output()->dims()[1] &&
-             param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
-             param.Filter()->dims()[2] == 3) {
-    math::DepthwiseConv3x3(param.Input(), param.Strides(), param.Paddings(),
-                           param.Filter(), nullptr, param.Output(), false);
+  if (param.Input()->type() == typeid(int8_t)) {
+    ConvCompute_int8(param);
   } else {
-    if (param.Input()->type() == typeid(int8_t)) {
-      ConvBasic_int8(param);
+    if (param.Groups() == param.Input()->dims()[1] &&
+        param.Input()->dims()[1] == param.Output()->dims()[1] &&
+        param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
+        param.Filter()->dims()[2] == 3 && param.Strides()[0] == 1) {
+      math::DepthwiseConv3x3s1p1(param.Input(), param.Filter(), param.Output(),
+                                 nullptr, false);
+    } else if (param.Groups() == param.Input()->dims()[1] &&
+               param.Input()->dims()[1] == param.Output()->dims()[1] &&
+               param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
+               param.Filter()->dims()[2] == 3) {
+      math::DepthwiseConv3x3(param.Input(), param.Strides(), param.Paddings(),
+                             param.Filter(), nullptr, param.Output(), false);
     } else {
       ConvBasic(param);
     }

@@ -21,9 +21,7 @@ namespace operators {
 
 void conv3x3s1_int8(const framework::Tensor& input,
                     const framework::Tensor& weight,
-                    framework::Tensor* output) {
-  // TODO(hjchen2)
-}
+                    framework::Tensor* output) {}
 
 }  // namespace operators
 }  // namespace paddle_mobile
