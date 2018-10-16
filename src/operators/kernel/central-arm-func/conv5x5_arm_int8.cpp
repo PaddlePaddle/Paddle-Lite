@@ -37,16 +37,12 @@ void conv5x5s1_int8(const framework::Tensor& input,
   int out_image_size = output_h * output_w;
   memset(out_data, 0, output_c * out_image_size * sizeof(int32_t));
 
+  #pragma omp parallel for
   for (int oc = 0; oc < output_c; ++oc) {
     for (int ic = 0; ic < input_c; ++ic) {
       const int8_t* kernel = w_data + (oc * input_c + ic) * 25;
-      int32_t* output0 = out_data;
-      int32_t* output1 = out_data + output_w;
-      // load kernel
-      asm volatile("vld1.8    {d0-d3}, [%0]  \n"
-                   : "=r"(kernel)
-                   :  // no output
-                   : "memory", "q0", "q1");
+      int32_t* output0 = out_data + oc * out_image_size;
+      int32_t* output1 = output0 + output_w;
       int oh = 0;
       for (; oh < output_h - 1; oh += 2) {
         const int8_t* r0 = in_data + ic * image_size + oh * input_w;
@@ -59,6 +55,10 @@ void conv5x5s1_int8(const framework::Tensor& input,
         int ow = output_w >> 3;
         int remain = output_w & 0x7;
         if (ow > 0) {
+          asm volatile("vld1.8  {d0-d3}, [%[kernel]]  \n"
+                       : [kernel] "+r"(kernel)
+                       :
+                       : "cc", "memory", "q0", "q1");
           asm volatile(
               "0:                                  \n"
               "vld1.8     {d4-d5}, [%[r0]]         \n"  // r0
@@ -262,6 +262,10 @@ void conv5x5s1_int8(const framework::Tensor& input,
                 "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15");
         }
         if (remain > 0) {
+          asm volatile("vld1.8  {d0-d3}, [%[kernel]]  \n"
+                       : [kernel] "+r"(kernel)
+                       :
+                       : "cc", "memory", "q0", "q1");
           asm volatile(
               "0:                                  \n"
               "vld1.8     d4, [%[r0]]              \n"
@@ -346,6 +350,10 @@ void conv5x5s1_int8(const framework::Tensor& input,
         int ow = output_w >> 3;
         int remain = output_w & 0x7;
         if (ow > 0) {
+          asm volatile("vld1.8  {d0-d3}, [%[kernel]]  \n"
+                       : [kernel] "+r"(kernel)
+                       :
+                       : "cc", "memory", "q0", "q1");
           asm volatile(
               "0:                                  \n"
               "vld1.8     {d4-d5}, [%[r0]]         \n"  // r0
@@ -474,7 +482,12 @@ void conv5x5s1_int8(const framework::Tensor& input,
               : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
                 "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15");
         }
+
         if (remain > 0) {
+          asm volatile("vld1.8  {d0-d3}, [%[kernel]]  \n"
+                       : [kernel] "+r"(kernel)
+                       :
+                       : "cc", "memory", "q0", "q1");
           asm volatile(
               "0:                                  \n"
               "vld1.8     d4, [%[r0]]              \n"
@@ -523,7 +536,6 @@ void conv5x5s1_int8(const framework::Tensor& input,
         }
       }
     }
-    out_data += out_image_size;
   }
 #else
 // TODO(hjchen2)
