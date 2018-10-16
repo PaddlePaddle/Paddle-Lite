@@ -64,7 +64,7 @@ void ElementwiseAddKernel<GPU_CL, float>::Compute(
     cl_mem input_image = input->GetCLImage();
     cl_mem bias_image = bias->GetCLImage();
     cl_mem output_image = output->GetCLImage();
-    int tensor_w = input->dims()[4];
+    int tensor_w = input->dims()[3];
     status = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&input_image);
     CL_CHECK_ERRORS(status);
     status = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&bias_image);
