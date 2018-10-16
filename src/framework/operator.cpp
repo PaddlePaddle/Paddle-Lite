@@ -73,7 +73,7 @@ void OperatorBase<Dtype>::Run() {
         } else {
           CLImage *cl_image = vari->template GetMutable<framework::CLImage>();
           if (cl_image) {
-            DLOG << type_ << " input- " << key << "="<<*cl_image;
+            DLOG << type_ << " input- " << key << "=" << *cl_image;
           }
         }
 
@@ -98,7 +98,7 @@ void OperatorBase<Dtype>::Run() {
         } else {
           CLImage *cl_image = vari->template GetMutable<framework::CLImage>();
           if (cl_image) {
-            DLOG << type_ << " output- " << key << "="<<*cl_image ;
+            DLOG << type_ << " output- " << key << "=" << *cl_image;
           }
         }
 

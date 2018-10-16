@@ -46,27 +46,28 @@ class CLImage {
   /*
    * need call SetTensorData first
    * */
-  void InitCLImage(cl_context context,cl_command_queue command_queue) {
+  void InitCLImage(cl_context context, cl_command_queue command_queue) {
     if (tensor_data_ == nullptr) {
       PADDLE_MOBILE_THROW_EXCEPTION(" need call SetTensorData first");
     }
     if (tensor_dims_.size() <= 2) {
-      InitCLImage2C(context, command_queue,tensor_data_, tensor_dims_);
+      InitCLImage2C(context, command_queue, tensor_data_, tensor_dims_);
     } else {
-      InitCLImage(context, command_queue,tensor_data_, tensor_dims_);
+      InitCLImage(context, command_queue, tensor_data_, tensor_dims_);
     }
     delete[](tensor_data_);
     tensor_data_ = nullptr;
     initialized_ = true;
   }
 
-  void InitEmptyImage(cl_context context, cl_command_queue command_queue,const DDim &dim) {
+  void InitEmptyImage(cl_context context, cl_command_queue command_queue,
+                      const DDim &dim) {
     if (tensor_data_ != nullptr) {
       PADDLE_MOBILE_THROW_EXCEPTION(
           " empty image tensor data shouldn't have value");
     }
     DLOG << " init empty image ";
-    InitCLImage(context, command_queue,nullptr, dim);
+    InitCLImage(context, command_queue, nullptr, dim);
     initialized_ = true;
   }
 
@@ -93,7 +94,7 @@ class CLImage {
    * */
   inline size_t HeightOfOneBlock() const { return height_of_one_block_; }
 
-  inline cl_command_queue  CommandQueue() const{ return command_queue_;}
+  inline cl_command_queue CommandQueue() const { return command_queue_; }
 
   /*
    *  resize original tensor dim
@@ -124,7 +125,8 @@ class CLImage {
   const DDim &dims() const { return tensor_dims_; }
 
  private:
-  void InitCLImage2C(cl_context context, cl_command_queue command_queue,float *tensor_data, const DDim &dim) {
+  void InitCLImage2C(cl_context context, cl_command_queue command_queue,
+                     float *tensor_data, const DDim &dim) {
     command_queue_ = command_queue;
     assert(dim.size() <= 2);
     int tdim[2] = {1, 1};
@@ -141,43 +143,44 @@ class CLImage {
       imageData.reset(new half_t[width * height * 4]);
       for (int h = 0; h < tdim[0]; h++) {
         for (int w = 0; w < tdim[1]; w++) {
-          imageData[(h * width + w / 4) * 4 + (w % 4)] = Float2Half(tensor_data[h * tdim[1] + w]);
+          imageData[(h * width + w / 4) * 4 + (w % 4)] =
+              Float2Half(tensor_data[h * tdim[1] + w]);
         }
       }
     }
     InitCLImage(context, width, height, imageData.get());
   }
 
-  void InitCLImage(cl_context context,int width, int height, void *data) {
+  void InitCLImage(cl_context context, int width, int height, void *data) {
     cl_image_format cf = {.image_channel_order = CL_RGBA,
                           .image_channel_data_type = CL_HALF_FLOAT};
     cl_image_desc cid = {
-      .image_type = CL_MEM_OBJECT_IMAGE2D,
-      .image_width = width,
-      .image_height = height,
-      .image_depth = 1,
-      .image_array_size = 1,
-      .image_row_pitch = 0,
-      .image_slice_pitch = 0,
-      .num_mip_levels = 0,
-      .num_samples = 0,
-      // .buffer = nullptr
+        .image_type = CL_MEM_OBJECT_IMAGE2D,
+        .image_width = width,
+        .image_height = height,
+        .image_depth = 1,
+        .image_array_size = 1,
+        .image_row_pitch = 0,
+        .image_slice_pitch = 0,
+        .num_mip_levels = 0,
+        .num_samples = 0,
+        // .buffer = nullptr
     };
     cid.buffer = nullptr;
     cl_int err;
     cl_image_ = clCreateImage(
-      context, CL_MEM_READ_WRITE | (data ? CL_MEM_COPY_HOST_PTR : 0),
-      &cf,   // const cl_image_format *image_format
-      &cid,  // const cl_image_desc *image_desc
-      data,  // void *host_ptr
-      &err
-    );
+        context, CL_MEM_READ_WRITE | (data ? CL_MEM_COPY_HOST_PTR : 0),
+        &cf,   // const cl_image_format *image_format
+        &cid,  // const cl_image_desc *image_desc
+        data,  // void *host_ptr
+        &err);
     if (err != CL_SUCCESS) {
       CL_CHECK_ERRORS(err);
       PADDLE_MOBILE_THROW_EXCEPTION(" create image 2d error ");
     }
   }
-  void InitCLImage(cl_context context, cl_command_queue command_queue,float *tensor_data, const DDim &dim) {
+  void InitCLImage(cl_context context, cl_command_queue command_queue,
+                   float *tensor_data, const DDim &dim) {
     DLOG << " tensor dim: " << dim;
     // NCHW -> [W * (C+3)/4, H * N]
     tensor_dims_ = dim;
@@ -207,6 +210,7 @@ class CLImage {
     image_width_ = width;
     image_height_ = height;
     image_dims_ = make_ddim({image_width_, image_height_});
+    c_block_ = W / width;
 
     std::unique_ptr<half_t[]> imageData{};
     int count = 0;

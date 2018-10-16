@@ -12,7 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "cl_image.h"
+#include "framework/cl/cl_image.h"
+
 namespace paddle_mobile {
 namespace framework {
 void CLImageToTensor(CLImage *cl_image, Tensor *tensor,
@@ -63,7 +64,7 @@ void CLImageToTensor(CLImage *cl_image, Tensor *tensor,
   }
 
   if (err != CL_SUCCESS) {
-    // TODO: error handling
+    CL_CHECK_ERRORS(err);
   }
 }
 void TensorToCLImage(const Tensor *tensor, CLImage *cl_image,
@@ -97,7 +98,7 @@ void TensorToCLImage(const Tensor *tensor, CLImage *cl_image,
   err = clEnqueueReadImage(commandQueue, image, CL_TRUE, origin, region, 0, 0,
                            imageData, 0, NULL, NULL);
   if (err != CL_SUCCESS) {
-    // TODO: error handling
+    CL_CHECK_ERRORS(err);
   }
   size_t i0 = 0;
   for (int n = 0; n < N; n++) {
@@ -117,7 +118,7 @@ void TensorToCLImage(const Tensor *tensor, CLImage *cl_image,
   }
 }
 #ifdef PADDLE_MOBILE_DEBUG
-Print &operator<<(Print &printer, const CLImage &cl_image){
+Print &operator<<(Print &printer, const CLImage &cl_image) {
   printer << " dims: " << cl_image.dims() << "\n";
   int stride = cl_image.numel() / 20;
   stride = stride > 0 ? stride : 1;
@@ -148,8 +149,8 @@ Print &operator<<(Print &printer, const CLImage &cl_image){
   cl_mem image = cl_image.GetCLImage();
   size_t origin[3] = {0, 0, 0};
   size_t region[3] = {width, height, 1};
-  err = clEnqueueReadImage(cl_image.CommandQueue(), image, CL_TRUE, origin, region, 0, 0,
-                           imageData, 0, NULL, NULL);
+  err = clEnqueueReadImage(cl_image.CommandQueue(), image, CL_TRUE, origin,
+                           region, 0, 0, imageData, 0, NULL, NULL);
   size_t i0 = 0;
   for (int n = 0; n < N; n++) {
     for (int c = 0; c < C; c++) {
@@ -168,13 +169,13 @@ Print &operator<<(Print &printer, const CLImage &cl_image){
   }
 
   if (err != CL_SUCCESS) {
-    // TODO: error handling
+    CL_CHECK_ERRORS(err);
   }
-    for (int i = 0; i < cl_image.numel(); i += stride) {
-            printer << data[i] << " ";
-    }
+  for (int i = 0; i < cl_image.numel(); i += stride) {
+    printer << data[i] << " ";
+  }
   return printer;
-        }
+}
 #endif
 }  // namespace framework
 }  // namespace paddle_mobile
