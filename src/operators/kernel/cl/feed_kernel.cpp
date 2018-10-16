@@ -61,7 +61,7 @@ void FeedKernel<GPU_CL, float>::Compute(const FeedParam<GPU_CL> &param) {
   size_t region[3] = {height, width, 1};
   clEnqueueReadImage(commandQueue, cl_image, CL_TRUE, origin, region, 0, 0, out,
                      0, NULL, NULL);
-  //  for (int i = 0; i < numel; i++) DLOG << Half2Float(out[i]);
+
 }
 
 template class FeedKernel<GPU_CL, float>;
