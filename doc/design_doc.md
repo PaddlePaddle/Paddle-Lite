@@ -3,7 +3,7 @@
 
 #### 以下是 paddle-mobile 代码的执行流程图:
 
-![执行流程图](http://otkwwi4x8.bkt.clouddn.com/2018-07-02-15305189473720.png)
+![执行流程图](http://mms-graph.bj.bcebos.com/paddle-mobile/git_images/flow_chart.png)
 
 
 #### 主要分为: Loader 模块、 Program 模块、 Executor 模块、 op 模块、 kernel 模块、scope variable Tensor 模块
@@ -14,12 +14,12 @@
 先来看一下模型, 模型分为两种结构:
  一种为参数文件是散开的, 如下图, 红框为模型结构的 protobuf 文件, 其余为参数文件
 
-![模型描述](http://otkwwi4x8.bkt.clouddn.com/2018-07-02-15305190629577.png)
+![模型描述](http://mms-graph.bj.bcebos.com/paddle-mobile/git_images/model_desc.png)
 
 
 另一种为参数文件结合在一起的, 如下图, 红框内为模型结构描述的 protobuf 文件, 另一个文件为结合在一起的参数文件
 
-![模型描述combined](http://otkwwi4x8.bkt.clouddn.com/2018-07-02-15305191057130.png)
+![模型描述combined](http://mms-graph.bj.bcebos.com/paddle-mobile/git_images/model_desc_combined.png)
 
 
 loader 模块的作用是将模型结构信息 load 进内存, 将红框内的 protobuf 文件 load 进内存, 并对模型结构进行优化(如将几个细粒度的 op 融合成 粗粒度的 op, 如将 conv、 add、 batchnorm、 relu 融合为 conv\_add\_batchnorm\_relu).
@@ -161,7 +161,7 @@ sh build.sh android yolo
 ### 五. kernel
 kernel 为 op 的底层运算实现, 主要有两个函数, Init 和 Compute, 分别用来初始化、预处理 和 运算操作, 值得提出的是, kernel 会根据泛型特化到不同的平台, 如图所示:
 
-![设备特化]![](http://otkwwi4x8.bkt.clouddn.com/2018-07-02-15305191401976.png)
+![设备特化](http://mms-graph.bj.bcebos.com/paddle-mobile/git_images/devices.png)
 
 不同平台的 kernel 实现, 为同一个 kernel 类不同泛型的特化实现, 目前有三个平台, arm、mali、fpga, 图中的 central-arm-func\ 目录为 op kernel 的 arm 实现, 它承担了 arm\ 目录下 kernel 的底层实现, 同时 arm 处理器作为中央处理器, central-arm-func\ 也可以作为其他协处理器的底层实现, 如: fpga 的某一个 op kernel 还没有 fpga 协处理器的实现, 就可以直接调用使用这里的 arm 实现.
 
