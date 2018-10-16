@@ -88,6 +88,8 @@ class CLEngine {
     return true;
   }
 
+  cl_device_id DeviceID(int index = 0) { return devices_[index]; }
+
  private:
   CLEngine() { initialized_ = false; }
 
