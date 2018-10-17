@@ -46,14 +46,4 @@ class ConvOp : public framework::OperatorWithKernel<
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(conv2d);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(conv2d);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-USE_OP_FPGA(conv2d);
-#endif
-
 #endif

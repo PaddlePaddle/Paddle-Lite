@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include "operators/math/math_function.h"
 #include <cstring>
+#include <string>
 #include "operators/math/gemm.h"
 
 namespace paddle_mobile {
@@ -35,12 +36,13 @@ void matmul<float>(const framework::Tensor &matrix_a, bool trans_a,
   int M = dim_out[0];
   int N = dim_out[1];
   int K = (!trans_a) ? dim_a[1] : dim_a[0];
+  Gemm gemm;
 
   if (trans_a) {
     int numel = matrix_a.numel();
     int m = matrix_a.dims()[0];
     int n = matrix_a.dims()[1];
-    float *tmp = (float *)(matrix_a.data<float>());
+    float *tmp = (float *)(matrix_a.data<float>());  // NOLINT
     float *a = static_cast<float *>(
         paddle_mobile::memory::Alloc(sizeof(float) * numel));
     int index = 0;
@@ -49,20 +51,24 @@ void matmul<float>(const framework::Tensor &matrix_a, bool trans_a,
         a[index++] = tmp[i * n + j];
       }
     }
+
 #ifdef _OPENMP
-    Sgemm_omp(M, N, K, alpha, a, K, matrix_b.data<float>(), N, beta,
-              matrix_out->data<float>(), N, relu, bias);
+
+    gemm.Sgemm_omp(M, N, K, alpha, a, K, matrix_b.data<float>(), N, beta,
+                   matrix_out->data<float>(), N, relu, bias);
 #else
-    Sgemm(M, N, K, alpha, a, K, matrix_b.data<float>(), N, beta,
-          matrix_out->data<float>(), N, relu, bias);
+    gemm.Sgemm(M, N, K, alpha, a, K, matrix_b.data<float>(), N, beta,
+               matrix_out->data<float>(), N, relu, bias);
 #endif
   } else {
 #ifdef _OPENMP
-    Sgemm_omp(M, N, K, alpha, matrix_a.data<float>(), K, matrix_b.data<float>(),
-              N, beta, matrix_out->data<float>(), N, relu, bias);
+    gemm.Sgemm_omp(M, N, K, alpha, matrix_a.data<float>(), K,
+                   matrix_b.data<float>(), N, beta, matrix_out->data<float>(),
+                   N, relu, bias);
 #else
-    Sgemm(M, N, K, alpha, matrix_a.data<float>(), K, matrix_b.data<float>(), N,
-          beta, matrix_out->data<float>(), N, relu, bias);
+    gemm.Sgemm(M, N, K, alpha, matrix_a.data<float>(), K,
+               matrix_b.data<float>(), N, beta, matrix_out->data<float>(), N,
+               relu, bias);
 #endif
   }
 }
@@ -73,6 +79,7 @@ void matmulWithBn<float>(const framework::Tensor &matrix_a, bool trans_a,
                          float alpha, framework::Tensor *matrix_out, float beta,
                          bool relu, framework::Tensor *new_scale,
                          framework::Tensor *new_bias, int group, float *bias) {
+  Gemm gemm;
   auto dim_a = matrix_a.dims();
   auto dim_b = matrix_b.dims();
   auto dim_out = matrix_out->dims();
@@ -85,21 +92,22 @@ void matmulWithBn<float>(const framework::Tensor &matrix_a, bool trans_a,
   int K = (!trans_a) ? dim_a[1] : dim_a[0];
 
 #ifdef _OPENMP
-  SgemmWithBn_omp(M, N, K, alpha, matrix_a.data<float>(), K,
-                  matrix_b.data<float>(), N, beta, matrix_out->data<float>(), N,
-                  relu, new_scale->data<float>() + group,
-                  new_bias->data<float>() + group, bias);
+  gemm.SgemmWithBn_omp(
+      M, N, K, alpha, matrix_a.data<float>(), K, matrix_b.data<float>(), N,
+      beta, matrix_out->data<float>(), N, relu,
+      new_scale->data<float>() + group, new_bias->data<float>() + group, bias);
 #else
-  SgemmWithBn(M, N, K, alpha, matrix_a.data<float>(), K, matrix_b.data<float>(),
-              N, beta, matrix_out->data<float>(), N, relu,
-              new_scale->data<float>() + group, new_bias->data<float>() + group,
-              bias);
+  gemm.SgemmWithBn(M, N, K, alpha, matrix_a.data<float>(), K,
+                   matrix_b.data<float>(), N, beta, matrix_out->data<float>(),
+                   N, relu, new_scale->data<float>() + group,
+                   new_bias->data<float>() + group, bias);
 #endif
 }
 void matmulWithPRelu(const framework::Tensor &matrix_a, bool trans_a,
                      const framework::Tensor &matrix_b, bool trans_b,
                      framework::Tensor *matrix_out, float *p, std::string mode,
                      float *bias, float *bias1) {
+  Gemm gemm;
   auto dim_a = matrix_a.dims();
   auto dim_b = matrix_b.dims();
   auto dim_out = matrix_out->dims();
@@ -112,11 +120,13 @@ void matmulWithPRelu(const framework::Tensor &matrix_a, bool trans_a,
   int K = (!trans_a) ? dim_a[1] : dim_a[0];
 
 #ifdef _OPENMP
-  SgemmWithPRelu_omp(M, N, K, matrix_a.data<float>(), K, matrix_b.data<float>(),
-                     N, matrix_out->data<float>(), N, p, mode, bias, bias1);
+  gemm.SgemmWithPRelu_omp(M, N, K, matrix_a.data<float>(), K,
+                          matrix_b.data<float>(), N, matrix_out->data<float>(),
+                          N, p, mode, bias, bias1);
 #else
-  SgemmWithPRelu(M, N, K, matrix_a.data<float>(), K, matrix_b.data<float>(), N,
-                 matrix_out->data<float>(), N, p, mode, bias, bias1);
+  gemm.SgemmWithPRelu(M, N, K, matrix_a.data<float>(), K,
+                      matrix_b.data<float>(), N, matrix_out->data<float>(), N,
+                      p, mode, bias, bias1);
 
 #endif
 }
@@ -126,7 +136,7 @@ struct ClearTensor<CPU, T> {
   void operator()(framework::Tensor *tensor) {
     auto size = tensor->numel();
     auto *tensor_data = tensor->data<float>();
-    memset((void *)tensor_data, 0, sizeof(T) * size);
+    memset((void *)tensor_data, 0, sizeof(T) * size);  // NOLINT
   }
 };
 

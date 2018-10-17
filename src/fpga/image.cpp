@@ -12,9 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "image.h"
+#include "fpga/image.h"
 #include <memory.h>
-#include "api.h"
+#include <algorithm>
+#include "fpga/api.h"
 
 namespace paddle_mobile {
 namespace fpga {
@@ -23,7 +24,7 @@ namespace image {
 void convert_to_hwc(float **data_in, int channel, int height, int width) {
   float *tmp = *data_in;
   float *data_tmp =
-      (float *)fpga_malloc(channel * height * width * sizeof(float));
+      (float *)fpga_malloc(channel * height * width * sizeof(float));  // NOLINT
   int64_t amount_per_row = width * channel;
   for (int c = 0; c < channel; c++) {
     for (int h = 0; h < height; h++) {
@@ -42,12 +43,14 @@ void align_element_conv(float **data_in, int height, int cw) {
   int align_cw = align_to_x(cw, IMAGE_ALIGNMENT);
   if (align_cw != cw) {
     float *tmp = *data_in;
-    float *data_tmp = (float *)fpga_malloc(height * align_cw * sizeof(float));
+    float *data_tmp =
+        (float *)fpga_malloc(height * align_cw * sizeof(float));  // NOLINT
 
     memset(data_tmp, 0, height * align_cw * sizeof(float));
 
     for (h = 0; h < height; h++) {
-      memcpy((void *)(data_tmp + h * align_cw), (void *)(*data_in + h * cw),
+      memcpy((void *)(data_tmp + h * align_cw),  // NOLINT
+             (void *)(*data_in + h * cw),        // NOLINT
              cw * sizeof(float));
     }
 
@@ -95,7 +98,7 @@ void concat_images(int16_t **images_in, float **scales_in, void *image_out,
       for (i = 0; i < image_num; i++) {
         align_each_in_area_cw =
             align_to_x(channel_num[i] * width, IMAGE_ALIGNMENT);
-        memcpy((int16_t *)image_out + tmp_channel +
+        memcpy((int16_t *)image_out + tmp_channel +  // NOLINT
                    k * align_each_out_area_cw_differ,
                images_in[i] + j * channel_num[i] + k * align_each_in_area_cw,
                channel_num[i] * sizeof(int16_t));

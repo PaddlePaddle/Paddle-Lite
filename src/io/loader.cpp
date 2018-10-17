@@ -27,8 +27,8 @@ using framework::Variable;
  * @param scope
  */
 void InitMemoryFromProgram(
-    std::shared_ptr<framework::ProgramDesc> &originProgramDesc,
-    std::shared_ptr<framework::Scope> &scope) {
+    std::shared_ptr<framework::ProgramDesc> &originProgramDesc,  // NOLINT
+    std::shared_ptr<framework::Scope> &scope) {                  // NOLINT
   for (const auto &block : originProgramDesc.get()->Blocks()) {
     for (const auto &var_desc : block->Vars()) {
       auto var = scope.get()->Var(var_desc->Name());
@@ -61,12 +61,16 @@ void InitMemoryFromProgram(
  */
 template <typename Dtype, Precision P>
 void FusionAndPrintInfos(
-    bool &optimize, bool &can_add_split, framework::Program<Dtype, P> &program,
+    bool optimize, bool can_add_split,
+    framework::Program<Dtype, P> &program,  // NOLINT
     const std::shared_ptr<framework::ProgramDesc> &originProgramDesc) {
   if (optimize) {
     framework::ProgramOptimize program_optimize;
     program.optimizeProgram =
         program_optimize.FusionOptimize(originProgramDesc, can_add_split);
+    if (!program.optimizeProgram) {
+      program.optimizeProgram = originProgramDesc;
+    }
   }
   if (optimize) {
     program.optimizeProgram->Description("optimize: ");
@@ -74,6 +78,7 @@ void FusionAndPrintInfos(
     originProgramDesc->Description("program: ");
   }
 }
+
 static size_t ReadBuffer(const char *file_name, uint8_t **out) {
   FILE *fp;
   fp = fopen(file_name, "rb");

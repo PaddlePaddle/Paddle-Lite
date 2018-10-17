@@ -49,10 +49,10 @@ void FusionDWConvBNReluOp<Dtype, T>::InferShape() const {
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
+REGISTER_FUSION_MATCHER(fusion_dwconv_bn_relu, ops::FusionDWConvBNReluMatcher);
+
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(fusion_dwconv_bn_relu, ops::FusionDWConvBNReluOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 #endif

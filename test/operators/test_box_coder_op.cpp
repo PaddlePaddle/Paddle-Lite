@@ -46,7 +46,7 @@ class TestBoxCoderOp {
           DLOG << " Input TargetBox is : " << op->Input("TargetBox")[0];
           DLOG << " OutputBox is : " << op->Output("OutputBox")[0];
           DLOG << " code_type : "
-               << op->GetAttrMap().at("code_type").Get<std::string>();
+               << op->GetAttrMap().at("code_type").GetString();
           std::shared_ptr<operators::BoxCoderOp<Dtype, float>> boxcoder =
               std::make_shared<operators::BoxCoderOp<Dtype, float>>(
                   op->Type(), op->GetInputs(), op->GetOutputs(),

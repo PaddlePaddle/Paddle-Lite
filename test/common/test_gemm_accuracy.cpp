@@ -83,8 +83,9 @@ int do_sgemm(int m, int n, int k, bool relu, int t1, int t2, int pr) {
     }
   }
 
-  paddle_mobile::operators::math::SgemmWithBn(
-      m, n, k, 0.9, a, lda, b, ldb, 0.3, c, ldc, relu, scale, bias, nullptr);
+  paddle_mobile::operators::math::Gemm gemm;
+  gemm.SgemmWithBn(m, n, k, 0.9, a, lda, b, ldb, 0.3, c, ldc, relu, scale, bias,
+                   nullptr);
   int eq = 0;
   int neq = 0;
   for (int i = 0; i < m * n; ++i) {

@@ -54,6 +54,9 @@ void FusionFcReluOp<Dtype, T>::InferShape() const {
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
+
+REGISTER_FUSION_MATCHER(fusion_fc_relu, ops::FusionFcReluMatcher);
+
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(fusion_fc_relu, ops::FusionFcReluOp);
 #endif

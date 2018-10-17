@@ -79,6 +79,13 @@ enum PMStatus {
   PMWrongDevice = 0x08     /*!< un-correct device. */
 };
 
+enum RoundType {
+  ROUND_UNK = 0,
+  ROUND_NEAREST_AWAY_ZERO = 1,
+  ROUND_NEAREST_TOWARDS_ZERO = 2,
+  ROUND_NEAREST_TO_EVEN = 3
+};
+
 extern const char *G_OP_TYPE_CONV;
 extern const char *G_OP_TYPE_BATCHNORM;
 extern const char *G_OP_TYPE_BOX_CODER;
@@ -119,6 +126,9 @@ extern const char *G_OP_TYPE_REGION;
 extern const char *G_OP_TYPE_FUSION_CONV_BN;
 extern const char *G_OP_TYPE_CONV_TRANSPOSE;
 extern const char *G_OP_TYPE_PRELU;
+
+extern const char *G_OP_TYPE_QUANTIZE;
+extern const char *G_OP_TYPE_DEQUANTIZE;
 
 extern std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>

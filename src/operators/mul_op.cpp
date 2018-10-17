@@ -62,6 +62,6 @@ REGISTER_OPERATOR_CPU(mul, ops::MulOp);
 REGISTER_OPERATOR_MALI_GPU(mul, ops::MulOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(mul, ops::MulOp);
 #endif
-
 #endif

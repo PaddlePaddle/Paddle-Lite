@@ -33,7 +33,8 @@ bool ConvBNKernel<FPGA, float>::Init(FusionConvBNParam<FPGA> *param) {
   PADDLE_MOBILE_ENFORCE(out->dims()[1] == param->InputBias()->dims()[0],
                         "Output channel should be equal to bias number");
   const int channel = out->dims()[1];
-  auto bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sizeof(float));
+  auto bs_ptr =
+      (float *)fpga::fpga_malloc(2 * channel * sizeof(float));  // // NOLINT
   auto new_scale = new Tensor();
   auto new_bias = new Tensor();
   auto new_scale_ptr = new_scale->mutable_data<float>({channel});
