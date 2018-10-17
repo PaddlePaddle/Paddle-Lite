@@ -26,7 +26,7 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace framework {
 
-enum ImageType { Normal, Folder };
+enum ImageType { Normal = 0, Folder = 1 };
 
 class CLImage {
  public:
@@ -88,7 +88,7 @@ class CLImage {
 
   cl_mem GetCLImage() const { return cl_image_; }
 
-  const DDim &ImageDims() { return image_dims_; }
+  const DDim &ImageDims() const { return image_dims_; }
 
   inline size_t ImageWidth() const { return image_width_; }
 
@@ -139,7 +139,7 @@ class CLImage {
    * */
   const DDim &dims() const { return tensor_dims_; }
 
-  const ImageType GetImageType() const { type; }
+  const ImageType GetImageType() const { return type; }
 
  private:
   ImageType type;
@@ -157,6 +157,14 @@ class CLImage {
     }
     int width = (tdim[1] + 3) / 4;
     int height = tdim[0];
+
+    width_of_one_block_ = tdim[1];
+    height_of_one_block_ = tdim[0];
+
+    image_width_ = width;
+    image_height_ = height;
+    image_dims_ = make_ddim({image_width_, image_height_});
+    c_block_ = tdim[1] / width;
     std::unique_ptr<half_t[]> imageData{};
     if (tensor_data) {
       imageData.reset(new half_t[width * height * 4]);

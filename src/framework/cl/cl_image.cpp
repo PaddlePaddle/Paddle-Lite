@@ -125,7 +125,7 @@ Print &operator<<(Print &printer, const CLImage &cl_image) {
   float *data = new float[cl_image.numel()];
   DDim ddim = cl_image.dims();
   size_t N, C, H, W, width, height;
-  if (cl_image.GetImageType() == Normal) {
+  if (cl_image.GetImageType() == 0 || ddim.size() == 4) {
     if (ddim.size() == 4) {
       N = ddim[0];
       if (N < 0) {
@@ -152,7 +152,7 @@ Print &operator<<(Print &printer, const CLImage &cl_image) {
       W = ddim[0];
     }
     float *p = data;
-    half imageData[width * height * 4];
+    half *imageData = new half[height * width * 4];
     cl_int err;
     cl_mem image = cl_image.GetCLImage();
     size_t origin[3] = {0, 0, 0};
@@ -175,7 +175,7 @@ Print &operator<<(Print &printer, const CLImage &cl_image) {
       }
       i0 += width * H;
     }
-
+    delete (imageData);
     CL_CHECK_ERRORS(err);
   } else {
     if (ddim.size() == 2) {
@@ -191,7 +191,7 @@ Print &operator<<(Print &printer, const CLImage &cl_image) {
       W = ddim[0];
     }
     float *p = data;
-    half imageData[width * height * 4];
+    half *imageData = new half[width * height * 4];
     cl_int err;
     cl_mem image = cl_image.GetCLImage();
     size_t origin[3] = {0, 0, 0};
@@ -210,6 +210,7 @@ Print &operator<<(Print &printer, const CLImage &cl_image) {
   for (int i = 0; i < cl_image.numel(); i += stride) {
     printer << data[i] << " ";
   }
+  delete (data);
   return printer;
 }
 #endif
