@@ -24,7 +24,7 @@ bool ReluKernel<GPU_CL, float>::Init(ReluParam<GPU_CL>* param) {
   this->cl_helper_.AddKernel("relu_p0", "relu.cl");
   this->cl_helper_.AddKernel("relu_p1", "relu.cl");
   const auto dim = const_cast<framework::CLImage*>(param->InputX())->ImageDims();
-  param->getMidImage().InitEmptyImage(this->cl_helper_.CLContext(), dim);
+  param->getMidImage().InitEmptyImage(this->cl_helper_.CLContext(), this->cl_helper_.CLCommandQueue(), dim);
   return true;
 }
 
