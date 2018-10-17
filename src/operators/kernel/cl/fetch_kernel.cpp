@@ -58,7 +58,7 @@ void FetchKernel<GPU_CL, float>::Compute(const FetchParam<GPU_CL> &param) {
   clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
                          default_work_size.data(), NULL, 0, NULL, NULL);
 
-  memcpy(out->data(), out_cl_tensor.Data(), out->memory_size());
+  memcpy(out->data<float>(), out_cl_tensor.Data<float>(), out->memory_size());
 }
 
 template class FetchKernel<GPU_CL, float>;
