@@ -12,10 +12,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma OPENCL EXTENSION cl_khr_fp16 : enable
 
 #define BIASE
 #define BATCH_NORM
+#define RELU
+
+#include "cl_kernel/cl_common.h"
 
 __kernel void conv_3x3(__private const int global_size_dim0,
                                               __private const int global_size_dim1,
