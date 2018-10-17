@@ -124,51 +124,88 @@ Print &operator<<(Print &printer, const CLImage &cl_image) {
   stride = stride > 0 ? stride : 1;
   float *data = new float[cl_image.numel()];
   DDim ddim = cl_image.dims();
-  size_t N, C, H, W;
-  if (ddim.size() == 4) {
-    N = ddim[0];
-    if (N < 0) {
+  size_t N, C, H, W, width, height;
+  if (cl_image.GetImageType() == Normal) {
+    if (ddim.size() == 4) {
+      N = ddim[0];
+      if (N < 0) {
+        N = 1;
+      }
+      C = ddim[1];
+      H = ddim[2];
+      W = ddim[3];
+      width = W * ((C + 3) / 4);
+      height = N * H;
+    } else if (ddim.size() == 2) {
+      width = ddim[1];
+      height = ddim[0];
       N = 1;
+      C = 1;
+      H = ddim[0];
+      W = ddim[1];
+    } else if (ddim.size() == 1) {
+      width = ddim[0];
+      height = 1;
+      N = 1;
+      C = 1;
+      H = 1;
+      W = ddim[0];
     }
-    C = ddim[1];
-    H = ddim[2];
-    W = ddim[3];
-  } else if (ddim.size() == 1) {
-    N = 1;
-    C = ddim[0];
-    H = 1;
-    W = 1;
-  }
-
-  size_t width = W * ((C + 3) / 4);
-  size_t height = H * N;
-
-  float *p = data;
-  half imageData[width * height * 4];
-  cl_int err;
-  cl_mem image = cl_image.GetCLImage();
-  size_t origin[3] = {0, 0, 0};
-  size_t region[3] = {width, height, 1};
-  err = clEnqueueReadImage(cl_image.CommandQueue(), image, CL_TRUE, origin,
-                           region, 0, 0, imageData, 0, NULL, NULL);
-  size_t i0 = 0;
-  for (int n = 0; n < N; n++) {
-    for (int c = 0; c < C; c++) {
-      size_t i1 = i0;
-      for (int h = 0; h < H; h++) {
-        size_t i2 = (i1 << 2) + c % 4;
-        for (int w = 0; w < W; w++) {
-          *p = Half2Float(imageData[i2]);
-          i2 += 4;
-          p++;
+    float *p = data;
+    half imageData[width * height * 4];
+    cl_int err;
+    cl_mem image = cl_image.GetCLImage();
+    size_t origin[3] = {0, 0, 0};
+    size_t region[3] = {width, height, 1};
+    err = clEnqueueReadImage(cl_image.CommandQueue(), image, CL_TRUE, origin,
+                             region, 0, 0, imageData, 0, NULL, NULL);
+    size_t i0 = 0;
+    for (int n = 0; n < N; n++) {
+      for (int c = 0; c < C; c++) {
+        size_t i1 = i0 + (c / 4) * W;
+        for (int h = 0; h < H; h++) {
+          size_t i2 = (i1 << 2) + c % 4;
+          for (int w = 0; w < W; w++) {
+            *p = Half2Float(imageData[i2]);
+            i2 += 4;
+            p++;
+          }
+          i1 += width;
         }
-        i1 += width;
+      }
+      i0 += width * H;
+    }
+
+    CL_CHECK_ERRORS(err);
+  } else {
+    if (ddim.size() == 2) {
+      width = (ddim[1] + 3) / 4;
+      height = ddim[0];
+      H = ddim[0];
+      W = ddim[1];
+
+    } else if (ddim.size() == 1) {
+      width = (ddim[0] + 3) / 4;
+      height = 1;
+      H = 1;
+      W = ddim[0];
+    }
+    float *p = data;
+    half imageData[width * height * 4];
+    cl_int err;
+    cl_mem image = cl_image.GetCLImage();
+    size_t origin[3] = {0, 0, 0};
+    size_t region[3] = {width, height, 1};
+    err = clEnqueueReadImage(cl_image.CommandQueue(), image, CL_TRUE, origin,
+                             region, 0, 0, imageData, 0, NULL, NULL);
+    for (int h = 0; h < H; h++) {
+      for (int w = 0; w < W; w++) {
+        p[h * W + w] = Half2Float(imageData[(h * width + w / 4) * 4 + (w % 4)]);
       }
     }
-    i0 += width * H;
-  }
 
-  CL_CHECK_ERRORS(err);
+    CL_CHECK_ERRORS(err);
+  }
 
   for (int i = 0; i < cl_image.numel(); i += stride) {
     printer << data[i] << " ";

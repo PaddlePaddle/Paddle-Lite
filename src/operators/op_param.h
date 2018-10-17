@@ -1235,7 +1235,7 @@ class ReluParamBase : public OpParam {
 
  public:
   ReluParamBase(const VariableNameMap &inputs, const VariableNameMap &outputs,
-            const AttributeMap &attrs, const Scope &scope) {
+                const AttributeMap &attrs, const Scope &scope) {
     input_x_ = InputXFrom<GType>(inputs, scope);
     out_ = OutFrom<GType>(outputs, scope);
   }
@@ -1251,18 +1251,17 @@ class ReluParamBase : public OpParam {
 
 template <typename Dtype>
 class ReluParam : public ReluParamBase<Dtype> {
-public:
+ public:
   using ReluParamBase<Dtype>::ReluParamBase;
 };
 
 template <>
 class ReluParam<GPU_CL> : public ReluParamBase<GPU_CL> {
-public:
+ public:
   using ReluParamBase<GPU_CL>::ReluParamBase;
-  framework::CLImage& getMidImage() {
-    return midImage;
-  }
-private:
+  framework::CLImage &getMidImage() { return midImage; }
+
+ private:
   framework::CLImage midImage;
 };
 
