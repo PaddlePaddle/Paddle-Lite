@@ -43,7 +43,7 @@ template <typename DeviceType, typename OpType>
 class Executor4Test : public Executor<DeviceType> {
  public:
   Executor4Test(Program<DeviceType> p, string op_type,
-                bool use_optimize = false, int predict_op_count = 1)
+                bool use_optimize = false)
       : Executor<DeviceType>() {
     this->use_optimize_ = use_optimize;
     this->program_ = p;
@@ -64,7 +64,7 @@ class Executor4Test : public Executor<DeviceType> {
       std::vector<std::shared_ptr<OpDesc>> ops = block_desc->Ops();
       for (int i = 0; i < ops.size(); ++i) {
         auto op = ops[i];
-        if (op->Type() == op_type && i < predict_op_count) {
+        if (op->Type() == op_type) {
           DLOG << "匹配到: " << op->Type();
 
           /// test first meeting op in program
@@ -74,6 +74,7 @@ class Executor4Test : public Executor<DeviceType> {
                       op->Type(), op->GetInputs(), op->GetOutputs(),
                       op->GetAttrMap(), this->program_.scope);
           this->ops_of_block_[*block_desc.get()].push_back(op_ptr);
+          break;
         }
       }
     }
