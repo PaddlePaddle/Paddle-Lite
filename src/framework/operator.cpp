@@ -57,7 +57,9 @@ void OperatorBase<Dtype>::CheckAllInputOutputSet() const {}
 
 template <typename Dtype>
 void OperatorBase<Dtype>::Run() {
+  DLOG << " ----- Begin run impl --- " << type_ << " ----- ";
   RunImpl();
+  DLOG << " ----- End run impl --- " << type_ << " ----- ";
 #ifdef PADDLE_MOBILE_DEBUG
   DLOG << "-------------" << type_ << "----------------------------";
   vector<string> input_keys = GetInputKeys();
