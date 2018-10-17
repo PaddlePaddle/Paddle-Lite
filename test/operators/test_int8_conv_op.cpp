@@ -143,7 +143,7 @@ int TestConvOp() {
   int input_c = 3;
   int input_h = 100;
   int input_w = 100;
-  int output_c = 32;
+  int output_c = 8;
   framework::DDim input_shape =
       framework::make_ddim({batch_size, input_c, input_h, input_w});
   framework::DDim filter_shape =
@@ -158,11 +158,11 @@ int TestConvOp() {
 
   auto input_var = scope.get()->Var("input");
   auto input = input_var->template GetMutable<framework::LoDTensor>();
-  SetupTensor<Itype>(input, input_shape, -127, 127);
+  SetupTensor<Itype>(input, input_shape, -7, 7);
 
   auto filter_var = scope.get()->Var("filter");
   auto filter = filter_var->template GetMutable<framework::LoDTensor>();
-  SetupTensor<Itype>(filter, filter_shape, -127, 127);
+  SetupTensor<Itype>(filter, filter_shape, -7, 7);
 
   auto output_var = scope.get()->Var("output");
   framework::AttributeMap attrs;
@@ -202,4 +202,13 @@ int TestConvOp() {
 
 }  // namespace paddle_mobile
 
-int main() { return paddle_mobile::TestConvOp<int8_t, int32_t, 5, 2, 1>(); }
+int main() {
+  // kernel = 3, pad = 0, stride = 1
+  paddle_mobile::TestConvOp<int8_t, int32_t, 3, 0, 1>();
+  // kernel = 3, pad = 1, stride = 1
+  paddle_mobile::TestConvOp<int8_t, int32_t, 3, 1, 1>();
+  // kernel = 5, pad = 0, stride = 1
+  paddle_mobile::TestConvOp<int8_t, int32_t, 5, 0, 1>();
+  // kernel = 5, pad = 2, stride = 1
+  paddle_mobile::TestConvOp<int8_t, int32_t, 5, 2, 1>();
+}
