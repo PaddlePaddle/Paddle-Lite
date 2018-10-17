@@ -62,6 +62,8 @@ const char *G_OP_TYPE_CRF = "crf_decoding";
 const char *G_OP_TYPE_BILINEAR_INTERP = "bilinear_interp";
 const char *G_OP_TYPE_FLATTEN = "flatten";
 const char *G_OP_TYPE_SHAPE = "shape";
+const char *G_OP_TYPE_ELEMENTWISE_MUL = "elementwise_mul";
+const char *G_OP_TYPE_SUM = "sum";
 
 const char *G_OP_TYPE_QUANTIZE = "quantize";
 const char *G_OP_TYPE_DEQUANTIZE = "dequantize";
@@ -115,7 +117,8 @@ std::unordered_map<
         {G_OP_TYPE_FLATTEN, {{"X"}, {"Out"}}},
         {G_OP_TYPE_SHAPE, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_CONV_TRANSPOSE, {{"Input"}, {"Output"}}},
+        {G_OP_TYPE_SUM, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_ELEMENTWISE_MUL, {{"X", "Y"}, {"Out"}}},
         {G_OP_TYPE_QUANTIZE, {{"X"}, {"Out", "OutScale"}}},
         {G_OP_TYPE_DEQUANTIZE, {{"X", "Scale"}, {"Out"}}}};
-
 }  // namespace paddle_mobile
