@@ -14,7 +14,7 @@ limitations under the License. */
 
 #ifdef CONV_OP
 
-#include "operators/kernel/central-arm-func/conv_arm_int8.h"
+#include "operators/math/conv_arm_int8.h"
 
 namespace paddle_mobile {
 namespace operators {
