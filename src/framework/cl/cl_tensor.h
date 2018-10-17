@@ -48,12 +48,14 @@ class CLTensor : TensorBase {
     return *this;
   }
 
-  inline cl_mem mutable_with_data(void *data) {
-    int64_t size = numel() * sizeof(float);
-    holder_.reset(new PlaceholderImpl(size, data, typeid(cl_mem), context_,
-                                      command_queue_));
-    return reinterpret_cast<cl_mem>(
-        reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(holder_->ptr())));
+  template <typename T>
+  inline cl_mem mutable_with_data(const T *data) {
+    int64_t size = numel() * sizeof(T);
+
+    holder_.reset(new PlaceholderImpl(
+        size, reinterpret_cast<void *>(const_cast<T *>(data)), typeid(T),
+        context_, command_queue_));
+    return reinterpret_cast<cl_mem>(holder_->ptr());
   }
 
   inline cl_mem mutable_data(std::type_index type) {
