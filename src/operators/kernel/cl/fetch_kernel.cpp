@@ -13,51 +13,52 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "operators/kernel/fetch_kernel.h"
+#include "framework/cl/cl_tensor.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
 bool FetchKernel<GPU_CL, float>::Init(FetchParam<GPU_CL> *param) {
-  //  this->cl_helper_.AddKernel("fetch", "fetch_kernel.cl");
+  this->cl_helper_.AddKernel("fetch", "fetch_kernel.cl");
   return true;
 }
 
 template <>
 void FetchKernel<GPU_CL, float>::Compute(const FetchParam<GPU_CL> &param) {
-  //  auto kernel = this->cl_helper_.KernelAt(0);
-  //  auto default_work_size =
-  //  this->cl_helper_.DefaultWorkSize(*param.InputX());
-  //
-  //  auto input = param.InputX()->GetCLImage();
-  //  auto *out = param.Out();
-  //
-  //  const auto &dims = param.InputX()->dims();
-  //  const int N = dims[0];
-  //  const int C = dims[1];
-  //  const int in_height = dims[2];
-  //  const int in_width = dims[3];
-  //
-  //  int size_ch = in_height * in_width;
-  //  int size_block = size_ch * 4;
-  //  int size_batch = size_ch * C;
-  //
-  //  // need create outputBuffer
-  //  cl_image_format imageFormat;
-  //  imageFormat.image_channel_order = CL_RGBA;
-  //  imageFormat.image_channel_data_type = CL_FLOAT;
-  //  cl_mem outputBuffer;
-  //
-  //  clSetKernelArg(kernel, 0, sizeof(int), &in_height);
-  //  clSetKernelArg(kernel, 1, sizeof(int), &in_width);
-  //  clSetKernelArg(kernel, 2, sizeof(int), &size_ch);
-  //  clSetKernelArg(kernel, 3, sizeof(int), &size_block);
-  //  clSetKernelArg(kernel, 4, sizeof(int), &size_batch);
-  //  clSetKernelArg(kernel, 5, sizeof(cl_mem), &input);
-  //  clSetKernelArg(kernel, 6, sizeof(cl_mem), &outputBuffer);
-  //
-  //  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
-  //                         default_work_size.data(), NULL, 0, NULL, NULL);
+  auto kernel = this->cl_helper_.KernelAt(0);
+  auto default_work_size = this->cl_helper_.DefaultWorkSize(*param.InputX());
+
+  auto input = param.InputX()->GetCLImage();
+  auto *out = param.Out();
+
+  const auto &dims = param.InputX()->dims();
+  const int N = dims[0];
+  const int C = dims[1];
+  const int in_height = dims[2];
+  const int in_width = dims[3];
+
+  int size_ch = in_height * in_width;
+  int size_block = size_ch * 4;
+  int size_batch = size_ch * C;
+
+  CLTensor out_cl_tensor(this->cl_helper_.CLContext(),
+                         this->cl_helper_.CLCommandQueue());
+  out_cl_tensor.Resize(out->dims());
+  cl_mem outBuffer = out_cl_tensor.mutable_data<float>();
+
+  clSetKernelArg(kernel, 0, sizeof(int), &in_height);
+  clSetKernelArg(kernel, 1, sizeof(int), &in_width);
+  clSetKernelArg(kernel, 2, sizeof(int), &size_ch);
+  clSetKernelArg(kernel, 3, sizeof(int), &size_block);
+  clSetKernelArg(kernel, 4, sizeof(int), &size_batch);
+  clSetKernelArg(kernel, 5, sizeof(cl_mem), &input);
+  clSetKernelArg(kernel, 6, sizeof(cl_mem), &outBuffer);
+
+  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
+                         default_work_size.data(), NULL, 0, NULL, NULL);
+
+  memcpy(out->data(), out_cl_tensor.Data(), out->memory_size());
 }
 
 template class FetchKernel<GPU_CL, float>;
