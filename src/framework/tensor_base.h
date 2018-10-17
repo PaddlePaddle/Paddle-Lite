@@ -72,36 +72,6 @@ class TensorBase {
 
   inline bool IsInitialized() const { return holder_ != nullptr; }
 
-  virtual inline void *mutable_data(std::type_index type) = 0;
-
-  /*! Return a pointer to mutable memory block. */
-  template <typename T>
-  inline T *data() {
-    check_memory_size();
-    PADDLE_MOBILE_ENFORCE(
-        (std::is_same<T, void>::value ||
-         holder_->type().hash_code() == typeid(T).hash_code()),
-        "Tensor holds the wrong type, it holds %s",
-        this->holder_->type().name());
-
-    return reinterpret_cast<T *>(reinterpret_cast<uintptr_t>(holder_->ptr()) +
-                                 offset_);
-  }
-
-  /*! Return a pointer to constant memory block. */
-  template <typename T>
-  inline const T *data() const {
-    check_memory_size();
-    PADDLE_MOBILE_ENFORCE(
-        (std::is_same<T, void>::value ||
-         holder_->type().hash_code() == typeid(T).hash_code()),
-        "Tensor holds the wrong type, it holds %s ,requested:%s",
-        this->holder_->type().name(), typeid(T).name());
-
-    return reinterpret_cast<const T *>(
-        reinterpret_cast<uintptr_t>(holder_->ptr()) + offset_);
-  }
-
   /*! Return the dimensions of the memory block. */
   inline const DDim &dims() const { return dims_; }
 
