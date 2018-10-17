@@ -43,10 +43,11 @@ void ReluKernel<GPU_CL, float>::Compute(const ReluParam<GPU_CL>& param) {
   clSetKernelArg(kernel_p1, 0, sizeof(cl_mem), &tImage);
   clSetKernelArg(kernel_p1, 1, sizeof(cl_mem), &outputImage);
   const size_t work_size[2] = {input->ImageWidth(), input->ImageHeight()};
-  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel_p0, 3, NULL,
-                         work_size, NULL, 0, NULL, NULL);
-  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel_p1, 3, NULL,
-                         work_size, NULL, 0, NULL, NULL);
+
+//  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel_p0, 3, NULL,
+//                         work_size, NULL, 0, NULL, NULL);
+//  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel_p1, 3, NULL,
+//                         work_size, NULL, 0, NULL, NULL);
 }
 
 template class ReluKernel<GPU_CL, float>;
