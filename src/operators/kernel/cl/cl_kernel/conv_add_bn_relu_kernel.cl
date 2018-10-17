@@ -14,7 +14,6 @@ limitations under the License. */
 
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
 
-
 #define BIASE
 #define BATCH_NORM
 
@@ -54,21 +53,24 @@ __kernel void conv_3x3(__private const int global_size_dim0,
     ouput_pos_in_one_block.x = out_w;
     ouput_pos_in_one_block.y = out_nh;
 
+
+    const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
+                              CLK_ADDRESS_CLAMP          |
+                              CLK_FILTER_NEAREST;
+
     int2 in_pos_in_one_block;
     in_pos_in_one_block.x = ouput_pos_in_one_block.x * stride + offset;
     in_pos_in_one_block.y = ouput_pos_in_one_block.y * stride + offset;
 
  #ifdef BIASE
-    half4 output = read_imageh(bias, sampler, int2(out_c, 0));
+    half4 output = read_imageh(bias, sampler, (int2)(out_c, 0));
 #else
     half4 output = 0.0f;
 #endif
 
    half4 input[9];
 
-   const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-                              CLK_ADDRESS_CLAMP         |
-                              CLK_FILTER_NEAREST;
+
 
    for (int i = 0; i < input_c; ++i) {
         int2 pos_in = (int2)(i * input_width + in_pos_in_one_block.x, in_pos_in_one_block.y);
@@ -139,7 +141,7 @@ __kernel void conv_3x3(__private const int global_size_dim0,
     }
 
 #ifdef BATCH_NORM
-    output = output * read_imageh(new_scale, sampler, int2(out_c, 0)) + read_imageh(new_biase, sampler, int2(out_c, 0))
+    output = output * read_imageh(new_scale, sampler, (int2)(out_c, 0)) + read_imageh(new_biase, sampler, (int2)(out_c, 0));
 #endif
 
 #ifdef RELU
@@ -250,7 +252,7 @@ __kernel void depth_conv_3x3(__private const int global_size_dim0,
     }
 
 #ifdef BATCH_NORM
-    output = output * read_imageh(new_scale, sampler, (int2)(out_c, 0)) + read_imageh(new_biase, sampler, (int2)(out_c, 0))
+    output = output * read_imageh(new_scale, sampler, (int2)(out_c, 0)) + read_imageh(new_biase, sampler, (int2)(out_c, 0));
 #endif
 
 #ifdef RELU
@@ -321,7 +323,7 @@ __kernel void conv_1x1(__private const int global_size_dim0,
   }
 
 #ifdef BATCH_NORM
-    output = output * read_imageh(new_scale, sampler, (int2)(out_c, 0)) + read_imageh(new_biase, sampler, (int2)(out_c, 0))
+    output = output * read_imageh(new_scale, sampler, (int2)(out_c, 0)) + read_imageh(new_biase, sampler, (int2)(out_c, 0));
 #endif
 
 #ifdef RELU
