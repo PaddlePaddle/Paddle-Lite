@@ -47,7 +47,7 @@ void DepthwiseConvKernel<GPU_CL, float>::Compute(
   int nh = default_work_size[2];
   auto input = param.Input()->GetCLImage();
   auto filter = param.Filter()->GetCLImage();
-  auto output = param.Output();
+  auto output = param.Output()->GetCLImage();
   int stride = param.Strides()[0];
   int offset = param.Offset();
   int input_c = param.Input()->CBlock();
