@@ -35,6 +35,7 @@ using framework::AttributeMap;
 using framework::LoDTensor;
 using framework::Scope;
 using framework::Tensor;
+using framework::Variable;
 using std::string;
 using std::vector;
 
@@ -182,6 +183,11 @@ class OpParam {
     return GetMultiVarValue<T>("X", inputs, scope);
   }
 
+  static vector<Variable *> InputMultiVarsFrom(const VariableNameMap &inputs,
+                                               const Scope &scope) {
+    return GetMultiVar("X", inputs, scope);
+  }
+
   template <typename T>
   static T *OutputBatchGateFrom(const VariableNameMap &outputs,
                                 const Scope &scope) {
@@ -214,6 +220,11 @@ class OpParam {
   template <typename T>
   static T *OutputFrom(const VariableNameMap &outputs, const Scope &scope) {
     return GetVarValue<T>("Output", outputs, scope);
+  }
+
+  static Variable *OutVarFrom(const VariableNameMap &outputs,
+                              const Scope &scope) {
+    return GetVar("Out", outputs, scope);
   }
 
   template <typename T>
@@ -286,6 +297,19 @@ class OpParam {
     }
   }
 
+  static Variable *GetVar(const string &key, const VariableNameMap &var_map,
+                          const Scope &scope) {
+    PADDLE_MOBILE_ENFORCE(var_map.count(key) > 0,
+                          "%s is not contained in var_map", key.c_str())
+    auto var_vec = var_map.at(key);
+    if (!var_vec.empty()) {
+      auto var = scope.FindVar(var_vec[0]);
+      return var;
+    } else {
+      return nullptr;
+    }
+  }
+
   static std::string getkey(const string &key, const VariableNameMap &var_map,
                             int index) {
     auto var_vec = var_map.at(key);
@@ -316,6 +340,19 @@ class OpParam {
     for (auto &var_vec : var_vecs) {
       auto var = scope.FindVar(var_vec);
       var_res.push_back(var->GetMutable<T>());
+    }
+    return var_res;
+  }
+
+  static vector<Variable *> GetMultiVar(const string &key,
+                                        const VariableNameMap &var_map,
+                                        const Scope &scope) {
+    auto var_vecs = var_map.at(key);
+    assert(var_vecs.size() > 1);
+    vector<Variable *> var_res;
+    for (auto &var_vec : var_vecs) {
+      auto var = scope.FindVar(var_vec);
+      var_res.push_back(var);
     }
     return var_res;
   }
@@ -405,6 +442,45 @@ class ElementwiseAddParam : OpParam {
 #endif
 };
 
+template <typename Dtype>
+class ElementwiseMulParam : OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  ElementwiseMulParam(const VariableNameMap &inputs,
+                      const VariableNameMap &outputs, const AttributeMap &attrs,
+                      const Scope &scope) {
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    input_y_ = InputYFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+    axis_ = GetAttr<int>("axis", attrs);
+  }
+
+  const GType *InputX() const { return input_x_; }
+
+  const GType *InputY() const { return input_y_; }
+
+  GType *Out() const { return out_; }
+
+  const int &Axis() const { return axis_; }
+
+ private:
+  GType *input_x_;
+  GType *input_y_;
+  GType *out_;
+  int axis_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::EWAddArgs fpga_EW_mul_args;
+
+ public:
+  const fpga::EWMulArgs &FpgaArgs() const { return fpga_EW_mul_args; }
+  void SetFpgaArgs(const fpga::EWMulArgs &args) { fpga_EW_mul_args = args; }
+#endif
+};
+
 #ifdef FUSION_ELEMENTWISEADDRELU_OP
 template <typename Dtype>
 using ElementwiseAddReluParam = ElementwiseAddParam<Dtype>;
@@ -486,6 +562,46 @@ class ConcatParam : public OpParam {
  public:
   const fpga::ConcatArgs &FpgaArgs() const { return fpga_concat_args; }
   void SetFpgaArgs(const fpga::ConcatArgs &args) { fpga_concat_args = args; }
+#endif
+};
+#endif
+
+#ifdef SUM_OP
+template <typename Dtype>
+class SumParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  SumParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+           const AttributeMap &attrs, const Scope &scope) {
+    inputs_vars_ = InputMultiVarsFrom(inputs, scope);
+    out_var_ = OutVarFrom(outputs, scope);
+    inputs_ = InputMultiFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+  }
+
+  vector<Variable *> InputsVars() const { return inputs_vars_; }
+
+  Variable *OutVar() const { return out_var_; }
+
+  vector<GType *> Inputs() const { return inputs_; }
+
+  GType *Out() const { return out_; }
+
+ private:
+  vector<Variable *> inputs_vars_;
+  Variable *out_var_;
+  vector<GType *> inputs_;
+  GType *out_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::SumArgs fpga_sum_args;
+
+ public:
+  const fpga::SumArgs &FpgaArgs() const { return fpga_sum_args; }
+  void SetFpgaArgs(const fpga::SumArgs &args) { fpga_sum_args = args; }
 #endif
 };
 #endif
