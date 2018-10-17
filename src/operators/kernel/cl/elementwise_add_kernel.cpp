@@ -22,16 +22,16 @@ namespace operators {
 template <>
 bool ElementwiseAddKernel<GPU_CL, float>::Init(
     ElementwiseAddParam<GPU_CL> *param) {
-    CLImage *bias = (CLImage*)param->InputY();
-    bias->InitCLImage(cl_helper_.CLContext());
-   if(bias->dims().size()==4){
-     this->cl_helper_.AddKernel("elementwise_add", "elementwise_add_kernel.cl");
-   }else if(param->InputY()->dims().size()==1){
-    DLOG<<"-----init add-----";
-     this->cl_helper_.AddKernel("channel_add", "channel_add_kernel.cl");
-   }else{
-     DLOG << "error:bias dims is error";
-   }
+  CLImage *bias = (CLImage *)param->InputY();
+  bias->InitCLImage(cl_helper_.CLContext(), this->cl_helper_.CLCommandQueue());
+  if (bias->dims().size() == 4) {
+    this->cl_helper_.AddKernel("elementwise_add", "elementwise_add_kernel.cl");
+  } else if (param->InputY()->dims().size() == 1) {
+    DLOG << "-----init add-----";
+    this->cl_helper_.AddKernel("channel_add", "channel_add_kernel.cl");
+  } else {
+    DLOG << "error:bias dims is error";
+  }
 
   return true;
 }
@@ -44,7 +44,7 @@ void ElementwiseAddKernel<GPU_CL, float>::Compute(
   auto output = param.Out();
   cl_int status;
   auto kernel = this->cl_helper_.KernelAt(0);
-  if(bias->dims().size()==4){
+  if (bias->dims().size() == 4) {
     cl_mem input_image = input->GetCLImage();
     cl_mem bias_image = bias->GetCLImage();
     cl_mem output_image = output->GetCLImage();
@@ -57,14 +57,15 @@ void ElementwiseAddKernel<GPU_CL, float>::Compute(
     int width = input->ImageWidth();
     int height = input->ImageHeight();
     size_t global_work_size[2] = {width, height};
-    status = clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2,
-                                    NULL, global_work_size, NULL, 0, NULL, NULL);
+    status =
+        clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2,
+                               NULL, global_work_size, NULL, 0, NULL, NULL);
     CL_CHECK_ERRORS(status);
-  }else if(bias->dims().size()==1){
+  } else if (bias->dims().size() == 1) {
     cl_mem input_image = input->GetCLImage();
     cl_mem bias_image = bias->GetCLImage();
     cl_mem output_image = output->GetCLImage();
-    int tensor_w = input->dims()[4];
+    int tensor_w = input->dims()[3];
     status = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&input_image);
     CL_CHECK_ERRORS(status);
     status = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&bias_image);
@@ -76,13 +77,13 @@ void ElementwiseAddKernel<GPU_CL, float>::Compute(
     int width = input->ImageWidth();
     int height = input->ImageHeight();
     size_t global_work_size[2] = {width, height};
-    status = clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2,
-                                    NULL, global_work_size, NULL, 0, NULL, NULL);
+    status =
+        clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2,
+                               NULL, global_work_size, NULL, 0, NULL, NULL);
     CL_CHECK_ERRORS(status);
-  }else{
+  } else {
     DLOG << "error:bias dims is error";
   }
-
 }
 
 template class ElementwiseAddKernel<GPU_CL, float>;

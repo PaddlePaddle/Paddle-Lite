@@ -37,19 +37,19 @@ void ReshapeKernel<GPU_CL, float>::Compute(const ReshapeParam<GPU_CL> &param) {
   int dims[4] = {1, 1, 1, 1};
   int odims[4] = {1, 1, 1, 1};
   for (int i = 0; i < inputDim.size(); i++) {
-    dims[4-inputDim.size()+i] = inputDim[i];
+    dims[4 - inputDim.size() + i] = inputDim[i];
   }
   for (int i = 0; i < outputDim.size(); i++) {
-    odims[4-outputDim.size()+i] = outputDim[i];
+    odims[4 - outputDim.size() + i] = outputDim[i];
   }
-  clSetKernelArg(kernel, 2, sizeof(int), dims);
-  clSetKernelArg(kernel, 3, sizeof(int), dims + 1);
-  clSetKernelArg(kernel, 4, sizeof(int), dims + 2);
-  clSetKernelArg(kernel, 5, sizeof(int), dims + 3);
-  clSetKernelArg(kernel, 6, sizeof(int), odims);
-  clSetKernelArg(kernel, 7, sizeof(int), odims + 1);
-  clSetKernelArg(kernel, 8, sizeof(int), odims + 2);
-  clSetKernelArg(kernel, 9, sizeof(int), odims + 3);
+  clSetKernelArg(kernel, 2, sizeof(cl_int), &dims);
+  clSetKernelArg(kernel, 3, sizeof(cl_int), &dims[1]);
+  clSetKernelArg(kernel, 4, sizeof(cl_int), &dims[2]);
+  clSetKernelArg(kernel, 5, sizeof(cl_int), &dims[3]);
+  clSetKernelArg(kernel, 6, sizeof(cl_int), &odims);
+  clSetKernelArg(kernel, 7, sizeof(cl_int), &odims[1]);
+  clSetKernelArg(kernel, 8, sizeof(cl_int), &odims[1]);
+  clSetKernelArg(kernel, 9, sizeof(cl_int), &odims[1]);
   const size_t work_size[2] = {output->ImageWidth(), output->ImageHeight()};
 
   clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2, NULL,

@@ -29,8 +29,10 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
           param->Paddings()[0] == param->Paddings()[1],
       "need equal");
 
-  param->Filter()->InitCLImage(cl_helper_.CLContext());
-  param->Bias()->InitCLImage(cl_helper_.CLContext());
+  param->Filter()->InitCLImage(cl_helper_.CLContext(),
+                               cl_helper_.CLCommandQueue());
+  param->Bias()->InitCLImage(cl_helper_.CLContext(),
+                             cl_helper_.CLCommandQueue());
 
   //  const CL *mean = param->InputMean();
   const framework::CLImage *mean = param->InputMean();
@@ -38,6 +40,11 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
   const framework::CLImage *scale = param->InputScale();
   const framework::CLImage *bias = param->InputBias();
   const float epsilon = param->Epsilon();
+  //
+  //  DLOG << " climage mean: " << *mean;
+  //  DLOG << " climage variance: " << *variance;
+  //  DLOG << " climage scale: " << *scale;
+  //  DLOG << " climage bias: " << *bias;
 
   auto mean_ptr = mean->data<float>();
   auto variance_ptr = variance->data<float>();
@@ -62,12 +69,22 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
   framework::CLImage *new_scale = new framework::CLImage();
 
   new_scale->SetTensorData(new_scale_ptr, variance->dims());
-  new_scale->InitCLImage(this->cl_helper_.CLContext());
+  new_scale->InitCLImage(this->cl_helper_.CLContext(),
+                         cl_helper_.CLCommandQueue());
+
+  DLOG << " climage - y bias: " << *(param->Bias());
+
+  DLOG << " climage - new scale: " << *new_scale;
 
   framework::CLImage *new_bias = new framework::CLImage();
 
   new_bias->SetTensorData(new_bias_ptr, variance->dims());
-  new_bias->InitCLImage(this->cl_helper_.CLContext());
+  new_bias->InitCLImage(this->cl_helper_.CLContext(),
+                        cl_helper_.CLCommandQueue());
+
+  DLOG << " climage - new bias: " << *new_bias;
+
+  DLOG << " climage - filter: " << *(param->Filter());
 
   param->SetNewScale(new_scale);
   param->SetNewBias(new_bias);
@@ -113,7 +130,7 @@ void ConvAddBNReluKernel<GPU_CL, float>::Compute(
   auto biase = param.Bias()->GetCLImage();
   auto new_scale = param.NewScale()->GetCLImage();
   auto new_bias = param.NewBias()->GetCLImage();
-  auto output = param.Output();
+  auto output = param.Output()->GetCLImage();
   int stride = param.Strides()[0];
   int offset = param.Offset();
   int input_c = param.Input()->CBlock();
@@ -126,23 +143,54 @@ void ConvAddBNReluKernel<GPU_CL, float>::Compute(
   cl_int status;
 
   status = clSetKernelArg(kernel, 0, sizeof(int), &c_block);
-  status = clSetKernelArg(kernel, 1, sizeof(int), &w);
-  status = clSetKernelArg(kernel, 2, sizeof(int), &nh);
-  status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &input);
-  status = clSetKernelArg(kernel, 4, sizeof(cl_mem), &filter);
-  status = clSetKernelArg(kernel, 5, sizeof(cl_mem), &biase);
-  status = clSetKernelArg(kernel, 6, sizeof(cl_mem), &new_scale);
-  status = clSetKernelArg(kernel, 7, sizeof(cl_mem), &new_bias);
-  status = clSetKernelArg(kernel, 8, sizeof(cl_mem), &output);
-  status = clSetKernelArg(kernel, 9, sizeof(int), &stride);
-  status = clSetKernelArg(kernel, 10, sizeof(int), &offset);
-  status = clSetKernelArg(kernel, 11, sizeof(int), &input_c);
-  status = clSetKernelArg(kernel, 12, sizeof(int), &dilation);
-  status = clSetKernelArg(kernel, 13, sizeof(int), &input_width);
-  status = clSetKernelArg(kernel, 14, sizeof(int), &input_height);
-  status = clSetKernelArg(kernel, 15, sizeof(int), &output_width);
-  status = clSetKernelArg(kernel, 16, sizeof(int), &output_height);
+  CL_CHECK_ERRORS(status);
 
+  status = clSetKernelArg(kernel, 1, sizeof(int), &w);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, 2, sizeof(int), &nh);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &input);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, 4, sizeof(cl_mem), &filter);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, 5, sizeof(cl_mem), &biase);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, 6, sizeof(cl_mem), &new_scale);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, 7, sizeof(cl_mem), &new_bias);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, 8, sizeof(cl_mem), &output);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, 9, sizeof(int), &stride);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, 10, sizeof(int), &offset);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, 11, sizeof(int), &input_c);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, 12, sizeof(int), &dilation);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, 13, sizeof(int), &input_width);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, 14, sizeof(int), &input_height);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, 15, sizeof(int), &output_width);
+  CL_CHECK_ERRORS(status);
+
+  status = clSetKernelArg(kernel, 16, sizeof(int), &output_height);
   CL_CHECK_ERRORS(status);
 
   status =
