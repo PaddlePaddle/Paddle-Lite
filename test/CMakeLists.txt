@@ -255,6 +255,10 @@ if (NOT FOUND_MATCH)
     target_link_libraries(test-gemm-accuracy paddle-mobile)
 
     # gen test
+    ADD_EXECUTABLE(test-gemm-int8-accuracy common/test_gemm_int8_accuracy.cpp)
+    target_link_libraries(test-gemm-int8-accuracy paddle-mobile)
+
+    # gen test
     ADD_EXECUTABLE(test-gemm-perf common/test_gemm_perf.cpp)
     target_link_libraries(test-gemm-perf paddle-mobile)
 
