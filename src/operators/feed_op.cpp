@@ -12,12 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "feed_op.h"
-namespace paddle_mobile {
-namespace operators {}
-}  // namespace paddle_mobile
+#include "operators/feed_op.h"
 
 namespace ops = paddle_mobile::operators;
+
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(feed, ops::FeedOp);
 #endif

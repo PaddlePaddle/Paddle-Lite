@@ -20,11 +20,11 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
-using std::string;
+
 template <typename DeviceType, typename T>
 class FeedOp : public framework::OperatorBase<DeviceType> {
  public:
-  FeedOp(const string &type, const VariableNameMap &inputs,
+  FeedOp(const std::string &type, const VariableNameMap &inputs,
          const VariableNameMap &outputs, const framework::AttributeMap attrs,
          std::shared_ptr<framework::Scope> scope)
       : framework::OperatorBase<DeviceType>(type, inputs, outputs, attrs,
@@ -35,10 +35,6 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
     auto out_dims = param_.Out()->dims();
     out_dims[0] = param_.BatchSize();
     param_.Out()->Resize(out_dims);
-
-    //  note : mobile infershape iscalled when executer is created.  so  do not
-    //  pass lod here .
-    // it is empty
   }
 
 #ifdef PADDLE_MOBILE_FPGA
@@ -49,7 +45,7 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
   }
 
   void RunImpl() const {
-    auto input = (Tensor *)const_cast<LoDTensor *>(param_.InputX());
+    auto input = (Tensor *)const_cast<LoDTensor *>(param_.InputX());  // NOLINT
     fpga::format_image(input);
     auto input_ptr = input->data<float>();
     Tensor *output = param_.Out();
@@ -61,7 +57,7 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
     args.output_data_type = fpga::DATA_TYPE_FP16;
     args.input_layout_type = fpga::LAYOUT_CHW;
     args.output_layout_type = fpga::LAYOUT_HWC;
-    args.image.address = (void *)input_ptr;
+    args.image.address = (void *)input_ptr;  // NOLINT
     args.image.channels = (uint32_t)input->dims()[1];
     args.image.height = (uint32_t)input->dims()[2];
     args.image.width = (uint32_t)input->dims()[3];
@@ -86,13 +82,3 @@ class FeedOp : public framework::OperatorBase<DeviceType> {
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
-#ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(feed);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(feed);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-USE_OP_FPGA(feed);
-#endif

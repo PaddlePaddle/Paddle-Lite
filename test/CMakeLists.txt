@@ -35,8 +35,8 @@ if (CON GREATER -1)
     ADD_EXECUTABLE(test-yolo net/test_yolo.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-yolo paddle-mobile)
     # gen test
-    ADD_EXECUTABLE(test_yolo_combined net/test_yolo_combined.cpp test_helper.h test_include.h executor_for_test.h)
-    target_link_libraries(test_yolo_combined paddle-mobile)
+    ADD_EXECUTABLE(test-yolo-combined net/test_yolo_combined.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test-yolo-combined paddle-mobile)
     set(FOUND_MATCH ON)
 
 endif ()
@@ -212,6 +212,14 @@ if (NOT FOUND_MATCH)
     ADD_EXECUTABLE(test-fc-op operators/test_fusion_fc_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-fc-op paddle-mobile)
 
+    # test quantize op
+    ADD_EXECUTABLE(test-quantize-op operators/test_quantize_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-quantize-op paddle-mobile)
+
+    # test dequantize op
+    ADD_EXECUTABLE(test-dequantize-op operators/test_dequantize_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-dequantize-op paddle-mobile)
+
     # gen test log
     ADD_EXECUTABLE(test-log common/test_log.cpp)
     target_link_libraries(test-log paddle-mobile)
@@ -315,7 +323,10 @@ if (NOT FOUND_MATCH)
     target_link_libraries(test-fssd paddle-mobile)
 
 
+    # gen test
+    ADD_EXECUTABLE(test-multi-process net/test_multi_inference_predict.cpp test_helper.h test_include.h)
+    target_link_libraries(test-multi-process paddle-mobile)
+
+
     #add_library(test-lib-size SHARED common/test_lib_size.h common/test_lib_size.cpp)
-
-
 endif ()

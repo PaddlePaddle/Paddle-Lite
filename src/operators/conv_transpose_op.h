@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef CONV_TRANSPOSE
+#ifdef CONV_TRANSPOSE_OP
 
 #pragma once
 
@@ -87,15 +87,5 @@ class ConvOpTranspose : public framework::OperatorWithKernel<
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
-#ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(conv2d_transpose);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(conv2d_transpose);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-USE_OP_FPGA(conv2d_transpose);
-#endif
 
 #endif

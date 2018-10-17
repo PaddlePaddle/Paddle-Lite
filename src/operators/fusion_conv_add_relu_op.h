@@ -65,37 +65,7 @@ class FusionConvAddReluOp : public framework::OperatorWithKernel<
  protected:
 };
 
-#ifdef PADDLE_MOBILE_CPU
-
-#ifndef CONV_ADD_RELU_REGISTER
-#define CONV_ADD_RELU_REGISTER
-static framework::FusionOpRegistrar fusion_conv_add_relu_registrar(
-    new FusionConvAddReluOpMatcher());
-#endif
-
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-
-#ifndef CONV_ADD_RELU_REGISTER
-#define CONV_ADD_RELU_REGISTER
-static framework::FusionOpRegistrar fusion_conv_add_relu_registrar(
-    new FusionConvAddReluOpMatcher());
-#endif
-
-#endif
-
 }  // namespace operators
 }  // namespace paddle_mobile
-
-#ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(fusion_conv_add_relu);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-USE_OP_FPGA(fusion_conv_add_relu);
-#endif
 
 #endif

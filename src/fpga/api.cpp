@@ -12,15 +12,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "api.h"
+#include "fpga/api.h"
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <algorithm>
 #include <map>
-#include "bias_scale.h"
-#include "filter.h"
-#include "image.h"
+#include "fpga/bias_scale.h"
+#include "fpga/filter.h"
+#include "fpga/image.h"
 #define FPGA_TEST_MODE
 #define PADDLE_MOBILE_OS_LINUX
 
@@ -59,8 +59,8 @@ void *fpga_malloc(size_t size) {
 #endif
   counter += size;
   memory_map.insert(std::make_pair(ptr, size));
-  DLOG << "Address: " << ptr << ", " << size << " bytes allocated. Total "
-       << counter << " bytes";
+  //  DLOG << "Address: " << ptr << ", " << size << " bytes allocated. Total "
+  //       << counter << " bytes";
   return ptr;
 }
 
@@ -78,8 +78,8 @@ void fpga_free(void *ptr) {
     free(ptr);
 #endif
     counter += size;
-    DLOG << "Address: " << ptr << ", " << size << " bytes freed. Total "
-         << counter << " bytes";
+    //    DLOG << "Address: " << ptr << ", " << size << " bytes freed. Total "
+    //         << counter << " bytes";
   } else {
     DLOG << "Invalid pointer";
   }
@@ -101,6 +101,27 @@ int fpga_invalidate(void *address, size_t size) {
   args.address = address;
   args.size = size;
   return do_ioctl(IOCTL_MEMCACHE_INVAL, &args);
+}
+
+half fp32_2_fp16(float fp32_num) {
+  unsigned long tmp = *(unsigned long *)(&fp32_num);  // NOLINT
+  half t = ((tmp & 0x007fffff) >> 13) | ((tmp & 0x80000000) >> 16) |
+           (((tmp & 0x7f800000) >> 13) - (112 << 10));
+  if (tmp & 0x1000) {
+    t++;  // roundoff
+  }
+  return t;
+}
+
+float fp16_2_fp32(half fp16_num) {
+  int frac = (fp16_num & 0x3ff);
+  int exp = ((fp16_num & 0x7c00) >> 10) + 112;
+  int s = fp16_num & 0x8000;
+  int tmp = 0;
+  float fp32_num;
+  tmp = s << 16 | exp << 23 | frac << 13;
+  fp32_num = *(float *)&tmp;  // NOLINT
+  return fp32_num;
 }
 
 int ComputeBasicConv(const struct ConvArgs &args) {
@@ -148,6 +169,8 @@ int ComputeFpgaConv(const struct WrapperConvArgs &args) {
 int ComputeFpgaPool(const struct PoolingArgs &args) {
 #ifdef FPGA_TEST_MODE
   DLOG << "=============ComputeFpgaPool===========";
+  DLOG << "   mode:" << args.mode
+       << "   kernel_reciprocal:" << fp16_2_fp32(args.kernel_reciprocal);
   DLOG << "   image_address:" << args.image.address
        << "   image_scale_address:" << args.image.scale_address
        << "   image_channels:" << args.image.channels
@@ -240,7 +263,7 @@ void format_image(framework::Tensor *image_tensor) {
   auto channel = dims[1], height = dims[2], width = dims[3];
   auto data_ptr = image_tensor->data<float>();
   size_t memory_size = channel * height * width * sizeof(float);
-  auto new_data = (float *)fpga_malloc(memory_size);
+  auto new_data = (float *)fpga_malloc(memory_size);  // NOLINT
   fpga_copy(new_data, data_ptr, memory_size);
   image::format_image(&new_data, channel, height, width);
   image_tensor->reset_data_ptr(new_data);
@@ -311,16 +334,30 @@ int get_aligned_filter_num(int num) {
 
 void format_filter(framework::Tensor *filter_tensor, float max_value,
                    int group_num) {
-  filter_tensor->scale[0] = float(max_value / 127.0);
-  filter_tensor->scale[1] = float(127.0 / max_value);
+  filter_tensor->scale[0] = float(max_value / 127.0);  // NOLINT
+  filter_tensor->scale[1] = float(127.0 / max_value);  // NOLINT
   auto dims = filter_tensor->dims();
   auto num = dims[0], channel = dims[1], height = dims[2], width = dims[3];
   auto data_ptr = filter_tensor->data<float>();
   size_t memory_size = num * channel * height * width * sizeof(float);
-  auto new_data = (float *)fpga_malloc(memory_size);
+  auto new_data = (float *)fpga_malloc(memory_size);  // NOLINT
   fpga_copy(new_data, data_ptr, memory_size);
   filter::format_filter(&new_data, num, channel, height, width, group_num,
                         max_value);
+  filter_tensor->reset_data_ptr(new_data);
+}
+
+void format_fc_filter(framework::Tensor *filter_tensor, float max_value) {
+  filter_tensor->scale[0] = float(max_value / 127.0);  // NOLINT
+  filter_tensor->scale[1] = float(127.0 / max_value);  // NOLINT
+  auto dims = filter_tensor->dims();
+  auto num = dims[0], channel = dims[1], height = dims[2], width = dims[3];
+  auto data_ptr = filter_tensor->data<float>();
+  size_t memory_size = num * channel * height * width * sizeof(float);
+  auto new_data = (float *)fpga_malloc(memory_size);  // NOLINT
+  fpga_copy(new_data, data_ptr, memory_size);
+  filter::format_fc_filter(&new_data, num, channel, height, width, 1,
+                           max_value);
   filter_tensor->reset_data_ptr(new_data);
 }
 
@@ -358,7 +395,8 @@ void fill_conv_arg(struct WrapperConvArgs *arg, framework::Tensor *input,
   arg->filter_num = (uint32_t)filter->dims()[0];
   arg->output.address = out_ptr;
   arg->output.scale_address = out->scale;
-  arg->conv_args = (ConvArgs *)fpga_malloc(arg->split_num * sizeof(ConvArgs));
+  arg->conv_args =
+      (ConvArgs *)fpga_malloc(arg->split_num * sizeof(ConvArgs));  // NOLINT
 
   arg->concat_arg.image_num = arg->split_num;
   arg->concat_arg.image_out = out_ptr;
@@ -367,12 +405,15 @@ void fill_conv_arg(struct WrapperConvArgs *arg, framework::Tensor *input,
   arg->concat_arg.width = (uint32_t)filter->dims()[3];
 
   int n = arg->split_num;
-  arg->concat_arg.images_in = (half **)fpga_malloc(n * sizeof(int *));
-  arg->concat_arg.scales_in = (float **)fpga_malloc(n * sizeof(float *));
-  arg->concat_arg.channel_num = (uint32_t *)fpga_malloc(n * sizeof(uint32_t));
+  arg->concat_arg.images_in =
+      (half **)fpga_malloc(n * sizeof(int *));  // NOLINT
+  arg->concat_arg.scales_in =
+      (float **)fpga_malloc(n * sizeof(float *));  // NOLINT
+  arg->concat_arg.channel_num =
+      (uint32_t *)fpga_malloc(n * sizeof(uint32_t));  // NOLINT
   arg->concat_arg.image_out = out_ptr;
 
-  auto channel = (int)out->dims()[1];
+  auto channel = (int)out->dims()[1];  // NOLINT
   int filter_num_per_div = get_filter_num_per_div(filter, group_num);
   int element_num = get_aligned_filter_element_num(
       filter->dims()[1] * filter->dims()[2] * filter->dims()[3]);
@@ -392,29 +433,28 @@ void fill_conv_arg(struct WrapperConvArgs *arg, framework::Tensor *input,
     arg->conv_args[i].image.pad_height = (uint32_t)padding_h;
     arg->conv_args[i].image.pad_width = (uint32_t)padding_w;
     arg->conv_args[i].filter_scale_address = filter->scale;
-    arg->conv_args[i].filter_address =
-        &((int8_t *)filter_ptr)[i * element_num * filter_num_per_div];
+    arg->conv_args[i].filter_address = &(
+        (int8_t *)filter_ptr)[i * element_num * filter_num_per_div];  // NOLINT
     arg->conv_args[i].sb_address = &bs_ptr[i * filter_num_per_div * 2];
-    arg->conv_args[i].filter_num =
-        (uint32_t)(i == n - 1 ? channel - (n - 1) * filter_num_per_div
-                              : filter_num_per_div);
+    arg->conv_args[i].filter_num = (uint32_t)(
+        i == n - 1 ? channel - (n - 1) * filter_num_per_div  // NOLINT
+                   : filter_num_per_div);
 
     if (n > 1) {
       arg->conv_args[i].output.scale_address =
-          (float *)fpga_malloc(2 * sizeof(float));
+          (float *)fpga_malloc(2 * sizeof(float));  // NOLINT
       arg->conv_args[i].output.address = fpga_malloc(
           input->dims()[2] *
           align_to_x(input->dims()[3] * arg->conv_args[i].filter_num,
                      IMAGE_ALIGNMENT) *
           sizeof(half));
-    }
-
-    else {
+    } else {
       arg->conv_args[i].output.scale_address = out->scale;
       arg->conv_args[i].output.address = out_ptr;
     }
 
-    arg->concat_arg.images_in[i] = (half *)arg->conv_args[i].output.address;
+    arg->concat_arg.images_in[i] =
+        (half *)arg->conv_args[i].output.address;  // NOLINT
     arg->concat_arg.scales_in[i] = arg->conv_args[i].output.scale_address;
     arg->concat_arg.channel_num[i] = arg->conv_args[i].filter_num;
   }
