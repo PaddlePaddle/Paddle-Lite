@@ -16,7 +16,7 @@ limitations under the License. */
 
 #pragma once
 #include <vector>
-#include "operators/kernel/central-arm-func/conv_arm_int8.h"
+#include "operators/math/conv_arm_int8.h"
 #include "operators/math/conv_func.h"
 #include "operators/math/depthwise_conv_3x3.h"
 #include "operators/math/im2col.h"
