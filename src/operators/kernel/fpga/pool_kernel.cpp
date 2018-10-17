@@ -29,8 +29,12 @@ bool PoolKernel<FPGA, float>::Init(PoolParam<FPGA> *param) {
   vector<int> ksize = param->Ksize();
   vector<int> strides = param->Strides();
   vector<int> paddings = param->Paddings();
+  std::string pooling_type = param->PoolingType();
 
   fpga::PoolingArgs poolArgs = {0};
+  poolArgs.mode = pooling_type == "max" ? 0 : 1;  // max:0, avg:1
+  poolArgs.kernel_reciprocal =
+      fpga::fp32_2_fp16(float(1.0 / (ksize[0] * ksize[1])));
   poolArgs.image.address = input_ptr;
   poolArgs.image.channels = (uint32_t)input->dims()[1];
   poolArgs.image.height = (uint32_t)input->dims()[2];

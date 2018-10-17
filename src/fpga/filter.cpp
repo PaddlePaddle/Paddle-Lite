@@ -11,9 +11,11 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#include "filter.h"
+
+#include "fpga/filter.h"
 #include <memory.h>
-#include "api.h"
+#include <algorithm>
+#include "fpga/api.h"
 
 namespace paddle_mobile {
 namespace fpga {
@@ -55,7 +57,7 @@ void convert_to_hwc(char **data_in, int num, int channel, int height,
                     int width) {
   char *tmp = *data_in;
   int chw = channel * height * width;
-  char *data_tmp = (char *)fpga_malloc(chw * num * sizeof(char));
+  char *data_tmp = (char *)fpga_malloc(chw * num * sizeof(char));  // NOLINT
   for (int n = 0; n < num; n++) {
     int64_t amount_per_row = width * channel;
     for (int c = 0; c < channel; c++) {
@@ -83,16 +85,26 @@ float find_max(float *data_in, int data_size) {
   return max;
 }
 
+signed char float_to_int8(float fdata) {
+  if (fdata < 0.0) {
+    fdata -= 0.5;
+  } else {
+    fdata += 0.5;
+  }
+  return (signed char)fdata;
+}
+
 void quantize(float **data_in, int data_size, float max) {
   float *tmp = *data_in;
   float fix_range = 127;
   float scale = fix_range / max;
 
-  char *tmp_data = (char *)fpga_malloc(data_size * sizeof(char));
+  signed char *tmp_data = (signed char *)fpga_malloc(data_size * sizeof(char));
   for (int i = 0; i < data_size; i++) {
-    tmp_data[i] = (char)((*data_in)[i] * scale);
+    tmp_data[i] = float_to_int8(
+        (*data_in)[i] * scale);  // (signed char)((*data_in)[i] * scale);
   }
-  *data_in = (float *)tmp_data;
+  *data_in = (float *)tmp_data;  // NOLINT
   fpga_free(tmp);
 }
 
@@ -102,7 +114,8 @@ void align_element(char **data_in, int num, int chw) {
   int align_chw = align_to_x(chw, FILTER_ELEMENT_ALIGNMENT);
   if (align_chw != chw) {
     char *tmp = *data_in;
-    char *data_tmp = (char *)fpga_malloc(num * align_chw * sizeof(char));
+    char *data_tmp =
+        (char *)fpga_malloc(num * align_chw * sizeof(char));  // NOLINT
 
     memset(data_tmp, 0, num * align_chw);
     for (j = 0; j < num; j++) {
@@ -124,7 +137,7 @@ void align_num(char **data_in, int num_per_div_before_alignment, int num,
     int div_num =
         (num + num_per_div_before_alignment - 1) / num_per_div_before_alignment;
     int num_element = div_num * num_per_div_after_alignment * align_chw;
-    char *data_tmp = (char *)fpga_malloc(num_element * sizeof(char));
+    char *data_tmp = (char *)fpga_malloc(num_element * sizeof(char));  // NOLINT
 
     memset(data_tmp, 0, num_element * sizeof(char));
 
@@ -146,7 +159,8 @@ void reorder(char **data_in, int num_after_alignment, int chw) {
   int chw_align = align_to_x(chw, FILTER_ELEMENT_ALIGNMENT);
 
   char *data_tmp =
-      (char *)fpga_malloc(chw_align * num_after_alignment * sizeof(char));
+      (char *)fpga_malloc(chw_align * num_after_alignment *  // NOLINT
+                          sizeof(char));
   char *tmp = *data_in;
   for (index = 0; index < num_after_alignment; index++) {
     new_index = index / 32 * 32 + (index % 16 / 4 * 8) + (index % 16 % 4) +
@@ -163,10 +177,11 @@ void interleave(char **data_in, int num_after_alignment, int chw) {
   int j = 0;
   int k = 0;
   int interleave_per_num = 16;
-  ;
+
   int chw_align = align_to_x(chw, FILTER_ELEMENT_ALIGNMENT);
   char *data_tmp =
-      (char *)fpga_malloc(chw_align * num_after_alignment * sizeof(char));
+      (char *)fpga_malloc(chw_align * num_after_alignment *  // NOLINT
+                          sizeof(char));
   char *tmp = *data_in;
   int interleave_num = chw_align * 2 / interleave_per_num;
   for (i = 0; i < num_after_alignment; i += 2) {
@@ -199,9 +214,48 @@ void format_filter(float **data_in, int num, int channel, int height, int width,
 
   quantize(data_in, data_size, max);
 
-  char **quantize_data = (char **)data_in;
+  char **quantize_data = (char **)data_in;  // NOLINT
 
   convert_to_hwc(quantize_data, num, channel, height, width);
+  align_element(quantize_data, num, chw);
+  align_num(quantize_data, num_per_div_before_alignment, num, chw);
+  reorder(quantize_data, num_after_alignment, chw);
+  interleave(quantize_data, num_after_alignment, chw);
+  fpga_flush(*quantize_data, align_to_x(chw, FILTER_ELEMENT_ALIGNMENT) *
+                                 num_after_alignment * sizeof(char));
+}
+
+void convert_fc_filter(char **data_in, int num, int chw) {
+  char *tmp = *data_in;
+  char *data_tmp = (char *)fpga_malloc(chw * num * sizeof(char));  // NOLINT
+  for (int n = 0; n < num; n++) {
+    for (int c = 0; c < chw; c++) {
+      data_tmp[n * chw + c] = (*data_in)[num * c + n];
+    }
+  }
+  *data_in = data_tmp;
+  fpga_free(tmp);
+}
+
+void format_fc_filter(float **data_in, int num, int channel, int height,
+                      int width, int group_num, float max) {
+  int data_size = channel * height * width * num;
+  int chw = channel * height * width;
+
+  int division_capacity = calc_division_capacity(chw);
+  int num_per_div_before_alignment =
+      calc_num_per_div(num, group_num, division_capacity);
+  int num_per_div_after_alignment =
+      align_to_x(num_per_div_before_alignment, FILTER_NUM_ALIGNMENT);
+  int div_num =
+      (num + num_per_div_before_alignment - 1) / num_per_div_before_alignment;
+  int num_after_alignment = num_per_div_after_alignment * div_num;
+
+  quantize(data_in, data_size, max);
+
+  char **quantize_data = (char **)data_in;  // NOLINT
+
+  convert_fc_filter(quantize_data, num, chw);
   align_element(quantize_data, num, chw);
   align_num(quantize_data, num_per_div_before_alignment, num, chw);
   reorder(quantize_data, num_after_alignment, chw);

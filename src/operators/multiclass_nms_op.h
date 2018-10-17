@@ -52,12 +52,4 @@ class MultiClassNMSOp : public framework::OperatorWithKernel<
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(multiclass_nms);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-#endif
-
 #endif

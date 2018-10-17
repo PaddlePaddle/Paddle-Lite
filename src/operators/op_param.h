@@ -40,30 +40,6 @@ using std::vector;
 
 template <typename Dtype>
 struct DtypeTensorTrait {
-  typedef void ptype;
-  typedef void rtype;
-};
-
-template <>
-struct DtypeTensorTrait<CPU> {
-  // This is the type we obtained in variable.
-  typedef framework::LoDTensor gtype;
-  // This type will be the parent class type
-  // or the same type.
-  typedef framework::Tensor rtype;
-};
-
-template <>
-struct DtypeTensorTrait<FPGA> {
-  // This is the type we obtained in variable.
-  typedef framework::LoDTensor gtype;
-  // This type will be the parent class type
-  // or the same type.
-  typedef framework::Tensor rtype;
-};
-
-template <>
-struct DtypeTensorTrait<GPU_MALI> {
   // This is the type we obtained in variable.
   typedef framework::LoDTensor gtype;
   // This type will be the parent class type
@@ -287,6 +263,10 @@ class OpParam {
   static const T GetAttr(const string &key, const AttributeMap &map) {
     return ((Attribute)map.at(key)).Get<T>();
   }
+  static const std::string GetStringAttr(const string &key,
+                                         const AttributeMap &map) {
+    return ((Attribute)map.at(key)).GetString();
+  }
 
   static const bool HasAttr(const string &key, const AttributeMap &map) {
     return map.count(key) > 0;
@@ -462,6 +442,15 @@ class MulParam : OpParam {
   GType *out_;
   int x_num_col_dims_;
   int y_num_col_dims_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::WrapperConvArgs fpga_conv_args;
+
+ public:
+  const fpga::WrapperConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::WrapperConvArgs &args) { fpga_conv_args = args; }
+#endif
 };
 #endif
 
@@ -517,7 +506,7 @@ class LrnParam : public OpParam {
     alpha_ = GetAttr<float>("alpha", attrs);
     beta_ = GetAttr<float>("beta", attrs);
     k_ = GetAttr<float>("k", attrs);
-    data_format_ = GetAttr<string>("data_format", attrs);
+    data_format_ = GetStringAttr("data_format", attrs);
   }
 
   const RType *InputX() const { return input_x_; }
@@ -614,7 +603,7 @@ class PoolParam : public OpParam {
     input_ = InputXFrom<GType>(inputs, scope);
 
     output_ = OutFrom<GType>(outputs, scope);
-    pooling_type_ = GetAttr<string>("pooling_type", attrs);
+    pooling_type_ = GetStringAttr("pooling_type", attrs);
     ksize_ = GetAttr<vector<int>>("ksize", attrs);
     strides_ = GetAttr<vector<int>>("strides", attrs);
     paddings_ = GetAttr<vector<int>>("paddings", attrs);
@@ -748,7 +737,7 @@ class BoxCoderParam : public OpParam {
     input_priorboxvar_ = InputPriorBoxVarFrom<GType>(inputs, scope);
     input_targetbox_ = InputTargetBoxFrom<GType>(inputs, scope);
     output_box_ = OutputBoxFrom<GType>(outputs, scope);
-    code_type_ = GetAttr<std::string>("code_type", attrs);
+    code_type_ = GetStringAttr("code_type", attrs);
   }
   const RType *InputPriorBox() const { return input_priorbox_; }
 
@@ -1223,7 +1212,7 @@ class PReluParam : public OpParam {
     alpha_ = InputAlphaFrom<GType>(inputs, scope);
     framework::DDim dims = alpha_->dims();
     out_ = OutFrom<GType>(outputs, scope);
-    mode_ = GetAttr<std::string>("mode", attrs);
+    mode_ = GetStringAttr("mode", attrs);
     DLOG << "PReluParam mode after" << mode_;
   }
   const RType *InputX() const { return input_x_; }
@@ -1354,7 +1343,7 @@ class FusionConvAddPReluParam : public ConvParam<Dtype> {
                           const AttributeMap &attrs, const Scope &scope)
       : ConvParam<Dtype>(inputs, outputs, attrs, scope) {
     alpha_ = OpParam::InputAlphaFrom<GType>(inputs, scope);
-    mode_ = OpParam::GetAttr<std::string>("mode", attrs);
+    mode_ = OpParam::GetStringAttr("mode", attrs);
     framework::DDim dims = alpha_->dims();
     bias_ = OpParam::InputYFrom<GType>(inputs, scope);
     axis_ = OpParam::GetAttr<int>("axis", attrs);
@@ -1397,7 +1386,7 @@ class FusionConvAddAddPReluParam : public ConvParam<Dtype> {
       : ConvParam<Dtype>(inputs, outputs, attrs, scope) {
     bias1_ = OpParam::InputYFrom1<GType>(inputs, scope);
     alpha_ = OpParam::InputAlphaFrom<GType>(inputs, scope);
-    mode_ = OpParam::GetAttr<std::string>("mode", attrs);
+    mode_ = OpParam::GetStringAttr("mode", attrs);
     framework::DDim dims = alpha_->dims();
     bias_ = OpParam::InputYFrom<GType>(inputs, scope);
     output_ = OpParam::OutFrom<GType>(outputs, scope);
@@ -1935,7 +1924,7 @@ class DropoutParam : public OpParam {
 };
 #endif
 
-#ifdef CONV_TRANSPOSE
+#ifdef CONV_TRANSPOSE_OP
 template <typename Dtype>
 class ConvTransposeParam : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
@@ -2004,8 +1993,8 @@ class GruParam : public OpParam {
         OutputBatchResetHiddenPrevFrom<GType>(outputs, scope);
     output_batch_hidden_ = OutputBatchHiddenFrom<GType>(outputs, scope);
     output_hidden_ = OutputHiddenFrom<GType>(outputs, scope);
-    activation_ = GetAttr<std::string>("activation", attrs);
-    gate_activation_ = GetAttr<std::string>("gate_activation", attrs);
+    activation_ = GetStringAttr("activation", attrs);
+    gate_activation_ = GetStringAttr("gate_activation", attrs);
     is_reverse_ = GetAttr<bool>("is_reverse", attrs);
   }
   const GType *InputInput() const { return input_input_; }
@@ -2150,6 +2139,76 @@ class ShapeParam : public OpParam {
   RType *out_;
 };
 #endif
+
+template <typename Dtype>
+class QuantizeParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  QuantizeParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+                const AttributeMap &attrs, const Scope &scope) {
+    input_ = InputXFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+    if (HasAttr("is_static", attrs)) {
+      is_static_ = GetAttr<bool>("is_static", attrs);
+    }
+    // online
+    // scale = max(abs(x))
+    online_scale_ = GetVarValue<GType>("OutScale", outputs, scope);
+    // offline
+    if (HasAttr("static_scale", attrs)) {
+      static_scale_ = GetAttr<float>("static_scale", attrs);
+    }
+    // x = round(scale * x)
+    if (HasAttr("round_type", attrs)) {
+      round_type_ = GetAttr<RoundType>("round_type", attrs);
+    }
+  }
+
+ public:
+  // op input
+  RType *input_;
+  // op output
+  RType *out_;
+  //
+  RType *online_scale_;
+  // if static scale or not
+  bool is_static_ = false;
+  // quantize scale
+  float static_scale_ = 1.0f;
+  // round method type
+  // nearest_zero and nearest_even is valid currently
+  RoundType round_type_ = ROUND_NEAREST_TO_EVEN;
+};
+
+template <typename Dtype>
+class DequantizeParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  DequantizeParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+                  const AttributeMap &attrs, const Scope &scope) {
+    input_ = InputXFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+    activation_scale_ = GetVarValue<GType>("Scale", inputs, scope);
+    // dequantization is performed as x = x / static_scale / online_scale
+    if (HasAttr("weight_scale", attrs)) {
+      weight_scale_ = GetAttr<float>("weight_scale", attrs);
+    } else {
+      weight_scale_ = GetAttr<float>("max_range", attrs);
+    }
+  }
+
+ public:
+  // op input
+  RType *input_;
+  // op output
+  RType *out_;
+  RType *activation_scale_;
+  float weight_scale_;
+};
 
 }  // namespace operators
 }  // namespace paddle_mobile

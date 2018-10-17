@@ -121,6 +121,7 @@ if (CON GREATER -1)
   set(FUSION_CONVBNRELU_OP ON)
   set(FUSION_CONVBN_OP ON)
   set(FUSION_CONVADD_OP ON)
+  set(MUL_OP ON)
 
   set(FOUND_MATCH ON)
 endif()
@@ -356,7 +357,7 @@ if (FUSION_CONVBN_OP)
 endif()
 
 if (CONV_TRANSPOSE_OP)
-  add_definitions(-DCONV_TRANSPOSE)
+  add_definitions(-DCONV_TRANSPOSE_OP)
 endif()
 
 if (LOOKUP_OP)

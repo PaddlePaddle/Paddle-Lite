@@ -99,6 +99,8 @@ struct WrapperConvArgs {
 };
 
 struct PoolingArgs {
+  int16_t mode;  // mode: 0:max, 1:avg
+  half kernel_reciprocal;
   struct KernelArgs kernel;
   struct ImageInputArgs image;  // input image;
   struct ImageOutputArgs output;
@@ -212,6 +214,7 @@ int get_aligned_filter_element_num(int chw);
 int get_aligned_filter_num(int num);
 void format_filter(framework::Tensor* filter_tensor, float max_value,
                    int group_num);
+void format_fc_filter(framework::Tensor* filter_tensor, float max_value);
 void format_bias_scale_array(float** bias_scale_array,
                              int element_num_per_division, int num);
 void format_concat_output(framework::Tensor* out, int height, int width,
@@ -221,6 +224,9 @@ void fill_conv_arg(struct WrapperConvArgs* arg, framework::Tensor* input,
                    framework::Tensor* out, framework::Tensor* filter,
                    bool relu_enabled, int group_num, int stride_h, int stride_w,
                    int padding_h, int padding_w, float* bs_ptr);
+
+half fp32_2_fp16(float fp32_num);
+float fp16_2_fp32(half fp16_num);
 
 }  // namespace fpga
 }  // namespace paddle_mobile

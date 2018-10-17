@@ -92,3 +92,4 @@ metal/images/
 metal/paddle-mobile/paddle-mobile/CPU/libpaddle-mobile.a
 *.xcuserdatad/
 */xcuserdata/
+/venv/

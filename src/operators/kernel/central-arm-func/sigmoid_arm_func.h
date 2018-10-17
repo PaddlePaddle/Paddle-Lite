@@ -24,7 +24,9 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
+
 using framework::DDim;
+
 void sigmoid(const Tensor *X, Tensor *Y) {
 #ifdef __ARM_NEON
   const float *input = X->data<float>();

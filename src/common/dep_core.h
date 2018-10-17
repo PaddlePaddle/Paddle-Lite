@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma once
+
 #ifdef PADDLE_EXECUTOR_MULTITHREAD
 #include <string>
 #include <unordered_map>
@@ -60,6 +61,7 @@ class depCore {
   std::vector<std::vector<int>> deps;
   std::vector<std::vector<int>> next;
 };
+
 }  // namespace paddle_mobile
 
 #endif

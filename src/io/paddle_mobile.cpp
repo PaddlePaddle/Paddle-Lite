@@ -19,10 +19,9 @@ namespace paddle_mobile {
 template <typename Dtype, Precision P>
 void PaddleMobile<Dtype, P>::SetThreadNum(int num) {
 #ifdef _OPENMP
-  //  omp_set_dynamic(0);
   omp_set_num_threads(num);
 #endif
-};
+}
 
 template <typename Dtype, Precision P>
 bool PaddleMobile<Dtype, P>::Load(const std::string &dirname, bool optimize,
@@ -128,40 +127,38 @@ PaddleMobile<Dtype, P>::~PaddleMobile() {
 
 template <typename Dtype, Precision P>
 void PaddleMobile<Dtype, P>::InjectVariable(const framework::Tensor &t,
-                                            string var_name) {
+                                            std::string var_name) {
   executor_->InjectVariable(t, var_name);
 }
 
 template <typename Dtype, Precision P>
 void PaddleMobile<Dtype, P>::FeedData(const framework::Tensor &t) {
   executor_->FeedData(t);
-};
+}
 
 template <typename Dtype, Precision P>
 std::shared_ptr<framework::Tensor> PaddleMobile<Dtype, P>::FetchResult(int id) {
   return executor_->FetchResult(id);
-};
+}
 
 template <typename Dtype, Precision P>
 void PaddleMobile<Dtype, P>::Predict_From_To(int start, int end) {
   executor_->Predict_From_To(start, end);
-};
+}
 
 template <typename Dtype, Precision P>
 void PaddleMobile<Dtype, P>::Predict_From(int start) {
   executor_->Predict_From(start);
-};
+}
 
 template <typename Dtype, Precision P>
 void PaddleMobile<Dtype, P>::Predict_To(int end) {
   executor_->Predict_To(end);
-};
+}
 #endif
 
 template class PaddleMobile<CPU, Precision::FP32>;
-
 template class PaddleMobile<FPGA, Precision::FP32>;
-
 template class PaddleMobile<GPU_MALI, Precision::FP32>;
 
 }  // namespace paddle_mobile

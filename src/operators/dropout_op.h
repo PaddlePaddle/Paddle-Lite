@@ -50,13 +50,4 @@ class DropoutOp : public framework::OperatorWithKernel<
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(dropout);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-USE_OP_FPGA(dropout);
-#endif
-
 #endif

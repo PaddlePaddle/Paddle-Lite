@@ -30,14 +30,10 @@ void ScaleOp<Dtype, T>::InferShape() const {
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-USE_OP_CPU(scale);
 REGISTER_OPERATOR_CPU(scale, ops::ScaleOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
-USE_OP_MALI_GPU(scale);
 REGISTER_OPERATOR_MALI_GPU(scale, ops::ScaleOp);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
 #endif
 
 #endif
