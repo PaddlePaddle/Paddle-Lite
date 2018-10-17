@@ -117,7 +117,7 @@ void ConvAddBNReluKernel<GPU_CL, float>::Compute(
   auto biase = param.Bias()->GetCLImage();
   auto new_scale = param.NewScale()->GetCLImage();
   auto new_bias = param.NewBias()->GetCLImage();
-  auto output = param.Output();
+  auto output = param.Output()->GetCLImage();
   int stride = param.Strides()[0];
   int offset = param.Offset();
   int input_c = param.Input()->CBlock();
