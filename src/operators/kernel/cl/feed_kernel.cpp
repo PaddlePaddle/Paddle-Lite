@@ -36,7 +36,8 @@ void FeedKernel<GPU_CL, float>::Compute(const FeedParam<GPU_CL> &param) {
   cl_mem cl_image = output->GetCLImage();
   int height = output->dims()[2];
   int width = output->dims()[3];
-  CLTensor input_cl_tensor(this->cl_helper_.CLContext());
+  CLTensor input_cl_tensor(this->cl_helper_.CLContext(),
+                           this->cl_helper_.CLCommandQueue());
   input_cl_tensor.Resize(input->dims());
   cl_mem inputBuffer =
       input_cl_tensor.mutable_with_data<cl_mem>((void *)input_data);
