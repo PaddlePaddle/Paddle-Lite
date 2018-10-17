@@ -1229,12 +1229,12 @@ class ResizeParam : public OpParam {
  * @b op 层实例化好这个 param 传递给 kernel 层使用
  * */
 template <typename Dtype>
-class ReluParam : public OpParam {
+class ReluParamBase : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
   typedef typename DtypeTensorTrait<Dtype>::rtype RType;
 
  public:
-  ReluParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+  ReluParamBase(const VariableNameMap &inputs, const VariableNameMap &outputs,
             const AttributeMap &attrs, const Scope &scope) {
     input_x_ = InputXFrom<GType>(inputs, scope);
     out_ = OutFrom<GType>(outputs, scope);
@@ -1248,6 +1248,24 @@ class ReluParam : public OpParam {
   RType *input_x_;
   RType *out_;
 };
+
+template <typename Dtype>
+class ReluParam : public ReluParamBase<Dtype> {
+public:
+  using ReluParamBase<Dtype>::ReluParamBase;
+};
+
+template <>
+class ReluParam<GPU_CL> : public ReluParamBase<GPU_CL> {
+public:
+  using ReluParamBase<GPU_CL>::ReluParamBase;
+  framework::CLImage& getMidImage() {
+    return midImage;
+  }
+private:
+  framework::CLImage midImage;
+};
+
 #endif
 
 #ifdef PRELU_OP
