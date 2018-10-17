@@ -22,12 +22,13 @@ namespace operators {
 template <>
 bool ElementwiseAddKernel<GPU_CL, float>::Init(
     ElementwiseAddParam<GPU_CL> *param) {
+  DLOG << "-----init add-----";
   CLImage *bias = (CLImage *)param->InputY();
   bias->InitCLImage(cl_helper_.CLContext(), this->cl_helper_.CLCommandQueue());
+  DLOG << " bias: " << *bias;
   if (bias->dims().size() == 4) {
     this->cl_helper_.AddKernel("elementwise_add", "elementwise_add_kernel.cl");
   } else if (param->InputY()->dims().size() == 1) {
-    DLOG << "-----init add-----";
     this->cl_helper_.AddKernel("channel_add", "channel_add_kernel.cl");
   } else {
     DLOG << "error:bias dims is error";

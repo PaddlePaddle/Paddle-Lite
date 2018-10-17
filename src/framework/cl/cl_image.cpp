@@ -125,7 +125,8 @@ Print &operator<<(Print &printer, const CLImage &cl_image) {
   float *data = new float[cl_image.numel()];
   DDim ddim = cl_image.dims();
   size_t N, C, H, W, width, height;
-  if (cl_image.GetImageType() == 0 || ddim.size() == 4) {
+
+  if (cl_image.GetImageType() == Normal || cl_image.dims().size() == 3 || cl_image.dims().size() == 4) {
     if (ddim.size() == 4) {
       N = ddim[0];
       if (N < 0) {
@@ -159,6 +160,12 @@ Print &operator<<(Print &printer, const CLImage &cl_image) {
     size_t region[3] = {width, height, 1};
     err = clEnqueueReadImage(cl_image.CommandQueue(), image, CL_TRUE, origin,
                              region, 0, 0, imageData, 0, NULL, NULL);
+
+    if (err != CL_SUCCESS) {
+      printf("ImageWidth %ld \n", cl_image.ImageWidth());
+      printf("ImageWidth %ld \n", cl_image.ImageHeight());
+    }
+
     size_t i0 = 0;
     for (int n = 0; n < N; n++) {
       for (int c = 0; c < C; c++) {
@@ -177,6 +184,9 @@ Print &operator<<(Print &printer, const CLImage &cl_image) {
     }
     delete (imageData);
     CL_CHECK_ERRORS(err);
+
+
+
   } else {
     if (ddim.size() == 2) {
       width = (ddim[1] + 3) / 4;
@@ -210,7 +220,7 @@ Print &operator<<(Print &printer, const CLImage &cl_image) {
   for (int i = 0; i < cl_image.numel(); i += stride) {
     printer << data[i] << " ";
   }
-  delete (data);
+  delete(data);
   return printer;
 }
 #endif

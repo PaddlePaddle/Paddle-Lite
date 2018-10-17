@@ -26,7 +26,11 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace framework {
 
-enum ImageType { Normal = 0, Folder = 1 };
+enum ImageType {
+  Invalid = -1,
+  Normal = 0,
+  Folder = 1
+};
 
 class CLImage {
  public:
@@ -47,14 +51,19 @@ class CLImage {
 
   /*
    * need call SetTensorData first
+   *
+   * folder when one dim or two dim
    * */
   void InitCLImage(cl_context context, cl_command_queue command_queue) {
     if (tensor_data_ == nullptr) {
       PADDLE_MOBILE_THROW_EXCEPTION(" need call SetTensorData first");
     }
+    DLOG << tensor_dims_;
     if (tensor_dims_.size() <= 2) {
+      DLOG << " dim <= 2 folder ~~~~~ ";
       InitCLImage2C(context, command_queue, tensor_data_, tensor_dims_);
     } else {
+      DLOG << " dim >  2 norm ~~~~~ ";
       InitCLImage(context, command_queue, tensor_data_, tensor_dims_);
     }
     delete[](tensor_data_);
@@ -139,13 +148,13 @@ class CLImage {
    * */
   const DDim &dims() const { return tensor_dims_; }
 
-  const ImageType GetImageType() const { return type; }
+  const ImageType GetImageType() const { return image_type_; }
 
  private:
-  ImageType type;
+  ImageType image_type_ = Invalid;
   void InitCLImage2C(cl_context context, cl_command_queue command_queue,
                      float *tensor_data, const DDim &dim) {
-    type = Folder;
+    image_type_ = Folder;
     command_queue_ = command_queue;
     assert(dim.size() <= 2);
     int tdim[2] = {1, 1};
@@ -158,13 +167,13 @@ class CLImage {
     int width = (tdim[1] + 3) / 4;
     int height = tdim[0];
 
-    width_of_one_block_ = tdim[1];
-    height_of_one_block_ = tdim[0];
-
     image_width_ = width;
     image_height_ = height;
-    image_dims_ = make_ddim({image_width_, image_height_});
-    c_block_ = tdim[1] / width;
+    image_dims_ = make_ddim({width, height});
+    width_of_one_block_ = width;
+    height_of_one_block_ = height;
+    c_block_ = 1;
+
     std::unique_ptr<half_t[]> imageData{};
     if (tensor_data) {
       imageData.reset(new half_t[width * height * 4]);
@@ -208,7 +217,7 @@ class CLImage {
   }
   void InitCLImage(cl_context context, cl_command_queue command_queue,
                    float *tensor_data, const DDim &dim) {
-    type = Normal;
+    image_type_ = Normal;
     DLOG << " tensor dim: " << dim;
     // NCHW -> [W * (C+3)/4, H * N]
     tensor_dims_ = dim;
@@ -239,6 +248,10 @@ class CLImage {
     image_height_ = height;
     image_dims_ = make_ddim({image_width_, image_height_});
     c_block_ = W / width;
+
+    DLOG << " tensor dim " << tensor_dims_;
+    DLOG << " 赋值时: image width: " << image_width_;
+    DLOG << " 赋值时: image height: " << image_height_;
 
     std::unique_ptr<half_t[]> imageData{};
     int count = 0;

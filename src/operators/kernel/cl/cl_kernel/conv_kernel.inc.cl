@@ -50,7 +50,6 @@ __kernel void conv_3x3(__private const int global_size_dim0,
                                               __private const int output_width,
                                               __private const int output_height) {
 
-
     const int out_c = get_global_id(0);
     const int out_w = get_global_id(1);
     const int out_nh = get_global_id(2);
@@ -72,15 +71,13 @@ __kernel void conv_3x3(__private const int global_size_dim0,
     in_pos_in_one_block.x = ouput_pos_in_one_block.x * stride + offset;
     in_pos_in_one_block.y = ouput_pos_in_one_block.y * stride + offset;
 
- #ifdef BIASE
+#ifdef BIASE
     half4 output = read_imageh(bias, sampler, (int2)(out_c, 0));
 #else
     half4 output = 0.0f;
 #endif
 
    half4 input[9];
-
-
 
    for (int i = 0; i < input_c; ++i) {
         int2 pos_in = (int2)(i * input_width + in_pos_in_one_block.x, in_pos_in_one_block.y);
