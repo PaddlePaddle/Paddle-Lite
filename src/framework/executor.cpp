@@ -37,7 +37,7 @@ limitations under the License. */
 #include "framework/cl/cl_image.h"
 #endif
 
-int debug_to = 115;
+int debug_to = 3;
 
 namespace paddle_mobile {
 namespace framework {
@@ -87,7 +87,7 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
   for (int i = 0; i < blocks.size(); ++i) {
     std::shared_ptr<framework::BlockDesc> block_desc = blocks[i];
     std::vector<std::shared_ptr<framework::OpDesc>> ops = block_desc->Ops();
-    for (int j = 0; j < ops.size(); ++j) {
+    for (int j = 0; j < debug_to; ++j) {
       std::shared_ptr<framework::OpDesc> op = ops[j];
       DLOG << "create op: " << j << "  " << op->Type();
       auto op_base = framework::OpRegistry<Dtype>::CreateOp(
@@ -416,7 +416,7 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
     }
   }
 #else
-  for (int i = 0; i < ops.size(); i++) {
+  for (int i = 0; i < debug_to; i++) {
 #ifdef PADDLE_MOBILE_PROFILE
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
