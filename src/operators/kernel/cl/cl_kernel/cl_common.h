@@ -12,11 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once;
-
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
 
-inline hafl4 activation(half4 in
+inline half4 activation(half4 in
 #ifdef PRELU
                         ,
                         half4 prelu_alpha
@@ -28,7 +26,7 @@ inline hafl4 activation(half4 in
 #endif
 
 #ifdef RELU
-  fmax(in, 0.0);
+  output = fmax(in, (half4)(0.0f));
 #endif
   return output;
 }

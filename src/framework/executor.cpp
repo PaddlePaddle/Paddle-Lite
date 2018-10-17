@@ -87,7 +87,7 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
   for (int i = 0; i < blocks.size(); ++i) {
     std::shared_ptr<framework::BlockDesc> block_desc = blocks[i];
     std::vector<std::shared_ptr<framework::OpDesc>> ops = block_desc->Ops();
-    for (int j = 0; j < debug_to; ++j) {
+    for (int j = 0; j < ops.size(); ++j) {
       std::shared_ptr<framework::OpDesc> op = ops[j];
       DLOG << "create op: " << j << "  " << op->Type();
       auto op_base = framework::OpRegistry<Dtype>::CreateOp(
@@ -416,7 +416,7 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
     }
   }
 #else
-  for (int i = 0; i < debug_to; i++) {
+  for (int i = 0; i < ops.size(); i++) {
 #ifdef PADDLE_MOBILE_PROFILE
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -953,12 +953,14 @@ void Executor<GPU_CL, Precision::FP32>::InitMemory() {
         if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
           auto cl_image = var->template GetMutable<framework::CLImage>();
           cl_context context = program_.scope->GetCLScpoe()->Context();
+          cl_command_queue command_queue =
+              program_.scope->GetCLScpoe()->CommandQueue();
 
           const framework::TensorDesc &desc = var_desc->Tensor_desc();
           //          framework::DDim ddim = framework::make_ddim(desc.Dims());
           framework::DDim ddim = cl_image->dims();
           DLOG << var_desc->Name();
-          cl_image->InitEmptyImage(context, ddim);
+          cl_image->InitEmptyImage(context, command_queue, ddim);
         }
       }
     }
@@ -1010,11 +1012,12 @@ void Executor<GPU_CL, Precision::FP32>::InitCombineMemory() {
       } else {
         auto cl_image = var->template GetMutable<framework::CLImage>();
         cl_context context = program_.scope->GetCLScpoe()->Context();
-
+        cl_command_queue command_queue =
+            program_.scope->GetCLScpoe()->CommandQueue();
         const framework::TensorDesc &desc = var_desc->Tensor_desc();
         framework::DDim ddim = cl_image->dims();
         //        framework::DDim ddim = framework::make_ddim(desc.Dims());
-        cl_image->InitEmptyImage(context, ddim);
+        cl_image->InitEmptyImage(context, command_queue, ddim);
       }
     }
   }
