@@ -168,9 +168,8 @@ Print &operator<<(Print &printer, const CLImage &cl_image) {
     i0 += width * H;
   }
 
-  if (err != CL_SUCCESS) {
-    CL_CHECK_ERRORS(err);
-  }
+  CL_CHECK_ERRORS(err);
+
   for (int i = 0; i < cl_image.numel(); i += stride) {
     printer << data[i] << " ";
   }
