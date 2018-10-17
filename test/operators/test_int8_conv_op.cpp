@@ -139,11 +139,11 @@ int TestConvOp() {
   int dilation_h = 1;
   int dilation_w = 1;
 
-  int batch_size = 2;
+  int batch_size = 1;
   int input_c = 3;
-  int input_h = 100;
-  int input_w = 100;
-  int output_c = 8;
+  int input_h = 25;
+  int input_w = 25;
+  int output_c = 3;
   framework::DDim input_shape =
       framework::make_ddim({batch_size, input_c, input_h, input_w});
   framework::DDim filter_shape =
@@ -158,11 +158,11 @@ int TestConvOp() {
 
   auto input_var = scope.get()->Var("input");
   auto input = input_var->template GetMutable<framework::LoDTensor>();
-  SetupTensor<Itype>(input, input_shape, -7, 7);
+  SetupTensor<Itype>(input, input_shape, -127, 127);
 
   auto filter_var = scope.get()->Var("filter");
   auto filter = filter_var->template GetMutable<framework::LoDTensor>();
-  SetupTensor<Itype>(filter, filter_shape, -7, 7);
+  SetupTensor<Itype>(filter, filter_shape, -127, 127);
 
   auto output_var = scope.get()->Var("output");
   framework::AttributeMap attrs;
