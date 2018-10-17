@@ -157,6 +157,34 @@ class Tensor : public TensorBase {
     }
   }
 
+  /*! Return a pointer to mutable memory block. */
+  template <typename T>
+  inline T *data() {
+    check_memory_size();
+    PADDLE_MOBILE_ENFORCE(
+        (std::is_same<T, void>::value ||
+         holder_->type().hash_code() == typeid(T).hash_code()),
+        "Tensor holds the wrong type, it holds %s",
+        this->holder_->type().name());
+
+    return reinterpret_cast<T *>(reinterpret_cast<uintptr_t>(holder_->ptr()) +
+                                 offset_);
+  }
+
+  /*! Return a pointer to constant memory block. */
+  template <typename T>
+  inline const T *data() const {
+    check_memory_size();
+    PADDLE_MOBILE_ENFORCE(
+        (std::is_same<T, void>::value ||
+         holder_->type().hash_code() == typeid(T).hash_code()),
+        "Tensor holds the wrong type, it holds %s ,requested:%s",
+        this->holder_->type().name(), typeid(T).name());
+
+    return reinterpret_cast<const T *>(
+        reinterpret_cast<uintptr_t>(holder_->ptr()) + offset_);
+  }
+
  private:
   struct PlaceholderImpl : public Placeholder {
     PlaceholderImpl(size_t size, std::type_index type)
