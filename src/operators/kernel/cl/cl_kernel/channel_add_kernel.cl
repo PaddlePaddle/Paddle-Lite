@@ -21,7 +21,7 @@ __kernel void channel_add(__global image2d_t input, __global image2d_t bias,__wr
      coords.y = y;
      int2 coords_bias;
      coords_bias.x = x/w;
-     coords_bias.y = 1;
+     coords_bias.y = 0;
      half4 in = read_imageh(input, sampler, coords);
      half4 biase = read_imageh(bias, sampler, coords_bias);
      half4 output = in + biase;

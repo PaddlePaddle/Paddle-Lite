@@ -26,6 +26,8 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace framework {
 
+enum ImageType { Normal, Folder };
+
 class CLImage {
  public:
   CLImage() = default;
@@ -55,6 +57,19 @@ class CLImage {
     } else {
       InitCLImage(context, command_queue, tensor_data_, tensor_dims_);
     }
+    delete[](tensor_data_);
+    tensor_data_ = nullptr;
+    initialized_ = true;
+  }
+
+  /*
+   * need call SetTensorData first
+   * */
+  void InitCLImageNormal(cl_context context, cl_command_queue command_queue) {
+    if (tensor_data_ == nullptr) {
+      PADDLE_MOBILE_THROW_EXCEPTION(" need call SetTensorData first");
+    }
+    InitCLImage(context, command_queue, tensor_data_, tensor_dims_);
     delete[](tensor_data_);
     tensor_data_ = nullptr;
     initialized_ = true;
@@ -124,9 +139,13 @@ class CLImage {
    * */
   const DDim &dims() const { return tensor_dims_; }
 
+  const ImageType GetImageType() const { type; }
+
  private:
+  ImageType type;
   void InitCLImage2C(cl_context context, cl_command_queue command_queue,
                      float *tensor_data, const DDim &dim) {
+    type = Folder;
     command_queue_ = command_queue;
     assert(dim.size() <= 2);
     int tdim[2] = {1, 1};
@@ -136,7 +155,7 @@ class CLImage {
       tdim[0] = dim[0];
       tdim[1] = dim[1];
     }
-    int width = tdim[1] + 3 / 4;
+    int width = (tdim[1] + 3) / 4;
     int height = tdim[0];
     std::unique_ptr<half_t[]> imageData{};
     if (tensor_data) {
@@ -181,6 +200,7 @@ class CLImage {
   }
   void InitCLImage(cl_context context, cl_command_queue command_queue,
                    float *tensor_data, const DDim &dim) {
+    type = Normal;
     DLOG << " tensor dim: " << dim;
     // NCHW -> [W * (C+3)/4, H * N]
     tensor_dims_ = dim;
@@ -224,7 +244,8 @@ class CLImage {
           for (int h = 0; h < H; h++) {
             size_t i2 = (i1 << 2) + c % 4;
             for (int w = 0; w < W; w++) {
-              // int x = (n * width * H + h * width + (c / 4) * W + w) * 4 + (c % 4);
+              // int x = (n * width * H + h * width + (c / 4) * W + w) * 4 + (c
+              // % 4);
               imageData[i2] = Float2Half(*p);
               i2 += 4;
               p++;

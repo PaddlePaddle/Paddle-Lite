@@ -23,7 +23,7 @@ int main() {
   //  auto isok = paddle_mobile.Load(std::string(g_mobilenet_detect) + "/model",
   //                     std::string(g_mobilenet_detect) + "/params", true);
 
-  auto isok = paddle_mobile.Load(g_mobilenet, true);
+  auto isok = paddle_mobile.Load(g_mobilenet, false);
   if (isok) {
     auto time2 = paddle_mobile::time();
     std::cout << "load cost :" << paddle_mobile::time_diff(time1, time1) << "ms"
