@@ -28,7 +28,19 @@ namespace framework {
 
 class CLTensor : TensorBase {
  public:
-  explicit CLTensor(cl_context context) : context_(context) {}
+  CLTensor(cl_context context, cl_command_queue command_queue)
+      : context_(context), command_queue_(command_queue) {}
+
+  CLTensor() = default;
+
+  /*
+   * if init method haven't set context and command_queue, need set
+   * */
+  void SetContextAndCommandQueue(cl_context context,
+                                 cl_command_queue command_queue) {
+    context_ = context;
+    command_queue_ = command_queue;
+  }
 
   /*! Resize the dimensions of the memory block. */
   inline CLTensor &Resize(const DDim &dims) {
@@ -39,7 +51,8 @@ class CLTensor : TensorBase {
   template <typename T>
   inline T mutable_with_data(void *data) {
     int64_t size = numel() * sizeof(float);
-    holder_.reset(new PlaceholderImpl(size, data, typeid(T), context_));
+    holder_.reset(
+        new PlaceholderImpl(size, data, typeid(T), context_, command_queue_));
     return reinterpret_cast<T>(
         reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(holder_->ptr())));
   }
@@ -51,7 +64,7 @@ class CLTensor : TensorBase {
     PADDLE_MOBILE_ENFORCE(numel() >= 0, "the Tensor's numel must >=0.")
     int64_t size = numel() * SizeOfType(type);
     if (holder_ == nullptr || holder_->size() < size + offset_) {
-      holder_.reset(new PlaceholderImpl(size, type, context_));
+      holder_.reset(new PlaceholderImpl(size, type, context_, command_queue_));
       offset_ = 0;
     }
     return reinterpret_cast<void *>(
@@ -85,6 +98,7 @@ class CLTensor : TensorBase {
 
  private:
   cl_context context_;
+  cl_command_queue command_queue_;
 
   /*
    *   virtual ~Placeholder() = default;
@@ -99,20 +113,31 @@ class CLTensor : TensorBase {
    * */
   struct PlaceholderImpl : public Placeholder {
     PlaceholderImpl(size_t size, void *input, std::type_index type,
-                    cl_context context)
+                    cl_context context, cl_command_queue command_queue)
         : ptr_(clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
                               size, reinterpret_cast<void *>(input), NULL)),
           size_(size),
-          type_(type) {}
+          type_(type),
+          command_queue_(command_queue) {}
 
-    PlaceholderImpl(size_t size, std::type_index type, cl_context context)
+    PlaceholderImpl(size_t size, std::type_index type, cl_context context,
+                    cl_command_queue command_queue)
         : ptr_(clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, NULL)),
           size_(size),
-          type_(type) {}
+          type_(type),
+          command_queue_(command_queue) {}
 
     virtual size_t size() const { return size_; }
 
-    virtual void *ptr() const { return static_cast<void *>(ptr_.get()); }
+    virtual void *ptr() const {
+      if (host_ptr_) {
+        delete (host_ptr_);
+      }
+      char *host_ptr = new char[size_];
+      clEnqueueReadBuffer(command_queue_, ptr_.get(), CL_TRUE, 0, size_,
+                          host_ptr, 0, NULL, NULL);
+      return static_cast<void *>(host_ptr);
+    }
 
     virtual std::type_index type() const { return type_; }
 
@@ -124,6 +149,17 @@ class CLTensor : TensorBase {
 
     /* the current type of memory */
     std::type_index type_;
+
+    cl_command_queue command_queue_;
+
+    ~PlaceholderImpl() {
+      if (host_ptr_) {
+        delete (host_ptr_);
+      }
+    }
+
+   private:
+    void *host_ptr_;
   };
 };
 
