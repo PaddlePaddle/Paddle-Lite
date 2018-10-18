@@ -40,6 +40,25 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
   const framework::CLImage *scale = param->InputScale();
   const framework::CLImage *bias = param->InputBias();
   const float epsilon = param->Epsilon();
+
+  const int C = mean->numel();
+
+  for (int j = 0; j < C; ++j) {
+    DLOG << " mean - " << j << mean->data<float>()[j];
+  }
+
+  for (int j = 0; j < C; ++j) {
+    DLOG << " variance - " << j << variance->data<float>()[j];
+  }
+
+  for (int j = 0; j < C; ++j) {
+    DLOG << " scale - " << j << scale->data<float>()[j];
+  }
+
+  for (int j = 0; j < C; ++j) {
+    DLOG << " bias - " << j << bias->data<float>()[j];
+  }
+
   //
   //  DLOG << " climage mean: " << *mean;
   //  DLOG << " climage variance: " << *variance;
@@ -50,8 +69,6 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
   auto variance_ptr = variance->data<float>();
   auto scale_ptr = scale->data<float>();
   auto bias_ptr = bias->data<float>();
-
-  const int C = mean->numel();
 
   float inv_std_ptr[C];
   for (int i = 0; i < C; i++) {
@@ -67,6 +84,14 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
   }
 
   framework::CLImage *new_scale = new framework::CLImage();
+
+  for (int j = 0; j < C; ++j) {
+    DLOG << " new scale - " << j << new_scale_ptr[j];
+  }
+
+  for (int j = 0; j < C; ++j) {
+    DLOG << " new bias - " << j << new_bias_ptr[j];
+  }
 
   new_scale->SetTensorData(new_scale_ptr, variance->dims());
   new_scale->InitCLImage(this->cl_helper_.CLContext(),
