@@ -1667,7 +1667,7 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
   const int w_times = (out_w - 2) / 3;
   float32x4_t zero = vdupq_n_f32(0.0);
   for (int b = batch_size; b > 0; --b) {
-    #pragma omp parallel for
+#pragma omp parallel for
     for (int j = 0; j < c; j++) {
       const float *input_row_ptr;
       float *output_row_ptr;
@@ -1901,7 +1901,9 @@ void DepthwiseConv3x3s2p0(const Tensor *input, const Tensor *filter,
     for (int c = 0; c < input_channel; c++) {
       const float *filter_data = filter->data<float>() + c * 9;
       const float *input_data = input->data<float>() + c * inhxw;
-      const float *bias_data = bias.data<float>() + c;
+      if (if_bias) {
+        const float *bias_data = bias.data<float>() + c;
+      }
       float *output_data = output->data<float>() + c * outhxw;
       float w00 = filter_data[0];
       float w01 = filter_data[1];
@@ -1912,9 +1914,9 @@ void DepthwiseConv3x3s2p0(const Tensor *input, const Tensor *filter,
       float w20 = filter_data[6];
       float w21 = filter_data[7];
       float w22 = filter_data[8];
-
-      float32x4_t biasv = vld1q_dup_f32(bias_data);
-
+      if (if_bias) {
+        float32x4_t biasv = vld1q_dup_f32(bias_data);
+      }
       for (int i = 0; i < output_height; i += 1) {
         for (int m = 0; m < output_width - 2; m += 3) {
           float *output_ptr = output_data + i * output_width + m;
@@ -1949,8 +1951,9 @@ void DepthwiseConv3x3s2p0(const Tensor *input, const Tensor *filter,
           out0 = vmlaq_n_f32(out0, in4, w20);
           out0 = vmlaq_n_f32(out0, tmp4, w21);
           out0 = vmlaq_n_f32(out0, tmp5, w22);
-          out0 = vaddq_f32(out0, biasv);
-
+          if (if_bias) {
+            out0 = vaddq_f32(out0, biasv);
+          }
           vst1q_lane_f32(output_ptr, out0, 0);
           vst1q_lane_f32(output_ptr + 1, out0, 1);
           vst1q_lane_f32(output_ptr + 2, out0, 2);
@@ -1960,16 +1963,18 @@ void DepthwiseConv3x3s2p0(const Tensor *input, const Tensor *filter,
         }
         for (int j = m; j < output_width; j++) {
           output_data[i * output_width + j] =
-              input_data[(2 * i - 1) * input_width + 2 * j - 1] * w00 +
-              input_data[(2 * i - 1) * input_width + 2 * j] * w01 +
-              input_data[(2 * i - 1) * input_width + 2 * j + 1] * w02 +
-              input_data[(2 * i) * input_width + 2 * j - 1] * w10 +
-              input_data[(2 * i) * input_width + 2 * j] * w11 +
-              input_data[(2 * i) * input_width + 2 * j + 1] * w12 +
-              input_data[(2 * i + 1) * input_width + 2 * j - 1] * w20 +
-              input_data[(2 * i + 1) * input_width + 2 * j] * w21 +
-              input_data[(2 * i + 1) * input_width + 2 * j + 1] * w22;
-          output_data[i * output_width + j] += *bias_data;
+              input_data[(2 * i) * input_width + 2 * j] * w00 +
+              input_data[(2 * i) * input_width + 2 * j + 1] * w01 +
+              input_data[(2 * i) * input_width + 2 * j + 2] * w02 +
+              input_data[(2 * i + 1) * input_width + 2 * j] * w10 +
+              input_data[(2 * i + 1) * input_width + 2 * j + 1] * w11 +
+              input_data[(2 * i + 1) * input_width + 2 * j + 2] * w12 +
+              input_data[(2 * i + 2) * input_width + 2 * j] * w20 +
+              input_data[(2 * i + 2) * input_width + 2 * j + 1] * w21 +
+              input_data[(2 * i + 2) * input_width + 2 * j + 2] * w22;
+          if (if_bias) {
+            output_data[i * output_width + j] += *bias_data;
+          }
         }
       }
     }
