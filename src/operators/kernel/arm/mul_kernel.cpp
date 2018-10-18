@@ -25,11 +25,14 @@ bool MulKernel<CPU, float>::Init(MulParam<CPU> *param) {
   return true;
 }
 
+
 template <>
 void MulKernel<CPU, float>::Compute(const MulParam<CPU> &param) const {
   MulCompute<float>(param);
   param.Out()->set_lod(param.InputX()->lod());
 }
+
+template class MulKernel<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile

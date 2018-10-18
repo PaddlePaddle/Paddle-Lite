@@ -58,7 +58,7 @@ void MulCompute(const MulParam<CPU> &param) {
   const Tensor *input_x = param.InputX();
   const Tensor *input_y = param.InputY();
   Tensor *out = param.Out();
-  out->mutable_data<float>();
+
   const Tensor x_matrix =
       input_x->dims().size() > 2
           ? framework::ReshapeToMatrix(*input_x, param.XNumColDims())
@@ -71,14 +71,20 @@ void MulCompute(const MulParam<CPU> &param) {
   if (out_dim.size() != 2) {
     out->Resize({x_matrix.dims()[0], y_matrix.dims()[1]});
   }
-  math::matmul<float>(x_matrix, false, y_matrix, false, static_cast<float>(1),
-                      out, static_cast<float>(0));
+  if (param.InputX()->type() == typeid(int8_t)) {
+    out->mutable_data<int32_t>();
+    math::matmul<int8_t>(x_matrix, false, y_matrix, false,
+                         static_cast<int8_t>(1), out, static_cast<int8_t>(0));
+
+  } else {
+    out->mutable_data<float>();
+    math::matmul<float>(x_matrix, false, y_matrix, false, static_cast<float>(1),
+                        out, static_cast<float>(0));
+  }
   if (out_dim.size() != 2) {
     out->Resize(out_dim);
   }
 }
-
-template class MulKernel<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
