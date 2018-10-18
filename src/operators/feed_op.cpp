@@ -12,7 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "feed_op.h"
+#include "operators/feed_op.h"
+
 namespace paddle_mobile {
 namespace operators {
 
@@ -22,6 +23,7 @@ void FeedOp<DeviceType, T>::InferShape() const {
   out_dims[0] = this->param_.BatchSize();
   this->param_.Out()->Resize(out_dims);
 }
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
