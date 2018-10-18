@@ -22,14 +22,6 @@ void FetchOp<DeviceType, T>::InferShape() const {
   this->param_.Out()->Resize(x_dims);
 }
 
-template <typename DeviceType, typename T>
-void FetchOp<DeviceType, T>::RunImpl() {
-#ifdef PADDLE_MOBILE_CL
-  this->kernel_.Compute(this->param_);
-#else
-  this->param_.Out()->ShareDataWith(*(this->param_.InputX()));
-#endif
-}
 }  // namespace operators
 }  // namespace paddle_mobile
 
