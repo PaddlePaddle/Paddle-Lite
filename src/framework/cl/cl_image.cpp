@@ -183,7 +183,7 @@ Print &operator<<(Print &printer, const CLImage &cl_image) {
       }
       i0 += width * H;
     }
-    delete (imageData);
+    delete[](imageData);
     CL_CHECK_ERRORS(err);
 
   } else {
@@ -213,13 +213,14 @@ Print &operator<<(Print &printer, const CLImage &cl_image) {
       }
     }
 
+    delete[](imageData);
     CL_CHECK_ERRORS(err);
   }
 
   for (int i = 0; i < cl_image.numel(); i += stride) {
     printer << data[i] << " ";
   }
-  delete (data);
+  delete[](data);
   return printer;
 }
 #endif
