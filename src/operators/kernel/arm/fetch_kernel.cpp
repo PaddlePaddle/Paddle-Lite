@@ -11,30 +11,26 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
+#ifdef FUSION_CONVADD_OP
 
-#include "fetch_op.h"
+#include "operators/kernel/fetch_kernel.h"
+
 namespace paddle_mobile {
 namespace operators {
 
-template <typename DeviceType, typename T>
-void FetchOp<DeviceType, T>::InferShape() const {
-  auto x_dims = this->param_.InputX()->dims();
-  this->param_.Out()->Resize(x_dims);
+template <>
+bool FetchKernel<CPU, float>::Init(FetchParam<CPU> *param) {
+  return true;
 }
+
+template <>
+void FetchKernel<CPU, float>::Compute(const FetchParam<CPU> &param) {
+  param.Out()->ShareDataWith(*(param.InputX()));
+}
+
+template class FetchKernel<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(fetch, ops::FetchOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-REGISTER_OPERATOR_MALI_GPU(fetch, ops::FetchOp);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(fetch, ops::FetchOp);
-#endif
-#ifdef PADDLE_MOBILE_CL
-REGISTER_OPERATOR_CL(fetch, ops::FetchOp);
 #endif
