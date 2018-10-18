@@ -126,7 +126,8 @@ Print &operator<<(Print &printer, const CLImage &cl_image) {
   DDim ddim = cl_image.dims();
   size_t N, C, H, W, width, height;
 
-  if (cl_image.GetImageType() == Normal || cl_image.dims().size() == 3 || cl_image.dims().size() == 4) {
+  if (cl_image.GetImageType() == Normal || cl_image.dims().size() == 3 ||
+      cl_image.dims().size() == 4) {
     if (ddim.size() == 4) {
       N = ddim[0];
       if (N < 0) {
@@ -185,8 +186,6 @@ Print &operator<<(Print &printer, const CLImage &cl_image) {
     delete (imageData);
     CL_CHECK_ERRORS(err);
 
-
-
   } else {
     if (ddim.size() == 2) {
       width = (ddim[1] + 3) / 4;
@@ -220,7 +219,7 @@ Print &operator<<(Print &printer, const CLImage &cl_image) {
   for (int i = 0; i < cl_image.numel(); i += stride) {
     printer << data[i] << " ";
   }
-  delete(data);
+  delete (data);
   return printer;
 }
 #endif

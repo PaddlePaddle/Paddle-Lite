@@ -26,11 +26,7 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace framework {
 
-enum ImageType {
-  Invalid = -1,
-  Normal = 0,
-  Folder = 1
-};
+enum ImageType { Invalid = -1, Normal = 0, Folder = 1 };
 
 class CLImage {
  public:
@@ -43,9 +39,10 @@ class CLImage {
     int numel = product(dim);
     if (tensor_data_ != nullptr) {
       delete[](tensor_data_);
+      tensor_data_ = nullptr;
     }
     tensor_data_ = new float[numel];
-    memcpy(tensor_data_, tensorData, numel);
+    memcpy(tensor_data_, tensorData, numel * sizeof(float));
     tensor_dims_ = dim;
   }
 
