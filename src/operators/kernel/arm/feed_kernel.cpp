@@ -12,25 +12,23 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-
 #include "operators/kernel/feed_kernel.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        template <>
-        bool FeedKernel<CPU, float>::Init(FeedParam<CPU> *param) {
-            return true;
-        }
+template <>
+bool FeedKernel<CPU, float>::Init(FeedParam<CPU> *param) {
+  return true;
+}
 
-        template <>
-        void FeedKernel<CPU, float>::Compute(const FeedParam<CPU> &param) {
-            param.Out()->ShareDataWith(*(param.InputX()));
-            param.Out()->set_lod(param.InputX()->lod());
-        }
+template <>
+void FeedKernel<CPU, float>::Compute(const FeedParam<CPU> &param) {
+  param.Out()->ShareDataWith(*(param.InputX()));
+  param.Out()->set_lod(param.InputX()->lod());
+}
 
-        template class FeedKernel<CPU, float>;
+template class FeedKernel<CPU, float>;
 
-    }  // namespace operators
+}  // namespace operators
 }  // namespace paddle_mobile
-
