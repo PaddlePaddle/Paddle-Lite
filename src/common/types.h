@@ -126,6 +126,8 @@ extern const char *G_OP_TYPE_REGION;
 extern const char *G_OP_TYPE_FUSION_CONV_BN;
 extern const char *G_OP_TYPE_CONV_TRANSPOSE;
 extern const char *G_OP_TYPE_PRELU;
+extern const char *G_OP_TYPE_SUM;
+extern const char *G_OP_TYPE_ELEMENTWISE_MUL;
 
 extern const char *G_OP_TYPE_QUANTIZE;
 extern const char *G_OP_TYPE_DEQUANTIZE;
