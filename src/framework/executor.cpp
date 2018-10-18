@@ -948,7 +948,7 @@ void Executor<GPU_CL, Precision::FP32>::InitMemory() {
         cl_image->SetTensorData(tensorInput, ddim);
 
         delete origin_data;
-        //        paddle_mobile::memory::Free(tensorInput);
+        paddle_mobile::memory::Free(tensorInput);
       } else {
         if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
           auto cl_image = var->template GetMutable<framework::CLImage>();
