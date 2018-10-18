@@ -24,7 +24,6 @@ namespace operators {
 using std::string;
 
 template <typename DeviceType, typename T>
-#ifdef PADDLE_MOBILE_CL
 class FetchOp
     : public framework::OperatorWithKernel<DeviceType, FetchParam<DeviceType>,
                                            FetchKernel<DeviceType, T>> {
@@ -35,26 +34,10 @@ class FetchOp
       : framework::OperatorWithKernel<DeviceType, FetchParam<DeviceType>,
                                       FetchKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-#else
-class FetchOp : public framework::OperatorBase<DeviceType> {
- public:
-  FetchOp(const string &type, const VariableNameMap &inputs,
-          const VariableNameMap &outputs, const framework::AttributeMap attrs,
-          std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorBase<DeviceType>(type, inputs, outputs, attrs,
-                                            scope),
-        param_(inputs, outputs, attrs, *scope) {}
 
-  void Init() {}
-#endif
   void InferShape() const override;
 
-  void RunImpl() override;
-
  protected:
-#ifndef PADDLE_MOBILE_CL
-  FetchParam<DeviceType> param_;
-#endif
 };
 
 }  // namespace operators
