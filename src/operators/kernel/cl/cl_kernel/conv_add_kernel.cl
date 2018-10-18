@@ -63,6 +63,14 @@ __kernel void conv_3x3(__private const int global_size_dim0,
     const int out_w = get_global_id(1);
     const int out_nh = get_global_id(2);
 
+    if (out_c >= global_size_dim0 ||
+        out_w >= global_size_dim1 ||
+        out_nh >= global_size_dim2) {
+        printf(" out of range ");
+        return;
+    }
+
+
     int2 stride_xy;
     stride_xy.x = stride;
     stride_xy.y = stride;
@@ -133,24 +141,24 @@ __kernel void conv_3x3(__private const int global_size_dim0,
         input[8] = select(read_imageh(input_image, sampler,
                           (int2)(pos_in.x + dilation, pos_in.y + dilation)),
                           (half4)(0.0f),
-                          (ushort4)(pos_in.x + dilation < 0 || in_pos_in_one_block.y + dilation < 0 || pos_in.x + dilation >= input_width || in_pos_in_one_block.y + dilation >= input_height));
+                          (ushort4)(in_pos_in_one_block.x + dilation < 0 || in_pos_in_one_block.y + dilation < 0 || in_pos_in_one_block.x + dilation >= input_width || in_pos_in_one_block.y + dilation >= input_height));
 
         for (int j = 0; j < 9; ++j) {
             int2 fuck;
             fuck.x = i * 3 + j % 3;
-            fuck.y = out_c * 4 * 3 + 0 * out_c * 3 + j / 3;
+            fuck.y = out_c * 4 * 3 + 0 * 3 + j / 3;
             half4 weight_x = read_imageh(filter, sampler, fuck);
             output.x += dot(input[j], weight_x);
 
-            fuck.y = out_c * 4 * 3 + 1 * out_c * 3 + j / 3;
+            fuck.y = out_c * 4 * 3 + 1 * 3 + j / 3;
             half4 weight_y = read_imageh(filter, sampler, fuck);
             output.y += dot(input[j], weight_y);
 
-            fuck.y = out_c * 4 * 3 + 2 * out_c * 3 + j / 3;
+            fuck.y = out_c * 4 * 3 + 2 * 3 + j / 3;
             half4 weight_z = read_imageh(filter, sampler, fuck);
             output.z += dot(input[j], weight_z);
 
-            fuck.y = out_c * 4 * 3 + 3 * out_c * 3 + j / 3;
+            fuck.y = out_c * 4 * 3 + 3 * 3 + j / 3;
             half4 weight_w = read_imageh(filter, sampler, fuck);
             output.w += dot(input[j], weight_w);
         }
@@ -166,7 +174,6 @@ __kernel void conv_3x3(__private const int global_size_dim0,
 
     write_imageh(output_image, (int2)(out_c * global_size_dim1 + out_w, out_nh), output);
 }
-
 
 
 
