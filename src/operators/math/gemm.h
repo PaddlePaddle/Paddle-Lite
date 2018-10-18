@@ -80,12 +80,6 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
   void PackMatrixB_omp_16c(int k, int n, int n_tail, const float *B, int ldb,
                            float *buffer);
 
-  // 8位 int
-  void PackMatrixA_6r(int m, int k, int m_tail, const int8_t *A, int lda,
-                      int8_t *buffer);
-  void PackMatrixB_8c(int k, int n, int n_tail, const int8_t *B, int ldb,
-                      int8_t *buffer);
-
   // 分块矩阵乘法
   void InnerKernel(int mc, int nc, float alpha, const float *a, const float *b,
                    float beta, float *c, float *C, int ldc, bool relu);
@@ -104,11 +98,6 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
                             float *c, float *C, int ldc, float *p,
                             std::string mode, float *bias, float *bias1);
 
-  // 8位 int
-  void InnerKernelWithBias(int mc, int nc, float alpha, const int8_t *a,
-                           const int8_t *b, float beta, int *c, int *C, int ldc,
-                           bool relu, int8_t *bias);
-
   /*
   // 向量矩阵乘法 (M = 1)
   void VectorKernel(int m, int n, int k, float alpha, const float *A, int lda,
@@ -126,8 +115,6 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
   void AddDot6x8(int k, const float *a, const float *b, float *c, int ldc);
   void AddDot8x12(int k, const float *a, const float *b, float *c, int ldc);
   void AddDot6x16(int k, const float *a, const float *b, float *c, int ldc);
-
-  void AddDot6x8(int k, const int8_t *a, const int8_t *b, int *c, int ldc);
 
   // 分块矩阵乘法结果回写
   // C = A * B
@@ -154,20 +141,7 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
                        float *new_scale, float *new_bias);
   void WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
                           float *new_scale, float *new_bias, float *bias1);
-  // 8位 int 分块矩阵乘法结果回写
-  // C = alpha * A * B + beta * C
-  void WriteWithAlphaBeta(int mc, int nc, int *c, int *C, int ldc);
-  // C = A * B
-  void WriteBasic(int mc, int nc, int *c, int *C, int ldc);
-  // C = A * B + C
-  void WriteWithAdd(int mc, int nc, int *c, int *C, int ldc);
-  // C = A * B + bias
-  void WriteWithAddV1(int mc, int nc, int *c, int *C, int ldc, int8_t *bias);
-  // C = A * B + C, relu(C)
-  void WriteWithAddRelu(int mc, int nc, int *c, int *C, int ldc);
-  // C = A * B + bias, relu(C)
-  void WriteWithAddReluV1(int mc, int nc, int *c, int *C, int ldc,
-                          int8_t *bias);
+
   /*
   // 向量矩阵乘法结果回写
   // C = A * B
@@ -185,11 +159,6 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
   void VecWriteWithBnRelu(int n, float *c, float *C, int ldc, float *new_scale,
                           float *new_bias);
   */
-
-  // 8位 int 矩阵乘法
-  void Sgemm(int m, int n, int k, float alpha, const int8_t *A, int lda,
-             const int8_t *B, int ldb, float beta, int *C, int ldc, bool relu,
-             int8_t *bias);
 
   // 32位 float 矩阵乘法
   void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
@@ -219,6 +188,47 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
                           const float *B, int ldb, float *C, int ldc, float *p,
                           std::string mode, float *bias, float *bias1);
 
+  /************************ 8 bit function cluster ************************/
+  // 8 bit int small block inner product
+  void AddDot6x8(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
+                 int32_t ldc);
+
+  // 8 bit int inner product
+  void InnerKernelWithBias(int32_t mc, int32_t nc, int8_t alpha,
+                           const int8_t *a, const int8_t *b, int8_t beta,
+                           int32_t *c, int32_t *C, int32_t ldc, bool relu,
+                           int8_t *bias);
+
+  // 8 bit int pack function
+  void PackMatrixA_6r(int32_t m, int32_t k, int32_t m_tail, const int8_t *A,
+                      int32_t lda, int8_t *buffer);
+  void PackMatrixB_8c(int32_t k, int32_t n, int32_t n_tail, const int8_t *B,
+                      int32_t ldb, int8_t *buffer);
+
+  // 8 bit int matrix product
+  void Sgemm(int32_t m, int32_t n, int32_t k, int8_t alpha, const int8_t *A,
+             int32_t lda, const int8_t *B, int32_t ldb, int8_t beta, int32_t *C,
+             int32_t ldc, bool relu, int8_t *bias);
+
+  // 8 bit int write back
+  // C = alpha * A * B + beta * C
+  void WriteWithAlphaBeta(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
+                          int32_t ldc);
+  // C = A * B
+  void WriteBasic(int32_t mc, int32_t nc, int32_t *c, int32_t *C, int32_t ldc);
+  // C = A * B + C
+  void WriteWithAdd(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
+                    int32_t ldc);
+  // C = A * B + bias
+  void WriteWithAddV1(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
+                      int32_t ldc, int8_t *bias);
+  // C = A * B + C, relu(C)
+  void WriteWithAddRelu(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
+                        int32_t ldc);
+  // C = A * B + bias, relu(C)
+  void WriteWithAddReluV1(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
+                          int32_t ldc, int8_t *bias);
+
  private:
   int MC = 0;
   int KC = 0;
@@ -230,10 +240,10 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
   float *packedC;
   float *zero;
 
-  // 8位 int
+  // 8 bit int
   int8_t *packedA_int8;
   int8_t *packedB_int8;
-  int *packedC_int8;
+  int32_t *packedC_int8;
   int8_t *zero_int8;
 };
 
