@@ -77,6 +77,14 @@ fusion_conv_add_attrs_dict = {
     'strides': 'stride',
     'groups': 'group'
 }
+
+# fluid attr key  ---  mdl params key
+pool2d_attrs_dict = {
+    'global_pooling': 'global_pooling',
+    'pooling_type': 'type'
+}
+
+
 # fluid attr key  ---  mdl params key
 fluid_attrs_type_dict = {
     'paddings': 0,
