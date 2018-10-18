@@ -57,14 +57,14 @@ int do_sgemm(int m, int n, int k, bool relu, int pr) {
   int ldc = n;
   default_random_engine e;
   uniform_int_distribution<int8_t> pixel(-127, 127);
-  int8_t *a =
-      static_cast<int8_t *>(paddle_mobile::memory::Alloc(sizeof(int8_t) * m * k));
-  int8_t *b =
-      static_cast<int8_t *>(paddle_mobile::memory::Alloc(sizeof(int8_t) * k * n));
-  int32_t *c =
-      static_cast<int32_t *>(paddle_mobile::memory::Alloc(sizeof(int32_t) * m * n));
-  int32_t *c1 =
-      static_cast<int32_t *>(paddle_mobile::memory::Alloc(sizeof(int32_t) * m * n));
+  int8_t *a = static_cast<int8_t *>(
+      paddle_mobile::memory::Alloc(sizeof(int8_t) * m * k));
+  int8_t *b = static_cast<int8_t *>(
+      paddle_mobile::memory::Alloc(sizeof(int8_t) * k * n));
+  int32_t *c = static_cast<int32_t *>(
+      paddle_mobile::memory::Alloc(sizeof(int32_t) * m * n));
+  int32_t *c1 = static_cast<int32_t *>(
+      paddle_mobile::memory::Alloc(sizeof(int32_t) * m * n));
 
   for (int i = 0; i < m * k; ++i) {
     a[i] = pixel(e);
@@ -84,8 +84,8 @@ int do_sgemm(int m, int n, int k, bool relu, int pr) {
   }
 
   paddle_mobile::operators::math::Gemm gemm;
-  gemm.Sgemm(m, n, k, 1, a, lda, b, ldb, 0, c, ldc, relu,
-                   nullptr);
+  gemm.Sgemm(m, n, k, static_cast<int8_t>(1), a, lda, b, ldb,
+             static_cast<int8_t>(0), c, ldc, relu, nullptr);
   int eq = 0;
   int neq = 0;
   for (int i = 0; i < m * n; ++i) {
@@ -124,7 +124,8 @@ int main() {
   do_sgemm(512, 256, 384, false, 0);
   do_sgemm(1366, 768, 256, false, 0);
   do_sgemm(1255, 755, 333, false, 0);
-  do_sgemm(555, 777, 999, false,  0);
+  do_sgemm(555, 777, 999, false, 0);
+  do_sgemm(1024, 1024, 1024, false, 0);
 
   return 0;
 }
