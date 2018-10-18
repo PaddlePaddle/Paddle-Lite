@@ -1,3 +1,4 @@
+# coding=utf-8
 import json
 import os
 
@@ -12,13 +13,25 @@ def load_mdl(mdl_json_path):
         return json.load(f)
 
 
+def create_if_not_exit(target_dir):
+    if os.path.exists(target_dir):
+        shutil.rmtree(target_dir)
+    os.makedirs(target_dir, 0777)
+
+
 class Converter:
     'convert mdlmodel to fluidmodel'
 
     def __init__(self, base_dir, mdl_json_path):
+        print 'base_dir:  ' + base_dir
         self.mdl_json_path = base_dir + mdl_json_path
         self.base_dir = base_dir
         print mdl_json_path
+        self.source_weights_dir = self.base_dir + 'datas/sourcemodels/source_weights/'
+        self.target_weight_dir = self.base_dir + 'datas/target/target_weights/'
+
+        create_if_not_exit(self.target_weight_dir)
+
         self.mdl_json = load_mdl(self.mdl_json_path)
         self.program_desc = framework_pb2.ProgramDesc()
         self.weight_list_ = []
@@ -41,16 +54,18 @@ class Converter:
         print 'convert end.....'
         desc_serialize_to_string = self.program_desc.SerializeToString()
 
-        outputmodel_ = self.base_dir + 'datas/target/outputmodel/'
-        if os.path.exists(outputmodel_):
-            shutil.rmtree(outputmodel_)
-        os.makedirs(outputmodel_, 0777)
-        # todo copy weight files
-        # if os.path.exists(outputmodel_):
-        #     shutil.rmtree(outputmodel_)
-        # shutil.copytree('yolo/datas/multiobjects/float32s_nchw_with_head/', 'mobilenet/datas/target/outputmodel/')
+        outputmodel_dir = self.base_dir + 'datas/target/mobilenet_classfication/'
+        if os.path.exists(outputmodel_dir):
+            shutil.rmtree(outputmodel_dir)
+        os.makedirs(outputmodel_dir, 0777)
 
-        f = open(outputmodel_ + "__model__", "wb")
+        if os.path.exists(outputmodel_dir):
+            shutil.rmtree(outputmodel_dir)
+        # create_if_not_exit(outputmodel_dir)
+
+        shutil.copytree(self.target_weight_dir, outputmodel_dir)
+
+        f = open(outputmodel_dir + "__model__", "wb")
         f.write(desc_serialize_to_string)
         f.close()
 
@@ -63,26 +78,30 @@ class Converter:
 
             layers_ = self.mdl_json['layer']
             for layer in layers_:
-                desc_ops_add = block_desc.ops.add()
 
-                # print layer
-                # for i in layer:
-                #     print i
-                if 'name' in layer:
-                    l_name = layer['name']
-                if 'type' in layer:
-                    self.package_ops_type(desc_ops_add, layer)
+                if layer['type'] == 'SoftmaxLayer':
+                    pass
+                else:
+                    desc_ops_add = block_desc.ops.add()
 
-                if 'weight' in layer:
-                    self.package_ops_weight2inputs(desc_ops_add, layer)
+                    # print layer
+                    # for i in layer:
+                    #     print i
+                    if 'name' in layer:
+                        l_name = layer['name']
+                    if 'type' in layer:
+                        self.package_ops_type(desc_ops_add, layer)
 
-                if 'output' in layer:
-                    self.package_ops_outputs(desc_ops_add, layer)
+                    if 'weight' in layer:
+                        self.package_ops_weight2inputs(desc_ops_add, layer)
 
-                if 'input' in layer:
-                    self.package_ops_inputs(desc_ops_add, layer)
+                    if 'output' in layer:
+                        self.package_ops_outputs(desc_ops_add, layer)
 
-                self.package_ops_attrs(desc_ops_add, layer)
+                    if 'input' in layer:
+                        self.package_ops_inputs(desc_ops_add, layer)
+
+                    self.package_ops_attrs(desc_ops_add, layer)
 
         self.add_op_fetch(block_desc)
 
@@ -105,7 +124,8 @@ class Converter:
         desc_ops_add = block_desc.ops.add()
         inputs_add = desc_ops_add.inputs.add()
         inputs_add.parameter = 'X'
-        inputs_add.arguments.append('conv_pred_87')
+        # todo pick last layer --> op output
+        inputs_add.arguments.append('fc7')
         desc_ops_add.type = 'fetch'
         outputs_add = desc_ops_add.outputs.add()
         outputs_add.parameter = 'Out'
@@ -129,6 +149,128 @@ class Converter:
             # boolean
             attrs_add.type = 6
             attrs_add.b = 0
+        elif desc_ops_add.type == types.op_fluid_pooling:
+            Converter.pack_pooling_attr(desc_ops_add, layer)
+            pass
+        elif desc_ops_add.type == types.op_fluid_softmax:
+            pass
+
+    @staticmethod
+    def pack_pooling_attr(desc_ops_add, layer):
+        print layer
+        l_params = layer['param']
+
+        attrs_add = desc_ops_add.attrs.add()
+        attrs_add.name = 'use_mkldnn'
+        # boolean
+        attrs_add.type = 6
+        attrs_add.b = 0
+
+        attrs_add = desc_ops_add.attrs.add()
+        attrs_add.name = 'use_cudnn'
+        # boolean
+        attrs_add.type = 6
+        attrs_add.b = 1
+
+        attrs_add = desc_ops_add.attrs.add()
+        attrs_add.name = 'paddings'
+        # ints
+        attrs_add.type = 3
+        attrs_add.ints.append(0)
+        attrs_add.ints.append(0)
+
+        attrs_add = desc_ops_add.attrs.add()
+        attrs_add.name = 'strides'
+        # ints
+        attrs_add.type = 3
+        attrs_add.ints.append(1)
+        attrs_add.ints.append(1)
+
+        attrs_add = desc_ops_add.attrs.add()
+        attrs_add.name = 'global_pooling'
+        # boolean
+        attrs_add.type = 6
+        attrs_add.b = (l_params[types.pool2d_attrs_dict.get('global_pooling')])
+
+        attrs_add = desc_ops_add.attrs.add()
+        attrs_add.name = 'pooling_type'
+        # 2-->STRING
+        attrs_add.type = 2
+        # 注意这里 avg but mdl is ave
+        attrs_add.s = l_params[types.pool2d_attrs_dict.get('pooling_type')]
+
+        attrs_add = desc_ops_add.attrs.add()
+        attrs_add.name = 'ceil_mode'
+        # boolean
+        attrs_add.type = 6
+        attrs_add.b = 1
+
+        attrs_add = desc_ops_add.attrs.add()
+        attrs_add.name = 'ksize'
+        # ints
+        attrs_add.type = 3
+        attrs_add.ints.append(7)
+        attrs_add.ints.append(7)
+
+    # type: "pool2d"
+    # attrs
+    # {
+    #     name: "use_mkldnn"
+    #     type: BOOLEAN
+    #     b: false
+    # }
+    # attrs
+    # {
+    #     name: "ceil_mode"
+    #     type: BOOLEAN
+    #     b: true
+    # }
+    # attrs
+    # {
+    #     name: "use_cudnn"
+    #     type: BOOLEAN
+    #     b: true
+    # }
+    # attrs
+    # {
+    #     name: "paddings"
+    #     type: INTS
+    #     ints: 0
+    #     ints: 0
+    # }
+    # attrs
+    # {
+    #     name: "strides"
+    #     type: INTS
+    #     ints: 1
+    #     ints: 1
+    # }
+    # attrs
+    # {
+    #     name: "global_pooling"
+    #     type: BOOLEAN
+    #     b: false
+    # }
+    # attrs
+    # {
+    #     name: "data_format"
+    #     type: STRING
+    #     s: "AnyLayout"
+    # }
+    # attrs
+    # {
+    #     name: "ksize"
+    #     type: INTS
+    #     ints: 7
+    #     ints: 7
+    # }
+    # attrs
+    # {
+    #     name: "pooling_type"
+    #     type: STRING
+    #     s: "avg"
+    # }
+    # is_target: false
 
     @staticmethod
     def pack_fusion_conv_add_attr(desc_ops_add, layer):
@@ -181,12 +323,26 @@ class Converter:
             attrs_add.ints.append(l_params[types.fusion_conv_add_attrs_dict.get('paddings')])
             attrs_add.ints.append(l_params[types.fusion_conv_add_attrs_dict.get('paddings')])
 
+            # attrs_add = desc_ops_add.attrs.add()
+            # attrs_add.name = 'paddings'
+            # # ints
+            # attrs_add.type = 3
+            # attrs_add.ints.append(0)
+            # attrs_add.ints.append(0)
+
             attrs_add = desc_ops_add.attrs.add()
             attrs_add.name = 'strides'
             # ints
             attrs_add.type = 3
             attrs_add.ints.append(l_params[types.fusion_conv_add_attrs_dict.get('strides')])
             attrs_add.ints.append(l_params[types.fusion_conv_add_attrs_dict.get('strides')])
+
+            # attrs_add = desc_ops_add.attrs.add()
+            # attrs_add.name = 'strides'
+            # # ints
+            # attrs_add.type = 3
+            # attrs_add.ints.append(6)
+            # attrs_add.ints.append(6)
 
             attrs_add = desc_ops_add.attrs.add()
             attrs_add.name = 'groups'
@@ -232,8 +388,8 @@ class Converter:
             # print o
             outputs_add = desc_ops_add.outputs.add()
             dict = types.op_io_dict.get(desc_ops_add.type)
-            print 'desc_ops_add.type:  ' + desc_ops_add.type
-            print dict
+            # print 'desc_ops_add.type:  ' + desc_ops_add.type
+            # print dict
             outputs_add.parameter = dict.get(types.mdl_outputs_key)
             outputs_add.arguments.append(o)
 
@@ -305,7 +461,7 @@ class Converter:
 
             # issues in mdl model filter swich n and c
             if j in self.deepwise_weight_list_ and len(dims_of_matrix) == 4:
-                print j
+                print "deep wise issue fit:  " + j
                 tensor.dims.append(dims_of_matrix[1])
                 tensor.dims.append(dims_of_matrix[0])
                 tensor.dims.append(dims_of_matrix[2])
@@ -320,6 +476,12 @@ class Converter:
                 vars_add.persistable = 1
                 dims_size = len(dims_of_matrix)
                 # print dims_size
+                # print 'weight name : ' + j
+                Swichter().copy_add_head(
+                    self.source_weights_dir + j + '.bin',
+                    self.target_weight_dir + j
+                )
+
                 # if dims_size == 4:
                 #     # convert weight from nhwc to nchw
                 #     Swichter().nhwc2nchw_one_slice_add_head(
@@ -341,7 +503,7 @@ class Converter:
                 vars_add.persistable = 0
 
 
-mdl_path = "datas/sourcemodels/cls231_0802/mobileNetModel.json"
+mdl_path = "datas/sourcemodels/source_profile/mobileNetModel.json"
 base_dir = "/Users/xiebaiyuan/PaddleProject/paddle-mobile/tools/python/modeltools/mobilenet/"
 converter = Converter(base_dir, mdl_path)
 converter.convert()
