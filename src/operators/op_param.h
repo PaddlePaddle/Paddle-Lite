@@ -1255,6 +1255,7 @@ class ReluParam : public ReluParamBase<Dtype> {
   using ReluParamBase<Dtype>::ReluParamBase;
 };
 
+#ifdef PADDLE_MOBILE_CL
 template <>
 class ReluParam<GPU_CL> : public ReluParamBase<GPU_CL> {
  public:
@@ -1264,6 +1265,7 @@ class ReluParam<GPU_CL> : public ReluParamBase<GPU_CL> {
  private:
   framework::CLImage midImage;
 };
+#endif
 
 #endif
 
