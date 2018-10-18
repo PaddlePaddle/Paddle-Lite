@@ -442,7 +442,7 @@ class ElementwiseAddParam : OpParam {
 #endif
 };
 
-#ifdef ElementwiseMul_OP
+#ifdef ELEMENTWISEMUL_OP
 template <typename Dtype>
 class ElementwiseMulParam : OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
@@ -474,7 +474,7 @@ class ElementwiseMulParam : OpParam {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::EWAddArgs fpga_EW_mul_args;
+  fpga::EWMulArgs fpga_EW_mul_args;
 
  public:
   const fpga::EWMulArgs &FpgaArgs() const { return fpga_EW_mul_args; }
