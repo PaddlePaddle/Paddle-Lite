@@ -244,7 +244,7 @@ class CLImage {
     image_width_ = width;
     image_height_ = height;
     image_dims_ = make_ddim({image_width_, image_height_});
-    c_block_ = W / width;
+    c_block_ = width / W;
 
     DLOG << " tensor dim " << tensor_dims_;
     DLOG << " 赋值时: image width: " << image_width_;
