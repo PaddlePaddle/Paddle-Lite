@@ -119,7 +119,7 @@ void SumCompute(const SumParam<CPU> &param) {
       if (sel_row.rows().size() == 0) {
         continue;
       }
-      PADDLE_MOBILE_ENFORCE(out->height() == sel_row.height());
+      PADDLE_MOBILE_ENFORCE(out->height() == sel_row.height(), "");
       functor(sel_row, offset, out);
       offset += sel_row.value().numel();
     }
@@ -140,7 +140,7 @@ void SumCompute(const SumParam<CPU> &param) {
             framework::TensorCopy((*in_array)[i], &out_array[i]);
             out_array[i].set_lod((*in_array)[i].lod());
           } else {
-            PADDLE_MOBILE_ENFORCE(out_array[i].lod() == (*in_array)[i].lod());
+            PADDLE_MOBILE_ENFORCE(out_array[i].lod() == (*in_array)[i].lod(), "");
             auto *inptr = (*in_array)[i].data<float>();
             auto *outptr = out_array[i].data<float>();
 
