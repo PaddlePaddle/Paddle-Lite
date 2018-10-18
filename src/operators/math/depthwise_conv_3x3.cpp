@@ -1901,9 +1901,7 @@ void DepthwiseConv3x3s2p0(const Tensor *input, const Tensor *filter,
     for (int c = 0; c < input_channel; c++) {
       const float *filter_data = filter->data<float>() + c * 9;
       const float *input_data = input->data<float>() + c * inhxw;
-      if (if_bias) {
-        const float *bias_data = bias.data<float>() + c;
-      }
+      const float *bias_data = bias.data<float>() + c;
       float *output_data = output->data<float>() + c * outhxw;
       float w00 = filter_data[0];
       float w01 = filter_data[1];
@@ -1914,9 +1912,7 @@ void DepthwiseConv3x3s2p0(const Tensor *input, const Tensor *filter,
       float w20 = filter_data[6];
       float w21 = filter_data[7];
       float w22 = filter_data[8];
-      if (if_bias) {
-        float32x4_t biasv = vld1q_dup_f32(bias_data);
-      }
+      float32x4_t biasv = vld1q_dup_f32(bias_data);
       for (int i = 0; i < output_height; i += 1) {
         for (int m = 0; m < output_width - 2; m += 3) {
           float *output_ptr = output_data + i * output_width + m;
