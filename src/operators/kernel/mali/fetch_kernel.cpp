@@ -19,16 +19,16 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool FetchKernel<CPU, float>::Init(FetchParam<CPU> *param) {
+bool FetchKernel<GPU_MALI, float>::Init(FetchParam<GPU_MALI> *param) {
   return true;
 }
 
 template <>
-void FetchKernel<CPU, float>::Compute(const FetchParam<CPU> &param) {
+void FetchKernel<GPU_MALI, float>::Compute(const FetchParam<GPU_MALI> &param) {
   param.Out()->ShareDataWith(*(param.InputX()));
 }
 
-template class FetchKernel<CPU, float>;
+template class FetchKernel<GPU_MALI, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
