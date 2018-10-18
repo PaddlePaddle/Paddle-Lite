@@ -15,23 +15,22 @@ limitations under the License. */
 #include "operators/kernel/feed_kernel.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
+template <>
+bool FeedKernel<GPU_MALI, float>::Init(FeedParam<GPU_MALI> *param) {
+  return true;
+}
 
-        template <>
-        bool FeedKernel<GPU_MALI, float>::Init(
-                FeedParam<GPU_MALI> *param) {
-            return true;
-        }
+template <>
+void FeedKernel<GPU_MALI, float>::Compute(const FeedParam<GPU_MALI> &param) {
+  param.Out()->ShareDataWith(*(param.InputX()));
+  param.Out()->set_lod(param.InputX()->lod());
+}
 
-        template <>
-        void FeedKernel<GPU_MALI, float>::Compute(
-                const FeedParam<GPU_MALI> &param) {
-        }
+template class FeedKernel<GPU_MALI, float>;
 
-        template class FeedKernel<GPU_MALI, float>;
-
-    }  // namespace operators
+}  // namespace operators
 }  // namespace paddle_mobile
 
 #endif
