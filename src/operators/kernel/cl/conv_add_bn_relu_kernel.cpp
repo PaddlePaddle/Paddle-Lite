@@ -165,6 +165,18 @@ void ConvAddBNReluKernel<GPU_CL, float>::Compute(
   int output_width = param.Output()->WidthOfOneBlock();
   int output_height = param.Output()->HeightOfOneBlock();
 
+  DLOG << " c block " << c_block;
+  DLOG << " w " << w;
+  DLOG << " nh " << nh;
+  DLOG << " stride " << stride;
+  DLOG << " offset " << offset;
+  DLOG << " input_c " << input_c;
+  DLOG << " dilation " << dilation;
+  DLOG << " input width " << input_width;
+  DLOG << " input height " << input_height;
+  DLOG << " output width " << output_width;
+  DLOG << " output height " << output_height;
+
   cl_int status;
 
   status = clSetKernelArg(kernel, 0, sizeof(int), &c_block);
