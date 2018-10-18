@@ -442,6 +442,7 @@ class ElementwiseAddParam : OpParam {
 #endif
 };
 
+#ifdef ElementwiseMul_OP
 template <typename Dtype>
 class ElementwiseMulParam : OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
@@ -480,6 +481,7 @@ class ElementwiseMulParam : OpParam {
   void SetFpgaArgs(const fpga::EWMulArgs &args) { fpga_EW_mul_args = args; }
 #endif
 };
+#endif
 
 #ifdef FUSION_ELEMENTWISEADDRELU_OP
 template <typename Dtype>
