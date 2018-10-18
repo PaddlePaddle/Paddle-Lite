@@ -78,26 +78,30 @@ class Converter:
 
             layers_ = self.mdl_json['layer']
             for layer in layers_:
-                desc_ops_add = block_desc.ops.add()
 
-                # print layer
-                # for i in layer:
-                #     print i
-                if 'name' in layer:
-                    l_name = layer['name']
-                if 'type' in layer:
-                    self.package_ops_type(desc_ops_add, layer)
+                if layer['type'] == 'SoftmaxLayer':
+                    pass
+                else:
+                    desc_ops_add = block_desc.ops.add()
 
-                if 'weight' in layer:
-                    self.package_ops_weight2inputs(desc_ops_add, layer)
+                    # print layer
+                    # for i in layer:
+                    #     print i
+                    if 'name' in layer:
+                        l_name = layer['name']
+                    if 'type' in layer:
+                        self.package_ops_type(desc_ops_add, layer)
 
-                if 'output' in layer:
-                    self.package_ops_outputs(desc_ops_add, layer)
+                    if 'weight' in layer:
+                        self.package_ops_weight2inputs(desc_ops_add, layer)
 
-                if 'input' in layer:
-                    self.package_ops_inputs(desc_ops_add, layer)
+                    if 'output' in layer:
+                        self.package_ops_outputs(desc_ops_add, layer)
 
-                self.package_ops_attrs(desc_ops_add, layer)
+                    if 'input' in layer:
+                        self.package_ops_inputs(desc_ops_add, layer)
+
+                    self.package_ops_attrs(desc_ops_add, layer)
 
         self.add_op_fetch(block_desc)
 
@@ -121,7 +125,7 @@ class Converter:
         inputs_add = desc_ops_add.inputs.add()
         inputs_add.parameter = 'X'
         # todo pick last layer --> op output
-        inputs_add.arguments.append('Softmax')
+        inputs_add.arguments.append('fc7')
         desc_ops_add.type = 'fetch'
         outputs_add = desc_ops_add.outputs.add()
         outputs_add.parameter = 'Out'
