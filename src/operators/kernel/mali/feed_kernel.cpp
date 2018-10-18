@@ -23,7 +23,10 @@ bool FeedKernel<GPU_MALI, float>::Init(FeedParam<GPU_MALI> *param) {
 }
 
 template <>
-void FeedKernel<GPU_MALI, float>::Compute(const FeedParam<GPU_MALI> &param) {}
+void FeedKernel<GPU_MALI, float>::Compute(const FeedParam<GPU_MALI> &param) {
+  param.Out()->ShareDataWith(*(param.InputX()));
+  param.Out()->set_lod(param.InputX()->lod());
+}
 
 template class FeedKernel<GPU_MALI, float>;
 
