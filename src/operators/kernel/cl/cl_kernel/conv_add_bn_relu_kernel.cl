@@ -220,7 +220,7 @@ __kernel void depth_conv_3x3(__private const int global_size_dim0,
 #endif
 
     int2 pos_in_input_block = (int2)(out_c * input_width, batch_index * input_height);
-    int weight_x_to = out_c * 3;
+    int weight_y_to = out_c * 12;
 
     half4 inputs[9];
 
@@ -262,11 +262,14 @@ __kernel void depth_conv_3x3(__private const int global_size_dim0,
 
     for (int j = 0; j < 9; ++j) {
         half4 input = inputs[j];
-        half4 weight = read_imageh(filter, sampler, (int2)(weight_x_to + j % 3, j / 3));
-        output.x += input.x * weight.x;
-        output.y += input.y * weight.y;
-        output.z += input.z * weight.z;
-        output.w += input.w * weight.w;
+        half4 weight0 = read_imageh(filter, sampler, (int2)(j % 3, weight_y_to + j / 3));
+        half4 weight1 = read_imageh(filter, sampler, (int2)(j % 3, weight_y_to + 3 + j / 3));
+        half4 weight2 = read_imageh(filter, sampler, (int2)(j % 3, weight_y_to + 6 + j / 3));
+        half4 weight3 = read_imageh(filter, sampler, (int2)(j % 3, weight_y_to + 9 + j / 3));
+        output.x += input.x * weight0.x;
+        output.y += input.y * weight1.x;
+        output.z += input.z * weight2.x;
+        output.w += input.w * weight3.x;
     }
 
 #ifdef BATCH_NORM
