@@ -32,11 +32,19 @@ void FetchKernel<GPU_CL, float>::Compute(const FetchParam<GPU_CL> &param) {
   auto input = param.InputX()->GetCLImage();
   auto *out = param.Out();
 
-  const auto &dims = param.InputX()->dims();
-  const int N = dims[0];
-  const int C = dims[1];
-  const int in_height = dims[2];
-  const int in_width = dims[3];
+  const auto &dim = param.InputX()->dims();
+  size_t new_dims[] = {1, 1, 1, 1};
+
+  for (int j = 0; j < dim.size(); ++j) {
+    new_dims[4 - dim.size() + j] = dim[j];
+  }
+
+  size_t N, C, in_height, in_width;
+
+  N = new_dims[0];
+  C = new_dims[1];
+  in_height = new_dims[2];
+  in_width = new_dims[3];
 
   int size_ch = in_height * in_width;
   int size_block = size_ch * 4;
