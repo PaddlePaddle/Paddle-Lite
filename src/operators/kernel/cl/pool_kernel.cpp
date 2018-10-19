@@ -63,8 +63,10 @@ void PoolKernel<GPU_CL, float>::Compute(const PoolParam<GPU_CL> &param) {
   clSetKernelArg(kernel, 10, sizeof(cl_mem), &input);
   clSetKernelArg(kernel, 11, sizeof(cl_mem), &out);
 
+  cl_event out_event = param.Output()->GetClEvent();
+  cl_event wait_event = param.Input()->GetClEvent();
   clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
-                         default_work_size.data(), NULL, 0, NULL, NULL);
+                         default_work_size.data(), NULL, 1, &wait_event, &out_event);
 }
 
 template class PoolKernel<GPU_CL, float>;
