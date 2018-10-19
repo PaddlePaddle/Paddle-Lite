@@ -199,6 +199,12 @@ LOAD_OP3(pool2d, CPU, MALI_GPU, FPGA);
 #ifdef MULTICLASSNMS_OP
 LOAD_OP1(multiclass_nms, CPU);
 #endif
+#ifdef SUM_OP
+LOAD_OP1(sum, CPU);
+#endif
+#ifdef ELEMENTWISEMUL_OP
+LOAD_OP1(elementiwise_mul, CPU);
+#endif
 #ifdef SLICE_OP
 LOAD_OP2(slice, CPU, MALI_GPU);
 #endif
