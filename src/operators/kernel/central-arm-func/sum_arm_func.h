@@ -27,13 +27,11 @@ void SumCompute(const SumParam<CPU> &param) {
   auto *outvar = param.OutVar();
 
   bool in_place = outvar == inputsvars[0];
-  DLOG << "11:";
   if (outvar->IsType<framework::LoDTensor>()) {
     auto *out = outvar->GetMutable<LoDTensor>();
     if (!in_place) {
       out->mutable_data<float>();
     }
-    DLOG << "1:";
     auto *outptr = out->data<float>();
     // auto result = Flatten(*out);
 
@@ -62,7 +60,6 @@ void SumCompute(const SumParam<CPU> &param) {
     }
 
   } else if (outvar->IsType<framework::SelectedRows>()) {
-    DLOG << "2:";
     std::unique_ptr<framework::SelectedRows> in0;
     if (in_place) {
       // If is in_place, we store the input[0] to in0
@@ -119,12 +116,12 @@ void SumCompute(const SumParam<CPU> &param) {
       if (sel_row.rows().size() == 0) {
         continue;
       }
-      PADDLE_MOBILE_ENFORCE(out->height() == sel_row.height());
+      PADDLE_MOBILE_ENFORCE(out->height() == sel_row.height(),
+                            "seletrows height != outheight");
       functor(sel_row, offset, out);
       offset += sel_row.value().numel();
     }
   } else if (outvar->IsType<LoDTensorArray>()) {
-    DLOG << "3:";
     auto &out_array = *outvar->GetMutable<LoDTensorArray>();
     for (size_t i = in_place ? 1 : 0; i < inputsvars.size(); ++i) {
       PADDLE_MOBILE_ENFORCE(inputsvars[i]->IsType<LoDTensorArray>(),
@@ -140,7 +137,8 @@ void SumCompute(const SumParam<CPU> &param) {
             framework::TensorCopy((*in_array)[i], &out_array[i]);
             out_array[i].set_lod((*in_array)[i].lod());
           } else {
-            PADDLE_MOBILE_ENFORCE(out_array[i].lod() == (*in_array)[i].lod());
+            PADDLE_MOBILE_ENFORCE(out_array[i].lod() == (*in_array)[i].lod(),
+                                  "outLod != inLod");
             auto *inptr = (*in_array)[i].data<float>();
             auto *outptr = out_array[i].data<float>();
 
@@ -152,9 +150,7 @@ void SumCompute(const SumParam<CPU> &param) {
       }
     }
   } else {
-    DLOG << "2:";
     if (outvar->IsType<framework::Tensor>()) {
-      DLOG << "3: ";
     }
     PADDLE_MOBILE_THROW_EXCEPTION(
         "Unexpected branch, output variable type is %s", outvar->Type().name());

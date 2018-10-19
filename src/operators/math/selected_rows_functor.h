@@ -47,7 +47,7 @@ struct SelectedRowsAddTo {
                   const int64_t input2_offset,
                   framework::SelectedRows* input2) {
     auto in1_height = input1.height();
-    PADDLE_MOBILE_ENFORCE(in1_height == input2->height());
+    PADDLE_MOBILE_ENFORCE(in1_height == input2->height(), "height error");
 
     auto& in1_rows = input1.rows();
     auto& in2_rows = *(input2->mutable_rows());
@@ -77,13 +77,14 @@ struct SelectedRowsAddToTensor {
                   framework::Tensor* input2) {
     auto in1_height = input1.height();
     auto in2_dims = input2->dims();
-    PADDLE_MOBILE_ENFORCE(in1_height == in2_dims[0]);
+    PADDLE_MOBILE_ENFORCE(in1_height == in2_dims[0], "height != dims[0]");
 
     auto& in1_value = input1.value();
     auto& in1_rows = input1.rows();
 
     int64_t in1_row_numel = in1_value.numel() / in1_rows.size();
-    PADDLE_MOBILE_ENFORCE(in1_row_numel == input2->numel() / in1_height);
+    PADDLE_MOBILE_ENFORCE(in1_row_numel == input2->numel() / in1_height,
+                          "row_numel error");
 
     auto* in1_data = in1_value.data<T>();
     auto* input2_data = input2->data<T>();
