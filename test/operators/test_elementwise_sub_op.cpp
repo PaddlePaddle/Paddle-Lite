@@ -16,15 +16,15 @@ limitations under the License. */
 
 #include "../test_helper.h"
 #include "../test_include.h"
-#include "operators/im2sequence_op.h"
+#include "operators/elementwise_sub_op.h"
 
 namespace paddle_mobile {
 namespace framework {
 
 template <typename Dtype>
-class TestIm2SequenceOp {
+class TestElementwiseSubOp {
  public:
-  explicit TestIm2SequenceOp(const Program<Dtype> p) : program_(p) {
+  explicit TestElementwiseSubOp(const Program<Dtype> p) : program_(p) {
     if (use_optimize_) {
       to_predict_program_ = program_.optimizeProgram;
     } else {
@@ -40,14 +40,14 @@ class TestIm2SequenceOp {
       //    DLOG << " ops " << ops.size();
       for (int j = 0; j < ops.size(); ++j) {
         std::shared_ptr<OpDesc> op = ops[j];
-        if (op->Type() == "im2sequence" &&
-            op->Input("X")[0] == "conv2d_19.tmp_1") {
-          DLOG << " im2squence attr size: " << op->GetAttrMap().size();
+        if (op->Type() == "elementwise_sub" &&
+            op->Input("X")[0] == "sigmoid_1.tmp_0") {
+          DLOG << " elementwise_sub attr size: " << op->GetAttrMap().size();
           DLOG << " inputs size: " << op->GetInputs().size();
           DLOG << " outputs size: " << op->GetOutputs().size();
 
-          std::shared_ptr<operators::Im2SequenceOp<Dtype, float>> lrn =
-              std::make_shared<operators::Im2SequenceOp<Dtype, float>>(
+          std::shared_ptr<operators::ElementwiseSubOp<Dtype, float>> lrn =
+              std::make_shared<operators::ElementwiseSubOp<Dtype, float>>(
                   op->Type(), op->GetInputs(), op->GetOutputs(),
                   op->GetAttrMap(), program_.scope);
           ops_of_block_[*block_desc.get()].push_back(lrn);
@@ -56,23 +56,27 @@ class TestIm2SequenceOp {
     }
   }
 
-  std::shared_ptr<Tensor> predict_bn(const Tensor &t1) {
+  std::shared_ptr<Tensor> predict_bn(const Tensor &t1, const Tensor &t2) {
     // feed
     auto scope = program_.scope;
-    Variable *x1_feed_value = scope->Var("conv2d_19.tmp_1");
+    Variable *x1_feed_value = scope->Var("tmp_0");
     auto tensor_x1 = x1_feed_value->GetMutable<LoDTensor>();
     tensor_x1->ShareDataWith(t1);
 
-    Variable *output = scope->Var("im2sequence_0.tmp_0");
+    Variable *x2_feed_value = scope->Var("sigmoid_1.tmp_0");
+    auto tensor_x2 = x2_feed_value->GetMutable<LoDTensor>();
+    tensor_x2->ShareDataWith(t2);
+
+    Variable *output = scope->Var("tmp_1");
     auto *output_tensor = output->GetMutable<LoDTensor>();
-    output_tensor->mutable_data<float>({2, 12});
+    output_tensor->mutable_data<float>({1, 1, 6, 6});
     //  DLOG << typeid(output_tensor).name();
     //  DLOG << "output_tensor dims: " << output_tensor->dims();
 
     std::shared_ptr<Tensor> out_tensor = std::make_shared<LoDTensor>();
     out_tensor.reset(output_tensor);
 
-    predict_bn(t1, 0);
+    predict_bn(t1, t2, 0);
     return out_tensor;
   }
 
@@ -84,7 +88,7 @@ class TestIm2SequenceOp {
       ops_of_block_;
   bool use_optimize_ = false;
 
-  void predict_bn(const Tensor &t1, int block_id) {
+  void predict_bn(const Tensor &t1, const Tensor &t2, int block_id) {
     std::shared_ptr<BlockDesc> to_predict_block =
         to_predict_program_->Block(block_id);
     for (int j = 0; j < ops_of_block_[*to_predict_block.get()].size(); ++j) {
@@ -95,34 +99,49 @@ class TestIm2SequenceOp {
   }
 };
 
-template class TestIm2SequenceOp<CPU>;
+template class TestElementwiseSubOp<CPU>;
 }  // namespace framework
 }  // namespace paddle_mobile
 
 int main() {
   DLOG << "----------**********----------";
-  DLOG << "begin to run Im2Sequence Test";
+  DLOG << "begin to run ElementwiseSub Test";
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
-  auto program = loader.Load(std::string(g_eng) + "/model",
-                             std::string(g_eng) + "/params");
+  auto program = loader.Load(std::string(g_ocr) + "/model",
+                             std::string(g_ocr) + "/params");
 
-  /// input x (4,10,2,2)
-  paddle_mobile::framework::Tensor inputx;
-  SetupTensor<float>(&inputx, {1, 2, 6, 2}, static_cast<float>(0),
+  /// input x1 (1,1,6,6)
+  paddle_mobile::framework::Tensor inputx1;
+  SetupTensor<float>(&inputx1, {1, 1, 6, 6}, static_cast<float>(0),
                      static_cast<float>(1));
-  auto *inputx_ptr = inputx.data<float>();
+  auto *inputx1_ptr = inputx1.data<float>();
 
-  paddle_mobile::framework::TestIm2SequenceOp<paddle_mobile::CPU>
-      testIm2SequenceOp(program);
+  /// input x2 (1,1,6,6)
+  paddle_mobile::framework::Tensor inputx2;
+  SetupTensor<float>(&inputx2, {1, 1, 6, 6}, static_cast<float>(0),
+                     static_cast<float>(1));
+  auto *inputx2_ptr = inputx2.data<float>();
 
-  auto output_op = testIm2SequenceOp.predict_bn(inputx);
+  paddle_mobile::framework::TestElementwiseSubOp<paddle_mobile::CPU>
+      testElementwiseSubOp(program);
+
+  auto output_op = testElementwiseSubOp.predict_bn(inputx1, inputx2);
   auto *output_op_ptr = output_op->data<float>();
 
-  auto input_dim = inputx.numel() / inputx.dims()[0];
-  DLOG << " input : ";
-  for (int i = 0; i < inputx.dims()[0]; ++i) {
-    for (int j = 0; j < input_dim; ++j) {
-      DLOGF("%f ", inputx_ptr[i * input_dim + j]);
+  auto inputx1_dim = inputx1.numel() / inputx1.dims()[0];
+  DLOG << " input1 : ";
+  for (int i = 0; i < inputx1.dims()[0]; ++i) {
+    for (int j = 0; j < inputx1_dim; ++j) {
+      DLOGF("%f ", inputx1_ptr[i * inputx1_dim + j]);
+    }
+    DLOGF("\n");
+  }
+
+  auto inputx2_dim = inputx2.numel() / inputx2.dims()[0];
+  DLOG << " input2 : ";
+  for (int i = 0; i < inputx2.dims()[0]; ++i) {
+    for (int j = 0; j < inputx2_dim; ++j) {
+      DLOGF("%f ", inputx2_ptr[i * inputx2_dim + j]);
     }
     DLOGF("\n");
   }
