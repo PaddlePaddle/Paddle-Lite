@@ -155,7 +155,7 @@ void ConvKernel<GPU_CL, float>::Compute(const ConvParam<GPU_CL> &param) {
   DLOG << " begin enqueue ";
 
   status =
-      clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
+      clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
                              default_work_size.data(), NULL, 0, NULL, NULL);
   CL_CHECK_ERRORS(status);
   DLOG << " end enqueue ";

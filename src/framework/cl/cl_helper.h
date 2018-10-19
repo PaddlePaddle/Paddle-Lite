@@ -49,34 +49,26 @@ class CLHelper {
   cl_context CLContext() { return scope_->Context(); }
 
   std::vector<size_t> DefaultWorkSize(const CLImage &image) {
+    if (image.GetImageType() == Invalid) {
+      PADDLE_MOBILE_THROW_EXCEPTION(" not support image type");
+    }
     // n c h w
     auto image_dim = image.dims();
     if (image_dim.size() == 4) {
       auto n = image_dim[0];
       auto h = image_dim[2];
       auto w = image_dim[3];
-
       auto image_width = image.ImageWidth();
-
       auto work_size_0 = image_width / w;
-
       auto work_size_1 = w;
-
       auto work_size_2 = n * h;
-
       return {work_size_0, work_size_1, work_size_2};
     } else if (image_dim.size() == 2) {
-      auto image_width = image.ImageWidth();
-
-      auto work_size_0 = image_width / image_dim[1];
-
-      auto work_size_1 = image_dim[1];
-
-      auto work_size_2 = image_dim[0];
-
-      return {work_size_0, work_size_1, work_size_2};
+      return {1, image.ImageWidth(), image.ImageHeight()};
+    } else if (image_dim.size() == 1) {
+      return  {1, image.ImageWidth(), 1};
     }
-    PADDLE_MOBILE_THROW_EXCEPTION("not support this dim, need imp");
+    PADDLE_MOBILE_THROW_EXCEPTION(" not support this dim, need imp ");
   }
 
  private:
