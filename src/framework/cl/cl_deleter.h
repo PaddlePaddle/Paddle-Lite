@@ -30,6 +30,13 @@ struct CLMemDeleter {
   }
 };
 
+struct CLEventDeleter {
+  template <class T>
+  void operator()(T *clEventObj) {
+    clReleaseEvent(clEventObj);
+  }
+};
+
 struct CLCommQueueDeleter {
   template <class T>
   void operator()(T *clQueueObj) {

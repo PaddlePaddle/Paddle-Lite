@@ -76,9 +76,12 @@ void DepthwiseConvKernel<GPU_CL, float>::Compute(
 
   CL_CHECK_ERRORS(status);
 
+  cl_event out_event = param.Output()->GetClEvent();
+  cl_event wait_event = param.Input()->GetClEvent();
+
   status =
       clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
-                             default_work_size.data(), NULL, 0, NULL, NULL);
+                             default_work_size.data(), NULL, 1, &wait_event, &out_event);
 
   CL_CHECK_ERRORS(status);
 }
