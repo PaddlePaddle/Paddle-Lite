@@ -85,6 +85,16 @@ static framework::FusionOpRegistrar convadd_registrar(
 #ifdef PADDLE_MOBILE_FPGA
 #endif
 
+#ifdef PADDLE_MOBILE_CL
+
+#ifndef CONV_ADD_REGISTER
+static framework::FusionOpRegistrar convadd_registrar(
+    new FusionConvAddMatcher());
+#define CONV_ADD_REGISTER
+#endif
+
+#endif
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
