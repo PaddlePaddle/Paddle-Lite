@@ -25,7 +25,6 @@ bool MulKernel<CPU, float>::Init(MulParam<CPU> *param) {
   return true;
 }
 
-
 template <>
 void MulKernel<CPU, float>::Compute(const MulParam<CPU> &param) const {
   MulCompute<float>(param);
