@@ -55,11 +55,11 @@ void SoftmaxKernel<GPU_CL, float>::Compute(const SoftmaxParam<GPU_CL> &param) {
 //  clSetKernelArg(kernel, 4, sizeof(int), &dims[2]);
 //  clSetKernelArg(kernel, 5, sizeof(int), &dims[3]);
 
-  cl_event out_event = param.Out()->GetClEvent();
-  cl_event wait_event = param.InputX()->GetClEvent();
+//  cl_event out_event = param.Out()->GetClEvent();
+//  cl_event wait_event = param.InputX()->GetClEvent();
 
   status = clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
-                         default_work_size.data(), NULL, 1, &wait_event, &out_event);
+                         default_work_size.data(), NULL, 0, NULL, NULL);
 
   CL_CHECK_ERRORS(status);
 

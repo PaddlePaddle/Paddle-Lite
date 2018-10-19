@@ -55,11 +55,11 @@ void ReshapeKernel<GPU_CL, float>::Compute(const ReshapeParam<GPU_CL> &param) {
   clSetKernelArg(kernel, 9, sizeof(cl_int), &odims[1]);
   const size_t work_size[2] = {output->ImageWidth(), output->ImageHeight()};
 
-  cl_event out_event = param.Out()->GetClEvent();
-  cl_event wait_event = param.InputX()->GetClEvent();
+//  cl_event out_event = param.Out()->GetClEvent();
+//  cl_event wait_event = param.InputX()->GetClEvent();
 
   clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2, NULL,
-                         work_size, NULL, 1, &wait_event, &out_event);
+                         work_size, NULL, 0, NULL, NULL);
 }
 
 template class ReshapeKernel<GPU_CL, float>;
