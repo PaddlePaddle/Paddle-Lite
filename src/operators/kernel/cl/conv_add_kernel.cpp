@@ -36,12 +36,12 @@ bool ConvAddKernel<GPU_CL, float>::Init(FusionConvAddParam<GPU_CL> *param) {
 
   if (param->Filter()->WidthOfOneBlock() == 1 &&
       param->Filter()->HeightOfOneBlock() == 1) {
-    this->cl_helper_.AddKernel("conv_1x1", "conv_add_bn_relu_kernel.cl");
+    this->cl_helper_.AddKernel("conv_1x1", "conv_add_kernel.cl");
   } else if (param->Filter()->dims()[1] == 1) {
-    this->cl_helper_.AddKernel("depth_conv_3x3", "conv_add_bn_relu_kernel.cl");
+    this->cl_helper_.AddKernel("depth_conv_3x3", "conv_add_kernel.cl");
   } else if (param->Filter()->WidthOfOneBlock() == 3 &&
              param->Filter()->HeightOfOneBlock() == 3) {
-    this->cl_helper_.AddKernel("conv_3x3", "conv_add_bn_relu_kernel.cl");
+    this->cl_helper_.AddKernel("conv_3x3", "conv_add_kernel.cl");
   } else {
     PADDLE_MOBILE_THROW_EXCEPTION(" not support ");
   }
