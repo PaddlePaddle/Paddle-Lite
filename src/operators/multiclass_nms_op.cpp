@@ -25,8 +25,8 @@ void MultiClassNMSOp<Dtype, T>::InferShape() const {
   if (input_scores_dims.size() != 3) {
     LOG(kLOG_ERROR) << "Input Scores size must be 3";
   }
-  if (input_bboxes_dims[2] != 4) {
-    LOG(kLOG_ERROR) << "Input BBoxes 2nd dimension must be 4";
+  if (input_bboxes_dims[2] % 4 != 0 || input_bboxes_dims[2] < 4) {
+    LOG(kLOG_ERROR) << "Input BBoxes 2nd dimension must be multiples of 4";
   }
   if (input_bboxes_dims[1] != input_scores_dims[2]) {
     LOG(kLOG_ERROR) << "Predict bboxes must be equal";
