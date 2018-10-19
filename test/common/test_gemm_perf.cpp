@@ -22,9 +22,9 @@ limitations under the License. */
 #define b(i, j) b[(i)*ldb + (j)]
 #define c1(i, j) c1[(i)*ldc + (j)]
 
-#define m 2048
-#define n 2048
-#define k 2048
+#define m 1024
+#define n 1024
+#define k 1024
 
 int main() {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;

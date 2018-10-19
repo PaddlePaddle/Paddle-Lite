@@ -86,7 +86,8 @@ int TestMulOP() {
       ++neq;
     }
   }
-  DLOG << "mnk=" << m << " " << n << " " << k << "   eq=" << eq << " neq=" << neq;
+  DLOG << "mnk=" << m << " " << n << " " << k << "   eq=" << eq
+       << " neq=" << neq;
   delete op;
   return 0;
 }
