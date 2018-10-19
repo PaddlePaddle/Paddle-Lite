@@ -26,32 +26,35 @@ int main() {
   auto isok = paddle_mobile.Load(g_mobilenet, true);
   if (isok) {
     auto time2 = paddle_mobile::time();
-    std::cout << "load cost :" << paddle_mobile::time_diff(time1, time1) << "ms"
+    std::cout << "load cost :" << paddle_mobile::time_diff(time1, time2) << "ms"
               << std::endl;
 
     std::vector<float> input;
     std::vector<int64_t> dims{1, 3, 224, 224};
     GetInput<float>(g_test_image_1x3x224x224_banana, &input, dims);
 
-    auto vec_result = paddle_mobile.Predict(input, dims);
-    //    std::vector<float>::iterator biggest =
-    //        std::max_element(std::begin(vec_result), std::end(vec_result));
-    //    std::cout << " Max element is " << *biggest << " at position "
-    //              << std::distance(std::begin(vec_result), biggest) <<
-    //              std::endl;
-
-    //    for (int i = 0; i < 10; ++i) {
-    //      auto vec_result = paddle_mobile.Predict(input, dims);
-    //    }
     //    auto time3 = paddle_mobile::time();
-    //    for (int i = 0; i < 10; ++i) {
-    //      auto vec_result = paddle_mobile.Predict(input, dims);
-    //    }
-    //    DLOG << vec_result;
+    auto vec_result = paddle_mobile.Predict(input, dims);
     //    auto time4 = paddle_mobile::time();
-    //    std::cout << "predict cost :" << paddle_mobile::time_diff(time3,
-    //    time4) / 10 << "ms"
-    //              << std::endl;
+
+    for (int i = 0; i < 10; ++i) {
+      auto vec_result = paddle_mobile.Predict(input, dims);
+    }
+
+
+    auto time3 = paddle_mobile::time();
+
+    for (int i = 0; i < 10; ++i) {
+      auto vec_result = paddle_mobile.Predict(input, dims);
+    }
+
+    auto time4 = paddle_mobile::time();
+    std::cout << "predict cost :" << paddle_mobile::time_diff(time3, time4) / 10
+              << "ms" << std::endl;
+    std::vector<float>::iterator biggest =
+        std::max_element(std::begin(vec_result), std::end(vec_result));
+    std::cout << " Max element is " << *biggest << " at position "
+              << std::distance(std::begin(vec_result), biggest) << std::endl;
   }
 
   std::cout << "如果结果Nan请查看: test/images/g_test_image_1x3x224x224_banana "

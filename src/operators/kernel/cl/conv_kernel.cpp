@@ -111,12 +111,12 @@ void ConvKernel<GPU_CL, float>::Compute(const ConvParam<GPU_CL> &param) {
   status = clSetKernelArg(kernel, 12, sizeof(int), &output_width);
   status = clSetKernelArg(kernel, 13, sizeof(int), &output_height);
 
-  cl_event out_event = param.Output()->GetClEvent();
-  cl_event wait_event = param.Input()->GetClEvent();
+//  cl_event out_event = param.Output()->GetClEvent();
+//  cl_event wait_event = param.Input()->GetClEvent();
 
   status =
       clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
-                             default_work_size.data(), NULL, 1, &wait_event, &out_event);
+                             default_work_size.data(), NULL, 0, NULL, NULL);
   CL_CHECK_ERRORS(status);
 }
 
