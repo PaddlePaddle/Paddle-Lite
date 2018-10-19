@@ -95,7 +95,7 @@ void OperatorBase<Dtype>::Run() {
         if (type_ == "fetch") {
           Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
           if (tensor) {
-            DLOG << type_ << " output- " << key << "=" << tensor->dims();
+            DLOG << type_ << " output- " << key << "=" << *tensor;
           }
         } else {
           CLImage *cl_image = vari->template GetMutable<framework::CLImage>();

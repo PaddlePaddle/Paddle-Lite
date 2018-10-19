@@ -922,12 +922,7 @@ void Executor<GPU_CL, Precision::FP32>::InitMemory() {
       if (var_desc->Persistable()) {
         CLImage *cl_image = nullptr;
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
-          auto tensor = var->template GetMutable<framework::LoDTensor>();
-          if (var_desc->Name() == "fetch") {
-            const framework::TensorDesc &desc = var_desc->Tensor_desc();
-            framework::DDim ddim = framework::make_ddim(desc.Dims());
-            tensor->mutable_data<float>(ddim);
-          }
+          var->template GetMutable<framework::LoDTensor>();
           continue;
         } else {
           cl_image = var->template GetMutable<framework::CLImage>();
@@ -991,12 +986,7 @@ void Executor<GPU_CL, Precision::FP32>::InitCombineMemory() {
       if (var_desc->Persistable()) {
         CLImage *cl_image = nullptr;
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
-          auto tensor = var->template GetMutable<framework::LoDTensor>();
-          if (var_desc->Name() == "fetch") {
-            const framework::TensorDesc &desc = var_desc->Tensor_desc();
-            framework::DDim ddim = framework::make_ddim(desc.Dims());
-            tensor->mutable_data<float>(ddim);
-          }
+          var->template GetMutable<framework::LoDTensor>();
           continue;
         } else {
           cl_image = var->template GetMutable<framework::CLImage>();
