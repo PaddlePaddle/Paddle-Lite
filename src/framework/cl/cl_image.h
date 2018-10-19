@@ -20,6 +20,7 @@ limitations under the License. */
 
 #include "framework/cl/cl_half.h"
 #include "framework/cl/cl_tool.h"
+#include "framework/cl/cl_deleter.h"
 #include "framework/ddim.h"
 #include "framework/tensor.h"
 
@@ -88,11 +89,20 @@ class CLImage {
           " empty image tensor data shouldn't have value");
     }
     DLOG << " init empty image ";
-    InitCLImage(context, command_queue, nullptr, dim);
+    if (tensor_dims_.size() <= 2) {
+      DLOG << " dim <= 2 folder ~~~~~ ";
+      InitCLImage2C(context, command_queue, tensor_data_, tensor_dims_);
+    } else {
+      DLOG << " dim >  2 norm ~~~~~ ";
+      InitCLImage(context, command_queue, tensor_data_, tensor_dims_);
+    }
+
+
+//    InitCLImage(context, command_queue, nullptr, dim);
     initialized_ = true;
   }
 
-  cl_mem GetCLImage() const { return cl_image_; }
+  cl_mem GetCLImage() const { return cl_image_.get(); }
 
   const DDim &ImageDims() const { return image_dims_; }
 
@@ -201,12 +211,13 @@ class CLImage {
     };
     cid.buffer = nullptr;
     cl_int err;
-    cl_image_ = clCreateImage(
+    cl_mem cl_image = clCreateImage(
         context, CL_MEM_READ_WRITE | (data ? CL_MEM_COPY_HOST_PTR : 0),
         &cf,   // const cl_image_format *image_format
         &cid,  // const cl_image_desc *image_desc
         data,  // void *host_ptr
         &err);
+    cl_image_.reset(cl_image);
     if (err != CL_SUCCESS) {
       CL_CHECK_ERRORS(err);
       PADDLE_MOBILE_THROW_EXCEPTION(" create image 2d error ");
@@ -283,7 +294,7 @@ class CLImage {
   }
 
   bool initialized_ = false;
-  cl_mem cl_image_;
+  std::unique_ptr<_cl_mem, CLMemDeleter> cl_image_;
   size_t image_width_;
   size_t width_of_one_block_;
   size_t height_of_one_block_;

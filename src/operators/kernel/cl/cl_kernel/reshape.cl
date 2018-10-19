@@ -26,6 +26,31 @@ __kernel void reshape(__read_only image2d_t input,
                       __private const int x3) {
   const int x = get_global_id(0);
   const int y = get_global_id(1);
+
+  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
+                            CLK_ADDRESS_CLAMP |
+                            CLK_FILTER_NEAREST;
+
+  half4 in = read_imageh(input, sampler, (int2)(x, y));
+
+  write_imageh(output, (int2)(x, y), in);
+}
+
+
+/*
+
+__kernel void reshape(__read_only image2d_t input,
+                      __write_only image2d_t output,
+                      __private const int d0,
+                      __private const int d1,
+                      __private const int d2,
+                      __private const int d3,
+                      __private const int x0,
+                      __private const int x1,
+                      __private const int x2,
+                      __private const int x3) {
+  const int x = get_global_id(0);
+  const int y = get_global_id(1);
   int obx = x / x3;
   int oby = y / x2;
   int ox = x % x3;
@@ -49,3 +74,5 @@ __kernel void reshape(__read_only image2d_t input,
   }
   write_imageh(output, (int2)(x, y), r);
 }
+
+*/
