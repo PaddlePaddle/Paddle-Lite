@@ -58,7 +58,7 @@ class Swichter:
         to_file = open(to_file_name, "wb")
 
         tmp = tmp_file.read()
-        head = self.read_head('yolo/datas/yolo/conv1_biases')
+        head = self.read_head('yolo/datas/yolo/head')
         to_file.write(head)
         to_file.write(tmp)
         tmp_file.close()
@@ -77,7 +77,7 @@ class Swichter:
         to_file = open(to_file_name, "wb")
         # tmp_file = open(tmp_file_name, "wb")
 
-        head = self.read_head('yolo/datas/yolo/conv1_biases')
+        head = self.read_head('yolo/datas/yolo/head')
         to_file.write(head)
         to_file.write(from_file.read())
         from_file.close()
@@ -96,7 +96,7 @@ class Swichter:
         to_file = open(to_file_name, "wb")
         # tmp_file = open(tmp_file_name, "wb")
 
-        head = self.read_head('yolo/datas/yolo/conv1_biases')
+        head = self.read_head('yolo/datas/yolo/head')
         to_file.write(head)
         to_file.write(read)
         from_file.close()
@@ -110,6 +110,6 @@ class Swichter:
 #     32,
 #     3, 3, 3)
 
-# Swichter().read_head('/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/modeltools/yolo/conv1_biases')
+# Swichter().read_head('/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/modeltools/yolo/head')
 
 # Swichter().copy_add_head('datas/model.0.0.weight', 'datas/conv1_0', '')
