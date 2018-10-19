@@ -429,7 +429,6 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
   }
 #endif
 
-  DLOG << " predict return nullptr";
 
   auto last_op = ops.rbegin();
   auto output_map = (*last_op)->Outputs();

@@ -50,12 +50,12 @@ void ReluKernel<GPU_CL, float>::Compute(const ReluParam<GPU_CL>& param) {
 //  clSetKernelArg(kernel_p1, 1, sizeof(cl_mem), &outputImage);
     const size_t work_size[2] = {input->ImageWidth(), input->ImageHeight()};
 
-  cl_event out_event = param.Out()->GetClEvent();
-  cl_event wait_event = param.InputX()->GetClEvent();
+//  cl_event out_event = param.Out()->GetClEvent();
+//  cl_event wait_event = param.InputX()->GetClEvent();
 
   clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2,
     NULL,
-                           work_size, NULL, 1, &wait_event, &out_event);
+                           work_size, NULL, 0, NULL, NULL);
   //  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel_p1, 3,
   //  NULL,
   //                         work_size, NULL, 0, NULL, NULL);
