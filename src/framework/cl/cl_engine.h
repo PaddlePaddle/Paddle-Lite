@@ -84,8 +84,24 @@ class CLEngine {
   bool BuildProgram(cl_program program) {
     cl_int status;
     status = clBuildProgram(program, 0, 0, "-cl-fast-relaxed-math", 0, 0);
+
     CL_CHECK_ERRORS(status);
-    return true;
+
+    if (status_ == CL_BUILD_PROGRAM_FAILURE) {
+      size_t log_size;
+      clGetProgramBuildInfo(program, CLEngine::Instance()->DeviceID(),
+                            CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+      char *log = (char *)malloc(log_size);
+      clGetProgramBuildInfo(program, CLEngine::Instance()->DeviceID(),
+                            CL_PROGRAM_BUILD_LOG, log_size, log, NULL);
+      DLOG << " program build error: " << log;
+    }
+
+    if (status == CL_SUCCESS) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   cl_device_id DeviceID(int index = 0) { return devices_[index]; }
