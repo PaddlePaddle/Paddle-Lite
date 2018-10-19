@@ -14,6 +14,41 @@ limitations under the License. */
 
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
 
+__kernel void softmax(__read_only image2d_t input_image,
+                      __write_only image2d_t output_image,
+                      __private const int group
+                      ) {
+    const int out_c = get_global_id(0);   //  block index
+    const int out_w = get_global_id(1);   // index in one block
+    const int out_nh = get_global_id(2);
+
+
+  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
+                            CLK_ADDRESS_CLAMP |
+                            CLK_FILTER_NEAREST;
+
+  half maxv = 0.0f;
+  for (int i = 0; i < group; ++i) {
+    half4 temp = read_imageh(input_image, sampler, (int2)(i, 0));
+    maxv = max(maxv, max(temp.x, max(temp.y, max(temp.z, temp.w))));
+  }
+
+  half4 rsum = (half4)(0.0f);
+
+  for (int i = 0; i < group; ++i) {
+    half4 r = read_imageh(input_image, sampler, (int2)(i, 0));
+    rsum += exp(r - maxv);
+  }
+
+  half sum = rsum.x + rsum.y + rsum.z + rsum.w;
+
+  half4 rr = read_imageh(input_image, sampler, (int2)(out_w, out_nh));
+  half4 result = exp(rr - maxv) / sum;
+  write_imageh(output_image, (int2)(out_w, out_nh), result);
+}
+
+/*
+
 __kernel void softmax(__read_only image2d_t input,
                       __write_only image2d_t output,
                       __private const int d0,
@@ -42,3 +77,5 @@ __kernel void softmax(__read_only image2d_t input,
 
   write_imageh(output, (int2)(z * d3 + x, y), r);
 }
+
+*/
