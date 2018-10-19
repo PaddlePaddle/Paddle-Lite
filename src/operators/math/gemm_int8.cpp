@@ -27,7 +27,7 @@ namespace paddle_mobile {
 namespace operators {
 namespace math {
 
-//  8 bit int small block inner product
+// 8 bits int small block inner product
 void Gemm::AddDot6x8(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
                      int32_t ldc) {
 #if __ARM_NEON
@@ -373,7 +373,7 @@ void Gemm::AddDot6x8(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
 #endif
 }
 
-// 8 bit int inner product
+// 8 bits int inner product
 void Gemm::InnerKernelWithBias(int32_t mc, int32_t nc, int8_t alpha,
                                const int8_t *a, const int8_t *b, int8_t beta,
                                int32_t *c, int32_t *C, int32_t ldc, bool relu,
@@ -410,7 +410,7 @@ void Gemm::InnerKernelWithBias(int32_t mc, int32_t nc, int8_t alpha,
   }
 }
 
-// 8 bit int PackMatrixA
+// 8 bits int PackMatrixA
 void Gemm::PackMatrixA_6r(int32_t m, int32_t k, int32_t m_tail, const int8_t *A,
                           int32_t lda, int8_t *buffer) {
   const int32_t i_length = m - m_tail;
@@ -465,7 +465,7 @@ void Gemm::PackMatrixA_6r(int32_t m, int32_t k, int32_t m_tail, const int8_t *A,
   }
 }
 
-// 8 bit int PackMatrixB
+// 8 bits int PackMatrixB
 void Gemm::PackMatrixB_8c(int32_t k, int32_t n, int32_t n_tail, const int8_t *B,
                           int32_t ldb, int8_t *buffer) {
   const int32_t j_length = n - n_tail;
@@ -507,7 +507,7 @@ void Gemm::PackMatrixB_8c(int32_t k, int32_t n, int32_t n_tail, const int8_t *B,
   }
 }
 
-// 8 bit int matrix product (m*k x k*n)
+// 8 bits int matrix product (m*k x k*n)
 void Gemm::Sgemm(int32_t m, int32_t n, int32_t k, int8_t alpha, const int8_t *A,
                  int32_t lda, const int8_t *B, int32_t ldb, int8_t beta,
                  int32_t *C, int32_t ldc, bool relu, int8_t *bias) {
@@ -570,7 +570,7 @@ void Gemm::Sgemm(int32_t m, int32_t n, int32_t k, int8_t alpha, const int8_t *A,
   paddle_mobile::memory::Free(zero_int8);
 }
 
-//  8 bit int write back
+//  8 bits int write back
 // C = alpha * A * B + beta * C
 void Gemm::WriteWithAlphaBeta(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
                               int32_t ldc) {}
