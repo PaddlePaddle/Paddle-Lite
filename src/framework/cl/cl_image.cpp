@@ -119,6 +119,9 @@ void TensorToCLImage(const Tensor *tensor, CLImage *cl_image,
 }
 #ifdef PADDLE_MOBILE_DEBUG
 Print &operator<<(Print &printer, const CLImage &cl_image) {
+  if (cl_image.GetImageType() == Invalid) {
+    PADDLE_MOBILE_THROW_EXCEPTION(" not support image type");
+  }
   printer << " dims: " << cl_image.dims() << "\n";
   int stride = cl_image.numel() / 20;
   stride = stride > 0 ? stride : 1;

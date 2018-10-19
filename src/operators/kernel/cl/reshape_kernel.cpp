@@ -36,9 +36,12 @@ void ReshapeKernel<GPU_CL, float>::Compute(const ReshapeParam<GPU_CL> &param) {
   const auto &outputDim = output->dims();
   int dims[4] = {1, 1, 1, 1};
   int odims[4] = {1, 1, 1, 1};
+  // 1 1000 1 1
   for (int i = 0; i < inputDim.size(); i++) {
     dims[4 - inputDim.size() + i] = inputDim[i];
   }
+
+  // 1 1 1 1000
   for (int i = 0; i < outputDim.size(); i++) {
     odims[4 - outputDim.size() + i] = outputDim[i];
   }

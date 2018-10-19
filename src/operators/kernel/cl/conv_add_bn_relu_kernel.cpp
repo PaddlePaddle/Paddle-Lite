@@ -43,21 +43,21 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
 
   const int C = mean->numel();
 
-  for (int j = 0; j < C; ++j) {
-    DLOG << " mean - " << j << mean->data<float>()[j];
-  }
-
-  for (int j = 0; j < C; ++j) {
-    DLOG << " variance - " << j << variance->data<float>()[j];
-  }
-
-  for (int j = 0; j < C; ++j) {
-    DLOG << " scale - " << j << scale->data<float>()[j];
-  }
-
-  for (int j = 0; j < C; ++j) {
-    DLOG << " bias - " << j << bias->data<float>()[j];
-  }
+//  for (int j = 0; j < C; ++j) {
+//    DLOG << " mean - " << j << mean->data<float>()[j];
+//  }
+//
+//  for (int j = 0; j < C; ++j) {
+//    DLOG << " variance - " << j << variance->data<float>()[j];
+//  }
+//
+//  for (int j = 0; j < C; ++j) {
+//    DLOG << " scale - " << j << scale->data<float>()[j];
+//  }
+//
+//  for (int j = 0; j < C; ++j) {
+//    DLOG << " bias - " << j << bias->data<float>()[j];
+//  }
 
   //
   //  DLOG << " climage mean: " << *mean;
@@ -85,21 +85,21 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
 
   framework::CLImage *new_scale = new framework::CLImage();
 
-  for (int j = 0; j < C; ++j) {
-    DLOG << " new scale - " << j << new_scale_ptr[j];
-  }
-
-  for (int j = 0; j < C; ++j) {
-    DLOG << " new bias - " << j << new_bias_ptr[j];
-  }
+//  for (int j = 0; j < C; ++j) {
+//    DLOG << " new scale - " << j << new_scale_ptr[j];
+//  }
+//
+//  for (int j = 0; j < C; ++j) {
+//    DLOG << " new bias - " << j << new_bias_ptr[j];
+//  }
 
   new_scale->SetTensorData(new_scale_ptr, variance->dims());
   new_scale->InitCLImage(this->cl_helper_.CLContext(),
                          cl_helper_.CLCommandQueue());
 
-  DLOG << " climage - y bias: " << *(param->Bias());
-
-  DLOG << " climage - new scale: " << *new_scale;
+//  DLOG << " climage - y bias: " << *(param->Bias());
+//
+//  DLOG << " climage - new scale: " << *new_scale;
 
   framework::CLImage *new_bias = new framework::CLImage();
 
@@ -107,9 +107,9 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
   new_bias->InitCLImage(this->cl_helper_.CLContext(),
                         cl_helper_.CLCommandQueue());
 
-  DLOG << " climage - new bias: " << *new_bias;
-
-  DLOG << " climage - filter: " << *(param->Filter());
+//  DLOG << " climage - new bias: " << *new_bias;
+//
+//  DLOG << " climage - filter: " << *(param->Filter());
 
   param->SetNewScale(new_scale);
   param->SetNewBias(new_bias);
@@ -237,7 +237,7 @@ void ConvAddBNReluKernel<GPU_CL, float>::Compute(
   CL_CHECK_ERRORS(status);
 
   status =
-      clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
+      clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
                              default_work_size.data(), NULL, 0, NULL, NULL);
   CL_CHECK_ERRORS(status);
 }
