@@ -2,11 +2,11 @@
 
 __kernel void fetch(__private const int in_height,
                     __private const int in_width,
+                    __read_only image2d_t input,
+                    __global float* out,
                     __private const int size_ch,
                     __private const int size_block,
-                    __private const int size_batch,
-                    __read_only image2d_t input,
-                    __global float* out) {
+                    __private const int size_batch) {
   const int in_c = get_global_id(0);
   const int in_w = get_global_id(1);
   const int in_nh = get_global_id(2);
@@ -24,4 +24,23 @@ __kernel void fetch(__private const int in_height,
   out[index + size_ch] = convert_float(in.y);
   out[index + size_ch * 2] = convert_float(in.z);
   out[index + size_ch * 3] = convert_float(in.w);
+}
+
+__kernel void fetch_2d(__private const int in_height,
+                       __private const int in_width,
+                       __read_only image2d_t input,
+                       __global float* out) {
+  const int in_w = get_global_id(1);
+  const int in_h = get_global_id(2);
+
+  const sampler_t sampler =
+      CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
+
+  half4 in = read_imageh(input, sampler, (int2)(in_w, in_h));
+
+  const int index = (in_h * in_width + in_w) * 4;
+  out[index] = convert_float(in.x);
+  out[index + 1] = convert_float(in.y);
+  out[index + 2] = convert_float(in.z);
+  out[index + 3] = convert_float(in.w);
 }
