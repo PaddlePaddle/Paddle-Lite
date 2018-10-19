@@ -206,5 +206,8 @@ LOAD_OP2(slice, CPU, MALI_GPU);
 LOAD_OP2(fusion_conv_bn, CPU, FPGA);
 LOAD_FUSION_MATCHER(fusion_conv_bn);
 #endif
+#ifdef ELEMENTWISESUB_OP
+LOAD_OP1(elementwise_sub, CPU)
+#endif
 LOAD_OP1(quantize, CPU);
 LOAD_OP1(dequantize, CPU);
