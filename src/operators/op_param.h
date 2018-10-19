@@ -488,6 +488,7 @@ template <typename Dtype>
 using ElementwiseAddReluParam = ElementwiseAddParam<Dtype>;
 #endif
 
+#ifdef ELEMENTWISESUB_OP
 template <typename Dtype>
 class ElementwiseSubParam : OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
@@ -517,6 +518,7 @@ class ElementwiseSubParam : OpParam {
   GType *out_;
   int axis_;
 };
+#endif
 
 #ifdef MUL_OP
 template <typename Dtype>
