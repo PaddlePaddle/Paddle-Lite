@@ -73,8 +73,9 @@ void FetchKernel<GPU_CL, float>::Compute(const FetchParam<GPU_CL> &param) {
     clSetKernelArg(kernel, 6, sizeof(int), &size_batch);
   }
 
+  cl_event wait_event = param.InputX()->GetClEvent();
   clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
-                         default_work_size.data(), NULL, 0, NULL, NULL);
+                         default_work_size.data(), NULL, 1, &wait_event, NULL);
 
   memcpy(out->data<float>(), out_cl_tensor.Data<float>(), out->memory_size());
 }
