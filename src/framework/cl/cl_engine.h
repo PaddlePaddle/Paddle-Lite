@@ -82,8 +82,9 @@ class CLEngine {
   }
 
   std::unique_ptr<_cl_event, CLEventDeleter> CreateEvent(cl_context context) {
-    cl_event event = clCreateUserEvent(context, status_);
+    cl_event event = clCreateUserEvent(context, &status_);
     std::unique_ptr<_cl_event, CLEventDeleter> event_ptr(event);
+    CL_CHECK_ERRORS(status_);
     return std::move(event_ptr);
   }
 
