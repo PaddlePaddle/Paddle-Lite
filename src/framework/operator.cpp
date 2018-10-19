@@ -32,7 +32,7 @@ template <typename Dtype>
 vector<string> OperatorBase<Dtype>::GetInputKeys() const {
   auto it = op_input_output_key.find(type_);
   if (it == op_input_output_key.end()) {
-    DLOG << type_ << " has no outputs";
+    DLOG << type_ << " has no inputs";
     return {};
   }
   return it->second.first;
