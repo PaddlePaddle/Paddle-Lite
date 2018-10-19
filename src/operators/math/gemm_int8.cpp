@@ -55,189 +55,185 @@ void Gemm::AddDot6x8(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
     "vmov.s8      q13,        #0                 \n\t"
     "vmov.s8      q14,        #0                 \n\t"
     "vmov.s8      q15,        #0                 \n\t"
-    "mov r0,      #6                             \n\t"
+    "mov r0,      #12                            \n\t"
     "subs         %[kc1],     %[kc1], #1         \n\t"
     "blt          1f                             \n\t"
     "0:                                          \n\t"
-    "vld1.s8      {d0},       [%[a_ptr]],    r0  \n\t"  // A col0
+    "vld1.s8      {d0, d1},   [%[a_ptr]],    r0  \n\t"  // A col0, q0 used
     "vmov.s8      q2,         #0                 \n\t"  // q2 used
-    "vld1.s8      {d1},       [%[a_ptr]],    r0  \n\t"  // A col1, q0 used
-    "vdup.s8      d6,         d0[0]              \n\t"
+    "vdup.s8      d6,         d0[0]              \n\t"  // 1/2 q3 used
     "vld1.s8      {d2-d3},    [%[b_ptr]]!        \n\t"  // B row0, B row1, q1 used
-    "vdup.s8      d7,         d1[0]              \n\t"  // q3 used
+    "vdup.s8      d7,         d0[6]              \n\t"  // q3 used
     "vmlal.s8     q2,         d2,            d6  \n\t"  // A col00 * B row0
     "vmlal.s8     q2,         d3,            d7  \n\t"  // A col10 * B row1, q3 free
     "vaddw.s16    q4,         q4,            d4  \n\t"
     "vaddw.s16    q5,         q5,            d5  \n\t"  // res row 0
     "vmov.s8      q2,                        #0  \n\t"
     "vdup.s8      d6,         d0[1]              \n\t"
-    "vdup.s8      d7,         d1[1]              \n\t"
+    "vdup.s8      d7,         d0[7]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q6,         q6,            d4  \n\t"
     "vaddw.s16    q7,         q7,            d5  \n\t"  // res row 1
     "vmov.s8      q2,         #0                 \n\t"
     "vdup.s8      d6,         d0[2]              \n\t"
-    "vdup.s8      d7,         d1[2]              \n\t"
+    "vdup.s8      d7,         d1[0]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q8,         q8,            d4  \n\t"
     "vaddw.s16    q9,         q9,            d5  \n\t"  // res row 2
     "vmov.s8      q2,                        #0  \n\t"
     "vdup.s8      d6,         d0[3]              \n\t"
-    "vdup.s8      d7,         d1[3]              \n\t"
+    "vdup.s8      d7,         d1[1]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q10,        q10,           d4  \n\t"
     "vaddw.s16    q11,        q11,           d5  \n\t"  // res row 3
     "vmov.s8      q2,         #0.                \n\t"
     "vdup.s8      d6,         d0[4]              \n\t"
-    "vdup.s8      d7,         d1[4]              \n\t"
+    "vdup.s8      d7,         d1[2]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q12,        q12,           d4  \n\t"
     "vaddw.s16    q13,        q13,           d5  \n\t"  // res row 4
     "vmov.s8      q2,         #0                 \n\t"
     "vdup.s8      d6,         d0[5]              \n\t"
-    "vdup.s8      d7,         d1[5]              \n\t"
+    "vdup.s8      d7,         d1[3]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q14,        q14,           d4  \n\t"
     "vaddw.s16    q15,        q15,           d5  \n\t"  // res row 5
 
-    "vld1.s8      {d0},       [%[a_ptr]],    r0  \n\t"  // A col0
-    "vld1.s8      {d1},       [%[a_ptr]],    r0  \n\t"  // A col1, q0 used
-    "vld1.s8      {d2-d3},    [%[b_ptr]]!        \n\t"  // B row0, B row1, q1 used
+    "vld1.s8      {d0, d1},   [%[a_ptr]],    r0  \n\t"  // A col0, q0 used
     "vmov.s8      q2,         #0                 \n\t"  // q2 used
-    "vdup.s8      d6,         d0[0]              \n\t"
-    "vdup.s8      d7,         d1[0]              \n\t"  // q3 used
+    "vdup.s8      d6,         d0[0]              \n\t"  // 1/2 q3 used
+    "vld1.s8      {d2-d3},    [%[b_ptr]]!        \n\t"  // B row0, B row1, q1 used
+    "vdup.s8      d7,         d0[6]              \n\t"  // q3 used
     "vmlal.s8     q2,         d2,            d6  \n\t"  // A col00 * B row0
     "vmlal.s8     q2,         d3,            d7  \n\t"  // A col10 * B row1, q3 free
     "vaddw.s16    q4,         q4,            d4  \n\t"
     "vaddw.s16    q5,         q5,            d5  \n\t"  // res row 0
     "vmov.s8      q2,                        #0  \n\t"
     "vdup.s8      d6,         d0[1]              \n\t"
-    "vdup.s8      d7,         d1[1]              \n\t"
+    "vdup.s8      d7,         d0[7]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q6,         q6,            d4  \n\t"
     "vaddw.s16    q7,         q7,            d5  \n\t"  // res row 1
     "vmov.s8      q2,         #0                 \n\t"
     "vdup.s8      d6,         d0[2]              \n\t"
-    "vdup.s8      d7,         d1[2]              \n\t"
+    "vdup.s8      d7,         d1[0]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q8,         q8,            d4  \n\t"
     "vaddw.s16    q9,         q9,            d5  \n\t"  // res row 2
     "vmov.s8      q2,                        #0  \n\t"
     "vdup.s8      d6,         d0[3]              \n\t"
-    "vdup.s8      d7,         d1[3]              \n\t"
+    "vdup.s8      d7,         d1[1]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q10,        q10,           d4  \n\t"
     "vaddw.s16    q11,        q11,           d5  \n\t"  // res row 3
     "vmov.s8      q2,         #0.                \n\t"
     "vdup.s8      d6,         d0[4]              \n\t"
-    "vdup.s8      d7,         d1[4]              \n\t"
+    "vdup.s8      d7,         d1[2]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q12,        q12,           d4  \n\t"
     "vaddw.s16    q13,        q13,           d5  \n\t"  // res row 4
     "vmov.s8      q2,         #0                 \n\t"
     "vdup.s8      d6,         d0[5]              \n\t"
-    "vdup.s8      d7,         d1[5]              \n\t"
+    "vdup.s8      d7,         d1[3]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q14,        q14,           d4  \n\t"
     "vaddw.s16    q15,        q15,           d5  \n\t"  // res row 5
 
-    "vld1.s8      {d0},       [%[a_ptr]],    r0  \n\t"  // A col0
-    "vld1.s8      {d1},       [%[a_ptr]],    r0  \n\t"  // A col1, q0 used
-    "vld1.s8      {d2-d3},    [%[b_ptr]]!        \n\t"  // B row0, B row1, q1 used
+    "vld1.s8      {d0, d1},   [%[a_ptr]],    r0  \n\t"  // A col0, q0 used
     "vmov.s8      q2,         #0                 \n\t"  // q2 used
-    "vdup.s8      d6,         d0[0]              \n\t"
-    "vdup.s8      d7,         d1[0]              \n\t"  // q3 used
+    "vdup.s8      d6,         d0[0]              \n\t"  // 1/2 q3 used
+    "vld1.s8      {d2-d3},    [%[b_ptr]]!        \n\t"  // B row0, B row1, q1 used
+    "vdup.s8      d7,         d0[6]              \n\t"  // q3 used
     "vmlal.s8     q2,         d2,            d6  \n\t"  // A col00 * B row0
     "vmlal.s8     q2,         d3,            d7  \n\t"  // A col10 * B row1, q3 free
     "vaddw.s16    q4,         q4,            d4  \n\t"
     "vaddw.s16    q5,         q5,            d5  \n\t"  // res row 0
     "vmov.s8      q2,                        #0  \n\t"
     "vdup.s8      d6,         d0[1]              \n\t"
-    "vdup.s8      d7,         d1[1]              \n\t"
+    "vdup.s8      d7,         d0[7]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q6,         q6,            d4  \n\t"
     "vaddw.s16    q7,         q7,            d5  \n\t"  // res row 1
     "vmov.s8      q2,         #0                 \n\t"
     "vdup.s8      d6,         d0[2]              \n\t"
-    "vdup.s8      d7,         d1[2]              \n\t"
+    "vdup.s8      d7,         d1[0]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q8,         q8,            d4  \n\t"
     "vaddw.s16    q9,         q9,            d5  \n\t"  // res row 2
     "vmov.s8      q2,                        #0  \n\t"
     "vdup.s8      d6,         d0[3]              \n\t"
-    "vdup.s8      d7,         d1[3]              \n\t"
+    "vdup.s8      d7,         d1[1]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q10,        q10,           d4  \n\t"
     "vaddw.s16    q11,        q11,           d5  \n\t"  // res row 3
     "vmov.s8      q2,         #0.                \n\t"
     "vdup.s8      d6,         d0[4]              \n\t"
-    "vdup.s8      d7,         d1[4]              \n\t"
+    "vdup.s8      d7,         d1[2]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q12,        q12,           d4  \n\t"
     "vaddw.s16    q13,        q13,           d5  \n\t"  // res row 4
     "vmov.s8      q2,         #0                 \n\t"
     "vdup.s8      d6,         d0[5]              \n\t"
-    "vdup.s8      d7,         d1[5]              \n\t"
+    "vdup.s8      d7,         d1[3]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q14,        q14,           d4  \n\t"
     "vaddw.s16    q15,        q15,           d5  \n\t"  // res row 5
 
-    "vld1.s8      {d0},       [%[a_ptr]],    r0  \n\t"  // A col0
-    "vld1.s8      {d1},       [%[a_ptr]],    r0  \n\t"  // A col1, q0 used
-    "vld1.s8      {d2-d3},    [%[b_ptr]]!        \n\t"  // B row0, B row1, q1 used
+    "vld1.s8      {d0, d1},   [%[a_ptr]],    r0  \n\t"  // A col0, q0 used
     "vmov.s8      q2,         #0                 \n\t"  // q2 used
-    "vdup.s8      d6,         d0[0]              \n\t"
-    "vdup.s8      d7,         d1[0]              \n\t"  // q3 used
+    "vdup.s8      d6,         d0[0]              \n\t"  // 1/2 q3 used
+    "vld1.s8      {d2-d3},    [%[b_ptr]]!        \n\t"  // B row0, B row1, q1 used
+    "vdup.s8      d7,         d0[6]              \n\t"  // q3 used
     "vmlal.s8     q2,         d2,            d6  \n\t"  // A col00 * B row0
     "vmlal.s8     q2,         d3,            d7  \n\t"  // A col10 * B row1, q3 free
     "vaddw.s16    q4,         q4,            d4  \n\t"
     "vaddw.s16    q5,         q5,            d5  \n\t"  // res row 0
     "vmov.s8      q2,                        #0  \n\t"
     "vdup.s8      d6,         d0[1]              \n\t"
-    "vdup.s8      d7,         d1[1]              \n\t"
+    "vdup.s8      d7,         d0[7]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q6,         q6,            d4  \n\t"
     "vaddw.s16    q7,         q7,            d5  \n\t"  // res row 1
     "vmov.s8      q2,         #0                 \n\t"
     "vdup.s8      d6,         d0[2]              \n\t"
-    "vdup.s8      d7,         d1[2]              \n\t"
+    "vdup.s8      d7,         d1[0]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q8,         q8,            d4  \n\t"
     "vaddw.s16    q9,         q9,            d5  \n\t"  // res row 2
     "vmov.s8      q2,                        #0  \n\t"
     "vdup.s8      d6,         d0[3]              \n\t"
-    "vdup.s8      d7,         d1[3]              \n\t"
+    "vdup.s8      d7,         d1[1]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q10,        q10,           d4  \n\t"
     "vaddw.s16    q11,        q11,           d5  \n\t"  // res row 3
     "vmov.s8      q2,         #0.                \n\t"
     "vdup.s8      d6,         d0[4]              \n\t"
-    "vdup.s8      d7,         d1[4]              \n\t"
+    "vdup.s8      d7,         d1[2]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q12,        q12,           d4  \n\t"
     "vaddw.s16    q13,        q13,           d5  \n\t"  // res row 4
     "vmov.s8      q2,         #0                 \n\t"
     "vdup.s8      d6,         d0[5]              \n\t"
-    "vdup.s8      d7,         d1[5]              \n\t"
+    "vdup.s8      d7,         d1[3]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q14,        q14,           d4  \n\t"
@@ -249,51 +245,50 @@ void Gemm::AddDot6x8(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
     "subs         %[kc3],     %[kc3],        #1  \n\t"
     "blt          3f                             \n\t"
     "2:                                          \n\t"
-    "vld1.s8      {d0},       [%[a_ptr]],    r0  \n\t"  // A col0
-    "vld1.s8      {d1},       [%[a_ptr]],    r0  \n\t"  // A col1, q0 used
-    "vld1.s8      {d2-d3},    [%[b_ptr]]!        \n\t"  // B row0, B row1, q1 used
+    "vld1.s8      {d0, d1},   [%[a_ptr]],    r0  \n\t"  // A col0, q0 used
     "vmov.s8      q2,         #0                 \n\t"  // q2 used
-    "vdup.s8      d6,         d0[0]              \n\t"
-    "vdup.s8      d7,         d1[0]              \n\t"  // q3 used
+    "vdup.s8      d6,         d0[0]              \n\t"  // 1/2 q3 used
+    "vld1.s8      {d2-d3},    [%[b_ptr]]!        \n\t"  // B row0, B row1, q1 used
+    "vdup.s8      d7,         d0[6]              \n\t"  // q3 used
     "vmlal.s8     q2,         d2,            d6  \n\t"  // A col00 * B row0
     "vmlal.s8     q2,         d3,            d7  \n\t"  // A col10 * B row1, q3 free
     "vaddw.s16    q4,         q4,            d4  \n\t"
     "vaddw.s16    q5,         q5,            d5  \n\t"  // res row 0
     "vmov.s8      q2,                        #0  \n\t"
     "vdup.s8      d6,         d0[1]              \n\t"
-    "vdup.s8      d7,         d1[1]              \n\t"
+    "vdup.s8      d7,         d0[7]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q6,         q6,            d4  \n\t"
     "vaddw.s16    q7,         q7,            d5  \n\t"  // res row 1
     "vmov.s8      q2,         #0                 \n\t"
     "vdup.s8      d6,         d0[2]              \n\t"
-    "vdup.s8      d7,         d1[2]              \n\t"
+    "vdup.s8      d7,         d1[0]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q8,         q8,            d4  \n\t"
     "vaddw.s16    q9,         q9,            d5  \n\t"  // res row 2
     "vmov.s8      q2,                        #0  \n\t"
     "vdup.s8      d6,         d0[3]              \n\t"
-    "vdup.s8      d7,         d1[3]              \n\t"
+    "vdup.s8      d7,         d1[1]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q10,        q10,           d4  \n\t"
     "vaddw.s16    q11,        q11,           d5  \n\t"  // res row 3
     "vmov.s8      q2,         #0.                \n\t"
     "vdup.s8      d6,         d0[4]              \n\t"
-    "vdup.s8      d7,         d1[4]              \n\t"
+    "vdup.s8      d7,         d1[2]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q12,        q12,           d4  \n\t"
     "vaddw.s16    q13,        q13,           d5  \n\t"  // res row 4
     "vmov.s8      q2,         #0                 \n\t"
     "vdup.s8      d6,         d0[5]              \n\t"
-    "vdup.s8      d7,         d1[5]              \n\t"
+    "vdup.s8      d7,         d1[3]              \n\t"
     "vmlal.s8     q2,         d2,            d6  \n\t"
     "vmlal.s8     q2,         d3,            d7  \n\t"
     "vaddw.s16    q14,        q14,           d4  \n\t"
-    "vaddw.s16    q15,        q15,           d5  \n\t"  // res row5
+    "vaddw.s16    q15,        q15,           d5  \n\t"  // res row 5
 
     "subs         %[kc3],     %[kc3],        #1  \n\t"
     "bge          2b                             \n\t"
