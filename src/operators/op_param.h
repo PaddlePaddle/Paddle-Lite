@@ -953,7 +953,7 @@ class FetchParam : public OpParam {
   Tensor *Out() const { return out_; }
 
   static Tensor *OutFrom(const VariableNameMap &outputs, const Scope &scope) {
-    return GetVarValue<Tensor>("Out", outputs, scope);
+    return GetVarValue<LoDTensor>("Out", outputs, scope);
   }
 
  private:
