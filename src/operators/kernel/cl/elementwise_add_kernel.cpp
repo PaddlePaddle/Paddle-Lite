@@ -78,9 +78,11 @@ void ElementwiseAddKernel<GPU_CL, float>::Compute(
     int width = input->ImageWidth();
     int height = input->ImageHeight();
     size_t global_work_size[2] = {width, height};
+    cl_event out_event = param.Out()->GetClEvent();
+    cl_event wait_event = param.InputX()->GetClEvent();
     status =
         clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2,
-                               NULL, global_work_size, NULL, 0, NULL, NULL);
+                               NULL, global_work_size, NULL, 1,&wait_event, &out_event);
     CL_CHECK_ERRORS(status);
   } else {
     DLOG << "error:bias dims is error";
