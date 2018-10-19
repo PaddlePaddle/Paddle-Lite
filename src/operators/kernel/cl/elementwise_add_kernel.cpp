@@ -82,7 +82,7 @@ void ElementwiseAddKernel<GPU_CL, float>::Compute(
     cl_event wait_event = param.InputX()->GetClEvent();
     status =
         clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2,
-                               NULL, global_work_size, NULL, 1,&wait_event, &out_event);
+                               NULL, global_work_size, NULL, 0, NULL, NULL);
     CL_CHECK_ERRORS(status);
   } else {
     DLOG << "error:bias dims is error";

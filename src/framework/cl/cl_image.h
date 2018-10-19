@@ -308,7 +308,7 @@ class CLImage {
   size_t c_block_;
   DDim tensor_dims_;
   DDim image_dims_;
-  float *tensor_data_;
+  float *tensor_data_ = nullptr;
   cl_context context_;
   cl_command_queue command_queue_;
 };

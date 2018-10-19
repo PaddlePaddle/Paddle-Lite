@@ -97,7 +97,7 @@ class CLTensor : TensorBase {
   inline cl_mem CLBuffer() {
     check_memory_size();
     return reinterpret_cast<cl_mem>(
-        reinterpret_cast<uintptr_t>(holder_->ptr()) + offset_);
+        reinterpret_cast<uintptr_t>(holder_->ptr()));
   }
 
   template <typename T>
@@ -115,8 +115,14 @@ class CLTensor : TensorBase {
     return reinterpret_cast<T *>(host_ptr_);
   }
 
+  int memorySize() {
+    return holder_->size();
+  }
+
   ~CLTensor() {
+    DLOG << "~CLTensor";
     if (host_ptr_) {
+      DLOG << " delete host ptr ";
       delete (host_ptr_);
       host_ptr_ = nullptr;
     }
@@ -125,7 +131,7 @@ class CLTensor : TensorBase {
  private:
   cl_context context_;
   cl_command_queue command_queue_;
-  void *host_ptr_;
+  void *host_ptr_ = nullptr;
 
   struct PlaceholderImpl : public Placeholder {
     PlaceholderImpl(size_t size, void *input, std::type_index type,
