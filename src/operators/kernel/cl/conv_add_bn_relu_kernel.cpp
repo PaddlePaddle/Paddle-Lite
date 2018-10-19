@@ -168,20 +168,20 @@ void ConvAddBNReluKernel<GPU_CL, float>::Compute(
   int output_width = param.Output()->WidthOfOneBlock();
   int output_height = param.Output()->HeightOfOneBlock();
 
-  DLOG << " c block " << c_block;
-  DLOG << " w " << w;
-  DLOG << " nh " << nh;
-  DLOG << " stride " << stride;
-  DLOG << " offset " << offset;
-  DLOG << " input_c " << input_c;
-  DLOG << " dilation " << dilation;
-  DLOG << " input width " << input_width;
-  DLOG << " input height " << input_height;
-  DLOG << " output width " << output_width;
-  DLOG << " output height " << output_height;
-  DLOG << " input dim " << param.Input()->dims();
-  DLOG << " output dim " << param.Output()->dims();
-  DLOG << " filter dim " << param.Filter()->dims();
+//  DLOG << " c block " << c_block;
+//  DLOG << " w " << w;
+//  DLOG << " nh " << nh;
+//  DLOG << " stride " << stride;
+//  DLOG << " offset " << offset;
+//  DLOG << " input_c " << input_c;
+//  DLOG << " dilation " << dilation;
+//  DLOG << " input width " << input_width;
+//  DLOG << " input height " << input_height;
+//  DLOG << " output width " << output_width;
+//  DLOG << " output height " << output_height;
+//  DLOG << " input dim " << param.Input()->dims();
+//  DLOG << " output dim " << param.Output()->dims();
+//  DLOG << " filter dim " << param.Filter()->dims();
 
   cl_int status;
 
@@ -236,9 +236,12 @@ void ConvAddBNReluKernel<GPU_CL, float>::Compute(
   status = clSetKernelArg(kernel, 16, sizeof(int), &output_height);
   CL_CHECK_ERRORS(status);
 
+  cl_event out_event = param.Output()->GetClEvent();
+  cl_event wait_event = param.Input()->GetClEvent();
+
   status =
       clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
-                             default_work_size.data(), NULL, 0, NULL, NULL);
+                             default_work_size.data(), NULL, 1, &wait_event, &out_event);
   CL_CHECK_ERRORS(status);
 }
 

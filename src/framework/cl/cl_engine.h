@@ -81,6 +81,12 @@ class CLEngine {
     return std::move(program_ptr);
   }
 
+  std::unique_ptr<_cl_event, CLEventDeleter> CreateEvent(cl_context context) {
+    cl_event event = clCreateUserEvent(context, status_);
+    std::unique_ptr<_cl_event, CLEventDeleter> event_ptr(event);
+    return std::move(event_ptr);
+  }
+
   bool BuildProgram(cl_program program) {
     cl_int status;
     status = clBuildProgram(program, 0, 0, "-cl-fast-relaxed-math", 0, 0);
