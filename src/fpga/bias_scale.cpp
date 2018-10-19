@@ -27,7 +27,7 @@ void align_element(float **data_in, int num_per_div_before_alignment, int num) {
       (num + num_per_div_before_alignment - 1) / num_per_div_before_alignment;
   int num_per_div_after_alignment =
       align_to_x(num_per_div_before_alignment, BS_NUM_ALIGNMENT);
-  if(num_per_div_before_alignment == num_per_div_after_alignment){
+  if (num_per_div_before_alignment == num_per_div_after_alignment) {
     return;
   }
   int num_element =
