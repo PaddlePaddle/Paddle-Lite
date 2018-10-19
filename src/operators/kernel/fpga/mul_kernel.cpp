@@ -44,6 +44,7 @@ bool MulKernel<FPGA, float>::Init(MulParam<FPGA> *param) {
   int width = (uint32_t)input_x->dims()[3];
   int filter_channel = chw / height / width;
 
+  out->Resize(framework::make_ddim({1, channel, 1, 1}));
   filter->Resize(framework::make_ddim({num, filter_channel, height, width}));
   float max_value = fpga::filter_find_max(filter);
   fpga::format_fc_filter(filter, max_value);
