@@ -62,26 +62,14 @@ bool ConvKernel<GPU_CL, float>::Init(ConvParam<GPU_CL> *param) {
 
 template <>
 void ConvKernel<GPU_CL, float>::Compute(const ConvParam<GPU_CL> &param) {
-  DLOG << " Compute helper: " << &cl_helper_;
-  DLOG << " begin compute ";
   auto kernel = this->cl_helper_.KernelAt(0);
-  DLOG << " get work size ";
   auto default_work_size = this->cl_helper_.DefaultWorkSize(*param.Output());
-  DLOG << " end work size ";
   int c_block = default_work_size[0];
   int w = default_work_size[1];
   int nh = default_work_size[2];
   auto input = param.Input()->GetCLImage();
-
-  DLOG << " get Input ";
-
   auto filter = param.Filter()->GetCLImage();
-
-  DLOG << " get Filter ";
-
   auto output = param.Output()->GetCLImage();
-
-  DLOG << " get Output ";
 
   int stride = param.Strides()[0];
   int offset = param.Offset();
@@ -109,56 +97,27 @@ void ConvKernel<GPU_CL, float>::Compute(const ConvParam<GPU_CL> &param) {
   DLOG << " output height " << output_height;
 
   status = clSetKernelArg(kernel, 0, sizeof(int), &c_block);
-  CL_CHECK_ERRORS(status);
-
   status = clSetKernelArg(kernel, 1, sizeof(int), &w);
-  CL_CHECK_ERRORS(status);
-
   status = clSetKernelArg(kernel, 2, sizeof(int), &nh);
-  CL_CHECK_ERRORS(status);
-
   status = clSetKernelArg(kernel, 3, sizeof(cl_mem), &input);
-  CL_CHECK_ERRORS(status);
-
   status = clSetKernelArg(kernel, 4, sizeof(cl_mem), &filter);
-  CL_CHECK_ERRORS(status);
-
   status = clSetKernelArg(kernel, 5, sizeof(cl_mem), &output);
-  CL_CHECK_ERRORS(status);
-
   status = clSetKernelArg(kernel, 6, sizeof(int), &stride);
-  CL_CHECK_ERRORS(status);
-
   status = clSetKernelArg(kernel, 7, sizeof(int), &offset);
-  CL_CHECK_ERRORS(status);
-
   status = clSetKernelArg(kernel, 8, sizeof(int), &input_c);
-  CL_CHECK_ERRORS(status);
-
   status = clSetKernelArg(kernel, 9, sizeof(int), &dilation);
-  CL_CHECK_ERRORS(status);
-
   status = clSetKernelArg(kernel, 10, sizeof(int), &input_width);
-  CL_CHECK_ERRORS(status);
-
   status = clSetKernelArg(kernel, 11, sizeof(int), &input_height);
-  CL_CHECK_ERRORS(status);
-
   status = clSetKernelArg(kernel, 12, sizeof(int), &output_width);
-  CL_CHECK_ERRORS(status);
-
   status = clSetKernelArg(kernel, 13, sizeof(int), &output_height);
-  CL_CHECK_ERRORS(status);
 
-  DLOG << " end set kernel arg ";
-
-  DLOG << " begin enqueue ";
+  cl_event out_event = param.Output()->GetClEvent();
+  cl_event wait_event = param.Input()->GetClEvent();
 
   status =
       clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
-                             default_work_size.data(), NULL, 0, NULL, NULL);
+                             default_work_size.data(), NULL, 1, &wait_event, &out_event);
   CL_CHECK_ERRORS(status);
-  DLOG << " end enqueue ";
 }
 
 template class ConvKernel<GPU_CL, float>;

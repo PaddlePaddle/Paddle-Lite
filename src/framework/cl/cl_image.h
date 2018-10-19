@@ -21,6 +21,7 @@ limitations under the License. */
 #include "framework/cl/cl_half.h"
 #include "framework/cl/cl_tool.h"
 #include "framework/cl/cl_deleter.h"
+#include "framework/cl/cl_engine.h"
 #include "framework/ddim.h"
 #include "framework/tensor.h"
 
@@ -97,6 +98,8 @@ class CLImage {
       InitCLImage(context, command_queue, tensor_data_, tensor_dims_);
     }
 
+    cl_event_ = CLEngine::Instance()->CreateEvent(context);
+
 
 //    InitCLImage(context, command_queue, nullptr, dim);
     initialized_ = true;
@@ -156,6 +159,8 @@ class CLImage {
   const DDim &dims() const { return tensor_dims_; }
 
   const ImageType GetImageType() const { return image_type_; }
+
+  cl_event GetClEvent() const { return cl_event_.get(); }
 
  private:
   ImageType image_type_ = Invalid;
@@ -295,6 +300,7 @@ class CLImage {
 
   bool initialized_ = false;
   std::unique_ptr<_cl_mem, CLMemDeleter> cl_image_;
+  std::unique_ptr<_cl_event, CLEventDeleter> cl_event_;
   size_t image_width_;
   size_t width_of_one_block_;
   size_t height_of_one_block_;

@@ -34,21 +34,13 @@ void SoftmaxKernel<GPU_CL, float>::Compute(const SoftmaxParam<GPU_CL> &param) {
   auto inputImage = input->GetCLImage();
   auto outputImage = output->GetCLImage();
 
-  DLOG << " softmax - output image dim " << output->ImageDims();
-  DLOG << " softmax - output image tensor dim " << output->dims();
-
   int group = output->ImageWidth();
 
   cl_int status;
 
   status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &inputImage);
-  CL_CHECK_ERRORS(status);
-
   status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &outputImage);
-  CL_CHECK_ERRORS(status);
-
   status = clSetKernelArg(kernel, 2, sizeof(int), &group);
-  CL_CHECK_ERRORS(status);
 
 //  const auto &inputDim = input->dims();
 //
@@ -62,7 +54,6 @@ void SoftmaxKernel<GPU_CL, float>::Compute(const SoftmaxParam<GPU_CL> &param) {
 //  clSetKernelArg(kernel, 3, sizeof(int), &dims[1]);
 //  clSetKernelArg(kernel, 4, sizeof(int), &dims[2]);
 //  clSetKernelArg(kernel, 5, sizeof(int), &dims[3]);
-  DLOG << "default_work_size:  " << default_work_size;
 
   status = clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
                          default_work_size.data(), NULL, 0, NULL, NULL);
