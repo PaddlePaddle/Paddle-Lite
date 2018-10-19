@@ -130,11 +130,14 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
   if (param->Filter()->WidthOfOneBlock() == 1 &&
       param->Filter()->HeightOfOneBlock() == 1) {
     this->cl_helper_.AddKernel("conv_1x1", "conv_add_bn_relu_kernel.cl");
+    DLOG << " conv add bn relu conv 1x1";
   } else if (param->Filter()->dims()[1] == 1) {
     this->cl_helper_.AddKernel("depth_conv_3x3", "conv_add_bn_relu_kernel.cl");
+    DLOG << " conv add bn relu depth_conv_3x3";
   } else if (param->Filter()->WidthOfOneBlock() == 3 &&
              param->Filter()->HeightOfOneBlock() == 3) {
     this->cl_helper_.AddKernel("conv_3x3", "conv_add_bn_relu_kernel.cl");
+    DLOG << " conv add bn relu conv_3x3";
   } else {
     PADDLE_MOBILE_THROW_EXCEPTION(" not support ");
   }
@@ -176,6 +179,9 @@ void ConvAddBNReluKernel<GPU_CL, float>::Compute(
   DLOG << " input height " << input_height;
   DLOG << " output width " << output_width;
   DLOG << " output height " << output_height;
+  DLOG << " input dim " << param.Input()->dims();
+  DLOG << " output dim " << param.Output()->dims();
+  DLOG << " filter dim " << param.Filter()->dims();
 
   cl_int status;
 
