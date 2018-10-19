@@ -471,15 +471,6 @@ class ElementwiseMulParam : OpParam {
   GType *input_y_;
   GType *out_;
   int axis_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::EWMulArgs fpga_EW_mul_args;
-
- public:
-  const fpga::EWMulArgs &FpgaArgs() const { return fpga_EW_mul_args; }
-  void SetFpgaArgs(const fpga::EWMulArgs &args) { fpga_EW_mul_args = args; }
-#endif
 };
 #endif
 
@@ -596,15 +587,6 @@ class SumParam : public OpParam {
   Variable *out_var_;
   vector<GType *> inputs_;
   GType *out_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SumArgs fpga_sum_args;
-
- public:
-  const fpga::SumArgs &FpgaArgs() const { return fpga_sum_args; }
-  void SetFpgaArgs(const fpga::SumArgs &args) { fpga_sum_args = args; }
-#endif
 };
 #endif
 

@@ -203,7 +203,7 @@ LOAD_OP1(multiclass_nms, CPU);
 LOAD_OP1(sum, CPU);
 #endif
 #ifdef ELEMENTWISEMUL_OP
-LOAD_OP1(elementiwise_mul, CPU);
+LOAD_OP1(elementwise_mul, CPU);
 #endif
 #ifdef SLICE_OP
 LOAD_OP2(slice, CPU, MALI_GPU);
