@@ -15,6 +15,7 @@ limitations under the License. */
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include <random>
 #include "../test_helper.h"
 #include "common/log.h"
 #include "memory/t_malloc.h"
@@ -25,7 +26,10 @@ limitations under the License. */
 #define c(i, j) c[(i)*ldc + (j)]
 #define c1(i, j) c1[(i)*ldc + (j)]
 
-void print_matirx(int m, int n, int ldc, float *c) {
+using std::default_random_engine;
+using std::uniform_int_distribution;
+
+void print_matirx(int m, int n, int ldc, int32_t *c) {
   for (int i = 0; i < m; ++i) {
     std::cout << c(i, 0);
     for (int j = 1; j < n; ++j) {
@@ -36,60 +40,56 @@ void print_matirx(int m, int n, int ldc, float *c) {
   std::cout << std::endl;
 }
 
-int do_sgemm(int m, int n, int k, bool relu, int t1, int t2, int pr) {
+void print_matirx(int m, int n, int ldc, int8_t *c) {
+  for (int i = 0; i < m; ++i) {
+    std::cout << static_cast<int32_t>(c(i, 0));
+    for (int j = 1; j < n; ++j) {
+      std::cout << " | " << static_cast<int32_t>(c(i, j));
+    }
+    std::cout << std::endl;
+  }
+  std::cout << std::endl;
+}
+
+int do_sgemm(int m, int n, int k, bool relu, int pr) {
   int lda = k;
   int ldb = n;
   int ldc = n;
+  default_random_engine e;
+  uniform_int_distribution<int8_t> pixel(-127, 127);
+  int8_t *a = static_cast<int8_t *>(
+      paddle_mobile::memory::Alloc(sizeof(int8_t) * m * k));
+  int8_t *b = static_cast<int8_t *>(
+      paddle_mobile::memory::Alloc(sizeof(int8_t) * k * n));
+  int32_t *c = static_cast<int32_t *>(
+      paddle_mobile::memory::Alloc(sizeof(int32_t) * m * n));
+  int32_t *c1 = static_cast<int32_t *>(
+      paddle_mobile::memory::Alloc(sizeof(int32_t) * m * n));
 
-  float *a =
-      static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m * k));
-  float *b =
-      static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * k * n));
-  float *c =
-      static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m * n));
-  float *c1 =
-      static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m * n));
-  float *scale =
-      static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m));
-  float *bias =
-      static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m));
-
-  srand(unsigned(time(0)));
   for (int i = 0; i < m * k; ++i) {
-    a[i] = t1 + rand() % t2;
+    a[i] = pixel(e);
   }
   for (int i = 0; i < k * n; ++i) {
-    b[i] = t1 + rand() % t2;
-  }
-  for (int i = 0; i < m; ++i) {
-    scale[i] = t1 + rand() % t2;
-  }
-  for (int i = 0; i < m; ++i) {
-    bias[i] = t1 + rand() % t2;
+    b[i] = pixel(e);
   }
 
   for (int i = 0; i < m; ++i) {
     for (int j = 0; j < n; ++j) {
-      float r = 0;
+      int32_t r = 0;
       for (int p = 0; p < k; p++) {
-        r += a(i, p) * b(p, j);
-      }
-      r *= scale[i];
-      r += bias[i];
-      if (relu && (r < 0)) {
-        r = 0;
+        r += static_cast<int32_t>(a(i, p)) * static_cast<int32_t>(b(p, j));
       }
       c1(i, j) = r;
     }
   }
 
   paddle_mobile::operators::math::Gemm gemm;
-  gemm.SgemmWithBn(m, n, k, 1, a, lda, b, ldb, 0.3, c, ldc, relu, scale, bias,
-                   nullptr);
+  gemm.Sgemm(m, n, k, static_cast<int8_t>(1), a, lda, b, ldb,
+             static_cast<int8_t>(0), c, ldc, relu, nullptr);
   int eq = 0;
   int neq = 0;
   for (int i = 0; i < m * n; ++i) {
-    if (static_cast<int>(c[i]) == static_cast<int>(c1[i])) {
+    if (c[i] == c1[i]) {
       ++eq;
     } else {
       ++neq;
@@ -114,24 +114,18 @@ int do_sgemm(int m, int n, int k, bool relu, int t1, int t2, int pr) {
   paddle_mobile::memory::Free(b);
   paddle_mobile::memory::Free(c);
   paddle_mobile::memory::Free(c1);
-  paddle_mobile::memory::Free(scale);
-  paddle_mobile::memory::Free(bias);
 
   return 0;
 }
 
 int main() {
-  do_sgemm(9, 9, 9, true, 10, 10, 10);
-  do_sgemm(10, 6, 12, false, 10, 10, 0);
-  do_sgemm(512, 256, 384, false, 10, 10, 0);
-  do_sgemm(1366, 768, 256, false, 10, 10, 0);
-  do_sgemm(1255, 755, 333, false, 10, 10, 0);
-  do_sgemm(555, 777, 999, false, 10, 10, 0);
+  do_sgemm(9, 9, 9, false, 10);
+  do_sgemm(10, 6, 12, false, 0);
+  do_sgemm(512, 256, 384, false, 0);
+  do_sgemm(1366, 768, 256, false, 0);
+  do_sgemm(1255, 755, 333, false, 0);
+  do_sgemm(555, 777, 999, false, 0);
+  do_sgemm(1024, 1024, 1024, false, 0);
 
-  do_sgemm(10, 6, 12, true, -4, 10, 0);
-  do_sgemm(512, 256, 384, true, -4, 10, 0);
-  do_sgemm(1366, 768, 256, true, -4, 10, 0);
-  do_sgemm(1255, 755, 333, true, -4, 10, 0);
-  do_sgemm(555, 777, 999, true, -4, 10, 0);
   return 0;
 }
