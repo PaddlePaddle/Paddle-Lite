@@ -21,6 +21,8 @@ namespace operators {
 template <>
 bool FetchKernel<GPU_CL, float>::Init(FetchParam<GPU_CL> *param) {
   this->cl_helper_.AddKernel("fetch", "fetch_kernel.cl");
+  auto *out = param->Out();
+  out->mutable_data<float>();
   return true;
 }
 
