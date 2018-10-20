@@ -202,12 +202,21 @@ LOAD_OP1(multiclass_nms, CPU);
 #ifdef POLYGONBOXTRANSFORM_OP
 LOAD_OP1(polygon_box_transform, CPU);
 #endif
+#ifdef SUM_OP
+LOAD_OP1(sum, CPU);
+#endif
+#ifdef ELEMENTWISEMUL_OP
+LOAD_OP1(elementwise_mul, CPU);
+#endif
 #ifdef SLICE_OP
 LOAD_OP2(slice, CPU, MALI_GPU);
 #endif
 #ifdef FUSION_CONVBN_OP
 LOAD_OP2(fusion_conv_bn, CPU, FPGA);
 LOAD_FUSION_MATCHER(fusion_conv_bn);
+#endif
+#ifdef ELEMENTWISESUB_OP
+LOAD_OP1(elementwise_sub, CPU)
 #endif
 LOAD_OP1(quantize, CPU);
 LOAD_OP1(dequantize, CPU);
