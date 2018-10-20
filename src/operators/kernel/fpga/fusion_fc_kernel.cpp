@@ -54,9 +54,9 @@ bool FusionFcKernel<FPGA, float>::Init(FusionFcParam<FPGA> *param) {
   fpga::format_bias_scale_array(&bs_ptr, element_num_per_div, channel);
   fpga::format_fp16_ofm(out);
 
-  fpga::WrapperConvArgs conv_arg = {0};
-  fpga::fill_conv_arg(&conv_arg, input_x, out, filter, relu_enabled, 1, 1, 1, 0,
-                      0, bs_ptr);
+  fpga::SplitConvArgs conv_arg = {0};
+  fpga::fill_split_arg(&conv_arg, input_x, out, filter, relu_enabled, 1, 1, 1,
+                       0, 0, bs_ptr);
   param->SetFpgaArgs(conv_arg);
   return true;
 }
