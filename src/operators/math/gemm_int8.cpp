@@ -652,7 +652,7 @@ void Gemm::WriteBasic(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
   int32_t *C0, *c0;
   c_ptr = c;
   C_ptr = C;
-  if (nc1 > 0) {
+  /*if (nc1 > 0) {
     asm volatile(
         "subs       %[mc], %[mc], #1        \n\t"
         "blt        end_mc_%=               \n\t"
@@ -684,7 +684,7 @@ void Gemm::WriteBasic(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
         : [C_ptr] "r"(C_ptr), [c_ptr] "r"(c_ptr), [mc] "r"(m), [nc1] "r"(nc1),
           [step] "r"(step), [step1] "r"(step1)
         : "memory", "r5", "r6", "q0", "q1", "q2", "q3");
-  }
+  }*/
 
   if (_nc1 != 0) {
     for (int32_t i = 0; i < mc; i++) {

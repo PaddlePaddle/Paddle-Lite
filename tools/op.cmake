@@ -118,12 +118,9 @@ if (CON GREATER -1)
   set(POOL_OP ON)
   set(CONCAT_OP ON)
   set(SOFTMAX_OP ON)
-  set(DROPOUT_OP ON)
   set(FUSION_CONVBNRELU_OP ON)
   set(FUSION_CONVBN_OP ON)
   set(FUSION_CONVADD_OP ON)
-  set(MUL_OP ON)
-
   set(FOUND_MATCH ON)
 endif()
 
