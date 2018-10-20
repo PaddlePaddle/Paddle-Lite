@@ -317,7 +317,7 @@ void Gemm::AddDot6x8(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
         [kc3] "r"(kc3), [kc5] "r"(kc5), [kc6] "r"(kc6), [step] "r"(step)
       : "cc", "memory", "r0", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
         "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15");
-#endif
+#endif  // __ARM_NEON
 }
 
 // 8 bits int inner product
@@ -524,6 +524,7 @@ void Gemm::WriteWithAlphaBeta(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
 // C = A * B, 8位 int32_t
 void Gemm::WriteBasic(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
                       int32_t ldc) {
+#if __ARM_NEON
   int32_t nc1 = nc >> 4;
   int32_t _nc1 = nc & 15;
   int32_t step = sizeof(int32_t) * ldc;
@@ -577,6 +578,7 @@ void Gemm::WriteBasic(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
       }
     }
   }
+#endif  // __ARM_NEON
 }
 
 // C = A * B + C
