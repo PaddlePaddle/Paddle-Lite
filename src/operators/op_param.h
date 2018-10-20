@@ -985,6 +985,28 @@ class MultiClassNMSParam : public OpParam {
 };
 #endif
 
+#ifdef POLYGONBOXTRANSFORM_OP
+template <typename Dtype>
+class PolygonBoxTransformParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  PolygonBoxTransformParam(const VariableNameMap &inputs,
+                           const VariableNameMap &outputs,
+                           const AttributeMap &attrs, const Scope &scope) {
+    input_ = InputFrom<GType>(inputs, scope);
+    output_ = OutputFrom<GType>(outputs, scope);
+  }
+  const RType *Input() const { return input_; }
+  RType *Output() const { return output_; }
+
+ private:
+  RType *input_;
+  RType *output_;
+};
+#endif
+
 template <typename Dtype>
 class FeedParam : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
