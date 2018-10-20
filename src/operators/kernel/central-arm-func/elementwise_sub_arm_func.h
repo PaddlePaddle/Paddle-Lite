@@ -12,26 +12,32 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef MUL_OP
+#ifdef ELEMENTWISESUB_OP
 
-#include "operators/kernel/mul_kernel.h"
-#include "operators/kernel/central-arm-func/mul_arm_func.h"
+#pragma once
+#include "operators/math/elementwise_op_function.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <>
-bool MulKernel<CPU, float>::Init(MulParam<CPU> *param) {
-  return true;
+template <typename T>
+struct SubFunctor {
+  inline T operator()(T a, T b) const { return a - b; }
+};
+
+template <typename P>
+void ElementwiseSubCompute(const ElementwiseSubParam<CPU> &param) {
+  const Tensor *input_x = param.InputX();
+  const Tensor *input_y = param.InputY();
+  Tensor *Out = param.Out();
+  Out->mutable_data<float>();
+  int axis = param.Axis();
+  ElementwiseComputeEx<SubFunctor<float>, float>(input_x, input_y, axis,
+                                                 SubFunctor<float>(), Out);
 }
 
-template <>
-void MulKernel<CPU, float>::Compute(const MulParam<CPU> &param) const {
-  MulCompute<float>(param);
-  param.Out()->set_lod(param.InputX()->lod());
-}
-
-template class MulKernel<CPU, float>;
+template class ElementwiseSubKernel<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
