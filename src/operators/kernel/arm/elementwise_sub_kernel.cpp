@@ -12,26 +12,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef MUL_OP
+#ifdef ELEMENTWISESUB_OP
 
-#include "operators/kernel/mul_kernel.h"
-#include "operators/kernel/central-arm-func/mul_arm_func.h"
+#include "operators/kernel/elementwise_sub_kernel.h"
+#include "operators/kernel/central-arm-func/elementwise_sub_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool MulKernel<CPU, float>::Init(MulParam<CPU> *param) {
+bool ElementwiseSubKernel<CPU, float>::Init(ElementwiseSubParam<CPU> *param) {
   return true;
 }
 
 template <>
-void MulKernel<CPU, float>::Compute(const MulParam<CPU> &param) const {
-  MulCompute<float>(param);
+void ElementwiseSubKernel<CPU, float>::Compute(
+    const ElementwiseSubParam<CPU> &param) const {
+  ElementwiseSubCompute<float>(param);
   param.Out()->set_lod(param.InputX()->lod());
 }
-
-template class MulKernel<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile

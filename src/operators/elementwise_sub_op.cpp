@@ -12,28 +12,30 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef MUL_OP
+#ifdef ELEMENTWISESUB_OP
 
-#include "operators/kernel/mul_kernel.h"
-#include "operators/kernel/central-arm-func/mul_arm_func.h"
+#include "operators/elementwise_sub_op.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <>
-bool MulKernel<CPU, float>::Init(MulParam<CPU> *param) {
-  return true;
+template <typename Dtype, typename T>
+void ElementwiseSubOp<Dtype, T>::InferShape() const {
+  auto x_dim = this->param_.InputX()->dims();
+  this->param_.Out()->Resize(x_dim);
 }
-
-template <>
-void MulKernel<CPU, float>::Compute(const MulParam<CPU> &param) const {
-  MulCompute<float>(param);
-  param.Out()->set_lod(param.InputX()->lod());
-}
-
-template class MulKernel<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+#ifdef PADDLE_MOBILE_CPU
+REGISTER_OPERATOR_CPU(elementwise_sub, ops::ElementwiseSubOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+REGISTER_OPERATOR_MALI_GPU(elementwise_sub, ops::ElementwiseSubOp);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+#endif
 
 #endif

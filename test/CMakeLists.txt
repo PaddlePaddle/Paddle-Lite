@@ -173,6 +173,14 @@ if (NOT FOUND_MATCH)
     target_link_libraries(test-elementwiseadd-op paddle-mobile)
 
     # gen test
+    ADD_EXECUTABLE(test-elementwisesub-op operators/test_elementwise_sub_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-elementwisesub-op paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-im2sequence-op operators/test_im2sequence_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-im2sequence-op paddle-mobile)
+
+	# gen test
     ADD_EXECUTABLE(test-concat-op operators/test_concat_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-concat-op paddle-mobile)
 
@@ -261,6 +269,10 @@ if (NOT FOUND_MATCH)
     # gen test
     ADD_EXECUTABLE(test-gemm-accuracy common/test_gemm_accuracy.cpp)
     target_link_libraries(test-gemm-accuracy paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-gemm-int8-accuracy common/test_gemm_int8_accuracy.cpp)
+    target_link_libraries(test-gemm-int8-accuracy paddle-mobile)
 
     # gen test
     ADD_EXECUTABLE(test-gemm-perf common/test_gemm_perf.cpp)
