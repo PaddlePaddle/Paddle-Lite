@@ -27,6 +27,7 @@ limitations under the License. */
 static const char *g_ocr = "../models/ocr";
 static const char *g_mobilenet_ssd = "../models/mobilenet+ssd";
 static const char *g_genet_combine = "../models/enet";
+static const char *g_eng = "../models/eng_20conv_1_9_fc";
 static const char *g_mobilenet_ssd_gesture = "../models/mobilenet+ssd_gesture";
 static const char *g_mobilenet_combined = "../models/mobilenet_combine";
 static const char *g_googlenetv1_combined = "../models/googlenetv1_combine";
@@ -51,6 +52,7 @@ static const char *g_test_image_1x3x224x224_banana =
 static const char *g_test_image_desktop_1_3_416_416_nchw_float =
     "../images/in_put_1_3_416_416_2";
 static const char *g_hand = "../images/hand_image";
+static const char *g_moto = "../images/moto_300x300_float";
 static const char *g_imgfssd_ar = "../images/test_image_ssd_ar";
 static const char *g_imgfssd_ar1 = "../images/003_0001.txt";
 static const char *g_img = "../images/img.bin";

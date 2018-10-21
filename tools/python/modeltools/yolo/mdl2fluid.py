@@ -1,9 +1,7 @@
 import json
-import os
 
-import framework_pb2 as framework_pb2
-import op_types as types
-from swicher import Swichter
+from core import framework_pb2 as framework_pb2, op_types as types
+from yolo.swicher import Swichter
 import shutil
 
 
@@ -40,10 +38,10 @@ class Converter:
         print self.program_desc.blocks
         print 'convert end.....'
         desc_serialize_to_string = self.program_desc.SerializeToString()
-        shutil.rmtree('newyolo/')
-        shutil.copytree('multiobjects/float32s_nchw_with_head', 'newyolo/')
+        shutil.rmtree('yolo/datas/newyolo/')
+        shutil.copytree('yolo/datas/multiobjects/float32s_nchw_with_head/', 'yolo/datas/newyolo/')
 
-        f = open("newyolo/__model__", "wb")
+        f = open("yolo/datas/newyolo/__model__", "wb")
         f.write(desc_serialize_to_string)
         f.close()
 
@@ -312,9 +310,9 @@ class Converter:
                 if dims_size == 4:
                     # convert weight from nhwc to nchw
                     Swichter().nhwc2nchw_one_slice_add_head(
-                        '/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/multiobjects/float32s_nhwc/' + j + '.bin',
-                        '/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/multiobjects/float32s_nchw_with_head/' + j,
-                        '/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/multiobjects/float32s_nchw/' + j + '.tmp',
+                        'yolo/datas/multiobjects/float32s_nhwc/' + j + '.bin',
+                        'yolo/datas/multiobjects/float32s_nchw_with_head/' + j,
+                        'yolo/datas/multiobjects/float32s_nchw/' + j + '.tmp',
                         dims_of_matrix[0],
                         dims_of_matrix[1],
                         dims_of_matrix[2],
@@ -322,14 +320,14 @@ class Converter:
                     )
                 else:
                     Swichter().copy_add_head(
-                        '/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/multiobjects/float32s_nhwc/' + j + '.bin',
-                        '/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/multiobjects/float32s_nchw_with_head/' + j,
-                        '/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/multiobjects/float32s_nchw/' + j + '.tmp'
+                        'yolo/datas/multiobjects/float32s_nhwc/' + j + '.bin',
+                        'yolo/datas/multiobjects/float32s_nchw_with_head/' + j,
+                        'yolo/datas/multiobjects/float32s_nchw/' + j + '.tmp'
                     )
             else:
                 vars_add.persistable = 0
 
 
-mdl_path = "/Users/xiebaiyuan/PaddleProject/paddle-mobile/python/tools/mdl2fluid/multiobjects/YOLO_Universal.json"
+mdl_path = "yolo/datas/multiobjects/YOLO_Universal.json"
 converter = Converter(mdl_path)
 converter.convert()

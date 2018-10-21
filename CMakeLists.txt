@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.0)
 project(paddle-mobile)
 
 # select the platform to build
-option(CPU "armv7 with neon support" ON)
+option(CPU "armv7 with neon support" OFF)
 option(MALI_GPU "mali gpu support" OFF)
-option(FPGA "fpga support" OFF)
+option(FPGA "fpga support" ON)
 
 option(USE_OPENMP "openmp support" OFF)
 option(DEBUGING "enable debug mode" ON)
@@ -20,6 +20,7 @@ set(CMAKE_CXX_FLAGS "-O3 -s -DNDEBUG ${CMAKE_CXX_FLAGS}")
 if(IS_IOS)
     set(CMAKE_CXX_FLAGS "-mfpu=neon -marm -fobjc-abi-version=2 -fobjc-arc \
         -std=gnu++11 -stdlib=libc++ -isysroot ${CMAKE_OSX_SYSROOT} ${CMAKE_CXX_FLAGS}")
+    add_compile_options(-fembed-bitcode)
 else()
     set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 endif()
@@ -28,7 +29,10 @@ if(DEBUGING)
     message(STATUS "debugging mode")
     add_definitions(-DPADDLE_MOBILE_DEBUG)
 else()
-    add_definitions(-fvisibility=hidden -fvisibility-inlines-hidden)
+    if(FPGA)
+    else()
+        add_definitions(-fvisibility=hidden -fvisibility-inlines-hidden)
+    endif()
 endif()
 
 if(USE_EXCEPTION)
@@ -92,8 +96,7 @@ else()
 endif()
 
 if(FPGA)
-    set(DEBUGING ON)
-    add_definitions(-DPADDLE_MOBILE_DEBUG)
+    message("FPGA mode enabled")
     add_definitions(-DPADDLE_MOBILE_FPGA)
 else()
     file(GLOB_RECURSE _tmp_list src/operators/kernel/fpga/*.cpp src/operators/kernel/fpga/*.cc)
@@ -176,6 +179,10 @@ if(DEBUGING)
     else()
         add_subdirectory(test)
     endif()
+elseif(FPGA)
+    add_subdirectory(test)
 endif()
+
+
 
 

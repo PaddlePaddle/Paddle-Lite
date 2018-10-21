@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include <stdint-gcc.h>
 #include "../test_helper.h"
 #include "../test_include.h"
 #include "operators/mul_op.h"
@@ -73,12 +74,20 @@ int TestMulOP() {
     }
   }
 
+  int32_t eq = 0;
+  int32_t neq = 0;
   for (int32_t i = 0; i < m * n; ++i) {
     PADDLE_MOBILE_ENFORCE(
         output_data[i] == c[i], "output[%d] = %d, output_cmp[%d] = %d", i,
         static_cast<int32_t>(output_data[i]), i, static_cast<int32_t>(c[i]));
+    if (static_cast<int>(output_data[i] == c[i])) {
+      ++eq;
+    } else {
+      ++neq;
+    }
   }
-  DLOG << "Run MulOp successfully!";
+  DLOG << "mnk=" << m << " " << n << " " << k << "   eq=" << eq
+       << " neq=" << neq;
   delete op;
   return 0;
 }

@@ -21,7 +21,10 @@ namespace paddle_mobile {
 namespace fpga {
 namespace filter {
 
-int calc_division_capacity(int chw) { return 2048 / ((chw + 15) / 16) * 32; }
+int calc_division_capacity(int chw) {
+  int n = 2048 / ((chw + 15) / 16) * 32;
+  return n < 2048 ? n : 2048;
+}
 
 int calc_split_num(int num, int division_capacity) {
   return (num + division_capacity - 1) / division_capacity;
@@ -210,12 +213,12 @@ void format_filter(float **data_in, int num, int channel, int height, int width,
       align_to_x(num_per_div_before_alignment, FILTER_NUM_ALIGNMENT);
   int div_num =
       (num + num_per_div_before_alignment - 1) / num_per_div_before_alignment;
-  int num_after_alignment = num_per_div_after_alignment * div_num;
-
+  int residual = num % num_per_div_before_alignment;
+  int num_after_alignment = num_per_div_after_alignment *
+                                ((residual == 0) ? div_num : (div_num - 1)) +
+                            align_to_x(residual, FILTER_NUM_ALIGNMENT);
   quantize(data_in, data_size, max);
-
   char **quantize_data = (char **)data_in;  // NOLINT
-
   convert_to_hwc(quantize_data, num, channel, height, width);
   align_element(quantize_data, num, chw);
   align_num(quantize_data, num_per_div_before_alignment, num, chw);
