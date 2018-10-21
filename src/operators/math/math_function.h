@@ -15,6 +15,7 @@ limitations under the License. */
 #pragma once
 
 #include <cmath>
+#include <string>
 #include "framework/tensor.h"
 
 namespace paddle_mobile {
@@ -25,7 +26,7 @@ template <typename T>
 void matmul(const framework::Tensor &matrix_a, bool trans_a,
             const framework::Tensor &matrix_b, bool trans_b, T alpha,
             framework::Tensor *matrix_out, T beta, bool relu = false,
-            float *bias = nullptr);
+            T *bias = nullptr);
 
 template <typename T>
 void matmulWithBn(const framework::Tensor &matrix_a, bool trans_a,
