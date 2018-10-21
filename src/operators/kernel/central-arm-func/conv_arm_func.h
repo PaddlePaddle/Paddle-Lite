@@ -28,15 +28,15 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
+template <typename Dtype>
 inline void ConvBasic(const ConvParam<CPU> &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
   Tensor *output = param.Output();
-  output->mutable_data<float>();
   int groups = param.Groups();
-  std::vector<int> strides = param.Strides();
-  std::vector<int> paddings = param.Paddings();
-  std::vector<int> dilations = param.Dilations();
+  const std::vector<int> strides = param.Strides();
+  const std::vector<int> paddings = param.Paddings();
+  const std::vector<int> dilations = param.Dilations();
 
   const int batch_size = static_cast<int>(input->dims()[0]);
 
@@ -60,7 +60,7 @@ inline void ConvBasic(const ConvParam<CPU> &param) {
   Tensor col;
   Tensor col_matrix;
   if (is_expand) {
-    col.mutable_data<float>(col_shape);
+    col.mutable_data<Dtype>(col_shape);
     col_matrix.ShareDataWith(col);
     col_matrix.Resize(col_matrix_shape);
   }
@@ -79,8 +79,8 @@ inline void ConvBasic(const ConvParam<CPU> &param) {
   int in_step = static_cast<int>(input->dims()[1]) / groups;
   int out_step = static_cast<int>(output->dims()[1]) / groups;
 
-  math::Vol2ColFunctor<CPU, float> vol2col;
-  math::Im2ColFunctor<math::ColFormat::kCFO, CPU, float> im2col;
+  math::Vol2ColFunctor<CPU, Dtype> vol2col;
+  math::Im2ColFunctor<math::ColFormat::kCFO, CPU, Dtype> im2col;
 
   for (int i = 0; i < batch_size; i++) {
     Tensor in_batch = input->Slice(i, i + 1).Resize(input_shape);
@@ -99,6 +99,7 @@ inline void ConvBasic(const ConvParam<CPU> &param) {
                std::vector<int>{paddings[0], paddings[1], paddings[0],
                                 paddings[1]},
                &col);
+
       } else if (data_dim == 3U) {
         // vol2col
         vol2col(in_slice, dilations, strides, paddings, &col);
@@ -107,7 +108,8 @@ inline void ConvBasic(const ConvParam<CPU> &param) {
       // gemm
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
-      math::matmul<float>(filter_slice, false, col_matrix, false,
+
+      math::matmul<Dtype>(filter_slice, false, col_matrix, false,
                           static_cast<float>(1), &out_slice,
                           static_cast<float>(0));
     }
@@ -126,42 +128,41 @@ inline void ConvCompute_int8(const ConvParam<CPU> &param) {
   const Tensor *input = param.Input();
   Tensor *filter = param.Filter();
   Tensor *output = param.Output();
-  output->mutable_data<int32_t>();
   int groups = param.Groups();
-  std::vector<int> strides = param.Strides();
-  std::vector<int> paddings = param.Paddings();
-  std::vector<int> dilations = param.Dilations();
+  const std::vector<int> &strides = param.Strides();
+  const std::vector<int> &paddings = param.Paddings();
+  const std::vector<int> &dilations = param.Dilations();
   int kernel_h = filter->dims()[2];
   int kernel_w = filter->dims()[3];
-  const int batch_size = static_cast<int>(input->dims()[0]);
-  math::PadFunctor<CPU, int8_t> pad;
+  output->mutable_data<int32_t>();
 
-  Tensor input_pad;
-  for (int i = 0; i < batch_size; ++i) {
-    Tensor in_batch = input->Slice(i, i + 1);
-    Tensor out_batch = output->Slice(i, i + 1);
-    if (paddings[0] == 0 && paddings[1] == 0) {
-      input_pad = in_batch;
-    } else {
-      framework::DDim pad_shape = in_batch.dims();
-      pad_shape[2] += 2 * paddings[0];
-      pad_shape[3] += 2 * paddings[1];
-      input_pad.mutable_data<int8_t>(pad_shape);
-      pad(in_batch, paddings[0], paddings[1], &input_pad);
-    }
+  ConvFunc conv_func = 0;
+  if (strides[1] == strides[0] && strides[1] < 6 && kernel_h == kernel_w &&
+      kernel_h < 8 && groups == 1 && dilations[0] == dilations[1] &&
+      dilations[1] == 1) {
+    conv_func = conv_funcs_table[kernel_h - 1][strides[0] - 1];
+  }
+  if (conv_func) {
+    int batch_size = input->dims()[0];
+    math::PadFunctor<CPU, int8_t> pad;
 
-    if (strides[1] == strides[0] && strides[1] < 6 && kernel_h == kernel_w &&
-        kernel_h < 8 && groups == 1 && dilations[0] == dilations[1] &&
-        dilations[1] == 1) {
-      ConvFunc conv_func = conv_funcs_table[kernel_h - 1][strides[0] - 1];
-      if (conv_func) {
-        conv_func(input_pad, *filter, &out_batch);
+    Tensor input_pad;
+    for (int i = 0; i < batch_size; ++i) {
+      Tensor in_batch = input->Slice(i, i + 1);
+      Tensor out_batch = output->Slice(i, i + 1);
+      if (paddings[0] == 0 && paddings[1] == 0) {
+        input_pad = in_batch;
       } else {
-        // TODO(hjchen2)
+        framework::DDim pad_shape = in_batch.dims();
+        pad_shape[2] += 2 * paddings[0];
+        pad_shape[3] += 2 * paddings[1];
+        input_pad.mutable_data<int8_t>(pad_shape);
+        pad(in_batch, paddings[0], paddings[1], &input_pad);
       }
-    } else {
-      // TODO(hjchen2)
+      conv_func(input_pad, *filter, &out_batch);
     }
+  } else {
+    ConvBasic<int8_t>(param);
   }
 }
 
@@ -170,6 +171,7 @@ void ConvCompute(const ConvParam<CPU> &param) {
   if (param.Input()->type() == typeid(int8_t)) {
     ConvCompute_int8(param);
   } else {
+    param.Output()->mutable_data<float>();
     if (param.Groups() == param.Input()->dims()[1] &&
         param.Input()->dims()[1] == param.Output()->dims()[1] &&
         param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
@@ -183,7 +185,7 @@ void ConvCompute(const ConvParam<CPU> &param) {
       math::DepthwiseConv3x3(param.Input(), param.Strides(), param.Paddings(),
                              param.Filter(), nullptr, param.Output(), false);
     } else {
-      ConvBasic(param);
+      ConvBasic<float>(param);
     }
   }
 }
