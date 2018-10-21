@@ -22,7 +22,7 @@ limitations under the License. */
 #include "fpga/filter.h"
 #include "fpga/image.h"
 #define FPGA_TEST_MODE
-#define PADDLE_MOBILE_OS_LINUX
+// #define PADDLE_MOBILE_OS_LINUX
 
 namespace paddle_mobile {
 namespace fpga {
@@ -125,6 +125,7 @@ float fp16_2_fp32(half fp16_num) {
 }
 
 int ComputeBasicConv(const struct ConvArgs &args) {
+#ifdef FPGA_TEST_MODE
   DLOG << "======Compute Basic Conv======";
   DLOG << "   relu_enabled:" << args.relu_enabled
        << "   sb_address:" << args.sb_address
@@ -144,11 +145,11 @@ int ComputeBasicConv(const struct ConvArgs &args) {
        << "   stride_w:" << args.kernel.stride_w;
   DLOG << "   out_address:" << args.output.address
        << "   out_scale_address:" << args.output.scale_address;
-
+#endif
   return do_ioctl(IOCTL_CONFIG_CONV, &args);
 }
 
-int ComputeFpgaConv(const struct WrapperConvArgs &args) {
+int ComputeFpgaConv(const struct SplitConvArgs &args) {
 #ifdef FPGA_TEST_MODE
   DLOG << "=============ComputeFPGAConv===========";
   DLOG << "   filter_num:" << args.filter_num
@@ -192,8 +193,9 @@ int ComputeFpgaPool(const struct PoolingArgs &args) {
 int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
 #ifdef FPGA_TEST_MODE
   DLOG << "=============ComputeFpgaEWAdd===========";
-  DLOG << "   relu_enabled:" << args.relu_enabled << "   const0:" << args.const0
-       << "   const1:" << args.const1;
+  DLOG << "   relu_enabled:" << args.relu_enabled
+       << "   const0:" << fp16_2_fp32(int16_t(args.const0))
+       << "   const1:" << fp16_2_fp32(int16_t(args.const1));
   DLOG << "   image0_address:" << args.image0.address
        << "   image0_scale_address:" << args.image0.scale_address
        << "   image0_channels:" << args.image0.channels
@@ -381,10 +383,10 @@ void format_concat_output(framework::Tensor *out, int height, int width,
   out->reset_data_ptr(data_ptr);
 }
 
-void fill_conv_arg(struct WrapperConvArgs *arg, framework::Tensor *input,
-                   framework::Tensor *out, framework::Tensor *filter,
-                   bool relu_enabled, int group_num, int stride_h, int stride_w,
-                   int padding_h, int padding_w, float *bs_ptr) {
+void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
+                    framework::Tensor *out, framework::Tensor *filter,
+                    bool relu_enabled, int group_num, int stride_h,
+                    int stride_w, int padding_h, int padding_w, float *bs_ptr) {
   auto input_ptr = input->data<float>();
   auto filter_ptr = filter->data<float>();
   auto out_ptr = out->data<float>();
@@ -401,8 +403,8 @@ void fill_conv_arg(struct WrapperConvArgs *arg, framework::Tensor *input,
   arg->concat_arg.image_num = arg->split_num;
   arg->concat_arg.image_out = out_ptr;
   arg->concat_arg.scale_out = out->scale;
-  arg->concat_arg.height = (uint32_t)filter->dims()[2];
-  arg->concat_arg.width = (uint32_t)filter->dims()[3];
+  arg->concat_arg.height = (uint32_t)out->dims()[2];
+  arg->concat_arg.width = (uint32_t)out->dims()[3];
 
   int n = arg->split_num;
   arg->concat_arg.images_in =
@@ -411,7 +413,6 @@ void fill_conv_arg(struct WrapperConvArgs *arg, framework::Tensor *input,
       (float **)fpga_malloc(n * sizeof(float *));  // NOLINT
   arg->concat_arg.channel_num =
       (uint32_t *)fpga_malloc(n * sizeof(uint32_t));  // NOLINT
-  arg->concat_arg.image_out = out_ptr;
 
   auto channel = (int)out->dims()[1];  // NOLINT
   int filter_num_per_div = get_filter_num_per_div(filter, group_num);

@@ -187,29 +187,29 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
                           const float *B, int ldb, float *C, int ldc, float *p,
                           std::string mode, float *bias, float *bias1);
 
-  /************************ 8 bit function cluster ************************/
-  // 8 bit int small block inner product
+  // 8 bits function cluster begins
+  // 8 bits int small block inner product
   void AddDot6x8(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
                  int32_t ldc);
 
-  // 8 bit int inner product
+  // 8 bits int inner product
   void InnerKernelWithBias(int32_t mc, int32_t nc, int8_t alpha,
                            const int8_t *a, const int8_t *b, int8_t beta,
                            int32_t *c, int32_t *C, int32_t ldc, bool relu,
                            int8_t *bias);
 
-  // 8 bit int pack function
+  // 8 bits int pack function
   void PackMatrixA_6r(int32_t m, int32_t k, int32_t m_tail, const int8_t *A,
                       int32_t lda, int8_t *buffer);
   void PackMatrixB_8c(int32_t k, int32_t n, int32_t n_tail, const int8_t *B,
                       int32_t ldb, int8_t *buffer);
 
-  // 8 bit int matrix product
+  // 8 bits int matrix product
   void Sgemm(int32_t m, int32_t n, int32_t k, int8_t alpha, const int8_t *A,
              int32_t lda, const int8_t *B, int32_t ldb, int8_t beta, int32_t *C,
              int32_t ldc, bool relu, int8_t *bias);
 
-  // 8 bit int write back
+  // 8 bits int write back
   // C = alpha * A * B + beta * C
   void WriteWithAlphaBeta(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
                           int32_t ldc);
@@ -239,7 +239,7 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
   float *packedC;
   float *zero;
 
-  // 8 bit int
+  // 8 bits int
   int8_t *packedA_int8;
   int8_t *packedB_int8;
   int32_t *packedC_int8;

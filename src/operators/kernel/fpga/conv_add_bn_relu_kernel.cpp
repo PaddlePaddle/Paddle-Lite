@@ -65,10 +65,11 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
 
   fpga::format_fp16_ofm(out);
 
-  fpga::WrapperConvArgs conv_arg = {0};
-  fpga::fill_conv_arg(&conv_arg, input, out, filter, relu_enabled,
-                      param->Groups(), param->Strides()[0], param->Strides()[1],
-                      param->Paddings()[0], param->Paddings()[1], bs_ptr);
+  fpga::SplitConvArgs conv_arg = {0};
+  fpga::fill_split_arg(&conv_arg, input, out, filter, relu_enabled,
+                       param->Groups(), param->Strides()[0],
+                       param->Strides()[1], param->Paddings()[0],
+                       param->Paddings()[1], bs_ptr);
   param->SetFpgaArgs(conv_arg);
   return true;
 }
