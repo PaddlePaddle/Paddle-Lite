@@ -338,6 +338,8 @@ inline Print &operator<<(Print &printer, const Tensor &tensor) {
   for (int i = 0; i < tensor.numel(); i += stride) {
     if (tensor.type() == typeid(float)) {
       printer << tensor.data<float>()[i] << " ";
+    } else if (tensor.type() == typeid(int32_t)) {
+      printer << tensor.data<int32_t>()[i] << " ";
     } else if (tensor.type() == typeid(int64_t)) {
       printer << tensor.data<int64_t>()[i] << " ";
     } else if (tensor.type() == typeid(int8_t)) {

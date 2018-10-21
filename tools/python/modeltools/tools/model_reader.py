@@ -1,6 +1,6 @@
 import os
 
-import framework_pb2 as framework_pb2
+from core import framework_pb2 as framework_pb2
 
 
 def read_model(model_path):
@@ -16,7 +16,7 @@ def read_model(model_path):
             # print desc.blocks
 
     except IOError:
-        print ": File not found.  Creating a new file."
+        print ": File not found."
 
 
 def get_file_size(file_path):
@@ -26,5 +26,5 @@ def get_file_size(file_path):
     return round(fsize, 2)
 
 
-path = "newyolo/__model__"
+path = '/Users/xiebaiyuan/PaddleProject/paddle-mobile/tools/python/modeltools/mobilenet/datas/sourcemodels/mobilenet_example/mobilenet/__model__'
 read_model(path)

@@ -12,14 +12,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include <cstdlib>
+#pragma once
 
+#include <cstdlib>
+#include <cstring>
+#include <string>
 #include "common/enforce.h"
 #include "common/log.h"
 
-#pragma once
-
 namespace paddle_mobile {
+
 template <int ID, typename Type>
 struct IDToType {
   typedef Type type_t;
@@ -79,13 +81,13 @@ struct Variant {
 
   template <typename T, typename... Args>
   void Set(Args &&... args) {
-    helper::Destroy(type_id, &data.data);
-    new (&data.data) T(std::forward<Args>(args)...);
+    helper::Destroy(type_id, data.data);
+    new (data.data) T(std::forward<Args>(args)...);
     type_id = typeid(T).hash_code();
   }
 
   void SetString(std::string &string) {
-    //    helper::Destroy(type_id, &data);
+    helper::Destroy(type_id, data.data);
     type_id = typeid(std::string).hash_code();
     strcpy(data.data, string.c_str());
   }
@@ -109,7 +111,7 @@ struct Variant {
           "stl lib with string copy)");
       exit(0);
     } else if (type_id == typeid(T).hash_code()) {
-      return *const_cast<T *>(reinterpret_cast<const T *>(&data));
+      return *const_cast<T *>(reinterpret_cast<const T *>(data.data));
     } else {
       PADDLE_MOBILE_THROW_EXCEPTION(" bad cast in variant");
       exit(0);
@@ -122,7 +124,8 @@ struct Variant {
   static inline size_t invalid_type() { return typeid(void).hash_code(); }
   typedef VariantHelper<Ts...> helper;
   size_t type_id;
-  RawData<helper::size> data;
+  // todo use an anto size to suite this.
+  RawData<64> data;
 };
 
 template <typename T>

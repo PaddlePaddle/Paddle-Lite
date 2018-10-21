@@ -45,13 +45,13 @@ def combine_bgrs_nchw(bgrs, means_b_g_r, scale, channel_type=ChannelType.BGR):
 
     print '------------------'
     print bgrs_float_array[0]
-    print bgrs_float_array[416 * 416 * 2 + 416 * 2 + 2]
+    print bgrs_float_array[224 * 224 * 2 + 224 * 2 + 2]
 
     # for i in range(0, 9):
     #     print'bs %d' % i
     #     print bs[i] / 255.
 
-    print bs[416 * 2 + 2] / 255.
+    print bs[224 * 2 + 2] / 255.
     print '--------------combine_bgrs_nchw-----------------end'
 
     return bgrs_float_array
@@ -64,6 +64,6 @@ def combine_bgrs_nchw(bgrs, means_b_g_r, scale, channel_type=ChannelType.BGR):
 # cv2.waitKey(0)
 
 
-bgrs = tools.resize_take_rgbs('datas/newyolo.jpg', (416, 416, 3))
+bgrs = tools.resize_take_rgbs('datas/jpgs/0000_0.9834-148196_82452-0ad4b83ec6bc0f9c5f28101539267054.jpg_p0_0.126571263346.jpg', (224, 224, 3))
 array = combine_bgrs_nchw(bgrs, (0, 0, 0), 1. / 255, ChannelType.RGB)
-tools.save_to_file('datas/desktop_1_3_416_416_nchw_float', array)
+tools.save_to_file('datas/desktop_1_3_224_224_nchw_float', array)
