@@ -28,13 +28,11 @@ limitations under the License. */
 
 int main() {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
-  paddle_mobile.SetThreadNum(4);
-  Tensor aa, bb, cc, scale, bias;
+  paddle_mobile.SetThreadNum(1);
+  Tensor aa, bb, cc;
   auto aaptr = aa.mutable_data<float>({m, k});
   auto bbptr = bb.mutable_data<float>({k, n});
   auto ccptr = cc.mutable_data<float>({m, n});
-  auto scaleptr = scale.mutable_data<float>({m});
-  auto biasptr = bias.mutable_data<float>({m});
 
   for (int i = 0; i < m * k; ++i) {
     aaptr[i] = 2;
@@ -45,23 +43,55 @@ int main() {
   for (int i = 0; i < m * n; ++i) {
     ccptr[i] = 2;
   }
-  for (int i = 0; i < m; ++i) {
-    scaleptr[i] = 1;
-    biasptr[i] = 0;
+
+  Tensor aa_int8, bb_int8, cc_int8;
+  auto aaptr_int8 = aa_int8.mutable_data<int8_t>({m, k});
+  auto bbptr_int8 = bb_int8.mutable_data<int8_t>({k, n});
+  auto ccptr_int8 = cc_int8.mutable_data<int32_t>({m, n});
+
+  for (int i = 0; i < m * k; ++i) {
+    aaptr_int8[i] = static_cast<int8_t>(2);
+  }
+  for (int i = 0; i < k * n; ++i) {
+    bbptr_int8[i] = static_cast<int8_t>(2);
+  }
+  for (int i = 0; i < m * n; ++i) {
+    ccptr_int8[i] = static_cast<int32_t>(2);
+  }
+
+  // float
+  // warm-up 10 times
+  for (int j = 0; j < 10; ++j) {
+    paddle_mobile::operators::math::matmul<float>(
+        aa, false, bb, false, static_cast<float>(1), &cc, static_cast<float>(0),
+        false, nullptr);
   }
 
   auto time1 = time();
   for (int j = 0; j < 10; ++j) {
     paddle_mobile::operators::math::matmul<float>(
         aa, false, bb, false, static_cast<float>(1), &cc, static_cast<float>(0),
-        false, biasptr);
-
-    //    paddle_mobile::operators::math::matmulWithBn<float>(
-    //        aa, false, bb, false, static_cast<float>(1), &cc,
-    //        static_cast<float>(0), true, &scale, &bias, 0);
+        false, nullptr);
   }
   auto time2 = time();
-  std::cout << "gemm  cost :" << time_diff(time1, time2) / 10 << "ms\n";
+  std::cout << "float gemm  cost :" << time_diff(time1, time2) / 10 << "ms\n";
+
+  // int8_t
+  // warm-up 10 times
+  for (int j = 0; j < 10; ++j) {
+    paddle_mobile::operators::math::matmul<int8_t>(
+        aa_int8, false, bb_int8, false, static_cast<int8_t>(1), &cc_int8,
+        static_cast<int8_t>(0), false, nullptr);
+  }
+
+  auto time3 = time();
+  for (int j = 0; j < 10; ++j) {
+    paddle_mobile::operators::math::matmul<int8_t>(
+        aa_int8, false, bb_int8, false, static_cast<int8_t>(1), &cc_int8,
+        static_cast<int8_t>(0), false, nullptr);
+  }
+  auto time4 = time();
+  std::cout << "int8_t gemm  cost :" << time_diff(time3, time4) / 10 << "ms\n";
 
   return 0;
 }
