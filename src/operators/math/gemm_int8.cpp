@@ -32,11 +32,10 @@ void Gemm::AddDot6x8(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
                      int32_t ldc) {
 #if __ARM_NEON
 #if __aarch64__
-    // TODO
+// TODO
 #else
-  const int8_t *a_ptr, *b_ptr;
-  a_ptr = a;
-  b_ptr = b;
+  const int8_t *a_ptr = a;
+  const int8_t *b_ptr = b;
   int32_t kc1 = k >> 3;
   int32_t kc2 = k & 7;
   int32_t kc3 = kc2 >> 2;
@@ -652,7 +651,7 @@ void Gemm::WriteBasic(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
                       int32_t ldc) {
 #if __ARM_NEON
 #if __aarch64__
-    // TODO
+// TODO
 #else
   int32_t nc1 = nc >> 4;
   int32_t _nc1 = nc & 15;
