@@ -235,8 +235,8 @@ void Gemm::AddDot4x8(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
       :
       : [a_ptr] "r"(a_ptr), [b_ptr] "r"(b_ptr), [c] "r"(c), [kc1] "r"(kc1),
         [kc3] "r"(kc3), [kc5] "r"(kc5), [kc6] "r"(kc6), [step] "r"(step)
-      : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
-        "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15");
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8",
+        "q9", "q10", "q11", "q12", "q13", "q14", "q15");
 #endif  // __aarch64__
 #endif  // __ARM_NEON
 }
@@ -546,7 +546,7 @@ void Gemm::InnerKernelWithBias(int32_t mc, int32_t nc, int8_t alpha,
 #pragma omp parallel for
   for (int32_t j = 0; j < nc; j += NR) {
     for (int32_t i = 0; i < mc; i += MR_INT8) {
-//      AddDot6x8(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+      //      AddDot6x8(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
       AddDot4x8(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
     }
   }
@@ -764,7 +764,7 @@ void Gemm::Sgemm(int32_t m, int32_t n, int32_t k, int8_t alpha, const int8_t *A,
     PackMatrixB_8c(KC, nc, nc % NR, &B(0, j), ldb, packedB_int8);
     for (int32_t i = 0; i < m; i += MC) {
       mc = s_min(m - i, MC);
-//      PackMatrixA_6r(mc, KC, mc % MR_INT8, &A(i, 0), lda, packedA_int8);
+      //      PackMatrixA_6r(mc, KC, mc % MR_INT8, &A(i, 0), lda, packedA_int8);
       PackMatrixA_4r(mc, KC, mc % MR_INT8, &A(i, 0), lda, packedA_int8);
       if (bias == nullptr) {
         InnerKernelWithBias(mc, nc, alpha, packedA_int8, packedB_int8, beta,
