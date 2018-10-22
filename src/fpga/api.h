@@ -89,12 +89,20 @@ struct ConcatArgs {
   uint32_t width;
 };
 
-struct WrapperConvArgs {
+struct SplitConvArgs {
   uint32_t split_num;
   uint32_t group_num;
   uint32_t filter_num;
   struct ImageOutputArgs output;
   struct ConvArgs* conv_args;
+  struct ConcatArgs concat_arg;
+};
+
+struct GroupConvArgs {
+  uint32_t group_num;
+  uint32_t filter_num;
+  struct ImageOutputArgs output;
+  struct SplitConvArgs* conv_args;
   struct ConcatArgs concat_arg;
 };
 
@@ -159,30 +167,6 @@ struct MemoryCacheArgs {
 #define IOCTL_FPGA_REG_READ _IOW(IOCTL_FPGA_MAGIC, 28, struct FpgaRegReadArgs)
 #define IOCTL_FPGA_REG_WRITE _IOW(IOCTL_FPGA_MAGIC, 29, struct FpgaRegWriteArgs)
 
-enum FPGA_ERR_TYPE {
-  ERR_IOCTL_CMD = -1,
-  ERR_TIMEOUT = -2,
-  ERR_COMPLETION_TIMEOUT = -3,
-  ERR_INVALID_FPGA_ADDR = -4,
-  ERR_NOMEM = -5,
-  ERR_NO_RESERVE_MEM = -6,
-  ERR_COPY_FROM_USER = -7,
-  ERR_COPY_TO_USER = -8,
-  ERR_DEL_TIMER = -9,
-  ERR_ENABLE_MSI = -10,
-  ERR_REGISTER_IRQ = -11,
-  ERR_PCIE_REGISTER = -12,
-  ERR_PCIE_PROBE = -13,
-  ERR_REGISTER_BLOCK = -14,
-  ERR_ALLOC_GENDISK = -15,
-  ERR_INIT_QUEUE = -16,
-  ERR_WAIT = -17,
-  ERR_ECC_ERROR = -31,
-  ERR_FPGA_FAIL_STOP = -64,
-  ERR_FPGA_DEBUG_STOP = -113,
-  DEV_TMP_UNAVAILABLE = -128
-};
-
 //============================== API =============================
 
 int open_device();
@@ -195,7 +179,7 @@ int fpga_flush(void* address, size_t size);
 int fpga_invalidate(void* address, size_t size);
 
 int PerformBypass(const struct BypassArgs& args);
-int ComputeFpgaConv(const struct WrapperConvArgs& args);
+int ComputeFpgaConv(const struct SplitConvArgs& args);
 int ComputeFpgaPool(const struct PoolingArgs& args);
 int ComputeFpgaEWAdd(const struct EWAddArgs& args);
 int ComputeFPGAConcat(const struct ConcatArgs& args);
@@ -220,10 +204,10 @@ void format_bias_scale_array(float** bias_scale_array,
 void format_concat_output(framework::Tensor* out, int height, int width,
                           int image_num, uint32_t* channel_num);
 
-void fill_conv_arg(struct WrapperConvArgs* arg, framework::Tensor* input,
-                   framework::Tensor* out, framework::Tensor* filter,
-                   bool relu_enabled, int group_num, int stride_h, int stride_w,
-                   int padding_h, int padding_w, float* bs_ptr);
+void fill_split_arg(struct SplitConvArgs* arg, framework::Tensor* input,
+                    framework::Tensor* out, framework::Tensor* filter,
+                    bool relu_enabled, int group_num, int stride_h,
+                    int stride_w, int padding_h, int padding_w, float* bs_ptr);
 
 half fp32_2_fp16(float fp32_num);
 float fp16_2_fp32(half fp16_num);

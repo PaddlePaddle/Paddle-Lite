@@ -546,11 +546,11 @@ class MulParam : OpParam {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::WrapperConvArgs fpga_conv_args;
+  fpga::SplitConvArgs fpga_conv_args;
 
  public:
-  const fpga::WrapperConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::WrapperConvArgs &args) { fpga_conv_args = args; }
+  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 #endif
@@ -999,6 +999,28 @@ class MultiClassNMSParam : public OpParam {
 };
 #endif
 
+#ifdef POLYGONBOXTRANSFORM_OP
+template <typename Dtype>
+class PolygonBoxTransformParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  PolygonBoxTransformParam(const VariableNameMap &inputs,
+                           const VariableNameMap &outputs,
+                           const AttributeMap &attrs, const Scope &scope) {
+    input_ = InputFrom<GType>(inputs, scope);
+    output_ = OutputFrom<GType>(outputs, scope);
+  }
+  const RType *Input() const { return input_; }
+  RType *Output() const { return output_; }
+
+ private:
+  RType *input_;
+  RType *output_;
+};
+#endif
+
 template <typename Dtype>
 class FeedParam : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
@@ -1401,11 +1423,11 @@ class FusionFcParam : public OpParam {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::WrapperConvArgs fpga_conv_args;
+  fpga::SplitConvArgs fpga_conv_args;
 
  public:
-  const fpga::WrapperConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::WrapperConvArgs &args) { fpga_conv_args = args; }
+  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 
@@ -1441,11 +1463,11 @@ class FusionConvAddParam : public ConvParam<Dtype> {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::WrapperConvArgs fpga_conv_args;
+  fpga::SplitConvArgs fpga_conv_args;
 
  public:
-  const fpga::WrapperConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::WrapperConvArgs &args) { fpga_conv_args = args; }
+  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 
@@ -1496,11 +1518,11 @@ class FusionConvAddPReluParam : public ConvParam<Dtype> {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::WrapperConvArgs fpga_conv_args;
+  fpga::SplitConvArgs fpga_conv_args;
 
  public:
-  const fpga::WrapperConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::WrapperConvArgs &args) { fpga_conv_args = args; }
+  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 #endif
@@ -1554,11 +1576,11 @@ class FusionConvAddAddPReluParam : public ConvParam<Dtype> {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::WrapperConvArgs fpga_conv_args;
+  fpga::SplitConvArgs fpga_conv_args;
 
  public:
-  const fpga::WrapperConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::WrapperConvArgs &args) { fpga_conv_args = args; }
+  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 #endif
@@ -1629,11 +1651,11 @@ class FusionConvAddBNReluParam : public ConvParam<Dtype> {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::WrapperConvArgs fpga_conv_args;
+  fpga::SplitConvArgs fpga_conv_args;
 
  public:
-  const fpga::WrapperConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::WrapperConvArgs &args) { fpga_conv_args = args; }
+  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 #endif
@@ -1715,11 +1737,11 @@ class FusionConvBNAddReluParam : public ConvParam<Dtype> {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::WrapperConvArgs fpga_conv_args;
+  fpga::SplitConvArgs fpga_conv_args;
 
  public:
-  const fpga::WrapperConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::WrapperConvArgs &args) { fpga_conv_args = args; }
+  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 #endif
@@ -1782,11 +1804,11 @@ class FusionConvBNParam : public ConvParam<Dtype> {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::WrapperConvArgs fpga_conv_args;
+  fpga::SplitConvArgs fpga_conv_args;
 
  public:
-  const fpga::WrapperConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::WrapperConvArgs &args) { fpga_conv_args = args; }
+  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 #endif
@@ -1857,11 +1879,11 @@ class FusionConvAddBNParam : public ConvParam<Dtype> {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::WrapperConvArgs fpga_conv_args;
+  fpga::SplitConvArgs fpga_conv_args;
 
  public:
-  const fpga::WrapperConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::WrapperConvArgs &args) { fpga_conv_args = args; }
+  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 #endif
@@ -1983,11 +2005,11 @@ class FusionConvBNReluParam : public ConvParam<Dtype> {
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
-  fpga::WrapperConvArgs fpga_conv_args;
+  fpga::SplitConvArgs fpga_conv_args;
 
  public:
-  const fpga::WrapperConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::WrapperConvArgs &args) { fpga_conv_args = args; }
+  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
 #endif
 };
 #endif
