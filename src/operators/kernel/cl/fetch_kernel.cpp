@@ -14,6 +14,8 @@ limitations under the License. */
 
 #include "operators/kernel/fetch_kernel.h"
 #include "framework/cl/cl_tensor.h"
+//#include "common/common.h"
+//#include <iostream>
 
 namespace paddle_mobile {
 namespace operators {
@@ -77,10 +79,18 @@ void FetchKernel<GPU_CL, float>::Compute(const FetchParam<GPU_CL> &param) {
   clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
                          default_work_size.data(), NULL, 0, NULL, NULL);
 
+//  auto time1 = paddle_mobile::time();
+
 //  printf(" before finish \n");
 //  clFlsh(this->cl_helper_.CLCommandQueue());
-//  clFinish(this->cl_helper_.CLCommandQueue());
+  clFinish(this->cl_helper_.CLCommandQueue());
 //  printf(" after finish \n");
+
+//  auto time2 = paddle_mobile::time();
+//
+//
+//  std::cout << " finish  cost :" << paddle_mobile::time_diff(time1, time2)
+//            << "ms" << std::endl;
 
   memcpy(out->data<float>(), out_cl_tensor.Data<float>(), out->memory_size());
 }
