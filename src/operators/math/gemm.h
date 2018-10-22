@@ -22,6 +22,7 @@ limitations under the License. */
 #define C(i, j) C[(i)*ldc + (j)]
 
 #if __aarch64__
+#define MR_INT8 4
 #define MR 6
 #define NR 16
 #else
