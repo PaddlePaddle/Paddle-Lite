@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.0)
 project(paddle-mobile)
 
 # select the platform to build
-option(CPU "armv7 with neon support" ON)
+option(CPU "armv7 with neon support" OFF)
 option(MALI_GPU "mali gpu support" OFF)
-option(FPGA "fpga support" OFF)
+option(FPGA "fpga support" ON)
 
 option(USE_OPENMP "openmp support" OFF)
 option(DEBUGING "enable debug mode" ON)
@@ -29,7 +29,10 @@ if(DEBUGING)
     message(STATUS "debugging mode")
     add_definitions(-DPADDLE_MOBILE_DEBUG)
 else()
-    add_definitions(-fvisibility=hidden -fvisibility-inlines-hidden)
+    if(FPGA)
+    else()
+        add_definitions(-fvisibility=hidden -fvisibility-inlines-hidden)
+    endif()
 endif()
 
 if(USE_EXCEPTION)
@@ -93,8 +96,7 @@ else()
 endif()
 
 if(FPGA)
-    set(DEBUGING ON)
-    add_definitions(-DPADDLE_MOBILE_DEBUG)
+    message("FPGA mode enabled")
     add_definitions(-DPADDLE_MOBILE_FPGA)
 else()
     file(GLOB_RECURSE _tmp_list src/operators/kernel/fpga/*.cpp src/operators/kernel/fpga/*.cc)
@@ -177,6 +179,10 @@ if(DEBUGING)
     else()
         add_subdirectory(test)
     endif()
+elseif(FPGA)
+    add_subdirectory(test)
 endif()
+
+
 
 
