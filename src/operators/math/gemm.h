@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma once
+#include <stdint-gcc.h>
 #include <string>
 #include "common/log.h"
 
@@ -25,6 +26,7 @@ limitations under the License. */
 #define MR 6
 #define NR 16
 #else
+#define MR_INT8 4
 #define MR 6
 #define NR 8
 #endif
@@ -189,6 +191,8 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
 
   // 8 bits function cluster begins
   // 8 bits int small block inner product
+  void AddDot4x8(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
+                 int32_t ldc);
   void AddDot6x8(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
                  int32_t ldc);
 
@@ -199,6 +203,8 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
                            int8_t *bias);
 
   // 8 bits int pack function
+  void PackMatrixA_4r(int32_t m, int32_t k, int32_t m_tail, const int8_t *A,
+                      int32_t lda, int8_t *buffer);
   void PackMatrixA_6r(int32_t m, int32_t k, int32_t m_tail, const int8_t *A,
                       int32_t lda, int8_t *buffer);
   void PackMatrixB_8c(int32_t k, int32_t n, int32_t n_tail, const int8_t *B,
