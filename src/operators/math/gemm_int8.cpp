@@ -34,8 +34,9 @@ void Gemm::AddDot6x8(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
 #if __aarch64__
 // TODO
 #else
-  const int8_t *a_ptr = a;
-  const int8_t *b_ptr = b;
+  const int8_t *a_ptr, *b_ptr;
+  a_ptr = a;
+  b_ptr = b;
   int32_t kc1 = k >> 3;
   int32_t kc2 = k & 7;
   int32_t kc3 = kc2 >> 2;
