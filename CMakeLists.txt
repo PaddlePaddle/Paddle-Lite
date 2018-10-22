@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.0)
 project(paddle-mobile)
 
 # select the platform to build
-option(CPU "armv7 with neon support" OFF)
+option(CPU "armv7 with neon support" ON)
 option(MALI_GPU "mali gpu support" OFF)
-option(FPGA "fpga support" ON)
+option(FPGA "fpga support" OFF)
 
 option(USE_OPENMP "openmp support" OFF)
 option(DEBUGING "enable debug mode" ON)
