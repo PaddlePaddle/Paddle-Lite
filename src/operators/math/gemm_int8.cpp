@@ -31,6 +31,9 @@ namespace math {
 void Gemm::AddDot6x8(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
                      int32_t ldc) {
 #if __ARM_NEON
+#if __aarch64__
+    // TODO
+#else
   const int8_t *a_ptr, *b_ptr;
   a_ptr = a;
   b_ptr = b;
@@ -435,7 +438,8 @@ void Gemm::AddDot6x8(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
         [kc3] "r"(kc3), [kc5] "r"(kc5), [kc6] "r"(kc6), [step] "r"(step)
       : "cc", "memory", "r0", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
         "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15");
-#endif
+#endif  // __aarch64__
+#endif  // __ARM_NEON
 }
 
 // 8 bits int inner product
@@ -539,6 +543,9 @@ void Gemm::PackMatrixB_8c(int32_t k, int32_t n, int32_t n_tail, const int8_t *B,
     for (int32_t i = 0; i < k; ++i) {
       const int8_t *b0 = &B(i, j);
 #if __ARM_NEON
+#if __aarch64__
+      // TODO
+#else
       asm volatile(
           //          "pld        [%[b0]]                     \n\t"
           "vld1.s8    {d0},   [%[b0]]         \n\t"
@@ -546,6 +553,7 @@ void Gemm::PackMatrixB_8c(int32_t k, int32_t n, int32_t n_tail, const int8_t *B,
           : [local_buffer] "+r"(local_buffer)
           : [b0] "r"(b0)
           : "memory", "q0");
+#endif  // __aarch64__
 #else
       *local_buffer++ = *b0++;
       *local_buffer++ = *b0++;
@@ -643,6 +651,9 @@ void Gemm::WriteWithAlphaBeta(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
 void Gemm::WriteBasic(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
                       int32_t ldc) {
 #if __ARM_NEON
+#if __aarch64__
+    // TODO
+#else
   int32_t nc1 = nc >> 4;
   int32_t _nc1 = nc & 15;
   int32_t step = sizeof(int32_t) * ldc;
@@ -696,6 +707,7 @@ void Gemm::WriteBasic(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
       }
     }
   }
+#endif  // __aarch64__
 #endif  // __ARM_NEON
 }
 
