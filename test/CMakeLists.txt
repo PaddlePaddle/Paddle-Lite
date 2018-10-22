@@ -186,6 +186,10 @@ if (NOT FOUND_MATCH)
     target_link_libraries(test-polygon-box-transform-op paddle-mobile)
 
     # gen test
+    ADD_EXECUTABLE(test-fill-constant-op operators/test_fill_constant_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-fill-constant-op paddle-mobile)
+
+    # gen test
     ADD_EXECUTABLE(test-reshape-op operators/test_reshape_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-reshape-op paddle-mobile)
 
