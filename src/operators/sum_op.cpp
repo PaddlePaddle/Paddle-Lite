@@ -65,7 +65,6 @@ REGISTER_OPERATOR_CPU(sum, ops::SumOp);
 REGISTER_OPERATOR_MALI_GPU(sum, ops::ConcatOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(sum, ops::ConcatOp);
 #endif
 
 #endif

@@ -21,7 +21,10 @@ namespace paddle_mobile {
 namespace fpga {
 namespace filter {
 
-int calc_division_capacity(int chw) { return 2048 / ((chw + 15) / 16) * 32; }
+int calc_division_capacity(int chw) {
+  int n = 2048 / ((chw + 15) / 16) * 32;
+  return n < 2048 ? n : 2048;
+}
 
 int calc_split_num(int num, int division_capacity) {
   return (num + division_capacity - 1) / division_capacity;

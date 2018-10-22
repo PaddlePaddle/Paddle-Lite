@@ -30,7 +30,11 @@ int main() {
                              input_tensor.data<float>() + input_tensor.numel());
 
     paddle_mobile.FeedData(input_tensor);
-    paddle_mobile.Predict_To(-1);
+    for (int i = 0; i < 1000; i++) {
+      paddle_mobile.Predict_To(-1);
+      if (i % 100 == 0) std::cout << i << std::endl;
+    }
+
     //    paddle_mobile.Predict_From(73);
     //    paddle_mobile.Predict_From_To(72, 73);
 
