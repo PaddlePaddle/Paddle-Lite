@@ -61,38 +61,11 @@ endif ()
 
 list(FIND NET "FPGAnets" CON)
 if (CON GREATER -1)
-    ADD_EXECUTABLE(test-resnet net/test_resnet.cpp test_helper.h test_include.h executor_for_test.h)
-    target_link_libraries(test-resnet paddle-mobile)
-
     ADD_EXECUTABLE(test-resnet50 fpga/test_resnet50.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-resnet50 paddle-mobile)
 
-    ADD_EXECUTABLE(test-fpga-EW fpga/test_fpga_EW.cpp test_helper.h test_include.h executor_for_test.h)
-    target_link_libraries(test-fpga-EW paddle-mobile)
-
-    ADD_EXECUTABLE(test-fpga-conv fpga/test_fpga_conv.cpp test_helper.h test_include.h executor_for_test.h)
-    target_link_libraries(test-fpga-conv paddle-mobile)
-
-    ADD_EXECUTABLE(test-fpga-pooling fpga/test_fpga_pooling.cpp test_helper.h test_include.h executor_for_test.h)
-    target_link_libraries(test-fpga-pooling paddle-mobile)
-
-    ADD_EXECUTABLE(test-fpga-bypass fpga/test_fpga_bypass.cpp test_helper.h test_include.h executor_for_test.h)
-    target_link_libraries(test-fpga-bypass paddle-mobile)
-
-    ADD_EXECUTABLE(test-fpga-softmax fpga/test_fpga_softmax.cpp test_helper.h test_include.h executor_for_test.h)
-    target_link_libraries(test-fpga-softmax paddle-mobile)
-
-    ADD_EXECUTABLE(test-fpga-concat fpga/test_fpga_concat.cpp test_helper.h test_include.h executor_for_test.h)
-    target_link_libraries(test-fpga-concat paddle-mobile)
-
-    ADD_EXECUTABLE(test-tensor-quant fpga/test_tensor_quant.cpp test_helper.h test_include.h executor_for_test.h)
-    target_link_libraries(test-tensor-quant paddle-mobile)
-
-    ADD_EXECUTABLE(test-fpga-concat-op fpga/test_concat_op.cpp test_helper.h test_include.h)
-    target_link_libraries(test-fpga-concat-op paddle-mobile)
-
-    ADD_EXECUTABLE(test-format-data fpga/test_format_data.cpp test_helper.h test_include.h)
-    target_link_libraries(test-format-data paddle-mobile)
+#    ADD_EXECUTABLE(test-resnet net/test_resnet.cpp test_helper.h test_include.h executor_for_test.h)
+#    target_link_libraries(test-resnet paddle-mobile)
     set(FOUND_MATCH ON)
 
 endif ()
@@ -207,6 +180,10 @@ if (NOT FOUND_MATCH)
     # gen test
     ADD_EXECUTABLE(test-multiclassnms-op operators/test_multiclass_nms_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-multiclassnms-op paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-polygon-box-transform-op operators/test_polygon_box_transform_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-polygon-box-transform-op paddle-mobile)
 
     # gen test
     ADD_EXECUTABLE(test-reshape-op operators/test_reshape_op.cpp test_helper.h test_include.h)
