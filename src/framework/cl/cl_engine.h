@@ -90,7 +90,7 @@ class CLEngine {
 
   bool BuildProgram(cl_program program) {
     cl_int status;
-    status = clBuildProgram(program, 0, 0, "-cl-fast-relaxed-math", 0, 0);
+    status = clBuildProgram(program, 0, 0, "-cl-fast-relaxed-math -I cl_kernel", 0, 0);
 
     CL_CHECK_ERRORS(status);
 
