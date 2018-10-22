@@ -1063,6 +1063,42 @@ class FetchParam : public OpParam {
   RType *out_;
 };
 
+#ifdef FILL_CONSTANT_OP
+template <typename Dtype>
+class FillConstantParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  FillConstantParam(const VariableNameMap &inputs,
+                    const VariableNameMap &outputs, const AttributeMap &attrs,
+                    const Scope &scope) {
+    out_var_ = OutVarFrom(outputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+    dtype_ = GetAttr<int>("dtype", attrs);
+    shape_ = GetAttr<vector<int>>("shape", attrs);
+    value_ = GetAttr<float>("value", attrs);
+  }
+
+  Variable *OutVar() const { return out_var_; }
+
+  RType *Out() const { return out_; }
+
+  const int &DataDtype() const { return dtype_; }
+
+  const vector<int> &Shape() const { return shape_; }
+
+  const float &Value() const { return value_; }
+
+ private:
+  Variable *out_var_;
+  RType *out_;
+  int dtype_;
+  vector<int> shape_;
+  float value_;
+};
+#endif
+
 #ifdef TRANSPOSE_OP
 template <typename Dtype>
 class TransposeParam : public OpParam {
