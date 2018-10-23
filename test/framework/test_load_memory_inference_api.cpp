@@ -14,8 +14,10 @@ limitations under the License. */
 
 #include <string>
 
+#include <iostream>
 #include "../test_helper.h"
-#include "../test_include.h"
+#include "io/paddle_inference_api.h"
+
 static size_t ReadBuffer(const char *file_name, uint8_t **out) {
   FILE *fp;
   fp = fopen(file_name, "rb");
@@ -50,18 +52,29 @@ static char *Get_binary_data(std::string filename) {
   return data;
 }
 
-int main() {
-  paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
+paddle_mobile::PaddleMobileConfig GetConfig() {
+  paddle_mobile::PaddleMobileConfig config;
+  config.precision = paddle_mobile::PaddleMobileConfig::FP32;
+  config.device = paddle_mobile::PaddleMobileConfig::kCPU;
+  const std::shared_ptr<paddle_mobile::PaddleModelMemoryPack> &memory_pack =
+      std::make_shared<paddle_mobile::PaddleModelMemoryPack>();
   auto model_path = std::string(g_genet_combine) + "/model";
   auto params_path = std::string(g_genet_combine) + "/params";
-  uint8_t *bufModel = nullptr;
-  size_t sizeBuf = ReadBuffer(model_path.c_str(), &bufModel);
-  uint8_t *bufParams = nullptr;
-
-  std::cout << "sizeBuf: " << sizeBuf << std::endl;
-  size_t sizeParams = ReadBuffer(params_path.c_str(), &bufParams);
-  std::cout << "sizeParams: " << sizeParams << std::endl;
-
-  paddle_mobile.LoadCombinedMemory(sizeBuf, bufModel, sizeParams, bufParams);
+  memory_pack->model_size =
+      ReadBuffer(model_path.c_str(), &memory_pack->model_buf);
+  std::cout << "sizeBuf: " << memory_pack->model_size << std::endl;
+  memory_pack->combined_params_size =
+      ReadBuffer(params_path.c_str(), &memory_pack->combined_params_buf);
+  std::cout << "sizeParams: " << memory_pack->combined_params_size << std::endl;
+  memory_pack->from_memory = true;
+  config.memory_pack = *memory_pack;
+  config.thread_num = 4;
+  return config;
+}
+int main() {
+  paddle_mobile::PaddleMobileConfig config = GetConfig();
+  auto predictor = paddle_mobile::CreatePaddlePredictor<
+      paddle_mobile::PaddleMobileConfig,
+      paddle_mobile::PaddleEngineKind::kPaddleMobile>(config);
   return 0;
 }
