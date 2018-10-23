@@ -14,7 +14,7 @@ ___
 3. 装载驱动：sudo insmod [fpgadrv.ko](http://mms-graph.bj.bcebos.com/paddle-mobile/fpga/files.tar.gz)
 
 
-##编译工程
+## 编译工程
 ___
 1. 将最新的paddle mobile 代码复制到ZCU102开发板中。
 2. 进入paddle-mobile根目录， CMakeLists.txt 设置平台为 option(FPGA "fpga support" ON)。CPU和MALI\_GPU选项设置为OFF。
