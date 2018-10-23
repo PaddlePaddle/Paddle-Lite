@@ -343,7 +343,9 @@ inline Print &operator<<(Print &printer, const Tensor &tensor) {
     } else if (tensor.type() == typeid(int64_t)) {
       printer << tensor.data<int64_t>()[i] << " ";
     } else if (tensor.type() == typeid(int8_t)) {
-      printer << static_cast<int32_t>(tensor.data<int8_t>()[i]) << " ";
+      printer << static_cast<int>(tensor.data<int8_t>()[i]) << " ";
+    } else if (tensor.type() == typeid(int32_t)) {
+      printer << tensor.data<int32_t>()[i] << " ";
     }
   }
 #endif

@@ -14,7 +14,7 @@ limitations under the License. */
 
 #ifdef ELEMENTWISEMUL_OP
 
-#include "elementwise_mul_op.h"
+#include "operators/elementwise_mul_op.h"
 
 namespace paddle_mobile {
 namespace operators {

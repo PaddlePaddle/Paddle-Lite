@@ -18,14 +18,6 @@ limitations under the License. */
 
 namespace paddle_mobile {
 
-// static float g_test_data[50] = {
-//   -5.55, -5.5, -5.45, -5.0, -4.55, -4.5, -4.45, -4.0, -3.55, -3.5,
-//   -3.45, -3.01, -2.75, -2.5, -2.501, -2.49, -2.01, -1.75, -1.5, -1.25,
-//   -1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0, 1.25,
-//   1.5, 1.75, 2.01, 2.49, 2.501, 2.5, 2.75, 3.01, 3.45, 3.5,
-//   3.55, 4.0, 4.45, 4.5, 4.55, 5.0, 5.45, 5.5, 5.55, 6.0,
-// };
-
 static float find_abs_max(const Tensor *input) {
   float max_abs = 0.f;
   const float *x = input->data<const float>();
@@ -60,6 +52,16 @@ static void quantize_round_to_even(const Tensor *input, const float scale,
   }
 }
 
+static void quantize_round_to_nearest(const Tensor *input, const float scale,
+                                      Tensor *output) {
+  const float *x = input->data<const float>();
+  int8_t *y = output->mutable_data<int8_t>();
+  size_t size = input->numel();
+  for (size_t i = 0; i < size; ++i) {
+    y[i] = round(x[i] * scale);
+  }
+}
+
 int TestQuqntizeOp() {
   framework::DDim dim = framework::make_ddim({1, 3, 224, 224});
 
@@ -88,15 +90,16 @@ int TestQuqntizeOp() {
   auto output_scale = output_scale_var->template Get<framework::LoDTensor>();
   const float *output_scale_data = output_scale->data<float>();
 
-  float max_abs = find_abs_max(input);
-  float output_scale_cmp = 127 / max_abs;
+  float output_scale_cmp = find_abs_max(input);
   PADDLE_MOBILE_ENFORCE(output_scale_cmp == output_scale_data[0],
                         "output_scale = %.6f, output_scale_cmp = %.6f",
                         output_scale_cmp, output_scale_data[0]);
 
   framework::Tensor output_cmp;
   output_cmp.Resize(dim);
-  quantize_round_to_even(input, output_scale_cmp, &output_cmp);
+  float scale = 127 / output_scale_cmp;
+  // quantize_round_to_even(input, scale, &output_cmp);
+  quantize_round_to_nearest(input, scale, &output_cmp);
   int8_t *output_cmp_data = output_cmp.data<int8_t>();
   for (int i = 0; i < output->numel(); ++i) {
     PADDLE_MOBILE_ENFORCE(output_data[i] == output_cmp_data[i],

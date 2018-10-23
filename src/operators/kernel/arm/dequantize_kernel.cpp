@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef PADDLE_MOBILE_CPU
+#ifdef DEQUANT_OP
 
 #include "operators/kernel/dequantize_kernel.h"
 
@@ -38,7 +38,8 @@ void DequantizeKernel<CPU, float>::Compute(
   const int32_t *x = input->data<const int32_t>();
   float *y = output->mutable_data<float>();
   size_t size = output->numel();
-  float scale = 1.f / (activation_scale * weight_scale);
+  // float scale = 1.f / (activation_scale * weight_scale);
+  float scale = activation_scale / weight_scale;
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
   size_t loop = size >> 4;
   size_t remain = size & 0xF;
