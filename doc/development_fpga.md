@@ -1,8 +1,8 @@
-#FPGA开发文档
+# FPGA开发文档
 
 FPGA平台的代码在Xilinx ZCU102 revision 1.0开发板测试Resnet50成功，预测结果正确。
 
-##准备硬件
+## 准备硬件
 ___
 
 1. 购买Xilinx ZCU102 revision1.0 开发板
@@ -24,13 +24,13 @@ ___
     * cmake ..
     * make
 
-#准备模型和数据
+## 准备模型和数据
 ___
 1. 模型文件放在./test/models/resnet50中。将[\_\_model\_\_](http://mms-graph.bj.bcebos.com/paddle-mobile/fpga/files.tar.gz)文件复制到此文件夹下。
 2. 另外下载模型[权重文件](http://paddle-imagenet-models.bj.bcebos.com/resnet_50_model.tar),解压后也放在./test/models/resnet50 中。
 3. 将数据文件[image_src_float](http://mms-graph.bj.bcebos.com/paddle-mobile/fpga/files.tar.gz)复制到/test/images下。此数据文件对应着标准数据集中的ILSVRC2012_val_00000885.JPEG，分类标签为80， 对应着"black grouse".
 
-##运行程序
+## 运行程序
 ___
 1. 进入./test/build目录。
 2. sudo ./test-resnet50
