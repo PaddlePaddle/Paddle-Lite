@@ -12,25 +12,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef DEQUANT_OP
+#ifdef CONV_OP
 
-#include "operators/dequantize_op.h"
+#pragma once
+
+#include "framework/tensor.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename DeviceType, typename T>
-void DequantizeOp<DeviceType, T>::InferShape() const {
-  const auto& input_dims = this->param_.input_->dims();
-  this->param_.out_->Resize(input_dims);
-}
+void conv3x3s1_int8(const framework::Tensor& input,
+                    const framework::Tensor& weight, framework::Tensor* output);
+
+void conv3x3s1_int8_4c(const framework::Tensor& input,
+                       const framework::Tensor& weight,
+                       framework::Tensor* output);
+
+void conv5x5s1_int8(const framework::Tensor& input,
+                    const framework::Tensor& weight, framework::Tensor* output);
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(dequantize, ops::DequantizeOp);
-#endif
 
 #endif

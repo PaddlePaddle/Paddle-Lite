@@ -156,7 +156,7 @@ class AttrReader {
   template <typename T>
   inline T Get(const string &name) const {
     PADDLE_MOBILE_ENFORCE(attrs_.count(name) != 0,
-                          "%s should  be in AttributeMap", name);
+                          "%s should  be in AttributeMap", name.c_str());
     return ((Attribute)attrs_.at(name)).Get<T>();
   }
 
