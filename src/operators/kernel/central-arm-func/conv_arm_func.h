@@ -120,10 +120,15 @@ inline void ConvCompute_int8(const ConvParam<CPU> &param) {
   typedef void (*ConvFunc)(const Tensor &input, const Tensor &kernel,
                            Tensor *output);
   static ConvFunc conv_funcs_table[7][5] = {
-      {0, 0, 0, 0, 0},                                // k = 1
-      {0, 0, 0, 0, 0}, {conv3x3s1_int8, 0, 0, 0, 0},  // k = 3
-      {0, 0, 0, 0, 0}, {conv5x5s1_int8, 0, 0, 0, 0},  // k = 5
-      {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},               // k = 7
+      {0, 0, 0, 0, 0},  // k = 1
+      //      {0, 0, 0, 0, 0}, {conv3x3s1_int8, 0, 0, 0, 0},  // k = 3
+      //      {0, 0, 0, 0, 0}, {conv5x5s1_int8, 0, 0, 0, 0},  // k = 5
+      {0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0},  // k = 3
+      {0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0},  // k = 5
+      {0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 0},  // k = 7
   };
   const Tensor *input = param.Input();
   Tensor *filter = param.Filter();
