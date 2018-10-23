@@ -24,10 +24,6 @@ namespace operators {
 void conv3x3s1_int8(const framework::Tensor& input,
                     const framework::Tensor& weight, framework::Tensor* output);
 
-void conv3x3s1_int8_4c(const framework::Tensor& input,
-                       const framework::Tensor& weight,
-                       framework::Tensor* output);
-
 void conv5x5s1_int8(const framework::Tensor& input,
                     const framework::Tensor& weight, framework::Tensor* output);
 
