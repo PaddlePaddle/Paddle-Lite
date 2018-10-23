@@ -3379,7 +3379,7 @@ void Gemm::SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A,
     // 对 B 分块
     NC = L1 / (KC * sizeof(float));
     if (NC == 0) {
-      NC == NR;
+      NC = NR;
     } else {
       int nblock_num = (n + NC - 1) / NC;
       NC = (n + nblock_num - 1) / nblock_num;
