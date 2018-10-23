@@ -199,6 +199,9 @@ LOAD_OP3(pool2d, CPU, MALI_GPU, FPGA);
 #ifdef MULTICLASSNMS_OP
 LOAD_OP1(multiclass_nms, CPU);
 #endif
+#ifdef POLYGONBOXTRANSFORM_OP
+LOAD_OP1(polygon_box_transform, CPU);
+#endif
 #ifdef SUM_OP
 LOAD_OP1(sum, CPU);
 #endif

@@ -999,6 +999,28 @@ class MultiClassNMSParam : public OpParam {
 };
 #endif
 
+#ifdef POLYGONBOXTRANSFORM_OP
+template <typename Dtype>
+class PolygonBoxTransformParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  PolygonBoxTransformParam(const VariableNameMap &inputs,
+                           const VariableNameMap &outputs,
+                           const AttributeMap &attrs, const Scope &scope) {
+    input_ = InputFrom<GType>(inputs, scope);
+    output_ = OutputFrom<GType>(outputs, scope);
+  }
+  const RType *Input() const { return input_; }
+  RType *Output() const { return output_; }
+
+ private:
+  RType *input_;
+  RType *output_;
+};
+#endif
+
 template <typename Dtype>
 class FeedParam : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
@@ -2272,6 +2294,7 @@ class ShapeParam : public OpParam {
 };
 #endif
 
+#ifdef QUANT_OP
 template <typename Dtype>
 class QuantizeParam : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
@@ -2311,7 +2334,9 @@ class QuantizeParam : public OpParam {
   // nearest_zero and nearest_even is valid currently
   RoundType round_type_ = ROUND_NEAREST_AWAY_ZERO;
 };
+#endif
 
+#ifdef DEQUANT_OP
 template <typename Dtype>
 class DequantizeParam : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
@@ -2339,6 +2364,7 @@ class DequantizeParam : public OpParam {
   RType *activation_scale_;
   float weight_scale_;
 };
+#endif
 
 }  // namespace operators
 }  // namespace paddle_mobile
