@@ -29,6 +29,14 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
           param->Paddings()[0] == param->Paddings()[1],
       "need equal");
 
+  auto filter_ddim = param->Filter()->dims();
+
+  std::vector<int64_t> filter_shape(
+      {filter_ddim[1], filter_ddim[0], filter_ddim[2], filter_ddim[3]});
+  framework::DDim ddim = framework::make_ddim(filter_shape);
+  if (filter_ddim[1] == 1) {
+    param->Filter()->Resize(ddim);
+  }
   param->Filter()->InitCLImage(cl_helper_.CLContext(),
                                cl_helper_.CLCommandQueue());
   param->Bias()->InitCLImage(cl_helper_.CLContext(),
@@ -43,21 +51,21 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
 
   const int C = mean->numel();
 
-//  for (int j = 0; j < C; ++j) {
-//    DLOG << " mean - " << j << mean->data<float>()[j];
-//  }
-//
-//  for (int j = 0; j < C; ++j) {
-//    DLOG << " variance - " << j << variance->data<float>()[j];
-//  }
-//
-//  for (int j = 0; j < C; ++j) {
-//    DLOG << " scale - " << j << scale->data<float>()[j];
-//  }
-//
-//  for (int j = 0; j < C; ++j) {
-//    DLOG << " bias - " << j << bias->data<float>()[j];
-//  }
+  //  for (int j = 0; j < C; ++j) {
+  //    DLOG << " mean - " << j << mean->data<float>()[j];
+  //  }
+  //
+  //  for (int j = 0; j < C; ++j) {
+  //    DLOG << " variance - " << j << variance->data<float>()[j];
+  //  }
+  //
+  //  for (int j = 0; j < C; ++j) {
+  //    DLOG << " scale - " << j << scale->data<float>()[j];
+  //  }
+  //
+  //  for (int j = 0; j < C; ++j) {
+  //    DLOG << " bias - " << j << bias->data<float>()[j];
+  //  }
 
   //
   //  DLOG << " climage mean: " << *mean;
@@ -85,21 +93,21 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
 
   framework::CLImage *new_scale = new framework::CLImage();
 
-//  for (int j = 0; j < C; ++j) {
-//    DLOG << " new scale - " << j << new_scale_ptr[j];
-//  }
-//
-//  for (int j = 0; j < C; ++j) {
-//    DLOG << " new bias - " << j << new_bias_ptr[j];
-//  }
+  //  for (int j = 0; j < C; ++j) {
+  //    DLOG << " new scale - " << j << new_scale_ptr[j];
+  //  }
+  //
+  //  for (int j = 0; j < C; ++j) {
+  //    DLOG << " new bias - " << j << new_bias_ptr[j];
+  //  }
 
   new_scale->SetTensorData(new_scale_ptr, variance->dims());
   new_scale->InitCLImage(this->cl_helper_.CLContext(),
                          cl_helper_.CLCommandQueue());
 
-//  DLOG << " climage - y bias: " << *(param->Bias());
-//
-//  DLOG << " climage - new scale: " << *new_scale;
+  //  DLOG << " climage - y bias: " << *(param->Bias());
+  //
+  //  DLOG << " climage - new scale: " << *new_scale;
 
   framework::CLImage *new_bias = new framework::CLImage();
 
@@ -107,9 +115,9 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
   new_bias->InitCLImage(this->cl_helper_.CLContext(),
                         cl_helper_.CLCommandQueue());
 
-//  DLOG << " climage - new bias: " << *new_bias;
-//
-//  DLOG << " climage - filter: " << *(param->Filter());
+  //  DLOG << " climage - new bias: " << *new_bias;
+  //
+  //  DLOG << " climage - filter: " << *(param->Filter());
 
   param->SetNewScale(new_scale);
   param->SetNewBias(new_bias);
@@ -131,8 +139,12 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
       param->Filter()->HeightOfOneBlock() == 1) {
     this->cl_helper_.AddKernel("conv_1x1", "conv_add_bn_relu_kernel.cl");
     DLOG << " conv add bn relu conv 1x1";
-  } else if (param->Filter()->dims()[1] == 1) {
-    this->cl_helper_.AddKernel("depth_conv_3x3", "conv_add_bn_relu_kernel.cl");
+  } else if (param->Filter()->dims()[0] == 1 &&
+             param->Input()->dims()[1] == param->Output()->dims()[1] &&
+             param->Filter()->dims()[2] == 3) {
+    //    this->cl_helper_.AddKernel("depth_conv_3x3",
+    //    "conv_add_bn_relu_kernel.cl");
+    this->cl_helper_.AddKernel("depth_conv_3x3", "depthwise_conv_kernel.cl");
     DLOG << " conv add bn relu depth_conv_3x3";
   } else if (param->Filter()->WidthOfOneBlock() == 3 &&
              param->Filter()->HeightOfOneBlock() == 3) {
@@ -167,21 +179,23 @@ void ConvAddBNReluKernel<GPU_CL, float>::Compute(
   int input_height = param.Input()->HeightOfOneBlock();
   int output_width = param.Output()->WidthOfOneBlock();
   int output_height = param.Output()->HeightOfOneBlock();
+  int filter_width = param.Filter()->WidthOfOneBlock();
+  int filter_height = param.Filter()->HeightOfOneBlock();
 
-//  DLOG << " c block " << c_block;
-//  DLOG << " w " << w;
-//  DLOG << " nh " << nh;
-//  DLOG << " stride " << stride;
-//  DLOG << " offset " << offset;
-//  DLOG << " input_c " << input_c;
-//  DLOG << " dilation " << dilation;
-//  DLOG << " input width " << input_width;
-//  DLOG << " input height " << input_height;
-//  DLOG << " output width " << output_width;
-//  DLOG << " output height " << output_height;
-//  DLOG << " input dim " << param.Input()->dims();
-//  DLOG << " output dim " << param.Output()->dims();
-//  DLOG << " filter dim " << param.Filter()->dims();
+  //  DLOG << " c block " << c_block;
+  //  DLOG << " w " << w;
+  //  DLOG << " nh " << nh;
+  //  DLOG << " stride " << stride;
+  //  DLOG << " offset " << offset;
+  //  DLOG << " input_c " << input_c;
+  //  DLOG << " dilation " << dilation;
+  //  DLOG << " input width " << input_width;
+  //  DLOG << " input height " << input_height;
+  //  DLOG << " output width " << output_width;
+  //  DLOG << " output height " << output_height;
+  //  DLOG << " input dim " << param.Input()->dims();
+  //  DLOG << " output dim " << param.Output()->dims();
+  //  DLOG << " filter dim " << param.Filter()->dims();
 
   cl_int status;
 
@@ -236,12 +250,21 @@ void ConvAddBNReluKernel<GPU_CL, float>::Compute(
   status = clSetKernelArg(kernel, 16, sizeof(int), &output_height);
   CL_CHECK_ERRORS(status);
 
-//  cl_event out_event = param.Output()->GetClEvent();
-//  cl_event wait_event = param.Input()->GetClEvent();
+  if (param.Filter()->dims()[0] == 1 &&
+      param.Input()->dims()[1] == param.Output()->dims()[1] &&
+      param.Filter()->dims()[2] == 3) {
+    status = clSetKernelArg(kernel, 17, sizeof(int), &filter_width);
+    CL_CHECK_ERRORS(status);
 
-  status =
-      clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
-                             default_work_size.data(), NULL, 0, NULL, NULL);
+    status = clSetKernelArg(kernel, 18, sizeof(int), &filter_height);
+    CL_CHECK_ERRORS(status);
+  }
+  //  cl_event out_event = param.Output()->GetClEvent();
+  //  cl_event wait_event = param.Input()->GetClEvent();
+
+  status = clEnqueueNDRangeKernel(
+      this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
+      default_work_size.data(), NULL, 0, NULL, NULL);
   CL_CHECK_ERRORS(status);
 }
 
