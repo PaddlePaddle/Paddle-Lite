@@ -26,6 +26,15 @@ bool ConvKernel<GPU_CL, float>::Init(ConvParam<GPU_CL> *param) {
           param->Paddings()[0] == param->Paddings()[1],
       "need equal");
 
+  auto filter_ddim = param->Filter()->dims();
+
+  std::vector<int64_t> filter_shape(
+          {filter_ddim[1], filter_ddim[0], filter_ddim[2], filter_ddim[3]});
+  framework::DDim ddim = framework::make_ddim(filter_shape);
+  if (filter_ddim[1] == 1) {
+    param->Filter()->Resize(ddim);
+  }
+
   param->Filter()->InitCLImage(cl_helper_.CLContext(),
                                this->cl_helper_.CLCommandQueue());
 
@@ -44,9 +53,11 @@ bool ConvKernel<GPU_CL, float>::Init(ConvParam<GPU_CL> *param) {
     DLOG << " here1 ";
     this->cl_helper_.AddKernel("conv_1x1", "conv_kernel.cl");
 
-  } else if (param->Filter()->dims()[1] == 1) {
+  } else if (param->Filter()->dims()[0] == 1 &&
+             param->Input()->dims()[1] == param->Output()->dims()[1] &&
+             param->Filter()->dims()[2] == 3) {
     DLOG << " here2 ";
-    this->cl_helper_.AddKernel("depth_conv_3x3", "conv_kernel.cl");
+    this->cl_helper_.AddKernel("depth_conv_3x3", "depthwise_conv_kernel.cl");
 
   } else if (param->Filter()->WidthOfOneBlock() == 3 &&
              param->Filter()->HeightOfOneBlock() == 3) {
@@ -110,6 +121,7 @@ void ConvKernel<GPU_CL, float>::Compute(const ConvParam<GPU_CL> &param) {
   status = clSetKernelArg(kernel, 11, sizeof(int), &input_height);
   status = clSetKernelArg(kernel, 12, sizeof(int), &output_width);
   status = clSetKernelArg(kernel, 13, sizeof(int), &output_height);
+
 
 //  cl_event out_event = param.Output()->GetClEvent();
 //  cl_event wait_event = param.Input()->GetClEvent();
