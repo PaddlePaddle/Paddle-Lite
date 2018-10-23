@@ -83,7 +83,7 @@ Paddle-Mobile是PaddlePaddle组织下的项目，是一个致力于嵌入式平�
 
 - **FPGA**
 
-    FPGA实现正在进行中，是基于Xilinx的ZU5目标开发板。
+    目前已经支持 ZCU102 开发板。
 
 - **灵活性**
 
@@ -112,6 +112,7 @@ Paddle-Mobile是PaddlePaddle组织下的项目，是一个致力于嵌入式平�
 开发文档主要是关于编译、运行等问题。做为开发者，它可以和贡献文档共同结合使用。
 * [iOS](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_ios.md)
 * [Android](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_android.md)
+* [FPGA](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_fpga.md)
 
 ### 贡献文档
 - [贡献文档链接](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/CONTRIBUTING.md)
