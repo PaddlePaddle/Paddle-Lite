@@ -12,6 +12,9 @@ if (CON GREATER -1)
     ADD_EXECUTABLE(test-googlenet net/test_googlenet.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-googlenet paddle-mobile)
 
+    # gen test
+    ADD_EXECUTABLE(test-googlenet-quali net/test_googlenet_quali.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test-googlenet-quali paddle-mobile)
     set(FOUND_MATCH ON)
 
 endif ()
@@ -134,6 +137,10 @@ if (NOT FOUND_MATCH)
     target_link_libraries(test-googlenet paddle-mobile)
 
     # gen test
+    ADD_EXECUTABLE(test-googlenet-quali net/test_googlenet_quali.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test-googlenet-quali paddle-mobile)
+
+    # gen test
     ADD_EXECUTABLE(test-conv-op operators/test_cov_op.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-conv-op paddle-mobile)
 
@@ -228,6 +235,10 @@ if (NOT FOUND_MATCH)
     # gen test log
     ADD_EXECUTABLE(test-loadmemory framework/test_load_memory.cpp)
     target_link_libraries(test-loadmemory paddle-mobile)
+
+    # gen test log
+    ADD_EXECUTABLE(test-loadmemory-inference framework/test_load_memory_inference_api.cpp)
+    target_link_libraries(test-loadmemory-inference paddle-mobile)
 
     ADD_EXECUTABLE(test-inference-api framework/test_inference_api.cpp)
     target_link_libraries(test-inference-api paddle-mobile)
