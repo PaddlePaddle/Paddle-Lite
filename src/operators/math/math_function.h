@@ -15,6 +15,7 @@ limitations under the License. */
 #pragma once
 
 #include <cmath>
+#include <string>
 #include "framework/tensor.h"
 
 namespace paddle_mobile {

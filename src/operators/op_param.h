@@ -2330,6 +2330,7 @@ class ShapeParam : public OpParam {
 };
 #endif
 
+#ifdef QUANT_OP
 template <typename Dtype>
 class QuantizeParam : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
@@ -2340,14 +2341,12 @@ class QuantizeParam : public OpParam {
                 const AttributeMap &attrs, const Scope &scope) {
     input_ = InputXFrom<GType>(inputs, scope);
     out_ = OutFrom<GType>(outputs, scope);
-    if (HasAttr("is_static", attrs)) {
-      is_static_ = GetAttr<bool>("is_static", attrs);
-    }
     // online
     // scale = max(abs(x))
     online_scale_ = GetVarValue<GType>("OutScale", outputs, scope);
     // offline
     if (HasAttr("static_scale", attrs)) {
+      is_static_ = true;
       static_scale_ = GetAttr<float>("static_scale", attrs);
     }
     // x = round(scale * x)
@@ -2369,9 +2368,11 @@ class QuantizeParam : public OpParam {
   float static_scale_ = 1.0f;
   // round method type
   // nearest_zero and nearest_even is valid currently
-  RoundType round_type_ = ROUND_NEAREST_TO_EVEN;
+  RoundType round_type_ = ROUND_NEAREST_AWAY_ZERO;
 };
+#endif
 
+#ifdef DEQUANT_OP
 template <typename Dtype>
 class DequantizeParam : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
@@ -2399,6 +2400,7 @@ class DequantizeParam : public OpParam {
   RType *activation_scale_;
   float weight_scale_;
 };
+#endif
 
 }  // namespace operators
 }  // namespace paddle_mobile
