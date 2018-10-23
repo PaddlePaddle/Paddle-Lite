@@ -36,7 +36,9 @@ void conv5x5s1_int8(const framework::Tensor& input,
   int image_size = input_h * input_w;
   int out_image_size = output_h * output_w;
   memset(out_data, 0, output_c * out_image_size * sizeof(int32_t));
-
+#if __aarch64__
+  // TODO(hjchen2)
+#else
   #pragma omp parallel for
   for (int oc = 0; oc < output_c; ++oc) {
     for (int ic = 0; ic < input_c; ++ic) {
@@ -537,6 +539,7 @@ void conv5x5s1_int8(const framework::Tensor& input,
       }
     }
   }
+#endif
 #else
 // TODO(hjchen2)
 #endif

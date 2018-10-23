@@ -140,10 +140,10 @@ int TestConvOp() {
   int dilation_w = 1;
 
   int batch_size = 1;
-  int input_c = 63;
-  int input_h = 51;
-  int input_w = 51;
-  int output_c = 125;
+  int input_c = 3;
+  int input_h = 100;
+  int input_w = 100;
+  int output_c = 10;
   framework::DDim input_shape =
       framework::make_ddim({batch_size, input_c, input_h, input_w});
   framework::DDim filter_shape =
@@ -174,40 +174,38 @@ int TestConvOp() {
 
   auto *op = new operators::ConvOp<CPU, float>("conv2d", inputs, outputs, attrs,
                                                scope);
-  struct timespec ts_begin, ts_end;
+  //  struct timespec ts_begin, ts_end;
   op->InferShape();
   // warmup
+  //  op->Run();
+  //  clock_gettime(CLOCK_MONOTONIC, &ts_begin);
+  //  for (int i = 0; i < 10; ++i) {
   op->Run();
-  clock_gettime(CLOCK_MONOTONIC, &ts_begin);
-  for (int i = 0; i < 10; ++i) {
-    op->Run();
+  //  }
+  //  clock_gettime(CLOCK_MONOTONIC, &ts_end);
+  //  uint64_t elapsed = (ts_end.tv_sec - ts_begin.tv_sec) * 1e3 +
+  //                     (ts_end.tv_nsec - ts_begin.tv_nsec) / 1e6;
+  //  LOG(kLOG_INFO) << "elapsed: " << elapsed / 10.0 << " ms";
+
+  int kernel_extent_h = dilation_h * (kernel_h - 1) + 1;
+  int kernel_extent_w = dilation_w * (kernel_w - 1) + 1;
+  int output_h = (input_h + 2 * pad_h - kernel_extent_h) / stride_h + 1;
+  int output_w = (input_w + 2 * pad_w - kernel_extent_w) / stride_w + 1;
+  auto output_shape = framework::make_ddim(
+      std::vector<int>({batch_size, output_c, output_h, output_w}));
+  framework::Tensor output_cmp;
+  output_cmp.mutable_data<Otype>(output_shape);
+  conv2d<Itype, Otype>(input, filter, attrs, &output_cmp);
+
+  // compare results
+  auto output = output_var->template Get<framework::LoDTensor>();
+  const Otype *output_data = output->data<Otype>();
+  Otype *output_cmp_data = output_cmp.data<Otype>();
+  for (int i = 0; i < output->numel(); ++i) {
+    PADDLE_MOBILE_ENFORCE(output_data[i] == output_cmp_data[i],
+                          "output[%d] = %d, output_cmp[%d] = %d", i,
+                          output_data[i], i, output_cmp_data[i]);
   }
-  clock_gettime(CLOCK_MONOTONIC, &ts_end);
-  uint64_t elapsed = (ts_end.tv_sec - ts_begin.tv_sec) * 1e3 +
-                     (ts_end.tv_nsec - ts_begin.tv_nsec) / 1e6;
-  LOG(kLOG_INFO) << "elapsed: " << elapsed / 10.0 << " ms";
-
-  /*
-    int kernel_extent_h = dilation_h * (kernel_h - 1) + 1;
-    int kernel_extent_w = dilation_w * (kernel_w - 1) + 1;
-    int output_h = (input_h + 2 * pad_h - kernel_extent_h) / stride_h + 1;
-    int output_w = (input_w + 2 * pad_w - kernel_extent_w) / stride_w + 1;
-    auto output_shape = framework::make_ddim(
-        std::vector<int>({batch_size, output_c, output_h, output_w}));
-    framework::Tensor output_cmp;
-    output_cmp.mutable_data<Otype>(output_shape);
-    conv2d<Itype, Otype>(input, filter, attrs, &output_cmp);
-
-    // compare results
-    auto output = output_var->template Get<framework::LoDTensor>();
-    const Otype *output_data = output->data<Otype>();
-    Otype *output_cmp_data = output_cmp.data<Otype>();
-    for (int i = 0; i < output->numel(); ++i) {
-      PADDLE_MOBILE_ENFORCE(output_data[i] == output_cmp_data[i],
-                            "output[%d] = %d, output_cmp[%d] = %d", i,
-                            output_data[i], i, output_cmp_data[i]);
-    }
-  */
   delete op;
   return 0;
 }
@@ -219,9 +217,34 @@ int main() {
   LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=0, stride=2";
   paddle_mobile::TestConvOp<int8_t, int32_t, 7, 0, 2>();
 
+  // kernel = 7, pad = 1, stride = 2
+  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=1, stride=2";
+  paddle_mobile::TestConvOp<int8_t, int32_t, 7, 1, 2>();
+
   // kernel = 7, pad = 3, stride = 2
   LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=3, stride=2";
   paddle_mobile::TestConvOp<int8_t, int32_t, 7, 3, 2>();
+
+  // kernel = 7, pad = 0, stride = 1
+  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=0, stride=1";
+  paddle_mobile::TestConvOp<int8_t, int32_t, 7, 0, 1>();
+
+  // kernel = 7, pad = 1, stride = 1
+  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=1, stride=1";
+  paddle_mobile::TestConvOp<int8_t, int32_t, 7, 1, 1>();
+
+  // kernel = 7, pad = 3, stride = 1
+  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=3, stride=1";
+  paddle_mobile::TestConvOp<int8_t, int32_t, 7, 3, 1>();
+
+  // kernel = 7, pad = 5, stride = 3
+  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=5, stride=3";
+  paddle_mobile::TestConvOp<int8_t, int32_t, 7, 5, 3>();
+
+  // kernel = 7, pad = 3, stride = 4
+  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=3, stride=4";
+  paddle_mobile::TestConvOp<int8_t, int32_t, 7, 3, 4>();
+  LOG(paddle_mobile::kLOG_INFO) << "\n";
 
   // kernel = 3, pad = 0, stride = 1
   LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=3, pad=0, stride=1";

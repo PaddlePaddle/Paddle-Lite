@@ -80,12 +80,13 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
 }
 
 template <typename Dtype>
-void LoadMemInternal(void **data, framework::LoDTensor *tensor) {
+static void LoadMemInternal(void **data, framework::LoDTensor *tensor,
+                            bool quant_uint8 = false) {
   char **data_buf = reinterpret_cast<char **>(data);
   int64_t size = tensor->numel();
   Dtype *tensor_data = tensor->mutable_data<Dtype>();
-  if (0) {
-    // TODO(hjchen2) should be moved into operator init function
+  if (quant_uint8) {
+    // should be moved into operator init function
     float min_value;
     float max_value;
     memcpy(&min_value, data_buf, sizeof(float));
@@ -141,7 +142,8 @@ void Executor<Dtype, P>::LoadMemory(
   // parse tensor from stream
   switch (tensor_desc.DataType()) {
     case framework::VARTYPE_TYPE_FP32:
-      LoadMemInternal<float>(reinterpret_cast<void **>(data_buf), tensor);
+      LoadMemInternal<float>(reinterpret_cast<void **>(data_buf), tensor,
+                             program_.quantification);
       break;
     case framework::VARTYPE_TYPE_INT8:
       LoadMemInternal<int8_t>(reinterpret_cast<void **>(data_buf), tensor);

@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef QUANT_OP
+
 #include "operators/quantize_op.h"
 #include <vector>
 
@@ -32,4 +34,6 @@ void QuantizeOp<DeviceType, T>::InferShape() const {
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(quantize, ops::QuantizeOp);
+#endif
+
 #endif
