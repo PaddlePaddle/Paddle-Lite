@@ -217,68 +217,77 @@ __kernel void depth_conv_3x3(__private const int global_size_dim0,
     half4 output = 0.0f;
 #endif
 
+    const int filter_width = 3;
+    const int filter_height = 3;
+
     int2 pos_in_input_block = (int2)(out_c * input_width, batch_index * input_height);
-    int weight_y_to = out_c * 12;
+
+    int2 pos_in_filter_block = (int2)(out_c * filter_width, batch_index * filter_height);
+
+    int filter_x = pos_in_filter_block.x ;
+    int filter_y = pos_in_filter_block.y ;
 
     half4 inputs[9];
 
-    inputs[0] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x - 1, pos_in_input_block.y + in_pos_in_one_block.y - 1)),
-                       (half4)(0.0f),
-                       (ushort4)((in_pos_in_one_block.x - 1 < 0 || in_pos_in_one_block.y - 1 < 0 || in_pos_in_one_block.x - 1 >= input_width || in_pos_in_one_block.y - 1 >= input_height) << 15));
+        inputs[0] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x - 1, pos_in_input_block.y + in_pos_in_one_block.y - 1)),
+                           (half4)(0.0f),
+                           (ushort4)((in_pos_in_one_block.x - 1 < 0 || in_pos_in_one_block.y - 1 < 0 || in_pos_in_one_block.x - 1 >= input_width || in_pos_in_one_block.y - 1 >= input_height) << 15));
 
-    inputs[1] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x, pos_in_input_block.y + in_pos_in_one_block.y - 1)),
-                       (half4)(0.0f),
-                       (ushort4)((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y - 1 < 0 || in_pos_in_one_block.x >= input_width || in_pos_in_one_block.y - 1 >= input_height) << 15));
+        inputs[1] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x, pos_in_input_block.y + in_pos_in_one_block.y - 1)),
+                           (half4)(0.0f),
+                           (ushort4)((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y - 1 < 0 || in_pos_in_one_block.x >= input_width || in_pos_in_one_block.y - 1 >= input_height) << 15));
 
-    inputs[2] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x + 1, pos_in_input_block.y + in_pos_in_one_block.y - 1)),
-                       (half4)(0.0f),
-                       (ushort4)((in_pos_in_one_block.x + 1 < 0 || in_pos_in_one_block.y - 1 < 0 || in_pos_in_one_block.x + 1 >= input_width || in_pos_in_one_block.y - 1 >= input_height) << 15));
+        inputs[2] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x + 1, pos_in_input_block.y + in_pos_in_one_block.y - 1)),
+                           (half4)(0.0f),
+                           (ushort4)((in_pos_in_one_block.x + 1 < 0 || in_pos_in_one_block.y - 1 < 0 || in_pos_in_one_block.x + 1 >= input_width || in_pos_in_one_block.y - 1 >= input_height) << 15));
 
-    inputs[3] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x - 1, pos_in_input_block.y + in_pos_in_one_block.y)),
-                       (half4)(0.0f),
-                       (ushort4)((in_pos_in_one_block.x - 1 < 0 || in_pos_in_one_block.y < 0 || in_pos_in_one_block.x - 1 >= input_width || in_pos_in_one_block.y >= input_height) << 15));
-    /*
-    if (output_pos.x == 112 && output_pos.y == 0) {
-          half4 input1 = inputs[3];
-          float4 in = (float4)(input1.x, input1.y, input1.z, input1.w);
-          printf(" input4 3 - %v4hlf \n", in);
-          printf(" --- %d ---\n", in_pos_in_one_block.x - 1);
+        inputs[3] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x - 1, pos_in_input_block.y + in_pos_in_one_block.y)),
+                           (half4)(0.0f),
+                           (ushort4)((in_pos_in_one_block.x - 1 < 0 || in_pos_in_one_block.y < 0 || in_pos_in_one_block.x - 1 >= input_width || in_pos_in_one_block.y >= input_height) << 15));
+        /*
+        if (output_pos.x == 112 && output_pos.y == 0) {
+              half4 input1 = inputs[3];
+              float4 in = (float4)(input1.x, input1.y, input1.z, input1.w);
+              printf(" input4 3 - %v4hlf \n", in);
+              printf(" --- %d ---\n", in_pos_in_one_block.x - 1);
+        }
+        */
+
+
+        inputs[4] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x, pos_in_input_block.y + in_pos_in_one_block.y)),
+                           (half4)(0.0f),
+                           (ushort4)((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y < 0 || in_pos_in_one_block.x >= input_width || in_pos_in_one_block.y >= input_height) << 15));
+
+        inputs[5] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x + 1, pos_in_input_block.y + in_pos_in_one_block.y)),
+                           (half4)(0.0f),
+                           (ushort4)((in_pos_in_one_block.x + 1 < 0 || in_pos_in_one_block.y < 0 || in_pos_in_one_block.x + 1 >= input_width || in_pos_in_one_block.y >= input_height) << 15));
+
+        inputs[6] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x - 1, pos_in_input_block.y + in_pos_in_one_block.y + 1)),
+                           (half4)(0.0f),
+                           (ushort4)((in_pos_in_one_block.x - 1 < 0 || in_pos_in_one_block.y + 1 < 0 || in_pos_in_one_block.x - 1 >= input_width || in_pos_in_one_block.y + 1 >= input_height) << 15));
+
+        inputs[7] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x, pos_in_input_block.y + in_pos_in_one_block.y + 1)),
+                           (half4)(0.0f),
+                           (ushort4)((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y + 1 < 0 || in_pos_in_one_block.x >= input_width || in_pos_in_one_block.y + 1 >= input_height) << 15));
+
+        inputs[8] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x + 1, pos_in_input_block.y + in_pos_in_one_block.y + 1)),
+                           (half4)(0.0f),
+                           (ushort4)((in_pos_in_one_block.x + 1 < 0 || in_pos_in_one_block.y + 1 < 0 || in_pos_in_one_block.x + 1 >= input_width || in_pos_in_one_block.y + 1 >= input_height) << 15));
+
+    half4 filters[9];
+    filters[0] =  read_imageh(filter, sampler,(int2)(filter_x,filter_y));
+    filters[1] =  read_imageh(filter, sampler,(int2)(filter_x + 1,filter_y));
+    filters[2] =  read_imageh(filter, sampler,(int2)(filter_x + 2,filter_y));
+    filters[3] =  read_imageh(filter, sampler,(int2)(filter_x,filter_y + 1));
+    filters[4] =  read_imageh(filter, sampler,(int2)(filter_x + 1,filter_y + 1));
+    filters[5] =  read_imageh(filter, sampler,(int2)(filter_x + 2,filter_y + 1));
+    filters[6] =  read_imageh(filter, sampler,(int2)(filter_x,filter_y + 2));
+    filters[7] =  read_imageh(filter, sampler,(int2)(filter_x + 1,filter_y + 2));
+    filters[8] =  read_imageh(filter, sampler,(int2)(filter_x + 2,filter_y + 2));
+
+    for(int i = 0 ;i < 9 ; i++){
+     output += inputs[i] * filters[i];
     }
-    */
-
-
-    inputs[4] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x, pos_in_input_block.y + in_pos_in_one_block.y)),
-                       (half4)(0.0f),
-                       (ushort4)((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y < 0 || in_pos_in_one_block.x >= input_width || in_pos_in_one_block.y >= input_height) << 15));
-
-    inputs[5] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x + 1, pos_in_input_block.y + in_pos_in_one_block.y)),
-                       (half4)(0.0f),
-                       (ushort4)((in_pos_in_one_block.x + 1 < 0 || in_pos_in_one_block.y < 0 || in_pos_in_one_block.x + 1 >= input_width || in_pos_in_one_block.y >= input_height) << 15));
-
-    inputs[6] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x - 1, pos_in_input_block.y + in_pos_in_one_block.y + 1)),
-                       (half4)(0.0f),
-                       (ushort4)((in_pos_in_one_block.x - 1 < 0 || in_pos_in_one_block.y + 1 < 0 || in_pos_in_one_block.x - 1 >= input_width || in_pos_in_one_block.y + 1 >= input_height) << 15));
-
-    inputs[7] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x, pos_in_input_block.y + in_pos_in_one_block.y + 1)),
-                       (half4)(0.0f),
-                       (ushort4)((in_pos_in_one_block.x < 0 || in_pos_in_one_block.y + 1 < 0 || in_pos_in_one_block.x >= input_width || in_pos_in_one_block.y + 1 >= input_height) << 15));
-
-    inputs[8] = select(read_imageh(input, sampler, (int2)(pos_in_input_block.x + in_pos_in_one_block.x + 1, pos_in_input_block.y + in_pos_in_one_block.y + 1)),
-                       (half4)(0.0f),
-                       (ushort4)((in_pos_in_one_block.x + 1 < 0 || in_pos_in_one_block.y + 1 < 0 || in_pos_in_one_block.x + 1 >= input_width || in_pos_in_one_block.y + 1 >= input_height) << 15));
-
-    for (int j = 0; j < 9; ++j) {
-        half4 input = inputs[j];
-        half4 weight0 = read_imageh(filter, sampler, (int2)(j % 3, weight_y_to + j / 3));
-        half4 weight1 = read_imageh(filter, sampler, (int2)(j % 3, weight_y_to + 3 + j / 3));
-        half4 weight2 = read_imageh(filter, sampler, (int2)(j % 3, weight_y_to + 6 + j / 3));
-        half4 weight3 = read_imageh(filter, sampler, (int2)(j % 3, weight_y_to + 9 + j / 3));
-        output.x += input.x * weight0.x;
-        output.y += input.y * weight1.x;
-        output.z += input.z * weight2.x;
-        output.w += input.w * weight3.x;
-    }
-
 #ifdef BATCH_NORM
     output = output * read_imageh(new_scale, sampler, (int2)(out_c, 0)) + read_imageh(new_biase, sampler, (int2)(out_c, 0));
 #endif

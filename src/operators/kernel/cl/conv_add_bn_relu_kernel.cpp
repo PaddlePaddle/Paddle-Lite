@@ -144,7 +144,7 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
              param->Filter()->dims()[2] == 3) {
     //    this->cl_helper_.AddKernel("depth_conv_3x3",
     //    "conv_add_bn_relu_kernel.cl");
-    this->cl_helper_.AddKernel("depth_conv_3x3", "depthwise_conv_kernel.cl");
+    this->cl_helper_.AddKernel("depth_conv_3x3", "depthwise_conv_add_bn_relu_kernel.cl");
     DLOG << " conv add bn relu depth_conv_3x3";
   } else if (param->Filter()->WidthOfOneBlock() == 3 &&
              param->Filter()->HeightOfOneBlock() == 3) {
@@ -179,8 +179,6 @@ void ConvAddBNReluKernel<GPU_CL, float>::Compute(
   int input_height = param.Input()->HeightOfOneBlock();
   int output_width = param.Output()->WidthOfOneBlock();
   int output_height = param.Output()->HeightOfOneBlock();
-  int filter_width = param.Filter()->WidthOfOneBlock();
-  int filter_height = param.Filter()->HeightOfOneBlock();
 
   //  DLOG << " c block " << c_block;
   //  DLOG << " w " << w;
@@ -250,15 +248,6 @@ void ConvAddBNReluKernel<GPU_CL, float>::Compute(
   status = clSetKernelArg(kernel, 16, sizeof(int), &output_height);
   CL_CHECK_ERRORS(status);
 
-  if (param.Filter()->dims()[0] == 1 &&
-      param.Input()->dims()[1] == param.Output()->dims()[1] &&
-      param.Filter()->dims()[2] == 3) {
-    status = clSetKernelArg(kernel, 17, sizeof(int), &filter_width);
-    CL_CHECK_ERRORS(status);
-
-    status = clSetKernelArg(kernel, 18, sizeof(int), &filter_height);
-    CL_CHECK_ERRORS(status);
-  }
   //  cl_event out_event = param.Output()->GetClEvent();
   //  cl_event wait_event = param.Input()->GetClEvent();
 
