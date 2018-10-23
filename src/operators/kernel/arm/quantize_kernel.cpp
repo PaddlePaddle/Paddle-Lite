@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef PADDLE_MOBILE_CPU
+#ifdef QUANT_OP
 
 #include "operators/kernel/quantize_kernel.h"
 #include <cmath>
@@ -225,7 +225,7 @@ static void quantize_round_to_nearest(const Tensor *input, const float scale,
   const float *x = input->data<const float>();
   int8_t *y = output->mutable_data<int8_t>();
   size_t size = input->numel();
-#ifdef defined(__ARM_NEON__) || defined(__ARM_NEON)
+#if defined(__ARM_NEON__) || defined(__ARM_NEON)
   size_t loop = size >> 4;
   size_t remain = size & 0xF;
   for (size_t i = 0; i < loop; ++i) {
@@ -280,17 +280,18 @@ void QuantizeKernel<CPU, float>::Compute(
   }
   max_abs = std::max(max_abs, 1e-6f);
   // only support int8 currently
-  float online_scale = 127 / max_abs;
-  param.online_scale_->mutable_data<float>()[0] = online_scale;
+  float scale = 127 / max_abs;
+  param.online_scale_->mutable_data<float>()[0] = max_abs;
   switch (param.round_type_) {
     case ROUND_NEAREST_TO_EVEN:
-      quantize_round_to_even(input, online_scale, output);
+      quantize_round_to_even(input, scale, output);
       break;
     case ROUND_NEAREST_TOWARDS_ZERO:
-      quantize_round_to_zero(input, online_scale, output);
+      quantize_round_to_zero(input, scale, output);
       break;
     case ROUND_NEAREST_AWAY_ZERO:
-      quantize_round_to_nearest(input, online_scale, output);
+      quantize_round_to_nearest(input, scale, output);
+      break;
     default:
       LOG(kLOG_ERROR) << "round type is not supported.";
       break;

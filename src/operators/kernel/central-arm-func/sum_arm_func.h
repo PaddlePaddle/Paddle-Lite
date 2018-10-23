@@ -15,11 +15,14 @@ limitations under the License. */
 #ifdef SUM_OP
 #pragma once
 
+#include <vector>
 #include "operators/math/selected_rows_functor.h"
 
 namespace paddle_mobile {
 namespace operators {
+
 using LoDTensorArray = std::vector<LoDTensor>;
+
 template <typename P>
 void SumCompute(const SumParam<CPU> &param) {
   auto inputsvars = param.InputsVars();
@@ -63,31 +66,21 @@ void SumCompute(const SumParam<CPU> &param) {
     std::unique_ptr<framework::SelectedRows> in0;
     if (in_place) {
       // If is in_place, we store the input[0] to in0
-      auto *in_sel0 = inputsvars[0]->Get<SelectedRows>();
+      auto *in_sel0 = inputsvars[0]->Get<framework::SelectedRows>();
       auto &rows = in_sel0->rows();
-      //#ifdef PADDLE_WITH_CUDA
-      //                    std::vector<int64_t> rows_in_cpu;
-      //        rows_in_cpu.reserve(rows.size());
-      //        for (auto item : rows) {
-      //          rows_in_cpu.push_back(item);
-      //        }
-      //        in0.reset(new framework::SelectedRows(rows_in_cpu,
-      //        in_sel0.height()));
-      //#else
       in0.reset(new framework::SelectedRows(rows, in_sel0->height()));
-      //#endif
       in0->mutable_value()->ShareDataWith(in_sel0->value());
     }
 
-    auto get_selected_row = [&](size_t i) -> const SelectedRows & {
+    auto get_selected_row = [&](size_t i) -> const framework::SelectedRows & {
       if (i == 0 && in0) {
         return *in0.get();
       } else {
-        return *(inputsvars[i]->Get<SelectedRows>());
+        return *(inputsvars[i]->Get<framework::SelectedRows>());
       }
     };
 
-    auto *out = outvar->GetMutable<SelectedRows>();
+    auto *out = outvar->GetMutable<framework::SelectedRows>();
     out->mutable_rows()->clear();
     auto *out_value = out->mutable_value();
 
@@ -150,8 +143,6 @@ void SumCompute(const SumParam<CPU> &param) {
       }
     }
   } else {
-    if (outvar->IsType<framework::Tensor>()) {
-    }
     PADDLE_MOBILE_THROW_EXCEPTION(
         "Unexpected branch, output variable type is %s", outvar->Type().name());
   }

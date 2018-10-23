@@ -15,11 +15,30 @@ limitations under the License. */
 #include "operators/math/math_function.h"
 #include <cstring>
 #include <string>
+#include "framework/data_type.h"
+#include "framework/tensor.h"
 #include "operators/math/gemm.h"
 
 namespace paddle_mobile {
 namespace operators {
 namespace math {
+
+struct TensorSetConstant {
+  TensorSetConstant(framework::Tensor *tensor, float value)
+      : tensor_(tensor), value_(value) {}
+  template <typename T>
+  void apply() const {
+    auto *begin = tensor_->mutable_data<T>();
+    std::fill(begin, begin + tensor_->numel(), static_cast<T>(value_));
+  }
+  framework::Tensor *tensor_;
+  float value_;
+};
+
+void set_constant(framework::Tensor *tensor, float value) {
+  framework::VisitDataType(framework::ToDataType(tensor->type()),
+                           TensorSetConstant(tensor, value));
+}
 
 template <>
 void matmul<float>(const framework::Tensor &matrix_a, bool trans_a,

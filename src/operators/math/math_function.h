@@ -15,11 +15,14 @@ limitations under the License. */
 #pragma once
 
 #include <cmath>
+#include <string>
 #include "framework/tensor.h"
 
 namespace paddle_mobile {
 namespace operators {
 namespace math {
+
+void set_constant(framework::Tensor *tensor, float value);
 
 template <typename T>
 void matmul(const framework::Tensor &matrix_a, bool trans_a,
