@@ -397,7 +397,7 @@ void Im2ColFunctor<ColFormat::kCFO, CPU, float>::operator()(
 
         col_data[col_idx] = (im_row_idx < 0 || im_row_idx >= im_height ||
                              im_col_idx < 0 || im_col_idx >= im_width)
-                                ? static_cast<T>(0)
+                                ? static_cast<float>(0)
                                 : im_data[im_idx];
       }
     }
@@ -405,10 +405,68 @@ void Im2ColFunctor<ColFormat::kCFO, CPU, float>::operator()(
 #endif
 }
 
-// TODO(hjchen2)
-void ExtractToRows1() {}
+void ExtractToImg(const int8_t *im_data, int8_t *col_data, const int im_height,
+                  const int im_width, const int col_height, const int col_width,
+                  const int padding_h, const int padding_w, const int stride_h,
+                  const int stride_w, const int kh, const int kw) {
+  int h = padding_h - kh;
+  int w = padding_w - kw;
+  int col_start_height = h > 0 ? (h + stride_h - 1) / stride_h : 0;
+  int col_start_width = w > 0 ? (w + stride_w - 1) / stride_w : 0;
+  int start_height = kh + col_start_height * stride_h - padding_h;
+  int start_width = kw + col_start_width * stride_w - padding_w;
 
-void ExtractToRows2() {}
+  int end_height = (col_height - col_start_height) * stride_h + start_height;
+  end_height = end_height > im_height ? im_height : end_height;
+  int end_width = (col_width - col_start_width) * stride_w + start_width;
+  end_width = end_width > im_width ? im_width : end_width;
+  int extract = (end_width - start_width + stride_w - 1) / stride_w;
+
+  im_data += start_height * im_width + start_width;
+  col_data += col_start_height * col_width + col_start_width;
+  for (int i = start_height; i < end_height; i += stride_h) {
+    if (stride_w == 1) {
+      memcpy(col_data, im_data, extract * sizeof(int8_t));
+    } else if (stride_w == 2) {
+      int s = 0;
+#if __ARM_NEON
+      for (; s < extract - 15; s += 16) {
+        int8x16x2_t img = vld2q_s8(im_data + s * 2);
+        vst1q_s8(col_data + s, img.val[0]);
+      }
+#endif
+      for (; s < extract; ++s) {
+        col_data[s] = im_data[s * 2];
+      }
+    } else if (stride_w == 3) {
+      int s = 0;
+#if __ARM_NEON
+      for (; s < extract - 15; s += 16) {
+        int8x16x3_t img = vld3q_s8(im_data + s * 3);
+        vst1q_s8(col_data + s, img.val[0]);
+      }
+#endif
+      for (; s < extract; ++s) {
+        col_data[s] = im_data[s * 3];
+      }
+    } else if (stride_w == 4) {
+      int s = 0;
+#if __ARM_NEON
+      for (; s < extract - 15; s += 16) {
+        int8x16x4_t img = vld4q_s8(im_data + s * 4);
+        vst1q_s8(col_data + s, img.val[0]);
+      }
+#endif
+      for (; s < extract; ++s) {
+        col_data[s] = im_data[s * 4];
+      }
+    } else {
+      PADDLE_MOBILE_THROW_EXCEPTION("stride_w must be one of 1, 2, 3 and 4.");
+    }
+    im_data += im_width * stride_h;
+    col_data += col_width;
+  }
+}
 
 /*
  * im = [input_channels, input_height, input_width]
@@ -432,64 +490,42 @@ void Im2ColFunctor<ColFormat::kCFO, CPU, int8_t>::operator()(
   int channels_col = im_channels * filter_height * filter_width;
   const int8_t *im_data = im.data<int8_t>();
   int8_t *col_data = col->data<int8_t>();
-// #if defined(__ARM_NEON__) || defined(__ARM_NEON)
-#if 0
-  if (stride[0] == stride[1] && stride[0] == 1 && dilation[0] == 1 &&
-      padding[0] == padding[1] && dilation[0] == dilation[1]) {
+#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+  if (stride[0] <= 4 && dilation[0] == 1 && dilation[0] == dilation[1]) {
     // pad 0
     memset(col_data, 0, col->numel() * sizeof(int8_t));
     for (int ic = 0; ic < im_channels; ++ic) {
-      for (int oh = 0; oh < padding[0]; ++oh) {
-        for (int k = 0; k < filter_height * filter_width; ++k) {
-          ExtractToRows1();
-          ExtractToRows1();
+      for (int kh = 0; kh < filter_height; ++kh) {
+        for (int kw = 0; kw < filter_width; ++kw) {
+          ExtractToImg(im_data, col_data, im_height, im_width, col_height,
+                       col_width, padding[0], padding[1], stride[0], stride[1],
+                       kh, kw);
+          col_data += col_height * col_width;
         }
       }
-      for (int oh = padding[0]; oh < col_height - padding[0]; ++oh) {
-        for (int k = 0; k < filter_height * filter_width; ++k) {
-          ExtractToRows1();
-        }
-      }
-    }
-  } else if (stride[0] == stride[1] && stride[0] == 2 && dilation[0] == 1 &&
-             padding[0] == padding[1] && dilation[0] == dilation[1]) {
-    // pad 0
-    memset(col_data, 0, col->numel() * sizeof(int8_t));
-    for (int ic = 0; ic < im_channels; ++ic) {
-      for (int oh = 0; oh < padding[0]; ++oh) {
-        for (int k = 0; k < filter_height * filter_width; ++k) {
-          ExtractToRows2();
-          ExtractToRows2();
-        }
-      }
-      for (int oh = padding[0]; oh < col_height - padding[0]; ++oh) {
-        for (int k = 0; k < filter_height * filter_width; ++k) {
-          ExtractToRows2();
-        }
-      }
+      im_data += im_height * im_width;
     }
   } else {
 #endif
-  for (int c = 0; c < channels_col; ++c) {
-    int w_offset = c % filter_width;
-    int h_offset = (c / filter_width) % filter_height;
-    int c_im = c / (filter_width * filter_height);
-    for (int h = 0; h < col_height; ++h) {
-      int im_row_idx = h * stride[0] - padding[0] + h_offset * dilation[0];
-      for (int w = 0; w < col_width; ++w) {
-        int im_col_idx = w * stride[1] - padding[1] + w_offset * dilation[1];
-        int col_idx = (c * col_height + h) * col_width + w;
-        int im_idx = (im_row_idx + c_im * im_height) * im_width + im_col_idx;
+    for (int c = 0; c < channels_col; ++c) {
+      int w_offset = c % filter_width;
+      int h_offset = (c / filter_width) % filter_height;
+      int c_im = c / (filter_width * filter_height);
+      for (int h = 0; h < col_height; ++h) {
+        int im_row_idx = h * stride[0] - padding[0] + h_offset * dilation[0];
+        for (int w = 0; w < col_width; ++w) {
+          int im_col_idx = w * stride[1] - padding[1] + w_offset * dilation[1];
+          int col_idx = (c * col_height + h) * col_width + w;
+          int im_idx = (im_row_idx + c_im * im_height) * im_width + im_col_idx;
 
-        col_data[col_idx] = (im_row_idx < 0 || im_row_idx >= im_height ||
-                             im_col_idx < 0 || im_col_idx >= im_width)
-                                ? static_cast<int8_t>(0)
-                                : im_data[im_idx];
+          col_data[col_idx] = (im_row_idx < 0 || im_row_idx >= im_height ||
+                               im_col_idx < 0 || im_col_idx >= im_width)
+                                  ? static_cast<int8_t>(0)
+                                  : im_data[im_idx];
+        }
       }
     }
-  }
-// #if defined(__ARM_NEON__) || defined(__ARM_NEON)
-#if 0
+#if defined(__ARM_NEON__) || defined(__ARM_NEON)
   }
 #endif
 }
