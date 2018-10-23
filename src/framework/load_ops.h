@@ -64,6 +64,9 @@ limitations under the License. */
 // load requared ops
 LOAD_OP(feed)
 LOAD_OP(fetch)
+#ifdef FILL_CONSTANT_OP
+LOAD_OP(fill_constant)
+#endif
 #ifdef BATCHNORM_OP
 LOAD_OP2(batch_norm, CPU, MALI_GPU);
 #endif
