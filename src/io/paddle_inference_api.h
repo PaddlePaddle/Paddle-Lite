@@ -111,6 +111,14 @@ class PaddlePredictor {
   PaddlePredictor() = default;
 };
 
+struct PaddleModelMemoryPack {
+  bool from_memory = false;
+  size_t model_size = 0;
+  uint8_t* model_buf = nullptr;
+  size_t combined_params_size = 0;
+  uint8_t* combined_params_buf = nullptr;
+};
+
 struct PaddleMobileConfig : public PaddlePredictor::Config {
   enum Precision { FP32 = 0 };
   enum Device { kCPU = 0, kFPGA = 1, kGPU_MALI = 2 };
@@ -124,6 +132,7 @@ struct PaddleMobileConfig : public PaddlePredictor::Config {
   int thread_num = 1;
   std::string prog_file;
   std::string param_file;
+  struct PaddleModelMemoryPack memory_pack;
 };
 
 // A factory to help create different predictors.
