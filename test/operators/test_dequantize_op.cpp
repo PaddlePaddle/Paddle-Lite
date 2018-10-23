@@ -59,7 +59,7 @@ int TestDequqntizeOp() {
 
   framework::Tensor output_cmp;
   output_cmp.Resize(dim);
-  float dequant_scale = 1.f / (1.27 * 1.74);
+  float dequant_scale = 1.27 / 1.74;
   dequantize(input, dequant_scale, &output_cmp);
   const float* output_cmp_data = output_cmp.data<float>();
   for (int i = 0; i < output->numel(); ++i) {

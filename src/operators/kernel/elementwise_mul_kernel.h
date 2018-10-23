@@ -23,8 +23,6 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-using namespace framework;
-
 template <typename DeviceType, typename T>
 class ElementwiseMulKernel
     : public framework::OpKernelBase<DeviceType,

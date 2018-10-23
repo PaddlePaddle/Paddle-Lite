@@ -193,6 +193,10 @@ if (NOT FOUND_MATCH)
     target_link_libraries(test-polygon-box-transform-op paddle-mobile)
 
     # gen test
+    ADD_EXECUTABLE(test-fill-constant-op operators/test_fill_constant_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-fill-constant-op paddle-mobile)
+
+    # gen test
     ADD_EXECUTABLE(test-reshape-op operators/test_reshape_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-reshape-op paddle-mobile)
 
@@ -215,6 +219,10 @@ if (NOT FOUND_MATCH)
     # test dequantize op
     ADD_EXECUTABLE(test-dequantize-op operators/test_dequantize_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-dequantize-op paddle-mobile)
+
+    # test int8 conv op
+    ADD_EXECUTABLE(test-int8-conv-op operators/test_int8_conv_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-int8-conv-op paddle-mobile)
 
     # gen test log
     ADD_EXECUTABLE(test-log common/test_log.cpp)

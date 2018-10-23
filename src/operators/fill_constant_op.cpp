@@ -12,25 +12,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef DEQUANT_OP
+#ifdef FILL_CONSTANT_OP
 
-#include "operators/dequantize_op.h"
-
-namespace paddle_mobile {
-namespace operators {
-
-template <typename DeviceType, typename T>
-void DequantizeOp<DeviceType, T>::InferShape() const {
-  const auto& input_dims = this->param_.input_->dims();
-  this->param_.out_->Resize(input_dims);
-}
-
-}  // namespace operators
-}  // namespace paddle_mobile
+#include "operators/fill_constant_op.h"
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(dequantize, ops::DequantizeOp);
+REGISTER_OPERATOR_CPU(fill_constant, ops::FillConstantOp);
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+REGISTER_OPERATOR_MALI_GPU(fill_constant, ops::FillConstantOp);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(fill_constant, ops::FillConstantOp);
 #endif
 
 #endif
