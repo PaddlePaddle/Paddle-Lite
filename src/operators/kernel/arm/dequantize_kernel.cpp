@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef PADDLE_MOBILE_CPU
+#ifdef DEQUANT_OP
 
 #include "operators/kernel/dequantize_kernel.h"
 

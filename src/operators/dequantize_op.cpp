@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef DEQUANT_OP
+
 #include "operators/dequantize_op.h"
 
 namespace paddle_mobile {
@@ -29,4 +31,6 @@ void DequantizeOp<DeviceType, T>::InferShape() const {
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(dequantize, ops::DequantizeOp);
+#endif
+
 #endif

@@ -642,6 +642,7 @@ void Gemm::WriteWithAlphaBeta(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
 // C = A * B, 8位 int32_t
 void Gemm::WriteBasic(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
                       int32_t ldc) {
+#if __ARM_NEON
   int32_t nc1 = nc >> 4;
   int32_t _nc1 = nc & 15;
   int32_t step = sizeof(int32_t) * ldc;
@@ -695,6 +696,7 @@ void Gemm::WriteBasic(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
       }
     }
   }
+#endif  // __ARM_NEON
 }
 
 // C = A * B + C

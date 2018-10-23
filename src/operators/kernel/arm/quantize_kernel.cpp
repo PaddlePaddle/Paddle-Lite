@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef PADDLE_MOBILE_CPU
+#ifdef QUANT_OP
 
 #include "operators/kernel/quantize_kernel.h"
 #include <cmath>
@@ -225,7 +225,7 @@ static void quantize_round_to_nearest(const Tensor *input, const float scale,
   const float *x = input->data<const float>();
   int8_t *y = output->mutable_data<int8_t>();
   size_t size = input->numel();
-#ifdef defined(__ARM_NEON__) || defined(__ARM_NEON)
+#if defined(__ARM_NEON__) || defined(__ARM_NEON)
   size_t loop = size >> 4;
   size_t remain = size & 0xF;
   for (size_t i = 0; i < loop; ++i) {
