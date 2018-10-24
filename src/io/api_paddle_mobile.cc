@@ -29,7 +29,14 @@ PaddleMobilePredictor<Dtype, P>::PaddleMobilePredictor(
 template <typename Dtype, Precision P>
 bool PaddleMobilePredictor<Dtype, P>::Init(const PaddleMobileConfig &config) {
   paddle_mobile_.reset(new PaddleMobile<Dtype, P>());
-  if (!config.model_dir.empty()) {
+
+  if (config.memory_pack.from_memory) {
+    DLOG << "load from memory!";
+    paddle_mobile_->LoadCombinedMemory(config.memory_pack.model_size,
+                                       config.memory_pack.model_buf,
+                                       config.memory_pack.combined_params_size,
+                                       config.memory_pack.combined_params_buf);
+  } else if (!config.model_dir.empty()) {
     paddle_mobile_->Load(config.model_dir, config.optimize,
                          config.quantification, config.batch_size);
   } else if (!config.prog_file.empty() && !config.param_file.empty()) {
