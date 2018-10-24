@@ -29,7 +29,7 @@ bool ConvKernel<GPU_CL, float>::Init(ConvParam<GPU_CL> *param) {
   auto filter_ddim = param->Filter()->dims();
 
   std::vector<int64_t> filter_shape(
-          {filter_ddim[1], filter_ddim[0], filter_ddim[2], filter_ddim[3]});
+      {filter_ddim[1], filter_ddim[0], filter_ddim[2], filter_ddim[3]});
   framework::DDim ddim = framework::make_ddim(filter_shape);
   if (filter_ddim[1] == 1) {
     param->Filter()->Resize(ddim);
@@ -44,12 +44,11 @@ bool ConvKernel<GPU_CL, float>::Init(ConvParam<GPU_CL> *param) {
 
   DLOG << " init helper: " << &cl_helper_;
   DLOG << " conv kernel add kernel ~ ";
-  DLOG << " width of one block: " << param->Filter()->WidthOfOneBlock();
-  DLOG << " height of one block: " << param->Filter()->HeightOfOneBlock();
+  DLOG << " width of one block: " << param->Filter()->dims()[3];
+  DLOG << " height of one block: " << param->Filter()->dims()[2];
   DLOG << " filter dims: " << param->Filter()->dims();
 
-  if (param->Filter()->WidthOfOneBlock() == 1 &&
-      param->Filter()->HeightOfOneBlock() == 1) {
+  if (param->Filter()->dims()[2] == 1 && param->Filter()->dims()[3] == 1) {
     DLOG << " here1 ";
     this->cl_helper_.AddKernel("conv_1x1", "conv_kernel.cl");
 
@@ -59,8 +58,8 @@ bool ConvKernel<GPU_CL, float>::Init(ConvParam<GPU_CL> *param) {
     DLOG << " here2 ";
     this->cl_helper_.AddKernel("depth_conv_3x3", "depthwise_conv_kernel.cl");
 
-  } else if (param->Filter()->WidthOfOneBlock() == 3 &&
-             param->Filter()->HeightOfOneBlock() == 3) {
+  } else if (param->Filter()->dims()[2] == 3 &&
+             param->Filter()->dims()[3] == 3) {
     DLOG << " here3 ";
     this->cl_helper_.AddKernel("conv_3x3", "conv_kernel.cl");
 
@@ -84,13 +83,15 @@ void ConvKernel<GPU_CL, float>::Compute(const ConvParam<GPU_CL> &param) {
 
   int stride = param.Strides()[0];
   int offset = param.Offset();
-  int input_c = param.Input()->CBlock();
+  int input_c = reinterpret_cast<framework::CLImageConverterFolder *>(
+                    param.Input()->Converter())
+                    ->GetCBlock();
   int dilation = param.Dilations()[0];
-  int input_width = param.Input()->WidthOfOneBlock();
-  int input_height = param.Input()->HeightOfOneBlock();
 
-  int output_width = param.Output()->WidthOfOneBlock();
-  int output_height = param.Output()->HeightOfOneBlock();
+  int input_width = param.Input()->dims()[3];
+  int input_height = param.Input()->dims()[2];
+  int output_width = param.Output()->dims()[3];
+  int output_height = param.Output()->dims()[2];
 
   cl_int status;
 
@@ -122,13 +123,12 @@ void ConvKernel<GPU_CL, float>::Compute(const ConvParam<GPU_CL> &param) {
   status = clSetKernelArg(kernel, 12, sizeof(int), &output_width);
   status = clSetKernelArg(kernel, 13, sizeof(int), &output_height);
 
+  //  cl_event out_event = param.Output()->GetClEvent();
+  //  cl_event wait_event = param.Input()->GetClEvent();
 
-//  cl_event out_event = param.Output()->GetClEvent();
-//  cl_event wait_event = param.Input()->GetClEvent();
-
-  status =
-      clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
-                             default_work_size.data(), NULL, 0, NULL, NULL);
+  status = clEnqueueNDRangeKernel(
+      this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
+      default_work_size.data(), NULL, 0, NULL, NULL);
   CL_CHECK_ERRORS(status);
 }
 

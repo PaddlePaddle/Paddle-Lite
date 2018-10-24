@@ -90,7 +90,8 @@ class CLEngine {
 
   bool BuildProgram(cl_program program) {
     cl_int status;
-    status = clBuildProgram(program, 0, 0, "-cl-fast-relaxed-math -I cl_kernel", 0, 0);
+    status = clBuildProgram(program, 0, 0, "-cl-fast-relaxed-math -I cl_kernel",
+                            0, 0);
 
     CL_CHECK_ERRORS(status);
 
@@ -98,7 +99,7 @@ class CLEngine {
       size_t log_size;
       clGetProgramBuildInfo(program, CLEngine::Instance()->DeviceID(),
                             CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
-      char *log = (char *)malloc(log_size);
+      char *log = reinterpret_cast<char *>(malloc(log_size));
       clGetProgramBuildInfo(program, CLEngine::Instance()->DeviceID(),
                             CL_PROGRAM_BUILD_LOG, log_size, log, NULL);
       DLOG << " program build error: " << log;

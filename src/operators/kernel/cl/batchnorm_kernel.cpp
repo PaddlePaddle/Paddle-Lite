@@ -76,18 +76,16 @@ void BatchNormKernel<GPU_CL, float>::Compute(
   auto out = param.OutputY()->GetCLImage();
   auto new_scale = param.NewScale()->GetCLImage();
   auto new_bias = param.NewBias()->GetCLImage();
-  const int out_height = param.OutputY()->HeightOfOneBlock();
-  const int out_width = param.OutputY()->WidthOfOneBlock();
+  const int out_width = default_work_size[1];
 
-  clSetKernelArg(kernel, 0, sizeof(int), &out_height);
   clSetKernelArg(kernel, 1, sizeof(int), &out_width);
   clSetKernelArg(kernel, 2, sizeof(cl_mem), &input);
   clSetKernelArg(kernel, 3, sizeof(cl_mem), &new_scale);
   clSetKernelArg(kernel, 4, sizeof(cl_mem), &new_bias);
   clSetKernelArg(kernel, 5, sizeof(cl_mem), &out);
 
-//  cl_event out_event = param.OutputY()->GetClEvent();
-//  cl_event wait_event = param.InputX()->GetClEvent();
+  //  cl_event out_event = param.OutputY()->GetClEvent();
+  //  cl_event wait_event = param.InputX()->GetClEvent();
   clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
                          default_work_size.data(), NULL, 0, NULL, NULL);
 }

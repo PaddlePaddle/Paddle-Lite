@@ -30,7 +30,7 @@ void FeedKernel<GPU_CL, float>::Compute(const FeedParam<GPU_CL> &param) {
   cl_int status;
   auto output = param.Out();
   const Tensor *input = param.InputX();
-//  DLOG << *input;
+  //  DLOG << *input;
   const float *input_data = input->data<float>();
   int numel = input->numel();
   cl_mem cl_image = output->GetCLImage();
@@ -52,7 +52,7 @@ void FeedKernel<GPU_CL, float>::Compute(const FeedParam<GPU_CL> &param) {
 
   size_t global_work_size[2] = {width, height};
 
-//  cl_event out_event = param.Out()->GetClEvent();
+  //  cl_event out_event = param.Out()->GetClEvent();
 
   status = clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2,
                                   NULL, global_work_size, NULL, 0, NULL, NULL);

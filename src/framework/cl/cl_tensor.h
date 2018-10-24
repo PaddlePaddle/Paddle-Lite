@@ -115,9 +115,7 @@ class CLTensor : TensorBase {
     return reinterpret_cast<T *>(host_ptr_);
   }
 
-  int memorySize() {
-    return holder_->size();
-  }
+  int memorySize() { return holder_->size(); }
 
   ~CLTensor() {
     DLOG << "~CLTensor";
