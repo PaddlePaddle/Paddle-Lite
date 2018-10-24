@@ -15,11 +15,30 @@ limitations under the License. */
 #include "operators/math/math_function.h"
 #include <cstring>
 #include <string>
+#include "framework/data_type.h"
+#include "framework/tensor.h"
 #include "operators/math/gemm.h"
 
 namespace paddle_mobile {
 namespace operators {
 namespace math {
+
+struct TensorSetConstant {
+  TensorSetConstant(framework::Tensor *tensor, float value)
+      : tensor_(tensor), value_(value) {}
+  template <typename T>
+  void apply() const {
+    auto *begin = tensor_->mutable_data<T>();
+    std::fill(begin, begin + tensor_->numel(), static_cast<T>(value_));
+  }
+  framework::Tensor *tensor_;
+  float value_;
+};
+
+void set_constant(framework::Tensor *tensor, float value) {
+  framework::VisitDataType(framework::ToDataType(tensor->type()),
+                           TensorSetConstant(tensor, value));
+}
 
 template <>
 void matmul<float>(const framework::Tensor &matrix_a, bool trans_a,
@@ -135,7 +154,7 @@ template <typename T>
 struct ClearTensor<CPU, T> {
   void operator()(framework::Tensor *tensor) {
     auto size = tensor->numel();
-    auto *tensor_data = tensor->data<float>();
+    auto *tensor_data = tensor->data<T>();
     memset((void *)tensor_data, 0, sizeof(T) * size);  // NOLINT
   }
 };
@@ -151,9 +170,9 @@ struct RowwiseAdd<CPU, T> {
     PADDLE_MOBILE_ENFORCE((output->dims() == in_dims),
                           "output->dims() must be equal to in_dims.");
 
-    auto *input_data = input.data<float>();
-    auto *out_data = output->data<float>();
-    auto *vec_data = vector.data<float>();
+    auto *input_data = input.data<T>();
+    auto *out_data = output->data<T>();
+    auto *vec_data = vector.data<T>();
     for (int64_t i = 0; i < in_dims[0]; ++i) {
       for (int64_t j = 0; j < size; ++j) {
         out_data[i * size + j] = input_data[i * size + j] + vec_data[j];

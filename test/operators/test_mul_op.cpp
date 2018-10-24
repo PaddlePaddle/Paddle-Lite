@@ -12,80 +12,88 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include "../test_helper.h"
 #include "../test_include.h"
 #include "operators/mul_op.h"
 
+#define a(i, j) a[(i)*lda + (j)]
+#define b(i, j) b[(i)*ldb + (j)]
+#define c(i, j) c[(i)*ldc + (j)]
+
+namespace paddle_mobile {
+using framework::AttributeMap;
+using framework::DDim;
+using framework::Scope;
+using framework::make_ddim;
+template <typename I, typename O>
+int TestMulOP() {
+  int32_t m = 1024;
+  int32_t n = 1024;
+  int32_t k = 1024;
+  int32_t lda = k;
+  int32_t ldb = n;
+  int32_t ldc = n;
+  DDim inputA_shape = make_ddim({m, k});
+  DDim inputB_shape = make_ddim({k, n});
+  VariableNameMap inputs;
+  VariableNameMap outputs;
+  auto scope = std::make_shared<Scope>();
+  inputs["X"] = std::vector<std::string>({"inputA"});
+  inputs["Y"] = std::vector<std::string>({"inputB"});
+  outputs["Out"] = std::vector<std::string>({"output"});
+
+  auto inputA_var = scope.get()->Var("inputA");
+  auto inputA = inputA_var->template GetMutable<framework::LoDTensor>();
+  SetupTensor<I>(inputA, inputA_shape, -127, 127);
+  auto inputB_var = scope.get()->Var("inputB");
+  auto inputB = inputB_var->template GetMutable<framework::LoDTensor>();
+  SetupTensor<I>(inputB, inputB_shape, -127, 127);
+
+  auto output_var = scope.get()->Var("output");
+  AttributeMap attrs;
+  attrs["x_num_col_dims"].Set<int>(1);
+  attrs["y_num_col_dims"].Set<int>(1);
+  auto *op =
+      new operators::MulOp<CPU, float>("mul", inputs, outputs, attrs, scope);
+  op->InferShape();
+  op->Run();
+  auto output = output_var->template Get<framework::LoDTensor>();
+  const O *output_data = output->data<O>();
+  // compare
+  O *c = static_cast<O *>(memory::Alloc(sizeof(O) * m * n));
+  I *a = inputA->data<I>();
+  I *b = inputB->data<I>();
+  for (int32_t i = 0; i < m; ++i) {
+    for (int32_t j = 0; j < n; ++j) {
+      O r = 0;
+      for (int32_t p = 0; p < k; p++) {
+        r += static_cast<O>(a(i, p)) * static_cast<O>(b(p, j));
+      }
+      c(i, j) = r;
+    }
+  }
+
+  int32_t eq = 0;
+  int32_t neq = 0;
+  for (int32_t i = 0; i < m * n; ++i) {
+    PADDLE_MOBILE_ENFORCE(
+        output_data[i] == c[i], "output[%d] = %d, output_cmp[%d] = %d", i,
+        static_cast<int32_t>(output_data[i]), i, static_cast<int32_t>(c[i]));
+    if (static_cast<int>(output_data[i] == c[i])) {
+      ++eq;
+    } else {
+      ++neq;
+    }
+  }
+  DLOG << "mnk=" << m << " " << n << " " << k << "   eq=" << eq
+       << " neq=" << neq;
+  delete op;
+  return 0;
+}
+}  // namespace paddle_mobile
+
 int main() {
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
-  auto program = loader.Load(g_resnet);
-  PADDLE_MOBILE_ENFORCE(program.originProgram != nullptr,
-                        "program file read fail");
-
-  Executor4Test<paddle_mobile::CPU,
-                paddle_mobile::operators::MulOp<paddle_mobile::CPU, float>>
-      executor(program, "mul");
-
-  // 1. input_tensors;
-  vector<Tensor> input_tensors;
-
-  Tensor input1;
-  auto input1_data = CreateInput<float>(&input1, {3, 2, 1, 1}, 0, 1);
-  input_tensors.push_back(input1);
-  Tensor input2;
-  auto input2_data = CreateInput<float>(&input2, {2, 3}, 0, 1);
-  input_tensors.push_back(input2);
-
-  // 2. input_names
-  vector<string> input_names({
-      "pool2d_0.tmp_0",
-      "fc_0.w_0",
-  });
-
-  // 3. output_names
-  vector<string> output_names({"fc_0.tmp_0"});
-
-  // 4. out_dims;
-  vector<DDim> out_ddims;
-  auto out_ddim = paddle_mobile::framework::make_ddim({3, 3});
-  out_ddims.push_back(out_ddim);
-
-  auto output = executor.Predict<LoDTensor>(input_tensors, input_names,
-                                            output_names, out_ddims);
-
-  auto output0_data = output[0]->data<float>();
-
-  auto dim_1 = input1.numel() / input1.dims()[0];
-  DLOG << " input1 : ";
-  for (int i = 0; i < input1.dims()[0]; ++i) {
-    for (int j = 0; j < dim_1; ++j) {
-      DLOGF("%f ", input1_data[i * dim_1 + j]);
-    }
-    DLOGF("\n");
-  }
-
-  auto dim_2 = input2.numel() / input2.dims()[0];
-  DLOG << " input2 : ";
-  for (int i = 0; i < input2.dims()[0]; ++i) {
-    for (int j = 0; j < dim_2; ++j) {
-      DLOGF("%f ", input2_data[i * dim_2 + j]);
-    }
-    DLOGF("\n");
-  }
-
-  auto dim_output0 = output[0]->numel() / output[0]->dims()[0];
-  DLOG << " output : ";
-  for (int i = 0; i < output[0]->dims()[0]; ++i) {
-    for (int j = 0; j < dim_output0; ++j) {
-      DLOGF("%f ", output0_data[i * dim_2 + j]);
-    }
-    DLOGF("\n");
-  }
-
-  /// output (3,3)
-  DLOG << "output memory size : " << output[0]->memory_size();
-  DLOG << "output numel : " << output[0]->numel();
-
-  DLOG << input1_data[0] << " x " << input2_data[0] << " + " << input1_data[1]
-       << " x " << input2_data[0 + 3] << " = " << output0_data[0];
+  paddle_mobile::TestMulOP<int8_t, int32_t>();
+  paddle_mobile::TestMulOP<float, float>();
   return 0;
 }

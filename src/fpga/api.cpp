@@ -22,7 +22,7 @@ limitations under the License. */
 #include "fpga/filter.h"
 #include "fpga/image.h"
 #define FPGA_TEST_MODE
-//#define PADDLE_MOBILE_OS_LINUX
+#define PADDLE_MOBILE_OS_LINUX
 
 namespace paddle_mobile {
 namespace fpga {
@@ -149,7 +149,7 @@ int ComputeBasicConv(const struct ConvArgs &args) {
   return do_ioctl(IOCTL_CONFIG_CONV, &args);
 }
 
-int ComputeFpgaConv(const struct WrapperConvArgs &args) {
+int ComputeFpgaConv(const struct SplitConvArgs &args) {
 #ifdef FPGA_TEST_MODE
   DLOG << "=============ComputeFPGAConv===========";
   DLOG << "   filter_num:" << args.filter_num
@@ -194,8 +194,8 @@ int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
 #ifdef FPGA_TEST_MODE
   DLOG << "=============ComputeFpgaEWAdd===========";
   DLOG << "   relu_enabled:" << args.relu_enabled
-       << "   const0:" << fp16_2_fp32(short(args.const0))
-       << "   const1:" << fp16_2_fp32(short(args.const1));
+       << "   const0:" << fp16_2_fp32(int16_t(args.const0))
+       << "   const1:" << fp16_2_fp32(int16_t(args.const1));
   DLOG << "   image0_address:" << args.image0.address
        << "   image0_scale_address:" << args.image0.scale_address
        << "   image0_channels:" << args.image0.channels
@@ -383,10 +383,10 @@ void format_concat_output(framework::Tensor *out, int height, int width,
   out->reset_data_ptr(data_ptr);
 }
 
-void fill_conv_arg(struct WrapperConvArgs *arg, framework::Tensor *input,
-                   framework::Tensor *out, framework::Tensor *filter,
-                   bool relu_enabled, int group_num, int stride_h, int stride_w,
-                   int padding_h, int padding_w, float *bs_ptr) {
+void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
+                    framework::Tensor *out, framework::Tensor *filter,
+                    bool relu_enabled, int group_num, int stride_h,
+                    int stride_w, int padding_h, int padding_w, float *bs_ptr) {
   auto input_ptr = input->data<float>();
   auto filter_ptr = filter->data<float>();
   auto out_ptr = out->data<float>();

@@ -18,9 +18,9 @@ limitations under the License. */
 #include <vector>
 
 #include "framework/lod_tensor.h"
+#include "framework/mixed_vector.h"
 #include "framework/tensor.h"
 #include "memory/t_malloc.h"
-#include "mixed_vector.h"
 
 namespace paddle_mobile {
 namespace framework {
