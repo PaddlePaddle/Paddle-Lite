@@ -41,13 +41,13 @@ void FeedKernel<GPU_CL, float>::Compute(const FeedParam<GPU_CL> &param) {
   input_cl_tensor.Resize(input->dims());
   cl_mem inputBuffer = input_cl_tensor.mutable_with_data<float>(input_data);
 
-  status = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&inputBuffer);
+  status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &inputBuffer);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&cl_image);
+  status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &cl_image);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 2, sizeof(cl_int), (void *)&width);
+  status = clSetKernelArg(kernel, 2, sizeof(cl_int), &width);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 3, sizeof(cl_int), (void *)&height);
+  status = clSetKernelArg(kernel, 3, sizeof(cl_int), &height);
   CL_CHECK_ERRORS(status);
 
   size_t global_work_size[2] = {width, height};
