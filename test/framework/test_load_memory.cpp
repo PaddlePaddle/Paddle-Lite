@@ -58,9 +58,9 @@ int main() {
   size_t sizeBuf = ReadBuffer(model_path.c_str(), &bufModel);
   uint8_t *bufParams = nullptr;
 
-  DLOG << "sizeBuf: " << sizeBuf;
+  std::cout << "sizeBuf: " << sizeBuf << std::endl;
   size_t sizeParams = ReadBuffer(params_path.c_str(), &bufParams);
-  DLOG << "sizeParams: " << sizeParams;
+  std::cout << "sizeParams: " << sizeParams << std::endl;
 
   paddle_mobile.LoadCombinedMemory(sizeBuf, bufModel, sizeParams, bufParams);
   return 0;

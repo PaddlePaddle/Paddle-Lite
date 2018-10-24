@@ -22,6 +22,7 @@ const char *G_OP_TYPE_BATCHNORM = "batch_norm";
 const char *G_OP_TYPE_BOX_CODER = "box_coder";
 const char *G_OP_TYPE_CONCAT = "concat";
 const char *G_OP_TYPE_ELEMENTWISE_ADD = "elementwise_add";
+const char *G_OP_TYPE_FILL_CONSTANT = "fill_constant";
 const char *G_OP_TYPE_FUSION_CONV_ADD_RELU = "fusion_conv_add_relu";
 const char *G_OP_TYPE_FUSION_CONV_ADD_PRELU = "fusion_conv_add_prelu";
 const char *G_OP_TYPE_FUSION_CONV_ADD_ADD_PRELU = "fusion_conv_add_add_prelu";
@@ -34,6 +35,7 @@ const char *G_OP_TYPE_FUSION_CONV_ADD = "fusion_conv_add";
 const char *G_OP_TYPE_LRN = "lrn";
 const char *G_OP_TYPE_MUL = "mul";
 const char *G_OP_TYPE_MULTICLASS_NMS = "multiclass_nms";
+const char *G_OP_TYPE_POLYGON_BOX_TRANSFORM = "polygon_box_transform";
 const char *G_OP_TYPE_POOL2D = "pool2d";
 const char *G_OP_TYPE_PRIOR_BOX = "prior_box";
 const char *G_OP_TYPE_RELU = "relu";
@@ -94,9 +96,11 @@ std::unordered_map<
         {G_OP_TYPE_FUSION_CONV_BN_ADD_RELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_PRIOR_BOX, {{"Image", "Input"}, {"Boxes", "Variances"}}},
         {G_OP_TYPE_MULTICLASS_NMS, {{"BBoxes", "Scores"}, {"Out"}}},
+        {G_OP_TYPE_POLYGON_BOX_TRANSFORM, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_FC, {{"X", "Y", "Z"}, {"Out"}}},
         {G_OP_TYPE_RESHAPE, {{"X"}, {"Out"}}},
         {G_OP_TYPE_DEPTHWISE_CONV, {{"Input"}, {"Output"}}},
+        {G_OP_TYPE_FILL_CONSTANT, {{}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_RELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_PRELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_ADD_PRELU, {{"Input"}, {"Out"}}},

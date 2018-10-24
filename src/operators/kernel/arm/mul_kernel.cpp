@@ -31,6 +31,8 @@ void MulKernel<CPU, float>::Compute(const MulParam<CPU> &param) const {
   param.Out()->set_lod(param.InputX()->lod());
 }
 
+template class MulKernel<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
