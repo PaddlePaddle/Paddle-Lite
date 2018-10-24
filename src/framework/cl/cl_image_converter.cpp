@@ -248,8 +248,8 @@ void CLImageConverterNWBlock::NCHWToImage(float *tensor, half_t *image,
     for (int c = 0; c < C; c++) {
       for (int h = 0; h < H; ++h) {
         for (int w = 0; w < W; ++w) {
-          int index = 4 * c * (width * H) + 4 * (n / 4) * H * W + h * W * 4 +
-                      w * 4 + (n % 4);
+          int index = 4 * c * (width * H) + 4 * h * width + 4 * W * (n / 4) +
+                      w * 4 + n % 4;
           if (n < N) {
             image[index] = Float2Half(*p);
             p++;
@@ -283,8 +283,8 @@ void CLImageConverterNWBlock::ImageToNCHW(half_t *image, float *tensor,
     for (int c = 0; c < C; c++) {
       for (int h = 0; h < H; ++h) {
         for (int w = 0; w < W; ++w) {
-          int index = 4 * c * (width * H) + 4 * (n / 4) * H * W + h * W * 4 +
-                      w * 4 + (n % 4);
+          int index = 4 * c * (width * H) + 4 * h * width + 4 * W * (n / 4) +
+                      w * 4 + n % 4;
           *p = Half2Float(image[index]);
           p++;
           if (index >= (width * height * 4)) {
