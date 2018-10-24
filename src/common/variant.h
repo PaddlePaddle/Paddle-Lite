@@ -12,14 +12,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include <cstdlib>
+#pragma once
 
+#include <cstdlib>
+#include <cstring>
+#include <string>
 #include "common/enforce.h"
 #include "common/log.h"
 
-#pragma once
-
 namespace paddle_mobile {
+
 template <int ID, typename Type>
 struct IDToType {
   typedef Type type_t;

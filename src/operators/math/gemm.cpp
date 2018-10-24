@@ -3379,7 +3379,7 @@ void Gemm::SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A,
     // 对 B 分块
     NC = L1 / (KC * sizeof(float));
     if (NC == 0) {
-      NC == NR;
+      NC = NR;
     } else {
       int nblock_num = (n + NC - 1) / NC;
       NC = (n + nblock_num - 1) / nblock_num;
@@ -3662,7 +3662,7 @@ void Gemm::AddDot6x8(int k, const float *a, const float *b, float *c, int ldc) {
   b_ptr = b;
   int kc1 = k / 8;
   int kc2 = k % 8;
-  int step = 4 * ldc;
+  int step = sizeof(float) * ldc;
   asm volatile(
       "pld        [%[a_ptr]]            \n\t"
       "pld        [%[a_ptr],  #64]      \n\t"
@@ -3866,11 +3866,10 @@ void Gemm::AddDot6x8(int k, const float *a, const float *b, float *c, int ldc) {
       :
       : [a_ptr] "r"(a_ptr), [b_ptr] "r"(b_ptr), [c] "r"(c), [kc1] "r"(kc1),
         [kc2] "r"(kc2), [step] "r"(step)
-      : "memory", "r5", "r6", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
-        "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15");
+      : "cc", "memory", "r5", "r6", "q0", "q1", "q2", "q3", "q4", "q5", "q6",
+        "q7", "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15");
 
 #endif  // __aarch64__
-#else
 
 #endif  // __ARM_NEON
 }

@@ -26,7 +26,7 @@ void SumOp<Dtype, T>::InferShape() const {
   auto inputs = this->param_.Inputs();
   const size_t n = inputs.size();
 
-  std::vector<DDim> inputs_dims;
+  std::vector<framework::DDim> inputs_dims;
   inputs_dims.reserve(n);
   for (int i = 0; i < n; i++) {
     inputs_dims.push_back(inputs[i]->dims());
@@ -65,7 +65,6 @@ REGISTER_OPERATOR_CPU(sum, ops::SumOp);
 REGISTER_OPERATOR_MALI_GPU(sum, ops::ConcatOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(sum, ops::ConcatOp);
 #endif
 
 #endif

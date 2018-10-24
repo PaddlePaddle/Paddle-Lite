@@ -64,6 +64,9 @@ limitations under the License. */
 // load requared ops
 LOAD_OP(feed)
 LOAD_OP(fetch)
+#ifdef FILL_CONSTANT_OP
+LOAD_OP(fill_constant)
+#endif
 #ifdef BATCHNORM_OP
 LOAD_OP2(batch_norm, CPU, MALI_GPU);
 #endif
@@ -198,6 +201,9 @@ LOAD_OP3(pool2d, CPU, MALI_GPU, FPGA);
 #endif
 #ifdef MULTICLASSNMS_OP
 LOAD_OP1(multiclass_nms, CPU);
+#endif
+#ifdef POLYGONBOXTRANSFORM_OP
+LOAD_OP1(polygon_box_transform, CPU);
 #endif
 #ifdef SUM_OP
 LOAD_OP1(sum, CPU);
