@@ -37,8 +37,7 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
   if (filter_ddim[1] == 1) {
     param->Filter()->Resize(ddim);
   }
-  param->Filter()->InitCLImage(cl_helper_.CLContext(),
-                               cl_helper_.CLCommandQueue());
+
   param->Bias()->InitCLImage(cl_helper_.CLContext(),
                              cl_helper_.CLCommandQueue());
 
@@ -135,19 +134,25 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
 
   param->SetOffset(offset);
 
-  if (param->Filter()->WidthOfOneBlock() == 1 &&
-      param->Filter()->HeightOfOneBlock() == 1) {
+  if (param->Filter()->dims()[2] == 1 && param->Filter()->dims()[3] == 1) {
+    param->Filter()->InitNImage(cl_helper_.CLContext(),
+                                cl_helper_.CLCommandQueue());
+
     this->cl_helper_.AddKernel("conv_1x1", "conv_add_bn_relu_kernel.cl");
     DLOG << " conv add bn relu conv 1x1";
   } else if (param->Filter()->dims()[0] == 1 &&
              param->Input()->dims()[1] == param->Output()->dims()[1] &&
              param->Filter()->dims()[2] == 3) {
-    //    this->cl_helper_.AddKernel("depth_conv_3x3",
-    //    "conv_add_bn_relu_kernel.cl");
-    this->cl_helper_.AddKernel("depth_conv_3x3", "depthwise_conv_add_bn_relu_kernel.cl");
+    param->Filter()->InitCLImage(cl_helper_.CLContext(),
+                                 cl_helper_.CLCommandQueue());
+    this->cl_helper_.AddKernel("depth_conv_3x3", "conv_add_bn_relu_kernel.cl");
     DLOG << " conv add bn relu depth_conv_3x3";
-  } else if (param->Filter()->WidthOfOneBlock() == 3 &&
-             param->Filter()->HeightOfOneBlock() == 3) {
+
+  } else if (param->Filter()->dims()[2] == 3 &&
+             param->Filter()->dims()[3] == 3) {
+    param->Filter()->InitCLImage(cl_helper_.CLContext(),
+                                 cl_helper_.CLCommandQueue());
+
     this->cl_helper_.AddKernel("conv_3x3", "conv_add_bn_relu_kernel.cl");
     DLOG << " conv add bn relu conv_3x3";
   } else {
@@ -173,12 +178,14 @@ void ConvAddBNReluKernel<GPU_CL, float>::Compute(
   auto output = param.Output()->GetCLImage();
   int stride = param.Strides()[0];
   int offset = param.Offset();
-  int input_c = param.Input()->CBlock();
+  int input_c = reinterpret_cast<framework::CLImageConverterFolder *>(
+                    param.Input()->Converter())
+                    ->GetCBlock();
   int dilation = param.Dilations()[0];
-  int input_width = param.Input()->WidthOfOneBlock();
-  int input_height = param.Input()->HeightOfOneBlock();
-  int output_width = param.Output()->WidthOfOneBlock();
-  int output_height = param.Output()->HeightOfOneBlock();
+  int input_width = param.Input()->dims()[3];
+  int input_height = param.Input()->dims()[2];
+  int output_width = param.Output()->dims()[3];
+  int output_height = param.Output()->dims()[2];
 
   //  DLOG << " c block " << c_block;
   //  DLOG << " w " << w;

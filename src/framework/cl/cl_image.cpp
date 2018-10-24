@@ -16,214 +16,47 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace framework {
+
 void CLImageToTensor(CLImage *cl_image, Tensor *tensor,
                      cl_command_queue commandQueue) {
-  DDim ddim = cl_image->dims();
-  size_t N, C, H, W;
-  if (ddim.size() == 4) {
-    N = ddim[0];
-    if (N < 0) {
-      N = 1;
-    }
-    C = ddim[1];
-    H = ddim[2];
-    W = ddim[3];
-  } else if (ddim.size() == 1) {
-    N = 1;
-    C = ddim[0];
-    H = 1;
-    W = 1;
-  }
-
-  size_t width = W * ((C + 3) / 4);
-  size_t height = H * N;
-
-  float *p = tensor->mutable_data<float>();
-  half imageData[width * height * 4];
-  cl_int err;
-  cl_mem image = cl_image->GetCLImage();
-  size_t origin[3] = {0, 0, 0};
-  size_t region[3] = {width, height, 1};
-  err = clEnqueueReadImage(commandQueue, image, CL_TRUE, origin, region, 0, 0,
-                           imageData, 0, NULL, NULL);
-  size_t i0 = 0;
-  for (int n = 0; n < N; n++) {
-    for (int c = 0; c < C; c++) {
-      size_t i1 = i0;
-      for (int h = 0; h < H; h++) {
-        size_t i2 = (i1 << 2) + c % 4;
-        for (int w = 0; w < W; w++) {
-          *p = Half2Float(imageData[i2]);
-          i2 += 4;
-          p++;
-        }
-        i1 += width;
-      }
-    }
-    i0 += width * H;
-  }
-
-  if (err != CL_SUCCESS) {
-    CL_CHECK_ERRORS(err);
-  }
+  // TODO(yangfei): need imp
 }
+
 void TensorToCLImage(const Tensor *tensor, CLImage *cl_image,
                      cl_command_queue commandQueue) {
-  DDim ddim = cl_image->dims();
-  size_t N, C, H, W;
-  if (ddim.size() == 4) {
-    N = ddim[0];
-    if (N < 0) {
-      N = 1;
-    }
-    C = ddim[1];
-    H = ddim[2];
-    W = ddim[3];
-  } else if (ddim.size() == 1) {
-    N = 1;
-    C = ddim[0];
-    H = 1;
-    W = 1;
-  }
-
-  size_t width = W * ((C + 3) / 4);
-  size_t height = H * N;
-
-  const float *p = tensor->data<float>();
-  half imageData[width * height * 4];
-  cl_mem image = cl_image->GetCLImage();
-  size_t origin[3] = {0, 0, 0};
-  size_t region[3] = {width, height, 1};
-  cl_int err;
-  err = clEnqueueReadImage(commandQueue, image, CL_TRUE, origin, region, 0, 0,
-                           imageData, 0, NULL, NULL);
-  if (err != CL_SUCCESS) {
-    CL_CHECK_ERRORS(err);
-  }
-  size_t i0 = 0;
-  for (int n = 0; n < N; n++) {
-    for (int c = 0; c < C; c++) {
-      size_t i1 = i0;
-      for (int h = 0; h < H; h++) {
-        size_t i2 = (i1 << 2) + c % 4;
-        for (int w = 0; w < W; w++) {
-          imageData[i2] = Float2Half(*p);
-          i2 += 4;
-          p++;
-        }
-        i1 += width;
-      }
-    }
-    i0 += width * H;
-  }
+  // TODO(yangfei): need imp
 }
+
 #ifdef PADDLE_MOBILE_DEBUG
 Print &operator<<(Print &printer, const CLImage &cl_image) {
-  if (cl_image.GetImageType() == Invalid) {
-    PADDLE_MOBILE_THROW_EXCEPTION(" not support image type");
-  }
-  printer << " dims: " << cl_image.dims() << "\n";
+  int width = cl_image.ImageDims()[0];
+  int height = cl_image.ImageDims()[1];
+
+  half_t *image_data = new half_t[height * width * 4];
+  cl_int err;
+  cl_mem image = cl_image.GetCLImage();
+  size_t origin[3] = {0, 0, 0};
+  size_t region[3] = {width, height, 1};
+  err = clEnqueueReadImage(cl_image.CommandQueue(), image, CL_TRUE, origin,
+                           region, 0, 0, image_data, 0, NULL, NULL);
+
+  CL_CHECK_ERRORS(err);
+
+  float *tensor_data = new float[cl_image.numel()];
+  auto converter = cl_image.Converter();
+  converter->ImageToNCHW(image_data, tensor_data, cl_image.ImageDims(),
+                         cl_image.dims());
   int stride = cl_image.numel() / 20;
   stride = stride > 0 ? stride : 1;
-  float *data = new float[cl_image.numel()];
-  DDim ddim = cl_image.dims();
-  size_t N, C, H, W, width, height;
 
-  if (cl_image.GetImageType() == Normal || cl_image.dims().size() == 3 ||
-      cl_image.dims().size() == 4) {
-    if (ddim.size() == 4) {
-      N = ddim[0];
-      if (N < 0) {
-        N = 1;
-      }
-      C = ddim[1];
-      H = ddim[2];
-      W = ddim[3];
-      width = W * ((C + 3) / 4);
-      height = N * H;
-    } else if (ddim.size() == 2) {
-      width = ddim[1];
-      height = ddim[0];
-      N = 1;
-      C = 1;
-      H = ddim[0];
-      W = ddim[1];
-    } else if (ddim.size() == 1) {
-      width = ddim[0];
-      height = 1;
-      N = 1;
-      C = 1;
-      H = 1;
-      W = ddim[0];
-    }
-    float *p = data;
-    half *imageData = new half[height * width * 4];
-    cl_int err;
-    cl_mem image = cl_image.GetCLImage();
-    size_t origin[3] = {0, 0, 0};
-    size_t region[3] = {width, height, 1};
-    err = clEnqueueReadImage(cl_image.CommandQueue(), image, CL_TRUE, origin,
-                             region, 0, 0, imageData, 0, NULL, NULL);
-
-    if (err != CL_SUCCESS) {
-      printf("ImageWidth %ld \n", cl_image.ImageWidth());
-      printf("ImageWidth %ld \n", cl_image.ImageHeight());
-    }
-
-    size_t i0 = 0;
-    for (int n = 0; n < N; n++) {
-      for (int c = 0; c < C; c++) {
-        size_t i1 = i0 + (c / 4) * W;
-        for (int h = 0; h < H; h++) {
-          size_t i2 = (i1 << 2) + c % 4;
-          for (int w = 0; w < W; w++) {
-            *p = Half2Float(imageData[i2]);
-            i2 += 4;
-            p++;
-          }
-          i1 += width;
-        }
-      }
-      i0 += width * H;
-    }
-    delete (imageData);
-    CL_CHECK_ERRORS(err);
-
-  } else {
-    if (ddim.size() == 2) {
-      width = (ddim[1] + 3) / 4;
-      height = ddim[0];
-      H = ddim[0];
-      W = ddim[1];
-
-    } else if (ddim.size() == 1) {
-      width = (ddim[0] + 3) / 4;
-      height = 1;
-      H = 1;
-      W = ddim[0];
-    }
-    float *p = data;
-    half *imageData = new half[width * height * 4];
-    cl_int err;
-    cl_mem image = cl_image.GetCLImage();
-    size_t origin[3] = {0, 0, 0};
-    size_t region[3] = {width, height, 1};
-    err = clEnqueueReadImage(cl_image.CommandQueue(), image, CL_TRUE, origin,
-                             region, 0, 0, imageData, 0, NULL, NULL);
-    for (int h = 0; h < H; h++) {
-      for (int w = 0; w < W; w++) {
-        p[h * W + w] = Half2Float(imageData[(h * width + w / 4) * 4 + (w % 4)]);
-      }
-    }
-
-    delete (imageData);
-    CL_CHECK_ERRORS(err);
-  }
-
+  printer << " dims: " << cl_image.dims() << "\n";
   for (int i = 0; i < cl_image.numel(); i += stride) {
-    printer << data[i] << " ";
+    printer << tensor_data[i] << " ";
   }
-  delete (data);
+
+  delete[](tensor_data);
+  delete[](image_data);
+
   return printer;
 }
 #endif

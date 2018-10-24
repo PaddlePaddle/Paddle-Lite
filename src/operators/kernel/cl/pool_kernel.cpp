@@ -34,10 +34,17 @@ void PoolKernel<GPU_CL, float>::Compute(const PoolParam<GPU_CL> &param) {
   auto input = param.Input()->GetCLImage();
   auto out = param.Output()->GetCLImage();
 
-  const int in_height = param.Input()->HeightOfOneBlock();
-  const int in_width = param.Input()->WidthOfOneBlock();
-  const int out_height = param.Output()->HeightOfOneBlock();
-  const int out_width = param.Output()->WidthOfOneBlock();
+  framework::CLImageConverterFolder *input_folder_converter =
+      reinterpret_cast<framework::CLImageConverterFolder *>(
+          param.Input()->Converter());
+  framework::CLImageConverterFolder *output_folder_converter =
+      reinterpret_cast<framework::CLImageConverterFolder *>(
+          param.Output()->Converter());
+
+  const int in_height = input_folder_converter->HeightOfOneBlock();
+  const int in_width = input_folder_converter->WidthOfOneBlock();
+  const int out_height = output_folder_converter->HeightOfOneBlock();
+  const int out_width = output_folder_converter->WidthOfOneBlock();
 
   std::string pooling_type = param.PoolingType();
   std::vector<int> ksize = param.Ksize();
@@ -63,8 +70,8 @@ void PoolKernel<GPU_CL, float>::Compute(const PoolParam<GPU_CL> &param) {
   clSetKernelArg(kernel, 10, sizeof(cl_mem), &input);
   clSetKernelArg(kernel, 11, sizeof(cl_mem), &out);
 
-//  cl_event out_event = param.Output()->GetClEvent();
-//  cl_event wait_event = param.Input()->GetClEvent();
+  //  cl_event out_event = param.Output()->GetClEvent();
+  //  cl_event wait_event = param.Input()->GetClEvent();
   clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
                          default_work_size.data(), NULL, 0, NULL, NULL);
 }

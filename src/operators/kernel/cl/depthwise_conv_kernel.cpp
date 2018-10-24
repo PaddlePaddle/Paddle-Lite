@@ -50,12 +50,15 @@ void DepthwiseConvKernel<GPU_CL, float>::Compute(
   auto output = param.Output()->GetCLImage();
   int stride = param.Strides()[0];
   int offset = param.Offset();
-  int input_c = param.Input()->CBlock();
+  int input_c = reinterpret_cast<framework::CLImageConverterFolder *>(
+                    param.Input()->Converter())
+                    ->GetCBlock();
   int dilation = param.Dilations()[0];
-  int input_width = param.Input()->WidthOfOneBlock();
-  int input_height = param.Input()->HeightOfOneBlock();
-  int output_width = param.Output()->WidthOfOneBlock();
-  int output_height = param.Output()->HeightOfOneBlock();
+
+  int input_width = param.Input()->dims()[3];
+  int input_height = param.Input()->dims()[2];
+  int output_width = param.Output()->dims()[3];
+  int output_height = param.Output()->dims()[2];
 
   cl_int status;
 
@@ -76,12 +79,12 @@ void DepthwiseConvKernel<GPU_CL, float>::Compute(
 
   CL_CHECK_ERRORS(status);
 
-//  cl_event out_event = param.Output()->GetClEvent();
-//  cl_event wait_event = param.Input()->GetClEvent();
+  //  cl_event out_event = param.Output()->GetClEvent();
+  //  cl_event wait_event = param.Input()->GetClEvent();
 
-  status =
-      clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
-                             default_work_size.data(), NULL, 0, NULL, NULL);
+  status = clEnqueueNDRangeKernel(
+      this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
+      default_work_size.data(), NULL, 0, NULL, NULL);
 
   CL_CHECK_ERRORS(status);
 }
