@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.6)
+
 option(USE_OPENMP "openmp support" OFF)
-
-project(paddle-mobile)
-
 option(DEBUGING "enable debug mode" ON)
 option(USE_EXCEPTION "use std exception" ON)
 option(LOG_PROFILE "log profile" OFF)
@@ -11,6 +9,8 @@ option(CPU "armv7 with neon" OFF)
 option(GPU_MALI "mali gpu" OFF)
 option(GPU_CL "opencl gpu" ON)
 option(FPGA "fpga" OFF)
+
+project(paddle-mobile)
 
 file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c src/*.mm)
 file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)

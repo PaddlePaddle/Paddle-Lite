@@ -25,8 +25,6 @@ bool ConvAddKernel<GPU_CL, float>::Init(FusionConvAddParam<GPU_CL> *param) {
       param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
           param->Paddings()[0] == param->Paddings()[1],
       "need equal");
-  param->Filter()->InitCLImage(cl_helper_.CLContext(),
-                               this->cl_helper_.CLCommandQueue());
   param->Bias()->InitCLImage(cl_helper_.CLContext(),
                              this->cl_helper_.CLCommandQueue());
 
@@ -34,14 +32,24 @@ bool ConvAddKernel<GPU_CL, float>::Init(FusionConvAddParam<GPU_CL> *param) {
                static_cast<int>(param->Paddings()[1]);
   param->SetOffset(offset);
 
-  if (param->Filter()->WidthOfOneBlock() == 1 &&
-      param->Filter()->HeightOfOneBlock() == 1) {
+  if (param->Filter()->dims()[2] == 1 && param->Filter()->dims()[3] == 1) {
+    param->Filter()->InitNImage(cl_helper_.CLContext(),
+                                cl_helper_.CLCommandQueue());
+
     this->cl_helper_.AddKernel("conv_1x1", "conv_add_kernel.cl");
   } else if (param->Filter()->dims()[1] == 1) {
+    param->Filter()->InitCLImage(cl_helper_.CLContext(),
+                                 cl_helper_.CLCommandQueue());
+
     this->cl_helper_.AddKernel("depth_conv_3x3", "conv_add_kernel.cl");
-  } else if (param->Filter()->WidthOfOneBlock() == 3 &&
-             param->Filter()->HeightOfOneBlock() == 3) {
+
+  } else if (param->Filter()->dims()[2] == 3 &&
+             param->Filter()->dims()[3] == 3) {
+    param->Filter()->InitCLImage(cl_helper_.CLContext(),
+                                 cl_helper_.CLCommandQueue());
+
     this->cl_helper_.AddKernel("conv_3x3", "conv_add_kernel.cl");
+
   } else {
     PADDLE_MOBILE_THROW_EXCEPTION(" not support ");
   }
@@ -63,12 +71,15 @@ void ConvAddKernel<GPU_CL, float>::Compute(
   auto output = param.Output()->GetCLImage();
   int stride = param.Strides()[0];
   int offset = param.Offset();
-  int input_c = param.Input()->CBlock();
+  int input_c = reinterpret_cast<framework::CLImageConverterFolder *>(
+                    param.Input()->Converter())
+                    ->GetCBlock();
   int dilation = param.Dilations()[0];
-  int input_width = param.Input()->WidthOfOneBlock();
-  int input_height = param.Input()->HeightOfOneBlock();
-  int output_width = param.Output()->WidthOfOneBlock();
-  int output_height = param.Output()->HeightOfOneBlock();
+
+  int input_width = param.Input()->dims()[3];
+  int input_height = param.Input()->dims()[2];
+  int output_width = param.Output()->dims()[3];
+  int output_height = param.Output()->dims()[2];
 
   cl_int status;
 
@@ -117,12 +128,12 @@ void ConvAddKernel<GPU_CL, float>::Compute(
   status = clSetKernelArg(kernel, 14, sizeof(int), &output_height);
   CL_CHECK_ERRORS(status);
 
-//  cl_event out_event = param.Output()->GetClEvent();
-//  cl_event wait_event = param.Input()->GetClEvent();
+  //  cl_event out_event = param.Output()->GetClEvent();
+  //  cl_event wait_event = param.Input()->GetClEvent();
 
-  status =
-      clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
-                             default_work_size.data(), NULL, 0, NULL, NULL);
+  status = clEnqueueNDRangeKernel(
+      this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
+      default_work_size.data(), NULL, 0, NULL, NULL);
   CL_CHECK_ERRORS(status);
 }
 
