@@ -26,7 +26,7 @@ void PolygonBoxTransformCompute(const PolygonBoxTransformParam<CPU>& param) {
   const auto& input_dims = input->dims();
   const auto* input_data = input->data<float>();
   auto* output = param.Output();
-  auto* output_data = output->mutable_data<float>();
+  auto* output_data = output->mutable_data<float>(input_dims);
 
   int64_t batch_size = input_dims[0];
   int64_t geo_channel = input_dims[1];
