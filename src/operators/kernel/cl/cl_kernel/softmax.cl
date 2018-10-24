@@ -40,7 +40,7 @@ __kernel void softmax(__read_only image2d_t input_image,
     rsum += exp(r - maxv);
   }
 
-  half sum = rsum.x + rsum.y + rsum.z + rsum.w;
+  float sum = rsum.x + rsum.y + rsum.z + rsum.w;
 
   half4 rr = read_imageh(input_image, sampler, (int2)(out_w, out_nh));
   half4 result = exp(rr - maxv) / sum;
