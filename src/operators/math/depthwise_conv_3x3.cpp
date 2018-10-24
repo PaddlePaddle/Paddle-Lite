@@ -1465,7 +1465,7 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
                                      Tensor *output, const Tensor *new_scale,
                                      const Tensor *new_bias, bool if_relu) {
 #if __ARM_NEON
-  //#ifdef _OPENMP
+  // #ifdef _OPENMP
   //  const float *newscale_data = new_scale->data<float>();
   //  const float *newbias_data = new_bias->data<float>();
   //
@@ -1645,7 +1645,7 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
   //    }
   //  }
   //
-  //#else
+  // #else
 
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
@@ -1877,7 +1877,7 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
     input_data += inhxw * c;
     output_data += outhxw * c;
   }
-//#endif
+// #endif
 #endif
 }
 

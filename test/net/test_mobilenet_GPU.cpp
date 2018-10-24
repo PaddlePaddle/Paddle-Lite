@@ -33,23 +33,27 @@ int main() {
     std::vector<int64_t> dims{1, 3, 224, 224};
     GetInput<float>(g_test_image_1x3x224x224_banana, &input, dims);
 
+    std::vector<float> vec_result;
+    //            = paddle_mobile.Predict(input, dims);
+
     auto time3 = paddle_mobile::time();
-    auto vec_result = paddle_mobile.Predict(input, dims);
+    int max = 1;
+    for (int i = 0; i < max; ++i) {
+      vec_result = paddle_mobile.Predict(input, dims);
+    }
     auto time4 = paddle_mobile::time();
 
-//    for (int i = 0; i < 10; ++i) {
-//      auto vec_result = paddle_mobile.Predict(input, dims);
-//    }
+    //    auto time3 = paddle_mobile::time();
 
+    //    for (int i = 0; i < 10; ++i) {
+    //      auto vec_result = paddle_mobile.Predict(input, dims);
+    //    }
 
-//    auto time3 = paddle_mobile::time();
+    //    auto time4 = paddle_mobile::time();
 
-//    for (int i = 0; i < 10; ++i) {
-//      auto vec_result = paddle_mobile.Predict(input, dims);
-//    }
-
-//    auto time4 = paddle_mobile::time();
-    std::cout << "predict cost :" << paddle_mobile::time_diff(time3, time4) << "ms" << std::endl;
+    std::cout << "predict cost :"
+              << paddle_mobile::time_diff(time3, time4) / max << "ms"
+              << std::endl;
     std::vector<float>::iterator biggest =
         std::max_element(std::begin(vec_result), std::end(vec_result));
     std::cout << " Max element is " << *biggest << " at position "

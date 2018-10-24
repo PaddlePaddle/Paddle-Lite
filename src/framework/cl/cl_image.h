@@ -18,22 +18,30 @@ limitations under the License. */
 
 #include "CL/cl.h"
 
-#include "framework/cl/cl_half.h"
-#include "framework/cl/cl_tool.h"
 #include "framework/cl/cl_deleter.h"
 #include "framework/cl/cl_engine.h"
+#include "framework/cl/cl_half.h"
+#include "framework/cl/cl_image_converter.h"
+#include "framework/cl/cl_tool.h"
 #include "framework/ddim.h"
 #include "framework/tensor.h"
 
 namespace paddle_mobile {
 namespace framework {
 
-enum ImageType { Invalid = -1, Normal = 0, Folder = 1 };
-
 class CLImage {
  public:
   CLImage() = default;
 
+  ~CLImage() {
+    if (tensor_data_ != nullptr) {
+      delete[](tensor_data_);
+    }
+
+    if (image_converter_) {
+      delete (image_converter_);
+    }
+  }
   /*
    * will not hold input tensor data, memcpy in this method
    * */
@@ -54,79 +62,79 @@ class CLImage {
    * folder when one dim or two dim
    * */
   void InitCLImage(cl_context context, cl_command_queue command_queue) {
-    if (tensor_data_ == nullptr) {
-      PADDLE_MOBILE_THROW_EXCEPTION(" need call SetTensorData first");
-    }
-    DLOG << tensor_dims_;
-    if (tensor_dims_.size() <= 2) {
-      DLOG << " dim <= 2 folder ~~~~~ ";
-      InitCLImage2C(context, command_queue, tensor_data_, tensor_dims_);
-    } else {
-      DLOG << " dim >  2 norm ~~~~~ ";
-      InitCLImage(context, command_queue, tensor_data_, tensor_dims_);
-    }
-    delete[](tensor_data_);
-    tensor_data_ = nullptr;
-    initialized_ = true;
+    PADDLE_MOBILE_ENFORCE(tensor_data_ != nullptr,
+                          " need call SetTensorData first");
+    CLImageConverterFolder *folder_converter = new CLImageConverterFolder();
+    InitCLImage(context, command_queue, folder_converter);
   }
 
-  /*
-   * need call SetTensorData first
-   * */
-  void InitCLImageNormal(cl_context context, cl_command_queue command_queue) {
+  void InitCLImage(cl_context context, cl_command_queue command_queue,
+                   CLImageConverterBase *converter) {
+    if (image_converter_ != nullptr) {
+      delete (image_converter_);
+    }
+
+    PADDLE_MOBILE_ENFORCE(tensor_data_ != nullptr,
+                          " need call SetTensorData first");
+
+    DLOG << " begin init cl image ";
+    image_dims_ = converter->InitImageDimInfoWith(tensor_dims_);
+
+    half_t *image_data = new half_t[product(image_dims_) * 4];
+
+    DLOG << " convert to image";
+    converter->NCHWToImage(tensor_data_, image_data, tensor_dims_);
+    DLOG << " end convert to image";
+
+    InitCLImage(context, image_dims_[0], image_dims_[1], image_data);
+
+    delete[](image_data);
+    delete[](tensor_data_);
+
+    command_queue_ = command_queue;
+    tensor_data_ = nullptr;
+    image_converter_ = converter;
+    initialized_ = true;
+    DLOG << " end init cl image";
+  }
+
+  void InitNImage(cl_context context, cl_command_queue command_queue) {
     if (tensor_data_ == nullptr) {
       PADDLE_MOBILE_THROW_EXCEPTION(" need call SetTensorData first");
     }
-    InitCLImage(context, command_queue, tensor_data_, tensor_dims_);
-    delete[](tensor_data_);
-    tensor_data_ = nullptr;
-    initialized_ = true;
+    CLImageConverterNWBlock *folder_converter = new CLImageConverterNWBlock();
+    InitCLImage(context, command_queue, folder_converter);
+    PADDLE_MOBILE_ENFORCE(tensor_dims_.size() == 4, " tensor dim is not 4");
   }
 
   void InitEmptyImage(cl_context context, cl_command_queue command_queue,
                       const DDim &dim) {
-    if (tensor_data_ != nullptr) {
-      PADDLE_MOBILE_THROW_EXCEPTION(
-          " empty image tensor data shouldn't have value");
-    }
-    DLOG << " init empty image ";
-    if (tensor_dims_.size() <= 2) {
-      DLOG << " dim <= 2 folder ~~~~~ ";
-      InitCLImage2C(context, command_queue, tensor_data_, tensor_dims_);
-    } else {
-      DLOG << " dim >  2 norm ~~~~~ ";
-      InitCLImage(context, command_queue, tensor_data_, tensor_dims_);
-    }
+    PADDLE_MOBILE_ENFORCE(tensor_data_ == nullptr,
+                          " empty image tensor data shouldn't have value");
 
+    CLImageConverterFolder *folder_converter = new CLImageConverterFolder();
+
+    DLOG << " to get image dims ";
+    image_dims_ = folder_converter->InitImageDimInfoWith(dim);
+    DLOG << " end get image dims " << image_dims_;
+
+    InitCLImage(context, image_dims_[0], image_dims_[1], nullptr);
+
+    tensor_dims_ = dim;
+    command_queue_ = command_queue;
+    image_converter_ = folder_converter;
     cl_event_ = CLEngine::Instance()->CreateEvent(context);
-
-
-//    InitCLImage(context, command_queue, nullptr, dim);
     initialized_ = true;
+    DLOG << " end init cl image";
   }
 
   cl_mem GetCLImage() const { return cl_image_.get(); }
 
   const DDim &ImageDims() const { return image_dims_; }
 
-  inline size_t ImageWidth() const { return image_width_; }
+  inline size_t ImageWidth() const { return image_dims_[0]; }
 
-  inline size_t ImageHeight() const { return image_height_; }
-
-  /*
-   * block of channels, 4 channel one block
-   * */
-  inline size_t CBlock() const { return c_block_; }
-
-  /*
-   *  width of original tensor
-   * */
-  inline size_t WidthOfOneBlock() const { return width_of_one_block_; }
-
-  /*
-   *  height of original tensor
-   * */
-  inline size_t HeightOfOneBlock() const { return height_of_one_block_; }
+  inline size_t ImageHeight() const { return image_dims_[1]; }
 
   inline cl_command_queue CommandQueue() const { return command_queue_; }
 
@@ -158,47 +166,11 @@ class CLImage {
    * */
   const DDim &dims() const { return tensor_dims_; }
 
-  const ImageType GetImageType() const { return image_type_; }
-
   cl_event GetClEvent() const { return cl_event_.get(); }
 
+  CLImageConverterBase *Converter() const { return image_converter_; }
+
  private:
-  ImageType image_type_ = Invalid;
-  void InitCLImage2C(cl_context context, cl_command_queue command_queue,
-                     float *tensor_data, const DDim &dim) {
-    image_type_ = Folder;
-    command_queue_ = command_queue;
-    assert(dim.size() <= 2);
-    int tdim[2] = {1, 1};
-    if (dim.size() == 1) {
-      tdim[1] = dim[0];
-    } else {
-      tdim[0] = dim[0];
-      tdim[1] = dim[1];
-    }
-    int width = (tdim[1] + 3) / 4;
-    int height = tdim[0];
-
-    image_width_ = width;
-    image_height_ = height;
-    image_dims_ = make_ddim({width, height});
-    width_of_one_block_ = width;
-    height_of_one_block_ = height;
-    c_block_ = 1;
-
-    std::unique_ptr<half_t[]> imageData{};
-    if (tensor_data) {
-      imageData.reset(new half_t[width * height * 4]);
-      for (int h = 0; h < tdim[0]; h++) {
-        for (int w = 0; w < tdim[1]; w++) {
-          imageData[(h * width + w / 4) * 4 + (w % 4)] =
-              Float2Half(tensor_data[h * tdim[1] + w]);
-        }
-      }
-    }
-    InitCLImage(context, width, height, imageData.get());
-  }
-
   void InitCLImage(cl_context context, int width, int height, void *data) {
     cl_image_format cf = {.image_channel_order = CL_RGBA,
                           .image_channel_data_type = CL_HALF_FLOAT};
@@ -228,89 +200,16 @@ class CLImage {
       PADDLE_MOBILE_THROW_EXCEPTION(" create image 2d error ");
     }
   }
-  void InitCLImage(cl_context context, cl_command_queue command_queue,
-                   float *tensor_data, const DDim &dim) {
-    image_type_ = Normal;
-    DLOG << " tensor dim: " << dim;
-    // NCHW -> [W * (C+3)/4, H * N]
-    tensor_dims_ = dim;
-    command_queue_ = command_queue;
-    if (tensor_data) {
-      tensor_data_ = tensor_data;
-    }
-    size_t new_dims[] = {1, 1, 1, 1};
-
-    for (int j = 0; j < dim.size(); ++j) {
-      new_dims[4 - dim.size() + j] = dim[j];
-    }
-
-    size_t N, C, H, W;
-
-    N = new_dims[0];
-    C = new_dims[1];
-    H = new_dims[2];
-    W = new_dims[3];
-
-    width_of_one_block_ = W;
-    height_of_one_block_ = H;
-
-    size_t width = W * ((C + 3) / 4);
-    size_t height = H * N;
-
-    image_width_ = width;
-    image_height_ = height;
-    image_dims_ = make_ddim({image_width_, image_height_});
-    c_block_ = width / W;
-
-    DLOG << " tensor dim " << tensor_dims_;
-    DLOG << " 赋值时: image width: " << image_width_;
-    DLOG << " 赋值时: image height: " << image_height_;
-
-    std::unique_ptr<half_t[]> imageData{};
-    int count = 0;
-    if (tensor_data != nullptr) {
-      imageData.reset(new half_t[width * height * 4]);
-      float *p = tensor_data;
-      size_t i0 = 0;
-      for (int n = 0; n < N; n++) {
-        for (int c = 0; c < c_block_ * 4; c++) {
-          size_t i1 = i0 + (c / 4) * W;
-          for (int h = 0; h < H; h++) {
-            size_t i2 = (i1 << 2) + c % 4;
-            for (int w = 0; w < W; w++) {
-              if (c < C) {
-                // int x = (n * width * H + h * width + (c / 4) * W + w) * 4 +
-                // (c % 4);
-                imageData[i2] = Float2Half(*p);
-                i2 += 4;
-                p++;
-              } else {
-                imageData[i2] = 0.0;
-                i2 += 4;
-              }
-            }
-            i1 += width;
-          }
-        }
-        i0 += width * H;
-      }
-    }
-    InitCLImage(context, width, height, imageData.get());
-  }
 
   bool initialized_ = false;
   std::unique_ptr<_cl_mem, CLMemDeleter> cl_image_;
   std::unique_ptr<_cl_event, CLEventDeleter> cl_event_;
-  size_t image_width_;
-  size_t width_of_one_block_;
-  size_t height_of_one_block_;
-  size_t image_height_;
-  size_t c_block_;
   DDim tensor_dims_;
   DDim image_dims_;
   float *tensor_data_ = nullptr;
   cl_context context_;
   cl_command_queue command_queue_;
+  CLImageConverterBase *image_converter_ = nullptr;
 };
 
 void TensorToCLImage(Tensor *tensor, CLImage *image,
