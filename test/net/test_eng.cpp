@@ -27,9 +27,9 @@ int main() {
                          true)) {
     auto time2 = time();
     std::cout << "load cost :" << time_diff(time1, time1) << "ms" << std::endl;
-    std::vector<int64_t> dims{1, 1, 48, 48};
+    std::vector<int64_t> dims{1, 1, 48, 512};
     LoDTensor input_tensor;
-    SetupTensor<float>(&input_tensor, {1, 1, 48, 48}, static_cast<float>(0),
+    SetupTensor<float>(&input_tensor, {1, 1, 48, 512}, static_cast<float>(0),
                        static_cast<float>(1));
 
     std::vector<float> input(input_tensor.data<float>(),
@@ -39,9 +39,9 @@ int main() {
       paddle_mobile.PredictLod(input_tensor);
     }
     auto time3 = time();
-    //        for (int i = 0; i < 10; ++i) {
-    //            paddle_mobile.Predict(input, dims);
-    //        }
+    for (int i = 0; i < 1; ++i) {
+      paddle_mobile.PredictLod(input_tensor);
+    }
     auto time4 = time();
     std::cout << "predict cost :" << time_diff(time3, time4) << "ms"
               << std::endl;
