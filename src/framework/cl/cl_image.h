@@ -106,6 +106,14 @@ class CLImage {
     InitCLImage(context, command_queue, folder_converter);
     PADDLE_MOBILE_ENFORCE(tensor_dims_.size() == 4, " tensor dim is not 4");
   }
+  void InitDWImage(cl_context context, cl_command_queue command_queue) {
+    if (tensor_data_ == nullptr) {
+      PADDLE_MOBILE_THROW_EXCEPTION(" need call SetTensorData first");
+    }
+    CLImageConverterDWBlock *dw_converter = new CLImageConverterDWBlock();
+    InitCLImage(context, command_queue, dw_converter);
+    PADDLE_MOBILE_ENFORCE(tensor_dims_.size() == 4, " tensor dim is not 4");
+  }
 
   void InitEmptyImage(cl_context context, cl_command_queue command_queue,
                       const DDim &dim) {

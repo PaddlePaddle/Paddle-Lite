@@ -297,5 +297,97 @@ void CLImageConverterNWBlock::ImageToNCHW(half_t *image, float *tensor,
   DLOG << " init done";
 }
 
+const DDim &CLImageConverterDWBlock::InitImageDimInfoWith(
+    const DDim &tensor_dim) {
+  PADDLE_MOBILE_ENFORCE(tensor_dim.size() == 4, " tensor dim is not 4");
+  size_t N, C, H, W;
+  N = tensor_dim[0];
+  C = tensor_dim[1];
+  H = tensor_dim[2];
+  W = tensor_dim[3];
+  size_t width = W * ((N + 3) / 4);
+  size_t height = C * H;
+  return make_ddim({width, height});
+}
+
+void CLImageConverterDWBlock::NCHWToImage(float *tensor, half_t *image,
+                                          const DDim &tensor_dim) {
+  size_t new_dims[] = {1, 1, 1, 1};
+  for (int j = 0; j < tensor_dim.size(); ++j) {
+    new_dims[4 - tensor_dim.size() + j] = tensor_dim[j];
+  }
+
+  size_t N, C, H, W;
+  N = new_dims[1];
+  C = new_dims[0];
+  H = new_dims[2];
+  W = new_dims[3];
+
+  DDim in_image_dim = InitImageDimInfoWith(tensor_dim);
+
+  DLOG << " tensor dim " << tensor_dim;
+  DLOG << " image dim " << in_image_dim;
+
+  size_t width = in_image_dim[0];
+  size_t height = in_image_dim[1];
+
+  int w_block = width / W;
+
+  float *p = tensor;
+  size_t i0 = 0;
+  for (int n = 0; n < N; n++) {
+    for (int c = 0; c < w_block * 4; c++) {
+      size_t i1 = i0 + (c / 4) * W;
+      for (int h = 0; h < H; h++) {
+        size_t i2 = (i1 << 2) + c % 4;
+        for (int w = 0; w < W; w++) {
+          if (c < C) {
+            // int x = (n * width * H + h * width + (c / 4) * W + w) * 4 +
+            // (c % 4);
+            image[i2] = Float2Half(*p);
+            i2 += 4;
+            p++;
+          } else {
+            image[i2] = 0.0;
+            i2 += 4;
+          }
+        }
+        i1 += width;
+      }
+    }
+    i0 += width * H;
+  }
+}
+
+void CLImageConverterDWBlock::ImageToNCHW(half_t *image, float *tensor,
+                                          const DDim &image_dim,
+                                          const DDim &tensor_dim) {
+  PADDLE_MOBILE_ENFORCE(tensor_dim.size() == 4, " tensor dim is not 4");
+  float *p = tensor;
+  int N = tensor_dim[1];
+  int C = tensor_dim[0];
+  int H = tensor_dim[2];
+  int W = tensor_dim[3];
+  int width = image_dim[0];
+  int height = image_dim[0];
+
+  size_t i0 = 0;
+  for (int n = 0; n < N; n++) {
+    for (int c = 0; c < C; c++) {
+      size_t i1 = i0 + (c / 4) * W;
+      for (int h = 0; h < H; h++) {
+        size_t i2 = (i1 << 2) + c % 4;
+        for (int w = 0; w < W; w++) {
+          *p = Half2Float(image[i2]);
+          i2 += 4;
+          p++;
+        }
+        i1 += width;
+      }
+    }
+    i0 += width * H;
+  }
+}
+
 }  // namespace framework
 }  // namespace paddle_mobile
