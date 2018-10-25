@@ -40,6 +40,7 @@ const char *G_OP_TYPE_POOL2D = "pool2d";
 const char *G_OP_TYPE_PRIOR_BOX = "prior_box";
 const char *G_OP_TYPE_RELU = "relu";
 const char *G_OP_TYPE_RESHAPE = "reshape";
+const char *G_OP_TYPE_RESHAPE2 = "reshape2";
 const char *G_OP_TYPE_SIGMOID = "sigmoid";
 const char *G_OP_TYPE_SOFTMAX = "softmax";
 const char *G_OP_TYPE_TRANSPOSE = "transpose";
@@ -101,6 +102,7 @@ std::unordered_map<
         {G_OP_TYPE_POLYGON_BOX_TRANSFORM, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_FC, {{"X", "Y", "Z"}, {"Out"}}},
         {G_OP_TYPE_RESHAPE, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_RESHAPE2, {{"X"}, {"Out", "XShape"}}},
         {G_OP_TYPE_DEPTHWISE_CONV, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_FILL_CONSTANT, {{}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_RELU, {{"Input"}, {"Out"}}},
