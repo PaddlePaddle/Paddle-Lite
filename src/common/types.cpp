@@ -43,6 +43,7 @@ const char *G_OP_TYPE_RESHAPE = "reshape";
 const char *G_OP_TYPE_SIGMOID = "sigmoid";
 const char *G_OP_TYPE_SOFTMAX = "softmax";
 const char *G_OP_TYPE_TRANSPOSE = "transpose";
+const char *G_OP_TYPE_TRANSPOSE2 = "transpose2";
 const char *G_OP_TYPE_SPLIT = "split";
 const char *G_OP_TYPE_FEED = "feed";
 const char *G_OP_TYPE_FETCH = "fetch";
@@ -90,6 +91,7 @@ std::unordered_map<
         {G_OP_TYPE_FEED, {{"X"}, {"Out"}}},
         {G_OP_TYPE_FETCH, {{"X"}, {"Out"}}},
         {G_OP_TYPE_TRANSPOSE, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_TRANSPOSE2, {{"X"}, {"Out", "XShape"}}},
         {G_OP_TYPE_BOX_CODER,
          {{"PriorBox", "PriorBoxVar", "TargetBox"}, {"OutputBox"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_BN_RELU, {{"Input"}, {"Out"}}},
