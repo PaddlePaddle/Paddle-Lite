@@ -201,6 +201,10 @@ if (NOT FOUND_MATCH)
     target_link_libraries(test-reshape-op paddle-mobile)
 
     # gen test
+    ADD_EXECUTABLE(test-reshape2-op operators/test_reshape2_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-reshape2-op paddle-mobile)
+
+    # gen test
     ADD_EXECUTABLE(test-relu-op operators/test_relu_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-relu-op paddle-mobile)
 
