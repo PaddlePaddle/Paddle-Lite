@@ -1270,6 +1270,49 @@ class ReshapeParam : public OpParam {
 };
 #endif
 
+#ifdef RESHAPE2_OP
+template <typename Dtype>
+class Reshape2Param : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  Reshape2Param(const VariableNameMap &inputs, const VariableNameMap &outputs,
+                const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    input_shape_ = InputShapeFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+    output_xshape_ = OutputXShapeFrom<GType>(outputs, scope);
+    shape_ = GetAttr<vector<int>>("shape", attrs);
+    if (HasAttr("inplace", attrs)) {
+      inplace_ = GetAttr<bool>("inplace", attrs);
+    } else {
+      inplace_ = false;
+    }
+  }
+
+  const RType *InputX() const { return input_x_; }
+
+  const RType *InputShape() const { return input_shape_; }
+
+  RType *Out() const { return out_; }
+
+  RType *OutputXShape() const { return output_xshape_; }
+
+  const vector<int> &Shape() const { return shape_; }
+
+  const bool &Inplace() const { return inplace_; }
+
+ private:
+  RType *input_x_;
+  RType *input_shape_;
+  RType *out_;
+  RType *output_xshape_;
+  vector<int> shape_;
+  bool inplace_;
+};
+#endif
+
 #ifdef SCALE_OP
 template <typename Dtype>
 class ScaleParam : public OpParam {
