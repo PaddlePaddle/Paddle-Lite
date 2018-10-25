@@ -185,6 +185,10 @@ if (NOT FOUND_MATCH)
     target_link_libraries(test-transpose-op paddle-mobile)
 
     # gen test
+    ADD_EXECUTABLE(test-transpose2-op operators/test_transpose2_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-transpose2-op paddle-mobile)
+
+    # gen test
     ADD_EXECUTABLE(test-multiclassnms-op operators/test_multiclass_nms_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-multiclassnms-op paddle-mobile)
 
