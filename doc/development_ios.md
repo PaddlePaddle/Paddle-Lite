@@ -34,7 +34,7 @@ cd ../build/release/ios/build
 libpaddle-mobile.a
 
 /src/ios_io/ 下的
-PaddleMobile.h
+PaddleMobileCPU.h
 ```
 拖入工程
 
