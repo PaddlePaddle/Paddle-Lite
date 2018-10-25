@@ -209,12 +209,18 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
                       int32_t lda, int8_t *buffer);
   void PackMatrixB_8c(int32_t k, int32_t n, int32_t n_tail, const int8_t *B,
                       int32_t ldb, int8_t *buffer);
+  void PackMatrixA_omp_4r(int32_t m, int32_t k, int32_t m_tail, const int8_t *A,
+                          int32_t lda, int8_t *buffer);
+  void PackMatrixB_omp_8c(int32_t k, int32_t n, int32_t n_tail, const int8_t *B,
+                          int32_t ldb, int8_t *buffer);
 
   // 8 bits int matrix product
   void Sgemm(int32_t m, int32_t n, int32_t k, int8_t alpha, const int8_t *A,
              int32_t lda, const int8_t *B, int32_t ldb, int8_t beta, int32_t *C,
              int32_t ldc, bool relu, int8_t *bias);
-
+  void Sgemm_omp(int32_t m, int32_t n, int32_t k, int8_t alpha, const int8_t *A,
+                 int32_t lda, const int8_t *B, int32_t ldb, int8_t beta,
+                 int32_t *C, int32_t ldc, bool relu, int8_t *bias);
   // 8 bits int write back
   // C = alpha * A * B + beta * C
   void WriteWithAlphaBeta(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
