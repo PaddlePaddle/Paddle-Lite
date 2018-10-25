@@ -112,6 +112,9 @@ LOAD_OP2(reshape, CPU, MALI_GPU);
 #ifdef TRANSPOSE_OP
 LOAD_OP1(transpose, CPU);
 #endif
+#ifdef TRANSPOSE2_OP
+LOAD_OP1(transpose2, CPU);
+#endif
 #ifdef PRIORBOX_OP
 LOAD_OP1(prior_box, CPU);
 #endif
