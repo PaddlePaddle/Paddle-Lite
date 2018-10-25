@@ -135,11 +135,15 @@ static void quantize_round_to_even(const Tensor *input, const float scale,
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
   size_t loop = size >> 4;
   size_t remain = size & 0xF;
+
+  #pragma omp parallel for
   for (size_t i = 0; i < loop; ++i) {
-    float32x4_t r0 = vld1q_f32(x);
-    float32x4_t r1 = vld1q_f32(x + 4);
-    float32x4_t r2 = vld1q_f32(x + 8);
-    float32x4_t r3 = vld1q_f32(x + 12);
+    const float *local_x = x + (i << 4);
+    int8_t *local_y = y + (i << 4);
+    float32x4_t r0 = vld1q_f32(local_x);
+    float32x4_t r1 = vld1q_f32(local_x + 4);
+    float32x4_t r2 = vld1q_f32(local_x + 8);
+    float32x4_t r3 = vld1q_f32(local_x + 12);
     r0 = vmulq_n_f32(r0, scale);
     r1 = vmulq_n_f32(r1, scale);
     r2 = vmulq_n_f32(r2, scale);
@@ -156,12 +160,12 @@ static void quantize_round_to_even(const Tensor *input, const float scale,
     int16x8_t q6 = vcombine_s16(d2, d3);
     int8x8_t d5 = vmovn_s16(q5);
     int8x8_t d6 = vmovn_s16(q6);
-    vst1_s8(y, d5);
-    vst1_s8(y + 8, d6);
-    x += 16;
-    y += 16;
+    vst1_s8(local_y, d5);
+    vst1_s8(local_y + 8, d6);
   }
   size = remain;
+  x += (loop << 4);
+  y += (loop << 4);
 #endif
   for (size_t i = 0; i < size; ++i) {
     float value = x[i] * scale;
@@ -187,11 +191,15 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
 #ifdef defined(__ARM_NEON__) || defined(__ARM_NEON)
   size_t loop = size >> 4;
   size_t remain = size & 0xF;
+
+  #pragma omp parallel for
   for (size_t i = 0; i < loop; ++i) {
-    float32x4_t r0 = vld1q_f32(x);
-    float32x4_t r1 = vld1q_f32(x + 4);
-    float32x4_t r2 = vld1q_f32(x + 8);
-    float32x4_t r3 = vld1q_f32(x + 12);
+    const float *local_x = x + (i << 4);
+    int8_t *local_y = y + (i << 4);
+    float32x4_t r0 = vld1q_f32(local_x);
+    float32x4_t r1 = vld1q_f32(local_x + 4);
+    float32x4_t r2 = vld1q_f32(local_x + 8);
+    float32x4_t r3 = vld1q_f32(local_x + 12);
     r0 = vmulq_n_f32(r0, scale);
     r1 = vmulq_n_f32(r1, scale);
     r2 = vmulq_n_f32(r2, scale);
@@ -208,12 +216,12 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
     int16x8_t q6 = vcombine_s16(d2, d3);
     int8x8_t d5 = vmovn_s16(q5);
     int8x8_t d6 = vmovn_s16(q6);
-    vst1_s8(y, d5);
-    vst1_s8(y + 8, d6);
-    x += 16;
-    y += 16;
+    vst1_s8(local_y, d5);
+    vst1_s8(local_y + 8, d6);
   }
   size = remain;
+  x += (loop << 4);
+  y += (loop << 4);
 #endif
   for (size_t i = 0; i < size; ++i) {
     y[i] = trunc(x[i] * scale);
@@ -228,11 +236,15 @@ static void quantize_round_to_nearest(const Tensor *input, const float scale,
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
   size_t loop = size >> 4;
   size_t remain = size & 0xF;
+
+  #pragma omp parallel for
   for (size_t i = 0; i < loop; ++i) {
-    float32x4_t r0 = vld1q_f32(x);
-    float32x4_t r1 = vld1q_f32(x + 4);
-    float32x4_t r2 = vld1q_f32(x + 8);
-    float32x4_t r3 = vld1q_f32(x + 12);
+    const float *local_x = x + (i << 4);
+    int8_t *local_y = y + (i << 4);
+    float32x4_t r0 = vld1q_f32(local_x);
+    float32x4_t r1 = vld1q_f32(local_x + 4);
+    float32x4_t r2 = vld1q_f32(local_x + 8);
+    float32x4_t r3 = vld1q_f32(local_x + 12);
     r0 = vmulq_n_f32(r0, scale);
     r1 = vmulq_n_f32(r1, scale);
     r2 = vmulq_n_f32(r2, scale);
@@ -249,12 +261,12 @@ static void quantize_round_to_nearest(const Tensor *input, const float scale,
     int16x8_t q6 = vcombine_s16(d2, d3);
     int8x8_t d5 = vmovn_s16(q5);
     int8x8_t d6 = vmovn_s16(q6);
-    vst1_s8(y, d5);
-    vst1_s8(y + 8, d6);
-    x += 16;
-    y += 16;
+    vst1_s8(local_y, d5);
+    vst1_s8(local_y + 8, d6);
   }
   size = remain;
+  x += (loop << 4);
+  y += (loop << 4);
 #endif
   for (size_t i = 0; i < size; ++i) {
     y[i] = round(x[i] * scale);

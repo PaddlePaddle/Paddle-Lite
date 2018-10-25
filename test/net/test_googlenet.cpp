@@ -25,7 +25,7 @@ int main() {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
 #endif
 
-  paddle_mobile.SetThreadNum(1);
+  paddle_mobile.SetThreadNum(4);
   bool optimize = true;
   auto time1 = time();
   if (paddle_mobile.Load(g_googlenet, optimize)) {
