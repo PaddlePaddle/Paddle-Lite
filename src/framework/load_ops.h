@@ -109,6 +109,9 @@ LOAD_FUSION_MATCHER(fusion_conv_add_bn_relu);
 #ifdef RESHAPE_OP
 LOAD_OP2(reshape, CPU, MALI_GPU);
 #endif
+#ifdef RESHAPE2_OP
+LOAD_OP2(reshape2, CPU, MALI_GPU);
+#endif
 #ifdef TRANSPOSE_OP
 LOAD_OP1(transpose, CPU);
 #endif
