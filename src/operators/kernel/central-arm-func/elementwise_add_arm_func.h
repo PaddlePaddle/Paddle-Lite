@@ -58,6 +58,7 @@ void ElementwiseAddCompute(const ElementwiseAddParam<CPU> &param) {
   const float *input_data = input_x->data<float>();
   float *output_data = Out->mutable_data<float>();
   for (int i = 0; i < batch; ++i) {
+    #pragma omp parallel for
     for (int j = 0; j < channels; ++j) {
       size_t offset = (i * channels + j) * elementwise_num;
       const float *input = input_data + offset;
