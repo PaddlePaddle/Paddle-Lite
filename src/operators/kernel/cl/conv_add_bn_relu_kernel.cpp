@@ -150,7 +150,7 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
 
   } else if (param->Filter()->dims()[2] == 3 &&
              param->Filter()->dims()[3] == 3) {
-    param->Filter()->InitNImage(cl_helper_.CLContext(),
+    param->Filter()->InitCLImage(cl_helper_.CLContext(),
                                 cl_helper_.CLCommandQueue());
 
     this->cl_helper_.AddKernel("conv_3x3", "conv_add_bn_relu_kernel.cl");
