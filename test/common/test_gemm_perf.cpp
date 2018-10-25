@@ -28,7 +28,7 @@ limitations under the License. */
 
 int main() {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
-  paddle_mobile.SetThreadNum(1);
+  paddle_mobile.SetThreadNum(8);
   Tensor aa, bb, cc;
   auto aaptr = aa.mutable_data<float>({m, k});
   auto bbptr = bb.mutable_data<float>({k, n});

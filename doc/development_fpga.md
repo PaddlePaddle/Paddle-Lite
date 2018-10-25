@@ -27,8 +27,9 @@ ___
 ## 准备模型和数据
 ___
 1. 模型文件放在./test/models/resnet50中。将[\_\_model\_\_](http://mms-graph.bj.bcebos.com/paddle-mobile/fpga/files.tar.gz)文件复制到此文件夹下。
-2. 另外下载模型[权重文件](http://paddle-imagenet-models.bj.bcebos.com/resnet_50_model.tar),解压后也放在./test/models/resnet50 中。
-3. 将数据文件[image_src_float](http://mms-graph.bj.bcebos.com/paddle-mobile/fpga/files.tar.gz)复制到/test/images下。此数据文件对应着标准数据集中的ILSVRC2012_val_00000885.JPEG，分类标签为80， 对应着"black grouse".
+2. 如果不存在，则创建文件夹./test/models/resnet50 和 ./test/images。
+3. 另外下载模型[权重文件](http://paddle-imagenet-models.bj.bcebos.com/resnet_50_model.tar),解压后也放在./test/models/resnet50 中。
+4. 将数据文件[image_src_float](http://mms-graph.bj.bcebos.com/paddle-mobile/fpga/files.tar.gz)复制到./test/images下。此数据文件对应着标准数据集中的ILSVRC2012_val_00000885.JPEG，分类标签为80， 对应着"black grouse"。
 
 ## 运行程序
 ___
