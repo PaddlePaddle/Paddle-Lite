@@ -20,6 +20,9 @@ limitations under the License. */
 #include "common/log.h"
 #include "memory/t_malloc.h"
 #include "operators/math/gemm.h"
+#ifdef _OPENMP
+#include <omp.h>
+#endif  // _OPENMP
 
 #define a(i, j) a[(i)*lda + (j)]
 #define b(i, j) b[(i)*ldb + (j)]
@@ -84,8 +87,13 @@ int do_sgemm(int m, int n, int k, bool relu, int pr) {
   }
 
   paddle_mobile::operators::math::Gemm gemm;
+#ifdef _OPENMP
+  gemm.Sgemm_omp(m, n, k, static_cast<int8_t>(1), a, lda, b, ldb,
+                 static_cast<int8_t>(0), c, ldc, relu, nullptr);
+#else
   gemm.Sgemm(m, n, k, static_cast<int8_t>(1), a, lda, b, ldb,
              static_cast<int8_t>(0), c, ldc, relu, nullptr);
+#endif
   int eq = 0;
   int neq = 0;
   for (int i = 0; i < m * n; ++i) {
@@ -119,12 +127,17 @@ int do_sgemm(int m, int n, int k, bool relu, int pr) {
 }
 
 int main() {
-  do_sgemm(9, 9, 9, false, 10);
+#ifdef _OPENMP
+  omp_set_num_threads(8);
+#endif
+  do_sgemm(9, 9, 9, false, 1);
   do_sgemm(10, 6, 12, false, 0);
   do_sgemm(512, 256, 384, false, 0);
   do_sgemm(1366, 768, 256, false, 0);
   do_sgemm(1255, 755, 333, false, 0);
-  do_sgemm(555, 777, 999, false, 0);
+  do_sgemm(599, 1133, 393, false, 0);
+  do_sgemm(777, 555, 999, false, 0);
+  do_sgemm(333, 797, 939, false, 0);
   do_sgemm(1024, 1024, 1024, false, 0);
 
   return 0;

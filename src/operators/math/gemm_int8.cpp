@@ -30,7 +30,7 @@ void Gemm::AddDot4x8(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
                      int32_t ldc) {
 #if __ARM_NEON
 #if __aarch64__
-// TODO
+// TODO(wzzju)
 #else
   const int8_t *a_ptr, *b_ptr;
   a_ptr = a;
@@ -246,7 +246,7 @@ void Gemm::AddDot6x8(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
                      int32_t ldc) {
 #if __ARM_NEON
 #if __aarch64__
-// TODO
+// TODO(wzzju)
 #else
   const int8_t *a_ptr, *b_ptr;
   a_ptr = a;
@@ -546,8 +546,12 @@ void Gemm::InnerKernelWithBias(int32_t mc, int32_t nc, int8_t alpha,
 #pragma omp parallel for
   for (int32_t j = 0; j < nc; j += NR) {
     for (int32_t i = 0; i < mc; i += MR_INT8) {
+#if __aarch64__
+    // TODO(wzzju)
+#else
       //      AddDot6x8(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
       AddDot4x8(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
+#endif  // __aarch64__
     }
   }
   if (alpha != 1) {
@@ -682,7 +686,7 @@ void Gemm::PackMatrixB_8c(int32_t k, int32_t n, int32_t n_tail, const int8_t *B,
       const int8_t *b0 = &B(i, j);
 #if __ARM_NEON
 #if __aarch64__
-      // TODO
+      // TODO(wzzju)
 #else
       asm volatile(
           //          "pld        [%[b0]]                     \n\t"
@@ -791,7 +795,7 @@ void Gemm::WriteBasic(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
                       int32_t ldc) {
 #if __ARM_NEON
 #if __aarch64__
-// TODO
+// TODO(wzzju)
 #else
   int32_t nc1 = nc >> 4;
   int32_t _nc1 = nc & 15;
