@@ -29,15 +29,6 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
           param->Paddings()[0] == param->Paddings()[1],
       "need equal");
 
-  auto filter_ddim = param->Filter()->dims();
-
-  std::vector<int64_t> filter_shape(
-      {filter_ddim[1], filter_ddim[0], filter_ddim[2], filter_ddim[3]});
-  framework::DDim ddim = framework::make_ddim(filter_shape);
-  if (filter_ddim[1] == 1) {
-    param->Filter()->Resize(ddim);
-  }
-
   param->Bias()->InitCLImage(cl_helper_.CLContext(),
                              cl_helper_.CLCommandQueue());
 
@@ -140,10 +131,10 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
 
     this->cl_helper_.AddKernel("conv_1x1", "conv_add_bn_relu_kernel.cl");
     DLOG << " conv add bn relu conv 1x1";
-  } else if (param->Filter()->dims()[0] == 1 &&
+  } else if (param->Filter()->dims()[1] == 1 &&
              param->Input()->dims()[1] == param->Output()->dims()[1] &&
              param->Filter()->dims()[2] == 3) {
-    param->Filter()->InitCLImage(cl_helper_.CLContext(),
+    param->Filter()->InitDWImage(cl_helper_.CLContext(),
                                  cl_helper_.CLCommandQueue());
     this->cl_helper_.AddKernel("depth_conv_3x3", "conv_add_bn_relu_kernel.cl");
     DLOG << " conv add bn relu depth_conv_3x3";
@@ -151,7 +142,7 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
   } else if (param->Filter()->dims()[2] == 3 &&
              param->Filter()->dims()[3] == 3) {
     param->Filter()->InitCLImage(cl_helper_.CLContext(),
-                                cl_helper_.CLCommandQueue());
+                                 cl_helper_.CLCommandQueue());
 
     this->cl_helper_.AddKernel("conv_3x3", "conv_add_bn_relu_kernel.cl");
     DLOG << " conv add bn relu conv_3x3";
