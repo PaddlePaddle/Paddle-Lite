@@ -125,7 +125,6 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
 
   param->SetOffset(offset);
 
-
   /*
   if (param->Filter()->dims()[2] == 1 &&
       param->Filter()->dims()[3] == 1 &&
@@ -136,8 +135,7 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
     DLOG << " conv add bn relu conv 1x1 4";
   }
   */
-  if (param->Filter()->dims()[2] == 1 &&
-      param->Filter()->dims()[3] == 1) {
+  if (param->Filter()->dims()[2] == 1 && param->Filter()->dims()[3] == 1) {
     param->Filter()->InitNImage(cl_helper_.CLContext(),
                                 cl_helper_.CLCommandQueue());
     this->cl_helper_.AddKernel("conv_1x1", "conv_add_bn_relu_kernel.cl");

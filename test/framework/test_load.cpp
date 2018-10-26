@@ -12,8 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include <string>
 #include <iostream>
+#include <string>
 
 #include "../test_helper.h"
 #include "framework/loader.h"
@@ -37,8 +37,8 @@ int main() {
 
   //  auto program = loader.Load(g_mobilenet_ssd, true);
 
-//  auto program = loader.Load(std::string(g_ocr) + "/model",
-//                             std::string(g_ocr) + "/params", false);
+  //  auto program = loader.Load(std::string(g_ocr) + "/model",
+  //                             std::string(g_ocr) + "/params", false);
   //  program.originProgram->Description("program desc: ");
 
   return 0;
