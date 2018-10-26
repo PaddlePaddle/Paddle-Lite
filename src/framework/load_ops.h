@@ -109,8 +109,14 @@ LOAD_FUSION_MATCHER(fusion_conv_add_bn_relu);
 #ifdef RESHAPE_OP
 LOAD_OP2(reshape, CPU, MALI_GPU);
 #endif
+#ifdef RESHAPE2_OP
+LOAD_OP2(reshape2, CPU, MALI_GPU);
+#endif
 #ifdef TRANSPOSE_OP
 LOAD_OP1(transpose, CPU);
+#endif
+#ifdef TRANSPOSE2_OP
+LOAD_OP1(transpose2, CPU);
 #endif
 #ifdef PRIORBOX_OP
 LOAD_OP1(prior_box, CPU);
@@ -221,5 +227,9 @@ LOAD_FUSION_MATCHER(fusion_conv_bn);
 #ifdef ELEMENTWISESUB_OP
 LOAD_OP1(elementwise_sub, CPU)
 #endif
+#ifdef QUANT_OP
 LOAD_OP1(quantize, CPU);
+#endif
+#ifdef DEQUANT_OP
 LOAD_OP1(dequantize, CPU);
+#endif
