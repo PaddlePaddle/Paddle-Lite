@@ -185,6 +185,10 @@ if (NOT FOUND_MATCH)
     target_link_libraries(test-transpose-op paddle-mobile)
 
     # gen test
+    ADD_EXECUTABLE(test-transpose2-op operators/test_transpose2_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-transpose2-op paddle-mobile)
+
+    # gen test
     ADD_EXECUTABLE(test-multiclassnms-op operators/test_multiclass_nms_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-multiclassnms-op paddle-mobile)
 
@@ -199,6 +203,10 @@ if (NOT FOUND_MATCH)
     # gen test
     ADD_EXECUTABLE(test-reshape-op operators/test_reshape_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-reshape-op paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-reshape2-op operators/test_reshape2_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-reshape2-op paddle-mobile)
 
     # gen test
     ADD_EXECUTABLE(test-relu-op operators/test_relu_op.cpp test_helper.h test_include.h)
