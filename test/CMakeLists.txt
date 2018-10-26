@@ -257,6 +257,10 @@ else ()
     ADD_EXECUTABLE(test-mobilenetgpu  net/test_mobilenet_GPU.cpp test_helper.h  test_include.h)
     target_link_libraries(test-mobilenetgpu paddle-mobile)
 
+    # gen test
+    ADD_EXECUTABLE(test-yologpu net/test_yologpu.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-yologpu paddle-mobile)
+
 
     #add_library(test-lib-size SHARED common/test_lib_size.h common/test_lib_size.cpp)
 
