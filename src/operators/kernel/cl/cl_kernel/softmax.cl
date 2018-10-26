@@ -33,17 +33,17 @@ __kernel void softmax(__read_only image2d_t input_image,
     maxv = max(maxv, max(temp.x, max(temp.y, max(temp.z, temp.w))));
   }
 
-
   half4 rsum = (half4)(0.0f);
+
   for (int i = 0; i < group; ++i) {
     half4 r = read_imageh(input_image, sampler, (int2)(i, 0));
-    rsum += convert_half4(exp(convert_float4(r - maxv)));
+    rsum += exp(r - maxv);
   }
 
   float sum = rsum.x + rsum.y + rsum.z + rsum.w;
 
   half4 rr = read_imageh(input_image, sampler, (int2)(out_w, out_nh));
-  half4 result = convert_half4(exp(convert_float4(rr - maxv)) / sum);
+  half4 result = exp(rr - maxv) / sum;
   write_imageh(output_image, (int2)(out_w, out_nh), result);
 }
 

@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#pragma once
+
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
 
 inline half4 activation(half4 in

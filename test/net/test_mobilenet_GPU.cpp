@@ -23,7 +23,7 @@ int main() {
   //  auto isok = paddle_mobile.Load(std::string(g_mobilenet_detect) + "/model",
   //                     std::string(g_mobilenet_detect) + "/params", true);
 
-  auto isok = paddle_mobile.Load(g_mobilenet, true);
+  auto isok = paddle_mobile.Load(std::string(g_mobilenet), true);
   if (isok) {
     auto time2 = paddle_mobile::time();
     std::cout << "load cost :" << paddle_mobile::time_diff(time1, time2) << "ms"
@@ -33,23 +33,14 @@ int main() {
     std::vector<int64_t> dims{1, 3, 224, 224};
     GetInput<float>(g_test_image_1x3x224x224_banana, &input, dims);
 
-    std::vector<float> vec_result;
-    //            = paddle_mobile.Predict(input, dims);
+    std::vector<float> vec_result = paddle_mobile.Predict(input, dims);
 
     auto time3 = paddle_mobile::time();
-    int max = 1;
+    int max = 10;
     for (int i = 0; i < max; ++i) {
       vec_result = paddle_mobile.Predict(input, dims);
     }
     auto time4 = paddle_mobile::time();
-
-    //    auto time3 = paddle_mobile::time();
-
-    //    for (int i = 0; i < 10; ++i) {
-    //      auto vec_result = paddle_mobile.Predict(input, dims);
-    //    }
-
-    //    auto time4 = paddle_mobile::time();
 
     std::cout << "predict cost :"
               << paddle_mobile::time_diff(time3, time4) / max << "ms"
