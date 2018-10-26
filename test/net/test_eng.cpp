@@ -23,13 +23,13 @@ int main() {
   //    paddle_mobile.SetThreadNum(4);
   auto time1 = time();
   if (paddle_mobile.Load(std::string(g_eng) + "/model",
-                         std::string(g_eng) + "/params", false, false, 1,
+                         std::string(g_eng) + "/params", true, false, 1,
                          true)) {
     auto time2 = time();
     std::cout << "load cost :" << time_diff(time1, time1) << "ms" << std::endl;
-    std::vector<int64_t> dims{1, 1, 48, 512};
+    std::vector<int64_t> dims{1, 1, 48, 400};
     LoDTensor input_tensor;
-    SetupTensor<float>(&input_tensor, {1, 1, 48, 512}, static_cast<float>(0),
+    SetupTensor<float>(&input_tensor, {1, 1, 48, 400}, static_cast<float>(0),
                        static_cast<float>(1));
 
     std::vector<float> input(input_tensor.data<float>(),
