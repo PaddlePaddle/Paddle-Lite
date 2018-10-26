@@ -17,50 +17,50 @@ limitations under the License. */
 #include "../test_include.h"
 
 int main() {
-    paddle_mobile::PaddleMobile<paddle_mobile::GPU_CL> paddle_mobile;
-    //    paddle_mobile.SetThreadNum(4);
-    auto time1 = paddle_mobile::time();
-    //  auto isok = paddle_mobile.Load(std::string(g_mobilenet_detect) + "/model",
-    //                     std::string(g_mobilenet_detect) + "/params", true);
+  paddle_mobile::PaddleMobile<paddle_mobile::GPU_CL> paddle_mobile;
+  //    paddle_mobile.SetThreadNum(4);
+  auto time1 = paddle_mobile::time();
+  //  auto isok = paddle_mobile.Load(std::string(g_mobilenet_detect) + "/model",
+  //                     std::string(g_mobilenet_detect) + "/params", true);
 
-    auto isok = paddle_mobile.Load(std::string(g_yolo_mul), true);
-    if (isok) {
-        auto time2 = paddle_mobile::time();
-        std::cout << "load cost :" << paddle_mobile::time_diff(time1, time2) << "ms"
-                  << std::endl;
+  auto isok = paddle_mobile.Load(std::string(g_yolo_mul), true);
+  if (isok) {
+    auto time2 = paddle_mobile::time();
+    std::cout << "load cost :" << paddle_mobile::time_diff(time1, time2) << "ms"
+              << std::endl;
 
-        std::vector<float> input;
-        std::vector<int64_t> dims{1, 3, 416, 416};
-        GetInput<float>(g_yolo_img, &input, dims);
+    std::vector<float> input;
+    std::vector<int64_t> dims{1, 3, 416, 416};
+    GetInput<float>(g_yolo_img, &input, dims);
 
-        std::vector<float> vec_result;
-        //            = paddle_mobile.Predict(input, dims);
+    std::vector<float> vec_result;
+    //            = paddle_mobile.Predict(input, dims);
 
-        auto time3 = paddle_mobile::time();
-        int max = 10;
-        for (int i = 0; i < max; ++i) {
-            vec_result = paddle_mobile.Predict(input, dims);
-        }
-        auto time4 = paddle_mobile::time();
-
-        //    auto time3 = paddle_mobile::time();
-
-        //    for (int i = 0; i < 10; ++i) {
-        //      auto vec_result = paddle_mobile.Predict(input, dims);
-        //    }
-
-        //    auto time4 = paddle_mobile::time();
-
-        std::cout << "predict cost :"
-                  << paddle_mobile::time_diff(time3, time4) / max << "ms"
-                  << std::endl;
-        std::vector<float>::iterator biggest =
-                std::max_element(std::begin(vec_result), std::end(vec_result));
-        std::cout << " Max element is " << *biggest << " at position "
-                  << std::distance(std::begin(vec_result), biggest) << std::endl;
-//        for (float i : vec_result) {
-//            std::cout << i << std::endl;
-//        }
+    auto time3 = paddle_mobile::time();
+    int max = 10;
+    for (int i = 0; i < max; ++i) {
+      vec_result = paddle_mobile.Predict(input, dims);
     }
-    return 0;
+    auto time4 = paddle_mobile::time();
+
+    //    auto time3 = paddle_mobile::time();
+
+    //    for (int i = 0; i < 10; ++i) {
+    //      auto vec_result = paddle_mobile.Predict(input, dims);
+    //    }
+
+    //    auto time4 = paddle_mobile::time();
+
+    std::cout << "predict cost :"
+              << paddle_mobile::time_diff(time3, time4) / max << "ms"
+              << std::endl;
+    std::vector<float>::iterator biggest =
+        std::max_element(std::begin(vec_result), std::end(vec_result));
+    std::cout << " Max element is " << *biggest << " at position "
+              << std::distance(std::begin(vec_result), biggest) << std::endl;
+    //        for (float i : vec_result) {
+    //            std::cout << i << std::endl;
+    //        }
+  }
+  return 0;
 }
