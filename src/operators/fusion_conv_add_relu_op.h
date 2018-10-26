@@ -29,9 +29,8 @@ namespace operators {
 class FusionConvAddReluOpMatcher : public framework::FusionOpMatcher {
  public:
   FusionConvAddReluOpMatcher() {
-    node_ = framework::Node(G_OP_TYPE_CONV);
-    node_ > std::make_shared<framework::Node>(G_OP_TYPE_ELEMENTWISE_ADD) >
-        std::make_shared<framework::Node>(G_OP_TYPE_RELU);
+    node_ = framework::Node(G_OP_TYPE_FUSION_CONV_ADD);
+    node_ > std::make_shared<framework::Node>(G_OP_TYPE_RELU);
   }
 
   void FolderNodes(
@@ -82,6 +81,15 @@ static framework::FusionOpRegistrar fusion_conv_add_relu_registrar(
 #endif
 
 #endif
+#ifdef PADDLE_MOBILE_CL
+
+#ifndef CONV_ADD_RELU_REGISTER
+#define CONV_ADD_RELU_REGISTER
+static framework::FusionOpRegistrar fusion_conv_add_relu_registrar(
+    new FusionConvAddReluOpMatcher());
+#endif
+
+#endif
 
 }  // namespace operators
 }  // namespace paddle_mobile
@@ -93,6 +101,10 @@ USE_OP_CPU(fusion_conv_add_relu);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 USE_OP_FPGA(fusion_conv_add_relu);
+#endif
+
+#ifdef PADDLE_MOBILE_CL
+USE_OP_CL(fusion_conv_add_relu);
 #endif
 
 #endif

@@ -12,15 +12,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVADD_OP
+#ifdef FUSION_CONVADDRELU_OP
 
-#include "operators/kernel/conv_add_kernel.h"
+#include "operators/kernel/conv_add_relu_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ConvAddKernel<GPU_CL, float>::Init(FusionConvAddParam<GPU_CL> *param) {
+bool ConvAddReluKernel<GPU_CL, float>::Init(
+    FusionConvAddReluParam<GPU_CL> *param) {
   PADDLE_MOBILE_ENFORCE(
       param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
           param->Paddings()[0] == param->Paddings()[1],
@@ -36,20 +37,20 @@ bool ConvAddKernel<GPU_CL, float>::Init(FusionConvAddParam<GPU_CL> *param) {
     param->Filter()->InitNImage(cl_helper_.CLContext(),
                                 cl_helper_.CLCommandQueue());
 
-    this->cl_helper_.AddKernel("conv_1x1", "conv_add_kernel.cl");
+    this->cl_helper_.AddKernel("conv_1x1", "conv_add_relu_kernel.cl");
   } else if (param->Filter()->dims()[1] == 1 &&
              param->Input()->dims()[1] == param->Output()->dims()[1] &&
              param->Filter()->dims()[2] == 3) {
     param->Filter()->InitDWImage(cl_helper_.CLContext(),
                                  cl_helper_.CLCommandQueue());
-    this->cl_helper_.AddKernel("depth_conv_3x3", "conv_add_kernel.cl");
+    this->cl_helper_.AddKernel("depth_conv_3x3", "conv_add_relu_kernel.cl");
 
   } else if (param->Filter()->dims()[2] == 3 &&
              param->Filter()->dims()[3] == 3) {
     param->Filter()->InitCLImage(cl_helper_.CLContext(),
                                  cl_helper_.CLCommandQueue());
 
-    this->cl_helper_.AddKernel("conv_3x3", "conv_add_kernel.cl");
+    this->cl_helper_.AddKernel("conv_3x3", "conv_add_relu_kernel.cl");
 
   } else {
     PADDLE_MOBILE_THROW_EXCEPTION(" not support ");
@@ -59,8 +60,8 @@ bool ConvAddKernel<GPU_CL, float>::Init(FusionConvAddParam<GPU_CL> *param) {
 }
 
 template <>
-void ConvAddKernel<GPU_CL, float>::Compute(
-    const FusionConvAddParam<GPU_CL> &param) {
+void ConvAddReluKernel<GPU_CL, float>::Compute(
+    const FusionConvAddReluParam<GPU_CL> &param) {
   auto kernel = this->cl_helper_.KernelAt(0);
   auto default_work_size = this->cl_helper_.DefaultWorkSize(*param.Output());
   int c_block = default_work_size[0];
@@ -141,7 +142,7 @@ void ConvAddKernel<GPU_CL, float>::Compute(
   CL_CHECK_ERRORS(status);
 }
 
-template class ConvAddKernel<GPU_CL, float>;
+template class ConvAddReluKernel<GPU_CL, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
