@@ -51,12 +51,23 @@ void matmul<int8_t>(const framework::Tensor &matrix_a, bool trans_a,
       }
     }
 
+#ifdef _OPENMP
+    gemm.Sgemm_omp(M, N, K, alpha, a, K, matrix_b.data<int8_t>(), N, beta,
+                   matrix_out->data<int32_t>(), N, relu, bias);
+#else
     gemm.Sgemm(M, N, K, alpha, a, K, matrix_b.data<int8_t>(), N, beta,
                matrix_out->data<int32_t>(), N, relu, bias);
+#endif
   } else {
+#ifdef _OPENMP
+    gemm.Sgemm_omp(M, N, K, alpha, matrix_a.data<int8_t>(), K,
+                   matrix_b.data<int8_t>(), N, beta,
+                   matrix_out->data<int32_t>(), N, relu, bias);
+#else
     gemm.Sgemm(M, N, K, alpha, matrix_a.data<int8_t>(), K,
                matrix_b.data<int8_t>(), N, beta, matrix_out->data<int32_t>(), N,
                relu, bias);
+#endif
   }
 }
 }  // namespace math
