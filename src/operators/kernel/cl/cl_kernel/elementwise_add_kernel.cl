@@ -11,6 +11,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
+
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
 __kernel void elementwise_add(__global image2d_t input, __global image2d_t bias,__write_only image2d_t outputImage) {
      int x = get_global_id(0);

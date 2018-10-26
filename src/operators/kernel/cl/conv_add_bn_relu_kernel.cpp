@@ -125,10 +125,21 @@ bool ConvAddBNReluKernel<GPU_CL, float>::Init(
 
   param->SetOffset(offset);
 
-  if (param->Filter()->dims()[2] == 1 && param->Filter()->dims()[3] == 1) {
+
+  /*
+  if (param->Filter()->dims()[2] == 1 &&
+      param->Filter()->dims()[3] == 1 &&
+      (param->Filter()->dims()[0] % 16) == 0) {
     param->Filter()->InitNImage(cl_helper_.CLContext(),
                                 cl_helper_.CLCommandQueue());
-
+    this->cl_helper_.AddKernel("conv_1x1_4", "conv_add_bn_relu_kernel.cl");
+    DLOG << " conv add bn relu conv 1x1 4";
+  }
+  */
+  if (param->Filter()->dims()[2] == 1 &&
+      param->Filter()->dims()[3] == 1) {
+    param->Filter()->InitNImage(cl_helper_.CLContext(),
+                                cl_helper_.CLCommandQueue());
     this->cl_helper_.AddKernel("conv_1x1", "conv_add_bn_relu_kernel.cl");
     DLOG << " conv add bn relu conv 1x1";
   } else if (param->Filter()->dims()[1] == 1 &&
@@ -248,6 +259,23 @@ void ConvAddBNReluKernel<GPU_CL, float>::Compute(
 
   //  cl_event out_event = param.Output()->GetClEvent();
   //  cl_event wait_event = param.Input()->GetClEvent();
+
+  /*
+  if (param.Filter()->dims()[2] == 1 &&
+      param.Filter()->dims()[3] == 1 &&
+      param.Filter()->dims()[0] % 16 == 0) {
+    DLOG << " before modifi work size: " << default_work_size;
+
+    default_work_size[0] = default_work_size[0] / 4;
+
+    DLOG << " modification work size: " << default_work_size;
+    DLOG << " input dims " << param.Input()->dims();
+    DLOG << " output dims " << param.Output()->dims();
+    DLOG << " filter dims: " << param.Filter()->dims();
+    DLOG << " biase dims : " << param.Bias()->dims();
+
+  }
+  */
 
   status = clEnqueueNDRangeKernel(
       this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,

@@ -56,7 +56,6 @@ __kernel void conv_3x3(__private const int global_size_dim0,
     if (out_c >= global_size_dim0 ||
         out_w >= global_size_dim1 ||
         out_nh >= global_size_dim2) {
-        printf(" out of range ");
         return;
     }
 
@@ -134,22 +133,22 @@ __kernel void conv_3x3(__private const int global_size_dim0,
                           (ushort4)((in_pos_in_one_block.x + dilation < 0 || in_pos_in_one_block.y + dilation < 0 || in_pos_in_one_block.x + dilation >= input_width || in_pos_in_one_block.y + dilation >= input_height) << 15));
 
         for (int j = 0; j < 9; ++j) {
-            int2 fuck;
-            fuck.x = i * 3 + j % 3;
-            fuck.y = out_c * 4 * 3 + 0 * 3 + j / 3;
-            half4 weight_x = read_imageh(filter, sampler, fuck);
+            int2 pos_of_weight;
+            pos_of_weight.x = i * 3 + j % 3;
+            pos_of_weight.y = out_c * 4 * 3 + 0 * 3 + j / 3;
+            half4 weight_x = read_imageh(filter, sampler, pos_of_weight);
             output.x += dot(input[j], weight_x);
 
-            fuck.y = out_c * 4 * 3 + 1 * 3 + j / 3;
-            half4 weight_y = read_imageh(filter, sampler, fuck);
+            pos_of_weight.y = out_c * 4 * 3 + 1 * 3 + j / 3;
+            half4 weight_y = read_imageh(filter, sampler, pos_of_weight);
             output.y += dot(input[j], weight_y);
 
-            fuck.y = out_c * 4 * 3 + 2 * 3 + j / 3;
-            half4 weight_z = read_imageh(filter, sampler, fuck);
+            pos_of_weight.y = out_c * 4 * 3 + 2 * 3 + j / 3;
+            half4 weight_z = read_imageh(filter, sampler, pos_of_weight);
             output.z += dot(input[j], weight_z);
 
-            fuck.y = out_c * 4 * 3 + 3 * 3 + j / 3;
-            half4 weight_w = read_imageh(filter, sampler, fuck);
+            pos_of_weight.y = out_c * 4 * 3 + 3 * 3 + j / 3;
+            half4 weight_w = read_imageh(filter, sampler, pos_of_weight);
             output.w += dot(input[j], weight_w);
         }
     }
@@ -321,6 +320,7 @@ __kernel void depth_conv_3x3(__private const int global_size_dim0,
 
 }
 
+
 __kernel void conv_1x1(__private const int global_size_dim0,
                        __private const int global_size_dim1,
                        __private const int global_size_dim2,
@@ -349,92 +349,179 @@ __kernel void conv_1x1(__private const int global_size_dim0,
   const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
                            CLK_ADDRESS_CLAMP         |
                            CLK_FILTER_NEAREST;
+
   const uint kernelHXW = 1;
   int2 stride_xy = (int2)(stride, stride);
   int2 ouput_pos_in_one_block = (int2)(out_w, out_nh);
   int2 in_pos_in_one_block = ouput_pos_in_one_block * stride_xy + (int2)(offset, offset);
+
 #ifdef BIASE
     half4 output = read_imageh(bias, sampler, (int2)(out_c, 0));
 #else
     half4 output = 0.0f;
 #endif
 
-  int out_c_p = 0, out_w_p = 0, out_nh_p = 0;
-
-/*
-  if (out_c == out_c_p && out_w == out_w_p && out_nh == out_nh_p) {
-        float4 out = (float4)(output.x, output.y, output.z, output.w);
-        printf(" after bias output4 = %v4hlf \n", out);
-
-  }
-
-*/
-
    for (int i = 0; i < input_c; ++i) {
         int2 pos_in = (int2)(i * input_width + in_pos_in_one_block.x, in_pos_in_one_block.y);
         half4 input = read_imageh(input_image, sampler, pos_in);
 
-        half4 weight_x = read_imageh(filter, sampler, (int2)(i, out_c * 4 + 0));
-        output.x += dot(input, weight_x);
-
-        half4 weight_y = read_imageh(filter, sampler, (int2)(i, out_c * 4 + 1));
-        output.y += dot(input, weight_y);
-
-        half4 weight_z = read_imageh(filter, sampler, (int2)(i, out_c * 4 + 2));
-        output.z += dot(input, weight_z);
-
-        half4 weight_w = read_imageh(filter, sampler, (int2)(i, out_c * 4 + 3));
-        output.w += dot(input, weight_w);
+        half4 weight0 = read_imageh(filter, sampler, (int2)(out_c, i * 4 + 0));
+        half4 weight1 = read_imageh(filter, sampler, (int2)(out_c, i * 4 + 1));
+        half4 weight2 = read_imageh(filter, sampler, (int2)(out_c, i * 4 + 2));
+        half4 weight3 = read_imageh(filter, sampler, (int2)(out_c, i * 4 + 3));
 /*
-        if (out_c == out_c_p && out_w == out_w_p && out_nh == out_nh_p) {
-            printf("x - %d \n", pos_in.x);
-
-            printf("y - %d \n", pos_in.y);
-
-            float4 in = (float4)(input.x, input.y, input.z, input.w);
-            printf("input4 = %v4hlf \n", in);
-
-            float4 w = (float4)(weight_x.x, weight_x.y, weight_x.z, weight_x.w);
-            printf("weight4 = %v4hlf \n", w);
-
-        }
+        output.x = dot(input, weight0);
+        output.y = dot(input, weight1);
+        output.z = dot(input, weight2);
+        output.w = dot(input, weight3);
 */
-  }
-/*
-  if (out_c == out_c_p && out_w == out_w_p && out_nh == out_nh_p) {
-        float4 out = (float4)(output.x, output.y, output.z, output.w);
-        printf("output4 = %v4hlf \n", out);
 
-  }
+        output = mad(input.x, weight0, output);
+        output = mad(input.y, weight1, output);
+        output = mad(input.z, weight2, output);
+        output = mad(input.w, weight3, output);
 
-*/
+   }
 
 #ifdef BATCH_NORM
     output = output * read_imageh(new_scale, sampler, (int2)(out_c, 0)) + read_imageh(new_biase, sampler, (int2)(out_c, 0));
 #endif
 
-/*
-  if (out_c == out_c_p && out_w == out_w_p && out_nh == out_nh_p) {
-        float4 out = (float4)(output.x, output.y, output.z, output.w);
-        printf(" after batch output4 = %v4hlf \n", out);
-
-  }
-
-*/
-
 #ifdef RELU
   output = activation(output);
 #endif
 
-/*
-  if (out_c == out_c_p && out_w == out_w_p && out_nh == out_nh_p) {
-        float4 out = (float4)(output.x, output.y, output.z, output.w);
-        printf(" after relu output4 = %v4hlf \n", out);
-
-  }
-
-*/
-
   int2 output_pos = (int2)(out_c * global_size_dim1 + out_w, out_nh);
   write_imageh(output_image, output_pos, output);
 }
+
+
+
+/*
+
+__kernel void conv_1x1_4(__private const int global_size_dim0,
+                       __private const int global_size_dim1,
+                       __private const int global_size_dim2,
+                       __read_only image2d_t input_image,
+                       __read_only image2d_t filter,
+#ifdef BIASE
+                       __read_only image2d_t bias,
+#endif
+#ifdef BATCH_NORM
+                       __read_only image2d_t new_scale,
+                       __read_only image2d_t new_biase,
+#endif
+                       __write_only image2d_t output_image,
+                       __private const int stride,
+                       __private const int offset,
+                       __private const int input_c,
+                       __private const int dilation,
+                       __private const int input_width,
+                       __private const int input_height,
+                       __private const int output_width,
+                       __private const int output_height) {
+  const int out_c = get_global_id(0) * 4;
+  const int out_w = get_global_id(1);
+  const int out_nh = get_global_id(2);
+
+  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
+                           CLK_ADDRESS_CLAMP         |
+                           CLK_FILTER_NEAREST;
+
+  int2 stride_xy = (int2)(stride, stride);
+  int2 ouput_pos_in_one_block = (int2)(out_w, out_nh);
+  int2 in_pos_in_one_block = ouput_pos_in_one_block * stride_xy + (int2)(offset, offset);
+
+#ifdef BIASE
+    half4 output0 = read_imageh(bias, sampler, (int2)(out_c, 0));
+    half4 output1 = read_imageh(bias, sampler, (int2)(out_c + 1, 0));
+    half4 output2 = read_imageh(bias, sampler, (int2)(out_c + 2, 0));
+    half4 output3 = read_imageh(bias, sampler, (int2)(out_c + 3, 0));
+#else
+    half4 output0 = 0.0f;
+    half4 output1 = 0.0f;
+    half4 output2 = 0.0f;
+    half4 output3 = 0.0f;
+#endif
+
+   for (int i = 0; i < input_c; ++i) {
+        int2 pos_in = (int2)(i * input_width + in_pos_in_one_block.x, in_pos_in_one_block.y);
+        half4 input = read_imageh(input_image, sampler, pos_in);
+
+        half4 weight0_0 = read_imageh(filter, sampler, (int2)(out_c, i * 4 + 0));
+        half4 weight0_1 = read_imageh(filter, sampler, (int2)(out_c, i * 4 + 1));
+        half4 weight0_2 = read_imageh(filter, sampler, (int2)(out_c, i * 4 + 2));
+        half4 weight0_3 = read_imageh(filter, sampler, (int2)(out_c, i * 4 + 3));
+
+        output0 = mad(input.x, weight0_0, output0);
+        output0 = mad(input.y, weight0_1, output0);
+        output0 = mad(input.z, weight0_2, output0);
+        output0 = mad(input.w, weight0_3, output0);
+
+        half4 weight1_0 = read_imageh(filter, sampler, (int2)(out_c + 1, i * 4 + 0));
+        half4 weight1_1 = read_imageh(filter, sampler, (int2)(out_c + 1, i * 4 + 1));
+        half4 weight1_2 = read_imageh(filter, sampler, (int2)(out_c + 1, i * 4 + 2));
+        half4 weight1_3 = read_imageh(filter, sampler, (int2)(out_c + 1, i * 4 + 3));
+
+        output1 = mad(input.x, weight1_0, output1);
+        output1 = mad(input.y, weight1_1, output1);
+        output1 = mad(input.z, weight1_2, output1);
+        output1 = mad(input.w, weight1_3, output1);
+
+        half4 weight2_0 = read_imageh(filter, sampler, (int2)(out_c + 2, i * 4 + 0));
+        half4 weight2_1 = read_imageh(filter, sampler, (int2)(out_c + 2, i * 4 + 1));
+        half4 weight2_2 = read_imageh(filter, sampler, (int2)(out_c + 2, i * 4 + 2));
+        half4 weight2_3 = read_imageh(filter, sampler, (int2)(out_c + 2, i * 4 + 3));
+
+        output2 = mad(input.x, weight2_0, output2);
+        output2 = mad(input.y, weight2_1, output2);
+        output2 = mad(input.z, weight2_2, output2);
+        output2 = mad(input.w, weight2_3, output2);
+
+        half4 weight3_0 = read_imageh(filter, sampler, (int2)(out_c + 3, i * 4 + 0));
+        half4 weight3_1 = read_imageh(filter, sampler, (int2)(out_c + 3, i * 4 + 1));
+        half4 weight3_2 = read_imageh(filter, sampler, (int2)(out_c + 3, i * 4 + 2));
+        half4 weight3_3 = read_imageh(filter, sampler, (int2)(out_c + 3, i * 4 + 3));
+
+        output3 = mad(input.x, weight3_0, output3);
+        output3 = mad(input.y, weight3_1, output3);
+        output3 = mad(input.z, weight3_2, output3);
+        output3 = mad(input.w, weight3_3, output3);
+
+   }
+
+#ifdef BATCH_NORM
+    output0 = output0 * read_imageh(new_scale, sampler, (int2)(out_c + 0, 0)) + read_imageh(new_biase, sampler, (int2)(out_c + 0, 0));
+
+    output1 = output1 * read_imageh(new_scale, sampler, (int2)(out_c + 1, 0)) + read_imageh(new_biase, sampler, (int2)(out_c + 1, 0));
+
+    output2 = output2 * read_imageh(new_scale, sampler, (int2)(out_c + 2, 0)) + read_imageh(new_biase, sampler, (int2)(out_c + 2, 0));
+
+    output3 = output3 * read_imageh(new_scale, sampler, (int2)(out_c + 3, 0)) + read_imageh(new_biase, sampler, (int2)(out_c + 3, 0));
+
+#endif
+
+#ifdef RELU
+  output0 = activation(output0);
+  output1 = activation(output1);
+  output2 = activation(output2);
+  output3 = activation(output3);
+#endif
+
+  int2 output_pos0 = (int2)(out_c * global_size_dim1 + out_w, out_nh);
+  write_imageh(output_image, output_pos0, output0);
+
+
+  int2 output_pos1 = (int2)((out_c + 1) * global_size_dim1 + out_w, out_nh);
+  write_imageh(output_image, output_pos1, output1);
+
+
+  int2 output_pos2 = (int2)((out_c + 2) * global_size_dim1 + out_w, out_nh);
+  write_imageh(output_image, output_pos2, output2);
+
+
+  int2 output_pos3 = (int2)((out_c + 3) * global_size_dim1 + out_w, out_nh);
+  write_imageh(output_image, output_pos3, output3);
+}
+
+*/

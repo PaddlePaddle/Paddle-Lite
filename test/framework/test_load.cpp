@@ -13,19 +13,33 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include <string>
+#include <iostream>
 
 #include "../test_helper.h"
 #include "framework/loader.h"
 
 int main() {
-  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::GPU_CL> loader;
   //  ../../../test/models/googlenet
   //  ../../../test/models/mobilenet
-  //  auto program = loader.Load(g_googlenet, true);
+
+  std::cout << " Begin load mobilenet " << std::endl;
+
+  auto program = loader.Load(std::string(g_mobilenet_mul), true);
+
+  std::cout << " End load mobilenet " << std::endl;
+
+  std::cout << " Begin load YOLO " << std::endl;
+
+  auto program1 = loader.Load(std::string(g_yolo_mul), true);
+
+  std::cout << " End load YOLO " << std::endl;
+
   //  auto program = loader.Load(g_mobilenet_ssd, true);
 
-  auto program = loader.Load(std::string(g_ocr) + "/model",
-                             std::string(g_ocr) + "/params", false);
+//  auto program = loader.Load(std::string(g_ocr) + "/model",
+//                             std::string(g_ocr) + "/params", false);
   //  program.originProgram->Description("program desc: ");
+
   return 0;
 }
