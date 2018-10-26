@@ -2147,9 +2147,9 @@ class Im2SequenceParam : public OpParam {
     paddings_ = GetAttr<vector<int>>("paddings", attrs);
   }
 
-  const RType *Input() const { return input_x_; }
+  const GType *Input() const { return input_x_; }
 
-  RType *Output() const { return out_; }
+  GType *Output() const { return out_; }
 
   const vector<int> &Kernels() const { return kernels_; }
 
@@ -2158,8 +2158,8 @@ class Im2SequenceParam : public OpParam {
   const vector<int> &Paddings() const { return paddings_; }
 
  private:
-  RType *input_x_;
-  RType *out_;
+  GType *input_x_;
+  GType *out_;
   vector<int> kernels_;
   vector<int> strides_;
   vector<int> paddings_;
