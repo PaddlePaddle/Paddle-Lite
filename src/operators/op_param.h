@@ -244,6 +244,12 @@ class OpParam {
   }
 
   template <typename T>
+  static T *OutputXShapeFrom(const VariableNameMap &outputs,
+                             const Scope &scope) {
+    return GetVarValue<T>("XShape", outputs, scope);
+  }
+
+  template <typename T>
   static T *OutputBoxesFrom(const VariableNameMap &outputs,
                             const Scope &scope) {
     return GetVarValue<T>("Boxes", outputs, scope);
@@ -1126,6 +1132,37 @@ class TransposeParam : public OpParam {
 };
 #endif
 
+#ifdef TRANSPOSE2_OP
+template <typename Dtype>
+class Transpose2Param : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  Transpose2Param(const VariableNameMap &inputs, const VariableNameMap &outputs,
+                  const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+    output_xshape_ = OutputXShapeFrom<GType>(outputs, scope);
+    axis_ = GetAttr<vector<int>>("axis", attrs);
+  }
+
+  const RType *InputX() const { return input_x_; }
+
+  RType *Out() const { return out_; }
+
+  RType *OutputXShape() const { return output_xshape_; }
+
+  const vector<int> &Axis() const { return axis_; }
+
+ private:
+  RType *input_x_;
+  RType *out_;
+  RType *output_xshape_;
+  vector<int> axis_;
+};
+#endif
+
 #ifdef LOOKUP_OP
 template <typename Dtype>
 class LookupParam : public OpParam {
@@ -1228,6 +1265,49 @@ class ReshapeParam : public OpParam {
   RType *input_x_;
   RType *input_shape_;
   RType *out_;
+  vector<int> shape_;
+  bool inplace_;
+};
+#endif
+
+#ifdef RESHAPE2_OP
+template <typename Dtype>
+class Reshape2Param : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  Reshape2Param(const VariableNameMap &inputs, const VariableNameMap &outputs,
+                const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    input_shape_ = InputShapeFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+    output_xshape_ = OutputXShapeFrom<GType>(outputs, scope);
+    shape_ = GetAttr<vector<int>>("shape", attrs);
+    if (HasAttr("inplace", attrs)) {
+      inplace_ = GetAttr<bool>("inplace", attrs);
+    } else {
+      inplace_ = false;
+    }
+  }
+
+  const RType *InputX() const { return input_x_; }
+
+  const RType *InputShape() const { return input_shape_; }
+
+  RType *Out() const { return out_; }
+
+  RType *OutputXShape() const { return output_xshape_; }
+
+  const vector<int> &Shape() const { return shape_; }
+
+  const bool &Inplace() const { return inplace_; }
+
+ private:
+  RType *input_x_;
+  RType *input_shape_;
+  RType *out_;
+  RType *output_xshape_;
   vector<int> shape_;
   bool inplace_;
 };

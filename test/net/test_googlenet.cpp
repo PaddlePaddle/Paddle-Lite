@@ -25,8 +25,8 @@ int main() {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
 #endif
 
-  paddle_mobile.SetThreadNum(1);
-  bool optimize = false;
+  paddle_mobile.SetThreadNum(4);
+  bool optimize = true;
   auto time1 = time();
   if (paddle_mobile.Load(g_googlenet, optimize)) {
     auto time2 = time();
@@ -35,10 +35,10 @@ int main() {
     std::vector<float> output;
     std::vector<int64_t> dims{1, 3, 224, 224};
     GetInput<float>(g_test_image_1x3x224x224, &input, dims);
-    //    // 预热十次
-    //    for (int i = 0; i < 10; ++i) {
-    //      output = paddle_mobile.Predict(input, dims);
-    //    }
+    // 预热十次
+    for (int i = 0; i < 10; ++i) {
+      output = paddle_mobile.Predict(input, dims);
+    }
     auto time3 = time();
     for (int i = 0; i < 10; ++i) {
       output = paddle_mobile.Predict(input, dims);
@@ -47,9 +47,6 @@ int main() {
 
     std::cout << "predict cost :" << time_diff(time3, time4) / 10 << "ms"
               << std::endl;
-    for (int i = 0; i < output.size(); ++i) {
-      DLOG << "result[" << i << "] = " << output[i];
-    }
   }
   return 0;
 }

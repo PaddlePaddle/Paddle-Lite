@@ -11,25 +11,24 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
+#ifdef TRANSPOSE2_OP
 
-#ifdef CONV_OP
-
-#pragma once
-
-#include "framework/tensor.h"
+#include "operators/kernel/transpose2_kernel.h"
+#include "operators/kernel/central-arm-func/transpose2_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-void conv3x3s1_int8(const framework::Tensor& input,
-                    const framework::Tensor& weight, framework::Tensor* output);
+template <>
+bool Transpose2Kernel<CPU, float>::Init(Transpose2Param<CPU> *param) {
+  return true;
+}
 
-void conv3x3s1_int8_4c(const framework::Tensor& input,
-                       const framework::Tensor& weight,
-                       framework::Tensor* output);
-
-void conv5x5s1_int8(const framework::Tensor& input,
-                    const framework::Tensor& weight, framework::Tensor* output);
+template <>
+void Transpose2Kernel<CPU, float>::Compute(
+    const Transpose2Param<CPU> &param) const {
+  Transpose2Compute<float>(param);
+}
 
 }  // namespace operators
 }  // namespace paddle_mobile

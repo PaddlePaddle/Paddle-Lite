@@ -160,7 +160,7 @@ build_for_ios() {
     fi
     cd "${BUILD_DIR}"
     make -j 8
-    cp ../../../src/ios_io/PaddleMobile.h ./build/PaddleMobile.h
+    cp ../../../src/ios_io/PaddleMobileCPU.h ./build/PaddleMobileCPU.h
     cd ./build
     # 生成符号表
     ranlib *.a
