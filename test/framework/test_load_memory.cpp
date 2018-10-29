@@ -12,10 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include <iostream>
 #include <string>
-
 #include "../test_helper.h"
 #include "../test_include.h"
+
 static size_t ReadBuffer(const char *file_name, uint8_t **out) {
   FILE *fp;
   fp = fopen(file_name, "rb");
