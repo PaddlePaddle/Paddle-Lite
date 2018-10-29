@@ -44,11 +44,15 @@ void DequantizeKernel<CPU, float>::Compute(
   size_t loop = size >> 4;
   size_t remain = size & 0xF;
   float32x4_t s = vdupq_n_f32(scale);
+
+  #pragma omp parallel for
   for (size_t i = 0; i < loop; ++i) {
-    int32x4_t r0 = vld1q_s32(x);
-    int32x4_t r1 = vld1q_s32(x + 4);
-    int32x4_t r2 = vld1q_s32(x + 8);
-    int32x4_t r3 = vld1q_s32(x + 12);
+    const int32_t *local_x = x + (i << 4);
+    float *local_y = y + (i << 4);
+    int32x4_t r0 = vld1q_s32(local_x);
+    int32x4_t r1 = vld1q_s32(local_x + 4);
+    int32x4_t r2 = vld1q_s32(local_x + 8);
+    int32x4_t r3 = vld1q_s32(local_x + 12);
     float32x4_t f0 = vcvtq_f32_s32(r0);
     float32x4_t f1 = vcvtq_f32_s32(r1);
     float32x4_t f2 = vcvtq_f32_s32(r2);
@@ -57,14 +61,14 @@ void DequantizeKernel<CPU, float>::Compute(
     f1 = vmulq_f32(f1, s);
     f2 = vmulq_f32(f2, s);
     f3 = vmulq_f32(f3, s);
-    vst1q_f32(y, f0);
-    vst1q_f32(y + 4, f1);
-    vst1q_f32(y + 8, f2);
-    vst1q_f32(y + 12, f3);
-    x += 16;
-    y += 16;
+    vst1q_f32(local_y, f0);
+    vst1q_f32(local_y + 4, f1);
+    vst1q_f32(local_y + 8, f2);
+    vst1q_f32(local_y + 12, f3);
   }
   size = remain;
+  x += (loop << 4);
+  y += (loop << 4);
 #endif
   for (size_t i = 0; i < size; ++i) {
     y[i] = x[i] * scale;
