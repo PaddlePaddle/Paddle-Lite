@@ -130,7 +130,8 @@ void ConvCompute(const ConvParam<CPU> &param) {
     } else if (param.Groups() == param.Input()->dims()[1] &&
                param.Input()->dims()[1] == param.Output()->dims()[1] &&
                param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
-               param.Filter()->dims()[2] == 3) {
+               param.Filter()->dims()[2] == 3 &&
+               param.Input()->dims()[2] == param.Input()->dims()[3]) {
       math::DepthwiseConv3x3(param.Input(), param.Strides(), param.Paddings(),
                              param.Filter(), nullptr, param.Output(), false);
     } else {
