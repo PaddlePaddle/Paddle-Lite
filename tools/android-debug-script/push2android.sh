@@ -7,7 +7,7 @@ IMAGE_PATH="../../test/images/*"
 EXE_FILE="../../test/build/*"
 EXE_DIR="data/local/tmp/bin"
 adb shell mkdir ${EXE_DIR}
-MODELS_DIR="/data/local/tmp"
+MODELS_DIR="/data/local/tmp/models"
 adb shell mkdir ${MODELS_DIR}
 for file in `ls ${MODELS_SRC}`
 do
@@ -19,7 +19,7 @@ ACL_BUILD_PATH="../../src/operators/kernel/mali/ACL_Android/build/*"
 adb push ${ACL_BUILD_PATH} ${EXE_DIR}
 fi
 
-IMAGES_DIR="/data/local/tmp"
+IMAGES_DIR="/data/local/tmp/images"
 adb shell mkdir ${IMAGES_DIR}
 LIB_PATH="../../build/release/arm-v7a/build/*"
 adb push ${EXE_FILE} ${EXE_DIR}
