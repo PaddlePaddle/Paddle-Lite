@@ -123,7 +123,7 @@ void ConvBNAddReluCompute(const FusionConvBNAddReluParam<CPU> &param) {
       param.Input()->dims()[1] == param.Output()->dims()[1] &&
       param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
       param.Filter()->dims()[2] == 3 && param.Strides()[0] == 1 &&
-      param.Input()->dims()[2] == param.Input()->dims()[2]) {
+      param.Input()->dims()[2] == param.Input()->dims()[3]) {
     math::DepthwiseConvAddBNRelu3x3s1p1(param.Input(), param.Filter(),
                                         param.Output(), param.NewScale(),
                                         param.NewBias(), true);
@@ -131,7 +131,7 @@ void ConvBNAddReluCompute(const FusionConvBNAddReluParam<CPU> &param) {
              param.Input()->dims()[1] == param.Output()->dims()[1] &&
              param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
              param.Filter()->dims()[2] == 3 && param.Strides()[0] == 2 &&
-             param.Input()->dims()[2] == param.Input()->dims()[2]) {
+             param.Input()->dims()[2] == param.Input()->dims()[3]) {
     //    math::DepthwiseConvAddBNRelu3x3s2p1(param.Input(), param.Filter(),
     //                                        param.Output(), param.NewScale(),
     //                                        param.NewBias(), 1);
