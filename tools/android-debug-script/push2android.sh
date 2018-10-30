@@ -1,21 +1,16 @@
 #!/usr/bin/env sh
 
 push_fn () {
-
-
-cp ../../src/operators/kernel/cl/cl_kernel/*  ../../build/release/arm-v7a/build/cl_kernel/
-
-
 MODELS_PATH="../../test/models/*"
 MODELS_SRC="../../test/models"
 IMAGE_PATH="../../test/images/*"
 EXE_FILE="../../test/build/*"
 EXE_DIR="data/local/tmp/bin"
 adb shell mkdir ${EXE_DIR}
-MODELS_DIR="data/local/tmp/models"
+MODELS_DIR="/data/local/tmp"
 adb shell mkdir ${MODELS_DIR}
 for file in `ls ${MODELS_SRC}`
-do 
+do
     adb shell mkdir ${MODELS_DIR}"/"${file}
 done
 
@@ -24,11 +19,15 @@ ACL_BUILD_PATH="../../src/operators/kernel/mali/ACL_Android/build/*"
 adb push ${ACL_BUILD_PATH} ${EXE_DIR}
 fi
 
-IMAGES_DIR="data/local/tmp/images"
+IMAGES_DIR="/data/local/tmp"
 adb shell mkdir ${IMAGES_DIR}
 LIB_PATH="../../build/release/arm-v7a/build/*"
 adb push ${EXE_FILE} ${EXE_DIR}
-adb push ${LIB_PATH} ${EXE_DIR}
+for file in ${LIB_PATH}
+do
+    adb push ${file} ${EXE_DIR}
+done
+
 if [[ $1 != "npm" ]]; then
 adb push ${IMAGE_PATH} ${IMAGES_DIR}
 adb push ${MODELS_PATH} ${MODELS_DIR}
