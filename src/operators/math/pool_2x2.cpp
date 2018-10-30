@@ -123,9 +123,12 @@ void Pool2x2Maxs2p0(vector<int> strides, vector<int> paddings,
 
         if (_w2 != 0) {
           in_ptr1 = input_data + i * input_batch_stride +
-                     c * input_channel_stride + ph * input_width+16 * w1 + 4 * w2;
+                    c * input_channel_stride + ph * input_width + 16 * w1 +
+                    4 * w2;
           in_ptr2 = in_ptr1 + input_width;
-          out_ptr = output_data + i * output_batch_stride + c * output_channel_stride + ph / 2 * output_width + 8 * w1 + 2 * w2;
+          out_ptr = output_data + i * output_batch_stride +
+                    c * output_channel_stride + ph / 2 * output_width + 8 * w1 +
+                    2 * w2;
           if (_w2 == 1) {
             *out_ptr = (*in_ptr1 > *in_ptr2) ? *in_ptr1 : *in_ptr2;
           } else if (_w2 == 2) {
@@ -136,13 +139,13 @@ void Pool2x2Maxs2p0(vector<int> strides, vector<int> paddings,
             *out_ptr = (temp > temp1) ? temp : temp1;
           } else if (_w2 == 3) {
             float temp = (*in_ptr1 > *in_ptr2) ? *in_ptr1 : *in_ptr2;
-              in_ptr1++;
-              in_ptr2++;
+            in_ptr1++;
+            in_ptr2++;
             float temp1 = (*in_ptr1 > *in_ptr2) ? *in_ptr1 : *in_ptr2;
-              in_ptr1++;
-              in_ptr2++;
+            in_ptr1++;
+            in_ptr2++;
             *out_ptr = (temp > temp1) ? temp : temp1;
-              out_ptr++;
+            out_ptr++;
             *out_ptr = (*in_ptr1 > *in_ptr2) ? *in_ptr1 : *in_ptr2;
           }
         }
@@ -259,10 +262,12 @@ void Pool2x2Avgs2p0(vector<int> strides, vector<int> paddings,
 
         if (_w2 != 0) {
           in_ptr1 = input_data + i * input_batch_stride +
-                    c * input_channel_stride + ph * input_width + 16 * w1 + 4 * w2;
+                    c * input_channel_stride + ph * input_width + 16 * w1 +
+                    4 * w2;
           in_ptr2 = in_ptr1 + input_width;
           out_ptr = output_data + i * output_batch_stride +
-                    c * output_channel_stride + ph / 2 * output_width + 8 * w1 + 2 * w2;
+                    c * output_channel_stride + ph / 2 * output_width + 8 * w1 +
+                    2 * w2;
           if (_w2 == 1) {
             *out_ptr = 0.5 * (*in_ptr1 + *in_ptr2);
           } else if (_w2 == 2) {
