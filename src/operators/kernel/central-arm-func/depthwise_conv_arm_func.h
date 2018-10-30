@@ -30,8 +30,7 @@ void DepthwiseConvCompute(const ConvParam<CPU> &param) {
   Bias.mutable_data<float>({param.Groups()});
   if (param.Groups() == param.Input()->dims()[1] &&
       param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
-      param.Filter()->dims()[2] == 3 && param.Strides()[0] == 1 &&
-      param.Input()->dims()[2] == param.Input()->dims()[3]) {
+      param.Filter()->dims()[2] == 3 && param.Strides()[0] == 1) {
     math::DepthwiseConv3x3s1p1(param.Input(), param.Filter(), param.Output(),
                                &Bias, false);
   } else if (param.Groups() == param.Input()->dims()[1] &&
