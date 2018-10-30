@@ -76,7 +76,7 @@ void PoolCompute(const PoolParam<CPU> &param) {
       }
     }
 
-  } else if (0 && ksize[0] == 2 && ksize[0] == ksize[1] && strides[0] == 2 &&
+  } else if (ksize[0] == 2 && ksize[0] == ksize[1] && strides[0] == 2 &&
              strides[0] == strides[1] && paddings[0] == paddings[1] &&
              paddings[1] == 0) {
 #if __ARM_NEON
