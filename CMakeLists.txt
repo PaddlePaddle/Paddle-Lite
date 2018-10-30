@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.6)
 
-option(USE_OPENMP "openmp support" OFF)
+option(USE_OPENMP "openmp support" ON)
 option(DEBUGING "enable debug mode" ON)
 option(USE_EXCEPTION "use std exception" ON)
 option(LOG_PROFILE "log profile" OFF)
 # select the platform to build
-option(CPU "armv7 with neon" OFF)
+option(CPU "armv7 with neon" ON)
 option(GPU_MALI "mali gpu" OFF)
 option(GPU_CL "opencl gpu" ON)
 option(FPGA "fpga" OFF)
