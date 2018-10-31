@@ -49,11 +49,14 @@ void ElementwiseAddKernel<GPU_CL, float>::Compute(
     cl_mem input_image = input->GetCLImage();
     cl_mem bias_image = bias->GetCLImage();
     cl_mem output_image = output->GetCLImage();
-    status = clSetKernelArg(kernel, 0, sizeof(cl_mem), reinterpret_cast<void *>(&input_image));
+    status = clSetKernelArg(kernel, 0, sizeof(cl_mem),
+                            reinterpret_cast<void *>(&input_image));
     CL_CHECK_ERRORS(status);
-    status = clSetKernelArg(kernel, 1, sizeof(cl_mem), reinterpret_cast<void *>(&bias_image));
+    status = clSetKernelArg(kernel, 1, sizeof(cl_mem),
+                            reinterpret_cast<void *>(&bias_image));
     CL_CHECK_ERRORS(status);
-    status = clSetKernelArg(kernel, 2, sizeof(cl_mem), reinterpret_cast<void *>(&output_image));
+    status = clSetKernelArg(kernel, 2, sizeof(cl_mem),
+                            reinterpret_cast<void *>(&output_image));
     CL_CHECK_ERRORS(status);
     int width = input->ImageWidth();
     int height = input->ImageHeight();
@@ -67,13 +70,17 @@ void ElementwiseAddKernel<GPU_CL, float>::Compute(
     cl_mem bias_image = bias->GetCLImage();
     cl_mem output_image = output->GetCLImage();
     int tensor_w = input->dims()[3];
-    status = clSetKernelArg(kernel, 0, sizeof(cl_mem), reinterpret_cast<void *>(&input_image));
+    status = clSetKernelArg(kernel, 0, sizeof(cl_mem),
+                            reinterpret_cast<void *>(&input_image));
     CL_CHECK_ERRORS(status);
-    status = clSetKernelArg(kernel, 1, sizeof(cl_mem), reinterpret_cast<void *>(&bias_image));
+    status = clSetKernelArg(kernel, 1, sizeof(cl_mem),
+                            reinterpret_cast<void *>(&bias_image));
     CL_CHECK_ERRORS(status);
-    status = clSetKernelArg(kernel, 2, sizeof(cl_mem), reinterpret_cast<void *>(&output_image));
+    status = clSetKernelArg(kernel, 2, sizeof(cl_mem),
+                            reinterpret_cast<void *>(&output_image));
     CL_CHECK_ERRORS(status);
-    status = clSetKernelArg(kernel, 3, sizeof(cl_int), reinterpret_cast<void *>(&tensor_w));
+    status = clSetKernelArg(kernel, 3, sizeof(cl_int),
+                            reinterpret_cast<void *>(&tensor_w));
     CL_CHECK_ERRORS(status);
     int width = input->ImageWidth();
     int height = input->ImageHeight();

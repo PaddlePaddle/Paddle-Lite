@@ -39,8 +39,7 @@ class FusionConvAddPReluOpMatcher : public framework::FusionOpMatcher {
       std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
     node->Folder(node_.Depth(), Type(),
                  {{G_OP_TYPE_ELEMENTWISE_ADD, {{"Y", "Y"}}},
-                  {G_OP_TYPE_PRELU, {{"Alpha", "Alpha"}}}
-                 },
+                  {G_OP_TYPE_PRELU, {{"Alpha", "Alpha"}}}},
                  removed_nodes);
   }
   std::string Type() { return G_OP_TYPE_FUSION_CONV_ADD_PRELU; }
