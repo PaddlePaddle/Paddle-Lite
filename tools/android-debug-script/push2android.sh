@@ -5,7 +5,7 @@ MODELS_PATH="../../test/models/*"
 MODELS_SRC="../../test/models"
 IMAGE_PATH="../../test/images/*"
 EXE_FILE="../../test/build/*"
-EXE_DIR="data/local/tmp/bin"
+EXE_DIR="/data/local/tmp/bin"
 adb shell mkdir ${EXE_DIR}
 MODELS_DIR="/data/local/tmp/models"
 adb shell mkdir ${MODELS_DIR}
