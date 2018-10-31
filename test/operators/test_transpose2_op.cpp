@@ -13,15 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "../test_include.h"
-#include "operators/reshape2_op.h"
+#include "operators/transpose2_op.h"
 
 namespace paddle_mobile {
 namespace framework {
 
 template <typename Dtype>
-class TestReshape2Op {
+class TestTranspose2Op {
  public:
-  explicit TestReshape2Op(const Program<Dtype> p) : program_(p) {
+  explicit TestTranspose2Op(const Program<Dtype> p) : program_(p) {
     if (use_optimize_) {
       to_predict_program_ = program_.optimizeProgram;
     } else {
@@ -32,7 +32,7 @@ class TestReshape2Op {
     for (auto block_desc : blocks) {
       std::vector<std::shared_ptr<OpDesc>> ops = block_desc->Ops();
       for (auto op : ops) {
-        if (op->Type() == "reshape2") {
+        if (op->Type() == "transpose2") {
           DLOG << " attr size: " << op->GetAttrMap().size();
           std::unordered_map<std::string, Attribute> attrs = op->GetAttrMap();
           for (std::unordered_map<std::string, Attribute>::iterator it =
@@ -57,8 +57,8 @@ class TestReshape2Op {
 
           input_var_name = op->Input("X")[0];
           output_var_name = op->Output("Out")[0];
-          std::shared_ptr<operators::Reshape2Op<Dtype, float>> op_ptr =
-              std::make_shared<operators::Reshape2Op<Dtype, float>>(
+          std::shared_ptr<operators::Transpose2Op<Dtype, float>> op_ptr =
+              std::make_shared<operators::Transpose2Op<Dtype, float>>(
                   op->Type(), op->GetInputs(), op->GetOutputs(),
                   op->GetAttrMap(), program_.scope);
           ops_of_block_[*block_desc.get()].push_back(op_ptr);
@@ -76,6 +76,7 @@ class TestReshape2Op {
 
     Variable *output = scope->Var(output_var_name);
     auto *output_tensor = output->GetMutable<LoDTensor>();
+    output_tensor->mutable_data<float>({1, 2, 8});
 
     std::shared_ptr<Tensor> out_tensor = std::make_shared<LoDTensor>();
     out_tensor.reset(output_tensor);
@@ -105,19 +106,19 @@ class TestReshape2Op {
   }
 };
 
-template class TestReshape2Op<CPU>;
+template class TestTranspose2Op<CPU>;
 }  // namespace framework
 }  // namespace paddle_mobile
 
 int main() {
   DLOG << "----------**********----------";
-  DLOG << "begin to run Reshape2 Test";
+  DLOG << "begin to run Transpose2 Test";
   paddle_mobile::Loader<paddle_mobile::CPU> loader;
   auto program = loader.Load(std::string(g_ocr) + "/model",
                              std::string(g_ocr) + "/params");
 
   paddle_mobile::framework::Tensor input;
-  SetupTensor<float>(&input, {1, 4, 4}, static_cast<float>(0),
+  SetupTensor<float>(&input, {1, 8, 2}, static_cast<float>(0),
                      static_cast<float>(1));
   auto *input_ptr = input.data<float>();
   for (int i = 0; i < 16; ++i) {
@@ -128,10 +129,10 @@ int main() {
     DLOG << " index " << i << " : " << input_ptr[i];
   }
 
-  paddle_mobile::framework::TestReshape2Op<paddle_mobile::CPU> testReshape2Op(
-      program);
+  paddle_mobile::framework::TestTranspose2Op<paddle_mobile::CPU>
+      testTranspose2Op(program);
 
-  auto output = testReshape2Op.predict(input);
+  auto output = testTranspose2Op.predict(input);
   auto *output_ptr = output->data<float>();
 
   DLOG << "output : ";

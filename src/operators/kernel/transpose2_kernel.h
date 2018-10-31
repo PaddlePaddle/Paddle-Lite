@@ -12,21 +12,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef SOFTMAX_OP
+#ifdef TRANSPOSE2_OP
+
 #pragma once
-#include "../../math/softmax.h"
+
+#include <vector>
+
+#include "framework/operator.h"
 #include "operators/op_param.h"
+
 namespace paddle_mobile {
 namespace operators {
-template <typename P>
-void SoftmaxCompute(const SoftmaxParam<CPU> &param) {
-  const Tensor *in_x = param.InputX();
-  Tensor *out = param.Out();
-  auto x_dims = in_x->dims();
-  out->Resize(x_dims);
-  out->mutable_data<float>();
-  math::SoftmaxFuntor<CPU, float>()(in_x, out);
-}
+
+template <typename DeviceType, typename T>
+class Transpose2Kernel
+    : public framework::OpKernelBase<DeviceType, Transpose2Param<DeviceType>> {
+ public:
+  void Compute(const Transpose2Param<DeviceType>& param) const;
+  bool Init(Transpose2Param<DeviceType>* param);
+};
 }  // namespace operators
 }  // namespace paddle_mobile
+
 #endif
