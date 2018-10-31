@@ -57,7 +57,7 @@ bool ConvBNReluKernel<CPU, float>::Init(FusionConvBNReluParam<CPU> *param) {
 
 template <>
 void ConvBNReluKernel<CPU, float>::Compute(
-    const FusionConvBNReluParam<CPU> &param) const {
+    const FusionConvBNReluParam<CPU> &param) {
   ConvBNReluCompute<float>(param);
 }
 template class ConvBNReluKernel<CPU, float>;

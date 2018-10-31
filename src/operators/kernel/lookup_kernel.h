@@ -28,7 +28,7 @@ template <typename DeviceType, typename T>
 class LookupKernel
     : public framework::OpKernelBase<DeviceType, LookupParam<DeviceType>> {
  public:
-  void Compute(const LookupParam<DeviceType>& param) const;
+  void Compute(const LookupParam<DeviceType>& param);
   bool Init(LookupParam<DeviceType>* param);
 };
 }  // namespace operators

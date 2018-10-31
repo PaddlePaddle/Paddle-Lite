@@ -37,10 +37,6 @@ class ElementwiseAddOp : public framework::OperatorWithKernel<
             DeviceType, ElementwiseAddParam<DeviceType>,
             operators::ElementwiseAddKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, ElementwiseAddParam<DeviceType>,
-      operators::ElementwiseAddKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:

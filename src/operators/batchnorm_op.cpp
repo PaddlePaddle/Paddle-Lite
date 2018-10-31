@@ -14,7 +14,7 @@ limitations under the License. */
 
 #ifdef BATCHNORM_OP
 
-#include "batchnorm_op.h"
+#include "operators/batchnorm_op.h"
 #include "framework/op_proto_maker.h"
 #include "framework/op_registry.h"
 
@@ -38,6 +38,10 @@ REGISTER_OPERATOR_CPU(batch_norm, ops::BatchNormOp);
 REGISTER_OPERATOR_MALI_GPU(batch_norm, ops::BatchNormOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+#endif
+
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(batch_norm, ops::BatchNormOp);
 #endif
 
 #endif

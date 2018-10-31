@@ -25,7 +25,7 @@ template <typename DeviceType, typename T>
 class SumKernel
     : public framework::OpKernelBase<DeviceType, SumParam<DeviceType>> {
  public:
-  void Compute(const SumParam<DeviceType> &param) const;
+  void Compute(const SumParam<DeviceType> &param);
   bool Init(SumParam<DeviceType> *param);
 };
 

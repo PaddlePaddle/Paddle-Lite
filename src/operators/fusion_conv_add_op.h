@@ -19,8 +19,8 @@ limitations under the License. */
 #include <vector>
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
-#include "op_param.h"
 #include "operators/kernel/conv_add_kernel.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -56,10 +56,6 @@ class FusionConvAddOp : public framework::OperatorWithKernel<
                                       FusionConvAddParam<DeviceType>,
                                       operators::ConvAddKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, FusionConvAddParam<DeviceType>,
-      operators::ConvAddKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:

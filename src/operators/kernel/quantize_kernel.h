@@ -26,7 +26,7 @@ template <typename DeviceType, typename T>
 class QuantizeKernel
     : public framework::OpKernelBase<DeviceType, QuantizeParam<DeviceType>> {
  public:
-  void Compute(const QuantizeParam<DeviceType> &param) const;
+  void Compute(const QuantizeParam<DeviceType> &param);
   bool Init(QuantizeParam<DeviceType> *param);
 };
 

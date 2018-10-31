@@ -195,8 +195,7 @@ bool PoolKernel<GPU_MALI, float>::Init(PoolParam<GPU_MALI>* param) {
 }
 
 template <>
-void PoolKernel<GPU_MALI, float>::Compute(
-    const PoolParam<GPU_MALI>& param) const {
+void PoolKernel<GPU_MALI, float>::Compute(const PoolParam<GPU_MALI>& param) {
   std::cout << "init acl" << std::endl;
   AclPoolOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclPoolOp<GPU_MALI, float>*>(this->GetAclOp());

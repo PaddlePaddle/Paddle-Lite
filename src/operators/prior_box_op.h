@@ -40,9 +40,6 @@ class PriorBoxOp : public framework::OperatorWithKernel<
                                       operators::PriorBoxKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 
-  using framework::OperatorWithKernel<
-      DeviceType, PriorBoxParam<DeviceType>,
-      operators::PriorBoxKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:

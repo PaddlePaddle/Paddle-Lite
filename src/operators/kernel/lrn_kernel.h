@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#pragma once
+
 #ifdef LRN_OP
 #ifdef _OPENMP
 #include <omp.h>
@@ -173,7 +175,7 @@ template <typename DeviceType, typename T>
 class LrnKernel
     : public framework::OpKernelBase<DeviceType, LrnParam<DeviceType>> {
  public:
-  void Compute(const LrnParam<DeviceType> &param) const;
+  void Compute(const LrnParam<DeviceType> &param);
   bool Init(LrnParam<DeviceType> *param);
 };
 }  // namespace operators

@@ -10,7 +10,7 @@ adb shell mkdir ${EXE_DIR}
 MODELS_DIR="/data/local/tmp/models"
 adb shell mkdir ${MODELS_DIR}
 for file in `ls ${MODELS_SRC}`
-do 
+do
     adb shell mkdir ${MODELS_DIR}"/"${file}
 done
 

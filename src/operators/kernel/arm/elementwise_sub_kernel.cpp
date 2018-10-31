@@ -27,7 +27,7 @@ bool ElementwiseSubKernel<CPU, float>::Init(ElementwiseSubParam<CPU> *param) {
 
 template <>
 void ElementwiseSubKernel<CPU, float>::Compute(
-    const ElementwiseSubParam<CPU> &param) const {
+    const ElementwiseSubParam<CPU> &param) {
   ElementwiseSubCompute<float>(param);
   param.Out()->set_lod(param.InputX()->lod());
 }

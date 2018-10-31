@@ -26,6 +26,7 @@ limitations under the License. */
 #include "framework/tensor.h"
 
 namespace paddle_mobile {
+namespace framework {
 
 template <typename Dtype = CPU, Precision P = Precision::FP32>
 class Executor {
@@ -79,7 +80,10 @@ class Executor {
   void LoadMemory(void **data,
                   const std::shared_ptr<framework::VarDesc> var_desc,
                   framework::LoDTensor *tensor);
-
+#ifdef PADDLE_MOBILE_CL
+  void LoadMemory(const framework::VarDesc var_desc, float *tensorInput,
+                  char **data);
+#endif
   framework::Program<Dtype> program_;
   int batch_size_ = 1;
   std::shared_ptr<framework::ProgramDesc> to_predict_program_;
@@ -97,4 +101,5 @@ class Executor {
   bool loddable_ = false;
 };
 
+}  // namespace framework
 }  // namespace paddle_mobile
