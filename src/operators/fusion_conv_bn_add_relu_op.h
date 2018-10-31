@@ -17,12 +17,12 @@ limitations under the License. */
 #pragma once
 
 #include <string>
-#include <vector>
 #include <utility>
+#include <vector>
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
-#include "operators/op_param.h"
 #include "operators/kernel/conv_bn_add_relu_kernel.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {

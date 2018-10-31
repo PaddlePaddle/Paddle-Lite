@@ -19,8 +19,8 @@ limitations under the License. */
 #include <vector>
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
-#include "operators/op_param.h"
 #include "operators/kernel/conv_add_kernel.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
