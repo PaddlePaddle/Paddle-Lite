@@ -38,10 +38,6 @@ class SliceOp : public framework::OperatorWithKernel<
       : framework::OperatorWithKernel<DeviceType, SliceParam<DeviceType>,
                                       operators::SliceKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, SliceParam<DeviceType>,
-      operators::SliceKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:

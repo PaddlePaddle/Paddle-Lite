@@ -31,7 +31,7 @@ template <typename DeviceType, typename T>
 class DepthwiseConvKernel
     : public OpKernelBase<DeviceType, ConvParam<DeviceType>> {
  public:
-  void Compute(const ConvParam<DeviceType> &param) const;
+  void Compute(const ConvParam<DeviceType> &param);
   bool Init(ConvParam<DeviceType> *param);
 };
 }  // namespace operators

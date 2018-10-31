@@ -28,7 +28,7 @@ bool PolygonBoxTransformKernel<CPU, float>::Init(
 
 template <>
 void PolygonBoxTransformKernel<CPU, float>::Compute(
-    const PolygonBoxTransformParam<CPU> &param) const {
+    const PolygonBoxTransformParam<CPU> &param) {
   PolygonBoxTransformCompute<float>(param);
 }
 

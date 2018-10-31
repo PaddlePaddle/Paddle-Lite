@@ -28,7 +28,7 @@ class MultiClassNMSKernel
     : public framework::OpKernelBase<DeviceType,
                                      MultiClassNMSParam<DeviceType>> {
  public:
-  void Compute(const MultiClassNMSParam<DeviceType>& param) const;
+  void Compute(const MultiClassNMSParam<DeviceType>& param);
   bool Init(MultiClassNMSParam<DeviceType>* param);
 };
 }  // namespace operators

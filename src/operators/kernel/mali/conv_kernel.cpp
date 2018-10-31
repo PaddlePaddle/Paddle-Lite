@@ -211,8 +211,7 @@ bool ConvKernel<GPU_MALI, float>::Init(ConvParam<GPU_MALI>* param) {
 }
 
 template <>
-void ConvKernel<GPU_MALI, float>::Compute(
-    const ConvParam<GPU_MALI>& param) const {
+void ConvKernel<GPU_MALI, float>::Compute(const ConvParam<GPU_MALI>& param) {
   std::cout << "init acl" << std::endl;
   AclConvOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclConvOp<GPU_MALI, float>*>(this->GetAclOp());

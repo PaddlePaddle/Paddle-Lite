@@ -27,7 +27,7 @@ template <typename DeviceType, typename T>
 class ReluKernel
     : public framework::OpKernelBase<DeviceType, ReluParam<DeviceType>> {
  public:
-  void Compute(const ReluParam<DeviceType>& param) const;
+  void Compute(const ReluParam<DeviceType>& param);
   bool Init(ReluParam<DeviceType>* param);
 };
 }  // namespace operators

@@ -56,10 +56,6 @@ class FusionFcOp : public framework::OperatorWithKernel<
                                       operators::FusionFcKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
 
-  using framework::OperatorWithKernel<
-      DeviceType, FusionFcParam<DeviceType>,
-      operators::FusionFcKernel<DeviceType, T>>::OperatorWithKernel;
-
   void InferShape() const override;
 };
 

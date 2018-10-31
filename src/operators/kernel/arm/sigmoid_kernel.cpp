@@ -32,7 +32,7 @@ bool SigmoidKernel<CPU, float>::Init(SigmoidParam<CPU> *param) {
 }
 
 template <>
-void SigmoidKernel<CPU, float>::Compute(const SigmoidParam<CPU> &param) const {
+void SigmoidKernel<CPU, float>::Compute(const SigmoidParam<CPU> &param) {
   SigmoidCompute<float>(param);
 }
 

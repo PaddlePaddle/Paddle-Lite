@@ -26,7 +26,7 @@ template <typename DeviceType, typename T>
 class DequantizeKernel
     : public framework::OpKernelBase<DeviceType, DequantizeParam<DeviceType>> {
  public:
-  void Compute(const DequantizeParam<DeviceType> &param) const;
+  void Compute(const DequantizeParam<DeviceType> &param);
   bool Init(DequantizeParam<DeviceType> *param);
 };
 

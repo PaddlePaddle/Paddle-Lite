@@ -22,10 +22,10 @@ limitations under the License. */
 #endif  // _OPENMP
 
 #include "common/types.h"
+#include "framework/executor.h"
 #include "framework/load_ops.h"
+#include "framework/loader.h"
 #include "framework/tensor.h"
-#include "io/executor.h"
-#include "io/loader.h"
 
 namespace paddle_mobile {
 
@@ -52,7 +52,7 @@ class PaddleMobile {
 
   bool LoadCombinedMemory(size_t model_len, const uint8_t *model_buf,
                           size_t combined_params_len,
-                          const uint8_t *combined_params_buf);
+                          uint8_t *combined_params_buf);
 
   void SetThreadNum(int num);
   void Clear();
@@ -69,8 +69,8 @@ class PaddleMobile {
 #endif
 
  private:
-  std::shared_ptr<Loader<Dtype, P>> loader_;
-  std::shared_ptr<Executor<Dtype, P>> executor_;
+  std::shared_ptr<framework::Loader<Dtype, P>> loader_;
+  std::shared_ptr<framework::Executor<Dtype, P>> executor_;
 };
 
 }  // namespace paddle_mobile

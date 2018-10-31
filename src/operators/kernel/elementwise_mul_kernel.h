@@ -28,7 +28,7 @@ class ElementwiseMulKernel
     : public framework::OpKernelBase<DeviceType,
                                      ElementwiseMulParam<DeviceType>> {
  public:
-  void Compute(const ElementwiseMulParam<DeviceType> &param) const;
+  void Compute(const ElementwiseMulParam<DeviceType> &param);
   bool Init(ElementwiseMulParam<DeviceType> *param);
 };
 }  // namespace operators
