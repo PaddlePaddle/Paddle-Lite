@@ -38,10 +38,6 @@ class ShapeOp : public framework::OperatorWithKernel<
       : framework::OperatorWithKernel<DeviceType, ShapeParam<DeviceType>,
                                       operators::ShapeKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, ShapeParam<DeviceType>,
-      operators::ShapeKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 };
 

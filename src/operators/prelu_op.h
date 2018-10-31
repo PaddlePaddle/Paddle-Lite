@@ -38,10 +38,6 @@ class PReluOp : public framework::OperatorWithKernel<
       : framework::OperatorWithKernel<DeviceType, PReluParam<DeviceType>,
                                       operators::PReluKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, PReluParam<DeviceType>,
-      operators::PReluKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:

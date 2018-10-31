@@ -17,11 +17,12 @@ limitations under the License. */
 #pragma once
 
 #include <string>
+#include <utility>
 #include <vector>
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
-#include "op_param.h"
 #include "operators/kernel/conv_bn_add_relu_kernel.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -71,10 +72,6 @@ class FusionConvBNAddReluOp
             DeviceType, FusionConvBNAddReluParam<DeviceType>,
             operators::ConvBNAddReluKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, FusionConvBNAddReluParam<DeviceType>,
-      operators::ConvBNAddReluKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:

@@ -26,7 +26,7 @@ using framework::OpKernelBase;
 template <typename DeviceType, typename T>
 class PoolKernel : public OpKernelBase<DeviceType, PoolParam<DeviceType>> {
  public:
-  void Compute(const PoolParam<DeviceType> &param) const override;
+  void Compute(const PoolParam<DeviceType> &param);
   bool Init(PoolParam<DeviceType> *param);
 };
 }  // namespace operators

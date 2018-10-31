@@ -40,10 +40,6 @@ class BilinearOp : public framework::OperatorWithKernel<
             DeviceType, BilinearInterpParam<DeviceType>,
             operators::BilinearInterpKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, BilinearInterpParam<DeviceType>,
-      operators::BilinearInterpKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 };
 

@@ -56,37 +56,69 @@ template <typename Dtype>
 void OperatorBase<Dtype>::CheckAllInputOutputSet() const {}
 
 template <typename Dtype>
-void OperatorBase<Dtype>::Run() const {
+void OperatorBase<Dtype>::Run() {
+  DLOG << " ----- Begin run impl --- " << type_ << " ----- ";
   RunImpl();
-#ifdef PADDLE_MOBILE_DEBUG
-  DLOG << "-------------" << type_ << "----------------------------";
-  vector<string> input_keys = GetInputKeys();
-  for (const auto key : input_keys) {
-    auto var_vec_in = inputs_.at(key);
-    for (int i = 0; i < var_vec_in.size(); ++i) {
-      auto vari = scope_->FindVar(var_vec_in[i]);
-      if (vari->IsInitialized()) {
-        Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
-        if (tensor) DLOG << type_ << " input- " << key << "=" << *tensor;
-      }
-    }
-  }
-  for (const auto key : GetOutKeys()) {
-    auto var_vec_out = outputs_.at(key);
-    for (int i = 0; i < var_vec_out.size(); ++i) {
-      auto vari = scope_->FindVar(var_vec_out[i]);
-      if (vari->IsInitialized()) {
-        Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
-        if (tensor) DLOG << type_ << " output- " << key << "=" << *tensor;
-      }
-    }
-  }
-#endif
+  DLOG << " ----- End run impl --- " << type_ << " ----- ";
+  //#ifdef PADDLE_MOBILE_DEBUG
+  //  DLOG << "-------------" << type_ << "----------------------------";
+  //  vector<string> input_keys = GetInputKeys();
+  //  for (const auto key : input_keys) {
+  //    auto var_vec_in = inputs_.at(key);
+  //    for (int i = 0; i < var_vec_in.size(); ++i) {
+  //      auto vari = scope_->FindVar(var_vec_in[i]);
+  //      if (vari->IsInitialized()) {
+  //#ifdef PADDLE_MOBILE_CL
+  //        if (type_ == "feed") {
+  //          Tensor *tensor = vari->template
+  //          GetMutable<framework::LoDTensor>(); if (tensor) DLOG << type_ << "
+  //          input- " << key << "=" << *tensor;
+  //        } else {
+  //          CLImage *cl_image = vari->template
+  //          GetMutable<framework::CLImage>(); if (cl_image) {
+  //            DLOG << type_ << " input- " << key << "=" << *cl_image;
+  //          }
+  //        }
+  //
+  //#else
+  //        Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
+  //        if (tensor) DLOG << type_ << " input- " << key << "=" << *tensor;
+  //#endif
+  //      }
+  //    }
+  //  }
+  //  for (const auto key : GetOutKeys()) {
+  //    auto var_vec_out = outputs_.at(key);
+  //    for (int i = 0; i < var_vec_out.size(); ++i) {
+  //      auto vari = scope_->FindVar(var_vec_out[i]);
+  //      if (vari->IsInitialized()) {
+  //#ifdef PADDLE_MOBILE_CL
+  //        if (type_ == "fetch") {
+  //          Tensor *tensor = vari->template
+  //          GetMutable<framework::LoDTensor>(); if (tensor) {
+  //            DLOG << type_ << " output- " << key << "=" << *tensor;
+  //          }
+  //        } else {
+  //          CLImage *cl_image = vari->template
+  //          GetMutable<framework::CLImage>(); if (cl_image) {
+  //            DLOG << type_ << " output- " << key << "=" << *cl_image;
+  //          }
+  //        }
+  //
+  //#else
+  //        Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
+  //        if (tensor) DLOG << type_ << " output- " << key << "=" << *tensor;
+  //#endif
+  //      }
+  //    }
+  //  }
+  //#endif
 }
 
 template class OperatorBase<CPU>;
 template class OperatorBase<FPGA>;
 template class OperatorBase<GPU_MALI>;
+template class OperatorBase<GPU_CL>;
 
 }  // namespace framework
 }  // namespace paddle_mobile

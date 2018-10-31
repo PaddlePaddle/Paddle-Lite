@@ -28,7 +28,7 @@ template <typename DeviceType, typename T>
 class Transpose2Kernel
     : public framework::OpKernelBase<DeviceType, Transpose2Param<DeviceType>> {
  public:
-  void Compute(const Transpose2Param<DeviceType>& param) const;
+  void Compute(const Transpose2Param<DeviceType>& param);
   bool Init(Transpose2Param<DeviceType>* param);
 };
 }  // namespace operators

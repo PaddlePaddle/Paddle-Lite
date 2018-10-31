@@ -342,6 +342,13 @@ if (NOT FOUND_MATCH)
     ADD_EXECUTABLE(test-fssd net/test_mobilenet_025_fssd.cpp test_helper.h test_include.h)
     target_link_libraries(test-fssd paddle-mobile)
 
+    # gen test
+    ADD_EXECUTABLE(test-mobilenetgpu  net/test_mobilenet_GPU.cpp test_helper.h  test_include.h)
+    target_link_libraries(test-mobilenetgpu paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-yologpu net/test_yologpu.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-yologpu paddle-mobile)
 
     # gen test
     ADD_EXECUTABLE(test-multi-process net/test_multi_inference_predict.cpp test_helper.h test_include.h)
@@ -350,7 +357,6 @@ if (NOT FOUND_MATCH)
     # gen test
     ADD_EXECUTABLE(test-eng net/test_eng.cpp test_helper.h test_include.h)
     target_link_libraries(test-eng paddle-mobile)
-
 
     #add_library(test-lib-size SHARED common/test_lib_size.h common/test_lib_size.cpp)
 endif ()

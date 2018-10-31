@@ -28,13 +28,13 @@ bool PaddleMobile<Dtype, P>::Load(const std::string &dirname, bool optimize,
                                   bool quantification, int batch_size,
                                   bool loddable) {
   if (loader_.get() == nullptr) {
-    loader_ = std::make_shared<Loader<Dtype, P>>();
+    loader_ = std::make_shared<framework::Loader<Dtype, P>>();
   } else {
     LOG(kLOG_INFO) << "loader inited";
   }
 
   if (executor_.get() == nullptr) {
-    executor_ = std::make_shared<Executor<Dtype, P>>(
+    executor_ = std::make_shared<framework::Executor<Dtype, P>>(
         loader_->Load(dirname, optimize, quantification), batch_size, optimize,
         loddable);
   } else {
@@ -50,13 +50,13 @@ bool PaddleMobile<Dtype, P>::Load(const std::string &model_path,
                                   bool quantification, int batch_size,
                                   bool loddable) {
   if (loader_.get() == nullptr) {
-    loader_ = std::make_shared<Loader<Dtype, P>>();
+    loader_ = std::make_shared<framework::Loader<Dtype, P>>();
   } else {
     LOG(kLOG_INFO) << "loader inited";
   }
 
   if (executor_.get() == nullptr) {
-    executor_ = std::make_shared<Executor<Dtype, P>>(
+    executor_ = std::make_shared<framework::Executor<Dtype, P>>(
         loader_->Load(model_path, para_path, optimize, quantification),
         batch_size, optimize, loddable);
   } else {
@@ -67,21 +67,22 @@ bool PaddleMobile<Dtype, P>::Load(const std::string &model_path,
 }
 
 template <typename Dtype, Precision P>
-bool PaddleMobile<Dtype, P>::LoadCombinedMemory(
-    size_t model_len, const uint8_t *model_buf, size_t combined_params_len,
-    const uint8_t *combined_params_buf) {
+bool PaddleMobile<Dtype, P>::LoadCombinedMemory(size_t model_len,
+                                                const uint8_t *model_buf,
+                                                size_t combined_params_len,
+                                                uint8_t *combined_params_buf) {
   int batch_size = 1;
   bool optimise = true;
   bool quantification = false;
 
   if (loader_.get() == nullptr) {
-    loader_ = std::make_shared<Loader<Dtype, P>>();
+    loader_ = std::make_shared<framework::Loader<Dtype, P>>();
   } else {
     LOG(kLOG_INFO) << "loader inited";
   }
 
   if (executor_.get() == nullptr) {
-    executor_ = std::make_shared<Executor<Dtype, P>>(
+    executor_ = std::make_shared<framework::Executor<Dtype, P>>(
         loader_->LoadCombinedMemory(model_len, model_buf, combined_params_len,
                                     combined_params_buf, optimise,
                                     quantification),
@@ -160,5 +161,7 @@ void PaddleMobile<Dtype, P>::Predict_To(int end) {
 template class PaddleMobile<CPU, Precision::FP32>;
 template class PaddleMobile<FPGA, Precision::FP32>;
 template class PaddleMobile<GPU_MALI, Precision::FP32>;
+
+template class PaddleMobile<GPU_CL, Precision::FP32>;
 
 }  // namespace paddle_mobile

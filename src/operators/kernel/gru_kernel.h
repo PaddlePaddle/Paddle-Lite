@@ -28,7 +28,7 @@ template <typename DeviceType, typename T>
 class GruKernel
     : public framework::OpKernelBase<DeviceType, GruParam<DeviceType>> {
  public:
-  void Compute(const GruParam<DeviceType>& param) const;
+  void Compute(const GruParam<DeviceType>& param);
   bool Init(GruParam<DeviceType>* param);
 };
 }  // namespace operators
