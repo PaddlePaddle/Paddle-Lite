@@ -62,6 +62,7 @@ Paddle-Mobile是PaddlePaddle组织下的项目，是一个致力于嵌入式平�
 * [iOS](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_ios.md)
 * [Android](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_android.md)
 * [FPGA](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_fpga.md)
+* [ARM_LINUX](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_arm_linux.md)
 
 ### 贡献文档
 - [贡献文档链接](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/CONTRIBUTING.md)
