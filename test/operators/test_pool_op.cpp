@@ -16,7 +16,7 @@ limitations under the License. */
 #include "operators/pool_op.h"
 
 int main() {
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
   auto program = loader.Load(std::string(g_googlenet));
   if (program.originProgram == nullptr) {
     DLOG << "program read file";

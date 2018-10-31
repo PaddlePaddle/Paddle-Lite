@@ -27,7 +27,7 @@ bool BilinearInterpKernel<CPU, float>::Init(BilinearInterpParam<CPU> *param) {
 
 template <>
 void BilinearInterpKernel<CPU, float>::Compute(
-    const BilinearInterpParam<CPU> &param) const {
+    const BilinearInterpParam<CPU> &param) {
   BilinearInterpCompute<float>(param);
 }
 

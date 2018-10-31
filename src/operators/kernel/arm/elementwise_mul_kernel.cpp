@@ -27,7 +27,7 @@ bool ElementwiseMulKernel<CPU, float>::Init(ElementwiseMulParam<CPU> *param) {
 
 template <>
 void ElementwiseMulKernel<CPU, float>::Compute(
-    const ElementwiseMulParam<CPU> &param) const {
+    const ElementwiseMulParam<CPU> &param) {
   ElementwiseMulCompute<float>(param);
   param.Out()->set_lod(param.InputX()->lod());
 }

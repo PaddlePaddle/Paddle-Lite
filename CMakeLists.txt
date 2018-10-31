@@ -1,15 +1,16 @@
-cmake_minimum_required(VERSION 3.0)
-project(paddle-mobile)
+cmake_minimum_required(VERSION 3.6)
 
-# select the platform to build
-option(CPU "armv7 with neon support" ON)
-option(MALI_GPU "mali gpu support" OFF)
-option(FPGA "fpga support" OFF)
-
-option(USE_OPENMP "openmp support" OFF)
+option(USE_OPENMP "openmp support" ON)
 option(DEBUGING "enable debug mode" ON)
-option(USE_EXCEPTION "use std exception" OFF)
+option(USE_EXCEPTION "use std exception" ON)
 option(LOG_PROFILE "log profile" OFF)
+# select the platform to build
+option(CPU "armv7 with neon" ON)
+option(GPU_MALI "mali gpu" OFF)
+option(GPU_CL "opencl gpu" ON)
+option(FPGA "fpga" OFF)
+
+project(paddle-mobile)
 
 file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c src/*.mm)
 file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
@@ -70,7 +71,27 @@ else()
     endforeach()
 endif()
 
-if(MALI_GPU)
+if (GPU_CL)
+    add_definitions(-DPADDLE_MOBILE_CL)
+
+    # opencl version
+    add_definitions(-DCL_TARGET_OPENCL_VERSION=220)
+
+    link_libraries(${CMAKE_CURRENT_LIST_DIR}/third_party/opencl/libOpenCL.so)
+    include_directories(third_party/opencl/OpenCL-Headers)
+else()
+    file(GLOB_RECURSE _tmp_list src/framework/cl/*.cpp src/operators/kernel/cl/*.cpp)
+    foreach(f ${_tmp_list})
+        list(REMOVE_ITEM PADDLE_MOBILE_CC ${f})
+    endforeach()
+
+    file(GLOB_RECURSE _tmp_list_h src/framework/cl/*.h)
+    foreach(f ${_tmp_list_h})
+        list(REMOVE_ITEM PADDLE_MOBILE_H ${f})
+    endforeach()
+endif()
+
+if (GPU_MALI)
     add_definitions(-DPADDLE_MOBILE_MALI_GPU)
     add_definitions(-DUSE_ACL=1)
     add_definitions(-DUSE_OPENCL)
@@ -124,17 +145,17 @@ endif()
 if(ANDROID_NDK_TOOLCHAIN_INCLUDED)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -llog")
 else()
-    list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/jni/paddle_mobile_jni.h)
-    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/jni/paddle_mobile_jni.cpp)
+    list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/io/jni/paddle_mobile_jni.h)
+    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/io/jni/paddle_mobile_jni.cpp)
     list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/operators/math/math_func_neon.h)
 endif()
 
 if(IS_IOS)
 else()
-    list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/ios_io/PaddleMobileCPU.h)
-    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/ios_io/PaddleMobileCPU.mm)
-    list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/ios_io/op_symbols.h)
-endif()
+    list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/io/ios_io/PaddleMobileCPU.h)
+    list(REMOVE_ITEM PADDLE_MOBILE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/io/ios_io/PaddleMobileCPU.mm)
+    list(REMOVE_ITEM PADDLE_MOBILE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/io/ios_io/op_symbols.h)
+endif ()
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

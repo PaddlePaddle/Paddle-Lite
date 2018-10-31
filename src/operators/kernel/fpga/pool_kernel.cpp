@@ -53,7 +53,7 @@ bool PoolKernel<FPGA, float>::Init(PoolParam<FPGA> *param) {
 }
 
 template <>
-void PoolKernel<FPGA, float>::Compute(const PoolParam<FPGA> &param) const {
+void PoolKernel<FPGA, float>::Compute(const PoolParam<FPGA> &param) {
   fpga::ComputeFpgaPool(param.FpgaArgs());
 }
 }  // namespace operators

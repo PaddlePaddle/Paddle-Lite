@@ -20,7 +20,7 @@ limitations under the License. */
 #include <vector>
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
-#include "op_param.h"
+#include "operators/op_param.h"
 #include "operators/kernel/dwconv_bn_relu_kernel.h"
 
 namespace paddle_mobile {
@@ -65,9 +65,6 @@ class FusionDWConvBNReluOp
             operators::DWConvBNReluKernel<DeviceType, T>>(type, inputs, outputs,
                                                           attrs, scope) {}
 
-  using framework::OperatorWithKernel<
-      DeviceType, FusionDWConvBNReluParam<DeviceType>,
-      operators::DWConvBNReluKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:

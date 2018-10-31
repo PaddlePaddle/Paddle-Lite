@@ -54,7 +54,7 @@ bool DWConvBNReluKernel<CPU, float>::Init(FusionDWConvBNReluParam<CPU> *param) {
 
 template <>
 void DWConvBNReluKernel<CPU, float>::Compute(
-    const FusionDWConvBNReluParam<CPU> &param) const {
+    const FusionDWConvBNReluParam<CPU> &param) {
   DWConvBNReluCompute<float>(param);
 }
 template class DWConvBNReluKernel<CPU, float>;

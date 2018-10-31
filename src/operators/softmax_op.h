@@ -36,11 +36,6 @@ class SoftmaxOp : public framework::OperatorWithKernel<
       : framework::OperatorWithKernel<DeviceType, SoftmaxParam<DeviceType>,
                                       operators::SoftmaxKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, SoftmaxParam<DeviceType>,
-      operators::SoftmaxKernel<DeviceType, T>>::OperatorWithKernel;
-
   void InferShape() const override;
 
  private:

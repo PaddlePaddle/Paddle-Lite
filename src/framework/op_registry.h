@@ -14,8 +14,10 @@ limitations under the License. */
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <tuple>
+
 #include "common/log.h"
 #include "common/type_define.h"
 #include "framework/op_info.h"
@@ -119,6 +121,9 @@ class OpRegistry {
 
 #define REGISTER_OPERATOR_FPGA(op_type, op_class) \
   REGISTER_OPERATOR(op_type, op_class, fpga, paddle_mobile::FPGA);
+
+#define REGISTER_OPERATOR_CL(op_type, op_class) \
+  REGISTER_OPERATOR(op_type, op_class, cl, paddle_mobile::GPU_CL);
 
 }  // namespace framework
 }  // namespace paddle_mobile

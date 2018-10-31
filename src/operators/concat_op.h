@@ -34,10 +34,6 @@ class ConcatOp : public framework::OperatorWithKernel<
       : framework::OperatorWithKernel<DeviceType, ConcatParam<DeviceType>,
                                       operators::ConcatKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, ConcatParam<DeviceType>,
-      operators::ConcatKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:

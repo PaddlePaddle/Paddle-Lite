@@ -24,7 +24,7 @@ template <typename DeviceType, typename T>
 class SliceKernel
     : public framework::OpKernelBase<DeviceType, SliceParam<DeviceType>> {
  public:
-  void Compute(const SliceParam<DeviceType>& param) const {}
+  void Compute(const SliceParam<DeviceType>& param) {}
 };
 }  // namespace operators
 }  // namespace paddle_mobile
