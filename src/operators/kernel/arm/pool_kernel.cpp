@@ -25,7 +25,7 @@ bool PoolKernel<CPU, float>::Init(PoolParam<CPU> *param) {
 }
 
 template <>
-void PoolKernel<CPU, float>::Compute(const PoolParam<CPU> &param) const {
+void PoolKernel<CPU, float>::Compute(const PoolParam<CPU> &param) {
   PoolCompute<float>(param);
 }
 }  // namespace operators

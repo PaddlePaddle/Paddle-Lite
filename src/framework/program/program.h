@@ -18,6 +18,8 @@ limitations under the License. */
 #include "framework/program/program_desc.h"
 #include "framework/scope.h"
 
+#include <string>
+
 namespace paddle_mobile {
 namespace framework {
 
@@ -32,7 +34,7 @@ class Program {
   bool combined = false;
   bool quantification = false;
   size_t combined_params_len;
-  const uint8_t *combined_params_buf;
+  uint8_t *combined_params_buf;
 };
 
 }  // namespace framework

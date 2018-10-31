@@ -36,6 +36,7 @@ static const char *g_squeezenet = "../models/squeezenet";
 static const char *g_googlenet = "../models/googlenet";
 static const char *g_googlenet_quali = "../models/googlenet_combine_quali";
 static const char *g_mobilenet = "../models/mobilenet";
+static const char *g_mobilenet_mul = "../models/mobilenet_mul";
 static const char *g_alexnet = "../models/alexnet";
 static const char *g_inceptionv4 = "../models/inceptionv4";
 static const char *g_nlp = "../models/nlp";
@@ -44,8 +45,8 @@ static const char *g_resnet = "../models/resnet";
 static const char *g_googlenet_combine = "../models/googlenet_combine";
 static const char *g_yolo = "../models/yolo";
 static const char *g_yolo_combined = "../models/yolo_combined";
+static const char *g_yolo_mul = "../models/yolo_mul";
 static const char *g_fluid_fssd_new = "../models/fluid_fssd_new";
-
 static const char *g_test_image_1x3x224x224 =
     "../images/test_image_1x3x224x224_float";
 static const char *g_test_image_1x3x224x224_banana =
@@ -57,9 +58,12 @@ static const char *g_moto = "../images/moto_300x300_float";
 static const char *g_imgfssd_ar = "../images/test_image_ssd_ar";
 static const char *g_imgfssd_ar1 = "../images/003_0001.txt";
 static const char *g_img = "../images/img.bin";
+static const char *g_yolo_img = "../images/in_put_1_3_416_416_2";
+static const char *g_mobilenet_img = "../images/image";
 
 using paddle_mobile::framework::DDim;
 using paddle_mobile::framework::Tensor;
+using namespace paddle_mobile;
 
 template <typename T>
 void SetupTensor(paddle_mobile::framework::Tensor *input,

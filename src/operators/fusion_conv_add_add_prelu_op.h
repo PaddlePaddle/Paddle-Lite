@@ -17,6 +17,7 @@ limitations under the License. */
 #pragma once
 
 #include <string>
+#include <utility>
 #include <vector>
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
@@ -67,10 +68,6 @@ class FusionConvAddAddPReluOp
             DeviceType, FusionConvAddAddPReluParam<DeviceType>,
             operators::ConvAddAddPReluKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, FusionConvAddAddPReluParam<DeviceType>,
-      operators::ConvAddAddPReluKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:

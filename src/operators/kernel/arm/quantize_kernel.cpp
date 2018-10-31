@@ -279,8 +279,7 @@ bool QuantizeKernel<CPU, float>::Init(QuantizeParam<CPU> *param) {
 }
 
 template <>
-void QuantizeKernel<CPU, float>::Compute(
-    const QuantizeParam<CPU> &param) const {
+void QuantizeKernel<CPU, float>::Compute(const QuantizeParam<CPU> &param) {
   float max_abs = 0.f;
   const Tensor *input = param.input_;
   Tensor *output = param.out_;

@@ -26,8 +26,7 @@ bool BatchNormKernel<CPU, float>::Init(BatchNormParam<CPU> *param) {
 }
 
 template <>
-void BatchNormKernel<CPU, float>::Compute(
-    const BatchNormParam<CPU> &param) const {
+void BatchNormKernel<CPU, float>::Compute(const BatchNormParam<CPU> &param) {
   BatchnormCompute<float>(param);
 }
 

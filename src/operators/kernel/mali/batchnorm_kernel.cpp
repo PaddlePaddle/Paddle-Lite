@@ -145,7 +145,7 @@ bool BatchNormKernel<GPU_MALI, float>::Init(BatchNormParam<GPU_MALI>* param) {
 
 template <>
 void BatchNormKernel<GPU_MALI, float>::Compute(
-    const BatchNormParam<GPU_MALI>& param) const {
+    const BatchNormParam<GPU_MALI>& param) {
   std::cout << "init acl" << std::endl;
   AclBatchNormOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclBatchNormOp<GPU_MALI, float>*>(this->GetAclOp());

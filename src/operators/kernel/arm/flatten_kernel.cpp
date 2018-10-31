@@ -26,7 +26,7 @@ bool FlattenKernel<CPU, float>::Init(FlattenParam<CPU> *param) {
 }
 
 template <>
-void FlattenKernel<CPU, float>::Compute(const FlattenParam<CPU> &param) const {
+void FlattenKernel<CPU, float>::Compute(const FlattenParam<CPU> &param) {
   FlattenCompute<float>(param);
 }
 

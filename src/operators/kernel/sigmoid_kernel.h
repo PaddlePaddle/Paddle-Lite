@@ -28,7 +28,7 @@ template <typename DeviceType, typename T>
 class SigmoidKernel
     : public OpKernelBase<DeviceType, SigmoidParam<DeviceType>> {
  public:
-  void Compute(const SigmoidParam<DeviceType>& param) const override;
+  void Compute(const SigmoidParam<DeviceType>& param);
   bool Init(SigmoidParam<DeviceType>* param);
 };
 
