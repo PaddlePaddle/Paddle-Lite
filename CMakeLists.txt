@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.0.0)
 
 option(USE_OPENMP "openmp support" ON)
 option(DEBUGING "enable debug mode" OFF)
