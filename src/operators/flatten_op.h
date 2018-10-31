@@ -17,6 +17,7 @@ limitations under the License. */
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "framework/operator.h"
 #include "operators/kernel/flatten_kernel.h"
@@ -53,10 +54,6 @@ class FlattenOp : public framework::OperatorWithKernel<
       : framework::OperatorWithKernel<DeviceType, FlattenParam<DeviceType>,
                                       operators::FlattenKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, FlattenParam<DeviceType>,
-      operators::FlattenKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 };
 

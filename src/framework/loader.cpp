@@ -12,13 +12,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "io/loader.h"
+#include "framework/loader.h"
 
 #include "framework/lod_tensor.h"
 #include "framework/program/program-optimize/program_optimize.h"
+#ifdef PADDLE_MOBILE_CL
+#include "framework/cl/cl_image.h"
+#endif
 
 namespace paddle_mobile {
-using framework::Variable;
+namespace framework {
 
 /**
  * muteandresize tensor as originProgramDesc and scope in loadParams
@@ -26,23 +29,24 @@ using framework::Variable;
  * @param originProgramDesc
  * @param scope
  */
-void InitMemoryFromProgram(
-    std::shared_ptr<framework::ProgramDesc> &originProgramDesc,  // NOLINT
-    std::shared_ptr<framework::Scope> &scope) {                  // NOLINT
+template <typename Dtype, Precision P>
+void Loader<Dtype, P>::InitMemoryFromProgram(
+    const std::shared_ptr<ProgramDesc> &originProgramDesc,
+    const std::shared_ptr<Scope> &scope) {
   for (const auto &block : originProgramDesc.get()->Blocks()) {
     for (const auto &var_desc : block->Vars()) {
       auto var = scope.get()->Var(var_desc->Name());
-      if (var_desc->Type() == framework::VARTYPE_TYPE_LOD_TENSOR) {
+      if (var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
         if (var_desc->Persistable()) {
           auto dim = var_desc->Tensor_desc().Dims();
-          auto tensor = var->GetMutable<framework::LoDTensor>();
-          tensor->Resize(framework::make_ddim(dim));
+          auto tensor = var->GetMutable<LoDTensor>();
+          tensor->Resize(make_ddim(dim));
         } else {
           auto dim = var_desc->Tensor_desc().Dims();
           PADDLE_MOBILE_ENFORCE(dim.size() > 0, "dim size is 0");
           dim[0] = 1;
-          auto tensor = var->GetMutable<framework::LoDTensor>();
-          tensor->Resize(framework::make_ddim(dim));
+          auto tensor = var->GetMutable<LoDTensor>();
+          tensor->Resize(make_ddim(dim));
         }
       } else {
         // TODO(codeWorm): some.
@@ -50,6 +54,36 @@ void InitMemoryFromProgram(
     }
   }
 }
+
+#ifdef PADDLE_MOBILE_CL
+template <>
+void Loader<GPU_CL, Precision::FP32>::InitMemoryFromProgram(
+    const std::shared_ptr<ProgramDesc> &originProgramDesc,
+    const std::shared_ptr<Scope> &scope) {
+  for (const auto &block : originProgramDesc.get()->Blocks()) {
+    for (const auto &var_desc : block->Vars()) {
+      auto var = scope.get()->Var(var_desc->Name());
+      if (var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
+        if (var_desc->Persistable()) {
+          auto dim = var_desc->Tensor_desc().Dims();
+          //              auto tensor = var->GetMutable<LoDTensor>();
+          auto cl_image = var->GetMutable<framework::CLImage>();
+          cl_image->Resize(make_ddim(dim));
+        } else {
+          auto dim = var_desc->Tensor_desc().Dims();
+          PADDLE_MOBILE_ENFORCE(dim.size() > 0, "dim size is 0");
+          dim[0] = 1;
+          auto cl_image = var->GetMutable<framework::CLImage>();
+          cl_image->Resize(make_ddim(dim));
+        }
+      } else {
+        // TODO(codeWorm): some.
+      }
+    }
+  }
+}
+#endif
+
 /**
  * fusion and print someinfos
  * @tparam Dtype
@@ -61,19 +95,18 @@ void InitMemoryFromProgram(
  */
 template <typename Dtype, Precision P>
 void FusionAndPrintInfos(
-    bool optimize, bool can_add_split,
-    framework::Program<Dtype, P> &program,  // NOLINT
-    const std::shared_ptr<framework::ProgramDesc> &originProgramDesc) {
+    bool optimize, bool can_add_split, Program<Dtype, P> *program,
+    const std::shared_ptr<ProgramDesc> &originProgramDesc) {
   if (optimize) {
-    framework::ProgramOptimize program_optimize;
-    program.optimizeProgram =
+    ProgramOptimize program_optimize;
+    program->optimizeProgram =
         program_optimize.FusionOptimize(originProgramDesc, can_add_split);
-    if (!program.optimizeProgram) {
-      program.optimizeProgram = originProgramDesc;
+    if (!program->optimizeProgram) {
+      program->optimizeProgram = originProgramDesc;
     }
   }
   if (optimize) {
-    program.optimizeProgram->Description("optimize: ");
+    program->optimizeProgram->Description("optimize: ");
   } else {
     originProgramDesc->Description("program: ");
   }
@@ -102,9 +135,10 @@ static size_t ReadBuffer(const char *file_name, uint8_t **out) {
 }
 
 template <typename Dtype, Precision P>
-const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
-    const std::string &dirname, bool optimize, bool quantification,
-    bool can_add_split) {
+const Program<Dtype, P> Loader<Dtype, P>::Load(const std::string &dirname,
+                                               bool optimize,
+                                               bool quantification,
+                                               bool can_add_split) {
   auto program = this->LoadProgram(dirname + "/__model__", optimize,
                                    quantification, can_add_split);
   program.model_path = dirname;
@@ -112,9 +146,10 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
 }
 
 template <typename Dtype, Precision P>
-const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
-    const std::string &model_path, const std::string &para_path, bool optimize,
-    bool quantification) {
+const Program<Dtype, P> Loader<Dtype, P>::Load(const std::string &model_path,
+                                               const std::string &para_path,
+                                               bool optimize,
+                                               bool quantification) {
   auto program = this->LoadProgram(model_path, optimize, quantification);
 
   program.para_path = para_path;
@@ -124,7 +159,7 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::Load(
 }
 
 template <typename Dtype, Precision P>
-const framework::Program<Dtype, P> Loader<Dtype, P>::LoadProgram(
+const Program<Dtype, P> Loader<Dtype, P>::LoadProgram(
     const std::string &model_path, bool optimize, bool quantification,
     bool can_add_split) {
   std::string model_filename = model_path;
@@ -141,29 +176,29 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::LoadProgram(
   //
   DLOG << "n_ops: " << (*c_program->blocks)->n_ops;
   //
-  auto originProgramDesc = std::make_shared<framework::ProgramDesc>(c_program);
+  auto originProgramDesc = std::make_shared<ProgramDesc>(c_program);
 
-  framework::Program<Dtype, P> program;
+  Program<Dtype, P> program;
   program.originProgram = originProgramDesc;
   program.quantification = quantification;
   program.combined_params_len = 0;
   program.combined_params_buf = nullptr;
-  auto scope = std::make_shared<framework::Scope>();
+  auto scope = std::make_shared<Scope>();
   program.scope = scope;
 
   // use  originProgramDesc and scope to init tensors
   InitMemoryFromProgram(originProgramDesc, scope);
   // perform fusion and print infos
-  FusionAndPrintInfos(optimize, can_add_split, program, originProgramDesc);
+  FusionAndPrintInfos(optimize, can_add_split, &program, originProgramDesc);
 
   paddle_mobile__framework__proto__program_desc__free_unpacked(c_program, NULL);
   return program;
 }
 
 template <typename Dtype, Precision P>
-const framework::Program<Dtype, P> Loader<Dtype, P>::LoadCombinedMemory(
+const Program<Dtype, P> Loader<Dtype, P>::LoadCombinedMemory(
     size_t read_size, const uint8_t *buf, size_t combined_params_len,
-    const uint8_t *combined_params_buf, bool optimize, bool quantification) {
+    uint8_t *combined_params_buf, bool optimize, bool quantification) {
   bool can_add_split = false;
 
   PaddleMobile__Framework__Proto__ProgramDesc *c_program;
@@ -177,26 +212,31 @@ const framework::Program<Dtype, P> Loader<Dtype, P>::LoadCombinedMemory(
   DLOG << "n_ops: " << (*c_program->blocks)->n_ops;
   //
 
-  auto originProgramDesc = std::make_shared<framework::ProgramDesc>(c_program);
+  auto originProgramDesc = std::make_shared<ProgramDesc>(c_program);
 
-  framework::Program<Dtype, P> program;
+  Program<Dtype, P> program;
   program.combined = true;
   program.originProgram = originProgramDesc;
   program.quantification = quantification;
   program.combined_params_len = combined_params_len;
   program.combined_params_buf = combined_params_buf;
 
-  auto scope = std::make_shared<framework::Scope>();
+  auto scope = std::make_shared<Scope>();
   program.scope = scope;
   InitMemoryFromProgram(originProgramDesc, scope);
-  FusionAndPrintInfos(optimize, can_add_split, program, originProgramDesc);
+  FusionAndPrintInfos(optimize, can_add_split, &program, originProgramDesc);
   paddle_mobile__framework__proto__program_desc__free_unpacked(c_program,
                                                                nullptr);
   return program;
 }
 
 template class Loader<CPU, Precision::FP32>;
+
 template class Loader<FPGA, Precision::FP32>;
+
 template class Loader<GPU_MALI, Precision::FP32>;
 
+template class Loader<GPU_CL, Precision::FP32>;
+
+}  // namespace framework
 }  // namespace paddle_mobile

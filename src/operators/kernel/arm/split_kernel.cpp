@@ -26,7 +26,7 @@ bool SplitKernel<CPU, float>::Init(SplitParam<CPU> *param) {
 }
 
 template <>
-void SplitKernel<CPU, float>::Compute(const SplitParam<CPU> &param) const {
+void SplitKernel<CPU, float>::Compute(const SplitParam<CPU> &param) {
   SplitCompute<float>(param);
 }
 

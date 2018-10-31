@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include <string>
 #include "framework/operator.h"
+#include "operators/kernel/fetch_kernel.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
@@ -23,25 +24,20 @@ namespace operators {
 using std::string;
 
 template <typename DeviceType, typename T>
-class FetchOp : public framework::OperatorBase<DeviceType> {
+class FetchOp
+    : public framework::OperatorWithKernel<DeviceType, FetchParam<DeviceType>,
+                                           FetchKernel<DeviceType, T>> {
  public:
   FetchOp(const string &type, const VariableNameMap &inputs,
           const VariableNameMap &outputs, const framework::AttributeMap attrs,
           std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorBase<DeviceType>(type, inputs, outputs, attrs,
-                                            scope),
-        param_(inputs, outputs, attrs, *scope) {}
-  void RunImpl() const { param_.Out()->ShareDataWith(*param_.InputX()); }
+      : framework::OperatorWithKernel<DeviceType, FetchParam<DeviceType>,
+                                      FetchKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
 
-  void Init() {}
-
-  void InferShape() const {
-    auto x_dims = param_.InputX()->dims();
-    param_.Out()->Resize(x_dims);
-  }
+  void InferShape() const override;
 
  protected:
-  FetchParam<DeviceType> param_;
 };
 
 }  // namespace operators

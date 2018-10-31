@@ -26,7 +26,7 @@ bool ShapeKernel<CPU, float>::Init(ShapeParam<CPU> *param) {
 }
 
 template <>
-void ShapeKernel<CPU, float>::Compute(const ShapeParam<CPU> &param) const {
+void ShapeKernel<CPU, float>::Compute(const ShapeParam<CPU> &param) {
   ShapeCompute<float>(param);
 }
 

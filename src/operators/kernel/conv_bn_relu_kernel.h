@@ -35,7 +35,7 @@ template <typename DeviceType, typename T>
 class ConvBNReluKernel
     : public OpKernelBase<DeviceType, FusionConvBNReluParam<DeviceType>> {
  public:
-  void Compute(const FusionConvBNReluParam<DeviceType> &param) const;
+  void Compute(const FusionConvBNReluParam<DeviceType> &param);
   bool Init(FusionConvBNReluParam<DeviceType> *param);
 };
 

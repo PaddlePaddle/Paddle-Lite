@@ -26,7 +26,7 @@ template <typename DeviceType, typename T>
 class DropoutKernel
     : public framework::OpKernelBase<DeviceType, DropoutParam<DeviceType>> {
  public:
-  void Compute(const DropoutParam<DeviceType>& param) const;
+  void Compute(const DropoutParam<DeviceType>& param);
   bool Init(DropoutParam<DeviceType>* para);
 };
 }  // namespace operators

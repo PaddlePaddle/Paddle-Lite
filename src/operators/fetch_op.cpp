@@ -13,6 +13,17 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "operators/fetch_op.h"
+namespace paddle_mobile {
+namespace operators {
+
+template <typename DeviceType, typename T>
+void FetchOp<DeviceType, T>::InferShape() const {
+  auto x_dims = this->param_.InputX()->dims();
+  this->param_.Out()->Resize(x_dims);
+}
+
+}  // namespace operators
+}  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
@@ -23,4 +34,7 @@ REGISTER_OPERATOR_MALI_GPU(fetch, ops::FetchOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(fetch, ops::FetchOp);
+#endif
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(fetch, ops::FetchOp);
 #endif
