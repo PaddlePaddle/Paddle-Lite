@@ -1396,7 +1396,7 @@ void DepthwiseConv3x3s2p1v2(const Tensor *input, const Tensor *filter,
                            input_const[in_w] * w21 +
                            input_const[in_w + 1] * w22;
 
-      out2in_mid = (out_h - 1) * 2;
+      out2in_mid = (out_w - 1) * 2;
       output_data_tmp[out_w - 1] =
           w10 * input_const[out2in_mid - 1] + w11 * input_const[out2in_mid] +
           w20 * input_const[out2in_mid + in_w - 1] +
@@ -1412,7 +1412,7 @@ void DepthwiseConv3x3s2p1v2(const Tensor *input, const Tensor *filter,
           w11 * input_const[out2in_mid] + w12 * input_const[out2in_mid + 1] +
           (1 - if_pad) * (w21 * input_const[out2in_mid + in_w] +
                           w22 * input_const[out2in_mid + in_w + 1]);
-      out2in_mid = (out_h - 1) * 2 * in_w + (out_h - 1) * 2;
+      out2in_mid = (out_h - 1) * 2 * in_w + (out_w - 1) * 2;
 
       output_data_tmp[out_h * out_w - 1] =
           w00 * input_const[out2in_mid - in_w - 1] +
@@ -1438,7 +1438,7 @@ void DepthwiseConv3x3s2p1v2(const Tensor *input, const Tensor *filter,
                                      w21 * input_const[out2in_mid + in_w] +
                                      w22 * input_const[out2in_mid + in_w + 1];
 
-        out2in_mid = i * 2 * in_w + (out_h - 1) * 2;
+        out2in_mid = i * 2 * in_w + (out_w - 1) * 2;
         output_data_tmp[i * out_w + out_w - 1] =
             w00 * input_const[out2in_mid - in_w - 1] +
             w01 * input_const[out2in_mid - in_w] +
@@ -1791,7 +1791,7 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
                            input_const[in_w] * w21 +
                            input_const[in_w + 1] * w22;
 
-      out2in_mid = (out_h - 1) * 2;
+      out2in_mid = (out_w - 1) * 2;
       output_data_tmp[out_w - 1] =
           w10 * input_const[out2in_mid - 1] + w11 * input_const[out2in_mid] +
           w20 * input_const[out2in_mid + in_w - 1] +
@@ -1807,7 +1807,7 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
           w11 * input_const[out2in_mid] + w12 * input_const[out2in_mid + 1] +
           (1 - if_pad) * (w21 * input_const[out2in_mid + in_w] +
                           w22 * input_const[out2in_mid + in_w + 1]);
-      out2in_mid = (out_h - 1) * 2 * in_w + (out_h - 1) * 2;
+      out2in_mid = (out_h - 1) * 2 * in_w + (out_w - 1) * 2;
 
       output_data_tmp[out_h * out_w - 1] =
           w00 * input_const[out2in_mid - in_w - 1] +
@@ -1850,7 +1850,7 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
                                      w21 * input_const[out2in_mid + in_w] +
                                      w22 * input_const[out2in_mid + in_w + 1];
 
-        out2in_mid = i * 2 * in_w + (out_h - 1) * 2;
+        out2in_mid = i * 2 * in_w + (out_w - 1) * 2;
         output_data_tmp[i * out_w + out_w - 1] =
             w00 * input_const[out2in_mid - in_w - 1] +
             w01 * input_const[out2in_mid - in_w] +
