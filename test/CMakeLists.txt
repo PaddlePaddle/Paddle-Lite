@@ -185,6 +185,10 @@ if (NOT FOUND_MATCH)
     target_link_libraries(test-transpose-op paddle-mobile)
 
     # gen test
+    ADD_EXECUTABLE(test-transpose2-op operators/test_transpose2_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-transpose2-op paddle-mobile)
+
+    # gen test
     ADD_EXECUTABLE(test-multiclassnms-op operators/test_multiclass_nms_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-multiclassnms-op paddle-mobile)
 
@@ -342,6 +346,10 @@ if (NOT FOUND_MATCH)
     # gen test
     ADD_EXECUTABLE(test-multi-process net/test_multi_inference_predict.cpp test_helper.h test_include.h)
     target_link_libraries(test-multi-process paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-eng net/test_eng.cpp test_helper.h test_include.h)
+    target_link_libraries(test-eng paddle-mobile)
 
 
     #add_library(test-lib-size SHARED common/test_lib_size.h common/test_lib_size.cpp)
