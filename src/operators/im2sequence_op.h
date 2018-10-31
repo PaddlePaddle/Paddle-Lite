@@ -17,9 +17,9 @@ limitations under the License. */
 #pragma once
 
 #include <string>
-#include "operators/op_param.h"
 #include "framework/operator.h"
 #include "operators/kernel/im2sequence_kernel.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {

@@ -14,8 +14,8 @@ limitations under the License. */
 
 #ifdef POOL_OP
 
-#include <vector>
 #include "operators/pool_op.h"
+#include <vector>
 #include "framework/op_proto_maker.h"
 #include "framework/op_registry.h"
 
