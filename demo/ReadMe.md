@@ -11,7 +11,8 @@ android cpu demo 演示了Paddle Mobile 在Android平台上粗分类的应用.
 1. clone 仓库
 2. 打开Android Studio
 3. "open an existing Android Studio Project"
-4. run and enjoy it
+4. 目录中选择 paddle-mobile-demo/android/CPU/paddle_mobile_android/
+5. run and enjoy it
 
 ---
 
