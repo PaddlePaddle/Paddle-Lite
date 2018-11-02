@@ -1,7 +1,4 @@
-## PADDLE MOBILE DEMOS
-- [ANDROID](https://github.com/xiebaiyuan/paddle-mobile-demo)
----
-### 原DEMO下载路径
+## Demo 下载路径
 - [ANDROID](http://mms-graph.bj.bcebos.com/paddle-mobile%2FPaddleMobile_Android.zip)
 
 - [IOS](http://mms-graph.bj.bcebos.com/paddle-mobile%2FPaddleMobileDemo_iOS.zip)
