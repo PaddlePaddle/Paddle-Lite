@@ -11,26 +11,16 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#ifdef FUSION_CONVADD_OP
 
-#include "operators/kernel/fetch_kernel.h"
+#pragma once
 
 namespace paddle_mobile {
-namespace operators {
+namespace fpga {
+namespace bias_scale {
 
-template <>
-bool FetchKernel<FPGA, float>::Init(FetchParam<FPGA> *param) {
-  return true;
-}
+void align_element(float **data_in, int num, int num_after_alignment);
+void format_bias_scale_array(float **data_in, int num, int num_after_alignment);
 
-template <>
-void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
-  param.Out()->ShareDataWith(*(param.InputX()));
-}
-
-template class FetchKernel<FPGA, float>;
-
-}  // namespace operators
+}  // namespace bias_scale
+}  // namespace fpga
 }  // namespace paddle_mobile
-
-#endif
