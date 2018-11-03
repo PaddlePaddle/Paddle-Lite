@@ -1,11 +1,10 @@
-## 如何运行demo
-- Android demo下载路径   
- http://mms-graph.bj.bcebos.com/paddle-mobile%2FPaddleMobile_Android.zip
-- iOS demo下载路径：   
-  http://mms-graph.bj.bcebos.com/paddle-mobile%2FPaddleMobileDemo_iOS.zip
-  
-在demo目录下执行下载demo的脚本
+## Demo 下载路径
+- [ANDROID](http://mms-graph.bj.bcebos.com/paddle-mobile%2FPaddleMobile_Android.zip)
+
+- [IOS](http://mms-graph.bj.bcebos.com/paddle-mobile%2FPaddleMobileDemo_iOS.zip)
+
+- 原demo亦可使用getDemo.sh进行下载
+
 ```
 sh getDemo.sh
 ```
-demo工程就下载解压到当前目录中了。
