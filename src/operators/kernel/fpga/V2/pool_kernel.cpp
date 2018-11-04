@@ -24,7 +24,9 @@ bool PoolKernel<FPGA, float>::Init(PoolParam<FPGA> *param) {
   auto *input = const_cast<Tensor *>(param->Input());
   auto input_ptr = input->data<float>();
   Tensor *output = param->Output();
-  fpga::format_fp16_ofm(output);
+  int aligned_channel_num =
+      fpga::get_aligned_channel_num((int)output->dims()[1]);  // NOLINT
+  fpga::format_fp16_ofm(output, aligned_channel_num);
   auto output_ptr = output->mutable_data<float>();
   vector<int> ksize = param->Ksize();
   vector<int> strides = param->Strides();
@@ -34,7 +36,7 @@ bool PoolKernel<FPGA, float>::Init(PoolParam<FPGA> *param) {
   fpga::PoolingArgs poolArgs = {0};
   poolArgs.mode = pooling_type == "max" ? 0 : 1;  // max:0, avg:1
   poolArgs.kernel_reciprocal =
-      fpga::fp32_2_fp16(float(1.0 / (ksize[0] * ksize[1])));
+      fpga::fp32_2_fp16(float(1.0 / (ksize[0] * ksize[1])));  // NOLINT
   poolArgs.image.address = input_ptr;
   poolArgs.image.channels = (uint32_t)input->dims()[1];
   poolArgs.image.height = (uint32_t)input->dims()[2];
