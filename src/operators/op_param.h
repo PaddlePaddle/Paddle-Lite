@@ -23,8 +23,13 @@ limitations under the License. */
 #include "framework/scope.h"
 #include "framework/tensor.h"
 #include "framework/variable.h"
-#ifdef PADDLE_MOBILE_FPGA
-#include "fpga/api.h"
+
+#ifdef PADDLE_MOBILE_FPGA_V1
+#include "fpga/V1/api.h"
+#endif
+
+#ifdef PADDLE_MOBILE_FPGA_V2
+#include "fpga/V2/api.h"
 #endif
 
 #ifdef PADDLE_MOBILE_CL

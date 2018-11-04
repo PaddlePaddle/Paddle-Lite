@@ -13,7 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 #include <fstream>
 #include "../test_include.h"
-#include "fpga/api.h"
+
+#ifdef PADDLE_MOBILE_FPGA_V1
+#include "fpga/V1/api.h"
+#endif
+#ifdef PADDLE_MOBILE_FPGA_V2
+#include "fpga/V2/api.h"
+#endif
+
 void readStream(std::string filename, float *buf) {
   std::ifstream in;
   in.open(filename, std::ios::in);
