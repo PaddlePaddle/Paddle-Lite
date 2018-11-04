@@ -14,11 +14,9 @@ limitations under the License. */
 
 #ifdef SOFTMAX_OP
 
-#include "../softmax_kernel.h"
-#include "../central-arm-func/softmax_arm_func.h"
-#include "common/types.h"
-#include "fpga/api.h"
-#include "operators/math/softmax.h"
+#include "operators/kernel/softmax_kernel.h"
+#include "operators/kernel/central-arm-func/softmax_arm_func.h"
+
 namespace paddle_mobile {
 namespace operators {
 

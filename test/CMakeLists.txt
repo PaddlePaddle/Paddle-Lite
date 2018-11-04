@@ -62,15 +62,18 @@ if (CON GREATER -1)
 
 endif ()
 
-list(FIND NET "FPGAnets" CON)
+list(FIND NET "FPGA_NET_V1" CON)
 if (CON GREATER -1)
     ADD_EXECUTABLE(test-resnet50 fpga/test_resnet50.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-resnet50 paddle-mobile)
-
-#    ADD_EXECUTABLE(test-resnet net/test_resnet.cpp test_helper.h test_include.h executor_for_test.h)
-#    target_link_libraries(test-resnet paddle-mobile)
     set(FOUND_MATCH ON)
+endif ()
 
+list(FIND NET "FPGA_NET_V2" CON)
+if (CON GREATER -1)
+    ADD_EXECUTABLE(test-resnet50 fpga/test_resnet50.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test-resnet50 paddle-mobile)
+    set(FOUND_MATCH ON)
 endif ()
 
 list(FIND NET "mobilenetssd" CON)
