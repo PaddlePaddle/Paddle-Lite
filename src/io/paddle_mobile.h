@@ -36,7 +36,7 @@ class PaddleMobile {
  public:
   PaddleMobile() {
 #ifndef PADDLE_MOBILE_CL
-    bool is_gpu= std::is_same<DeviceType<kGPU_CL>, Dtype>::value;
+    bool is_gpu = std::is_same<DeviceType<kGPU_CL>, Dtype>::value;
     PADDLE_MOBILE_ENFORCE(!is_gpu,
                           "Not Enable GPU in CmakeList but run gpu codes ");
 #endif
