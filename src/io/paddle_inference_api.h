@@ -132,6 +132,7 @@ struct PaddleMobileConfig : public PaddlePredictor::Config {
   int thread_num = 1;
   std::string prog_file;
   std::string param_file;
+  std::string cl_path;
   struct PaddleModelMemoryPack memory_pack;
 };
 
