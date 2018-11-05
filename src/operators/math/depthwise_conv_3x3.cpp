@@ -1275,7 +1275,8 @@ void DepthwiseConv3x3s2p1v2(const Tensor *input, const Tensor *filter,
   const int inhxw = in_h * in_w;
   const int outhxw = out_h * out_w;
   /// todo : fix if_pad when w != h
-  const int if_pad = in_w - 1 == (out_w - 1) * 2 ? 1 : 0;
+  const int if_pad_r = in_w - 1 == (out_w - 1) * 2 ? 1 : 0;
+  const int if_pad_b = in_h - 1 == (out_h - 1) * 2 ? 1 : 0;
   const int batch_size = static_cast<int>(input->dims()[0]);
   const int c = static_cast<int>(input->dims()[1]);
   const float *input_row_ptr;
@@ -1366,7 +1367,7 @@ void DepthwiseConv3x3s2p1v2(const Tensor *input, const Tensor *filter,
         elewise_res0 = vmlaq_n_f32(elewise_res0, input_buff_mid.val[0], w10);
         elewise_res2 = vmlaq_n_f32(elewise_res2, input_buff_mid.val[0], w12);
 
-        if (!if_pad) {
+        if (!if_pad_b) {
           elewise_res1 =
               vmlaq_n_f32(elewise_res1, input_buff_bottom[w4].val[1], w21);
           elewise_res0 =
@@ -1401,8 +1402,8 @@ void DepthwiseConv3x3s2p1v2(const Tensor *input, const Tensor *filter,
           w10 * input_const[out2in_mid - 1] + w11 * input_const[out2in_mid] +
           w20 * input_const[out2in_mid + in_w - 1] +
           w21 * input_const[out2in_mid + in_w] +
-          (1 - if_pad) * (w12 * input_const[out2in_mid + 1] +
-                          w22 * input_const[out2in_mid + in_w + 1]);
+          (1 - if_pad_r) * (w12 * input_const[out2in_mid + 1] +
+                            w22 * input_const[out2in_mid + in_w + 1]);
 
       out2in_mid = (out_h - 1) * 2 * in_w;
 
@@ -1410,19 +1411,20 @@ void DepthwiseConv3x3s2p1v2(const Tensor *input, const Tensor *filter,
           w01 * input_const[out2in_mid - in_w] +
           w02 * input_const[out2in_mid - in_w + 1] +
           w11 * input_const[out2in_mid] + w12 * input_const[out2in_mid + 1] +
-          (1 - if_pad) * (w21 * input_const[out2in_mid + in_w] +
-                          w22 * input_const[out2in_mid + in_w + 1]);
+          (1 - if_pad_b) * (w21 * input_const[out2in_mid + in_w] +
+                            w22 * input_const[out2in_mid + in_w + 1]);
       out2in_mid = (out_h - 1) * 2 * in_w + (out_w - 1) * 2;
 
       output_data_tmp[out_h * out_w - 1] =
           w00 * input_const[out2in_mid - in_w - 1] +
           w01 * input_const[out2in_mid - in_w] +
           w10 * input_const[out2in_mid - 1] + w11 * input_const[out2in_mid] +
-          (1 - if_pad) * (w20 * input_const[out2in_mid + in_w - 1] +
-                          w21 * input_const[out2in_mid + in_w] +
-                          w02 * input_const[out2in_mid - in_w + 1] +
-                          w12 * input_const[out2in_mid + 1] +
-                          w22 * input_const[out2in_mid + in_w + 1]);
+          (1 - if_pad_r) * (w20 * input_const[out2in_mid + in_w - 1] +
+                            w21 * input_const[out2in_mid + in_w]) +
+          (1 - if_pad_b) * (w02 * input_const[out2in_mid - in_w + 1] +
+                            w12 * input_const[out2in_mid + 1]) +
+          (1 - if_pad_r) * (1 - if_pad_b) * w22 *
+              input_const[out2in_mid + in_w + 1];
       if (if_bias) {
         output_data_tmp[0] += bias_data[j];
         output_data_tmp[out_w - 1] += bias_data[j];
@@ -1445,9 +1447,9 @@ void DepthwiseConv3x3s2p1v2(const Tensor *input, const Tensor *filter,
             w10 * input_const[out2in_mid - 1] + w11 * input_const[out2in_mid] +
             w20 * input_const[out2in_mid + in_w - 1] +
             w21 * input_const[out2in_mid + in_w] +
-            (1 - if_pad) * (w02 * input_const[out2in_mid - in_w + 1] +
-                            w12 * input_const[out2in_mid + 1] +
-                            w22 * input_const[out2in_mid + in_w + 1]);
+            (1 - if_pad_r) * (w02 * input_const[out2in_mid - in_w + 1] +
+                              w12 * input_const[out2in_mid + 1] +
+                              w22 * input_const[out2in_mid + in_w + 1]);
         if (if_bias) {
           output_data_tmp[i * out_w] += bias_data[j];
           output_data_tmp[i * out_w + out_w - 1] += bias_data[j];
@@ -1662,7 +1664,8 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
   const int inhxw = in_h * in_w;
   const int outhxw = out_h * out_w;
   /// todo : fix if_pad when w != h
-  const int if_pad = in_w - 1 == (out_w - 1) * 2 ? 1 : 0;
+  const int if_pad_r = in_w - 1 == (out_w - 1) * 2 ? 1 : 0;
+  const int if_pad_b = in_h - 1 == (out_h - 1) * 2 ? 1 : 0;
   const int batch_size = static_cast<int>(input->dims()[0]);
   const int c = static_cast<int>(input->dims()[1]);
   const int w_times = (out_w - 2) / 3;
@@ -1756,7 +1759,7 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
         elewise_res0 = vmlaq_n_f32(elewise_res0, input_buff_mid.val[0], w10);
         elewise_res2 = vmlaq_n_f32(elewise_res2, input_buff_mid.val[0], w12);
 
-        if (!if_pad) {
+        if (!if_pad_b) {
           elewise_res1 =
               vmlaq_n_f32(elewise_res1, input_buff_bottom[w4].val[1], w21);
           elewise_res0 =
@@ -1796,8 +1799,8 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
           w10 * input_const[out2in_mid - 1] + w11 * input_const[out2in_mid] +
           w20 * input_const[out2in_mid + in_w - 1] +
           w21 * input_const[out2in_mid + in_w] +
-          (1 - if_pad) * (w12 * input_const[out2in_mid + 1] +
-                          w22 * input_const[out2in_mid + in_w + 1]);
+          (1 - if_pad_r) * (w12 * input_const[out2in_mid + 1] +
+                            w22 * input_const[out2in_mid + in_w + 1]);
 
       out2in_mid = (out_h - 1) * 2 * in_w;
 
@@ -1805,19 +1808,20 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
           w01 * input_const[out2in_mid - in_w] +
           w02 * input_const[out2in_mid - in_w + 1] +
           w11 * input_const[out2in_mid] + w12 * input_const[out2in_mid + 1] +
-          (1 - if_pad) * (w21 * input_const[out2in_mid + in_w] +
-                          w22 * input_const[out2in_mid + in_w + 1]);
+          (1 - if_pad_b) * (w21 * input_const[out2in_mid + in_w] +
+                            w22 * input_const[out2in_mid + in_w + 1]);
       out2in_mid = (out_h - 1) * 2 * in_w + (out_w - 1) * 2;
 
       output_data_tmp[out_h * out_w - 1] =
           w00 * input_const[out2in_mid - in_w - 1] +
           w01 * input_const[out2in_mid - in_w] +
           w10 * input_const[out2in_mid - 1] + w11 * input_const[out2in_mid] +
-          (1 - if_pad) * (w20 * input_const[out2in_mid + in_w - 1] +
-                          w21 * input_const[out2in_mid + in_w] +
-                          w02 * input_const[out2in_mid - in_w + 1] +
-                          w12 * input_const[out2in_mid + 1] +
-                          w22 * input_const[out2in_mid + in_w + 1]);
+          (1 - if_pad_r) * (w20 * input_const[out2in_mid + in_w - 1] +
+                            w21 * input_const[out2in_mid + in_w]) +
+          (1 - if_pad_b) * (w02 * input_const[out2in_mid - in_w + 1] +
+                            w12 * input_const[out2in_mid + 1]) +
+          (1 - if_pad_r) * (1 - if_pad_b) * w22 *
+              input_const[out2in_mid + in_w + 1];
       output_data_tmp[0] =
           output_data_tmp[0] * newscale_data[j] + newbias_data[j];
       output_data_tmp[out_w - 1] =
@@ -1857,9 +1861,9 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
             w10 * input_const[out2in_mid - 1] + w11 * input_const[out2in_mid] +
             w20 * input_const[out2in_mid + in_w - 1] +
             w21 * input_const[out2in_mid + in_w] +
-            (1 - if_pad) * (w02 * input_const[out2in_mid - in_w + 1] +
-                            w12 * input_const[out2in_mid + 1] +
-                            w22 * input_const[out2in_mid + in_w + 1]);
+            (1 - if_pad_r) * (w02 * input_const[out2in_mid - in_w + 1] +
+                              w12 * input_const[out2in_mid + 1] +
+                              w22 * input_const[out2in_mid + in_w + 1]);
         output_data_tmp[i * out_w] =
             output_data_tmp[i * out_w] * newscale_data[j] + newbias_data[j];
         output_data_tmp[i * out_w + out_w - 1] =
