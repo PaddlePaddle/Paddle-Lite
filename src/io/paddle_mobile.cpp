@@ -158,6 +158,13 @@ void PaddleMobile<Dtype, P>::Predict_To(int end) {
 }
 #endif
 
+#ifdef PADDLE_MOBILE_CL
+template <typename Dtype, Precision P>
+void PaddleMobile<Dtype, P>::SetCLPath(std::string path) {
+  framework::CLEngine::Instance()->setClPath(path);
+}
+#endif
+
 template class PaddleMobile<CPU, Precision::FP32>;
 template class PaddleMobile<FPGA, Precision::FP32>;
 template class PaddleMobile<GPU_MALI, Precision::FP32>;
