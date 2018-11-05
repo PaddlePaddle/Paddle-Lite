@@ -29,7 +29,9 @@ PaddleMobilePredictor<Dtype, P>::PaddleMobilePredictor(
 template <typename Dtype, Precision P>
 bool PaddleMobilePredictor<Dtype, P>::Init(const PaddleMobileConfig &config) {
   paddle_mobile_.reset(new PaddleMobile<Dtype, P>());
-
+#ifdef PADDLE_MOBILE_CL
+  paddle_mobile_->SetCLPath(config.cl_path);
+#endif
   if (config.memory_pack.from_memory) {
     DLOG << "load from memory!";
     paddle_mobile_->LoadCombinedMemory(config.memory_pack.model_size,
