@@ -55,11 +55,11 @@ static char *Get_binary_data(std::string filename) {
 paddle_mobile::PaddleMobileConfig GetConfig() {
   paddle_mobile::PaddleMobileConfig config;
   config.precision = paddle_mobile::PaddleMobileConfig::FP32;
-  config.device = paddle_mobile::PaddleMobileConfig::kCPU;
+  config.device = paddle_mobile::PaddleMobileConfig::kGPU_CL;
   const std::shared_ptr<paddle_mobile::PaddleModelMemoryPack> &memory_pack =
       std::make_shared<paddle_mobile::PaddleModelMemoryPack>();
-  auto model_path = std::string(g_genet_combine) + "/model";
-  auto params_path = std::string(g_genet_combine) + "/params";
+  auto model_path = std::string(g_mobilenet_combined) + "/model";
+  auto params_path = std::string(g_mobilenet_combined) + "/params";
   memory_pack->model_size =
       ReadBuffer(model_path.c_str(), &memory_pack->model_buf);
   std::cout << "sizeBuf: " << memory_pack->model_size << std::endl;
