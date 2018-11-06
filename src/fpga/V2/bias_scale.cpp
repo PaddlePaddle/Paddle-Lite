@@ -39,7 +39,6 @@ void align_element(float **data_in, int num, int num_after_alignment) {
 void format_bias_scale_array(float **data_in, int num,
                              int num_after_alignment) {
   align_element(data_in, num, num_after_alignment);
-  fpga_flush(*data_in, 2 * num_after_alignment * sizeof(float));
 }
 
 }  // namespace bias_scale
