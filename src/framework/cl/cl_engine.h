@@ -114,6 +114,9 @@ class CLEngine {
 
   cl_device_id DeviceID(int index = 0) { return devices_[index]; }
 
+  std::string GetCLPath() { return cl_path_; }
+  void setClPath(std::string cl_path) { cl_path_ = cl_path; }
+
  private:
   CLEngine() { initialized_ = false; }
 
@@ -129,6 +132,7 @@ class CLEngine {
 
   cl_int status_;
 
+  std::string cl_path_;
   std::unique_ptr<_cl_program, CLProgramDeleter> program_;
 
   //  bool SetClContext();
