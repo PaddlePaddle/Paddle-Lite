@@ -11,30 +11,19 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
+#pragma once
+#include "fpga/V2/api.h"
 
-#ifdef SLICE_OP
-
-#include "operators/slice_op.h"
-#include <vector>
 namespace paddle_mobile {
-namespace operators {
+namespace fpga {
 
-template <typename Dtype, typename T>
-void SliceOp<Dtype, T>::InferShape() const {
-  /// todo: add InputShape() detection.
-}
+int PerformBypass(const struct BypassArgs& args);
+int ComputeBasicConv(const struct ConvArgs& args);
+int ComputeFpgaPool(const struct PoolingArgs& args);
+int ComputeFpgaEWAdd(const struct EWAddArgs& args);
 
-}  // namespace operators
+int ComputeFpgaConv(const struct SplitConvArgs& args);
+int ComputeFPGAConcat(const struct ConcatArgs& args);
+
+}  // namespace fpga
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(slice, ops::SliceOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-REGISTER_OPERATOR_MALI_GPU(slice, ops::SliceOp);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(slice, ops::SliceOp);
-#endif
-#endif

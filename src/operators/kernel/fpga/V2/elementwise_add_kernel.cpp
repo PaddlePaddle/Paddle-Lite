@@ -11,16 +11,15 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#ifdef FUSION_ELEMENTWISEADDRELU_OP
+#ifdef ELEMENTWISEADD_OP
 
-#include "operators/kernel/elementwise_add_relu_kernel.h"
+#include "operators/kernel/elementwise_add_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ElementwiseAddReluKernel<FPGA, float>::Init(
-    ElementwiseAddReluParam<FPGA> *param) {
+bool ElementwiseAddKernel<FPGA, float>::Init(ElementwiseAddParam<FPGA> *param) {
   bool relu_enabled = false;
   auto *input_x = const_cast<LoDTensor *>(param->InputX());
   auto *input_y = const_cast<LoDTensor *>(param->InputY());
@@ -56,8 +55,8 @@ bool ElementwiseAddReluKernel<FPGA, float>::Init(
 }
 
 template <>
-void ElementwiseAddReluKernel<FPGA, float>::Compute(
-    const ElementwiseAddReluParam<FPGA> &param) {
+void ElementwiseAddKernel<FPGA, float>::Compute(
+    const ElementwiseAddParam<FPGA> &param) {
   fpga::ComputeFpgaEWAdd(param.FpgaArgs());
 }
 }  // namespace operators
