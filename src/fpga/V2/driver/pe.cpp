@@ -13,13 +13,49 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "fpga/V2/driver/pe.h"
-#include "fpga/V2/driver/driver.h"
-#include "fpga/V2/image.h"
 #include "fpga/V2/config.h"
+#include "fpga/V2/driver/driver.h"
+#include "fpga/V2/filter.h"
+#include "fpga/V2/image.h"
 
 namespace paddle_mobile {
 namespace fpga {
-#define MUL8(x) x*8
+#define MUL8(x) (x * 8)
+#define BYPASS_DONE 1
+
+float Findfp16Max() {
+  uint16_t abs_vals[16];
+  uint64_t max_fp16;
+
+  max_fp16 = reg_readq(MUL8(49));
+  abs_vals[0] = (uint16_t)(0x0000007f & (max_fp16));        // NOLINT
+  abs_vals[1] = (uint16_t)(0x0000007f & (max_fp16 >> 16));  // NOLINT
+  abs_vals[2] = (uint16_t)(0x0000007f & (max_fp16 >> 32));  // NOLINT
+  abs_vals[3] = (uint16_t)(0x0000007f & (max_fp16 >> 48));  // NOLINT
+  max_fp16 = reg_readq(MUL8(50));
+  abs_vals[4] = (uint16_t)(0x0000007f & (max_fp16));        // NOLINT
+  abs_vals[5] = (uint16_t)(0x0000007f & (max_fp16 >> 16));  // NOLINT
+  abs_vals[6] = (uint16_t)(0x0000007f & (max_fp16 >> 32));  // NOLINT
+  abs_vals[7] = (uint16_t)(0x0000007f & (max_fp16 >> 48));  // NOLINT
+  max_fp16 = reg_readq(MUL8(51));
+  abs_vals[8] = (uint16_t)(0x0000007f & (max_fp16));         // NOLINT
+  abs_vals[9] = (uint16_t)(0x0000007f & (max_fp16 >> 16));   // NOLINT
+  abs_vals[10] = (uint16_t)(0x0000007f & (max_fp16 >> 32));  // NOLINT
+  abs_vals[11] = (uint16_t)(0x0000007f & (max_fp16 >> 48));  // NOLINT
+  max_fp16 = reg_readq(MUL8(52));
+  abs_vals[12] = (uint16_t)(0x0000007f & (max_fp16));
+  abs_vals[13] = (uint16_t)(0x0000007f & (max_fp16 >> 16));  // NOLINT
+  abs_vals[14] = (uint16_t)(0x0000007f & (max_fp16 >> 32));  // NOLINT
+  abs_vals[15] = (uint16_t)(0x0000007f & (max_fp16 >> 48));  // NOLINT
+
+  uint16_t tmp = 0;
+  for (int i = 0; i < 16; i++) {
+    if (tmp < abs_vals[i]) {
+      tmp = abs_vals[i];
+    }
+  }
+  return fp16_2_fp32(tmp) / 127.0f;
+}
 
 int ComputeFpgaConv(const struct SplitConvArgs &args) {
   ComputeBasicConv(args.conv_args[0]);
@@ -129,26 +165,55 @@ int PerformBypass(const struct BypassArgs &args) {
 #ifndef PADDLE_MOBILE_ZU5
   return 0;
 #endif
-  uint64_t bp_enable = 0x8800000000000000;
-  uint64_t *ifm_src_paddr = (uint64_t *)vaddr_to_paddr(args.image.address); // NOLINT
-  uint64_t *ifm_dst_paddr = (uint64_t *)vaddr_to_paddr(args.output.address); // NOLINT
-  uint64_t length = (args.image.channels)*(args.image.width)*(args.image.height);
 
-  bp_enable += length;
+  uint64_t ifm_src_paddr = vaddr_to_paddr(args.image.address);
+  uint64_t ifm_dst_paddr = vaddr_to_paddr(args.output.address);
+  uint64_t bp_enable;
+  int64_t length;
+  uint64_t pixels;
 
-  reg_writeq(*ifm_src_paddr, MUL8(27));
-  reg_writeq(*ifm_dst_paddr, MUL8(28));
-  reg_writeq(0, MUL8(0));
-  reg_writeq(bp_enable, MUL8(0));
-  //poll
-  int ret = -1;
-  ret = fpga_regpoll(MUL8(48),1, 0xffffffff);
-  if(ret != -1) {
-    reg_readq(MUL8(63));
+  // fp32->fp16
+  if ((args.input_data_type) && (!args.output_data_type)) {
+    pixels = (args.image.channels) * (args.image.width) * (args.image.height);
+    length = pixels * sizeof(float);
+    bp_enable = 0x8800000000000000 + length;
+  }
+  // fp16->fp32
+  else if ((!args.input_data_type) && (args.output_data_type)) {
+    pixels = filter::calc_aligned_channel((args.image.channels)) *
+             (args.image.width) * (args.image.height);
+    length = pixels * sizeof(short);
+    length = align_to_x((int)length, 64);  // NOLINT
+    bp_enable = 0x8a00000000000000 + length;
+  }
+  // fp16->fp16 findmax
+  else if ((!args.input_data_type) && (!args.output_data_type)) {
+    pixels = (args.image.channels) * (args.image.width) * (args.image.height);
+    length = pixels * sizeof(short);
+    bp_enable = 0x8900000000000000 + length;
+  } else {
+    return -1;
   }
 
+  // start bypass
+  reg_writeq(ifm_src_paddr, MUL8(27));
+  reg_writeq(ifm_dst_paddr, MUL8(28));
+  reg_writeq(0, MUL8(0));
+  reg_writeq(bp_enable, MUL8(0));
+  // poll
+  int ret = -1;
+  ret = fpga_regpoll(MUL8(48), BYPASS_DONE, 0xffffffff);
+  if (ret != -1) {
+    // clear "irq"
+    reg_readq(MUL8(63));
+  }
+  // get max value
+  if ((!args.input_data_type) && (!args.output_data_type)) {
+    float scale = Findfp16Max();
+    args.output.scale_address[0] = (float)(1.0 / scale);  // NOLINT
+    args.output.scale_address[1] = scale;
+  }
   return ret;
-
 }
 
 int ComputeFPGAConcat(const struct ConcatArgs &args) {

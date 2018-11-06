@@ -14,5 +14,5 @@ limitations under the License. */
 
 #pragma once
 
-//#define PADDLE_MOBILE_ZU5
+#define PADDLE_MOBILE_ZU5
 #define FPGA_PRINT_MODE

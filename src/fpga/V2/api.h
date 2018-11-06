@@ -22,7 +22,6 @@ limitations under the License. */
 #include "fpga/V2/driver/pe.h"
 #include "framework/tensor.h"
 
-
 namespace paddle_mobile {
 namespace fpga {
 
@@ -35,7 +34,6 @@ enum LayoutType {
   LAYOUT_CHW = 1,
   LAYOUT_HWC = 0,
 };
-
 
 struct KernelArgs {
   uint32_t width;
@@ -121,8 +119,6 @@ struct BypassArgs {
   struct ImageInputArgs image;
   struct ImageOutputArgs output;
 };
-
-
 
 int open_device();
 int close_device();
