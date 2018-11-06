@@ -22,7 +22,7 @@ int main() {
   auto time1 = paddle_mobile::time();
   //  auto isok = paddle_mobile.Load(std::string(g_mobilenet_detect) + "/model",
   //                     std::string(g_mobilenet_detect) + "/params", true);
-
+  paddle_mobile.SetCLPath(".");
   auto isok = paddle_mobile.Load(std::string(g_mobilenet), true);
   if (isok) {
     auto time2 = paddle_mobile::time();
