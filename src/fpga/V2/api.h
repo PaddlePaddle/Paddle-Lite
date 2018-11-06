@@ -18,6 +18,8 @@ limitations under the License. */
 #include <cstddef>
 #include <iostream>
 #include <limits>
+#include "fpga/V2/driver/driver.h"
+#include "fpga/V2/driver/pe.h"
 #include "framework/tensor.h"
 
 namespace paddle_mobile {
@@ -31,16 +33,6 @@ enum DataType {
 enum LayoutType {
   LAYOUT_CHW = 1,
   LAYOUT_HWC = 0,
-};
-
-struct VersionArgs {
-  void* buffer;
-};
-
-struct MemoryCopyArgs {
-  void* src;
-  void* dest;
-  size_t size;
 };
 
 struct KernelArgs {
@@ -128,56 +120,10 @@ struct BypassArgs {
   struct ImageOutputArgs output;
 };
 
-struct FpgaRegWriteArgs {
-  uint64_t address;  //
-  uint64_t value;
-};
-
-struct FpgaRegReadArgs {
-  uint64_t address;
-  uint64_t value;
-};
-
-struct MemoryCacheArgs {
-  void* address;
-  size_t size;
-};
-
-#define IOCTL_FPGA_MAGIC 'FPGA'
-
-#define IOCTL_VERSION _IOW(IOCTL_FPGA_MAGIC, 01, struct VersionArgs)
-
-#define IOCTL_SEPARATOR_0 10
-
-#define IOCTL_MEM_COPY _IOW(IOCTL_FPGA_MAGIC, 11, struct MemoryCopyArgs)
-#define IOCTL_MEMCACHE_INVAL _IOW(IOCTL_FPGA_MAGIC, 12, struct MemoryCacheArgs)
-#define IOCTL_MEMCACHE_FLUSH _IOW(IOCTL_FPGA_MAGIC, 13, struct MemoryCacheArgs)
-
-#define IOCTL_SEPARATOR_1 20
-
-#define IOCTL_CONFIG_CONV _IOW(IOCTL_FPGA_MAGIC, 21, struct ConvArgs)
-#define IOCTL_CONFIG_POOLING _IOW(IOCTL_FPGA_MAGIC, 22, struct PoolingArgs)
-#define IOCTL_CONFIG_EW _IOW(IOCTL_FPGA_MAGIC, 23, struct EWAddArgs)
-#define IOCTL_CONFIG_BYPASS _IOW(IOCTL_FPGA_MAGIC, 24, struct BypassArgs)
-#define IOCTL_FPGA_REG_READ _IOW(IOCTL_FPGA_MAGIC, 28, struct FpgaRegReadArgs)
-#define IOCTL_FPGA_REG_WRITE _IOW(IOCTL_FPGA_MAGIC, 29, struct FpgaRegWriteArgs)
-
-//============================== API =============================
-
 int open_device();
 int close_device();
-
 void* fpga_malloc(size_t size);
 void fpga_free(void* ptr);
-void fpga_copy(void* dst, const void* src, size_t num);
-int fpga_flush(void* address, size_t size);
-int fpga_invalidate(void* address, size_t size);
-
-int PerformBypass(const struct BypassArgs& args);
-int ComputeFpgaConv(const struct SplitConvArgs& args);
-int ComputeFpgaPool(const struct PoolingArgs& args);
-int ComputeFpgaEWAdd(const struct EWAddArgs& args);
-int ComputeFPGAConcat(const struct ConcatArgs& args);
 
 static inline int align_to_x(int num, int x) { return (num + x - 1) / x * x; }
 

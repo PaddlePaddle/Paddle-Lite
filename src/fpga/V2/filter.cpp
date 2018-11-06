@@ -94,7 +94,6 @@ void format_filter(float **data_in, int num, int channel, int height, int width,
   convert_to_hwc(data_in, num, channel, height, width);
   align_filter(data_in, num, channel, height, width);
   int pixel_num = calc_aligned_total_pixel_num(num, channel, height, width);
-  fpga_flush(*data_in, pixel_num * sizeof(float));
 }
 
 void convert_fc_filter(float **data_in, int num, int chw) {
@@ -114,8 +113,6 @@ void format_fc_filter(float **data_in, int num, int channel, int height,
   int chw = channel * height * width;
   convert_fc_filter(data_in, num, chw);
   align_filter(data_in, num, channel, height, width);
-  int pixel_num = calc_aligned_total_pixel_num(num, channel, height, width);
-  fpga_flush(*data_in, pixel_num * sizeof(float));
 }
 
 float find_max(float *data_in, int data_size) {

@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef CONCAT_OP
 
 #include "operators/kernel/concat_kernel.h"
+#include "fpga/V2/api.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -68,7 +69,7 @@ bool ConcatKernel<FPGA, float>::Init(ConcatParam<FPGA> *param) {
 
 template <>
 void ConcatKernel<FPGA, float>::Compute(const ConcatParam<FPGA> &param) {
-  ComputeFPGAConcat(param.FpgaArgs());
+  fpga::ComputeFPGAConcat(param.FpgaArgs());
 }
 template class ConcatKernel<FPGA, float>;
 
