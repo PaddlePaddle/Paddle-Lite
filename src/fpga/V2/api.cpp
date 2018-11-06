@@ -15,9 +15,9 @@ limitations under the License. */
 #include "fpga/V2/api.h"
 #include <algorithm>
 #include "fpga/V2/bias_scale.h"
+#include "fpga/V2/config.h"
 #include "fpga/V2/filter.h"
 #include "fpga/V2/image.h"
-#include "fpga/V2/config.h"
 
 namespace paddle_mobile {
 namespace fpga {
