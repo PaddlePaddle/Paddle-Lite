@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include <iostream>
+#include "../../src/common/types.h"
 #include "../test_helper.h"
 #include "../test_include.h"
 
@@ -20,10 +21,15 @@ int main() {
   paddle_mobile::PaddleMobile<paddle_mobile::GPU_CL> paddle_mobile;
   //    paddle_mobile.SetThreadNum(4);
   auto time1 = paddle_mobile::time();
-  //  auto isok = paddle_mobile.Load(std::string(g_mobilenet_detect) + "/model",
-  //                     std::string(g_mobilenet_detect) + "/params", true);
-  paddle_mobile.SetCLPath(".");
-  auto isok = paddle_mobile.Load(std::string(g_mobilenet), true);
+#ifdef PADDLE_MOBILE_CL
+  paddle_mobile.SetCLPath("/data/local/tmp/bin");
+#endif
+
+  auto isok =
+      paddle_mobile.Load(std::string(g_mobilenet_mul) + "/model",
+                         std::string(g_mobilenet_mul) + "/params", true);
+
+  //  auto isok = paddle_mobile.Load(std::string(g_mobilenet_mul), true);
   if (isok) {
     auto time2 = paddle_mobile::time();
     std::cout << "load cost :" << paddle_mobile::time_diff(time1, time2) << "ms"
