@@ -704,7 +704,7 @@ void Executor<GPU_CL, Precision::FP32>::InitCombineMemory() {
     }
   }
   if (self_alloc) {
-    delete origin_data;
+    delete data;
   }
   LOG(kLOG_INFO) << " end init combine memory ";
 }
