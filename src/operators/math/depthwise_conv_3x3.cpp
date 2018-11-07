@@ -249,7 +249,7 @@ void DepthwiseConv3x3s1p1(const Tensor *input, const Tensor *filter,
 #if __ARM_NEON
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
-  float *output_data = output->data<float>();
+  float *output_data = output->mutable_data<float>();
   const float *bias_data;
   if (if_bias) {
     bias_data = bias->data<float>();
