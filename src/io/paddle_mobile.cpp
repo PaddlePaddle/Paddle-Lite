@@ -16,6 +16,7 @@ limitations under the License. */
 
 namespace paddle_mobile {
 
+static std::mutex lc;
 template <typename Dtype, Precision P>
 void PaddleMobile<Dtype, P>::SetThreadNum(int num) {
 #ifdef _OPENMP
@@ -161,7 +162,10 @@ void PaddleMobile<Dtype, P>::Predict_To(int end) {
 #ifdef PADDLE_MOBILE_CL
 template <typename Dtype, Precision P>
 void PaddleMobile<Dtype, P>::SetCLPath(std::string path) {
-  framework::CLEngine::Instance()->setClPath(path);
+  std::lock_guard<std::mutex> lock(lc);
+  if (framework::CLEngine::Instance()->GetCLPath() == "") {
+    framework::CLEngine::Instance()->setClPath(path);
+  }
 }
 #endif
 
