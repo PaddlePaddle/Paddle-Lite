@@ -22,6 +22,7 @@ limitations under the License. */
 #include "operators/math/math_function.h"
 #include "operators/math/pad.h"
 #include "operators/math/vol2col.h"
+#include "operators/math/winograd/winograd.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
@@ -116,6 +117,34 @@ inline void ConvBasic(const ConvParam<CPU> &param) {
   }
 }
 
+inline void BatchConv3x3Winograd(const ConvParam<CPU> &param) {
+  const Tensor *input = param.Input();
+  Tensor *filter = param.Filter();
+  Tensor *output = param.Output();
+  output->mutable_data<float>();
+  int batch_size = input->dims()[0];
+  int groups = param.Groups();
+  const std::vector<int> &paddings = param.Paddings();
+  math::PadFunctor<CPU, float> pad;
+
+  Tensor input_pad;
+  for (int i = 0; i < batch_size; ++i) {
+    Tensor in_batch = input->Slice(i, i + 1);
+    Tensor out_batch = output->Slice(i, i + 1);
+    if (paddings[0] == 0 && paddings[1] == 0) {
+      input_pad = in_batch;
+    } else {
+      framework::DDim pad_shape = in_batch.dims();
+      pad_shape[2] += 2 * paddings[0];
+      pad_shape[3] += 2 * paddings[1];
+      input_pad.mutable_data<float>(pad_shape);
+      pad(in_batch, paddings[0], paddings[0], paddings[1], paddings[1],
+          &input_pad);
+    }
+    math::winograd_f6k3(input_pad, *filter, &out_batch);
+  }
+}
+
 template <typename P>
 void ConvCompute(const ConvParam<CPU> &param) {
   if (param.Input()->type() == typeid(int8_t)) {
@@ -133,6 +162,12 @@ void ConvCompute(const ConvParam<CPU> &param) {
                param.Filter()->dims()[2] == 3) {
       math::DepthwiseConv3x3(param.Input(), param.Strides(), param.Paddings(),
                              param.Filter(), nullptr, param.Output(), false);
+    } else if (param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
+               param.Strides()[0] == param.Strides()[1] &&
+               param.Dilations()[0] == param.Dilations()[1] &&
+               param.Filter()->dims()[2] == 3 && param.Strides()[0] == 1 &&
+               param.Dilations()[0] == 1 && param.Input()->dims()[1] > 16) {
+      BatchConv3x3Winograd(param);
     } else {
       ConvBasic<float, float>(param);
     }

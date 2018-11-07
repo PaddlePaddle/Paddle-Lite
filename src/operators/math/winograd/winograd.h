@@ -12,21 +12,29 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef CONV_OP
+
 #pragma once
+
 #include "framework/tensor.h"
 
 namespace paddle_mobile {
 namespace operators {
 namespace math {
 
-template <typename DeviceType, typename T>
-class PadFunctor {
- public:
-  void operator()(const framework::Tensor &input, const int pad_top,
-                  const int pad_bottom, const int pad_left, const int pad_right,
-                  framework::Tensor *output);
-};
+// F(2X2, 3X3)
+void winograd_f2k3(const framework::Tensor &input,
+                   const framework::Tensor &weight, framework::Tensor *output);
+// F(6X6, 3X3)
+void winograd_f6k3(const framework::Tensor &input,
+                   const framework::Tensor &weight, framework::Tensor *output);
+
+// F(4X4, 5X5)
+void winograd_f4k5(const framework::Tensor &input,
+                   const framework::Tensor &weight, framework::Tensor *output);
 
 }  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif
