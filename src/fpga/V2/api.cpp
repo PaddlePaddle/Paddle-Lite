@@ -13,46 +13,30 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "fpga/V2/api.h"
-#include <fcntl.h>
-#include <sys/ioctl.h>
 #include <algorithm>
-#include <map>
 #include "fpga/V2/bias_scale.h"
+#include "fpga/V2/config.h"
 #include "fpga/V2/filter.h"
 #include "fpga/V2/image.h"
-#define FPGA_TEST_MODE
-// #define PADDLE_MOBILE_OS_LINUX
 
 namespace paddle_mobile {
 namespace fpga {
-
-static int fd = -1;
-static const char *device_path = "/dev/fpgadrv0";
 static std::map<void *, size_t> memory_map;
 
-static inline int do_ioctl(int req, const void *arg) {
-#ifdef PADDLE_MOBILE_OS_LINUX
-  int result = ioctl(fd, req, (uint64_t)arg);
-  PADDLE_MOBILE_ENFORCE(result == 0, "ioctl didn't return correctly");
-  return result;
-#else
-  return -1;
-#endif
-}
-
 int open_device() {
-  if (fd == -1) {
-    fd = open(device_path, O_RDWR);
-  }
-  return fd;
+  int ret = open_device_driver();
+  return ret;
 }
 
-// memory management;
+int close_device() {
+  int ret = close_device_driver();
+  return ret;
+}
+
 void *fpga_malloc(size_t size) {
   static uint64_t counter = 0;
-
-#ifdef PADDLE_MOBILE_OS_LINUX
-  auto ptr = mmap64(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+#ifdef PADDLE_MOBILE_ZU5
+  auto ptr = fpga_malloc_driver(size);
 #else
   auto ptr = malloc(size);
 #endif
@@ -66,13 +50,12 @@ void *fpga_malloc(size_t size) {
 void fpga_free(void *ptr) {
   static uint64_t counter = 0;
   size_t size = 0;
-
   auto iter = memory_map.find(ptr);  // std::map<void *, size_t>::iterator
   if (iter != memory_map.end()) {
     size = iter->second;
     memory_map.erase(iter);
-#ifdef PADDLE_MOBILE_OS_LINUX
-    munmap(ptr, size);
+#ifdef PADDLE_MOBILE_ZU5
+    fpga_free_driver(ptr);
 #else
     free(ptr);
 #endif
@@ -82,24 +65,6 @@ void fpga_free(void *ptr) {
   } else {
     DLOG << "Invalid pointer";
   }
-}
-
-void fpga_copy(void *dest, const void *src, size_t num) {
-  memcpy(dest, src, num);
-}
-
-int fpga_flush(void *address, size_t size) {
-  struct MemoryCacheArgs args = {nullptr};
-  args.address = address;
-  args.size = size;
-  return do_ioctl(IOCTL_MEMCACHE_FLUSH, &args);
-}
-
-int fpga_invalidate(void *address, size_t size) {
-  struct MemoryCacheArgs args = {nullptr};
-  args.address = address;
-  args.size = size;
-  return do_ioctl(IOCTL_MEMCACHE_INVAL, &args);
 }
 
 half fp32_2_fp16(float fp32_num) {
@@ -123,136 +88,13 @@ float fp16_2_fp32(half fp16_num) {
   return fp32_num;
 }
 
-int ComputeBasicConv(const struct ConvArgs &args) {
-#ifdef FPGA_TEST_MODE
-  DLOG << "======Compute Basic Conv======";
-  DLOG << "   relu_enabled:" << args.relu_enabled
-       << "   sb_address:" << args.sb_address
-       << "   filter_address:" << args.filter_address
-       << "   filter_num:" << args.filter_num
-       << "   group_num:" << args.group_num;
-  DLOG << "   image_address:" << args.image.address
-       << "   image_scale_address:" << args.image.scale_address
-       << "   image_channels:" << args.image.channels
-       << "   image_height:" << args.image.height
-       << "   image_width:" << args.image.width
-       << "   pad_height:" << args.image.pad_height
-       << "   pad_width:" << args.image.pad_width;
-  DLOG << "   kernel_height:" << args.kernel.height
-       << "   kernel_width:" << args.kernel.width
-       << "   stride_h:" << args.kernel.stride_h
-       << "   stride_w:" << args.kernel.stride_w;
-  DLOG << "   out_address:" << args.output.address
-       << "   out_scale_address:" << args.output.scale_address;
-#endif
-  return do_ioctl(IOCTL_CONFIG_CONV, &args);
-}
-
-int ComputeFpgaConv(const struct SplitConvArgs &args) {
-  ComputeBasicConv(args.conv_args[0]);
-}
-
-int ComputeFpgaPool(const struct PoolingArgs &args) {
-#ifdef FPGA_TEST_MODE
-  DLOG << "=============ComputeFpgaPool===========";
-  DLOG << "   mode:" << args.mode
-       << "   kernel_reciprocal:" << fp16_2_fp32(args.kernel_reciprocal);
-  DLOG << "   image_address:" << args.image.address
-       << "   image_scale_address:" << args.image.scale_address
-       << "   image_channels:" << args.image.channels
-       << "   image_height:" << args.image.height
-       << "   image_width:" << args.image.width
-       << "   pad_height:" << args.image.pad_height
-       << "   pad_width:" << args.image.pad_width;
-  DLOG << "   kernel_height:" << args.kernel.height
-       << "   kernel_width:" << args.kernel.width
-       << "   stride_h:" << args.kernel.stride_h
-       << "   stride_w:" << args.kernel.stride_w;
-  DLOG << "   out_address:" << args.output.address
-       << "   out_scale_address:" << args.output.scale_address;
-#endif
-
-  return do_ioctl(IOCTL_CONFIG_POOLING, &args);
-}
-
-int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
-#ifdef FPGA_TEST_MODE
-  DLOG << "=============ComputeFpgaEWAdd===========";
-  DLOG << "   relu_enabled:" << args.relu_enabled
-       << "   const0:" << fp16_2_fp32(int16_t(args.const0))
-       << "   const1:" << fp16_2_fp32(int16_t(args.const1));
-  DLOG << "   image0_address:" << args.image0.address
-       << "   image0_scale_address:" << args.image0.scale_address
-       << "   image0_channels:" << args.image0.channels
-       << "   image0_height:" << args.image0.height
-       << "   image0_width:" << args.image0.width
-       << "   pad0_height:" << args.image0.pad_height
-       << "   pad0_width:" << args.image0.pad_width;
-  DLOG << "   image1_address:" << args.image1.address
-       << "   image1_scale_address:" << args.image1.scale_address
-       << "   image1_channels:" << args.image1.channels
-       << "   image1_height:" << args.image1.height
-       << "   image1_width:" << args.image1.width
-       << "   pad1_height:" << args.image1.pad_height
-       << "   pad_width:" << args.image1.pad_width;
-  DLOG << "   out_address:" << args.output.address
-       << "   out_scale_address:" << args.output.scale_address;
-#endif
-
-  return do_ioctl(IOCTL_CONFIG_EW, &args);
-}
-int PerformBypass(const struct BypassArgs &args) {
-#ifdef FPGA_TEST_MODE
-  DLOG << "=============ComputeFpgaBypass===========";
-  DLOG << "   input_type:" << args.input_data_type
-       << "   output_type:" << args.output_data_type
-       << "   input_layout_type:" << args.input_layout_type
-       << "   output_layout_type:" << args.output_layout_type;
-  DLOG << "   image_address:" << args.image.address
-       << "   image_scale_address:" << args.image.scale_address
-       << "   image_channels:" << args.image.channels
-       << "   image_height:" << args.image.height
-       << "   image_width:" << args.image.width
-       << "   pad_height:" << args.image.pad_height
-       << "   pad_width:" << args.image.pad_width;
-  DLOG << "   out_address:" << args.output.address
-       << "   out_scale_address:" << args.output.scale_address;
-#endif
-
-  return do_ioctl(IOCTL_CONFIG_BYPASS, &args);
-}
-
-int ComputeFPGAConcat(const struct ConcatArgs &args) {
-#ifdef FPGA_TEST_MODE
-  DLOG << "=============ComputeFpgaConcat===========";
-  DLOG << "   Image_num: " << args.image_num
-       << "   out_address:" << args.image_out
-       << "   out_scale_address:" << args.scale_out
-       << "   out_channel:" << args.out_channel;
-  DLOG << "   image_height:" << args.height << "   image_width:" << args.width;
-  for (int i = 0; i < args.image_num; i++) {
-    DLOG << "   " << i << "th:        ";
-    DLOG << "   channel_num:" << args.channel_num[i]
-         << "   aligned_channel_num:" << args.aligned_channel_num[i]
-         << "   image_address:" << args.images_in[i]
-         << "   image_scale_address:" << args.scales_in[i];
-  }
-#endif
-
-  image::concat_images(args.images_in, args.scales_in, args.image_out,
-                       args.scale_out, args.image_num, args.channel_num,
-                       args.height, args.width, args.aligned_channel_num,
-                       args.out_channel);
-  return 0;
-}
-
 void format_image(framework::Tensor *image_tensor) {
   auto dims = image_tensor->dims();
   auto channel = dims[1], height = dims[2], width = dims[3];
   auto data_ptr = image_tensor->data<float>();
   size_t memory_size = channel * height * width * sizeof(float);
   auto new_data = (float *)fpga_malloc(memory_size);  // NOLINT
-  fpga_copy(new_data, data_ptr, memory_size);
+  memcpy(new_data, data_ptr, memory_size);
   int aligned_channel = filter::calc_aligned_channel((int)channel);  // NOLINT
   image::format_image(&new_data, (int)channel, (int)height,          // NOLINT
                       (int)width,                                    // NOLINT
@@ -265,7 +107,7 @@ void format_fp16_ofm(framework::Tensor *ofm_tensor, int aligned_channel) {
   size_t memory_size = 0;
   if (dims.size() == 4) {
     auto height = dims[2], width = dims[3];
-    memory_size = height * width * aligned_channel * sizeof(half);
+    memory_size = (height + 1) / 2 * 2 * width * aligned_channel * sizeof(half);
   } else if (dims.size() == 2) {
     memory_size = aligned_channel * sizeof(half);
   } else {
@@ -319,7 +161,7 @@ void format_filter(framework::Tensor *filter_tensor, float max_value,
   auto data_ptr = filter_tensor->data<float>();
   size_t memory_size = num * channel * height * width * sizeof(float);
   auto new_data = (float *)fpga_malloc(memory_size);  // NOLINT
-  fpga_copy(new_data, data_ptr, memory_size);
+  memcpy(new_data, data_ptr, memory_size);
   filter::format_filter(&new_data, (int)num, (int)channel,  // NOLINT
                         (int)height,                        // NOLINT
                         (int)width, group_num, max_value);  // NOLINT
@@ -334,7 +176,7 @@ void format_fc_filter(framework::Tensor *filter_tensor, float max_value) {
   auto data_ptr = filter_tensor->data<float>();
   size_t memory_size = num * channel * height * width * sizeof(float);
   auto new_data = (float *)fpga_malloc(memory_size);  // NOLINT
-  fpga_copy(new_data, data_ptr, memory_size);
+  memcpy(new_data, data_ptr, memory_size);
   filter::format_fc_filter(&new_data, (int)num, (int)channel,  // NOLINT
                            (int)height,                        // NOLINT
                            (int)width, 1, max_value);          // NOLINT
