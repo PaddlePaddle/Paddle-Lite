@@ -82,6 +82,7 @@ std::unordered_map<
         {G_OP_TYPE_FUSION_CONV_ADD, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_RELU, {{"X"}, {"Out"}}},
         {G_OP_TYPE_SOFTMAX, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_SIGMOID, {{"X"}, {"Out"}}},
         {G_OP_TYPE_MUL, {{"X"}, {"Out"}}},
         {G_OP_TYPE_ELEMENTWISE_ADD, {{"X", "Y"}, {"Out"}}},
         {G_OP_TYPE_POOL2D, {{"X"}, {"Out"}}},
