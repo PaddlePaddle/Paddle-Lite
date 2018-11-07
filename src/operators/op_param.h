@@ -436,6 +436,16 @@ class ConvParam : public OpParam {
 #ifdef PADDLE_MOBILE_CL
   int offset_;
 #endif
+
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::SplitConvArgs fpga_conv_args;
+
+ public:
+  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
+#endif
 };
 template <typename Dtype>
 Print &operator<<(Print &printer, const ConvParam<Dtype> &conv_param);
@@ -580,15 +590,6 @@ class MulParam : OpParam {
   GType *out_;
   int x_num_col_dims_;
   int y_num_col_dims_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 
@@ -1641,15 +1642,6 @@ class FusionConvAddParam : public ConvParam<Dtype> {
   RType *bias_;
   int axis_;
   RType *output_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 
 template <typename Dtype>
@@ -1696,15 +1688,6 @@ class FusionConvAddPReluParam : public ConvParam<Dtype> {
   RType *output_;
   RType *alpha_;
   std::string mode_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 
@@ -1754,15 +1737,6 @@ class FusionConvAddAddPReluParam : public ConvParam<Dtype> {
   std::string keyOutput_;
   std::string keyX1_;
   std::string keyY1_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 
@@ -1829,16 +1803,6 @@ class FusionConvAddBNReluParam : public ConvParam<Dtype> {
   bool is_test_;
   RType *new_bias_;
   RType *new_scale_;
-
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 
@@ -1916,15 +1880,6 @@ class FusionConvBNAddReluParam : public ConvParam<Dtype> {
   std::string keyBNY_;
   std::string keyX_;
   std::string keyY_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 
@@ -1983,15 +1938,6 @@ class FusionConvBNParam : public ConvParam<Dtype> {
   bool is_test_;
   RType *new_bias_;
   RType *new_scale_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 
@@ -2058,15 +2004,6 @@ class FusionConvAddBNParam : public ConvParam<Dtype> {
   bool is_test_;
   RType *new_bias_;
   RType *new_scale_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 
@@ -2184,15 +2121,6 @@ class FusionConvBNReluParam : public ConvParam<Dtype> {
   bool is_test_;
   RType *new_bias_;
   RType *new_scale_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 
