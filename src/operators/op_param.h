@@ -1338,23 +1338,23 @@ class Reshape2Param : public OpParam {
     }
   }
 
-  const RType *InputX() const { return input_x_; }
+  const GType *InputX() const { return input_x_; }
 
-  const RType *InputShape() const { return input_shape_; }
+  const GType *InputShape() const { return input_shape_; }
 
-  RType *Out() const { return out_; }
+  GType *Out() const { return out_; }
 
-  RType *OutputXShape() const { return output_xshape_; }
+  GType *OutputXShape() const { return output_xshape_; }
 
   const vector<int> &Shape() const { return shape_; }
 
   const bool &Inplace() const { return inplace_; }
 
  private:
-  RType *input_x_;
-  RType *input_shape_;
-  RType *out_;
-  RType *output_xshape_;
+  GType *input_x_;
+  GType *input_shape_;
+  GType *out_;
+  GType *output_xshape_;
   vector<int> shape_;
   bool inplace_;
 };
