@@ -37,7 +37,13 @@ class PaddleMobile {
   typedef typename PrecisionTrait<P>::ptype Ptype;
 
  public:
-  PaddleMobile() {}
+  PaddleMobile() {
+#ifndef PADDLE_MOBILE_CL
+    bool is_gpu = std::is_same<DeviceType<kGPU_CL>, Dtype>::value;
+    PADDLE_MOBILE_ENFORCE(!is_gpu,
+                          "Not Enable GPU in CmakeList but run gpu codes ");
+#endif
+  }
   bool Load(const std::string &dirname, bool optimize = false,
             bool quantification = false, int batch_size = 1,
             bool loddable = false);
