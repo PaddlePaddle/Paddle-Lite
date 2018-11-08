@@ -44,7 +44,12 @@ void Loader<Dtype, P>::InitMemoryFromProgram(
         } else {
           auto dim = var_desc->Tensor_desc().Dims();
           PADDLE_MOBILE_ENFORCE(dim.size() > 0, "dim size is 0");
-          dim[0] = 1;
+          //          dim[0] = 1;
+          for (auto &d : dim) {
+            if (d < 0) {
+              d *= -1;
+            }
+          }
           auto tensor = var->GetMutable<LoDTensor>();
           tensor->Resize(make_ddim(dim));
         }
@@ -82,6 +87,54 @@ void Loader<GPU_CL, Precision::FP32>::InitMemoryFromProgram(
     }
   }
 }
+template <>
+const Program<GPU_CL, Precision::FP32>
+Loader<GPU_CL, Precision::FP32>::LoadCombinedMemory(
+    size_t read_size, const uint8_t *buf, size_t combined_params_len,
+    uint8_t *combined_params_buf, bool optimize, bool quantification) {
+  bool can_add_split = false;
+
+  PaddleMobile__Framework__Proto__ProgramDesc *c_program;
+  PADDLE_MOBILE_ENFORCE(buf != nullptr, "read from __model__ is null");
+
+  c_program = paddle_mobile__framework__proto__program_desc__unpack(
+      nullptr, read_size, buf);
+  //
+  PADDLE_MOBILE_ENFORCE(c_program != nullptr, "program is null");
+  //
+  DLOG << "n_ops: " << (*c_program->blocks)->n_ops;
+  //
+
+  auto originProgramDesc = std::make_shared<ProgramDesc>(c_program);
+
+  Program<GPU_CL, Precision::FP32> program;
+  program.combined = true;
+  program.originProgram = originProgramDesc;
+  program.quantification = quantification;
+  program.combined_params_len = combined_params_len;
+  program.combined_params_buf = combined_params_buf;
+
+  auto scope = std::make_shared<Scope>();
+  program.scope = scope;
+  InitMemoryFromProgram(originProgramDesc, scope);
+  if (optimize) {
+    ProgramOptimize program_optimize;
+    program.optimizeProgram =
+        program_optimize.FusionOptimize(originProgramDesc, can_add_split);
+    if (!program.optimizeProgram) {
+      program.optimizeProgram = originProgramDesc;
+    }
+  }
+  if (optimize) {
+    program.optimizeProgram->Description("optimize: ");
+  } else {
+    originProgramDesc->Description("program: ");
+  }
+  paddle_mobile__framework__proto__program_desc__free_unpacked(c_program,
+                                                               nullptr);
+  return program;
+}
+
 #endif
 
 /**

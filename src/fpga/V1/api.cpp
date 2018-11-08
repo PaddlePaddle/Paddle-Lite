@@ -12,15 +12,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "fpga/api.h"
+#include "fpga/V1/api.h"
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <algorithm>
 #include <map>
-#include "fpga/bias_scale.h"
-#include "fpga/filter.h"
-#include "fpga/image.h"
+#include "fpga/V1/bias_scale.h"
+#include "fpga/V1/filter.h"
+#include "fpga/V1/image.h"
 #define FPGA_TEST_MODE
 #define PADDLE_MOBILE_OS_LINUX
 
