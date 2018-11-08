@@ -44,7 +44,12 @@ void Loader<Dtype, P>::InitMemoryFromProgram(
         } else {
           auto dim = var_desc->Tensor_desc().Dims();
           PADDLE_MOBILE_ENFORCE(dim.size() > 0, "dim size is 0");
-          dim[0] = 1;
+          //          dim[0] = 1;
+          for (auto &d : dim) {
+            if (d < 0) {
+              d *= -1;
+            }
+          }
           auto tensor = var->GetMutable<LoDTensor>();
           tensor->Resize(make_ddim(dim));
         }
