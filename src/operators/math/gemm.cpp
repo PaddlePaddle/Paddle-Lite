@@ -3307,8 +3307,13 @@ void Gemm::Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
       float *local_A = packedA + MC * KC * local_threads;
       float *local_C = packedC + MC * NC * local_threads;
       (*this.*procPackA)(mc, KC, mc % MR, &A(i, 0), lda, local_A);
-      InnerKernelWithBias(mc, n, alpha, local_A, packedB, beta, local_C,
-                          &C(i, 0), ldc, relu, bias + i);
+      if (bias == nullptr) {
+        InnerKernelWithBias(mc, n, alpha, local_A, packedB, beta, local_C,
+                            &C(i, 0), ldc, relu, nullptr);
+      } else {
+        InnerKernelWithBias(mc, n, alpha, local_A, packedB, beta, local_C,
+                            &C(i, 0), ldc, relu, bias + i);
+      }
     }
   } else {
 #pragma omp parallel for

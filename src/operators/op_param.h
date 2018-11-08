@@ -23,8 +23,13 @@ limitations under the License. */
 #include "framework/scope.h"
 #include "framework/tensor.h"
 #include "framework/variable.h"
-#ifdef PADDLE_MOBILE_FPGA
-#include "fpga/api.h"
+
+#ifdef PADDLE_MOBILE_FPGA_V1
+#include "fpga/V1/api.h"
+#endif
+
+#ifdef PADDLE_MOBILE_FPGA_V2
+#include "fpga/V2/api.h"
 #endif
 
 #ifdef PADDLE_MOBILE_CL
@@ -431,6 +436,16 @@ class ConvParam : public OpParam {
 #ifdef PADDLE_MOBILE_CL
   int offset_;
 #endif
+
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::SplitConvArgs fpga_conv_args;
+
+ public:
+  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
+#endif
 };
 template <typename Dtype>
 Print &operator<<(Print &printer, const ConvParam<Dtype> &conv_param);
@@ -575,15 +590,6 @@ class MulParam : OpParam {
   GType *out_;
   int x_num_col_dims_;
   int y_num_col_dims_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 
@@ -1332,23 +1338,23 @@ class Reshape2Param : public OpParam {
     }
   }
 
-  const RType *InputX() const { return input_x_; }
+  const GType *InputX() const { return input_x_; }
 
-  const RType *InputShape() const { return input_shape_; }
+  const GType *InputShape() const { return input_shape_; }
 
-  RType *Out() const { return out_; }
+  GType *Out() const { return out_; }
 
-  RType *OutputXShape() const { return output_xshape_; }
+  GType *OutputXShape() const { return output_xshape_; }
 
   const vector<int> &Shape() const { return shape_; }
 
   const bool &Inplace() const { return inplace_; }
 
  private:
-  RType *input_x_;
-  RType *input_shape_;
-  RType *out_;
-  RType *output_xshape_;
+  GType *input_x_;
+  GType *input_shape_;
+  GType *out_;
+  GType *output_xshape_;
   vector<int> shape_;
   bool inplace_;
 };
@@ -1636,15 +1642,6 @@ class FusionConvAddParam : public ConvParam<Dtype> {
   RType *bias_;
   int axis_;
   RType *output_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 
 template <typename Dtype>
@@ -1691,15 +1688,6 @@ class FusionConvAddPReluParam : public ConvParam<Dtype> {
   RType *output_;
   RType *alpha_;
   std::string mode_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 
@@ -1749,15 +1737,6 @@ class FusionConvAddAddPReluParam : public ConvParam<Dtype> {
   std::string keyOutput_;
   std::string keyX1_;
   std::string keyY1_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 
@@ -1824,16 +1803,6 @@ class FusionConvAddBNReluParam : public ConvParam<Dtype> {
   bool is_test_;
   RType *new_bias_;
   RType *new_scale_;
-
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 
@@ -1911,15 +1880,6 @@ class FusionConvBNAddReluParam : public ConvParam<Dtype> {
   std::string keyBNY_;
   std::string keyX_;
   std::string keyY_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 
@@ -1978,15 +1938,6 @@ class FusionConvBNParam : public ConvParam<Dtype> {
   bool is_test_;
   RType *new_bias_;
   RType *new_scale_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 
@@ -2053,15 +2004,6 @@ class FusionConvAddBNParam : public ConvParam<Dtype> {
   bool is_test_;
   RType *new_bias_;
   RType *new_scale_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 
@@ -2179,15 +2121,6 @@ class FusionConvBNReluParam : public ConvParam<Dtype> {
   bool is_test_;
   RType *new_bias_;
   RType *new_scale_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 

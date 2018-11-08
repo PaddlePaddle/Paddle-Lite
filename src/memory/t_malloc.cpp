@@ -16,10 +16,12 @@ limitations under the License. */
 #include <cstdlib>
 #include <cstring>
 
-#ifdef PADDLE_MOBILE_FPGA
+#ifdef PADDLE_MOBILE_FPGA_V1
+#include "fpga/V1/api.h"
+#endif
 
-#include "fpga/api.h"
-
+#ifdef PADDLE_MOBILE_FPGA_V2
+#include "fpga/V2/api.h"
 #endif
 
 namespace paddle_mobile {

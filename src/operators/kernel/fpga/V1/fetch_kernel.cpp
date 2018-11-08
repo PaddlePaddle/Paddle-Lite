@@ -12,29 +12,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef SLICE_OP
+#include "operators/kernel/fetch_kernel.h"
 
-#include "operators/slice_op.h"
-#include <vector>
 namespace paddle_mobile {
 namespace operators {
 
-template <typename Dtype, typename T>
-void SliceOp<Dtype, T>::InferShape() const {
-  /// todo: add InputShape() detection.
+template <>
+bool FetchKernel<FPGA, float>::Init(FetchParam<FPGA> *param) {
+  return true;
 }
+
+template <>
+void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
+  param.Out()->ShareDataWith(*(param.InputX()));
+}
+
+template class FetchKernel<FPGA, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(slice, ops::SliceOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-REGISTER_OPERATOR_MALI_GPU(slice, ops::SliceOp);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(slice, ops::SliceOp);
-#endif
-#endif

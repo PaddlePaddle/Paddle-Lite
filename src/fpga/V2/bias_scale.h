@@ -12,29 +12,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef SLICE_OP
+#pragma once
 
-#include "operators/slice_op.h"
-#include <vector>
 namespace paddle_mobile {
-namespace operators {
+namespace fpga {
+namespace bias_scale {
 
-template <typename Dtype, typename T>
-void SliceOp<Dtype, T>::InferShape() const {
-  /// todo: add InputShape() detection.
-}
+void align_element(float **data_in, int num, int num_after_alignment);
+void format_bias_scale_array(float **data_in, int num, int num_after_alignment);
 
-}  // namespace operators
+}  // namespace bias_scale
+}  // namespace fpga
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(slice, ops::SliceOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-REGISTER_OPERATOR_MALI_GPU(slice, ops::SliceOp);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(slice, ops::SliceOp);
-#endif
-#endif
