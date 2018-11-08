@@ -17,6 +17,14 @@ limitations under the License. */
 #include "operators/kernel/slice_kernel.h"
 
 namespace paddle_mobile {
-namespace operators {}
+namespace operators {
+
+template <>
+bool SliceKernel<CPU, float>::Init(SliceParam<CPU>* param) {
+  return true;
+}
+template <>
+void SliceKernel<CPU, float>::Compute(const SliceParam<CPU>& param) {}
+}  // namespace operators
 }  // namespace paddle_mobile
 #endif

@@ -90,8 +90,10 @@ class CLEngine {
 
   bool BuildProgram(cl_program program) {
     cl_int status;
-    status = clBuildProgram(program, 0, 0, "-cl-fast-relaxed-math -I cl_kernel",
-                            0, 0);
+    std::string path = "-cl-fast-relaxed-math -I " +
+                       CLEngine::Instance()->GetCLPath() + "/cl_kernel";
+
+    status = clBuildProgram(program, 0, 0, path.c_str(), 0, 0);
 
     CL_CHECK_ERRORS(status);
 
@@ -114,6 +116,9 @@ class CLEngine {
 
   cl_device_id DeviceID(int index = 0) { return devices_[index]; }
 
+  std::string GetCLPath() { return cl_path_; }
+  void setClPath(std::string cl_path) { cl_path_ = cl_path; }
+
  private:
   CLEngine() { initialized_ = false; }
 
@@ -129,6 +134,7 @@ class CLEngine {
 
   cl_int status_;
 
+  std::string cl_path_;
   std::unique_ptr<_cl_program, CLProgramDeleter> program_;
 
   //  bool SetClContext();

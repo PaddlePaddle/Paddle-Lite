@@ -649,12 +649,14 @@ void Executor<GPU_CL, Precision::FP32>::InitMemory() {
 
 template <>
 void Executor<GPU_CL, Precision::FP32>::InitCombineMemory() {
-  char *origin_data;
+  char *origin_data = nullptr;
+  bool self_alloc = false;
   if (program_.combined_params_buf && program_.combined_params_len) {
     LOG(kLOG_INFO) << "use outter memory";
     origin_data = reinterpret_cast<char *>(program_.combined_params_buf);
   } else {
     LOG(kLOG_INFO) << " begin init combine memory";
+    self_alloc = true;
     origin_data = ReadFileToBuff(program_.para_path);
   }
   PADDLE_MOBILE_ENFORCE(origin_data != nullptr, "origin_data==nullptr!!!");
@@ -701,7 +703,9 @@ void Executor<GPU_CL, Precision::FP32>::InitCombineMemory() {
       }
     }
   }
-  delete origin_data;
+  if (self_alloc) {
+    delete data;
+  }
   LOG(kLOG_INFO) << " end init combine memory ";
 }
 

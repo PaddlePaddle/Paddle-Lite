@@ -26,6 +26,9 @@ limitations under the License. */
 #include "framework/load_ops.h"
 #include "framework/loader.h"
 #include "framework/tensor.h"
+#ifdef PADDLE_MOBILE_CL
+#include "framework/cl/cl_engine.h"
+#endif
 
 namespace paddle_mobile {
 
@@ -72,6 +75,11 @@ class PaddleMobile {
   void Predict_From_To(int start = 0, int end = -1);
   void Predict_From(int start);
   void Predict_To(int end);
+#endif
+
+#ifdef PADDLE_MOBILE_CL
+ public:
+  void SetCLPath(std::string cl_path);
 #endif
 
  private:

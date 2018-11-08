@@ -58,7 +58,8 @@ class CLScope {
     }
 
     auto program = CLEngine::Instance()->CreateProgramWith(
-        context_.get(), "./cl_kernel/" + file_name);
+        context_.get(),
+        CLEngine::Instance()->GetCLPath() + "/cl_kernel/" + file_name);
 
     DLOG << " --- begin build program -> " << file_name << " --- ";
     CLEngine::Instance()->BuildProgram(program.get());
