@@ -166,7 +166,7 @@ void ConvCompute(const ConvParam<CPU> &param) {
                param.Strides()[0] == param.Strides()[1] &&
                param.Dilations()[0] == param.Dilations()[1] &&
                param.Filter()->dims()[2] == 3 && param.Strides()[0] == 1 &&
-               param.Dilations()[0] == 1 && param.Input()->dims()[1] > 16) {
+               param.Dilations()[0] == 1 && param.Input()->dims()[1] >= 16) {
       BatchConv3x3Winograd(param);
     } else {
       ConvBasic<float, float>(param);
