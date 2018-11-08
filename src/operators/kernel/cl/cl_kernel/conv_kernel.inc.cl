@@ -132,7 +132,29 @@ __kernel void conv_3x3(__private const int global_size_dim0,
                           (half4)(0.0f),
                           (ushort4)((in_pos_in_one_block.x + dilation < 0 || in_pos_in_one_block.y + dilation < 0 || in_pos_in_one_block.x + dilation >= input_width || in_pos_in_one_block.y + dilation >= input_height) << 15));
 
+
+/*
         for (int j = 0; j < 9; ++j) {
+            int2 pos_of_weight;
+            pos_of_weight.x = i * 3 + j % 3;
+            pos_of_weight.y = out_c * 4 * 3 + 0 * 3 + j / 3;
+            float4 weight_x = read_imagef(filter, sampler, pos_of_weight);
+            output.x += dot(input[j], weight_x);
+
+            pos_of_weight.y = out_c * 4 * 3 + 1 * 3 + j / 3;
+            float4 weight_y = read_imagef(filter, sampler, pos_of_weight);
+            output.y += dot(input[j], weight_y);
+
+            pos_of_weight.y = out_c * 4 * 3 + 2 * 3 + j / 3;
+            float4 weight_z = read_imagef(filter, sampler, pos_of_weight);
+            output.z += dot(input[j], weight_z);
+
+            pos_of_weight.y = out_c * 4 * 3 + 3 * 3 + j / 3;
+            float4 weight_w = read_imagef(filter, sampler, pos_of_weight);
+            output.w += dot(input[j], weight_w);
+        }
+*/
+            int j = 0;
             int2 pos_of_weight;
             pos_of_weight.x = i * 3 + j % 3;
             pos_of_weight.y = out_c * 4 * 3 + 0 * 3 + j / 3;
@@ -150,7 +172,151 @@ __kernel void conv_3x3(__private const int global_size_dim0,
             pos_of_weight.y = out_c * 4 * 3 + 3 * 3 + j / 3;
             half4 weight_w = read_imageh(filter, sampler, pos_of_weight);
             output.w += dot(input[j], weight_w);
-        }
+
+            j = 1;
+            pos_of_weight.x = i * 3 + j % 3;
+            pos_of_weight.y = out_c * 4 * 3 + 0 * 3 + j / 3;
+            weight_x = read_imageh(filter, sampler, pos_of_weight);
+            output.x += dot(input[j], weight_x);
+
+            pos_of_weight.y = out_c * 4 * 3 + 1 * 3 + j / 3;
+            weight_y = read_imageh(filter, sampler, pos_of_weight);
+            output.y += dot(input[j], weight_y);
+
+            pos_of_weight.y = out_c * 4 * 3 + 2 * 3 + j / 3;
+            weight_z = read_imageh(filter, sampler, pos_of_weight);
+            output.z += dot(input[j], weight_z);
+
+            pos_of_weight.y = out_c * 4 * 3 + 3 * 3 + j / 3;
+            weight_w = read_imageh(filter, sampler, pos_of_weight);
+            output.w += dot(input[j], weight_w);
+
+            j = 2;
+            pos_of_weight.x = i * 3 + j % 3;
+            pos_of_weight.y = out_c * 4 * 3 + 0 * 3 + j / 3;
+            weight_x = read_imageh(filter, sampler, pos_of_weight);
+            output.x += dot(input[j], weight_x);
+
+            pos_of_weight.y = out_c * 4 * 3 + 1 * 3 + j / 3;
+            weight_y = read_imageh(filter, sampler, pos_of_weight);
+            output.y += dot(input[j], weight_y);
+
+            pos_of_weight.y = out_c * 4 * 3 + 2 * 3 + j / 3;
+            weight_z = read_imageh(filter, sampler, pos_of_weight);
+            output.z += dot(input[j], weight_z);
+
+            pos_of_weight.y = out_c * 4 * 3 + 3 * 3 + j / 3;
+            weight_w = read_imageh(filter, sampler, pos_of_weight);
+            output.w += dot(input[j], weight_w);
+
+            j = 3;
+            pos_of_weight.x = i * 3 + j % 3;
+            pos_of_weight.y = out_c * 4 * 3 + 0 * 3 + j / 3;
+            weight_x = read_imageh(filter, sampler, pos_of_weight);
+            output.x += dot(input[j], weight_x);
+
+            pos_of_weight.y = out_c * 4 * 3 + 1 * 3 + j / 3;
+            weight_y = read_imageh(filter, sampler, pos_of_weight);
+            output.y += dot(input[j], weight_y);
+
+            pos_of_weight.y = out_c * 4 * 3 + 2 * 3 + j / 3;
+            weight_z = read_imageh(filter, sampler, pos_of_weight);
+            output.z += dot(input[j], weight_z);
+
+            pos_of_weight.y = out_c * 4 * 3 + 3 * 3 + j / 3;
+            weight_w = read_imageh(filter, sampler, pos_of_weight);
+            output.w += dot(input[j], weight_w);
+
+            j = 4;
+            pos_of_weight.x = i * 3 + j % 3;
+            pos_of_weight.y = out_c * 4 * 3 + 0 * 3 + j / 3;
+            weight_x = read_imageh(filter, sampler, pos_of_weight);
+            output.x += dot(input[j], weight_x);
+
+            pos_of_weight.y = out_c * 4 * 3 + 1 * 3 + j / 3;
+            weight_y = read_imageh(filter, sampler, pos_of_weight);
+            output.y += dot(input[j], weight_y);
+
+            pos_of_weight.y = out_c * 4 * 3 + 2 * 3 + j / 3;
+            weight_z = read_imageh(filter, sampler, pos_of_weight);
+            output.z += dot(input[j], weight_z);
+
+            pos_of_weight.y = out_c * 4 * 3 + 3 * 3 + j / 3;
+            weight_w = read_imageh(filter, sampler, pos_of_weight);
+            output.w += dot(input[j], weight_w);
+
+            j = 5;
+            pos_of_weight.x = i * 3 + j % 3;
+            pos_of_weight.y = out_c * 4 * 3 + 0 * 3 + j / 3;
+            weight_x = read_imageh(filter, sampler, pos_of_weight);
+            output.x += dot(input[j], weight_x);
+
+            pos_of_weight.y = out_c * 4 * 3 + 1 * 3 + j / 3;
+            weight_y = read_imageh(filter, sampler, pos_of_weight);
+            output.y += dot(input[j], weight_y);
+
+            pos_of_weight.y = out_c * 4 * 3 + 2 * 3 + j / 3;
+            weight_z = read_imageh(filter, sampler, pos_of_weight);
+            output.z += dot(input[j], weight_z);
+
+            pos_of_weight.y = out_c * 4 * 3 + 3 * 3 + j / 3;
+            weight_w = read_imageh(filter, sampler, pos_of_weight);
+            output.w += dot(input[j], weight_w);
+
+           j = 6;
+           pos_of_weight.x = i * 3 + j % 3;
+           pos_of_weight.y = out_c * 4 * 3 + 0 * 3 + j / 3;
+           weight_x = read_imageh(filter, sampler, pos_of_weight);
+           output.x += dot(input[j], weight_x);
+
+           pos_of_weight.y = out_c * 4 * 3 + 1 * 3 + j / 3;
+           weight_y = read_imageh(filter, sampler, pos_of_weight);
+           output.y += dot(input[j], weight_y);
+
+           pos_of_weight.y = out_c * 4 * 3 + 2 * 3 + j / 3;
+           weight_z = read_imageh(filter, sampler, pos_of_weight);
+           output.z += dot(input[j], weight_z);
+
+           pos_of_weight.y = out_c * 4 * 3 + 3 * 3 + j / 3;
+           weight_w = read_imageh(filter, sampler, pos_of_weight);
+           output.w += dot(input[j], weight_w);
+
+           j = 7;
+           pos_of_weight.x = i * 3 + j % 3;
+           pos_of_weight.y = out_c * 4 * 3 + 0 * 3 + j / 3;
+           weight_x = read_imageh(filter, sampler, pos_of_weight);
+           output.x += dot(input[j], weight_x);
+
+           pos_of_weight.y = out_c * 4 * 3 + 1 * 3 + j / 3;
+           weight_y = read_imageh(filter, sampler, pos_of_weight);
+           output.y += dot(input[j], weight_y);
+
+           pos_of_weight.y = out_c * 4 * 3 + 2 * 3 + j / 3;
+           weight_z = read_imageh(filter, sampler, pos_of_weight);
+           output.z += dot(input[j], weight_z);
+
+           pos_of_weight.y = out_c * 4 * 3 + 3 * 3 + j / 3;
+           weight_w = read_imageh(filter, sampler, pos_of_weight);
+           output.w += dot(input[j], weight_w);
+
+           j = 8;
+           pos_of_weight.x = i * 3 + j % 3;
+           pos_of_weight.y = out_c * 4 * 3 + 0 * 3 + j / 3;
+           weight_x = read_imageh(filter, sampler, pos_of_weight);
+           output.x += dot(input[j], weight_x);
+
+           pos_of_weight.y = out_c * 4 * 3 + 1 * 3 + j / 3;
+           weight_y = read_imageh(filter, sampler, pos_of_weight);
+           output.y += dot(input[j], weight_y);
+
+           pos_of_weight.y = out_c * 4 * 3 + 2 * 3 + j / 3;
+           weight_z = read_imageh(filter, sampler, pos_of_weight);
+           output.z += dot(input[j], weight_z);
+
+           pos_of_weight.y = out_c * 4 * 3 + 3 * 3 + j / 3;
+           weight_w = read_imageh(filter, sampler, pos_of_weight);
+           output.w += dot(input[j], weight_w);
+
     }
 
 #ifdef BATCH_NORM
@@ -525,3 +691,11 @@ __kernel void conv_1x1_4(__private const int global_size_dim0,
 }
 
 */
+
+
+
+
+
+
+
+
