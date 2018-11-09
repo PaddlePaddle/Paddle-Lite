@@ -37,10 +37,6 @@ class LookupOp : public framework::OperatorWithKernel<
       : framework::OperatorWithKernel<DeviceType, LookupParam<DeviceType>,
                                       operators::LookupKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, LookupParam<DeviceType>,
-      operators::LookupKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 };
 

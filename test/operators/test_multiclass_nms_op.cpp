@@ -111,9 +111,8 @@ template class TestMultiClassNMSOp<CPU>;
 int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run MulticlassNMS Test";
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
   auto program = loader.Load(std::string(g_mobilenet_ssd));
-
   paddle_mobile::framework::Tensor inputx1;
   SetupTensor<float>(&inputx1, {1, 2, 4}, static_cast<float>(0),
                      static_cast<float>(1));

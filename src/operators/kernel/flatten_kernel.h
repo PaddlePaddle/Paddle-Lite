@@ -28,7 +28,7 @@ template <typename DeviceType, typename T>
 class FlattenKernel
     : public framework::OpKernelBase<DeviceType, FlattenParam<DeviceType>> {
  public:
-  void Compute(const FlattenParam<DeviceType>& param) const;
+  void Compute(const FlattenParam<DeviceType>& param);
   bool Init(FlattenParam<DeviceType>* param);
 };
 }  // namespace operators

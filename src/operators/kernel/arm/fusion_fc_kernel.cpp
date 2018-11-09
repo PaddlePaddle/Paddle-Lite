@@ -26,8 +26,7 @@ bool FusionFcKernel<CPU, float>::Init(FusionFcParam<CPU> *param) {
 }
 
 template <>
-void FusionFcKernel<CPU, float>::Compute(
-    const FusionFcParam<CPU> &param) const {
+void FusionFcKernel<CPU, float>::Compute(const FusionFcParam<CPU> &param) {
   FusionFcCompute<float>(param);
   param.Out()->set_lod(param.InputX()->lod());
 }

@@ -26,7 +26,7 @@ bool MulKernel<CPU, float>::Init(MulParam<CPU> *param) {
 }
 
 template <>
-void MulKernel<CPU, float>::Compute(const MulParam<CPU> &param) const {
+void MulKernel<CPU, float>::Compute(const MulParam<CPU> &param) {
   MulCompute<float>(param);
   param.Out()->set_lod(param.InputX()->lod());
 }

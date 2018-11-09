@@ -26,7 +26,7 @@ bool ReluKernel<CPU, float>::Init(ReluParam<CPU> *param) {
 }
 
 template <>
-void ReluKernel<CPU, float>::Compute(const ReluParam<CPU> &param) const {
+void ReluKernel<CPU, float>::Compute(const ReluParam<CPU> &param) {
   ReluCompute<float>(param);
 }
 

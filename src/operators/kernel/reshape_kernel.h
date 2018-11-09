@@ -71,7 +71,7 @@ template <typename DeviceType, typename T>
 class ReshapeKernel
     : public framework::OpKernelBase<DeviceType, ReshapeParam<DeviceType>> {
  public:
-  void Compute(const ReshapeParam<DeviceType>& param) const;
+  void Compute(const ReshapeParam<DeviceType>& param);
   bool Init(ReshapeParam<DeviceType>* param);
 };
 }  // namespace operators

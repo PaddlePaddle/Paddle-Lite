@@ -112,7 +112,7 @@ template class TestFcOp<CPU>;
 int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run Fc Test";
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
   //    "../../../test/models/googlenet"
   auto program = loader.Load(g_googlenet);
   paddle_mobile::framework::ProgramOptimize optimize;

@@ -114,7 +114,7 @@ template class TestBoxCoderOp<CPU>;
 int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run BoxCoderOp Test";
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
   auto program = loader.Load(std::string(g_mobilenet_ssd));
 
   paddle_mobile::framework::Tensor priorbox;

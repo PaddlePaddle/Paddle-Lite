@@ -23,8 +23,17 @@ limitations under the License. */
 #include "framework/scope.h"
 #include "framework/tensor.h"
 #include "framework/variable.h"
-#ifdef PADDLE_MOBILE_FPGA
-#include "fpga/api.h"
+
+#ifdef PADDLE_MOBILE_FPGA_V1
+#include "fpga/V1/api.h"
+#endif
+
+#ifdef PADDLE_MOBILE_FPGA_V2
+#include "fpga/V2/api.h"
+#endif
+
+#ifdef PADDLE_MOBILE_CL
+#include "framework/cl/cl_image.h"
 #endif
 
 namespace paddle_mobile {
@@ -47,6 +56,17 @@ struct DtypeTensorTrait {
   // or the same type.
   typedef framework::Tensor rtype;
 };
+
+#ifdef PADDLE_MOBILE_CL
+template <>
+struct DtypeTensorTrait<GPU_CL> {
+  // This is the type we obtained in variable.
+  typedef framework::CLImage gtype;
+  // This type will be the parent class type
+  // or the same type.
+  typedef framework::CLImage rtype;
+};
+#endif
 
 class OpParam {
  protected:
@@ -397,6 +417,13 @@ class ConvParam : public OpParam {
 
   const int &Groups() const { return groups; }
 
+#ifdef PADDLE_MOBILE_CL
+  int Offset() const { return offset_; }
+
+  int SetOffset(int in_offset) { offset_ = in_offset; }
+
+#endif
+
  private:
   RType *input_;
   RType *output_;
@@ -405,6 +432,20 @@ class ConvParam : public OpParam {
   vector<int> paddings_;
   vector<int> dilations_;
   int groups;
+
+#ifdef PADDLE_MOBILE_CL
+  int offset_;
+#endif
+
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::SplitConvArgs fpga_conv_args;
+
+ public:
+  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
+#endif
 };
 template <typename Dtype>
 Print &operator<<(Print &printer, const ConvParam<Dtype> &conv_param);
@@ -549,15 +590,6 @@ class MulParam : OpParam {
   GType *out_;
   int x_num_col_dims_;
   int y_num_col_dims_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 
@@ -715,6 +747,14 @@ class BatchNormParam : OpParam {
 
   const string &DataFormat() const { return data_format_; }
 
+  void SetNewScale(RType *new_scale) { new_scale_ = new_scale; }
+
+  void SetNewBias(RType *new_bias) { new_bias_ = new_bias; }
+
+  const RType *NewScale() const { return new_scale_; }
+
+  const RType *NewBias() const { return new_bias_; }
+
  private:
   RType *input_x_;
   RType *output_y_;
@@ -726,6 +766,8 @@ class BatchNormParam : OpParam {
   float momentum_;
   bool is_test_;
   string data_format_;
+  RType *new_bias_;
+  RType *new_scale_;
 };
 #endif
 
@@ -1034,18 +1076,18 @@ class FeedParam : public OpParam {
 
  public:
   FeedParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-            const AttributeMap &attrs, Scope *scope) {
-    input_x_ = InputXFrom<GType>(inputs, *scope);
-    out_ = OutFrom<GType>(outputs, *scope);
-    auto var = scope->Var("batch_size");
+            const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+    auto var = scope.FindVar("batch_size");
     batch_size = var->GetValue<int>();
   }
-  const GType *InputX() const { return input_x_; }
+  const LoDTensor *InputX() const { return input_x_; }
   GType *Out() const { return out_; }
   const int BatchSize() const { return batch_size; }
 
  private:
-  GType *input_x_;
+  LoDTensor *input_x_;
   GType *out_;
   int batch_size;
 };
@@ -1059,14 +1101,19 @@ class FetchParam : public OpParam {
   FetchParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
              const AttributeMap &attrs, const Scope &scope) {
     input_x_ = InputXFrom<GType>(inputs, scope);
-    out_ = OutFrom<GType>(outputs, scope);
+    out_ = OutFrom(outputs, scope);
   }
+
   const RType *InputX() const { return input_x_; }
-  RType *Out() const { return out_; }
+  Tensor *Out() const { return out_; }
+
+  static Tensor *OutFrom(const VariableNameMap &outputs, const Scope &scope) {
+    return GetVarValue<LoDTensor>("Out", outputs, scope);
+  }
 
  private:
   RType *input_x_;
-  RType *out_;
+  Tensor *out_;
 };
 
 #ifdef FILL_CONSTANT_OP
@@ -1291,23 +1338,23 @@ class Reshape2Param : public OpParam {
     }
   }
 
-  const RType *InputX() const { return input_x_; }
+  const GType *InputX() const { return input_x_; }
 
-  const RType *InputShape() const { return input_shape_; }
+  const GType *InputShape() const { return input_shape_; }
 
-  RType *Out() const { return out_; }
+  GType *Out() const { return out_; }
 
-  RType *OutputXShape() const { return output_xshape_; }
+  GType *OutputXShape() const { return output_xshape_; }
 
   const vector<int> &Shape() const { return shape_; }
 
   const bool &Inplace() const { return inplace_; }
 
  private:
-  RType *input_x_;
-  RType *input_shape_;
-  RType *out_;
-  RType *output_xshape_;
+  GType *input_x_;
+  GType *input_shape_;
+  GType *out_;
+  GType *output_xshape_;
   vector<int> shape_;
   bool inplace_;
 };
@@ -1447,13 +1494,13 @@ class ResizeParam : public OpParam {
  * @b op 层实例化好这个 param 传递给 kernel 层使用
  * */
 template <typename Dtype>
-class ReluParam : public OpParam {
+class ReluParamBase : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
   typedef typename DtypeTensorTrait<Dtype>::rtype RType;
 
  public:
-  ReluParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-            const AttributeMap &attrs, const Scope &scope) {
+  ReluParamBase(const VariableNameMap &inputs, const VariableNameMap &outputs,
+                const AttributeMap &attrs, const Scope &scope) {
     input_x_ = InputXFrom<GType>(inputs, scope);
     out_ = OutFrom<GType>(outputs, scope);
   }
@@ -1466,6 +1513,25 @@ class ReluParam : public OpParam {
   RType *input_x_;
   RType *out_;
 };
+
+template <typename Dtype>
+class ReluParam : public ReluParamBase<Dtype> {
+ public:
+  using ReluParamBase<Dtype>::ReluParamBase;
+};
+
+#ifdef PADDLE_MOBILE_CL
+template <>
+class ReluParam<GPU_CL> : public ReluParamBase<GPU_CL> {
+ public:
+  using ReluParamBase<GPU_CL>::ReluParamBase;
+  framework::CLImage &getMidImage() { return midImage; }
+
+ private:
+  framework::CLImage midImage;
+};
+#endif
+
 #endif
 
 #ifdef PRELU_OP
@@ -1576,15 +1642,6 @@ class FusionConvAddParam : public ConvParam<Dtype> {
   RType *bias_;
   int axis_;
   RType *output_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 
 template <typename Dtype>
@@ -1631,15 +1688,6 @@ class FusionConvAddPReluParam : public ConvParam<Dtype> {
   RType *output_;
   RType *alpha_;
   std::string mode_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 
@@ -1689,15 +1737,6 @@ class FusionConvAddAddPReluParam : public ConvParam<Dtype> {
   std::string keyOutput_;
   std::string keyX1_;
   std::string keyY1_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 
@@ -1764,15 +1803,6 @@ class FusionConvAddBNReluParam : public ConvParam<Dtype> {
   bool is_test_;
   RType *new_bias_;
   RType *new_scale_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 
@@ -1850,15 +1880,6 @@ class FusionConvBNAddReluParam : public ConvParam<Dtype> {
   std::string keyBNY_;
   std::string keyX_;
   std::string keyY_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 
@@ -1917,15 +1938,6 @@ class FusionConvBNParam : public ConvParam<Dtype> {
   bool is_test_;
   RType *new_bias_;
   RType *new_scale_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 
@@ -1992,15 +2004,6 @@ class FusionConvAddBNParam : public ConvParam<Dtype> {
   bool is_test_;
   RType *new_bias_;
   RType *new_scale_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 
@@ -2118,15 +2121,6 @@ class FusionConvBNReluParam : public ConvParam<Dtype> {
   bool is_test_;
   RType *new_bias_;
   RType *new_scale_;
-#ifdef PADDLE_MOBILE_FPGA
-
- private:
-  fpga::SplitConvArgs fpga_conv_args;
-
- public:
-  const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
-  void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
-#endif
 };
 #endif
 

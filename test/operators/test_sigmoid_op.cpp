@@ -15,7 +15,7 @@ limitations under the License. */
 #include "../../src/operators/kernel/central-arm-func/sigmoid_arm_func.h"
 #include "../../src/operators/kernel/sigmoid_kernel.h"
 #include "../test_helper.h"
-#include "io/executor.h"
+#include "framework/executor.h"
 
 int main() {
   paddle_mobile::framework::Tensor input;

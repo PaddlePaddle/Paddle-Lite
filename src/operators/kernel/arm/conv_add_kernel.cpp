@@ -25,8 +25,7 @@ bool ConvAddKernel<CPU, float>::Init(FusionConvAddParam<CPU> *param) {
 }
 
 template <>
-void ConvAddKernel<CPU, float>::Compute(
-    const FusionConvAddParam<CPU> &param) const {
+void ConvAddKernel<CPU, float>::Compute(const FusionConvAddParam<CPU> &param) {
   ConvAddCompute<float>(param);
 }
 

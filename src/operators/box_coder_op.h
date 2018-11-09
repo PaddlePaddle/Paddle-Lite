@@ -39,10 +39,6 @@ class BoxCoderOp : public framework::OperatorWithKernel<
       : framework::OperatorWithKernel<DeviceType, BoxCoderParam<DeviceType>,
                                       operators::BoxCoderKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, BoxCoderParam<DeviceType>,
-      operators::BoxCoderKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:

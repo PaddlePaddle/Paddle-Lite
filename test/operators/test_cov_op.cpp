@@ -16,7 +16,7 @@ limitations under the License. */
 #include "operators/conv_op.h"
 
 int main() {
-  paddle_mobile::Loader<paddle_mobile::GPU_MALI> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::GPU_MALI> loader;
   //  ../models/image_classification_resnet.inference.model
   auto program = loader.Load(g_googlenet);
 

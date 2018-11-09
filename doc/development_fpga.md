@@ -1,6 +1,6 @@
 # FPGA开发文档
 
-FPGA平台的代码在Xilinx ZCU102 revision 1.0开发板测试Resnet50成功，预测结果正确。
+FPGA平台的代码分为V1和V2。其中V1在Xilinx ZCU102 revision 1.0开发板测试Resnet50成功，预测结果正确。以下描述适用于复现V1运行的结果。
 
 ## 准备硬件
 ___
@@ -17,7 +17,7 @@ ___
 ## 编译工程
 ___
 1. 将最新的paddle mobile 代码复制到ZCU102开发板中。
-2. 进入paddle-mobile根目录， CMakeLists.txt 设置平台为 option(FPGA "fpga support" ON)。CPU和MALI\_GPU选项设置为OFF。
+2. 进入paddle-mobile根目录， CMakeLists.txt 设置平台为 option(FPGA "fpga support" ON)。CPU和MALI\_GPU选项设置为OFF。设置option(FPGAV1 "fpga v1" ON), option(FPGAV2 "fpga v2" OFF)。
 2. 执行以下命令，可在./test/build下生成test-resnet50可执行程序。
     * mkdir build
     * cd build
