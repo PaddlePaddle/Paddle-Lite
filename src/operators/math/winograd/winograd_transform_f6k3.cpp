@@ -13,8 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 // Inspired by https://arxiv.org/abs/1509.09308 and
-// https://github.com/andravin/wincnn
-// Refered from nnpack and ncnn project
+// https://github.com/andravin/wincnn Refered from nnpack and ncnn project
 
 #include "operators/math/pad.h"
 #include "operators/math/winograd/winograd_transform.h"
@@ -51,7 +50,7 @@ void winograd_transform_weight<8, 3>(const framework::Tensor &weight,
 #ifdef __aarch64__
   remain_start = 0;
 #else
-  for (int oc = 0; oc < out_channel; oc += 4) {
+  for (int oc = 0; oc < out_channel - 3; oc += 4) {
     float gw[96];                                       // gw[3][8][4]
     const float *inptr0 = inptr + oc * in_channel * 9;  //
     const float *inptr1 = inptr + (oc + 1) * in_channel * 9;
@@ -64,7 +63,7 @@ void winograd_transform_weight<8, 3>(const framework::Tensor &weight,
       asm volatile(
           "vld1.32    {d0-d1}, [%[tm_ptr]]          \n"
 
-          "mov        r0, #6                        \n"
+          "mov        r0, #24                       \n"
           "vld1.32    {d2-d5}, [%[inptr0]], r0      \n"
           "vld1.32    {d6-d9}, [%[inptr1]], r0      \n"
           "vld1.32    {d10-d13}, [%[inptr2]], r0    \n"
@@ -146,19 +145,15 @@ void winograd_transform_weight<8, 3>(const framework::Tensor &weight,
 
           "vst1.32    {d8-d9}, [%[gw_ptr]]!         \n"
 
-          "mov        r0, #3                        \n"
-          "vld1.32    {d2-d5}, [%[inptr0]], r0      \n"
-          "vld1.32    {d6-d9}, [%[inptr1]], r0      \n"
-          "vld1.32    {d10-d13}, [%[inptr2]], r0    \n"
-          "vld1.32    {d14-d17}, [%[inptr3]], r0    \n"
+          "mov        r0, #12                       \n"
+          "vld1.32    {d2-d3}, [%[inptr0]], r0      \n"
+          "vld1.32    {d6-d7}, [%[inptr1]], r0      \n"
+          "vld1.32    {d10-d11}, [%[inptr2]], r0    \n"
+          "vld1.32    {d14-d15}, [%[inptr3]], r0    \n"
           "vtrn.32    q1, q3                        \n"
-          "vtrn.32    q2, q4                        \n"
           "vtrn.32    q5, q7                        \n"
-          "vtrn.32    q6, q8                        \n"
           "vswp.32    d3, d10                       \n"
           "vswp.32    d7, d14                       \n"
-          "vswp.32    d5, d12                       \n"
-          "vswp.32    d9, d16                       \n"
 
           // q1: g0, q3: g1, q5: g2
           "vst1.32    {d2-d3}, [%[gw_ptr]]!         \n"
@@ -194,7 +189,7 @@ void winograd_transform_weight<8, 3>(const framework::Tensor &weight,
 
           "vst1.32    {d10-d11}, [%[gw_ptr]]!       \n"
           : [gw_ptr] "+r"(gw_ptr), [inptr0] "+r"(inptr0), [inptr1] "+r"(inptr1),
-            [inptr2] "+r"(inptr0), [inptr3] "+r"(inptr3)
+            [inptr2] "+r"(inptr2), [inptr3] "+r"(inptr3)
           : [tm_ptr] "r"((float *)transform_matrix)
           : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
             "q8", "q9", "q10", "q11", "q12", "q13", "r0");
@@ -202,8 +197,8 @@ void winograd_transform_weight<8, 3>(const framework::Tensor &weight,
       float *gw_ptr0 = gw;
       float *gw_ptr1 = gw + 32;
       float *gw_ptr2 = gw + 64;
-      float *outptr0 = outptr + (ic << 2);  // ic * 4
-      int steps = (in_channel << 2);        // in_channel * 4
+      float *outptr0 = outptr + (ic << 2);            // ic * 4
+      int steps = (in_channel << 2) * sizeof(float);  // in_channel * 4
       asm volatile(
           "vld1.32    {d0-d1}, [%[tm_ptr]]               \n"
           "mov        r0, #8                             \n"
@@ -237,7 +232,8 @@ void winograd_transform_weight<8, 3>(const framework::Tensor &weight,
           "vmul.f32   q13, q13, d1[0]                    \n"
           "vst1.32    {d26-d27}, [%[outptr0]], %[steps]  \n"
 
-          "vadd.f32   q12, q2, q9                        \n"
+          // w5 = ((g2 + 4 * g0) + 2 * g1) * (1.0 / 180)
+          "vadd.f32   q12, q3, q9                        \n"
           "vadd.f32   q13, q12, q10                      \n"
           "vmul.f32   q13, q13, d1[1]                    \n"
           "vst1.32    {d26-d27}, [%[outptr0]], %[steps]  \n"
@@ -260,57 +256,70 @@ void winograd_transform_weight<8, 3>(const framework::Tensor &weight,
 
   // remain output channel
   for (int oc = remain_start; oc < out_channel; ++oc) {
-    float gw[8][3];                                     // gw[3][8]
+    float gw[3][8];                                     // gw[3][8]
     const float *inptr0 = inptr + oc * in_channel * 9;  //
-    // oc * 64 * in_channel + oc % 4
-    int offset = ((oc * in_channel) << 6) + oc & 0x3;
+    // (oc / 4) * 64 * in_channel * 4 + oc % 4
+    int offset = ((oc & 0xFFFC) << 6) * in_channel + (oc & 0x3);
     int steps = (in_channel << 2);  // in_channel * 4
     float *outptr = trans_outptr + offset;
     for (int ic = 0; ic < in_channel; ++ic) {
-      for (int i = 0; i < 3; ++i) {
-        float g0 = inptr0[i];
-        float g1 = inptr0[3 + i];
-        float g2 = inptr0[6 + i];
+      for (int i = 0; i < 3; ++i, inptr0 += 3) {
+        float g0 = inptr0[0];
+        float g1 = inptr0[1];
+        float g2 = inptr0[2];
         float d0 = g0 + g2;
         float d1 = g0 + 4 * g2;
         float d2 = g2 + 4 * g0;
         float d3 = 2 * g1;
-        gw[0][i] = g0;
-        gw[1][i] = -2.f / 9 * (d0 + g1);  // -2.f/9 * (g0 + g1 + g2)
-        gw[2][i] = -2.f / 9 * (d0 - g1);  // -2.f/9 * (g0 - g1 + g2)
-        gw[3][i] = 1.f / 90 * (d1 + d3);  // 1.f/90 * (g0 + 2 * g1 + 4 * g2)
-        gw[4][i] = 1.f / 90 * (d1 - d3);  // 1.f/90 * (g0 - 2 * g1 + 4 * g2)
-        gw[5][i] = 8.f / 45 * (d2 + d3);  // 8.f/45 * (4 * g0 + 2 * g1 + g2)
-        gw[6][i] = 8.f / 45 * (d2 - d3);  // 8.f/45 * (4 * g0 - 2 * g1 + g2)
-        gw[7][i] = g2;
+        gw[i][0] = g0;
+        gw[i][1] = -2.f / 9 * (d0 + g1);   // -2.f/9 * (g0 + g1 + g2)
+        gw[i][2] = -2.f / 9 * (d0 - g1);   // -2.f/9 * (g0 - g1 + g2)
+        gw[i][3] = 1.f / 90 * (d1 + d3);   // 1.f/90 * (g0 + 2 * g1 + 4 * g2)
+        gw[i][4] = 1.f / 90 * (d1 - d3);   // 1.f/90 * (g0 - 2 * g1 + 4 * g2)
+        gw[i][5] = 1.f / 180 * (d2 + d3);  // 1.f/180 * (4 * g0 + 2 * g1 + g2)
+        gw[i][6] = 1.f / 180 * (d2 - d3);  // 1.f/180 * (4 * g0 - 2 * g1 + g2)
+        gw[i][7] = g2;
       }
-      inptr0 += 9;
-      outptr += ic * 4;
       for (int i = 0; i < 8; ++i) {
-        float g0 = gw[i][0];
-        float g1 = gw[i][1];
-        float g2 = gw[i][2];
+        float g0 = gw[0][i];
+        float g1 = gw[1][i];
+        float g2 = gw[2][i];
         float d0 = g0 + g2;
         float d1 = g0 + 4 * g2;
         float d2 = g2 + 4 * g0;
         float d3 = 2 * g1;
         int offset = i * 8 * steps;
-        outptr[offset] = gw[i][0];
+        outptr[offset] = g0;
         outptr[offset + 1 * steps] = -2.f / 9 * (d0 + g1);
         outptr[offset + 2 * steps] = -2.f / 9 * (d0 - g1);
         outptr[offset + 3 * steps] = 1.f / 90 * (d1 + d3);
         outptr[offset + 4 * steps] = 1.f / 90 * (d1 - d3);
-        outptr[offset + 5 * steps] = 8.f / 45 * (d2 + d3);
-        outptr[offset + 6 * steps] = 8.f / 45 * (d2 - d3);
-        outptr[offset + 7 * steps] = gw[i][2];
+        outptr[offset + 5 * steps] = 1.f / 180 * (d2 + d3);
+        outptr[offset + 6 * steps] = 1.f / 180 * (d2 - d3);
+        outptr[offset + 7 * steps] = g2;
       }
+      outptr += 4;
     }
   }
+
+  //  for (int i = 0; i < output->numel(); ++i) {
+  //    DLOG << "TransK[" << i << "] = " << trans_outptr[i];
+  //  }
 }
 
 template <>
 void winograd_transform_input<8, 3>(const framework::Tensor &input,
                                     framework::Tensor *output) {
+  /*
+   * x0 = (d0 - d6) + (d4 - d2) * 5.25
+   * x1 = (d2 + d6) - 4.25 * (d4 + d3) + (d1 + d5)
+   * x2 = (d2 + d6) - 4.25 * (d4 - d3) - (d1 + d5)
+   * x3 = (0.25 * d2 - 1.25 * d4 + d6) + (0.5 * d1 - 2.5 * d3 + 2 * d5)
+   * x4 = (0.25 * d2 - 1.25 * d4 + d6) - (0.5 * d1 - 2.5 * d3 + 2 * d5)
+   * x5 = (4 * d2 - 5 * d4 + d6) + (2 * d1 - 2.5 * d3 + 0.5 * d5)
+   * x6 = (4 * d2 - 5 * d4 + d6) - (2 * d1 - 2.5 * d3 + 0.5 * d5)
+   * x7 = (d7 - d1) + (d3 - d5) * 5.25
+   */
   // pack input to [8 * roundup(h/6), 8 * roundup(w/6), channel] tiles
   int channel = input.dims()[1];
   int height = input.dims()[2];
@@ -346,8 +355,12 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
   size_t image_size = height * width;
   const float transform_matrix[8] = {5.25f, -5.f,   -4.25f, -2.5f,
                                      2.f,   -1.25f, 0.5f,   0.25f};
+  int remain_c_start = channel & 0xFFFC;
+#if 0
+  remain_c_start = 0;
+#else
   #pragma omp parallel for
-  for (int c = 0; c < channel; c += 4) {
+  for (int c = 0; c < channel - 3; c += 4) {
     const float *in = inptr + c * image_size;
     float d_bt[64 * 4];  // d * B_t
     for (int h = 0; h < h_tiles; ++h) {
@@ -356,63 +369,64 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
         const float *in1 = in0 + image_size;
         const float *in2 = in1 + image_size;
         const float *in3 = in2 + image_size;
+        int steps = width * sizeof(float);
         float *d_bt_ptr = d_bt;
         asm volatile(
             "mov        r0, #8                          \n"
             "vld1.32    {d0-d3}, [%[tm_ptr]]            \n"
             // row loop
             "loop_r_%=:                                 \n"
-            "vld1.32    {d4-d7}, [%[in0]], %[width]     \n"
-            "vld1.32    {d8-d11}, [%[in1]], %[width]    \n"
-            "vld1.32    {d12-d15}, [%[in2]], %[width]   \n"
-            "vld1.32    {d16-d19}, [%[in3]], %[width]   \n"
-            "vtrn.32    q2, q4                          \n"
-            "vtrn.32    q3, q5                          \n"
-            "vtrn.32    q6, q8                          \n"
-            "vtrn.32    q7, q9                          \n"
-            "vswp.32    d5, d12                         \n"
-            "vswp.32    d9, d16                         \n"
-            "vswp.32    d7, d14                         \n"
-            "vswp.32    d11, d18                        \n"  // q2: d0, q3: d1,
-                                                             // ..., q9: d7
-            "vsub.f32   q10, q2, q8                     \n"
-            "vsub.f32   q11, q6, q4                     \n"
+            "vld1.32    {d4-d7}, [%[in0]], %[steps]     \n"
+            "vld1.32    {d8-d11}, [%[in1]], %[steps]    \n"
+            "vld1.32    {d12-d15}, [%[in2]], %[steps]   \n"
+            "vld1.32    {d16-d19}, [%[in3]], %[steps]   \n"
+            "vtrn.32    q2, q4                          \n"  // d0: q2, q2
+            "vtrn.32    q3, q5                          \n"  // d1: q4, q3
+            "vtrn.32    q6, q8                          \n"  // d2: q6, q4
+            "vtrn.32    q7, q9                          \n"  // d3: q8, q5
+            "vswp.32    d5, d12                         \n"  // d4: q3, q6
+            "vswp.32    d9, d16                         \n"  // d5: q5, q7
+            "vswp.32    d7, d14                         \n"  // d6: q7, q8
+            "vswp.32    d11, d18                        \n"  // d7: q9, q9
+
+            "vsub.f32   q10, q2, q7                     \n"
+            "vsub.f32   q11, q3, q6                     \n"
             "vmla.f32   q10, q11, d0[0]                 \n"  // d0 - d6 + (d4 -
                                                              // d2) * 5.25
             "vst1.32    {d20-d21}, [%[d_bt]]!           \n"
 
-            "vadd.f32   q10, q4, q8                     \n"
-            "vadd.f32   q11, q3, q7                     \n"
-            "vmla.f32   q10, q6, d1[0]                  \n"  // d2 - 4.25 * d4 +
+            "vadd.f32   q10, q6, q7                     \n"
+            "vadd.f32   q11, q4, q5                     \n"
+            "vmla.f32   q10, q3, d1[0]                  \n"  // d2 - 4.25 * d4 +
                                                              // d6
-            "vmla.f32   q11, q5, d1[0]                  \n"  // d1 - 4.25 * d3 +
+            "vmla.f32   q11, q8, d1[0]                  \n"  // d1 - 4.25 * d3 +
                                                              // d5
             "vadd.f32   q12, q10, q11                   \n"
             "vsub.f32   q13, q10, q11                   \n"
             "vst1.32    {d24-d27}, [%[d_bt]]!           \n"
 
-            "vmul.f32   q10, q4, d3[1]                  \n"  // 0.25 * d2
-            "vmul.f32   q11, q3, d3[0]                  \n"  // 0.5 * d1
-            "vadd.f32   q10, q10, q8                    \n"  // 0.25 * d2 + d6
-            "vmla.f32   q11, q7, d2[0]                  \n"  // 0.5 * d1 + 2 *
+            "vmul.f32   q10, q6, d3[1]                  \n"  // 0.25 * d2
+            "vmul.f32   q11, q4, d3[0]                  \n"  // 0.5 * d1
+            "vadd.f32   q10, q10, q7                    \n"  // 0.25 * d2 + d6
+            "vmla.f32   q11, q5, d2[0]                  \n"  // 0.5 * d1 + 2 *
                                                              // d5
-            "vmla.f32   q10, q6, d2[1]                  \n"  // 0.25 * d2 + d6
+            "vmla.f32   q10, q3, d2[1]                  \n"  // 0.25 * d2 + d6
                                                              // - 1.25 * d4
-            "vmla.f32   q11, q5, d1[1]                  \n"  // 0.5 * d1 + 2 *
+            "vmla.f32   q11, q8, d1[1]                  \n"  // 0.5 * d1 + 2 *
                                                              // d5 - 2.5 * d3
             "vadd.f32   q12, q10, q11                   \n"
             "vsub.f32   q13, q10, q11                   \n"
             "vst1.32    {d24-d27}, [%[d_bt]]!           \n"
 
-            "vmul.f32   q10, q4, d2[0]                  \n"  // 2 * d2
-            "vmul.f32   q11, q3, d2[0]                  \n"  // 2 * d1
-            "vmla.f32   q10, q6, d1[1]                  \n"  // 2 * d2 - 2.5 *
+            "vmul.f32   q10, q6, d2[0]                  \n"  // 2 * d2
+            "vmul.f32   q11, q4, d2[0]                  \n"  // 2 * d1
+            "vmla.f32   q10, q3, d1[1]                  \n"  // 2 * d2 - 2.5 *
                                                              // d4
-            "vmla.f32   q11, q5, d1[1]                  \n"  // 2 * d1 - 2.5 *
+            "vmla.f32   q11, q8, d1[1]                  \n"  // 2 * d1 - 2.5 *
                                                              // d3
-            "vmla.f32   q10, q8, d3[0]                  \n"  // 2 * d1 - 2.5 *
+            "vmla.f32   q10, q7, d3[0]                  \n"  // 2 * d1 - 2.5 *
                                                              // d3 + 0.5 * d6
-            "vmla.f32   q11, q7, d3[0]                  \n"  // 2 * d2 - 2.5 *
+            "vmla.f32   q11, q5, d3[0]                  \n"  // 2 * d2 - 2.5 *
                                                              // d4 + 0.5 * d5
             "vmul.f32   q10, q10, d2[0]                 \n"  // 4 * d1 - 5 * d3
                                                              // + d6
@@ -420,8 +434,8 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
             "vsub.f32   q13, q10, q11                   \n"
             "vst1.32    {d24-d27}, [%[d_bt]]!           \n"
 
-            "vsub.f32   q10, q9, q3                     \n"
-            "vsub.f32   q11, q5, q7                     \n"
+            "vsub.f32   q10, q9, q4                     \n"
+            "vsub.f32   q11, q8, q5                     \n"
             "vmla.f32   q10, q11, d0[0]                 \n"
             "vst1.32    {d20-d21}, [%[d_bt]]!           \n"
 
@@ -429,7 +443,7 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
             "bne        loop_r_%=                       \n"
             : [d_bt] "+r"(d_bt_ptr), [in0] "+r"(in0), [in1] "+r"(in1),
               [in2] "+r"(in2), [in3] "+r"(in3)
-            : [tm_ptr] "r"((float *)transform_matrix), [width] "r"(width)
+            : [tm_ptr] "r"((float *)transform_matrix), [steps] "r"(steps)
             : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
               "q8", "q9", "q10", "q11", "q12", "q13", "r0");
 
@@ -441,15 +455,17 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
         float *ptr5 = ptr4 + 32;
         float *ptr6 = ptr5 + 32;
         float *ptr7 = ptr6 + 32;
-        int tile_id = h * w_tiles + w;
-        int block_id = tile_id >> 3;
-        int pack_id = tile_id & 0x7;
+        int tile_indics = h * w_tiles + w;
+        int tile_block = tile_indics >> 3;
+        int block_indics = tile_indics & 0x7;
         // (tiles / 8, 64, channel, 8)
-        float *out0 = outptr + (block_id * 64 * channel + c) * 8 + pack_id;
-        int steps = channel * 8;
+        float *out0 =
+            outptr + (tile_block * 64 * channel + c) * 8 + block_indics;
+        steps = (channel - 3) * 8 * sizeof(float);
         asm volatile(
             "vld1.32    {d0-d3}, [%[tm_ptr]]            \n"
             "mov        r0, 4                           \n"
+            "mov        r1, 32                          \n"
             "loop_col_%=:                               \n"
             // col 0:
             "vld1.32    {d4-d5}, [%[ptr0]]!             \n"  // q2: d0
@@ -461,11 +477,14 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
             "vld1.32    {d16-d17}, [%[ptr6]]!           \n"  // q8: d6
             "vld1.32    {d18-d19}, [%[ptr7]]!           \n"  // q9: d7
 
-            "vsub.f32  q10, q2, q8                      \n"  // d0 - d6
-            "vsub.f32  q11, q6, q4                      \n"  // d4 - d2
-            "vmla.f32  q10, q11, d0[0]                  \n"  // d0 - d6 + (d4 -
+            "vsub.f32   q10, q2, q8                     \n"  // d0 - d6
+            "vsub.f32   q11, q6, q4                     \n"  // d4 - d2
+            "vmla.f32   q10, q11, d0[0]                 \n"  // d0 - d6 + (d4 -
                                                              // d2) * 5.25
-            "vst1.32   {d20-d21}, [%[out0]], %[steps]   \n"
+            "vst1.32    {d20[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d20[1]}, [%[out0]], r1         \n"
+            "vst1.32    {d21[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d21[1]}, [%[out0]], %[steps]   \n"
 
             "vadd.f32   q10, q4, q8                     \n"
             "vadd.f32   q11, q3, q7                     \n"
@@ -474,9 +493,15 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
             "vmla.f32   q11, q5, d1[0]                  \n"  // d1 - 4.25 * d3 +
                                                              // d5
             "vadd.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24-d25}, [%[out0]], %[steps]  \n"
+            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
             "vsub.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24-d25}, [%[out0]], %[steps]  \n"
+            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
 
             "vmul.f32   q10, q4, d3[1]                  \n"  // 0.25 * d2
             "vmul.f32   q11, q3, d3[0]                  \n"  // 0.5 * d1
@@ -488,9 +513,15 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
             "vmla.f32   q11, q5, d1[1]                  \n"  // 0.5 * d1 + 2 *
                                                              // d5 - 2.5 * d3
             "vadd.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24-d25}, [%[out0]], %[steps]  \n"
+            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
             "vsub.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24-d25}, [%[out0]], %[steps]  \n"
+            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
 
             "vmul.f32   q10, q4, d2[0]                  \n"  // 2 * d2
             "vmul.f32   q11, q3, d2[0]                  \n"  // 2 * d1
@@ -505,14 +536,23 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
             "vmul.f32   q10, q10, d2[0]                 \n"  // 4 * d1 - 5 * d3
                                                              // + d6
             "vadd.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24-d25}, [%[out0]], %[steps]  \n"
+            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
             "vsub.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24-d25}, [%[out0]], %[steps]  \n"
+            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
 
             "vsub.f32   q10, q9, q3                     \n"
             "vsub.f32   q11, q5, q7                     \n"
             "vmla.f32   q10, q11, d0[0]                 \n"
-            "vst1.32    {d24-d25}, [%[out0]], %[steps]  \n"
+            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
 
             // col 1:
             "vld1.32    {d4-d5}, [%[ptr0]]!             \n"  // q2: d0
@@ -524,11 +564,14 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
             "vld1.32    {d16-d17}, [%[ptr6]]!           \n"  // q8: d6
             "vld1.32    {d18-d19}, [%[ptr7]]!           \n"  // q9: d7
 
-            "vsub.f32  q10, q2, q8                      \n"  // d0 - d6
-            "vsub.f32  q11, q6, q4                      \n"  // d4 - d2
-            "vmla.f32  q10, q11, d0[0]                  \n"  // d0 - d6 + (d4 -
+            "vsub.f32   q10, q2, q8                     \n"  // d0 - d6
+            "vsub.f32   q11, q6, q4                     \n"  // d4 - d2
+            "vmla.f32   q10, q11, d0[0]                 \n"  // d0 - d6 + (d4 -
                                                              // d2) * 5.25
-            "vst1.32   {d20-d21}, [%[out0]], %[steps]   \n"
+            "vst1.32    {d20[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d20[1]}, [%[out0]], r1         \n"
+            "vst1.32    {d21[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d21[1]}, [%[out0]], %[steps]   \n"
 
             "vadd.f32   q10, q4, q8                     \n"
             "vadd.f32   q11, q3, q7                     \n"
@@ -537,9 +580,16 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
             "vmla.f32   q11, q5, d1[0]                  \n"  // d1 - 4.25 * d3 +
                                                              // d5
             "vadd.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24-d25}, [%[out0]], %[steps]  \n"
+            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
+
             "vsub.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24-d25}, [%[out0]], %[steps]  \n"
+            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
 
             "vmul.f32   q10, q4, d3[1]                  \n"  // 0.25 * d2
             "vmul.f32   q11, q3, d3[0]                  \n"  // 0.5 * d1
@@ -551,9 +601,16 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
             "vmla.f32   q11, q5, d1[1]                  \n"  // 0.5 * d1 + 2 *
                                                              // d5 - 2.5 * d3
             "vadd.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24-d25}, [%[out0]], %[steps]  \n"
+            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
+
             "vsub.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24-d25}, [%[out0]], %[steps]  \n"
+            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
 
             "vmul.f32   q10, q4, d2[0]                  \n"  // 2 * d2
             "vmul.f32   q11, q3, d2[0]                  \n"  // 2 * d1
@@ -568,14 +625,24 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
             "vmul.f32   q10, q10, d2[0]                 \n"  // 4 * d1 - 5 * d3
                                                              // + d6
             "vadd.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24-d25}, [%[out0]], %[steps]  \n"
+            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
+
             "vsub.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24-d25}, [%[out0]], %[steps]  \n"
+            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
 
             "vsub.f32   q10, q9, q3                     \n"
             "vsub.f32   q11, q5, q7                     \n"
             "vmla.f32   q10, q11, d0[0]                 \n"
-            "vst1.32    {d24-d25}, [%[out0]], %[steps]  \n"
+            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
 
             "subs       r0, #1                          \n"
             "bne        loop_col_%=                     \n"
@@ -584,13 +651,13 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
               [ptr5] "+r"(ptr5), [ptr6] "+r"(ptr6), [ptr7] "+r"(ptr7)
             : [tm_ptr] "r"((float *)transform_matrix), [steps] "r"(steps)
             : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
-              "q8", "q9", "q10", "q11", "q12", "q13", "r0");
+              "q8", "q9", "q10", "q11", "q12", "q13", "r0", "r1");
       }
     }
   }
+#endif
 
   // remainer channels
-  int remain_c_start = ((channel >> 2) << 2);
   for (int c = remain_c_start; c < channel; ++c) {
     const float *in = inptr + c * image_size;
     float d_bt[64];  // d * B_t
@@ -601,7 +668,7 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
         const float *in2 = in1 + width;
         const float *in3 = in2 + width;
         float *d_bt_ptr = d_bt;
-        int steps = 4 * width;
+        int steps = 4 * width * sizeof(float);
         asm volatile(
             "vld1.32    {d0-d3}, [%[tm_ptr]]            \n"
             "mov        r0, #2                          \n"
@@ -611,53 +678,53 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
             "vld1.32    {d8-d11}, [%[in1]], %[steps]    \n"
             "vld1.32    {d12-d15}, [%[in2]], %[steps]   \n"
             "vld1.32    {d16-d19}, [%[in3]], %[steps]   \n"
-            "vtrn.32    q2, q4                          \n"
-            "vtrn.32    q3, q5                          \n"
-            "vtrn.32    q6, q8                          \n"
-            "vtrn.32    q7, q9                          \n"
-            "vswp.32    d5, d12                         \n"
-            "vswp.32    d9, d16                         \n"
-            "vswp.32    d7, d14                         \n"
-            "vswp.32    d11, d18                        \n"  // q2: d0, q3: d1,
-                                                             // ..., q9: d7
-            "vsub.f32   q10, q2, q8                     \n"
-            "vsub.f32   q11, q6, q4                     \n"
+            "vtrn.32    q2, q4                          \n"  // d0: q2, q2
+            "vtrn.32    q3, q5                          \n"  // d1: q4, q3
+            "vtrn.32    q6, q8                          \n"  // d2: q6, q4
+            "vtrn.32    q7, q9                          \n"  // d3: q8, q5
+            "vswp.32    d5, d12                         \n"  // d4: q3, q6
+            "vswp.32    d9, d16                         \n"  // d5: q5, q7
+            "vswp.32    d7, d14                         \n"  // d6: q7, q8
+            "vswp.32    d11, d18                        \n"  // d7: q9, q9
+
+            "vsub.f32   q10, q2, q7                     \n"
+            "vsub.f32   q11, q3, q6                     \n"
             "vmla.f32   q10, q11, d0[0]                 \n"  // d0 - d6 + (d4 -
                                                              // d2) * 5.25"
             "vst1.32    {d20-d21}, [%[d_bt]]!           \n"
 
-            "vadd.f32   q10, q4, q8                     \n"
-            "vadd.f32   q11, q3, q7                     \n"
-            "vmla.f32   q10, q6, d1[0]                  \n"  // d2 - 4.25 * d4 +
+            "vadd.f32   q10, q6, q7                     \n"
+            "vadd.f32   q11, q4, q5                     \n"
+            "vmla.f32   q10, q3, d1[0]                  \n"  // d2 - 4.25 * d4 +
                                                              // d6
-            "vmla.f32   q11, q5, d1[0]                  \n"  // d1 - 4.25 * d3 +
+            "vmla.f32   q11, q8, d1[0]                  \n"  // d1 - 4.25 * d3 +
                                                              // d5
             "vadd.f32   q12, q10, q11                   \n"
             "vsub.f32   q13, q10, q11                   \n"
             "vst1.32    {d24-d27}, [%[d_bt]]!           \n"
 
-            "vmul.f32   q10, q4, d3[1]                  \n"  // 0.25 * d2
-            "vmul.f32   q11, q3, d3[0]                  \n"  // 0.5 * d1
-            "vadd.f32   q10, q10, q8                    \n"  // 0.25 * d2 + d6
-            "vmla.f32   q11, q7, d2[0]                  \n"  // 0.5 * d1 + 2 *
+            "vmul.f32   q10, q6, d3[1]                  \n"  // 0.25 * d2
+            "vmul.f32   q11, q4, d3[0]                  \n"  // 0.5 * d1
+            "vadd.f32   q10, q10, q7                    \n"  // 0.25 * d2 + d6
+            "vmla.f32   q11, q5, d2[0]                  \n"  // 0.5 * d1 + 2 *
                                                              // d5
-            "vmla.f32   q10, q6, d2[1]                  \n"  // 0.25 * d2 + d6
+            "vmla.f32   q10, q3, d2[1]                  \n"  // 0.25 * d2 + d6
                                                              // - 1.25 * d4
-            "vmla.f32   q11, q5, d1[1]                  \n"  // 0.5 * d1 + 2 *
+            "vmla.f32   q11, q8, d1[1]                  \n"  // 0.5 * d1 + 2 *
                                                              // d5 - 2.5 * d3
             "vadd.f32   q12, q10, q11                   \n"
             "vsub.f32   q13, q10, q11                   \n"
             "vst1.32    {d24-d27}, [%[d_bt]]!           \n"
 
-            "vmul.f32   q10, q4, d2[0]                  \n"  // 2 * d2
-            "vmul.f32   q11, q3, d2[0]                  \n"  // 2 * d1
-            "vmla.f32   q10, q6, d1[1]                  \n"  // 2 * d2 - 2.5 *
+            "vmul.f32   q10, q6, d2[0]                  \n"  // 2 * d2
+            "vmul.f32   q11, q4, d2[0]                  \n"  // 2 * d1
+            "vmla.f32   q10, q3, d1[1]                  \n"  // 2 * d2 - 2.5 *
                                                              // d4
-            "vmla.f32   q11, q5, d1[1]                  \n"  // 2 * d1 - 2.5 *
+            "vmla.f32   q11, q8, d1[1]                  \n"  // 2 * d1 - 2.5 *
                                                              // d3
-            "vmla.f32   q10, q8, d3[0]                  \n"  // 2 * d1 - 2.5 *
+            "vmla.f32   q10, q7, d3[0]                  \n"  // 2 * d1 - 2.5 *
                                                              // d3 + 0.5 * d6
-            "vmla.f32   q11, q7, d3[0]                  \n"  // 2 * d2 - 2.5 *
+            "vmla.f32   q11, q5, d3[0]                  \n"  // 2 * d2 - 2.5 *
                                                              // d4 + 0.5 * d5
             "vmul.f32   q10, q10, d2[0]                 \n"  // 4 * d1 - 5 * d3
                                                              // + d6
@@ -665,8 +732,8 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
             "vsub.f32   q13, q10, q11                   \n"
             "vst1.32    {d24-d27}, [%[d_bt]]!           \n"
 
-            "vsub.f32   q10, q9, q3                     \n"
-            "vsub.f32   q11, q5, q7                     \n"
+            "vsub.f32   q10, q9, q4                     \n"
+            "vsub.f32   q11, q8, q5                     \n"
             "vmla.f32   q10, q11, d0[0]                 \n"
             "vst1.32    {d20-d21}, [%[d_bt]]!           \n"
 
@@ -685,20 +752,23 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
         int pack_id = tile_id & 0x7;
         // (tiles / 8, 64, channel, 8)
         float *out0 = outptr + (block_id * 64 * channel + c) * 8 + pack_id;
-        steps = channel * 8;
+        float *out1 = out0 + channel * 8;
+        float *out2 = out1 + channel * 8;
+        float *out3 = out2 + channel * 8;
+        float *out4 = out3 + channel * 8;
+        float *out5 = out4 + channel * 8;
+        float *out6 = out5 + channel * 8;
+        float *out7 = out6 + channel * 8;
+        steps = 8 * channel * 8 * sizeof(float);
         asm volatile(
             "mov        r0, #2                          \n"
             "vld1.32    {d0-d3}, [%[tm_ptr]]            \n"
             // row loop
             "loop_r_%=:                                 \n"
-            "vld1.32    {d4-d5}, [%[ptr0]]!             \n"  // q2: d0
-            "vld1.32    {d6-d7}, [%[ptr0]]!             \n"  // q3: d1
-            "vld1.32    {d8-d9}, [%[ptr0]]!             \n"  // q4: d2
-            "vld1.32    {d10-d11}, [%[ptr0]]!           \n"  // q5: d3
-            "vld1.32    {d12-d13}, [%[ptr1]]!           \n"  // q6: d4
-            "vld1.32    {d14-d15}, [%[ptr1]]!           \n"  // q7: d5
-            "vld1.32    {d16-d17}, [%[ptr1]]!           \n"  // q8: d6
-            "vld1.32    {d18-d19}, [%[ptr1]]!           \n"  // q9: d7
+            "vld1.32    {d4-d7}, [%[ptr0]]!             \n"  // q2: d0, q3: d1
+            "vld1.32    {d8-d11}, [%[ptr0]]!            \n"  // q4: d2, q5: d3
+            "vld1.32    {d12-d15}, [%[ptr1]]!           \n"  // q6: d4, q7: d5
+            "vld1.32    {d16-d19}, [%[ptr1]]!           \n"  // q8: d6, q9: d7
 
             "vtrn.32    q2, q3                          \n"
             "vtrn.32    q4, q5                          \n"
@@ -725,15 +795,15 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
             "vmla.f32   q11, q5, d1[0]                  \n"  // d1 - 4.25 * d3 +
                                                              // d5
             "vadd.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24[0]}, [%[out0]], %[steps]   \n"
-            "vst1.32    {d24[1]}, [%[out0]], %[steps]   \n"
-            "vst1.32    {d25[0]}, [%[out0]], %[steps]   \n"
-            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
+            "vst1.32    {d24[0]}, [%[out1]], %[steps]   \n"
+            "vst1.32    {d24[1]}, [%[out1]], %[steps]   \n"
+            "vst1.32    {d25[0]}, [%[out1]], %[steps]   \n"
+            "vst1.32    {d25[1]}, [%[out1]], %[steps]   \n"
             "vsub.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24[0]}, [%[out0]], %[steps]   \n"
-            "vst1.32    {d24[1]}, [%[out0]], %[steps]   \n"
-            "vst1.32    {d25[0]}, [%[out0]], %[steps]   \n"
-            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
+            "vst1.32    {d24[0]}, [%[out2]], %[steps]   \n"
+            "vst1.32    {d24[1]}, [%[out2]], %[steps]   \n"
+            "vst1.32    {d25[0]}, [%[out2]], %[steps]   \n"
+            "vst1.32    {d25[1]}, [%[out2]], %[steps]   \n"
 
             "vmul.f32   q10, q4, d3[1]                  \n"  // 0.25 * d2
             "vmul.f32   q11, q3, d3[0]                  \n"  // 0.5 * d1
@@ -745,15 +815,15 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
             "vmla.f32   q11, q5, d1[1]                  \n"  // 0.5 * d1 + 2 *
                                                              // d5 - 2.5 * d3
             "vadd.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24[0]}, [%[out0]], %[steps]   \n"
-            "vst1.32    {d24[1]}, [%[out0]], %[steps]   \n"
-            "vst1.32    {d25[0]}, [%[out0]], %[steps]   \n"
-            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
+            "vst1.32    {d24[0]}, [%[out3]], %[steps]   \n"
+            "vst1.32    {d24[1]}, [%[out3]], %[steps]   \n"
+            "vst1.32    {d25[0]}, [%[out3]], %[steps]   \n"
+            "vst1.32    {d25[1]}, [%[out3]], %[steps]   \n"
             "vsub.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24[0]}, [%[out0]], %[steps]   \n"
-            "vst1.32    {d24[1]}, [%[out0]], %[steps]   \n"
-            "vst1.32    {d25[0]}, [%[out0]], %[steps]   \n"
-            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
+            "vst1.32    {d24[0]}, [%[out4]], %[steps]   \n"
+            "vst1.32    {d24[1]}, [%[out4]], %[steps]   \n"
+            "vst1.32    {d25[0]}, [%[out4]], %[steps]   \n"
+            "vst1.32    {d25[1]}, [%[out4]], %[steps]   \n"
 
             "vmul.f32   q10, q4, d2[0]                  \n"  // 2 * d2
             "vmul.f32   q11, q3, d2[0]                  \n"  // 2 * d1
@@ -768,32 +838,39 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
             "vmul.f32   q10, q10, d2[0]                 \n"  // 4 * d1 - 5 * d3
                                                              // + d6
             "vadd.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24[0]}, [%[out0]], %[steps]   \n"
-            "vst1.32    {d24[1]}, [%[out0]], %[steps]   \n"
-            "vst1.32    {d25[0]}, [%[out0]], %[steps]   \n"
-            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
+            "vst1.32    {d24[0]}, [%[out5]], %[steps]   \n"
+            "vst1.32    {d24[1]}, [%[out5]], %[steps]   \n"
+            "vst1.32    {d25[0]}, [%[out5]], %[steps]   \n"
+            "vst1.32    {d25[1]}, [%[out5]], %[steps]   \n"
             "vsub.f32   q12, q10, q11                   \n"
-            "vst1.32    {d24[0]}, [%[out0]], %[steps]   \n"
-            "vst1.32    {d24[1]}, [%[out0]], %[steps]   \n"
-            "vst1.32    {d25[0]}, [%[out0]], %[steps]   \n"
-            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
+            "vst1.32    {d24[0]}, [%[out6]], %[steps]   \n"
+            "vst1.32    {d24[1]}, [%[out6]], %[steps]   \n"
+            "vst1.32    {d25[0]}, [%[out6]], %[steps]   \n"
+            "vst1.32    {d25[1]}, [%[out6]], %[steps]   \n"
 
             "vsub.f32   q10, q9, q3                     \n"
             "vsub.f32   q11, q5, q7                     \n"
             "vmla.f32   q10, q11, d0[0]                 \n"
-            "vst1.32    {d20[0]}, [%[out0]], %[steps]   \n"
-            "vst1.32    {d20[1]}, [%[out0]], %[steps]   \n"
-            "vst1.32    {d21[0]}, [%[out0]], %[steps]   \n"
-            "vst1.32    {d21[1]}, [%[out0]], %[steps]   \n"
+            "vst1.32    {d20[0]}, [%[out7]], %[steps]   \n"
+            "vst1.32    {d20[1]}, [%[out7]], %[steps]   \n"
+            "vst1.32    {d21[0]}, [%[out7]], %[steps]   \n"
+            "vst1.32    {d21[1]}, [%[out7]], %[steps]   \n"
 
             "subs       r0, #1                          \n"
             "bne        loop_r_%=                       \n"
-            : [out0] "+r"(out0), [ptr0] "+r"(ptr0), [ptr1] "+r"(ptr1)
+            : [out0] "+r"(out0), [out1] "+r"(out1), [out2] "+r"(out2),
+              [out3] "+r"(out3), [out4] "+r"(out4), [out5] "+r"(out5),
+              [out6] "+r"(out6), [out7] "+r"(out7), [ptr0] "+r"(ptr0),
+              [ptr1] "+r"(ptr1)
             : [tm_ptr] "r"((float *)transform_matrix), [steps] "r"(steps)
             : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
               "q8", "q9", "q10", "q11", "q12", "q13", "r0");
       }
     }
+  }
+
+  for (int i = 0; i < output->numel(); ++i) {
+    DLOG << "TransInput[" << i << "] = " << outptr[i];
   }
 }
 
@@ -828,7 +905,7 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
         float *out3 = out2 + 8 * tiles * 64;      // out channel 3
         int inter_channel = in_channel >> 1;
         int remain_channel = in_channel & 0x1;
-        int steps = 64;
+        int steps = 64 * sizeof(float);
         asm volatile(
             "veor       q8, q8, q8                     \n"
             "veor       q9, q9, q9                     \n"
@@ -864,8 +941,8 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
             "vmla.f32   q14, q4, d3[1]                 \n"
             "vmla.f32   q15, q5, d3[1]                 \n"
 
-            "subs      %[inter_channel], #1            \n"
-            "bne       loop_4c_%=                      \n"
+            "subs       %[inter_channel], #1           \n"
+            "bne        loop_4c_%=                     \n"
 
             // cmp remain channel > 0
             "cmp_remain_%=:                            \n"
@@ -935,6 +1012,10 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
       }
     }
   }
+
+  for (int i = 0; i < uv_trans.numel(); ++i) {
+    DLOG << "uv_trans[" << i << "] = " << uv_trans_ptr[i];
+  }
   /*
    * s0 = m0 + (m1 + m2) +      (m3 + m4) + 32 * (m5 + m6)
    * s1 =      (m1 - m2) +  2 * (m3 - m4) + 16 * (m5 - m6)
@@ -951,12 +1032,19 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
   int remain_w = out_w - out_w / 6 * 6;
   float *output_ptr = output->mutable_data<float>();
   out_channel = output->dims()[1];
+  int uv_image_size = uv_trans.dims()[1] * 64;
   float transform_matrix[8] = {2.f, 4.f, 8.f, 16.f};
+
+  DLOG << "out_channel: " << out_channel;
+  DLOG << "h_tiles: " << h_tiles;
+  DLOG << "w_tiles: " << w_tiles;
+  DLOG << "remain_h: " << remain_h;
+  DLOG << "remain_w: " << remain_w;
 
   for (int oc = 0; oc < out_channel; ++oc) {
     float at_m[48];        // [6][8]
     float output_tmp[36];  // [6][6], temporarily restore results
-    const float *uv_ptr = uv_trans_ptr + oc * h_tiles * w_tiles * 64;
+    const float *uv_ptr = uv_trans_ptr + oc * uv_image_size;
     for (int tile_h = 0; tile_h < h_tiles; ++tile_h) {
       for (int tile_w = 0; tile_w < w_tiles; ++tile_w) {
         float *at_m_ptr = at_m;
@@ -1010,6 +1098,7 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
             "vst1.32    {d30-d31}, [%[at_m_ptr]]!     \n"
 
             "vadd.f32   q15, q12, q8                  \n"
+            "vadd.f32   q15, q15, q14                 \n"
             "vmla.f32   q15, q2, d1[1]                \n"
             "vst1.32    {d30-d31}, [%[at_m_ptr]]!     \n"
 
@@ -1018,7 +1107,10 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
             : [uv_ptr] "+r"(uv_ptr), [at_m_ptr] "+r"(at_m_ptr)
             : [tm_ptr] "r"((float *)transform_matrix)
             : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
-              "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15");
+              "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15", "r0");
+        for (int i = 0; i < 48; ++i) {
+          DLOG << "at_m[" << i << "] = " << at_m[i];
+        }
 
         float *at_m_ptr0 = at_m;
         float *at_m_ptr1 = at_m + 24;
@@ -1056,8 +1148,8 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
               "vmul.f32   q7, q11, d0[0]                \n"  // 2 * (m5 + m6)
 
               "vadd.f32   q1, q1, q9                   \n"
-              "vadd.f32   q1, q1, q10                 \n"
-              "vmla.f32   q1, q3, d1[1]                \n"
+              "vadd.f32   q1, q1, q10                  \n"
+              "vmla.f32   q1, q7, d1[1]                \n"
 
               "vadd.f32   q2, q12, q6                  \n"
               "vmla.f32   q2, q14, d1[1]               \n"
@@ -1083,6 +1175,7 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
               "vmla.f32   q1, q10, d1[1]               \n"
 
               "vadd.f32   q2, q12, q8                  \n"
+              "vadd.f32   q2, q2, q14                  \n"
               "vmla.f32   q2, q6, d1[1]                \n"
 
               "vtrn.32    q1, q2                       \n"
@@ -1117,14 +1210,14 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
 
               "vmov.32    d19, d10                      \n"
               "vmla.f32   d19, d11, d0[1]               \n"
-              "vmla.f32   d19, d20, d1[0]               \n"
+              "vmla.f32   d19, d12, d1[0]               \n"
 
               "vmov.32    d21, d13                      \n"
               "vmla.f32   d21, d14, d1[0]               \n"
               "vmla.f32   d21, d15, d0[1]               \n"
 
-              "vtrn.32    d18, d19                      \n"
-              "vtrn.32    d20, d21                      \n"
+              "vtrn.32    d18, d20                      \n"
+              "vtrn.32    d19, d21                      \n"
               "vst1.32    {d18-d19}, [%[out_ptr4]]!     \n"
               "vst1.32    {d20-d21}, [%[out_ptr5]]!     \n"
 
@@ -1132,6 +1225,7 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
               "vmla.f32   d18, d11, d1[1]               \n"
 
               "vadd.f32   d19, d13, d9                  \n"
+              "vadd.f32   d19, d19, d15                 \n"
               "vmla.f32   d19, d16, d1[1]               \n"
 
               "vtrn.32    d18, d19                      \n"
@@ -1148,6 +1242,9 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
           float *out_ptr = output_ptr + offset;
           int remain_row = (tile_h < h_tiles - 1) ? 6 : remain_h;
           int remain_col = (tile_w < w_tiles - 1) ? 6 : remain_w;
+          for (int i = 0; i < 36; ++i) {
+            DLOG << "output_tmp[" << i << "] = " << output_tmp[i];
+          }
           for (int i = 0; i < remain_row; ++i, out_ptr += out_w) {
             memcpy(out_ptr, output_tmp + i * 6, remain_col * sizeof(float));
           }
@@ -1185,8 +1282,8 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
               "vmul.f32   q7, q11, d0[0]                \n"  // 2 * (m5 + m6)
 
               "vadd.f32   q1, q1, q9                   \n"
-              "vadd.f32   q1, q1, q10                 \n"
-              "vmla.f32   q1, q3, d1[1]                \n"
+              "vadd.f32   q1, q1, q10                  \n"
+              "vmla.f32   q1, q7, d1[1]                \n"
 
               "vadd.f32   q2, q12, q6                  \n"
               "vmla.f32   q2, q14, d1[1]               \n"
@@ -1212,6 +1309,7 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
               "vmla.f32   q1, q10, d1[1]               \n"
 
               "vadd.f32   q2, q12, q8                  \n"
+              "vadd.f32   q2, q2, q14                  \n"
               "vmla.f32   q2, q6, d1[1]                \n"
 
               "vtrn.32    q1, q2                       \n"
@@ -1246,14 +1344,14 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
 
               "vmov.32    d19, d10                      \n"
               "vmla.f32   d19, d11, d0[1]               \n"
-              "vmla.f32   d19, d20, d1[0]               \n"
+              "vmla.f32   d19, d12, d1[0]               \n"
 
               "vmov.32    d21, d13                      \n"
               "vmla.f32   d21, d14, d1[0]               \n"
               "vmla.f32   d21, d15, d0[1]               \n"
 
-              "vtrn.32    d18, d19                      \n"
-              "vtrn.32    d20, d21                      \n"
+              "vtrn.32    d18, d20                      \n"
+              "vtrn.32    d19, d21                      \n"
               "vst1.32    {d18-d19}, [%[out_ptr4]]!     \n"
               "vst1.32    {d20-d21}, [%[out_ptr5]]!     \n"
 
@@ -1261,6 +1359,7 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
               "vmla.f32   d18, d11, d1[1]               \n"
 
               "vadd.f32   d19, d13, d9                  \n"
+              "vadd.f32   d19, d19, d15                 \n"
               "vmla.f32   d19, d16, d1[1]               \n"
 
               "vtrn.32    d18, d19                      \n"
