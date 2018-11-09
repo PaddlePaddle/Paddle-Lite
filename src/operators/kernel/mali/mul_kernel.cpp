@@ -27,8 +27,7 @@ bool MulKernel<GPU_MALI, float>::Init(MulParam<GPU_MALI> *param) {
 }
 
 template <>
-void MulKernel<GPU_MALI, float>::Compute(
-    const MulParam<GPU_MALI> &param) const {
+void MulKernel<GPU_MALI, float>::Compute(const MulParam<GPU_MALI> &param) {
   const Tensor *input_x = param.InputX();
   const Tensor *input_y = param.InputY();
   Tensor *out = param.Out();

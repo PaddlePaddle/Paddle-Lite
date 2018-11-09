@@ -96,7 +96,7 @@ template class TestPolygonBoxTransformOp<CPU>;
 int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run PolygonBoxTransform Test";
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
   auto program = loader.Load(std::string(g_ocr));
 
   paddle_mobile::framework::Tensor input;

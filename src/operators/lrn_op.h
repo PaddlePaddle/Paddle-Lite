@@ -35,10 +35,6 @@ class LrnOp : public framework::OperatorWithKernel<
       : framework::OperatorWithKernel<DeviceType, LrnParam<DeviceType>,
                                       operators::LrnKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, LrnParam<DeviceType>,
-      operators::LrnKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:

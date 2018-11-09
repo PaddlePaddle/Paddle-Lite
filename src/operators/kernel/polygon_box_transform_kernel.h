@@ -27,7 +27,7 @@ class PolygonBoxTransformKernel
     : public framework::OpKernelBase<DeviceType,
                                      PolygonBoxTransformParam<DeviceType>> {
  public:
-  void Compute(const PolygonBoxTransformParam<DeviceType>& param) const;
+  void Compute(const PolygonBoxTransformParam<DeviceType>& param);
   bool Init(PolygonBoxTransformParam<DeviceType>* param);
 };
 }  // namespace operators

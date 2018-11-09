@@ -33,7 +33,7 @@ inline int Im2SeqOutputSize(int input_size, int filter_size, int padding_0,
 
 template <>
 void Im2SequenceKernel<CPU, float>::Compute(
-    const Im2SequenceParam<CPU> &param) const {
+    const Im2SequenceParam<CPU> &param) {
   const Tensor *in_x = param.Input();
   framework::LoDTensor *out = param.Output();
   out->mutable_data<float>();
@@ -56,7 +56,7 @@ void Im2SequenceKernel<CPU, float>::Compute(
   out->mutable_data<float>({batch_size * output_height * output_width,
                             img_channels * kernels[0] * kernels[1]});
   const std::vector<int> dilations({1, 1});
-  // TODO: verify
+  // TODO(): verify
   auto out_dims = out->dims();
   out->Resize({batch_size, out->numel() / batch_size});
   for (int i = 0; i < batch_size; i++) {

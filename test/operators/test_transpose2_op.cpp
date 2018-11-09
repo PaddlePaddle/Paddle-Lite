@@ -113,7 +113,7 @@ template class TestTranspose2Op<CPU>;
 int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run Transpose2 Test";
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
   auto program = loader.Load(std::string(g_ocr) + "/model",
                              std::string(g_ocr) + "/params");
 

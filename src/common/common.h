@@ -13,7 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma once
-#include <chrono>
+#include <chrono>  // NOLINT
+
+namespace paddle_mobile {
 
 using Time = decltype(std::chrono::high_resolution_clock::now());
 
@@ -25,3 +27,5 @@ inline double time_diff(Time t1, Time t2) {
   ms counter = std::chrono::duration_cast<ms>(diff);
   return counter.count() / 1000.0;
 }
+
+}  // namespace paddle_mobile

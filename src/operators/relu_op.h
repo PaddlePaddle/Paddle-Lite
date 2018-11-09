@@ -41,10 +41,6 @@ class ReluOp : public framework::OperatorWithKernel<
       : framework::OperatorWithKernel<DeviceType, ReluParam<DeviceType>,
                                       operators::ReluKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, ReluParam<DeviceType>,
-      operators::ReluKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:

@@ -8,46 +8,23 @@
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)-->
 
 
-欢迎来到 Paddle-Mobile GitHub 项目。
-
-Paddle-Mobile是PaddlePaddle组织下的项目，是一个致力于嵌入式平台的深度学习的框架。Paddle-Mobile设计思想和PaddlePaddle的最新版fluid版本保持了高度一致，同时针对嵌入式做了大量优化。设计之初就对嵌入式的性能、体积、能耗、硬件平台覆盖等方面做了考虑。
-
-## 简单搜索线上效果
-
-如下gif是简单搜索app的线上主体检测应用效果
-
-![ezgif-1-050a733dfb](http://otkwwi4x8.bkt.clouddn.com/2018-07-05-ezgif-1-050a733dfb.gif)
-
-## Demo目录
-
-[点我](https://github.com/PaddlePaddle/paddle-mobile/tree/develop/demo)
+欢迎来到 Paddle-Mobile GitHub 项目。Paddle-Mobile是PaddlePaddle组织下的项目，是一个致力于嵌入式平台的深度学习的框架。
 
 ## Features
 
-- **ARM CPU**
+- 高性能支持ARM CPU 
+- 支持Mali GPU
+- 支持Andreno GPU
+- 支持苹果设备的GPU Metal实现
+- 支持ZU5、ZU9等FPGA开发板
+- 支持树莓派等arm-linux开发板
 
-- **Mali GPU**
+## Demo
+- [ANDROID](https://github.com/xiebaiyuan/paddle-mobile-demo)
 
-- **苹果设备的GPU Metal实现**
+### 原Domo目录
 
-- **FPGA**
-
-    目前已经支持 ZCU102 开发板。
-
-- **灵活性**
-
-    * paddle-mobile cpu版不依赖任何第三库, 可进行快速集成。
-    * 使用泛型特化进行平台切换, 可灵活切换 cpu、gpu 和其他协处理器。
-    * 可根据特定的常见网络, 进行编译特定的 op, 降低编译时间, 减小包大小。
-    * 使用 docker 编译, 提供统一的编译环境。
-    * 高可拓展性, 方便拓展其他协处理器, 提供高性能 arm 算子实现, 方便其他协处理器开发者集成开发。
-    * 直接兼容 paddle-fluid 模型, 不需要额外的转换操作。
-
-- **体积**
-
-    paddle-mobile从设计之初就深入考虑到移动端的包体积的问题，cpu实现中没有外部依赖。在编译过程中，如果该网络不需要的op是完全不会被打入的。同时编译选项优化也为体积压缩提供了帮助。
-    除了二进制体积，我们对代码体积极力避免过大。整个仓库的代码体积也非常小。
-
+[https://github.com/PaddlePaddle/paddle-mobile/tree/develop/demo](https://github.com/PaddlePaddle/paddle-mobile/tree/develop/demo)
 
 ## 文档
 
@@ -62,6 +39,7 @@ Paddle-Mobile是PaddlePaddle组织下的项目，是一个致力于嵌入式平�
 * [iOS](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_ios.md)
 * [Android](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_android.md)
 * [FPGA](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_fpga.md)
+* [ARM_LINUX](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_arm_linux.md)
 
 ### 贡献文档
 - [贡献文档链接](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/CONTRIBUTING.md)
@@ -73,18 +51,22 @@ Paddle-Mobile是PaddlePaddle组织下的项目，是一个致力于嵌入式平�
 ### 1. 直接使用Paddle Fluid训练
 该方式最为可靠，推荐方式
 ### 2. caffe转为Paddle Fluid模型
-[链接](https://github.com/PaddlePaddle/models/tree/develop/fluid/image_classification/caffe2fluid)
+[https://github.com/PaddlePaddle/models/tree/develop/fluid/image_classification/caffe2fluid](https://github.com/PaddlePaddle/models/tree/develop/fluid/image_classification/caffe2fluid)
 ### 3. ONNX
 ONNX全称为“Open Neural Network Exchange”，即“开放的神经网络切换”。该项目的目的是让不同的神经网络开发框架做到互通互用。
 
 除直接使用PaddlePaddle训练fluid版本的模型外，还可以通过onnx转换得到个别Paddle fluid模型。
 
-目前，百度也在做onnx支持工作。相关转换项目在这里：[paddle-onnx](https://github.com/PaddlePaddle/paddle-onnx)。
-
-![](http://7xop3k.com1.z0.glb.clouddn.com/15311951836000.jpg)
+目前，百度也在做onnx支持工作。相关转换项目在这里：
+[https://github.com/PaddlePaddle/paddle-onnx](https://github.com/PaddlePaddle/paddle-onnx)
 
 ### 4. 部分测试模型和测试图片下载
-[下载链接](http://mms-graph.bj.bcebos.com/paddle-mobile%2FmodelsAndImages.zip)
+[http://mms-graph.bj.bcebos.com/paddle-mobile%2FmodelsAndImages.zip](http://mms-graph.bj.bcebos.com/paddle-mobile%2FmodelsAndImages.zip)
+
+<!--## 简单搜索线上效果
+
+如下gif是简单搜索app的线上主体检测应用效果
+![ezgif-1-050a733dfb](http://otkwwi4x8.bkt.clouddn.com/2018-07-05-ezgif-1-050a733dfb.gif)-->
 
 ## 问题解决
 
@@ -96,5 +78,3 @@ Paddle-Mobile 提供相对宽松的Apache-2.0开源协议 [Apache-2.0 license](L
 
 ## 旧版 Mobile-Deep-Learning
 原MDL(Mobile-Deep-Learning)工程被迁移到了这里 [Mobile-Deep-Learning](https://github.com/allonli/mobile-deep-learning) 
-
-

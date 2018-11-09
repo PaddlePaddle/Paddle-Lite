@@ -17,7 +17,7 @@ limitations under the License. */
 #include "operators/softmax_op.h"
 
 int main() {
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
   auto program = loader.Load(std::string(g_mobilenet));
   if (program.originProgram == nullptr) {
     DLOG << "program read file";

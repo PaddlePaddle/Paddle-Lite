@@ -108,7 +108,7 @@ void ResizeTensor(const Tensor* src, Tensor* dst) {
 }
 
 template <>
-void ResizeKernel<CPU, float>::Compute(const ResizeParam<CPU>& param) const {
+void ResizeKernel<CPU, float>::Compute(const ResizeParam<CPU>& param) {
   const auto* input_x = param.InputX();
   const auto& input_x_dims = input_x->dims();
   auto* out = param.Out();

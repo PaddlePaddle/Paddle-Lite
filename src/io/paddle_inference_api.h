@@ -44,7 +44,7 @@ class PaddleBuf {
   PaddleBuf(void* data, size_t length)
       : data_(data), length_(length), memory_owned_{false} {}
   // Own memory.
-  PaddleBuf(size_t length)
+  explicit PaddleBuf(size_t length)
       : data_(new char[length]), length_(length), memory_owned_(true) {}
   // Resize to `length` bytes.
   void Resize(size_t length);
@@ -121,7 +121,7 @@ struct PaddleModelMemoryPack {
 
 struct PaddleMobileConfig : public PaddlePredictor::Config {
   enum Precision { FP32 = 0 };
-  enum Device { kCPU = 0, kFPGA = 1, kGPU_MALI = 2 };
+  enum Device { kCPU = 0, kFPGA = 1, kGPU_MALI = 2, kGPU_CL = 3 };
 
   enum Precision precision;
   enum Device device;
@@ -132,6 +132,7 @@ struct PaddleMobileConfig : public PaddlePredictor::Config {
   int thread_num = 1;
   std::string prog_file;
   std::string param_file;
+  std::string cl_path;
   struct PaddleModelMemoryPack memory_pack;
 };
 

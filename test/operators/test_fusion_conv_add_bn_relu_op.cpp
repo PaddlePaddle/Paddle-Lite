@@ -17,7 +17,7 @@ limitations under the License. */
 #include "operators/fusion_conv_add_bn_relu_op.h"
 
 int main() {
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
   //  ../models/image_classification_resnet.inference.model
   auto program = loader.Load(g_mobilenet, true);
 
