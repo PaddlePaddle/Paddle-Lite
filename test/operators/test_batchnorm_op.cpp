@@ -125,7 +125,7 @@ template class TestBatchNormOp<CPU>;
 int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run BatchNormOp Test";
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
   auto program = loader.Load(std::string(g_mobilenet_ssd));
 
   /// input x (4,10,2,2)

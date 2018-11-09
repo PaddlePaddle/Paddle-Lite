@@ -62,15 +62,18 @@ if (CON GREATER -1)
 
 endif ()
 
-list(FIND NET "FPGAnets" CON)
+list(FIND NET "FPGA_NET_V1" CON)
 if (CON GREATER -1)
     ADD_EXECUTABLE(test-resnet50 fpga/test_resnet50.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-resnet50 paddle-mobile)
-
-#    ADD_EXECUTABLE(test-resnet net/test_resnet.cpp test_helper.h test_include.h executor_for_test.h)
-#    target_link_libraries(test-resnet paddle-mobile)
     set(FOUND_MATCH ON)
+endif ()
 
+list(FIND NET "FPGA_NET_V2" CON)
+if (CON GREATER -1)
+    ADD_EXECUTABLE(test-resnet50 fpga/test_resnet50.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test-resnet50 paddle-mobile)
+    set(FOUND_MATCH ON)
 endif ()
 
 list(FIND NET "mobilenetssd" CON)
@@ -342,6 +345,13 @@ if (NOT FOUND_MATCH)
     ADD_EXECUTABLE(test-fssd net/test_mobilenet_025_fssd.cpp test_helper.h test_include.h)
     target_link_libraries(test-fssd paddle-mobile)
 
+    # gen test
+    ADD_EXECUTABLE(test-mobilenetgpu  net/test_mobilenet_GPU.cpp test_helper.h  test_include.h)
+    target_link_libraries(test-mobilenetgpu paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-yologpu net/test_yologpu.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-yologpu paddle-mobile)
 
     # gen test
     ADD_EXECUTABLE(test-multi-process net/test_multi_inference_predict.cpp test_helper.h test_include.h)
@@ -350,7 +360,6 @@ if (NOT FOUND_MATCH)
     # gen test
     ADD_EXECUTABLE(test-eng net/test_eng.cpp test_helper.h test_include.h)
     target_link_libraries(test-eng paddle-mobile)
-
 
     #add_library(test-lib-size SHARED common/test_lib_size.h common/test_lib_size.cpp)
 endif ()

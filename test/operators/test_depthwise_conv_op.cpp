@@ -16,7 +16,7 @@ limitations under the License. */
 #include "operators/depthwise_conv_op.h"
 
 int main() {
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
   //  ../models/image_classification_resnet.inference.model
   auto program = loader.Load(g_mobilenet_ssd);
 

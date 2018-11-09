@@ -38,10 +38,6 @@ class ResizeOp : public framework::OperatorWithKernel<
       : framework::OperatorWithKernel<DeviceType, ResizeParam<DeviceType>,
                                       operators::ResizeKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, ResizeParam<DeviceType>,
-      operators::ResizeKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:

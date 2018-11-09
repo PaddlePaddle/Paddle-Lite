@@ -27,7 +27,7 @@ template <typename DeviceType, typename T>
 class ConcatKernel
     : public framework::OpKernelBase<DeviceType, ConcatParam<DeviceType>> {
  public:
-  void Compute(const ConcatParam<DeviceType> &param) const;
+  void Compute(const ConcatParam<DeviceType> &param);
   bool Init(ConcatParam<DeviceType> *param);
 };
 

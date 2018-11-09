@@ -26,7 +26,7 @@ bool ConvKernel<CPU, float>::Init(ConvParam<CPU> *param) {
 }
 
 template <>
-void ConvKernel<CPU, float>::Compute(const ConvParam<CPU> &param) const {
+void ConvKernel<CPU, float>::Compute(const ConvParam<CPU> &param) {
   ConvCompute<float>(param);
 }
 

@@ -27,7 +27,7 @@ bool CrfKernel<CPU, float>::Init(CrfParam<CPU> *param) {
 }
 
 template <>
-void CrfKernel<CPU, float>::Compute(const CrfParam<CPU> &param) const {
+void CrfKernel<CPU, float>::Compute(const CrfParam<CPU> &param) {
   CrfCompute<float>(param);
 }
 

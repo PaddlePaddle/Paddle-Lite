@@ -26,8 +26,7 @@ bool BoxCoderKernel<CPU, float>::Init(BoxCoderParam<CPU> *param) {
 }
 
 template <>
-void BoxCoderKernel<CPU, float>::Compute(
-    const BoxCoderParam<CPU> &param) const {
+void BoxCoderKernel<CPU, float>::Compute(const BoxCoderParam<CPU> &param) {
   BoxCoderCompute<float>(param);
 }
 

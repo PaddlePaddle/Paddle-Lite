@@ -28,7 +28,7 @@ template <typename DeviceType, typename T>
 class SplitKernel
     : public framework::OpKernelBase<DeviceType, SplitParam<DeviceType>> {
  public:
-  void Compute(const SplitParam<DeviceType>& param) const;
+  void Compute(const SplitParam<DeviceType>& param);
   bool Init(SplitParam<DeviceType>* param);
 };
 }  // namespace operators

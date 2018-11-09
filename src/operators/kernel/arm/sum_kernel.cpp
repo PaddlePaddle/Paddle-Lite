@@ -26,7 +26,7 @@ bool SumKernel<CPU, float>::Init(SumParam<CPU> *param) {
 }
 
 template <>
-void SumKernel<CPU, float>::Compute(const SumParam<CPU> &param) const {
+void SumKernel<CPU, float>::Compute(const SumParam<CPU> &param) {
   SumCompute<float>(param);
   param.Out()->set_lod(param.Inputs()[0]->lod());
 }

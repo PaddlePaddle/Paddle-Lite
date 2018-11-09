@@ -90,6 +90,8 @@ build_for_android() {
     fi
     cd "../build/release/${PLATFORM}"
     make -j 8
+    mkdir ./build/cl_kernel
+    cp ../../../src/operators/kernel/cl/cl_kernel/*  ./build/cl_kernel/
 }
 
 

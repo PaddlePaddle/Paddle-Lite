@@ -29,7 +29,7 @@ class ElementwiseAddReluKernel
     : public framework::OpKernelBase<DeviceType,
                                      ElementwiseAddReluParam<DeviceType>> {
  public:
-  void Compute(const ElementwiseAddReluParam<DeviceType> &param) const;
+  void Compute(const ElementwiseAddReluParam<DeviceType> &param);
   bool Init(ElementwiseAddReluParam<DeviceType> *param);
 };
 }  // namespace operators

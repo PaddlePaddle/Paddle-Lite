@@ -24,7 +24,7 @@ template <typename DeviceType, typename T>
 class PReluKernel
     : public framework::OpKernelBase<DeviceType, PReluParam<DeviceType>> {
  public:
-  void Compute(const PReluParam<DeviceType>& param) const;
+  void Compute(const PReluParam<DeviceType>& param);
 };
 }  // namespace operators
 }  // namespace paddle_mobile

@@ -28,7 +28,7 @@ class ElementwiseSubKernel
     : public framework::OpKernelBase<DeviceType,
                                      ElementwiseSubParam<DeviceType>> {
  public:
-  void Compute(const ElementwiseSubParam<DeviceType> &param) const;
+  void Compute(const ElementwiseSubParam<DeviceType> &param);
   bool Init(ElementwiseSubParam<DeviceType> *param);
 };
 

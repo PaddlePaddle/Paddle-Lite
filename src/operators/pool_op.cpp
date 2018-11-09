@@ -14,7 +14,8 @@ limitations under the License. */
 
 #ifdef POOL_OP
 
-#include "pool_op.h"
+#include "operators/pool_op.h"
+#include <vector>
 #include "framework/op_proto_maker.h"
 #include "framework/op_registry.h"
 
@@ -67,6 +68,9 @@ REGISTER_OPERATOR_MALI_GPU(pool2d, ops::PoolOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(pool2d, ops::PoolOp);
+#endif
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(pool2d, ops::PoolOp);
 #endif
 
 #endif

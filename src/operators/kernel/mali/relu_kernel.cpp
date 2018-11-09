@@ -115,8 +115,7 @@ bool ReluKernel<GPU_MALI, float>::Init(ReluParam<GPU_MALI>* param) {
 }
 
 template <>
-void ReluKernel<GPU_MALI, float>::Compute(
-    const ReluParam<GPU_MALI>& param) const {
+void ReluKernel<GPU_MALI, float>::Compute(const ReluParam<GPU_MALI>& param) {
   std::cout << "init acl" << std::endl;
   AclReluOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclReluOp<GPU_MALI, float>*>(this->GetAclOp());

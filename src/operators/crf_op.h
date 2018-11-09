@@ -37,10 +37,6 @@ class CrfOp : public framework::OperatorWithKernel<
       : framework::OperatorWithKernel<DeviceType, CrfParam<DeviceType>,
                                       operators::CrfKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, CrfParam<DeviceType>,
-      operators::CrfKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 };
 
