@@ -41,48 +41,48 @@ void ExtractToImg(const float *im_data, float *col_data, const int im_height,
 
   im_data += start_height * im_width + start_width;
   col_data += col_start_height * col_width + col_start_width;
-  #pragma omp parallel for
+
   for (int i = start_height; i < end_height; i += stride_h) {
-    const float *local_im_data = im_data + i * im_width * stride_h;
-    float *local_col_data = col_data + col_width;
     if (stride_w == 1) {
-      memcpy(local_col_data, local_im_data, extract * sizeof(float));
+      memcpy(col_data, im_data, extract * sizeof(float));
     } else if (stride_w == 2) {
       int s = 0;
 #if __ARM_NEON
-      for (; s < extract - 15; s += 16) {
-        float32x4x2_t img = vld2q_f32(local_im_data + s * 2);
-        vst1q_f32(local_col_data + s, img.val[0]);
+      for (; s < extract - 3; s += 4) {
+        float32x4x2_t img = vld2q_f32(im_data + s * 2);
+        vst1q_f32(col_data + s, img.val[0]);
       }
 #endif
       for (; s < extract; ++s) {
-        local_col_data[s] = local_im_data[s * 2];
+        col_data[s] = im_data[s * 2];
       }
     } else if (stride_w == 3) {
       int s = 0;
 #if __ARM_NEON
-      for (; s < extract - 15; s += 16) {
-        float32x4x3_t img = vld3q_f32(local_im_data + s * 3);
-        vst1q_f32(local_col_data + s, img.val[0]);
+      for (; s < extract - 3; s += 4) {
+        float32x4x3_t img = vld3q_f32(im_data + s * 3);
+        vst1q_f32(col_data + s, img.val[0]);
       }
 #endif
       for (; s < extract; ++s) {
-        local_col_data[s] = local_im_data[s * 3];
+        col_data[s] = im_data[s * 3];
       }
     } else if (stride_w == 4) {
       int s = 0;
 #if __ARM_NEON
-      for (; s < extract - 15; s += 16) {
-        float32x4x4_t img = vld4q_f32(local_im_data + s * 4);
-        vst1q_f32(local_col_data + s, img.val[0]);
+      for (; s < extract - 3; s += 4) {
+        float32x4x4_t img = vld4q_f32(im_data + s * 4);
+        vst1q_f32(col_data + s, img.val[0]);
       }
 #endif
       for (; s < extract; ++s) {
-        local_col_data[s] = local_im_data[s * 4];
+        col_data[s] = im_data[s * 4];
       }
     } else {
       PADDLE_MOBILE_THROW_EXCEPTION("stride_w must be one of 1, 2, 3 and 4.");
     }
+    im_data += im_width * stride_h;
+    col_data += col_width;
   }
 }
 
@@ -428,18 +428,23 @@ void Im2ColFunctor<ColFormat::kCFO, CPU, float>::operator()(
       im_data += isize * isize;
     }
   } else if (stride[0] <= 4 && dilation[0] == 1 && dilation[0] == dilation[1]) {
+    int im_spatial_size = im_height * im_width;
+    int col_spatial_size = col_height * col_width;
     // pad 0
     memset(col_data, 0, col->numel() * sizeof(float));
+    #pragma omp parallel for
     for (int ic = 0; ic < im_channels; ++ic) {
+      const float *local_im_data = im_data + ic * im_spatial_size;
+      float *local_col_data =
+          col_data + ic * filter_height * filter_width * col_spatial_size;
       for (int kh = 0; kh < filter_height; ++kh) {
         for (int kw = 0; kw < filter_width; ++kw) {
-          ExtractToImg(im_data, col_data, im_height, im_width, col_height,
-                       col_width, padding[0], padding[1], stride[0], stride[1],
-                       kh, kw);
-          col_data += col_height * col_width;
+          ExtractToImg(local_im_data, local_col_data, im_height, im_width,
+                       col_height, col_width, padding[0], padding[1], stride[0],
+                       stride[1], kh, kw);
+          local_col_data += col_spatial_size;
         }
       }
-      im_data += im_height * im_width;
     }
   } else {
 #endif
@@ -553,18 +558,23 @@ void Im2ColFunctor<ColFormat::kCFO, CPU, int8_t>::operator()(
   int8_t *col_data = col->mutable_data<int8_t>();
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
   if (stride[0] <= 4 && dilation[0] == 1 && dilation[0] == dilation[1]) {
+    int im_spatial_size = im_height * im_width;
+    int col_spatial_size = col_height * col_width;
     // pad 0
     memset(col_data, 0, col->numel() * sizeof(int8_t));
+    #pragma omp parallel for
     for (int ic = 0; ic < im_channels; ++ic) {
+      const int8_t *local_im_data = im_data + ic * im_spatial_size;
+      int8_t *local_col_data =
+          col_data + ic * filter_height * filter_width * col_spatial_size;
       for (int kh = 0; kh < filter_height; ++kh) {
         for (int kw = 0; kw < filter_width; ++kw) {
-          ExtractToImg(im_data, col_data, im_height, im_width, col_height,
-                       col_width, padding[0], padding[1], stride[0], stride[1],
-                       kh, kw);
-          col_data += col_height * col_width;
+          ExtractToImg(local_im_data, local_col_data, im_height, im_width,
+                       col_height, col_width, padding[0], padding[1], stride[0],
+                       stride[1], kh, kw);
+          local_col_data += col_spatial_size;
         }
       }
-      im_data += im_height * im_width;
     }
   } else {
 #endif
