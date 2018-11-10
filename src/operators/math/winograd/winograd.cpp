@@ -30,6 +30,9 @@ void winograd_f6k3(const framework::Tensor &input,
                    const framework::Tensor &weight, framework::Tensor *output) {
   framework::Tensor transformed_input;
   framework::Tensor transformed_weight;
+#if __aarch64__
+  // TODO(hjchen2)
+#else
   // transform weight
   winograd_transform_weight<8, 3>(weight, &transformed_weight);
   // tile input and transform
@@ -37,6 +40,7 @@ void winograd_f6k3(const framework::Tensor &input,
   // caculate output
   winograd_transform_output<8, 3>(transformed_input, transformed_weight,
                                   output);
+#endif
 }
 
 // F(4X4, 5X5)
