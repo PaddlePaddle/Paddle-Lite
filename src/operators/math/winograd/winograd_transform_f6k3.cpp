@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 // Inspired by https://arxiv.org/abs/1509.09308 and
-// https://github.com/andravin/wincnn Refered from nnpack and ncnn project
+// https://github.com/andravin/wincnn and refered from nnpack and ncnn project
 
 #include "operators/math/pad.h"
 #include "operators/math/winograd/winograd_transform.h"
@@ -326,7 +326,6 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
   int width = input.dims()[3];
   int h_tiles = (height + 3) / 6;  // (height + 5 - 2) / 6
   int w_tiles = (width + 3) / 6;   // (width + 5 - 2) / 6
-
   int tiles = (h_tiles * w_tiles + 7) / 8;
   framework::DDim transformed_shape =
       framework::make_ddim(std::vector<int>{tiles, 64, channel, 8});
@@ -549,10 +548,10 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
             "vsub.f32   q10, q9, q3                     \n"
             "vsub.f32   q11, q5, q7                     \n"
             "vmla.f32   q10, q11, d0[0]                 \n"
-            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
+            "vst1.32    {d20[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d20[1]}, [%[out0]], r1         \n"
+            "vst1.32    {d21[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d21[1]}, [%[out0]], %[steps]   \n"
 
             // col 1:
             "vld1.32    {d4-d5}, [%[ptr0]]!             \n"  // q2: d0
@@ -639,10 +638,10 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
             "vsub.f32   q10, q9, q3                     \n"
             "vsub.f32   q11, q5, q7                     \n"
             "vmla.f32   q10, q11, d0[0]                 \n"
-            "vst1.32    {d24[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d24[1]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[0]}, [%[out0]], r1         \n"
-            "vst1.32    {d25[1]}, [%[out0]], %[steps]   \n"
+            "vst1.32    {d20[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d20[1]}, [%[out0]], r1         \n"
+            "vst1.32    {d21[0]}, [%[out0]], r1         \n"
+            "vst1.32    {d21[1]}, [%[out0]], %[steps]   \n"
 
             "subs       r0, #1                          \n"
             "bne        loop_col_%=                     \n"
@@ -869,9 +868,14 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
     }
   }
 
-  for (int i = 0; i < output->numel(); ++i) {
-    DLOG << "TransInput[" << i << "] = " << outptr[i];
-  }
+  //  for (int c = 0; c < channel; ++c) {
+  //    for (int tile = 0; tile < output->numel()/channel/64; ++tile) {
+  //      for (int i = 0; i < 64; ++i) {
+  //        int offset = (((tile / 8) * 64 + i) * channel + c) * 8 + (tile % 8);
+  //        DLOG << "TransInput[" << i << "] = " << outptr[offset];
+  //      }
+  //    }
+  //  }
 }
 
 template <>
@@ -896,9 +900,9 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
   for (int i = 0; i < out_channel; ++i) {
     float *uv_ptr = uv_trans_ptr + (i * tiles * 64 * 32);
     for (int k = 0; k < 64; ++k) {
-      const float *w_ptr = weight_ptr + (i * 64 + k) * in_channel * 4;
       for (int j = 0; j < tiles; ++j) {
-        const float *in_ptr = input_ptr + (k * tiles + j) * in_channel * 8;
+        const float *w_ptr = weight_ptr + (i * 64 + k) * in_channel * 4;
+        const float *in_ptr = input_ptr + (j * 64 + k) * in_channel * 8;
         float *out0 = uv_ptr + (8 * j) * 64 + k;  // out channel 0
         float *out1 = out0 + 8 * tiles * 64;      // out channel 1
         float *out2 = out1 + 8 * tiles * 64;      // out channel 2
@@ -1013,9 +1017,15 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
     }
   }
 
-  for (int i = 0; i < uv_trans.numel(); ++i) {
-    DLOG << "uv_trans[" << i << "] = " << uv_trans_ptr[i];
-  }
+  //  for (int c = 0; c < 4 * out_channel; ++c) {
+  //    for (int tile = 0; tile < 8 * tiles; ++tile) {
+  //      for (int i = 0; i < 64; ++i) {
+  //        int offset = (c * 8 * tiles + tile) * 64 + i;
+  //        DLOG << "uv_trans[" << i << "] = " << uv_trans_ptr[offset];
+  //      }
+  //    }
+  //  }
+
   /*
    * s0 = m0 + (m1 + m2) +      (m3 + m4) + 32 * (m5 + m6)
    * s1 =      (m1 - m2) +  2 * (m3 - m4) + 16 * (m5 - m6)
@@ -1035,11 +1045,11 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
   int uv_image_size = uv_trans.dims()[1] * 64;
   float transform_matrix[8] = {2.f, 4.f, 8.f, 16.f};
 
-  DLOG << "out_channel: " << out_channel;
-  DLOG << "h_tiles: " << h_tiles;
-  DLOG << "w_tiles: " << w_tiles;
-  DLOG << "remain_h: " << remain_h;
-  DLOG << "remain_w: " << remain_w;
+  //  DLOG << "out_channel: " << out_channel;
+  //  DLOG << "h_tiles: " << h_tiles;
+  //  DLOG << "w_tiles: " << w_tiles;
+  //  DLOG << "remain_h: " << remain_h;
+  //  DLOG << "remain_w: " << remain_w;
 
   for (int oc = 0; oc < out_channel; ++oc) {
     float at_m[48];        // [6][8]
@@ -1108,9 +1118,9 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
             : [tm_ptr] "r"((float *)transform_matrix)
             : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
               "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15", "r0");
-        for (int i = 0; i < 48; ++i) {
-          DLOG << "at_m[" << i << "] = " << at_m[i];
-        }
+        //        for (int i = 0; i < 48; ++i) {
+        //          DLOG << "at_m[" << i << "] = " << at_m[i];
+        //        }
 
         float *at_m_ptr0 = at_m;
         float *at_m_ptr1 = at_m + 24;
@@ -1242,9 +1252,9 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
           float *out_ptr = output_ptr + offset;
           int remain_row = (tile_h < h_tiles - 1) ? 6 : remain_h;
           int remain_col = (tile_w < w_tiles - 1) ? 6 : remain_w;
-          for (int i = 0; i < 36; ++i) {
-            DLOG << "output_tmp[" << i << "] = " << output_tmp[i];
-          }
+          //          for (int i = 0; i < 36; ++i) {
+          //            DLOG << "output_tmp[" << i << "] = " << output_tmp[i];
+          //          }
           for (int i = 0; i < remain_row; ++i, out_ptr += out_w) {
             memcpy(out_ptr, output_tmp + i * 6, remain_col * sizeof(float));
           }
