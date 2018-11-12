@@ -22,14 +22,14 @@ limitations under the License. */
 #include "operators/math/math_function.h"
 #include "operators/math/pad.h"
 #include "operators/math/vol2col.h"
-#include "operators/math/winograd/winograd.h"
+#include "operators/math/winograd/winograd_transform.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <typename Itype, typename Otype>
-inline void ConvBasic(const ConvParam<CPU> &param) {
+inline void GemmConv(const ConvParam<CPU> &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
   Tensor *output = param.Output();
@@ -117,9 +117,10 @@ inline void ConvBasic(const ConvParam<CPU> &param) {
   }
 }
 
-inline void BatchConv3x3Winograd(const ConvParam<CPU> &param) {
+template <int tile, int kernel>
+inline void WinogradConv3x3(const ConvParam<CPU> &param) {
   const Tensor *input = param.Input();
-  Tensor *filter = param.Filter();
+  const Tensor *filter = param.Filter();
   Tensor *output = param.Output();
   output->mutable_data<float>();
   int batch_size = input->dims()[0];
@@ -127,51 +128,40 @@ inline void BatchConv3x3Winograd(const ConvParam<CPU> &param) {
   const std::vector<int> &paddings = param.Paddings();
   math::PadFunctor<CPU, float> pad;
 
+  auto winograd_pad = [&](int width, int pad) {
+    int output_tile = tile - kernel + 1;
+    //    int tiles = (width + pad - kernel) / output_tile + 1;
+    //    return (tiles - 1) * output_tile + tile - width;
+    int pad_width = (width + 2 * pad - kernel) / output_tile * output_tile;
+    return pad_width + tile - width;
+  };
+
   Tensor input_pad;
+  framework::Tensor transformed_input;
   for (int i = 0; i < batch_size; ++i) {
     Tensor in_batch = input->Slice(i, i + 1);
     Tensor out_batch = output->Slice(i, i + 1);
-    if (paddings[0] == 0 && paddings[1] == 0) {
-      input_pad = in_batch;
-    } else {
+    int pad_bottom = winograd_pad(in_batch.dims()[2], paddings[0]);
+    int pad_right = winograd_pad(in_batch.dims()[3], paddings[1]);
+    if (paddings[0] || paddings[1] || pad_bottom || pad_right) {
       framework::DDim pad_shape = in_batch.dims();
-      pad_shape[2] += 2 * paddings[0];
-      pad_shape[3] += 2 * paddings[1];
+      pad_shape[2] += paddings[0] + pad_bottom;
+      pad_shape[3] += paddings[1] + pad_right;
       input_pad.mutable_data<float>(pad_shape);
-      pad(in_batch, paddings[0], paddings[0], paddings[1], paddings[1],
+      pad(in_batch, paddings[0], pad_bottom, paddings[1], pad_right,
           &input_pad);
-    }
-    math::winograd_f6k3(input_pad, *filter, &out_batch);
-  }
-}
-
-template <typename P>
-void ConvCompute(const ConvParam<CPU> &param) {
-  if (param.Input()->type() == typeid(int8_t)) {
-    ConvBasic<int8_t, int32_t>(param);
-  } else {
-    if (param.Groups() == param.Input()->dims()[1] &&
-        param.Input()->dims()[1] == param.Output()->dims()[1] &&
-        param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
-        param.Filter()->dims()[2] == 3 && param.Strides()[0] == 1) {
-      math::DepthwiseConv3x3s1p1(param.Input(), param.Filter(), param.Output(),
-                                 nullptr, false);
-    } else if (param.Groups() == param.Input()->dims()[1] &&
-               param.Input()->dims()[1] == param.Output()->dims()[1] &&
-               param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
-               param.Filter()->dims()[2] == 3) {
-      math::DepthwiseConv3x3(param.Input(), param.Strides(), param.Paddings(),
-                             param.Filter(), nullptr, param.Output(), false);
-    } else if (param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
-               param.Strides()[0] == param.Strides()[1] &&
-               param.Dilations()[0] == param.Dilations()[1] &&
-               param.Filter()->dims()[2] == 3 && param.Strides()[0] == 1 &&
-               param.Dilations()[0] == 1 && param.Output()->dims()[1] >= 16 &&
-               param.Output()->dims()[2] >= 16) {
-      BatchConv3x3Winograd(param);
     } else {
-      ConvBasic<float, float>(param);
+      input_pad = in_batch;
     }
+#if __aarch64__
+      // TODO(hjchen2)
+#else
+    // tile input and transform
+    math::winograd_transform_input<tile, kernel>(input_pad, &transformed_input);
+    // caculate output
+    math::winograd_transform_output<tile, kernel>(transformed_input, *filter,
+                                                  output);
+#endif
   }
 }
 

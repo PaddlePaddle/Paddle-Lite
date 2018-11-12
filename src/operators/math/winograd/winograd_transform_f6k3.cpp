@@ -40,6 +40,7 @@ void winograd_transform_weight<8, 3>(const framework::Tensor &weight,
    * w7 = g2
    */
   // weight shape is [out_channel, in_channel, kernel_h, kernel_w]
+  // package weight into [roundup(out_channel/4), 64, in_channel, 4] tiles
   int out_channel = weight.dims()[0];
   int in_channel = weight.dims()[1];
   // reshape and alloc transformed weight
@@ -322,12 +323,12 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
    * x6 = (4 * d2 - 5 * d4 + d6) - (2 * d1 - 2.5 * d3 + 0.5 * d5)
    * x7 = (d7 - d1) + (d3 - d5) * 5.25
    */
-  // pack input to [8 * roundup(h/6), 8 * roundup(w/6), channel] tiles
+  // package input into [roundup(tiles/8), 64, channel, 8] tiles
   int channel = input.dims()[1];
   int height = input.dims()[2];
   int width = input.dims()[3];
-  int h_tiles = (height + 3) / 6;  // (height + 5 - 2) / 6
-  int w_tiles = (width + 3) / 6;   // (width + 5 - 2) / 6
+  int h_tiles = (height + 3) / 6;  // (height - 8 + 5 + 6) / 6
+  int w_tiles = (width + 3) / 6;   // (width - 8 + 5 + 6) / 6
   int tiles = (h_tiles * w_tiles + 7) / 8;
   framework::DDim transformed_shape =
       framework::make_ddim(std::vector<int>{tiles, 64, channel, 8});
@@ -335,29 +336,11 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
   memset(outptr, 0, output->numel() * sizeof(float));
 
   const float *inptr = input.data<float>();
-  int inter_h = (height - 2) / 6;
-  int inter_w = (width - 2) / 6;
-  int remain_h = height - (inter_h * 6);
-  int remain_w = width - (inter_w * 6);
-  framework::Tensor input_pad;
-  if (remain_h > 2 || remain_w > 2) {
-    inter_h += (remain_h > 2);
-    inter_w += (remain_w > 2);
-    height = (inter_h - 1) * 6 + 8;
-    width = (inter_w - 1) * 6 + 8;
-    framework::DDim input_shape =
-        framework::make_ddim(std::vector<int>{1, channel, height, width});
-    PadFunctor<CPU, float> pad;
-    inptr = input_pad.mutable_data<float>(input_shape);
-    pad(input, 0, height - input.dims()[2], 0, width - input.dims()[3],
-        &input_pad);
-  }
-
   size_t image_size = height * width;
   const float transform_matrix[8] = {5.25f, -5.f,   -4.25f, -2.5f,
                                      2.f,   -1.25f, 0.5f,   0.25f};
   int remain_c_start = channel & 0xFFFC;
-#if 0
+#if 1
   remain_c_start = 0;
 #else
   #pragma omp parallel for
@@ -381,14 +364,14 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
             "vld1.32    {d8-d11}, [%[in1]], %[steps]    \n"
             "vld1.32    {d12-d15}, [%[in2]], %[steps]   \n"
             "vld1.32    {d16-d19}, [%[in3]], %[steps]   \n"
-            "vtrn.32    q2, q4                          \n"  // d0: q2, q2
-            "vtrn.32    q3, q5                          \n"  // d1: q4, q3
-            "vtrn.32    q6, q8                          \n"  // d2: q6, q4
-            "vtrn.32    q7, q9                          \n"  // d3: q8, q5
-            "vswp.32    d5, d12                         \n"  // d4: q3, q6
-            "vswp.32    d9, d16                         \n"  // d5: q5, q7
-            "vswp.32    d7, d14                         \n"  // d6: q7, q8
-            "vswp.32    d11, d18                        \n"  // d7: q9, q9
+            "vtrn.32    q2, q4                          \n"  // d0: q2
+            "vtrn.32    q3, q5                          \n"  // d1: q4
+            "vtrn.32    q6, q8                          \n"  // d2: q6
+            "vtrn.32    q7, q9                          \n"  // d3: q8
+            "vswp.32    d5, d12                         \n"  // d4: q3
+            "vswp.32    d9, d16                         \n"  // d5: q5
+            "vswp.32    d7, d14                         \n"  // d6: q7
+            "vswp.32    d11, d18                        \n"  // d7: q9
 
             "vsub.f32   q10, q2, q7                     \n"
             "vsub.f32   q11, q3, q6                     \n"
@@ -680,14 +663,14 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
             "vld1.32    {d8-d11}, [%[in1]], %[steps]    \n"
             "vld1.32    {d12-d15}, [%[in2]], %[steps]   \n"
             "vld1.32    {d16-d19}, [%[in3]], %[steps]   \n"
-            "vtrn.32    q2, q4                          \n"  // d0: q2, q2
-            "vtrn.32    q3, q5                          \n"  // d1: q4, q3
-            "vtrn.32    q6, q8                          \n"  // d2: q6, q4
-            "vtrn.32    q7, q9                          \n"  // d3: q8, q5
-            "vswp.32    d5, d12                         \n"  // d4: q3, q6
-            "vswp.32    d9, d16                         \n"  // d5: q5, q7
-            "vswp.32    d7, d14                         \n"  // d6: q7, q8
-            "vswp.32    d11, d18                        \n"  // d7: q9, q9
+            "vtrn.32    q2, q4                          \n"  // d0: q2
+            "vtrn.32    q3, q5                          \n"  // d1: q4
+            "vtrn.32    q6, q8                          \n"  // d2: q6
+            "vtrn.32    q7, q9                          \n"  // d3: q8
+            "vswp.32    d5, d12                         \n"  // d4: q3
+            "vswp.32    d9, d16                         \n"  // d5: q5
+            "vswp.32    d7, d14                         \n"  // d6: q7
+            "vswp.32    d11, d18                        \n"  // d7: q9
 
             "vsub.f32   q10, q2, q7                     \n"
             "vsub.f32   q11, q3, q6                     \n"
@@ -749,11 +732,12 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
 
         float *ptr0 = d_bt;
         float *ptr1 = ptr0 + 32;
-        int tile_id = h * w_tiles + w;
-        int block_id = tile_id >> 3;
-        int pack_id = tile_id & 0x7;
+        int tile_indics = h * w_tiles + w;
+        int tile_block = tile_indics >> 3;
+        int block_indics = tile_indics & 0x7;
         // (tiles / 8, 64, channel, 8)
-        float *out0 = outptr + (block_id * 64 * channel + c) * 8 + pack_id;
+        float *out0 =
+            outptr + (tile_block * 64 * channel + c) * 8 + block_indics;
         float *out1 = out0 + channel * 8;
         float *out2 = out1 + channel * 8;
         float *out3 = out2 + channel * 8;
@@ -771,7 +755,6 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
             "vld1.32    {d8-d11}, [%[ptr0]]!            \n"  // q4: d2, q5: d3
             "vld1.32    {d12-d15}, [%[ptr1]]!           \n"  // q6: d4, q7: d5
             "vld1.32    {d16-d19}, [%[ptr1]]!           \n"  // q8: d6, q9: d7
-
             "vtrn.32    q2, q3                          \n"
             "vtrn.32    q4, q5                          \n"
             "vtrn.32    q6, q7                          \n"
@@ -918,7 +901,7 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
             "cmp        %[inter_channel], #0           \n"
             "ble        cmp_remain_%=                  \n"
 
-            "loop_4c_%=:                               \n"
+            "loop_2c_%=:                               \n"
             "vld1.32    {d0-d3}, [%[w_ptr]]!           \n"
             "vld1.32    {d4-d7}, [%[in_ptr]]!          \n"
             "vmla.f32   q8, q2, d0[0]                  \n"
@@ -941,7 +924,7 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
             "vmla.f32   q15, q5, d3[1]                 \n"
 
             "subs       %[inter_channel], #1           \n"
-            "bne        loop_4c_%=                     \n"
+            "bne        loop_2c_%=                     \n"
 
             // cmp remain channel > 0
             "cmp_remain_%=:                            \n"

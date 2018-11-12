@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "common/enforce.h"
@@ -119,10 +120,6 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
   virtual void InferShape() const = 0;
 
   void Init() {
-    //    for (auto i : this->inputs_) {
-    //      DLOG << i.first;
-    //      DLOG << i.second;
-    //    }
     PADDLE_MOBILE_ENFORCE(kernel_.Init(&param_), "  %s kernel init failed",
                           this->type_.c_str());
   }
