@@ -11,20 +11,29 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
+
+#ifdef FUSION_DECONVRELU_OP
+
 #pragma once
 
-#include "fpga/V2/fpga_common.h"
+#include "framework/operator.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
-namespace fpga {
+namespace operators {
 
-int PerformBypass(const struct BypassArgs& args);
-int ComputeBasicConv(const struct ConvArgs& args);
-int ComputeFpgaPool(const struct PoolingArgs& args);
-int ComputeFpgaEWAdd(const struct EWAddArgs& args);
+using framework::OpKernelBase;
 
-int ComputeFpgaConv(const struct SplitConvArgs& args);
-int ComputeFPGAConcat(const struct ConcatArgs& args);
+template <typename DeviceType, typename T>
+class DeconvReluKernel
+    : public OpKernelBase<DeviceType, FusionDeconvReluParam<DeviceType>> {
+ public:
+  void Compute(const FusionDeconvReluParam<DeviceType> &param);
 
-}  // namespace fpga
+  bool Init(FusionDeconvReluParam<DeviceType> *param);
+};
+
+}  // namespace operators
 }  // namespace paddle_mobile
+
+#endif
