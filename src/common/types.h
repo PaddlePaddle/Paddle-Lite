@@ -139,6 +139,9 @@ extern const char *G_OP_TYPE_ELEMENTWISE_MUL;
 extern const char *G_OP_TYPE_QUANTIZE;
 extern const char *G_OP_TYPE_DEQUANTIZE;
 
+extern const char *G_OP_TYPE_TANH;
+extern const char *G_OP_TYPE_FUSION_DECONV_RELU;
+
 extern std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
     op_input_output_key;

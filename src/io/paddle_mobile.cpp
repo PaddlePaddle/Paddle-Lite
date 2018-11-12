@@ -21,7 +21,6 @@ limitations under the License. */
 #include "operators/math/gemm.h"
 namespace paddle_mobile {
 
-static std::mutex lc;
 template <typename Dtype, Precision P>
 void PaddleMobile<Dtype, P>::SetThreadNum(int num) {
 #ifdef _OPENMP
@@ -148,8 +147,8 @@ double PaddleMobile<Dtype, P>::GetPredictTime() {
   }
   paddle_mobile::operators::math::Gemm gemm;
   auto time1 = paddle_mobile::time();
-  gemm.Sgemm(m, n, k, static_cast<float>(1), a, lda, b, ldb,
-             static_cast<float>(0), c, ldc, false, nullptr);
+  //  gemm.Sgemm(m, n, k, static_cast<float>(1), a, lda, b, ldb,
+  //             static_cast<float>(0), c, ldc, false, nullptr);
   auto time2 = paddle_mobile::time();
   double cost = paddle_mobile::time_diff(time1, time2);
   paddle_mobile::memory::Free(a);
@@ -199,6 +198,7 @@ void PaddleMobile<Dtype, P>::Predict_To(int end) {
 #endif
 
 #ifdef PADDLE_MOBILE_CL
+static std::mutex lc;
 template <typename Dtype, Precision P>
 void PaddleMobile<Dtype, P>::SetCLPath(std::string path) {
   std::lock_guard<std::mutex> lock(lc);
