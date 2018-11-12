@@ -20,8 +20,8 @@ limitations under the License. */
  */
 
 #pragma once
+#include "common/types.h"
 #include "string"
-
 namespace paddle_mobile {
 template <typename Dtype, Precision P = Precision::FP32>
 class PaddleTester {

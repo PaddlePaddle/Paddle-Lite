@@ -13,7 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "io/paddle_test_inference_api.h"
-#include "common/types.h"
 #include "io/paddle_mobile.h"
 namespace paddle_mobile {
 template <typename Dtype, Precision P>
