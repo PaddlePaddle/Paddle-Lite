@@ -26,6 +26,7 @@ limitations under the License. */
 #include "framework/program/var_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
+#include "memory/t_malloc.h"
 
 #ifdef PADDLE_EXECUTOR_MULTITHREAD
 #include <queue>
@@ -86,8 +87,10 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
   }
   std::shared_ptr<framework::BlockDesc> to_predict_block =
       to_predict_program_->Block(0);
+  int i = 0;
   auto &ops = ops_of_block_[*to_predict_block.get()];
   for (const auto &op : ops) {
+    DLOG << "Initialize op[" << i++ << "]: " << op->Type();
     op->Init();
   }
 }
@@ -102,8 +105,8 @@ static void LoadMemInternal(void **data, framework::LoDTensor *tensor,
     // should be moved into operator init function
     float min_value;
     float max_value;
-    memcpy(&min_value, data_buf, sizeof(float));
-    memcpy(&max_value, data_buf + sizeof(float), sizeof(float));
+    memory::Copy(&min_value, data_buf, sizeof(float));
+    memory::Copy(&max_value, data_buf + sizeof(float), sizeof(float));
     data_buf += 2 * sizeof(float);
     const float factor = (max_value - min_value) / 255.0;
     const uint8_t *uint8_data = reinterpret_cast<uint8_t *>(data_buf);
@@ -112,7 +115,7 @@ static void LoadMemInternal(void **data, framework::LoDTensor *tensor,
     }
     data_buf += size * sizeof(uint8_t);
   } else {
-    memcpy(tensor_data, *data_buf, size * sizeof(Dtype));
+    memory::Copy(tensor_data, *data_buf, size * sizeof(Dtype));
     *data_buf += size * sizeof(Dtype);
   }
 }
@@ -128,7 +131,7 @@ void Executor<Dtype, P>::LoadMemory(
   // lod information
   // uint64_t lod_level = *(reinterpret_cast<uint64_t *>(*data_buf));
   uint64_t lod_level = 0;
-  memcpy(&lod_level, *data_buf, sizeof(uint64_t));
+  memory::Copy(&lod_level, *data_buf, sizeof(uint64_t));
   *data_buf += sizeof(uint64_t);
 
   auto *lod = tensor->mutable_lod();
@@ -137,7 +140,7 @@ void Executor<Dtype, P>::LoadMemory(
     uint64_t size = *(reinterpret_cast<uint64_t *>(*data_buf));
     *data_buf += sizeof(uint64_t);
     std::vector<size_t> tmp_dim(size / sizeof(size_t));
-    memcpy(tmp_dim.data(), *data_buf, size);
+    memory::Copy(tmp_dim.data(), *data_buf, size);
     (*lod)[i] = std::move(tmp_dim);
     *data_buf += size;
   }
