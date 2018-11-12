@@ -130,8 +130,8 @@ inline void WinogradConv3x3(const ConvParam<CPU> &param) {
 
   auto winograd_pad = [&](int width, int pad) {
     int output_tile = tile - kernel + 1;
-    //    int tiles = (width + pad - kernel) / output_tile + 1;
-    //    return (tiles - 1) * output_tile + tile - width;
+    // int tiles = (width + pad - kernel) / output_tile + 1;
+    // return (tiles - 1) * output_tile + tile - width;
     int pad_width = (width + 2 * pad - kernel) / output_tile * output_tile;
     return pad_width + tile - width;
   };
@@ -141,8 +141,10 @@ inline void WinogradConv3x3(const ConvParam<CPU> &param) {
   for (int i = 0; i < batch_size; ++i) {
     Tensor in_batch = input->Slice(i, i + 1);
     Tensor out_batch = output->Slice(i, i + 1);
-    int pad_bottom = winograd_pad(in_batch.dims()[2], paddings[0]);
-    int pad_right = winograd_pad(in_batch.dims()[3], paddings[1]);
+    // int pad_bottom = winograd_pad(in_batch.dims()[2], paddings[0]);
+    // int pad_right = winograd_pad(in_batch.dims()[3], paddings[1]);
+    int pad_bottom = paddings[0];
+    int pad_right = paddings[1];
     if (paddings[0] || paddings[1] || pad_bottom || pad_right) {
       framework::DDim pad_shape = in_batch.dims();
       pad_shape[2] += paddings[0] + pad_bottom;
