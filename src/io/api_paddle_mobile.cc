@@ -52,6 +52,10 @@ bool PaddleMobilePredictor<Dtype, P>::Init(const PaddleMobileConfig &config) {
   paddle_mobile_->SetThreadNum(config.thread_num);
   return true;
 }
+template <typename Dtype, Precision P>
+double PaddleMobilePredictor<Dtype, P>::CaculatePredictTime() {
+  return paddle_mobile_->GetPredictTime();
+};
 
 template <typename Dtype, Precision P>
 bool PaddleMobilePredictor<Dtype, P>::Run(
