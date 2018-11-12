@@ -32,7 +32,7 @@ const int MALLOC_ALIGN = 64;
 namespace fpga = paddle_mobile::fpga;
 
 void Copy(void *dst, const void *src, size_t num) {
-  std::memcpy(dst, src, num);
+  fpga::fpga_copy(dst, src, num);
 }
 
 void *Alloc(size_t size) { return fpga::fpga_malloc(size); }
