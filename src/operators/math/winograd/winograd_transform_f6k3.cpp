@@ -336,6 +336,23 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
   memset(outptr, 0, output->numel() * sizeof(float));
 
   const float *inptr = input.data<float>();
+  int inter_h = (height - 2) / 6;
+  int inter_w = (width - 2) / 6;
+  int remain_h = height - (inter_h * 6);
+  int remain_w = width - (inter_w * 6);
+  framework::Tensor input_pad;
+  if (remain_h > 2 || remain_w > 2) {
+    inter_h += (remain_h > 2);
+    inter_w += (remain_w > 2);
+    height = (inter_h - 1) * 6 + 8;
+    width = (inter_w - 1) * 6 + 8;
+    framework::DDim input_shape =
+        framework::make_ddim(std::vector<int>{1, channel, height, width});
+    PadFunctor<CPU, float> pad;
+    inptr = input_pad.mutable_data<float>(input_shape);
+    pad(input, 0, height - input.dims()[2], 0, width - input.dims()[3],
+        &input_pad);
+  }
   size_t image_size = height * width;
   const float transform_matrix[8] = {5.25f, -5.f,   -4.25f, -2.5f,
                                      2.f,   -1.25f, 0.5f,   0.25f};
