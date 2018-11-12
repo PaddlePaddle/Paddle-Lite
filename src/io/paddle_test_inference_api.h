@@ -20,8 +20,6 @@ limitations under the License. */
  */
 
 #pragma once
-#include "common/types.h"
-#include "io/paddle_mobile.h"
 #include "string"
 
 namespace paddle_mobile {
