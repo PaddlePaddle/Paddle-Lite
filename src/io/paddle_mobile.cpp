@@ -147,8 +147,8 @@ double PaddleMobile<Dtype, P>::GetPredictTime() {
   }
   paddle_mobile::operators::math::Gemm gemm;
   auto time1 = paddle_mobile::time();
-//  gemm.Sgemm(m, n, k, static_cast<float>(1), a, lda, b, ldb,
-//             static_cast<float>(0), c, ldc, false, nullptr);
+  //  gemm.Sgemm(m, n, k, static_cast<float>(1), a, lda, b, ldb,
+  //             static_cast<float>(0), c, ldc, false, nullptr);
   auto time2 = paddle_mobile::time();
   double cost = paddle_mobile::time_diff(time1, time2);
   paddle_mobile::memory::Free(a);
