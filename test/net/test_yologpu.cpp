@@ -18,16 +18,17 @@ limitations under the License. */
 #include "../test_helper.h"
 #include "../test_include.h"
 void t1() {
-  paddle_mobile::PaddleMobile<paddle_mobile::GPU_CL> paddle_mobile;
+  paddle_mobile::PaddleMobile<paddle_mobile::GPU_CL> paddle_mobile_gpu;
+  paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile_cpu;
   //    paddle_mobile.SetThreadNum(4);
 #ifdef PADDLE_MOBILE_CL
-  paddle_mobile.SetCLPath("/data/local/tmp/bin");
+  paddle_mobile_gpu.SetCLPath("/data/local/tmp/bin");
 #endif
-  printf("cpu time:%f\n", paddle_mobile.GetCPUPredictTime());
-  printf("gpu time:%f\n", paddle_mobile.GetGPUPredictTime());
+  printf("cpu time:%f\n", paddle_mobile_cpu.GetPredictTime());
+  printf("gpu time:%f\n", paddle_mobile_gpu.GetPredictTime());
   auto time1 = paddle_mobile::time();
-  auto isok = paddle_mobile.Load(std::string(g_yolo_mul) + "/model",
-                                 std::string(g_yolo_mul) + "/params", true);
+  auto isok = paddle_mobile_gpu.Load(std::string(g_yolo_mul) + "/model",
+                                     std::string(g_yolo_mul) + "/params", true);
 
   //  auto isok = paddle_mobile.Load(std::string(g_yolo_mul), true);
   if (isok) {
@@ -45,7 +46,7 @@ void t1() {
     auto time3 = paddle_mobile::time();
     int max = 10;
     for (int i = 0; i < max; ++i) {
-      vec_result = paddle_mobile.Predict(input, dims);
+      vec_result = paddle_mobile_gpu.Predict(input, dims);
     }
     auto time4 = paddle_mobile::time();
 
@@ -173,10 +174,12 @@ void t3() {
 
 int main() {
   //  std::thread th1(t1);
-  //    std::thread th2(t2);
-  std::thread th1(t1);
+  //      std::thread th2(t2);
+  std::thread th3(t3);
+  //  std::thread th1(t1);
   //  th1.join();
-  //    th2.join();
-  th1.join();
+  //      th2.join();
+  th3.join();
+  //  th1.join();
   return 0;
 }
