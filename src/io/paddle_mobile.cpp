@@ -13,9 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "io/paddle_mobile.h"
+#ifdef PADDLE_MOBILE_CL
 #include <CL/cl.h>
-#include "common/common.h"
 #include "framework/cl/cl_tensor.h"
+#endif
+#include "common/common.h"
 #include "operators/math/gemm.h"
 namespace paddle_mobile {
 
@@ -123,7 +125,7 @@ void PaddleMobile<Dtype, P>::Clear() {
 }
 
 template <typename Dtype, Precision P>
-double PaddleMobile<Dtype, P>::GetCPUPredictTime() {
+double PaddleMobile<Dtype, P>::GetPredictTime() {
   int m = 32;
   int n = 224 * 224;
   int k = 27;
@@ -204,8 +206,8 @@ void PaddleMobile<Dtype, P>::SetCLPath(std::string path) {
     framework::CLEngine::Instance()->setClPath(path);
   }
 }
-template <typename Dtype, Precision P>
-double PaddleMobile<Dtype, P>::GetGPUPredictTime() {
+template <>
+double PaddleMobile<GPU_CL, Precision::FP32>::GetPredictTime() {
   cl_int status;
   cl_uint nPlatform;
   clGetPlatformIDs(0, NULL, &nPlatform);
