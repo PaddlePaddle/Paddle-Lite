@@ -53,11 +53,6 @@ bool PaddleMobilePredictor<Dtype, P>::Init(const PaddleMobileConfig &config) {
   return true;
 }
 template <typename Dtype, Precision P>
-double PaddleMobilePredictor<Dtype, P>::CaculatePredictTime() {
-  return paddle_mobile_->GetPredictTime();
-};
-
-template <typename Dtype, Precision P>
 bool PaddleMobilePredictor<Dtype, P>::Run(
     const std::vector<PaddleTensor> &inputs,
     std::vector<PaddleTensor> *output_data, int batch_size) {
