@@ -98,7 +98,7 @@ class PaddlePredictor {
   virtual bool Run(const std::vector<PaddleTensor>& inputs,
                    std::vector<PaddleTensor>* output_data,
                    int batch_size = -1) = 0;
-
+  virtual double CaculatePredictTime() = 0;
   // Destroy the Predictor.
   virtual ~PaddlePredictor() = default;
 
