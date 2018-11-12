@@ -44,7 +44,7 @@ void DepthwiseConvCompute(const ConvParam<CPU> &param) {
                                  Bias, false);
 
   } else {
-    ConvBasic<float, float>(param);
+    GemmConv<float, float>(param);
   }
 }
 

@@ -379,9 +379,9 @@ class ConvParam : public OpParam {
 
   const RType *Input() const { return input_; }
 
-  RType *Filter() const { return filter_; }
+  RType *&Filter() const { return filter_; }
 
-  RType *Output() const { return output_; }
+  RType *&Output() const { return output_; }
 
   const vector<int> &Strides() const { return strides_; }
 
@@ -389,15 +389,28 @@ class ConvParam : public OpParam {
 
   const vector<int> &Dilations() const { return dilations_; }
 
+  enum ExecMode {
+    EXEC_INVALID = 0,
+    EXEC_GEMM_FLOAT,
+    EXEC_DEPTHWISE3x3S1P1_FLOAT,
+    EXEC_DEPTHWISE3x3_FLOAT,
+    EXEC_WINOGRAD3X3_FLOAT,
+    EXEC_WINOGRAD5X5_FLOAT,
+    EXEC_GEMM_INT8,
+  };
+
+  ExecMode &ExecMode() const { return exec_mode_; }
+
   const int &Groups() const { return groups; }
 
  private:
   RType *input_;
-  RType *output_;
-  RType *filter_;
+  mutable RType *output_;
+  mutable RType *filter_;
   vector<int> strides_;
   vector<int> paddings_;
   vector<int> dilations_;
+  mutable enum ExecMode exec_mode_;
   int groups;
 };
 template <typename Dtype>
