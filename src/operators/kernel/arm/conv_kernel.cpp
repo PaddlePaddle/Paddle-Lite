@@ -17,8 +17,6 @@ limitations under the License. */
 #include "operators/kernel/conv_kernel.h"
 #include "operators/kernel/central-arm-func/conv_arm_func.h"
 
-#include <iostream>
-
 namespace paddle_mobile {
 namespace operators {
 
