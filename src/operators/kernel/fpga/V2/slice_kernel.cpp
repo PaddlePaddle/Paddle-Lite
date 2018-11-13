@@ -24,6 +24,10 @@ bool SliceKernel<FPGA, float>::Init(SliceParam<FPGA>* param) {
 }
 template <>
 void SliceKernel<FPGA, float>::Compute(const SliceParam<FPGA>& param) {}
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/develop
 }  // namespace operators
 }  // namespace paddle_mobile
 #endif

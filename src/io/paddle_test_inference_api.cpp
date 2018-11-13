@@ -11,24 +11,25 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#pragma once
-<<<<<<< HEAD
-#include "fpga/V2/api.h"
-=======
 
-#include "fpga/V2/fpga_common.h"
->>>>>>> upstream/develop
-
+#include "io/paddle_test_inference_api.h"
+#include "io/paddle_mobile.h"
 namespace paddle_mobile {
-namespace fpga {
+template <typename Dtype, Precision P>
+double PaddleTester<Dtype, P>::CaculatePredictTime(std::string *cl_path) {
+  PaddleMobile<Dtype, P> paddle_mobile;
+#ifdef PADDLE_MOBILE_CL
+  if (cl_path) {
+    paddle_mobile.SetCLPath(*cl_path);
+  }
 
-int PerformBypass(const struct BypassArgs& args);
-int ComputeBasicConv(const struct ConvArgs& args);
-int ComputeFpgaPool(const struct PoolingArgs& args);
-int ComputeFpgaEWAdd(const struct EWAddArgs& args);
+#endif
+  return paddle_mobile.GetPredictTime();
+}
+template class PaddleTester<CPU, Precision::FP32>;
+template class PaddleTester<FPGA, Precision::FP32>;
+template class PaddleTester<GPU_MALI, Precision::FP32>;
 
-int ComputeFpgaConv(const struct SplitConvArgs& args);
-int ComputeFPGAConcat(const struct ConcatArgs& args);
+template class PaddleTester<GPU_CL, Precision::FP32>;
 
-}  // namespace fpga
 }  // namespace paddle_mobile

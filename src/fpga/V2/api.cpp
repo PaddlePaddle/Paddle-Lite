@@ -16,27 +16,47 @@ limitations under the License. */
 #include <algorithm>
 #include "fpga/V2/bias_scale.h"
 #include "fpga/V2/config.h"
+<<<<<<< HEAD
+=======
+#include "fpga/V2/driver/driver.h"
+>>>>>>> upstream/develop
 #include "fpga/V2/filter.h"
 #include "fpga/V2/image.h"
 
 namespace paddle_mobile {
 namespace fpga {
+<<<<<<< HEAD
 static std::map<void *, size_t> memory_map;
 
 int open_device() {
   int ret = open_device_driver();
+=======
+
+static std::map<void *, size_t> memory_map;
+
+int open_device() {
+  int ret = driver::open_device_driver();
+>>>>>>> upstream/develop
   return ret;
 }
 
 int close_device() {
+<<<<<<< HEAD
   int ret = close_device_driver();
+=======
+  int ret = driver::close_device_driver();
+>>>>>>> upstream/develop
   return ret;
 }
 
 void *fpga_malloc(size_t size) {
   static uint64_t counter = 0;
 #ifdef PADDLE_MOBILE_ZU5
+<<<<<<< HEAD
   auto ptr = fpga_malloc_driver(size);
+=======
+  auto ptr = driver::fpga_malloc_driver(size);
+>>>>>>> upstream/develop
 #else
   auto ptr = malloc(size);
 #endif
@@ -55,7 +75,11 @@ void fpga_free(void *ptr) {
     size = iter->second;
     memory_map.erase(iter);
 #ifdef PADDLE_MOBILE_ZU5
+<<<<<<< HEAD
     fpga_free_driver(ptr);
+=======
+    driver::fpga_free_driver(ptr);
+>>>>>>> upstream/develop
 #else
     free(ptr);
 #endif
@@ -66,6 +90,7 @@ void fpga_free(void *ptr) {
     DLOG << "Invalid pointer";
   }
 }
+<<<<<<< HEAD
 
 half fp32_2_fp16(float fp32_num) {
   unsigned long tmp = *(unsigned long *)(&fp32_num);  // NOLINT
@@ -86,6 +111,29 @@ float fp16_2_fp32(half fp16_num) {
   tmp = s << 16 | exp << 23 | frac << 13;
   fp32_num = *(float *)&tmp;  // NOLINT
   return fp32_num;
+=======
+void fpga_copy(void *dest, const void *src, size_t num) {
+#ifdef PADDLE_MOBILE_ZU5
+  driver::fpga_copy_driver(dest, src, num);
+#else
+  memcpy(dest, src, num);
+#endif
+}
+
+int fpga_flush(void *address, size_t size) {
+#ifdef PADDLE_MOBILE_ZU5
+  return driver::fpga_flush_driver(address, size);
+#else
+  return 0;
+#endif
+}
+int fpga_invalidate(void *address, size_t size) {
+#ifdef PADDLE_MOBILE_ZU5
+  return driver::fpga_invalidate_driver(address, size);
+#else
+  return 0;
+#endif
+>>>>>>> upstream/develop
 }
 
 void format_image(framework::Tensor *image_tensor) {
@@ -240,7 +288,11 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
   arg->filter_num = (uint32_t)filter->dims()[0];
   arg->output.address = out_ptr;
   arg->output.scale_address = out->scale;
+<<<<<<< HEAD
   arg->conv_args =
+=======
+  arg->conv_arg =
+>>>>>>> upstream/develop
       (ConvArgs *)fpga_malloc(arg->split_num * sizeof(ConvArgs));  // NOLINT
 
   arg->concat_arg.image_num = arg->split_num;
@@ -258,6 +310,7 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
       (uint32_t *)fpga_malloc(n * sizeof(uint32_t));  // NOLINT
 
   for (int i = 0; i < n; i++) {
+<<<<<<< HEAD
     arg->conv_args[i].relu_enabled = relu_enabled;
     arg->conv_args[i].sb_address = bs_ptr;
     arg->conv_args[i].filter_address = (int8_t *)filter_ptr;  // NOLINT
@@ -280,6 +333,35 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
 
     arg->conv_args[i].output.address = out_ptr;
     arg->conv_args[i].output.scale_address = out->scale;
+=======
+    arg->conv_arg[i].relu_enabled = relu_enabled;
+    arg->conv_arg[i].sb_address = bs_ptr;
+    arg->conv_arg[i].filter_address = (int8_t *)filter_ptr;  // NOLINT
+    arg->conv_arg[i].filter_scale_address = filter->scale;
+    arg->conv_arg[i].filter_num = arg->filter_num;
+    arg->conv_arg[i].group_num = (uint32_t)group_num;
+
+    arg->conv_arg[i].kernel.stride_h = (uint32_t)stride_h;
+    arg->conv_arg[i].kernel.stride_w = (uint32_t)stride_w;
+    arg->conv_arg[i].kernel.height = (uint32_t)filter->dims()[2];
+    arg->conv_arg[i].kernel.width = (uint32_t)filter->dims()[3];
+
+    arg->conv_arg[i].image.address = input_ptr;
+    arg->conv_arg[i].image.scale_address = input->scale;
+    arg->conv_arg[i].image.channels = (uint32_t)input->dims()[1];
+    arg->conv_arg[i].image.height = (uint32_t)input->dims()[2];
+    arg->conv_arg[i].image.width = (uint32_t)input->dims()[3];
+    arg->conv_arg[i].image.pad_height = (uint32_t)padding_h;
+    arg->conv_arg[i].image.pad_width = (uint32_t)padding_w;
+
+    arg->conv_arg[i].output.address = out_ptr;
+    arg->conv_arg[i].output.scale_address = out->scale;
+
+    int num_after_alignment =
+        filter::calc_aligned_num((int)input->dims()[1], arg->filter_num);
+    arg->conv_arg[i].free_space =
+        fpga_malloc(num_after_alignment * 2 * sizeof(half));
+>>>>>>> upstream/develop
   }
 }
 

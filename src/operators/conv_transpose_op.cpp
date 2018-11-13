@@ -27,6 +27,7 @@ REGISTER_OPERATOR_CPU(conv2d_transpose, ops::ConvOpTranspose);
 #ifdef PADDLE_MOBILE_MALI_GPU
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(conv2d_transpose, ops::ConvOpTranspose);
 #endif
 
 #endif

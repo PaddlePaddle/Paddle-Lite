@@ -27,7 +27,11 @@ void align_element(float **data_in, int num, int num_after_alignment) {
       (float *)fpga_malloc(total_element * sizeof(float));  // NOLINT
   memset(ptr_aligned, 0, total_element * sizeof(float));
 
+<<<<<<< HEAD
   for (int i = 1; i < num; i++) {
+=======
+  for (int i = 0; i < num; i++) {
+>>>>>>> upstream/develop
     ptr_aligned[i * 2 + 0] = ptr_unaligned[i];
     ptr_aligned[i * 2 + 1] = ptr_unaligned[i + num];
   }
@@ -39,6 +43,10 @@ void align_element(float **data_in, int num, int num_after_alignment) {
 void format_bias_scale_array(float **data_in, int num,
                              int num_after_alignment) {
   align_element(data_in, num, num_after_alignment);
+<<<<<<< HEAD
+=======
+  fpga_flush(*data_in, 2 * num_after_alignment * sizeof(float));
+>>>>>>> upstream/develop
 }
 
 }  // namespace bias_scale
