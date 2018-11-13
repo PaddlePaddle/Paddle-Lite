@@ -95,12 +95,13 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
 }
 
 template <typename Dtype>
-void LoadMemInternal(void **data, framework::LoDTensor *tensor) {
+static void LoadMemInternal(void **data, framework::LoDTensor *tensor,
+                            bool quant_uint8 = false) {
   char **data_buf = reinterpret_cast<char **>(data);
   int64_t size = tensor->numel();
   Dtype *tensor_data = tensor->mutable_data<Dtype>();
-  if (0) {
-    // TODO(hjchen2) should be moved into operator init function
+  if (quant_uint8) {
+    // should be moved into operator init function
     float min_value;
     float max_value;
     memory::Copy(&min_value, data_buf, sizeof(float));
@@ -156,7 +157,8 @@ void Executor<Dtype, P>::LoadMemory(
   // parse tensor from stream
   switch (tensor_desc.DataType()) {
     case framework::VARTYPE_TYPE_FP32:
-      LoadMemInternal<float>(reinterpret_cast<void **>(data_buf), tensor);
+      LoadMemInternal<float>(reinterpret_cast<void **>(data_buf), tensor,
+                             program_.quantification);
       break;
     case framework::VARTYPE_TYPE_INT8:
       LoadMemInternal<int8_t>(reinterpret_cast<void **>(data_buf), tensor);
@@ -263,7 +265,6 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
   framework::Variable *g_feed_value = program_.scope->Var("feed");
   framework::Tensor *feed_tensor =
       g_feed_value->GetMutable<framework::LoDTensor>();
-  DLOG << "feed_tensor dim: " << feed_tensor->dims();
   feed_tensor->Resize(t.dims());
   feed_tensor->ShareDataWith(t);
   std::shared_ptr<framework::BlockDesc> to_predict_block =
@@ -298,15 +299,7 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
   for (int i = 0; i < profile.size(); i++) {
     const auto &pInfo = profile[i];
     uint64_t timeCost = pInfo.runEnd - pInfo.runBegin;
-    if (ops[i]->Type() == "conv2d") {
-      auto inputs = ops[i]->Inputs();
-      auto *filter = framework::GetVarValue<framework::LoDTensor>(
-          "Filter", inputs, *(program_.scope));
-      int kernel_size = filter->dims()[2];
-      _tp[ops[i]->Type() + "_" + std::to_string(kernel_size)] += timeCost;
-    } else {
-      _tp[ops[i]->Type()] += timeCost;
-    }
+    _tp[ops[i]->Type()] += timeCost;
   }
   printf("====================[ profile ]======================\n");
   using prof_t = std::pair<std::string, uint64_t>;
@@ -376,14 +369,6 @@ std::shared_ptr<framework::LoDTensor> Executor<Dtype, P>::PredictLod(
   for (int i = 0; i < profile.size(); i++) {
     const auto &pInfo = profile[i];
     uint64_t timeCost = pInfo.runEnd - pInfo.runBegin;
-    if (ops[i]->Type() == "conv2d") {
-      auto inputs = ops[i]->Inputs();
-      auto input_keys = ops[i]->GetInputKeys();
-      auto *filter = framework::GetVarValue<framework::LoDTensor>(
-          input_keys[1], inputs, *(program_.scope));
-      int kernel_size = filter->dims()[2];
-      printf("kernel size: %d\n", kernel_size);
-    }
     _tp[ops[i]->Type()] += timeCost;
   }
   printf("====================[ profile ]======================\n");

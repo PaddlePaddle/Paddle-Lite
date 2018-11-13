@@ -909,10 +909,9 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
             "veor       q13, q13, q13                  \n"
             "veor       q14, q14, q14                  \n"
             "veor       q15, q15, q15                  \n"
-            // loop 2 channels
-            "cmp        %[inter_channel], #0           \n"
-            "ble        cmp_remain_%=                  \n"
 
+            "b          store_res_%=                   \n"
+            // loop 2 channels
             "loop_2c_%=:                               \n"
             "vld1.32    {d0-d3}, [%[w_ptr]]!           \n"
             "vld1.32    {d4-d7}, [%[in_ptr]]!          \n"
@@ -937,11 +936,7 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
 
             "subs       %[inter_channel], #1           \n"
             "bne        loop_2c_%=                     \n"
-
-            // cmp remain channel > 0
-            "cmp_remain_%=:                            \n"
-            "cmp        %[remain_channel], #0          \n"
-            "ble        store_res_%=                   \n"
+            "mov        pc, lr                         \n"
 
             // loop 1 channel
             "loop_c_%=:                                \n"
@@ -959,8 +954,16 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
 
             "subs       %[remain_channel], #1          \n"
             "bne        loop_c_%=                      \n"
+            "mov        pc, lr                         \n"
 
             "store_res_%=:                             \n"
+            "cmp        %[inter_channel], #0           \n"
+            "it         gt                             \n"
+            "blgt       loop_2c_%=                     \n"
+            "cmp        %[remain_channel], #0          \n"
+            "it         gt                             \n"
+            "blgt       loop_c_%=                      \n"
+
             "vst1.32    {d16-d19}, [%[uv_ptr]]!        \n"
             "vst1.32    {d20-d23}, [%[uv_ptr]]!        \n"
             "vst1.32    {d24-d27}, [%[uv_ptr]]!        \n"
@@ -970,7 +973,7 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
               [inter_channel] "+r"(inter_channel)
             :
             : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
-              "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15");
+              "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15", "pc", "lr");
       }
     }
   }
