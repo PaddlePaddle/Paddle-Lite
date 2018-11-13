@@ -25,7 +25,11 @@ limitations under the License. */
 #define __ALIGN_KERNEL_MASK(x, mask) (((x) + (mask)) & ~(mask))
 #define __ALIGN_MASK(x, mask) __ALIGN_KERNEL_MASK((x), (mask))
 
+<<<<<<< HEAD
 #define round_down(x, y) ((x) & ((y)-1))
+=======
+#define round_down(x, y) ((x) & ~((y)-1))
+>>>>>>> upstream/develop
 
 namespace fpga_bitmap {
 void bitmap_set(uint64_t *map, unsigned int start, int len);

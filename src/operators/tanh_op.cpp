@@ -11,24 +11,25 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#pragma once
-<<<<<<< HEAD
-#include "fpga/V2/api.h"
-=======
 
-#include "fpga/V2/fpga_common.h"
->>>>>>> upstream/develop
+#ifdef TANH_OP
+
+#include "operators/tanh_op.h"
 
 namespace paddle_mobile {
-namespace fpga {
+namespace operators {
 
-int PerformBypass(const struct BypassArgs& args);
-int ComputeBasicConv(const struct ConvArgs& args);
-int ComputeFpgaPool(const struct PoolingArgs& args);
-int ComputeFpgaEWAdd(const struct EWAddArgs& args);
+template <typename DeviceType, typename T>
+void TanhOp<DeviceType, T>::InferShape() const {
+  this->param_.Out()->Resize(this->param_.InputX()->dims());
+}
 
-int ComputeFpgaConv(const struct SplitConvArgs& args);
-int ComputeFPGAConcat(const struct ConcatArgs& args);
-
-}  // namespace fpga
+}  // namespace operators
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+#ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(Tanh, ops::TanhOp);
+#endif
+
+#endif
