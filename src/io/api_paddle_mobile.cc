@@ -52,7 +52,6 @@ bool PaddleMobilePredictor<Dtype, P>::Init(const PaddleMobileConfig &config) {
   paddle_mobile_->SetThreadNum(config.thread_num);
   return true;
 }
-
 template <typename Dtype, Precision P>
 bool PaddleMobilePredictor<Dtype, P>::Run(
     const std::vector<PaddleTensor> &inputs,

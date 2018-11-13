@@ -17,6 +17,10 @@ limitations under the License. */
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+<<<<<<< HEAD
+=======
+#include <sys/ioctl.h>
+>>>>>>> upstream/develop
 #include <sys/mman.h>
 #include <unistd.h>
 #include <algorithm>
@@ -32,6 +36,10 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace fpga {
+<<<<<<< HEAD
+=======
+namespace driver {
+>>>>>>> upstream/develop
 struct FPGA_INFO g_fpgainfo;
 
 int open_drvdevice() {
@@ -43,7 +51,12 @@ int open_drvdevice() {
 
 int open_memdevice() {
   if (g_fpgainfo.fd_mem == -1) {
+<<<<<<< HEAD
     g_fpgainfo.fd_mem = open(g_fpgainfo.memdevice_path, O_RDWR | O_DSYNC);
+=======
+    // g_fpgainfo.fd_mem = open(g_fpgainfo.memdevice_path, O_RDWR | O_DSYNC);
+    g_fpgainfo.fd_mem = open(g_fpgainfo.memdevice_path, O_RDWR);
+>>>>>>> upstream/develop
   }
   return g_fpgainfo.fd_mem;
 }
@@ -51,7 +64,10 @@ int open_memdevice() {
 void pl_reset() {
   // DLOG << "PL RESET";
 
+<<<<<<< HEAD
   // reg_writeq(0x5a, REG_FPGA_RESET);
+=======
+>>>>>>> upstream/develop
   usleep(100 * 1000);
 }
 
@@ -131,7 +147,11 @@ int pl_get_status() { return 0; }
 int fpga_regpoll(uint64_t reg, uint64_t val, int time) {
   uint64_t i = 0;
   /*timeout精确性待确认*/
+<<<<<<< HEAD
   int64_t timeout = time * CPU_FREQ / 1000000;
+=======
+  int64_t timeout = time * 6;
+>>>>>>> upstream/develop
 
   for (i = 0; i < timeout; i++) {
     if (val == reg_readq(reg)) {
@@ -173,9 +193,20 @@ int memory_request(struct fpga_memory *memory, size_t size, uint64_t *addr) {
 }
 
 void memory_release(struct fpga_memory *memory) {
+<<<<<<< HEAD
   pthread_mutex_lock(&memory->mutex);
   fpga_bitmap::bitmap_clear(memory->bitmap, 0, memory->page_num);
   pthread_mutex_unlock(&memory->mutex);
+=======
+  void *ptr = nullptr;
+
+  /*unmap memory*/
+  std::map<void *, size_t> map = g_fpgainfo.fpga_addr2size_map;
+  std::map<void *, size_t>::iterator iter;
+  for (iter = map.begin(); iter != map.end(); iter++) {
+    fpga_free_driver(ptr);
+  }
+>>>>>>> upstream/develop
 }
 
 int create_fpga_memory_inner(struct fpga_memory *memory, size_t memory_size) {
@@ -238,7 +269,10 @@ int init_fpga_memory(struct fpga_memory *memory) {
     return rc;
   }
 
+<<<<<<< HEAD
   // spin_lock_init(&memory->spin);
+=======
+>>>>>>> upstream/develop
   fpga_bitmap::bitmap_clear(memory->bitmap, 0, memory->page_num);
   fpga_bitmap::bitmap_set(memory->bitmap, 0, 1);  // NOTE reserve fpga page 0.
 
@@ -293,9 +327,29 @@ void *fpga_reg_malloc(size_t size) {
   return ret;
 }
 
+<<<<<<< HEAD
 void *fpga_malloc_driver(size_t size) {
   void *ret = nullptr;
   uint64_t phy_addr = 0;
+=======
+void *fpga_reg_free(void *ptr) {
+  size_t size = 0;
+
+  auto iter = g_fpgainfo.fpga_addr2size_map.find(ptr);
+  if (iter != g_fpgainfo.fpga_addr2size_map.end()) {
+    size = iter->second;
+    g_fpgainfo.fpga_addr2size_map.erase(iter);
+    munmap(ptr, size);
+  } else {
+    DLOG << "Invalid pointer";
+  }
+}
+
+void *fpga_malloc_driver(size_t size) {
+  void *ret = nullptr;
+  uint64_t phy_addr = 0;
+  int i = 0;
+>>>>>>> upstream/develop
 
   memory_request(g_fpgainfo.memory_info, size, &phy_addr);
 
@@ -311,17 +365,79 @@ void *fpga_malloc_driver(size_t size) {
 
 void fpga_free_driver(void *ptr) {
   size_t size = 0;
+<<<<<<< HEAD
+=======
+  uint32_t pos = 0;
+  uint64_t p_addr = 0;
+>>>>>>> upstream/develop
 
   auto iter = g_fpgainfo.fpga_addr2size_map.find(ptr);
   if (iter != g_fpgainfo.fpga_addr2size_map.end()) {
     size = iter->second;
     g_fpgainfo.fpga_addr2size_map.erase(iter);
     munmap(ptr, size);
+<<<<<<< HEAD
+=======
+
+    p_addr = vaddr_to_paddr(ptr);
+    pos = (p_addr - g_fpgainfo.memory_info->mem_start) / FPGA_PAGE_SIZE;
+
+    /*clear bitmap*/
+    pthread_mutex_lock(&g_fpgainfo.memory_info->mutex);
+    fpga_bitmap::bitmap_clear(g_fpgainfo.memory_info->bitmap, pos,
+                              g_fpgainfo.memory_info->nr[pos]);
+    pthread_mutex_unlock(&g_fpgainfo.memory_info->mutex);
+>>>>>>> upstream/develop
   } else {
     DLOG << "Invalid pointer";
   }
 }
 
+<<<<<<< HEAD
+=======
+static inline int do_ioctl(unsigned long req, const void *arg) {
+  return ioctl(g_fpgainfo.fd_mem, req, arg);
+}
+
+int fpga_flush_driver(void *address, size_t size) {
+  struct MemoryCacheArgs args;
+  uint64_t p_addr;
+
+  p_addr = vaddr_to_paddr(address);
+
+  args.offset = (void *)(p_addr - FPGA_MEM_PHY_ADDR);
+  args.size = size;
+
+  return do_ioctl(IOCTL_MEMCACHE_FLUSH, &args);
+}
+
+int fpga_invalidate_driver(void *address, size_t size) {
+  struct MemoryCacheArgs args;
+  uint64_t p_addr;
+
+  p_addr = vaddr_to_paddr(address);
+
+  args.offset = (void *)(p_addr - FPGA_MEM_PHY_ADDR);
+  args.size = size;
+
+  return do_ioctl(IOCTL_MEMCACHE_INVAL, &args);
+}
+
+void fpga_copy_driver(void *dest, const void *src, size_t num) {
+  uint64_t i;
+
+  DLOG << "dest:" << dest << " src:" << src << " size:" << num;
+
+  for (i = 0; i < num; i++) {
+    // DLOG << "i:" << i << " val:" << *((int8_t *)src + i);
+    // usleep(1);
+    *((int8_t *)dest + i) = *((int8_t *)src + i);
+  }
+
+  return;
+}
+
+>>>>>>> upstream/develop
 int open_device_driver() {
   g_fpgainfo.FpgaRegPhyAddr = FPGA_REG_PHY_ADDR;
   g_fpgainfo.FpgaMemPhyAddr = FPGA_MEM_PHY_ADDR;
@@ -347,12 +463,20 @@ int open_device_driver() {
 
 int close_device_driver() {
   pl_destroy();
+<<<<<<< HEAD
   fpga_free_driver(g_fpgainfo.FpgaRegVirAddr);
+=======
+  fpga_reg_free(g_fpgainfo.FpgaRegVirAddr);
+>>>>>>> upstream/develop
   memory_release(g_fpgainfo.memory_info);
   destroy_fpga_memory(g_fpgainfo.memory_info);
 
   return 0;
 }
 
+<<<<<<< HEAD
+=======
+}  // namespace driver
+>>>>>>> upstream/develop
 }  // namespace fpga
 }  // namespace paddle_mobile
