@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.0.0)
 
 option(USE_OPENMP "openmp support" ON)
-option(DEBUGING "enable debug mode" ON)
-option(USE_EXCEPTION "use std exception" ON)
+option(DEBUGING "enable debug mode" OFF)
+option(USE_EXCEPTION "use std exception" OFF)
 option(SYMBOL_HIDDEN "symbol hidden" OFF) # on when use jni or ios io
 option(LOG_PROFILE "log profile" OFF)
 # select the platform to build
@@ -247,6 +247,5 @@ elseif(FPGA)
     add_subdirectory(test)
 endif()
 
-
-
+add_subdirectory(test)
 
