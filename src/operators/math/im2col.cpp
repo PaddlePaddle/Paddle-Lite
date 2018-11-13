@@ -117,7 +117,7 @@ void Im2ColFunctor<ColFormat::kCFO, CPU, float>::operator()(
        (((isize - 2 * padding[0] + filter_height) % stride[0] == 0) ? 1 : 0));
   int fill = isize % 2;
   if (stride[0] == 1 && filter_height == 3 && pad1 && pad2 &&
-      dilation[0] == 1 && im_height > 2) {
+      dilation[0] == 1 && im_height > 2 && im_height == im_width) {
     for (int c = 0; c < im_channels; ++c) {
       int oosize = osize * osize;
       int nk4 = osize / 4;
@@ -289,7 +289,7 @@ void Im2ColFunctor<ColFormat::kCFO, CPU, float>::operator()(
       im_data += isize * isize;
     }
   } else if (stride[0] == 2 && filter_height == 3 && pad1 && dilation[0] == 1 &&
-             im_height > 2) {
+             im_height > 2 && im_height == im_width) {
     for (int c = 0; c < im_channels; ++c) {
       int oosize = osize * osize;
       int nk4 = osize / 4;
@@ -676,7 +676,6 @@ class Im2ColFunctor<ColFormat::kOCF, CPU, T> {
 
     const T *im_data = im.data<T>();
     T *col_data = col->data<T>();
-
     for (int col_row_idx = 0; col_row_idx < col_height; ++col_row_idx) {
       for (int col_col_idx = 0; col_col_idx < col_width; ++col_col_idx) {
         for (int channel = 0; channel < im_channels; ++channel) {
@@ -688,7 +687,6 @@ class Im2ColFunctor<ColFormat::kOCF, CPU, T> {
                  ++filter_col_idx) {
               int im_col_offset =
                   col_col_idx * stride[1] + filter_col_idx - padding[1];
-
               int col_offset =
                   ((((col_row_idx)*col_width + col_col_idx) * im_channels +
                     channel) *
@@ -696,7 +694,6 @@ class Im2ColFunctor<ColFormat::kOCF, CPU, T> {
                    filter_row_idx) *
                       filter_width +
                   filter_col_idx;
-
               int im_offset = (channel * im_height + im_row_offset) * im_width +
                               im_col_offset;
               col_data[col_offset] =

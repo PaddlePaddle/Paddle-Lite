@@ -38,9 +38,6 @@ class PoolOp : public OperatorWithKernel<DeviceType, PoolParam<DeviceType>,
       : OperatorWithKernel<DeviceType, PoolParam<DeviceType>,
                            operators::PoolKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-  using OperatorWithKernel<
-      DeviceType, PoolParam<DeviceType>,
-      operators::PoolKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  private:

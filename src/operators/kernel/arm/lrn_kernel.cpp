@@ -26,7 +26,7 @@ bool LrnKernel<CPU, float>::Init(LrnParam<CPU> *param) {
 }
 
 template <>
-void LrnKernel<CPU, float>::Compute(const LrnParam<CPU> &param) const {
+void LrnKernel<CPU, float>::Compute(const LrnParam<CPU> &param) {
   LrnCompute<float>(param);
 }
 

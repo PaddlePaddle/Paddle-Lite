@@ -16,7 +16,7 @@ limitations under the License. */
 #include "../test_include.h"
 #include "operators/transpose_op.h"
 int main() {
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
   auto program = loader.Load(std::string(g_mobilenet_ssd));
   if (program.originProgram == nullptr) {
     DLOG << "program read file";

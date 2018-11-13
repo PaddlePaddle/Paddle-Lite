@@ -117,9 +117,9 @@ class Attribute {
 
   template <typename Vistor>
   static typename Vistor::type_t ApplyVistor(Vistor vistor, Attribute attr) {
-    if (attr.variant_.TypeId() == typeid(int).hash_code()) {
+    if (attr.variant_.TypeId() == typeid(int).hash_code()) {  // NOLINT
       return vistor(attr.variant_.Get<int>());
-    } else if (attr.variant_.TypeId() == typeid(float).hash_code()) {
+    } else if (attr.variant_.TypeId() == typeid(float).hash_code()) {  // NOLINT
       return vistor(attr.variant_.Get<float>());
     } else if (attr.variant_.TypeId() == typeid(string).hash_code()) {
       return vistor(attr.variant_.GetString());
@@ -129,7 +129,7 @@ class Attribute {
       return vistor(attr.variant_.Get<vector<float>>());
     } else if (attr.variant_.TypeId() == typeid(vector<string>).hash_code()) {
       return vistor(attr.variant_.Get<vector<string>>());
-    } else if (attr.variant_.TypeId() == typeid(bool).hash_code()) {
+    } else if (attr.variant_.TypeId() == typeid(bool).hash_code()) {  // NOLINT
       return vistor(attr.variant_.Get<bool>());
     } else if (attr.variant_.TypeId() == typeid(vector<bool>).hash_code()) {
       return vistor(attr.variant_.Get<vector<bool>>());
@@ -137,7 +137,6 @@ class Attribute {
       return vistor(attr.variant_.Get<int64_t>());
     } else {
       PADDLE_MOBILE_THROW_EXCEPTION("type not support");
-      exit(0);
     }
   }
 

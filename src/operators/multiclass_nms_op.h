@@ -40,10 +40,6 @@ class MultiClassNMSOp : public framework::OperatorWithKernel<
             DeviceType, MultiClassNMSParam<DeviceType>,
             operators::MultiClassNMSKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, MultiClassNMSParam<DeviceType>,
-      operators::MultiClassNMSKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  protected:

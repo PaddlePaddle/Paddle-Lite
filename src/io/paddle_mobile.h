@@ -22,10 +22,13 @@ limitations under the License. */
 #endif  // _OPENMP
 
 #include "common/types.h"
+#include "framework/executor.h"
 #include "framework/load_ops.h"
+#include "framework/loader.h"
 #include "framework/tensor.h"
-#include "io/executor.h"
-#include "io/loader.h"
+#ifdef PADDLE_MOBILE_CL
+#include "framework/cl/cl_engine.h"
+#endif
 
 namespace paddle_mobile {
 
@@ -34,7 +37,13 @@ class PaddleMobile {
   typedef typename PrecisionTrait<P>::ptype Ptype;
 
  public:
-  PaddleMobile() {}
+  PaddleMobile() {
+#ifndef PADDLE_MOBILE_CL
+    bool is_gpu = std::is_same<DeviceType<kGPU_CL>, Dtype>::value;
+    PADDLE_MOBILE_ENFORCE(!is_gpu,
+                          "Not Enable GPU in CmakeList but run gpu codes ");
+#endif
+  }
   bool Load(const std::string &dirname, bool optimize = false,
             bool quantification = false, int batch_size = 1,
             bool loddable = false);
@@ -52,10 +61,11 @@ class PaddleMobile {
 
   bool LoadCombinedMemory(size_t model_len, const uint8_t *model_buf,
                           size_t combined_params_len,
-                          const uint8_t *combined_params_buf);
+                          uint8_t *combined_params_buf);
 
   void SetThreadNum(int num);
   void Clear();
+  double GetPredictTime();
 
   ~PaddleMobile();
 
@@ -68,9 +78,16 @@ class PaddleMobile {
   void Predict_To(int end);
 #endif
 
+#ifdef PADDLE_MOBILE_CL
+ public:
+  void SetCLPath(std::string cl_path);
+  int readText(const char *kernelPath,
+               char **pcode);  // 读取文本文件放入 pcode，返回字符串长度
+#endif
+
  private:
-  std::shared_ptr<Loader<Dtype, P>> loader_;
-  std::shared_ptr<Executor<Dtype, P>> executor_;
+  std::shared_ptr<framework::Loader<Dtype, P>> loader_;
+  std::shared_ptr<framework::Executor<Dtype, P>> executor_;
 };
 
 }  // namespace paddle_mobile

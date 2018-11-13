@@ -28,7 +28,7 @@ template <typename DeviceType, typename T>
 class ShapeKernel
     : public framework::OpKernelBase<DeviceType, ShapeParam<DeviceType>> {
  public:
-  void Compute(const ShapeParam<DeviceType>& param) const;
+  void Compute(const ShapeParam<DeviceType>& param);
   bool Init(ShapeParam<DeviceType>* param);
 };
 }  // namespace operators

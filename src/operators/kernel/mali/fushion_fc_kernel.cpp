@@ -26,7 +26,7 @@ bool FusionFcKernel<GPU_MALI, float>::Init(FusionFcParam<GPU_MALI> *param) {
 
 template <>
 void FusionFcKernel<GPU_MALI, float>::Compute(
-    const FusionFcParam<GPU_MALI> &param) const {
+    const FusionFcParam<GPU_MALI> &param) {
   const Tensor *input_x = param.InputX();
   const Tensor *input_y = param.InputY();
   const Tensor *input_z = param.InputZ();

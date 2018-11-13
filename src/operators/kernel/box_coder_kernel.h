@@ -29,7 +29,7 @@ template <typename DeviceType, typename T>
 class BoxCoderKernel
     : public framework::OpKernelBase<DeviceType, BoxCoderParam<DeviceType>> {
  public:
-  void Compute(const BoxCoderParam<DeviceType>& param) const;
+  void Compute(const BoxCoderParam<DeviceType>& param);
   bool Init(BoxCoderParam<DeviceType>* param);
 };
 }  // namespace operators

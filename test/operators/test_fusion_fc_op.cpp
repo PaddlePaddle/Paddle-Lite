@@ -12,8 +12,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
-
 #include <framework/program/program-optimize/program_optimize.h>
 #include "../test_include.h"
 #include "operators/fusion_fc_op.h"
@@ -114,7 +112,7 @@ template class TestFcOp<CPU>;
 int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run Fc Test";
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
   //    "../../../test/models/googlenet"
   auto program = loader.Load(g_googlenet);
   paddle_mobile::framework::ProgramOptimize optimize;

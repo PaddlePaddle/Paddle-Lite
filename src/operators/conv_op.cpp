@@ -62,4 +62,8 @@ REGISTER_OPERATOR_MALI_GPU(conv2d, ops::ConvOp);
 REGISTER_OPERATOR_FPGA(conv2d, ops::ConvOp);
 #endif
 
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(conv2d, ops::ConvOp);
+#endif
+
 #endif

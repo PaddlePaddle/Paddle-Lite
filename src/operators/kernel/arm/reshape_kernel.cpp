@@ -26,7 +26,7 @@ bool ReshapeKernel<CPU, float>::Init(ReshapeParam<CPU> *param) {
 }
 
 template <>
-void ReshapeKernel<CPU, float>::Compute(const ReshapeParam<CPU> &param) const {
+void ReshapeKernel<CPU, float>::Compute(const ReshapeParam<CPU> &param) {
   ReshapeCompute<float>(param);
 }
 

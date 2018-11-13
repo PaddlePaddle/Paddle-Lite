@@ -12,8 +12,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
-
 #include "../test_helper.h"
 #include "../test_include.h"
 #include "operators/sum_op.h"
@@ -105,7 +103,7 @@ template class TestSumOp<CPU>;
 int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run Sum Test";
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
   auto program = loader.Load(std::string(g_eng) + "/model",
                              std::string(g_eng) + "/params");
 
