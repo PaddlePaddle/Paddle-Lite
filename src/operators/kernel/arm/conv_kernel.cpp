@@ -40,7 +40,8 @@ bool ConvKernel<CPU, float>::Init(ConvParam<CPU> *param) {
                param->Dilations()[0] == param->Dilations()[1] &&
                param->Filter()->dims()[2] == 3 && param->Strides()[0] == 1 &&
                param->Dilations()[0] == 1 && param->Output()->dims()[1] >= 16 &&
-               param->Input()->dims()[2] >= 16) {
+               param->Input()->dims()[1] >= 16 &&
+               param->Input()->dims()[2] <= 140 /* refered from ncnn */) {
       param->ExecMode() = ConvParam<CPU>::EXEC_WINOGRAD3X3_FLOAT;
       // transform weight
       framework::Tensor *transformed_weight = new framework::Tensor;
