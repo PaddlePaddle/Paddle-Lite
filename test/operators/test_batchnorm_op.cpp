@@ -12,8 +12,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
-
 #include "../test_helper.h"
 #include "../test_include.h"
 #include "operators/batchnorm_op.h"
@@ -127,7 +125,7 @@ template class TestBatchNormOp<CPU>;
 int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run BatchNormOp Test";
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
   auto program = loader.Load(std::string(g_mobilenet_ssd));
 
   /// input x (4,10,2,2)

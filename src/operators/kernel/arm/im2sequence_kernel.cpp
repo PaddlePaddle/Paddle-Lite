@@ -33,9 +33,9 @@ inline int Im2SeqOutputSize(int input_size, int filter_size, int padding_0,
 
 template <>
 void Im2SequenceKernel<CPU, float>::Compute(
-    const Im2SequenceParam<CPU> &param) const {
+    const Im2SequenceParam<CPU> &param) {
   const Tensor *in_x = param.Input();
-  Tensor *out = param.Output();
+  framework::LoDTensor *out = param.Output();
   out->mutable_data<float>();
 
   std::vector<int> kernels = param.Kernels();
@@ -52,22 +52,31 @@ void Im2SequenceKernel<CPU, float>::Compute(
                                        paddings[2], strides[0]);
   int output_width = Im2SeqOutputSize(img_width, kernels[1], paddings[1],
                                       paddings[3], strides[1]);
-  const std::vector<int> dilations({1, 1});
 
-  // TODO: verify
+  out->mutable_data<float>({batch_size * output_height * output_width,
+                            img_channels * kernels[0] * kernels[1]});
+  const std::vector<int> dilations({1, 1});
+  // TODO(): verify
   auto out_dims = out->dims();
   out->Resize({batch_size, out->numel() / batch_size});
-
   for (int i = 0; i < batch_size; i++) {
     const Tensor src =
         in_x->Slice(i, i + 1).Resize({img_channels, img_height, img_width});
     Tensor dst = out->Slice(i, i + 1).Resize(
         {output_height, output_width, img_channels, kernels[0], kernels[1]});
-
     math::Im2ColFunctor<math::ColFormat::kOCF, CPU, float> f;
     f(src, dilations, strides, paddings, &dst);
   }
   out->Resize(out_dims);
+  framework::LoD lod(1);
+  lod[0].reserve(batch_size + 1);
+  int offset = 0;
+  lod[0].push_back(offset);
+  for (int i = 0; i < batch_size; ++i) {
+    offset += output_height * output_width;
+    lod[0].push_back(offset);
+  }
+  out->set_lod(lod);
 }
 
 template class Im2SequenceKernel<CPU, float>;

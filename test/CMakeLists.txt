@@ -62,15 +62,21 @@ if (CON GREATER -1)
 
 endif ()
 
-list(FIND NET "FPGAnets" CON)
+list(FIND NET "FPGA_NET_V1" CON)
+if (CON GREATER -1)
+    ADD_EXECUTABLE(test-resnet50 fpga/test_resnet50.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test-resnet50 paddle-mobile)
+    set(FOUND_MATCH ON)
+endif ()
+
+list(FIND NET "FPGA_NET_V2" CON)
 if (CON GREATER -1)
     ADD_EXECUTABLE(test-resnet50 fpga/test_resnet50.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-resnet50 paddle-mobile)
 
-#    ADD_EXECUTABLE(test-resnet net/test_resnet.cpp test_helper.h test_include.h executor_for_test.h)
-#    target_link_libraries(test-resnet paddle-mobile)
+    ADD_EXECUTABLE(test-pe fpga/test_pe.cpp)
+    target_link_libraries(test-pe paddle-mobile)
     set(FOUND_MATCH ON)
-
 endif ()
 
 list(FIND NET "mobilenetssd" CON)
@@ -185,6 +191,10 @@ if (NOT FOUND_MATCH)
     target_link_libraries(test-transpose-op paddle-mobile)
 
     # gen test
+    ADD_EXECUTABLE(test-transpose2-op operators/test_transpose2_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-transpose2-op paddle-mobile)
+
+    # gen test
     ADD_EXECUTABLE(test-multiclassnms-op operators/test_multiclass_nms_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-multiclassnms-op paddle-mobile)
 
@@ -199,6 +209,10 @@ if (NOT FOUND_MATCH)
     # gen test
     ADD_EXECUTABLE(test-reshape-op operators/test_reshape_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-reshape-op paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-reshape2-op operators/test_reshape2_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-reshape2-op paddle-mobile)
 
     # gen test
     ADD_EXECUTABLE(test-relu-op operators/test_relu_op.cpp test_helper.h test_include.h)
@@ -331,12 +345,24 @@ if (NOT FOUND_MATCH)
     target_link_libraries(test-fssd paddle-mobile)
 
     # gen test
+    ADD_EXECUTABLE(test-mobilenetgpu  net/test_mobilenet_GPU.cpp test_helper.h  test_include.h)
+    target_link_libraries(test-mobilenetgpu paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-yologpu net/test_yologpu.cpp test_helper.h  test_include.h executor_for_test.h)
+    target_link_libraries(test-yologpu paddle-mobile)
+
+    # gen test
     ADD_EXECUTABLE(test-multi-process net/test_multi_inference_predict.cpp test_helper.h test_include.h)
     target_link_libraries(test-multi-process paddle-mobile)
 
     # gen test benchmark
     ADD_EXECUTABLE(test-benchmark net/test_benchmark.cpp)
     target_link_libraries(test-benchmark paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-eng net/test_eng.cpp test_helper.h test_include.h)
+    target_link_libraries(test-eng paddle-mobile)
 
     #add_library(test-lib-size SHARED common/test_lib_size.h common/test_lib_size.cpp)
 endif ()

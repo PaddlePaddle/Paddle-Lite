@@ -113,7 +113,7 @@ bool SoftmaxKernel<GPU_MALI, float>::Init(SoftmaxParam<GPU_MALI>* param) {
 
 template <>
 void SoftmaxKernel<GPU_MALI, float>::Compute(
-    const SoftmaxParam<GPU_MALI>& param) const {
+    const SoftmaxParam<GPU_MALI>& param) {
   std::cout << "init acl" << std::endl;
   AclSoftmaxOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclSoftmaxOp<GPU_MALI, float>*>(this->GetAclOp());

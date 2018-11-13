@@ -38,5 +38,8 @@ REGISTER_OPERATOR_CPU(reshape, ops::ReshapeOp);
 #ifdef PADDLE_MOBILE_MALI_GPU
 REGISTER_OPERATOR_MALI_GPU(reshape, ops::ReshapeOp);
 #endif
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(reshape, ops::ReshapeOp);
+#endif
 
 #endif

@@ -12,8 +12,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
-
 #include "../test_helper.h"
 #include "../test_include.h"
 #include "operators/im2sequence_op.h"
@@ -62,7 +60,6 @@ class TestIm2SequenceOp {
     Variable *x1_feed_value = scope->Var("conv2d_19.tmp_1");
     auto tensor_x1 = x1_feed_value->GetMutable<LoDTensor>();
     tensor_x1->ShareDataWith(t1);
-
     Variable *output = scope->Var("im2sequence_0.tmp_0");
     auto *output_tensor = output->GetMutable<LoDTensor>();
     output_tensor->mutable_data<float>({2, 12});
@@ -102,7 +99,7 @@ template class TestIm2SequenceOp<CPU>;
 int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run Im2Sequence Test";
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
   auto program = loader.Load(std::string(g_eng) + "/model",
                              std::string(g_eng) + "/params");
 

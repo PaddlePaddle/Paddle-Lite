@@ -36,11 +36,6 @@ class SigmoidOp : public framework::OperatorWithKernel<
       : framework::OperatorWithKernel<DeviceType, SigmoidParam<DeviceType>,
                                       operators::SigmoidKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, SigmoidParam<DeviceType>,
-      operators::SigmoidKernel<DeviceType, T>>::OperatorWithKernel;
-
   void InferShape() const override;
 };
 

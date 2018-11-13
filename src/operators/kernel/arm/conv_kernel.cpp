@@ -55,7 +55,7 @@ bool ConvKernel<CPU, float>::Init(ConvParam<CPU> *param) {
 }
 
 template <>
-void ConvKernel<CPU, float>::Compute(const ConvParam<CPU> &param) const {
+void ConvKernel<CPU, float>::Compute(const ConvParam<CPU> &param) {
   switch (param.ExecMode()) {
     case ConvParam<CPU>::EXEC_GEMM_INT8:
       GemmConv<int8_t, int32_t>(param);

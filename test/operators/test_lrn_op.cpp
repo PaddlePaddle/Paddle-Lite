@@ -16,7 +16,7 @@ limitations under the License. */
 #include "operators/lrn_op.h"
 
 int main() {
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
   auto program = loader.Load(g_googlenet);
   PADDLE_MOBILE_ENFORCE(program.originProgram != nullptr,
                         "program file read fail");

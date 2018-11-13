@@ -12,7 +12,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
 #include "../test_include.h"
 #include "operators/polygon_box_transform_op.h"
 
@@ -97,7 +96,7 @@ template class TestPolygonBoxTransformOp<CPU>;
 int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run PolygonBoxTransform Test";
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
   auto program = loader.Load(std::string(g_ocr));
 
   paddle_mobile::framework::Tensor input;

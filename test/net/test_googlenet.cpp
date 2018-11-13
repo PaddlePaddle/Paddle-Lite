@@ -28,8 +28,9 @@ int main() {
   bool optimize = true;
   auto time1 = time();
   if (paddle_mobile.Load(g_googlenet, optimize)) {
-    auto time2 = time();
-    std::cout << "load cost: " << time_diff(time1, time2) << "ms\n";
+    auto time2 = paddle_mobile::time();
+    std::cout << "load cost :" << paddle_mobile::time_diff(time1, time2) << "ms"
+              << std::endl;
     std::vector<float> input;
     std::vector<float> output;
     std::vector<int64_t> dims{1, 3, 224, 224};

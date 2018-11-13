@@ -39,7 +39,13 @@ struct PrecisionTrait<Precision::FP16> {
 };
 
 //! device type
-enum DeviceTypeEnum { kINVALID = -1, kCPU = 0, kFPGA = 1, kGPU_MALI = 2 };
+enum DeviceTypeEnum {
+  kINVALID = -1,
+  kCPU = 0,
+  kFPGA = 1,
+  kGPU_MALI = 2,
+  kGPU_CL = 3
+};
 
 template <DeviceTypeEnum T>
 struct DeviceType {};
@@ -47,6 +53,7 @@ struct DeviceType {};
 typedef DeviceType<kCPU> CPU;
 typedef DeviceType<kFPGA> FPGA;
 typedef DeviceType<kGPU_MALI> GPU_MALI;
+typedef DeviceType<kGPU_CL> GPU_CL;
 
 //! data type
 enum DataType {
@@ -131,6 +138,9 @@ extern const char *G_OP_TYPE_ELEMENTWISE_MUL;
 
 extern const char *G_OP_TYPE_QUANTIZE;
 extern const char *G_OP_TYPE_DEQUANTIZE;
+
+extern const char *G_OP_TYPE_TANH;
+extern const char *G_OP_TYPE_FUSION_DECONV_RELU;
 
 extern std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
