@@ -69,6 +69,7 @@ build_for_android() {
         -DANDROID_ABI="${ABI}" \
         -DCMAKE_BUILD_TYPE="${MODE}" \
         -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
+        -DANDROID_TOOLCHAIN='clang' \
         -DANDROID_PLATFORM="${ANDROID_PLATFORM_VERSION}" \
         -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
         -DANDROID_STL=c++_static \
@@ -82,6 +83,7 @@ build_for_android() {
         -DANDROID_ABI="${ABI}" \
         -DCMAKE_BUILD_TYPE="${MODE}" \
         -DCMAKE_TOOLCHAIN_FILE="${TOOLCHAIN_FILE}" \
+        -DANDROID_TOOLCHAIN='clang' \
         -DANDROID_PLATFORM="${ANDROID_PLATFORM_VERSION}" \
         -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
         -DANDROID_STL=c++_static \

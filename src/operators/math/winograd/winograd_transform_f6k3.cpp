@@ -885,7 +885,7 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
   // compute U*V first
   framework::Tensor uv_trans;
   framework::DDim shape =
-      framework::make_ddim(std::vector<int>{4 * out_channel, 8 * tiles, 64});
+      framework::make_ddim(std::vector<int>{out_channel, tiles, 64, 32});
   float *uv_trans_ptr = uv_trans.mutable_data<float>(shape);
   memset(uv_trans_ptr, 0, uv_trans.numel() * sizeof(float));
   const float *input_ptr = input.data<float>();
@@ -894,17 +894,12 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
   #pragma omp parallel for
   for (int i = 0; i < out_channel; ++i) {
     float *uv_ptr = uv_trans_ptr + (i * tiles * 64 * 32);
-    for (int k = 0; k < 64; ++k) {
-      for (int j = 0; j < tiles; ++j) {
+    for (int j = 0; j < tiles; ++j) {
+      for (int k = 0; k < 64; ++k) {
         const float *w_ptr = weight_ptr + (i * 64 + k) * in_channel * 4;
         const float *in_ptr = input_ptr + (j * 64 + k) * in_channel * 8;
-        float *out0 = uv_ptr + (8 * j) * 64 + k;  // out channel 0
-        float *out1 = out0 + 8 * tiles * 64;      // out channel 1
-        float *out2 = out1 + 8 * tiles * 64;      // out channel 2
-        float *out3 = out2 + 8 * tiles * 64;      // out channel 3
         int inter_channel = in_channel >> 1;
         int remain_channel = in_channel & 0x1;
-        int steps = 64 * sizeof(float);
         asm volatile(
             "veor       q8, q8, q8                     \n"
             "veor       q9, q9, q9                     \n"
@@ -921,6 +916,7 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
             "loop_2c_%=:                               \n"
             "vld1.32    {d0-d3}, [%[w_ptr]]!           \n"
             "vld1.32    {d4-d7}, [%[in_ptr]]!          \n"
+            "vld1.32    {d8-d11}, [%[in_ptr]]!         \n"
             "vmla.f32   q8, q2, d0[0]                  \n"
             "vmla.f32   q9, q3, d0[0]                  \n"
             "vmla.f32   q10, q2, d0[1]                 \n"
@@ -930,7 +926,6 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
             "vmla.f32   q14, q2, d1[1]                 \n"
             "vmla.f32   q15, q3, d1[1]                 \n"
 
-            "vld1.32    {d8-d11}, [%[in_ptr]]!         \n"
             "vmla.f32   q8, q4, d2[0]                  \n"
             "vmla.f32   q9, q5, d2[0]                  \n"
             "vmla.f32   q10, q4, d2[1]                 \n"
@@ -966,46 +961,14 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
             "bne        loop_c_%=                      \n"
 
             "store_res_%=:                             \n"
-            "vst1.32    {d16[0]},  [%[out0]], %[steps] \n"
-            "vst1.32    {d16[1]},  [%[out0]], %[steps] \n"
-            "vst1.32    {d17[0]},  [%[out0]], %[steps] \n"
-            "vst1.32    {d17[1]},  [%[out0]], %[steps] \n"
-            "vst1.32    {d18[0]},  [%[out0]], %[steps] \n"
-            "vst1.32    {d18[1]},  [%[out0]], %[steps] \n"
-            "vst1.32    {d19[0]},  [%[out0]], %[steps] \n"
-            "vst1.32    {d19[1]},  [%[out0]], %[steps] \n"
-
-            "vst1.32    {d20[0]},  [%[out1]], %[steps] \n"
-            "vst1.32    {d20[1]},  [%[out1]], %[steps] \n"
-            "vst1.32    {d21[0]},  [%[out1]], %[steps] \n"
-            "vst1.32    {d21[1]},  [%[out1]], %[steps] \n"
-            "vst1.32    {d22[0]},  [%[out1]], %[steps] \n"
-            "vst1.32    {d22[1]},  [%[out1]], %[steps] \n"
-            "vst1.32    {d23[0]},  [%[out1]], %[steps] \n"
-            "vst1.32    {d23[1]},  [%[out1]], %[steps] \n"
-
-            "vst1.32    {d24[0]},  [%[out2]], %[steps] \n"
-            "vst1.32    {d24[1]},  [%[out2]], %[steps] \n"
-            "vst1.32    {d25[0]},  [%[out2]], %[steps] \n"
-            "vst1.32    {d25[1]},  [%[out2]], %[steps] \n"
-            "vst1.32    {d26[0]},  [%[out2]], %[steps] \n"
-            "vst1.32    {d26[1]},  [%[out2]], %[steps] \n"
-            "vst1.32    {d27[0]},  [%[out2]], %[steps] \n"
-            "vst1.32    {d27[1]},  [%[out2]], %[steps] \n"
-
-            "vst1.32    {d28[0]},  [%[out3]], %[steps] \n"
-            "vst1.32    {d28[1]},  [%[out3]], %[steps] \n"
-            "vst1.32    {d29[0]},  [%[out3]], %[steps] \n"
-            "vst1.32    {d29[1]},  [%[out3]], %[steps] \n"
-            "vst1.32    {d30[0]},  [%[out3]], %[steps] \n"
-            "vst1.32    {d30[1]},  [%[out3]], %[steps] \n"
-            "vst1.32    {d31[0]},  [%[out3]], %[steps] \n"
-            "vst1.32    {d31[1]},  [%[out3]], %[steps] \n"
-            : [w_ptr] "+r"(w_ptr), [in_ptr] "+r"(in_ptr), [out0] "+r"(out0),
-              [out1] "+r"(out1), [out2] "+r"(out2), [out3] "+r"(out3),
+            "vst1.32    {d16-d19}, [%[uv_ptr]]!        \n"
+            "vst1.32    {d20-d23}, [%[uv_ptr]]!        \n"
+            "vst1.32    {d24-d27}, [%[uv_ptr]]!        \n"
+            "vst1.32    {d28-d31}, [%[uv_ptr]]!        \n"
+            : [w_ptr] "+r"(w_ptr), [in_ptr] "+r"(in_ptr), [uv_ptr] "+r"(uv_ptr),
               [remain_channel] "+r"(remain_channel),
               [inter_channel] "+r"(inter_channel)
-            : [steps] "r"(steps)
+            :
             : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
               "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15");
       }
@@ -1027,76 +990,105 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
   int remain_h = out_h - out_h / 6 * 6;
   int remain_w = out_w - out_w / 6 * 6;
   float *output_ptr = output->mutable_data<float>();
-  out_channel = output->dims()[1];
-  int uv_image_size = uv_trans.dims()[1] * 64;
   float transform_matrix[8] = {2.f, 4.f, 8.f, 16.f};
 
   #pragma omp parallel for
-  for (int oc = 0; oc < out_channel; ++oc) {
+  for (int oc = 0; oc < output->dims()[1]; ++oc) {
     float at_m[48];        // [6][8]
     float output_tmp[36];  // [6][6], temporarily restore results
-    const float *uv_ptr = uv_trans_ptr + oc * uv_image_size;
+    // (oc / 4) * tiles * 64 * 32 + (oc & 0x3) * 8
+    const float *uv_ptr =
+        uv_trans_ptr + (oc >> 2) * tiles * 64 * 32 + (oc & 0x3) * 8;
     for (int tile_h = 0; tile_h < h_tiles; ++tile_h) {
       for (int tile_w = 0; tile_w < w_tiles; ++tile_w) {
         float *at_m_ptr = at_m;
+        int tile_indics = tile_h * w_tiles + tile_w;
+        int tile_block = tile_indics >> 3;
+        int block_indics = tile_indics & 0x7;
+        const float *uv_ptr0 = uv_ptr + tile_block * 64 * 32 + block_indics;
+        int steps = 32 * sizeof(float);
         asm volatile(
-            "vld1.32    {d0-d1}, [%[tm_ptr]]          \n"
-            "mov        r0, #2                        \n"
-            "loop_%=:                                 \n"
-            "vld1.32    {d2-d5}, [%[uv_ptr]]!         \n"
-            "vld1.32    {d6-d9}, [%[uv_ptr]]!         \n"
-            "vld1.32    {d10-d13}, [%[uv_ptr]]!       \n"
-            "vld1.32    {d14-d17}, [%[uv_ptr]]!       \n"
-            "vtrn.32    q1, q3                        \n"
-            "vtrn.32    q2, q4                        \n"
-            "vtrn.32    q5, q7                        \n"
-            "vtrn.32    q6, q8                        \n"
-            "vswp.32    d3, d10                       \n"  // q1: m0, q5: m2
-            "vswp.32    d7, d14                       \n"  // q3: m1, q7: m3
-            "vswp.32    d5, d12                       \n"  // q2: m4, q6: m6
-            "vswp.32    d9, d16                       \n"  // q4: m5, q8: m7
+            "vld1.32    {d0-d1}, [%[tm_ptr]]              \n"
+            "mov        r0, #2                            \n"
 
-            "vadd.f32   q9, q3, q5                    \n"  // m1 + m2
-            "vadd.f32   q10, q7, q2                   \n"  // m3 + m4
-            "vadd.f32   q11, q4, q6                   \n"  // m5 + m6
-            "vsub.f32   q12, q3, q5                   \n"  // m1 - m2
-            "vsub.f32   q13, q7, q2                   \n"  // m3 - m4
-            "vsub.f32   q14, q4, q6                   \n"  // m5 - m6
-            "vmul.f32   q2, q13, d0[0]                \n"  // 2 * (m3 - m4)
-            "vmul.f32   q3, q11, d0[0]                \n"  // 2 * (m5 + m6)
+            "loop_%=:                                     \n"
+            "vld1.32    {d2[0]}, [%[uv_ptr0]], %[steps]   \n"
+            "vld1.32    {d6[0]}, [%[uv_ptr0]], %[steps]   \n"
+            "vld1.32    {d10[0]}, [%[uv_ptr0]], %[steps]  \n"
+            "vld1.32    {d14[0]}, [%[uv_ptr0]], %[steps]  \n"
+            "vld1.32    {d4[0]}, [%[uv_ptr0]], %[steps]   \n"
+            "vld1.32    {d8[0]}, [%[uv_ptr0]], %[steps]   \n"
+            "vld1.32    {d12[0]}, [%[uv_ptr0]], %[steps]  \n"
+            "vld1.32    {d16[0]}, [%[uv_ptr0]], %[steps]  \n"
 
-            "vadd.f32   q15, q1, q9                   \n"
-            "vadd.f32   q15, q15, q10                 \n"
-            "vmla.f32   q15, q3, d1[1]                \n"
-            "vst1.32    {d30-d31}, [%[at_m_ptr]]!     \n"
+            "vld1.32    {d2[1]}, [%[uv_ptr0]], %[steps]   \n"
+            "vld1.32    {d6[1]}, [%[uv_ptr0]], %[steps]   \n"
+            "vld1.32    {d10[1]}, [%[uv_ptr0]], %[steps]  \n"
+            "vld1.32    {d14[1]}, [%[uv_ptr0]], %[steps]  \n"
+            "vld1.32    {d4[1]}, [%[uv_ptr0]], %[steps]   \n"
+            "vld1.32    {d8[1]}, [%[uv_ptr0]], %[steps]   \n"
+            "vld1.32    {d12[1]}, [%[uv_ptr0]], %[steps]  \n"
+            "vld1.32    {d16[1]}, [%[uv_ptr0]], %[steps]  \n"
 
-            "vadd.f32   q15, q12, q2                  \n"
-            "vmla.f32   q15, q14, d1[1]               \n"
-            "vst1.32    {d30-d31}, [%[at_m_ptr]]!     \n"
+            "vld1.32    {d3[0]}, [%[uv_ptr0]], %[steps]   \n"
+            "vld1.32    {d7[0]}, [%[uv_ptr0]], %[steps]   \n"
+            "vld1.32    {d11[0]}, [%[uv_ptr0]], %[steps]  \n"
+            "vld1.32    {d15[0]}, [%[uv_ptr0]], %[steps]  \n"
+            "vld1.32    {d5[0]}, [%[uv_ptr0]], %[steps]   \n"
+            "vld1.32    {d9[0]}, [%[uv_ptr0]], %[steps]   \n"
+            "vld1.32    {d13[0]}, [%[uv_ptr0]], %[steps]  \n"
+            "vld1.32    {d17[0]}, [%[uv_ptr0]], %[steps]  \n"
 
-            "vmov.32    q15, q9                       \n"
-            "vmla.f32   q15, q10, d0[1]               \n"
-            "vmla.f32   q15, q11, d1[0]               \n"
-            "vst1.32    {d30-d31}, [%[at_m_ptr]]!     \n"
+            "vld1.32    {d3[1]}, [%[uv_ptr0]], %[steps]   \n"
+            "vld1.32    {d7[1]}, [%[uv_ptr0]], %[steps]   \n"
+            "vld1.32    {d11[1]}, [%[uv_ptr0]], %[steps]  \n"
+            "vld1.32    {d15[1]}, [%[uv_ptr0]], %[steps]  \n"
+            "vld1.32    {d5[1]}, [%[uv_ptr0]], %[steps]   \n"
+            "vld1.32    {d9[1]}, [%[uv_ptr0]], %[steps]   \n"
+            "vld1.32    {d13[1]}, [%[uv_ptr0]], %[steps]  \n"
+            "vld1.32    {d17[1]}, [%[uv_ptr0]], %[steps]  \n"
 
-            "vmov.32    q15, q12                      \n"
-            "vmla.f32   q15, q13, d1[0]               \n"
-            "vmla.f32   q15, q14, d0[1]               \n"
-            "vst1.32    {d30-d31}, [%[at_m_ptr]]!     \n"
+            "vadd.f32   q9, q3, q5                     \n"  // m1 + m2
+            "vadd.f32   q10, q7, q2                    \n"  // m3 + m4
+            "vadd.f32   q11, q4, q6                    \n"  // m5 + m6
+            "vsub.f32   q12, q3, q5                    \n"  // m1 - m2
+            "vsub.f32   q13, q7, q2                    \n"  // m3 - m4
+            "vsub.f32   q14, q4, q6                    \n"  // m5 - m6
+            "vmul.f32   q2, q13, d0[0]                 \n"  // 2 * (m3 - m4)
+            "vmul.f32   q3, q11, d0[0]                 \n"  // 2 * (m5 + m6)
 
-            "vadd.f32   q15, q9, q3                   \n"
-            "vmla.f32   q15, q10, d1[1]               \n"
-            "vst1.32    {d30-d31}, [%[at_m_ptr]]!     \n"
+            "vadd.f32   q15, q1, q9                    \n"
+            "vadd.f32   q15, q15, q10                  \n"
+            "vmla.f32   q15, q3, d1[1]                 \n"
+            "vst1.32    {d30-d31}, [%[at_m_ptr]]!      \n"
 
-            "vadd.f32   q15, q12, q8                  \n"
-            "vadd.f32   q15, q15, q14                 \n"
-            "vmla.f32   q15, q2, d1[1]                \n"
-            "vst1.32    {d30-d31}, [%[at_m_ptr]]!     \n"
+            "vadd.f32   q15, q12, q2                   \n"
+            "vmla.f32   q15, q14, d1[1]                \n"
+            "vst1.32    {d30-d31}, [%[at_m_ptr]]!      \n"
 
-            "subs       r0, #1                        \n"
-            "bne        loop_%=                       \n"
-            : [uv_ptr] "+r"(uv_ptr), [at_m_ptr] "+r"(at_m_ptr)
-            : [tm_ptr] "r"((float *)transform_matrix)
+            "vmov.32    q15, q9                        \n"
+            "vmla.f32   q15, q10, d0[1]                \n"
+            "vmla.f32   q15, q11, d1[0]                \n"
+            "vst1.32    {d30-d31}, [%[at_m_ptr]]!      \n"
+
+            "vmov.32    q15, q12                       \n"
+            "vmla.f32   q15, q13, d1[0]                \n"
+            "vmla.f32   q15, q14, d0[1]                \n"
+            "vst1.32    {d30-d31}, [%[at_m_ptr]]!      \n"
+
+            "vadd.f32   q15, q9, q3                    \n"
+            "vmla.f32   q15, q10, d1[1]                \n"
+            "vst1.32    {d30-d31}, [%[at_m_ptr]]!      \n"
+
+            "vadd.f32   q15, q12, q8                   \n"
+            "vadd.f32   q15, q15, q14                  \n"
+            "vmla.f32   q15, q2, d1[1]                 \n"
+            "vst1.32    {d30-d31}, [%[at_m_ptr]]!      \n"
+
+            "subs       r0, #1                         \n"
+            "bne        loop_%=                        \n"
+            : [uv_ptr0] "+r"(uv_ptr0), [at_m_ptr] "+r"(at_m_ptr)
+            : [tm_ptr] "r"((float *)transform_matrix), [steps] "r"(steps)
             : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
               "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15", "r0");
 
