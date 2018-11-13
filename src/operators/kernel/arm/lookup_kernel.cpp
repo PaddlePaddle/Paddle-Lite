@@ -25,7 +25,7 @@ bool LookupKernel<CPU, float>::Init(LookupParam<CPU> *param) {
 }
 
 template <>
-void LookupKernel<CPU, float>::Compute(const LookupParam<CPU> &param) const {
+void LookupKernel<CPU, float>::Compute(const LookupParam<CPU> &param) {
   LookupCompute<float>(param);
   param.Out()->set_lod(param.InputIds()->lod());
 }

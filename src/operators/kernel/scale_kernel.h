@@ -24,7 +24,7 @@ template <typename DeviceType, typename T>
 class ScaleKernel
     : public framework::OpKernelBase<DeviceType, ScaleParam<DeviceType>> {
  public:
-  void Compute(const ScaleParam<DeviceType>& param) const;
+  void Compute(const ScaleParam<DeviceType>& param);
 };
 }  // namespace operators
 }  // namespace paddle_mobile

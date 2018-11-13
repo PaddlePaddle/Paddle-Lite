@@ -83,6 +83,7 @@ void PoolCompute(const PoolParam<CPU> &param) {
 #if __aarch64__
     PoolBasic(pooling_type, ksize, strides, paddings, in_x, out);
 #else
+    /// todo: fix bug in Pool2x2
     if (pooling_type == "max") {
       math::Pool2x2Maxs2p0(strides, paddings, in_x, out);
     } else if (pooling_type == "avg") {

@@ -19,14 +19,15 @@ limitations under the License. */
 int main() {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
   paddle_mobile.SetThreadNum(4);
-  auto time1 = time();
+  auto time1 = paddle_mobile::time();
   //  auto isok = paddle_mobile.Load(std::string(g_mobilenet_detect) + "/model",
   //                     std::string(g_mobilenet_detect) + "/params", true);
 
   auto isok = paddle_mobile.Load(g_mobilenet, true);
   if (isok) {
-    auto time2 = time();
-    std::cout << "load cost :" << time_diff(time1, time1) << "ms" << std::endl;
+    auto time2 = paddle_mobile::time();
+    std::cout << "load cost :" << paddle_mobile::time_diff(time1, time1) << "ms"
+              << std::endl;
 
     std::vector<float> input;
     std::vector<int64_t> dims{1, 3, 224, 224};
@@ -42,14 +43,14 @@ int main() {
     for (int i = 0; i < 10; ++i) {
       auto vec_result = paddle_mobile.Predict(input, dims);
     }
-    auto time3 = time();
+    auto time3 = paddle_mobile::time();
     for (int i = 0; i < 10; ++i) {
       auto vec_result = paddle_mobile.Predict(input, dims);
     }
     DLOG << vec_result;
-    auto time4 = time();
-    std::cout << "predict cost :" << time_diff(time3, time4) / 10 << "ms"
-              << std::endl;
+    auto time4 = paddle_mobile::time();
+    std::cout << "predict cost :" << paddle_mobile::time_diff(time3, time4) / 10
+              << "ms" << std::endl;
   }
 
   std::cout << "如果结果Nan请查看: test/images/g_test_image_1x3x224x224_banana "

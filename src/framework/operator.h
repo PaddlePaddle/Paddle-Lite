@@ -32,7 +32,10 @@ limitations under the License. */
 #include "framework/scope.h"
 #include "framework/tensor.h"
 #include "framework/variable.h"
-
+#ifdef PADDLE_MOBILE_CL
+#include "framework/cl/cl_helper.h"
+#include "framework/cl/cl_scope.h"
+#endif
 namespace paddle_mobile {
 namespace framework {
 using std::string;
@@ -60,10 +63,10 @@ class OperatorBase {
                const VariableNameMap &outputs, const AttributeMap &attrs,
                std::shared_ptr<Scope> scope);
   virtual ~OperatorBase() {}
-  void Run() const;
+  void Run();
   std::vector<string> GetOutKeys() const;
   std::vector<string> GetInputKeys() const;
-  virtual void RunImpl() const = 0;
+  virtual void RunImpl() = 0;
 
   virtual void Init() = 0;
   /*
@@ -113,9 +116,13 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
                      const VariableNameMap &outputs, const AttributeMap &attrs,
                      std::shared_ptr<Scope> scope)
       : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope),
-        param_(inputs, outputs, attrs, *scope) {}
+        param_(inputs, outputs, attrs, *scope) {
+#ifdef PADDLE_MOBILE_CL
+    kernel_.InitCLHelper(scope->GetCLScpoe());
+#endif
+  }
 
-  virtual void RunImpl() const { this->kernel_.Compute(this->param_); }
+  virtual void RunImpl() { this->kernel_.Compute(this->param_); }
 
   virtual void InferShape() const = 0;
 
@@ -135,21 +142,34 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
 template <typename Dtype, typename P>
 class OpKernelBase {
  public:
-  /*
-   * @b 所有kernel 需实现 Compute 方法
-   * @p para 这个参数为 kernel 运算时所需要用到参数组成的一个结构体,
-   *    所有结构体存在与: paddle-mobile/src/operators/op_param.h
-   * */
-#ifdef PADDLE_MOBILE_MALI_GPU
+  OpKernelBase() = default;
+
+#ifdef PADDLE_MOBILE_CL
+  virtual void InitCLHelper(CLScope *clScope) {
+    cl_helper_ = CLHelper(clScope);
+  }
+#endif
+
+    /*
+     * @b 所有kernel 需实现 Compute 方法
+     * @p para 这个参数为 kernel 运算时所需要用到参数组成的一个结构体,
+     *    所有结构体存在与: paddle-mobile/src/operators/op_param.h
+     * */
+#ifdef PADDLE_McOBILE_MALI_GPU
   OpKernelBase() { acl_op_ = nullptr; }
   void *GetAclOp() const { return acl_op_; }
   void SetAclOp(void *op, void *ob) const {
     reinterpret_cast<OpKernelBase<Dtype, P> *>(ob)->acl_op_ = op;
   }
 #endif
-  virtual void Compute(const P &para) const = 0;
+  virtual void Compute(const P &para) = 0;
   virtual bool Init(P *para) { return true; }
   virtual ~OpKernelBase() = default;
+
+ protected:
+#ifdef PADDLE_MOBILE_CL
+  CLHelper cl_helper_;
+#endif
 
  private:
 #ifdef PADDLE_MOBILE_MALI_GPU

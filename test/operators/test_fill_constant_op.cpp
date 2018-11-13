@@ -12,7 +12,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
 #include "../test_include.h"
 #include "operators/fill_constant_op.h"
 
@@ -95,7 +94,7 @@ template class TestFillConstantOp<CPU>;
 int main() {
   DLOG << "----------**********----------";
   DLOG << "begin to run FillConstant Test";
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
   auto program = loader.Load(std::string(g_ocr) + "/model",
                              std::string(g_ocr) + "/params");
 

@@ -35,7 +35,7 @@ struct PReluFunctor {
  * @b 特化到具体平台的实现, param 从 op 层传入
  * */
 template <>
-void PReluKernel<CPU, float>::Compute(const PReluParam<CPU> &param) const {
+void PReluKernel<CPU, float>::Compute(const PReluParam<CPU> &param) {
   auto *x = param.InputX();
   auto *alpha = param.InputAlpha();
   auto *out = param.Out();

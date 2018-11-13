@@ -27,7 +27,7 @@ template <typename DeviceType, typename T>
 class FusionFcKernel
     : public framework::OpKernelBase<DeviceType, FusionFcParam<DeviceType>> {
  public:
-  void Compute(const FusionFcParam<DeviceType>& param) const;
+  void Compute(const FusionFcParam<DeviceType>& param);
   bool Init(FusionFcParam<DeviceType>* param);
 };
 

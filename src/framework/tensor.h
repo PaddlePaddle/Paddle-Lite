@@ -24,65 +24,24 @@ limitations under the License. */
 #include <vector>
 
 #include "common/enforce.h"
-#include "common/types.h"
 #include "framework/data_layout.h"
-#include "framework/ddim.h"
+#include "framework/tensor_base.h"
 #include "memory/t_malloc.h"
 
 namespace paddle_mobile {
 namespace framework {
-template <typename... T>
-struct SizeOfTypeFunctor;
-
-template <typename T>
-struct SizeOfTypeFunctor<T> {
-  size_t operator()(std::type_index type) const {
-    if (typeid(T).hash_code() == type.hash_code()) {
-      return sizeof(T);
-    } else {
-      return 0UL;
-    }
-  }
-};
-
-template <>
-struct SizeOfTypeFunctor<> {
-  size_t operator()(std::type_index type) const { return 0UL; }
-};
-
-template <typename HEAD, typename... TAIL>
-struct SizeOfTypeFunctor<HEAD, TAIL...> {
-  size_t operator()(std::type_index type) const {
-    SizeOfTypeFunctor<HEAD> head;
-    size_t head_size = head(type);
-    if (head_size != 0) {
-      return head_size;
-    }
-    SizeOfTypeFunctor<TAIL...> tail;
-    return tail(type);
-  }
-};
-
-static inline size_t SizeOfType(std::type_index type) {
-  SizeOfTypeFunctor<int8_t, int, half, float, double, int16_t, int64_t, bool,
-                    size_t>
-      functor;
-  size_t size = functor(type);
-
-  PADDLE_MOBILE_ENFORCE(size != 0UL, "Cannot get size of type %s", type.name());
-  return size;
-}
 
 class LoDTensor;
 
-class Tensor {
+class Tensor : public TensorBase {
  public:
-  Tensor() : offset_(0) {}
+  Tensor() {}
   template <typename T>
-  Tensor(std::vector<T> input, DDim ddim) : offset_(0) {
+  Tensor(std::vector<T> input, DDim ddim) {
     PADDLE_MOBILE_ENFORCE(
         input.size() == framework::product(ddim),
         "input vector'length should be equal to tensor's length");
+
     auto input_ptr = mutable_data<T>(ddim);
     for (int i = 0; i < input.size(); ++i) {
       input_ptr[i] = input[i];
@@ -95,44 +54,19 @@ class Tensor {
     this->offset_ = inTensor.offset_;
   }
 
-  /*! Return a pointer to mutable memory block. */
-  template <typename T>
-  inline T *data() {
-    check_memory_size();
-    PADDLE_MOBILE_ENFORCE(
-        (std::is_same<T, void>::value ||
-         holder_->type().hash_code() == typeid(T).hash_code()),
-        "Tensor holds the wrong type, it holds %s",
-        this->holder_->type().name());
-
-    return reinterpret_cast<T *>(reinterpret_cast<uintptr_t>(holder_->ptr()) +
-                                 offset_);
+  /*! Resize the dimensions of the memory block. */
+  inline Tensor &Resize(const DDim &dims) {
+    dims_ = dims;
+    return *this;
   }
 
-  /*! Return a pointer to constant memory block. */
-  template <typename T>
-  inline const T *data() const {
-    check_memory_size();
-    PADDLE_MOBILE_ENFORCE(
-        (std::is_same<T, void>::value ||
-         holder_->type().hash_code() == typeid(T).hash_code()),
-        "Tensor holds the wrong type, it holds %s ,requested:%s",
-        this->holder_->type().name(), typeid(T).name());
-
-    return reinterpret_cast<const T *>(
-        reinterpret_cast<uintptr_t>(holder_->ptr()) + offset_);
-  }
-
-  inline bool IsInitialized() const { return holder_ != nullptr; }
-
-  /**
-   * @brief   Return a pointer to mutable memory block.
-   * @note    If not exist, then allocation.
-   */
-  template <typename T>
-  inline T *mutable_data() {
-    static_assert(std::is_pod<T>::value, "T must be POD");
-    return reinterpret_cast<T *>(mutable_data(typeid(T)));
+  /*! The internal of two tensors share the same memory block. */
+  inline Tensor &ShareDataWith(const Tensor &src) {
+    src.check_memory_size();
+    if (holder_.get() != src.holder_.get()) {
+      *this = src;
+    }
+    return *this;
   }
 
   inline void *mutable_data(std::type_index type) {
@@ -150,6 +84,16 @@ class Tensor {
   }
 
   /**
+   * @brief   Return a pointer to mutable memory block.
+   * @note    If not exist, then allocation.
+   */
+  template <typename T>
+  inline T *mutable_data() {
+    static_assert(std::is_pod<T>::value, "T must be POD");
+    return reinterpret_cast<T *>(mutable_data(typeid(T)));
+  }
+
+  /**
    * @brief     Return a pointer to mutable memory block.
    *
    * @param[in] dims    The dimensions of the memory block.
@@ -162,27 +106,6 @@ class Tensor {
     static_assert(std::is_pod<T>::value, "T must be POD");
     Resize(dims);
     return mutable_data<T>();
-  }
-
-  /*! Return the dimensions of the memory block. */
-  inline const DDim &dims() const { return dims_; }
-
-  /*! Return the numel of the memory block. */
-  inline int64_t numel() const { return product(dims_); }
-
-  /*! Resize the dimensions of the memory block. */
-  inline Tensor &Resize(const DDim &dims) {
-    dims_ = dims;
-    return *this;
-  }
-
-  /*! The internal of two tensors share the same memory block. */
-  inline Tensor &ShareDataWith(const Tensor &src) {
-    src.check_memory_size();
-    if (holder_.get() != src.holder_.get()) {
-      *this = src;
-    }
-    return *this;
   }
 
   /**
@@ -218,44 +141,35 @@ class Tensor {
     }
   }
 
-  std::type_index type() const {
+  /*! Return a pointer to mutable memory block. */
+  template <typename T>
+  inline T *data() {
+    check_memory_size();
     PADDLE_MOBILE_ENFORCE(
-        holder_ != nullptr,
-        "Tensor not initialized yet when Tensor::type() is called.")
-    return holder_->type();
+        (std::is_same<T, void>::value ||
+         holder_->type().hash_code() == typeid(T).hash_code()),
+        "Tensor holds the wrong type, it holds %s",
+        this->holder_->type().name());
+
+    return reinterpret_cast<T *>(reinterpret_cast<uintptr_t>(holder_->ptr()) +
+                                 offset_);
   }
 
-  // memory size returns the holding memory size in byte.
-  size_t memory_size() const {
-    return holder_ == nullptr ? 0UL : holder_->size() - offset_;
-  }
-
-  inline void check_memory_size() const {
+  /*! Return a pointer to constant memory block. */
+  template <typename T>
+  inline const T *data() const {
+    check_memory_size();
     PADDLE_MOBILE_ENFORCE(
-        holder_ != nullptr,
-        "Tensor holds no memory. Call Tensor::mutable_data first.");
-    PADDLE_MOBILE_ENFORCE(numel() * SizeOfType(type()) <= memory_size(),
-                          "Tensor's dims_ is out of bound. ");
+        (std::is_same<T, void>::value ||
+         holder_->type().hash_code() == typeid(T).hash_code()),
+        "Tensor holds the wrong type, it holds %s ,requested:%s",
+        this->holder_->type().name(), typeid(T).name());
+
+    return reinterpret_cast<const T *>(
+        reinterpret_cast<uintptr_t>(holder_->ptr()) + offset_);
   }
 
  private:
-  /**
-   * @note    Placeholder hides type T, so it doesn't appear as a
-   * template
-   *          parameter of Variable.
-   */
-  struct Placeholder {
-    virtual ~Placeholder() = default;
-
-    virtual void *ptr() const = 0;
-
-    virtual size_t size() const = 0;
-
-    virtual std::type_index type() const = 0;
-
-    virtual void set_type(std::type_index type) = 0;
-  };
-
   struct PlaceholderImpl : public Placeholder {
     PlaceholderImpl(size_t size, std::type_index type)
         : ptr_(static_cast<uint8_t *>(memory::Alloc(size)),
@@ -282,27 +196,6 @@ class Tensor {
     /* the current type of memory */
     std::type_index type_;
   };
-
-  /*! holds the memory block if allocated. */
-  std::shared_ptr<Placeholder> holder_;
-
-  /**
-   * @brief points to elements dimensions.
-   *
-   * @note dims_ do not indicate the memory block size.
-   */
-
-  DDim dims_;
-
-  /**
-   * @brief   A PlaceHolder may be shared by more than one tensor.
-   *
-   * @note    Some of them may be slices of the others. So the offset_
-   *          is introduced here to indicate the byte offset between
-   *          PlaceHolder::ptr_ and where the tensor data really
-   * begins.
-   */
-  size_t offset_;
 
 #ifdef PADDLE_MOBILE_FPGA
  public:  // NOLINT

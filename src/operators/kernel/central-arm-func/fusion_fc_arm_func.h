@@ -29,10 +29,9 @@ void FusionFcCompute(const FusionFcParam<CPU> &param) {
   auto *input_z_data = input_z->data<float>();
   int axis = param.Axis();
   Tensor *out = param.Out();
-  auto *out_data = out->mutable_data<float>();
   //  int m = out->dims()[0];
   //  int n = out->dims()[1];
-
+  auto *out_data = out->mutable_data<float>();
   const Tensor x_matrix =
       input_x->dims().size() > 2
           ? framework::ReshapeToMatrix(*input_x, param.XNumColDims())

@@ -74,7 +74,7 @@ template <typename DeviceType, typename T>
 class ResizeKernel
     : public framework::OpKernelBase<DeviceType, ResizeParam<DeviceType>> {
  public:
-  void Compute(const ResizeParam<DeviceType> &param) const;
+  void Compute(const ResizeParam<DeviceType> &param);
 };
 }  // namespace operators
 }  // namespace paddle_mobile

@@ -37,10 +37,6 @@ class GruOp : public framework::OperatorWithKernel<
       : framework::OperatorWithKernel<DeviceType, GruParam<DeviceType>,
                                       operators::GruKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, GruParam<DeviceType>,
-      operators::GruKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 };
 

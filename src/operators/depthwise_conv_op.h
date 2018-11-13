@@ -36,10 +36,6 @@ class DepthwiseConvOp : public framework::OperatorWithKernel<
             DeviceType, ConvParam<DeviceType>,
             operators::DepthwiseConvKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
-  using framework::OperatorWithKernel<
-      DeviceType, ConvParam<DeviceType>,
-      operators::DepthwiseConvKernel<DeviceType, T>>::OperatorWithKernel;
   void InferShape() const override;
 
  private:

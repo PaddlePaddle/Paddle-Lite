@@ -118,7 +118,7 @@ bool ConcatKernel<GPU_MALI, float>::Init(ConcatParam<GPU_MALI>* param) {
 
 template <>
 void ConcatKernel<GPU_MALI, float>::Compute(
-    const ConcatParam<GPU_MALI>& param) const {
+    const ConcatParam<GPU_MALI>& param) {
   std::cout << "init acl" << std::endl;
   AclConcatOp<GPU_MALI, float>* acl_op =
       reinterpret_cast<AclConcatOp<GPU_MALI, float>*>(this->GetAclOp());

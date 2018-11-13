@@ -34,7 +34,7 @@ bool ElementwiseAddKernel<GPU_MALI, float>::Init(
 
 template <>
 void ElementwiseAddKernel<GPU_MALI, float>::Compute(
-    const ElementwiseAddParam<GPU_MALI> &param) const {
+    const ElementwiseAddParam<GPU_MALI> &param) {
   const Tensor *input_x = param.InputX();
   const Tensor *input_y = param.InputY();
   Tensor *Out = param.Out();

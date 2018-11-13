@@ -29,7 +29,9 @@ PaddleMobilePredictor<Dtype, P>::PaddleMobilePredictor(
 template <typename Dtype, Precision P>
 bool PaddleMobilePredictor<Dtype, P>::Init(const PaddleMobileConfig &config) {
   paddle_mobile_.reset(new PaddleMobile<Dtype, P>());
-
+#ifdef PADDLE_MOBILE_CL
+  paddle_mobile_->SetCLPath(config.cl_path);
+#endif
   if (config.memory_pack.from_memory) {
     DLOG << "load from memory!";
     paddle_mobile_->LoadCombinedMemory(config.memory_pack.model_size,
@@ -50,7 +52,6 @@ bool PaddleMobilePredictor<Dtype, P>::Init(const PaddleMobileConfig &config) {
   paddle_mobile_->SetThreadNum(config.thread_num);
   return true;
 }
-
 template <typename Dtype, Precision P>
 bool PaddleMobilePredictor<Dtype, P>::Run(
     const std::vector<PaddleTensor> &inputs,
@@ -126,6 +127,8 @@ CreatePaddlePredictor<PaddleMobileConfig, PaddleEngineKind::kPaddleMobile>(
       x.reset(new PaddleMobilePredictor<FPGA, Precision::FP32>(config));
     } else if (config.device == PaddleMobileConfig::kGPU_MALI) {
       x.reset(new PaddleMobilePredictor<GPU_MALI, Precision::FP32>(config));
+    } else if (config.device == PaddleMobileConfig::kGPU_CL) {
+      x.reset(new PaddleMobilePredictor<GPU_CL, Precision::FP32>(config));
     } else {
       LOG(kLOG_ERROR) << "unsupport device type!";
       return nullptr;

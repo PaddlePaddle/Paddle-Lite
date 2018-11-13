@@ -15,8 +15,14 @@ limitations under the License. */
 #pragma once
 
 #include <list>
+#include <string>
 #include <unordered_map>
-#include "variable.h"
+#include <vector>
+
+#ifdef PADDLE_MOBILE_CL
+#include "framework/cl/cl_scope.h"
+#endif
+#include "framework/variable.h"
 
 namespace paddle_mobile {
 namespace framework {
@@ -33,6 +39,10 @@ class Scope {
       delete kid;
     }
     kids_.clear();
+
+#ifdef PADDLE_MOBILE_CL
+    delete cl_scope_;
+#endif
   }
 
   Scope &NewScope() const;
@@ -72,6 +82,10 @@ class Scope {
 
   Variable *FindVarLocally(const std::string &name) const;
 
+#ifdef PADDLE_MOBILE_CL
+  CLScope *GetCLScpoe() { return cl_scope_; }
+#endif
+
  private:
   // Call Scope::NewScope for a sub-scope.
   explicit Scope(Scope const *parent) : parent_(parent) {}
@@ -79,6 +93,10 @@ class Scope {
   mutable std::unordered_map<std::string, Variable *> vars_;
   mutable std::list<Scope *> kids_;
   Scope const *parent_{nullptr};
+
+#ifdef PADDLE_MOBILE_CL
+  CLScope *cl_scope_ = new CLScope();
+#endif
 };
 }  // namespace framework
 }  // namespace paddle_mobile

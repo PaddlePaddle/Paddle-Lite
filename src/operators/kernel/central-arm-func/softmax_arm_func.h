@@ -24,6 +24,7 @@ void SoftmaxCompute(const SoftmaxParam<CPU> &param) {
   Tensor *out = param.Out();
   auto x_dims = in_x->dims();
   out->Resize(x_dims);
+  out->mutable_data<float>();
   math::SoftmaxFuntor<CPU, float>()(in_x, out);
 }
 }  // namespace operators

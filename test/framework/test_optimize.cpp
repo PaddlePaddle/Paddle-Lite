@@ -13,12 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "../test_helper.h"
+#include "framework/loader.h"
 #include "framework/program/program-optimize/node.h"
 #include "framework/program/program-optimize/program_optimize.h"
-#include "io/loader.h"
 
 int main() {
-  paddle_mobile::Loader<paddle_mobile::CPU> loader;
+  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
   //    "../../../test/models/googlenet"
   auto program = loader.Load(g_mobilenet_ssd, true);
   paddle_mobile::framework::ProgramOptimize optimize;

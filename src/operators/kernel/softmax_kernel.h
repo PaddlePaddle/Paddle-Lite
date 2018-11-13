@@ -27,7 +27,7 @@ template <typename DeviceType, typename T>
 class SoftmaxKernel
     : public OpKernelBase<DeviceType, SoftmaxParam<DeviceType>> {
  public:
-  void Compute(const SoftmaxParam<DeviceType> &param) const override;
+  void Compute(const SoftmaxParam<DeviceType> &param);
   bool Init(SoftmaxParam<DeviceType> *param);
 };
 }  // namespace operators
