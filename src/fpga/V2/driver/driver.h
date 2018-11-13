@@ -53,7 +53,7 @@ struct MemoryCacheArgs {
   size_t size;
 };
 
-#define IOCTL_FPGA_MAGIC 'FPGA'
+#define IOCTL_FPGA_MAGIC 'F'
 #define IOCTL_MEMCACHE_INVAL _IOW(IOCTL_FPGA_MAGIC, 12, struct MemoryCacheArgs)
 #define IOCTL_MEMCACHE_FLUSH _IOW(IOCTL_FPGA_MAGIC, 13, struct MemoryCacheArgs)
 
