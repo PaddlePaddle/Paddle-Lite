@@ -17,18 +17,18 @@ limitations under the License. */
 #include "operators/kernel/box_coder_kernel.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        template <>
-        bool BoxCoderKernel<GPU_CL, float>::Init(BoxCoderParam<GPU_CL> *param) {
-            return true;
-        }
+template <>
+bool BoxCoderKernel<GPU_CL, float>::Init(BoxCoderParam<GPU_CL> *param) {
+  return true;
+}
 
-        template <>
-        void BoxCoderKernel<GPU_CL, float>::Compute(const BoxCoderParam<GPU_CL> &param) {
-        }
+template <>
+void BoxCoderKernel<GPU_CL, float>::Compute(
+    const BoxCoderParam<GPU_CL> &param) {}
 
-    }  // namespace operators
+}  // namespace operators
 }  // namespace paddle_mobile
 
 #endif

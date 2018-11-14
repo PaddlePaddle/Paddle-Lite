@@ -17,19 +17,17 @@ limitations under the License. */
 #include "operators/kernel/concat_kernel.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        template <>
-        bool ConcatKernel<GPU_CL, float>::Init(ConcatParam<GPU_CL> *param) {
-            return true;
-        }
+template <>
+bool ConcatKernel<GPU_CL, float>::Init(ConcatParam<GPU_CL> *param) {
+  return true;
+}
 
-        template <>
-        void ConcatKernel<GPU_CL, float>::Compute(const ConcatParam<GPU_CL> &param) {
+template <>
+void ConcatKernel<GPU_CL, float>::Compute(const ConcatParam<GPU_CL> &param) {}
 
-        }
-
-    }  // namespace operators
+}  // namespace operators
 }  // namespace paddle_mobile
 
 #endif
