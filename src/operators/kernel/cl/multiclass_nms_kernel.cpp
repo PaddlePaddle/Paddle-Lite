@@ -17,19 +17,19 @@ limitations under the License. */
 #include "operators/kernel/multiclass_nms_kernel.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        template <>
-        bool MultiClassNMSKernel<GPU_CL, float>::Init(MultiClassNMSParam<GPU_CL> *param) {
-            return true;
-        }
+template <>
+bool MultiClassNMSKernel<GPU_CL, float>::Init(
+    MultiClassNMSParam<GPU_CL> *param) {
+  return true;
+}
 
-        template <>
-        void MultiClassNMSKernel<GPU_CL, float>::Compute(
-                const MultiClassNMSParam<GPU_CL> &param) {
-        }
+template <>
+void MultiClassNMSKernel<GPU_CL, float>::Compute(
+    const MultiClassNMSParam<GPU_CL> &param) {}
 
-    }  // namespace operators
+}  // namespace operators
 }  // namespace paddle_mobile
 
 #endif
