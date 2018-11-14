@@ -17,20 +17,19 @@ limitations under the License. */
 #include "operators/kernel/prior_box_kernel.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        template <>
-        bool PriorBoxKernel<GPU_CL, float>::Init(PriorBoxParam<GPU_CL> *param) {
-            return true;
-        }
+template <>
+bool PriorBoxKernel<GPU_CL, float>::Init(PriorBoxParam<GPU_CL> *param) {
+  return true;
+}
 
-        template <>
-        void PriorBoxKernel<GPU_CL, float>::Compute(const PriorBoxParam<GPU_CL> &param) {
+template <>
+void PriorBoxKernel<GPU_CL, float>::Compute(
+    const PriorBoxParam<GPU_CL> &param) {}
+template class PriorBoxKernel<GPU_CL, float>;
 
-        }
-        template class PriorBoxKernel<GPU_CL, float>;
-
-    }  // namespace operators
+}  // namespace operators
 }  // namespace paddle_mobile
 
 #endif

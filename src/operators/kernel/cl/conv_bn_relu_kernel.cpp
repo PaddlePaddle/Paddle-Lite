@@ -17,21 +17,20 @@ limitations under the License. */
 #include "operators/kernel/conv_bn_relu_kernel.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        template <>
-        bool ConvBNReluKernel<GPU_CL, float>::Init(FusionConvBNReluParam<GPU_CL> *param) {
+template <>
+bool ConvBNReluKernel<GPU_CL, float>::Init(
+    FusionConvBNReluParam<GPU_CL> *param) {
+  return true;
+}
 
-            return true;
-        }
+template <>
+void ConvBNReluKernel<GPU_CL, float>::Compute(
+    const FusionConvBNReluParam<GPU_CL> &param) {}
+template class ConvBNReluKernel<GPU_CL, float>;
 
-        template <>
-        void ConvBNReluKernel<GPU_CL, float>::Compute(
-                const FusionConvBNReluParam<GPU_CL> &param) {
-        }
-        template class ConvBNReluKernel<GPU_CL, float>;
-
-    }  // namespace operators
+}  // namespace operators
 }  // namespace paddle_mobile
 
 #endif

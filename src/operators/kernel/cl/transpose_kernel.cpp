@@ -16,18 +16,18 @@ limitations under the License. */
 #include "operators/kernel/transpose_kernel.h"
 
 namespace paddle_mobile {
-    namespace operators {
+namespace operators {
 
-        template <>
-        bool TransposeKernel<GPU_CL, float>::Init(TransposeParam<GPU_CL> *param) {
-            return true;
-        }
+template <>
+bool TransposeKernel<GPU_CL, float>::Init(TransposeParam<GPU_CL> *param) {
+  return true;
+}
 
-        template <>
-        void TransposeKernel<GPU_CL, float>::Compute(const TransposeParam<GPU_CL> &param) {
-        }
+template <>
+void TransposeKernel<GPU_CL, float>::Compute(
+    const TransposeParam<GPU_CL> &param) {}
 
-    }  // namespace operators
+}  // namespace operators
 }  // namespace paddle_mobile
 
 #endif
