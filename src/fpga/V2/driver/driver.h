@@ -24,6 +24,7 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace fpga {
+namespace driver {
 
 #define DIV_ROUND_UP(n, d) (((n) + (d)-1) / (d))
 
@@ -46,6 +47,15 @@ const int PE_IDX_EW = 2;
 const int PE_IDX_BYPASS = 3;
 
 enum pe_status { IDLE = 0, BUSY = 1 };
+
+struct MemoryCacheArgs {
+  void *offset;
+  size_t size;
+};
+
+#define IOCTL_FPGA_MAGIC 'FPGA'
+#define IOCTL_MEMCACHE_INVAL _IOW(IOCTL_FPGA_MAGIC, 12, struct MemoryCacheArgs)
+#define IOCTL_MEMCACHE_FLUSH _IOW(IOCTL_FPGA_MAGIC, 13, struct MemoryCacheArgs)
 
 struct fpga_pe {
   char type_name[MAX_TYPE_NAME_LENTH + 1];
@@ -95,26 +105,39 @@ extern struct FPGA_INFO g_fpgainfo;
 
 inline uint64_t reg_readq(uint32_t offset) {
   // DLOG << "offset : " << offset;
-  uint64_t value =
-      *(uint64_t *)((uint8_t *)g_fpgainfo.FpgaRegVirAddr + offset);  // NOLINT
+  uint64_t value = *(volatile uint64_t *)((uint8_t *)g_fpgainfo.FpgaRegVirAddr +
+                                          offset);  // NOLINT
 
   return value;
 }
 
 inline void reg_writeq(uint64_t value, uint32_t offset) {
   // DLOG << "offset : " << offset << ", value : " << value;
-  *(uint64_t *)((uint8_t *)g_fpgainfo.FpgaRegVirAddr + offset) =  // NOLINT
+  *(volatile uint64_t *)((uint8_t *)g_fpgainfo.FpgaRegVirAddr +
+                         offset) =  // NOLINT
       value;
 }
 
 int open_device_driver();
+
 int close_device_driver();
+
 void *fpga_malloc_driver(size_t size);
+
 void fpga_free_driver(void *ptr);
+
+void fpga_copy_driver(void *dest, const void *src, size_t num);
+
+int fpga_flush_driver(void *address, size_t size);
+
+int fpga_invalidate_driver(void *address, size_t size);
+
 /*pe*/
 
 uint64_t vaddr_to_paddr(void *address);
+
 int fpga_regpoll(uint64_t reg, uint64_t val, int time);
 
+}  // namespace driver
 }  // namespace fpga
 }  // namespace paddle_mobile

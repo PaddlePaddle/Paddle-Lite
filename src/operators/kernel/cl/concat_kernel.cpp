@@ -11,20 +11,23 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#pragma once
 
-#include "fpga/V2/fpga_common.h"
+#ifdef CONCAT_OP
+
+#include "operators/kernel/concat_kernel.h"
 
 namespace paddle_mobile {
-namespace fpga {
+namespace operators {
 
-int PerformBypass(const struct BypassArgs& args);
-int ComputeBasicConv(const struct ConvArgs& args);
-int ComputeFpgaPool(const struct PoolingArgs& args);
-int ComputeFpgaEWAdd(const struct EWAddArgs& args);
+template <>
+bool ConcatKernel<GPU_CL, float>::Init(ConcatParam<GPU_CL> *param) {
+  return true;
+}
 
-int ComputeFpgaConv(const struct SplitConvArgs& args);
-int ComputeFPGAConcat(const struct ConcatArgs& args);
+template <>
+void ConcatKernel<GPU_CL, float>::Compute(const ConcatParam<GPU_CL> &param) {}
 
-}  // namespace fpga
+}  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

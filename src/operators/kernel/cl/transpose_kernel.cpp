@@ -11,20 +11,23 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#pragma once
+#ifdef TRANSPOSE_OP
 
-#include "fpga/V2/fpga_common.h"
+#include "operators/kernel/transpose_kernel.h"
 
 namespace paddle_mobile {
-namespace fpga {
+namespace operators {
 
-int PerformBypass(const struct BypassArgs& args);
-int ComputeBasicConv(const struct ConvArgs& args);
-int ComputeFpgaPool(const struct PoolingArgs& args);
-int ComputeFpgaEWAdd(const struct EWAddArgs& args);
+template <>
+bool TransposeKernel<GPU_CL, float>::Init(TransposeParam<GPU_CL> *param) {
+  return true;
+}
 
-int ComputeFpgaConv(const struct SplitConvArgs& args);
-int ComputeFPGAConcat(const struct ConcatArgs& args);
+template <>
+void TransposeKernel<GPU_CL, float>::Compute(
+    const TransposeParam<GPU_CL> &param) {}
 
-}  // namespace fpga
+}  // namespace operators
 }  // namespace paddle_mobile
+
+#endif
