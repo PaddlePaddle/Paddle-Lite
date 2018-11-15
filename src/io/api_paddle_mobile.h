@@ -40,8 +40,6 @@ class PaddleMobilePredictor : public PaddlePredictor {
            std::vector<PaddleTensor>* output_data,
            int batch_size = -1) override;
 
-  double CaculatePredictTime() override;
-
   ~PaddleMobilePredictor() override;
 
  private:
