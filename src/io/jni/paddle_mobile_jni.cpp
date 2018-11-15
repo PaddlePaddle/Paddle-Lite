@@ -405,9 +405,9 @@ Java_com_baidu_paddle_PML_predictLod(JNIEnv *env, jclass thiz, jlongArray buf) {
   ANDROIDLOGE("predict nlp size %d", count);
 
   result = env->NewLongArray(count);
-
   env->SetLongArrayRegion(result, 0, count, vec_result->data<int64_t>());
 
+  env->ReleaseLongArrayElements(buf, ddim_ptr, 0);
   return result;
 }
 
