@@ -122,9 +122,12 @@ void PaddleMobile<Dtype, P>::Clear() {
   executor_ = nullptr;
   loader_ = nullptr;
 }
-
 template <typename Dtype, Precision P>
-double PaddleMobile<Dtype, P>::GetPredictTime() {
+double PaddleMobile<Dtype, P>::GetPredictTime() {}
+
+#ifdef PADDLE_MOBILE_CPU
+template <>
+double PaddleMobile<CPU, Precision::FP32>::GetPredictTime() {
   int m = 32;
   int n = 224 * 224;
   int k = 27;
@@ -147,8 +150,8 @@ double PaddleMobile<Dtype, P>::GetPredictTime() {
   }
   paddle_mobile::operators::math::Gemm gemm;
   auto time1 = paddle_mobile::time();
-  //  gemm.Sgemm(m, n, k, static_cast<float>(1), a, lda, b, ldb,
-  //             static_cast<float>(0), c, ldc, false, nullptr);
+  gemm.Sgemm(m, n, k, static_cast<float>(1), a, lda, b, ldb,
+             static_cast<float>(0), c, ldc, false, nullptr);
   auto time2 = paddle_mobile::time();
   double cost = paddle_mobile::time_diff(time1, time2);
   paddle_mobile::memory::Free(a);
@@ -156,6 +159,7 @@ double PaddleMobile<Dtype, P>::GetPredictTime() {
   paddle_mobile::memory::Free(c);
   return cost;
 }
+#endif
 
 template <typename Dtype, Precision P>
 PaddleMobile<Dtype, P>::~PaddleMobile() {
