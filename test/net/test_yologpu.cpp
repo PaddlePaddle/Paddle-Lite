@@ -15,17 +15,21 @@ limitations under the License. */
 #include <iostream>
 #include <thread>
 #include "../../src/common/types.h"
+#include "../../src/io/paddle_test_inference_api.h"
 #include "../test_helper.h"
 #include "../test_include.h"
 void t1() {
   paddle_mobile::PaddleMobile<paddle_mobile::GPU_CL> paddle_mobile_gpu;
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile_cpu;
+  paddle_mobile::PaddleTester<paddle_mobile::CPU> paddle_test_cpu;
+  paddle_mobile::PaddleTester<paddle_mobile::GPU_CL> paddle_test_gpu;
+  printf("cpu time:%f\n", paddle_test_cpu.CaculatePredictTime());
+  std::string path = "/data/local/tmp/bin";
+  printf("gpu time:%f\n", paddle_test_gpu.CaculatePredictTime(&path));
   //    paddle_mobile.SetThreadNum(4);
 #ifdef PADDLE_MOBILE_CL
   paddle_mobile_gpu.SetCLPath("/data/local/tmp/bin");
 #endif
-  printf("cpu time:%f\n", paddle_mobile_cpu.GetPredictTime());
-  printf("gpu time:%f\n", paddle_mobile_gpu.GetPredictTime());
   auto time1 = paddle_mobile::time();
   auto isok = paddle_mobile_gpu.Load(std::string(g_yolo_mul) + "/model",
                                      std::string(g_yolo_mul) + "/params", true);
@@ -175,11 +179,11 @@ void t3() {
 int main() {
   //  std::thread th1(t1);
   //      std::thread th2(t2);
-  std::thread th3(t3);
-  //  std::thread th1(t1);
+  //  std::thread th3(t3);
+  std::thread th1(t1);
   //  th1.join();
   //      th2.join();
-  th3.join();
-  //  th1.join();
+  //  th3.join();
+  th1.join();
   return 0;
 }

@@ -1534,6 +1534,27 @@ class ReluParam<GPU_CL> : public ReluParamBase<GPU_CL> {
 
 #endif
 
+#ifdef TANH_OP
+template <typename Dtype>
+class TanhParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  TanhParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+            const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+  }
+  const RType *InputX() const { return input_x_; }
+  RType *Out() const { return out_; }
+
+ private:
+  RType *input_x_;
+  RType *out_;
+};
+#endif
+
 #ifdef PRELU_OP
 template <typename Dtype>
 class PReluParam : public OpParam {
@@ -2229,7 +2250,22 @@ class ConvTransposeParam : public OpParam {
   vector<int> paddings_;
   vector<int> dilations_;
   int groups;
+
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::DeconvArgs fpga_conv_args;
+
+ public:
+  const fpga::DeconvArgs &FpgaArgs() const { return fpga_conv_args; }
+  void SetFpgaArgs(const fpga::DeconvArgs &args) { fpga_conv_args = args; }
+#endif
 };
+#endif
+
+#ifdef FUSION_DECONVRELU_OP
+template <typename Dtype>
+using FusionDeconvReluParam = ConvTransposeParam<Dtype>;
 #endif
 
 #ifdef GRU_OP

@@ -58,6 +58,7 @@ void format_image(float **data_in, int channel, int height, int width,
                   int aligned_channel) {
   convert_to_hwc(data_in, channel, height, width);
   align_image(data_in, channel, height, width, aligned_channel);
+  fpga_flush(*data_in, aligned_channel * height * width * sizeof(float));
 }
 
 void concat_images(int16_t **images_in, float **scales_in, void *image_out,
@@ -69,6 +70,8 @@ void concat_images(int16_t **images_in, float **scales_in, void *image_out,
   scale_out[1] = 0.0;
   for (int i = 0; i < image_num; i++) {
     scale_out[0] = std::max(*scale_out, scales_in[i][0]);
+    fpga_invalidate(images_in[i],
+                    height * width * aligned_channel_num[i] * sizeof(int16_t));
   }
   scale_out[1] = 1 / scale_out[0];
 
@@ -83,6 +86,7 @@ void concat_images(int16_t **images_in, float **scales_in, void *image_out,
       tmp_channel_sum += channel_num[i];
     }
   }
+  fpga_flush(image_out, hw * out_channel * sizeof(int16_t));
 }
 
 }  // namespace image

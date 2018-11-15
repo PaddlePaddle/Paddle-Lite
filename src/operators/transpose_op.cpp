@@ -55,5 +55,8 @@ namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(transpose, ops::TransposeOp);
 #endif
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(transpose, ops::TransposeOp);
+#endif
 
 #endif  // TRANSPOSE_OP

@@ -20,29 +20,29 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace fpga {
-#define MUL8(x) (x * 8)
+#define MUL8(x) ((x)*8)
 #define BYPASS_DONE 1
 
 float Findfp16Max() {
   uint16_t abs_vals[16];
   uint64_t max_fp16;
 
-  max_fp16 = reg_readq(MUL8(49));
+  max_fp16 = driver::reg_readq(MUL8(49));
   abs_vals[0] = (uint16_t)(0x0000007f & (max_fp16));        // NOLINT
   abs_vals[1] = (uint16_t)(0x0000007f & (max_fp16 >> 16));  // NOLINT
   abs_vals[2] = (uint16_t)(0x0000007f & (max_fp16 >> 32));  // NOLINT
   abs_vals[3] = (uint16_t)(0x0000007f & (max_fp16 >> 48));  // NOLINT
-  max_fp16 = reg_readq(MUL8(50));
+  max_fp16 = driver::reg_readq(MUL8(50));
   abs_vals[4] = (uint16_t)(0x0000007f & (max_fp16));        // NOLINT
   abs_vals[5] = (uint16_t)(0x0000007f & (max_fp16 >> 16));  // NOLINT
   abs_vals[6] = (uint16_t)(0x0000007f & (max_fp16 >> 32));  // NOLINT
   abs_vals[7] = (uint16_t)(0x0000007f & (max_fp16 >> 48));  // NOLINT
-  max_fp16 = reg_readq(MUL8(51));
+  max_fp16 = driver::reg_readq(MUL8(51));
   abs_vals[8] = (uint16_t)(0x0000007f & (max_fp16));         // NOLINT
   abs_vals[9] = (uint16_t)(0x0000007f & (max_fp16 >> 16));   // NOLINT
   abs_vals[10] = (uint16_t)(0x0000007f & (max_fp16 >> 32));  // NOLINT
   abs_vals[11] = (uint16_t)(0x0000007f & (max_fp16 >> 48));  // NOLINT
-  max_fp16 = reg_readq(MUL8(52));
+  max_fp16 = driver::reg_readq(MUL8(52));
   abs_vals[12] = (uint16_t)(0x0000007f & (max_fp16));
   abs_vals[13] = (uint16_t)(0x0000007f & (max_fp16 >> 16));  // NOLINT
   abs_vals[14] = (uint16_t)(0x0000007f & (max_fp16 >> 32));  // NOLINT
@@ -58,7 +58,7 @@ float Findfp16Max() {
 }
 
 int ComputeFpgaConv(const struct SplitConvArgs &args) {
-  ComputeBasicConv(args.conv_args[0]);
+  ComputeBasicConv(args.conv_arg[0]);
 }
 
 int ComputeBasicConv(const struct ConvArgs &args) {
@@ -166,8 +166,8 @@ int PerformBypass(const struct BypassArgs &args) {
   return 0;
 #endif
 
-  uint64_t ifm_src_paddr = vaddr_to_paddr(args.image.address);
-  uint64_t ifm_dst_paddr = vaddr_to_paddr(args.output.address);
+  uint64_t ifm_src_paddr = driver::vaddr_to_paddr(args.image.address);
+  uint64_t ifm_dst_paddr = driver::vaddr_to_paddr(args.output.address);
   uint64_t bp_enable;
   int64_t length;
   uint64_t pixels;
@@ -196,16 +196,16 @@ int PerformBypass(const struct BypassArgs &args) {
   }
 
   // start bypass
-  reg_writeq(ifm_src_paddr, MUL8(27));
-  reg_writeq(ifm_dst_paddr, MUL8(28));
-  reg_writeq(0, MUL8(0));
-  reg_writeq(bp_enable, MUL8(0));
+  driver::reg_writeq(ifm_src_paddr, MUL8(27));
+  driver::reg_writeq(ifm_dst_paddr, MUL8(28));
+  driver::reg_writeq(0, MUL8(0));
+  driver::reg_writeq(bp_enable, MUL8(0));
   // poll
   int ret = -1;
-  ret = fpga_regpoll(MUL8(48), BYPASS_DONE, 0xffffffff);
+  ret = driver::fpga_regpoll(MUL8(48), BYPASS_DONE, 0xffffffff);
   if (ret != -1) {
     // clear "irq"
-    reg_readq(MUL8(63));
+    driver::reg_readq(MUL8(63));
   }
   // get max value
   if ((!args.input_data_type) && (!args.output_data_type)) {
