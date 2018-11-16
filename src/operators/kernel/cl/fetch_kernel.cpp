@@ -27,8 +27,6 @@ bool FetchKernel<GPU_CL, float>::Init(FetchParam<GPU_CL> *param) {
   } else {
     this->cl_helper_.AddKernel("fetch", "fetch_kernel.cl");
   }
-  auto *out = param->Out();
-  out->mutable_data<float>();
   return true;
 }
 
@@ -39,7 +37,7 @@ void FetchKernel<GPU_CL, float>::Compute(const FetchParam<GPU_CL> &param) {
 
   auto input = param.InputX()->GetCLImage();
   auto *out = param.Out();
-
+  out->mutable_data<float>();
   const auto &dim = param.InputX()->dims();
   size_t new_dims[] = {1, 1, 1, 1};
 
@@ -70,9 +68,11 @@ void FetchKernel<GPU_CL, float>::Compute(const FetchParam<GPU_CL> &param) {
     int size_ch = in_height * in_width;
     int size_block = size_ch * 4;
     int size_batch = size_ch * C;
+    int out_c = new_dims[1];
     clSetKernelArg(kernel, 4, sizeof(int), &size_ch);
     clSetKernelArg(kernel, 5, sizeof(int), &size_block);
     clSetKernelArg(kernel, 6, sizeof(int), &size_batch);
+    clSetKernelArg(kernel, 7, sizeof(int), &out_c);
   }
 
   //  cl_event wait_event = param.InpdutX()->GetClEvent();
@@ -93,6 +93,8 @@ void FetchKernel<GPU_CL, float>::Compute(const FetchParam<GPU_CL> &param) {
   //            << "ms" << std::endl;
 
   memcpy(out->data<float>(), out_cl_tensor.Data<float>(), out->memory_size());
+  DLOG << *param.InputX();
+  DLOG << *out;
 }
 
 template class FetchKernel<GPU_CL, float>;
