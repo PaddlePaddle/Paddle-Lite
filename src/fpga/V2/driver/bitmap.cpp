@@ -57,13 +57,8 @@ static uint64_t ffs(uint64_t data) {
   uint64_t bit = 0;
   int i = 0;
 
-<<<<<<< HEAD
-  for (i = 0; i < sizeof(data); i++) {
-    if (data & (1 << i)) {
-=======
   for (i = 0; i < sizeof(data) * 8; i++) {
     if (data & (1UL << i)) {
->>>>>>> upstream/develop
       bit = i;
       break;
     }

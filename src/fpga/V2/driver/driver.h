@@ -24,10 +24,7 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace fpga {
-<<<<<<< HEAD
-=======
 namespace driver {
->>>>>>> upstream/develop
 
 #define DIV_ROUND_UP(n, d) (((n) + (d)-1) / (d))
 
@@ -51,8 +48,6 @@ const int PE_IDX_BYPASS = 3;
 
 enum pe_status { IDLE = 0, BUSY = 1 };
 
-<<<<<<< HEAD
-=======
 struct MemoryCacheArgs {
   void *offset;
   size_t size;
@@ -62,7 +57,6 @@ struct MemoryCacheArgs {
 #define IOCTL_MEMCACHE_INVAL _IOW(IOCTL_FPGA_MAGIC, 12, struct MemoryCacheArgs)
 #define IOCTL_MEMCACHE_FLUSH _IOW(IOCTL_FPGA_MAGIC, 13, struct MemoryCacheArgs)
 
->>>>>>> upstream/develop
 struct fpga_pe {
   char type_name[MAX_TYPE_NAME_LENTH + 1];
   struct pe_data_s *outer;
@@ -111,39 +105,20 @@ extern struct FPGA_INFO g_fpgainfo;
 
 inline uint64_t reg_readq(uint32_t offset) {
   // DLOG << "offset : " << offset;
-<<<<<<< HEAD
-  uint64_t value =
-      *(uint64_t *)((uint8_t *)g_fpgainfo.FpgaRegVirAddr + offset);  // NOLINT
-=======
   uint64_t value = *(volatile uint64_t *)((uint8_t *)g_fpgainfo.FpgaRegVirAddr +
                                           offset);  // NOLINT
->>>>>>> upstream/develop
 
   return value;
 }
 
 inline void reg_writeq(uint64_t value, uint32_t offset) {
   // DLOG << "offset : " << offset << ", value : " << value;
-<<<<<<< HEAD
-  *(uint64_t *)((uint8_t *)g_fpgainfo.FpgaRegVirAddr + offset) =  // NOLINT
-=======
   *(volatile uint64_t *)((uint8_t *)g_fpgainfo.FpgaRegVirAddr +
                          offset) =  // NOLINT
->>>>>>> upstream/develop
       value;
 }
 
 int open_device_driver();
-<<<<<<< HEAD
-int close_device_driver();
-void *fpga_malloc_driver(size_t size);
-void fpga_free_driver(void *ptr);
-/*pe*/
-
-uint64_t vaddr_to_paddr(void *address);
-int fpga_regpoll(uint64_t reg, uint64_t val, int time);
-
-=======
 
 int close_device_driver();
 
@@ -164,6 +139,5 @@ uint64_t vaddr_to_paddr(void *address);
 int fpga_regpoll(uint64_t reg, uint64_t val, int time);
 
 }  // namespace driver
->>>>>>> upstream/develop
 }  // namespace fpga
 }  // namespace paddle_mobile
