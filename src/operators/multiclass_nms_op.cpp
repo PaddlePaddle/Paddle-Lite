@@ -43,5 +43,8 @@ namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(multiclass_nms, ops::MultiClassNMSOp);
 #endif
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(multiclass_nms, ops::MultiClassNMSOp);
+#endif
 
 #endif

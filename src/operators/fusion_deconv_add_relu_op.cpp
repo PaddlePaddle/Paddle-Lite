@@ -12,38 +12,23 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "operators/feed_op.h"
+#ifdef FUSION_DECONVADDRELU_OP
+
+#include "operators/fusion_deconv_add_relu_op.h"
 
 namespace paddle_mobile {
-namespace operators {
-
-template <typename DeviceType, typename T>
-void FeedOp<DeviceType, T>::InferShape() const {
-  auto out_dims = this->param_.Out()->dims();
-  out_dims[0] = this->param_.BatchSize();
-  auto input_dims = this->param_.InputX()->dims();
-  DLOG << input_dims.size();
-  if (input_dims.size() == 4) {
-    this->param_.Out()->Resize(input_dims);
-  } else {
-    this->param_.Out()->Resize(out_dims);
-  }
-}
-
-}  // namespace operators
+namespace operators {}
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-
+REGISTER_FUSION_MATCHER(fusion_deconv_add_relu,
+                        ops::FusionDeconvAddReluMatcher);
 #ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(feed, ops::FeedOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
-REGISTER_OPERATOR_MALI_GPU(feed, ops::FeedOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(feed, ops::FeedOp);
+REGISTER_OPERATOR_FPGA(fusion_deconv_add_relu, ops::FusionDeconvAddReluOp);
 #endif
-#ifdef PADDLE_MOBILE_CL
-REGISTER_OPERATOR_CL(feed, ops::FeedOp);
+
 #endif
