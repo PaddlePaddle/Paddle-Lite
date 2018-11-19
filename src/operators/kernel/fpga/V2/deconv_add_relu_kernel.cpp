@@ -11,20 +11,26 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#pragma once
 
-#include "fpga/V2/fpga_common.h"
+#ifdef FUSION_DECONVADDRELU_OP
+
+#include "operators/kernel/deconv_add_relu_kernel.h"
+#include "framework/operator.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
-namespace fpga {
+namespace operators {
 
-int PerformBypass(const struct BypassArgs& args);
-int ComputeBasicConv(const struct ConvArgs& args);
-int ComputeFpgaPool(const struct PoolingArgs& args);
-int ComputeFpgaEWAdd(const struct EWAddArgs& args);
+template <>
+bool DeconvAddReluKernel<FPGA, float>::Init(FusionDeconvAddReluParam<FPGA> *param) {
+  return true;
+}
 
-int ComputeFpgaConv(const struct SplitConvArgs& args);
-int ComputeFPGAConcat(const struct ConcatArgs& args);
+template <>
+void DeconvAddReluKernel<FPGA, float>::Compute(
+    const FusionDeconvAddReluParam<FPGA> &param) {}
 
-}  // namespace fpga
+}  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

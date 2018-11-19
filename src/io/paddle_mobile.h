@@ -81,11 +81,8 @@ class PaddleMobile {
 #ifdef PADDLE_MOBILE_CL
  public:
   void SetCLPath(std::string cl_path);
-<<<<<<< HEAD
-=======
   int readText(const char *kernelPath,
                char **pcode);  // 读取文本文件放入 pcode，返回字符串长度
->>>>>>> upstream/develop
 #endif
 
  private:

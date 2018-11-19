@@ -26,10 +26,7 @@ limitations under the License. */
 #include "framework/program/var_desc.h"
 #include "framework/scope.h"
 #include "framework/tensor.h"
-<<<<<<< HEAD:src/framework/executor.cpp
-=======
 #include "memory/t_malloc.h"
->>>>>>> upstream/develop:src/framework/executor.cpp
 
 #ifdef PADDLE_EXECUTOR_MULTITHREAD
 #include <queue>

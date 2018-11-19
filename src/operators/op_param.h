@@ -1532,8 +1532,6 @@ class ReluParam<GPU_CL> : public ReluParamBase<GPU_CL> {
 };
 #endif
 
-<<<<<<< HEAD
-=======
 #endif
 
 #ifdef TANH_OP
@@ -1555,7 +1553,6 @@ class TanhParam : public OpParam {
   RType *input_x_;
   RType *out_;
 };
->>>>>>> upstream/develop
 #endif
 
 #ifdef PRELU_OP
@@ -2224,7 +2221,10 @@ class ConvTransposeParam : public OpParam {
                      const Scope &scope) {
     filter_ = FilterFrom<GType>(inputs, scope);
     input_ = InputFrom<GType>(inputs, scope);
-    output_ = OutputFrom<GType>(outputs, scope);
+    //output_ = OutputFrom<GType>(outputs, scope);
+    if (outputs.count("Output")) {
+        output_ = OpParam::OutputFrom<GType>(outputs, scope);
+    }
     strides_ = GetAttr<vector<int>>("strides", attrs);
     paddings_ = GetAttr<vector<int>>("paddings", attrs);
     dilations_ = GetAttr<vector<int>>("dilations", attrs);
@@ -2264,6 +2264,37 @@ class ConvTransposeParam : public OpParam {
   void SetFpgaArgs(const fpga::DeconvArgs &args) { fpga_conv_args = args; }
 #endif
 };
+#endif
+#ifdef FUSION_DECONVADD_OP
+template <typename Dtype>
+class FusionDeconvAddParam : public ConvTransposeParam<Dtype> {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+public:
+  FusionDeconvAddParam(const VariableNameMap &inputs,
+                     const VariableNameMap &outputs, const AttributeMap &attrs,
+                     const Scope &scope)
+      :ConvTransposeParam<Dtype>(inputs, outputs, attrs, scope) {
+    bias_ = OpParam::InputYFrom<GType>(inputs, scope);
+    axis_ = OpParam::GetAttr<int>("axis", attrs);
+    output_ = OpParam::OutFrom<GType>(outputs, scope);
+  }
+  RType *Bias() const { return bias_; }
+
+  const int &Axis() const { return axis_; }
+
+  RType *Output() const { return output_; }
+
+ protected:
+  RType *bias_;
+  int axis_;
+  RType *output_;
+};
+#endif
+
+#ifdef FUSION_DECONVADDRELU_OP
+template <typename Dtype>
+using FusionDeconvAddReluParam = FusionDeconvAddParam<Dtype>;
 #endif
 
 #ifdef FUSION_DECONVRELU_OP

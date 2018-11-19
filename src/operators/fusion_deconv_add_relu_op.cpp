@@ -11,20 +11,23 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#pragma once
 
-#include "fpga/V2/fpga_common.h"
+#ifdef FUSION_DECONVADDRELU_OP
+
+#include "operators/fusion_deconv_add_relu_op.h"
 
 namespace paddle_mobile {
-namespace fpga {
-
-int PerformBypass(const struct BypassArgs& args);
-int ComputeBasicConv(const struct ConvArgs& args);
-int ComputeFpgaPool(const struct PoolingArgs& args);
-int ComputeFpgaEWAdd(const struct EWAddArgs& args);
-
-int ComputeFpgaConv(const struct SplitConvArgs& args);
-int ComputeFPGAConcat(const struct ConcatArgs& args);
-
-}  // namespace fpga
+namespace operators {}
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+REGISTER_FUSION_MATCHER(fusion_deconv_add_relu, ops::FusionDeconvAddReluMatcher);
+#ifdef PADDLE_MOBILE_CPU
+#endif
+#ifdef PADDLE_MOBILE_MALI_GPU
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(fusion_deconv_add_relu, ops::FusionDeconvAddReluOp);
+#endif
+
+#endif
