@@ -68,10 +68,10 @@ void ConvAddKernel<GPU_CL, float>::Compute(
   int nh = default_work_size[2];
   auto input = param.Input()->GetCLImage();
   auto filter = param.Filter()->GetCLImage();
-  DLOG << "---yangfei30---";
-  DLOG << *param.Filter();
-  DLOG << param.Paddings();
   auto biase = param.Bias()->GetCLImage();
+  param.Output()->InitEmptyImage(cl_helper_.CLContext(),
+                                 cl_helper_.CLCommandQueue(),
+                                 param.Output()->dims());
   auto output = param.Output()->GetCLImage();
   int stride = param.Strides()[0];
   int offset = param.Offset();
