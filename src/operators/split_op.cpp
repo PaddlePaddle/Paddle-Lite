@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #ifdef SPLIT_OP
-#include <vector>
 #include "operators/split_op.h"
+#include <vector>
 
 namespace paddle_mobile {
 namespace operators {

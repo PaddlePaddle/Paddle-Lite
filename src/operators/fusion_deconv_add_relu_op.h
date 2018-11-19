@@ -29,32 +29,33 @@ class FusionDeconvAddReluMatcher : public framework::FusionOpMatcher {
   FusionDeconvAddReluMatcher() {
     node_ = framework::Node(G_OP_TYPE_CONV_TRANSPOSE);
     node_ > std::make_shared<framework::Node>(G_OP_TYPE_ELEMENTWISE_ADD) >
-            std::make_shared<framework::Node>(G_OP_TYPE_RELU);
+        std::make_shared<framework::Node>(G_OP_TYPE_RELU);
   }
 
   void FolderNodes(
       framework::Node *node,
       std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
-      node->Folder(node_.Depth(), Type(),
-                   {{G_OP_TYPE_ELEMENTWISE_ADD, {{"Y", "Y"}}}}, removed_nodes);
+    node->Folder(node_.Depth(), Type(),
+                 {{G_OP_TYPE_ELEMENTWISE_ADD, {{"Y", "Y"}}}}, removed_nodes);
   }
 
   std::string Type() { return G_OP_TYPE_FUSION_DECONV_ADD_RELU; }
 };
 
 template <typename DeviceType, typename T>
-class FusionDeconvAddReluOp : public framework::OperatorWithKernel<
-                               DeviceType, FusionDeconvAddReluParam<DeviceType>,
-                               operators::DeconvAddReluKernel<DeviceType, T>> {
+class FusionDeconvAddReluOp
+    : public framework::OperatorWithKernel<
+          DeviceType, FusionDeconvAddReluParam<DeviceType>,
+          operators::DeconvAddReluKernel<DeviceType, T>> {
  public:
   FusionDeconvAddReluOp(const string &type, const VariableNameMap &inputs,
-                     const VariableNameMap &outputs,
-                     const framework::AttributeMap &attrs,
-                     std::shared_ptr<framework::Scope> scope)
+                        const VariableNameMap &outputs,
+                        const framework::AttributeMap &attrs,
+                        std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<
             DeviceType, FusionDeconvAddReluParam<DeviceType>,
-            operators::DeconvAddReluKernel<DeviceType, T>>(type, inputs, outputs,
-                                                        attrs, scope) {}
+            operators::DeconvAddReluKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
 
   void InferShape() const {
     auto input = this->param_.Input();
