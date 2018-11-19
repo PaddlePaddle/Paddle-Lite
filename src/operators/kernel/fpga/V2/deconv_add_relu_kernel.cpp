@@ -22,7 +22,8 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool DeconvAddReluKernel<FPGA, float>::Init(FusionDeconvAddReluParam<FPGA> *param) {
+bool DeconvAddReluKernel<FPGA, float>::Init(
+    FusionDeconvAddReluParam<FPGA> *param) {
   return true;
 }
 
