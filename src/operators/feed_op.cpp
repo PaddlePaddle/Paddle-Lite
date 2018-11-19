@@ -21,7 +21,13 @@ template <typename DeviceType, typename T>
 void FeedOp<DeviceType, T>::InferShape() const {
   auto out_dims = this->param_.Out()->dims();
   out_dims[0] = this->param_.BatchSize();
-  this->param_.Out()->Resize(out_dims);
+  auto input_dims = this->param_.InputX()->dims();
+  DLOG << input_dims.size();
+  if (input_dims.size() == 4) {
+    this->param_.Out()->Resize(input_dims);
+  } else {
+    this->param_.Out()->Resize(out_dims);
+  }
 }
 
 }  // namespace operators
