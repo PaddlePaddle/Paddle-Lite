@@ -39,6 +39,10 @@ void PriorBoxKernel<GPU_CL, float>::Compute(
   const auto &input_aspect_ratio = param.AspectRatios();
   const bool &flip = param.Flip();
   const bool &clip = param.Clip();
+  int isclip =0;
+    if(clip){
+        isclip = 1;
+    }
   const float &step_w = param.StepW();
   const float &step_h = param.StepH();
   const float &offset = param.Offset();
@@ -116,7 +120,7 @@ void PriorBoxKernel<GPU_CL, float>::Compute(
   int w = default_work_size[1];
   int nh = default_work_size[2];
 
-  std::vector<int64_t> box_shape({1, 1, 1, num_priors});
+  std::vector<int64_t> box_shape({num_priors});
   framework::DDim ddim = framework::make_ddim(box_shape);
 
   framework::CLTensor box_width_cl_tensor(this->cl_helper_.CLContext(),
@@ -141,6 +145,13 @@ void PriorBoxKernel<GPU_CL, float>::Compute(
   DLOG << "img_height:" << img_height;
   DLOG << "num_priors:" << num_priors;
   DLOG << "C:" << C;
+  DLOG << "isclip:" << isclip;
+  for(int i=0;i<num_priors;i++){
+    DLOG<<box_width[i];
+  }
+  for(int i=0;i<num_priors;i++){
+    DLOG<<box_height[i];
+  }
   status = clSetKernelArg(kernel, 0, sizeof(int), &c_block);
   CL_CHECK_ERRORS(status);
   status = clSetKernelArg(kernel, 1, sizeof(int), &w);
@@ -166,6 +177,8 @@ void PriorBoxKernel<GPU_CL, float>::Compute(
   status = clSetKernelArg(kernel, 11, sizeof(int), &num_priors);
   CL_CHECK_ERRORS(status);
   status = clSetKernelArg(kernel, 12, sizeof(int), &C);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 13, sizeof(int), &isclip);
   CL_CHECK_ERRORS(status);
   size_t global_work_size[2] = {c_block, nh};
   status = clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2,
