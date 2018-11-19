@@ -39,10 +39,10 @@ void PriorBoxKernel<GPU_CL, float>::Compute(
   const auto &input_aspect_ratio = param.AspectRatios();
   const bool &flip = param.Flip();
   const bool &clip = param.Clip();
-  int isclip =0;
-    if(clip){
-        isclip = 1;
-    }
+  int isclip = 0;
+  if (clip) {
+    isclip = 1;
+  }
   const float &step_w = param.StepW();
   const float &step_h = param.StepH();
   const float &offset = param.Offset();
@@ -146,11 +146,11 @@ void PriorBoxKernel<GPU_CL, float>::Compute(
   DLOG << "num_priors:" << num_priors;
   DLOG << "C:" << C;
   DLOG << "isclip:" << isclip;
-  for(int i=0;i<num_priors;i++){
-    DLOG<<box_width[i];
+  for (int i = 0; i < num_priors; i++) {
+    DLOG << box_width[i];
   }
-  for(int i=0;i<num_priors;i++){
-    DLOG<<box_height[i];
+  for (int i = 0; i < num_priors; i++) {
+    DLOG << box_height[i];
   }
   status = clSetKernelArg(kernel, 0, sizeof(int), &c_block);
   CL_CHECK_ERRORS(status);

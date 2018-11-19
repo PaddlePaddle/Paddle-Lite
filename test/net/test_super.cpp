@@ -18,48 +18,47 @@ limitations under the License. */
 #include "../test_include.h"
 
 int main() {
-    paddle_mobile::PaddleMobile<paddle_mobile::GPU_CL> paddle_mobile;
-    //    paddle_mobile.SetThreadNum(4);
-    auto time1 = paddle_mobile::time();
+  paddle_mobile::PaddleMobile<paddle_mobile::GPU_CL> paddle_mobile;
+  //    paddle_mobile.SetThreadNum(4);
+  auto time1 = paddle_mobile::time();
 #ifdef PADDLE_MOBILE_CL
-    paddle_mobile.SetCLPath("/data/local/tmp/bin");
+  paddle_mobile.SetCLPath("/data/local/tmp/bin");
 #endif
 
-    auto isok =
-            paddle_mobile.Load(std::string(g_super) + "/model",
-                               std::string(g_super) + "/params",true, false,1,true);
+  auto isok = paddle_mobile.Load(std::string(g_super) + "/model",
+                                 std::string(g_super) + "/params", true, false,
+                                 1, true);
 
-    //  auto isok = paddle_mobile.Load(std::string(g_mobilenet_mul), true);
-    if (isok) {
-        auto time2 = paddle_mobile::time();
-        std::cout << "load cost :" << paddle_mobile::time_diff(time1, time2) << "ms"
-                  << std::endl;
-
-        std::vector<float> input;
-        std::vector<int64_t> dims{1, 1,300, 300};
-        GetInput<float>(g_yolo_img, &input, dims);
-
-        std::vector<float> vec_result ;
-
-        auto time3 = paddle_mobile::time();
-        int max = 10;
-        for (int i = 0; i < max; ++i) {
-            vec_result = paddle_mobile.Predict(input, dims);
-
-        }
-        auto time4 = paddle_mobile::time();
-
-        std::cout << "predict cost :"
-                  << paddle_mobile::time_diff(time3, time4) / max << "ms"
-                  << std::endl;
-        std::vector<float>::iterator biggest =
-                std::max_element(std::begin(vec_result), std::end(vec_result));
-        std::cout << " Max element is " << *biggest << " at position "
-                  << std::distance(std::begin(vec_result), biggest) << std::endl;
-    }
-
-    std::cout << "如果结果Nan请查看: test/images/g_test_image_1x3x224x224_banana "
-            "是否存在?"
+  //  auto isok = paddle_mobile.Load(std::string(g_mobilenet_mul), true);
+  if (isok) {
+    auto time2 = paddle_mobile::time();
+    std::cout << "load cost :" << paddle_mobile::time_diff(time1, time2) << "ms"
               << std::endl;
-    return 0;
+
+    std::vector<float> input;
+    std::vector<int64_t> dims{1, 1, 300, 300};
+    GetInput<float>(g_yolo_img, &input, dims);
+
+    std::vector<float> vec_result;
+
+    auto time3 = paddle_mobile::time();
+    int max = 10;
+    for (int i = 0; i < max; ++i) {
+      vec_result = paddle_mobile.Predict(input, dims);
+    }
+    auto time4 = paddle_mobile::time();
+
+    std::cout << "predict cost :"
+              << paddle_mobile::time_diff(time3, time4) / max << "ms"
+              << std::endl;
+    std::vector<float>::iterator biggest =
+        std::max_element(std::begin(vec_result), std::end(vec_result));
+    std::cout << " Max element is " << *biggest << " at position "
+              << std::distance(std::begin(vec_result), biggest) << std::endl;
+  }
+
+  std::cout << "如果结果Nan请查看: test/images/g_test_image_1x3x224x224_banana "
+               "是否存在?"
+            << std::endl;
+  return 0;
 }
