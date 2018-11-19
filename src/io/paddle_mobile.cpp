@@ -21,7 +21,6 @@ limitations under the License. */
 #include "operators/math/gemm.h"
 namespace paddle_mobile {
 
-static std::mutex lc;
 template <typename Dtype, Precision P>
 void PaddleMobile<Dtype, P>::SetThreadNum(int num) {
 #ifdef _OPENMP
@@ -203,10 +202,7 @@ void PaddleMobile<Dtype, P>::Predict_To(int end) {
 #endif
 
 #ifdef PADDLE_MOBILE_CL
-<<<<<<< HEAD
-=======
 static std::mutex lc;
->>>>>>> upstream/develop
 template <typename Dtype, Precision P>
 void PaddleMobile<Dtype, P>::SetCLPath(std::string path) {
   std::lock_guard<std::mutex> lock(lc);
@@ -214,8 +210,6 @@ void PaddleMobile<Dtype, P>::SetCLPath(std::string path) {
     framework::CLEngine::Instance()->setClPath(path);
   }
 }
-<<<<<<< HEAD
-=======
 template <>
 double PaddleMobile<GPU_CL, Precision::FP32>::GetPredictTime() {
   cl_int status;
@@ -418,7 +412,6 @@ int PaddleMobile<Dtype, P>::readText(
   return size + 1;
 }
 
->>>>>>> upstream/develop
 #endif
 
 template class PaddleMobile<CPU, Precision::FP32>;

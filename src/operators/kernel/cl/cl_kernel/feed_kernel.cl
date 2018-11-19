@@ -13,20 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
-<<<<<<< HEAD
-__kernel void feed(__global float *in, __write_only image2d_t outputImage,int h,int w)
-=======
 __kernel void feed(__global float *in, __write_only image2d_t outputImage,int h,int w,int c)
->>>>>>> upstream/develop
  {
         int i = get_global_id(0);
         int j = get_global_id(1);
         half4 pixel;
         pixel.x = convert_half(in[(i * w + j)]);
-<<<<<<< HEAD
-        pixel.y = convert_half(in[h * w + (i * w + j)]);
-        pixel.z = convert_half(in[2 * h * w + (i * w + j)]);
-=======
         if(c>=2){
         pixel.y = convert_half(in[h * w + (i * w + j)]);
         }else{
@@ -37,7 +29,6 @@ __kernel void feed(__global float *in, __write_only image2d_t outputImage,int h,
         }else{
          pixel.z = 0.0;
         }
->>>>>>> upstream/develop
         pixel.w = 0.0;
         int2 coords;
         coords.x = j;

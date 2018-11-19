@@ -36,10 +36,7 @@ void FeedKernel<GPU_CL, float>::Compute(const FeedParam<GPU_CL> &param) {
   const float *input_data = input->data<float>();
   int numel = input->numel();
   cl_mem cl_image = output->GetCLImage();
-<<<<<<< HEAD
-=======
   int c = input->dims()[1];
->>>>>>> upstream/develop
   int height = output->dims()[2];
   int width = output->dims()[3];
   CLTensor input_cl_tensor(this->cl_helper_.CLContext(),
@@ -55,11 +52,8 @@ void FeedKernel<GPU_CL, float>::Compute(const FeedParam<GPU_CL> &param) {
   CL_CHECK_ERRORS(status);
   status = clSetKernelArg(kernel, 3, sizeof(cl_int), &height);
   CL_CHECK_ERRORS(status);
-<<<<<<< HEAD
-=======
   status = clSetKernelArg(kernel, 4, sizeof(cl_int), &c);
   CL_CHECK_ERRORS(status);
->>>>>>> upstream/develop
 
   size_t global_work_size[2] = {width, height};
 

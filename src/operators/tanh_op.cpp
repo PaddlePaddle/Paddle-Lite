@@ -29,7 +29,7 @@ void TanhOp<DeviceType, T>::InferShape() const {
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(Tanh, ops::TanhOp);
+REGISTER_OPERATOR_FPGA(tanh, ops::TanhOp);
 #endif
 
 #endif

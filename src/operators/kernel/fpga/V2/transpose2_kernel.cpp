@@ -11,20 +11,25 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#pragma once
+#ifdef TRANSPOSE2_OP
 
-#include "fpga/V2/fpga_common.h"
+#include "operators/kernel/transpose2_kernel.h"
+#include "operators/kernel/central-arm-func/transpose2_arm_func.h"
 
 namespace paddle_mobile {
-namespace fpga {
+namespace operators {
 
-int PerformBypass(const struct BypassArgs& args);
-int ComputeBasicConv(const struct ConvArgs& args);
-int ComputeFpgaPool(const struct PoolingArgs& args);
-int ComputeFpgaEWAdd(const struct EWAddArgs& args);
+template <>
+bool Transpose2Kernel<FPGA, float>::Init(Transpose2Param<FPGA> *param) {
+  return true;
+}
 
-int ComputeFpgaConv(const struct SplitConvArgs& args);
-int ComputeFPGAConcat(const struct ConcatArgs& args);
+template <>
+void Transpose2Kernel<FPGA, float>::Compute(const Transpose2Param<FPGA> &param) {
+  //Transpose2Compute<float>(param);
+}
 
-}  // namespace fpga
+}  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

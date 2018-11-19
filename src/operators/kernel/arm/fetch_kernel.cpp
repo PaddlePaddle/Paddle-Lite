@@ -8,10 +8,6 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-<<<<<<< HEAD
-#ifdef FUSION_CONVADD_OP
-=======
->>>>>>> upstream/develop
 #include "operators/kernel/fetch_kernel.h"
 namespace paddle_mobile {
 namespace operators {
@@ -26,7 +22,3 @@ void FetchKernel<CPU, float>::Compute(const FetchParam<CPU> &param) {
 template class FetchKernel<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
-<<<<<<< HEAD
-#endif
-=======
->>>>>>> upstream/develop

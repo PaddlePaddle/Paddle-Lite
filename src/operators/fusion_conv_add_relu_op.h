@@ -29,8 +29,9 @@ namespace operators {
 class FusionConvAddReluOpMatcher : public framework::FusionOpMatcher {
  public:
   FusionConvAddReluOpMatcher() {
-    //    node_ = framework::Node(G_OP_TYPE_FUSION_CONV_ADD);
-    //    node_ > std::make_shared<framework::Node>(G_OP_TYPE_RELU);
+    node_ = framework::Node(G_OP_TYPE_CONV);
+    node_ > std::make_shared<framework::Node>(G_OP_TYPE_ELEMENTWISE_ADD) >
+            std::make_shared<framework::Node>(G_OP_TYPE_RELU);
   }
 
   void FolderNodes(
