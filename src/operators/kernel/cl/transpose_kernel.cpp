@@ -11,25 +11,23 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
+#ifdef TRANSPOSE_OP
 
-#ifdef TANH_OP
-
-#include "operators/tanh_op.h"
+#include "operators/kernel/transpose_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename DeviceType, typename T>
-void TanhOp<DeviceType, T>::InferShape() const {
-  this->param_.Out()->Resize(this->param_.InputX()->dims());
+template <>
+bool TransposeKernel<GPU_CL, float>::Init(TransposeParam<GPU_CL> *param) {
+  return true;
 }
+
+template <>
+void TransposeKernel<GPU_CL, float>::Compute(
+    const TransposeParam<GPU_CL> &param) {}
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(tanh, ops::TanhOp);
-#endif
 
 #endif

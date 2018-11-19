@@ -12,55 +12,119 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVADD_OP
+#ifdef FUSION_CONVBNRELU_OP
 
-#include "operators/kernel/conv_add_kernel.h"
+#include "operators/kernel/conv_bn_relu_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ConvAddKernel<GPU_CL, float>::Init(FusionConvAddParam<GPU_CL> *param) {
+bool ConvBNReluKernel<GPU_CL, float>::Init(
+    FusionConvBNReluParam<GPU_CL> *param) {
   PADDLE_MOBILE_ENFORCE(
       param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
           param->Paddings()[0] == param->Paddings()[1],
       "need equal");
-  param->Bias()->InitCLImage(cl_helper_.CLContext(),
-                             this->cl_helper_.CLCommandQueue());
+  const framework::CLImage *mean = param->InputMean();
+  const framework::CLImage *variance = param->InputVariance();
+  const framework::CLImage *scale = param->InputScale();
+  const framework::CLImage *bias = param->InputBias();
+  const float epsilon = param->Epsilon();
+
+  const int C = mean->numel();
+
+  auto mean_ptr = mean->data<float>();
+  auto variance_ptr = variance->data<float>();
+  auto scale_ptr = scale->data<float>();
+  auto bias_ptr = bias->data<float>();
+
+  float inv_std_ptr[C];
+  for (int i = 0; i < C; i++) {
+    inv_std_ptr[i] =
+        1 / static_cast<float>(pow((variance_ptr[i] + epsilon), 0.5));
+  }
+  float *new_scale_ptr = new float[C];
+  float *new_bias_ptr = new float[C];
+
+  for (int i = 0; i < C; i++) {
+    new_scale_ptr[i] = inv_std_ptr[i] * scale_ptr[i];
+    new_bias_ptr[i] = bias_ptr[i] - mean_ptr[i] * inv_std_ptr[i] * scale_ptr[i];
+  }
+
+  framework::CLImage *new_scale = new framework::CLImage();
+
+  //  for (int j = 0; j < C; ++j) {
+  //    DLOG << " new scale - " << j << new_scale_ptr[j];
+  //  }
+  //
+  //  for (int j = 0; j < C; ++j) {
+  //    DLOG << " new bias - " << j << new_bias_ptr[j];
+  //  }
+
+  new_scale->SetTensorData(new_scale_ptr, variance->dims());
+  new_scale->InitCLImage(this->cl_helper_.CLContext(),
+                         cl_helper_.CLCommandQueue());
+
+  //  DLOG << " climage - y bias: " << *(param->Bias());
+  //
+  //  DLOG << " climage - new scale: " << *new_scale;
+
+  framework::CLImage *new_bias = new framework::CLImage();
+
+  new_bias->SetTensorData(new_bias_ptr, variance->dims());
+  new_bias->InitCLImage(this->cl_helper_.CLContext(),
+                        cl_helper_.CLCommandQueue());
+
+  //  DLOG << " climage - new bias: " << *new_bias;
+  //
+  //  DLOG << " climage - filter: " << *(param->Filter());
+
+  param->SetNewScale(new_scale);
+  param->SetNewBias(new_bias);
+
+  delete[](new_scale_ptr);
+  delete[](new_bias_ptr);
+
+  PADDLE_MOBILE_ENFORCE(
+      param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
+          param->Paddings()[0] == param->Paddings()[1],
+      "need equal");
 
   int offset = static_cast<int>(param->Filter()->dims()[2]) / 2 -
                static_cast<int>(param->Paddings()[1]);
+
   param->SetOffset(offset);
 
   if (param->Filter()->dims()[2] == 1 && param->Filter()->dims()[3] == 1) {
     param->Filter()->InitNImage(cl_helper_.CLContext(),
                                 cl_helper_.CLCommandQueue());
-
-    this->cl_helper_.AddKernel("conv_1x1", "conv_add_kernel.cl");
+    this->cl_helper_.AddKernel("conv_1x1", "conv_bn_relu_kernel.cl");
+    DLOG << " conv bn relu conv 1x1";
   } else if (param->Filter()->dims()[1] == 1 &&
              param->Input()->dims()[1] == param->Output()->dims()[1] &&
              param->Filter()->dims()[2] == 3) {
     param->Filter()->InitDWImage(cl_helper_.CLContext(),
                                  cl_helper_.CLCommandQueue());
-    this->cl_helper_.AddKernel("depth_conv_3x3", "conv_add_kernel.cl");
+    this->cl_helper_.AddKernel("depth_conv_3x3", "conv_bn_relu_kernel.cl");
+    DLOG << " conv bn relu depth_conv_3x3";
 
   } else if (param->Filter()->dims()[2] == 3 &&
              param->Filter()->dims()[3] == 3) {
     param->Filter()->InitCLImage(cl_helper_.CLContext(),
                                  cl_helper_.CLCommandQueue());
 
-    this->cl_helper_.AddKernel("conv_3x3", "conv_add_kernel.cl");
-
+    this->cl_helper_.AddKernel("conv_3x3", "conv_bn_relu_kernel.cl");
+    DLOG << " conv bn relu conv_3x3";
   } else {
     PADDLE_MOBILE_THROW_EXCEPTION(" not support ");
   }
-
   return true;
 }
 
 template <>
-void ConvAddKernel<GPU_CL, float>::Compute(
-    const FusionConvAddParam<GPU_CL> &param) {
+void ConvBNReluKernel<GPU_CL, float>::Compute(
+    const FusionConvBNReluParam<GPU_CL> &param) {
   auto kernel = this->cl_helper_.KernelAt(0);
   auto default_work_size = this->cl_helper_.DefaultWorkSize(*param.Output());
   int c_block = default_work_size[0];
@@ -68,10 +132,8 @@ void ConvAddKernel<GPU_CL, float>::Compute(
   int nh = default_work_size[2];
   auto input = param.Input()->GetCLImage();
   auto filter = param.Filter()->GetCLImage();
-  auto biase = param.Bias()->GetCLImage();
-  param.Output()->InitEmptyImage(cl_helper_.CLContext(),
-                                 cl_helper_.CLCommandQueue(),
-                                 param.Output()->dims());
+  auto new_scale = param.NewScale()->GetCLImage();
+  auto new_bias = param.NewBias()->GetCLImage();
   auto output = param.Output()->GetCLImage();
   int stride = param.Strides()[0];
   int offset = param.Offset();
@@ -79,7 +141,6 @@ void ConvAddKernel<GPU_CL, float>::Compute(
                     param.Input()->Converter())
                     ->GetCBlock();
   int dilation = param.Dilations()[0];
-
   int input_width = param.Input()->dims()[3];
   int input_height = param.Input()->dims()[2];
   int output_width = param.Output()->dims()[3];
@@ -102,46 +163,45 @@ void ConvAddKernel<GPU_CL, float>::Compute(
   status = clSetKernelArg(kernel, 4, sizeof(cl_mem), &filter);
   CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 5, sizeof(cl_mem), &biase);
+  status = clSetKernelArg(kernel, 5, sizeof(cl_mem), &new_scale);
   CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 6, sizeof(cl_mem), &output);
+  status = clSetKernelArg(kernel, 6, sizeof(cl_mem), &new_bias);
   CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 7, sizeof(int), &stride);
+  status = clSetKernelArg(kernel, 7, sizeof(cl_mem), &output);
   CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 8, sizeof(int), &offset);
+  status = clSetKernelArg(kernel, 8, sizeof(int), &stride);
   CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 9, sizeof(int), &input_c);
+  status = clSetKernelArg(kernel, 9, sizeof(int), &offset);
   CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 10, sizeof(int), &dilation);
+  status = clSetKernelArg(kernel, 10, sizeof(int), &input_c);
   CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 11, sizeof(int), &input_width);
+  status = clSetKernelArg(kernel, 11, sizeof(int), &dilation);
   CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 12, sizeof(int), &input_height);
+  status = clSetKernelArg(kernel, 12, sizeof(int), &input_width);
   CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 13, sizeof(int), &output_width);
+  status = clSetKernelArg(kernel, 13, sizeof(int), &input_height);
   CL_CHECK_ERRORS(status);
 
-  status = clSetKernelArg(kernel, 14, sizeof(int), &output_height);
+  status = clSetKernelArg(kernel, 14, sizeof(int), &output_width);
   CL_CHECK_ERRORS(status);
 
-  //  cl_event out_event = param.Output()->GetClEvent();
-  //  cl_event wait_event = param.Input()->GetClEvent();
+  status = clSetKernelArg(kernel, 15, sizeof(int), &output_height);
+  CL_CHECK_ERRORS(status);
 
   status = clEnqueueNDRangeKernel(
       this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
       default_work_size.data(), NULL, 0, NULL, NULL);
   CL_CHECK_ERRORS(status);
 }
-
-template class ConvAddKernel<GPU_CL, float>;
+template class ConvBNReluKernel<GPU_CL, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
