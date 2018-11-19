@@ -73,7 +73,7 @@ void convert_to_hwc(float **data_in, int num, int channel, int height,
 
 void align_filter(float **data_in, int num, int channel, int height,
                   int width) {
-  int aligned_channel = calc_channel_parallelism(channel);
+  int aligned_channel = calc_aligned_channel(channel);
   int hw = height * width;
   int pixel_num = calc_aligned_total_pixel_num(num, channel, height, width);
   float *new_data = (float *)fpga_malloc(pixel_num * sizeof(float));  // NOLINT
