@@ -67,9 +67,6 @@ if (CON GREATER -1)
     ADD_EXECUTABLE(test-resnet50 fpga/test_resnet50.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-resnet50 paddle-mobile)
 
-    ADD_EXECUTABLE(test-densebox net/test_densebox_combine.cpp test_helper.h test_include.h executor_for_test.h)
-    target_link_libraries(test-densebox paddle-mobile)
-
     set(FOUND_MATCH ON)
 endif ()
 
@@ -80,9 +77,6 @@ if (CON GREATER -1)
 
     ADD_EXECUTABLE(test-pe fpga/test_pe.cpp)
     target_link_libraries(test-pe paddle-mobile)
-
-    ADD_EXECUTABLE(test-densebox net/test_densebox_combine.cpp test_helper.h test_include.h executor_for_test.h)
-    target_link_libraries(test-densebox paddle-mobile)
 
     set(FOUND_MATCH ON)
 endif ()
