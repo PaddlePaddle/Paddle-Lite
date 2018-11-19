@@ -34,8 +34,8 @@ class FusionDeconvAddMatcher : public framework::FusionOpMatcher {
   void FolderNodes(
       framework::Node *node,
       std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
-      node->Folder(node_.Depth(), Type(),
-                   {{G_OP_TYPE_ELEMENTWISE_ADD, {{"Y", "Y"}}}}, removed_nodes);
+    node->Folder(node_.Depth(), Type(),
+                 {{G_OP_TYPE_ELEMENTWISE_ADD, {{"Y", "Y"}}}}, removed_nodes);
   }
 
   std::string Type() { return G_OP_TYPE_FUSION_DECONV_ADD; }
@@ -43,17 +43,17 @@ class FusionDeconvAddMatcher : public framework::FusionOpMatcher {
 
 template <typename DeviceType, typename T>
 class FusionDeconvAddOp : public framework::OperatorWithKernel<
-                               DeviceType, FusionDeconvAddParam<DeviceType>,
-                               operators::DeconvAddKernel<DeviceType, T>> {
+                              DeviceType, FusionDeconvAddParam<DeviceType>,
+                              operators::DeconvAddKernel<DeviceType, T>> {
  public:
   FusionDeconvAddOp(const string &type, const VariableNameMap &inputs,
-                     const VariableNameMap &outputs,
-                     const framework::AttributeMap &attrs,
-                     std::shared_ptr<framework::Scope> scope)
+                    const VariableNameMap &outputs,
+                    const framework::AttributeMap &attrs,
+                    std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<
             DeviceType, FusionDeconvAddParam<DeviceType>,
             operators::DeconvAddKernel<DeviceType, T>>(type, inputs, outputs,
-                                                        attrs, scope) {}
+                                                       attrs, scope) {}
 
   void InferShape() const {
     auto input = this->param_.Input();

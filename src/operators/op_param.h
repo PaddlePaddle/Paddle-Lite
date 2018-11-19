@@ -2221,9 +2221,9 @@ class ConvTransposeParam : public OpParam {
                      const Scope &scope) {
     filter_ = FilterFrom<GType>(inputs, scope);
     input_ = InputFrom<GType>(inputs, scope);
-    //output_ = OutputFrom<GType>(outputs, scope);
+    // output_ = OutputFrom<GType>(outputs, scope);
     if (outputs.count("Output")) {
-        output_ = OpParam::OutputFrom<GType>(outputs, scope);
+      output_ = OpParam::OutputFrom<GType>(outputs, scope);
     }
     strides_ = GetAttr<vector<int>>("strides", attrs);
     paddings_ = GetAttr<vector<int>>("paddings", attrs);
@@ -2270,11 +2270,12 @@ template <typename Dtype>
 class FusionDeconvAddParam : public ConvTransposeParam<Dtype> {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
   typedef typename DtypeTensorTrait<Dtype>::rtype RType;
-public:
+
+ public:
   FusionDeconvAddParam(const VariableNameMap &inputs,
-                     const VariableNameMap &outputs, const AttributeMap &attrs,
-                     const Scope &scope)
-      :ConvTransposeParam<Dtype>(inputs, outputs, attrs, scope) {
+                       const VariableNameMap &outputs,
+                       const AttributeMap &attrs, const Scope &scope)
+      : ConvTransposeParam<Dtype>(inputs, outputs, attrs, scope) {
     bias_ = OpParam::InputYFrom<GType>(inputs, scope);
     axis_ = OpParam::GetAttr<int>("axis", attrs);
     output_ = OpParam::OutFrom<GType>(outputs, scope);

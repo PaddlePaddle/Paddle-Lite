@@ -21,7 +21,8 @@ namespace operators {}
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-REGISTER_FUSION_MATCHER(fusion_deconv_add_relu, ops::FusionDeconvAddReluMatcher);
+REGISTER_FUSION_MATCHER(fusion_deconv_add_relu,
+                        ops::FusionDeconvAddReluMatcher);
 #ifdef PADDLE_MOBILE_CPU
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU

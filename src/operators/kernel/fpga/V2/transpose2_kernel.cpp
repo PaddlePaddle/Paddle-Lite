@@ -25,8 +25,9 @@ bool Transpose2Kernel<FPGA, float>::Init(Transpose2Param<FPGA> *param) {
 }
 
 template <>
-void Transpose2Kernel<FPGA, float>::Compute(const Transpose2Param<FPGA> &param) {
-  //Transpose2Compute<float>(param);
+void Transpose2Kernel<FPGA, float>::Compute(
+    const Transpose2Param<FPGA> &param) {
+  // Transpose2Compute<float>(param);
 }
 
 }  // namespace operators
