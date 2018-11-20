@@ -115,6 +115,7 @@ void ConvAddBasic(const FusionConvAddParam<CPU> &param) {
 
 template <typename P>
 void ConvAddCompute(const FusionConvAddParam<CPU> &param) {
+  param.Output()->mutable_data<float>();
   if (param.Groups() == param.Input()->dims()[1] &&
       param.Input()->dims()[1] == param.Output()->dims()[1] &&
       param.Filter()->dims()[2] == param.Filter()->dims()[3] &&

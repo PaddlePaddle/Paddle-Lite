@@ -73,6 +73,8 @@ const char *G_OP_TYPE_QUANTIZE = "quantize";
 const char *G_OP_TYPE_DEQUANTIZE = "dequantize";
 extern const char *G_OP_TYPE_TANH = "tanh";
 extern const char *G_OP_TYPE_FUSION_DECONV_RELU = "fusion_deconv_relu";
+extern const char *G_OP_TYPE_FUSION_DECONV_ADD = "fusion_deconv_add";
+extern const char *G_OP_TYPE_FUSION_DECONV_ADD_RELU = "fusion_deconv_add_relu";
 
 std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
@@ -133,5 +135,7 @@ std::unordered_map<
         {G_OP_TYPE_QUANTIZE, {{"X"}, {"Out", "OutScale"}}},
         {G_OP_TYPE_DEQUANTIZE, {{"X", "Scale"}, {"Out"}}},
         {G_OP_TYPE_TANH, {{"X"}, {"Out"}}},
-        {G_OP_TYPE_FUSION_DECONV_RELU, {{"Input"}, {"Out"}}}};
+        {G_OP_TYPE_FUSION_DECONV_RELU, {{"Input"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_DECONV_ADD, {{"Input"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_DECONV_ADD_RELU, {{"Input"}, {"Out"}}}};
 }  // namespace paddle_mobile
