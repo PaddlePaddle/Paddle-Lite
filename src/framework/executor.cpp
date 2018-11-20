@@ -280,6 +280,9 @@ std::shared_ptr<framework::Tensor> Executor<Dtype, P>::Predict(
     clock_gettime(CLOCK_MONOTONIC, &ts);
     profile[i].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
 #endif
+    if (loddable_) {
+      ops[i]->InferShape();
+    }
     // to Run
     ops[i]->Run();
 #ifdef PADDLE_MOBILE_PROFILE
