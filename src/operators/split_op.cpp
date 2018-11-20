@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #ifdef SPLIT_OP
-
 #include "operators/split_op.h"
+#include <vector>
 
 namespace paddle_mobile {
 namespace operators {
@@ -82,6 +82,9 @@ void SplitOp<DeviceType, T>::InferShape() const {
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(split, ops::SplitOp);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(split, ops::SplitOp);
 #endif
 
 #endif  // SPLIT_OP
