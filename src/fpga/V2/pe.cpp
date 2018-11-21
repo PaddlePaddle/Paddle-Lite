@@ -213,7 +213,7 @@ int PerformBypass(const struct BypassArgs &args) {
   //    args.output.scale_address[0] = (float)(1.0 / scale);  // NOLINT
   //    args.output.scale_address[1] = scale;
   //  }
-  return ret;
+  // return ret;
 }
 
 int ComputeFPGAConcat(const struct ConcatArgs &args) {
