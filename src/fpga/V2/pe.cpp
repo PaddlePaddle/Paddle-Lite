@@ -12,11 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "fpga/V2/driver/pe.h"
-#include "fpga/V2/config.h"
-#include "fpga/V2/driver/driver.h"
+#include "fpga/common/pe.h"
 #include "fpga/V2/filter.h"
 #include "fpga/V2/image.h"
+#include "fpga/common/config.h"
+#include "fpga/common/driver.h"
 
 namespace paddle_mobile {
 namespace fpga {
@@ -166,53 +166,53 @@ int PerformBypass(const struct BypassArgs &args) {
   return 0;
 #endif
 
-  uint64_t ifm_src_paddr = driver::vaddr_to_paddr(args.image.address);
-  uint64_t ifm_dst_paddr = driver::vaddr_to_paddr(args.output.address);
-  uint64_t bp_enable;
-  int64_t length;
-  uint64_t pixels;
-
-  // fp32->fp16
-  if ((args.input_data_type) && (!args.output_data_type)) {
-    pixels = (args.image.channels) * (args.image.width) * (args.image.height);
-    length = pixels * sizeof(float);
-    bp_enable = 0x8800000000000000 + length;
-  }
-  // fp16->fp32
-  else if ((!args.input_data_type) && (args.output_data_type)) {
-    pixels = filter::calc_aligned_channel((args.image.channels)) *
-             (args.image.width) * (args.image.height);
-    length = pixels * sizeof(short);
-    length = align_to_x((int)length, 64);  // NOLINT
-    bp_enable = 0x8a00000000000000 + length;
-  }
-  // fp16->fp16 findmax
-  else if ((!args.input_data_type) && (!args.output_data_type)) {
-    pixels = (args.image.channels) * (args.image.width) * (args.image.height);
-    length = pixels * sizeof(short);
-    bp_enable = 0x8900000000000000 + length;
-  } else {
-    return -1;
-  }
-
-  // start bypass
-  driver::reg_writeq(ifm_src_paddr, MUL8(27));
-  driver::reg_writeq(ifm_dst_paddr, MUL8(28));
-  driver::reg_writeq(0, MUL8(0));
-  driver::reg_writeq(bp_enable, MUL8(0));
-  // poll
-  int ret = -1;
-  ret = driver::fpga_regpoll(MUL8(48), BYPASS_DONE, 0xffffffff);
-  if (ret != -1) {
-    // clear "irq"
-    driver::reg_readq(MUL8(63));
-  }
-  // get max value
-  if ((!args.input_data_type) && (!args.output_data_type)) {
-    float scale = Findfp16Max();
-    args.output.scale_address[0] = (float)(1.0 / scale);  // NOLINT
-    args.output.scale_address[1] = scale;
-  }
+  //  uint64_t ifm_src_paddr = driver::vaddr_to_paddr(args.image.address);
+  //  uint64_t ifm_dst_paddr = driver::vaddr_to_paddr(args.output.address);
+  //  uint64_t bp_enable;
+  //  int64_t length;
+  //  uint64_t pixels;
+  //
+  //  // fp32->fp16
+  //  if ((args.input_data_type) && (!args.output_data_type)) {
+  //    pixels = (args.image.channels) * (args.image.width) *
+  //    (args.image.height); length = pixels * sizeof(float); bp_enable =
+  //    0x8800000000000000 + length;
+  //  }
+  //  // fp16->fp32
+  //  else if ((!args.input_data_type) && (args.output_data_type)) {
+  //    pixels = filter::calc_aligned_channel((args.image.channels)) *
+  //             (args.image.width) * (args.image.height);
+  //    length = pixels * sizeof(short);
+  //    length = align_to_x((int)length, 64);  // NOLINT
+  //    bp_enable = 0x8a00000000000000 + length;
+  //  }
+  //  // fp16->fp16 findmax
+  //  else if ((!args.input_data_type) && (!args.output_data_type)) {
+  //    pixels = (args.image.channels) * (args.image.width) *
+  //    (args.image.height); length = pixels * sizeof(short); bp_enable =
+  //    0x8900000000000000 + length;
+  //  } else {
+  //    return -1;
+  //  }
+  //
+  //  // start bypass
+  //  driver::reg_writeq(ifm_src_paddr, MUL8(27));
+  //  driver::reg_writeq(ifm_dst_paddr, MUL8(28));
+  //  driver::reg_writeq(0, MUL8(0));
+  //  driver::reg_writeq(bp_enable, MUL8(0));
+  //  // poll
+  //  int ret = -1;
+  //  ret = driver::fpga_regpoll(MUL8(48), BYPASS_DONE, 0xffffffff);
+  //  if (ret != -1) {
+  //    // clear "irq"
+  //    driver::reg_readq(MUL8(63));
+  //  }
+  //  // get max value
+  //  if ((!args.input_data_type) && (!args.output_data_type)) {
+  //    float scale = Findfp16Max();
+  //    args.output.scale_address[0] = (float)(1.0 / scale);  // NOLINT
+  //    args.output.scale_address[1] = scale;
+  //  }
   return ret;
 }
 

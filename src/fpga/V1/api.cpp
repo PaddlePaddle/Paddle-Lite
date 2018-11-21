@@ -13,250 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "fpga/V1/api.h"
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <sys/mman.h>
-#include <algorithm>
-#include <map>
 #include "fpga/V1/bias_scale.h"
 #include "fpga/V1/filter.h"
 #include "fpga/V1/image.h"
-#define FPGA_TEST_MODE
-#define PADDLE_MOBILE_OS_LINUX
 
 namespace paddle_mobile {
 namespace fpga {
-
-static int fd = -1;
-static const char *device_path = "/dev/fpgadrv0";
-static std::map<void *, size_t> memory_map;
-
-static inline int do_ioctl(int req, const void *arg) {
-#ifdef PADDLE_MOBILE_OS_LINUX
-  int result = ioctl(fd, req, (uint64_t)arg);
-  PADDLE_MOBILE_ENFORCE(result == 0, "ioctl didn't return correctly");
-  return result;
-#else
-  return -1;
-#endif
-}
-
-int open_device() {
-  if (fd == -1) {
-    fd = open(device_path, O_RDWR);
-  }
-  return fd;
-}
-
-// memory management;
-void *fpga_malloc(size_t size) {
-  static uint64_t counter = 0;
-
-#ifdef PADDLE_MOBILE_OS_LINUX
-  auto ptr = mmap64(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-#else
-  auto ptr = malloc(size);
-#endif
-  counter += size;
-  memory_map.insert(std::make_pair(ptr, size));
-  //  DLOG << "Address: " << ptr << ", " << size << " bytes allocated. Total "
-  //       << counter << " bytes";
-  return ptr;
-}
-
-void fpga_free(void *ptr) {
-  static uint64_t counter = 0;
-  size_t size = 0;
-
-  auto iter = memory_map.find(ptr);  // std::map<void *, size_t>::iterator
-  if (iter != memory_map.end()) {
-    size = iter->second;
-    memory_map.erase(iter);
-#ifdef PADDLE_MOBILE_OS_LINUX
-    munmap(ptr, size);
-#else
-    free(ptr);
-#endif
-    counter += size;
-    //    DLOG << "Address: " << ptr << ", " << size << " bytes freed. Total "
-    //         << counter << " bytes";
-  } else {
-    DLOG << "Invalid pointer";
-  }
-}
-
-void fpga_copy(void *dest, const void *src, size_t num) {
-  memcpy(dest, src, num);
-}
-
-int fpga_flush(void *address, size_t size) {
-  struct MemoryCacheArgs args = {nullptr};
-  args.address = address;
-  args.size = size;
-  return do_ioctl(IOCTL_MEMCACHE_FLUSH, &args);
-}
-
-int fpga_invalidate(void *address, size_t size) {
-  struct MemoryCacheArgs args = {nullptr};
-  args.address = address;
-  args.size = size;
-  return do_ioctl(IOCTL_MEMCACHE_INVAL, &args);
-}
-
-half fp32_2_fp16(float fp32_num) {
-  unsigned long tmp = *(unsigned long *)(&fp32_num);  // NOLINT
-  half t = ((tmp & 0x007fffff) >> 13) | ((tmp & 0x80000000) >> 16) |
-           (((tmp & 0x7f800000) >> 13) - (112 << 10));
-  if (tmp & 0x1000) {
-    t++;  // roundoff
-  }
-  return t;
-}
-
-float fp16_2_fp32(half fp16_num) {
-  int frac = (fp16_num & 0x3ff);
-  int exp = ((fp16_num & 0x7c00) >> 10) + 112;
-  int s = fp16_num & 0x8000;
-  int tmp = 0;
-  float fp32_num;
-  tmp = s << 16 | exp << 23 | frac << 13;
-  fp32_num = *(float *)&tmp;  // NOLINT
-  return fp32_num;
-}
-
-int ComputeBasicConv(const struct ConvArgs &args) {
-#ifdef FPGA_TEST_MODE
-  DLOG << "======Compute Basic Conv======";
-  DLOG << "   relu_enabled:" << args.relu_enabled
-       << "   sb_address:" << args.sb_address
-       << "   filter_address:" << args.filter_address
-       << "   filter_num:" << args.filter_num
-       << "   group_num:" << args.group_num;
-  DLOG << "   image_address:" << args.image.address
-       << "   image_scale_address:" << args.image.scale_address
-       << "   image_channels:" << args.image.channels
-       << "   image_height:" << args.image.height
-       << "   image_width:" << args.image.width
-       << "   pad_height:" << args.image.pad_height
-       << "   pad_width:" << args.image.pad_width;
-  DLOG << "   kernel_height:" << args.kernel.height
-       << "   kernel_width:" << args.kernel.width
-       << "   stride_h:" << args.kernel.stride_h
-       << "   stride_w:" << args.kernel.stride_w;
-  DLOG << "   out_address:" << args.output.address
-       << "   out_scale_address:" << args.output.scale_address;
-#endif
-  return do_ioctl(IOCTL_CONFIG_CONV, &args);
-}
-
-int ComputeFpgaConv(const struct SplitConvArgs &args) {
-#ifdef FPGA_TEST_MODE
-  DLOG << "=============ComputeFPGAConv===========";
-  DLOG << "   filter_num:" << args.filter_num
-       << "   group_num:" << args.group_num
-       << "   split_num:" << args.split_num;
-#endif
-
-  int split_num = args.split_num;
-  for (int i = 0; i < split_num; i++) {
-    ComputeBasicConv(args.conv_args[i]);
-  }
-
-  if (split_num > 1) {
-    ComputeFPGAConcat(args.concat_arg);
-  }
-}
-
-int ComputeFpgaPool(const struct PoolingArgs &args) {
-#ifdef FPGA_TEST_MODE
-  DLOG << "=============ComputeFpgaPool===========";
-  DLOG << "   mode:" << args.mode
-       << "   kernel_reciprocal:" << fp16_2_fp32(args.kernel_reciprocal);
-  DLOG << "   image_address:" << args.image.address
-       << "   image_scale_address:" << args.image.scale_address
-       << "   image_channels:" << args.image.channels
-       << "   image_height:" << args.image.height
-       << "   image_width:" << args.image.width
-       << "   pad_height:" << args.image.pad_height
-       << "   pad_width:" << args.image.pad_width;
-  DLOG << "   kernel_height:" << args.kernel.height
-       << "   kernel_width:" << args.kernel.width
-       << "   stride_h:" << args.kernel.stride_h
-       << "   stride_w:" << args.kernel.stride_w;
-  DLOG << "   out_address:" << args.output.address
-       << "   out_scale_address:" << args.output.scale_address;
-#endif
-
-  return do_ioctl(IOCTL_CONFIG_POOLING, &args);
-}
-
-int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
-#ifdef FPGA_TEST_MODE
-  DLOG << "=============ComputeFpgaEWAdd===========";
-  DLOG << "   relu_enabled:" << args.relu_enabled
-       << "   const0:" << fp16_2_fp32(int16_t(args.const0))
-       << "   const1:" << fp16_2_fp32(int16_t(args.const1));
-  DLOG << "   image0_address:" << args.image0.address
-       << "   image0_scale_address:" << args.image0.scale_address
-       << "   image0_channels:" << args.image0.channels
-       << "   image0_height:" << args.image0.height
-       << "   image0_width:" << args.image0.width
-       << "   pad0_height:" << args.image0.pad_height
-       << "   pad0_width:" << args.image0.pad_width;
-  DLOG << "   image1_address:" << args.image1.address
-       << "   image1_scale_address:" << args.image1.scale_address
-       << "   image1_channels:" << args.image1.channels
-       << "   image1_height:" << args.image1.height
-       << "   image1_width:" << args.image1.width
-       << "   pad1_height:" << args.image1.pad_height
-       << "   pad_width:" << args.image1.pad_width;
-  DLOG << "   out_address:" << args.output.address
-       << "   out_scale_address:" << args.output.scale_address;
-#endif
-
-  return do_ioctl(IOCTL_CONFIG_EW, &args);
-}
-int PerformBypass(const struct BypassArgs &args) {
-#ifdef FPGA_TEST_MODE
-  DLOG << "=============ComputeFpgaBypass===========";
-  DLOG << "   input_type:" << args.input_data_type
-       << "   output_type:" << args.output_data_type
-       << "   input_layout_type:" << args.input_layout_type
-       << "   output_layout_type:" << args.output_layout_type;
-  DLOG << "   image_address:" << args.image.address
-       << "   image_scale_address:" << args.image.scale_address
-       << "   image_channels:" << args.image.channels
-       << "   image_height:" << args.image.height
-       << "   image_width:" << args.image.width
-       << "   pad_height:" << args.image.pad_height
-       << "   pad_width:" << args.image.pad_width;
-  DLOG << "   out_address:" << args.output.address
-       << "   out_scale_address:" << args.output.scale_address;
-#endif
-
-  return do_ioctl(IOCTL_CONFIG_BYPASS, &args);
-}
-
-int ComputeFPGAConcat(const struct ConcatArgs &args) {
-#ifdef FPGA_TEST_MODE
-  DLOG << "=============ComputeFpgaConcat===========";
-  DLOG << "   Image_num: " << args.image_num
-       << "   out_address:" << args.image_out
-       << "   out_scale_address:" << args.scale_out;
-  DLOG << "   image_height:" << args.height << "   image_width:" << args.width;
-  for (int i = 0; i < args.image_num; i++) {
-    DLOG << "   " << i << "th:        ";
-    DLOG << "   channel_num:" << args.channel_num[i]
-         << "   image_address:" << args.images_in[i]
-         << "   image_scale_address:" << args.scales_in[i];
-  }
-#endif
-
-  image::concat_images(args.images_in, args.scales_in, args.image_out,
-                       args.scale_out, args.image_num, args.channel_num,
-                       args.height, args.width);
-  return 0;
-}
 
 int get_align_image_cw(int cw) { return align_to_x(cw, IMAGE_ALIGNMENT); }
 
@@ -397,7 +159,7 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
   arg->filter_num = (uint32_t)filter->dims()[0];
   arg->output.address = out_ptr;
   arg->output.scale_address = out->scale;
-  arg->conv_args =
+  arg->conv_arg =
       (ConvArgs *)fpga_malloc(arg->split_num * sizeof(ConvArgs));  // NOLINT
 
   arg->concat_arg.image_num = arg->split_num;
@@ -420,44 +182,44 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
       filter->dims()[1] * filter->dims()[2] * filter->dims()[3]);
 
   for (int i = 0; i < n; i++) {
-    arg->conv_args[i].relu_enabled = relu_enabled;
-    arg->conv_args[i].group_num = (uint32_t)group_num;
-    arg->conv_args[i].kernel.stride_h = (uint32_t)stride_h;
-    arg->conv_args[i].kernel.stride_w = (uint32_t)stride_w;
-    arg->conv_args[i].kernel.height = (uint32_t)filter->dims()[2];
-    arg->conv_args[i].kernel.width = (uint32_t)filter->dims()[3];
-    arg->conv_args[i].image.address = input_ptr;
-    arg->conv_args[i].image.channels = (uint32_t)input->dims()[1];
-    arg->conv_args[i].image.height = (uint32_t)input->dims()[2];
-    arg->conv_args[i].image.width = (uint32_t)input->dims()[3];
-    arg->conv_args[i].image.scale_address = input->scale;
-    arg->conv_args[i].image.pad_height = (uint32_t)padding_h;
-    arg->conv_args[i].image.pad_width = (uint32_t)padding_w;
-    arg->conv_args[i].filter_scale_address = filter->scale;
-    arg->conv_args[i].filter_address = &(
+    arg->conv_arg[i].relu_enabled = relu_enabled;
+    arg->conv_arg[i].group_num = (uint32_t)group_num;
+    arg->conv_arg[i].kernel.stride_h = (uint32_t)stride_h;
+    arg->conv_arg[i].kernel.stride_w = (uint32_t)stride_w;
+    arg->conv_arg[i].kernel.height = (uint32_t)filter->dims()[2];
+    arg->conv_arg[i].kernel.width = (uint32_t)filter->dims()[3];
+    arg->conv_arg[i].image.address = input_ptr;
+    arg->conv_arg[i].image.channels = (uint32_t)input->dims()[1];
+    arg->conv_arg[i].image.height = (uint32_t)input->dims()[2];
+    arg->conv_arg[i].image.width = (uint32_t)input->dims()[3];
+    arg->conv_arg[i].image.scale_address = input->scale;
+    arg->conv_arg[i].image.pad_height = (uint32_t)padding_h;
+    arg->conv_arg[i].image.pad_width = (uint32_t)padding_w;
+    arg->conv_arg[i].filter_scale_address = filter->scale;
+    arg->conv_arg[i].filter_address = &(
         (int8_t *)filter_ptr)[i * element_num * filter_num_per_div];  // NOLINT
-    arg->conv_args[i].sb_address = &bs_ptr[i * filter_num_per_div * 2];
-    arg->conv_args[i].filter_num = (uint32_t)(
+    arg->conv_arg[i].sb_address = &bs_ptr[i * filter_num_per_div * 2];
+    arg->conv_arg[i].filter_num = (uint32_t)(
         i == n - 1 ? channel - (n - 1) * filter_num_per_div  // NOLINT
                    : filter_num_per_div);
 
     if (n > 1) {
-      arg->conv_args[i].output.scale_address =
+      arg->conv_arg[i].output.scale_address =
           (float *)fpga_malloc(2 * sizeof(float));  // NOLINT
-      arg->conv_args[i].output.address = fpga_malloc(
-          input->dims()[2] *
-          align_to_x(input->dims()[3] * arg->conv_args[i].filter_num,
-                     IMAGE_ALIGNMENT) *
-          sizeof(half));
+      arg->conv_arg[i].output.address =
+          fpga_malloc(input->dims()[2] *
+                      align_to_x(input->dims()[3] * arg->conv_arg[i].filter_num,
+                                 IMAGE_ALIGNMENT) *
+                      sizeof(half));
     } else {
-      arg->conv_args[i].output.scale_address = out->scale;
-      arg->conv_args[i].output.address = out_ptr;
+      arg->conv_arg[i].output.scale_address = out->scale;
+      arg->conv_arg[i].output.address = out_ptr;
     }
 
     arg->concat_arg.images_in[i] =
-        (half *)arg->conv_args[i].output.address;  // NOLINT
-    arg->concat_arg.scales_in[i] = arg->conv_args[i].output.scale_address;
-    arg->concat_arg.channel_num[i] = arg->conv_args[i].filter_num;
+        (half *)arg->conv_arg[i].output.address;  // NOLINT
+    arg->concat_arg.scales_in[i] = arg->conv_arg[i].output.scale_address;
+    arg->concat_arg.channel_num[i] = arg->conv_arg[i].filter_num;
   }
 }
 

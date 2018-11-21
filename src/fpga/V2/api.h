@@ -14,20 +14,12 @@ limitations under the License. */
 
 #pragma once
 
-#include "fpga/V2/driver/pe.h"
-#include "fpga/V2/fpga_common.h"
+#include "fpga/common/fpga_common.h"
+#include "fpga/common/pe.h"
 #include "framework/tensor.h"
 
 namespace paddle_mobile {
 namespace fpga {
-
-int open_device();
-int close_device();
-void* fpga_malloc(size_t size);
-void fpga_free(void* ptr);
-void fpga_copy(void* dest, const void* src, size_t num);
-int fpga_flush(void* address, size_t size);
-int fpga_invalidate(void* address, size_t size);
 
 float filter_find_max(framework::Tensor* filter_tensor);
 int get_aligned_channel_num(int channel_num);

@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "fpga/V2/driver/bitmap.h"
+#include "fpga/common/bitmap.h"
 
 namespace fpga_bitmap {
 void bitmap_set(uint64_t *map, unsigned int start, int len) {
