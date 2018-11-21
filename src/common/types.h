@@ -142,6 +142,9 @@ extern const char *G_OP_TYPE_DEQUANTIZE;
 extern const char *G_OP_TYPE_TANH;
 extern const char *G_OP_TYPE_FUSION_DECONV_RELU;
 
+extern const char *G_OP_TYPE_FUSION_DECONV_ADD;
+extern const char *G_OP_TYPE_FUSION_DECONV_ADD_RELU;
+
 extern std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
     op_input_output_key;

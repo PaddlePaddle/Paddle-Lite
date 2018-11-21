@@ -12,24 +12,28 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef TANH_OP
+#ifdef FUSION_DECONVADDRELU_OP
 
-#include "operators/tanh_op.h"
+#pragma once
+
+#include "framework/operator.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
+using framework::OpKernelBase;
+
 template <typename DeviceType, typename T>
-void TanhOp<DeviceType, T>::InferShape() const {
-  this->param_.Out()->Resize(this->param_.InputX()->dims());
-}
+class DeconvAddReluKernel
+    : public OpKernelBase<DeviceType, FusionDeconvAddReluParam<DeviceType>> {
+ public:
+  void Compute(const FusionDeconvAddReluParam<DeviceType> &param);
+
+  bool Init(FusionDeconvAddReluParam<DeviceType> *param);
+};
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(tanh, ops::TanhOp);
-#endif
 
 #endif
