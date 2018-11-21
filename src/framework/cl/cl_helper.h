@@ -61,9 +61,16 @@ class CLHelper {
       auto work_size_2 = n * h;
       return {work_size_0, work_size_1, work_size_2};
     } else if (image_dim.size() == 2) {
+      auto h = image_dim[0];
+      auto w = image_dim[1];
       return {1, image.ImageWidth(), image.ImageHeight()};
     } else if (image_dim.size() == 1) {
       return {1, image.ImageWidth(), 1};
+    } else if (image_dim.size() == 3) {
+      int c = image_dim[0];
+      int h = image_dim[1];
+      int w = image_dim[2];
+      return {(c + 3) / 4, w, h};
     }
     PADDLE_MOBILE_THROW_EXCEPTION(" not support this dim, need imp ");
   }
