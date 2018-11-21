@@ -213,7 +213,7 @@ else()
     set(NET "default" CACHE STRING "select net type")
 endif()
 
-set_property(CACHE NET PROPERTY STRINGS "default" "googlenet" "mobilenet" "yolo" "squeezenet" "FPGAnets" "NLP")
+set_property(CACHE NET PROPERTY STRINGS "default" "googlenet" "mobilenet" "yolo" "squeezenet" "FPGA_NET_V1" "FPGA_NET_V2" "NLP")
 include("${CMAKE_CURRENT_LIST_DIR}/tools/op.cmake")
 
 
