@@ -138,19 +138,19 @@ __kernel void conv_3x3(__private const int global_size_dim0,
             int2 pos_of_weight;
             pos_of_weight.x = i * 3 + j % 3;
             pos_of_weight.y = out_c * 4 * 3 + 0 * 3 + j / 3;
-            float4 weight_x = read_imagef(filter, sampler, pos_of_weight);
+            half4 weight_x = read_imageh(filter, sampler, pos_of_weight);
             output.x += dot(input[j], weight_x);
 
             pos_of_weight.y = out_c * 4 * 3 + 1 * 3 + j / 3;
-            float4 weight_y = read_imagef(filter, sampler, pos_of_weight);
+            half4 weight_y = read_imageh(filter, sampler, pos_of_weight);
             output.y += dot(input[j], weight_y);
 
             pos_of_weight.y = out_c * 4 * 3 + 2 * 3 + j / 3;
-            float4 weight_z = read_imagef(filter, sampler, pos_of_weight);
+            half4 weight_z = read_imageh(filter, sampler, pos_of_weight);
             output.z += dot(input[j], weight_z);
 
             pos_of_weight.y = out_c * 4 * 3 + 3 * 3 + j / 3;
-            float4 weight_w = read_imagef(filter, sampler, pos_of_weight);
+            half4 weight_w = read_imageh(filter, sampler, pos_of_weight);
             output.w += dot(input[j], weight_w);
         }
 */
