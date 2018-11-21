@@ -2211,7 +2211,6 @@ class DropoutParam : public OpParam {
 };
 #endif
 
-#ifdef CONV_TRANSPOSE_OP
 template <typename Dtype>
 class ConvTransposeParam : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
@@ -2266,7 +2265,7 @@ class ConvTransposeParam : public OpParam {
   void SetFpgaArgs(const fpga::DeconvArgs &args) { fpga_conv_args = args; }
 #endif
 };
-#endif
+
 #ifdef FUSION_DECONVADD_OP
 template <typename Dtype>
 class FusionDeconvAddParam : public ConvTransposeParam<Dtype> {
