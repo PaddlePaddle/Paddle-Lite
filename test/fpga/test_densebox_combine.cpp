@@ -27,19 +27,19 @@ static const char *g_densebox_combine = "../models/densebox";
 int main() {
   paddle_mobile::fpga::open_device();
   paddle_mobile::PaddleMobile<paddle_mobile::FPGA> paddle_mobile;
-  //paddle_mobile.SetThreadNum(4);
+  // paddle_mobile.SetThreadNum(4);
   if (paddle_mobile.Load(std::string(g_densebox_combine) + "/model",
                          std::string(g_densebox_combine) + "/params", true)) {
-    //std::vector<float> input;
-    //std::vector<int64_t> dims{1, 3, 512, 1024};
-    //GetInput<float>(g_test_image_1x3x224x224_banana, &input, dims);
+    // std::vector<float> input;
+    // std::vector<int64_t> dims{1, 3, 512, 1024};
+    // GetInput<float>(g_test_image_1x3x224x224_banana, &input, dims);
 
-    //auto vec_result = paddle_mobile.Predict(input, dims);
+    // auto vec_result = paddle_mobile.Predict(input, dims);
 
     Tensor input_tensor;
     SetupTensor<float>(&input_tensor, {1, 3, 512, 1024}, static_cast<float>(0),
                        static_cast<float>(1));
-    //readStream(g_image_src_float,
+    // readStream(g_image_src_float,
     //           input_tensor.mutable_data<float>({1, 3, 224, 224}));
     paddle_mobile.FeedData(input_tensor);
     paddle_mobile.Predict_To(-1);
