@@ -63,6 +63,31 @@ class CLImageConverterFolder : public CLImageConverterBase {
   int height_of_one_block_;
 };
 
+class CLImageConverterNormal : public CLImageConverterBase {
+ public:
+  const DDim &InitImageDimInfoWith(const DDim &tensor_dim);
+  void NCHWToImage(float *tensor, half_t *image, const DDim &tensor_dim);
+  void ImageToNCHW(half_t *image, float *tensor, const DDim &image_dim,
+                   const DDim &tensor_dim);
+
+  /*
+   *  width of original tensor
+   * */
+  inline size_t WidthOfOneBlock() const { return width_of_one_block_; }
+
+  /*
+   *  height of original tensor
+   * */
+  inline size_t HeightOfOneBlock() const { return height_of_one_block_; }
+
+  int GetCBlock() const { return c_block_; }
+
+ private:
+  int c_block_;
+  int width_of_one_block_;
+  int height_of_one_block_;
+};
+
 class CLImageConverterNWBlock : public CLImageConverterBase {
   const DDim &InitImageDimInfoWith(const DDim &tensor_dim);
   void NCHWToImage(float *tensor, half_t *image, const DDim &tensor_dim);
