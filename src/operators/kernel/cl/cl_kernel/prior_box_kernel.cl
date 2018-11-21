@@ -19,7 +19,9 @@ __kernel void prior_box(__private const int global_size_dim0,
                         __private const int global_size_dim2,
                         __global float *box_width,
                         __global float *box_height,
-                        __write_only image2d_t output_image,
+                        __global float *variances_Buffer,
+                        __write_only image2d_t output_boxes,
+                        __write_only image2d_t output_variances,
                         __private const float step_width,
                         __private const float step_height,
                         __private const float offset,
@@ -44,16 +46,25 @@ __kernel void prior_box(__private const int global_size_dim0,
                         float center_y = ((float)out_n + offset) * step_height;
 
                         half4 output[4];
+                        half4 variances[4];
                         output[0].x = convert_half((center_x0 - box_width[out_h]) / (float)img_width);
                         output[1].x = convert_half((center_y - box_height[out_h]) / (float)img_height);
                         output[2].x = convert_half((center_x0 + box_width[out_h]) / (float)img_width);
                         output[3].x = convert_half((center_y + box_height[out_h]) / (float)img_height);
+                        variances[0].x = convert_half(variances_Buffer[0]);
+                        variances[1].x = convert_half(variances_Buffer[1]);
+                        variances[2].x = convert_half(variances_Buffer[2]);
+                        variances[3].x = convert_half(variances_Buffer[3]);
 
                         if(C - 4 * out_c>=2){
                         output[0].y = convert_half((center_x1 - box_width[out_h]) / (float)img_width);
                         output[1].y = convert_half((center_y - box_height[out_h]) / (float)img_height);
                         output[2].y = convert_half((center_x1 + box_width[out_h]) / (float)img_width);
                         output[3].y = convert_half((center_y + box_height[out_h]) / (float)img_height);
+                        variances[0].y = convert_half(variances_Buffer[0]);
+                        variances[1].y = convert_half(variances_Buffer[1]);
+                        variances[2].y = convert_half(variances_Buffer[2]);
+                        variances[3].y = convert_half(variances_Buffer[3]);
                         }else{
                          output[0].y = 0.0f;
                          output[1].y = 0.0f;
@@ -65,6 +76,10 @@ __kernel void prior_box(__private const int global_size_dim0,
                         output[1].z = convert_half((center_y - box_height[out_h]) / (float)img_height);
                         output[2].z = convert_half((center_x2 + box_width[out_h]) / (float)img_width);
                         output[3].z = convert_half((center_y + box_height[out_h]) / (float)img_height);
+                        variances[0].z = convert_half(variances_Buffer[0]);
+                        variances[1].z = convert_half(variances_Buffer[1]);
+                        variances[2].z = convert_half(variances_Buffer[2]);
+                        variances[3].z = convert_half(variances_Buffer[3]);
                         }else{
                         output[0].z = 0.0f;
                         output[1].z = 0.0f;
@@ -76,6 +91,10 @@ __kernel void prior_box(__private const int global_size_dim0,
                         output[1].w = convert_half((center_y - box_height[out_h]) / (float)img_height);
                         output[2].w = convert_half((center_x3 + box_width[out_h]) / (float)img_width);
                         output[3].w = convert_half((center_y + box_height[out_h]) / (float)img_height);
+                        variances[0].w = convert_half(variances_Buffer[0]);
+                        variances[1].w = convert_half(variances_Buffer[1]);
+                        variances[2].w = convert_half(variances_Buffer[2]);
+                        variances[3].w = convert_half(variances_Buffer[3]);
                         }else{
                         output[0].w = 0.0f;
                         output[1].w = 0.0f;
@@ -88,10 +107,21 @@ __kernel void prior_box(__private const int global_size_dim0,
                          output[2] = min(max((half4)(0.0f, 0.0f, 0.0f, 0.0f), output[2]),(half4)(1.0f, 1.0f, 1.0f, 1.0f));
                          output[3] = min(max((half4)(0.0f, 0.0f, 0.0f, 0.0f), output[3]),(half4)(1.0f, 1.0f, 1.0f, 1.0f));
                         }
+                        if(output_pos.x == 0 && output_pos.y == 1){
+                          float4 out = (float4)(output[0].x, output[1].x, output[2].x, output[3].x);
+                          printf("output = %v4hlf \n", out);
 
-                        write_imageh(output_image, (int2)(output_pos.x + 0, output_pos.y), output[0]);
-                        write_imageh(output_image, (int2)(output_pos.x + 1, output_pos.y), output[1]);
-                        write_imageh(output_image, (int2)(output_pos.x + 2, output_pos.y), output[2]);
-                        write_imageh(output_image, (int2)(output_pos.x + 3, output_pos.y), output[3]);
+                        }
+
+                        write_imageh(output_boxes, (int2)(output_pos.x + 0, output_pos.y), output[0]);
+                        write_imageh(output_boxes, (int2)(output_pos.x + 1, output_pos.y), output[1]);
+                        write_imageh(output_boxes, (int2)(output_pos.x + 2, output_pos.y), output[2]);
+                        write_imageh(output_boxes, (int2)(output_pos.x + 3, output_pos.y), output[3]);
+
+                        write_imageh(output_variances, (int2)(output_pos.x + 0, output_pos.y), variances[0]);
+                        write_imageh(output_variances, (int2)(output_pos.x + 1, output_pos.y), variances[1]);
+                        write_imageh(output_variances, (int2)(output_pos.x + 2, output_pos.y), variances[2]);
+                        write_imageh(output_variances, (int2)(output_pos.x + 3, output_pos.y), variances[3]);
+
 
 }
