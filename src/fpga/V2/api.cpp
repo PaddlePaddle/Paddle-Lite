@@ -13,83 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "fpga/V2/api.h"
-#include <algorithm>
 #include "fpga/V2/bias_scale.h"
-#include "fpga/V2/config.h"
-#include "fpga/V2/driver/driver.h"
 #include "fpga/V2/filter.h"
 #include "fpga/V2/image.h"
 
 namespace paddle_mobile {
 namespace fpga {
-
-static std::map<void *, size_t> memory_map;
-
-int open_device() {
-  int ret = driver::open_device_driver();
-  return ret;
-}
-
-int close_device() {
-  int ret = driver::close_device_driver();
-  return ret;
-}
-
-void *fpga_malloc(size_t size) {
-  static uint64_t counter = 0;
-#ifdef PADDLE_MOBILE_ZU5
-  auto ptr = driver::fpga_malloc_driver(size);
-#else
-  auto ptr = malloc(size);
-#endif
-  counter += size;
-  memory_map.insert(std::make_pair(ptr, size));
-  //  DLOG << "Address: " << ptr << ", " << size << " bytes allocated. Total "
-  //       << counter << " bytes";
-  return ptr;
-}
-
-void fpga_free(void *ptr) {
-  static uint64_t counter = 0;
-  size_t size = 0;
-  auto iter = memory_map.find(ptr);  // std::map<void *, size_t>::iterator
-  if (iter != memory_map.end()) {
-    size = iter->second;
-    memory_map.erase(iter);
-#ifdef PADDLE_MOBILE_ZU5
-    driver::fpga_free_driver(ptr);
-#else
-    free(ptr);
-#endif
-    counter += size;
-    //    DLOG << "Address: " << ptr << ", " << size << " bytes freed. Total "
-    //         << counter << " bytes";
-  } else {
-    DLOG << "Invalid pointer";
-  }
-}
-void fpga_copy(void *dest, const void *src, size_t num) {
-#ifdef PADDLE_MOBILE_ZU5
-  driver::fpga_copy_driver(dest, src, num);
-#else
-  memcpy(dest, src, num);
-#endif
-}
-
-int fpga_flush(void *address, size_t size) {
-#ifdef PADDLE_MOBILE_ZU5
-  return driver::fpga_flush_driver(address, size);
-#else
-  return 0;
-#endif
-}
-int fpga_invalidate(void *address, size_t size) {
-#ifdef PADDLE_MOBILE_ZU5
-  return driver::fpga_invalidate_driver(address, size);
-#else
-  return 0;
-#endif
-}
 
 void format_image(framework::Tensor *image_tensor) {
   auto dims = image_tensor->dims();
@@ -284,8 +213,8 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
     arg->conv_arg[i].output.address = out_ptr;
     arg->conv_arg[i].output.scale_address = out->scale;
 
-    int num_after_alignment =
-        filter::calc_aligned_num((int)input->dims()[1], arg->filter_num);
+    int num_after_alignment = filter::calc_aligned_num(
+        (int)input->dims()[1], arg->filter_num);  // NOLINT
     arg->conv_arg[i].free_space =
         fpga_malloc(num_after_alignment * 2 * sizeof(half));
   }
