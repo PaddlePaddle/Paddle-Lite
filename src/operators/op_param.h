@@ -849,6 +849,8 @@ class PriorBoxParam : public OpParam {
     if (HasAttr("min_max_aspect_ratios_order", attrs)) {
       min_max_aspect_ratios_order_ =
           GetAttr<bool>("min_max_aspect_ratios_order", attrs);
+    } else {
+      min_max_aspect_ratios_order_ = false;
     }
     flip_ = GetAttr<bool>("flip", attrs);
     clip_ = GetAttr<bool>("clip", attrs);

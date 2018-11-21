@@ -39,6 +39,10 @@ void PriorBoxKernel<GPU_CL, float>::Compute(
   const auto &input_aspect_ratio = param.AspectRatios();
   const bool &flip = param.Flip();
   const bool &clip = param.Clip();
+  int isclip = 0;
+  if (clip) {
+    isclip = 1;
+  }
   const float &step_w = param.StepW();
   const float &step_h = param.StepH();
   const float &offset = param.Offset();
@@ -75,6 +79,8 @@ void PriorBoxKernel<GPU_CL, float>::Compute(
       paddle_mobile::memory::Alloc(sizeof(float) * num_priors));
   float *box_height = static_cast<float *>(
       paddle_mobile::memory::Alloc(sizeof(float) * num_priors));
+  float *variancesptr =
+      static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * 4));
   int idx = 0;
   for (size_t s = 0; s < min_sizes.size(); ++s) {
     auto min_size = min_sizes[s];
@@ -108,6 +114,9 @@ void PriorBoxKernel<GPU_CL, float>::Compute(
       }
     }
   }
+  for (int i = 0; i < variances.size(); i++) {
+    variancesptr[i] = variances[i];
+  }
   cl_int status;
   auto kernel = this->cl_helper_.KernelAt(0);
   auto default_work_size =
@@ -116,7 +125,7 @@ void PriorBoxKernel<GPU_CL, float>::Compute(
   int w = default_work_size[1];
   int nh = default_work_size[2];
 
-  std::vector<int64_t> box_shape({1, 1, 1, num_priors});
+  std::vector<int64_t> box_shape({num_priors});
   framework::DDim ddim = framework::make_ddim(box_shape);
 
   framework::CLTensor box_width_cl_tensor(this->cl_helper_.CLContext(),
@@ -131,16 +140,33 @@ void PriorBoxKernel<GPU_CL, float>::Compute(
   cl_mem box_height_Buffer =
       box_height_cl_tensor.mutable_with_data<float>(box_height);
 
-  DLOG << "c_block:" << c_block;
-  DLOG << "w:" << w;
-  DLOG << "nh:" << nh;
-  DLOG << "step_width:" << step_width;
-  DLOG << "step_height:" << step_height;
-  DLOG << "offset:" << offset;
-  DLOG << "img_width:" << img_width;
-  DLOG << "img_height:" << img_height;
-  DLOG << "num_priors:" << num_priors;
-  DLOG << "C:" << C;
+  framework::CLTensor variances_cl_tensor(this->cl_helper_.CLContext(),
+                                          this->cl_helper_.CLCommandQueue());
+
+  std::vector<int64_t> variances_shape({4});
+  framework::DDim vddim = framework::make_ddim(variances_shape);
+
+  variances_cl_tensor.Resize(vddim);
+  cl_mem variances_Buffer =
+      variances_cl_tensor.mutable_with_data<float>(variancesptr);
+
+  //            DLOG << "c_block:" << c_block;
+  //            DLOG << "w:" << w;
+  //            DLOG << "nh:" << nh;
+  //            DLOG << "step_width:" << step_width;
+  //            DLOG << "step_height:" << step_height;
+  //            DLOG << "offset:" << offset;
+  //            DLOG << "img_width:" << img_width;
+  //            DLOG << "img_height:" << img_height;
+  //            DLOG << "num_priors:" << num_priors;
+  //            DLOG << "C:" << C;
+  //            DLOG << "isclip:" << isclip;
+  //            printf("param.MinMaxAspectRatiosOrder() =
+  //            %d\n",param.MinMaxAspectRatiosOrder()); for (int i = 0; i <
+  //            num_priors; i++) {
+  //                DLOG << box_width[i];
+  //                DLOG << box_height[i];
+  //            }
   status = clSetKernelArg(kernel, 0, sizeof(int), &c_block);
   CL_CHECK_ERRORS(status);
   status = clSetKernelArg(kernel, 1, sizeof(int), &w);
@@ -151,28 +177,36 @@ void PriorBoxKernel<GPU_CL, float>::Compute(
   CL_CHECK_ERRORS(status);
   status = clSetKernelArg(kernel, 4, sizeof(cl_mem), &box_height_Buffer);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 5, sizeof(cl_mem), &output_boxes);
+  status = clSetKernelArg(kernel, 5, sizeof(cl_mem), &variances_Buffer);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 6, sizeof(float), &step_width);
+  status = clSetKernelArg(kernel, 6, sizeof(cl_mem), &output_boxes);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 7, sizeof(float), &step_height);
+  status = clSetKernelArg(kernel, 7, sizeof(cl_mem), &output_variances);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 8, sizeof(float), &offset);
+  status = clSetKernelArg(kernel, 8, sizeof(float), &step_width);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 9, sizeof(int), &img_width);
+  status = clSetKernelArg(kernel, 9, sizeof(float), &step_height);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 10, sizeof(int), &img_height);
+  status = clSetKernelArg(kernel, 10, sizeof(float), &offset);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 11, sizeof(int), &num_priors);
+  status = clSetKernelArg(kernel, 11, sizeof(int), &img_width);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 12, sizeof(int), &C);
+  status = clSetKernelArg(kernel, 12, sizeof(int), &img_height);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 13, sizeof(int), &num_priors);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 14, sizeof(int), &C);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 15, sizeof(int), &isclip);
   CL_CHECK_ERRORS(status);
   size_t global_work_size[2] = {c_block, nh};
   status = clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2,
                                   NULL, global_work_size, NULL, 0, NULL, NULL);
   CL_CHECK_ERRORS(status);
+
   paddle_mobile::memory::Free(box_width);
   paddle_mobile::memory::Free(box_height);
+  paddle_mobile::memory::Free(variancesptr);
 }
 template class PriorBoxKernel<GPU_CL, float>;
 
