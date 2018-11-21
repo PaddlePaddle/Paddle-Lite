@@ -15,7 +15,7 @@ limitations under the License. */
 #include "fpga/V1/image.h"
 #include <memory.h>
 #include <algorithm>
-#include "fpga/V1/api.h"
+#include "fpga/common/fpga_common.h"
 
 namespace paddle_mobile {
 namespace fpga {

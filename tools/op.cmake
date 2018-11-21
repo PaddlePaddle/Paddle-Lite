@@ -102,7 +102,6 @@ if (CON GREATER -1)
   set(MUL_OP ON)
   set(RESHAPE_OP ON)
   set(SOFTMAX_OP ON)
-
   set(FOUND_MATCH ON)
 endif()
 
@@ -120,7 +119,6 @@ if (CON GREATER -1)
   set(SOFTMAX_OP ON)
   set(FUSION_CONVBNRELU_OP ON)
   set(FUSION_CONVBN_OP ON)
-  set(FUSION_CONVADD_OP ON)
   set(FOUND_MATCH ON)
 endif()
 
