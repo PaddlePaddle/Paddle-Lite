@@ -14,6 +14,7 @@ limitations under the License. */
 
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 namespace paddle_mobile {
@@ -117,9 +118,19 @@ struct BypassArgs {
 struct DeconvArgs {
   struct ConvArgs conv_arg;
 };
+
 static inline int align_to_x(int num, int x) { return (num + x - 1) / x * x; }
+
 int16_t fp32_2_fp16(float fp32_num);
 float fp16_2_fp32(int16_t fp16_num);
+
+int open_device();
+int close_device();
+void* fpga_malloc(size_t size);
+void fpga_free(void* ptr);
+void fpga_copy(void* dest, const void* src, size_t num);
+int fpga_flush(void* address, size_t size);
+int fpga_invalidate(void* address, size_t size);
 
 }  // namespace fpga
 }  // namespace paddle_mobile
