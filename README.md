@@ -37,7 +37,8 @@
 
 开发文档主要是关于编译、运行等问题。做为开发者，它可以和贡献文档共同结合使用。
 * [iOS](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_ios.md)
-* [Android](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_android.md)
+* [Android_CPU](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_android.md)
+* [Android_GPU](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_android_GPU.md)
 * [FPGA](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_fpga.md)
 * [ARM_LINUX](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/doc/development_arm_linux.md)
 
