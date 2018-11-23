@@ -1018,9 +1018,9 @@ class MultiClassNMSParam : public OpParam {
     score_threshold_ = GetAttr<float>("score_threshold", attrs);
   }
 
-  const RType *InputBBoxes() const { return input_bboxes_; }
+  RType *InputBBoxes() const { return input_bboxes_; }
 
-  const RType *InputScores() const { return input_scores_; }
+  RType *InputScores() const { return input_scores_; }
 
   RType *Out() const { return out_; }
 
