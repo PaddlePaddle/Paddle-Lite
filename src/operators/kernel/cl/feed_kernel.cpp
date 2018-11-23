@@ -27,6 +27,7 @@ bool FeedKernel<GPU_CL, float>::Init(FeedParam<GPU_CL> *param) {
 template <>
 void FeedKernel<GPU_CL, float>::Compute(const FeedParam<GPU_CL> &param) {
   auto kernel = this->cl_helper_.KernelAt(0);
+  auto default_work_size = this->cl_helper_.DefaultWorkSize(*(param.Out()));
   cl_int status;
   param.Out()->InitEmptyImage(cl_helper_.CLContext(),
                               cl_helper_.CLCommandQueue(), param.Out()->dims());
@@ -35,10 +36,13 @@ void FeedKernel<GPU_CL, float>::Compute(const FeedParam<GPU_CL> &param) {
   //  DLOG << *input;
   const float *input_data = input->data<float>();
   int numel = input->numel();
-  cl_mem cl_image = output->GetCLImage();
-  int c = input->dims()[1];
-  int height = output->dims()[2];
-  int width = output->dims()[3];
+  cl_mem output_image = output->GetCLImage();
+  const int out_C = output->dims()[1];
+  const int out_H = output->dims()[2];
+  const int out_W = output->dims()[3];
+  const int Stride2 = out_C * out_H * out_W;
+  const int Stride1 = out_H * out_W;
+  const int Stride0 = out_W;
   CLTensor input_cl_tensor(this->cl_helper_.CLContext(),
                            this->cl_helper_.CLCommandQueue());
   input_cl_tensor.Resize(input->dims());
@@ -46,21 +50,25 @@ void FeedKernel<GPU_CL, float>::Compute(const FeedParam<GPU_CL> &param) {
 
   status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &inputBuffer);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &cl_image);
+  status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &output_image);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 2, sizeof(cl_int), &width);
+  status = clSetKernelArg(kernel, 2, sizeof(cl_int), &out_H);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 3, sizeof(cl_int), &height);
+  status = clSetKernelArg(kernel, 3, sizeof(cl_int), &out_W);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 4, sizeof(cl_int), &c);
+  status = clSetKernelArg(kernel, 4, sizeof(cl_int), &out_C);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 5, sizeof(cl_int), &Stride0);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 6, sizeof(cl_int), &Stride1);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 7, sizeof(cl_int), &Stride2);
   CL_CHECK_ERRORS(status);
 
-  size_t global_work_size[2] = {width, height};
+  status = clEnqueueNDRangeKernel(
+      this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
+      default_work_size.data(), NULL, 0, NULL, NULL);
 
-  //  cl_event out_event = param.Out()->GetClEvent();
-
-  status = clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2,
-                                  NULL, global_work_size, NULL, 0, NULL, NULL);
   CL_CHECK_ERRORS(status);
 }
 

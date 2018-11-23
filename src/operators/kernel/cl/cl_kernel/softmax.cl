@@ -16,35 +16,46 @@ limitations under the License. */
 
 __kernel void softmax(__read_only image2d_t input_image,
                       __write_only image2d_t output_image,
-                      __private const int group
+                      __private const int out_W
                       ) {
     const int out_c = get_global_id(0);   //  block index
     const int out_w = get_global_id(1);   // index in one block
     const int out_nh = get_global_id(2);
 
+    const int in_c = out_c;
+    const int in_w = out_w;
+    const int in_nh = out_nh;
 
-  const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-                            CLK_ADDRESS_CLAMP |
-                            CLK_FILTER_NEAREST;
+    int2 input_pos;
+    int2 output_pos;
 
-  half maxv = 0.0f;
-  for (int i = 0; i < group; ++i) {
-    half4 temp = read_imageh(input_image, sampler, (int2)(i, 0));
-    maxv = max(maxv, max(temp.x, max(temp.y, max(temp.z, temp.w))));
-  }
+    input_pos.x = in_c * out_W + in_w;
+    input_pos.y = in_nh;
 
+    output_pos.x = out_c * out_W + out_w;
+    output_pos.y = out_nh;
 
-  half4 rsum = (half4)(0.0f);
-  for (int i = 0; i < group; ++i) {
-    half4 r = read_imageh(input_image, sampler, (int2)(i, 0));
-    rsum += convert_half4(exp(convert_float4(r - maxv)));
-  }
+    const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
+                                CLK_ADDRESS_CLAMP |
+                                CLK_FILTER_NEAREST;
 
-  float sum = rsum.x + rsum.y + rsum.z + rsum.w;
+    half4 input_max = 0.0f;
+    half4 input_tmp;
+    for(int i=0;i<out_W;i++){
+     input_tmp = read_imageh(input_image, sampler,(int2)(in_c * out_W + i,in_nh));
+     input_max = max(input_max,input_tmp);
+    }
 
-  half4 rr = read_imageh(input_image, sampler, (int2)(out_w, out_nh));
-  half4 result = convert_half4(exp(convert_float4(rr - maxv)) / sum);
-  write_imageh(output_image, (int2)(out_w, out_nh), result);
+    half4 sum = (half4)0.0f;
+    for(int i=0;i<out_W;i++){
+        input_tmp = read_imageh(input_image, sampler,(int2)(in_c * out_W + i,in_nh));
+        sum += exp(input_tmp - input_max);
+       }
+
+       half4 input = read_imageh(input_image, sampler,input_pos);
+       half4 output = exp(input - input_max)/sum;
+       write_imageh(output_image, output_pos, output);
+
 }
 
 /*
