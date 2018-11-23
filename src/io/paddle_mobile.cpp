@@ -143,10 +143,12 @@ double PaddleMobile<CPU, Precision::FP32>::GetPredictTime() {
   int t1 = 1;
   int t2 = 1;
   for (int i = 0; i < m * k; ++i) {
-    a[i] = t1 + rand() % t2;
+    unsigned int seed = 100;
+    a[i] = t1 + rand_r(&seed) % t2;
   }
   for (int i = 0; i < k * n; ++i) {
-    b[i] = t1 + rand() % t2;
+    unsigned int seed = 200;
+    b[i] = t1 + rand_r(&seed) % t2;
   }
   paddle_mobile::operators::math::Gemm gemm;
   auto time1 = paddle_mobile::time();
@@ -215,13 +217,13 @@ double PaddleMobile<GPU_CL, Precision::FP32>::GetPredictTime() {
   cl_int status;
   cl_uint nPlatform;
   clGetPlatformIDs(0, NULL, &nPlatform);
-  cl_platform_id *listPlatform =
-      (cl_platform_id *)malloc(nPlatform * sizeof(cl_platform_id));
+  cl_platform_id *listPlatform = reinterpret_cast<cl_platform_id *>(
+      malloc(nPlatform * sizeof(cl_platform_id)));
   clGetPlatformIDs(nPlatform, listPlatform, NULL);
   cl_uint nDevice = 0;
   clGetDeviceIDs(listPlatform[0], CL_DEVICE_TYPE_GPU, 0, NULL, &nDevice);
   cl_device_id *listDevice =
-      (cl_device_id *)malloc(nDevice * sizeof(cl_device_id));
+      reinterpret_cast<cl_device_id *>(malloc(nDevice * sizeof(cl_device_id)));
   clGetDeviceIDs(listPlatform[0], CL_DEVICE_TYPE_GPU, nDevice, listDevice,
                  NULL);
   cl_context context =
@@ -277,41 +279,66 @@ double PaddleMobile<GPU_CL, Precision::FP32>::GetPredictTime() {
   clBuildProgram(program, 0, 0, path1.c_str(), NULL, NULL);
   cl_kernel kernel = clCreateKernel(program, "feed", &status);
 
+  int out_H = 224;
+  int out_W = 224;
+  int out_C = 3;
+  int Stride2 = out_C * out_H * out_W;
+  int Stride1 = out_H * out_W;
+  int Stride0 = out_W;
   status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &inputBuffer);
   CL_CHECK_ERRORS(status);
   status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &cl_input_image);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 2, sizeof(cl_int), &input_w);
+  status = clSetKernelArg(kernel, 2, sizeof(cl_int), &out_H);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 3, sizeof(cl_int), &input_h);
+  status = clSetKernelArg(kernel, 3, sizeof(cl_int), &out_W);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 4, sizeof(cl_int), &c);
+  status = clSetKernelArg(kernel, 4, sizeof(cl_int), &out_C);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 5, sizeof(cl_int), &Stride0);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 6, sizeof(cl_int), &Stride1);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 7, sizeof(cl_int), &Stride2);
   CL_CHECK_ERRORS(status);
 
-  size_t global_work_size[2] = {input_w, input_h};
+  size_t global_work_size[3] = {1, 224, 224};
 
   //  cl_event out_event = param.Out()->GetClEvent();
 
-  status = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global_work_size,
+  status = clEnqueueNDRangeKernel(queue, kernel, 3, NULL, global_work_size,
                                   NULL, 0, NULL, NULL);
   CL_CHECK_ERRORS(status);
+
+  out_H = 3;
+  out_W = 3;
+  out_C = 3;
+  Stride2 = out_C * out_H * out_W;
+  Stride1 = out_H * out_W;
+  Stride0 = out_W;
 
   status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &filterBuffer);
   CL_CHECK_ERRORS(status);
   status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &cl_filter_image);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 2, sizeof(cl_int), &filter_w);
+  status = clSetKernelArg(kernel, 2, sizeof(cl_int), &out_H);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 3, sizeof(cl_int), &filter_h);
+  status = clSetKernelArg(kernel, 3, sizeof(cl_int), &out_W);
   CL_CHECK_ERRORS(status);
-  status = clSetKernelArg(kernel, 4, sizeof(cl_int), &c);
+  status = clSetKernelArg(kernel, 4, sizeof(cl_int), &out_C);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 5, sizeof(cl_int), &Stride0);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 6, sizeof(cl_int), &Stride1);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 7, sizeof(cl_int), &Stride2);
   CL_CHECK_ERRORS(status);
 
-  size_t global_work_size1[2] = {filter_w, filter_h};
+  size_t global_work_size1[3] = {1, 3, 96};
 
   //  cl_event out_event = param.Out()->GetClEvent();
 
-  status = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global_work_size1,
+  status = clEnqueueNDRangeKernel(queue, kernel, 3, NULL, global_work_size1,
                                   NULL, 0, NULL, NULL);
   CL_CHECK_ERRORS(status);
 
@@ -378,13 +405,16 @@ double PaddleMobile<GPU_CL, Precision::FP32>::GetPredictTime() {
   auto time2 = paddle_mobile::time();
   paddle_mobile::memory::Free(input);
   paddle_mobile::memory::Free(filter);
-  return paddle_mobile::time_diff(time1, time2);
+  if (status == CL_SUCCESS) {
+    return paddle_mobile::time_diff(time1, time2);
+  } else {
+    return -1;
+  }
 }
 template <typename Dtype, Precision P>
 int PaddleMobile<Dtype, P>::readText(
     const char *kernelPath,
-    char **pcode)  // 读取文本文件放入 pcode，返回字符串长度
-{
+    char **pcode) {  // 读取文本文件放入 pcode，返回字符串长度
   FILE *fp;
   int size;
   // printf("<readText> File: %s\n", kernelPath);
@@ -402,7 +432,7 @@ int PaddleMobile<Dtype, P>::readText(
     return -1;
   }
   rewind(fp);
-  if ((*pcode = (char *)malloc(size + 1)) == NULL) {
+  if ((*pcode = reinterpret_cast<char *>(malloc(size + 1))) == NULL) {
     printf("<readText> Allocate space failed\n");
     return -1;
   }
