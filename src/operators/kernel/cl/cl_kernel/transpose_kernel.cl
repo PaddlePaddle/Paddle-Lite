@@ -101,7 +101,7 @@ __kernel void transpose_4d( __read_only image2d_t input_image,
                           if(out_w%4==0){
                             output.z = input2.x;
                             }else if(out_w%4==1){
-                             output.z = input1.y;
+                             output.z = input2.y;
                             }else if(out_w%4==2){
                              output.z = input2.z;
                             }else{
@@ -126,4 +126,44 @@ __kernel void transpose_4d( __read_only image2d_t input_image,
                            output.w = 0.0f;
                            }
                            write_imageh(output_image, output_pos, output);
+}
+
+__kernel void transpose( __read_only image2d_t input_image,
+                            __write_only image2d_t output_image,
+                            __private const int out_C,
+                            __private const int out_H,
+                            __private const int out_W,
+                            __private const int in_W
+                           ){
+                           const int out_c = get_global_id(0);
+                           const int out_w = get_global_id(1);
+                           const int out_nh = get_global_id(2);
+                           const int out_n =  1;
+                           const int out_h = out_nh%out_H;
+
+                           const int in_n = 1;
+                           const int in_c = out_c;
+                           const int in_w = out_h;
+                           const int in_h = out_w;
+
+                           int2 input_pos;
+                           int2 output_pos;
+
+                           input_pos.x = in_c * in_W + in_w;
+                           input_pos.y = in_n * in_h;
+
+                           output_pos.x = out_c * out_W + out_w;
+                           output_pos.y = out_n * out_h;
+
+                           const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
+                                                      CLK_ADDRESS_CLAMP      |
+                                                      CLK_FILTER_NEAREST;
+
+                           half4 input;
+                           half4 output;
+                           input = read_imageh(input_image, sampler,input_pos);
+
+                           output = input;
+                           write_imageh(output_image, output_pos, output);
+
 }

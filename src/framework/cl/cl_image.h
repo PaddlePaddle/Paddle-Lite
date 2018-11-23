@@ -222,11 +222,11 @@ class CLImage {
   CLImageConverterBase *image_converter_ = nullptr;
 };
 
-void TensorToCLImage(Tensor *tensor, CLImage *image,
-                     cl_command_queue commandQueue);
+void TensorToCLImage(Tensor *tensor, CLImage *image, cl_context context,
+                     cl_command_queue commandQueue, cl_kernel kernel);
 
-void CLImageToTensor(CLImage *image, Tensor *tensor,
-                     cl_command_queue commandQueue);
+void CLImageToTensor(CLImage *image, Tensor *tensor, cl_context context,
+                     cl_command_queue commandQueue, cl_kernel kernel);
 
 #ifdef PADDLE_MOBILE_DEBUG
 Print &operator<<(Print &printer, const CLImage &image);

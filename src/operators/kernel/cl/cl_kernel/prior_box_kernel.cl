@@ -107,11 +107,13 @@ __kernel void prior_box(__private const int global_size_dim0,
                          output[2] = min(max((half4)(0.0f, 0.0f, 0.0f, 0.0f), output[2]),(half4)(1.0f, 1.0f, 1.0f, 1.0f));
                          output[3] = min(max((half4)(0.0f, 0.0f, 0.0f, 0.0f), output[3]),(half4)(1.0f, 1.0f, 1.0f, 1.0f));
                         }
+                        /*
                         if(output_pos.x == 0 && output_pos.y == 1){
                           float4 out = (float4)(output[0].x, output[1].x, output[2].x, output[3].x);
                           printf("output = %v4hlf \n", out);
 
                         }
+                        */
 
                         write_imageh(output_boxes, (int2)(output_pos.x + 0, output_pos.y), output[0]);
                         write_imageh(output_boxes, (int2)(output_pos.x + 1, output_pos.y), output[1]);
