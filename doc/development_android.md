@@ -153,7 +153,7 @@ root@5affd29d4fc5:/ # make
 ## 测试
 在编译完成后，我们提供了自动化的测试脚本，帮助用户将运行单测文件所需要的模型及库文件push到Android设备
 
-* 下载测试需要的 [mobilenet和test_image_1x3x224x224_float文件](http://mms-graph.bj.bcebos.com/paddle-mobile/opencl_test_src.zip)
+* 下载测试需要的 [mobilenet和test_image_1x3x224x224_float(预处理过的 NCHW 文件) 文件](http://mms-graph.bj.bcebos.com/paddle-mobile/opencl_test_src.zip)
 
 * 创建模型和图片文件夹
 
@@ -173,6 +173,7 @@ sh push2android.sh
 ```
 
 * mobilenet cpu模型预测结果
+
 假设mobilenet和test_image_1x3x224x224_float文件已经推送到手机上，执行下面命令进行mobilenet cpu的预测
 
 ```
