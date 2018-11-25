@@ -150,7 +150,7 @@ root@5affd29d4fc5:/ # make
 ### 6. 查看构建产出
 构架产出可以在 host 机器上查看，在 paddle-mobile 的目录下，build 以及 test/build 下，可以使用 adb 指令或者 scp 传输到 device 上执行
 
-##测试
+## 测试
 在编译完成后，我们提供了自动化的测试脚本，帮助用户将运行单测文件所需要的模型及库文件push到Android设备中，执行以下命令：
 
 ```
@@ -165,7 +165,7 @@ which to test :
 ```
 输入名称即可运行对应的测试文件。
 
-##部署
+## 部署
 Android应用可通过JNI接口调用底层C/C++，paddle-mobile对外提供的JNI接口如下：
 
 ##### 1 load接口  加载模型参数
