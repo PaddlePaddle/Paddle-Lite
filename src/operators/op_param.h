@@ -423,6 +423,7 @@ class ConvParam : public OpParam {
     EXEC_WINOGRAD3X3_FLOAT,
     EXEC_WINOGRAD5X5_FLOAT,
     EXEC_GEMM_INT8,
+    EXEC_DEPTHWISE3x3_INT8,
   };
 
   ExecMode &ExecMode() const { return exec_mode_; }
@@ -2498,7 +2499,7 @@ class QuantizeParam : public OpParam {
   QuantizeParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
                 const AttributeMap &attrs, const Scope &scope) {
     input_ = InputXFrom<GType>(inputs, scope);
-    out_ = OutFrom<GType>(outputs, scope);
+    output_ = OutFrom<GType>(outputs, scope);
     // online
     // scale = max(abs(x))
     online_scale_ = GetVarValue<GType>("OutScale", outputs, scope);
@@ -2517,8 +2518,7 @@ class QuantizeParam : public OpParam {
   // op input
   RType *input_;
   // op output
-  RType *out_;
-  //
+  RType *output_;
   RType *online_scale_;
   // if static scale or not
   bool is_static_ = false;
@@ -2526,7 +2526,11 @@ class QuantizeParam : public OpParam {
   float static_scale_ = 1.0f;
   // round method type
   // nearest_zero and nearest_even is valid currently
-  RoundType round_type_ = ROUND_NEAREST_AWAY_ZERO;
+  // RoundType round_type_ = ROUND_NEAREST_AWAY_ZERO;
+  RoundType round_type_ = ROUND_NEAREST_TOWARDS_ZERO;
+  // optional paddings
+  std::vector<int> paddings_;
+  int8_t padding_val_;
 };
 #endif
 
@@ -2540,7 +2544,7 @@ class DequantizeParam : public OpParam {
   DequantizeParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
                   const AttributeMap &attrs, const Scope &scope) {
     input_ = InputXFrom<GType>(inputs, scope);
-    out_ = OutFrom<GType>(outputs, scope);
+    output_ = OutFrom<GType>(outputs, scope);
     activation_scale_ = GetVarValue<GType>("Scale", inputs, scope);
     // dequantization is performed as x = x / static_scale / online_scale
     if (HasAttr("weight_scale", attrs)) {
@@ -2554,9 +2558,30 @@ class DequantizeParam : public OpParam {
   // op input
   RType *input_;
   // op output
-  RType *out_;
+  RType *output_;
   RType *activation_scale_;
   float weight_scale_;
+};
+#endif
+
+#ifdef PAD_OP
+template <typename Dtype>
+class PadParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  input_ = InputXFrom<GType>(inputs, scope);
+  output_ = OutFrom<GType>(outputs, scope);
+  paddings_ = GetVarValue<std::vector<int>>("Paddings", inputs, scope);
+
+ public:
+  // op input
+  RType *input_;
+  // op output
+  RType *output_;
+  // paddings
+  std::vector<int> paddings_;
 };
 #endif
 
