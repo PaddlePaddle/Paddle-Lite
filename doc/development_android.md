@@ -151,17 +151,36 @@ root@5affd29d4fc5:/ # make
 构架产出可以在 host 机器上查看，在 paddle-mobile 的目录下，build 以及 test/build 下，可以使用 adb 指令或者 scp 传输到 device 上执行
 
 ## 测试
-在编译完成后，我们提供了自动化的测试脚本，帮助用户将运行单测文件所需要的模型及库文件push到Android设备中，执行以下命令：
+在编译完成后，我们提供了自动化的测试脚本，帮助用户将运行单测文件所需要的模型及库文件push到Android设备
+
+* 下载测试需要的 [mobilenet和test_image_1x3x224x224_float文件](http://mms-graph.bj.bcebos.com/paddle-mobile/opencl_test_src.zip)
+
+* 创建模型和图片文件夹
+
+```
+cd test
+mkdir models
+mkdir images
+```
+
+* 将mobilenet复制到paddle-mobile/test/models目录下 将test_image_1x3x224x224_float复制到paddle-mobile/test/images目录下
+
+* 执行下面命令将可执行文件和预测需要的文件部署到手机
 
 ```
 cd tools/android-debug-script
-sh run_on_android.sh (npm) 可选参数npm,用于选择是否传输模型文件到手机上
+sh push2android.sh
 ```
-出现如下提示：
+
+* mobilenet cpu模型预测结果
+假设mobilenet和test_image_1x3x224x224_float文件已经推送到手机上，执行下面命令进行mobilenet cpu的预测
 
 ```
-**** choose OP or NET to test ****
-which to test :
+adb shell
+cd /data/local/tmp/bin/
+export LD_LIBRARY_PATH=.
+./test-mobilenet
 ```
-输入名称即可运行对应的测试文件。
+
+
 
