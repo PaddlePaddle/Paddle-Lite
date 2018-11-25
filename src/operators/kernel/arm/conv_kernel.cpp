@@ -99,7 +99,6 @@ void ConvKernel<CPU, float>::Compute(const ConvParam<CPU> &param) {
       PADDLE_MOBILE_THROW_EXCEPTION("Invalid convolution execute mode %d",
                                     param.ExecMode());
   }
-  std::cout << "exec here..." << std::endl;
 }
 
 template class ConvKernel<CPU, float>;
