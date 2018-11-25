@@ -17,11 +17,11 @@
 cd tools
 sh build.sh android
 
-# 如果想编译某个支持某个某些特定网络的库 (可以控制包体积), 可以使用
+# 如果想编译只支持某些特定网络的库 (可以控制包体积, 编译出来的库就只包含了支持这这些特定模型的算子), 可以使用
 
 sh build.sh android  mobilenet googlenet
 
-# 这样编译出来的库就只包含了支持这两个模型的算子, 当然这些网络是需要在 cmakelist  中配置的(https://github.com/PaddlePaddle/paddle-mobile/blob/73769e7d05ef4820a115ad3fb9b1ca3f55179d03/CMakeLists.txt#L216), 目前配置了几个常见模型
+# 当然这些网络是需要在 cmakelist  中配置的(https://github.com/PaddlePaddle/paddle-mobile/blob/73769e7d05ef4820a115ad3fb9b1ca3f55179d03/CMakeLists.txt#L216), 目前配置了几个常见模型
 
 ```
 
