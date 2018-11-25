@@ -11,18 +11,22 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#include "operators/math/depthwise_conv_3x3.h"
+
+#include "operators/math/depthwise_conv3x3.h"
+#include <vector>
 #if __ARM_NEON
 #include <arm_neon.h>
 #endif
-#include <vector>
 
 namespace paddle_mobile {
 namespace operators {
 namespace math {
-void DepthwiseConv3x3(const Tensor *input, vector<int> strides,
-                      vector<int> paddings, const Tensor *filter, Tensor *bias,
-                      Tensor *output, bool if_bias) {
+
+void DepthwiseConv3x3(const framework::Tensor *input,
+                      const std::vector<int> &strides,
+                      const std::vector<int> &paddings,
+                      const framework::Tensor *filter, framework::Tensor *bias,
+                      framework::Tensor *output, bool if_bias) {
   const int batch_size = input->dims()[0];
 
   const int input_height = input->dims()[2];
@@ -67,12 +71,12 @@ void DepthwiseConv3x3(const Tensor *input, vector<int> strides,
         for (int pw = 0; pw < output_width; pw++) {
           hstart = ph * stride_height - padding_height;
           wstart = pw * stride_width - padding_width;
-          hend = min(hstart + _kernel_size, input_height + padding_height);
-          wend = min(wstart + _kernel_size, input_width + padding_width);
-          hstart = max(hstart, 0);
-          wstart = max(wstart, 0);
-          hend = min(hend, input_height);
-          wend = min(wend, input_width);
+          hend = std::min(hstart + _kernel_size, input_height + padding_height);
+          wend = std::min(wstart + _kernel_size, input_width + padding_width);
+          hstart = std::max(hstart, 0);
+          wstart = std::max(wstart, 0);
+          hend = std::min(hend, input_height);
+          wend = std::min(wend, input_width);
           pos1 = input_data + hstart * input_width + wstart;
           pos2 = input_data + (hstart + 1) * input_width + wstart;
           pos3 = input_data + (hstart + 2) * input_width + wstart;
@@ -244,8 +248,10 @@ void DepthwiseConv3x3(const Tensor *input, vector<int> strides,
   }
 }
 
-void DepthwiseConv3x3s1p1(const Tensor *input, const Tensor *filter,
-                          Tensor *output, Tensor *bias, bool if_bias) {
+void DepthwiseConv3x3s1p1(const framework::Tensor *input,
+                          const framework::Tensor *filter,
+                          framework::Tensor *output, framework::Tensor *bias,
+                          bool if_bias) {
 #if __ARM_NEON
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
@@ -517,9 +523,12 @@ void DepthwiseConv3x3s1p1(const Tensor *input, const Tensor *filter,
 #endif
 }
 
-void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
-                                   Tensor *output, const Tensor *new_scale,
-                                   const Tensor *new_bias, bool if_relu) {
+void DepthwiseConvAddBNRelu3x3s1p1(const framework::Tensor *input,
+                                   const framework::Tensor *filter,
+                                   framework::Tensor *output,
+                                   const framework::Tensor *new_scale,
+                                   const framework::Tensor *new_bias,
+                                   bool if_relu) {
 #if __ARM_NEON
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
@@ -1059,9 +1068,12 @@ void DepthwiseConvAddBNRelu3x3s1p1(const Tensor *input, const Tensor *filter,
 }
 
 /// w!=h not fix
-void DepthwiseConvAddBNRelu3x3s2p1(const Tensor *input, const Tensor *filter,
-                                   Tensor *output, const Tensor *new_scale,
-                                   const Tensor *new_bias, bool if_relu) {
+void DepthwiseConvAddBNRelu3x3s2p1(const framework::Tensor *input,
+                                   const framework::Tensor *filter,
+                                   framework::Tensor *output,
+                                   const framework::Tensor *new_scale,
+                                   const framework::Tensor *new_bias,
+                                   bool if_relu) {
 #if __ARM_NEON
 
   const int batch_size = input->dims()[0];
@@ -1107,12 +1119,12 @@ void DepthwiseConvAddBNRelu3x3s2p1(const Tensor *input, const Tensor *filter,
         for (int pw = 0; pw < output_width; pw++) {
           hstart = ph * stride_height - padding_height;
           wstart = pw * stride_width - padding_width;
-          hend = min(hstart + _kernel_size, input_height + padding_height);
-          wend = min(wstart + _kernel_size, input_width + padding_width);
-          hstart = max(hstart, 0);
-          wstart = max(wstart, 0);
-          hend = min(hend, input_height);
-          wend = min(wend, input_width);
+          hend = std::min(hstart + _kernel_size, input_height + padding_height);
+          wend = std::min(wstart + _kernel_size, input_width + padding_width);
+          hstart = std::max(hstart, 0);
+          wstart = std::max(wstart, 0);
+          hend = std::min(hend, input_height);
+          wend = std::min(wend, input_width);
           pos1 = input_data + hstart * input_width + wstart;
           pos2 = input_data + (hstart + 1) * input_width + wstart;
           pos3 = input_data + (hstart + 2) * input_width + wstart;
@@ -1258,8 +1270,10 @@ void DepthwiseConvAddBNRelu3x3s2p1(const Tensor *input, const Tensor *filter,
 #endif
 }
 
-void DepthwiseConv3x3s2p1v2(const Tensor *input, const Tensor *filter,
-                            Tensor *output, Tensor bias, bool if_bias) {
+void DepthwiseConv3x3s2p1v2(const framework::Tensor *input,
+                            const framework::Tensor *filter,
+                            framework::Tensor *output, framework::Tensor bias,
+                            bool if_bias) {
 #if __ARM_NEON
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
@@ -1463,9 +1477,12 @@ void DepthwiseConv3x3s2p1v2(const Tensor *input, const Tensor *filter,
 #endif
 }
 
-void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
-                                     Tensor *output, const Tensor *new_scale,
-                                     const Tensor *new_bias, bool if_relu) {
+void DepthwiseConvAddBNRelu3x3s2p1v2(const framework::Tensor *input,
+                                     const framework::Tensor *filter,
+                                     framework::Tensor *output,
+                                     const framework::Tensor *new_scale,
+                                     const framework::Tensor *new_bias,
+                                     bool if_relu) {
 #if __ARM_NEON
   // #ifdef _OPENMP
   //  const float *newscale_data = new_scale->data<float>();
@@ -1886,8 +1903,10 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const Tensor *input, const Tensor *filter,
 #endif
 }
 
-void DepthwiseConv3x3s2p0(const Tensor *input, const Tensor *filter,
-                          Tensor *output, Tensor bias, bool if_bias) {
+void DepthwiseConv3x3s2p0(const framework::Tensor *input,
+                          const framework::Tensor *filter,
+                          framework::Tensor *output, framework::Tensor bias,
+                          bool if_bias) {
 #if __ARM_NEON
 
   const int batch_size = static_cast<int>(input->dims()[0]);

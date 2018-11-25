@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef DEQUANT_OP
 
 #include "operators/kernel/dequantize_kernel.h"
+#include <iostream>
 
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
 #include <arm_neon.h>
@@ -31,7 +32,7 @@ bool DequantizeKernel<CPU, float>::Init(DequantizeParam<CPU> *param) {
 template <>
 void DequantizeKernel<CPU, float>::Compute(const DequantizeParam<CPU> &param) {
   const Tensor *input = param.input_;
-  Tensor *output = param.out_;
+  Tensor *output = param.output_;
   float activation_scale = param.activation_scale_->data<float>()[0];
   float weight_scale = param.weight_scale_;
   const int32_t *x = input->data<const int32_t>();

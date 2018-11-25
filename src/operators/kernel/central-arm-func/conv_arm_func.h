@@ -17,7 +17,7 @@ limitations under the License. */
 #pragma once
 #include <vector>
 #include "operators/math/conv_func.h"
-#include "operators/math/depthwise_conv_3x3.h"
+#include "operators/math/depthwise_conv3x3.h"
 #include "operators/math/im2col.h"
 #include "operators/math/math_function.h"
 #include "operators/math/pad.h"
@@ -39,10 +39,7 @@ inline void GemmConv(const ConvParam<CPU> &param) {
   const std::vector<int> paddings = param.Paddings();
   const std::vector<int> dilations = param.Dilations();
 
-  const int batch_size = static_cast<int>(input->dims()[0]);
-
   std::vector<int64_t> filter_shape_vec(framework::vectorize(filter.dims()));
-
   std::vector<int64_t> output_shape_vec(framework::vectorize(output->dims()));
   size_t data_dim = filter_shape_vec.size() - 2;
   std::vector<int64_t> col_shape_vec(1 + 2 * data_dim);
@@ -83,6 +80,7 @@ inline void GemmConv(const ConvParam<CPU> &param) {
   math::Vol2ColFunctor<CPU, Itype> vol2col;
   math::Im2ColFunctor<math::ColFormat::kCFO, CPU, Itype> im2col;
 
+  const int batch_size = static_cast<int>(input->dims()[0]);
   for (int i = 0; i < batch_size; i++) {
     Tensor in_batch = input->Slice(i, i + 1).Resize(input_shape);
     Tensor out_batch = output->Slice(i, i + 1).Resize(output_matrix_shape);
@@ -126,7 +124,6 @@ inline void WinogradConv3x3(const ConvParam<CPU> &param) {
   int batch_size = input->dims()[0];
   int groups = param.Groups();
   const std::vector<int> &paddings = param.Paddings();
-  math::PadFunctor<CPU, float> pad;
 
   auto winograd_pad = [&](int width, int pad) {
     int output_tile = tile - kernel + 1;
@@ -136,6 +133,7 @@ inline void WinogradConv3x3(const ConvParam<CPU> &param) {
     return pad_width + tile - width;
   };
 
+  math::PadFunctor<CPU, float> pad;
   Tensor input_pad;
   framework::Tensor transformed_input;
   for (int i = 0; i < batch_size; ++i) {
@@ -155,15 +153,49 @@ inline void WinogradConv3x3(const ConvParam<CPU> &param) {
     } else {
       input_pad = in_batch;
     }
-#if __aarch64__
-      // TODO(hjchen2)
-#else
     // tile input and transform
     math::winograd_transform_input<tile, kernel>(input_pad, &transformed_input);
     // caculate output
     math::winograd_transform_output<tile, kernel>(transformed_input, *filter,
                                                   output);
-#endif
+  }
+}
+
+template <typename Itype, typename Otype>
+inline void DepthwiseConv3x3(const ConvParam<CPU> &param) {
+  const Tensor *input = param.Input();
+  const Tensor *filter = param.Filter();
+  Tensor *output = param.Output();
+  output->mutable_data<Otype>();
+
+  const std::vector<int> &paddings = param.Paddings();
+  const std::vector<int> &strides = param.Strides();
+  const int batch_size = static_cast<int>(input->dims()[0]);
+  Tensor input_pad;
+  math::PadFunctor<CPU, Itype> pad;
+  for (int i = 0; i < batch_size; i++) {
+    Tensor in_batch = input->Slice(i, i + 1);
+    Tensor out_batch = output->Slice(i, i + 1);
+    //    if (paddings[0] || paddings[1]) {
+    //      framework::DDim pad_shape = in_batch.dims();
+    //      pad_shape[2] += 2 * paddings[0];
+    //      pad_shape[3] += 2 * paddings[1];
+    //      input_pad.mutable_data<float>(pad_shape);
+    //      pad(in_batch, paddings[0], paddings[0], paddings[1], paddings[1],
+    //          &input_pad);
+    //    } else {
+    //      input_pad = in_batch;
+    //    }
+    //    math::DepthwiseConv3x3s1<Itype, Otype>(input_pad, *filter,
+    //    &out_batch);
+    if (strides[0] == 1) {
+      math::DepthwiseConv3x3s1<Itype, Otype>(in_batch, *filter, &out_batch);
+    } else if (strides[0] == 2) {
+      math::DepthwiseConv3x3s2<Itype, Otype>(in_batch, *filter, &out_batch);
+    } else {
+      //      math::DepthwiseConv3x3<Itype, Otype>(in_batch, *filter,
+      //      &out_batch);
+    }
   }
 }
 

@@ -22,7 +22,7 @@ namespace operators {
 template <typename DeviceType, typename T>
 void DequantizeOp<DeviceType, T>::InferShape() const {
   const auto& input_dims = this->param_.input_->dims();
-  this->param_.out_->Resize(input_dims);
+  this->param_.output_->Resize(input_dims);
 }
 
 }  // namespace operators
