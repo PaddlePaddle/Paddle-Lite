@@ -17,7 +17,7 @@
 cd tools
 sh build.sh android
 
-# 如果想编译只支持某些特定网络的库 (可以控制包体积, 编译出来的库就只包含了支持这这些特定模型的算子), 可以使用
+# 如果想编译只支持某些特定网络的库 (可以控制包体积, 编译出来的库就只包含了支持这些特定模型的算子), 可以使用
 
 sh build.sh android  mobilenet googlenet
 
