@@ -15,10 +15,9 @@ limitations under the License. */
 #ifdef DEPTHWISECONV_OP
 
 #pragma once
-#include <operators/math/depthwise_conv_3x3.h>
 #include <vector>
 #include "operators/kernel/central-arm-func/conv_arm_func.h"
-
+#include "operators/math/depthwise_conv3x3.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
