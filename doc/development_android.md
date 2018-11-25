@@ -1,10 +1,93 @@
 # Android开发文档
 
-用户可通过如下两种方式，交叉编译Android平台上适用的paddle-mobile库：
+用户可通过如下两种方式进行编译:
 
+- 基于OSX 、Linux交叉编译
 - 基于Docker容器编译
-- 基于Linux交叉编译
 
+## 基于OSX 、Linux交叉编译
+
+需要: NDK17及以上、cmake 3.0及以上
+
+### 执行编译
+在paddle-mobile根目录中，执行以下命令：
+
+```
+
+cd tools
+sh build.sh android
+
+# 如果想编译某个支持某个某些特定网络的库 (可以控制包体积), 可以使用
+
+sh build.sh android  mobilenet googlenet
+
+# 这样编译出来的库就只包含了支持这两个模型的算子, 当然这些网络是需要在 cmakelist  中配置的(https://github.com/PaddlePaddle/paddle-mobile/blob/73769e7d05ef4820a115ad3fb9b1ca3f55179d03/CMakeLists.txt#L216), 目前配置了几个常见模型
+
+```
+
+执行完毕后，生成的so位于 build/release/ 目录中
+
+jni 头文件位于 [https://github.com/PaddlePaddle/paddle-mobile/tree/develop/src/io/jni](https://github.com/PaddlePaddle/paddle-mobile/tree/develop/src/io/jni)
+
+c++ 头文件位于 [https://github.com/PaddlePaddle/paddle-mobile/blob/develop/src/io/paddle_inference_api.h](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/src/io/paddle_inference_api.h) 
+
+单测可执行文件位于 test/build 目录中。
+
+如果有环境问题, 可以看接下来的环节
+
+### 环境配置
+
+##### 下载Android NDK
+
+如果你的电脑安装了Android Studio, 可以在 Android Studio 中直接下载安装 NDK
+
+或者可以在 [https://developer.android.com/ndk/](https://developer.android.com/ndk/) 这里自行下载，也可以通过以下命令获取：
+
+- Mac平台
+```
+wget https://dl.google.com/android/repository/android-ndk-r17b-darwin-x86_64.zip
+unzip android-ndk-r17b-darwin-x86_64.zip
+
+```
+- Linux平台
+```
+wget https://dl.google.com/android/repository/android-ndk-r17b-linux-x86_64.zip
+unzip android-ndk-r17b-linux-x86_64.zip
+```
+
+##### 设置环境变量
+工程中自带的独立工具链会根据环境变量NDK_ROOT查找NDK，因此需要配置环境变量：
+
+```
+export NDK_ROOT = "path to ndk"
+```
+
+##### 安装 CMake
+
+- Mac平台
+
+mac 平台下可以使用 homebrew 安装
+
+```
+brew install cmake
+
+```
+- Linux平台
+
+linux 下可以使用 apt-get 进行安装
+```
+apt-get install cmake
+
+```
+
+##### Tips:
+如果想要获得体积更小的库，可选择编译支持指定模型结构的库。
+如执行如下命令：
+
+```
+sh build.sh android googlenet
+```
+会得到一个支持googlnet的体积更小的库。
 
 ## 基于Docker容器编译
 ### 1. 安装 docker
@@ -66,47 +149,6 @@ root@5affd29d4fc5:/ # make
 ```
 ### 6. 查看构建产出
 构架产出可以在 host 机器上查看，在 paddle-mobile 的目录下，build 以及 test/build 下，可以使用 adb 指令或者 scp 传输到 device 上执行
-
-## 基于Linux交叉编译
-### 交叉编译环境准备
-##### 下载Android NDK
-
-从源码交叉编译paddle-mobile,用户需要提前准备好交叉编译环境。Android平台使用的C/C++交叉编译工具链是[Android NDK](https://developer.android.com/ndk/)，用户可以自行前往下载，也可以通过以下命令获取：
-- Mac平台
-```
-wget https://dl.google.com/android/repository/android-ndk-r17b-darwin-x86_64.zip
-unzip android-ndk-r17b-darwin-x86_64.zip
-
-```
-- Linux平台
-```
-wget https://dl.google.com/android/repository/android-ndk-r17b-linux-x86_64.zip
-unzip android-ndk-r17b-linux-x86_64.zip
-```
-
-##### 设置环境变量
-工程中自带的独立工具链会根据环境变量NDK_ROOT查找NDK，因此需要配置环境变量：
-
-```
-export NDK_ROOT = "path to ndk"
-```
-### 执行编译
-在paddle-mobile根目录中，执行以下命令：
-
-```
-cd tools
-sh build.sh android
-
-```
-执行完毕后，生成的so位于build目录中，单测可执行文件位于test/build目录中。
-##### Tips:
-如果想要获得体积更小的库，可选择编译支持指定模型结构的库。
-如执行如下命令：
-
-```
-sh build.sh android googlenet
-```
-会得到一个支持googlnet的体积更小的库。
 
 ##测试
 在编译完成后，我们提供了自动化的测试脚本，帮助用户将运行单测文件所需要的模型及库文件push到Android设备中，执行以下命令：
