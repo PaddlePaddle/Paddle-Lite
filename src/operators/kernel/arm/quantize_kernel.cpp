@@ -126,6 +126,54 @@ static float find_abs_max(const Tensor *input) {
   return max_abs;
 }
 
+#if 0
+static void quantize_round_to_zero(const Tensor *input, const float scale,
+                                   const std::vector<int> &paddings,
+                                   const int8_t padding_val, Tensor *output) {
+  const float *x = input->data<const float>();
+  int8_t *y = output->mutable_data<int8_t>();
+  size_t size = input->numel();
+#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+  size_t loop = size >> 4;
+  size_t remain = size & 0xF;
+
+#pragma omp parallel for
+  for (size_t i = 0; i < loop; ++i) {
+    const float *local_x = x + (i << 4);
+    int8_t *local_y = y + (i << 4);
+    float32x4_t r0 = vld1q_f32(local_x);
+    float32x4_t r1 = vld1q_f32(local_x + 4);
+    float32x4_t r2 = vld1q_f32(local_x + 8);
+    float32x4_t r3 = vld1q_f32(local_x + 12);
+    r0 = vmulq_n_f32(r0, scale);
+    r1 = vmulq_n_f32(r1, scale);
+    r2 = vmulq_n_f32(r2, scale);
+    r3 = vmulq_n_f32(r3, scale);
+    int32x4_t q0 = vrnd_towards_zero(r0);
+    int32x4_t q1 = vrnd_towards_zero(r1);
+    int32x4_t q2 = vrnd_towards_zero(r2);
+    int32x4_t q3 = vrnd_towards_zero(r3);
+    int16x4_t d0 = vmovn_s32(q0);
+    int16x4_t d1 = vmovn_s32(q1);
+    int16x4_t d2 = vmovn_s32(q2);
+    int16x4_t d3 = vmovn_s32(q3);
+    int16x8_t q5 = vcombine_s16(d0, d1);
+    int16x8_t q6 = vcombine_s16(d2, d3);
+    int8x8_t d5 = vmovn_s16(q5);
+    int8x8_t d6 = vmovn_s16(q6);
+    vst1_s8(local_y, d5);
+    vst1_s8(local_y + 8, d6);
+  }
+  size = remain;
+  x += (loop << 4);
+  y += (loop << 4);
+#endif
+  for (size_t i = 0; i < size; ++i) {
+    y[i] = static_cast<int8_t>(x[i] * scale);
+  }
+}
+#endif
+
 #ifdef __aarch64__
 static void quantize_round_to_even(const Tensor *input, const float scale,
                                    Tensor *output) {
@@ -272,7 +320,7 @@ static void quantize_round_to_nearest(const Tensor *input, const float scale,
     y[i] = round(x[i] * scale);
   }
 }
-#else   // __aarch64__
+#else  // __aarch64__
 
 static void quantize_round_to_even(const Tensor *input, const float scale,
                                    const std::vector<int> &paddings,
@@ -282,7 +330,7 @@ static void quantize_round_to_nearest(const Tensor *input, const float scale,
                                       const std::vector<int> &paddings,
                                       const int8_t padding_val,
                                       Tensor *output) {}
-
+#if 1
 static void quantize_round_to_zero(const Tensor *input, const float scale,
                                    const std::vector<int> &paddings,
                                    const int8_t padding_val, Tensor *output) {
@@ -300,11 +348,11 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
 
   for (int batch = 0; batch < input->dims()[0]; ++batch) {
     for (int c = 0; c < channels - 3; c += 4) {
-      const float *x0 = x + c * input_spatial_size;
-      const float *x1 = x0 + input_spatial_size;
-      const float *x2 = x1 + input_spatial_size;
-      const float *x3 = x2 + input_spatial_size;
-      size_t offset = c * output_spatial_size;
+      const float *input0 = x + (batch * channels + c) * input_spatial_size;
+      const float *input1 = input0 + input_spatial_size;
+      const float *input2 = input1 + input_spatial_size;
+      const float *input3 = input2 + input_spatial_size;
+      size_t offset = (batch * channels + c) * output_spatial_size;
       for (int h = 0; h < 2; ++h) {
         int8_t *y0 =
             y + offset + h * ((input_h + paddings[0]) * output_w - paddings[1]);
@@ -312,7 +360,7 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
         int8_t *y2 = y1 + output_spatial_size;
         int8_t *y3 = y2 + output_spatial_size;
         int loop = start >> 4;
-        int remain = start & 0xFFF0;
+        int remain = start & 0xF;
         asm volatile(
             "vdup.s8    q0,     %[val]      \n"
             "cmp        %[loop], #0         \n"
@@ -372,10 +420,15 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
       int8_t *y2 = y1 + output_spatial_size;
       int8_t *y3 = y2 + output_spatial_size;
       for (int h = 0; h < input_h; ++h) {
+        const float *x0 = input0 + h * input_w;
+        const float *x1 = input1 + h * input_w;
+        const float *x2 = input2 + h * input_w;
+        const float *x3 = input3 + h * input_w;
         int loop = input_w >> 4;
-        int remain = input_w & 0xFFF0;
+        int remain = input_w & 0xF;
         int pad_loop = paddings[1] >> 1;
-        int pad_remain = paddings[1] & 0xFFFE;
+        int pad_remain = paddings[1] & 0x1;
+        int remain_steps = remain;
         asm volatile(
             "vdup.f32   q0, %[scale]        \n"
             "cmp        %[loop], #0         \n"
@@ -446,10 +499,10 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
             "vmovn.s16  d21, q2             \n"
             "vmovn.s16  d23, q3             \n"
             "vmovn.s16  d25, q4             \n"
-            "vst1.32    {q9}, [%[y0]]       \n"
-            "vst1.32    {q10}, [%[y0]]      \n"
-            "vst1.32    {q11}, [%[y0]]      \n"
-            "vst1.32    {q12}, [%[y0]]      \n"
+            "vst1.32    {q9}, [%[y0]]!      \n"
+            "vst1.32    {q10}, [%[y1]]!     \n"
+            "vst1.32    {q11}, [%[y2]]!     \n"
+            "vst1.32    {q12}, [%[y3]]!     \n"
 
             "subs       %[loop], #1         \n"
             "bne        loop_quantize_%=    \n"
@@ -458,10 +511,10 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
             "cmp        %[remain], #0       \n"
             "ble        end_%=              \n"
 
-            "vld1.32    {q1, q2}, [%[x0]]   \n"
-            "vld1.32    {q3, q4}, [%[x1]]   \n"
-            "vld1.32    {q5, q6}, [%[x2]]   \n"
-            "vld1.32    {q7, q8}, [%[x3]]   \n"
+            "vld1.32    {q1, q2}, [%[x0]]!  \n"
+            "vld1.32    {q3, q4}, [%[x1]]!  \n"
+            "vld1.32    {q5, q6}, [%[x2]]!  \n"
+            "vld1.32    {q7, q8}, [%[x3]]!  \n"
             "vmul.f32  q1, q1, q0           \n"
             "vmul.f32  q2, q2, q0           \n"
             "vmul.f32  q3, q3, q0           \n"
@@ -490,10 +543,10 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
             "vmovn.s16  d20, q2             \n"
             "vmovn.s16  d22, q3             \n"
             "vmovn.s16  d24, q4             \n"
-            "vld1.32    {q1, q2}, [%[x0]]!  \n"
-            "vld1.32    {q3, q4}, [%[x1]]!  \n"
-            "vld1.32    {q5, q6}, [%[x2]]!  \n"
-            "vld1.32    {q7, q8}, [%[x3]]!  \n"
+            "vld1.32    {q1, q2}, [%[x0]]   \n"
+            "vld1.32    {q3, q4}, [%[x1]]   \n"
+            "vld1.32    {q5, q6}, [%[x2]]   \n"
+            "vld1.32    {q7, q8}, [%[x3]]   \n"
             "vmul.f32  q1, q1, q0           \n"
             "vmul.f32  q2, q2, q0           \n"
             "vmul.f32  q3, q3, q0           \n"
@@ -574,8 +627,8 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
               [y0] "+r"(y0), [y1] "+r"(y1), [y2] "+r"(y2), [y3] "+r"(y3),
               [loop] "+r"(loop), [remain] "+r"(remain)
             : [scale] "r"(scale)
-            : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8",
-              "q9", "q10", "q11", "q12");
+            : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+              "q8", "q9", "q10", "q11", "q12");
         asm volatile(
             "vdup.s8    d0, %[val]          \n"
             "cmp        %[pad_loop], #0     \n"
@@ -608,23 +661,63 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
             : [y0] "+r"(y0), [y1] "+r"(y1), [y2] "+r"(y2), [y3] "+r"(y3),
               [pad_loop] "+r"(pad_loop), [pad_remain] "+r"(pad_remain)
             : [val] "r"(padding_val)
-            : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8",
-              "q9", "q10", "q11", "q12");
-
-        x0 += remain;
-        x1 += remain;
-        x2 += remain;
-        x3 += remain;
+            : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+              "q8", "q9", "q10", "q11", "q12");
       }
     }
     for (int c = (channels & 0xFFFC); c < channels; ++c) {
-      const float *x0 = x + c * input_spatial_size;
-      int8_t *y0 = y + c * output_spatial_size;
-      for (int h = 0; h < paddings[0]; ++h) {
+      const float *input0 = x + (batch * channels + c) * input_spatial_size;
+      size_t offset = (batch * channels + c) * output_spatial_size;
+      for (int h = 0; h < 2; ++h) {
+        int8_t *y0 =
+            y + offset + h * ((input_h + paddings[0]) * output_w - paddings[1]);
+        int loop = start >> 4;
+        int remain = start & 0xF;
+        asm volatile(
+            "vdup.s8    q0,     %[val]      \n"
+            "cmp        %[loop], #0         \n"
+            "ble        start_remain_%=     \n"
+
+            "store_16w_%=:                  \n"
+            "vst1.32    {q0}, [%[y0]]!      \n"
+            "subs       %[loop], #1         \n"
+            "bne        store_16w_%=        \n"
+
+            "start_remain_%=:               \n"
+            "cmp        %[remain], #8       \n"
+            "blt        store_4w_%=         \n"
+            "vst1.32    {d0}, [%[y0]]!      \n"
+            "sub        %[remain], #8       \n"
+
+            "store_4w_%=:                   \n"
+            "cmp        %[remain], #4       \n"
+            "blt        store_2w_%=         \n"
+            "vst1.32    {d0[0]}, [%[y0]]!   \n"
+            "sub        %[remain], #4       \n"
+
+            "store_2w_%=:                   \n"
+            "cmp        %[remain], #4       \n"
+            "blt        store_1w_%=         \n"
+            "vst1.16    {d0[0]}, [%[y0]]!   \n"
+            "sub        %[remain], #2       \n"
+
+            "store_1w_%=:                   \n"
+            "cmp        %[remain], #1       \n"
+            "blt        end_%=              \n"
+            "vst1.8     {d0[0]}, [%[y0]]!   \n"
+            "end_%=:                        \n"
+            : [y0] "+r"(y0), [loop] "+r"(loop), [remain] "+r"(remain)
+            : [val] "r"(padding_val)
+            : "cc", "memory", "q0");
+      }
+      // quantize valid area
+      int8_t *y0 = y + offset + start;
+      for (int h = 0; h < input_h; ++h) {
+        const float *x0 = input0 + h * input_w;
         int loop = input_w >> 4;
-        int remain = input_w & 0xFFF0;
+        int remain = input_w & 0xF;
         int pad_loop = paddings[1] >> 1;
-        int pad_remain = paddings[1] & 0xFFFE;
+        int pad_remain = paddings[1] & 0x1;
         asm volatile(
             "vdup.f32   q0, %[scale]        \n"
             "cmp        %[loop], #0         \n"
@@ -632,22 +725,22 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
 
             "loop_quantize_%=:              \n"
             "vld1.32    {q1, q2}, [%[x0]]!  \n"
-            "vmul.f32  q1, q1, q0           \n"
-            "vmul.f32  q2, q2, q0           \n"
+            "vmul.f32   q1, q1, q0          \n"
+            "vmul.f32   q2, q2, q0          \n"
             "vcvt.s32.f32  q1, q1           \n"
             "vcvt.s32.f32  q2, q2           \n"
             "vmovn.s32  d2, q1              \n"
             "vmovn.s32  d3, q2              \n"
             "vmovn.s16  d18, q1             \n"
             "vld1.32    {q1, q2}, [%[x0]]!  \n"
-            "vmul.f32  q1, q1, q0           \n"
-            "vmul.f32  q2, q2, q0           \n"
+            "vmul.f32   q1, q1, q0          \n"
+            "vmul.f32   q2, q2, q0          \n"
             "vcvt.s32.f32  q1, q1           \n"
             "vcvt.s32.f32  q2, q2           \n"
             "vmovn.s32  d2, q1              \n"
             "vmovn.s32  d3, q2              \n"
             "vmovn.s16  d19, q1             \n"
-            "vst1.32    {q9}, [%[y0]]       \n"
+            "vst1.32    {q9}, [%[y0]]!      \n"
 
             "subs       %[loop], #1         \n"
             "bne        loop_quantize_%=    \n"
@@ -656,19 +749,18 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
             "cmp        %[remain], #0       \n"
             "ble        start_pad_%=        \n"
 
-            "vld1.32    {q1, q2}, [%[x0]]   \n"
-            "vmul.f32  q1, q1, q0           \n"
-            "vmul.f32  q2, q2, q0           \n"
+            "vldm       %[x0], {d2-d9}      \n"
+            "vmul.f32   q1, q1, q0          \n"
+            "vmul.f32   q2, q2, q0          \n"
             "vcvt.s32.f32  q1, q1           \n"
             "vcvt.s32.f32  q2, q2           \n"
             "vmovn.s32  d2, q1              \n"
             "vmovn.s32  d3, q2              \n"
             "vmovn.s16  d18, q1             \n"
-            "vld1.32    {q1, q2}, [%[x0]]!  \n"
-            "vmul.f32  q1, q1, q0           \n"
-            "vmul.f32  q2, q2, q0           \n"
-            "vcvt.s32.f32  q1, q1           \n"
-            "vcvt.s32.f32  q2, q2           \n"
+            "vmul.f32   q3, q3, q0          \n"
+            "vmul.f32   q4, q4, q0          \n"
+            "vcvt.s32.f32  q1, q3           \n"
+            "vcvt.s32.f32  q2, q4           \n"
             "vmovn.s32  d2, q1              \n"
             "vmovn.s32  d3, q2              \n"
             "vmovn.s16  d19, q1             \n"
@@ -722,12 +814,12 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
               [remain] "+r"(remain), [pad_loop] "+r"(pad_loop),
               [pad_remain] "+r"(pad_remain)
             : [scale] "r"(scale), [val] "r"(padding_val)
-            : "memory", "q0", "q1", "q2", "q9");
-        x0 += remain;
+            : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q9");
       }
     }
   }
 }
+#endif
 #endif  // __aarch64__
 #endif  // ARM_NEON
 
