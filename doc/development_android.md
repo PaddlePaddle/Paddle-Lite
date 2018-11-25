@@ -2,10 +2,10 @@
 
 用户可通过如下两种方式进行编译:
 
-- 基于OSX 、Linux交叉编译
+- 基于macOS 、Linux交叉编译
 - 基于Docker容器编译
 
-## 基于OSX 、Linux交叉编译
+## 基于macOS 、Linux交叉编译
 
 需要: NDK17及以上、cmake 3.0及以上
 
