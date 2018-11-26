@@ -15,7 +15,6 @@ limitations under the License. */
 #ifdef CONV_OP
 
 #include "operators/kernel/conv_kernel.h"
-#include <iostream>
 #include "operators/kernel/central-arm-func/conv_arm_func.h"
 
 namespace paddle_mobile {
@@ -27,7 +26,8 @@ bool ConvKernel<CPU, float>::Init(ConvParam<CPU> *param) {
     if (param->Groups() == param->Input()->dims()[1] &&
         param->Input()->dims()[1] == param->Output()->dims()[1] &&
         param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
-        param->Filter()->dims()[2] == 3) {
+        param->Filter()->dims()[2] == 3 && param->Strides()[0] < 3 &&
+        param->Strides()[0] == param->Strides()[1]) {
       param->ExecMode() = ConvParam<CPU>::EXEC_DEPTHWISE3x3_INT8;
     } else {
       param->ExecMode() = ConvParam<CPU>::EXEC_GEMM_INT8;
@@ -70,30 +70,23 @@ void ConvKernel<CPU, float>::Compute(const ConvParam<CPU> &param) {
   switch (param.ExecMode()) {
     case ConvParam<CPU>::EXEC_GEMM_INT8:
       GemmConv<int8_t, int32_t>(param);
-      std::cout << "EXEC_GEMM_INT8" << std::endl;
       break;
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3_INT8:
       DepthwiseConv3x3<int8_t, int32_t>(param);
-      std::cout << "EXEC_DEPTHWISE3x3_INT8" << std::endl;
       break;
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3S1P1_FLOAT:
       math::DepthwiseConv3x3s1p1(param.Input(), param.Filter(), param.Output(),
                                  nullptr, false);
-      std::cout << "EXEC_DEPTHWISE3x3S1P1_FLOAT" << std::endl;
       break;
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3_FLOAT:
       math::DepthwiseConv3x3(param.Input(), param.Strides(), param.Paddings(),
                              param.Filter(), nullptr, param.Output(), false);
-      std::cout << "EXEC_DEPTHWISE3x3_FLOAT=" << param.Strides()[0]
-                << std::endl;
       break;
     case ConvParam<CPU>::EXEC_WINOGRAD3X3_FLOAT:
       WinogradConv3x3<8, 3>(param);
-      std::cout << "EXEC_WINOGRAD3X3_FLOAT" << std::endl;
       break;
     case ConvParam<CPU>::EXEC_GEMM_FLOAT:
       GemmConv<float, float>(param);
-      std::cout << "EXEC_GEMM_FLOAT" << std::endl;
       break;
     default:
       PADDLE_MOBILE_THROW_EXCEPTION("Invalid convolution execute mode %d",

@@ -126,54 +126,6 @@ static float find_abs_max(const Tensor *input) {
   return max_abs;
 }
 
-#if 0
-static void quantize_round_to_zero(const Tensor *input, const float scale,
-                                   const std::vector<int> &paddings,
-                                   const int8_t padding_val, Tensor *output) {
-  const float *x = input->data<const float>();
-  int8_t *y = output->mutable_data<int8_t>();
-  size_t size = input->numel();
-#if defined(__ARM_NEON__) || defined(__ARM_NEON)
-  size_t loop = size >> 4;
-  size_t remain = size & 0xF;
-
-#pragma omp parallel for
-  for (size_t i = 0; i < loop; ++i) {
-    const float *local_x = x + (i << 4);
-    int8_t *local_y = y + (i << 4);
-    float32x4_t r0 = vld1q_f32(local_x);
-    float32x4_t r1 = vld1q_f32(local_x + 4);
-    float32x4_t r2 = vld1q_f32(local_x + 8);
-    float32x4_t r3 = vld1q_f32(local_x + 12);
-    r0 = vmulq_n_f32(r0, scale);
-    r1 = vmulq_n_f32(r1, scale);
-    r2 = vmulq_n_f32(r2, scale);
-    r3 = vmulq_n_f32(r3, scale);
-    int32x4_t q0 = vrnd_towards_zero(r0);
-    int32x4_t q1 = vrnd_towards_zero(r1);
-    int32x4_t q2 = vrnd_towards_zero(r2);
-    int32x4_t q3 = vrnd_towards_zero(r3);
-    int16x4_t d0 = vmovn_s32(q0);
-    int16x4_t d1 = vmovn_s32(q1);
-    int16x4_t d2 = vmovn_s32(q2);
-    int16x4_t d3 = vmovn_s32(q3);
-    int16x8_t q5 = vcombine_s16(d0, d1);
-    int16x8_t q6 = vcombine_s16(d2, d3);
-    int8x8_t d5 = vmovn_s16(q5);
-    int8x8_t d6 = vmovn_s16(q6);
-    vst1_s8(local_y, d5);
-    vst1_s8(local_y + 8, d6);
-  }
-  size = remain;
-  x += (loop << 4);
-  y += (loop << 4);
-#endif
-  for (size_t i = 0; i < size; ++i) {
-    y[i] = static_cast<int8_t>(x[i] * scale);
-  }
-}
-#endif
-
 #ifdef __aarch64__
 static void quantize_round_to_even(const Tensor *input, const float scale,
                                    Tensor *output) {
@@ -320,7 +272,7 @@ static void quantize_round_to_nearest(const Tensor *input, const float scale,
     y[i] = round(x[i] * scale);
   }
 }
-#else  // __aarch64__
+#else   // __aarch64__
 
 static void quantize_round_to_even(const Tensor *input, const float scale,
                                    const std::vector<int> &paddings,
@@ -330,7 +282,7 @@ static void quantize_round_to_nearest(const Tensor *input, const float scale,
                                       const std::vector<int> &paddings,
                                       const int8_t padding_val,
                                       Tensor *output) {}
-#if 1
+
 static void quantize_round_to_zero(const Tensor *input, const float scale,
                                    const std::vector<int> &paddings,
                                    const int8_t padding_val, Tensor *output) {
@@ -347,6 +299,7 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
   int start = paddings[0] * output_w + paddings[1];
 
   for (int batch = 0; batch < input->dims()[0]; ++batch) {
+    #pragma omp parallel for
     for (int c = 0; c < channels - 3; c += 4) {
       const float *input0 = x + (batch * channels + c) * input_spatial_size;
       const float *input1 = input0 + input_spatial_size;
@@ -819,7 +772,6 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
     }
   }
 }
-#endif
 #endif  // __aarch64__
 #endif  // ARM_NEON
 

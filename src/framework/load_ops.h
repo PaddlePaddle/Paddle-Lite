@@ -233,6 +233,3 @@ LOAD_OP1(quantize, CPU);
 #ifdef DEQUANT_OP
 LOAD_OP1(dequantize, CPU);
 #endif
-#ifdef PAD_OP
-LOAD_OP1(pad, CPU);
-#endif
