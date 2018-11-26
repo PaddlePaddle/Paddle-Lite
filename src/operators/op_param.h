@@ -1554,6 +1554,20 @@ class TanhParam : public OpParam {
  private:
   RType *input_x_;
   RType *out_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  std::shared_ptr<RType> float_input_x_;
+  fpga::BypassArgs fpga_bypass_args;
+
+ public:
+  RType *FloatInput() const {
+    return float_input_x_ == nullptr ? input_x_ : float_input_x_.get();
+  }
+  void SetFloatInput(Tensor *input) { float_input_x_.reset(input); }
+  const fpga::BypassArgs &FpgaArgs() const { return fpga_bypass_args; }
+  void SetFpgaArgs(const fpga::BypassArgs &args) { fpga_bypass_args = args; }
+#endif
 };
 #endif
 
