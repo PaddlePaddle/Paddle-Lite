@@ -21,6 +21,7 @@ namespace operators {
 
 template <>
 bool Transpose2Kernel<FPGA, float>::Init(Transpose2Param<FPGA> *param) {
+  param->Out()->ShareDataWith(*param->InputX());
   return true;
 }
 
