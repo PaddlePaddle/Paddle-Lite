@@ -138,13 +138,11 @@ int ComputeFPGAConcat(const struct ConcatArgs &args) {
   DLOG << "=============ComputeFpgaConcat===========";
   DLOG << "   Image_num: " << args.image_num
        << "   out_address:" << args.image_out
-       << "   out_scale_address:" << args.scale_out
-       << "   out_channel:" << args.out_channel;
+       << "   out_scale_address:" << args.scale_out;
   DLOG << "   image_height:" << args.height << "   image_width:" << args.width;
   for (int i = 0; i < args.image_num; i++) {
     DLOG << "   " << i << "th:        ";
     DLOG << "   channel_num:" << args.channel_num[i]
-         << "   aligned_channel_num:" << args.aligned_channel_num[i]
          << "   image_address:" << args.images_in[i]
          << "   image_scale_address:" << args.scales_in[i];
   }
@@ -153,6 +151,26 @@ int ComputeFPGAConcat(const struct ConcatArgs &args) {
   image::concat_images(args.images_in, args.scales_in, args.image_out,
                        args.scale_out, args.image_num, args.channel_num,
                        args.height, args.width);
+  return 0;
+}
+
+int ComputeFPGASplit(const struct SplitArgs &args) {
+#ifdef FPGA_PRINT_MODE
+  DLOG << "=============ComputeFpgaSplit===========";
+  DLOG << "   Image_num: " << args.image_num
+       << "   in_address:" << args.image_in
+       << "   in_scale_address:" << args.scale_in;
+  DLOG << "   image_height:" << args.height << "   image_width:" << args.width;
+  for (int i = 0; i < args.image_num; i++) {
+    DLOG << "   " << i << "th:        ";
+    DLOG << "   channel_num:" << args.out_channel_nums[i]
+         << "   image_address:" << args.images_out[i]
+         << "   image_scale_address:" << args.scales_out[i];
+  }
+#endif
+  image::split_image(args.image_in, args.scale_in, args.images_out,
+                     args.scales_out, args.image_num, args.out_channel_nums,
+                     args.height, args.width);
   return 0;
 }
 
