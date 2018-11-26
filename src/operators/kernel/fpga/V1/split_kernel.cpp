@@ -19,11 +19,45 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 template <>
-bool SplitKernel<FPGA, float>::Init(SplitParam<FPGA>* param) {
+bool SplitKernel<FPGA, float>::Init(SplitParam<FPGA> *param) {
+  auto *in = const_cast<Tensor *>(param->InputX());
+  auto outs = param->Outs();
+  auto sections = param->Sections();
+  int axis = param->Axis();
+  PADDLE_MOBILE_ENFORCE(axis == 1, "Only support split in channel dimension");
+  PADDLE_MOBILE_ENFORCE(outs.size() == sections.size(),
+                        "Output number should be equal to section number");
+  auto image_num = (uint32_t)outs.size();
+  auto images_out =
+      reinterpret_cast<void **>(fpga::fpga_malloc(image_num * sizeof(void *)));
+  auto scales_out = reinterpret_cast<float **>(
+      fpga::fpga_malloc(image_num * sizeof(float *)));
+  auto out_channels = reinterpret_cast<uint32_t *>(
+      fpga::fpga_malloc(image_num * sizeof(uint32_t)));
+  for (int i = 0; i < image_num; i++) {
+    fpga::format_fp16_ofm(outs[i]);
+    images_out[i] = outs[i]->mutable_data<float>();
+    scales_out[i] = outs[i]->scale;
+    out_channels[i] = (uint32_t)sections[i];
+  }
+
+  fpga::SplitArgs arg = {0};
+  arg.image_num = image_num;
+  arg.image_in = (half *)in->data<float>();
+  arg.scale_in = in->scale;
+  arg.images_out = images_out;
+  arg.scales_out = scales_out;
+  arg.out_channel_nums = out_channels;
+  arg.height = (uint32_t)in->dims()[2];
+  arg.width = (uint32_t)in->dims()[3];
+
+  param->SetFpgaArgs(arg);
   return true;
 }
 template <>
-void SplitKernel<FPGA, float>::Compute(const SplitParam<FPGA>& param) {}
+void SplitKernel<FPGA, float>::Compute(const SplitParam<FPGA> &param) {
+  fpga::ComputeFPGASplit(param.FpgaArgs());
+}
 
 }  // namespace operators
 }  // namespace paddle_mobile

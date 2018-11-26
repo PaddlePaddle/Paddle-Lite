@@ -28,6 +28,9 @@ void concat_images(int16_t** images_in, float** scales_in, void* image_out,
                    float* scale_out, int image_num, uint32_t* channel_num,
                    int height,
                    int width);  // Concat featuremaps along channel direction
+void split_image(int16_t* image_in, float* scale_in, void** images_out,
+                 float** scales_out, int image_num, uint32_t* channel_nums,
+                 int height, int width);
 }  // namespace image
 }  // namespace fpga
 }  // namespace paddle_mobile

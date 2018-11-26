@@ -2421,6 +2421,15 @@ class SplitParam : public OpParam {
   int num;
   std::vector<int> sections;
   //  std::vector<GType> out_ts_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::SplitArgs fpga_split_args;
+
+ public:
+  const fpga::SplitArgs &FpgaArgs() const { return fpga_split_args; }
+  void SetFpgaArgs(const fpga::SplitArgs &args) { fpga_split_args = args; }
+#endif
 };
 #endif
 
