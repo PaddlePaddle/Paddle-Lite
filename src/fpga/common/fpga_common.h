@@ -74,8 +74,19 @@ struct ConcatArgs {
   void* image_out;
   float* scale_out;
   uint32_t* channel_num;
-  uint32_t* aligned_channel_num;
-  uint32_t out_channel;
+  //  uint32_t* aligned_channel_num;
+  //  uint32_t out_channel;
+  uint32_t height;
+  uint32_t width;
+};
+
+struct SplitArgs {
+  uint32_t image_num;
+  int16_t* image_in;
+  float* scale_in;
+  void** images_out;
+  float** scales_out;
+  uint32_t* out_channel_nums;
   uint32_t height;
   uint32_t width;
 };
