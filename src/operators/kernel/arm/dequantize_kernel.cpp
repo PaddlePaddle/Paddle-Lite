@@ -15,7 +15,6 @@ limitations under the License. */
 #ifdef DEQUANT_OP
 
 #include "operators/kernel/dequantize_kernel.h"
-#include <iostream>
 
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
 #include <arm_neon.h>

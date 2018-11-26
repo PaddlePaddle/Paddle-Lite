@@ -15,7 +15,6 @@ limitations under the License. */
 #ifdef ELEMENTWISEADD_OP
 
 #include "operators/kernel/elementwise_add_kernel.h"
-#include <iostream>
 #include "operators/kernel/central-arm-func/elementwise_add_arm_func.h"
 
 namespace paddle_mobile {
