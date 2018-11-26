@@ -98,7 +98,6 @@ inline void GemmConv(const ConvParam<CPU> &param) {
                std::vector<int>{paddings[0], paddings[1], paddings[0],
                                 paddings[1]},
                &col);
-
       } else if (data_dim == 3U) {
         // vol2col
         vol2col(in_slice, dilations, strides, paddings, &col);
@@ -176,25 +175,25 @@ inline void DepthwiseConv3x3(const ConvParam<CPU> &param) {
   for (int i = 0; i < batch_size; i++) {
     Tensor in_batch = input->Slice(i, i + 1);
     Tensor out_batch = output->Slice(i, i + 1);
-    //    if (paddings[0] || paddings[1]) {
-    //      framework::DDim pad_shape = in_batch.dims();
-    //      pad_shape[2] += 2 * paddings[0];
-    //      pad_shape[3] += 2 * paddings[1];
-    //      input_pad.mutable_data<float>(pad_shape);
-    //      pad(in_batch, paddings[0], paddings[0], paddings[1], paddings[1],
-    //          &input_pad);
-    //    } else {
-    //      input_pad = in_batch;
-    //    }
-    //    math::DepthwiseConv3x3s1<Itype, Otype>(input_pad, *filter,
-    //    &out_batch);
-    if (strides[0] == 1) {
-      math::DepthwiseConv3x3s1<Itype, Otype>(in_batch, *filter, &out_batch);
-    } else if (strides[0] == 2) {
-      math::DepthwiseConv3x3s2<Itype, Otype>(in_batch, *filter, &out_batch);
+    if (paddings[0] || paddings[1]) {
+      framework::DDim pad_shape = in_batch.dims();
+      pad_shape[2] += 2 * paddings[0];
+      pad_shape[3] += 2 * paddings[1];
+      input_pad.mutable_data<float>(pad_shape);
+      pad(in_batch, paddings[0], paddings[0], paddings[1], paddings[1],
+          &input_pad);
     } else {
-      //      math::DepthwiseConv3x3<Itype, Otype>(in_batch, *filter,
-      //      &out_batch);
+      input_pad = in_batch;
+    }
+    if (strides[0] == 1) {
+      math::DepthwiseConv3x3s1<Itype, Otype>(input_pad, *filter, &out_batch);
+    } else if (strides[0] == 2) {
+      math::DepthwiseConv3x3s2<Itype, Otype>(input_pad, *filter, &out_batch);
+    } else {
+      // math::DepthwiseConv3x3<Itype, Otype>(input_pad, *filter,
+      // &out_batch);
+      PADDLE_MOBILE_THROW_EXCEPTION(
+          "Depthwise conv with generic strides has not been implemented.");
     }
   }
 }

@@ -2564,26 +2564,5 @@ class DequantizeParam : public OpParam {
 };
 #endif
 
-#ifdef PAD_OP
-template <typename Dtype>
-class PadParam : public OpParam {
-  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
-  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
-
- public:
-  input_ = InputXFrom<GType>(inputs, scope);
-  output_ = OutFrom<GType>(outputs, scope);
-  paddings_ = GetVarValue<std::vector<int>>("Paddings", inputs, scope);
-
- public:
-  // op input
-  RType *input_;
-  // op output
-  RType *output_;
-  // paddings
-  std::vector<int> paddings_;
-};
-#endif
-
 }  // namespace operators
 }  // namespace paddle_mobile

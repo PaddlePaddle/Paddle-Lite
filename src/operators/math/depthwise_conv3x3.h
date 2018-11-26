@@ -65,6 +65,7 @@ void DepthwiseConv3x3s2p0(const framework::Tensor *input,
                           framework::Tensor *output, framework::Tensor bias,
                           bool if_bias);
 
+// TODO(hjchen2) need to be implemented
 // template<typename Itype, typename Otype>
 // void DepthwiseConv3x3(const framework::Tensor *input,
 //                      const framework::Tensor *filter,

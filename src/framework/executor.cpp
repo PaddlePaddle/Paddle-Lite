@@ -72,7 +72,7 @@ Executor<Dtype, P>::Executor(const framework::Program<Dtype> p, int batch_size,
           op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(),
           program_.scope);
       // infer shape to reshape tensor before predict,
-      // but for lod tensor, it will need to reshape in runtime
+      // but for lod tensor, it will still need to reshape in runtime
       if (!loddable_) {
         op_base->InferShape();
       }
