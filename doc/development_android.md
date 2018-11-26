@@ -1,10 +1,93 @@
 # Android开发文档
 
-用户可通过如下两种方式，交叉编译Android平台上适用的paddle-mobile库：
+用户可通过如下两种方式进行编译:
 
+- 基于macOS 、Linux交叉编译
 - 基于Docker容器编译
-- 基于Linux交叉编译
 
+## 基于macOS 、Linux交叉编译
+
+需要: NDK17及以上、cmake 3.0及以上
+
+### 执行编译
+在paddle-mobile根目录中，执行以下命令：
+
+```
+
+cd tools
+sh build.sh android
+
+# 如果想编译只支持某些特定网络的库 (可以控制包体积, 编译出来的库就只包含了支持这些特定模型的算子), 可以使用
+
+sh build.sh android  mobilenet googlenet
+
+# 当然这些网络是需要在 cmakelist  中配置的(https://github.com/PaddlePaddle/paddle-mobile/blob/73769e7d05ef4820a115ad3fb9b1ca3f55179d03/CMakeLists.txt#L216), 目前配置了几个常见模型
+
+```
+
+执行完毕后，生成的so位于 build/release/ 目录中
+
+jni 头文件位于 [https://github.com/PaddlePaddle/paddle-mobile/tree/develop/src/io/jni](https://github.com/PaddlePaddle/paddle-mobile/tree/develop/src/io/jni)
+
+c++ 头文件位于 [https://github.com/PaddlePaddle/paddle-mobile/blob/develop/src/io/paddle_inference_api.h](https://github.com/PaddlePaddle/paddle-mobile/blob/develop/src/io/paddle_inference_api.h) 
+
+单测可执行文件位于 test/build 目录中。
+
+如果有环境问题, 可以看接下来的环节
+
+### 环境配置
+
+##### 下载Android NDK
+
+如果你的电脑安装了Android Studio, 可以在 Android Studio 中直接下载安装 NDK
+
+或者可以在 [https://developer.android.com/ndk/](https://developer.android.com/ndk/) 这里自行下载，也可以通过以下命令获取：
+
+- Mac平台
+```
+wget https://dl.google.com/android/repository/android-ndk-r17b-darwin-x86_64.zip
+unzip android-ndk-r17b-darwin-x86_64.zip
+
+```
+- Linux平台
+```
+wget https://dl.google.com/android/repository/android-ndk-r17b-linux-x86_64.zip
+unzip android-ndk-r17b-linux-x86_64.zip
+```
+
+##### 设置环境变量
+工程中自带的独立工具链会根据环境变量NDK_ROOT查找NDK，因此需要配置环境变量：
+
+```
+export NDK_ROOT = "path to ndk"
+```
+
+##### 安装 CMake
+
+- Mac平台
+
+mac 平台下可以使用 homebrew 安装
+
+```
+brew install cmake
+
+```
+- Linux平台
+
+linux 下可以使用 apt-get 进行安装
+```
+apt-get install cmake
+
+```
+
+##### Tips:
+如果想要获得体积更小的库，可选择编译支持指定模型结构的库。
+如执行如下命令：
+
+```
+sh build.sh android googlenet
+```
+会得到一个支持googlnet的体积更小的库。
 
 ## 基于Docker容器编译
 ### 1. 安装 docker
@@ -67,115 +150,38 @@ root@5affd29d4fc5:/ # make
 ### 6. 查看构建产出
 构架产出可以在 host 机器上查看，在 paddle-mobile 的目录下，build 以及 test/build 下，可以使用 adb 指令或者 scp 传输到 device 上执行
 
-## 基于Linux交叉编译
-### 交叉编译环境准备
-##### 下载Android NDK
+## 测试
+在编译完成后，我们提供了自动化的测试脚本，帮助用户将运行单测文件所需要的模型及库文件push到Android设备
 
-从源码交叉编译paddle-mobile,用户需要提前准备好交叉编译环境。Android平台使用的C/C++交叉编译工具链是[Android NDK](https://developer.android.com/ndk/)，用户可以自行前往下载，也可以通过以下命令获取：
-- Mac平台
-```
-wget https://dl.google.com/android/repository/android-ndk-r17b-darwin-x86_64.zip
-unzip android-ndk-r17b-darwin-x86_64.zip
+* 下载测试需要的 [mobilenet和test_image_1x3x224x224_float(预处理过的 NCHW 文件) 文件](http://mms-graph.bj.bcebos.com/paddle-mobile/opencl_test_src.zip)
+
+* 创建模型和图片文件夹
 
 ```
-- Linux平台
-```
-wget https://dl.google.com/android/repository/android-ndk-r17b-linux-x86_64.zip
-unzip android-ndk-r17b-linux-x86_64.zip
+cd test
+mkdir models
+mkdir images
 ```
 
-##### 设置环境变量
-工程中自带的独立工具链会根据环境变量NDK_ROOT查找NDK，因此需要配置环境变量：
+* 将mobilenet复制到paddle-mobile/test/models目录下 将test_image_1x3x224x224_float复制到paddle-mobile/test/images目录下
 
-```
-export NDK_ROOT = "path to ndk"
-```
-### 执行编译
-在paddle-mobile根目录中，执行以下命令：
-
-```
-cd tools
-sh build.sh android
-
-```
-执行完毕后，生成的so位于build目录中，单测可执行文件位于test/build目录中。
-##### Tips:
-如果想要获得体积更小的库，可选择编译支持指定模型结构的库。
-如执行如下命令：
-
-```
-sh build.sh android googlenet
-```
-会得到一个支持googlnet的体积更小的库。
-
-##测试
-在编译完成后，我们提供了自动化的测试脚本，帮助用户将运行单测文件所需要的模型及库文件push到Android设备中，执行以下命令：
+* 执行下面命令将可执行文件和预测需要的文件部署到手机
 
 ```
 cd tools/android-debug-script
-sh run_on_android.sh (npm) 可选参数npm,用于选择是否传输模型文件到手机上
+sh push2android.sh
 ```
-出现如下提示：
+
+* mobilenet cpu模型预测结果
+
+假设mobilenet和test_image_1x3x224x224_float文件已经推送到手机上，执行下面命令进行mobilenet cpu的预测
 
 ```
-**** choose OP or NET to test ****
-which to test :
+adb shell
+cd /data/local/tmp/bin/
+export LD_LIBRARY_PATH=.
+./test-mobilenet
 ```
-输入名称即可运行对应的测试文件。
 
-##部署
-Android应用可通过JNI接口调用底层C/C++，paddle-mobile对外提供的JNI接口如下：
-
-##### 1 load接口  加载模型参数
-- 用于加载参数文件分散的模型
-```
-/**
-     * Load seperated parameters
-     * @param modelDir
-     * @return
-     */
-    public static native boolean load(String modelDir);
-```
-- 用于加载参数文件合并的模型文件
-```
-/**
-     * Load combined parameters
-     * @param modelPath
-     * @param paramPath
-     * @return
-     */
-    public static native boolean loadCombined(String modelPath,String paramPath);
-
-```
-##### 2 predict接口 执行预测
-- 接受预处理过的RGB数组的predict接口
-```
-/**
-*@param buf 输入数据
-*@return 输出数据
-JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictImage(
-    JNIEnv *env, jclass thiz, jfloatArray buf);
-```
-- 接受原始yuv数据的predict接口
-```
- /**
-     *
-     * @param buf yuv420格式的字节数组
-     * @param imgWidth yuv数据的宽
-     * @param imgHeight yuv数据的高
-     * @param ddims 输入数据的形状
-     * @param meanValues 模型训练时各通道的均值
-     * @return
-     */
-
-    public static native float[] predictYuv(byte[] buf, int imgWidth, int imgHeight, int[] ddims, float[]meanValues);
-
-```
-##### 3 clear接口 销毁实例、清理内存操作
-
-```
-JNIEXPORT void JNICALL Java_com_baidu_paddle_PMLL_clear(JNIEnv *env,
-                                                        jclass thiz);
-```
 
 
