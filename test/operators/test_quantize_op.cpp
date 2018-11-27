@@ -27,34 +27,38 @@ enum RoundType {
 }
 
 template <round::RoundType T>
-static int8_t Round(float x);
+struct Round {
+  int8_t operator()(float x);
+};
 
 template <>
-static int8_t Round<round::RoundAwayZero>(float x) {
-  return std::round(x);
-}
+struct Round<round::RoundAwayZero> {
+  int8_t operator()(float x) { return std::round(x); }
+};
 
 template <>
-static int8_t Round<round::RoundTowardsZero>(float x) {
-  return int8_t(x);
-}
+struct Round<round::RoundTowardsZero> {
+  int8_t operator()(float x) { return int8_t(x); }
+};
 
 template <>
-static int8_t Round<round::RoundToEven>(float x) {
-  int8_t ret = 0;
-  float v = std::round(x);
-  int32_t q = (int32_t)v;
-  if (abs(abs(q - x) - 0.5) > 0) {
-    ret = q;
-  } else {
-    if (abs(q) % 2 == 0) {
+struct Round<round::RoundToEven> {
+  int8_t operator()(float x) {
+    int8_t ret = 0;
+    float v = std::round(x);
+    int32_t q = (int32_t)v;
+    if (abs(abs(q - x) - 0.5) > 0) {
       ret = q;
     } else {
-      ret = q + ((q > 0) ? -1 : 1);
+      if (abs(q) % 2 == 0) {
+        ret = q;
+      } else {
+        ret = q + ((q > 0) ? -1 : 1);
+      }
     }
+    return ret;
   }
-  return ret;
-}
+};
 
 template <round::RoundType T>
 static void quantize(const Tensor *input, const float scale, const int pad,
@@ -70,7 +74,6 @@ static void quantize(const Tensor *input, const float scale, const int pad,
   const float *x = input->data<const float>();
   int8_t *y = output->mutable_data<int8_t>();
 
-  std::cout << "pad: " << pad << ", pad_val: " << int(pad_val) << std::endl;
   for (int nc = 0; nc < batch_size * channels; ++nc) {
     const float *xh = x + nc * input_spatial;
     int8_t *yh = y + nc * output_spatial;
@@ -86,7 +89,7 @@ static void quantize(const Tensor *input, const float scale, const int pad,
         yh[w] = pad_val;
       }
       for (int w = 0; w < input_w; ++w) {
-        yh[w + pad] = Round<T>(xh[w] * scale);
+        yh[w + pad] = Round<T>()(xh[w] * scale);
       }
       // pad right
       for (int w = 0; w < pad; ++w) {
