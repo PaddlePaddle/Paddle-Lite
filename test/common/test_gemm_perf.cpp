@@ -28,7 +28,7 @@ limitations under the License. */
 
 int main() {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
-  paddle_mobile.SetThreadNum(8);
+  paddle_mobile.SetThreadNum(4);
   Tensor aa, bb, cc;
   auto aaptr = aa.mutable_data<float>({m, k});
   auto bbptr = bb.mutable_data<float>({k, n});
@@ -44,10 +44,12 @@ int main() {
     ccptr[i] = 2;
   }
 
-  Tensor aa_int8, bb_int8, cc_int8;
+  Tensor aa_int8, bb_int8, cc_int32, cc_int8;
   auto aaptr_int8 = aa_int8.mutable_data<int8_t>({m, k});
   auto bbptr_int8 = bb_int8.mutable_data<int8_t>({k, n});
-  auto ccptr_int8 = cc_int8.mutable_data<int32_t>({m, n});
+  auto ccptr_int32 = cc_int32.mutable_data<int32_t>({m, n});
+  auto ccptr_int8 = cc_int8.mutable_data<int8_t>({m, n});
+  int32_t* bias_data = new int32_t[m];
 
   for (int i = 0; i < m * k; ++i) {
     aaptr_int8[i] = static_cast<int8_t>(2);
@@ -56,7 +58,11 @@ int main() {
     bbptr_int8[i] = static_cast<int8_t>(2);
   }
   for (int i = 0; i < m * n; ++i) {
-    ccptr_int8[i] = static_cast<int32_t>(2);
+    ccptr_int32[i] = static_cast<int32_t>(2);
+  }
+
+  for (int i = 0; i < m; ++i) {
+    bias_data[i] = 2;
   }
 
   // float
@@ -76,22 +82,41 @@ int main() {
   auto time2 = time();
   std::cout << "float gemm  cost :" << time_diff(time1, time2) / 10 << "ms\n";
 
-  // int8_t
+  // int8_t without bias
   // warm-up 10 times
   for (int j = 0; j < 10; ++j) {
-    paddle_mobile::operators::math::matmul<int8_t>(
-        aa_int8, false, bb_int8, false, static_cast<int8_t>(1), &cc_int8,
-        static_cast<int8_t>(0), false, nullptr);
+    paddle_mobile::operators::math::matmul_int8(
+        aa_int8, false, bb_int8, false, static_cast<float>(1), &cc_int32,
+        static_cast<float>(0), false, nullptr);
   }
 
   auto time3 = time();
   for (int j = 0; j < 10; ++j) {
-    paddle_mobile::operators::math::matmul<int8_t>(
-        aa_int8, false, bb_int8, false, static_cast<int8_t>(1), &cc_int8,
-        static_cast<int8_t>(0), false, nullptr);
+    paddle_mobile::operators::math::matmul_int8(
+        aa_int8, false, bb_int8, false, static_cast<float>(1), &cc_int32,
+        static_cast<float>(0), false, nullptr);
   }
   auto time4 = time();
   std::cout << "int8_t gemm  cost :" << time_diff(time3, time4) / 10 << "ms\n";
+
+  // int8_t with bias&relu
+  // warm-up 10 times
+  for (int j = 0; j < 10; ++j) {
+    paddle_mobile::operators::math::matmul_int8(
+        aa_int8, false, bb_int8, false, static_cast<float>(1), &cc_int8,
+        static_cast<float>(0), true, &bias_data[0]);
+  }
+  auto time5 = time();
+  for (int j = 0; j < 10; ++j) {
+    paddle_mobile::operators::math::matmul_int8(
+        aa_int8, false, bb_int8, false, static_cast<float>(1), &cc_int8,
+        static_cast<float>(0), true, &bias_data[0]);
+  }
+  auto time6 = time();
+  std::cout << "int8_t gemm_with_bias_relu cost :"
+            << time_diff(time5, time6) / 10 << "ms\n";
+
+  delete[] bias_data;
 
   return 0;
 }
