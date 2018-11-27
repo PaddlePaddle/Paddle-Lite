@@ -2536,6 +2536,11 @@ class QuantizeParam : public OpParam {
     if (HasAttr("round_type", attrs)) {
       round_type_ = GetAttr<RoundType>("round_type", attrs);
     }
+    // get paddings
+    paddings_ = std::vector<int>({0, 0});
+    if (HasAttr("paddings", attrs)) {
+      paddings_ = GetAttr<vector<int>>("paddings", attrs);
+    }
   }
 
  public:
