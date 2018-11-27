@@ -21,15 +21,15 @@ limitations under the License. */
 #include <arm_neon.h>
 
 #ifndef __aarch64__
-float32_t vmaxvq_f32(float32x4_t r) {
+inline float32_t vmaxvq_f32(float32x4_t r) {
   float32x2_t v = vmax_f32(vget_high_f32(r), vget_low_f32(r));
   return vget_lane_f32(vpmax_f32(v, v), 0);
 }
 #endif
 
-int32x4_t vrnd_towards_zero(float32x4_t r) { return vcvtq_s32_f32(r); }
+inline int32x4_t vrnd_towards_zero(float32x4_t r) { return vcvtq_s32_f32(r); }
 
-int32x4_t vrnd_away_zero(float32x4_t r) {
+inline int32x4_t vrnd_away_zero(float32x4_t r) {
   float32x4_t plus = vdupq_n_f32(0.5);
   float32x4_t minus = vdupq_n_f32(-0.5);
   float32x4_t zero = vdupq_n_f32(0);
@@ -40,7 +40,7 @@ int32x4_t vrnd_away_zero(float32x4_t r) {
   return ret;
 }
 
-int32x4_t vrnd_to_even(float32x4_t r) {
+inline int32x4_t vrnd_to_even(float32x4_t r) {
 #if 0
   int32x4_t ret;
   float value[4];
@@ -84,7 +84,6 @@ int32x4_t vrnd_to_even(float32x4_t r) {
   return rnd;
 #endif
 }
-#endif
 
 namespace paddle_mobile {
 namespace operators {
@@ -127,6 +126,7 @@ static float find_abs_max(const Tensor *input) {
   return max_abs;
 }
 
+#ifdef __aarch64__
 static void quantize_round_to_even(const Tensor *input, const float scale,
                                    Tensor *output) {
   const float *x = input->data<const float>();
@@ -188,7 +188,7 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
   const float *x = input->data<const float>();
   int8_t *y = output->mutable_data<int8_t>();
   size_t size = input->numel();
-#ifdef defined(__ARM_NEON__) || defined(__ARM_NEON)
+#if defined(__ARM_NEON__) || defined(__ARM_NEON)
   size_t loop = size >> 4;
   size_t remain = size & 0xF;
 
@@ -224,7 +224,7 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
   y += (loop << 4);
 #endif
   for (size_t i = 0; i < size; ++i) {
-    y[i] = trunc(x[i] * scale);
+    y[i] = static_cast<int8_t>(x[i] * scale);
   }
 }
 
@@ -272,6 +272,508 @@ static void quantize_round_to_nearest(const Tensor *input, const float scale,
     y[i] = round(x[i] * scale);
   }
 }
+#else   // __aarch64__
+
+static void quantize_round_to_even(const Tensor *input, const float scale,
+                                   const std::vector<int> &paddings,
+                                   const int8_t padding_val, Tensor *output) {}
+
+static void quantize_round_to_nearest(const Tensor *input, const float scale,
+                                      const std::vector<int> &paddings,
+                                      const int8_t padding_val,
+                                      Tensor *output) {}
+
+static void quantize_round_to_zero(const Tensor *input, const float scale,
+                                   const std::vector<int> &paddings,
+                                   const int8_t padding_val, Tensor *output) {
+  int channels = input->dims()[1];
+  int input_h = input->dims()[2];
+  int input_w = input->dims()[3];
+  int output_h = output->dims()[2];
+  int output_w = output->dims()[3];
+  int input_spatial_size = input_h * input_w;
+  int output_spatial_size = output_h * output_w;
+  const float *x = input->data<float>();
+  int8_t *y = output->mutable_data<int8_t>();
+  // valid area start
+  int start = paddings[0] * output_w + paddings[1];
+
+  for (int batch = 0; batch < input->dims()[0]; ++batch) {
+    #pragma omp parallel for
+    for (int c = 0; c < channels - 3; c += 4) {
+      const float *input0 = x + (batch * channels + c) * input_spatial_size;
+      const float *input1 = input0 + input_spatial_size;
+      const float *input2 = input1 + input_spatial_size;
+      const float *input3 = input2 + input_spatial_size;
+      size_t offset = (batch * channels + c) * output_spatial_size;
+      for (int h = 0; h < 2; ++h) {
+        int8_t *y0 =
+            y + offset + h * ((input_h + paddings[0]) * output_w - paddings[1]);
+        int8_t *y1 = y0 + output_spatial_size;
+        int8_t *y2 = y1 + output_spatial_size;
+        int8_t *y3 = y2 + output_spatial_size;
+        int loop = start >> 4;
+        int remain = start & 0xF;
+        asm volatile(
+            "vdup.s8    q0,     %[val]      \n"
+            "cmp        %[loop], #0         \n"
+            "ble        start_remain_%=     \n"
+
+            "store_16w_%=:                  \n"
+            "vst1.32    {q0}, [%[y0]]!      \n"
+            "vst1.32    {q0}, [%[y1]]!      \n"
+            "vst1.32    {q0}, [%[y2]]!      \n"
+            "vst1.32    {q0}, [%[y3]]!      \n"
+            "subs       %[loop], #1         \n"
+            "bne        store_16w_%=        \n"
+
+            "start_remain_%=:               \n"
+            "cmp        %[remain], #8       \n"
+            "blt        store_4w_%=         \n"
+            "vst1.32    {d0}, [%[y0]]!      \n"
+            "vst1.32    {d0}, [%[y1]]!      \n"
+            "vst1.32    {d0}, [%[y2]]!      \n"
+            "vst1.32    {d0}, [%[y3]]!      \n"
+            "sub        %[remain], #8       \n"
+
+            "store_4w_%=:                   \n"
+            "cmp        %[remain], #4       \n"
+            "blt        store_2w_%=         \n"
+            "vst1.32    {d0[0]}, [%[y0]]!   \n"
+            "vst1.32    {d0[0]}, [%[y1]]!   \n"
+            "vst1.32    {d0[0]}, [%[y2]]!   \n"
+            "vst1.32    {d0[0]}, [%[y3]]!   \n"
+            "sub        %[remain], #4       \n"
+
+            "store_2w_%=:                   \n"
+            "cmp        %[remain], #4       \n"
+            "blt        store_1w_%=         \n"
+            "vst1.16    {d0[0]}, [%[y0]]!   \n"
+            "vst1.16    {d0[0]}, [%[y1]]!   \n"
+            "vst1.16    {d0[0]}, [%[y2]]!   \n"
+            "vst1.16    {d0[0]}, [%[y3]]!   \n"
+            "sub        %[remain], #2       \n"
+
+            "store_1w_%=:                   \n"
+            "cmp        %[remain], #1       \n"
+            "blt        end_%=              \n"
+            "vst1.8     {d0[0]}, [%[y0]]!   \n"
+            "vst1.8     {d0[0]}, [%[y1]]!   \n"
+            "vst1.8     {d0[0]}, [%[y2]]!   \n"
+            "vst1.8     {d0[0]}, [%[y3]]!   \n"
+            "end_%=:                        \n"
+            : [y0] "+r"(y0), [y1] "+r"(y1), [y2] "+r"(y2), [y3] "+r"(y3),
+              [loop] "+r"(loop), [remain] "+r"(remain)
+            : [val] "r"(padding_val)
+            : "cc", "memory", "q0");
+      }
+      // quantize valid area
+      int8_t *y0 = y + offset + start;
+      int8_t *y1 = y0 + output_spatial_size;
+      int8_t *y2 = y1 + output_spatial_size;
+      int8_t *y3 = y2 + output_spatial_size;
+      for (int h = 0; h < input_h; ++h) {
+        const float *x0 = input0 + h * input_w;
+        const float *x1 = input1 + h * input_w;
+        const float *x2 = input2 + h * input_w;
+        const float *x3 = input3 + h * input_w;
+        int loop = input_w >> 4;
+        int remain = input_w & 0xF;
+        int pad_loop = paddings[1] >> 1;
+        int pad_remain = paddings[1] & 0x1;
+        int remain_steps = remain;
+        asm volatile(
+            "vdup.f32   q0, %[scale]        \n"
+            "cmp        %[loop], #0         \n"
+            "ble        quantize_remain_%=  \n"
+
+            "loop_quantize_%=:              \n"
+            "vld1.32    {q1, q2}, [%[x0]]!  \n"
+            "vld1.32    {q3, q4}, [%[x1]]!  \n"
+            "vld1.32    {q5, q6}, [%[x2]]!  \n"
+            "vld1.32    {q7, q8}, [%[x3]]!  \n"
+            "vmul.f32  q1, q1, q0           \n"
+            "vmul.f32  q2, q2, q0           \n"
+            "vmul.f32  q3, q3, q0           \n"
+            "vmul.f32  q4, q4, q0           \n"
+            "vmul.f32  q5, q5, q0           \n"
+            "vmul.f32  q6, q6, q0           \n"
+            "vmul.f32  q7, q7, q0           \n"
+            "vmul.f32  q8, q8, q0           \n"
+            "vcvt.s32.f32  q1, q1           \n"
+            "vcvt.s32.f32  q2, q2           \n"
+            "vcvt.s32.f32  q3, q3           \n"
+            "vcvt.s32.f32  q4, q4           \n"
+            "vcvt.s32.f32  q5, q5           \n"
+            "vcvt.s32.f32  q6, q6           \n"
+            "vcvt.s32.f32  q7, q7           \n"
+            "vcvt.s32.f32  q8, q8           \n"
+            "vmovn.s32  d2, q1              \n"
+            "vmovn.s32  d3, q2              \n"
+            "vmovn.s32  d4, q3              \n"
+            "vmovn.s32  d5, q4              \n"
+            "vmovn.s32  d6, q5              \n"
+            "vmovn.s32  d7, q6              \n"
+            "vmovn.s32  d8, q7              \n"
+            "vmovn.s32  d9, q8              \n"
+            "vmovn.s16  d18, q1             \n"
+            "vmovn.s16  d20, q2             \n"
+            "vmovn.s16  d22, q3             \n"
+            "vmovn.s16  d24, q4             \n"
+            "vld1.32    {q1, q2}, [%[x0]]!  \n"
+            "vld1.32    {q3, q4}, [%[x1]]!  \n"
+            "vld1.32    {q5, q6}, [%[x2]]!  \n"
+            "vld1.32    {q7, q8}, [%[x3]]!  \n"
+            "vmul.f32  q1, q1, q0           \n"
+            "vmul.f32  q2, q2, q0           \n"
+            "vmul.f32  q3, q3, q0           \n"
+            "vmul.f32  q4, q4, q0           \n"
+            "vmul.f32  q5, q5, q0           \n"
+            "vmul.f32  q6, q6, q0           \n"
+            "vmul.f32  q7, q7, q0           \n"
+            "vmul.f32  q8, q8, q0           \n"
+            "vcvt.s32.f32  q1, q1           \n"
+            "vcvt.s32.f32  q2, q2           \n"
+            "vcvt.s32.f32  q3, q3           \n"
+            "vcvt.s32.f32  q4, q4           \n"
+            "vcvt.s32.f32  q5, q5           \n"
+            "vcvt.s32.f32  q6, q6           \n"
+            "vcvt.s32.f32  q7, q7           \n"
+            "vcvt.s32.f32  q8, q8           \n"
+            "vmovn.s32  d2, q1              \n"
+            "vmovn.s32  d3, q2              \n"
+            "vmovn.s32  d4, q3              \n"
+            "vmovn.s32  d5, q4              \n"
+            "vmovn.s32  d6, q5              \n"
+            "vmovn.s32  d7, q6              \n"
+            "vmovn.s32  d8, q7              \n"
+            "vmovn.s32  d9, q8              \n"
+            "vmovn.s16  d19, q1             \n"
+            "vmovn.s16  d21, q2             \n"
+            "vmovn.s16  d23, q3             \n"
+            "vmovn.s16  d25, q4             \n"
+            "vst1.32    {q9}, [%[y0]]!      \n"
+            "vst1.32    {q10}, [%[y1]]!     \n"
+            "vst1.32    {q11}, [%[y2]]!     \n"
+            "vst1.32    {q12}, [%[y3]]!     \n"
+
+            "subs       %[loop], #1         \n"
+            "bne        loop_quantize_%=    \n"
+
+            "quantize_remain_%=:            \n"
+            "cmp        %[remain], #0       \n"
+            "ble        end_%=              \n"
+
+            "vld1.32    {q1, q2}, [%[x0]]!  \n"
+            "vld1.32    {q3, q4}, [%[x1]]!  \n"
+            "vld1.32    {q5, q6}, [%[x2]]!  \n"
+            "vld1.32    {q7, q8}, [%[x3]]!  \n"
+            "vmul.f32  q1, q1, q0           \n"
+            "vmul.f32  q2, q2, q0           \n"
+            "vmul.f32  q3, q3, q0           \n"
+            "vmul.f32  q4, q4, q0           \n"
+            "vmul.f32  q5, q5, q0           \n"
+            "vmul.f32  q6, q6, q0           \n"
+            "vmul.f32  q7, q7, q0           \n"
+            "vmul.f32  q8, q8, q0           \n"
+            "vcvt.s32.f32  q1, q1           \n"
+            "vcvt.s32.f32  q2, q2           \n"
+            "vcvt.s32.f32  q3, q3           \n"
+            "vcvt.s32.f32  q4, q4           \n"
+            "vcvt.s32.f32  q5, q5           \n"
+            "vcvt.s32.f32  q6, q6           \n"
+            "vcvt.s32.f32  q7, q7           \n"
+            "vcvt.s32.f32  q8, q8           \n"
+            "vmovn.s32  d2, q1              \n"
+            "vmovn.s32  d3, q2              \n"
+            "vmovn.s32  d4, q3              \n"
+            "vmovn.s32  d5, q4              \n"
+            "vmovn.s32  d6, q5              \n"
+            "vmovn.s32  d7, q6              \n"
+            "vmovn.s32  d8, q7              \n"
+            "vmovn.s32  d9, q8              \n"
+            "vmovn.s16  d18, q1             \n"
+            "vmovn.s16  d20, q2             \n"
+            "vmovn.s16  d22, q3             \n"
+            "vmovn.s16  d24, q4             \n"
+            "vld1.32    {q1, q2}, [%[x0]]   \n"
+            "vld1.32    {q3, q4}, [%[x1]]   \n"
+            "vld1.32    {q5, q6}, [%[x2]]   \n"
+            "vld1.32    {q7, q8}, [%[x3]]   \n"
+            "vmul.f32  q1, q1, q0           \n"
+            "vmul.f32  q2, q2, q0           \n"
+            "vmul.f32  q3, q3, q0           \n"
+            "vmul.f32  q4, q4, q0           \n"
+            "vmul.f32  q5, q5, q0           \n"
+            "vmul.f32  q6, q6, q0           \n"
+            "vmul.f32  q7, q7, q0           \n"
+            "vmul.f32  q8, q8, q0           \n"
+            "vcvt.s32.f32  q1, q1           \n"
+            "vcvt.s32.f32  q2, q2           \n"
+            "vcvt.s32.f32  q3, q3           \n"
+            "vcvt.s32.f32  q4, q4           \n"
+            "vcvt.s32.f32  q5, q5           \n"
+            "vcvt.s32.f32  q6, q6           \n"
+            "vcvt.s32.f32  q7, q7           \n"
+            "vcvt.s32.f32  q8, q8           \n"
+            "vmovn.s32  d2, q1              \n"
+            "vmovn.s32  d3, q2              \n"
+            "vmovn.s32  d4, q3              \n"
+            "vmovn.s32  d5, q4              \n"
+            "vmovn.s32  d6, q5              \n"
+            "vmovn.s32  d7, q6              \n"
+            "vmovn.s32  d8, q7              \n"
+            "vmovn.s32  d9, q8              \n"
+            "vmovn.s16  d19, q1             \n"
+            "vmovn.s16  d21, q2             \n"
+            "vmovn.s16  d23, q3             \n"
+            "vmovn.s16  d25, q4             \n"
+
+            "cmp        %[remain], #8       \n"
+            "blt        store_4w_%=         \n"
+            "vst1.32    {d18}, [%[y0]]!     \n"
+            "vst1.32    {d20}, [%[y1]]!     \n"
+            "vst1.32    {d22}, [%[y2]]!     \n"
+            "vst1.32    {d24}, [%[y3]]!     \n"
+            "vmov.32    d18, d19            \n"
+            "vmov.32    d20, d21            \n"
+            "vmov.32    d22, d23            \n"
+            "vmov.32    d24, d25            \n"
+            "sub        %[remain], #8       \n"
+
+            "store_4w_%=:                   \n"
+            "cmp        %[remain], #4       \n"
+            "blt        store_2w_%=         \n"
+            "vst1.32    {d18[0]}, [%[y0]]!  \n"
+            "vst1.32    {d20[0]}, [%[y1]]!  \n"
+            "vst1.32    {d22[0]}, [%[y2]]!  \n"
+            "vst1.32    {d24[0]}, [%[y3]]!  \n"
+            "vext.32    d18, d18, d18, #1   \n"
+            "vext.32    d20, d20, d20, #1   \n"
+            "vext.32    d22, d22, d22, #1   \n"
+            "vext.32    d24, d24, d24, #1   \n"
+            "sub        %[remain], #4       \n"
+
+            "store_2w_%=:                   \n"
+            "cmp        %[remain], #2       \n"
+            "blt        store_1w_%=         \n"
+            "vst1.16    {d18[0]}, [%[y0]]!  \n"
+            "vst1.16    {d20[0]}, [%[y1]]!  \n"
+            "vst1.16    {d22[0]}, [%[y2]]!  \n"
+            "vst1.16    {d24[0]}, [%[y3]]!  \n"
+            "vext.16    d18, d18, d18, #1   \n"
+            "vext.16    d20, d20, d20, #1   \n"
+            "vext.16    d22, d22, d22, #1   \n"
+            "vext.16    d24, d24, d24, #1   \n"
+            "sub        %[remain], #2       \n"
+
+            "store_1w_%=:"
+            "cmp        %[remain], #1       \n"
+            "blt        end_%=              \n"
+            "vst1.8     {d18[0]}, [%[y0]]!  \n"
+            "vst1.8     {d20[0]}, [%[y1]]!  \n"
+            "vst1.8     {d22[0]}, [%[y2]]!  \n"
+            "vst1.8     {d24[0]}, [%[y3]]!  \n"
+
+            "end_%=:                        \n"
+            : [x0] "+r"(x0), [x1] "+r"(x1), [x2] "+r"(x2), [x3] "+r"(x3),
+              [y0] "+r"(y0), [y1] "+r"(y1), [y2] "+r"(y2), [y3] "+r"(y3),
+              [loop] "+r"(loop), [remain] "+r"(remain)
+            : [scale] "r"(scale)
+            : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+              "q8", "q9", "q10", "q11", "q12");
+        asm volatile(
+            "vdup.s8    d0, %[val]          \n"
+            "cmp        %[pad_loop], #0     \n"
+            "ble        store_pad_2w_%=     \n"
+            "loop_pad_4w_%=:                \n"
+            "vst1.32    {d0[0]}, [%[y0]]!   \n"
+            "vst1.32    {d0[0]}, [%[y1]]!   \n"
+            "vst1.32    {d0[0]}, [%[y2]]!   \n"
+            "vst1.32    {d0[0]}, [%[y3]]!   \n"
+            "subs       %[pad_loop], #1     \n"
+            "bne        loop_pad_4w_%=      \n"
+
+            "store_pad_2w_%=:               \n"
+            "cmp        %[pad_remain], #2   \n"
+            "ble        store_pad_1w_%=     \n"
+            "vst1.16    {d0[0]}, [%[y0]]!   \n"
+            "vst1.16    {d0[0]}, [%[y1]]!   \n"
+            "vst1.16    {d0[0]}, [%[y2]]!   \n"
+            "vst1.16    {d0[0]}, [%[y3]]!   \n"
+            "sub        %[pad_remain], #2   \n"
+
+            "store_pad_1w_%=:               \n"
+            "cmp        %[pad_remain], #1   \n"
+            "ble        end_%=              \n"
+            "vst1.8    {d0[0]}, [%[y0]]!    \n"
+            "vst1.8    {d0[0]}, [%[y1]]!    \n"
+            "vst1.8    {d0[0]}, [%[y2]]!    \n"
+            "vst1.8    {d0[0]}, [%[y3]]!    \n"
+            "end_%=:                        \n"
+            : [y0] "+r"(y0), [y1] "+r"(y1), [y2] "+r"(y2), [y3] "+r"(y3),
+              [pad_loop] "+r"(pad_loop), [pad_remain] "+r"(pad_remain)
+            : [val] "r"(padding_val)
+            : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+              "q8", "q9", "q10", "q11", "q12");
+      }
+    }
+    for (int c = (channels & 0xFFFC); c < channels; ++c) {
+      const float *input0 = x + (batch * channels + c) * input_spatial_size;
+      size_t offset = (batch * channels + c) * output_spatial_size;
+      for (int h = 0; h < 2; ++h) {
+        int8_t *y0 =
+            y + offset + h * ((input_h + paddings[0]) * output_w - paddings[1]);
+        int loop = start >> 4;
+        int remain = start & 0xF;
+        asm volatile(
+            "vdup.s8    q0,     %[val]      \n"
+            "cmp        %[loop], #0         \n"
+            "ble        start_remain_%=     \n"
+
+            "store_16w_%=:                  \n"
+            "vst1.32    {q0}, [%[y0]]!      \n"
+            "subs       %[loop], #1         \n"
+            "bne        store_16w_%=        \n"
+
+            "start_remain_%=:               \n"
+            "cmp        %[remain], #8       \n"
+            "blt        store_4w_%=         \n"
+            "vst1.32    {d0}, [%[y0]]!      \n"
+            "sub        %[remain], #8       \n"
+
+            "store_4w_%=:                   \n"
+            "cmp        %[remain], #4       \n"
+            "blt        store_2w_%=         \n"
+            "vst1.32    {d0[0]}, [%[y0]]!   \n"
+            "sub        %[remain], #4       \n"
+
+            "store_2w_%=:                   \n"
+            "cmp        %[remain], #4       \n"
+            "blt        store_1w_%=         \n"
+            "vst1.16    {d0[0]}, [%[y0]]!   \n"
+            "sub        %[remain], #2       \n"
+
+            "store_1w_%=:                   \n"
+            "cmp        %[remain], #1       \n"
+            "blt        end_%=              \n"
+            "vst1.8     {d0[0]}, [%[y0]]!   \n"
+            "end_%=:                        \n"
+            : [y0] "+r"(y0), [loop] "+r"(loop), [remain] "+r"(remain)
+            : [val] "r"(padding_val)
+            : "cc", "memory", "q0");
+      }
+      // quantize valid area
+      int8_t *y0 = y + offset + start;
+      for (int h = 0; h < input_h; ++h) {
+        const float *x0 = input0 + h * input_w;
+        int loop = input_w >> 4;
+        int remain = input_w & 0xF;
+        int pad_loop = paddings[1] >> 1;
+        int pad_remain = paddings[1] & 0x1;
+        asm volatile(
+            "vdup.f32   q0, %[scale]        \n"
+            "cmp        %[loop], #0         \n"
+            "ble        quantize_remain_%=  \n"
+
+            "loop_quantize_%=:              \n"
+            "vld1.32    {q1, q2}, [%[x0]]!  \n"
+            "vmul.f32   q1, q1, q0          \n"
+            "vmul.f32   q2, q2, q0          \n"
+            "vcvt.s32.f32  q1, q1           \n"
+            "vcvt.s32.f32  q2, q2           \n"
+            "vmovn.s32  d2, q1              \n"
+            "vmovn.s32  d3, q2              \n"
+            "vmovn.s16  d18, q1             \n"
+            "vld1.32    {q1, q2}, [%[x0]]!  \n"
+            "vmul.f32   q1, q1, q0          \n"
+            "vmul.f32   q2, q2, q0          \n"
+            "vcvt.s32.f32  q1, q1           \n"
+            "vcvt.s32.f32  q2, q2           \n"
+            "vmovn.s32  d2, q1              \n"
+            "vmovn.s32  d3, q2              \n"
+            "vmovn.s16  d19, q1             \n"
+            "vst1.32    {q9}, [%[y0]]!      \n"
+
+            "subs       %[loop], #1         \n"
+            "bne        loop_quantize_%=    \n"
+
+            "quantize_remain_%=:            \n"
+            "cmp        %[remain], #0       \n"
+            "ble        start_pad_%=        \n"
+
+            "vldm       %[x0], {d2-d9}      \n"
+            "vmul.f32   q1, q1, q0          \n"
+            "vmul.f32   q2, q2, q0          \n"
+            "vcvt.s32.f32  q1, q1           \n"
+            "vcvt.s32.f32  q2, q2           \n"
+            "vmovn.s32  d2, q1              \n"
+            "vmovn.s32  d3, q2              \n"
+            "vmovn.s16  d18, q1             \n"
+            "vmul.f32   q3, q3, q0          \n"
+            "vmul.f32   q4, q4, q0          \n"
+            "vcvt.s32.f32  q1, q3           \n"
+            "vcvt.s32.f32  q2, q4           \n"
+            "vmovn.s32  d2, q1              \n"
+            "vmovn.s32  d3, q2              \n"
+            "vmovn.s16  d19, q1             \n"
+
+            "cmp        %[remain], #8       \n"
+            "blt        store_4w_%=         \n"
+            "vst1.32    {d18}, [%[y0]]!     \n"
+            "vmov.32    d18, d19            \n"
+            "sub        %[remain], #8       \n"
+
+            "store_4w_%=:                   \n"
+            "cmp        %[remain], #4       \n"
+            "blt        store_2w_%=         \n"
+            "vst1.32    {d18[0]}, [%[y0]]!  \n"
+            "vext.32    d18, d18, d18, #1   \n"
+            "sub        %[remain], #4       \n"
+
+            "store_2w_%=:                   \n"
+            "cmp        %[remain], #2       \n"
+            "blt        store_1w_%=         \n"
+            "vst1.16    {d18[0]}, [%[y0]]!  \n"
+            "vext.16    d18, d18, d18, #1   \n"
+            "sub        %[remain], #2       \n"
+
+            "store_1w_%=:"
+            "cmp        %[remain], #1       \n"
+            "blt        start_pad_%=        \n"
+            "vst1.8     {d18[0]}, [%[y0]]!  \n"
+
+            "start_pad_%=:                  \n"
+            "vdup.s8    d0, %[val]          \n"
+            "cmp        %[pad_loop], #0     \n"
+            "ble        pad_remain_%=       \n"
+            "loop_pad_4w_%=:                \n"
+            "vst1.32    {d0[0]}, [%[y0]]!   \n"
+            "subs       %[pad_loop], #1     \n"
+            "bne        loop_pad_4w_%=      \n"
+
+            "pad_remain_%=:                 \n"
+            "cmp        %[pad_remain], #2   \n"
+            "ble        store_pad_1w_%=     \n"
+            "vst1.16    {d0[0]}, [%[y0]]!   \n"
+            "sub        %[pad_remain], #2   \n"
+
+            "store_pad_1w_%=:               \n"
+            "cmp        %[pad_remain], #1   \n"
+            "ble        end_%=              \n"
+            "vst1.8    {d0[0]}, [%[y0]]!    \n"
+            "end_%=:                        \n"
+            : [x0] "+r"(x0), [y0] "+r"(y0), [loop] "+r"(loop),
+              [remain] "+r"(remain), [pad_loop] "+r"(pad_loop),
+              [pad_remain] "+r"(pad_remain)
+            : [scale] "r"(scale), [val] "r"(padding_val)
+            : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q9");
+      }
+    }
+  }
+}
+#endif  // __aarch64__
+#endif  // ARM_NEON
 
 template <>
 bool QuantizeKernel<CPU, float>::Init(QuantizeParam<CPU> *param) {
@@ -280,10 +782,10 @@ bool QuantizeKernel<CPU, float>::Init(QuantizeParam<CPU> *param) {
 
 template <>
 void QuantizeKernel<CPU, float>::Compute(const QuantizeParam<CPU> &param) {
-  float max_abs = 0.f;
   const Tensor *input = param.input_;
-  Tensor *output = param.out_;
+  Tensor *output = param.output_;
   Tensor *output_scale = param.online_scale_;
+  float max_abs = 0.f;
   if (param.is_static_) {
     max_abs = param.static_scale_;
   } else {
@@ -293,15 +795,19 @@ void QuantizeKernel<CPU, float>::Compute(const QuantizeParam<CPU> &param) {
   // only support int8 currently
   float scale = 127 / max_abs;
   param.online_scale_->mutable_data<float>()[0] = max_abs;
+  //  const auto &paddings = param.paddings_;
+  std::vector<int> paddings = {0, 0};
+  //  const auto padding_val = param.padding_val_;
+  int8_t padding_val = 127;
   switch (param.round_type_) {
     case ROUND_NEAREST_TO_EVEN:
-      quantize_round_to_even(input, scale, output);
+      quantize_round_to_even(input, scale, paddings, padding_val, output);
       break;
     case ROUND_NEAREST_TOWARDS_ZERO:
-      quantize_round_to_zero(input, scale, output);
+      quantize_round_to_zero(input, scale, paddings, padding_val, output);
       break;
     case ROUND_NEAREST_AWAY_ZERO:
-      quantize_round_to_nearest(input, scale, output);
+      quantize_round_to_nearest(input, scale, paddings, padding_val, output);
       break;
     default:
       LOG(kLOG_ERROR) << "round type is not supported.";
