@@ -22,8 +22,9 @@ namespace math {
 template <typename DeviceType, typename T>
 class PadFunctor {
  public:
-  void operator()(const framework::Tensor &input, const int pad_h,
-                  const int pad_w, framework::Tensor *output);
+  void operator()(const framework::Tensor &input, const int pad_top,
+                  const int pad_bottom, const int pad_left, const int pad_right,
+                  framework::Tensor *output);
 };
 
 }  // namespace math

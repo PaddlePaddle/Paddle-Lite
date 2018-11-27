@@ -22,8 +22,8 @@ namespace operators {
 
 template <typename DeviceType, typename T>
 void QuantizeOp<DeviceType, T>::InferShape() const {
-  const auto& input_dims = this->param_.input_->dims();
-  this->param_.out_->Resize(input_dims);
+  const auto &input_dims = this->param_.input_->dims();
+  this->param_.output_->Resize(input_dims);
   auto scale_dims = framework::make_ddim(std::vector<int>{1});
   this->param_.online_scale_->Resize(scale_dims);
 }
