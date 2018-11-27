@@ -29,8 +29,8 @@ template <>
 void FeedKernel<FPGA, float>::Compute(const FeedParam<FPGA> &param) {
   auto input =
       reinterpret_cast<Tensor *>(const_cast<LoDTensor *>(param.InputX()));
-  auto input_ptr = input->data<float>();
   fpga::format_image(input);
+  auto input_ptr = input->data<float>();
   Tensor *output = param.Out();
   auto output_ptr = output->data<float>();
 
