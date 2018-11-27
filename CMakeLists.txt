@@ -5,6 +5,7 @@ option(DEBUGING "enable debug mode" ON)
 option(USE_EXCEPTION "use std exception" ON)
 option(SYMBOL_HIDDEN "symbol hidden" OFF) # on when use jni or ios io
 option(LOG_PROFILE "log profile" OFF)
+
 # select the platform to build
 option(CPU "armv7 with neon" ON)
 option(GPU_MALI "mali gpu" OFF)
@@ -14,7 +15,6 @@ if(FPGA)
     option(FPGAV1 "fpga v1" ON)
     option(FPGAV2 "fpga v2" OFF)
 endif()
-
 
 project(paddle-mobile)
 
@@ -246,7 +246,4 @@ if(DEBUGING)
 elseif(FPGA)
     add_subdirectory(test)
 endif()
-
-
-
 
