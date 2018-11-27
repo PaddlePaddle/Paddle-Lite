@@ -20,12 +20,11 @@ int main() {
 #ifdef PADDLE_MOBILE_FPGA
   paddle_mobile::PaddleMobile<paddle_mobile::FPGA> paddle_mobile;
 #endif
-
 #ifdef PADDLE_MOBILE_CPU
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
 #endif
 
-  paddle_mobile.SetThreadNum(4);
+  paddle_mobile.SetThreadNum(1);
   bool optimize = true;
   auto time1 = time();
   if (paddle_mobile.Load(g_googlenet, optimize)) {
@@ -36,7 +35,7 @@ int main() {
     std::vector<float> output;
     std::vector<int64_t> dims{1, 3, 224, 224};
     GetInput<float>(g_test_image_1x3x224x224, &input, dims);
-    // 预热十次
+    // warmup
     for (int i = 0; i < 10; ++i) {
       output = paddle_mobile.Predict(input, dims);
     }
@@ -46,8 +45,7 @@ int main() {
     }
     auto time4 = time();
 
-    std::cout << "predict cost :" << time_diff(time3, time4) / 10 << "ms"
-              << std::endl;
+    std::cout << "predict cost: " << time_diff(time3, time4) / 10 << "ms\n";
   }
   return 0;
 }
