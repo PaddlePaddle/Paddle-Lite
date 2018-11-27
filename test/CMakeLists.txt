@@ -67,7 +67,7 @@ if (CON GREATER -1)
     ADD_EXECUTABLE(test-resnet50 fpga/test_resnet50.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-resnet50 paddle-mobile)
 
-    ADD_EXECUTABLE(test-densebox net/test_densebox_combine.cpp test_helper.h test_include.h executor_for_test.h)
+    ADD_EXECUTABLE(test-densebox fpga/test_densebox_combine.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-densebox paddle-mobile)
 
     set(FOUND_MATCH ON)
@@ -81,7 +81,7 @@ if (CON GREATER -1)
     ADD_EXECUTABLE(test-pe fpga/test_pe.cpp)
     target_link_libraries(test-pe paddle-mobile)
 
-    ADD_EXECUTABLE(test-densebox net/test_densebox_combine.cpp test_helper.h test_include.h executor_for_test.h)
+    ADD_EXECUTABLE(test-densebox fpga/test_densebox_combine.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-densebox paddle-mobile)
 
     set(FOUND_MATCH ON)
@@ -372,5 +372,8 @@ if (NOT FOUND_MATCH)
     ADD_EXECUTABLE(test-eng net/test_eng.cpp test_helper.h test_include.h)
     target_link_libraries(test-eng paddle-mobile)
 
+    # gen test
+    ADD_EXECUTABLE(test-super net/test_super.cpp test_helper.h test_include.h)
+    target_link_libraries(test-super paddle-mobile)
     #add_library(test-lib-size SHARED common/test_lib_size.h common/test_lib_size.cpp)
 endif ()

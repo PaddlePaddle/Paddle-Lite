@@ -26,40 +26,76 @@ bool ReshapeKernel<GPU_CL, float>::Init(ReshapeParam<GPU_CL> *param) {
 template <>
 void ReshapeKernel<GPU_CL, float>::Compute(const ReshapeParam<GPU_CL> &param) {
   auto kernel = this->cl_helper_.KernelAt(0);
+  auto default_work_size = this->cl_helper_.DefaultWorkSize(*param.Out());
   const auto *input = param.InputX();
   auto *output = param.Out();
-  auto inputImage = input->GetCLImage();
-  auto outputImage = output->GetCLImage();
-  clSetKernelArg(kernel, 0, sizeof(cl_mem), &inputImage);
-  clSetKernelArg(kernel, 1, sizeof(cl_mem), &outputImage);
+  auto input_image = input->GetCLImage();
+  auto output_image = output->GetCLImage();
   const auto &inputDim = input->dims();
   const auto &outputDim = output->dims();
-  int dims[4] = {1, 1, 1, 1};
-  int odims[4] = {1, 1, 1, 1};
+  int input_dims[4] = {1, 1, 1, 1};
+  int output_dims[4] = {1, 1, 1, 1};
   // 1 1000 1 1
   for (int i = 0; i < inputDim.size(); i++) {
-    dims[4 - inputDim.size() + i] = inputDim[i];
+    input_dims[4 - inputDim.size() + i] = inputDim[i];
   }
 
   // 1 1 1 1000
   for (int i = 0; i < outputDim.size(); i++) {
-    odims[4 - outputDim.size() + i] = outputDim[i];
+    output_dims[4 - outputDim.size() + i] = outputDim[i];
   }
-  clSetKernelArg(kernel, 2, sizeof(cl_int), &dims);
-  clSetKernelArg(kernel, 3, sizeof(cl_int), &dims[1]);
-  clSetKernelArg(kernel, 4, sizeof(cl_int), &dims[2]);
-  clSetKernelArg(kernel, 5, sizeof(cl_int), &dims[3]);
-  clSetKernelArg(kernel, 6, sizeof(cl_int), &odims);
-  clSetKernelArg(kernel, 7, sizeof(cl_int), &odims[1]);
-  clSetKernelArg(kernel, 8, sizeof(cl_int), &odims[1]);
-  clSetKernelArg(kernel, 9, sizeof(cl_int), &odims[1]);
-  const size_t work_size[2] = {output->ImageWidth(), output->ImageHeight()};
 
-  //  cl_event out_event = param.Out()->GetClEvent();
-  //  cl_event wait_event = param.InputX()->GetClEvent();
-
-  clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 2, NULL,
-                         work_size, NULL, 0, NULL, NULL);
+  int out_C = output_dims[1];
+  int out_H = output_dims[2];
+  int out_W = output_dims[3];
+  int in_W = input_dims[3];
+  int in_H = input_dims[2];
+  int in_Stride0 = in_W;
+  int in_Stride1 = input_dims[2] * input_dims[3];
+  int in_Stride2 = input_dims[1] * input_dims[2] * input_dims[3];
+  int out_Stride0 = out_W;
+  int out_Stride1 = out_H * out_W;
+  int out_Stride2 = out_C * out_H * out_W;
+  DLOG << "out_C=" << out_C;
+  DLOG << "out_H=" << out_H;
+  DLOG << "out_W=" << out_W;
+  DLOG << "in_W=" << in_W;
+  DLOG << "default_work_size=" << default_work_size;
+  DLOG << "in_Stride0=" << in_Stride0;
+  DLOG << "in_Stride1=" << in_Stride1;
+  DLOG << "out_Stride0=" << out_Stride0;
+  DLOG << "out_Stride1=" << out_Stride1;
+  cl_int status;
+  status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input_image);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &output_image);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 2, sizeof(int), &out_C);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 3, sizeof(int), &out_H);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 4, sizeof(int), &out_W);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 5, sizeof(int), &in_W);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 6, sizeof(int), &in_H);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 7, sizeof(int), &in_Stride0);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 8, sizeof(int), &in_Stride1);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 9, sizeof(int), &in_Stride2);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 10, sizeof(int), &out_Stride0);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 11, sizeof(int), &out_Stride1);
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 12, sizeof(int), &out_Stride2);
+  CL_CHECK_ERRORS(status);
+  status = clEnqueueNDRangeKernel(
+      this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
+      default_work_size.data(), NULL, 0, NULL, NULL);
+  CL_CHECK_ERRORS(status);
 }
 
 template class ReshapeKernel<GPU_CL, float>;

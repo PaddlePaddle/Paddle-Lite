@@ -863,6 +863,8 @@ class PriorBoxParam : public OpParam {
     if (HasAttr("min_max_aspect_ratios_order", attrs)) {
       min_max_aspect_ratios_order_ =
           GetAttr<bool>("min_max_aspect_ratios_order", attrs);
+    } else {
+      min_max_aspect_ratios_order_ = false;
     }
     flip_ = GetAttr<bool>("flip", attrs);
     clip_ = GetAttr<bool>("clip", attrs);
@@ -1030,9 +1032,9 @@ class MultiClassNMSParam : public OpParam {
     score_threshold_ = GetAttr<float>("score_threshold", attrs);
   }
 
-  const RType *InputBBoxes() const { return input_bboxes_; }
+  RType *InputBBoxes() const { return input_bboxes_; }
 
-  const RType *InputScores() const { return input_scores_; }
+  RType *InputScores() const { return input_scores_; }
 
   RType *Out() const { return out_; }
 
@@ -1566,6 +1568,20 @@ class TanhParam : public OpParam {
  private:
   RType *input_x_;
   RType *out_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  std::shared_ptr<RType> float_input_x_;
+  fpga::BypassArgs fpga_bypass_args;
+
+ public:
+  RType *FloatInput() const {
+    return float_input_x_ == nullptr ? input_x_ : float_input_x_.get();
+  }
+  void SetFloatInput(Tensor *input) { float_input_x_.reset(input); }
+  const fpga::BypassArgs &FpgaArgs() const { return fpga_bypass_args; }
+  void SetFpgaArgs(const fpga::BypassArgs &args) { fpga_bypass_args = args; }
+#endif
 };
 #endif
 
@@ -2223,7 +2239,6 @@ class DropoutParam : public OpParam {
 };
 #endif
 
-#ifdef CONV_TRANSPOSE_OP
 template <typename Dtype>
 class ConvTransposeParam : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
@@ -2278,7 +2293,7 @@ class ConvTransposeParam : public OpParam {
   void SetFpgaArgs(const fpga::DeconvArgs &args) { fpga_conv_args = args; }
 #endif
 };
-#endif
+
 #ifdef FUSION_DECONVADD_OP
 template <typename Dtype>
 class FusionDeconvAddParam : public ConvTransposeParam<Dtype> {
@@ -2434,6 +2449,15 @@ class SplitParam : public OpParam {
   int num;
   std::vector<int> sections;
   //  std::vector<GType> out_ts_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::SplitArgs fpga_split_args;
+
+ public:
+  const fpga::SplitArgs &FpgaArgs() const { return fpga_split_args; }
+  void SetFpgaArgs(const fpga::SplitArgs &args) { fpga_split_args = args; }
+#endif
 };
 #endif
 
