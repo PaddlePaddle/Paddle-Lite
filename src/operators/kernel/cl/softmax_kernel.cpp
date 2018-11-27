@@ -33,31 +33,24 @@ void SoftmaxKernel<GPU_CL, float>::Compute(const SoftmaxParam<GPU_CL> &param) {
   auto *output = param.Out();
   auto inputImage = input->GetCLImage();
   auto outputImage = output->GetCLImage();
+  const auto &outputDim = output->dims();
 
-  int group = output->ImageWidth();
+  int dims[4] = {1, 1, 1, 1};
+
+  for (int i = 0; i < outputDim.size(); i++) {
+    dims[4 - outputDim.size() + i] = outputDim[i];
+  }
+
+  const int out_W = dims[3];
 
   cl_int status;
 
   status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &inputImage);
+  CL_CHECK_ERRORS(status);
   status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &outputImage);
-  status = clSetKernelArg(kernel, 2, sizeof(int), &group);
-
-  //  const auto &inputDim = input->dims();
-  //
-  //  int dims[4] = {1, 1, 1, 1};
-  //
-  //  for (int i = 0; i < inputDim.size(); i++) {
-  //    dims[4 - inputDim.size() + i] = inputDim[i];
-  //  }
-  //
-  //  clSetKernelArg(kernel, 2, sizeof(int), &dims);
-  //  clSetKernelArg(kernel, 3, sizeof(int), &dims[1]);
-  //  clSetKernelArg(kernel, 4, sizeof(int), &dims[2]);
-  //  clSetKernelArg(kernel, 5, sizeof(int), &dims[3]);
-
-  //  cl_event out_event = param.Out()->GetClEvent();
-  //  cl_event wait_event = param.InputX()->GetClEvent();
-
+  CL_CHECK_ERRORS(status);
+  status = clSetKernelArg(kernel, 2, sizeof(int), &out_W);
+  CL_CHECK_ERRORS(status);
   status = clEnqueueNDRangeKernel(
       this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(), NULL,
       default_work_size.data(), NULL, 0, NULL, NULL);

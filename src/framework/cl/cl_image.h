@@ -120,17 +120,19 @@ class CLImage {
     PADDLE_MOBILE_ENFORCE(tensor_data_ == nullptr,
                           " empty image tensor data shouldn't have value");
 
-    CLImageConverterFolder *folder_converter = new CLImageConverterFolder();
+    //    CLImageConverterFolder *folder_converter = new
+    //    CLImageConverterFolder();
+    CLImageConverterNormal *normal_converter = new CLImageConverterNormal();
 
     DLOG << " to get image dims ";
-    image_dims_ = folder_converter->InitImageDimInfoWith(dim);
+    image_dims_ = normal_converter->InitImageDimInfoWith(dim);
     DLOG << " end get image dims " << image_dims_;
 
     InitCLImage(context, image_dims_[0], image_dims_[1], nullptr);
 
     tensor_dims_ = dim;
     command_queue_ = command_queue;
-    image_converter_ = folder_converter;
+    image_converter_ = normal_converter;
     cl_event_ = CLEngine::Instance()->CreateEvent(context);
     initialized_ = true;
     DLOG << " end init cl image";
@@ -220,11 +222,11 @@ class CLImage {
   CLImageConverterBase *image_converter_ = nullptr;
 };
 
-void TensorToCLImage(Tensor *tensor, CLImage *image,
-                     cl_command_queue commandQueue);
+void TensorToCLImage(Tensor *tensor, CLImage *image, cl_context context,
+                     cl_command_queue commandQueue, cl_kernel kernel);
 
-void CLImageToTensor(CLImage *image, Tensor *tensor,
-                     cl_command_queue commandQueue);
+void CLImageToTensor(CLImage *image, Tensor *tensor, cl_context context,
+                     cl_command_queue commandQueue, cl_kernel kernel);
 
 #ifdef PADDLE_MOBILE_DEBUG
 Print &operator<<(Print &printer, const CLImage &image);
