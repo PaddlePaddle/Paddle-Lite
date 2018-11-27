@@ -12,25 +12,31 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef DEQUANT_OP
+#ifdef CONV_OP
 
-#include "operators/dequantize_op.h"
+#pragma once
+
+#include "framework/tensor.h"
 
 namespace paddle_mobile {
 namespace operators {
+namespace math {
 
-template <typename DeviceType, typename T>
-void DequantizeOp<DeviceType, T>::InferShape() const {
-  const auto& input_dims = this->param_.input_->dims();
-  this->param_.output_->Resize(input_dims);
-}
+template <int tile, int kernel>
+void winograd_transform_weight(const framework::Tensor &weight,
+                               framework::Tensor *output);
 
+template <int tile, int kernel>
+void winograd_transform_input(const framework::Tensor &input,
+                              framework::Tensor *output);
+
+template <int tile, int kernel>
+void winograd_transform_output(const framework::Tensor &input,
+                               const framework::Tensor &weight,
+                               framework::Tensor *output);
+
+}  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(dequantize, ops::DequantizeOp);
-#endif
 
 #endif
