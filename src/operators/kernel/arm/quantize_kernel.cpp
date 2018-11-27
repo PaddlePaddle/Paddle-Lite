@@ -379,8 +379,8 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
         const float *x3 = input3 + h * input_w;
         int loop = input_w >> 4;
         int remain = input_w & 0xF;
-        int pad_loop = paddings[1] >> 1;
-        int pad_remain = paddings[1] & 0x1;
+        int pad_loop = paddings[1] >> 1;  // (paddings[1] << 1) >> 2
+        int pad_remain = (paddings[1] << 1) & 0x3;
         int remain_steps = remain;
         asm volatile(
             "vdup.f32   q0, %[scale]        \n"
@@ -596,7 +596,7 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
 
             "store_pad_2w_%=:               \n"
             "cmp        %[pad_remain], #2   \n"
-            "ble        store_pad_1w_%=     \n"
+            "blt        store_pad_1w_%=     \n"
             "vst1.16    {d0[0]}, [%[y0]]!   \n"
             "vst1.16    {d0[0]}, [%[y1]]!   \n"
             "vst1.16    {d0[0]}, [%[y2]]!   \n"
@@ -605,7 +605,7 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
 
             "store_pad_1w_%=:               \n"
             "cmp        %[pad_remain], #1   \n"
-            "ble        end_%=              \n"
+            "blt        end_%=              \n"
             "vst1.8    {d0[0]}, [%[y0]]!    \n"
             "vst1.8    {d0[0]}, [%[y1]]!    \n"
             "vst1.8    {d0[0]}, [%[y2]]!    \n"
@@ -669,8 +669,8 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
         const float *x0 = input0 + h * input_w;
         int loop = input_w >> 4;
         int remain = input_w & 0xF;
-        int pad_loop = paddings[1] >> 1;
-        int pad_remain = paddings[1] & 0x1;
+        int pad_loop = paddings[1] >> 1;  // (paddings[1] << 1) >> 2
+        int pad_remain = (paddings[1] << 1) & 0x3;
         asm volatile(
             "vdup.f32   q0, %[scale]        \n"
             "cmp        %[loop], #0         \n"
@@ -754,14 +754,14 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
 
             "pad_remain_%=:                 \n"
             "cmp        %[pad_remain], #2   \n"
-            "ble        store_pad_1w_%=     \n"
+            "blt        store_pad_1w_%=     \n"
             "vst1.16    {d0[0]}, [%[y0]]!   \n"
             "sub        %[pad_remain], #2   \n"
 
             "store_pad_1w_%=:               \n"
             "cmp        %[pad_remain], #1   \n"
-            "ble        end_%=              \n"
-            "vst1.8    {d0[0]}, [%[y0]]!    \n"
+            "blt        end_%=              \n"
+            "vst1.8     {d0[0]}, [%[y0]]!   \n"
             "end_%=:                        \n"
             : [x0] "+r"(x0), [y0] "+r"(y0), [loop] "+r"(loop),
               [remain] "+r"(remain), [pad_loop] "+r"(pad_loop),
@@ -795,10 +795,10 @@ void QuantizeKernel<CPU, float>::Compute(const QuantizeParam<CPU> &param) {
   // only support int8 currently
   float scale = 127 / max_abs;
   param.online_scale_->mutable_data<float>()[0] = max_abs;
-  //  const auto &paddings = param.paddings_;
-  std::vector<int> paddings = {0, 0};
-  //  const auto padding_val = param.padding_val_;
-  int8_t padding_val = 127;
+  const auto &paddings = param.paddings_;
+  // std::vector<int> paddings = {0, 0};
+  // const auto padding_val = param.padding_val_;
+  int8_t padding_val = 0;
   switch (param.round_type_) {
     case ROUND_NEAREST_TO_EVEN:
       quantize_round_to_even(input, scale, paddings, padding_val, output);
