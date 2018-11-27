@@ -28,8 +28,8 @@ limitations under the License. */
 #include <iostream>
 
 #include "common/enforce.h"
-#include "fpga/V2/driver/bitmap.h"
-#include "fpga/V2/driver/driver.h"
+#include "fpga/common/bitmap.h"
+#include "fpga/common/driver.h"
 
 namespace paddle_mobile {
 namespace fpga {
@@ -353,7 +353,7 @@ void fpga_free_driver(void *ptr) {
   }
 }
 
-static inline int do_ioctl(unsigned long req, const void *arg) {
+static inline int do_ioctl(int64_t req, const void *arg) {
   return ioctl(g_fpgainfo.fd_mem, req, arg);
 }
 
@@ -363,7 +363,7 @@ int fpga_flush_driver(void *address, size_t size) {
 
   p_addr = vaddr_to_paddr(address);
 
-  args.offset = (void *)(p_addr - FPGA_MEM_PHY_ADDR);
+  args.offset = (void *)(p_addr - FPGA_MEM_PHY_ADDR);  // NOLINT
   args.size = size;
 
   return do_ioctl(IOCTL_MEMCACHE_FLUSH, &args);
@@ -375,7 +375,7 @@ int fpga_invalidate_driver(void *address, size_t size) {
 
   p_addr = vaddr_to_paddr(address);
 
-  args.offset = (void *)(p_addr - FPGA_MEM_PHY_ADDR);
+  args.offset = (void *)(p_addr - FPGA_MEM_PHY_ADDR);  // NOLINT
   args.size = size;
 
   return do_ioctl(IOCTL_MEMCACHE_INVAL, &args);
@@ -389,7 +389,7 @@ void fpga_copy_driver(void *dest, const void *src, size_t num) {
   for (i = 0; i < num; i++) {
     // DLOG << "i:" << i << " val:" << *((int8_t *)src + i);
     // usleep(1);
-    *((int8_t *)dest + i) = *((int8_t *)src + i);
+    *((int8_t *)dest + i) = *((int8_t *)src + i);  // NOLINT
   }
 
   return;

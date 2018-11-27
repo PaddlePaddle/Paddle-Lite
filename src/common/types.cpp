@@ -71,10 +71,10 @@ const char *G_OP_TYPE_SUM = "sum";
 
 const char *G_OP_TYPE_QUANTIZE = "quantize";
 const char *G_OP_TYPE_DEQUANTIZE = "dequantize";
-extern const char *G_OP_TYPE_TANH = "tanh";
-extern const char *G_OP_TYPE_FUSION_DECONV_RELU = "fusion_deconv_relu";
-extern const char *G_OP_TYPE_FUSION_DECONV_ADD = "fusion_deconv_add";
-extern const char *G_OP_TYPE_FUSION_DECONV_ADD_RELU = "fusion_deconv_add_relu";
+const char *G_OP_TYPE_TANH = "tanh";
+const char *G_OP_TYPE_FUSION_DECONV_RELU = "fusion_deconv_relu";
+const char *G_OP_TYPE_FUSION_DECONV_ADD = "fusion_deconv_add";
+const char *G_OP_TYPE_FUSION_DECONV_ADD_RELU = "fusion_deconv_add_relu";
 
 std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>

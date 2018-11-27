@@ -12,50 +12,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "fpga/V2/driver/pe.h"
-#include "fpga/V2/config.h"
-#include "fpga/V2/driver/driver.h"
-#include "fpga/V2/filter.h"
-#include "fpga/V2/image.h"
+#include "fpga/common/pe.h"
+#include "fpga/V1/filter.h"
+#include "fpga/V1/image.h"
+#include "fpga/common/config.h"
+#include "fpga/common/driver.h"
 
 namespace paddle_mobile {
 namespace fpga {
-#define MUL8(x) ((x)*8)
-#define BYPASS_DONE 1
-
-float Findfp16Max() {
-  uint16_t abs_vals[16];
-  uint64_t max_fp16;
-
-  max_fp16 = driver::reg_readq(MUL8(49));
-  abs_vals[0] = (uint16_t)(0x0000007f & (max_fp16));        // NOLINT
-  abs_vals[1] = (uint16_t)(0x0000007f & (max_fp16 >> 16));  // NOLINT
-  abs_vals[2] = (uint16_t)(0x0000007f & (max_fp16 >> 32));  // NOLINT
-  abs_vals[3] = (uint16_t)(0x0000007f & (max_fp16 >> 48));  // NOLINT
-  max_fp16 = driver::reg_readq(MUL8(50));
-  abs_vals[4] = (uint16_t)(0x0000007f & (max_fp16));        // NOLINT
-  abs_vals[5] = (uint16_t)(0x0000007f & (max_fp16 >> 16));  // NOLINT
-  abs_vals[6] = (uint16_t)(0x0000007f & (max_fp16 >> 32));  // NOLINT
-  abs_vals[7] = (uint16_t)(0x0000007f & (max_fp16 >> 48));  // NOLINT
-  max_fp16 = driver::reg_readq(MUL8(51));
-  abs_vals[8] = (uint16_t)(0x0000007f & (max_fp16));         // NOLINT
-  abs_vals[9] = (uint16_t)(0x0000007f & (max_fp16 >> 16));   // NOLINT
-  abs_vals[10] = (uint16_t)(0x0000007f & (max_fp16 >> 32));  // NOLINT
-  abs_vals[11] = (uint16_t)(0x0000007f & (max_fp16 >> 48));  // NOLINT
-  max_fp16 = driver::reg_readq(MUL8(52));
-  abs_vals[12] = (uint16_t)(0x0000007f & (max_fp16));
-  abs_vals[13] = (uint16_t)(0x0000007f & (max_fp16 >> 16));  // NOLINT
-  abs_vals[14] = (uint16_t)(0x0000007f & (max_fp16 >> 32));  // NOLINT
-  abs_vals[15] = (uint16_t)(0x0000007f & (max_fp16 >> 48));  // NOLINT
-
-  uint16_t tmp = 0;
-  for (int i = 0; i < 16; i++) {
-    if (tmp < abs_vals[i]) {
-      tmp = abs_vals[i];
-    }
-  }
-  return fp16_2_fp32(tmp) / 127.0f;
-}
 
 int ComputeFpgaConv(const struct SplitConvArgs &args) {
   ComputeBasicConv(args.conv_arg[0]);
@@ -166,54 +130,7 @@ int PerformBypass(const struct BypassArgs &args) {
   return 0;
 #endif
 
-  uint64_t ifm_src_paddr = driver::vaddr_to_paddr(args.image.address);
-  uint64_t ifm_dst_paddr = driver::vaddr_to_paddr(args.output.address);
-  uint64_t bp_enable;
-  int64_t length;
-  uint64_t pixels;
-
-  // fp32->fp16
-  if ((args.input_data_type) && (!args.output_data_type)) {
-    pixels = (args.image.channels) * (args.image.width) * (args.image.height);
-    length = pixels * sizeof(float);
-    bp_enable = 0x8800000000000000 + length;
-  }
-  // fp16->fp32
-  else if ((!args.input_data_type) && (args.output_data_type)) {
-    pixels = filter::calc_aligned_channel((args.image.channels)) *
-             (args.image.width) * (args.image.height);
-    length = pixels * sizeof(short);
-    length = align_to_x((int)length, 64);  // NOLINT
-    bp_enable = 0x8a00000000000000 + length;
-  }
-  // fp16->fp16 findmax
-  else if ((!args.input_data_type) && (!args.output_data_type)) {
-    pixels = (args.image.channels) * (args.image.width) * (args.image.height);
-    length = pixels * sizeof(short);
-    bp_enable = 0x8900000000000000 + length;
-  } else {
-    return -1;
-  }
-
-  // start bypass
-  driver::reg_writeq(ifm_src_paddr, MUL8(27));
-  driver::reg_writeq(ifm_dst_paddr, MUL8(28));
-  driver::reg_writeq(0, MUL8(0));
-  driver::reg_writeq(bp_enable, MUL8(0));
-  // poll
-  int ret = -1;
-  ret = driver::fpga_regpoll(MUL8(48), BYPASS_DONE, 0xffffffff);
-  if (ret != -1) {
-    // clear "irq"
-    driver::reg_readq(MUL8(63));
-  }
-  // get max value
-  if ((!args.input_data_type) && (!args.output_data_type)) {
-    float scale = Findfp16Max();
-    args.output.scale_address[0] = (float)(1.0 / scale);  // NOLINT
-    args.output.scale_address[1] = scale;
-  }
-  return ret;
+  return 0;
 }
 
 int ComputeFPGAConcat(const struct ConcatArgs &args) {
@@ -221,13 +138,11 @@ int ComputeFPGAConcat(const struct ConcatArgs &args) {
   DLOG << "=============ComputeFpgaConcat===========";
   DLOG << "   Image_num: " << args.image_num
        << "   out_address:" << args.image_out
-       << "   out_scale_address:" << args.scale_out
-       << "   out_channel:" << args.out_channel;
+       << "   out_scale_address:" << args.scale_out;
   DLOG << "   image_height:" << args.height << "   image_width:" << args.width;
   for (int i = 0; i < args.image_num; i++) {
     DLOG << "   " << i << "th:        ";
     DLOG << "   channel_num:" << args.channel_num[i]
-         << "   aligned_channel_num:" << args.aligned_channel_num[i]
          << "   image_address:" << args.images_in[i]
          << "   image_scale_address:" << args.scales_in[i];
   }
@@ -235,8 +150,27 @@ int ComputeFPGAConcat(const struct ConcatArgs &args) {
 
   image::concat_images(args.images_in, args.scales_in, args.image_out,
                        args.scale_out, args.image_num, args.channel_num,
-                       args.height, args.width, args.aligned_channel_num,
-                       args.out_channel);
+                       args.height, args.width);
+  return 0;
+}
+
+int ComputeFPGASplit(const struct SplitArgs &args) {
+#ifdef FPGA_PRINT_MODE
+  DLOG << "=============ComputeFpgaSplit===========";
+  DLOG << "   Image_num: " << args.image_num
+       << "   in_address:" << args.image_in
+       << "   in_scale_address:" << args.scale_in;
+  DLOG << "   image_height:" << args.height << "   image_width:" << args.width;
+  for (int i = 0; i < args.image_num; i++) {
+    DLOG << "   " << i << "th:        ";
+    DLOG << "   channel_num:" << args.out_channel_nums[i]
+         << "   image_address:" << args.images_out[i]
+         << "   image_scale_address:" << args.scales_out[i];
+  }
+#endif
+  image::split_image(args.image_in, args.scale_in, args.images_out,
+                     args.scales_out, args.image_num, args.out_channel_nums,
+                     args.height, args.width);
   return 0;
 }
 

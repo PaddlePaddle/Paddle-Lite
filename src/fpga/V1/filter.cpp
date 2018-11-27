@@ -15,7 +15,7 @@ limitations under the License. */
 #include "fpga/V1/filter.h"
 #include <memory.h>
 #include <algorithm>
-#include "fpga/V1/api.h"
+#include "fpga/common/fpga_common.h"
 
 namespace paddle_mobile {
 namespace fpga {
@@ -31,20 +31,22 @@ int calc_split_num(int num, int division_capacity) {
 }
 
 int calc_division_number(int num, int group_num, int division_capacity) {
-  PADDLE_MOBILE_ENFORCE(num % group_num == 0,
-                        "Filter number should be divisible by group number");
+  //  PADDLE_MOBILE_ENFORCE(num % group_num == 0,
+  //                        "Filter number should be divisible by group
+  //                        number");
   int split_num = calc_split_num(num, division_capacity);
-  PADDLE_MOBILE_ENFORCE(group_num == 1 || split_num == 1,
-                        "Split number or group number should be 1");
+  //  PADDLE_MOBILE_ENFORCE(group_num == 1 || split_num == 1,
+  //                        "Split number or group number should be 1");
   return group_num * split_num;
 }
 
 int calc_num_per_div(int num, int group_num, int division_capacity) {
-  PADDLE_MOBILE_ENFORCE(num % group_num == 0,
-                        "Filter number should be divisible by group number");
+  //  PADDLE_MOBILE_ENFORCE(num % group_num == 0,
+  //                        "Filter number should be divisible by group
+  //                        number");
   int split_num = calc_split_num(num, division_capacity);
-  PADDLE_MOBILE_ENFORCE(group_num == 1 || split_num == 1,
-                        "Split number or group number should be 1");
+  //  PADDLE_MOBILE_ENFORCE(group_num == 1 || split_num == 1,
+  //                        "Split number or group number should be 1");
   if (group_num == 1) {
     if (num > division_capacity) {
       return division_capacity;

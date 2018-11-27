@@ -389,5 +389,42 @@ void CLImageConverterDWBlock::ImageToNCHW(half_t *image, float *tensor,
   }
 }
 
+const DDim &CLImageConverterNormal::InitImageDimInfoWith(
+    const DDim &tensor_dim) {
+  size_t new_dims[] = {1, 1, 1, 1};
+  for (int j = 0; j < tensor_dim.size(); ++j) {
+    new_dims[4 - tensor_dim.size() + j] = tensor_dim[j];
+  }
+  size_t N, C, H, W;
+  N = new_dims[0];
+  C = new_dims[1];
+  H = new_dims[2];
+  W = new_dims[3];
+  size_t width = W * ((C + 3) / 4);
+  size_t height = H * N;
+
+  width_of_one_block_ = W;
+  height_of_one_block_ = H;
+  c_block_ = width / W;
+
+  return make_ddim({width, height});
+}
+
+void CLImageConverterNormal::NCHWToImage(float *tensor, half_t *image,
+                                         const DDim &tensor_dim) {
+  PADDLE_MOBILE_ENFORCE(tensor_dim.size() <= 4 && tensor_dim.size() > 0,
+                        "tensor dim is not support ");
+
+  CLImageConverterDefault default_converter;
+  default_converter.NCHWToImage(tensor, image, tensor_dim);
+}
+
+void CLImageConverterNormal::ImageToNCHW(half_t *image, float *tensor,
+                                         const DDim &image_dim,
+                                         const DDim &tensor_dim) {
+  CLImageConverterDefault default_converter;
+  default_converter.ImageToNCHW(image, tensor, image_dim, tensor_dim);
+}
+
 }  // namespace framework
 }  // namespace paddle_mobile

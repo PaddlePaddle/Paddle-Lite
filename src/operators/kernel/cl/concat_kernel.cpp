@@ -21,11 +21,49 @@ namespace operators {
 
 template <>
 bool ConcatKernel<GPU_CL, float>::Init(ConcatParam<GPU_CL> *param) {
+  if (param->Out()->dims().size() < 4) {
+    this->cl_helper_.AddKernel("concatByH", "concat_kernel.cl");
+  }
   return true;
 }
 
 template <>
-void ConcatKernel<GPU_CL, float>::Compute(const ConcatParam<GPU_CL> &param) {}
+void ConcatKernel<GPU_CL, float>::Compute(const ConcatParam<GPU_CL> &param) {
+  if (param.Out()->dims().size() < 4) {
+    auto kernel = this->cl_helper_.KernelAt(0);
+    auto inputs = param.Inputs();
+    auto *output_image = param.Out()->GetCLImage();
+    int out_W = 0;
+    if (param.Out()->dims().size() == 3) {
+      out_W = param.Out()->dims()[2];
+    } else if (param.Out()->dims().size() == 2) {
+      out_W = param.Out()->dims()[1];
+    }
+    int out_H_Start = 0;
+    for (int i = 0; i < inputs.size(); i++) {
+      auto input_image = inputs[i]->GetCLImage();
+      auto default_work_size = this->cl_helper_.DefaultWorkSize(*inputs[i]);
+      cl_int status;
+      status = clSetKernelArg(kernel, 0, sizeof(cl_mem), &input_image);
+      CL_CHECK_ERRORS(status);
+      status = clSetKernelArg(kernel, 1, sizeof(cl_mem), &output_image);
+      CL_CHECK_ERRORS(status);
+      status = clSetKernelArg(kernel, 2, sizeof(int), &out_W);
+      CL_CHECK_ERRORS(status);
+      status = clSetKernelArg(kernel, 3, sizeof(int), &out_H_Start);
+      CL_CHECK_ERRORS(status);
+      status = clEnqueueNDRangeKernel(
+          this->cl_helper_.CLCommandQueue(), kernel, default_work_size.size(),
+          NULL, default_work_size.data(), NULL, 0, NULL, NULL);
+      CL_CHECK_ERRORS(status);
+      if (param.Out()->dims().size() == 3) {
+        out_H_Start += inputs[i]->dims()[1];
+      } else if (param.Out()->dims().size() == 2) {
+        out_H_Start += inputs[i]->dims()[0];
+      }
+    }
+  }
+}
 
 }  // namespace operators
 }  // namespace paddle_mobile
