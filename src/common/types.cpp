@@ -71,6 +71,8 @@ const char *G_OP_TYPE_SUM = "sum";
 
 const char *G_OP_TYPE_QUANTIZE = "quantize";
 const char *G_OP_TYPE_DEQUANTIZE = "dequantize";
+const char *G_OP_TYPE_FUSION_DEQUANT_ADD_BN_RELU = "fusion_dequant_add_bn_relu";
+
 const char *G_OP_TYPE_TANH = "tanh";
 const char *G_OP_TYPE_FUSION_DECONV_RELU = "fusion_deconv_relu";
 const char *G_OP_TYPE_FUSION_DECONV_ADD = "fusion_deconv_add";
@@ -134,6 +136,7 @@ std::unordered_map<
         {G_OP_TYPE_ELEMENTWISE_MUL, {{"X", "Y"}, {"Out"}}},
         {G_OP_TYPE_QUANTIZE, {{"X"}, {"Out", "OutScale"}}},
         {G_OP_TYPE_DEQUANTIZE, {{"X", "Scale"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_DEQUANT_ADD_BN_RELU, {{"X", "Scale"}, {"Out"}}},
         {G_OP_TYPE_TANH, {{"X"}, {"Out"}}},
         {G_OP_TYPE_FUSION_DECONV_RELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_FUSION_DECONV_ADD, {{"Input"}, {"Out"}}},
