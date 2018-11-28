@@ -108,13 +108,13 @@ inline void GemmConv(const ConvParam<CPU> &param) {
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
 
       if (param.Input()->type() == typeid(int8_t)) {
-        math::matmul_int8(filter_slice, false, col_matrix, false,
-                          static_cast<float>(1), &out_slice,
-                          static_cast<float>(0));
+        math::matmul(filter_slice, false, col_matrix, false,
+                     static_cast<float>(1), &out_slice, static_cast<float>(0),
+                     false, static_cast<int32_t *>(nullptr));
       } else {
-        math::matmul<float>(filter_slice, false, col_matrix, false,
-                            static_cast<float>(1), &out_slice,
-                            static_cast<float>(0));
+        math::matmul(filter_slice, false, col_matrix, false,
+                     static_cast<float>(1), &out_slice, static_cast<float>(0),
+                     false, static_cast<float *>(nullptr));
       }
     }
   }
