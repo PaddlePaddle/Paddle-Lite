@@ -39,7 +39,7 @@ void format_bias_scale_array(float** bias_scale_array, int filter_num,
 void format_concat_output(framework::Tensor* out, int height, int width,
                           uint32_t out_channel);
 int format_conv_data(framework::Tensor* filter_tensor,
-                     framework::Tensor* ofm_tensor, float* bs_ptr, int group);
+                     framework::Tensor* ofm_tensor, float** bs_ptr, int group);
 int format_fc_data(framework::Tensor* filter_tensor,
                    framework::Tensor* ofm_tensor, float* bs_ptr);
 void fill_split_arg(struct SplitConvArgs* arg, framework::Tensor* input,
