@@ -103,13 +103,13 @@ int main() {
   // warm-up 10 times
   for (int j = 0; j < 10; ++j) {
     paddle_mobile::operators::math::matmul_int8(
-        aa_int8, false, bb_int8, false, static_cast<float>(1), &cc_int8,
+        aa_int8, false, bb_int8, false, static_cast<float>(0.618), &cc_int8,
         static_cast<float>(0), true, &bias_data[0]);
   }
   auto time5 = time();
   for (int j = 0; j < 10; ++j) {
     paddle_mobile::operators::math::matmul_int8(
-        aa_int8, false, bb_int8, false, static_cast<float>(1), &cc_int8,
+        aa_int8, false, bb_int8, false, static_cast<float>(0.618), &cc_int8,
         static_cast<float>(0), true, &bias_data[0]);
   }
   auto time6 = time();
