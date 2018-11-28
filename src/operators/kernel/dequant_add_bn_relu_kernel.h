@@ -12,25 +12,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef DEQUANT_OP
+#pragma once
 
-#include "operators/dequantize_op.h"
+#ifdef FUSION_DEQUANT_ADD_BN_RELU_OP
+
+#include "framework/operator.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <typename DeviceType, typename T>
-void DequantizeOp<DeviceType, T>::InferShape() const {
-  const auto& input_dims = this->param_.input_->dims();
-  this->param_.output_->Resize(input_dims);
-}
+class FusionDequantAddBNReluKernel
+    : public framework::OpKernelBase<DeviceType,
+                                     FusionDequantAddBNReluParam<DeviceType>> {
+ public:
+  void Compute(const FusionDequantAddBNReluParam<DeviceType> &param);
+  bool Init(FusionDequantAddBNReluParam<DeviceType> *param);
+};
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(dequantize, ops::DequantizeOp);
-#endif
 
 #endif

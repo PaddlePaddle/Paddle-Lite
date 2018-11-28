@@ -233,3 +233,7 @@ LOAD_OP1(quantize, CPU);
 #ifdef DEQUANT_OP
 LOAD_OP1(dequantize, CPU);
 #endif
+#ifdef FUSION_DEQUANT_ADD_BN_RELU_OP
+LOAD_OP1(fusion_dequant_add_bn_relu, CPU);
+LOAD_FUSION_MATCHER(fusion_dequant_add_bn_relu);
+#endif
