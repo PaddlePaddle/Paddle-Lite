@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_DEQUANT_ADD_BN_RELU_OP
+#ifdef FUSION_DEQUANT_ADD_BN_OP
 
 #pragma once
 
@@ -20,19 +20,18 @@ limitations under the License. */
 #include <vector>
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
-#include "operators/kernel/dequant_bn_relu_kernel.h"
+#include "operators/kernel/dequant_add_bn_kernel.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-class FusionDequantAddBNReluMatcher : public framework::FusionOpMatcher {
+class FusionDequantAddBNMatcher : public framework::FusionOpMatcher {
  public:
-  FusionDequantAddBNReluMatcher() {
+  FusionDequantAddBNMatcher() {
     node_ = framework::Node(G_OP_TYPE_DEQUANTIZE);
     node_ > std::make_shared<framework::Node>(G_OP_TYPE_ELEMENTWISE_ADD) >
-        std::make_shared<framework::Node>(G_OP_TYPE_BATCHNORM) >
-        std::make_shared<framework::Node>(G_OP_TYPE_RELU);
+        std::make_shared<framework::Node>(G_OP_TYPE_BATCHNORM);
   }
 
   void FolderNodes(
@@ -48,23 +47,22 @@ class FusionDequantAddBNReluMatcher : public framework::FusionOpMatcher {
                  removed_nodes);
   }
 
-  std::string Type() { return G_OP_TYPE_FUSION_DEQUANT_ADD_BN_RELU; }
+  std::string Type() { return G_OP_TYPE_FUSION_DEQUANT_ADD_BN; }
 };
 
 template <typename DeviceType, typename T>
-class FusionDequantAddBNReluOp
+class FusionDequantAddBNOp
     : public framework::OperatorWithKernel<
-          DeviceType, FusionDequantAddBNReluParam<DeviceType>,
-          operators::FusionDequantAddBNReluKernel<DeviceType, T>> {
+          DeviceType, FusionDequantAddBNParam<DeviceType>,
+          operators::FusionDequantAddBNKernel<DeviceType, T>> {
  public:
-  FusionDequantAddBNReluOp(const std::string &type,
-                           const VariableNameMap &inputs,
-                           const VariableNameMap &outputs,
-                           const framework::AttributeMap &attrs,
-                           std::shared_ptr<framework::Scope> scope)
+  FusionDequantAddBNOp(const std::string &type, const VariableNameMap &inputs,
+                       const VariableNameMap &outputs,
+                       const framework::AttributeMap &attrs,
+                       std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<
-            DeviceType, FusionDequantAddBNReluParam<DeviceType>,
-            operators::FusionDequantAddBNReluKernel<DeviceType, T>>(
+            DeviceType, FusionDequantAddBNParam<DeviceType>,
+            operators::FusionDequantAddBNKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
   // inference output shape
   void InferShape() const override;
