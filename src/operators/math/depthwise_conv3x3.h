@@ -50,7 +50,7 @@ void DepthwiseConvAddBNRelu3x3s2p1(const framework::Tensor *input,
 
 void DepthwiseConv3x3s2p1v2(const framework::Tensor *input,
                             const framework::Tensor *filter,
-                            framework::Tensor *output, framework::Tensor bias,
+                            framework::Tensor *output, framework::Tensor *bias,
                             bool if_bias);
 
 void DepthwiseConvAddBNRelu3x3s2p1v2(const framework::Tensor *input,
@@ -62,7 +62,7 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const framework::Tensor *input,
 
 void DepthwiseConv3x3s2p0(const framework::Tensor *input,
                           const framework::Tensor *filter,
-                          framework::Tensor *output, framework::Tensor bias,
+                          framework::Tensor *output, framework::Tensor *bias,
                           bool if_bias);
 
 // TODO(hjchen2) need to be implemented
