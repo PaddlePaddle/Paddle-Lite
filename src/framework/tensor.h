@@ -54,22 +54,6 @@ class Tensor : public TensorBase {
     this->offset_ = inTensor.offset_;
   }
 
-#ifdef PADDLE_MOBILE_DEBUG
-  template <typename T>
-  inline void dump(std::string filename) const {
-    const T *dataptr = data<T>();
-    std::ofstream out(filename.c_str());
-    for (int i = 0; i < numel(); ++i) {
-      out << dataptr[i] << " ";
-    }
-    out << "形状：";
-    for (int j = 0; j < dims_.size(); ++j) {
-      out << dims_[j] << " ";
-    }
-    out.close();
-  }
-#endif
-
   /*! Resize the dimensions of the memory block. */
   inline Tensor &Resize(const DDim &dims) {
     dims_ = dims;
