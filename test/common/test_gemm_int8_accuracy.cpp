@@ -65,12 +65,19 @@ int32_t qadd_int32(int32_t l, int32_t r) {
     return static_cast<int32_t>(res);
 }
 
+// round to zero
+float round2zero(float v) {
+  float res;
+  if (v > 0)
+    res = std::floor(v);
+  else if (v < 0)
+    res = std::ceil(v);
+  return res;
+}
+
 int8_t qscale_int32(int32_t v, float scale) {
   float res = static_cast<float>(v) * scale;
-  if (res > 0)
-    res = std::floor(res);
-  else if (res < 0)
-    res = std::ceil(res);  // round to zero
+  res = round2zero(res);
   if (res > 127)
     return static_cast<int8_t>(127);
   else if (res < -127)
@@ -155,7 +162,7 @@ int do_sgemm_with_bias(int m, int n, int k, bool relu, int pr) {
   int lda = k;
   int ldb = n;
   int ldc = n;
-  float scale = 0.00628;
+  float scale = 0.00628f;
   default_random_engine e;
   uniform_int_distribution<int8_t> pixel(-127, 127);
   int8_t *a = static_cast<int8_t *>(

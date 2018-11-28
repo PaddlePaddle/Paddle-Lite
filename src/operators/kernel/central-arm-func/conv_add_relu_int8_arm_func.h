@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVADDRELU_OP
+#ifdef FUSION_CONVADDRELU_INT8_OP
 
 #pragma once
 #include <vector>
@@ -26,21 +26,24 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename P>
-void ConvAddReluCompute(const FusionConvAddReluParam<CPU> &param) {
+void ConvAddReluInt8Compute(const FusionConvAddReluInt8Param<CPU> &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
   Tensor bias = *param.Bias();
-  int axis = param.Axis();
+  Tensor scale = *param.InputScale();
+  int32_t axis = param.Axis();
   Tensor *output = param.Output();
-  float *biase_data = bias.data<float>();
   output->mutable_data<P>();
 
-  int groups = param.Groups();
-  std::vector<int> strides = param.Strides();
-  std::vector<int> paddings = param.Paddings();
-  std::vector<int> dilations = param.Dilations();
+  int32_t *biase_data = bias.data<int32_t>();
+  float scale_v = scale.data<float>()[0];
 
-  const int batch_size = static_cast<int>(input->dims()[0]);
+  int32_t groups = param.Groups();
+  std::vector<int32_t> strides = param.Strides();
+  std::vector<int32_t> paddings = param.Paddings();
+  std::vector<int32_t> dilations = param.Dilations();
+
+  const int32_t batch_size = static_cast<int32_t>(input->dims()[0]);
 
   std::vector<int64_t> filter_shape_vec(framework::vectorize(filter.dims()));
 
@@ -62,13 +65,13 @@ void ConvAddReluCompute(const FusionConvAddReluParam<CPU> &param) {
   Tensor col;
   Tensor col_matrix;
   if (is_expand) {
-    col.mutable_data<float>(col_shape);
+    col.mutable_data<P>(col_shape);
     col_matrix.ShareDataWith(col);
     col_matrix.Resize(col_matrix_shape);
   }
 
   framework::DDim input_shape = framework::slice_ddim(
-      input->dims(), 1, static_cast<int>(input->dims().size()));
+      input->dims(), 1, static_cast<int32_t>(input->dims().size()));
 
   framework::DDim filter_matrix_shape = {filter.dims()[0],
                                          filter.numel() / filter.dims()[0]};
@@ -78,17 +81,17 @@ void ConvAddReluCompute(const FusionConvAddReluParam<CPU> &param) {
       output->numel() / (output->dims()[0] * output->dims()[1])};
 
   // convolution operator: im2col(or vol2col) + gemm
-  int in_step = static_cast<int>(input->dims()[1]) / groups;
-  int out_step = static_cast<int>(output->dims()[1]) / groups;
+  int32_t in_step = static_cast<int32_t>(input->dims()[1]) / groups;
+  int32_t out_step = static_cast<int32_t>(output->dims()[1]) / groups;
 
-  math::Vol2ColFunctor<CPU, float> vol2col;
-  math::Im2ColFunctor<math::ColFormat::kCFO, CPU, float> im2col;
+  math::Vol2ColFunctor<CPU, P> vol2col;
+  math::Im2ColFunctor<math::ColFormat::kCFO, CPU, P> im2col;
 
-  for (int i = 0; i < batch_size; i++) {
+  for (int32_t i = 0; i < batch_size; i++) {
     Tensor in_batch = input->Slice(i, i + 1).Resize(input_shape);
     Tensor out_batch = output->Slice(i, i + 1).Resize(output_matrix_shape);
 
-    for (int g = 0; g < groups; g++) {
+    for (int32_t g = 0; g < groups; g++) {
       Tensor in_slice = in_batch.Slice(g * in_step, (g + 1) * in_step);
 
       if (!is_expand) {
@@ -98,8 +101,8 @@ void ConvAddReluCompute(const FusionConvAddReluParam<CPU> &param) {
       } else if (data_dim == 2U) {
         // im2col
         im2col(in_slice, dilations, strides,
-               std::vector<int>{paddings[0], paddings[1], paddings[0],
-                                paddings[1]},
+               std::vector<int32_t>{paddings[0], paddings[1], paddings[0],
+                                    paddings[1]},
                &col);
       } else if (data_dim == 3U) {
         // vol2col
@@ -109,9 +112,9 @@ void ConvAddReluCompute(const FusionConvAddReluParam<CPU> &param) {
       // gemm
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
-      math::matmul<float>(filter_slice, false, col_matrix, false,
-                          static_cast<float>(1), &out_slice,
-                          static_cast<float>(1), true, biase_data);
+
+      math::matmul_int8(filter_slice, false, col_matrix, false, scale_v,
+                        &out_slice, static_cast<float>(0), true, biase_data);
     }
   }
 }
@@ -119,4 +122,4 @@ void ConvAddReluCompute(const FusionConvAddReluParam<CPU> &param) {
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#endif
+#endif  // FUSION_CONVADDRELU_INT8_OP

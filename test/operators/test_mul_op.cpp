@@ -79,14 +79,14 @@ int TestMulOP() {
     PADDLE_MOBILE_ENFORCE(
         output_data[i] == c[i], "output[%d] = %d, output_cmp[%d] = %d", i,
         static_cast<int32_t>(output_data[i]), i, static_cast<int32_t>(c[i]));
-    if (static_cast<int>(output_data[i] == c[i])) {
+    if (output_data[i] == c[i]) {
       ++eq;
     } else {
       ++neq;
     }
   }
-  DLOG << "mnk=" << m << " " << n << " " << k << "   eq=" << eq
-       << " neq=" << neq;
+  std::cout << "mnk=" << m << " " << n << " " << k << "   eq=" << eq
+            << " neq=" << neq << std::endl;
   delete op;
   return 0;
 }
