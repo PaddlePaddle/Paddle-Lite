@@ -419,6 +419,8 @@ class ConvParam : public OpParam {
     EXEC_INVALID = 0,
     EXEC_GEMM_FLOAT,
     EXEC_DEPTHWISE3x3S1P1_FLOAT,
+    EXEC_DEPTHWISE3x3S2P0_FLOAT,
+    EXEC_DEPTHWISE3x3S2P1_FLOAT,
     EXEC_DEPTHWISE3x3_FLOAT,
     EXEC_WINOGRAD3X3_FLOAT,
     EXEC_WINOGRAD5X5_FLOAT,
@@ -2573,7 +2575,9 @@ class DequantizeParam : public OpParam {
   DequantizeParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
                   const AttributeMap &attrs, const Scope &scope) {
     input_ = InputXFrom<GType>(inputs, scope);
-    output_ = OutFrom<GType>(outputs, scope);
+    if (outputs.count("Out")) {
+      output_ = OutFrom<GType>(outputs, scope);
+    }
     activation_scale_ = OpParam::GetVarValue<GType>("Scale", inputs, scope);
     // dequantization is performed as x = x / static_scale / online_scale
     if (HasAttr("weight_scale", attrs)) {
@@ -2593,20 +2597,19 @@ class DequantizeParam : public OpParam {
 };
 #endif
 
-#ifdef FUSION_DEQUANT_ADD_BN_RELU_OP
+#if defined(FUSION_DEQUANT_ADD_BN_OP) ||      \
+    defined(FUSION_DEQUANT_ADD_BN_RELU_OP) || \
+    defined(FUSION_DEQUANT_BN_RELU_OP) || defined(FUSION_DEQUANT_BN_OP)
 template <typename Dtype>
-class FusionDequantAddBNReluParam : public DequantizeParam<Dtype> {
+class FusionDequantBNParam : public DequantizeParam<Dtype> {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
   typedef typename DtypeTensorTrait<Dtype>::rtype RType;
 
  public:
-  FusionDequantAddBNReluParam(const VariableNameMap &inputs,
-                              const VariableNameMap &outputs,
-                              const AttributeMap &attrs, const Scope &scope)
+  FusionDequantBNParam(const VariableNameMap &inputs,
+                       const VariableNameMap &outputs,
+                       const AttributeMap &attrs, const Scope &scope)
       : DequantizeParam<Dtype>(inputs, outputs, attrs, scope) {
-    // element wise add params
-    axis_ = OpParam::GetAttr<int>("axis", attrs);
-    bias_ = OpParam::InputYFrom<GType>(inputs, scope);
     // batch norm params
     bn_mean_ = OpParam::GetVarValue<GType>("BNMean", inputs, scope);
     bn_variance_ = OpParam::GetVarValue<GType>("BNVariance", inputs, scope);
@@ -2614,21 +2617,83 @@ class FusionDequantAddBNReluParam : public DequantizeParam<Dtype> {
     bn_bias_ = OpParam::GetVarValue<GType>("BNBias", inputs, scope);
     epsilon_ = OpParam::GetAttr<float>("epsilon", attrs);
     // output
-    output_ = OpParam::OutFrom<GType>(outputs, scope);
+    if (outputs.count("Y")) {
+      this->output_ = OpParam::OutputYFrom<GType>(outputs, scope);
+    }
   }
 
  public:
-  // elementwise add
-  int axis_;
-  RType *bias_;
   // batch norm
   RType *bn_mean_;
   RType *bn_variance_;
   RType *bn_scale_;
   RType *bn_bias_;
   float epsilon_;
-  // output
-  RType *output_;
+};
+#endif
+
+#if defined(FUSION_DEQUANT_ADD_BN_RELU_OP) || defined(FUSION_DEQUANT_ADD_BN_OP)
+template <typename Dtype>
+class FusionDequantAddBNParam : public FusionDequantBNParam<Dtype> {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  FusionDequantAddBNParam(const VariableNameMap &inputs,
+                          const VariableNameMap &outputs,
+                          const AttributeMap &attrs, const Scope &scope)
+      : FusionDequantBNParam<Dtype>(inputs, outputs, attrs, scope) {
+    // element wise add params
+    axis_ = OpParam::GetAttr<int>("axis", attrs);
+    bias_ = OpParam::InputYFrom<GType>(inputs, scope);
+    // output
+    if (outputs.count("Y")) {
+      this->output_ = OpParam::OutputYFrom<GType>(outputs, scope);
+    }
+  }
+
+ public:
+  // elementwise add
+  int axis_;
+  RType *bias_;
+};
+#endif
+
+#ifdef FUSION_DEQUANT_BN_RELU_OP
+template <typename Dtype>
+class FusionDequantBNReluParam : public FusionDequantBNParam<Dtype> {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  FusionDequantBNReluParam(const VariableNameMap &inputs,
+                           const VariableNameMap &outputs,
+                           const AttributeMap &attrs, const Scope &scope)
+      : FusionDequantBNParam<Dtype>(inputs, outputs, attrs, scope) {
+    // output
+    if (outputs.count("Out")) {
+      this->output_ = OpParam::OutFrom<GType>(outputs, scope);
+    }
+  }
+};
+#endif
+
+#ifdef FUSION_DEQUANT_ADD_BN_RELU_OP
+template <typename Dtype>
+class FusionDequantAddBNReluParam : public FusionDequantAddBNParam<Dtype> {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  FusionDequantAddBNReluParam(const VariableNameMap &inputs,
+                              const VariableNameMap &outputs,
+                              const AttributeMap &attrs, const Scope &scope)
+      : FusionDequantAddBNParam<Dtype>(inputs, outputs, attrs, scope) {
+    // output
+    if (outputs.count("Out")) {
+      this->output_ = OpParam::OutFrom<GType>(outputs, scope);
+    }
+  }
 };
 #endif
 
