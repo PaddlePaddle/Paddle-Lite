@@ -85,16 +85,16 @@ int main() {
   // int8_t without bias
   // warm-up 10 times
   for (int j = 0; j < 10; ++j) {
-    paddle_mobile::operators::math::matmul_int8(
+    paddle_mobile::operators::math::matmul(
         aa_int8, false, bb_int8, false, static_cast<float>(1), &cc_int32,
-        static_cast<float>(0), false, nullptr);
+        static_cast<float>(0), false, static_cast<int32_t*>(nullptr));
   }
 
   auto time3 = time();
   for (int j = 0; j < 10; ++j) {
-    paddle_mobile::operators::math::matmul_int8(
+    paddle_mobile::operators::math::matmul(
         aa_int8, false, bb_int8, false, static_cast<float>(1), &cc_int32,
-        static_cast<float>(0), false, nullptr);
+        static_cast<float>(0), false, static_cast<int32_t*>(nullptr));
   }
   auto time4 = time();
   std::cout << "int8_t gemm  cost :" << time_diff(time3, time4) / 10 << "ms\n";
@@ -102,15 +102,15 @@ int main() {
   // int8_t with bias&relu
   // warm-up 10 times
   for (int j = 0; j < 10; ++j) {
-    paddle_mobile::operators::math::matmul_int8(
+    paddle_mobile::operators::math::matmul(
         aa_int8, false, bb_int8, false, static_cast<float>(0.618), &cc_int8,
-        static_cast<float>(0), true, &bias_data[0]);
+        static_cast<float>(0), true, bias_data);
   }
   auto time5 = time();
   for (int j = 0; j < 10; ++j) {
-    paddle_mobile::operators::math::matmul_int8(
+    paddle_mobile::operators::math::matmul(
         aa_int8, false, bb_int8, false, static_cast<float>(0.618), &cc_int8,
-        static_cast<float>(0), true, &bias_data[0]);
+        static_cast<float>(0), true, bias_data);
   }
   auto time6 = time();
   std::cout << "int8_t gemm_with_bias_relu cost :"
