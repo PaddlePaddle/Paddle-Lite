@@ -325,6 +325,10 @@ if (NOT FOUND_MATCH)
     target_link_libraries(test-conv-add-relu-op paddle-mobile)
 
     # gen test
+    ADD_EXECUTABLE(test-conv-add-relu-int8-op operators/test_fusion_conv_add_relu_int8_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-conv-add-relu-int8-op paddle-mobile)
+
+    # gen test
     ADD_EXECUTABLE(test-conv-add-bn-relu-op operators/test_fusion_conv_add_bn_relu_op.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-conv-add-bn-relu-op paddle-mobile)
 

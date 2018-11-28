@@ -24,6 +24,7 @@ const char *G_OP_TYPE_CONCAT = "concat";
 const char *G_OP_TYPE_ELEMENTWISE_ADD = "elementwise_add";
 const char *G_OP_TYPE_FILL_CONSTANT = "fill_constant";
 const char *G_OP_TYPE_FUSION_CONV_ADD_RELU = "fusion_conv_add_relu";
+const char *G_OP_TYPE_FUSION_CONV_ADD_RELU_INT8 = "fusion_conv_add_relu_int8";
 const char *G_OP_TYPE_FUSION_CONV_ADD_PRELU = "fusion_conv_add_prelu";
 const char *G_OP_TYPE_FUSION_CONV_ADD_ADD_PRELU = "fusion_conv_add_add_prelu";
 const char *G_OP_TYPE_FUSION_CONV_ADD_BN_RELU = "fusion_conv_add_bn_relu";
@@ -111,6 +112,7 @@ std::unordered_map<
         {G_OP_TYPE_DEPTHWISE_CONV, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_FILL_CONSTANT, {{}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_RELU, {{"Input"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_CONV_ADD_RELU_INT8, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_PRELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_ADD_PRELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_IM2SEQUENCE, {{"X"}, {"Out"}}},

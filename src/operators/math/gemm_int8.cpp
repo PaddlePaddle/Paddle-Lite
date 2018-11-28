@@ -243,6 +243,9 @@ void Gemm::AddDot4x8(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
 #endif  // __ARM_NEON
 }
 
+// The core idea of AddDot4x2 function is borrowed from the Google's gemmlowp
+// open source library. The address of gemmlowp is
+// https://github.com/google/gemmlowp.
 void Gemm::AddDot4x2(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
                      int32_t ldc) {
 #if __ARM_NEON
