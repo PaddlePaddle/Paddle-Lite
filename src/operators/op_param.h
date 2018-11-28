@@ -1631,11 +1631,11 @@ class FusionFcParam : public OpParam {
     y_num_col_dims_ = GetAttr<int>("y_num_col_dims", attrs);
     axis_ = GetAttr<int>("axis", attrs);
   }
-  const GType *InputX() const { return input_x_; }
+  GType *InputX() const { return input_x_; }
 
-  const RType *InputY() const { return input_y_; }
+  RType *InputY() const { return input_y_; }
 
-  const RType *InputZ() const { return input_z_; }
+  RType *InputZ() const { return input_z_; }
 
   GType *Out() const { return out_; }
 
