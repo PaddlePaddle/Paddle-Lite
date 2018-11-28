@@ -138,6 +138,7 @@ extern const char *G_OP_TYPE_ELEMENTWISE_MUL;
 
 extern const char *G_OP_TYPE_QUANTIZE;
 extern const char *G_OP_TYPE_DEQUANTIZE;
+extern const char *G_OP_TYPE_FUSION_DEQUANT_ADD_BN_RELU;
 
 extern const char *G_OP_TYPE_TANH;
 extern const char *G_OP_TYPE_FUSION_DECONV_RELU;
