@@ -113,8 +113,8 @@ void ConvAddReluInt8Compute(const FusionConvAddReluInt8Param<CPU> &param) {
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
 
-      math::matmul_int8(filter_slice, false, col_matrix, false, scale_v,
-                        &out_slice, static_cast<float>(0), true, biase_data);
+      math::matmul(filter_slice, false, col_matrix, false, scale_v, &out_slice,
+                   static_cast<float>(0), true, biase_data);
     }
   }
 }
