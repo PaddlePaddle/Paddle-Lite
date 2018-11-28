@@ -12,31 +12,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef QUANT_OP
+#pragma once
 
-#include "operators/quantize_op.h"
-#include <vector>
+#ifdef FUSION_DEQUANT_ADD_BN_RELU_OP
+
+#include "framework/operator.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <typename DeviceType, typename T>
-void QuantizeOp<DeviceType, T>::InferShape() const {
-  auto input_dims = this->param_.input_->dims();
-  const std::vector<int> &paddings = this->param_.paddings_;
-  input_dims[2] += 2 * paddings[0];
-  input_dims[3] += 2 * paddings[1];
-  this->param_.output_->Resize(input_dims);
-  auto scale_dims = framework::make_ddim(std::vector<int>{1});
-  this->param_.online_scale_->Resize(scale_dims);
-}
+class FusionDequantAddBNReluKernel
+    : public framework::OpKernelBase<DeviceType,
+                                     FusionDequantAddBNReluParam<DeviceType>> {
+ public:
+  void Compute(const FusionDequantAddBNReluParam<DeviceType> &param);
+  bool Init(FusionDequantAddBNReluParam<DeviceType> *param);
+};
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(quantize, ops::QuantizeOp);
-#endif
 
 #endif

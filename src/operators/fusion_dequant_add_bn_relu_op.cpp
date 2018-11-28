@@ -12,31 +12,29 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef QUANT_OP
+#ifdef FUSION_DEQUANT_ADD_BN_RELU_OP
 
-#include "operators/quantize_op.h"
-#include <vector>
+#include "operators/fusion_dequant_add_bn_relu_op.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename DeviceType, typename T>
-void QuantizeOp<DeviceType, T>::InferShape() const {
-  auto input_dims = this->param_.input_->dims();
-  const std::vector<int> &paddings = this->param_.paddings_;
-  input_dims[2] += 2 * paddings[0];
-  input_dims[3] += 2 * paddings[1];
+template <typename Dtype, typename T>
+void FusionDequantAddBNReluOp<Dtype, T>::InferShape() const {
+  const auto& input_dims = this->param_.input_->dims();
   this->param_.output_->Resize(input_dims);
-  auto scale_dims = framework::make_ddim(std::vector<int>{1});
-  this->param_.online_scale_->Resize(scale_dims);
 }
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
+REGISTER_FUSION_MATCHER(fusion_dequant_add_bn_relu,
+                        ops::FusionDequantAddBNReluMatcher);
+
 #ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(quantize, ops::QuantizeOp);
+REGISTER_OPERATOR_CPU(fusion_dequant_add_bn_relu,
+                      ops::FusionDequantAddBNReluOp);
 #endif
 
 #endif
