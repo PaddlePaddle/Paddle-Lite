@@ -52,6 +52,16 @@ bool ConvAddReluKernel<GPU_CL, float>::Init(
 
     this->cl_helper_.AddKernel("conv_3x3", "conv_add_relu_kernel.cl");
 
+  } else if (param->Filter()->dims()[2] == 7 &&
+             param->Filter()->dims()[3] == 7) {
+    param->Filter()->InitCLImage(cl_helper_.CLContext(),
+                                 cl_helper_.CLCommandQueue());
+    this->cl_helper_.AddKernel("conv_7x7", "conv_add_relu_kernel.cl");
+  } else if (param->Filter()->dims()[2] == 5 &&
+             param->Filter()->dims()[3] == 5) {
+    param->Filter()->InitCLImage(cl_helper_.CLContext(),
+                                 cl_helper_.CLCommandQueue());
+    this->cl_helper_.AddKernel("conv_5x5", "conv_add_relu_kernel.cl");
   } else {
     PADDLE_MOBILE_THROW_EXCEPTION(" not support ");
   }
