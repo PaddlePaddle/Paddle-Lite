@@ -12,26 +12,28 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+#ifdef FUSION_DEQUANT_BN_RELU_OP
 
-#ifdef FUSION_DEQUANT_ADD_BN_RELU_OP
-
-#include "framework/operator.h"
-#include "operators/op_param.h"
+#include "operators/fusion_dequant_bn_relu_op.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename DeviceType, typename T>
-class FusionDequantAddBNReluKernel
-    : public framework::OpKernelBase<DeviceType,
-                                     FusionDequantAddBNReluParam<DeviceType>> {
- public:
-  void Compute(const FusionDequantAddBNReluParam<DeviceType> &param);
-  bool Init(FusionDequantAddBNReluParam<DeviceType> *param);
-};
+template <typename Dtype, typename T>
+void FusionDequantBNReluOp<Dtype, T>::InferShape() const {
+  const auto& input_dims = this->param_.input_->dims();
+  this->param_.output_->Resize(input_dims);
+}
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+REGISTER_FUSION_MATCHER(fusion_dequant_bn_relu,
+                        ops::FusionDequantBNReluMatcher);
+
+#ifdef PADDLE_MOBILE_CPU
+REGISTER_OPERATOR_CPU(fusion_dequant_bn_relu, ops::FusionDequantBNReluOp);
+#endif
 
 #endif
