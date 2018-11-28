@@ -18,7 +18,7 @@ limitations under the License. */
 
 namespace paddle_mobile {
 
-// Reference convolution for checking results:
+// Reference convolution from Caffe for checking results.
 // accumulate through explicit loops over input, output, and filters.
 template <typename Itype, typename Otype>
 void conv2d(const framework::Tensor *input, const framework::Tensor *filter,
@@ -129,7 +129,7 @@ void conv2d(const framework::Tensor *input, const framework::Tensor *filter,
 }
 
 template <typename Itype, typename Otype, int Kernel, int Pad, int Stride>
-int TestConvOp() {
+int TestConvOp(int in_channels, int in_height, int in_width, int out_channels) {
   int kernel_h = Kernel;
   int kernel_w = Kernel;
   int pad_h = Pad;
@@ -140,10 +140,10 @@ int TestConvOp() {
   int dilation_w = 1;
 
   int batch_size = 1;
-  int input_c = 3;
-  int input_h = 100;
-  int input_w = 100;
-  int output_c = 10;
+  int input_c = in_channels;
+  int input_h = in_height;
+  int input_w = in_width;
+  int output_c = out_channels;
   framework::DDim input_shape =
       framework::make_ddim({batch_size, input_c, input_h, input_w});
   framework::DDim filter_shape =
@@ -158,7 +158,7 @@ int TestConvOp() {
 
   auto input_var = scope.get()->Var("input");
   auto input = input_var->template GetMutable<framework::LoDTensor>();
-  SetupTensor<Itype>(input, input_shape, -20, 20);
+  SetupTensor<Itype>(input, input_shape, -20.0, 20.0);
 
   auto filter_var = scope.get()->Var("filter");
   auto filter = filter_var->template GetMutable<framework::LoDTensor>();
@@ -174,8 +174,9 @@ int TestConvOp() {
 
   auto *op = new operators::ConvOp<CPU, float>("conv2d", inputs, outputs, attrs,
                                                scope);
-  //  struct timespec ts_begin, ts_end;
   op->InferShape();
+  op->Init();
+  //  struct timespec ts_begin, ts_end;
   // warmup
   //  op->Run();
   //  clock_gettime(CLOCK_MONOTONIC, &ts_begin);
@@ -202,9 +203,16 @@ int TestConvOp() {
   const Otype *output_data = output->data<Otype>();
   Otype *output_cmp_data = output_cmp.data<Otype>();
   for (int i = 0; i < output->numel(); ++i) {
-    PADDLE_MOBILE_ENFORCE(output_data[i] == output_cmp_data[i],
+    float gap = output_data[i] - output_cmp_data[i];
+    PADDLE_MOBILE_ENFORCE(std::abs(gap / (output_data[i] + 1e-5)) < 1e-3,
                           "output[%d] = %d, output_cmp[%d] = %d", i,
                           output_data[i], i, output_cmp_data[i]);
+    // if (std::abs(gap / (output_data[i] + 1e-5)) > 1e-3) {
+    //   LOG(kLOG_INFO) << "output_data[" << i << "] = " << output_data[i]
+    //                  << ", output_cmp_data[" << i << "] = " <<
+    //                  output_cmp_data[i];
+    //   return 1;
+    // }
   }
   delete op;
   return 0;
@@ -212,68 +220,88 @@ int TestConvOp() {
 
 }  // namespace paddle_mobile
 
-int main() {
-  // kernel = 7, pad = 0, stride = 2
-  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=0, stride=2";
-  paddle_mobile::TestConvOp<int8_t, int32_t, 7, 0, 2>();
-
-  // kernel = 7, pad = 1, stride = 2
-  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=1, stride=2";
-  paddle_mobile::TestConvOp<int8_t, int32_t, 7, 1, 2>();
-
-  // kernel = 7, pad = 3, stride = 2
-  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=3, stride=2";
-  paddle_mobile::TestConvOp<int8_t, int32_t, 7, 3, 2>();
-
-  // kernel = 7, pad = 0, stride = 1
-  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=0, stride=1";
-  paddle_mobile::TestConvOp<int8_t, int32_t, 7, 0, 1>();
-
-  // kernel = 7, pad = 1, stride = 1
-  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=1, stride=1";
-  paddle_mobile::TestConvOp<int8_t, int32_t, 7, 1, 1>();
-
-  // kernel = 7, pad = 3, stride = 1
-  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=3, stride=1";
-  paddle_mobile::TestConvOp<int8_t, int32_t, 7, 3, 1>();
-
-  // kernel = 7, pad = 5, stride = 3
-  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=5, stride=3";
-  paddle_mobile::TestConvOp<int8_t, int32_t, 7, 5, 3>();
-
-  // kernel = 7, pad = 3, stride = 4
-  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=3, stride=4";
-  paddle_mobile::TestConvOp<int8_t, int32_t, 7, 3, 4>();
-  LOG(paddle_mobile::kLOG_INFO) << "\n";
-
-  // kernel = 3, pad = 0, stride = 1
-  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=3, pad=0, stride=1";
-  paddle_mobile::TestConvOp<int8_t, int32_t, 3, 0, 1>();
-  // kernel = 3, pad = 0, stride = 1
-  LOG(paddle_mobile::kLOG_INFO) << "float, kernel=3, pad=0, stride=1";
-  paddle_mobile::TestConvOp<float, float, 3, 0, 1>();
-  LOG(paddle_mobile::kLOG_INFO) << "\n";
-
-  // kernel = 3, pad = 1, stride = 1
-  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=3, pad=1, stride=1";
-  paddle_mobile::TestConvOp<int8_t, int32_t, 3, 1, 1>();
+int main(int argc, char *argv[]) {
+  if (argc < 5) {
+    LOG(paddle_mobile::kLOG_INFO)
+        << "Usage:\n"
+        << "  ./test-int8-conv-op in_channels in_height in_width out_channels\n"
+        << "  params:\n"
+        << "   -in_channels: int, input image's channels\n"
+        << "   -in_height: int, input image's height\n"
+        << "   -in_width: int, input image's width\n"
+        << "   -out_channels: int, conv output channels\n";
+    return 1;
+  }
+  int in_channels = atoi(argv[1]);
+  int in_height = atoi(argv[2]);
+  int in_width = atoi(argv[3]);
+  int out_channels = atoi(argv[4]);
   // kernel = 3, pad = 1, stride = 1
   LOG(paddle_mobile::kLOG_INFO) << "float, kernel=3, pad=1, stride=1";
-  paddle_mobile::TestConvOp<float, float, 3, 1, 1>();
-  LOG(paddle_mobile::kLOG_INFO) << "\n";
-
+  paddle_mobile::TestConvOp<float, float, 3, 1, 1>(in_channels, in_height,
+                                                   in_width, out_channels);
+  // kernel = 7, pad = 0, stride = 2
+  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=0, stride=2";
+  paddle_mobile::TestConvOp<int8_t, int32_t, 7, 0, 2>(in_channels, in_height,
+                                                      in_width, out_channels);
+  // kernel = 7, pad = 1, stride = 2
+  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=1, stride=2";
+  paddle_mobile::TestConvOp<int8_t, int32_t, 7, 1, 2>(in_channels, in_height,
+                                                      in_width, out_channels);
+  // kernel = 7, pad = 3, stride = 2
+  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=3, stride=2";
+  paddle_mobile::TestConvOp<int8_t, int32_t, 7, 3, 2>(in_channels, in_height,
+                                                      in_width, out_channels);
+  // kernel = 7, pad = 0, stride = 1
+  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=0, stride=1";
+  paddle_mobile::TestConvOp<int8_t, int32_t, 7, 0, 1>(in_channels, in_height,
+                                                      in_width, out_channels);
+  // kernel = 7, pad = 1, stride = 1
+  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=1, stride=1";
+  paddle_mobile::TestConvOp<int8_t, int32_t, 7, 1, 1>(in_channels, in_height,
+                                                      in_width, out_channels);
+  // kernel = 7, pad = 3, stride = 1
+  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=3, stride=1";
+  paddle_mobile::TestConvOp<int8_t, int32_t, 7, 3, 1>(in_channels, in_height,
+                                                      in_width, out_channels);
+  // kernel = 7, pad = 5, stride = 3
+  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=5, stride=3";
+  paddle_mobile::TestConvOp<int8_t, int32_t, 7, 5, 3>(in_channels, in_height,
+                                                      in_width, out_channels);
+  // kernel = 7, pad = 3, stride = 4
+  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=7, pad=3, stride=4";
+  paddle_mobile::TestConvOp<int8_t, int32_t, 7, 3, 4>(in_channels, in_height,
+                                                      in_width, out_channels);
+  // kernel = 3, pad = 0, stride = 1
+  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=3, pad=0, stride=1";
+  paddle_mobile::TestConvOp<int8_t, int32_t, 3, 0, 1>(in_channels, in_height,
+                                                      in_width, out_channels);
+  // kernel = 3, pad = 0, stride = 1
+  LOG(paddle_mobile::kLOG_INFO) << "float, kernel=3, pad=0, stride=1";
+  paddle_mobile::TestConvOp<float, float, 3, 0, 1>(in_channels, in_height,
+                                                   in_width, out_channels);
+  // kernel = 3, pad = 1, stride = 1
+  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=3, pad=1, stride=1";
+  paddle_mobile::TestConvOp<int8_t, int32_t, 3, 1, 1>(in_channels, in_height,
+                                                      in_width, out_channels);
+  // kernel = 3, pad = 1, stride = 1
+  LOG(paddle_mobile::kLOG_INFO) << "float, kernel=3, pad=1, stride=1";
+  paddle_mobile::TestConvOp<float, float, 3, 1, 1>(in_channels, in_height,
+                                                   in_width, out_channels);
   // kernel = 5, pad = 0, stride = 1
   LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=5, pad=0, stride=1";
-  paddle_mobile::TestConvOp<int8_t, int32_t, 5, 0, 1>();
+  paddle_mobile::TestConvOp<int8_t, int32_t, 5, 0, 1>(in_channels, in_height,
+                                                      in_width, out_channels);
   // kernel = 5, pad = 0, stride = 1
   LOG(paddle_mobile::kLOG_INFO) << "float, kernel=5, pad=0, stride=1";
-  paddle_mobile::TestConvOp<float, float, 5, 0, 1>();
-  LOG(paddle_mobile::kLOG_INFO) << "\n";
-
+  paddle_mobile::TestConvOp<float, float, 5, 0, 1>(in_channels, in_height,
+                                                   in_width, out_channels);
   // kernel = 5, pad = 2, stride = 1
   LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=5, pad=2, stride=1";
-  paddle_mobile::TestConvOp<int8_t, int32_t, 5, 2, 1>();
+  paddle_mobile::TestConvOp<int8_t, int32_t, 5, 2, 1>(in_channels, in_height,
+                                                      in_width, out_channels);
   // kernel = 5, pad = 2, stride = 1
   LOG(paddle_mobile::kLOG_INFO) << "float, kernel=5, pad=2, stride=1";
-  paddle_mobile::TestConvOp<float, float, 5, 2, 1>();
+  paddle_mobile::TestConvOp<float, float, 5, 2, 1>(in_channels, in_height,
+                                                   in_width, out_channels);
 }

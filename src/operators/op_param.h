@@ -405,15 +405,28 @@ class ConvParam : public OpParam {
 
   const RType *Input() const { return input_; }
 
-  RType *Filter() const { return filter_; }
+  RType *&Filter() const { return filter_; }
 
-  RType *Output() const { return output_; }
+  RType *&Output() const { return output_; }
 
   const vector<int> &Strides() const { return strides_; }
 
   const vector<int> &Paddings() const { return paddings_; }
 
   const vector<int> &Dilations() const { return dilations_; }
+
+  enum ExecMode {
+    EXEC_INVALID = 0,
+    EXEC_GEMM_FLOAT,
+    EXEC_DEPTHWISE3x3S1P1_FLOAT,
+    EXEC_DEPTHWISE3x3_FLOAT,
+    EXEC_WINOGRAD3X3_FLOAT,
+    EXEC_WINOGRAD5X5_FLOAT,
+    EXEC_GEMM_INT8,
+    EXEC_DEPTHWISE3x3_INT8,
+  };
+
+  ExecMode &ExecMode() const { return exec_mode_; }
 
   const int &Groups() const { return groups; }
 
@@ -426,11 +439,12 @@ class ConvParam : public OpParam {
 
  private:
   RType *input_;
-  RType *output_;
-  RType *filter_;
+  mutable RType *output_;
+  mutable RType *filter_;
   vector<int> strides_;
   vector<int> paddings_;
   vector<int> dilations_;
+  mutable enum ExecMode exec_mode_;
   int groups;
 
 #ifdef PADDLE_MOBILE_CL
@@ -2509,10 +2523,10 @@ class QuantizeParam : public OpParam {
   QuantizeParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
                 const AttributeMap &attrs, const Scope &scope) {
     input_ = InputXFrom<GType>(inputs, scope);
-    out_ = OutFrom<GType>(outputs, scope);
+    output_ = OutFrom<GType>(outputs, scope);
     // online
     // scale = max(abs(x))
-    online_scale_ = GetVarValue<GType>("OutScale", outputs, scope);
+    online_scale_ = OpParam::GetVarValue<GType>("OutScale", outputs, scope);
     // offline
     if (HasAttr("static_scale", attrs)) {
       is_static_ = true;
@@ -2522,14 +2536,18 @@ class QuantizeParam : public OpParam {
     if (HasAttr("round_type", attrs)) {
       round_type_ = GetAttr<RoundType>("round_type", attrs);
     }
+    // get paddings
+    paddings_ = std::vector<int>({0, 0});
+    if (HasAttr("paddings", attrs)) {
+      paddings_ = GetAttr<vector<int>>("paddings", attrs);
+    }
   }
 
  public:
   // op input
   RType *input_;
   // op output
-  RType *out_;
-  //
+  RType *output_;
   RType *online_scale_;
   // if static scale or not
   bool is_static_ = false;
@@ -2537,7 +2555,11 @@ class QuantizeParam : public OpParam {
   float static_scale_ = 1.0f;
   // round method type
   // nearest_zero and nearest_even is valid currently
-  RoundType round_type_ = ROUND_NEAREST_AWAY_ZERO;
+  // RoundType round_type_ = ROUND_NEAREST_AWAY_ZERO;
+  RoundType round_type_ = ROUND_NEAREST_TOWARDS_ZERO;
+  // optional paddings
+  std::vector<int> paddings_;
+  int8_t padding_val_;
 };
 #endif
 
@@ -2551,8 +2573,8 @@ class DequantizeParam : public OpParam {
   DequantizeParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
                   const AttributeMap &attrs, const Scope &scope) {
     input_ = InputXFrom<GType>(inputs, scope);
-    out_ = OutFrom<GType>(outputs, scope);
-    activation_scale_ = GetVarValue<GType>("Scale", inputs, scope);
+    output_ = OutFrom<GType>(outputs, scope);
+    activation_scale_ = OpParam::GetVarValue<GType>("Scale", inputs, scope);
     // dequantization is performed as x = x / static_scale / online_scale
     if (HasAttr("weight_scale", attrs)) {
       weight_scale_ = GetAttr<float>("weight_scale", attrs);
@@ -2565,9 +2587,48 @@ class DequantizeParam : public OpParam {
   // op input
   RType *input_;
   // op output
-  RType *out_;
+  RType *output_;
   RType *activation_scale_;
   float weight_scale_;
+};
+#endif
+
+#ifdef FUSION_DEQUANT_ADD_BN_RELU_OP
+template <typename Dtype>
+class FusionDequantAddBNReluParam : public DequantizeParam<Dtype> {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  FusionDequantAddBNReluParam(const VariableNameMap &inputs,
+                              const VariableNameMap &outputs,
+                              const AttributeMap &attrs, const Scope &scope)
+      : DequantizeParam<Dtype>(inputs, outputs, attrs, scope) {
+    // element wise add params
+    axis_ = OpParam::GetAttr<int>("axis", attrs);
+    bias_ = OpParam::InputYFrom<GType>(inputs, scope);
+    // batch norm params
+    bn_mean_ = OpParam::GetVarValue<GType>("BNMean", inputs, scope);
+    bn_variance_ = OpParam::GetVarValue<GType>("BNVariance", inputs, scope);
+    bn_scale_ = OpParam::GetVarValue<GType>("BNScale", inputs, scope);
+    bn_bias_ = OpParam::GetVarValue<GType>("BNBias", inputs, scope);
+    epsilon_ = OpParam::GetAttr<float>("epsilon", attrs);
+    // output
+    output_ = OpParam::OutFrom<GType>(outputs, scope);
+  }
+
+ public:
+  // elementwise add
+  int axis_;
+  RType *bias_;
+  // batch norm
+  RType *bn_mean_;
+  RType *bn_variance_;
+  RType *bn_scale_;
+  RType *bn_bias_;
+  float epsilon_;
+  // output
+  RType *output_;
 };
 #endif
 
