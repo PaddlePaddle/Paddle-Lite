@@ -35,7 +35,7 @@ void ConvAddReluInt8Compute(const FusionConvAddReluInt8Param<CPU> &param) {
   Tensor *output = param.Output();
   output->mutable_data<P>();
 
-  int32_t *biase_data = bias.data<int32_t>();
+  int32_t *bias_data = bias.data<int32_t>();
   float scale_v = scale.data<float>()[0];
 
   int32_t groups = param.Groups();
@@ -114,7 +114,7 @@ void ConvAddReluInt8Compute(const FusionConvAddReluInt8Param<CPU> &param) {
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
 
       math::matmul(filter_slice, false, col_matrix, false, scale_v, &out_slice,
-                   static_cast<float>(0), true, biase_data);
+                   static_cast<float>(0), true, bias_data);
     }
   }
 }
