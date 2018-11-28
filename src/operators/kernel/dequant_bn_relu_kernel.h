@@ -12,33 +12,35 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef DEPTHWISECONV_OP
-
 #pragma once
 
-#include <string>
 #include "framework/operator.h"
-#include "operators/kernel/conv_kernel.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
+#ifdef FUSION_DEQUANT_BN_RELU_OP
 template <typename DeviceType, typename T>
-class DepthwiseConvOp : public framework::OperatorWithKernel<
-                            DeviceType, ConvParam<DeviceType>,
-                            operators::ConvKernel<DeviceType, T>> {
+class FusionDequantBNReluKernel
+    : public framework::OpKernelBase<DeviceType,
+                                     FusionDequantBNReluParam<DeviceType>> {
  public:
-  DepthwiseConvOp(const std::string &type, const VariableNameMap &inputs,
-                  const VariableNameMap &outputs,
-                  const framework::AttributeMap &attrs,
-                  std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, ConvParam<DeviceType>,
-                                      operators::ConvKernel<DeviceType, T>>(
-            type, inputs, outputs, attrs, scope) {}
-  void InferShape() const override;
+  void Compute(const FusionDequantBNReluParam<DeviceType> &param);
+  bool Init(FusionDequantBNReluParam<DeviceType> *param);
 };
+#endif
+
+#ifdef FUSION_DEQUANT_ADD_BN_RELU_OP
+template <typename DeviceType, typename T>
+class FusionDequantAddBNReluKernel
+    : public framework::OpKernelBase<DeviceType,
+                                     FusionDequantAddBNReluParam<DeviceType>> {
+ public:
+  void Compute(const FusionDequantAddBNReluParam<DeviceType> &param);
+  bool Init(FusionDequantAddBNReluParam<DeviceType> *param);
+};
+#endif
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
-#endif

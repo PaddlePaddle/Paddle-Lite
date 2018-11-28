@@ -128,7 +128,8 @@ static float find_abs_max(const Tensor *input) {
 
 #ifdef __aarch64__
 static void quantize_round_to_even(const Tensor *input, const float scale,
-                                   Tensor *output) {
+                                   const std::vector<int> &paddings,
+                                   const int8_t padding_val, Tensor *output) {
   const float *x = input->data<const float>();
   int8_t *y = output->mutable_data<int8_t>();
   size_t size = input->numel();
@@ -184,7 +185,8 @@ static void quantize_round_to_even(const Tensor *input, const float scale,
 }
 
 static void quantize_round_to_zero(const Tensor *input, const float scale,
-                                   Tensor *output) {
+                                   const std::vector<int> &paddings,
+                                   const int8_t padding_val, Tensor *output) {
   const float *x = input->data<const float>();
   int8_t *y = output->mutable_data<int8_t>();
   size_t size = input->numel();
@@ -229,6 +231,8 @@ static void quantize_round_to_zero(const Tensor *input, const float scale,
 }
 
 static void quantize_round_to_nearest(const Tensor *input, const float scale,
+                                      const std::vector<int> &paddings,
+                                      const int8_t padding_val,
                                       Tensor *output) {
   const float *x = input->data<const float>();
   int8_t *y = output->mutable_data<int8_t>();
