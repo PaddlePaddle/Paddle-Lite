@@ -31,11 +31,13 @@ __kernel void pool_max(
   const sampler_t sampler =
       CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
 
-  int start_h = max(out_h * stride_h - pad_top, 0);
+  int start_h = out_h * stride_h - pad_top;
   int end_h = min(start_h + ksize_h, in_height);
+  start_h = max(start_h,0);
 
-  int start_w = max(out_w * stride_w - pad_left, 0);
+  int start_w = out_w * stride_w - pad_left;
   int end_w = min(start_w + ksize_w, in_width);
+  start_w = max(start_w,0);
 
   const int pos_in_x = out_c * in_width;
   const int pos_in_y = out_n * in_height;
