@@ -405,9 +405,9 @@ class ConvParam : public OpParam {
 
   const RType *Input() const { return input_; }
 
-  RType *&Filter() const { return filter_; }
+  RType *Filter() const { return filter_; }
 
-  RType *&Output() const { return output_; }
+  RType *Output() const { return output_; }
 
   const vector<int> &Strides() const { return strides_; }
 
@@ -441,8 +441,8 @@ class ConvParam : public OpParam {
 
  private:
   RType *input_;
-  mutable RType *output_;
-  mutable RType *filter_;
+  RType *output_;
+  RType *filter_;
   vector<int> strides_;
   vector<int> paddings_;
   vector<int> dilations_;
