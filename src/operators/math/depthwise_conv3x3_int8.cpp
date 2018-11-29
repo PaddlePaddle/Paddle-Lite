@@ -29,6 +29,7 @@ namespace math {
 template <>
 void DepthwiseConv3x3s1<int8_t, int32_t>(const framework::Tensor &input,
                                          const framework::Tensor &filter,
+                                         const std::vector<int> &paddings,
                                          framework::Tensor *output) {
   const int8_t *input_data = input.data<int8_t>();
   const int8_t *filter_data = filter.data<int8_t>();
@@ -751,6 +752,7 @@ void DepthwiseConv3x3s1<int8_t, int32_t>(const framework::Tensor &input,
 template <>
 void DepthwiseConv3x3s2<int8_t, int32_t>(const framework::Tensor &input,
                                          const framework::Tensor &filter,
+                                         const std::vector<int> &paddings,
                                          framework::Tensor *output) {
   const int8_t *input_data = input.data<int8_t>();
   const int8_t *filter_data = filter.data<int8_t>();
