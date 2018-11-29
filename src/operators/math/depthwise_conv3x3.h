@@ -70,16 +70,19 @@ void DepthwiseConv3x3s2p0(const framework::Tensor *input,
 // void DepthwiseConv3x3(const framework::Tensor *input,
 //                      const framework::Tensor *filter,
 //                      const std::vector<int> &strides,
+//                      const std::vector<int> &paddings,
 //                      framework::Tensor *output);
 
 template <typename Itype, typename Otype>
 void DepthwiseConv3x3s1(const framework::Tensor &input,
                         const framework::Tensor &filter,
+                        const std::vector<int> &paddings,
                         framework::Tensor *output);
 
 template <typename Itype, typename Otype>
 void DepthwiseConv3x3s2(const framework::Tensor &input,
                         const framework::Tensor &filter,
+                        const std::vector<int> &paddings,
                         framework::Tensor *output);
 
 }  // namespace math

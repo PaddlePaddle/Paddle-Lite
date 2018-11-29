@@ -1278,7 +1278,10 @@ void DepthwiseConv3x3s2p1v2(const framework::Tensor *input,
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
   float *output_data = output->data<float>();
-  const float *bias_data = bias->data<float>();
+  const float *bias_data;
+  if (if_bias) {
+    bias_data = bias->data<float>();
+  }
 
   const int in_h = static_cast<int>(input->dims()[2]);
   const int in_w = static_cast<int>(input->dims()[3]);
