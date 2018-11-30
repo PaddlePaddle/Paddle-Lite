@@ -2924,6 +2924,7 @@ void Gemm::WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
 #endif  // __ARM_NEON
 
 // 32位 float 矩阵乘法
+template <>
 void Gemm::Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
                  const float *B, int ldb, float beta, float *C, int ldc,
                  bool relu, float *bias) {

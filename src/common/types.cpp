@@ -114,7 +114,7 @@ std::unordered_map<
         {G_OP_TYPE_DEPTHWISE_CONV, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_FILL_CONSTANT, {{}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_RELU, {{"Input"}, {"Out"}}},
-        {G_OP_TYPE_FUSION_CONV_ADD_RELU_INT8, {{"Input"}, {"Output"}}},
+        {G_OP_TYPE_FUSION_CONV_ADD_RELU_INT8, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_PRELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_ADD_PRELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_IM2SEQUENCE, {{"X"}, {"Out"}}},

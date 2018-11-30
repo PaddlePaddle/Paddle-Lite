@@ -1705,36 +1705,19 @@ class FusionConvAddReluParam : public FusionConvAddParam<DeviceType> {
   FusionConvAddReluParam(const VariableNameMap &inputs,
                          const VariableNameMap &outputs,
                          const AttributeMap &attrs, const Scope &scope)
-      : FusionConvAddParam<DeviceType>(inputs, outputs, attrs, scope) {}
-};
-#endif
-
+      : FusionConvAddParam<DeviceType>(inputs, outputs, attrs, scope) {
 #ifdef FUSION_CONVADDRELU_INT8_OP
-template <typename Dtype>
-class FusionConvAddReluInt8Param : public ConvParam<Dtype> {
-  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
-  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
-
- public:
-  FusionConvAddReluInt8Param(const VariableNameMap &inputs,
-                             const VariableNameMap &outputs,
-                             const AttributeMap &attrs, const Scope &scope)
-      : ConvParam<Dtype>(inputs, outputs, attrs, scope) {
     scale_ = OpParam::InputScaleFrom<GType>(inputs, scope);
-    bias_ = OpParam::InputYFrom<GType>(inputs, scope);
-    axis_ = OpParam::GetAttr<int>("axis", attrs);
+#endif
   }
-
+#ifdef FUSION_CONVADDRELU_INT8_OP
+  typedef typename DtypeTensorTrait<DeviceType>::gtype GType;
+  typedef typename DtypeTensorTrait<DeviceType>::rtype RType;
   const RType *InputScale() const { return scale_; }
-
-  RType *Bias() const { return bias_; }
-
-  const int &Axis() const { return axis_; }
 
  protected:
   RType *scale_;
-  RType *bias_;
-  int axis_;
+#endif
 };
 #endif
 

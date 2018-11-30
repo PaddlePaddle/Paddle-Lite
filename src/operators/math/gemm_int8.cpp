@@ -14,7 +14,6 @@ limitations under the License. */
 
 #include <string.h>
 #include "common/log.h"
-#include "memory/t_malloc.h"
 #include "operators/math/gemm.h"
 #if __ARM_NEON
 #include <arm_neon.h>
@@ -670,6 +669,11 @@ void Gemm::AddDot6x8(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
 }
 
 // 8 bits int inner product
+template <>
+void Gemm::InnerKernel(int32_t mc, int32_t nc, float alpha, const int8_t *a,
+                       const int8_t *b, float beta, int32_t *c, int8_t *C,
+                       int32_t ldc, bool relu) {}
+template <>
 void Gemm::InnerKernel(int32_t mc, int32_t nc, float alpha, const int8_t *a,
                        const int8_t *b, float beta, int32_t *c, int32_t *C,
                        int32_t ldc, bool relu) {
@@ -691,6 +695,7 @@ void Gemm::InnerKernel(int32_t mc, int32_t nc, float alpha, const int8_t *a,
   }
 }
 
+template <>
 void Gemm::InnerKernelWithBias(int32_t mc, int32_t nc, float alpha,
                                const int8_t *a, const int8_t *b, float beta,
                                int32_t *c, int8_t *C, int32_t ldc, bool relu,
@@ -714,6 +719,12 @@ void Gemm::InnerKernelWithBias(int32_t mc, int32_t nc, float alpha,
     WriteWithAddScale(mc, nc, c, C, ldc, bias, alpha);
   }
 }
+
+template <>
+void Gemm::InnerKernelWithBias(int32_t mc, int32_t nc, float alpha,
+                               const int8_t *a, const int8_t *b, float beta,
+                               int32_t *c, int32_t *C, int32_t ldc, bool relu,
+                               int32_t *bias) {}
 
 // 8 bits int PackMatrixA_4r
 void Gemm::PackMatrixA_4r_16(int32_t m, int32_t k, int32_t m_tail,
@@ -1081,128 +1092,6 @@ void Gemm::PackMatrixB_8c(int32_t k, int32_t n, int32_t n_tail, const int8_t *B,
       }
     }
   }
-}
-
-// 8 bits int matrix product (m*k x k*n)
-void Gemm::Sgemm(int32_t m, int32_t n, int32_t k, float alpha, const int8_t *A,
-                 int32_t lda, const int8_t *B, int32_t ldb, float beta,
-                 int32_t *C, int32_t ldc, bool relu, int32_t *bias) {
-  // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
-  // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
-  int32_t L1 = 32 * 1024;
-  int32_t L2 = 512 * 1024;
-
-  const int32_t k_complete = (k + 15) - ((k + 15) & 15);
-  KC = k_complete;
-  MC = L1 / (KC * sizeof(int8_t));
-  NC = L2 / (KC * sizeof(int8_t));
-
-  // make sure MC is multiple of MR_INT8, and NC is multiple of NR_INT8
-  if (MC == 0) {
-    MC = MR_INT8;
-  } else {
-    int32_t mblock_num = (m + MC - 1) / MC;
-    MC = (m + mblock_num - 1) / mblock_num;
-    MC = (MC + MR_INT8 - 1) / MR_INT8 * MR_INT8;
-  }
-  // DLOG << "mblock_num = " << mblock_num << ", MC = " << MC << "\n";
-  if (NC == 0) {
-    NC = NR_INT8;
-  } else {
-    int32_t nblock_num = (n + NC - 1) / NC;
-    NC = (n + nblock_num - 1) / nblock_num;
-    NC = (NC + NR_INT8 - 1) / NR_INT8 * NR_INT8;
-  }
-  //  DLOG << "nblock_num = " << nblock_num << ", NC = " << NC << "\n";
-  packedA_int8 = static_cast<int8_t *>(
-      paddle_mobile::memory::Alloc(sizeof(int8_t) * MC * KC));
-  packedB_int8 = static_cast<int8_t *>(
-      paddle_mobile::memory::Alloc(sizeof(int8_t) * KC * NC));
-  packedC_int32 = static_cast<int32_t *>(
-      paddle_mobile::memory::Alloc(sizeof(int32_t) * MC * NC));
-  zero_int8 =
-      static_cast<int8_t *>(paddle_mobile::memory::Alloc(sizeof(int8_t) * k));
-
-  memset(static_cast<void *>(zero_int8), 0, sizeof(int8_t) * k);
-  int32_t mc, nc;
-  for (int32_t j = 0; j < n; j += NC) {
-    nc = s_min(n - j, NC);
-    PackMatrixB_2c_16(k, nc, nc % NR_INT8, &B(0, j), ldb, packedB_int8);
-    for (int32_t i = 0; i < m; i += MC) {
-      mc = s_min(m - i, MC);
-      PackMatrixA_4r_16(mc, k, mc % MR_INT8, &A(i, 0), lda, packedA_int8);
-      if (bias == nullptr) {
-        InnerKernel(mc, nc, alpha, packedA_int8, packedB_int8, beta,
-                    packedC_int32, &C(i, j), ldc, relu);
-      }
-    }
-  }
-
-  paddle_mobile::memory::Free(packedA_int8);
-  paddle_mobile::memory::Free(packedB_int8);
-  paddle_mobile::memory::Free(packedC_int32);
-  paddle_mobile::memory::Free(zero_int8);
-}
-
-// 8 bits int matrix product (m*k x k*n)
-void Gemm::Sgemm(int32_t m, int32_t n, int32_t k, float alpha, const int8_t *A,
-                 int32_t lda, const int8_t *B, int32_t ldb, float beta,
-                 int8_t *C, int32_t ldc, bool relu, int32_t *bias) {
-  // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
-  // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
-  int32_t L1 = 32 * 1024;
-  int32_t L2 = 512 * 1024;
-
-  const int32_t k_complete = (k + 15) - ((k + 15) & 15);
-  KC = k_complete;
-  MC = L1 / (KC * sizeof(int8_t));
-  NC = L2 / (KC * sizeof(int8_t));
-
-  // make sure MC is multiple of MR_INT8, and NC is multiple of NR_INT8
-  if (MC == 0) {
-    MC = MR_INT8;
-  } else {
-    int32_t mblock_num = (m + MC - 1) / MC;
-    MC = (m + mblock_num - 1) / mblock_num;
-    MC = (MC + MR_INT8 - 1) / MR_INT8 * MR_INT8;
-  }
-  // DLOG << "mblock_num = " << mblock_num << ", MC = " << MC << "\n";
-  if (NC == 0) {
-    NC = NR_INT8;
-  } else {
-    int32_t nblock_num = (n + NC - 1) / NC;
-    NC = (n + nblock_num - 1) / nblock_num;
-    NC = (NC + NR_INT8 - 1) / NR_INT8 * NR_INT8;
-  }
-  //  DLOG << "nblock_num = " << nblock_num << ", NC = " << NC << "\n";
-  packedA_int8 = static_cast<int8_t *>(
-      paddle_mobile::memory::Alloc(sizeof(int8_t) * MC * KC));
-  packedB_int8 = static_cast<int8_t *>(
-      paddle_mobile::memory::Alloc(sizeof(int8_t) * KC * NC));
-  packedC_int32 = static_cast<int32_t *>(
-      paddle_mobile::memory::Alloc(sizeof(int32_t) * MC * NC));
-  zero_int8 =
-      static_cast<int8_t *>(paddle_mobile::memory::Alloc(sizeof(int8_t) * k));
-
-  memset(static_cast<void *>(zero_int8), 0, sizeof(int8_t) * k);
-  int32_t mc, nc;
-  for (int32_t j = 0; j < n; j += NC) {
-    nc = s_min(n - j, NC);
-    PackMatrixB_2c_16(k, nc, nc % NR_INT8, &B(0, j), ldb, packedB_int8);
-    for (int32_t i = 0; i < m; i += MC) {
-      mc = s_min(m - i, MC);
-      PackMatrixA_4r_16(mc, k, mc % MR_INT8, &A(i, 0), lda, packedA_int8);
-      if (bias != nullptr) {
-        InnerKernelWithBias(mc, nc, alpha, packedA_int8, packedB_int8, beta,
-                            packedC_int32, &C(i, j), ldc, relu, bias + i);
-      }
-    }
-  }
-
-  paddle_mobile::memory::Free(packedA_int8);
-  paddle_mobile::memory::Free(packedB_int8);
-  paddle_mobile::memory::Free(packedC_int32);
-  paddle_mobile::memory::Free(zero_int8);
 }
 
 //  8 bits int write back

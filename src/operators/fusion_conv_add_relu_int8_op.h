@@ -16,28 +16,26 @@ limitations under the License. */
 #pragma once
 #include <string>
 #include "framework/operator.h"
-#include "operators/kernel/conv_add_relu_int8_kernel.h"
+#include "operators/kernel/conv_add_relu_kernel.h"
 #include "operators/op_param.h"
 namespace paddle_mobile {
 namespace operators {
-using std::string;
 template <typename DeviceType, typename T>
 class FusionConvAddReluInt8Op
     : public framework::OperatorWithKernel<
-          DeviceType, FusionConvAddReluInt8Param<DeviceType>,
-          operators::ConvAddReluInt8Kernel<DeviceType, T>> {
+          DeviceType, FusionConvAddReluParam<DeviceType>,
+          operators::ConvAddReluKernel<DeviceType, T>> {
  public:
-  FusionConvAddReluInt8Op(const string &type, const VariableNameMap &inputs,
+  FusionConvAddReluInt8Op(const std::string &type,
+                          const VariableNameMap &inputs,
                           const VariableNameMap &outputs,
                           const framework::AttributeMap &attrs,
                           std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<
-            DeviceType, FusionConvAddReluInt8Param<DeviceType>,
-            operators::ConvAddReluInt8Kernel<DeviceType, T>>(
-            type, inputs, outputs, attrs, scope) {}
+            DeviceType, FusionConvAddReluParam<DeviceType>,
+            operators::ConvAddReluKernel<DeviceType, T>>(type, inputs, outputs,
+                                                         attrs, scope) {}
   void InferShape() const override;
-
- protected:
 };
 }  // namespace operators
 }  // namespace paddle_mobile
