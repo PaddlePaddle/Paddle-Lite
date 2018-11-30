@@ -34,7 +34,7 @@ endif()
 
 if(DEBUGING)
     message(STATUS "debugging mode")
-    add_definitions(-DPADDLE_MOBILE_DEBUG)
+#    add_definitions(-DPADDLE_MOBILE_DEBUG)
 else()
 endif()
 

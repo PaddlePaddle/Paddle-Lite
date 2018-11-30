@@ -28,9 +28,23 @@ bool ConvAddReluKernel<CPU, float>::Init(FusionConvAddReluParam<CPU> *param) {
 template <>
 void ConvAddReluKernel<CPU, float>::Compute(
     const FusionConvAddReluParam<CPU> &param) {
-  ConvAddReluCompute<float>(param);
+  ConvAddReluCompute<float, float>(param);
 }
 template class ConvAddReluKernel<CPU, float>;
+
+#ifdef FUSION_CONVADDRELU_INT8_OP
+template <>
+bool ConvAddReluKernel<CPU, int8_t>::Init(FusionConvAddReluParam<CPU> *param) {
+  return true;
+}
+
+template <>
+void ConvAddReluKernel<CPU, int8_t>::Compute(
+    const FusionConvAddReluParam<CPU> &param) {
+  ConvAddReluCompute<int8_t, int32_t>(param);
+}
+template class ConvAddReluKernel<CPU, int8_t>;
+#endif
 
 }  // namespace operators
 }  // namespace paddle_mobile

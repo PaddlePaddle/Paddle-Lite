@@ -12,6 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef FUSION_CONVADDRELU_INT8_OP
+
+#include <limits>
+#include <iostream>
 #include "../test_helper.h"
 #include "../test_include.h"
 #include "operators/fusion_conv_add_relu_int8_op.h"
@@ -19,10 +23,10 @@ limitations under the License. */
 namespace paddle_mobile {
 int32_t qadd_int32(int32_t l, int32_t r) {
   int64_t res = static_cast<int64_t>(l) + static_cast<int64_t>(r);
-  if (res > INT_MAX)
-    return INT_MAX;
-  else if (res < INT_MIN)
-    return INT_MIN;
+  if (res > std::numeric_limits<int32_t>::max())
+    return std::numeric_limits<int32_t>::max();
+  else if (res < std::numeric_limits<int32_t>::min())
+    return std::numeric_limits<int32_t>::min();
   else
     return static_cast<int32_t>(res);
 }
@@ -217,8 +221,8 @@ int TestConvOp(int in_channels, int in_height, int in_width, int out_channels) {
   inputs["Input"] = std::vector<std::string>({"input"});
   inputs["Filter"] = std::vector<std::string>({"filter"});
   inputs["Scale"] = std::vector<std::string>({"scale"});
-  inputs["Y"] = std::vector<std::string>({"y"});
-  outputs["Output"] = std::vector<std::string>({"output"});
+  inputs["Y"] = std::vector<std::string>({"bias"});
+  outputs["Out"] = std::vector<std::string>({"output"});
 
   auto input_var = scope.get()->Var("input");
   auto input = input_var->template GetMutable<framework::LoDTensor>();
@@ -234,7 +238,7 @@ int TestConvOp(int in_channels, int in_height, int in_width, int out_channels) {
   float scale_v = 0.000828f;
   scale->mutable_data<float>()[0] = scale_v;
 
-  auto bias_var = scope.get()->Var("y");
+  auto bias_var = scope.get()->Var("bias");
   auto bias = bias_var->template GetMutable<framework::LoDTensor>();
   SetupTensor<int32_t>(bias, bias_shape, -127, 127);
 
@@ -352,3 +356,5 @@ int main(int argc, char *argv[]) {
   paddle_mobile::TestConvOp<int8_t, 5, 2, 1>(in_channels, in_height, in_width,
                                              out_channels);
 }
+
+#endif
