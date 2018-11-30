@@ -12,10 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include <climits>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include <limits>
 #include <random>
 #include "../test_helper.h"
 #include "common/log.h"
@@ -57,10 +57,10 @@ void print_matirx(int m, int n, int ldc, int8_t *c) {
 
 int32_t qadd_int32(int32_t l, int32_t r) {
   int64_t res = static_cast<int64_t>(l) + static_cast<int64_t>(r);
-  if (res > INT_MAX)
-    return INT_MAX;
-  else if (res < INT_MIN)
-    return INT_MIN;
+  if (res > std::numeric_limits<int32_t>::max())
+    return std::numeric_limits<int32_t>::max();
+  else if (res < std::numeric_limits<int32_t>::min())
+    return std::numeric_limits<int32_t>::min();
   else
     return static_cast<int32_t>(res);
 }
