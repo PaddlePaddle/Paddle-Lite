@@ -16,6 +16,7 @@ limitations under the License. */
 #include <memory.h>
 #include "fpga/common/fpga_common.h"
 
+#include "fpga/V1/api.h"
 namespace paddle_mobile {
 namespace fpga {
 namespace bias_scale {
@@ -25,10 +26,16 @@ void align_element(float **data_in, int num_per_div_before_alignment, int num) {
   float *ptr_unaligned = *data_in;
   int div_num =
       (num + num_per_div_before_alignment - 1) / num_per_div_before_alignment;
+
+  int residual = num % num_per_div_before_alignment;
+  int residual_algin = align_to_x(residual, BS_NUM_ALIGNMENT);
+
   int num_per_div_after_alignment =
       align_to_x(num_per_div_before_alignment, BS_NUM_ALIGNMENT);
-  int num_element =
-      2 * div_num * num_per_div_after_alignment;  // including bias & scale
+  int num_element = (residual == 0)
+                        ? 2 * div_num * num_per_div_after_alignment
+                        : 2 * ((div_num - 1) * num_per_div_after_alignment +
+                               residual_algin);  // including bias & scale
   float *ptr_aligned =
       (float *)fpga_malloc(num_element * sizeof(float));  // NOLINT
 
@@ -36,9 +43,11 @@ void align_element(float **data_in, int num_per_div_before_alignment, int num) {
 
   for (int i = 0; i < div_num; i++) {
     if (i == div_num - 1) {
-      copynum = (num_per_div_after_alignment * div_num > num)
+      copynum = (residual > 0) ? residual : (num_per_div_before_alignment);
+
+      /*(num_per_div_after_alignment * div_num > num)
                     ? (num % num_per_div_after_alignment)
-                    : (num_per_div_before_alignment);
+                    : (num_per_div_before_alignment);*/
     } else {
       copynum = num_per_div_before_alignment;
     }
@@ -46,7 +55,7 @@ void align_element(float **data_in, int num_per_div_before_alignment, int num) {
     memcpy(ptr_aligned + i * num_per_div_after_alignment,
            ptr_unaligned + num_per_div_before_alignment * i,
            copynum * sizeof(float));
-    memcpy(ptr_aligned + (div_num + i) * num_per_div_after_alignment,
+    memcpy(ptr_aligned + i * num_per_div_after_alignment + num_element / 2,
            ptr_unaligned + num_per_div_before_alignment * i + num,
            copynum * sizeof(float));
   }
@@ -79,8 +88,15 @@ void format_bias_scale_array(float **bias_scale_array,
   int div_num = (num + element_num_per_division - 1) / element_num_per_division;
   int element_num_after_division =
       align_to_x(element_num_per_division, BS_NUM_ALIGNMENT);
-  interleave(bias_scale_array, div_num * element_num_after_division);
-  fpga_flush(*bias_scale_array, 2 * element_num_after_division * sizeof(float));
+
+  int residual = num % element_num_per_division;
+  int residual_algin = align_to_x(residual, BS_NUM_ALIGNMENT);
+  int num_after_alignment =
+      residual > 0
+          ? ((div_num - 1) * element_num_after_division + residual_algin)
+          : (div_num * element_num_after_division);
+  interleave(bias_scale_array, num_after_alignment);
+  fpga_flush(*bias_scale_array, 2 * num_after_alignment * sizeof(float));
 }
 
 }  // namespace bias_scale
