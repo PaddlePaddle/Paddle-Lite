@@ -180,10 +180,10 @@ inline void DepthwiseConv3x3(const ConvParam<CPU> &param) {
     Tensor in_batch = input->Slice(i, i + 1);
     Tensor out_batch = output->Slice(i, i + 1);
     if (strides[0] == 1) {
-      math::DepthwiseConv3x3s1<Itype, Otype>(in_batch, *filter, paddings,
+      math::DepthwiseConv3x3S1<Itype, Otype>(in_batch, *filter, paddings,
                                              &out_batch);
     } else if (strides[0] == 2) {
-      math::DepthwiseConv3x3s2<Itype, Otype>(in_batch, *filter, paddings,
+      math::DepthwiseConv3x3S2<Itype, Otype>(in_batch, *filter, paddings,
                                              &out_batch);
     } else {
       // math::DepthwiseConv3x3<Itype, Otype>(input_pad, *filter,
