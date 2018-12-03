@@ -44,25 +44,19 @@ struct Round<round::RoundTowardsZero> {
 template <>
 struct Round<round::RoundToEven> {
   int8_t operator()(float x) {
-    int8_t ret = 0;
     float v = std::round(x);
-    int32_t q = (int32_t)v;
-    if (abs(abs(q - x) - 0.5) > 0) {
-      ret = q;
-    } else {
-      if (abs(q) % 2 == 0) {
-        ret = q;
-      } else {
-        ret = q + ((q > 0) ? -1 : 1);
+    int32_t q = static_cast<int32_t>(v);
+    if (abs(abs(q - v) - 0.5) <= 0) {
+      if (abs(q) % 2 != 0) {
+        q = q + ((q > 0) ? -1 : 1);
       }
     }
-    return ret;
+    return static_cast<int8_t>(q);
   }
 };
 
 template <round::RoundType T>
-static void quantize(const Tensor *input, const float scale, const int pad,
-                     const int8_t pad_val, Tensor *output) {
+static void quantize(const Tensor *input, const float scale, Tensor *output) {
   int batch_size = input->dims()[0];
   int channels = input->dims()[1];
   int input_h = input->dims()[2];
@@ -77,29 +71,9 @@ static void quantize(const Tensor *input, const float scale, const int pad,
   for (int nc = 0; nc < batch_size * channels; ++nc) {
     const float *xh = x + nc * input_spatial;
     int8_t *yh = y + nc * output_spatial;
-    // pad top
-    for (int h = 0; h < pad; ++h, yh += output_w) {
-      for (int w = 0; w < output_w; ++w) {
-        yh[w] = pad_val;
-      }
-    }
     for (int h = 0; h < input_h; ++h, yh += output_w, xh += input_w) {
-      // pad left
-      for (int w = 0; w < pad; ++w) {
-        yh[w] = pad_val;
-      }
       for (int w = 0; w < input_w; ++w) {
-        yh[w + pad] = Round<T>()(xh[w] * scale);
-      }
-      // pad right
-      for (int w = 0; w < pad; ++w) {
-        yh[pad + input_w + w] = pad_val;
-      }
-    }
-    // pad bottom
-    for (int h = 0; h < pad; ++h, yh += output_w) {
-      for (int w = 0; w < output_w; ++w) {
-        yh[w] = pad_val;
+        yh[w] = Round<T>()(xh[w] * scale);
       }
     }
   }
@@ -120,19 +94,14 @@ static float find_abs_max(const Tensor *input) {
 
 int TestQuqntizeOp(int argc, char *argv[]) {
   if (argc < 5) {
-    std::cout
-        << "Usage: ./test-quantize-op batch_size channel height width [pad]"
-        << std::endl;
+    std::cout << "Usage: ./test-quantize-op batch_size channel height width"
+              << std::endl;
     return 1;
   }
-  int pad = 0;
   int batch_size = atoi(argv[1]);
   int channel = atoi(argv[2]);
   int height = atoi(argv[3]);
   int width = atoi(argv[4]);
-  if (argc == 6) {
-    pad = atoi(argv[5]);
-  }
   std::cout << "batch_size: " << batch_size << ", channel: " << channel
             << ", height: " << height << ", width: " << width << std::endl;
   framework::DDim dim =
@@ -153,7 +122,6 @@ int TestQuqntizeOp(int argc, char *argv[]) {
   auto output_scale_var = scope.get()->Var("output_scale");
 
   framework::AttributeMap attrs;
-  attrs["paddings"].Set<vector<int>>(std::vector<int>({pad, pad}));
   auto *op = new operators::QuantizeOp<CPU, float>("quantize", inputs, outputs,
                                                    attrs, scope);
   op->InferShape();
@@ -172,9 +140,9 @@ int TestQuqntizeOp(int argc, char *argv[]) {
   framework::Tensor output_cmp;
   output_cmp.Resize(output->dims());
   float scale = 127 / output_scale_cmp;
-  // quantize<round::RoundToEven>(input, scale, pad, 0, &output_cmp);
-  // quantize<round::RoundAwayZero>(input, scale, pad, 0, &output_cmp);
-  quantize<round::RoundTowardsZero>(input, scale, pad, 0, &output_cmp);
+  // quantize<round::RoundToEven>(input, scale, &output_cmp);
+  // quantize<round::RoundAwayZero>(input, scale, &output_cmp);
+  quantize<round::RoundTowardsZero>(input, scale, &output_cmp);
   int8_t *output_cmp_data = output_cmp.data<int8_t>();
   for (int i = 0; i < output->numel(); ++i) {
     PADDLE_MOBILE_ENFORCE(output_data[i] == output_cmp_data[i],
