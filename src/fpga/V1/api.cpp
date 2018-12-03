@@ -196,19 +196,35 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
     arg->conv_arg[i].image.pad_height = (uint32_t)padding_h;
     arg->conv_arg[i].image.pad_width = (uint32_t)padding_w;
     arg->conv_arg[i].filter_scale_address = filter->scale;
-    arg->conv_arg[i].filter_address = &(
-        (int8_t *)filter_ptr)[i * element_num * filter_num_per_div];  // NOLINT
-    arg->conv_arg[i].sb_address = &bs_ptr[i * filter_num_per_div * 2];
+    //    arg->conv_arg[i].filter_address = &(
+    //        (int8_t *)filter_ptr)[i * element_num * filter_num_per_div];  //
+    //        NOLINT
+    //    arg->conv_arg[i].sb_address = &bs_ptr[i * filter_num_per_div * 2];
+
     arg->conv_arg[i].filter_num = (uint32_t)(
         i == n - 1 ? channel - (n - 1) * filter_num_per_div  // NOLINT
                    : filter_num_per_div);
+
+    size_t filter_size =
+        element_num * arg->conv_arg[i].filter_num * sizeof(int8_t);
+    auto filter_head =
+        &((int8_t *)filter_ptr)[i * element_num * filter_num_per_div];
+    arg->conv_arg[i].filter_address = fpga_malloc(filter_size);
+    memcpy(arg->conv_arg[i].filter_address, filter_head, filter_size);
+    fpga_flush(arg->conv_arg[i].filter_address, filter_size);
+
+    size_t bs_size = 2 * arg->conv_arg[i].filter_num * sizeof(float);
+    auto bs_head = &bs_ptr[i * filter_num_per_div * 2];
+    arg->conv_arg[i].sb_address = fpga_malloc(bs_size);
+    memcpy(arg->conv_arg[i].sb_address, bs_head, bs_size);
+    fpga_flush(arg->conv_arg[i].sb_address, bs_size);
 
     if (n > 1) {
       arg->conv_arg[i].output.scale_address =
           (float *)fpga_malloc(2 * sizeof(float));  // NOLINT
       arg->conv_arg[i].output.address =
-          fpga_malloc(input->dims()[2] *
-                      align_to_x(input->dims()[3] * arg->conv_arg[i].filter_num,
+          fpga_malloc(out->dims()[2] *
+                      align_to_x(out->dims()[3] * arg->conv_arg[i].filter_num,
                                  IMAGE_ALIGNMENT) *
                       sizeof(half));
     } else {
@@ -221,6 +237,8 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
     arg->concat_arg.scales_in[i] = arg->conv_arg[i].output.scale_address;
     arg->concat_arg.channel_num[i] = arg->conv_arg[i].filter_num;
   }
+  filter->reset_data_ptr(nullptr);
+  fpga_free(bs_ptr);
 }
 
 }  // namespace fpga
