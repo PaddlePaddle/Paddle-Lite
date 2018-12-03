@@ -137,11 +137,13 @@ int fpga_regpoll(uint64_t reg, uint64_t val, int time) {
 
   for (i = 0; i < timeout; i++) {
     if (val == reg_readq(reg)) {
+      std::cout << "fpga_regpoll:" << i << "val:" << val << "reg:" << reg
+                << std::endl;
       break;
     }
   }
 
-  if (i <= timeout) {
+  if (i < timeout) {
     return 0;
   } else {
     return -1;
@@ -153,6 +155,12 @@ int memory_request(struct fpga_memory *memory, size_t size, uint64_t *addr) {
   uint64_t _nr = DIV_ROUND_UP(size, FPGA_PAGE_SIZE);
   unsigned int nr = (unsigned int)_nr;
   int ret = 0;
+  DLOG << size;
+  DLOG << _nr;
+  DLOG << nr;
+
+  uint64_t a_size = FPGA_PAGE_SIZE * nr;
+  DLOG << a_size;
 
   pthread_mutex_lock(&memory->mutex);
 
@@ -166,6 +174,7 @@ int memory_request(struct fpga_memory *memory, size_t size, uint64_t *addr) {
 
     *addr = address_ofset;
   } else {
+    DLOG << "memory request failed!";
     ret = -ENOMEM;
   }
 
@@ -282,7 +291,7 @@ uint64_t vaddr_to_paddr(void *address) {
   if (iter != g_fpgainfo.fpga_vaddr2paddr_map.end()) {
     paddr = iter->second;
   } else {
-    DLOG << "Invalid pointer";
+    DLOG << "Invalid pointer: " << address;
   }
 
   return paddr;
@@ -348,6 +357,11 @@ void fpga_free_driver(void *ptr) {
     fpga_bitmap::bitmap_clear(g_fpgainfo.memory_info->bitmap, pos,
                               g_fpgainfo.memory_info->nr[pos]);
     pthread_mutex_unlock(&g_fpgainfo.memory_info->mutex);
+
+    auto iter = g_fpgainfo.fpga_vaddr2paddr_map.find(ptr);
+    if (iter != g_fpgainfo.fpga_vaddr2paddr_map.end()) {
+      g_fpgainfo.fpga_vaddr2paddr_map.erase(iter);
+    }
   } else {
     DLOG << "Invalid pointer";
   }
