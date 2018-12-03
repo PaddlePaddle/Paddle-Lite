@@ -38,7 +38,7 @@ bool ConvAddKernel<FPGA, float>::Init(FusionConvAddParam<FPGA> *param) {
     bs_ptr[i] = bias_ptr[i];
   }
 
-  fpga::format_conv_data(filter, out, bs_ptr, param->Groups());
+  fpga::format_conv_data(filter, out, &bs_ptr, param->Groups());
 
   fpga::SplitConvArgs conv_arg = {0};
   fpga::fill_split_arg(&conv_arg, input, out, filter, relu_enabled,
