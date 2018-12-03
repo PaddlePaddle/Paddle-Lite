@@ -17,6 +17,7 @@ limitations under the License. */
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <cstring>
 #include <map>
 
@@ -44,7 +45,7 @@ const int PE_IDX_POOLING = 1;
 const int PE_IDX_EW = 2;
 const int PE_IDX_BYPASS = 3;
 
-enum pe_status { IDLE = 0, BUSY = 1 };
+enum pe_status { IDLE = 0, BUSY = 1, ERROR = 2 };
 
 struct MemoryCacheArgs {
   void *offset;
@@ -58,7 +59,7 @@ struct MemoryCacheArgs {
 struct fpga_pe {
   char type_name[MAX_TYPE_NAME_LENTH + 1];
   struct pe_data_s *outer;
-  pe_status status;  // 0=idle 1=busy -1=fail
+  pe_status status;
   uint64_t interrupt_cnt;
 };
 
@@ -106,6 +107,8 @@ inline uint64_t reg_readq(uint32_t offset) {
   uint64_t value =
       *(volatile uint64_t *)((uint8_t *)g_fpgainfo.FpgaRegVirAddr +  // NOLINT
                              offset);                                // NOLINT
+  // DLOG << "read end";
+  usleep(10);
 
   return value;
 }
@@ -114,6 +117,8 @@ inline void reg_writeq(uint64_t value, uint32_t offset) {
   // DLOG << "offset : " << offset << ", value : " << value;
   *(volatile uint64_t *)((uint8_t *)g_fpgainfo.FpgaRegVirAddr +  // NOLINT
                          offset) = value;
+  // DLOG << "write end";
+  usleep(10);
 }
 
 int open_device_driver();
