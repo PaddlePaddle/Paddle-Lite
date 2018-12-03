@@ -14,8 +14,8 @@ limitations under the License. */
 
 #ifdef FUSION_CONVADDRELU_INT8_OP
 
-#include <limits>
 #include <iostream>
+#include <limits>
 #include "../test_helper.h"
 #include "../test_include.h"
 #include "operators/fusion_conv_add_relu_int8_op.h"
