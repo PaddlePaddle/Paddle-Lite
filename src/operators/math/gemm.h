@@ -23,12 +23,10 @@ limitations under the License. */
 
 #if __aarch64__
 #define MR_INT8 4
-#define NR_INT8 2
 #define MR 6
 #define NR 16
 #else
 #define MR_INT8 4
-#define NR_INT8 2
 #define MR 6
 #define NR 8
 #endif
@@ -195,58 +193,52 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
   // 8 bits int small block inner product
   void AddDot4x8(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
                  int32_t ldc);
-  void AddDot4x2(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
-                 int32_t ldc);
   void AddDot6x8(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
                  int32_t ldc);
 
   // 8 bits int inner product
-  void InnerKernel(int32_t mc, int32_t nc, float alpha, const int8_t *a,
-                   const int8_t *b, float beta, int32_t *c, int32_t *C,
-                   int32_t ldc, bool relu);
-  void InnerKernelWithBias(int32_t mc, int32_t nc, float alpha, const int8_t *a,
-                           const int8_t *b, float beta, int32_t *c, int8_t *C,
-                           int32_t ldc, bool relu, int32_t *bias);
+  void InnerKernelWithBias(int32_t mc, int32_t nc, int8_t alpha,
+                           const int8_t *a, const int8_t *b, int8_t beta,
+                           int32_t *c, int32_t *C, int32_t ldc, bool relu,
+                           int8_t *bias);
 
   // 8 bits int pack function
   void PackMatrixA_4r(int32_t m, int32_t k, int32_t m_tail, const int8_t *A,
                       int32_t lda, int8_t *buffer);
-  void PackMatrixA_4r_16(int32_t m, int32_t k, int32_t m_tail, const int8_t *A,
-                         int32_t lda, int8_t *buffer);
   void PackMatrixA_6r(int32_t m, int32_t k, int32_t m_tail, const int8_t *A,
                       int32_t lda, int8_t *buffer);
-  void PackMatrixB_2c_16(int32_t k, int32_t n, int32_t n_tail, const int8_t *B,
-                         int32_t ldb, int8_t *buffer);
   void PackMatrixB_8c(int32_t k, int32_t n, int32_t n_tail, const int8_t *B,
                       int32_t ldb, int8_t *buffer);
   void PackMatrixA_omp_4r(int32_t m, int32_t k, int32_t m_tail, const int8_t *A,
                           int32_t lda, int8_t *buffer);
   void PackMatrixB_omp_8c(int32_t k, int32_t n, int32_t n_tail, const int8_t *B,
                           int32_t ldb, int8_t *buffer);
-  void PackMatrixA_omp_4r_16(int32_t m, int32_t k, int32_t m_tail,
-                             const int8_t *A, int32_t lda, int8_t *buffer);
-  void PackMatrixB_omp_2c_16(int32_t k, int32_t n, int32_t n_tail,
-                             const int8_t *B, int32_t ldb, int8_t *buffer);
 
   // 8 bits int matrix product
-  void Sgemm(int32_t m, int32_t n, int32_t k, float alpha, const int8_t *A,
-             int32_t lda, const int8_t *B, int32_t ldb, float beta, int32_t *C,
-             int32_t ldc, bool relu, int32_t *bias);
-  void Sgemm(int32_t m, int32_t n, int32_t k, float alpha, const int8_t *A,
-             int32_t lda, const int8_t *B, int32_t ldb, float beta, int8_t *C,
-             int32_t ldc, bool relu, int32_t *bias);
-  void Sgemm_omp(int32_t m, int32_t n, int32_t k, float alpha, const int8_t *A,
-                 int32_t lda, const int8_t *B, int32_t ldb, float beta,
-                 int32_t *C, int32_t ldc, bool relu, int32_t *bias);
+  void Sgemm(int32_t m, int32_t n, int32_t k, int8_t alpha, const int8_t *A,
+             int32_t lda, const int8_t *B, int32_t ldb, int8_t beta, int32_t *C,
+             int32_t ldc, bool relu, int8_t *bias);
+  void Sgemm_omp(int32_t m, int32_t n, int32_t k, int8_t alpha, const int8_t *A,
+                 int32_t lda, const int8_t *B, int32_t ldb, int8_t beta,
+                 int32_t *C, int32_t ldc, bool relu, int8_t *bias);
   // 8 bits int write back
+  // C = alpha * A * B + beta * C
+  void WriteWithAlphaBeta(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
+                          int32_t ldc);
   // C = A * B
   void WriteBasic(int32_t mc, int32_t nc, int32_t *c, int32_t *C, int32_t ldc);
-  // C = A * B + bias, scale * relu(C)
-  void WriteWithAddReluScale(int32_t mc, int32_t nc, int32_t *c, int8_t *C,
-                             int32_t ldc, int32_t *bias, float scale);
-  // C = A * B + bias, scale * C
-  void WriteWithAddScale(int32_t mc, int32_t nc, int32_t *c, int8_t *C,
-                         int32_t ldc, int32_t *bias, float scale);
+  // C = A * B + C
+  void WriteWithAdd(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
+                    int32_t ldc);
+  // C = A * B + bias
+  void WriteWithAddV1(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
+                      int32_t ldc, int8_t *bias);
+  // C = A * B + C, relu(C)
+  void WriteWithAddRelu(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
+                        int32_t ldc);
+  // C = A * B + bias, relu(C)
+  void WriteWithAddReluV1(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
+                          int32_t ldc, int8_t *bias);
 
  private:
   int MC = 0;
@@ -262,7 +254,7 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
   // 8 bits int
   int8_t *packedA_int8;
   int8_t *packedB_int8;
-  int32_t *packedC_int32;
+  int32_t *packedC_int8;
   int8_t *zero_int8;
 };
 
