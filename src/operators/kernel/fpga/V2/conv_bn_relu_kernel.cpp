@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef FUSION_CONVBNRELU_OP
 
 #include "operators/kernel/conv_bn_relu_kernel.h"
+#include "fpga/V2/filter.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -50,7 +51,7 @@ bool ConvBNReluKernel<FPGA, float>::Init(FusionConvBNReluParam<FPGA> *param) {
   param->SetNewScale(new_scale);
   param->SetNewBias(new_bias);
 
-  fpga::format_conv_data(filter, out, bs_ptr, param->Groups());
+  fpga::format_conv_data(filter, out, &bs_ptr, param->Groups());
 
   fpga::SplitConvArgs conv_arg = {0};
   fpga::fill_split_arg(&conv_arg, input, out, filter, relu_enabled,
