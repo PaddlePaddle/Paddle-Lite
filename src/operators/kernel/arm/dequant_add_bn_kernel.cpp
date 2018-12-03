@@ -12,9 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_DEQUANT_ADD_BN_RELU_OP
+#ifdef FUSION_DEQUANT_ADD_BN_OP
 
-#include "operators/kernel/dequant_add_bn_relu_kernel.h"
+#include "operators/kernel/dequant_add_bn_kernel.h"
 #include <cmath>
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
 #include <arm_neon.h>
@@ -24,8 +24,8 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool FusionDequantAddBNReluKernel<CPU, float>::Init(
-    FusionDequantAddBNReluParam<CPU> *param) {
+bool FusionDequantAddBNKernel<CPU, float>::Init(
+    FusionDequantAddBNParam<CPU> *param) {
   // elementwise add params
   const Tensor *bias = param->bias_;
   // batch norm params
@@ -49,8 +49,8 @@ bool FusionDequantAddBNReluKernel<CPU, float>::Init(
 }
 
 template <>
-void FusionDequantAddBNReluKernel<CPU, float>::Compute(
-    const FusionDequantAddBNReluParam<CPU> &param) {
+void FusionDequantAddBNKernel<CPU, float>::Compute(
+    const FusionDequantAddBNParam<CPU> &param) {
   const int32_t *input = param.input_->data<int32_t>();
   const float *bn_scale = param.bn_scale_->data<float>();
   const float *bn_bias = param.bn_bias_->data<float>();
@@ -78,7 +78,6 @@ void FusionDequantAddBNReluKernel<CPU, float>::Compute(
       remain = spatial_size & 0xF;
       float32x4_t __scale = vdupq_n_f32(scale);
       float32x4_t __bias = vdupq_n_f32(bias);
-      float32x4_t __zero = vdupq_n_f32(0.f);
 
       for (int k = 0; k < loop; ++k, x += 16, y += 16) {
         int32x4_t r0 = vld1q_s32(x);
@@ -93,10 +92,6 @@ void FusionDequantAddBNReluKernel<CPU, float>::Compute(
         f1 = vmlaq_f32(__bias, __scale, f1);
         f2 = vmlaq_f32(__bias, __scale, f2);
         f3 = vmlaq_f32(__bias, __scale, f3);
-        f0 = vmaxq_f32(__zero, f0);
-        f1 = vmaxq_f32(__zero, f1);
-        f2 = vmaxq_f32(__zero, f2);
-        f3 = vmaxq_f32(__zero, f3);
         vst1q_f32(y, f0);
         vst1q_f32(y + 4, f1);
         vst1q_f32(y + 8, f2);
@@ -104,7 +99,7 @@ void FusionDequantAddBNReluKernel<CPU, float>::Compute(
       }
 #endif  // __ARM_NEON__
       for (int k = 0; k < remain; ++k) {
-        y[k] = std::max(scale * x[k] + bias, 0.f);
+        y[k] = scale * x[k] + bias;
       }
     }
   }
@@ -113,4 +108,4 @@ void FusionDequantAddBNReluKernel<CPU, float>::Compute(
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#endif  // FUSION_DEQUANT_ADD_BN_RELU_OP
+#endif  // FUSION_DEQUANT_ADD_BN_OP
