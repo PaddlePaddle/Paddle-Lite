@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 #include <fstream>
+#include <iomanip>
+#include <iostream>
 #include "../test_include.h"
 
 #ifdef PADDLE_MOBILE_FPGA_V1
@@ -87,26 +89,29 @@ int main() {
   paddle_mobile::PaddleMobile<paddle_mobile::FPGA> paddle_mobile;
   if (paddle_mobile.Load(std::string(g_resnet50), true)) {
     Tensor input_tensor;
-    SetupTensor<float>(&input_tensor, {1, 3, 224, 224}, static_cast<float>(0),
-                       static_cast<float>(1));
+    SetupTensor<float>(&input_tensor, {1, 3, 224, 224}, static_cast<float>(2),
+                       static_cast<float>(2));
     readStream(g_image_src_float,
                input_tensor.mutable_data<float>({1, 3, 224, 224}));
     paddle_mobile.FeedData(input_tensor);
     paddle_mobile.Predict_To(-1);
-    /*for(int i = 0; i < 73; i++)
-    {
+    for (int i = 0; i < 73; i++) {
       auto tensor_ptr = paddle_mobile.FetchResult(i);
-      std::string saveName = "resnet50_result_" + std::to_string (i);
+      std::string saveName = "resnet50_result_" + std::to_string(i);
       paddle_mobile::fpga::fpga_invalidate((*tensor_ptr).data<float>(),
-    tensor_ptr->numel()); dump_stride(saveName, (*tensor_ptr), 20);
-      //dump(saveName, (*tensor_ptr));
-    }*/
+                                           tensor_ptr->numel() * sizeof(half));
+      dump_stride(saveName, (*tensor_ptr), 20);
+      // dump(saveName, (*tensor_ptr));
+    }
 
-    /*std::shared_ptr<Tensor> output_tensor = paddle_mobile.FetchResult(73);
-    (*output_tensor).dump<float>("resnet50_result_73");
+    std::shared_ptr<Tensor> output_tensor = paddle_mobile.FetchResult(73);
+    //(*output_tensor).dump<float>("resnet50_result_73");
     output_tensor = paddle_mobile.FetchResult(74);
-    (*output_tensor).dump<float>("resnet50_result_74");*/
-    std::shared_ptr<Tensor> output_tensor = paddle_mobile.FetchResult(74);
+    //(*output_tensor).dump<float>("resnet50_result_74");
+    // std::shared_ptr<Tensor> output_tensor = paddle_mobile.FetchResult(74);
+
+    // output_tensor = paddle_mobile.FetchResult(74);
+
     float max = 0;
     auto data_ptr = output_tensor->data<float>();
     int maximumIdx = 0;
@@ -116,7 +121,7 @@ int main() {
         max = data_ptr[i];
       }
     }
-    std::cout << "index : " << maximumIdx << ",    value : " << max
+    std::cout << "index : " << std::dec << maximumIdx << ",    value : " << max
               << std::endl;
     std::cout << "Computation done" << std::endl;
     return 0;
