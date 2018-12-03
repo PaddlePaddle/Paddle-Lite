@@ -12,25 +12,24 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef DEPTHWISECONV_OP
+#pragma once
 
-#include "operators/kernel/depthwise_conv_kernel.h"
-#include "operators/kernel/central-arm-func/depthwise_conv_arm_func.h"
+#ifdef FUSION_DEQUANT_ADD_BN_OP
+
+#include "framework/operator.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <>
-bool DepthwiseConvKernel<CPU, float>::Init(ConvParam<CPU> *param) {
-  return true;
-}
-
-template <>
-void DepthwiseConvKernel<CPU, float>::Compute(const ConvParam<CPU> &param) {
-  DepthwiseConvCompute<float>(param);
-}
-
-template class DepthwiseConvKernel<CPU, float>;
+template <typename DeviceType, typename T>
+class FusionDequantAddBNKernel
+    : public framework::OpKernelBase<DeviceType,
+                                     FusionDequantAddBNParam<DeviceType>> {
+ public:
+  void Compute(const FusionDequantAddBNParam<DeviceType> &param);
+  bool Init(FusionDequantAddBNParam<DeviceType> *param);
+};
 
 }  // namespace operators
 }  // namespace paddle_mobile
