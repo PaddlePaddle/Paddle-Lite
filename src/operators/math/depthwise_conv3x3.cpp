@@ -1272,13 +1272,16 @@ void DepthwiseConvAddBNRelu3x3s2p1(const framework::Tensor *input,
 
 void DepthwiseConv3x3s2p1v2(const framework::Tensor *input,
                             const framework::Tensor *filter,
-                            framework::Tensor *output, framework::Tensor bias,
+                            framework::Tensor *output, framework::Tensor *bias,
                             bool if_bias) {
 #if __ARM_NEON
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
   float *output_data = output->data<float>();
-  const float *bias_data = bias.data<float>();
+  const float *bias_data;
+  if (if_bias) {
+    bias_data = bias->data<float>();
+  }
 
   const int in_h = static_cast<int>(input->dims()[2]);
   const int in_w = static_cast<int>(input->dims()[3]);
@@ -1905,7 +1908,7 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const framework::Tensor *input,
 
 void DepthwiseConv3x3s2p0(const framework::Tensor *input,
                           const framework::Tensor *filter,
-                          framework::Tensor *output, framework::Tensor bias,
+                          framework::Tensor *output, framework::Tensor *bias,
                           bool if_bias) {
 #if __ARM_NEON
 
@@ -1925,7 +1928,7 @@ void DepthwiseConv3x3s2p0(const framework::Tensor *input,
     for (int c = 0; c < input_channel; c++) {
       const float *filter_data = filter->data<float>() + c * 9;
       const float *input_data = input->data<float>() + c * inhxw;
-      const float *bias_data = bias.data<float>() + c;
+      const float *bias_data = bias->data<float>() + c;
       float *output_data = output->data<float>() + c * outhxw;
       float w00 = filter_data[0];
       float w01 = filter_data[1];

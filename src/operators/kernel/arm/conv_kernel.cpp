@@ -22,41 +22,43 @@ namespace operators {
 
 template <>
 bool ConvKernel<CPU, float>::Init(ConvParam<CPU> *param) {
+  bool conv3x3 = param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
+                 param->Filter()->dims()[2] == 3;
+  bool depth3x3 = conv3x3 && param->Groups() == param->Input()->dims()[1] &&
+                  param->Input()->dims()[1] == param->Output()->dims()[1];
   if (param->Filter()->type() == typeid(int8_t)) {
-    if (param->Groups() == param->Input()->dims()[1] &&
-        param->Input()->dims()[1] == param->Output()->dims()[1] &&
-        param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
-        param->Filter()->dims()[2] == 3 && param->Strides()[0] < 3 &&
+    if (depth3x3 && param->Strides()[0] < 3 &&
         param->Strides()[0] == param->Strides()[1]) {
       param->ExecMode() = ConvParam<CPU>::EXEC_DEPTHWISE3x3_INT8;
     } else {
       param->ExecMode() = ConvParam<CPU>::EXEC_GEMM_INT8;
     }
   } else {
-    if (param->Groups() == param->Input()->dims()[1] &&
-        param->Input()->dims()[1] == param->Output()->dims()[1] &&
-        param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
-        param->Filter()->dims()[2] == 3 && param->Strides()[0] == 1) {
+    if (depth3x3 && param->Strides()[0] == param->Strides()[1] &&
+        param->Strides()[0] == 1 && param->Paddings()[0] == 1 &&
+        param->Paddings()[0] == param->Paddings()[1]) {
       param->ExecMode() = ConvParam<CPU>::EXEC_DEPTHWISE3x3S1P1_FLOAT;
-    } else if (param->Groups() == param->Input()->dims()[1] &&
-               param->Input()->dims()[1] == param->Output()->dims()[1] &&
-               param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
-               param->Filter()->dims()[2] == 3) {
-      param->ExecMode() = ConvParam<CPU>::EXEC_DEPTHWISE3x3_FLOAT;
+    } else if (depth3x3 && param->Strides()[0] == param->Strides()[1] &&
+               param->Strides()[0] == 2 && param->Paddings()[0] == 0 &&
+               param->Paddings()[0] == param->Paddings()[1]) {
+      param->ExecMode() = ConvParam<CPU>::EXEC_DEPTHWISE3x3S2P0_FLOAT;
+    } else if (depth3x3 && param->Strides()[0] == param->Strides()[1] &&
+               param->Strides()[0] == 2 && param->Paddings()[0] == 1 &&
+               param->Paddings()[0] == param->Paddings()[1]) {
+      param->ExecMode() = ConvParam<CPU>::EXEC_DEPTHWISE3x3S2P1_FLOAT;
 #ifndef __aarch64__
-    } else if (param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
-               param->Strides()[0] == param->Strides()[1] &&
+    } else if (conv3x3 && param->Strides()[0] == param->Strides()[1] &&
                param->Dilations()[0] == param->Dilations()[1] &&
-               param->Filter()->dims()[2] == 3 && param->Strides()[0] == 1 &&
-               param->Dilations()[0] == 1 && param->Output()->dims()[1] >= 16 &&
+               param->Strides()[0] == 1 && param->Dilations()[0] == 1 &&
+               param->Output()->dims()[1] >= 16 &&
                param->Input()->dims()[1] >= 16 &&
                param->Input()->dims()[2] <= 140 /* refered from ncnn */) {
       param->ExecMode() = ConvParam<CPU>::EXEC_WINOGRAD3X3_FLOAT;
       // transform weight
-      framework::Tensor *transformed_weight = new framework::Tensor;
+      framework::Tensor transformed_weight;
       operators::math::winograd_transform_weight<8, 3>(*param->Filter(),
-                                                       transformed_weight);
-      param->Filter() = transformed_weight;
+                                                       &transformed_weight);
+      framework::TensorCopy(transformed_weight, param->Filter());
 #endif
     } else {
       param->ExecMode() = ConvParam<CPU>::EXEC_GEMM_FLOAT;
@@ -78,9 +80,13 @@ void ConvKernel<CPU, float>::Compute(const ConvParam<CPU> &param) {
       math::DepthwiseConv3x3s1p1(param.Input(), param.Filter(), param.Output(),
                                  nullptr, false);
       break;
-    case ConvParam<CPU>::EXEC_DEPTHWISE3x3_FLOAT:
-      math::DepthwiseConv3x3(param.Input(), param.Strides(), param.Paddings(),
-                             param.Filter(), nullptr, param.Output(), false);
+    case ConvParam<CPU>::EXEC_DEPTHWISE3x3S2P1_FLOAT:
+      math::DepthwiseConv3x3s2p1v2(param.Input(), param.Filter(),
+                                   param.Output(), nullptr, false);
+      break;
+    case ConvParam<CPU>::EXEC_DEPTHWISE3x3S2P0_FLOAT:
+      math::DepthwiseConv3x3s2p0(param.Input(), param.Filter(), param.Output(),
+                                 nullptr, false);
       break;
     case ConvParam<CPU>::EXEC_WINOGRAD3X3_FLOAT:
       WinogradConv3x3<8, 3>(param);
