@@ -28,15 +28,21 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 namespace math {
-using framework::Tensor;
-using std::vector;
-void Pool3x3Avgs1p1(const Tensor *input, Tensor *output);
-void Pool3x3Maxs1p1(const Tensor *input, Tensor *output);
-void Pool3x3Max(vector<int> strides, vector<int> paddings, const Tensor *input,
-                Tensor *output);
+void Pool3x3Avgs1p1(const framework::Tensor *input, framework::Tensor *output);
+void Pool3x3Maxs1p1(const framework::Tensor *input, framework::Tensor *output);
+void Pool3x3Max(std::vector<int> strides, std::vector<int> paddings,
+                const framework::Tensor *input, framework::Tensor *output);
 
-void Pool3x3Avg(vector<int> strides, vector<int> paddings, const Tensor *in_x,
-                Tensor *out);
+void Pool3x3Avg(std::vector<int> strides, std::vector<int> paddings,
+                const framework::Tensor *in_x, framework::Tensor *out);
+
+void Pool3x3Maxs1_int8(const framework::Tensor *input,
+                       framework::Tensor *output, int32_t pad_h, int32_t pad_w);
+void Pool3x3Maxs2_int8(const framework::Tensor *input,
+                       framework::Tensor *output, int32_t pad_h, int32_t pad_w);
+void Pool3x3Max_int8(const std::vector<int> &strides,
+                     const std::vector<int> &paddings,
+                     const framework::Tensor *input, framework::Tensor *output);
 }  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile
