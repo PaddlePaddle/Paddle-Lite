@@ -77,15 +77,25 @@ void BatchNormKernel<GPU_CL, float>::Compute(
   auto new_scale = param.NewScale()->GetCLImage();
   auto new_bias = param.NewBias()->GetCLImage();
   const int out_width = default_work_size[1];
-
-  clSetKernelArg(kernel, 1, sizeof(int), &out_width);
-  clSetKernelArg(kernel, 2, sizeof(cl_mem), &input);
-  clSetKernelArg(kernel, 3, sizeof(cl_mem), &new_scale);
-  clSetKernelArg(kernel, 4, sizeof(cl_mem), &new_bias);
-  clSetKernelArg(kernel, 5, sizeof(cl_mem), &out);
-
-  //  cl_event out_event = param.OutputY()->GetClEvent();
-  //  cl_event wait_event = param.InputX()->GetClEvent();
+  DLOG << *param.InputX();
+  DLOG << *param.NewBias();
+  DLOG << *param.NewScale();
+  DLOG << default_work_size[0];
+  DLOG << default_work_size[1];
+  DLOG << default_work_size[2];
+  DLOG << out_width;
+  DLOG << *param.OutputY();
+  cl_int status;
+  clSetKernelArg(kernel, 0, sizeof(cl_int), &out_width);
+  CL_CHECK_ERRORS(status);
+  clSetKernelArg(kernel, 1, sizeof(cl_mem), &input);
+  CL_CHECK_ERRORS(status);
+  clSetKernelArg(kernel, 2, sizeof(cl_mem), &new_scale);
+  CL_CHECK_ERRORS(status);
+  clSetKernelArg(kernel, 3, sizeof(cl_mem), &new_bias);
+  CL_CHECK_ERRORS(status);
+  clSetKernelArg(kernel, 4, sizeof(cl_mem), &out);
+  CL_CHECK_ERRORS(status);
   clEnqueueNDRangeKernel(this->cl_helper_.CLCommandQueue(), kernel, 3, NULL,
                          default_work_size.data(), NULL, 0, NULL, NULL);
 }

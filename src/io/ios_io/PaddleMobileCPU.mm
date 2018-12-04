@@ -95,7 +95,8 @@ static std::mutex shared_mutex;
          andModelParamsLen:(size_t)combinedParamsLen
       andCombinedParamsBuf:(const uint8_t *)combinedParamsBuf {
   pam_->SetThreadNum(2);
-  return loaded_ = pam_->LoadCombinedMemory(modelLen, modelBuf, combinedParamsLen, combinedParamsBuf);
+  return loaded_ = pam_->LoadCombinedMemory(modelLen, modelBuf, combinedParamsLen,
+          const_cast<uint8_t*>(combinedParamsBuf));
 }
 
 - (BOOL)load:(NSString *)modelAndWeightPath{
