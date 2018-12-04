@@ -202,6 +202,7 @@ int main(int argc, char *argv[]) {
   int in_channels = atoi(argv[1]);
   int in_height = atoi(argv[2]);
   int in_width = atoi(argv[3]);
+#if __ARM_NEON
   // kernel = 3, pad = 1, stride = 1
   LOG(paddle_mobile::kLOG_INFO)
       << "float, ceil_mode=false, pooling_type=max, kernel=3, pad=1, stride=1";
@@ -212,6 +213,7 @@ int main(int argc, char *argv[]) {
       << "float, ceil_mode=false, pooling_type=max, kernel=3, pad=0, stride=2";
   paddle_mobile::TestPoolOp<float, 0, 0, 3, 0, 2>(in_channels, in_height,
                                                   in_width);
+#endif
   // kernel = 3, pad = 0, stride = 1
   LOG(paddle_mobile::kLOG_INFO)
       << "int8_t, ceil_mode=false, pooling_type=max, kernel=3, pad=0, stride=1";
