@@ -130,7 +130,7 @@ void Pool3x3Maxs1_int8(const Tensor *input, Tensor *output, int32_t pad_h,
   const int8_t *input_data = input->data<int8_t>();
   const int32_t output_channels = output->dims()[1];
   const int32_t h_out = output->dims()[2];
-  int32_t w_out = output->dims()[3];
+  const int32_t w_out = output->dims()[3];
   int8_t *output_data = output->mutable_data<int8_t>();
   const int32_t outputdata_channel_stride = h_out * w_out;
   const int32_t inputdata_channel_stride = h_in * w_in;
@@ -259,7 +259,7 @@ void Pool3x3Maxs1_int8(const Tensor *input, Tensor *output, int32_t pad_h,
 
               PADDLE_LABEL_LESS8_SAVE
               ": \n\t"
-              "vst1.8 {d15}, [%[img_out]], r0\n\t"
+              "vst1.8 {d15[0]}, [%[img_out]], r0\n\t"
               "add %[row0], %[row0], #1 \n\t"
               "add %[row1], %[row1], #1 \n\t"
               "add %[row2], %[row2], #1 \n\t"
@@ -311,7 +311,7 @@ void Pool3x3Maxs2_int8(const Tensor *input, Tensor *output, int32_t pad_h,
   const int32_t w_in = input->dims()[3];
   const int32_t output_channels = output->dims()[1];
   const int32_t h_out = output->dims()[2];
-  int32_t w_out = output->dims()[3];
+  const int32_t w_out = output->dims()[3];
   const int32_t outputdata_channel_stride = h_out * w_out;
   const int32_t inputdata_channel_stride = h_in * w_in;
   const int32_t output_batch_stride =
@@ -342,7 +342,9 @@ void Pool3x3Maxs2_int8(const Tensor *input, Tensor *output, int32_t pad_h,
           asm volatile(
               "vld2.8 {q0, q1}, [%[row0]]! \n\t"  // q0=0-30, q1=1-31
               "vld2.8 {q2, q3}, [%[row1]]! \n\t"
-              "vld2.8 {q4, q5}, [%[row2]]! \n\t" LOOP_LABEL
+              "vld2.8 {q4, q5}, [%[row2]]! \n\t"
+
+              LOOP_LABEL
               ": \n\t"
               "vmax.s8 q15, q0, q1 \n\t"
               "vld2.8 {q6, q7}, [%[row0]]! \n\t"  // q0=32-62, q1=33-63
@@ -435,7 +437,7 @@ void Pool3x3Maxs2_int8(const Tensor *input, Tensor *output, int32_t pad_h,
 
               PADDLE_LABEL_LESS8_SAVE
               ": \n\t"
-              "vst1.8 {d15}, [%[img_out]], r0\n\t"
+              "vst1.8 {d15[0]}, [%[img_out]], r0\n\t"
               "add %[row0], %[row0], #2 \n\t"
               "add %[row1], %[row1], #2 \n\t"
               "add %[row2], %[row2], #2 \n\t"
