@@ -201,9 +201,8 @@ int do_sgemm_with_bias(int m, int n, int k, bool relu, int pr) {
 
   paddle_mobile::operators::math::Gemm gemm;
 #ifdef _OPENMP
-  // TODO(wzzju):gemm.Sgemm_omp_with_bias, now use single thread instead.
-  gemm.Sgemm(m, n, k, scale, a, lda, b, ldb, static_cast<float>(0), c, ldc,
-             relu, bias);
+  gemm.Sgemm_omp(m, n, k, scale, a, lda, b, ldb, static_cast<float>(0), c, ldc,
+                 relu, bias);
 #else
   gemm.Sgemm(m, n, k, scale, a, lda, b, ldb, static_cast<float>(0), c, ldc,
              relu, bias);

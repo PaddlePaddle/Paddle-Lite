@@ -54,9 +54,8 @@ void matmul(const framework::Tensor &matrix_a, bool trans_a,
 
 #ifdef _OPENMP
     if (bias != nullptr) {
-      // TODO(wzzju):gemm.Sgemm_omp_with_bias, now use single thread instead.
-      gemm.Sgemm(M, N, K, alpha, a, K, matrix_b.data<int8_t>(), N, beta,
-                 matrix_out->data<int8_t>(), N, relu, bias);
+      gemm.Sgemm_omp(M, N, K, alpha, a, K, matrix_b.data<int8_t>(), N, beta,
+                     matrix_out->data<int8_t>(), N, relu, bias);
     } else {
       gemm.Sgemm_omp(M, N, K, alpha, a, K, matrix_b.data<int8_t>(), N, beta,
                      matrix_out->data<int32_t>(), N, relu, bias);
@@ -73,10 +72,9 @@ void matmul(const framework::Tensor &matrix_a, bool trans_a,
   } else {
 #ifdef _OPENMP
     if (bias != nullptr) {
-      // TODO(wzzju):gemm.Sgemm_omp_with_bias, now use single thread instead.
-      gemm.Sgemm(M, N, K, alpha, matrix_a.data<int8_t>(), K,
-                 matrix_b.data<int8_t>(), N, beta, matrix_out->data<int8_t>(),
-                 N, relu, bias);
+      gemm.Sgemm_omp(M, N, K, alpha, matrix_a.data<int8_t>(), K,
+                     matrix_b.data<int8_t>(), N, beta,
+                     matrix_out->data<int8_t>(), N, relu, bias);
     } else {
       gemm.Sgemm_omp(M, N, K, alpha, matrix_a.data<int8_t>(), K,
                      matrix_b.data<int8_t>(), N, beta,
