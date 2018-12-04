@@ -163,31 +163,21 @@ template <typename Itype, typename Otype>
 inline void DepthwiseConv3x3(const ConvParam<CPU> &param) {
   const Tensor *input = param.Input();
   const Tensor *filter = param.Filter();
+  const std::vector<int> &paddings = param.Paddings();
+  const std::vector<int> &strides = param.Strides();
+  const int batch_size = input->dims()[0];
   Tensor *output = param.Output();
   output->mutable_data<Otype>();
 
-  const std::vector<int> &paddings = param.Paddings();
-  const std::vector<int> &strides = param.Strides();
-  const int batch_size = static_cast<int>(input->dims()[0]);
-  Tensor input_pad;
-  math::PadFunctor<CPU, Itype> pad;
   for (int i = 0; i < batch_size; i++) {
     Tensor in_batch = input->Slice(i, i + 1);
     Tensor out_batch = output->Slice(i, i + 1);
-    if (paddings[0] || paddings[1]) {
-      framework::DDim pad_shape = in_batch.dims();
-      pad_shape[2] += 2 * paddings[0];
-      pad_shape[3] += 2 * paddings[1];
-      input_pad.mutable_data<float>(pad_shape);
-      pad(in_batch, paddings[0], paddings[0], paddings[1], paddings[1],
-          &input_pad);
-    } else {
-      input_pad = in_batch;
-    }
     if (strides[0] == 1) {
-      math::DepthwiseConv3x3s1<Itype, Otype>(input_pad, *filter, &out_batch);
+      math::DepthwiseConv3x3S1<Itype, Otype>(in_batch, *filter, paddings,
+                                             &out_batch);
     } else if (strides[0] == 2) {
-      math::DepthwiseConv3x3s2<Itype, Otype>(input_pad, *filter, &out_batch);
+      math::DepthwiseConv3x3S2<Itype, Otype>(in_batch, *filter, paddings,
+                                             &out_batch);
     } else {
       // math::DepthwiseConv3x3<Itype, Otype>(input_pad, *filter,
       // &out_batch);
