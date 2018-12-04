@@ -153,7 +153,7 @@ void Pool3x3Maxs1_int8(const Tensor *input, Tensor *output, int32_t pad_h,
         int32_t nw1 = left_w >> 3;
         int32_t left_w1 = left_w & 0x7;
 #if __aarch64__
-        // TODO(wzzju)
+        // TODO
 #else
         if (nw > 0) {
 #define LOOP_LABEL "1"
@@ -334,7 +334,7 @@ void Pool3x3Maxs2_int8(const Tensor *input, Tensor *output, int32_t pad_h,
         int32_t nw1 = left_w >> 3;
         int32_t left_w1 = left_w & 0x7;
 #if __aarch64__
-        // TODO(wzzju)
+        // TODO
 #else
         if (nw > 0) {
 #define LOOP_LABEL "1"
@@ -527,7 +527,7 @@ void Pool3x3Max_int8(const vector<int> &strides, const vector<int> &paddings,
           } else {
 #if __ARM_NEON
 #if __aarch64__
-          // TODO(wzzju)
+          // TODO
 #else
             asm volatile(
                 "vld1.8  {d0}, [%[pos1]]        \n\t"
