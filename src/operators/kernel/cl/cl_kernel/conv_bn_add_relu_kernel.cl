@@ -12,27 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef DEPTHWISECONV_OP
 
-#include "operators/kernel/depthwise_conv_kernel.h"
-#include "operators/kernel/central-arm-func/depthwise_conv_arm_func.h"
+#define BATCH_NORM
+#define BIASE
+#define RELU
 
-namespace paddle_mobile {
-namespace operators {
-
-template <>
-bool DepthwiseConvKernel<CPU, float>::Init(ConvParam<CPU> *param) {
-  return true;
-}
-
-template <>
-void DepthwiseConvKernel<CPU, float>::Compute(const ConvParam<CPU> &param) {
-  DepthwiseConvCompute<float>(param);
-}
-
-template class DepthwiseConvKernel<CPU, float>;
-
-}  // namespace operators
-}  // namespace paddle_mobile
-
-#endif
+#include "conv_kernel.inc.cl"

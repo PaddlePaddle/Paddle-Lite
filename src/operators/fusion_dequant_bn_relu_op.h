@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_DEQUANT_ADD_BN_RELU_OP
+#ifdef FUSION_DEQUANT_BN_RELU_OP
 
 #pragma once
 
@@ -26,12 +26,11 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-class FusionDequantAddBNReluMatcher : public framework::FusionOpMatcher {
+class FusionDequantBNReluMatcher : public framework::FusionOpMatcher {
  public:
-  FusionDequantAddBNReluMatcher() {
+  FusionDequantBNReluMatcher() {
     node_ = framework::Node(G_OP_TYPE_DEQUANTIZE);
-    node_ > std::make_shared<framework::Node>(G_OP_TYPE_ELEMENTWISE_ADD) >
-        std::make_shared<framework::Node>(G_OP_TYPE_BATCHNORM) >
+    node_ > std::make_shared<framework::Node>(G_OP_TYPE_BATCHNORM) >
         std::make_shared<framework::Node>(G_OP_TYPE_RELU);
   }
 
@@ -39,8 +38,7 @@ class FusionDequantAddBNReluMatcher : public framework::FusionOpMatcher {
       framework::Node *node,
       std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
     node->Folder(node_.Depth(), Type(),
-                 {{G_OP_TYPE_ELEMENTWISE_ADD, {{"Y", "Y"}}},
-                  {G_OP_TYPE_BATCHNORM,
+                 {{G_OP_TYPE_BATCHNORM,
                    {{"Scale", "BNScale"},
                     {"Mean", "BNMean"},
                     {"Bias", "BNBias"},
@@ -48,23 +46,22 @@ class FusionDequantAddBNReluMatcher : public framework::FusionOpMatcher {
                  removed_nodes);
   }
 
-  std::string Type() { return G_OP_TYPE_FUSION_DEQUANT_ADD_BN_RELU; }
+  std::string Type() { return G_OP_TYPE_FUSION_DEQUANT_BN_RELU; }
 };
 
 template <typename DeviceType, typename T>
-class FusionDequantAddBNReluOp
+class FusionDequantBNReluOp
     : public framework::OperatorWithKernel<
-          DeviceType, FusionDequantAddBNReluParam<DeviceType>,
-          operators::FusionDequantAddBNReluKernel<DeviceType, T>> {
+          DeviceType, FusionDequantBNReluParam<DeviceType>,
+          operators::FusionDequantBNReluKernel<DeviceType, T>> {
  public:
-  FusionDequantAddBNReluOp(const std::string &type,
-                           const VariableNameMap &inputs,
-                           const VariableNameMap &outputs,
-                           const framework::AttributeMap &attrs,
-                           std::shared_ptr<framework::Scope> scope)
+  FusionDequantBNReluOp(const std::string &type, const VariableNameMap &inputs,
+                        const VariableNameMap &outputs,
+                        const framework::AttributeMap &attrs,
+                        std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<
-            DeviceType, FusionDequantAddBNReluParam<DeviceType>,
-            operators::FusionDequantAddBNReluKernel<DeviceType, T>>(
+            DeviceType, FusionDequantBNReluParam<DeviceType>,
+            operators::FusionDequantBNReluKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
   // inference output shape
   void InferShape() const override;
