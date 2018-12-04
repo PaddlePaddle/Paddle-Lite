@@ -31,7 +31,7 @@ void Gemm::AddDot4x8(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
                      int32_t ldc) {
 #if __ARM_NEON
 #if __aarch64__
-// TODO(wzzju)
+// TODO()
 #else
   const int8_t *a_ptr, *b_ptr;
   a_ptr = a;
@@ -249,7 +249,7 @@ void Gemm::AddDot4x2(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
                      int32_t ldc) {
 #if __ARM_NEON
 #if __aarch64__
-// TODO(wzzju)
+// TODO
 #else
 #define PADDLE_LABEL_LOOP "1"
 #define PADDLE_LABEL_AFTER_LOOP "2"
@@ -376,7 +376,7 @@ void Gemm::AddDot6x8(int32_t k, const int8_t *a, const int8_t *b, int32_t *c,
                      int32_t ldc) {
 #if __ARM_NEON
 #if __aarch64__
-// TODO(wzzju)
+// TODO
 #else
   const int8_t *a_ptr, *b_ptr;
   a_ptr = a;
@@ -681,7 +681,7 @@ void Gemm::InnerKernel(int32_t mc, int32_t nc, float alpha, const int8_t *a,
   for (int32_t j = 0; j < nc; j += NR_INT8) {
     for (int32_t i = 0; i < mc; i += MR_INT8) {
 #if __aarch64__
-    // TODO(wzzju)
+    // TODO
 #else
       //      AddDot6x8(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
       //      AddDot4x8(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
@@ -704,7 +704,7 @@ void Gemm::InnerKernelWithBias(int32_t mc, int32_t nc, float alpha,
   for (int32_t j = 0; j < nc; j += NR_INT8) {
     for (int32_t i = 0; i < mc; i += MR_INT8) {
 #if __aarch64__
-    // TODO(wzzju)
+    // TODO
 #else
       //      AddDot6x8(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
       //      AddDot4x8(KC, a + i * KC, b + j * KC, c + i * NC + j, NC);
@@ -742,7 +742,7 @@ void Gemm::PackMatrixA_4r_16(int32_t m, int32_t k, int32_t m_tail,
     for (int32_t j = 0; j < k_count; ++j) {
 #if __ARM_NEON
 #if __aarch64__
-    // TODO(wzzju)
+    // TODO
 #else
       asm volatile(
           "vld1.s8    {d0, d1},   [%[a0]]!         \n\t"
@@ -822,7 +822,7 @@ void Gemm::PackMatrixA_4r_16(int32_t m, int32_t k, int32_t m_tail,
     for (int32_t j = 0; j < k_count; ++j) {
 #if __ARM_NEON
 #if __aarch64__
-    // TODO(wzzju)
+    // TODO
 #else
       asm volatile(
           "vld1.s8    {d0, d1},   [%[a0]]!         \n\t"
@@ -1058,7 +1058,7 @@ void Gemm::PackMatrixB_8c(int32_t k, int32_t n, int32_t n_tail, const int8_t *B,
       const int8_t *b0 = &B(i, j);
 #if __ARM_NEON
 #if __aarch64__
-      // TODO(wzzju)
+      // TODO
 #else
       asm volatile(
           //          "pld        [%[b0]]                     \n\t"
@@ -1100,7 +1100,7 @@ void Gemm::WriteBasic(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
                       int32_t ldc) {
 #if __ARM_NEON
 #if __aarch64__
-// TODO(wzzju)
+// TODO
 #else
   int32_t nc1 = nc >> 4;
   int32_t _nc1 = nc & 15;
@@ -1164,7 +1164,7 @@ void Gemm::WriteWithAddScale(int32_t mc, int32_t nc, int32_t *c, int8_t *C,
                              int32_t ldc, int32_t *bias, float scale) {
 #if __ARM_NEON
 #if __aarch64__
-// TODO(wzzju)
+// TODO
 #else
   int32_t zero = 0;
   int8_t narrow = -128;
@@ -1292,7 +1292,7 @@ void Gemm::WriteWithAddReluScale(int32_t mc, int32_t nc, int32_t *c, int8_t *C,
                                  int32_t ldc, int32_t *bias, float scale) {
 #if __ARM_NEON
 #if __aarch64__
-// TODO(wzzju)
+// TODO
 #else
   int32_t zero = 0;
   int32_t nc1 = nc >> 3;
