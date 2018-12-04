@@ -96,8 +96,7 @@ void PoolCompute(const PoolParam<CPU> &param) {
                paddings[1] == 0) {
 #if __ARM_NEON
 #if __aarch64__
-      PoolBasic<float, float>(pooling_type, ksize, strides, paddings, in_x,
-                              out);
+      PoolBasic<float, float>(pooling_type, ksize, strides, paddings, in_x, out);
 #else
       /// todo: fix bug in Pool2x2
       if (pooling_type == "max") {
@@ -107,8 +106,7 @@ void PoolCompute(const PoolParam<CPU> &param) {
       }
 #endif
 #else
-      PoolBasic<float, float>(pooling_type, ksize, strides, paddings, in_x,
-                              out);
+      PoolBasic<float, float>(pooling_type, ksize, strides, paddings, in_x, out);
 #endif  // __ARM_NEON
 
     } else {
