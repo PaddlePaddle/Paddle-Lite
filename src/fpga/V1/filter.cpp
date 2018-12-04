@@ -146,11 +146,15 @@ void align_num(char **data_in, int num_per_div_before_alignment, int num,
 
   memset(data_tmp, 0, num_element * sizeof(char));
 
-  for (i = 0; i < div_num; i++) {
+  for (i = 0; i < div_num - 1; i++) {
     memcpy(data_tmp + num_per_div_after_alignment * align_chw * i,
            *data_in + num_per_div_before_alignment * align_chw * i,
            num_per_div_before_alignment * align_chw);
   }
+
+  memcpy(data_tmp + num_per_div_after_alignment * align_chw * i,
+         *data_in + num_per_div_before_alignment * align_chw * i,
+         (num - (div_num - 1) * num_per_div_before_alignment) * align_chw);
 
   *data_in = data_tmp;
   fpga_free(tmp);
