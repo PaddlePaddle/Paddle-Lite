@@ -251,7 +251,7 @@ int TestConvOp(int in_channels, int in_height, int in_width, int out_channels) {
   attrs["groups"].Set<int>(1);
   attrs["axis"].Set<int>(0);
 
-  auto *op = new operators::FusionConvAddReluInt8Op<CPU, int8_t>(
+  auto *op = new operators::FusionConvAddReluInt8Op<CPU, T>(
       "fusion_conv_add_relu_int8", inputs, outputs, attrs, scope);
   op->InferShape();
   op->Init();

@@ -269,8 +269,8 @@ if (NOT FOUND_MATCH)
 
 
     #gen test
-    ADD_EXECUTABLE(test-pool operators/test_pool_op.cpp test_helper.h test_include.h executor_for_test.h)
-    target_link_libraries(test-pool paddle-mobile)
+    ADD_EXECUTABLE(test-pool-op operators/test_pool_op.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test-pool-op paddle-mobile)
 
     #gen test
     ADD_EXECUTABLE(test-softmax operators/test_softmax_op.cpp test_helper.h test_include.h executor_for_test.h)
