@@ -95,7 +95,7 @@ int TestMulOP() {
 
 int main() {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
-  paddle_mobile.SetThreadNum(8);
+  paddle_mobile.SetThreadNum(4);
   paddle_mobile::TestMulOP<int8_t, int32_t>();
   paddle_mobile::TestMulOP<float, float>();
   return 0;
