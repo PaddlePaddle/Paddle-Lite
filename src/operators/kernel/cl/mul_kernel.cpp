@@ -25,9 +25,7 @@ bool MulKernel<GPU_CL, float>::Init(MulParam<GPU_CL> *param) {
 }
 
 template <>
-void MulKernel<GPU_CL, float>::Compute(const MulParam<GPU_CL> &param) {
-
-}
+void MulKernel<GPU_CL, float>::Compute(const MulParam<GPU_CL> &param) {}
 
 template class MulKernel<GPU_CL, float>;
 
