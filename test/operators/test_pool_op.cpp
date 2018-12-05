@@ -173,8 +173,8 @@ int TestPoolOp(int in_channels, int in_height, int in_width) {
   const T *output_data = output->data<T>();
   T *output_cmp_data = output_cmp.data<T>();
   for (int i = 0; i < output->numel(); ++i) {
-    //    PADDLE_MOBILE_ENFORCE(output_data[i] == output_cmp_data[i],
-    //                          "The execution of test_pool_op is failed!");
+    PADDLE_MOBILE_ENFORCE(output_data[i] == output_cmp_data[i],
+                          "The execution of test_pool_op is failed!");
     if (output_data[i] == output_cmp_data[i]) {
       ++eq;
     } else {
