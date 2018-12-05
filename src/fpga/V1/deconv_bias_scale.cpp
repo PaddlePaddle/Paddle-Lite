@@ -24,23 +24,25 @@ namespace paddle_mobile {
 namespace fpga {
 namespace deconv_bias_scale {
 
-void deconv_bias_scale_expand(float** bias_scale_array,int num,int sub_conv_n){
+void deconv_bias_scale_expand(float** bias_scale_array, int num,
+                              int sub_conv_n) {
   int sub_num = num * sub_conv_n;
   float* ptr_tmp = *bias_scale_array;
-  float*ptr_bias_scale_expand = (float*)fpga_malloc(sizeof(float) * sub_num * 2);
- int scale_base_offset = sub_num;
-  for (int i = 0; i < sub_conv_n; ++i)
-  {
+  float* ptr_bias_scale_expand =
+      (float*)fpga_malloc(sizeof(float) * sub_num * 2);
+  int scale_base_offset = sub_num;
+  for (int i = 0; i < sub_conv_n; ++i) {
     int offset = num * i;
-     //copy bias
-     fpga_copy(ptr_bias_scale_expand + offset, ptr_tmp,num * sizeof(float));
-       //copy scale
-     fpga_copy(ptr_bias_scale_expand + scale_base_offset+ offset, ptr_tmp + num,num * sizeof(float));
+    // copy bias
+    fpga_copy(ptr_bias_scale_expand + offset, ptr_tmp, num * sizeof(float));
+    // copy scale
+    fpga_copy(ptr_bias_scale_expand + scale_base_offset + offset, ptr_tmp + num,
+              num * sizeof(float));
   }
   *bias_scale_array = ptr_bias_scale_expand;
   fpga_free(ptr_tmp);
 }
 
-}  // namespace bias_scale
+}  // namespace deconv_bias_scale
 }  // namespace fpga
 }  // namespace paddle_mobile
