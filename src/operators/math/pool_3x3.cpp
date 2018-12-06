@@ -38,6 +38,7 @@ void Pool3x3Avgs1p1(const Tensor *input, Tensor *output) {
   const int input_width = static_cast<int>(input->dims()[3]);
   const int output_height = static_cast<int>(output->dims()[2]);
   const int output_width = static_cast<int>(output->dims()[3]);
+  output->mutable_data<float>();
 
   const int hxw = input_height * input_width;
 
@@ -472,7 +473,7 @@ void Pool3x3Maxs1p1(const Tensor *input, Tensor *output) {
   const int inputdata_channel_stride = h_in * w_in;
   const int input_batch_stride = output_channels * inputdata_channel_stride;
   const int output_batch_stride = output_channels * outputdata_channel_stride;
-  float *out_data = output->data<float>();
+  float *out_data = output->mutable_data<float>();
   const float *input_data = input->data<float>();
   for (int k = 0; k < batch_size; ++k) {
 #pragma omp parallel for
