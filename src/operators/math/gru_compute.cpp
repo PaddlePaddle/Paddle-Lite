@@ -34,12 +34,12 @@ struct GRUUnitFunctor<CPU, T> {
       gemm.Sgemm_omp(batch_size, frame_size * 2, frame_size, 1,
                      value.prev_out_value, frame_size, value.gate_weight,
                      frame_size * 2, 1, value.gate_value, frame_size * 3, false,
-                     nullptr);
+                     static_cast<float *>(nullptr));
 #else
       gemm.Sgemm(batch_size, frame_size * 2, frame_size, 1,
                  value.prev_out_value, frame_size, value.gate_weight,
                  frame_size * 2, 1, value.gate_value, frame_size * 3, false,
-                 nullptr);
+                 static_cast<float *>(nullptr));
 #endif
     }
 
@@ -51,12 +51,12 @@ struct GRUUnitFunctor<CPU, T> {
       gemm.Sgemm_omp(batch_size, frame_size, frame_size, 1,
                      value.reset_output_value, frame_size, value.state_weight,
                      frame_size, 1, value.gate_value + frame_size * 2,
-                     frame_size * 3, false, nullptr);
+                     frame_size * 3, false, static_cast<float *>(nullptr));
 #else
       gemm.Sgemm(batch_size, frame_size, frame_size, 1,
                  value.reset_output_value, frame_size, value.state_weight,
                  frame_size, 1, value.gate_value + frame_size * 2,
-                 frame_size * 3, false, nullptr);
+                 frame_size * 3, false, static_cast<float *>(nullptr));
 #endif
     }
 
