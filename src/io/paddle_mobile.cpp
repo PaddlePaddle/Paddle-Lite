@@ -153,7 +153,8 @@ double PaddleMobile<CPU, Precision::FP32>::GetPredictTime() {
   paddle_mobile::operators::math::Gemm gemm;
   auto time1 = paddle_mobile::time();
   gemm.Sgemm(m, n, k, static_cast<float>(1), a, lda, b, ldb,
-             static_cast<float>(0), c, ldc, false, nullptr);
+             static_cast<float>(0), c, ldc, false,
+             static_cast<float *>(nullptr));
   auto time2 = paddle_mobile::time();
   double cost = paddle_mobile::time_diff(time1, time2);
   paddle_mobile::memory::Free(a);

@@ -16,6 +16,8 @@ limitations under the License. */
 
 #pragma once
 
+#include <climits>
+#include <cmath>
 #include "common/log.h"
 #include "framework/tensor.h"
 #include "pool_2x2.h"
@@ -37,24 +39,42 @@ namespace math {
  * in pool pooling, and finally takes the average.
  *        MaxPoolGrad and AvgPoolGrad are gradient operations respectively.
  */
-template <class T>
+template <typename T>
 class MaxPool {
  public:
-  inline T initial() { return static_cast<T>(-FLT_MAX); }
+  inline T initial() {
+    if (typeid(T) == typeid(int8_t)) {
+      return static_cast<T>(-SCHAR_MAX);
+    }
+    return static_cast<T>(-FLT_MAX);
+  }
 
   inline void compute(const T &x, T *y) { *y = *y > x ? *y : x; }
 
   inline void finalize(const T &pool_field, T *y) {}
 };
 
-template <class T>
+template <typename Itype, typename Otype>
 class AvgPool {
  public:
-  inline T initial() { return static_cast<T>(0); }
+  inline Otype initial() { return static_cast<Otype>(0); }
 
-  inline void compute(const T &x, T *y) { *y += x; }
+  inline void compute(const Itype &x, Otype *y) { *y += x; }
 
-  inline void finalize(const T &pool_field, T *y) { *y /= pool_field; }
+  inline void finalize(const float &pool_field, Otype *y) {
+    if (typeid(Itype) == typeid(int8_t)) {
+      float tmp = *y / pool_field;
+      if (tmp > SCHAR_MAX) {
+        *y = SCHAR_MAX;
+      } else if (tmp < -SCHAR_MAX) {
+        *y = -SCHAR_MAX;
+      } else {
+        *y = static_cast<Otype>(std::round(tmp));
+      }
+    } else {
+      *y /= pool_field;
+    }
+  }
 };
 
 template <typename DeviceType, typename PoolProcess, typename T>
