@@ -12,9 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVADDRELU_INT8_OP
-
 #include <iostream>
+
+#ifdef FUSION_CONVADDRELU_INT8_OP
 #include <limits>
 #include "../test_helper.h"
 #include "../test_include.h"
@@ -356,5 +356,9 @@ int main(int argc, char *argv[]) {
   paddle_mobile::TestConvOp<int8_t, 5, 2, 1>(in_channels, in_height, in_width,
                                              out_channels);
 }
-
+#else
+int main() {
+  std::cout << "FUSION_CONVADDRELU_INT8_OP is not defined!" << std::endl;
+  return 0;
+}
 #endif

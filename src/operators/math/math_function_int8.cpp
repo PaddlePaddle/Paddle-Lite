@@ -24,8 +24,8 @@ namespace math {
 template <>
 void matmul(const framework::Tensor &matrix_a, bool trans_a,
             const framework::Tensor &matrix_b, bool trans_b, float alpha,
-            framework::Tensor *matrix_out, float beta, bool relu,
-            int32_t *bias) {
+            framework::Tensor *matrix_out, float beta, bool relu, int32_t *bias,
+            bool addOnRow) {
   auto dim_a = matrix_a.dims();
   auto dim_b = matrix_b.dims();
   auto dim_out = matrix_out->dims();
@@ -55,18 +55,18 @@ void matmul(const framework::Tensor &matrix_a, bool trans_a,
 #ifdef _OPENMP
     if (bias != nullptr) {
       gemm.Sgemm_omp(M, N, K, alpha, a, K, matrix_b.data<int8_t>(), N, beta,
-                     matrix_out->data<int8_t>(), N, relu, bias);
+                     matrix_out->data<int8_t>(), N, relu, bias, addOnRow);
     } else {
       gemm.Sgemm_omp(M, N, K, alpha, a, K, matrix_b.data<int8_t>(), N, beta,
-                     matrix_out->data<int32_t>(), N, relu, bias);
+                     matrix_out->data<int32_t>(), N, relu, bias, addOnRow);
     }
 #else
     if (bias != nullptr) {
       gemm.Sgemm(M, N, K, alpha, a, K, matrix_b.data<int8_t>(), N, beta,
-                 matrix_out->data<int8_t>(), N, relu, bias);
+                 matrix_out->data<int8_t>(), N, relu, bias, addOnRow);
     } else {
       gemm.Sgemm(M, N, K, alpha, a, K, matrix_b.data<int8_t>(), N, beta,
-                 matrix_out->data<int32_t>(), N, relu, bias);
+                 matrix_out->data<int32_t>(), N, relu, bias, addOnRow);
     }
 #endif
   } else {
@@ -74,21 +74,21 @@ void matmul(const framework::Tensor &matrix_a, bool trans_a,
     if (bias != nullptr) {
       gemm.Sgemm_omp(M, N, K, alpha, matrix_a.data<int8_t>(), K,
                      matrix_b.data<int8_t>(), N, beta,
-                     matrix_out->data<int8_t>(), N, relu, bias);
+                     matrix_out->data<int8_t>(), N, relu, bias, addOnRow);
     } else {
       gemm.Sgemm_omp(M, N, K, alpha, matrix_a.data<int8_t>(), K,
                      matrix_b.data<int8_t>(), N, beta,
-                     matrix_out->data<int32_t>(), N, relu, bias);
+                     matrix_out->data<int32_t>(), N, relu, bias, addOnRow);
     }
 #else
     if (bias != nullptr) {
       gemm.Sgemm(M, N, K, alpha, matrix_a.data<int8_t>(), K,
                  matrix_b.data<int8_t>(), N, beta, matrix_out->data<int8_t>(),
-                 N, relu, bias);
+                 N, relu, bias, addOnRow);
     } else {
       gemm.Sgemm(M, N, K, alpha, matrix_a.data<int8_t>(), K,
                  matrix_b.data<int8_t>(), N, beta, matrix_out->data<int32_t>(),
-                 N, relu, bias);
+                 N, relu, bias, addOnRow);
     }
 #endif
   }

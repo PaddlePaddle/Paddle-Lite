@@ -167,13 +167,24 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
                           float *new_bias);
   */
 
+  // 32位 float 矩阵乘法
+  void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
+             const float *B, int ldb, float beta, float *C, int ldc, bool relu,
+             float *bias);
+
   // 32位 float 矩阵乘法, 并对结果进行 batchnrom
   void SgemmWithBn(int m, int n, int k, float alpha, const float *A, int lda,
                    const float *B, int ldb, float beta, float *C, int ldc,
                    bool relu, float *new_scale, float *new_bias, float *bias);
+
   void SgemmWithPRelu(int m, int n, int k, const float *A, int lda,
                       const float *B, int ldb, float *C, int ldc, float *p,
                       std::string mode, float *bias, float *bias1);
+
+  // 32位 float 矩阵乘法（openmp 多线程版本）
+  void Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
+                 const float *B, int ldb, float beta, float *C, int ldc,
+                 bool relu, float *bias);
 
   // 32位 float 矩阵乘法, 并对结果进行 batchnrom（openmp 多线程版本）
   void SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A,
@@ -202,7 +213,8 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
   template <typename Otype>
   void InnerKernelWithBias(int32_t mc, int32_t nc, float alpha, const int8_t *a,
                            const int8_t *b, float beta, int32_t *c, Otype *C,
-                           int32_t ldc, bool relu, int32_t *bias);
+                           int32_t ldc, bool relu, int32_t *bias,
+                           bool addOnRow = false);
 
   // 8 bits int pack function
   void PackMatrixA_4r(int32_t m, int32_t k, int32_t m_tail, const int8_t *A,
@@ -228,28 +240,32 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
   template <typename Itype, typename Btype, typename Otype>
   void Sgemm_omp(int32_t m, int32_t n, int32_t k, float alpha, const Itype *A,
                  int32_t lda, const Itype *B, int32_t ldb, float beta, Otype *C,
-                 int32_t ldc, bool relu, Btype *bias);
+                 int32_t ldc, bool relu, Btype *bias, bool addOnRow = false);
   template <typename Otype>
   void Sgemm_omp(int32_t m, int32_t n, int32_t k, float alpha, const int8_t *A,
                  int32_t lda, const int8_t *B, int32_t ldb, float beta,
-                 Otype *C, int32_t ldc, bool relu, int32_t *bias);
+                 Otype *C, int32_t ldc, bool relu, int32_t *bias,
+                 bool addOnRow = false);
   template <typename Itype, typename Btype, typename Otype>
   void Sgemm(int32_t m, int32_t n, int32_t k, float alpha, const Itype *A,
              int32_t lda, const Itype *B, int32_t ldb, float beta, Otype *C,
-             int32_t ldc, bool relu, Btype *bias);
+             int32_t ldc, bool relu, Btype *bias, bool addOnRow = false);
   template <typename Otype>
   void Sgemm(int32_t m, int32_t n, int32_t k, float alpha, const int8_t *A,
              int32_t lda, const int8_t *B, int32_t ldb, float beta, Otype *C,
-             int32_t ldc, bool relu, int32_t *bias);
+             int32_t ldc, bool relu, int32_t *bias, bool addOnRow = false);
   // 8 bits int write back
   // C = A * B
   void WriteBasic(int32_t mc, int32_t nc, int32_t *c, int32_t *C, int32_t ldc);
   // C = A * B + bias, scale * relu(C)
   void WriteWithAddReluScale(int32_t mc, int32_t nc, int32_t *c, int8_t *C,
                              int32_t ldc, int32_t *bias, float scale);
-  // C = A * B + bias, scale * C
+  // C = A * B + bias, scale * C, bias is added on column
   void WriteWithAddScale(int32_t mc, int32_t nc, int32_t *c, int8_t *C,
                          int32_t ldc, int32_t *bias, float scale);
+  // C = A * B + bias, scale * C, bias is added on row
+  void WriteWithAddScaleT(int32_t mc, int32_t nc, int32_t *c, int8_t *C,
+                          int32_t ldc, int32_t *bias, float scale);
 
  private:
   int MC = 0;
@@ -273,7 +289,8 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
 template <typename Otype>
 void Gemm::Sgemm(int32_t m, int32_t n, int32_t k, float alpha, const int8_t *A,
                  int32_t lda, const int8_t *B, int32_t ldb, float beta,
-                 Otype *C, int32_t ldc, bool relu, int32_t *bias) {
+                 Otype *C, int32_t ldc, bool relu, int32_t *bias,
+                 bool addOnRow) {
   // L1 data cache is 32 kib (Per Contex-A57, Contex-A72, Contex-A73)
   // L2 cache is 0.5~4 Mib (Contex-A72 cluster)
   int32_t L1 = 32 * 1024;
@@ -322,8 +339,15 @@ void Gemm::Sgemm(int32_t m, int32_t n, int32_t k, float alpha, const int8_t *A,
         InnerKernel(mc, nc, alpha, packedA_int8, packedB_int8, beta,
                     packedC_int32, &C(i, j), ldc, relu);
       } else {
-        InnerKernelWithBias(mc, nc, alpha, packedA_int8, packedB_int8, beta,
-                            packedC_int32, &C(i, j), ldc, relu, bias + i);
+        if (addOnRow) {
+          InnerKernelWithBias(mc, nc, alpha, packedA_int8, packedB_int8, beta,
+                              packedC_int32, &C(i, j), ldc, relu, bias + j,
+                              addOnRow);
+        } else {
+          InnerKernelWithBias(mc, nc, alpha, packedA_int8, packedB_int8, beta,
+                              packedC_int32, &C(i, j), ldc, relu, bias + i,
+                              addOnRow);
+        }
       }
     }
   }
@@ -339,7 +363,7 @@ template <typename Otype>
 void Gemm::Sgemm_omp(int32_t m, int32_t n, int32_t k, float alpha,
                      const int8_t *A, int32_t lda, const int8_t *B, int32_t ldb,
                      float beta, Otype *C, int32_t ldc, bool relu,
-                     int32_t *bias) {
+                     int32_t *bias, bool addOnRow) {
 #ifdef _OPENMP
   int32_t max_threads = omp_get_max_threads();
 #else
@@ -422,8 +446,13 @@ void Gemm::Sgemm_omp(int32_t m, int32_t n, int32_t k, float alpha,
         InnerKernel(mc, n, alpha, local_A, packedB_int8, beta, local_C,
                     &C(i, 0), ldc, relu);
       } else {
-        InnerKernelWithBias(mc, n, alpha, local_A, packedB_int8, beta, local_C,
-                            &C(i, 0), ldc, relu, bias + i);
+        if (addOnRow) {
+          InnerKernelWithBias(mc, n, alpha, local_A, packedB_int8, beta,
+                              local_C, &C(i, 0), ldc, relu, bias, addOnRow);
+        } else {
+          InnerKernelWithBias(mc, n, alpha, local_A, packedB_int8, beta,
+                              local_C, &C(i, 0), ldc, relu, bias + i, addOnRow);
+        }
       }
     }
   } else {
@@ -447,8 +476,13 @@ void Gemm::Sgemm_omp(int32_t m, int32_t n, int32_t k, float alpha,
         InnerKernel(m, nc, alpha, packedA_int8, local_B, beta, local_C,
                     &C(0, j), ldc, relu);
       } else {
-        InnerKernelWithBias(m, nc, alpha, packedA_int8, local_B, beta, local_C,
-                            &C(0, j), ldc, relu, bias);
+        if (addOnRow) {
+          InnerKernelWithBias(m, nc, alpha, packedA_int8, local_B, beta,
+                              local_C, &C(0, j), ldc, relu, bias + j, addOnRow);
+        } else {
+          InnerKernelWithBias(m, nc, alpha, packedA_int8, local_B, beta,
+                              local_C, &C(0, j), ldc, relu, bias, addOnRow);
+        }
       }
     }
   }

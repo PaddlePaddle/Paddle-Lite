@@ -49,7 +49,8 @@ int main() {
   auto bbptr_int8 = bb_int8.mutable_data<int8_t>({k, n});
   auto ccptr_int32 = cc_int32.mutable_data<int32_t>({m, n});
   auto ccptr_int8 = cc_int8.mutable_data<int8_t>({m, n});
-  int32_t* bias_data = new int32_t[m];
+  int32_t* bias_data_col = new int32_t[m];
+  int32_t* bias_data_row = new int32_t[n];
 
   for (int i = 0; i < m * k; ++i) {
     aaptr_int8[i] = static_cast<int8_t>(2);
@@ -62,7 +63,11 @@ int main() {
   }
 
   for (int i = 0; i < m; ++i) {
-    bias_data[i] = 2;
+    bias_data_col[i] = 2;
+  }
+
+  for (int i = 0; i < n; ++i) {
+    bias_data_row[i] = 2;
   }
 
   // float
@@ -73,14 +78,15 @@ int main() {
         false, nullptr);
   }
 
-  auto time1 = time();
+  auto time_start0 = time();
   for (int j = 0; j < 10; ++j) {
     paddle_mobile::operators::math::matmul<float>(
         aa, false, bb, false, static_cast<float>(1), &cc, static_cast<float>(0),
         false, nullptr);
   }
-  auto time2 = time();
-  std::cout << "float gemm  cost :" << time_diff(time1, time2) / 10 << "ms\n";
+  auto time_end0 = time();
+  std::cout << "float gemm  cost :" << time_diff(time_start0, time_end0) / 10
+            << "ms\n";
 
   // int8_t without bias
   // warm-up 10 times
@@ -90,33 +96,69 @@ int main() {
         static_cast<float>(0));
   }
 
-  auto time3 = time();
+  auto time_start1 = time();
   for (int j = 0; j < 10; ++j) {
     paddle_mobile::operators::math::matmul<float, int32_t>(
         aa_int8, false, bb_int8, false, static_cast<float>(1), &cc_int32,
         static_cast<float>(0));
   }
-  auto time4 = time();
-  std::cout << "int8_t gemm  cost :" << time_diff(time3, time4) / 10 << "ms\n";
+  auto time_end1 = time();
+  std::cout << "int8_t gemm  cost :" << time_diff(time_start1, time_end1) / 10
+            << "ms\n";
+
+  // int8_t with bias, column element wise add
+  // warm-up 10 times
+  for (int j = 0; j < 10; ++j) {
+    paddle_mobile::operators::math::matmul(
+        aa_int8, false, bb_int8, false, static_cast<float>(0.618), &cc_int8,
+        static_cast<float>(0), false, bias_data_col, false);
+  }
+  auto time_start2 = time();
+  for (int j = 0; j < 10; ++j) {
+    paddle_mobile::operators::math::matmul(
+        aa_int8, false, bb_int8, false, static_cast<float>(0.618), &cc_int8,
+        static_cast<float>(0), false, bias_data_col, false);
+  }
+  auto time_end2 = time();
+  std::cout << "int8_t gemm_with_bias(column add) cost :"
+            << time_diff(time_start2, time_end2) / 10 << "ms\n";
+
+  // int8_t with bias, row element wise add
+  // warm-up 10 times
+  for (int j = 0; j < 10; ++j) {
+    paddle_mobile::operators::math::matmul(
+        aa_int8, false, bb_int8, false, static_cast<float>(0.618), &cc_int8,
+        static_cast<float>(0), false, bias_data_row, true);
+  }
+  auto time_start3 = time();
+  for (int j = 0; j < 10; ++j) {
+    paddle_mobile::operators::math::matmul(
+        aa_int8, false, bb_int8, false, static_cast<float>(0.618), &cc_int8,
+        static_cast<float>(0), false, bias_data_row, true);
+  }
+  auto time_end3 = time();
+  std::cout << "int8_t gemm_with_bias(row add) cost :"
+            << time_diff(time_start3, time_end3) / 10 << "ms\n";
 
   // int8_t with bias&relu
   // warm-up 10 times
   for (int j = 0; j < 10; ++j) {
     paddle_mobile::operators::math::matmul(
         aa_int8, false, bb_int8, false, static_cast<float>(0.618), &cc_int8,
-        static_cast<float>(0), true, bias_data);
+        static_cast<float>(0), true, bias_data_col, false);
   }
-  auto time5 = time();
+  auto time_start4 = time();
   for (int j = 0; j < 10; ++j) {
     paddle_mobile::operators::math::matmul(
         aa_int8, false, bb_int8, false, static_cast<float>(0.618), &cc_int8,
-        static_cast<float>(0), true, bias_data);
+        static_cast<float>(0), true, bias_data_col, false);
   }
-  auto time6 = time();
+  auto time_end4 = time();
   std::cout << "int8_t gemm_with_bias_relu cost :"
-            << time_diff(time5, time6) / 10 << "ms\n";
+            << time_diff(time_start4, time_end4) / 10 << "ms\n";
 
-  delete[] bias_data;
+  delete[] bias_data_row;
+  delete[] bias_data_col;
 
   return 0;
 }
