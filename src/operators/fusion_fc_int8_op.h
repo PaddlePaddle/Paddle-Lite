@@ -12,31 +12,39 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVADDRELU_INT8_OP
+#ifdef FUSION_FC_INT8_OP
+
 #pragma once
+
 #include <string>
+#include <vector>
+
 #include "framework/operator.h"
-#include "operators/kernel/conv_add_relu_kernel.h"
+#include "framework/program/program-optimize/fusion_op_register.h"
+#include "operators/kernel/fusion_fc_kernel.h"
 #include "operators/op_param.h"
+
 namespace paddle_mobile {
 namespace operators {
+
 template <typename DeviceType, typename T>
-class FusionConvAddReluInt8Op
+class FusionFcInt8Op
     : public framework::OperatorWithKernel<DeviceType,
-                                           FusionConvAddReluParam<DeviceType>,
-                                           ConvAddReluKernel<DeviceType, T>> {
+                                           FusionFcParam<DeviceType>,
+                                           FusionFcKernel<DeviceType, T>> {
  public:
-  FusionConvAddReluInt8Op(const std::string &type,
-                          const VariableNameMap &inputs,
-                          const VariableNameMap &outputs,
-                          const framework::AttributeMap &attrs,
-                          std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType,
-                                      FusionConvAddReluParam<DeviceType>,
-                                      ConvAddReluKernel<DeviceType, T>>(
+  FusionFcInt8Op(const std::string &type, const VariableNameMap &inputs,
+                 const VariableNameMap &outputs,
+                 const framework::AttributeMap &attrs,
+                 std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<DeviceType, FusionFcParam<DeviceType>,
+                                      FusionFcKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
+
   void InferShape() const override;
 };
+
 }  // namespace operators
 }  // namespace paddle_mobile
-#endif  // FUSION_CONVADDRELU_INT8_OP
+
+#endif  // FUSION_FC_INT8_OP

@@ -34,7 +34,7 @@ template <typename T, typename S>
 void matmul(const framework::Tensor &matrix_a, bool trans_a,
             const framework::Tensor &matrix_b, bool trans_b, T alpha,
             framework::Tensor *matrix_out, T beta, bool relu = false,
-            S *bias = nullptr);
+            S *bias = nullptr, bool addOnRow = false);
 
 template <typename T>
 void matmulWithBn(const framework::Tensor &matrix_a, bool trans_a,

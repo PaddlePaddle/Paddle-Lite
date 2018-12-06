@@ -25,7 +25,7 @@ limitations under the License. */
 #define c(i, j) c[(i)*ldc + (j)]
 #define c1(i, j) c1[(i)*ldc + (j)]
 
-void print_matirx(int m, int n, int ldc, float *c) {
+void print_matrix(int m, int n, int ldc, float *c) {
   for (int i = 0; i < m; ++i) {
     std::cout << c(i, 0);
     for (int j = 1; j < n; ++j) {
@@ -98,17 +98,19 @@ int do_sgemm(int m, int n, int k, bool relu, int t1, int t2, int pr) {
 
   if (pr > 0) {
     std::cout << "A:" << std::endl;
-    print_matirx(m, k, lda, a);
+    print_matrix(m, k, lda, a);
     std::cout << "B:" << std::endl;
-    print_matirx(k, n, ldb, b);
+    print_matrix(k, n, ldb, b);
     std::cout << "C:" << std::endl;
-    print_matirx(m, n, ldc, c);
+    print_matrix(m, n, ldc, c);
     std::cout << "C1:" << std::endl;
-    print_matirx(m, n, ldc, c1);
+    print_matrix(m, n, ldc, c1);
   }
 
   std::cout << "mnk=" << m << " " << n << " " << k << " relu=" << relu
             << "   eq=" << eq << " neq=" << neq << std::endl;
+
+  PADDLE_MOBILE_ENFORCE(neq == 0, "The execution of do_sgemm is failed!");
 
   paddle_mobile::memory::Free(a);
   paddle_mobile::memory::Free(b);
