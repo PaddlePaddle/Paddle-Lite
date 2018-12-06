@@ -103,6 +103,7 @@ extern const char *G_OP_TYPE_FUSION_CONV_ADD_RELU_INT8;
 extern const char *G_OP_TYPE_FUSION_CONV_ADD_PRELU;
 extern const char *G_OP_TYPE_FUSION_CONV_ADD_ADD_PRELU;
 extern const char *G_OP_TYPE_FC;
+extern const char *G_OP_TYPE_FC_INT8;
 extern const char *G_OP_TYPE_FUSION_CONV_ADD;
 extern const char *G_OP_TYPE_FUSION_CONV_ADD_BN_RELU;
 extern const char *G_OP_TYPE_FUSION_CONV_BN_ADD_RELU;

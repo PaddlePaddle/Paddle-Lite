@@ -17,6 +17,7 @@ limitations under the License. */
 #include <iostream>
 #include <limits>
 #include <random>
+#include <type_traits>
 #include "../test_helper.h"
 #include "common/log.h"
 #include "memory/t_malloc.h"
@@ -33,24 +34,32 @@ limitations under the License. */
 using std::default_random_engine;
 using std::uniform_int_distribution;
 
-void print_matirx(int m, int n, int ldc, int32_t *c) {
+template <typename T>
+void print_matrix(int m, int n, int ldc, T *c) {
   for (int i = 0; i < m; ++i) {
-    std::cout << c(i, 0);
-    for (int j = 1; j < n; ++j) {
-      std::cout << " | " << c(i, j);
+    if (std::is_same<T, int8_t>::value) {
+      std::cout.setf(std::ios::left);
+      std::cout.width(4);
+      std::cout << static_cast<int32_t>(c(i, 0));
+    } else {
+      std::cout.setf(std::ios::left);
+      std::cout.width(6);
+      std::cout << c(i, 0);
     }
-    std::cout << std::endl;
-  }
-  std::cout << std::endl;
-}
-
-void print_matirx(int m, int n, int ldc, int8_t *c) {
-  for (int i = 0; i < m; ++i) {
-    std::cout << static_cast<int32_t>(c(i, 0));
     for (int j = 1; j < n; ++j) {
-      std::cout << " | " << static_cast<int32_t>(c(i, j));
+      if (std::is_same<T, int8_t>::value) {
+        std::cout << " | ";
+        std::cout.setf(std::ios::left);
+        std::cout.width(4);
+        std::cout << static_cast<int32_t>(c(i, j));
+      } else {
+        std::cout << " | ";
+        std::cout.setf(std::ios::left);
+        std::cout.width(6);
+        std::cout << c(i, j);
+      }
     }
-    std::cout << std::endl;
+    std::cout << "\n";
   }
   std::cout << std::endl;
 }
@@ -138,17 +147,19 @@ int do_sgemm(int m, int n, int k, bool relu, int pr) {
 
   if (pr > 0) {
     std::cout << "A:" << std::endl;
-    print_matirx(m, k, lda, a);
+    print_matrix(m, k, lda, a);
     std::cout << "B:" << std::endl;
-    print_matirx(k, n, ldb, b);
+    print_matrix(k, n, ldb, b);
     std::cout << "C:" << std::endl;
-    print_matirx(m, n, ldc, c);
+    print_matrix(m, n, ldc, c);
     std::cout << "C1:" << std::endl;
-    print_matirx(m, n, ldc, c1);
+    print_matrix(m, n, ldc, c1);
   }
 
   std::cout << "mnk=" << m << " " << n << " " << k << " relu=" << relu
             << "   eq=" << eq << " neq=" << neq << std::endl;
+
+  PADDLE_MOBILE_ENFORCE(neq == 0, "The execution of do_sgemm is failed!");
 
   paddle_mobile::memory::Free(a);
   paddle_mobile::memory::Free(b);
@@ -158,7 +169,8 @@ int do_sgemm(int m, int n, int k, bool relu, int pr) {
   return 0;
 }
 
-int do_sgemm_with_bias(int m, int n, int k, bool relu, int pr) {
+int do_sgemm_with_bias(int m, int n, int k, bool relu, int pr,
+                       bool addOnRow = false) {
   int lda = k;
   int ldb = n;
   int ldc = n;
@@ -174,8 +186,14 @@ int do_sgemm_with_bias(int m, int n, int k, bool relu, int pr) {
   int8_t *c1 = static_cast<int8_t *>(
       paddle_mobile::memory::Alloc(sizeof(int8_t) * m * n));
 
-  int32_t *bias =
-      static_cast<int32_t *>(paddle_mobile::memory::Alloc(sizeof(int32_t) * m));
+  int32_t *bias = nullptr;
+  if (addOnRow) {
+    bias = static_cast<int32_t *>(
+        paddle_mobile::memory::Alloc(sizeof(int32_t) * n));
+  } else {
+    bias = static_cast<int32_t *>(
+        paddle_mobile::memory::Alloc(sizeof(int32_t) * m));
+  }
 
   for (int i = 0; i < m * k; ++i) {
     a[i] = pixel(e);
@@ -183,29 +201,48 @@ int do_sgemm_with_bias(int m, int n, int k, bool relu, int pr) {
   for (int i = 0; i < k * n; ++i) {
     b[i] = pixel(e);
   }
-  for (int i = 0; i < m; ++i) {
-    bias[i] = static_cast<int32_t>(pixel(e));
-  }
-  for (int i = 0; i < m; ++i) {
-    int32_t bias_v = bias[i];
-    for (int j = 0; j < n; ++j) {
-      int32_t r = 0;
-      for (int p = 0; p < k; p++) {
-        r += static_cast<int32_t>(a(i, p)) * static_cast<int32_t>(b(p, j));
+
+  if (addOnRow) {
+    for (int i = 0; i < n; ++i) {
+      bias[i] = static_cast<int32_t>(pixel(e));
+    }
+    for (int i = 0; i < m; ++i) {
+      for (int j = 0; j < n; ++j) {
+        int32_t bias_v = bias[j];
+        int32_t r = 0;
+        for (int p = 0; p < k; p++) {
+          r += static_cast<int32_t>(a(i, p)) * static_cast<int32_t>(b(p, j));
+        }
+        r = qadd_int32(r, bias_v);
+        if (relu) r = std::max(0, r);
+        c1(i, j) = qscale_int32(r, scale);
       }
-      r = qadd_int32(r, bias_v);
-      if (relu) r = std::max(0, r);
-      c1(i, j) = qscale_int32(r, scale);
+    }
+  } else {
+    for (int i = 0; i < m; ++i) {
+      bias[i] = static_cast<int32_t>(pixel(e));
+    }
+    for (int i = 0; i < m; ++i) {
+      int32_t bias_v = bias[i];
+      for (int j = 0; j < n; ++j) {
+        int32_t r = 0;
+        for (int p = 0; p < k; p++) {
+          r += static_cast<int32_t>(a(i, p)) * static_cast<int32_t>(b(p, j));
+        }
+        r = qadd_int32(r, bias_v);
+        if (relu) r = std::max(0, r);
+        c1(i, j) = qscale_int32(r, scale);
+      }
     }
   }
 
   paddle_mobile::operators::math::Gemm gemm;
 #ifdef _OPENMP
   gemm.Sgemm_omp(m, n, k, scale, a, lda, b, ldb, static_cast<float>(0), c, ldc,
-                 relu, bias);
+                 relu, bias, addOnRow);
 #else
   gemm.Sgemm(m, n, k, scale, a, lda, b, ldb, static_cast<float>(0), c, ldc,
-             relu, bias);
+             relu, bias, addOnRow);
 #endif
   int eq = 0;
   int neq = 0;
@@ -219,19 +256,26 @@ int do_sgemm_with_bias(int m, int n, int k, bool relu, int pr) {
 
   if (pr > 0) {
     std::cout << "A:" << std::endl;
-    print_matirx(m, k, lda, a);
+    print_matrix(m, k, lda, a);
     std::cout << "B:" << std::endl;
-    print_matirx(k, n, ldb, b);
+    print_matrix(k, n, ldb, b);
     std::cout << "Bias:" << std::endl;
-    print_matirx(m, 1, 1, bias);
+    if (addOnRow) {
+      print_matrix(1, n, n, bias);
+    } else {
+      print_matrix(m, 1, 1, bias);
+    }
     std::cout << "C:" << std::endl;
-    print_matirx(m, n, ldc, c);
+    print_matrix(m, n, ldc, c);
     std::cout << "C1:" << std::endl;
-    print_matirx(m, n, ldc, c1);
+    print_matrix(m, n, ldc, c1);
   }
 
   std::cout << "mnk=" << m << " " << n << " " << k << " relu=" << relu
             << "   eq=" << eq << " neq=" << neq << std::endl;
+
+  PADDLE_MOBILE_ENFORCE(neq == 0,
+                        "The execution of do_sgemm_with_bias is failed!");
 
   paddle_mobile::memory::Free(a);
   paddle_mobile::memory::Free(b);
@@ -261,7 +305,7 @@ int main() {
 
   std::cout << "\n\n******************************************************\n\n"
             << std::endl;
-  std::cout << "Test gemm with bias:" << std::endl;
+  std::cout << "Test gemm with bias(bias is added on column):" << std::endl;
   do_sgemm_with_bias(9, 9, 9, false, 1);
   do_sgemm_with_bias(10, 6, 12, false, 0);
   do_sgemm_with_bias(512, 256, 384, false, 0);
@@ -271,6 +315,19 @@ int main() {
   do_sgemm_with_bias(777, 555, 999, false, 0);
   do_sgemm_with_bias(333, 797, 939, false, 0);
   do_sgemm_with_bias(1024, 1024, 1024, false, 0);
+
+  std::cout << "\n\n******************************************************\n\n"
+            << std::endl;
+  std::cout << "Test gemm with bias(bias is added on row):" << std::endl;
+  do_sgemm_with_bias(9, 9, 9, false, 1, true);
+  do_sgemm_with_bias(10, 6, 12, false, 0, true);
+  do_sgemm_with_bias(512, 256, 384, false, 0, true);
+  do_sgemm_with_bias(1366, 768, 256, false, 0, true);
+  do_sgemm_with_bias(1255, 755, 333, false, 0, true);
+  do_sgemm_with_bias(599, 1133, 393, false, 0, true);
+  do_sgemm_with_bias(777, 555, 999, false, 0, true);
+  do_sgemm_with_bias(333, 797, 939, false, 0, true);
+  do_sgemm_with_bias(1024, 1024, 1024, false, 0, true);
 
   std::cout << "\n\n******************************************************\n\n"
             << std::endl;
