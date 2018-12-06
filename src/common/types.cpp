@@ -32,6 +32,7 @@ const char *G_OP_TYPE_FUSION_CONV_BN_ADD_RELU = "fusion_conv_bn_add_relu";
 const char *G_OP_TYPE_FUSION_DWCONV_BN_RELU = "fusion_dwconv_bn_relu";
 const char *G_OP_TYPE_FUSION_CONV_BN_RELU = "fusion_conv_bn_relu";
 const char *G_OP_TYPE_FC = "fusion_fc";
+const char *G_OP_TYPE_FC_INT8 = "fusion_fc_int8";
 const char *G_OP_TYPE_FUSION_CONV_ADD = "fusion_conv_add";
 const char *G_OP_TYPE_LRN = "lrn";
 const char *G_OP_TYPE_MUL = "mul";
@@ -111,12 +112,13 @@ std::unordered_map<
         {G_OP_TYPE_MULTICLASS_NMS, {{"BBoxes", "Scores"}, {"Out"}}},
         {G_OP_TYPE_POLYGON_BOX_TRANSFORM, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_FC, {{"X", "Y", "Z"}, {"Out"}}},
+        {G_OP_TYPE_FC_INT8, {{"X", "Y", "Z", "Scale"}, {"Out"}}},
         {G_OP_TYPE_RESHAPE, {{"X"}, {"Out"}}},
         {G_OP_TYPE_RESHAPE2, {{"X"}, {"Out", "XShape"}}},
         {G_OP_TYPE_DEPTHWISE_CONV, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_FILL_CONSTANT, {{}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_RELU, {{"Input"}, {"Out"}}},
-        {G_OP_TYPE_FUSION_CONV_ADD_RELU_INT8, {{"Input"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_CONV_ADD_RELU_INT8, {{"Input", "Scale"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_PRELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_ADD_PRELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_IM2SEQUENCE, {{"X"}, {"Out"}}},
