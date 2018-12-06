@@ -73,8 +73,9 @@ void MulCompute(const MulParam<CPU> &param) {
   }
   if (param.InputX()->type() == typeid(int8_t)) {
     out->mutable_data<int32_t>();
-    math::matmul<int8_t>(x_matrix, false, y_matrix, false,
-                         static_cast<int8_t>(1), out, static_cast<int8_t>(0));
+    math::matmul<float, int32_t>(x_matrix, false, y_matrix, false,
+                                 static_cast<float>(1), out,
+                                 static_cast<float>(0));
 
   } else {
     out->mutable_data<float>();

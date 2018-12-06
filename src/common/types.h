@@ -99,6 +99,7 @@ extern const char *G_OP_TYPE_BOX_CODER;
 extern const char *G_OP_TYPE_CONCAT;
 extern const char *G_OP_TYPE_ELEMENTWISE_ADD;
 extern const char *G_OP_TYPE_FUSION_CONV_ADD_RELU;
+extern const char *G_OP_TYPE_FUSION_CONV_ADD_RELU_INT8;
 extern const char *G_OP_TYPE_FUSION_CONV_ADD_PRELU;
 extern const char *G_OP_TYPE_FUSION_CONV_ADD_ADD_PRELU;
 extern const char *G_OP_TYPE_FC;

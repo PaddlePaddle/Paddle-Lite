@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include <iostream>
 #include "../test_helper.h"
 #include "../test_include.h"
 #include "operators/mul_op.h"
@@ -79,14 +80,14 @@ int TestMulOP() {
     PADDLE_MOBILE_ENFORCE(
         output_data[i] == c[i], "output[%d] = %d, output_cmp[%d] = %d", i,
         static_cast<int32_t>(output_data[i]), i, static_cast<int32_t>(c[i]));
-    if (static_cast<int>(output_data[i] == c[i])) {
+    if (output_data[i] == c[i]) {
       ++eq;
     } else {
       ++neq;
     }
   }
-  DLOG << "mnk=" << m << " " << n << " " << k << "   eq=" << eq
-       << " neq=" << neq;
+  std::cout << "mnk=" << m << " " << n << " " << k << "   eq=" << eq
+            << " neq=" << neq << std::endl;
   delete op;
   return 0;
 }
@@ -94,7 +95,7 @@ int TestMulOP() {
 
 int main() {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
-  paddle_mobile.SetThreadNum(8);
+  paddle_mobile.SetThreadNum(4);
   paddle_mobile::TestMulOP<int8_t, int32_t>();
   paddle_mobile::TestMulOP<float, float>();
   return 0;
