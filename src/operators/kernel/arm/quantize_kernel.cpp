@@ -19,10 +19,12 @@ limitations under the License. */
 
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
 #include <arm_neon.h>
+#endif
 
 namespace paddle_mobile {
 namespace operators {
 
+#if defined(__ARM_NEON__) || defined(__ARM_NEON)
 #ifndef __aarch64__
 inline float32_t vmaxvq_f32(float32x4_t r) {
   float32x2_t v = vmax_f32(vget_high_f32(r), vget_low_f32(r));
