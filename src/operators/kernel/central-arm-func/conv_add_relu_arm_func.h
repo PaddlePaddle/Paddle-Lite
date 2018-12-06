@@ -39,8 +39,7 @@ void ConvAddReluCompute(const FusionConvAddReluParam<CPU> &param) {
   float beta = 1.0f;
 
 #ifdef FUSION_CONVADDRELU_INT8_OP
-  Tensor scale = *param.InputScale();
-  alpha = scale.data<float>()[0];
+  alpha = param.InputScale()->data<float>()[0];
   beta = 0.0f;
 #endif
 
