@@ -699,7 +699,7 @@ template <>
 void Gemm::InnerKernelWithBias(int32_t mc, int32_t nc, float alpha,
                                const int8_t *a, const int8_t *b, float beta,
                                int32_t *c, int8_t *C, int32_t ldc, bool relu,
-                               int32_t *bias) {
+                               int32_t *bias, bool addOnRow) {
 #pragma omp parallel for
   for (int32_t j = 0; j < nc; j += NR_INT8) {
     for (int32_t i = 0; i < mc; i += MR_INT8) {
@@ -716,7 +716,11 @@ void Gemm::InnerKernelWithBias(int32_t mc, int32_t nc, float alpha,
     WriteWithAddReluScale(mc, nc, c, C, ldc, bias, alpha);
     return;
   } else {
-    WriteWithAddScale(mc, nc, c, C, ldc, bias, alpha);
+    if (addOnRow) {
+      WriteWithAddScaleT(mc, nc, c, C, ldc, bias, alpha);
+    } else {
+      WriteWithAddScale(mc, nc, c, C, ldc, bias, alpha);
+    }
   }
 }
 
@@ -724,7 +728,7 @@ template <>
 void Gemm::InnerKernelWithBias(int32_t mc, int32_t nc, float alpha,
                                const int8_t *a, const int8_t *b, float beta,
                                int32_t *c, int32_t *C, int32_t ldc, bool relu,
-                               int32_t *bias) {}
+                               int32_t *bias, bool addOnRow) {}
 
 // 8 bits int PackMatrixA_4r
 void Gemm::PackMatrixA_4r_16(int32_t m, int32_t k, int32_t m_tail,
@@ -1159,14 +1163,13 @@ void Gemm::WriteBasic(int32_t mc, int32_t nc, int32_t *c, int32_t *C,
 #endif  // __ARM_NEON
 }
 
-// C = A * B + bias, scale * C
+// C = A * B + bias, scale * C, bias is added on column
 void Gemm::WriteWithAddScale(int32_t mc, int32_t nc, int32_t *c, int8_t *C,
                              int32_t ldc, int32_t *bias, float scale) {
 #if __ARM_NEON
 #if __aarch64__
 // TODO
 #else
-  int32_t zero = 0;
   int8_t narrow = -128;
   int32_t nc1 = nc >> 3;
   int32_t _nc1 = nc & 7;
@@ -1184,7 +1187,6 @@ void Gemm::WriteWithAddScale(int32_t mc, int32_t nc, int32_t *c, int8_t *C,
         "subs       %[mc], %[mc], #1        \n\t"
         "blt        end_mc_%=               \n\t"
         "vdup.32    q15,  %[scale]          \n\t"
-        "vdup.32    q14,  %[zero]           \n\t"
         "vdup.8     d24,  %[narrow]         \n\t"
         "loop_mc_%=:                        \n\t"
         "vld1.32    {d26[0]}, [%[bias_ptr]]!\n\t"
@@ -1222,9 +1224,9 @@ void Gemm::WriteWithAddScale(int32_t mc, int32_t nc, int32_t *c, int8_t *C,
         :
         : [C_ptr] "r"(C_ptr), [c_ptr] "r"(c_ptr), [mc] "r"(m), [nc1] "r"(n),
           [step] "r"(step), [step1] "r"(step1), [bias_ptr] "r"(bias_ptr),
-          [scale] "r"(scale), [zero] "r"(zero), [narrow] "r"(narrow)
+          [scale] "r"(scale), [narrow] "r"(narrow)
         : "cc", "memory", "r5", "r6", "q0", "q1", "q2", "q3", "q4", "q5", "q6",
-          "q7", "q12", "q13", "q14", "q15");
+          "q7", "q12", "q13", "q15");
   }
 
   int32_t nc_left;
@@ -1239,7 +1241,6 @@ void Gemm::WriteWithAddScale(int32_t mc, int32_t nc, int32_t *c, int8_t *C,
       nc_left = _nc1;
       asm volatile(
           "vdup.32    q15,  %[scale]          \n\t"
-          "vdup.32    q14,  %[zero]           \n\t"
           "vdup.8     d24,  %[narrow]         \n\t"
           "vdup.32    q13,  %[bias_v]         \n\t"
           "cmp        %[_nc1], #4             \n\t"
@@ -1260,7 +1261,7 @@ void Gemm::WriteWithAddScale(int32_t mc, int32_t nc, int32_t *c, int8_t *C,
           "subs       %[_nc1], %[_nc1], #4    \n\t"
           "beq        process_over_%=         \n\t"
           "less_four_%=:                      \n\t"
-          "vld1.32    {q0}, [%[c0]]!          \n\t"
+          "vld1.32    {q0}, [%[c0]]          \n\t"
           "vqadd.s32  q0, q0, q13             \n\t"
           "vcvt.f32.s32 q1, q0                \n\t"
           "vmul.f32   q1, q1, q15             \n\t"
@@ -1277,17 +1278,138 @@ void Gemm::WriteWithAddScale(int32_t mc, int32_t nc, int32_t *c, int8_t *C,
           "process_over_%=:                   \n\t"
           :
           : [_nc1] "r"(nc_left), [C0] "r"(C0), [c0] "r"(c0),
-            [bias_v] "r"(bias_v), [scale] "r"(scale), [zero] "r"(zero),
-            [narrow] "r"(narrow)
-          : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q12", "q13", "q14",
-            "q15");
+            [bias_v] "r"(bias_v), [scale] "r"(scale), [narrow] "r"(narrow)
+          : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q12", "q13", "q15");
     }
   }
 #endif  // __aarch64__
 #endif  // __ARM_NEON
 }
 
-// C = A * B + bias, scale * relu(C)
+// C = A * B + bias, scale * C, bias is added on row
+void Gemm::WriteWithAddScaleT(int32_t mc, int32_t nc, int32_t *c, int8_t *C,
+                              int32_t ldc, int32_t *bias, float scale) {
+#if __ARM_NEON
+#if __aarch64__
+// TODO
+#else
+  int8_t narrow = -128;
+  int32_t nc1 = nc >> 3;
+  int32_t _nc1 = nc & 7;
+  int32_t step = sizeof(int8_t) * ldc;
+  int32_t step1 = sizeof(int32_t) * (NC - (nc1 << 3));
+  int32_t volatile m = mc;
+  int32_t volatile n = nc1;
+  int32_t *volatile c_ptr, *volatile bias_ptr;
+  int8_t *volatile C_ptr;
+  c_ptr = c;
+  C_ptr = C;
+  bias_ptr = bias;
+  if (nc1 > 0) {
+    asm volatile(
+        "subs       %[mc], %[mc], #1        \n\t"
+        "blt        end_mc_%=               \n\t"
+        "vdup.32    q15,  %[scale]          \n\t"
+        "vdup.8     d24,  %[narrow]         \n\t"
+        "loop_mc_%=:                        \n\t"
+        "mov        r4,   %[bias_ptr]       \n\t"
+        "mov        r6,   %[C_ptr]          \n\t"
+        "mov        r5,   %[nc1]            \n\t"
+        "subs       r5,   r5,   #1          \n\t"
+        "blt        end_nc1_%=              \n\t"
+        "loop_nc1_%=:                       \n\t"
+        "vld1.32    {q13, q14}, [r4]!        \n\t"
+        "vld1.32    {q0, q1}, [%[c_ptr]]!   \n\t"
+        "vqadd.s32  q0, q0, q13             \n\t"
+        "vqadd.s32  q1, q1, q14             \n\t"
+        "vcvt.f32.s32 q2, q0                \n\t"
+        "vcvt.f32.s32 q3, q1                \n\t"
+        "vmul.f32   q2, q2, q15             \n\t"
+        "vmul.f32   q3, q3, q15             \n\t"
+        "vcvt.s32.f32 q4, q2                \n\t"
+        "vcvt.s32.f32 q5, q3                \n\t"
+        "vqmovn.s32 d12, q4                 \n\t"
+        "vqmovn.s32 d13, q5                 \n\t"
+        "vqmovn.s16 d14, q6                 \n\t"
+        "vceq.s8    d15, d14, d24           \n\t"
+        "vsub.s8    d14, d14, d15           \n\t"
+        "vst1.8     {d14}, [r6]!            \n\t"
+        "subs       r5,   r5,   #1          \n\t"
+        "bge        loop_nc1_%=             \n\t"
+        "end_nc1_%=:                        \n\t"
+
+        "add        %[C_ptr], %[C_ptr], %[step]  \n\t"
+        "add        %[c_ptr], %[c_ptr], %[step1] \n\t"
+        "subs       %[mc], %[mc], #1        \n\t"
+        "bge        loop_mc_%=              \n\t"
+        "end_mc_%=:                         \n\t"
+
+        :
+        : [C_ptr] "r"(C_ptr), [c_ptr] "r"(c_ptr), [mc] "r"(m), [nc1] "r"(n),
+          [step] "r"(step), [step1] "r"(step1), [bias_ptr] "r"(bias_ptr),
+          [scale] "r"(scale), [narrow] "r"(narrow)
+        : "cc", "memory", "r4", "r5", "r6", "q0", "q1", "q2", "q3", "q4", "q5",
+          "q6", "q7", "q12", "q13", "q15");
+  }
+
+  int32_t nc_left;
+  int32_t *c0;
+  int8_t *C0;
+  int32_t *volatile bias0 = bias_ptr + nc1 * 8;
+  if (_nc1 != 0) {
+    for (int32_t i = 0; i < mc; i++) {
+      C0 = C_ptr + nc1 * 8 + i * ldc;
+      c0 = c_ptr + nc1 * 8 + i * NC;
+      nc_left = _nc1;
+      asm volatile(
+          "vdup.32    q15,  %[scale]          \n\t"
+          "vdup.8     d24,  %[narrow]         \n\t"
+          "cmp        %[_nc1], #4             \n\t"
+          "blt        less_four_%=            \n\t"
+          "vld1.32    {q0}, [%[c0]]!          \n\t"
+          "vld1.32    {q13}, [%[bias0]]!      \n\t"
+          "vqadd.s32  q0, q0, q13             \n\t"
+          "vcvt.f32.s32 q1, q0                \n\t"
+          "vmul.f32   q1, q1, q15             \n\t"
+          "vcvt.s32.f32 q2, q1                \n\t"
+          "vqmovn.s32 d6, q2                  \n\t"
+          "vqmovn.s16 d8, q3                  \n\t"
+          "vceq.s8    d9, d8, d24             \n\t"
+          "vsub.s8    d8, d8, d9              \n\t"
+          "vst1.8     {d8[0]}, [%[C0]]!       \n\t"
+          "vst1.8     {d8[1]}, [%[C0]]!       \n\t"
+          "vst1.8     {d8[2]}, [%[C0]]!       \n\t"
+          "vst1.8     {d8[3]}, [%[C0]]!       \n\t"
+          "subs       %[_nc1], %[_nc1], #4    \n\t"
+          "beq        process_over_%=         \n\t"
+          "less_four_%=:                      \n\t"
+          "vld1.32    {q0}, [%[c0]]           \n\t"
+          "vld1.32    {q13}, [%[bias0]]       \n\t"
+          "vqadd.s32  q0, q0, q13             \n\t"
+          "vcvt.f32.s32 q1, q0                \n\t"
+          "vmul.f32   q1, q1, q15             \n\t"
+          "vcvt.s32.f32 q2, q1                \n\t"
+          "vqmovn.s32 d6, q2                  \n\t"
+          "vqmovn.s16 d8, q3                  \n\t"
+          "vceq.s8    d9, d8, d24             \n\t"
+          "vsub.s8    d8, d8, d9              \n\t"
+          "loop_save_%=:                      \n\t"
+          "vst1.8     {d8[0]}, [%[C0]]!       \n\t"
+          "vext.8 d8, d8, d8, #1              \n\t"
+          "subs       %[_nc1], %[_nc1], #1    \n\t"
+          "bgt        loop_save_%=            \n\t"
+          "process_over_%=:                   \n\t"
+          :
+          : [_nc1] "r"(nc_left), [C0] "r"(C0), [c0] "r"(c0), [bias0] "r"(bias0),
+            [scale] "r"(scale), [narrow] "r"(narrow)
+          : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q12", "q13", "q15");
+    }
+  }
+#endif  // __aarch64__
+#endif  // __ARM_NEON
+}
+
+// C = A * B + bias, scale * relu(C), bias is added on column
 void Gemm::WriteWithAddReluScale(int32_t mc, int32_t nc, int32_t *c, int8_t *C,
                                  int32_t ldc, int32_t *bias, float scale) {
 #if __ARM_NEON

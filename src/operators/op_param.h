@@ -1632,6 +1632,10 @@ class FusionFcParam : public OpParam {
     x_num_col_dims_ = GetAttr<int>("x_num_col_dims", attrs);
     y_num_col_dims_ = GetAttr<int>("y_num_col_dims", attrs);
     axis_ = GetAttr<int>("axis", attrs);
+
+#ifdef FUSION_FC_INT8_OP
+    scale_ = InputScaleFrom<GType>(inputs, scope);
+#endif
   }
   GType *InputX() const { return input_x_; }
 
@@ -1655,8 +1659,16 @@ class FusionFcParam : public OpParam {
   int x_num_col_dims_;
   int y_num_col_dims_;
   int axis_;
-#ifdef PADDLE_MOBILE_FPGA
 
+#ifdef FUSION_FC_INT8_OP
+ public:
+  const RType *InputScale() const { return scale_; }
+
+ private:
+  RType *scale_;
+#endif
+
+#ifdef PADDLE_MOBILE_FPGA
  private:
   fpga::SplitConvArgs fpga_conv_args;
 
@@ -1717,7 +1729,7 @@ class FusionConvAddReluParam : public FusionConvAddParam<DeviceType> {
   typedef typename DtypeTensorTrait<DeviceType>::rtype RType;
   const RType *InputScale() const { return scale_; }
 
- protected:
+ private:
   RType *scale_;
 #endif
 };
