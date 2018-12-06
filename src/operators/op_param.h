@@ -439,7 +439,7 @@ class ConvParam : public OpParam {
 
 #endif
 
- private:
+ protected:
   RType *input_;
   RType *output_;
   RType *filter_;
@@ -1707,7 +1707,19 @@ class FusionConvAddReluParam : public FusionConvAddParam<DeviceType> {
   FusionConvAddReluParam(const VariableNameMap &inputs,
                          const VariableNameMap &outputs,
                          const AttributeMap &attrs, const Scope &scope)
-      : FusionConvAddParam<DeviceType>(inputs, outputs, attrs, scope) {}
+      : FusionConvAddParam<DeviceType>(inputs, outputs, attrs, scope) {
+#ifdef FUSION_CONVADDRELU_INT8_OP
+    scale_ = OpParam::InputScaleFrom<GType>(inputs, scope);
+#endif
+  }
+#ifdef FUSION_CONVADDRELU_INT8_OP
+  typedef typename DtypeTensorTrait<DeviceType>::gtype GType;
+  typedef typename DtypeTensorTrait<DeviceType>::rtype RType;
+  const RType *InputScale() const { return scale_; }
+
+ protected:
+  RType *scale_;
+#endif
 };
 #endif
 
