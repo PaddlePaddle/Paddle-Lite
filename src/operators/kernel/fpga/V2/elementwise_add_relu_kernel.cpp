@@ -21,7 +21,7 @@ namespace operators {
 template <>
 bool ElementwiseAddReluKernel<FPGA, float>::Init(
     ElementwiseAddReluParam<FPGA> *param) {
-  bool relu_enabled = false;
+  bool relu_enabled = true;
   auto *input_x = const_cast<LoDTensor *>(param->InputX());
   auto *input_y = const_cast<LoDTensor *>(param->InputY());
   auto *out = param->Out();
