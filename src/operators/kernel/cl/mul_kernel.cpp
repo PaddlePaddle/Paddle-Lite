@@ -12,29 +12,24 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef DROPOUT_OP
-#include "operators/dropout_op.h"
+#ifdef MUL_OP
+
+#include "operators/kernel/mul_kernel.h"
+
 namespace paddle_mobile {
 namespace operators {
 
-template <typename Dtype, typename T>
-void DropoutOp<Dtype, T>::InferShape() const {
-  auto input_dims = this->param_.InputX()->dims();
-  this->param_.Out()->Resize(input_dims);
+template <>
+bool MulKernel<GPU_CL, float>::Init(MulParam<GPU_CL> *param) {
+  return true;
 }
+
+template <>
+void MulKernel<GPU_CL, float>::Compute(const MulParam<GPU_CL> &param) {}
+
+template class MulKernel<GPU_CL, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(dropout, ops::DropoutOp);
-#endif
-#ifdef PADDLE_MOBILE_CL
-REGISTER_OPERATOR_CL(dropout, ops::DropoutOp);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(dropout, ops::DropoutOp);
-#endif
 
 #endif
