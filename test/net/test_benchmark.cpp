@@ -59,6 +59,13 @@ int main(int argc, char* argv[]) {
     }
     auto time4 = time();
     std::cout << "predict cost :" << time_diff(time3, time4) / 10 << "ms\n";
+    std::ostringstream os("output tensor size: ");
+    os << output->numel() << "\n" << output->data<float>()[0];
+    for (int i = 1; i < output->numel(); ++i) {
+      os << ", " << output->data<float>()[i];
+    }
+    std::string output_str = os.str();
+    std::cout << output_str << std::endl;
   }
   return 0;
 }

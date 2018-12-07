@@ -25,25 +25,34 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-using paddle_mobile::framework::Tensor;
-
 template <typename DeviceType, typename T>
 class ReluOp : public framework::OperatorWithKernel<
                    DeviceType, ReluParam<DeviceType>,
                    operators::ReluKernel<DeviceType, T>> {
  public:
-  /*
-   * @b op 的实例化方法, 需要调用父类的实例化方法, 以及实例化自己的参数结构体
-   * */
   ReluOp(const std::string &type, const VariableNameMap &inputs,
          const VariableNameMap &outputs, const framework::AttributeMap &attrs,
          std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<DeviceType, ReluParam<DeviceType>,
                                       operators::ReluKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-  void InferShape() const override;
 
- protected:
+  void InferShape() const override;
+};
+
+template <typename DeviceType, typename T>
+class Relu6Op : public framework::OperatorWithKernel<
+                    DeviceType, ReluParam<DeviceType>,
+                    operators::Relu6Kernel<DeviceType, T>> {
+ public:
+  Relu6Op(const std::string &type, const VariableNameMap &inputs,
+          const VariableNameMap &outputs, const framework::AttributeMap &attrs,
+          std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<DeviceType, ReluParam<DeviceType>,
+                                      operators::Relu6Kernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
+
+  void InferShape() const override;
 };
 
 }  // namespace operators

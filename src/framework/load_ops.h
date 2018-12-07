@@ -191,6 +191,7 @@ LOAD_OP2(mul, CPU, MALI_GPU);
 #endif
 #ifdef RELU_OP
 LOAD_OP2(relu, CPU, MALI_GPU);
+LOAD_OP1(relu6, CPU);
 #endif
 #ifdef IM2SEQUENCE_OP
 LOAD_OP1(im2sequence, CPU);
@@ -244,4 +245,12 @@ LOAD_FUSION_MATCHER(fusion_dequant_bn_relu);
 #ifdef FUSION_DEQUANT_ADD_BN_RELU_OP
 LOAD_OP1(fusion_dequant_add_bn_relu, CPU);
 LOAD_FUSION_MATCHER(fusion_dequant_add_bn_relu);
+#endif
+#ifdef FUSION_DEQUANT_ADD_BN_QUANT_OP
+LOAD_OP1(fusion_dequant_add_bn_quant, CPU);
+LOAD_FUSION_MATCHER(fusion_dequant_add_bn_quant);
+#endif
+#ifdef FUSION_DEQUANT_ADD_BN_RELU_QUANT_OP
+LOAD_OP1(fusion_dequant_add_bn_relu_quant, CPU);
+LOAD_FUSION_MATCHER(fusion_dequant_add_bn_relu_quant);
 #endif

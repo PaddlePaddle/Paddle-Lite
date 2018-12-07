@@ -42,5 +42,27 @@ class FusionDequantAddBNReluKernel
 };
 #endif
 
+#ifdef FUSION_DEQUANT_ADD_BN_RELU_QUANT_OP
+template <typename DeviceType, typename T>
+class FusionDequantAddBNReluQuantKernel
+    : public framework::OpKernelBase<
+          DeviceType, FusionDequantAddBNReluQuantParam<DeviceType>> {
+ public:
+  void Compute(const FusionDequantAddBNReluQuantParam<DeviceType> &param);
+  bool Init(FusionDequantAddBNReluQuantParam<DeviceType> *param);
+};
+#endif
+
+#ifdef FUSION_DEQUANT_ADD_BN_QUANT_OP
+template <typename DeviceType, typename T>
+class FusionDequantAddBNQuantKernel
+    : public framework::OpKernelBase<DeviceType,
+                                     FusionDequantAddBNQuantParam<DeviceType>> {
+ public:
+  void Compute(const FusionDequantAddBNQuantParam<DeviceType> &param);
+  bool Init(FusionDequantAddBNQuantParam<DeviceType> *param);
+};
+#endif
+
 }  // namespace operators
 }  // namespace paddle_mobile
