@@ -50,31 +50,31 @@ inline int8_t Round<ROUND_NEAREST_TO_EVEN>(const float &x) {
 
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
 template <RoundType R = ROUND_NEAREST_TOWARDS_ZERO>
-inline int32x4_t vround_f32(float32x4_t r) {
-  return vcvtq_s32_f32(r);
+inline int32x4_t vRoundq_f32(const float32x4_t &x) {
+  return vcvtq_s32_f32(x);
 }
 
 template <>
-inline int32x4_t vround_f32<ROUND_NEAREST_AWAY_ZERO>(float32x4_t r) {
+inline int32x4_t vRoundq_f32<ROUND_NEAREST_AWAY_ZERO>(const float32x4_t &x) {
   float32x4_t plus = vdupq_n_f32(0.5);
   float32x4_t minus = vdupq_n_f32(-0.5);
   float32x4_t zero = vdupq_n_f32(0);
-  uint32x4_t more_than_zero = vcgtq_f32(r, zero);
+  uint32x4_t more_than_zero = vcgtq_f32(x, zero);
   float32x4_t temp = vbslq_f32(more_than_zero, plus, minus);
-  temp = vaddq_f32(r, temp);
+  temp = vaddq_f32(x, temp);
   int32x4_t ret = vcvtq_s32_f32(temp);
   return ret;
 }
 
 template <>
-inline int32x4_t vround_f32<ROUND_NEAREST_TO_EVEN>(float32x4_t r) {
+inline int32x4_t vRoundq_f32<ROUND_NEAREST_TO_EVEN>(const float32x4_t &x) {
   float32x4_t point5 = vdupq_n_f32(0.5);
   int32x4_t one = vdupq_n_s32(1);
   int32x4_t zero = vdupq_n_s32(0);
 
-  int32x4_t rnd = vround_f32<ROUND_NEAREST_AWAY_ZERO>(r);
+  int32x4_t rnd = math::vRoundq_f32<ROUND_NEAREST_AWAY_ZERO>(x);
   float32x4_t frnd = vcvtq_f32_s32(rnd);
-  frnd = vsubq_f32(frnd, r);
+  frnd = vsubq_f32(frnd, x);
   frnd = vabsq_f32(frnd);
   uint32x4_t equal_point5 = vceqq_f32(frnd, point5);
   int32x4_t abs_rnd = vabsq_s32(rnd);
