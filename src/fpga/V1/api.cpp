@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include "fpga/V1/api.h"
 #include "fpga/V1/bias_scale.h"
+#include "fpga/V1/deconv_filter.h"
 #include "fpga/V1/filter.h"
 #include "fpga/V1/image.h"
 
@@ -122,6 +123,32 @@ void format_fc_filter(framework::Tensor *filter_tensor, float max_value) {
   fpga_copy(new_data, data_ptr, memory_size);
   filter::format_fc_filter(&new_data, num, channel, height, width, 1,
                            max_value);
+  filter_tensor->reset_data_ptr(new_data);
+}
+void format_deconv_filter(framework::Tensor *filter_tensor, float max_value,
+                          int group_num, int stride) {
+  filter_tensor->scale[0] = float(max_value / 127.0);  // NOLINT
+  filter_tensor->scale[1] = float(127.0 / max_value);  // NOLINT
+  auto dims = filter_tensor->dims();
+  auto num = dims[0], channel = dims[1], height = dims[2], width = dims[3];
+  auto data_ptr = filter_tensor->data<float>();
+  size_t memory_size = num * channel * height * width * sizeof(float);
+  auto new_data = (float *)fpga_malloc(memory_size);  // NOLINT
+  memcpy(new_data, data_ptr, memory_size);
+
+  int hw = height * width;
+  deconv_filter::deconv_NC_convert(&new_data, num, channel, hw);
+
+  num = dims[1];
+  channel = dims[0];
+  deconv_filter::deconv_format_filter(
+      &new_data, (int)num, (int)channel,          // NOLINT
+      (int)height,                                // NOLINT
+      (int)width, group_num, max_value, stride);  // NOLINT
+
+  framework::DDim dims_new =
+      framework::make_ddim({num, channel, height, width});
+  filter_tensor->Resize(dims_new);
   filter_tensor->reset_data_ptr(new_data);
 }
 
@@ -240,6 +267,100 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
   filter->reset_data_ptr(nullptr);
   fpga_free(bs_ptr);
 }
+void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
+                     framework::Tensor *out, framework::Tensor *filter,
+                     bool relu_enabled, int group_num, int stride_h,
+                     int stride_w, int padding_h, int padding_w,
+                     float *bs_ptr) {
+  auto input_ptr = input->data<float>();
+  auto filter_ptr = filter->data<float>();
+  auto out_ptr = out->data<float>();
 
+  arg->group_num = (uint32_t)group_num;
+  arg->sub_conv_num = stride_h;
+  arg->filter_num = (uint32_t)filter->dims()[0];
+
+  int sub_conv_num = arg->sub_conv_num;
+  int sub_stride = 1;
+  int sub_pad = deconv_filter::deconv_calc_sub_pad(filter->dims()[3], padding_w,
+                                                   stride_w);
+  int sub_filter_width =
+      deconv_filter::deconv_get_sub_filter_axis(filter->dims()[3], stride_w);
+
+  int sub_output_width = deconv_filter::deconv_get_sub_out_axis(
+      input->dims()[3], sub_pad, sub_filter_width);
+  int sub_output_height = deconv_filter::deconv_get_sub_out_axis(
+      input->dims()[2], sub_pad, sub_filter_width);
+
+  arg->sub_output_width = sub_output_width;
+  arg->sub_output_height = sub_output_height;
+  arg->omit_size =
+      deconv_filter::deconv_get_omit(stride_w, filter->dims()[3], padding_w);
+  arg->conv_args = (ConvArgs *)fpga_malloc(sub_conv_num * sizeof(ConvArgs));
+
+  int sub_channels = (int32_t)input->dims()[1];
+  int omit_size = arg->omit_size;
+  int real_out_width = sub_output_width * sub_conv_num - 2 * omit_size;
+  int real_out_height = sub_output_height * sub_conv_num - 2 * omit_size;
+  int sub_filter_num = sub_conv_num * (arg->filter_num);
+
+  int conv_output_size =
+      (align_to_x(sub_output_width * sub_filter_num, IMAGE_ALIGNMENT)) *
+      sub_output_height;
+  int ouput_size = conv_output_size * sub_conv_num;
+
+  int align_sub_filter_num = align_to_x(sub_filter_num, FILTER_NUM_ALIGNMENT);
+  int align_sub_filter_count =
+      align_to_x(sub_filter_width * sub_filter_width * sub_channels,
+                 FILTER_ELEMENT_ALIGNMENT);
+  int align_conv_sub_filter_count =
+      align_sub_filter_count * align_sub_filter_num;
+
+  for (int i = 0; i < sub_conv_num; ++i) {
+    arg->conv_args[i].filter_num = (arg->sub_conv_num) * (arg->filter_num);
+    arg->conv_args[i].group_num = group_num;
+
+    arg->conv_args[i].filter_scale_address = filter->scale;
+    arg->conv_args[i].relu_enabled = relu_enabled;
+
+    arg->conv_args[i].kernel.width = sub_filter_width;
+    arg->conv_args[i].kernel.height = sub_filter_width;
+    arg->conv_args[i].kernel.stride_w = 1;
+    arg->conv_args[i].kernel.stride_h = 1;
+
+    // DeconvParam.conv_args[i].image.address = (void*)ptr_image;
+    arg->conv_args[i].image.scale_address = input->scale;
+    arg->conv_args[i].image.channels = sub_channels;
+    arg->conv_args[i].image.width = (uint32_t)input->dims()[3];
+    arg->conv_args[i].image.height = (uint32_t)input->dims()[2];
+    arg->conv_args[i].image.pad_width = sub_pad;
+    arg->conv_args[i].image.pad_height = sub_pad;
+    arg->conv_args[i].image.address = input_ptr;
+
+    arg->conv_args[i].sb_address = (void *)bs_ptr;
+
+    char *filter_sub_space =
+        (char *)fpga_malloc(align_conv_sub_filter_count * sizeof(char));
+    fpga_copy(filter_sub_space,
+              (char *)filter_ptr + i * align_conv_sub_filter_count,
+              align_conv_sub_filter_count);
+    arg->conv_args[i].filter_address = (void *)(filter_sub_space);
+    fpga_flush(filter_sub_space, align_conv_sub_filter_count);
+
+    if (sub_conv_num == 1) {
+      arg->conv_args[i].output.address = out_ptr;
+      arg->conv_args[i].output.scale_address = out->scale;
+    } else {
+      half *ptr_output = (half *)fpga_malloc(conv_output_size * sizeof(half));
+      arg->conv_args[i].output.address = (void *)((half *)ptr_output);
+      float *ptr_output_scale = (float *)fpga_malloc(2 * sizeof(float));
+      arg->conv_args[i].output.scale_address = ptr_output_scale;
+    }
+  }
+
+  arg->output.address = out_ptr;
+  arg->output.scale_address = out->scale;
+  // fpga_free(filter_ptr);
+}
 }  // namespace fpga
 }  // namespace paddle_mobile

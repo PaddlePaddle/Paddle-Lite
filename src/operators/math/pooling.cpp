@@ -70,15 +70,15 @@ class PoolFunctor<CPU, PoolProcess, T> {
             int wend = std::min(wstart + ksize_width, input_width);
             wstart = std::max(wstart, 0);
 
-            T ele = pool_process.initial();
+            auto ele = pool_process.initial();
             for (int h = hstart; h < hend; ++h) {
               for (int w = wstart; w < wend; ++w) {
                 pool_process.compute(input_data[h * input_width + w], &ele);
               }
             }
             int pool_size = (hend - hstart) * (wend - wstart);
-            pool_process.finalize(static_cast<T>(pool_size), &ele);
-            output_data[ph * output_width + pw] = ele;
+            pool_process.finalize(static_cast<float>(pool_size), &ele);
+            output_data[ph * output_width + pw] = static_cast<T>(ele);
           }
         }
         input_data += input_stride;
@@ -88,8 +88,10 @@ class PoolFunctor<CPU, PoolProcess, T> {
   }
 };
 
-template class PoolFunctor<CPU, math::AvgPool<float>, float>;
+template class PoolFunctor<CPU, math::AvgPool<float, float>, float>;
 template class PoolFunctor<CPU, math::MaxPool<float>, float>;
+template class PoolFunctor<CPU, math::AvgPool<int8_t, int32_t>, int8_t>;
+template class PoolFunctor<CPU, math::MaxPool<int8_t>, int8_t>;
 }  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile

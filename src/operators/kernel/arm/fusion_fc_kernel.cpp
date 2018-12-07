@@ -27,9 +27,26 @@ bool FusionFcKernel<CPU, float>::Init(FusionFcParam<CPU> *param) {
 
 template <>
 void FusionFcKernel<CPU, float>::Compute(const FusionFcParam<CPU> &param) {
-  FusionFcCompute<float>(param);
+  FusionFcCompute<float, float>(param);
   param.Out()->set_lod(param.InputX()->lod());
 }
+
+template class FusionFcKernel<CPU, float>;
+
+#ifdef FUSION_FC_INT8_OP
+template <>
+bool FusionFcKernel<CPU, int8_t>::Init(FusionFcParam<CPU> *param) {
+  return true;
+}
+
+template <>
+void FusionFcKernel<CPU, int8_t>::Compute(const FusionFcParam<CPU> &param) {
+  FusionFcCompute<int8_t, int32_t>(param);
+  param.Out()->set_lod(param.InputX()->lod());
+}
+
+template class FusionFcKernel<CPU, int8_t>;
+#endif
 
 }  // namespace operators
 }  // namespace paddle_mobile
