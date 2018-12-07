@@ -14,7 +14,7 @@ limitations under the License. */
 
 #ifdef LRN_OP
 
-#include "lrn_op.h"
+#include "operators/lrn_op.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -31,6 +31,9 @@ void LrnOp<Dtype, T>::InferShape() const {
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(lrn, ops::LrnOp);
+#endif
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(lrn, ops::LrnOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
 REGISTER_OPERATOR_MALI_GPU(lrn, ops::LrnOp);
