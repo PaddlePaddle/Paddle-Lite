@@ -214,7 +214,7 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
     arg->conv_arg[i].output.scale_address = out->scale;
 
     int num_after_alignment = filter::calc_aligned_num(
-        (int)input->dims()[1], arg->filter_num);  // NOLINT
+        arg->filter_num, (int)input->dims()[1]);  // NOLINT
     arg->conv_arg[i].free_space =
         fpga_malloc(num_after_alignment * 2 * sizeof(half));
   }
