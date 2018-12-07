@@ -114,6 +114,7 @@ extern const char *G_OP_TYPE_MULTICLASS_NMS;
 extern const char *G_OP_TYPE_POOL2D;
 extern const char *G_OP_TYPE_PRIOR_BOX;
 extern const char *G_OP_TYPE_RELU;
+extern const char *G_OP_TYPE_RELU6;
 extern const char *G_OP_TYPE_RESHAPE;
 extern const char *G_OP_TYPE_SIGMOID;
 extern const char *G_OP_TYPE_SOFTMAX;
@@ -141,6 +142,8 @@ extern const char *G_OP_TYPE_DEQUANTIZE;
 extern const char *G_OP_TYPE_FUSION_DEQUANT_ADD_BN;
 extern const char *G_OP_TYPE_FUSION_DEQUANT_BN_RELU;
 extern const char *G_OP_TYPE_FUSION_DEQUANT_ADD_BN_RELU;
+extern const char *G_OP_TYPE_FUSION_DEQUANT_ADD_BN_QUANT;
+extern const char *G_OP_TYPE_FUSION_DEQUANT_ADD_BN_RELU_QUANT;
 
 extern const char *G_OP_TYPE_TANH;
 extern const char *G_OP_TYPE_FUSION_DECONV_RELU;
