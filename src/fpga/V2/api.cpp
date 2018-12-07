@@ -146,11 +146,11 @@ int format_conv_data(framework::Tensor *filter_tensor,
 }
 
 int format_fc_data(framework::Tensor *filter_tensor,
-                   framework::Tensor *ofm_tensor, float *bs_ptr) {
+                   framework::Tensor *ofm_tensor, float **bs_ptr) {
   float max_value = fpga::filter_find_max(filter_tensor);
   fpga::format_fc_filter(filter_tensor, max_value);
   int aligned_num = get_aligned_filter_num(filter_tensor);
-  fpga::format_bias_scale_array(&bs_ptr,
+  fpga::format_bias_scale_array(bs_ptr,
                                 (int)filter_tensor->dims()[0],  // NOLINT
                                 aligned_num);
   int aligned_channel = fpga::get_conv_output_channel(filter_tensor);
