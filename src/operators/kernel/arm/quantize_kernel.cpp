@@ -53,10 +53,10 @@ static void Quantize(const Tensor *input, const float scale, Tensor *output) {
     r1 = vmulq_f32(r1, __scale);
     r2 = vmulq_f32(r2, __scale);
     r3 = vmulq_f32(r3, __scale);
-    int32x4_t q0 = math::vround_f32<R>(r0);
-    int32x4_t q1 = math::vround_f32<R>(r1);
-    int32x4_t q2 = math::vround_f32<R>(r2);
-    int32x4_t q3 = math::vround_f32<R>(r3);
+    int32x4_t q0 = math::vRoundq_f32<R>(r0);
+    int32x4_t q1 = math::vRoundq_f32<R>(r1);
+    int32x4_t q2 = math::vRoundq_f32<R>(r2);
+    int32x4_t q3 = math::vRoundq_f32<R>(r3);
     int16x4_t d0 = vmovn_s32(q0);
     int16x4_t d1 = vmovn_s32(q1);
     int16x4_t d2 = vmovn_s32(q2);

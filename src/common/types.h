@@ -87,10 +87,19 @@ enum PMStatus {
 };
 
 enum RoundType {
-  ROUND_UNK = 0,
-  ROUND_NEAREST_AWAY_ZERO = 1,
-  ROUND_NEAREST_TOWARDS_ZERO = 2,
-  ROUND_NEAREST_TO_EVEN = 3
+  ROUND_NEAREST_AWAY_ZERO = 0,
+  ROUND_NEAREST_TOWARDS_ZERO = 1,
+  ROUND_NEAREST_TO_EVEN = 2,
+};
+
+enum ActivationType {
+  Linear = 0,
+  Relu = 1,
+  Relu6 = 2,
+  PRelu = 3,
+  LeakyRelu = 4,
+  Tanh = 5,
+  Sigmoid = 6,
 };
 
 extern const char *G_OP_TYPE_CONV;
@@ -139,6 +148,7 @@ extern const char *G_OP_TYPE_ELEMENTWISE_MUL;
 
 extern const char *G_OP_TYPE_QUANTIZE;
 extern const char *G_OP_TYPE_DEQUANTIZE;
+extern const char *G_OP_TYPE_FUSION_DEQUANT_BN;
 extern const char *G_OP_TYPE_FUSION_DEQUANT_ADD_BN;
 extern const char *G_OP_TYPE_FUSION_DEQUANT_BN_RELU;
 extern const char *G_OP_TYPE_FUSION_DEQUANT_ADD_BN_RELU;

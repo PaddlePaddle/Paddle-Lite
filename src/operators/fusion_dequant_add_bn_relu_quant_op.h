@@ -18,7 +18,7 @@ limitations under the License. */
 #include <vector>
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
-#include "operators/kernel/dequant_bn_relu_kernel.h"
+#include "operators/kernel/dequant_bn_kernel.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
@@ -44,7 +44,8 @@ class FusionDequantAddBNReluQuantMatcher : public framework::FusionOpMatcher {
                    {{"Scale", "BNScale"},
                     {"Mean", "BNMean"},
                     {"Bias", "BNBias"},
-                    {"Variance", "BNVariance"}}}},
+                    {"Variance", "BNVariance"},
+                    {"Y", "Out"}}}},
                  removed_nodes);
   }
 
@@ -90,7 +91,8 @@ class FusionDequantAddBNQuantMatcher : public framework::FusionOpMatcher {
                    {{"Scale", "BNScale"},
                     {"Mean", "BNMean"},
                     {"Bias", "BNBias"},
-                    {"Variance", "BNVariance"}}}},
+                    {"Variance", "BNVariance"},
+                    {"Y", "Out"}}}},
                  removed_nodes);
   }
 
