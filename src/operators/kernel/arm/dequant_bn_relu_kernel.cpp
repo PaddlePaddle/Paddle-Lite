@@ -1,4 +1,4 @@
-/* Copyright (c) 201f8 PaddlePaddle Authors. All Rights Reserved.
+/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -167,8 +167,9 @@ void DequantBNQuantCompute(const FusionDequantAddBNQuantParam<CPU> *param) {
 
   //  if (param->is_static_) {
   if (true) {
-    max_abs = param->static_scale_;
+    max_abs = param->offline_scale_->data<float>()[0];
     float quant_scale = 127.f / max_abs;
+
     #pragma omp parallel for collapse(2)
     for (int batch = 0; batch < batch_size; ++batch) {
       for (int c = 0; c < channels; ++c) {
@@ -287,8 +288,9 @@ void DequantBNReluQuantCompute(
 
   //  if (param->is_static_) {
   if (true) {
-    max_abs = param->static_scale_;
+    max_abs = param->offline_scale_->data<float>()[0];
     float quant_scale = 127.f / max_abs;
+
     #pragma omp parallel for collapse(2)
     for (int batch = 0; batch < batch_size; ++batch) {
       for (int c = 0; c < channels; ++c) {
