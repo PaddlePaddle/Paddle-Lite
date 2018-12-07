@@ -68,6 +68,13 @@ class CLImage {
     InitCLImage(context, command_queue, folder_converter);
   }
 
+  void InitNormalCLImage(cl_context context, cl_command_queue command_queue) {
+    PADDLE_MOBILE_ENFORCE(tensor_data_ != nullptr,
+                          " need call SetTensorData first");
+    CLImageConverterNormal *normal_converter = new CLImageConverterNormal();
+    InitCLImage(context, command_queue, normal_converter);
+  }
+
   void InitCLImage(cl_context context, cl_command_queue command_queue,
                    CLImageConverterBase *converter) {
     if (image_converter_ != nullptr) {

@@ -13,7 +13,27 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma OPENCL EXTENSION cl_khr_fp16 : enable
-/*
+
+__kernel void concatByC0(__read_only image2d_t input_image,
+                      __write_only image2d_t output_image,
+                      __private const int out_W) {
+
+                      const int in_c = get_global_id(0);
+                      const int in_w = get_global_id(1);
+                      const int in_nh = get_global_id(2);
+
+                      int2 input_pos ;
+                      input_pos.x = in_c * out_W + in_w;
+                      input_pos.y = in_nh;
+                      const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
+                                                CLK_ADDRESS_CLAMP |
+                                                CLK_FILTER_NEAREST;
+                      half4 input;
+                      input = read_imageh(input_image, sampler,input_pos);
+
+                      write_imageh(output_image, input_pos, input);
+
+}
 
 __kernel void concatByC(__read_only image2d_t input_image1,
                       __read_only image2d_t input_image2,
@@ -24,13 +44,13 @@ __kernel void concatByC(__read_only image2d_t input_image1,
                       __private const int out_C_Start,
                       __private const int in_W,
                       __private const int in_H,
-                      __private const int int_C1,
-                      __private const int int_C2) {
+                      __private const int in_C1,
+                      __private const int in_C2) {
 
                        const int in_c = get_global_id(0);
                        const int in_w = get_global_id(1);
                        const int in_nh = get_global_id(2);
-                       int out_c1 = (out_C_Start)/4 + in_c;
+                       int out_c1 = (out_C_Start + 3)/4 -1 + in_c;
 
                        int out_c2 = out_c1 + 1;
 
@@ -45,7 +65,7 @@ __kernel void concatByC(__read_only image2d_t input_image1,
 
                        int2 input_pos1;
                        if(in_c==0){
-                        input_pos1.x = ((in_C1-1)/4) * in_W + in_w;
+                        input_pos1.x = ((in_C1 + 3)/4-1) * in_W + in_w;
                        }else{
                         input_pos1.x = (in_c - 1) * in_W + in_w;
                        }
@@ -103,26 +123,6 @@ __kernel void concatByC(__read_only image2d_t input_image1,
                        write_imageh(output_image, output_pos2, output2);
 }
 
-__kernel void concatByW0(__read_only image2d_t input_image,
-                      __write_only image2d_t output_image,
-                      __private const int out_W) {
-
-                      const int in_c = get_global_id(0);
-                      const int in_w = get_global_id(1);
-                      const int in_nh = get_global_id(2);
-
-                      int2 input_pos = in_c * out_W + in_w;
-
-                      const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-                                                CLK_ADDRESS_CLAMP |
-                                                CLK_FILTER_NEAREST;
-                      half4 input;
-                      input = read_imageh(input_image, sampler,input_pos);
-
-                      write_imageh(output_image, input_pos, input);
-
-}
-*/
 
 __kernel void concatByH(__read_only image2d_t input_image,
                       __write_only image2d_t output_image,
