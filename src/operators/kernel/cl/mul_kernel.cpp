@@ -11,22 +11,25 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#pragma once
 
-#include "fpga/common/fpga_common.h"
+#ifdef MUL_OP
+
+#include "operators/kernel/mul_kernel.h"
 
 namespace paddle_mobile {
-namespace fpga {
+namespace operators {
 
-int PerformBypass(const struct BypassArgs& args);
-int ComputeBasicConv(const struct ConvArgs& args);
-int ComputeFpgaPool(const struct PoolingArgs& args);
-int ComputeFpgaEWAdd(const struct EWAddArgs& args);
+template <>
+bool MulKernel<GPU_CL, float>::Init(MulParam<GPU_CL> *param) {
+  return true;
+}
 
-int ComputeFpgaConv(const struct SplitConvArgs& args);
-int ComputeFPGAConcat(const struct ConcatArgs& args);
-int ComputeFPGASplit(const struct SplitArgs& args);
-int ComputeFpgaDeconv(const struct DeconvArgs& args);
+template <>
+void MulKernel<GPU_CL, float>::Compute(const MulParam<GPU_CL> &param) {}
 
-}  // namespace fpga
+template class MulKernel<GPU_CL, float>;
+
+}  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

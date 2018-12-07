@@ -11,22 +11,18 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
+
 #pragma once
 
-#include "fpga/common/fpga_common.h"
+#define BS_NUM_ALIGNMENT 8
 
 namespace paddle_mobile {
 namespace fpga {
+namespace deconv_bias_scale {
 
-int PerformBypass(const struct BypassArgs& args);
-int ComputeBasicConv(const struct ConvArgs& args);
-int ComputeFpgaPool(const struct PoolingArgs& args);
-int ComputeFpgaEWAdd(const struct EWAddArgs& args);
+void deconv_bias_scale_expand(float** bias_scale_array, int num,
+                              int sub_conv_n);
 
-int ComputeFpgaConv(const struct SplitConvArgs& args);
-int ComputeFPGAConcat(const struct ConcatArgs& args);
-int ComputeFPGASplit(const struct SplitArgs& args);
-int ComputeFpgaDeconv(const struct DeconvArgs& args);
-
+}  // namespace deconv_bias_scale
 }  // namespace fpga
 }  // namespace paddle_mobile

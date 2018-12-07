@@ -12,15 +12,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef MUL_OP
+#ifdef FUSION_FC_INT8_OP
 
-#include "mul_op.h"
+#include "operators/fusion_fc_int8_op.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
-void MulOp<Dtype, T>::InferShape() const {
+void FusionFcInt8Op<Dtype, T>::InferShape() const {
   auto x_dims = this->param_.InputX()->dims();
   auto y_dims = this->param_.InputY()->dims();
   int x_num_col_dims = this->param_.XNumColDims();
@@ -56,15 +56,6 @@ void MulOp<Dtype, T>::InferShape() const {
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(mul, ops::MulOp);
+REGISTER_OPERATOR_CPU_INT8(fusion_fc_int8, ops::FusionFcInt8Op);
 #endif
-#ifdef PADDLE_MOBILE_CL
-REGISTER_OPERATOR_CL(mul, ops::MulOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-REGISTER_OPERATOR_MALI_GPU(mul, ops::MulOp);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(mul, ops::MulOp);
-#endif
-#endif
+#endif  // FUSION_FC_INT8_OP

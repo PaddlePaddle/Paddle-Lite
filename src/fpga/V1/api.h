@@ -43,6 +43,25 @@ void fill_split_arg(struct SplitConvArgs* arg, framework::Tensor* input,
                     framework::Tensor* out, framework::Tensor* filter,
                     bool relu_enabled, int group_num, int stride_h,
                     int stride_w, int padding_h, int padding_w, float* bs_ptr);
+void fill_deconv_arg(struct DeconvArgs* arg, framework::Tensor* input,
+                     framework::Tensor* out, framework::Tensor* filter,
+                     bool relu_enabled, int group_num, int stride_h,
+                     int stride_w, int padding_h, int padding_w, float* bs_ptr);
+
+void format_deconv_filter(framework::Tensor* filter_tensor, float max_value,
+                          int group_num, int stride);
+
+template <typename Dtype>
+void savefile(std::string filename, void* buffer, int dataSize, Dtype tmp) {
+  float data;
+  std::ofstream out(filename.c_str());
+  for (int i = 0; i < dataSize; ++i) {
+    data = (((Dtype*)buffer)[i]);
+    out << data << std::endl;
+  }
+  out.close();
+  return;
+}
 
 }  // namespace fpga
 }  // namespace paddle_mobile

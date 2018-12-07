@@ -56,6 +56,7 @@ class CLImage {
     tensor_dims_ = dim;
   }
 
+  bool isInit() { return initialized_; }
   /*
    * need call SetTensorData first
    *
