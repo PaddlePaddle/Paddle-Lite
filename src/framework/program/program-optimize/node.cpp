@@ -220,7 +220,16 @@ void Node::Folder(
     }
   } else {
     for (auto &op_output : this->op_desc_->outputs_) {
-      op_desc->outputs_.emplace(op_output.first, op_output.second);
+      auto output_key = op_output.first;
+      if (change->find(this->type_) != change->end()) {
+        const auto change_pairs = (*change)[this->type_];
+        for (const auto &target : change_pairs) {
+          if (target.first == output_key) {
+            output_key = target.second;
+          }
+        }
+      }
+      op_desc->outputs_.emplace(output_key, op_output.second);
     }
 
     for (auto &output : this->outputs_) {

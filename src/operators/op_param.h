@@ -2530,7 +2530,7 @@ class QuantizeParam : public OpParam {
     // scale = max(abs(x))
     online_scale_ = OpParam::GetVarValue<GType>("OutScale", outputs, scope);
     // offline
-    if (OpParam::HasAttr("InScale", attrs)) {
+    if (inputs.count("InScale")) {
       offline_ = true;
       offline_scale_ = OpParam::GetVarValue<GType>("InScale", inputs, scope);
     }
@@ -2566,9 +2566,7 @@ class DequantizeParam : public OpParam {
   DequantizeParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
                   const AttributeMap &attrs, const Scope &scope) {
     input_ = InputXFrom<GType>(inputs, scope);
-    if (outputs.count("Out")) {
-      output_ = OutFrom<GType>(outputs, scope);
-    }
+    output_ = OutFrom<GType>(outputs, scope);
     activation_scale_ = OpParam::GetVarValue<GType>("Scale", inputs, scope);
     // dequantization is performed as x = x / static_scale / online_scale
     if (OpParam::HasAttr("weight_scale", attrs)) {
@@ -2588,10 +2586,10 @@ class DequantizeParam : public OpParam {
 };
 #endif
 
-#if defined(FUSION_DEQUANT_ADD_BN_OP) ||                                   \
-    defined(FUSION_DEQUANT_ADD_BN_RELU_OP) ||                              \
-    defined(FUSION_DEQUANT_BN_RELU_OP) || defined(FUSION_DEQUANT_BN_OP) || \
-    defined(FUSION_DEQUANT_ADD_BN_QUANT_OP) ||                             \
+#if defined(FUSION_DEQUANT_BN_OP) || defined(FUSION_DEQUANT_ADD_BN_OP) || \
+    defined(FUSION_DEQUANT_ADD_BN_RELU_OP) ||                             \
+    defined(FUSION_DEQUANT_BN_RELU_OP) ||                                 \
+    defined(FUSION_DEQUANT_ADD_BN_QUANT_OP) ||                            \
     defined(FUSION_DEQUANT_ADD_BN_RELU_QUANT_OP)
 template <typename Dtype>
 class FusionDequantBNParam : public DequantizeParam<Dtype> {
@@ -2609,10 +2607,6 @@ class FusionDequantBNParam : public DequantizeParam<Dtype> {
     bn_scale_ = OpParam::GetVarValue<GType>("BNScale", inputs, scope);
     bn_bias_ = OpParam::GetVarValue<GType>("BNBias", inputs, scope);
     epsilon_ = OpParam::GetAttr<float>("epsilon", attrs);
-    // output
-    if (outputs.count("Y")) {
-      this->output_ = OpParam::OutputYFrom<GType>(outputs, scope);
-    }
   }
 
  public:
@@ -2642,54 +2636,12 @@ class FusionDequantAddBNParam : public FusionDequantBNParam<Dtype> {
     // element wise add params
     axis_ = OpParam::GetAttr<int>("axis", attrs);
     bias_ = OpParam::InputYFrom<GType>(inputs, scope);
-    // output
-    if (outputs.count("Y")) {
-      this->output_ = OpParam::OutputYFrom<GType>(outputs, scope);
-    }
   }
 
  public:
   // elementwise add
   int axis_;
   RType *bias_;
-};
-#endif
-
-#ifdef FUSION_DEQUANT_BN_RELU_OP
-template <typename Dtype>
-class FusionDequantBNReluParam : public FusionDequantBNParam<Dtype> {
-  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
-  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
-
- public:
-  FusionDequantBNReluParam(const VariableNameMap &inputs,
-                           const VariableNameMap &outputs,
-                           const AttributeMap &attrs, const Scope &scope)
-      : FusionDequantBNParam<Dtype>(inputs, outputs, attrs, scope) {
-    // output
-    if (outputs.count("Out")) {
-      this->output_ = OpParam::OutFrom<GType>(outputs, scope);
-    }
-  }
-};
-#endif
-
-#ifdef FUSION_DEQUANT_ADD_BN_RELU_OP
-template <typename Dtype>
-class FusionDequantAddBNReluParam : public FusionDequantAddBNParam<Dtype> {
-  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
-  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
-
- public:
-  FusionDequantAddBNReluParam(const VariableNameMap &inputs,
-                              const VariableNameMap &outputs,
-                              const AttributeMap &attrs, const Scope &scope)
-      : FusionDequantAddBNParam<Dtype>(inputs, outputs, attrs, scope) {
-    // output
-    if (outputs.count("Out")) {
-      this->output_ = OpParam::OutFrom<GType>(outputs, scope);
-    }
-  }
 };
 #endif
 
@@ -2707,9 +2659,9 @@ class FusionDequantAddBNQuantParam : public FusionDequantAddBNParam<Dtype> {
     // scale output
     online_scale_ = OpParam::GetVarValue<GType>("OutScale", outputs, scope);
     // offline
-    if (OpParam::HasAttr("static_scale", attrs)) {
-      is_static_ = true;
-      static_scale_ = OpParam::GetAttr<float>("static_scale", attrs);
+    if (inputs.count("InScale")) {
+      offline_ = true;
+      offline_scale_ = OpParam::GetVarValue<GType>("InScale", inputs, scope);
     }
     // x = round(scale * x)
     if (OpParam::HasAttr("round_type", attrs)) {
@@ -2719,48 +2671,10 @@ class FusionDequantAddBNQuantParam : public FusionDequantAddBNParam<Dtype> {
 
  public:
   RType *online_scale_;
-  // if static scale or not
-  bool is_static_ = false;
-  // quantize scale
-  float static_scale_ = 1.0f;
-  // round method type
-  // RoundType round_type_ = ROUND_NEAREST_AWAY_ZERO;
-  RoundType round_type_ = ROUND_NEAREST_TOWARDS_ZERO;
-};
-#endif
-
-#ifdef FUSION_DEQUANT_ADD_BN_RELU_QUANT_OP
-template <typename Dtype>
-class FusionDequantAddBNReluQuantParam
-    : public FusionDequantAddBNReluParam<Dtype> {
-  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
-  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
-
- public:
-  FusionDequantAddBNReluQuantParam(const VariableNameMap &inputs,
-                                   const VariableNameMap &outputs,
-                                   const AttributeMap &attrs,
-                                   const Scope &scope)
-      : FusionDequantAddBNReluParam<Dtype>(inputs, outputs, attrs, scope) {
-    // scale output
-    online_scale_ = OpParam::GetVarValue<GType>("OutScale", outputs, scope);
-    // offline
-    if (OpParam::HasAttr("static_scale", attrs)) {
-      is_static_ = true;
-      static_scale_ = OpParam::GetAttr<float>("static_scale", attrs);
-    }
-    // x = round(scale * x)
-    if (OpParam::HasAttr("round_type", attrs)) {
-      round_type_ = OpParam::GetAttr<RoundType>("round_type", attrs);
-    }
-  }
-
- public:
-  RType *online_scale_;
-  // if static scale or not
-  bool is_static_ = false;
-  // quantize scale
-  float static_scale_ = 1.0f;
+  // quantize offline scale
+  RType *offline_scale_;
+  // if offine scale or not
+  bool offline_ = false;
   // round method type
   // RoundType round_type_ = ROUND_NEAREST_AWAY_ZERO;
   RoundType round_type_ = ROUND_NEAREST_TOWARDS_ZERO;
