@@ -67,7 +67,9 @@ void FusionDequantAddBNKernel<CPU, float>::Compute(
   #pragma omp parallel for collapse(2)
   for (int batch = 0; batch < batch_size; ++batch) {
     for (int c = 0; c < channels; ++c) {
-      float scale = bn_scale[c] * dequant_scale;
+      // not fuse bn and dequant scale to minimize precision difference
+      // float scale = bn_scale[c] * dequant_scale;
+      float scale = bn_scale[c];
       float bias = bn_bias[c];
       size_t offset = (batch * channels + c) * spatial_size;
       const int32_t *x = input + offset;
@@ -76,9 +78,9 @@ void FusionDequantAddBNKernel<CPU, float>::Compute(
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
       int loop = spatial_size >> 4;
       remain = spatial_size & 0xF;
+      float32x4_t __dequant_scale = vdupq_n_f32(dequant_scale);
       float32x4_t __scale = vdupq_n_f32(scale);
       float32x4_t __bias = vdupq_n_f32(bias);
-
       for (int k = 0; k < loop; ++k, x += 16, y += 16) {
         int32x4_t r0 = vld1q_s32(x);
         int32x4_t r1 = vld1q_s32(x + 4);
@@ -88,6 +90,10 @@ void FusionDequantAddBNKernel<CPU, float>::Compute(
         float32x4_t f1 = vcvtq_f32_s32(r1);
         float32x4_t f2 = vcvtq_f32_s32(r2);
         float32x4_t f3 = vcvtq_f32_s32(r3);
+        f0 = vmulq_f32(__dequant_scale, f0);
+        f1 = vmulq_f32(__dequant_scale, f1);
+        f2 = vmulq_f32(__dequant_scale, f2);
+        f3 = vmulq_f32(__dequant_scale, f3);
         f0 = vmlaq_f32(__bias, __scale, f0);
         f1 = vmlaq_f32(__bias, __scale, f1);
         f2 = vmlaq_f32(__bias, __scale, f2);
@@ -99,7 +105,7 @@ void FusionDequantAddBNKernel<CPU, float>::Compute(
       }
 #endif  // __ARM_NEON__
       for (int k = 0; k < remain; ++k) {
-        y[k] = scale * x[k] + bias;
+        y[k] = scale * (dequant_scale * x[k]) + bias;
       }
     }
   }
