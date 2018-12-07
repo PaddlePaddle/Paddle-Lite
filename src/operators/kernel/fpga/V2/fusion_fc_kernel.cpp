@@ -47,7 +47,7 @@ bool FusionFcKernel<FPGA, float>::Init(FusionFcParam<FPGA> *param) {
 
   out->Resize(framework::make_ddim({1, channel, 1, 1}));
   filter->Resize(framework::make_ddim({num, filter_channel, height, width}));
-  fpga::format_fc_data(filter, out, bs_ptr);
+  fpga::format_fc_data(filter, out, &bs_ptr);
 
   fpga::SplitConvArgs conv_arg = {0};
   fpga::fill_split_arg(&conv_arg, input_x, out, filter, relu_enabled, 1, 1, 1,
