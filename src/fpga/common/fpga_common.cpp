@@ -92,7 +92,8 @@ void fpga_free(void *ptr) {
 }
 void fpga_copy(void *dest, const void *src, size_t num) {
 #ifdef PADDLE_MOBILE_ZU5
-  driver::fpga_copy_driver(dest, src, num);
+  // driver::fpga_copy_driver(dest, src, num);
+  memcpy(dest, src, num);
 #else
   memcpy(dest, src, num);
 #endif
