@@ -12,16 +12,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVBNADDRELU_OP
+#ifdef FUSION_CONVADDRELU_INT8_OP
 
-#include "operators/fusion_conv_bn_add_relu_op.h"
+#include "operators/fusion_conv_add_relu_int8_op.h"
+#include <vector>
 #include "operators/math/conv_func.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
-void FusionConvBNAddReluOp<Dtype, T>::InferShape() const {
+void FusionConvAddReluInt8Op<Dtype, T>::InferShape() const {
   auto in_dims = this->param_.Input()->dims();
   auto filter_dims = this->param_.Filter()->dims();
   const std::vector<int> &strides = this->param_.Strides();
@@ -40,7 +41,6 @@ void FusionConvBNAddReluOp<Dtype, T>::InferShape() const {
         math::ConvOutputSize(in_dims[i + 2], filter_dims[i + 2], dilations[i],
                              paddings[i], strides[i]));
   }
-
   framework::DDim ddim = framework::make_ddim(output_shape);
   this->param_.Output()->Resize(ddim);
 }
@@ -49,17 +49,8 @@ void FusionConvBNAddReluOp<Dtype, T>::InferShape() const {
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-REGISTER_FUSION_MATCHER(fusion_conv_bn_add_relu,
-                        ops::FusionConvBNAddReluMatcher);
-
 #ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(fusion_conv_bn_add_relu, ops::FusionConvBNAddReluOp);
+REGISTER_OPERATOR_CPU_INT8(fusion_conv_add_relu_int8,
+                           ops::FusionConvAddReluInt8Op);
 #endif
-#ifdef PADDLE_MOBILE_CL
-REGISTER_OPERATOR_CL(fusion_conv_bn_add_relu, ops::FusionConvBNAddReluOp);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(fusion_conv_bn_add_relu, ops::FusionConvBNAddReluOp);
-#endif
-
-#endif
+#endif  // FUSION_CONVADDRELU_INT8_OP
