@@ -41,7 +41,7 @@ void format_concat_output(framework::Tensor* out, int height, int width,
 int format_conv_data(framework::Tensor* filter_tensor,
                      framework::Tensor* ofm_tensor, float** bs_ptr, int group);
 int format_fc_data(framework::Tensor* filter_tensor,
-                   framework::Tensor* ofm_tensor, float* bs_ptr);
+                   framework::Tensor* ofm_tensor, float** bs_ptr);
 void fill_split_arg(struct SplitConvArgs* arg, framework::Tensor* input,
                     framework::Tensor* out, framework::Tensor* filter,
                     bool relu_enabled, int group_num, int stride_h,
