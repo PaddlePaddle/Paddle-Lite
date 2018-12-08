@@ -103,10 +103,10 @@ void DequantBNCompute(const FusionDequantBNParam<CPU> *param) {
         f1 = vmlaq_f32(__bias, __scale, f1);
         f2 = vmlaq_f32(__bias, __scale, f2);
         f3 = vmlaq_f32(__bias, __scale, f3);
-        f0 = math::vActiveq_f32(f0);
-        f1 = math::vActiveq_f32(f1);
-        f2 = math::vActiveq_f32(f2);
-        f3 = math::vActiveq_f32(f3);
+        f0 = math::vActiveq_f32<Act>(f0);
+        f1 = math::vActiveq_f32<Act>(f1);
+        f2 = math::vActiveq_f32<Act>(f2);
+        f3 = math::vActiveq_f32<Act>(f3);
         vst1q_f32(y, f0);
         vst1q_f32(y + 4, f1);
         vst1q_f32(y + 8, f2);
@@ -241,10 +241,10 @@ void DequantBNQuantCompute(const FusionDequantAddBNQuantParam<CPU> *param) {
           f1 = vmlaq_f32(__bias, __scale, f1);
           f2 = vmlaq_f32(__bias, __scale, f2);
           f3 = vmlaq_f32(__bias, __scale, f3);
-          f0 = math::vActiveq_f32(f0);
-          f1 = math::vActiveq_f32(f1);
-          f2 = math::vActiveq_f32(f2);
-          f3 = math::vActiveq_f32(f3);
+          f0 = math::vActiveq_f32<Act>(f0);
+          f1 = math::vActiveq_f32<Act>(f1);
+          f2 = math::vActiveq_f32<Act>(f2);
+          f3 = math::vActiveq_f32<Act>(f3);
           f0 = vmulq_f32(__quant_scale, f0);
           f1 = vmulq_f32(__quant_scale, f1);
           f2 = vmulq_f32(__quant_scale, f2);
@@ -273,7 +273,7 @@ void DequantBNQuantCompute(const FusionDequantAddBNQuantParam<CPU> *param) {
       }
     }
   } else {
-    // TODO
+    // TODO(hjchen2)
     max_abs = std::max(max_abs, 1e-6f);
   }
   param->online_scale_->mutable_data<float>()[0] = max_abs;
