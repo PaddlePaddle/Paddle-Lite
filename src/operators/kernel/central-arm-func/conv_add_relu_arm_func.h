@@ -37,12 +37,6 @@ void ConvAddReluCompute(const FusionConvAddReluParam<CPU> &param) {
 
   float alpha = 1.0f;
   float beta = 1.0f;
-
-#ifdef FUSION_CONVADDRELU_INT8_OP
-  alpha = param.InputScale()->data<float>()[0];
-  beta = 0.0f;
-#endif
-
   int32_t groups = param.Groups();
   std::vector<int32_t> strides = param.Strides();
   std::vector<int32_t> paddings = param.Paddings();

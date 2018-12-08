@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include <iostream>
+#include <sstream>
 #include "../test_helper.h"
 #include "../test_include.h"
 

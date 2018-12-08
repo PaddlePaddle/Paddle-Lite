@@ -17,7 +17,6 @@ limitations under the License. */
 #include "../test_helper.h"
 #include "../test_include.h"
 #include "framework/operator.h"
-#include "operators/fusion_fc_int8_op.h"
 #include "operators/fusion_fc_op.h"
 
 #define a(i, j) a[(i)*lda + (j)]
@@ -103,18 +102,8 @@ int TestFcOP() {
   attrs["y_num_col_dims"].Set<int>(1);
   attrs["axis"].Set<int>(1);
   operators::OperatorBase<CPU> *op = nullptr;
-#ifdef FUSION_FC_INT8_OP
-  if (std::is_same<T, int8_t>::value) {
-    op = new operators::FusionFcInt8Op<CPU, T>("fusion_fc_int8", inputs,
-                                               outputs, attrs, scope);
-  } else {
-    op = new operators::FusionFcOp<CPU, T>("fusion_fc", inputs, outputs, attrs,
-                                           scope);
-  }
-#else
   op = new operators::FusionFcOp<CPU, T>("fusion_fc", inputs, outputs, attrs,
                                          scope);
-#endif
   op->InferShape();
   op->Run();
   auto output = output_var->template Get<framework::LoDTensor>();
@@ -166,9 +155,6 @@ int TestFcOP() {
 int main() {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
   paddle_mobile.SetThreadNum(4);
-#ifdef FUSION_FC_INT8_OP
-  paddle_mobile::TestFcOP<int8_t, int32_t>();
-#endif
   paddle_mobile::TestFcOP<float, float>();
   return 0;
 }
