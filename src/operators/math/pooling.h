@@ -35,7 +35,7 @@ struct PoolingVal {
   float val;
   int count;
   PoolingVal() {
-    val = std::numeric_limits<float>::min();
+    val = -std::numeric_limits<float>::max();
     count = 0;
   }
   inline PoolingVal<P> &operator+=(const float &x) {
