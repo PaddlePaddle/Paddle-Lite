@@ -102,6 +102,11 @@ enum ActivationType {
   Sigmoid = 6,
 };
 
+enum PoolingType {
+  Max = 0,
+  Avg = 1,
+};
+
 extern const char *G_OP_TYPE_CONV;
 extern const char *G_OP_TYPE_BATCHNORM;
 extern const char *G_OP_TYPE_BOX_CODER;
