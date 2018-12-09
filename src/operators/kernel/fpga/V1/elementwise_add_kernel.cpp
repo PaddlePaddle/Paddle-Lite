@@ -49,6 +49,7 @@ bool ElementwiseAddKernel<FPGA, float>::Init(ElementwiseAddParam<FPGA> *param) {
   ewaddArgs.image1.pad_width = 0;
   ewaddArgs.output.scale_address = out->scale;
   ewaddArgs.output.address = out_ptr;
+  fpga::expand_EW_arg(&ewaddArgs);
   param->SetFpgaArgs(ewaddArgs);
   return true;
 }

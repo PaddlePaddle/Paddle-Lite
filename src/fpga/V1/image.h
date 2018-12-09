@@ -14,9 +14,8 @@ limitations under the License. */
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
-#define IMAGE_ALIGNMENT 16  // Aligned to 16
 namespace paddle_mobile {
 namespace fpga {
 namespace image {
@@ -24,13 +23,16 @@ namespace image {
 void convert_to_hwc(float** data_in, int channel, int height, int width);
 void align_element_conv(float** data_in, int height, int cw);
 void format_image(float** data_in, int channel, int height, int width);
+
+// Concat featuremaps along channel direction
 void concat_images(int16_t** images_in, float** scales_in, void* image_out,
                    float* scale_out, int image_num, uint32_t* channel_num,
-                   int height,
-                   int width);  // Concat featuremaps along channel direction
-void split_image(int16_t* image_in, float* scale_in, void** images_out,
-                 float** scales_out, int image_num, uint32_t* channel_nums,
-                 int height, int width);
+                   int height, int width);
+
+// Split featuremap along channel direction
+void split_image(int16_t* image_in, const float* scale_in, void** images_out,
+                 float** scales_out, int image_num,
+                 const uint32_t* channel_nums, int height, int width);
 }  // namespace image
 }  // namespace fpga
 }  // namespace paddle_mobile
