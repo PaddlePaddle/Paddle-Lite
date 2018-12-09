@@ -161,9 +161,9 @@ struct Pooling3x3<P, 1> {
           x0.val[0] = vld1q_f32(input_ptr0);
           x0.val[1] = vld1q_f32(input_ptr0 + 4);
           x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x1.val[1] = vextq_f32(x0.val[0], x0.val[1], 1);
+          x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
           x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x2.val[1] = vextq_f32(x0.val[0], x0.val[1], 2);
+          x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
           x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
           y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
@@ -172,9 +172,9 @@ struct Pooling3x3<P, 1> {
           x0.val[0] = vld1q_f32(input_ptr1);
           x0.val[1] = vld1q_f32(input_ptr1 + 4);
           x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x1.val[1] = vextq_f32(x0.val[0], x0.val[1], 1);
+          x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
           x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x2.val[1] = vextq_f32(x0.val[0], x0.val[1], 2);
+          x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
           x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
           y1.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
@@ -185,9 +185,9 @@ struct Pooling3x3<P, 1> {
           x0.val[0] = vld1q_f32(input_ptr2);
           x0.val[1] = vld1q_f32(input_ptr2 + 4);
           x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x1.val[1] = vextq_f32(x0.val[0], x0.val[1], 1);
+          x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
           x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x2.val[1] = vextq_f32(x0.val[0], x0.val[1], 2);
+          x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
           x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
           y2.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
@@ -204,9 +204,9 @@ struct Pooling3x3<P, 1> {
           x0.val[0] = vld1q_f32(input_ptr3);
           x0.val[1] = vld1q_f32(input_ptr3 + 4);
           x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x1.val[1] = vextq_f32(x0.val[0], x0.val[1], 1);
+          x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
           x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x2.val[1] = vextq_f32(x0.val[0], x0.val[1], 2);
+          x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
           x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
           y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
@@ -223,9 +223,9 @@ struct Pooling3x3<P, 1> {
           x0.val[0] = vld1q_f32(input_ptr4);
           x0.val[1] = vld1q_f32(input_ptr4 + 4);
           x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x1.val[1] = vextq_f32(x0.val[0], x0.val[1], 1);
+          x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
           x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x2.val[1] = vextq_f32(x0.val[0], x0.val[1], 2);
+          x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
           x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
@@ -242,9 +242,9 @@ struct Pooling3x3<P, 1> {
           x0.val[0] = vld1q_f32(input_ptr5);
           x0.val[1] = vld1q_f32(input_ptr5 + 4);
           x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x1.val[1] = vextq_f32(x0.val[0], x0.val[1], 1);
+          x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
           x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x2.val[1] = vextq_f32(x0.val[0], x0.val[1], 2);
+          x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
           x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
@@ -270,12 +270,14 @@ struct Pooling3x3<P, 1> {
         // remain w
         if (remain >= 4) {
           x0.val[0] = vld1q_f32(input_ptr0);
+          x0.val[1] = vld1q_f32(input_ptr0 + 4);
           x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
           x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
           y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
 
           x0.val[0] = vld1q_f32(input_ptr1);
+          x0.val[1] = vld1q_f32(input_ptr1 + 4);
           x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
           x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
@@ -283,6 +285,7 @@ struct Pooling3x3<P, 1> {
           y0.val[0] = vPoolPreq_f32<P>(y1.val[0], y0.val[0]);
 
           x0.val[0] = vld1q_f32(input_ptr2);
+          x0.val[1] = vld1q_f32(input_ptr2 + 4);
           x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
           x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
@@ -293,6 +296,7 @@ struct Pooling3x3<P, 1> {
           vst1q_f32(output_ptr0, y0.val[0]);
 
           x0.val[0] = vld1q_f32(input_ptr3);
+          x0.val[1] = vld1q_f32(input_ptr3 + 4);
           x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
           x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
@@ -303,6 +307,7 @@ struct Pooling3x3<P, 1> {
           vst1q_f32(output_ptr1, y1.val[0]);
 
           x0.val[0] = vld1q_f32(input_ptr4);
+          x0.val[1] = vld1q_f32(input_ptr4 + 4);
           x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
           x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
@@ -313,6 +318,7 @@ struct Pooling3x3<P, 1> {
           vst1q_f32(output_ptr2, y2.val[0]);
 
           x0.val[0] = vld1q_f32(input_ptr5);
+          x0.val[1] = vld1q_f32(input_ptr5 + 4);
           x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
           x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
@@ -372,9 +378,9 @@ struct Pooling3x3<P, 1> {
           x0.val[0] = vld1q_f32(input_ptr0);
           x0.val[1] = vld1q_f32(input_ptr0 + 4);
           x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x1.val[1] = vextq_f32(x0.val[0], x0.val[1], 1);
+          x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
           x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x2.val[1] = vextq_f32(x0.val[0], x0.val[1], 2);
+          x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
           x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
           y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
@@ -383,22 +389,26 @@ struct Pooling3x3<P, 1> {
           x0.val[0] = vld1q_f32(input_ptr1);
           x0.val[1] = vld1q_f32(input_ptr1 + 4);
           x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x1.val[1] = vextq_f32(x0.val[0], x0.val[1], 1);
+          x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
           x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x2.val[1] = vextq_f32(x0.val[0], x0.val[1], 2);
+          x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
           x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
+          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
           y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
           y0.val[1] = vPoolPreq_f32<P>(x0.val[1], y0.val[1]);
 
           x0.val[0] = vld1q_f32(input_ptr2);
           x0.val[1] = vld1q_f32(input_ptr2 + 4);
           x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x1.val[1] = vextq_f32(x0.val[0], x0.val[1], 1);
+          x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
           x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x2.val[1] = vextq_f32(x0.val[0], x0.val[1], 2);
+          x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
           x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
+          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
           y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
           y0.val[1] = vPoolPreq_f32<P>(x0.val[1], y0.val[1]);
           y0.val[0] = vPoolPostq_f32<P>(y0.val[0]);
@@ -414,21 +424,26 @@ struct Pooling3x3<P, 1> {
         // remain w
         if (remain >= 4) {
           x0.val[0] = vld1q_f32(input_ptr0);
+          x0.val[1] = vld1q_f32(input_ptr0 + 4);
           x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
           x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
           y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
 
           x0.val[0] = vld1q_f32(input_ptr1);
+          x0.val[1] = vld1q_f32(input_ptr1 + 4);
           x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
           x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
+          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
           y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
 
           x0.val[0] = vld1q_f32(input_ptr2);
+          x0.val[1] = vld1q_f32(input_ptr2 + 4);
           x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
           x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
+          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
           y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
           y0.val[0] = vPoolPostq_f32<P>(y0.val[0]);
           vst1q_f32(output_ptr0, y0.val[0]);
@@ -540,6 +555,8 @@ struct Pooling3x3<P, 2> {
           x2.val[1] = vextq_f32(x1.val[0], x1.val[0], 1);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
           x0.val[1] = vPoolPreq_f32<P>(x1.val[0], x1.val[1]);
+          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
           y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
           y0.val[1] = vPoolPreq_f32<P>(x0.val[1], y0.val[1]);
 
@@ -616,6 +633,7 @@ struct Pooling3x3<P, 2> {
           input_ptr3 += 12;
           input_ptr4 += 12;
           input_ptr5 += 12;
+          input_ptr6 += 12;
           output_ptr0 += 6;
           output_ptr1 += 6;
           output_ptr2 += 6;
@@ -632,6 +650,7 @@ struct Pooling3x3<P, 2> {
           x1.val[0] = vdupq_n_f32(input_ptr1[8]);
           x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
+          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
           y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
 
           x0 = vld2q_f32(input_ptr2);
@@ -681,6 +700,7 @@ struct Pooling3x3<P, 2> {
           input_ptr3 += 8;
           input_ptr4 += 8;
           input_ptr5 += 8;
+          input_ptr6 += 8;
           output_ptr0 += 4;
           output_ptr1 += 4;
           output_ptr2 += 4;
@@ -738,6 +758,8 @@ struct Pooling3x3<P, 2> {
           x2.val[1] = vextq_f32(x1.val[0], x1.val[0], 1);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
           x0.val[1] = vPoolPreq_f32<P>(x1.val[0], x1.val[1]);
+          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
           y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
           y0.val[1] = vPoolPreq_f32<P>(x0.val[1], y0.val[1]);
 
@@ -773,6 +795,7 @@ struct Pooling3x3<P, 2> {
           x1.val[0] = vdupq_n_f32(input_ptr1[8]);
           x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
           x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
+          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
           y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
 
           x0 = vld2q_f32(input_ptr2);
