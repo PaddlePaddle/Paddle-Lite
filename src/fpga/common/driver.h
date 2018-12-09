@@ -103,22 +103,15 @@ struct FPGA_INFO {
 extern struct FPGA_INFO g_fpgainfo;
 
 inline uint64_t reg_readq(uint32_t offset) {
-  // DLOG << "offset : " << offset;
   uint64_t value =
       *(volatile uint64_t *)((uint8_t *)g_fpgainfo.FpgaRegVirAddr +  // NOLINT
                              offset);                                // NOLINT
-  // DLOG << "read end";
-  usleep(10);
-
   return value;
 }
 
 inline void reg_writeq(uint64_t value, uint32_t offset) {
-  // DLOG << "offset : " << offset << ", value : " << value;
   *(volatile uint64_t *)((uint8_t *)g_fpgainfo.FpgaRegVirAddr +  // NOLINT
                          offset) = value;
-  // DLOG << "write end";
-  usleep(10);
 }
 
 int open_device_driver();
