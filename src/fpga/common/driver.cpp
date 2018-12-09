@@ -137,8 +137,6 @@ int fpga_regpoll(uint64_t reg, uint64_t val, int time) {
 
   for (i = 0; i < timeout; i++) {
     if (val == reg_readq(reg)) {
-      std::cout << "fpga_regpoll:" << i << "val:" << val << "reg:" << reg
-                << std::endl;
       break;
     }
   }
@@ -401,8 +399,6 @@ void fpga_copy_driver(void *dest, const void *src, size_t num) {
   DLOG << "dest:" << dest << " src:" << src << " size:" << num;
 
   for (i = 0; i < num; i++) {
-    // DLOG << "i:" << i << " val:" << *((int8_t *)src + i);
-    // usleep(1);
     *((int8_t *)dest + i) = *((int8_t *)src + i);  // NOLINT
   }
 
