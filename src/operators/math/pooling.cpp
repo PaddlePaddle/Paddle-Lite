@@ -60,18 +60,12 @@ void Pooling<P>::operator()(const framework::Tensor &input,
           wstart = std::max(wstart, 0);
 
           PoolingVal<P> val;
-          //          std::cout << "output[" << ph * output_width + pw << "]:"
-          //          << std::endl;
           for (int h = hstart; h < hend; ++h) {
             for (int w = wstart; w < wend; ++w) {
               val += input_ptr[h * input_width + w];
-              //              std::cout << "input[" << h << "][" << w << "] = "
-              //              << input_ptr[h * input_width + w] << std::endl;
             }
           }
           output_ptr[ph * output_width + pw] = val.Value();
-          //          std::cout << "output[" << ph * output_width + pw << "] = "
-          //          << val.Value() << std::endl;
         }
       }
     }

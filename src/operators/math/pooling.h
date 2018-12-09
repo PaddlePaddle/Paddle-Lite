@@ -34,45 +34,39 @@ template <PoolingType P = Max>
 struct PoolingVal {
   float val;
   int count;
-  PoolingVal() {
-    val = -std::numeric_limits<float>::max();
-    count = 0;
-  }
+  PoolingVal() : count(0) { val = -std::numeric_limits<float>::max(); }
   inline PoolingVal<P> &operator+=(const float &x) {
     val = std::max(val, x);
-    count += 1;
+    ++count;
     return *this;
   }
-  float Value() const {
-    if (count > 0) {
-      return val;
-    }
-    return 0.f;
-  }
+  inline float Value() { return (count > 0) ? val : 0.f; }
 };
 
 template <>
 struct PoolingVal<Avg> {
   float val;
   int count;
-  PoolingVal() {
-    val = 0.f;
-    count = 0;
-  }
+  PoolingVal() : val(0.f), count(0) {}
   inline PoolingVal<Avg> &operator+=(const float &x) {
     val += x;
-    count += 1;
+    ++count;
     return *this;
   }
-  float Value() const {
-    if (count > 0) {
-      return val / count;
-    }
-    return 0.f;
-  }
+  inline float Value() { return (count > 0) ? val * (1.f / count) : 0.f; }
 };
 
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
+template <PoolingType P = Max>
+inline float32x4_t vPoolInitq_f32() {
+  return vdupq_n_f32(-std::numeric_limits<float>::max());
+}
+
+template <>
+inline float32x4_t vPoolInitq_f32<Avg>() {
+  return vdupq_n_f32(0.f);
+}
+
 template <PoolingType P = Max>
 inline float32x4_t vPoolPreq_f32(const float32x4_t &x1, const float32x4_t &x2) {
   return vmaxq_f32(x1, x2);
@@ -85,14 +79,15 @@ inline float32x4_t vPoolPreq_f32<Avg>(const float32x4_t &x1,
 }
 
 template <PoolingType P = Max>
-inline float32x4_t vPoolPostq_f32(const float32x4_t &x) {
+inline float32x4_t vPoolPostq_f32(const float32x4_t &x,
+                                  const float32x4_t &post) {
   return x;
 }
 
 template <>
-inline float32x4_t vPoolPostq_f32<Avg>(const float32x4_t &x) {
-  float32x4_t avg = vdupq_n_f32(1.f / 9);
-  return vmulq_f32(avg, x);
+inline float32x4_t vPoolPostq_f32<Avg>(const float32x4_t &x,
+                                       const float32x4_t &post) {
+  return vmulq_f32(x, post);
 }
 #endif  // __ARM_NEON__
 
@@ -107,13 +102,13 @@ inline float PoolPre<Avg>(const float &x1, const float &x2) {
 }
 
 template <PoolingType P = Max>
-inline float PoolPost(const float &x) {
+inline float PoolPost(const float &x, const float &post) {
   return x;
 }
 
 template <>
-inline float PoolPost<Avg>(const float &x) {
-  return 1.f / 9 * x;
+inline float PoolPost<Avg>(const float &x, const float &post) {
+  return x * post;
 }
 
 template <PoolingType P>
