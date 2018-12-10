@@ -197,6 +197,8 @@ inline void Pooling3x3ValidCol(const float *input, const int h_output,
     vst1q_lane_f32(output3, y0.val[0], 3);
     vst1q_lane_f32(output4, y0.val[1], 0);
     vst1q_lane_f32(output5, y0.val[1], 1);
+    input_offset += 6 * Stride * input_w;
+    output_offset += 6 * output_w;
   }
 #endif
   for (int h = remain_start; h < h_output_end; ++h) {
