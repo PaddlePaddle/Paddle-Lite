@@ -14,8 +14,6 @@ limitations under the License. */
 
 #pragma once
 
-#define BS_NUM_ALIGNMENT 8
-
 namespace paddle_mobile {
 namespace fpga {
 namespace deconv_bias_scale {
