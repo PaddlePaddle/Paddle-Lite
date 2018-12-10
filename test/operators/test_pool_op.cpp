@@ -59,7 +59,8 @@ int TestPoolOp(int in_channels, int in_height, int in_width) {
   attrs["ksize"].Set<vector<int>>(std::vector<int>({kernel_h, kernel_w}));
   attrs["strides"].Set<vector<int>>(std::vector<int>({stride_h, stride_w}));
   attrs["paddings"].Set<vector<int>>(std::vector<int>({pad_h, pad_w}));
-  attrs["ceil_mode"].Set<bool>(false);
+  attrs["ceil_mode"].Set<bool>(true);
+  //  attrs["ceil_mode"].Set<bool>(false);
   attrs["global_pooling"].Set<bool>(false);
 
   auto *op = new operators::PoolOp<CPU, float>("pool2d", inputs, outputs, attrs,
@@ -116,57 +117,57 @@ int main(int argc, char *argv[]) {
   int in_channels = atoi(argv[1]);
   int in_height = atoi(argv[2]);
   int in_width = atoi(argv[3]);
-  LOG(paddle_mobile::kLOG_INFO)
-      << "float, pooling_type=max, kernel=3, pad=0, stride=1";
-  paddle_mobile::TestPoolOp<0, 3, 0, 1>(in_channels, in_height, in_width);
-  LOG(paddle_mobile::kLOG_INFO)
-      << "float, pooling_type=max, kernel=3, pad=1, stride=1";
-  paddle_mobile::TestPoolOp<0, 3, 1, 1>(in_channels, in_height, in_width);
-  LOG(paddle_mobile::kLOG_INFO)
-      << "float, pooling_type=max, kernel=3, pad=2, stride=1";
-  paddle_mobile::TestPoolOp<0, 3, 2, 1>(in_channels, in_height, in_width);
-  LOG(paddle_mobile::kLOG_INFO)
-      << "float, pooling_type=max, kernel=3, pad=5, stride=1";
-  paddle_mobile::TestPoolOp<0, 3, 5, 1>(in_channels, in_height, in_width);
-
-  LOG(paddle_mobile::kLOG_INFO)
-      << "float, pooling_type=avg, kernel=3, pad=0, stride=1";
-  paddle_mobile::TestPoolOp<1, 3, 0, 1>(in_channels, in_height, in_width);
-  LOG(paddle_mobile::kLOG_INFO)
-      << "float, pooling_type=avg, kernel=3, pad=1, stride=1";
-  paddle_mobile::TestPoolOp<1, 3, 1, 1>(in_channels, in_height, in_width);
-  LOG(paddle_mobile::kLOG_INFO)
-      << "float, pooling_type=avg, kernel=3, pad=2, stride=1";
-  paddle_mobile::TestPoolOp<1, 3, 2, 1>(in_channels, in_height, in_width);
-  LOG(paddle_mobile::kLOG_INFO)
-      << "float, pooling_type=avg, kernel=3, pad=5, stride=1";
-  paddle_mobile::TestPoolOp<1, 3, 5, 1>(in_channels, in_height, in_width);
+  //  LOG(paddle_mobile::kLOG_INFO)
+  //      << "float, pooling_type=max, kernel=3, pad=0, stride=1";
+  //  paddle_mobile::TestPoolOp<0, 3, 0, 1>(in_channels, in_height, in_width);
+  //  LOG(paddle_mobile::kLOG_INFO)
+  //      << "float, pooling_type=max, kernel=3, pad=1, stride=1";
+  //  paddle_mobile::TestPoolOp<0, 3, 1, 1>(in_channels, in_height, in_width);
+  //  LOG(paddle_mobile::kLOG_INFO)
+  //      << "float, pooling_type=max, kernel=3, pad=2, stride=1";
+  //  paddle_mobile::TestPoolOp<0, 3, 2, 1>(in_channels, in_height, in_width);
+  //  LOG(paddle_mobile::kLOG_INFO)
+  //      << "float, pooling_type=max, kernel=3, pad=5, stride=1";
+  //  paddle_mobile::TestPoolOp<0, 3, 5, 1>(in_channels, in_height, in_width);
+  //
+  //  LOG(paddle_mobile::kLOG_INFO)
+  //      << "float, pooling_type=avg, kernel=3, pad=0, stride=1";
+  //  paddle_mobile::TestPoolOp<1, 3, 0, 1>(in_channels, in_height, in_width);
+  //  LOG(paddle_mobile::kLOG_INFO)
+  //      << "float, pooling_type=avg, kernel=3, pad=1, stride=1";
+  //  paddle_mobile::TestPoolOp<1, 3, 1, 1>(in_channels, in_height, in_width);
+  //  LOG(paddle_mobile::kLOG_INFO)
+  //      << "float, pooling_type=avg, kernel=3, pad=2, stride=1";
+  //  paddle_mobile::TestPoolOp<1, 3, 2, 1>(in_channels, in_height, in_width);
+  //  LOG(paddle_mobile::kLOG_INFO)
+  //      << "float, pooling_type=avg, kernel=3, pad=5, stride=1";
+  //  paddle_mobile::TestPoolOp<1, 3, 5, 1>(in_channels, in_height, in_width);
 
   LOG(paddle_mobile::kLOG_INFO)
       << "float, pooling_type=max, kernel=3, pad=0, stride=2";
   paddle_mobile::TestPoolOp<0, 3, 0, 2>(in_channels, in_height, in_width);
-  LOG(paddle_mobile::kLOG_INFO)
-      << "float, pooling_type=max, kernel=3, pad=1, stride=2";
-  paddle_mobile::TestPoolOp<0, 3, 1, 2>(in_channels, in_height, in_width);
-  LOG(paddle_mobile::kLOG_INFO)
-      << "float, pooling_type=max, kernel=3, pad=2, stride=2";
-  paddle_mobile::TestPoolOp<0, 3, 2, 2>(in_channels, in_height, in_width);
-  LOG(paddle_mobile::kLOG_INFO)
-      << "float, pooling_type=max, kernel=3, pad=5, stride=2";
-  paddle_mobile::TestPoolOp<0, 3, 5, 2>(in_channels, in_height, in_width);
-
-  LOG(paddle_mobile::kLOG_INFO)
-      << "float, pooling_type=avg, kernel=3, pad=0, stride=2";
-  paddle_mobile::TestPoolOp<1, 3, 0, 2>(in_channels, in_height, in_width);
-  LOG(paddle_mobile::kLOG_INFO)
-      << "float, pooling_type=avg, kernel=3, pad=1, stride=2";
-  paddle_mobile::TestPoolOp<1, 3, 1, 2>(in_channels, in_height, in_width);
-  LOG(paddle_mobile::kLOG_INFO)
-      << "float, pooling_type=avg, kernel=3, pad=2, stride=2";
-  paddle_mobile::TestPoolOp<1, 3, 2, 2>(in_channels, in_height, in_width);
-  LOG(paddle_mobile::kLOG_INFO)
-      << "float, pooling_type=avg, kernel=3, pad=5, stride=2";
-  paddle_mobile::TestPoolOp<1, 3, 5, 2>(in_channels, in_height, in_width);
+  //  LOG(paddle_mobile::kLOG_INFO)
+  //      << "float, pooling_type=max, kernel=3, pad=1, stride=2";
+  //  paddle_mobile::TestPoolOp<0, 3, 1, 2>(in_channels, in_height, in_width);
+  //  LOG(paddle_mobile::kLOG_INFO)
+  //      << "float, pooling_type=max, kernel=3, pad=2, stride=2";
+  //  paddle_mobile::TestPoolOp<0, 3, 2, 2>(in_channels, in_height, in_width);
+  //  LOG(paddle_mobile::kLOG_INFO)
+  //      << "float, pooling_type=max, kernel=3, pad=5, stride=2";
+  //  paddle_mobile::TestPoolOp<0, 3, 5, 2>(in_channels, in_height, in_width);
+  //
+  //  LOG(paddle_mobile::kLOG_INFO)
+  //      << "float, pooling_type=avg, kernel=3, pad=0, stride=2";
+  //  paddle_mobile::TestPoolOp<1, 3, 0, 2>(in_channels, in_height, in_width);
+  //  LOG(paddle_mobile::kLOG_INFO)
+  //      << "float, pooling_type=avg, kernel=3, pad=1, stride=2";
+  //  paddle_mobile::TestPoolOp<1, 3, 1, 2>(in_channels, in_height, in_width);
+  //  LOG(paddle_mobile::kLOG_INFO)
+  //      << "float, pooling_type=avg, kernel=3, pad=2, stride=2";
+  //  paddle_mobile::TestPoolOp<1, 3, 2, 2>(in_channels, in_height, in_width);
+  //  LOG(paddle_mobile::kLOG_INFO)
+  //      << "float, pooling_type=avg, kernel=3, pad=5, stride=2";
+  //  paddle_mobile::TestPoolOp<1, 3, 5, 2>(in_channels, in_height, in_width);
 
   //  // kernel = 5, pad = 0, stride = 1
   //  LOG(paddle_mobile::kLOG_INFO)
