@@ -14,9 +14,6 @@ limitations under the License. */
 
 #pragma once
 
-#define FILTER_NUM_ALIGNMENT 32      // Filter number aligned to 32
-#define FILTER_ELEMENT_ALIGNMENT 16  // Filter element number aligned to 16
-
 namespace paddle_mobile {
 namespace fpga {
 namespace filter {
