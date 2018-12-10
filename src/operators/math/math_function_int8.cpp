@@ -22,10 +22,11 @@ namespace operators {
 namespace math {
 
 template <>
-void matmul(const framework::Tensor &matrix_a, bool trans_a,
-            const framework::Tensor &matrix_b, bool trans_b, float alpha,
-            framework::Tensor *matrix_out, float beta, bool relu, int32_t *bias,
-            bool addOnRow) {
+void matmul<int8_t, int32_t>(const framework::Tensor &matrix_a, bool trans_a,
+                             const framework::Tensor &matrix_b, bool trans_b,
+                             float alpha, framework::Tensor *matrix_out,
+                             float beta, bool relu, int32_t *bias,
+                             bool addOnRow) {
   auto dim_a = matrix_a.dims();
   auto dim_b = matrix_b.dims();
   auto dim_out = matrix_out->dims();
@@ -93,6 +94,16 @@ void matmul(const framework::Tensor &matrix_a, bool trans_a,
 #endif
   }
 }
+
+template <>
+void matmul<int8_t, int32_t>(const framework::Tensor &matrix_a, bool trans_a,
+                             const framework::Tensor &matrix_b, bool trans_b,
+                             float alpha, framework::Tensor *matrix_out,
+                             float beta, bool relu, int32_t *bias) {
+  matmul<int8_t, int32_t>(matrix_a, trans_a, matrix_b, trans_b, alpha,
+                          matrix_out, beta, relu, bias, false);
+}
+
 }  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile

@@ -24,24 +24,24 @@ namespace math {
 
 void set_constant(framework::Tensor *tensor, float value);
 
-template <typename T>
+template <typename Itype, typename Otype>
 void matmul(const framework::Tensor &matrix_a, bool trans_a,
-            const framework::Tensor &matrix_b, bool trans_b, T alpha,
-            framework::Tensor *matrix_out, T beta, bool relu = false,
-            float *bias = nullptr);
+            const framework::Tensor &matrix_b, bool trans_b, float alpha,
+            framework::Tensor *matrix_out, float beta, bool relu = false,
+            Otype *bias = nullptr);
 
-template <typename T, typename S>
+template <typename Itype, typename Otype>
 void matmul(const framework::Tensor &matrix_a, bool trans_a,
-            const framework::Tensor &matrix_b, bool trans_b, T alpha,
-            framework::Tensor *matrix_out, T beta, bool relu = false,
-            S *bias = nullptr, bool addOnRow = false);
+            const framework::Tensor &matrix_b, bool trans_b, float alpha,
+            framework::Tensor *matrix_out, float beta, bool relu, Otype *bias,
+            bool addOnRow);
 
 template <typename T>
 void matmulWithBn(const framework::Tensor &matrix_a, bool trans_a,
-                  const framework::Tensor &matrix_b, bool trans_b, T alpha,
-                  framework::Tensor *matrix_out, T beta, bool relu,
+                  const framework::Tensor &matrix_b, bool trans_b, float alpha,
+                  framework::Tensor *matrix_out, float beta, bool relu,
                   framework::Tensor *new_scale, framework::Tensor *new_bias,
-                  int group, float *bias = nullptr);
+                  int group, T *bias = nullptr);
 
 void matmulWithPRelu(const framework::Tensor &matrix_a, bool trans_a,
                      const framework::Tensor &matrix_b, bool trans_b,
