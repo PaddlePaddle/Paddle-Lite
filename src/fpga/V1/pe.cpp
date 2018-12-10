@@ -203,29 +203,11 @@ int ComputeBasicConv(const struct ConvArgs &args) {
   DLOG << "   out_address:" << args.output.address
        << "   out_scale_address:" << args.output.scale_address;
 #endif
-  cout << "    relu_enabled:" << args.relu_enabled
-       << "    sb_address:" << args.sb_address
-       << "    filter_address:" << args.filter_address
-       << "    filter_num:" << args.filter_num
-       << "    group_num:" << args.group_num;
-  cout << "    image_address:" << args.image.address
-       << "    image_scale_address:" << args.image.scale_address
-       << "    image_channels:" << args.image.channels
-       << "    image_height:" << args.image.height
-       << "    image_width:" << args.image.width
-       << "    pad_height:" << args.image.pad_height
-       << "    pad_width:" << args.image.pad_width;
-  cout << "    kernel_height:" << args.kernel.height
-       << "    kernel_width:" << args.kernel.width
-       << "    stride_h:" << args.kernel.stride_h
-       << "    stride_w:" << args.kernel.stride_w;
-  cout << "    out_address:" << args.output.address
-       << "    out_scale_address:" << args.output.scale_address;
 
 #ifdef PADDLE_MOBILE_ZU5
-  DLOG << "Conv";
-  // return 0;
-  uint64_t timer_cnt;
+  int ret = 0;
+  uint64_t output_scale = 0;
+  /*
   uint64_t output_scale;
   uint64_t image_scale;
   uint64_t filter_scale;
@@ -233,14 +215,10 @@ int ComputeBasicConv(const struct ConvArgs &args) {
   uint64_t sb_address_phy = 0;
   uint64_t filter_address_phy = 0;
   uint64_t output_address_phy = 0;
-  int ret = 0;
+
 
   fpga_copy(&image_scale, args.image.scale_address, 2 * sizeof(float));
   fpga_copy(&filter_scale, args.filter_scale_address, 2 * sizeof(float));
-
-  cout << "image_scale :" << hex << (image_scale) << endl;
-  cout << "filter_scale :" << hex << (filter_scale) << endl;
-
   uint64_t filterlen = (uint64_t)args.kernel.width *
                        (uint64_t)args.kernel.height *
                        (uint64_t)args.image.channels;
@@ -349,8 +327,8 @@ int ComputeBasicConv(const struct ConvArgs &args) {
   filter_address_phy = vaddr_to_paddr(args.filter_address);
   output_address_phy = vaddr_to_paddr(args.output.address);
 
-  /*SDK刷Cache保证数据一致性*/
   uint64_t cmd = 0UL | (args.relu_enabled ? USE_RELU : 0) | USE_BIAS;
+*/
 
   pthread_mutex_lock(&g_fpgainfo.pe_data->mutex);
   if (ERROR == g_fpgainfo.pe_data->pes[PE_IDX_CONV]->status) {
@@ -359,78 +337,63 @@ int ComputeBasicConv(const struct ConvArgs &args) {
     pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
     return ret;
   }
-
-  /*restart scale*/
   reg_writeq(output_scale, REG_SCALE_PARAMETER);
-
-  reg_writeq(image_address_phy, REG_CONV_IMAGE_BASE_ADDR);
-  reg_writeq(filter_address_phy, REG_CONV_FILTER_BASE_ADDR);
-  reg_writeq(sb_address_phy, REG_CONV_SB_BASE_ADDR);
-  reg_writeq(output_address_phy, REG_CONV_RESULT_BASE_ADDR);
-
   reg_writeq(
       ((uint64_t)args.image.height) | (((uint64_t)args.image.width) << 32),
       REG_CONV_IMAGE_PIXEL);
   reg_writeq(
       ((uint64_t)args.kernel.height) | (((uint64_t)args.kernel.width) << 32),
       REG_CONV_FILTER_PIXEL);
-  reg_writeq(output_height | (output_width << 32), REG_CONV_RESULT_PIXEL);
+  reg_writeq(args.driver.output_height | (args.driver.output_width << 32),
+             REG_CONV_RESULT_PIXEL);
   reg_writeq(((uint64_t)args.image.pad_height) |
                  (((uint64_t)args.image.pad_width) << 32),
              REG_CONV_PAD_PIXEL);
   reg_writeq(((uint64_t)args.kernel.stride_h) |
                  (((uint64_t)args.kernel.stride_w) << 32),
              REG_CONV_STEP_PIXEL);
-
   reg_writeq((uint64_t)args.group_num, REG_CONV_GROUP_NUMBER);
   reg_writeq((uint64_t)args.filter_num, REG_CONV_FILTER_NUMBER);
   reg_writeq((uint64_t)args.image.channels, REG_CONV_CHANNEL_NUMBER);
+  reg_writeq(*(uint64_t *)args.image.scale_address, REG_CONV_IMAGE_SCALE);
+  reg_writeq(*(uint64_t *)args.filter_scale_address, REG_CONV_FILTER_SCALE);
 
-  reg_writeq(filter_per_group, REG_CONV_FILTER_PER_GROUP);
-  reg_writeq(channel_per_group, REG_CONV_CHANNEL_PER_GROUP);
+  reg_writeq(args.driver.image_address_phy, REG_CONV_IMAGE_BASE_ADDR);
+  reg_writeq(args.driver.filter_address_phy, REG_CONV_FILTER_BASE_ADDR);
+  reg_writeq(args.driver.sb_address_phy, REG_CONV_SB_BASE_ADDR);
+  reg_writeq(args.driver.output_address_phy, REG_CONV_RESULT_BASE_ADDR);
+  reg_writeq(args.driver.filter_per_group, REG_CONV_FILTER_PER_GROUP);
+  reg_writeq(args.driver.channel_per_group, REG_CONV_CHANNEL_PER_GROUP);
+  reg_writeq(args.driver.image_amount_per_row, REG_CONV_IMAGE_AMOUNT_PER_ROW);
+  reg_writeq(args.driver.image_one_pad_per_row, REG_CONV_IMAGE_ONE_PAD_PER_ROW);
+  reg_writeq(args.driver.filter_amount_all, REG_CONV_FILTER_AMOUNT_ALL);
+  reg_writeq(args.driver.output_amount_per_row, REG_CONV_RESULT_AMOUNT_PER_ROW);
+  reg_writeq(args.driver.image_block_amount_per_row, 0xca8);
+  reg_writeq(args.driver.filter_pad_width_mul_channel, 0xcb0);
+  reg_writeq(args.driver.image_amount_per_row_multi_win_first, 0xcb8);
+  reg_writeq(args.driver.image_amount_per_row_multi_win, 0xcc0);
+  reg_writeq(args.driver.image_block_num, 0xcc8);
+  reg_writeq(args.driver.image_block_len, 0xcd0);
+  reg_writeq(args.driver.image_block_len_last, 0xcd8);
+  reg_writeq(args.driver.image_win_cnt, 0xce0);
+  reg_writeq(args.driver.image_win_cnt_last, 0xce8);
+  reg_writeq(args.driver.res_row_data_align4_pad, 0xcf8);
+  reg_writeq(args.driver.prog_full_cnt, 0xd08);
+  reg_writeq(args.driver.post_prog_full_cnt, 0xd10);
+  reg_writeq(args.driver.fpga_bias_scale_len / 4, 0xd20);
 
-  reg_writeq(image_amount_per_row, REG_CONV_IMAGE_AMOUNT_PER_ROW);
-  reg_writeq(image_one_pad_per_row, REG_CONV_IMAGE_ONE_PAD_PER_ROW);
-  reg_writeq(filter_amount_all, REG_CONV_FILTER_AMOUNT_ALL);
-  reg_writeq(output_amount_per_row, REG_CONV_RESULT_AMOUNT_PER_ROW);
+  reg_writeq(args.driver.cmd, REG_CONV_CMD);
 
-  reg_writeq(image_block_amount_per_row, 0xca8);
-  reg_writeq(filter_pad_width_mul_channel, 0xcb0);
-  reg_writeq(image_amount_per_row_multi_win_first, 0xcb8);
-  reg_writeq(image_amount_per_row_multi_win, 0xcc0);
-  reg_writeq(image_block_num, 0xcc8);
-  reg_writeq(image_block_len, 0xcd0);
-  reg_writeq(image_block_len_last, 0xcd8);
-  reg_writeq(image_win_cnt, 0xce0);
-  reg_writeq(image_win_cnt_last, 0xce8);
-  reg_writeq(res_row_data_align4_pad, 0xcf8);
-  reg_writeq(prog_full_cnt, 0xd08);
-  reg_writeq(post_prog_full_cnt, 0xd10);
-  reg_writeq(fpga_bias_scale_len / 4, 0xd20);
-
-  /*write scale*/
-  reg_writeq(image_scale, REG_CONV_IMAGE_SCALE);
-  reg_writeq(filter_scale, REG_CONV_FILTER_SCALE);
-
-  reg_writeq(cmd, REG_CONV_CMD);
-
-  DLOG << "before reg poll";
   if (0 != fpga_regpoll(REG_INTERRUPT, INTERRUPT_CONV, PE_IRQ_TIMEOUT)) {
     g_fpgainfo.pe_data->pes[PE_IDX_CONV]->status = ERROR;
     ret = -EIO;
     DLOG << "Conv Wait Irq Timeout!";
   }
-  DLOG << "after reg poll";
-  usleep(40);
-
-  /*SDK 无效 Cache保证数据一致性*/
 
   output_scale = reg_readq(REG_SCALE_PARAMETER);
   output_scale = (output_scale << 32) | (output_scale >> 32);
   fpga_copy(args.output.scale_address, &output_scale, sizeof(float) * 2);
-  cout << "output_scale :" << hex << (output_scale) << endl;
 
-  //*(args.output.scale_address) = output_scale;
   pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
 
   return ret;
@@ -575,9 +538,6 @@ int ComputeFpgaPool(const struct PoolingArgs &args) {
     DLOG << "Pooling Wait Irq Timeout!";
   }
   DLOG << "after reg poll";
-  usleep(40);
-
-  /*SDK 无效 Cache保证数据一致性*/
 
   // *(args.output.scale_address) = reg_readq(REG_SCALE_PARAMETER);
   output_scale = reg_readq(REG_SCALE_PARAMETER);
@@ -615,11 +575,9 @@ int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
        << "   out_scale_address:" << args.output.scale_address;
 #endif
 #ifdef PADDLE_MOBILE_ZU5
-  DLOG << "Conv";
-  // return 0;
   int ret = 0;
   uint64_t output_scale = 0;
-  uint64_t timer_cnt = 0;
+  /*uint64_t timer_cnt = 0;
   uint64_t image0_address_phy = 0;
   uint64_t image1_address_phy = 0;
   uint64_t output_address_phy = 0;
@@ -629,54 +587,44 @@ int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
                      (uint64_t)args.image0.height *
                      (uint64_t)args.image0.channels;
   uint64_t coefficient = (uint64_t)args.const0 << 32 | (uint64_t)args.const1;
-
-  pthread_mutex_lock(&g_fpgainfo.pe_data->mutex);
-  if (ERROR == g_fpgainfo.pe_data->pes[PE_IDX_POOLING]->status) {
-    ret = -EIO;
-    DLOG << "Conv Status Error!";
-    pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
-    return ret;
-  }
-
   image0_address_phy = vaddr_to_paddr(args.image0.address);
   image1_address_phy = vaddr_to_paddr(args.image1.address);
   output_address_phy = vaddr_to_paddr(args.output.address);
 
   uint64_t image_amount_per_row =
-      align_to_x((uint64_t)args.image0.width * (uint64_t)args.image0.channels,
-                 IMAGE_ALIGN);
+  align_to_x((uint64_t)args.image0.width * (uint64_t)args.image0.channels,
+             IMAGE_ALIGN);
   uint64_t image_image_pixel = ((uint64_t)args.image0.channels << 32) |
                                ((uint64_t)args.image0.width << 16) |
-                               (uint64_t)args.image0.height;
+                               (uint64_t)args.image0.height;*/
 
-  /*SDK刷Cache保证数据一致性*/
+  pthread_mutex_lock(&g_fpgainfo.pe_data->mutex);
+  if (ERROR == g_fpgainfo.pe_data->pes[PE_IDX_EW]->status) {
+    ret = -EIO;
+    DLOG << "EW Status Error!";
+    pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
+    return ret;
+  }
 
-  /*restart scale*/
   reg_writeq(output_scale, REG_SCALE_PARAMETER);
-
-  reg_writeq(image0_address_phy, REG_EW_IMAGE0_BASE_ADDR);
-  reg_writeq(image1_address_phy, REG_EW_IMAGE1_BASE_ADDR);
-  reg_writeq(datalen, REG_EW_DATA_LEN);
-  reg_writeq(image_image_pixel, REG_EW_IMAGE_PIXEL);
-  reg_writeq(image_amount_per_row, REG_EW_IMAGE_AMOUNT_PER_ROW);
-
-  reg_writeq(output_address_phy, REG_EW_RESULT_BASE_ADDR);
-  reg_writeq(coefficient, REG_EW_COEFFICIENT);
-
-  reg_writeq(cmd, REG_EW_CMD);
+  reg_writeq(args.driver.image0_address_phy, REG_EW_IMAGE0_BASE_ADDR);
+  reg_writeq(args.driver.image1_address_phy, REG_EW_IMAGE1_BASE_ADDR);
+  reg_writeq(args.driver.datalen, REG_EW_DATA_LEN);
+  reg_writeq(args.driver.image_image_pixel, REG_EW_IMAGE_PIXEL);
+  reg_writeq(args.driver.image_amount_per_row, REG_EW_IMAGE_AMOUNT_PER_ROW);
+  reg_writeq(args.driver.output_address_phy, REG_EW_RESULT_BASE_ADDR);
+  reg_writeq(args.driver.coefficient, REG_EW_COEFFICIENT);
+  reg_writeq(args.driver.cmd, REG_EW_CMD);
 
   if (0 != fpga_regpoll(REG_INTERRUPT, INTERRUPT_POOLING, PE_IRQ_TIMEOUT)) {
-    g_fpgainfo.pe_data->pes[PE_IDX_POOLING]->status = ERROR;
+    g_fpgainfo.pe_data->pes[PE_IDX_EW]->status = ERROR;
     ret = -EIO;
     DLOG << "EW Wait Irq Timeout!";
   }
-  usleep(40);
 
-  /*SDK 无效 Cache保证数据一致性*/
   output_scale = reg_readq(REG_SCALE_PARAMETER);
   output_scale = (output_scale << 32) | (output_scale >> 32);
   fpga_copy(args.output.scale_address, &output_scale, sizeof(float) * 2);
-
   //*(args.output.scale_address) = reg_readq(REG_SCALE_PARAMETER);
   //*(args.output.timer_cnt) = reg_readq(REG_TIMER_COUNTER);
   pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
@@ -802,9 +750,7 @@ int PerformBypass(const struct BypassArgs &args) {
     DLOG << "BYPASS Wait Irq Timeout!";
   }
   DLOG << "after reg poll";
-  usleep(40);
 
-  /*SDK 无效 Cache保证数据一致性*/
   output_scale = reg_readq(REG_SCALE_PARAMETER);
   output_scale = (output_scale << 32) | (output_scale >> 32);
   fpga_copy(args.output.scale_address, &output_scale, sizeof(float) * 2);
@@ -883,8 +829,9 @@ void deconv_post_process(half **data_in, int sub_conv_n, int num, int channel,
   *data_in = ptr_deconv;
   fpga_free(ptr_tmp);
 }
+
 int ComputeFpgaDeconv(const struct DeconvArgs &args) {
-#ifdef FPGA_TEST_MODE
+#ifdef FPGA_PRINT_MODE
   DLOG << "=============ComputeFPGADeConv===========";
   DLOG << "   filter_num:" << args.filter_num
        << "   group_num:" << args.group_num
