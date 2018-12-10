@@ -12,76 +12,125 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include <cstring>
+#include <iostream>
+#include <vector>
+#include "../test_helper.h"
 #include "../test_include.h"
 #include "operators/concat_op.h"
 
+namespace paddle_mobile {
+using framework::AttributeMap;
+using framework::DDim;
+using framework::LoDTensor;
+using framework::Scope;
+using framework::make_ddim;
+
+template <typename T>
+void concat(const std::vector<LoDTensor> &input, LoDTensor &output, int axis) {
+  int num = input.size();
+
+  int rows = 1;
+  auto dim_0 = input[0].dims();
+  for (int i = 0; i < axis; ++i) {
+    rows *= dim_0[i];
+  }
+  int out_rows = rows, out_cols = 0;
+
+  std::vector<int> input_cols(input.size());
+  for (int i = 0; i < num; ++i) {
+    int t_cols = input[i].numel() / rows;
+    out_cols += t_cols;
+    input_cols[i] = t_cols;
+  }
+
+  // computation
+  auto output_data = output.data<T>();
+  int col_idx = 0;
+  for (int j = 0; j < num; ++j) {
+    int col_len = input_cols[j];
+    auto input_data = input[j].data<T>();
+    for (int k = 0; k < out_rows; ++k) {
+      memcpy(output_data + k * out_cols + col_idx, input_data + k * col_len,
+             sizeof(T) * col_len);
+    }
+    col_idx += col_len;
+  }
+}
+
+template <typename T>
+int TestConcatOP() {
+  DDim inputA_shape = make_ddim({10, 4, 2, 2});
+  DDim inputB_shape = make_ddim({20, 4, 2, 2});
+  DDim inputC_shape = make_ddim({30, 4, 2, 2});
+  DDim inputD_shape = make_ddim({40, 4, 2, 2});
+  DDim output_shape = make_ddim({100, 4, 2, 2});
+  int axis_v = 0;
+  VariableNameMap inputs;
+  VariableNameMap outputs;
+  std::vector<LoDTensor> input_tensors;
+  auto scope = std::make_shared<Scope>();
+  inputs["X"] =
+      std::vector<std::string>({"inputA", "inputB", "inputC", "inputD"});
+  outputs["Out"] = std::vector<std::string>({"output"});
+
+  auto inputA_var = scope.get()->Var("inputA");
+  auto inputA = inputA_var->template GetMutable<framework::LoDTensor>();
+  SetupTensor<T>(inputA, inputA_shape, -127, 127);
+  input_tensors.push_back(std::move(*inputA));
+
+  auto inputB_var = scope.get()->Var("inputB");
+  auto inputB = inputB_var->template GetMutable<framework::LoDTensor>();
+  SetupTensor<T>(inputB, inputB_shape, -127, 127);
+  input_tensors.push_back(std::move(*inputB));
+
+  auto inputC_var = scope.get()->Var("inputC");
+  auto inputC = inputC_var->template GetMutable<framework::LoDTensor>();
+  SetupTensor<T>(inputC, inputC_shape, -127, 127);
+  input_tensors.push_back(std::move(*inputC));
+
+  auto inputD_var = scope.get()->Var("inputD");
+  auto inputD = inputD_var->template GetMutable<framework::LoDTensor>();
+  SetupTensor<T>(inputD, inputD_shape, -127, 127);
+  input_tensors.push_back(std::move(*inputD));
+
+  auto output_var = scope.get()->Var("output");
+  AttributeMap attrs;
+  attrs["axis"].Set<int>(axis_v);
+
+  auto *op = new operators::ConcatOp<CPU, float>("concat", inputs, outputs,
+                                                 attrs, scope);
+  op->InferShape();
+  op->Run();
+  auto output = output_var->template Get<framework::LoDTensor>();
+  const T *output_data = output->data<T>();
+  LoDTensor output_cmp;
+  output_cmp.mutable_data<T>(output_shape);
+  concat<T>(input_tensors, output_cmp, axis_v);
+  const T *output_cmp_data = output_cmp.data<T>();
+  // compare
+  int eq = 0;
+  int neq = 0;
+  for (int i = 0; i < output->numel(); ++i) {
+    PADDLE_MOBILE_ENFORCE(output_data[i] == output_cmp_data[i],
+                          "The execution of test_concat_op is failed!");
+    if (output_data[i] == output_cmp_data[i]) {
+      ++eq;
+    } else {
+      ++neq;
+    }
+  }
+  std::cout << "eq = " << eq << ", neq = " << neq << std::endl;
+
+  delete op;
+  return 0;
+}
+}  // namespace paddle_mobile
+
 int main() {
-  paddle_mobile::framework::Loader<paddle_mobile::CPU> loader;
-  auto program = loader.Load(g_googlenet);
-  PADDLE_MOBILE_ENFORCE(program.originProgram != nullptr,
-                        "program file read fail");
-
-  Executor4Test<paddle_mobile::CPU,
-                paddle_mobile::operators::ConcatOp<paddle_mobile::CPU, float>>
-      executor(program, "concat");
-
-  // 1. input_tensors;
-  vector<Tensor> input_tensors;
-
-  Tensor input1;
-  auto input1_data = CreateInput<float>(&input1, {4, 10, 2, 2}, 0, 1);
-  input_tensors.push_back(input1);
-  Tensor input2;
-  auto input2_data = CreateInput<float>(&input2, {4, 20, 2, 2}, 0, 1);
-  input_tensors.push_back(input2);
-  Tensor input3;
-  auto input3_data = CreateInput<float>(&input3, {4, 30, 2, 2}, 0, 1);
-  input_tensors.push_back(input3);
-  Tensor input4;
-  auto input4_data = CreateInput<float>(&input4, {4, 40, 2, 2}, 0, 1);
-  input_tensors.push_back(input4);
-  // 2. input_names
-  vector<string> input_names({
-      "conv2d_3.tmp_1",
-      "conv2d_5.tmp_1",
-      "conv2d_7.tmp_1",
-      "conv2d_8.tmp_1",
-  });
-
-  // 3. output_names
-  vector<string> output_names({"concat_0.tmp_0"});
-
-  // 4. out_dims;
-  vector<DDim> out_ddims;
-  auto out_ddim = paddle_mobile::framework::make_ddim({3, 100, 2, 2});
-  out_ddims.push_back(out_ddim);
-
-  auto output = executor.Predict<LoDTensor>(input_tensors, input_names,
-                                            output_names, out_ddims);
-
-  auto output0_data = output[0]->data<float>();
-
-  // 5. test one example.
-  int input_n = 1;
-  int input_c = 2;
-  int input_h = 0;
-  int input_w = 1;
-  int stride0 = input3.numel() / input3.dims()[0];
-  int stride1 = input3.numel() / input3.dims()[0] / input3.dims()[1];
-  int stride2 = input3.dims()[3];
-  /// inputx1 (4,10,2,2),
-  /// inputx2 (4,20,2,2),
-  /// inputx3 (4,30,2,2),
-  /// inputx4 (4,40,2,2),
-  /// axis = 1
-  /// output (4,100,2,2)
-  int input_index =
-      input_n * stride0 + input_c * stride1 + input_h * stride2 + input_w;
-  int output_index = input_n * 100 * 2 * 2 +
-                     (input_c + input1.dims()[1] + input2.dims()[1]) * 2 * 2 +
-                     input_h * 2 + input_w;
-
-  DLOG << " input3 [1, 2,0,1] = " << input3_data[input_index];
-  DLOG << " output [1,32,0,1] = " << output0_data[output_index];
+  paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
+  paddle_mobile.SetThreadNum(4);
+  paddle_mobile::TestConcatOP<float>();
+  paddle_mobile::TestConcatOP<int8_t>();
   return 0;
 }

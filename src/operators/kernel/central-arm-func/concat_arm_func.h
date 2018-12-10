@@ -57,8 +57,8 @@ template <typename P>
 void ConcatCompute(const ConcatParam<CPU> &param) {
   auto inputs = param.Inputs();
   auto *out = param.Out();
-  int64_t axis = param.Axis();
-  out->mutable_data<float>();
+  int axis = param.Axis();
+  out->mutable_data<P>();
 
   /// Sometimes direct copies will be faster, this maybe need deeply analysis.
   if (axis == 0 && inputs.size() < 10) {
@@ -66,12 +66,12 @@ void ConcatCompute(const ConcatParam<CPU> &param) {
     for (auto *in : inputs) {
       auto in_stride = framework::stride_numel(in->dims());
       auto out_stride = framework::stride_numel(out->dims());
-      auto dst = out->data<float>() + output_offset;
-      auto src = in->data<float>();
+      auto dst = out->data<P>() + output_offset;
+      auto src = in->data<P>();
       PADDLE_MOBILE_ENFORCE(
           in_stride.size() == out_stride.size(),
           "src and dst tensor should have the same dims size.");
-      memory::Copy(dst, src, sizeof(float) * in_stride[0]);
+      memory::Copy(dst, src, sizeof(P) * in_stride[0]);
       output_offset += in_stride[0];
     }
   } else {
@@ -79,8 +79,8 @@ void ConcatCompute(const ConcatParam<CPU> &param) {
     for (int j = 0; j < inputs.size(); ++j) {
       inputs_concat[j] = *inputs[j];
     }
-    ConcatFunctor<float> concat_functor;
-    concat_functor(inputs_concat, static_cast<int>(axis), out);
+    ConcatFunctor<P> concat_functor;
+    concat_functor(inputs_concat, axis, out);
   }
 }
 
