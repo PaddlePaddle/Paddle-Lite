@@ -53,7 +53,7 @@ struct PoolingVal<Avg> {
     ++count;
     return *this;
   }
-  inline float Value() { return (count > 0) ? val * (1.f / count) : 0.f; }
+  inline float Value() { return (count > 0) ? val / count : 0.f; }
 };
 
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)

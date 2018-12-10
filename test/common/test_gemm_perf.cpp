@@ -73,14 +73,14 @@ int main() {
   // float
   // warm-up 10 times
   for (int j = 0; j < 10; ++j) {
-    paddle_mobile::operators::math::matmul<float>(
+    paddle_mobile::operators::math::matmul<float, float>(
         aa, false, bb, false, static_cast<float>(1), &cc, static_cast<float>(0),
         false, nullptr);
   }
 
   auto time_start0 = time();
   for (int j = 0; j < 10; ++j) {
-    paddle_mobile::operators::math::matmul<float>(
+    paddle_mobile::operators::math::matmul<float, float>(
         aa, false, bb, false, static_cast<float>(1), &cc, static_cast<float>(0),
         false, nullptr);
   }
@@ -91,14 +91,14 @@ int main() {
   // int8_t without bias
   // warm-up 10 times
   for (int j = 0; j < 10; ++j) {
-    paddle_mobile::operators::math::matmul<float, int32_t>(
+    paddle_mobile::operators::math::matmul<int8_t, int32_t>(
         aa_int8, false, bb_int8, false, static_cast<float>(1), &cc_int32,
         static_cast<float>(0));
   }
 
   auto time_start1 = time();
   for (int j = 0; j < 10; ++j) {
-    paddle_mobile::operators::math::matmul<float, int32_t>(
+    paddle_mobile::operators::math::matmul<int8_t, int32_t>(
         aa_int8, false, bb_int8, false, static_cast<float>(1), &cc_int32,
         static_cast<float>(0));
   }
@@ -109,13 +109,13 @@ int main() {
   // int8_t with bias, column element wise add
   // warm-up 10 times
   for (int j = 0; j < 10; ++j) {
-    paddle_mobile::operators::math::matmul(
+    paddle_mobile::operators::math::matmul<int8_t, int32_t>(
         aa_int8, false, bb_int8, false, static_cast<float>(0.618), &cc_int8,
         static_cast<float>(0), false, bias_data_col, false);
   }
   auto time_start2 = time();
   for (int j = 0; j < 10; ++j) {
-    paddle_mobile::operators::math::matmul(
+    paddle_mobile::operators::math::matmul<int8_t, int32_t>(
         aa_int8, false, bb_int8, false, static_cast<float>(0.618), &cc_int8,
         static_cast<float>(0), false, bias_data_col, false);
   }
@@ -126,13 +126,13 @@ int main() {
   // int8_t with bias, row element wise add
   // warm-up 10 times
   for (int j = 0; j < 10; ++j) {
-    paddle_mobile::operators::math::matmul(
+    paddle_mobile::operators::math::matmul<int8_t, int32_t>(
         aa_int8, false, bb_int8, false, static_cast<float>(0.618), &cc_int8,
         static_cast<float>(0), false, bias_data_row, true);
   }
   auto time_start3 = time();
   for (int j = 0; j < 10; ++j) {
-    paddle_mobile::operators::math::matmul(
+    paddle_mobile::operators::math::matmul<int8_t, int32_t>(
         aa_int8, false, bb_int8, false, static_cast<float>(0.618), &cc_int8,
         static_cast<float>(0), false, bias_data_row, true);
   }
@@ -143,13 +143,13 @@ int main() {
   // int8_t with bias&relu
   // warm-up 10 times
   for (int j = 0; j < 10; ++j) {
-    paddle_mobile::operators::math::matmul(
+    paddle_mobile::operators::math::matmul<int8_t, int32_t>(
         aa_int8, false, bb_int8, false, static_cast<float>(0.618), &cc_int8,
         static_cast<float>(0), true, bias_data_col, false);
   }
   auto time_start4 = time();
   for (int j = 0; j < 10; ++j) {
-    paddle_mobile::operators::math::matmul(
+    paddle_mobile::operators::math::matmul<int8_t, int32_t>(
         aa_int8, false, bb_int8, false, static_cast<float>(0.618), &cc_int8,
         static_cast<float>(0), true, bias_data_col, false);
   }

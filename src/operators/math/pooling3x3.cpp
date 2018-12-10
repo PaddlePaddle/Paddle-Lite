@@ -288,360 +288,363 @@ struct Pooling3x3<P, 1> {
     int valid_w_end = valid_w_start + valid_w;
     float avg = 1.f / 9;
 
-    #pragma omp parallel for
-    for (int c = 0; c < output->dims()[1]; ++c) {
-      const float *input_ptr = input_data + c * image_size;
-      float *output_ptr = output_data + c * out_image_size;
-      // top
-      for (int h = 0; h < valid_h_start; ++h) {
-        Pooling3x3NormalRow<P, 1>(input_ptr, h, input_h, input_w, padding_h,
-                                  padding_w, output_w, output_ptr);
-      }
-      // left
-      for (int w = 0; w < valid_w_start; ++w) {
-        Pooling3x3ValidCol<P, 1>(input_ptr, valid_h_start, valid_h_end, w,
-                                 input_h, input_w, padding_h, padding_w,
-                                 output_w, output_ptr);
-      }
-      // right
-      for (int w = valid_w_end; w < output_w; ++w) {
-        Pooling3x3ValidCol<P, 1>(input_ptr, valid_h_start, valid_h_end, w,
-                                 input_h, input_w, padding_h, padding_w,
-                                 output_w, output_ptr);
-      }
-      // bottom
-      for (int h = valid_h_end; h < output_h; ++h) {
-        Pooling3x3NormalRow<P, 1>(input_ptr, h, input_h, input_w, padding_h,
-                                  padding_w, output_w, output_ptr);
-      }
-      // valid
-      int output_w_tiles = valid_w / 6;
-      int output_w_remain = valid_w - output_w_tiles * 6;
-      for (int h = valid_h_start; h < valid_h_end - 3; h += 4) {
-        const float *input_ptr0 = input_ptr + (h - padding_h) * input_w;
-        const float *input_ptr1 = input_ptr0 + input_w;
-        const float *input_ptr2 = input_ptr1 + input_w;
-        const float *input_ptr3 = input_ptr2 + input_w;
-        const float *input_ptr4 = input_ptr3 + input_w;
-        const float *input_ptr5 = input_ptr4 + input_w;
-        float *output_ptr0 = output_ptr + h * output_w + valid_w_start;
-        float *output_ptr1 = output_ptr0 + output_w;
-        float *output_ptr2 = output_ptr1 + output_w;
-        float *output_ptr3 = output_ptr2 + output_w;
-        int remain = output_w_remain;
+    #pragma omp parallel for collapse(2)
+    for (int batch = 0; batch < output->dims()[0]; ++batch) {
+      for (int c = 0; c < output->dims()[1]; ++c) {
+        int channel = batch * output->dims()[1] + c;
+        const float *input_ptr = input_data + channel * image_size;
+        float *output_ptr = output_data + channel * out_image_size;
+        // top
+        for (int h = 0; h < valid_h_start; ++h) {
+          Pooling3x3NormalRow<P, 1>(input_ptr, h, input_h, input_w, padding_h,
+                                    padding_w, output_w, output_ptr);
+        }
+        // left
+        for (int w = 0; w < valid_w_start; ++w) {
+          Pooling3x3ValidCol<P, 1>(input_ptr, valid_h_start, valid_h_end, w,
+                                   input_h, input_w, padding_h, padding_w,
+                                   output_w, output_ptr);
+        }
+        // right
+        for (int w = valid_w_end; w < output_w; ++w) {
+          Pooling3x3ValidCol<P, 1>(input_ptr, valid_h_start, valid_h_end, w,
+                                   input_h, input_w, padding_h, padding_w,
+                                   output_w, output_ptr);
+        }
+        // bottom
+        for (int h = valid_h_end; h < output_h; ++h) {
+          Pooling3x3NormalRow<P, 1>(input_ptr, h, input_h, input_w, padding_h,
+                                    padding_w, output_w, output_ptr);
+        }
+        // valid
+        int output_w_tiles = valid_w / 6;
+        int output_w_remain = valid_w - output_w_tiles * 6;
+        for (int h = valid_h_start; h < valid_h_end - 3; h += 4) {
+          const float *input_ptr0 = input_ptr + (h - padding_h) * input_w;
+          const float *input_ptr1 = input_ptr0 + input_w;
+          const float *input_ptr2 = input_ptr1 + input_w;
+          const float *input_ptr3 = input_ptr2 + input_w;
+          const float *input_ptr4 = input_ptr3 + input_w;
+          const float *input_ptr5 = input_ptr4 + input_w;
+          float *output_ptr0 = output_ptr + h * output_w + valid_w_start;
+          float *output_ptr1 = output_ptr0 + output_w;
+          float *output_ptr2 = output_ptr1 + output_w;
+          float *output_ptr3 = output_ptr2 + output_w;
+          int remain = output_w_remain;
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
-        float32x4x2_t x0, x1, x2;
-        float32x4x2_t y0, y1, y2;
-        float32x4_t post = vdupq_n_f32(1.f / 9);
-        for (int loop = 0; loop < output_w_tiles; ++loop) {
-          x0.val[0] = vld1q_f32(input_ptr0);
-          x0.val[1] = vld1q_f32(input_ptr0 + 4);
-          x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
-          x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
-          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
+          float32x4x2_t x0, x1, x2;
+          float32x4x2_t y0, y1, y2;
+          float32x4_t post = vdupq_n_f32(1.f / 9);
+          for (int loop = 0; loop < output_w_tiles; ++loop) {
+            x0.val[0] = vld1q_f32(input_ptr0);
+            x0.val[1] = vld1q_f32(input_ptr0 + 4);
+            x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
+            x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
+            x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
+            x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
+            x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
 
-          x0.val[0] = vld1q_f32(input_ptr1);
-          x0.val[1] = vld1q_f32(input_ptr1 + 4);
-          x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
-          x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
-          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
-          y1.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y1.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
-          y0.val[0] = vPoolPreq_f32<P>(y1.val[0], y0.val[0]);
-          y0.val[1] = vPoolPreq_f32<P>(y1.val[1], y0.val[1]);
+            x0.val[0] = vld1q_f32(input_ptr1);
+            x0.val[1] = vld1q_f32(input_ptr1 + 4);
+            x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
+            x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
+            x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
+            x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
+            x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
+            y1.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y1.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
+            y0.val[0] = vPoolPreq_f32<P>(y1.val[0], y0.val[0]);
+            y0.val[1] = vPoolPreq_f32<P>(y1.val[1], y0.val[1]);
 
-          x0.val[0] = vld1q_f32(input_ptr2);
-          x0.val[1] = vld1q_f32(input_ptr2 + 4);
-          x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
-          x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
-          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
-          y2.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y2.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
-          y1.val[0] = vPoolPreq_f32<P>(y2.val[0], y1.val[0]);
-          y1.val[1] = vPoolPreq_f32<P>(y2.val[1], y1.val[1]);
-          y0.val[0] = vPoolPreq_f32<P>(y2.val[0], y0.val[0]);
-          y0.val[1] = vPoolPreq_f32<P>(y2.val[1], y0.val[1]);
-          y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
-          y0.val[1] = vPoolPostq_f32<P>(y0.val[1], post);
-          vst1q_f32(output_ptr0, y0.val[0]);
-          vst1_f32(output_ptr0 + 4, vget_low_f32(y0.val[1]));
+            x0.val[0] = vld1q_f32(input_ptr2);
+            x0.val[1] = vld1q_f32(input_ptr2 + 4);
+            x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
+            x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
+            x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
+            x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
+            x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
+            y2.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y2.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
+            y1.val[0] = vPoolPreq_f32<P>(y2.val[0], y1.val[0]);
+            y1.val[1] = vPoolPreq_f32<P>(y2.val[1], y1.val[1]);
+            y0.val[0] = vPoolPreq_f32<P>(y2.val[0], y0.val[0]);
+            y0.val[1] = vPoolPreq_f32<P>(y2.val[1], y0.val[1]);
+            y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
+            y0.val[1] = vPoolPostq_f32<P>(y0.val[1], post);
+            vst1q_f32(output_ptr0, y0.val[0]);
+            vst1_f32(output_ptr0 + 4, vget_low_f32(y0.val[1]));
 
-          x0.val[0] = vld1q_f32(input_ptr3);
-          x0.val[1] = vld1q_f32(input_ptr3 + 4);
-          x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
-          x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
-          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
-          y1.val[0] = vPoolPreq_f32<P>(y0.val[0], y1.val[0]);
-          y1.val[1] = vPoolPreq_f32<P>(y0.val[1], y1.val[1]);
-          y2.val[0] = vPoolPreq_f32<P>(y0.val[0], y2.val[0]);
-          y2.val[1] = vPoolPreq_f32<P>(y0.val[1], y2.val[1]);
-          y1.val[0] = vPoolPostq_f32<P>(y1.val[0], post);
-          y1.val[1] = vPoolPostq_f32<P>(y1.val[1], post);
-          vst1q_f32(output_ptr1, y1.val[0]);
-          vst1_f32(output_ptr1 + 4, vget_low_f32(y1.val[1]));
+            x0.val[0] = vld1q_f32(input_ptr3);
+            x0.val[1] = vld1q_f32(input_ptr3 + 4);
+            x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
+            x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
+            x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
+            x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
+            x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
+            y1.val[0] = vPoolPreq_f32<P>(y0.val[0], y1.val[0]);
+            y1.val[1] = vPoolPreq_f32<P>(y0.val[1], y1.val[1]);
+            y2.val[0] = vPoolPreq_f32<P>(y0.val[0], y2.val[0]);
+            y2.val[1] = vPoolPreq_f32<P>(y0.val[1], y2.val[1]);
+            y1.val[0] = vPoolPostq_f32<P>(y1.val[0], post);
+            y1.val[1] = vPoolPostq_f32<P>(y1.val[1], post);
+            vst1q_f32(output_ptr1, y1.val[0]);
+            vst1_f32(output_ptr1 + 4, vget_low_f32(y1.val[1]));
 
-          x0.val[0] = vld1q_f32(input_ptr4);
-          x0.val[1] = vld1q_f32(input_ptr4 + 4);
-          x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
-          x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
-          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
-          y0.val[1] = vPoolPreq_f32<P>(x0.val[1], y0.val[1]);
-          y2.val[0] = vPoolPreq_f32<P>(x0.val[0], y2.val[0]);
-          y2.val[1] = vPoolPreq_f32<P>(x0.val[1], y2.val[1]);
-          y2.val[0] = vPoolPostq_f32<P>(y2.val[0], post);
-          y2.val[1] = vPoolPostq_f32<P>(y2.val[1], post);
-          vst1q_f32(output_ptr2, y2.val[0]);
-          vst1_f32(output_ptr2 + 4, vget_low_f32(y2.val[1]));
+            x0.val[0] = vld1q_f32(input_ptr4);
+            x0.val[1] = vld1q_f32(input_ptr4 + 4);
+            x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
+            x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
+            x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
+            x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
+            x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
+            y0.val[1] = vPoolPreq_f32<P>(x0.val[1], y0.val[1]);
+            y2.val[0] = vPoolPreq_f32<P>(x0.val[0], y2.val[0]);
+            y2.val[1] = vPoolPreq_f32<P>(x0.val[1], y2.val[1]);
+            y2.val[0] = vPoolPostq_f32<P>(y2.val[0], post);
+            y2.val[1] = vPoolPostq_f32<P>(y2.val[1], post);
+            vst1q_f32(output_ptr2, y2.val[0]);
+            vst1_f32(output_ptr2 + 4, vget_low_f32(y2.val[1]));
 
-          x0.val[0] = vld1q_f32(input_ptr5);
-          x0.val[1] = vld1q_f32(input_ptr5 + 4);
-          x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
-          x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
-          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
-          y0.val[1] = vPoolPreq_f32<P>(x0.val[1], y0.val[1]);
-          y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
-          y0.val[1] = vPoolPostq_f32<P>(y0.val[1], post);
-          vst1q_f32(output_ptr3, y0.val[0]);
-          vst1_f32(output_ptr3 + 4, vget_low_f32(y0.val[1]));
+            x0.val[0] = vld1q_f32(input_ptr5);
+            x0.val[1] = vld1q_f32(input_ptr5 + 4);
+            x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
+            x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
+            x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
+            x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
+            x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
+            y0.val[1] = vPoolPreq_f32<P>(x0.val[1], y0.val[1]);
+            y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
+            y0.val[1] = vPoolPostq_f32<P>(y0.val[1], post);
+            vst1q_f32(output_ptr3, y0.val[0]);
+            vst1_f32(output_ptr3 + 4, vget_low_f32(y0.val[1]));
 
-          input_ptr0 += 6;
-          input_ptr1 += 6;
-          input_ptr2 += 6;
-          input_ptr3 += 6;
-          input_ptr4 += 6;
-          input_ptr5 += 6;
-          output_ptr0 += 6;
-          output_ptr1 += 6;
-          output_ptr2 += 6;
-          output_ptr3 += 6;
-        }
-        // remain w
-        if (remain >= 4) {
-          x0.val[0] = vld1q_f32(input_ptr0);
-          x0.val[1] = vld1q_f32(input_ptr0 + 4);
-          x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            input_ptr0 += 6;
+            input_ptr1 += 6;
+            input_ptr2 += 6;
+            input_ptr3 += 6;
+            input_ptr4 += 6;
+            input_ptr5 += 6;
+            output_ptr0 += 6;
+            output_ptr1 += 6;
+            output_ptr2 += 6;
+            output_ptr3 += 6;
+          }
+          // remain width
+          if (remain >= 4) {
+            x0.val[0] = vld1q_f32(input_ptr0);
+            x0.val[1] = vld1q_f32(input_ptr0 + 4);
+            x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
+            x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
 
-          x0.val[0] = vld1q_f32(input_ptr1);
-          x0.val[1] = vld1q_f32(input_ptr1 + 4);
-          x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
-          y1.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y0.val[0] = vPoolPreq_f32<P>(y1.val[0], y0.val[0]);
+            x0.val[0] = vld1q_f32(input_ptr1);
+            x0.val[1] = vld1q_f32(input_ptr1 + 4);
+            x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
+            x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
+            y1.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y0.val[0] = vPoolPreq_f32<P>(y1.val[0], y0.val[0]);
 
-          x0.val[0] = vld1q_f32(input_ptr2);
-          x0.val[1] = vld1q_f32(input_ptr2 + 4);
-          x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
-          y2.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y1.val[0] = vPoolPreq_f32<P>(y2.val[0], y1.val[0]);
-          y0.val[0] = vPoolPreq_f32<P>(y2.val[0], y0.val[0]);
-          y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
-          vst1q_f32(output_ptr0, y0.val[0]);
+            x0.val[0] = vld1q_f32(input_ptr2);
+            x0.val[1] = vld1q_f32(input_ptr2 + 4);
+            x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
+            x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
+            y2.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y1.val[0] = vPoolPreq_f32<P>(y2.val[0], y1.val[0]);
+            y0.val[0] = vPoolPreq_f32<P>(y2.val[0], y0.val[0]);
+            y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
+            vst1q_f32(output_ptr0, y0.val[0]);
 
-          x0.val[0] = vld1q_f32(input_ptr3);
-          x0.val[1] = vld1q_f32(input_ptr3 + 4);
-          x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y1.val[0] = vPoolPreq_f32<P>(y0.val[0], y1.val[0]);
-          y2.val[0] = vPoolPreq_f32<P>(y0.val[0], y2.val[0]);
-          y1.val[0] = vPoolPostq_f32<P>(y1.val[0], post);
-          vst1q_f32(output_ptr1, y1.val[0]);
+            x0.val[0] = vld1q_f32(input_ptr3);
+            x0.val[1] = vld1q_f32(input_ptr3 + 4);
+            x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
+            x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y1.val[0] = vPoolPreq_f32<P>(y0.val[0], y1.val[0]);
+            y2.val[0] = vPoolPreq_f32<P>(y0.val[0], y2.val[0]);
+            y1.val[0] = vPoolPostq_f32<P>(y1.val[0], post);
+            vst1q_f32(output_ptr1, y1.val[0]);
 
-          x0.val[0] = vld1q_f32(input_ptr4);
-          x0.val[1] = vld1q_f32(input_ptr4 + 4);
-          x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
-          y2.val[0] = vPoolPreq_f32<P>(x0.val[0], y2.val[0]);
-          y2.val[0] = vPoolPostq_f32<P>(y2.val[0], post);
-          vst1q_f32(output_ptr2, y2.val[0]);
+            x0.val[0] = vld1q_f32(input_ptr4);
+            x0.val[1] = vld1q_f32(input_ptr4 + 4);
+            x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
+            x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
+            y2.val[0] = vPoolPreq_f32<P>(x0.val[0], y2.val[0]);
+            y2.val[0] = vPoolPostq_f32<P>(y2.val[0], post);
+            vst1q_f32(output_ptr2, y2.val[0]);
 
-          x0.val[0] = vld1q_f32(input_ptr5);
-          x0.val[1] = vld1q_f32(input_ptr5 + 4);
-          x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
-          y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
-          vst1q_f32(output_ptr3, y0.val[0]);
+            x0.val[0] = vld1q_f32(input_ptr5);
+            x0.val[1] = vld1q_f32(input_ptr5 + 4);
+            x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
+            x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
+            y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
+            vst1q_f32(output_ptr3, y0.val[0]);
 
-          input_ptr0 += 4;
-          input_ptr1 += 4;
-          input_ptr2 += 4;
-          input_ptr3 += 4;
-          input_ptr4 += 4;
-          input_ptr5 += 4;
-          output_ptr0 += 4;
-          output_ptr1 += 4;
-          output_ptr2 += 4;
-          output_ptr3 += 4;
-          remain -= 4;
-        }
+            input_ptr0 += 4;
+            input_ptr1 += 4;
+            input_ptr2 += 4;
+            input_ptr3 += 4;
+            input_ptr4 += 4;
+            input_ptr5 += 4;
+            output_ptr0 += 4;
+            output_ptr1 += 4;
+            output_ptr2 += 4;
+            output_ptr3 += 4;
+            remain -= 4;
+          }
 #endif  // __ARM_NEON__
-        for (int r = 0; r < remain; ++r) {
-          float m0 = PoolPre<P>(input_ptr0[r], input_ptr0[r + 1]);
-          m0 = PoolPre<P>(m0, input_ptr0[r + 2]);
-          float m1 = PoolPre<P>(input_ptr1[r], input_ptr1[r + 1]);
-          m1 = PoolPre<P>(m1, input_ptr1[r + 2]);
-          float m2 = PoolPre<P>(input_ptr2[r], input_ptr2[r + 1]);
-          m2 = PoolPre<P>(m2, input_ptr2[r + 2]);
-          float m3 = PoolPre<P>(input_ptr3[r], input_ptr3[r + 1]);
-          m3 = PoolPre<P>(m3, input_ptr3[r + 2]);
-          float m4 = PoolPre<P>(input_ptr4[r], input_ptr4[r + 1]);
-          m4 = PoolPre<P>(m4, input_ptr4[r + 2]);
-          float m5 = PoolPre<P>(input_ptr5[r], input_ptr5[r + 1]);
-          m5 = PoolPre<P>(m5, input_ptr5[r + 2]);
+          for (int r = 0; r < remain; ++r) {
+            float m0 = PoolPre<P>(input_ptr0[r], input_ptr0[r + 1]);
+            m0 = PoolPre<P>(m0, input_ptr0[r + 2]);
+            float m1 = PoolPre<P>(input_ptr1[r], input_ptr1[r + 1]);
+            m1 = PoolPre<P>(m1, input_ptr1[r + 2]);
+            float m2 = PoolPre<P>(input_ptr2[r], input_ptr2[r + 1]);
+            m2 = PoolPre<P>(m2, input_ptr2[r + 2]);
+            float m3 = PoolPre<P>(input_ptr3[r], input_ptr3[r + 1]);
+            m3 = PoolPre<P>(m3, input_ptr3[r + 2]);
+            float m4 = PoolPre<P>(input_ptr4[r], input_ptr4[r + 1]);
+            m4 = PoolPre<P>(m4, input_ptr4[r + 2]);
+            float m5 = PoolPre<P>(input_ptr5[r], input_ptr5[r + 1]);
+            m5 = PoolPre<P>(m5, input_ptr5[r + 2]);
 
-          m0 = PoolPre<P>(PoolPre<P>(m0, m1), m2);
-          m1 = PoolPre<P>(PoolPre<P>(m1, m2), m3);
-          m2 = PoolPre<P>(PoolPre<P>(m2, m3), m4);
-          m3 = PoolPre<P>(PoolPre<P>(m3, m4), m5);
-          output_ptr0[r] = PoolPost<P>(m0, avg);
-          output_ptr1[r] = PoolPost<P>(m1, avg);
-          output_ptr2[r] = PoolPost<P>(m2, avg);
-          output_ptr3[r] = PoolPost<P>(m3, avg);
+            m0 = PoolPre<P>(PoolPre<P>(m0, m1), m2);
+            m1 = PoolPre<P>(PoolPre<P>(m1, m2), m3);
+            m2 = PoolPre<P>(PoolPre<P>(m2, m3), m4);
+            m3 = PoolPre<P>(PoolPre<P>(m3, m4), m5);
+            output_ptr0[r] = PoolPost<P>(m0, avg);
+            output_ptr1[r] = PoolPost<P>(m1, avg);
+            output_ptr2[r] = PoolPost<P>(m2, avg);
+            output_ptr3[r] = PoolPost<P>(m3, avg);
+          }
         }
-      }
-      // remain h
-      int start_h = valid_h_start + (valid_h & 0xFFFC);
-      for (int h = start_h; h < valid_h_end; ++h) {
-        const float *input_ptr0 = input_ptr + (h - padding_h) * input_w;
-        const float *input_ptr1 = input_ptr0 + input_w;
-        const float *input_ptr2 = input_ptr1 + input_w;
-        float *output_ptr0 = output_ptr + h * output_w + valid_w_start;
-        int remain = output_w_remain;
+        // remain height
+        int start_h = valid_h_start + (valid_h & 0xFFFC);
+        for (int h = start_h; h < valid_h_end; ++h) {
+          const float *input_ptr0 = input_ptr + (h - padding_h) * input_w;
+          const float *input_ptr1 = input_ptr0 + input_w;
+          const float *input_ptr2 = input_ptr1 + input_w;
+          float *output_ptr0 = output_ptr + h * output_w + valid_w_start;
+          int remain = output_w_remain;
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
-        float32x4x2_t x0, x1, x2, y0;
-        float32x4_t post = vdupq_n_f32(1.f / 9);
-        for (int loop = 0; loop < output_w_tiles; ++loop) {
-          x0.val[0] = vld1q_f32(input_ptr0);
-          x0.val[1] = vld1q_f32(input_ptr0 + 4);
-          x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
-          x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
-          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
+          float32x4x2_t x0, x1, x2, y0;
+          float32x4_t post = vdupq_n_f32(1.f / 9);
+          for (int loop = 0; loop < output_w_tiles; ++loop) {
+            x0.val[0] = vld1q_f32(input_ptr0);
+            x0.val[1] = vld1q_f32(input_ptr0 + 4);
+            x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
+            x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
+            x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
+            x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
+            x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
 
-          x0.val[0] = vld1q_f32(input_ptr1);
-          x0.val[1] = vld1q_f32(input_ptr1 + 4);
-          x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
-          x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
-          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
-          y0.val[1] = vPoolPreq_f32<P>(x0.val[1], y0.val[1]);
+            x0.val[0] = vld1q_f32(input_ptr1);
+            x0.val[1] = vld1q_f32(input_ptr1 + 4);
+            x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
+            x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
+            x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
+            x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
+            x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
+            y0.val[1] = vPoolPreq_f32<P>(x0.val[1], y0.val[1]);
 
-          x0.val[0] = vld1q_f32(input_ptr2);
-          x0.val[1] = vld1q_f32(input_ptr2 + 4);
-          x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
-          x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
-          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
-          y0.val[1] = vPoolPreq_f32<P>(x0.val[1], y0.val[1]);
-          y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
-          y0.val[1] = vPoolPostq_f32<P>(y0.val[1], post);
-          vst1q_f32(output_ptr0, y0.val[0]);
-          vst1_f32(output_ptr0 + 4, vget_low_f32(y0.val[1]));
+            x0.val[0] = vld1q_f32(input_ptr2);
+            x0.val[1] = vld1q_f32(input_ptr2 + 4);
+            x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
+            x1.val[1] = vextq_f32(x0.val[1], x0.val[1], 1);
+            x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
+            x2.val[1] = vextq_f32(x0.val[1], x0.val[1], 2);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
+            x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x1.val[1]);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
+            y0.val[1] = vPoolPreq_f32<P>(x0.val[1], y0.val[1]);
+            y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
+            y0.val[1] = vPoolPostq_f32<P>(y0.val[1], post);
+            vst1q_f32(output_ptr0, y0.val[0]);
+            vst1_f32(output_ptr0 + 4, vget_low_f32(y0.val[1]));
 
-          input_ptr0 += 6;
-          input_ptr1 += 6;
-          input_ptr2 += 6;
-          output_ptr0 += 6;
-        }
-        // remain w
-        if (remain >= 4) {
-          x0.val[0] = vld1q_f32(input_ptr0);
-          x0.val[1] = vld1q_f32(input_ptr0 + 4);
-          x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            input_ptr0 += 6;
+            input_ptr1 += 6;
+            input_ptr2 += 6;
+            output_ptr0 += 6;
+          }
+          // remain width
+          if (remain >= 4) {
+            x0.val[0] = vld1q_f32(input_ptr0);
+            x0.val[1] = vld1q_f32(input_ptr0 + 4);
+            x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
+            x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
 
-          x0.val[0] = vld1q_f32(input_ptr1);
-          x0.val[1] = vld1q_f32(input_ptr1 + 4);
-          x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
+            x0.val[0] = vld1q_f32(input_ptr1);
+            x0.val[1] = vld1q_f32(input_ptr1 + 4);
+            x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
+            x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
 
-          x0.val[0] = vld1q_f32(input_ptr2);
-          x0.val[1] = vld1q_f32(input_ptr2 + 4);
-          x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
-          x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
-          y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
-          vst1q_f32(output_ptr0, y0.val[0]);
+            x0.val[0] = vld1q_f32(input_ptr2);
+            x0.val[1] = vld1q_f32(input_ptr2 + 4);
+            x1.val[0] = vextq_f32(x0.val[0], x0.val[1], 1);
+            x2.val[0] = vextq_f32(x0.val[0], x0.val[1], 2);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x1.val[0]);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
+            y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
+            vst1q_f32(output_ptr0, y0.val[0]);
 
-          input_ptr0 += 4;
-          input_ptr1 += 4;
-          input_ptr2 += 4;
-          output_ptr0 += 4;
-          remain -= 4;
-        }
+            input_ptr0 += 4;
+            input_ptr1 += 4;
+            input_ptr2 += 4;
+            output_ptr0 += 4;
+            remain -= 4;
+          }
 #endif  // __ARM_NEON__
-        for (int r = 0; r < remain; ++r) {
-          float m0 = PoolPre<P>(input_ptr0[r], input_ptr0[r + 1]);
-          m0 = PoolPre<P>(m0, input_ptr0[r + 2]);
-          float m1 = PoolPre<P>(input_ptr1[r], input_ptr1[r + 1]);
-          m1 = PoolPre<P>(m1, input_ptr1[r + 2]);
-          float m2 = PoolPre<P>(input_ptr2[r], input_ptr2[r + 1]);
-          m2 = PoolPre<P>(m2, input_ptr2[r + 2]);
+          for (int r = 0; r < remain; ++r) {
+            float m0 = PoolPre<P>(input_ptr0[r], input_ptr0[r + 1]);
+            m0 = PoolPre<P>(m0, input_ptr0[r + 2]);
+            float m1 = PoolPre<P>(input_ptr1[r], input_ptr1[r + 1]);
+            m1 = PoolPre<P>(m1, input_ptr1[r + 2]);
+            float m2 = PoolPre<P>(input_ptr2[r], input_ptr2[r + 1]);
+            m2 = PoolPre<P>(m2, input_ptr2[r + 2]);
 
-          m0 = PoolPre<P>(PoolPre<P>(m0, m1), m2);
-          output_ptr0[r] = PoolPost<P>(m0, avg);
+            m0 = PoolPre<P>(PoolPre<P>(m0, m1), m2);
+            output_ptr0[r] = PoolPost<P>(m0, avg);
+          }
         }
       }
     }
@@ -671,339 +674,342 @@ struct Pooling3x3<P, 2> {
     int valid_w_end = valid_w_start + valid_w;
     float avg = 1.f / 9;
 
-    #pragma omp parallel for
-    for (int c = 0; c < output->dims()[1]; ++c) {
-      const float *input_ptr = input_data + c * image_size;
-      float *output_ptr = output_data + c * out_image_size;
-      // top
-      for (int h = 0; h < valid_h_start; ++h) {
-        Pooling3x3NormalRow<P, 2>(input_ptr, h, input_h, input_w, padding_h,
-                                  padding_w, output_w, output_ptr);
-      }
-      // left
-      for (int w = 0; w < valid_w_start; ++w) {
-        Pooling3x3ValidCol<P, 2>(input_ptr, valid_h_start, valid_h_end, w,
-                                 input_h, input_w, padding_h, padding_w,
-                                 output_w, output_ptr);
-      }
-      // right
-      for (int w = valid_w_end; w < output_w; ++w) {
-        Pooling3x3ValidCol<P, 2>(input_ptr, valid_h_start, valid_h_end, w,
-                                 input_h, input_w, padding_h, padding_w,
-                                 output_w, output_ptr);
-      }
-      // bottom
-      for (int h = valid_h_end; h < output_h; ++h) {
-        Pooling3x3NormalRow<P, 2>(input_ptr, h, input_h, input_w, padding_h,
-                                  padding_w, output_w, output_ptr);
-      }
-      // valid
-      int input_w_start = 2 * valid_w_start - padding_w;
-      int output_w_tiles = valid_w / 6;
-      int output_w_remain = valid_w - output_w_tiles * 6;
-      for (int h = valid_h_start; h < valid_h_end - 2; h += 3) {
-        size_t offset = (2 * h - padding_h) * input_w + input_w_start;
-        const float *input_ptr0 = input_ptr + offset;
-        const float *input_ptr1 = input_ptr0 + input_w;
-        const float *input_ptr2 = input_ptr1 + input_w;
-        const float *input_ptr3 = input_ptr2 + input_w;
-        const float *input_ptr4 = input_ptr3 + input_w;
-        const float *input_ptr5 = input_ptr4 + input_w;
-        const float *input_ptr6 = input_ptr5 + input_w;
-        float *output_ptr0 = output_ptr + h * output_w + valid_w_start;
-        float *output_ptr1 = output_ptr0 + output_w;
-        float *output_ptr2 = output_ptr1 + output_w;
-        int remain = output_w_remain;
+    #pragma omp parallel for collapse(2)
+    for (int batch = 0; batch < output->dims()[0]; ++batch) {
+      for (int c = 0; c < output->dims()[1]; ++c) {
+        int channel = batch * output->dims()[1] + c;
+        const float *input_ptr = input_data + channel * image_size;
+        float *output_ptr = output_data + channel * out_image_size;
+        // top
+        for (int h = 0; h < valid_h_start; ++h) {
+          Pooling3x3NormalRow<P, 2>(input_ptr, h, input_h, input_w, padding_h,
+                                    padding_w, output_w, output_ptr);
+        }
+        // left
+        for (int w = 0; w < valid_w_start; ++w) {
+          Pooling3x3ValidCol<P, 2>(input_ptr, valid_h_start, valid_h_end, w,
+                                   input_h, input_w, padding_h, padding_w,
+                                   output_w, output_ptr);
+        }
+        // right
+        for (int w = valid_w_end; w < output_w; ++w) {
+          Pooling3x3ValidCol<P, 2>(input_ptr, valid_h_start, valid_h_end, w,
+                                   input_h, input_w, padding_h, padding_w,
+                                   output_w, output_ptr);
+        }
+        // bottom
+        for (int h = valid_h_end; h < output_h; ++h) {
+          Pooling3x3NormalRow<P, 2>(input_ptr, h, input_h, input_w, padding_h,
+                                    padding_w, output_w, output_ptr);
+        }
+        // valid
+        int input_w_start = 2 * valid_w_start - padding_w;
+        int output_w_tiles = valid_w / 6;
+        int output_w_remain = valid_w - output_w_tiles * 6;
+        for (int h = valid_h_start; h < valid_h_end - 2; h += 3) {
+          size_t offset = (2 * h - padding_h) * input_w + input_w_start;
+          const float *input_ptr0 = input_ptr + offset;
+          const float *input_ptr1 = input_ptr0 + input_w;
+          const float *input_ptr2 = input_ptr1 + input_w;
+          const float *input_ptr3 = input_ptr2 + input_w;
+          const float *input_ptr4 = input_ptr3 + input_w;
+          const float *input_ptr5 = input_ptr4 + input_w;
+          const float *input_ptr6 = input_ptr5 + input_w;
+          float *output_ptr0 = output_ptr + h * output_w + valid_w_start;
+          float *output_ptr1 = output_ptr0 + output_w;
+          float *output_ptr2 = output_ptr1 + output_w;
+          int remain = output_w_remain;
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
-        float32x4x2_t x0, x1, x2;
-        float32x4x2_t y0, y1, y2;
-        float32x4_t post = vdupq_n_f32(1.f / 9);
-        for (int loop = 0; loop < output_w_tiles; ++loop) {
-          x0 = vld2q_f32(input_ptr0);
-          x1 = vld2q_f32(input_ptr0 + 8);
-          x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
-          x2.val[1] = vextq_f32(x1.val[0], x1.val[0], 1);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
-          x0.val[1] = vPoolPreq_f32<P>(x1.val[0], x1.val[1]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
+          float32x4x2_t x0, x1, x2;
+          float32x4x2_t y0, y1, y2;
+          float32x4_t post = vdupq_n_f32(1.f / 9);
+          for (int loop = 0; loop < output_w_tiles; ++loop) {
+            x0 = vld2q_f32(input_ptr0);
+            x1 = vld2q_f32(input_ptr0 + 8);
+            x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
+            x2.val[1] = vextq_f32(x1.val[0], x1.val[0], 1);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
+            x0.val[1] = vPoolPreq_f32<P>(x1.val[0], x1.val[1]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
 
-          x0 = vld2q_f32(input_ptr1);
-          x1 = vld2q_f32(input_ptr1 + 8);
-          x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
-          x2.val[1] = vextq_f32(x1.val[0], x1.val[0], 1);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
-          x0.val[1] = vPoolPreq_f32<P>(x1.val[0], x1.val[1]);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
-          y0.val[1] = vPoolPreq_f32<P>(x0.val[1], y0.val[1]);
+            x0 = vld2q_f32(input_ptr1);
+            x1 = vld2q_f32(input_ptr1 + 8);
+            x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
+            x2.val[1] = vextq_f32(x1.val[0], x1.val[0], 1);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
+            x0.val[1] = vPoolPreq_f32<P>(x1.val[0], x1.val[1]);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
+            y0.val[1] = vPoolPreq_f32<P>(x0.val[1], y0.val[1]);
 
-          x0 = vld2q_f32(input_ptr2);
-          x1 = vld2q_f32(input_ptr2 + 8);
-          x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
-          x2.val[1] = vextq_f32(x1.val[0], x1.val[0], 1);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
-          x0.val[1] = vPoolPreq_f32<P>(x1.val[0], x1.val[1]);
-          y1.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y1.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
-          y0.val[0] = vPoolPreq_f32<P>(y1.val[0], y0.val[0]);
-          y0.val[1] = vPoolPreq_f32<P>(y1.val[1], y0.val[1]);
-          y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
-          y0.val[1] = vPoolPostq_f32<P>(y0.val[1], post);
-          vst1q_f32(output_ptr0, y0.val[0]);
-          vst1_f32(output_ptr0 + 4, vget_low_f32(y0.val[1]));
+            x0 = vld2q_f32(input_ptr2);
+            x1 = vld2q_f32(input_ptr2 + 8);
+            x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
+            x2.val[1] = vextq_f32(x1.val[0], x1.val[0], 1);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
+            x0.val[1] = vPoolPreq_f32<P>(x1.val[0], x1.val[1]);
+            y1.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y1.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
+            y0.val[0] = vPoolPreq_f32<P>(y1.val[0], y0.val[0]);
+            y0.val[1] = vPoolPreq_f32<P>(y1.val[1], y0.val[1]);
+            y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
+            y0.val[1] = vPoolPostq_f32<P>(y0.val[1], post);
+            vst1q_f32(output_ptr0, y0.val[0]);
+            vst1_f32(output_ptr0 + 4, vget_low_f32(y0.val[1]));
 
-          x0 = vld2q_f32(input_ptr3);
-          x1 = vld2q_f32(input_ptr3 + 8);
-          x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
-          x2.val[1] = vextq_f32(x1.val[0], x1.val[0], 1);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
-          x0.val[1] = vPoolPreq_f32<P>(x1.val[0], x1.val[1]);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
-          y1.val[0] = vPoolPreq_f32<P>(x0.val[0], y1.val[0]);
-          y1.val[1] = vPoolPreq_f32<P>(x0.val[1], y1.val[1]);
+            x0 = vld2q_f32(input_ptr3);
+            x1 = vld2q_f32(input_ptr3 + 8);
+            x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
+            x2.val[1] = vextq_f32(x1.val[0], x1.val[0], 1);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
+            x0.val[1] = vPoolPreq_f32<P>(x1.val[0], x1.val[1]);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
+            y1.val[0] = vPoolPreq_f32<P>(x0.val[0], y1.val[0]);
+            y1.val[1] = vPoolPreq_f32<P>(x0.val[1], y1.val[1]);
 
-          x0 = vld2q_f32(input_ptr4);
-          x1 = vld2q_f32(input_ptr4 + 8);
-          x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
-          x2.val[1] = vextq_f32(x1.val[0], x1.val[0], 1);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
-          x0.val[1] = vPoolPreq_f32<P>(x1.val[0], x1.val[1]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
-          y1.val[0] = vPoolPreq_f32<P>(y0.val[0], y1.val[0]);
-          y1.val[1] = vPoolPreq_f32<P>(y0.val[1], y1.val[1]);
-          y1.val[0] = vPoolPostq_f32<P>(y1.val[0], post);
-          y1.val[1] = vPoolPostq_f32<P>(y1.val[1], post);
-          vst1q_f32(output_ptr1, y1.val[0]);
-          vst1_f32(output_ptr1 + 4, vget_low_f32(y1.val[1]));
+            x0 = vld2q_f32(input_ptr4);
+            x1 = vld2q_f32(input_ptr4 + 8);
+            x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
+            x2.val[1] = vextq_f32(x1.val[0], x1.val[0], 1);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
+            x0.val[1] = vPoolPreq_f32<P>(x1.val[0], x1.val[1]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
+            y1.val[0] = vPoolPreq_f32<P>(y0.val[0], y1.val[0]);
+            y1.val[1] = vPoolPreq_f32<P>(y0.val[1], y1.val[1]);
+            y1.val[0] = vPoolPostq_f32<P>(y1.val[0], post);
+            y1.val[1] = vPoolPostq_f32<P>(y1.val[1], post);
+            vst1q_f32(output_ptr1, y1.val[0]);
+            vst1_f32(output_ptr1 + 4, vget_low_f32(y1.val[1]));
 
-          x0 = vld2q_f32(input_ptr5);
-          x1 = vld2q_f32(input_ptr5 + 8);
-          x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
-          x2.val[1] = vextq_f32(x1.val[0], x1.val[0], 1);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
-          x0.val[1] = vPoolPreq_f32<P>(x1.val[0], x1.val[1]);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
-          y0.val[1] = vPoolPreq_f32<P>(x0.val[1], y0.val[1]);
+            x0 = vld2q_f32(input_ptr5);
+            x1 = vld2q_f32(input_ptr5 + 8);
+            x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
+            x2.val[1] = vextq_f32(x1.val[0], x1.val[0], 1);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
+            x0.val[1] = vPoolPreq_f32<P>(x1.val[0], x1.val[1]);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
+            y0.val[1] = vPoolPreq_f32<P>(x0.val[1], y0.val[1]);
 
-          x0 = vld2q_f32(input_ptr6);
-          x1 = vld2q_f32(input_ptr6 + 8);
-          x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
-          x2.val[1] = vextq_f32(x1.val[0], x1.val[0], 1);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
-          x0.val[1] = vPoolPreq_f32<P>(x1.val[0], x1.val[1]);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
-          y0.val[1] = vPoolPreq_f32<P>(x0.val[1], y0.val[1]);
-          y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
-          y0.val[1] = vPoolPostq_f32<P>(y0.val[1], post);
-          vst1q_f32(output_ptr2, y0.val[0]);
-          vst1_f32(output_ptr2 + 4, vget_low_f32(y0.val[1]));
+            x0 = vld2q_f32(input_ptr6);
+            x1 = vld2q_f32(input_ptr6 + 8);
+            x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
+            x2.val[1] = vextq_f32(x1.val[0], x1.val[0], 1);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
+            x0.val[1] = vPoolPreq_f32<P>(x1.val[0], x1.val[1]);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
+            y0.val[1] = vPoolPreq_f32<P>(x0.val[1], y0.val[1]);
+            y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
+            y0.val[1] = vPoolPostq_f32<P>(y0.val[1], post);
+            vst1q_f32(output_ptr2, y0.val[0]);
+            vst1_f32(output_ptr2 + 4, vget_low_f32(y0.val[1]));
 
-          input_ptr0 += 12;
-          input_ptr1 += 12;
-          input_ptr2 += 12;
-          input_ptr3 += 12;
-          input_ptr4 += 12;
-          input_ptr5 += 12;
-          input_ptr6 += 12;
-          output_ptr0 += 6;
-          output_ptr1 += 6;
-          output_ptr2 += 6;
-        }
-        // remain w
-        if (remain >= 4) {
-          x0 = vld2q_f32(input_ptr0);
-          x1.val[0] = vdupq_n_f32(input_ptr0[8]);
-          x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            input_ptr0 += 12;
+            input_ptr1 += 12;
+            input_ptr2 += 12;
+            input_ptr3 += 12;
+            input_ptr4 += 12;
+            input_ptr5 += 12;
+            input_ptr6 += 12;
+            output_ptr0 += 6;
+            output_ptr1 += 6;
+            output_ptr2 += 6;
+          }
+          // remain width
+          if (remain >= 4) {
+            x0 = vld2q_f32(input_ptr0);
+            x1.val[0] = vdupq_n_f32(input_ptr0[8]);
+            x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
 
-          x0 = vld2q_f32(input_ptr1);
-          x1.val[0] = vdupq_n_f32(input_ptr1[8]);
-          x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
+            x0 = vld2q_f32(input_ptr1);
+            x1.val[0] = vdupq_n_f32(input_ptr1[8]);
+            x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
 
-          x0 = vld2q_f32(input_ptr2);
-          x1.val[0] = vdupq_n_f32(input_ptr2[8]);
-          x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
-          y1.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y0.val[0] = vPoolPreq_f32<P>(y1.val[0], y0.val[0]);
-          y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
-          vst1q_f32(output_ptr0, y0.val[0]);
+            x0 = vld2q_f32(input_ptr2);
+            x1.val[0] = vdupq_n_f32(input_ptr2[8]);
+            x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
+            y1.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y0.val[0] = vPoolPreq_f32<P>(y1.val[0], y0.val[0]);
+            y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
+            vst1q_f32(output_ptr0, y0.val[0]);
 
-          x0 = vld2q_f32(input_ptr3);
-          x1.val[0] = vdupq_n_f32(input_ptr3[8]);
-          x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y1.val[0] = vPoolPreq_f32<P>(x0.val[0], y1.val[0]);
+            x0 = vld2q_f32(input_ptr3);
+            x1.val[0] = vdupq_n_f32(input_ptr3[8]);
+            x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y1.val[0] = vPoolPreq_f32<P>(x0.val[0], y1.val[0]);
 
-          x0 = vld2q_f32(input_ptr4);
-          x1.val[0] = vdupq_n_f32(input_ptr4[8]);
-          x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y1.val[0] = vPoolPreq_f32<P>(y0.val[0], y1.val[0]);
-          y1.val[0] = vPoolPostq_f32<P>(y1.val[0], post);
-          vst1q_f32(output_ptr1, y1.val[0]);
+            x0 = vld2q_f32(input_ptr4);
+            x1.val[0] = vdupq_n_f32(input_ptr4[8]);
+            x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y1.val[0] = vPoolPreq_f32<P>(y0.val[0], y1.val[0]);
+            y1.val[0] = vPoolPostq_f32<P>(y1.val[0], post);
+            vst1q_f32(output_ptr1, y1.val[0]);
 
-          x0 = vld2q_f32(input_ptr5);
-          x1.val[0] = vdupq_n_f32(input_ptr5[8]);
-          x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
+            x0 = vld2q_f32(input_ptr5);
+            x1.val[0] = vdupq_n_f32(input_ptr5[8]);
+            x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
 
-          x0 = vld2q_f32(input_ptr6);
-          x1.val[0] = vdupq_n_f32(input_ptr6[8]);
-          x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
-          y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
-          vst1q_f32(output_ptr2, y0.val[0]);
+            x0 = vld2q_f32(input_ptr6);
+            x1.val[0] = vdupq_n_f32(input_ptr6[8]);
+            x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
+            y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
+            vst1q_f32(output_ptr2, y0.val[0]);
 
-          input_ptr0 += 8;
-          input_ptr1 += 8;
-          input_ptr2 += 8;
-          input_ptr3 += 8;
-          input_ptr4 += 8;
-          input_ptr5 += 8;
-          input_ptr6 += 8;
-          output_ptr0 += 4;
-          output_ptr1 += 4;
-          output_ptr2 += 4;
-          remain -= 4;
-        }
+            input_ptr0 += 8;
+            input_ptr1 += 8;
+            input_ptr2 += 8;
+            input_ptr3 += 8;
+            input_ptr4 += 8;
+            input_ptr5 += 8;
+            input_ptr6 += 8;
+            output_ptr0 += 4;
+            output_ptr1 += 4;
+            output_ptr2 += 4;
+            remain -= 4;
+          }
 #endif  // __ARM_NEON__
-        for (int r = 0; r < remain; ++r) {
-          float m0 = PoolPre<P>(input_ptr0[2 * r], input_ptr0[2 * r + 1]);
-          m0 = PoolPre<P>(m0, input_ptr0[2 * r + 2]);
-          float m1 = PoolPre<P>(input_ptr1[2 * r], input_ptr1[2 * r + 1]);
-          m1 = PoolPre<P>(m1, input_ptr1[2 * r + 2]);
-          float m2 = PoolPre<P>(input_ptr2[2 * r], input_ptr2[2 * r + 1]);
-          m2 = PoolPre<P>(m2, input_ptr2[2 * r + 2]);
-          float m3 = PoolPre<P>(input_ptr3[2 * r], input_ptr3[2 * r + 1]);
-          m3 = PoolPre<P>(m3, input_ptr3[2 * r + 2]);
-          float m4 = PoolPre<P>(input_ptr4[2 * r], input_ptr4[2 * r + 1]);
-          m4 = PoolPre<P>(m4, input_ptr4[2 * r + 2]);
-          float m5 = PoolPre<P>(input_ptr5[2 * r], input_ptr5[2 * r + 1]);
-          m5 = PoolPre<P>(m5, input_ptr5[2 * r + 2]);
-          float m6 = PoolPre<P>(input_ptr6[2 * r], input_ptr6[2 * r + 1]);
-          m6 = PoolPre<P>(m6, input_ptr6[2 * r + 2]);
+          for (int r = 0; r < remain; ++r) {
+            float m0 = PoolPre<P>(input_ptr0[2 * r], input_ptr0[2 * r + 1]);
+            m0 = PoolPre<P>(m0, input_ptr0[2 * r + 2]);
+            float m1 = PoolPre<P>(input_ptr1[2 * r], input_ptr1[2 * r + 1]);
+            m1 = PoolPre<P>(m1, input_ptr1[2 * r + 2]);
+            float m2 = PoolPre<P>(input_ptr2[2 * r], input_ptr2[2 * r + 1]);
+            m2 = PoolPre<P>(m2, input_ptr2[2 * r + 2]);
+            float m3 = PoolPre<P>(input_ptr3[2 * r], input_ptr3[2 * r + 1]);
+            m3 = PoolPre<P>(m3, input_ptr3[2 * r + 2]);
+            float m4 = PoolPre<P>(input_ptr4[2 * r], input_ptr4[2 * r + 1]);
+            m4 = PoolPre<P>(m4, input_ptr4[2 * r + 2]);
+            float m5 = PoolPre<P>(input_ptr5[2 * r], input_ptr5[2 * r + 1]);
+            m5 = PoolPre<P>(m5, input_ptr5[2 * r + 2]);
+            float m6 = PoolPre<P>(input_ptr6[2 * r], input_ptr6[2 * r + 1]);
+            m6 = PoolPre<P>(m6, input_ptr6[2 * r + 2]);
 
-          m0 = PoolPre<P>(PoolPre<P>(m0, m1), m2);
-          m1 = PoolPre<P>(PoolPre<P>(m2, m3), m4);
-          m2 = PoolPre<P>(PoolPre<P>(m4, m5), m6);
-          output_ptr0[r] = PoolPost<P>(m0, avg);
-          output_ptr1[r] = PoolPost<P>(m1, avg);
-          output_ptr2[r] = PoolPost<P>(m2, avg);
+            m0 = PoolPre<P>(PoolPre<P>(m0, m1), m2);
+            m1 = PoolPre<P>(PoolPre<P>(m2, m3), m4);
+            m2 = PoolPre<P>(PoolPre<P>(m4, m5), m6);
+            output_ptr0[r] = PoolPost<P>(m0, avg);
+            output_ptr1[r] = PoolPost<P>(m1, avg);
+            output_ptr2[r] = PoolPost<P>(m2, avg);
+          }
         }
-      }
-      // remain h
-      int start_h = valid_h_start + valid_h / 3 * 3;
-      for (int h = start_h; h < valid_h_end; ++h) {
-        size_t offset = (2 * h - padding_h) * input_w + input_w_start;
-        const float *input_ptr0 = input_ptr + offset;
-        const float *input_ptr1 = input_ptr0 + input_w;
-        const float *input_ptr2 = input_ptr1 + input_w;
-        float *output_ptr0 = output_ptr + h * output_w + valid_w_start;
-        int remain = output_w_remain;
+        // remain height
+        int start_h = valid_h_start + valid_h / 3 * 3;
+        for (int h = start_h; h < valid_h_end; ++h) {
+          size_t offset = (2 * h - padding_h) * input_w + input_w_start;
+          const float *input_ptr0 = input_ptr + offset;
+          const float *input_ptr1 = input_ptr0 + input_w;
+          const float *input_ptr2 = input_ptr1 + input_w;
+          float *output_ptr0 = output_ptr + h * output_w + valid_w_start;
+          int remain = output_w_remain;
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
-        float32x4x2_t x0, x1, x2, y0;
-        float32x4_t post = vdupq_n_f32(1.f / 9);
-        for (int loop = 0; loop < output_w_tiles; ++loop) {
-          x0 = vld2q_f32(input_ptr0);
-          x1 = vld2q_f32(input_ptr0 + 8);
-          x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
-          x2.val[1] = vextq_f32(x1.val[0], x1.val[0], 1);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
-          x0.val[1] = vPoolPreq_f32<P>(x1.val[0], x1.val[1]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
+          float32x4x2_t x0, x1, x2, y0;
+          float32x4_t post = vdupq_n_f32(1.f / 9);
+          for (int loop = 0; loop < output_w_tiles; ++loop) {
+            x0 = vld2q_f32(input_ptr0);
+            x1 = vld2q_f32(input_ptr0 + 8);
+            x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
+            x2.val[1] = vextq_f32(x1.val[0], x1.val[0], 1);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
+            x0.val[1] = vPoolPreq_f32<P>(x1.val[0], x1.val[1]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
 
-          x0 = vld2q_f32(input_ptr1);
-          x1 = vld2q_f32(input_ptr1 + 8);
-          x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
-          x2.val[1] = vextq_f32(x1.val[0], x1.val[0], 1);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
-          x0.val[1] = vPoolPreq_f32<P>(x1.val[0], x1.val[1]);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
-          y0.val[1] = vPoolPreq_f32<P>(x0.val[1], y0.val[1]);
+            x0 = vld2q_f32(input_ptr1);
+            x1 = vld2q_f32(input_ptr1 + 8);
+            x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
+            x2.val[1] = vextq_f32(x1.val[0], x1.val[0], 1);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
+            x0.val[1] = vPoolPreq_f32<P>(x1.val[0], x1.val[1]);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
+            y0.val[1] = vPoolPreq_f32<P>(x0.val[1], y0.val[1]);
 
-          x0 = vld2q_f32(input_ptr2);
-          x1 = vld2q_f32(input_ptr2 + 8);
-          x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
-          x2.val[1] = vextq_f32(x1.val[0], x1.val[0], 1);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
-          x0.val[1] = vPoolPreq_f32<P>(x1.val[0], x1.val[1]);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
-          y0.val[1] = vPoolPreq_f32<P>(x0.val[1], y0.val[1]);
-          y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
-          y0.val[1] = vPoolPostq_f32<P>(y0.val[1], post);
-          vst1q_f32(output_ptr0, y0.val[0]);
-          vst1_f32(output_ptr0 + 4, vget_low_f32(y0.val[1]));
+            x0 = vld2q_f32(input_ptr2);
+            x1 = vld2q_f32(input_ptr2 + 8);
+            x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
+            x2.val[1] = vextq_f32(x1.val[0], x1.val[0], 1);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
+            x0.val[1] = vPoolPreq_f32<P>(x1.val[0], x1.val[1]);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            x0.val[1] = vPoolPreq_f32<P>(x0.val[1], x2.val[1]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
+            y0.val[1] = vPoolPreq_f32<P>(x0.val[1], y0.val[1]);
+            y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
+            y0.val[1] = vPoolPostq_f32<P>(y0.val[1], post);
+            vst1q_f32(output_ptr0, y0.val[0]);
+            vst1_f32(output_ptr0 + 4, vget_low_f32(y0.val[1]));
 
-          input_ptr0 += 12;
-          input_ptr1 += 12;
-          input_ptr2 += 12;
-          output_ptr0 += 6;
-        }
-        // remain w
-        if (remain >= 4) {
-          x0 = vld2q_f32(input_ptr0);
-          x1.val[0] = vdupq_n_f32(input_ptr0[8]);
-          x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            input_ptr0 += 12;
+            input_ptr1 += 12;
+            input_ptr2 += 12;
+            output_ptr0 += 6;
+          }
+          // remain width
+          if (remain >= 4) {
+            x0 = vld2q_f32(input_ptr0);
+            x1.val[0] = vdupq_n_f32(input_ptr0[8]);
+            x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
 
-          x0 = vld2q_f32(input_ptr1);
-          x1.val[0] = vdupq_n_f32(input_ptr1[8]);
-          x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
+            x0 = vld2q_f32(input_ptr1);
+            x1.val[0] = vdupq_n_f32(input_ptr1[8]);
+            x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
 
-          x0 = vld2q_f32(input_ptr2);
-          x1.val[0] = vdupq_n_f32(input_ptr2[8]);
-          x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
-          x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
-          y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
-          y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
-          vst1q_f32(output_ptr0, y0.val[0]);
+            x0 = vld2q_f32(input_ptr2);
+            x1.val[0] = vdupq_n_f32(input_ptr2[8]);
+            x2.val[0] = vextq_f32(x0.val[0], x1.val[0], 1);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x0.val[1]);
+            x0.val[0] = vPoolPreq_f32<P>(x0.val[0], x2.val[0]);
+            y0.val[0] = vPoolPreq_f32<P>(x0.val[0], y0.val[0]);
+            y0.val[0] = vPoolPostq_f32<P>(y0.val[0], post);
+            vst1q_f32(output_ptr0, y0.val[0]);
 
-          input_ptr0 += 8;
-          input_ptr1 += 8;
-          input_ptr2 += 8;
-          output_ptr0 += 4;
-          remain -= 4;
-        }
+            input_ptr0 += 8;
+            input_ptr1 += 8;
+            input_ptr2 += 8;
+            output_ptr0 += 4;
+            remain -= 4;
+          }
 #endif  // __ARM_NEON__
-        for (int r = 0; r < remain; ++r) {
-          float m0 = PoolPre<P>(input_ptr0[2 * r], input_ptr0[2 * r + 1]);
-          m0 = PoolPre<P>(m0, input_ptr0[2 * r + 2]);
-          float m1 = PoolPre<P>(input_ptr1[2 * r], input_ptr1[2 * r + 1]);
-          m1 = PoolPre<P>(m1, input_ptr1[2 * r + 2]);
-          float m2 = PoolPre<P>(input_ptr2[2 * r], input_ptr2[2 * r + 1]);
-          m2 = PoolPre<P>(m2, input_ptr2[2 * r + 2]);
+          for (int r = 0; r < remain; ++r) {
+            float m0 = PoolPre<P>(input_ptr0[2 * r], input_ptr0[2 * r + 1]);
+            m0 = PoolPre<P>(m0, input_ptr0[2 * r + 2]);
+            float m1 = PoolPre<P>(input_ptr1[2 * r], input_ptr1[2 * r + 1]);
+            m1 = PoolPre<P>(m1, input_ptr1[2 * r + 2]);
+            float m2 = PoolPre<P>(input_ptr2[2 * r], input_ptr2[2 * r + 1]);
+            m2 = PoolPre<P>(m2, input_ptr2[2 * r + 2]);
 
-          m0 = PoolPre<P>(PoolPre<P>(m0, m1), m2);
-          output_ptr0[r] = PoolPost<P>(m0, avg);
+            m0 = PoolPre<P>(PoolPre<P>(m0, m1), m2);
+            output_ptr0[r] = PoolPost<P>(m0, avg);
+          }
         }
       }
     }
