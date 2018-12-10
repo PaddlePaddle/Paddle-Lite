@@ -197,6 +197,8 @@ inline void Pooling3x3ValidCol(const float *input, const int h_output,
     vst1q_lane_f32(output3, y0.val[0], 3);
     vst1q_lane_f32(output4, y0.val[1], 0);
     vst1q_lane_f32(output5, y0.val[1], 1);
+    input_offset += 6 * Stride * input_w;
+    output_offset += 6 * output_w;
   }
 #endif
   for (int h = remain_start; h < h_output_end; ++h) {
@@ -222,7 +224,7 @@ inline void Pooling3x3NormalRow(const float *input, const int h_output,
   const int h_end = h_in_end < input_h ? h_in_end : input_h;
 
   int valid_w_start = (padding_w + Stride - 1) / Stride;
-  int valid_w_end = output_w - valid_w_start;
+  int valid_w_end = (input_w - 3) / Stride + 1 + valid_w_start;
 
   float *output_ptr = output + h_output * output_w;
   // border left
@@ -279,11 +281,11 @@ struct Pooling3x3<P, 1> {
     int image_size = input_h * input_w;
     int out_image_size = output_h * output_w;
     int valid_h_start = padding_h;
-    int valid_h_end = output_h - valid_h_start;
-    int valid_h = valid_h_end - valid_h_start;
+    int valid_h = input_h - 2;
+    int valid_h_end = valid_h_start + valid_h;
     int valid_w_start = padding_w;
-    int valid_w_end = output_w - valid_w_start;
-    int valid_w = valid_w_end - valid_w_start;
+    int valid_w = input_w - 2;
+    int valid_w_end = valid_w_start + valid_w;
     float avg = 1.f / 9;
 
     #pragma omp parallel for
@@ -662,11 +664,11 @@ struct Pooling3x3<P, 2> {
     int image_size = input_h * input_w;
     int out_image_size = output_h * output_w;
     int valid_h_start = (padding_h + 1) / 2;
-    int valid_h_end = output_h - valid_h_start;
-    int valid_h = valid_h_end - valid_h_start;
+    int valid_h = (input_h - 3) / 2 + 1;
+    int valid_h_end = valid_h_start + valid_h;
     int valid_w_start = (padding_w + 1) / 2;
-    int valid_w_end = output_w - valid_w_start;
-    int valid_w = valid_w_end - valid_w_start;
+    int valid_w = (input_w - 3) / 2 + 1;
+    int valid_w_end = valid_w_start + valid_w;
     float avg = 1.f / 9;
 
     #pragma omp parallel for
