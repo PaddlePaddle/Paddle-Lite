@@ -111,24 +111,36 @@ void concat_images(int16_t **images_in, float **scales_in, void *image_out,
   fpga_flush(image_out, height * align_each_out_area_cw * sizeof(int16_t));
 }
 
-void split_image(int16_t *image_in, float *scale_in, void **images_out,
-                 float **scales_out, int image_num, uint32_t *channel_nums,
-                 int height, int width) {
+void split_image(int16_t *image_in, const float *scale_in, void **images_out,
+                 float **scales_out, int image_num,
+                 const uint32_t *channel_nums, int height, int width) {
   int total_channel = 0;
   for (int i = 0; i < image_num; i++) {
     scales_out[i][0] = scale_in[0];
     scales_out[i][1] = scale_in[1];
     total_channel += channel_nums[i];
   }
+  int element_num = height * align_to_x(width * total_channel, IMAGE_ALIGNMENT);
+  fpga_invalidate(image_in, element_num * sizeof(int16_t));
 
+  int src_offset = 0, des_offset = 0;
   for (int h = 0; h < height; h++) {
-    int src_offset = h * align_to_x(total_channel * width, IMAGE_ALIGNMENT);
-    for (int i = 0; i < image_num; i++) {
-      int des_offset = h * align_to_x(channel_nums[i] * width, IMAGE_ALIGNMENT);
-      memcpy((int16_t *)images_out[i] + des_offset, image_in + src_offset,
-             channel_nums[i] * sizeof(int16_t));
-      src_offset += channel_nums[i];
+    for (int w = 0; w < width; w++) {
+      src_offset = h * align_to_x(total_channel * width, IMAGE_ALIGNMENT) +
+                   w * total_channel;
+      for (int i = 0; i < image_num; i++) {
+        des_offset = h * align_to_x(channel_nums[i] * width, IMAGE_ALIGNMENT) +
+                     w * channel_nums[i];
+        memcpy((int16_t *)images_out[i] + des_offset, image_in + src_offset,
+               channel_nums[i] * sizeof(int16_t));
+        src_offset += channel_nums[i];
+      }
     }
+  }
+
+  for (int i = 0; i < image_num; i++) {
+    element_num = height * align_to_x(width * channel_nums[i], IMAGE_ALIGNMENT);
+    fpga_flush(images_out[i], element_num * sizeof(int16_t));
   }
 }
 
