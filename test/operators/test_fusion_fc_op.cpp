@@ -17,8 +17,10 @@ limitations under the License. */
 #include "../test_helper.h"
 #include "../test_include.h"
 #include "framework/operator.h"
-#include "operators/fusion_fc_int8_op.h"
 #include "operators/fusion_fc_op.h"
+#ifdef FUSION_FC_INT8_OP
+#include "operators/fusion_fc_int8_op.h"
+#endif
 
 #define a(i, j) a[(i)*lda + (j)]
 #define b(i, j) b[(i)*ldb + (j)]
