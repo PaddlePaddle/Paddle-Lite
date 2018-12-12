@@ -85,6 +85,7 @@ extension VarDesc: CustomStringConvertible, CustomDebugStringConvertible {
         if let inTensorDesc = tensorDesc {
             str += " dim size: \(inTensorDesc.dims.count) \n"
             str += "    dim: \(inTensorDesc.dims) \n"
+            str += "type:\(self.type) \n"
         } else {
             str += " no dim info"
         }

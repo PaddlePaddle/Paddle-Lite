@@ -13,9 +13,10 @@
  limitations under the License. */
 
 import Foundation
+import Metal
 
 class BatchNormParam<P: PrecisionType>: OpParam {
-  typealias ParamPrecisionType = P
+  //typealias ParamPrecisionType = P
   required init(opDesc: OpDesc, inScope: Scope) throws {
     do {
       input = try BatchNormParam.inputX(inputs: opDesc.inputs, from: inScope)
