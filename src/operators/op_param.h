@@ -1634,7 +1634,9 @@ class FusionFcParam : public OpParam {
     axis_ = GetAttr<int>("axis", attrs);
 
 #ifdef FUSION_FC_INT8_OP
-    scale_ = InputScaleFrom<GType>(inputs, scope);
+    if (inputs.count("Scale")) {
+      scale_ = InputScaleFrom<GType>(inputs, scope);
+    }
 #endif
   }
   GType *InputX() const { return input_x_; }
@@ -1721,7 +1723,9 @@ class FusionConvAddReluParam : public FusionConvAddParam<DeviceType> {
                          const AttributeMap &attrs, const Scope &scope)
       : FusionConvAddParam<DeviceType>(inputs, outputs, attrs, scope) {
 #ifdef FUSION_CONVADDRELU_INT8_OP
-    scale_ = OpParam::InputScaleFrom<GType>(inputs, scope);
+    if (inputs.count("Scale")) {
+      scale_ = OpParam::InputScaleFrom<GType>(inputs, scope);
+    }
 #endif
   }
 #ifdef FUSION_CONVADDRELU_INT8_OP
