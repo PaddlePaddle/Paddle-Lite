@@ -16,7 +16,7 @@
 import Foundation
 
 class ReluParam<P: PrecisionType>: OpParam {
-  typealias ParamPrecisionType = P
+  //typealias ParamPrecisionType = P
   required init(opDesc: OpDesc, inScope: Scope) throws {
     do {
       input = try ReluParam.inputX(inputs: opDesc.inputs, from: inScope)

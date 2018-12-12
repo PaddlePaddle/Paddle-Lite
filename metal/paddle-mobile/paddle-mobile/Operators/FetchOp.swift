@@ -13,6 +13,7 @@
  limitations under the License. */
 
 import Foundation
+import Metal
 
 class FetchParam<P: PrecisionType>: OpParam{
   var output: FetchHolder
@@ -29,7 +30,7 @@ class FetchParam<P: PrecisionType>: OpParam{
     }
   }
   
-  typealias ParamPrecisionType = P
+  //typealias ParamPrecisionType = P
 }
 
 class FetchKernel<P: PrecisionType>: Kernel, Computable {
