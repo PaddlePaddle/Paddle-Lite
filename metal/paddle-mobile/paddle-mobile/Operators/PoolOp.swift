@@ -15,7 +15,7 @@
 import Foundation
 
 class PoolParam<P: PrecisionType>: OpParam {
-  typealias ParamPrecisionType = P
+  //typealias ParamPrecisionType = P
   required init(opDesc: OpDesc, inScope: Scope) throws {
     do {
       input = try PoolParam.inputX(inputs: opDesc.inputs, from: inScope)

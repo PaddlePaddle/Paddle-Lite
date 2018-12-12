@@ -13,8 +13,10 @@
  limitations under the License. */
 
 import Foundation
+import MetalKit
+import CoreMedia
 
-protocol Tensorial: CustomStringConvertible, CustomDebugStringConvertible{
+protocol Tensorial: Variant {
   var dim: Dim { get set }
   func numel() -> Int
   var layout: DataLayout { get }
@@ -61,7 +63,7 @@ class Tensor<P: PrecisionType>: Tensorial {
     }
   }
   
-  required init(inDim: Dim, inLayout: DataLayout = DataLayout.NCHW()) {
+  init(inDim: Dim, inLayout: DataLayout = DataLayout.NCHW()) {
     dim = inDim
     let size = inDim.numel() * MemoryLayout<P>.size
     let pointer = UnsafeMutablePointer<P>.allocate(capacity: size)
