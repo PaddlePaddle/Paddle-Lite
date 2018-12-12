@@ -204,7 +204,8 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
 
     arg->conv_arg[i].image.address = input_ptr;
     arg->conv_arg[i].image.scale_address = input->scale;
-    arg->conv_arg[i].image.channels = (uint32_t)input->dims()[1];
+    arg->conv_arg[i].image.channels =
+        (uint32_t)get_aligned_channel_num((int)(input->dims()[1]));  // NOLINT
     arg->conv_arg[i].image.height = (uint32_t)input->dims()[2];
     arg->conv_arg[i].image.width = (uint32_t)input->dims()[3];
     arg->conv_arg[i].image.pad_height = (uint32_t)padding_h;
@@ -216,7 +217,7 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
     int num_after_alignment = filter::calc_aligned_num(
         arg->filter_num, (int)input->dims()[1]);  // NOLINT
     arg->conv_arg[i].free_space =
-        fpga_malloc(num_after_alignment * 2 * sizeof(half));
+        fpga_malloc(num_after_alignment * 2 * sizeof(float));  // half
   }
 }
 

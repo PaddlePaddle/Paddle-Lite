@@ -15,7 +15,7 @@
 import Foundation
 
 class ConvAddPreluParam<P: PrecisionType>: OpParam {
-  typealias ParamPrecisionType = P
+  //typealias ParamPrecisionType = P
   required init(opDesc: OpDesc, inScope: Scope) throws {
     do {
       filter = try ConvAddPreluParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
@@ -34,8 +34,8 @@ class ConvAddPreluParam<P: PrecisionType>: OpParam {
   }
   
   let input: Texture<P>
-  let y: Tensor<ParamPrecisionType>
-  let filter: Tensor<ParamPrecisionType>
+  let y: Tensor<P>
+  let filter: Tensor<P>
   let mode: String
   let alpha: Tensor<P>
   var output: Texture<P>
