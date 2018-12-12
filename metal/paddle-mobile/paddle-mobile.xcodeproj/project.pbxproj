@@ -29,6 +29,11 @@
 		4AF9287921341661005B6C3A /* Softmax.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AF9287821341661005B6C3A /* Softmax.metal */; };
 		4AF928822135673D005B6C3A /* ConcatKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AF928812135673D005B6C3A /* ConcatKernel.metal */; };
 		4AF9288421357BE3005B6C3A /* Elementwise.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AF9288321357BE3005B6C3A /* Elementwise.metal */; };
+		C28FDF8421B7858F0054EFAC /* MobileNetCombined.swift in Sources */ = {isa = PBXBuildFile; fileRef = C28FDF8221B7858F0054EFAC /* MobileNetCombined.swift */; };
+		C28FDF8521B7858F0054EFAC /* YoloNet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C28FDF8321B7858F0054EFAC /* YoloNet.swift */; };
+		C28FE02F21BA68C00054EFAC /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C28FE02C21BA68C00054EFAC /* Metal.framework */; };
+		C28FE03021BA68C00054EFAC /* MetalPerformanceShaders.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C28FE02D21BA68C00054EFAC /* MetalPerformanceShaders.framework */; };
+		C28FE03121BA68C00054EFAC /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C28FE02E21BA68C00054EFAC /* MetalKit.framework */; };
 		D3831F70E7E0B565B9AC22DA /* Pods_paddle_mobile.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD2E06330A1E7129C918DB46 /* Pods_paddle_mobile.framework */; };
 		FC0226562138F33800F395E2 /* TransposeKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC0226552138F33800F395E2 /* TransposeKernel.metal */; };
 		FC0226582138F38D00F395E2 /* PoolKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC0226572138F38D00F395E2 /* PoolKernel.metal */; };
@@ -72,7 +77,6 @@
 		FC4FD9752140E1DE0073E130 /* PaddleMobile.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC4FD9742140E1DE0073E130 /* PaddleMobile.swift */; };
 		FC4FD9792140E4980073E130 /* PaddleMobileCPU.h in Headers */ = {isa = PBXBuildFile; fileRef = FC4FD9772140E4980073E130 /* PaddleMobileCPU.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		FC4FD97A2140E4980073E130 /* libpaddle-mobile.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FC4FD9782140E4980073E130 /* libpaddle-mobile.a */; };
-		FC4FD97E2140F2C30073E130 /* libstdc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = FC4FD97D2140F2C30073E130 /* libstdc++.tbd */; };
 		FC5163F620EF556E00636C28 /* Texture2DTo2DArrayKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC5163F520EF556E00636C28 /* Texture2DTo2DArrayKernel.swift */; };
 		FC60DB8920E9AAA500FF203F /* MetalExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC60DB8820E9AAA500FF203F /* MetalExtension.swift */; };
 		FC803BBF214CB65A0094B8E5 /* ConvAddPreluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC803BBE214CB65A0094B8E5 /* ConvAddPreluOp.swift */; };
@@ -160,6 +164,11 @@
 		4AF9287821341661005B6C3A /* Softmax.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Softmax.metal; sourceTree = "<group>"; };
 		4AF928812135673D005B6C3A /* ConcatKernel.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = ConcatKernel.metal; sourceTree = "<group>"; };
 		4AF9288321357BE3005B6C3A /* Elementwise.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Elementwise.metal; sourceTree = "<group>"; };
+		C28FDF8221B7858F0054EFAC /* MobileNetCombined.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MobileNetCombined.swift; sourceTree = "<group>"; };
+		C28FDF8321B7858F0054EFAC /* YoloNet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = YoloNet.swift; sourceTree = "<group>"; };
+		C28FE02C21BA68C00054EFAC /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		C28FE02D21BA68C00054EFAC /* MetalPerformanceShaders.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalPerformanceShaders.framework; path = System/Library/Frameworks/MetalPerformanceShaders.framework; sourceTree = SDKROOT; };
+		C28FE02E21BA68C00054EFAC /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
 		CDF58151D902A1CBAE56A0C2 /* Pods-paddle-mobile.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-paddle-mobile.debug.xcconfig"; path = "../Pods/Target Support Files/Pods-paddle-mobile/Pods-paddle-mobile.debug.xcconfig"; sourceTree = "<group>"; };
 		DD2E06330A1E7129C918DB46 /* Pods_paddle_mobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_paddle_mobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2A7957C92EDA5C3BEC0FFC2 /* Pods-paddle-mobile.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-paddle-mobile.release.xcconfig"; path = "../Pods/Target Support Files/Pods-paddle-mobile/Pods-paddle-mobile.release.xcconfig"; sourceTree = "<group>"; };
@@ -277,7 +286,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FC4FD97E2140F2C30073E130 /* libstdc++.tbd in Frameworks */,
+				C28FE02F21BA68C00054EFAC /* Metal.framework in Frameworks */,
+				C28FE03021BA68C00054EFAC /* MetalPerformanceShaders.framework in Frameworks */,
+				C28FE03121BA68C00054EFAC /* MetalKit.framework in Frameworks */,
 				D3831F70E7E0B565B9AC22DA /* Pods_paddle_mobile.framework in Frameworks */,
 				FC4FD97A2140E4980073E130 /* libpaddle-mobile.a in Frameworks */,
 			);
@@ -289,6 +300,9 @@
 		336CBE234BF5DE48658DE65F /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				C28FE02C21BA68C00054EFAC /* Metal.framework */,
+				C28FE02E21BA68C00054EFAC /* MetalKit.framework */,
+				C28FE02D21BA68C00054EFAC /* MetalPerformanceShaders.framework */,
 				FC4FD97D2140F2C30073E130 /* libstdc++.tbd */,
 				DD2E06330A1E7129C918DB46 /* Pods_paddle_mobile.framework */,
 			);
@@ -325,6 +339,8 @@
 		FC039B6C20E11C3C0081E9F8 /* paddle-mobile */ = {
 			isa = PBXGroup;
 			children = (
+				C28FDF8221B7858F0054EFAC /* MobileNetCombined.swift */,
+				C28FDF8321B7858F0054EFAC /* YoloNet.swift */,
 				FCE9D7B6214F869000B520C3 /* Net.swift */,
 				FC9A19E22148C31300CD9CBF /* MobilenetSSD_AR.swift */,
 				FC33B0EF2147659000714A93 /* MobileNet.swift */,
@@ -681,6 +697,7 @@
 				FC039BBA20E11CC20081E9F8 /* TensorDesc.swift in Sources */,
 				FC039BA020E11CB20081E9F8 /* Dim.swift in Sources */,
 				FC039BB820E11CC20081E9F8 /* framework.pb.swift in Sources */,
+				C28FDF8521B7858F0054EFAC /* YoloNet.swift in Sources */,
 				FC039B9920E11C9A0081E9F8 /* Types.swift in Sources */,
 				FC4CB74920F0B954007C0C6D /* ConvKernel.metal in Sources */,
 				FCA3A1632132A4AC00084FE5 /* ReshapeKernel.metal in Sources */,
@@ -725,6 +742,7 @@
 				FCE9D7B7214F869000B520C3 /* Net.swift in Sources */,
 				FC0E2DBE20EE460D009C1FAC /* BatchNormKernel.swift in Sources */,
 				FC039BAB20E11CBC0081E9F8 /* Operator.swift in Sources */,
+				C28FDF8421B7858F0054EFAC /* MobileNetCombined.swift in Sources */,
 				FCD04E6A20F319EC0007374F /* SoftmaxOp.swift in Sources */,
 				FC292C82214255BD00CF622F /* MobileNetSSD.swift in Sources */,
 				FCBCCC612122FBDF00D94F7E /* PriorBoxKernel.swift in Sources */,
@@ -885,9 +903,9 @@
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
 				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = A798K58VVL;
+				DEVELOPMENT_TEAM = "";
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
@@ -904,10 +922,11 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/paddle-mobile/CPU",
 				);
-				MACH_O_TYPE = mh_dylib;
+				MACH_O_TYPE = staticlib;
 				MTL_LANGUAGE_REVISION = UseDeploymentTarget;
 				PRODUCT_BUNDLE_IDENTIFIER = "orange.paddle-mobile";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.0;
@@ -921,9 +940,9 @@
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
 				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = A798K58VVL;
+				DEVELOPMENT_TEAM = "";
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
@@ -940,10 +959,11 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/paddle-mobile/CPU",
 				);
-				MACH_O_TYPE = mh_dylib;
+				MACH_O_TYPE = staticlib;
 				MTL_LANGUAGE_REVISION = UseDeploymentTarget;
 				PRODUCT_BUNDLE_IDENTIFIER = "orange.paddle-mobile";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

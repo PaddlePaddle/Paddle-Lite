@@ -15,7 +15,7 @@
 import Foundation
 
 class BoxcoderParam<P: PrecisionType>: OpParam {
-  typealias ParamPrecisionType = P
+  //typealias ParamPrecisionType = P
   required init(opDesc: OpDesc, inScope: Scope) throws {
     do {
       priorBox = try BoxcoderParam.getFirstTensor(key: "PriorBox", map: opDesc.inputs, from: inScope)
