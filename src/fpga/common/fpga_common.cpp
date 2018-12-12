@@ -113,6 +113,12 @@ int fpga_invalidate(void *address, size_t size) {
   return 0;
 #endif
 }
-
+uint64_t vaddr_to_paddr(void *address) {
+#ifdef PADDLE_MOBILE_ZU5
+  return driver::vaddr_to_paddr(address);
+#else
+  return 0;
+#endif
+}
 }  // namespace fpga
 }  // namespace paddle_mobile
