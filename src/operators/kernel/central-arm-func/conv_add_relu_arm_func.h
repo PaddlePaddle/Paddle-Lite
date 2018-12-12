@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef FUSION_CONVADDRELU_OP
 
 #pragma once
+#include <type_traits>
 #include <vector>
 #include "operators/math/conv_func.h"
 #include "operators/math/im2col.h"
@@ -39,8 +40,10 @@ void ConvAddReluCompute(const FusionConvAddReluParam<CPU> &param) {
   float beta = 1.0f;
 
 #ifdef FUSION_CONVADDRELU_INT8_OP
-  alpha = param.InputScale()->data<float>()[0];
-  beta = 0.0f;
+  if (std::is_same<P, int8_t>::value) {
+    alpha = param.InputScale()->data<float>()[0];
+    beta = 0.0f;
+  }
 #endif
 
   int32_t groups = param.Groups();
