@@ -15,7 +15,7 @@
 import Foundation
 
 class ConvAddParam<P: PrecisionType>: OpParam {
-  typealias ParamPrecisionType = P
+  //typealias ParamPrecisionType = P
   required init(opDesc: OpDesc, inScope: Scope) throws {
     do {
       filter = try ConvAddParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
@@ -33,8 +33,8 @@ class ConvAddParam<P: PrecisionType>: OpParam {
   }
   
   let input: Texture<P>
-  let y: Tensor<ParamPrecisionType>
-  let filter: Tensor<ParamPrecisionType>
+  let y: Tensor<P>
+  let filter: Tensor<P>
   
   var output: Texture<P>
   let stride: [Int32]
