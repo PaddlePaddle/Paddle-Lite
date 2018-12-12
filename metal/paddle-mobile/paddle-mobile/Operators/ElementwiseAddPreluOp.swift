@@ -13,9 +13,10 @@
  limitations under the License. */
 
 import Foundation
+import Metal
 
 class ElementwiseAddPreluParam<P: PrecisionType>: OpParam {
-  typealias ParamPrecisionType = P
+  //typealias ParamPrecisionType = P
   required init(opDesc: OpDesc, inScope: Scope) throws {
     do {
       alpha = try ElementwiseAddPreluParam.paramInputAlpha(inputs: opDesc.paraInputs, from: inScope)
