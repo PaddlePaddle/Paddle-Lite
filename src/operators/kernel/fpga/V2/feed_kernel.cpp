@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "operators/kernel/feed_kernel.h"
-
+#include "fpga/V2/filter.h"
 namespace paddle_mobile {
 namespace operators {
 
@@ -24,7 +24,6 @@ bool FeedKernel<FPGA, float>::Init(FeedParam<FPGA> *param) {
   fpga::format_fp16_ofm(output, aligned_channel);
   return true;
 }
-
 template <>
 void FeedKernel<FPGA, float>::Compute(const FeedParam<FPGA> &param) {
   auto input =
@@ -33,6 +32,9 @@ void FeedKernel<FPGA, float>::Compute(const FeedParam<FPGA> &param) {
   auto input_ptr = input->data<float>();
   Tensor *output = param.Out();
   auto output_ptr = output->data<float>();
+  auto channel = input->dims()[1];
+  uint32_t aligned_channels =
+      fpga::filter::calc_aligned_channel((int)channel);  // NOLINT
 
   fpga::BypassArgs args = {fpga::DATA_TYPE_FP32};
 
@@ -41,7 +43,7 @@ void FeedKernel<FPGA, float>::Compute(const FeedParam<FPGA> &param) {
   args.input_layout_type = fpga::LAYOUT_CHW;
   args.output_layout_type = fpga::LAYOUT_HWC;
   args.image.address = reinterpret_cast<void *>(input_ptr);
-  args.image.channels = (uint32_t)input->dims()[1];
+  args.image.channels = aligned_channels;
   args.image.height = (uint32_t)input->dims()[2];
   args.image.width = (uint32_t)input->dims()[3];
   args.image.pad_height = 0;
