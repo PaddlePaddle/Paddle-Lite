@@ -17,7 +17,7 @@ import MetalKit
 import Foundation
 import paddle_mobile
 
-class MetalHelper {
+public class MetalHelper {
   let device: MTLDevice
   let queue: MTLCommandQueue
   let textureLoader: MTKTextureLoader

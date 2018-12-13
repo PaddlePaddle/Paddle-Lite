@@ -16,7 +16,6 @@ limitations under the License. */
 #include <memory.h>
 #include <algorithm>
 #include "fpga/common/fpga_common.h"
-
 namespace paddle_mobile {
 namespace fpga {
 namespace filter {
@@ -88,12 +87,25 @@ void align_filter(float **data_in, int num, int channel, int height,
   *data_in = new_data;
   fpga_free(temp);
 }
-
+void convert_to_fp16(float **data_in, int data_size) {
+  float *tmp = *data_in;
+  // half_float::half *tmp_data = (half_float::half *)fpga_malloc(data_size *
+  // sizeof(half_float::half));
+  int16_t *tmp_data =
+      (int16_t *)fpga_malloc(data_size * sizeof(int16_t));  // NOLINT
+  for (int i = 0; i < data_size; i++) {
+    // tmp_data[i] = (half_float::half)((*data_in)[i]);
+    tmp_data[i] = fp32_2_fp16((*data_in)[i]);
+  }
+  *data_in = (float *)tmp_data;  // NOLINT
+  fpga_free(tmp);
+}
 void format_filter(float **data_in, int num, int channel, int height, int width,
                    int group_num, float max) {
   convert_to_hwc(data_in, num, channel, height, width);
   align_filter(data_in, num, channel, height, width);
   int pixel_num = calc_aligned_total_pixel_num(num, channel, height, width);
+  convert_to_fp16(data_in, pixel_num);
   fpga_flush(*data_in, pixel_num * sizeof(float));
 }
 
@@ -115,6 +127,7 @@ void format_fc_filter(float **data_in, int num, int channel, int height,
   convert_fc_filter(data_in, num, chw);
   align_filter(data_in, num, channel, height, width);
   int pixel_num = calc_aligned_total_pixel_num(num, channel, height, width);
+  convert_to_fp16(data_in, pixel_num);
   fpga_flush(*data_in, pixel_num * sizeof(float));
 }
 

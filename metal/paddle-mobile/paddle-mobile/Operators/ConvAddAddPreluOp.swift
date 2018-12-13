@@ -13,9 +13,10 @@
  limitations under the License. */
 
 import Foundation
+import Metal
 
 class ConvAddAddPreluParam<P: PrecisionType>: OpParam {
-  typealias ParamPrecisionType = P
+  //typealias ParamPrecisionType = P
   required init(opDesc: OpDesc, inScope: Scope) throws {
     do {
       filter = try ConvAddAddPreluParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
@@ -34,8 +35,8 @@ class ConvAddAddPreluParam<P: PrecisionType>: OpParam {
   }
   
   let input: Texture<P>
-  let y: Tensor<ParamPrecisionType>
-  let filter: Tensor<ParamPrecisionType>
+  let y: Tensor<P>
+  let filter: Tensor<P>
   let mode: String
   let alpha: Tensor<P>
   var output: Texture<P>

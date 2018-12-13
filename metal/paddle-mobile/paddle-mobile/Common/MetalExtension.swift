@@ -13,6 +13,8 @@
  limitations under the License. */
 
 import Foundation
+import MetalKit
+import CoreMedia
 
 fileprivate var defaultMetalLibrary: MTLLibrary?
 fileprivate var paddleMobileMetalLibrary: MTLLibrary?

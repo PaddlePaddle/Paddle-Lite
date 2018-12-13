@@ -33,7 +33,7 @@ class ScaleKernel: CusomKernel {
   
 }
 
-public class Runner: NSObject {
+@objc public class Runner: NSObject {
   var program: Program?
   var executor: Executor<Float32>?
   var queue: MTLCommandQueue?

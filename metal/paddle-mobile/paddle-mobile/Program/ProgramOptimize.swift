@@ -203,6 +203,7 @@ class ProgramOptimize<P: PrecisionType> {
     var typeMapNodes: [String : [(node: Node, output: [String : Node])]] = [:]
     let block = originProgramDesc.blocks[0]
     for opDesc in block.ops {
+        print(opDesc.type)
       guard let opInputKeys = opInfos[opDesc.type]?.inputs, let outputKeys = opInfos[opDesc.type]?.outputs else {
         fatalError()
       }

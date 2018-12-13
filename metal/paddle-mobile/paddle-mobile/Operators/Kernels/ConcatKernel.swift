@@ -13,6 +13,7 @@
  limitations under the License. */
 
 import Foundation
+import Metal
 
 struct ConcatTestParam: TestParam {
   var input: [MTLTexture]
