@@ -13,16 +13,17 @@
  limitations under the License. */
 
 import Foundation
+import Metal
 
 class SoftmaxParam<P: PrecisionType>: OpParam {
-  typealias ParamPrecisionType = P
+  //typealias ParamPrecisionType = P
   required init(opDesc: OpDesc, inScope: Scope) throws {
     do {
       input = try SoftmaxParam.inputX(inputs: opDesc.inputs, from: inScope)
       output = try SoftmaxParam.outputOut(outputs: opDesc.outputs, from: inScope)
       
-      assert(input.tensorDim.dims.count == 2)
-      assert(input.transpose == [0, 1, 2, 3])
+      //assert(input.tensorDim.dims.count == 2)
+      //assert(input.transpose == [0, 1, 2, 3])
       
       output.dim = input.dim
       output.tensorDim = input.tensorDim
