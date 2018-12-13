@@ -14,6 +14,7 @@
 
 
 import Foundation
+import Metal
 
 public class ResultHolder: NSObject {
   @objc public let result: UnsafeMutablePointer<Float32>?

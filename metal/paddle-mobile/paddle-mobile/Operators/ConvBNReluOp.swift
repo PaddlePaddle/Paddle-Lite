@@ -15,7 +15,7 @@
 import Foundation
 
 class ConvBNReluParam<P: PrecisionType>: OpParam {
-  typealias ParamPrecisionType = P
+  //typealias ParamPrecisionType = P
   required init(opDesc: OpDesc, inScope: Scope) throws {
     do {
       filter = try ConvBNReluParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
@@ -38,11 +38,11 @@ class ConvBNReluParam<P: PrecisionType>: OpParam {
   
   let input: Texture<P>
   
-  let variance: Tensor<ParamPrecisionType>
-  let bias: Tensor<ParamPrecisionType>
-  let mean: Tensor<ParamPrecisionType>
-  let scale: Tensor<ParamPrecisionType>
-  let filter: Tensor<ParamPrecisionType>
+  let variance: Tensor<P>
+  let bias: Tensor<P>
+  let mean: Tensor<P>
+  let scale: Tensor<P>
+  let filter: Tensor<P>
   let epsilon: Float32
   var newScale: MTLBuffer?
   var newBiase: MTLBuffer?

@@ -15,8 +15,8 @@
 import Foundation
 
 class ConvTransposeParam<P: PrecisionType>: ConvParam<P> {
-  typealias ParamPrecisionType = P
-  required init(opDesc: OpDesc, inScope: Scope) throws {
+  //typealias ParamPrecisionType = P
+    required init(opDesc: OpDesc, inScope: Scope) throws {
     do {
       try super.init(opDesc: opDesc, inScope: inScope)
     } catch let error {
