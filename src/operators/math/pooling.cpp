@@ -72,8 +72,8 @@ void Pooling<P>::operator()(const framework::Tensor &input,
   }
 }
 
-template struct Pooling<Max>;
-template struct Pooling<Avg>;
+template struct Pooling<MAX>;
+template struct Pooling<AVG>;
 
 }  // namespace math
 }  // namespace operators

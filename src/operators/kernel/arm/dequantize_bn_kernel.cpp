@@ -131,7 +131,7 @@ bool FusionDequantBNKernel<CPU, float>::Init(FusionDequantBNParam<CPU> *param) {
 template <>
 void FusionDequantBNKernel<CPU, float>::Compute(
     const FusionDequantBNParam<CPU> &param) {
-  DequantBNCompute<Linear>(&param);
+  DequantBNCompute<IDENTITY>(&param);
 }
 #endif  // FUSION_DEQUANT_BN_OP
 
@@ -146,7 +146,7 @@ bool FusionDequantBNReluKernel<CPU, float>::Init(
 template <>
 void FusionDequantBNReluKernel<CPU, float>::Compute(
     const FusionDequantBNParam<CPU> &param) {
-  DequantBNCompute<Relu>(&param);
+  DequantBNCompute<RELU>(&param);
 }
 #endif  // FUSION_DEQUANT_BN_RELU_OP
 
@@ -162,7 +162,7 @@ bool FusionDequantAddBNKernel<CPU, float>::Init(
 template <>
 void FusionDequantAddBNKernel<CPU, float>::Compute(
     const FusionDequantAddBNParam<CPU> &param) {
-  DequantBNCompute<Linear>(&param);
+  DequantBNCompute<IDENTITY>(&param);
 }
 #endif  // FUSION_DEQUANT_ADD_BN_OP
 
@@ -178,7 +178,7 @@ bool FusionDequantAddBNReluKernel<CPU, float>::Init(
 template <>
 void FusionDequantAddBNReluKernel<CPU, float>::Compute(
     const FusionDequantAddBNParam<CPU> &param) {
-  DequantBNCompute<Relu>(&param);
+  DequantBNCompute<RELU>(&param);
 }
 #endif  // FUSION_DEQUANT_ADD_BN_RELU_OP
 
@@ -292,13 +292,13 @@ void FusionDequantAddBNQuantKernel<CPU, float>::Compute(
     const FusionDequantAddBNQuantParam<CPU> &param) {
   switch (param.round_type_) {
     case ROUND_NEAREST_TO_EVEN:
-      DequantBNQuantCompute<Linear, ROUND_NEAREST_TO_EVEN>(&param);
+      DequantBNQuantCompute<IDENTITY, ROUND_NEAREST_TO_EVEN>(&param);
       break;
     case ROUND_NEAREST_TOWARDS_ZERO:
-      DequantBNQuantCompute<Linear, ROUND_NEAREST_TOWARDS_ZERO>(&param);
+      DequantBNQuantCompute<IDENTITY, ROUND_NEAREST_TOWARDS_ZERO>(&param);
       break;
     case ROUND_NEAREST_AWAY_ZERO:
-      DequantBNQuantCompute<Linear, ROUND_NEAREST_AWAY_ZERO>(&param);
+      DequantBNQuantCompute<IDENTITY, ROUND_NEAREST_AWAY_ZERO>(&param);
       break;
     default:
       LOG(kLOG_ERROR) << "round type is not supported.";
@@ -321,13 +321,13 @@ void FusionDequantAddBNReluQuantKernel<CPU, float>::Compute(
     const FusionDequantAddBNQuantParam<CPU> &param) {
   switch (param.round_type_) {
     case ROUND_NEAREST_TO_EVEN:
-      DequantBNQuantCompute<Relu, ROUND_NEAREST_TO_EVEN>(&param);
+      DequantBNQuantCompute<RELU, ROUND_NEAREST_TO_EVEN>(&param);
       break;
     case ROUND_NEAREST_TOWARDS_ZERO:
-      DequantBNQuantCompute<Relu, ROUND_NEAREST_TOWARDS_ZERO>(&param);
+      DequantBNQuantCompute<RELU, ROUND_NEAREST_TOWARDS_ZERO>(&param);
       break;
     case ROUND_NEAREST_AWAY_ZERO:
-      DequantBNQuantCompute<Relu, ROUND_NEAREST_AWAY_ZERO>(&param);
+      DequantBNQuantCompute<RELU, ROUND_NEAREST_AWAY_ZERO>(&param);
       break;
     default:
       LOG(kLOG_ERROR) << "round type is not supported.";
