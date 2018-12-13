@@ -30,7 +30,7 @@ namespace paddle_mobile {
 namespace operators {
 namespace math {
 
-template <PoolingType P = Max>
+template <PoolingType P = MAX>
 struct PoolingVal {
   float val;
   int count;
@@ -44,11 +44,11 @@ struct PoolingVal {
 };
 
 template <>
-struct PoolingVal<Avg> {
+struct PoolingVal<AVG> {
   float val;
   int count;
   PoolingVal() : val(0.f), count(0) {}
-  inline PoolingVal<Avg> &operator+=(const float &x) {
+  inline PoolingVal<AVG> &operator+=(const float &x) {
     val += x;
     ++count;
     return *this;
@@ -57,57 +57,57 @@ struct PoolingVal<Avg> {
 };
 
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
-template <PoolingType P = Max>
+template <PoolingType P = MAX>
 inline float32x4_t vPoolInitq_f32() {
   return vdupq_n_f32(-std::numeric_limits<float>::max());
 }
 
 template <>
-inline float32x4_t vPoolInitq_f32<Avg>() {
+inline float32x4_t vPoolInitq_f32<AVG>() {
   return vdupq_n_f32(0.f);
 }
 
-template <PoolingType P = Max>
+template <PoolingType P = MAX>
 inline float32x4_t vPoolPreq_f32(const float32x4_t &x1, const float32x4_t &x2) {
   return vmaxq_f32(x1, x2);
 }
 
 template <>
-inline float32x4_t vPoolPreq_f32<Avg>(const float32x4_t &x1,
+inline float32x4_t vPoolPreq_f32<AVG>(const float32x4_t &x1,
                                       const float32x4_t &x2) {
   return vaddq_f32(x1, x2);
 }
 
-template <PoolingType P = Max>
+template <PoolingType P = MAX>
 inline float32x4_t vPoolPostq_f32(const float32x4_t &x,
                                   const float32x4_t &post) {
   return x;
 }
 
 template <>
-inline float32x4_t vPoolPostq_f32<Avg>(const float32x4_t &x,
+inline float32x4_t vPoolPostq_f32<AVG>(const float32x4_t &x,
                                        const float32x4_t &post) {
   return vmulq_f32(x, post);
 }
 #endif  // __ARM_NEON__
 
-template <PoolingType P = Max>
+template <PoolingType P = MAX>
 inline float PoolPre(const float &x1, const float &x2) {
   return std::max(x1, x2);
 }
 
 template <>
-inline float PoolPre<Avg>(const float &x1, const float &x2) {
+inline float PoolPre<AVG>(const float &x1, const float &x2) {
   return x1 + x2;
 }
 
-template <PoolingType P = Max>
+template <PoolingType P = MAX>
 inline float PoolPost(const float &x, const float &post) {
   return x;
 }
 
 template <>
-inline float PoolPost<Avg>(const float &x, const float &post) {
+inline float PoolPost<AVG>(const float &x, const float &post) {
   return x * post;
 }
 

@@ -93,18 +93,18 @@ enum RoundType {
 };
 
 enum ActivationType {
-  Linear = 0,
-  Relu = 1,
-  Relu6 = 2,
-  PRelu = 3,
-  LeakyRelu = 4,
-  Tanh = 5,
-  Sigmoid = 6,
+  IDENTITY = 0,
+  RELU = 1,
+  RELU6 = 2,
+  PRELU = 3,
+  LEAKY_RELU = 4,
+  TANH = 5,
+  SIGMOID = 6,
 };
 
 enum PoolingType {
-  Max = 0,
-  Avg = 1,
+  MAX = 0,
+  AVG = 1,
 };
 
 extern const char *G_OP_TYPE_CONV;

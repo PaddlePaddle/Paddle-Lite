@@ -74,7 +74,7 @@ template <>
 void ReluKernel<CPU, float>::Compute(const ReluParam<CPU> &param) {
   const Tensor *input = param.InputX();
   Tensor *output = param.Out();
-  ReluCompute<float, Relu>()(input, output);
+  ReluCompute<float, RELU>()(input, output);
 }
 
 template <>
@@ -86,7 +86,7 @@ template <>
 void Relu6Kernel<CPU, float>::Compute(const ReluParam<CPU> &param) {
   const Tensor *input = param.InputX();
   Tensor *output = param.Out();
-  ReluCompute<float, Relu6>()(input, output);
+  ReluCompute<float, RELU6>()(input, output);
 }
 
 }  // namespace operators

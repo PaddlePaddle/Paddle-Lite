@@ -143,12 +143,10 @@ double PaddleMobile<CPU, Precision::FP32>::GetPredictTime() {
   int t1 = 1;
   int t2 = 1;
   for (int i = 0; i < m * k; ++i) {
-    unsigned int seed = 100;
-    a[i] = t1 + rand_r(&seed) % t2;
+    a[i] = t1 + rand() % t2;  // NOLINT
   }
   for (int i = 0; i < k * n; ++i) {
-    unsigned int seed = 200;
-    b[i] = t1 + rand_r(&seed) % t2;
+    b[i] = t1 + rand() % t2;  // NOLINT
   }
   paddle_mobile::operators::math::Gemm gemm;
   auto time1 = paddle_mobile::time();

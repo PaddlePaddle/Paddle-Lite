@@ -40,28 +40,28 @@ void PoolCompute(const PoolParam<CPU> &param) {
   if (ksize[0] == 3 && ksize[0] == ksize[1]) {
     if (pooling_type == "max" && strides[0] == strides[1]) {
       if (strides[0] == 1) {
-        math::Pooling3x3<Max, 1>()(*input, paddings, output);
+        math::Pooling3x3<MAX, 1>()(*input, paddings, output);
       } else if (strides[0] == 2) {
-        math::Pooling3x3<Max, 2>()(*input, paddings, output);
+        math::Pooling3x3<MAX, 2>()(*input, paddings, output);
       } else {
-        math::Pooling<Max>()(*input, ksize, strides, paddings, output);
+        math::Pooling<MAX>()(*input, ksize, strides, paddings, output);
       }
     } else if (pooling_type == "avg" && strides[0] == strides[1]) {
       if (strides[0] == 1) {
-        math::Pooling3x3<Avg, 1>()(*input, paddings, output);
+        math::Pooling3x3<AVG, 1>()(*input, paddings, output);
       } else if (strides[0] == 2) {
-        math::Pooling3x3<Avg, 2>()(*input, paddings, output);
+        math::Pooling3x3<AVG, 2>()(*input, paddings, output);
       } else {
-        math::Pooling<Avg>()(*input, ksize, strides, paddings, output);
+        math::Pooling<AVG>()(*input, ksize, strides, paddings, output);
       }
     } else {
       // Others
     }
   } else {
     if (pooling_type == "max") {
-      math::Pooling<Max>()(*input, ksize, strides, paddings, output);
+      math::Pooling<MAX>()(*input, ksize, strides, paddings, output);
     } else if (pooling_type == "avg") {
-      math::Pooling<Avg>()(*input, ksize, strides, paddings, output);
+      math::Pooling<AVG>()(*input, ksize, strides, paddings, output);
     } else {
       // Others
     }
