@@ -93,8 +93,8 @@ void ConvTransposeCompute(const ConvTransposeParam<CPU> &param) {
       Tensor filter_slice = filter.Slice(g * in_step, (g + 1) * in_step);
       Tensor out_slice = output_batch.Slice(g * out_step, (g + 1) * out_step);
 
-      math::matmul(filter_slice, true, in_slice, false, static_cast<P>(1.0),
-                   &col_matrix, static_cast<P>(0.0));
+      math::matmul<P, P>(filter_slice, true, in_slice, false,
+                         static_cast<P>(1.0), &col_matrix, static_cast<P>(0.0));
       if (data_dim == 2U) {
         col2im(col, dilations, strides,
                std::vector<int>{paddings[0], paddings[1], paddings[0],

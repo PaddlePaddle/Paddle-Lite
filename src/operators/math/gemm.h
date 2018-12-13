@@ -105,16 +105,15 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
                             float *c, float *C, int ldc, float *p,
                             std::string mode, float *bias, float *bias1);
 
-  /*
   // 向量矩阵乘法 (M = 1)
   void VectorKernel(int m, int n, int k, float alpha, const float *A, int lda,
                     const float *B, int ldb, float beta, float *C, int ldc,
                     bool relu);
-
-  void VectorKernelWithBn(int m, int n, int k, float alpha, const float *A,
-                          int lda, const float *B, int ldb, float beta, float
-  *C, int ldc, bool relu, float *new_scale, float *new_bias);
-  */
+  /*
+    void VectorKernelWithBn(int m, int n, int k, float alpha, const float *A,
+                            int lda, const float *B, int ldb, float beta, float
+    *C, int ldc, bool relu, float *new_scale, float *new_bias);
+    */
 
   // 计算一个更小的 C 矩阵分块
   void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc);
@@ -149,7 +148,6 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
   void WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
                           float *new_scale, float *new_bias, float *bias1);
 
-  /*
   // 向量矩阵乘法结果回写
   // C = A * B
   void VecWriteBasic(int n, float *c, float *C, int ldc);
@@ -159,13 +157,14 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
   void VecWriteWithAdd(int n, float *c, float *C, int ldc);
   // C = A * B + C, relu(C)
   void VecWriteWithAddRelu(int n, float *c, float *C, int ldc);
-  // C = A * B, batchnorm(C)
-  void VecWriteWithBn(int n, float *c, float *C, int ldc, float *new_scale,
-                      float *new_bias);
-  // C = A * B, batchnorm(C), relu(C)
-  void VecWriteWithBnRelu(int n, float *c, float *C, int ldc, float *new_scale,
-                          float *new_bias);
-  */
+  /*
+    // C = A * B, batchnorm(C)
+    void VecWriteWithBn(int n, float *c, float *C, int ldc, float *new_scale,
+                        float *new_bias);
+    // C = A * B, batchnorm(C), relu(C)
+    void VecWriteWithBnRelu(int n, float *c, float *C, int ldc, float
+    *new_scale, float *new_bias);
+    */
 
   // 32位 float 矩阵乘法
   void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
@@ -392,7 +391,7 @@ void Gemm::Sgemm_omp(int32_t m, int32_t n, int32_t k, float alpha,
     packedB_int8 = static_cast<int8_t *>(
         paddle_mobile::memory::Alloc(sizeof(int8_t) * KC * NC));
 #if __aarch64__
-    // TODO()
+    // TODO(paddle mobile)
 #else
     PackMatrixB_omp_2c_16(k, n, n % NR_INT8, B, ldb, packedB_int8);
 #endif
@@ -414,7 +413,7 @@ void Gemm::Sgemm_omp(int32_t m, int32_t n, int32_t k, float alpha,
     packedA_int8 = static_cast<int8_t *>(
         paddle_mobile::memory::Alloc(sizeof(int8_t) * MC * KC));
 #if __aarch64__
-    // TODO()
+    // TODO(paddle mobile)
 #else
     PackMatrixA_omp_4r_16(m, k, m % MR_INT8, A, lda, packedA_int8);
 #endif
@@ -438,7 +437,7 @@ void Gemm::Sgemm_omp(int32_t m, int32_t n, int32_t k, float alpha,
       int8_t *local_A = packedA_int8 + MC * KC * local_threads;
       int32_t *local_C = packedC_int32 + MC * NC * local_threads;
 #if __aarch64__
-      // TODO()
+      // TODO(paddle mobile)
 #else
       PackMatrixA_4r_16(mc, k, mc % MR_INT8, &A(i, 0), lda, local_A);
 #endif
@@ -468,7 +467,7 @@ void Gemm::Sgemm_omp(int32_t m, int32_t n, int32_t k, float alpha,
       int8_t *local_B = packedB_int8 + KC * NC * local_threads;
       int32_t *local_C = packedC_int32 + MC * NC * local_threads;
 #if __aarch64__
-      // TODO()
+      // TODO(paddle mobile)
 #else
       PackMatrixB_2c_16(k, nc, nc % NR_INT8, &B(0, j), ldb, local_B);
 #endif
