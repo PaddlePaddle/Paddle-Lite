@@ -33,4 +33,4 @@ namespace ops = paddle_mobile::operators;
 REGISTER_OPERATOR_CPU(dequantize, ops::DequantizeOp);
 #endif
 
-#endif
+#endif  // DEQUANT_OP
