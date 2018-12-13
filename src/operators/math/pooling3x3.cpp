@@ -1016,10 +1016,10 @@ struct Pooling3x3<P, 2> {
   }
 };
 
-template struct Pooling3x3<Max, 1>;
-template struct Pooling3x3<Avg, 1>;
-template struct Pooling3x3<Max, 2>;
-template struct Pooling3x3<Avg, 2>;
+template struct Pooling3x3<MAX, 1>;
+template struct Pooling3x3<AVG, 1>;
+template struct Pooling3x3<MAX, 2>;
+template struct Pooling3x3<AVG, 2>;
 
 }  // namespace math
 }  // namespace operators

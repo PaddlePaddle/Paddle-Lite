@@ -11,13 +11,14 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
+
 #ifdef GRU_OP
+
 #include "operators/math/gru_compute.h"
 #include "common/types.h"
-#include "operators/math/activation_functions.h"
+#include "operators/math/activation.h"
 #include "operators/math/gemm.h"
 #include "operators/math/gru_cpu_kernel.h"
-#include "operators/math/gru_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -43,8 +44,7 @@ struct GRUUnitFunctor<CPU, T> {
 #endif
     }
 
-    forward_reset_output(forward::gru_resetOutput<T>(), value, frame_size,
-                         batch_size, active_gate);
+    forward_reset_output(value, frame_size, batch_size, active_gate);
 
     if (value.prev_out_value) {
 #ifdef _OPENMP
@@ -60,8 +60,7 @@ struct GRUUnitFunctor<CPU, T> {
 #endif
     }
 
-    forward_final_output(forward::gru_finalOutput<T>(), value, frame_size,
-                         batch_size, active_node);
+    forward_final_output(value, frame_size, batch_size, active_node);
   }
 };
 
