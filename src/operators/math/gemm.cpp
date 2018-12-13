@@ -3160,7 +3160,8 @@ void Gemm::Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
 #endif
 
   //  int L1 = 64 / max_threads * 1024;
-  int L1 = 32 / max_threads * 1024;
+  int L = (max_threads > 2) ? 64 : 32;
+  int L1 = L / max_threads * 1024;
   KC = k;
   zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
   memset(static_cast<void *>(zero), 0, sizeof(float) * KC);

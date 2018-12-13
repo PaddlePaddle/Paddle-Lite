@@ -13,6 +13,8 @@
  limitations under the License. */
 
 import Foundation
+import MetalKit
+import CoreMedia
 
 class FeedParam<P: PrecisionType>: OpParam{
   var output: Texture<P>
@@ -30,7 +32,7 @@ class FeedParam<P: PrecisionType>: OpParam{
     }
   }
   
-  typealias ParamPrecisionType = P
+  //typealias ParamPrecisionType = P
 }
 
 class FeedOp<P: PrecisionType>: Operator<Texture2DTo2DArrayKernel<P>, FeedParam<P>>, Runable, Creator, InferShaperable {

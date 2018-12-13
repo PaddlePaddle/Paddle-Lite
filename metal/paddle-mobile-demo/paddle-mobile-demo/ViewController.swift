@@ -23,23 +23,23 @@ let threadSupport: [(Platform, String)] = [(.GPU, "GPU"), (.CPU, "CPU")]
 
 //.mobilenet_ssd : Runner.init(inNet: MobileNet_ssd_hand.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform),
 let modelHelperMap: [SupportModel : Runner] = [
-                                               .genet : Runner.init(inNet: Genet.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform),
-                                               .mobilenet_ssd_ar : Runner.init(inNet: MobileNet_ssd_AR.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform)]
+                                               .yolo : Runner.init(inNet: YoloNet.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform),
+                                               .mobilenet_combined : Runner.init(inNet: MobileNetCombined.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform)]
 //, .genet : Genet.init()
 //let modelHelperMap: [SupportModel : Net] = [.mobilenet : MobileNet.init(), .mobilenet_ssd : MobileNet_ssd_hand.init()]
 
-let netSupport: [SupportModel : Net] = [.genet : Genet.init(device: MetalHelper.shared.device), .mobilenet_ssd_ar : MobileNet_ssd_AR.init(device: MetalHelper.shared.device)]
+let netSupport: [SupportModel : Net] = [.yolo : YoloNet.init(device: MetalHelper.shared.device), .mobilenet_combined : MobileNetCombined.init(device: MetalHelper.shared.device)]
 
 enum SupportModel: String{
   //  case mobilenet = "mobilenet"
 //  case mobilenet_ssd    = "mobilenetssd"
-  case genet            = "genet"
-  case mobilenet_ssd_ar = "mobilenetssd_ar"
+  case yolo            = "yolo"
+  case mobilenet_combined = "mobilenet_combined"
   
   static func supportedModels() -> [SupportModel] {
     // .mobilenet,
     // .mobilenet_ssd,
-    return [.genet, .mobilenet_ssd_ar]
+    return [.yolo, .mobilenet_combined]
   }
 }
 
@@ -98,7 +98,7 @@ class ViewController: UIViewController {
   }
   
   @IBAction func predictAct(_ sender: Any) {
-    let max = 50
+    let max = 1
     switch platform {
     case .GPU:
       guard let inTexture = toPredictTexture else {
@@ -106,11 +106,11 @@ class ViewController: UIViewController {
         return
       }
       
-      for _ in 0..<10{
-        runner.predict(texture: inTexture) { (success, resultHolder)  in
-          resultHolder?.releasePointer()
-        }
-      }
+//      for _ in 0..<1{
+//        runner.predict(texture: inTexture) { (success, resultHolder)  in
+//          resultHolder?.releasePointer()
+//        }
+//      }
       
       let startDate = Date.init()
       for i in 0..<max {
@@ -180,7 +180,7 @@ class ViewController: UIViewController {
 //    } else {
 //      print(" load error ! ")
 //    }
-//    
+//
     modelPickerView.delegate = self
     modelPickerView.dataSource = self
     threadPickerView.delegate = self

@@ -13,6 +13,8 @@
  limitations under the License. */
 
 import Foundation
+import MetalKit
+import CoreMedia
 
 struct Texture2DTo2DArrayParam {
   let input: MTLTexture
