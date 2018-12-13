@@ -197,21 +197,21 @@ void QuantizeKernel<CPU, float>::Compute(const QuantizeParam<CPU> &param) {
   }
   max_abs = std::max(max_abs, 1e-6f);
   param.online_scale_->mutable_data<float>()[0] = max_abs;
-  //  switch (param.round_type_) {
-  //    case ROUND_NEAREST_TO_EVEN:
-  //      Quantize<ROUND_NEAREST_TO_EVEN>(input, scale, output);
-  //      break;
-  //    case ROUND_NEAREST_TOWARDS_ZERO:
-  //      Quantize<ROUND_NEAREST_TOWARDS_ZERO>(input, scale, output);
-  //      break;
-  //    case ROUND_NEAREST_AWAY_ZERO:
-  //      Quantize<ROUND_NEAREST_AWAY_ZERO>(input, scale, output);
-  //      break;
-  //    default:
-  //      LOG(kLOG_ERROR) << "round type is not supported.";
-  //      break;
-  //  }
-  Quantize<ROUND_NEAREST_AWAY_ZERO>(input, max_abs, param.offline_, output);
+  switch (param.round_type_) {
+    case ROUND_NEAREST_TO_EVEN:
+      Quantize<ROUND_NEAREST_TO_EVEN>(input, max_abs, param.offline_, output);
+      break;
+    case ROUND_NEAREST_TOWARDS_ZERO:
+      Quantize<ROUND_NEAREST_TOWARDS_ZERO>(input, max_abs, param.offline_,
+                                           output);
+      break;
+    case ROUND_NEAREST_AWAY_ZERO:
+      Quantize<ROUND_NEAREST_AWAY_ZERO>(input, max_abs, param.offline_, output);
+      break;
+    default:
+      LOG(kLOG_ERROR) << "round type is not supported.";
+      break;
+  }
 }
 
 }  // namespace operators

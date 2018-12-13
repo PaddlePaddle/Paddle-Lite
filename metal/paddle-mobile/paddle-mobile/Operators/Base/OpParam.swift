@@ -26,7 +26,7 @@ protocol OpParam {
   var output: OutputType { get set }
   func outputDesc() -> String
   
-  associatedtype ParamPrecisionType: PrecisionType
+  //associatedtype ParamPrecisionType: PrecisionType
   init(opDesc: OpDesc, inScope: Scope) throws
   static func getFirstTensor<VarType: Variant>(key: String, map: [String : [String]], from: Scope) throws -> VarType
   static func inputX<VarType: Variant>(inputs: [String : [String]], from: Scope) throws -> VarType
