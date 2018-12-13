@@ -1260,10 +1260,10 @@ void Gemm::AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
         "q10", "q11", "q12", "q13");
 }
 
-/*
-void Gemm::VectorKernel(int m, int n, int k, float alpha, const float *A, int
-lda, const float *B, int ldb, float beta, float *C, int ldc, bool relu) { float
-*bufferC = static_cast<float *>(memory::Alloc(sizeof(float) * n));
+void Gemm::VectorKernel(int m, int n, int k, float alpha, const float *A,
+                        int lda, const float *B, int ldb, float beta, float *C,
+                        int ldc, bool relu) {
+  float *bufferC = static_cast<float *>(memory::Alloc(sizeof(float) * n));
 
   const float *a0, *b0, *b1, *b2, *b3;
   float *c0, *C0;
@@ -1482,6 +1482,7 @@ lda, const float *B, int ldb, float beta, float *C, int ldc, bool relu) { float
   }
 }
 
+/*
 void Gemm::VectorKernelWithBn(int m, int n, int k, float alpha, const float *A,
                         int lda, const float *B, int ldb, float beta, float *C,
                         int ldc, bool relu, float *new_scale, float *new_bias) {
@@ -2579,278 +2580,278 @@ void Gemm::WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
   }
 }
 
+// C = A * B
+void Gemm::VecWriteBasic(int n, float *c, float *C, int ldc) {
+  int nc1 = n / 16;
+  int _nc1 = n % 16;
+  int nc2 = _nc1 / 4;
+  int nc3 = 16 - 4 * (_nc1 % 4);
+
+  asm volatile(
+      "subs       %[nc1],   %[nc1],   #1  \n\t"
+      "blt        end_nc1_%=              \n\t"
+      "loop_nc1_%=:                       \n\t"
+
+      "vld1.32    {q0, q1}, [%[c]]!       \n\t"
+      "vst1.32    {q0, q1}, [%[C]]!       \n\t"
+
+      "vld1.32    {q2, q3}, [%[c]]!       \n\t"
+      "vst1.32    {q2, q3}, [%[C]]!       \n\t"
+
+      "subs       %[nc1],   %[nc1],   #1  \n\t"
+      "bge        loop_nc1_%=             \n\t"
+      "end_nc1_%=:                        \n\t"
+
+      "subs       %[nc2],   %[nc2],   #1  \n\t"
+      "blt        end_nc2_%=              \n\t"
+      "loop_nc2_%=:                       \n\t"
+
+      "vld1.32    {q4},     [%[c]]!       \n\t"
+      "vst1.32    {q4},     [%[C]]!       \n\t"
+
+      "subs       %[nc2],   %[nc2],   #1  \n\t"
+      "bge        loop_nc2_%=             \n\t"
+      "end_nc2_%=:                        \n\t"
+
+      "cmp        %[nc3],    #16          \n\t"
+      "beq        end_nc3_%=              \n\t"
+      "sub        %[c],     %[c],   %[nc3]    \n\t"
+      "sub        %[C],     %[C],   %[nc3]    \n\t"
+      "vld1.32    {q5},     [%[c]]!       \n\t"
+      "vst1.32    {q5},     [%[C]]!       \n\t"
+      "end_nc3_%=:                        \n\t"
+
+      :
+      : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3] "r"(nc3)
+      : "memory", "q0", "q1", "q2", "q3", "q4", "q5");
+}
+
+// C = alpha * A * B + beta * C
+void Gemm::VecWriteWithAlphaBeta(int n, float *c, float *C, int ldc) {}
+
+// C = A * B + C
+void Gemm::VecWriteWithAdd(int n, float *c, float *C, int ldc) {
+  int nc1 = n / 16;
+  int _nc1 = n % 16;
+
+  asm volatile(
+      "subs       %[nc1],   %[nc1],   #1  \n\t"
+      "blt        end_nc1_%=              \n\t"
+      "loop_nc1_%=:                       \n\t"
+
+      "vld1.32    {q0, q1},   [%[c]]!     \n\t"
+      "vld1.32    {q2, q3},   [%[C]]      \n\t"
+      "vadd.f32   q10,  q0,   q2          \n\t"
+      "vadd.f32   q11,  q1,   q3          \n\t"
+      "vst1.32    {q10, q11}, [%[C]]!     \n\t"
+
+      "vld1.32    {q4, q5},   [%[c]]!     \n\t"
+      "vld1.32    {q6, q7},   [%[C]]      \n\t"
+      "vadd.f32   q12,  q4,   q6          \n\t"
+      "vadd.f32   q13,  q5,   q7          \n\t"
+      "vst1.32    {q12, q13}, [%[C]]!     \n\t"
+
+      "subs       %[nc1],   %[nc1],   #1  \n\t"
+      "bge        loop_nc1_%=             \n\t"
+      "end_nc1_%=:                        \n\t"
+
+      : [C] "+r"(C), [c] "+r"(c)
+      : [nc1] "r"(nc1)
+      : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q10", "q11",
+        "q12", "q13");
+
+  if (_nc1 != 0) {
+    for (int j = 0; j < _nc1; j++) {
+      *C++ += *c++;
+    }
+  }
+}
+
+// C = A * B + C, relu(C)
+void Gemm::VecWriteWithAddRelu(int n, float *c, float *C, int ldc) {
+  int nc1 = n / 16;
+  int _nc1 = n % 16;
+
+  asm volatile(
+      "vmov.f32   q14,      #0.0          \n\t"
+      "subs       %[nc1],   %[nc1],   #1  \n\t"
+      "blt        end_nc1_%=              \n\t"
+      "loop_nc1_%=:                       \n\t"
+
+      "vld1.32    {q0, q1},   [%[c]]!     \n\t"
+      "vld1.32    {q2, q3},   [%[C]]      \n\t"
+      "vadd.f32   q10,  q0,   q2          \n\t"
+      "vadd.f32   q11,  q1,   q3          \n\t"
+      "vmax.f32   q10,  q10,  q14         \n\t"
+      "vmax.f32   q11,  q11,  q14         \n\t"
+      "vst1.32    {q10, q11}, [%[C]]!     \n\t"
+
+      "vld1.32    {q4, q5},   [%[c]]!     \n\t"
+      "vld1.32    {q6, q7},   [%[C]]      \n\t"
+      "vadd.f32   q12,  q4,   q6          \n\t"
+      "vadd.f32   q13,  q5,   q7          \n\t"
+      "vmax.f32   q12,  q12,  q14         \n\t"
+      "vmax.f32   q13,  q13,  q14         \n\t"
+      "vst1.32    {q12, q13}, [%[C]]!     \n\t"
+
+      "subs       %[nc1],   %[nc1],   #1  \n\t"
+      "bge        loop_nc1_%=             \n\t"
+      "end_nc1_%=:                        \n\t"
+
+      : [C] "+r"(C), [c] "+r"(c)
+      : [nc1] "r"(nc1)
+      : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q10", "q11",
+        "q12", "q13");
+
+  if (_nc1 != 0) {
+    for (int j = 0; j < _nc1; j++) {
+      *C += *c;
+      if (*C < 0) {
+        *C = 0;
+      }
+      C++;
+      c++;
+    }
+  }
+}
+
   /*
-  // C = A * B
-  void Gemm::VecWriteBasic(int n, float *c, float *C, int ldc) {
-    int nc1 = n / 16;
-    int _nc1 = n % 16;
-    int nc2 = _nc1 / 4;
-    int nc3 = 16 - 4 * (_nc1 % 4);
+    // C = A * B, batchnorm(C)
+    void Gemm::VecWriteWithBn(int n, float *c, float *C, int ldc, float *scale,
+                        float *bias) {
+      int nc1 = n / 16;
+      int _nc1 = n % 16;
+      int nc2 = _nc1 / 4;
+      int nc3 = 16 - 4 * (_nc1 % 4);
 
-    asm volatile(
-        "subs       %[nc1],   %[nc1],   #1  \n\t"
-        "blt        end_nc1_%=              \n\t"
-        "loop_nc1_%=:                       \n\t"
+      asm volatile(
+          "subs       %[nc1],   %[nc1],   #1  \n\t"
+          "blt        end_nc1_%=              \n\t"
+          "loop_nc1_%=:                       \n\t"
 
-        "vld1.32    {q0, q1}, [%[c]]!       \n\t"
-        "vst1.32    {q0, q1}, [%[C]]!       \n\t"
+          "vld1.32    {q0, q1},   [%[c]]!     \n\t"
+          "vld1.32    {q2, q3},   [%[scale]]! \n\t"
+          "vld1.32    {q10, q11}, [%[bias]]!  \n\t"
+          "vmla.f32   q10,  q0,   q2          \n\t"
+          "vmla.f32   q11,  q1,   q3          \n\t"
+          "vst1.32    {q10, q11}, [%[C]]!     \n\t"
 
-        "vld1.32    {q2, q3}, [%[c]]!       \n\t"
-        "vst1.32    {q2, q3}, [%[C]]!       \n\t"
+          "vld1.32    {q4, q5},   [%[c]]!     \n\t"
+          "vld1.32    {q6, q7},   [%[scale]]! \n\t"
+          "vld1.32    {q12, q13}, [%[bias]]!  \n\t"
+          "vmla.f32   q12,  q4,   q6          \n\t"
+          "vmla.f32   q13,  q5,   q7          \n\t"
+          "vst1.32    {q12, q13}, [%[C]]!     \n\t"
 
-        "subs       %[nc1],   %[nc1],   #1  \n\t"
-        "bge        loop_nc1_%=             \n\t"
-        "end_nc1_%=:                        \n\t"
+          "subs       %[nc1],   %[nc1],   #1  \n\t"
+          "bge        loop_nc1_%=             \n\t"
+          "end_nc1_%=:                        \n\t"
 
-        "subs       %[nc2],   %[nc2],   #1  \n\t"
-        "blt        end_nc2_%=              \n\t"
-        "loop_nc2_%=:                       \n\t"
+          "subs       %[nc2],   %[nc2],   #1  \n\t"
+          "blt        end_nc2_%=              \n\t"
+          "loop_nc2_%=:                       \n\t"
 
-        "vld1.32    {q4},     [%[c]]!       \n\t"
-        "vst1.32    {q4},     [%[C]]!       \n\t"
+          "vld1.32    {q0},   [%[c]]!         \n\t"
+          "vld1.32    {q1},   [%[scale]]!     \n\t"
+          "vld1.32    {q10},  [%[bias]]!      \n\t"
+          "vmla.f32   q10,    q0,   q1        \n\t"
+          "vst1.32    {q10},  [%[C]]!         \n\t"
 
-        "subs       %[nc2],   %[nc2],   #1  \n\t"
-        "bge        loop_nc2_%=             \n\t"
-        "end_nc2_%=:                        \n\t"
+          "subs       %[nc2],   %[nc2],   #1  \n\t"
+          "bge        loop_nc2_%=             \n\t"
+          "end_nc2_%=:                        \n\t"
 
-        "cmp        %[nc3],    #16          \n\t"
-        "beq        end_nc3_%=              \n\t"
-        "sub        %[c],     %[c],   %[nc3]    \n\t"
-        "sub        %[C],     %[C],   %[nc3]    \n\t"
-        "vld1.32    {q5},     [%[c]]!       \n\t"
-        "vst1.32    {q5},     [%[C]]!       \n\t"
-        "end_nc3_%=:                        \n\t"
+          "cmp        %[nc3],    #16          \n\t"
+          "beq        end_nc3_%=              \n\t"
 
-        :
-        : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3] "r"(nc3)
-        : "memory", "q0", "q1", "q2", "q3", "q4", "q5");
-  }
+          "sub        %[c],     %[c],   %[nc3]      \n\t"
+          "sub        %[scale], %[scale],  %[nc3]   \n\t"
+          "sub        %[bias],  %[bias],   %[nc3]   \n\t"
+          "sub        %[C],     %[C],   %[nc3]      \n\t"
 
-  // C = alpha * A * B + beta * C
-  void Gemm::VecWriteWithAlphaBeta(int n, float *c, float *C, int ldc) {}
+          "vld1.32    {q0},   [%[c]]!         \n\t"
+          "vld1.32    {q1},   [%[scale]]!     \n\t"
+          "vld1.32    {q10},  [%[bias]]!      \n\t"
+          "vmla.f32   q10,    q0,   q1        \n\t"
+          "vst1.32    {q10},  [%[C]]!         \n\t"
+          "end_nc3_%=:                        \n\t"
 
-  // C = A * B + C
-  void Gemm::VecWriteWithAdd(int n, float *c, float *C, int ldc) {
-    int nc1 = n / 16;
-    int _nc1 = n % 16;
-
-    asm volatile(
-        "subs       %[nc1],   %[nc1],   #1  \n\t"
-        "blt        end_nc1_%=              \n\t"
-        "loop_nc1_%=:                       \n\t"
-
-        "vld1.32    {q0, q1},   [%[c]]!     \n\t"
-        "vld1.32    {q2, q3},   [%[C]]      \n\t"
-        "vadd.f32   q10,  q0,   q2          \n\t"
-        "vadd.f32   q11,  q1,   q3          \n\t"
-        "vst1.32    {q10, q11}, [%[C]]!     \n\t"
-
-        "vld1.32    {q4, q5},   [%[c]]!     \n\t"
-        "vld1.32    {q6, q7},   [%[C]]      \n\t"
-        "vadd.f32   q12,  q4,   q6          \n\t"
-        "vadd.f32   q13,  q5,   q7          \n\t"
-        "vst1.32    {q12, q13}, [%[C]]!     \n\t"
-
-        "subs       %[nc1],   %[nc1],   #1  \n\t"
-        "bge        loop_nc1_%=             \n\t"
-        "end_nc1_%=:                        \n\t"
-
-        : [C] "+r"(C), [c] "+r"(c)
-        : [nc1] "r"(nc1)
-        : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q10",
-  "q11", "q12", "q13");
-
-    if (_nc1 != 0) {
-      for (int j = 0; j < _nc1; j++) {
-        *C++ += *c++;
-      }
+          :
+          : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3]
+    "r"(nc3), [scale] "r"(scale), [bias] "r"(bias) : "memory", "q0", "q1", "q2",
+    "q3", "q4", "q5", "q6", "q7", "q10", "q11", "q12", "q13");
     }
-  }
 
-  // C = A * B + C, relu(C)
-  void Gemm::VecWriteWithAddRelu(int n, float *c, float *C, int ldc) {
-    int nc1 = n / 16;
-    int _nc1 = n % 16;
+    // C = A * B, batchnorm(C), relu(C)
+    void Gemm::VecWriteWithBnRelu(int n, float *c, float *C, int ldc, float
+    *scale, float *bias) { int nc1 = n / 16; int _nc1 = n % 16; int nc2 = _nc1 /
+    4; int nc3 = 16 - 4 * (_nc1 % 4);
 
-    asm volatile(
-        "vmov.f32   q14,      #0.0          \n\t"
-        "subs       %[nc1],   %[nc1],   #1  \n\t"
-        "blt        end_nc1_%=              \n\t"
-        "loop_nc1_%=:                       \n\t"
+      asm volatile(
+          "vmov.f32   q14,      #0.0          \n\t"
+          "subs       %[nc1],   %[nc1],   #1  \n\t"
+          "blt        end_nc1_%=              \n\t"
+          "loop_nc1_%=:                       \n\t"
 
-        "vld1.32    {q0, q1},   [%[c]]!     \n\t"
-        "vld1.32    {q2, q3},   [%[C]]      \n\t"
-        "vadd.f32   q10,  q0,   q2          \n\t"
-        "vadd.f32   q11,  q1,   q3          \n\t"
-        "vmax.f32   q10,  q10,  q14         \n\t"
-        "vmax.f32   q11,  q11,  q14         \n\t"
-        "vst1.32    {q10, q11}, [%[C]]!     \n\t"
+          "vld1.32    {q0, q1},   [%[c]]!     \n\t"
+          "vld1.32    {q2, q3},   [%[scale]]! \n\t"
+          "vld1.32    {q10, q11}, [%[bias]]!  \n\t"
+          "vmla.f32   q10,  q0,   q2          \n\t"
+          "vmla.f32   q11,  q1,   q3          \n\t"
+          "vmax.f32   q10,  q10,  q14         \n\t"
+          "vmax.f32   q11,  q11,  q14         \n\t"
+          "vst1.32    {q10, q11}, [%[C]]!     \n\t"
 
-        "vld1.32    {q4, q5},   [%[c]]!     \n\t"
-        "vld1.32    {q6, q7},   [%[C]]      \n\t"
-        "vadd.f32   q12,  q4,   q6          \n\t"
-        "vadd.f32   q13,  q5,   q7          \n\t"
-        "vmax.f32   q12,  q12,  q14         \n\t"
-        "vmax.f32   q13,  q13,  q14         \n\t"
-        "vst1.32    {q12, q13}, [%[C]]!     \n\t"
+          "vld1.32    {q4, q5},   [%[c]]!     \n\t"
+          "vld1.32    {q6, q7},   [%[scale]]! \n\t"
+          "vld1.32    {q12, q13}, [%[bias]]!  \n\t"
+          "vmla.f32   q12,  q4,   q6          \n\t"
+          "vmla.f32   q13,  q5,   q7          \n\t"
+          "vmax.f32   q12,  q12,  q14         \n\t"
+          "vmax.f32   q13,  q13,  q14         \n\t"
+          "vst1.32    {q12, q13}, [%[C]]!     \n\t"
 
-        "subs       %[nc1],   %[nc1],   #1  \n\t"
-        "bge        loop_nc1_%=             \n\t"
-        "end_nc1_%=:                        \n\t"
+          "subs       %[nc1],   %[nc1],   #1  \n\t"
+          "bge        loop_nc1_%=             \n\t"
+          "end_nc1_%=:                        \n\t"
 
-        : [C] "+r"(C), [c] "+r"(c)
-        : [nc1] "r"(nc1)
-        : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q10",
-  "q11", "q12", "q13");
+          "subs       %[nc2],   %[nc2],   #1  \n\t"
+          "blt        end_nc2_%=              \n\t"
+          "loop_nc2_%=:                       \n\t"
 
-    if (_nc1 != 0) {
-      for (int j = 0; j < _nc1; j++) {
-        *C += *c;
-        if (*C < 0) {
-          *C = 0;
-        }
-        C++;
-        c++;
-      }
+          "vld1.32    {q0},   [%[c]]!         \n\t"
+          "vld1.32    {q1},   [%[scale]]!     \n\t"
+          "vld1.32    {q10},  [%[bias]]!      \n\t"
+          "vmla.f32   q10,    q0,   q1        \n\t"
+          "vmax.f32   q10,    q10,  q14       \n\t"
+          "vst1.32    {q10},  [%[C]]!         \n\t"
+
+          "subs       %[nc2],   %[nc2],   #1  \n\t"
+          "bge        loop_nc2_%=             \n\t"
+          "end_nc2_%=:                        \n\t"
+
+          "cmp        %[nc3],    #16          \n\t"
+          "beq        end_nc3_%=              \n\t"
+
+          "sub        %[c],     %[c],   %[nc3]      \n\t"
+          "sub        %[scale], %[scale],  %[nc3]   \n\t"
+          "sub        %[bias],  %[bias],   %[nc3]   \n\t"
+          "sub        %[C],     %[C],   %[nc3]      \n\t"
+
+          "vld1.32    {q0},   [%[c]]!         \n\t"
+          "vld1.32    {q1},   [%[scale]]!     \n\t"
+          "vld1.32    {q10},  [%[bias]]!      \n\t"
+          "vmla.f32   q10,    q0,   q1        \n\t"
+          "vmax.f32   q10,    q10,  q14       \n\t"
+          "vst1.32    {q10},  [%[C]]!         \n\t"
+          "end_nc3_%=:                        \n\t"
+
+          :
+          : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3]
+    "r"(nc3), [scale] "r"(scale), [bias] "r"(bias) : "memory", "q0", "q1", "q2",
+    "q3", "q4", "q5", "q6", "q7", "q10", "q11", "q12", "q13", "q14");
     }
-  }
-
-  // C = A * B, batchnorm(C)
-  void Gemm::VecWriteWithBn(int n, float *c, float *C, int ldc, float *scale,
-                      float *bias) {
-    int nc1 = n / 16;
-    int _nc1 = n % 16;
-    int nc2 = _nc1 / 4;
-    int nc3 = 16 - 4 * (_nc1 % 4);
-
-    asm volatile(
-        "subs       %[nc1],   %[nc1],   #1  \n\t"
-        "blt        end_nc1_%=              \n\t"
-        "loop_nc1_%=:                       \n\t"
-
-        "vld1.32    {q0, q1},   [%[c]]!     \n\t"
-        "vld1.32    {q2, q3},   [%[scale]]! \n\t"
-        "vld1.32    {q10, q11}, [%[bias]]!  \n\t"
-        "vmla.f32   q10,  q0,   q2          \n\t"
-        "vmla.f32   q11,  q1,   q3          \n\t"
-        "vst1.32    {q10, q11}, [%[C]]!     \n\t"
-
-        "vld1.32    {q4, q5},   [%[c]]!     \n\t"
-        "vld1.32    {q6, q7},   [%[scale]]! \n\t"
-        "vld1.32    {q12, q13}, [%[bias]]!  \n\t"
-        "vmla.f32   q12,  q4,   q6          \n\t"
-        "vmla.f32   q13,  q5,   q7          \n\t"
-        "vst1.32    {q12, q13}, [%[C]]!     \n\t"
-
-        "subs       %[nc1],   %[nc1],   #1  \n\t"
-        "bge        loop_nc1_%=             \n\t"
-        "end_nc1_%=:                        \n\t"
-
-        "subs       %[nc2],   %[nc2],   #1  \n\t"
-        "blt        end_nc2_%=              \n\t"
-        "loop_nc2_%=:                       \n\t"
-
-        "vld1.32    {q0},   [%[c]]!         \n\t"
-        "vld1.32    {q1},   [%[scale]]!     \n\t"
-        "vld1.32    {q10},  [%[bias]]!      \n\t"
-        "vmla.f32   q10,    q0,   q1        \n\t"
-        "vst1.32    {q10},  [%[C]]!         \n\t"
-
-        "subs       %[nc2],   %[nc2],   #1  \n\t"
-        "bge        loop_nc2_%=             \n\t"
-        "end_nc2_%=:                        \n\t"
-
-        "cmp        %[nc3],    #16          \n\t"
-        "beq        end_nc3_%=              \n\t"
-
-        "sub        %[c],     %[c],   %[nc3]      \n\t"
-        "sub        %[scale], %[scale],  %[nc3]   \n\t"
-        "sub        %[bias],  %[bias],   %[nc3]   \n\t"
-        "sub        %[C],     %[C],   %[nc3]      \n\t"
-
-        "vld1.32    {q0},   [%[c]]!         \n\t"
-        "vld1.32    {q1},   [%[scale]]!     \n\t"
-        "vld1.32    {q10},  [%[bias]]!      \n\t"
-        "vmla.f32   q10,    q0,   q1        \n\t"
-        "vst1.32    {q10},  [%[C]]!         \n\t"
-        "end_nc3_%=:                        \n\t"
-
-        :
-        : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3]
-  "r"(nc3), [scale] "r"(scale), [bias] "r"(bias) : "memory", "q0", "q1", "q2",
-  "q3", "q4", "q5", "q6", "q7", "q10", "q11", "q12", "q13");
-  }
-
-  // C = A * B, batchnorm(C), relu(C)
-  void Gemm::VecWriteWithBnRelu(int n, float *c, float *C, int ldc, float
-  *scale, float *bias) { int nc1 = n / 16; int _nc1 = n % 16; int nc2 = _nc1 /
-  4; int nc3 = 16 - 4 * (_nc1 % 4);
-
-    asm volatile(
-        "vmov.f32   q14,      #0.0          \n\t"
-        "subs       %[nc1],   %[nc1],   #1  \n\t"
-        "blt        end_nc1_%=              \n\t"
-        "loop_nc1_%=:                       \n\t"
-
-        "vld1.32    {q0, q1},   [%[c]]!     \n\t"
-        "vld1.32    {q2, q3},   [%[scale]]! \n\t"
-        "vld1.32    {q10, q11}, [%[bias]]!  \n\t"
-        "vmla.f32   q10,  q0,   q2          \n\t"
-        "vmla.f32   q11,  q1,   q3          \n\t"
-        "vmax.f32   q10,  q10,  q14         \n\t"
-        "vmax.f32   q11,  q11,  q14         \n\t"
-        "vst1.32    {q10, q11}, [%[C]]!     \n\t"
-
-        "vld1.32    {q4, q5},   [%[c]]!     \n\t"
-        "vld1.32    {q6, q7},   [%[scale]]! \n\t"
-        "vld1.32    {q12, q13}, [%[bias]]!  \n\t"
-        "vmla.f32   q12,  q4,   q6          \n\t"
-        "vmla.f32   q13,  q5,   q7          \n\t"
-        "vmax.f32   q12,  q12,  q14         \n\t"
-        "vmax.f32   q13,  q13,  q14         \n\t"
-        "vst1.32    {q12, q13}, [%[C]]!     \n\t"
-
-        "subs       %[nc1],   %[nc1],   #1  \n\t"
-        "bge        loop_nc1_%=             \n\t"
-        "end_nc1_%=:                        \n\t"
-
-        "subs       %[nc2],   %[nc2],   #1  \n\t"
-        "blt        end_nc2_%=              \n\t"
-        "loop_nc2_%=:                       \n\t"
-
-        "vld1.32    {q0},   [%[c]]!         \n\t"
-        "vld1.32    {q1},   [%[scale]]!     \n\t"
-        "vld1.32    {q10},  [%[bias]]!      \n\t"
-        "vmla.f32   q10,    q0,   q1        \n\t"
-        "vmax.f32   q10,    q10,  q14       \n\t"
-        "vst1.32    {q10},  [%[C]]!         \n\t"
-
-        "subs       %[nc2],   %[nc2],   #1  \n\t"
-        "bge        loop_nc2_%=             \n\t"
-        "end_nc2_%=:                        \n\t"
-
-        "cmp        %[nc3],    #16          \n\t"
-        "beq        end_nc3_%=              \n\t"
-
-        "sub        %[c],     %[c],   %[nc3]      \n\t"
-        "sub        %[scale], %[scale],  %[nc3]   \n\t"
-        "sub        %[bias],  %[bias],   %[nc3]   \n\t"
-        "sub        %[C],     %[C],   %[nc3]      \n\t"
-
-        "vld1.32    {q0},   [%[c]]!         \n\t"
-        "vld1.32    {q1},   [%[scale]]!     \n\t"
-        "vld1.32    {q10},  [%[bias]]!      \n\t"
-        "vmla.f32   q10,    q0,   q1        \n\t"
-        "vmax.f32   q10,    q10,  q14       \n\t"
-        "vst1.32    {q10},  [%[C]]!         \n\t"
-        "end_nc3_%=:                        \n\t"
-
-        :
-        : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3]
-  "r"(nc3), [scale] "r"(scale), [bias] "r"(bias) : "memory", "q0", "q1", "q2",
-  "q3", "q4", "q5", "q6", "q7", "q10", "q11", "q12", "q13", "q14");
-  }
-  */
+    */
 
 #endif  // __aarch64__
 #else
@@ -3149,13 +3150,18 @@ void Gemm::SgemmWithPRelu(int m, int n, int k, const float *A, int lda,
 void Gemm::Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
                      const float *B, int ldb, float beta, float *C, int ldc,
                      bool relu, float *bias) {
+  if (m == 1 && bias == nullptr) {
+    return VectorKernel(m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, relu);
+  }
 #ifdef _OPENMP
   int max_threads = omp_get_max_threads();
 #else
   int max_threads = 1;
 #endif
 
-  int L1 = 64 / max_threads * 1024;
+  //  int L1 = 64 / max_threads * 1024;
+  int L = (max_threads > 2) ? 64 : 32;
+  int L1 = L / max_threads * 1024;
   KC = k;
   zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
   memset(static_cast<void *>(zero), 0, sizeof(float) * KC);

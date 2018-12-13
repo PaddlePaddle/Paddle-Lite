@@ -17,7 +17,6 @@ limitations under the License. */
 #pragma once
 
 #include "framework/operator.h"
-
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
@@ -30,6 +29,15 @@ class ReluKernel
   void Compute(const ReluParam<DeviceType>& param);
   bool Init(ReluParam<DeviceType>* param);
 };
+
+template <typename DeviceType, typename T>
+class Relu6Kernel
+    : public framework::OpKernelBase<DeviceType, ReluParam<DeviceType>> {
+ public:
+  void Compute(const ReluParam<DeviceType>& param);
+  bool Init(ReluParam<DeviceType>* param);
+};
+
 }  // namespace operators
 }  // namespace paddle_mobile
 

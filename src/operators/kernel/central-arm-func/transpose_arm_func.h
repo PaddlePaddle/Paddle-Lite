@@ -21,23 +21,6 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-// vector<int> pos;
-// template <typename T>
-// void TransposeFunc(const int numel, const T* input, const vector<int> axis,
-//                    const vector<int> old_strides, const vector<int>
-//                    new_strides, T* output) {
-//   for (int i = 0; i < numel; ++i) {
-//     int old_idx = 0;
-//     int idx = i;
-//     for (int j = 0; j < axis.size(); ++j) {
-//       int order = axis[j];
-//       old_idx += (idx / new_strides[j]) * old_strides[order];
-//       idx %= new_strides[j];
-//     }
-//     output[i] = input[old_idx];
-//   }
-// }
-
 template <typename P>
 void TransposeCompute(const TransposeParam<CPU>& param) {
   const auto* input_x = param.InputX();
