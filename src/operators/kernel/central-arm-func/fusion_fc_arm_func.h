@@ -23,20 +23,15 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-template <typename P, typename S>
+template <typename Itype, typename Otype>
 void FusionFcCompute(const FusionFcParam<CPU> &param) {
   const Tensor *input_x = param.InputX();
   const Tensor *input_y = param.InputY();
   Tensor *input_z = param.InputZ();
-  S *input_z_data = input_z->data<S>();
+  Otype *input_z_data = input_z->data<Otype>();
   int axis = param.Axis();
   Tensor *out = param.Out();
-  //  int m = out->dims()[0];
-  //  int n = out->dims()[1];
-  auto *out_data = out->mutable_data<P>();
-
-  float alpha = 1.0f;
-  float beta = 1.0f;
+  auto *out_data = out->mutable_data<Itype>();
 
   const Tensor x_matrix =
       input_x->dims().size() > 2
@@ -57,28 +52,14 @@ void FusionFcCompute(const FusionFcParam<CPU> &param) {
   axis = (axis == -1 ? out_dim.size() - input_z->dims().size() : axis);
   PADDLE_MOBILE_ENFORCE(axis == 1, " to fit broadcast, axis = 1. ");
 
-  if (std::is_same<P, int8_t>::value) {
-#ifdef FUSION_FC_INT8_OP
-    alpha = param.InputScale()->data<float>()[0];
-    beta = 0.0f;
-    math::matmul(x_matrix, false, y_matrix, false, alpha, out, beta, false,
-                 input_z_data, true);
-#endif
-  } else {
-    // bias_data的维度和out的第二个维度一致
-    int64_t classes = input_z->numel();
-    for (int i = 0; i < out_dim[0]; i++) {
-      memory::Copy(out_data + i * classes, input_z_data,
-                   sizeof(float) * classes);
-    }
-
-    math::matmul<float>(x_matrix, false, y_matrix, false, alpha, out, beta,
-                        false);
+  // bias_data的维度和out的第二个维度一致
+  int64_t classes = input_z->numel();
+  for (int i = 0; i < out_dim[0]; i++) {
+    memory::Copy(out_data + i * classes, input_z_data, sizeof(Otype) * classes);
   }
-  PADDLE_MOBILE_ENFORCE(out_dim.size() == 2, " out_dim.size must be 2.");
-  //  if (out_dim.size() != 2) {
-  //      out->Resize(out_dim);
-  //  }
+  math::matmul<Itype, Otype>(x_matrix, false, y_matrix, false,
+                             static_cast<float>(1), out, static_cast<float>(1),
+                             false);
 }
 
 }  // namespace operators

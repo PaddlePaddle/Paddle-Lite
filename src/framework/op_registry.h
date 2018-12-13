@@ -98,24 +98,6 @@ class OpRegistry {
   }
 };
 
-#define REGISTER_OPERATOR_INT8(op_type, op_class, device_name, device_type) \
-  template class op_class<device_type, int8_t>;                             \
-  template <typename Dtype, typename T>                                     \
-  class _OpClass_##op_type##_##device_name : public op_class<Dtype, T> {    \
-   public:                                                                  \
-    DEFINE_OP_CONSTRUCTOR(_OpClass_##op_type##_##device_name, op_class);    \
-  };                                                                        \
-  static paddle_mobile::framework::OperatorRegistrar<                       \
-      device_type, _OpClass_##op_type##_##device_name<device_type, int8_t>> \
-      __op_registrar_##op_type##_##device_name(#op_type);                   \
-  int TouchOpRegistrar_##op_type##_##device_name() {                        \
-    __op_registrar_##op_type##_##device_name.Touch();                       \
-    return 0;                                                               \
-  }
-
-#define REGISTER_OPERATOR_CPU_INT8(op_type, op_class) \
-  REGISTER_OPERATOR_INT8(op_type, op_class, cpu, paddle_mobile::CPU);
-
 #define REGISTER_OPERATOR(op_type, op_class, device_name, device_type)     \
   template class op_class<device_type, float>;                             \
   template <typename Dtype, typename T>                                    \
