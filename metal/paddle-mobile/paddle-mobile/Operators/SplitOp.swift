@@ -15,7 +15,7 @@
 import Foundation
 
 class SplitParam<P: PrecisionType>: OpParam {
-  typealias ParamPrecisionType = P
+  //typealias ParamPrecisionType = P
   required init(opDesc: OpDesc, inScope: Scope) throws {
     do {
       input = try SplitParam.inputX(inputs: opDesc.inputs, from: inScope)

@@ -67,7 +67,8 @@ class OpCreator<P: PrecisionType> {
          gFlatten                   :     FlattenOp<P>.creat,
          gConvAddPreluType          :     ConvAddPreluOp<P>.creat,
          gConvAddAddPreluType       :     ConvAddAddPreluOp<P>.creat,
-         gElementwiseAddPreluType:   ElementwiseAddPreluOp<P>.creat]
+         gElementwiseAddPreluType   :     ElementwiseAddPreluOp<P>.creat,
+         gFusionConvAddType         :     ConvAddOp<P>.creat]
   
     private init(){}
 }
