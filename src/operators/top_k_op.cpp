@@ -12,28 +12,29 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef GRU_OP
+#ifdef TOP_K_OP
 
-#include "operators/kernel/gru_kernel.h"
-#include "operators/kernel/central-arm-func/gru_arm_func.h"
+#include "operators/top_k_op.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <>
-bool GruKernel<CPU, float>::Init(GruParam<CPU> *param) {
-  return true;
+template <typename DeviceType, typename T>
+void TopKOp<DeviceType, T>::InferShape() const {
+  const int k = this->param_.k_;
+  auto dims = this->param_.input_->dims();
+  // should check k <= dims[-1] && k >= 1
+  dims[dims.size() - 1] = k;
+  this->param_.output_->Resize(dims);
+  this->param_.indices_->Resize(dims);
 }
-
-template <>
-void GruKernel<CPU, float>::Compute(const GruParam<CPU> &param) {
-  GruCompute<float>(param);
-  param.OutHidden()->set_lod(param.InputInput()->lod());
-}
-
-template class GruKernel<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
+namespace ops = paddle_mobile::operators;
+#ifdef PADDLE_MOBILE_CPU
+REGISTER_OPERATOR_CPU(top_k, ops::TopKOp);
 #endif
+
+#endif  // TOP_K_OP

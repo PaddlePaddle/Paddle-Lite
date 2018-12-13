@@ -150,6 +150,8 @@ extern const char *G_OP_TYPE_CONV_TRANSPOSE;
 extern const char *G_OP_TYPE_PRELU;
 extern const char *G_OP_TYPE_SUM;
 extern const char *G_OP_TYPE_ELEMENTWISE_MUL;
+extern const char *G_OP_TYPE_TOP_K;
+extern const char *G_OP_TYPE_CAST;
 
 extern const char *G_OP_TYPE_QUANTIZE;
 extern const char *G_OP_TYPE_DEQUANTIZE;

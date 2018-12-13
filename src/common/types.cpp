@@ -69,6 +69,8 @@ const char *G_OP_TYPE_FLATTEN = "flatten";
 const char *G_OP_TYPE_SHAPE = "shape";
 const char *G_OP_TYPE_ELEMENTWISE_MUL = "elementwise_mul";
 const char *G_OP_TYPE_SUM = "sum";
+const char *G_OP_TYPE_TOP_K = "top_k";
+const char *G_OP_TYPE_CAST = "cast";
 
 const char *G_OP_TYPE_QUANTIZE = "quantize";
 const char *G_OP_TYPE_DEQUANTIZE = "dequantize";
@@ -142,6 +144,8 @@ std::unordered_map<
         {G_OP_TYPE_SHAPE, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_CONV_TRANSPOSE, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_SUM, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_TOP_K, {{"X"}, {"Out", "Indices"}}},
+        {G_OP_TYPE_CAST, {{"X"}, {"Out"}}},
         {G_OP_TYPE_ELEMENTWISE_MUL, {{"X", "Y"}, {"Out"}}},
         {G_OP_TYPE_QUANTIZE, {{"X"}, {"Out", "OutScale"}}},
         {G_OP_TYPE_DEQUANTIZE, {{"X", "Scale"}, {"Out"}}},
