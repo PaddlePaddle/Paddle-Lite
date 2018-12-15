@@ -57,7 +57,7 @@ void FusionFcCompute(const FusionFcParam<CPU> &param) {
   for (int i = 0; i < out_dim[0]; i++) {
     memory::Copy(out_data + i * classes, input_z_data, sizeof(Otype) * classes);
   }
-  math::matmul<Itype, Otype>(x_matrix, false, y_matrix, false,
+  math::MatMul<Itype, Otype>(x_matrix, false, y_matrix, false,
                              static_cast<float>(1), out, static_cast<float>(1),
                              false);
 }
