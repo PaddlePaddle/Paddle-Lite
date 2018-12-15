@@ -106,9 +106,9 @@ void DWConvBNReluBasic(const FusionDWConvBNReluParam<CPU> &param) {
       // gemm
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
-      math::matmulWithBn<float>(
-          filter_slice, false, col_matrix, false, static_cast<float>(1),
-          &out_slice, static_cast<float>(0), true, &new_scale, &new_bias, g);
+      math::MatMulWithBn(filter_slice, false, col_matrix, false,
+                         static_cast<float>(1), &out_slice,
+                         static_cast<float>(0), true, &new_scale, &new_bias, g);
     }
   }
 }

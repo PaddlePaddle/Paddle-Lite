@@ -25,12 +25,11 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
-using std::string;
 
 template <typename DeviceType, typename T>
 class FillConstantOp : public framework::OperatorBase<DeviceType> {
  public:
-  FillConstantOp(const string &type, const VariableNameMap &inputs,
+  FillConstantOp(const std::string &type, const VariableNameMap &inputs,
                  const VariableNameMap &outputs,
                  const framework::AttributeMap attrs,
                  std::shared_ptr<framework::Scope> scope)
@@ -58,7 +57,7 @@ class FillConstantOp : public framework::OperatorBase<DeviceType> {
     tensor->Resize(framework::make_ddim(param_.Shape()));
     tensor->mutable_data(framework::ToTypeIndex(data_type));
 
-    math::set_constant(tensor, value);
+    math::SetConstant(tensor, value);
   }
 
   void Init() {}

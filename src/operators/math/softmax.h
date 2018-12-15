@@ -13,17 +13,21 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #ifdef SOFTMAX_OP
+
 #pragma once
+
 #include "framework/tensor.h"
+
 namespace paddle_mobile {
 namespace operators {
 namespace math {
 
-template <typename DeviceType, typename T>
+template <typename Device, typename T>
 class SoftmaxFuntor {
  public:
   void operator()(const framework::Tensor *X, framework::Tensor *Y);
 };
+
 }  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile

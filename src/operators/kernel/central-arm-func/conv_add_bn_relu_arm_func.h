@@ -25,6 +25,7 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
+
 void ConvAddBNReluBasic(const FusionConvAddBNReluParam<CPU> &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
@@ -105,12 +106,13 @@ void ConvAddBNReluBasic(const FusionConvAddBNReluParam<CPU> &param) {
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
 
-      math::matmulWithBn<float>(
-          filter_slice, false, col_matrix, false, static_cast<float>(1),
-          &out_slice, static_cast<float>(0), true, &new_scale, &new_bias, g);
+      math::MatMulWithBn(filter_slice, false, col_matrix, false,
+                         static_cast<float>(1), &out_slice,
+                         static_cast<float>(0), true, &new_scale, &new_bias, g);
     }
   }
 }
+
 template <typename P>
 void ConvAddBNReluCompute(const FusionConvAddBNReluParam<CPU> &param) {
   Tensor Bias;
@@ -126,9 +128,6 @@ void ConvAddBNReluCompute(const FusionConvAddBNReluParam<CPU> &param) {
              param.Input()->dims()[1] == param.Output()->dims()[1] &&
              param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
              param.Filter()->dims()[2] == 3 && param.Strides()[0] == 2) {
-    //    math::DepthwiseConvAddBNRelu3x3s2p1(param.Input(), param.Filter(),
-    //                                        param.Output(), param.NewScale(),
-    //                                        param.NewBias(), 1);
     math::DepthwiseConvAddBNRelu3x3s2p1v2(param.Input(), param.Filter(),
                                           param.Output(), param.NewScale(),
                                           param.NewBias(), true);

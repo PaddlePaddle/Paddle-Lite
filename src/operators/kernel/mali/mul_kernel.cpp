@@ -44,7 +44,7 @@ void MulKernel<GPU_MALI, float>::Compute(const MulParam<GPU_MALI> &param) {
   if (out_dim.size() != 2) {
     out->Resize({x_matrix.dims()[0], y_matrix.dims()[1]});
   }
-  math::matmul<float>(x_matrix, false, y_matrix, false, static_cast<float>(1),
+  math::MatMul<float>(x_matrix, false, y_matrix, false, static_cast<float>(1),
                       out, static_cast<float>(0));
   if (out_dim.size() != 2) {
     out->Resize(out_dim);
