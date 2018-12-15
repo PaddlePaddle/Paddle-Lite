@@ -61,7 +61,7 @@ void FusionFcKernel<GPU_MALI, float>::Compute(
   for (int i = 0; i < out->numel(); i++) {
     DLOG << out_data[i];
   }
-  math::matmul<float>(x_matrix, false, y_matrix, false, static_cast<float>(1),
+  math::MatMul<float>(x_matrix, false, y_matrix, false, static_cast<float>(1),
                       out, static_cast<float>(1));
   PADDLE_MOBILE_ENFORCE(out_dim.size() == 2, " out_dim.size must be 2.");
   //            if (out_dim.size() != 2) {
