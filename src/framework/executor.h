@@ -17,6 +17,7 @@ limitations under the License. */
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include "common/types.h"
 #include "common/util.h"
@@ -28,41 +29,29 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace framework {
 
-template <typename Dtype = CPU, Precision P = Precision::FP32>
+template <typename Device, typename T = float>
 class Executor {
  public:
-  typedef typename PrecisionTrait<P>::ptype Ptype;
-  // exector constructor
-  // @param program program converted from proto program in PaddlePaddle
-  // @param use_optimize bool whether use operator fusion to speed up or not
-  // @param loddable bool
-  Executor(const framework::Program<Dtype> program, int batch_size = 1,
-           const bool use_optimize = true, const bool loddable = false);
+  Executor(const Program<Device> &program, int batch_size = 1,
+           const bool use_optimize = true, const bool lod_mode = false);
 
-  // predict with tensor input
-  // @param t input tensor to do prediction
-  // @return predicted tensor
-  std::shared_ptr<framework::Tensor> Predict(const framework::Tensor &t);
+  PMStatus Predict(const std::vector<std::pair<std::string, Tensor>> &inputs);
+  PMStatus Predict(
+      const std::vector<std::pair<std::string, LoDTensor>> &inputs);
 
-  // predict with lod tensor input
-  // @param t input lod tensor to do prediction
-  // @return predicted lod tensor
-  std::shared_ptr<framework::LoDTensor> PredictLod(
-      const framework::LoDTensor &t);
+  std::vector<T> Predict(const std::vector<T> &input,
+                         const std::vector<int64_t> &dims);
+  PMStatus Predict();
 
-  // predict with vector input and dims
-  // @param input vector whose elements will be formed
-  // @param       input lod tensor to do prediction
-  // @param dims  vector whose elements will be formed
-  // @param       input tensor shape
-  // @return vector which is flatted from predicted tensor
-  std::vector<Ptype> Predict(const std::vector<Ptype> &input,
-                             const std::vector<int64_t> &dims);
+  void SetInput(const Tensor &input, const std::string &var_name);
+  void SetInput(const LoDTensor &input, const std::string &var_name);
+
+  std::shared_ptr<LoDTensor> GetOutput(const std::string &var_name);
 
 #ifdef PADDLE_MOBILE_FPGA
-  void InjectVariable(const framework::Tensor &t, std::string var_name);
-  void FeedData(const framework::Tensor &t);
-  std::shared_ptr<framework::Tensor> FetchResult(int id = -1);
+  void InjectVariable(const Tensor &t, std::string var_name);
+  void FeedData(const Tensor &t);
+  std::shared_ptr<Tensor> FetchResult(int id = -1);
   void Predict_From_To(int start = 0, int end = -1);
   void Predict_From(int start);
   void Predict_To(int end);
@@ -70,26 +59,28 @@ class Executor {
 
  protected:
   Executor() = default;
-  std::shared_ptr<framework::Tensor> Predict(const framework::Tensor &t,
-                                             int block_id);
-  bool varInputMemory(const std::shared_ptr<framework::VarDesc> &var_desc,
-                      framework::Variable *var,
-                      framework::LoDTensor *tensor) const;
+
+  bool varInputMemory(const std::shared_ptr<VarDesc> &var_desc, Variable *var,
+                      LoDTensor *tensor) const;
   void InitMemory();
   void InitCombineMemory();
-  void LoadMemory(void **data,
-                  const std::shared_ptr<framework::VarDesc> var_desc,
-                  framework::LoDTensor *tensor);
+  void LoadMemory(void **data, const std::shared_ptr<VarDesc> var_desc,
+                  LoDTensor *tensor);
 #ifdef PADDLE_MOBILE_CL
-  void LoadMemory(const framework::VarDesc var_desc, float *tensorInput,
-                  char **data);
+  void LoadMemory(const VarDesc var_desc, float *tensorInput, char **data);
 #endif
-  framework::Program<Dtype> program_;
-  int batch_size_ = 1;
-  std::shared_ptr<framework::ProgramDesc> to_predict_program_;
-  std::map<framework::BlockDesc,
-           std::vector<std::shared_ptr<framework::OperatorBase<Dtype>>>>
-      ops_of_block_;
+
+  int batch_size_;
+  bool use_optimize_;
+  bool lod_mode_;
+  Program<Device> program_;
+  std::shared_ptr<ProgramDesc> program_desc_;
+
+  typedef std::shared_ptr<OperatorBase<Device>> OperatorBasePtr;
+  std::vector<std::vector<OperatorBasePtr>> ops_of_block_;
+  // operators list
+  std::vector<OperatorBasePtr> ops_list_;
+
 #ifdef PADDLE_MOBILE_PROFILE
   struct ProfInfo {
     int tid = 0;
@@ -97,8 +88,6 @@ class Executor {
     uint64_t runEnd = 0UL;
   };
 #endif
-  bool use_optimize_ = false;
-  bool loddable_ = false;
 };
 
 }  // namespace framework

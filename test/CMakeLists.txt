@@ -375,5 +375,8 @@ if (NOT FOUND_MATCH)
     # gen test
     ADD_EXECUTABLE(test-super net/test_super.cpp test_helper.h test_include.h)
     target_link_libraries(test-super paddle-mobile)
-    #add_library(test-lib-size SHARED common/test_lib_size.h common/test_lib_size.cpp)
+   
+    # gen test
+    ADD_EXECUTABLE(test-ocr net/test_ocr.cpp test_helper.h test_include.h)
+    target_link_libraries(test-ocr paddle-mobile)
 endif ()
