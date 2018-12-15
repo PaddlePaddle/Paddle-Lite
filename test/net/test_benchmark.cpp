@@ -52,15 +52,16 @@ int main(int argc, char* argv[]) {
     SetupTensor<float>(&input, in_shape, 0.f, 255.f);
     // warmup
     for (int i = 0; i < 10; ++i) {
-      output = paddle_mobile.Predict(input);
+      paddle_mobile.Predict(input);
     }
     auto time3 = time();
     for (int i = 0; i < 10; ++i) {
-      output = paddle_mobile.Predict(input);
+      paddle_mobile.Predict(input);
     }
     auto time4 = time();
     std::cout << "predict cost :" << time_diff(time3, time4) / 10 << "ms\n";
     std::ostringstream os("output tensor size: ");
+    output = paddle_mobile.Fetch();
     os << output->numel() << "\n" << output->data<float>()[0];
     for (int i = 1; i < output->numel(); ++i) {
       os << ", " << output->data<float>()[i];
