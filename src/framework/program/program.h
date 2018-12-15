@@ -14,16 +14,15 @@ limitations under the License. */
 
 #pragma once
 
+#include <string>
 #include "common/types.h"
 #include "framework/program/program_desc.h"
 #include "framework/scope.h"
 
-#include <string>
-
 namespace paddle_mobile {
 namespace framework {
 
-template <typename Dtype, Precision P = Precision::FP32>
+template <typename Device, typename T = float>
 class Program {
  public:
   std::shared_ptr<ProgramDesc> originProgram;

@@ -226,7 +226,6 @@ inline Print &operator<<(Print &printer, const Tensor &tensor) {
     }
   }
 #endif
-
   return printer;
 }
 

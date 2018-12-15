@@ -372,5 +372,12 @@ if (NOT FOUND_MATCH)
     # gen test
     ADD_EXECUTABLE(test-super net/test_super.cpp test_helper.h test_include.h)
     target_link_libraries(test-super paddle-mobile)
+<<<<<<< HEAD
     
+=======
+   
+    # gen test
+    ADD_EXECUTABLE(test-ocr net/test_ocr.cpp test_helper.h test_include.h)
+    target_link_libraries(test-ocr paddle-mobile)
+>>>>>>> Support feed multi inputs and fetch multi outputs
 endif ()
