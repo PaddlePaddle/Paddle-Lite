@@ -13,8 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #ifdef FUSION_CONVADDPRELU_OP
-
 #pragma once
+
+#include <string>
 #include <vector>
 #include "operators/math/conv_func.h"
 #include "operators/math/im2col.h"
@@ -30,8 +31,6 @@ void ConvAddPReluCompute(const FusionConvAddPReluParam<CPU> &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
   Tensor bias = *param.Bias();
-  //            DLOG<<"yangfei";
-  //            DLOG<<bias.dims();
   int axis = param.Axis();
   Tensor *output = param.Output();
   float *biase_data = bias.data<float>();
@@ -112,13 +111,7 @@ void ConvAddPReluCompute(const FusionConvAddPReluParam<CPU> &param) {
       // gemm
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
-      //                    math::matmul<float>(filter_slice, false, col_matrix,
-      //                    false,
-      //                                        static_cast<float>(1),
-      //                                        &out_slice,
-      //                                        static_cast<float>(1), true,
-      //                                        biase_data);
-      math::matmulWithPRelu(filter_slice, false, col_matrix, false, &out_slice,
+      math::MatMulWithPRelu(filter_slice, false, col_matrix, false, &out_slice,
                             p, mode, biase_data, nullptr);
     }
   }
@@ -127,4 +120,4 @@ void ConvAddPReluCompute(const FusionConvAddPReluParam<CPU> &param) {
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#endif
+#endif  // FUSION_CONVADDPRELU_OP
