@@ -41,12 +41,12 @@ int main(int argc, char* argv[]) {
 #endif
   paddle_mobile.SetThreadNum(thread_num);
   auto time1 = time();
-  if (paddle_mobile.Load(g_googlenet, optimize)) {
+  std::vector<float> output;
+  if (paddle_mobile.Load(g_googlenet, optimize, false, 1, true)) {
     auto time2 = paddle_mobile::time();
     std::cout << "load cost :" << paddle_mobile::time_diff(time1, time2) << "ms"
               << std::endl;
     std::vector<float> input;
-    std::vector<float> output;
     std::vector<int64_t> dims{1, 3, 224, 224};
     if (feed_shape) {
       sscanf(feed_shape, "%d,%d,%d", &dims[1], &dims[2], &dims[3]);
