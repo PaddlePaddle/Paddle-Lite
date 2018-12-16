@@ -128,7 +128,7 @@ void SoftmaxFuntor<CPU, float>::operator()(const framework::Tensor *X,
         x0 = vmulq_f32(x0, __inv_sum);
         x1 = vmulq_f32(x1, __inv_sum);
         vst1q_f32(output, x0);
-        vst1q_f32(output + 4, x0);
+        vst1q_f32(output + 4, x1);
       }
 #endif
       for (int i = 0; i < remain; ++i) {
