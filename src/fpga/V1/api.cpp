@@ -24,8 +24,6 @@ namespace fpga {
 #define USE_RELU 1
 #define USE_BIAS 2
 
-int get_align_image_cw(int cw) { return align_to_x(cw, IMAGE_ALIGNMENT); }
-
 void format_image(framework::Tensor *image_tensor) {
   auto dims = image_tensor->dims();
   auto channel = dims[1], height = dims[2], width = dims[3];
@@ -94,10 +92,6 @@ int get_filter_num_per_div(framework::Tensor *filter_tensor, int group_num) {
 
 int get_aligned_filter_element_num(int chw) {
   return align_to_x(chw, FILTER_ELEMENT_ALIGNMENT);
-}
-
-int get_aligned_filter_num(int num) {
-  return align_to_x(num, FILTER_NUM_ALIGNMENT);
 }
 
 void format_filter(framework::Tensor *filter_tensor, float max_value,
@@ -177,46 +171,37 @@ void format_concat_output(framework::Tensor *out, int height, int width,
 
 void expand_conv_arg(ConvArgs *arg) {
   ConvArgs args = *arg;
-  uint64_t filterlen = (uint64_t)args.kernel.width *
-                       (uint64_t)args.kernel.height *
-                       (uint64_t)args.image.channels;
-  filterlen = align_to_x(filterlen, FILTER_ELEMENT_ALIGNMENT);
-  filterlen *= align_to_x((uint64_t)args.filter_num, FILTER_NUM_ALIGNMENT);
-  uint64_t fpga_bias_scale_len =
+
+  auto fpga_bias_scale_len =
       align_to_x(args.filter_num / args.group_num, 8) * args.group_num;
 
-  uint64_t output_height =
+  auto output_height =
       (args.image.height + args.image.pad_height * 2 - args.kernel.height) /
           args.kernel.stride_h +
       1;
-  uint64_t output_width =
+  auto output_width =
       (args.image.width + args.image.pad_width * 2 - args.kernel.width) /
           args.kernel.stride_w +
       1;
-  uint64_t output_size =
-      output_height * output_width * (uint64_t)args.filter_num;
 
-  auto filter_per_group = (uint64_t)(args.filter_num / args.group_num);
-  auto channel_per_group = (uint64_t)(args.image.channels / args.group_num);
+  auto filter_per_group = args.filter_num / args.group_num;
+  auto channel_per_group = args.image.channels / args.group_num;
 
-  uint64_t image_row_count = ((uint64_t)args.image.width) *
-                             ((uint64_t)args.image.channels);  // without align
-  uint64_t image_amount_per_row = align_to_x(image_row_count, IMAGE_ALIGNMENT);
-  uint64_t image_one_pad_per_row =
-      align_to_x(image_row_count, IMAGE_ALIGNMENT) +
-      ((uint64_t)args.image.pad_width) * ((uint64_t)args.image.channels);
-  uint64_t filter_amount_all =
-      align_to_x(((uint64_t)args.kernel.height) *
-                     ((uint64_t)args.kernel.width) * channel_per_group,
+  auto image_row_count = args.image.width * args.image.channels;
+  auto image_amount_per_row = align_to_x(image_row_count, IMAGE_ALIGNMENT);
+  auto image_one_pad_per_row = align_to_x(image_row_count, IMAGE_ALIGNMENT) +
+                               args.image.pad_width * args.image.channels;
+  auto filter_amount_all =
+      align_to_x(args.kernel.height * args.kernel.width * channel_per_group,
                  FILTER_ELEMENT_ALIGNMENT);
 
-  uint64_t output_amount_per_row =
-      align_to_x(output_width * ((uint64_t)args.filter_num), IMAGE_ALIGNMENT);
+  auto output_amount_per_row =
+      align_to_x(output_width * args.filter_num, IMAGE_ALIGNMENT);
 
   // find the opt partition strategy
   uint64_t res_win;
   uint64_t res_fit = 0;
-  for (res_win = 1; res_win <= output_width; res_win = res_win + 1) {
+  for (res_win = 1; res_win <= output_width; res_win++) {
     if ((align_to_x(
              (args.image.channels *
               (args.kernel.width + (res_win - 1) * args.kernel.stride_w)),
@@ -238,48 +223,48 @@ void expand_conv_arg(ConvArgs *arg) {
   }
   res_fit = res_win;
 
-  uint64_t block_num = (output_width + res_fit - 1) / res_fit;
-  uint64_t block_len = res_fit;
-  uint64_t block_last = output_width - res_fit * (block_num - 1);
+  auto block_num = (output_width + res_fit - 1) / res_fit;
+  auto block_len = res_fit;
+  auto block_last = output_width - res_fit * (block_num - 1);
 
-  uint64_t res_amount_per_row = output_width * args.filter_num;
-  uint64_t res_amount_per_row_pad = output_amount_per_row - res_amount_per_row;
+  auto res_amount_per_row = output_width * args.filter_num;
+  auto res_amount_per_row_pad = output_amount_per_row - res_amount_per_row;
 
-  uint64_t image_block_amount_per_row =
-      args.kernel.stride_w * (res_fit)*args.image.channels;
-  uint64_t filter_pad_width_mul_channel =
+  auto image_block_amount_per_row =
+      args.kernel.stride_w * res_fit * args.image.channels;
+  auto filter_pad_width_mul_channel =
       args.image.pad_width * args.image.channels;
-  uint64_t image_amount_per_row_multi_win_first =
+  auto image_amount_per_row_multi_win_first =
       image_amount_per_row * (4 * args.kernel.stride_h - args.image.pad_height);
-  uint64_t image_amount_per_row_multi_win =
+  auto image_amount_per_row_multi_win =
       image_amount_per_row * (4 * args.kernel.stride_h);
 
-  uint64_t image_block_num = block_num;
-  uint64_t image_block_len =
+  auto image_block_num = block_num;
+  auto image_block_len =
       align_to_x((args.image.channels *
                   (args.kernel.width + (block_len - 1) * args.kernel.stride_w)),
                  IMAGE_ALIGNMENT) /
           16 +
       1;
-  uint64_t image_block_len_last =
+  auto image_block_len_last =
       align_to_x(
           (args.image.channels *
            (args.kernel.width + (block_last - 1) * args.kernel.stride_w)),
           IMAGE_ALIGNMENT) /
           16 +
       1;
-  uint64_t image_win_cnt = block_len;
-  uint64_t image_win_cnt_last = block_last;
-  uint64_t res_row_data_align4_pad = res_amount_per_row_pad / 8;
-  uint64_t prog_full_cnt = 2048 / (filter_amount_all / 16 * 2) - 1;
+  auto image_win_cnt = block_len;
+  auto image_win_cnt_last = block_last;
+  auto res_row_data_align4_pad = res_amount_per_row_pad / 8;
+  auto prog_full_cnt = 2048 / (filter_amount_all / 16 * 2) - 1;
   if (prog_full_cnt == 1023) {
     prog_full_cnt--;
   }
-  uint64_t post_prog_full_cnt =
+  auto post_prog_full_cnt =
       (512 / (align_to_x(args.filter_num, 4) / 4 * 2) > 2)
           ? (512 / (align_to_x(args.filter_num, 4) / 4 * 2) - 2)
           : 0;
-  uint64_t cmd = 0UL | (args.relu_enabled ? USE_RELU : 0) | USE_BIAS;
+  auto cmd = 0UL | (args.relu_enabled ? USE_RELU : 0) | USE_BIAS;
 
   (*arg).driver.image_address_phy = vaddr_to_paddr(args.image.address);
   (*arg).driver.sb_address_phy = vaddr_to_paddr(args.sb_address);
@@ -449,7 +434,6 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
   arg->sub_conv_num = (uint32_t)stride_h;
   arg->filter_num = (uint32_t)filter->dims()[0];
   int sub_conv_num = arg->sub_conv_num;
-  int sub_stride = 1;
   int sub_pad = deconv_filter::deconv_calc_sub_pad((int)filter->dims()[3],
                                                    padding_w, stride_w);
   int sub_filter_width = deconv_filter::deconv_get_sub_filter_axis(
@@ -466,16 +450,12 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
       stride_w, (int)filter->dims()[3], padding_w);
   arg->conv_args = (ConvArgs *)fpga_malloc(sub_conv_num * sizeof(ConvArgs));
 
-  int sub_channels = (int)input->dims()[1];
-  int omit_size = arg->omit_size;
-  int real_out_width = sub_output_width * sub_conv_num - 2 * omit_size;
-  int real_out_height = sub_output_height * sub_conv_num - 2 * omit_size;
+  auto sub_channels = (int)input->dims()[1];
   int sub_filter_num = sub_conv_num * (arg->filter_num);
 
   int conv_output_size =
       (align_to_x(sub_output_width * sub_filter_num, IMAGE_ALIGNMENT)) *
       sub_output_height;
-  int ouput_size = conv_output_size * sub_conv_num;
 
   int align_sub_filter_num = align_to_x(sub_filter_num, FILTER_NUM_ALIGNMENT);
   int align_sub_filter_count =
@@ -485,7 +465,7 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
       align_sub_filter_count * align_sub_filter_num;
 
   for (int i = 0; i < sub_conv_num; ++i) {
-    arg->conv_args[i].filter_num = (arg->sub_conv_num) * (arg->filter_num);
+    arg->conv_args[i].filter_num = arg->sub_conv_num * arg->filter_num;
     arg->conv_args[i].group_num = (uint32_t)group_num;
 
     arg->conv_args[i].filter_scale_address = filter->scale;
@@ -496,7 +476,6 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
     arg->conv_args[i].kernel.stride_w = 1;
     arg->conv_args[i].kernel.stride_h = 1;
 
-    // DeconvParam.conv_args[i].image.address = (void*)ptr_image;
     arg->conv_args[i].image.scale_address = input->scale;
     arg->conv_args[i].image.channels = (uint32_t)sub_channels;
     arg->conv_args[i].image.width = (uint32_t)input->dims()[3];
@@ -504,30 +483,31 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
     arg->conv_args[i].image.pad_width = (uint32_t)sub_pad;
     arg->conv_args[i].image.pad_height = (uint32_t)sub_pad;
     arg->conv_args[i].image.address = input_ptr;
-    arg->conv_args[i].sb_address = (void *)bs_ptr;
+    arg->conv_args[i].sb_address = bs_ptr;
 
     auto filter_sub_space =
         (char *)fpga_malloc(align_conv_sub_filter_count * sizeof(char));
     fpga_copy(filter_sub_space,
               (char *)filter_ptr + i * align_conv_sub_filter_count,
               (size_t)align_conv_sub_filter_count);
-    arg->conv_args[i].filter_address = (void *)(filter_sub_space);
+    arg->conv_args[i].filter_address = filter_sub_space;
     fpga_flush(filter_sub_space, (size_t)align_conv_sub_filter_count);
 
     if (sub_conv_num == 1) {
       arg->conv_args[i].output.address = out_ptr;
       arg->conv_args[i].output.scale_address = out->scale;
     } else {
-      auto ptr_output = (half *)fpga_malloc(conv_output_size * sizeof(half));
-      arg->conv_args[i].output.address = (void *)((half *)ptr_output);
+      auto ptr_output = fpga_malloc(conv_output_size * sizeof(half));
+      arg->conv_args[i].output.address = ptr_output;
       auto ptr_output_scale = (float *)fpga_malloc(2 * sizeof(float));
       arg->conv_args[i].output.scale_address = ptr_output_scale;
     }
+    expand_conv_arg(&arg->conv_args[i]);
   }
 
   arg->output.address = out_ptr;
   arg->output.scale_address = out->scale;
-  // fpga_free(filter_ptr);
+  filter->reset_data_ptr(nullptr);
 }  // fill_deconv_arg
 
 }  // namespace fpga
