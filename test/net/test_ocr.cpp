@@ -28,6 +28,7 @@ void load_images(const char *image_dir, const char *images_list,
     image_shapes->push_back(std::make_pair(height, width));
     image_names->push_back(filename);
   }
+  if_list.close();
 }
 
 int main(int argc, char **argv) {
@@ -53,7 +54,7 @@ int main(int argc, char **argv) {
 
   for (int i = 0; i < image_names.size(); i++) {
     std::string file_name = image_names[i];
-    std::vector<float> input;
+    std::vector<float> input_vec;
     std::vector<int64_t> dims{1, 1, 48, 512};
     dims[2] = image_shapes[i].first;
     dims[3] = image_shapes[i].second;
@@ -62,14 +63,22 @@ int main(int argc, char **argv) {
     std::cerr << "img_path: " << img_path << std::endl;
     std::cerr << "shape = [" << dims[0] << ", " << dims[1] << ", " << dims[2]
               << ", " << dims[3] << "]" << std::endl;
-    GetInput<float>(img_path, &input, dims);
+    GetInput<float>(img_path, &input_vec, dims);
+    framework::Tensor input(input_vec, framework::make_ddim(dims));
     // predict
-    auto output = paddle_mobile.Predict(input, dims);
+    paddle_mobile.Predict(input);
+    auto output_topk = paddle_mobile.Fetch("top_k_1.tmp_0");
+    auto output_indices = paddle_mobile.Fetch("cast_68.tmp_0");
     // print result
     std::cerr << file_name << std::endl;
-    std::cerr << output[0];
-    for (int j = 1; j < output.size(); ++j) {
-      std::cerr << " " << output[j];
+    std::cerr << output_topk->data<float>()[0];
+    for (int j = 1; j < output_topk->numel(); ++j) {
+      std::cerr << " " << output_topk->data<float>()[j];
+    }
+    std::cerr << std::endl;
+    std::cerr << output_indices->data<float>()[0];
+    for (int j = 1; j < output_indices->numel(); ++j) {
+      std::cerr << " " << output_indices->data<float>()[j];
     }
     std::cerr << std::endl;
   }
