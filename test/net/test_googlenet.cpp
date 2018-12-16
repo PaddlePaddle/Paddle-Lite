@@ -19,7 +19,7 @@ limitations under the License. */
 int main(int argc, char* argv[]) {
   if (argc < 2) {
     std::cout << "Usage: ./test_benchmark feed_shape [thread_num] [use_fuse]\n"
-              << "feed_shape: input tensor shape, such as 1,3,224,224.\n"
+              << "feed_shape: input tensor shape, such as 3,224,224.\n"
               << "thread_num: optional int, threads count, default is 1.\n"
               << "use_fuse: optional bool, default is 0.\n";
     return 1;
@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
       sscanf(feed_shape, "%d,%d,%d", &dims[1], &dims[2], &dims[3]);
     }
     std::cout << "feed shape: [" << dims[0] << ", " << dims[1] << ", "
-              << dims[2] << ", " << dims[3] << "]\n";
+              << dims[2] << ", " << dims[3] << "]" << std::endl;
     GetInput<float>(g_test_image_1x3x224x224, &input, dims);
     // warmup
     for (int i = 0; i < 10; ++i) {

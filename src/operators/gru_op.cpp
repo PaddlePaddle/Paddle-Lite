@@ -15,7 +15,6 @@ limitations under the License. */
 #ifdef GRU_OP
 
 #include "operators/gru_op.h"
-#include <iostream>
 #include <vector>
 #include "common/enforce.h"
 

@@ -15,7 +15,6 @@ limitations under the License. */
 #ifdef CAST_OP
 
 #include <algorithm>
-#include <iostream>
 #include <vector>
 #include "framework/data_type.h"
 #include "operators/kernel/kernels.h"
