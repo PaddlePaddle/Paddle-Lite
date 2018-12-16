@@ -37,6 +37,18 @@ enum LayoutType {
   LAYOUT_HWC = 0,
 };
 
+enum ActivationType {
+  NONE = 0,
+  LEAKYRELU = 1,
+  SIGMOID = 2,
+  TANH = 3,
+};
+
+struct ActivationArgs {
+  enum ActivationType activation_type;
+  int16_t leaky_relu_negative_slope;
+};
+
 struct KernelArgs {
   uint32_t width;
   uint32_t height;
@@ -58,7 +70,10 @@ struct ImageOutputArgs {
   void* address;         // output result address;
   float* scale_address;  // output scale address;
   uint64_t timer_cnt;    // time counter for FPGA computation
+  struct ActivationArgs
+      activation;  // To select activation and specify (Leaky)Relu parameter.
 };
+
 #ifdef PADDLE_MOBILE_FPGA_V1
 struct ConvDriverParam {
   uint64_t image_address_phy;
@@ -198,7 +213,11 @@ struct DeconvArgs {
   struct ConvArgs* conv_args;
 };
 
-static inline int align_to_x(int num, int x) { return (num + x - 1) / x * x; }
+// static inline int align_to_x(int num, int x) { return (num + x - 1) / x * x;
+// }
+static inline uint32_t align_to_x(int64_t num, int64_t x) {
+  return ((uint32_t)(num + x) - 1) / (uint32_t)x * (uint32_t)x;
+}
 
 int16_t fp32_2_fp16(float fp32_num);
 float fp16_2_fp32(int16_t fp16_num);
