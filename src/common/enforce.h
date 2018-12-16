@@ -63,7 +63,12 @@ struct PaddleMobileException : public std::exception {
 #else
 #define PADDLE_MOBILE_THROW_EXCEPTION(...)
 
-#define PADDLE_MOBILE_ENFORCE(stat, ...)
+#define PADDLE_MOBILE_ENFORCE(stat, ...) \
+  {                                      \
+    if (stat) {                          \
+    } else {                             \
+    }                                    \
+  }
 
 #endif
 
