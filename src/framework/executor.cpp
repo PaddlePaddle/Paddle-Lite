@@ -350,7 +350,7 @@ PMStatus Executor<Device, T>::Predict() {
       _tp[ops_list_[i]->Type()] += timeCost;
     }
   }
-  DLOG << "====================[ profile ]======================";
+  printf("====================[ profile ]======================\n");
   typedef std::pair<std::string, uint64_t> prof_t;
   std::vector<prof_t> _tv(_tp.begin(), _tp.end());
   uint64_t _ptotal = 0;
@@ -367,7 +367,7 @@ PMStatus Executor<Device, T>::Predict() {
            static_cast<float>(p.second),
            static_cast<float>(p.second) / _ptotal * 100.0);
   }
-  DLOG << "====================[---------]======================";
+  printf("====================[---------]======================\n");
 #endif
   return PMSuccess;
 }

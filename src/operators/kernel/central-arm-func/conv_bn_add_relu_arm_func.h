@@ -108,10 +108,10 @@ void ConvBNAddReluBasic(const FusionConvBNAddReluParam<CPU> &param) {
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
       Tensor bias_data = bias_batch.Slice(g * out_step, (g + 1) * out_step);
-      math::matmulWithBn<float>(filter_slice, false, col_matrix, false,
-                                static_cast<float>(1), &out_slice,
-                                static_cast<float>(1), true, &new_scale,
-                                &new_bias, g, bias_data.data<float>());
+      math::MatMulWithBn(filter_slice, false, col_matrix, false,
+                         static_cast<float>(1), &out_slice,
+                         static_cast<float>(1), true, &new_scale, &new_bias, g,
+                         bias_data.data<float>());
     }
   }
 }
