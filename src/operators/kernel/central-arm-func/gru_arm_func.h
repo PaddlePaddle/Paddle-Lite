@@ -25,18 +25,16 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-using LoDTensor = framework::LoDTensor;
-using Tensor = framework::Tensor;
-
-template <typename DeviceType, typename T>
+template <typename Device, typename T>
 inline void ReorderInitState(const framework::Tensor& src,
                              std::vector<size_t> index_lod,
                              framework::Tensor* dst, bool indexed_src) {
-  math::CopyMatrixRowsFunctor<DeviceType, T> row_shuffle;
+  math::CopyMatrixRowsFunctor<Device, T> row_shuffle;
   dst->mutable_data<T>(src.dims());
   row_shuffle(src, index_lod, dst, indexed_src);
 }
-template <typename P>
+
+template <typename T>
 void GruCompute(const GruParam<CPU>& param) {
   auto* input = param.InputInput();
   auto* h0 = param.InputH0();
@@ -57,8 +55,6 @@ void GruCompute(const GruParam<CPU>& param) {
   bool is_reverse = param.IsReverse();
   math::LoDTensor2BatchFunctor<CPU, float> to_batch;
   to_batch(*input, batch_gate, true, is_reverse);
-  //  math::ClearTensor<CPU, float> clearTensor;
-  //  clearTensor(batch_gate);
   if (bias) {
     math::RowwiseAdd<CPU, float> add_bias;
     add_bias(*batch_gate, *bias, batch_gate);
@@ -68,7 +64,7 @@ void GruCompute(const GruParam<CPU>& param) {
   gru_value.gate_weight = const_cast<float*>(weight_data);
   gru_value.state_weight =
       const_cast<float*>(weight_data + 2 * frame_size * frame_size);
-  Tensor ordered_h0;
+  framework::Tensor ordered_h0;
   std::vector<size_t> order(batch_gate->lod()[2]);
   if (h0) {
     // Since the batch computing for GRU reorders the input sequences
@@ -87,9 +83,10 @@ void GruCompute(const GruParam<CPU>& param) {
     int bstart = static_cast<int>(batch_starts[n]);
     int bend = static_cast<int>(batch_starts[n + 1]);
     int cur_batch_size = bend - bstart;
-    Tensor gate_t = batch_gate->Slice(bstart, bend);  // BUG
-    Tensor reset_hidden_prev_t = batch_reset_hidden_prev->Slice(bstart, bend);
-    Tensor hidden_t = batch_hidden->Slice(bstart, bend);
+    framework::Tensor gate_t = batch_gate->Slice(bstart, bend);
+    framework::Tensor reset_hidden_prev_t =
+        batch_reset_hidden_prev->Slice(bstart, bend);
+    framework::Tensor hidden_t = batch_hidden->Slice(bstart, bend);
     gru_value.output_value = hidden_t.data<float>();
     gru_value.gate_value = gate_t.data<float>();
     gru_value.reset_output_value = reset_hidden_prev_t.data<float>();
@@ -105,7 +102,6 @@ void GruCompute(const GruParam<CPU>& param) {
 }
 
 }  // namespace operators
-
 }  // namespace paddle_mobile
 
-#endif
+#endif  // GRU_OP
