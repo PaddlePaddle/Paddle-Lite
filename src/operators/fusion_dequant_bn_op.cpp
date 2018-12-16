@@ -12,28 +12,43 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_DEQUANT_BN_RELU_OP
-
-#include "operators/fusion_dequant_bn_relu_op.h"
+#include "operators/fusion_dequant_bn_op.h"
 
 namespace paddle_mobile {
 namespace operators {
 
+#ifdef FUSION_DEQUANT_BN_OP
+template <typename Dtype, typename T>
+void FusionDequantBNOp<Dtype, T>::InferShape() const {
+  const auto& input_dims = this->param_.input_->dims();
+  this->param_.output_->Resize(input_dims);
+}
+#endif  // FUSION_DEQUANT_BN_OP
+
+#ifdef FUSION_DEQUANT_BN_RELU_OP
 template <typename Dtype, typename T>
 void FusionDequantBNReluOp<Dtype, T>::InferShape() const {
   const auto& input_dims = this->param_.input_->dims();
   this->param_.output_->Resize(input_dims);
 }
+#endif  // FUSION_DEQUANT_BN_RELU_OP
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
+
+#ifdef FUSION_DEQUANT_BN_OP
+REGISTER_FUSION_MATCHER(fusion_dequant_bn, ops::FusionDequantBNMatcher);
+#ifdef PADDLE_MOBILE_CPU
+REGISTER_OPERATOR_CPU(fusion_dequant_bn, ops::FusionDequantBNOp);
+#endif  // PADDLE_MOBILE_CPU
+#endif  // FUSION_DEQUANT_BN_OP
+
+#ifdef FUSION_DEQUANT_BN_RELU_OP
 REGISTER_FUSION_MATCHER(fusion_dequant_bn_relu,
                         ops::FusionDequantBNReluMatcher);
-
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(fusion_dequant_bn_relu, ops::FusionDequantBNReluOp);
-#endif
-
-#endif
+#endif  // PADDLE_MOBILE_CPU
+#endif  // FUSION_DEQUANT_BN_RELU_OP

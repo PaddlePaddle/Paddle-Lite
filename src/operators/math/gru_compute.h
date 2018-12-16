@@ -11,7 +11,7 @@ limitations under the License. */
 #ifdef GRU_OP
 #pragma once
 
-#include "operators/math/activation_functions.h"
+#include "operators/math/activation.h"
 
 namespace paddle_mobile {
 namespace operators {

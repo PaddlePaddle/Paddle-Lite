@@ -12,29 +12,27 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_DEQUANT_BN_RELU_OP
-
 #pragma once
 
 #include <string>
 #include <vector>
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
-#include "operators/kernel/dequant_bn_relu_kernel.h"
+#include "operators/kernel/dequant_bn_kernel.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-class FusionDequantBNReluMatcher : public framework::FusionOpMatcher {
+#if defined(FUSION_DEQUANT_BN_OP) || defined(FUSION_DEQUANT_BN_RELU_OP)
+class FusionDequantBNMatcher : public framework::FusionOpMatcher {
  public:
-  FusionDequantBNReluMatcher() {
+  FusionDequantBNMatcher() {
     node_ = framework::Node(G_OP_TYPE_DEQUANTIZE);
-    node_ > std::make_shared<framework::Node>(G_OP_TYPE_BATCHNORM) >
-        std::make_shared<framework::Node>(G_OP_TYPE_RELU);
+    node_ > std::make_shared<framework::Node>(G_OP_TYPE_BATCHNORM);
   }
 
-  void FolderNodes(
+  virtual void FolderNodes(
       framework::Node *node,
       std::vector<std::shared_ptr<framework::Node>> *removed_nodes) {
     node->Folder(node_.Depth(), Type(),
@@ -47,13 +45,43 @@ class FusionDequantBNReluMatcher : public framework::FusionOpMatcher {
                  removed_nodes);
   }
 
-  std::string Type() { return G_OP_TYPE_FUSION_DEQUANT_BN_RELU; }
+  std::string Type() override { return G_OP_TYPE_FUSION_DEQUANT_BN; }
+};
+#endif  // FUSION_DEQUANT_BN_OP || FUSION_DEQUANT_BN_RELU_OP
+
+#ifdef FUSION_DEQUANT_BN_OP
+template <typename DeviceType, typename T>
+class FusionDequantBNOp : public framework::OperatorWithKernel<
+                              DeviceType, FusionDequantBNParam<DeviceType>,
+                              operators::FusionDequantBNKernel<DeviceType, T>> {
+ public:
+  FusionDequantBNOp(const std::string &type, const VariableNameMap &inputs,
+                    const VariableNameMap &outputs,
+                    const framework::AttributeMap &attrs,
+                    std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<
+            DeviceType, FusionDequantBNParam<DeviceType>,
+            operators::FusionDequantBNKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
+  // inference output shape
+  void InferShape() const override;
+};
+#endif  // FUSION_DEQUANT_BN_OP
+
+#ifdef FUSION_DEQUANT_BN_RELU_OP
+class FusionDequantBNReluMatcher : public FusionDequantBNMatcher {
+ public:
+  FusionDequantBNReluMatcher() : FusionDequantBNMatcher() {
+    node_ > std::make_shared<framework::Node>(G_OP_TYPE_RELU);
+  }
+
+  virtual std::string Type() { return G_OP_TYPE_FUSION_DEQUANT_BN_RELU; }
 };
 
 template <typename DeviceType, typename T>
 class FusionDequantBNReluOp
     : public framework::OperatorWithKernel<
-          DeviceType, FusionDequantBNReluParam<DeviceType>,
+          DeviceType, FusionDequantBNParam<DeviceType>,
           operators::FusionDequantBNReluKernel<DeviceType, T>> {
  public:
   FusionDequantBNReluOp(const std::string &type, const VariableNameMap &inputs,
@@ -61,14 +89,13 @@ class FusionDequantBNReluOp
                         const framework::AttributeMap &attrs,
                         std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<
-            DeviceType, FusionDequantBNReluParam<DeviceType>,
+            DeviceType, FusionDequantBNParam<DeviceType>,
             operators::FusionDequantBNReluKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-  // inference output shape
+
   void InferShape() const override;
 };
+#endif  // FUSION_DEQUANT_BN_RELU_OP
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
-#endif

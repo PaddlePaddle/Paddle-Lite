@@ -40,10 +40,9 @@ inverse kernel weights of each channel for every filter
 void deconv_inverse_filter(float** data_in, int num, int channel, int width,
                            int height) {
   float* tmp = *data_in;
-  // float fix_range = 127;//  float scale = fix_range / max;
   int data_size = num * channel * width * height;
   int hw_len = height * width;
-  float* tmp_data = (float*)fpga_malloc(data_size * sizeof(float));
+  auto tmp_data = (float*)fpga_malloc(data_size * sizeof(float));
   for (int i = 0; i < num; ++i) {
     for (int j = 0; j < channel; ++j) {
       for (int k = 0; k < hw_len; ++k) {
@@ -52,7 +51,7 @@ void deconv_inverse_filter(float** data_in, int num, int channel, int width,
       }
     }
   }
-  *data_in = (float*)tmp_data;  //
+  *data_in = tmp_data;
   fpga_free(tmp);
 }
 
@@ -61,8 +60,7 @@ void deconv_inverse_filter(float** data_in, int num, int channel, int width,
 */
 int deconv_calc_sub_pad(int filter_axis, int pad, int stride) {
   if (stride == 0 || ((filter_axis - pad - 1) < 0)) {
-    // error
-    return 0;
+    PADDLE_MOBILE_ENFORCE(false, "Wrong deconv parameters");
   }
   return (filter_axis - pad - 1) / stride;
 }
@@ -79,11 +77,8 @@ int deconv_get_sub_out_axis(int image_axis, int sub_pad, int sub_filter_axis) {
    position. so the omit rows or columns is (stride - )
 */
 int deconv_get_omit(int stride, int filter_width, int pad) {
-  if (((filter_width - pad) <= 0)) {  // ((filter_width-pad) > stride) ||
-    // error
-    return 0;
-  }
-  int idx = 1;
+  PADDLE_MOBILE_ENFORCE(filter_width > pad, "Wrong deconv parameters");
+  int idx;
   bool flag = false;
   for (idx = 1; idx <= stride; ++idx) {
     int j = idx;
@@ -100,10 +95,6 @@ int deconv_get_omit(int stride, int filter_width, int pad) {
   }
 
   return (stride - idx);
-}
-
-int deconv_get_sub_filter_num(int filter_num, int stride) {
-  return filter_num * stride;
 }
 
 void deconv_get_sub_filter(char** data_in, int height, int width,
@@ -245,7 +236,6 @@ void deconv_format_filter(float** data_in, int num, int channel, int height,
   char* ptr_space = (char*)fpga_malloc(sub_conv_n * align_offset *
                                        sizeof(char));  // continuous space
   for (int i = 0; i < sub_conv_n; ++i) {
-    int offset = i * origin_offset;
     char* ptr_tmp = (ptr_ptr_data)[i];
 
     filter::align_element(&ptr_tmp, sub_num, sub_chw);

@@ -24,17 +24,19 @@ void ReluOp<Dtype, T>::InferShape() const {
   this->param_.Out()->Resize(input_dims);
 }
 
+template <typename Dtype, typename T>
+void Relu6Op<Dtype, T>::InferShape() const {
+  auto input_dims = this->param_.InputX()->dims();
+  this->param_.Out()->Resize(input_dims);
+}
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
-/*
- * @b 每一个 op 都需要注册一下的,
- *    USE_OP的参数 和 REGISTER_OPERATOR的第一个参数
- * 都是需要和model中类型对应起来的
- * */
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(relu, ops::ReluOp);
+REGISTER_OPERATOR_CPU(relu6, ops::Relu6Op);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
 REGISTER_OPERATOR_MALI_GPU(relu, ops::ReluOp);
