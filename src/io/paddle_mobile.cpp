@@ -202,50 +202,50 @@ double PaddleMobile<CPU, float>::GetPredictTime() {
 #endif
 
 #ifdef PADDLE_MOBILE_FPGA
-template <typename Device, T P>
-void PaddleMobile<Device, P>::InjectVariable(const framework::Tensor &t,
+template <typename Device, typename T>
+void PaddleMobile<Device, T>::InjectVariable(const framework::Tensor &t,
                                              std::string var_name) {
   executor_->InjectVariable(t, var_name);
 }
 
-template <typename Device, T P>
-void PaddleMobile<Device, P>::FeedData(const framework::Tensor &t) {
+template <typename Device, typename T>
+void PaddleMobile<Device, T>::FeedData(const framework::Tensor &t) {
   executor_->FeedData(t);
 }
 
-template <typename Device, T P>
-std::shared_ptr<framework::Tensor> PaddleMobile<Device, P>::FetchResult(
+template <typename Device, typename T>
+std::shared_ptr<framework::Tensor> PaddleMobile<Device, T>::FetchResult(
     int id) {
   return executor_->FetchResult(id);
 }
 
-template <typename Device, T P>
-void PaddleMobile<Device, P>::Predict_From_To(int start, int end) {
+template <typename Device, typename T>
+void PaddleMobile<Device, T>::Predict_From_To(int start, int end) {
   executor_->Predict_From_To(start, end);
 }
 
-template <typename Device, T P>
-void PaddleMobile<Device, P>::Predict_From(int start) {
+template <typename Device, typename T>
+void PaddleMobile<Device, T>::Predict_From(int start) {
   executor_->Predict_From(start);
 }
 
-template <typename Device, T P>
-void PaddleMobile<Device, P>::Predict_To(int end) {
+template <typename Device, typename T>
+void PaddleMobile<Device, T>::Predict_To(int end) {
   executor_->Predict_To(end);
 }
 #endif
 
 #ifdef PADDLE_MOBILE_CL
 static std::mutex lc;
-template <typename Device, T P>
-void PaddleMobile<Device, P>::SetCLPath(std::string path) {
+template <typename Device, typename T>
+void PaddleMobile<Device, T>::SetCLPath(std::string path) {
   std::lock_guard<std::mutex> lock(lc);
   if (framework::CLEngine::Instance()->GetCLPath() == "") {
     framework::CLEngine::Instance()->setClPath(path);
   }
 }
 template <>
-double PaddleMobile<GPU_CL, T::FP32>::GetPredictTime() {
+double PaddleMobile<GPU_CL, float>::GetPredictTime() {
   cl_int status;
   cl_uint nPlatform;
   clGetPlatformIDs(0, NULL, &nPlatform);
@@ -443,8 +443,8 @@ double PaddleMobile<GPU_CL, T::FP32>::GetPredictTime() {
     return -1;
   }
 }
-template <typename Device, T P>
-int PaddleMobile<Device, P>::readText(
+template <typename Device, typename T>
+int PaddleMobile<Device, T>::readText(
     const char *kernelPath,
     char **pcode) {  // 读取文本文件放入 pcode，返回字符串长度
   FILE *fp;
