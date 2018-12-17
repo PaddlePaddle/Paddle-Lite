@@ -456,9 +456,8 @@ void Executor<Device, T>::LoadMemory(const VarDesc var_desc, float *tensorInput,
                                      char **data) {}
 
 template <>
-void Executor<GPU_CL, Precision::FP32>::LoadMemory(const VarDesc var_desc,
-                                                   float *tensorInput,
-                                                   char **data) {
+void Executor<GPU_CL, float>::LoadMemory(const VarDesc var_desc,
+                                         float *tensorInput, char **data) {
   // 1. version
   uint32_t version = *reinterpret_cast<uint32_t *>(*data);
 
