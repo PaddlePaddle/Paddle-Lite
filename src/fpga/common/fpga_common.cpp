@@ -115,7 +115,7 @@ int fpga_invalidate(void *address, size_t size) {
 }
 uint64_t vaddr_to_paddr(void *address) {
 #ifdef PADDLE_MOBILE_ZU5
-  return driver::vaddr_to_paddr(address);
+  return driver::vaddr_to_paddr_driver(address);
 #else
   return 0;
 #endif

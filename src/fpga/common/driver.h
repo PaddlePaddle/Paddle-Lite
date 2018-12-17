@@ -31,8 +31,8 @@ namespace driver {
 
 #define FPGA_REG_PHY_ADDR 0xa0000000
 #define FPGA_REG_SIZE 0x1000
-#define FPGA_MEM_PHY_ADDR 0x20000000
-#define FPGA_MEM_SIZE 0x20000000
+#define FPGA_MEM_PHY_ADDR 0x40000000
+#define FPGA_MEM_SIZE 0x80000000
 
 #define FPGA_PAGE_SIZE (16UL * 1024UL)
 
@@ -122,15 +122,11 @@ void *fpga_malloc_driver(size_t size);
 
 void fpga_free_driver(void *ptr);
 
-void fpga_copy_driver(void *dest, const void *src, size_t num);
-
 int fpga_flush_driver(void *address, size_t size);
 
 int fpga_invalidate_driver(void *address, size_t size);
 
-/*pe*/
-
-uint64_t vaddr_to_paddr(void *address);
+uint64_t vaddr_to_paddr_driver(void *address);
 
 int fpga_regpoll(uint64_t reg, uint64_t val, int time);
 
