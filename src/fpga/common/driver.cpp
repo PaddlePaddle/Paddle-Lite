@@ -153,10 +153,6 @@ int memory_request(struct fpga_memory *memory, size_t size, uint64_t *addr) {
   uint64_t _nr = DIV_ROUND_UP(size, FPGA_PAGE_SIZE);
   unsigned int nr = (unsigned int)_nr;
   int ret = 0;
-  DLOG << size;
-  DLOG << _nr;
-  DLOG << nr;
-
   uint64_t a_size = FPGA_PAGE_SIZE * nr;
   DLOG << a_size;
 
@@ -283,7 +279,7 @@ int fpga_memory_add() {
   return 0;
 }
 
-uint64_t vaddr_to_paddr(void *address) {
+uint64_t vaddr_to_paddr_driver(void *address) {
   uint64_t paddr = 0;
   auto iter = g_fpgainfo.fpga_vaddr2paddr_map.find(address);
   if (iter != g_fpgainfo.fpga_vaddr2paddr_map.end()) {
@@ -315,7 +311,7 @@ void *fpga_reg_free(void *ptr) {
     g_fpgainfo.fpga_addr2size_map.erase(iter);
     munmap(ptr, size);
   } else {
-    DLOG << "Invalid pointer";
+    DLOG << "Invalid pointer" << ptr;
   }
 }
 
@@ -347,7 +343,7 @@ void fpga_free_driver(void *ptr) {
     g_fpgainfo.fpga_addr2size_map.erase(iter);
     munmap(ptr, size);
 
-    p_addr = vaddr_to_paddr(ptr);
+    p_addr = vaddr_to_paddr_driver(ptr);
     pos = (p_addr - g_fpgainfo.memory_info->mem_start) / FPGA_PAGE_SIZE;
 
     /*clear bitmap*/
@@ -361,7 +357,7 @@ void fpga_free_driver(void *ptr) {
       g_fpgainfo.fpga_vaddr2paddr_map.erase(iter);
     }
   } else {
-    DLOG << "Invalid pointer";
+    DLOG << "Invalid pointer" << ptr;
   }
 }
 
@@ -373,7 +369,7 @@ int fpga_flush_driver(void *address, size_t size) {
   struct MemoryCacheArgs args;
   uint64_t p_addr;
 
-  p_addr = vaddr_to_paddr(address);
+  p_addr = vaddr_to_paddr_driver(address);
 
   args.offset = (void *)(p_addr - FPGA_MEM_PHY_ADDR);  // NOLINT
   args.size = size;
@@ -385,7 +381,7 @@ int fpga_invalidate_driver(void *address, size_t size) {
   struct MemoryCacheArgs args;
   uint64_t p_addr;
 
-  p_addr = vaddr_to_paddr(address);
+  p_addr = vaddr_to_paddr_driver(address);
 
   args.offset = (void *)(p_addr - FPGA_MEM_PHY_ADDR);  // NOLINT
   args.size = size;
