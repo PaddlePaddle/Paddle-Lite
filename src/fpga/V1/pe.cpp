@@ -13,15 +13,25 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "fpga/common/pe.h"
+#include "common/types.h"
 #include "fpga/V1/filter.h"
 #include "fpga/V1/image.h"
 #include "fpga/common/config.h"
 #include "fpga/common/driver.h"
 
+#ifdef COST_TIME_PRINT
+#include <sys/time.h>
+#include <time.h>
+#include <iomanip>
+#include <iostream>
+//#include <iostream>
+#endif
+
 namespace paddle_mobile {
 namespace fpga {
 
 using namespace driver;  // NOLINT
+using namespace std;
 #define USE_RELU 1
 #define USE_BIAS 2
 
@@ -162,15 +172,17 @@ int ComputeFpgaConv(const struct SplitConvArgs &args) {
        << "   group_num:" << args.group_num
        << "   split_num:" << args.split_num;
 #endif
-
+  int ret = 0;
   int split_num = args.split_num;
   for (int i = 0; i < split_num; i++) {
-    ComputeBasicConv(args.conv_arg[i]);
+    ret |= ComputeBasicConv(args.conv_arg[i]);
   }
 
   if (split_num > 1) {
     ComputeFPGAConcat(args.concat_arg);
   }
+
+  return ret;
 }
 
 int ComputeBasicConv(const struct ConvArgs &args) {
@@ -250,12 +262,13 @@ int ComputeBasicConv(const struct ConvArgs &args) {
   reg_writeq(args.driver.post_prog_full_cnt, 0xd10);
   reg_writeq(args.driver.fpga_bias_scale_len / 4, 0xd20);
   reg_writeq(args.driver.cmd, REG_CONV_CMD);
-
+  DLOG << "before reg poll";
   if (0 != fpga_regpoll(REG_INTERRUPT, INTERRUPT_CONV, PE_IRQ_TIMEOUT)) {
     g_fpgainfo.pe_data->pes[PE_IDX_CONV]->status = ERROR;
     ret = -EIO;
     DLOG << "Conv Wait Irq Timeout!";
   }
+  DLOG << "after reg poll";
 
   output_scale = reg_readq(REG_SCALE_PARAMETER);
   output_scale = (output_scale << 32) | (output_scale >> 32);
@@ -289,6 +302,8 @@ int ComputeFpgaPool(const struct PoolingArgs &args) {
        << "   out_scale_address:" << args.output.scale_address;
 #endif
 #ifdef PADDLE_MOBILE_ZU5
+  DLOG << "Polling";
+  // return 0;
   uint64_t output_scale = 0;
   uint64_t timer_cnt = 0;
   int ret = 0;
@@ -561,11 +576,13 @@ int PerformBypass(const struct BypassArgs &args) {
   reg_writeq(datalen, REG_CONVERT_LENGTH);
   reg_writeq(cmd, REG_CONVERT_CMD);
 
+  DLOG << "before reg poll";
   if (0 != fpga_regpoll(REG_INTERRUPT, INTERRUPT_BYPASS, PE_IRQ_TIMEOUT)) {
     g_fpgainfo.pe_data->pes[PE_IDX_BYPASS]->status = ERROR;
     ret = -EIO;
     DLOG << "BYPASS Wait Irq Timeout!";
   }
+  DLOG << "after reg poll";
 
   output_scale = reg_readq(REG_SCALE_PARAMETER);
   output_scale = (output_scale << 32) | (output_scale >> 32);
@@ -619,37 +636,29 @@ void deconv_post_process(const struct DeconvArgs &args) {
   int align_deconv_row_len = align_to_x(deconv_row_len, 16);
 
   for (int idx = 0; idx < sub_conv_n; ++idx) {
-    fpga_invalidate(args.conv_args[idx].output.address,
-                    align_origin_w * origin_h * sizeof(int16_t));
+    paddle_mobile::fpga::fpga_invalidate(
+        args.split_conv_args[idx].output.address,
+        align_origin_w * origin_h * sizeof(int16_t));
   }
 
-  auto ptr_deconv = (int16_t *)fpga_malloc(num * align_deconv_row_len *
-                                           deconv_h * sizeof(int16_t));
-  memset(ptr_deconv, 0,
-         num * align_deconv_row_len * deconv_h * sizeof(int16_t));
   int deconv_idx = 0;
   for (int nn = 0; nn < num; ++nn) {
     for (int hh = 0; hh < origin_h; ++hh) {
       int hx = (hh % sub_conv_n);
       auto sub_t =
-          (int16_t *)(args.conv_args[sub_conv_n - hx - 1].output.address);
+          (int16_t *)(args.split_conv_args[sub_conv_n - hx - 1].output.address);
       int hi = (hh / sub_conv_n);
       if ((hh < omit_size) || (hh >= (origin_h - omit_size))) continue;
       int sidx = (nn * origin_h * align_origin_w + hi * align_origin_w +
                   omit_size * channel);
-
-      fpga_copy(ptr_deconv + deconv_idx, sub_t + sidx,
+      fpga_copy((int16_t *)(args.output.address) + deconv_idx, sub_t + sidx,
                 sizeof(int16_t) * deconv_row_len);
       deconv_idx += align_deconv_row_len;
     }
   }
-  fpga_copy(args.output.address, ptr_deconv,
-            num * align_deconv_row_len * deconv_h * sizeof(int16_t));
   fpga_flush(args.output.address,
              num * align_deconv_row_len * deconv_h * sizeof(int16_t));
-  fpga_free(ptr_deconv);
-
-}  // deconv_post_process
+}
 
 int ComputeFpgaDeconv(const struct DeconvArgs &args) {
 #ifdef FPGA_PRINT_MODE
@@ -661,32 +670,70 @@ int ComputeFpgaDeconv(const struct DeconvArgs &args) {
        << "   sub_conv_num:" << args.sub_conv_num;
   DLOG << "args.output.address: " << args.output.address
        << "args.output.scale_address: " << args.output.scale_address;
-  DLOG << "args.conv_args.sb_address: " << (args.conv_args)->sb_address
 
-       << "args.conv_args.filter_address: " << (args.conv_args)->filter_address;
-#endif
-#ifndef PADDLE_MOBILE_ZU5
-  return 0;
 #endif
 
   int sub_conv_num = args.sub_conv_num;
+
+#ifdef COST_TIME_PRINT
+  timeval start, end;
+  long dif_sec, dif_usec;
+#endif
+
   for (int i = 0; i < sub_conv_num; i++) {
-    ComputeBasicConv(args.conv_args[i]);
+#ifdef COST_TIME_PRINT
+    gettimeofday(&start, NULL);
+#endif
+
+    ComputeFpgaConv(args.split_conv_args[i]);
+#ifdef COST_TIME_PRINT
+    gettimeofday(&end, NULL);
+    dif_sec = end.tv_sec - start.tv_sec;
+    dif_usec = end.tv_usec - start.tv_usec;
+    std::cout << "deconv basic_conv: " << i << " times:  "
+              << "    cost time: " << (dif_sec * 1000000 + dif_usec) << "us"
+              << std::endl;
+#endif
   }
 
   if (sub_conv_num > 1) {
     float max_scale = -1.0f;
+#ifdef COST_TIME_PRINT
+    gettimeofday(&start, NULL);
+#endif
     for (int i = 0; i < sub_conv_num; i++) {
       paddle_mobile::fpga::fpga_invalidate(
-          args.conv_args[i].output.scale_address, 2 * sizeof(float));
-      float ptr_scale = (args.conv_args[i].output.scale_address)[0];
+          args.split_conv_args[i].output.scale_address, 2 * sizeof(float));
+      float ptr_scale = (args.split_conv_args[i].output.scale_address)[0];
       if (ptr_scale > max_scale) {
         args.output.scale_address[0] = ptr_scale;
         args.output.scale_address[1] =
-            (args.conv_args[i].output.scale_address)[1];
+            (args.split_conv_args[i].output.scale_address)[1];
       }
     }
+
+#ifdef COST_TIME_PRINT
+    gettimeofday(&end, NULL);
+    dif_sec = end.tv_sec - start.tv_sec;
+    dif_usec = end.tv_usec - start.tv_usec;
+    std::cout << "deconv scale  "
+              << "    cost time: " << (dif_sec * 1000000 + dif_usec) << "us"
+              << std::endl;
+#endif
+
+    //    fpga_flush(args.output.scale_address, 2 * sizeof(float));
+#ifdef COST_TIME_PRINT
+    gettimeofday(&start, NULL);
+#endif
     deconv_post_process(args);
+#ifdef COST_TIME_PRINT
+    gettimeofday(&end, NULL);
+    dif_sec = end.tv_sec - start.tv_sec;
+    dif_usec = end.tv_usec - start.tv_usec;
+    std::cout << "deconv_post_process  "
+              << "    cost time: " << (dif_sec * 1000000 + dif_usec) << "us"
+              << std::endl;
+#endif
   }
 
   return 0;
