@@ -55,11 +55,10 @@ bool DeconvAddReluKernel<FPGA, float>::Init(
   fpga::format_deconv_filter(filter, max_value, param->Groups(),
                              param->Strides()[0]);
 
-  // int element_num_per_div =
-  //     fpga::get_filter_num_per_div(filter, param->Groups());
+  int element_num_per_div =
+      fpga::get_deconv_filter_num_per_div(filter, param->Groups(), sub_conv_n);
 
-  // deconv only support group=1 && no spilt
-  fpga::format_bias_scale_array(&bs_ptr, channel * sub_conv_n,
+  fpga::format_bias_scale_array(&bs_ptr, element_num_per_div,
                                 channel * sub_conv_n);
 
   fpga::format_fp16_ofm(out);
