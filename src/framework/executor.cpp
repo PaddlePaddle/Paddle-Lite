@@ -399,8 +399,7 @@ void Executor<Device, T>::FeedData(const Tensor &t) {
 
 template <typename Device, typename T>
 std::shared_ptr<Tensor> Executor<Device, T>::FetchResult(int id) {
-  std::shared_ptr<BlockDesc> to_predict_block = program_desc_->Block(0);
-  auto &ops = ops_of_block_[*to_predict_block.get()];
+  auto &ops = ops_of_block_[0];
 
   PADDLE_MOBILE_ENFORCE(id < (int)ops.size(), "Index out of range");
   auto op = id < 0 ? ops[ops.size() - 1] : ops[id];
@@ -414,8 +413,7 @@ std::shared_ptr<Tensor> Executor<Device, T>::FetchResult(int id) {
 
 template <typename Device, typename T>
 void Executor<Device, T>::Predict_From_To(int start, int end) {
-  std::shared_ptr<BlockDesc> to_predict_block = program_desc_->Block(0);
-  auto &ops = ops_of_block_[*to_predict_block.get()];
+  auto &ops = ops_of_block_[0];
   end = end < 0 ? static_cast<int>(ops.size()) : end;
   PADDLE_MOBILE_ENFORCE(start >= 0 && start < end && end <= ops.size(),
                         "start or end parameter is wrong");
