@@ -97,7 +97,7 @@ void SoftmaxFuntor<CPU, float>::operator()(const framework::Tensor *X,
       }
 #endif  // __ARM_NEON__
       for (int i = 0; i < remain; ++i) {
-        output[i] = std::expf(input[i] - max);
+        output[i] = expf(input[i] - max);
       }
 
       // sum(exp(x - max))
