@@ -210,7 +210,7 @@ struct DeconvArgs {
   uint32_t sub_output_width;
   uint32_t sub_output_height;
   struct ImageOutputArgs output;
-  struct ConvArgs* conv_args;
+  struct SplitConvArgs* split_conv_args;
 };
 
 // static inline int align_to_x(int num, int x) { return (num + x - 1) / x * x;
