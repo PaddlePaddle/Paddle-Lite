@@ -56,14 +56,13 @@ void MatMul<float, float>(const framework::Tensor &matrix_a, bool trans_a,
   int N = dim_out[1];
   int K = (!trans_a) ? dim_a[1] : dim_a[0];
   Gemm gemm;
-
   if (trans_a) {
+    framework::Tensor matrix_trans;
     int numel = matrix_a.numel();
     int m = matrix_a.dims()[0];
     int n = matrix_a.dims()[1];
     float *tmp = (float *)(matrix_a.data<float>());  // NOLINT
-    float *a = static_cast<float *>(
-        paddle_mobile::memory::Alloc(sizeof(float) * numel));
+    float *a = matrix_trans.mutable_data<float>(matrix_a.dims());
     int index = 0;
     for (int j = 0; j < n; j++) {
       for (int i = 0; i < m; i++) {
