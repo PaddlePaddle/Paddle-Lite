@@ -22,6 +22,8 @@ const char *G_OP_TYPE_BATCHNORM = "batch_norm";
 const char *G_OP_TYPE_BOX_CODER = "box_coder";
 const char *G_OP_TYPE_CONCAT = "concat";
 const char *G_OP_TYPE_ELEMENTWISE_ADD = "elementwise_add";
+const char *G_OP_TYPE_ELEMENTWISE_SUB = "elementwise_sub";
+const char *G_OP_TYPE_ELEMENTWISE_MUL = "elementwise_mul";
 const char *G_OP_TYPE_FILL_CONSTANT = "fill_constant";
 const char *G_OP_TYPE_FUSION_CONV_ADD_RELU = "fusion_conv_add_relu";
 const char *G_OP_TYPE_FUSION_CONV_ADD_PRELU = "fusion_conv_add_prelu";
@@ -67,7 +69,6 @@ const char *G_OP_TYPE_CRF = "crf_decoding";
 const char *G_OP_TYPE_BILINEAR_INTERP = "bilinear_interp";
 const char *G_OP_TYPE_FLATTEN = "flatten";
 const char *G_OP_TYPE_SHAPE = "shape";
-const char *G_OP_TYPE_ELEMENTWISE_MUL = "elementwise_mul";
 const char *G_OP_TYPE_SUM = "sum";
 const char *G_OP_TYPE_TOP_K = "top_k";
 const char *G_OP_TYPE_CAST = "cast";
@@ -102,6 +103,8 @@ std::unordered_map<
         {G_OP_TYPE_SIGMOID, {{"X"}, {"Out"}}},
         {G_OP_TYPE_MUL, {{"X"}, {"Out"}}},
         {G_OP_TYPE_ELEMENTWISE_ADD, {{"X", "Y"}, {"Out"}}},
+        {G_OP_TYPE_ELEMENTWISE_SUB, {{"X", "Y"}, {"Out"}}},
+        {G_OP_TYPE_ELEMENTWISE_MUL, {{"X", "Y"}, {"Out"}}},
         {G_OP_TYPE_POOL2D, {{"X"}, {"Out"}}},
         {G_OP_TYPE_BATCHNORM, {{"X"}, {"Y"}}},
         {G_OP_TYPE_LRN, {{"X"}, {"Out"}}},
@@ -146,7 +149,6 @@ std::unordered_map<
         {G_OP_TYPE_SUM, {{"X"}, {"Out"}}},
         {G_OP_TYPE_TOP_K, {{"X"}, {"Out", "Indices"}}},
         {G_OP_TYPE_CAST, {{"X"}, {"Out"}}},
-        {G_OP_TYPE_ELEMENTWISE_MUL, {{"X", "Y"}, {"Out"}}},
         {G_OP_TYPE_QUANTIZE, {{"X"}, {"Out", "OutScale"}}},
         {G_OP_TYPE_DEQUANTIZE, {{"X", "Scale"}, {"Out"}}},
         {G_OP_TYPE_FUSION_DEQUANT_BN, {{"X", "Scale"}, {"Out"}}},
