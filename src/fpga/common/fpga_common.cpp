@@ -59,6 +59,9 @@ int close_device() {
 
 void *fpga_malloc(size_t size) {
   static uint64_t counter = 0;
+  if (size <= 0) {
+    size = 1;
+  }
 #ifdef PADDLE_MOBILE_ZU5
   auto ptr = driver::fpga_malloc_driver(size);
 #else
