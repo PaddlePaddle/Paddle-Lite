@@ -69,10 +69,10 @@ class LoDTensor2BatchFunctor {
 
     auto lods = lod_tensor.lod();
     PADDLE_MOBILE_ENFORCE((lods.size() == 1UL),
-                          "Only support one level sequence now.");
+                          "Only support 1 level sequence, but %d is given",
+                          lods.size());
 
     const auto& lod = lods[0];
-
     std::vector<SeqInfo> seq_info;
     for (size_t seq_id = 0; seq_id < lod.size() - 1; ++seq_id) {
       int length = lod[seq_id + 1] - lod[seq_id];
