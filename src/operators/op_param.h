@@ -2589,9 +2589,9 @@ class QuantizeParam : public OpParam {
 
  public:
   // op input
-  RType *input_;
+  GType *input_;
   // op output
-  RType *output_;
+  GType *output_;
   RType *online_scale_;
   // quantize offline scale
   RType *offline_scale_;
@@ -2625,9 +2625,9 @@ class DequantizeParam : public OpParam {
 
  public:
   // op input
-  RType *input_;
+  GType *input_;
   // op output
-  RType *output_;
+  GType *output_;
   RType *activation_scale_;
   float weight_scale_;
 };
