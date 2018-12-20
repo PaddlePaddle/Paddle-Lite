@@ -27,7 +27,12 @@ void format_fp32_ofm(framework::Tensor* ofm_tensor);
 
 float filter_find_max(framework::Tensor* filter_tensor);
 int get_filter_num_per_div(framework::Tensor* filter_tensor, int group_num);
+int get_deconv_filter_num_per_div(framework::Tensor* filter_tensor,
+                                  int group_num, int stride);
+
 int get_plit_num(framework::Tensor* filter_tensor);
+int get_deconv_plit_num(framework::Tensor* filter_tensor, int stride);
+
 int get_aligned_filter_element_num(int chw);
 void format_filter(framework::Tensor* filter_tensor, float max_value,
                    int group_num);
