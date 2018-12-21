@@ -28,6 +28,10 @@ extern _PaddleMobile__Framework__Proto__VarType__Type ToDataType(
 extern std::type_index ToTypeIndex(
     _PaddleMobile__Framework__Proto__VarType__Type type);
 
+inline _PaddleMobile__Framework__Proto__VarType__Type ToDataType(int type) {
+  return static_cast<_PaddleMobile__Framework__Proto__VarType__Type>(type);
+}
+
 template <typename Visitor>
 inline void VisitDataType(_PaddleMobile__Framework__Proto__VarType__Type type,
                           Visitor visitor) {

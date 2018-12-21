@@ -12,23 +12,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef SOFTMAX_OP
+#ifdef CAST_OP
 
-#pragma once
-
-#include "framework/tensor.h"
+#include "operators/cast_op.h"
 
 namespace paddle_mobile {
 namespace operators {
-namespace math {
 
-template <typename Device, typename T>
-class SoftmaxFuntor {
- public:
-  void operator()(const framework::Tensor *X, framework::Tensor *Y);
-};
+template <typename DeviceType, typename T>
+void CastOp<DeviceType, T>::InferShape() const {
+  const auto &dims = this->param_.input_->dims();
+  this->param_.output_->Resize(dims);
+}
 
-}  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+#ifdef PADDLE_MOBILE_CPU
+REGISTER_OPERATOR_CPU(cast, ops::CastOp);
 #endif
+
+#endif  // CAST_OP

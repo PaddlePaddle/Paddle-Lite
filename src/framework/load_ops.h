@@ -228,6 +228,12 @@ LOAD_FUSION_MATCHER(fusion_conv_bn);
 #ifdef ELEMENTWISESUB_OP
 LOAD_OP1(elementwise_sub, CPU)
 #endif
+#ifdef TOP_K_OP
+LOAD_OP1(top_k, CPU)
+#endif
+#ifdef CAST_OP
+LOAD_OP1(cast, CPU)
+#endif
 #ifdef QUANT_OP
 LOAD_OP1(quantize, CPU);
 #endif

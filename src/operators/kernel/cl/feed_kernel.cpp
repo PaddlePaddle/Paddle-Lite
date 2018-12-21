@@ -14,6 +14,7 @@ limitations under the License. */
 
 #include "operators/kernel/feed_kernel.h"
 #include "framework/cl/cl_tensor.h"
+
 namespace paddle_mobile {
 namespace operators {
 
@@ -43,8 +44,8 @@ void FeedKernel<GPU_CL, float>::Compute(const FeedParam<GPU_CL> &param) {
   const int Stride2 = out_C * out_H * out_W;
   const int Stride1 = out_H * out_W;
   const int Stride0 = out_W;
-  CLTensor input_cl_tensor(this->cl_helper_.CLContext(),
-                           this->cl_helper_.CLCommandQueue());
+  framework::CLTensor input_cl_tensor(this->cl_helper_.CLContext(),
+                                      this->cl_helper_.CLCommandQueue());
   input_cl_tensor.Resize(input->dims());
   cl_mem inputBuffer = input_cl_tensor.mutable_with_data<float>(input_data);
 

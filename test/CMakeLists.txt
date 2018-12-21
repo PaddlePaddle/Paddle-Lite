@@ -261,20 +261,17 @@ if (NOT FOUND_MATCH)
     ADD_EXECUTABLE(test-inference-api framework/test_inference_api.cpp)
     target_link_libraries(test-inference-api paddle-mobile)
 
-
-    # gen test log
     # gen test
     ADD_EXECUTABLE(test-optimize framework/test_optimize.cpp)
     target_link_libraries(test-optimize paddle-mobile)
-
 
     #gen test
     ADD_EXECUTABLE(test-pool-op operators/test_pool_op.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-pool-op paddle-mobile)
 
     #gen test
-    ADD_EXECUTABLE(test-softmax operators/test_softmax_op.cpp test_helper.h test_include.h executor_for_test.h)
-    target_link_libraries(test-softmax paddle-mobile)
+    ADD_EXECUTABLE(test-softmax-op operators/test_softmax_op.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test-softmax-op paddle-mobile)
 
     # gen test
     ADD_EXECUTABLE(test-gemm-accuracy common/test_gemm_accuracy.cpp)
@@ -375,5 +372,8 @@ if (NOT FOUND_MATCH)
     # gen test
     ADD_EXECUTABLE(test-super net/test_super.cpp test_helper.h test_include.h)
     target_link_libraries(test-super paddle-mobile)
-    #add_library(test-lib-size SHARED common/test_lib_size.h common/test_lib_size.cpp)
+   
+    # gen test
+    ADD_EXECUTABLE(test-ocr net/test_ocr.cpp test_helper.h test_include.h)
+    target_link_libraries(test-ocr paddle-mobile)
 endif ()

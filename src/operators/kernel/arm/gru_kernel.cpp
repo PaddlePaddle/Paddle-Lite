@@ -29,12 +29,6 @@ template <>
 void GruKernel<CPU, float>::Compute(const GruParam<CPU> &param) {
   GruCompute<float>(param);
   param.OutHidden()->set_lod(param.InputInput()->lod());
-  //  DLOG << "________________" << param.OutHidden()->dims();
-  //  DLOG << "________________" << param.OutHidden()->numel();
-  //  auto *hiden_data = param.OutHidden()->data<float>();
-  //  for (int64_t i = 0; i < 10; i++) {
-  //    DLOG << "****************" << hiden_data[i];
-  //  }
 }
 
 template class GruKernel<CPU, float>;
