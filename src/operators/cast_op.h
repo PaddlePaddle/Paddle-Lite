@@ -12,30 +12,28 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef DEQUANT_OP
+#ifdef CAST_OP
 
 #pragma once
 
 #include <string>
 #include "framework/operator.h"
-#include "operators/kernel/dequantize_kernel.h"
+#include "operators/kernel/kernels.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <typename DeviceType, typename T>
-class DequantizeOp
-    : public framework::OperatorWithKernel<DeviceType,
-                                           DequantizeParam<DeviceType>,
-                                           DequantizeKernel<DeviceType, T>> {
+class CastOp : public framework::OperatorWithKernel<
+                   DeviceType, CastParam<DeviceType>,
+                   operators::CastKernel<DeviceType, T>> {
  public:
-  DequantizeOp(const std::string &type, const VariableNameMap &inputs,
-               const VariableNameMap &outputs,
-               const framework::AttributeMap &attrs,
-               std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, DequantizeParam<DeviceType>,
-                                      DequantizeKernel<DeviceType, T>>(
+  CastOp(const std::string &type, const VariableNameMap &inputs,
+         const VariableNameMap &outputs, const framework::AttributeMap &attrs,
+         std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<DeviceType, CastParam<DeviceType>,
+                                      operators::CastKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
   // inference output shape
   void InferShape() const override;
@@ -44,4 +42,4 @@ class DequantizeOp
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#endif  // DEQUANT_OP
+#endif  // CAST_OP

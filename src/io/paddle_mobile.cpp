@@ -13,81 +13,81 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "io/paddle_mobile.h"
+#include <utility>
+#include "common/common.h"
 #ifdef PADDLE_MOBILE_CL
 #include <CL/cl.h>
 #include "framework/cl/cl_tensor.h"
 #endif
-#include "common/common.h"
 #include "operators/math/gemm.h"
+
 namespace paddle_mobile {
 
-template <typename Dtype, Precision P>
-void PaddleMobile<Dtype, P>::SetThreadNum(int num) {
+template <typename Device, typename T>
+void PaddleMobile<Device, T>::SetThreadNum(int num) {
 #ifdef _OPENMP
   omp_set_num_threads(num);
 #endif
 }
 
-template <typename Dtype, Precision P>
-bool PaddleMobile<Dtype, P>::Load(const std::string &dirname, bool optimize,
-                                  bool quantification, int batch_size,
-                                  bool loddable) {
+template <typename Device, typename T>
+PMStatus PaddleMobile<Device, T>::Load(const std::string &dirname,
+                                       bool optimize, bool quantification,
+                                       int batch_size, bool loddable) {
   if (loader_.get() == nullptr) {
-    loader_ = std::make_shared<framework::Loader<Dtype, P>>();
+    loader_ = std::make_shared<framework::Loader<Device, T>>();
   } else {
     LOG(kLOG_INFO) << "loader inited";
   }
 
   if (executor_.get() == nullptr) {
-    executor_ = std::make_shared<framework::Executor<Dtype, P>>(
+    executor_ = std::make_shared<framework::Executor<Device, T>>(
         loader_->Load(dirname, optimize, quantification), batch_size, optimize,
         loddable);
   } else {
     LOG(kLOG_INFO) << "executor inited";
   }
 
-  return true;
+  return PMSuccess;
 }
 
-template <typename Dtype, Precision P>
-bool PaddleMobile<Dtype, P>::Load(const std::string &model_path,
-                                  const std::string &para_path, bool optimize,
-                                  bool quantification, int batch_size,
-                                  bool loddable) {
+template <typename Device, typename T>
+PMStatus PaddleMobile<Device, T>::Load(const std::string &model_path,
+                                       const std::string &para_path,
+                                       bool optimize, bool quantification,
+                                       int batch_size, bool loddable) {
   if (loader_.get() == nullptr) {
-    loader_ = std::make_shared<framework::Loader<Dtype, P>>();
+    loader_ = std::make_shared<framework::Loader<Device, T>>();
   } else {
     LOG(kLOG_INFO) << "loader inited";
   }
 
   if (executor_.get() == nullptr) {
-    executor_ = std::make_shared<framework::Executor<Dtype, P>>(
+    executor_ = std::make_shared<framework::Executor<Device, T>>(
         loader_->Load(model_path, para_path, optimize, quantification),
         batch_size, optimize, loddable);
   } else {
     LOG(kLOG_INFO) << "executor inited";
   }
 
-  return true;
+  return PMSuccess;
 }
 
-template <typename Dtype, Precision P>
-bool PaddleMobile<Dtype, P>::LoadCombinedMemory(size_t model_len,
-                                                const uint8_t *model_buf,
-                                                size_t combined_params_len,
-                                                uint8_t *combined_params_buf) {
+template <typename Device, typename T>
+bool PaddleMobile<Device, T>::LoadCombinedMemory(size_t model_len,
+                                                 const uint8_t *model_buf,
+                                                 size_t combined_params_len,
+                                                 uint8_t *combined_params_buf) {
   int batch_size = 1;
   bool optimise = true;
   bool quantification = false;
-
   if (loader_.get() == nullptr) {
-    loader_ = std::make_shared<framework::Loader<Dtype, P>>();
+    loader_ = std::make_shared<framework::Loader<Device, T>>();
   } else {
     LOG(kLOG_INFO) << "loader inited";
   }
-
   if (executor_.get() == nullptr) {
-    executor_ = std::make_shared<framework::Executor<Dtype, P>>(
+    executor_ = std::make_shared<framework::Executor<Device, T>>(
         loader_->LoadCombinedMemory(model_len, model_buf, combined_params_len,
                                     combined_params_buf, optimise,
                                     quantification),
@@ -96,38 +96,76 @@ bool PaddleMobile<Dtype, P>::LoadCombinedMemory(size_t model_len,
     LOG(kLOG_INFO) << "executor inited";
   }
 
-  return true;
-}
-template <typename Dtype, Precision P>
-std::shared_ptr<framework::Tensor> PaddleMobile<Dtype, P>::Predict(
-    const framework::Tensor &t) {
-  return executor_->Predict(t);
+  return PMSuccess;
 }
 
-template <typename Dtype, Precision P>
-std::shared_ptr<framework::Tensor> PaddleMobile<Dtype, P>::PredictLod(
-    const framework::LoDTensor &t) {
-  return executor_->PredictLod(t);
+template <typename Device, typename T>
+PMStatus PaddleMobile<Device, T>::Predict(const framework::Tensor &input) {
+  std::vector<std::pair<std::string, framework::Tensor>> inputs;
+  inputs.push_back(std::make_pair("feed", input));
+  return this->Predict(inputs);
 }
 
-template <typename Dtype, Precision P>
-std::vector<typename PaddleMobile<Dtype, P>::Ptype>
-PaddleMobile<Dtype, P>::Predict(const std::vector<Ptype> &input,
-                                const std::vector<int64_t> &dims) {
+template <typename Device, typename T>
+PMStatus PaddleMobile<Device, T>::Predict(const framework::LoDTensor &input) {
+  std::vector<std::pair<std::string, framework::LoDTensor>> inputs;
+  inputs.push_back(std::make_pair("feed", input));
+  return this->Predict(inputs);
+}
+
+template <typename Device, typename T>
+PMStatus PaddleMobile<Device, T>::Predict(
+    const std::vector<std::pair<std::string, framework::Tensor>> &inputs) {
+  return executor_->Predict(inputs);
+}
+
+template <typename Device, typename T>
+PMStatus PaddleMobile<Device, T>::Predict(
+    const std::vector<std::pair<std::string, framework::LoDTensor>> &inputs) {
+  return executor_->Predict(inputs);
+}
+
+template <typename Device, typename T>
+std::vector<T> PaddleMobile<Device, T>::Predict(
+    const std::vector<T> &input, const std::vector<int64_t> &dims) {
   return executor_->Predict(input, dims);
 }
 
-template <typename Dtype, Precision P>
-void PaddleMobile<Dtype, P>::Clear() {
+template <typename Device, typename T>
+PMStatus PaddleMobile<Device, T>::Predict() {
+  return executor_->Predict();
+}
+
+template <typename Device, typename T>
+void PaddleMobile<Device, T>::Feed(const framework::Tensor &input,
+                                   const std::string &var_name) {
+  executor_->SetInput(input, var_name);
+}
+
+template <typename Device, typename T>
+void PaddleMobile<Device, T>::Feed(const framework::LoDTensor &input,
+                                   const std::string &var_name) {
+  executor_->SetInput(input, var_name);
+}
+
+typedef std::shared_ptr<framework::LoDTensor> LoDTensorPtr;
+template <typename Device, typename T>
+LoDTensorPtr PaddleMobile<Device, T>::Fetch(const std::string &var_name) {
+  return executor_->GetOutput(var_name);
+}
+
+template <typename Device, typename T>
+void PaddleMobile<Device, T>::Clear() {
   executor_ = nullptr;
   loader_ = nullptr;
 }
-template <typename Dtype, Precision P>
-double PaddleMobile<Dtype, P>::GetPredictTime() {}
+
+template <typename Device, typename T>
+double PaddleMobile<Device, T>::GetPredictTime() {}
 
 #ifdef PADDLE_MOBILE_CPU
 template <>
-double PaddleMobile<CPU, Precision::FP32>::GetPredictTime() {
+double PaddleMobile<CPU, float>::GetPredictTime() {
   int m = 32;
   int n = 224 * 224;
   int k = 27;
@@ -148,7 +186,8 @@ double PaddleMobile<CPU, Precision::FP32>::GetPredictTime() {
   for (int i = 0; i < k * n; ++i) {
     b[i] = t1 + rand() % t2;  // NOLINT
   }
-  paddle_mobile::operators::math::Gemm gemm;
+
+  operators::math::Gemm gemm;
   auto time1 = paddle_mobile::time();
   gemm.Sgemm(m, n, k, static_cast<float>(1), a, lda, b, ldb,
              static_cast<float>(0), c, ldc, false,
@@ -162,57 +201,51 @@ double PaddleMobile<CPU, Precision::FP32>::GetPredictTime() {
 }
 #endif
 
-template <typename Dtype, Precision P>
-PaddleMobile<Dtype, P>::~PaddleMobile() {
-  executor_ = nullptr;
-  loader_ = nullptr;
-}
-
 #ifdef PADDLE_MOBILE_FPGA
-
-template <typename Dtype, Precision P>
-void PaddleMobile<Dtype, P>::InjectVariable(const framework::Tensor &t,
-                                            std::string var_name) {
+template <typename Device, typename T>
+void PaddleMobile<Device, T>::InjectVariable(const framework::Tensor &t,
+                                             std::string var_name) {
   executor_->InjectVariable(t, var_name);
 }
 
-template <typename Dtype, Precision P>
-void PaddleMobile<Dtype, P>::FeedData(const framework::Tensor &t) {
+template <typename Device, typename T>
+void PaddleMobile<Device, T>::FeedData(const framework::Tensor &t) {
   executor_->FeedData(t);
 }
 
-template <typename Dtype, Precision P>
-std::shared_ptr<framework::Tensor> PaddleMobile<Dtype, P>::FetchResult(int id) {
+template <typename Device, typename T>
+std::shared_ptr<framework::Tensor> PaddleMobile<Device, T>::FetchResult(
+    int id) {
   return executor_->FetchResult(id);
 }
 
-template <typename Dtype, Precision P>
-void PaddleMobile<Dtype, P>::Predict_From_To(int start, int end) {
+template <typename Device, typename T>
+void PaddleMobile<Device, T>::Predict_From_To(int start, int end) {
   executor_->Predict_From_To(start, end);
 }
 
-template <typename Dtype, Precision P>
-void PaddleMobile<Dtype, P>::Predict_From(int start) {
+template <typename Device, typename T>
+void PaddleMobile<Device, T>::Predict_From(int start) {
   executor_->Predict_From(start);
 }
 
-template <typename Dtype, Precision P>
-void PaddleMobile<Dtype, P>::Predict_To(int end) {
+template <typename Device, typename T>
+void PaddleMobile<Device, T>::Predict_To(int end) {
   executor_->Predict_To(end);
 }
 #endif
 
 #ifdef PADDLE_MOBILE_CL
 static std::mutex lc;
-template <typename Dtype, Precision P>
-void PaddleMobile<Dtype, P>::SetCLPath(std::string path) {
+template <typename Device, typename T>
+void PaddleMobile<Device, T>::SetCLPath(std::string path) {
   std::lock_guard<std::mutex> lock(lc);
   if (framework::CLEngine::Instance()->GetCLPath() == "") {
     framework::CLEngine::Instance()->setClPath(path);
   }
 }
 template <>
-double PaddleMobile<GPU_CL, Precision::FP32>::GetPredictTime() {
+double PaddleMobile<GPU_CL, float>::GetPredictTime() {
   cl_int status;
   cl_uint nPlatform;
   clGetPlatformIDs(0, NULL, &nPlatform);
@@ -410,8 +443,8 @@ double PaddleMobile<GPU_CL, Precision::FP32>::GetPredictTime() {
     return -1;
   }
 }
-template <typename Dtype, Precision P>
-int PaddleMobile<Dtype, P>::readText(
+template <typename Device, typename T>
+int PaddleMobile<Device, T>::readText(
     const char *kernelPath,
     char **pcode) {  // 读取文本文件放入 pcode，返回字符串长度
   FILE *fp;
@@ -440,13 +473,11 @@ int PaddleMobile<Dtype, P>::readText(
   fclose(fp);
   return size + 1;
 }
-
 #endif
 
-template class PaddleMobile<CPU, Precision::FP32>;
-template class PaddleMobile<FPGA, Precision::FP32>;
-template class PaddleMobile<GPU_MALI, Precision::FP32>;
-
-template class PaddleMobile<GPU_CL, Precision::FP32>;
+template class PaddleMobile<CPU, float>;
+template class PaddleMobile<FPGA, float>;
+template class PaddleMobile<GPU_MALI, float>;
+template class PaddleMobile<GPU_CL, float>;
 
 }  // namespace paddle_mobile

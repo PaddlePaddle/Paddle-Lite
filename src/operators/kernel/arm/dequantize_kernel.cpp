@@ -30,8 +30,8 @@ bool DequantizeKernel<CPU, float>::Init(DequantizeParam<CPU> *param) {
 
 template <>
 void DequantizeKernel<CPU, float>::Compute(const DequantizeParam<CPU> &param) {
-  const Tensor *input = param.input_;
-  Tensor *output = param.output_;
+  const LoDTensor *input = param.input_;
+  LoDTensor *output = param.output_;
   float activation_scale = param.activation_scale_->data<float>()[0];
   float weight_scale = param.weight_scale_;
   const int32_t *x = input->data<const int32_t>();
@@ -72,6 +72,7 @@ void DequantizeKernel<CPU, float>::Compute(const DequantizeParam<CPU> &param) {
   for (size_t i = 0; i < size; ++i) {
     y[i] = x[i] * scale;
   }
+  output->set_lod(input->lod());
 }
 
 }  // namespace operators
