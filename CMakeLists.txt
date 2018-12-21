@@ -7,11 +7,11 @@ option(SYMBOL_HIDDEN "symbol hidden" OFF) # on when use jni or ios io
 option(LOG_PROFILE "log profile" OFF)
 
 # select the platform to build
-option(CPU "armv7 with neon" OFF)
+option(CPU "armv7 with neon" ON)
 option(GPU_MALI "mali gpu" OFF)
 option(GPU_CL "opencl gpu" OFF)
 
-option(FPGA "fpga" ON)
+option(FPGA "fpga" OFF)
 if(FPGA)
     option(FPGAV1 "fpga v1" ON)
     option(FPGAV2 "fpga v2" OFF)
