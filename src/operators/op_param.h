@@ -904,6 +904,11 @@ class PriorBoxParam : public OpParam {
     return min_max_aspect_ratios_order_;
   }
 
+#ifdef PADDLE_MOBILE_FPGA
+  void *get_cache_boxes() const { return cache_boxes_; }
+  void *get_cache_variances() const { return cache_variances_; }
+#endif
+
  private:
   RType *input_;
   RType *input_image_;
@@ -919,6 +924,11 @@ class PriorBoxParam : public OpParam {
   float step_h_;
   float offset_;
   bool min_max_aspect_ratios_order_;
+
+#ifdef PADDLE_MOBILE_FPGA
+  void *cache_boxes_ = nullptr;
+  void *cache_variances_ = nullptr;
+#endif
 };
 #endif
 

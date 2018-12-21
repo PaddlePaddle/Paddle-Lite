@@ -42,4 +42,7 @@ REGISTER_OPERATOR_MALI_GPU(reshape, ops::ReshapeOp);
 REGISTER_OPERATOR_CL(reshape, ops::ReshapeOp);
 #endif
 
+#ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(reshape, ops::ReshapeOp);
+#endif
 #endif

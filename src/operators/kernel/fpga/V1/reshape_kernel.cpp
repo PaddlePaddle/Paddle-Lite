@@ -15,7 +15,7 @@ limitations under the License. */
 #ifdef RESHAPE_OP
 
 #include "operators/kernel/reshape_kernel.h"
-#include "operators/kernel/central-arm-func/reshape_arm_func.h"
+// #include "operators/kernel/central-arm-func/reshape_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -27,7 +27,30 @@ bool ReshapeKernel<FPGA, float>::Init(ReshapeParam<FPGA> *param) {
 
 template <>
 void ReshapeKernel<FPGA, float>::Compute(const ReshapeParam<FPGA> &param) {
-  ReshapeCompute<float>(param);
+  const auto *input_x = param.InputX();
+  const auto &input_x_dims = input_x->dims();
+  auto *out = param.Out();
+  framework::DDim out_dims = out->dims();
+  const auto *input_shape = param.InputShape();
+
+  if (input_shape) {
+    auto *shape_data = input_shape->data<int>();
+    framework::Tensor cpu_shape_tensor;
+    auto shape =
+        std::vector<int>(shape_data, shape_data + input_shape->numel());
+    out_dims = ValidateShape(shape, input_x->dims());
+  }
+
+  bool inplace = param.Inplace();
+  out->Resize(out_dims);
+  if (!inplace) {
+    out->mutable_data<float>();
+    framework::TensorCopy(*input_x, out);  // TODO(chonwhite) is it right?
+    out->Resize(out_dims);
+  } else {
+    out->ShareDataWith(*input_x);
+    out->Resize(out_dims);
+  }
 }
 
 }  // namespace operators

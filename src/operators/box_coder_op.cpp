@@ -61,6 +61,7 @@ REGISTER_OPERATOR_CL(box_coder, ops::BoxCoderOp);
 #ifdef PADDLE_MOBILE_MALI_GPU
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(box_coder, ops::BoxCoderOp);
 #endif
 
 #endif

@@ -15,10 +15,191 @@ limitations under the License. */
 #ifdef PRIORBOX_OP
 
 #include "operators/kernel/prior_box_kernel.h"
+#include <string>
 #include "operators/kernel/central-arm-func/prior_box_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
+
+void compute_prior_box(const PriorBoxParam<FPGA> &param, void *boxes_data,
+                       void *variances_data) {
+  const auto *input_ = param.Input();
+  const auto &input_dims = input_->dims();
+
+  const auto *input_image = param.InputImage();
+  const auto &input_image_dims = input_image->dims();
+
+  const auto &min_sizes = param.MinSizes();
+  const auto &max_sizes = param.MaxSizes();
+  const auto &variances = param.Variances();
+  const auto &input_aspect_ratio = param.AspectRatios();
+  const bool &flip = param.Flip();
+  const bool &clip = param.Clip();
+  const float &step_w = param.StepW();
+  const float &step_h = param.StepH();
+  const float &offset = param.Offset();
+
+  Tensor *output_boxes = param.OutputBoxes();
+  Tensor *output_variances = param.OutputVariances();
+
+  // auto output_boxes_dataptr = output_boxes->mutable_data<float>();
+  // auto output_variances_dataptr = output_variances->mutable_data<float>();
+
+  float *output_boxes_dataptr = reinterpret_cast<float *>(
+      fpga::fpga_malloc(output_boxes->numel() * sizeof(float)));
+  float *output_variances_dataptr = reinterpret_cast<float *>(
+      fpga::fpga_malloc(output_variances->numel() * sizeof(float)));
+
+  std::vector<float> aspect_ratios;
+  ExpandAspectRatios(input_aspect_ratio, flip, &aspect_ratios);
+
+  auto img_width = input_image_dims[3];
+  auto img_height = input_image_dims[2];
+
+  auto feature_width = input_dims[3];
+  auto feature_height = input_dims[2];
+
+  auto stride0 = output_boxes->dims()[1] * output_boxes->dims()[2] *
+                 output_boxes->dims()[3];
+  auto stride1 = output_boxes->dims()[2] * output_boxes->dims()[3];
+  auto stride2 = output_boxes->dims()[3];
+
+  float step_width, step_height;
+  /// 300 / 19
+  if (step_w == 0 || step_h == 0) {
+    step_width = static_cast<float>(img_width) / feature_width;
+    step_height = static_cast<float>(img_height) / feature_height;
+  } else {
+    step_width = step_w;
+    step_height = step_h;
+  }
+
+  int num_priors = aspect_ratios.size() * min_sizes.size();
+  if (!max_sizes.empty()) {
+    num_priors += max_sizes.size();
+  }
+
+  for (int h = 0; h < feature_height; ++h) {
+    for (int w = 0; w < feature_width; ++w) {
+      /// map origin image
+      float center_x = (w + offset) * step_width;
+      float center_y = (h + offset) * step_height;
+      float box_width, box_height;
+      int idx = 0;
+      for (size_t s = 0; s < min_sizes.size(); ++s) {
+        auto min_size = min_sizes[s];
+        if (param.MinMaxAspectRatiosOrder()) {
+          box_width = box_height = min_size / 2.;
+          output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 + 0] =
+              (center_x - box_width) / img_width;
+          output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 + 1] =
+              (center_y - box_height) / img_height;
+          output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 + 2] =
+              (center_x + box_width) / img_width;
+          output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 + 3] =
+              (center_y + box_height) / img_height;
+          idx++;
+
+          if (max_sizes.size() > 0) {
+            auto max_size = max_sizes[s];
+            // square prior with size sqrt(minSize * maxSize)
+            box_width = box_height = sqrt(min_size * max_size) / 2.;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 0] = (center_x - box_width) / img_width;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 1] = (center_y - box_height) / img_height;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 2] = (center_x + box_width) / img_width;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 3] = (center_y + box_height) / img_height;
+            idx++;
+          }
+
+          // priors with different aspect ratios
+          for (float ar : aspect_ratios) {
+            if (fabs(ar - 1.) < 1e-6) {
+              continue;
+            }
+            box_width = min_size * sqrt(ar) / 2.;
+            box_height = min_size / sqrt(ar) / 2.;
+            /// box_width/2 , / img_width 为了得到feature map 相对于
+            /// 原图的归一化位置的比例。
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 0] = (center_x - box_width) / img_width;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 1] = (center_y - box_height) / img_height;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 2] = (center_x + box_width) / img_width;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 3] = (center_y + box_height) / img_height;
+            idx++;
+          }
+
+        } else {
+          // priors with different aspect ratios
+          for (float ar : aspect_ratios) {
+            box_width = min_size * sqrt(ar) / 2.;
+            box_height = min_size / sqrt(ar) / 2.;
+            /// box_width/2 , / img_width 为了得到feature map 相对于
+            /// 原图的归一化位置的比例。
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 0] = (center_x - box_width) / img_width;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 1] = (center_y - box_height) / img_height;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 2] = (center_x + box_width) / img_width;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 3] = (center_y + box_height) / img_height;
+            idx++;
+          }
+          if (!max_sizes.empty()) {
+            auto max_size = max_sizes[s];
+            // square prior with size sqrt(minSize * maxSize)
+            box_width = box_height = sqrt(min_size * max_size) / 2.;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 0] = (center_x - box_width) / img_width;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 1] = (center_y - box_height) / img_height;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 2] = (center_x + box_width) / img_width;
+            output_boxes_dataptr[h * stride0 + w * stride1 + idx * stride2 +
+                                 3] = (center_y + box_height) / img_height;
+            idx++;
+          }
+        }
+      }
+    }
+  }
+  if (clip) {
+    math::Transform trans;
+    ClipFunctor<float> clip_func;
+    trans(output_boxes_dataptr, output_boxes_dataptr + output_boxes->numel(),
+          output_boxes_dataptr, clip_func);
+  }
+
+  if ((variances.size() != 4)) {
+    LOG(kLOG_ERROR) << " variances.size() must be 4.";
+  }
+
+  int64_t box_num = feature_height * feature_width * num_priors;
+
+  for (int i = 0; i < box_num; i++) {
+    output_variances_dataptr[4 * i] = variances[0];
+    output_variances_dataptr[4 * i + 1] = variances[1];
+    output_variances_dataptr[4 * i + 2] = variances[2];
+    output_variances_dataptr[4 * i + 3] = variances[3];
+  }
+  fpga::fpga_flush(output_boxes_dataptr, output_boxes->numel() * sizeof(float));
+  fpga::fpga_flush(output_variances_dataptr,
+                   output_variances->numel() * sizeof(float));
+
+  fpga::to_half(output_boxes_dataptr, boxes_data, output_boxes->numel());
+  fpga::to_half(output_variances_dataptr, variances_data,
+                output_boxes->numel());
+
+  fpga::fpga_free(output_boxes_dataptr);
+  fpga::fpga_free(output_variances_dataptr);
+}
 
 template <>
 bool PriorBoxKernel<FPGA, float>::Init(PriorBoxParam<FPGA> *param) {
@@ -27,7 +208,24 @@ bool PriorBoxKernel<FPGA, float>::Init(PriorBoxParam<FPGA> *param) {
 
 template <>
 void PriorBoxKernel<FPGA, float>::Compute(const PriorBoxParam<FPGA> &param) {
-  PriorBoxCompute<float>(param);
+  if (param.get_cache_boxes() == nullptr) {
+    compute_prior_box(param, param.get_cache_boxes(),
+                      param.get_cache_variances());
+  }
+  Tensor *output_boxes = param.OutputBoxes();
+  Tensor *output_variances = param.OutputVariances();
+
+  auto output_boxes_dataptr = output_boxes->mutable_data<float>();
+  auto output_variances_dataptr = output_variances->mutable_data<float>();
+
+  std::memcpy(output_boxes_dataptr, param.get_cache_boxes(),
+              output_boxes->numel() * sizeof(half));
+  std::memcpy(output_variances_dataptr, param.get_cache_variances(),
+              output_variances->numel() * sizeof(half));
+
+  fpga::fpga_flush(output_boxes_dataptr, output_boxes->numel() * sizeof(half));
+  fpga::fpga_flush(output_variances_dataptr,
+                   output_variances->numel() * sizeof(half));
 }
 
 }  // namespace operators

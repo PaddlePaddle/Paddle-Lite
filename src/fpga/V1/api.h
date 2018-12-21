@@ -14,12 +14,17 @@ limitations under the License. */
 
 #pragma once
 
+#include <string>
+
 #include "fpga/common/fpga_common.h"
 #include "fpga/common/pe.h"
 #include "framework/tensor.h"
 
 namespace paddle_mobile {
 namespace fpga {
+
+void to_float(float* src, float* dst, int num);
+void to_half(float* src, void* dst, int num);
 
 void format_image(framework::Tensor* image_tensor);
 void format_fp16_ofm(framework::Tensor* ofm_tensor);  // only allocate memory
@@ -59,7 +64,7 @@ void savefile(std::string filename, void* buffer, int dataSize, Dtype tmp) {
   float data;
   std::ofstream out(filename.c_str());
   for (int i = 0; i < dataSize; ++i) {
-    data = (((Dtype*)buffer)[i]);
+    data = (reinterpret_cast<Dtype*>(buffer)[i]);
     out << data << std::endl;
   }
   out.close();

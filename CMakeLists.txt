@@ -7,11 +7,11 @@ option(SYMBOL_HIDDEN "symbol hidden" OFF) # on when use jni or ios io
 option(LOG_PROFILE "log profile" OFF)
 
 # select the platform to build
-option(CPU "armv7 with neon" ON)
+option(CPU "armv7 with neon" OFF)
 option(GPU_MALI "mali gpu" OFF)
 option(GPU_CL "opencl gpu" OFF)
 
-option(FPGA "fpga" OFF)
+option(FPGA "fpga" ON)
 if(FPGA)
     option(FPGAV1 "fpga v1" ON)
     option(FPGAV2 "fpga v2" OFF)
@@ -136,6 +136,14 @@ if(FPGA)
     list(APPEND PADDLE_MOBILE_CC src/operators/math/softmax.cpp)
     list(APPEND PADDLE_MOBILE_h src/operators/math/softmax.h)
     list(APPEND PADDLE_MOBILE_h src/operators/math/math_func_neon.h)
+    list(APPEND PADDLE_MOBILE_h src/operators/math/poly_util.h)
+    list(APPEND PADDLE_MOBILE_CC src/operators/math/poly_util.cpp)
+    list(APPEND PADDLE_MOBILE_h src/operators/math/gpc.h)
+    list(APPEND PADDLE_MOBILE_CC src/operators/math/gpc.cpp)
+
+    # list(APPEND PADDLE_MOBILE_h src/operators/kernel/central/reshape_arm_funcs.h)
+    # list(APPEND PADDLE_MOBILE_CC src/operators/kernel/central-arm-func/softmax_arm_func.cpp)
+
     if(FPGAV1)
         message("FPGA_V1 enabled")
         add_definitions(-DPADDLE_MOBILE_FPGA_V1)
@@ -226,16 +234,16 @@ elseif(IS_IOS)
     if(USE_OPENMP)
         add_library(paddle-mobile-stage0 STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
         add_custom_target(paddle-mobile ALL
-            COMMAND libtool -static -o ${CMAKE_BINARY_DIR}/libpaddle-mobile.a ${CMAKE_CURRENT_LIST_DIR}/tools/libomp.a $<TARGET_FILE:paddle-mobile-stage0>
-            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-            DEPENDS paddle-mobile
-        )
+                COMMAND libtool -static -o ${CMAKE_BINARY_DIR}/libpaddle-mobile.a ${CMAKE_CURRENT_LIST_DIR}/tools/libomp.a $<TARGET_FILE:paddle-mobile-stage0>
+                WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+                DEPENDS paddle-mobile
+                )
         add_dependencies(paddle-mobile paddle-mobile-stage0)
     else()
         add_library(paddle-mobile STATIC ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
     endif()
 else()
-  add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
+    add_library(paddle-mobile SHARED ${PADDLE_MOBILE_CC} ${PADDLE_MOBILE_H})
 endif()
 
 # unit test

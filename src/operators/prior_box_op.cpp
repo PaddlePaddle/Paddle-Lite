@@ -57,4 +57,8 @@ REGISTER_OPERATOR_CPU(prior_box, ops::PriorBoxOp);
 #ifdef PADDLE_MOBILE_CL
 REGISTER_OPERATOR_CL(prior_box, ops::PriorBoxOp);
 #endif
+
+#ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(prior_box, ops::PriorBoxOp);
+#endif
 #endif

@@ -54,6 +54,7 @@ namespace ops = paddle_mobile::operators;
 REGISTER_OPERATOR_CPU(flatten, ops::FlattenOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(flatten, ops::FlattenOp);
 #endif
 
 #endif

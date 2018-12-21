@@ -21,13 +21,20 @@ namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ShapeKernel<FPGA, float>::Init(ShapeParam<FPGA> *param) {
+bool ShapeKernel<FPGA, float>::Init(ShapeParam<FPGA>* param) {
   return true;
 }
 
 template <>
-void ShapeKernel<FPGA, float>::Compute(const ShapeParam<FPGA> &param) {
-  ShapeCompute<float>(param);
+void ShapeKernel<FPGA, float>::Compute(const ShapeParam<FPGA>& param) {
+  // ShapeCompute<float>(param);
+  auto* in_t = param.Input();
+  auto* out_t = param.Out();
+  auto out_data = out_t->mutable_data<int32_t>();
+  auto in_dims = in_t->dims();
+  for (int i = 0; i < in_dims.size(); ++i) {
+    out_data[i] = static_cast<int32_t>(in_dims[i]);
+  }
 }
 
 }  // namespace operators

@@ -47,4 +47,8 @@ REGISTER_OPERATOR_CPU(multiclass_nms, ops::MultiClassNMSOp);
 REGISTER_OPERATOR_CL(multiclass_nms, ops::MultiClassNMSOp);
 #endif
 
+#ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(multiclass_nms, ops::MultiClassNMSOp);
+#endif
+
 #endif

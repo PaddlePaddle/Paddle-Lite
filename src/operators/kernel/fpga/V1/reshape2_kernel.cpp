@@ -27,7 +27,7 @@ bool Reshape2Kernel<FPGA, float>::Init(Reshape2Param<FPGA> *param) {
 
 template <>
 void Reshape2Kernel<FPGA, float>::Compute(const Reshape2Param<FPGA> &param) {
-  Reshape2Compute<float>(param);
+  // Reshape2Compute<float>(param);
 }
 
 }  // namespace operators

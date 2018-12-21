@@ -21,12 +21,13 @@ namespace operators {
 
 template <>
 bool TransposeKernel<FPGA, float>::Init(TransposeParam<FPGA> *param) {
+  param->Out()->ShareDataWith(*param->InputX());
   return true;
 }
 
 template <>
 void TransposeKernel<FPGA, float>::Compute(const TransposeParam<FPGA> &param) {
-  TransposeCompute<float>(param);
+  // TransposeCompute<float>(param);
 }
 
 }  // namespace operators
