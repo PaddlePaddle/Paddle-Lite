@@ -19,7 +19,7 @@ limitations under the License. */
 int main(int argc, char* argv[]) {
   if (argc < 2) {
     std::cout << "Usage: ./test_benchmark feed_shape [thread_num] [use_fuse]\n"
-              << "feed_shape: input tensor shape, such as 1,3,224,224.\n"
+              << "feed_shape: input tensor shape, such as 3,224,224.\n"
               << "thread_num: optional int, threads count, default is 1.\n"
               << "use_fuse: optional bool, default is 0.\n";
     return 1;
@@ -41,18 +41,18 @@ int main(int argc, char* argv[]) {
 #endif
   paddle_mobile.SetThreadNum(thread_num);
   auto time1 = time();
-  if (paddle_mobile.Load(g_googlenet, optimize)) {
+  std::vector<float> output;
+  if (paddle_mobile.Load(g_googlenet, optimize, false, 1, true)) {
     auto time2 = paddle_mobile::time();
     std::cout << "load cost :" << paddle_mobile::time_diff(time1, time2) << "ms"
               << std::endl;
     std::vector<float> input;
-    std::vector<float> output;
     std::vector<int64_t> dims{1, 3, 224, 224};
     if (feed_shape) {
       sscanf(feed_shape, "%d,%d,%d", &dims[1], &dims[2], &dims[3]);
     }
     std::cout << "feed shape: [" << dims[0] << ", " << dims[1] << ", "
-              << dims[2] << ", " << dims[3] << "]\n";
+              << dims[2] << ", " << dims[3] << "]" << std::endl;
     GetInput<float>(g_test_image_1x3x224x224, &input, dims);
     // warmup
     for (int i = 0; i < 10; ++i) {

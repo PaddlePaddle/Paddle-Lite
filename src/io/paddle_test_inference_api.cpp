@@ -14,10 +14,12 @@ limitations under the License. */
 
 #include "io/paddle_test_inference_api.h"
 #include "io/paddle_mobile.h"
+
 namespace paddle_mobile {
-template <typename Dtype, Precision P>
-double PaddleTester<Dtype, P>::CaculatePredictTime(std::string *cl_path) {
-  PaddleMobile<Dtype, P> paddle_mobile;
+
+template <typename Device, typename T>
+double PaddleTester<Device, T>::CaculatePredictTime(std::string *cl_path) {
+  PaddleMobile<Device, T> paddle_mobile;
 #ifdef PADDLE_MOBILE_CL
   if (cl_path) {
     paddle_mobile.SetCLPath(*cl_path);
@@ -26,10 +28,10 @@ double PaddleTester<Dtype, P>::CaculatePredictTime(std::string *cl_path) {
 #endif
   return paddle_mobile.GetPredictTime();
 }
-template class PaddleTester<CPU, Precision::FP32>;
-template class PaddleTester<FPGA, Precision::FP32>;
-template class PaddleTester<GPU_MALI, Precision::FP32>;
+template class PaddleTester<CPU, float>;
+template class PaddleTester<FPGA, float>;
+template class PaddleTester<GPU_MALI, float>;
 
-template class PaddleTester<GPU_CL, Precision::FP32>;
+template class PaddleTester<GPU_CL, float>;
 
 }  // namespace paddle_mobile

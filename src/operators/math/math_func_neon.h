@@ -38,7 +38,11 @@ limitations under the License. */
  *
  *  (this is the zlib license)
  */
+
+#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+
 #pragma once
+
 #include <arm_neon.h>
 
 #define c_inv_mant_mask ~0x7f800000u
@@ -316,11 +320,11 @@ static inline float32x4_t cos_ps(float32x4_t x) {
 static inline float32x4_t div_ps(float32x4_t a, float32x4_t b) {
   float32x4_t reciprocal = vrecpeq_f32(b);
   reciprocal = vmulq_f32(vrecpsq_f32(b, reciprocal), reciprocal);
-  //     reciprocal = vmulq_f32(vrecpsq_f32(b, reciprocal), reciprocal);
   return vmulq_f32(a, reciprocal);
 }
 
 static inline float32x4_t pow_ps(float32x4_t a, float32x4_t b) {
-  // pow(x, m) = exp(m * log(x))
   return exp_ps(vmulq_f32(b, log_ps(a)));
 }
+
+#endif  // __ARM_NEON__

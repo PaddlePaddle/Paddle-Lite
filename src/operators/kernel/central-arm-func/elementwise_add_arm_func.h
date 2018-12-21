@@ -26,18 +26,12 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename T>
-struct AddFunctor {
-  inline T operator()(T a, T b) const { return a + b; }
-};
-
-template <typename P>
-void ElementwiseAddCompute(const ElementwiseAddParam<CPU> &param) {
-  const Tensor *input_x = param.InputX();
-  const Tensor *input_y = param.InputY();
-  Tensor *Out = param.Out();
-  Out->mutable_data<float>();
+inline void ElementwiseAddCompute(const ElementwiseAddParam<CPU> &param) {
+  const framework::Tensor *input_x = param.InputX();
+  const framework::Tensor *input_y = param.InputY();
+  framework::Tensor *Out = param.Out();
   int axis = param.Axis();
-#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+
   const auto &x_dims = input_x->dims();
   const auto &y_dims = input_y->dims();
   /// axis = -1 represent the last dimensions.
@@ -57,18 +51,20 @@ void ElementwiseAddCompute(const ElementwiseAddParam<CPU> &param) {
   const float *bias_data = input_y->data<float>();
   const float *input_data = input_x->data<float>();
   float *output_data = Out->mutable_data<float>();
+
+  #pragma omp parallel for collapse(2)
   for (int i = 0; i < batch; ++i) {
-    #pragma omp parallel for
     for (int j = 0; j < channels; ++j) {
       size_t offset = (i * channels + j) * elementwise_num;
       const float *input = input_data + offset;
-      const float *bias = bias_data + j;
+      const float bias = bias_data[j];
       float *output = output_data + offset;
-
+      int remain = elementwise_num;
+#if defined(__ARM_NEON__) || defined(__ARM_NEON)
       int loop = elementwise_num >> 0x4;
-      int remain = elementwise_num & 0xF;
+      remain = elementwise_num & 0xF;
       for (int k = 0; k < loop; ++k) {
-        float32x4_t rb = vdupq_n_f32(*bias);
+        float32x4_t rb = vdupq_n_f32(bias);
         float32x4_t r0 = vld1q_f32(input);
         float32x4_t r1 = vld1q_f32(input + 4);
         float32x4_t r2 = vld1q_f32(input + 8);
@@ -84,15 +80,12 @@ void ElementwiseAddCompute(const ElementwiseAddParam<CPU> &param) {
         input += 16;
         output += 16;
       }
+#endif
       for (int k = 0; k < remain; ++k) {
-        output[k] = input[k] + *bias;
+        output[k] = input[k] + bias;
       }
     }
   }
-#else
-  ElementwiseComputeEx<AddFunctor<float>, float>(input_x, input_y, axis,
-                                                 AddFunctor<float>(), Out);
-#endif
 }
 
 template class ElementwiseAddKernel<CPU, float>;
