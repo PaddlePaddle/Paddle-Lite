@@ -31,8 +31,8 @@ kernel void fetch(texture2d_array<float, access::read> inTexture [[texture(0)]],
   int output_to = 4 * input_width * input_height;
   output[gid.z * output_to + 0 * input_width * input_height + gid.y * input_width + gid.x] = input.x;
   output[gid.z * output_to + 1 * input_width * input_height + gid.y * input_width + gid.x] = input.y;
-//  output[gid.z * output_to + 2 * input_width * input_height + gid.y * input_width + gid.x] = input.z;
-//  output[gid.z * output_to + 3 * input_width * input_height + gid.y * input_width + gid.x] = input.w;
+  output[gid.z * output_to + 2 * input_width * input_height + gid.y * input_width + gid.x] = input.z;
+  output[gid.z * output_to + 3 * input_width * input_height + gid.y * input_width + gid.x] = input.w;
 }
 
 
@@ -52,8 +52,8 @@ kernel void fetch_half(texture2d_array<half, access::read> inTexture [[texture(0
   int output_to = 4 * input_width * input_height;
   output[gid.z * output_to + 0 * input_width * input_height + gid.y * input_width + gid.x] = input.x;
   output[gid.z * output_to + 1 * input_width * input_height + gid.y * input_width + gid.x] = input.y;
-//  output[gid.z * output_to + 2 * input_width * input_height + gid.y * input_width + gid.x] = input.z;
-//  output[gid.z * output_to + 3 * input_width * input_height + gid.y * input_width + gid.x] = input.w;
+  output[gid.z * output_to + 2 * input_width * input_height + gid.y * input_width + gid.x] = input.z;
+  output[gid.z * output_to + 3 * input_width * input_height + gid.y * input_width + gid.x] = input.w;
   
 }
 

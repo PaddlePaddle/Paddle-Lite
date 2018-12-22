@@ -175,19 +175,17 @@ class ViewController: UIViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     
-//    if runner.load() {
-//      print(" load success ! ")
-//    } else {
-//      print(" load error ! ")
-//    }
-//
     modelPickerView.delegate = self
     modelPickerView.dataSource = self
     threadPickerView.delegate = self
     threadPickerView.dataSource = self
+    if let image = UIImage.init(named: "test.jpg") {
+        selectImage = image
+        selectImageView.image = image
+    } else {
+        print("请添加测试图片")
+    }
     
-    selectImage = UIImage.init(named: "hand.jpg")
-    selectImageView.image = selectImage
     
 //    if platform == .CPU {
 //      inputPointer = runner.preproccess(image: selectImage!.cgImage!)
