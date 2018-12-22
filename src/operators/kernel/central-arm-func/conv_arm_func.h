@@ -106,9 +106,10 @@ inline void GemmConv(const ConvParam<CPU> &param) {
       // gemm
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
-      math::matmul(filter_slice, false, col_matrix, false,
-                   static_cast<float>(1), &out_slice, static_cast<float>(0),
-                   false, static_cast<Otype *>(nullptr));
+      math::MatMul<Itype, Otype>(filter_slice, false, col_matrix, false,
+                                 static_cast<float>(1), &out_slice,
+                                 static_cast<float>(0), false,
+                                 static_cast<Otype *>(nullptr));
     }
   }
 }
@@ -116,7 +117,7 @@ inline void GemmConv(const ConvParam<CPU> &param) {
 template <int tile, int kernel>
 inline void WinogradConv3x3(const ConvParam<CPU> &param) {
   const Tensor *input = param.Input();
-  const Tensor *filter = param.Filter();
+  const Tensor *filter = param.transformed_filter_;
   Tensor *output = param.Output();
   output->mutable_data<float>();
   int batch_size = input->dims()[0];

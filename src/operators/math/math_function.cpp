@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "operators/math/math_function.h"
-#include <cstring>
 #include <string>
+#include "common/enforce.h"
 #include "framework/data_type.h"
 #include "framework/tensor.h"
 #include "operators/math/gemm.h"
@@ -35,35 +35,34 @@ struct TensorSetConstant {
   float value_;
 };
 
-void set_constant(framework::Tensor *tensor, float value) {
+void SetConstant(framework::Tensor *tensor, float value) {
   framework::VisitDataType(framework::ToDataType(tensor->type()),
                            TensorSetConstant(tensor, value));
 }
 
 template <>
-void matmul<float>(const framework::Tensor &matrix_a, bool trans_a,
-                   const framework::Tensor &matrix_b, bool trans_b, float alpha,
-                   framework::Tensor *matrix_out, float beta, bool relu,
-                   float *bias) {
+void MatMul<float, float>(const framework::Tensor &matrix_a, bool trans_a,
+                          const framework::Tensor &matrix_b, bool trans_b,
+                          float alpha, framework::Tensor *matrix_out,
+                          float beta, bool relu, float *bias) {
   auto dim_a = matrix_a.dims();
   auto dim_b = matrix_b.dims();
   auto dim_out = matrix_out->dims();
   PADDLE_MOBILE_ENFORCE(
       dim_a.size() == 2 && dim_b.size() == 2 && dim_out.size() == 2,
-      "The input and output of matmul be matrix");
+      "The input and output of MatMul be matrix");
 
   int M = dim_out[0];
   int N = dim_out[1];
   int K = (!trans_a) ? dim_a[1] : dim_a[0];
   Gemm gemm;
-
   if (trans_a) {
+    framework::Tensor matrix_trans;
     int numel = matrix_a.numel();
     int m = matrix_a.dims()[0];
     int n = matrix_a.dims()[1];
     float *tmp = (float *)(matrix_a.data<float>());  // NOLINT
-    float *a = static_cast<float *>(
-        paddle_mobile::memory::Alloc(sizeof(float) * numel));
+    float *a = matrix_trans.mutable_data<float>(matrix_a.dims());
     int index = 0;
     for (int j = 0; j < n; j++) {
       for (int i = 0; i < m; i++) {
@@ -72,7 +71,6 @@ void matmul<float>(const framework::Tensor &matrix_a, bool trans_a,
     }
 
 #ifdef _OPENMP
-
     gemm.Sgemm_omp(M, N, K, alpha, a, K, matrix_b.data<float>(), N, beta,
                    matrix_out->data<float>(), N, relu, bias);
 #else
@@ -92,19 +90,18 @@ void matmul<float>(const framework::Tensor &matrix_a, bool trans_a,
   }
 }
 
-template <>
-void matmulWithBn<float>(const framework::Tensor &matrix_a, bool trans_a,
-                         const framework::Tensor &matrix_b, bool trans_b,
-                         float alpha, framework::Tensor *matrix_out, float beta,
-                         bool relu, framework::Tensor *new_scale,
-                         framework::Tensor *new_bias, int group, float *bias) {
+void MatMulWithBn(const framework::Tensor &matrix_a, bool trans_a,
+                  const framework::Tensor &matrix_b, bool trans_b, float alpha,
+                  framework::Tensor *matrix_out, float beta, bool relu,
+                  framework::Tensor *new_scale, framework::Tensor *new_bias,
+                  int group, float *bias) {
   Gemm gemm;
   auto dim_a = matrix_a.dims();
   auto dim_b = matrix_b.dims();
   auto dim_out = matrix_out->dims();
   PADDLE_MOBILE_ENFORCE(
       dim_a.size() == 2 && dim_b.size() == 2 && dim_out.size() == 2,
-      "The input and output of matmul be matrix");
+      "The input and output of MatMul be matrix");
 
   int M = dim_out[0];
   int N = dim_out[1];
@@ -122,7 +119,7 @@ void matmulWithBn<float>(const framework::Tensor &matrix_a, bool trans_a,
                    new_bias->data<float>() + group, bias);
 #endif
 }
-void matmulWithPRelu(const framework::Tensor &matrix_a, bool trans_a,
+void MatMulWithPRelu(const framework::Tensor &matrix_a, bool trans_a,
                      const framework::Tensor &matrix_b, bool trans_b,
                      framework::Tensor *matrix_out, float *p, std::string mode,
                      float *bias, float *bias1) {
@@ -132,7 +129,7 @@ void matmulWithPRelu(const framework::Tensor &matrix_a, bool trans_a,
   auto dim_out = matrix_out->dims();
   PADDLE_MOBILE_ENFORCE(
       dim_a.size() == 2 && dim_b.size() == 2 && dim_out.size() == 2,
-      "The input and output of matmul be matrix");
+      "The input and output of MatMul be matrix");
 
   int M = dim_out[0];
   int N = dim_out[1];
@@ -146,7 +143,6 @@ void matmulWithPRelu(const framework::Tensor &matrix_a, bool trans_a,
   gemm.SgemmWithPRelu(M, N, K, matrix_a.data<float>(), K,
                       matrix_b.data<float>(), N, matrix_out->data<float>(), N,
                       p, mode, bias, bias1);
-
 #endif
 }
 

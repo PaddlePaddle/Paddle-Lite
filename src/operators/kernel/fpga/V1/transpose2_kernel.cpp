@@ -14,7 +14,6 @@ limitations under the License. */
 #ifdef TRANSPOSE2_OP
 
 #include "operators/kernel/transpose2_kernel.h"
-#include "operators/kernel/central-arm-func/transpose2_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {

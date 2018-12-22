@@ -21,16 +21,19 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace fpga {
 
-int get_align_image_cw(int cw);
 void format_image(framework::Tensor* image_tensor);
 void format_fp16_ofm(framework::Tensor* ofm_tensor);  // only allocate memory
 void format_fp32_ofm(framework::Tensor* ofm_tensor);
 
 float filter_find_max(framework::Tensor* filter_tensor);
 int get_filter_num_per_div(framework::Tensor* filter_tensor, int group_num);
+int get_deconv_filter_num_per_div(framework::Tensor* filter_tensor,
+                                  int group_num, int stride);
+
 int get_plit_num(framework::Tensor* filter_tensor);
+int get_deconv_plit_num(framework::Tensor* filter_tensor, int stride);
+
 int get_aligned_filter_element_num(int chw);
-int get_aligned_filter_num(int num);
 void format_filter(framework::Tensor* filter_tensor, float max_value,
                    int group_num);
 void format_fc_filter(framework::Tensor* filter_tensor, float max_value);

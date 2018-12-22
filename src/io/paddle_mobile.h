@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #ifdef _OPENMP
 #include <omp.h>
@@ -32,43 +33,52 @@ limitations under the License. */
 
 namespace paddle_mobile {
 
-template <typename Dtype = CPU, Precision P = Precision::FP32>
+template <typename Device, typename T = float>
 class PaddleMobile {
-  typedef typename PrecisionTrait<P>::ptype Ptype;
-
  public:
   PaddleMobile() {
 #ifndef PADDLE_MOBILE_CL
-    bool is_gpu = std::is_same<DeviceType<kGPU_CL>, Dtype>::value;
-    PADDLE_MOBILE_ENFORCE(!is_gpu,
-                          "Not Enable GPU in CmakeList but run gpu codes ");
+    bool is_gpu = std::is_same<DeviceType<kGPU_CL>, Device>::value;
+    PADDLE_MOBILE_ENFORCE(!is_gpu, "Please recompile with GPU_CL is on");
 #endif
   }
-  bool Load(const std::string &dirname, bool optimize = false,
-            bool quantification = false, int batch_size = 1,
-            bool loddable = false);
+  ~PaddleMobile() {}
 
-  bool Load(const std::string &model_path, const std::string &para_path,
-            bool optimize = false, bool quantification = false,
-            int batch_size = 1, bool loddable = false);
+  PMStatus Load(const std::string &dirname, const bool optimize = false,
+                const bool quantification = false, const int batch_size = 1,
+                const bool lod = false);
+  PMStatus Load(const std::string &model_path, const std::string &para_path,
+                const bool optimize = false, const bool quantification = false,
+                const int batch_size = 1, const bool lod = false);
 
-  std::shared_ptr<framework::Tensor> Predict(const framework::Tensor &t);
+  PMStatus Predict(const framework::Tensor &input);
+  PMStatus Predict(const framework::LoDTensor &input);
 
-  std::shared_ptr<framework::Tensor> PredictLod(const framework::LoDTensor &t);
+  PMStatus Predict(
+      const std::vector<std::pair<std::string, framework::Tensor>> &inputs);
+  PMStatus Predict(
+      const std::vector<std::pair<std::string, framework::LoDTensor>> &inputs);
 
-  std::vector<Ptype> Predict(const std::vector<Ptype> &input,
-                             const std::vector<int64_t> &dims);
+  std::vector<T> Predict(const std::vector<T> &input,
+                         const std::vector<int64_t> &dims);
+  PMStatus Predict();
+
+  void Feed(const framework::LoDTensor &input, const std::string &var_name);
+  void Feed(const framework::Tensor &input, const std::string &var_name);
+
+  typedef std::shared_ptr<framework::LoDTensor> LoDTensorPtr;
+  LoDTensorPtr Fetch(const std::string &var_name);
+
+  LoDTensorPtr Fetch() { return Fetch("fetch"); }
 
   bool LoadCombinedMemory(size_t model_len, const uint8_t *model_buf,
                           size_t combined_params_len,
                           uint8_t *combined_params_buf, bool optimize = false, bool quantification = false,
                           int batch_size = 1, bool loddable = false);
 
-  void SetThreadNum(int num);
+  void SetThreadNum(int count);
   void Clear();
   double GetPredictTime();
-
-  ~PaddleMobile();
 
 #ifdef PADDLE_MOBILE_FPGA
   void InjectVariable(const framework::Tensor &t, std::string var_name);
@@ -80,15 +90,15 @@ class PaddleMobile {
 #endif
 
 #ifdef PADDLE_MOBILE_CL
- public:
+ public:  // NOLINT
   void SetCLPath(std::string cl_path);
   int readText(const char *kernelPath,
                char **pcode);  // 读取文本文件放入 pcode，返回字符串长度
 #endif
 
  private:
-  std::shared_ptr<framework::Loader<Dtype, P>> loader_;
-  std::shared_ptr<framework::Executor<Dtype, P>> executor_;
+  std::shared_ptr<framework::Loader<Device, T>> loader_;
+  std::shared_ptr<framework::Executor<Device, T>> executor_;
 };
 
 }  // namespace paddle_mobile

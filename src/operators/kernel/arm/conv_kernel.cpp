@@ -55,10 +55,9 @@ bool ConvKernel<CPU, float>::Init(ConvParam<CPU> *param) {
                param->Input()->dims()[2] <= 140 /* refered from ncnn */) {
       param->ExecMode() = ConvParam<CPU>::EXEC_WINOGRAD3X3_FLOAT;
       // transform weight
-      framework::Tensor transformed_weight;
-      operators::math::winograd_transform_weight<8, 3>(*param->Filter(),
-                                                       &transformed_weight);
-      framework::TensorCopy(transformed_weight, param->Filter());
+      param->transformed_filter_ = new framework::Tensor;
+      operators::math::winograd_transform_weight<8, 3>(
+          *param->Filter(), param->transformed_filter_);
 #endif
     } else {
       param->ExecMode() = ConvParam<CPU>::EXEC_GEMM_FLOAT;

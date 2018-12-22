@@ -16,9 +16,9 @@ limitations under the License. */
 
 #ifdef ENABLE_EXCEPTION
 #include <stdio.h>
+#include <stdlib.h>
 #include <exception>
 #include <string>
-
 #endif
 
 namespace paddle_mobile {

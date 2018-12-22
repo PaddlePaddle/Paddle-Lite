@@ -25,24 +25,18 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-template <typename P, typename S>
+template <typename Itype, typename Otype>
 void ConvAddReluCompute(const FusionConvAddReluParam<CPU> &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
   Tensor bias = *param.Bias();
   int32_t axis = param.Axis();
-  S *bias_data = bias.data<S>();
+  Otype *bias_data = bias.data<Otype>();
   Tensor *output = param.Output();
-  output->mutable_data<P>();
+  output->mutable_data<Otype>();
 
   float alpha = 1.0f;
   float beta = 1.0f;
-
-#ifdef FUSION_CONVADDRELU_INT8_OP
-  alpha = param.InputScale()->data<float>()[0];
-  beta = 0.0f;
-#endif
-
   int32_t groups = param.Groups();
   std::vector<int32_t> strides = param.Strides();
   std::vector<int32_t> paddings = param.Paddings();
@@ -70,7 +64,7 @@ void ConvAddReluCompute(const FusionConvAddReluParam<CPU> &param) {
   Tensor col;
   Tensor col_matrix;
   if (is_expand) {
-    col.mutable_data<P>(col_shape);
+    col.mutable_data<Itype>(col_shape);
     col_matrix.ShareDataWith(col);
     col_matrix.Resize(col_matrix_shape);
   }
@@ -89,8 +83,8 @@ void ConvAddReluCompute(const FusionConvAddReluParam<CPU> &param) {
   int32_t in_step = static_cast<int32_t>(input->dims()[1]) / groups;
   int32_t out_step = static_cast<int32_t>(output->dims()[1]) / groups;
 
-  math::Vol2ColFunctor<CPU, P> vol2col;
-  math::Im2ColFunctor<math::ColFormat::kCFO, CPU, P> im2col;
+  math::Vol2ColFunctor<CPU, Itype> vol2col;
+  math::Im2ColFunctor<math::ColFormat::kCFO, CPU, Itype> im2col;
 
   for (int32_t i = 0; i < batch_size; i++) {
     Tensor in_batch = input->Slice(i, i + 1).Resize(input_shape);
@@ -118,8 +112,8 @@ void ConvAddReluCompute(const FusionConvAddReluParam<CPU> &param) {
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
 
-      math::matmul(filter_slice, false, col_matrix, false, alpha, &out_slice,
-                   beta, true, bias_data);
+      math::MatMul<Itype, Otype>(filter_slice, false, col_matrix, false, alpha,
+                                 &out_slice, beta, true, bias_data);
     }
   }
 }
