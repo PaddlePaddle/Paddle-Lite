@@ -16,75 +16,138 @@ limitations under the License. */
 
 #pragma once
 
-#include <climits>
+#include <algorithm>
 #include <cmath>
-#include "common/log.h"
+#include <limits>
+#include <vector>
+#include "common/types.h"
 #include "framework/tensor.h"
-#include "pool_2x2.h"
-#include "pool_3x3.h"
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+#include <arm_neon.h>
+#endif
 
 namespace paddle_mobile {
 namespace operators {
 namespace math {
 
-#define FLT_MAX __FLT_MAX__
-
-/*
- * \brief Extracting simple operations from pooling.
- *        Both MaxPool and AvgPool need "initial", "compute" and "finalize"
- * operation.
- *        MaxPool initializes temp variable to the negative maximum to find the
- * maximum value in the pooling field.
- *        AvgPool initializes temp variable to the zero to accumulate all values
- * in pool pooling, and finally takes the average.
- *        MaxPoolGrad and AvgPoolGrad are gradient operations respectively.
- */
-template <typename T>
-class MaxPool {
- public:
-  inline T initial() {
-    if (typeid(T) == typeid(int8_t)) {
-      return static_cast<T>(-SCHAR_MAX);
-    }
-    return static_cast<T>(-FLT_MAX);
+template <PoolingType P = MAX>
+struct PoolingVal {
+  float val;
+  int count;
+  PoolingVal() : count(0) { val = -std::numeric_limits<float>::max(); }
+  inline PoolingVal<P> &operator+=(const float &x) {
+    val = std::max(val, x);
+    ++count;
+    return *this;
   }
-
-  inline void compute(const T &x, T *y) { *y = *y > x ? *y : x; }
-
-  inline void finalize(const T &pool_field, T *y) {}
+  inline float Value() { return (count > 0) ? val : 0.f; }
 };
 
-template <typename Itype, typename Otype>
-class AvgPool {
- public:
-  inline Otype initial() { return static_cast<Otype>(0); }
-
-  inline void compute(const Itype &x, Otype *y) { *y += x; }
-
-  inline void finalize(const float &pool_field, Otype *y) {
-    if (typeid(Itype) == typeid(int8_t)) {
-      float tmp = *y / pool_field;
-      if (tmp > SCHAR_MAX) {
-        *y = SCHAR_MAX;
-      } else if (tmp < -SCHAR_MAX) {
-        *y = -SCHAR_MAX;
-      } else {
-        *y = static_cast<Otype>(std::round(tmp));
-      }
-    } else {
-      *y /= pool_field;
-    }
+template <>
+struct PoolingVal<AVG> {
+  float val;
+  int count;
+  PoolingVal() : val(0.f), count(0) {}
+  inline PoolingVal<AVG> &operator+=(const float &x) {
+    val += x;
+    ++count;
+    return *this;
   }
+  inline float Value() { return (count > 0) ? val / count : 0.f; }
 };
 
-template <typename DeviceType, typename PoolProcess, typename T>
-class PoolFunctor {
- public:
-  void operator()(const framework::Tensor &input, const std::vector<int> &ksize,
-                  const std::vector<int> &strides,
-                  const std::vector<int> &paddings, PoolProcess pool_compute,
-                  framework::Tensor *output);
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+template <PoolingType P = MAX>
+inline float32x4_t vPoolInitq_f32() {
+  return vdupq_n_f32(-std::numeric_limits<float>::max());
+}
+
+template <>
+inline float32x4_t vPoolInitq_f32<AVG>() {
+  return vdupq_n_f32(0.f);
+}
+
+template <PoolingType P = MAX>
+inline float32x4_t vPoolPreq_f32(const float32x4_t &x1, const float32x4_t &x2) {
+  return vmaxq_f32(x1, x2);
+}
+
+template <>
+inline float32x4_t vPoolPreq_f32<AVG>(const float32x4_t &x1,
+                                      const float32x4_t &x2) {
+  return vaddq_f32(x1, x2);
+}
+
+template <PoolingType P = MAX>
+inline float32x4_t vPoolPostq_f32(const float32x4_t &x,
+                                  const float32x4_t &post) {
+  return x;
+}
+
+template <>
+inline float32x4_t vPoolPostq_f32<AVG>(const float32x4_t &x,
+                                       const float32x4_t &post) {
+  return vmulq_f32(x, post);
+}
+#endif  // __ARM_NEON__
+
+template <PoolingType P = MAX>
+inline float PoolPre(const float &x1, const float &x2) {
+  return std::max(x1, x2);
+}
+
+template <>
+inline float PoolPre<AVG>(const float &x1, const float &x2) {
+  return x1 + x2;
+}
+
+template <PoolingType P = MAX>
+inline float PoolPost(const float &x, const float &post) {
+  return x;
+}
+
+template <>
+inline float PoolPost<AVG>(const float &x, const float &post) {
+  return x * post;
+}
+
+template <PoolingType P>
+struct Pooling {
+  inline void operator()(const framework::Tensor &input,
+                         const std::vector<int> &kernel_size,
+                         const std::vector<int> &strides,
+                         const std::vector<int> &paddings,
+                         framework::Tensor *output);
 };
+
+template <PoolingType P, int Stride>
+struct Pooling2x2 {
+  inline void operator()(const framework::Tensor &input,
+                         const std::vector<int> &paddings,
+                         framework::Tensor *output);
+};
+
+template <PoolingType P, int Stride>
+struct Pooling3x3 {
+  inline void operator()(const framework::Tensor &input,
+                         const std::vector<int> &paddings,
+                         framework::Tensor *output);
+};
+
+template <PoolingType P, int Stride>
+struct Pooling5x5 {
+  inline void operator()(const framework::Tensor &input,
+                         const std::vector<int> &paddings,
+                         framework::Tensor *output);
+};
+
+template <PoolingType P, int Stride>
+struct Pooling7x7 {
+  inline void operator()(const framework::Tensor &input,
+                         const std::vector<int> &paddings,
+                         framework::Tensor *output);
+};
+
 }  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile

@@ -43,4 +43,4 @@ class QuantizeOp : public framework::OperatorWithKernel<
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#endif
+#endif  // QUANT_OP

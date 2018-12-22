@@ -12,26 +12,34 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef CAST_OP
+
 #pragma once
 
-#ifdef FUSION_DEQUANT_ADD_BN_OP
-
+#include <string>
 #include "framework/operator.h"
+#include "operators/kernel/kernels.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <typename DeviceType, typename T>
-class FusionDequantAddBNKernel
-    : public framework::OpKernelBase<DeviceType,
-                                     FusionDequantAddBNParam<DeviceType>> {
+class CastOp : public framework::OperatorWithKernel<
+                   DeviceType, CastParam<DeviceType>,
+                   operators::CastKernel<DeviceType, T>> {
  public:
-  void Compute(const FusionDequantAddBNParam<DeviceType> &param);
-  bool Init(FusionDequantAddBNParam<DeviceType> *param);
+  CastOp(const std::string &type, const VariableNameMap &inputs,
+         const VariableNameMap &outputs, const framework::AttributeMap &attrs,
+         std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<DeviceType, CastParam<DeviceType>,
+                                      operators::CastKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
+  // inference output shape
+  void InferShape() const override;
 };
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#endif
+#endif  // CAST_OP

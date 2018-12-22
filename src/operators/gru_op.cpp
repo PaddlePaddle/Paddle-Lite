@@ -14,19 +14,15 @@ limitations under the License. */
 
 #ifdef GRU_OP
 
-#include <vector>
-
-#include "common/enforce.h"
 #include "operators/gru_op.h"
+#include <vector>
+#include "common/enforce.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
 void GruOp<Dtype, T>::InferShape() const {
-  auto lod_size = this->param_.InputInput()->lod().size();
-  PADDLE_MOBILE_ENFORCE((lod_size == 1),
-                        "Current LoD only supports one dimension.");
   auto input_dims = this->param_.InputInput()->dims();
   auto weight_dims = this->param_.InputWeight()->dims();
   int input_size = input_dims[1];

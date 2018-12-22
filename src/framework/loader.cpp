@@ -23,14 +23,8 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace framework {
 
-/**
- * muteandresize tensor as originProgramDesc and scope in loadParams
- *
- * @param originProgramDesc
- * @param scope
- */
-template <typename Dtype, Precision P>
-void Loader<Dtype, P>::InitMemoryFromProgram(
+template <typename Device, typename T>
+void Loader<Device, T>::InitMemoryFromProgram(
     const std::shared_ptr<ProgramDesc> &originProgramDesc,
     const std::shared_ptr<Scope> &scope) {
   for (const auto &block : originProgramDesc.get()->Blocks()) {
@@ -43,8 +37,6 @@ void Loader<Dtype, P>::InitMemoryFromProgram(
           tensor->Resize(make_ddim(dim));
         } else {
           auto dim = var_desc->Tensor_desc().Dims();
-          //          PADDLE_MOBILE_ENFORCE(dim.size() > 0, "dim size is 0");
-          //          dim[0] = 1;
           if (dim.size() == 0) {
             auto tensor = var->GetMutable<LoDTensor>();
             framework::DDim dDim = {0};
@@ -60,7 +52,7 @@ void Loader<Dtype, P>::InitMemoryFromProgram(
           }
         }
       } else {
-        // TODO(codeWorm): some.
+        // TODO(codeWorm)
       }
     }
   }
@@ -68,7 +60,7 @@ void Loader<Dtype, P>::InitMemoryFromProgram(
 
 #ifdef PADDLE_MOBILE_CL
 template <>
-void Loader<GPU_CL, Precision::FP32>::InitMemoryFromProgram(
+void Loader<GPU_CL, float>::InitMemoryFromProgram(
     const std::shared_ptr<ProgramDesc> &originProgramDesc,
     const std::shared_ptr<Scope> &scope) {
   for (const auto &block : originProgramDesc.get()->Blocks()) {
@@ -77,7 +69,6 @@ void Loader<GPU_CL, Precision::FP32>::InitMemoryFromProgram(
       if (var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
         if (var_desc->Persistable()) {
           auto dim = var_desc->Tensor_desc().Dims();
-          //              auto tensor = var->GetMutable<LoDTensor>();
           auto cl_image = var->GetMutable<framework::CLImage>();
           cl_image->Resize(make_ddim(dim));
         } else {
@@ -88,14 +79,13 @@ void Loader<GPU_CL, Precision::FP32>::InitMemoryFromProgram(
           cl_image->Resize(make_ddim(dim));
         }
       } else {
-        // TODO(codeWorm): some.
+        // TODO(codeWorm)
       }
     }
   }
 }
 template <>
-const Program<GPU_CL, Precision::FP32>
-Loader<GPU_CL, Precision::FP32>::LoadCombinedMemory(
+const Program<GPU_CL, float> Loader<GPU_CL, float>::LoadCombinedMemory(
     size_t read_size, const uint8_t *buf, size_t combined_params_len,
     uint8_t *combined_params_buf, bool optimize, bool quantification) {
   bool can_add_split = false;
@@ -113,7 +103,7 @@ Loader<GPU_CL, Precision::FP32>::LoadCombinedMemory(
 
   auto originProgramDesc = std::make_shared<ProgramDesc>(c_program);
 
-  Program<GPU_CL, Precision::FP32> program;
+  Program<GPU_CL, float> program;
   program.combined = true;
   program.originProgram = originProgramDesc;
   program.quantification = quantification;
@@ -145,16 +135,16 @@ Loader<GPU_CL, Precision::FP32>::LoadCombinedMemory(
 
 /**
  * fusion and print someinfos
- * @tparam Dtype
+ * @tparam Device
  * @tparam P
  * @param optimize
  * @param can_add_split
  * @param program
  * @param originProgramDesc
  */
-template <typename Dtype, Precision P>
+template <typename Device, typename T>
 void FusionAndPrintInfos(
-    bool optimize, bool can_add_split, Program<Dtype, P> *program,
+    bool optimize, bool can_add_split, Program<Device, T> *program,
     const std::shared_ptr<ProgramDesc> &originProgramDesc) {
   if (optimize) {
     ProgramOptimize program_optimize;
@@ -193,22 +183,22 @@ static size_t ReadBuffer(const char *file_name, uint8_t **out) {
   return cur_len;
 }
 
-template <typename Dtype, Precision P>
-const Program<Dtype, P> Loader<Dtype, P>::Load(const std::string &dirname,
-                                               bool optimize,
-                                               bool quantification,
-                                               bool can_add_split) {
+template <typename Device, typename T>
+const Program<Device, T> Loader<Device, T>::Load(const std::string &dirname,
+                                                 bool optimize,
+                                                 bool quantification,
+                                                 bool can_add_split) {
   auto program = this->LoadProgram(dirname + "/__model__", optimize,
                                    quantification, can_add_split);
   program.model_path = dirname;
   return program;
 }
 
-template <typename Dtype, Precision P>
-const Program<Dtype, P> Loader<Dtype, P>::Load(const std::string &model_path,
-                                               const std::string &para_path,
-                                               bool optimize,
-                                               bool quantification) {
+template <typename Device, typename T>
+const Program<Device, T> Loader<Device, T>::Load(const std::string &model_path,
+                                                 const std::string &para_path,
+                                                 bool optimize,
+                                                 bool quantification) {
   auto program = this->LoadProgram(model_path, optimize, quantification);
 
   program.para_path = para_path;
@@ -217,8 +207,8 @@ const Program<Dtype, P> Loader<Dtype, P>::Load(const std::string &model_path,
   return program;
 }
 
-template <typename Dtype, Precision P>
-const Program<Dtype, P> Loader<Dtype, P>::LoadProgram(
+template <typename Device, typename T>
+const Program<Device, T> Loader<Device, T>::LoadProgram(
     const std::string &model_path, bool optimize, bool quantification,
     bool can_add_split) {
   std::string model_filename = model_path;
@@ -237,7 +227,7 @@ const Program<Dtype, P> Loader<Dtype, P>::LoadProgram(
   //
   auto originProgramDesc = std::make_shared<ProgramDesc>(c_program);
 
-  Program<Dtype, P> program;
+  Program<Device, T> program;
   program.originProgram = originProgramDesc;
   program.quantification = quantification;
   program.combined_params_len = 0;
@@ -254,8 +244,8 @@ const Program<Dtype, P> Loader<Dtype, P>::LoadProgram(
   return program;
 }
 
-template <typename Dtype, Precision P>
-const Program<Dtype, P> Loader<Dtype, P>::LoadCombinedMemory(
+template <typename Device, typename T>
+const Program<Device, T> Loader<Device, T>::LoadCombinedMemory(
     size_t read_size, const uint8_t *buf, size_t combined_params_len,
     uint8_t *combined_params_buf, bool optimize, bool quantification) {
   bool can_add_split = false;
@@ -273,7 +263,7 @@ const Program<Dtype, P> Loader<Dtype, P>::LoadCombinedMemory(
 
   auto originProgramDesc = std::make_shared<ProgramDesc>(c_program);
 
-  Program<Dtype, P> program;
+  Program<Device, T> program;
   program.combined = true;
   program.originProgram = originProgramDesc;
   program.quantification = quantification;
@@ -289,13 +279,13 @@ const Program<Dtype, P> Loader<Dtype, P>::LoadCombinedMemory(
   return program;
 }
 
-template class Loader<CPU, Precision::FP32>;
+template class Loader<CPU, float>;
 
-template class Loader<FPGA, Precision::FP32>;
+template class Loader<FPGA, float>;
 
-template class Loader<GPU_MALI, Precision::FP32>;
+template class Loader<GPU_MALI, float>;
 
-template class Loader<GPU_CL, Precision::FP32>;
+template class Loader<GPU_CL, float>;
 
 }  // namespace framework
 }  // namespace paddle_mobile

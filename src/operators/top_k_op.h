@@ -12,39 +12,34 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_FC_INT8_OP
+#ifdef TOP_K_OP
 
 #pragma once
 
 #include <string>
-#include <vector>
-
 #include "framework/operator.h"
-#include "framework/program/program-optimize/fusion_op_register.h"
-#include "operators/kernel/fusion_fc_kernel.h"
+#include "operators/kernel/kernels.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <typename DeviceType, typename T>
-class FusionFcInt8Op
-    : public framework::OperatorWithKernel<DeviceType,
-                                           FusionFcParam<DeviceType>,
-                                           FusionFcKernel<DeviceType, T>> {
+class TopKOp : public framework::OperatorWithKernel<
+                   DeviceType, TopKParam<DeviceType>,
+                   operators::TopKKernel<DeviceType, T>> {
  public:
-  FusionFcInt8Op(const std::string &type, const VariableNameMap &inputs,
-                 const VariableNameMap &outputs,
-                 const framework::AttributeMap &attrs,
-                 std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, FusionFcParam<DeviceType>,
-                                      FusionFcKernel<DeviceType, T>>(
+  TopKOp(const std::string &type, const VariableNameMap &inputs,
+         const VariableNameMap &outputs, const framework::AttributeMap &attrs,
+         std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<DeviceType, TopKParam<DeviceType>,
+                                      operators::TopKKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
-
+  // inference output shape
   void InferShape() const override;
 };
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#endif  // FUSION_FC_INT8_OP
+#endif  // TOP_K_OP

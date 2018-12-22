@@ -59,6 +59,9 @@ int close_device() {
 
 void *fpga_malloc(size_t size) {
   static uint64_t counter = 0;
+  if (size <= 0) {
+    size = 1;
+  }
 #ifdef PADDLE_MOBILE_ZU5
   auto ptr = driver::fpga_malloc_driver(size);
 #else
@@ -115,7 +118,7 @@ int fpga_invalidate(void *address, size_t size) {
 }
 uint64_t vaddr_to_paddr(void *address) {
 #ifdef PADDLE_MOBILE_ZU5
-  return driver::vaddr_to_paddr(address);
+  return driver::vaddr_to_paddr_driver(address);
 #else
   return 0;
 #endif

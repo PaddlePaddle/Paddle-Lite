@@ -19,7 +19,7 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace operators {
-using namespace framework;
+
 template <typename DeviceType, typename T>
 class FeedKernel
     : public framework::OpKernelBase<DeviceType, FeedParam<DeviceType>> {

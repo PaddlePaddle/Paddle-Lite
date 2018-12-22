@@ -18,17 +18,17 @@
 
 namespace paddle_mobile {
 
-template <typename Dtype, Precision P>
-PaddleMobilePredictor<Dtype, P>::PaddleMobilePredictor(
+template <typename Device, typename T>
+PaddleMobilePredictor<Device, T>::PaddleMobilePredictor(
     const PaddleMobileConfig &config) {
   PADDLE_MOBILE_ENFORCE(Init(config) == true,
                         "paddle mobile predictor init failed!");
   config_ = config;
 }
 
-template <typename Dtype, Precision P>
-bool PaddleMobilePredictor<Dtype, P>::Init(const PaddleMobileConfig &config) {
-  paddle_mobile_.reset(new PaddleMobile<Dtype, P>());
+template <typename Device, typename T>
+bool PaddleMobilePredictor<Device, T>::Init(const PaddleMobileConfig &config) {
+  paddle_mobile_.reset(new PaddleMobile<Device, T>());
 #ifdef PADDLE_MOBILE_CL
   paddle_mobile_->SetCLPath(config.cl_path);
 #endif
@@ -52,8 +52,8 @@ bool PaddleMobilePredictor<Dtype, P>::Init(const PaddleMobileConfig &config) {
   paddle_mobile_->SetThreadNum(config.thread_num);
   return true;
 }
-template <typename Dtype, Precision P>
-bool PaddleMobilePredictor<Dtype, P>::Run(
+template <typename Device, typename T>
+bool PaddleMobilePredictor<Device, T>::Run(
     const std::vector<PaddleTensor> &inputs,
     std::vector<PaddleTensor> *output_data, int batch_size) {
   if (inputs.empty()) {
@@ -78,12 +78,12 @@ bool PaddleMobilePredictor<Dtype, P>::Run(
   framework::Tensor input_tensor;
   input_tensor.Resize(ddim);
   int input_length = framework::product(ddim);
-  typedef typename PrecisionTrait<P>::ptype PType;
-  auto input_ptr = input_tensor.mutable_data<PType>();
+  auto input_ptr = input_tensor.mutable_data<T>();
 
-  memcpy(input_ptr, static_cast<PType *>(input.data.data()),
-         input_length * sizeof(PType));
-  auto output_tensor = paddle_mobile_->Predict(input_tensor);
+  memcpy(input_ptr, static_cast<T *>(input.data.data()),
+         input_length * sizeof(T));
+  paddle_mobile_->Predict(input_tensor);
+  auto output_tensor = paddle_mobile_->Fetch();
 
   if (output_data->empty()) {
     LOG(kLOG_ERROR) << "At least one output should be set with tensors' names.";
@@ -99,18 +99,18 @@ bool PaddleMobilePredictor<Dtype, P>::Run(
     output.shape.push_back(static_cast<int>(d));
   }
 
-  if (output.data.length() < output_length * sizeof(PType)) {
-    output.data.Resize(output_length * sizeof(PType));
+  if (output.data.length() < output_length * sizeof(T)) {
+    output.data.Resize(output_length * sizeof(T));
   }
 
-  memcpy(output.data.data(), output_tensor->template data<PType>(),
-         output_length * sizeof(PType));
+  memcpy(output.data.data(), output_tensor->template data<T>(),
+         output_length * sizeof(T));
 
   return true;
 }
 
-template <typename Dtype, Precision P>
-PaddleMobilePredictor<Dtype, P>::~PaddleMobilePredictor() {
+template <typename Device, typename T>
+PaddleMobilePredictor<Device, T>::~PaddleMobilePredictor() {
   paddle_mobile_->Clear();
 }
 
@@ -122,13 +122,13 @@ CreatePaddlePredictor<PaddleMobileConfig, PaddleEngineKind::kPaddleMobile>(
   std::unique_ptr<PaddlePredictor> x;
   if (config.precision == PaddleMobileConfig::FP32) {
     if (config.device == PaddleMobileConfig::kCPU) {
-      x.reset(new PaddleMobilePredictor<CPU, Precision::FP32>(config));
+      x.reset(new PaddleMobilePredictor<CPU, float>(config));
     } else if (config.device == PaddleMobileConfig::kFPGA) {
-      x.reset(new PaddleMobilePredictor<FPGA, Precision::FP32>(config));
+      x.reset(new PaddleMobilePredictor<FPGA, float>(config));
     } else if (config.device == PaddleMobileConfig::kGPU_MALI) {
-      x.reset(new PaddleMobilePredictor<GPU_MALI, Precision::FP32>(config));
+      x.reset(new PaddleMobilePredictor<GPU_MALI, float>(config));
     } else if (config.device == PaddleMobileConfig::kGPU_CL) {
-      x.reset(new PaddleMobilePredictor<GPU_CL, Precision::FP32>(config));
+      x.reset(new PaddleMobilePredictor<GPU_CL, float>(config));
     } else {
       LOG(kLOG_ERROR) << "unsupport device type!";
       return nullptr;

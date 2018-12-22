@@ -42,7 +42,8 @@ class FusionDequantBNReluMatcher : public framework::FusionOpMatcher {
                    {{"Scale", "BNScale"},
                     {"Mean", "BNMean"},
                     {"Bias", "BNBias"},
-                    {"Variance", "BNVariance"}}}},
+                    {"Variance", "BNVariance"},
+                    {"Y", "Out"}}}},
                  removed_nodes);
   }
 

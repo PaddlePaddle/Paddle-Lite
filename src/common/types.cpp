@@ -22,9 +22,10 @@ const char *G_OP_TYPE_BATCHNORM = "batch_norm";
 const char *G_OP_TYPE_BOX_CODER = "box_coder";
 const char *G_OP_TYPE_CONCAT = "concat";
 const char *G_OP_TYPE_ELEMENTWISE_ADD = "elementwise_add";
+const char *G_OP_TYPE_ELEMENTWISE_SUB = "elementwise_sub";
+const char *G_OP_TYPE_ELEMENTWISE_MUL = "elementwise_mul";
 const char *G_OP_TYPE_FILL_CONSTANT = "fill_constant";
 const char *G_OP_TYPE_FUSION_CONV_ADD_RELU = "fusion_conv_add_relu";
-const char *G_OP_TYPE_FUSION_CONV_ADD_RELU_INT8 = "fusion_conv_add_relu_int8";
 const char *G_OP_TYPE_FUSION_CONV_ADD_PRELU = "fusion_conv_add_prelu";
 const char *G_OP_TYPE_FUSION_CONV_ADD_ADD_PRELU = "fusion_conv_add_add_prelu";
 const char *G_OP_TYPE_FUSION_CONV_ADD_BN_RELU = "fusion_conv_add_bn_relu";
@@ -32,7 +33,6 @@ const char *G_OP_TYPE_FUSION_CONV_BN_ADD_RELU = "fusion_conv_bn_add_relu";
 const char *G_OP_TYPE_FUSION_DWCONV_BN_RELU = "fusion_dwconv_bn_relu";
 const char *G_OP_TYPE_FUSION_CONV_BN_RELU = "fusion_conv_bn_relu";
 const char *G_OP_TYPE_FC = "fusion_fc";
-const char *G_OP_TYPE_FC_INT8 = "fusion_fc_int8";
 const char *G_OP_TYPE_FUSION_CONV_ADD = "fusion_conv_add";
 const char *G_OP_TYPE_LRN = "lrn";
 const char *G_OP_TYPE_MUL = "mul";
@@ -41,6 +41,7 @@ const char *G_OP_TYPE_POLYGON_BOX_TRANSFORM = "polygon_box_transform";
 const char *G_OP_TYPE_POOL2D = "pool2d";
 const char *G_OP_TYPE_PRIOR_BOX = "prior_box";
 const char *G_OP_TYPE_RELU = "relu";
+const char *G_OP_TYPE_RELU6 = "relu6";
 const char *G_OP_TYPE_RESHAPE = "reshape";
 const char *G_OP_TYPE_RESHAPE2 = "reshape2";
 const char *G_OP_TYPE_SIGMOID = "sigmoid";
@@ -68,14 +69,20 @@ const char *G_OP_TYPE_CRF = "crf_decoding";
 const char *G_OP_TYPE_BILINEAR_INTERP = "bilinear_interp";
 const char *G_OP_TYPE_FLATTEN = "flatten";
 const char *G_OP_TYPE_SHAPE = "shape";
-const char *G_OP_TYPE_ELEMENTWISE_MUL = "elementwise_mul";
 const char *G_OP_TYPE_SUM = "sum";
+const char *G_OP_TYPE_TOP_K = "top_k";
+const char *G_OP_TYPE_CAST = "cast";
 
 const char *G_OP_TYPE_QUANTIZE = "quantize";
 const char *G_OP_TYPE_DEQUANTIZE = "dequantize";
+const char *G_OP_TYPE_FUSION_DEQUANT_BN = "fusion_dequant_bn";
 const char *G_OP_TYPE_FUSION_DEQUANT_ADD_BN = "fusion_dequant_add_bn";
 const char *G_OP_TYPE_FUSION_DEQUANT_BN_RELU = "fusion_dequant_bn_relu";
 const char *G_OP_TYPE_FUSION_DEQUANT_ADD_BN_RELU = "fusion_dequant_add_bn_relu";
+const char *G_OP_TYPE_FUSION_DEQUANT_ADD_BN_QUANT =
+    "fusion_dequant_add_bn_quant";
+const char *G_OP_TYPE_FUSION_DEQUANT_ADD_BN_RELU_QUANT =
+    "fusion_dequant_add_bn_relu_quant";
 
 const char *G_OP_TYPE_TANH = "tanh";
 const char *G_OP_TYPE_FUSION_DECONV_RELU = "fusion_deconv_relu";
@@ -91,10 +98,13 @@ std::unordered_map<
         {G_OP_TYPE_PRELU, {{"X", "Alpha"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_ADD, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_RELU, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_RELU6, {{"X"}, {"Out"}}},
         {G_OP_TYPE_SOFTMAX, {{"X"}, {"Out"}}},
         {G_OP_TYPE_SIGMOID, {{"X"}, {"Out"}}},
         {G_OP_TYPE_MUL, {{"X"}, {"Out"}}},
         {G_OP_TYPE_ELEMENTWISE_ADD, {{"X", "Y"}, {"Out"}}},
+        {G_OP_TYPE_ELEMENTWISE_SUB, {{"X", "Y"}, {"Out"}}},
+        {G_OP_TYPE_ELEMENTWISE_MUL, {{"X", "Y"}, {"Out"}}},
         {G_OP_TYPE_POOL2D, {{"X"}, {"Out"}}},
         {G_OP_TYPE_BATCHNORM, {{"X"}, {"Y"}}},
         {G_OP_TYPE_LRN, {{"X"}, {"Out"}}},
@@ -112,13 +122,11 @@ std::unordered_map<
         {G_OP_TYPE_MULTICLASS_NMS, {{"BBoxes", "Scores"}, {"Out"}}},
         {G_OP_TYPE_POLYGON_BOX_TRANSFORM, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_FC, {{"X", "Y", "Z"}, {"Out"}}},
-        {G_OP_TYPE_FC_INT8, {{"X", "Y", "Z", "Scale"}, {"Out"}}},
         {G_OP_TYPE_RESHAPE, {{"X"}, {"Out"}}},
         {G_OP_TYPE_RESHAPE2, {{"X"}, {"Out", "XShape"}}},
         {G_OP_TYPE_DEPTHWISE_CONV, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_FILL_CONSTANT, {{}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_RELU, {{"Input"}, {"Out"}}},
-        {G_OP_TYPE_FUSION_CONV_ADD_RELU_INT8, {{"Input", "Scale"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_PRELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_FUSION_CONV_ADD_ADD_PRELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_IM2SEQUENCE, {{"X"}, {"Out"}}},
@@ -139,12 +147,18 @@ std::unordered_map<
         {G_OP_TYPE_SHAPE, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_CONV_TRANSPOSE, {{"Input"}, {"Output"}}},
         {G_OP_TYPE_SUM, {{"X"}, {"Out"}}},
-        {G_OP_TYPE_ELEMENTWISE_MUL, {{"X", "Y"}, {"Out"}}},
+        {G_OP_TYPE_TOP_K, {{"X"}, {"Out", "Indices"}}},
+        {G_OP_TYPE_CAST, {{"X"}, {"Out"}}},
         {G_OP_TYPE_QUANTIZE, {{"X"}, {"Out", "OutScale"}}},
         {G_OP_TYPE_DEQUANTIZE, {{"X", "Scale"}, {"Out"}}},
-        {G_OP_TYPE_FUSION_DEQUANT_ADD_BN, {{"X", "Scale"}, {"Y"}}},
+        {G_OP_TYPE_FUSION_DEQUANT_BN, {{"X", "Scale"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_DEQUANT_ADD_BN, {{"X", "Scale"}, {"Out"}}},
         {G_OP_TYPE_FUSION_DEQUANT_BN_RELU, {{"X", "Scale"}, {"Out"}}},
         {G_OP_TYPE_FUSION_DEQUANT_ADD_BN_RELU, {{"X", "Scale"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_DEQUANT_ADD_BN_RELU_QUANT,
+         {{"X", "Scale"}, {"Out", "OutScale"}}},
+        {G_OP_TYPE_FUSION_DEQUANT_ADD_BN_QUANT,
+         {{"X", "Scale"}, {"Out", "OutScale"}}},
         {G_OP_TYPE_TANH, {{"X"}, {"Out"}}},
         {G_OP_TYPE_FUSION_DECONV_RELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_FUSION_DECONV_ADD, {{"Input"}, {"Out"}}},

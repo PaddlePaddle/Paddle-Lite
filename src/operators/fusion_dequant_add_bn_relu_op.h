@@ -20,7 +20,7 @@ limitations under the License. */
 #include <vector>
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
-#include "operators/kernel/dequant_bn_relu_kernel.h"
+#include "operators/kernel/dequant_bn_kernel.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
@@ -44,7 +44,8 @@ class FusionDequantAddBNReluMatcher : public framework::FusionOpMatcher {
                    {{"Scale", "BNScale"},
                     {"Mean", "BNMean"},
                     {"Bias", "BNBias"},
-                    {"Variance", "BNVariance"}}}},
+                    {"Variance", "BNVariance"},
+                    {"Y", "Out"}}}},
                  removed_nodes);
   }
 
@@ -54,7 +55,7 @@ class FusionDequantAddBNReluMatcher : public framework::FusionOpMatcher {
 template <typename DeviceType, typename T>
 class FusionDequantAddBNReluOp
     : public framework::OperatorWithKernel<
-          DeviceType, FusionDequantAddBNReluParam<DeviceType>,
+          DeviceType, FusionDequantAddBNParam<DeviceType>,
           operators::FusionDequantAddBNReluKernel<DeviceType, T>> {
  public:
   FusionDequantAddBNReluOp(const std::string &type,
@@ -63,7 +64,7 @@ class FusionDequantAddBNReluOp
                            const framework::AttributeMap &attrs,
                            std::shared_ptr<framework::Scope> scope)
       : framework::OperatorWithKernel<
-            DeviceType, FusionDequantAddBNReluParam<DeviceType>,
+            DeviceType, FusionDequantAddBNParam<DeviceType>,
             operators::FusionDequantAddBNReluKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
   // inference output shape
