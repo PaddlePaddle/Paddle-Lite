@@ -27,59 +27,119 @@
 
 @end
 
+@interface  PaddleMobileCPUConfig: NSObject
+
+/**
+ @b 默认为 1, 多线程时, 建议设置为 2
+ */
+@property (assign, nonatomic) int threadNum;
+
+/**
+ @b 是否开启运行时 infershape
+ */
+@property  (assign, nonatomic) BOOL loddable;
+
+/**
+ @b 是否开启模型 op 融合优化
+ */
+@property  (assign, nonatomic) BOOL optimize;
+
+@end
+
 @interface PaddleMobileCPU : NSObject
 
-/*
-    创建对象
-*/
-- (instancetype)init;
+/**
+ @b 创建对象
 
-/*
-    load 模型, 开辟内存
-*/
-- (BOOL)load:(NSString *)modelPath andWeightsPath:(NSString *)weighsPath;
+ @param config 配置
+ @return paddlemobile CPU 对象
+ */
+- (instancetype)initWithConfig:(PaddleMobileCPUConfig *)config;
 
-/*
-  加载散开形式的模型, 需传入模型的目录
-*/
+/**
+ @b 加载模型
+
+ @param modelPath 模型路径
+ @param weighsPath 权重路径
+ @return 是否加载成功
+ */
+- (BOOL)loadModel:(NSString *)modelPath andWeightsPath:(NSString *)weighsPath;
+
+/**
+ @b 加载散开形式的模型, 需传入模型的目录
+
+ @param modelAndWeightPath 模型和权重的路径
+ @return 是否加载成功
+ */
 - (BOOL)load:(NSString *)modelAndWeightPath;
 
-/*
- * 从内存中加载模型
- * */
+/**
+ @b 从内存中加载模型
+
+ @param modelLen 模型大小(字节数)
+ @param modelBuf 模型在内存中的位置
+ @param combinedParamsLen 权重大小(字节数)
+ @param combinedParamsBuf 权重在内存中的位置
+ @return 是否加载成功
+ */
 - (BOOL)LoadCombinedMemory:(size_t)modelLen
                andModelBuf:(const uint8_t *)modelBuf
          andModelParamsLen:(size_t)combinedParamsLen
       andCombinedParamsBuf:(const uint8_t *)combinedParamsBuf;
 
 /*
- *  对图像进行预处理, 需要外部开辟 output 内存, 外部释放 output 内存
+ *
  * */
+
+
+/**
+ @b 对图像进行预处理, 需要外部开辟 output 内存, 外部释放 output 内存, 每一个像素经过这样的预处理 (x + means) * scale, 其中 x 为像素值
+
+ @param image 输入的图像
+ @param output 预处理后的输出
+ @param means 预处理中 means
+ @param scale 预处理中的 scale
+ @param dim 预处理后的维度
+ */
 -(void)preprocess:(CGImageRef)image
            output:(float *)output
             means:(NSArray<NSNumber *> *)means
         scale:(float)scale
         dim:(NSArray<NSNumber *> *)dim;
 
-/*
- * 预测预处理后的数据, 返回结果使用结束需要调用其 realseOutput 函数进行释放
- * */
+/**
+ 进行预测
+
+ @param input 输入
+ @param dim 输入维度
+ @return 输出结果
+ */
 - (PaddleMobileCPUResult *)predictInput:(float *)input
                                     dim:(NSArray<NSNumber *> *)dim;
 
-/*
-    进行预测, means 和 scale 为训练模型时的预处理参数, 如训练时没有做这些预处理则直接使用 predict
-*/
-- (NSArray *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim means:(NSArray<NSNumber *> *)means scale:(float)scale;
+/**
+ @b 进行预测, means 和 scale 为训练模型时的预处理参数, 如训练时没有做这些预处理则直接使用 predict, 每一个像素经过这样的预处理 (x + means) * scale, 其中 x 为像素值
 
-/*
-    进行预测, 默认 means 为 0, scale 为 1.0
-*/
-- (NSArray *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim;
+ @param image 输入图像
+ @param dim 输入维度
+ @param means 预处理中 means
+ @param scale 预处理中 scale
+ @return 预测结果
+ */
+- (PaddleMobileCPUResult *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim means:(NSArray<NSNumber *> *)means scale:(float)scale;
 
-/*
-    清理内存
-*/
+/**
+ 进行预测, 预处理 means 值为 0, scale 值为 1
+
+ @param image 输入图像
+ @param dim 输入维度
+ @return 预测结果
+ */
+- (PaddleMobileCPUResult *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim;
+
+/**
+ @b 清理内存
+ */
 - (void)clear;
 
 @end
