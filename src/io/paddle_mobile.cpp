@@ -73,8 +73,8 @@ PMStatus PaddleMobile<Device, T>::Load(const std::string &model_path,
   return PMSuccess;
 }
 
-template <typename Dtype, typename T>
-bool PaddleMobile<Dtype, T>::LoadCombinedMemory(size_t model_len,
+template <typename Device, typename T>
+bool PaddleMobile<Device, T>::LoadCombinedMemory(size_t model_len,
                                                 const uint8_t *model_buf,
                                                 size_t combined_params_len,
                                                 uint8_t *combined_params_buf,
