@@ -59,7 +59,7 @@
 
 @interface  PaddleMobileCPU()
 {
-  paddle_mobile::PaddleMobile<paddle_mobile::CPU, paddle_mobile::Precision::FP32> *pam_;
+  paddle_mobile::PaddleMobile<paddle_mobile::CPU, float> *pam_;
   BOOL loaded_;
 }
 
@@ -73,7 +73,7 @@ static std::mutex shared_mutex;
 
 - (instancetype)initWithConfig:(PaddleMobileCPUConfig *)config {
   if (self = [super init]) {
-    pam_ = new paddle_mobile::PaddleMobile<paddle_mobile::CPU, paddle_mobile::Precision::FP32>();
+    pam_ = new paddle_mobile::PaddleMobile<paddle_mobile::CPU, float>();
     _config = config;
   }
   return self;
@@ -82,6 +82,7 @@ static std::mutex shared_mutex;
 -(instancetype)init {
   if (self = [super init]) {
     _config = [[PaddleMobileCPUConfig alloc] init];
+    pam_ = new paddle_mobile::PaddleMobile<paddle_mobile::CPU, float>();
   }
   return self;
 }
@@ -246,7 +247,8 @@ static std::mutex shared_mutex;
   memcpy(input_ptr, input,
          numel * sizeof(float));
 
-  std::shared_ptr<paddle_mobile::framework::Tensor> output = pam_->Predict(input_tensor);
+  pam_->Predict(input_tensor);
+  std::shared_ptr<paddle_mobile::framework::Tensor> output = pam_->Fetch();
 
   float *output_pointer = new float[output->numel()];
 

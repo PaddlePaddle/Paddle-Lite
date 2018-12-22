@@ -20,27 +20,22 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-#ifdef FUSION_DEQUANT_BN_RELU_OP
-template <typename DeviceType, typename T>
-class FusionDequantBNReluKernel
-    : public framework::OpKernelBase<DeviceType,
-                                     FusionDequantBNReluParam<DeviceType>> {
- public:
-  void Compute(const FusionDequantBNReluParam<DeviceType> &param);
-  bool Init(FusionDequantBNReluParam<DeviceType> *param);
-};
-#endif
+#define DECLARE_KERNEL(KernelClass, KernelParam)                              \
+  template <typename DeviceType, typename T>                                  \
+  class KernelClass                                                           \
+      : public framework::OpKernelBase<DeviceType, KernelParam<DeviceType>> { \
+   public:                                                                    \
+    bool Init(KernelParam<DeviceType> *param);                                \
+    void Compute(const KernelParam<DeviceType> &param);                       \
+  };
 
-#ifdef FUSION_DEQUANT_ADD_BN_RELU_OP
-template <typename DeviceType, typename T>
-class FusionDequantAddBNReluKernel
-    : public framework::OpKernelBase<DeviceType,
-                                     FusionDequantAddBNReluParam<DeviceType>> {
- public:
-  void Compute(const FusionDequantAddBNReluParam<DeviceType> &param);
-  bool Init(FusionDequantAddBNReluParam<DeviceType> *param);
-};
-#endif
+#ifdef TOP_K_OP
+DECLARE_KERNEL(TopKKernel, TopKParam)
+#endif  // TOP_K_OP
+
+#ifdef CAST_OP
+DECLARE_KERNEL(CastKernel, CastParam)
+#endif  // CAST_OP
 
 }  // namespace operators
 }  // namespace paddle_mobile

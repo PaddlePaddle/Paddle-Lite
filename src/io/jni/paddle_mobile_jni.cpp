@@ -16,21 +16,23 @@ limitations under the License. */
 
 #include "paddle_mobile_jni.h"
 #include <cmath>
+#include <string>
+#include <vector>
 #include "common/log.h"
 #include "framework/tensor.h"
 #include "io/paddle_mobile.h"
 
 #ifdef ENABLE_EXCEPTION
-
 #include "common/enforce.h"
-
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 namespace paddle_mobile {
 namespace jni {
+
 using framework::DDim;
 using framework::Program;
 using framework::Tensor;
@@ -200,7 +202,8 @@ JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictImage(
     for (int i = 0; i < length; i++) {
       input_ptr[i] = dataPointer[i];
     }
-    auto output = getPaddleMobileInstance()->Predict(input);
+    getPaddleMobileInstance()->Predict(input);
+    auto output = getPaddleMobileInstance()->Fetch();
     count = output->numel();
     result = env->NewFloatArray(count);
     env->SetFloatArrayRegion(result, 0, count, output->data<float>());
@@ -233,7 +236,8 @@ JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictImage(
   for (int i = 0; i < length; i++) {
     input_ptr[i] = dataPointer[i];
   }
-  auto output = getPaddleMobileInstance()->Predict(input);
+  getPaddleMobileInstance()->Predict(input);
+  auto output = getPaddleMobileInstance()->Fetch();
   count = output->numel();
   result = env->NewFloatArray(count);
   env->SetFloatArrayRegion(result, 0, count, output->data<float>());
@@ -328,7 +332,8 @@ JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictYuv(
     for (int i = 0; i < length; i++) {
       input_ptr[i] = matrix[i];
     }
-    auto output = getPaddleMobileInstance()->Predict(input);
+    getPaddleMobileInstance()->Predict(input);
+    auto output = getPaddleMobileInstance()->Fetch();
     count = output->numel();
     result = env->NewFloatArray(count);
     env->SetFloatArrayRegion(result, 0, count, output->data<float>());
@@ -363,7 +368,8 @@ JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictYuv(
   for (int i = 0; i < length; i++) {
     input_ptr[i] = matrix[i];
   }
-  auto output = getPaddleMobileInstance()->Predict(input);
+  getPaddleMobileInstance()->Predict(input);
+  auto output = getPaddleMobileInstance()->Fetch();
   count = output->numel();
   result = env->NewFloatArray(count);
   env->SetFloatArrayRegion(result, 0, count, output->data<float>());
@@ -399,7 +405,8 @@ Java_com_baidu_paddle_PML_predictLod(JNIEnv *env, jclass thiz, jlongArray buf) {
   auto *pdata = words.mutable_data<int64_t>();
   size_t n = words.numel() * sizeof(int64_t);
   memcpy(pdata, ids.data(), n);
-  auto vec_result = paddle_mobile.PredictLod(words);
+  paddle_mobile.Predict(words);
+  auto vec_result = paddle_mobile.Fetch();
   int count = vec_result->numel();
   jlongArray result = NULL;
   ANDROIDLOGE("predict nlp size %d", count);

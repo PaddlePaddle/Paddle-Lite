@@ -44,4 +44,4 @@ class DequantizeOp
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#endif
+#endif  // DEQUANT_OP

@@ -12,26 +12,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef POOL_OP
+#ifdef CAST_OP
 
-#pragma once
+#include "operators/cast_op.h"
 
-#include "framework/tensor.h"
-#ifdef __ARM_NEON
-#include <arm_neon.h>
-#endif  // __ARM_NEON
 namespace paddle_mobile {
 namespace operators {
-namespace math {
-using framework::Tensor;
-using std::vector;
 
-void Pool2x2Maxs2p0(vector<int> strides, vector<int> paddings,
-                    const Tensor *input, Tensor *output);
+template <typename DeviceType, typename T>
+void CastOp<DeviceType, T>::InferShape() const {
+  const auto &dims = this->param_.input_->dims();
+  this->param_.output_->Resize(dims);
+}
 
-void Pool2x2Avgs2p0(vector<int> strides, vector<int> paddings,
-                    const Tensor *in_x, Tensor *out);
-}  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+#ifdef PADDLE_MOBILE_CPU
+REGISTER_OPERATOR_CPU(cast, ops::CastOp);
 #endif
+
+#endif  // CAST_OP

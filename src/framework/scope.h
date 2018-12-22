@@ -26,6 +26,7 @@ limitations under the License. */
 
 namespace paddle_mobile {
 namespace framework {
+
 class Scope {
  public:
   Scope() = default;

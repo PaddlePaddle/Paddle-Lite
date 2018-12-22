@@ -87,10 +87,24 @@ enum PMStatus {
 };
 
 enum RoundType {
-  ROUND_UNK = 0,
-  ROUND_NEAREST_AWAY_ZERO = 1,
-  ROUND_NEAREST_TOWARDS_ZERO = 2,
-  ROUND_NEAREST_TO_EVEN = 3
+  ROUND_NEAREST_AWAY_ZERO = 0,
+  ROUND_NEAREST_TOWARDS_ZERO = 1,
+  ROUND_NEAREST_TO_EVEN = 2,
+};
+
+enum ActivationType {
+  IDENTITY = 0,
+  RELU = 1,
+  RELU6 = 2,
+  PRELU = 3,
+  LEAKY_RELU = 4,
+  TANH = 5,
+  SIGMOID = 6,
+};
+
+enum PoolingType {
+  MAX = 0,
+  AVG = 1,
 };
 
 extern const char *G_OP_TYPE_CONV;
@@ -98,12 +112,12 @@ extern const char *G_OP_TYPE_BATCHNORM;
 extern const char *G_OP_TYPE_BOX_CODER;
 extern const char *G_OP_TYPE_CONCAT;
 extern const char *G_OP_TYPE_ELEMENTWISE_ADD;
+extern const char *G_OP_TYPE_ELEMENTWISE_SUB;
+extern const char *G_OP_TYPE_ELEMENTWISE_MUL;
 extern const char *G_OP_TYPE_FUSION_CONV_ADD_RELU;
-extern const char *G_OP_TYPE_FUSION_CONV_ADD_RELU_INT8;
 extern const char *G_OP_TYPE_FUSION_CONV_ADD_PRELU;
 extern const char *G_OP_TYPE_FUSION_CONV_ADD_ADD_PRELU;
 extern const char *G_OP_TYPE_FC;
-extern const char *G_OP_TYPE_FC_INT8;
 extern const char *G_OP_TYPE_FUSION_CONV_ADD;
 extern const char *G_OP_TYPE_FUSION_CONV_ADD_BN_RELU;
 extern const char *G_OP_TYPE_FUSION_CONV_BN_ADD_RELU;
@@ -116,6 +130,7 @@ extern const char *G_OP_TYPE_MULTICLASS_NMS;
 extern const char *G_OP_TYPE_POOL2D;
 extern const char *G_OP_TYPE_PRIOR_BOX;
 extern const char *G_OP_TYPE_RELU;
+extern const char *G_OP_TYPE_RELU6;
 extern const char *G_OP_TYPE_RESHAPE;
 extern const char *G_OP_TYPE_SIGMOID;
 extern const char *G_OP_TYPE_SOFTMAX;
@@ -136,13 +151,17 @@ extern const char *G_OP_TYPE_FUSION_CONV_BN;
 extern const char *G_OP_TYPE_CONV_TRANSPOSE;
 extern const char *G_OP_TYPE_PRELU;
 extern const char *G_OP_TYPE_SUM;
-extern const char *G_OP_TYPE_ELEMENTWISE_MUL;
+extern const char *G_OP_TYPE_TOP_K;
+extern const char *G_OP_TYPE_CAST;
 
 extern const char *G_OP_TYPE_QUANTIZE;
 extern const char *G_OP_TYPE_DEQUANTIZE;
+extern const char *G_OP_TYPE_FUSION_DEQUANT_BN;
 extern const char *G_OP_TYPE_FUSION_DEQUANT_ADD_BN;
 extern const char *G_OP_TYPE_FUSION_DEQUANT_BN_RELU;
 extern const char *G_OP_TYPE_FUSION_DEQUANT_ADD_BN_RELU;
+extern const char *G_OP_TYPE_FUSION_DEQUANT_ADD_BN_QUANT;
+extern const char *G_OP_TYPE_FUSION_DEQUANT_ADD_BN_RELU_QUANT;
 
 extern const char *G_OP_TYPE_TANH;
 extern const char *G_OP_TYPE_FUSION_DECONV_RELU;

@@ -22,10 +22,7 @@ namespace operators {
 
 template <typename DeviceType, typename T>
 void QuantizeOp<DeviceType, T>::InferShape() const {
-  auto input_dims = this->param_.input_->dims();
-  const std::vector<int> &paddings = this->param_.paddings_;
-  input_dims[2] += 2 * paddings[0];
-  input_dims[3] += 2 * paddings[1];
+  const auto &input_dims = this->param_.input_->dims();
   this->param_.output_->Resize(input_dims);
   auto scale_dims = framework::make_ddim(std::vector<int>{1});
   this->param_.online_scale_->Resize(scale_dims);
@@ -39,4 +36,4 @@ namespace ops = paddle_mobile::operators;
 REGISTER_OPERATOR_CPU(quantize, ops::QuantizeOp);
 #endif
 
-#endif
+#endif  // QUANT_OP

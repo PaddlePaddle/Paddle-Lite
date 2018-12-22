@@ -94,27 +94,20 @@ void FusionFcCompute(const FusionFcParam<GPU_CL> &param, cl_context context,
     memory::Copy(out_data + i * classes, input_z_data, sizeof(float) * classes);
   }
 
-  //  for (int i = 0; i < out->numel(); i++) {
-  //    DLOG << out_data[i];
-  //  }
-  // bias_data的维度和out的维度一致
-  math::matmul<float>(x_matrix, false, y_matrix, false, static_cast<float>(1),
-                      out, static_cast<float>(1), false);
+  math::MatMul<float, float>(x_matrix, false, y_matrix, false,
+                             static_cast<float>(1), out, static_cast<float>(1),
+                             false);
 
   out_image->InitEmptyImage(context, commandQueue, out->dims());
   framework::TensorToCLImage(out, out_image, context, commandQueue, kernel1);
-
-  DLOG << *out;
 
   delete (input_x);
   delete (input_y);
   delete (input_z);
   delete (out);
   PADDLE_MOBILE_ENFORCE(out_dim.size() == 2, " out_dim.size must be 2.");
-  //            if (out_dim.size() != 2) {
-  //                out->Resize(out_dim);
-  //            }
 }
+
 template <>
 void FusionFcKernel<GPU_CL, float>::Compute(
     const FusionFcParam<GPU_CL> &param) {

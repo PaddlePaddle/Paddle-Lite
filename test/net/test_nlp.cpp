@@ -48,8 +48,8 @@ int main() {
     DLOG << "words lod 22: " << words.lod();
     auto time3 = time();
     for (int i = 0; i < 1; ++i) {
-      auto vec_result = paddle_mobile.PredictLod(words);
-      DLOG << *vec_result;
+      paddle_mobile.Predict(words);
+      DLOG << *paddle_mobile.Fetch();
     }
     auto time4 = time();
     std::cout << "predict cost :" << time_diff(time3, time4) / 1 << "ms"
@@ -84,8 +84,8 @@ int main() {
   DLOG << "words lod 22: " << words.lod();
   auto time3 = time();
   for (int i = 0; i < 1; ++i) {
-    auto vec_result = paddle_mobile.PredictLod(words);
-    DLOG << *vec_result;
+    paddle_mobile.Predict(words);
+    DLOG << *paddle_mobile.Fetch();
   }
   auto time4 = time();
   std::cout << "predict cost :" << time_diff(time3, time4) / 1 << "ms"
