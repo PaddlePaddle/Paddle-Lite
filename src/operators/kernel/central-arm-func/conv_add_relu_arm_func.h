@@ -121,7 +121,7 @@ void ConvAddReluCompute(const FusionConvAddReluParam<CPU> &param) {
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
 
-      math::matmul<Itype, Otype>(filter_slice, false, col_matrix, false, alpha,
+      math::MatMul<Itype, Otype>(filter_slice, false, col_matrix, false, alpha,
                                  &out_slice, beta, true, bias_data);
     }
   }

@@ -22,39 +22,39 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace framework {
 
-template <typename Dtype = CPU, Precision P = Precision::FP32>
+template <typename Device = CPU, typename T = float>
 class Loader {
  public:
   /*
    * @b load separate format fluid model
-   * @b 加载分开形式的 fluid 模型
+   * @b 加载分开存储的fluid模型
    * */
-  const Program<Dtype, P> Load(const std::string &dirname,
-                               bool optimize = false,
-                               bool quantification = false,
-                               bool can_add_split = false);
+  const Program<Device, T> Load(const std::string &dirname,
+                                bool optimize = false,
+                                bool quantification = false,
+                                bool can_add_split = false);
 
   /*
    * @b load combine format fluid mode
-   * @b 加载结合在一起格式的模型
+   * @b 加载统一存储的fluid模型
    * */
-  const Program<Dtype, P> Load(const std::string &model_path,
-                               const std::string &para_path,
-                               bool optimize = false,
-                               bool quantification = false);
+  const Program<Device, T> Load(const std::string &model_path,
+                                const std::string &para_path,
+                                bool optimize = false,
+                                bool quantification = false);
 
-  const Program<Dtype, P> LoadCombinedMemory(size_t model_len,
-                                             const uint8_t *model_buf,
-                                             size_t combined_params_len,
-                                             uint8_t *combined_params_buf,
-                                             bool optimize = false,
-                                             bool quantification = false);
+  const Program<Device, T> LoadCombinedMemory(size_t model_len,
+                                              const uint8_t *model_buf,
+                                              size_t combined_params_len,
+                                              uint8_t *combined_params_buf,
+                                              bool optimize = false,
+                                              bool quantification = false);
 
  private:
-  const Program<Dtype, P> LoadProgram(const std::string &model_path,
-                                      bool optimize = false,
-                                      bool quantification = false,
-                                      bool can_add_split = false);
+  const Program<Device, T> LoadProgram(const std::string &model_path,
+                                       bool optimize = false,
+                                       bool quantification = false,
+                                       bool can_add_split = false);
 
   void InitMemoryFromProgram(
       const std::shared_ptr<ProgramDesc> &originProgramDesc,

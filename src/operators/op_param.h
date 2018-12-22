@@ -439,10 +439,11 @@ class ConvParam : public OpParam {
 
 #endif
 
- protected:
+ public:
   RType *input_;
   RType *output_;
   RType *filter_;
+  RType *transformed_filter_;
   vector<int> strides_;
   vector<int> paddings_;
   vector<int> dilations_;
@@ -455,7 +456,7 @@ class ConvParam : public OpParam {
 
 #ifdef PADDLE_MOBILE_FPGA
 
- private:
+ public:
   fpga::SplitConvArgs fpga_conv_args;
 
  public:
@@ -2535,6 +2536,52 @@ class ShapeParam : public OpParam {
 };
 #endif
 
+#ifdef TOP_K_OP
+template <typename Dtype>
+class TopKParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  TopKParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+            const AttributeMap &attrs, const Scope &scope) {
+    input_ = OpParam::GetVarValue<GType>("X", inputs, scope);
+    output_ = OpParam::GetVarValue<GType>("Out", outputs, scope);
+    indices_ = OpParam::GetVarValue<GType>("Indices", outputs, scope);
+    k_ = OpParam::GetAttr<int>("k", attrs);
+  }
+
+ public:
+  RType *input_;
+  RType *output_;
+  RType *indices_;
+  int k_;
+};
+#endif  // TOP_K_OP
+
+#ifdef CAST_OP
+template <typename Dtype>
+class CastParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  CastParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+            const AttributeMap &attrs, const Scope &scope) {
+    input_ = OpParam::GetVarValue<GType>("X", inputs, scope);
+    output_ = OpParam::GetVarValue<GType>("Out", outputs, scope);
+    input_type_ = OpParam::GetAttr<int>("in_dtype", attrs);
+    output_type_ = OpParam::GetAttr<int>("out_dtype", attrs);
+  }
+
+ public:
+  RType *input_;
+  RType *output_;
+  int input_type_;
+  int output_type_;
+};
+#endif  // CAST_OP
+
 #ifdef QUANT_OP
 template <typename Dtype>
 class QuantizeParam : public OpParam {
@@ -2562,9 +2609,9 @@ class QuantizeParam : public OpParam {
 
  public:
   // op input
-  RType *input_;
+  GType *input_;
   // op output
-  RType *output_;
+  GType *output_;
   RType *online_scale_;
   // quantize offline scale
   RType *offline_scale_;
@@ -2598,9 +2645,9 @@ class DequantizeParam : public OpParam {
 
  public:
   // op input
-  RType *input_;
+  GType *input_;
   // op output
-  RType *output_;
+  GType *output_;
   RType *activation_scale_;
   float weight_scale_;
 };

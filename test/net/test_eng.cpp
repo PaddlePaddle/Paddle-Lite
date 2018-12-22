@@ -36,11 +36,11 @@ int main() {
                              input_tensor.data<float>() + input_tensor.numel());
     //   预热十次
     for (int i = 0; i < 1; ++i) {
-      paddle_mobile.PredictLod(input_tensor);
+      paddle_mobile.Predict(input_tensor);
     }
     auto time3 = time();
     for (int i = 0; i < 1; ++i) {
-      paddle_mobile.PredictLod(input_tensor);
+      paddle_mobile.Predict(input_tensor);
     }
     auto time4 = time();
     std::cout << "predict cost :" << time_diff(time3, time4) << "ms"

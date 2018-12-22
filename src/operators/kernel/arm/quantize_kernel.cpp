@@ -186,8 +186,8 @@ bool QuantizeKernel<CPU, float>::Init(QuantizeParam<CPU> *param) {
 
 template <>
 void QuantizeKernel<CPU, float>::Compute(const QuantizeParam<CPU> &param) {
-  const Tensor *input = param.input_;
-  Tensor *output = param.output_;
+  const LoDTensor *input = param.input_;
+  LoDTensor *output = param.output_;
   Tensor *output_scale = param.online_scale_;
   float max_abs = 0.f;
   if (param.offline_) {
@@ -212,6 +212,7 @@ void QuantizeKernel<CPU, float>::Compute(const QuantizeParam<CPU> &param) {
       LOG(kLOG_ERROR) << "round type is not supported.";
       break;
   }
+  output->set_lod(input->lod());
 }
 
 }  // namespace operators

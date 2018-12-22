@@ -148,8 +148,8 @@ class Tensor : public TensorBase {
     PADDLE_MOBILE_ENFORCE(
         (std::is_same<T, void>::value ||
          holder_->type().hash_code() == typeid(T).hash_code()),
-        "Tensor holds the wrong type, it holds %s",
-        this->holder_->type().name());
+        "Tensor holds the wrong type, it holds %s, requested %s",
+        this->holder_->type().name(), typeid(T).name());
 
     return reinterpret_cast<T *>(reinterpret_cast<uintptr_t>(holder_->ptr()) +
                                  offset_);
@@ -162,7 +162,7 @@ class Tensor : public TensorBase {
     PADDLE_MOBILE_ENFORCE(
         (std::is_same<T, void>::value ||
          holder_->type().hash_code() == typeid(T).hash_code()),
-        "Tensor holds the wrong type, it holds %s ,requested:%s",
+        "Tensor holds the wrong type, it holds %s, requested %s",
         this->holder_->type().name(), typeid(T).name());
 
     return reinterpret_cast<const T *>(
@@ -226,7 +226,6 @@ inline Print &operator<<(Print &printer, const Tensor &tensor) {
     }
   }
 #endif
-
   return printer;
 }
 

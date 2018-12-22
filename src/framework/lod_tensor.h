@@ -16,12 +16,12 @@ limitations under the License. */
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
-#include "tensor.h"
-#include "tensor_util.h"
+#include "framework/tensor.h"
+#include "framework/tensor_util.h"
 
 namespace paddle_mobile {
-
 namespace framework {
 
 /*
@@ -201,6 +201,30 @@ void AppendLoD(LoD *lod, const LoD &lod_length);
 void SerializeToStream(std::ostream &os, const LoDTensor &tensor);
 
 void DeserializeFromStream(std::istream &is, LoDTensor *tensor);
+
+#ifdef PADDLE_MOBILE_DEBUG
+inline Print &operator<<(Print &printer, const LoDTensor &tensor) {
+  printer << " dims: " << tensor.dims() << "\n";
+  int stride = tensor.numel() / 20;
+  stride = stride > 0 ? stride : 1;
+#ifndef PADDLE_MOBILE_FPGA
+  for (int i = 0; i < tensor.numel(); i += stride) {
+    if (tensor.type() == typeid(float)) {
+      printer << tensor.data<float>()[i] << " ";
+    } else if (tensor.type() == typeid(int32_t)) {
+      printer << tensor.data<int32_t>()[i] << " ";
+    } else if (tensor.type() == typeid(int64_t)) {
+      printer << tensor.data<int64_t>()[i] << " ";
+    } else if (tensor.type() == typeid(int8_t)) {
+      printer << static_cast<int>(tensor.data<int8_t>()[i]) << " ";
+    } else if (tensor.type() == typeid(int32_t)) {
+      printer << tensor.data<int32_t>()[i] << " ";
+    }
+  }
+#endif  // PADDLE_MOBILE_FPGA
+  return printer;
+}
+#endif  // PADDLE_MOBILE_DEBUG
 
 }  // namespace framework
 }  // namespace paddle_mobile

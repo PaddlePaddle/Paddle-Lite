@@ -22,7 +22,7 @@ namespace operators {
 namespace math {
 
 template <>
-void matmul<int8_t, int32_t>(const framework::Tensor &matrix_a, bool trans_a,
+void MatMul<int8_t, int32_t>(const framework::Tensor &matrix_a, bool trans_a,
                              const framework::Tensor &matrix_b, bool trans_b,
                              float alpha, framework::Tensor *matrix_out,
                              float beta, bool relu, int32_t *bias,
@@ -32,7 +32,7 @@ void matmul<int8_t, int32_t>(const framework::Tensor &matrix_a, bool trans_a,
   auto dim_out = matrix_out->dims();
   PADDLE_MOBILE_ENFORCE(
       dim_a.size() == 2 && dim_b.size() == 2 && dim_out.size() == 2,
-      "The input and output of matmul be matrix");
+      "The input and output of MatMul be matrix");
 
   int32_t M = dim_out[0];
   int32_t N = dim_out[1];
@@ -96,11 +96,11 @@ void matmul<int8_t, int32_t>(const framework::Tensor &matrix_a, bool trans_a,
 }
 
 template <>
-void matmul<int8_t, int32_t>(const framework::Tensor &matrix_a, bool trans_a,
+void MatMul<int8_t, int32_t>(const framework::Tensor &matrix_a, bool trans_a,
                              const framework::Tensor &matrix_b, bool trans_b,
                              float alpha, framework::Tensor *matrix_out,
                              float beta, bool relu, int32_t *bias) {
-  matmul<int8_t, int32_t>(matrix_a, trans_a, matrix_b, trans_b, alpha,
+  MatMul<int8_t, int32_t>(matrix_a, trans_a, matrix_b, trans_b, alpha,
                           matrix_out, beta, relu, bias, false);
 }
 
