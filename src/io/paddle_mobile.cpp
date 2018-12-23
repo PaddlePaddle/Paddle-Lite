@@ -74,13 +74,10 @@ PMStatus PaddleMobile<Device, T>::Load(const std::string &model_path,
 }
 
 template <typename Device, typename T>
-bool PaddleMobile<Device, T>::LoadCombinedMemory(size_t model_len,
-                                                const uint8_t *model_buf,
-                                                size_t combined_params_len,
-                                                uint8_t *combined_params_buf,
-                                                bool optimize,
-                                                bool quantification, int batch_size,
-                                                bool loddable) {
+bool PaddleMobile<Device, T>::LoadCombinedMemory(
+    size_t model_len, const uint8_t *model_buf, size_t combined_params_len,
+    uint8_t *combined_params_buf, bool optimize, bool quantification,
+    int batch_size, bool loddable) {
   if (loader_.get() == nullptr) {
     loader_ = std::make_shared<framework::Loader<Device, T>>();
   } else {
