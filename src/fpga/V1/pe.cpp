@@ -260,6 +260,7 @@ int ComputeBasicConv(const struct ConvArgs &args) {
   reg_writeq(args.driver.res_row_data_align4_pad, 0xcf8);
   reg_writeq(args.driver.prog_full_cnt, 0xd08);
   reg_writeq(args.driver.post_prog_full_cnt, 0xd10);
+  reg_writeq(args.driver.deconv_param, 0xd18);
   reg_writeq(args.driver.fpga_bias_scale_len / 4, 0xd20);
   reg_writeq(args.driver.cmd, REG_CONV_CMD);
   DLOG << "before reg poll";
