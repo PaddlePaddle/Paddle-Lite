@@ -91,6 +91,9 @@ class TensorBase {
   }
 
   inline void check_memory_size() const {
+#ifdef PADDLE_MOBILE_FPGA
+    return;
+#endif
     PADDLE_MOBILE_ENFORCE(
         holder_ != nullptr,
         "Tensor holds no memory. Call Tensor::mutable_data first.");

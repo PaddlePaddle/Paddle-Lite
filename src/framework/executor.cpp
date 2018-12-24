@@ -230,6 +230,10 @@ template <typename Device, typename T>
 bool Executor<Device, T>::varInputMemory(
     const std::shared_ptr<VarDesc> &var_desc, Variable *var,
     LoDTensor *tensor) const {
+#ifdef PADDLE_MOBILE_FPGA
+  tensor->init(typeid(float));
+  return true;
+#endif
   auto type = var_desc->Tensor_desc().DataType();
   switch (type) {
     case VARTYPE_TYPE_FP32:
