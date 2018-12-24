@@ -23,10 +23,11 @@ int main() {
   //  ../../../test/models/googlenet
   //  ../../../test/models/mobilenet
 
-  //  auto program = loader.Load(g_mobilenet_ssd, true);
+  std::string g_super = "../models/superresoltion";
+  //  auto program = loader.Load(g_super, true);
 
-  //  auto program = loader.Load(std::string(g_ocr) + "/model",
-  //                             std::string(g_ocr) + "/params", false);
+  auto program = loader.Load(std::string(g_super) + "/model",
+                               std::string(g_super) + "/params", false);
   //  program.originProgram->Description("program desc: ");
 
   return 0;
