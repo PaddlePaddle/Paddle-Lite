@@ -105,6 +105,8 @@ struct ConvDriverParam {
   uint64_t post_prog_full_cnt;
   uint64_t fpga_bias_scale_len;
   uint64_t cmd;
+
+  uint64_t deconv_param;
 };
 
 struct EWAddDriverParam {
@@ -116,6 +118,13 @@ struct EWAddDriverParam {
   uint64_t output_address_phy;
   uint64_t coefficient;
   uint64_t cmd;
+};
+
+struct DeconvTxParm {
+  uint32_t omit_size;
+  uint32_t sub_conv_num;
+  uint32_t deconv_en;
+  uint32_t out_addr_offset;
 };
 #endif
 
@@ -136,6 +145,7 @@ struct ConvArgs {
 #endif
 
 #ifdef PADDLE_MOBILE_FPGA_V1
+  struct DeconvTxParm deconv_tx_param;
   struct ConvDriverParam driver;
 #endif
 };
