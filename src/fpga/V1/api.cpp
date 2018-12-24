@@ -52,6 +52,22 @@ void format_fp16_ofm(framework::Tensor *ofm_tensor) {
   ofm_tensor->reset_data_ptr(p);
 }
 
+void format_fp16_ofm(framework::Tensor *ofm_tensor, framework::DDim dims) {
+  // auto dims = ofm_tensor->dims();
+  size_t memory_size = 0;
+  if (dims.size() == 4) {
+    auto channel = dims[1], height = dims[2], width = dims[3];
+    memory_size =
+        height * align_to_x(channel * width, IMAGE_ALIGNMENT) * sizeof(half);
+  } else if (dims.size() == 2) {
+    memory_size = align_to_x(dims[1], IMAGE_ALIGNMENT) * sizeof(half);
+  } else {
+    DLOG << "Wrong ofm dimension";
+  }
+  auto p = fpga_malloc(memory_size);
+  memset(p, 0, memory_size);
+  ofm_tensor->reset_data_ptr(p);
+}
 void format_fp32_ofm(framework::Tensor *ofm_tensor) {
   auto dims = ofm_tensor->dims();
   size_t memory_size = 0;
@@ -211,8 +227,9 @@ void expand_conv_arg(ConvArgs *arg) {
       align_to_x(args.kernel.height * args.kernel.width * channel_per_group,
                  FILTER_ELEMENT_ALIGNMENT);
 
-  auto output_amount_per_row =
-      align_to_x(output_width * args.filter_num, IMAGE_ALIGNMENT);
+  auto output_amount_per_row = align_to_x(
+      (output_width - (args.deconv_tx_param.omit_size) * 2) * args.filter_num,
+      IMAGE_ALIGNMENT);
 
   // find the opt partition strategy
   uint64_t res_win;
@@ -243,7 +260,8 @@ void expand_conv_arg(ConvArgs *arg) {
   auto block_len = res_fit;
   auto block_last = output_width - res_fit * (block_num - 1);
 
-  auto res_amount_per_row = output_width * args.filter_num;
+  auto res_amount_per_row =
+      (output_width - (args.deconv_tx_param.omit_size) * 2) * args.filter_num;
   auto res_amount_per_row_pad = output_amount_per_row - res_amount_per_row;
 
   auto image_block_amount_per_row =
@@ -282,10 +300,14 @@ void expand_conv_arg(ConvArgs *arg) {
           : 0;
   auto cmd = 0UL | (args.relu_enabled ? USE_RELU : 0) | USE_BIAS;
 
+  auto deconv_param = ((args.deconv_tx_param.deconv_en) << 24) |
+                      ((args.deconv_tx_param.sub_conv_num) << 16) |
+                      ((args.deconv_tx_param.omit_size) << 0);
   (*arg).driver.image_address_phy = vaddr_to_paddr(args.image.address);
   (*arg).driver.sb_address_phy = vaddr_to_paddr(args.sb_address);
   (*arg).driver.filter_address_phy = vaddr_to_paddr(args.filter_address);
-  (*arg).driver.output_address_phy = vaddr_to_paddr(args.output.address);
+  (*arg).driver.output_address_phy = vaddr_to_paddr(args.output.address) +
+                                     args.deconv_tx_param.out_addr_offset;
   (*arg).driver.output_height = output_height;
   (*arg).driver.output_width = output_width;
   (*arg).driver.filter_per_group = filter_per_group;
@@ -309,6 +331,7 @@ void expand_conv_arg(ConvArgs *arg) {
   (*arg).driver.post_prog_full_cnt = post_prog_full_cnt;
   (*arg).driver.fpga_bias_scale_len = fpga_bias_scale_len;
   (*arg).driver.cmd = cmd;
+  (*arg).driver.deconv_param = deconv_param;
 }  // expand_conv_arg()
 
 void expand_EW_arg(EWAddArgs *arg) {
@@ -356,6 +379,8 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
   arg->output.scale_address = out->scale;
   arg->conv_arg =
       (ConvArgs *)fpga_malloc(arg->split_num * sizeof(ConvArgs));  // NOLINT
+
+  memset(arg->conv_arg, 0, arg->split_num * sizeof(struct ConvArgs));
 
   arg->concat_arg.image_num = arg->split_num;
   arg->concat_arg.image_out = out_ptr;
@@ -444,20 +469,19 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
                      float *bs_ptr) {
   auto input_ptr = input->data<float>();
   auto filter_ptr = filter->data<float>();
-  auto out_ptr = out->data<float>();
 
   arg->group_num = (uint32_t)group_num;
   arg->sub_conv_num = (uint32_t)stride_h;
   arg->filter_num = (uint32_t)filter->dims()[0];
-  int sub_conv_num = arg->sub_conv_num;
+  uint32_t sub_conv_num = arg->sub_conv_num;
   int sub_pad = deconv_filter::deconv_calc_sub_pad((int)filter->dims()[3],
                                                    padding_w, stride_w);
-  int sub_filter_width = deconv_filter::deconv_get_sub_filter_axis(
+  auto sub_filter_width = (uint32_t)deconv_filter::deconv_get_sub_filter_axis(
       (int)filter->dims()[3], stride_w);
 
-  int sub_output_width = deconv_filter::deconv_get_sub_out_axis(
+  auto sub_output_width = (uint32_t)deconv_filter::deconv_get_sub_out_axis(
       (int)input->dims()[3], sub_pad, sub_filter_width);
-  int sub_output_height = deconv_filter::deconv_get_sub_out_axis(
+  auto sub_output_height = (uint32_t)deconv_filter::deconv_get_sub_out_axis(
       (int)input->dims()[2], sub_pad, sub_filter_width);
 
   arg->sub_output_width = (uint32_t)sub_output_width;
@@ -465,28 +489,25 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
   arg->omit_size = (uint32_t)deconv_filter::deconv_get_omit(
       stride_w, (int)filter->dims()[3], padding_w);
 
-  arg->output.address = out_ptr;
-  arg->output.scale_address = out->scale;
-
-  int sub_channels = (int)input->dims()[1];
-  int omit_size = arg->omit_size;
+  auto sub_channels = (int)input->dims()[1];
+  uint32_t omit_size = arg->omit_size;
   int real_out_width = sub_output_width * sub_conv_num - 2 * omit_size;
-  int real_out_height = sub_output_height * sub_conv_num - 2 * omit_size;
   int sub_filter_num = sub_conv_num * (arg->filter_num);
 
-  int conv_output_size =
+  framework::DDim dims_out_new = framework::make_ddim(
+      {1, arg->filter_num, sub_output_height * sub_conv_num, real_out_width});
+  fpga::format_fp16_ofm(out, dims_out_new);
+  auto out_ptr = out->data<float>();
+  arg->output.address =
+      (half *)out_ptr +
+      omit_size * sizeof(half) *
+          (align_to_x(real_out_width * arg->filter_num, IMAGE_ALIGNMENT));
+  arg->output.scale_address = out->scale;
+
+  uint32_t conv_output_size =
       (align_to_x(sub_output_width * sub_filter_num, IMAGE_ALIGNMENT)) *
       sub_output_height;
-  int ouput_size = conv_output_size * sub_conv_num;
-
-  int align_sub_filter_num = align_to_x(sub_filter_num, FILTER_NUM_ALIGNMENT);
-  int align_sub_filter_count =
-      align_to_x(sub_filter_width * sub_filter_width * sub_channels,
-                 FILTER_ELEMENT_ALIGNMENT);
-  int align_conv_sub_filter_count =
-      align_sub_filter_count * align_sub_filter_num;
-
-  int split_num =
+  uint32_t split_num =
       group_num == 1 ? (uint32_t)get_deconv_plit_num(filter, sub_conv_num) : 1;
 
   arg->split_conv_args =
@@ -508,14 +529,10 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
         (float **)fpga_malloc(split_num * sizeof(float *));
     arg->split_conv_args[i].concat_arg.channel_num =
         (uint32_t *)fpga_malloc(split_num * sizeof(uint32_t));
-    // arg->split_conv_args[i].concat_arg.image_out =
-    // fpga_malloc(conv_output_size * sizeof(half));
-    // arg->split_conv_args[i].concat_arg.scale_out = fpga_malloc(2 *
-    // sizeof(float));
   }
 
-  int filter_num_per_div =
-      get_deconv_filter_num_per_div(filter, group_num, stride_w);
+  auto filter_num_per_div =
+      (uint32_t)get_deconv_filter_num_per_div(filter, group_num, stride_w);
   int element_num = get_aligned_filter_element_num(
       (int)(sub_channels * sub_filter_width * sub_filter_width));
 
@@ -533,14 +550,21 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
                             align_to_x(residual, FILTER_NUM_ALIGNMENT);
 
   int filter_sub_conv_offset = element_num * num_after_alignment;
+  uint32_t out_addr_offset = 0;
   for (int i = 0; i < sub_conv_num; ++i) {
     if (sub_conv_num == 1) {
       arg->split_conv_args[i].output.address = arg->output.address;
       arg->split_conv_args[i].output.scale_address = arg->output.scale_address;
+      out_addr_offset = 0;
 
     } else {
-      auto ptr_output = (half *)fpga_malloc(conv_output_size * sizeof(half));
-      arg->split_conv_args[i].output.address = (void *)((half *)ptr_output);
+      auto ptr_output = (half *)out_ptr;
+      out_addr_offset =
+          sizeof(half) * (sub_conv_num - 1 - i) *
+          (align_to_x(real_out_width * arg->filter_num, IMAGE_ALIGNMENT));
+
+      arg->split_conv_args[i].output.address = (void *)(ptr_output);
+
       auto ptr_output_scale = (float *)fpga_malloc(2 * sizeof(float));
       arg->split_conv_args[i].output.scale_address = ptr_output_scale;
     }
@@ -556,6 +580,13 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
       arg->split_conv_args[i].conv_arg[j].kernel.stride_w = 1;
       arg->split_conv_args[i].conv_arg[j].kernel.stride_h = 1;
 
+      arg->split_conv_args[i].conv_arg[j].deconv_tx_param.deconv_en = 1;
+      arg->split_conv_args[i].conv_arg[j].deconv_tx_param.sub_conv_num =
+          sub_conv_num;
+      arg->split_conv_args[i].conv_arg[j].deconv_tx_param.omit_size = omit_size;
+      arg->split_conv_args[i].conv_arg[j].deconv_tx_param.out_addr_offset =
+          out_addr_offset;
+
       arg->split_conv_args[i].conv_arg[j].image.scale_address = input->scale;
       arg->split_conv_args[i].conv_arg[j].image.channels =
           (uint32_t)sub_channels;
@@ -568,10 +599,10 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
       arg->split_conv_args[i].conv_arg[j].image.address = input_ptr;
 
       arg->split_conv_args[i].conv_arg[j].filter_scale_address = filter->scale;
-      arg->split_conv_args[i].conv_arg[j].filter_num = (uint32_t)(
-          j == split_num - 1
-              ? sub_filter_num - (split_num - 1) * filter_num_per_div  // NOLINT
-              : filter_num_per_div);
+      arg->split_conv_args[i].conv_arg[j].filter_num =
+          (uint32_t)(j == split_num - 1
+                         ? sub_filter_num - (split_num - 1) * filter_num_per_div
+                         : filter_num_per_div);
 
       size_t filter_size =
           element_num *
@@ -587,19 +618,6 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
              filter_size);
       fpga_flush(arg->split_conv_args[i].conv_arg[j].filter_address,
                  filter_size);
-
-      {
-        static int test_cnt = 0;
-        signed char result = 0;
-        if (test_cnt <= 1) {
-          std::string filename = "deconv_split_flt" + std::to_string(test_cnt);
-
-          fpga::savefile<signed char>(
-              filename, arg->split_conv_args[i].conv_arg[j].filter_address,
-              filter_size, result);
-          test_cnt++;
-        }
-      }
 
       size_t bs_align_num = align_to_x(
           arg->split_conv_args[i].conv_arg[j].filter_num, BS_NUM_ALIGNMENT);

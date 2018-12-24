@@ -61,8 +61,6 @@ bool DeconvAddReluKernel<FPGA, float>::Init(
   fpga::format_bias_scale_array(&bs_ptr, element_num_per_div,
                                 channel * sub_conv_n);
 
-  fpga::format_fp16_ofm(out);
-
   fpga::DeconvArgs deconv_arg = {0};
   fpga::fill_deconv_arg(&deconv_arg, input, out, filter, relu_enabled,
                         param->Groups(), param->Strides()[0],
