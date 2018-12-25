@@ -33,9 +33,18 @@ limitations under the License. */
 
 namespace paddle_mobile {
 
+
 template <typename Device, typename T = float>
 class PaddleMobile {
  public:
+
+  PaddleMobile(PaddleMobileConfigInternal config): config_(config){
+#ifndef PADDLE_MOBILE_CL
+    bool is_gpu = std::is_same<DeviceType<kGPU_CL>, Device>::value;
+    PADDLE_MOBILE_ENFORCE(!is_gpu, "Please recompile with GPU_CL is on");
+#endif
+  }
+
   PaddleMobile() {
 #ifndef PADDLE_MOBILE_CL
     bool is_gpu = std::is_same<DeviceType<kGPU_CL>, Device>::value;
@@ -100,6 +109,7 @@ class PaddleMobile {
  private:
   std::shared_ptr<framework::Loader<Device, T>> loader_;
   std::shared_ptr<framework::Executor<Device, T>> executor_;
+  PaddleMobileConfigInternal config_;
 };
 
 }  // namespace paddle_mobile
