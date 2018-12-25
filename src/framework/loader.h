@@ -25,6 +25,7 @@ namespace framework {
 template <typename Device = CPU, typename T = float>
 class Loader {
  public:
+
   /*
    * @b load separate format fluid model
    * @b 加载分开存储的fluid模型
@@ -59,6 +60,7 @@ class Loader {
   void InitMemoryFromProgram(
       const std::shared_ptr<ProgramDesc> &originProgramDesc,
       const std::shared_ptr<Scope> &scope);
+
 };
 
 }  // namespace framework
