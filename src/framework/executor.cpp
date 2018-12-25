@@ -38,6 +38,12 @@ namespace framework {
 #pragma mark - executor
 
 template <typename Device, typename T>
+Executor<Device, T>::Executor(const Program<Device> &program, paddle_mobile::PaddleMobileConfigInternal config, int batch_size,
+         const bool use_optimize, const bool lod_mode): Executor(program, batch_size, use_optimize, lod_mode) {
+  config_ = config;
+};
+
+template <typename Device, typename T>
 Executor<Device, T>::Executor(const Program<Device> &program, int batch_size,
                               const bool use_optimize, const bool lod_mode)
     : program_(program),
@@ -212,10 +218,16 @@ void Executor<Device, T>::InitCombineMemory() {
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
           continue;
         }
+
+        DLOG << " init combine memory persistable: " << var_desc->Name();
+
         LoadMemory(reinterpret_cast<void **>(&data), var_desc, tensor);
       } else {
         if (var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
+          DLOG << " init combine memory no persistable in lod: " << var_desc->Name();
           varInputMemory(var_desc, var, tensor);
+        } else {
+          DLOG << " init combine memory no persistable: " << var_desc->Name();
         }
       }
     }
@@ -224,6 +236,32 @@ void Executor<Device, T>::InitCombineMemory() {
     delete[] origin_data;
   }
   LOG(kLOG_INFO) << "init combine memory finish";
+}
+
+template <typename Device, typename T>
+void Executor<Device, T>::InitNoPersistableMemory(const LoDTensor &input_tensor) {
+  for (const auto &block : program_desc_->Blocks()) {
+    for (const auto &var_desc : block->Vars()) {
+      auto var = program_.scope->Var(var_desc->Name());
+      auto tensor = var->template GetMutable<LoDTensor>();
+      if (var_desc->Persistable()) {
+        if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
+          continue;
+        }
+      } else {
+        if (var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
+          DDim tensor_dim = tensor->dims();
+          DDim new_dim = make_ddim({tensor_dim[0], tensor_dim[1], input_tensor.dims()[2], input_tensor.dims()[3]});
+          tensor->template Resize(new_dim);
+          tensor->template mutable_data<T>();
+        }
+      }
+    }
+  }
+
+  std::shared_ptr<LoDTensor> output = GetOutput("fetch");
+  output->Resize(input_tensor.dims());
+  output->mutable_data<T>();
 }
 
 template <typename Device, typename T>
@@ -275,6 +313,7 @@ PMStatus Executor<Device, T>::Predict(
 template <typename Device, typename T>
 std::vector<T> Executor<Device, T>::Predict(const std::vector<T> &input,
                                             const std::vector<int64_t> &dims) {
+
   Tensor feed_tensor(input, make_ddim(dims));
   SetInput(feed_tensor, "feed");
   std::vector<T> output;
@@ -293,7 +332,15 @@ void Executor<Device, T>::SetInput(const Tensor &input,
   auto *target_var = program_.scope->FindVar(var_name);
   PADDLE_MOBILE_ENFORCE(target_var != nullptr, "Variable %s is not exist",
                         var_name.c_str());
+
   auto *target_tensor = target_var->template GetMutable<LoDTensor>();
+
+  if (config_.load_when_predict) {
+    if (target_tensor->IsInitialized() && target_tensor->dims() != input.dims()) {
+      InitNoPersistableMemory(*target_tensor);
+    }
+  }
+
   target_tensor->Resize(input.dims());
   target_tensor->ShareDataWith(input);
 }
@@ -301,10 +348,18 @@ void Executor<Device, T>::SetInput(const Tensor &input,
 template <typename Device, typename T>
 void Executor<Device, T>::SetInput(const LoDTensor &input,
                                    const std::string &var_name) {
+
   auto *target_var = program_.scope->FindVar(var_name);
   PADDLE_MOBILE_ENFORCE(target_var != nullptr, "Variable %s is not exist",
                         var_name.c_str());
   auto *target_tensor = target_var->template GetMutable<LoDTensor>();
+
+  if (config_.load_when_predict) {
+    if (target_tensor->IsInitialized() && target_tensor->dims() != input.dims()) {
+      InitNoPersistableMemory(*target_tensor);
+    }
+  }
+
   target_tensor->Resize(input.dims());
   target_tensor->ShareDataWith(input);
   target_tensor->set_lod(input.lod());

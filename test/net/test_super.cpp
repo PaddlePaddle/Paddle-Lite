@@ -18,7 +18,10 @@ limitations under the License. */
 #include "../test_include.h"
 
 int main() {
-  paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
+  paddle_mobile::PaddleMobileConfigInternal config;
+  config.load_when_predict = true;
+
+  paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile(config);
   //    paddle_mobile.SetThreadNum(4);
   auto time1 = paddle_mobile::time();
 #ifdef PADDLE_MOBILE_CL
@@ -27,7 +30,7 @@ int main() {
 
   auto isok = paddle_mobile.Load(std::string(g_super) + "/model",
                                  std::string(g_super) + "/params", true, false,
-                                 1, true);
+                                 1, false);
 
   //  auto isok = paddle_mobile.Load(std::string(g_mobilenet_mul), true);
   if (isok) {

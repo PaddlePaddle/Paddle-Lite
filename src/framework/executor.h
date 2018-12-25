@@ -32,6 +32,8 @@ namespace framework {
 template <typename Device, typename T = float>
 class Executor {
  public:
+  Executor(const Program<Device> &program, paddle_mobile::PaddleMobileConfigInternal config, int batch_size = 1,
+           const bool use_optimize = true, const bool lod_mode = false);
   Executor(const Program<Device> &program, int batch_size = 1,
            const bool use_optimize = true, const bool lod_mode = false);
 
@@ -60,10 +62,13 @@ class Executor {
  protected:
   Executor() = default;
 
+
+
   bool varInputMemory(const std::shared_ptr<VarDesc> &var_desc, Variable *var,
                       LoDTensor *tensor) const;
   void InitMemory();
   void InitCombineMemory();
+  void InitNoPersistableMemory(const LoDTensor &input_tensor);
   void LoadMemory(void **data, const std::shared_ptr<VarDesc> var_desc,
                   LoDTensor *tensor);
 #ifdef PADDLE_MOBILE_CL
@@ -73,13 +78,17 @@ class Executor {
   int batch_size_;
   bool use_optimize_;
   bool lod_mode_;
+  PaddleMobileConfigInternal config_ = PaddleMobileConfigInternal();
   Program<Device> program_;
   std::shared_ptr<ProgramDesc> program_desc_;
-
   typedef std::shared_ptr<OperatorBase<Device>> OperatorBasePtr;
   std::vector<std::vector<OperatorBasePtr>> ops_of_block_;
   // operators list
   std::vector<OperatorBasePtr> ops_list_;
+
+  // for super resoltion
+  DDim input_dim_;
+
 
 #ifdef PADDLE_MOBILE_PROFILE
   struct ProfInfo {
