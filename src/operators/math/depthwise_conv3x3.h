@@ -32,7 +32,7 @@ void DepthwiseConv3x3(const framework::Tensor *input,
 void DepthwiseConv3x3s1p1(const framework::Tensor *input,
                           const framework::Tensor *filter,
                           framework::Tensor *output, framework::Tensor *bias,
-                          bool if_bias);
+                          bool if_bias, bool if_relu);
 
 void DepthwiseConvAddBNRelu3x3s1p1(const framework::Tensor *input,
                                    const framework::Tensor *filter,
@@ -51,7 +51,7 @@ void DepthwiseConvAddBNRelu3x3s2p1(const framework::Tensor *input,
 void DepthwiseConv3x3s2p1v2(const framework::Tensor *input,
                             const framework::Tensor *filter,
                             framework::Tensor *output, framework::Tensor *bias,
-                            bool if_bias);
+                            bool if_bias, bool if_relu);
 
 void DepthwiseConvAddBNRelu3x3s2p1v2(const framework::Tensor *input,
                                      const framework::Tensor *filter,
@@ -63,7 +63,7 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const framework::Tensor *input,
 void DepthwiseConv3x3s2p0(const framework::Tensor *input,
                           const framework::Tensor *filter,
                           framework::Tensor *output, framework::Tensor *bias,
-                          bool if_bias);
+                          bool if_bias, bool if_relu);
 
 // TODO(hjchen2) need to be implemented
 // template<typename Itype, typename Otype>
