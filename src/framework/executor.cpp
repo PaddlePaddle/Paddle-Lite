@@ -552,10 +552,9 @@ void Executor<GPU_CL, float>::SetInput(const Tensor &input,
   DLOG << "target_tensor->dims()   " << target_tensor->dims();
   DLOG << "input.dims()   " << input.dims();
   if (config_.load_when_predict) {
-    if (target_tensor->dims() != input.dims()) {
+    if (input_dim_last_ != input.dims()) {
       if (!target_tensor->IsInitialized()) {
         DLOG << "SetInput ---- > resize1";
-        std::cout << "SetInput ---- > resize1" << std::endl;
         target_tensor->Resize(input.dims());
         target_tensor->mutable_data<float>();
       }
@@ -567,6 +566,7 @@ void Executor<GPU_CL, float>::SetInput(const Tensor &input,
     DLOG << "SetInput ---- > ShareDataWith";
   }
   target_tensor->ShareDataWith(input);
+  input_dim_last_ = input.dims();
 }
 
 template <typename Device, typename T>
