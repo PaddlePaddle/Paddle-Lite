@@ -21,7 +21,7 @@ int main() {
   paddle_mobile::PaddleMobileConfigInternal config;
   config.load_when_predict = true;
 
-  paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile(config);
+  paddle_mobile::PaddleMobile<paddle_mobile::GPU_CL> paddle_mobile(config);
   //    paddle_mobile.SetThreadNum(4);
   auto time1 = paddle_mobile::time();
 #ifdef PADDLE_MOBILE_CL
@@ -40,21 +40,26 @@ int main() {
 
     std::vector<float> input;
     std::vector<int64_t> dims{1, 1, 300, 300};
-    GetInput<float>(g_yolo_img, &input, dims);
+    GetInput<float>(g_test_image_1x3x224x224, &input, dims);
 
     std::vector<float> vec_result;
 
     auto time3 = paddle_mobile::time();
-    int max = 1;
+    int max = 10;
+
     for (int i = 0; i < max; ++i) {
+      auto time5 = paddle_mobile::time();
       vec_result = paddle_mobile.Predict(input, dims);
+      auto time6 = paddle_mobile::time();
+      std::cout << "predict cost :第" << i << ": "
+                << paddle_mobile::time_diff(time5, time6) << "ms" << std::endl;
     }
     auto time4 = paddle_mobile::time();
 
     std::cout << "predict cost :"
               << paddle_mobile::time_diff(time3, time4) / max << "ms"
               << std::endl;
-    std::vector<float>::iterator biggest =
+    auto biggest =
         std::max_element(std::begin(vec_result), std::end(vec_result));
     std::cout << " Max element is " << *biggest << " at position "
               << std::distance(std::begin(vec_result), biggest) << std::endl;

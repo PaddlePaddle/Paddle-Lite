@@ -1190,8 +1190,7 @@ void Gemm::WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
 
 void Gemm::VectorKernel(int m, int n, int k, float alpha, const float *A,
                         int lda, const float *B, int ldb, float beta, float *C,
-                        int ldc, bool relu) {
-}
+                        int ldc, bool relu) {}
 
 #else
 

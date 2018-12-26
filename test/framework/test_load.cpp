@@ -27,7 +27,7 @@ int main() {
   //  auto program = loader.Load(g_super, true);
 
   auto program = loader.Load(std::string(g_super) + "/model",
-                               std::string(g_super) + "/params", false);
+                             std::string(g_super) + "/params", false);
   //  program.originProgram->Description("program desc: ");
 
   return 0;

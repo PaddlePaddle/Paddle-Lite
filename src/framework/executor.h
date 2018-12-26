@@ -32,9 +32,8 @@ namespace framework {
 template <typename Device, typename T = float>
 class Executor {
  public:
-  Executor(const Program<Device> &program, paddle_mobile::PaddleMobileConfigInternal config, int batch_size = 1,
-           const bool use_optimize = true, const bool lod_mode = false);
-  Executor(const Program<Device> &program, int batch_size = 1,
+  Executor(const Program<Device> &program,
+           paddle_mobile::PaddleMobileConfigInternal config, int batch_size = 1,
            const bool use_optimize = true, const bool lod_mode = false);
 
   PMStatus Predict(const std::vector<std::pair<std::string, Tensor>> &inputs);
@@ -62,8 +61,6 @@ class Executor {
  protected:
   Executor() = default;
 
-
-
   bool varInputMemory(const std::shared_ptr<VarDesc> &var_desc, Variable *var,
                       LoDTensor *tensor) const;
   void InitMemory();
@@ -88,7 +85,6 @@ class Executor {
 
   // for super resoltion
   DDim input_dim_;
-
 
 #ifdef PADDLE_MOBILE_PROFILE
   struct ProfInfo {
