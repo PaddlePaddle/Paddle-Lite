@@ -84,7 +84,7 @@ class Executor {
   std::vector<OperatorBasePtr> ops_list_;
 
   // for super resoltion
-  DDim input_dim_;
+  DDim input_dim_last_;
 
 #ifdef PADDLE_MOBILE_PROFILE
   struct ProfInfo {
