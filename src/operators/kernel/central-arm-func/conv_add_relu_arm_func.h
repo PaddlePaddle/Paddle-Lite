@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef FUSION_CONVADDRELU_OP
 
 #pragma once
+#include <operators/math/depthwise_conv3x3.h>
 #include <vector>
 #include "operators/math/conv_func.h"
 #include "operators/math/im2col.h"
@@ -26,7 +27,7 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename Itype, typename Otype>
-void ConvAddReluCompute(const FusionConvAddReluParam<CPU> &param) {
+void ConvAddReluBasic(const FusionConvAddReluParam<CPU> &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
   Tensor bias = *param.Bias();
@@ -118,6 +119,34 @@ void ConvAddReluCompute(const FusionConvAddReluParam<CPU> &param) {
   }
 }
 
+template <typename Itype, typename Otype>
+void ConvAddReluCompute(const FusionConvAddReluParam<CPU> &param) {
+  param.Output()->mutable_data<float>();
+  if (param.Groups() == param.Input()->dims()[1] &&
+      param.Input()->dims()[1] == param.Output()->dims()[1] &&
+      param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
+      param.Filter()->dims()[2] == 3 && param.Strides()[0] == 1) {
+    math::DepthwiseConv3x3s1p1(param.Input(), param.Filter(), param.Output(),
+                               param.Bias(), true, true);
+  } else if (param.Groups() == param.Input()->dims()[1] &&
+             param.Input()->dims()[1] == param.Output()->dims()[1] &&
+             param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
+             param.Filter()->dims()[2] == 3 && param.Strides()[0] == 2) {
+    //        math::DepthwiseConv3x3(param.Input(), param.Strides(),
+    //        param.Paddings(),
+    //                               param.Filter(), param.Bias(),
+    //                               param.Output(), false);
+    if (param.Paddings()[0] == 0) {
+      math::DepthwiseConv3x3s2p0(param.Input(), param.Filter(), param.Output(),
+                                 param.Bias(), true, true);
+    } else {
+      math::DepthwiseConv3x3s2p1v2(param.Input(), param.Filter(),
+                                   param.Output(), param.Bias(), true, true);
+    }
+  } else {
+    ConvAddReluBasic<Itype, Otype>(param);
+  }
+}
 }  // namespace operators
 }  // namespace paddle_mobile
 
