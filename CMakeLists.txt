@@ -1,15 +1,15 @@
 cmake_minimum_required(VERSION 3.0.0)
 
-option(USE_OPENMP "openmp support" OFF)
+option(USE_OPENMP "openmp support" ON)
 option(DEBUGING "enable debug mode" ON)
 option(USE_EXCEPTION "use std exception" ON)
 option(SYMBOL_HIDDEN "symbol hidden" OFF) # on when use jni or ios io
-option(LOG_PROFILE "log profile" ON)
+option(LOG_PROFILE "log profile" OFF)
 
 # select the platform to build
 option(CPU "armv7 with neon" ON)
 option(GPU_MALI "mali gpu" OFF)
-option(GPU_CL "opencl gpu" ON)
+option(GPU_CL "opencl gpu" OFF)
 
 option(FPGA "fpga" OFF)
 if(FPGA)
