@@ -42,8 +42,8 @@ PMStatus PaddleMobile<Device, T>::Load(const std::string &dirname,
 
   if (executor_.get() == nullptr) {
     executor_ = std::make_shared<framework::Executor<Device, T>>(
-        loader_->Load(dirname, optimize, quantification), config_, batch_size, optimize,
-        loddable);
+        loader_->Load(dirname, optimize, quantification), config_, batch_size,
+        optimize, loddable);
   } else {
     LOG(kLOG_INFO) << "executor inited";
   }
@@ -64,7 +64,8 @@ PMStatus PaddleMobile<Device, T>::Load(const std::string &model_path,
 
   if (executor_.get() == nullptr) {
     executor_ = std::make_shared<framework::Executor<Device, T>>(
-        loader_->Load(model_path, para_path, optimize, quantification), config_, batch_size, optimize, loddable);
+        loader_->Load(model_path, para_path, optimize, quantification), config_,
+        batch_size, optimize, loddable);
   } else {
     LOG(kLOG_INFO) << "executor inited";
   }
@@ -86,8 +87,8 @@ bool PaddleMobile<Device, T>::LoadCombinedMemory(
     executor_ = std::make_shared<framework::Executor<Device, T>>(
         loader_->LoadCombinedMemory(model_len, model_buf, combined_params_len,
                                     combined_params_buf, optimize,
-                                    quantification), config_,
-        batch_size, optimize, loddable);
+                                    quantification),
+        config_, batch_size, optimize, loddable);
   } else {
     LOG(kLOG_INFO) << "executor inited";
   }
