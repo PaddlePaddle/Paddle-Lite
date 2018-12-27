@@ -70,13 +70,17 @@ extension InputTexture {
  */
 
 
-public class Texture<P: PrecisionType>: Tensorial {
+public class Texture: Tensorial {
   var dim: Dim
   public var tensorDim: Dim
   public var padToFourDim: Dim
   private var textureDesc: MTLTextureDescriptor!
   public var metalTexture: MTLTexture!
   var transpose: [Int] = [0, 1, 2, 3]
+  
+  func elementCount() -> Int {
+    return metalTexture.width * metalTexture.height * metalTexture.arrayLength * 4
+  }
   
   func toTensor() -> [Float32] {
     guard  padToFourDim.cout() == 4 else {
@@ -92,6 +96,8 @@ public class Texture<P: PrecisionType>: Tensorial {
     return metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
   }
   
+  
+  
   func initTexture(device: MTLDevice, inTranspose: [Int] = [0, 1, 2, 3], computePrecision: ComputePrecision = .Float16) {
     transpose = inTranspose
     for i in 0..<(4 - tensorDim.cout()) {
@@ -99,8 +105,8 @@ public class Texture<P: PrecisionType>: Tensorial {
         fatalError()
       }
     }
-    let newDim = transpose.map { padToFourDim[$0] }
     
+    let newDim = transpose.map { padToFourDim[$0] }
     let newLayout = transpose.map { layout.layoutWithDim[$0] }
     
     layout = DataLayout.init(newLayout)
@@ -137,6 +143,26 @@ public class Texture<P: PrecisionType>: Tensorial {
     tmpTextureDes.storageMode = .shared
     textureDesc = tmpTextureDes
     metalTexture = device.makeTexture(descriptor: tmpTextureDes) ?! " texture nil "
+  }
+  
+  func updateDims(inTensorDim: Dim, inDim: Dim) {
+    var fourDim: Dim
+    if inDim.cout() == 4 {
+      fourDim = inDim
+    } else if inDim.cout() < 4 {
+      var fourDimNum: [Int] = []
+      for _ in 0..<(4 - inDim.cout()) {
+        fourDimNum.append(1)
+      }
+      fourDimNum.append(contentsOf: inDim.dims)
+      fourDim = Dim.init(inDim: fourDimNum)
+    } else {
+      fatalError(" not support ")
+    }
+    
+    tensorDim = inTensorDim
+    dim = fourDim
+    padToFourDim = fourDim
   }
   
   init(device: MTLDevice, inDim: Dim) {

@@ -17,10 +17,12 @@
 		FC039B8920E11C560081E9F8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FC039B8820E11C560081E9F8 /* Assets.xcassets */; };
 		FC039B8C20E11C560081E9F8 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = FC039B8A20E11C560081E9F8 /* LaunchScreen.storyboard */; };
 		FC203FB221CBFDBA00B37166 /* test.jpg in Resources */ = {isa = PBXBuildFile; fileRef = FC203FA921CBFDBA00B37166 /* test.jpg */; };
-		FC203FB321CBFDBA00B37166 /* combined_mobilenet_params in Resources */ = {isa = PBXBuildFile; fileRef = FC203FAD21CBFDBA00B37166 /* combined_mobilenet_params */; };
-		FC203FB421CBFDBA00B37166 /* combined_mobilenet_model in Resources */ = {isa = PBXBuildFile; fileRef = FC203FAE21CBFDBA00B37166 /* combined_mobilenet_model */; };
-		FC203FB521CBFDBA00B37166 /* yolo_params in Resources */ = {isa = PBXBuildFile; fileRef = FC203FB021CBFDBA00B37166 /* yolo_params */; };
-		FC203FB621CBFDBA00B37166 /* yolo_model in Resources */ = {isa = PBXBuildFile; fileRef = FC203FB121CBFDBA00B37166 /* yolo_model */; };
+		FC704C1921D2375300F98BAB /* super_params in Resources */ = {isa = PBXBuildFile; fileRef = FC704C1721D2375300F98BAB /* super_params */; };
+		FC704C1A21D2375300F98BAB /* super_model in Resources */ = {isa = PBXBuildFile; fileRef = FC704C1821D2375300F98BAB /* super_model */; };
+		FC704C2221D237FC00F98BAB /* combined_mobilenet_params in Resources */ = {isa = PBXBuildFile; fileRef = FC704C1D21D237FC00F98BAB /* combined_mobilenet_params */; };
+		FC704C2321D237FC00F98BAB /* combined_mobilenet_model in Resources */ = {isa = PBXBuildFile; fileRef = FC704C1E21D237FC00F98BAB /* combined_mobilenet_model */; };
+		FC704C2421D237FC00F98BAB /* yolo_params in Resources */ = {isa = PBXBuildFile; fileRef = FC704C2021D237FC00F98BAB /* yolo_params */; };
+		FC704C2521D237FC00F98BAB /* yolo_model in Resources */ = {isa = PBXBuildFile; fileRef = FC704C2121D237FC00F98BAB /* yolo_model */; };
 		FC803BCD214D27930094B8E5 /* FPSCounter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC803BCB214D27920094B8E5 /* FPSCounter.swift */; };
 		FC803BCE214D27930094B8E5 /* VideoCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC803BCC214D27920094B8E5 /* VideoCapture.swift */; };
 		FCBCCC552122EF5500D94F7E /* MetalHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCBCCC542122EF5400D94F7E /* MetalHelper.swift */; };
@@ -58,12 +60,14 @@
 		FC039B8B20E11C560081E9F8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		FC039B8D20E11C560081E9F8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		FC203FA921CBFDBA00B37166 /* test.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = test.jpg; sourceTree = "<group>"; };
-		FC203FAD21CBFDBA00B37166 /* combined_mobilenet_params */ = {isa = PBXFileReference; lastKnownFileType = file; path = combined_mobilenet_params; sourceTree = "<group>"; };
-		FC203FAE21CBFDBA00B37166 /* combined_mobilenet_model */ = {isa = PBXFileReference; lastKnownFileType = file; path = combined_mobilenet_model; sourceTree = "<group>"; };
-		FC203FB021CBFDBA00B37166 /* yolo_params */ = {isa = PBXFileReference; lastKnownFileType = file; path = yolo_params; sourceTree = "<group>"; };
-		FC203FB121CBFDBA00B37166 /* yolo_model */ = {isa = PBXFileReference; lastKnownFileType = file; path = yolo_model; sourceTree = "<group>"; };
 		FC27991121343A39000B6BAD /* paddle-mobile-demo-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "paddle-mobile-demo-Bridging-Header.h"; sourceTree = "<group>"; };
 		FC4FD97B2140EE250073E130 /* libc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libc++.tbd"; path = "usr/lib/libc++.tbd"; sourceTree = SDKROOT; };
+		FC704C1721D2375300F98BAB /* super_params */ = {isa = PBXFileReference; lastKnownFileType = file; path = super_params; sourceTree = "<group>"; };
+		FC704C1821D2375300F98BAB /* super_model */ = {isa = PBXFileReference; lastKnownFileType = file; path = super_model; sourceTree = "<group>"; };
+		FC704C1D21D237FC00F98BAB /* combined_mobilenet_params */ = {isa = PBXFileReference; lastKnownFileType = file; path = combined_mobilenet_params; sourceTree = "<group>"; };
+		FC704C1E21D237FC00F98BAB /* combined_mobilenet_model */ = {isa = PBXFileReference; lastKnownFileType = file; path = combined_mobilenet_model; sourceTree = "<group>"; };
+		FC704C2021D237FC00F98BAB /* yolo_params */ = {isa = PBXFileReference; lastKnownFileType = file; path = yolo_params; sourceTree = "<group>"; };
+		FC704C2121D237FC00F98BAB /* yolo_model */ = {isa = PBXFileReference; lastKnownFileType = file; path = yolo_model; sourceTree = "<group>"; };
 		FC803BCB214D27920094B8E5 /* FPSCounter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FPSCounter.swift; sourceTree = "<group>"; };
 		FC803BCC214D27920094B8E5 /* VideoCapture.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VideoCapture.swift; sourceTree = "<group>"; };
 		FCBCCC542122EF5400D94F7E /* MetalHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalHelper.swift; sourceTree = "<group>"; };
@@ -155,35 +159,45 @@
 		FC203FAA21CBFDBA00B37166 /* models */ = {
 			isa = PBXGroup;
 			children = (
-				FC203FAB21CBFDBA00B37166 /* vision_model */,
+				FC704C1B21D237FC00F98BAB /* vision_model */,
+				FC704C1621D2375300F98BAB /* superresoltion */,
 			);
 			name = models;
 			path = ../../models;
 			sourceTree = "<group>";
 		};
-		FC203FAB21CBFDBA00B37166 /* vision_model */ = {
+		FC704C1621D2375300F98BAB /* superresoltion */ = {
 			isa = PBXGroup;
 			children = (
-				FC203FAC21CBFDBA00B37166 /* mobilenet */,
-				FC203FAF21CBFDBA00B37166 /* yolo */,
+				FC704C1721D2375300F98BAB /* super_params */,
+				FC704C1821D2375300F98BAB /* super_model */,
+			);
+			path = superresoltion;
+			sourceTree = "<group>";
+		};
+		FC704C1B21D237FC00F98BAB /* vision_model */ = {
+			isa = PBXGroup;
+			children = (
+				FC704C1C21D237FC00F98BAB /* mobilenet */,
+				FC704C1F21D237FC00F98BAB /* yolo */,
 			);
 			path = vision_model;
 			sourceTree = "<group>";
 		};
-		FC203FAC21CBFDBA00B37166 /* mobilenet */ = {
+		FC704C1C21D237FC00F98BAB /* mobilenet */ = {
 			isa = PBXGroup;
 			children = (
-				FC203FAD21CBFDBA00B37166 /* combined_mobilenet_params */,
-				FC203FAE21CBFDBA00B37166 /* combined_mobilenet_model */,
+				FC704C1D21D237FC00F98BAB /* combined_mobilenet_params */,
+				FC704C1E21D237FC00F98BAB /* combined_mobilenet_model */,
 			);
 			path = mobilenet;
 			sourceTree = "<group>";
 		};
-		FC203FAF21CBFDBA00B37166 /* yolo */ = {
+		FC704C1F21D237FC00F98BAB /* yolo */ = {
 			isa = PBXGroup;
 			children = (
-				FC203FB021CBFDBA00B37166 /* yolo_params */,
-				FC203FB121CBFDBA00B37166 /* yolo_model */,
+				FC704C2021D237FC00F98BAB /* yolo_params */,
+				FC704C2121D237FC00F98BAB /* yolo_model */,
 			);
 			path = yolo;
 			sourceTree = "<group>";
@@ -269,13 +283,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				FC039B8C20E11C560081E9F8 /* LaunchScreen.storyboard in Resources */,
-				FC203FB421CBFDBA00B37166 /* combined_mobilenet_model in Resources */,
-				FC203FB321CBFDBA00B37166 /* combined_mobilenet_params in Resources */,
+				FC704C2221D237FC00F98BAB /* combined_mobilenet_params in Resources */,
+				FC704C1921D2375300F98BAB /* super_params in Resources */,
 				FC039B8920E11C560081E9F8 /* Assets.xcassets in Resources */,
-				FC203FB521CBFDBA00B37166 /* yolo_params in Resources */,
-				FC203FB621CBFDBA00B37166 /* yolo_model in Resources */,
+				FC704C1A21D2375300F98BAB /* super_model in Resources */,
 				FC039B8720E11C550081E9F8 /* Main.storyboard in Resources */,
 				FC203FB221CBFDBA00B37166 /* test.jpg in Resources */,
+				FC704C2321D237FC00F98BAB /* combined_mobilenet_model in Resources */,
+				FC704C2421D237FC00F98BAB /* yolo_params in Resources */,
+				FC704C2521D237FC00F98BAB /* yolo_model in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

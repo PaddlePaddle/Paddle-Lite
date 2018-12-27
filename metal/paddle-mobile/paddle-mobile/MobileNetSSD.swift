@@ -24,7 +24,7 @@ public class MobileNet_ssd_hand: Net{
     paramPath = Bundle.main.path(forResource: "ssd_hand_params", ofType: nil) ?! "para null"
     modelDir = ""
     preprocessKernel = MobilenetssdPreProccess.init(device: device)
-    dim = (n: 1, h: 300, w: 300, c: 3)
+    inputDim_ = Dim.init(inDim: [1, 300, 300, 3])
   }
   
   @objc override public init(device: MTLDevice,paramPointer: UnsafeMutableRawPointer, paramSize:Int, modePointer: UnsafeMutableRawPointer, modelSize: Int) {
@@ -36,7 +36,7 @@ public class MobileNet_ssd_hand: Net{
     paramPath = ""
     modelDir = ""
     preprocessKernel = MobilenetssdPreProccess.init(device: device)
-    dim = (n: 1, h: 300, w: 300, c: 3)
+    inputDim_ = Dim.init(inDim: [1, 300, 300, 3])
   }
   
   class MobilenetssdPreProccess: CusomKernel {

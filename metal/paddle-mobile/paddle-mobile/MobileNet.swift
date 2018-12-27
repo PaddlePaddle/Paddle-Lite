@@ -52,9 +52,7 @@ class MobileNet: Net{
     }
     return s.joined(separator: "\n")
   }
-  
-
-  
+    
   override init(device: MTLDevice) {
     super.init(device: device)
     means = [123.68, 116.78, 103.94]
@@ -64,7 +62,7 @@ class MobileNet: Net{
     paramPath = Bundle.main.path(forResource: "params", ofType: nil) ?! "para null"
     modelDir = ""
     preprocessKernel = MobilenetPreProccess.init(device: device)
-    dim = (n: 1, h: 224, w: 224, c: 3)
+    inputDim_ = Dim.init(inDim: [1, 224, 224, 3])
   }
 }
 

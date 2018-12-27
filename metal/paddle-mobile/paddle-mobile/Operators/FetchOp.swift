@@ -17,13 +17,13 @@ import Metal
 
 class FetchParam<P: PrecisionType>: OpParam{
   var output: FetchHolder
-  let input: Texture<P>
+  let input: Texture
   let scope: Scope
   required init(opDesc: OpDesc, inScope: Scope) throws {
     scope = inScope
     do {
       input = try FetchParam.inputX(inputs: opDesc.inputs, from: inScope)
-      output = FetchHolder.init(inCapacity: input.numel(), inDim: input.tensorDim.dims)
+      output = FetchHolder.init(inPaddedCapacity: input.elementCount(), inDim: input.tensorDim)
       scope.setOutput(output: output)
     } catch let error {
       throw error
@@ -51,17 +51,13 @@ class FetchKernel<P: PrecisionType>: Kernel, Computable {
       if param.input.transpose == [0, 2, 3, 1] {
         super.init(device: device, inFunctionName: "fetch_half")
       } else {
-//        fatalError(" not support ")
-        super.init(device: device, inFunctionName: "fetch_placeholder_half")
-        print(" not support ")
+        fatalError(" not support ")
       }
     } else if computePrecision == .Float32 {
       if param.input.transpose == [0, 2, 3, 1] {
-        super.init(device: device, inFunctionName: "fetch")
+        super.init(device: device, inFunctionName: "fetch_float")
       } else {
-        print(" not support ")
-        super.init(device: device, inFunctionName: "fetch_placeholder")
-//        fatalError(" not support ")        
+        fatalError(" not support ")
       }
     } else {
       fatalError(" not support ")
@@ -83,6 +79,12 @@ class FetchOp<P: PrecisionType>: Operator< FetchKernel<P>, FetchParam<P>>, Runab
     } catch let error {
       throw error
     }
+  }
+  
+  func delogOutput() {
+    print("fetch output: ")
+    let resArr = Array<Any>.floatArrWithBuffer(floatArrBuffer: self.para.output.result, count: self.para.output.capacity)
+    print(resArr.strideArray())
   }
 }
 

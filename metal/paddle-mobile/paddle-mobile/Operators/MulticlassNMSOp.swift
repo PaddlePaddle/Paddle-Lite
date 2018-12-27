@@ -22,18 +22,18 @@ class MulticlassNMSParam<P: PrecisionType>: OpParam {
       bboxes = try MulticlassNMSParam.getFirstTensor(key: "BBoxes", map: opDesc.inputs, from: inScope)
       output = try MulticlassNMSParam.outputOut(outputs: opDesc.outputs, from: inScope)
       
-      middleOutput = FetchHolder.init(inCapacity: scores.tensorDim.numel(), inDim: scores.tensorDim.dims)
+      middleOutput = FetchHolder.init(inPaddedCapacity: scores.tensorDim.numel(), inDim: scores.tensorDim)
       
-      bboxOutput = FetchHolder.init(inCapacity: bboxes.tensorDim.numel(), inDim: bboxes.tensorDim.dims)
+      bboxOutput = FetchHolder.init(inPaddedCapacity: bboxes.tensorDim.numel(), inDim: bboxes.tensorDim)
     } catch let error {
       throw error
     }
   }
   var bboxOutput: FetchHolder
   var middleOutput: FetchHolder
-  let scores: Texture<P>
-  let bboxes: Texture<P>
-  var output: Texture<P>
+  let scores: Texture
+  let bboxes: Texture
+  var output: Texture
 }
 
 class MulticlassNMSOp<P: PrecisionType>: Operator<MulticlassNMSKernel<P>, MulticlassNMSParam<P>>, Runable, Creator, InferShaperable{

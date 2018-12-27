@@ -15,47 +15,18 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void fetch(texture2d_array<float, access::read> inTexture [[texture(0)]],
-                       device float *output [[buffer(0)]],
-                      uint3 gid [[thread_position_in_grid]]) {
-  
-  if (gid.x >= inTexture.get_width() ||
-      gid.y >= inTexture.get_height() ||
-      gid.z >= inTexture.get_array_size()) {
-    return;
-  }
-  
-  int input_width = inTexture.get_width();
-  int input_height = inTexture.get_height();
-  const float4 input = inTexture.read(gid.xy, gid.z);
-  int output_to = 4 * input_width * input_height;
-  output[gid.z * output_to + 0 * input_width * input_height + gid.y * input_width + gid.x] = input.x;
-  output[gid.z * output_to + 1 * input_width * input_height + gid.y * input_width + gid.x] = input.y;
-  output[gid.z * output_to + 2 * input_width * input_height + gid.y * input_width + gid.x] = input.z;
-  output[gid.z * output_to + 3 * input_width * input_height + gid.y * input_width + gid.x] = input.w;
-}
+#define P float
 
+#include "FetchKernel.inc.metal"
 
-kernel void fetch_half(texture2d_array<half, access::read> inTexture [[texture(0)]],
-                  device float * output [[buffer(0)]],
-                  uint3 gid [[thread_position_in_grid]]) {
-  
-  if (gid.x >= inTexture.get_width() ||
-      gid.y >= inTexture.get_height() ||
-      gid.z >= inTexture.get_array_size()) {
-    return;
-  }
-  
-  int input_width = inTexture.get_width();
-  int input_height = inTexture.get_height();
-  const half4 input = inTexture.read(gid.xy, gid.z);
-  int output_to = 4 * input_width * input_height;
-  output[gid.z * output_to + 0 * input_width * input_height + gid.y * input_width + gid.x] = input.x;
-  output[gid.z * output_to + 1 * input_width * input_height + gid.y * input_width + gid.x] = input.y;
-  output[gid.z * output_to + 2 * input_width * input_height + gid.y * input_width + gid.x] = input.z;
-  output[gid.z * output_to + 3 * input_width * input_height + gid.y * input_width + gid.x] = input.w;
-  
-}
+#undef P
+
+#define P half
+
+#include "FetchKernel.inc.metal"
+
+#undef P
+
 
 kernel void fetch_placeholder(texture2d_array<float, access::read> inTexture [[texture(0)]],
                               device float *output [[buffer(0)]],
@@ -64,8 +35,6 @@ kernel void fetch_placeholder(texture2d_array<float, access::read> inTexture [[t
 }
 
 kernel void fetch_placeholder_half(texture2d_array<half, access::read> inTexture [[texture(0)]],
-                              device float *output [[buffer(0)]],
-                              uint3 gid [[thread_position_in_grid]]) {
+                                   device float *output [[buffer(0)]],
+                                   uint3 gid [[thread_position_in_grid]]) {
 }
-
-

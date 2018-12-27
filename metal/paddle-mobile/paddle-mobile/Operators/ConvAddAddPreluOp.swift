@@ -34,12 +34,12 @@ class ConvAddAddPreluParam<P: PrecisionType>: OpParam {
     }
   }
   
-  let input: Texture<P>
+  let input: Texture
   let y: Tensor<P>
   let filter: Tensor<P>
   let mode: String
   let alpha: Tensor<P>
-  var output: Texture<P>
+  var output: Texture
   let stride: [Int32]
   let paddings: [Int32]
   let dilations: [Int32]

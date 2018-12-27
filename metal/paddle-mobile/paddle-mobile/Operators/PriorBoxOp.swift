@@ -53,10 +53,10 @@ class PriorBoxParam<P: PrecisionType>: OpParam {
   var stepH: Float32
   let offset: Float32
   
-  let input: Texture<P>
-  let inputImage: Texture<P>
-  var output: Texture<P>
-  let outputVariances: Texture<P>
+  let input: Texture
+  let inputImage: Texture
+  var output: Texture
+  let outputVariances: Texture
 }
 
 class PriorBoxOp<P: PrecisionType>: Operator<PriorBoxKernel<P>, PriorBoxParam<P>>, Runable, Creator, InferShaperable{
