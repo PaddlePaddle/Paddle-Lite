@@ -65,7 +65,7 @@ class Executor {
                       LoDTensor *tensor) const;
   void InitMemory();
   void InitCombineMemory();
-  void InitNoPersistableMemory(const LoDTensor &input_tensor);
+  void InitNoPersistableMemory(const Tensor &input_tensor);
   void LoadMemory(void **data, const std::shared_ptr<VarDesc> var_desc,
                   LoDTensor *tensor);
 #ifdef PADDLE_MOBILE_CL
