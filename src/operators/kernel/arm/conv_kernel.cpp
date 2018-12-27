@@ -24,7 +24,11 @@ template <>
 bool ConvKernel<CPU, float>::Init(ConvParam<CPU> *param) {
   bool conv3x3 = param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
                  param->Filter()->dims()[2] == 3;
+  bool conv5x5 = param->Filter()->dims()[2] == param->Filter()->dims()[3] &&
+                 param->Filter()->dims()[2] == 5;
   bool depth3x3 = conv3x3 && param->Groups() == param->Input()->dims()[1] &&
+                  param->Input()->dims()[1] == param->Output()->dims()[1];
+  bool depth5x5 = conv5x5 && param->Groups() == param->Input()->dims()[1] &&
                   param->Input()->dims()[1] == param->Output()->dims()[1];
   if (param->Filter()->type() == typeid(int8_t)) {
     if (depth3x3 && param->Strides()[0] < 3 &&
@@ -46,6 +50,9 @@ bool ConvKernel<CPU, float>::Init(ConvParam<CPU> *param) {
                param->Strides()[0] == 2 && param->Paddings()[0] == 1 &&
                param->Paddings()[0] == param->Paddings()[1]) {
       param->ExecMode() = ConvParam<CPU>::EXEC_DEPTHWISE3x3S2P1_FLOAT;
+    } else if (depth5x5 && param->Strides()[0] == param->Strides()[1] &&
+               param->Strides()[0] == 1) {
+      param->ExecMode() = ConvParam<CPU>::EXEC_DEPTHWISE5x5S1_FLOAT;
 #ifndef __aarch64__
     } else if (conv3x3 && param->Strides()[0] == param->Strides()[1] &&
                param->Dilations()[0] == param->Dilations()[1] &&
@@ -86,6 +93,10 @@ void ConvKernel<CPU, float>::Compute(const ConvParam<CPU> &param) {
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3S2P0_FLOAT:
       math::DepthwiseConv3x3s2p0(param.Input(), param.Filter(), param.Output(),
                                  nullptr, false);
+      break;
+    case ConvParam<CPU>::EXEC_DEPTHWISE5x5S1_FLOAT:
+      math::DepthwiseConv5x5S1<float, float>(*param.Input(), *param.Filter(),
+                                             param.Paddings(), param.Output());
       break;
     case ConvParam<CPU>::EXEC_WINOGRAD3X3_FLOAT:
       WinogradConv3x3<8, 3>(param);
