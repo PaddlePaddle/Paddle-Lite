@@ -28,8 +28,8 @@ class PreluParam<P: PrecisionType>: OpParam {
   }
   let mode: String
   let alpha: Tensor<P>
-  let input: Texture<P>
-  var output: Texture<P>
+  let input: Texture
+  var output: Texture
 }
 
 class PreluOp<P: PrecisionType>: Operator<PreluKernel<P>, PreluParam<P>>, Runable, Creator, InferShaperable{

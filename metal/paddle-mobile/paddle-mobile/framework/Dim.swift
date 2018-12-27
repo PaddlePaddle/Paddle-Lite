@@ -18,7 +18,11 @@ public struct Dim {
     public init(inDim: [Int]) {
         dims = inDim
     }
-    
+  
+  public init(inDim: (n: Int, h: Int, w: Int, c: Int)) {
+    dims = [inDim.n, inDim.h, inDim.w, inDim.c]
+  }
+  
     mutating func swapeDimAt(index1: Int, index2: Int) {
         dims.swapAt(index1, index2)
     }
@@ -34,6 +38,10 @@ public struct Dim {
     public static func ==(left: Dim, right: Dim) -> Bool {
         return left.dims == right.dims;
     }
+  
+  public static func !=(left: Dim, right: Dim) -> Bool {
+    return left.dims != right.dims;
+  }
     
     public subscript(index: Int) -> Int {
         return dims[index];

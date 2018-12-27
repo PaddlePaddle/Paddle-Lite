@@ -24,7 +24,7 @@ public class MobileNet_ssd_AR: Net{
     paramPath = Bundle.main.path(forResource: "ar_params", ofType: nil) ?! "para null"
     modelDir = ""
     preprocessKernel = MobilenetssdPreProccess.init(device: device)
-    dim = (n: 1, h: 160, w: 160, c: 3)
+    inputDim_ = Dim.init(inDim: [1, 160, 160, 3])
   }
   
   @objc override public init(device: MTLDevice,paramPointer: UnsafeMutableRawPointer, paramSize:Int, modePointer: UnsafeMutableRawPointer, modelSize: Int) {
@@ -36,7 +36,7 @@ public class MobileNet_ssd_AR: Net{
     paramPath = ""
     modelDir = ""
     preprocessKernel = MobilenetssdPreProccess.init(device: device)
-    dim = (n: 1, h: 160, w: 160, c: 3)
+    inputDim_ = Dim.init(inDim: [1, 160, 160, 3])
   }
   
   class MobilenetssdPreProccess: CusomKernel {
@@ -96,57 +96,57 @@ public class MobileNet_ssd_AR: Net{
   }
   
   override func updateProgram(program: Program) {
-    for i in [56, 66, 76, 86, 93, 99] {
-      let opDesc = program.programDesc.blocks[0].ops[i]
-      let output = opDesc.outputs["Out"]!.first!
-      let v = program.scope[output]!
-      let originTexture = v as! Texture<Float32>
-      originTexture.tensorDim = Dim.init(inDim: [originTexture.tensorDim[1] / 7, originTexture.tensorDim[0] * 7])
-      
-      originTexture.dim = Dim.init(inDim: [1, 1, originTexture.dim[3] / 7, originTexture.dim[2] * 7])
-      
-      originTexture.padToFourDim = Dim.init(inDim: [1, 1, originTexture.padToFourDim[3] / 7, originTexture.padToFourDim[2] * 7])
-      
-      program.scope[output] = originTexture
-      
-      if i == 99 {
-        opDesc.attrs["axis"] = 0
-      } else {
-        opDesc.attrs["shape"] = originTexture.tensorDim.dims.map { Int32($0) }
-      }
-    }
-    
-    for i in [58, 59, 88, 89, 95, 96, 68, 69, 78, 79] {
-      let opDesc = program.programDesc.blocks[0].ops[i]
-      let output = opDesc.outputs["Out"]!.first!
-      let v = program.scope[output]!
-      
-      
-      
-      let originTexture = v as! Texture<Float32>
-      originTexture.tensorDim = Dim.init(inDim: [originTexture.tensorDim[1], originTexture.tensorDim[2]])
-      opDesc.attrs["shape"] = originTexture.tensorDim.dims.map { Int32($0) }
-    }
-    
-    for i in [60, 101, 90, 97, 70, 80] {
-      let opDesc = program.programDesc.blocks[0].ops[i]
-      let output = opDesc.outputs["Out"]!.first!
-      let v = program.scope[output]!
-      let originTexture = v as! Texture<Float32>
-      originTexture.tensorDim = Dim.init(inDim: [originTexture.tensorDim[1], originTexture.tensorDim[2]])
-      opDesc.attrs["axis"] = (opDesc.attrs["axis"]! as! Int) - 1
-    }
-    
-    for i in [102] {
-      let opDesc = program.programDesc.blocks[0].ops[i]
-      for output in opDesc.outputs["Out"]! {
-        let v = program.scope[output]!
-        let originTexture = v as! Texture<Float32>
-        originTexture.tensorDim = Dim.init(inDim: [originTexture.tensorDim[1], originTexture.tensorDim[2]])
-      }
-      opDesc.attrs["axis"] = (opDesc.attrs["axis"]! as! Int) - 1
-      print(" split axis \(opDesc.attrs["axis"])")
-    }
+//    for i in [56, 66, 76, 86, 93, 99] {
+//      let opDesc = program.programDesc.blocks[0].ops[i]
+//      let output = opDesc.outputs["Out"]!.first!
+//      let v = program.scope[output]!
+//      let originTexture = v as! Texture
+//      originTexture.tensorDim = Dim.init(inDim: [originTexture.tensorDim[1] / 7, originTexture.tensorDim[0] * 7])
+//      
+//      originTexture.dim = Dim.init(inDim: [1, 1, originTexture.dim[3] / 7, originTexture.dim[2] * 7])
+//      
+//      originTexture.padToFourDim = Dim.init(inDim: [1, 1, originTexture.padToFourDim[3] / 7, originTexture.padToFourDim[2] * 7])
+//      
+//      program.scope[output] = originTexture
+//      
+//      if i == 99 {
+//        opDesc.attrs["axis"] = 0
+//      } else {
+//        opDesc.attrs["shape"] = originTexture.tensorDim.dims.map { Int32($0) }
+//      }
+//    }
+//    
+//    for i in [58, 59, 88, 89, 95, 96, 68, 69, 78, 79] {
+//      let opDesc = program.programDesc.blocks[0].ops[i]
+//      let output = opDesc.outputs["Out"]!.first!
+//      let v = program.scope[output]!
+//      
+//      
+//      
+//      let originTexture = v as! Texture
+//      originTexture.tensorDim = Dim.init(inDim: [originTexture.tensorDim[1], originTexture.tensorDim[2]])
+//      opDesc.attrs["shape"] = originTexture.tensorDim.dims.map { Int32($0) }
+//    }
+//    
+//    for i in [60, 101, 90, 97, 70, 80] {
+//      let opDesc = program.programDesc.blocks[0].ops[i]
+//      let output = opDesc.outputs["Out"]!.first!
+//      let v = program.scope[output]!
+//      let originTexture = v as! Texture
+//      originTexture.tensorDim = Dim.init(inDim: [originTexture.tensorDim[1], originTexture.tensorDim[2]])
+//      opDesc.attrs["axis"] = (opDesc.attrs["axis"]! as! Int) - 1
+//    }
+//    
+//    for i in [102] {
+//      let opDesc = program.programDesc.blocks[0].ops[i]
+//      for output in opDesc.outputs["Out"]! {
+//        let v = program.scope[output]!
+//        let originTexture = v as! Texture
+//        originTexture.tensorDim = Dim.init(inDim: [originTexture.tensorDim[1], originTexture.tensorDim[2]])
+//      }
+//      opDesc.attrs["axis"] = (opDesc.attrs["axis"]! as! Int) - 1
+//      print(" split axis \(opDesc.attrs["axis"])")
+//    }
     // 99
   }
   

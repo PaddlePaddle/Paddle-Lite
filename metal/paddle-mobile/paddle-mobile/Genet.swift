@@ -24,7 +24,7 @@ public class Genet: Net {
     paramPath = Bundle.main.path(forResource: "genet_params", ofType: nil) ?! "para null"
     modelDir = ""
     preprocessKernel = GenetPreProccess.init(device: device)
-    dim = (n: 1, h: 128, w: 128, c: 3)
+    inputDim_ = Dim.init(inDim: [1, 128, 128, 3])
   }
   
   @objc override public init(device: MTLDevice,paramPointer: UnsafeMutableRawPointer, paramSize:Int, modePointer: UnsafeMutableRawPointer, modelSize: Int) {
@@ -36,7 +36,7 @@ public class Genet: Net {
     paramPath = ""
     modelDir = ""
     preprocessKernel = GenetPreProccess.init(device: device)
-    dim = (n: 1, h: 128, w: 128, c: 3)
+    inputDim_ = Dim.init(inDim: [1, 128, 128, 3])
   }
 
   class GenetPreProccess: CusomKernel {

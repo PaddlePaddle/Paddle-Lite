@@ -15,7 +15,7 @@
 import Foundation
 
 
-let testTo = 81
+let testTo = 22
 
 var isTest = false
 
@@ -44,19 +44,19 @@ public class GPUResultHolder {
 
 extension GPUResultHolder: CustomDebugStringConvertible, CustomStringConvertible {
   public var debugDescription: String {
-//    var str = ""
-//    str += "Dim: \(dim) \n value:[ "
-//    if resultArr.count < 20 {
-//      for d in resultArr {
-//        str += " \(d) "
-//      }
-//    } else {
-//      for d in stride(from: 0, to: resultArr.count, by: resultArr.count/20) {
-//        str += " \(resultArr[d]) "
-//      }
-//    }
-//    str += " ]"
-//    return str
+    //    var str = ""
+    //    str += "Dim: \(dim) \n value:[ "
+    //    if resultArr.count < 20 {
+    //      for d in resultArr {
+    //        str += " \(d) "
+    //      }
+    //    } else {
+    //      for d in stride(from: 0, to: resultArr.count, by: resultArr.count/20) {
+    //        str += " \(resultArr[d]) "
+    //      }
+    //    }
+    //    str += " ]"
+    //    return str
     fatalError()
   }
   
@@ -67,17 +67,19 @@ extension GPUResultHolder: CustomDebugStringConvertible, CustomStringConvertible
 
 public class Executor<P: PrecisionType> {
   var ops: [Runable & InferShaperable] = []
+  var preInputDim: Dim = Dim.init(inDim: [])
   let program: Program
   let device: MTLDevice
   let inflightSemaphore: DispatchSemaphore
   let queue: MTLCommandQueue
   public init(inDevice:MTLDevice, inQueue: MTLCommandQueue, inProgram: Program) throws {
-    self.inflightSemaphore = DispatchSemaphore(value: 3)
+    self.inflightSemaphore = DispatchSemaphore(value: 1)
     program = inProgram
     device = inDevice
     queue = inQueue
-//    print("before for ")
-//print(program.scope.vars["fea_pyramid1_mbox_conf_flat.Flatten.output.1.tmp_0"])
+    
+    //    print("before for ")
+    //print(program.scope.vars["fea_pyramid1_mbox_conf_flat.Flatten.output.1.tmp_0"])
     
     
     for block in inProgram.programDesc.blocks {
@@ -85,13 +87,15 @@ public class Executor<P: PrecisionType> {
       for i in 0..<block.ops.count {
         let opDesc = block.ops[i]
         do {
-//          print("in for i \(i): ")
-//      print(program.scope.vars["fea_pyramid1_mbox_conf_flat.Flatten.output.1.tmp_0"])
-//
-//          if i == 56 {
-//          print(program.scope.vars["fea_pyramid1_mbox_conf_flat.Flatten.output.1.tmp_0"])
-//
-//          }
+          
+          
+          //          print("in for i \(i): ")
+          //      print(program.scope.vars["fea_pyramid1_mbox_conf_flat.Flatten.output.1.tmp_0"])
+          //
+          //          if i == 56 {
+          //          print(program.scope.vars["fea_pyramid1_mbox_conf_flat.Flatten.output.1.tmp_0"])
+          //
+          //          }
           
           let op = try OpCreator<P>.shared.creat(device: inDevice, opDesc: opDesc, scope: inProgram.scope)
           ops.append(op)
@@ -102,11 +106,12 @@ public class Executor<P: PrecisionType> {
     }
   }
   
-  public func predict(input: MTLTexture, dim: [Int], completionHandle: @escaping (GPUResultHolder) -> Void, preProcessKernle: CusomKernel? = nil, except: Int = 0) throws {
+  public func predict(input: MTLTexture, dim: Dim, completionHandle: @escaping (GPUResultHolder) -> Void, preProcessKernle: CusomKernel? = nil, except: Int = 0) throws {
+    inflightSemaphore.wait()
+
     guard let buffer = queue.makeCommandBuffer() else {
       throw PaddleMobileError.predictError(message: "CommandBuffer is nil")
     }
-    inflightSemaphore.wait()
     
     let resInput: MTLTexture
     if let inPre = preProcessKernle {
@@ -121,7 +126,7 @@ public class Executor<P: PrecisionType> {
     }
     
     let beforeDate = Date.init()
-    let inputTexture = InputTexture.init(inMTLTexture: resInput, inExpectDim: Dim.init(inDim: dim))
+    let inputTexture = InputTexture.init(inMTLTexture: resInput, inExpectDim: dim)
     program.scope.setInput(input: inputTexture)
     //(ops.count - except)
     for i in 0..<(ops.count - except) {
@@ -140,38 +145,24 @@ public class Executor<P: PrecisionType> {
     }
     
     buffer.addCompletedHandler { [weak self] (commandbuffer) in
-//      let inputArr = resInput.toTensor(dim: (n: dim[0], c: dim[3], h: dim[1], w: dim[2]))
-//      print(inputArr.strideArray())
-//
-////      print(dim)
-//      writeToLibrary(fileName: "test_image_ssd_ar", array: inputArr)
-//      print(" write done ")
-
-//      print("write to library done")
-//      return
-//                  print(inputArr)
-//
-//                  let stridableInput: [(index: Int, value: Float)] = input.stridableFloatArray()
-//                  print(stridableInput)
-//
-//                  let _: Flo? = input.logDesc(header: "input: ", stridable: true)
-//      for i in 0..<self!.ops.count {
-//        let op = self!.ops[i]
-//        print(" 第 \(i) 个 op: ")
-//        op.delogOutput()
-//      }
-      
-//      return;
-//      self!.ops[testTo - 2].delogOutput()
-//      self!.ops[testTo - 1].delogOutput()
-//      self!.ops[5].delogOutput()
-
-//      return
-      
       guard let SSelf = self else {
-//        return
         fatalError()
       }
+      
+      //将输入写进文件
+      /*
+       let inputArr = resInput.toTensor(dim: (n: dim[0], c: dim[3], h: dim[1], w: dim[2]))
+       print(dim)
+       writeToLibrary(fileName: "test_image_ssd_ar", array: inputArr)
+       print(" write done ")
+       return
+       */
+      
+      /*    输出 op 计算结果
+       for op in SSelf.ops {
+        op.delogOutput()
+       }
+       */
       
       let afterDate = Date.init()
       var resultHolder: GPUResultHolder
@@ -180,17 +171,13 @@ public class Executor<P: PrecisionType> {
       } else {
         let outputVar: Variant = SSelf.program.scope.output()!
         let output: FetchHolder = outputVar as! FetchHolder
-//        let beforeToTensorDate = Date.init()
-
-        resultHolder = GPUResultHolder.init(inDim: output.dim, inPointer: output.result, inCapacity: output.capacity, inElapsedTime: afterDate.timeIntervalSince(beforeDate))
-        
-//        let timeToTensor = Date.init().timeIntervalSince(beforeToTensorDate)
-//        print(timeToTensor)
+        resultHolder = GPUResultHolder.init(inDim: output.dim.dims, inPointer: output.result, inCapacity: output.capacity, inElapsedTime: afterDate.timeIntervalSince(beforeDate))
       }
-
+      
       completionHandle(resultHolder)
       SSelf.inflightSemaphore.signal()
     }
+    
     buffer.commit()
   }
   

@@ -24,8 +24,8 @@ class ShapeParam<P: PrecisionType>: OpParam {
       throw error
     }
   }
-  var output: Texture<P>
-  let input: Texture<P>
+  var output: Texture
+  let input: Texture
 }
 
 class ShapeOp<P: PrecisionType>: Operator<ShapeKernel<P>, ShapeParam<P>>, Runable, Creator, InferShaperable{

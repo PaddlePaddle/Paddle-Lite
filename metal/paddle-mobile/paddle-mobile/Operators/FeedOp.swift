@@ -17,7 +17,7 @@ import MetalKit
 import CoreMedia
 
 class FeedParam<P: PrecisionType>: OpParam{
-  var output: Texture<P>
+  var output: Texture
   var input: InputTexture {
     return scope.input() as! InputTexture
   }

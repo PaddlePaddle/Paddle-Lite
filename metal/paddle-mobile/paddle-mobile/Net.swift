@@ -35,7 +35,22 @@ public class Net: NSObject {
   var except: Int = 0
   var means: [Float] = []
   var scale: Float = 0.0
-  var dim: (n: Int, h: Int, w: Int, c: Int) = (n: 0, h: 0, w: 0, c: 0)
+  
+  var needUpdateProgram = true
+  
+  public var inputDim: Dim {
+    get{
+      return inputDim_
+    }
+    set{
+      if inputDim_ != newValue {
+        needUpdateProgram = true
+      }
+      inputDim_ = newValue
+    }
+  }
+  
+  var inputDim_: Dim = Dim.init(inDim: [])
   var preprocessKernel: CusomKernel? = nil
   var paramPointer: UnsafeMutableRawPointer? = nil
   var paramSize: Int = 0
@@ -44,15 +59,17 @@ public class Net: NSObject {
   var modelPath: String = ""
   var paramPath: String = ""
   var modelDir: String = ""
+  let device: MTLDevice
+  
   @objc public init(device: MTLDevice,paramPointer: UnsafeMutableRawPointer, paramSize:Int, modePointer: UnsafeMutableRawPointer, modelSize: Int) {
-      self.paramPointer = paramPointer
-      self.paramSize = paramSize
-      self.modelPointer = modePointer
-      self.modelSize = modelSize
-      super.init()
+    self.paramPointer = paramPointer
+    self.paramSize = paramSize
+    self.modelPointer = modePointer
+    self.modelSize = modelSize
+    self.device = device
+    super.init()
   }
 
-  
   public func resultStr(res: ResultHolder) -> String {
     fatalError()
   }
@@ -62,6 +79,7 @@ public class Net: NSObject {
   }
   
   @objc public init(device: MTLDevice) {
+    self.device = device
     super.init()
   }
   

@@ -32,8 +32,8 @@ class PoolParam<P: PrecisionType>: OpParam {
     }
     //        let buffer = input.metalTexture.buffer.contents().assumingMemoryBound(to: P.self)
   }
-  let input: Texture<P>
-  var output: Texture<P>
+  let input: Texture
+  var output: Texture
   var ksize: [Int32]
   var stride: [Int32]
   var padding: [Int32]

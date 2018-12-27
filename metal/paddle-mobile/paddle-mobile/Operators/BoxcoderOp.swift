@@ -37,10 +37,10 @@ class BoxcoderParam<P: PrecisionType>: OpParam {
     assert(codeType == "decode_center_size") // encode_center_size is not implemented
     assert((targetBox.tensorDim.cout() == 3) && (targetBox.tensorDim[0] == 1)) // N must be 1 (only handle batch size = 1)
   }
-  let priorBox: Texture<P>
-  let priorBoxVar: Texture<P>
-  let targetBox: Texture<P>
-  var output: Texture<P>
+  let priorBox: Texture
+  let priorBoxVar: Texture
+  let targetBox: Texture
+  var output: Texture
   let codeType: String
   let boxNormalized: Bool
 }

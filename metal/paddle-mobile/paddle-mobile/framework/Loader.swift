@@ -150,6 +150,9 @@ public class Loader<P: PrecisionType> {
       
       let originProgramDesc = ProgramDesc.init(protoProgram: protoProgram)
       let programDesc = ProgramOptimize<P>.init().optimize(originProgramDesc: originProgramDesc)
+      
+//      let programDesc = ProgramDesc.init(protoProgram: protoProgram)
+
       print(programDesc)
       
       guard programDesc.blocks.count > 0 else {
@@ -210,7 +213,7 @@ public class Loader<P: PrecisionType> {
               scope[varDesc.name] = tensor
             } else {
               let dim = Dim.init(inDim: tensorDesc.dims)
-              scope[varDesc.name] = Texture<P>.init(device: device, inDim: dim)
+              scope[varDesc.name] = Texture.init(device: device, inDim: dim)
             }
           } else {
             if varDesc.name == fetchKey {

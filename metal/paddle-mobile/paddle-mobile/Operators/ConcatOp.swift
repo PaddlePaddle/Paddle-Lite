@@ -22,7 +22,7 @@ class ConcatParam<P: PrecisionType>: OpParam {
         fatalError()
       }
       for x in xlist {
-        guard let variant = inScope[x], let v = variant as? Texture<P> else {
+        guard let variant = inScope[x], let v = variant as? Texture else {
           fatalError()
         }
         if transpose.count == 0 {
@@ -40,8 +40,8 @@ class ConcatParam<P: PrecisionType>: OpParam {
       throw error
     }
   }
-  var input: [Texture<P>] = []
-  var output: Texture<P>
+  var input: [Texture] = []
+  var output: Texture
   var transpose: [Int] = []
   let axis: Int
 }

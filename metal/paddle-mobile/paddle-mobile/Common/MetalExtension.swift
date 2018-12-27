@@ -501,7 +501,7 @@ public extension MTLTexture {
     } else {
       fatalError(" 目前还不支持其他类型 ")
     }
-    
+    print(textureArray.count)
     var output: [Float32] = []
     for s in 0..<arrayLength {
       for c in 0..<4{

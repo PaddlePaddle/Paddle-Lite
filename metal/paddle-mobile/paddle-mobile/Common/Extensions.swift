@@ -110,7 +110,17 @@ extension Array {
       return newArray
     }
   }
+  
+  public static func floatArrWithBuffer(floatArrBuffer: UnsafeMutablePointer<Float32>, count: Int) -> [Float32] {
+    var arr: [Float32] = []
+    for i in 0..<count {
+      arr.append(floatArrBuffer[i])
+    }
+    return arr
+  }
 }
+
+
 
 extension String{
   func cStr() -> UnsafePointer<Int8>? {

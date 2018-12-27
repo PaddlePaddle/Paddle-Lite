@@ -48,9 +48,9 @@ class ReshapeParam<P: PrecisionType>: OpParam {
       throw error
     }
   }
-  let input: Texture<P>
+  let input: Texture
   let shape: [Int32]
-  var output: Texture<P>
+  var output: Texture
 }
 
 class ReshapeOp<P: PrecisionType>: Operator<ReshapeKernel<P>, ReshapeParam<P>>, Runable, Creator, InferShaperable{

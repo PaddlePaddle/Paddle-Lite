@@ -40,7 +40,7 @@ class ConvAddBatchNormReluParam<P: PrecisionType>: OpParam {
     }
   }
   
-  let input: Texture<P>
+  let input: Texture
   
   let variance: Tensor<P>
   let bias: Tensor<P>
@@ -52,7 +52,7 @@ class ConvAddBatchNormReluParam<P: PrecisionType>: OpParam {
   var newScale: MTLBuffer?
   var newBiase: MTLBuffer?
   
-  var output: Texture<P>
+  var output: Texture
   let stride: [Int32]
   let paddings: [Int32]
   let dilations: [Int32]
