@@ -104,6 +104,8 @@ class PaddlePredictor {
   // The common configs for all the predictors.
   struct Config {
     std::string model_dir;  // path to the model directory.
+    std::string prog_file;
+    std::string param_file;
   };
 
  protected:
@@ -128,9 +130,8 @@ struct PaddleMobileConfig : public PaddlePredictor::Config {
   int batch_size = 1;
   bool optimize = true;
   bool quantification = false;
+  bool lod_mode = false;
   int thread_num = 1;
-  std::string prog_file;
-  std::string param_file;
   std::string cl_path;
   struct PaddleModelMemoryPack memory_pack;
 };

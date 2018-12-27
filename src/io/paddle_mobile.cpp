@@ -15,6 +15,9 @@ limitations under the License. */
 #include "io/paddle_mobile.h"
 #include <utility>
 #include "common/common.h"
+#ifdef _OPENMP
+#include <omp.h>
+#endif  // _OPENMP
 #ifdef PADDLE_MOBILE_CL
 #include <CL/cl.h>
 #include "framework/cl/cl_tensor.h"
@@ -33,7 +36,7 @@ void PaddleMobile<Device, T>::SetThreadNum(int num) {
 template <typename Device, typename T>
 PMStatus PaddleMobile<Device, T>::Load(const std::string &dirname,
                                        bool optimize, bool quantification,
-                                       int batch_size, bool loddable) {
+                                       int batch_size, bool lod_mode) {
   if (loader_.get() == nullptr) {
     loader_ = std::make_shared<framework::Loader<Device, T>>();
   } else {
@@ -43,7 +46,7 @@ PMStatus PaddleMobile<Device, T>::Load(const std::string &dirname,
   if (executor_.get() == nullptr) {
     executor_ = std::make_shared<framework::Executor<Device, T>>(
         loader_->Load(dirname, optimize, quantification), batch_size, optimize,
-        loddable);
+        lod_mode);
   } else {
     LOG(kLOG_INFO) << "executor inited";
   }
@@ -55,7 +58,7 @@ template <typename Device, typename T>
 PMStatus PaddleMobile<Device, T>::Load(const std::string &model_path,
                                        const std::string &para_path,
                                        bool optimize, bool quantification,
-                                       int batch_size, bool loddable) {
+                                       int batch_size, bool lod_mode) {
   if (loader_.get() == nullptr) {
     loader_ = std::make_shared<framework::Loader<Device, T>>();
   } else {
@@ -65,12 +68,27 @@ PMStatus PaddleMobile<Device, T>::Load(const std::string &model_path,
   if (executor_.get() == nullptr) {
     executor_ = std::make_shared<framework::Executor<Device, T>>(
         loader_->Load(model_path, para_path, optimize, quantification),
-        batch_size, optimize, loddable);
+        batch_size, optimize, lod_mode);
   } else {
     LOG(kLOG_INFO) << "executor inited";
   }
 
   return PMSuccess;
+}
+
+template <typename Device, typename T>
+PMStatus PaddleMobile<Device, T>::Load(const PaddleMobileConfig &config) {
+  if (!config.model_dir.empty()) {
+    return this->Load(config.model_dir, config.optimize, config.quantification,
+                      config.batch_size, config.lod_mode);
+  } else if (!config.prog_file.empty() && !config.param_file.empty()) {
+    return this->Load(config.prog_file, config.param_file, config.optimize,
+                      config.quantification, config.batch_size,
+                      config.lod_mode);
+  } else {
+    LOG(kLOG_ERROR) << "Failed to load inference model";
+    return PMNotInitialized;
+  }
 }
 
 template <typename Device, typename T>

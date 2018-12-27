@@ -12,19 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-/*
- * This file contains the implementation of inference API with Anakin engine
- * embeded, this API can only support Anakin models.
- */
-
 #pragma once
 
 #include <vector>
-#include "io/paddle_inference_api.h"
-
-// from paddle_mobile
-#include "common/enforce.h"
 #include "common/types.h"
+#include "io/paddle_inference_api.h"
 #include "io/paddle_mobile.h"
 
 namespace paddle_mobile {
