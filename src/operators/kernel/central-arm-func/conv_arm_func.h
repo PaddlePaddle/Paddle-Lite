@@ -18,6 +18,7 @@ limitations under the License. */
 #include <vector>
 #include "operators/math/conv_func.h"
 #include "operators/math/depthwise_conv3x3.h"
+#include "operators/math/depthwise_conv5x5.h"
 #include "operators/math/im2col.h"
 #include "operators/math/math_function.h"
 #include "operators/math/pad.h"

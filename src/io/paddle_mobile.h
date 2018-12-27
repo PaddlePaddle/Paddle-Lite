@@ -18,15 +18,12 @@ limitations under the License. */
 #include <string>
 #include <utility>
 #include <vector>
-#ifdef _OPENMP
-#include <omp.h>
-#endif  // _OPENMP
-
 #include "common/types.h"
 #include "framework/executor.h"
 #include "framework/load_ops.h"
 #include "framework/loader.h"
 #include "framework/tensor.h"
+#include "io/paddle_inference_api.h"
 #ifdef PADDLE_MOBILE_CL
 #include "framework/cl/cl_engine.h"
 #endif
@@ -46,10 +43,12 @@ class PaddleMobile {
 
   PMStatus Load(const std::string &dirname, const bool optimize = false,
                 const bool quantification = false, const int batch_size = 1,
-                const bool lod = false);
+                const bool lod_mode = false);
   PMStatus Load(const std::string &model_path, const std::string &para_path,
                 const bool optimize = false, const bool quantification = false,
-                const int batch_size = 1, const bool lod = false);
+                const int batch_size = 1, const bool lod_mode = false);
+
+  PMStatus Load(const PaddleMobileConfig &config);
 
   PMStatus Predict(const framework::Tensor &input);
   PMStatus Predict(const framework::LoDTensor &input);
