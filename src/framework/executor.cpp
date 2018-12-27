@@ -238,7 +238,7 @@ void Executor<Device, T>::InitCombineMemory() {
 
 template <typename Device, typename T>
 void Executor<Device, T>::InitNoPersistableMemory(
-    const LoDTensor &input_tensor) {
+    const Tensor &input_tensor) {
   for (const auto &block : program_desc_->Blocks()) {
     for (const auto &var_desc : block->Vars()) {
       auto var = program_.scope->Var(var_desc->Name());
@@ -336,9 +336,9 @@ void Executor<Device, T>::SetInput(const Tensor &input,
   auto *target_tensor = target_var->template GetMutable<LoDTensor>();
 
   if (config_.load_when_predict) {
-    if (target_tensor->IsInitialized() &&
-        target_tensor->dims() != input.dims()) {
-      InitNoPersistableMemory(*target_tensor);
+    if (input_dim_last_ != input.dims()) {
+      InitNoPersistableMemory(input);
+      input_dim_last_ = input.dims();
     }
   }
 
@@ -355,9 +355,9 @@ void Executor<Device, T>::SetInput(const LoDTensor &input,
   auto *target_tensor = target_var->template GetMutable<LoDTensor>();
 
   if (config_.load_when_predict) {
-    if (target_tensor->IsInitialized() &&
-        target_tensor->dims() != input.dims()) {
+    if (input_dim_last_ != input.dims()) {
       InitNoPersistableMemory(*target_tensor);
+      input_dim_last_ = input.dims();
     }
   }
 
