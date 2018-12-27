@@ -64,6 +64,7 @@
 		FC0E2DBE20EE460D009C1FAC /* BatchNormKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC0E2DBD20EE460D009C1FAC /* BatchNormKernel.swift */; };
 		FC0E2DC020EE461F009C1FAC /* ElementwiseAddKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC0E2DBF20EE461F009C1FAC /* ElementwiseAddKernel.swift */; };
 		FC1B16B320EC9A4F00678B91 /* Kernels.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC1B16B220EC9A4F00678B91 /* Kernels.metal */; };
+		FC1CF3F721D4B4C400F7392E /* Runner.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC1CF3F621D4B4C400F7392E /* Runner.swift */; };
 		FC292C5421421B2F00CF622F /* PaddleMobileGPU.h in Headers */ = {isa = PBXBuildFile; fileRef = FC292C5321421B2E00CF622F /* PaddleMobileGPU.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		FC292C5621421B4600CF622F /* PaddleMobileGPU.m in Sources */ = {isa = PBXBuildFile; fileRef = FC292C5521421B4600CF622F /* PaddleMobileGPU.m */; };
 		FC292C81214255BD00CF622F /* CPUCompute.mm in Sources */ = {isa = PBXBuildFile; fileRef = FC292C7C214255BC00CF622F /* CPUCompute.mm */; };
@@ -74,11 +75,11 @@
 		FC3602CC2108819F00FACB58 /* PaddleMobileUnitTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC3602CB2108819F00FACB58 /* PaddleMobileUnitTest.swift */; };
 		FC4CB74920F0B954007C0C6D /* ConvKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC4CB74820F0B954007C0C6D /* ConvKernel.metal */; };
 		FC4CB74B20F12C30007C0C6D /* ProgramOptimize.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC4CB74A20F12C30007C0C6D /* ProgramOptimize.swift */; };
-		FC4FD9752140E1DE0073E130 /* PaddleMobile.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC4FD9742140E1DE0073E130 /* PaddleMobile.swift */; };
 		FC4FD9792140E4980073E130 /* PaddleMobileCPU.h in Headers */ = {isa = PBXBuildFile; fileRef = FC4FD9772140E4980073E130 /* PaddleMobileCPU.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		FC4FD97A2140E4980073E130 /* libpaddle-mobile.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FC4FD9782140E4980073E130 /* libpaddle-mobile.a */; };
 		FC5163F620EF556E00636C28 /* Texture2DTo2DArrayKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC5163F520EF556E00636C28 /* Texture2DTo2DArrayKernel.swift */; };
 		FC60DB8920E9AAA500FF203F /* MetalExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC60DB8820E9AAA500FF203F /* MetalExtension.swift */; };
+		FC704C2721D2385100F98BAB /* SuperResolutionNet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC704C2621D2385100F98BAB /* SuperResolutionNet.swift */; };
 		FC803BBF214CB65A0094B8E5 /* ConvAddPreluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC803BBE214CB65A0094B8E5 /* ConvAddPreluOp.swift */; };
 		FC803BC1214CB77A0094B8E5 /* ConvAddPreluKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC803BC0214CB77A0094B8E5 /* ConvAddPreluKernel.swift */; };
 		FC803BC3214CB79C0094B8E5 /* ConvAddPreluKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC803BC2214CB79C0094B8E5 /* ConvAddPreluKernel.metal */; };
@@ -87,6 +88,7 @@
 		FC803BC9214CFC8D0094B8E5 /* FetchKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC803BC8214CFC8D0094B8E5 /* FetchKernel.metal */; };
 		FC82735920E3C04200BE430A /* OpCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC82735820E3C04200BE430A /* OpCreator.swift */; };
 		FC9A19E32148C31300CD9CBF /* MobilenetSSD_AR.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9A19E22148C31300CD9CBF /* MobilenetSSD_AR.swift */; };
+		FC9C2A0D21D3D185005856C6 /* FetchKernel.inc.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC9C2A0C21D3D185005856C6 /* FetchKernel.inc.metal */; };
 		FC9D037920E229E4000F735A /* OpParam.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9D037820E229E4000F735A /* OpParam.swift */; };
 		FC9D038020E22FBB000F735A /* FeedOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9D037F20E22FBB000F735A /* FeedOp.swift */; };
 		FC9D038220E2312E000F735A /* FetchOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9D038120E2312E000F735A /* FetchOp.swift */; };
@@ -203,6 +205,7 @@
 		FC0E2DBD20EE460D009C1FAC /* BatchNormKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchNormKernel.swift; sourceTree = "<group>"; };
 		FC0E2DBF20EE461F009C1FAC /* ElementwiseAddKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElementwiseAddKernel.swift; sourceTree = "<group>"; };
 		FC1B16B220EC9A4F00678B91 /* Kernels.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Kernels.metal; sourceTree = "<group>"; };
+		FC1CF3F621D4B4C400F7392E /* Runner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Runner.swift; sourceTree = "<group>"; };
 		FC292C5321421B2E00CF622F /* PaddleMobileGPU.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PaddleMobileGPU.h; sourceTree = "<group>"; };
 		FC292C5521421B4600CF622F /* PaddleMobileGPU.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PaddleMobileGPU.m; sourceTree = "<group>"; };
 		FC292C7C214255BC00CF622F /* CPUCompute.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = CPUCompute.mm; sourceTree = "<group>"; };
@@ -213,12 +216,12 @@
 		FC3602CB2108819F00FACB58 /* PaddleMobileUnitTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaddleMobileUnitTest.swift; sourceTree = "<group>"; };
 		FC4CB74820F0B954007C0C6D /* ConvKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ConvKernel.metal; sourceTree = "<group>"; };
 		FC4CB74A20F12C30007C0C6D /* ProgramOptimize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramOptimize.swift; sourceTree = "<group>"; };
-		FC4FD9742140E1DE0073E130 /* PaddleMobile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PaddleMobile.swift; sourceTree = "<group>"; };
 		FC4FD9772140E4980073E130 /* PaddleMobileCPU.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PaddleMobileCPU.h; sourceTree = "<group>"; };
 		FC4FD9782140E4980073E130 /* libpaddle-mobile.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libpaddle-mobile.a"; sourceTree = "<group>"; };
 		FC4FD97D2140F2C30073E130 /* libstdc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libstdc++.tbd"; path = "usr/lib/libstdc++.tbd"; sourceTree = SDKROOT; };
 		FC5163F520EF556E00636C28 /* Texture2DTo2DArrayKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Texture2DTo2DArrayKernel.swift; sourceTree = "<group>"; };
 		FC60DB8820E9AAA500FF203F /* MetalExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalExtension.swift; sourceTree = "<group>"; };
+		FC704C2621D2385100F98BAB /* SuperResolutionNet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperResolutionNet.swift; sourceTree = "<group>"; };
 		FC803BBE214CB65A0094B8E5 /* ConvAddPreluOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvAddPreluOp.swift; sourceTree = "<group>"; };
 		FC803BC0214CB77A0094B8E5 /* ConvAddPreluKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvAddPreluKernel.swift; sourceTree = "<group>"; };
 		FC803BC2214CB79C0094B8E5 /* ConvAddPreluKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ConvAddPreluKernel.metal; sourceTree = "<group>"; };
@@ -227,6 +230,7 @@
 		FC803BC8214CFC8D0094B8E5 /* FetchKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = FetchKernel.metal; sourceTree = "<group>"; };
 		FC82735820E3C04200BE430A /* OpCreator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpCreator.swift; sourceTree = "<group>"; };
 		FC9A19E22148C31300CD9CBF /* MobilenetSSD_AR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobilenetSSD_AR.swift; sourceTree = "<group>"; };
+		FC9C2A0C21D3D185005856C6 /* FetchKernel.inc.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = FetchKernel.inc.metal; sourceTree = "<group>"; };
 		FC9D037820E229E4000F735A /* OpParam.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpParam.swift; sourceTree = "<group>"; };
 		FC9D037F20E22FBB000F735A /* FeedOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedOp.swift; sourceTree = "<group>"; };
 		FC9D038120E2312E000F735A /* FetchOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchOp.swift; sourceTree = "<group>"; };
@@ -339,6 +343,7 @@
 		FC039B6C20E11C3C0081E9F8 /* paddle-mobile */ = {
 			isa = PBXGroup;
 			children = (
+				FC704C2621D2385100F98BAB /* SuperResolutionNet.swift */,
 				C28FDF8221B7858F0054EFAC /* MobileNetCombined.swift */,
 				C28FDF8321B7858F0054EFAC /* YoloNet.swift */,
 				FCE9D7B6214F869000B520C3 /* Net.swift */,
@@ -351,13 +356,13 @@
 				FC292C5521421B4600CF622F /* PaddleMobileGPU.m */,
 				FC292C5321421B2E00CF622F /* PaddleMobileGPU.h */,
 				FC4FD9762140E4920073E130 /* CPU */,
-				FC4FD9742140E1DE0073E130 /* PaddleMobile.swift */,
 				FC039BAE20E11CC20081E9F8 /* Program */,
 				FC039BA320E11CBC0081E9F8 /* Operators */,
 				FC039B9C20E11CB20081E9F8 /* framework */,
 				FC039B9320E11C9A0081E9F8 /* Common */,
 				FC039B6D20E11C3C0081E9F8 /* paddle_mobile.h */,
 				FC039B6E20E11C3C0081E9F8 /* Info.plist */,
+				FC1CF3F621D4B4C400F7392E /* Runner.swift */,
 			);
 			path = "paddle-mobile";
 			sourceTree = "<group>";
@@ -540,6 +545,7 @@
 				FCE9D7B8214FAA4800B520C3 /* NMSFetchResultKernel.metal */,
 				FCE3A1B02153E90F00C37CDE /* ElementwiseAddPreluKernel.inc.metal */,
 				FCE3A1B22153E91900C37CDE /* ElementwiseAddPreluKernel.metal */,
+				FC9C2A0C21D3D185005856C6 /* FetchKernel.inc.metal */,
 			);
 			path = metal;
 			sourceTree = "<group>";
@@ -650,6 +656,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FC9D038020E22FBB000F735A /* FeedOp.swift in Sources */,
+				FC9C2A0D21D3D185005856C6 /* FetchKernel.inc.metal in Sources */,
 				4AA1EAAA214F53D800D0F791 /* BoxCoder.inc.metal in Sources */,
 				FC039B9F20E11CB20081E9F8 /* Tensor.swift in Sources */,
 				FC803BC9214CFC8D0094B8E5 /* FetchKernel.metal in Sources */,
@@ -701,7 +708,6 @@
 				FC039B9920E11C9A0081E9F8 /* Types.swift in Sources */,
 				FC4CB74920F0B954007C0C6D /* ConvKernel.metal in Sources */,
 				FCA3A1632132A4AC00084FE5 /* ReshapeKernel.metal in Sources */,
-				FC4FD9752140E1DE0073E130 /* PaddleMobile.swift in Sources */,
 				FCBCCC592122F42700D94F7E /* ConvBNReluOp.swift in Sources */,
 				FC039BA920E11CBC0081E9F8 /* ConvOp.swift in Sources */,
 				FC9D038420E23B01000F735A /* Texture.swift in Sources */,
@@ -715,6 +721,7 @@
 				FC039BBF20E11CC20081E9F8 /* Attribute.swift in Sources */,
 				4AA1EA8E2146647F00D0F791 /* SplitKernel.swift in Sources */,
 				FCD04E7420F3437E0007374F /* ConvAddKernel.swift in Sources */,
+				FC1CF3F721D4B4C400F7392E /* Runner.swift in Sources */,
 				FC039BB920E11CC20081E9F8 /* Scope.swift in Sources */,
 				FC292C5621421B4600CF622F /* PaddleMobileGPU.m in Sources */,
 				FCD04E6620F314C50007374F /* PoolOp.swift in Sources */,
@@ -740,6 +747,7 @@
 				FCBCCC5D2122F8A100D94F7E /* DepthwiseConvOp.swift in Sources */,
 				FCE3A1AF2153E8EE00C37CDE /* ElementwiseAddPreluKernel.swift in Sources */,
 				FCE9D7B7214F869000B520C3 /* Net.swift in Sources */,
+				FC704C2721D2385100F98BAB /* SuperResolutionNet.swift in Sources */,
 				FC0E2DBE20EE460D009C1FAC /* BatchNormKernel.swift in Sources */,
 				FC039BAB20E11CBC0081E9F8 /* Operator.swift in Sources */,
 				C28FDF8421B7858F0054EFAC /* MobileNetCombined.swift in Sources */,

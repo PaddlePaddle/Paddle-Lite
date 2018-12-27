@@ -21,25 +21,32 @@ import MetalPerformanceShaders
 var platform: Platform = .GPU
 let threadSupport: [(Platform, String)] = [(.GPU, "GPU"), (.CPU, "CPU")]
 
+let netSupport: [SupportModel : Net] = [
+  .super_resolution : SuperResolutionNet.init(device: MetalHelper.shared.device),
+  .yolo : YoloNet.init(device: MetalHelper.shared.device),
+  .mobilenet_combined : MobileNetCombined.init(device: MetalHelper.shared.device)]
+
 //.mobilenet_ssd : Runner.init(inNet: MobileNet_ssd_hand.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform),
 let modelHelperMap: [SupportModel : Runner] = [
-                                               .yolo : Runner.init(inNet: YoloNet.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform),
-                                               .mobilenet_combined : Runner.init(inNet: MobileNetCombined.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform)]
+  .super_resolution : Runner.init(inNet: netSupport[.super_resolution]!, commandQueue: MetalHelper.shared.queue, inPlatform: platform),
+  .yolo : Runner.init(inNet: YoloNet.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform),
+  .mobilenet_combined : Runner.init(inNet: MobileNetCombined.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform)]
 //, .genet : Genet.init()
 //let modelHelperMap: [SupportModel : Net] = [.mobilenet : MobileNet.init(), .mobilenet_ssd : MobileNet_ssd_hand.init()]
 
-let netSupport: [SupportModel : Net] = [.yolo : YoloNet.init(device: MetalHelper.shared.device), .mobilenet_combined : MobileNetCombined.init(device: MetalHelper.shared.device)]
+
 
 enum SupportModel: String{
   //  case mobilenet = "mobilenet"
-//  case mobilenet_ssd    = "mobilenetssd"
-  case yolo            = "yolo"
+  //  case mobilenet_ssd    = "mobilenetssd"
+  case yolo               = "yolo"
   case mobilenet_combined = "mobilenet_combined"
+  case super_resolution   = "superresoltion"
   
   static func supportedModels() -> [SupportModel] {
     // .mobilenet,
     // .mobilenet_ssd,
-    return [.yolo, .mobilenet_combined]
+    return [.super_resolution, .yolo, .mobilenet_combined]
   }
 }
 
@@ -50,8 +57,8 @@ class ViewController: UIViewController {
   @IBOutlet weak var modelPickerView: UIPickerView!
   @IBOutlet weak var threadPickerView: UIPickerView!
   @IBOutlet weak var videoView: UIView!
-//  var videoCapture: VideoCapture!
-
+  //  var videoCapture: VideoCapture!
+  
   var selectImage: UIImage?
   var inputPointer: UnsafeMutablePointer<Float32>?
   var modelType: SupportModel = SupportModel.supportedModels()[0]
@@ -62,18 +69,19 @@ class ViewController: UIViewController {
   var threadNum = 1
   
   @IBAction func loadAct(_ sender: Any) {
-     runner = Runner.init(inNet: netSupport[modelType]!, commandQueue: MetalHelper.shared.queue, inPlatform: platform)
+    runner = Runner.init(inNet: netSupport[modelType]!, commandQueue: MetalHelper.shared.queue, inPlatform: platform)
     
     if platform == .CPU {
       if inputPointer == nil {
         inputPointer = runner.preproccess(image: selectImage!.cgImage!)
-       
       }
     } else if platform == .GPU {
       if self.toPredictTexture == nil {
-        runner.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
+        
+        runner.getTexture(image: selectImage!.cgImage!) { [weak self] (texture) in
           self?.toPredictTexture = texture
         }
+        
       }
     } else {
       fatalError( " unsupport " )
@@ -106,27 +114,21 @@ class ViewController: UIViewController {
         return
       }
       
-//      for _ in 0..<1{
-//        runner.predict(texture: inTexture) { (success, resultHolder)  in
-//          resultHolder?.releasePointer()
-//        }
-//      }
-      
       let startDate = Date.init()
       for i in 0..<max {
-        runner.predict(texture: inTexture) { [weak self] (success, resultHolder)  in
+        self.runner.predict(texture: inTexture) { [weak self] (success, resultHolder)  in
           guard let sSelf = self else {
             fatalError()
           }
           if success {
             if i == max - 1 {
               let time = Date.init().timeIntervalSince(startDate)
+              print(Array<Any>.floatArrWithBuffer(floatArrBuffer: resultHolder!.result!, count: resultHolder!.capacity).strideArray())
               DispatchQueue.main.async {
-//                print(resultHolder!.result![0])
+                //                print(resultHolder!.result![0])
                 sSelf.resultTextView.text = sSelf.runner.net.resultStr(res: resultHolder!)
-                
                 sSelf.elapsedTimeLabel.text = "平均耗时: \(time/Double(max) * 1000.0) ms"
-               
+                
               }
             }
           }
@@ -134,12 +136,9 @@ class ViewController: UIViewController {
           DispatchQueue.main.async {
             resultHolder?.releasePointer()
           }
-//            print("释放")
         }
-//        print("sleep before ")
-//        usleep(33000)
-//        print("sleep after ")
       }
+      
     case .CPU:
       guard let inInputPointer = inputPointer else {
         fatalError( " need input pointer " )
@@ -161,12 +160,15 @@ class ViewController: UIViewController {
             if i == max - 1 {
               let time = Date.init().timeIntervalSince(startDate)
               DispatchQueue.main.async {
-//                sSelf.resultTextView.text = sSelf.runner.net.resultStr(res: res)
+                //                sSelf.resultTextView.text = sSelf.runner.net.resultStr(res: res)
                 sSelf.elapsedTimeLabel.text = "平均耗时: \(time/Double(max) * 1000.0) ms"
               }
             }
           }
           res?.releaseOutput()
+          
+          print(" predict done -- 123 ")
+          
         }
       }
     }
@@ -180,36 +182,36 @@ class ViewController: UIViewController {
     threadPickerView.delegate = self
     threadPickerView.dataSource = self
     if let image = UIImage.init(named: "test.jpg") {
-        selectImage = image
-        selectImageView.image = image
+      selectImage = image
+      selectImageView.image = image
     } else {
-        print("请添加测试图片")
+      print("请添加测试图片")
     }
     
     
-//    if platform == .CPU {
-//      inputPointer = runner.preproccess(image: selectImage!.cgImage!)
-//    } else if platform == .GPU {
-//      runner.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
-//        self?.toPredictTexture = texture
-//      }
-//    } else {
-//      fatalError( " unsupport " )
-//    }
+    //    if platform == .CPU {
+    //      inputPointer = runner.preproccess(image: selectImage!.cgImage!)
+    //    } else if platform == .GPU {
+    //      runner.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
+    //        self?.toPredictTexture = texture
+    //      }
+    //    } else {
+    //      fatalError( " unsupport " )
+    //    }
     
-//    videoCapture = VideoCapture.init(device: MetalHelper.shared.device, orientation: .portrait, position: .back)
-//    videoCapture.fps = 30
-//    videoCapture.delegate = self
-//    videoCapture.setUp { (success) in
-//      DispatchQueue.main.async {
-//        if let preViewLayer = self.videoCapture.previewLayer {
-//          self.videoView.layer.addSublayer(preViewLayer)
-//          self.videoCapture.previewLayer?.frame = self.videoView.bounds
-//        }
-//        self.videoCapture.start()
-//      }
-//    }
-
+    //    videoCapture = VideoCapture.init(device: MetalHelper.shared.device, orientation: .portrait, position: .back)
+    //    videoCapture.fps = 30
+    //    videoCapture.delegate = self
+    //    videoCapture.setUp { (success) in
+    //      DispatchQueue.main.async {
+    //        if let preViewLayer = self.videoCapture.previewLayer {
+    //          self.videoView.layer.addSublayer(preViewLayer)
+    //          self.videoCapture.previewLayer?.frame = self.videoView.bounds
+    //        }
+    //        self.videoCapture.start()
+    //      }
+    //    }
+    
   }
 }
 
@@ -276,25 +278,11 @@ extension ViewController: VideoCaptureDelegate{
   func predictTexture(texture: MTLTexture){
     runner.scaleTexture(input: texture) { (scaledTexture) in
       self.runner.predict(texture: scaledTexture, completion: { (success, resultHolder) in
-//        print(resultHolder!.result![0])
+        //        print(resultHolder!.result![0])
         resultHolder?.releasePointer()
       })
     }
   }
-  
-  
-//  @available(iOS 10.0, *)
-//  func videoCapture(_ capture: VideoCapture, didCaptureVideoTexture texture: MTLTexture?, timestamp: CMTime) {
-////    if !bool1 {
-////      DispatchQueue.main.asyncAfter(deadline: DispatchTime.init(uptimeNanoseconds: 500000000)) {
-//    self.predictTexture(texture: texture!)
-////      }
-//
-//
-////      bool1 = true
-////    }
-//
-//  }
 
 }
 

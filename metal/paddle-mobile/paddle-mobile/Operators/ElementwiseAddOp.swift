@@ -55,9 +55,9 @@ class ElementwiseAddParam<P: PrecisionType>: OpParam {
     }
   }
   
-  var inputX: Texture<P>
-  var inputY: Texture<P>
-  var output: Texture<P>
+  var inputX: Texture
+  var inputY: Texture
+  var output: Texture
   var axis: Int
 }
 

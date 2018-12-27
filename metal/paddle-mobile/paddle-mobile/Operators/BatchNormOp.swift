@@ -34,8 +34,8 @@ class BatchNormParam<P: PrecisionType>: OpParam {
       throw error
     }
   }
-  let input: Texture<P>
-  var output: Texture<P>
+  let input: Texture
+  var output: Texture
   let bias: Tensor<P>
   let mean: Tensor<P>
   let scale: Tensor<P>

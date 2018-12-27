@@ -1,18 +1,11 @@
-/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
- http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License. */
+//
+//  Runner.swift
+//  paddle-mobile
+//
+//  Created by liuRuiLong on 2018/12/27.
+//  Copyright © 2018 orange. All rights reserved.
+//
 
-import Metal
 import MetalKit
 import Foundation
 
@@ -30,7 +23,6 @@ class ScaleKernel: CusomKernel {
       fatalError(" unsupport ")
     }
   }
-  
 }
 
 @objc public class Runner: NSObject {
@@ -53,6 +45,10 @@ class ScaleKernel: CusomKernel {
    * inPlatform:   需要使用的平台, GPU or CPU
    */
   @objc public init(inNet: Net, commandQueue: MTLCommandQueue?, inPlatform: Platform) {
+    guard inNet.inputDim.cout() == 4 else {
+      fatalError(" input dim count must 4 ")
+    }
+    
     net = inNet
     queue = commandQueue
     device = queue?.device
@@ -63,12 +59,13 @@ class ScaleKernel: CusomKernel {
     if platform == .CPU {
       cpuPaddleMobile = PaddleMobileCPU.init()
     }
-    numel = net.dim.n * net.dim.c * net.dim.h * net.dim.w
+    
+    numel = net.inputDim.numel()
     meansNumber = net.means.map { NSNumber.init(value: $0) }
-    dimsNum = [NSNumber.init(value: net.dim.n),
-               NSNumber.init(value: net.dim.c),
-               NSNumber.init(value: net.dim.h),
-               NSNumber.init(value: net.dim.w)]
+    dimsNum = [NSNumber.init(value: net.inputDim[0]),
+               NSNumber.init(value: net.inputDim[3]),
+               NSNumber.init(value: net.inputDim[1]),
+               NSNumber.init(value: net.inputDim[2])]
   }
   
   /**
@@ -82,11 +79,11 @@ class ScaleKernel: CusomKernel {
       }
       let loader = Loader<Float32>.init()
       do {
-//        program = try loader.load(device: inDevice, paramPointer: net.paramPointer!, paramSize: net.paramSize,modePointer:net.modelPointer!,modelSize:net.modelSize)
+        //        program = try loader.load(device: inDevice, paramPointer: net.paramPointer!, paramSize: net.paramSize,modePointer:net.modelPointer!,modelSize:net.modelSize)
         program = try loader.load(device: inDevice, modelPath: net.modelPath, paraPath: net.paramPath)
-        net.updateProgram(program: program!)
-
+        
         executor = try Executor<Float32>.init(inDevice: inDevice, inQueue: inQueue, inProgram: program!)
+        net.updateProgram(program: program!)
       } catch let error {
         print(error)
         return false
@@ -98,7 +95,6 @@ class ScaleKernel: CusomKernel {
   }
   
   @objc public func predict(inputPointer: UnsafeMutablePointer<Float32>, completion: @escaping ( _ success: Bool, _ result: PaddleMobileCPUResult?) -> Void) {
-    
     guard let res = cpuPaddleMobile?.predictInput(inputPointer, dim: dimsNum) else {
       completion(false, nil)
       return
@@ -112,14 +108,15 @@ class ScaleKernel: CusomKernel {
    * ( _ success: Bool, _ time:TimeInterval, _ resultArray: [Float32]) -> Void : 回调闭包, 三个参数分别为: 是否成功, 预测耗时, 结果数组
    */
   @objc public func predict(texture: MTLTexture, completion: @escaping ( _ success: Bool, _ result: ResultHolder?) -> Void) {
+    net.updateProgram(program: program!)
     do {
-      try self.executor?.predict(input: texture, dim: [self.net.dim.n, self.net.dim.h, self.net.dim.w, self.net.dim.c], completionHandle: { [weak self] (res) in
+      try self.executor?.predict(input: texture, dim: self.net.inputDim, completionHandle: { [weak self] (res) in
         guard let SSelf = self else {
           fatalError( " self nil " )
         }
         let result = SSelf.net.fetchResult(paddleMobileRes: res)
         completion(true, result)
-      }, preProcessKernle: self.net.preprocessKernel, except: self.net.except)
+        }, preProcessKernle: self.net.preprocessKernel, except: self.net.except)
     } catch let error {
       print(error)
       completion(false, nil)
@@ -132,21 +129,21 @@ class ScaleKernel: CusomKernel {
    * cgImage: 需要预测的图片
    * ( _ success: Bool, _ time:TimeInterval, _ resultArray: [Float32]) -> Void : 回调闭包, 三个参数分别为: 是否成功, 预测耗时, 结果数组
    */
-//  @objc public func predict(cgImage: CGImage, completion: @escaping ( _ success: Bool, _ resultArray: [Float32]) -> Void) {
-//    if platform == .GPU {
-//      getTexture(image: cgImage) { [weak self] (texture) in
-//        guard let SSelf = self else {
-//          fatalError( "" )
-//        }
-//        SSelf.predict(texture: texture, completion: completion)
-//      }
-//    } else if platform == .CPU {
-//      let input = preproccess(image: cgImage)
-//      predict(inputPointer: input, completion: completion)
-//      input.deinitialize(count: numel)
-//      input.deallocate()
-//    }
-//  }
+  //  @objc public func predict(cgImage: CGImage, completion: @escaping ( _ success: Bool, _ resultArray: [Float32]) -> Void) {
+  //    if platform == .GPU {
+  //      getTexture(image: cgImage) { [weak self] (texture) in
+  //        guard let SSelf = self else {
+  //          fatalError( "" )
+  //        }
+  //        SSelf.predict(texture: texture, completion: completion)
+  //      }
+  //    } else if platform == .CPU {
+  //      let input = preproccess(image: cgImage)
+  //      predict(inputPointer: input, completion: completion)
+  //      input.deinitialize(count: numel)
+  //      input.deallocate()
+  //    }
+  //  }
   
   /*
    * 清理内存, 调用此函数后, 不能再使用, 需重新 load
@@ -164,12 +161,18 @@ class ScaleKernel: CusomKernel {
   @objc public func preproccess(image: CGImage) -> UnsafeMutablePointer<Float> {
     let output = UnsafeMutablePointer<Float>.allocate(capacity: numel)
     let means = net.means.map { NSNumber.init(value: $0) }
-    let dims = [NSNumber.init(value: net.dim.n),
-                NSNumber.init(value: net.dim.c),
-                NSNumber.init(value: net.dim.h),
-                NSNumber.init(value: net.dim.w)]
-    cpuPaddleMobile?.preprocess(image, output: output, means: means, scale: net.scale, dim: dims)
-    return output
+    
+    if net.inputDim.cout() == 4 {
+      let dims = [NSNumber.init(value: net.inputDim[0]),
+                 NSNumber.init(value: net.inputDim[3]),
+                 NSNumber.init(value: net.inputDim[1]),
+                 NSNumber.init(value: net.inputDim[2])]
+      cpuPaddleMobile?.preprocess(image, output: output, means: means, scale: net.scale, dim: dims)
+      return output
+    }
+    
+    fatalError()
+    
   }
   
   /*
@@ -190,7 +193,7 @@ class ScaleKernel: CusomKernel {
       fatalError( " make buffer error" )
     }
     
-    let scaleKernel = ScaleKernel.init(device: inDevice, shape: CusomKernel.Shape.init(inWidth: net.dim.w, inHeight: net.dim.h, inChannel: 3))
+    let scaleKernel = ScaleKernel.init(device: inDevice, shape: CusomKernel.Shape.init(inWidth: net.inputDim[2], inHeight: net.inputDim[1], inChannel: 3))
     
     do {
       try scaleKernel.compute(inputTexuture: input, commandBuffer: buffer)
@@ -205,5 +208,3 @@ class ScaleKernel: CusomKernel {
     buffer.commit()
   }
 }
-
-

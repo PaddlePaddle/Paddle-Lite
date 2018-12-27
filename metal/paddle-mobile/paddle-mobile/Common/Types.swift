@@ -250,28 +250,29 @@ extension InputTexture: Variant {
 }
 
 extension MTLTexture where Self: Variant {
-  
 }
 
 class FetchHolder: Variant {
   var resultBuffer: MTLBuffer?
-  var dim: [Int]
+  var dim: Dim
   var capacity: Int
+  var paddedCapacity: Int
   
-  init(inCapacity: Int, inDim: [Int]) {
-    capacity = inCapacity
+  init(inPaddedCapacity: Int, inDim: Dim) {
+    paddedCapacity = inPaddedCapacity
+    capacity = inDim.numel()
     dim = inDim
   }
   
   func initBuffer(device: MTLDevice) {
-    resultBuffer = device.makeBuffer(length: capacity * 4, options: [])
+    resultBuffer = device.makeBuffer(length: paddedCapacity * 4, options: [])
   }
   
   var result: UnsafeMutablePointer<Float32> {
     guard let inResultBuffer = resultBuffer else {
       fatalError()
     }
-    return inResultBuffer.contents().bindMemory(to: Float32.self, capacity: capacity)
+    return inResultBuffer.contents().bindMemory(to: Float32.self, capacity: paddedCapacity)
   }
   
 }

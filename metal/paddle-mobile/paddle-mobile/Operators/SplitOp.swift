@@ -19,7 +19,7 @@ class SplitParam<P: PrecisionType>: OpParam {
   required init(opDesc: OpDesc, inScope: Scope) throws {
     do {
       input = try SplitParam.inputX(inputs: opDesc.inputs, from: inScope)
-      output = Texture<P>.init(device: input.metalTexture!.device, inDim: input.dim)
+      output = Texture.init(device: input.metalTexture!.device, inDim: input.dim)
       axis = try SplitParam.getAttr(key: "axis", attrs: opDesc.attrs)
       sections = try SplitParam.getAttr(key: "sections", attrs: opDesc.attrs)
       if axis < 0 {
@@ -29,7 +29,7 @@ class SplitParam<P: PrecisionType>: OpParam {
         fatalError()
       }
       for out in outlist {
-        guard let variant = inScope[out], let v = variant as? Texture<P> else {
+        guard let variant = inScope[out], let v = variant as? Texture else {
           fatalError()
         }
         outputList.append(v)
@@ -41,9 +41,9 @@ class SplitParam<P: PrecisionType>: OpParam {
   }
   
   var axis: Int
-  let input: Texture<P>
-  var output: Texture<P>
-  var outputList: [Texture<P>] = []
+  let input: Texture
+  var output: Texture
+  var outputList: [Texture] = []
   var sections: [Int32] = []
 }
 

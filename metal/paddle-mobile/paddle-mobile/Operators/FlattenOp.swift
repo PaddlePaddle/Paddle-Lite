@@ -25,8 +25,8 @@ class FlattenParam<P: PrecisionType>: OpParam {
       throw error
     }
   }
-  let input: Texture<P>
-  var output: Texture<P>
+  let input: Texture
+  var output: Texture
   let axis: Int
 }
 

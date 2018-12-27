@@ -30,8 +30,8 @@ class BilinearInterpParam<P: PrecisionType>: OpParam {
       fatalError()
     }
   }
-  let input: Texture<P>
-  var output: Texture<P>
+  let input: Texture
+  var output: Texture
   let out_h: Int
   let out_w: Int
 }
