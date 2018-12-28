@@ -82,6 +82,25 @@ void format_bias_scale_array(float **bias_scale_array,
   interleave(bias_scale_array, div_num * element_num_after_division);
   fpga_flush(*bias_scale_array, 2 * element_num_after_division * sizeof(float));
 }
+void format_bias_array(float **bias_array, int num) {
+  float *ptr_unaligned = *bias_array;
+  int num_before_align = num;
+  int num_after_align = align_to_x(num_before_align, BIAS_NUM_ALIGNMENT);
+  float *ptr_aligned =
+      (float *)fpga_malloc(num_after_align * sizeof(float));  // NOLINT
+
+  memset(ptr_aligned, 0, num_after_align * sizeof(float));
+  if (num < 16) {
+    memcpy(ptr_aligned, ptr_unaligned, num * sizeof(float));
+    for (int i = num; i < num_after_align; i++) {
+      ptr_aligned[i] = ptr_unaligned[i % num];
+    }
+  } else {
+    memcpy(ptr_aligned, ptr_unaligned, num * sizeof(float));
+  }
+  fpga_free(ptr_unaligned);
+  *bias_array = ptr_aligned;
+}
 
 }  // namespace bias_scale
 }  // namespace fpga
