@@ -14,7 +14,6 @@
 
 #pragma once
 
-#import "PaddleMobileCPU.h"
 #import "CPUCompute.h"
 #import "PaddleMobileGPU.h"
 #import <UIKit/UIKit.h>
