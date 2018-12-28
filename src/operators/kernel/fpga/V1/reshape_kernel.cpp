@@ -12,18 +12,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+#ifdef RESHAPE_OP
+
+#include "operators/kernel/reshape_kernel.h"
 
 namespace paddle_mobile {
-namespace fpga {
-namespace bias_scale {
+namespace operators {
 
-void align_element(float** data_in, int num_per_div_before_alignment, int num);
-void interleave(float** data_in, int num_after_alignment);
-void format_bias_scale_array(float** bias_scale_array,
-                             int element_num_per_division, int num);
-void format_bias_array(float** bias_array, int num);
+template <>
+bool ReshapeKernel<FPGA, float>::Init(ReshapeParam<FPGA> *param) {
+  return true;
+}
 
-}  // namespace bias_scale
-}  // namespace fpga
+template <>
+void ReshapeKernel<FPGA, float>::Compute(const ReshapeParam<FPGA> &param) {}
+
+}  // namespace operators
 }  // namespace paddle_mobile
+
+#endif
