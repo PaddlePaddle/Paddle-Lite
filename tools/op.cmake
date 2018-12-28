@@ -197,6 +197,16 @@ if (CON GREATER -1)
   set(FOUND_MATCH ON)
 endif()
 
+list(FIND NET "super" CON)
+if (CON GREATER -1)
+  message("super enabled")
+  set(FUSION_CONVADD_OP ON)
+  set(FUSION_CONVADDRELU_OP ON)
+  set(ELEMENTWISEADD_OP ON)
+
+  set(FOUND_MATCH ON)
+endif()
+
 
 if(NOT FOUND_MATCH)
   message("--default--")
