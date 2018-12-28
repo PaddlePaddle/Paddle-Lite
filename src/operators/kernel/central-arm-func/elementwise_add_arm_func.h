@@ -59,12 +59,11 @@ inline void ElementwiseAddCompute(const ElementwiseAddParam<CPU> &param) {
       const float *input = input_data + offset;
       const float bias = bias_data[j];
       float *output = output_data + offset;
-      int remain = elementwise_num;
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
       int loop = elementwise_num >> 0x4;
-      remain = elementwise_num & 0xF;
+      int remain = elementwise_num & 0xF;
+      float32x4_t rb = vdupq_n_f32(bias);
       for (int k = 0; k < loop; ++k) {
-        float32x4_t rb = vdupq_n_f32(bias);
         float32x4_t r0 = vld1q_f32(input);
         float32x4_t r1 = vld1q_f32(input + 4);
         float32x4_t r2 = vld1q_f32(input + 8);
@@ -80,10 +79,46 @@ inline void ElementwiseAddCompute(const ElementwiseAddParam<CPU> &param) {
         input += 16;
         output += 16;
       }
-#endif
-      for (int k = 0; k < remain; ++k) {
+      if (remain >= 8) {
+        float32x4_t r0 = vld1q_f32(input);
+        float32x4_t r1 = vld1q_f32(input + 4);
+        r0 = vaddq_f32(r0, rb);
+        r1 = vaddq_f32(r1, rb);
+        vst1q_f32(output, r0);
+        vst1q_f32(output + 4, r1);
+        input += 8;
+        output += 8;
+        remain -= 8;
+      }
+      if (remain >= 4) {
+        float32x4_t r0 = vld1q_f32(input);
+        r0 = vaddq_f32(r0, rb);
+        vst1q_f32(output, r0);
+        input += 4;
+        output += 4;
+        remain -= 4;
+      }
+      if (remain > 0) {
+        float32x4_t r0 = vld1q_f32(input);
+        r0 = vaddq_f32(r0, rb);
+        switch (remain) {
+          case 1:
+            vst1q_lane_f32(output, r0, 0);
+            break;
+          case 2:
+            vst1_f32(output, vget_low_f32(r0));
+            break;
+          case 3:
+            vst1_f32(output, vget_low_f32(r0));
+            vst1_lane_f32(output, vget_high_f32(r0), 0);
+            break;
+        }
+      }
+#else
+      for (int k = 0; k < elementwise_num; ++k) {
         output[k] = input[k] + bias;
       }
+#endif  // __ARM_NEON__
     }
   }
 }
