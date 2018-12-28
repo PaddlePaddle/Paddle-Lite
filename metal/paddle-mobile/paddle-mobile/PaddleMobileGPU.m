@@ -12,9 +12,10 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
-#import <Foundation/Foundation.h>
-#import "PaddleMobileGPU.h"
 #import "paddle_mobile.h"
+#import "PaddleMobileGPU.h"
+
+#import <Foundation/Foundation.h>
 #import <paddle_mobile/paddle_mobile-Swift.h>
 
 @implementation ModelConfig
@@ -59,7 +60,7 @@
     } else if (netType == MobileNetType) {
       
     }
-    runner = [[Runner alloc] initInNet:net commandQueue:queue inPlatform:PlatformGPU];
+    runner = [[Runner alloc] initInNet:net commandQueue:queue];
   }
   return self;
 }

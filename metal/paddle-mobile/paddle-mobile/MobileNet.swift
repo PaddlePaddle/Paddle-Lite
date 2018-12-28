@@ -14,7 +14,7 @@
 
 import Foundation
 
-class MobileNet: Net{
+public class MobileNet: Net{
   
   class MobilenetPreProccess: CusomKernel {
     init(device: MTLDevice) {
@@ -53,13 +53,13 @@ class MobileNet: Net{
     return s.joined(separator: "\n")
   }
     
-  override init(device: MTLDevice) {
+  override public init(device: MTLDevice) {
     super.init(device: device)
     means = [123.68, 116.78, 103.94]
     scale = 0.017
     except = 0
-    modelPath = Bundle.main.path(forResource: "model", ofType: nil) ?! "model null"
-    paramPath = Bundle.main.path(forResource: "params", ofType: nil) ?! "para null"
+    modelPath = Bundle.main.path(forResource: "mobilenet_model", ofType: nil) ?! "model null"
+    paramPath = Bundle.main.path(forResource: "mobilenet_params", ofType: nil) ?! "para null"
     modelDir = ""
     preprocessKernel = MobilenetPreProccess.init(device: device)
     inputDim_ = Dim.init(inDim: [1, 224, 224, 3])

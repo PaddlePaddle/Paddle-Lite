@@ -28,7 +28,8 @@ public class SuperResolutionNet: Net{
     paramPath = Bundle.main.path(forResource: "super_params", ofType: nil) ?! "para null"
     modelDir = ""
     preprocessKernel = nil
-    inputDim_ = Dim.init(inDim: [1, Int(552 * 1.414), Int(310 * 1.414), 1])
+//    inputDim_ = Dim.init(inDim: [1, Int(552 * 1.414), Int(310 * 1.414), 1])
+    inputDim_ = Dim.init(inDim: [1, 224, 224, 1])
   }
   
   override func updateProgram(program: Program) {

@@ -33,6 +33,8 @@ public class ResultHolder: NSObject {
 
 public class Net: NSObject {
   var except: Int = 0
+  
+  // for CPU
   var means: [Float] = []
   var scale: Float = 0.0
   
@@ -69,7 +71,16 @@ public class Net: NSObject {
     self.device = device
     super.init()
   }
+  
+  @objc public init(device: MTLDevice) {
+    self.device = device
+    super.init()
+  }
 
+  @objc public func updateInputDim(inDim: [Int]) {
+    inputDim = Dim.init(inDim: inDim)
+  }
+  
   public func resultStr(res: ResultHolder) -> String {
     fatalError()
   }
@@ -78,12 +89,6 @@ public class Net: NSObject {
     return ResultHolder.init(inResult: paddleMobileRes.resultPointer, inCapacity: paddleMobileRes.capacity)
   }
   
-  @objc public init(device: MTLDevice) {
-    self.device = device
-    super.init()
-  }
-  
   func updateProgram(program: Program) {
-
   }
 }

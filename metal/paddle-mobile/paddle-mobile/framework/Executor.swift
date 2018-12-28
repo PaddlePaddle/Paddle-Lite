@@ -19,8 +19,7 @@ let testTo = 22
 
 var isTest = false
 
-let computePrecision: ComputePrecision = .Float16
-
+let computePrecision: ComputePrecision = .Float32
 public class GPUResultHolder {
   public let dim: [Int]
   public let capacity: Int
@@ -153,17 +152,18 @@ public class Executor<P: PrecisionType> {
       /*
        let inputArr = resInput.toTensor(dim: (n: dim[0], c: dim[3], h: dim[1], w: dim[2]))
        print(dim)
-       writeToLibrary(fileName: "test_image_ssd_ar", array: inputArr)
+       writeToLibrary(fileName: "test_image_yolo", array: inputArr)
        print(" write done ")
        return
        */
       
+ 
       /*    输出 op 计算结果
        for op in SSelf.ops {
-        op.delogOutput()
+       op.delogOutput()
        }
        */
-      
+    
       let afterDate = Date.init()
       var resultHolder: GPUResultHolder
       if except > 0 {
