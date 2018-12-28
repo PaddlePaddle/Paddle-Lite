@@ -160,11 +160,8 @@ void DepthwiseConv5x5S1<float, float>(const framework::Tensor &input,
   int valid_w_start = padding_w;
   int valid_w_end = output_w - valid_w_start;
   int valid_w = valid_w_end - valid_w_start;
-  DLOG << "valid_h_start: " << valid_h_start;
-  DLOG << "valid_h_end: " << valid_h_end;
-  DLOG << "valid_w_start: " << valid_w_start;
-  DLOG << "valid_w_end: " << valid_w_end;
 
+  #pragma omp parallel for
   for (int g = 0; g < input.dims()[1]; ++g) {
     const float *input_ptr = input_data + g * image_size;
     const float *filter_ptr = filter_data + g * 25;
@@ -214,25 +211,26 @@ void DepthwiseConv5x5S1<float, float>(const framework::Tensor &input,
         float32x4_t row4 = vld1q_f32(input_ptr4);
         float32x4_t row5 = vld1q_f32(input_ptr5);
         float32x4_t zero = vdupq_n_f32(0.f);
+        float32x4_t acc0, acc1;
         for (int w = valid_w_start - 1; w >= 0; --w) {
           int padding = padding_w - w;
           if (padding >= 5) {
             output_ptr0[w] = 0.f;
             output_ptr1[w] = 0.f;
           } else {
-            row0 = vmulq_f32(row0, _ker[0]);
-            row0 = vmlaq_f32(row0, row1, _ker[1]);
-            row0 = vmlaq_f32(row0, row2, _ker[2]);
-            row0 = vmlaq_f32(row0, row3, _ker[3]);
-            row0 = vmlaq_f32(row0, row4, _ker[4]);
-            row1 = vmulq_f32(row1, _ker[0]);
-            row1 = vmlaq_f32(row1, row2, _ker[1]);
-            row1 = vmlaq_f32(row1, row3, _ker[2]);
-            row1 = vmlaq_f32(row1, row4, _ker[3]);
-            row1 = vmlaq_f32(row1, row5, _ker[4]);
-            row0 = vpaddq_f32(row0, row1);
+            acc0 = vmulq_f32(row0, _ker[0]);
+            acc0 = vmlaq_f32(acc0, row1, _ker[1]);
+            acc0 = vmlaq_f32(acc0, row2, _ker[2]);
+            acc0 = vmlaq_f32(acc0, row3, _ker[3]);
+            acc0 = vmlaq_f32(acc0, row4, _ker[4]);
+            acc1 = vmulq_f32(row1, _ker[0]);
+            acc1 = vmlaq_f32(acc1, row2, _ker[1]);
+            acc1 = vmlaq_f32(acc1, row3, _ker[2]);
+            acc1 = vmlaq_f32(acc1, row4, _ker[3]);
+            acc1 = vmlaq_f32(acc1, row5, _ker[4]);
+            acc0 = vpaddq_f32(acc0, acc1);
             float32x2_t sum =
-                vpadd_f32(vget_low_f32(row0), vget_high_f32(row0));
+                vpadd_f32(vget_low_f32(acc0), vget_high_f32(acc0));
             vst1_lane_f32(output_ptr0 + w, sum, 0);
             vst1_lane_f32(output_ptr1 + w, sum, 1);
 
@@ -456,6 +454,7 @@ void DepthwiseConv5x5S1<float, float>(const framework::Tensor &input,
         float32x4_t row4 = vld1q_f32(input_ptr4);
         float32x4_t row5 = vld1q_f32(input_ptr5);
         float32x4_t zero = vdupq_n_f32(0.f);
+        float32x4_t acc0, acc1;
         for (int w = valid_w_end; w < output_w; ++w) {
           int padding = w + 5 - (padding_w + input_w);
           if (padding >= 5) {
@@ -479,19 +478,19 @@ void DepthwiseConv5x5S1<float, float>(const framework::Tensor &input,
             row3 = vextq_f32(row3, zero, 1);
             row4 = vextq_f32(row4, zero, 1);
             row5 = vextq_f32(row5, zero, 1);
-            row0 = vmulq_f32(row0, _ker[0]);
-            row0 = vmlaq_f32(row0, row1, _ker[1]);
-            row0 = vmlaq_f32(row0, row2, _ker[2]);
-            row0 = vmlaq_f32(row0, row3, _ker[3]);
-            row0 = vmlaq_f32(row0, row4, _ker[4]);
-            row1 = vmulq_f32(row1, _ker[0]);
-            row1 = vmlaq_f32(row1, row2, _ker[1]);
-            row1 = vmlaq_f32(row1, row3, _ker[2]);
-            row1 = vmlaq_f32(row1, row4, _ker[3]);
-            row1 = vmlaq_f32(row1, row5, _ker[4]);
-            row0 = vpaddq_f32(row0, row1);
+            acc0 = vmulq_f32(row0, _ker[0]);
+            acc0 = vmlaq_f32(acc0, row1, _ker[1]);
+            acc0 = vmlaq_f32(acc0, row2, _ker[2]);
+            acc0 = vmlaq_f32(acc0, row3, _ker[3]);
+            acc0 = vmlaq_f32(acc0, row4, _ker[4]);
+            acc1 = vmulq_f32(row1, _ker[0]);
+            acc1 = vmlaq_f32(acc1, row2, _ker[1]);
+            acc1 = vmlaq_f32(acc1, row3, _ker[2]);
+            acc1 = vmlaq_f32(acc1, row4, _ker[3]);
+            acc1 = vmlaq_f32(acc1, row5, _ker[4]);
+            acc0 = vpaddq_f32(acc0, acc1);
             float32x2_t sum =
-                vpadd_f32(vget_low_f32(row0), vget_high_f32(row0));
+                vpadd_f32(vget_low_f32(acc0), vget_high_f32(acc0));
             sum0 += vget_lane_f32(sum, 0);
             sum1 += vget_lane_f32(sum, 1);
             *output_ptr0 = sum0;
@@ -519,18 +518,18 @@ void DepthwiseConv5x5S1<float, float>(const framework::Tensor &input,
         float32x4_t row3 = vld1q_f32(input_ptr3);
         float32x4_t row4 = vld1q_f32(input_ptr4);
         float32x4_t zero = vdupq_n_f32(0.f);
+        float32x4_t acc;
         for (int w = valid_w_start - 1; w >= 0; --w) {
           int padding = padding_w - w;
           if (padding >= 5) {
             output_ptr0[w] = 0.f;
           } else {
-            row0 = vmulq_f32(row0, _ker[0]);
-            row0 = vmlaq_f32(row0, row1, _ker[1]);
-            row0 = vmlaq_f32(row0, row2, _ker[2]);
-            row0 = vmlaq_f32(row0, row3, _ker[3]);
-            row0 = vmlaq_f32(row0, row4, _ker[4]);
-            float32x2_t sum =
-                vpadd_f32(vget_low_f32(row0), vget_high_f32(row0));
+            acc = vmulq_f32(row0, _ker[0]);
+            acc = vmlaq_f32(acc, row1, _ker[1]);
+            acc = vmlaq_f32(acc, row2, _ker[2]);
+            acc = vmlaq_f32(acc, row3, _ker[3]);
+            acc = vmlaq_f32(acc, row4, _ker[4]);
+            float32x2_t sum = vpadd_f32(vget_low_f32(acc), vget_high_f32(acc));
             sum = vpadd_f32(sum, sum);
             vst1_lane_f32(output_ptr0 + w, sum, 0);
 
@@ -687,6 +686,7 @@ void DepthwiseConv5x5S1<float, float>(const framework::Tensor &input,
         float32x4_t row3 = vld1q_f32(input_ptr3);
         float32x4_t row4 = vld1q_f32(input_ptr4);
         float32x4_t zero = vdupq_n_f32(0.f);
+        float32x4_t acc;
         for (int w = valid_w_end; w < output_w; ++w) {
           int padding = w + 5 - (padding_w + input_w);
           if (padding >= 5) {
@@ -703,13 +703,12 @@ void DepthwiseConv5x5S1<float, float>(const framework::Tensor &input,
             row2 = vextq_f32(row2, zero, 1);
             row3 = vextq_f32(row3, zero, 1);
             row4 = vextq_f32(row4, zero, 1);
-            row0 = vmulq_f32(row0, _ker[0]);
-            row0 = vmlaq_f32(row0, row1, _ker[1]);
-            row0 = vmlaq_f32(row0, row2, _ker[2]);
-            row0 = vmlaq_f32(row0, row3, _ker[3]);
-            row0 = vmlaq_f32(row0, row4, _ker[4]);
-            float32x2_t sum =
-                vpadd_f32(vget_low_f32(row0), vget_high_f32(row0));
+            acc = vmulq_f32(row0, _ker[0]);
+            acc = vmlaq_f32(acc, row1, _ker[1]);
+            acc = vmlaq_f32(acc, row2, _ker[2]);
+            acc = vmlaq_f32(acc, row3, _ker[3]);
+            acc = vmlaq_f32(acc, row4, _ker[4]);
+            float32x2_t sum = vpadd_f32(vget_low_f32(acc), vget_high_f32(acc));
             sum = vpadd_f32(sum, sum);
             sum0 += vget_lane_f32(sum, 0);
             *output_ptr0 = sum0;
