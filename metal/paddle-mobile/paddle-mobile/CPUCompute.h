@@ -16,7 +16,6 @@
 
 #import <Foundation/Foundation.h>
 
-
 @interface CPUResult: NSObject
 @property (assign, nonatomic) float *output;
 @property (assign, nonatomic) int outputSize;

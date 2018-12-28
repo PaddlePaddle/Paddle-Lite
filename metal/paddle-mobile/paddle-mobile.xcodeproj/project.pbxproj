@@ -75,8 +75,6 @@
 		FC3602CC2108819F00FACB58 /* PaddleMobileUnitTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC3602CB2108819F00FACB58 /* PaddleMobileUnitTest.swift */; };
 		FC4CB74920F0B954007C0C6D /* ConvKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC4CB74820F0B954007C0C6D /* ConvKernel.metal */; };
 		FC4CB74B20F12C30007C0C6D /* ProgramOptimize.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC4CB74A20F12C30007C0C6D /* ProgramOptimize.swift */; };
-		FC4FD9792140E4980073E130 /* PaddleMobileCPU.h in Headers */ = {isa = PBXBuildFile; fileRef = FC4FD9772140E4980073E130 /* PaddleMobileCPU.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		FC4FD97A2140E4980073E130 /* libpaddle-mobile.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FC4FD9782140E4980073E130 /* libpaddle-mobile.a */; };
 		FC5163F620EF556E00636C28 /* Texture2DTo2DArrayKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC5163F520EF556E00636C28 /* Texture2DTo2DArrayKernel.swift */; };
 		FC60DB8920E9AAA500FF203F /* MetalExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC60DB8820E9AAA500FF203F /* MetalExtension.swift */; };
 		FC704C2721D2385100F98BAB /* SuperResolutionNet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC704C2621D2385100F98BAB /* SuperResolutionNet.swift */; };
@@ -87,6 +85,8 @@
 		FC803BC7214CBA820094B8E5 /* Macro.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC803BC6214CBA820094B8E5 /* Macro.metal */; };
 		FC803BC9214CFC8D0094B8E5 /* FetchKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC803BC8214CFC8D0094B8E5 /* FetchKernel.metal */; };
 		FC82735920E3C04200BE430A /* OpCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC82735820E3C04200BE430A /* OpCreator.swift */; };
+		FC9797C921D6101D00F2FD90 /* ResizeBilinearOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9797C821D6101D00F2FD90 /* ResizeBilinearOp.swift */; };
+		FC9797CB21D6102D00F2FD90 /* ResizeBilinearKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9797CA21D6102D00F2FD90 /* ResizeBilinearKernel.swift */; };
 		FC9A19E32148C31300CD9CBF /* MobilenetSSD_AR.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9A19E22148C31300CD9CBF /* MobilenetSSD_AR.swift */; };
 		FC9C2A0D21D3D185005856C6 /* FetchKernel.inc.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC9C2A0C21D3D185005856C6 /* FetchKernel.inc.metal */; };
 		FC9D037920E229E4000F735A /* OpParam.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9D037820E229E4000F735A /* OpParam.swift */; };
@@ -216,8 +216,6 @@
 		FC3602CB2108819F00FACB58 /* PaddleMobileUnitTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaddleMobileUnitTest.swift; sourceTree = "<group>"; };
 		FC4CB74820F0B954007C0C6D /* ConvKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ConvKernel.metal; sourceTree = "<group>"; };
 		FC4CB74A20F12C30007C0C6D /* ProgramOptimize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramOptimize.swift; sourceTree = "<group>"; };
-		FC4FD9772140E4980073E130 /* PaddleMobileCPU.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PaddleMobileCPU.h; sourceTree = "<group>"; };
-		FC4FD9782140E4980073E130 /* libpaddle-mobile.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libpaddle-mobile.a"; sourceTree = "<group>"; };
 		FC4FD97D2140F2C30073E130 /* libstdc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libstdc++.tbd"; path = "usr/lib/libstdc++.tbd"; sourceTree = SDKROOT; };
 		FC5163F520EF556E00636C28 /* Texture2DTo2DArrayKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Texture2DTo2DArrayKernel.swift; sourceTree = "<group>"; };
 		FC60DB8820E9AAA500FF203F /* MetalExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalExtension.swift; sourceTree = "<group>"; };
@@ -229,6 +227,8 @@
 		FC803BC6214CBA820094B8E5 /* Macro.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Macro.metal; sourceTree = "<group>"; };
 		FC803BC8214CFC8D0094B8E5 /* FetchKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = FetchKernel.metal; sourceTree = "<group>"; };
 		FC82735820E3C04200BE430A /* OpCreator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpCreator.swift; sourceTree = "<group>"; };
+		FC9797C821D6101D00F2FD90 /* ResizeBilinearOp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ResizeBilinearOp.swift; sourceTree = "<group>"; };
+		FC9797CA21D6102D00F2FD90 /* ResizeBilinearKernel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ResizeBilinearKernel.swift; sourceTree = "<group>"; };
 		FC9A19E22148C31300CD9CBF /* MobilenetSSD_AR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobilenetSSD_AR.swift; sourceTree = "<group>"; };
 		FC9C2A0C21D3D185005856C6 /* FetchKernel.inc.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = FetchKernel.inc.metal; sourceTree = "<group>"; };
 		FC9D037820E229E4000F735A /* OpParam.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpParam.swift; sourceTree = "<group>"; };
@@ -294,7 +294,6 @@
 				C28FE03021BA68C00054EFAC /* MetalPerformanceShaders.framework in Frameworks */,
 				C28FE03121BA68C00054EFAC /* MetalKit.framework in Frameworks */,
 				D3831F70E7E0B565B9AC22DA /* Pods_paddle_mobile.framework in Frameworks */,
-				FC4FD97A2140E4980073E130 /* libpaddle-mobile.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -355,7 +354,6 @@
 				FC292C7D214255BC00CF622F /* CPUCompute.h */,
 				FC292C5521421B4600CF622F /* PaddleMobileGPU.m */,
 				FC292C5321421B2E00CF622F /* PaddleMobileGPU.h */,
-				FC4FD9762140E4920073E130 /* CPU */,
 				FC039BAE20E11CC20081E9F8 /* Program */,
 				FC039BA320E11CBC0081E9F8 /* Operators */,
 				FC039B9C20E11CB20081E9F8 /* framework */,
@@ -395,6 +393,7 @@
 		FC039BA320E11CBC0081E9F8 /* Operators */ = {
 			isa = PBXGroup;
 			children = (
+				FC9797C821D6101D00F2FD90 /* ResizeBilinearOp.swift */,
 				FC086BA520E67E8500D85EF7 /* Kernels */,
 				FCD592FA20E248EC00252966 /* Base */,
 				FCEBC0F320F1FDD90099DBAF /* ConvAddBatchNormReluOp.swift */,
@@ -449,6 +448,7 @@
 		FC086BA520E67E8500D85EF7 /* Kernels */ = {
 			isa = PBXGroup;
 			children = (
+				FC9797CA21D6102D00F2FD90 /* ResizeBilinearKernel.swift */,
 				FCDDC6CD212FE02100E5EF74 /* Base */,
 				FCEB6837212F00B100D2448E /* metal */,
 				FCDDC6C7212FA3CA00E5EF74 /* ConvTransposeKernel.swift */,
@@ -478,15 +478,6 @@
 				FCE3A1AE2153E8EE00C37CDE /* ElementwiseAddPreluKernel.swift */,
 			);
 			path = Kernels;
-			sourceTree = "<group>";
-		};
-		FC4FD9762140E4920073E130 /* CPU */ = {
-			isa = PBXGroup;
-			children = (
-				FC4FD9782140E4980073E130 /* libpaddle-mobile.a */,
-				FC4FD9772140E4980073E130 /* PaddleMobileCPU.h */,
-			);
-			path = CPU;
 			sourceTree = "<group>";
 		};
 		FCD592FA20E248EC00252966 /* Base */ = {
@@ -557,7 +548,6 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FC4FD9792140E4980073E130 /* PaddleMobileCPU.h in Headers */,
 				FC292C85214257CB00CF622F /* CPUCompute.h in Headers */,
 				FC292C5421421B2F00CF622F /* PaddleMobileGPU.h in Headers */,
 				4AA1EA9E2148D6F900D0F791 /* ConcatKernel.inc.metal in Headers */,
@@ -683,6 +673,7 @@
 				FCDDC6CC212FDFDB00E5EF74 /* ReluKernel.metal in Sources */,
 				FC0226562138F33800F395E2 /* TransposeKernel.metal in Sources */,
 				FCDDC6C6212F9FB800E5EF74 /* PreluKernel.swift in Sources */,
+				FC9797CB21D6102D00F2FD90 /* ResizeBilinearKernel.swift in Sources */,
 				FCA67CD52138272900BD58AA /* ConvAddMetal.metal in Sources */,
 				FCBCCC5B2122F66F00D94F7E /* ConvBNReluKernel.swift in Sources */,
 				4AA1EA8C2146640900D0F791 /* SplitOp.swift in Sources */,
@@ -777,6 +768,7 @@
 				FC039BAD20E11CBC0081E9F8 /* ReluOp.swift in Sources */,
 				FCBCCC572122F41300D94F7E /* DwConvBNReluOp.swift in Sources */,
 				FC039BBE20E11CC20081E9F8 /* OpDesc.swift in Sources */,
+				FC9797C921D6101D00F2FD90 /* ResizeBilinearOp.swift in Sources */,
 				4AA1EA88214662BD00D0F791 /* BilinearInterpKernel.swift in Sources */,
 				FC039B9720E11C9A0081E9F8 /* Extensions.swift in Sources */,
 			);

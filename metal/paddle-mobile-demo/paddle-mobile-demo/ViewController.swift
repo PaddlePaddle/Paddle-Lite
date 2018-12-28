@@ -18,23 +18,11 @@ import CoreMedia
 import paddle_mobile
 import MetalPerformanceShaders
 
-var platform: Platform = .GPU
-let threadSupport: [(Platform, String)] = [(.GPU, "GPU"), (.CPU, "CPU")]
+enum Platform {
+  case GPU
+}
 
-let netSupport: [SupportModel : Net] = [
-  .super_resolution : SuperResolutionNet.init(device: MetalHelper.shared.device),
-  .yolo : YoloNet.init(device: MetalHelper.shared.device),
-  .mobilenet_combined : MobileNetCombined.init(device: MetalHelper.shared.device)]
-
-//.mobilenet_ssd : Runner.init(inNet: MobileNet_ssd_hand.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform),
-let modelHelperMap: [SupportModel : Runner] = [
-  .super_resolution : Runner.init(inNet: netSupport[.super_resolution]!, commandQueue: MetalHelper.shared.queue, inPlatform: platform),
-  .yolo : Runner.init(inNet: YoloNet.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform),
-  .mobilenet_combined : Runner.init(inNet: MobileNetCombined.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform)]
-//, .genet : Genet.init()
-//let modelHelperMap: [SupportModel : Net] = [.mobilenet : MobileNet.init(), .mobilenet_ssd : MobileNet_ssd_hand.init()]
-
-
+let platformSupport: [(Platform, String)] = [(.GPU, "GPU")]
 
 enum SupportModel: String{
   //  case mobilenet = "mobilenet"
@@ -42,13 +30,20 @@ enum SupportModel: String{
   case yolo               = "yolo"
   case mobilenet_combined = "mobilenet_combined"
   case super_resolution   = "superresoltion"
+  case mobilenet          = "mobilenet"
   
   static func supportedModels() -> [SupportModel] {
     // .mobilenet,
     // .mobilenet_ssd,
-    return [.super_resolution, .yolo, .mobilenet_combined]
+    return [.super_resolution, .yolo, .mobilenet_combined, .mobilenet]
   }
 }
+
+let netSupport: [SupportModel : Net] = [
+  .super_resolution : SuperResolutionNet.init(device: MetalHelper.shared.device),
+  .yolo : YoloNet.init(device: MetalHelper.shared.device),
+  .mobilenet_combined : MobileNetCombined.init(device: MetalHelper.shared.device),
+  .mobilenet : MobileNet.init(device: MetalHelper.shared.device)]
 
 class ViewController: UIViewController {
   @IBOutlet weak var resultTextView: UITextView!
@@ -65,23 +60,16 @@ class ViewController: UIViewController {
   var toPredictTexture: MTLTexture?
   
   var runner: Runner!
-  
+  var platform: Platform = .GPU
   var threadNum = 1
   
   @IBAction func loadAct(_ sender: Any) {
-    runner = Runner.init(inNet: netSupport[modelType]!, commandQueue: MetalHelper.shared.queue, inPlatform: platform)
-    
-    if platform == .CPU {
-      if inputPointer == nil {
-        inputPointer = runner.preproccess(image: selectImage!.cgImage!)
-      }
-    } else if platform == .GPU {
+    runner = Runner.init(inNet: netSupport[modelType]!, commandQueue: MetalHelper.shared.queue)
+    if platform == .GPU {
       if self.toPredictTexture == nil {
-        
         runner.getTexture(image: selectImage!.cgImage!) { [weak self] (texture) in
           self?.toPredictTexture = texture
         }
-        
       }
     } else {
       fatalError( " unsupport " )
@@ -136,39 +124,6 @@ class ViewController: UIViewController {
           DispatchQueue.main.async {
             resultHolder?.releasePointer()
           }
-        }
-      }
-      
-    case .CPU:
-      guard let inInputPointer = inputPointer else {
-        fatalError( " need input pointer " )
-      }
-      
-      for _ in 0..<10 {
-        runner.predict(inputPointer: inInputPointer) { (success, res) in
-          res?.releaseOutput()
-        }
-      }
-      
-      let startDate = Date.init()
-      for i in 0..<max {
-        runner.predict(inputPointer: inInputPointer) { [weak self](success, res) in
-          guard let sSelf = self else {
-            fatalError()
-          }
-          if success {
-            if i == max - 1 {
-              let time = Date.init().timeIntervalSince(startDate)
-              DispatchQueue.main.async {
-                //                sSelf.resultTextView.text = sSelf.runner.net.resultStr(res: res)
-                sSelf.elapsedTimeLabel.text = "平均耗时: \(time/Double(max) * 1000.0) ms"
-              }
-            }
-          }
-          res?.releaseOutput()
-          
-          print(" predict done -- 123 ")
-          
         }
       }
     }
@@ -230,7 +185,7 @@ extension ViewController: UIPickerViewDataSource, UIPickerViewDelegate{
     if pickerView == modelPickerView {
       return SupportModel.supportedModels().count
     } else if pickerView == threadPickerView {
-      return threadSupport.count
+      return platformSupport.count
     } else {
       fatalError()
     }
@@ -240,7 +195,7 @@ extension ViewController: UIPickerViewDataSource, UIPickerViewDelegate{
     if pickerView == modelPickerView {
       return SupportModel.supportedModels()[row].rawValue
     } else if pickerView == threadPickerView {
-      return threadSupport[row].1
+      return platformSupport[row].1
     } else {
       fatalError()
     }
@@ -250,8 +205,7 @@ extension ViewController: UIPickerViewDataSource, UIPickerViewDelegate{
     if pickerView == modelPickerView {
       self.modelType = SupportModel.supportedModels()[row]
     } else if pickerView == threadPickerView {
-      
-      platform = threadSupport[row].0
+      platform = platformSupport[row].0
     } else {
       fatalError()
     }

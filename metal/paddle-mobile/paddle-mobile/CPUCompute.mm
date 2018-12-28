@@ -12,16 +12,12 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
-
 #import "CPUCompute.h"
 
 #import <map>
 #import <vector>
 #import <utility>
 #import <algorithm>
-
-
-
 
 struct NMSParam {
   

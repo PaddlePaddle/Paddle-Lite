@@ -9,10 +9,6 @@
 import MetalKit
 import Foundation
 
-@objc public enum Platform: Int{
-  case CPU, GPU
-}
-
 class ScaleKernel: CusomKernel {
   init(device: MTLDevice, shape: Shape) {
     if computePrecision == .Float32 {
@@ -32,8 +28,6 @@ class ScaleKernel: CusomKernel {
   var textureLoader: MTKTextureLoader?
   public let net: Net
   let device: MTLDevice?
-  let platform: Platform
-  var cpuPaddleMobile: PaddleMobileCPU?
   let numel: Int
   let meansNumber: [NSNumber]
   
@@ -44,7 +38,7 @@ class ScaleKernel: CusomKernel {
    * commandQueue: GPU 是需要传入
    * inPlatform:   需要使用的平台, GPU or CPU
    */
-  @objc public init(inNet: Net, commandQueue: MTLCommandQueue?, inPlatform: Platform) {
+  @objc public init(inNet: Net, commandQueue: MTLCommandQueue?) {
     guard inNet.inputDim.cout() == 4 else {
       fatalError(" input dim count must 4 ")
     }
@@ -52,14 +46,10 @@ class ScaleKernel: CusomKernel {
     net = inNet
     queue = commandQueue
     device = queue?.device
-    platform = inPlatform
     if let inDevice = device {
       textureLoader = MTKTextureLoader.init(device: inDevice)
     }
-    if platform == .CPU {
-      cpuPaddleMobile = PaddleMobileCPU.init()
-    }
-    
+
     numel = net.inputDim.numel()
     meansNumber = net.means.map { NSNumber.init(value: $0) }
     dimsNum = [NSNumber.init(value: net.inputDim[0]),
@@ -72,7 +62,6 @@ class ScaleKernel: CusomKernel {
    * load 模型, 返回 true 可进行预测
    */
   @objc public func load() -> Bool {
-    if platform == .GPU {
       guard let inDevice = device, let inQueue = queue else {
         print(" paddle mobile gpu load error, need MTLCommandQueue")
         return false
@@ -88,18 +77,7 @@ class ScaleKernel: CusomKernel {
         print(error)
         return false
       }
-    } else {
-      return cpuPaddleMobile?.load(net.modelPath, andWeightsPath: net.paramPath) ?? false
-    }
     return true
-  }
-  
-  @objc public func predict(inputPointer: UnsafeMutablePointer<Float32>, completion: @escaping ( _ success: Bool, _ result: PaddleMobileCPUResult?) -> Void) {
-    guard let res = cpuPaddleMobile?.predictInput(inputPointer, dim: dimsNum) else {
-      completion(false, nil)
-      return
-    }
-    completion(true, res)
   }
   
   /**
@@ -124,57 +102,15 @@ class ScaleKernel: CusomKernel {
     }
   }
   
-  /**
-   * CPU GPU 通用版本 predict
-   * cgImage: 需要预测的图片
-   * ( _ success: Bool, _ time:TimeInterval, _ resultArray: [Float32]) -> Void : 回调闭包, 三个参数分别为: 是否成功, 预测耗时, 结果数组
-   */
-  //  @objc public func predict(cgImage: CGImage, completion: @escaping ( _ success: Bool, _ resultArray: [Float32]) -> Void) {
-  //    if platform == .GPU {
-  //      getTexture(image: cgImage) { [weak self] (texture) in
-  //        guard let SSelf = self else {
-  //          fatalError( "" )
-  //        }
-  //        SSelf.predict(texture: texture, completion: completion)
-  //      }
-  //    } else if platform == .CPU {
-  //      let input = preproccess(image: cgImage)
-  //      predict(inputPointer: input, completion: completion)
-  //      input.deinitialize(count: numel)
-  //      input.deallocate()
-  //    }
-  //  }
-  
   /*
    * 清理内存, 调用此函数后, 不能再使用, 需重新 load
    */
   @objc public func clear() {
-    if platform == .GPU {
-      executor?.clear()
-      executor = nil
-      program = nil
-    } else if platform == .CPU {
-      cpuPaddleMobile?.clear()
-    }
+    executor?.clear()
+    executor = nil
+    program = nil
   }
-  
-  @objc public func preproccess(image: CGImage) -> UnsafeMutablePointer<Float> {
-    let output = UnsafeMutablePointer<Float>.allocate(capacity: numel)
-    let means = net.means.map { NSNumber.init(value: $0) }
-    
-    if net.inputDim.cout() == 4 {
-      let dims = [NSNumber.init(value: net.inputDim[0]),
-                 NSNumber.init(value: net.inputDim[3]),
-                 NSNumber.init(value: net.inputDim[1]),
-                 NSNumber.init(value: net.inputDim[2])]
-      cpuPaddleMobile?.preprocess(image, output: output, means: means, scale: net.scale, dim: dims)
-      return output
-    }
-    
-    fatalError()
-    
-  }
-  
+
   /*
    * 获取 texture, 对 texture 进行预处理, GPU 预测时使用
    */
