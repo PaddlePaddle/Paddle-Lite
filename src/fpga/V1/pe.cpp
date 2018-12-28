@@ -24,14 +24,13 @@ limitations under the License. */
 #include <time.h>
 #include <iomanip>
 #include <iostream>
-//#include <iostream>
 #endif
 
 namespace paddle_mobile {
 namespace fpga {
 
 using namespace driver;  // NOLINT
-using namespace std;
+using namespace std;     // NOLINT
 #define USE_RELU 1
 #define USE_BIAS 2
 
@@ -53,7 +52,6 @@ using namespace std;
 #define INTERRUPT_CONV 0x0004
 #define INTERRUPT_POOLING 0x0008
 #define INTERRUPT_EW 0x0010
-//#define INTERRUPT_RESIZE 0x0020
 
 /* Register offset */
 #define REG_INTERRUPT 0x000
@@ -72,9 +70,6 @@ using namespace std;
 #define REG_FLASH_CONFIG 0x210
 #define REG_FLASH_STATUS 0x218
 #define REG_SN 0x220
-
-//#define REG_READ_SCALE
-//#define REG_WRITE_SCALE
 
 /*bypass*/
 #define REG_CONVERT_CMD 0x400
@@ -236,8 +231,10 @@ int ComputeBasicConv(const struct ConvArgs &args) {
   reg_writeq((uint64_t)args.group_num, REG_CONV_GROUP_NUMBER);
   reg_writeq((uint64_t)args.filter_num, REG_CONV_FILTER_NUMBER);
   reg_writeq((uint64_t)args.image.channels, REG_CONV_CHANNEL_NUMBER);
-  reg_writeq(*(uint64_t *)args.image.scale_address, REG_CONV_IMAGE_SCALE);
-  reg_writeq(*(uint64_t *)args.filter_scale_address, REG_CONV_FILTER_SCALE);
+  reg_writeq(*(uint64_t *)args.image.scale_address,  // NOLINT
+             REG_CONV_IMAGE_SCALE);
+  reg_writeq(*(uint64_t *)args.filter_scale_address,  // NOLINT
+             REG_CONV_FILTER_SCALE);
   reg_writeq(args.driver.image_address_phy, REG_CONV_IMAGE_BASE_ADDR);
   reg_writeq(args.driver.filter_address_phy, REG_CONV_FILTER_BASE_ADDR);
   reg_writeq(args.driver.sb_address_phy, REG_CONV_SB_BASE_ADDR);
@@ -280,7 +277,6 @@ int ComputeBasicConv(const struct ConvArgs &args) {
   return ret;
 #endif
   return 0;
-
 }  // ComputeBasicConv
 
 int ComputeFpgaPool(const struct PoolingArgs &args) {
@@ -406,13 +402,11 @@ int ComputeFpgaPool(const struct PoolingArgs &args) {
   output_scale = reg_readq(REG_SCALE_PARAMETER);
   output_scale = (output_scale << 32) | (output_scale >> 32);
   fpga_copy(args.output.scale_address, &output_scale, sizeof(float) * 2);
-  //*(args.output.timer_cnt) = reg_readq(REG_TIMER_COUNTER);
   pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
 
   return ret;
 #endif
   return 0;
-
 }  // ComputeFpgaPool
 
 int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
@@ -468,13 +462,10 @@ int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
   output_scale = reg_readq(REG_SCALE_PARAMETER);
   output_scale = (output_scale << 32) | (output_scale >> 32);
   fpga_copy(args.output.scale_address, &output_scale, sizeof(float) * 2);
-  //*(args.output.scale_address) = reg_readq(REG_SCALE_PARAMETER);
-  //*(args.output.timer_cnt) = reg_readq(REG_TIMER_COUNTER);
   pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
   return ret;
 #endif
   return 0;
-
 }  // ComputeFpgaEWAdd
 
 int PerformBypass(const struct BypassArgs &args) {
@@ -588,13 +579,10 @@ int PerformBypass(const struct BypassArgs &args) {
   output_scale = reg_readq(REG_SCALE_PARAMETER);
   output_scale = (output_scale << 32) | (output_scale >> 32);
   fpga_copy(args.output.scale_address, &output_scale, sizeof(float) * 2);
-  //*(args.output.scale_address) = reg_readq(REG_SCALE_PARAMETER);
-  //*(args.output.timer_cnt) = reg_readq(REG_TIMER_COUNTER);
   pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
   return ret;
 #endif
   return 0;
-
 }  // PerformBypass
 
 int ComputeFPGAConcat(const struct ConcatArgs &args) {
@@ -647,13 +635,14 @@ void deconv_post_process(const struct DeconvArgs &args) {
     for (int hh = 0; hh < origin_h; ++hh) {
       int hx = (hh % sub_conv_n);
       auto sub_t =
-          (int16_t *)(args.split_conv_args[sub_conv_n - hx - 1].output.address);
+          (int16_t *)(args.split_conv_args[sub_conv_n - hx - 1]  // NOLINT
+                          .output.address);
       int hi = (hh / sub_conv_n);
       if ((hh < omit_size) || (hh >= (origin_h - omit_size))) continue;
       int sidx = (nn * origin_h * align_origin_w + hi * align_origin_w +
                   omit_size * channel);
-      fpga_copy((int16_t *)(args.output.address) + deconv_idx, sub_t + sidx,
-                sizeof(int16_t) * deconv_row_len);
+      fpga_copy((int16_t *)(args.output.address) + deconv_idx,    // NOLINT
+                sub_t + sidx, sizeof(int16_t) * deconv_row_len);  // NOLINT
       deconv_idx += align_deconv_row_len;
     }
   }
@@ -678,7 +667,7 @@ int ComputeFpgaDeconv(const struct DeconvArgs &args) {
 
 #ifdef COST_TIME_PRINT
   timeval start, end;
-  long dif_sec, dif_usec;
+  long dif_sec, dif_usec;  // NOLINT
 #endif
 
   for (int i = 0; i < sub_conv_num; i++) {
@@ -723,18 +712,16 @@ int ComputeFpgaDeconv(const struct DeconvArgs &args) {
 #endif
 
     //    fpga_flush(args.output.scale_address, 2 * sizeof(float));
-#ifdef COST_TIME_PRINT
-    gettimeofday(&start, NULL);
-#endif
-    deconv_post_process(args);
-#ifdef COST_TIME_PRINT
-    gettimeofday(&end, NULL);
-    dif_sec = end.tv_sec - start.tv_sec;
-    dif_usec = end.tv_usec - start.tv_usec;
-    std::cout << "deconv_post_process  "
-              << "    cost time: " << (dif_sec * 1000000 + dif_usec) << "us"
-              << std::endl;
-#endif
+    /*#ifdef COST_TIME_PRINT
+    gettimeofday(&start,NULL);
+    #endif
+        //deconv_post_process(args);
+    #ifdef COST_TIME_PRINT
+        gettimeofday(&end,NULL);
+     dif_sec = end.tv_sec - start.tv_sec;
+     dif_usec = end.tv_usec - start.tv_usec;
+      std::cout << "deconv_post_process  " << "    cost time: "  <<
+    (dif_sec*1000000+dif_usec)  << "us" << std::endl; #endif*/
   }
 
   return 0;

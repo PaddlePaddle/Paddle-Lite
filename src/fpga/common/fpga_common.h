@@ -25,6 +25,7 @@ namespace fpga {
 #define FILTER_NUM_ALIGNMENT 32      // Filter number aligned to 32
 #define FILTER_ELEMENT_ALIGNMENT 16  // Filter element number aligned to 16
 #define BS_NUM_ALIGNMENT 8
+#define BIAS_NUM_ALIGNMENT 16
 #endif
 
 enum DataType {
@@ -222,7 +223,14 @@ struct DeconvArgs {
   struct ImageOutputArgs output;
   struct SplitConvArgs* split_conv_args;
 };
-
+struct DWconvArgs {
+  bool relu_enabled;
+  void* bias_address;
+  void* filter_address;
+  struct KernelArgs kernel;
+  struct ImageInputArgs image;
+  struct ImageOutputArgs output;
+};
 // static inline int align_to_x(int num, int x) { return (num + x - 1) / x * x;
 // }
 static inline uint32_t align_to_x(int64_t num, int64_t x) {
