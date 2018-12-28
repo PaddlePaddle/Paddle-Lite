@@ -16,7 +16,6 @@
 		4AA1EA92214665D700D0F791 /* ShapeOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AA1EA91214665D700D0F791 /* ShapeOp.swift */; };
 		4AA1EA942146661500D0F791 /* ShapeKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AA1EA932146661500D0F791 /* ShapeKernel.swift */; };
 		4AA1EA982146666500D0F791 /* FlattenOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AA1EA972146666500D0F791 /* FlattenOp.swift */; };
-		4AA1EA9E2148D6F900D0F791 /* ConcatKernel.inc.metal in Headers */ = {isa = PBXBuildFile; fileRef = 4AA1EA9D2148D6F900D0F791 /* ConcatKernel.inc.metal */; };
 		4AA1EAA02148DEEE00D0F791 /* ReshapeKernel.inc.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AA1EA9F2148DEEE00D0F791 /* ReshapeKernel.inc.metal */; };
 		4AA1EAA2214912CD00D0F791 /* FlattenKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AA1EAA1214912CC00D0F791 /* FlattenKernel.swift */; };
 		4AA1EAA4214A295C00D0F791 /* Split.inc.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AA1EAA3214A295C00D0F791 /* Split.inc.metal */; };
@@ -69,7 +68,6 @@
 		FC292C5621421B4600CF622F /* PaddleMobileGPU.m in Sources */ = {isa = PBXBuildFile; fileRef = FC292C5521421B4600CF622F /* PaddleMobileGPU.m */; };
 		FC292C81214255BD00CF622F /* CPUCompute.mm in Sources */ = {isa = PBXBuildFile; fileRef = FC292C7C214255BC00CF622F /* CPUCompute.mm */; };
 		FC292C82214255BD00CF622F /* MobileNetSSD.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC292C7E214255BC00CF622F /* MobileNetSSD.swift */; };
-		FC292C85214257CB00CF622F /* CPUCompute.h in Headers */ = {isa = PBXBuildFile; fileRef = FC292C7D214255BC00CF622F /* CPUCompute.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		FC292C872142624800CF622F /* Genet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC292C862142624800CF622F /* Genet.swift */; };
 		FC33B0F02147659000714A93 /* MobileNet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC33B0EF2147659000714A93 /* MobileNet.swift */; };
 		FC3602CC2108819F00FACB58 /* PaddleMobileUnitTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC3602CB2108819F00FACB58 /* PaddleMobileUnitTest.swift */; };
@@ -87,6 +85,7 @@
 		FC82735920E3C04200BE430A /* OpCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC82735820E3C04200BE430A /* OpCreator.swift */; };
 		FC9797C921D6101D00F2FD90 /* ResizeBilinearOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9797C821D6101D00F2FD90 /* ResizeBilinearOp.swift */; };
 		FC9797CB21D6102D00F2FD90 /* ResizeBilinearKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9797CA21D6102D00F2FD90 /* ResizeBilinearKernel.swift */; };
+		FC9797CD21D61B2E00F2FD90 /* CPUCompute.h in Headers */ = {isa = PBXBuildFile; fileRef = FC292C7D214255BC00CF622F /* CPUCompute.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		FC9A19E32148C31300CD9CBF /* MobilenetSSD_AR.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9A19E22148C31300CD9CBF /* MobilenetSSD_AR.swift */; };
 		FC9C2A0D21D3D185005856C6 /* FetchKernel.inc.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC9C2A0C21D3D185005856C6 /* FetchKernel.inc.metal */; };
 		FC9D037920E229E4000F735A /* OpParam.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9D037820E229E4000F735A /* OpParam.swift */; };
@@ -342,16 +341,8 @@
 		FC039B6C20E11C3C0081E9F8 /* paddle-mobile */ = {
 			isa = PBXGroup;
 			children = (
-				FC704C2621D2385100F98BAB /* SuperResolutionNet.swift */,
-				C28FDF8221B7858F0054EFAC /* MobileNetCombined.swift */,
-				C28FDF8321B7858F0054EFAC /* YoloNet.swift */,
+				FC9797CC21D61A5500F2FD90 /* CustomNet */,
 				FCE9D7B6214F869000B520C3 /* Net.swift */,
-				FC9A19E22148C31300CD9CBF /* MobilenetSSD_AR.swift */,
-				FC33B0EF2147659000714A93 /* MobileNet.swift */,
-				FC292C862142624800CF622F /* Genet.swift */,
-				FC292C7E214255BC00CF622F /* MobileNetSSD.swift */,
-				FC292C7C214255BC00CF622F /* CPUCompute.mm */,
-				FC292C7D214255BC00CF622F /* CPUCompute.h */,
 				FC292C5521421B4600CF622F /* PaddleMobileGPU.m */,
 				FC292C5321421B2E00CF622F /* PaddleMobileGPU.h */,
 				FC039BAE20E11CC20081E9F8 /* Program */,
@@ -480,6 +471,22 @@
 			path = Kernels;
 			sourceTree = "<group>";
 		};
+		FC9797CC21D61A5500F2FD90 /* CustomNet */ = {
+			isa = PBXGroup;
+			children = (
+				FC292C7C214255BC00CF622F /* CPUCompute.mm */,
+				FC292C7D214255BC00CF622F /* CPUCompute.h */,
+				FC704C2621D2385100F98BAB /* SuperResolutionNet.swift */,
+				C28FDF8221B7858F0054EFAC /* MobileNetCombined.swift */,
+				C28FDF8321B7858F0054EFAC /* YoloNet.swift */,
+				FC9A19E22148C31300CD9CBF /* MobilenetSSD_AR.swift */,
+				FC33B0EF2147659000714A93 /* MobileNet.swift */,
+				FC292C862142624800CF622F /* Genet.swift */,
+				FC292C7E214255BC00CF622F /* MobileNetSSD.swift */,
+			);
+			path = CustomNet;
+			sourceTree = "<group>";
+		};
 		FCD592FA20E248EC00252966 /* Base */ = {
 			isa = PBXGroup;
 			children = (
@@ -548,10 +555,9 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FC292C85214257CB00CF622F /* CPUCompute.h in Headers */,
 				FC292C5421421B2F00CF622F /* PaddleMobileGPU.h in Headers */,
-				4AA1EA9E2148D6F900D0F791 /* ConcatKernel.inc.metal in Headers */,
 				FC039B6F20E11C3C0081E9F8 /* paddle_mobile.h in Headers */,
+				FC9797CD21D61B2E00F2FD90 /* CPUCompute.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
