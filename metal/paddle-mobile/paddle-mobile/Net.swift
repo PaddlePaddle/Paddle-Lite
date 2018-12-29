@@ -17,17 +17,17 @@ import Foundation
 import Metal
 
 public class ResultHolder: NSObject {
-  @objc public let result: UnsafeMutablePointer<Float32>?
+  @objc public let result: UnsafeMutablePointer<Float32>
   @objc public let capacity: Int
 
-  init(inResult: UnsafeMutablePointer<Float32>?, inCapacity: Int) {
+  init(inResult: UnsafeMutablePointer<Float32>, inCapacity: Int) {
     result = inResult
     capacity = inCapacity
   }
   
   @objc public func releasePointer() {
-    result?.deinitialize(count: capacity)
-    result?.deallocate()
+    result.deinitialize(count: capacity)
+    result.deallocate()
   }
 }
 
@@ -86,7 +86,11 @@ public class Net: NSObject {
   }
   
   func fetchResult(paddleMobileRes: GPUResultHolder) -> ResultHolder {
-    return ResultHolder.init(inResult: paddleMobileRes.resultPointer, inCapacity: paddleMobileRes.capacity)
+    guard let inResPointer = paddleMobileRes.resultPointer else {
+      fatalError()
+    }
+    
+    return ResultHolder.init(inResult: inResPointer, inCapacity: paddleMobileRes.capacity)
   }
   
   func updateProgram(program: Program) {

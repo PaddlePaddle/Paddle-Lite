@@ -47,7 +47,7 @@ public class MobileNet_ssd_AR: Net{
   }
   
   override public func resultStr(res: ResultHolder) -> String {
-    return " \(res.result![0])"
+    return " \(res.result[0])"
   }
   
   override func fetchResult(paddleMobileRes: GPUResultHolder) -> ResultHolder {

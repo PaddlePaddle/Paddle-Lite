@@ -120,9 +120,17 @@ extension Array {
   }
 }
 
+extension UnsafeMutablePointer {
+  public func floatArr(count: Int) -> [Pointee]{
+    var arr: [Pointee] = []
+    for i in 0..<count {
+      arr.append(self[i])
+    }
+    return arr
+  }
+}
 
-
-extension String{
+extension String {
   func cStr() -> UnsafePointer<Int8>? {
     return (self as NSString).utf8String
   }
