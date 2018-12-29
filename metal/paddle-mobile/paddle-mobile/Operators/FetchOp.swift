@@ -83,7 +83,7 @@ class FetchOp<P: PrecisionType>: Operator< FetchKernel<P>, FetchParam<P>>, Runab
   
   func delogOutput() {
     print("fetch output: ")
-    let resArr = Array<Any>.floatArrWithBuffer(floatArrBuffer: self.para.output.result, count: self.para.output.capacity)
+    let resArr = self.para.output.result.floatArr(count: self.para.output.capacity)
     print(resArr.strideArray())
   }
 }
