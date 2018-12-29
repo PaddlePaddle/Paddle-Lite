@@ -108,15 +108,14 @@ class ViewController: UIViewController {
           guard let sSelf = self else {
             fatalError()
           }
-          if success {
+          if let inResultHolder = resultHolder, success {
             if i == max - 1 {
               let time = Date.init().timeIntervalSince(startDate)
-              print(Array<Any>.floatArrWithBuffer(floatArrBuffer: resultHolder!.result!, count: resultHolder!.capacity).strideArray())
+            
+              print(inResultHolder.result.floatArr(count: inResultHolder.capacity).strideArray())
               DispatchQueue.main.async {
-                //                print(resultHolder!.result![0])
                 sSelf.resultTextView.text = sSelf.runner.net.resultStr(res: resultHolder!)
                 sSelf.elapsedTimeLabel.text = "平均耗时: \(time/Double(max) * 1000.0) ms"
-                
               }
             }
           }

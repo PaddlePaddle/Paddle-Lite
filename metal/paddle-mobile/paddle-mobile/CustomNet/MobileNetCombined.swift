@@ -41,7 +41,7 @@ public class MobileNetCombined: Net {
   
   override  public func resultStr(res: ResultHolder) -> String {
     //    fatalError()
-    return " \(res.result![0]) ... "
+    return " \(res.result[0]) ... "
   }
   
 }
