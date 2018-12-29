@@ -51,7 +51,10 @@ class ScaleKernel: CusomKernel {
     }
 
     numel = net.inputDim.numel()
-    meansNumber = net.means.map { NSNumber.init(value: $0) }
+    meansNumber = net.means.map {
+      NSNumber.init(value: $0)
+    }
+    
     dimsNum = [NSNumber.init(value: net.inputDim[0]),
                NSNumber.init(value: net.inputDim[3]),
                NSNumber.init(value: net.inputDim[1]),
@@ -119,6 +122,29 @@ class ScaleKernel: CusomKernel {
     scaleTexture(input: texture!, complete: getTexture)
   }
   
+  @objc public func getTexture(inBuffer: MTLBuffer, getTexture: @escaping (MTLTexture) -> Void) {
+    guard let inQueue = queue, let inDevice = device else {
+      fatalError( " queue or devcie nil " )
+    }
+    
+    guard let buffer = inQueue.makeCommandBuffer() else {
+      fatalError( " make buffer error" )
+    }
+    
+    let bufferToTextureKernel = BufferToTextureKernel.init(device: inDevice, outputDim: Shape.init(inWidth: net.inputDim[2], inHeight: net.inputDim[1], inChannel: net.inputDim[3]))
+    do {
+      try bufferToTextureKernel.compute(inputBuffer: inBuffer, commandBuffer: buffer)
+    } catch {
+      fatalError(" bufferToTextureKernel error ")
+    }
+    
+    buffer.addCompletedHandler { (buffer) in
+      getTexture(bufferToTextureKernel.outputTexture)
+    }
+    
+    buffer.commit()
+  }
+  
   public func scaleTexture(input: MTLTexture , complete: @escaping (MTLTexture) -> Void) {
     
     guard let inQueue = queue, let inDevice = device else {
@@ -129,7 +155,7 @@ class ScaleKernel: CusomKernel {
       fatalError( " make buffer error" )
     }
     
-    let scaleKernel = ScaleKernel.init(device: inDevice, shape: CusomKernel.Shape.init(inWidth: net.inputDim[2], inHeight: net.inputDim[1], inChannel: 3))
+    let scaleKernel = ScaleKernel.init(device: inDevice, shape: Shape.init(inWidth: net.inputDim[2], inHeight: net.inputDim[1], inChannel: 3))
     
     do {
       try scaleKernel.compute(inputTexuture: input, commandBuffer: buffer)

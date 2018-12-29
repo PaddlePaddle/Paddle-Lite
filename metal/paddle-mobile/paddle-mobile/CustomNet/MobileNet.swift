@@ -18,7 +18,7 @@ public class MobileNet: Net{
   
   class MobilenetPreProccess: CusomKernel {
     init(device: MTLDevice) {
-      let s = CusomKernel.Shape.init(inWidth: 224, inHeight: 224, inChannel: 3)
+      let s = Shape.init(inWidth: 224, inHeight: 224, inChannel: 3)
       super.init(device: device, inFunctionName: "mobilenet_preprocess", outputDim: s, usePaddleMobileLib: false)
     }
   }

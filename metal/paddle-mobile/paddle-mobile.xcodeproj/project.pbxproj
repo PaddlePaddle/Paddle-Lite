@@ -112,6 +112,7 @@
 		FCBCCC6D2123073A00D94F7E /* BoxcoderKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCBCCC6C2123073A00D94F7E /* BoxcoderKernel.swift */; };
 		FCBCCC6F2123097100D94F7E /* MulticlassNMSOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCBCCC6E2123097100D94F7E /* MulticlassNMSOp.swift */; };
 		FCBCCC71212309A700D94F7E /* MulticlassNMSKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCBCCC70212309A700D94F7E /* MulticlassNMSKernel.swift */; };
+		FCCED5E121D71FC000BE8D5F /* PoolKernel.inc.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCCED5E021D71FC000BE8D5F /* PoolKernel.inc.metal */; };
 		FCD04E6620F314C50007374F /* PoolOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCD04E6520F314C50007374F /* PoolOp.swift */; };
 		FCD04E6820F315020007374F /* PoolKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCD04E6720F315020007374F /* PoolKernel.swift */; };
 		FCD04E6A20F319EC0007374F /* SoftmaxOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCD04E6920F319EC0007374F /* SoftmaxOp.swift */; };
@@ -254,6 +255,7 @@
 		FCBCCC6C2123073A00D94F7E /* BoxcoderKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoxcoderKernel.swift; sourceTree = "<group>"; };
 		FCBCCC6E2123097100D94F7E /* MulticlassNMSOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MulticlassNMSOp.swift; sourceTree = "<group>"; };
 		FCBCCC70212309A700D94F7E /* MulticlassNMSKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MulticlassNMSKernel.swift; sourceTree = "<group>"; };
+		FCCED5E021D71FC000BE8D5F /* PoolKernel.inc.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = PoolKernel.inc.metal; sourceTree = "<group>"; };
 		FCD04E6520F314C50007374F /* PoolOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoolOp.swift; sourceTree = "<group>"; };
 		FCD04E6720F315020007374F /* PoolKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoolKernel.swift; sourceTree = "<group>"; };
 		FCD04E6920F319EC0007374F /* SoftmaxOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoftmaxOp.swift; sourceTree = "<group>"; };
@@ -535,6 +537,7 @@
 				FCA67CD82138287B00BD58AA /* ConvBNReluKernel.metal */,
 				FC0226552138F33800F395E2 /* TransposeKernel.metal */,
 				4AA1EAAD214F5FD900D0F791 /* TransposeKernel.inc.metal */,
+				FCCED5E021D71FC000BE8D5F /* PoolKernel.inc.metal */,
 				FC0226572138F38D00F395E2 /* PoolKernel.metal */,
 				FC803BC2214CB79C0094B8E5 /* ConvAddPreluKernel.metal */,
 				FC803BC4214CB8F00094B8E5 /* ConvAddPrelu.inc.metal */,
@@ -707,6 +710,7 @@
 				FCA3A1632132A4AC00084FE5 /* ReshapeKernel.metal in Sources */,
 				FCBCCC592122F42700D94F7E /* ConvBNReluOp.swift in Sources */,
 				FC039BA920E11CBC0081E9F8 /* ConvOp.swift in Sources */,
+				FCCED5E121D71FC000BE8D5F /* PoolKernel.inc.metal in Sources */,
 				FC9D038420E23B01000F735A /* Texture.swift in Sources */,
 				FCE3A1B32153E91900C37CDE /* ElementwiseAddPreluKernel.metal in Sources */,
 				4AA1EAA2214912CD00D0F791 /* FlattenKernel.swift in Sources */,

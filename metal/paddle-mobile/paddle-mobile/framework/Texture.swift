@@ -96,8 +96,6 @@ public class Texture: Tensorial {
     return metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
   }
   
-  
-  
   func initTexture(device: MTLDevice, inTranspose: [Int] = [0, 1, 2, 3], computePrecision: ComputePrecision = .Float16) {
     transpose = inTranspose
     for i in 0..<(4 - tensorDim.cout()) {
