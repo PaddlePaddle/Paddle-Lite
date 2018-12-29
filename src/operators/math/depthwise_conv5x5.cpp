@@ -12,8 +12,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
-
 #if defined(__ARM_NEON__) && !defined(__aarch64__)
 
 #include "operators/math/depthwise_conv5x5.h"
@@ -81,7 +79,6 @@ inline void DepthwiseConv5x5NormalRow(const float *input, const float *filter,
 
   int valid_w_start = (padding_w + Stride_w - 1) / Stride_w;
   int valid_w_end = output_w - valid_w_start;
-
   float *output_ptr = output + h_output * output_w;
   // border left
   DEPTHWISE_CONV_NORMAL_BORDER(0, valid_w_start)
@@ -111,6 +108,8 @@ inline void DepthwiseConv5x5NormalRow(const float *input, const float *filter,
     _sum = vdupq_n_f32(0.f);
     int remain_start = valid_w_start + (output_tiles << 2);
     int input_w_offset = remain_start * Stride_w - padding_w;
+    float *output_ptr0 = output_ptr + remain_start;
+
     for (int h_in = h_start; h_in < h_end; ++h_in) {
       int index = h_in - h_in_start;
       Depth5x5NormalRowLoadInput<Stride_w>(
@@ -123,14 +122,14 @@ inline void DepthwiseConv5x5NormalRow(const float *input, const float *filter,
     }
     switch (remain) {
       case 1:
-        vst1_lane_f32(output_ptr + remain_start, vget_low_f32(_sum), 0);
+        vst1_lane_f32(output_ptr0, vget_low_f32(_sum), 0);
         break;
       case 2:
-        vst1_f32(output_ptr + remain_start, vget_low_f32(_sum));
+        vst1_f32(output_ptr0, vget_low_f32(_sum));
         break;
       case 3:
-        vst1_f32(output_ptr + remain_start, vget_low_f32(_sum));
-        vst1_lane_f32(output_ptr + remain_start + 2, vget_high_f32(_sum), 0);
+        vst1_f32(output_ptr0, vget_low_f32(_sum));
+        vst1_lane_f32(output_ptr0 + 2, vget_high_f32(_sum), 0);
         break;
     }
   }
