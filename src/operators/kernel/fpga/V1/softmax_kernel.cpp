@@ -28,18 +28,26 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
   fpga::format_fp32_ofm(out);
 
   auto float_input = new Tensor;
-  float_input->mutable_data<float>(
-      {1, input->dims()[2], input->dims()[3], input->dims()[1]});
-  fpga::format_fp32_ofm(float_input);
+  if (input->dims().size() == 2) {
+    float_input->mutable_data<float>({1, input->dims()[1]});
+  } else if (input->dims().size() == 4) {
+    float_input->mutable_data<float>(
+        {1, input->dims()[2], input->dims()[3], input->dims()[1]});
+  } else {
+    DLOG << "wrong dimension of softmax input";
+  }
 
+  fpga::format_fp32_ofm(float_input);
   fpga::BypassArgs args = {fpga::DATA_TYPE_FP16};
   args.input_layout_type = fpga::LAYOUT_HWC;
   args.output_layout_type = fpga::LAYOUT_CHW;
   args.input_data_type = fpga::DATA_TYPE_FP16;
   args.output_data_type = fpga::DATA_TYPE_FP32;
   args.image.address = input_ptr;
-  args.image.height = (uint32_t)input->dims()[2];
-  args.image.width = (uint32_t)input->dims()[3];
+  args.image.height =
+      (input->dims().size() == 4) ? (uint32_t)input->dims()[2] : 1;
+  args.image.width =
+      (input->dims().size() == 4) ? (uint32_t)input->dims()[3] : 1;
   args.image.channels = (uint32_t)input->dims()[1];
   args.output.address = float_input->data<float>();
   args.output.scale_address = float_input->scale;
@@ -56,7 +64,7 @@ void SoftmaxKernel<FPGA, float>::Compute(const SoftmaxParam<FPGA> &param) {
   fpga::PerformBypass(param.FpgaArgs());
   fpga::fpga_invalidate((void *)in_x->data<float>(),  // NOLINT
                         in_x->numel() * sizeof(float));
-  // TODO: In general case, 0 should be squeezed before softmax input
+  // TODO: In general case, 0 should be squeezed before softmax input  // NOLINT
   math::SoftmaxFuntor<CPU, float>()(in_x, out);
   fpga::fpga_flush(out->data<float>(), out->memory_size());
 }

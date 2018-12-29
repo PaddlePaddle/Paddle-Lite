@@ -36,8 +36,8 @@ bool DeconvAddReluKernel<FPGA, float>::Init(
   int channel = out->dims()[1];
 
   int sub_conv_n = param->Strides()[0];
-  auto bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sub_conv_n *
-                                           sizeof(float));  // NOLINT
+  auto bs_ptr = (float *)fpga::fpga_malloc(2 * channel * sub_conv_n *  // NOLINT
+                                           sizeof(float));             // NOLINT
 
   for (int i = 0; i < channel * sub_conv_n; i++) {
     bs_ptr[i + sub_conv_n * channel] = 1;
@@ -50,17 +50,7 @@ bool DeconvAddReluKernel<FPGA, float>::Init(
                         "filter width should be equal to filter height ");
   PADDLE_MOBILE_ENFORCE(((filter->dims()[2] % param->Strides()[0]) == 0),
                         "filter axis should be the multiple of stride axis ");
-
-  float max_value = fpga::filter_find_max(filter);
-  fpga::format_deconv_filter(filter, max_value, param->Groups(),
-                             param->Strides()[0]);
-
-  int element_num_per_div =
-      fpga::get_deconv_filter_num_per_div(filter, param->Groups(), sub_conv_n);
-
-  fpga::format_bias_scale_array(&bs_ptr, element_num_per_div,
-                                channel * sub_conv_n);
-
+  fpga::format_deconv_data(filter, out, &bs_ptr, param->Groups(), sub_conv_n);
   fpga::DeconvArgs deconv_arg = {0};
   fpga::fill_deconv_arg(&deconv_arg, input, out, filter, relu_enabled,
                         param->Groups(), param->Strides()[0],
