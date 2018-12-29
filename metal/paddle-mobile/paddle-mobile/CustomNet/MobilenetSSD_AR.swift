@@ -41,7 +41,7 @@ public class MobileNet_ssd_AR: Net{
   
   class MobilenetssdPreProccess: CusomKernel {
     init(device: MTLDevice) {
-      let s = CusomKernel.Shape.init(inWidth: 160, inHeight: 160, inChannel: 3)
+      let s = Shape.init(inWidth: 160, inHeight: 160, inChannel: 3)
       super.init(device: device, inFunctionName: "mobilent_ar_preprocess", outputDim: s, usePaddleMobileLib: false)
     }
   }

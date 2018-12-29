@@ -17,11 +17,11 @@ public class MobileNetCombined: Net {
     modelPath = Bundle.main.path(forResource: "combined_mobilenet_model", ofType: nil) ?! "model null"
     paramPath = Bundle.main.path(forResource: "combined_mobilenet_params", ofType: nil) ?! "para null"
     modelDir = ""
-    //preprocessKernel = GenetPreProccess.init(device: device)
-    inputDim_ = Dim.init(inDim: [1, 416, 416, 3])
+    inputDim_ = Dim.init(inDim: [1, 224, 224, 3])
   }
   
   @objc override public init(device: MTLDevice,paramPointer: UnsafeMutableRawPointer, paramSize:Int, modePointer: UnsafeMutableRawPointer, modelSize: Int) {
+
     super.init(device:device,paramPointer:paramPointer,paramSize:paramSize,modePointer:modePointer,modelSize:modelSize)
     means = [0, 0, 0]
     scale = 1
@@ -29,9 +29,7 @@ public class MobileNetCombined: Net {
     modelPath = ""
     paramPath = ""
     modelDir = ""
-    //preprocessKernel = GenetPreProccess.init(device: device)
-    inputDim_ = Dim.init(inDim: [1, 416, 416, 3])
-    
+    inputDim_ = Dim.init(inDim: [1,  224, 224, 3])
   }
   
   //    class GenetPreProccess: CusomKernel {

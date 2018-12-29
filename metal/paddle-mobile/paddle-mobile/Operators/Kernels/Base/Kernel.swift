@@ -46,17 +46,60 @@ open class Kernel {
   }
 }
 
-open class CusomKernel: Kernel {
-  public struct Shape {
-    public let width: Int
-    public let height: Int
-    public let channel: Int
-    public init(inWidth: Int, inHeight: Int, inChannel: Int){
-      width = inWidth
-      height = inHeight
-      channel = inChannel
+public struct Shape {
+  public let width: Int
+  public let height: Int
+  public let channel: Int
+  public init(inWidth: Int, inHeight: Int, inChannel: Int){
+    width = inWidth
+    height = inHeight
+    channel = inChannel
+  }
+}
+
+open class BufferToTextureKernel: Kernel {
+  public let outputTexture: MTLTexture
+  
+  public init(device: MTLDevice, outputDim: Shape, usePaddleMobileLib: Bool = false) {
+    let textureDesc = MTLTextureDescriptor.init()
+    textureDesc.textureType = .type2D
+    textureDesc.width = outputDim.width
+    textureDesc.height = outputDim.height
+    textureDesc.depth = (outputDim.channel + 3) / 4
+    
+    if computePrecision == .Float16 {
+      textureDesc.pixelFormat = .rgba16Float
+    } else if computePrecision == .Float32 {
+      textureDesc.pixelFormat = .rgba32Float
+    } else {
+      fatalError()
+    }
+    
+    textureDesc.usage = [.shaderRead, .shaderWrite]
+    textureDesc.storageMode = .shared
+    outputTexture = device.makeTexture(descriptor: textureDesc) ?! " make texture error "
+    if computePrecision == .Float32 {
+      super.init(device: device, inFunctionName: "buffer_to_texture_kernel", usePaddleMobileLib: usePaddleMobileLib)
+    } else {
+      super.init(device: device, inFunctionName: "buffer_to_texture_kernel_half", usePaddleMobileLib: usePaddleMobileLib)
     }
   }
+  
+  public func compute(inputBuffer: MTLBuffer , commandBuffer: MTLCommandBuffer) throws {
+    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+      throw PaddleMobileError.predictError(message: " encode is nil")
+    }
+    
+    encoder.setBuffer(inputBuffer, offset: 0, index: 0)
+    encoder.setTexture(outputTexture, index: 0)
+    encoder.dispatch(computePipline: pipline, outTexture: outputTexture)
+    encoder.endEncoding()
+  }
+
+}
+
+open class CusomKernel: Kernel {
+
   public let outputTexture: MTLTexture
   public init(device: MTLDevice, inFunctionName: String, outputDim: Shape, usePaddleMobileLib: Bool = false) {
     let textureDesc = MTLTextureDescriptor.init()

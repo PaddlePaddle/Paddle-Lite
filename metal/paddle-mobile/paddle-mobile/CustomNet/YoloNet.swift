@@ -18,7 +18,7 @@ public class YoloNet: Net {
     modelPath = Bundle.main.path(forResource: "yolo_model", ofType: nil) ?! "model null"
     paramPath = Bundle.main.path(forResource: "yolo_params", ofType: nil) ?! "para null"
     modelDir = ""
-    //preprocessKernel = GenetPreProccess.init(device: device)
+//    preprocessKernel = GenetPreProccess.init(device: device)
     inputDim_ = Dim.init(inDim: [1, 416, 416, 3])
     
   }

@@ -507,7 +507,7 @@ void Executor<Device, T>::Predict_To(int end) {
 #ifdef PADDLE_MOBILE_CL
 template <>
 void Executor<GPU_CL, float>::InitNoPersistableMemory(
-    const LoDTensor &input_tensor) {
+    const Tensor &input_tensor) {
   DLOG << "CL InitNoPersistableMemory ";
   for (const auto &block : program_desc_->Blocks()) {
     for (const auto &var_desc : block->Vars()) {

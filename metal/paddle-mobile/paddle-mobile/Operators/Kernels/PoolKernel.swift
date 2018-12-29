@@ -49,7 +49,7 @@ class PoolKernel<P: PrecisionType>: Kernel, Computable{
     )
     
     if computePrecision == .Float32 {
-      super.init(device: device, inFunctionName: "pool")
+      super.init(device: device, inFunctionName: "pool_float")
     } else if computePrecision == .Float16 {
       super.init(device: device, inFunctionName: "pool_half")
     } else {
