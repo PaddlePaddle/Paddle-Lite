@@ -41,7 +41,7 @@ public class Genet: Net {
 
   class GenetPreProccess: CusomKernel {
     init(device: MTLDevice) {
-      let s = CusomKernel.Shape.init(inWidth: 128, inHeight: 128, inChannel: 3)
+      let s = Shape.init(inWidth: 128, inHeight: 128, inChannel: 3)
       super.init(device: device, inFunctionName: "genet_preprocess", outputDim: s, usePaddleMobileLib: false)
     }
   }

@@ -25,8 +25,7 @@ public class GPUResultHolder {
   public let capacity: Int
   public var resultPointer: UnsafeMutablePointer<Float32>?
   public var intermediateResults: [String : [Variant]]?
-  public let elapsedTime: Double
-  public init(inDim: [Int], inPointer: UnsafeMutablePointer<Float32>?, inCapacity: Int, inElapsedTime: Double, inIntermediateResults: [String : [Variant]]? = nil) {
+  public init(inDim: [Int], inPointer: UnsafeMutablePointer<Float32>?, inCapacity: Int, inIntermediateResults: [String : [Variant]]? = nil) {
     dim = inDim
     capacity = inCapacity
     
@@ -35,7 +34,6 @@ public class GPUResultHolder {
       resultPointer?.initialize(from: inInPointer, count: inCapacity)
     }
     
-    elapsedTime = inElapsedTime
     intermediateResults = inIntermediateResults
   }
   
@@ -124,7 +122,6 @@ public class Executor<P: PrecisionType> {
       resInput = input
     }
     
-    let beforeDate = Date.init()
     let inputTexture = InputTexture.init(inMTLTexture: resInput, inExpectDim: dim)
     program.scope.setInput(input: inputTexture)
     //(ops.count - except)
@@ -150,28 +147,28 @@ public class Executor<P: PrecisionType> {
       
       //将输入写进文件
       /*
+     
        let inputArr = resInput.toTensor(dim: (n: dim[0], c: dim[3], h: dim[1], w: dim[2]))
        print(dim)
-       writeToLibrary(fileName: "test_image_yolo", array: inputArr)
+       writeToLibrary(fileName: "test_image_mingren", array: inputArr)
        print(" write done ")
+       
        return
        */
       
- 
       /*    输出 op 计算结果
        for op in SSelf.ops {
        op.delogOutput()
        }
        */
     
-      let afterDate = Date.init()
       var resultHolder: GPUResultHolder
       if except > 0 {
-        resultHolder = GPUResultHolder.init(inDim: [], inPointer: nil, inCapacity: 0, inElapsedTime: afterDate.timeIntervalSince(beforeDate), inIntermediateResults: outputTextures)
+        resultHolder = GPUResultHolder.init(inDim: [], inPointer: nil, inCapacity: 0,  inIntermediateResults: outputTextures)
       } else {
         let outputVar: Variant = SSelf.program.scope.output()!
         let output: FetchHolder = outputVar as! FetchHolder
-        resultHolder = GPUResultHolder.init(inDim: output.dim.dims, inPointer: output.result, inCapacity: output.capacity, inElapsedTime: afterDate.timeIntervalSince(beforeDate))
+        resultHolder = GPUResultHolder.init(inDim: output.dim.dims, inPointer: output.result, inCapacity: output.capacity)
       }
       
       completionHandle(resultHolder)

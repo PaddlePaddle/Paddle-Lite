@@ -13,7 +13,8 @@
  limitations under the License. */
 
 #include <metal_stdlib>
-#include "Common.metal"
+#include "Macro.metal"
+
 using namespace metal;
 
 struct PoolParam {
@@ -26,68 +27,10 @@ struct PoolParam {
   int poolType;
 };
 
-kernel void pool(texture2d_array<float, access::read> inTexture [[texture(0)]],
-                 texture2d_array<float, access::write> outTexture [[texture(1)]],
-                 constant PoolParam &pm [[buffer(0)]],
-                 uint3 gid [[thread_position_in_grid]]) {
-  if (gid.x >= outTexture.get_width() ||
-      gid.y >= outTexture.get_height() ||
-      gid.z >= outTexture.get_array_size()) return;
-  int xmin = gid.x * pm.strideX - pm.paddingX;
-  int xmax = min(xmin + pm.ksizeX, int(inTexture.get_width()));
-  xmin = max(xmin, 0);
-  int ymin = gid.y * pm.strideX - pm.paddingX;
-  int ymax = min(ymin + pm.ksizeX, int(inTexture.get_height()));
-  ymin = max(ymin, 0);
-  
-  float4 r = 0;
-  if (pm.poolType == 0) {
-    r = inTexture.read(uint2(xmin, ymin), gid.z);
-    for (int x = xmin; x < xmax; x++) {
-      for (int y = ymin; y < ymax; y++) {
-        r = fmax(r, inTexture.read(uint2(x, y), gid.z));
-      }
-    }
-  } else if (pm.poolType == 1) {
-    for (int x = xmin; x < xmax; x++) {
-      for (int y = ymin; y < ymax; y++) {
-        r += inTexture.read(uint2(x, y), gid.z);
-      }
-    }
-    r /= pm.ksizeX * pm.ksizeY;
-  }
-  outTexture.write(r, gid.xy, gid.z);
-}
+#define P float
+#import "PoolKernel.inc.metal"
+#undef P
 
-kernel void pool_half(texture2d_array<half, access::read> inTexture [[texture(0)]],
-                      texture2d_array<half, access::write> outTexture [[texture(1)]],
-                      constant PoolParam &pm [[buffer(0)]],
-                      uint3 gid [[thread_position_in_grid]]) {
-  if (gid.x >= outTexture.get_width() ||
-      gid.y >= outTexture.get_height() ||
-      gid.z >= outTexture.get_array_size()) return;
-  int xmin = gid.x * pm.strideX - pm.paddingX;
-  int xmax = min(xmin + pm.ksizeX, int(inTexture.get_width()));
-  xmin = max(xmin, 0);
-  int ymin = gid.y * pm.strideX - pm.paddingX;
-  int ymax = min(ymin + pm.ksizeX, int(inTexture.get_height()));
-  ymin = max(ymin, 0);
-  
-  half4 r = 0;
-  if (pm.poolType == 0) {
-    r = inTexture.read(uint2(xmin, ymin), gid.z);
-    for (int x = xmin; x < xmax; x++) {
-      for (int y = ymin; y < ymax; y++) {
-        r = fmax(r, inTexture.read(uint2(x, y), gid.z));
-      }
-    }
-  } else if (pm.poolType == 1) {
-    for (int x = xmin; x < xmax; x++) {
-      for (int y = ymin; y < ymax; y++) {
-        r += inTexture.read(uint2(x, y), gid.z);
-      }
-    }
-    r /= pm.ksizeX * pm.ksizeY;
-  }
-  outTexture.write(r, gid.xy, gid.z);
-}
+#define P half
+#import "PoolKernel.inc.metal"
+#undef P

@@ -24,6 +24,6 @@ using namespace metal;
 
 #define FUNC(f, r, n, v, p) CONCAT5_(f, r, n, v, p)
 #define VECTOR(p, n) CONCAT2(p, n)
-
+#define FUNC2_(a, b) CONCAT2_(a, b)
 #define FUNC3_(a, b, c) CONCAT3_(a, b, c)
 
