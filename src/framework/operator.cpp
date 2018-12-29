@@ -64,8 +64,7 @@ void OperatorBase<Dtype>::Run() {
   for (const auto key : input_keys) {
     auto var_vec_in = inputs_.at(key);
     for (int i = 0; i < var_vec_in.size(); ++i) {
-      DLOG << var_vec_in[i];
-      auto vari = this->scope_->FindVar("input");
+      auto vari = this->scope_->FindVar(var_vec_in[i]);
       if (vari->IsInitialized()) {
         const Tensor *tensor = vari->template Get<framework::LoDTensor>();
         if (tensor) DLOG << type_ << " input- " << key << "=" << *tensor;
