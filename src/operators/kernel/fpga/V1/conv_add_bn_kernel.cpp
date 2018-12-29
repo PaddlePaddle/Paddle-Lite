@@ -15,7 +15,7 @@ limitations under the License. */
 #ifdef FUSION_CONVADDBN_OP
 
 #include "operators/kernel/conv_add_bn_kernel.h"
-
+#include <math.h>
 namespace paddle_mobile {
 namespace operators {
 
@@ -58,14 +58,7 @@ bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam<FPGA> *param) {
   param->SetNewScale(new_scale);
   param->SetNewBias(new_bias);
 
-  float max_value = fpga::filter_find_max(filter);
-  fpga::format_filter(filter, max_value, param->Groups());
-
-  int element_num_per_div =
-      fpga::get_filter_num_per_div(filter, param->Groups());
-  fpga::format_bias_scale_array(&bs_ptr, element_num_per_div, channel);
-  fpga::format_fp16_ofm(out);
-
+  fpga::format_conv_data(filter, out, &bs_ptr, param->Groups());
   fpga::SplitConvArgs conv_arg = {0};
   fpga::fill_split_arg(&conv_arg, input, out, filter, relu_enabled,
                        param->Groups(), param->Strides()[0],
