@@ -277,7 +277,84 @@ void format_fc_filter(float **data_in, int num, int channel, int height,
   fpga_flush(*quantize_data, align_to_x(chw, FILTER_ELEMENT_ALIGNMENT) *
                                  num_after_alignment * sizeof(char));
 }
+void convert_to_hwn(int16_t **data_in, int num, int height, int width) {
+  int16_t *tmp = *data_in;
+  int16_t *data_tmp =
+      (int16_t *)fpga_malloc(height * width * num * sizeof(int16_t));  // NOLINT
+  for (int n = 0; n < num; n++) {
+    for (int h = 0; h < height; h++) {
+      for (int w = 0; w < width; w++) {
+        *(data_tmp + h * width * num + w * num + n) = *((*data_in)++);
+      }
+    }
+  }
+  *data_in = data_tmp;
+  fpga_free(tmp);
+}
 
+void align_element_nw(int16_t **data_in, int num, int height, int width) {
+  int unalign_nw = num * width;
+  int align_nw = align_to_x(num * width, FILTER_ELEMENT_ALIGNMENT);
+  if (unalign_nw == align_nw) {
+    return;
+  } else {
+    int16_t *tmp = *data_in;
+
+    int num_element = height * align_nw;
+    int16_t *data_tmp =
+        (int16_t *)fpga_malloc(num_element * sizeof(int16_t));  // NOLINT
+
+    memset(data_tmp, 0, num_element * sizeof(int16_t));
+    if (unalign_nw >= FILTER_ELEMENT_ALIGNMENT) {
+      for (int h = 0; h < height; h++) {
+        int offset_unalign = h * unalign_nw;
+        int offset_align = h * align_nw;
+        for (int nw = 0; nw < unalign_nw; nw++) {
+          data_tmp[offset_align + nw] = *((*data_in) + offset_unalign + nw);
+        }
+      }
+    } else {
+      for (int h = 0; h < height; h++) {
+        int offset_unalign = h * unalign_nw;
+        int offset_align = h * align_nw;
+        for (int nw = 0; nw < align_nw; nw++) {
+          data_tmp[offset_align + nw] =
+              *((*data_in) + offset_unalign + nw % unalign_nw);
+        }
+      }
+    }
+
+    *data_in = data_tmp;
+    free(tmp);
+  }
+}
+void quantize_to_fp16(float **data_in, int num, int height, int width,
+                      float *scale_ptr) {
+  float *tmp = *data_in;
+  int size = num * height * width;
+
+  int16_t *tmp_data = (int16_t *)fpga_malloc(size * sizeof(int16_t));  // NOLINT
+  for (int n = 0; n < num; n++) {
+    float scale_val = scale_ptr[n];
+    for (int h = 0; h < height; h++) {
+      for (int w = 0; w < width; w++) {
+        int index = n * height * width + h * width + w;
+        tmp_data[index] = fp32_2_fp16((*data_in)[index] * scale_val);
+      }
+    }
+  }
+  *data_in = (float *)tmp_data;  // NOLINT
+  fpga_free(tmp);
+}
+void format_dwconv_filter(float **data_in, int num, int height, int width,
+                          float *scale_ptr) {
+  quantize_to_fp16(data_in, num, height, width, scale_ptr);
+  int16_t **quantize_data = (int16_t **)data_in;  // NOLINT
+  convert_to_hwn(quantize_data, num, height, width);
+  align_element_nw(quantize_data, num, height, width);
+  fpga_flush(*quantize_data, align_to_x(num * width, FILTER_ELEMENT_ALIGNMENT) *
+                                 height * sizeof(char));
+}
 }  // namespace filter
 }  // namespace fpga
 }  // namespace paddle_mobile
