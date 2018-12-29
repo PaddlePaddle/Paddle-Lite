@@ -73,7 +73,9 @@ class PaddleMobile {
 
   bool LoadCombinedMemory(size_t model_len, const uint8_t *model_buf,
                           size_t combined_params_len,
-                          uint8_t *combined_params_buf);
+                          uint8_t *combined_params_buf, bool optimize = false,
+                          bool quantification = false, int batch_size = 1,
+                          bool loddable = false);
 
   void SetThreadNum(int count);
   void Clear();
