@@ -15,7 +15,8 @@ limitations under the License. */
 #ifdef POOL_OP
 
 #include "operators/kernel/pool_kernel.h"
-#include "../central-arm-func/pool_arm_func.h"
+#include "operators/kernel/central-arm-func/pool_arm_func.h"
+
 namespace paddle_mobile {
 namespace operators {
 
@@ -28,7 +29,8 @@ template <>
 void PoolKernel<CPU, float>::Compute(const PoolParam<CPU> &param) {
   PoolCompute<float>(param);
 }
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#endif
+#endif  // POOL_OP
