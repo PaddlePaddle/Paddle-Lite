@@ -53,7 +53,7 @@ struct PoolingVal<AVG> {
     ++count;
     return *this;
   }
-  inline float Value() { return (count > 0) ? val / count : 0.f; }
+  inline float Value() { return (count > 0) ? val * (1.f / count) : 0.f; }
 };
 
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
@@ -68,6 +68,16 @@ inline float32x4_t vPoolInitq_f32<AVG>() {
 }
 
 template <PoolingType P = MAX>
+inline float32x2_t vPoolInit_f32() {
+  return vdup_n_f32(-std::numeric_limits<float>::max());
+}
+
+template <>
+inline float32x2_t vPoolInit_f32<AVG>() {
+  return vdup_n_f32(0.f);
+}
+
+template <PoolingType P = MAX>
 inline float32x4_t vPoolPreq_f32(const float32x4_t &x1, const float32x4_t &x2) {
   return vmaxq_f32(x1, x2);
 }
@@ -76,6 +86,28 @@ template <>
 inline float32x4_t vPoolPreq_f32<AVG>(const float32x4_t &x1,
                                       const float32x4_t &x2) {
   return vaddq_f32(x1, x2);
+}
+
+template <PoolingType P = MAX>
+inline float32x2_t vPoolPre_f32(const float32x2_t &x1, const float32x2_t &x2) {
+  return vmax_f32(x1, x2);
+}
+
+template <>
+inline float32x2_t vPoolPre_f32<AVG>(const float32x2_t &x1,
+                                     const float32x2_t &x2) {
+  return vadd_f32(x1, x2);
+}
+
+template <PoolingType P = MAX>
+inline float32x2_t vpPoolPre_f32(const float32x2_t &x1, const float32x2_t &x2) {
+  return vpmax_f32(x1, x2);
+}
+
+template <>
+inline float32x2_t vpPoolPre_f32<AVG>(const float32x2_t &x1,
+                                      const float32x2_t &x2) {
+  return vpadd_f32(x1, x2);
 }
 
 template <PoolingType P = MAX>
@@ -88,6 +120,18 @@ template <>
 inline float32x4_t vPoolPostq_f32<AVG>(const float32x4_t &x,
                                        const float32x4_t &post) {
   return vmulq_f32(x, post);
+}
+
+template <PoolingType P = MAX>
+inline float32x2_t vPoolPost_f32(const float32x2_t &x,
+                                 const float32x2_t &post) {
+  return x;
+}
+
+template <>
+inline float32x2_t vPoolPost_f32<AVG>(const float32x2_t &x,
+                                      const float32x2_t &post) {
+  return vmul_f32(x, post);
 }
 #endif  // __ARM_NEON__
 
