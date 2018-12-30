@@ -40,7 +40,7 @@ namespace math {
 
 template <PoolingType P, int Stride = 1>
 struct Pooling2x2NormalRowLoadInput {
-  inline void operator()(const float *input, float32x4_t *x0, float32x4_t *x1) {
+  void operator()(const float *input, float32x4_t *x0, float32x4_t *x1) {
     x0[0] = vld1q_f32(input);
     x0[1] = vld1q_f32(input + 4);
     x1[0] = vextq_f32(x0[0], x0[1], 1);
@@ -50,7 +50,7 @@ struct Pooling2x2NormalRowLoadInput {
 
 template <PoolingType P>
 struct Pooling2x2NormalRowLoadInput<P, 2> {
-  inline void operator()(const float *input, float32x4_t *x0, float32x4_t *x1) {
+  void operator()(const float *input, float32x4_t *x0, float32x4_t *x1) {
     float32x4x2_t t0 = vld2q_f32(input);
     float32x4x2_t t1 = vld2q_f32(input + 8);
     x0[0] = t0.val[0];
