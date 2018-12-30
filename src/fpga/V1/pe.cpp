@@ -159,6 +159,12 @@ using namespace std;     // NOLINT
 #define REG_EW_IMAGE_PIXEL 0x0F30
 #define REG_EW_IMAGE_AMOUNT_PER_ROW 0x0F38
 
+/*dwconv*/
+#define REG_DWCONV_FILTER_BASE_ADDR 0xe08
+#define REG_DWCONV_FILTER_SHAPE 0xe10
+#define REG_DWCONV_FILTER_N_ALIGN 0xe18
+#define REG_DWCONV_CMD 0xe00
+
 int ComputeFpgaConv(const struct SplitConvArgs &args) {
 //  ComputeBasicConv(args.conv_arg[0]);
 #ifdef FPGA_PRINT_MODE
@@ -746,6 +752,162 @@ int ComputeFPGASplit(const struct SplitArgs &args) {
                      args.height, args.width);
   return 0;
 }  // ComputeFPGASplit
+int ComputeDWConv(const struct DWconvArgs &args) {
+#ifdef FPGA_PRINT_MODE
+  DLOG << "=============ComputeDWConv===========";
+  DLOG << "   mode:" << args.relu_enabled;
+  DLOG << "   image_address:" << args.image.address
+       << "   image_scale_address:" << args.image.scale_address
+       << "   image_channels:" << args.image.channels
+       << "   image_height:" << args.image.height
+       << "   image_width:" << args.image.width
+       << "   pad_height:" << args.image.pad_height
+       << "   pad_width:" << args.image.pad_width;
+  DLOG << "   filter_address:" << args.filter_address
+       << "   bias_address:" << args.bias_address;
+  DLOG << "   kernel_height:" << args.kernel.height
+       << "   kernel_width:" << args.kernel.width
+       << "   stride_h:" << args.kernel.stride_h
+       << "   stride_w:" << args.kernel.stride_w;
+  DLOG << "   out_address:" << args.output.address
+       << "   out_scale_address:" << args.output.scale_address;
+#endif
+#ifdef PADDLE_MOBILE_ZU5
+  DLOG << "DWConv";
+  // return 0;
+  uint64_t output_scale = 0;
+  uint64_t timer_cnt = 0;
+  int ret = 0;
+  uint64_t cmd = args.relu_enabled;
+  uint64_t image_physical_address = 0;
+  uint64_t output_physical_address = 0;
+  uint64_t filter_physical_address = 0;
+  uint64_t bias_physical_address = 0;
 
+  image_physical_address = vaddr_to_paddr(args.image.address);
+  output_physical_address = vaddr_to_paddr(args.output.address);
+  filter_physical_address = vaddr_to_paddr(args.filter_address);
+  bias_physical_address = vaddr_to_paddr(args.bias_address);
+  uint64_t filter_N_align =
+      align_to_x((uint64_t)args.image.channels, IMAGE_ALIGNMENT);
+  uint64_t filter_amount_per_row_align =
+      filter_N_align * (uint64_t)args.kernel.width;
+  uint64_t filter_amount_align = filter_N_align * (uint64_t)args.kernel.width *
+                                 (uint64_t)args.kernel.height;
+
+  uint32_t output_height = (uint32_t)(
+      (args.image.height + args.image.pad_height * 2 - args.kernel.height) /
+          args.kernel.stride_h +
+      1);
+  uint32_t output_width = (uint32_t)(
+      (args.image.width + args.image.pad_width * 2 - args.kernel.width) /
+          args.kernel.stride_w +
+      1);
+
+  uint64_t image_amount_per_row =
+      align_to_x((uint64_t)args.image.width * (uint64_t)args.image.channels,
+                 IMAGE_ALIGNMENT);
+  uint64_t image_one_pad_per_row =
+      align_to_x((uint64_t)args.image.width * (uint64_t)args.image.channels,
+                 FILTER_ELEMENT_ALIGNMENT) +
+      (uint64_t)args.image.pad_width * (uint64_t)args.image.channels;
+  uint64_t image_two_pad_per_row = align_to_x(
+      ((uint64_t)args.image.width + (uint64_t)args.image.pad_width * 2) *
+          (uint64_t)args.image.channels,
+      IMAGE_ALIGNMENT);
+  uint64_t image_row_mul_pooling_hight =
+      image_amount_per_row * (uint64_t)args.kernel.height;
+  uint64_t image_row_mul_pad_hight =
+      image_amount_per_row * (uint64_t)args.image.pad_height;
+  uint64_t image_row_mul_step_hight =
+      image_amount_per_row * (uint64_t)args.kernel.stride_h;
+  uint64_t result_amount_align_32 =
+      align_to_x((uint64_t)output_width * (uint64_t)args.image.channels,
+                 FILTER_ELEMENT_ALIGNMENT);
+  uint64_t result_amount_align_64 = align_to_x(
+      (uint64_t)output_width * (uint64_t)args.image.channels, IMAGE_ALIGNMENT);
+  uint64_t image_calcu_height =
+      (uint64_t)args.kernel.height +
+      ((uint64_t)output_height - 1) * (uint64_t)args.kernel.stride_h;
+  uint64_t image_pad_left = args.image.channels * args.image.pad_width;
+  uint64_t image_skip_window = args.image.channels * args.kernel.stride_w;
+
+  uint64_t image_padleft_skipwindow =
+      (image_skip_window << 32) | image_pad_left;
+
+  pthread_mutex_lock(&g_fpgainfo.pe_data->mutex);
+  if (ERROR == g_fpgainfo.pe_data->pes[PE_IDX_POOLING]->status) {
+    ret = -EIO;
+    DLOG << "Conv Status Error!";
+    pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
+    return ret;
+  }
+
+  /*restart scale*/
+  reg_writeq(output_scale, REG_SCALE_PARAMETER);
+  reg_writeq(image_physical_address, REG_POOLING_IMAGE_BASE_ADDR);
+  reg_writeq(output_physical_address, REG_POOLING_RESULT_BASE_ADDR);
+  reg_writeq((bias_physical_address << 32 | filter_physical_address),
+             REG_DWCONV_FILTER_BASE_ADDR);
+  reg_writeq(filter_amount_per_row_align | (filter_amount_align << 32),
+             REG_DWCONV_FILTER_SHAPE);
+  reg_writeq(filter_N_align, REG_DWCONV_FILTER_N_ALIGN);
+
+  reg_writeq(
+      ((uint64_t)args.image.height) | (((uint64_t)args.image.width) << 32),
+      REG_POOLING_IMAGE_PIXEL);
+  reg_writeq(
+      ((uint64_t)args.kernel.height) | (((uint64_t)args.kernel.width) << 32),
+      REG_POOLING_WINDOW_SIZE);
+
+  reg_writeq(((uint64_t)output_height) | (((uint64_t)output_width) << 32),
+             REG_POOLING_RESULT_PIXEL);
+
+  reg_writeq(((uint64_t)args.image.pad_height) |
+                 (((uint64_t)args.image.pad_width) << 32),
+             REG_POOLING_PAD_PIXEL);
+  reg_writeq(((uint64_t)args.kernel.stride_h) |
+                 (((uint64_t)args.kernel.stride_w) << 32),
+             REG_POOLING_STEP_PIXEL);
+
+  reg_writeq((uint64_t)args.image.channels, REG_POOLING_CHANNEL_NUMBER);
+
+  reg_writeq(image_amount_per_row, REG_POOLING_IMAGE_AMOUNT_PER_ROW);
+  reg_writeq(image_one_pad_per_row, REG_POOLING_IMAGE_ONE_PAD_PER_ROW);
+  reg_writeq(image_two_pad_per_row, REG_POOLING_IMAGE_TWO_PAD_PER_ROW);
+
+  reg_writeq(image_row_mul_pooling_hight,
+             REG_POOLING_IMAGE_ROW_MUL_WINDOW_HEIGHT);
+  reg_writeq(image_row_mul_pad_hight, REG_POOLING_IMAGE_ROW_MUL_PAD_HEIGHT);
+  reg_writeq(image_row_mul_step_hight, REG_POOLING_IMAGE_ROW_MUL_STEP_HEIGHT);
+
+  reg_writeq(result_amount_align_32, REG_POOLING_RESULT_AMOUNT_ALIGN_32);
+  reg_writeq(result_amount_align_64, REG_POOLING_RESULT_AMOUNT_ALIGN_64);
+
+  reg_writeq(image_calcu_height, REG_POOLING_IMAGE_CALCU_HEIGHT);
+
+  reg_writeq(image_padleft_skipwindow, REG_POOLING_IMAGE_PADLEFT_SKIPWINDOW);
+
+  /*SDK刷Cache保证数据一致性*/
+
+  reg_writeq(cmd, REG_DWCONV_CMD);
+
+  DLOG << "before reg poll";
+  if (0 != fpga_regpoll(REG_INTERRUPT, INTERRUPT_POOLING, PE_IRQ_TIMEOUT)) {
+    g_fpgainfo.pe_data->pes[PE_IDX_POOLING]->status = ERROR;
+    ret = -EIO;
+    DLOG << "Pooling Wait Irq Timeout!";
+  }
+  DLOG << "after reg poll";
+
+  // *(args.output.scale_address) = reg_readq(REG_SCALE_PARAMETER);
+  output_scale = reg_readq(REG_SCALE_PARAMETER);
+  output_scale = (output_scale << 32) | (output_scale >> 32);
+  fpga_copy(args.output.scale_address, &output_scale, sizeof(float) * 2);
+  pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
+  return ret;
+#endif
+  return 0;
+}
 }  // namespace fpga
 }  // namespace paddle_mobile

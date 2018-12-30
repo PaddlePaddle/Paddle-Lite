@@ -27,6 +27,6 @@ int ComputeFpgaConv(const struct SplitConvArgs& args);
 int ComputeFPGAConcat(const struct ConcatArgs& args);
 int ComputeFPGASplit(const struct SplitArgs& args);
 int ComputeFpgaDeconv(const struct DeconvArgs& args);
-
+int ComputeDWConv(const struct DWconvArgs& args);
 }  // namespace fpga
 }  // namespace paddle_mobile
