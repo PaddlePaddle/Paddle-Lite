@@ -110,7 +110,7 @@ inline void ElementwiseAddCompute(const ElementwiseAddParam<CPU> &param) {
             break;
           case 3:
             vst1_f32(output, vget_low_f32(r0));
-            vst1_lane_f32(output, vget_high_f32(r0), 0);
+            vst1q_lane_f32(output, r0, 2);
             break;
         }
       }
