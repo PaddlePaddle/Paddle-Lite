@@ -83,7 +83,7 @@ template <>
 void ConvAddBNReluKernel<FPGA, float>::Compute(
     const FusionConvAddBNReluParam<FPGA> &param) {
   if (param.Groups() == param.Output()->dims()[1]) {
-    // fpga::ComputeFpgaConv(param.FpgaDwconvArgs());
+    fpga::ComputeDWConv(param.FpgaDwconvArgs());
   } else {
     fpga::ComputeFpgaConv(param.FpgaArgs());
   }
