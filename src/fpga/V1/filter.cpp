@@ -292,34 +292,25 @@ void convert_to_hwn(int16_t **data_in, int num, int height, int width) {
   fpga_free(tmp);
 }
 
-void align_element_nw(int16_t **data_in, int num, int height, int width) {
-  int unalign_nw = num * width;
-  int align_nw = align_to_x(num * width, FILTER_ELEMENT_ALIGNMENT);
-  if (unalign_nw == align_nw) {
+void align_element_n(int16_t **data_in, int num, int height, int width) {
+  int unalign_n = num;
+  int align_n = align_to_x(num, FILTER_ELEMENT_ALIGNMENT);
+  if (unalign_n == align_n) {
     return;
   } else {
     int16_t *tmp = *data_in;
 
-    int num_element = height * align_nw;
+    int num_element = height * width * align_n;
     int16_t *data_tmp =
         (int16_t *)fpga_malloc(num_element * sizeof(int16_t));  // NOLINT
 
     memset(data_tmp, 0, num_element * sizeof(int16_t));
-    if (unalign_nw >= FILTER_ELEMENT_ALIGNMENT) {
-      for (int h = 0; h < height; h++) {
-        int offset_unalign = h * unalign_nw;
-        int offset_align = h * align_nw;
-        for (int nw = 0; nw < unalign_nw; nw++) {
-          data_tmp[offset_align + nw] = *((*data_in) + offset_unalign + nw);
-        }
-      }
-    } else {
-      for (int h = 0; h < height; h++) {
-        int offset_unalign = h * unalign_nw;
-        int offset_align = h * align_nw;
-        for (int nw = 0; nw < align_nw; nw++) {
-          data_tmp[offset_align + nw] =
-              *((*data_in) + offset_unalign + nw % unalign_nw);
+    for (int h = 0; h < height; h++) {
+      for (int w = 0; w < width; w++) {
+        int offset_unalign = h * width * unalign_n + w * unalign_n;
+        int offset_align = h * width * align_n + w * align_n;
+        for (int n = 0; n < unalign_n; n++) {
+          data_tmp[offset_align + n] = *((*data_in) + offset_unalign + n);
         }
       }
     }
@@ -351,9 +342,9 @@ void format_dwconv_filter(float **data_in, int num, int height, int width,
   quantize_to_fp16(data_in, num, height, width, scale_ptr);
   int16_t **quantize_data = (int16_t **)data_in;  // NOLINT
   convert_to_hwn(quantize_data, num, height, width);
-  align_element_nw(quantize_data, num, height, width);
-  fpga_flush(*quantize_data, align_to_x(num * width, FILTER_ELEMENT_ALIGNMENT) *
-                                 height * sizeof(char));
+  align_element_n(quantize_data, num, height, width);
+  fpga_flush(*quantize_data, align_to_x(num, FILTER_ELEMENT_ALIGNMENT) *
+                                 height * width * sizeof(int16_t));
 }
 }  // namespace filter
 }  // namespace fpga
