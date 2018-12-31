@@ -21,6 +21,7 @@ namespace operators {
 
 template <>
 bool ReshapeKernel<FPGA, float>::Init(ReshapeParam<FPGA> *param) {
+  param->Out()->ShareDataWith(*param->InputX());
   return true;
 }
 
