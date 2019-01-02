@@ -63,7 +63,8 @@ class FeedOp<P: PrecisionType>: Operator<Texture2DTo2DArrayKernel<P>, FeedParam<
   
   func delogOutput() {
     print(" \(type) output: ")
-    print(para.output.metalTexture.toTensor(dim: (n: para.output.padToFourDim[0], c: para.output.padToFourDim[1], h: para.output.padToFourDim[2], w: para.output.padToFourDim[3])).strideArray())
+    
+    print(para.output.metalTexture.toTensor(dim: (n: para.output.padToFourDim[0], c: para.output.padToFourDim[3], h: para.output.padToFourDim[2], w: para.output.padToFourDim[1])).strideArray())
   }
 }
 
