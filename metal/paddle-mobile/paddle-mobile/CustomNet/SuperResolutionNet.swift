@@ -15,13 +15,6 @@
 import Foundation
 
 
-class SuperResolutionPreProccess: CusomKernel {
-  init(device: MTLDevice) {
-    let s = Shape.init(inWidth: 224, inHeight: 224, inChannel: 3)
-    super.init(device: device, inFunctionName: "super_resolution_preprocess", outputDim: s, usePaddleMobileLib: false)
-  }
-}
-
 public class SuperResolutionNet: Net{
   override public func resultStr(res: ResultHolder) -> String {
     return "未实现"

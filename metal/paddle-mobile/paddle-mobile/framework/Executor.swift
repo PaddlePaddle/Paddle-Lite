@@ -144,23 +144,23 @@ public class Executor<P: PrecisionType> {
       guard let SSelf = self else {
         fatalError()
       }
-      
+            
       //将输入写进文件
       /*
-     
        let inputArr = resInput.toTensor(dim: (n: dim[0], c: dim[3], h: dim[1], w: dim[2]))
        print(dim)
-       writeToLibrary(fileName: "test_image_mingren", array: inputArr)
+       writeToLibrary(fileName: "test_image_super", array: inputArr)
        print(" write done ")
-       
        return
        */
       
       /*    输出 op 计算结果
-       for op in SSelf.ops {
-       op.delogOutput()
-       }
+      
        */
+      
+      for op in SSelf.ops {
+        op.delogOutput()
+      }
     
       var resultHolder: GPUResultHolder
       if except > 0 {
