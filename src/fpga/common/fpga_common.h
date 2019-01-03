@@ -16,6 +16,8 @@ limitations under the License. */
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
+#include <vector>
 
 namespace paddle_mobile {
 namespace fpga {
@@ -158,7 +160,7 @@ struct ConcatArgs {
   void* image_out;
   float* scale_out;
   uint32_t* channel_num;
-  uint32_t* aligned_channel_num;
+  uint32_t* aligned_channel_num;  // Not used so far. Reserved for V2.
   uint32_t out_channel;
   uint32_t height;
   uint32_t width;
@@ -171,6 +173,9 @@ struct SplitConvArgs {
   struct ImageOutputArgs output;
   struct ConvArgs* conv_arg;
   struct ConcatArgs concat_arg;
+  std::shared_ptr<ConvArgs> shared_conv_arg;
+  std::vector<std::shared_ptr<char>> vector_concat_space;
+  std::vector<std::shared_ptr<char>> vector_conv_space;
 };
 
 struct SplitArgs {
@@ -221,7 +226,7 @@ struct DeconvArgs {
   uint32_t sub_output_width;
   uint32_t sub_output_height;
   struct ImageOutputArgs output;
-  struct SplitConvArgs* split_conv_args;
+  std::vector<std::shared_ptr<SplitConvArgs>> split_conv_args;
 };
 struct DWconvArgs {
   bool relu_enabled;

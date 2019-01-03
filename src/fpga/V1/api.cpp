@@ -411,6 +411,7 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
   auto input_ptr = input->data<float>();
   auto filter_ptr = filter->data<float>();
   auto out_ptr = out->data<float>();
+  auto deleter = [](void *p) { fpga_free(p); };
 
   arg->group_num = (uint32_t)group_num;
   // Either group_num or split_num = 1;
@@ -420,6 +421,8 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
   arg->output.scale_address = out->scale;
   arg->conv_arg =
       (ConvArgs *)fpga_malloc(arg->split_num * sizeof(ConvArgs));  // NOLINT
+
+  arg->shared_conv_arg = std::shared_ptr<ConvArgs>(arg->conv_arg, deleter);
 
   memset(arg->conv_arg, 0, arg->split_num * sizeof(struct ConvArgs));
 
@@ -431,11 +434,17 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
 
   int n = arg->split_num;
   arg->concat_arg.images_in =
-      (half **)fpga_malloc(n * sizeof(int *));  // NOLINT
+      static_cast<int16_t **>(fpga_malloc(n * sizeof(int *)));
   arg->concat_arg.scales_in =
-      (float **)fpga_malloc(n * sizeof(float *));  // NOLINT
+      static_cast<float **>(fpga_malloc(n * sizeof(float *)));
   arg->concat_arg.channel_num =
-      (uint32_t *)fpga_malloc(n * sizeof(uint32_t));  // NOLINT
+      static_cast<uint32_t *>(fpga_malloc(n * sizeof(uint32_t)));
+  arg->vector_concat_space.push_back(std::shared_ptr<char>(
+      reinterpret_cast<char *>(arg->concat_arg.images_in), deleter));
+  arg->vector_concat_space.push_back(std::shared_ptr<char>(
+      reinterpret_cast<char *>(arg->concat_arg.scales_in), deleter));
+  arg->vector_concat_space.push_back(std::shared_ptr<char>(
+      reinterpret_cast<char *>(arg->concat_arg.channel_num), deleter));
 
   auto channel = (int)out->dims()[1];  // NOLINT
   int filter_num_per_div = get_filter_num_per_div(filter, group_num);
@@ -469,6 +478,8 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
     auto filter_head = &(
         (int8_t *)filter_ptr)[i * element_num * filter_num_per_div];  // NOLINT
     arg->conv_arg[i].filter_address = fpga_malloc(filter_size);
+    arg->vector_conv_space.push_back(std::shared_ptr<char>(
+        reinterpret_cast<char *>(arg->conv_arg[i].filter_address), deleter));
     memcpy(arg->conv_arg[i].filter_address, filter_head, filter_size);
     fpga_flush(arg->conv_arg[i].filter_address, filter_size);
 
@@ -477,18 +488,25 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
                      sizeof(float);
     auto bs_head = &bs_ptr[i * filter_num_per_div * 2];
     arg->conv_arg[i].sb_address = fpga_malloc(bs_size);
+    arg->vector_conv_space.push_back(std::shared_ptr<char>(
+        reinterpret_cast<char *>(arg->conv_arg[i].sb_address), deleter));
     memcpy(arg->conv_arg[i].sb_address, bs_head, bs_size);
     fpga_flush(arg->conv_arg[i].sb_address, bs_size);
 
     if (n > 1) {
       arg->conv_arg[i].output.scale_address =
-          (float *)fpga_malloc(2 * sizeof(float));  // NOLINT
+          static_cast<float *>(fpga_malloc(2 * sizeof(float)));
       arg->conv_arg[i].output.address =
           fpga_malloc(out->dims()[2] *
                       align_to_x((int)(out->dims()[3] *  // NOLINT
                                        arg->conv_arg[i].filter_num),
                                  IMAGE_ALIGNMENT) *
                       sizeof(half));
+      arg->vector_conv_space.push_back(std::shared_ptr<char>(
+          reinterpret_cast<char *>(arg->conv_arg[i].output.scale_address),
+          deleter));
+      arg->vector_conv_space.push_back(std::shared_ptr<char>(
+          reinterpret_cast<char *>(arg->conv_arg[i].output.address), deleter));
     } else {
       arg->conv_arg[i].output.scale_address = out->scale;
       arg->conv_arg[i].output.address = out_ptr;
@@ -512,6 +530,7 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
                      float *bs_ptr) {
   auto input_ptr = input->data<float>();
   auto filter_ptr = filter->data<float>();
+  auto deleter = [](void *p) { fpga_free(p); };
 
   arg->group_num = (uint32_t)group_num;
   arg->sub_conv_num = (uint32_t)stride_h;
@@ -554,25 +573,41 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
   uint32_t split_num =
       group_num == 1 ? (uint32_t)get_deconv_plit_num(filter, sub_conv_num) : 1;
 
-  arg->split_conv_args = (SplitConvArgs *)fpga_malloc(  // NOLINT
-      sub_conv_num * sizeof(SplitConvArgs));            // NOLINT
   for (int i = 0; i < sub_conv_num; ++i) {
-    arg->split_conv_args[i].filter_num =
+    arg->split_conv_args.push_back(std::make_shared<SplitConvArgs>());
+    arg->split_conv_args[i]->filter_num =
         (arg->sub_conv_num) * (arg->filter_num);
-    arg->split_conv_args[i].group_num = (uint32_t)group_num;
-    arg->split_conv_args[i].split_num = split_num;
-    arg->split_conv_args[i].conv_arg =
-        (ConvArgs *)fpga_malloc(split_num * sizeof(ConvArgs));  // NOLINT
+    arg->split_conv_args[i]->group_num = (uint32_t)group_num;
+    arg->split_conv_args[i]->split_num = split_num;
+    arg->split_conv_args[i]->concat_arg.height = sub_output_height;
+    arg->split_conv_args[i]->concat_arg.width = sub_output_width;
+    arg->split_conv_args[i]->concat_arg.image_num = split_num;
 
-    arg->split_conv_args[i].concat_arg.height = sub_output_height;
-    arg->split_conv_args[i].concat_arg.width = sub_output_width;
-    arg->split_conv_args[i].concat_arg.image_num = split_num;
-    arg->split_conv_args[i].concat_arg.images_in =
-        (half **)fpga_malloc(split_num * sizeof(half *));  // NOLINT
-    arg->split_conv_args[i].concat_arg.scales_in =
-        (float **)fpga_malloc(split_num * sizeof(float *));  // NOLINT
-    arg->split_conv_args[i].concat_arg.channel_num =
-        (uint32_t *)fpga_malloc(split_num * sizeof(uint32_t));  // NOLINT
+    arg->split_conv_args[i]->conv_arg =
+        static_cast<ConvArgs *>(fpga_malloc(split_num * sizeof(ConvArgs)));
+    arg->split_conv_args[i]->concat_arg.images_in =
+        static_cast<int16_t **>(fpga_malloc(split_num * sizeof(int16_t *)));
+    arg->split_conv_args[i]->concat_arg.scales_in =
+        static_cast<float **>(fpga_malloc(split_num * sizeof(float *)));
+    arg->split_conv_args[i]->concat_arg.channel_num =
+        static_cast<uint32_t *>(fpga_malloc(split_num * sizeof(uint32_t)));
+    arg->split_conv_args[i]->shared_conv_arg =
+        std::shared_ptr<ConvArgs>(arg->split_conv_args[i]->conv_arg, deleter);
+    arg->split_conv_args[i]->vector_concat_space.push_back(
+        std::shared_ptr<char>(
+            reinterpret_cast<char *>(
+                arg->split_conv_args[i]->concat_arg.images_in),
+            deleter));
+    arg->split_conv_args[i]->vector_concat_space.push_back(
+        std::shared_ptr<char>(
+            reinterpret_cast<char *>(
+                arg->split_conv_args[i]->concat_arg.scales_in),
+            deleter));
+    arg->split_conv_args[i]->vector_concat_space.push_back(
+        std::shared_ptr<char>(
+            reinterpret_cast<char *>(
+                arg->split_conv_args[i]->concat_arg.channel_num),
+            deleter));
   }
 
   auto filter_num_per_div =
@@ -597,111 +632,132 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
   uint32_t out_addr_offset = 0;
   for (int i = 0; i < sub_conv_num; ++i) {
     if (sub_conv_num == 1) {
-      arg->split_conv_args[i].output.address = arg->output.address;
-      arg->split_conv_args[i].output.scale_address = arg->output.scale_address;
+      arg->split_conv_args[i]->output.address = arg->output.address;
+      arg->split_conv_args[i]->output.scale_address = arg->output.scale_address;
       out_addr_offset = 0;
 
     } else {
-      auto ptr_output = (half *)out_ptr;  // NOLINT
       out_addr_offset =
-          sizeof(half) * (sub_conv_num - 1 - i) *
+          sizeof(int16_t) * (sub_conv_num - 1 - i) *
           (align_to_x(real_out_width * arg->filter_num, IMAGE_ALIGNMENT));
 
-      arg->split_conv_args[i].output.address = (void *)(ptr_output);  // NOLINT
-
-      auto ptr_output_scale =
-          (float *)fpga_malloc(2 * sizeof(float));  // NOLINT
-      arg->split_conv_args[i].output.scale_address = ptr_output_scale;
+      arg->split_conv_args[i]->output.address = out_ptr;
+      arg->split_conv_args[i]->output.scale_address =
+          static_cast<float *>(fpga_malloc(2 * sizeof(float)));
+      arg->split_conv_args[i]->vector_conv_space.push_back(
+          std::shared_ptr<char>(
+              reinterpret_cast<char *>(
+                  arg->split_conv_args[i]->output.scale_address),
+              deleter));
     }
 
     for (int j = 0; j < split_num; ++j) {
-      arg->split_conv_args[i].conv_arg[j].relu_enabled = relu_enabled;
-      arg->split_conv_args[i].conv_arg[j].group_num = (uint32_t)group_num;
+      arg->split_conv_args[i]->conv_arg[j].relu_enabled = relu_enabled;
+      arg->split_conv_args[i]->conv_arg[j].group_num = (uint32_t)group_num;
 
-      arg->split_conv_args[i].conv_arg[j].kernel.width =
+      arg->split_conv_args[i]->conv_arg[j].kernel.width =
           (uint32_t)sub_filter_width;
-      arg->split_conv_args[i].conv_arg[j].kernel.height =
+      arg->split_conv_args[i]->conv_arg[j].kernel.height =
           (uint32_t)sub_filter_width;
-      arg->split_conv_args[i].conv_arg[j].kernel.stride_w = 1;
-      arg->split_conv_args[i].conv_arg[j].kernel.stride_h = 1;
+      arg->split_conv_args[i]->conv_arg[j].kernel.stride_w = 1;
+      arg->split_conv_args[i]->conv_arg[j].kernel.stride_h = 1;
 
-      arg->split_conv_args[i].conv_arg[j].deconv_tx_param.deconv_en = 1;
-      arg->split_conv_args[i].conv_arg[j].deconv_tx_param.sub_conv_num =
+      arg->split_conv_args[i]->conv_arg[j].deconv_tx_param.deconv_en = 1;
+      arg->split_conv_args[i]->conv_arg[j].deconv_tx_param.sub_conv_num =
           sub_conv_num;
-      arg->split_conv_args[i].conv_arg[j].deconv_tx_param.omit_size = omit_size;
-      arg->split_conv_args[i].conv_arg[j].deconv_tx_param.out_addr_offset =
+      arg->split_conv_args[i]->conv_arg[j].deconv_tx_param.omit_size =
+          omit_size;
+      arg->split_conv_args[i]->conv_arg[j].deconv_tx_param.out_addr_offset =
           out_addr_offset;
 
-      arg->split_conv_args[i].conv_arg[j].image.scale_address = input->scale;
-      arg->split_conv_args[i].conv_arg[j].image.channels =
+      arg->split_conv_args[i]->conv_arg[j].image.scale_address = input->scale;
+      arg->split_conv_args[i]->conv_arg[j].image.channels =
           (uint32_t)sub_channels;
-      arg->split_conv_args[i].conv_arg[j].image.width =
+      arg->split_conv_args[i]->conv_arg[j].image.width =
           (uint32_t)input->dims()[3];
-      arg->split_conv_args[i].conv_arg[j].image.height =
+      arg->split_conv_args[i]->conv_arg[j].image.height =
           (uint32_t)input->dims()[2];
-      arg->split_conv_args[i].conv_arg[j].image.pad_width = (uint32_t)sub_pad;
-      arg->split_conv_args[i].conv_arg[j].image.pad_height = (uint32_t)sub_pad;
-      arg->split_conv_args[i].conv_arg[j].image.address = input_ptr;
+      arg->split_conv_args[i]->conv_arg[j].image.pad_width = (uint32_t)sub_pad;
+      arg->split_conv_args[i]->conv_arg[j].image.pad_height = (uint32_t)sub_pad;
+      arg->split_conv_args[i]->conv_arg[j].image.address = input_ptr;
 
-      arg->split_conv_args[i].conv_arg[j].filter_scale_address = filter->scale;
-      arg->split_conv_args[i].conv_arg[j].filter_num =
+      arg->split_conv_args[i]->conv_arg[j].filter_scale_address = filter->scale;
+      arg->split_conv_args[i]->conv_arg[j].filter_num =
           (uint32_t)(j == split_num - 1
                          ? sub_filter_num - (split_num - 1) * filter_num_per_div
                          : filter_num_per_div);
 
       size_t filter_size =
           element_num *
-          align_to_x(arg->split_conv_args[i].conv_arg[j].filter_num,
+          align_to_x(arg->split_conv_args[i]->conv_arg[j].filter_num,
                      FILTER_NUM_ALIGNMENT) *
           sizeof(int8_t);
       auto filter_head = &((
           int8_t *)filter_ptr)[j * element_num * filter_num_per_div +  // NOLINT
                                i * filter_sub_conv_offset];
-      arg->split_conv_args[i].conv_arg[j].filter_address =
+      arg->split_conv_args[i]->conv_arg[j].filter_address =
           fpga_malloc(filter_size);
-      memcpy(arg->split_conv_args[i].conv_arg[j].filter_address, filter_head,
+      arg->split_conv_args[i]->vector_conv_space.push_back(
+          std::shared_ptr<char>(
+              reinterpret_cast<char *>(
+                  arg->split_conv_args[i]->conv_arg[j].filter_address),
+              deleter));
+
+      memcpy(arg->split_conv_args[i]->conv_arg[j].filter_address, filter_head,
              filter_size);
-      fpga_flush(arg->split_conv_args[i].conv_arg[j].filter_address,
+      fpga_flush(arg->split_conv_args[i]->conv_arg[j].filter_address,
                  filter_size);
 
       size_t bs_align_num = align_to_x(
-          arg->split_conv_args[i].conv_arg[j].filter_num, BS_NUM_ALIGNMENT);
+          arg->split_conv_args[i]->conv_arg[j].filter_num, BS_NUM_ALIGNMENT);
       size_t bs_size = 2 * bs_align_num * sizeof(float);
       auto bs_head = &bs_ptr[j * filter_num_per_div * 2];
 
-      arg->split_conv_args[i].conv_arg[j].sb_address = fpga_malloc(bs_size);
-      memcpy(arg->split_conv_args[i].conv_arg[j].sb_address, bs_head, bs_size);
-      fpga_flush(arg->split_conv_args[i].conv_arg[j].sb_address, bs_size);
+      arg->split_conv_args[i]->conv_arg[j].sb_address = fpga_malloc(bs_size);
+      arg->split_conv_args[i]->vector_conv_space.push_back(
+          std::shared_ptr<char>(
+              reinterpret_cast<char *>(
+                  arg->split_conv_args[i]->conv_arg[j].sb_address),
+              deleter));
+
+      memcpy(arg->split_conv_args[i]->conv_arg[j].sb_address, bs_head, bs_size);
+      fpga_flush(arg->split_conv_args[i]->conv_arg[j].sb_address, bs_size);
 
       if (split_num == 1) {
-        arg->split_conv_args[i].conv_arg[j].output.address =
-            arg->split_conv_args[i].output.address;
-        arg->split_conv_args[i].conv_arg[j].output.scale_address =
-            arg->split_conv_args[i].output.scale_address;
+        arg->split_conv_args[i]->conv_arg[j].output.address =
+            arg->split_conv_args[i]->output.address;
+        arg->split_conv_args[i]->conv_arg[j].output.scale_address =
+            arg->split_conv_args[i]->output.scale_address;
       } else {
-        auto ptr_output =
-            (half *)fpga_malloc(conv_output_size * sizeof(half));  // NOLINT
-        arg->split_conv_args[i].conv_arg[j].output.address =
-            (void *)((half *)ptr_output);  // NOLINT
-        auto ptr_output_scale =
-            (float *)fpga_malloc(2 * sizeof(float));  // NOLINT
-        arg->split_conv_args[i].conv_arg[j].output.scale_address =
-            ptr_output_scale;
+        arg->split_conv_args[i]->conv_arg[j].output.address =
+            fpga_malloc(conv_output_size * sizeof(int16_t));
+        arg->split_conv_args[i]->conv_arg[j].output.scale_address =
+            static_cast<float *>(fpga_malloc(2 * sizeof(float)));
+        arg->split_conv_args[i]->vector_conv_space.push_back(
+            std::shared_ptr<char>(
+                reinterpret_cast<char *>(
+                    arg->split_conv_args[i]->conv_arg[j].output.address),
+                deleter));
+        arg->split_conv_args[i]->vector_conv_space.push_back(
+            std::shared_ptr<char>(
+                reinterpret_cast<char *>(
+                    arg->split_conv_args[i]->conv_arg[j].output.scale_address),
+                deleter));
       }
-      arg->split_conv_args[i].concat_arg.images_in[j] =
-          (half *)arg->split_conv_args[i].conv_arg[j].output.address;  // NOLINT
-      arg->split_conv_args[i].concat_arg.scales_in[j] =
-          arg->split_conv_args[i].conv_arg[j].output.scale_address;
-      arg->split_conv_args[i].concat_arg.channel_num[j] =
-          arg->split_conv_args[i].conv_arg[j].filter_num;
+      arg->split_conv_args[i]->concat_arg.images_in[j] = static_cast<int16_t *>(
+          arg->split_conv_args[i]->conv_arg[j].output.address);
+      arg->split_conv_args[i]->concat_arg.scales_in[j] =
+          arg->split_conv_args[i]->conv_arg[j].output.scale_address;
+      arg->split_conv_args[i]->concat_arg.channel_num[j] =
+          arg->split_conv_args[i]->conv_arg[j].filter_num;
 
-      expand_conv_arg(&(arg->split_conv_args[i].conv_arg[j]));
+      expand_conv_arg(&(arg->split_conv_args[i]->conv_arg[j]));
     }
 
-    arg->split_conv_args[i].concat_arg.image_out =
-        arg->split_conv_args[i].output.address;
-    arg->split_conv_args[i].concat_arg.scale_out =
-        arg->split_conv_args[i].output.scale_address;
+    arg->split_conv_args[i]->concat_arg.image_out =
+        arg->split_conv_args[i]->output.address;
+    arg->split_conv_args[i]->concat_arg.scale_out =
+        arg->split_conv_args[i]->output.scale_address;
   }
   filter->reset_data_ptr(nullptr);
   fpga_free(bs_ptr);
@@ -717,16 +773,16 @@ void fill_dwconv_arg(struct DWconvArgs *arg, framework::Tensor *input,
   arg->relu_enabled = relu_enabled;
   arg->bias_address = bias_ptr;
   arg->filter_address = filter_ptr;
-  arg->kernel.height = filter->dims()[2];
-  arg->kernel.width = filter->dims()[3];
-  arg->kernel.stride_h = stride_h;
-  arg->kernel.stride_w = stride_w;
+  arg->kernel.height = (uint32_t)filter->dims()[2];
+  arg->kernel.width = (uint32_t)filter->dims()[3];
+  arg->kernel.stride_h = (uint32_t)stride_h;
+  arg->kernel.stride_w = (uint32_t)stride_w;
   arg->image.address = input_ptr;
   arg->image.channels = (uint32_t)input->dims()[1];
   arg->image.height = (uint32_t)input->dims()[2];
   arg->image.width = (uint32_t)input->dims()[3];
-  arg->image.pad_height = padding_h;
-  arg->image.pad_width = padding_w;
+  arg->image.pad_height = (uint32_t)padding_h;
+  arg->image.pad_width = (uint32_t)padding_w;
   arg->image.scale_address = input->scale;
   arg->output.address = output_ptr;
   arg->output.scale_address = out->scale;
