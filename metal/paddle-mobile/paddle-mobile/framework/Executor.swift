@@ -15,7 +15,7 @@
 import Foundation
 
 
-let testTo = 22
+let testTo = 5
 
 var isTest = false
 
@@ -144,15 +144,13 @@ public class Executor<P: PrecisionType> {
       guard let SSelf = self else {
         fatalError()
       }
-      
+            
       //将输入写进文件
       /*
-     
        let inputArr = resInput.toTensor(dim: (n: dim[0], c: dim[3], h: dim[1], w: dim[2]))
        print(dim)
-       writeToLibrary(fileName: "test_image_mingren", array: inputArr)
+       writeToLibrary(fileName: "test_image_super", array: inputArr)
        print(" write done ")
-       
        return
        */
       

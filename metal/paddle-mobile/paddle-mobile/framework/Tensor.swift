@@ -97,7 +97,7 @@ class Tensor<P: PrecisionType>: Tensorial {
   
 
   
-  func initBuffer(device: MTLDevice, precision: ComputePrecision = .Float16, convertToNHWC: Bool = true, withTranspose: Bool = false) {
+  func initBuffer(device: MTLDevice, precision: ComputePrecision = .Float16, padWhenOneC: Bool = false, convertToNHWC: Bool = true, withTranspose: Bool = false) {
     if convertToNHWC {
 //      print(layout)
       convert(to: DataLayout.NHWC())
@@ -145,7 +145,7 @@ class Tensor<P: PrecisionType>: Tensorial {
           case .Float16:
             float32ToFloat16(input: floatPointer, output: buffer.contents(), count: count)
           }
-        } else if C == 1 {
+        } else if C == 1 && !padWhenOneC {
           buffer = device.makeBuffer(length: numel() * precisionSize)
           switch precision {
           case .Float32:
@@ -238,10 +238,32 @@ class Tensor<P: PrecisionType>: Tensorial {
     data.release()
   }
   
+  var n: Int {
+    get {
+      if dim.cout() == 4 {
+        if layout == DataLayout.NCHW() {
+          return dim[0]
+        } else if layout == DataLayout.NHWC() {
+          return dim[0]
+        } else {
+          fatalError(" unsupport ")
+        }
+      } else {
+        fatalError()
+      }
+    }
+  }
+  
   var width: Int {
     get {
       if dim.cout() == 4 {
-        return dim[1]
+        if layout == DataLayout.NHWC() {
+          return dim[2]
+        } else if layout == DataLayout.NCHW() {
+          return dim[3]
+        } else {
+          fatalError(" unsupport ")
+        }
       } else {
         fatalError()
       }
@@ -251,7 +273,13 @@ class Tensor<P: PrecisionType>: Tensorial {
   var height: Int {
     get {
       if dim.cout() == 4 {
-        return dim[2]
+        if layout == DataLayout.NHWC() {
+          return dim[1]
+        } else if layout == DataLayout.NCHW() {
+          return dim[2]
+        } else {
+          fatalError(" unsupport ")
+        }
       } else {
         fatalError()
       }
@@ -261,7 +289,13 @@ class Tensor<P: PrecisionType>: Tensorial {
   var channel: Int {
     get {
       if dim.cout() == 4 {
-        return dim[3]
+        if layout == DataLayout.NHWC() {
+          return dim[3]
+        } else if layout == DataLayout.NCHW() {
+          return dim[1]
+        } else {
+          fatalError(" unsupport ")
+        }
       } else {
         fatalError()
       }
