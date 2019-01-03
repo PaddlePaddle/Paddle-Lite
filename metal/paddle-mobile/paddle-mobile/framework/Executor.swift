@@ -15,7 +15,7 @@
 import Foundation
 
 
-let testTo = 22
+let testTo = 2
 
 var isTest = false
 
@@ -81,7 +81,7 @@ public class Executor<P: PrecisionType> {
     
     for block in inProgram.programDesc.blocks {
       //block.ops.count
-      for i in 0..<block.ops.count {
+      for i in 0..<testTo {
         let opDesc = block.ops[i]
         do {
           
@@ -125,7 +125,7 @@ public class Executor<P: PrecisionType> {
     let inputTexture = InputTexture.init(inMTLTexture: resInput, inExpectDim: dim)
     program.scope.setInput(input: inputTexture)
     //(ops.count - except)
-    for i in 0..<(ops.count - except) {
+    for i in 0..<(testTo - except) {
       let op = ops[i]
       do {
         try op.run(device: device, buffer: buffer)
@@ -161,6 +161,7 @@ public class Executor<P: PrecisionType> {
       for op in SSelf.ops {
         op.delogOutput()
       }
+      return
     
       var resultHolder: GPUResultHolder
       if except > 0 {

@@ -50,11 +50,11 @@ public class SuperResolutionNet: Net{
               texture.updateDims(inTensorDim: Dim.init(inDim: [texture.tensorDim[0], texture.tensorDim[1], inputDim[1], inputDim[2]]), inDim: newDim)
               texture.initTexture(device: device, inTranspose: [0, 1, 2, 3], computePrecision: computePrecision)
               
-              let output: FetchHolder = program.scope.output() as! FetchHolder
-              output.dim = newDim
-              output.capacity = newDim.numel()
-              output.paddedCapacity = newDim.numel() * 4
-              output.initBuffer(device: device)
+//              let output: FetchHolder = program.scope.output() as! FetchHolder
+//              output.dim = newDim
+//              output.capacity = newDim.numel()
+//              output.paddedCapacity = newDim.numel() * 4
+//              output.initBuffer(device: device)
             }
           }
         }
