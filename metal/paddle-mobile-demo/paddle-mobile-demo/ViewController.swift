@@ -18,6 +18,34 @@ import CoreMedia
 import paddle_mobile
 import MetalPerformanceShaders
 
+
+class FileReader {
+  let file: UnsafeMutablePointer<FILE>
+  let fileSize: Int
+  init(paramPath: String) throws {
+    guard let tmpFile = fopen(paramPath, "rb") else {
+      throw PaddleMobileError.loaderError(message: "open param file error" + paramPath)
+    }
+    file = tmpFile
+    fseek(file, 0, SEEK_END)
+    fileSize = ftell(file)
+    guard fileSize > 0 else {
+      throw PaddleMobileError.loaderError(message: "param file size is too small")
+    }
+    rewind(file)
+  }
+  
+  func read<T>() -> UnsafeMutablePointer<T> {
+    let ptr = UnsafeMutablePointer<T>.allocate(capacity: MemoryLayout<T>.size * fileSize)
+    fread(ptr, fileSize, 1, file)
+    return ptr
+  }
+  
+  deinit {
+    fclose(file)
+  }
+}
+
 enum Platform {
   case GPU
 }
@@ -66,10 +94,24 @@ class ViewController: UIViewController {
   @IBAction func loadAct(_ sender: Any) {
     runner = Runner.init(inNet: netSupport[modelType]!, commandQueue: MetalHelper.shared.queue)
     if platform == .GPU {
+      let filePath = Bundle.main.path(forResource: "mingren_input_data", ofType: nil)
+      let fileReader = try! FileReader.init(paramPath: filePath!)
+      let pointer: UnsafeMutablePointer<Float32> = fileReader.read()
+      
+      
+      let buffer = MetalHelper.shared.device.makeBuffer(length: fileReader.fileSize, options: .storageModeShared)
+      
+      buffer?.contents().copyMemory(from: pointer, byteCount: fileReader.fileSize)
+      
+      
       if self.toPredictTexture == nil {
-        runner.getTexture(image: selectImage!.cgImage!) { [weak self] (texture) in
+        
+        runner.getTexture(inBuffer: buffer!) { [weak self] (texture) in
           self?.toPredictTexture = texture
         }
+        
+//        runner.getTexture(image: selectImage!.cgImage!) { [weak self] (texture) in
+//        }
       }
     } else {
       fatalError( " unsupport " )
@@ -108,7 +150,8 @@ class ViewController: UIViewController {
           guard let sSelf = self else {
             fatalError()
           }
-          if let inResultHolder = resultHolder, success {
+          
+          if success, let inResultHolder = resultHolder {
             if i == max - 1 {
               let time = Date.init().timeIntervalSince(startDate)
             

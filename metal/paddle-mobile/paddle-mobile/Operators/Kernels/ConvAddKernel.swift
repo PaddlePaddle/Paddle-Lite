@@ -18,13 +18,14 @@ class ConvAddKernel<P: PrecisionType>: Kernel, Computable {
   var metalParam: MetalConvParam!
   required init(device: MTLDevice, param: ConvAddParam<P>) {
     param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1], computePrecision: computePrecision)
-    param.filter.initBuffer(device: device, precision: computePrecision)
+    let padWhenOneC = !(param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1])
+    param.filter.initBuffer(device: device, precision: computePrecision, padWhenOneC: padWhenOneC)
     param.y.initBuffer(device: device, precision: computePrecision)
     
     if computePrecision == .Float16 {
       if param.filter.width == 1 && param.filter.height == 1 {
         super.init(device: device, inFunctionName: "conv_add_1x1_half")
-      } else if param.filter.channel == 1 {
+      } else if param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1] {
         super.init(device: device, inFunctionName: "depthwise_conv_add_3x3_half")
       } else if param.filter.width == 3 && param.filter.height == 3 {
         super.init(device: device, inFunctionName: "conv_add_3x3_half")
@@ -38,7 +39,7 @@ class ConvAddKernel<P: PrecisionType>: Kernel, Computable {
     } else if computePrecision == .Float32 {
       if param.filter.width == 1 && param.filter.height == 1 {
         super.init(device: device, inFunctionName: "conv_add_1x1")
-      } else if param.filter.channel == 1 {
+      } else if param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1] {
         super.init(device: device, inFunctionName: "depthwise_conv_add_3x3")
       } else if param.filter.width == 1 && param.filter.height == 5 {
         super.init(device: device, inFunctionName: "conv_add_5x1")
