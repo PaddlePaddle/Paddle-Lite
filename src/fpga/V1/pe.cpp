@@ -632,7 +632,7 @@ void deconv_post_process(const struct DeconvArgs &args) {
 
   for (int idx = 0; idx < sub_conv_n; ++idx) {
     paddle_mobile::fpga::fpga_invalidate(
-        args.split_conv_args[idx].output.address,
+        args.split_conv_args[idx]->output.address,
         align_origin_w * origin_h * sizeof(int16_t));
   }
 
@@ -642,7 +642,7 @@ void deconv_post_process(const struct DeconvArgs &args) {
       int hx = (hh % sub_conv_n);
       auto sub_t =
           (int16_t *)(args.split_conv_args[sub_conv_n - hx - 1]  // NOLINT
-                          .output.address);
+                          ->output.address);
       int hi = (hh / sub_conv_n);
       if ((hh < omit_size) || (hh >= (origin_h - omit_size))) continue;
       int sidx = (nn * origin_h * align_origin_w + hi * align_origin_w +
@@ -681,7 +681,7 @@ int ComputeFpgaDeconv(const struct DeconvArgs &args) {
     gettimeofday(&start, NULL);
 #endif
 
-    ComputeFpgaConv(args.split_conv_args[i]);
+    ComputeFpgaConv(*args.split_conv_args[i]);
 #ifdef COST_TIME_PRINT
     gettimeofday(&end, NULL);
     dif_sec = end.tv_sec - start.tv_sec;
@@ -699,12 +699,12 @@ int ComputeFpgaDeconv(const struct DeconvArgs &args) {
 #endif
     for (int i = 0; i < sub_conv_num; i++) {
       paddle_mobile::fpga::fpga_invalidate(
-          args.split_conv_args[i].output.scale_address, 2 * sizeof(float));
-      float ptr_scale = (args.split_conv_args[i].output.scale_address)[0];
+          args.split_conv_args[i]->output.scale_address, 2 * sizeof(float));
+      float ptr_scale = (args.split_conv_args[i]->output.scale_address)[0];
       if (ptr_scale > max_scale) {
         args.output.scale_address[0] = ptr_scale;
         args.output.scale_address[1] =
-            (args.split_conv_args[i].output.scale_address)[1];
+            (args.split_conv_args[i]->output.scale_address)[1];
       }
     }
 
