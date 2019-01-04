@@ -12,14 +12,18 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
-#pragma once
+#include <metal_stdlib>
+using namespace metal;
 
-#import <UIKit/UIKit.h>
 
-//! Project version number for paddle_mobile.
-//FOUNDATION_EXPORT double paddle_mobileVersionNumber;
+#define CONCAT2(a, b) a ## b
+#define CONCAT2_(a, b) a ## _ ## b
+#define CONCAT3_(a, b, c) a ## _ ## b ## _ ## c
+#define CONCAT4_(a, b, c, d) a ## _ ## b ## _ ## c ## _ ## d
+#define CONCAT5_(a, b, c, d, e) a ## _ ## b ## _ ## c ## _ ## d ## _ ## e
 
-//! Project version string for paddle_mobile.
-//FOUNDATION_EXPORT const unsigned char paddle_mobileVersionString[];
-
+#define FUNC(f, r, n, v, p) CONCAT5_(f, r, n, v, p)
+#define VECTOR(p, n) CONCAT2(p, n)
+#define FUNC2_(a, b) CONCAT2_(a, b)
+#define FUNC3_(a, b, c) CONCAT3_(a, b, c)
 

@@ -12,14 +12,20 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
-#pragma once
+import Foundation
 
-#import <UIKit/UIKit.h>
-
-//! Project version number for paddle_mobile.
-//FOUNDATION_EXPORT double paddle_mobileVersionNumber;
-
-//! Project version string for paddle_mobile.
-//FOUNDATION_EXPORT const unsigned char paddle_mobileVersionString[];
-
-
+@objc public class Program: NSObject {
+    public let paramPath: String
+    public let programDesc: ProgramDesc
+    public let scope: Scope
+    init(inProgramDesc: ProgramDesc, inParamPath: String, inScope: Scope) {
+        programDesc = inProgramDesc
+        paramPath = inParamPath
+        scope = inScope
+    }
+    init(inProgramDesc: ProgramDesc, inScope: Scope) {
+        programDesc = inProgramDesc
+        scope = inScope
+        paramPath = ""
+    }
+}

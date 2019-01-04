@@ -12,14 +12,12 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
-#pragma once
+#include <metal_stdlib>
+using namespace metal;
 
-#import <UIKit/UIKit.h>
-
-//! Project version number for paddle_mobile.
-//FOUNDATION_EXPORT double paddle_mobileVersionNumber;
-
-//! Project version string for paddle_mobile.
-//FOUNDATION_EXPORT const unsigned char paddle_mobileVersionString[];
-
-
+#define P float
+#include "BoxCoder.inc.metal"
+#undef P
+#define P half
+#include "BoxCoder.inc.metal"
+#undef P

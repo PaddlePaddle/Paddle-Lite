@@ -11,15 +11,12 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License. */
+#import <Foundation/Foundation.h>
 
-#pragma once
+NS_ASSUME_NONNULL_BEGIN
 
-#import <UIKit/UIKit.h>
+@interface OCDemoViewController : NSObject
 
-//! Project version number for paddle_mobile.
-//FOUNDATION_EXPORT double paddle_mobileVersionNumber;
+@end
 
-//! Project version string for paddle_mobile.
-//FOUNDATION_EXPORT const unsigned char paddle_mobileVersionString[];
-
-
+NS_ASSUME_NONNULL_END

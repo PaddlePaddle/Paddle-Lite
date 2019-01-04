@@ -12,14 +12,8 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
-#pragma once
+#import "OCDemoViewController.h"
 
-#import <UIKit/UIKit.h>
+@implementation OCDemoViewController
 
-//! Project version number for paddle_mobile.
-//FOUNDATION_EXPORT double paddle_mobileVersionNumber;
-
-//! Project version string for paddle_mobile.
-//FOUNDATION_EXPORT const unsigned char paddle_mobileVersionString[];
-
-
+@end

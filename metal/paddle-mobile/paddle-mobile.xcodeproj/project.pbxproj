@@ -28,8 +28,6 @@
 		4AF9287921341661005B6C3A /* Softmax.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AF9287821341661005B6C3A /* Softmax.metal */; };
 		4AF928822135673D005B6C3A /* ConcatKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AF928812135673D005B6C3A /* ConcatKernel.metal */; };
 		4AF9288421357BE3005B6C3A /* Elementwise.metal in Sources */ = {isa = PBXBuildFile; fileRef = 4AF9288321357BE3005B6C3A /* Elementwise.metal */; };
-		C28FDF8421B7858F0054EFAC /* MobileNetCombined.swift in Sources */ = {isa = PBXBuildFile; fileRef = C28FDF8221B7858F0054EFAC /* MobileNetCombined.swift */; };
-		C28FDF8521B7858F0054EFAC /* YoloNet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C28FDF8321B7858F0054EFAC /* YoloNet.swift */; };
 		C28FE02F21BA68C00054EFAC /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C28FE02C21BA68C00054EFAC /* Metal.framework */; };
 		C28FE03021BA68C00054EFAC /* MetalPerformanceShaders.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C28FE02D21BA68C00054EFAC /* MetalPerformanceShaders.framework */; };
 		C28FE03121BA68C00054EFAC /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C28FE02E21BA68C00054EFAC /* MetalKit.framework */; };
@@ -64,18 +62,16 @@
 		FC0E2DC020EE461F009C1FAC /* ElementwiseAddKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC0E2DBF20EE461F009C1FAC /* ElementwiseAddKernel.swift */; };
 		FC1B16B320EC9A4F00678B91 /* Kernels.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC1B16B220EC9A4F00678B91 /* Kernels.metal */; };
 		FC1CF3F721D4B4C400F7392E /* Runner.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC1CF3F621D4B4C400F7392E /* Runner.swift */; };
-		FC292C5421421B2F00CF622F /* PaddleMobileGPU.h in Headers */ = {isa = PBXBuildFile; fileRef = FC292C5321421B2E00CF622F /* PaddleMobileGPU.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		FC292C5621421B4600CF622F /* PaddleMobileGPU.m in Sources */ = {isa = PBXBuildFile; fileRef = FC292C5521421B4600CF622F /* PaddleMobileGPU.m */; };
-		FC292C81214255BD00CF622F /* CPUCompute.mm in Sources */ = {isa = PBXBuildFile; fileRef = FC292C7C214255BC00CF622F /* CPUCompute.mm */; };
-		FC292C82214255BD00CF622F /* MobileNetSSD.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC292C7E214255BC00CF622F /* MobileNetSSD.swift */; };
-		FC292C872142624800CF622F /* Genet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC292C862142624800CF622F /* Genet.swift */; };
-		FC33B0F02147659000714A93 /* MobileNet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC33B0EF2147659000714A93 /* MobileNet.swift */; };
+		FC2BFCC221DF2F9100C262B2 /* GlobalConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC2BFCC121DF2F9100C262B2 /* GlobalConfig.swift */; };
+		FC2BFD4621DF685F00C262B2 /* Scale.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC2BFD4521DF685F00C262B2 /* Scale.swift */; };
+		FC2BFD4A21DF81DE00C262B2 /* Kernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC2BFD4921DF81DE00C262B2 /* Kernel.swift */; };
+		FC2BFD4E21DF820B00C262B2 /* ConvAddBatchNormReluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC2BFD4D21DF820A00C262B2 /* ConvAddBatchNormReluOp.swift */; };
+		FC2BFD5121DF8E0400C262B2 /* Scale.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC2BFD5021DF8E0400C262B2 /* Scale.metal */; };
 		FC3602CC2108819F00FACB58 /* PaddleMobileUnitTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC3602CB2108819F00FACB58 /* PaddleMobileUnitTest.swift */; };
 		FC4CB74920F0B954007C0C6D /* ConvKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC4CB74820F0B954007C0C6D /* ConvKernel.metal */; };
 		FC4CB74B20F12C30007C0C6D /* ProgramOptimize.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC4CB74A20F12C30007C0C6D /* ProgramOptimize.swift */; };
 		FC5163F620EF556E00636C28 /* Texture2DTo2DArrayKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC5163F520EF556E00636C28 /* Texture2DTo2DArrayKernel.swift */; };
 		FC60DB8920E9AAA500FF203F /* MetalExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC60DB8820E9AAA500FF203F /* MetalExtension.swift */; };
-		FC704C2721D2385100F98BAB /* SuperResolutionNet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC704C2621D2385100F98BAB /* SuperResolutionNet.swift */; };
 		FC803BBF214CB65A0094B8E5 /* ConvAddPreluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC803BBE214CB65A0094B8E5 /* ConvAddPreluOp.swift */; };
 		FC803BC1214CB77A0094B8E5 /* ConvAddPreluKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC803BC0214CB77A0094B8E5 /* ConvAddPreluKernel.swift */; };
 		FC803BC3214CB79C0094B8E5 /* ConvAddPreluKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC803BC2214CB79C0094B8E5 /* ConvAddPreluKernel.metal */; };
@@ -85,8 +81,6 @@
 		FC82735920E3C04200BE430A /* OpCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC82735820E3C04200BE430A /* OpCreator.swift */; };
 		FC9797C921D6101D00F2FD90 /* ResizeBilinearOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9797C821D6101D00F2FD90 /* ResizeBilinearOp.swift */; };
 		FC9797CB21D6102D00F2FD90 /* ResizeBilinearKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9797CA21D6102D00F2FD90 /* ResizeBilinearKernel.swift */; };
-		FC9797CD21D61B2E00F2FD90 /* CPUCompute.h in Headers */ = {isa = PBXBuildFile; fileRef = FC292C7D214255BC00CF622F /* CPUCompute.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		FC9A19E32148C31300CD9CBF /* MobilenetSSD_AR.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9A19E22148C31300CD9CBF /* MobilenetSSD_AR.swift */; };
 		FC9C2A0D21D3D185005856C6 /* FetchKernel.inc.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC9C2A0C21D3D185005856C6 /* FetchKernel.inc.metal */; };
 		FC9D037920E229E4000F735A /* OpParam.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9D037820E229E4000F735A /* OpParam.swift */; };
 		FC9D038020E22FBB000F735A /* FeedOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9D037F20E22FBB000F735A /* FeedOp.swift */; };
@@ -138,9 +132,7 @@
 		FCE9D7B9214FAA4800B520C3 /* NMSFetchResultKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCE9D7B8214FAA4800B520C3 /* NMSFetchResultKernel.metal */; };
 		FCEB684A212F00DB00D2448E /* PreluKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCEB6849212F00DB00D2448E /* PreluKernel.metal */; };
 		FCEB684C212F093800D2448E /* PreluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCEB684B212F093800D2448E /* PreluOp.swift */; };
-		FCEBC0F420F1FDD90099DBAF /* ConvAddBatchNormReluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCEBC0F320F1FDD90099DBAF /* ConvAddBatchNormReluOp.swift */; };
 		FCEBC0F620F1FE120099DBAF /* ConvAddBatchNormReluKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCEBC0F520F1FE120099DBAF /* ConvAddBatchNormReluKernel.swift */; };
-		FCF2D73820E64E70007AC5F5 /* Kernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF2D73720E64E70007AC5F5 /* Kernel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -166,8 +158,6 @@
 		4AF9287821341661005B6C3A /* Softmax.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Softmax.metal; sourceTree = "<group>"; };
 		4AF928812135673D005B6C3A /* ConcatKernel.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = ConcatKernel.metal; sourceTree = "<group>"; };
 		4AF9288321357BE3005B6C3A /* Elementwise.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Elementwise.metal; sourceTree = "<group>"; };
-		C28FDF8221B7858F0054EFAC /* MobileNetCombined.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MobileNetCombined.swift; sourceTree = "<group>"; };
-		C28FDF8321B7858F0054EFAC /* YoloNet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = YoloNet.swift; sourceTree = "<group>"; };
 		C28FE02C21BA68C00054EFAC /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		C28FE02D21BA68C00054EFAC /* MetalPerformanceShaders.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalPerformanceShaders.framework; path = System/Library/Frameworks/MetalPerformanceShaders.framework; sourceTree = SDKROOT; };
 		C28FE02E21BA68C00054EFAC /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
@@ -206,20 +196,17 @@
 		FC0E2DBF20EE461F009C1FAC /* ElementwiseAddKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElementwiseAddKernel.swift; sourceTree = "<group>"; };
 		FC1B16B220EC9A4F00678B91 /* Kernels.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Kernels.metal; sourceTree = "<group>"; };
 		FC1CF3F621D4B4C400F7392E /* Runner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Runner.swift; sourceTree = "<group>"; };
-		FC292C5321421B2E00CF622F /* PaddleMobileGPU.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PaddleMobileGPU.h; sourceTree = "<group>"; };
-		FC292C5521421B4600CF622F /* PaddleMobileGPU.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PaddleMobileGPU.m; sourceTree = "<group>"; };
-		FC292C7C214255BC00CF622F /* CPUCompute.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = CPUCompute.mm; sourceTree = "<group>"; };
-		FC292C7D214255BC00CF622F /* CPUCompute.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CPUCompute.h; sourceTree = "<group>"; };
-		FC292C7E214255BC00CF622F /* MobileNetSSD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileNetSSD.swift; sourceTree = "<group>"; };
-		FC292C862142624800CF622F /* Genet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Genet.swift; sourceTree = "<group>"; };
-		FC33B0EF2147659000714A93 /* MobileNet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MobileNet.swift; sourceTree = "<group>"; };
+		FC2BFCC121DF2F9100C262B2 /* GlobalConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalConfig.swift; sourceTree = "<group>"; };
+		FC2BFD4521DF685F00C262B2 /* Scale.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scale.swift; sourceTree = "<group>"; };
+		FC2BFD4921DF81DE00C262B2 /* Kernel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Kernel.swift; sourceTree = "<group>"; };
+		FC2BFD4D21DF820A00C262B2 /* ConvAddBatchNormReluOp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConvAddBatchNormReluOp.swift; sourceTree = "<group>"; };
+		FC2BFD5021DF8E0400C262B2 /* Scale.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Scale.metal; sourceTree = "<group>"; };
 		FC3602CB2108819F00FACB58 /* PaddleMobileUnitTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaddleMobileUnitTest.swift; sourceTree = "<group>"; };
 		FC4CB74820F0B954007C0C6D /* ConvKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ConvKernel.metal; sourceTree = "<group>"; };
 		FC4CB74A20F12C30007C0C6D /* ProgramOptimize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramOptimize.swift; sourceTree = "<group>"; };
 		FC4FD97D2140F2C30073E130 /* libstdc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libstdc++.tbd"; path = "usr/lib/libstdc++.tbd"; sourceTree = SDKROOT; };
 		FC5163F520EF556E00636C28 /* Texture2DTo2DArrayKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Texture2DTo2DArrayKernel.swift; sourceTree = "<group>"; };
 		FC60DB8820E9AAA500FF203F /* MetalExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalExtension.swift; sourceTree = "<group>"; };
-		FC704C2621D2385100F98BAB /* SuperResolutionNet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperResolutionNet.swift; sourceTree = "<group>"; };
 		FC803BBE214CB65A0094B8E5 /* ConvAddPreluOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvAddPreluOp.swift; sourceTree = "<group>"; };
 		FC803BC0214CB77A0094B8E5 /* ConvAddPreluKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvAddPreluKernel.swift; sourceTree = "<group>"; };
 		FC803BC2214CB79C0094B8E5 /* ConvAddPreluKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ConvAddPreluKernel.metal; sourceTree = "<group>"; };
@@ -229,7 +216,6 @@
 		FC82735820E3C04200BE430A /* OpCreator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpCreator.swift; sourceTree = "<group>"; };
 		FC9797C821D6101D00F2FD90 /* ResizeBilinearOp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ResizeBilinearOp.swift; sourceTree = "<group>"; };
 		FC9797CA21D6102D00F2FD90 /* ResizeBilinearKernel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ResizeBilinearKernel.swift; sourceTree = "<group>"; };
-		FC9A19E22148C31300CD9CBF /* MobilenetSSD_AR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobilenetSSD_AR.swift; sourceTree = "<group>"; };
 		FC9C2A0C21D3D185005856C6 /* FetchKernel.inc.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = FetchKernel.inc.metal; sourceTree = "<group>"; };
 		FC9D037820E229E4000F735A /* OpParam.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpParam.swift; sourceTree = "<group>"; };
 		FC9D037F20E22FBB000F735A /* FeedOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedOp.swift; sourceTree = "<group>"; };
@@ -281,9 +267,7 @@
 		FCE9D7B8214FAA4800B520C3 /* NMSFetchResultKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = NMSFetchResultKernel.metal; sourceTree = "<group>"; };
 		FCEB6849212F00DB00D2448E /* PreluKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = PreluKernel.metal; sourceTree = "<group>"; };
 		FCEB684B212F093800D2448E /* PreluOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreluOp.swift; sourceTree = "<group>"; };
-		FCEBC0F320F1FDD90099DBAF /* ConvAddBatchNormReluOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ConvAddBatchNormReluOp.swift; path = "paddle-mobile/Operators/ConvAddBatchNormReluOp.swift"; sourceTree = SOURCE_ROOT; };
 		FCEBC0F520F1FE120099DBAF /* ConvAddBatchNormReluKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvAddBatchNormReluKernel.swift; sourceTree = "<group>"; };
-		FCF2D73720E64E70007AC5F5 /* Kernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Kernel.swift; path = "paddle-mobile/Operators/Kernels/Base/Kernel.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -343,17 +327,10 @@
 		FC039B6C20E11C3C0081E9F8 /* paddle-mobile */ = {
 			isa = PBXGroup;
 			children = (
-				FC9797CC21D61A5500F2FD90 /* CustomNet */,
-				FCE9D7B6214F869000B520C3 /* Net.swift */,
-				FC292C5521421B4600CF622F /* PaddleMobileGPU.m */,
-				FC292C5321421B2E00CF622F /* PaddleMobileGPU.h */,
-				FC039BAE20E11CC20081E9F8 /* Program */,
-				FC039BA320E11CBC0081E9F8 /* Operators */,
-				FC039B9C20E11CB20081E9F8 /* framework */,
-				FC039B9320E11C9A0081E9F8 /* Common */,
+				FC2BFD4721DF818000C262B2 /* API */,
+				FC2BFD4821DF818000C262B2 /* Src */,
 				FC039B6D20E11C3C0081E9F8 /* paddle_mobile.h */,
 				FC039B6E20E11C3C0081E9F8 /* Info.plist */,
-				FC1CF3F621D4B4C400F7392E /* Runner.swift */,
 			);
 			path = "paddle-mobile";
 			sourceTree = "<group>";
@@ -386,10 +363,10 @@
 		FC039BA320E11CBC0081E9F8 /* Operators */ = {
 			isa = PBXGroup;
 			children = (
-				FC9797C821D6101D00F2FD90 /* ResizeBilinearOp.swift */,
 				FC086BA520E67E8500D85EF7 /* Kernels */,
 				FCD592FA20E248EC00252966 /* Base */,
-				FCEBC0F320F1FDD90099DBAF /* ConvAddBatchNormReluOp.swift */,
+				FC9797C821D6101D00F2FD90 /* ResizeBilinearOp.swift */,
+				FC2BFD4D21DF820A00C262B2 /* ConvAddBatchNormReluOp.swift */,
 				FC039BA420E11CBC0081E9F8 /* ConvOp.swift */,
 				FC039BA520E11CBC0081E9F8 /* ElementwiseAddOp.swift */,
 				FC039BA720E11CBC0081E9F8 /* BatchNormOp.swift */,
@@ -441,9 +418,9 @@
 		FC086BA520E67E8500D85EF7 /* Kernels */ = {
 			isa = PBXGroup;
 			children = (
-				FC9797CA21D6102D00F2FD90 /* ResizeBilinearKernel.swift */,
 				FCDDC6CD212FE02100E5EF74 /* Base */,
 				FCEB6837212F00B100D2448E /* metal */,
+				FC9797CA21D6102D00F2FD90 /* ResizeBilinearKernel.swift */,
 				FCDDC6C7212FA3CA00E5EF74 /* ConvTransposeKernel.swift */,
 				FC0E2DBB20EE45FE009C1FAC /* ConvKernel.swift */,
 				FC0E2DB920EE3B8D009C1FAC /* ReluKernel.swift */,
@@ -469,24 +446,30 @@
 				FC803BC0214CB77A0094B8E5 /* ConvAddPreluKernel.swift */,
 				FCE3A1AA2153DE8C00C37CDE /* ConvAddAddPreluKernel.swift */,
 				FCE3A1AE2153E8EE00C37CDE /* ElementwiseAddPreluKernel.swift */,
+				FC2BFD4521DF685F00C262B2 /* Scale.swift */,
 			);
 			path = Kernels;
 			sourceTree = "<group>";
 		};
-		FC9797CC21D61A5500F2FD90 /* CustomNet */ = {
+		FC2BFD4721DF818000C262B2 /* API */ = {
 			isa = PBXGroup;
 			children = (
-				FC292C7C214255BC00CF622F /* CPUCompute.mm */,
-				FC292C7D214255BC00CF622F /* CPUCompute.h */,
-				FC704C2621D2385100F98BAB /* SuperResolutionNet.swift */,
-				C28FDF8221B7858F0054EFAC /* MobileNetCombined.swift */,
-				C28FDF8321B7858F0054EFAC /* YoloNet.swift */,
-				FC9A19E22148C31300CD9CBF /* MobilenetSSD_AR.swift */,
-				FC33B0EF2147659000714A93 /* MobileNet.swift */,
-				FC292C862142624800CF622F /* Genet.swift */,
-				FC292C7E214255BC00CF622F /* MobileNetSSD.swift */,
+				FCE9D7B6214F869000B520C3 /* Net.swift */,
+				FC1CF3F621D4B4C400F7392E /* Runner.swift */,
+				FC2BFCC121DF2F9100C262B2 /* GlobalConfig.swift */,
 			);
-			path = CustomNet;
+			path = API;
+			sourceTree = "<group>";
+		};
+		FC2BFD4821DF818000C262B2 /* Src */ = {
+			isa = PBXGroup;
+			children = (
+				FC039BAE20E11CC20081E9F8 /* Program */,
+				FC039BA320E11CBC0081E9F8 /* Operators */,
+				FC039B9C20E11CB20081E9F8 /* framework */,
+				FC039B9320E11C9A0081E9F8 /* Common */,
+			);
+			path = Src;
 			sourceTree = "<group>";
 		};
 		FCD592FA20E248EC00252966 /* Base */ = {
@@ -502,7 +485,7 @@
 		FCDDC6CD212FE02100E5EF74 /* Base */ = {
 			isa = PBXGroup;
 			children = (
-				FCF2D73720E64E70007AC5F5 /* Kernel.swift */,
+				FC2BFD4921DF81DE00C262B2 /* Kernel.swift */,
 			);
 			path = Base;
 			sourceTree = "<group>";
@@ -547,6 +530,7 @@
 				FCE3A1B02153E90F00C37CDE /* ElementwiseAddPreluKernel.inc.metal */,
 				FCE3A1B22153E91900C37CDE /* ElementwiseAddPreluKernel.metal */,
 				FC9C2A0C21D3D185005856C6 /* FetchKernel.inc.metal */,
+				FC2BFD5021DF8E0400C262B2 /* Scale.metal */,
 			);
 			path = metal;
 			sourceTree = "<group>";
@@ -558,9 +542,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FC292C5421421B2F00CF622F /* PaddleMobileGPU.h in Headers */,
 				FC039B6F20E11C3C0081E9F8 /* paddle_mobile.h in Headers */,
-				FC9797CD21D61B2E00F2FD90 /* CPUCompute.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -678,7 +660,6 @@
 				FCE3A1AB2153DE8C00C37CDE /* ConvAddAddPreluKernel.swift in Sources */,
 				FC9D037920E229E4000F735A /* OpParam.swift in Sources */,
 				FC3602CC2108819F00FACB58 /* PaddleMobileUnitTest.swift in Sources */,
-				FCF2D73820E64E70007AC5F5 /* Kernel.swift in Sources */,
 				FCDDC6CC212FDFDB00E5EF74 /* ReluKernel.metal in Sources */,
 				FC0226562138F33800F395E2 /* TransposeKernel.metal in Sources */,
 				FCDDC6C6212F9FB800E5EF74 /* PreluKernel.swift in Sources */,
@@ -686,13 +667,10 @@
 				FCA67CD52138272900BD58AA /* ConvAddMetal.metal in Sources */,
 				FCBCCC5B2122F66F00D94F7E /* ConvBNReluKernel.swift in Sources */,
 				4AA1EA8C2146640900D0F791 /* SplitOp.swift in Sources */,
-				FC292C81214255BD00CF622F /* CPUCompute.mm in Sources */,
-				FCEBC0F420F1FDD90099DBAF /* ConvAddBatchNormReluOp.swift in Sources */,
 				4AA1EAAC214F55C800D0F791 /* Softmax.inc.metal in Sources */,
 				FC0E2DC020EE461F009C1FAC /* ElementwiseAddKernel.swift in Sources */,
 				4AF928772133F1DB005B6C3A /* BoxCoder.metal in Sources */,
 				FC803BBF214CB65A0094B8E5 /* ConvAddPreluOp.swift in Sources */,
-				FC33B0F02147659000714A93 /* MobileNet.swift in Sources */,
 				FCEB684C212F093800D2448E /* PreluOp.swift in Sources */,
 				4AA1EAA8214B7AFB00D0F791 /* BilinearInterp.inc.metal in Sources */,
 				FCA67CD92138287B00BD58AA /* ConvBNReluKernel.metal in Sources */,
@@ -704,17 +682,19 @@
 				FC039BBA20E11CC20081E9F8 /* TensorDesc.swift in Sources */,
 				FC039BA020E11CB20081E9F8 /* Dim.swift in Sources */,
 				FC039BB820E11CC20081E9F8 /* framework.pb.swift in Sources */,
-				C28FDF8521B7858F0054EFAC /* YoloNet.swift in Sources */,
 				FC039B9920E11C9A0081E9F8 /* Types.swift in Sources */,
 				FC4CB74920F0B954007C0C6D /* ConvKernel.metal in Sources */,
 				FCA3A1632132A4AC00084FE5 /* ReshapeKernel.metal in Sources */,
 				FCBCCC592122F42700D94F7E /* ConvBNReluOp.swift in Sources */,
 				FC039BA920E11CBC0081E9F8 /* ConvOp.swift in Sources */,
 				FCCED5E121D71FC000BE8D5F /* PoolKernel.inc.metal in Sources */,
+				FC2BFD4A21DF81DE00C262B2 /* Kernel.swift in Sources */,
 				FC9D038420E23B01000F735A /* Texture.swift in Sources */,
 				FCE3A1B32153E91900C37CDE /* ElementwiseAddPreluKernel.metal in Sources */,
+				FC2BFD4E21DF820B00C262B2 /* ConvAddBatchNormReluOp.swift in Sources */,
 				4AA1EAA2214912CD00D0F791 /* FlattenKernel.swift in Sources */,
 				4AA1EA982146666500D0F791 /* FlattenOp.swift in Sources */,
+				FC2BFCC221DF2F9100C262B2 /* GlobalConfig.swift in Sources */,
 				FCBCCC652122FCD700D94F7E /* TransposeOp.swift in Sources */,
 				4AA1EAA6214B5F6800D0F791 /* Shape.metal in Sources */,
 				FCD04E6E20F31B4B0007374F /* ReshapeOp.swift in Sources */,
@@ -724,13 +704,11 @@
 				FCD04E7420F3437E0007374F /* ConvAddKernel.swift in Sources */,
 				FC1CF3F721D4B4C400F7392E /* Runner.swift in Sources */,
 				FC039BB920E11CC20081E9F8 /* Scope.swift in Sources */,
-				FC292C5621421B4600CF622F /* PaddleMobileGPU.m in Sources */,
 				FCD04E6620F314C50007374F /* PoolOp.swift in Sources */,
 				FCE9D7B9214FAA4800B520C3 /* NMSFetchResultKernel.metal in Sources */,
 				FC039BAC20E11CBC0081E9F8 /* BatchNormOp.swift in Sources */,
 				FCBCCC6F2123097100D94F7E /* MulticlassNMSOp.swift in Sources */,
 				FC039BBC20E11CC20081E9F8 /* VarDesc.swift in Sources */,
-				FC292C872142624800CF622F /* Genet.swift in Sources */,
 				FC803BC5214CB8F00094B8E5 /* ConvAddPrelu.inc.metal in Sources */,
 				4AF928822135673D005B6C3A /* ConcatKernel.metal in Sources */,
 				FCBCCC632122FCC000D94F7E /* TransposeKernel.swift in Sources */,
@@ -748,23 +726,20 @@
 				FCBCCC5D2122F8A100D94F7E /* DepthwiseConvOp.swift in Sources */,
 				FCE3A1AF2153E8EE00C37CDE /* ElementwiseAddPreluKernel.swift in Sources */,
 				FCE9D7B7214F869000B520C3 /* Net.swift in Sources */,
-				FC704C2721D2385100F98BAB /* SuperResolutionNet.swift in Sources */,
 				FC0E2DBE20EE460D009C1FAC /* BatchNormKernel.swift in Sources */,
 				FC039BAB20E11CBC0081E9F8 /* Operator.swift in Sources */,
-				C28FDF8421B7858F0054EFAC /* MobileNetCombined.swift in Sources */,
 				FCD04E6A20F319EC0007374F /* SoftmaxOp.swift in Sources */,
-				FC292C82214255BD00CF622F /* MobileNetSSD.swift in Sources */,
 				FCBCCC612122FBDF00D94F7E /* PriorBoxKernel.swift in Sources */,
 				FCBCCC5F2122FB3B00D94F7E /* PriorBoxOp.swift in Sources */,
 				FC9D038220E2312E000F735A /* FetchOp.swift in Sources */,
 				FCA67B1721364EF000BD58AA /* ConvTransposeKernel.metal in Sources */,
 				FC039BBD20E11CC20081E9F8 /* Program.swift in Sources */,
+				FC2BFD5121DF8E0400C262B2 /* Scale.metal in Sources */,
 				FC039BA220E11CB70081E9F8 /* Loader.swift in Sources */,
 				FCBCCC67212306B000D94F7E /* ConcatOp.swift in Sources */,
 				FCD04E6C20F31A280007374F /* SoftmaxKernel.swift in Sources */,
 				FCEB684A212F00DB00D2448E /* PreluKernel.metal in Sources */,
 				4AA1EAA02148DEEE00D0F791 /* ReshapeKernel.inc.metal in Sources */,
-				FC9A19E32148C31300CD9CBF /* MobilenetSSD_AR.swift in Sources */,
 				FCDDC6CF212FE14700E5EF74 /* PriorBoxKernel.metal in Sources */,
 				FC4CB74B20F12C30007C0C6D /* ProgramOptimize.swift in Sources */,
 				FCE3A1A92153DE5100C37CDE /* ConvAddAddPreluOp.swift in Sources */,
@@ -780,6 +755,7 @@
 				FC039BBE20E11CC20081E9F8 /* OpDesc.swift in Sources */,
 				FC9797C921D6101D00F2FD90 /* ResizeBilinearOp.swift in Sources */,
 				4AA1EA88214662BD00D0F791 /* BilinearInterpKernel.swift in Sources */,
+				FC2BFD4621DF685F00C262B2 /* Scale.swift in Sources */,
 				FC039B9720E11C9A0081E9F8 /* Extensions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -919,7 +895,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				ENABLE_BITCODE = NO;
+				ENABLE_BITCODE = YES;
 				INFOPLIST_FILE = "paddle-mobile/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
@@ -956,7 +932,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				ENABLE_BITCODE = NO;
+				ENABLE_BITCODE = YES;
 				INFOPLIST_FILE = "paddle-mobile/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;

@@ -12,14 +12,19 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
-#pragma once
+import Metal
+import MetalKit
+import Foundation
+import paddle_mobile
 
-#import <UIKit/UIKit.h>
-
-//! Project version number for paddle_mobile.
-//FOUNDATION_EXPORT double paddle_mobileVersionNumber;
-
-//! Project version string for paddle_mobile.
-//FOUNDATION_EXPORT const unsigned char paddle_mobileVersionString[];
-
-
+public class MetalHelper {
+  let device: MTLDevice
+  let queue: MTLCommandQueue
+  let textureLoader: MTKTextureLoader
+  static let shared: MetalHelper = MetalHelper.init()
+  private init(){
+    device = MTLCreateSystemDefaultDevice()!
+    queue = device.makeCommandQueue()!
+    textureLoader = MTKTextureLoader.init(device: device)
+  }
+}
