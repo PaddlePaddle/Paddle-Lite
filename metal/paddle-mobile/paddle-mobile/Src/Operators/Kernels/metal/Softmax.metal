@@ -12,14 +12,18 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
-#pragma once
+#include <metal_stdlib>
+using namespace metal;
 
-#import <UIKit/UIKit.h>
+struct SoftmaxParam {
+  int N;
+  int K;
+};
 
-//! Project version number for paddle_mobile.
-//FOUNDATION_EXPORT double paddle_mobileVersionNumber;
+#define P float
+#include "Softmax.inc.metal"
+#undef P
 
-//! Project version string for paddle_mobile.
-//FOUNDATION_EXPORT const unsigned char paddle_mobileVersionString[];
-
-
+#define P half
+#include "Softmax.inc.metal"
+#undef P

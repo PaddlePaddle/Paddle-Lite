@@ -12,14 +12,25 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
-#pragma once
+#include <metal_stdlib>
+#include "Macro.metal"
 
-#import <UIKit/UIKit.h>
+using namespace metal;
 
-//! Project version number for paddle_mobile.
-//FOUNDATION_EXPORT double paddle_mobileVersionNumber;
+struct PoolParam {
+  int ksizeX;
+  int ksizeY;
+  int strideX;
+  int strideY;
+  int paddingX;
+  int paddingY;
+  int poolType;
+};
 
-//! Project version string for paddle_mobile.
-//FOUNDATION_EXPORT const unsigned char paddle_mobileVersionString[];
+#define P float
+#import "PoolKernel.inc.metal"
+#undef P
 
-
+#define P half
+#import "PoolKernel.inc.metal"
+#undef P
