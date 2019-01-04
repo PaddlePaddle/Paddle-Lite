@@ -18,7 +18,6 @@ import CoreMedia
 import paddle_mobile
 import MetalPerformanceShaders
 
-
 class FileReader {
   let file: UnsafeMutablePointer<FILE>
   let fileSize: Int
@@ -53,16 +52,12 @@ enum Platform {
 let platformSupport: [(Platform, String)] = [(.GPU, "GPU")]
 
 enum SupportModel: String{
-  //  case mobilenet = "mobilenet"
-  //  case mobilenet_ssd    = "mobilenetssd"
   case yolo               = "yolo"
   case mobilenet_combined = "mobilenet_combined"
   case super_resolution   = "superresoltion"
   case mobilenet          = "mobilenet"
   
   static func supportedModels() -> [SupportModel] {
-    // .mobilenet,
-    // .mobilenet_ssd,
     return [.super_resolution, .yolo, .mobilenet_combined, .mobilenet]
   }
 }
@@ -94,24 +89,25 @@ class ViewController: UIViewController {
   @IBAction func loadAct(_ sender: Any) {
     runner = Runner.init(inNet: netSupport[modelType]!, commandQueue: MetalHelper.shared.queue)
     if platform == .GPU {
-      let filePath = Bundle.main.path(forResource: "mingren_input_data", ofType: nil)
-      let fileReader = try! FileReader.init(paramPath: filePath!)
-      let pointer: UnsafeMutablePointer<Float32> = fileReader.read()
-      
-      
-      let buffer = MetalHelper.shared.device.makeBuffer(length: fileReader.fileSize, options: .storageModeShared)
-      
-      buffer?.contents().copyMemory(from: pointer, byteCount: fileReader.fileSize)
+//      let filePath = Bundle.main.path(forResource: "mingren_input_data", ofType: nil)
+//      let fileReader = try! FileReader.init(paramPath: filePath!)
+//      let pointer: UnsafeMutablePointer<Float32> = fileReader.read()
+//      
+//      
+//      let buffer = MetalHelper.shared.device.makeBuffer(length: fileReader.fileSize, options: .storageModeShared)
+//      
+//      buffer?.contents().copyMemory(from: pointer, byteCount: fileReader.fileSize)
       
       
       if self.toPredictTexture == nil {
         
-        runner.getTexture(inBuffer: buffer!) { [weak self] (texture) in
+//        runner.getTexture(inBuffer: buffer!) { [weak self] (texture) in
+//          self?.toPredictTexture = texture
+//        }
+        
+        runner.getTexture(image: selectImage!.cgImage!) { [weak self] (texture) in
           self?.toPredictTexture = texture
         }
-        
-//        runner.getTexture(image: selectImage!.cgImage!) { [weak self] (texture) in
-//        }
       }
     } else {
       fatalError( " unsupport " )
@@ -178,13 +174,14 @@ class ViewController: UIViewController {
     modelPickerView.dataSource = self
     threadPickerView.delegate = self
     threadPickerView.dataSource = self
-    if let image = UIImage.init(named: "test.jpg") {
+    if let image = UIImage.init(named: "classify-img-output.png") {
       selectImage = image
       selectImageView.image = image
     } else {
       print("请添加测试图片")
     }
     
+    GlobalConfig.shared.computePrecision = .Float32
     
     //    if platform == .CPU {
     //      inputPointer = runner.preproccess(image: selectImage!.cgImage!)
