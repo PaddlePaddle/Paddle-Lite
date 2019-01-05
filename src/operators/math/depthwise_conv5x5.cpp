@@ -16,7 +16,6 @@ limitations under the License. */
 
 #include "operators/math/depthwise_conv5x5.h"
 #include <arm_neon.h>
-#include <iostream>
 
 namespace paddle_mobile {
 namespace operators {
