@@ -122,7 +122,7 @@ void ConvAddCompute(const FusionConvAddParam<CPU> &param) {
       param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
       param.Filter()->dims()[2] == 3 && param.Strides()[0] == 1) {
     math::DepthwiseConv3x3s1p1(param.Input(), param.Filter(), param.Output(),
-                               param.Bias(), true);
+                               param.Bias(), true, false);
   } else if (param.Groups() == param.Input()->dims()[1] &&
              param.Input()->dims()[1] == param.Output()->dims()[1] &&
              param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
@@ -133,10 +133,10 @@ void ConvAddCompute(const FusionConvAddParam<CPU> &param) {
     //                               param.Output(), false);
     if (param.Paddings()[0] == 0) {
       math::DepthwiseConv3x3s2p0(param.Input(), param.Filter(), param.Output(),
-                                 param.Bias(), true);
+                                 param.Bias(), true, false);
     } else {
       math::DepthwiseConv3x3s2p1v2(param.Input(), param.Filter(),
-                                   param.Output(), param.Bias(), true);
+                                   param.Output(), param.Bias(), true, false);
     }
   } else {
     ConvAddBasic(param);

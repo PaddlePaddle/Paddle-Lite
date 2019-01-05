@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #pragma once
-
+#include <cstdint>
 namespace paddle_mobile {
 namespace fpga {
 namespace filter {
@@ -37,6 +37,13 @@ void format_filter(float** data_in, int num, int channel, int height, int width,
 void convert_fc_filter(char** data_in, int num, int chw);
 void format_fc_filter(float** data_in, int num, int channel, int height,
                       int width, int group_num, float max);
+
+void convert_to_hwn(int16_t** data_in, int num, int height, int width);
+void align_element_n(int16_t** data_in, int num, int height, int width);
+void quantize_to_fp16(float** data_in, int num, int height, int width,
+                      float* scale_ptr);
+void format_dwconv_filter(float** data_in, int num, int height, int width,
+                          float* scale_ptr);
 
 }  // namespace filter
 }  // namespace fpga

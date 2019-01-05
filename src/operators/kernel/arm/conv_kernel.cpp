@@ -96,15 +96,15 @@ void ConvKernel<CPU, float>::Compute(const ConvParam<CPU> &param) {
 #endif  // __aarch64__
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3S1P1_FLOAT:
       math::DepthwiseConv3x3s1p1(param.Input(), param.Filter(), param.Output(),
-                                 nullptr, false);
+                                 nullptr, false, false);
       break;
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3S2P1_FLOAT:
       math::DepthwiseConv3x3s2p1v2(param.Input(), param.Filter(),
-                                   param.Output(), nullptr, false);
+                                   param.Output(), nullptr, false, false);
       break;
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3S2P0_FLOAT:
       math::DepthwiseConv3x3s2p0(param.Input(), param.Filter(), param.Output(),
-                                 nullptr, false);
+                                 nullptr, false, false);
       break;
 #ifndef __aarch64__
     case ConvParam<CPU>::EXEC_DEPTHWISE5x5_FLOAT:

@@ -464,6 +464,13 @@ class ConvParam : public OpParam {
  public:
   const fpga::SplitConvArgs &FpgaArgs() const { return fpga_conv_args; }
   void SetFpgaArgs(const fpga::SplitConvArgs &args) { fpga_conv_args = args; }
+
+ public:
+  fpga::DWconvArgs fpga_dwconv_args;
+
+ public:
+  const fpga::DWconvArgs &FpgaDwconvArgs() const { return fpga_dwconv_args; }
+  void SetFpgaArgs(const fpga::DWconvArgs &args) { fpga_dwconv_args = args; }
 #endif
 };
 template <typename Dtype>

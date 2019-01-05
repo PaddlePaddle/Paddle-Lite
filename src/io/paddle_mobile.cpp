@@ -91,14 +91,10 @@ PMStatus PaddleMobile<Device, T>::Load(const PaddleMobileConfig &config) {
   }
 }
 
-template <typename Device, typename T>
-bool PaddleMobile<Device, T>::LoadCombinedMemory(size_t model_len,
-                                                 const uint8_t *model_buf,
-                                                 size_t combined_params_len,
-                                                 uint8_t *combined_params_buf) {
-  int batch_size = 1;
-  bool optimise = true;
-  bool quantification = false;
+bool PaddleMobile<Device, T>::LoadCombinedMemory(
+    size_t model_len, const uint8_t *model_buf, size_t combined_params_len,
+    uint8_t *combined_params_buf, bool optimize, bool quantification,
+    int batch_size, bool lod_mode) {
   if (loader_.get() == nullptr) {
     loader_ = std::make_shared<framework::Loader<Device, T>>();
   } else {
@@ -107,9 +103,9 @@ bool PaddleMobile<Device, T>::LoadCombinedMemory(size_t model_len,
   if (executor_.get() == nullptr) {
     executor_ = std::make_shared<framework::Executor<Device, T>>(
         loader_->LoadCombinedMemory(model_len, model_buf, combined_params_len,
-                                    combined_params_buf, optimise,
+                                    combined_params_buf, optimize,
                                     quantification),
-        batch_size, optimise);
+        batch_size, optimize, lod_mode);
   } else {
     LOG(kLOG_INFO) << "executor inited";
   }

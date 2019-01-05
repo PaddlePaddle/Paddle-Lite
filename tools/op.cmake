@@ -122,6 +122,11 @@ if (CON GREATER -1)
   set(SPLIT_OP ON)
   set(FUSION_DECONVADD_OP ON)
   set(FUSION_DECONVADDRELU_OP ON)
+
+  set(RESHAPE_OP ON)
+  set(FUSION_CONVADDBNRELU_OP ON)
+  set(FUSION_CONVADDBN_OP ON)
+
   set(FOUND_MATCH ON)
 endif()
 
@@ -193,6 +198,16 @@ if (CON GREATER -1)
   set(PRELU_OP ON)
   set(POOL_OP ON)
   set(CONCAT_OP ON)
+
+  set(FOUND_MATCH ON)
+endif()
+
+list(FIND NET "super" CON)
+if (CON GREATER -1)
+  message("super enabled")
+  set(FUSION_CONVADD_OP ON)
+  set(FUSION_CONVADDRELU_OP ON)
+  set(ELEMENTWISEADD_OP ON)
 
   set(FOUND_MATCH ON)
 endif()
