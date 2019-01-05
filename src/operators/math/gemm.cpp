@@ -3150,9 +3150,11 @@ void Gemm::SgemmWithPRelu(int m, int n, int k, const float *A, int lda,
 void Gemm::Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
                      const float *B, int ldb, float beta, float *C, int ldc,
                      bool relu, float *bias) {
+#ifndef __aarch64__
   if (m == 1 && bias == nullptr) {
     return VectorKernel(m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, relu);
   }
+#endif  // __aarch64__
 #ifdef _OPENMP
   int max_threads = omp_get_max_threads();
 #else

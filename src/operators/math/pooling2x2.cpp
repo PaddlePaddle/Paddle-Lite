@@ -19,6 +19,8 @@ limitations under the License. */
 #include <arm_neon.h>
 #include "operators/math/pooling.h"
 
+// TODO(hjchen2): Optimize Pooling2x2NormalRow and use inline assembly
+
 namespace paddle_mobile {
 namespace operators {
 namespace math {
@@ -60,7 +62,6 @@ struct Pooling2x2NormalRowLoadInput<P, 2> {
   }
 };
 
-// TODO(hjchen2): To optimize Pooling2x2NormalRow
 template <PoolingType P, int Stride>
 inline void Pooling2x2NormalRow(const float *input, const int h_output,
                                 const int input_h, const int input_w,
