@@ -251,27 +251,31 @@ void DepthwiseConv3x3(const framework::Tensor *input,
 void DepthwiseConv3x3s1p1(const framework::Tensor *input,
                           const framework::Tensor *filter,
                           framework::Tensor *output, framework::Tensor *bias,
-                          bool if_bias) {
+                          bool if_bias, bool if_relu) {
 #if __ARM_NEON
-  const float *input_data = input->data<float>();
-  const float *filter_data = filter->data<float>();
-  float *output_data = output->mutable_data<float>();
-  const float *bias_data;
-  if (if_bias) {
-    bias_data = bias->data<float>();
-  }
-
-  const int h = static_cast<int>(input->dims()[2]);
-  const int w = static_cast<int>(input->dims()[3]);
-  //  const int l = h;
+  const float *bias_data = bias->data<float>();
   const int batch_size = static_cast<int>(input->dims()[0]);
   const int c = static_cast<int>(input->dims()[1]);
+  const int h = static_cast<int>(input->dims()[2]);
+  const int w = static_cast<int>(input->dims()[3]);
   const int hxw = h * w;
-  float32x4_t vbias = vdupq_n_f32(0.0);
-  for (int b = 0; b < batch_size; ++b) {
-    const float *filter_data_tmp = filter_data;
+  // const int l = h;
 
+  // leftTop, rightTop, leftBottom, rightBottom
+  const int lt = 0;
+  const int rt = w - 1;
+  const int lb = (h - 1) * w;
+  const int rb = h * w - 1;
+
+  float32x4_t zero = vdupq_n_f32(0.0);
+
+  for (int b = 0; b < batch_size; ++b) {
+#pragma omp parallel for
     for (int j = 0; j < c; ++j) {
+      const float *filter_data_tmp = filter->data<float>() + j * 9;
+      const float *input_data = input->data<float>() + j * hxw;
+      float *output_data = output->mutable_data<float>() + j * hxw;
+      float32x4_t vbias;
       if (if_bias) {
         vbias = vdupq_n_f32(bias_data[j]);
       }
@@ -287,39 +291,51 @@ void DepthwiseConv3x3s1p1(const framework::Tensor *input,
       float w21 = filter_data_tmp[7];
       float w22 = filter_data_tmp[8];
 
-      output_data[0] = w11 * input_data[0] + w12 * input_data[1] +
-                       w21 * input_data[w] + w22 * input_data[w + 1];
-      output_data[w - 1] = w10 * input_data[w - 2] + w11 * input_data[w - 1] +
-                           w20 * input_data[2 * w - 2] +
-                           w21 * input_data[2 * w - 1];
-      output_data[(h - 1) * w] =
+      output_data[lt] = w11 * input_data[0] + w12 * input_data[1] +
+                        w21 * input_data[w] + w22 * input_data[w + 1];
+      output_data[rt] = w10 * input_data[w - 2] + w11 * input_data[w - 1] +
+                        w20 * input_data[2 * w - 2] +
+                        w21 * input_data[2 * w - 1];
+      output_data[lb] =
           w01 * input_data[(h - 2) * w] + w02 * input_data[(h - 2) * w + 1] +
           w11 * input_data[(h - 1) * w] + w12 * input_data[(h - 1) * w + 1];
-      output_data[h * w - 1] =
+      output_data[rb] =
           w00 * input_data[h * w - w - 2] + w01 * input_data[h * w - w - 1] +
           w10 * input_data[h * w - 2] + w11 * input_data[h * w - 1];
       if (if_bias) {
-        output_data[0] += bias_data[j];
-        output_data[w - 1] += bias_data[j];
-        output_data[(h - 1) * w] += bias_data[j];
-        output_data[h * w - 1] += bias_data[j];
+        output_data[lt] += bias_data[j];
+        output_data[rt] += bias_data[j];
+        output_data[lb] += bias_data[j];
+        output_data[rb] += bias_data[j];
+      }
+      if (if_relu) {
+        output_data[lt] = output_data[lt] < 0 ? 0 : output_data[lt];
+        output_data[rt] = output_data[rt] < 0 ? 0 : output_data[rt];
+        output_data[lb] = output_data[lb] < 0 ? 0 : output_data[lb];
+        output_data[rb] = output_data[rb] < 0 ? 0 : output_data[rb];
       }
 
       for (int i = 1; i < h - 1; ++i) {
-        output_data[i * w] =
+        int left = i * w;
+        int right = i * w + w - 1;
+        output_data[left] =
             w01 * input_data[i * w - w] + w02 * input_data[i * w - w + 1] +
             w11 * input_data[i * w] + w12 * input_data[i * w + 1] +
             w21 * input_data[i * w + w] + w22 * input_data[i * w + w + 1];
 
-        output_data[i * w + w - 1] = w00 * input_data[i * w + w - 1 - w - 1] +
-                                     w01 * input_data[i * w + w - 1 - w] +
-                                     w10 * input_data[i * w + w - 1 - 1] +
-                                     w11 * input_data[i * w + w - 1] +
-                                     w20 * input_data[i * w + w - 1 + w - 1] +
-                                     w21 * input_data[i * w + w - 1 + w];
+        output_data[right] = w00 * input_data[i * w + w - 1 - w - 1] +
+                             w01 * input_data[i * w + w - 1 - w] +
+                             w10 * input_data[i * w + w - 1 - 1] +
+                             w11 * input_data[i * w + w - 1] +
+                             w20 * input_data[i * w + w - 1 + w - 1] +
+                             w21 * input_data[i * w + w - 1 + w];
         if (if_bias) {
-          output_data[i * w] += bias_data[j];
-          output_data[i * w + w - 1] += bias_data[j];
+          output_data[left] += bias_data[j];
+          output_data[right] += bias_data[j];
+        }
+        if (if_relu) {
+          output_data[left] = output_data[left] < 0 ? 0 : output_data[left];
+          output_data[right] = output_data[right] < 0 ? 0 : output_data[right];
         }
       }
 
@@ -352,7 +368,9 @@ void DepthwiseConv3x3s1p1(const framework::Tensor *input,
         out0 = vmlaq_n_f32(out0, tmp2, w21);
         out0 = vmlaq_n_f32(out0, tmp3, w22);
         out0 = vaddq_f32(out0, vbias);
-
+        if (if_relu) {
+          out0 = vmaxq_f32(out0, zero);
+        }
         vst1q_f32(output_ptr, out0);
 
         in5 = vld1q_f32(input_tmp_end + 4);
@@ -370,7 +388,9 @@ void DepthwiseConv3x3s1p1(const framework::Tensor *input,
         out0 = vmlaq_n_f32(out0, tmp2, w11);
         out0 = vmlaq_n_f32(out0, tmp3, w12);
         out0 = vaddq_f32(out0, vbias);
-
+        if (if_relu) {
+          out0 = vmaxq_f32(out0, zero);
+        }
         vst1q_f32(output_ptr + (h - 1) * w, out0);
 
         // can optimize to each 8 stride.
@@ -399,6 +419,9 @@ void DepthwiseConv3x3s1p1(const framework::Tensor *input,
       out0 = vmlaq_n_f32(out0, tmp2, w21);
       out0 = vmlaq_n_f32(out0, tmp3, w22);
       out0 = vaddq_f32(out0, vbias);
+      if (if_relu) {
+        out0 = vmaxq_f32(out0, zero);
+      }
 
       for (int i = 0; i < c_mid; ++i) {
         if (i == 0) {
@@ -428,6 +451,9 @@ void DepthwiseConv3x3s1p1(const framework::Tensor *input,
       out0 = vmlaq_n_f32(out0, tmp2, w11);
       out0 = vmlaq_n_f32(out0, tmp3, w12);
       out0 = vaddq_f32(out0, vbias);
+      if (if_relu) {
+        out0 = vmaxq_f32(out0, zero);
+      }
 
       for (int i = 0; i < c_mid; ++i) {
         if (i == 0) {
@@ -471,6 +497,9 @@ void DepthwiseConv3x3s1p1(const framework::Tensor *input,
           out0 = vmlaq_n_f32(out0, tmp4, w21);
           out0 = vmlaq_n_f32(out0, tmp5, w22);
           out0 = vaddq_f32(out0, vbias);
+          if (if_relu) {
+            out0 = vmaxq_f32(out0, zero);
+          }
 
           vst1q_f32(output_ptr, out0);
 
@@ -502,6 +531,9 @@ void DepthwiseConv3x3s1p1(const framework::Tensor *input,
         out0 = vmlaq_n_f32(out0, tmp4, w21);
         out0 = vmlaq_n_f32(out0, tmp5, w22);
         out0 = vaddq_f32(out0, vbias);
+        if (if_relu) {
+          out0 = vmaxq_f32(out0, zero);
+        }
 
         for (int i = 0; i < c_mid; ++i) {
           if (i == 0) {
@@ -515,9 +547,6 @@ void DepthwiseConv3x3s1p1(const framework::Tensor *input,
           }
         }
       }
-      output_data += hxw;
-      input_data += hxw;
-      filter_data_tmp += 9;
     }
   }
 #endif
@@ -1273,7 +1302,7 @@ void DepthwiseConvAddBNRelu3x3s2p1(const framework::Tensor *input,
 void DepthwiseConv3x3s2p1v2(const framework::Tensor *input,
                             const framework::Tensor *filter,
                             framework::Tensor *output, framework::Tensor *bias,
-                            bool if_bias) {
+                            bool if_bias, bool if_relu) {
 #if __ARM_NEON
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
@@ -1361,6 +1390,9 @@ void DepthwiseConv3x3s2p1v2(const framework::Tensor *input,
           res3 = vaddq_f32(vextq_f32(elewise_res2, zero, 1),
                            vaddq_f32(elewise_res0, elewise_res1));
           res3 = vaddq_f32(res3, vbias);
+          if (if_relu) {
+            res3 = vmaxq_f32(res3, zero);
+          }
           vst1q_f32(output_row_ptr, res3);
 
           input_row_ptr += 6;
@@ -1395,6 +1427,9 @@ void DepthwiseConv3x3s2p1v2(const framework::Tensor *input,
         res3 = vaddq_f32(vextq_f32(elewise_res2, zero, 1),
                          vaddq_f32(elewise_res0, elewise_res1));
         res3 = vaddq_f32(res3, vbias);
+        if (if_relu) {
+          res3 = vmaxq_f32(res3, zero);
+        }
 
         if ((w4 != w_times)) {
           vst1q_f32(output_row_ptr, res3);
@@ -1410,12 +1445,18 @@ void DepthwiseConv3x3s2p1v2(const framework::Tensor *input,
         output_row_ptr += 3;
       }
 
-      output_data_tmp[0] = input_const[0] * w11 + input_const[1] * w12 +
-                           input_const[in_w] * w21 +
-                           input_const[in_w + 1] * w22;
+      // leftTop, rightTop, leftBottom, rightBottom
+      int lt = 0;
+      int rt = out_w - 1;
+      int lb = out_w * (out_h - 1);
+      int rb = out_h * out_w - 1;
+
+      output_data_tmp[lt] = input_const[0] * w11 + input_const[1] * w12 +
+                            input_const[in_w] * w21 +
+                            input_const[in_w + 1] * w22;
 
       out2in_mid = (out_w - 1) * 2;
-      output_data_tmp[out_w - 1] =
+      output_data_tmp[rt] =
           w10 * input_const[out2in_mid - 1] + w11 * input_const[out2in_mid] +
           w20 * input_const[out2in_mid + in_w - 1] +
           w21 * input_const[out2in_mid + in_w] +
@@ -1424,7 +1465,7 @@ void DepthwiseConv3x3s2p1v2(const framework::Tensor *input,
 
       out2in_mid = (out_h - 1) * 2 * in_w;
 
-      output_data_tmp[out_w * (out_h - 1)] =
+      output_data_tmp[lb] =
           w01 * input_const[out2in_mid - in_w] +
           w02 * input_const[out2in_mid - in_w + 1] +
           w11 * input_const[out2in_mid] + w12 * input_const[out2in_mid + 1] +
@@ -1432,7 +1473,7 @@ void DepthwiseConv3x3s2p1v2(const framework::Tensor *input,
                             w22 * input_const[out2in_mid + in_w + 1]);
       out2in_mid = (out_h - 1) * 2 * in_w + (out_w - 1) * 2;
 
-      output_data_tmp[out_h * out_w - 1] =
+      output_data_tmp[rb] =
           w00 * input_const[out2in_mid - in_w - 1] +
           w01 * input_const[out2in_mid - in_w] +
           w10 * input_const[out2in_mid - 1] + w11 * input_const[out2in_mid] +
@@ -1443,22 +1484,30 @@ void DepthwiseConv3x3s2p1v2(const framework::Tensor *input,
           (1 - if_pad_r) * (1 - if_pad_b) * w22 *
               input_const[out2in_mid + in_w + 1];
       if (if_bias) {
-        output_data_tmp[0] += bias_data[j];
-        output_data_tmp[out_w - 1] += bias_data[j];
-        output_data_tmp[out_w * (out_h - 1)] += bias_data[j];
-        output_data_tmp[out_h * out_w - 1] += bias_data[j];
+        output_data_tmp[lt] += bias_data[j];
+        output_data_tmp[rt] += bias_data[j];
+        output_data_tmp[lb] += bias_data[j];
+        output_data_tmp[rb] += bias_data[j];
+      }
+      if (if_relu) {
+        output_data_tmp[lt] = output_data_tmp[lt] < 0 ? 0 : output_data_tmp[lt];
+        output_data_tmp[rt] = output_data_tmp[rt] < 0 ? 0 : output_data_tmp[rt];
+        output_data_tmp[lb] = output_data_tmp[lb] < 0 ? 0 : output_data_tmp[lb];
+        output_data_tmp[rb] = output_data_tmp[rb] < 0 ? 0 : output_data_tmp[rb];
       }
       for (int i = 1; i < out_h - 1; i++) {
         out2in_mid = i * 2 * in_w;
-        output_data_tmp[i * out_w] = w01 * input_const[out2in_mid - in_w] +
-                                     w02 * input_const[out2in_mid - in_w + 1] +
-                                     w11 * input_const[out2in_mid] +
-                                     w12 * input_const[out2in_mid + 1] +
-                                     w21 * input_const[out2in_mid + in_w] +
-                                     w22 * input_const[out2in_mid + in_w + 1];
+        int left = i * out_w;
+        output_data_tmp[left] = w01 * input_const[out2in_mid - in_w] +
+                                w02 * input_const[out2in_mid - in_w + 1] +
+                                w11 * input_const[out2in_mid] +
+                                w12 * input_const[out2in_mid + 1] +
+                                w21 * input_const[out2in_mid + in_w] +
+                                w22 * input_const[out2in_mid + in_w + 1];
 
         out2in_mid = i * 2 * in_w + (out_w - 1) * 2;
-        output_data_tmp[i * out_w + out_w - 1] =
+        int right = i * out_w + out_w - 1;
+        output_data_tmp[right] =
             w00 * input_const[out2in_mid - in_w - 1] +
             w01 * input_const[out2in_mid - in_w] +
             w10 * input_const[out2in_mid - 1] + w11 * input_const[out2in_mid] +
@@ -1468,8 +1517,14 @@ void DepthwiseConv3x3s2p1v2(const framework::Tensor *input,
                               w12 * input_const[out2in_mid + 1] +
                               w22 * input_const[out2in_mid + in_w + 1]);
         if (if_bias) {
-          output_data_tmp[i * out_w] += bias_data[j];
-          output_data_tmp[i * out_w + out_w - 1] += bias_data[j];
+          output_data_tmp[left] += bias_data[j];
+          output_data_tmp[right] += bias_data[j];
+        }
+        if (if_relu) {
+          output_data_tmp[left] =
+              output_data_tmp[left] < 0 ? 0 : output_data_tmp[left];
+          output_data_tmp[right] =
+              output_data_tmp[right] < 0 ? 0 : output_data_tmp[right];
         }
       }
       filter_data_tmp += 9;
@@ -1909,7 +1964,7 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const framework::Tensor *input,
 void DepthwiseConv3x3s2p0(const framework::Tensor *input,
                           const framework::Tensor *filter,
                           framework::Tensor *output, framework::Tensor *bias,
-                          bool if_bias) {
+                          bool if_bias, bool if_relu) {
 #if __ARM_NEON
 
   const int batch_size = static_cast<int>(input->dims()[0]);
@@ -1977,6 +2032,9 @@ void DepthwiseConv3x3s2p0(const framework::Tensor *input,
           if (if_bias) {
             out0 = vaddq_f32(out0, biasv);
           }
+          if (if_relu) {
+            out0 = vmaxq_f32(out0, zero);
+          }
           vst1q_lane_f32(output_ptr, out0, 0);
           vst1q_lane_f32(output_ptr + 1, out0, 1);
           vst1q_lane_f32(output_ptr + 2, out0, 2);
@@ -1985,7 +2043,8 @@ void DepthwiseConv3x3s2p0(const framework::Tensor *input,
         for (m = 0; m < output_width - 2; m += 3) {
         }
         for (int j = m; j < output_width; j++) {
-          output_data[i * output_width + j] =
+          int index = i * output_width + j;
+          output_data[index] =
               input_data[(2 * i) * input_width + 2 * j] * w00 +
               input_data[(2 * i) * input_width + 2 * j + 1] * w01 +
               input_data[(2 * i) * input_width + 2 * j + 2] * w02 +
@@ -1996,7 +2055,11 @@ void DepthwiseConv3x3s2p0(const framework::Tensor *input,
               input_data[(2 * i + 2) * input_width + 2 * j + 1] * w21 +
               input_data[(2 * i + 2) * input_width + 2 * j + 2] * w22;
           if (if_bias) {
-            output_data[i * output_width + j] += *bias_data;
+            output_data[index] += *bias_data;
+          }
+          if (if_relu) {
+            output_data[index] =
+                output_data[index] < 0 ? 0 : output_data[index];
           }
         }
       }

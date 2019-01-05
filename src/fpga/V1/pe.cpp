@@ -24,14 +24,13 @@ limitations under the License. */
 #include <time.h>
 #include <iomanip>
 #include <iostream>
-//#include <iostream>
 #endif
 
 namespace paddle_mobile {
 namespace fpga {
 
 using namespace driver;  // NOLINT
-using namespace std;
+using namespace std;     // NOLINT
 #define USE_RELU 1
 #define USE_BIAS 2
 
@@ -53,7 +52,6 @@ using namespace std;
 #define INTERRUPT_CONV 0x0004
 #define INTERRUPT_POOLING 0x0008
 #define INTERRUPT_EW 0x0010
-//#define INTERRUPT_RESIZE 0x0020
 
 /* Register offset */
 #define REG_INTERRUPT 0x000
@@ -72,9 +70,6 @@ using namespace std;
 #define REG_FLASH_CONFIG 0x210
 #define REG_FLASH_STATUS 0x218
 #define REG_SN 0x220
-
-//#define REG_READ_SCALE
-//#define REG_WRITE_SCALE
 
 /*bypass*/
 #define REG_CONVERT_CMD 0x400
@@ -164,6 +159,12 @@ using namespace std;
 #define REG_EW_IMAGE_PIXEL 0x0F30
 #define REG_EW_IMAGE_AMOUNT_PER_ROW 0x0F38
 
+/*dwconv*/
+#define REG_DWCONV_FILTER_BASE_ADDR 0xe08
+#define REG_DWCONV_FILTER_SHAPE 0xe10
+#define REG_DWCONV_FILTER_N_ALIGN 0xe18
+#define REG_DWCONV_CMD 0xe00
+
 int ComputeFpgaConv(const struct SplitConvArgs &args) {
 //  ComputeBasicConv(args.conv_arg[0]);
 #ifdef FPGA_PRINT_MODE
@@ -236,8 +237,10 @@ int ComputeBasicConv(const struct ConvArgs &args) {
   reg_writeq((uint64_t)args.group_num, REG_CONV_GROUP_NUMBER);
   reg_writeq((uint64_t)args.filter_num, REG_CONV_FILTER_NUMBER);
   reg_writeq((uint64_t)args.image.channels, REG_CONV_CHANNEL_NUMBER);
-  reg_writeq(*(uint64_t *)args.image.scale_address, REG_CONV_IMAGE_SCALE);
-  reg_writeq(*(uint64_t *)args.filter_scale_address, REG_CONV_FILTER_SCALE);
+  reg_writeq(*(uint64_t *)args.image.scale_address,  // NOLINT
+             REG_CONV_IMAGE_SCALE);
+  reg_writeq(*(uint64_t *)args.filter_scale_address,  // NOLINT
+             REG_CONV_FILTER_SCALE);
   reg_writeq(args.driver.image_address_phy, REG_CONV_IMAGE_BASE_ADDR);
   reg_writeq(args.driver.filter_address_phy, REG_CONV_FILTER_BASE_ADDR);
   reg_writeq(args.driver.sb_address_phy, REG_CONV_SB_BASE_ADDR);
@@ -260,6 +263,7 @@ int ComputeBasicConv(const struct ConvArgs &args) {
   reg_writeq(args.driver.res_row_data_align4_pad, 0xcf8);
   reg_writeq(args.driver.prog_full_cnt, 0xd08);
   reg_writeq(args.driver.post_prog_full_cnt, 0xd10);
+  reg_writeq(args.driver.deconv_param, 0xd18);
   reg_writeq(args.driver.fpga_bias_scale_len / 4, 0xd20);
   reg_writeq(args.driver.cmd, REG_CONV_CMD);
   DLOG << "before reg poll";
@@ -279,7 +283,6 @@ int ComputeBasicConv(const struct ConvArgs &args) {
   return ret;
 #endif
   return 0;
-
 }  // ComputeBasicConv
 
 int ComputeFpgaPool(const struct PoolingArgs &args) {
@@ -405,13 +408,11 @@ int ComputeFpgaPool(const struct PoolingArgs &args) {
   output_scale = reg_readq(REG_SCALE_PARAMETER);
   output_scale = (output_scale << 32) | (output_scale >> 32);
   fpga_copy(args.output.scale_address, &output_scale, sizeof(float) * 2);
-  //*(args.output.timer_cnt) = reg_readq(REG_TIMER_COUNTER);
   pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
 
   return ret;
 #endif
   return 0;
-
 }  // ComputeFpgaPool
 
 int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
@@ -467,13 +468,10 @@ int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
   output_scale = reg_readq(REG_SCALE_PARAMETER);
   output_scale = (output_scale << 32) | (output_scale >> 32);
   fpga_copy(args.output.scale_address, &output_scale, sizeof(float) * 2);
-  //*(args.output.scale_address) = reg_readq(REG_SCALE_PARAMETER);
-  //*(args.output.timer_cnt) = reg_readq(REG_TIMER_COUNTER);
   pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
   return ret;
 #endif
   return 0;
-
 }  // ComputeFpgaEWAdd
 
 int PerformBypass(const struct BypassArgs &args) {
@@ -587,13 +585,10 @@ int PerformBypass(const struct BypassArgs &args) {
   output_scale = reg_readq(REG_SCALE_PARAMETER);
   output_scale = (output_scale << 32) | (output_scale >> 32);
   fpga_copy(args.output.scale_address, &output_scale, sizeof(float) * 2);
-  //*(args.output.scale_address) = reg_readq(REG_SCALE_PARAMETER);
-  //*(args.output.timer_cnt) = reg_readq(REG_TIMER_COUNTER);
   pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
   return ret;
 #endif
   return 0;
-
 }  // PerformBypass
 
 int ComputeFPGAConcat(const struct ConcatArgs &args) {
@@ -637,7 +632,7 @@ void deconv_post_process(const struct DeconvArgs &args) {
 
   for (int idx = 0; idx < sub_conv_n; ++idx) {
     paddle_mobile::fpga::fpga_invalidate(
-        args.split_conv_args[idx].output.address,
+        args.split_conv_args[idx]->output.address,
         align_origin_w * origin_h * sizeof(int16_t));
   }
 
@@ -646,13 +641,14 @@ void deconv_post_process(const struct DeconvArgs &args) {
     for (int hh = 0; hh < origin_h; ++hh) {
       int hx = (hh % sub_conv_n);
       auto sub_t =
-          (int16_t *)(args.split_conv_args[sub_conv_n - hx - 1].output.address);
+          (int16_t *)(args.split_conv_args[sub_conv_n - hx - 1]  // NOLINT
+                          ->output.address);
       int hi = (hh / sub_conv_n);
       if ((hh < omit_size) || (hh >= (origin_h - omit_size))) continue;
       int sidx = (nn * origin_h * align_origin_w + hi * align_origin_w +
                   omit_size * channel);
-      fpga_copy((int16_t *)(args.output.address) + deconv_idx, sub_t + sidx,
-                sizeof(int16_t) * deconv_row_len);
+      fpga_copy((int16_t *)(args.output.address) + deconv_idx,    // NOLINT
+                sub_t + sidx, sizeof(int16_t) * deconv_row_len);  // NOLINT
       deconv_idx += align_deconv_row_len;
     }
   }
@@ -677,7 +673,7 @@ int ComputeFpgaDeconv(const struct DeconvArgs &args) {
 
 #ifdef COST_TIME_PRINT
   timeval start, end;
-  long dif_sec, dif_usec;
+  long dif_sec, dif_usec;  // NOLINT
 #endif
 
   for (int i = 0; i < sub_conv_num; i++) {
@@ -685,7 +681,7 @@ int ComputeFpgaDeconv(const struct DeconvArgs &args) {
     gettimeofday(&start, NULL);
 #endif
 
-    ComputeFpgaConv(args.split_conv_args[i]);
+    ComputeFpgaConv(*args.split_conv_args[i]);
 #ifdef COST_TIME_PRINT
     gettimeofday(&end, NULL);
     dif_sec = end.tv_sec - start.tv_sec;
@@ -703,12 +699,12 @@ int ComputeFpgaDeconv(const struct DeconvArgs &args) {
 #endif
     for (int i = 0; i < sub_conv_num; i++) {
       paddle_mobile::fpga::fpga_invalidate(
-          args.split_conv_args[i].output.scale_address, 2 * sizeof(float));
-      float ptr_scale = (args.split_conv_args[i].output.scale_address)[0];
+          args.split_conv_args[i]->output.scale_address, 2 * sizeof(float));
+      float ptr_scale = (args.split_conv_args[i]->output.scale_address)[0];
       if (ptr_scale > max_scale) {
         args.output.scale_address[0] = ptr_scale;
         args.output.scale_address[1] =
-            (args.split_conv_args[i].output.scale_address)[1];
+            (args.split_conv_args[i]->output.scale_address)[1];
       }
     }
 
@@ -722,18 +718,16 @@ int ComputeFpgaDeconv(const struct DeconvArgs &args) {
 #endif
 
     //    fpga_flush(args.output.scale_address, 2 * sizeof(float));
-#ifdef COST_TIME_PRINT
-    gettimeofday(&start, NULL);
-#endif
-    deconv_post_process(args);
-#ifdef COST_TIME_PRINT
-    gettimeofday(&end, NULL);
-    dif_sec = end.tv_sec - start.tv_sec;
-    dif_usec = end.tv_usec - start.tv_usec;
-    std::cout << "deconv_post_process  "
-              << "    cost time: " << (dif_sec * 1000000 + dif_usec) << "us"
-              << std::endl;
-#endif
+    /*#ifdef COST_TIME_PRINT
+    gettimeofday(&start,NULL);
+    #endif
+        //deconv_post_process(args);
+    #ifdef COST_TIME_PRINT
+        gettimeofday(&end,NULL);
+     dif_sec = end.tv_sec - start.tv_sec;
+     dif_usec = end.tv_usec - start.tv_usec;
+      std::cout << "deconv_post_process  " << "    cost time: "  <<
+    (dif_sec*1000000+dif_usec)  << "us" << std::endl; #endif*/
   }
 
   return 0;
@@ -758,6 +752,162 @@ int ComputeFPGASplit(const struct SplitArgs &args) {
                      args.height, args.width);
   return 0;
 }  // ComputeFPGASplit
+int ComputeDWConv(const struct DWconvArgs &args) {
+#ifdef FPGA_PRINT_MODE
+  DLOG << "=============ComputeDWConv===========";
+  DLOG << "   mode:" << args.relu_enabled;
+  DLOG << "   image_address:" << args.image.address
+       << "   image_scale_address:" << args.image.scale_address
+       << "   image_channels:" << args.image.channels
+       << "   image_height:" << args.image.height
+       << "   image_width:" << args.image.width
+       << "   pad_height:" << args.image.pad_height
+       << "   pad_width:" << args.image.pad_width;
+  DLOG << "   filter_address:" << args.filter_address
+       << "   bias_address:" << args.bias_address;
+  DLOG << "   kernel_height:" << args.kernel.height
+       << "   kernel_width:" << args.kernel.width
+       << "   stride_h:" << args.kernel.stride_h
+       << "   stride_w:" << args.kernel.stride_w;
+  DLOG << "   out_address:" << args.output.address
+       << "   out_scale_address:" << args.output.scale_address;
+#endif
+#ifdef PADDLE_MOBILE_ZU5
+  DLOG << "DWConv";
+  // return 0;
+  uint64_t output_scale = 0;
+  uint64_t timer_cnt = 0;
+  int ret = 0;
+  uint64_t cmd = args.relu_enabled;
+  uint64_t image_physical_address = 0;
+  uint64_t output_physical_address = 0;
+  uint64_t filter_physical_address = 0;
+  uint64_t bias_physical_address = 0;
 
+  image_physical_address = vaddr_to_paddr(args.image.address);
+  output_physical_address = vaddr_to_paddr(args.output.address);
+  filter_physical_address = vaddr_to_paddr(args.filter_address);
+  bias_physical_address = vaddr_to_paddr(args.bias_address);
+  uint64_t filter_N_align =
+      align_to_x((uint64_t)args.image.channels, IMAGE_ALIGNMENT);
+  uint64_t filter_amount_per_row_align =
+      filter_N_align * (uint64_t)args.kernel.width;
+  uint64_t filter_amount_align = filter_N_align * (uint64_t)args.kernel.width *
+                                 (uint64_t)args.kernel.height;
+
+  uint32_t output_height = (uint32_t)(
+      (args.image.height + args.image.pad_height * 2 - args.kernel.height) /
+          args.kernel.stride_h +
+      1);
+  uint32_t output_width = (uint32_t)(
+      (args.image.width + args.image.pad_width * 2 - args.kernel.width) /
+          args.kernel.stride_w +
+      1);
+
+  uint64_t image_amount_per_row =
+      align_to_x((uint64_t)args.image.width * (uint64_t)args.image.channels,
+                 IMAGE_ALIGNMENT);
+  uint64_t image_one_pad_per_row =
+      align_to_x((uint64_t)args.image.width * (uint64_t)args.image.channels,
+                 FILTER_ELEMENT_ALIGNMENT) +
+      (uint64_t)args.image.pad_width * (uint64_t)args.image.channels;
+  uint64_t image_two_pad_per_row = align_to_x(
+      ((uint64_t)args.image.width + (uint64_t)args.image.pad_width * 2) *
+          (uint64_t)args.image.channels,
+      IMAGE_ALIGNMENT);
+  uint64_t image_row_mul_pooling_hight =
+      image_amount_per_row * (uint64_t)args.kernel.height;
+  uint64_t image_row_mul_pad_hight =
+      image_amount_per_row * (uint64_t)args.image.pad_height;
+  uint64_t image_row_mul_step_hight =
+      image_amount_per_row * (uint64_t)args.kernel.stride_h;
+  uint64_t result_amount_align_32 =
+      align_to_x((uint64_t)output_width * (uint64_t)args.image.channels,
+                 FILTER_ELEMENT_ALIGNMENT);
+  uint64_t result_amount_align_64 = align_to_x(
+      (uint64_t)output_width * (uint64_t)args.image.channels, IMAGE_ALIGNMENT);
+  uint64_t image_calcu_height =
+      (uint64_t)args.kernel.height +
+      ((uint64_t)output_height - 1) * (uint64_t)args.kernel.stride_h;
+  uint64_t image_pad_left = args.image.channels * args.image.pad_width;
+  uint64_t image_skip_window = args.image.channels * args.kernel.stride_w;
+
+  uint64_t image_padleft_skipwindow =
+      (image_skip_window << 32) | image_pad_left;
+
+  pthread_mutex_lock(&g_fpgainfo.pe_data->mutex);
+  if (ERROR == g_fpgainfo.pe_data->pes[PE_IDX_POOLING]->status) {
+    ret = -EIO;
+    DLOG << "Conv Status Error!";
+    pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
+    return ret;
+  }
+
+  /*restart scale*/
+  reg_writeq(output_scale, REG_SCALE_PARAMETER);
+  reg_writeq(image_physical_address, REG_POOLING_IMAGE_BASE_ADDR);
+  reg_writeq(output_physical_address, REG_POOLING_RESULT_BASE_ADDR);
+  reg_writeq((bias_physical_address << 32 | filter_physical_address),
+             REG_DWCONV_FILTER_BASE_ADDR);
+  reg_writeq(filter_amount_per_row_align | (filter_amount_align << 32),
+             REG_DWCONV_FILTER_SHAPE);
+  reg_writeq(filter_N_align, REG_DWCONV_FILTER_N_ALIGN);
+
+  reg_writeq(
+      ((uint64_t)args.image.height) | (((uint64_t)args.image.width) << 32),
+      REG_POOLING_IMAGE_PIXEL);
+  reg_writeq(
+      ((uint64_t)args.kernel.height) | (((uint64_t)args.kernel.width) << 32),
+      REG_POOLING_WINDOW_SIZE);
+
+  reg_writeq(((uint64_t)output_height) | (((uint64_t)output_width) << 32),
+             REG_POOLING_RESULT_PIXEL);
+
+  reg_writeq(((uint64_t)args.image.pad_height) |
+                 (((uint64_t)args.image.pad_width) << 32),
+             REG_POOLING_PAD_PIXEL);
+  reg_writeq(((uint64_t)args.kernel.stride_h) |
+                 (((uint64_t)args.kernel.stride_w) << 32),
+             REG_POOLING_STEP_PIXEL);
+
+  reg_writeq((uint64_t)args.image.channels, REG_POOLING_CHANNEL_NUMBER);
+
+  reg_writeq(image_amount_per_row, REG_POOLING_IMAGE_AMOUNT_PER_ROW);
+  reg_writeq(image_one_pad_per_row, REG_POOLING_IMAGE_ONE_PAD_PER_ROW);
+  reg_writeq(image_two_pad_per_row, REG_POOLING_IMAGE_TWO_PAD_PER_ROW);
+
+  reg_writeq(image_row_mul_pooling_hight,
+             REG_POOLING_IMAGE_ROW_MUL_WINDOW_HEIGHT);
+  reg_writeq(image_row_mul_pad_hight, REG_POOLING_IMAGE_ROW_MUL_PAD_HEIGHT);
+  reg_writeq(image_row_mul_step_hight, REG_POOLING_IMAGE_ROW_MUL_STEP_HEIGHT);
+
+  reg_writeq(result_amount_align_32, REG_POOLING_RESULT_AMOUNT_ALIGN_32);
+  reg_writeq(result_amount_align_64, REG_POOLING_RESULT_AMOUNT_ALIGN_64);
+
+  reg_writeq(image_calcu_height, REG_POOLING_IMAGE_CALCU_HEIGHT);
+
+  reg_writeq(image_padleft_skipwindow, REG_POOLING_IMAGE_PADLEFT_SKIPWINDOW);
+
+  /*SDK刷Cache保证数据一致性*/
+
+  reg_writeq(cmd, REG_DWCONV_CMD);
+
+  DLOG << "before reg poll";
+  if (0 != fpga_regpoll(REG_INTERRUPT, INTERRUPT_POOLING, PE_IRQ_TIMEOUT)) {
+    g_fpgainfo.pe_data->pes[PE_IDX_POOLING]->status = ERROR;
+    ret = -EIO;
+    DLOG << "Pooling Wait Irq Timeout!";
+  }
+  DLOG << "after reg poll";
+
+  // *(args.output.scale_address) = reg_readq(REG_SCALE_PARAMETER);
+  output_scale = reg_readq(REG_SCALE_PARAMETER);
+  output_scale = (output_scale << 32) | (output_scale >> 32);
+  fpga_copy(args.output.scale_address, &output_scale, sizeof(float) * 2);
+  pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
+  return ret;
+#endif
+  return 0;
+}
 }  // namespace fpga
 }  // namespace paddle_mobile
