@@ -16,6 +16,8 @@ limitations under the License. */
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
+#include <vector>
 
 namespace paddle_mobile {
 namespace fpga {
@@ -25,6 +27,7 @@ namespace fpga {
 #define FILTER_NUM_ALIGNMENT 32      // Filter number aligned to 32
 #define FILTER_ELEMENT_ALIGNMENT 16  // Filter element number aligned to 16
 #define BS_NUM_ALIGNMENT 8
+#define BIAS_NUM_ALIGNMENT 16
 #endif
 
 enum DataType {
@@ -105,6 +108,8 @@ struct ConvDriverParam {
   uint64_t post_prog_full_cnt;
   uint64_t fpga_bias_scale_len;
   uint64_t cmd;
+
+  uint64_t deconv_param;
 };
 
 struct EWAddDriverParam {
@@ -116,6 +121,13 @@ struct EWAddDriverParam {
   uint64_t output_address_phy;
   uint64_t coefficient;
   uint64_t cmd;
+};
+
+struct DeconvTxParm {
+  uint32_t omit_size;
+  uint32_t sub_conv_num;
+  uint32_t deconv_en;
+  uint32_t out_addr_offset;
 };
 #endif
 
@@ -136,6 +148,7 @@ struct ConvArgs {
 #endif
 
 #ifdef PADDLE_MOBILE_FPGA_V1
+  struct DeconvTxParm deconv_tx_param;
   struct ConvDriverParam driver;
 #endif
 };
@@ -147,7 +160,7 @@ struct ConcatArgs {
   void* image_out;
   float* scale_out;
   uint32_t* channel_num;
-  uint32_t* aligned_channel_num;
+  uint32_t* aligned_channel_num;  // Not used so far. Reserved for V2.
   uint32_t out_channel;
   uint32_t height;
   uint32_t width;
@@ -160,6 +173,9 @@ struct SplitConvArgs {
   struct ImageOutputArgs output;
   struct ConvArgs* conv_arg;
   struct ConcatArgs concat_arg;
+  std::shared_ptr<ConvArgs> shared_conv_arg;
+  std::vector<std::shared_ptr<char>> vector_concat_space;
+  std::vector<std::shared_ptr<char>> vector_conv_space;
 };
 
 struct SplitArgs {
@@ -210,9 +226,16 @@ struct DeconvArgs {
   uint32_t sub_output_width;
   uint32_t sub_output_height;
   struct ImageOutputArgs output;
-  struct SplitConvArgs* split_conv_args;
+  std::vector<std::shared_ptr<SplitConvArgs>> split_conv_args;
 };
-
+struct DWconvArgs {
+  bool relu_enabled;
+  void* bias_address;
+  void* filter_address;
+  struct KernelArgs kernel;
+  struct ImageInputArgs image;
+  struct ImageOutputArgs output;
+};
 // static inline int align_to_x(int num, int x) { return (num + x - 1) / x * x;
 // }
 static inline uint32_t align_to_x(int64_t num, int64_t x) {

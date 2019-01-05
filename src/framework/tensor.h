@@ -202,6 +202,21 @@ class Tensor : public TensorBase {
   inline void reset_data_ptr(void *p) {
     ((PlaceholderImpl *)(holder_.get()))->ptr_.reset((uint8_t *)p);  // NOLINT
   }
+
+  inline void *init(std::type_index type) {
+    if (holder_ != nullptr) {
+      holder_->set_type(type);
+    }
+    PADDLE_MOBILE_ENFORCE(numel() >= 0, "the Tensor's numel must >=0.")
+    int64_t size = 1 * SizeOfType(type);
+    if (holder_ == nullptr || holder_->size() < size + offset_) {
+      holder_.reset(new PlaceholderImpl(size, type));
+      offset_ = 0;
+    }
+    return reinterpret_cast<void *>(
+        reinterpret_cast<uintptr_t>(holder_->ptr()) + offset_);
+  }
+
   float scale[2];  // scale[0]= MAX/127.0, scale[1]= 127.0/MAX
 #endif
 };

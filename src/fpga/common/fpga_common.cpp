@@ -75,6 +75,9 @@ void *fpga_malloc(size_t size) {
 }
 
 void fpga_free(void *ptr) {
+  if (ptr == nullptr) {
+    return;
+  }
   static uint64_t counter = 0;
   size_t size = 0;
   auto iter = memory_map.find(ptr);  // std::map<void *, size_t>::iterator
@@ -123,5 +126,6 @@ uint64_t vaddr_to_paddr(void *address) {
   return 0;
 #endif
 }
+
 }  // namespace fpga
 }  // namespace paddle_mobile

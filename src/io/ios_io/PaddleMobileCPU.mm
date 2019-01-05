@@ -45,20 +45,43 @@
 
 @end
 
+@implementation  PaddleMobileCPUConfig
+
+-(instancetype)init {
+  if (self = [super init]) {
+    self.threadNum = 1;
+    self.optimize = YES;
+  }
+  return self;
+}
+
+@end
 
 @interface  PaddleMobileCPU()
 {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU, float> *pam_;
   BOOL loaded_;
 }
+
+@property (strong, nonatomic) PaddleMobileCPUConfig *config;
+
 @end
 
 @implementation PaddleMobileCPU
 
 static std::mutex shared_mutex;
 
-- (instancetype)init {
+- (instancetype)initWithConfig:(PaddleMobileCPUConfig *)config {
   if (self = [super init]) {
+    pam_ = new paddle_mobile::PaddleMobile<paddle_mobile::CPU, float>();
+    _config = config;
+  }
+  return self;
+}
+
+-(instancetype)init {
+  if (self = [super init]) {
+    _config = [[PaddleMobileCPUConfig alloc] init];
     pam_ = new paddle_mobile::PaddleMobile<paddle_mobile::CPU, float>();
   }
   return self;
@@ -79,11 +102,11 @@ static std::mutex shared_mutex;
   return sharedManager;
 }
 
-- (BOOL)load:(NSString *)modelPath andWeightsPath:(NSString *)weighsPath{
+- (BOOL)loadModel:(NSString *)modelPath andWeightsPath:(NSString *)weighsPath {
   std::string model_path_str = std::string([modelPath UTF8String]);
   std::string weights_path_str = std::string([weighsPath UTF8String]);
-  pam_->SetThreadNum(2);
-  if (loaded_ = pam_->Load(model_path_str, weights_path_str, true)) {
+  pam_->SetThreadNum(self.config.threadNum);
+  if (loaded_ = pam_->Load(model_path_str, weights_path_str, self.config.optimize, false, 1, self.config.loddable)) {
     return YES;
   } else {
     return NO;
@@ -94,14 +117,14 @@ static std::mutex shared_mutex;
                andModelBuf:(const uint8_t *)modelBuf
          andModelParamsLen:(size_t)combinedParamsLen
       andCombinedParamsBuf:(const uint8_t *)combinedParamsBuf {
-  pam_->SetThreadNum(2);
+  pam_->SetThreadNum(self.config.threadNum);
   return loaded_ = pam_->LoadCombinedMemory(modelLen, modelBuf, combinedParamsLen,
-          const_cast<uint8_t*>(combinedParamsBuf));
+          const_cast<uint8_t*>(combinedParamsBuf), self.config.optimize, false, 1, self.config.loddable);
 }
 
 - (BOOL)load:(NSString *)modelAndWeightPath{
   std::string model_path_str = std::string([modelAndWeightPath UTF8String]);
-  if (loaded_ = pam_->Load(model_path_str)) {
+  if (loaded_ = pam_->Load(model_path_str, self.config.optimize, false, 1, self.config.loddable)) {
     return YES;
   } else {
     return NO;
@@ -115,6 +138,10 @@ static std::mutex shared_mutex;
         scale:(float)scale
         dim:(NSArray<NSNumber *> *)dim {
   std::lock_guard<std::mutex> lock(shared_mutex);
+
+  if (means == nil) {
+    means = @[@0, @0, @0];
+  }
 
   // dim to c++ vector, get numel
   std::vector<int64_t > dim_vec;
@@ -235,7 +262,7 @@ static std::mutex shared_mutex;
   return cpuResult;
 }
 
-- (NSArray *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim means:(NSArray<NSNumber *> *)means scale:(float)scale{
+- (PaddleMobileCPUResult *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim means:(NSArray<NSNumber *> *)means scale:(float)scale{
 //  printf(" predict one ");
   std::lock_guard<std::mutex> lock(shared_mutex);
   if (!loaded_) {
@@ -284,28 +311,22 @@ static std::mutex shared_mutex;
   // predict
   std::vector<float> cpp_result = pam_->Predict(predict_input, dim_vec);
 
-  // result
-  long count = 0;
-  count = cpp_result.size();
-  NSMutableArray *result = [[NSMutableArray alloc] init];
-  for (int i = 0; i < count; i++) {
-    [result addObject:[NSNumber numberWithFloat:cpp_result[i]]];
-  }
-
+  float *output_pointer = new float[cpp_result.size()];
+  memcpy(output_pointer, cpp_result.data(),
+         cpp_result.size() * sizeof(float));
+  PaddleMobileCPUResult *cpuResult = [[PaddleMobileCPUResult alloc] init];
+  [cpuResult toSetOutput: output_pointer];
+  [cpuResult toSetOutputSize: cpp_result.size()];
 
   free(output);
-
-  // 待验证
-  //  if ([UIDevice currentDevice].systemVersion.doubleValue < 11.0) {
   CFRelease(cfData);
   cfData = NULL;
-  //  }
 
-  return result;
+  return cpuResult;
 }
 
-- (NSArray *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim {
-  [self predict:image dim:dim means:nil scale:1];
+- (PaddleMobileCPUResult *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim {
+  return [self predict:image dim:dim means:nil scale:1];
 }
 
 - (void)clear{
