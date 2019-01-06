@@ -91,6 +91,7 @@ PMStatus PaddleMobile<Device, T>::Load(const PaddleMobileConfig &config) {
   }
 }
 
+template <typename Device, typename T>
 bool PaddleMobile<Device, T>::LoadCombinedMemory(
     size_t model_len, const uint8_t *model_buf, size_t combined_params_len,
     uint8_t *combined_params_buf, bool optimize, bool quantification,

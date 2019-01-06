@@ -643,8 +643,8 @@ void DepthwiseConv5x5S1<int8_t, int32_t>(const framework::Tensor &input,
         for (int w = valid_w_end; w < output_w; ++w) {
           int padding = w + 5 - (padding_w + input_w);
           if (padding >= 5) {
-            *output_ptr0 = 0.f;
-            *output_ptr1 = 0.f;
+            *output_ptr0 = 0;
+            *output_ptr1 = 0;
           } else {
             int iw = w - valid_w_end;
             int32_t sum0 = input_ptr0[iw] * filter_ptr0[0] +
