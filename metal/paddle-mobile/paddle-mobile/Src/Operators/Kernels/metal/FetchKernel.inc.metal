@@ -43,4 +43,19 @@ kernel void FUNC_T(fetch, P)(texture2d_array<P, access::read> inTexture [[textur
   output[gid.z * output_to + 3 * input_width * input_height + gid.y * input_width + gid.x] = input.w;
 }
 
+kernel void FUNC(fetch, 1or2, P)(texture2d_array<P, access::read> inTexture [[texture(0)]],
+                             device float4 *output [[buffer(0)]],
+                             uint3 gid [[thread_position_in_grid]]) {
+  if (gid.x >= inTexture.get_width() ||
+      gid.y >= inTexture.get_height() ||
+      gid.z >= inTexture.get_array_size()) {
+    return;
+  }
+  
+  int input_width = inTexture.get_width();
+  const VECTOR(P, 4) input = inTexture.read(gid.xy, gid.z);
+  output[gid.y * input_width + gid.x] = float4(input);
+}
+
+
 #endif

@@ -68,11 +68,11 @@ extension InputTexture {
  .height = 1
  .len = 1
  */
-
-
 public class Texture: Tensorial {
   public var dim: Dim
   public var tensorDim: Dim
+  
+  /// tensor dim pad to four
   public var padToFourDim: Dim
   private var textureDesc: MTLTextureDescriptor!
   public var metalTexture: MTLTexture!
@@ -163,7 +163,9 @@ public class Texture: Tensorial {
     padToFourDim = fourDim
   }
   
+  // 初始化时 dim padToFourDim 模型中的维度（一般来说 nchw），前面补全0
   init(device: MTLDevice, inDim: Dim) {
+    print(" in dim > \(inDim)")
     var fourDim: Dim
     if inDim.cout() == 4 {
       fourDim = inDim
