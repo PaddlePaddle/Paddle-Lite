@@ -424,8 +424,10 @@ class ConvParam : public OpParam {
     EXEC_DEPTHWISE3x3_FLOAT,
     EXEC_WINOGRAD3X3_FLOAT,
     EXEC_WINOGRAD5X5_FLOAT,
+    EXEC_DEPTHWISE5x5_FLOAT,
     EXEC_GEMM_INT8,
     EXEC_DEPTHWISE3x3_INT8,
+    EXEC_DEPTHWISE5x5_INT8,
   };
 
   ExecMode &ExecMode() const { return exec_mode_; }
@@ -2605,8 +2607,8 @@ class QuantizeParam : public OpParam {
   // if offine scale or not
   bool offline_ = false;
   // round method type
-  // RoundType round_type_ = ROUND_NEAREST_AWAY_ZERO;
-  RoundType round_type_ = ROUND_NEAREST_TOWARDS_ZERO;
+  RoundType round_type_ = ROUND_NEAREST_AWAY_ZERO;
+  // RoundType round_type_ = ROUND_NEAREST_TOWARDS_ZERO;
 };
 #endif
 

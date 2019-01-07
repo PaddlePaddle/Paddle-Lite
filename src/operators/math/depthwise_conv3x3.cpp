@@ -253,7 +253,6 @@ void DepthwiseConv3x3s1p1(const framework::Tensor *input,
                           framework::Tensor *output, framework::Tensor *bias,
                           bool if_bias, bool if_relu) {
 #if __ARM_NEON
-  const float *bias_data = bias->data<float>();
   const int batch_size = static_cast<int>(input->dims()[0]);
   const int c = static_cast<int>(input->dims()[1]);
   const int h = static_cast<int>(input->dims()[2]);
@@ -266,6 +265,11 @@ void DepthwiseConv3x3s1p1(const framework::Tensor *input,
   const int rt = w - 1;
   const int lb = (h - 1) * w;
   const int rb = h * w - 1;
+
+  const float *bias_data;
+  if (if_bias) {
+    bias_data = bias->data<float>();
+  }
 
   float32x4_t zero = vdupq_n_f32(0.0);
 
@@ -1966,7 +1970,6 @@ void DepthwiseConv3x3s2p0(const framework::Tensor *input,
                           framework::Tensor *output, framework::Tensor *bias,
                           bool if_bias, bool if_relu) {
 #if __ARM_NEON
-
   const int batch_size = static_cast<int>(input->dims()[0]);
   const int input_channel = static_cast<int>(input->dims()[1]);
 
@@ -1983,7 +1986,12 @@ void DepthwiseConv3x3s2p0(const framework::Tensor *input,
     for (int c = 0; c < input_channel; c++) {
       const float *filter_data = filter->data<float>() + c * 9;
       const float *input_data = input->data<float>() + c * inhxw;
-      const float *bias_data = bias->data<float>() + c;
+      const float *bias_data;
+      float32x4_t biasv;
+      if (if_bias) {
+        bias_data = bias->data<float>() + c;
+        biasv = vld1q_dup_f32(bias_data);
+      }
       float *output_data = output->data<float>() + c * outhxw;
       float w00 = filter_data[0];
       float w01 = filter_data[1];
@@ -1994,7 +2002,6 @@ void DepthwiseConv3x3s2p0(const framework::Tensor *input,
       float w20 = filter_data[6];
       float w21 = filter_data[7];
       float w22 = filter_data[8];
-      float32x4_t biasv = vld1q_dup_f32(bias_data);
       for (int i = 0; i < output_height; i += 1) {
         for (int m = 0; m < output_width - 2; m += 3) {
           float *output_ptr = output_data + i * output_width + m;

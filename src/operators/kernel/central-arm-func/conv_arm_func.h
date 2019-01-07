@@ -18,6 +18,7 @@ limitations under the License. */
 #include <vector>
 #include "operators/math/conv_func.h"
 #include "operators/math/depthwise_conv3x3.h"
+#include "operators/math/depthwise_conv5x5.h"
 #include "operators/math/im2col.h"
 #include "operators/math/math_function.h"
 #include "operators/math/pad.h"
@@ -160,6 +161,7 @@ inline void WinogradConv3x3(const ConvParam<CPU> &param) {
   }
 }
 
+#ifndef __aarch64__
 template <typename Itype, typename Otype>
 inline void DepthwiseConv3x3(const ConvParam<CPU> &param) {
   const Tensor *input = param.Input();
@@ -180,13 +182,33 @@ inline void DepthwiseConv3x3(const ConvParam<CPU> &param) {
       math::DepthwiseConv3x3S2<Itype, Otype>(in_batch, *filter, paddings,
                                              &out_batch);
     } else {
-      // math::DepthwiseConv3x3<Itype, Otype>(input_pad, *filter,
-      // &out_batch);
-      PADDLE_MOBILE_THROW_EXCEPTION(
-          "Depthwise conv with generic strides has not been implemented.");
+      GemmConv<Itype, Otype>(param);
     }
   }
 }
+
+template <typename Itype, typename Otype>
+inline void DepthwiseConv5x5(const ConvParam<CPU> &param) {
+  const Tensor *input = param.Input();
+  const Tensor *filter = param.Filter();
+  const std::vector<int> &paddings = param.Paddings();
+  const std::vector<int> &strides = param.Strides();
+  const int batch_size = input->dims()[0];
+  Tensor *output = param.Output();
+  output->mutable_data<Otype>();
+
+  if (strides[0] == 1) {
+    for (int i = 0; i < batch_size; i++) {
+      Tensor in_batch = input->Slice(i, i + 1);
+      Tensor out_batch = output->Slice(i, i + 1);
+      math::DepthwiseConv5x5S1<Itype, Otype>(in_batch, *filter, paddings,
+                                             &out_batch);
+    }
+  } else {
+    GemmConv<Itype, Otype>(param);
+  }
+}
+#endif  // __aarch64__
 
 }  // namespace operators
 }  // namespace paddle_mobile
