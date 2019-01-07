@@ -64,9 +64,9 @@ void OperatorBase<Dtype>::Run() {
   for (const auto key : input_keys) {
     auto var_vec_in = inputs_.at(key);
     for (int i = 0; i < var_vec_in.size(); ++i) {
-      auto vari = scope_->FindVar(var_vec_in[i]);
+      auto vari = this->scope_->FindVar(var_vec_in[i]);
       if (vari->IsInitialized()) {
-        Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
+        const Tensor *tensor = vari->template Get<framework::LoDTensor>();
         if (tensor) DLOG << type_ << " input- " << key << "=" << *tensor;
       }
     }
@@ -76,7 +76,7 @@ void OperatorBase<Dtype>::Run() {
     for (int i = 0; i < var_vec_out.size(); ++i) {
       auto vari = scope_->FindVar(var_vec_out[i]);
       if (vari->IsInitialized()) {
-        Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
+        const Tensor *tensor = vari->template Get<framework::LoDTensor>();
         if (tensor) DLOG << type_ << " output- " << key << "=" << *tensor;
       }
     }
@@ -97,10 +97,10 @@ void OperatorBase<GPU_CL>::Run() {
       auto vari = scope_->FindVar(var_vec_in[i]);
       if (vari->IsInitialized()) {
         if (type_ == "feed") {
-          Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
+          const Tensor *tensor = vari->template Get<framework::LoDTensor>();
           if (tensor) DLOG << type_ << " input- " << key << "=" << *tensor;
         } else {
-          CLImage *cl_image = vari->template GetMutable<framework::CLImage>();
+          const CLImage *cl_image = vari->template Get<framework::CLImage>();
           if (cl_image) {
             DLOG << type_ << " input- " << key << "=" << *cl_image;
           }
@@ -114,12 +114,12 @@ void OperatorBase<GPU_CL>::Run() {
       auto vari = scope_->FindVar(var_vec_out[i]);
       if (vari->IsInitialized()) {
         if (type_ == "fetch") {
-          Tensor *tensor = vari->template GetMutable<framework::LoDTensor>();
+          const Tensor *tensor = vari->template Get<framework::LoDTensor>();
           if (tensor) {
             DLOG << type_ << " output- " << key << "=" << *tensor;
           }
         } else {
-          CLImage *cl_image = vari->template GetMutable<framework::CLImage>();
+          const CLImage *cl_image = vari->template Get<framework::CLImage>();
           if (cl_image) {
             DLOG << type_ << " output- " << key << "=" << *cl_image;
           }

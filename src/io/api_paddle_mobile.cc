@@ -14,6 +14,7 @@
 
 #include "io/api_paddle_mobile.h"
 #include <vector>
+#include "common/enforce.h"
 #include "framework/tensor.h"
 
 namespace paddle_mobile {

@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #ifdef POOL_OP
+
 #pragma once
 
 #include <string>
@@ -54,8 +55,24 @@ void PoolCompute(const PoolParam<CPU> &param) {
       } else {
         math::Pooling<AVG>()(*input, ksize, strides, paddings, output);
       }
-    } else {
-      // Others
+    }
+  } else if (ksize[0] == 2 && ksize[0] == ksize[1]) {
+    if (pooling_type == "max" && strides[0] == strides[1]) {
+      if (strides[0] == 1) {
+        math::Pooling2x2<MAX, 1>()(*input, paddings, output);
+      } else if (strides[0] == 2) {
+        math::Pooling2x2<MAX, 2>()(*input, paddings, output);
+      } else {
+        math::Pooling<MAX>()(*input, ksize, strides, paddings, output);
+      }
+    } else if (pooling_type == "avg" && strides[0] == strides[1]) {
+      if (strides[0] == 1) {
+        math::Pooling2x2<AVG, 1>()(*input, paddings, output);
+      } else if (strides[0] == 2) {
+        math::Pooling2x2<AVG, 2>()(*input, paddings, output);
+      } else {
+        math::Pooling<AVG>()(*input, ksize, strides, paddings, output);
+      }
     }
   } else {
     if (pooling_type == "max") {
