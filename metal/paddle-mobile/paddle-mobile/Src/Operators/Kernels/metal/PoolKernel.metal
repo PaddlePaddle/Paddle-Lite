@@ -27,10 +27,10 @@ struct PoolParam {
   int poolType;
 };
 
-#define P float
-#import "PoolKernel.inc.metal"
+#define P half
+#include "PoolKernel.inc.metal"
 #undef P
 
-#define P half
-#import "PoolKernel.inc.metal"
+#define P float
+#include "PoolKernel.inc.metal"
 #undef P

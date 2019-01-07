@@ -33,38 +33,6 @@ class FetchParam<P: PrecisionType>: OpParam{
   //typealias ParamPrecisionType = P
 }
 
-class FetchKernel<P: PrecisionType>: Kernel, Computable {
-  
-  func compute(commandBuffer: MTLCommandBuffer, param: FetchParam<P>) throws {
-    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-      throw PaddleMobileError.predictError(message: " encode is nil")
-    }
-    encoder.setTexture(param.input.metalTexture, index: 0)
-    encoder.setBuffer(param.output.resultBuffer!, offset: 0, index: 0)
-    encoder.dispatch(computePipline: pipline, outTexture: param.input.metalTexture)
-    encoder.endEncoding()
-  }
-  
-  required init(device: MTLDevice, param: FetchParam<P>, initContext: InitContext) {
-    param.output.initBuffer(device: device)
-    if GlobalConfig.shared.computePrecision == .Float16 {
-      if param.input.transpose == [0, 2, 3, 1] {
-        super.init(device: device, inFunctionName: "fetch_half", initContext: initContext)
-      } else {
-        fatalError(" not support ")
-      }
-    } else if GlobalConfig.shared.computePrecision == .Float32 {
-      if param.input.transpose == [0, 2, 3, 1] {
-        super.init(device: device, inFunctionName: "fetch_float", initContext: initContext)
-      } else {
-        fatalError(" not support ")
-      }
-    } else {
-      fatalError(" not support ")
-    }
-  }
-}
-
 class FetchOp<P: PrecisionType>: Operator< FetchKernel<P>, FetchParam<P>>, Runable, Creator, InferShaperable {
   
   typealias OpType = FetchOp<P>
