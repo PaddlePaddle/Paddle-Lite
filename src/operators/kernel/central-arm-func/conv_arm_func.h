@@ -186,7 +186,6 @@ inline void DepthwiseConv3x3(const ConvParam<CPU> &param) {
     }
   }
 }
-#endif  // __aarch64__
 
 template <typename Itype, typename Otype>
 inline void DepthwiseConv5x5(const ConvParam<CPU> &param) {
@@ -209,6 +208,7 @@ inline void DepthwiseConv5x5(const ConvParam<CPU> &param) {
     GemmConv<Itype, Otype>(param);
   }
 }
+#endif  // __aarch64__
 
 }  // namespace operators
 }  // namespace paddle_mobile
