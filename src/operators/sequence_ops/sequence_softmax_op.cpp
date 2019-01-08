@@ -12,31 +12,28 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#if defined(SOFTMAX_OP) || defined(SEQUENCE_SOFTMAX_OP)
+#ifdef SEQUENCE_SOFTMAX_OP
 
-#pragma once
-
-#include "framework/lod_tensor.h"
-#include "framework/tensor.h"
+#include "operators/sequence_ops/sequence_softmax_op.h"
 
 namespace paddle_mobile {
 namespace operators {
-namespace math {
 
-template <typename Device, typename T>
-class SoftmaxFuntor {
- public:
-  void operator()(const framework::Tensor *X, framework::Tensor *Y);
-};
+template <typename DeviceType, typename T>
+void SequenceSoftmaxOp<DeviceType, T>::InferShape() const {
+  const auto *input_x = this->param_.InputX();
+  const auto &x_lod = input_x->lod();
 
-template <typename Device, typename T>
-class SequenceSoftmaxFuntor {
- public:
-  void operator()(const framework::LoDTensor *X, framework::LoDTensor *Y);
-};
+  this->param_.Out()->Resize(input_x->dims());
+  this->param_.Out()->set_lod(input_x->lod());
+}
 
-}  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile
 
+namespace ops = paddle_mobile::operators;
+#ifdef PADDLE_MOBILE_CPU
+REGISTER_OPERATOR_CPU(sequence_softmax, ops::SequenceSoftmaxOp);
 #endif
+
+#endif  // SEQUENCE_SOFTMAX_OP

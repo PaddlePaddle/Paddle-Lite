@@ -12,31 +12,32 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#if defined(SOFTMAX_OP) || defined(SEQUENCE_SOFTMAX_OP)
-
-#pragma once
+#ifdef SEQUENCE_SOFTMAX_OP
 
 #include "framework/lod_tensor.h"
-#include "framework/tensor.h"
+#include "operators/kernel/sequence_kernels.h"
+#include "operators/math/softmax.h"
 
 namespace paddle_mobile {
 namespace operators {
-namespace math {
 
-template <typename Device, typename T>
-class SoftmaxFuntor {
+template <typename T>
+class SequenceSoftmaxKernel<CPU, T>
+    : public framework::OpKernelBase<CPU, SoftmaxParam<CPU>> {
  public:
-  void operator()(const framework::Tensor *X, framework::Tensor *Y);
+  bool Init(SoftmaxParam<CPU> *param) { return true; }
+
+  void Compute(const SoftmaxParam<CPU> &param) {
+    const framework::LoDTensor *input = param.InputX();
+    framework::LoDTensor *output = param.Out();
+    math::SequenceSoftmaxFuntor<CPU, T> sequence_softmax;
+    sequence_softmax(input, output);
+  }
 };
 
-template <typename Device, typename T>
-class SequenceSoftmaxFuntor {
- public:
-  void operator()(const framework::LoDTensor *X, framework::LoDTensor *Y);
-};
+template class SequenceSoftmaxKernel<CPU, float>;
 
-}  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#endif
+#endif  // SEQUENCE_SOFTMAX_OP
