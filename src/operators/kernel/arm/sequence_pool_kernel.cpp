@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef SEQUENCE_POOL_OP
 
 #include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 #include "common/types.h"
@@ -41,7 +42,7 @@ void SequencePoolImpl(const framework::LoDTensor &input,
     float *out_ptr = output_ptr + i * width;
     int64_t height = static_cast<int64_t>(lod[i + 1] - lod[i]);
     if (width == 1) {
-      float val = 0.f;
+      float max = -std::numeric_limits<float>::max();
       int remain_h = height;
 #ifdef __ARM_NEON__
       int loop = remain_h >> 2;
@@ -53,19 +54,19 @@ void SequencePoolImpl(const framework::LoDTensor &input,
         in_ptr += 4;
       }
       float32x2_t __max2 =
-          vpadd_f32(vget_low_f32(__max4), vget_high_f32(__max4));
-      __max2 = vpadd_f32(__max2, __max2);
-      val = std::max(val, vget_lane_f32(__max2, 0));
+          vpmax_f32(vget_low_f32(__max4), vget_high_f32(__max4));
+      __max2 = vpmax_f32(__max2, __max2);
+      max = std::max(max, vget_lane_f32(__max2, 0));
 #endif  // __ARM_NEON__
       for (int h = 0; h < remain_h; ++h) {
-        val = std::max(val, in_ptr[h]);
+        max = std::max(max, in_ptr[h]);
       }
-      *out_ptr = val;
+      *out_ptr = max;
     } else {
       memcpy(out_ptr, in_ptr, width * sizeof(float));
+      in_ptr += width;
       int remain_h = height - 1;
 #ifdef __ARM_NEON__
-      int loop_w = width >> 2;
       int remain_w_start = width & 0xfffc;
 #endif  // __ARM_NEON__
       for (int h = 0; h < remain_h; ++h) {
@@ -121,6 +122,7 @@ void SequencePoolImpl<SUM, float>(const framework::LoDTensor &input,
       *out_ptr = sum;
     } else {
       memcpy(out_ptr, in_ptr, width * sizeof(float));
+      in_ptr += width;
       int remain_h = height - 1;
 #ifdef __ARM_NEON__
       int loop_w = width >> 2;
@@ -128,7 +130,7 @@ void SequencePoolImpl<SUM, float>(const framework::LoDTensor &input,
 #endif  // __ARM_NEON__
       for (int h = 0; h < remain_h; ++h) {
 #ifdef __ARM_NEON__
-        for (int w = 0; w < width; w += 4) {
+        for (int w = 0; w < width - 3; w += 4) {
           float32x4_t __in = vld1q_f32(in_ptr + w);
           float32x4_t __out = vld1q_f32(out_ptr + w);
           __out = vaddq_f32(__out, __in);
@@ -169,6 +171,7 @@ class SequencePoolKernel<CPU, T>
     const framework::LoDTensor *input = param.input_;
     framework::LoDTensor *output = param.output_;
     output->mutable_data<T>();
+    const std::string pooling_type = param.pool_type_;
 
     if (param.pool_type_ == "MAX") {
       SequencePoolImpl<MAX, T>(*input, output);
@@ -176,6 +179,10 @@ class SequencePoolKernel<CPU, T>
       SequencePoolImpl<FIRST, T>(*input, output);
     } else if (param.pool_type_ == "SUM") {
       SequencePoolImpl<SUM, T>(*input, output);
+    } else {
+      PADDLE_MOBILE_THROW_EXCEPTION(
+          "pooling type `%s` has not been implemented.",
+          param.pool_type_.c_str());
     }
   }
 };

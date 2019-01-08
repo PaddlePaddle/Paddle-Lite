@@ -978,12 +978,12 @@ class SoftmaxParam : public OpParam {
     input_x_ = InputXFrom<GType>(inputs, scope);
     out_ = OutFrom<GType>(outputs, scope);
   }
-  const RType *InputX() const { return input_x_; }
-  RType *Out() const { return out_; }
+  const GType *InputX() const { return input_x_; }
+  GType *Out() const { return out_; }
 
  private:
-  RType *input_x_;
-  RType *out_;
+  GType *input_x_;
+  GType *out_;
 
 #ifdef PADDLE_MOBILE_FPGA
 
@@ -2778,7 +2778,7 @@ class SequencePoolParam : public OpParam {
     output_ = OutFrom<GType>(outputs, scope);
     pool_type_ = "MAX";
     if (OpParam::HasAttr("pooltype", attrs)) {
-      pool_type_ = OpParam::GetAttr<std::string>("pooltype", attrs);
+      pool_type_ = OpParam::GetStringAttr("pooltype", attrs);
     }
   }
 
