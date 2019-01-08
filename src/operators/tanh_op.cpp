@@ -28,6 +28,9 @@ void TanhOp<DeviceType, T>::InferShape() const {
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
+#ifdef PADDLE_MOBILE_CPU
+REGISTER_OPERATOR_CPU(tanh, ops::TanhOp);
+#endif
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(tanh, ops::TanhOp);
 #endif

@@ -2737,5 +2737,57 @@ class FusionDequantAddBNQuantParam : public FusionDequantAddBNParam<Dtype> {
 };
 #endif
 
+#ifdef SEQUENCE_EXPAND_OP
+template <typename Dtype>
+class SequenceExpandParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  SequenceExpandParam(const VariableNameMap &inputs,
+                      const VariableNameMap &outputs, const AttributeMap &attrs,
+                      const Scope &scope) {
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    input_y_ = InputYFrom<GType>(inputs, scope);
+    output_ = OutFrom<GType>(outputs, scope);
+    ref_level_ = -1;
+    if (OpParam::HasAttr("ref_level", attrs)) {
+      ref_level_ = OpParam::GetAttr<int>("ref_level", attrs);
+    }
+  }
+
+ public:
+  GType *input_x_;
+  GType *input_y_;
+  GType *output_;
+  int ref_level_;
+};
+#endif  // SEQUENCE_EXPAND_OP
+
+#ifdef SEQUENCE_POOL_OP
+template <typename Dtype>
+class SequencePoolParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  SequencePoolParam(const VariableNameMap &inputs,
+                    const VariableNameMap &outputs, const AttributeMap &attrs,
+                    const Scope &scope) {
+    input_ = InputXFrom<GType>(inputs, scope);
+    output_ = OutFrom<GType>(outputs, scope);
+    pool_type_ = "MAX";
+    if (OpParam::HasAttr("pooltype", attrs)) {
+      pool_type_ = OpParam::GetAttr<std::string>("pooltype", attrs);
+    }
+  }
+
+ public:
+  GType *input_;
+  GType *output_;
+  std::string pool_type_;
+};
+#endif  // SEQUENCE_EXPAND_OP
+
 }  // namespace operators
 }  // namespace paddle_mobile
