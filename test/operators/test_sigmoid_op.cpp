@@ -12,10 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "../../src/operators/kernel/central-arm-func/sigmoid_arm_func.h"
-#include "../../src/operators/kernel/sigmoid_kernel.h"
 #include "../test_helper.h"
-#include "framework/executor.h"
 
 int main() {
   paddle_mobile::framework::Tensor input;
@@ -25,11 +22,5 @@ int main() {
 
   auto out_ddim = paddle_mobile::framework::make_ddim({1, 4, 60, 60});
   output.Resize(out_ddim);
-  paddle_mobile::operators::sigmoid(&input, &output);
-  auto *output_ptr = output.data<float>();
-  for (int j = 0; j < output.numel(); ++j) {
-    DLOG << " value of output: " << output_ptr[j];
-  }
-  DLOG << 5;
   return 0;
 }
