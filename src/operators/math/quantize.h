@@ -56,6 +56,9 @@ inline int32x4_t vRoundq_f32(const float32x4_t &x) {
 
 template <>
 inline int32x4_t vRoundq_f32<ROUND_NEAREST_AWAY_ZERO>(const float32x4_t &x) {
+#if __aarch64__
+  return vcvtaq_s32_f32(x);
+#else
   float32x4_t plus = vdupq_n_f32(0.5);
   float32x4_t minus = vdupq_n_f32(-0.5);
   float32x4_t zero = vdupq_n_f32(0);
@@ -64,10 +67,14 @@ inline int32x4_t vRoundq_f32<ROUND_NEAREST_AWAY_ZERO>(const float32x4_t &x) {
   temp = vaddq_f32(x, temp);
   int32x4_t ret = vcvtq_s32_f32(temp);
   return ret;
+#endif
 }
 
 template <>
 inline int32x4_t vRoundq_f32<ROUND_NEAREST_TO_EVEN>(const float32x4_t &x) {
+#if __aarch64__
+  return vcvtnq_s32_f32(x);
+#else
   float32x4_t point5 = vdupq_n_f32(0.5);
   int32x4_t one = vdupq_n_s32(1);
   int32x4_t zero = vdupq_n_s32(0);
@@ -90,6 +97,7 @@ inline int32x4_t vRoundq_f32<ROUND_NEAREST_TO_EVEN>(const float32x4_t &x) {
   smask = vsubq_s32(smask, one);
   rnd = vaddq_s32(rnd, smask);
   return rnd;
+#endif
 }
 #endif  // __ARM_NEON__
 
