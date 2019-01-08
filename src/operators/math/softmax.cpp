@@ -60,6 +60,68 @@ float find_max(const float *input, const int num_classes) {
   return max;
 }
 
+void SoftmaxBasic(const float *input, int num_classes, float *y) {
+  float *output = y;
+  // find max
+  float max = find_max(input, num_classes);
+
+  // exp(x - max)
+  int remain = num_classes;
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+  int loop = num_classes >> 3;
+  remain = num_classes & 0x7;
+  float32x4_t __max = vdupq_n_f32(max);
+  for (int i = 0; i < loop; ++i, input += 8, output += 8) {
+    float32x4_t x0 = vld1q_f32(input);
+    float32x4_t x1 = vld1q_f32(input + 4);
+    x0 = vsubq_f32(x0, __max);
+    x1 = vsubq_f32(x1, __max);
+    x0 = exp_ps(x0);
+    x1 = exp_ps(x1);
+    vst1q_f32(output, x0);
+    vst1q_f32(output + 4, x1);
+  }
+#endif  // __ARM_NEON__
+  for (int i = 0; i < remain; ++i) {
+    output[i] = expf(input[i] - max);
+  }
+
+  // sum(exp(x - max))
+  float sum = 0.f;
+  output = y;
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+  float32x4_t __sum = vdupq_n_f32(0.f);
+  for (int i = 0; i < loop; ++i, output += 8) {
+    float32x4_t x0 = vld1q_f32(output);
+    float32x4_t x1 = vld1q_f32(output + 4);
+    __sum = vaddq_f32(x0, __sum);
+    __sum = vaddq_f32(x1, __sum);
+  }
+  sum += vaddvq_f32(__sum);
+#endif  // __ARM_NEON__
+  for (int i = 0; i < remain; ++i) {
+    sum += output[i];
+  }
+
+  // exp(x - max) / sum
+  float inv_sum = 1.f / sum;
+  output = y;
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+  float32x4_t __inv_sum = vdupq_n_f32(inv_sum);
+  for (int i = 0; i < loop; ++i, output += 8) {
+    float32x4_t x0 = vld1q_f32(output);
+    float32x4_t x1 = vld1q_f32(output + 4);
+    x0 = vmulq_f32(x0, __inv_sum);
+    x1 = vmulq_f32(x1, __inv_sum);
+    vst1q_f32(output, x0);
+    vst1q_f32(output + 4, x1);
+  }
+#endif
+  for (int i = 0; i < remain; ++i) {
+    output[i] *= inv_sum;
+  }
+}
+
 template <>
 void SoftmaxFuntor<CPU, float>::operator()(const framework::Tensor *X,
                                            framework::Tensor *Y) {
@@ -76,65 +138,25 @@ void SoftmaxFuntor<CPU, float>::operator()(const framework::Tensor *X,
       size_t offset = (batch * channels + channel) * num_classes;
       const float *input = x + offset;
       float *output = y + offset;
-      // find max
-      float max = find_max(input, num_classes);
-
-      // exp(x - max)
-      int remain = num_classes;
-#if defined(__ARM_NEON) || defined(__ARM_NEON__)
-      int loop = num_classes >> 3;
-      remain = num_classes & 0x7;
-      float32x4_t __max = vdupq_n_f32(max);
-      for (int i = 0; i < loop; ++i, input += 8, output += 8) {
-        float32x4_t x0 = vld1q_f32(input);
-        float32x4_t x1 = vld1q_f32(input + 4);
-        x0 = vsubq_f32(x0, __max);
-        x1 = vsubq_f32(x1, __max);
-        x0 = exp_ps(x0);
-        x1 = exp_ps(x1);
-        vst1q_f32(output, x0);
-        vst1q_f32(output + 4, x1);
-      }
-#endif  // __ARM_NEON__
-      for (int i = 0; i < remain; ++i) {
-        output[i] = expf(input[i] - max);
-      }
-
-      // sum(exp(x - max))
-      float sum = 0.f;
-      output = y + offset;
-#if defined(__ARM_NEON) || defined(__ARM_NEON__)
-      float32x4_t __sum = vdupq_n_f32(0.f);
-      for (int i = 0; i < loop; ++i, output += 8) {
-        float32x4_t x0 = vld1q_f32(output);
-        float32x4_t x1 = vld1q_f32(output + 4);
-        __sum = vaddq_f32(x0, __sum);
-        __sum = vaddq_f32(x1, __sum);
-      }
-      sum += vaddvq_f32(__sum);
-#endif  // __ARM_NEON__
-      for (int i = 0; i < remain; ++i) {
-        sum += output[i];
-      }
-
-      // exp(x - max) / sum
-      float inv_sum = 1.f / sum;
-      output = y + offset;
-#if defined(__ARM_NEON) || defined(__ARM_NEON__)
-      float32x4_t __inv_sum = vdupq_n_f32(inv_sum);
-      for (int i = 0; i < loop; ++i, output += 8) {
-        float32x4_t x0 = vld1q_f32(output);
-        float32x4_t x1 = vld1q_f32(output + 4);
-        x0 = vmulq_f32(x0, __inv_sum);
-        x1 = vmulq_f32(x1, __inv_sum);
-        vst1q_f32(output, x0);
-        vst1q_f32(output + 4, x1);
-      }
-#endif
-      for (int i = 0; i < remain; ++i) {
-        output[i] *= inv_sum;
-      }
+      SoftmaxBasic(input, num_classes, output);
     }
+  }
+}
+
+template <>
+void SequenceSoftmaxFuntor<CPU, float>::operator()(
+    const framework::LoDTensor *X, framework::LoDTensor *Y) {
+  const float *x = X->data<float>();
+  const auto &lod = X->lod().back();
+  float *y = Y->mutable_data<float>();
+
+  #pragma omp parallel for
+  for (int batch = 0; batch < lod.size() - 1; ++batch) {
+    int num_classes = lod[batch + 1] - lod[batch];
+    size_t offset = lod[batch];
+    const float *input = x + offset;
+    float *output = y + offset;
+    SoftmaxBasic(input, num_classes, output);
   }
 }
 

@@ -37,5 +37,9 @@ DECLARE_KERNEL(SequenceExpandKernel, SequenceExpandParam);
 DECLARE_KERNEL(SequencePoolKernel, SequencePoolParam);
 #endif  // SEQUENCE_POOL_OP
 
+#ifdef SEQUENCE_SOFTMAX_OP
+DECLARE_KERNEL(SequenceSoftmaxKernel, SoftmaxParam);
+#endif  // SEQUENCE_SOFTMAX_OP
+
 }  // namespace operators
 }  // namespace paddle_mobile

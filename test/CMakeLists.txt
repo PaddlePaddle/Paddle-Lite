@@ -385,4 +385,13 @@ if (NOT FOUND_MATCH)
     # gen test
     ADD_EXECUTABLE(test-ocr net/test_ocr.cpp test_helper.h test_include.h)
     target_link_libraries(test-ocr paddle-mobile)
+
+    ADD_EXECUTABLE(test-sequence-expand operators/test_sequence_expand_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-sequence-expand paddle-mobile)
+
+    ADD_EXECUTABLE(test-sequence-pool operators/test_sequence_pool_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-sequence-pool paddle-mobile)
+
+    ADD_EXECUTABLE(test-sequence-softmax operators/test_sequence_softmax_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-sequence-softmax paddle-mobile)
 endif ()
