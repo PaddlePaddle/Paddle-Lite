@@ -264,3 +264,9 @@ LOAD_FUSION_MATCHER(fusion_dequant_add_bn_quant);
 LOAD_OP1(fusion_dequant_add_bn_relu_quant, CPU);
 LOAD_FUSION_MATCHER(fusion_dequant_add_bn_relu_quant);
 #endif
+#ifdef SEQUENCE_EXPAND_OP
+LOAD_OP1(sequence_expand, CPU);
+#endif
+#ifdef SEQUENCE_POOL_OP
+LOAD_OP1(sequence_pool, CPU);
+#endif

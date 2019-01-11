@@ -12,33 +12,36 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef TANH_OP
+#ifdef SEQUENCE_POOL_OP
 
 #pragma once
 
 #include <string>
 #include "framework/operator.h"
-#include "operators/kernel/activation_kernel.h"
+#include "operators/kernel/sequence_kernels.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <typename DeviceType, typename T>
-class TanhOp : public framework::OperatorWithKernel<
-                   DeviceType, TanhParam<DeviceType>,
-                   operators::TanhKernel<DeviceType, T>> {
+class SequencePoolOp : public framework::OperatorWithKernel<
+                           DeviceType, SequencePoolParam<DeviceType>,
+                           operators::SequencePoolKernel<DeviceType, T>> {
  public:
-  TanhOp(const std::string &type, const VariableNameMap &inputs,
-         const VariableNameMap &outputs, const framework::AttributeMap &attrs,
-         std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, TanhParam<DeviceType>,
-                                      operators::TanhKernel<DeviceType, T>>(
-            type, inputs, outputs, attrs, scope) {}
+  SequencePoolOp(const std::string &type, const VariableNameMap &inputs,
+                 const VariableNameMap &outputs,
+                 const framework::AttributeMap &attrs,
+                 std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<
+            DeviceType, SequencePoolParam<DeviceType>,
+            operators::SequencePoolKernel<DeviceType, T>>(type, inputs, outputs,
+                                                          attrs, scope) {}
+  // inference output shape
   void InferShape() const override;
 };
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#endif
+#endif  // SEQUENCE_POOL_OP

@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef RELU_OP
 
 #include "operators/relu_op.h"
+
 namespace paddle_mobile {
 namespace operators {
 
@@ -47,4 +48,4 @@ REGISTER_OPERATOR_MALI_GPU(relu, ops::ReluOp);
 REGISTER_OPERATOR_CL(relu, ops::ReluOp);
 #endif
 
-#endif
+#endif  // RELU_OP

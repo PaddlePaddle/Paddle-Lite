@@ -18,7 +18,7 @@ limitations under the License. */
 
 #include <string>
 #include "framework/operator.h"
-#include "operators/kernel/sigmoid_kernel.h"
+#include "operators/kernel/activation_kernel.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
