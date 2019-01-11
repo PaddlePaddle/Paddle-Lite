@@ -256,6 +256,6 @@ int fpga_invalidate(void* address, size_t size);
 uint64_t vaddr_to_paddr(void* address);
 void expand_conv_arg(ConvArgs* arg);
 void expand_EW_arg(EWAddArgs* arg);
-
+inline int32_t convertmantissa(int32_t i);
 }  // namespace fpga
 }  // namespace paddle_mobile
