@@ -12,27 +12,28 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#pragma once
+#ifdef SEQUENCE_SOFTMAX_OP
 
-#ifdef SIGMOID_OP
-
-#include "framework/operator.h"
-#include "operators/op_param.h"
+#include "operators/sequence_ops/sequence_softmax_op.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-using framework::OpKernelBase;
-
 template <typename DeviceType, typename T>
-class SigmoidKernel
-    : public OpKernelBase<DeviceType, SigmoidParam<DeviceType>> {
- public:
-  void Compute(const SigmoidParam<DeviceType>& param);
-  bool Init(SigmoidParam<DeviceType>* param);
-};
+void SequenceSoftmaxOp<DeviceType, T>::InferShape() const {
+  const auto *input_x = this->param_.InputX();
+  const auto &x_lod = input_x->lod();
+
+  this->param_.Out()->Resize(input_x->dims());
+  this->param_.Out()->set_lod(input_x->lod());
+}
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
+namespace ops = paddle_mobile::operators;
+#ifdef PADDLE_MOBILE_CPU
+REGISTER_OPERATOR_CPU(sequence_softmax, ops::SequenceSoftmaxOp);
 #endif
+
+#endif  // SEQUENCE_SOFTMAX_OP
