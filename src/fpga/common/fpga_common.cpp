@@ -22,7 +22,7 @@ namespace paddle_mobile {
 namespace fpga {
 
 int16_t fp32_2_fp16(float fp32_num) {
-  int32_t tmp = *(reinterpret_cast<int32_t *>)(&fp32_num);
+  int32_t tmp = *(reinterpret_cast<int32_t *>(&fp32_num));
   int16_t se_fp32 = (tmp >> 23) & 0x1ff;
   int32_t m_fp32 = tmp & 0x007fffff;
   int16_t se_fp16 = 0;
@@ -112,7 +112,7 @@ float fp16_2_fp32(int16_t fp16_num) {
   }
 
   int32_t tmp = e_fp32 + m_fp32;
-  float fp32_num = *(reinterpret_cast<float *>)&tmp;
+  float fp32_num = *(reinterpret_cast<float *>(&tmp));
   return fp32_num;
 }
 
