@@ -15,41 +15,38 @@ limitations under the License. */
 #include <math.h>
 #include <limits>
 #include "../test_include.h"
-#include "operators/softmax_op.h"
+#include "operators/sequence_ops/sequence_softmax_op.h"
 
 namespace paddle_mobile {
 
-void Softmax(const framework::Tensor *X, framework::Tensor *Y) {
-  const framework::DDim &dims = X->dims();
-  int batch_size = dims[0];
-  int num_classes = dims[dims.size() - 1];
-  int channels = X->numel() / batch_size / num_classes;
+void SequenceSoftmax(const framework::LoDTensor *X, framework::LoDTensor *Y) {
   const float *x = X->data<float>();
+  const auto &lod = X->lod().back();
   float *y = Y->mutable_data<float>();
-
-  for (int batch = 0; batch < batch_size; ++batch) {
-    for (int c = 0; c < channels; ++c) {
-      size_t offset = (batch * channels + c) * num_classes;
-      const float *input = x + offset;
-      float *output = y + offset;
-      float max = -std::numeric_limits<float>::max();
-      for (int j = 0; j < num_classes; ++j) {
-        max = (input[j] > max) ? input[j] : max;
-      }
-      float sum = 0.f;
-      for (int j = 0; j < num_classes; ++j) {
-        float tmp = std::expf(input[j] - max);
-        sum += tmp;
-        output[j] = tmp;
-      }
-      for (int j = 0; j < num_classes; ++j) {
-        output[j] /= sum;
-      }
+  for (int batch = 0; batch < lod.size() - 1; ++batch) {
+    int num_classes = lod[batch + 1] - lod[batch];
+    size_t offset = lod[batch];
+    const float *input = x + offset;
+    float *output = y + offset;
+    float max = -std::numeric_limits<float>::max();
+    for (int j = 0; j < num_classes; ++j) {
+      max = (input[j] > max) ? input[j] : max;
+    }
+    float sum = 0.f;
+    for (int j = 0; j < num_classes; ++j) {
+      float tmp = std::expf(input[j] - max);
+      sum += tmp;
+      output[j] = tmp;
+    }
+    for (int j = 0; j < num_classes; ++j) {
+      output[j] /= sum;
     }
   }
+  Y->set_lod(X->lod());
 }
 
-int TestSoftmaxOp(const std::vector<int> input_shape) {
+int TestSequenceSoftmaxOp(const std::vector<int> &input_shape,
+                          const std::vector<size_t> &input_lod) {
   framework::DDim dims = framework::make_ddim(input_shape);
   VariableNameMap inputs;
   VariableNameMap outputs;
@@ -60,21 +57,23 @@ int TestSoftmaxOp(const std::vector<int> input_shape) {
   auto input_var = scope.get()->Var("input");
   auto input = input_var->template GetMutable<framework::LoDTensor>();
   SetupTensor<float>(input, dims, -100.0, 100.0);
+  input->set_lod({input_lod});
 
   auto output_var = scope.get()->Var("output");
 
   framework::AttributeMap attrs;
-  auto *op = new operators::SoftmaxOp<CPU, float>("softmax", inputs, outputs,
-                                                  attrs, scope);
+  auto *op = new operators::SequenceSoftmaxOp<CPU, float>(
+      "sequence_softmax", inputs, outputs, attrs, scope);
+
   op->InferShape();
   op->Init();
   op->Run();
 
   auto output = output_var->template Get<framework::LoDTensor>();
 
-  framework::Tensor output_cmp;
+  framework::LoDTensor output_cmp;
   float *output_cmp_data = output_cmp.mutable_data<float>(output->dims());
-  Softmax(input, &output_cmp);
+  SequenceSoftmax(input, &output_cmp);
 
   const float *output_data = output->data<float>();
   for (int i = 0; i < output->numel(); ++i) {
@@ -94,7 +93,8 @@ int TestSoftmaxOp(const std::vector<int> input_shape) {
 }  // namespace paddle_mobile
 
 int main(int argc, char *argv[]) {
-  TestSoftmaxOp({128, 1000});
-  TestSoftmaxOp({128, 10, 1000});
+  TestSequenceSoftmaxOp({2, 1}, {0, 2});
+  TestSequenceSoftmaxOp({100, 1}, {0, 3, 100});
+  TestSequenceSoftmaxOp({100, 1}, {0, 50, 100});
   return 0;
 }

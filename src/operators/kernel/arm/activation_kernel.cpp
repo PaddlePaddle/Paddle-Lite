@@ -12,9 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef RELU_OP
-
-#include "operators/kernel/relu_kernel.h"
+#include "operators/kernel/activation_kernel.h"
 #include "common/types.h"
 #include "operators/math/activation.h"
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
@@ -25,12 +23,12 @@ namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, ActivationType Act>
-struct ReluCompute {
+struct ActivationCompute {
   void operator()(const Tensor *input, Tensor *output) {}
 };
 
 template <ActivationType Act>
-struct ReluCompute<float, Act> {
+struct ActivationCompute<float, Act> {
   void operator()(const Tensor *input, Tensor *output) {
     const float *x = input->data<float>();
     float *y = output->mutable_data<float>();
@@ -65,6 +63,7 @@ struct ReluCompute<float, Act> {
   }
 };
 
+#ifdef RELU_OP
 template <>
 bool ReluKernel<CPU, float>::Init(ReluParam<CPU> *param) {
   return true;
@@ -74,7 +73,7 @@ template <>
 void ReluKernel<CPU, float>::Compute(const ReluParam<CPU> &param) {
   const Tensor *input = param.InputX();
   Tensor *output = param.Out();
-  ReluCompute<float, RELU>()(input, output);
+  ActivationCompute<float, RELU>()(input, output);
 }
 
 template <>
@@ -86,10 +85,37 @@ template <>
 void Relu6Kernel<CPU, float>::Compute(const ReluParam<CPU> &param) {
   const Tensor *input = param.InputX();
   Tensor *output = param.Out();
-  ReluCompute<float, RELU6>()(input, output);
+  ActivationCompute<float, RELU6>()(input, output);
 }
+#endif
+
+#ifdef SIGMOID_OP
+template <>
+bool SigmoidKernel<CPU, float>::Init(SigmoidParam<CPU> *param) {
+  return true;
+}
+
+template <>
+void SigmoidKernel<CPU, float>::Compute(const SigmoidParam<CPU> &param) {
+  const Tensor *input = param.InputX();
+  Tensor *output = param.Out();
+  ActivationCompute<float, SIGMOID>()(input, output);
+}
+#endif
+
+#ifdef TANH_OP
+template <>
+void TanhKernel<CPU, float>::Init(TanhParam<CPU> *param) {
+  return true;
+}
+
+template <>
+void TanhKernel<CPU, float>::Compute(const TanhParam<CPU> &param) {
+  const Tensor *input = param.InputX();
+  Tensor *output = param.Out();
+  ActivationCompute<float, TANH>()(input, output);
+}
+#endif
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
-#endif
