@@ -394,4 +394,9 @@ if (NOT FOUND_MATCH)
 
     ADD_EXECUTABLE(test-sequence-softmax operators/test_sequence_softmax_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-sequence-softmax paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-vgg16ssd net/test_vgg16ssd.cpp test_helper.h test_include.h)
+    target_link_libraries(test-vgg16ssd paddle-mobile)
+
 endif ()

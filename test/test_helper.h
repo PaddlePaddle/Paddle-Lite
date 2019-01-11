@@ -50,6 +50,7 @@ static const char *g_yolo = "../models/yolo";
 static const char *g_yolo_combined = "../models/yolo_combined";
 static const char *g_yolo_mul = "../models/d";
 static const char *g_fluid_fssd_new = "../models/fluid_fssd_new";
+static const char *g_vgg16_ssd_combined = "../models/vgg16_ssd_combined";
 static const char *g_test_image_1x3x224x224 =
     "../images/test_image_1x3x224x224_float";
 static const char *g_test_image_1x3x224x224_banana =
