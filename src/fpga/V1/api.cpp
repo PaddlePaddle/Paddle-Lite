@@ -332,8 +332,8 @@ void expand_conv_arg(ConvArgs *arg) {
   auto image_win_cnt = block_len;
   auto image_win_cnt_last = block_last;
   auto res_row_data_align4_pad = res_amount_per_row_pad / 8;
-  auto prog_full_cnt = 2048 / (filter_amount_all / 16 * 2) - 1;
-  if (prog_full_cnt == 1023) {
+  auto prog_full_cnt = 1024 / (filter_amount_all / 16 * 2) - 1;
+  if (prog_full_cnt == 511) {
     prog_full_cnt--;
   }
   auto post_prog_full_cnt =
