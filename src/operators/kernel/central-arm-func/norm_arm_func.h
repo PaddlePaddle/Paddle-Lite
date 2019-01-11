@@ -52,10 +52,7 @@ void NormCompute(const NormParam<CPU> &param) {
 
   int pre, n, post;
   GetDims(x_dims, axis, &pre, &n, &post);
-
-  framework::DDim shape = {pre, n, post};
-  framework::DDim norm_shape = {pre, post};
-  square.Resize(shape);
+  square.Resize(input->dims());
 
   const float *input_ptr = input->data<float>();
   float *square_ptr = square.mutable_data<float>();
@@ -106,7 +103,7 @@ void NormCompute(const NormParam<CPU> &param) {
         norm_tmp++;
         out_tmp++;
       }
-      out_tmp = out_ptr + i * post;
+      norm_tmp = norm_ptr + i * post;
     }
   }
 }
