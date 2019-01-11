@@ -281,6 +281,11 @@ class OpParam {
   }
 
   template <typename T>
+  static T *OutputNormFrom(const VariableNameMap &outputs, const Scope &scope) {
+    return GetVarValue<T>("Norm", outputs, scope);
+  }
+
+  template <typename T>
   static T *OutputVariancesFrom(const VariableNameMap &outputs,
                                 const Scope &scope) {
     return GetVarValue<T>("Variances", outputs, scope);
@@ -730,6 +735,41 @@ class LrnParam : public OpParam {
   float beta_;
   float k_;
   string data_format_;
+};
+#endif
+
+#ifdef NORM_OP
+template <typename Dtype>
+class NormParam : OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  NormParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+            const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+    output_norm_ = OutputNormFrom<GType>(outputs, scope);
+    epsilon_ = GetAttr<float>("epsilon", attrs);
+    axis_ = GetAttr<int>("axis", attrs);
+  }
+
+  const RType *InputX() const { return input_x_; }
+
+  RType *Out() const { return out_; }
+
+  RType *OutputNorm() const { return output_norm_; }
+
+  const float &Epsilon() const { return epsilon_; }
+
+  const int &Axis() const { return axis_; }
+
+ private:
+  RType *input_x_;
+  RType *out_;
+  RType *output_norm_;
+  float epsilon_;
+  int axis_;
 };
 #endif
 
