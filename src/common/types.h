@@ -105,6 +105,8 @@ enum ActivationType {
 enum PoolingType {
   MAX = 0,
   AVG = 1,
+  SUM = 2,
+  FIRST = 3,
 };
 
 extern const char *G_OP_TYPE_CONV;
@@ -168,6 +170,10 @@ extern const char *G_OP_TYPE_FUSION_DECONV_RELU;
 
 extern const char *G_OP_TYPE_FUSION_DECONV_ADD;
 extern const char *G_OP_TYPE_FUSION_DECONV_ADD_RELU;
+
+extern const char *G_OP_TYPE_SEQUENCE_EXPAND;
+extern const char *G_OP_TYPE_SEQUENCE_POOL;
+extern const char *G_OP_TYPE_SEQUENCE_SOFTMAX;
 
 extern std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>

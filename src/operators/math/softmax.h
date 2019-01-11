@@ -12,10 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef SOFTMAX_OP
+#if defined(SOFTMAX_OP) || defined(SEQUENCE_SOFTMAX_OP)
 
 #pragma once
 
+#include "framework/lod_tensor.h"
 #include "framework/tensor.h"
 
 namespace paddle_mobile {
@@ -28,7 +29,14 @@ class SoftmaxFuntor {
   void operator()(const framework::Tensor *X, framework::Tensor *Y);
 };
 
+template <typename Device, typename T>
+class SequenceSoftmaxFuntor {
+ public:
+  void operator()(const framework::LoDTensor *X, framework::LoDTensor *Y);
+};
+
 }  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile
+
 #endif

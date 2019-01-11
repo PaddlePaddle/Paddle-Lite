@@ -89,6 +89,10 @@ const char *G_OP_TYPE_FUSION_DECONV_RELU = "fusion_deconv_relu";
 const char *G_OP_TYPE_FUSION_DECONV_ADD = "fusion_deconv_add";
 const char *G_OP_TYPE_FUSION_DECONV_ADD_RELU = "fusion_deconv_add_relu";
 
+const char *G_OP_TYPE_SEQUENCE_EXPAND = "sequence_expand";
+const char *G_OP_TYPE_SEQUENCE_POOL = "sequence_pool";
+const char *G_OP_TYPE_SEQUENCE_SOFTMAX = "sequence_softmax";
+
 std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
     op_input_output_key = {
@@ -162,5 +166,8 @@ std::unordered_map<
         {G_OP_TYPE_TANH, {{"X"}, {"Out"}}},
         {G_OP_TYPE_FUSION_DECONV_RELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_FUSION_DECONV_ADD, {{"Input"}, {"Out"}}},
-        {G_OP_TYPE_FUSION_DECONV_ADD_RELU, {{"Input"}, {"Out"}}}};
+        {G_OP_TYPE_FUSION_DECONV_ADD_RELU, {{"Input"}, {"Out"}}},
+        {G_OP_TYPE_SEQUENCE_EXPAND, {{"X", "Y"}, {"Out"}}},
+        {G_OP_TYPE_SEQUENCE_POOL, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_SEQUENCE_SOFTMAX, {{"X"}, {"Out"}}}};
 }  // namespace paddle_mobile
