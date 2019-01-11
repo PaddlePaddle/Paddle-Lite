@@ -109,8 +109,6 @@ void NormCompute(const NormParam<CPU> &param) {
       out_tmp = out_ptr + i * post;
     }
   }
-
-  delete (square_ptr);
 }
 
 }  // namespace operators
