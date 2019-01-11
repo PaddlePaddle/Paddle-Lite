@@ -12,32 +12,27 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef SIGMOID_OP
+#ifdef SEQUENCE_POOL_OP
 
-#include "../sigmoid_kernel.h"
-#include "../central-arm-func/sigmoid_arm_func.h"
-#ifdef __ARM_NEON
-#include "../../math/math_func_neon.h"
-#endif
-#include <cmath>
+#include "operators/sequence_ops/sequence_pool_op.h"
+
 namespace paddle_mobile {
 namespace operators {
 
-using framework::DDim;
-using framework::Tensor;
-
-template <>
-bool SigmoidKernel<CPU, float>::Init(SigmoidParam<CPU> *param) {
-  return true;
+template <typename DeviceType, typename T>
+void SequencePoolOp<DeviceType, T>::InferShape() const {
+  const auto *input = this->param_.input_;
+  auto out_dims = input->dims();
+  out_dims[0] = input->lod()[0].size() - 1;
+  this->param_.output_->Resize(out_dims);
 }
 
-template <>
-void SigmoidKernel<CPU, float>::Compute(const SigmoidParam<CPU> &param) {
-  SigmoidCompute<float>(param);
-}
-
-template class SigmoidKernel<CPU, float>;
 }  // namespace operators
 }  // namespace paddle_mobile
 
+namespace ops = paddle_mobile::operators;
+#ifdef PADDLE_MOBILE_CPU
+REGISTER_OPERATOR_CPU(sequence_pool, ops::SequencePoolOp);
 #endif
+
+#endif  // SEQUENCE_POOL_OP
