@@ -22,26 +22,97 @@ namespace paddle_mobile {
 namespace fpga {
 
 int16_t fp32_2_fp16(float fp32_num) {
-  unsigned long tmp = *(unsigned long *)(&fp32_num);  // NOLINT
-  auto t = (int16_t)(((tmp & 0x007fffff) >> 13) | ((tmp & 0x80000000) >> 16) |
-                     (((tmp & 0x7f800000) >> 13) - (112 << 10)));
-  if (tmp & 0x1000) {
-    t++;  // roundoff
+  int32_t tmp = *(reinterpret_cast<int32_t *>)(&fp32_num);
+  int16_t se_fp32 = (tmp >> 23) & 0x1ff;
+  int32_t m_fp32 = tmp & 0x007fffff;
+  int16_t se_fp16 = 0;
+  int16_t m_fp16 = 0;
+
+  if (se_fp32 < 103) {
+    se_fp16 = 0x0000;
+    m_fp16 = m_fp32 >> 24;
+  } else if (se_fp32 < 113) {
+    se_fp16 = (0x0400 >> (113 - se_fp32));
+    m_fp16 = m_fp32 >> (126 - se_fp32);
+  } else if (se_fp32 <= 142) {
+    se_fp16 = (se_fp32 - 112) << 10;
+    m_fp16 = m_fp32 >> 13;
+  } else if (se_fp32 < 255) {
+    se_fp16 = 0x7C00;
+    m_fp16 = m_fp32 >> 24;
+  } else if (se_fp32 == 255) {
+    se_fp16 = 0x7C00;
+    m_fp16 = m_fp32 >> 13;
+  } else if (se_fp32 < 359) {
+    se_fp16 = 0x8000;
+    m_fp16 = m_fp32 >> 24;
+  } else if (se_fp32 < 369) {
+    se_fp16 = (0x0400 >> (369 - se_fp32)) | 0x8000;
+    m_fp16 = m_fp32 >> (382 - se_fp32);
+  } else if (se_fp32 <= 398) {
+    se_fp16 = ((se_fp32 - 368) << 10) | 0x8000;
+    m_fp16 = m_fp32 >> 13;
+  } else if (se_fp32 < 511) {
+    se_fp16 = 0x7C00;
+    m_fp16 = m_fp32 >> 24;
+  } else {
+    se_fp16 = 0x7C00;
+    m_fp16 = m_fp32 >> 13;
   }
-  return t;
+  int16_t result = se_fp16 + m_fp16;
+  return result;
+}
+
+int32_t convertmantissa(int32_t i) {
+  int32_t m = i << 13;
+  int32_t e = 0;
+  while (!(m & 0x00800000)) {
+    e -= 0x00800000;
+    m <<= 1;
+  }
+  m &= ~0x00800000;
+  e += 0x38800000;
+  return m | e;
 }
 
 float fp16_2_fp32(int16_t fp16_num) {
-  if (0 == fp16_num) {
-    return 0;
+  int16_t se_fp16 = fp16_num >> 10;
+  int16_t m_fp16 = fp16_num & 0x3ff;
+  int32_t e_fp32 = 0;
+  int16_t offset = 0;
+  int32_t m_fp32 = 0;
+  if (se_fp16 == 0) {
+    e_fp32 = 0;
+    offset = 0;
+  } else if (se_fp16 < 31) {
+    e_fp32 = se_fp16 << 23;
+    offset = 1024;
+  } else if (se_fp16 == 31) {
+    e_fp32 = 0x47800000;
+    offset = 1024;
+  } else if (se_fp16 == 32) {
+    e_fp32 = 0x80000000;
+    offset = 0;
+  } else if (se_fp16 < 63) {
+    e_fp32 = 0x80000000 + (se_fp16 - 32) << 23;
+    offset = 1024;
+  } else {  // se_fp16 == 63
+    e_fp32 = 0xC7800000;
+    offset = 1024;
   }
-  int frac = (fp16_num & 0x3ff);
-  int exp = ((fp16_num & 0x7c00) >> 10) + 112;
-  int s = fp16_num & 0x8000;
-  int tmp = 0;
-  float fp32_num;
-  tmp = s << 16 | exp << 23 | frac << 13;
-  fp32_num = *(float *)&tmp;  // NOLINT
+  int16_t a = offset + m_fp16;
+  if (a == 0) {
+    m_fp32 = 0;
+  } else if (a < 1024) {
+    int32_t tmp = a;
+    m_fp32 = convertmantissa(tmp);
+  } else {
+    int32_t tmp = a - 1024;
+    m_fp32 = 0x38000000 + (tmp << 13);
+  }
+
+  int32_t tmp = e_fp32 + m_fp32;
+  float fp32_num = *(reinterpret_cast<float *>)&tmp;
   return fp32_num;
 }
 
@@ -126,6 +197,5 @@ uint64_t vaddr_to_paddr(void *address) {
   return 0;
 #endif
 }
-
 }  // namespace fpga
 }  // namespace paddle_mobile
