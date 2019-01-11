@@ -41,7 +41,6 @@ void NormCompute(const NormParam<CPU> &param) {
   int axis = param.Axis();
 
   const framework::Tensor *input = param.InputX();
-  framework::Tensor square;
   framework::Tensor *norm = param.OutputNorm();
   framework::Tensor *out = param.Out();
 
@@ -52,58 +51,51 @@ void NormCompute(const NormParam<CPU> &param) {
 
   int pre, n, post;
   GetDims(x_dims, axis, &pre, &n, &post);
-  square.Resize(input->dims());
 
   const float *input_ptr = input->data<float>();
-  float *square_ptr = square.mutable_data<float>();
   float *norm_ptr = norm->mutable_data<float>();
   float *out_ptr = out->mutable_data<float>();
 
-  const float *in_tmp = input_ptr;
-  float *square_tmp = square_ptr;
-  for (int i = 0; i < input->numel(); ++i) {
-    float element = *in_tmp;
-    *square_tmp = element * element;
-    square_tmp++;
-    in_tmp++;
-  }
+  for (int p = 0; p < pre; ++p) {
+    const float *in_tmp = input_ptr + p * n * post;
+    float *norm_tmp = norm_ptr + p * post;
 
-  //  const float *norm_tmp = norm_ptr;
-  //  for (int i = 0; i < norm->numel(); ++i) {
-  //    *norm_tmp = 0;
-  //    norm_tmp++;
-  //  }
-
-  square_tmp = square_ptr;
-  float *norm_tmp = norm_ptr;
-  for (int i = 0; i < pre; ++i) {
-    for (int j = 0; j < post; ++j) {
-      for (int k = 0; k < n; ++k) {
-        if (k == 0) {
-          *norm_tmp = *square_tmp;
-        } else {
-          *norm_tmp += *(square_tmp + k * post);
-        }
-      }
-      float sum = *norm_tmp + epsilon;
-      *norm_tmp = sqrtf(sum);
+    // in_ch = 0; norm = epsilon + x * x
+    for (int i = 0; i < post; ++i) {
+      *norm_tmp = epsilon;
+      *norm_tmp += (*in_tmp) * (*in_tmp);
       norm_tmp++;
-      square_tmp++;
+      in_tmp++;
     }
-  }
 
-  in_tmp = input_ptr;
-  norm_tmp = norm_ptr;
-  float *out_tmp = out_ptr;
-  for (int i = 0; i < pre; ++i) {
-    for (int k = 0; k < n; ++k) {
+    // in_ch >= 1; norm += x * x
+    for (int c = 1; c < n; ++c) {
+      norm_tmp = norm_ptr + p * post;
+      for (int i = 0; i < post; ++i) {
+        *norm_tmp += (*in_tmp) * (*in_tmp);
+        norm_tmp++;
+        in_tmp++;
+      }
+    }
+
+    // norm = sqart(norm)
+    norm_tmp = norm_ptr + p * post;
+    for (int i = 0; i < post; ++i) {
+      *norm_tmp = sqrtf(*norm_tmp);
+      norm_tmp++;
+    }
+
+    // out = input / norm
+    in_tmp = input_ptr + p * n * post;
+    float *out_tmp = out_ptr + p * n * post;
+    for (int c = 0; c < n; ++c) {
+      norm_tmp = norm_ptr + p * post;
       for (int j = 0; j < post; ++j) {
         *out_tmp = *in_tmp / *norm_tmp;
         in_tmp++;
         norm_tmp++;
         out_tmp++;
       }
-      norm_tmp = norm_ptr + i * post;
     }
   }
 }
