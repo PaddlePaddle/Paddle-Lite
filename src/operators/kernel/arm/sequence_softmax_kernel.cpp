@@ -12,33 +12,32 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef RELU_OP
+#ifdef SEQUENCE_SOFTMAX_OP
 
-#pragma once
-
-#include "framework/operator.h"
-#include "operators/op_param.h"
+#include "framework/lod_tensor.h"
+#include "operators/kernel/sequence_kernels.h"
+#include "operators/math/softmax.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename DeviceType, typename T>
-class ReluKernel
-    : public framework::OpKernelBase<DeviceType, ReluParam<DeviceType>> {
+template <typename T>
+class SequenceSoftmaxKernel<CPU, T>
+    : public framework::OpKernelBase<CPU, SoftmaxParam<CPU>> {
  public:
-  void Compute(const ReluParam<DeviceType>& param);
-  bool Init(ReluParam<DeviceType>* param);
+  bool Init(SoftmaxParam<CPU> *param) { return true; }
+
+  void Compute(const SoftmaxParam<CPU> &param) {
+    const framework::LoDTensor *input = param.InputX();
+    framework::LoDTensor *output = param.Out();
+    math::SequenceSoftmaxFuntor<CPU, T> sequence_softmax;
+    sequence_softmax(input, output);
+  }
 };
 
-template <typename DeviceType, typename T>
-class Relu6Kernel
-    : public framework::OpKernelBase<DeviceType, ReluParam<DeviceType>> {
- public:
-  void Compute(const ReluParam<DeviceType>& param);
-  bool Init(ReluParam<DeviceType>* param);
-};
+template class SequenceSoftmaxKernel<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#endif
+#endif  // SEQUENCE_SOFTMAX_OP
