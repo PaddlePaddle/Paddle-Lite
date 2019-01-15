@@ -19,17 +19,17 @@ limitations under the License. */
 
 namespace paddle_mobile {
 
-void Relu(const framework::Tensor *X, framework::Tensor *Y) {
+void Relu6(const framework::Tensor *X, framework::Tensor *Y) {
   const float *x = X->data<float>();
   float *y = Y->mutable_data<float>();
 
   for (int i = 0; i < X->numel(); ++i) {
     float q = x[i];
-    y[i] = std::max(0.f, q);
+    y[i] = std::min(std::max(0.f, q), 6.f);
   }
 }
 
-int TestReluOp(const std::vector<int> input_shape) {
+int TestRelu6Op(const std::vector<int> input_shape) {
   framework::DDim dims = framework::make_ddim(input_shape);
   VariableNameMap inputs;
   VariableNameMap outputs;
@@ -44,8 +44,8 @@ int TestReluOp(const std::vector<int> input_shape) {
   auto output_var = scope.get()->Var("output");
 
   framework::AttributeMap attrs;
-  auto *op =
-      new operators::ReluOp<CPU, float>("relu", inputs, outputs, attrs, scope);
+  auto *op = new operators::Relu6Op<CPU, float>("relu6", inputs, outputs, attrs,
+                                                scope);
   op->InferShape();
   op->Init();
   op->Run();
@@ -54,7 +54,7 @@ int TestReluOp(const std::vector<int> input_shape) {
 
   framework::Tensor output_cmp;
   float *output_cmp_data = output_cmp.mutable_data<float>(output->dims());
-  Relu(input, &output_cmp);
+  Relu6(input, &output_cmp);
 
   const float *output_data = output->data<float>();
   for (int i = 0; i < output->numel(); ++i) {
@@ -74,9 +74,9 @@ int TestReluOp(const std::vector<int> input_shape) {
 }  // namespace paddle_mobile
 
 int main() {
-  paddle_mobile::TestReluOp({1, 1, 2, 3});
-  paddle_mobile::TestReluOp({1, 3, 11, 22});
-  paddle_mobile::TestReluOp({1, 32, 112, 112});
-  std::cout << "test relu op pass." << std::endl;
+  paddle_mobile::TestRelu6Op({1, 1, 2, 3});
+  paddle_mobile::TestRelu6Op({1, 3, 11, 22});
+  paddle_mobile::TestRelu6Op({1, 32, 112, 112});
+  std::cout << "test relu6 op pass." << std::endl;
   return 0;
 }
