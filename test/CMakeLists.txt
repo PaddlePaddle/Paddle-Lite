@@ -235,6 +235,15 @@ if (NOT FOUND_MATCH)
     ADD_EXECUTABLE(test-relu-op operators/test_relu_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-relu-op paddle-mobile)
 
+    ADD_EXECUTABLE(test-relu6-op operators/test_relu6_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-relu6-op paddle-mobile)
+
+    ADD_EXECUTABLE(test-topk-op operators/test_topk_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-topk-op paddle-mobile)
+
+    ADD_EXECUTABLE(test-cast-op operators/test_cast_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-cast-op paddle-mobile)
+
     # gen test
     ADD_EXECUTABLE(test-fc-op operators/test_fusion_fc_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-fc-op paddle-mobile)
@@ -394,4 +403,9 @@ if (NOT FOUND_MATCH)
 
     ADD_EXECUTABLE(test-sequence-softmax operators/test_sequence_softmax_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-sequence-softmax paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-vgg16ssd net/test_vgg16ssd.cpp test_helper.h test_include.h)
+    target_link_libraries(test-vgg16ssd paddle-mobile)
+
 endif ()

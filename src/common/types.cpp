@@ -37,6 +37,7 @@ const char *G_OP_TYPE_FUSION_CONV_ADD = "fusion_conv_add";
 const char *G_OP_TYPE_LRN = "lrn";
 const char *G_OP_TYPE_MUL = "mul";
 const char *G_OP_TYPE_MULTICLASS_NMS = "multiclass_nms";
+const char *G_OP_TYPE_NORM = "norm";
 const char *G_OP_TYPE_POLYGON_BOX_TRANSFORM = "polygon_box_transform";
 const char *G_OP_TYPE_POOL2D = "pool2d";
 const char *G_OP_TYPE_PRIOR_BOX = "prior_box";
@@ -169,5 +170,6 @@ std::unordered_map<
         {G_OP_TYPE_FUSION_DECONV_ADD_RELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_SEQUENCE_EXPAND, {{"X", "Y"}, {"Out"}}},
         {G_OP_TYPE_SEQUENCE_POOL, {{"X"}, {"Out"}}},
-        {G_OP_TYPE_SEQUENCE_SOFTMAX, {{"X"}, {"Out"}}}};
+        {G_OP_TYPE_SEQUENCE_SOFTMAX, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_NORM, {{"X"}, {"Out", "Norm"}}}};
 }  // namespace paddle_mobile
