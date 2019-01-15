@@ -34,7 +34,7 @@ void SequenceSoftmax(const framework::LoDTensor *X, framework::LoDTensor *Y) {
     }
     float sum = 0.f;
     for (int j = 0; j < num_classes; ++j) {
-      float tmp = std::expf(input[j] - max);
+      float tmp = expf(input[j] - max);
       sum += tmp;
       output[j] = tmp;
     }
