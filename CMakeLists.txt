@@ -1,20 +1,20 @@
 cmake_minimum_required(VERSION 3.0.0)
 
-option(USE_OPENMP "openmp support" ON)
-option(DEBUGING "enable debug mode" ON)
-option(USE_EXCEPTION "use std exception" ON)
-option(SYMBOL_HIDDEN "symbol hidden" OFF) # on when use jni or ios io
-option(LOG_PROFILE "log profile" OFF)
+option(USE_OPENMP    "build with openmp support" ON)
+option(USE_EXCEPTION "build with exception" ON)
+option(WITH_LOGGING  "print logging for debug" ON)
+option(WITH_SYMBOL   "build with all symbols" ON) # turn off if use jni or ios io
+option(WITH_PROFILE  "print op profile for debug" OFF)
+option(WITH_TEST     "build with unit tests" ON)
 
 # select the platform to build
-option(CPU "armv7 with neon" ON)
-option(GPU_MALI "mali gpu" OFF)
-option(GPU_CL "opencl gpu" OFF)
-
-option(FPGA "fpga" OFF)
+option(CPU        "build with arm CPU support" ON)
+option(GPU_MALI   "build with arm mali GPU support" OFF)
+option(GPU_CL     "build with OpenCL support" OFF)
+option(FPGA       "build with FPGA support" OFF)
 if(FPGA)
-    option(FPGAV1 "fpga v1" ON)
-    option(FPGAV2 "fpga v2" OFF)
+  option(FPGAV1     "build with fpga v1 support" ON)
+  option(FPGAV2     "build with fpga v2 support" OFF)
 endif()
 
 project(paddle-mobile)
@@ -23,7 +23,6 @@ file(GLOB_RECURSE PADDLE_MOBILE_CC src/*.cc src/*.cpp src/*.c src/*.mm)
 file(GLOB_RECURSE PADDLE_MOBILE_H src/*.h)
 include_directories(src/)
 
-set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_FLAGS "-O3 -s -DNDEBUG ${CMAKE_CXX_FLAGS}")
 if(IS_IOS)
     set(CMAKE_CXX_FLAGS "-mfpu=neon -marm -fobjc-abi-version=2 -fobjc-arc \
@@ -33,13 +32,18 @@ else()
     set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 endif()
 
-if(DEBUGING)
+if(USE_OPENMP)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+    add_definitions(-DPADDLE_MOBILE_USE_OPENMP)
+endif()
+
+if(WITH_LOGGING)
     message(STATUS "debugging mode")
     add_definitions(-DPADDLE_MOBILE_DEBUG)
 else()
 endif()
 
-if(SYMBOL_HIDDEN)
+if(NOT WITH_SYMBOL)
     add_definitions(-fvisibility=hidden -fvisibility-inlines-hidden)
 endif()
 
@@ -50,13 +54,8 @@ else()
     add_definitions(-fno-exceptions)
 endif()
 
-if(LOG_PROFILE)
+if(WITH_PROFILE)
     add_definitions(-DPADDLE_MOBILE_PROFILE)
-endif()
-
-if(USE_OPENMP)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-    add_definitions(-DPADDLE_MOBILE_USE_OPENMP)
 endif()
 
 # platform control
@@ -217,7 +216,6 @@ endif()
 set_property(CACHE NET PROPERTY STRINGS "default" "googlenet" "mobilenet" "yolo" "squeezenet" "FPGA_NET_V1" "FPGA_NET_V2" "NLP")
 include("${CMAKE_CURRENT_LIST_DIR}/tools/op.cmake")
 
-
 # build library
 if(ANDROID_NDK_TOOLCHAIN_INCLUDED)
     list(REMOVE_DUPLICATES CMAKE_CXX_FLAGS)
@@ -239,7 +237,7 @@ else()
 endif()
 
 # unit test
-if(DEBUGING)
+if(WITH_TEST AND WITH_SYMBOL)
     if(IS_IOS)
     else()
         add_subdirectory(test)
