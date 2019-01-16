@@ -20,25 +20,16 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-#define DECLARE_KERNEL(KernelClass, KernelParam)                              \
-  template <typename DeviceType, typename T>                                  \
-  class KernelClass                                                           \
-      : public framework::OpKernelBase<DeviceType, KernelParam<DeviceType>> { \
-   public:                                                                    \
-    bool Init(KernelParam<DeviceType> *param);                                \
-    void Compute(const KernelParam<DeviceType> &param);                       \
-  };
-
 #ifdef SEQUENCE_EXPAND_OP
-DECLARE_KERNEL(SequenceExpandKernel, SequenceExpandParam);
+DECLARE_KERNEL(SequenceExpand, SequenceExpandParam);
 #endif  // SEQUENCE_EXPAND_OP
 
 #ifdef SEQUENCE_POOL_OP
-DECLARE_KERNEL(SequencePoolKernel, SequencePoolParam);
+DECLARE_KERNEL(SequencePool, SequencePoolParam);
 #endif  // SEQUENCE_POOL_OP
 
 #ifdef SEQUENCE_SOFTMAX_OP
-DECLARE_KERNEL(SequenceSoftmaxKernel, SoftmaxParam);
+DECLARE_KERNEL(SequenceSoftmax, SoftmaxParam);
 #endif  // SEQUENCE_SOFTMAX_OP
 
 }  // namespace operators

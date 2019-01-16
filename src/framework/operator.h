@@ -150,30 +150,6 @@ class OpKernelBase {
 #endif
 };
 
-#define DECLARE_OPERATOR(OpName, OpParam, OpKernel)                          \
-  template <typename DeviceType, typename T>                                 \
-  class OpName##Op : public framework::OperatorWithKernel<                   \
-                         DeviceType, OpParam<DeviceType>,                    \
-                         operators::OpKernel<DeviceType, T>> {               \
-   public:                                                                   \
-    OpName##Op(const std::string &type, const VariableNameMap &inputs,       \
-               const VariableNameMap &outputs,                               \
-               const framework::AttributeMap &attrs,                         \
-               std::shared_ptr<framework::Scope> scope)                      \
-        : framework::OperatorWithKernel<DeviceType, OpParam<DeviceType>,     \
-                                        operators::OpKernel<DeviceType, T>>( \
-              type, inputs, outputs, attrs, scope) {}                        \
-                                                                             \
-    void InferShape() const override;                                        \
-  };
-
-#define DEFINE_OP_CONSTRUCTOR(cls, parent_cls)                                 \
-  cls(const std::string &type, const ::paddle_mobile::VariableNameMap &inputs, \
-      const ::paddle_mobile::VariableNameMap &outputs,                         \
-      const ::paddle_mobile::framework::AttributeMap &attrs,                   \
-      std::shared_ptr<::paddle_mobile::framework::Scope> scope)                \
-      : parent_cls<Dtype, T>(type, inputs, outputs, attrs, scope) {}
-
 class FusionOpMatcher {
  public:
   FusionOpMatcher() {}
@@ -197,6 +173,39 @@ class FusionOpMatcher {
   std::string type_;
   std::shared_ptr<OpDesc> new_opdesc_;
 };
+
+#define DECLARE_OPERATOR(OpName, OpParam, OpKernel)                          \
+  template <typename DeviceType, typename T>                                 \
+  class OpName##Op : public framework::OperatorWithKernel<                   \
+                         DeviceType, OpParam<DeviceType>,                    \
+                         operators::OpKernel<DeviceType, T>> {               \
+   public:                                                                   \
+    OpName##Op(const std::string &type, const VariableNameMap &inputs,       \
+               const VariableNameMap &outputs,                               \
+               const framework::AttributeMap &attrs,                         \
+               std::shared_ptr<framework::Scope> scope)                      \
+        : framework::OperatorWithKernel<DeviceType, OpParam<DeviceType>,     \
+                                        operators::OpKernel<DeviceType, T>>( \
+              type, inputs, outputs, attrs, scope) {}                        \
+                                                                             \
+    void InferShape() const override;                                        \
+  };
+
+#define DECLARE_KERNEL(OpName, OpParam)                                   \
+  template <typename DeviceType, typename T>                              \
+  class OpName##Kernel                                                    \
+      : public framework::OpKernelBase<DeviceType, OpParam<DeviceType>> { \
+   public:                                                                \
+    bool Init(OpParam<DeviceType> *param);                                \
+    void Compute(const OpParam<DeviceType> &param);                       \
+  };
+
+#define DEFINE_OP_CONSTRUCTOR(cls, parent_cls)                                 \
+  cls(const std::string &type, const ::paddle_mobile::VariableNameMap &inputs, \
+      const ::paddle_mobile::VariableNameMap &outputs,                         \
+      const ::paddle_mobile::framework::AttributeMap &attrs,                   \
+      std::shared_ptr<::paddle_mobile::framework::Scope> scope)                \
+      : parent_cls<Dtype, T>(type, inputs, outputs, attrs, scope) {}
 
 }  // namespace framework
 }  // namespace paddle_mobile
