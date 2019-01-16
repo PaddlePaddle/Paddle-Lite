@@ -20,15 +20,6 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-#define DECLARE_KERNEL(KernelClass, KernelParam)                              \
-  template <typename DeviceType, typename T>                                  \
-  class KernelClass##Kernel                                                   \
-      : public framework::OpKernelBase<DeviceType, KernelParam<DeviceType>> { \
-   public:                                                                    \
-    bool Init(KernelParam<DeviceType> *param);                                \
-    void Compute(const KernelParam<DeviceType> &param);                       \
-  };
-
 #ifdef TOP_K_OP
 DECLARE_KERNEL(TopK, TopKParam)
 #endif  // TOP_K_OP
