@@ -15,7 +15,7 @@ limitations under the License. */
 #include <cmath>
 #include <iostream>
 #include "../test_include.h"
-#include "operators/relu_op.h"
+#include "operators/activation_op.h"
 
 namespace paddle_mobile {
 
