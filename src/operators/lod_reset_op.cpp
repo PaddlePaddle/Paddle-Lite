@@ -12,16 +12,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef TANH_OP
+#ifdef LOD_RESET_OP
 
-#include "operators/tanh_op.h"
+#include "operators/lod_reset_op.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename DeviceType, typename T>
-void TanhOp<DeviceType, T>::InferShape() const {
-  this->param_.Out()->Resize(this->param_.InputX()->dims());
+template <typename Dtype, typename T>
+void LodResetOp<Dtype, T>::InferShape() const {
+  const auto &input_dims = this->param_.input_->dims();
+  this->param_.output_->Resize(input_dims);
 }
 
 }  // namespace operators
@@ -29,10 +30,7 @@ void TanhOp<DeviceType, T>::InferShape() const {
 
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(tanh, ops::TanhOp);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(tanh, ops::TanhOp);
+REGISTER_OPERATOR_CPU(lod_reset, ops::LodResetOp);
 #endif
 
-#endif
+#endif  // LOD_RESET_OP

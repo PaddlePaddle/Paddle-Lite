@@ -12,29 +12,40 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef RELU_OP
-
-#include "operators/relu_op.h"
+#include "operators/activation_op.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename Dtype, typename T>
-void ReluOp<Dtype, T>::InferShape() const {
-  auto input_dims = this->param_.InputX()->dims();
-  this->param_.Out()->Resize(input_dims);
-}
+#define DEFINE_INFERSHAPE(OpName)                           \
+  template <typename Dtype, typename T>                     \
+  void OpName##Op<Dtype, T>::InferShape() const {           \
+    const auto &input_dims = this->param_.InputX()->dims(); \
+    this->param_.Out()->Resize(input_dims);                 \
+  }
 
-template <typename Dtype, typename T>
-void Relu6Op<Dtype, T>::InferShape() const {
-  auto input_dims = this->param_.InputX()->dims();
-  this->param_.Out()->Resize(input_dims);
-}
+#ifdef RELU_OP
+DEFINE_INFERSHAPE(Relu);
+DEFINE_INFERSHAPE(Relu6);
+#endif  // RELU_OP
+
+#ifdef SIGMOID_OP
+DEFINE_INFERSHAPE(Sigmoid);
+#endif  // SIGMOID_OP
+
+#ifdef TANH_OP
+DEFINE_INFERSHAPE(Tanh);
+#endif  // TANH_OP
+
+#ifdef LOG_OP
+DEFINE_INFERSHAPE(Log);
+#endif  // LOG_OP
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
+#ifdef RELU_OP
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(relu, ops::ReluOp);
 REGISTER_OPERATOR_CPU(relu6, ops::Relu6Op);
@@ -47,5 +58,23 @@ REGISTER_OPERATOR_MALI_GPU(relu, ops::ReluOp);
 #ifdef PADDLE_MOBILE_CL
 REGISTER_OPERATOR_CL(relu, ops::ReluOp);
 #endif
-
 #endif  // RELU_OP
+
+#ifdef SIGMOID_OP
+#ifdef PADDLE_MOBILE_CPU
+REGISTER_OPERATOR_CPU(sigmoid, ops::SigmoidOp);
+#endif
+#endif  // SIGMOID_OP
+
+#ifdef TANH_OP
+#ifdef PADDLE_MOBILE_CPU
+REGISTER_OPERATOR_CPU(tanh, ops::TanhOp);
+#endif
+#ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(tanh, ops::TanhOp);
+#endif
+#endif  // TANH_OP
+
+#ifdef LOG_OP
+REGISTER_OPERATOR_CPU(log, ops::LogOp);
+#endif  // LOG_OP
