@@ -12,8 +12,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef TANH_OP
-
 #pragma once
 
 #include <string>
@@ -24,21 +22,22 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-template <typename DeviceType, typename T>
-class TanhOp : public framework::OperatorWithKernel<
-                   DeviceType, TanhParam<DeviceType>,
-                   operators::TanhKernel<DeviceType, T>> {
- public:
-  TanhOp(const std::string &type, const VariableNameMap &inputs,
-         const VariableNameMap &outputs, const framework::AttributeMap &attrs,
-         std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, TanhParam<DeviceType>,
-                                      operators::TanhKernel<DeviceType, T>>(
-            type, inputs, outputs, attrs, scope) {}
-  void InferShape() const override;
-};
+#ifdef RELU_OP
+DECLARE_OPERATOR(Relu, ReluParam, ReluKernel);
+DECLARE_OPERATOR(Relu6, ReluParam, Relu6Kernel);
+#endif
+
+#ifdef SIGMOID_OP
+DECLARE_OPERATOR(Sigmoid, SigmoidParam, SigmoidKernel);
+#endif
+
+#ifdef TANH_OP
+DECLARE_OPERATOR(Tanh, TanhParam, TanhKernel);
+#endif
+
+#ifdef LOG_OP
+DECLARE_OPERATOR(Log, ReluParam, LogKernel);
+#endif
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
-#endif

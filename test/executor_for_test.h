@@ -20,12 +20,11 @@ limitations under the License. */
 #include "common/log.h"
 #include "framework/executor.h"
 #include "framework/op_registry.h"
+#include "operators/activation_op.h"
 #include "operators/conv_op.h"
 #include "operators/elementwise_add_op.h"
 #include "operators/pool_op.h"
-#include "operators/relu_op.h"
 #include "operators/reshape_op.h"
-#include "operators/sigmoid_op.h"
 #include "operators/softmax_op.h"
 #include "operators/transpose_op.h"
 

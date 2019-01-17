@@ -238,6 +238,12 @@ if (NOT FOUND_MATCH)
     ADD_EXECUTABLE(test-relu6-op operators/test_relu6_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-relu6-op paddle-mobile)
 
+    ADD_EXECUTABLE(test-tanh-op operators/test_tanh_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-tanh-op paddle-mobile)
+
+    ADD_EXECUTABLE(test-log-op operators/test_log_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-log-op paddle-mobile)
+
     ADD_EXECUTABLE(test-topk-op operators/test_topk_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-topk-op paddle-mobile)
 
