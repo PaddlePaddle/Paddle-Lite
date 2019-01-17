@@ -20,37 +20,28 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-#define DECLARE_KERNEL(KernelClass, KernelParam)                              \
-  template <typename DeviceType, typename T>                                  \
-  class KernelClass                                                           \
-      : public framework::OpKernelBase<DeviceType, KernelParam<DeviceType>> { \
-   public:                                                                    \
-    bool Init(KernelParam<DeviceType> *param);                                \
-    void Compute(const KernelParam<DeviceType> &param);                       \
-  };
-
 #ifdef FUSION_DEQUANT_BN_OP
-DECLARE_KERNEL(FusionDequantBNKernel, FusionDequantBNParam);
+DECLARE_KERNEL(FusionDequantBN, FusionDequantBNParam);
 #endif
 
 #ifdef FUSION_DEQUANT_BN_RELU_OP
-DECLARE_KERNEL(FusionDequantBNReluKernel, FusionDequantBNParam);
+DECLARE_KERNEL(FusionDequantBNRelu, FusionDequantBNParam);
 #endif
 
 #ifdef FUSION_DEQUANT_ADD_BN_OP
-DECLARE_KERNEL(FusionDequantAddBNKernel, FusionDequantAddBNParam);
+DECLARE_KERNEL(FusionDequantAddBN, FusionDequantAddBNParam);
 #endif
 
 #ifdef FUSION_DEQUANT_ADD_BN_RELU_OP
-DECLARE_KERNEL(FusionDequantAddBNReluKernel, FusionDequantAddBNParam);
+DECLARE_KERNEL(FusionDequantAddBNRelu, FusionDequantAddBNParam);
 #endif
 
 #ifdef FUSION_DEQUANT_ADD_BN_QUANT_OP
-DECLARE_KERNEL(FusionDequantAddBNQuantKernel, FusionDequantAddBNQuantParam);
+DECLARE_KERNEL(FusionDequantAddBNQuant, FusionDequantAddBNQuantParam);
 #endif
 
 #ifdef FUSION_DEQUANT_ADD_BN_RELU_QUANT_OP
-DECLARE_KERNEL(FusionDequantAddBNReluQuantKernel, FusionDequantAddBNQuantParam);
+DECLARE_KERNEL(FusionDequantAddBNReluQuant, FusionDequantAddBNQuantParam);
 #endif
 
 }  // namespace operators

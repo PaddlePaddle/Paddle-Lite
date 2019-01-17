@@ -36,13 +36,12 @@ limitations under the License. */
 #include "framework/cl/cl_helper.h"
 #include "framework/cl/cl_scope.h"
 #endif
+
 namespace paddle_mobile {
 namespace framework {
-using std::string;
-using std::vector;
 
 template <typename T>
-static T *GetVarValue(const string &key, const VariableNameMap &var_map,
+static T *GetVarValue(const std::string &key, const VariableNameMap &var_map,
                       const Scope &scope) {
   auto var_vec = var_map.at(key);
   if (!var_vec.empty()) {
@@ -56,44 +55,29 @@ static T *GetVarValue(const string &key, const VariableNameMap &var_map,
 template <typename Dtype>
 class OperatorBase {
  public:
-  /*
-   *  @b op 基类的实例化方法, op 获取到了 输入、参数以及提前分配好的输出 tensor
-   * */
   OperatorBase(const std::string &type, const VariableNameMap &inputs,
                const VariableNameMap &outputs, const AttributeMap &attrs,
                std::shared_ptr<Scope> scope);
   virtual ~OperatorBase() {}
-  void Run();
-  std::vector<string> GetOutKeys() const;
-  std::vector<string> GetInputKeys() const;
-  virtual void RunImpl() = 0;
 
   virtual void Init() = 0;
-  /*
-   * @b op 运算所需的输入, 如上一层的输出结果、卷积核
-   * */
+  virtual void InferShape() const = 0;
+  virtual void Run();
+  virtual void RunImpl() = 0;
+
+  std::vector<std::string> GetOutKeys() const;
+  std::vector<std::string> GetInputKeys() const;
+
   const VariableNameMap &Inputs() const { return inputs_; }
-  /*
-   * @b op 的输出, 内存会提前被分配好, 运算结果会被存到分配好的内存内
-   * */
   const VariableNameMap &Outputs() const { return outputs_; }
-  /*
-   * @b op 类型
-   * */
   const std::string &Type() const { return type_; }
-  /*
-   * @b op 运算所需要用到的参数: 如 conv 运算所需要用到的 stride
-   * */
   const AttributeMap &Attrs() const { return attrs_; }
+
   void ClearVariables(const std::vector<std::string> &var_names) const {
     if (this->scope_) {
       this->scope_->EraseVars(var_names);
     }
   }
-  /*
-   * @b 根据输入形状和参数计算出输出形状
-   * */
-  virtual void InferShape() const = 0;
 
  protected:
   std::shared_ptr<Scope> scope_;
@@ -106,9 +90,6 @@ class OperatorBase {
   void CheckAllInputOutputSet() const;
 };
 
-/*
- * @b 这个类为所有带有运算的 op 的父类, 这个 op 继承与 OperatorBase
- * */
 template <typename Dtype, typename ParamType, typename KernelType>
 class OperatorWithKernel : public OperatorBase<Dtype> {
  public:
@@ -136,9 +117,6 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
   ParamType param_;
 };
 
-/*
- * @b 所有kernel的父类
- * */
 template <typename Dtype, typename P>
 class OpKernelBase {
  public:
@@ -150,11 +128,6 @@ class OpKernelBase {
   }
 #endif
 
-    /*
-     * @b 所有kernel 需实现 Compute 方法
-     * @p para 这个参数为 kernel 运算时所需要用到参数组成的一个结构体,
-     *    所有结构体存在与: paddle-mobile/src/operators/op_param.h
-     * */
 #ifdef PADDLE_McOBILE_MALI_GPU
   OpKernelBase() { acl_op_ = nullptr; }
   void *GetAclOp() const { return acl_op_; }
@@ -177,13 +150,6 @@ class OpKernelBase {
 #endif
 };
 
-#define DEFINE_OP_CONSTRUCTOR(cls, parent_cls)                                 \
-  cls(const std::string &type, const ::paddle_mobile::VariableNameMap &inputs, \
-      const ::paddle_mobile::VariableNameMap &outputs,                         \
-      const ::paddle_mobile::framework::AttributeMap &attrs,                   \
-      std::shared_ptr<::paddle_mobile::framework::Scope> scope)                \
-      : parent_cls<Dtype, T>(type, inputs, outputs, attrs, scope) {}
-
 class FusionOpMatcher {
  public:
   FusionOpMatcher() {}
@@ -202,12 +168,44 @@ class FusionOpMatcher {
 
   virtual std::vector<std::pair<int, std::string>> NeedCheck() { return {}; }
 
-  //  virtual  bool Fusion();
  protected:
   Node node_;
   std::string type_;
   std::shared_ptr<OpDesc> new_opdesc_;
 };
+
+#define DECLARE_OPERATOR(OpName, OpParam, OpKernel)                          \
+  template <typename DeviceType, typename T>                                 \
+  class OpName##Op : public framework::OperatorWithKernel<                   \
+                         DeviceType, OpParam<DeviceType>,                    \
+                         operators::OpKernel<DeviceType, T>> {               \
+   public:                                                                   \
+    OpName##Op(const std::string &type, const VariableNameMap &inputs,       \
+               const VariableNameMap &outputs,                               \
+               const framework::AttributeMap &attrs,                         \
+               std::shared_ptr<framework::Scope> scope)                      \
+        : framework::OperatorWithKernel<DeviceType, OpParam<DeviceType>,     \
+                                        operators::OpKernel<DeviceType, T>>( \
+              type, inputs, outputs, attrs, scope) {}                        \
+                                                                             \
+    void InferShape() const override;                                        \
+  };
+
+#define DECLARE_KERNEL(OpName, OpParam)                                   \
+  template <typename DeviceType, typename T>                              \
+  class OpName##Kernel                                                    \
+      : public framework::OpKernelBase<DeviceType, OpParam<DeviceType>> { \
+   public:                                                                \
+    bool Init(OpParam<DeviceType> *param);                                \
+    void Compute(const OpParam<DeviceType> &param);                       \
+  };
+
+#define DEFINE_OP_CONSTRUCTOR(cls, parent_cls)                                 \
+  cls(const std::string &type, const ::paddle_mobile::VariableNameMap &inputs, \
+      const ::paddle_mobile::VariableNameMap &outputs,                         \
+      const ::paddle_mobile::framework::AttributeMap &attrs,                   \
+      std::shared_ptr<::paddle_mobile::framework::Scope> scope)                \
+      : parent_cls<Dtype, T>(type, inputs, outputs, attrs, scope) {}
 
 }  // namespace framework
 }  // namespace paddle_mobile
