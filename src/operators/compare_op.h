@@ -12,34 +12,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef SIGMOID_OP
-
 #pragma once
 
 #include <string>
 #include "framework/operator.h"
-#include "operators/kernel/activation_kernel.h"
+#include "operators/kernel/compare_kernel.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename DeviceType, typename T>
-class SigmoidOp : public framework::OperatorWithKernel<
-                      DeviceType, SigmoidParam<DeviceType>,
-                      operators::SigmoidKernel<DeviceType, T>> {
- public:
-  SigmoidOp(const std::string &type, const VariableNameMap &inputs,
-            const VariableNameMap &outputs,
-            const framework::AttributeMap &attrs,
-            std::shared_ptr<framework::Scope> scope)
-      : framework::OperatorWithKernel<DeviceType, SigmoidParam<DeviceType>,
-                                      operators::SigmoidKernel<DeviceType, T>>(
-            type, inputs, outputs, attrs, scope) {}
-  void InferShape() const override;
-};
+#ifdef LESS_THAN_OP
+DECLARE_OPERATOR(LessThan, CompareParam, LessThanKernel);
+#endif  // LESS_THAN_OP
 
 }  // namespace operators
 }  // namespace paddle_mobile
-
-#endif

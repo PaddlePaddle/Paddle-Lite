@@ -19,16 +19,16 @@ limitations under the License. */
 
 namespace paddle_mobile {
 
-void Sigmoid(const framework::Tensor *X, framework::Tensor *Y) {
+void Tanh(const framework::Tensor *X, framework::Tensor *Y) {
   const float *x = X->data<float>();
   float *y = Y->mutable_data<float>();
 
   for (int i = 0; i < X->numel(); ++i) {
-    y[i] = 1.f / (1.f + exp(-x[i]));
+    y[i] = 2.f / (1.f + exp(-2.f * x[i])) - 1.f;
   }
 }
 
-int TestSigmoidOp(const std::vector<int> input_shape) {
+int TestTanhOp(const std::vector<int> input_shape) {
   framework::DDim dims = framework::make_ddim(input_shape);
   VariableNameMap inputs;
   VariableNameMap outputs;
@@ -43,8 +43,8 @@ int TestSigmoidOp(const std::vector<int> input_shape) {
   auto output_var = scope.get()->Var("output");
 
   framework::AttributeMap attrs;
-  auto *op = new operators::SigmoidOp<CPU, float>("sigmoid", inputs, outputs,
-                                                  attrs, scope);
+  auto *op =
+      new operators::TanhOp<CPU, float>("tanh", inputs, outputs, attrs, scope);
   op->InferShape();
   op->Init();
   op->Run();
@@ -53,7 +53,7 @@ int TestSigmoidOp(const std::vector<int> input_shape) {
 
   framework::Tensor output_cmp;
   float *output_cmp_data = output_cmp.mutable_data<float>(output->dims());
-  Sigmoid(input, &output_cmp);
+  Tanh(input, &output_cmp);
 
   const float *output_data = output->data<float>();
   for (int i = 0; i < output->numel(); ++i) {
@@ -73,9 +73,9 @@ int TestSigmoidOp(const std::vector<int> input_shape) {
 }  // namespace paddle_mobile
 
 int main() {
-  paddle_mobile::TestSigmoidOp({1, 1, 2, 3});
-  paddle_mobile::TestSigmoidOp({1, 3, 11, 22});
-  paddle_mobile::TestSigmoidOp({1, 32, 112, 112});
+  paddle_mobile::TestTanhOp({1, 1, 2, 3});
+  paddle_mobile::TestTanhOp({1, 3, 11, 22});
+  paddle_mobile::TestTanhOp({1, 32, 112, 112});
   std::cout << "test sigmoid op pass." << std::endl;
   return 0;
 }

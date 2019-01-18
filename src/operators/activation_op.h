@@ -14,23 +14,30 @@ limitations under the License. */
 
 #pragma once
 
+#include <string>
 #include "framework/operator.h"
+#include "operators/kernel/activation_kernel.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-#ifdef TOP_K_OP
-DECLARE_KERNEL(TopK, TopKParam);
-#endif  // TOP_K_OP
+#ifdef RELU_OP
+DECLARE_OPERATOR(Relu, ReluParam, ReluKernel);
+DECLARE_OPERATOR(Relu6, ReluParam, Relu6Kernel);
+#endif
 
-#ifdef CAST_OP
-DECLARE_KERNEL(Cast, CastParam);
-#endif  // CAST_OP
+#ifdef SIGMOID_OP
+DECLARE_OPERATOR(Sigmoid, SigmoidParam, SigmoidKernel);
+#endif
 
-#ifdef LOD_RESET_OP
-DECLARE_KERNEL(LodReset, LodResetParam);
-#endif  // LOD_RESET_OP
+#ifdef TANH_OP
+DECLARE_OPERATOR(Tanh, TanhParam, TanhKernel);
+#endif
+
+#ifdef LOG_OP
+DECLARE_OPERATOR(Log, ReluParam, LogKernel);
+#endif
 
 }  // namespace operators
 }  // namespace paddle_mobile

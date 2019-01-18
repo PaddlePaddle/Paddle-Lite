@@ -86,6 +86,11 @@ inline float32x4_t vActiveq_f32<TANH>(const float32x4_t &x) {
   __out = vmulq_n_f32(__out, 2.f);
   return vsubq_f32(__out, __one);
 }
+
+template <>
+inline float32x4_t vActiveq_f32<LOG>(const float32x4_t &x) {
+  return log_ps(x);
+}
 #endif
 
 template <ActivationType Act = IDENTITY>
@@ -117,6 +122,11 @@ inline float Active<TANH>(const float &x) {
   //  tmp = (tmp > EXP_MAX_INPUT) ? EXP_MAX_INPUT : tmp;
   //  return (2.f / (1.f + exp(tmp))) - 1.f;
   return 2.f / (1.f + exp(-2.f * x)) - 1.f;
+}
+
+template <>
+inline float Active<LOG>(const float &x) {
+  return log(x);
 }
 
 }  // namespace math
