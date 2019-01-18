@@ -27,7 +27,7 @@ bool GruUnitKernel<CPU, float>::Init(GruUnitParam<CPU> *param) {
 
 template <>
 void GruUnitKernel<CPU, float>::Compute(const GruUnitParam<CPU> &param) {
-	GruUnitCompute(param);
+  GruUnitCompute(param);
 }
 
 template class GruUnitKernel<CPU, float>;
