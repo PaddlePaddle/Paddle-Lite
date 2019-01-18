@@ -173,7 +173,7 @@ build_error() {
 }
 
 if [ $# -lt 1 ]; then
-	echo "error: target missing!"
+    echo "error: target missing!"
     echo "available targets: ios|android"
     echo "sample usage: ./build.sh android"
 else

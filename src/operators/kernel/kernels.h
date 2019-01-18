@@ -21,15 +21,15 @@ namespace paddle_mobile {
 namespace operators {
 
 #ifdef TOP_K_OP
-DECLARE_KERNEL(TopK, TopKParam)
+DECLARE_KERNEL(TopK, TopKParam);
 #endif  // TOP_K_OP
 
 #ifdef CAST_OP
-DECLARE_KERNEL(Cast, CastParam)
+DECLARE_KERNEL(Cast, CastParam);
 #endif  // CAST_OP
 
 #ifdef LOD_RESET_OP
-DECLARE_KERNEL(LodReset, LodResetParam)
+DECLARE_KERNEL(LodReset, LodResetParam);
 #endif  // LOD_RESET_OP
 
 }  // namespace operators
