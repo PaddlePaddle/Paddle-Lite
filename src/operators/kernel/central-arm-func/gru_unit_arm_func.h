@@ -17,9 +17,9 @@ limitations under the License. */
 #pragma once
 
 #include <operators/math/gru_compute.h>
-#include "operators/math/math_function.h"
 #include "operators/kernel/activation_kernel.h"
 #include "operators/math/gemm.h"
+#include "operators/math/math_function.h"
 #include "operators/op_param.h"
 namespace paddle_mobile {
 namespace operators {
