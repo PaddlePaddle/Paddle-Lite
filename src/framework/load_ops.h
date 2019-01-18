@@ -273,3 +273,9 @@ LOAD_OP1(sequence_pool, CPU);
 #ifdef LOG_OP
 LOAD_OP1(log, CPU);
 #endif
+#ifdef LOD_RESET_OP
+LOAD_OP1(lod_reset, CPU);
+#endif
+#ifdef LESS_THAN_OP
+LOAD_OP1(less_than, CPU);
+#endif

@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#set -ex
+set -e
 
 function print_usage() {
   echo "\n${RED}Usage${NONE}:
@@ -27,17 +27,17 @@ function print_usage() {
   ${BLUE}linux_armv7${NONE}: run build for linux armv7 platform
   ${BLUE}linux_armv8${NONE}: run build for linux armv8 platform
   "
-  echo "\n${RED}Network${NONE}: optional, only for compressing framework size
-  ${BLUE}googlenet${NONE}: build only googlenet supported
-  ${BLUE}mobilenet${NONE}: build only mobilenet supported
-  ${BLUE}yolo${NONE}: build only yolo supported
-  ${BLUE}squeezenet${NONE}: build only squeezenet supported
-  ${BLUE}resnet${NONE}: build only resnet supported
-  ${BLUE}mobilenetssd${NONE}: build only mobilenetssd supported
-  ${BLUE}nlp${NONE}: build only nlp model supported
-  ${BLUE}mobilenetfssd${NONE}: build only mobilenetfssd supported
-  ${BLUE}genet${NONE}: build only genet supported
-  ${BLUE}super${NONE}: build only super supported
+  echo "\n${RED}Network${NONE}: optional, for deep compressing the framework size
+  ${BLUE}googlenet${NONE}: build only googlenet support
+  ${BLUE}mobilenet${NONE}: build only mobilenet support
+  ${BLUE}yolo${NONE}: build only yolo support
+  ${BLUE}squeezenet${NONE}: build only squeezenet support
+  ${BLUE}resnet${NONE}: build only resnet support
+  ${BLUE}mobilenetssd${NONE}: build only mobilenetssd support
+  ${BLUE}nlp${NONE}: build only nlp model support
+  ${BLUE}mobilenetfssd${NONE}: build only mobilenetfssd support
+  ${BLUE}genet${NONE}: build only genet support
+  ${BLUE}super${NONE}: build only super support
   "
 }
 
