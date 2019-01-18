@@ -10,20 +10,42 @@
 		30D0ED21F392CFA3885B1002 /* Pods_paddle_mobile_demo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18896810981724F8A0FED62A /* Pods_paddle_mobile_demo.framework */; };
 		C2CBB49021B778EA0020DC6C /* libc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = FC4FD97B2140EE250073E130 /* libc++.tbd */; };
 		C2E67E5E21524E460013F575 /* LoadPointerViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = C2E67E5D21524E460013F575 /* LoadPointerViewController.m */; };
-		FC013928210204A3008100E3 /* PreProcessKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC013927210204A3008100E3 /* PreProcessKernel.metal */; };
 		FC039B8220E11C550081E9F8 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039B8120E11C550081E9F8 /* AppDelegate.swift */; };
 		FC039B8420E11C550081E9F8 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC039B8320E11C550081E9F8 /* ViewController.swift */; };
 		FC039B8720E11C550081E9F8 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = FC039B8520E11C550081E9F8 /* Main.storyboard */; };
 		FC039B8920E11C560081E9F8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FC039B8820E11C560081E9F8 /* Assets.xcassets */; };
 		FC039B8C20E11C560081E9F8 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = FC039B8A20E11C560081E9F8 /* LaunchScreen.storyboard */; };
 		FC203FB221CBFDBA00B37166 /* test.jpg in Resources */ = {isa = PBXBuildFile; fileRef = FC203FA921CBFDBA00B37166 /* test.jpg */; };
-		FC203FB321CBFDBA00B37166 /* combined_mobilenet_params in Resources */ = {isa = PBXBuildFile; fileRef = FC203FAD21CBFDBA00B37166 /* combined_mobilenet_params */; };
-		FC203FB421CBFDBA00B37166 /* combined_mobilenet_model in Resources */ = {isa = PBXBuildFile; fileRef = FC203FAE21CBFDBA00B37166 /* combined_mobilenet_model */; };
-		FC203FB521CBFDBA00B37166 /* yolo_params in Resources */ = {isa = PBXBuildFile; fileRef = FC203FB021CBFDBA00B37166 /* yolo_params */; };
-		FC203FB621CBFDBA00B37166 /* yolo_model in Resources */ = {isa = PBXBuildFile; fileRef = FC203FB121CBFDBA00B37166 /* yolo_model */; };
+		FC2BFCBC21DF0A8600C262B2 /* 00001.jpg in Resources */ = {isa = PBXBuildFile; fileRef = FC2BFCBB21DF0A8600C262B2 /* 00001.jpg */; };
+		FC2BFCBE21DF15D900C262B2 /* 123.jpg in Resources */ = {isa = PBXBuildFile; fileRef = FC2BFCBD21DF15D900C262B2 /* 123.jpg */; };
+		FC2BFCC021DF279900C262B2 /* classify-img-output.png in Resources */ = {isa = PBXBuildFile; fileRef = FC2BFCBF21DF279900C262B2 /* classify-img-output.png */; };
+		FC2BFD3021DF3FEA00C262B2 /* MobilenetSSD_AR.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC2BFD2A21DF3FE900C262B2 /* MobilenetSSD_AR.swift */; };
+		FC2BFD3121DF3FEA00C262B2 /* Genet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC2BFD2B21DF3FE900C262B2 /* Genet.swift */; };
+		FC2BFD3221DF3FEA00C262B2 /* MobileNetSSD.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC2BFD2C21DF3FE900C262B2 /* MobileNetSSD.swift */; };
+		FC2BFD3321DF3FEA00C262B2 /* YoloNet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC2BFD2D21DF3FE900C262B2 /* YoloNet.swift */; };
+		FC2BFD3421DF3FEA00C262B2 /* MobileNetCombined.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC2BFD2E21DF3FEA00C262B2 /* MobileNetCombined.swift */; };
+		FC2BFD3521DF3FEA00C262B2 /* MobileNet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC2BFD2F21DF3FEA00C262B2 /* MobileNet.swift */; };
+		FC2BFD3821DF46DE00C262B2 /* OCDemoViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = FC2BFD3721DF46DE00C262B2 /* OCDemoViewController.m */; };
+		FC2BFD3C21DF480400C262B2 /* CPUCompute.mm in Sources */ = {isa = PBXBuildFile; fileRef = FC2BFD3B21DF480400C262B2 /* CPUCompute.mm */; };
+		FC2BFD3E21DF5CE800C262B2 /* PreProcessKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FC2BFD3D21DF5CE800C262B2 /* PreProcessKernel.metal */; };
+		FC2BFD4321DF5E1E00C262B2 /* PaddleMobileGPU.m in Sources */ = {isa = PBXBuildFile; fileRef = FC2BFD4021DF5E1E00C262B2 /* PaddleMobileGPU.m */; };
+		FC2BFD4421DF5E1E00C262B2 /* SuperResolutionNet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC2BFD4221DF5E1E00C262B2 /* SuperResolutionNet.swift */; };
+		FC5E03B221DCE8D90016C137 /* mingren_input_data in Resources */ = {isa = PBXBuildFile; fileRef = FC5E03B121DCE8D90016C137 /* mingren_input_data */; };
+		FC704C1921D2375300F98BAB /* super_params in Resources */ = {isa = PBXBuildFile; fileRef = FC704C1721D2375300F98BAB /* super_params */; };
+		FC704C1A21D2375300F98BAB /* super_model in Resources */ = {isa = PBXBuildFile; fileRef = FC704C1821D2375300F98BAB /* super_model */; };
+		FC704C2221D237FC00F98BAB /* combined_mobilenet_params in Resources */ = {isa = PBXBuildFile; fileRef = FC704C1D21D237FC00F98BAB /* combined_mobilenet_params */; };
+		FC704C2321D237FC00F98BAB /* combined_mobilenet_model in Resources */ = {isa = PBXBuildFile; fileRef = FC704C1E21D237FC00F98BAB /* combined_mobilenet_model */; };
+		FC704C2421D237FC00F98BAB /* yolo_params in Resources */ = {isa = PBXBuildFile; fileRef = FC704C2021D237FC00F98BAB /* yolo_params */; };
+		FC704C2521D237FC00F98BAB /* yolo_model in Resources */ = {isa = PBXBuildFile; fileRef = FC704C2121D237FC00F98BAB /* yolo_model */; };
 		FC803BCD214D27930094B8E5 /* FPSCounter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC803BCB214D27920094B8E5 /* FPSCounter.swift */; };
 		FC803BCE214D27930094B8E5 /* VideoCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC803BCC214D27920094B8E5 /* VideoCapture.swift */; };
+		FC9797BE21D6045B00F2FD90 /* banana.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = FC9797BD21D6045B00F2FD90 /* banana.jpeg */; };
+		FC9797C221D608E000F2FD90 /* mobilenet_model in Resources */ = {isa = PBXBuildFile; fileRef = FC9797C021D608DF00F2FD90 /* mobilenet_model */; };
+		FC9797C321D608E000F2FD90 /* mobilenet_params in Resources */ = {isa = PBXBuildFile; fileRef = FC9797C121D608DF00F2FD90 /* mobilenet_params */; };
+		FC9797C721D609FB00F2FD90 /* synset.txt in Resources */ = {isa = PBXBuildFile; fileRef = FC9797C621D609FB00F2FD90 /* synset.txt */; };
+		FC9797CF21D6506F00F2FD90 /* mingren.jpg in Resources */ = {isa = PBXBuildFile; fileRef = FC9797CE21D6506F00F2FD90 /* mingren.jpg */; };
 		FCBCCC552122EF5500D94F7E /* MetalHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCBCCC542122EF5400D94F7E /* MetalHelper.swift */; };
+		FCCED60521D7646E00BE8D5F /* test_image_super in Resources */ = {isa = PBXBuildFile; fileRef = FCCED60421D7646E00BE8D5F /* test_image_super */; };
 		FCEBEC2C20E1391F00C0B14D /* paddle_mobile.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */; };
 		FCEBEC2D20E1391F00C0B14D /* paddle_mobile.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		FCF437E8214B6DDB00943429 /* MultiPredictViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF437E7214B6DDB00943429 /* MultiPredictViewController.swift */; };
@@ -49,7 +71,6 @@
 		878829884E1A14D7044721D5 /* Pods-paddle-mobile-demo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-paddle-mobile-demo.debug.xcconfig"; path = "../Pods/Target Support Files/Pods-paddle-mobile-demo/Pods-paddle-mobile-demo.debug.xcconfig"; sourceTree = "<group>"; };
 		C2E67E5C21524E460013F575 /* LoadPointerViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LoadPointerViewController.h; sourceTree = "<group>"; };
 		C2E67E5D21524E460013F575 /* LoadPointerViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LoadPointerViewController.m; sourceTree = "<group>"; };
-		FC013927210204A3008100E3 /* PreProcessKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = PreProcessKernel.metal; sourceTree = "<group>"; };
 		FC039B7E20E11C550081E9F8 /* paddle-mobile-demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "paddle-mobile-demo.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		FC039B8120E11C550081E9F8 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		FC039B8320E11C550081E9F8 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -58,15 +79,41 @@
 		FC039B8B20E11C560081E9F8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		FC039B8D20E11C560081E9F8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		FC203FA921CBFDBA00B37166 /* test.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = test.jpg; sourceTree = "<group>"; };
-		FC203FAD21CBFDBA00B37166 /* combined_mobilenet_params */ = {isa = PBXFileReference; lastKnownFileType = file; path = combined_mobilenet_params; sourceTree = "<group>"; };
-		FC203FAE21CBFDBA00B37166 /* combined_mobilenet_model */ = {isa = PBXFileReference; lastKnownFileType = file; path = combined_mobilenet_model; sourceTree = "<group>"; };
-		FC203FB021CBFDBA00B37166 /* yolo_params */ = {isa = PBXFileReference; lastKnownFileType = file; path = yolo_params; sourceTree = "<group>"; };
-		FC203FB121CBFDBA00B37166 /* yolo_model */ = {isa = PBXFileReference; lastKnownFileType = file; path = yolo_model; sourceTree = "<group>"; };
 		FC27991121343A39000B6BAD /* paddle-mobile-demo-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "paddle-mobile-demo-Bridging-Header.h"; sourceTree = "<group>"; };
+		FC2BFCBB21DF0A8600C262B2 /* 00001.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = 00001.jpg; sourceTree = "<group>"; };
+		FC2BFCBD21DF15D900C262B2 /* 123.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = 123.jpg; sourceTree = "<group>"; };
+		FC2BFCBF21DF279900C262B2 /* classify-img-output.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "classify-img-output.png"; sourceTree = "<group>"; };
+		FC2BFD2A21DF3FE900C262B2 /* MobilenetSSD_AR.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MobilenetSSD_AR.swift; sourceTree = "<group>"; };
+		FC2BFD2B21DF3FE900C262B2 /* Genet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Genet.swift; sourceTree = "<group>"; };
+		FC2BFD2C21DF3FE900C262B2 /* MobileNetSSD.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MobileNetSSD.swift; sourceTree = "<group>"; };
+		FC2BFD2D21DF3FE900C262B2 /* YoloNet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = YoloNet.swift; sourceTree = "<group>"; };
+		FC2BFD2E21DF3FEA00C262B2 /* MobileNetCombined.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MobileNetCombined.swift; sourceTree = "<group>"; };
+		FC2BFD2F21DF3FEA00C262B2 /* MobileNet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MobileNet.swift; sourceTree = "<group>"; };
+		FC2BFD3621DF46DE00C262B2 /* OCDemoViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OCDemoViewController.h; sourceTree = "<group>"; };
+		FC2BFD3721DF46DE00C262B2 /* OCDemoViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OCDemoViewController.m; sourceTree = "<group>"; };
+		FC2BFD3A21DF480300C262B2 /* CPUCompute.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CPUCompute.h; sourceTree = "<group>"; };
+		FC2BFD3B21DF480400C262B2 /* CPUCompute.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = CPUCompute.mm; sourceTree = "<group>"; };
+		FC2BFD3D21DF5CE800C262B2 /* PreProcessKernel.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = PreProcessKernel.metal; sourceTree = "<group>"; };
+		FC2BFD4021DF5E1E00C262B2 /* PaddleMobileGPU.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PaddleMobileGPU.m; sourceTree = "<group>"; };
+		FC2BFD4121DF5E1E00C262B2 /* PaddleMobileGPU.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PaddleMobileGPU.h; sourceTree = "<group>"; };
+		FC2BFD4221DF5E1E00C262B2 /* SuperResolutionNet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SuperResolutionNet.swift; sourceTree = "<group>"; };
 		FC4FD97B2140EE250073E130 /* libc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libc++.tbd"; path = "usr/lib/libc++.tbd"; sourceTree = SDKROOT; };
+		FC5E03B121DCE8D90016C137 /* mingren_input_data */ = {isa = PBXFileReference; lastKnownFileType = file; path = mingren_input_data; sourceTree = "<group>"; };
+		FC704C1721D2375300F98BAB /* super_params */ = {isa = PBXFileReference; lastKnownFileType = file; path = super_params; sourceTree = "<group>"; };
+		FC704C1821D2375300F98BAB /* super_model */ = {isa = PBXFileReference; lastKnownFileType = file; path = super_model; sourceTree = "<group>"; };
+		FC704C1D21D237FC00F98BAB /* combined_mobilenet_params */ = {isa = PBXFileReference; lastKnownFileType = file; path = combined_mobilenet_params; sourceTree = "<group>"; };
+		FC704C1E21D237FC00F98BAB /* combined_mobilenet_model */ = {isa = PBXFileReference; lastKnownFileType = file; path = combined_mobilenet_model; sourceTree = "<group>"; };
+		FC704C2021D237FC00F98BAB /* yolo_params */ = {isa = PBXFileReference; lastKnownFileType = file; path = yolo_params; sourceTree = "<group>"; };
+		FC704C2121D237FC00F98BAB /* yolo_model */ = {isa = PBXFileReference; lastKnownFileType = file; path = yolo_model; sourceTree = "<group>"; };
 		FC803BCB214D27920094B8E5 /* FPSCounter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FPSCounter.swift; sourceTree = "<group>"; };
 		FC803BCC214D27920094B8E5 /* VideoCapture.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VideoCapture.swift; sourceTree = "<group>"; };
+		FC9797BD21D6045B00F2FD90 /* banana.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = banana.jpeg; sourceTree = "<group>"; };
+		FC9797C021D608DF00F2FD90 /* mobilenet_model */ = {isa = PBXFileReference; lastKnownFileType = file; path = mobilenet_model; sourceTree = "<group>"; };
+		FC9797C121D608DF00F2FD90 /* mobilenet_params */ = {isa = PBXFileReference; lastKnownFileType = file; path = mobilenet_params; sourceTree = "<group>"; };
+		FC9797C621D609FB00F2FD90 /* synset.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = synset.txt; sourceTree = "<group>"; };
+		FC9797CE21D6506F00F2FD90 /* mingren.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = mingren.jpg; sourceTree = "<group>"; };
 		FCBCCC542122EF5400D94F7E /* MetalHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalHelper.swift; sourceTree = "<group>"; };
+		FCCED60421D7646E00BE8D5F /* test_image_super */ = {isa = PBXFileReference; lastKnownFileType = file; path = test_image_super; sourceTree = "<group>"; };
 		FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = paddle_mobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		FCF437E7214B6DDB00943429 /* MultiPredictViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiPredictViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -125,8 +172,11 @@
 		FC039B8020E11C550081E9F8 /* paddle-mobile-demo */ = {
 			isa = PBXGroup;
 			children = (
-				FC203FA821CBFDBA00B37166 /* images */,
-				FC203FAA21CBFDBA00B37166 /* models */,
+				FC2BFD4F21DF892500C262B2 /* Resources */,
+				FCBCCC542122EF5400D94F7E /* MetalHelper.swift */,
+				FC2BFD3F21DF5DDF00C262B2 /* OCInterface */,
+				FC27991121343A39000B6BAD /* paddle-mobile-demo-Bridging-Header.h */,
+				FC2BFD3921DF46F000C262B2 /* OCDemo */,
 				FC803BCA214D27920094B8E5 /* VideoCapture */,
 				FC8CFED2213519540094D569 /* Net */,
 				FC039B8120E11C550081E9F8 /* AppDelegate.swift */,
@@ -135,10 +185,7 @@
 				FC039B8820E11C560081E9F8 /* Assets.xcassets */,
 				FC039B8A20E11C560081E9F8 /* LaunchScreen.storyboard */,
 				FC039B8D20E11C560081E9F8 /* Info.plist */,
-				FC27991121343A39000B6BAD /* paddle-mobile-demo-Bridging-Header.h */,
 				FCF437E7214B6DDB00943429 /* MultiPredictViewController.swift */,
-				C2E67E5C21524E460013F575 /* LoadPointerViewController.h */,
-				C2E67E5D21524E460013F575 /* LoadPointerViewController.m */,
 			);
 			path = "paddle-mobile-demo";
 			sourceTree = "<group>";
@@ -146,44 +193,90 @@
 		FC203FA821CBFDBA00B37166 /* images */ = {
 			isa = PBXGroup;
 			children = (
+				FC2BFCBF21DF279900C262B2 /* classify-img-output.png */,
+				FC2BFCBD21DF15D900C262B2 /* 123.jpg */,
+				FC2BFCBB21DF0A8600C262B2 /* 00001.jpg */,
+				FC5E03B121DCE8D90016C137 /* mingren_input_data */,
+				FCCED60421D7646E00BE8D5F /* test_image_super */,
+				FC9797CE21D6506F00F2FD90 /* mingren.jpg */,
+				FC9797BD21D6045B00F2FD90 /* banana.jpeg */,
 				FC203FA921CBFDBA00B37166 /* test.jpg */,
 			);
-			name = images;
-			path = ../../images;
+			path = images;
 			sourceTree = "<group>";
 		};
 		FC203FAA21CBFDBA00B37166 /* models */ = {
 			isa = PBXGroup;
 			children = (
-				FC203FAB21CBFDBA00B37166 /* vision_model */,
+				FC9797BF21D608DF00F2FD90 /* mobilenet */,
+				FC704C1B21D237FC00F98BAB /* vision_model */,
+				FC704C1621D2375300F98BAB /* superresoltion */,
 			);
-			name = models;
-			path = ../../models;
+			path = models;
 			sourceTree = "<group>";
 		};
-		FC203FAB21CBFDBA00B37166 /* vision_model */ = {
+		FC2BFD3921DF46F000C262B2 /* OCDemo */ = {
 			isa = PBXGroup;
 			children = (
-				FC203FAC21CBFDBA00B37166 /* mobilenet */,
-				FC203FAF21CBFDBA00B37166 /* yolo */,
+				C2E67E5C21524E460013F575 /* LoadPointerViewController.h */,
+				C2E67E5D21524E460013F575 /* LoadPointerViewController.m */,
+				FC2BFD3621DF46DE00C262B2 /* OCDemoViewController.h */,
+				FC2BFD3721DF46DE00C262B2 /* OCDemoViewController.m */,
+			);
+			path = OCDemo;
+			sourceTree = "<group>";
+		};
+		FC2BFD3F21DF5DDF00C262B2 /* OCInterface */ = {
+			isa = PBXGroup;
+			children = (
+				FC2BFD4121DF5E1E00C262B2 /* PaddleMobileGPU.h */,
+				FC2BFD4021DF5E1E00C262B2 /* PaddleMobileGPU.m */,
+				FC2BFD4221DF5E1E00C262B2 /* SuperResolutionNet.swift */,
+			);
+			path = OCInterface;
+			sourceTree = "<group>";
+		};
+		FC2BFD4F21DF892500C262B2 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				FC203FA821CBFDBA00B37166 /* images */,
+				FC203FAA21CBFDBA00B37166 /* models */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		FC704C1621D2375300F98BAB /* superresoltion */ = {
+			isa = PBXGroup;
+			children = (
+				FC704C1721D2375300F98BAB /* super_params */,
+				FC704C1821D2375300F98BAB /* super_model */,
+			);
+			path = superresoltion;
+			sourceTree = "<group>";
+		};
+		FC704C1B21D237FC00F98BAB /* vision_model */ = {
+			isa = PBXGroup;
+			children = (
+				FC704C1C21D237FC00F98BAB /* mobilenet */,
+				FC704C1F21D237FC00F98BAB /* yolo */,
 			);
 			path = vision_model;
 			sourceTree = "<group>";
 		};
-		FC203FAC21CBFDBA00B37166 /* mobilenet */ = {
+		FC704C1C21D237FC00F98BAB /* mobilenet */ = {
 			isa = PBXGroup;
 			children = (
-				FC203FAD21CBFDBA00B37166 /* combined_mobilenet_params */,
-				FC203FAE21CBFDBA00B37166 /* combined_mobilenet_model */,
+				FC704C1D21D237FC00F98BAB /* combined_mobilenet_params */,
+				FC704C1E21D237FC00F98BAB /* combined_mobilenet_model */,
 			);
 			path = mobilenet;
 			sourceTree = "<group>";
 		};
-		FC203FAF21CBFDBA00B37166 /* yolo */ = {
+		FC704C1F21D237FC00F98BAB /* yolo */ = {
 			isa = PBXGroup;
 			children = (
-				FC203FB021CBFDBA00B37166 /* yolo_params */,
-				FC203FB121CBFDBA00B37166 /* yolo_model */,
+				FC704C2021D237FC00F98BAB /* yolo_params */,
+				FC704C2121D237FC00F98BAB /* yolo_model */,
 			);
 			path = yolo;
 			sourceTree = "<group>";
@@ -200,10 +293,27 @@
 		FC8CFED2213519540094D569 /* Net */ = {
 			isa = PBXGroup;
 			children = (
-				FC013927210204A3008100E3 /* PreProcessKernel.metal */,
-				FCBCCC542122EF5400D94F7E /* MetalHelper.swift */,
+				FC2BFD3A21DF480300C262B2 /* CPUCompute.h */,
+				FC2BFD3B21DF480400C262B2 /* CPUCompute.mm */,
+				FC2BFD3D21DF5CE800C262B2 /* PreProcessKernel.metal */,
+				FC2BFD2B21DF3FE900C262B2 /* Genet.swift */,
+				FC2BFD2F21DF3FEA00C262B2 /* MobileNet.swift */,
+				FC2BFD2E21DF3FEA00C262B2 /* MobileNetCombined.swift */,
+				FC2BFD2A21DF3FE900C262B2 /* MobilenetSSD_AR.swift */,
+				FC2BFD2C21DF3FE900C262B2 /* MobileNetSSD.swift */,
+				FC2BFD2D21DF3FE900C262B2 /* YoloNet.swift */,
 			);
 			path = Net;
+			sourceTree = "<group>";
+		};
+		FC9797BF21D608DF00F2FD90 /* mobilenet */ = {
+			isa = PBXGroup;
+			children = (
+				FC9797C621D609FB00F2FD90 /* synset.txt */,
+				FC9797C021D608DF00F2FD90 /* mobilenet_model */,
+				FC9797C121D608DF00F2FD90 /* mobilenet_params */,
+			);
+			path = mobilenet;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -268,14 +378,26 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FCCED60521D7646E00BE8D5F /* test_image_super in Resources */,
 				FC039B8C20E11C560081E9F8 /* LaunchScreen.storyboard in Resources */,
-				FC203FB421CBFDBA00B37166 /* combined_mobilenet_model in Resources */,
-				FC203FB321CBFDBA00B37166 /* combined_mobilenet_params in Resources */,
+				FC9797CF21D6506F00F2FD90 /* mingren.jpg in Resources */,
+				FC704C2221D237FC00F98BAB /* combined_mobilenet_params in Resources */,
+				FC704C1921D2375300F98BAB /* super_params in Resources */,
+				FC2BFCBE21DF15D900C262B2 /* 123.jpg in Resources */,
 				FC039B8920E11C560081E9F8 /* Assets.xcassets in Resources */,
-				FC203FB521CBFDBA00B37166 /* yolo_params in Resources */,
-				FC203FB621CBFDBA00B37166 /* yolo_model in Resources */,
+				FC9797C721D609FB00F2FD90 /* synset.txt in Resources */,
+				FC5E03B221DCE8D90016C137 /* mingren_input_data in Resources */,
+				FC704C1A21D2375300F98BAB /* super_model in Resources */,
 				FC039B8720E11C550081E9F8 /* Main.storyboard in Resources */,
+				FC9797C221D608E000F2FD90 /* mobilenet_model in Resources */,
+				FC2BFCC021DF279900C262B2 /* classify-img-output.png in Resources */,
 				FC203FB221CBFDBA00B37166 /* test.jpg in Resources */,
+				FC704C2321D237FC00F98BAB /* combined_mobilenet_model in Resources */,
+				FC9797C321D608E000F2FD90 /* mobilenet_params in Resources */,
+				FC704C2421D237FC00F98BAB /* yolo_params in Resources */,
+				FC2BFCBC21DF0A8600C262B2 /* 00001.jpg in Resources */,
+				FC9797BE21D6045B00F2FD90 /* banana.jpeg in Resources */,
+				FC704C2521D237FC00F98BAB /* yolo_model in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -325,14 +447,24 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FC2BFD3221DF3FEA00C262B2 /* MobileNetSSD.swift in Sources */,
+				FC2BFD3C21DF480400C262B2 /* CPUCompute.mm in Sources */,
+				FC2BFD4321DF5E1E00C262B2 /* PaddleMobileGPU.m in Sources */,
 				FC039B8420E11C550081E9F8 /* ViewController.swift in Sources */,
 				FC803BCE214D27930094B8E5 /* VideoCapture.swift in Sources */,
-				FC013928210204A3008100E3 /* PreProcessKernel.metal in Sources */,
 				FCF437E8214B6DDB00943429 /* MultiPredictViewController.swift in Sources */,
+				FC2BFD3021DF3FEA00C262B2 /* MobilenetSSD_AR.swift in Sources */,
+				FC2BFD3321DF3FEA00C262B2 /* YoloNet.swift in Sources */,
+				FC2BFD3421DF3FEA00C262B2 /* MobileNetCombined.swift in Sources */,
 				FCBCCC552122EF5500D94F7E /* MetalHelper.swift in Sources */,
 				FC803BCD214D27930094B8E5 /* FPSCounter.swift in Sources */,
+				FC2BFD3521DF3FEA00C262B2 /* MobileNet.swift in Sources */,
 				C2E67E5E21524E460013F575 /* LoadPointerViewController.m in Sources */,
+				FC2BFD3121DF3FEA00C262B2 /* Genet.swift in Sources */,
 				FC039B8220E11C550081E9F8 /* AppDelegate.swift in Sources */,
+				FC2BFD4421DF5E1E00C262B2 /* SuperResolutionNet.swift in Sources */,
+				FC2BFD3E21DF5CE800C262B2 /* PreProcessKernel.metal in Sources */,
+				FC2BFD3821DF46DE00C262B2 /* OCDemoViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

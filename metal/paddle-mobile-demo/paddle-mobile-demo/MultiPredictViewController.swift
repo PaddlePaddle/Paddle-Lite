@@ -22,10 +22,10 @@ class MultiPredictViewController: UIViewController {
     super.viewDidLoad()
     let mobileNet = MobileNet_ssd_hand.init(device: MetalHelper.shared.device)
     let genet = Genet.init(device: MetalHelper.shared.device)
-    runner1 = Runner.init(inNet: mobileNet, commandQueue: MetalHelper.shared.queue, inPlatform: .GPU)
+    runner1 = Runner.init(inNet: mobileNet, commandQueue: MetalHelper.shared.queue)
     let queue2 = MetalHelper.shared.device.makeCommandQueue()
     
-    runner2 = Runner.init(inNet: genet, commandQueue: MetalHelper.shared.queue, inPlatform: .GPU)
+    runner2 = Runner.init(inNet: genet, commandQueue: MetalHelper.shared.queue)
   }
 
   @IBAction func predictAct(_ sender: Any) {
