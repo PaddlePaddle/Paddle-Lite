@@ -237,8 +237,7 @@ void Executor<Device, T>::InitCombineMemory() {
 }
 
 template <typename Device, typename T>
-void Executor<Device, T>::InitNoPersistableMemory(
-    const Tensor &input_tensor) {
+void Executor<Device, T>::InitNoPersistableMemory(const Tensor &input_tensor) {
   for (const auto &block : program_desc_->Blocks()) {
     for (const auto &var_desc : block->Vars()) {
       auto var = program_.scope->Var(var_desc->Name());
