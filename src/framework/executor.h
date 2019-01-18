@@ -75,7 +75,7 @@ class Executor {
   int batch_size_;
   bool use_optimize_;
   bool lod_mode_;
-  PaddleMobileConfigInternal config_ = PaddleMobileConfigInternal();
+  PaddleMobileConfigInternal config_;
   Program<Device> program_;
   std::shared_ptr<ProgramDesc> program_desc_;
   typedef std::shared_ptr<OperatorBase<Device>> OperatorBasePtr;
