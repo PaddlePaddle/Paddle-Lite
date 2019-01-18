@@ -256,6 +256,7 @@ if(NOT FOUND_MATCH)
   set(IM2SEQUENCE_OP ON)
   set(LOOKUP_OP ON)
   set(GRU_OP ON)
+  set(GRU_UNIT_OP ON)
   set(CRF_OP ON)
   set(BILINEAR_INTERP_OP ON)
   set(SPLIT_OP ON)
@@ -448,6 +449,10 @@ endif()
 
 if (GRU_OP)
   add_definitions(-DGRU_OP)
+endif()
+
+if (GRU_UNIT_OP)
+  add_definitions(-DGRU_UNIT_OP)
 endif()
 
 if (CRF_OP)
