@@ -12,27 +12,23 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef TANH_OP
-
-#include "operators/tanh_op.h"
+#include "operators/compare_op.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename DeviceType, typename T>
-void TanhOp<DeviceType, T>::InferShape() const {
-  this->param_.Out()->Resize(this->param_.InputX()->dims());
+#ifdef LESS_THAN_OP
+template <typename Dtype, typename T>
+void LessThanOp<Dtype, T>::InferShape() const {
+  const auto &input_dims = this->param_.input_x_->dims();
+  this->param_.output_->Resize(input_dims);
 }
+#endif  // LESS_THAN_OP
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(tanh, ops::TanhOp);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(tanh, ops::TanhOp);
-#endif
-
-#endif
+#ifdef LESS_THAN_OP
+REGISTER_OPERATOR_CPU(less_than, ops::LessThanOp);
+#endif  // LESS_THAN_OP

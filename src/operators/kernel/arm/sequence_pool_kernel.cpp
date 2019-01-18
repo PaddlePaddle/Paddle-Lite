@@ -66,8 +66,9 @@ void SequencePoolImpl(const framework::LoDTensor &input,
       memcpy(out_ptr, in_ptr, width * sizeof(float));
       in_ptr += width;
       int remain_h = height - 1;
+      int remain_w_start = 0;
 #ifdef __ARM_NEON__
-      int remain_w_start = width & 0xfffc;
+      remain_w_start = width & 0xfffc;
 #endif  // __ARM_NEON__
       for (int h = 0; h < remain_h; ++h) {
 #ifdef __ARM_NEON__
@@ -124,9 +125,10 @@ void SequencePoolImpl<SUM, float>(const framework::LoDTensor &input,
       memcpy(out_ptr, in_ptr, width * sizeof(float));
       in_ptr += width;
       int remain_h = height - 1;
+      int remain_w_start = 0;
 #ifdef __ARM_NEON__
       int loop_w = width >> 2;
-      int remain_w_start = width & 0xfffc;
+      remain_w_start = width & 0xfffc;
 #endif  // __ARM_NEON__
       for (int h = 0; h < remain_h; ++h) {
 #ifdef __ARM_NEON__
