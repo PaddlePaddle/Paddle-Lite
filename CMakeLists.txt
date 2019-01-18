@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10.0)
+cmake_minimum_required(VERSION 3.0.0)
 
 option(USE_OPENMP    "build with openmp support" ON)
 option(USE_EXCEPTION "build with exception" ON)
