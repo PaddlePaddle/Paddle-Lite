@@ -105,8 +105,7 @@ bool PaddleMobile<Device, T>::LoadCombinedMemory(
     executor_ = std::make_shared<framework::Executor<Device, T>>(
         loader_->LoadCombinedMemory(model_len, model_buf, combined_params_len,
                                     combined_params_buf, optimize,
-                                    quantification),
-        batch_size, optimize, lod_mode);
+                                    quantification), config_, batch_size, optimize, lod_mode);
   } else {
     LOG(kLOG_INFO) << "executor inited";
   }
