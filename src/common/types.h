@@ -158,6 +158,7 @@ extern const char *G_OP_TYPE_TOP_K;
 extern const char *G_OP_TYPE_CAST;
 extern const char *G_OP_TYPE_LOG;
 extern const char *G_OP_TYPE_LOD_RESET;
+extern const char *G_OP_TYPE_LESS_THAN;
 
 extern const char *G_OP_TYPE_QUANTIZE;
 extern const char *G_OP_TYPE_DEQUANTIZE;
