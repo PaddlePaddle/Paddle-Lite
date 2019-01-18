@@ -37,7 +37,7 @@ struct ActivationCompute<float, Act> {
     size_t loop = remain >> 4;
     remain = remain & 0xF;
 
-    #pragma omp parallel for
+#pragma omp parallel for
     for (size_t i = 0; i < loop; ++i) {
       const float *local_x = x + (i << 4);
       float *local_y = y + (i << 4);
