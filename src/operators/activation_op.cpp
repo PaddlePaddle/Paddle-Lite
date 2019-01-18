@@ -17,7 +17,7 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-#define DEFINE_INFERSHAPE(OpName)                           \
+#define DEFINE_ACTIVATION_INFERSHAPE(OpName)                \
   template <typename Dtype, typename T>                     \
   void OpName##Op<Dtype, T>::InferShape() const {           \
     const auto &input_dims = this->param_.InputX()->dims(); \
@@ -25,20 +25,20 @@ namespace operators {
   }
 
 #ifdef RELU_OP
-DEFINE_INFERSHAPE(Relu);
-DEFINE_INFERSHAPE(Relu6);
+DEFINE_ACTIVATION_INFERSHAPE(Relu);
+DEFINE_ACTIVATION_INFERSHAPE(Relu6);
 #endif  // RELU_OP
 
 #ifdef SIGMOID_OP
-DEFINE_INFERSHAPE(Sigmoid);
+DEFINE_ACTIVATION_INFERSHAPE(Sigmoid);
 #endif  // SIGMOID_OP
 
 #ifdef TANH_OP
-DEFINE_INFERSHAPE(Tanh);
+DEFINE_ACTIVATION_INFERSHAPE(Tanh);
 #endif  // TANH_OP
 
 #ifdef LOG_OP
-DEFINE_INFERSHAPE(Log);
+DEFINE_ACTIVATION_INFERSHAPE(Log);
 #endif  // LOG_OP
 
 }  // namespace operators
