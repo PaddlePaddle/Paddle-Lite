@@ -66,6 +66,7 @@ const char *G_OP_TYPE_CONV_TRANSPOSE = "conv2d_transpose";
 const char *G_OP_TYPE_PRELU = "prelu";
 const char *G_OP_TYPE_LOOKUP_TABLE = "lookup_table";
 const char *G_OP_TYPE_GRU = "gru";
+const char *G_OP_TYPE_GRU_UNIT = "gru_unit";
 const char *G_OP_TYPE_CRF = "crf_decoding";
 const char *G_OP_TYPE_BILINEAR_INTERP = "bilinear_interp";
 const char *G_OP_TYPE_FLATTEN = "flatten";
@@ -149,6 +150,9 @@ std::unordered_map<
         {G_OP_TYPE_GRU,
          {{"Input", "H0", "Weight", "Bias"},
           {"BatchGate", "BatchResetHiddenPrev", "BatchHidden", "Hidden"}}},
+        {G_OP_TYPE_GRU_UNIT,
+         {{"Input", "HiddenPrev", "Weight", "Bias"},
+          {"Gate", "ResetHiddenPrev", "Hidden"}}},
         {G_OP_TYPE_CRF, {{"Emission", "Transition", "Label"}, {"ViterbiPath"}}},
         {G_OP_TYPE_BILINEAR_INTERP, {{"OutSize", "X"}, {"Out"}}},
         {G_OP_TYPE_FLATTEN, {{"X"}, {"Out"}}},
