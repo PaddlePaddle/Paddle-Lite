@@ -47,7 +47,7 @@ void GruUnitCompute(const GruUnitParam<CPU>& param) {
   gru_value.state_weight =
       const_cast<P*>(weight_data + 2 * frame_size * frame_size);
   gru_value.output_value = hidden->data<P>();
-  gru_value.prev_out_value = hidden_prev->data<P>();
+  gru_value.prev_out_value = const_cast<P*>(hidden_prev->data<P>());
   gru_value.gate_value = gate->data<P>();
   gru_value.reset_output_value = reset_hidden_prev->data<P>();
   auto active_node = math::GetActivationType(param.Activation());
