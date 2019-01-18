@@ -38,12 +38,15 @@ namespace framework {
 #pragma mark - executor
 
 template <typename Device, typename T>
-Executor<Device, T>::Executor(const Program<Device> &program, int batch_size,
-                              const bool use_optimize, const bool lod_mode)
+Executor<Device, T>::Executor(const Program<Device> &program,
+                              paddle_mobile::PaddleMobileConfigInternal config,
+                              int batch_size, const bool use_optimize,
+                              const bool lod_mode)
     : program_(program),
       batch_size_(batch_size),
       use_optimize_(use_optimize),
-      lod_mode_(lod_mode) {
+      lod_mode_(lod_mode),
+      config_(config) {
   DLOG << "executor in lod mode: " << lod_mode_;
 
   Variable *variable_ptr = program_.scope->Var("batch_size");
@@ -212,10 +215,17 @@ void Executor<Device, T>::InitCombineMemory() {
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
           continue;
         }
+
+        DLOG << " init combine memory persistable: " << var_desc->Name();
+
         LoadMemory(reinterpret_cast<void **>(&data), var_desc, tensor);
       } else {
         if (var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
+          DLOG << " init combine memory no persistable in lod: "
+               << var_desc->Name();
           varInputMemory(var_desc, var, tensor);
+        } else {
+          DLOG << " init combine memory no persistable: " << var_desc->Name();
         }
       }
     }
@@ -224,6 +234,35 @@ void Executor<Device, T>::InitCombineMemory() {
     delete[] origin_data;
   }
   LOG(kLOG_INFO) << "init combine memory finish";
+}
+
+template <typename Device, typename T>
+void Executor<Device, T>::InitNoPersistableMemory(
+    const Tensor &input_tensor) {
+  for (const auto &block : program_desc_->Blocks()) {
+    for (const auto &var_desc : block->Vars()) {
+      auto var = program_.scope->Var(var_desc->Name());
+      auto tensor = var->template GetMutable<LoDTensor>();
+      if (var_desc->Persistable()) {
+        if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
+          continue;
+        }
+      } else {
+        if (var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
+          DDim tensor_dim = tensor->dims();
+          DDim new_dim =
+              make_ddim({tensor_dim[0], tensor_dim[1], input_tensor.dims()[2],
+                         input_tensor.dims()[3]});
+          tensor->Resize(new_dim);
+          tensor->template mutable_data<T>();
+        }
+      }
+    }
+  }
+
+  std::shared_ptr<LoDTensor> output = GetOutput("fetch");
+  output->Resize(input_tensor.dims());
+  output->mutable_data<T>();
 }
 
 template <typename Device, typename T>
@@ -297,7 +336,16 @@ void Executor<Device, T>::SetInput(const Tensor &input,
   auto *target_var = program_.scope->FindVar(var_name);
   PADDLE_MOBILE_ENFORCE(target_var != nullptr, "Variable %s is not exist",
                         var_name.c_str());
+
   auto *target_tensor = target_var->template GetMutable<LoDTensor>();
+
+  if (config_.load_when_predict) {
+    if (input_dim_last_ != input.dims()) {
+      InitNoPersistableMemory(input);
+      input_dim_last_ = input.dims();
+    }
+  }
+
   target_tensor->Resize(input.dims());
   target_tensor->ShareDataWith(input);
 }
@@ -309,6 +357,14 @@ void Executor<Device, T>::SetInput(const LoDTensor &input,
   PADDLE_MOBILE_ENFORCE(target_var != nullptr, "Variable %s is not exist",
                         var_name.c_str());
   auto *target_tensor = target_var->template GetMutable<LoDTensor>();
+
+  if (config_.load_when_predict) {
+    if (input_dim_last_ != input.dims()) {
+      InitNoPersistableMemory(*target_tensor);
+      input_dim_last_ = input.dims();
+    }
+  }
+
   target_tensor->Resize(input.dims());
   target_tensor->ShareDataWith(input);
   target_tensor->set_lod(input.lod());
@@ -453,6 +509,70 @@ void Executor<Device, T>::Predict_To(int end) {
 #endif
 
 #ifdef PADDLE_MOBILE_CL
+template <>
+void Executor<GPU_CL, float>::InitNoPersistableMemory(
+    const Tensor &input_tensor) {
+  DLOG << "CL InitNoPersistableMemory ";
+  for (const auto &block : program_desc_->Blocks()) {
+    for (const auto &var_desc : block->Vars()) {
+      auto var = program_.scope->Var(var_desc->Name());
+
+      auto cl_image = var->template GetMutable<CLImage>();
+
+      if (var_desc->Persistable()) {
+        if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
+          continue;
+        }
+      } else {
+        if (var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
+          cl_context context = program_.scope->GetCLScpoe()->Context();
+          cl_command_queue command_queue =
+              program_.scope->GetCLScpoe()->CommandQueue();
+
+          DDim tensor_dim = cl_image->dims();
+          DDim new_dim =
+              make_ddim({tensor_dim[0], tensor_dim[1], input_tensor.dims()[2],
+                         input_tensor.dims()[3]});
+          cl_image->Resize(new_dim);
+          cl_image->InitEmptyImage(context, command_queue, new_dim);
+        }
+      }
+    }
+  }
+  std::shared_ptr<LoDTensor> output = GetOutput("fetch");
+  output->Resize(input_tensor.dims());
+  output->mutable_data<float>();
+}
+template <>
+void Executor<GPU_CL, float>::SetInput(const Tensor &input,
+                                       const std::string &var_name) {
+  auto *target_var = program_.scope->FindVar(var_name);
+  PADDLE_MOBILE_ENFORCE(target_var != nullptr, "Variable %s is not exist",
+                        var_name.c_str());
+
+  auto *target_tensor = target_var->template GetMutable<LoDTensor>();
+  DLOG << "config_.load_when_predict   " << config_.load_when_predict;
+  DLOG << "target_tensor->IsInitialized() " << target_tensor->IsInitialized();
+  DLOG << "target_tensor->dims()   " << target_tensor->dims();
+  DLOG << "input.dims()   " << input.dims();
+  DLOG << "input_dim_last_   " << input_dim_last_;
+  if (config_.load_when_predict) {
+    if (input_dim_last_ != input.dims()) {
+      DLOG << "SetInput ---- > resize1";
+      target_tensor->Resize(input.dims());
+      target_tensor->mutable_data<float>();
+      InitNoPersistableMemory(*target_tensor);
+    }
+  } else {
+    DLOG << "SetInput ---- > resize2";
+    target_tensor->Resize(input.dims());
+    DLOG << "SetInput ---- > ShareDataWith";
+  }
+  target_tensor->ShareDataWith(input);
+  auto &dim = input.dims();
+  input_dim_last_ = static_cast<DDim>(dim);
+}
+
 template <typename Device, typename T>
 void Executor<Device, T>::LoadMemory(const VarDesc var_desc, float *tensorInput,
                                      char **data) {}
@@ -588,6 +708,8 @@ void Executor<GPU_CL, float>::InitMemory() {
 
 template <>
 void Executor<GPU_CL, float>::InitCombineMemory() {
+  DLOG << "CL InitCombineMemory---- "
+       << "config_.load_when_predict: " << config_.load_when_predict;
   char *origin_data = nullptr;
   bool self_alloc = false;
   if (program_.combined_params_buf && program_.combined_params_len) {
