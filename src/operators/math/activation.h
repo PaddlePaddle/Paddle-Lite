@@ -45,6 +45,19 @@ inline ActivationType GetActivationType(const std::string &type) {
   PADDLE_MOBILE_THROW_EXCEPTION("Not support activation type.");
 }
 
+inline ActivationType GetActivationType(const int type) {
+  if (type == 0) {
+    return ActivationType::IDENTITY;
+  } else if (type == 1) {
+    return ActivationType::SIGMOID;
+  } else if (type == 2) {
+    return ActivationType::TANH;
+  } else if (type == 3) {
+    return ActivationType::RELU;
+  }
+  PADDLE_MOBILE_THROW_EXCEPTION("Not support activation type.");
+}
+
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
 template <ActivationType Act = IDENTITY>
 inline float32x4_t vActiveq_f32(const float32x4_t &x) {
