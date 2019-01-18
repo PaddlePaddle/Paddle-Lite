@@ -18,30 +18,55 @@ import CoreMedia
 import paddle_mobile
 import MetalPerformanceShaders
 
-var platform: Platform = .GPU
-let threadSupport: [(Platform, String)] = [(.GPU, "GPU"), (.CPU, "CPU")]
-
-//.mobilenet_ssd : Runner.init(inNet: MobileNet_ssd_hand.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform),
-let modelHelperMap: [SupportModel : Runner] = [
-                                               .yolo : Runner.init(inNet: YoloNet.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform),
-                                               .mobilenet_combined : Runner.init(inNet: MobileNetCombined.init(device: MetalHelper.shared.device), commandQueue: MetalHelper.shared.queue, inPlatform: platform)]
-//, .genet : Genet.init()
-//let modelHelperMap: [SupportModel : Net] = [.mobilenet : MobileNet.init(), .mobilenet_ssd : MobileNet_ssd_hand.init()]
-
-let netSupport: [SupportModel : Net] = [.yolo : YoloNet.init(device: MetalHelper.shared.device), .mobilenet_combined : MobileNetCombined.init(device: MetalHelper.shared.device)]
-
-enum SupportModel: String{
-  //  case mobilenet = "mobilenet"
-//  case mobilenet_ssd    = "mobilenetssd"
-  case yolo            = "yolo"
-  case mobilenet_combined = "mobilenet_combined"
+class FileReader {
+  let file: UnsafeMutablePointer<FILE>
+  let fileSize: Int
+  init(paramPath: String) throws {
+    guard let tmpFile = fopen(paramPath, "rb") else {
+      throw PaddleMobileError.loaderError(message: "open param file error" + paramPath)
+    }
+    file = tmpFile
+    fseek(file, 0, SEEK_END)
+    fileSize = ftell(file)
+    guard fileSize > 0 else {
+      throw PaddleMobileError.loaderError(message: "param file size is too small")
+    }
+    rewind(file)
+  }
   
-  static func supportedModels() -> [SupportModel] {
-    // .mobilenet,
-    // .mobilenet_ssd,
-    return [.yolo, .mobilenet_combined]
+  func read<T>() -> UnsafeMutablePointer<T> {
+    let ptr = UnsafeMutablePointer<T>.allocate(capacity: MemoryLayout<T>.size * fileSize)
+    fread(ptr, fileSize, 1, file)
+    return ptr
+  }
+  
+  deinit {
+    fclose(file)
   }
 }
+
+enum Platform {
+  case GPU
+}
+
+let platformSupport: [(Platform, String)] = [(.GPU, "GPU")]
+
+enum SupportModel: String{
+  case yolo               = "yolo"
+  case mobilenet_combined = "mobilenet_combined"
+  case super_resolution   = "superresoltion"
+  case mobilenet          = "mobilenet"
+  
+  static func supportedModels() -> [SupportModel] {
+    return [.super_resolution, .yolo, .mobilenet_combined, .mobilenet]
+  }
+}
+
+let netSupport: [SupportModel : Net] = [
+  .super_resolution : SuperResolutionNet.init(device: MetalHelper.shared.device),
+  .yolo : YoloNet.init(device: MetalHelper.shared.device),
+  .mobilenet_combined : MobileNetCombined.init(device: MetalHelper.shared.device),
+  .mobilenet : MobileNet.init(device: MetalHelper.shared.device)]
 
 class ViewController: UIViewController {
   @IBOutlet weak var resultTextView: UITextView!
@@ -50,28 +75,37 @@ class ViewController: UIViewController {
   @IBOutlet weak var modelPickerView: UIPickerView!
   @IBOutlet weak var threadPickerView: UIPickerView!
   @IBOutlet weak var videoView: UIView!
-//  var videoCapture: VideoCapture!
-
+  //  var videoCapture: VideoCapture!
+  
   var selectImage: UIImage?
   var inputPointer: UnsafeMutablePointer<Float32>?
   var modelType: SupportModel = SupportModel.supportedModels()[0]
   var toPredictTexture: MTLTexture?
   
   var runner: Runner!
-  
+  var platform: Platform = .GPU
   var threadNum = 1
   
   @IBAction func loadAct(_ sender: Any) {
-     runner = Runner.init(inNet: netSupport[modelType]!, commandQueue: MetalHelper.shared.queue, inPlatform: platform)
-    
-    if platform == .CPU {
-      if inputPointer == nil {
-        inputPointer = runner.preproccess(image: selectImage!.cgImage!)
-       
-      }
-    } else if platform == .GPU {
+    runner = Runner.init(inNet: netSupport[modelType]!, commandQueue: MetalHelper.shared.queue)
+    if platform == .GPU {
+//      let filePath = Bundle.main.path(forResource: "mingren_input_data", ofType: nil)
+//      let fileReader = try! FileReader.init(paramPath: filePath!)
+//      let pointer: UnsafeMutablePointer<Float32> = fileReader.read()
+//      
+//      
+//      let buffer = MetalHelper.shared.device.makeBuffer(length: fileReader.fileSize, options: .storageModeShared)
+//      
+//      buffer?.contents().copyMemory(from: pointer, byteCount: fileReader.fileSize)
+      
+      
       if self.toPredictTexture == nil {
-        runner.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
+        
+//        runner.getTexture(inBuffer: buffer!) { [weak self] (texture) in
+//          self?.toPredictTexture = texture
+//        }
+        
+        runner.getTexture(image: selectImage!.cgImage!) { [weak self] (texture) in
           self?.toPredictTexture = texture
         }
       }
@@ -106,27 +140,21 @@ class ViewController: UIViewController {
         return
       }
       
-//      for _ in 0..<1{
-//        runner.predict(texture: inTexture) { (success, resultHolder)  in
-//          resultHolder?.releasePointer()
-//        }
-//      }
-      
       let startDate = Date.init()
       for i in 0..<max {
-        runner.predict(texture: inTexture) { [weak self] (success, resultHolder)  in
+        self.runner.predict(texture: inTexture) { [weak self] (success, resultHolder)  in
           guard let sSelf = self else {
             fatalError()
           }
-          if success {
+          
+          if success, let inResultHolder = resultHolder {
             if i == max - 1 {
               let time = Date.init().timeIntervalSince(startDate)
+            
+              print(inResultHolder.result.floatArr(count: inResultHolder.capacity).strideArray())
               DispatchQueue.main.async {
-//                print(resultHolder!.result![0])
                 sSelf.resultTextView.text = sSelf.runner.net.resultStr(res: resultHolder!)
-                
                 sSelf.elapsedTimeLabel.text = "平均耗时: \(time/Double(max) * 1000.0) ms"
-               
               }
             }
           }
@@ -134,39 +162,6 @@ class ViewController: UIViewController {
           DispatchQueue.main.async {
             resultHolder?.releasePointer()
           }
-//            print("释放")
-        }
-//        print("sleep before ")
-//        usleep(33000)
-//        print("sleep after ")
-      }
-    case .CPU:
-      guard let inInputPointer = inputPointer else {
-        fatalError( " need input pointer " )
-      }
-      
-      for _ in 0..<10 {
-        runner.predict(inputPointer: inInputPointer) { (success, res) in
-          res?.releaseOutput()
-        }
-      }
-      
-      let startDate = Date.init()
-      for i in 0..<max {
-        runner.predict(inputPointer: inInputPointer) { [weak self](success, res) in
-          guard let sSelf = self else {
-            fatalError()
-          }
-          if success {
-            if i == max - 1 {
-              let time = Date.init().timeIntervalSince(startDate)
-              DispatchQueue.main.async {
-//                sSelf.resultTextView.text = sSelf.runner.net.resultStr(res: res)
-                sSelf.elapsedTimeLabel.text = "平均耗时: \(time/Double(max) * 1000.0) ms"
-              }
-            }
-          }
-          res?.releaseOutput()
         }
       }
     }
@@ -179,37 +174,38 @@ class ViewController: UIViewController {
     modelPickerView.dataSource = self
     threadPickerView.delegate = self
     threadPickerView.dataSource = self
-    if let image = UIImage.init(named: "test.jpg") {
-        selectImage = image
-        selectImageView.image = image
+    if let image = UIImage.init(named: "classify-img-output.png") {
+      selectImage = image
+      selectImageView.image = image
     } else {
-        print("请添加测试图片")
+      print("请添加测试图片")
     }
     
+    GlobalConfig.shared.computePrecision = .Float32
     
-//    if platform == .CPU {
-//      inputPointer = runner.preproccess(image: selectImage!.cgImage!)
-//    } else if platform == .GPU {
-//      runner.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
-//        self?.toPredictTexture = texture
-//      }
-//    } else {
-//      fatalError( " unsupport " )
-//    }
+    //    if platform == .CPU {
+    //      inputPointer = runner.preproccess(image: selectImage!.cgImage!)
+    //    } else if platform == .GPU {
+    //      runner.getTexture(image: selectImage!.cgImage!) {[weak self] (texture) in
+    //        self?.toPredictTexture = texture
+    //      }
+    //    } else {
+    //      fatalError( " unsupport " )
+    //    }
     
-//    videoCapture = VideoCapture.init(device: MetalHelper.shared.device, orientation: .portrait, position: .back)
-//    videoCapture.fps = 30
-//    videoCapture.delegate = self
-//    videoCapture.setUp { (success) in
-//      DispatchQueue.main.async {
-//        if let preViewLayer = self.videoCapture.previewLayer {
-//          self.videoView.layer.addSublayer(preViewLayer)
-//          self.videoCapture.previewLayer?.frame = self.videoView.bounds
-//        }
-//        self.videoCapture.start()
-//      }
-//    }
-
+    //    videoCapture = VideoCapture.init(device: MetalHelper.shared.device, orientation: .portrait, position: .back)
+    //    videoCapture.fps = 30
+    //    videoCapture.delegate = self
+    //    videoCapture.setUp { (success) in
+    //      DispatchQueue.main.async {
+    //        if let preViewLayer = self.videoCapture.previewLayer {
+    //          self.videoView.layer.addSublayer(preViewLayer)
+    //          self.videoCapture.previewLayer?.frame = self.videoView.bounds
+    //        }
+    //        self.videoCapture.start()
+    //      }
+    //    }
+    
   }
 }
 
@@ -228,7 +224,7 @@ extension ViewController: UIPickerViewDataSource, UIPickerViewDelegate{
     if pickerView == modelPickerView {
       return SupportModel.supportedModels().count
     } else if pickerView == threadPickerView {
-      return threadSupport.count
+      return platformSupport.count
     } else {
       fatalError()
     }
@@ -238,7 +234,7 @@ extension ViewController: UIPickerViewDataSource, UIPickerViewDelegate{
     if pickerView == modelPickerView {
       return SupportModel.supportedModels()[row].rawValue
     } else if pickerView == threadPickerView {
-      return threadSupport[row].1
+      return platformSupport[row].1
     } else {
       fatalError()
     }
@@ -248,8 +244,7 @@ extension ViewController: UIPickerViewDataSource, UIPickerViewDelegate{
     if pickerView == modelPickerView {
       self.modelType = SupportModel.supportedModels()[row]
     } else if pickerView == threadPickerView {
-      
-      platform = threadSupport[row].0
+      platform = platformSupport[row].0
     } else {
       fatalError()
     }
@@ -276,25 +271,11 @@ extension ViewController: VideoCaptureDelegate{
   func predictTexture(texture: MTLTexture){
     runner.scaleTexture(input: texture) { (scaledTexture) in
       self.runner.predict(texture: scaledTexture, completion: { (success, resultHolder) in
-//        print(resultHolder!.result![0])
+        //        print(resultHolder!.result![0])
         resultHolder?.releasePointer()
       })
     }
   }
-  
-  
-//  @available(iOS 10.0, *)
-//  func videoCapture(_ capture: VideoCapture, didCaptureVideoTexture texture: MTLTexture?, timestamp: CMTime) {
-////    if !bool1 {
-////      DispatchQueue.main.asyncAfter(deadline: DispatchTime.init(uptimeNanoseconds: 500000000)) {
-//    self.predictTexture(texture: texture!)
-////      }
-//
-//
-////      bool1 = true
-////    }
-//
-//  }
 
 }
 
