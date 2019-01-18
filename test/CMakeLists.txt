@@ -250,6 +250,9 @@ if (NOT FOUND_MATCH)
     ADD_EXECUTABLE(test-cast-op operators/test_cast_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-cast-op paddle-mobile)
 
+    ADD_EXECUTABLE(test-less-than-op operators/test_less_than_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-less-than-op paddle-mobile)
+
     # gen test
     ADD_EXECUTABLE(test-fc-op operators/test_fusion_fc_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-fc-op paddle-mobile)
