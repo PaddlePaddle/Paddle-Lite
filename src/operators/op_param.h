@@ -2829,5 +2829,55 @@ class SequencePoolParam : public OpParam {
 };
 #endif  // SEQUENCE_EXPAND_OP
 
+#ifdef LOD_RESET_OP
+template <typename Dtype>
+class LodResetParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  LodResetParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+                const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    output_ = OutFrom<GType>(outputs, scope);
+    input_y_ = nullptr;
+    if (inputs.count("Y")) {
+      input_y_ = InputYFrom<GType>(inputs, scope);
+    } else {
+      target_lod_ = OpParam::GetAttr<vector<int>>("target_lod", attrs);
+    }
+  }
+
+ public:
+  GType *input_x_;
+  GType *input_y_;
+  GType *output_;
+  std::vector<int> target_lod_;
+};
+#endif  // LOD_RESET_OP
+
+#ifdef LESS_THAN_OP
+template <typename Dtype>
+class CompareParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  CompareParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+               const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    input_y_ = InputYFrom<GType>(inputs, scope);
+    output_ = OutFrom<GType>(outputs, scope);
+    axis_ = OpParam::GetAttr<int>("axis", attrs);
+  }
+
+ public:
+  GType *input_x_;
+  GType *input_y_;
+  GType *output_;
+  int axis_;
+};
+#endif  // LESS_THAN_OP
+
 }  // namespace operators
 }  // namespace paddle_mobile

@@ -105,7 +105,7 @@ void SigmoidKernel<CPU, float>::Compute(const SigmoidParam<CPU> &param) {
 
 #ifdef TANH_OP
 template <>
-void TanhKernel<CPU, float>::Init(TanhParam<CPU> *param) {
+bool TanhKernel<CPU, float>::Init(TanhParam<CPU> *param) {
   return true;
 }
 
@@ -114,6 +114,20 @@ void TanhKernel<CPU, float>::Compute(const TanhParam<CPU> &param) {
   const Tensor *input = param.InputX();
   Tensor *output = param.Out();
   ActivationCompute<float, TANH>()(input, output);
+}
+#endif
+
+#ifdef LOG_OP
+template <>
+bool LogKernel<CPU, float>::Init(ReluParam<CPU> *param) {
+  return true;
+}
+
+template <>
+void LogKernel<CPU, float>::Compute(const ReluParam<CPU> &param) {
+  const Tensor *input = param.InputX();
+  Tensor *output = param.Out();
+  ActivationCompute<float, LOG>()(input, output);
 }
 #endif
 
