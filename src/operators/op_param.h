@@ -2357,10 +2357,17 @@ class ConvTransposeParam : public OpParam {
 
  private:
   fpga::DeconvArgs fpga_conv_args;
+  fpga::DWDeconvArgs fpga_DWDeconv_args;
 
  public:
   const fpga::DeconvArgs &FpgaArgs() const { return fpga_conv_args; }
+  const fpga::DWDeconvArgs &FpgaDWDconvArgs() const {
+    return fpga_DWDeconv_args;
+  }
   void SetFpgaArgs(const fpga::DeconvArgs &args) { fpga_conv_args = args; }
+  void SetFpgaArgs(const fpga::DWDeconvArgs &args) {
+    fpga_DWDeconv_args = args;
+  }
 #endif
 };
 
