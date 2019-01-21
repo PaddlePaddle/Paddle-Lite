@@ -346,6 +346,16 @@ void format_dwconv_filter(float **data_in, int num, int height, int width,
   fpga_flush(*quantize_data, align_to_x(num, FILTER_ELEMENT_ALIGNMENT) *
                                  height * width * sizeof(int16_t));
 }
+
+void format_DWDeconv_filter(float **data_in, int num, int height, int width,
+                            float *scale_ptr) {
+  quantize_to_fp16(data_in, num, height, width, scale_ptr);
+  int16_t **quantize_data = (int16_t **)data_in;  // NOLINT
+  convert_to_hwn(quantize_data, num, height, width);
+  align_element_n(quantize_data, num, height, width);
+  fpga_flush(*quantize_data, align_to_x(num, FILTER_ELEMENT_ALIGNMENT) *
+                                 height * width * sizeof(int16_t));
+}
 }  // namespace filter
 }  // namespace fpga
 }  // namespace paddle_mobile

@@ -49,13 +49,23 @@ bool DeconvAddKernel<FPGA, float>::Init(FusionDeconvAddParam<FPGA> *param) {
                         "filter width should be equal to filter height ");
   PADDLE_MOBILE_ENFORCE(((filter->dims()[2] % param->Strides()[0]) == 0),
                         "filter axis should be the multiple of stride axis ");
-  fpga::format_deconv_data(filter, out, &bs_ptr, param->Groups(), sub_conv_n);
-  fpga::DeconvArgs deconv_arg = {0};
-  fpga::fill_deconv_arg(&deconv_arg, input, out, filter, relu_enabled,
-                        param->Groups(), param->Strides()[0],
-                        param->Strides()[1], param->Paddings()[0],
-                        param->Paddings()[1], bs_ptr);
-  param->SetFpgaArgs(deconv_arg);
+  if (param->Groups() == channel) {
+    fpga::format_DWDeconv_data(filter, out, &bs_ptr, param->Groups(),
+                               sub_conv_n);
+    fpga::DWDeconvArgs DWDeconv_arg = {0};
+    fpga::fill_DWDeconv_arg(&DWDeconv_arg, input, out, filter, relu_enabled,
+                            param->Strides()[0], param->Strides()[1],
+                            param->Paddings()[0], param->Paddings()[1], bs_ptr);
+    param->SetFpgaArgs(DWDeconv_arg);
+  } else {
+    fpga::format_deconv_data(filter, out, &bs_ptr, param->Groups(), sub_conv_n);
+    fpga::DeconvArgs deconv_arg = {0};
+    fpga::fill_deconv_arg(&deconv_arg, input, out, filter, relu_enabled,
+                          param->Groups(), param->Strides()[0],
+                          param->Strides()[1], param->Paddings()[0],
+                          param->Paddings()[1], bs_ptr);
+    param->SetFpgaArgs(deconv_arg);
+  }
 
   return true;
 }
@@ -63,7 +73,11 @@ bool DeconvAddKernel<FPGA, float>::Init(FusionDeconvAddParam<FPGA> *param) {
 template <>
 void DeconvAddKernel<FPGA, float>::Compute(
     const FusionDeconvAddParam<FPGA> &param) {
-  fpga::ComputeFpgaDeconv(param.FpgaArgs());
+  if (param.Groups() == param.Output()->dims()[1]) {
+    fpga::ComputeDWDeconv(param.FpgaDWDconvArgs());
+  } else {
+    fpga::ComputeFpgaDeconv(param.FpgaArgs());
+  }
 }
 
 }  // namespace operators
