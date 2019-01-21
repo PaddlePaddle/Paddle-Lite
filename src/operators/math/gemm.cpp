@@ -1188,6 +1188,10 @@ void Gemm::WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
   }
 }
 
+void Gemm::VectorKernel(int m, int n, int k, float alpha, const float *A,
+                        int lda, const float *B, int ldb, float beta, float *C,
+                        int ldc, bool relu) {}
+
 #else
 
 void Gemm::AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
