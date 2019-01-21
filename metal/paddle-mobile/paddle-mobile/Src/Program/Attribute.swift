@@ -35,7 +35,11 @@ extension Array: Attr {
 extension String: Attr {
 }
 
-func attrWithProtoDesc(attrDesc: PaddleMobile_Framework_Proto_OpDesc.Attr) -> Attr {
+extension NSMutableArray :Attr {
+}
+
+
+func attrWithProtoDesc(attrDesc: OpDesc_Attr) -> Attr {
     switch attrDesc.type {
     case .boolean:
         return attrDesc.b
@@ -47,14 +51,33 @@ func attrWithProtoDesc(attrDesc: PaddleMobile_Framework_Proto_OpDesc.Attr) -> At
         return attrDesc.l
     case .float:
         return attrDesc.f
+    ///  convert GPB class to swift class
     case .booleans:
-        return attrDesc.bools
+        var dimsArray = [Bool]()
+        let dimsCount = attrDesc.boolsArray.count
+        for i in 0..<dimsCount {
+            let dim = Bool(attrDesc.boolsArray.value(at: i))
+            dimsArray.append(dim)
+        }
+        return dimsArray
     case .floats:
-        return attrDesc.floats
+        var dimsArray = [Float]()
+        let dimsCount = attrDesc.floatsArray.count
+        for i in 0..<dimsCount {
+            let dim = Float(attrDesc.floatsArray.value(at: i))
+            dimsArray.append(dim)
+        }
+        return dimsArray
     case .ints:
-        return attrDesc.ints
+        var dimsArray = [Int32]()
+        let dimsCount = attrDesc.intsArray.count
+        for i in 0..<dimsCount {
+            let dim = Int32(attrDesc.intsArray.value(at: i))
+            dimsArray.append(dim)
+        }
+        return dimsArray
     case .strings:
-        return attrDesc.strings
+        return attrDesc.stringsArray
     default:
         fatalError(" not support this attr type: \(attrDesc.type)")
     }
