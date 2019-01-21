@@ -16,7 +16,7 @@ import Foundation
 
 class ConvParam<P: PrecisionType>: OpParam {
   //typealias ParamPrecisionType = P
-  required init(opDesc: OpDesc, inScope: Scope) throws {
+  required init(opDesc: PMOpDesc, inScope: Scope) throws {
     do {
       filter = try ConvParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
       input = try ConvParam.input(inputs: opDesc.inputs, from: inScope)

@@ -16,14 +16,14 @@ import Foundation
 
 @objc public class Program: NSObject {
     public let paramPath: String
-    public let programDesc: ProgramDesc
+    public let programDesc: PMProgramDesc
     public let scope: Scope
-    init(inProgramDesc: ProgramDesc, inParamPath: String, inScope: Scope) {
+    init(inProgramDesc: PMProgramDesc, inParamPath: String, inScope: Scope) {
         programDesc = inProgramDesc
         paramPath = inParamPath
         scope = inScope
     }
-    init(inProgramDesc: ProgramDesc, inScope: Scope) {
+    init(inProgramDesc: PMProgramDesc, inScope: Scope) {
         programDesc = inProgramDesc
         scope = inScope
         paramPath = ""

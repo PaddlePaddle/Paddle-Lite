@@ -72,11 +72,11 @@ public class InitContext {
 
 protocol Creator where Self: OperatorProtocol{
   associatedtype OpType: OperatorProtocol & Runable & InferShaperable
-  static func creat(device: MTLDevice, opDesc: OpDesc, inScope: Scope, initContext: InitContext) throws -> OpType
+  static func creat(device: MTLDevice, opDesc: PMOpDesc, inScope: Scope, initContext: InitContext) throws -> OpType
 }
 
 extension Creator where Self: OperatorProtocol {
-  static func creat(device: MTLDevice, opDesc: OpDesc, inScope: Scope, initContext: InitContext) throws -> OpType {
+  static func creat(device: MTLDevice, opDesc: PMOpDesc, inScope: Scope, initContext: InitContext) throws -> OpType {
     do {
       return try OpType.provide(device:device, opDesc: opDesc, inScope: inScope, initContext: initContext)
     } catch let error {
@@ -100,11 +100,11 @@ protocol OperatorProtocol {
   var attrs: [String : Attr] { get }
   var para: ParamType { get }
   var kernel: KerType { get }
-  init(device: MTLDevice, opDesc: OpDesc, inScope: Scope, initContext: InitContext) throws
+  init(device: MTLDevice, opDesc: PMOpDesc, inScope: Scope, initContext: InitContext) throws
 }
 
 extension OperatorProtocol {
-  static func provide(device: MTLDevice, opDesc: OpDesc, inScope: Scope, initContext: InitContext) throws -> Self {
+  static func provide(device: MTLDevice, opDesc: PMOpDesc, inScope: Scope, initContext: InitContext) throws -> Self {
     do {
       return try Self.init(device: device, opDesc: opDesc, inScope: inScope, initContext: initContext)
     } catch let error {
@@ -114,7 +114,7 @@ extension OperatorProtocol {
 }
 
 class Operator <KernelType:  Computable , ParameterType>: OperatorProtocol where KernelType.ParamType == ParameterType {
-  required init(device: MTLDevice, opDesc: OpDesc, inScope: Scope, initContext: InitContext) throws {
+  required init(device: MTLDevice, opDesc: PMOpDesc, inScope: Scope, initContext: InitContext) throws {
     type = opDesc.type
     scope = inScope
     inputs = opDesc.inputs
