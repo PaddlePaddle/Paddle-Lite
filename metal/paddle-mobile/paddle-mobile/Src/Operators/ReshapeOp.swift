@@ -17,7 +17,7 @@ import Metal
 
 class ReshapeParam<P: PrecisionType>: OpParam {
   //typealias ParamPrecisionType = P
-  required init(opDesc: OpDesc, inScope: Scope) throws {
+  required init(opDesc: PMOpDesc, inScope: Scope) throws {
     do {
       input = try ReshapeParam.inputX(inputs: opDesc.inputs, from: inScope)
       output = try ReshapeParam.outputOut(outputs: opDesc.outputs, from: inScope)
