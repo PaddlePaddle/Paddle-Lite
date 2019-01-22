@@ -26,7 +26,8 @@ namespace jni {
  */
 JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_load(JNIEnv *env,
                                                           jclass thiz,
-                                                          jstring modelPath);
+                                                          jstring modelPath,
+                                                          jboolean lod_mode);
 
 /**
  * load separated qualified model for android
@@ -63,6 +64,9 @@ JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictYuv(
  */
 JNIEXPORT jfloatArray JNICALL
 Java_com_baidu_paddle_PML_predict(JNIEnv *env, jclass thiz, jfloatArray buf);
+
+JNIEXPORT jlongArray JNICALL
+Java_com_baidu_paddle_PML_predictLod(JNIEnv *env, jclass thiz, jlongArray buf);
 
 /**
  * setThreadCount for multithread
