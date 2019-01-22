@@ -22,7 +22,7 @@ namespace operators {
 
 template <>
 bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
-  auto input = const_cast<Tensor *>(param->InputX());
+  auto input = const_cast<LoDTensor *>(param->InputX());
   auto input_ptr = input->data<float>();
   auto out = param->Out();
   fpga::format_fp32_ofm(out);
