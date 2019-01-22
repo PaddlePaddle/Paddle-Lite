@@ -7,15 +7,7 @@ public class PML {
      * @param modelDir model dir
      * @return isloadsuccess
      */
-    public static native boolean load(String modelDir);
-
-    /**
-     * load seperated model
-     *
-     * @param modelDir model dir
-     * @return isloadsuccess
-     */
-    public static native boolean loadnlp(String modelDir);
+    public static native boolean load(String modelDir, Boolean lodMode);
 
     /**
      * load combined model
@@ -24,7 +16,7 @@ public class PML {
      * @param paramPath param file path
      * @return isloadsuccess
      */
-    public static native boolean loadCombined(String modelPath, String paramPath);
+    public static native boolean loadCombined(String modelPath, String paramPath, Boolean lodMode);
 
     /**
      * load model and qualified params
@@ -32,7 +24,7 @@ public class PML {
      * @param modelDir qualified model dir
      * @return isloadsuccess
      */
-    public static native boolean loadQualified(String modelDir);
+    public static native boolean loadQualified(String modelDir, Boolean lodMode);
 
     /**
      * load model and qualified combined params
@@ -41,7 +33,7 @@ public class PML {
      * @param paramPath qualified param path
      * @return isloadsuccess
      */
-    public static native boolean loadCombinedQualified(String modelPath, String paramPath);
+    public static native boolean loadCombinedQualified(String modelPath, String paramPath, Boolean lodMode);
 
     /**
      * predict image
@@ -52,8 +44,11 @@ public class PML {
      */
     public static native float[] predictImage(float[] buf, int[] ddims);
 
-
     public static native float[] predictYuv(byte[] buf, int imgWidth, int imgHeight, int[] ddims, float[] meanValues);
+
+    // predict with variable length input
+    // support only one input and one output currently
+    public static native float[] predictLod(float[] buf);
 
     /**
      * clear model data
@@ -66,6 +61,4 @@ public class PML {
      * @param threadCount threadCount
      */
     public static native void setThread(int threadCount);
-
-
 }
