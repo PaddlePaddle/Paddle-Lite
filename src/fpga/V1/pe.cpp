@@ -18,8 +18,6 @@ limitations under the License. */
 #include "fpga/V1/image.h"
 #include "fpga/common/config.h"
 #include "fpga/common/driver.h"
-
-
 #ifdef COST_TIME_PRINT
 #include <sys/time.h>
 #include <time.h>
