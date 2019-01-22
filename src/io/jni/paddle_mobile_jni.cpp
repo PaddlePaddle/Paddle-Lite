@@ -39,7 +39,7 @@ using framework::Tensor;
 using paddle_mobile::CPU;
 using std::string;
 
-extern const char *ANDROID_LOG_TAG =
+const char *ANDROID_LOG_TAG =
     "paddle_mobile LOG built on " __DATE__ " " __TIME__;
 paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
 static std::mutex shared_mutex;
@@ -53,25 +53,25 @@ string jstring2cppstring(JNIEnv *env, jstring jstr) {
   return cppstr;
 }
 
-JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_load(JNIEnv *env,
-                                                          jclass thiz,
-                                                          jstring modelPath) {
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_load(
+    JNIEnv *env, jclass thiz, jstring modelPath, jboolean lod_mode = false) {
   std::lock_guard<std::mutex> lock(shared_mutex);
   ANDROIDLOGI("load invoked");
   bool optimize = true;
   bool isLoadOk = false;
-
 #ifdef ENABLE_EXCEPTION
   try {
     isLoadOk = getPaddleMobileInstance()->Load(
-        jstring2cppstring(env, modelPath), optimize);
+        jstring2cppstring(env, modelPath), optimize, false, 1,
+        static_cast<bool>(lod_mode));
   } catch (paddle_mobile::PaddleMobileException &e) {
     ANDROIDLOGE("jni got an PaddleMobileException! ", e.what());
     isLoadOk = false;
   }
 #else
   isLoadOk = getPaddleMobileInstance()->Load(jstring2cppstring(env, modelPath),
-                                             optimize);
+                                             optimize, false, 1,
+                                             static_cast<bool>(lod_mode));
 #endif
   return static_cast<jboolean>(isLoadOk);
 }

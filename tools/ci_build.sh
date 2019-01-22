@@ -146,6 +146,7 @@ function build_ios_armv8_cpu_only() {
     -DIOS_PLATFORM=OS \
     -DIOS_ARCH="${IOS_ARCH}" \
     -DIS_IOS=true \
+    -DUSE_OPENMP=OFF \
     -DGPU_MALI=OFF \
     -DGPU_CL=OFF \
     -DFPGA=OFF
@@ -163,6 +164,7 @@ function build_ios_armv8_gpu() {
     -DIOS_PLATFORM=OS \
     -DIOS_ARCH="${IOS_ARCH}" \
     -DIS_IOS=true \
+    -DUSE_OPENMP=OFF \
     -DGPU_MALI=OFF \
     -DGPU_CL=ON \
     -DFPGA=OFF
