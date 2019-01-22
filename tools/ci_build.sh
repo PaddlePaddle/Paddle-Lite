@@ -26,6 +26,7 @@ function print_usage() {
   ${BLUE}ios${NONE}: run build for apple ios platform
   ${BLUE}linux_armv7${NONE}: run build for linux armv7 platform
   ${BLUE}linux_armv8${NONE}: run build for linux armv8 platform
+  ${BLUE}fpga${NONE}: run build for fpga platform
   "
   echo "\n${RED}Network${NONE}: optional, for deep compressing the framework size
   ${BLUE}googlenet${NONE}: build only googlenet support
@@ -219,9 +220,17 @@ function build_ios() {
 }
 
 function build_linux_armv7() {
-  check_ndk
   build_linux_armv7_cpu_only
   # build_linux_armv7_gpu
+}
+
+function build_linux_fpga() {
+  cd ..
+  image=`docker images paddle-mobile:dev | grep 'paddle-mobile'`
+  if [[ "x"$image == "x" ]]; then
+    docker build -t paddle-mobile:dev - < Dockerfile
+  fi
+  docker run --rm -v `pwd`:/workspace paddle-mobile:dev bash /workspace/tools/docker_build_fpga.sh
 }
 
 function main() {
@@ -239,6 +248,9 @@ function main() {
       ;;
     linux_armv7)
       build_linux_armv7
+      ;;
+    fpga)
+      build_linux_fpga
       ;;
     *)
       print_usage
