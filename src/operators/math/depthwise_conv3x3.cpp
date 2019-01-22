@@ -270,7 +270,6 @@ void DepthwiseConv3x3s1p1(const framework::Tensor *input,
   if (if_bias) {
     bias_data = bias->data<float>();
   }
-
   float32x4_t zero = vdupq_n_f32(0.0);
 
   for (int b = 0; b < batch_size; ++b) {
