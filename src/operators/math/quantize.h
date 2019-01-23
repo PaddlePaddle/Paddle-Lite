@@ -40,8 +40,8 @@ template <>
 inline int8_t Round<ROUND_NEAREST_TO_EVEN>(const float &x) {
   float v = std::round(x);
   int32_t q = static_cast<int32_t>(v);
-  if (std::abs(std::abs(q - v) - 0.5) <= 0) {
-    if (std::abs(q) % 2 != 0) {
+  if (fabs(fabs(q - v) - 0.5) <= 0) {
+    if (abs(q) % 2 != 0) {
       q = q + ((q > 0) ? -1 : 1);
     }
   }

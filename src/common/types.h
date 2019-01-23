@@ -110,6 +110,10 @@ enum PoolingType {
   FIRST = 3,
 };
 
+struct PaddleMobileConfigInternal {
+  bool load_when_predict = false;
+};
+
 extern const char *G_OP_TYPE_CONV;
 extern const char *G_OP_TYPE_BATCHNORM;
 extern const char *G_OP_TYPE_BOX_CODER;
