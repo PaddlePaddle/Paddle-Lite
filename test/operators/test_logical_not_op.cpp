@@ -71,6 +71,6 @@ int main() {
   paddle_mobile::TestLogicalNotOp({1, 1, 2, 3});
   paddle_mobile::TestLogicalNotOp({1, 3, 11, 12});
   paddle_mobile::TestLogicalNotOp({1, 16, 32, 32});
-  std::cout << "test logical_not op pass." << std::endl;
+  DLOG << "test logical_not op pass.";
   return 0;
 }

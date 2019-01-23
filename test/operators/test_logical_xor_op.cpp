@@ -81,6 +81,6 @@ int main() {
   paddle_mobile::TestLogicalXorOp({1, 1, 2, 3});
   paddle_mobile::TestLogicalXorOp({1, 3, 11, 12});
   paddle_mobile::TestLogicalXorOp({1, 16, 32, 32});
-  std::cout << "test logical_xor op pass." << std::endl;
+  DLOG << "test logical_xor op pass.";
   return 0;
 }
