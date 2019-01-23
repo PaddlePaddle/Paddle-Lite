@@ -79,6 +79,6 @@ int main() {
   paddle_mobile::TestLogicalAndOp({1, 1, 2, 3});
   paddle_mobile::TestLogicalAndOp({1, 3, 11, 12});
   paddle_mobile::TestLogicalAndOp({1, 16, 32, 32});
-  std::cout << "test logical_and op pass." << std::endl;
+  DLOG << "test logical_and op pass.";
   return 0;
 }

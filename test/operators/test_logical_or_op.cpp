@@ -79,6 +79,6 @@ int main() {
   paddle_mobile::TestLogicalOrOp({1, 1, 2, 3});
   paddle_mobile::TestLogicalOrOp({1, 3, 11, 12});
   paddle_mobile::TestLogicalOrOp({1, 16, 32, 32});
-  std::cout << "test logical_or op pass." << std::endl;
+  DLOG << "test logical_or op pass.";
   return 0;
 }
