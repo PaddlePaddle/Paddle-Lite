@@ -154,6 +154,19 @@ if (CON GREATER -1)
 
 endif ()
 
+list(FIND NET "op" CON)
+if (CON GREATER -1)
+    # gen test
+    ADD_EXECUTABLE(test-sigmoid operators/test_sigmoid_op.cpp test_include.h)
+    target_link_libraries(test-sigmoid paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-sigmoid-cl operators/cl/test_sigmoid_cl_op.cpp test_helper.h  test_include.h)
+    target_link_libraries(test-sigmoid-cl paddle-mobile)
+
+    set(FOUND_MATCH ON)
+endif ()
+
 if (NOT FOUND_MATCH)
     # gen test
     ADD_EXECUTABLE(test-resnet net/test_resnet.cpp test_helper.h test_include.h executor_for_test.h)
@@ -351,6 +364,10 @@ if (NOT FOUND_MATCH)
     # gen test
     ADD_EXECUTABLE(test-sigmoid-op operators/test_sigmoid_op.cpp test_include.h)
     target_link_libraries(test-sigmoid-op paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-sigmoid-cl operators/cl/test_sigmoid_cl_op.cpp test_helper.h  test_include.h)
+    target_link_libraries(test-sigmoid-cl paddle-mobile)
 
     # gen test
     ADD_EXECUTABLE(test-depthwise-conv-op operators/test_depthwise_conv_op.cpp test_helper.h test_include.h executor_for_test.h)

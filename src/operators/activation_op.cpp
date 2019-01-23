@@ -66,6 +66,9 @@ REGISTER_OPERATOR_CL(relu, ops::ReluOp);
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(sigmoid, ops::SigmoidOp);
 #endif
+#ifdef PADDLE_MOBILE_CL
+REGISTER_OPERATOR_CL(sigmoid, ops::SigmoidOp);
+#endif
 #endif  // SIGMOID_OP
 
 #ifdef TANH_OP
