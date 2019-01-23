@@ -30,6 +30,10 @@ if (CON GREATER -1)
     target_link_libraries(test-mobilenet-combine paddle-mobile)
     set(FOUND_MATCH ON)
 
+    # gen test
+    ADD_EXECUTABLE(test-mobilenetgpu  net/test_mobilenet_GPU.cpp test_helper.h  test_include.h)
+    target_link_libraries(test-mobilenetgpu paddle-mobile)
+
 endif ()
 
 list(FIND NET "yolo" CON)

@@ -17,3 +17,9 @@ target 'paddle-mobile-unit-test' do
     project 'paddle-mobile-unit-test/paddle-mobile-unit-test.xcodeproj'
     pod 'SwiftProtobuf', '~> 1.0'
 end
+
+target 'MobileNetDemo' do
+    project 'MobileNetDemo/MobileNetDemo.xcodeproj'
+    pod 'SwiftProtobuf', '~> 1.0'
+end
+
