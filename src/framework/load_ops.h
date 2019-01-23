@@ -168,6 +168,9 @@ LOAD_FUSION_MATCHER(fusion_conv_bn_relu);
 #ifdef GRU_OP
 LOAD_OP1(gru, CPU);
 #endif
+#ifdef GRU_UNIT_OP
+LOAD_OP1(gru_unit, CPU);
+#endif
 #ifdef FUSION_CONVADDBN_OP
 LOAD_OP2(fusion_conv_add_bn, CPU, FPGA);
 LOAD_FUSION_MATCHER(fusion_conv_add_bn);
@@ -188,6 +191,9 @@ LOAD_OP1(crf_decoding, CPU);
 #endif
 #ifdef MUL_OP
 LOAD_OP2(mul, CPU, MALI_GPU);
+#endif
+#ifdef NORM_OP
+LOAD_OP1(norm, CPU);
 #endif
 #ifdef RELU_OP
 LOAD_OP2(relu, CPU, MALI_GPU);
@@ -278,4 +284,16 @@ LOAD_OP1(lod_reset, CPU);
 #endif
 #ifdef LESS_THAN_OP
 LOAD_OP1(less_than, CPU);
+#endif
+#ifdef LOGICAL_AND_OP
+LOAD_OP1(logical_and, CPU);
+#endif
+#ifdef LOGICAL_OR_OP
+LOAD_OP1(logical_or, CPU);
+#endif
+#ifdef LOGICAL_NOT_OP
+LOAD_OP1(logical_not, CPU);
+#endif
+#ifdef LOGICAL_XOR_OP
+LOAD_OP1(logical_xor, CPU);
 #endif
