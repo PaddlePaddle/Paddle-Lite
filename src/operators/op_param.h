@@ -2942,5 +2942,54 @@ class CompareParam : public OpParam {
 };
 #endif  // LESS_THAN_OP
 
+#if defined(LOGICAL_AND_OP) || defined(LOGICAL_OR_OP) || defined(LOGICAL_XOR_OP)
+template <typename Dtype>
+class LogicalBinaryParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  LogicalBinaryParam(const VariableNameMap &inputs,
+                     const VariableNameMap &outputs, const AttributeMap &attrs,
+                     const Scope &scope) {
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    input_y_ = InputYFrom<GType>(inputs, scope);
+    output_ = OutFrom<GType>(outputs, scope);
+  }
+
+  const GType *InputX() const { return input_x_; }
+  const GType *InputY() const { return input_y_; }
+  GType *Out() const { return output_; }
+
+ public:
+  GType *input_x_;
+  GType *input_y_;
+  GType *output_;
+};
+#endif  // LOGICAL_AND_OP LOGICAL_OR_OP LOGICAL_XOR_OP
+
+#ifdef LOGICAL_NOT_OP
+template <typename Dtype>
+class LogicalUnaryParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  LogicalUnaryParam(const VariableNameMap &inputs,
+                    const VariableNameMap &outputs, const AttributeMap &attrs,
+                    const Scope &scope) {
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    output_ = OutFrom<GType>(outputs, scope);
+  }
+
+  const GType *InputX() const { return input_x_; }
+  GType *Out() const { return output_; }
+
+ public:
+  GType *input_x_;
+  GType *output_;
+};
+#endif  // LOGICAL_NOT_OP
+
 }  // namespace operators
 }  // namespace paddle_mobile
