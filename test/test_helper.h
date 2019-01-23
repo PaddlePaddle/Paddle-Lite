@@ -63,6 +63,7 @@ static const char *g_imgfssd_ar = "../images/test_image_ssd_ar";
 static const char *g_imgfssd_ar1 = "../images/003_0001.txt";
 static const char *g_img = "../images/img.bin";
 static const char *g_yolo_img = "../images/in_put_1_3_416_416_2";
+static const char *g_super_img = "../images/mingren_input_data";
 static const char *g_mobilenet_img = "../images/image";
 
 using paddle_mobile::framework::DDim;

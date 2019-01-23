@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef FUSION_CONVADDBNRELU_OP
 
 #include "operators/kernel/conv_add_bn_relu_kernel.h"
+#include <cmath>
 #include "framework/cl/cl_image.h"
 #include "framework/cl/cl_tool.h"
 
