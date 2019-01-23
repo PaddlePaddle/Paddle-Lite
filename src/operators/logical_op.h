@@ -23,19 +23,19 @@ namespace paddle_mobile {
 namespace operators {
 
 #ifdef LOGICAL_AND_OP
-DECLARE_OPERATOR(LogicalAnd, LogicalAndParam, LogicalAndKernel);
+DECLARE_OPERATOR(LogicalAnd, LogicalBinaryParam, LogicalAndKernel);
 #endif
 
 #ifdef LOGICAL_OR_OP
-DECLARE_OPERATOR(LogicalOr, LogicalOrParam, LogicalOrKernel);
+DECLARE_OPERATOR(LogicalOr, LogicalBinaryParam, LogicalOrKernel);
 #endif
 
 #ifdef LOGICAL_NOT_OP
-DECLARE_OPERATOR(LogicalNot, LogicalNotParam, LogicalNotKernel);
+DECLARE_OPERATOR(LogicalNot, LogicalUnaryParam, LogicalNotKernel);
 #endif
 
 #ifdef LOGICAL_XOR_OP
-DECLARE_OPERATOR(LogicalXor, LogicalXorParam, LogicalXorKernel);
+DECLARE_OPERATOR(LogicalXor, LogicalBinaryParam, LogicalXorKernel);
 #endif
 
 }  // namespace operators
