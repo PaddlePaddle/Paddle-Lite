@@ -56,12 +56,13 @@ void BinaryLogicalCompute(const Tensor* inputX, const Tensor* inputY,
 
 #ifdef LOGICAL_AND_OP
 template <>
-bool LogicalAndKernel<CPU, float>::Init(LogicalAndParam<CPU>* param) {
+bool LogicalAndKernel<CPU, float>::Init(LogicalBinaryParam<CPU>* param) {
   return true;
 }
 
 template <>
-void LogicalAndKernel<CPU, float>::Compute(const LogicalAndParam<CPU>& param) {
+void LogicalAndKernel<CPU, float>::Compute(
+    const LogicalBinaryParam<CPU>& param) {
   auto* inputX = param.InputX();
   auto* inputY = param.InputY();
   auto* out = param.Out();
@@ -72,12 +73,13 @@ void LogicalAndKernel<CPU, float>::Compute(const LogicalAndParam<CPU>& param) {
 
 #ifdef LOGICAL_OR_OP
 template <>
-bool LogicalOrKernel<CPU, float>::Init(LogicalOrParam<CPU>* param) {
+bool LogicalOrKernel<CPU, float>::Init(LogicalBinaryParam<CPU>* param) {
   return true;
 }
 
 template <>
-void LogicalOrKernel<CPU, float>::Compute(const LogicalOrParam<CPU>& param) {
+void LogicalOrKernel<CPU, float>::Compute(
+    const LogicalBinaryParam<CPU>& param) {
   auto* inputX = param.InputX();
   auto* inputY = param.InputY();
   auto* out = param.Out();
@@ -88,12 +90,13 @@ void LogicalOrKernel<CPU, float>::Compute(const LogicalOrParam<CPU>& param) {
 
 #ifdef LOGICAL_NOT_OP
 template <>
-bool LogicalNotKernel<CPU, float>::Init(LogicalNotParam<CPU>* param) {
+bool LogicalNotKernel<CPU, float>::Init(LogicalUnaryParam<CPU>* param) {
   return true;
 }
 
 template <>
-void LogicalNotKernel<CPU, float>::Compute(const LogicalNotParam<CPU>& param) {
+void LogicalNotKernel<CPU, float>::Compute(
+    const LogicalUnaryParam<CPU>& param) {
   auto* inputX = param.InputX();
   auto* out = param.Out();
   out->mutable_data<bool>();
@@ -103,12 +106,13 @@ void LogicalNotKernel<CPU, float>::Compute(const LogicalNotParam<CPU>& param) {
 
 #ifdef LOGICAL_XOR_OP
 template <>
-bool LogicalXorKernel<CPU, float>::Init(LogicalXorParam<CPU>* param) {
+bool LogicalXorKernel<CPU, float>::Init(LogicalBinaryParam<CPU>* param) {
   return true;
 }
 
 template <>
-void LogicalXorKernel<CPU, float>::Compute(const LogicalXorParam<CPU>& param) {
+void LogicalXorKernel<CPU, float>::Compute(
+    const LogicalBinaryParam<CPU>& param) {
   auto* inputX = param.InputX();
   auto* inputY = param.InputY();
   auto* out = param.Out();

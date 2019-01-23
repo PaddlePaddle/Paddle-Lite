@@ -2942,15 +2942,16 @@ class CompareParam : public OpParam {
 };
 #endif  // LESS_THAN_OP
 
-#ifdef LOGICAL_AND_OP
+#if defined(LOGICAL_AND_OP) || defined(LOGICAL_OR_OP) || defined(LOGICAL_XOR_OP)
 template <typename Dtype>
-class LogicalAndParam : public OpParam {
+class LogicalBinaryParam : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
   typedef typename DtypeTensorTrait<Dtype>::rtype RType;
 
  public:
-  LogicalAndParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-                  const AttributeMap &attrs, const Scope &scope) {
+  LogicalBinaryParam(const VariableNameMap &inputs,
+                     const VariableNameMap &outputs, const AttributeMap &attrs,
+                     const Scope &scope) {
     input_x_ = InputXFrom<GType>(inputs, scope);
     input_y_ = InputYFrom<GType>(inputs, scope);
     output_ = OutFrom<GType>(outputs, scope);
@@ -2965,42 +2966,18 @@ class LogicalAndParam : public OpParam {
   GType *input_y_;
   GType *output_;
 };
-#endif  // LOGICAL_AND_OP
-
-#ifdef LOGICAL_OR_OP
-template <typename Dtype>
-class LogicalOrParam : public OpParam {
-  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
-  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
-
- public:
-  LogicalOrParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-                 const AttributeMap &attrs, const Scope &scope) {
-    input_x_ = InputXFrom<GType>(inputs, scope);
-    input_y_ = InputYFrom<GType>(inputs, scope);
-    output_ = OutFrom<GType>(outputs, scope);
-  }
-
-  const GType *InputX() const { return input_x_; }
-  const GType *InputY() const { return input_y_; }
-  GType *Out() const { return output_; }
-
- public:
-  GType *input_x_;
-  GType *input_y_;
-  GType *output_;
-};
-#endif  // LOGICAL_OR_OP
+#endif  // LOGICAL_AND_OP LOGICAL_OR_OP LOGICAL_XOR_OP
 
 #ifdef LOGICAL_NOT_OP
 template <typename Dtype>
-class LogicalNotParam : public OpParam {
+class LogicalUnaryParam : public OpParam {
   typedef typename DtypeTensorTrait<Dtype>::gtype GType;
   typedef typename DtypeTensorTrait<Dtype>::rtype RType;
 
  public:
-  LogicalNotParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-                  const AttributeMap &attrs, const Scope &scope) {
+  LogicalUnaryParam(const VariableNameMap &inputs,
+                    const VariableNameMap &outputs, const AttributeMap &attrs,
+                    const Scope &scope) {
     input_x_ = InputXFrom<GType>(inputs, scope);
     output_ = OutFrom<GType>(outputs, scope);
   }
@@ -3013,31 +2990,6 @@ class LogicalNotParam : public OpParam {
   GType *output_;
 };
 #endif  // LOGICAL_NOT_OP
-
-#ifdef LOGICAL_XOR_OP
-template <typename Dtype>
-class LogicalXorParam : public OpParam {
-  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
-  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
-
- public:
-  LogicalXorParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-                  const AttributeMap &attrs, const Scope &scope) {
-    input_x_ = InputXFrom<GType>(inputs, scope);
-    input_y_ = InputYFrom<GType>(inputs, scope);
-    output_ = OutFrom<GType>(outputs, scope);
-  }
-
-  const GType *InputX() const { return input_x_; }
-  const GType *InputY() const { return input_y_; }
-  GType *Out() const { return output_; }
-
- public:
-  GType *input_x_;
-  GType *input_y_;
-  GType *output_;
-};
-#endif  // LOGICAL_XOR_OP
 
 }  // namespace operators
 }  // namespace paddle_mobile
