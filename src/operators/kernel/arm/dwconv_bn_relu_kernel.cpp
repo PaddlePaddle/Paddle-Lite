@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef FUSION_DWCONVBNRELU_OP
 
 #include "operators/kernel/dwconv_bn_relu_kernel.h"
+#include <cmath>
 #include "operators/kernel/central-arm-func/dwconv_bn_relu_arm_func.h"
 
 namespace paddle_mobile {

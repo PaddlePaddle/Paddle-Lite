@@ -74,6 +74,13 @@ class OpParam {
   static T *InputH0From(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue<T>("H0", inputs, scope);
   }
+
+  template <typename T>
+  static T *InputHiddenPrevFrom(const VariableNameMap &inputs,
+                                const Scope &scope) {
+    return GetVarValue<T>("HiddenPrev", inputs, scope);
+  }
+
   template <typename T>
   static T *InputAlphaFrom(const VariableNameMap &inputs, const Scope &scope) {
     return GetVarValue<T>("Alpha", inputs, scope);
@@ -215,6 +222,11 @@ class OpParam {
   }
 
   template <typename T>
+  static T *OutputGateFrom(const VariableNameMap &outputs, const Scope &scope) {
+    return GetVarValue<T>("Gate", outputs, scope);
+  }
+
+  template <typename T>
   static T *OutputViterbiPathFrom(const VariableNameMap &outputs,
                                   const Scope &scope) {
     return GetVarValue<T>("ViterbiPath", outputs, scope);
@@ -223,6 +235,12 @@ class OpParam {
   static T *OutputBatchResetHiddenPrevFrom(const VariableNameMap &outputs,
                                            const Scope &scope) {
     return GetVarValue<T>("BatchResetHiddenPrev", outputs, scope);
+  }
+
+  template <typename T>
+  static T *OutputResetHiddenPrevFrom(const VariableNameMap &outputs,
+                                      const Scope &scope) {
+    return GetVarValue<T>("ResetHiddenPrev", outputs, scope);
   }
 
   template <typename T>
@@ -2441,6 +2459,51 @@ class GruParam : public OpParam {
   std::string activation_;
   std::string gate_activation_;
   bool is_reverse_;
+};
+#endif
+
+#ifdef GRU_UNIT_OP
+template <typename Dtype>
+class GruUnitParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+
+ public:
+  GruUnitParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+               const AttributeMap &attrs, const Scope &scope) {
+    input_input_ = InputFrom<GType>(inputs, scope);
+    input_hidden_prev_ = InputHiddenPrevFrom<GType>(inputs, scope);
+    input_bias_ = InputBiasFrom<GType>(inputs, scope);
+    input_weight_ = InputWeightFrom<GType>(inputs, scope);
+
+    output_gate_ = OutputGateFrom<GType>(outputs, scope);
+    output_reset_hidden_prev_ =
+        OutputResetHiddenPrevFrom<GType>(outputs, scope);
+    output_hidden_ = OutputHiddenFrom<GType>(outputs, scope);
+    activation_ = GetAttr<int>("activation", attrs);
+    gate_activation_ = GetAttr<int>("gate_activation", attrs);
+  }
+  const GType *InputInput() const { return input_input_; }
+  const GType *InputWeight() const { return input_weight_; }
+  const GType *InputHiddenPrev() const { return input_hidden_prev_; }
+  const GType *InputBias() const { return input_bias_; }
+  const int &Activation() const { return activation_; }
+  const int &GateActivation() const { return gate_activation_; }
+
+  GType *OutGate() const { return output_gate_; }
+  GType *OutResetHiddenPrev() const { return output_reset_hidden_prev_; }
+  GType *OutHidden() const { return output_hidden_; }
+
+ private:
+  GType *input_input_;
+  GType *input_hidden_prev_;
+  GType *input_bias_;
+  GType *input_weight_;
+
+  GType *output_gate_;
+  GType *output_reset_hidden_prev_;
+  GType *output_hidden_;
+  int activation_;
+  int gate_activation_;
 };
 #endif
 

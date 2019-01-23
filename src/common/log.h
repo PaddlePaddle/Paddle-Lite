@@ -175,11 +175,8 @@ struct Print {
   friend struct ToLog;
   template <typename T>
   Print &operator<<(T const &value) {
-    Print p = Print();
-    return p;
+    return *this;
   }
-
- private:
 };
 
 struct ToLog {
