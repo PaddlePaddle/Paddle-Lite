@@ -167,7 +167,7 @@ float find_abs_max(const Tensor *input) {
   max_abs = vmaxvq_f32(__max);
 #endif
   for (size_t i = 0; i < remain; ++i) {
-    max_abs = std::max(max_abs, std::abs(x[i]));
+    max_abs = std::max(max_abs, fabs(x[i]));
   }
   return max_abs;
 }
