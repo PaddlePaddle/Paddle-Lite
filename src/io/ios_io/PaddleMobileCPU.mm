@@ -73,6 +73,8 @@ static std::mutex shared_mutex;
 
 - (instancetype)initWithConfig:(PaddleMobileCPUConfig *)config {
   if (self = [super init]) {
+    paddle_mobile::PaddleMobileConfigInternal configInternal;
+    configInternal.load_when_predict = config.loadWhenPredict;
     pam_ = new paddle_mobile::PaddleMobile<paddle_mobile::CPU, float>();
     _config = config;
   }
