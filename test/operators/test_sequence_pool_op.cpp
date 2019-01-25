@@ -59,7 +59,7 @@ int TestSequencePoolOp(const framework::LoDTensor &input_x,
 int main(int argc, char *argv[]) {
   framework::LoDTensor input_x, output;
   // case 1
-  std::cerr << "running max case 1" << std::endl;
+  DLOG << "running max case 1";
   {
     std::vector<float> data{1, 2, 3, 4};
     input_x.Resize(framework::make_ddim({4, 1}));
@@ -71,14 +71,14 @@ int main(int argc, char *argv[]) {
     std::vector<float> expect_data{2, 4};
     for (int i = 0; i < 2; ++i) {
       if (output.data<float>()[i] != expect_data[i]) {
-        std::cerr << "output[" << i << "]: " << output.data<float>()[i]
-                  << " != expect[" << i << "]: " << expect_data[i] << std::endl;
+        DLOG << "output[" << i << "]: " << output.data<float>()[i]
+             << " != expect[" << i << "]: " << expect_data[i];
         return 1;
       }
     }
   }
   // case 2
-  std::cerr << "running max case 2" << std::endl;
+  DLOG << "running max case 2";
   {
     std::vector<float> data{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
     input_x.Resize(framework::make_ddim({data.size(), 1}));
@@ -90,13 +90,13 @@ int main(int argc, char *argv[]) {
     std::vector<float> expect_data{3, 10};
     for (int i = 0; i < 2; ++i) {
       if (output.data<float>()[i] != expect_data[i]) {
-        std::cerr << "output[" << i << "]: " << output.data<float>()[i]
-                  << " != expect[" << i << "]: " << expect_data[i] << std::endl;
+        DLOG << "output[" << i << "]: " << output.data<float>()[i]
+             << " != expect[" << i << "]: " << expect_data[i];
         return 1;
       }
     }
   }
-  std::cerr << "running max case 3" << std::endl;
+  DLOG << "running max case 3";
   // case 3
   {
     std::vector<float> data{1, 2, 3, 4, 5, 6, 7, 8};
@@ -109,14 +109,14 @@ int main(int argc, char *argv[]) {
     std::vector<float> expect_data{3, 4, 7, 8};
     for (int i = 0; i < 4; ++i) {
       if (output.data<float>()[i] != expect_data[i]) {
-        std::cerr << "output[" << i << "]: " << output.data<float>()[i]
-                  << " != expect[" << i << "]: " << expect_data[i] << std::endl;
+        DLOG << "output[" << i << "]: " << output.data<float>()[i]
+             << " != expect[" << i << "]: " << expect_data[i];
         return 1;
       }
     }
   }
   // case 4
-  std::cerr << "running max case 4" << std::endl;
+  DLOG << "running max case 4";
   {
     std::vector<float> data{1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
                             11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
@@ -129,14 +129,14 @@ int main(int argc, char *argv[]) {
     std::vector<float> expect_data{6, 7, 8, 9, 10, 16, 17, 18, 19, 20};
     for (int i = 0; i < 10; ++i) {
       if (output.data<float>()[i] != expect_data[i]) {
-        std::cerr << "output[" << i << "]: " << output.data<float>()[i]
-                  << " != expect[" << i << "]: " << expect_data[i] << std::endl;
+        DLOG << "output[" << i << "]: " << output.data<float>()[i]
+             << " != expect[" << i << "]: " << expect_data[i];
         return 1;
       }
     }
   }
   // case 1
-  std::cerr << "running sum case 1" << std::endl;
+  DLOG << "running sum case 1";
   {
     std::vector<float> data{1, 2, 3, 4};
     input_x.Resize(framework::make_ddim({4, 1}));
@@ -148,14 +148,14 @@ int main(int argc, char *argv[]) {
     std::vector<float> expect_data{3, 7};
     for (int i = 0; i < 2; ++i) {
       if (output.data<float>()[i] != expect_data[i]) {
-        std::cerr << "output[" << i << "]: " << output.data<float>()[i]
-                  << " != expect[" << i << "]: " << expect_data[i] << std::endl;
+        DLOG << "output[" << i << "]: " << output.data<float>()[i]
+             << " != expect[" << i << "]: " << expect_data[i];
         return 1;
       }
     }
   }
   // case 2
-  std::cerr << "running sum case 2" << std::endl;
+  DLOG << "running sum case 2";
   {
     std::vector<float> data{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
     input_x.Resize(framework::make_ddim({data.size(), 1}));
@@ -167,14 +167,14 @@ int main(int argc, char *argv[]) {
     std::vector<float> expect_data{6, 49};
     for (int i = 0; i < 2; ++i) {
       if (output.data<float>()[i] != expect_data[i]) {
-        std::cerr << "output[" << i << "]: " << output.data<float>()[i]
-                  << " != expect[" << i << "]: " << expect_data[i] << std::endl;
+        DLOG << "output[" << i << "]: " << output.data<float>()[i]
+             << " != expect[" << i << "]: " << expect_data[i];
         return 1;
       }
     }
   }
   // case 3
-  std::cerr << "running sum case 3" << std::endl;
+  DLOG << "running sum case 3";
   {
     std::vector<float> data{1, 2, 3, 4, 5, 6, 7, 8};
     input_x.Resize(framework::make_ddim({4, 2}));
@@ -186,14 +186,14 @@ int main(int argc, char *argv[]) {
     std::vector<float> expect_data{4, 6, 12, 14};
     for (int i = 0; i < 4; ++i) {
       if (output.data<float>()[i] != expect_data[i]) {
-        std::cerr << "output[" << i << "]: " << output.data<float>()[i]
-                  << " != expect[" << i << "]: " << expect_data[i] << std::endl;
+        DLOG << "output[" << i << "]: " << output.data<float>()[i]
+             << " != expect[" << i << "]: " << expect_data[i];
         return 1;
       }
     }
   }
   // case 4
-  std::cerr << "running sum case 4" << std::endl;
+  DLOG << "running sum case 4";
   {
     std::vector<float> data{1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
                             11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
@@ -206,14 +206,14 @@ int main(int argc, char *argv[]) {
     std::vector<float> expect_data{7, 9, 11, 13, 15, 27, 29, 31, 33, 35};
     for (int i = 0; i < 10; ++i) {
       if (output.data<float>()[i] != expect_data[i]) {
-        std::cerr << "output[" << i << "]: " << output.data<float>()[i]
-                  << " != expect[" << i << "]: " << expect_data[i] << std::endl;
+        DLOG << "output[" << i << "]: " << output.data<float>()[i]
+             << " != expect[" << i << "]: " << expect_data[i];
         return 1;
       }
     }
   }
   // case 1
-  std::cerr << "running first case 1" << std::endl;
+  DLOG << "running first case 1";
   {
     std::vector<float> data{1, 2, 3, 4};
     input_x.Resize(framework::make_ddim({4, 1}));
@@ -225,14 +225,14 @@ int main(int argc, char *argv[]) {
     std::vector<float> expect_data{1, 3};
     for (int i = 0; i < 2; ++i) {
       if (output.data<float>()[i] != expect_data[i]) {
-        std::cerr << "output[" << i << "]: " << output.data<float>()[i]
-                  << " != expect[" << i << "]: " << expect_data[i] << std::endl;
+        DLOG << "output[" << i << "]: " << output.data<float>()[i]
+             << " != expect[" << i << "]: " << expect_data[i];
         return 1;
       }
     }
   }
   // case 2
-  std::cerr << "running first case 2" << std::endl;
+  DLOG << "running first case 2";
   {
     std::vector<float> data{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
     input_x.Resize(framework::make_ddim({data.size(), 1}));
@@ -244,14 +244,14 @@ int main(int argc, char *argv[]) {
     std::vector<float> expect_data{1, 4};
     for (int i = 0; i < 2; ++i) {
       if (output.data<float>()[i] != expect_data[i]) {
-        std::cerr << "output[" << i << "]: " << output.data<float>()[i]
-                  << " != expect[" << i << "]: " << expect_data[i] << std::endl;
+        DLOG << "output[" << i << "]: " << output.data<float>()[i]
+             << " != expect[" << i << "]: " << expect_data[i];
         return 1;
       }
     }
   }
   // case 3
-  std::cerr << "running first case 3" << std::endl;
+  DLOG << "running first case 3";
   {
     std::vector<float> data{1, 2, 3, 4, 5, 6, 7, 8};
     input_x.Resize(framework::make_ddim({4, 2}));
@@ -263,14 +263,14 @@ int main(int argc, char *argv[]) {
     std::vector<float> expect_data{1, 2, 5, 6};
     for (int i = 0; i < 4; ++i) {
       if (output.data<float>()[i] != expect_data[i]) {
-        std::cerr << "output[" << i << "]: " << output.data<float>()[i]
-                  << " != expect[" << i << "]: " << expect_data[i] << std::endl;
+        DLOG << "output[" << i << "]: " << output.data<float>()[i]
+             << " != expect[" << i << "]: " << expect_data[i];
         return 1;
       }
     }
   }
   // case 4
-  std::cerr << "running first case 4" << std::endl;
+  DLOG << "running first case 4";
   {
     std::vector<float> data{1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
                             11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
@@ -283,8 +283,8 @@ int main(int argc, char *argv[]) {
     std::vector<float> expect_data{1, 2, 3, 4, 5, 11, 12, 13, 14, 15};
     for (int i = 0; i < 10; ++i) {
       if (output.data<float>()[i] != expect_data[i]) {
-        std::cerr << "output[" << i << "]: " << output.data<float>()[i]
-                  << " != expect[" << i << "]: " << expect_data[i] << std::endl;
+        DLOG << "output[" << i << "]: " << output.data<float>()[i]
+             << " != expect[" << i << "]: " << expect_data[i];
         return 1;
       }
     }

@@ -92,18 +92,10 @@ static float find_abs_max(const Tensor *input) {
   return max_abs;
 }
 
-int TestQuqntizeOp(int argc, char *argv[]) {
-  if (argc < 5) {
-    std::cout << "Usage: ./test-quantize-op batch_size channel height width"
-              << std::endl;
-    return 1;
-  }
-  int batch_size = atoi(argv[1]);
-  int channel = atoi(argv[2]);
-  int height = atoi(argv[3]);
-  int width = atoi(argv[4]);
-  std::cout << "batch_size: " << batch_size << ", channel: " << channel
-            << ", height: " << height << ", width: " << width << std::endl;
+int TestQuqntizeOp(const int batch_size, const int channel, const int height,
+                   const int width) {
+  DLOG << "batch_size: " << batch_size << ", channel: " << channel
+       << ", height: " << height << ", width: " << width;
   framework::DDim dim =
       framework::make_ddim({batch_size, channel, height, width});
 
@@ -140,9 +132,7 @@ int TestQuqntizeOp(int argc, char *argv[]) {
   framework::Tensor output_cmp;
   output_cmp.Resize(output->dims());
   float scale = 127 / output_scale_cmp;
-  // quantize<round::RoundToEven>(input, scale, &output_cmp);
-  // quantize<round::RoundAwayZero>(input, scale, &output_cmp);
-  quantize<round::RoundTowardsZero>(input, scale, &output_cmp);
+  quantize<round::RoundAwayZero>(input, scale, &output_cmp);
   int8_t *output_cmp_data = output_cmp.data<int8_t>();
   for (int i = 0; i < output->numel(); ++i) {
     PADDLE_MOBILE_ENFORCE(output_data[i] == output_cmp_data[i],
@@ -157,5 +147,7 @@ int TestQuqntizeOp(int argc, char *argv[]) {
 }  // namespace paddle_mobile
 
 int main(int argc, char *argv[]) {
-  return paddle_mobile::TestQuqntizeOp(argc, argv);
+  TestQuqntizeOp(1, 10, 10, 5);
+  TestQuqntizeOp(1, 111, 111, 5);
+  TestQuqntizeOp(5, 111, 111, 5);
 }

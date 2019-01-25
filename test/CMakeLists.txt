@@ -337,8 +337,8 @@ if (NOT FOUND_MATCH)
     target_link_libraries(test-genet paddle-mobile)
 
     # gen test
-    ADD_EXECUTABLE(test-sigmoid operators/test_sigmoid_op.cpp test_include.h)
-    target_link_libraries(test-sigmoid paddle-mobile)
+    ADD_EXECUTABLE(test-sigmoid-op operators/test_sigmoid_op.cpp test_include.h)
+    target_link_libraries(test-sigmoid-op paddle-mobile)
 
     # gen test
     ADD_EXECUTABLE(test-depthwise-conv-op operators/test_depthwise_conv_op.cpp test_helper.h test_include.h executor_for_test.h)
@@ -408,14 +408,14 @@ if (NOT FOUND_MATCH)
     ADD_EXECUTABLE(test-ocr net/test_ocr.cpp test_helper.h test_include.h)
     target_link_libraries(test-ocr paddle-mobile)
 
-    ADD_EXECUTABLE(test-sequence-expand operators/test_sequence_expand_op.cpp test_helper.h test_include.h)
-    target_link_libraries(test-sequence-expand paddle-mobile)
+    ADD_EXECUTABLE(test-sequence-expand-op operators/test_sequence_expand_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-sequence-expand-op paddle-mobile)
 
-    ADD_EXECUTABLE(test-sequence-pool operators/test_sequence_pool_op.cpp test_helper.h test_include.h)
-    target_link_libraries(test-sequence-pool paddle-mobile)
+    ADD_EXECUTABLE(test-sequence-pool-op operators/test_sequence_pool_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-sequence-pool-op paddle-mobile)
 
-    ADD_EXECUTABLE(test-sequence-softmax operators/test_sequence_softmax_op.cpp test_helper.h test_include.h)
-    target_link_libraries(test-sequence-softmax paddle-mobile)
+    ADD_EXECUTABLE(test-sequence-softmax-op operators/test_sequence_softmax_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-sequence-softmax-op paddle-mobile)
 
     # gen test
     ADD_EXECUTABLE(test-vgg16ssd net/test_vgg16ssd.cpp test_helper.h test_include.h)

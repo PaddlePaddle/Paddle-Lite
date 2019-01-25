@@ -297,3 +297,12 @@ LOAD_OP1(logical_not, CPU);
 #ifdef LOGICAL_XOR_OP
 LOAD_OP1(logical_xor, CPU);
 #endif
+#ifdef WHILE_OP
+LOAD_OP1(while, CPU);
+#endif
+#ifdef WRITE_TO_ARRAY_OP
+LOAD_OP1(write_to_array, CPU);
+#endif
+#ifdef READ_FROM_ARRAY_OP
+LOAD_OP1(read_from_array, CPU);
+#endif

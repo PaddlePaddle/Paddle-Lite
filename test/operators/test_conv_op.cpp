@@ -222,27 +222,8 @@ int TestConvOp(int in_channels, int in_height, int in_width, int out_channels,
 
 }  // namespace paddle_mobile
 
-int main(int argc, char *argv[]) {
-  if (argc < 5) {
-    LOG(paddle_mobile::kLOG_INFO)
-        << "Usage:\n"
-        << "  ./test-int8-conv-op in_channels in_height in_width out_channels "
-           "[groups]\n"
-        << "  params:\n"
-        << "   -in_channels: int, input image's channels\n"
-        << "   -in_height: int, input image's height\n"
-        << "   -in_width: int, input image's width\n"
-        << "   -out_channels: int, conv output channels\n";
-    return 1;
-  }
-  int in_channels = atoi(argv[1]);
-  int in_height = atoi(argv[2]);
-  int in_width = atoi(argv[3]);
-  int out_channels = atoi(argv[4]);
-  int groups = 1;
-  if (argc == 6) {
-    groups = atoi(argv[5]);
-  }
+int TestAll(const int in_channels, const int in_height, const int in_width,
+            const int out_channels, const int groups) {
   // kernel = 3, pad = 0, stride = 1
   LOG(paddle_mobile::kLOG_INFO) << "float, kernel=3, pad=0, stride=1";
   paddle_mobile::TestConvOp<int8_t, int32_t, 3, 0, 1>(
@@ -311,5 +292,20 @@ int main(int argc, char *argv[]) {
   paddle_mobile::TestConvOp<int8_t, int32_t, 5, 5, 1>(
       in_channels, in_height, in_width, out_channels, groups);
 
+  return 0;
+}
+
+int main() {
+  TestAll(1, 5, 5, 1, 1);
+  TestAll(1, 5, 5, 10, 1);
+  TestAll(10, 5, 5, 10, 10);
+
+  TestAll(5, 33, 33, 5, 1);
+  TestAll(5, 33, 33, 13, 1);
+  TestAll(13, 33, 33, 13, 13);
+
+  TestAll(5, 33, 13, 5, 1);
+  TestAll(5, 33, 13, 13, 1);
+  TestAll(13, 33, 13, 13, 13);
   return 0;
 }

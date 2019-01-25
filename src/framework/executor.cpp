@@ -65,6 +65,7 @@ Executor<Device, T>::Executor(const Program<Device> &program,
     for (int j = 0; j < ops.size(); ++j) {
       std::shared_ptr<OpDesc> op_desc = ops[j];
       DLOG << "create op: " << op_desc->Type();
+
       auto op_handler = OpRegistry<Device>::CreateOp(
           op_desc->Type(), op_desc->GetInputs(), op_desc->GetOutputs(),
           op_desc->GetAttrMap(), program_.scope);
