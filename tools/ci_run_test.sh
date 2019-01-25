@@ -8,13 +8,15 @@ function AddTest() {
 
 function ExecuteAndroidTest() {
   platform=$1
-  adb shell rm -rf /data/local/tmp/*
-  adb push ../build/${platform}/build/libpaddle-mobile.so /data/local/tmp/
-  for op in ${operators}
-  do
-    adb push ../test/build/test-${op}-op /data/local/tmp/
-    adb shell "cd /data/local/tmp/; LD_LIBRARY_PATH=. ./test-${op}-op"
-    echo "${BLUE}run test ${op} pass${NONE}"
+  devices=`adb devices | grep -v devices | grep device | awk -F ' ' '{print $1}'`
+  for device in ${devices}; do
+    adb -s ${device} shell rm -rf /data/local/tmp/*
+    adb -s ${device} push ../build/${platform}/build/libpaddle-mobile.so /data/local/tmp/
+    for op in ${operators}; do
+      adb -s ${device} push ../test/build/test-${op}-op /data/local/tmp/
+      adb -s ${device} shell "cd /data/local/tmp/; LD_LIBRARY_PATH=. ./test-${op}-op"
+      echo "${BLUE}run test ${op} pass${NONE}"
+    done
   done
 }
 
