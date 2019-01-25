@@ -41,9 +41,7 @@ OpDesc::OpDesc(PaddleMobile__Framework__Proto__OpDesc *desc) {
   for (int k = 0; k < desc->n_attrs; ++k) {
     PaddleMobile__Framework__Proto__OpDesc__Attr *attr = desc->attrs[k];
     std::string attr_name(attr->name);
-    if (attr->type != PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__BLOCK) {
-      attrs_[attr_name] = Attribute::GetAttrValue(attr);
-    }
+    attrs_[attr_name] = Attribute::GetAttrValue(attr);
   }
 }
 

@@ -15,6 +15,7 @@
 # limitations under the License.
 
 set -e
+source ./ci_run_test.sh
 
 function print_usage() {
   echo "\n${RED}Usage${NONE}:
@@ -63,7 +64,7 @@ function check_ndk() {
 }
 
 function build_android_armv7_cpu_only() {
-  rm -rf ../build/armeabi-v7a
+#  rm -rf ../build/armeabi-v7a
   cmake .. \
     -B"../build/armeabi-v7a" \
     -DANDROID_ABI="armeabi-v7a with NEON" \
@@ -82,7 +83,7 @@ function build_android_armv7_cpu_only() {
 }
 
 function build_android_armv7_gpu() {
-  rm -rf ../build/armeabi-v7a
+#  rm -rf ../build/armeabi-v7a
   cmake .. \
     -B"../build/armeabi-v7a" \
     -DANDROID_ABI="armeabi-v7a with NEON" \
@@ -231,6 +232,11 @@ function build_linux_fpga() {
     docker build -t paddle-mobile:dev - < Dockerfile
   fi
   docker run --rm -v `pwd`:/workspace paddle-mobile:dev bash /workspace/tools/docker_build_fpga.sh
+  cd -
+}
+
+function run_android_test() {
+  ExecuteAndroidTest $1
 }
 
 function main() {
@@ -239,9 +245,11 @@ function main() {
   case $CMD in
     android_armv7)
       build_android_armv7
+      run_android_test armeabi-v7a 
       ;;
     android_armv8)
       build_android_armv8
+      run_android_test arm64-v8a
       ;;
     ios)
       build_ios
