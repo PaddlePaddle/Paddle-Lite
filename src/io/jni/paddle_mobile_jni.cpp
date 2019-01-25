@@ -53,8 +53,10 @@ string jstring2cppstring(JNIEnv *env, jstring jstr) {
   return cppstr;
 }
 
-JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_load(
-    JNIEnv *env, jclass thiz, jstring modelPath, jboolean lod_mode = false) {
+JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_load(JNIEnv *env,
+                                                          jclass thiz,
+                                                          jstring modelPath,
+                                                          jboolean lodMode) {
   std::lock_guard<std::mutex> lock(shared_mutex);
   ANDROIDLOGI("load invoked");
   bool optimize = true;
@@ -63,7 +65,7 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_load(
   try {
     isLoadOk = getPaddleMobileInstance()->Load(
         jstring2cppstring(env, modelPath), optimize, false, 1,
-        static_cast<bool>(lod_mode));
+        static_cast<bool>(lodMode));
   } catch (paddle_mobile::PaddleMobileException &e) {
     ANDROIDLOGE("jni got an PaddleMobileException! ", e.what());
     isLoadOk = false;
@@ -71,35 +73,13 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_load(
 #else
   isLoadOk = getPaddleMobileInstance()->Load(jstring2cppstring(env, modelPath),
                                              optimize, false, 1,
-                                             static_cast<bool>(lod_mode));
-#endif
-  return static_cast<jboolean>(isLoadOk);
-}
-
-JNIEXPORT jboolean JNICALL
-Java_com_baidu_paddle_PML_loadnlp(JNIEnv *env, jclass thiz, jstring modelPath) {
-  std::lock_guard<std::mutex> lock(shared_mutex);
-  ANDROIDLOGI("load invoked");
-  bool optimize = true;
-  bool isLoadOk = false;
-
-#ifdef ENABLE_EXCEPTION
-  try {
-    isLoadOk = getPaddleMobileInstance()->Load(
-        jstring2cppstring(env, modelPath), optimize, false, 1, true);
-  } catch (paddle_mobile::PaddleMobileException &e) {
-    ANDROIDLOGE("jni got an PaddleMobileException! ", e.what());
-    isLoadOk = false;
-  }
-#else
-  isLoadOk = getPaddleMobileInstance()->Load(jstring2cppstring(env, modelPath),
-                                             optimize, false, 1, true);
+                                             static_cast<bool>(lodMode));
 #endif
   return static_cast<jboolean>(isLoadOk);
 }
 
 JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadQualified(
-    JNIEnv *env, jclass thiz, jstring modelPath) {
+    JNIEnv *env, jclass thiz, jstring modelPath, jboolean lodMode) {
   std::lock_guard<std::mutex> lock(shared_mutex);
 
   ANDROIDLOGI("loadQualified invoked");
@@ -117,14 +97,16 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadQualified(
   }
 #else
   isLoadOk = getPaddleMobileInstance()->Load(jstring2cppstring(env, modelPath),
-                                             optimize, qualified);
+                                             optimize, qualified, 1,
+                                             static_cast<bool>(lodMode));
 #endif
 
   return static_cast<jboolean>(isLoadOk);
 }
 
 JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadCombined(
-    JNIEnv *env, jclass thiz, jstring modelPath, jstring paramPath) {
+    JNIEnv *env, jclass thiz, jstring modelPath, jstring paramPath,
+    jboolean lodMode) {
   std::lock_guard<std::mutex> lock(shared_mutex);
   ANDROIDLOGI("loadCombined invoked");
   bool optimize = true;
@@ -140,15 +122,16 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadCombined(
     isLoadOk = false;
   }
 #else
-  isLoadOk = getPaddleMobileInstance()->Load(jstring2cppstring(env, modelPath),
-                                             jstring2cppstring(env, paramPath),
-                                             optimize);
+  isLoadOk = getPaddleMobileInstance()->Load(
+      jstring2cppstring(env, modelPath), jstring2cppstring(env, paramPath),
+      optimize, false, 1, static_cast<bool>(lodMode));
 #endif
   return static_cast<jboolean>(isLoadOk);
 }
 
 JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadCombinedQualified(
-    JNIEnv *env, jclass thiz, jstring modelPath, jstring paramPath) {
+    JNIEnv *env, jclass thiz, jstring modelPath, jstring paramPath,
+    jboolean lodMode) {
   std::lock_guard<std::mutex> lock(shared_mutex);
   ANDROIDLOGI("loadCombinedQualified invoked");
   bool optimize = true;
@@ -165,9 +148,9 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadCombinedQualified(
     isLoadOk = false;
   }
 #else
-  isLoadOk = getPaddleMobileInstance()->Load(jstring2cppstring(env, modelPath),
-                                             jstring2cppstring(env, paramPath),
-                                             optimize, qualified);
+  isLoadOk = getPaddleMobileInstance()->Load(
+      jstring2cppstring(env, modelPath), jstring2cppstring(env, paramPath),
+      optimize, qualified, 1, static_cast<bool>(lodMode));
 #endif
   return static_cast<jboolean>(isLoadOk);
 }
