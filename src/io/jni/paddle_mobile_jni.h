@@ -27,24 +27,26 @@ namespace jni {
 JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_load(JNIEnv *env,
                                                           jclass thiz,
                                                           jstring modelPath,
-                                                          jboolean lod_mode);
+                                                          jboolean lodMode);
 
 /**
  * load separated qualified model for android
  */
 JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadQualified(
-    JNIEnv *env, jclass thiz, jstring modelPath);
+    JNIEnv *env, jclass thiz, jstring modelPath, jboolean lodMode);
 /**
  * load combined model  for android
  */
 JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadCombined(
-    JNIEnv *env, jclass thiz, jstring modelPath, jstring paramPath);
+    JNIEnv *env, jclass thiz, jstring modelPath, jstring paramPath,
+    jboolean lodMode);
 
 /**
  * load combined qualified model for android
  */
 JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadCombinedQualified(
-    JNIEnv *env, jclass thiz, jstring modelPath, jstring paramPath);
+    JNIEnv *env, jclass thiz, jstring modelPath, jstring paramPath,
+    jboolean lodMode);
 
 /**
  * object detection for anroid
@@ -62,9 +64,6 @@ JNIEXPORT jfloatArray JNICALL Java_com_baidu_paddle_PML_predictYuv(
 /**
  * object detection for anroid
  */
-JNIEXPORT jfloatArray JNICALL
-Java_com_baidu_paddle_PML_predict(JNIEnv *env, jclass thiz, jfloatArray buf);
-
 JNIEXPORT jlongArray JNICALL
 Java_com_baidu_paddle_PML_predictLod(JNIEnv *env, jclass thiz, jlongArray buf);
 
