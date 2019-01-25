@@ -44,6 +44,11 @@
  */
 @property  (assign, nonatomic) BOOL optimize;
 
+/**
+ @b 是否预测时初始化内存，用于处理可变输入
+ */
+@property  (assign, nonatomic) BOOL loadWhenPredict;
+
 @end
 
 @interface PaddleMobileCPU : NSObject
