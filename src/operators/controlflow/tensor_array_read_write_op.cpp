@@ -12,37 +12,32 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef RESHAPE_OP
+#include "operators/controlflow/tensor_array_read_write_op.h"
 
-#include "operators/reshape_op.h"
-#include <vector>
 namespace paddle_mobile {
 namespace operators {
 
+#ifdef WRITE_TO_ARRAY_OP
 template <typename Dtype, typename T>
-void ReshapeOp<Dtype, T>::InferShape() const {
-  /// todo: add InputShape() detection.
-  auto &shape = this->param_.Shape();
-  auto input_x_dims = this->param_.InputX()->dims();
-  auto out_dims = ValidateShape(shape, input_x_dims);
-  this->param_.Out()->Resize(out_dims);
-}
+void WriteToArrayOp<Dtype, T>::InferShape() const {}
+#endif  // WRITE_TO_ARRAY_OP
+
+#ifdef READ_FROM_ARRAY_OP
+template <typename Dtype, typename T>
+void ReadFromArrayOp<Dtype, T>::InferShape() const {}
+#endif  // READ_FROM_ARRAY_OP
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
 namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(reshape, ops::ReshapeOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-REGISTER_OPERATOR_MALI_GPU(reshape, ops::ReshapeOp);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(reshape, ops::ReshapeOp);
-#endif
-#ifdef PADDLE_MOBILE_CL
-REGISTER_OPERATOR_CL(reshape, ops::ReshapeOp);
-#endif
 
+#ifdef PADDLE_MOBILE_CPU
+#ifdef WRITE_TO_ARRAY_OP
+REGISTER_OPERATOR_CPU(write_to_array, ops::WriteToArrayOp);
+#endif  // WRITE_TO_ARRAY_OP
+
+#ifdef READ_FROM_ARRAY_OP
+REGISTER_OPERATOR_CPU(read_from_array, ops::ReadFromArrayOp);
+#endif  // READ_FROM_ARRAY_OP
 #endif
