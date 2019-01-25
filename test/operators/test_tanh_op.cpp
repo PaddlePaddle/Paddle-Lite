@@ -58,7 +58,7 @@ int TestTanhOp(const std::vector<int> input_shape) {
   const float *output_data = output->data<float>();
   for (int i = 0; i < output->numel(); ++i) {
     float gap = output_data[i] - output_cmp_data[i];
-    if (std::abs(gap / (output_data[i] + 1e-5)) > 1e-3) {
+    if (gap > 1e-5 && std::abs(gap / (output_data[i] + 1e-5)) > 1e-3) {
       LOG(kLOG_INFO) << "output_data[" << i << "] = " << output_data[i]
                      << ", output_cmp_data[" << i
                      << "] = " << output_cmp_data[i];

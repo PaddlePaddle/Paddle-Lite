@@ -90,6 +90,10 @@ class Attribute {
         attr.Set<int64_t>(attr_desc->l);
         break;
       }
+      case PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__BLOCK: {
+        attr.Set<int>(attr_desc->block_idx);
+        break;
+      }
       default:
         PADDLE_MOBILE_THROW_EXCEPTION("attr type not support");
     }

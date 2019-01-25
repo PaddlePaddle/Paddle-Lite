@@ -90,7 +90,8 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadQualified(
 #ifdef ENABLE_EXCEPTION
   try {
     isLoadOk = getPaddleMobileInstance()->Load(
-        jstring2cppstring(env, modelPath), optimize, qualified);
+        jstring2cppstring(env, modelPath), optimize, qualified, 1,
+        static_cast<bool>(lodMode));
   } catch (paddle_mobile::PaddleMobileException &e) {
     ANDROIDLOGE("jni got an PaddleMobileException! ", e.what());
     isLoadOk = false;
@@ -116,7 +117,7 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadCombined(
   try {
     isLoadOk = getPaddleMobileInstance()->Load(
         jstring2cppstring(env, modelPath), jstring2cppstring(env, paramPath),
-        optimize);
+        optimize, false, 1, static_cast<bool>(lodMode));
   } catch (paddle_mobile::PaddleMobileException &e) {
     ANDROIDLOGE("jni got an PaddleMobileException! ", e.what());
     isLoadOk = false;
@@ -142,7 +143,7 @@ JNIEXPORT jboolean JNICALL Java_com_baidu_paddle_PML_loadCombinedQualified(
   try {
     isLoadOk = getPaddleMobileInstance()->Load(
         jstring2cppstring(env, modelPath), jstring2cppstring(env, paramPath),
-        optimize, qualified);
+        optimize, qualified, 1, static_cast<bool>(lodMode));
   } catch (paddle_mobile::PaddleMobileException &e) {
     ANDROIDLOGE("jni got an PaddleMobileException! ", e.what());
     isLoadOk = false;
