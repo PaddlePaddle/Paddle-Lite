@@ -81,6 +81,8 @@ const char *G_OP_TYPE_LOGICAL_AND = "logical_and";
 const char *G_OP_TYPE_LOGICAL_OR = "logical_or";
 const char *G_OP_TYPE_LOGICAL_NOT = "logical_not";
 const char *G_OP_TYPE_LOGICAL_XOR = "logical_xor";
+const char *G_OP_TYPE_WRITE_TO_ARRAY = "write_to_array";
+const char *G_OP_TYPE_READ_FROM_ARRAY = "read_from_array";
 
 const char *G_OP_TYPE_QUANTIZE = "quantize";
 const char *G_OP_TYPE_DEQUANTIZE = "dequantize";
@@ -189,5 +191,7 @@ std::unordered_map<
         {G_OP_TYPE_LOGICAL_AND, {{"X", "Y"}, {"Out"}}},
         {G_OP_TYPE_LOGICAL_OR, {{"X", "Y"}, {"Out"}}},
         {G_OP_TYPE_LOGICAL_XOR, {{"X", "Y"}, {"Out"}}},
-        {G_OP_TYPE_LOGICAL_NOT, {{"X"}, {"Out"}}}};
+        {G_OP_TYPE_LOGICAL_NOT, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_WRITE_TO_ARRAY, {{"X", "I"}, {"Out"}}},
+        {G_OP_TYPE_READ_FROM_ARRAY, {{"X", "I"}, {"Out"}}}};
 }  // namespace paddle_mobile
