@@ -2991,5 +2991,63 @@ class LogicalUnaryParam : public OpParam {
 };
 #endif  // LOGICAL_NOT_OP
 
+// #ifdef WHILE_OP
+// template <typename Dtype>
+// class WhileParam : public OpParam {
+//  public:
+//   WhileParam(const VariableNameMap &inputs,
+//              const VariableNameMap &outputs, const AttributeMap &attrs,
+//              const Scope &scope) {
+//     cond_ = OpParam::GetVarValue<framework::LoDTensor>("Condition", inputs,
+//     scope); block_desc_ = OpParam::GetAttr<framework::BlockDesc
+//     *>("sub_block", attrs);
+//   }
+//
+//  public:
+//   framework::LoDTensor *cond_;
+//   const framework::BlockDesc *block_desc_;
+// };
+// #endif  // WHILE_OP
+
+#ifdef WRITE_TO_ARRAY_OP
+template <typename Dtype>
+class WriteToArrayParam : public OpParam {
+ public:
+  WriteToArrayParam(const VariableNameMap &inputs,
+                    const VariableNameMap &outputs, const AttributeMap &attrs,
+                    const Scope &scope) {
+    input_ = OpParam::GetVarValue<framework::LoDTensor>("X", inputs, scope);
+    index_ = OpParam::GetVarValue<framework::LoDTensor>("I", inputs, scope);
+    output_ =
+        OpParam::GetVarValue<framework::LoDTensorArray>("Out", outputs, scope);
+  }
+
+ public:
+  framework::LoDTensor *input_;
+  framework::LoDTensor *index_;
+  framework::LoDTensorArray *output_;
+};
+#endif
+
+#ifdef READ_FROM_ARRAY_OP
+template <typename Dtype>
+class ReadFromArrayParam : public OpParam {
+ public:
+  ReadFromArrayParam(const VariableNameMap &inputs,
+                     const VariableNameMap &outputs, const AttributeMap &attrs,
+                     const Scope &scope) {
+    input_ =
+        OpParam::GetVarValue<framework::LoDTensorArray>("X", inputs, scope);
+    index_ = OpParam::GetVarValue<framework::LoDTensor>("I", inputs, scope);
+    output_ = OpParam::GetVarValue<framework::LoDTensor>("Out", outputs, scope);
+  }
+
+ public:
+  framework::LoDTensorArray *input_;
+  framework::LoDTensor *index_;
+  framework::LoDTensor *output_;
+};
+#endif
+
 }  // namespace operators
 }  // namespace paddle_mobile
