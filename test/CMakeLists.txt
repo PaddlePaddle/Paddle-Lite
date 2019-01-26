@@ -437,4 +437,9 @@ if (NOT FOUND_MATCH)
     ADD_EXECUTABLE(test-logical-xor-op operators/test_logical_xor_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-logical-xor-op paddle-mobile)
 
+    ADD_EXECUTABLE(test-conv-bn-relu-op operators/test_conv_bn_relu_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-conv-bn-relu-op paddle-mobile)
+
+    ADD_EXECUTABLE(test-dwconv-bn-relu-op operators/test_dwconv_bn_relu_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-dwconv-bn-relu-op paddle-mobile)
 endif ()
