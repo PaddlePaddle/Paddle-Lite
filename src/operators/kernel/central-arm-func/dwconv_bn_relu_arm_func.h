@@ -32,6 +32,7 @@ void DWConvBNReluBasic(const FusionDWConvBNReluParam<CPU> &param) {
   Tensor new_scale = *param.NewScale();
 
   Tensor *output = param.Output();
+  output->mutable_data<float>();
 
   int groups = param.Groups();
   std::vector<int> strides = param.Strides();
