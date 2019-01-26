@@ -64,7 +64,7 @@ function check_ndk() {
 }
 
 function build_android_armv7_cpu_only() {
-#  rm -rf ../build/armeabi-v7a
+  rm -rf ../build/armeabi-v7a
   cmake .. \
     -B"../build/armeabi-v7a" \
     -DANDROID_ABI="armeabi-v7a with NEON" \
@@ -83,7 +83,7 @@ function build_android_armv7_cpu_only() {
 }
 
 function build_android_armv7_gpu() {
-#  rm -rf ../build/armeabi-v7a
+  rm -rf ../build/armeabi-v7a
   cmake .. \
     -B"../build/armeabi-v7a" \
     -DANDROID_ABI="armeabi-v7a with NEON" \
@@ -236,7 +236,7 @@ function build_linux_fpga() {
 }
 
 function run_android_test() {
-  ExecuteAndroidTest $1
+  ExecuteAndroidTests $1
 }
 
 function main() {

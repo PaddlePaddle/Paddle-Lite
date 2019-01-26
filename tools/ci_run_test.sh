@@ -6,7 +6,7 @@ function AddTest() {
   operators="${operators} $1"
 }
 
-function ExecuteAndroidTest() {
+function ExecuteAndroidTests() {
   platform=$1
   devices=`adb devices | grep -v devices | grep device | awk -F ' ' '{print $1}'`
   for device in ${devices}; do
