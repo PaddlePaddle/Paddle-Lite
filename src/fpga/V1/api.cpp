@@ -805,6 +805,7 @@ void fill_dwconv_arg(struct DWconvArgs *arg, framework::Tensor *input,
   auto filter_ptr = filter->data<float>();
   auto input_ptr = input->data<float>();
   auto output_ptr = out->mutable_data<float>();
+  arg->sub_conv_num = 1;
   arg->relu_enabled = relu_enabled;
   arg->bias_address = bias_ptr;
   arg->filter_address = filter_ptr;
