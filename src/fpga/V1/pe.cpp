@@ -1044,7 +1044,6 @@ int ComputeDWDeconv(const struct DWDeconvArgs &args) {
             << "    cost time: " << (dif_sec * 1000000 + dif_usec) << "us"
             << std::endl;
 #endif
-#endif
   return 0;
 }  // ComputeFpgaDeconv
 
