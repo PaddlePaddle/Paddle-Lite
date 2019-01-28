@@ -27,7 +27,7 @@ class OpCreator<P: PrecisionType> {
         }
     }
     
-  func creat(device: MTLDevice, opDesc: OpDesc, scope: Scope, initContext: InitContext) throws -> Runable & InferShaperable {
+  func creat(device: MTLDevice, opDesc: PMOpDesc, scope: Scope, initContext: InitContext) throws -> Runable & InferShaperable {
         guard let opCreator = opCreators[opDesc.type] else {
             throw PaddleMobileError.opError(message: "there is no " + opDesc.type + " yet")
         }
@@ -39,7 +39,7 @@ class OpCreator<P: PrecisionType> {
         }
     }
     
-    let opCreators: [String : (MTLDevice, OpDesc, Scope, InitContext) throws -> Runable & InferShaperable] =
+    let opCreators: [String : (MTLDevice, PMOpDesc, Scope, InitContext) throws -> Runable & InferShaperable] =
         [gConvType                  :     ConvOp<P>.creat,
          gBatchNormType             :     BatchNormOp<P>.creat,
          gReluType                  :     ReluOp<P>.creat,
