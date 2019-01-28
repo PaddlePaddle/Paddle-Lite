@@ -76,7 +76,7 @@ int32_t convertmantissa(int32_t i) {
 }
 
 float fp16_2_fp32(int16_t fp16_num) {
-  int16_t se_fp16 = fp16_num >> 10;
+  int16_t se_fp16 = (fp16_num >> 10) & 0x3f;
   int16_t m_fp16 = fp16_num & 0x3ff;
   int32_t e_fp32 = 0;
   int16_t offset = 0;
@@ -94,7 +94,7 @@ float fp16_2_fp32(int16_t fp16_num) {
     e_fp32 = 0x80000000;
     offset = 0;
   } else if (se_fp16 < 63) {
-    e_fp32 = 0x80000000 + (se_fp16 - 32) << 23;
+    e_fp32 = 0x80000000 + ((se_fp16 - 32) << 23);
     offset = 1024;
   } else {  // se_fp16 == 63
     e_fp32 = 0xC7800000;

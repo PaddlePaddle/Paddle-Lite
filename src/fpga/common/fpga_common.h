@@ -229,6 +229,7 @@ struct DeconvArgs {
   std::vector<std::shared_ptr<SplitConvArgs>> split_conv_args;
 };
 struct DWconvArgs {
+  uint32_t sub_conv_num;
   bool relu_enabled;
   void* bias_address;
   void* filter_address;
@@ -236,6 +237,19 @@ struct DWconvArgs {
   struct ImageInputArgs image;
   struct ImageOutputArgs output;
 };
+
+struct DWDeconvArgs {
+  uint32_t sub_conv_num;
+  uint32_t group_num;
+  uint32_t filter_num;
+  uint32_t omit_size;
+  uint32_t sub_output_width;
+  uint32_t sub_output_height;
+  struct ImageOutputArgs output;
+  std::vector<std::shared_ptr<DWconvArgs>> dw_conv_args;
+  std::vector<std::shared_ptr<char>> vector_dw_conv_space;
+};
+
 // static inline int align_to_x(int num, int x) { return (num + x - 1) / x * x;
 // }
 static inline uint32_t align_to_x(int64_t num, int64_t x) {
