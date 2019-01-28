@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include <iostream>
 #include "../test_helper.h"
 #include "../test_include.h"
 #include "operators/conv_op.h"
@@ -209,10 +210,10 @@ int TestConvOp(int in_channels, int in_height, int in_width, int out_channels,
     //    PADDLE_MOBILE_ENFORCE(std::abs(gap / (output_data[i] + 1e-5)) < 1e-3,
     //                          "output[%d] = %d, output_cmp[%d] = %d", i,
     //                          output_data[i], i, output_cmp_data[i]);
-    if (std::abs(gap / (output_data[i] + 1e-5)) > 1e-3) {
-      LOG(kLOG_INFO) << "output_data[" << i << "] = " << output_data[i]
-                     << ", output_cmp_data[" << i
-                     << "] = " << output_cmp_data[i];
+    if (gap > 1e-2 && std::abs(gap / (output_data[i] + 1e-5)) > 1e-3) {
+      std::cerr << "output_data[" << i << "] = " << output_data[i]
+                << ", output_cmp_data[" << i << "] = " << output_cmp_data[i]
+                << std::endl;
       exit(1);
     }
   }
@@ -224,73 +225,114 @@ int TestConvOp(int in_channels, int in_height, int in_width, int out_channels,
 
 int TestAll(const int in_channels, const int in_height, const int in_width,
             const int out_channels, const int groups) {
+  std::cerr << "in_channels=" << in_channels << ", in_height=" << in_height
+            << ", in_width=" << in_width << ", out_channels=" << out_channels
+            << ", groups=" << groups << std::endl;
   // kernel = 3, pad = 0, stride = 1
-  LOG(paddle_mobile::kLOG_INFO) << "float, kernel=3, pad=0, stride=1";
+  std::cerr << "float, kernel=3, pad=0, stride=1" << std::endl;
+  paddle_mobile::TestConvOp<float, float, 3, 0, 1>(
+      in_channels, in_height, in_width, out_channels, groups);
+  // kernel = 3, pad = 1, stride = 1
+  std::cerr << "float, kernel=3, pad=1, stride=1" << std::endl;
+  paddle_mobile::TestConvOp<float, float, 3, 1, 1>(
+      in_channels, in_height, in_width, out_channels, groups);
+  // kernel = 3, pad = 2, stride = 1
+  std::cerr << "float, kernel=3, pad=2, stride=1" << std::endl;
+  paddle_mobile::TestConvOp<float, float, 3, 2, 1>(
+      in_channels, in_height, in_width, out_channels, groups);
+  // kernel = 3, pad = 5, stride = 1
+  std::cerr << "float, kernel=3, pad=5, stride=1" << std::endl;
+  paddle_mobile::TestConvOp<float, float, 3, 5, 1>(
+      in_channels, in_height, in_width, out_channels, groups);
+
+  // kernel = 3, pad = 0, stride = 2
+  std::cerr << "float, kernel=3, pad=0, stride=2" << std::endl;
+  paddle_mobile::TestConvOp<float, float, 3, 0, 2>(
+      in_channels, in_height, in_width, out_channels, groups);
+  // kernel = 3, pad = 1, stride = 2
+  std::cerr << "float, kernel=3, pad=1, stride=2" << std::endl;
+  paddle_mobile::TestConvOp<float, float, 3, 1, 2>(
+      in_channels, in_height, in_width, out_channels, groups);
+  // kernel = 3, pad = 2, stride = 2
+  std::cerr << "float, kernel=3, pad=2, stride=2" << std::endl;
+  paddle_mobile::TestConvOp<float, float, 3, 2, 2>(
+      in_channels, in_height, in_width, out_channels, groups);
+  // kernel = 3, pad = 5, stride = 2
+  std::cerr << "float, kernel=3, pad=5, stride=2" << std::endl;
+  paddle_mobile::TestConvOp<float, float, 3, 5, 2>(
+      in_channels, in_height, in_width, out_channels, groups);
+
+#ifndef __aarch64__
+  // kernel = 3, pad = 0, stride = 1
+  std::cerr << "int8, kernel=3, pad=0, stride=1" << std::endl;
   paddle_mobile::TestConvOp<int8_t, int32_t, 3, 0, 1>(
       in_channels, in_height, in_width, out_channels, groups);
   // kernel = 3, pad = 1, stride = 1
-  LOG(paddle_mobile::kLOG_INFO) << "float, kernel=3, pad=1, stride=1";
+  std::cerr << "int8, kernel=3, pad=1, stride=1" << std::endl;
   paddle_mobile::TestConvOp<int8_t, int32_t, 3, 1, 1>(
       in_channels, in_height, in_width, out_channels, groups);
   // kernel = 3, pad = 2, stride = 1
-  LOG(paddle_mobile::kLOG_INFO) << "float, kernel=3, pad=2, stride=1";
+  std::cerr << "int8, kernel=3, pad=2, stride=1" << std::endl;
   paddle_mobile::TestConvOp<int8_t, int32_t, 3, 2, 1>(
       in_channels, in_height, in_width, out_channels, groups);
   // kernel = 3, pad = 5, stride = 1
-  LOG(paddle_mobile::kLOG_INFO) << "float, kernel=3, pad=5, stride=1";
+  std::cerr << "int8, kernel=3, pad=5, stride=1" << std::endl;
   paddle_mobile::TestConvOp<int8_t, int32_t, 3, 5, 1>(
       in_channels, in_height, in_width, out_channels, groups);
 
   // kernel = 3, pad = 0, stride = 2
-  LOG(paddle_mobile::kLOG_INFO) << "float, kernel=3, pad=0, stride=2";
+  std::cerr << "int8, kernel=3, pad=0, stride=2" << std::endl;
   paddle_mobile::TestConvOp<int8_t, int32_t, 3, 0, 2>(
       in_channels, in_height, in_width, out_channels, groups);
   // kernel = 3, pad = 1, stride = 2
-  LOG(paddle_mobile::kLOG_INFO) << "float, kernel=3, pad=1, stride=2";
+  std::cerr << "int8, kernel=3, pad=1, stride=2" << std::endl;
   paddle_mobile::TestConvOp<int8_t, int32_t, 3, 1, 2>(
       in_channels, in_height, in_width, out_channels, groups);
   // kernel = 3, pad = 2, stride = 2
-  LOG(paddle_mobile::kLOG_INFO) << "float, kernel=3, pad=2, stride=2";
+  std::cerr << "int8, kernel=3, pad=2, stride=2" << std::endl;
   paddle_mobile::TestConvOp<int8_t, int32_t, 3, 2, 2>(
       in_channels, in_height, in_width, out_channels, groups);
   // kernel = 3, pad = 5, stride = 2
-  LOG(paddle_mobile::kLOG_INFO) << "float, kernel=3, pad=5, stride=2";
+  std::cerr << "int8, kernel=3, pad=5, stride=2" << std::endl;
   paddle_mobile::TestConvOp<int8_t, int32_t, 3, 5, 2>(
       in_channels, in_height, in_width, out_channels, groups);
+#endif  // __aarch64__
 
   // kernel = 5, pad = 0, stride = 1
-  LOG(paddle_mobile::kLOG_INFO) << "float, kernel=5, pad=0, stride=1";
+  std::cerr << "float, kernel=5, pad=0, stride=1" << std::endl;
   paddle_mobile::TestConvOp<float, float, 5, 0, 1>(
       in_channels, in_height, in_width, out_channels, groups);
   // kernel = 5, pad = 1, stride = 1
-  LOG(paddle_mobile::kLOG_INFO) << "float, kernel=5, pad=1, stride=1";
+  std::cerr << "float, kernel=5, pad=1, stride=1" << std::endl;
   paddle_mobile::TestConvOp<float, float, 5, 1, 1>(
       in_channels, in_height, in_width, out_channels, groups);
   // kernel = 5, pad = 2, stride = 1
-  LOG(paddle_mobile::kLOG_INFO) << "float, kernel=5, pad=2, stride=1";
+  std::cerr << "float, kernel=5, pad=2, stride=1" << std::endl;
   paddle_mobile::TestConvOp<float, float, 5, 2, 1>(
       in_channels, in_height, in_width, out_channels, groups);
   // kernel = 5, pad = 5, stride = 1
-  LOG(paddle_mobile::kLOG_INFO) << "float, kernel=5, pad=5, stride=1";
+  std::cerr << "float, kernel=5, pad=5, stride=1" << std::endl;
   paddle_mobile::TestConvOp<float, float, 5, 5, 1>(
       in_channels, in_height, in_width, out_channels, groups);
 
+#ifndef __aarch64__
   // kernel = 5, pad = 0, stride = 1
-  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=5, pad=0, stride=1";
+  std::cerr << "int8, kernel=5, pad=0, stride=1" << std::endl;
   paddle_mobile::TestConvOp<int8_t, int32_t, 5, 0, 1>(
       in_channels, in_height, in_width, out_channels, groups);
   // kernel = 5, pad = 1, stride = 1
-  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=5, pad=1, stride=1";
+  std::cerr << "int8, kernel=5, pad=1, stride=1" << std::endl;
   paddle_mobile::TestConvOp<int8_t, int32_t, 5, 1, 1>(
       in_channels, in_height, in_width, out_channels, groups);
   // kernel = 5, pad = 2, stride = 1
-  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=5, pad=2, stride=1";
+  std::cerr << "int8, kernel=5, pad=2, stride=1" << std::endl;
   paddle_mobile::TestConvOp<int8_t, int32_t, 5, 2, 1>(
       in_channels, in_height, in_width, out_channels, groups);
   // kernel = 5, pad = 5, stride = 1
-  LOG(paddle_mobile::kLOG_INFO) << "int8, kernel=5, pad=5, stride=1";
+  std::cerr << "int8, kernel=5, pad=5, stride=1" << std::endl;
   paddle_mobile::TestConvOp<int8_t, int32_t, 5, 5, 1>(
       in_channels, in_height, in_width, out_channels, groups);
+#endif  // __aarch64__
 
   return 0;
 }
