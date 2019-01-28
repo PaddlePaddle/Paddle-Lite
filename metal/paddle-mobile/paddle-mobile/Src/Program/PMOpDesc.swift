@@ -27,7 +27,7 @@ class PMOpDesc {
             var map: [String : [String]] = [:]
             for opDescVar  in vars {
                 if (canAdd(opDescVar.parameter)) {
-                    map[opDescVar.parameter] = opDescVar.argumentsArray as! [String]
+                    map[opDescVar.parameter] = opDescVar.argumentsArray as? [String]
                 }
             }
             return map
