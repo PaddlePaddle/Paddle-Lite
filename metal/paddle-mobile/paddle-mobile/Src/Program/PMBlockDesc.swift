@@ -14,28 +14,28 @@
 
 import Foundation
 
-public class BlockDesc {
+public class PMBlockDesc {
     let index: Int
     let parentIndex: Int
-    public let vars: [VarDesc]
-    let ops: [OpDesc]
-    init(block: PaddleMobile_Framework_Proto_BlockDesc) {
+    public let vars: [PMVarDesc]
+    let ops: [PMOpDesc]
+    init(block: BlockDesc) {
         index = Int(block.idx)
         parentIndex = Int(block.parentIdx)
-        var vars: [VarDesc] = []
-        for varOfBlock in block.vars {
-            vars.append(VarDesc.init(protoVarDesc: varOfBlock))
+        var vars: [PMVarDesc] = []
+        for varOfBlock in block.varsArray {
+            vars.append(PMVarDesc.init(protoVarDesc: varOfBlock as! VarDesc))
         }
         vars.sort { $0.name < $1.name }
         self.vars = vars
-        var ops: [OpDesc] = []
-        for op in block.ops {
-            ops.append(OpDesc.init(protoOpDesc: op))
+        var ops: [PMOpDesc] = []
+        for op in block.opsArray {
+            ops.append(PMOpDesc.init(protoOpDesc: op as! OpDesc))
         }
         self.ops = ops
     }
     
-    init(inVars: [VarDesc], inOps: [OpDesc]) {
+    init(inVars: [PMVarDesc], inOps: [PMOpDesc]) {
         vars = inVars
         ops = inOps
         index = 0
@@ -44,7 +44,7 @@ public class BlockDesc {
     
 }
 
-extension BlockDesc: CustomStringConvertible, CustomDebugStringConvertible {
+extension PMBlockDesc: CustomStringConvertible, CustomDebugStringConvertible {
   public var description: String {
         var str = ""
         

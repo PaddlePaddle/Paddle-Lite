@@ -17,7 +17,7 @@ import Metal
 
 class SoftmaxParam<P: PrecisionType>: OpParam {
   //typealias ParamPrecisionType = P
-  required init(opDesc: OpDesc, inScope: Scope) throws {
+  required init(opDesc: PMOpDesc, inScope: Scope) throws {
     do {
       input = try SoftmaxParam.inputX(inputs: opDesc.inputs, from: inScope)
       output = try SoftmaxParam.outputOut(outputs: opDesc.outputs, from: inScope)
