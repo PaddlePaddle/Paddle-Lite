@@ -151,6 +151,30 @@ void format_dwconv_filter(framework::Tensor *filter_tensor, float *scale_ptr) {
   filter_tensor->reset_data_ptr(new_data);
 }
 
+void format_DWDconv_filter(framework::Tensor *filter_tensor, float *scale_ptr,
+                           int stride) {
+  auto dims = filter_tensor->dims();
+  auto num = dims[0], height = dims[2], width = dims[3];
+  auto data_ptr = filter_tensor->data<float>();
+  size_t memory_size = num * height * width * sizeof(float);
+  auto new_data = (float *)fpga_malloc(memory_size);  // NOLINT
+  fpga_copy(new_data, data_ptr, memory_size);
+
+  int hw = height * width;
+  deconv_filter::deconv_NC_convert(&new_data, num, 1, hw);
+
+  num = dims[1];
+  int channel = dims[0];
+
+  deconv_filter::DWDconv_format_filter(&new_data, num, channel, height, width,
+                                       scale_ptr, stride);
+
+  //  framework::DDim dims_new =
+  //      framework::make_ddim({num, 1, height, width});
+  //  filter_tensor->Resize(dims_new);
+  filter_tensor->reset_data_ptr(new_data);
+}
+
 void format_fc_filter(framework::Tensor *filter_tensor, float max_value) {
   filter_tensor->scale[0] = float(max_value / 127.0);  // NOLINT
   filter_tensor->scale[1] = float(127.0 / max_value);  // NOLINT
@@ -241,6 +265,17 @@ void format_dwconv_data(framework::Tensor *filter_tensor,
   auto channel = ofm_tensor->dims()[1];
   format_dwconv_filter(filter_tensor, scale_ptr);
   format_bias_array(bias_ptr, channel);
+  format_fp16_ofm(ofm_tensor);
+}
+void format_DWDeconv_data(framework::Tensor *filter_tensor,
+                          framework::Tensor *ofm_tensor, float **bs_ptr,
+                          int group, int sub_conv_n) {
+  int channel = ofm_tensor->dims()[1];
+  // dw-deconv
+  format_DWDconv_filter(
+      filter_tensor,
+      (reinterpret_cast<float *>(*bs_ptr) + sub_conv_n * channel), sub_conv_n);
+  format_bias_array(bs_ptr, channel);
   format_fp16_ofm(ofm_tensor);
 }
 void expand_conv_arg(ConvArgs *arg) {
@@ -770,6 +805,7 @@ void fill_dwconv_arg(struct DWconvArgs *arg, framework::Tensor *input,
   auto filter_ptr = filter->data<float>();
   auto input_ptr = input->data<float>();
   auto output_ptr = out->mutable_data<float>();
+  arg->sub_conv_num = 1;
   arg->relu_enabled = relu_enabled;
   arg->bias_address = bias_ptr;
   arg->filter_address = filter_ptr;
@@ -786,6 +822,110 @@ void fill_dwconv_arg(struct DWconvArgs *arg, framework::Tensor *input,
   arg->image.scale_address = input->scale;
   arg->output.address = output_ptr;
   arg->output.scale_address = out->scale;
+}  // end dwconv arg fill
+
+void fill_DWDeconv_arg(struct DWDeconvArgs *arg, framework::Tensor *input,
+                       framework::Tensor *out, framework::Tensor *filter,
+                       bool relu_enabled, int stride_h, int stride_w,
+                       int padding_h, int padding_w, float *bias_ptr) {
+  auto filter_ptr = filter->data<float>();
+  auto input_ptr = input->data<float>();
+  auto output_ptr = out->mutable_data<float>();
+
+  auto deleter = [](void *p) { fpga_free(p); };
+
+  arg->group_num = (uint32_t)filter->dims()[0];
+  arg->sub_conv_num = (uint32_t)stride_w;
+  arg->filter_num = (uint32_t)filter->dims()[0];
+
+  int sub_conv_num = stride_w;
+
+  int sub_pad =
+      deconv_filter::deconv_calc_sub_pad((int)filter->dims()[3],  // NOLINT
+                                         padding_w, stride_w);
+  auto sub_filter_width = (uint32_t)deconv_filter::deconv_get_sub_filter_axis(
+      (int)filter->dims()[3], stride_w);  // NOLINT
+
+  auto sub_output_width = (uint32_t)deconv_filter::deconv_get_sub_out_axis(
+      (int)input->dims()[3], sub_pad, sub_filter_width);  // NOLINT
+  auto sub_output_height = (uint32_t)deconv_filter::deconv_get_sub_out_axis(
+      (int)input->dims()[2], sub_pad, sub_filter_width);  // NOLINT
+
+  arg->sub_output_width = (uint32_t)sub_output_width;
+  arg->sub_output_height = (uint32_t)sub_output_height;
+  arg->omit_size = (uint32_t)deconv_filter::deconv_get_omit(
+      stride_w, (int)filter->dims()[3], padding_w);  // NOLINT
+
+  auto sub_channels = (int)input->dims()[1];  // NOLINT
+  uint32_t omit_size = arg->omit_size;
+  int real_out_width = sub_output_width * sub_conv_num - 2 * omit_size;
+  int real_out_height = sub_output_height * sub_conv_num - 2 * omit_size;
+  int sub_filter_num = sub_conv_num * (arg->filter_num);
+
+  framework::DDim dims_out_new = framework::make_ddim(
+      {1, arg->filter_num, real_out_height, real_out_width});
+  fpga::format_fp16_ofm(out, dims_out_new);
+  auto out_ptr = out->data<float>();
+
+  /*====For Addition
+  arg->output.address =
+      (half *)out_ptr +  // NOLINT
+      omit_size * sizeof(half) *
+          (align_to_x(real_out_width * arg->filter_num, IMAGE_ALIGNMENT));
+          */
+  arg->output.address = out_ptr;
+  arg->output.scale_address = out->scale;
+
+  int filter_offset = sub_filter_width * sub_filter_width *
+                      align_to_x(sub_channels, FILTER_ELEMENT_ALIGNMENT) *
+                      arg->sub_conv_num;
+
+  for (int i = 0; i < sub_conv_num; ++i) {
+    arg->dw_conv_args.push_back(std::make_shared<DWconvArgs>());
+
+    arg->dw_conv_args[i]->sub_conv_num = sub_conv_num;
+    arg->dw_conv_args[i]->relu_enabled = relu_enabled;
+    arg->dw_conv_args[i]->bias_address = bias_ptr;
+
+    arg->dw_conv_args[i]->filter_address =
+        fpga_malloc(filter_offset * sizeof(int16_t));
+    memcpy(arg->dw_conv_args[i]->filter_address,
+           (reinterpret_cast<half *>(filter_ptr) + i * filter_offset),
+           filter_offset * sizeof(int16_t));
+    arg->vector_dw_conv_space.push_back(std::shared_ptr<char>(
+        reinterpret_cast<char *>(arg->dw_conv_args[i]->filter_address),
+        deleter));
+
+    arg->dw_conv_args[i]->kernel.height = (uint32_t)sub_filter_width;
+    arg->dw_conv_args[i]->kernel.width = (uint32_t)sub_filter_width;
+
+    arg->dw_conv_args[i]->kernel.stride_h = (uint32_t)1;
+    arg->dw_conv_args[i]->kernel.stride_w = (uint32_t)1;
+    arg->dw_conv_args[i]->image.address = input_ptr;
+    arg->dw_conv_args[i]->image.channels = (uint32_t)input->dims()[1];
+    arg->dw_conv_args[i]->image.height = (uint32_t)input->dims()[2];
+    arg->dw_conv_args[i]->image.width = (uint32_t)input->dims()[3];
+
+    arg->dw_conv_args[i]->image.pad_height = sub_pad;
+    arg->dw_conv_args[i]->image.pad_width = sub_pad;
+    arg->dw_conv_args[i]->image.scale_address = input->scale;
+
+    arg->dw_conv_args[i]->output.address =
+        fpga_malloc(sub_output_height *
+                    align_to_x(sub_output_width * sub_channels * sub_conv_num,
+                               IMAGE_ALIGNMENT) *
+                    sizeof(int16_t));
+    arg->dw_conv_args[i]->output.scale_address =
+        static_cast<float *>(fpga_malloc(2 * sizeof(float)));
+    arg->vector_dw_conv_space.push_back(std::shared_ptr<char>(
+        reinterpret_cast<char *>(arg->dw_conv_args[i]->output.address),
+        deleter));
+    arg->vector_dw_conv_space.push_back(std::shared_ptr<char>(
+        reinterpret_cast<char *>(arg->dw_conv_args[i]->output.scale_address),
+        deleter));
+  }
+
+  // arg->output.scale_address = out->scale;
 }  // end dwconv arg fill
 
 }  // namespace fpga
