@@ -17,7 +17,7 @@ import Metal
 
 class BilinearInterpParam<P: PrecisionType>: OpParam {
   //typealias ParamPrecisionType = P
-  required init(opDesc: OpDesc, inScope: Scope) throws {
+  required init(opDesc: PMOpDesc, inScope: Scope) throws {
     do {
       input = try BilinearInterpParam.inputX(inputs: opDesc.inputs, from: inScope)
       output = try BilinearInterpParam.outputOut(outputs: opDesc.outputs, from: inScope)

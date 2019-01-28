@@ -13,7 +13,7 @@
  limitations under the License. */
 
 import Foundation
-import SwiftProtobuf
+//import SwiftProtobuf
 
 public class Loader<P: PrecisionType> {
   class ParaLoader {
@@ -145,13 +145,17 @@ public class Loader<P: PrecisionType> {
   public init(){}
   func loadModelandParam(_ device:MTLDevice,_ modelData:Data, _ paraLoaderPointer:ParaLoaderWithPointer?, _ paraLoader:ParaLoader?) throws -> Program {
     do {
-      let protoProgram = try PaddleMobile_Framework_Proto_ProgramDesc.init(
-        serializedData: modelData)
+        /// swift protobuf serialized Data to instance class
+        //      let protoProgram = try PaddleMobile_Framework_Proto_ProgramDesc.init(
+        //        serializedData: modelData)
+        
+        /// oc protobuf serialized Data to instance class
+      let protoProgram = try ProgramDesc.init(data: (modelData as NSData) as Data)
       
-      let originProgramDesc = ProgramDesc.init(protoProgram: protoProgram)
+      let originProgramDesc = PMProgramDesc.init(protoProgram: protoProgram)
       let programDesc = ProgramOptimize<P>.init().optimize(originProgramDesc: originProgramDesc)
       
-//      let programDesc = ProgramDesc.init(protoProgram: protoProgram)
+//      let programDesc = PMProgramDesc.init(protoProgram: protoProgram)
 
       print(programDesc)
       
