@@ -23,7 +23,7 @@ class FeedParam<P: PrecisionType>: OpParam{
   }
   let scope: Scope
   
-  required init(opDesc: OpDesc, inScope: Scope) throws {
+  required init(opDesc: PMOpDesc, inScope: Scope) throws {
     scope = inScope
     do {
       output = try FeedParam.outputOut(outputs: opDesc.outputs, from: inScope)

@@ -17,7 +17,7 @@ import Foundation
 
 class ConvAddBatchNormReluParam<P: PrecisionType>: OpParam {
   //typealias ParamPrecisionType = P
-  required init(opDesc: OpDesc, inScope: Scope) throws {
+  required init(opDesc: PMOpDesc, inScope: Scope) throws {
     do {
       
       filter = try ConvAddBatchNormReluParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
