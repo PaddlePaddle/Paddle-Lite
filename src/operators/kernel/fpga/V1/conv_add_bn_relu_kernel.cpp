@@ -23,7 +23,10 @@ namespace operators {
 template <>
 bool ConvAddBNReluKernel<FPGA, float>::Init(
     FusionConvAddBNReluParam<FPGA> *param) {
-  bool relu_enabled = true;
+  // bool relu_enabled = true;
+  paddle_mobile::fpga::ActivationType activation_enable =
+      paddle_mobile::fpga::LEAKYRELU;
+  int16_t leaky_relu_negative_slope = 0;
   auto input = const_cast<Tensor *>(param->Input());
   auto bias = param->Bias();
   auto bias_ptr = bias->data<float>();
@@ -64,16 +67,16 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
   if (groups == channel) {
     fpga::format_dwconv_data(filter, out, new_scale_ptr, &new_bias_ptr);
     fpga::DWconvArgs dwconv_arg = {0};
-    fpga::fill_dwconv_arg(&dwconv_arg, input, out, filter, relu_enabled,
-                          strides[0], strides[1], paddings[0], paddings[1],
-                          new_bias_ptr);
+    fpga::fill_dwconv_arg(&dwconv_arg, input, out, filter, activation_enable,
+                          leaky_relu_negative_slope, strides[0], strides[1],
+                          paddings[0], paddings[1], new_bias_ptr);
     param->SetFpgaArgs(dwconv_arg);
   } else {
     fpga::format_conv_data(filter, out, &bs_ptr, param->Groups());
     fpga::SplitConvArgs conv_arg = {0};
-    fpga::fill_split_arg(&conv_arg, input, out, filter, relu_enabled,
-                         param->Groups(), strides[0], strides[1], paddings[0],
-                         paddings[1], bs_ptr);
+    fpga::fill_split_arg(&conv_arg, input, out, filter, activation_enable,
+                         leaky_relu_negative_slope, param->Groups(), strides[0],
+                         strides[1], paddings[0], paddings[1], bs_ptr);
     param->SetFpgaArgs(conv_arg);
   }
   return true;
