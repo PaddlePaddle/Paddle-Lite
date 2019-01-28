@@ -292,7 +292,7 @@ class ProgramOptimize<P: PrecisionType> {
       ops.append(node.opDesc!)
     }
     
-    var newProgramDesc = PMProgramDesc.init()
+    let newProgramDesc = PMProgramDesc.init()
     let newBlock = PMBlockDesc.init(inVars: block.vars, inOps: ops)
     newProgramDesc.blocks.append(newBlock)
     return newProgramDesc
