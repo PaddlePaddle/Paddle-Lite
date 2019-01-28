@@ -437,4 +437,12 @@ if (NOT FOUND_MATCH)
     ADD_EXECUTABLE(test-logical-xor-op operators/test_logical_xor_op.cpp test_helper.h test_include.h)
     target_link_libraries(test-logical-xor-op paddle-mobile)
 
+    # gen test
+    ADD_EXECUTABLE(test-increment-op operators/test_increment_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-increment-op paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-is-empty-op operators/test_is_empty_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-is-empty-op paddle-mobile)
+
 endif ()
