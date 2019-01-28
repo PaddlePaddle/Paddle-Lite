@@ -63,6 +63,7 @@ using namespace std;     // NOLINT
 #define REG_TIMER_COUNTER 0x070
 
 #define REG_SCALE_PARAMETER 0x080
+#define REG_ACTIVATION_MODE_AND_LEAKY_RELU_FACTOR 0x090
 
 #define REG_FLASH_CMD 0x200
 #define REG_FLASH_DATA 0x208
@@ -189,8 +190,8 @@ int ComputeFpgaConv(const struct SplitConvArgs &args) {
 int ComputeBasicConv(const struct ConvArgs &args) {
 #ifdef FPGA_PRINT_MODE
   DLOG << "======Compute Basic Conv======";
-  DLOG << "   relu_enabled:" << args.relu_enabled
-       << "   sb_address:" << args.sb_address
+  // DLOG << "   relu_enabled:" << args.relu_enabled
+  DLOG << "   sb_address:" << args.sb_address
        << "   filter_address:" << args.filter_address
        << "   filter_num:" << args.filter_num
        << "   group_num:" << args.group_num;
@@ -212,6 +213,25 @@ int ComputeBasicConv(const struct ConvArgs &args) {
 #ifdef PADDLE_MOBILE_ZU5
   int ret = 0;
   uint64_t output_scale = 0;
+
+  uint64_t reg_ActivationArgs = 0;
+  // active function:{none,leakeyrelu,sigmoid,tanh}
+  ActivationArgs active_args;
+  // active_args.activation_type = LEAKYRELU;
+
+  active_args.activation_type = args.output.activation.activation_type;
+
+  active_args.leaky_relu_negative_slope =
+      args.output.activation.leaky_relu_negative_slope;
+
+  reg_ActivationArgs = (uint64_t(active_args.activation_type) << 32) |
+                       active_args.leaky_relu_negative_slope;
+
+  DLOG << "   activation_type:" << active_args.activation_type
+       << "   leaky_relu_negative_slope:"
+       << active_args.leaky_relu_negative_slope;
+  DLOG << "   reg_ActivationArgs:" << reg_ActivationArgs;
+
   pthread_mutex_lock(&g_fpgainfo.pe_data->mutex);
   if (ERROR == g_fpgainfo.pe_data->pes[PE_IDX_CONV]->status) {
     ret = -EIO;
@@ -219,6 +239,10 @@ int ComputeBasicConv(const struct ConvArgs &args) {
     pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
     return ret;
   }
+
+  reg_writeq(reg_ActivationArgs,
+             REG_ACTIVATION_MODE_AND_LEAKY_RELU_FACTOR);  // active functoion
+
   reg_writeq(output_scale, REG_SCALE_PARAMETER);
   reg_writeq(
       ((uint64_t)args.image.height) | (((uint64_t)args.image.width) << 32),
@@ -278,6 +302,9 @@ int ComputeBasicConv(const struct ConvArgs &args) {
   output_scale = (output_scale << 32) | (output_scale >> 32);
   fpga_copy(args.output.scale_address, &output_scale, sizeof(float) * 2);
 
+  active_args.activation_type = NONE;
+  reg_writeq(reg_ActivationArgs, REG_ACTIVATION_MODE_AND_LEAKY_RELU_FACTOR);
+
   pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
 
   return ret;
@@ -313,6 +340,23 @@ int ComputeFpgaPool(const struct PoolingArgs &args) {
   uint64_t cmd = 0;
   uint64_t image_physical_address = 0;
   uint64_t output_physical_address = 0;
+
+  uint64_t reg_ActivationArgs = 0;
+  // active function:{none,leakeyrelu,sigmoid,tanh}
+  ActivationArgs active_args;
+  // active_args.activation_type = LEAKYRELU;
+  active_args.activation_type = args.output.activation.activation_type;
+
+  active_args.leaky_relu_negative_slope =
+      args.output.activation.leaky_relu_negative_slope;
+
+  reg_ActivationArgs = (uint64_t(active_args.activation_type) << 32) |
+                       active_args.leaky_relu_negative_slope;
+
+  DLOG << "   activation_type:" << active_args.activation_type
+       << "   leaky_relu_negative_slope:"
+       << active_args.leaky_relu_negative_slope;
+  DLOG << "   reg_ActivationArgs:" << reg_ActivationArgs;
 
   image_physical_address = vaddr_to_paddr_driver(args.image.address);
   output_physical_address = vaddr_to_paddr_driver(args.output.address);
@@ -364,6 +408,9 @@ int ComputeFpgaPool(const struct PoolingArgs &args) {
     return ret;
   }
 
+  reg_writeq(reg_ActivationArgs,
+             REG_ACTIVATION_MODE_AND_LEAKY_RELU_FACTOR);  // active functoion
+
   reg_writeq(output_scale, REG_SCALE_PARAMETER);
   reg_writeq(image_physical_address, REG_POOLING_IMAGE_BASE_ADDR);
   reg_writeq(output_physical_address, REG_POOLING_RESULT_BASE_ADDR);
@@ -408,6 +455,10 @@ int ComputeFpgaPool(const struct PoolingArgs &args) {
   output_scale = reg_readq(REG_SCALE_PARAMETER);
   output_scale = (output_scale << 32) | (output_scale >> 32);
   fpga_copy(args.output.scale_address, &output_scale, sizeof(float) * 2);
+
+  active_args.activation_type = NONE;
+  reg_writeq(reg_ActivationArgs, REG_ACTIVATION_MODE_AND_LEAKY_RELU_FACTOR);
+
   pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
 
   return ret;
@@ -418,8 +469,8 @@ int ComputeFpgaPool(const struct PoolingArgs &args) {
 int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
 #ifdef FPGA_PRINT_MODE
   DLOG << "=============ComputeFpgaEWAdd===========";
-  DLOG << "   relu_enabled:" << args.relu_enabled
-       << "   const0:" << fp16_2_fp32(int16_t(args.const0))
+  // DLOG << "   relu_enabled:" << args.relu_enabled
+  DLOG << "   const0:" << fp16_2_fp32(int16_t(args.const0))
        << "   const1:" << fp16_2_fp32(int16_t(args.const1));
   DLOG << "   image0_address:" << args.image0.address
        << "   image0_scale_address:" << args.image0.scale_address
@@ -441,6 +492,19 @@ int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
 #ifdef PADDLE_MOBILE_ZU5
   int ret = 0;
   uint64_t output_scale = 0;
+
+  uint64_t reg_ActivationArgs = 0;
+  ActivationArgs active_args;
+  active_args.activation_type = args.output.activation.activation_type;
+  active_args.leaky_relu_negative_slope =
+      args.output.activation.leaky_relu_negative_slope;
+  reg_ActivationArgs = (uint64_t(active_args.activation_type) << 32) |
+                       active_args.leaky_relu_negative_slope;
+  DLOG << "    activation_type:" << active_args.activation_type
+       << "    leaky_relu_negative_slope:"
+       << active_args.leaky_relu_negative_slope;
+  DLOG << "    reg_ActivationArgs:" << reg_ActivationArgs;
+
   pthread_mutex_lock(&g_fpgainfo.pe_data->mutex);
   if (ERROR == g_fpgainfo.pe_data->pes[PE_IDX_EW]->status) {
     ret = -EIO;
@@ -448,6 +512,9 @@ int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
     pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
     return ret;
   }
+
+  reg_writeq(reg_ActivationArgs,
+             REG_ACTIVATION_MODE_AND_LEAKY_RELU_FACTOR);  // active functoion
 
   reg_writeq(output_scale, REG_SCALE_PARAMETER);
   reg_writeq(args.driver.image0_address_phy, REG_EW_IMAGE0_BASE_ADDR);
@@ -468,6 +535,9 @@ int ComputeFpgaEWAdd(const struct EWAddArgs &args) {
   output_scale = reg_readq(REG_SCALE_PARAMETER);
   output_scale = (output_scale << 32) | (output_scale >> 32);
   fpga_copy(args.output.scale_address, &output_scale, sizeof(float) * 2);
+  active_args.activation_type = NONE;
+  reg_writeq(reg_ActivationArgs, REG_ACTIVATION_MODE_AND_LEAKY_RELU_FACTOR);
+
   pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
   return ret;
 #endif
@@ -501,6 +571,17 @@ int PerformBypass(const struct BypassArgs &args) {
   uint8_t data_cell_in = 0;
   uint8_t data_cell_out = 0;
   int ret = 0;
+
+  uint64_t reg_ActivationArgs = 0;
+  ActivationArgs active_args;
+  active_args.activation_type = args.output.activation.activation_type;
+
+  active_args.leaky_relu_negative_slope =
+      args.output.activation.leaky_relu_negative_slope;
+
+  reg_ActivationArgs = (uint64_t(active_args.activation_type) << 32) |
+                       active_args.leaky_relu_negative_slope;
+
   datalen = (uint64_t)args.image.width * (uint64_t)args.image.height *
             (uint64_t)args.image.channels;
   datalen = align_to_x(datalen, 16);
@@ -559,7 +640,6 @@ int PerformBypass(const struct BypassArgs &args) {
       (data_cell_out != SIZE_FP16 && data_cell_out != SIZE_FP32)) {
     return -EFAULT;
   }
-
   pthread_mutex_lock(&g_fpgainfo.pe_data->mutex);
   if (ERROR == g_fpgainfo.pe_data->pes[PE_IDX_BYPASS]->status) {
     ret = -EIO;
@@ -567,7 +647,8 @@ int PerformBypass(const struct BypassArgs &args) {
     pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
     return ret;
   }
-
+  reg_writeq(reg_ActivationArgs,
+             REG_ACTIVATION_MODE_AND_LEAKY_RELU_FACTOR);  // active functoion
   reg_writeq(output_scale, REG_SCALE_PARAMETER);
   reg_writeq(input_address_phy, REG_CONVERT_SRC_ADDR);
   reg_writeq(output_address_phy, REG_CONVERT_DST_ADDR);
@@ -585,6 +666,7 @@ int PerformBypass(const struct BypassArgs &args) {
   output_scale = reg_readq(REG_SCALE_PARAMETER);
   output_scale = (output_scale << 32) | (output_scale >> 32);
   fpga_copy(args.output.scale_address, &output_scale, sizeof(float) * 2);
+  reg_writeq(reg_ActivationArgs, REG_ACTIVATION_MODE_AND_LEAKY_RELU_FACTOR);
   pthread_mutex_unlock(&g_fpgainfo.pe_data->mutex);
   return ret;
 #endif
@@ -808,7 +890,7 @@ int ComputeFPGASplit(const struct SplitArgs &args) {
 int ComputeDWConv(const struct DWconvArgs &args) {
 #ifdef FPGA_PRINT_MODE
   DLOG << "=============ComputeDWConv===========";
-  DLOG << "   mode:" << args.relu_enabled;
+  // DLOG << "   mode:" << args.relu_enabled;
   DLOG << "   image_address:" << args.image.address
        << "   image_scale_address:" << args.image.scale_address
        << "   image_channels:" << args.image.channels
@@ -831,7 +913,8 @@ int ComputeDWConv(const struct DWconvArgs &args) {
   uint64_t output_scale = 0;
   uint64_t timer_cnt = 0;
   int ret = 0;
-  uint64_t cmd = args.relu_enabled;
+  // uint64_t cmd = args.relu_enabled;
+  uint64_t cmd = 0;
   uint64_t image_physical_address = 0;
   uint64_t output_physical_address = 0;
   uint64_t filter_physical_address = 0;

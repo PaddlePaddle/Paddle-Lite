@@ -26,7 +26,6 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
   auto input_ptr = input->data<float>();
   auto out = param->Out();
   fpga::format_fp32_ofm(out);
-
   auto float_input = new Tensor;
   if (input->dims().size() == 2) {
     float_input->mutable_data<float>({1, input->dims()[1]});
@@ -36,7 +35,6 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
   } else {
     DLOG << "wrong dimension of softmax input";
   }
-
   fpga::format_fp32_ofm(float_input);
   fpga::BypassArgs args = {fpga::DATA_TYPE_FP16};
   args.input_layout_type = fpga::LAYOUT_HWC;
@@ -53,6 +51,7 @@ bool SoftmaxKernel<FPGA, float>::Init(SoftmaxParam<FPGA> *param) {
   args.output.scale_address = float_input->scale;
   param->SetFloatInput(float_input);
   param->SetFpgaArgs(args);
+
   return true;
 }
 
