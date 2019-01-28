@@ -17,7 +17,7 @@ import Metal
 
 class ElementwiseAddPreluParam<P: PrecisionType>: OpParam {
   //typealias ParamPrecisionType = P
-  required init(opDesc: OpDesc, inScope: Scope) throws {
+  required init(opDesc: PMOpDesc, inScope: Scope) throws {
     do {
       alpha = try ElementwiseAddPreluParam.paramInputAlpha(inputs: opDesc.paraInputs, from: inScope)
       mode = try ElementwiseAddPreluParam.getAttr(key: "mode", attrs: opDesc.attrs)

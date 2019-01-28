@@ -25,8 +25,8 @@ class Node {
   var inputs: [Node] = []
   var outputs: [Node] = []
   var type: String
-  var opDesc: OpDesc?
-  init(inOpDesc: OpDesc) {
+  var opDesc: PMOpDesc?
+  init(inOpDesc: PMOpDesc) {
     type = inOpDesc.type
     opDesc = inOpDesc
   }
@@ -192,7 +192,7 @@ class ProgramOptimize<P: PrecisionType> {
                                   ElementwiseAddPreluOp<P>.self
   ]
   
-  func optimize(originProgramDesc: ProgramDesc) -> ProgramDesc {
+  func optimize(originProgramDesc: PMProgramDesc) -> PMProgramDesc {
     
     guard originProgramDesc.blocks.count == 1 else {
       fatalError(" not support yet")
@@ -287,13 +287,13 @@ class ProgramOptimize<P: PrecisionType> {
       }
     }
     
-    var ops: [OpDesc] = []
+    var ops: [PMOpDesc] = []
     for node in nodes {
       ops.append(node.opDesc!)
     }
     
-    var newProgramDesc = ProgramDesc.init()
-    let newBlock = BlockDesc.init(inVars: block.vars, inOps: ops)
+    var newProgramDesc = PMProgramDesc.init()
+    let newBlock = PMBlockDesc.init(inVars: block.vars, inOps: ops)
     newProgramDesc.blocks.append(newBlock)
     return newProgramDesc
   }
