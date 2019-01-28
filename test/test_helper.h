@@ -83,6 +83,26 @@ void SetupTensor(paddle_mobile::framework::Tensor *input,
   }
 }
 
+template <>
+void SetupTensor<bool>(paddle_mobile::framework::Tensor *input,
+                       paddle_mobile::framework::DDim dims, bool lower,
+                       bool upper) {
+  static unsigned int seed = 100;
+  std::mt19937 rng(seed++);
+  std::uniform_real_distribution<double> uniform_dist(0, 1);
+
+  bool *input_ptr = input->mutable_data<bool>(dims);
+  if (lower == upper) {
+    for (int i = 0; i < input->numel(); ++i) {
+      input_ptr[i] = lower;
+    }
+  } else {
+    for (int i = 0; i < input->numel(); ++i) {
+      input_ptr[i] = uniform_dist(rng) > 0.5;
+    }
+  }
+}
+
 template <typename T>
 T *CreateInput(Tensor *input, DDim dims, T low, T up) {
   SetupTensor<T>(input, dims, static_cast<float>(low), static_cast<float>(up));

@@ -1078,6 +1078,20 @@ class SigmoidParam : public OpParam {
  private:
   RType *input_x_;
   RType *out_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  std::shared_ptr<RType> float_input_x_;
+  fpga::BypassArgs fpga_bypass_args;
+
+ public:
+  RType *FloatInput() const {
+    return float_input_x_ == nullptr ? input_x_ : float_input_x_.get();
+  }
+  void SetFloatInput(Tensor *input) { float_input_x_.reset(input); }
+  const fpga::BypassArgs &FpgaArgs() const { return fpga_bypass_args; }
+  void SetFpgaArgs(const fpga::BypassArgs &args) { fpga_bypass_args = args; }
+#endif
 };
 #endif
 
@@ -2357,10 +2371,17 @@ class ConvTransposeParam : public OpParam {
 
  private:
   fpga::DeconvArgs fpga_conv_args;
+  fpga::DWDeconvArgs fpga_DWDeconv_args;
 
  public:
   const fpga::DeconvArgs &FpgaArgs() const { return fpga_conv_args; }
+  const fpga::DWDeconvArgs &FpgaDWDconvArgs() const {
+    return fpga_DWDeconv_args;
+  }
   void SetFpgaArgs(const fpga::DeconvArgs &args) { fpga_conv_args = args; }
+  void SetFpgaArgs(const fpga::DWDeconvArgs &args) {
+    fpga_DWDeconv_args = args;
+  }
 #endif
 };
 
@@ -2941,6 +2962,113 @@ class CompareParam : public OpParam {
   int axis_;
 };
 #endif  // LESS_THAN_OP
+
+#if defined(LOGICAL_AND_OP) || defined(LOGICAL_OR_OP) || defined(LOGICAL_XOR_OP)
+template <typename Dtype>
+class LogicalBinaryParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  LogicalBinaryParam(const VariableNameMap &inputs,
+                     const VariableNameMap &outputs, const AttributeMap &attrs,
+                     const Scope &scope) {
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    input_y_ = InputYFrom<GType>(inputs, scope);
+    output_ = OutFrom<GType>(outputs, scope);
+  }
+
+  const GType *InputX() const { return input_x_; }
+  const GType *InputY() const { return input_y_; }
+  GType *Out() const { return output_; }
+
+ public:
+  GType *input_x_;
+  GType *input_y_;
+  GType *output_;
+};
+#endif  // LOGICAL_AND_OP LOGICAL_OR_OP LOGICAL_XOR_OP
+
+#ifdef LOGICAL_NOT_OP
+template <typename Dtype>
+class LogicalUnaryParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  LogicalUnaryParam(const VariableNameMap &inputs,
+                    const VariableNameMap &outputs, const AttributeMap &attrs,
+                    const Scope &scope) {
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    output_ = OutFrom<GType>(outputs, scope);
+  }
+
+  const GType *InputX() const { return input_x_; }
+  GType *Out() const { return output_; }
+
+ public:
+  GType *input_x_;
+  GType *output_;
+};
+#endif  // LOGICAL_NOT_OP
+
+// #ifdef WHILE_OP
+// template <typename Dtype>
+// class WhileParam : public OpParam {
+//  public:
+//   WhileParam(const VariableNameMap &inputs,
+//              const VariableNameMap &outputs, const AttributeMap &attrs,
+//              const Scope &scope) {
+//     cond_ = OpParam::GetVarValue<framework::LoDTensor>("Condition", inputs,
+//     scope); block_desc_ = OpParam::GetAttr<framework::BlockDesc
+//     *>("sub_block", attrs);
+//   }
+//
+//  public:
+//   framework::LoDTensor *cond_;
+//   const framework::BlockDesc *block_desc_;
+// };
+// #endif  // WHILE_OP
+
+#ifdef WRITE_TO_ARRAY_OP
+template <typename Dtype>
+class WriteToArrayParam : public OpParam {
+ public:
+  WriteToArrayParam(const VariableNameMap &inputs,
+                    const VariableNameMap &outputs, const AttributeMap &attrs,
+                    const Scope &scope) {
+    input_ = OpParam::GetVarValue<framework::LoDTensor>("X", inputs, scope);
+    index_ = OpParam::GetVarValue<framework::LoDTensor>("I", inputs, scope);
+    output_ =
+        OpParam::GetVarValue<framework::LoDTensorArray>("Out", outputs, scope);
+  }
+
+ public:
+  framework::LoDTensor *input_;
+  framework::LoDTensor *index_;
+  framework::LoDTensorArray *output_;
+};
+#endif
+
+#ifdef READ_FROM_ARRAY_OP
+template <typename Dtype>
+class ReadFromArrayParam : public OpParam {
+ public:
+  ReadFromArrayParam(const VariableNameMap &inputs,
+                     const VariableNameMap &outputs, const AttributeMap &attrs,
+                     const Scope &scope) {
+    input_ =
+        OpParam::GetVarValue<framework::LoDTensorArray>("X", inputs, scope);
+    index_ = OpParam::GetVarValue<framework::LoDTensor>("I", inputs, scope);
+    output_ = OpParam::GetVarValue<framework::LoDTensor>("Out", outputs, scope);
+  }
+
+ public:
+  framework::LoDTensorArray *input_;
+  framework::LoDTensor *index_;
+  framework::LoDTensor *output_;
+};
+#endif
 
 }  // namespace operators
 }  // namespace paddle_mobile

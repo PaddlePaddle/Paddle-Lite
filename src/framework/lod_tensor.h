@@ -176,6 +176,8 @@ LoDTensor LodExpand(const LoDTensor &source, const LoD &lod, size_t level) {
   return tensor;
 }
 
+using LoDTensorArray = std::vector<LoDTensor>;
+
 // Get the absolute offset of a lod[start_level][start_idx:end_idx] and
 // relative length of details for every levels(i.e., [start_level: ]).
 //
