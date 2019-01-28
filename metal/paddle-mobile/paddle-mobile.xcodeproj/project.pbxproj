@@ -94,6 +94,7 @@
 		FCA67CD7213827AC00BD58AA /* ConvAddBNReluKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCA67CD6213827AC00BD58AA /* ConvAddBNReluKernel.metal */; };
 		FCA67CD92138287B00BD58AA /* ConvBNReluKernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCA67CD82138287B00BD58AA /* ConvBNReluKernel.metal */; };
 		FCB40E5921E0DCAB0075EC91 /* FetchKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCB40E5821E0DCAB0075EC91 /* FetchKernel.swift */; };
+		FCB91DC221FEEE990051C6B2 /* BufferToTexture.metal in Sources */ = {isa = PBXBuildFile; fileRef = FCB91DC121FEEE990051C6B2 /* BufferToTexture.metal */; };
 		FCBCCC572122F41300D94F7E /* DwConvBNReluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCBCCC562122F41300D94F7E /* DwConvBNReluOp.swift */; };
 		FCBCCC592122F42700D94F7E /* ConvBNReluOp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCBCCC582122F42700D94F7E /* ConvBNReluOp.swift */; };
 		FCBCCC5B2122F66F00D94F7E /* ConvBNReluKernel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCBCCC5A2122F66F00D94F7E /* ConvBNReluKernel.swift */; };
@@ -231,6 +232,7 @@
 		FCA67CD6213827AC00BD58AA /* ConvAddBNReluKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ConvAddBNReluKernel.metal; sourceTree = "<group>"; };
 		FCA67CD82138287B00BD58AA /* ConvBNReluKernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ConvBNReluKernel.metal; sourceTree = "<group>"; };
 		FCB40E5821E0DCAB0075EC91 /* FetchKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchKernel.swift; sourceTree = "<group>"; };
+		FCB91DC121FEEE990051C6B2 /* BufferToTexture.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = BufferToTexture.metal; sourceTree = "<group>"; };
 		FCBCCC562122F41300D94F7E /* DwConvBNReluOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DwConvBNReluOp.swift; sourceTree = "<group>"; };
 		FCBCCC582122F42700D94F7E /* ConvBNReluOp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvBNReluOp.swift; sourceTree = "<group>"; };
 		FCBCCC5A2122F66F00D94F7E /* ConvBNReluKernel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvBNReluKernel.swift; sourceTree = "<group>"; };
@@ -499,6 +501,7 @@
 		FCEB6837212F00B100D2448E /* metal */ = {
 			isa = PBXGroup;
 			children = (
+				FCB91DC121FEEE990051C6B2 /* BufferToTexture.metal */,
 				4AF928812135673D005B6C3A /* ConcatKernel.metal */,
 				4AA1EA9D2148D6F900D0F791 /* ConcatKernel.inc.metal */,
 				4AF9288321357BE3005B6C3A /* Elementwise.metal */,
@@ -565,7 +568,6 @@
 				FC039B6620E11C3C0081E9F8 /* Frameworks */,
 				FC039B6720E11C3C0081E9F8 /* Headers */,
 				FC039B6820E11C3C0081E9F8 /* Resources */,
-				D5CF176900BA02D0A10F4313 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -634,26 +636,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n";
-			showEnvVarsInLog = 0;
-		};
-		D5CF176900BA02D0A10F4313 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/../Pods/Target Support Files/Pods-paddle-mobile/Pods-paddle-mobile-resources.sh\"\n";
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -694,6 +677,7 @@
 				FCA67CD52138272900BD58AA /* ConvAddMetal.metal in Sources */,
 				FCBCCC5B2122F66F00D94F7E /* ConvBNReluKernel.swift in Sources */,
 				4AA1EA8C2146640900D0F791 /* SplitOp.swift in Sources */,
+				FCB91DC221FEEE990051C6B2 /* BufferToTexture.metal in Sources */,
 				4AA1EAAC214F55C800D0F791 /* Softmax.inc.metal in Sources */,
 				FC0E2DC020EE461F009C1FAC /* ElementwiseAddKernel.swift in Sources */,
 				4AF928772133F1DB005B6C3A /* BoxCoder.metal in Sources */,
