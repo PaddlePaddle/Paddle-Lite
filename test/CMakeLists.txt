@@ -30,6 +30,10 @@ if (CON GREATER -1)
     target_link_libraries(test-mobilenet-combine paddle-mobile)
     set(FOUND_MATCH ON)
 
+    # gen test
+    ADD_EXECUTABLE(test-mobilenetgpu  net/test_mobilenet_GPU.cpp test_helper.h  test_include.h)
+    target_link_libraries(test-mobilenetgpu paddle-mobile)
+
 endif ()
 
 list(FIND NET "yolo" CON)
@@ -416,5 +420,21 @@ if (NOT FOUND_MATCH)
     # gen test
     ADD_EXECUTABLE(test-vgg16ssd net/test_vgg16ssd.cpp test_helper.h test_include.h)
     target_link_libraries(test-vgg16ssd paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-logical-and-op operators/test_logical_and_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-logical-and-op paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-logical-or-op operators/test_logical_or_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-logical-or-op paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-logical-not-op operators/test_logical_not_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-logical-not-op paddle-mobile)
+
+    # gen test
+    ADD_EXECUTABLE(test-logical-xor-op operators/test_logical_xor_op.cpp test_helper.h test_include.h)
+    target_link_libraries(test-logical-xor-op paddle-mobile)
 
 endif ()

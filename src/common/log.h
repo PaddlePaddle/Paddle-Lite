@@ -85,18 +85,18 @@ struct Print {
 
  private:
   void print(LogLevel level) {
-    buffer_ << std::endl;
+    // buffer_ << std::endl;
     if (level == kLOG_ERROR) {
-      std::cerr << buffer_.str();
+      std::cerr << buffer_.str() << std::endl;
     } else {
-      std::cout << buffer_.str();
+      std::cout << buffer_.str() << std::endl;
     }
   }
   std::ostringstream buffer_;
 };
 
 struct ToLog {
-  ToLog(LogLevel level = kLOG_DEBUG, const std::string &info = "")
+  explicit ToLog(LogLevel level = kLOG_DEBUG, const std::string &info = "")
       : level_(level) {
     unsigned blanks =
         (unsigned)(level > kLOG_DEBUG ? (level - kLOG_DEBUG) * 4 : 1);
@@ -175,11 +175,8 @@ struct Print {
   friend struct ToLog;
   template <typename T>
   Print &operator<<(T const &value) {
-    Print p = Print();
-    return p;
+    return *this;
   }
-
- private:
 };
 
 struct ToLog {
