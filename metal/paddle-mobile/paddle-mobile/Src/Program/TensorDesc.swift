@@ -52,9 +52,19 @@ class TensorDesc {
         }
     }
     
-    init(protoTensorDesc: PaddleMobile_Framework_Proto_VarType.TensorDesc) {
-        dims = protoTensorDesc.dims.map{ Int($0) > 0 ? Int($0) : abs(Int($0)) }
-        dataType = VarTypeType.init(rawValue: protoTensorDesc.dataType.rawValue) ?? .ErrorType
+    init(protoTensorDesc: VarType_TensorDesc) {
+        //        dims = protoTensorDesc.dimsArray.map{ Int64($0)! > 0 ? Int64($0) : abs(Int64($0)) }
+        
+        var dimsArray = [Int]()
+        
+        let dimsCount = protoTensorDesc.dimsArray.count
+        for i in 0..<dimsCount {
+            let dim = Int(protoTensorDesc.dimsArray.value(at: i)) > 0 ?Int(protoTensorDesc.dimsArray.value(at: i)) :abs(Int(protoTensorDesc.dimsArray.value(at: i)))
+            dimsArray.append(dim)
+        }
+        dims = dimsArray
+        
+        dataType = VarTypeType.init(rawValue: Int(protoTensorDesc.dataType.rawValue)) ?? .ErrorType
     }
     
 }
