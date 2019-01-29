@@ -16,7 +16,7 @@ import Foundation
 
 class ShapeParam<P: PrecisionType>: OpParam {
  // typealias ParamPrecisionType = P
-  required init(opDesc: OpDesc, inScope: Scope) throws {
+  required init(opDesc: PMOpDesc, inScope: Scope) throws {
     do {
       input = try ShapeParam.input(inputs: opDesc.inputs, from: inScope)
       output = try ShapeParam.outputOut(outputs: opDesc.outputs, from: inScope)

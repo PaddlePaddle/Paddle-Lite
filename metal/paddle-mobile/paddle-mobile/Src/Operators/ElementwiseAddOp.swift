@@ -17,7 +17,7 @@ import Metal
 
 class ElementwiseAddParam<P: PrecisionType>: OpParam {
   //typealias ParamPrecisionType = P
-  required init(opDesc: OpDesc, inScope: Scope) throws {
+  required init(opDesc: PMOpDesc, inScope: Scope) throws {
     do {
       inputX = try ElementwiseAddParam.inputX(inputs: opDesc.inputs, from: inScope)
       output = try ElementwiseAddParam.outputOut(outputs: opDesc.outputs, from: inScope)
