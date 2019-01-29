@@ -45,6 +45,7 @@ enum ActivationType {
   LEAKYRELU = 1,
   SIGMOID = 2,
   TANH = 3,
+  SOFTMAX = 4,
 };
 
 struct ActivationArgs {
@@ -132,7 +133,7 @@ struct DeconvTxParm {
 #endif
 
 struct ConvArgs {
-  bool relu_enabled;
+  // bool relu_enabled;
   void* sb_address;  // scale and bias
   void* filter_address;
   float* filter_scale_address;
@@ -198,7 +199,7 @@ struct PoolingArgs {
 };
 
 struct EWAddArgs {
-  bool relu_enabled;
+  // bool relu_enabled;
   uint32_t const0;  // output0 = const0 x input0 + const1 x input1;
   uint32_t const1;
   struct ImageInputArgs image0;
@@ -230,7 +231,7 @@ struct DeconvArgs {
 };
 struct DWconvArgs {
   uint32_t sub_conv_num;
-  bool relu_enabled;
+  // bool relu_enabled;
   void* bias_address;
   void* filter_address;
   struct KernelArgs kernel;

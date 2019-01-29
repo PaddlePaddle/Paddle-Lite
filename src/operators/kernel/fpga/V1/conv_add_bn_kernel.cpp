@@ -22,7 +22,10 @@ namespace operators {
 
 template <>
 bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam<FPGA> *param) {
-  bool relu_enabled = false;
+  // bool relu_enabled = false;
+  paddle_mobile::fpga::ActivationType activation_enable =
+      paddle_mobile::fpga::NONE;
+  int16_t leaky_relu_negative_slope = 0;
   auto input = const_cast<Tensor *>(param->Input());
 
   auto bias = param->Bias();
@@ -61,10 +64,10 @@ bool ConvAddBNKernel<FPGA, float>::Init(FusionConvAddBNParam<FPGA> *param) {
 
   fpga::format_conv_data(filter, out, &bs_ptr, param->Groups());
   fpga::SplitConvArgs conv_arg = {0};
-  fpga::fill_split_arg(&conv_arg, input, out, filter, relu_enabled,
-                       param->Groups(), param->Strides()[0],
-                       param->Strides()[1], param->Paddings()[0],
-                       param->Paddings()[1], bs_ptr);
+  fpga::fill_split_arg(&conv_arg, input, out, filter, activation_enable,
+                       leaky_relu_negative_slope, param->Groups(),
+                       param->Strides()[0], param->Strides()[1],
+                       param->Paddings()[0], param->Paddings()[1], bs_ptr);
   param->SetFpgaArgs(conv_arg);
 
   return true;
