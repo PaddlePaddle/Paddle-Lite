@@ -1498,33 +1498,20 @@ class SliceParam : public OpParam {
  public:
   SliceParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
              const AttributeMap &attrs, const Scope &scope) {
-    input_x_ = InputXFrom<GType>(inputs, scope);
-    input_shape_ = InputShapeFrom<GType>(inputs, scope);
-    out_ = OutFrom<GType>(outputs, scope);
-    axis_ = GetAttr<int>("axis", attrs);
-    slice_points_ = GetAttr<vector<int>>("slice_points", attrs);
-    inplace_ = GetAttr<bool>("inplace", attrs);
+    input_ = InputFrom<GType>(inputs, scope);
+    output_ = OutFrom<GType>(outputs, scope);
+
+    axes_ = GetAttr<std::vector<int>>("axes", attrs);
+    starts_ = GetAttr<std::vector<int>>("starts", attrs);
+    ends_ = GetAttr<std::vector<int>>("ends", attrs);
   }
 
-  const RType *InputX() const { return input_x_; }
-
-  const RType *InputShape() const { return input_shape_; }
-
-  RType *Out() const { return out_; }
-
-  const int &Axis() const { return axis_; }
-
-  const vector<int> &SlicePoints() const { return slice_points_; }
-
-  const bool &Inplace() const { return inplace_; }
-
- private:
-  RType *input_x_;
-  RType *input_shape_;
-  RType *out_;
-  int axis_;
-  vector<int> slice_points_;
-  bool inplace_;
+ public:
+  GType *input_;
+  GType *output_;
+  std::vector<int> axes_;
+  std::vector<int> starts_;
+  std::vector<int> ends_;
 };
 #endif
 
