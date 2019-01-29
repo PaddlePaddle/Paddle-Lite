@@ -19,7 +19,6 @@ limitations under the License. */
 #include "fpga/V1/filter.h"
 // #include "filter.h"
 #include "fpga/V1/api.h"
-// #include "fpga_api.h"
 
 namespace paddle_mobile {
 namespace fpga {
