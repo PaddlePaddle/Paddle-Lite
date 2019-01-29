@@ -76,6 +76,5 @@ int main() {
   paddle_mobile::TestSigmoidOp({1, 1, 2, 3});
   paddle_mobile::TestSigmoidOp({1, 3, 11, 22});
   paddle_mobile::TestSigmoidOp({1, 32, 112, 112});
-  std::cout << "test sigmoid op pass." << std::endl;
   return 0;
 }
