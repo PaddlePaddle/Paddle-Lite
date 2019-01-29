@@ -194,6 +194,11 @@ extern const char *G_OP_TYPE_SEQUENCE_EXPAND;
 extern const char *G_OP_TYPE_SEQUENCE_POOL;
 extern const char *G_OP_TYPE_SEQUENCE_SOFTMAX;
 
+extern const char *G_OP_TYPE_SLICE;
+extern const char *G_OP_TYPE_ANCHOR_GENERATOR;
+extern const char *G_OP_TYPE_GENERATE_PROPOSALS;
+extern const char *G_OP_TYPE_PSROI_POOL;
+
 extern std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
     op_input_output_key;

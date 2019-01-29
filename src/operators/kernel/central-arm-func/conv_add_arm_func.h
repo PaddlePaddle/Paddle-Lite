@@ -30,10 +30,11 @@ void ConvAddBasic(const FusionConvAddParam<CPU> &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
   Tensor bias = *param.Bias();
-  int axis = param.Axis();
   Tensor *output = param.Output();
+  output->mutable_data<float>();
   float *biase_data = bias.data<float>();
 
+  int axis = param.Axis();
   int groups = param.Groups();
   std::vector<int> strides = param.Strides();
   std::vector<int> paddings = param.Paddings();
