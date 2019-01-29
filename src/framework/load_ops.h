@@ -306,3 +306,12 @@ LOAD_OP1(write_to_array, CPU);
 #ifdef READ_FROM_ARRAY_OP
 LOAD_OP1(read_from_array, CPU);
 #endif
+#ifdef ANCHOR_GENERATOR_OP
+LOAD_OP1(anchor_generator, CPU);
+#endif
+#ifdef PROPOSAL_OP
+LOAD_OP1(generate_proposals, CPU);
+#endif
+#ifdef PSROI_POOL_OP
+LOAD_OP1(psroi_pool, CPU);
+#endif
