@@ -56,13 +56,13 @@ public enum VarTypeType: Int {
     }
 }
 
-public class VarDesc {
+public class PMVarDesc {
     public let name: String
     public let persistable: Bool
     public let type: VarTypeType
     let tensorDesc: TensorDesc?
-    init(protoVarDesc: PaddleMobile_Framework_Proto_VarDesc) {
-        type = VarTypeType.init(rawValue: protoVarDesc.type.type.rawValue) ?? .ErrorType
+    init(protoVarDesc: VarDesc) {
+        type = VarTypeType.init(rawValue: Int(protoVarDesc.type.type.rawValue)) ?? .ErrorType
         name = protoVarDesc.name
         persistable = protoVarDesc.persistable
         switch type {
@@ -71,14 +71,14 @@ public class VarDesc {
         case .LodTensor:
             tensorDesc = TensorDesc.init(protoTensorDesc: protoVarDesc.type.lodTensor.tensor)
         case .StepLodTensorArray:
-            tensorDesc = TensorDesc.init(protoTensorDesc: protoVarDesc.type.tensorArray.tensor);
+            tensorDesc = TensorDesc.init(protoTensorDesc: protoVarDesc.type.tensorArray_p.tensor);
         default:
             tensorDesc = .none
         }
     }
 }
 
-extension VarDesc: CustomStringConvertible, CustomDebugStringConvertible {
+extension PMVarDesc: CustomStringConvertible, CustomDebugStringConvertible {
   public var description: String {
         var str = ""
         str += "var name \(name): \n"
