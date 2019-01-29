@@ -83,6 +83,8 @@ const char *G_OP_TYPE_LOGICAL_NOT = "logical_not";
 const char *G_OP_TYPE_LOGICAL_XOR = "logical_xor";
 const char *G_OP_TYPE_WRITE_TO_ARRAY = "write_to_array";
 const char *G_OP_TYPE_READ_FROM_ARRAY = "read_from_array";
+const char *G_OP_TYPE_IS_EMPTY = "is_empty";
+const char *G_OP_TYPE_INCREMENT = "increment";
 
 const char *G_OP_TYPE_QUANTIZE = "quantize";
 const char *G_OP_TYPE_DEQUANTIZE = "dequantize";
@@ -199,6 +201,8 @@ std::unordered_map<
         {G_OP_TYPE_LOGICAL_NOT, {{"X"}, {"Out"}}},
         {G_OP_TYPE_WRITE_TO_ARRAY, {{"X", "I"}, {"Out"}}},
         {G_OP_TYPE_READ_FROM_ARRAY, {{"X", "I"}, {"Out"}}},
+        {G_OP_TYPE_IS_EMPTY, {{"X"}, {"Out"}}},
+        {G_OP_TYPE_INCREMENT, {{"X"}, {"Out"}}},
         {G_OP_TYPE_SLICE, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_ANCHOR_GENERATOR, {{"Input"}, {"Anchors", "Variances"}}},
         {G_OP_TYPE_GENERATE_PROPOSALS,
