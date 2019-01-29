@@ -14,11 +14,11 @@
 
 import Foundation
 
-public class ProgramDesc {
-    public var blocks: [BlockDesc] = []
-    init(protoProgram: PaddleMobile_Framework_Proto_ProgramDesc) {
-        for block in protoProgram.blocks {
-            self.blocks.append(BlockDesc.init(block: block))
+public class PMProgramDesc {
+    public var blocks: [PMBlockDesc] = []
+    init(protoProgram: ProgramDesc) {
+        for block in protoProgram.blocksArray {
+            self.blocks.append(PMBlockDesc.init(block: block as! BlockDesc))
         }
     }
     
@@ -26,7 +26,7 @@ public class ProgramDesc {
     }
 }
 
-extension ProgramDesc: CustomStringConvertible, CustomDebugStringConvertible {
+extension PMProgramDesc: CustomStringConvertible, CustomDebugStringConvertible {
     public var description: String {
         var str: String = ""
         for i in 0..<blocks.count {
