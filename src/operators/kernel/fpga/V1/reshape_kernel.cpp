@@ -22,6 +22,12 @@ namespace operators {
 template <>
 bool ReshapeKernel<FPGA, float>::Init(ReshapeParam<FPGA> *param) {
   param->Out()->ShareDataWith(*param->InputX());
+  const int in_n = param->InputX()->dims()[0];
+  const int in_c = param->InputX()->dims()[1];
+  const int in_h = param->InputX()->dims()[2];
+  const int in_w = param->InputX()->dims()[3];
+  auto out = param->Out();
+  out->Resize(framework::make_ddim({in_n, in_c * in_h * in_w}));
   return true;
 }
 

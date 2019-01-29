@@ -19,16 +19,6 @@ limitations under the License. */
 #include "fpga/V1/filter.h"
 // #include "filter.h"
 #include "fpga/V1/api.h"
-// #include "fpga_api.h"
-
-// just for test
-//#include <string>
-//#include "deconv.h"
-//#include "deconv_api.h"
-// using namespace std;
-// using namespace paddle_mobile::fpga;
-// using namespace baidu::fpga::deconv::api;
-// namespace api = baidu::fpga::deconv::api;
 
 namespace paddle_mobile {
 namespace fpga {
@@ -42,7 +32,8 @@ void deconv_inverse_filter(float** data_in, int num, int channel, int width,
   float* tmp = *data_in;
   int data_size = num * channel * width * height;
   int hw_len = height * width;
-  auto tmp_data = (float*)fpga_malloc(data_size * sizeof(float));
+  auto tmp_data =
+      reinterpret_cast<float*>(fpga_malloc(data_size * sizeof(float)));
   for (int i = 0; i < num; ++i) {
     for (int j = 0; j < channel; ++j) {
       for (int k = 0; k < hw_len; ++k) {
@@ -97,9 +88,10 @@ int deconv_get_omit(int stride, int filter_width, int pad) {
   return (stride - idx);
 }
 
-void deconv_get_sub_filter(char** data_in, int height, int width,
-                           int sub_conv_n, int kernel_num, int channel) {
-  char* ptr_tmp = *data_in;
+template <typename T>
+void deconv_get_sub_filter(T** data_in, int height, int width, int sub_conv_n,
+                           int kernel_num, int channel) {
+  T* ptr_tmp = *data_in;
   int sub_num = kernel_num * sub_conv_n;
   int sub_h = height / sub_conv_n;
   int sub_w = width / sub_conv_n;
@@ -107,7 +99,8 @@ void deconv_get_sub_filter(char** data_in, int height, int width,
   int sub_filter_size =
       kernel_num * sub_h * sub_w * channel * sub_conv_n * sub_conv_n;
 
-  char* ptr_sub_filter = (char*)fpga_malloc(sub_filter_size * sizeof(char));
+  T* ptr_sub_filter =
+      reinterpret_cast<T*>(fpga_malloc(sub_filter_size * sizeof(T)));
   for (int idx = 0; idx < sub_conv_n; ++idx) {
     for (int nn = 0; nn < sub_num; ++nn) {
       int ni = nn % kernel_num;
@@ -124,7 +117,7 @@ void deconv_get_sub_filter(char** data_in, int height, int width,
 
           fpga_copy(
               ptr_sub_filter + idx * sub_h * sub_w * channel * sub_num + sidx,
-              (*data_in) + kidx, channel * sizeof(char));
+              (*data_in) + kidx, channel * sizeof(T));
           // for (int cc =0; cc < channel; ++cc) {
           //     ptr_sub_filter[idx*sub_h*sub_w*channel*sub_num + sidx + cc] =
           //     (*data_in)[kidx + cc];
@@ -140,7 +133,7 @@ void deconv_get_sub_filter(char** data_in, int height, int width,
 void deconv_NC_convert(float** filter_in, int kernel_num, int channels,
                        int hw) {
   float* tmp = *filter_in;
-  float* ptr_filter = (float*)(paddle_mobile::fpga::fpga_malloc(
+  float* ptr_filter = reinterpret_cast<float*>(paddle_mobile::fpga::fpga_malloc(
       hw * kernel_num * channels * sizeof(float)));
 
   for (int c = 0; c < channels; ++c) {
@@ -188,7 +181,8 @@ void deconv_format_filter(float** data_in, int num, int channel, int height,
   result2);
   }*/
 
-  deconv_get_sub_filter(quantize_data, height, width, stride, num, channel);
+  deconv_get_sub_filter<char>(quantize_data, height, width, stride, num,
+                              channel);
   /*{
      char result2 = (char)0;
      string filename = "sub_filter_filter_data";
@@ -212,10 +206,12 @@ void deconv_format_filter(float** data_in, int num, int channel, int height,
                                 ((residual == 0) ? div_num : (div_num - 1)) +
                             align_to_x(residual, FILTER_NUM_ALIGNMENT);
 
-  char** ptr_ptr_data = (char**)fpga_malloc(sub_conv_n * sizeof(char*));
+  char** ptr_ptr_data =
+      reinterpret_cast<char**>(fpga_malloc(sub_conv_n * sizeof(char*)));
   int origin_offset = sub_chw * sub_num;
   for (int i = 0; i < sub_conv_n; ++i) {
-    (ptr_ptr_data)[i] = (char*)fpga_malloc(origin_offset * sizeof(char));
+    (ptr_ptr_data)[i] =
+        reinterpret_cast<char*>(fpga_malloc(origin_offset * sizeof(char)));
     fpga_copy((ptr_ptr_data)[i], (*quantize_data) + origin_offset * i,
               origin_offset * sizeof(char));
 
@@ -233,8 +229,8 @@ void deconv_format_filter(float** data_in, int num, int channel, int height,
 
   int align_offset =
       align_to_x(sub_chw, FILTER_ELEMENT_ALIGNMENT) * num_after_alignment;
-  char* ptr_space = (char*)fpga_malloc(sub_conv_n * align_offset *
-                                       sizeof(char));  // continuous space
+  char* ptr_space = reinterpret_cast<char*>(fpga_malloc(
+      sub_conv_n * align_offset * sizeof(char)));  // continuous space
   for (int i = 0; i < sub_conv_n; ++i) {
     char* ptr_tmp = (ptr_ptr_data)[i];
 
@@ -251,7 +247,7 @@ void deconv_format_filter(float** data_in, int num, int channel, int height,
     fpga_copy(ptr_space + i * align_offset, ptr_tmp, align_offset);
     fpga_free(ptr_tmp);
   }
-  *data_in = (float*)ptr_space;
+  *data_in = reinterpret_cast<float*>(ptr_space);
 
   /*    {
         char result2 = (char)0;
@@ -260,6 +256,22 @@ void deconv_format_filter(float** data_in, int num, int channel, int height,
      align_offset, result2);
       }*/
   fpga_flush(ptr_space, sub_conv_n * align_offset * sizeof(char));
+}
+
+void DWDconv_format_filter(float** data_in, int num, int channel, int height,
+                           int width, float* scale_ptr, int stride) {
+  deconv_inverse_filter(data_in, num, channel, width, height);
+
+  filter::quantize_to_fp16(data_in, channel, height, width, scale_ptr);
+  int16_t** quantize_data = (int16_t**)data_in;  // NOLINT
+  filter::convert_to_hwn(quantize_data, channel, height, width);
+
+  deconv_get_sub_filter<int16_t>(quantize_data, height, width, stride, num,
+                                 channel);
+
+  filter::align_element_n(quantize_data, channel, height, width);
+  fpga_flush(*quantize_data, align_to_x(channel, FILTER_ELEMENT_ALIGNMENT) *
+                                 height * width * sizeof(int16_t));
 }
 
 }  // namespace deconv_filter

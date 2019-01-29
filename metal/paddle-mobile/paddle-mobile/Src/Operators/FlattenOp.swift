@@ -16,7 +16,7 @@ import Foundation
 
 class FlattenParam<P: PrecisionType>: OpParam {
   //typealias ParamPrecisionType = P
-  required init(opDesc: OpDesc, inScope: Scope) throws {
+  required init(opDesc: PMOpDesc, inScope: Scope) throws {
     do {
       input = try FlattenParam.inputX(inputs: opDesc.inputs, from: inScope)
       output = try FlattenParam.outputOut(outputs: opDesc.outputs, from: inScope)

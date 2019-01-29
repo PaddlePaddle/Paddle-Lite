@@ -18,6 +18,7 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace fpga {
 
+uint64_t FPGAVersion();
 int PerformBypass(const struct BypassArgs& args);
 int ComputeBasicConv(const struct ConvArgs& args);
 int ComputeFpgaPool(const struct PoolingArgs& args);
@@ -28,5 +29,7 @@ int ComputeFPGAConcat(const struct ConcatArgs& args);
 int ComputeFPGASplit(const struct SplitArgs& args);
 int ComputeFpgaDeconv(const struct DeconvArgs& args);
 int ComputeDWConv(const struct DWconvArgs& args);
+int ComputeDWDeconv(const struct DWDeconvArgs& args);
+
 }  // namespace fpga
 }  // namespace paddle_mobile

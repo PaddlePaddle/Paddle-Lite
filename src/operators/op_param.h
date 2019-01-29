@@ -1078,6 +1078,15 @@ class SigmoidParam : public OpParam {
  private:
   RType *input_x_;
   RType *out_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  fpga::BypassArgs fpga_bypass_args;
+
+ public:
+  const fpga::BypassArgs &FpgaArgs() const { return fpga_bypass_args; }
+  void SetFpgaArgs(const fpga::BypassArgs &args) { fpga_bypass_args = args; }
+#endif
 };
 #endif
 
@@ -1200,6 +1209,20 @@ class FetchParam : public OpParam {
  private:
   RType *input_x_;
   Tensor *out_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ private:
+  std::shared_ptr<RType> float_input_x_;
+  fpga::BypassArgs fpga_bypass_args;
+
+ public:
+  RType *FloatInput() const {
+    return float_input_x_ == nullptr ? input_x_ : float_input_x_.get();
+  }
+  void SetFloatInput(Tensor *input) { float_input_x_.reset(input); }
+  const fpga::BypassArgs &FpgaArgs() const { return fpga_bypass_args; }
+  void SetFpgaArgs(const fpga::BypassArgs &args) { fpga_bypass_args = args; }
+#endif
 };
 
 #ifdef FILL_CONSTANT_OP
@@ -2344,10 +2367,17 @@ class ConvTransposeParam : public OpParam {
 
  private:
   fpga::DeconvArgs fpga_conv_args;
+  fpga::DWDeconvArgs fpga_DWDeconv_args;
 
  public:
   const fpga::DeconvArgs &FpgaArgs() const { return fpga_conv_args; }
+  const fpga::DWDeconvArgs &FpgaDWDconvArgs() const {
+    return fpga_DWDeconv_args;
+  }
   void SetFpgaArgs(const fpga::DeconvArgs &args) { fpga_conv_args = args; }
+  void SetFpgaArgs(const fpga::DWDeconvArgs &args) {
+    fpga_DWDeconv_args = args;
+  }
 #endif
 };
 

@@ -154,7 +154,6 @@ int memory_request(struct fpga_memory *memory, size_t size, uint64_t *addr) {
   unsigned int nr = (unsigned int)_nr;
   int ret = 0;
   uint64_t a_size = FPGA_PAGE_SIZE * nr;
-  DLOG << a_size;
 
   pthread_mutex_lock(&memory->mutex);
 
@@ -391,9 +390,6 @@ int fpga_invalidate_driver(void *address, size_t size) {
 
 void fpga_copy_driver(void *dest, const void *src, size_t num) {
   uint64_t i;
-
-  DLOG << "dest:" << dest << " src:" << src << " size:" << num;
-
   for (i = 0; i < num; i++) {
     *((int8_t *)dest + i) = *((int8_t *)src + i);  // NOLINT
   }
