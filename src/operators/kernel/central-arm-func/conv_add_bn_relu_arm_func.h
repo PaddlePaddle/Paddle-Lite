@@ -32,6 +32,8 @@ void ConvAddBNReluBasic(const FusionConvAddBNReluParam<CPU> &param) {
   Tensor new_bias = *param.NewBias();
   Tensor new_scale = *param.NewScale();
   Tensor *output = param.Output();
+  output->mutable_data<float>();
+
   int groups = param.Groups();
   std::vector<int> strides = param.Strides();
   std::vector<int> paddings = param.Paddings();
@@ -115,8 +117,6 @@ void ConvAddBNReluBasic(const FusionConvAddBNReluParam<CPU> &param) {
 
 template <typename P>
 void ConvAddBNReluCompute(const FusionConvAddBNReluParam<CPU> &param) {
-  Tensor Bias;
-  Bias.mutable_data<float>({param.Groups()});
   if (param.Groups() == param.Input()->dims()[1] &&
       param.Input()->dims()[1] == param.Output()->dims()[1] &&
       param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
