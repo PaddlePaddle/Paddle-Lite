@@ -346,9 +346,9 @@ void expand_conv_arg(ConvArgs *arg) {
   auto filter_pad_width_mul_channel =
       args.image.pad_width * args.image.channels;
   auto image_amount_per_row_multi_win_first =
-      image_amount_per_row * (4 * args.kernel.stride_h - args.image.pad_height);
+      image_amount_per_row * (2 * args.kernel.stride_h - args.image.pad_height);
   auto image_amount_per_row_multi_win =
-      image_amount_per_row * (4 * args.kernel.stride_h);
+      image_amount_per_row * (2 * args.kernel.stride_h);
 
   auto image_block_num = block_num;
   auto image_block_len =
@@ -375,7 +375,8 @@ void expand_conv_arg(ConvArgs *arg) {
       (512 / (align_to_x(args.filter_num, 4) / 4 * 2) > 2)
           ? (512 / (align_to_x(args.filter_num, 4) / 4 * 2) - 2)
           : 0;
-  auto cmd = 0UL | (args.relu_enabled ? USE_RELU : 0) | USE_BIAS;
+  // auto cmd = 0UL | (args.relu_enabled ? USE_RELU : 0) | USE_BIAS;
+  auto cmd = 0UL | USE_BIAS;
 
   auto deconv_param = ((args.deconv_tx_param.deconv_en) << 24) |
                       ((args.deconv_tx_param.sub_conv_num) << 16) |
@@ -413,7 +414,8 @@ void expand_conv_arg(ConvArgs *arg) {
 
 void expand_EW_arg(EWAddArgs *arg) {
   EWAddArgs args = *arg;
-  uint64_t cmd = args.relu_enabled ? USE_RELU : 0;
+  // uint64_t cmd = args.relu_enabled ? USE_RELU : 0;
+  uint64_t cmd = 0;
   uint64_t datalen = (uint64_t)args.image0.width *
                      (uint64_t)args.image0.height *
                      (uint64_t)args.image0.channels;
@@ -441,8 +443,10 @@ void expand_EW_arg(EWAddArgs *arg) {
 
 void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
                     framework::Tensor *out, framework::Tensor *filter,
-                    bool relu_enabled, int group_num, int stride_h,
-                    int stride_w, int padding_h, int padding_w, float *bs_ptr) {
+                    ActivationType activation_enable,
+                    int16_t leaky_relu_negative_slope, int group_num,
+                    int stride_h, int stride_w, int padding_h, int padding_w,
+                    float *bs_ptr) {
   auto input_ptr = input->data<float>();
   auto filter_ptr = filter->data<float>();
   auto out_ptr = out->data<float>();
@@ -488,7 +492,10 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
             filter->dims()[3]));
 
   for (int i = 0; i < n; i++) {
-    arg->conv_arg[i].relu_enabled = relu_enabled;
+    // arg->conv_arg[i].relu_enabled = relu_enabled;
+    arg->conv_arg[i].output.activation.activation_type = activation_enable;
+    arg->conv_arg[i].output.activation.leaky_relu_negative_slope =
+        leaky_relu_negative_slope;
     arg->conv_arg[i].group_num = (uint32_t)group_num;
     arg->conv_arg[i].kernel.stride_h = (uint32_t)stride_h;
     arg->conv_arg[i].kernel.stride_w = (uint32_t)stride_w;
@@ -560,8 +567,9 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
 
 void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
                      framework::Tensor *out, framework::Tensor *filter,
-                     bool relu_enabled, int group_num, int stride_h,
-                     int stride_w, int padding_h, int padding_w,
+                     ActivationType activation_enable,
+                     int16_t leaky_relu_negative_slope, int group_num,
+                     int stride_h, int stride_w, int padding_h, int padding_w,
                      float *bs_ptr) {
   auto input_ptr = input->data<float>();
   auto filter_ptr = filter->data<float>();
@@ -687,7 +695,13 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
     }
 
     for (int j = 0; j < split_num; ++j) {
-      arg->split_conv_args[i]->conv_arg[j].relu_enabled = relu_enabled;
+      // arg->split_conv_args[i]->conv_arg[j].relu_enabled = relu_enabled;
+      arg->split_conv_args[i]->conv_arg[j].output.activation.activation_type =
+          activation_enable;
+      arg->split_conv_args[i]
+          ->conv_arg[j]
+          .output.activation.leaky_relu_negative_slope =
+          leaky_relu_negative_slope;
       arg->split_conv_args[i]->conv_arg[j].group_num = (uint32_t)group_num;
 
       arg->split_conv_args[i]->conv_arg[j].kernel.width =
@@ -800,13 +814,17 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
 
 void fill_dwconv_arg(struct DWconvArgs *arg, framework::Tensor *input,
                      framework::Tensor *out, framework::Tensor *filter,
-                     bool relu_enabled, int stride_h, int stride_w,
-                     int padding_h, int padding_w, float *bias_ptr) {
+                     ActivationType activation_enable,
+                     int16_t leaky_relu_negative_slope, int stride_h,
+                     int stride_w, int padding_h, int padding_w,
+                     float *bias_ptr) {
   auto filter_ptr = filter->data<float>();
   auto input_ptr = input->data<float>();
   auto output_ptr = out->mutable_data<float>();
   arg->sub_conv_num = 1;
-  arg->relu_enabled = relu_enabled;
+  // arg->relu_enabled = relu_enabled;
+  arg->output.activation.activation_type = activation_enable;
+  arg->output.activation.leaky_relu_negative_slope = leaky_relu_negative_slope;
   arg->bias_address = bias_ptr;
   arg->filter_address = filter_ptr;
   arg->kernel.height = (uint32_t)filter->dims()[2];
@@ -826,8 +844,10 @@ void fill_dwconv_arg(struct DWconvArgs *arg, framework::Tensor *input,
 
 void fill_DWDeconv_arg(struct DWDeconvArgs *arg, framework::Tensor *input,
                        framework::Tensor *out, framework::Tensor *filter,
-                       bool relu_enabled, int stride_h, int stride_w,
-                       int padding_h, int padding_w, float *bias_ptr) {
+                       ActivationType activation_enable,
+                       int16_t leaky_relu_negative_slope, int stride_h,
+                       int stride_w, int padding_h, int padding_w,
+                       float *bias_ptr) {
   auto filter_ptr = filter->data<float>();
   auto input_ptr = input->data<float>();
   auto output_ptr = out->mutable_data<float>();
@@ -884,7 +904,10 @@ void fill_DWDeconv_arg(struct DWDeconvArgs *arg, framework::Tensor *input,
     arg->dw_conv_args.push_back(std::make_shared<DWconvArgs>());
 
     arg->dw_conv_args[i]->sub_conv_num = sub_conv_num;
-    arg->dw_conv_args[i]->relu_enabled = relu_enabled;
+    // arg->dw_conv_args[i]->relu_enabled = relu_enabled;
+    arg->dw_conv_args[i]->output.activation.activation_type = activation_enable;
+    arg->dw_conv_args[i]->output.activation.leaky_relu_negative_slope =
+        leaky_relu_negative_slope;
     arg->dw_conv_args[i]->bias_address = bias_ptr;
 
     arg->dw_conv_args[i]->filter_address =
