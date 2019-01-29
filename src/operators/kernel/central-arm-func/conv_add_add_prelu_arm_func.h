@@ -32,11 +32,11 @@ void ConvAddAddPReluCompute(const FusionConvAddAddPReluParam<CPU> &param) {
   Tensor filter = *param.Filter();
   Tensor bias = *param.Bias();
   Tensor bias1 = *param.Bias1();
-  int axis = param.Axis();
   Tensor *output = param.Output();
-
+  output->mutable_data<float>();
   float *biase_data = bias.data<float>();
 
+  int axis = param.Axis();
   int groups = param.Groups();
   std::vector<int> strides = param.Strides();
   std::vector<int> paddings = param.Paddings();

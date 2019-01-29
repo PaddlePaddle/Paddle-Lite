@@ -312,3 +312,12 @@ LOAD_OP1(is_empty, CPU);
 #ifdef INCREMENT_OP
 LOAD_OP1(increment, CPU);
 #endif
+#ifdef ANCHOR_GENERATOR_OP
+LOAD_OP1(anchor_generator, CPU);
+#endif
+#ifdef PROPOSAL_OP
+LOAD_OP1(generate_proposals, CPU);
+#endif
+#ifdef PSROI_POOL_OP
+LOAD_OP1(psroi_pool, CPU);
+#endif
