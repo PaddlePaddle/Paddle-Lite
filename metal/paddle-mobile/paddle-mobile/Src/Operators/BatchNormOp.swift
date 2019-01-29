@@ -17,7 +17,7 @@ import Metal
 
 class BatchNormParam<P: PrecisionType>: OpParam {
   //typealias ParamPrecisionType = P
-  required init(opDesc: OpDesc, inScope: Scope) throws {
+  required init(opDesc: PMOpDesc, inScope: Scope) throws {
     do {
       input = try BatchNormParam.inputX(inputs: opDesc.inputs, from: inScope)
       if input.transpose != [0, 2, 3, 1] {
