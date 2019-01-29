@@ -564,7 +564,7 @@ void DepthwiseConvAddBNRelu3x3s1p1(const framework::Tensor *input,
 #if __ARM_NEON
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
-  float *output_data = output->data<float>();
+  float *output_data = output->mutable_data<float>();
   const float *newscale_data = new_scale->data<float>();
   const float *newbias_data = new_bias->data<float>();
 
@@ -1309,7 +1309,7 @@ void DepthwiseConv3x3s2p1v2(const framework::Tensor *input,
 #if __ARM_NEON
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
-  float *output_data = output->data<float>();
+  float *output_data = output->mutable_data<float>();
   const float *bias_data;
   if (if_bias) {
     bias_data = bias->data<float>();
@@ -1729,7 +1729,7 @@ void DepthwiseConvAddBNRelu3x3s2p1v2(const framework::Tensor *input,
 
   const float *input_data = input->data<float>();
   const float *filter_data = filter->data<float>();
-  float *output_data = output->data<float>();
+  float *output_data = output->mutable_data<float>();
   const float *newscale_data = new_scale->data<float>();
   const float *newbias_data = new_bias->data<float>();
 
@@ -1978,6 +1978,7 @@ void DepthwiseConv3x3s2p0(const framework::Tensor *input,
   const int output_width = static_cast<int>(output->dims()[3]);
   const int inhxw = input_height * input_width;
   const int outhxw = output_height * output_width;
+  output->mutable_data<float>();
 
   float32x4_t zero = vdupq_n_f32(0.0);
   for (int b = 0; b < batch_size; b++) {

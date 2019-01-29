@@ -31,6 +31,10 @@ DEFINE_ACTIVATION_INFERSHAPE(Relu6);
 
 #ifdef SIGMOID_OP
 DEFINE_ACTIVATION_INFERSHAPE(Sigmoid);
+namespace ops = paddle_mobile::operators;
+#ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(sigmoid, ops::SigmoidOp);
+#endif
 #endif  // SIGMOID_OP
 
 #ifdef TANH_OP
