@@ -29,7 +29,7 @@ namespace driver {
 
 #define DIV_ROUND_UP(n, d) (((n) + (d)-1) / (d))
 
-#define FPGA_REG_PHY_ADDR 0xa0000000
+#define FPGA_REG_PHY_ADDR 0x80000000
 #define FPGA_REG_SIZE 0x1000
 #define FPGA_MEM_PHY_ADDR 0x40000000
 #define FPGA_MEM_SIZE 0x80000000

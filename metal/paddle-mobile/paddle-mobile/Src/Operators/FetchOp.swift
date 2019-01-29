@@ -19,7 +19,7 @@ class FetchParam<P: PrecisionType>: OpParam{
   var output: FetchHolder
   let input: Texture
   let scope: Scope
-  required init(opDesc: OpDesc, inScope: Scope) throws {
+  required init(opDesc: PMOpDesc, inScope: Scope) throws {
     scope = inScope
     do {
       input = try FetchParam.inputX(inputs: opDesc.inputs, from: inScope)
