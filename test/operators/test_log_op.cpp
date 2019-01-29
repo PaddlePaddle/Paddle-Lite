@@ -76,6 +76,5 @@ int main() {
   paddle_mobile::TestLogOp({1, 1, 2, 3});
   paddle_mobile::TestLogOp({1, 3, 11, 22});
   paddle_mobile::TestLogOp({1, 32, 112, 112});
-  std::cout << "test log op pass." << std::endl;
   return 0;
 }
