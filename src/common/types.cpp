@@ -104,6 +104,11 @@ const char *G_OP_TYPE_SEQUENCE_EXPAND = "sequence_expand";
 const char *G_OP_TYPE_SEQUENCE_POOL = "sequence_pool";
 const char *G_OP_TYPE_SEQUENCE_SOFTMAX = "sequence_softmax";
 
+const char *G_OP_TYPE_SLICE = "slice";
+const char *G_OP_TYPE_ANCHOR_GENERATOR = "anchor_generator";
+const char *G_OP_TYPE_GENERATE_PROPOSALS = "generate_proposals";
+const char *G_OP_TYPE_PSROI_POOL = "psroi_pool";
+
 std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
     op_input_output_key = {
@@ -193,5 +198,11 @@ std::unordered_map<
         {G_OP_TYPE_LOGICAL_XOR, {{"X", "Y"}, {"Out"}}},
         {G_OP_TYPE_LOGICAL_NOT, {{"X"}, {"Out"}}},
         {G_OP_TYPE_WRITE_TO_ARRAY, {{"X", "I"}, {"Out"}}},
-        {G_OP_TYPE_READ_FROM_ARRAY, {{"X", "I"}, {"Out"}}}};
+        {G_OP_TYPE_READ_FROM_ARRAY, {{"X", "I"}, {"Out"}}},
+        {G_OP_TYPE_SLICE, {{"Input"}, {"Out"}}},
+        {G_OP_TYPE_ANCHOR_GENERATOR, {{"Input"}, {"Anchors", "Variances"}}},
+        {G_OP_TYPE_GENERATE_PROPOSALS,
+         {{"Scores", "BboxDeltas", "ImInfo", "Anchors", "Variances"},
+          {"RpnRois", "RpnRoiProbs"}}},
+        {G_OP_TYPE_PSROI_POOL, {{"X", "ROIs"}, {"Out"}}}};
 }  // namespace paddle_mobile
