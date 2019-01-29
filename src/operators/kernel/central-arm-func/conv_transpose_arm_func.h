@@ -31,6 +31,7 @@ void ConvTransposeCompute(const ConvTransposeParam<CPU> &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
   Tensor *output = param.Output();
+  output->mutable_data<P>();
 
   auto strides = param.Strides();
   auto paddings = param.Paddings();
@@ -75,8 +76,6 @@ void ConvTransposeCompute(const ConvTransposeParam<CPU> &param) {
   // filter size: (m, c/g * k_h * k_w) or (m, c/g * k_d * k_h * k_w)
   framework::DDim filter_matrix_shape = {input->dims()[1], col_matrix_shape[0]};
   filter.Resize(filter_matrix_shape);
-
-  output->mutable_data<P>();
 
   int in_step = static_cast<int>(input->dims()[1]) / groups;
   int out_step = static_cast<int>(output->dims()[1]) / groups;
