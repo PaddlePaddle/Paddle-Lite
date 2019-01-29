@@ -5,21 +5,25 @@ workspace 'paddle-mobile.xcworkspace'
 
 target 'paddle-mobile-demo' do
 	project 'paddle-mobile-demo/paddle-mobile-demo.xcodeproj'
-    pod 'SwiftProtobuf', '~> 1.0'
+    # pod 'SwiftProtobuf', '~> 1.0'
+    pod 'Protobuf', '~> 3.0.0'
 end
 
 target 'paddle-mobile' do
 	project 'paddle-mobile/paddle-mobile.xcodeproj'
-	pod 'SwiftProtobuf', '~> 1.0'
+    # pod 'SwiftProtobuf', '~> 1.0'
+    pod 'Protobuf', '~> 3.0.0'
 end
 
 target 'paddle-mobile-unit-test' do
     project 'paddle-mobile-unit-test/paddle-mobile-unit-test.xcodeproj'
-    pod 'SwiftProtobuf', '~> 1.0'
+    # pod 'SwiftProtobuf', '~> 1.0'
+    pod 'Protobuf', '~> 3.0.0'
 end
 
 target 'MobileNetDemo' do
     project 'MobileNetDemo/MobileNetDemo.xcodeproj'
-    pod 'SwiftProtobuf', '~> 1.0'
+    # pod 'SwiftProtobuf', '~> 1.0'
+    pod 'Protobuf', '~> 3.0.0'
 end
 

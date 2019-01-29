@@ -16,7 +16,7 @@ import Foundation
 
 class PriorBoxParam<P: PrecisionType>: OpParam {
   //typealias ParamPrecisionType = P
-  required init(opDesc: OpDesc, inScope: Scope) throws {
+  required init(opDesc: PMOpDesc, inScope: Scope) throws {
     do {
       min_max_aspect_ratios_order = try PriorBoxParam.getAttr(key: "min_max_aspect_ratios_order", attrs: opDesc.attrs)
     } catch _ {

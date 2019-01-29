@@ -16,7 +16,7 @@ import Foundation
 
 class ConcatParam<P: PrecisionType>: OpParam {
   //typealias ParamPrecisionType = P
-  required init(opDesc: OpDesc, inScope: Scope) throws {
+  required init(opDesc: PMOpDesc, inScope: Scope) throws {
     do {
       guard let xlist = opDesc.inputs["X"] else {
         fatalError()

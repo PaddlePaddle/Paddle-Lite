@@ -16,7 +16,7 @@ import Foundation
 
 class PreluParam<P: PrecisionType>: OpParam {
   //typealias ParamPrecisionType = P
-  required init(opDesc: OpDesc, inScope: Scope) throws {
+  required init(opDesc: PMOpDesc, inScope: Scope) throws {
     do {
       input = try PreluParam.inputX(inputs: opDesc.inputs, from: inScope)
       output = try PreluParam.outputOut(outputs: opDesc.outputs, from: inScope)

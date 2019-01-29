@@ -24,7 +24,10 @@ namespace operators {
 template <>
 bool DeconvAddReluKernel<FPGA, float>::Init(
     FusionDeconvAddReluParam<FPGA> *param) {
-  bool relu_enabled = true;
+  // bool relu_enabled = true;
+  paddle_mobile::fpga::ActivationType activation_enable =
+      paddle_mobile::fpga::LEAKYRELU;
+  int16_t leaky_relu_negative_slope = 0;
   auto input = const_cast<Tensor *>(param->Input());
   const Tensor *bias = param->Bias();
   auto bias_ptr = bias->data<float>();
@@ -50,20 +53,36 @@ bool DeconvAddReluKernel<FPGA, float>::Init(
                         "filter width should be equal to filter height ");
   PADDLE_MOBILE_ENFORCE(((filter->dims()[2] % param->Strides()[0]) == 0),
                         "filter axis should be the multiple of stride axis ");
-  fpga::format_deconv_data(filter, out, &bs_ptr, param->Groups(), sub_conv_n);
-  fpga::DeconvArgs deconv_arg = {0};
-  fpga::fill_deconv_arg(&deconv_arg, input, out, filter, relu_enabled,
-                        param->Groups(), param->Strides()[0],
-                        param->Strides()[1], param->Paddings()[0],
-                        param->Paddings()[1], bs_ptr);
-  param->SetFpgaArgs(deconv_arg);
+  if (param->Groups() == channel) {
+    fpga::format_DWDeconv_data(filter, out, &bs_ptr, param->Groups(),
+                               sub_conv_n);
+    fpga::DWDeconvArgs DWDeconv_arg = {0};
+    fpga::fill_DWDeconv_arg(&DWDeconv_arg, input, out, filter,
+                            activation_enable, leaky_relu_negative_slope,
+                            param->Strides()[0], param->Strides()[1],
+                            param->Paddings()[0], param->Paddings()[1], bs_ptr);
+    param->SetFpgaArgs(DWDeconv_arg);
+  } else {
+    fpga::format_deconv_data(filter, out, &bs_ptr, param->Groups(), sub_conv_n);
+    fpga::DeconvArgs deconv_arg = {0};
+    fpga::fill_deconv_arg(&deconv_arg, input, out, filter, activation_enable,
+                          leaky_relu_negative_slope, param->Groups(),
+                          param->Strides()[0], param->Strides()[1],
+                          param->Paddings()[0], param->Paddings()[1], bs_ptr);
+    param->SetFpgaArgs(deconv_arg);
+  }
   return true;
 }
 
 template <>
 void DeconvAddReluKernel<FPGA, float>::Compute(
     const FusionDeconvAddReluParam<FPGA> &param) {
-  fpga::ComputeFpgaDeconv(param.FpgaArgs());
+  // fpga::ComputeFpgaDeconv(param.FpgaArgs());
+  if (param.Groups() == param.Output()->dims()[1]) {
+    fpga::ComputeDWDeconv(param.FpgaDWDconvArgs());
+  } else {
+    fpga::ComputeFpgaDeconv(param.FpgaArgs());
+  }
 }
 
 }  // namespace operators

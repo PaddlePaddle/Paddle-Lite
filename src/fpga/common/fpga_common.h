@@ -45,6 +45,7 @@ enum ActivationType {
   LEAKYRELU = 1,
   SIGMOID = 2,
   TANH = 3,
+  SOFTMAX = 4,
 };
 
 struct ActivationArgs {
@@ -132,7 +133,7 @@ struct DeconvTxParm {
 #endif
 
 struct ConvArgs {
-  bool relu_enabled;
+  // bool relu_enabled;
   void* sb_address;  // scale and bias
   void* filter_address;
   float* filter_scale_address;
@@ -198,7 +199,7 @@ struct PoolingArgs {
 };
 
 struct EWAddArgs {
-  bool relu_enabled;
+  // bool relu_enabled;
   uint32_t const0;  // output0 = const0 x input0 + const1 x input1;
   uint32_t const1;
   struct ImageInputArgs image0;
@@ -229,13 +230,27 @@ struct DeconvArgs {
   std::vector<std::shared_ptr<SplitConvArgs>> split_conv_args;
 };
 struct DWconvArgs {
-  bool relu_enabled;
+  uint32_t sub_conv_num;
+  // bool relu_enabled;
   void* bias_address;
   void* filter_address;
   struct KernelArgs kernel;
   struct ImageInputArgs image;
   struct ImageOutputArgs output;
 };
+
+struct DWDeconvArgs {
+  uint32_t sub_conv_num;
+  uint32_t group_num;
+  uint32_t filter_num;
+  uint32_t omit_size;
+  uint32_t sub_output_width;
+  uint32_t sub_output_height;
+  struct ImageOutputArgs output;
+  std::vector<std::shared_ptr<DWconvArgs>> dw_conv_args;
+  std::vector<std::shared_ptr<char>> vector_dw_conv_space;
+};
+
 // static inline int align_to_x(int num, int x) { return (num + x - 1) / x * x;
 // }
 static inline uint32_t align_to_x(int64_t num, int64_t x) {
