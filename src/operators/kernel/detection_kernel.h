@@ -136,5 +136,35 @@ class PSRoiPoolParam : public OpParam {
 DECLARE_KERNEL(PSRoiPool, PSRoiPoolParam);
 #endif
 
+#ifdef ROI_PERSPECTIVE_OP
+template <typename Dtype>
+class RoiPerspectiveParam : public OpParam {
+ public:
+  RoiPerspectiveParam(const VariableNameMap &inputs,
+                      const VariableNameMap &outputs, const AttributeMap &attrs,
+                      const Scope &scope) {
+    input_x_ = OpParam::GetVarValue<framework::Tensor>("X", inputs, scope);
+    input_rois_ =
+        OpParam::GetVarValue<framework::LoDTensor>("ROIs", inputs, scope);
+    output_ = OpParam::GetVarValue<framework::Tensor>("Out", outputs, scope);
+
+    spatial_scale_ = OpParam::GetAttr<float>("spatial_scale", attrs);
+    transformed_height_ = OpParam::GetAttr<int>("transformed_height", attrs);
+    transformed_width_ = OpParam::GetAttr<int>("transformed_width", attrs);
+  }
+
+ public:
+  framework::Tensor *input_x_;
+  framework::LoDTensor *input_rois_;
+  framework::Tensor *output_;
+
+  float spatial_scale_;
+  int transformed_height_;
+  int transformed_width_;
+};
+
+DECLARE_KERNEL(RoiPerspective, RoiPerspectiveParam);
+#endif
+
 }  // namespace operators
 }  // namespace paddle_mobile
