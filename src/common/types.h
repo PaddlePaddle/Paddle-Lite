@@ -172,6 +172,8 @@ extern const char *G_OP_TYPE_LOGICAL_NOT;
 extern const char *G_OP_TYPE_LOGICAL_XOR;
 extern const char *G_OP_TYPE_WRITE_TO_ARRAY;
 extern const char *G_OP_TYPE_READ_FROM_ARRAY;
+extern const char *G_OP_TYPE_IS_EMPTY;
+extern const char *G_OP_TYPE_INCREMENT;
 
 extern const char *G_OP_TYPE_QUANTIZE;
 extern const char *G_OP_TYPE_DEQUANTIZE;
