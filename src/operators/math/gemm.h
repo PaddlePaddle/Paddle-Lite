@@ -46,15 +46,6 @@ namespace math {
 
 class Gemm {
  public:
-  /*
-// 将 A 矩阵分块复制到连续内存(ColMajor)
-void PackMatrixA(int m, int k, int m_tail, const float *A, int lda,
-           float *buffer);
-
-// 将 B 矩阵分块复制到连续内存(ColMajor)
-void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
-           float *buffer);
-*/
   typedef void (Gemm::*FnPack)(int, int, int, const float *, int, float *);
   typedef void (Gemm::*FnAddDot)(int, const float *, const float *, float *,
                                  int);
@@ -62,31 +53,31 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
   FnPack procPackB;
   FnAddDot procAddDot;
 
-  // 将 A 矩阵分块复制到连续内存(RowMajor)
+  // 将 A\B 矩阵分块复制到连续内存(RowMajor)
   void PackMatrixA_4r(int m, int k, int m_tail, const float *A, int lda,
                       float *buffer);
   void PackMatrixA_6r(int m, int k, int m_tail, const float *A, int lda,
                       float *buffer);
-  void PackMatrixA_8r(int m, int k, int m_tail, const float *A, int lda,
-                      float *buffer);
   void PackMatrixA_omp_6r(int m, int k, int m_tail, const float *A, int lda,
                           float *buffer);
+  void PackMatrixA_8r(int m, int k, int m_tail, const float *A, int lda,
+                      float *buffer);
   void PackMatrixA_omp_8r(int m, int k, int m_tail, const float *A, int lda,
                           float *buffer);
-
-  // 将 B 矩阵分块复制到连续内存(RowMajor)
   void PackMatrixB_8c(int k, int n, int n_tail, const float *B, int ldb,
                       float *buffer);
-  void PackMatrixB_12c(int k, int n, int n_tail, const float *B, int ldb,
-                       float *buffer);
-  void PackMatrixB_16c(int k, int n, int n_tail, const float *B, int ldb,
-                       float *buffer);
   void PackMatrixB_omp_8c(int k, int n, int n_tail, const float *B, int ldb,
                           float *buffer);
+#if __aarch64__
+  void PackMatrixB_12c(int k, int n, int n_tail, const float *B, int ldb,
+                       float *buffer);
   void PackMatrixB_omp_12c(int k, int n, int n_tail, const float *B, int ldb,
                            float *buffer);
+  void PackMatrixB_16c(int k, int n, int n_tail, const float *B, int ldb,
+                       float *buffer);
   void PackMatrixB_omp_16c(int k, int n, int n_tail, const float *B, int ldb,
                            float *buffer);
+#endif
 
   // 分块矩阵乘法
   void InnerKernel(int mc, int nc, float alpha, const float *a, const float *b,
@@ -106,22 +97,16 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
                             float *c, float *C, int ldc, float *p,
                             std::string mode, float *bias, float *bias1);
 
-  // 向量矩阵乘法 (M = 1)
-  void VectorKernel(int m, int n, int k, float alpha, const float *A, int lda,
-                    const float *B, int ldb, float beta, float *C, int ldc,
-                    bool relu);
-  /*
-    void VectorKernelWithBn(int m, int n, int k, float alpha, const float *A,
-                            int lda, const float *B, int ldb, float beta, float
-    *C, int ldc, bool relu, float *new_scale, float *new_bias);
-    */
-
   // 计算一个更小的 C 矩阵分块
-  void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc);
-  void AddDot4x8(int k, const float *a, const float *b, float *c, int ldc);
+#if __aarch64__
   void AddDot6x8(int k, const float *a, const float *b, float *c, int ldc);
   void AddDot8x12(int k, const float *a, const float *b, float *c, int ldc);
   void AddDot6x16(int k, const float *a, const float *b, float *c, int ldc);
+#else
+  void AddDot4x4(int k, const float *a, const float *b, float *c, int ldc);
+  void AddDot4x8(int k, const float *a, const float *b, float *c, int ldc);
+  void AddDot6x8(int k, const float *a, const float *b, float *c, int ldc);
+#endif
 
   // 分块矩阵乘法结果回写
   // C = A * B
@@ -149,6 +134,18 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
   void WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
                           float *new_scale, float *new_bias, float *bias1);
 
+  // 向量矩阵乘法 (M = 1)
+#if __aarch64__
+#else
+  void VectorKernel(int m, int n, int k, float alpha, const float *A, int lda,
+                    const float *B, int ldb, float beta, float *C, int ldc,
+                    bool relu);
+
+  void VectorKernelWithBn(int m, int n, int k, float alpha, const float *A,
+                          int lda, const float *B, int ldb, float beta,
+                          float *C, int ldc, bool relu, float *new_scale,
+                          float *new_bias);
+
   // 向量矩阵乘法结果回写
   // C = A * B
   void VecWriteBasic(int n, float *c, float *C, int ldc);
@@ -158,14 +155,13 @@ void PackMatrixB(int k, int n, int n_tail, const float *B, int ldb,
   void VecWriteWithAdd(int n, float *c, float *C, int ldc);
   // C = A * B + C, relu(C)
   void VecWriteWithAddRelu(int n, float *c, float *C, int ldc);
-  /*
-    // C = A * B, batchnorm(C)
-    void VecWriteWithBn(int n, float *c, float *C, int ldc, float *new_scale,
-                        float *new_bias);
-    // C = A * B, batchnorm(C), relu(C)
-    void VecWriteWithBnRelu(int n, float *c, float *C, int ldc, float
-    *new_scale, float *new_bias);
-    */
+  // C = A * B, batchnorm(C)
+  void VecWriteWithBn(int n, float *c, float *C, int ldc, float *new_scale,
+                      float *new_bias);
+  // C = A * B, batchnorm(C), relu(C)
+  void VecWriteWithBnRelu(int n, float *c, float *C, int ldc, float *new_scale,
+                          float *new_bias);
+#endif
 
   // 32位 float 矩阵乘法
   void Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
