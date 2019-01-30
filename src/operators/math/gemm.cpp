@@ -415,6 +415,7 @@ void Gemm::PackMatrixB_omp_8c(int k, int n, int n_tail, const float *B, int ldb,
   }
 }
 
+#if __ARM_NEON
 #if __aarch64__
 void Gemm::PackMatrixB_12c(int k, int n, int n_tail, const float *B, int ldb,
                            float *buffer) {
@@ -538,6 +539,7 @@ void Gemm::PackMatrixB_omp_16c(int k, int n, int n_tail, const float *B,
   }
 }
 #endif  // __aarch64__
+#endif  // __ARM_NEON
 
 // 分块矩阵乘法
 void Gemm::InnerKernel(int mc, int nc, float alpha, const float *a,
@@ -688,42 +690,7 @@ void Gemm::InnerKernelWithPRelu(int mc, int nc, const float *a, const float *b,
 #if __ARM_NEON
 #if __aarch64__
 
-void Gemm::AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
-  // init C
-  float32x4_t cv0 = vdupq_n_f32(0.0);
-  float32x4_t cv1 = vdupq_n_f32(0.0);
-  float32x4_t cv2 = vdupq_n_f32(0.0);
-  float32x4_t cv3 = vdupq_n_f32(0.0);
-
-  float32x4_t av;
-  float32x4_t bv;
-
-  float32x2_t av01;
-  float32x2_t av23;
-
-  for (int p = 0; p < k; p += 1) {
-    av = vld1q_f32(a);
-    bv = vld1q_f32(b);
-
-    av01 = vget_low_f32(av);
-    cv0 = vmlaq_lane_f32(cv0, bv, av01, 0);
-    cv1 = vmlaq_lane_f32(cv1, bv, av01, 1);
-    av23 = vget_high_f32(av);
-    cv2 = vmlaq_lane_f32(cv2, bv, av23, 0);
-    cv3 = vmlaq_lane_f32(cv3, bv, av23, 1);
-
-    a += MR;
-    b += NR;
-  }
-
-  vst1q_f32(c, cv0);
-  vst1q_f32(c + ldc, cv1);
-  vst1q_f32(c + 2 * ldc, cv2);
-  vst1q_f32(c + 3 * ldc, cv3);
-  //  float32x4x4_t cv = {cv0, cv1, cv2, cv3};
-}
-
-void Gemm::AddDot4x8(int k, const float *a, const float *b, float *c, int ldc) {
+void Gemm::AddDot6x8(int k, const float *a, const float *b, float *c, int ldc) {
   // init C
   float32x4_t cv0 = vdupq_n_f32(0.0);
   float32x4_t cv1 = vdupq_n_f32(0.0);
@@ -733,6 +700,10 @@ void Gemm::AddDot4x8(int k, const float *a, const float *b, float *c, int ldc) {
   float32x4_t cv5 = vdupq_n_f32(0.0);
   float32x4_t cv6 = vdupq_n_f32(0.0);
   float32x4_t cv7 = vdupq_n_f32(0.0);
+  float32x4_t cv8 = vdupq_n_f32(0.0);
+  float32x4_t cv9 = vdupq_n_f32(0.0);
+  float32x4_t cv10 = vdupq_n_f32(0.0);
+  float32x4_t cv11 = vdupq_n_f32(0.0);
 
   float32x4_t av;
   float32x4_t bv0;
@@ -740,22 +711,30 @@ void Gemm::AddDot4x8(int k, const float *a, const float *b, float *c, int ldc) {
 
   float32x2_t av01;
   float32x2_t av23;
+  float32x2_t av45;
 
   for (int p = 0; p < k; p += 1) {
     av = vld1q_f32(a);
+    av01 = vget_low_f32(av);
+    av23 = vget_high_f32(av);
+    av45 = vld1_f32(a + 4);
     bv0 = vld1q_f32(b);
     bv1 = vld1q_f32(b + 4);
 
-    av01 = vget_low_f32(av);
     cv0 = vmlaq_lane_f32(cv0, bv0, av01, 0);
     cv1 = vmlaq_lane_f32(cv1, bv1, av01, 0);
     cv2 = vmlaq_lane_f32(cv2, bv0, av01, 1);
     cv3 = vmlaq_lane_f32(cv3, bv1, av01, 1);
-    av23 = vget_high_f32(av);
+
     cv4 = vmlaq_lane_f32(cv4, bv0, av23, 0);
     cv5 = vmlaq_lane_f32(cv5, bv1, av23, 0);
     cv6 = vmlaq_lane_f32(cv6, bv0, av23, 1);
     cv7 = vmlaq_lane_f32(cv7, bv1, av23, 1);
+
+    cv8 = vmlaq_lane_f32(cv8, bv0, av45, 0);
+    cv9 = vmlaq_lane_f32(cv9, bv1, av45, 0);
+    cv10 = vmlaq_lane_f32(cv10, bv0, av45, 1);
+    cv11 = vmlaq_lane_f32(cv11, bv1, av45, 1);
 
     a += MR;
     b += NR;
@@ -769,7 +748,595 @@ void Gemm::AddDot4x8(int k, const float *a, const float *b, float *c, int ldc) {
   vst1q_f32(c + 2 * ldc + 4, cv5);
   vst1q_f32(c + 3 * ldc, cv6);
   vst1q_f32(c + 3 * ldc + 4, cv7);
+  vst1q_f32(c + 4 * ldc, cv8);
+  vst1q_f32(c + 4 * ldc + 4, cv9);
+  vst1q_f32(c + 5 * ldc, cv10);
+  vst1q_f32(c + 5 * ldc + 4, cv11);
 }
+
+void Gemm::AddDot8x12(int k, const float *a, const float *b, float *c,
+                      int ldc) {
+  const float *a_ptr, *b_ptr;
+  a_ptr = a;
+  b_ptr = b;
+  int kc1 = k;
+  int step = 4 * ldc;
+  asm volatile(
+      "dup      v5.4s,     wzr     \n\t"
+      "dup      v6.4s,     wzr     \n\t"
+      "dup      v7.4s,     wzr     \n\t"
+      "dup      v8.4s,     wzr     \n\t"
+      "dup      v9.4s,     wzr     \n\t"
+      "dup      v10.4s,    wzr     \n\t"
+      "dup      v11.4s,    wzr     \n\t"
+      "dup      v12.4s,    wzr     \n\t"
+      "dup      v13.4s,    wzr     \n\t"
+      "dup      v14.4s,    wzr     \n\t"
+      "dup      v15.4s,    wzr     \n\t"
+      "dup      v16.4s,    wzr     \n\t"
+
+      "dup      v17.4s,    wzr     \n\t"
+      "dup      v18.4s,    wzr     \n\t"
+      "dup      v19.4s,    wzr     \n\t"
+      "dup      v20.4s,    wzr     \n\t"
+      "dup      v21.4s,    wzr     \n\t"
+      "dup      v22.4s,    wzr     \n\t"
+      "dup      v23.4s,    wzr     \n\t"
+      "dup      v24.4s,    wzr     \n\t"
+      "dup      v25.4s,    wzr     \n\t"
+      "dup      v26.4s,    wzr     \n\t"
+      "dup      v27.4s,    wzr     \n\t"
+      "dup      v28.4s,    wzr     \n\t"
+
+      "subs       %[kc1], %[kc1], #1    \n\t"
+      "blt        2f                    \n\t"
+      "1:                               \n\t"
+
+      "prfm     pldl1keep,         [%[a_ptr],   #32]  \n\t"
+      "prfm     pldl1keep,         [%[b_ptr],   #48]  \n\t"
+
+      "ld1      {v0.4s, v1.4s},         [%[a_ptr]],   #32   \n\t"
+      "ld1      {v2.4s, v3.4s, v4.4s},  [%[b_ptr]],   #48   \n\t"
+
+      "fmla     v5.4s,    v2.4s,   v0.s[0]       \n\t"
+      "fmla     v6.4s,    v3.4s,   v0.s[0]       \n\t"
+      "fmla     v7.4s,    v4.4s,   v0.s[0]       \n\t"
+      "fmla     v8.4s,    v2.4s,   v0.s[1]       \n\t"
+      "fmla     v9.4s,    v3.4s,   v0.s[1]       \n\t"
+      "fmla     v10.4s,   v4.4s,   v0.s[1]       \n\t"
+      "fmla     v11.4s,   v2.4s,   v0.s[2]       \n\t"
+      "fmla     v12.4s,   v3.4s,   v0.s[2]       \n\t"
+      "fmla     v13.4s,   v4.4s,   v0.s[2]       \n\t"
+      "fmla     v14.4s,   v2.4s,   v0.s[3]       \n\t"
+      "fmla     v15.4s,   v3.4s,   v0.s[3]       \n\t"
+      "fmla     v16.4s,   v4.4s,   v0.s[3]       \n\t"
+
+      "fmla     v17.4s,   v2.4s,   v1.s[0]       \n\t"
+      "fmla     v18.4s,   v3.4s,   v1.s[0]       \n\t"
+      "fmla     v19.4s,   v4.4s,   v1.s[0]       \n\t"
+      "fmla     v20.4s,   v2.4s,   v1.s[1]       \n\t"
+      "fmla     v21.4s,   v3.4s,   v1.s[1]       \n\t"
+      "fmla     v22.4s,   v4.4s,   v1.s[1]       \n\t"
+      "fmla     v23.4s,   v2.4s,   v1.s[2]       \n\t"
+      "fmla     v24.4s,   v3.4s,   v1.s[2]       \n\t"
+      "fmla     v25.4s,   v4.4s,   v1.s[2]       \n\t"
+      "fmla     v26.4s,   v2.4s,   v1.s[3]       \n\t"
+      "fmla     v27.4s,   v3.4s,   v1.s[3]       \n\t"
+      "fmla     v28.4s,   v4.4s,   v1.s[3]       \n\t"
+
+      "subs       %[kc1], %[kc1], #1      \n\t"
+      "bge        1b                      \n\t"
+      "2:                                 \n\t"
+
+      "st1      {v5.4s,   v6.4s,  v7.4s},    [%[c]],   %[step]   \n\t"
+      "st1      {v8.4s,   v9.4s,  v10.4s},   [%[c]],   %[step]   \n\t"
+      "st1      {v11.4s,  v12.4s, v13.4s},   [%[c]],   %[step]   \n\t"
+      "st1      {v14.4s,  v15.4s, v16.4s},   [%[c]],   %[step]   \n\t"
+      "st1      {v17.4s,  v18.4s, v19.4s},   [%[c]],   %[step]   \n\t"
+      "st1      {v20.4s,  v21.4s, v22.4s},   [%[c]],   %[step]   \n\t"
+      "st1      {v23.4s,  v24.4s, v25.4s},   [%[c]],   %[step]   \n\t"
+      "st1      {v26.4s,  v27.4s, v28.4s},   [%[c]],   %[step]   \n\t"
+      :
+      : [a_ptr] "r"(a_ptr), [b_ptr] "r"(b_ptr), [c] "r"(c), [kc1] "r"(kc1),
+        [step] "r"(step)
+      : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
+        "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19",
+        "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28");
+}
+
+void Gemm::AddDot6x16(int k, const float *a, const float *b, float *c,
+                      int ldc) {
+  const float *a_ptr, *b_ptr;
+  a_ptr = a;
+  b_ptr = b;
+  int kc1 = k;
+  int step = 4 * ldc;
+  int step1 = 4 * 6;
+  asm volatile(
+
+      "dup      v6.4s,     wzr     \n\t"
+      "dup      v7.4s,     wzr     \n\t"
+      "dup      v8.4s,     wzr     \n\t"
+      "dup      v9.4s,     wzr     \n\t"
+      "dup      v10.4s,    wzr     \n\t"
+      "dup      v11.4s,    wzr     \n\t"
+      "dup      v12.4s,    wzr     \n\t"
+      "dup      v13.4s,    wzr     \n\t"
+
+      "dup      v14.4s,    wzr     \n\t"
+      "dup      v15.4s,    wzr     \n\t"
+      "dup      v16.4s,    wzr     \n\t"
+      "dup      v17.4s,    wzr     \n\t"
+      "dup      v18.4s,    wzr     \n\t"
+      "dup      v19.4s,    wzr     \n\t"
+      "dup      v20.4s,    wzr     \n\t"
+      "dup      v21.4s,    wzr     \n\t"
+
+      "dup      v22.4s,    wzr     \n\t"
+      "dup      v23.4s,    wzr     \n\t"
+      "dup      v24.4s,    wzr     \n\t"
+      "dup      v25.4s,    wzr     \n\t"
+      "dup      v26.4s,    wzr     \n\t"
+      "dup      v27.4s,    wzr     \n\t"
+      "dup      v28.4s,    wzr     \n\t"
+      "dup      v29.4s,    wzr     \n\t"
+
+      "subs       %[kc1], %[kc1], #1    \n\t"
+      "blt        2f                    \n\t"
+      "1:                               \n\t"
+
+      "prfm   pldl1keep,  [%[a_ptr],  #24]  \n\t"
+      "prfm   pldl1keep,  [%[b_ptr],  #64]  \n\t"
+
+      "ld1      {v0.4s, v1.4s},  [%[a_ptr]],   %[step1]       \n\t"
+      "ld1      {v2.4s, v3.4s, v4.4s, v5.4s},  [%[b_ptr]],    #64   \n\t"
+
+      "fmla     v6.4s,    v2.4s,   v0.s[0]       \n\t"
+      "fmla     v7.4s,    v3.4s,   v0.s[0]       \n\t"
+      "fmla     v8.4s,    v4.4s,   v0.s[0]       \n\t"
+      "fmla     v9.4s,    v5.4s,   v0.s[0]       \n\t"
+
+      "fmla     v10.4s,   v2.4s,   v0.s[1]       \n\t"
+      "fmla     v11.4s,   v3.4s,   v0.s[1]       \n\t"
+      "fmla     v12.4s,   v4.4s,   v0.s[1]       \n\t"
+      "fmla     v13.4s,   v5.4s,   v0.s[1]       \n\t"
+
+      "fmla     v14.4s,   v2.4s,   v0.s[2]       \n\t"
+      "fmla     v15.4s,   v3.4s,   v0.s[2]       \n\t"
+      "fmla     v16.4s,   v4.4s,   v0.s[2]       \n\t"
+      "fmla     v17.4s,   v5.4s,   v0.s[2]       \n\t"
+
+      "fmla     v18.4s,   v2.4s,   v0.s[3]       \n\t"
+      "fmla     v19.4s,   v3.4s,   v0.s[3]       \n\t"
+      "fmla     v20.4s,   v4.4s,   v0.s[3]       \n\t"
+      "fmla     v21.4s,   v5.4s,   v0.s[3]       \n\t"
+
+      "fmla     v22.4s,   v2.4s,   v1.s[0]       \n\t"
+      "fmla     v23.4s,   v3.4s,   v1.s[0]       \n\t"
+      "fmla     v24.4s,   v4.4s,   v1.s[0]       \n\t"
+      "fmla     v25.4s,   v5.4s,   v1.s[0]       \n\t"
+
+      "fmla     v26.4s,   v2.4s,   v1.s[1]       \n\t"
+      "fmla     v27.4s,   v3.4s,   v1.s[1]       \n\t"
+      "fmla     v28.4s,   v4.4s,   v1.s[1]       \n\t"
+      "fmla     v29.4s,   v5.4s,   v1.s[1]       \n\t"
+
+      "subs       %[kc1], %[kc1], #1      \n\t"
+      "bge        1b                      \n\t"
+      "2:                                 \n\t"
+
+      "st1      {v6.4s,  v7.4s,  v8.4s,  v9.4s},    [%[c]],   %[step]   \n\t"
+      "st1      {v10.4s, v11.4s, v12.4s, v13.4s},   [%[c]],   %[step]   \n\t"
+      "st1      {v14.4s, v15.4s, v16.4s, v17.4s},   [%[c]],   %[step]   \n\t"
+      "st1      {v18.4s, v19.4s, v20.4s, v21.4s},   [%[c]],   %[step]   \n\t"
+      "st1      {v22.4s, v23.4s, v24.4s, v25.4s},   [%[c]],   %[step]   \n\t"
+      "st1      {v26.4s, v27.4s, v28.4s, v29.4s},   [%[c]],   %[step]   \n\t"
+      :
+      : [a_ptr] "r"(a_ptr), [b_ptr] "r"(b_ptr), [c] "r"(c), [kc1] "r"(kc1),
+        [step] "r"(step), [step1] "r"(step1)
+      : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
+        "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19",
+        "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29");
+}
+
+#else
+
+void Gemm::AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
+  const float *a_ptr, *b_ptr;
+  a_ptr = a;
+  b_ptr = b;
+  int kc1 = k / 4;
+  int kc2 = k % 4;
+  int step = 4 * ldc;
+  asm volatile(
+      "pld        [%[a_ptr]]          \n\t"
+      "pld        [%[b_ptr]]          \n\t"
+      "vmov.f32   q10,    #0.0        \n\t"
+      "vmov.f32   q11,    #0.0        \n\t"
+      "vmov.f32   q12,    #0.0        \n\t"
+      "vmov.f32   q13,    #0.0        \n\t"
+
+      "subs       %[kc1], %[kc1], #1  \n\t"
+      "blt        end_kc1_%=          \n\t"
+      "loop_kc1_%=:                   \n\t"
+      "pld        [%[a_ptr], #64]     \n\t"
+      "pld        [%[b_ptr], #64]     \n\t"
+      "vld1.32    {q0, q1}, [%[a_ptr]]!   \n\t"
+      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
+      "vmla.f32   q10, q2, d0[0]      \n\t"
+      "vmla.f32   q11, q2, d0[1]      \n\t"
+      "vmla.f32   q12, q2, d1[0]      \n\t"
+      "vmla.f32   q13, q2, d1[1]      \n\t"
+      "vmla.f32   q10, q3, d2[0]      \n\t"
+      "vmla.f32   q11, q3, d2[1]      \n\t"
+      "vmla.f32   q12, q3, d3[0]      \n\t"
+      "vmla.f32   q13, q3, d3[1]      \n\t"
+      "vld1.32    {q4, q5}, [%[a_ptr]]!   \n\t"
+      "vld1.32    {q6, q7}, [%[b_ptr]]!   \n\t"
+      "vmla.f32   q10, q6, d8[0]      \n\t"
+      "vmla.f32   q11, q6, d8[1]      \n\t"
+      "vmla.f32   q12, q6, d9[0]      \n\t"
+      "vmla.f32   q13, q6, d9[1]      \n\t"
+      "vmla.f32   q10, q7, d10[0]     \n\t"
+      "vmla.f32   q11, q7, d10[1]     \n\t"
+      "vmla.f32   q12, q7, d11[0]     \n\t"
+      "vmla.f32   q13, q7, d11[1]     \n\t"
+      "subs       %[kc1], %[kc1], #1  \n\t"
+      "bge        loop_kc1_%=         \n\t"
+      "end_kc1_%=:                    \n\t"
+
+      "subs       %[kc2], %[kc2], #1  \n\t"
+      "blt        end_kc2_%=          \n\t"
+      "loop_kc2_%=:                   \n\t"
+      "vld1.32    {q0}, [%[a_ptr]]!   \n\t"
+      "vld1.32    {q1}, [%[b_ptr]]!   \n\t"
+      "vmla.f32   q10, q1, d0[0]      \n\t"
+      "vmla.f32   q11, q1, d0[1]      \n\t"
+      "vmla.f32   q12, q1, d1[0]      \n\t"
+      "vmla.f32   q13, q1, d1[1]      \n\t"
+      "subs       %[kc2], %[kc2], #1  \n\t"
+      "bge        loop_kc2_%=         \n\t"
+      "end_kc2_%=:                    \n\t"
+
+      "mov        r5,     %[c]        \n\t"
+      "mov        r6,     %[step]     \n\t"
+      "vst1.32    {q10}, [r5], r6     \n\t"
+      "vst1.32    {q11}, [r5], r6     \n\t"
+      "vst1.32    {q12}, [r5], r6     \n\t"
+      "vst1.32    {q13}, [r5]         \n\t"
+      :
+      : [a_ptr] "r"(a_ptr), [b_ptr] "r"(b_ptr), [c] "r"(c), [kc1] "r"(kc1),
+        [kc2] "r"(kc2), [step] "r"(step)
+      : "memory", "r5", "r6", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+        "q10", "q11", "q12", "q13");
+}
+
+void Gemm::AddDot4x8(int k, const float *a, const float *b, float *c, int ldc) {
+  const float *a_ptr, *b_ptr;
+  a_ptr = a;
+  b_ptr = b;
+  int kc1 = k / 4;
+  int kc2 = k % 4;
+  int step = 4 * ldc;
+  asm volatile(
+      "pld        [%[a_ptr]]          \n\t"
+      "pld        [%[b_ptr]]          \n\t"
+
+      "vmov.f32   q8,     #0.0        \n\t"
+      "vmov.f32   q9,     #0.0        \n\t"
+      "vmov.f32   q10,    #0.0        \n\t"
+      "vmov.f32   q11,    #0.0        \n\t"
+      "vmov.f32   q12,    #0.0        \n\t"
+      "vmov.f32   q13,    #0.0        \n\t"
+      "vmov.f32   q14,    #0.0        \n\t"
+      "vmov.f32   q15,    #0.0        \n\t"
+
+      "subs       %[kc1], %[kc1], #1  \n\t"
+      "blt        end_kc1_%=          \n\t"
+      "loop_kc1_%=:                   \n\t"
+
+      "pld        [%[a_ptr], #64]     \n\t"
+      "pld        [%[b_ptr], #64]     \n\t"
+
+      "vld1.32    {q0, q1}, [%[a_ptr]]!   \n\t"
+      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
+      "vld1.32    {q4, q5}, [%[b_ptr]]!   \n\t"
+
+      "vmla.f32   q8,   q2,   d0[0]      \n\t"
+      "vmla.f32   q9,   q3,   d0[0]      \n\t"
+      "vmla.f32   q10,  q2,   d0[1]      \n\t"
+      "vmla.f32   q11,  q3,   d0[1]      \n\t"
+      "vmla.f32   q12,  q2,   d1[0]      \n\t"
+      "vmla.f32   q13,  q3,   d1[0]      \n\t"
+      "vmla.f32   q14,  q2,   d1[1]      \n\t"
+      "vmla.f32   q15,  q3,   d1[1]      \n\t"
+
+      "vmla.f32   q8,   q4,   d2[0]      \n\t"
+      "vmla.f32   q9,   q5,   d2[0]      \n\t"
+      "vmla.f32   q10,  q4,   d2[1]      \n\t"
+      "vmla.f32   q11,  q5,   d2[1]      \n\t"
+      "vmla.f32   q12,  q4,   d3[0]      \n\t"
+      "vmla.f32   q13,  q5,   d3[0]      \n\t"
+      "vmla.f32   q14,  q4,   d3[1]      \n\t"
+      "vmla.f32   q15,  q5,   d3[1]      \n\t"
+
+      "pld        [%[b_ptr], #64]     \n\t"
+
+      "vld1.32    {q0, q1}, [%[a_ptr]]!   \n\t"
+      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
+      "vld1.32    {q4, q5}, [%[b_ptr]]!   \n\t"
+
+      "vmla.f32   q8,   q2,   d0[0]      \n\t"
+      "vmla.f32   q9,   q3,   d0[0]      \n\t"
+      "vmla.f32   q10,  q2,   d0[1]      \n\t"
+      "vmla.f32   q11,  q3,   d0[1]      \n\t"
+      "vmla.f32   q12,  q2,   d1[0]      \n\t"
+      "vmla.f32   q13,  q3,   d1[0]      \n\t"
+      "vmla.f32   q14,  q2,   d1[1]      \n\t"
+      "vmla.f32   q15,  q3,   d1[1]      \n\t"
+
+      "vmla.f32   q8,   q4,   d2[0]      \n\t"
+      "vmla.f32   q9,   q5,   d2[0]      \n\t"
+      "vmla.f32   q10,  q4,   d2[1]      \n\t"
+      "vmla.f32   q11,  q5,   d2[1]      \n\t"
+      "vmla.f32   q12,  q4,   d3[0]      \n\t"
+      "vmla.f32   q13,  q5,   d3[0]      \n\t"
+      "vmla.f32   q14,  q4,   d3[1]      \n\t"
+      "vmla.f32   q15,  q5,   d3[1]      \n\t"
+
+      "subs       %[kc1], %[kc1], #1  \n\t"
+      "bge        loop_kc1_%=         \n\t"
+      "end_kc1_%=:                    \n\t"
+
+      "subs       %[kc2], %[kc2], #1  \n\t"
+      "blt        end_kc2_%=          \n\t"
+      "loop_kc2_%=:                   \n\t"
+      "vld1.32    {q0},     [%[a_ptr]]!   \n\t"
+      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
+      "vmla.f32   q8,   q2,   d0[0]      \n\t"
+      "vmla.f32   q9,   q3,   d0[0]      \n\t"
+      "vmla.f32   q10,  q2,   d0[1]      \n\t"
+      "vmla.f32   q11,  q3,   d0[1]      \n\t"
+      "vmla.f32   q12,  q2,   d1[0]      \n\t"
+      "vmla.f32   q13,  q3,   d1[0]      \n\t"
+      "vmla.f32   q14,  q2,   d1[1]      \n\t"
+      "vmla.f32   q15,  q3,   d1[1]      \n\t"
+      "subs       %[kc2], %[kc2], #1  \n\t"
+      "bge        loop_kc2_%=         \n\t"
+      "end_kc2_%=:                    \n\t"
+
+      "mov        r5,     %[c]        \n\t"
+      "mov        r6,     %[step]     \n\t"
+      "vst1.32    {q8, q9},   [r5], r6     \n\t"
+      "vst1.32    {q10, q11}, [r5], r6     \n\t"
+      "vst1.32    {q12, q13}, [r5], r6     \n\t"
+      "vst1.32    {q14, q15}, [r5]         \n\t"
+      :
+      : [a_ptr] "r"(a_ptr), [b_ptr] "r"(b_ptr), [c] "r"(c), [kc1] "r"(kc1),
+        [kc2] "r"(kc2), [step] "r"(step)
+      : "memory", "r5", "r6", "q0", "q1", "q2", "q3", "q4", "q5", "q8", "q9",
+        "q10", "q11", "q12", "q13", "q14", "q15");
+}
+
+void Gemm::AddDot6x8(int k, const float *a, const float *b, float *c, int ldc) {
+  const float *a_ptr, *b_ptr;
+  a_ptr = a;
+  b_ptr = b;
+  int kc1 = k / 8;
+  int kc2 = k % 8;
+  int step = sizeof(float) * ldc;
+  asm volatile(
+      "pld        [%[a_ptr]]            \n\t"
+      "pld        [%[a_ptr],  #64]      \n\t"
+      "pld        [%[b_ptr]]            \n\t"
+      "pld        [%[b_ptr],  #64]      \n\t"
+
+      "vmov.f32   q4,     #0.0          \n\t"
+      "vmov.f32   q5,     #0.0          \n\t"
+      "vmov.f32   q6,     #0.0          \n\t"
+      "vmov.f32   q7,     #0.0          \n\t"
+      "vmov.f32   q8,     #0.0          \n\t"
+      "vmov.f32   q9,     #0.0          \n\t"
+      "vmov.f32   q10,    #0.0          \n\t"
+      "vmov.f32   q11,    #0.0          \n\t"
+      "vmov.f32   q12,    #0.0          \n\t"
+      "vmov.f32   q13,    #0.0          \n\t"
+      "vmov.f32   q14,    #0.0          \n\t"
+      "vmov.f32   q15,    #0.0          \n\t"
+
+      "subs       %[kc1], %[kc1], #1    \n\t"
+      "blt        2f                    \n\t"
+      "1:                               \n\t"
+
+      "pld        [%[a_ptr], #128]       \n\t"
+      "pld        [%[b_ptr], #128]       \n\t"
+
+      "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
+      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
+
+      "vmla.f32   q4,   q2,   d0[0]       \n\t"
+      "vmla.f32   q5,   q3,   d0[0]       \n\t"
+      "vmla.f32   q6,   q2,   d0[1]       \n\t"
+      "vmla.f32   q7,   q3,   d0[1]       \n\t"
+      "vmla.f32   q8,   q2,   d1[0]       \n\t"
+      "vmla.f32   q9,   q3,   d1[0]       \n\t"
+      "vmla.f32   q10,  q2,   d1[1]       \n\t"
+      "vmla.f32   q11,  q3,   d1[1]       \n\t"
+      "vmla.f32   q12,  q2,   d2[0]       \n\t"
+      "vmla.f32   q13,  q3,   d2[0]       \n\t"
+      "vmla.f32   q14,  q2,   d2[1]       \n\t"
+      "vmla.f32   q15,  q3,   d2[1]       \n\t"
+
+      "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
+      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
+
+      "vmla.f32   q4,   q2,   d0[0]       \n\t"
+      "vmla.f32   q5,   q3,   d0[0]       \n\t"
+      "vmla.f32   q6,   q2,   d0[1]       \n\t"
+      "vmla.f32   q7,   q3,   d0[1]       \n\t"
+      "vmla.f32   q8,   q2,   d1[0]       \n\t"
+      "vmla.f32   q9,   q3,   d1[0]       \n\t"
+      "vmla.f32   q10,  q2,   d1[1]       \n\t"
+      "vmla.f32   q11,  q3,   d1[1]       \n\t"
+      "vmla.f32   q12,  q2,   d2[0]       \n\t"
+      "vmla.f32   q13,  q3,   d2[0]       \n\t"
+      "vmla.f32   q14,  q2,   d2[1]       \n\t"
+      "vmla.f32   q15,  q3,   d2[1]       \n\t"
+
+      "pld        [%[a_ptr], #128]       \n\t"
+      "pld        [%[b_ptr], #128]       \n\t"
+
+      "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
+      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
+
+      "vmla.f32   q4,   q2,   d0[0]       \n\t"
+      "vmla.f32   q5,   q3,   d0[0]       \n\t"
+      "vmla.f32   q6,   q2,   d0[1]       \n\t"
+      "vmla.f32   q7,   q3,   d0[1]       \n\t"
+      "vmla.f32   q8,   q2,   d1[0]       \n\t"
+      "vmla.f32   q9,   q3,   d1[0]       \n\t"
+      "vmla.f32   q10,  q2,   d1[1]       \n\t"
+      "vmla.f32   q11,  q3,   d1[1]       \n\t"
+      "vmla.f32   q12,  q2,   d2[0]       \n\t"
+      "vmla.f32   q13,  q3,   d2[0]       \n\t"
+      "vmla.f32   q14,  q2,   d2[1]       \n\t"
+      "vmla.f32   q15,  q3,   d2[1]       \n\t"
+
+      "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
+      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
+
+      "vmla.f32   q4,   q2,   d0[0]       \n\t"
+      "vmla.f32   q5,   q3,   d0[0]       \n\t"
+      "vmla.f32   q6,   q2,   d0[1]       \n\t"
+      "vmla.f32   q7,   q3,   d0[1]       \n\t"
+      "vmla.f32   q8,   q2,   d1[0]       \n\t"
+      "vmla.f32   q9,   q3,   d1[0]       \n\t"
+      "vmla.f32   q10,  q2,   d1[1]       \n\t"
+      "vmla.f32   q11,  q3,   d1[1]       \n\t"
+      "vmla.f32   q12,  q2,   d2[0]       \n\t"
+      "vmla.f32   q13,  q3,   d2[0]       \n\t"
+      "vmla.f32   q14,  q2,   d2[1]       \n\t"
+      "vmla.f32   q15,  q3,   d2[1]       \n\t"
+
+      "pld        [%[a_ptr], #128]       \n\t"
+      "pld        [%[b_ptr], #128]       \n\t"
+
+      "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
+      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
+
+      "vmla.f32   q4,   q2,   d0[0]       \n\t"
+      "vmla.f32   q5,   q3,   d0[0]       \n\t"
+      "vmla.f32   q6,   q2,   d0[1]       \n\t"
+      "vmla.f32   q7,   q3,   d0[1]       \n\t"
+      "vmla.f32   q8,   q2,   d1[0]       \n\t"
+      "vmla.f32   q9,   q3,   d1[0]       \n\t"
+      "vmla.f32   q10,  q2,   d1[1]       \n\t"
+      "vmla.f32   q11,  q3,   d1[1]       \n\t"
+      "vmla.f32   q12,  q2,   d2[0]       \n\t"
+      "vmla.f32   q13,  q3,   d2[0]       \n\t"
+      "vmla.f32   q14,  q2,   d2[1]       \n\t"
+      "vmla.f32   q15,  q3,   d2[1]       \n\t"
+
+      "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
+      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
+
+      "vmla.f32   q4,   q2,   d0[0]       \n\t"
+      "vmla.f32   q5,   q3,   d0[0]       \n\t"
+      "vmla.f32   q6,   q2,   d0[1]       \n\t"
+      "vmla.f32   q7,   q3,   d0[1]       \n\t"
+      "vmla.f32   q8,   q2,   d1[0]       \n\t"
+      "vmla.f32   q9,   q3,   d1[0]       \n\t"
+      "vmla.f32   q10,  q2,   d1[1]       \n\t"
+      "vmla.f32   q11,  q3,   d1[1]       \n\t"
+      "vmla.f32   q12,  q2,   d2[0]       \n\t"
+      "vmla.f32   q13,  q3,   d2[0]       \n\t"
+      "vmla.f32   q14,  q2,   d2[1]       \n\t"
+      "vmla.f32   q15,  q3,   d2[1]       \n\t"
+
+      "pld        [%[a_ptr], #128]       \n\t"
+      "pld        [%[b_ptr], #128]       \n\t"
+
+      "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
+      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
+
+      "vmla.f32   q4,   q2,   d0[0]       \n\t"
+      "vmla.f32   q5,   q3,   d0[0]       \n\t"
+      "vmla.f32   q6,   q2,   d0[1]       \n\t"
+      "vmla.f32   q7,   q3,   d0[1]       \n\t"
+      "vmla.f32   q8,   q2,   d1[0]       \n\t"
+      "vmla.f32   q9,   q3,   d1[0]       \n\t"
+      "vmla.f32   q10,  q2,   d1[1]       \n\t"
+      "vmla.f32   q11,  q3,   d1[1]       \n\t"
+      "vmla.f32   q12,  q2,   d2[0]       \n\t"
+      "vmla.f32   q13,  q3,   d2[0]       \n\t"
+      "vmla.f32   q14,  q2,   d2[1]       \n\t"
+      "vmla.f32   q15,  q3,   d2[1]       \n\t"
+
+      "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
+      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
+
+      "vmla.f32   q4,   q2,   d0[0]       \n\t"
+      "vmla.f32   q5,   q3,   d0[0]       \n\t"
+      "vmla.f32   q6,   q2,   d0[1]       \n\t"
+      "vmla.f32   q7,   q3,   d0[1]       \n\t"
+      "vmla.f32   q8,   q2,   d1[0]       \n\t"
+      "vmla.f32   q9,   q3,   d1[0]       \n\t"
+      "vmla.f32   q10,  q2,   d1[1]       \n\t"
+      "vmla.f32   q11,  q3,   d1[1]       \n\t"
+      "vmla.f32   q12,  q2,   d2[0]       \n\t"
+      "vmla.f32   q13,  q3,   d2[0]       \n\t"
+      "vmla.f32   q14,  q2,   d2[1]       \n\t"
+      "vmla.f32   q15,  q3,   d2[1]       \n\t"
+
+      "subs       %[kc1], %[kc1], #1      \n\t"
+      "bge        1b                      \n\t"
+      "2:                                 \n\t"
+
+      "subs       %[kc2], %[kc2], #1      \n\t"
+      "blt        4f                      \n\t"
+      "3:                                 \n\t"
+
+      "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
+      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
+
+      "vmla.f32   q4,   q2,   d0[0]       \n\t"
+      "vmla.f32   q5,   q3,   d0[0]       \n\t"
+      "vmla.f32   q6,   q2,   d0[1]       \n\t"
+      "vmla.f32   q7,   q3,   d0[1]       \n\t"
+      "vmla.f32   q8,   q2,   d1[0]       \n\t"
+      "vmla.f32   q9,   q3,   d1[0]       \n\t"
+      "vmla.f32   q10,  q2,   d1[1]       \n\t"
+      "vmla.f32   q11,  q3,   d1[1]       \n\t"
+      "vmla.f32   q12,  q2,   d2[0]       \n\t"
+      "vmla.f32   q13,  q3,   d2[0]       \n\t"
+      "vmla.f32   q14,  q2,   d2[1]       \n\t"
+      "vmla.f32   q15,  q3,   d2[1]       \n\t"
+
+      "subs       %[kc2], %[kc2], #1      \n\t"
+      "bge        3b                      \n\t"
+      "4:                                 \n\t"
+
+      "mov        r5,     %[c]            \n\t"
+      "mov        r6,     %[step]         \n\t"
+      "vst1.32    {q4, q5},   [r5], r6    \n\t"
+      "vst1.32    {q6, q7},   [r5], r6    \n\t"
+      "vst1.32    {q8, q9},   [r5], r6    \n\t"
+      "vst1.32    {q10, q11}, [r5], r6    \n\t"
+      "vst1.32    {q12, q13}, [r5], r6    \n\t"
+      "vst1.32    {q14, q15}, [r5]        \n\t"
+
+      :
+      : [a_ptr] "r"(a_ptr), [b_ptr] "r"(b_ptr), [c] "r"(c), [kc1] "r"(kc1),
+        [kc2] "r"(kc2), [step] "r"(step)
+      : "cc", "memory", "r5", "r6", "q0", "q1", "q2", "q3", "q4", "q5", "q6",
+        "q7", "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15");
+}
+
+#endif  // __aarch64__
+#endif  // __ARM_NEON
+
+#if __ARM_NEON
+#if __aarch64__
 
 // 分块矩阵乘法结果回写
 // C = A * B
@@ -1188,81 +1755,7 @@ void Gemm::WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
   }
 }
 
-void Gemm::VectorKernel(int m, int n, int k, float alpha, const float *A,
-                        int lda, const float *B, int ldb, float beta, float *C,
-                        int ldc, bool relu) {}
-
 #else
-
-void Gemm::AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
-  const float *a_ptr, *b_ptr;
-  a_ptr = a;
-  b_ptr = b;
-  int kc1 = k / 4;
-  int kc2 = k % 4;
-  int step = 4 * ldc;
-  asm volatile(
-      "pld        [%[a_ptr]]          \n\t"
-      "pld        [%[b_ptr]]          \n\t"
-      "vmov.f32   q10,    #0.0        \n\t"
-      "vmov.f32   q11,    #0.0        \n\t"
-      "vmov.f32   q12,    #0.0        \n\t"
-      "vmov.f32   q13,    #0.0        \n\t"
-
-      "subs       %[kc1], %[kc1], #1  \n\t"
-      "blt        end_kc1_%=          \n\t"
-      "loop_kc1_%=:                   \n\t"
-      "pld        [%[a_ptr], #64]     \n\t"
-      "pld        [%[b_ptr], #64]     \n\t"
-      "vld1.32    {q0, q1}, [%[a_ptr]]!   \n\t"
-      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
-      "vmla.f32   q10, q2, d0[0]      \n\t"
-      "vmla.f32   q11, q2, d0[1]      \n\t"
-      "vmla.f32   q12, q2, d1[0]      \n\t"
-      "vmla.f32   q13, q2, d1[1]      \n\t"
-      "vmla.f32   q10, q3, d2[0]      \n\t"
-      "vmla.f32   q11, q3, d2[1]      \n\t"
-      "vmla.f32   q12, q3, d3[0]      \n\t"
-      "vmla.f32   q13, q3, d3[1]      \n\t"
-      "vld1.32    {q4, q5}, [%[a_ptr]]!   \n\t"
-      "vld1.32    {q6, q7}, [%[b_ptr]]!   \n\t"
-      "vmla.f32   q10, q6, d8[0]      \n\t"
-      "vmla.f32   q11, q6, d8[1]      \n\t"
-      "vmla.f32   q12, q6, d9[0]      \n\t"
-      "vmla.f32   q13, q6, d9[1]      \n\t"
-      "vmla.f32   q10, q7, d10[0]     \n\t"
-      "vmla.f32   q11, q7, d10[1]     \n\t"
-      "vmla.f32   q12, q7, d11[0]     \n\t"
-      "vmla.f32   q13, q7, d11[1]     \n\t"
-      "subs       %[kc1], %[kc1], #1  \n\t"
-      "bge        loop_kc1_%=         \n\t"
-      "end_kc1_%=:                    \n\t"
-
-      "subs       %[kc2], %[kc2], #1  \n\t"
-      "blt        end_kc2_%=          \n\t"
-      "loop_kc2_%=:                   \n\t"
-      "vld1.32    {q0}, [%[a_ptr]]!   \n\t"
-      "vld1.32    {q1}, [%[b_ptr]]!   \n\t"
-      "vmla.f32   q10, q1, d0[0]      \n\t"
-      "vmla.f32   q11, q1, d0[1]      \n\t"
-      "vmla.f32   q12, q1, d1[0]      \n\t"
-      "vmla.f32   q13, q1, d1[1]      \n\t"
-      "subs       %[kc2], %[kc2], #1  \n\t"
-      "bge        loop_kc2_%=         \n\t"
-      "end_kc2_%=:                    \n\t"
-
-      "mov        r5,     %[c]        \n\t"
-      "mov        r6,     %[step]     \n\t"
-      "vst1.32    {q10}, [r5], r6     \n\t"
-      "vst1.32    {q11}, [r5], r6     \n\t"
-      "vst1.32    {q12}, [r5], r6     \n\t"
-      "vst1.32    {q13}, [r5]         \n\t"
-      :
-      : [a_ptr] "r"(a_ptr), [b_ptr] "r"(b_ptr), [c] "r"(c), [kc1] "r"(kc1),
-        [kc2] "r"(kc2), [step] "r"(step)
-      : "memory", "r5", "r6", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
-        "q10", "q11", "q12", "q13");
-}
 
 void Gemm::VectorKernel(int m, int n, int k, float alpha, const float *A,
                         int lda, const float *B, int ldb, float beta, float *C,
@@ -1486,10 +1979,10 @@ void Gemm::VectorKernel(int m, int n, int k, float alpha, const float *A,
   }
 }
 
-/*
 void Gemm::VectorKernelWithBn(int m, int n, int k, float alpha, const float *A,
-                        int lda, const float *B, int ldb, float beta, float *C,
-                        int ldc, bool relu, float *new_scale, float *new_bias) {
+                              int lda, const float *B, int ldb, float beta,
+                              float *C, int ldc, bool relu, float *new_scale,
+                              float *new_bias) {
   float *bufferC = static_cast<float *>(memory::Alloc(sizeof(float) * n));
 
   const float *a0, *b0, *b1, *b2, *b3;
@@ -1696,114 +2189,6 @@ void Gemm::VectorKernelWithBn(int m, int n, int k, float alpha, const float *A,
   } else {
     VecWriteWithBn(n, bufferC, C, ldc, new_scale, new_bias);
   }
-}
-*/
-
-void Gemm::AddDot4x8(int k, const float *a, const float *b, float *c, int ldc) {
-  const float *a_ptr, *b_ptr;
-  a_ptr = a;
-  b_ptr = b;
-  int kc1 = k / 4;
-  int kc2 = k % 4;
-  int step = 4 * ldc;
-  asm volatile(
-      "pld        [%[a_ptr]]          \n\t"
-      "pld        [%[b_ptr]]          \n\t"
-
-      "vmov.f32   q8,     #0.0        \n\t"
-      "vmov.f32   q9,     #0.0        \n\t"
-      "vmov.f32   q10,    #0.0        \n\t"
-      "vmov.f32   q11,    #0.0        \n\t"
-      "vmov.f32   q12,    #0.0        \n\t"
-      "vmov.f32   q13,    #0.0        \n\t"
-      "vmov.f32   q14,    #0.0        \n\t"
-      "vmov.f32   q15,    #0.0        \n\t"
-
-      "subs       %[kc1], %[kc1], #1  \n\t"
-      "blt        end_kc1_%=          \n\t"
-      "loop_kc1_%=:                   \n\t"
-
-      "pld        [%[a_ptr], #64]     \n\t"
-      "pld        [%[b_ptr], #64]     \n\t"
-
-      "vld1.32    {q0, q1}, [%[a_ptr]]!   \n\t"
-      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
-      "vld1.32    {q4, q5}, [%[b_ptr]]!   \n\t"
-
-      "vmla.f32   q8,   q2,   d0[0]      \n\t"
-      "vmla.f32   q9,   q3,   d0[0]      \n\t"
-      "vmla.f32   q10,  q2,   d0[1]      \n\t"
-      "vmla.f32   q11,  q3,   d0[1]      \n\t"
-      "vmla.f32   q12,  q2,   d1[0]      \n\t"
-      "vmla.f32   q13,  q3,   d1[0]      \n\t"
-      "vmla.f32   q14,  q2,   d1[1]      \n\t"
-      "vmla.f32   q15,  q3,   d1[1]      \n\t"
-
-      "vmla.f32   q8,   q4,   d2[0]      \n\t"
-      "vmla.f32   q9,   q5,   d2[0]      \n\t"
-      "vmla.f32   q10,  q4,   d2[1]      \n\t"
-      "vmla.f32   q11,  q5,   d2[1]      \n\t"
-      "vmla.f32   q12,  q4,   d3[0]      \n\t"
-      "vmla.f32   q13,  q5,   d3[0]      \n\t"
-      "vmla.f32   q14,  q4,   d3[1]      \n\t"
-      "vmla.f32   q15,  q5,   d3[1]      \n\t"
-
-      "pld        [%[b_ptr], #64]     \n\t"
-
-      "vld1.32    {q0, q1}, [%[a_ptr]]!   \n\t"
-      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
-      "vld1.32    {q4, q5}, [%[b_ptr]]!   \n\t"
-
-      "vmla.f32   q8,   q2,   d0[0]      \n\t"
-      "vmla.f32   q9,   q3,   d0[0]      \n\t"
-      "vmla.f32   q10,  q2,   d0[1]      \n\t"
-      "vmla.f32   q11,  q3,   d0[1]      \n\t"
-      "vmla.f32   q12,  q2,   d1[0]      \n\t"
-      "vmla.f32   q13,  q3,   d1[0]      \n\t"
-      "vmla.f32   q14,  q2,   d1[1]      \n\t"
-      "vmla.f32   q15,  q3,   d1[1]      \n\t"
-
-      "vmla.f32   q8,   q4,   d2[0]      \n\t"
-      "vmla.f32   q9,   q5,   d2[0]      \n\t"
-      "vmla.f32   q10,  q4,   d2[1]      \n\t"
-      "vmla.f32   q11,  q5,   d2[1]      \n\t"
-      "vmla.f32   q12,  q4,   d3[0]      \n\t"
-      "vmla.f32   q13,  q5,   d3[0]      \n\t"
-      "vmla.f32   q14,  q4,   d3[1]      \n\t"
-      "vmla.f32   q15,  q5,   d3[1]      \n\t"
-
-      "subs       %[kc1], %[kc1], #1  \n\t"
-      "bge        loop_kc1_%=         \n\t"
-      "end_kc1_%=:                    \n\t"
-
-      "subs       %[kc2], %[kc2], #1  \n\t"
-      "blt        end_kc2_%=          \n\t"
-      "loop_kc2_%=:                   \n\t"
-      "vld1.32    {q0},     [%[a_ptr]]!   \n\t"
-      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
-      "vmla.f32   q8,   q2,   d0[0]      \n\t"
-      "vmla.f32   q9,   q3,   d0[0]      \n\t"
-      "vmla.f32   q10,  q2,   d0[1]      \n\t"
-      "vmla.f32   q11,  q3,   d0[1]      \n\t"
-      "vmla.f32   q12,  q2,   d1[0]      \n\t"
-      "vmla.f32   q13,  q3,   d1[0]      \n\t"
-      "vmla.f32   q14,  q2,   d1[1]      \n\t"
-      "vmla.f32   q15,  q3,   d1[1]      \n\t"
-      "subs       %[kc2], %[kc2], #1  \n\t"
-      "bge        loop_kc2_%=         \n\t"
-      "end_kc2_%=:                    \n\t"
-
-      "mov        r5,     %[c]        \n\t"
-      "mov        r6,     %[step]     \n\t"
-      "vst1.32    {q8, q9},   [r5], r6     \n\t"
-      "vst1.32    {q10, q11}, [r5], r6     \n\t"
-      "vst1.32    {q12, q13}, [r5], r6     \n\t"
-      "vst1.32    {q14, q15}, [r5]         \n\t"
-      :
-      : [a_ptr] "r"(a_ptr), [b_ptr] "r"(b_ptr), [c] "r"(c), [kc1] "r"(kc1),
-        [kc2] "r"(kc2), [step] "r"(step)
-      : "memory", "r5", "r6", "q0", "q1", "q2", "q3", "q4", "q5", "q8", "q9",
-        "q10", "q11", "q12", "q13", "q14", "q15");
 }
 
 // C = A * B
@@ -2719,213 +3104,148 @@ void Gemm::VecWriteWithAddRelu(int n, float *c, float *C, int ldc) {
   }
 }
 
-  /*
-    // C = A * B, batchnorm(C)
-    void Gemm::VecWriteWithBn(int n, float *c, float *C, int ldc, float *scale,
-                        float *bias) {
-      int nc1 = n / 16;
-      int _nc1 = n % 16;
-      int nc2 = _nc1 / 4;
-      int nc3 = 16 - 4 * (_nc1 % 4);
+// C = A * B, batchnorm(C)
+void Gemm::VecWriteWithBn(int n, float *c, float *C, int ldc, float *scale,
+                          float *bias) {
+  int nc1 = n / 16;
+  int _nc1 = n % 16;
+  int nc2 = _nc1 / 4;
+  int nc3 = 16 - 4 * (_nc1 % 4);
 
-      asm volatile(
-          "subs       %[nc1],   %[nc1],   #1  \n\t"
-          "blt        end_nc1_%=              \n\t"
-          "loop_nc1_%=:                       \n\t"
+  asm volatile(
+      "subs       %[nc1],   %[nc1],   #1  \n\t"
+      "blt        end_nc1_%=              \n\t"
+      "loop_nc1_%=:                       \n\t"
 
-          "vld1.32    {q0, q1},   [%[c]]!     \n\t"
-          "vld1.32    {q2, q3},   [%[scale]]! \n\t"
-          "vld1.32    {q10, q11}, [%[bias]]!  \n\t"
-          "vmla.f32   q10,  q0,   q2          \n\t"
-          "vmla.f32   q11,  q1,   q3          \n\t"
-          "vst1.32    {q10, q11}, [%[C]]!     \n\t"
+      "vld1.32    {q0, q1},   [%[c]]!     \n\t"
+      "vld1.32    {q2, q3},   [%[scale]]! \n\t"
+      "vld1.32    {q10, q11}, [%[bias]]!  \n\t"
+      "vmla.f32   q10,  q0,   q2          \n\t"
+      "vmla.f32   q11,  q1,   q3          \n\t"
+      "vst1.32    {q10, q11}, [%[C]]!     \n\t"
 
-          "vld1.32    {q4, q5},   [%[c]]!     \n\t"
-          "vld1.32    {q6, q7},   [%[scale]]! \n\t"
-          "vld1.32    {q12, q13}, [%[bias]]!  \n\t"
-          "vmla.f32   q12,  q4,   q6          \n\t"
-          "vmla.f32   q13,  q5,   q7          \n\t"
-          "vst1.32    {q12, q13}, [%[C]]!     \n\t"
+      "vld1.32    {q4, q5},   [%[c]]!     \n\t"
+      "vld1.32    {q6, q7},   [%[scale]]! \n\t"
+      "vld1.32    {q12, q13}, [%[bias]]!  \n\t"
+      "vmla.f32   q12,  q4,   q6          \n\t"
+      "vmla.f32   q13,  q5,   q7          \n\t"
+      "vst1.32    {q12, q13}, [%[C]]!     \n\t"
 
-          "subs       %[nc1],   %[nc1],   #1  \n\t"
-          "bge        loop_nc1_%=             \n\t"
-          "end_nc1_%=:                        \n\t"
+      "subs       %[nc1],   %[nc1],   #1  \n\t"
+      "bge        loop_nc1_%=             \n\t"
+      "end_nc1_%=:                        \n\t"
 
-          "subs       %[nc2],   %[nc2],   #1  \n\t"
-          "blt        end_nc2_%=              \n\t"
-          "loop_nc2_%=:                       \n\t"
+      "subs       %[nc2],   %[nc2],   #1  \n\t"
+      "blt        end_nc2_%=              \n\t"
+      "loop_nc2_%=:                       \n\t"
 
-          "vld1.32    {q0},   [%[c]]!         \n\t"
-          "vld1.32    {q1},   [%[scale]]!     \n\t"
-          "vld1.32    {q10},  [%[bias]]!      \n\t"
-          "vmla.f32   q10,    q0,   q1        \n\t"
-          "vst1.32    {q10},  [%[C]]!         \n\t"
+      "vld1.32    {q0},   [%[c]]!         \n\t"
+      "vld1.32    {q1},   [%[scale]]!     \n\t"
+      "vld1.32    {q10},  [%[bias]]!      \n\t"
+      "vmla.f32   q10,    q0,   q1        \n\t"
+      "vst1.32    {q10},  [%[C]]!         \n\t"
 
-          "subs       %[nc2],   %[nc2],   #1  \n\t"
-          "bge        loop_nc2_%=             \n\t"
-          "end_nc2_%=:                        \n\t"
+      "subs       %[nc2],   %[nc2],   #1  \n\t"
+      "bge        loop_nc2_%=             \n\t"
+      "end_nc2_%=:                        \n\t"
 
-          "cmp        %[nc3],    #16          \n\t"
-          "beq        end_nc3_%=              \n\t"
+      "cmp        %[nc3],    #16          \n\t"
+      "beq        end_nc3_%=              \n\t"
 
-          "sub        %[c],     %[c],   %[nc3]      \n\t"
-          "sub        %[scale], %[scale],  %[nc3]   \n\t"
-          "sub        %[bias],  %[bias],   %[nc3]   \n\t"
-          "sub        %[C],     %[C],   %[nc3]      \n\t"
+      "sub        %[c],     %[c],   %[nc3]      \n\t"
+      "sub        %[scale], %[scale],  %[nc3]   \n\t"
+      "sub        %[bias],  %[bias],   %[nc3]   \n\t"
+      "sub        %[C],     %[C],   %[nc3]      \n\t"
 
-          "vld1.32    {q0},   [%[c]]!         \n\t"
-          "vld1.32    {q1},   [%[scale]]!     \n\t"
-          "vld1.32    {q10},  [%[bias]]!      \n\t"
-          "vmla.f32   q10,    q0,   q1        \n\t"
-          "vst1.32    {q10},  [%[C]]!         \n\t"
-          "end_nc3_%=:                        \n\t"
+      "vld1.32    {q0},   [%[c]]!         \n\t"
+      "vld1.32    {q1},   [%[scale]]!     \n\t"
+      "vld1.32    {q10},  [%[bias]]!      \n\t"
+      "vmla.f32   q10,    q0,   q1        \n\t"
+      "vst1.32    {q10},  [%[C]]!         \n\t"
+      "end_nc3_%=:                        \n\t"
 
-          :
-          : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3]
-    "r"(nc3), [scale] "r"(scale), [bias] "r"(bias) : "memory", "q0", "q1", "q2",
-    "q3", "q4", "q5", "q6", "q7", "q10", "q11", "q12", "q13");
-    }
+      :
+      : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3] "r"(nc3),
+        [scale] "r"(scale), [bias] "r"(bias)
+      : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q10", "q11",
+        "q12", "q13");
+}
 
-    // C = A * B, batchnorm(C), relu(C)
-    void Gemm::VecWriteWithBnRelu(int n, float *c, float *C, int ldc, float
-    *scale, float *bias) { int nc1 = n / 16; int _nc1 = n % 16; int nc2 = _nc1 /
-    4; int nc3 = 16 - 4 * (_nc1 % 4);
+// C = A * B, batchnorm(C), relu(C)
+void Gemm::VecWriteWithBnRelu(int n, float *c, float *C, int ldc, float *scale,
+                              float *bias) {
+  int nc1 = n / 16;
+  int _nc1 = n % 16;
+  int nc2 = _nc1 / 4;
+  int nc3 = 16 - 4 * (_nc1 % 4);
 
-      asm volatile(
-          "vmov.f32   q14,      #0.0          \n\t"
-          "subs       %[nc1],   %[nc1],   #1  \n\t"
-          "blt        end_nc1_%=              \n\t"
-          "loop_nc1_%=:                       \n\t"
+  asm volatile(
+      "vmov.f32   q14,      #0.0          \n\t"
+      "subs       %[nc1],   %[nc1],   #1  \n\t"
+      "blt        end_nc1_%=              \n\t"
+      "loop_nc1_%=:                       \n\t"
 
-          "vld1.32    {q0, q1},   [%[c]]!     \n\t"
-          "vld1.32    {q2, q3},   [%[scale]]! \n\t"
-          "vld1.32    {q10, q11}, [%[bias]]!  \n\t"
-          "vmla.f32   q10,  q0,   q2          \n\t"
-          "vmla.f32   q11,  q1,   q3          \n\t"
-          "vmax.f32   q10,  q10,  q14         \n\t"
-          "vmax.f32   q11,  q11,  q14         \n\t"
-          "vst1.32    {q10, q11}, [%[C]]!     \n\t"
+      "vld1.32    {q0, q1},   [%[c]]!     \n\t"
+      "vld1.32    {q2, q3},   [%[scale]]! \n\t"
+      "vld1.32    {q10, q11}, [%[bias]]!  \n\t"
+      "vmla.f32   q10,  q0,   q2          \n\t"
+      "vmla.f32   q11,  q1,   q3          \n\t"
+      "vmax.f32   q10,  q10,  q14         \n\t"
+      "vmax.f32   q11,  q11,  q14         \n\t"
+      "vst1.32    {q10, q11}, [%[C]]!     \n\t"
 
-          "vld1.32    {q4, q5},   [%[c]]!     \n\t"
-          "vld1.32    {q6, q7},   [%[scale]]! \n\t"
-          "vld1.32    {q12, q13}, [%[bias]]!  \n\t"
-          "vmla.f32   q12,  q4,   q6          \n\t"
-          "vmla.f32   q13,  q5,   q7          \n\t"
-          "vmax.f32   q12,  q12,  q14         \n\t"
-          "vmax.f32   q13,  q13,  q14         \n\t"
-          "vst1.32    {q12, q13}, [%[C]]!     \n\t"
+      "vld1.32    {q4, q5},   [%[c]]!     \n\t"
+      "vld1.32    {q6, q7},   [%[scale]]! \n\t"
+      "vld1.32    {q12, q13}, [%[bias]]!  \n\t"
+      "vmla.f32   q12,  q4,   q6          \n\t"
+      "vmla.f32   q13,  q5,   q7          \n\t"
+      "vmax.f32   q12,  q12,  q14         \n\t"
+      "vmax.f32   q13,  q13,  q14         \n\t"
+      "vst1.32    {q12, q13}, [%[C]]!     \n\t"
 
-          "subs       %[nc1],   %[nc1],   #1  \n\t"
-          "bge        loop_nc1_%=             \n\t"
-          "end_nc1_%=:                        \n\t"
+      "subs       %[nc1],   %[nc1],   #1  \n\t"
+      "bge        loop_nc1_%=             \n\t"
+      "end_nc1_%=:                        \n\t"
 
-          "subs       %[nc2],   %[nc2],   #1  \n\t"
-          "blt        end_nc2_%=              \n\t"
-          "loop_nc2_%=:                       \n\t"
+      "subs       %[nc2],   %[nc2],   #1  \n\t"
+      "blt        end_nc2_%=              \n\t"
+      "loop_nc2_%=:                       \n\t"
 
-          "vld1.32    {q0},   [%[c]]!         \n\t"
-          "vld1.32    {q1},   [%[scale]]!     \n\t"
-          "vld1.32    {q10},  [%[bias]]!      \n\t"
-          "vmla.f32   q10,    q0,   q1        \n\t"
-          "vmax.f32   q10,    q10,  q14       \n\t"
-          "vst1.32    {q10},  [%[C]]!         \n\t"
+      "vld1.32    {q0},   [%[c]]!         \n\t"
+      "vld1.32    {q1},   [%[scale]]!     \n\t"
+      "vld1.32    {q10},  [%[bias]]!      \n\t"
+      "vmla.f32   q10,    q0,   q1        \n\t"
+      "vmax.f32   q10,    q10,  q14       \n\t"
+      "vst1.32    {q10},  [%[C]]!         \n\t"
 
-          "subs       %[nc2],   %[nc2],   #1  \n\t"
-          "bge        loop_nc2_%=             \n\t"
-          "end_nc2_%=:                        \n\t"
+      "subs       %[nc2],   %[nc2],   #1  \n\t"
+      "bge        loop_nc2_%=             \n\t"
+      "end_nc2_%=:                        \n\t"
 
-          "cmp        %[nc3],    #16          \n\t"
-          "beq        end_nc3_%=              \n\t"
+      "cmp        %[nc3],    #16          \n\t"
+      "beq        end_nc3_%=              \n\t"
 
-          "sub        %[c],     %[c],   %[nc3]      \n\t"
-          "sub        %[scale], %[scale],  %[nc3]   \n\t"
-          "sub        %[bias],  %[bias],   %[nc3]   \n\t"
-          "sub        %[C],     %[C],   %[nc3]      \n\t"
+      "sub        %[c],     %[c],   %[nc3]      \n\t"
+      "sub        %[scale], %[scale],  %[nc3]   \n\t"
+      "sub        %[bias],  %[bias],   %[nc3]   \n\t"
+      "sub        %[C],     %[C],   %[nc3]      \n\t"
 
-          "vld1.32    {q0},   [%[c]]!         \n\t"
-          "vld1.32    {q1},   [%[scale]]!     \n\t"
-          "vld1.32    {q10},  [%[bias]]!      \n\t"
-          "vmla.f32   q10,    q0,   q1        \n\t"
-          "vmax.f32   q10,    q10,  q14       \n\t"
-          "vst1.32    {q10},  [%[C]]!         \n\t"
-          "end_nc3_%=:                        \n\t"
+      "vld1.32    {q0},   [%[c]]!         \n\t"
+      "vld1.32    {q1},   [%[scale]]!     \n\t"
+      "vld1.32    {q10},  [%[bias]]!      \n\t"
+      "vmla.f32   q10,    q0,   q1        \n\t"
+      "vmax.f32   q10,    q10,  q14       \n\t"
+      "vst1.32    {q10},  [%[C]]!         \n\t"
+      "end_nc3_%=:                        \n\t"
 
-          :
-          : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3]
-    "r"(nc3), [scale] "r"(scale), [bias] "r"(bias) : "memory", "q0", "q1", "q2",
-    "q3", "q4", "q5", "q6", "q7", "q10", "q11", "q12", "q13", "q14");
-    }
-    */
+      :
+      : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3] "r"(nc3),
+        [scale] "r"(scale), [bias] "r"(bias)
+      : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q10", "q11",
+        "q12", "q13", "q14");
+}
 
 #endif  // __aarch64__
-#else
-
-void Gemm::AddDot4x4(int k, const float *a, const float *b, float *c, int ldc) {
-  float *c0, *c1, *c2, *c3;
-  c0 = c;
-  c1 = c + ldc;
-  c2 = c + 2 * ldc;
-  c3 = c + 3 * ldc;
-  for (int p = 0; p < k; p += 1) {
-    // first row
-    c0[0] += a[0] * b[0];
-    c0[1] += a[0] * b[1];
-    c0[2] += a[0] * b[2];
-    c0[3] += a[0] * b[3];
-
-    // second row
-    c1[0] += a[1] * b[0];
-    c1[1] += a[1] * b[1];
-    c1[2] += a[1] * b[2];
-    c1[3] += a[1] * b[3];
-
-    // third row
-    c2[0] += a[2] * b[0];
-    c2[1] += a[2] * b[1];
-    c2[2] += a[2] * b[2];
-    c2[3] += a[2] * b[3];
-
-    // fourth row
-    c3[0] += a[3] * b[0];
-    c3[1] += a[3] * b[1];
-    c3[2] += a[3] * b[2];
-    c3[3] += a[3] * b[3];
-
-    a += 4;
-    b += 4;
-  }
-}
-
-void Gemm::AddDot4x8(int k, const float *a, const float *b, float *c, int ldc) {
-}
-
-void Gemm::WriteBasic(int mc, int nc, float *c, float *C, int ldc) {}
-
-void Gemm::WriteWithAlphaBeta(int mc, int nc, float *c, float *C, int ldc) {}
-
-void Gemm::WriteWithAdd(int mc, int nc, float *c, float *C, int ldc) {}
-
-void Gemm::WriteWithAddV1(int mc, int nc, float *c, float *C, int ldc,
-                          float *bias) {}
-
-void Gemm::WriteWithAddRelu(int mc, int nc, float *c, float *C, int ldc) {}
-
-void Gemm::WriteWithAddReluV1(int mc, int nc, float *c, float *C, int ldc,
-                              float *bias) {}
-
-void Gemm::WriteWithAddPRelu(int mc, int nc, float *c, float *C, int ldc,
-                             float *p, std::string mode, float *bias,
-                             float *bias1) {}
-
-void Gemm::WriteWithBn(int mc, int nc, float *c, float *C, int ldc,
-                       float *new_scale, float *new_bias) {}
-
-void Gemm::WriteWithBnRelu(int mc, int nc, float *c, float *C, int ldc,
-                           float *new_scale, float *new_bias) {}
-void Gemm::WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
-                              float *new_scale, float *new_bias, float *bias1) {
-}
-
 #endif  // __ARM_NEON
 
 // 32位 float 矩阵乘法
@@ -3532,479 +3852,6 @@ void Gemm::SgemmWithPRelu_omp(int m, int n, int k, const float *A, int lda,
   paddle_mobile::memory::Free(packedC);
   paddle_mobile::memory::Free(zero);
 }
-
-void Gemm::AddDot6x8(int k, const float *a, const float *b, float *c, int ldc) {
-#if __ARM_NEON
-#if __aarch64__
-
-  // init C
-  float32x4_t cv0 = vdupq_n_f32(0.0);
-  float32x4_t cv1 = vdupq_n_f32(0.0);
-  float32x4_t cv2 = vdupq_n_f32(0.0);
-  float32x4_t cv3 = vdupq_n_f32(0.0);
-  float32x4_t cv4 = vdupq_n_f32(0.0);
-  float32x4_t cv5 = vdupq_n_f32(0.0);
-  float32x4_t cv6 = vdupq_n_f32(0.0);
-  float32x4_t cv7 = vdupq_n_f32(0.0);
-  float32x4_t cv8 = vdupq_n_f32(0.0);
-  float32x4_t cv9 = vdupq_n_f32(0.0);
-  float32x4_t cv10 = vdupq_n_f32(0.0);
-  float32x4_t cv11 = vdupq_n_f32(0.0);
-
-  float32x4_t av;
-  float32x4_t bv0;
-  float32x4_t bv1;
-
-  float32x2_t av01;
-  float32x2_t av23;
-  float32x2_t av45;
-
-  for (int p = 0; p < k; p += 1) {
-    av = vld1q_f32(a);
-    av01 = vget_low_f32(av);
-    av23 = vget_high_f32(av);
-    av45 = vld1_f32(a + 4);
-    bv0 = vld1q_f32(b);
-    bv1 = vld1q_f32(b + 4);
-
-    cv0 = vmlaq_lane_f32(cv0, bv0, av01, 0);
-    cv1 = vmlaq_lane_f32(cv1, bv1, av01, 0);
-    cv2 = vmlaq_lane_f32(cv2, bv0, av01, 1);
-    cv3 = vmlaq_lane_f32(cv3, bv1, av01, 1);
-
-    cv4 = vmlaq_lane_f32(cv4, bv0, av23, 0);
-    cv5 = vmlaq_lane_f32(cv5, bv1, av23, 0);
-    cv6 = vmlaq_lane_f32(cv6, bv0, av23, 1);
-    cv7 = vmlaq_lane_f32(cv7, bv1, av23, 1);
-
-    cv8 = vmlaq_lane_f32(cv8, bv0, av45, 0);
-    cv9 = vmlaq_lane_f32(cv9, bv1, av45, 0);
-    cv10 = vmlaq_lane_f32(cv10, bv0, av45, 1);
-    cv11 = vmlaq_lane_f32(cv11, bv1, av45, 1);
-
-    a += MR;
-    b += NR;
-  }
-
-  vst1q_f32(c, cv0);
-  vst1q_f32(c + 4, cv1);
-  vst1q_f32(c + ldc, cv2);
-  vst1q_f32(c + ldc + 4, cv3);
-  vst1q_f32(c + 2 * ldc, cv4);
-  vst1q_f32(c + 2 * ldc + 4, cv5);
-  vst1q_f32(c + 3 * ldc, cv6);
-  vst1q_f32(c + 3 * ldc + 4, cv7);
-  vst1q_f32(c + 4 * ldc, cv8);
-  vst1q_f32(c + 4 * ldc + 4, cv9);
-  vst1q_f32(c + 5 * ldc, cv10);
-  vst1q_f32(c + 5 * ldc + 4, cv11);
-
-#else
-
-  const float *a_ptr, *b_ptr;
-  a_ptr = a;
-  b_ptr = b;
-  int kc1 = k / 8;
-  int kc2 = k % 8;
-  int step = sizeof(float) * ldc;
-  asm volatile(
-      "pld        [%[a_ptr]]            \n\t"
-      "pld        [%[a_ptr],  #64]      \n\t"
-      "pld        [%[b_ptr]]            \n\t"
-      "pld        [%[b_ptr],  #64]      \n\t"
-
-      "vmov.f32   q4,     #0.0          \n\t"
-      "vmov.f32   q5,     #0.0          \n\t"
-      "vmov.f32   q6,     #0.0          \n\t"
-      "vmov.f32   q7,     #0.0          \n\t"
-      "vmov.f32   q8,     #0.0          \n\t"
-      "vmov.f32   q9,     #0.0          \n\t"
-      "vmov.f32   q10,    #0.0          \n\t"
-      "vmov.f32   q11,    #0.0          \n\t"
-      "vmov.f32   q12,    #0.0          \n\t"
-      "vmov.f32   q13,    #0.0          \n\t"
-      "vmov.f32   q14,    #0.0          \n\t"
-      "vmov.f32   q15,    #0.0          \n\t"
-
-      "subs       %[kc1], %[kc1], #1    \n\t"
-      "blt        2f                    \n\t"
-      "1:                               \n\t"
-
-      "pld        [%[a_ptr], #128]       \n\t"
-      "pld        [%[b_ptr], #128]       \n\t"
-
-      "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
-      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
-
-      "vmla.f32   q4,   q2,   d0[0]       \n\t"
-      "vmla.f32   q5,   q3,   d0[0]       \n\t"
-      "vmla.f32   q6,   q2,   d0[1]       \n\t"
-      "vmla.f32   q7,   q3,   d0[1]       \n\t"
-      "vmla.f32   q8,   q2,   d1[0]       \n\t"
-      "vmla.f32   q9,   q3,   d1[0]       \n\t"
-      "vmla.f32   q10,  q2,   d1[1]       \n\t"
-      "vmla.f32   q11,  q3,   d1[1]       \n\t"
-      "vmla.f32   q12,  q2,   d2[0]       \n\t"
-      "vmla.f32   q13,  q3,   d2[0]       \n\t"
-      "vmla.f32   q14,  q2,   d2[1]       \n\t"
-      "vmla.f32   q15,  q3,   d2[1]       \n\t"
-
-      "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
-      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
-
-      "vmla.f32   q4,   q2,   d0[0]       \n\t"
-      "vmla.f32   q5,   q3,   d0[0]       \n\t"
-      "vmla.f32   q6,   q2,   d0[1]       \n\t"
-      "vmla.f32   q7,   q3,   d0[1]       \n\t"
-      "vmla.f32   q8,   q2,   d1[0]       \n\t"
-      "vmla.f32   q9,   q3,   d1[0]       \n\t"
-      "vmla.f32   q10,  q2,   d1[1]       \n\t"
-      "vmla.f32   q11,  q3,   d1[1]       \n\t"
-      "vmla.f32   q12,  q2,   d2[0]       \n\t"
-      "vmla.f32   q13,  q3,   d2[0]       \n\t"
-      "vmla.f32   q14,  q2,   d2[1]       \n\t"
-      "vmla.f32   q15,  q3,   d2[1]       \n\t"
-
-      "pld        [%[a_ptr], #128]       \n\t"
-      "pld        [%[b_ptr], #128]       \n\t"
-
-      "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
-      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
-
-      "vmla.f32   q4,   q2,   d0[0]       \n\t"
-      "vmla.f32   q5,   q3,   d0[0]       \n\t"
-      "vmla.f32   q6,   q2,   d0[1]       \n\t"
-      "vmla.f32   q7,   q3,   d0[1]       \n\t"
-      "vmla.f32   q8,   q2,   d1[0]       \n\t"
-      "vmla.f32   q9,   q3,   d1[0]       \n\t"
-      "vmla.f32   q10,  q2,   d1[1]       \n\t"
-      "vmla.f32   q11,  q3,   d1[1]       \n\t"
-      "vmla.f32   q12,  q2,   d2[0]       \n\t"
-      "vmla.f32   q13,  q3,   d2[0]       \n\t"
-      "vmla.f32   q14,  q2,   d2[1]       \n\t"
-      "vmla.f32   q15,  q3,   d2[1]       \n\t"
-
-      "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
-      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
-
-      "vmla.f32   q4,   q2,   d0[0]       \n\t"
-      "vmla.f32   q5,   q3,   d0[0]       \n\t"
-      "vmla.f32   q6,   q2,   d0[1]       \n\t"
-      "vmla.f32   q7,   q3,   d0[1]       \n\t"
-      "vmla.f32   q8,   q2,   d1[0]       \n\t"
-      "vmla.f32   q9,   q3,   d1[0]       \n\t"
-      "vmla.f32   q10,  q2,   d1[1]       \n\t"
-      "vmla.f32   q11,  q3,   d1[1]       \n\t"
-      "vmla.f32   q12,  q2,   d2[0]       \n\t"
-      "vmla.f32   q13,  q3,   d2[0]       \n\t"
-      "vmla.f32   q14,  q2,   d2[1]       \n\t"
-      "vmla.f32   q15,  q3,   d2[1]       \n\t"
-
-      "pld        [%[a_ptr], #128]       \n\t"
-      "pld        [%[b_ptr], #128]       \n\t"
-
-      "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
-      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
-
-      "vmla.f32   q4,   q2,   d0[0]       \n\t"
-      "vmla.f32   q5,   q3,   d0[0]       \n\t"
-      "vmla.f32   q6,   q2,   d0[1]       \n\t"
-      "vmla.f32   q7,   q3,   d0[1]       \n\t"
-      "vmla.f32   q8,   q2,   d1[0]       \n\t"
-      "vmla.f32   q9,   q3,   d1[0]       \n\t"
-      "vmla.f32   q10,  q2,   d1[1]       \n\t"
-      "vmla.f32   q11,  q3,   d1[1]       \n\t"
-      "vmla.f32   q12,  q2,   d2[0]       \n\t"
-      "vmla.f32   q13,  q3,   d2[0]       \n\t"
-      "vmla.f32   q14,  q2,   d2[1]       \n\t"
-      "vmla.f32   q15,  q3,   d2[1]       \n\t"
-
-      "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
-      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
-
-      "vmla.f32   q4,   q2,   d0[0]       \n\t"
-      "vmla.f32   q5,   q3,   d0[0]       \n\t"
-      "vmla.f32   q6,   q2,   d0[1]       \n\t"
-      "vmla.f32   q7,   q3,   d0[1]       \n\t"
-      "vmla.f32   q8,   q2,   d1[0]       \n\t"
-      "vmla.f32   q9,   q3,   d1[0]       \n\t"
-      "vmla.f32   q10,  q2,   d1[1]       \n\t"
-      "vmla.f32   q11,  q3,   d1[1]       \n\t"
-      "vmla.f32   q12,  q2,   d2[0]       \n\t"
-      "vmla.f32   q13,  q3,   d2[0]       \n\t"
-      "vmla.f32   q14,  q2,   d2[1]       \n\t"
-      "vmla.f32   q15,  q3,   d2[1]       \n\t"
-
-      "pld        [%[a_ptr], #128]       \n\t"
-      "pld        [%[b_ptr], #128]       \n\t"
-
-      "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
-      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
-
-      "vmla.f32   q4,   q2,   d0[0]       \n\t"
-      "vmla.f32   q5,   q3,   d0[0]       \n\t"
-      "vmla.f32   q6,   q2,   d0[1]       \n\t"
-      "vmla.f32   q7,   q3,   d0[1]       \n\t"
-      "vmla.f32   q8,   q2,   d1[0]       \n\t"
-      "vmla.f32   q9,   q3,   d1[0]       \n\t"
-      "vmla.f32   q10,  q2,   d1[1]       \n\t"
-      "vmla.f32   q11,  q3,   d1[1]       \n\t"
-      "vmla.f32   q12,  q2,   d2[0]       \n\t"
-      "vmla.f32   q13,  q3,   d2[0]       \n\t"
-      "vmla.f32   q14,  q2,   d2[1]       \n\t"
-      "vmla.f32   q15,  q3,   d2[1]       \n\t"
-
-      "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
-      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
-
-      "vmla.f32   q4,   q2,   d0[0]       \n\t"
-      "vmla.f32   q5,   q3,   d0[0]       \n\t"
-      "vmla.f32   q6,   q2,   d0[1]       \n\t"
-      "vmla.f32   q7,   q3,   d0[1]       \n\t"
-      "vmla.f32   q8,   q2,   d1[0]       \n\t"
-      "vmla.f32   q9,   q3,   d1[0]       \n\t"
-      "vmla.f32   q10,  q2,   d1[1]       \n\t"
-      "vmla.f32   q11,  q3,   d1[1]       \n\t"
-      "vmla.f32   q12,  q2,   d2[0]       \n\t"
-      "vmla.f32   q13,  q3,   d2[0]       \n\t"
-      "vmla.f32   q14,  q2,   d2[1]       \n\t"
-      "vmla.f32   q15,  q3,   d2[1]       \n\t"
-
-      "subs       %[kc1], %[kc1], #1      \n\t"
-      "bge        1b                      \n\t"
-      "2:                                 \n\t"
-
-      "subs       %[kc2], %[kc2], #1      \n\t"
-      "blt        4f                      \n\t"
-      "3:                                 \n\t"
-
-      "vld1.32    {d0-d2},  [%[a_ptr]]!   \n\t"
-      "vld1.32    {q2, q3}, [%[b_ptr]]!   \n\t"
-
-      "vmla.f32   q4,   q2,   d0[0]       \n\t"
-      "vmla.f32   q5,   q3,   d0[0]       \n\t"
-      "vmla.f32   q6,   q2,   d0[1]       \n\t"
-      "vmla.f32   q7,   q3,   d0[1]       \n\t"
-      "vmla.f32   q8,   q2,   d1[0]       \n\t"
-      "vmla.f32   q9,   q3,   d1[0]       \n\t"
-      "vmla.f32   q10,  q2,   d1[1]       \n\t"
-      "vmla.f32   q11,  q3,   d1[1]       \n\t"
-      "vmla.f32   q12,  q2,   d2[0]       \n\t"
-      "vmla.f32   q13,  q3,   d2[0]       \n\t"
-      "vmla.f32   q14,  q2,   d2[1]       \n\t"
-      "vmla.f32   q15,  q3,   d2[1]       \n\t"
-
-      "subs       %[kc2], %[kc2], #1      \n\t"
-      "bge        3b                      \n\t"
-      "4:                                 \n\t"
-
-      "mov        r5,     %[c]            \n\t"
-      "mov        r6,     %[step]         \n\t"
-      "vst1.32    {q4, q5},   [r5], r6    \n\t"
-      "vst1.32    {q6, q7},   [r5], r6    \n\t"
-      "vst1.32    {q8, q9},   [r5], r6    \n\t"
-      "vst1.32    {q10, q11}, [r5], r6    \n\t"
-      "vst1.32    {q12, q13}, [r5], r6    \n\t"
-      "vst1.32    {q14, q15}, [r5]        \n\t"
-
-      :
-      : [a_ptr] "r"(a_ptr), [b_ptr] "r"(b_ptr), [c] "r"(c), [kc1] "r"(kc1),
-        [kc2] "r"(kc2), [step] "r"(step)
-      : "cc", "memory", "r5", "r6", "q0", "q1", "q2", "q3", "q4", "q5", "q6",
-        "q7", "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15");
-
-#endif  // __aarch64__
-
-#endif  // __ARM_NEON
-}
-
-#if __aarch64__
-void Gemm::AddDot8x12(int k, const float *a, const float *b, float *c,
-                      int ldc) {
-  const float *a_ptr, *b_ptr;
-  a_ptr = a;
-  b_ptr = b;
-  int kc1 = k;
-  int step = 4 * ldc;
-  asm volatile(
-      "dup      v5.4s,     wzr     \n\t"
-      "dup      v6.4s,     wzr     \n\t"
-      "dup      v7.4s,     wzr     \n\t"
-      "dup      v8.4s,     wzr     \n\t"
-      "dup      v9.4s,     wzr     \n\t"
-      "dup      v10.4s,    wzr     \n\t"
-      "dup      v11.4s,    wzr     \n\t"
-      "dup      v12.4s,    wzr     \n\t"
-      "dup      v13.4s,    wzr     \n\t"
-      "dup      v14.4s,    wzr     \n\t"
-      "dup      v15.4s,    wzr     \n\t"
-      "dup      v16.4s,    wzr     \n\t"
-
-      "dup      v17.4s,    wzr     \n\t"
-      "dup      v18.4s,    wzr     \n\t"
-      "dup      v19.4s,    wzr     \n\t"
-      "dup      v20.4s,    wzr     \n\t"
-      "dup      v21.4s,    wzr     \n\t"
-      "dup      v22.4s,    wzr     \n\t"
-      "dup      v23.4s,    wzr     \n\t"
-      "dup      v24.4s,    wzr     \n\t"
-      "dup      v25.4s,    wzr     \n\t"
-      "dup      v26.4s,    wzr     \n\t"
-      "dup      v27.4s,    wzr     \n\t"
-      "dup      v28.4s,    wzr     \n\t"
-
-      "subs       %[kc1], %[kc1], #1    \n\t"
-      "blt        2f                    \n\t"
-      "1:                               \n\t"
-
-      "prfm     pldl1keep,         [%[a_ptr],   #32]  \n\t"
-      "prfm     pldl1keep,         [%[b_ptr],   #48]  \n\t"
-
-      "ld1      {v0.4s, v1.4s},         [%[a_ptr]],   #32   \n\t"
-      "ld1      {v2.4s, v3.4s, v4.4s},  [%[b_ptr]],   #48   \n\t"
-
-      "fmla     v5.4s,    v2.4s,   v0.s[0]       \n\t"
-      "fmla     v6.4s,    v3.4s,   v0.s[0]       \n\t"
-      "fmla     v7.4s,    v4.4s,   v0.s[0]       \n\t"
-      "fmla     v8.4s,    v2.4s,   v0.s[1]       \n\t"
-      "fmla     v9.4s,    v3.4s,   v0.s[1]       \n\t"
-      "fmla     v10.4s,   v4.4s,   v0.s[1]       \n\t"
-      "fmla     v11.4s,   v2.4s,   v0.s[2]       \n\t"
-      "fmla     v12.4s,   v3.4s,   v0.s[2]       \n\t"
-      "fmla     v13.4s,   v4.4s,   v0.s[2]       \n\t"
-      "fmla     v14.4s,   v2.4s,   v0.s[3]       \n\t"
-      "fmla     v15.4s,   v3.4s,   v0.s[3]       \n\t"
-      "fmla     v16.4s,   v4.4s,   v0.s[3]       \n\t"
-
-      "fmla     v17.4s,   v2.4s,   v1.s[0]       \n\t"
-      "fmla     v18.4s,   v3.4s,   v1.s[0]       \n\t"
-      "fmla     v19.4s,   v4.4s,   v1.s[0]       \n\t"
-      "fmla     v20.4s,   v2.4s,   v1.s[1]       \n\t"
-      "fmla     v21.4s,   v3.4s,   v1.s[1]       \n\t"
-      "fmla     v22.4s,   v4.4s,   v1.s[1]       \n\t"
-      "fmla     v23.4s,   v2.4s,   v1.s[2]       \n\t"
-      "fmla     v24.4s,   v3.4s,   v1.s[2]       \n\t"
-      "fmla     v25.4s,   v4.4s,   v1.s[2]       \n\t"
-      "fmla     v26.4s,   v2.4s,   v1.s[3]       \n\t"
-      "fmla     v27.4s,   v3.4s,   v1.s[3]       \n\t"
-      "fmla     v28.4s,   v4.4s,   v1.s[3]       \n\t"
-
-      "subs       %[kc1], %[kc1], #1      \n\t"
-      "bge        1b                      \n\t"
-      "2:                                 \n\t"
-
-      "st1      {v5.4s,   v6.4s,  v7.4s},    [%[c]],   %[step]   \n\t"
-      "st1      {v8.4s,   v9.4s,  v10.4s},   [%[c]],   %[step]   \n\t"
-      "st1      {v11.4s,  v12.4s, v13.4s},   [%[c]],   %[step]   \n\t"
-      "st1      {v14.4s,  v15.4s, v16.4s},   [%[c]],   %[step]   \n\t"
-      "st1      {v17.4s,  v18.4s, v19.4s},   [%[c]],   %[step]   \n\t"
-      "st1      {v20.4s,  v21.4s, v22.4s},   [%[c]],   %[step]   \n\t"
-      "st1      {v23.4s,  v24.4s, v25.4s},   [%[c]],   %[step]   \n\t"
-      "st1      {v26.4s,  v27.4s, v28.4s},   [%[c]],   %[step]   \n\t"
-      :
-      : [a_ptr] "r"(a_ptr), [b_ptr] "r"(b_ptr), [c] "r"(c), [kc1] "r"(kc1),
-        [step] "r"(step)
-      : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
-        "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19",
-        "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28");
-}
-
-void Gemm::AddDot6x16(int k, const float *a, const float *b, float *c,
-                      int ldc) {
-  const float *a_ptr, *b_ptr;
-  a_ptr = a;
-  b_ptr = b;
-  int kc1 = k;
-  int step = 4 * ldc;
-  int step1 = 4 * 6;
-  asm volatile(
-
-      "dup      v6.4s,     wzr     \n\t"
-      "dup      v7.4s,     wzr     \n\t"
-      "dup      v8.4s,     wzr     \n\t"
-      "dup      v9.4s,     wzr     \n\t"
-      "dup      v10.4s,    wzr     \n\t"
-      "dup      v11.4s,    wzr     \n\t"
-      "dup      v12.4s,    wzr     \n\t"
-      "dup      v13.4s,    wzr     \n\t"
-
-      "dup      v14.4s,    wzr     \n\t"
-      "dup      v15.4s,    wzr     \n\t"
-      "dup      v16.4s,    wzr     \n\t"
-      "dup      v17.4s,    wzr     \n\t"
-      "dup      v18.4s,    wzr     \n\t"
-      "dup      v19.4s,    wzr     \n\t"
-      "dup      v20.4s,    wzr     \n\t"
-      "dup      v21.4s,    wzr     \n\t"
-
-      "dup      v22.4s,    wzr     \n\t"
-      "dup      v23.4s,    wzr     \n\t"
-      "dup      v24.4s,    wzr     \n\t"
-      "dup      v25.4s,    wzr     \n\t"
-      "dup      v26.4s,    wzr     \n\t"
-      "dup      v27.4s,    wzr     \n\t"
-      "dup      v28.4s,    wzr     \n\t"
-      "dup      v29.4s,    wzr     \n\t"
-
-      "subs       %[kc1], %[kc1], #1    \n\t"
-      "blt        2f                    \n\t"
-      "1:                               \n\t"
-
-      "prfm   pldl1keep,  [%[a_ptr],  #24]  \n\t"
-      "prfm   pldl1keep,  [%[b_ptr],  #64]  \n\t"
-
-      "ld1      {v0.4s, v1.4s},  [%[a_ptr]],   %[step1]       \n\t"
-      "ld1      {v2.4s, v3.4s, v4.4s, v5.4s},  [%[b_ptr]],    #64   \n\t"
-
-      "fmla     v6.4s,    v2.4s,   v0.s[0]       \n\t"
-      "fmla     v7.4s,    v3.4s,   v0.s[0]       \n\t"
-      "fmla     v8.4s,    v4.4s,   v0.s[0]       \n\t"
-      "fmla     v9.4s,    v5.4s,   v0.s[0]       \n\t"
-
-      "fmla     v10.4s,   v2.4s,   v0.s[1]       \n\t"
-      "fmla     v11.4s,   v3.4s,   v0.s[1]       \n\t"
-      "fmla     v12.4s,   v4.4s,   v0.s[1]       \n\t"
-      "fmla     v13.4s,   v5.4s,   v0.s[1]       \n\t"
-
-      "fmla     v14.4s,   v2.4s,   v0.s[2]       \n\t"
-      "fmla     v15.4s,   v3.4s,   v0.s[2]       \n\t"
-      "fmla     v16.4s,   v4.4s,   v0.s[2]       \n\t"
-      "fmla     v17.4s,   v5.4s,   v0.s[2]       \n\t"
-
-      "fmla     v18.4s,   v2.4s,   v0.s[3]       \n\t"
-      "fmla     v19.4s,   v3.4s,   v0.s[3]       \n\t"
-      "fmla     v20.4s,   v4.4s,   v0.s[3]       \n\t"
-      "fmla     v21.4s,   v5.4s,   v0.s[3]       \n\t"
-
-      "fmla     v22.4s,   v2.4s,   v1.s[0]       \n\t"
-      "fmla     v23.4s,   v3.4s,   v1.s[0]       \n\t"
-      "fmla     v24.4s,   v4.4s,   v1.s[0]       \n\t"
-      "fmla     v25.4s,   v5.4s,   v1.s[0]       \n\t"
-
-      "fmla     v26.4s,   v2.4s,   v1.s[1]       \n\t"
-      "fmla     v27.4s,   v3.4s,   v1.s[1]       \n\t"
-      "fmla     v28.4s,   v4.4s,   v1.s[1]       \n\t"
-      "fmla     v29.4s,   v5.4s,   v1.s[1]       \n\t"
-
-      "subs       %[kc1], %[kc1], #1      \n\t"
-      "bge        1b                      \n\t"
-      "2:                                 \n\t"
-
-      "st1      {v6.4s,  v7.4s,  v8.4s,  v9.4s},    [%[c]],   %[step]   \n\t"
-      "st1      {v10.4s, v11.4s, v12.4s, v13.4s},   [%[c]],   %[step]   \n\t"
-      "st1      {v14.4s, v15.4s, v16.4s, v17.4s},   [%[c]],   %[step]   \n\t"
-      "st1      {v18.4s, v19.4s, v20.4s, v21.4s},   [%[c]],   %[step]   \n\t"
-      "st1      {v22.4s, v23.4s, v24.4s, v25.4s},   [%[c]],   %[step]   \n\t"
-      "st1      {v26.4s, v27.4s, v28.4s, v29.4s},   [%[c]],   %[step]   \n\t"
-      :
-      : [a_ptr] "r"(a_ptr), [b_ptr] "r"(b_ptr), [c] "r"(c), [kc1] "r"(kc1),
-        [step] "r"(step), [step1] "r"(step1)
-      : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
-        "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19",
-        "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29");
-}
-
-#endif  // __aarch64__
 
 }  // namespace math
 }  // namespace operators
