@@ -23,7 +23,7 @@ namespace operators {
 template <>
 bool AnchorGeneratorKernel<FPGA, float>::Init(
     AnchorGeneratorParam<FPGA> *param) {
-  //TODO zhangyang
+  // TODO zhangyang
   return true;
 }
 
