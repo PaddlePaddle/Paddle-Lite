@@ -65,6 +65,22 @@ void PSRoiPoolOp<DeviceType, T>::InferShape() const {
 }
 #endif
 
+#ifdef ROI_PERSPECTIVE_OP
+template <typename DeviceType, typename T>
+void RoiPerspectiveOp<DeviceType, T>::InferShape() const {
+  const auto &input_dims = this->param_.input_x_->dims();
+  const auto &rois_dims = this->param_.input_rois_->dims();
+  const int transformed_height = this->param_.transformed_height_;
+  const int transformed_width = this->param_.transformed_width_;
+  std::vector<int64_t> out_dims_v({rois_dims[0],   // num_rois
+                                   input_dims[1],  // channels
+                                   static_cast<int64_t>(transformed_height),
+                                   static_cast<int64_t>(transformed_width)});
+  auto out_dims = framework::make_ddim(out_dims_v);
+  this->param_.output_->Resize(out_dims);
+}
+#endif
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
@@ -78,6 +94,9 @@ REGISTER_OPERATOR_CPU(generate_proposals, ops::ProposalOp);
 #endif
 #ifdef PSROI_POOL_OP
 REGISTER_OPERATOR_CPU(psroi_pool, ops::PSRoiPoolOp);
+#endif
+#ifdef ROI_PERSPECTIVE_OP
+REGISTER_OPERATOR_CPU(roi_perspective_transform, ops::RoiPerspectiveOp);
 #endif
 #endif
 

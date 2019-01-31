@@ -110,6 +110,7 @@ const char *G_OP_TYPE_SLICE = "slice";
 const char *G_OP_TYPE_ANCHOR_GENERATOR = "anchor_generator";
 const char *G_OP_TYPE_GENERATE_PROPOSALS = "generate_proposals";
 const char *G_OP_TYPE_PSROI_POOL = "psroi_pool";
+const char *G_OP_TYPE_ROI_PERSPECTIVE = "roi_perspective_transform";
 
 std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
@@ -208,5 +209,6 @@ std::unordered_map<
         {G_OP_TYPE_GENERATE_PROPOSALS,
          {{"Scores", "BboxDeltas", "ImInfo", "Anchors", "Variances"},
           {"RpnRois", "RpnRoiProbs"}}},
-        {G_OP_TYPE_PSROI_POOL, {{"X", "ROIs"}, {"Out"}}}};
+        {G_OP_TYPE_PSROI_POOL, {{"X", "ROIs"}, {"Out"}}},
+        {G_OP_TYPE_ROI_PERSPECTIVE, {{"X", "ROIs"}, {"Out"}}}};
 }  // namespace paddle_mobile
