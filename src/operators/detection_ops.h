@@ -34,5 +34,9 @@ DECLARE_OPERATOR(Proposal, ProposalParam, ProposalKernel);
 DECLARE_OPERATOR(PSRoiPool, PSRoiPoolParam, PSRoiPoolKernel);
 #endif
 
+#ifdef ROI_PERSPECTIVE_OP
+DECLARE_OPERATOR(RoiPerspective, RoiPerspectiveParam, RoiPerspectiveKernel);
+#endif
+
 }  // namespace operators
 }  // namespace paddle_mobile
