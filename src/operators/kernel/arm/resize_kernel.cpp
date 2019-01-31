@@ -22,8 +22,8 @@ namespace operators {
 void BiLinearResizeTensor(const float* src, const int src_height,
                           const int src_width, float* dst, const int dst_height,
                           const int dst_width) {
-  const float scale_w = src_width / (float)dst_width;
-  const float scale_h = src_height / (float)dst_height;
+  const float scale_w = src_width / static_cast<float>(dst_width);
+  const float scale_h = src_height / static_cast<float>(dst_height);
   float* dst_data = dst;
   const float* src_data = src;
 
@@ -33,8 +33,8 @@ void BiLinearResizeTensor(const float* src, const int src_height,
     int src_h = std::floor(fh);
 
     fh -= src_h;
-    const float w_h0 = std::abs((float)1.0 - fh);
-    const float w_h1 = std::abs(fh);
+    const float w_h0 = fabs(1.0 - fh);
+    const float w_h1 = fabs(fh);
 
     const int dst_offset_1 = dst_h * dst_width;
     const int src_offset_1 = src_h * src_width;
@@ -45,8 +45,8 @@ void BiLinearResizeTensor(const float* src, const int src_height,
       float fw = dst_w * scale_w;
       int src_w = std::floor(fw);
       fw -= src_w;
-      const float w_w0 = std::abs((float)1.0 - fw);
-      const float w_w1 = std::abs(fw);
+      const float w_w0 = fabs(1.0 - fw);
+      const float w_w1 = fabs(fw);
 
       float dst_value = 0;
 
