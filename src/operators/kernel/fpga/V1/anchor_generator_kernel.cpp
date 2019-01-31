@@ -24,7 +24,6 @@ template <>
 bool AnchorGeneratorKernel<FPGA, float>::Init(
     AnchorGeneratorParam<FPGA> *param) {
   return true;
-  
 }
 
 template <>
