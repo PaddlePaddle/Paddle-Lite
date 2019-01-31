@@ -321,3 +321,6 @@ LOAD_OP1(generate_proposals, CPU);
 #ifdef PSROI_POOL_OP
 LOAD_OP1(psroi_pool, CPU);
 #endif
+#ifdef ROI_PERSPECTIVE_OP
+LOAD_OP1(roi_perspective_transform, CPU);
+#endif
