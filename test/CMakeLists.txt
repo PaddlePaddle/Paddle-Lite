@@ -74,6 +74,9 @@ if (CON GREATER -1)
     ADD_EXECUTABLE(test-densebox fpga/test_densebox_combine.cpp test_helper.h test_include.h executor_for_test.h)
     target_link_libraries(test-densebox paddle-mobile)
 
+    ADD_EXECUTABLE(test-rfcn fpga/test_rfcn.cpp test_helper.h test_include.h executor_for_test.h)
+    target_link_libraries(test-rfcn paddle-mobile)
+
     set(FOUND_MATCH ON)
 endif ()
 
