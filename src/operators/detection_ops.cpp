@@ -22,6 +22,7 @@ namespace operators {
 template <typename DeviceType, typename T>
 void AnchorGeneratorOp<DeviceType, T>::InferShape() const {
   const auto &input_dims = this->param_.input_->dims();
+  // DLOG << "AnchorGenerator input dim =" << input_dims.size();
   PADDLE_MOBILE_ENFORCE(input_dims.size() == 4, "The layout of input is NCHW.");
   const auto &anchor_sizes = this->param_.anchor_sizes_;
   const auto &aspect_ratios = this->param_.aspect_ratios_;
@@ -77,5 +78,17 @@ REGISTER_OPERATOR_CPU(generate_proposals, ops::ProposalOp);
 #endif
 #ifdef PSROI_POOL_OP
 REGISTER_OPERATOR_CPU(psroi_pool, ops::PSRoiPoolOp);
+#endif
+#endif
+
+#ifdef PADDLE_MOBILE_FPGA
+#ifdef ANCHOR_GENERATOR_OP
+REGISTER_OPERATOR_FPGA(anchor_generator, ops::AnchorGeneratorOp);
+#endif
+#ifdef PROPOSAL_OP
+REGISTER_OPERATOR_FPGA(generate_proposals, ops::ProposalOp);
+#endif
+#ifdef PSROI_POOL_OP
+REGISTER_OPERATOR_FPGA(psroi_pool, ops::PSRoiPoolOp);
 #endif
 #endif
