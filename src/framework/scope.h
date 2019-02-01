@@ -83,6 +83,13 @@ class Scope {
 
   Variable *FindVarLocally(const std::string &name) const;
 
+#ifdef PADDLE_MOBILE_FPGA
+  Variable *Var(const std::string &name, const int id);
+  std::vector<Variable *> VarContain(const std::string substring);
+  void InsertVar(const std::string str, Variable *var);
+  void print_vars();
+#endif
+
 #ifdef PADDLE_MOBILE_CL
   CLScope *GetCLScpoe() { return cl_scope_; }
 #endif

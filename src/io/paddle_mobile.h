@@ -90,6 +90,7 @@ class PaddleMobile {
 #ifdef PADDLE_MOBILE_FPGA
   void InjectVariable(const framework::Tensor &t, std::string var_name);
   void FeedData(const framework::Tensor &t);
+  void FeedData(const std::vector<framework::Tensor> &v);
   std::shared_ptr<framework::Tensor> FetchResult(int id = -1);
   void Predict_From_To(int start = 0, int end = -1);
   void Predict_From(int start);

@@ -53,7 +53,8 @@ void ProgramDesc::Description(std::string header) {
         }
       }
       for (auto &attr : op->GetAttrMap()) {
-        LOG(kLOG_DEBUG2) << "attr name:: " << attr.first;
+        if (attr.first == "op_callstack") continue;
+        LOG(kLOG_DEBUG2) << "attr name: " << attr.first;
         LOG(kLOG_DEBUG3) << "argument - " << attr.second;
       }
     }
