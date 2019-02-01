@@ -78,7 +78,9 @@ class OperatorBase {
       this->scope_->EraseVars(var_names);
     }
   }
-
+#ifdef PADDLE_MOBILE_FPGA
+  void ChangeNameMap(string key, std::vector<string> value);
+#endif
  protected:
   std::shared_ptr<Scope> scope_;
   std::string type_;

@@ -92,6 +92,14 @@ Executor<Device, T>::Executor(const Program<Device> &program,
       ops_list_.push_back(op_handler);
     }
   }
+#ifdef PADDLE_MOBILE_FPGA
+  TalorFeedOp();
+  DLOG << "TalorFeed finished";
+  TalorFetchdOp();
+  DLOG << "TalorFetch finished";
+  program_.scope->print_vars();
+
+#endif
 }
 
 template <typename T>
@@ -444,10 +452,53 @@ std::shared_ptr<LoDTensor> Executor<Device, T>::GetOutput(
 
 #ifdef PADDLE_MOBILE_FPGA
 template <typename Device, typename T>
+void Executor<Device, T>::TalorFeedOp() {
+  auto &ops = ops_of_block_[0];
+  int num = 0;
+  program_.scope->EraseVars(std::vector<string>{string("feed")});
+  for (auto op : ops) {
+    if (op->Type() == "feed") {
+      auto new_name = string("feed") + std::to_string(num++);
+      auto var = program_.scope->Var(new_name);
+      auto tensor = var->template GetMutable<LoDTensor>();
+      auto output_map = op->Outputs();
+      std::vector<std::string> out_keys = op->GetOutKeys();
+      PADDLE_MOBILE_ENFORCE(!out_keys.empty(), "this op contains no output");
+      auto output_tensor =
+          GetVarValue<LoDTensor>(out_keys[0], output_map, *(program_.scope));
+      tensor->Resize(output_tensor->dims());
+      tensor->init(typeid(float));
+      op->ChangeNameMap("X", std::vector<string>{new_name});
+    }
+  }
+}
+template <typename Device, typename T>
+void Executor<Device, T>::TalorFetchdOp() {
+  auto &ops = ops_of_block_[0];
+  int num = 0;
+  program_.scope->EraseVars(std::vector<string>{string("fetch")});
+  for (auto op : ops) {
+    if (op->Type() == "fetch") {
+      auto new_name = string("fetch") + std::to_string(num++);
+      auto var = program_.scope->Var(new_name);
+      auto tensor = var->template GetMutable<LoDTensor>();
+      auto input_map = op->Inputs();
+      std::vector<std::string> in_keys = op->GetInputKeys();
+      PADDLE_MOBILE_ENFORCE(!in_keys.empty(), "this op contains no input");
+      auto input_tensor =
+          GetVarValue<LoDTensor>(in_keys[0], input_map, *(program_.scope));
+      tensor->Resize(input_tensor->dims());
+      tensor->init(typeid(float));
+      op->ChangeNameMap("Out", std::vector<string>{new_name});
+    }
+  }
+}
+
+template <typename Device, typename T>
 void Executor<Device, T>::InjectVariable(const Tensor &t,
                                          std::string var_name) {
   Variable *g_feed_value = program_.scope->Var(var_name);
-  Tensor *feed_tensor = g_feed_value->GetMutable<LoDTensor>();
+  Tensor *feed_tensor = g_feed_value->template GetMutable<LoDTensor>();
   feed_tensor->Resize(t.dims());
   feed_tensor->ShareDataWith(t);
 }
@@ -455,6 +506,22 @@ void Executor<Device, T>::InjectVariable(const Tensor &t,
 template <typename Device, typename T>
 void Executor<Device, T>::FeedData(const Tensor &t) {
   InjectVariable(t, "feed");
+}
+
+template <typename Device, typename T>
+void Executor<Device, T>::FeedData(const std::vector<Tensor> &v) {
+  auto input_size = v.size();
+  PADDLE_MOBILE_ENFORCE(input_size > 0, "Empty input");
+  int counter = 0;
+  auto vars = program_.scope->VarContain("feed");
+  for (auto var : vars) {
+    Tensor *feed_tensor = var->template GetMutable<LoDTensor>();
+    feed_tensor->Resize(v[counter].dims());
+    feed_tensor->ShareDataWith(v[counter]);
+    if (++counter > v.size()) {
+      return;
+    }
+  }
 }
 
 template <typename Device, typename T>

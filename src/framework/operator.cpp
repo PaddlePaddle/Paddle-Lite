@@ -131,6 +131,21 @@ void OperatorBase<GPU_CL>::Run() {
 }
 #endif
 
+#ifdef PADDLE_MOBILE_FPGA
+template <typename Dtype>
+void OperatorBase<Dtype>::ChangeNameMap(string key, std::vector<string> value) {
+  auto it = inputs_.find(key);
+  if (it != inputs_.end()) {
+    inputs_[key] = value;
+    return;
+  }
+  it = outputs_.find(key);
+  if (it != outputs_.end()) {
+    inputs_[key] = value;
+  }
+}
+#endif
+
 template class OperatorBase<CPU>;
 template class OperatorBase<FPGA>;
 template class OperatorBase<GPU_MALI>;
