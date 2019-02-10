@@ -38,7 +38,7 @@ bool ConcatKernel<FPGA, float>::Init(ConcatParam<FPGA> *param) {
     PADDLE_MOBILE_ENFORCE(
         input->dims()[2] == height && input->dims()[3] == width,
         "Image height & width should be unified");
-    images_in[i] = (half *)input->data<float>();      // NOLINT
+    images_in[i] = input->data<half>();
     channel_num[i] = (uint32_t)inputs[i]->dims()[1];  // NOLINT
     scales_in[i] = input->scale;
   }
@@ -48,7 +48,7 @@ bool ConcatKernel<FPGA, float>::Init(ConcatParam<FPGA> *param) {
   concatArgs.image_num = image_num;
   concatArgs.images_in = images_in;
   concatArgs.scales_in = scales_in;
-  concatArgs.image_out = (half *)out->data<float>();  // NOLINT
+  concatArgs.image_out = out->data<half>();
   concatArgs.scale_out = out->scale;
   concatArgs.channel_num = channel_num;
   concatArgs.height = height;

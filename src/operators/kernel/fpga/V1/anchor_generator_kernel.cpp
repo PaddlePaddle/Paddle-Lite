@@ -23,15 +23,46 @@ namespace operators {
 template <>
 bool AnchorGeneratorKernel<FPGA, float>::Init(
     AnchorGeneratorParam<FPGA> *param) {
-  // TODO zhangyang
+  auto input = param->input_;
+  auto anchors = param->output_anchors_;
+  auto anchor_ptr = anchors->mutable_data<float>();
+  auto stride = param->stride_;
+  auto feature_width = input->dims()[3], feature_height = input->dims()[2];
+  auto stride_width = stride[0], stride_height = stride[1];
+
+  int anchors_offset[] = {-2,  -2,   18,   18,  -10, -9,   26,   25,   -23,
+                          -20, 39,   36,   -43, -34, 59,   49,   -63,  -54,
+                          79,  69,   -96,  -77, 112, 93,   -137, -118, 153,
+                          134, -204, -188, 220, 204, -281, -395, 296,  441};
+  int num_anchors = sizeof(anchors_offset) / (sizeof(int) * 4);
+
+  //  DLOG << "feature_height: " << feature_height;
+  //  DLOG << "feature_width: " << feature_width;
+  //  DLOG << "num_anchors: " << num_anchors;
+  //  DLOG << "stride_width: " << stride_width;
+  //  DLOG << "stride_height: " << stride_height;
+
+  for (int h_idx = 0; h_idx < feature_height; ++h_idx) {
+    for (int w_idx = 0; w_idx < feature_width; ++w_idx) {
+      int offset = h_idx * w_idx * num_anchors * 4;
+      for (int idx = 0; idx < num_anchors; idx++) {
+        anchor_ptr[offset + 0] =
+            anchors_offset[idx * 4 + 0] + w_idx * stride_width;
+        anchor_ptr[offset + 1] =
+            anchors_offset[idx * 4 + 1] + h_idx * stride_height;
+        anchor_ptr[offset + 2] =
+            anchors_offset[idx * 4 + 2] + w_idx * stride_width;
+        anchor_ptr[offset + 3] =
+            anchors_offset[idx * 4 + 3] + h_idx * stride_height;
+      }
+    }
+  }
   return true;
 }
 
 template <>
 void AnchorGeneratorKernel<FPGA, float>::Compute(
-    const AnchorGeneratorParam<FPGA> &param) {
-  // TODO(hjchen2)
-}
+    const AnchorGeneratorParam<FPGA> &param) {}
 
 }  // namespace operators
 }  // namespace paddle_mobile

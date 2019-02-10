@@ -51,8 +51,8 @@ void convert_to_chw(int16_t **data_in, int channel, int height, int width,
   }
 }
 
-void dump(std::string filename, const Tensor input_tensor) {
-  auto dataptr = input_tensor.data<float>();
+void dump(std::string filename, Tensor input_tensor) {
+  auto dataptr = reinterpret_cast<half *>(input_tensor.get_data());
   std::ofstream out(filename.c_str());
   float result = 0;
   for (int i = 0; i < input_tensor.numel(); ++i) {
@@ -61,12 +61,11 @@ void dump(std::string filename, const Tensor input_tensor) {
   }
   out.close();
 }
-void dump_stride(std::string filename, const Tensor input_tensor,
-                 const int dumpnum) {
+void dump_stride(std::string filename, Tensor input_tensor, const int dumpnum) {
   int c = (input_tensor.dims())[1];
   int h = (input_tensor.dims())[2];
   int w = (input_tensor.dims())[3];
-  auto data_ptr = input_tensor.data<float>();
+  auto data_ptr = input_tensor.get_data();
   int16_t *data_tmp = (int16_t *)malloc(c * h * w * sizeof(int16_t));
   int16_t *data_ptr_16 = (int16_t *)data_ptr;
   convert_to_chw(&data_ptr_16, c, h, w, data_tmp);
@@ -98,9 +97,9 @@ int main() {
     for (int i = 0; i < 73; i++) {
       auto tensor_ptr = paddle_mobile.FetchResult(i);
       std::string saveName = "resnet50_result_" + std::to_string(i);
-      paddle_mobile::fpga::fpga_invalidate((*tensor_ptr).data<float>(),
+      paddle_mobile::fpga::fpga_invalidate((*tensor_ptr).get_data(),
                                            tensor_ptr->numel() * sizeof(half));
-      dump_stride(saveName, (*tensor_ptr), 20);
+      // dump_stride(saveName, (*tensor_ptr), 20);
       // dump(saveName, (*tensor_ptr));
     }
 
