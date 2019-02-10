@@ -164,7 +164,7 @@ void fpga_free(void *ptr) {
     //    DLOG << "Address: " << ptr << ", " << size << " bytes freed. Total "
     //         << counter << " bytes";
   } else {
-    DLOG << "Invalid pointer";
+    DLOG << "Address: " << ptr << "  Invalid pointer";
   }
 }
 void fpga_copy(void *dest, const void *src, size_t num) {

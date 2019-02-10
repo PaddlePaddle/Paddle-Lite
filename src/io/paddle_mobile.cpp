@@ -228,10 +228,14 @@ void PaddleMobile<Device, T>::FeedData(const framework::Tensor &t) {
   executor_->FeedData(t);
 }
 template <typename Device, typename T>
-void PaddleMobile<Device, T>::FeedData(
-    const std::vector<framework::Tensor> &v) {
+void PaddleMobile<Device, T>::FeedData(const std::vector<void *> &v) {
   executor_->FeedData(v);
 };
+template <typename Device, typename T>
+void PaddleMobile<Device, T>::GetResults(std::vector<void *> *v) {
+  executor_->GetResults(v);
+}
+
 template <typename Device, typename T>
 std::shared_ptr<framework::Tensor> PaddleMobile<Device, T>::FetchResult(
     int id) {
