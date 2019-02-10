@@ -15,18 +15,61 @@ limitations under the License. */
 #ifdef RESHAPE2_OP
 
 #include "operators/kernel/reshape2_kernel.h"
+#include "framework/ddim.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
 bool Reshape2Kernel<FPGA, float>::Init(Reshape2Param<FPGA> *param) {
+  auto input = const_cast<LoDTensor *>(param->InputX());
+  auto output = param->Out();
+  auto shape = param->Shape();
+  output->ShareDataWith(*input);
+
+  auto num_in = framework::product(input->dims());
+  auto num_shape = framework::product(framework::make_ddim(shape));
+  PADDLE_MOBILE_ENFORCE(num_shape != 0, "0 index is not supported");
+
+  for (int i = 0; i < shape.size(); i++) {
+    if (shape[i] == -1) {
+      shape[i] = static_cast<int>(-num_in / num_shape);
+      break;
+    }
+  }
+  output->Resize(framework::make_ddim(shape));
+  DLOG << "input: " << input;
+  DLOG << "output: " << output;
+
   return true;
 }
 
 template <>
 void Reshape2Kernel<FPGA, float>::Compute(const Reshape2Param<FPGA> &param) {
-  return;
+  auto input = const_cast<LoDTensor *>(param.InputX());
+  auto output = param.Out();
+  auto shape = param.Shape();
+
+  if (output->type() != typeid(half)) {
+    DLOG << "wrong type";
+  }
+
+  auto num_in = framework::product(input->dims());
+  auto num_shape = framework::product(framework::make_ddim(shape));
+  PADDLE_MOBILE_ENFORCE(num_shape != 0, "0 index is not supported");
+
+  for (int i = 0; i < shape.size(); i++) {
+    if (shape[i] == -1) {
+      shape[i] = static_cast<int>(-num_in / num_shape);
+      break;
+    }
+  }
+  output->Resize(framework::make_ddim(shape));
+  if (output->type() != typeid(half)) {
+    DLOG << "wrong type";
+    DLOG << output;
+  }
+  //
 }
 
 }  // namespace operators

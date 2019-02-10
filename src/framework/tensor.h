@@ -202,6 +202,10 @@ class Tensor : public TensorBase {
   inline void reset_data_ptr(void *p) {
     ((PlaceholderImpl *)(holder_.get()))->ptr_.reset((uint8_t *)p);  // NOLINT
   }
+  inline void set_type(std::type_index type) { holder_->set_type(type); }
+  inline void *get_data() {
+    return (void *)(((PlaceholderImpl *)(holder_.get()))->ptr_.get());
+  }  // NOLINT
 
   inline void *init(std::type_index type) {
     if (holder_ != nullptr) {
@@ -217,7 +221,8 @@ class Tensor : public TensorBase {
         reinterpret_cast<uintptr_t>(holder_->ptr()) + offset_);
   }
 
-  float scale[2];  // scale[0]= MAX/127.0, scale[1]= 127.0/MAX
+  float scale[2];                 // scale[0]= MAX/127.0, scale[1]= 127.0/MAX
+  void *external_data = nullptr;  // only used for Feed
 #endif
 };
 

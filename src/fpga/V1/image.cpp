@@ -22,7 +22,6 @@ namespace fpga {
 namespace image {
 
 void convert_to_hwc(float **data_in, int channel, int height, int width) {
-  float *tmp = *data_in;
   float *data_tmp =
       (float *)fpga_malloc(channel * height * width * sizeof(float));  // NOLINT
   int64_t amount_per_row = width * channel;
@@ -35,33 +34,35 @@ void convert_to_hwc(float **data_in, int channel, int height, int width) {
     }
   }
   *data_in = data_tmp;
-  fpga_free(tmp);
 }
 
 void align_element_conv(float **data_in, int height, int cw) {
   int h = 0;
   int align_cw = align_to_x(cw, IMAGE_ALIGNMENT);
-  if (align_cw != cw) {
-    float *tmp = *data_in;
-    float *data_tmp =
-        (float *)fpga_malloc(height * align_cw * sizeof(float));  // NOLINT
 
-    memset(data_tmp, 0, height * align_cw * sizeof(float));
+  float *data_tmp =
+      (float *)fpga_malloc(height * align_cw * sizeof(float));  // NOLINT
 
-    for (h = 0; h < height; h++) {
-      memcpy((void *)(data_tmp + h * align_cw),  // NOLINT
-             (void *)(*data_in + h * cw),        // NOLINT
-             cw * sizeof(float));
-    }
+  memset(data_tmp, 0, height * align_cw * sizeof(float));
 
-    *data_in = data_tmp;
-    fpga_free(tmp);
+  for (h = 0; h < height; h++) {
+    memcpy((void *)(data_tmp + h * align_cw),  // NOLINT
+           (void *)(*data_in + h * cw),        // NOLINT
+           cw * sizeof(float));
   }
+
+  *data_in = data_tmp;
 }
 
 void format_image(float **data_in, int channel, int height, int width) {
   convert_to_hwc(data_in, channel, height, width);
-  align_element_conv(data_in, height, channel * width);
+  int cw = channel * width;
+  int align_cw = align_to_x(cw, IMAGE_ALIGNMENT);
+  if (align_cw != cw) {
+    float *hwc_temp = *data_in;
+    align_element_conv(data_in, height, channel * width);
+    fpga_free(hwc_temp);
+  }
   fpga_flush(*data_in, align_to_x(channel * width, IMAGE_ALIGNMENT) * height *
                            sizeof(float));
 }

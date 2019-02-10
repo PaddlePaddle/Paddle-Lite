@@ -50,6 +50,9 @@ OperatorBase<Dtype>::OperatorBase(const std::string &type,
       attrs_(attrs),
       scope_(scope) {
   CheckAllInputOutputSet();
+#ifdef PADDLE_MOBILE_FPGA
+  InsertTensors();
+#endif
 }
 
 template <typename Dtype>
@@ -133,15 +136,19 @@ void OperatorBase<GPU_CL>::Run() {
 
 #ifdef PADDLE_MOBILE_FPGA
 template <typename Dtype>
-void OperatorBase<Dtype>::ChangeNameMap(string key, std::vector<string> value) {
-  auto it = inputs_.find(key);
-  if (it != inputs_.end()) {
-    inputs_[key] = value;
-    return;
-  }
-  it = outputs_.find(key);
-  if (it != outputs_.end()) {
-    inputs_[key] = value;
+void OperatorBase<Dtype>::InsertTensors() {
+  static int feed_num = 0;
+  static int fetch_num = 0;
+  if (type_ == "feed") {
+    auto new_name = string("feed") + std::to_string(feed_num++);
+    auto var = scope_->Var(new_name);
+    var->template GetMutable<framework::LoDTensor>();
+    inputs_.at("X") = {string(new_name)};
+  } else if (type_ == "fetch") {
+    auto new_name = string("fetch") + std::to_string(fetch_num++);
+    auto var = scope_->Var(new_name);
+    var->template GetMutable<framework::LoDTensor>();
+    outputs_.at("Out") = {string(new_name)};
   }
 }
 #endif

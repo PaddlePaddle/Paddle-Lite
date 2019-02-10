@@ -28,11 +28,13 @@ void format_image(framework::Tensor *image_tensor) {
   auto dims = image_tensor->dims();
   auto channel = dims[1], height = dims[2], width = dims[3];
   auto data_ptr = image_tensor->data<float>();
-  size_t memory_size = channel * height * width * sizeof(float);
-  auto new_data = (float *)fpga_malloc(memory_size);  // NOLINT
-  fpga_copy(new_data, data_ptr, memory_size);
-  image::format_image(&new_data, channel, height, width);
-  image_tensor->reset_data_ptr(new_data);
+  auto external_ptr = reinterpret_cast<float *>(image_tensor->external_data);
+  float *p_data = external_ptr == nullptr ? data_ptr : external_ptr;
+  float *old_p = p_data;
+  image::format_image(&p_data, channel, height, width);
+  if (old_p != p_data) {
+    image_tensor->reset_data_ptr(p_data);
+  }
 }
 
 void format_fp16_ofm(framework::Tensor *ofm_tensor) {
@@ -50,6 +52,7 @@ void format_fp16_ofm(framework::Tensor *ofm_tensor) {
   auto p = fpga_malloc(memory_size);
   memset(p, 0, memory_size);
   ofm_tensor->reset_data_ptr(p);
+  ofm_tensor->set_type(typeid(half));
 }
 
 void format_fp16_ofm(framework::Tensor *ofm_tensor, framework::DDim dims) {
@@ -67,6 +70,7 @@ void format_fp16_ofm(framework::Tensor *ofm_tensor, framework::DDim dims) {
   auto p = fpga_malloc(memory_size);
   memset(p, 0, memory_size);
   ofm_tensor->reset_data_ptr(p);
+  ofm_tensor->set_type(typeid(half));
 }
 void format_fp32_ofm(framework::Tensor *ofm_tensor) {
   auto dims = ofm_tensor->dims();
@@ -83,6 +87,7 @@ void format_fp32_ofm(framework::Tensor *ofm_tensor) {
   auto p = fpga_malloc(memory_size);
   memset(p, 0, memory_size);
   ofm_tensor->reset_data_ptr(p);
+  ofm_tensor->set_type(typeid(float));
 }
 
 float filter_find_max(framework::Tensor *filter_tensor) {
@@ -139,6 +144,7 @@ void format_filter(framework::Tensor *filter_tensor, float max_value,
   filter::format_filter(&new_data, num, channel, height, width, group_num,
                         max_value);
   filter_tensor->reset_data_ptr(new_data);
+  filter_tensor->set_type(typeid(int8_t));
 }
 void format_dwconv_filter(framework::Tensor *filter_tensor, float *scale_ptr) {
   auto dims = filter_tensor->dims();
@@ -149,6 +155,7 @@ void format_dwconv_filter(framework::Tensor *filter_tensor, float *scale_ptr) {
   fpga_copy(new_data, data_ptr, memory_size);
   filter::format_dwconv_filter(&new_data, num, height, width, scale_ptr);
   filter_tensor->reset_data_ptr(new_data);
+  filter_tensor->set_type(typeid(int8_t));
 }
 
 void format_DWDconv_filter(framework::Tensor *filter_tensor, float *scale_ptr,
@@ -173,6 +180,7 @@ void format_DWDconv_filter(framework::Tensor *filter_tensor, float *scale_ptr,
   //      framework::make_ddim({num, 1, height, width});
   //  filter_tensor->Resize(dims_new);
   filter_tensor->reset_data_ptr(new_data);
+  filter_tensor->set_type(typeid(int8_t));
 }
 
 void format_fc_filter(framework::Tensor *filter_tensor, float max_value) {
@@ -187,6 +195,7 @@ void format_fc_filter(framework::Tensor *filter_tensor, float max_value) {
   filter::format_fc_filter(&new_data, num, channel, height, width, 1,
                            max_value);
   filter_tensor->reset_data_ptr(new_data);
+  filter_tensor->set_type(typeid(int8_t));
 }
 void format_deconv_filter(framework::Tensor *filter_tensor, float max_value,
                           int group_num, int stride) {
@@ -213,6 +222,7 @@ void format_deconv_filter(framework::Tensor *filter_tensor, float max_value,
       framework::make_ddim({num, channel, height, width});
   filter_tensor->Resize(dims_new);
   filter_tensor->reset_data_ptr(new_data);
+  filter_tensor->set_type(typeid(int8_t));
 }
 
 void format_bias_scale_array(float **bias_scale_array,
@@ -236,6 +246,7 @@ void format_concat_output(framework::Tensor *out, int height, int width,
   auto ddim = framework::make_ddim({1, sum_channel, height, width});
   out->Resize(ddim);
   out->reset_data_ptr(data_ptr);
+  out->set_type(typeid(half));
 }
 void format_conv_data(framework::Tensor *filter_tensor,
                       framework::Tensor *ofm_tensor, float **bs_ptr,
@@ -447,9 +458,9 @@ void fill_split_arg(struct SplitConvArgs *arg, framework::Tensor *input,
                     int16_t leaky_relu_negative_slope, int group_num,
                     int stride_h, int stride_w, int padding_h, int padding_w,
                     float *bs_ptr) {
-  auto input_ptr = input->data<float>();
-  auto filter_ptr = filter->data<float>();
-  auto out_ptr = out->data<float>();
+  auto input_ptr = input->data<half>();
+  auto filter_ptr = filter->data<int8_t>();
+  auto out_ptr = out->data<half>();
   auto deleter = [](void *p) { fpga_free(p); };
 
   arg->group_num = (uint32_t)group_num;
@@ -571,8 +582,8 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
                      int16_t leaky_relu_negative_slope, int group_num,
                      int stride_h, int stride_w, int padding_h, int padding_w,
                      float *bs_ptr) {
-  auto input_ptr = input->data<float>();
-  auto filter_ptr = filter->data<float>();
+  auto input_ptr = input->data<half>();
+  auto filter_ptr = filter->data<int8_t>();
   auto deleter = [](void *p) { fpga_free(p); };
 
   arg->group_num = (uint32_t)group_num;
@@ -603,7 +614,7 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
   framework::DDim dims_out_new = framework::make_ddim(
       {1, arg->filter_num, sub_output_height * sub_conv_num, real_out_width});
   fpga::format_fp16_ofm(out, dims_out_new);
-  auto out_ptr = out->data<float>();
+  auto out_ptr = out->data<half>();
   arg->output.address =
       (half *)out_ptr +  // NOLINT
       omit_size * sizeof(half) *
@@ -793,7 +804,7 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
                     arg->split_conv_args[i]->conv_arg[j].output.scale_address),
                 deleter));
       }
-      arg->split_conv_args[i]->concat_arg.images_in[j] = static_cast<int16_t *>(
+      arg->split_conv_args[i]->concat_arg.images_in[j] = static_cast<half *>(
           arg->split_conv_args[i]->conv_arg[j].output.address);
       arg->split_conv_args[i]->concat_arg.scales_in[j] =
           arg->split_conv_args[i]->conv_arg[j].output.scale_address;
@@ -818,9 +829,9 @@ void fill_dwconv_arg(struct DWconvArgs *arg, framework::Tensor *input,
                      int16_t leaky_relu_negative_slope, int stride_h,
                      int stride_w, int padding_h, int padding_w,
                      float *bias_ptr) {
-  auto filter_ptr = filter->data<float>();
-  auto input_ptr = input->data<float>();
-  auto output_ptr = out->mutable_data<float>();
+  auto filter_ptr = filter->data<uint8_t>();
+  auto input_ptr = input->data<half>();
+  auto output_ptr = out->mutable_data<half>();
   arg->sub_conv_num = 1;
   // arg->relu_enabled = relu_enabled;
   arg->output.activation.activation_type = activation_enable;
@@ -848,9 +859,8 @@ void fill_DWDeconv_arg(struct DWDeconvArgs *arg, framework::Tensor *input,
                        int16_t leaky_relu_negative_slope, int stride_h,
                        int stride_w, int padding_h, int padding_w,
                        float *bias_ptr) {
-  auto filter_ptr = filter->data<float>();
-  auto input_ptr = input->data<float>();
-  auto output_ptr = out->mutable_data<float>();
+  auto filter_ptr = filter->data<int8_t>();
+  auto input_ptr = input->data<half>();
 
   auto deleter = [](void *p) { fpga_free(p); };
 
@@ -885,7 +895,7 @@ void fill_DWDeconv_arg(struct DWDeconvArgs *arg, framework::Tensor *input,
   framework::DDim dims_out_new = framework::make_ddim(
       {1, arg->filter_num, real_out_height, real_out_width});
   fpga::format_fp16_ofm(out, dims_out_new);
-  auto out_ptr = out->data<float>();
+  auto out_ptr = out->data<half>();
 
   /*====For Addition
   arg->output.address =

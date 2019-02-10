@@ -103,6 +103,10 @@ class ProposalParam : public OpParam {
   float nms_thresh_;
   float min_size_;
   float eta_;
+#ifdef PADDLE_MOBILE_FPGA
+  std::shared_ptr<Tensor> float_score, float_bbox;
+  fpga::BypassArgs score_arg, bbox_arg;
+#endif
 };
 
 DECLARE_KERNEL(Proposal, ProposalParam);
@@ -133,6 +137,10 @@ class PSRoiPoolParam : public OpParam {
   int pooled_height_;
   int pooled_width_;
   float spatial_scale_;
+#ifdef PADDLE_MOBILE_FPGA
+  std::shared_ptr<Tensor> float_input, float_output;
+  fpga::BypassArgs input_arg, output_arg;
+#endif
 };
 
 DECLARE_KERNEL(PSRoiPool, PSRoiPoolParam);
