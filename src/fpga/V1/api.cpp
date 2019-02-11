@@ -37,6 +37,13 @@ void format_image(framework::Tensor *image_tensor) {
   }
 }
 
+void format_ofm(framework::Tensor *ofm_tensor) {
+  if (ofm_tensor->type() == typeid(float)) {
+    format_fp32_ofm(ofm_tensor);
+  } else {
+    format_fp16_ofm(ofm_tensor);
+  }
+}
 void format_fp16_ofm(framework::Tensor *ofm_tensor) {
   auto dims = ofm_tensor->dims();
   size_t memory_size = 0;
