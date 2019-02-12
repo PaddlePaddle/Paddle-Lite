@@ -84,6 +84,11 @@ Executor<Device, T>::Executor(const Program<Device> &program,
     InitMemory();
   }
 
+#ifdef PADDLE_MOBILE_FPGA
+  program_.scope->EraseVars({"feed", "fetch"});
+  program_.scope->print_vars();
+#endif
+
   int count = 0;
   for (int block_id = 0; block_id < ops_of_block_.size(); ++block_id) {
     for (auto &op_handler : ops_of_block_[block_id]) {
@@ -447,14 +452,41 @@ template <typename Device, typename T>
 void Executor<Device, T>::InjectVariable(const Tensor &t,
                                          std::string var_name) {
   Variable *g_feed_value = program_.scope->Var(var_name);
-  Tensor *feed_tensor = g_feed_value->GetMutable<LoDTensor>();
+  Tensor *feed_tensor = g_feed_value->template GetMutable<LoDTensor>();
   feed_tensor->Resize(t.dims());
   feed_tensor->ShareDataWith(t);
 }
 
 template <typename Device, typename T>
 void Executor<Device, T>::FeedData(const Tensor &t) {
-  InjectVariable(t, "feed");
+  InjectVariable(t, "feed0");
+}
+
+template <typename Device, typename T>
+void Executor<Device, T>::FeedData(const std::vector<void *> &v) {
+  auto input_size = v.size();
+  auto vars = program_.scope->VarContain("feed");
+  PADDLE_MOBILE_ENFORCE(input_size == vars.size(),
+                        "input data number not correct");
+  for (int i = 0; i < input_size; i++) {
+    auto var = program_.scope->Var("feed", i);
+    auto feed_tensor = var->template GetMutable<LoDTensor>();
+    feed_tensor->external_data = v[i];
+  }
+}
+
+template <typename Device, typename T>
+void Executor<Device, T>::GetResults(std::vector<void *> *v) {
+  auto output_size = v->size();
+  PADDLE_MOBILE_ENFORCE(output_size > 0, "Empty output");
+  auto vars = program_.scope->VarContain("fetch");
+  PADDLE_MOBILE_ENFORCE(output_size == vars.size(),
+                        "output data number not correct");
+  for (int i = 0; i < output_size; i++) {
+    auto var = program_.scope->Var("fetch", i);
+    auto fetch_tensor = var->template GetMutable<LoDTensor>();
+    (*v)[i] = fetch_tensor->template data<float>();
+  }
 }
 
 template <typename Device, typename T>

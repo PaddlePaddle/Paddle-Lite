@@ -23,29 +23,38 @@ limitations under the License. */
 #include "fpga/V2/api.h"
 #endif
 
-// static const char *g_densebox_combine = "../models/densebox";
-static const char *g_densebox_combine = "../models/rfcn";
+void readStream(std::string filename, uint8_t *buf) {
+  std::ifstream in;
+  in.open(filename, std::ios::in);
+  if (!in.is_open()) {
+    std::cout << "open File Failed." << std::endl;
+    return;
+  }
+  int i = 0;
+  while (!in.eof()) {
+    in >> buf[i];
+    i++;
+  }
+  in.close();
+}
+
+static const char *g_rfcn_combine = "../models/rfcn";
+const std::string g_image_src_float = "../models/rfcn/data.bin";
 int main() {
   paddle_mobile::fpga::open_device();
   paddle_mobile::PaddleMobile<paddle_mobile::FPGA> paddle_mobile;
-  // paddle_mobile.SetThreadNum(4);
-  if (paddle_mobile.Load(std::string(g_densebox_combine) + "/model",
-                         std::string(g_densebox_combine) + "/params", true,
-                         false, 1, true)) {
-    // std::vector<float> input;
-    // std::vector<int64_t> dims{1, 3, 512, 1024};
-    // GetInput<float>(g_test_image_1x3x224x224_banana, &input, dims);
 
-    // auto vec_result = paddle_mobile.Predict(input, dims);
-    return 0;
-
-    Tensor input_tensor;
-    SetupTensor<float>(&input_tensor, {1, 3, 512, 1024}, static_cast<float>(0),
-                       static_cast<float>(1));
-    // readStream(g_image_src_float,
-    //           input_tensor.mutable_data<float>({1, 3, 224, 224}));
-    paddle_mobile.FeedData(input_tensor);
+  if (paddle_mobile.Load(std::string(g_rfcn_combine) + "/model",
+                         std::string(g_rfcn_combine) + "/params", true, false,
+                         1, true)) {
+    float img_info[3] = {768, 1536, 768.0f / 960.0f};
+    auto img = fpga::fpga_malloc(768 * 1536 * 3 * sizeof(float));
+    readStream(g_image_src_float, reinterpret_cast<uint8_t *>(img));
+    std::vector<void *> v(3, nullptr);
+    paddle_mobile.FeedData({img_info, img});
     paddle_mobile.Predict_To(-1);
+    paddle_mobile.GetResults(&v);
+    DLOG << "Computation done";
   }
 
   return 0;

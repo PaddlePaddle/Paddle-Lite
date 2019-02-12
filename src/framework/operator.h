@@ -78,7 +78,9 @@ class OperatorBase {
       this->scope_->EraseVars(var_names);
     }
   }
-
+#ifdef PADDLE_MOBILE_FPGA
+  void InsertTensors();
+#endif
  protected:
   std::shared_ptr<Scope> scope_;
   std::string type_;
@@ -102,7 +104,6 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
     kernel_.InitCLHelper(scope->GetCLScpoe());
 #endif
   }
-
   virtual void RunImpl() { this->kernel_.Compute(this->param_); }
 
   virtual void InferShape() const = 0;

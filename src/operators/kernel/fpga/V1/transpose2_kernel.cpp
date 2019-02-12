@@ -20,7 +20,21 @@ namespace operators {
 
 template <>
 bool Transpose2Kernel<FPGA, float>::Init(Transpose2Param<FPGA> *param) {
-  param->Out()->ShareDataWith(*param->InputX());
+  auto input = param->InputX();
+  auto output = param->Out();
+  auto axis = param->Axis();
+  auto dim = input->dims();
+  output->ShareDataWith(*input);
+
+  auto dim_v = vectorize(dim);
+
+  for (int i = 0; i < axis.size(); i++) {
+    dim_v[i] = dim[axis[i]];
+  }
+  output->Resize(framework::make_ddim(dim_v));
+
+  DLOG << "input: " << input;
+  DLOG << "output: " << output;
   return true;
 }
 

@@ -19,20 +19,14 @@ namespace operators {
 
 template <>
 bool FetchKernel<FPGA, float>::Init(FetchParam<FPGA> *param) {
-  Tensor *output = param->Out();
-  // fpga::format_fp16_ofm(output);
-  return true;
-}
-
-template <>
-void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
-  param.Out()->ShareDataWith(*(param.InputX()));
-  /*auto input =
-          reinterpret_cast<Tensor *>(const_cast<Tensor *>(param.InputX()));
-  fpga::format_image(input);
-  auto input_ptr = input->data<float>();
-  Tensor *output = param.Out();
-  auto output_ptr = output->data<float>();
+  auto input = const_cast<Tensor *>(param->InputX());
+  auto output = param->Out();
+  if (input->type() == typeid(float)) {
+    return true;
+  }
+  output->init(typeid(float));
+  output->Resize(input->dims());
+  fpga::format_fp32_ofm(output);
 
   fpga::BypassArgs args = {fpga::DATA_TYPE_FP16};
 
@@ -40,13 +34,32 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
   args.output_data_type = fpga::DATA_TYPE_FP32;
   args.input_layout_type = fpga::LAYOUT_CHW;
   args.output_layout_type = fpga::LAYOUT_HWC;
-  args.image.address = reinterpret_cast<void *>(input_ptr);
-  args.image.channels = (uint32_t)input->dims()[1];
-  args.image.height = (input->dims().size() == 4) ? (uint32_t)input->dims()[2] :
-  1; args.image.width = (input->dims().size() == 4) ? (uint32_t)input->dims()[3]
-  : 1; args.image.pad_height = 0; args.image.pad_width = 0; args.output.address
-  = output_ptr; args.output.scale_address = output->scale;
-  fpga::PerformBypass(args);*/
+  args.image.address = input->data<half>();
+  args.image.channels = (uint32_t)product(input->dims());
+  args.image.height = 1;
+  args.image.width = 1;
+  args.image.pad_height = 0;
+  args.image.pad_width = 0;
+  args.output.address = output->data<float>();
+  args.output.scale_address = output->scale;
+  param->fpga_bypass_args = args;
+
+  return true;
+}
+
+template <>
+void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
+  auto input = param.InputX();
+  if (input->type() == typeid(float)) {
+    auto output = param.Out();
+    output->ShareDataWith(*input);
+    return;
+  }
+  fpga::PerformBypass(param.fpga_bypass_args);
+  fpga::fpga_invalidate(param.fpga_bypass_args.output.address,
+                        param.fpga_bypass_args.image.channels * sizeof(float));
+
+  // TODO: DEalign: get rid of extra 0
 }
 
 template class FetchKernel<FPGA, float>;
