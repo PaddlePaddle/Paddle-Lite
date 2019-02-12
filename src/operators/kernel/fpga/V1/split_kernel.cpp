@@ -34,16 +34,18 @@ bool SplitKernel<FPGA, float>::Init(SplitParam<FPGA> *param) {
       fpga::fpga_malloc(image_num * sizeof(float *)));
   auto out_channels = reinterpret_cast<uint32_t *>(
       fpga::fpga_malloc(image_num * sizeof(uint32_t)));
+  DLOG << "input: " << in;
   for (int i = 0; i < image_num; i++) {
     fpga::format_fp16_ofm(outs[i]);
-    images_out[i] = outs[i]->mutable_data<float>();
+    DLOG << "output: " << outs[i];
+    images_out[i] = outs[i]->mutable_data<half>();
     scales_out[i] = outs[i]->scale;
     out_channels[i] = (uint32_t)sections[i];
   }
 
   fpga::SplitArgs arg = {0};
   arg.image_num = image_num;
-  arg.image_in = (half *)in->data<float>();
+  arg.image_in = in->data<half>();
   arg.scale_in = in->scale;
   arg.images_out = images_out;
   arg.scales_out = scales_out;

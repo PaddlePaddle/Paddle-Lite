@@ -1172,6 +1172,12 @@ class FeedParam : public OpParam {
  public:
   FeedParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
             const AttributeMap &attrs, const Scope &scope) {
+#ifdef PADDLE_MOBILE_FPGA
+    static int feed_num = 0;
+    auto new_name = std::string("feed") + std::to_string(feed_num++);
+    const_cast<VariableNameMap &>(inputs).at("X") = {string(new_name)};
+#endif
+
     input_x_ = InputXFrom<LoDTensor>(inputs, scope);
     out_ = OutFrom<GType>(outputs, scope);
     auto var = scope.FindVar("batch_size");
@@ -1195,6 +1201,11 @@ class FetchParam : public OpParam {
  public:
   FetchParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
              const AttributeMap &attrs, const Scope &scope) {
+#ifdef PADDLE_MOBILE_FPGA
+    static int fetch_num = 0;
+    auto new_name = std::string("fetch") + std::to_string(fetch_num++);
+    const_cast<VariableNameMap &>(outputs).at("Out") = {string(new_name)};
+#endif
     input_x_ = InputXFrom<GType>(inputs, scope);
     out_ = OutFrom(outputs, scope);
   }
@@ -1210,18 +1221,9 @@ class FetchParam : public OpParam {
   RType *input_x_;
   Tensor *out_;
 #ifdef PADDLE_MOBILE_FPGA
-
- private:
-  std::shared_ptr<RType> float_input_x_;
+ public:
   fpga::BypassArgs fpga_bypass_args;
 
- public:
-  RType *FloatInput() const {
-    return float_input_x_ == nullptr ? input_x_ : float_input_x_.get();
-  }
-  void SetFloatInput(Tensor *input) { float_input_x_.reset(input); }
-  const fpga::BypassArgs &FpgaArgs() const { return fpga_bypass_args; }
-  void SetFpgaArgs(const fpga::BypassArgs &args) { fpga_bypass_args = args; }
 #endif
 };
 
