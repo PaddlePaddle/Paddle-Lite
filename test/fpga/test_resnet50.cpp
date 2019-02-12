@@ -61,15 +61,16 @@ void dump(std::string filename, Tensor input_tensor) {
   }
   out.close();
 }
-void dump_stride(std::string filename, Tensor input_tensor, const int dumpnum) {
+void dump_stride_half(std::string filename, Tensor input_tensor,
+                      const int dumpnum) {
   int c = (input_tensor.dims())[1];
   int h = (input_tensor.dims())[2];
   int w = (input_tensor.dims())[3];
   auto data_ptr = input_tensor.get_data();
-  int16_t *data_tmp = (int16_t *)malloc(c * h * w * sizeof(int16_t));
-  int16_t *data_ptr_16 = (int16_t *)data_ptr;
+  auto *data_tmp =
+      reinterpret_cast<half *>(malloc(c * h * w * sizeof(int16_t)));
+  auto *data_ptr_16 = reinterpret_cast<half *>(data_ptr);
   convert_to_chw(&data_ptr_16, c, h, w, data_tmp);
-  // const int16_t *dataptr = input_tensor.data<int16_t>();
   std::ofstream out(filename.c_str());
   float result = 0;
   int stride = input_tensor.numel() / dumpnum;
@@ -80,6 +81,20 @@ void dump_stride(std::string filename, Tensor input_tensor, const int dumpnum) {
   }
   out.close();
   free(data_tmp);
+}
+
+void dump_stride_float(std::string filename, Tensor input_tensor,
+                       const int dumpnum) {
+  auto data_ptr = reinterpret_cast<float *>(input_tensor.get_data());
+  std::ofstream out(filename.c_str());
+  float result = 0;
+  int stride = input_tensor.numel() / dumpnum;
+  stride = stride > 0 ? stride : 1;
+  for (int i = 0; i < input_tensor.numel(); i += stride) {
+    result = data_ptr[i];
+    out << result << std::endl;
+  }
+  out.close();
 }
 static const char *g_resnet50 = "../models/resnet50";
 const std::string g_image_src_float = "../images/image_src_float";
@@ -99,22 +114,19 @@ int main() {
       std::string saveName = "resnet50_result_" + std::to_string(i);
       paddle_mobile::fpga::fpga_invalidate((*tensor_ptr).get_data(),
                                            tensor_ptr->numel() * sizeof(half));
-      // dump_stride(saveName, (*tensor_ptr), 20);
+      dump_stride_half(saveName, (*tensor_ptr), 20);
       // dump(saveName, (*tensor_ptr));
     }
 
-    std::shared_ptr<Tensor> output_tensor = paddle_mobile.FetchResult(73);
-    //(*output_tensor).dump<float>("resnet50_result_73");
-    output_tensor = paddle_mobile.FetchResult(74);
-    //(*output_tensor).dump<float>("resnet50_result_74");
-    // std::shared_ptr<Tensor> output_tensor = paddle_mobile.FetchResult(74);
-
-    // output_tensor = paddle_mobile.FetchResult(74);
+    auto tensor_ptr = paddle_mobile.FetchResult(73);
+    dump_stride_float("resnet50_result_73", (*tensor_ptr), 20);
+    tensor_ptr = paddle_mobile.FetchResult(74);
+    dump_stride_float("resnet50_result_74", (*tensor_ptr), 9999);
 
     float max = 0;
-    auto data_ptr = output_tensor->data<float>();
+    auto data_ptr = tensor_ptr->data<float>();
     int maximumIdx = 0;
-    for (int i = 0; i < (*output_tensor).numel(); i++) {
+    for (int i = 0; i < (*tensor_ptr).numel(); i++) {
       if (data_ptr[i] > max) {
         maximumIdx = i;
         max = data_ptr[i];

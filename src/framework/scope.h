@@ -86,7 +86,6 @@ class Scope {
 #ifdef PADDLE_MOBILE_FPGA
   Variable *Var(const std::string &name, const int id);
   std::vector<Variable *> VarContain(const std::string substring);
-  void InsertVar(const std::string str, Variable *var);
   void print_vars();
 #endif
 
