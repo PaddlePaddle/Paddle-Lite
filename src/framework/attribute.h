@@ -91,7 +91,6 @@ class Attribute {
         break;
       }
       case PADDLE_MOBILE__FRAMEWORK__PROTO__ATTR_TYPE__BLOCK: {
-        attr.Set<int>(attr_desc->block_idx);
         break;
       }
       default:
@@ -139,6 +138,12 @@ class Attribute {
       return vistor(attr.variant_.Get<vector<bool>>());
     } else if (attr.variant_.TypeId() == typeid(int64_t).hash_code()) {
       return vistor(attr.variant_.Get<int64_t>());
+    } else if (attr.variant_.TypeId() ==
+               typeid(framework::BlockDesc *).hash_code()) {
+      return vistor(attr.variant_.Get<framework::BlockDesc *>());
+    } else if (attr.variant_.TypeId() ==
+               typeid(vector<framework::BlockDesc *>).hash_code()) {
+      return vistor(attr.variant_.Get<vector<framework::BlockDesc *>>());
     } else {
       PADDLE_MOBILE_THROW_EXCEPTION("type not support");
     }

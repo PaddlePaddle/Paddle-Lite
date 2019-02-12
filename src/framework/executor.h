@@ -78,10 +78,7 @@ class Executor {
   PaddleMobileConfigInternal config_;
   Program<Device> program_;
   std::shared_ptr<ProgramDesc> program_desc_;
-  typedef std::shared_ptr<OperatorBase<Device>> OperatorBasePtr;
-  std::vector<std::vector<OperatorBasePtr>> ops_of_block_;
-  // operators list
-  std::vector<OperatorBasePtr> ops_list_;
+  std::vector<std::shared_ptr<OperatorBase<Device>>> ops_of_block0_;
 
   // for super resoltion
   DDim input_dim_last_;

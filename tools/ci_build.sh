@@ -64,7 +64,7 @@ function check_ndk() {
 }
 
 function build_android_armv7_cpu_only() {
-  rm -rf ../build/armeabi-v7a
+#  rm -rf ../build/armeabi-v7a
   cmake .. \
     -B"../build/armeabi-v7a" \
     -DANDROID_ABI="armeabi-v7a with NEON" \
@@ -74,6 +74,7 @@ function build_android_armv7_cpu_only() {
     -DANDROID_STL=c++_static \
     -DANDROID=true \
     -DWITH_LOGGING=OFF \
+    -DCPU=ON \
     -DGPU_MALI=OFF \
     -DGPU_CL=OFF \
     -DFPGA=OFF
@@ -93,6 +94,7 @@ function build_android_armv7_gpu() {
     -DANDROID_STL=c++_static \
     -DANDROID=true \
     -DWITH_LOGGING=OFF \
+    -DCPU=ON \
     -DGPU_MALI=ON \
     -DGPU_CL=ON \
     -DFPGA=OFF
@@ -112,6 +114,7 @@ function build_android_armv8_cpu_only() {
     -DANDROID_STL=c++_static \
     -DANDROID=true \
     -DWITH_LOGGING=OFF \
+    -DCPU=ON \
     -DGPU_MALI=OFF \
     -DGPU_CL=OFF \
     -DFPGA=OFF
@@ -131,6 +134,7 @@ function build_android_armv8_gpu() {
     -DANDROID_STL=c++_static \
     -DANDROID=true \
     -DWITH_LOGGING=OFF \
+    -DCPU=ON \
     -DGPU_MALI=ON \
     -DGPU_CL=ON \
     -DFPGA=OFF
@@ -149,6 +153,7 @@ function build_ios_armv8_cpu_only() {
     -DIOS_ARCH="${IOS_ARCH}" \
     -DIS_IOS=true \
     -DUSE_OPENMP=OFF \
+    -DCPU=ON \
     -DGPU_MALI=OFF \
     -DGPU_CL=OFF \
     -DFPGA=OFF
@@ -167,6 +172,7 @@ function build_ios_armv8_gpu() {
     -DIOS_ARCH="${IOS_ARCH}" \
     -DIS_IOS=true \
     -DUSE_OPENMP=OFF \
+    -DCPU=ON \
     -DGPU_MALI=OFF \
     -DGPU_CL=ON \
     -DFPGA=OFF
@@ -181,6 +187,7 @@ function build_linux_armv7_cpu_only() {
     -B"../build/armv7_linux" \
     -DCMAKE_BUILD_TYPE="MinSizeRel" \
     -DCMAKE_TOOLCHAIN_FILE="./tools/toolchains/arm-linux-gnueabihf.cmake" \
+    -DCPU=ON \
     -DGPU_MALI=OFF \
     -DGPU_CL=OFF \
     -DFPGA=OFF
@@ -195,6 +202,7 @@ function build_linux_armv7_gpu() {
     -B"../build/armv7_linux" \
     -DCMAKE_BUILD_TYPE="MinSizeRel" \
     -DCMAKE_TOOLCHAIN_FILE="./tools/toolchains/arm-linux-gnueabihf.cmake" \
+    -DCPU=ON \
     -DGPU_MALI=ON \
     -DGPU_CL=ON \
     -DFPGA=OFF
