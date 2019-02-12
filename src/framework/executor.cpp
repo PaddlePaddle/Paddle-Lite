@@ -459,7 +459,7 @@ void Executor<Device, T>::InjectVariable(const Tensor &t,
 
 template <typename Device, typename T>
 void Executor<Device, T>::FeedData(const Tensor &t) {
-  InjectVariable(t, "feed");
+  InjectVariable(t, "feed0");
 }
 
 template <typename Device, typename T>
