@@ -27,10 +27,10 @@ bool ElementwiseAddKernel<FPGA, float>::Init(ElementwiseAddParam<FPGA> *param) {
   auto *input_x = const_cast<LoDTensor *>(param->InputX());
   auto *input_y = const_cast<LoDTensor *>(param->InputY());
   auto *out = param->Out();
-  auto input_x_ptr = input_x->data<float>();
-  auto input_y_ptr = input_y->data<float>();
+  auto input_x_ptr = input_x->data<half>();
+  auto input_y_ptr = input_y->data<half>();
   fpga::format_fp16_ofm(out);
-  auto out_ptr = out->mutable_data<float>();
+  auto out_ptr = out->mutable_data<half>();
 
   fpga::EWAddArgs ewaddArgs = {0};
   // ewaddArgs.relu_enabled = relu_enabled;
