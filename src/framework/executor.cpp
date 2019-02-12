@@ -57,25 +57,22 @@ Executor<Device, T>::Executor(const Program<Device> &program,
   PADDLE_MOBILE_ENFORCE(program_desc_ != nullptr,
                         "program_desc_ should not be nullptr");
   const auto &blocks = program_desc_->Blocks();
-  ops_of_block_.resize(blocks.size());
 
-  for (int i = 0; i < blocks.size(); ++i) {
-    std::shared_ptr<BlockDesc> block_desc = blocks[i];
-    std::vector<std::shared_ptr<OpDesc>> ops = block_desc->Ops();
-    for (int j = 0; j < ops.size(); ++j) {
-      std::shared_ptr<OpDesc> op_desc = ops[j];
-      DLOG << "create op: " << op_desc->Type();
+  std::shared_ptr<BlockDesc> block_desc = blocks[0];
+  std::vector<std::shared_ptr<OpDesc>> ops = block_desc->Ops();
+  for (int j = 0; j < ops.size(); ++j) {
+    std::shared_ptr<OpDesc> op_desc = ops[j];
+    DLOG << "create op: " << op_desc->Type();
 
-      auto op_handler = OpRegistry<Device>::CreateOp(
-          op_desc->Type(), op_desc->GetInputs(), op_desc->GetOutputs(),
-          op_desc->GetAttrMap(), program_.scope);
-      // infer shape to reshape inputs and outputs before predict,
-      // but for lod mode, it still need to infer shape in runtime
-      if (!lod_mode) {
-        op_handler->InferShape();
-      }
-      ops_of_block_[i].push_back(op_handler);
+    auto op_handler = OpRegistry<Device>::CreateOp(
+        op_desc->Type(), op_desc->GetInputs(), op_desc->GetOutputs(),
+        op_desc->GetAttrMap(), program_.scope);
+    // infer shape to reshape inputs and outputs before predict,
+    // but for lod mode, it still need to infer shape in runtime
+    if (!lod_mode) {
+      op_handler->InferShape();
     }
+    ops_of_block0_.push_back(op_handler);
   }
 
   if (program_.combined) {
@@ -85,12 +82,9 @@ Executor<Device, T>::Executor(const Program<Device> &program,
   }
 
   int count = 0;
-  for (int block_id = 0; block_id < ops_of_block_.size(); ++block_id) {
-    for (auto &op_handler : ops_of_block_[block_id]) {
-      DLOG << "Initialize op[" << count++ << "]: " << op_handler->Type();
-      op_handler->Init();
-      ops_list_.push_back(op_handler);
-    }
+  for (auto &op_handler : ops_of_block0_) {
+    DLOG << "Initialize op[" << count++ << "]: " << op_handler->Type();
+    op_handler->Init();
   }
 }
 
@@ -373,41 +367,40 @@ void Executor<Device, T>::SetInput(const LoDTensor &input,
 template <typename Device, typename T>
 PMStatus Executor<Device, T>::Predict() {
 #ifdef PADDLE_MOBILE_PROFILE
-  std::vector<ProfInfo> profile(ops_list_.size());
+  std::vector<ProfInfo> profile(ops_of_block0_.size());
   struct timespec ts;
   int op_index = 0;
 #endif
-  for (auto &block : ops_of_block_) {
-    for (auto &op_handler : block) {
+  for (auto &op_handler : ops_of_block0_) {
 #ifdef PADDLE_MOBILE_PROFILE
-      clock_gettime(CLOCK_MONOTONIC, &ts);
-      profile[op_index].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    profile[op_index].runBegin = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
 #endif
-      if (lod_mode_) {
-        op_handler->InferShape();
-      }
-      op_handler->Run();
-#ifdef PADDLE_MOBILE_PROFILE
-      clock_gettime(CLOCK_MONOTONIC, &ts);
-      profile[op_index].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
-      ++op_index;
-#endif
+    if (lod_mode_) {
+      op_handler->InferShape();
     }
+    op_handler->Run();
+#ifdef PADDLE_MOBILE_PROFILE
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    profile[op_index].runEnd = (uint64_t)ts.tv_sec * 1e9 + ts.tv_nsec;
+    ++op_index;
+#endif
   }
 #ifdef PADDLE_MOBILE_PROFILE
   std::unordered_map<std::string, uint64_t> _tp;
   for (int i = 0; i < profile.size(); i++) {
     const auto &pInfo = profile[i];
     uint64_t timeCost = pInfo.runEnd - pInfo.runBegin;
-    if (ops_list_[i]->Type() == "conv2d" ||
-        ops_list_[i]->Type() == "depthwise_conv2d") {
-      auto inputs = ops_list_[i]->Inputs();
+    if (ops_of_block0_[i]->Type() == "conv2d" ||
+        ops_of_block0_[i]->Type() == "depthwise_conv2d") {
+      auto inputs = ops_of_block0_[i]->Inputs();
       auto *filter =
           GetVarValue<LoDTensor>("Filter", inputs, *(program_.scope));
       int kernel_size = filter->dims()[2];
-      _tp[ops_list_[i]->Type() + "_" + std::to_string(kernel_size)] += timeCost;
+      _tp[ops_of_block0_[i]->Type() + "_" + std::to_string(kernel_size)] +=
+          timeCost;
     } else {
-      _tp[ops_list_[i]->Type()] += timeCost;
+      _tp[ops_of_block0_[i]->Type()] += timeCost;
     }
   }
   printf("====================[ profile ]======================\n");
@@ -459,7 +452,7 @@ void Executor<Device, T>::FeedData(const Tensor &t) {
 
 template <typename Device, typename T>
 std::shared_ptr<Tensor> Executor<Device, T>::FetchResult(int id) {
-  auto &ops = ops_of_block_[0];
+  auto &ops = ops_of_block0_;
 
   PADDLE_MOBILE_ENFORCE(id < (int)ops.size(), "Index out of range");
   auto op = id < 0 ? ops[ops.size() - 1] : ops[id];
@@ -473,7 +466,7 @@ std::shared_ptr<Tensor> Executor<Device, T>::FetchResult(int id) {
 
 template <typename Device, typename T>
 void Executor<Device, T>::Predict_From_To(int start, int end) {
-  auto &ops = ops_of_block_[0];
+  auto &ops = ops_of_block0_;
   end = end < 0 ? static_cast<int>(ops.size()) : end;
   PADDLE_MOBILE_ENFORCE(start >= 0 && start < end && end <= ops.size(),
                         "start or end parameter is wrong");
