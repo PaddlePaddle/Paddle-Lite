@@ -37,8 +37,7 @@ template <typename Dtype>
 using OpCreator = std::function<framework::OperatorBase<Dtype> *(
     const std::string & /*type*/, const VariableNameMap & /*inputs*/,
     const VariableNameMap & /*outputs*/,
-    const framework::AttributeMap & /*attrs*/,
-    std::shared_ptr<framework::Scope> /*scope*/)>;
+    const framework::AttributeMap & /*attrs*/, framework::Scope * /*scope*/)>;
 
 using InferVarTypeFN = std::function<void(const framework::OpDesc & /*op_desc*/,
                                           framework::BlockDesc * /*block*/)>;

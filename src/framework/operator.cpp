@@ -43,7 +43,7 @@ OperatorBase<Dtype>::OperatorBase(const std::string &type,
                                   const VariableNameMap &inputs,
                                   const VariableNameMap &outputs,
                                   const AttributeMap &attrs,
-                                  std::shared_ptr<Scope> scope)
+                                  framework::Scope *scope)
     : type_(type),
       inputs_(inputs),
       outputs_(outputs),

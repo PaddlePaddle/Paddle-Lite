@@ -32,7 +32,7 @@ class ElementwiseAddOp : public framework::OperatorWithKernel<
   ElementwiseAddOp(const string &type, const VariableNameMap &inputs,
                    const VariableNameMap &outputs,
                    const framework::AttributeMap &attrs,
-                   std::shared_ptr<framework::Scope> scope)
+                   framework::Scope *scope)
       : framework::OperatorWithKernel<
             DeviceType, ElementwiseAddParam<DeviceType>,
             operators::ElementwiseAddKernel<DeviceType, T>>(

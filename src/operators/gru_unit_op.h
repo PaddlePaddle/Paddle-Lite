@@ -16,6 +16,7 @@ limitations under the License. */
 
 #pragma once
 
+#include <string>
 #include "framework/operator.h"
 #include "operators/kernel/gru_unit_kernel.h"
 #include "operators/op_param.h"
@@ -30,10 +31,10 @@ class GruUnitOp : public framework::OperatorWithKernel<
  public:
   GruUnitOp(const std::string &type, const VariableNameMap &inputs,
             const VariableNameMap &outputs, const AttributeMap &attrs,
-            std::shared_ptr<Scope> scope)
+            framework::Scope *scope)
       : framework::OperatorWithKernel<DeviceType, GruUnitParam<DeviceType>,
                                       operators::GruUnitKernel<DeviceType, T>>(
-            type, inputs, outputs, attrs, scope){};
+            type, inputs, outputs, attrs, scope) {}
   void InferShape() const override;
 };
 

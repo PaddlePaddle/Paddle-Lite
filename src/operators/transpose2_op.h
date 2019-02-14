@@ -34,8 +34,7 @@ class Transpose2Op : public framework::OperatorWithKernel<
  public:
   Transpose2Op(const std::string &type, const VariableNameMap &inputs,
                const VariableNameMap &outputs,
-               const framework::AttributeMap &attrs,
-               std::shared_ptr<framework::Scope> scope)
+               const framework::AttributeMap &attrs, framework::Scope *scope)
       : framework::OperatorWithKernel<
             DeviceType, Transpose2Param<DeviceType>,
             operators::Transpose2Kernel<DeviceType, T>>(type, inputs, outputs,

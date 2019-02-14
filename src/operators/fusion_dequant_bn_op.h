@@ -58,7 +58,7 @@ class FusionDequantBNOp : public framework::OperatorWithKernel<
   FusionDequantBNOp(const std::string &type, const VariableNameMap &inputs,
                     const VariableNameMap &outputs,
                     const framework::AttributeMap &attrs,
-                    std::shared_ptr<framework::Scope> scope)
+                    framework::Scope *scope)
       : framework::OperatorWithKernel<
             DeviceType, FusionDequantBNParam<DeviceType>,
             operators::FusionDequantBNKernel<DeviceType, T>>(
@@ -87,7 +87,7 @@ class FusionDequantBNReluOp
   FusionDequantBNReluOp(const std::string &type, const VariableNameMap &inputs,
                         const VariableNameMap &outputs,
                         const framework::AttributeMap &attrs,
-                        std::shared_ptr<framework::Scope> scope)
+                        framework::Scope *scope)
       : framework::OperatorWithKernel<
             DeviceType, FusionDequantBNParam<DeviceType>,
             operators::FusionDequantBNReluKernel<DeviceType, T>>(

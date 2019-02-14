@@ -1198,20 +1198,19 @@ class FetchParam : public OpParam {
  public:
   FetchParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
              const AttributeMap &attrs, const Scope &scope) {
-    input_x_ = InputXFrom<GType>(inputs, scope);
-    out_ = OutFrom(outputs, scope);
+    input_x_ = InputXFrom<framework::LoDTensor>(inputs, scope);
+    out_ = OutFrom<framework::LoDTensorArray>(outputs, scope);
+    col_ = GetAttr<int>("col", attrs);
   }
 
-  const RType *InputX() const { return input_x_; }
-  Tensor *Out() const { return out_; }
-
-  static Tensor *OutFrom(const VariableNameMap &outputs, const Scope &scope) {
-    return GetVarValue<LoDTensor>("Out", outputs, scope);
-  }
+  const framework::LoDTensor *InputX() const { return input_x_; }
+  framework::LoDTensorArray *Out() const { return out_; }
+  const int Col() const { return col_; }
 
  private:
-  RType *input_x_;
-  Tensor *out_;
+  framework::LoDTensor *input_x_;
+  framework::LoDTensorArray *out_;
+  int col_;
 #ifdef PADDLE_MOBILE_FPGA
 
  private:
@@ -2664,9 +2663,9 @@ class TopKParam : public OpParam {
   }
 
  public:
-  RType *input_;
-  RType *output_;
-  RType *indices_;
+  GType *input_;
+  GType *output_;
+  GType *indices_;
   int k_;
 };
 #endif  // TOP_K_OP

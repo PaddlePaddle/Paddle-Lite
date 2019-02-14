@@ -69,7 +69,7 @@ class Executor4Test : public Executor<DeviceType> {
         std::shared_ptr<paddle_mobile::framework::OperatorBase<DeviceType>>
             op_ptr = paddle_mobile::framework::OpRegistry<DeviceType>::CreateOp(
                 op->Type(), op->GetInputs(), op->GetOutputs(), op->GetAttrMap(),
-                this->program_.scope);
+                this->program_.scope.get());
         this->ops_of_block0_.push_back(op_ptr);
         break;
       }
@@ -86,7 +86,7 @@ class Executor4Test : public Executor<DeviceType> {
                                           const vector<string> &input_names,
                                           const vector<string> &output_names,
                                           const vector<DDim> &ddims) {
-    auto scope = this->program_.scope;
+    auto scope = this->program_.scope.get();
     size_t input_size = input_names.size();
     size_t out_size = output_names.size();
 
@@ -119,7 +119,7 @@ class Executor4Test : public Executor<DeviceType> {
 
   std::shared_ptr<Tensor> Predict(const Tensor &t, string input, string output,
                                   const DDim &dDim) {
-    auto scope = this->program_.scope;
+    auto scope = this->program_.scope.get();
     Variable *g_feed_value = scope->Var(input);
     auto tensor = g_feed_value->GetMutable<LoDTensor>();
     tensor->ShareDataWith(t);

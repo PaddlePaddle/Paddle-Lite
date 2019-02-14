@@ -182,7 +182,7 @@ int TestConvOp(int in_channels, int in_height, int in_width, int out_channels,
   attrs["groups"].Set<int>(groups);
 
   auto *op = new operators::ConvOp<CPU, float>("conv2d", inputs, outputs, attrs,
-                                               scope);
+                                               scope.get());
   op->InferShape();
   op->Init();
   //  struct timespec ts_begin, ts_end;

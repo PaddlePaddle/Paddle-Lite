@@ -20,8 +20,8 @@ limitations under the License. */
 #include <vector>
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
-#include "op_param.h"
 #include "operators/kernel/conv_add_bn_kernel.h"
+#include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -59,7 +59,7 @@ class FusionConvAddBNOp : public framework::OperatorWithKernel<
   FusionConvAddBNOp(const string &type, const VariableNameMap &inputs,
                     const VariableNameMap &outputs,
                     const framework::AttributeMap &attrs,
-                    std::shared_ptr<framework::Scope> scope)
+                    framework::Scope *scope)
       : framework::OperatorWithKernel<
             DeviceType, FusionConvAddBNParam<DeviceType>,
             operators::ConvAddBNKernel<DeviceType, T>>(type, inputs, outputs,

@@ -47,26 +47,27 @@ void DepthwiseConv3x3(const framework::Tensor *input,
   const int output_channel_stride = output_height * output_width;
   const int filter_channel_stride = 9;
 
-  const float *input_data = input->data<float>();
-  const float *filter_data = filter->data<float>();
+  const float *input_ptr = input->data<float>();
+  const float *filter_ptr = filter->data<float>();
   if (if_bias) {
     math::expand_bias(*bias, 1, output->dims());
     output->ShareDataWith(*bias);
   }
-  float *output_data = output->mutable_data<float>();
+  float *output_ptr = output->mutable_data<float>();
 
-  const int input_batch_stride = output_channels * input_channel_stride;
-  const int output_batch_stride = output_channels * output_channel_stride;
-  const int filter_batch_stride = output_channels * output_channel_stride;
-  const float *pos1, *pos2, *pos3, *filter1, *filter2, *filter3, *output_ptr;
+  const float *pos1, *pos2, *pos3, *filter1, *filter2, *filter3, *output_ptr2;
   int hstart, wstart, hend, wend;
   float result;
   for (int i = 0; i < batch_size; ++i) {
+#pragma omp parallel for
     for (int c = 0; c < output_channels; ++c) {
-      filter1 = filter_data;
+      const float *input_data =
+          input_ptr + (i * output_channels + c) * input_channel_stride;
+      float *output_data =
+          output_ptr + (i * output_channels + c) * output_channel_stride;
+      filter1 = filter_ptr + c * filter_channel_stride;
       filter2 = filter1 + 3;
       filter3 = filter2 + 3;
-
       for (int ph = 0; ph < output_height; ph++) {
         for (int pw = 0; pw < output_width; pw++) {
           hstart = ph * stride_height - padding_height;
@@ -80,7 +81,7 @@ void DepthwiseConv3x3(const framework::Tensor *input,
           pos1 = input_data + hstart * input_width + wstart;
           pos2 = input_data + (hstart + 1) * input_width + wstart;
           pos3 = input_data + (hstart + 2) * input_width + wstart;
-          output_ptr = output_data + ph * output_width + pw;
+          output_ptr2 = output_data + ph * output_width + pw;
 
           if (hend - hstart != 3 || wend - wstart != 3) {
             result = 0;
@@ -230,7 +231,7 @@ void DepthwiseConv3x3(const framework::Tensor *input,
                 : [input_data] "r"(input_data), [pos1] "r"(pos1),
                   [pos2] "r"(pos2), [pos3] "r"(pos3), [filter1] "r"(filter1),
                   [filter2] "r"(filter2), [filter3] "r"(filter3),
-                  [output_ptr] "r"(output_ptr), [zero] "r"(zero)
+                  [output_ptr] "r"(output_ptr2), [zero] "r"(zero)
                 : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6");
 #endif  // __aarch64__
 #else
@@ -239,12 +240,7 @@ void DepthwiseConv3x3(const framework::Tensor *input,
           }
         }
       }
-      input_data += input_channel_stride;
-      output_data += output_channel_stride;
-      filter_data += filter_channel_stride;
     }
-    input_data += input_batch_stride;
-    output_data += output_batch_stride;
   }
 }
 

@@ -31,8 +31,7 @@ class Im2SequenceOp : public framework::OperatorWithKernel<
  public:
   Im2SequenceOp(const std::string &type, const VariableNameMap &inputs,
                 const VariableNameMap &outputs,
-                const framework::AttributeMap &attrs,
-                std::shared_ptr<framework::Scope> scope)
+                const framework::AttributeMap &attrs, framework::Scope *scope)
       : framework::OperatorWithKernel<
             DeviceType, Im2SequenceParam<DeviceType>,
             operators::Im2SequenceKernel<DeviceType, T>>(type, inputs, outputs,

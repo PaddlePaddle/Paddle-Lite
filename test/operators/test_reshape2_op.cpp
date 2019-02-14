@@ -60,7 +60,7 @@ class TestReshape2Op {
           std::shared_ptr<operators::Reshape2Op<Dtype, float>> op_ptr =
               std::make_shared<operators::Reshape2Op<Dtype, float>>(
                   op->Type(), op->GetInputs(), op->GetOutputs(),
-                  op->GetAttrMap(), program_.scope);
+                  op->GetAttrMap(), program_.scope.get());
           ops_of_block_[*block_desc.get()].push_back(op_ptr);
           return;
         }
@@ -69,7 +69,7 @@ class TestReshape2Op {
   }
 
   std::shared_ptr<Tensor> predict(const Tensor &t) {
-    auto scope = program_.scope;
+    auto scope = program_.scope.get();
     Variable *input_feed_value = scope->Var(input_var_name);
     auto tensor_input = input_feed_value->GetMutable<LoDTensor>();
     tensor_input->ShareDataWith(t);

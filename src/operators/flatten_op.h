@@ -49,8 +49,7 @@ class FlattenOp : public framework::OperatorWithKernel<
  public:
   FlattenOp(const std::string &type, const VariableNameMap &inputs,
             const VariableNameMap &outputs,
-            const framework::AttributeMap &attrs,
-            std::shared_ptr<framework::Scope> scope)
+            const framework::AttributeMap &attrs, framework::Scope *scope)
       : framework::OperatorWithKernel<DeviceType, FlattenParam<DeviceType>,
                                       operators::FlattenKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}

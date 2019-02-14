@@ -32,7 +32,7 @@ class ElementwiseMulOp : public framework::OperatorWithKernel<
   ElementwiseMulOp(const string &type, const VariableNameMap &inputs,
                    const VariableNameMap &outputs,
                    const framework::AttributeMap &attrs,
-                   std::shared_ptr<framework::Scope> scope)
+                   framework::Scope *scope)
       : framework::OperatorWithKernel<
             DeviceType, ElementwiseMulParam<DeviceType>,
             operators::ElementwiseMulKernel<DeviceType, T>>(

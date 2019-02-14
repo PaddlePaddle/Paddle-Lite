@@ -8,17 +8,24 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
+
 #include "operators/kernel/fetch_kernel.h"
+
 namespace paddle_mobile {
 namespace operators {
+
 template <>
 bool FetchKernel<CPU, float>::Init(FetchParam<CPU> *param) {
   return true;
 }
+
 template <>
 void FetchKernel<CPU, float>::Compute(const FetchParam<CPU> &param) {
-  param.Out()->ShareDataWith(*(param.InputX()));
+  int col = param.Col();
+  param.Out()->at(col).ShareDataWith(*(param.InputX()));
 }
+
 template class FetchKernel<CPU, float>;
+
 }  // namespace operators
 }  // namespace paddle_mobile
