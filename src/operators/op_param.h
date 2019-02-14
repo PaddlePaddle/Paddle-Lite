@@ -1172,18 +1172,21 @@ class FeedParam : public OpParam {
  public:
   FeedParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
             const AttributeMap &attrs, const Scope &scope) {
-    input_x_ = InputXFrom<LoDTensor>(inputs, scope);
+    input_x_ = InputXFrom<framework::LoDTensorArray>(inputs, scope);
     out_ = OutFrom<GType>(outputs, scope);
+    col_ = GetAttr<int>("col", attrs);
     auto var = scope.FindVar("batch_size");
     batch_size = var->GetValue<int>();
   }
-  const LoDTensor *InputX() const { return input_x_; }
+  const framework::LoDTensorArray *InputX() const { return input_x_; }
   GType *Out() const { return out_; }
+  const int Col() const { return col_; }
   const int BatchSize() const { return batch_size; }
 
  private:
-  LoDTensor *input_x_;
+  framework::LoDTensorArray *input_x_;
   GType *out_;
+  int col_;
   int batch_size;
 };
 
@@ -3008,24 +3011,6 @@ class LogicalUnaryParam : public OpParam {
 };
 #endif  // LOGICAL_NOT_OP
 
-// #ifdef WHILE_OP
-// template <typename Dtype>
-// class WhileParam : public OpParam {
-//  public:
-//   WhileParam(const VariableNameMap &inputs,
-//              const VariableNameMap &outputs, const AttributeMap &attrs,
-//              const Scope &scope) {
-//     cond_ = OpParam::GetVarValue<framework::LoDTensor>("Condition", inputs,
-//     scope); block_desc_ = OpParam::GetAttr<framework::BlockDesc
-//     *>("sub_block", attrs);
-//   }
-//
-//  public:
-//   framework::LoDTensor *cond_;
-//   const framework::BlockDesc *block_desc_;
-// };
-// #endif  // WHILE_OP
-
 #ifdef WRITE_TO_ARRAY_OP
 template <typename Dtype>
 class WriteToArrayParam : public OpParam {
@@ -3099,17 +3084,17 @@ class IncrementParam : public OpParam {
                  const AttributeMap &attrs, const Scope &scope) {
     input_x_ = InputXFrom<GType>(inputs, scope);
     output_ = OutFrom<GType>(outputs, scope);
-    step_ = OpParam::GetAttr<int>("step", attrs);
+    step_ = OpParam::GetAttr<float>("step", attrs);
   }
 
   const GType *InputX() const { return input_x_; }
   GType *Out() const { return output_; }
-  int Step() const { return step_; }
+  float Step() const { return step_; }
 
  public:
   GType *input_x_;
   GType *output_;
-  int step_;
+  float step_;
 };
 #endif  // INCREMENT_OP
 
