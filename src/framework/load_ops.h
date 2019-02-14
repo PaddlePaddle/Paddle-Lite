@@ -324,3 +324,6 @@ LOAD_OP1(psroi_pool, CPU);
 #ifdef ROI_PERSPECTIVE_OP
 LOAD_OP1(roi_perspective_transform, CPU);
 #endif
+#ifdef BEAM_SEARCH_DECODE_OP
+LOAD_OP1(beam_search_decode, CPU);
+#endif
