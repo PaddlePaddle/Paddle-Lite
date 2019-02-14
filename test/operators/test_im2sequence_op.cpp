@@ -47,7 +47,7 @@ class TestIm2SequenceOp {
           std::shared_ptr<operators::Im2SequenceOp<Dtype, float>> lrn =
               std::make_shared<operators::Im2SequenceOp<Dtype, float>>(
                   op->Type(), op->GetInputs(), op->GetOutputs(),
-                  op->GetAttrMap(), program_.scope);
+                  op->GetAttrMap(), program_.scope.get());
           ops_of_block_[*block_desc.get()].push_back(lrn);
         }
       }
@@ -56,7 +56,7 @@ class TestIm2SequenceOp {
 
   std::shared_ptr<Tensor> predict_bn(const Tensor &t1) {
     // feed
-    auto scope = program_.scope;
+    auto scope = program_.scope.get();
     Variable *x1_feed_value = scope->Var("conv2d_19.tmp_1");
     auto tensor_x1 = x1_feed_value->GetMutable<LoDTensor>();
     tensor_x1->ShareDataWith(t1);

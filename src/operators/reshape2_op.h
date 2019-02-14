@@ -34,8 +34,7 @@ class Reshape2Op : public framework::OperatorWithKernel<
  public:
   Reshape2Op(const std::string &type, const VariableNameMap &inputs,
              const VariableNameMap &outputs,
-             const framework::AttributeMap &attrs,
-             std::shared_ptr<framework::Scope> scope)
+             const framework::AttributeMap &attrs, framework::Scope *scope)
       : framework::OperatorWithKernel<DeviceType, Reshape2Param<DeviceType>,
                                       operators::Reshape2Kernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}

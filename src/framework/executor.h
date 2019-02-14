@@ -63,6 +63,7 @@ class Executor {
 
   bool varInputMemory(const std::shared_ptr<VarDesc> &var_desc,
                       Variable *var) const;
+  void InitFeedFetchList();
   void InitMemory();
   void InitCombineMemory();
   void InitNoPersistableMemory(const Tensor &input_tensor);
@@ -79,6 +80,8 @@ class Executor {
   Program<Device> program_;
   std::shared_ptr<ProgramDesc> program_desc_;
   std::vector<std::shared_ptr<OperatorBase<Device>>> ops_of_block0_;
+  std::unordered_map<std::string, int> feed_indices_;
+  std::unordered_map<std::string, int> fetch_indices_;
 
   // for super resoltion
   DDim input_dim_last_;

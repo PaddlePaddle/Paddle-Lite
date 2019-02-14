@@ -51,6 +51,11 @@ void ReadFromArrayKernel<CPU, float>::Compute(
   int64_t offset = param.index_->data<int64_t>()[0];
   if (offset < param.input_->size()) {
     TensorCopy(param.input_->at(offset), param.output_);
+    param.output_->set_lod(param.input_->at(offset).lod());
+  } else {
+    PADDLE_MOBILE_THROW_EXCEPTION(
+        "Can not read tensor which index is `%d` since it only has `%d` inputs",
+        offset, param.input_->size());
   }
 }
 #endif  // READ_FROM_ARRAY_OP

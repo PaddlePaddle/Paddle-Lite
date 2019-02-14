@@ -51,7 +51,7 @@ class FusionConvAddReluOp : public framework::OperatorWithKernel<
   FusionConvAddReluOp(const string &type, const VariableNameMap &inputs,
                       const VariableNameMap &outputs,
                       const framework::AttributeMap &attrs,
-                      std::shared_ptr<framework::Scope> scope)
+                      framework::Scope *scope)
       : framework::OperatorWithKernel<
             DeviceType, FusionConvAddReluParam<DeviceType>,
             operators::ConvAddReluKernel<DeviceType, T>>(type, inputs, outputs,

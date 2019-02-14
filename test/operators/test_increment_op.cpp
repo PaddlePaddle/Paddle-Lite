@@ -41,8 +41,8 @@ int TestIncrementOp(const std::vector<int> input_shape, int step) {
   framework::AttributeMap attrs;
   attrs["step"].Set<int>(step);
 
-  auto *op = new operators::IncrementOp<CPU, float>("increment", inputs,
-                                                    outputs, attrs, scope);
+  auto *op = new operators::IncrementOp<CPU, float>(
+      "increment", inputs, outputs, attrs, scope.get());
 
   op->InferShape();
   op->Init();

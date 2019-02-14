@@ -103,7 +103,7 @@ int TestFcOP() {
   attrs["axis"].Set<int>(1);
   operators::OperatorBase<CPU> *op = nullptr;
   op = new operators::FusionFcOp<CPU, T>("fusion_fc", inputs, outputs, attrs,
-                                         scope);
+                                         scope.get());
   op->InferShape();
   op->Run();
   auto output = output_var->template Get<framework::LoDTensor>();

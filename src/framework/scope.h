@@ -32,15 +32,7 @@ class Scope {
   Scope() = default;
 
   ~Scope() {
-    for (auto &var : vars_) {
-      delete var.second;
-    }
-    vars_.clear();
-    for (auto kid : kids_) {
-      delete kid;
-    }
-    kids_.clear();
-
+    DropKids();
 #ifdef PADDLE_MOBILE_CL
     delete cl_scope_;
 #endif

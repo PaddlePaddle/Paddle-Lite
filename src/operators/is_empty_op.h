@@ -31,8 +31,7 @@ class IsEmptyOp
  public:
   IsEmptyOp(const string &type, const VariableNameMap &inputs,
             const VariableNameMap &outputs,
-            const framework::AttributeMap &attrs,
-            std::shared_ptr<framework::Scope> scope)
+            const framework::AttributeMap &attrs, framework::Scope *scope)
       : framework::OperatorWithKernel<DeviceType, IsEmptyParam<DeviceType>,
                                       IsEmptyKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}

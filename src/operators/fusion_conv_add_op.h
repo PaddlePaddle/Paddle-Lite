@@ -50,8 +50,7 @@ class FusionConvAddOp : public framework::OperatorWithKernel<
  public:
   FusionConvAddOp(const string &type, const VariableNameMap &inputs,
                   const VariableNameMap &outputs,
-                  const framework::AttributeMap &attrs,
-                  std::shared_ptr<framework::Scope> scope)
+                  const framework::AttributeMap &attrs, framework::Scope *scope)
       : framework::OperatorWithKernel<DeviceType,
                                       FusionConvAddParam<DeviceType>,
                                       operators::ConvAddKernel<DeviceType, T>>(

@@ -34,7 +34,7 @@ class SplitOp : public framework::OperatorWithKernel<
  public:
   SplitOp(const std::string &type, const VariableNameMap &inputs,
           const VariableNameMap &outputs, const framework::AttributeMap &attrs,
-          std::shared_ptr<framework::Scope> scope)
+          framework::Scope *scope)
       : framework::OperatorWithKernel<DeviceType, SplitParam<DeviceType>,
                                       operators::SplitKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}
