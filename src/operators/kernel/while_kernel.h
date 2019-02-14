@@ -26,18 +26,16 @@ class WhileParam : public OpParam {
  public:
   WhileParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
              const AttributeMap &attrs, const Scope &scope)
-      : inputs_(inputs), outputs_(outputs), scope_(scope) {
+      : scope_(&scope) {
     cond_ =
         OpParam::GetVarValue<framework::LoDTensor>("Condition", inputs, scope);
     sub_block_ = OpParam::GetAttr<framework::BlockDesc *>("sub_block", attrs);
   }
 
  public:
+  const Scope *scope_;
   framework::LoDTensor *cond_;
-  const framework::BlockDesc *sub_block_;
-  const VariableNameMap inputs_;
-  const VariableNameMap outputs_;
-  const Scope scope_;
+  framework::BlockDesc *sub_block_;
 };
 
 DECLARE_KERNEL(While, WhileParam);

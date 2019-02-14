@@ -61,8 +61,8 @@ class Executor {
  protected:
   Executor() = default;
 
-  bool varInputMemory(const std::shared_ptr<VarDesc> &var_desc, Variable *var,
-                      LoDTensor *tensor) const;
+  bool varInputMemory(const std::shared_ptr<VarDesc> &var_desc,
+                      Variable *var) const;
   void InitMemory();
   void InitCombineMemory();
   void InitNoPersistableMemory(const Tensor &input_tensor);

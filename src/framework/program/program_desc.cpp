@@ -78,9 +78,8 @@ void ProgramDesc::Description(std::string header) {
     }
 
     for (const auto &var_desc : block->Vars()) {
+      LOG(kLOG_DEBUG1) << "var name: " << var_desc->Name();
       if (var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
-        LOG(kLOG_DEBUG1) << "var name: " << var_desc->Name();
-
         const TensorDesc &tensor_desc = var_desc->Tensor_desc();
 
         LOG(kLOG_DEBUG2) << "in var tensor desc dims size: "

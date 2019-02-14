@@ -12,24 +12,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "operators/kernel/feed_kernel.h"
+#ifdef BEAM_SEARCH_DECODE_OP
+
+#pragma once
+
+#include "operators/beam_search_decode_op.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <>
-bool FeedKernel<CPU, float>::Init(FeedParam<CPU> *param) {
-  return true;
-}
-
-template <>
-void FeedKernel<CPU, float>::Compute(const FeedParam<CPU> &param) {
-  int col = param.Col();
-  param.Out()->ShareDataWith(param.InputX()->at(col));
-  param.Out()->set_lod(param.InputX()->at(col).lod());
-}
-
-template class FeedKernel<CPU, float>;
+template <typename Dtype, typename T>
+void BeamSearchDecodeOp<Dtype, T>::InferShape() const {}
 
 }  // namespace operators
 }  // namespace paddle_mobile
+
+namespace ops = paddle_mobile::operators;
+
+#ifdef PADDLE_MOBILE_CPU
+REGISTER_OPERATOR_CPU(beam_search_decode, ops::BeamSearchDecodeOp);
+#endif
+
+namespace ops = paddle_mobile::operators;
+#endif  // BEAM_SEARCH_DECODE_OP

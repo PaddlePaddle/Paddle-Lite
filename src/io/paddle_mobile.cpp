@@ -152,14 +152,14 @@ PMStatus PaddleMobile<Device, T>::Predict() {
 }
 
 template <typename Device, typename T>
-void PaddleMobile<Device, T>::Feed(const framework::Tensor &input,
-                                   const std::string &var_name) {
+void PaddleMobile<Device, T>::Feed(const std::string &var_name,
+                                   const framework::Tensor &input) {
   executor_->SetInput(input, var_name);
 }
 
 template <typename Device, typename T>
-void PaddleMobile<Device, T>::Feed(const framework::LoDTensor &input,
-                                   const std::string &var_name) {
+void PaddleMobile<Device, T>::Feed(const std::string &var_name,
+                                   const framework::LoDTensor &input) {
   executor_->SetInput(input, var_name);
 }
 

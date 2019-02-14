@@ -170,20 +170,19 @@ void Executor<Device, T>::InitMemory() {
   for (const auto &block : program_desc_->Blocks()) {
     for (const auto &var_desc : block->Vars()) {
       auto var = program_.scope->Var(var_desc->Name());
-      auto tensor = var->template GetMutable<LoDTensor>();
       if (var_desc->Persistable()) {
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
+          var->template GetMutable<framework::LoDTensorArray>();
           continue;
         }
         char *origin_data =
             ReadFileToBuff(program_.model_path + "/" + var_desc->Name());
         char *data = origin_data;
+        auto tensor = var->template GetMutable<LoDTensor>();
         LoadMemory(reinterpret_cast<void **>(&data), var_desc, tensor);
         delete[] origin_data;
       } else {
-        if (var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
-          varInputMemory(var_desc, var, tensor);
-        }
+        varInputMemory(var_desc, var);
       }
     }
   }
@@ -205,23 +204,18 @@ void Executor<Device, T>::InitCombineMemory() {
   for (const auto &block : program_desc_->Blocks()) {
     for (const auto &var_desc : block->Vars()) {
       auto var = program_.scope->Var(var_desc->Name());
-      auto tensor = var->template GetMutable<LoDTensor>();
       if (var_desc->Persistable()) {
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
+          var->template GetMutable<framework::LoDTensorArray>();
           continue;
         }
 
         DLOG << " init combine memory persistable: " << var_desc->Name();
-
+        auto tensor = var->template GetMutable<LoDTensor>();
         LoadMemory(reinterpret_cast<void **>(&data), var_desc, tensor);
       } else {
-        if (var_desc->Type() == VARTYPE_TYPE_LOD_TENSOR) {
-          DLOG << " init combine memory no persistable in lod: "
-               << var_desc->Name();
-          varInputMemory(var_desc, var, tensor);
-        } else {
-          DLOG << " init combine memory no persistable: " << var_desc->Name();
-        }
+        DLOG << " init combine memory no persistable: " << var_desc->Name();
+        varInputMemory(var_desc, var);
       }
     }
   }
@@ -239,6 +233,7 @@ void Executor<Device, T>::InitNoPersistableMemory(const Tensor &input_tensor) {
       auto tensor = var->template GetMutable<LoDTensor>();
       if (var_desc->Persistable()) {
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
+          var->template GetMutable<framework::LoDTensorArray>();
           continue;
         }
       } else {
@@ -249,6 +244,9 @@ void Executor<Device, T>::InitNoPersistableMemory(const Tensor &input_tensor) {
                          input_tensor.dims()[3]});
           tensor->Resize(new_dim);
           tensor->template mutable_data<T>();
+        } else {
+          PADDLE_MOBILE_THROW_EXCEPTION("Unsupported var type `%d`",
+                                        var_desc->Type());
         }
       }
     }
@@ -261,34 +259,43 @@ void Executor<Device, T>::InitNoPersistableMemory(const Tensor &input_tensor) {
 
 template <typename Device, typename T>
 bool Executor<Device, T>::varInputMemory(
-    const std::shared_ptr<VarDesc> &var_desc, Variable *var,
-    LoDTensor *tensor) const {
+    const std::shared_ptr<VarDesc> &var_desc, Variable *var) const {
 #ifdef PADDLE_MOBILE_FPGA
   tensor->init(typeid(float));
   return true;
 #endif
-  auto type = var_desc->Tensor_desc().DataType();
-  switch (type) {
-    case VARTYPE_TYPE_FP32:
-      tensor->mutable_data<float>();
-      break;
-    case VARTYPE_TYPE_INT8:
-      tensor->mutable_data<int8_t>();
-      break;
-    case VARTYPE_TYPE_INT32:
-      tensor->mutable_data<int32_t>();
-      break;
-    case VARTYPE_TYPE_INT64:
-      tensor->mutable_data<int64_t>();
-      break;
-    default:
-      break;
+  auto TypeId = [](const VarType_Type &type) -> std::type_index {
+    switch (type) {
+      case VARTYPE_TYPE_BOOL:
+        return typeid(bool);
+      case VARTYPE_TYPE_FP32:
+        return typeid(float);
+      case VARTYPE_TYPE_INT8:
+        return typeid(int8_t);
+      case VARTYPE_TYPE_INT32:
+        return typeid(int);
+      case VARTYPE_TYPE_INT64:
+        return typeid(int64_t);
+      default:
+        PADDLE_MOBILE_THROW_EXCEPTION("got unhandled var type `%d`", type);
+    }
+  };
+
+  auto type = var_desc->Type();
+  if (type == VARTYPE_TYPE_LOD_TENSOR) {
+    auto data_type = var_desc->Tensor_desc().DataType();
+    framework::LoDTensor *tensor = var->template GetMutable<LoDTensor>();
+    tensor->mutable_data(TypeId(data_type));
+  } else if (type == VARTYPE_TYPE_STEP_SCOPES) {
+    std::vector<framework::Scope *> *step_scopes =
+        var->template GetMutable<std::vector<framework::Scope *>>();
+  } else if (type == VARTYPE_TYPE_STEP_LOD_TENSOR_ARRAY) {
+    framework::LoDTensorArray *tensor_array =
+        var->template GetMutable<framework::LoDTensorArray>();
+  } else {
+    PADDLE_MOBILE_THROW_EXCEPTION("got unhandled var type `%d`", type);
   }
-  bool is_mute_match =
-      (type == VARTYPE_TYPE_FP32) || (type == VARTYPE_TYPE_INT8) ||
-      (type == VARTYPE_TYPE_INT32) || (type == VARTYPE_TYPE_INT64);
-  PADDLE_MOBILE_ENFORCE(is_mute_match, "got unhandled data type : %d", type);
-  return is_mute_match;
+  return true;
 }
 
 template <typename Device, typename T>
