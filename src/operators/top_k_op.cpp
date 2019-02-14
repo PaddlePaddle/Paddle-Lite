@@ -26,7 +26,11 @@ void TopKOp<DeviceType, T>::InferShape() const {
   // should check k <= dims[-1] && k >= 1
   dims[dims.size() - 1] = k;
   this->param_.output_->Resize(dims);
+  //  this->param_.output_->set_lod(this->param_.input_->lod());
+  this->param_.output_->set_lod({{0, 1}});
   this->param_.indices_->Resize(dims);
+  //  this->param_.indices_->set_lod(this->param_.input_->lod());
+  this->param_.indices_->set_lod({{0, 1}});
 }
 
 }  // namespace operators

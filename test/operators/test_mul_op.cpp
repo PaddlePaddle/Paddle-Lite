@@ -54,8 +54,8 @@ int TestMulOP() {
   AttributeMap attrs;
   attrs["x_num_col_dims"].Set<int>(1);
   attrs["y_num_col_dims"].Set<int>(1);
-  auto *op =
-      new operators::MulOp<CPU, float>("mul", inputs, outputs, attrs, scope);
+  auto *op = new operators::MulOp<CPU, float>("mul", inputs, outputs, attrs,
+                                              scope.get());
   op->InferShape();
   op->Run();
   auto output = output_var->template Get<framework::LoDTensor>();

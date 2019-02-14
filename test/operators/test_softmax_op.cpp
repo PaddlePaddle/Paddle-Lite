@@ -65,7 +65,7 @@ int TestSoftmaxOp(const std::vector<int> input_shape) {
 
   framework::AttributeMap attrs;
   auto *op = new operators::SoftmaxOp<CPU, float>("softmax", inputs, outputs,
-                                                  attrs, scope);
+                                                  attrs, scope.get());
   op->InferShape();
   op->Init();
   op->Run();

@@ -63,7 +63,7 @@ int TestSequenceSoftmaxOp(const std::vector<int> &input_shape,
 
   framework::AttributeMap attrs;
   auto *op = new operators::SequenceSoftmaxOp<CPU, float>(
-      "sequence_softmax", inputs, outputs, attrs, scope);
+      "sequence_softmax", inputs, outputs, attrs, scope.get());
 
   op->InferShape();
   op->Init();

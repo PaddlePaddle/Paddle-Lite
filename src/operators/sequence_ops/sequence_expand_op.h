@@ -32,7 +32,7 @@ class SequenceExpandOp : public framework::OperatorWithKernel<
   SequenceExpandOp(const std::string &type, const VariableNameMap &inputs,
                    const VariableNameMap &outputs,
                    const framework::AttributeMap &attrs,
-                   std::shared_ptr<framework::Scope> scope)
+                   framework::Scope *scope)
       : framework::OperatorWithKernel<
             DeviceType, SequenceExpandParam<DeviceType>,
             operators::SequenceExpandKernel<DeviceType, T>>(

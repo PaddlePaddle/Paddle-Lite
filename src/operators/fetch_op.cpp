@@ -18,8 +18,9 @@ namespace operators {
 
 template <typename DeviceType, typename T>
 void FetchOp<DeviceType, T>::InferShape() const {
+  int col = this->param_.Col();
   auto x_dims = this->param_.InputX()->dims();
-  this->param_.Out()->Resize(x_dims);
+  this->param_.Out()->at(col).Resize(x_dims);
 }
 
 }  // namespace operators

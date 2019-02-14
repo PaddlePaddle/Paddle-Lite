@@ -57,7 +57,7 @@ class OperatorBase {
  public:
   OperatorBase(const std::string &type, const VariableNameMap &inputs,
                const VariableNameMap &outputs, const AttributeMap &attrs,
-               std::shared_ptr<Scope> scope);
+               framework::Scope *scope);
   virtual ~OperatorBase() {}
 
   virtual void Init() = 0;
@@ -80,7 +80,7 @@ class OperatorBase {
   }
 
  protected:
-  std::shared_ptr<Scope> scope_;
+  framework::Scope *scope_;
   std::string type_;
   VariableNameMap inputs_;
   VariableNameMap outputs_;
@@ -95,7 +95,7 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
  public:
   OperatorWithKernel(const std::string &type, const VariableNameMap &inputs,
                      const VariableNameMap &outputs, const AttributeMap &attrs,
-                     std::shared_ptr<Scope> scope)
+                     framework::Scope *scope)
       : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope),
         param_(inputs, outputs, attrs, *scope) {
 #ifdef PADDLE_MOBILE_CL
@@ -174,21 +174,20 @@ class FusionOpMatcher {
   std::shared_ptr<OpDesc> new_opdesc_;
 };
 
-#define DECLARE_OPERATOR(OpName, OpParam, OpKernel)                          \
-  template <typename DeviceType, typename T>                                 \
-  class OpName##Op : public framework::OperatorWithKernel<                   \
-                         DeviceType, OpParam<DeviceType>,                    \
-                         operators::OpKernel<DeviceType, T>> {               \
-   public:                                                                   \
-    OpName##Op(const std::string &type, const VariableNameMap &inputs,       \
-               const VariableNameMap &outputs,                               \
-               const framework::AttributeMap &attrs,                         \
-               std::shared_ptr<framework::Scope> scope)                      \
-        : framework::OperatorWithKernel<DeviceType, OpParam<DeviceType>,     \
-                                        operators::OpKernel<DeviceType, T>>( \
-              type, inputs, outputs, attrs, scope) {}                        \
-                                                                             \
-    void InferShape() const override;                                        \
+#define DECLARE_OPERATOR(OpName, OpParam, OpKernel)                           \
+  template <typename DeviceType, typename T>                                  \
+  class OpName##Op : public framework::OperatorWithKernel<                    \
+                         DeviceType, OpParam<DeviceType>,                     \
+                         operators::OpKernel<DeviceType, T>> {                \
+   public:                                                                    \
+    OpName##Op(const std::string &type, const VariableNameMap &inputs,        \
+               const VariableNameMap &outputs,                                \
+               const framework::AttributeMap &attrs, framework::Scope *scope) \
+        : framework::OperatorWithKernel<DeviceType, OpParam<DeviceType>,      \
+                                        operators::OpKernel<DeviceType, T>>(  \
+              type, inputs, outputs, attrs, scope) {}                         \
+                                                                              \
+    void InferShape() const override;                                         \
   };
 
 #define DECLARE_KERNEL(OpName, OpParam)                                   \
@@ -204,7 +203,7 @@ class FusionOpMatcher {
   cls(const std::string &type, const ::paddle_mobile::VariableNameMap &inputs, \
       const ::paddle_mobile::VariableNameMap &outputs,                         \
       const ::paddle_mobile::framework::AttributeMap &attrs,                   \
-      std::shared_ptr<::paddle_mobile::framework::Scope> scope)                \
+      ::paddle_mobile::framework::Scope *scope)                                \
       : parent_cls<Dtype, T>(type, inputs, outputs, attrs, scope) {}
 
 }  // namespace framework

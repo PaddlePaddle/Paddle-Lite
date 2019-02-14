@@ -29,6 +29,13 @@ template <>
 void BeamSearchDecodeKernel<CPU, float>::Compute(
     const BeamSearchDecodeParam<CPU> &param) {
   // TODO(hjchen2)
+  DLOG << "BeamSearchDecodeKernel";
+  param.sentence_scores_->Resize(framework::make_ddim({10}));
+  param.sentence_scores_->mutable_data<float>();
+  DLOG << "BeamSearchDecodeKernel";
+
+  param.sentence_ids_->Resize(framework::make_ddim({10}));
+  param.sentence_ids_->mutable_data<int64_t>();
 }
 
 }  // namespace operators

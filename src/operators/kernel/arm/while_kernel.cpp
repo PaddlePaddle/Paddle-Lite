@@ -26,11 +26,12 @@ class StepExecutor {
 
  public:
   StepExecutor(const framework::BlockDesc *block, framework::Scope *scope)
-      : scope_(std::shared_ptr<framework::Scope>(scope)) {
+      : scope_(scope) {
     std::vector<std::shared_ptr<framework::OpDesc>> ops = block->Ops();
     ops_of_block_.resize(ops.size());
     for (int i = 0; i < ops.size(); ++i) {
       std::shared_ptr<framework::OpDesc> op_desc = ops[i];
+      DLOG << "create op: " << op_desc->Type();
       auto op_handler = framework::OpRegistry<CPU>::CreateOp(
           op_desc->Type(), op_desc->GetInputs(), op_desc->GetOutputs(),
           op_desc->GetAttrMap(), scope_);
@@ -40,15 +41,13 @@ class StepExecutor {
 
   void Run() {
     for (auto &op_handler : ops_of_block_) {
-      DLOG << "run op: " << op_handler->Type();
       op_handler->InferShape();
       op_handler->Run();
-      DLOG << "run op finish";
     }
   }
 
  private:
-  std::shared_ptr<framework::Scope> scope_;
+  framework::Scope *scope_;
   std::vector<OperatorPtr> ops_of_block_;
 };
 
@@ -59,7 +58,6 @@ bool WhileKernel<CPU, float>::Init(WhileParam<CPU> *param) {
 
 template <>
 void WhileKernel<CPU, float>::Compute(const WhileParam<CPU> &param) {
-  // TODO(hjchen2)
   auto &current_scope = param.scope_->NewScope();
   StepExecutor executor(param.sub_block_, &current_scope);
   while (param.cond_->data<bool>()[0]) {

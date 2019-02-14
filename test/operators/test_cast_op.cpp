@@ -81,8 +81,8 @@ int TestCastOp(const std::vector<int> input_shape) {
   framework::AttributeMap attrs;
   attrs["in_dtype"].Set<int>(TypeInt<Itype>());
   attrs["out_dtype"].Set<int>(TypeInt<Otype>());
-  auto *op =
-      new operators::CastOp<CPU, float>("cast", inputs, outputs, attrs, scope);
+  auto *op = new operators::CastOp<CPU, float>("cast", inputs, outputs, attrs,
+                                               scope.get());
   op->InferShape();
   op->Init();
   op->Run();

@@ -71,8 +71,8 @@ int TestGruOp(int in_channels, int out_channels, std::string opname) {
   attrs["gate_activation"].SetString(std::string("sigmoid"));
   attrs["is_reverse"].Set<bool>(false);
 
-  auto *op =
-      new operators::GruOp<CPU, float>("gru", inputs, outputs, attrs, scope);
+  auto *op = new operators::GruOp<CPU, float>("gru", inputs, outputs, attrs,
+                                              scope.get());
   op->InferShape();
   op->Init();
   for (int i = 0; i < 10; ++i) {
