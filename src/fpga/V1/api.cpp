@@ -623,7 +623,7 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
   fpga::format_fp16_ofm(out, dims_out_new);
   auto out_ptr = out->data<half>();
   arg->output.address =
-      (half *)out_ptr +  // NOLINT
+      out_ptr +
       omit_size * sizeof(half) *
           (align_to_x(real_out_width * arg->filter_num, IMAGE_ALIGNMENT));
   arg->output.scale_address = out->scale;
@@ -713,7 +713,6 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
     }
 
     for (int j = 0; j < split_num; ++j) {
-      // arg->split_conv_args[i]->conv_arg[j].relu_enabled = relu_enabled;
       arg->split_conv_args[i]->conv_arg[j].output.activation.activation_type =
           activation_enable;
       arg->split_conv_args[i]
@@ -759,9 +758,9 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
           align_to_x(arg->split_conv_args[i]->conv_arg[j].filter_num,
                      FILTER_NUM_ALIGNMENT) *
           sizeof(int8_t);
-      auto filter_head = &((
-          int8_t *)filter_ptr)[j * element_num * filter_num_per_div +  // NOLINT
-                               i * filter_sub_conv_offset];
+      auto filter_head =
+          &filter_ptr[j * element_num * filter_num_per_div +  // NOLINT
+                      i * filter_sub_conv_offset];
       arg->split_conv_args[i]->conv_arg[j].filter_address =
           fpga_malloc(filter_size);
       arg->split_conv_args[i]->vector_conv_space.push_back(
@@ -836,6 +835,10 @@ void fill_dwconv_arg(struct DWconvArgs *arg, framework::Tensor *input,
                      int16_t leaky_relu_negative_slope, int stride_h,
                      int stride_w, int padding_h, int padding_w,
                      float *bias_ptr) {
+  auto deleter = [](void *p) { fpga_free(p); };
+  arg->vector_dwconv_space.push_back(
+      std::shared_ptr<char>(reinterpret_cast<char *>(bias_ptr), deleter));
+
   auto filter_ptr = filter->data<uint8_t>();
   auto input_ptr = input->data<half>();
   auto output_ptr = out->mutable_data<half>();
