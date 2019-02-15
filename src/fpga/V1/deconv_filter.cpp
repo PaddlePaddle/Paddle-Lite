@@ -247,6 +247,7 @@ void deconv_format_filter(float** data_in, int num, int channel, int height,
     fpga_copy(ptr_space + i * align_offset, ptr_tmp, align_offset);
     fpga_free(ptr_tmp);
   }
+  fpga_free(ptr_ptr_data);
   *data_in = reinterpret_cast<float*>(ptr_space);
 
   /*    {
