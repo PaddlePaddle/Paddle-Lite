@@ -43,6 +43,8 @@ bool SplitKernel<FPGA, float>::Init(SplitParam<FPGA> *param) {
     out_channels[i] = (uint32_t)sections[i];
   }
 
+  auto deleter = [](void *p) { fpga::fpga_free(p); };
+
   fpga::SplitArgs arg = {0};
   arg.image_num = image_num;
   arg.image_in = in->data<half>();
@@ -52,6 +54,12 @@ bool SplitKernel<FPGA, float>::Init(SplitParam<FPGA> *param) {
   arg.out_channel_nums = out_channels;
   arg.height = (uint32_t)in->dims()[2];
   arg.width = (uint32_t)in->dims()[3];
+  arg.vector_split_space.push_back(
+      std::shared_ptr<char>(reinterpret_cast<char *>(images_out), deleter));
+  arg.vector_split_space.push_back(
+      std::shared_ptr<char>(reinterpret_cast<char *>(scales_out), deleter));
+  arg.vector_split_space.push_back(
+      std::shared_ptr<char>(reinterpret_cast<char *>(out_channels), deleter));
 
   param->SetFpgaArgs(arg);
   return true;
