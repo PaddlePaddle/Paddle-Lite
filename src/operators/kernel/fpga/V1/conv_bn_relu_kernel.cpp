@@ -51,8 +51,6 @@ bool ConvBNReluKernel<FPGA, float>::Init(FusionConvBNReluParam<FPGA> *param) {
     bs_ptr[i + channel] = new_scale_ptr[i];
     bs_ptr[i] = new_bias_ptr[i];
   }
-  param->SetNewScale(new_scale);
-  param->SetNewBias(new_bias);
 
   fpga::format_conv_data(filter, out, &bs_ptr, param->Groups());
   fpga::SplitConvArgs conv_arg = {0};
@@ -61,6 +59,9 @@ bool ConvBNReluKernel<FPGA, float>::Init(FusionConvBNReluParam<FPGA> *param) {
                        param->Strides()[0], param->Strides()[1],
                        param->Paddings()[0], param->Paddings()[1], bs_ptr);
   param->SetFpgaArgs(conv_arg);
+
+  delete new_scale;
+  delete new_bias;
   return true;
 }
 
