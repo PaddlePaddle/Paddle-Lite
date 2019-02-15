@@ -187,6 +187,7 @@ struct SplitArgs {
   uint32_t* out_channel_nums;
   uint32_t height;
   uint32_t width;
+  std::vector<std::shared_ptr<char>> vector_split_space;
 };
 
 struct PoolingArgs {
@@ -236,6 +237,7 @@ struct DWconvArgs {
   struct KernelArgs kernel;
   struct ImageInputArgs image;
   struct ImageOutputArgs output;
+  std::vector<std::shared_ptr<char>> vector_dwconv_space;
 };
 
 struct DWDeconvArgs {
