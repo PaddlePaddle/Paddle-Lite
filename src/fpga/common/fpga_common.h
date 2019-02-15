@@ -19,17 +19,16 @@ limitations under the License. */
 #include <memory>
 #include <vector>
 
-namespace paddle_mobile {
-namespace fpga {
-
 #ifdef PADDLE_MOBILE_FPGA_V1
-#define IMAGE_ALIGNMENT 16           // Aligned to 16
-#define FILTER_NUM_ALIGNMENT 32      // Filter number aligned to 32
-#define FILTER_ELEMENT_ALIGNMENT 16  // Filter element number aligned to 16
-#define BS_NUM_ALIGNMENT 8
-#define BIAS_NUM_ALIGNMENT 16
+#define IMAGE_ALIGNMENT (16)           // Aligned to 16
+#define FILTER_NUM_ALIGNMENT (32)      // Filter number aligned to 32
+#define FILTER_ELEMENT_ALIGNMENT (16)  // Filter element number aligned to 16
+#define BS_NUM_ALIGNMENT (8)
+#define BIAS_NUM_ALIGNMENT (16)
 #endif
 
+namespace paddle_mobile {
+namespace fpga {
 enum DataType {
   DATA_TYPE_FP32 = 1,
   DATA_TYPE_FP16 = 0,
@@ -49,7 +48,7 @@ enum ActivationType {
 };
 
 struct ActivationArgs {
-  enum ActivationType activation_type;
+  enum ActivationType activation_type = NONE;
   int16_t leaky_relu_negative_slope;
 };
 
@@ -188,6 +187,7 @@ struct SplitArgs {
   uint32_t* out_channel_nums;
   uint32_t height;
   uint32_t width;
+  std::vector<std::shared_ptr<char>> vector_split_space;
 };
 
 struct PoolingArgs {
@@ -237,6 +237,7 @@ struct DWconvArgs {
   struct KernelArgs kernel;
   struct ImageInputArgs image;
   struct ImageOutputArgs output;
+  std::vector<std::shared_ptr<char>> vector_dwconv_space;
 };
 
 struct DWDeconvArgs {

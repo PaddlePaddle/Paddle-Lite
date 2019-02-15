@@ -21,11 +21,11 @@ namespace operators {
 
 template <>
 bool PoolKernel<FPGA, float>::Init(PoolParam<FPGA> *param) {
-  auto *input = const_cast<Tensor *>(param->Input());
-  auto input_ptr = input->data<float>();
+  auto *input = const_cast<LoDTensor *>(param->Input());
+  auto input_ptr = input->data<half>();
   Tensor *output = param->Output();
   fpga::format_fp16_ofm(output);
-  auto output_ptr = output->mutable_data<float>();
+  auto output_ptr = output->mutable_data<half>();
   vector<int> ksize = param->Ksize();
   vector<int> strides = param->Strides();
   vector<int> paddings = param->Paddings();
