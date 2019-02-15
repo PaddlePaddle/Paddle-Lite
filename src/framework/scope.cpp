@@ -111,5 +111,29 @@ Variable *Scope::FindVarLocally(const std::string &name) const {
   return nullptr;
 }
 
+#ifdef PADDLE_MOBILE_FPGA
+Variable *Scope::Var(const std::string &name, const int id) {
+  return Var(name + std::to_string(id));
+}
+
+std::vector<Variable *> Scope::VarContain(const std::string substring) {
+  std::vector<Variable *> v;
+  for (auto pair : vars_) {
+    if (pair.first.find(substring) == 0) {
+      v.push_back(pair.second);
+    }
+  }
+  return v;
+}
+
+void Scope::print_vars() {
+  DLOG << "====================start to print variables=================";
+  for (auto pair : vars_) {
+    DLOG << pair.first;
+  }
+  DLOG << "==================complete printing variables================";
+}
+#endif
+
 }  // namespace framework
 }  // namespace paddle_mobile

@@ -1053,7 +1053,7 @@ class SoftmaxParam : public OpParam {
   GType *FloatInput() const {
     return float_input_x_ == nullptr ? input_x_ : float_input_x_.get();
   }
-  void SetFloatInput(Tensor *input) { float_input_x_.reset(input); }
+  void SetFloatInput(LoDTensor *input) { float_input_x_.reset(input); }
   const fpga::BypassArgs &FpgaArgs() const { return fpga_bypass_args; }
   void SetFpgaArgs(const fpga::BypassArgs &args) { fpga_bypass_args = args; }
 #endif
@@ -1212,18 +1212,8 @@ class FetchParam : public OpParam {
   framework::LoDTensorArray *out_;
   int col_;
 #ifdef PADDLE_MOBILE_FPGA
-
- private:
-  std::shared_ptr<GType> float_input_x_;
-  fpga::BypassArgs fpga_bypass_args;
-
  public:
-  GType *FloatInput() const {
-    return float_input_x_ == nullptr ? input_x_ : float_input_x_.get();
-  }
-  void SetFloatInput(Tensor *input) { float_input_x_.reset(input); }
-  const fpga::BypassArgs &FpgaArgs() const { return fpga_bypass_args; }
-  void SetFpgaArgs(const fpga::BypassArgs &args) { fpga_bypass_args = args; }
+  fpga::BypassArgs fpga_bypass_args;
 #endif
 };
 
@@ -1660,7 +1650,7 @@ class TanhParam : public OpParam {
   GType *FloatInput() const {
     return float_input_x_ == nullptr ? input_x_ : float_input_x_.get();
   }
-  void SetFloatInput(Tensor *input) { float_input_x_.reset(input); }
+  void SetFloatInput(LoDTensor *input) { float_input_x_.reset(input); }
   const fpga::BypassArgs &FpgaArgs() const { return fpga_bypass_args; }
   void SetFpgaArgs(const fpga::BypassArgs &args) { fpga_bypass_args = args; }
 #endif

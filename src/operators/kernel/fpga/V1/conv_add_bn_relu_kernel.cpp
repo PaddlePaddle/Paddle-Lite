@@ -27,10 +27,10 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
   paddle_mobile::fpga::ActivationType activation_enable =
       paddle_mobile::fpga::LEAKYRELU;
   int16_t leaky_relu_negative_slope = 0;
-  auto input = const_cast<Tensor *>(param->Input());
+  auto input = const_cast<LoDTensor *>(param->Input());
   auto bias = param->Bias();
   auto bias_ptr = bias->data<float>();
-  auto filter = const_cast<Tensor *>(param->Filter());
+  auto filter = const_cast<LoDTensor *>(param->Filter());
   auto out = param->Output();
 
   vector<int> paddings = param->Paddings();
@@ -60,8 +60,6 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
     bs_ptr[i + channel] = new_scale_ptr[i];
     bs_ptr[i] = new_bias_ptr[i];
   }
-  param->SetNewScale(new_scale);
-  param->SetNewBias(new_bias);
 
   const int groups = param->Groups();
   if (groups == channel) {
@@ -71,6 +69,8 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
                           leaky_relu_negative_slope, strides[0], strides[1],
                           paddings[0], paddings[1], new_bias_ptr);
     param->SetFpgaArgs(dwconv_arg);
+    fpga::fpga_free(new_scale_ptr);
+    fpga::fpga_free(bs_ptr);
   } else {
     fpga::format_conv_data(filter, out, &bs_ptr, param->Groups());
     fpga::SplitConvArgs conv_arg = {0};
@@ -78,6 +78,8 @@ bool ConvAddBNReluKernel<FPGA, float>::Init(
                          leaky_relu_negative_slope, param->Groups(), strides[0],
                          strides[1], paddings[0], paddings[1], bs_ptr);
     param->SetFpgaArgs(conv_arg);
+    delete new_scale;
+    delete new_bias;
   }
   return true;
 }

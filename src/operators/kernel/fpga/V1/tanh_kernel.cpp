@@ -21,9 +21,11 @@ namespace operators {
 
 template <>
 bool TanhKernel<FPGA, float>::Init(TanhParam<FPGA> *param) {
-  auto input = const_cast<Tensor *>(param->InputX());
-  auto input_ptr = input->data<float>();
-  auto float_input = new Tensor;
+  auto input = const_cast<LoDTensor *>(param->InputX());
+  DLOG << "input: " << input;
+  auto input_ptr = input->data<half>();
+  auto float_input = new LoDTensor;
+
   float_input->mutable_data<float>(
       {1, input->dims()[1], input->dims()[2], input->dims()[3]});
   fpga::format_fp32_ofm(float_input);
