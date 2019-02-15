@@ -20,7 +20,7 @@ namespace paddle_mobile {
 namespace operators {
 template <>
 bool SplitKernel<FPGA, float>::Init(SplitParam<FPGA> *param) {
-  auto *in = const_cast<Tensor *>(param->InputX());
+  auto *in = const_cast<LoDTensor *>(param->InputX());
   auto outs = param->Outs();
   auto sections = param->Sections();
   int axis = param->Axis();
@@ -34,22 +34,32 @@ bool SplitKernel<FPGA, float>::Init(SplitParam<FPGA> *param) {
       fpga::fpga_malloc(image_num * sizeof(float *)));
   auto out_channels = reinterpret_cast<uint32_t *>(
       fpga::fpga_malloc(image_num * sizeof(uint32_t)));
+  DLOG << "input: " << in;
   for (int i = 0; i < image_num; i++) {
     fpga::format_fp16_ofm(outs[i]);
-    images_out[i] = outs[i]->mutable_data<float>();
+    DLOG << "output: " << outs[i];
+    images_out[i] = outs[i]->mutable_data<half>();
     scales_out[i] = outs[i]->scale;
     out_channels[i] = (uint32_t)sections[i];
   }
 
+  auto deleter = [](void *p) { fpga::fpga_free(p); };
+
   fpga::SplitArgs arg = {0};
   arg.image_num = image_num;
-  arg.image_in = (half *)in->data<float>();
+  arg.image_in = in->data<half>();
   arg.scale_in = in->scale;
   arg.images_out = images_out;
   arg.scales_out = scales_out;
   arg.out_channel_nums = out_channels;
   arg.height = (uint32_t)in->dims()[2];
   arg.width = (uint32_t)in->dims()[3];
+  arg.vector_split_space.push_back(
+      std::shared_ptr<char>(reinterpret_cast<char *>(images_out), deleter));
+  arg.vector_split_space.push_back(
+      std::shared_ptr<char>(reinterpret_cast<char *>(scales_out), deleter));
+  arg.vector_split_space.push_back(
+      std::shared_ptr<char>(reinterpret_cast<char *>(out_channels), deleter));
 
   param->SetFpgaArgs(arg);
   return true;

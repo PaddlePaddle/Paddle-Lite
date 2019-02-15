@@ -26,7 +26,15 @@ limitations under the License. */
 #include <string>
 #include <vector>
 
+// #define PADDLE_MOBILE_FPGA
+
 namespace paddle_mobile {
+
+#ifdef PADDLE_MOBILE_FPGA
+namespace fpga {
+int open_device();
+}
+#endif
 
 enum PaddleDType {
   FLOAT32,
@@ -107,6 +115,14 @@ class PaddlePredictor {
     std::string prog_file;
     std::string param_file;
   };
+#ifdef PADDLE_MOBILE_FPGA
+  virtual bool Run(const std::vector<PaddleTensor>& inputs,
+                   std::vector<PaddleTensor>* output_data,
+                   std::vector<int>* index_data, int batch_size = -1) = 0;
+  virtual void FeedData(const std::vector<void*>& inputs) = 0;
+  virtual void GetResults(std::vector<void*>* outputs) = 0;
+  virtual void Predict_From_To(int start = 0, int end = -1) = 0;
+#endif
 
  protected:
   PaddlePredictor() = default;

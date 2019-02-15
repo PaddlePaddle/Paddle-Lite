@@ -290,14 +290,11 @@ int ComputeBasicConv(const struct ConvArgs &args) {
   reg_writeq(args.driver.deconv_param, 0xd18);
   reg_writeq(args.driver.fpga_bias_scale_len / 4, 0xd20);
   reg_writeq(args.driver.cmd, REG_CONV_CMD);
-  DLOG << "before reg poll";
   if (0 != fpga_regpoll(REG_INTERRUPT, INTERRUPT_CONV, PE_IRQ_TIMEOUT)) {
     g_fpgainfo.pe_data->pes[PE_IDX_CONV]->status = ERROR;
     ret = -EIO;
     DLOG << "Conv Wait Irq Timeout!";
   }
-  DLOG << "after reg poll";
-
   output_scale = reg_readq(REG_SCALE_PARAMETER);
   output_scale = (output_scale << 32) | (output_scale >> 32);
   fpga_copy(args.output.scale_address, &output_scale, sizeof(float) * 2);
