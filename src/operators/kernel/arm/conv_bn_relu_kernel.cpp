@@ -42,8 +42,8 @@ bool ConvBNReluKernel<CPU, float>::Init(FusionConvBNReluParam<CPU> *param) {
     inv_std_ptr[i] =
         1 / static_cast<float>(pow((variance_ptr[i] + epsilon), 0.5));
   }
-  Tensor *new_scale = new Tensor();
-  Tensor *new_bias = new Tensor();
+  LoDTensor *new_scale = new LoDTensor();
+  LoDTensor *new_bias = new LoDTensor();
   auto new_scale_ptr = new_scale->mutable_data<float>({C});
   auto new_bias_ptr = new_bias->mutable_data<float>({C});
   for (int i = 0; i < C; i++) {

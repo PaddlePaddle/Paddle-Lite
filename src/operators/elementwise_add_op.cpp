@@ -23,6 +23,7 @@ template <typename Dtype, typename T>
 void ElementwiseAddOp<Dtype, T>::InferShape() const {
   auto x_dim = this->param_.InputX()->dims();
   this->param_.Out()->Resize(x_dim);
+  this->param_.Out()->set_lod(this->param_.InputX()->lod());
 }
 
 }  // namespace operators
