@@ -29,12 +29,10 @@ class SequenceSoftmaxKernel<CPU, T>
 
   void Compute(const SoftmaxParam<CPU> &param) {
     param.Out()->mutable_data<float>();
-    /*
-        const framework::LoDTensor *input = param.InputX();
-        framework::LoDTensor *output = param.Out();
-        math::SequenceSoftmaxFuntor<CPU, T> sequence_softmax;
-        sequence_softmax(input, output);
-    */
+    const framework::LoDTensor *input = param.InputX();
+    framework::LoDTensor *output = param.Out();
+    math::SequenceSoftmaxFuntor<CPU, T> sequence_softmax;
+    sequence_softmax(input, output);
   }
 };
 
