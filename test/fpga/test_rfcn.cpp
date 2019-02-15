@@ -39,7 +39,7 @@ void readStream(std::string filename, uint8_t *buf) {
 }
 
 static const char *g_rfcn_combine = "../models/rfcn";
-const std::string g_image_src_float = "../models/rfcn/data.bin";
+static const char *g_image_src_float = "../models/rfcn/data.bin";
 int main() {
   paddle_mobile::fpga::open_device();
   paddle_mobile::PaddleMobile<paddle_mobile::FPGA> paddle_mobile;
@@ -55,6 +55,7 @@ int main() {
     paddle_mobile.Predict_To(-1);
     paddle_mobile.GetResults(&v);
     DLOG << "Computation done";
+    fpga::fpga_free(img);
   }
 
   return 0;
