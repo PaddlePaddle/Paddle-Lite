@@ -26,8 +26,8 @@ public class MobileNetCombined: Net {
 //    metalLibPath = Bundle.main.path(forResource: "PaddleMobileMetal", ofType: "metallib") ?! " can't be nil "
   }
   
-  override  public func resultStr(res: ResultHolder) -> String {
-    return " \(res.result[0]) ... "
+  override  public func resultStr(res: [ResultHolder]) -> String {
+    return " \(res[0].result[0]) ... "
   }
   
 }

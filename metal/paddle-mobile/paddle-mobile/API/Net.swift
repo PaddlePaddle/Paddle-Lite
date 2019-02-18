@@ -71,17 +71,20 @@ import Foundation
     super.init()
   }
   
-  @objc open func resultStr(res: ResultHolder) -> String {
+  @objc open func resultStr(res: [ResultHolder]) -> String {
     fatalError()
   }
   
-  @objc open func fetchResult(paddleMobileRes: GPUResultHolder) -> ResultHolder {
-    guard let inResPointer = paddleMobileRes.resultPointer else {
-      fatalError()
+  @objc open func fetchResult(paddleMobileRes: [GPUResultHolder]) -> [ResultHolder] {
+    return paddleMobileRes.map { (gpuRes) -> ResultHolder in
+      guard let inResPointer = gpuRes.resultPointer else {
+        fatalError()
+      }
+      return ResultHolder.init(inResult: inResPointer, inCapacity: paddleMobileRes.capacity, inDim: gpuRes.dim)
     }
-    return ResultHolder.init(inResult: inResPointer, inCapacity: paddleMobileRes.capacity)
   }
   
   open func updateProgram(program: Program) {
   }
+  
 }
