@@ -66,24 +66,34 @@
   return [runner load];
 }
 
--(void)predict:(id<MTLTexture>)texture withCompletion:(void (^)(BOOL, NSArray<NSNumber *> *))completion {
+-(void)predict:(id<MTLTexture>)texture withCompletion:(void (^)(BOOL, NSArray<NSArray <NSNumber *>*> *))completion {
   
-  [runner predictWithTexture:texture completion:^(BOOL success, ResultHolder * _Nullable result) {
-    NSMutableArray<NSNumber *> *resultArray = [NSMutableArray arrayWithCapacity:result.capacity];
-    for (int i = 0; i < result.capacity; ++i) {
-      [resultArray addObject:[NSNumber numberWithFloat:result.result[i]]];
+  [runner predictWithTexture:texture completion:^(BOOL success, NSArray<ResultHolder *> * _Nullable resultArr) {
+    NSMutableArray<NSMutableArray <NSNumber *>*> *ocResultArray = [NSMutableArray arrayWithCapacity:resultArr.count];
+    for (int i = 0; i < resultArr.count; ++i) {
+      ResultHolder *resultHolder = resultArr[i];
+      NSMutableArray <NSNumber *>*res = [NSMutableArray arrayWithCapacity:resultHolder.capacity];
+      for (int j = 0; j < resultHolder.capacity; ++j) {
+        [res addObject:[NSNumber numberWithFloat:resultHolder.result[i]]];
+      }
+      [ocResultArray addObject:res];
+      [resultHolder releasePointer];
     }
-    completion(success, resultArray);
-    [result releasePointer];
-    
+    completion(success, ocResultArray);
   }];
 }
 
--(void)predict:(id<MTLTexture>)texture withResultCompletion:(void (^)(BOOL, PaddleMobileGPUResult *))completion {
-  [runner predictWithTexture:texture completion:^(BOOL success, ResultHolder * _Nullable result) {
-    PaddleMobileGPUResult *gpuResult = [[PaddleMobileGPUResult alloc] init];
-    [gpuResult setOutputResult:result];
-    completion(success, gpuResult);
+-(void)predict:(id<MTLTexture>)texture withResultCompletion:(void (^)(BOOL, NSArray <PaddleMobileGPUResult *> *))completion {
+  [runner predictWithTexture:texture completion:^(BOOL success, NSArray<ResultHolder *> * _Nullable resultArr) {
+    NSMutableArray <PaddleMobileGPUResult *> *ocResultArr = [NSMutableArray arrayWithCapacity:resultArr.count];
+    for (int i = 0; i < resultArr.count; ++i) {
+      ResultHolder *result = resultArr[i];
+      PaddleMobileGPUResult *gpuResult = [[PaddleMobileGPUResult alloc] init];
+      gpuResult.dim = result.dim;
+      [gpuResult setOutputResult:result];
+      [ocResultArr addObject:gpuResult];
+    }
+    completion(success, ocResultArr);
   }];
 }
 
