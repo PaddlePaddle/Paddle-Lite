@@ -22,7 +22,7 @@ limitations under the License. */
 #include "common/common.h"
 #include "common/log.h"
 #include "framework/ddim.h"
-#include "framework/tensor.h"
+#include "framework/lod_tensor.h"
 
 static const char *g_ocr = "../models/ocr";
 static const char *g_mobilenet_ssd = "../models/mobilenet+ssd";
@@ -66,9 +66,10 @@ static const char *g_yolo_img = "../images/in_put_1_3_416_416_2";
 static const char *g_super_img = "../images/mingren_input_data";
 static const char *g_mobilenet_img = "../images/image";
 
-using paddle_mobile::framework::DDim;
-using paddle_mobile::framework::Tensor;
 using namespace paddle_mobile;
+using paddle_mobile::framework::DDim;
+using paddle_mobile::framework::LoDTensor;
+using paddle_mobile::framework::Tensor;
 
 template <typename T>
 void SetupTensor(paddle_mobile::framework::Tensor *input,

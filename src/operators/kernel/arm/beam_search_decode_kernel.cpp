@@ -124,12 +124,12 @@ void BeamSearchDecoder<T>::ConvertSentenceVectorToLodTensor(
   id_tensor->set_lod(lod);
   id_tensor->Resize({static_cast<int64_t>(id_data.size())});
   id_tensor->mutable_data<int64_t>();
-  //  framework::TensorFromVector<int64_t>(id_data, cpu_ctx, id_tensor);
+  framework::TensorFromVector<int64_t>(id_data, id_tensor);
 
   score_tensor->set_lod(lod);
   score_tensor->Resize({static_cast<int64_t>(score_data.size())});
   score_tensor->mutable_data<T>();
-  //  framework::TensorFromVector<T>(score_data, cpu_ctx, score_tensor);
+  framework::TensorFromVector<T>(score_data, score_tensor);
 }
 
 template <typename T>
