@@ -41,8 +41,8 @@ public class Genet: Net {
     }
   }
   
-  override  public func resultStr(res: ResultHolder) -> String {
-    return " \(res.result[0]) ... "
+  override  public func resultStr(res: [ResultHolder]) -> String {
+    return " \(res[0].result[0]) ... "
   }
   
 }

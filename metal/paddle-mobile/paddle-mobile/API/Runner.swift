@@ -18,10 +18,12 @@ import Foundation
 @objc public class ResultHolder: NSObject {
   @objc public let result: UnsafeMutablePointer<Float32>
   @objc public let capacity: Int
+  @objc public let dim: [Int]
   
-  init(inResult: UnsafeMutablePointer<Float32>, inCapacity: Int) {
+  init(inResult: UnsafeMutablePointer<Float32>, inCapacity: Int, inDim: [Int]) {
     result = inResult
     capacity = inCapacity
+    dim = inDim
   }
   
   @objc public func releasePointer() {
@@ -99,7 +101,7 @@ import Foundation
   /// - Parameters:
   ///   - texture: 输入 texture 需要使用 getTexture 获得
   ///   - completion: 结果回调， 当 success 为 true 时 result 不为 nil
-  @objc public func predict(texture: MTLTexture, completion: @escaping ( _ success: Bool, _ result: ResultHolder?) -> Void) {
+  @objc public func predict(texture: MTLTexture, completion: @escaping ( _ success: Bool, _ result: [ResultHolder]?) -> Void) {
     do {
       try self.executor?.predict(input: texture, dim: self.net.inputDim, completionHandle: { [weak self] (res) in
         guard let SSelf = self else {

@@ -69,7 +69,7 @@ public class Executor<P: PrecisionType> {
     }
   }
   
-  public func predict(input: MTLTexture, dim: Dim, completionHandle: @escaping (GPUResultHolder) -> Void, preProcessKernle: CusomKernel? = nil, except: Int = 0) throws {
+  public func predict(input: MTLTexture, dim: Dim, completionHandle: @escaping ([GPUResultHolder]) -> Void, preProcessKernle: CusomKernel? = nil, except: Int = 0) throws {
     inflightSemaphore.wait()
 
     guard let buffer = queue.makeCommandBuffer() else {
@@ -135,7 +135,7 @@ public class Executor<P: PrecisionType> {
         resultHolder = GPUResultHolder.init(inDim: output.dim.dims, inPointer: output.result, inCapacity: output.capacity)
       }
       
-      completionHandle(resultHolder)
+      completionHandle([resultHolder])
       SSelf.inflightSemaphore.signal()
     }
     
