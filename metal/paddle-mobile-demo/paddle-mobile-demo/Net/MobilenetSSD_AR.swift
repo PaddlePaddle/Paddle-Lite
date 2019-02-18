@@ -39,11 +39,11 @@ public class MobileNet_ssd_AR: Net {
     }
   }
   
-  override public func resultStr(res: ResultHolder) -> String {
-    return " \(res.result[0])"
+  override public func resultStr(res: [ResultHolder]) -> String {
+    return " \(res[0].result[0])"
   }
   
-  override public func fetchResult(paddleMobileRes: GPUResultHolder) -> ResultHolder {
+  override public func fetchResult(paddleMobileRes: [GPUResultHolder]) -> [ResultHolder] {
     fatalError()
 //    guard let interRes = paddleMobileRes.intermediateResults else {
 //      fatalError(" need have inter result ")
