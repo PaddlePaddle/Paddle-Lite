@@ -147,7 +147,8 @@ class ViewController: UIViewController {
             fatalError()
           }
           
-          if success, let inResultHolder = resultHolder {
+          if success, let inResultHolderArr = resultHolder {
+            let inResultHolder = inResultHolderArr[0]
             if i == max - 1 {
               let time = Date.init().timeIntervalSince(startDate)
             
@@ -160,7 +161,7 @@ class ViewController: UIViewController {
           }
           
           DispatchQueue.main.async {
-            resultHolder?.releasePointer()
+            resultHolder?.first?.releasePointer()
           }
         }
       }
@@ -272,7 +273,7 @@ extension ViewController: VideoCaptureDelegate{
     runner.scaleTexture(input: texture) { (scaledTexture) in
       self.runner.predict(texture: scaledTexture, completion: { (success, resultHolder) in
         //        print(resultHolder!.result![0])
-        resultHolder?.releasePointer()
+        resultHolder?.first?.releasePointer()
       })
     }
   }
