@@ -16,7 +16,7 @@ import Foundation
 import paddle_mobile
 
 @objc public class SuperResolutionNet: Net{
-  override public func resultStr(res: ResultHolder) -> String {
+  override public func resultStr(res: [ResultHolder]) -> String {
     return "未实现"
   }
   
