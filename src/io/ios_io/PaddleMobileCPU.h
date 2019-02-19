@@ -19,9 +19,20 @@
 
 @interface PaddleMobileCPUResult: NSObject
 
+/**
+ @b 输出指针
+ */
 @property (assign, nonatomic, readonly) float *output;
 
+/**
+ @b 输出的 float 数
+ * */
 @property (assign, nonatomic, readonly) int outputSize;
+
+/**
+ @b 维度信息, longlongValue
+ */
+@property (strong, nonatomic, readonly) NSArray <NSNumber *> *dim;
 
 -(void)releaseOutput;
 
@@ -92,11 +103,6 @@
          andModelParamsLen:(size_t)combinedParamsLen
       andCombinedParamsBuf:(const uint8_t *)combinedParamsBuf;
 
-/*
- *
- * */
-
-
 /**
  @b 对图像进行预处理, 需要外部开辟 output 内存, 外部释放 output 内存, 每一个像素经过这样的预处理 (x + means) * scale, 其中 x 为像素值
 
@@ -134,13 +140,29 @@
 - (PaddleMobileCPUResult *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim means:(NSArray<NSNumber *> *)means scale:(float)scale;
 
 /**
- 进行预测, 预处理 means 值为 0, scale 值为 1
+ @b 进行预测, 预处理 means 值为 0, scale 值为 1
 
  @param image 输入图像
  @param dim 输入维度
  @return 预测结果
  */
 - (PaddleMobileCPUResult *)predict:(CGImageRef)image dim:(NSArray<NSNumber *> *)dim;
+
+
+/**
+ @b 取出模型描述中 key 为 "fetch" 对应的输出
+
+ @return 预测结果
+ */
+- (PaddleMobileCPUResult *)fetchOutput;
+
+/**
+ @b 当输出为多个时, 可用此函数取出对应的输出
+
+ @param key 模型中输出的key
+ @return 预测结果
+ */
+- (PaddleMobileCPUResult *)fetchOutputWithKey:(NSString *)key;
 
 /**
  @b 清理内存
