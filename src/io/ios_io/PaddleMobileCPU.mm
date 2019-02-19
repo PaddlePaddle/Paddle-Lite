@@ -43,6 +43,10 @@
   _outputSize = outputSize;
 }
 
+-(void)toSetDim:(NSArray <NSNumber *> *)dim {
+  _dim = dim;
+}
+
 @end
 
 @implementation  PaddleMobileCPUConfig
@@ -241,16 +245,21 @@ static std::mutex shared_mutex;
   }
 
   paddle_mobile::framework::Tensor input_tensor;
-
   paddle_mobile::framework::DDim dims = paddle_mobile::framework::make_ddim(dim_vec);
-
   float *input_ptr = input_tensor.mutable_data<float>(dims);
-
   memcpy(input_ptr, input,
          numel * sizeof(float));
 
   pam_->Predict(input_tensor);
   std::shared_ptr<paddle_mobile::framework::Tensor> output = pam_->Fetch();
+
+  auto output_dims = output->dims();
+  std::vector<int64_t> output_dim_vec = vectorize(output_dims);
+  NSMutableArray <NSNumber *> *ocDim = [NSMutableArray array];
+  for (int i = 0; i < output_dim_vec.size(); ++i) {
+    NSNumber *num = [NSNumber numberWithLongLong:output_dim_vec[i]];
+    [ocDim addObject:num];
+  }
 
   float *output_pointer = new float[output->numel()];
 
@@ -259,6 +268,7 @@ static std::mutex shared_mutex;
 
   PaddleMobileCPUResult *cpuResult = [[PaddleMobileCPUResult alloc] init];
   [cpuResult toSetOutput: output_pointer];
+  [cpuResult toSetDim: ocDim];
   [cpuResult toSetOutputSize: output->numel()];
 
   return cpuResult;
@@ -304,23 +314,31 @@ static std::mutex shared_mutex;
     return nil;
   }
 
-  // input
-  std::vector<float> predict_input;
-  for (int j = 0; j < numel; ++j) {
-    predict_input.push_back(dataPointer[j]);
+  paddle_mobile::framework::Tensor input_tensor;
+  paddle_mobile::framework::DDim dims = paddle_mobile::framework::make_ddim(dim_vec);
+  float *input_ptr = input_tensor.mutable_data<float>(dims);
+  memcpy(input_ptr, dataPointer,
+         numel * sizeof(float));
+
+  pam_->Predict(input_tensor);
+  std::shared_ptr<paddle_mobile::framework::Tensor> output_tensor = pam_->Fetch();
+
+  auto output_dims = output_tensor->dims();
+  std::vector<int64_t> output_dim_vec = vectorize(output_dims);
+  NSMutableArray <NSNumber *> *ocDim = [NSMutableArray array];
+  for (int i = 0; i < output_dim_vec.size(); ++i) {
+    NSNumber *num = [NSNumber numberWithLongLong:output_dim_vec[i]];
+    [ocDim addObject:num];
   }
 
-  // predict
-  std::vector<float> cpp_result = pam_->Predict(predict_input, dim_vec);
-
-  float *output_pointer = new float[cpp_result.size()];
-  memcpy(output_pointer, cpp_result.data(),
-         cpp_result.size() * sizeof(float));
+  float *output_pointer = new float[output_tensor->numel()];
+  memcpy(output_pointer, output_tensor->data<float>(),
+         output_tensor->numel() * sizeof(float));
   PaddleMobileCPUResult *cpuResult = [[PaddleMobileCPUResult alloc] init];
   [cpuResult toSetOutput: output_pointer];
-  [cpuResult toSetOutputSize: cpp_result.size()];
+  [cpuResult toSetDim: ocDim];
+  [cpuResult toSetOutputSize: output_tensor->numel()];
 
-  free(output);
   CFRelease(cfData);
   cfData = NULL;
 
@@ -331,8 +349,62 @@ static std::mutex shared_mutex;
   return [self predict:image dim:dim means:nil scale:1];
 }
 
+- (PaddleMobileCPUResult *)fetchOutput{
+  if (pam_ && loaded_) {
+    auto tensorPtr = pam_->Fetch();
+    float *output_pointer = new float[tensorPtr->numel()];
+    memcpy(output_pointer, tensorPtr->data<float>(),
+           tensorPtr->numel() * sizeof(float));
+    auto dims = tensorPtr->dims();
+    std::vector<int64_t> dim_vec = vectorize(dims);
+
+
+    NSMutableArray <NSNumber *> *ocDim = [NSMutableArray array];
+    for (int i = 0; i < dim_vec.size(); ++i) {
+      NSNumber *num = [NSNumber numberWithLongLong:dim_vec[i]];
+      [ocDim addObject:num];
+    }
+
+    PaddleMobileCPUResult *cpuResult = [[PaddleMobileCPUResult alloc] init];
+    [cpuResult toSetOutput: output_pointer];
+    [cpuResult toSetDim: ocDim];
+    [cpuResult toSetOutputSize: tensorPtr->numel()];
+
+    return cpuResult;
+  }
+  return nil;
+}
+
+- (PaddleMobileCPUResult *)fetchOutputWithKey:(NSString *)key{
+  if (pam_ && loaded_ && key.length) {
+    auto tensorPtr = pam_->Fetch(std::string([key cStringUsingEncoding:NSUTF8StringEncoding]));
+    float *output_pointer = new float[tensorPtr->numel()];
+    memcpy(output_pointer, tensorPtr->data<float>(),
+           tensorPtr->numel() * sizeof(float));
+
+    auto dims = tensorPtr->dims();
+    std::vector<int64_t> dim_vec = vectorize(dims);
+
+    NSMutableArray <NSNumber *> *ocDim = [NSMutableArray array];
+    for (int i = 0; i < dim_vec.size(); ++i) {
+      NSNumber *num = [NSNumber numberWithLongLong:dim_vec[i]];
+      [ocDim addObject:num];
+    }
+
+    PaddleMobileCPUResult *cpuResult = [[PaddleMobileCPUResult alloc] init];
+    [cpuResult toSetOutput: output_pointer];
+    [cpuResult toSetDim: ocDim];
+    [cpuResult toSetOutputSize: tensorPtr->numel()];
+
+    return cpuResult;
+  }
+  return nil;
+}
+
 - (void)clear{
-  pam_->Clear();
+  if (pam_) {
+    pam_->Clear();
+  }
 }
 
 @end
