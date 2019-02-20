@@ -200,6 +200,8 @@ extern const char *G_OP_TYPE_GENERATE_PROPOSALS;
 extern const char *G_OP_TYPE_PSROI_POOL;
 extern const char *G_OP_TYPE_ROI_PERSPECTIVE;
 
+extern const char *G_OP_TYPE_PAD2D;
+
 extern std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
     op_input_output_key;

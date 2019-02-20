@@ -327,3 +327,6 @@ LOAD_OP1(roi_perspective_transform, CPU);
 #ifdef BEAM_SEARCH_DECODE_OP
 LOAD_OP1(beam_search_decode, CPU);
 #endif
+#ifdef PAD2D_OP
+LOAD_OP1(pad2d, CPU);
+#endif
