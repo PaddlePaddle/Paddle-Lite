@@ -109,6 +109,7 @@ static std::mutex shared_mutex;
 }
 
 - (BOOL)loadModel:(NSString *)modelPath andWeightsPath:(NSString *)weighsPath {
+  std::lock_guard<std::mutex> lock(shared_mutex);
   std::string model_path_str = std::string([modelPath UTF8String]);
   std::string weights_path_str = std::string([weighsPath UTF8String]);
   pam_->SetThreadNum(self.config.threadNum);
@@ -123,12 +124,14 @@ static std::mutex shared_mutex;
                andModelBuf:(const uint8_t *)modelBuf
          andModelParamsLen:(size_t)combinedParamsLen
       andCombinedParamsBuf:(const uint8_t *)combinedParamsBuf {
+  std::lock_guard<std::mutex> lock(shared_mutex);
   pam_->SetThreadNum(self.config.threadNum);
   return loaded_ = pam_->LoadCombinedMemory(modelLen, modelBuf, combinedParamsLen,
           const_cast<uint8_t*>(combinedParamsBuf), self.config.optimize, false, 1, self.config.loddable);
 }
 
 - (BOOL)load:(NSString *)modelAndWeightPath{
+  std::lock_guard<std::mutex> lock(shared_mutex);
   std::string model_path_str = std::string([modelAndWeightPath UTF8String]);
   if (loaded_ = pam_->Load(model_path_str, self.config.optimize, false, 1, self.config.loddable)) {
     return YES;
@@ -402,6 +405,7 @@ static std::mutex shared_mutex;
 }
 
 - (void)clear{
+  std::lock_guard<std::mutex> lock(shared_mutex);
   if (pam_) {
     pam_->Clear();
   }
