@@ -112,6 +112,8 @@ const char *G_OP_TYPE_GENERATE_PROPOSALS = "generate_proposals";
 const char *G_OP_TYPE_PSROI_POOL = "psroi_pool";
 const char *G_OP_TYPE_ROI_PERSPECTIVE = "roi_perspective_transform";
 
+const char *G_OP_TYPE_PAD2D = "pad2d";
+
 std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
     op_input_output_key = {
@@ -210,5 +212,6 @@ std::unordered_map<
          {{"Scores", "BboxDeltas", "ImInfo", "Anchors", "Variances"},
           {"RpnRois", "RpnRoiProbs"}}},
         {G_OP_TYPE_PSROI_POOL, {{"X", "ROIs"}, {"Out"}}},
-        {G_OP_TYPE_ROI_PERSPECTIVE, {{"X", "ROIs"}, {"Out"}}}};
+        {G_OP_TYPE_ROI_PERSPECTIVE, {{"X", "ROIs"}, {"Out"}}},
+        {G_OP_TYPE_PAD2D, {{"X"}, {"Out"}}}};
 }  // namespace paddle_mobile

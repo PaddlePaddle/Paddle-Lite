@@ -378,18 +378,14 @@ std::vector<T> Executor<Device, T>::Predict(const std::vector<T> &input,
 template <typename Device, typename T>
 void Executor<Device, T>::SetInput(const Tensor &input,
                                    const std::string &var_name) {
-  framework::LoDTensor *target = nullptr;
+  int index = 0;
   if (feed_indices_.find(var_name) != feed_indices_.end()) {
-    int index = feed_indices_.find(var_name)->second;
-    auto *feed_var = program_.scope->Var("feed");
-    target = &(
-        feed_var->template GetMutable<framework::LoDTensorArray>()->at(index));
-  } else {
-    auto *target_var = program_.scope->FindVar(var_name);
-    PADDLE_MOBILE_ENFORCE(target_var != nullptr, "Variable %s is not exist",
-                          var_name.c_str());
-    target = target_var->template GetMutable<LoDTensor>();
+    index = feed_indices_.find(var_name)->second;
   }
+  auto *feed_var = program_.scope->Var("feed");
+  framework::LoDTensor &target =
+      feed_var->template GetMutable<framework::LoDTensorArray>()->at(index);
+
   if (config_.load_when_predict) {
     if (input_dim_last_ != input.dims()) {
       InitNoPersistableMemory(input);
@@ -397,25 +393,21 @@ void Executor<Device, T>::SetInput(const Tensor &input,
     }
   }
 
-  target->Resize(input.dims());
-  target->ShareDataWith(input);
+  target.Resize(input.dims());
+  target.ShareDataWith(input);
 }
 
 template <typename Device, typename T>
 void Executor<Device, T>::SetInput(const LoDTensor &input,
                                    const std::string &var_name) {
-  framework::LoDTensor *target = nullptr;
+  int index = 0;
   if (feed_indices_.find(var_name) != feed_indices_.end()) {
-    int index = feed_indices_.find(var_name)->second;
-    auto *feed_var = program_.scope->Var("feed");
-    target = &(
-        feed_var->template GetMutable<framework::LoDTensorArray>()->at(index));
-  } else {
-    auto *target_var = program_.scope->FindVar(var_name);
-    PADDLE_MOBILE_ENFORCE(target_var != nullptr, "Variable %s is not exist",
-                          var_name.c_str());
-    target = target_var->template GetMutable<LoDTensor>();
+    index = feed_indices_.find(var_name)->second;
   }
+  auto *feed_var = program_.scope->Var("feed");
+  framework::LoDTensor &target =
+      feed_var->template GetMutable<framework::LoDTensorArray>()->at(index);
+
   if (config_.load_when_predict) {
     if (input_dim_last_ != input.dims()) {
       InitNoPersistableMemory(input);
@@ -423,27 +415,23 @@ void Executor<Device, T>::SetInput(const LoDTensor &input,
     }
   }
 
-  target->Resize(input.dims());
-  target->ShareDataWith(input);
-  target->set_lod(input.lod());
+  target.Resize(input.dims());
+  target.ShareDataWith(input);
+  target.set_lod(input.lod());
 }
 
 template <typename Device, typename T>
 std::shared_ptr<LoDTensor> Executor<Device, T>::GetOutput(
     const std::string &var_name) {
-  framework::LoDTensor *target = nullptr;
+  int index = 0;
   if (fetch_indices_.find(var_name) != fetch_indices_.end()) {
-    int index = fetch_indices_.find(var_name)->second;
-    auto *fetch_var = program_.scope->Var("fetch");
-    target = &(
-        fetch_var->template GetMutable<framework::LoDTensorArray>()->at(index));
-  } else {
-    auto *target_var = program_.scope->FindVar(var_name);
-    PADDLE_MOBILE_ENFORCE(target_var != nullptr, "Variable %s is not exist",
-                          var_name.c_str());
-    target = target_var->template GetMutable<LoDTensor>();
+    index = fetch_indices_.find(var_name)->second;
   }
-  return std::make_shared<LoDTensor>(*target);
+  auto *fetch_var = program_.scope->Var("fetch");
+  framework::LoDTensor &target =
+      fetch_var->template GetMutable<framework::LoDTensorArray>()->at(index);
+
+  return std::make_shared<LoDTensor>(target);
 }
 
 template <typename Device, typename T>
