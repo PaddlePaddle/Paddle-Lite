@@ -12,17 +12,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef BEAM_SEARCH_DECODE_OP
+#ifdef BEAM_SEARCH_OP
 
 #pragma once
 
-#include "operators/beam_search_decode_op.h"
+#include "operators/beam_search_op.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
-void BeamSearchDecodeOp<Dtype, T>::InferShape() const {}
+void BeamSearchOp<Dtype, T>::InferShape() const {}
 
 }  // namespace operators
 }  // namespace paddle_mobile
@@ -30,7 +30,7 @@ void BeamSearchDecodeOp<Dtype, T>::InferShape() const {}
 namespace ops = paddle_mobile::operators;
 
 #ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(beam_search_decode, ops::BeamSearchDecodeOp);
+REGISTER_OPERATOR_CPU(beam_search, ops::BeamSearchOp);
 #endif
 
-#endif  // BEAM_SEARCH_DECODE_OP
+#endif  // BEAM_SEARCH_OP

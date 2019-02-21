@@ -12,25 +12,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef BEAM_SEARCH_DECODE_OP
+#ifdef ONE_HOT_OP
 
 #pragma once
 
-#include "operators/beam_search_decode_op.h"
+#include <string>
+#include "framework/operator.h"
+#include "operators/kernel/one_hot_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename Dtype, typename T>
-void BeamSearchDecodeOp<Dtype, T>::InferShape() const {}
+DECLARE_OPERATOR(Onehot, OnehotParam, OnehotKernel);
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
-namespace ops = paddle_mobile::operators;
-
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(beam_search_decode, ops::BeamSearchDecodeOp);
-#endif
-
-#endif  // BEAM_SEARCH_DECODE_OP
+#endif  // ONE_HOT_OP

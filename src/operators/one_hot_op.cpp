@@ -12,17 +12,24 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef BEAM_SEARCH_DECODE_OP
+#ifdef ONE_HOT_OP
 
 #pragma once
 
-#include "operators/beam_search_decode_op.h"
+#include "operators/one_hot_op.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
-void BeamSearchDecodeOp<Dtype, T>::InferShape() const {}
+void OnehotOp<Dtype, T>::InferShape() const {
+  const auto &x_dims = this->param_.input_->dims();
+  int depth = this->param_.depth_;
+  framework::DDim out_dims(x_dims);
+  out_dims[out_dims.size() - 1] = depth;
+  this->param_.output_->Resize(out_dims);
+  this->param_.output_->set_lod(this->param_.input_->lod());
+}
 
 }  // namespace operators
 }  // namespace paddle_mobile
@@ -30,7 +37,7 @@ void BeamSearchDecodeOp<Dtype, T>::InferShape() const {}
 namespace ops = paddle_mobile::operators;
 
 #ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(beam_search_decode, ops::BeamSearchDecodeOp);
+REGISTER_OPERATOR_CPU(one_hot, ops::OnehotOp);
 #endif
 
-#endif  // BEAM_SEARCH_DECODE_OP
+#endif  // ONE_HOT_OP
