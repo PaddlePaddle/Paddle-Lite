@@ -74,7 +74,6 @@ Executor<Device, T>::Executor(const Program<Device> &program,
     }
     ops_of_block0_.push_back(op_handler);
   }
-
   if (program_.combined) {
     InitCombineMemory();
   } else {
@@ -423,15 +422,23 @@ void Executor<Device, T>::SetInput(const LoDTensor &input,
 template <typename Device, typename T>
 std::shared_ptr<LoDTensor> Executor<Device, T>::GetOutput(
     const std::string &var_name) {
-  int index = 0;
-  if (fetch_indices_.find(var_name) != fetch_indices_.end()) {
-    index = fetch_indices_.find(var_name)->second;
-  }
-  auto *fetch_var = program_.scope->Var("fetch");
-  framework::LoDTensor &target =
-      fetch_var->template GetMutable<framework::LoDTensorArray>()->at(index);
+  const auto &iter = fetch_indices_.find(var_name);
+  if (var_name == "fetch" || iter != fetch_indices_.end()) {
+    int index = 0;
+    if (iter != fetch_indices_.end()) {
+      index = iter->second;
+    }
+    auto *fetch_var = program_.scope->Var("fetch");
+    framework::LoDTensor &target =
+        fetch_var->template GetMutable<framework::LoDTensorArray>()->at(index);
 
-  return std::make_shared<LoDTensor>(target);
+    return std::make_shared<LoDTensor>(target);
+  } else {
+    auto *fetch_var = program_.scope->Var(var_name);
+    framework::LoDTensor *target =
+        fetch_var->template GetMutable<framework::LoDTensor>();
+    return std::make_shared<LoDTensor>(*target);
+  }
 }
 
 template <typename Device, typename T>
