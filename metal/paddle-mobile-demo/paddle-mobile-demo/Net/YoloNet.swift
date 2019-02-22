@@ -23,8 +23,8 @@ public class YoloNet: Net {
     modelPath = Bundle.main.path(forResource: "yolo_model", ofType: nil) ?! "model null"
     paramPath = Bundle.main.path(forResource: "yolo_params", ofType: nil) ?! "para null"
     inputDim = Dim.init(inDim: [1, 416, 416, 3])
-//    metalLoadMode = .LoadMetalInCustomMetalLib
-//    metalLibPath = Bundle.main.path(forResource: "PaddleMobileMetal", ofType: "metallib") ?! " can't be nil "
+    metalLoadMode = .LoadMetalInCustomMetalLib
+    metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
   }
 
   override  public func resultStr(res: [ResultHolder]) -> String {

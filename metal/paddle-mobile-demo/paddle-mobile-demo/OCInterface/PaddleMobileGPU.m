@@ -53,9 +53,9 @@
   if (self) {
     Net *net = nil;
     if (netType == SuperResolutionNetType) {
-      net = [[SuperResolutionNet alloc] initWithDevice:queue.device];
+      net = [[SuperResolutionNet alloc] initWithDevice:queue.device inParamPointer:config.paramPointer inParamSize:config.paramSize inModelPointer:config.modelPointer inModelSize:config.modelSize];
     } else if (netType == MobileNetSSDType) {
-      net = [[MobileNet_ssd_AR alloc] initWithDevice:queue.device paramPointer:config.paramPointer paramSize:config.paramSize modePointer:config.modelPointer modelSize:config.modelSize];
+      net = [[MobileNet_ssd_AR alloc] initWithDevice:queue.device inParamPointer:config.paramPointer inParamSize:config.paramSize inModelPointer:config.modelPointer inModelSize:config.modelSize];
     }
     runner = [[Runner alloc] initInNet:net commandQueue:queue];
   }
