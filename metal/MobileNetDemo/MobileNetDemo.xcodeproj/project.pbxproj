@@ -15,6 +15,7 @@
 		FCB40E5121E0CEBB0075EC91 /* mobilenet_model in Resources */ = {isa = PBXBuildFile; fileRef = FCB40E4F21E0CEBB0075EC91 /* mobilenet_model */; };
 		FCB40E5221E0CEBB0075EC91 /* mobilenet_params in Resources */ = {isa = PBXBuildFile; fileRef = FCB40E5021E0CEBB0075EC91 /* mobilenet_params */; };
 		FCB40E5421E0CEF80075EC91 /* synset.txt in Resources */ = {isa = PBXBuildFile; fileRef = FCB40E5321E0CEF80075EC91 /* synset.txt */; };
+		FCC15E13221E715400DC3CB2 /* paddle-mobile-metallib.metallib in Resources */ = {isa = PBXBuildFile; fileRef = FCC15E12221E715400DC3CB2 /* paddle-mobile-metallib.metallib */; };
 		FCD3873821E1C31F0052F3D0 /* paddle_mobile.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FCD3873721E1C31F0052F3D0 /* paddle_mobile.framework */; };
 		FCD3873921E1C31F0052F3D0 /* paddle_mobile.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = FCD3873721E1C31F0052F3D0 /* paddle_mobile.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		FCF2870921DFAEC7009A87DA /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF2870821DFAEC7009A87DA /* AppDelegate.swift */; };
@@ -49,6 +50,7 @@
 		FCB40E4F21E0CEBB0075EC91 /* mobilenet_model */ = {isa = PBXFileReference; lastKnownFileType = file; path = mobilenet_model; sourceTree = "<group>"; };
 		FCB40E5021E0CEBB0075EC91 /* mobilenet_params */ = {isa = PBXFileReference; lastKnownFileType = file; path = mobilenet_params; sourceTree = "<group>"; };
 		FCB40E5321E0CEF80075EC91 /* synset.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = synset.txt; sourceTree = "<group>"; };
+		FCC15E12221E715400DC3CB2 /* paddle-mobile-metallib.metallib */ = {isa = PBXFileReference; lastKnownFileType = "archive.metal-library"; name = "paddle-mobile-metallib.metallib"; path = "../../../../Library/Developer/Xcode/DerivedData/paddle-mobile-hdsimtkoxoondndnjczkbkchcwyh/Build/Products/Release-iphoneos/paddle-mobile-metallib.metallib"; sourceTree = "<group>"; };
 		FCD3873721E1C31F0052F3D0 /* paddle_mobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = paddle_mobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		FCF2870521DFAEC7009A87DA /* MobileNetDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MobileNetDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FCF2870821DFAEC7009A87DA /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -127,6 +129,7 @@
 		FCF286FC21DFAEC7009A87DA = {
 			isa = PBXGroup;
 			children = (
+				FCC15E12221E715400DC3CB2 /* paddle-mobile-metallib.metallib */,
 				FCD3873721E1C31F0052F3D0 /* paddle_mobile.framework */,
 				FCF2870721DFAEC7009A87DA /* MobileNetDemo */,
 				FCF2870621DFAEC7009A87DA /* Products */,
@@ -225,6 +228,7 @@
 				FCB40E5121E0CEBB0075EC91 /* mobilenet_model in Resources */,
 				FCB40DE921E0B9410075EC91 /* banana.jpeg in Resources */,
 				FCF2871021DFAEC8009A87DA /* Assets.xcassets in Resources */,
+				FCC15E13221E715400DC3CB2 /* paddle-mobile-metallib.metallib in Resources */,
 				FCB40E5421E0CEF80075EC91 /* synset.txt in Resources */,
 				FCB40E5221E0CEBB0075EC91 /* mobilenet_params in Resources */,
 				FCF2870E21DFAEC7009A87DA /* Main.storyboard in Resources */,
