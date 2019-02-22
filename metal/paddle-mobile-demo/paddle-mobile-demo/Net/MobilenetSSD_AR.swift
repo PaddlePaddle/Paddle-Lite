@@ -23,13 +23,17 @@ public class MobileNet_ssd_AR: Net {
     paramPath = Bundle.main.path(forResource: "ar_params", ofType: nil) ?! "para null"
     preprocessKernel = MobilenetssdPreProccess.init(device: device)
     inputDim = Dim.init(inDim: [1, 160, 160, 3])
+    metalLoadMode = .LoadMetalInCustomMetalLib
+    metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
   }
   
-  @objc override public init(device: MTLDevice,paramPointer: UnsafeMutableRawPointer, paramSize:Int, modePointer: UnsafeMutableRawPointer, modelSize: Int) {
-    super.init(device:device,paramPointer:paramPointer,paramSize:paramSize,modePointer:modePointer,modelSize:modelSize)
+  @objc override public init(device: MTLDevice, inParamPointer: UnsafeMutableRawPointer, inParamSize:Int, inModelPointer: UnsafeMutableRawPointer, inModelSize: Int) {
+    super.init(device:device,inParamPointer:inParamPointer,inParamSize:inParamSize,inModelPointer:inModelPointer,inModelSize:inModelSize)
     except = 2
     preprocessKernel = MobilenetssdPreProccess.init(device: device)
     inputDim = Dim.init(inDim: [1, 160, 160, 3])
+    metalLoadMode = .LoadMetalInCustomMetalLib
+    metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
   }
   
   class MobilenetssdPreProccess: CusomKernel {

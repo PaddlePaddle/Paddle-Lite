@@ -27,3 +27,8 @@ target 'MobileNetDemo' do
     pod 'Protobuf', '~> 3.0.0'
 end
 
+
+target 'paddle-mobile-metallib' do
+    project 'paddle-mobile-metallib/paddle-mobile-metallib.xcodeproj'
+end
+

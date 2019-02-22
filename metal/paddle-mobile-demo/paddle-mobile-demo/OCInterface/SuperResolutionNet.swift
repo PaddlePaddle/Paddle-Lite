@@ -20,6 +20,18 @@ import paddle_mobile
     return "未实现"
   }
   
+  public override init(device: MTLDevice, inParamPointer: UnsafeMutableRawPointer, inParamSize: Int, inModelPointer: UnsafeMutableRawPointer, inModelSize: Int) {
+    super.init(device: device)
+    except = 0
+    metalLoadMode = .LoadMetalInCustomMetalLib
+    metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
+    inputDim = Dim.init(inDim: [1, 224, 224, 3])
+    self.paramPointer = inParamPointer
+    self.paramSize = inParamSize
+    self.modelPointer = inModelPointer
+    self.modelSize = inModelSize
+  }
+    
   @objc override public init(device: MTLDevice) {
     super.init(device: device)
     except = 0
@@ -27,8 +39,8 @@ import paddle_mobile
     paramPath = Bundle.main.path(forResource: "super_params", ofType: nil) ?! "para null"
     preprocessKernel = nil
     inputDim = Dim.init(inDim: [1, 224, 224, 1])
-//    metalLoadMode = .LoadMetalInCustomMetalLib
-//    metalLibPath = Bundle.main.path(forResource: "PaddleMobileMetal", ofType: "metallib") ?! " can't be nil "
+    metalLoadMode = .LoadMetalInCustomMetalLib
+    metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
   }
   
   override public func updateProgram(program: Program) {
