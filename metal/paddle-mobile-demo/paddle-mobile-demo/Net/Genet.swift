@@ -22,14 +22,18 @@ public class Genet: Net {
     paramPath = Bundle.main.path(forResource: "genet_params", ofType: nil) ?! "para null"
     preprocessKernel = GenetPreProccess.init(device: device)
     inputDim = Dim.init(inDim: [1, 128, 128, 3])
+    metalLoadMode = .LoadMetalInCustomMetalLib
+    metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
   }
   
-  @objc override public init(device: MTLDevice, paramPointer: UnsafeMutableRawPointer, paramSize:Int, modePointer: UnsafeMutableRawPointer, modelSize: Int) {
+  @objc override public init(device: MTLDevice, inParamPointer: UnsafeMutableRawPointer, inParamSize:Int, inModelPointer: UnsafeMutableRawPointer, inModelSize: Int) {
     super.init(device: device,
-               paramPointer: paramPointer,
-               paramSize: paramSize,
-               modePointer: modePointer,
-               modelSize: modelSize)
+               inParamPointer: inParamPointer,
+               inParamSize: inParamSize,
+               inModelPointer: inModelPointer,
+               inModelSize: inModelSize)
+    metalLoadMode = .LoadMetalInCustomMetalLib
+    metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
     preprocessKernel = GenetPreProccess.init(device: device)
     inputDim = Dim.init(inDim: [1, 128, 128, 3])
   }

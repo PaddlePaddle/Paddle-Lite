@@ -21,19 +21,19 @@ public class MobileNet_ssd_hand: Net {
     except = 2
     modelPath = Bundle.main.path(forResource: "ssd_hand_model", ofType: nil) ?! "model null"
     paramPath = Bundle.main.path(forResource: "ssd_hand_params", ofType: nil) ?! "para null"
-//    metalLoadMode = .LoadMetalInCustomMetalLib
-//    metalLibPath = Bundle.main.path(forResource: "PaddleMobileMetal", ofType: "metallib") ?! " can't be nil "
+    metalLoadMode = .LoadMetalInCustomMetalLib
+    metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
     preprocessKernel = MobilenetssdPreProccess.init(device: device)
     inputDim = Dim.init(inDim: [1, 300, 300, 3])
   }
   
-  @objc override public init(device: MTLDevice,paramPointer: UnsafeMutableRawPointer, paramSize:Int, modePointer: UnsafeMutableRawPointer, modelSize: Int) {
-    super.init(device:device,paramPointer:paramPointer,paramSize:paramSize,modePointer:modePointer,modelSize:modelSize)
+  @objc override public init(device: MTLDevice,inParamPointer: UnsafeMutableRawPointer, inParamSize:Int, inModelPointer inModePointer: UnsafeMutableRawPointer, inModelSize: Int) {
+    super.init(device:device,inParamPointer:inParamPointer,inParamSize:inParamSize,inModelPointer:inModePointer,inModelSize:inModelSize)
     except = 2
     modelPath = ""
     paramPath = ""
-//    metalLoadMode = .LoadMetalInCustomMetalLib
-//    metalLibPath = Bundle.main.path(forResource: "PaddleMobileMetal", ofType: "metallib") ?! " can't be nil "
+    metalLoadMode = .LoadMetalInCustomMetalLib
+    metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
     preprocessKernel = MobilenetssdPreProccess.init(device: device)
     inputDim = Dim.init(inDim: [1, 300, 300, 3])
   }

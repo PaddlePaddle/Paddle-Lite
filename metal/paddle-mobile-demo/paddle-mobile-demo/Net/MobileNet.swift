@@ -46,7 +46,7 @@ public class MobileNet: Net{
   override public func resultStr(res: [ResultHolder]) -> String {
     let resPointer = res[0].result
     var s: [String] = []
-    (0..<res.capacity).map { resPointer[$0] }.top(r: 5).enumerated().forEach{
+    (0..<res[0].capacity).map { resPointer[$0] }.top(r: 5).enumerated().forEach{
       s.append(String(format: "%d: %@ (%3.2f%%)", $0 + 1, labels[$1.0], $1.1 * 100))
     }
     return s.joined(separator: "\n")
@@ -61,6 +61,8 @@ public class MobileNet: Net{
 //    metalLibPath = Bundle.main.path(forResource: "PaddleMobileMetal", ofType: "metallib") ?! " can't be nil "
     preprocessKernel = MobilenetPreProccess.init(device: device)
     inputDim = Dim.init(inDim: [1, 224, 224, 3])
+    metalLoadMode = .LoadMetalInCustomMetalLib
+    metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
   }
 }
 

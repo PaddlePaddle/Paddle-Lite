@@ -22,8 +22,8 @@ public class MobileNetCombined: Net {
     modelPath = Bundle.main.path(forResource: "combined_mobilenet_model", ofType: nil) ?! "model null"
     paramPath = Bundle.main.path(forResource: "combined_mobilenet_params", ofType: nil) ?! "para null"
     inputDim = Dim.init(inDim: [1, 224, 224, 3])
-//    metalLoadMode = .LoadMetalInCustomMetalLib
-//    metalLibPath = Bundle.main.path(forResource: "PaddleMobileMetal", ofType: "metallib") ?! " can't be nil "
+    metalLoadMode = .LoadMetalInCustomMetalLib
+    metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
   }
   
   override  public func resultStr(res: [ResultHolder]) -> String {
