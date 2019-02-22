@@ -96,6 +96,7 @@ static std::mutex shared_mutex;
 - (void)dealloc {
   if (pam_) {
     delete pam_;
+    pam_ = nullptr;
   }
 }
 

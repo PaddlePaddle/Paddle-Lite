@@ -57,11 +57,11 @@ import Foundation
   @objc public var inputDim: Dim = Dim.init(inDim: [])
   
   
-  @objc public init(device: MTLDevice, paramPointer: UnsafeMutableRawPointer, paramSize:Int, modePointer: UnsafeMutableRawPointer, modelSize: Int) {
-    self.paramPointer = paramPointer
-    self.paramSize = paramSize
-    self.modelPointer = modePointer
-    self.modelSize = modelSize
+  @objc public init(device: MTLDevice, inParamPointer: UnsafeMutableRawPointer, inParamSize:Int, inModelPointer: UnsafeMutableRawPointer, inModelSize: Int) {
+    self.paramPointer = inParamPointer
+    self.paramSize = inParamSize
+    self.modelPointer = inModelPointer
+    self.modelSize = inModelSize
     self.device = device
     super.init()
   }
@@ -80,7 +80,7 @@ import Foundation
       guard let inResPointer = gpuRes.resultPointer else {
         fatalError()
       }
-      return ResultHolder.init(inResult: inResPointer, inCapacity: paddleMobileRes.capacity, inDim: gpuRes.dim)
+      return ResultHolder.init(inResult: inResPointer, inCapacity: gpuRes.capacity, inDim: gpuRes.dim)
     }
   }
   
