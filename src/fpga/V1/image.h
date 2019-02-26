@@ -20,7 +20,11 @@ namespace paddle_mobile {
 namespace fpga {
 namespace image {
 
-void convert_to_hwc(float** data_in, int channel, int height, int width);
+void convert_to_hwc(float** data_in, int channel, int height, int width,
+                    int num = 1);
+void convert_to_chw(float** data_in, int channel, int height, int width,
+                    int num = 1);
+
 void align_element_conv(float** data_in, int height, int cw);
 void format_image(float** data_in, int channel, int height, int width);
 
