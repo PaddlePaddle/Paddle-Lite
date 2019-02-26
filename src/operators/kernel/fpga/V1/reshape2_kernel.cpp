@@ -47,21 +47,11 @@ bool Reshape2Kernel<FPGA, float>::Init(Reshape2Param<FPGA> *param) {
 
 void reshape(LoDTensor *input, LoDTensor *output) {
   // Subscript r means after reshape
-  // TODO zhangyang verify this function
 
-  float *input_ptr_f, *output_ptr_f;
-  half *input_ptr_h, *output_ptr_h;
-  bool is_float = false;
-
-  if (input->type() == typeid(float)) {
-    input_ptr_f = input->data<float>();
-    output_ptr_f = output->data<float>();
-    is_float = true;
-
-  } else {
-    input_ptr_h = input->data<half>();
-    output_ptr_h = output->data<half>();
-  }
+  auto input_ptr = input->data<half>();
+  auto output_ptr = output->data<half>();
+  output->scale[0] = input->scale[0];
+  output->scale[1] = input->scale[1];
 
   auto C = static_cast<int>(input->dims()[1]);
   auto H = static_cast<int>(input->dims()[2]);
@@ -77,6 +67,8 @@ void reshape(LoDTensor *input, LoDTensor *output) {
   auto WCr_align = fpga::align_to_x(WCr, IMAGE_ALIGNMENT);
   auto HWr = Hr * Wr;
 
+  fpga::fpga_invalidate(input_ptr, H * WC_align * sizeof(half));
+
   int offset_align = 0;
   int offset_r = 0, offset_align_r = 0;
   int cr = 0, hr = 0, wr = 0;
@@ -87,21 +79,17 @@ void reshape(LoDTensor *input, LoDTensor *output) {
       int offset1 = w * C + offset0;
       for (int c = 0; c < C; c++) {
         offset_align = offset1 + c;
-        offset_r = c * HW + h * W + c;
+        offset_r = c * HW + h * W + w;
         cr = offset_r / HWr;
         hr = offset_r % HWr / Wr;
         wr = offset_r % Wr;
         offset_align_r = hr * WCr_align + wr * Cr + cr;
-        //          DLOG << "hwc"<< h<< " " << w << "  " << c;
-        //          DLOG << "hrwrcr" << hr<< " " << wr << "  " << cr;
-        if (is_float) {
-          output_ptr_f[offset_align_r] = input_ptr_f[offset_align];
-        } else {
-          output_ptr_h[offset_align_r] = input_ptr_h[offset_align];
-        }
+        output_ptr[offset_align_r] = input_ptr[offset_align];
       }
     }
   }
+
+  fpga::fpga_flush(output_ptr, Hr * WCr_align * sizeof(half));
 }
 
 template <>
@@ -123,6 +111,9 @@ void Reshape2Kernel<FPGA, float>::Compute(const Reshape2Param<FPGA> &param) {
   output->Resize(framework::make_ddim(shape));
   if (output->dims() == input->dims()) {
     DLOG << "No need to reshape";
+    output->ShareDataWith(*input);
+    framework::LoD lod = input->lod();
+    output->set_lod(lod);
     return;
   }
 
