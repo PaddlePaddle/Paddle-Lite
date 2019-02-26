@@ -228,39 +228,43 @@ int TestAll(const int in_channels, const int in_height, const int in_width,
   std::cerr << "in_channels=" << in_channels << ", in_height=" << in_height
             << ", in_width=" << in_width << ", out_channels=" << out_channels
             << ", groups=" << groups << std::endl;
-  //  // kernel = 3, pad = 0, stride = 1
-  //  std::cerr << "float, kernel=3, pad=0, stride=1" << std::endl;
-  //  paddle_mobile::TestConvOp<float, float, 3, 0, 1>(
-  //      in_channels, in_height, in_width, out_channels, groups);
-  //  // kernel = 3, pad = 1, stride = 1
-  //  std::cerr << "float, kernel=3, pad=1, stride=1" << std::endl;
-  //  paddle_mobile::TestConvOp<float, float, 3, 1, 1>(
-  //      in_channels, in_height, in_width, out_channels, groups);
-  //  // kernel = 3, pad = 2, stride = 1
-  //  std::cerr << "float, kernel=3, pad=2, stride=1" << std::endl;
-  //  paddle_mobile::TestConvOp<float, float, 3, 2, 1>(
-  //      in_channels, in_height, in_width, out_channels, groups);
-  //  // kernel = 3, pad = 5, stride = 1
-  //  std::cerr << "float, kernel=3, pad=5, stride=1" << std::endl;
-  //  paddle_mobile::TestConvOp<float, float, 3, 5, 1>(
-  //      in_channels, in_height, in_width, out_channels, groups);
-  //
-  //  // kernel = 3, pad = 0, stride = 2
-  //  std::cerr << "float, kernel=3, pad=0, stride=2" << std::endl;
-  //  paddle_mobile::TestConvOp<float, float, 3, 0, 2>(
-  //      in_channels, in_height, in_width, out_channels, groups);
-  //  // kernel = 3, pad = 1, stride = 2
-  //  std::cerr << "float, kernel=3, pad=1, stride=2" << std::endl;
-  //  paddle_mobile::TestConvOp<float, float, 3, 1, 2>(
-  //      in_channels, in_height, in_width, out_channels, groups);
-  //  // kernel = 3, pad = 2, stride = 2
-  //  std::cerr << "float, kernel=3, pad=2, stride=2" << std::endl;
-  //  paddle_mobile::TestConvOp<float, float, 3, 2, 2>(
-  //      in_channels, in_height, in_width, out_channels, groups);
-  //  // kernel = 3, pad = 5, stride = 2
-  //  std::cerr << "float, kernel=3, pad=5, stride=2" << std::endl;
-  //  paddle_mobile::TestConvOp<float, float, 3, 5, 2>(
-  //      in_channels, in_height, in_width, out_channels, groups);
+  std::cerr << "float, kernel=1, pad=0, stride=1" << std::endl;
+  paddle_mobile::TestConvOp<float, float, 1, 0, 1>(
+      in_channels, in_height, in_width, out_channels, groups);
+
+  // kernel = 3, pad = 0, stride = 1
+  std::cerr << "float, kernel=3, pad=0, stride=1" << std::endl;
+  paddle_mobile::TestConvOp<float, float, 3, 0, 1>(
+      in_channels, in_height, in_width, out_channels, groups);
+  // kernel = 3, pad = 1, stride = 1
+  std::cerr << "float, kernel=3, pad=1, stride=1" << std::endl;
+  paddle_mobile::TestConvOp<float, float, 3, 1, 1>(
+      in_channels, in_height, in_width, out_channels, groups);
+  // kernel = 3, pad = 2, stride = 1
+  std::cerr << "float, kernel=3, pad=2, stride=1" << std::endl;
+  paddle_mobile::TestConvOp<float, float, 3, 2, 1>(
+      in_channels, in_height, in_width, out_channels, groups);
+  // kernel = 3, pad = 5, stride = 1
+  std::cerr << "float, kernel=3, pad=5, stride=1" << std::endl;
+  paddle_mobile::TestConvOp<float, float, 3, 5, 1>(
+      in_channels, in_height, in_width, out_channels, groups);
+
+  // kernel = 3, pad = 0, stride = 2
+  std::cerr << "float, kernel=3, pad=0, stride=2" << std::endl;
+  paddle_mobile::TestConvOp<float, float, 3, 0, 2>(
+      in_channels, in_height, in_width, out_channels, groups);
+  // kernel = 3, pad = 1, stride = 2
+  std::cerr << "float, kernel=3, pad=1, stride=2" << std::endl;
+  paddle_mobile::TestConvOp<float, float, 3, 1, 2>(
+      in_channels, in_height, in_width, out_channels, groups);
+  // kernel = 3, pad = 2, stride = 2
+  std::cerr << "float, kernel=3, pad=2, stride=2" << std::endl;
+  paddle_mobile::TestConvOp<float, float, 3, 2, 2>(
+      in_channels, in_height, in_width, out_channels, groups);
+  // kernel = 3, pad = 5, stride = 2
+  std::cerr << "float, kernel=3, pad=5, stride=2" << std::endl;
+  paddle_mobile::TestConvOp<float, float, 3, 5, 2>(
+      in_channels, in_height, in_width, out_channels, groups);
 
 #ifndef __aarch64__
   // kernel = 3, pad = 0, stride = 1
@@ -338,6 +342,7 @@ int TestAll(const int in_channels, const int in_height, const int in_width,
 }
 
 int main() {
+  TestAll(16, 10, 10, 16, 16);
   TestAll(1, 5, 5, 1, 1);
   TestAll(1, 5, 5, 10, 1);
   TestAll(10, 5, 5, 10, 10);

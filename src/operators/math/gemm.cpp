@@ -2971,48 +2971,7 @@ void Gemm::WriteWithBnAddRelu(int mc, int nc, float *c, float *C, int ldc,
 
 // C = A * B
 void Gemm::VecWriteBasic(int n, float *c, float *C, int ldc) {
-  int nc1 = n / 16;
-  int _nc1 = n % 16;
-  int nc2 = _nc1 / 4;
-  int nc3 = 16 - 4 * (_nc1 % 4);
-
-  asm volatile(
-      "subs       %[nc1],   %[nc1],   #1  \n\t"
-      "blt        end_nc1_%=              \n\t"
-      "loop_nc1_%=:                       \n\t"
-
-      "vld1.32    {q0, q1}, [%[c]]!       \n\t"
-      "vst1.32    {q0, q1}, [%[C]]!       \n\t"
-
-      "vld1.32    {q2, q3}, [%[c]]!       \n\t"
-      "vst1.32    {q2, q3}, [%[C]]!       \n\t"
-
-      "subs       %[nc1],   %[nc1],   #1  \n\t"
-      "bge        loop_nc1_%=             \n\t"
-      "end_nc1_%=:                        \n\t"
-
-      "subs       %[nc2],   %[nc2],   #1  \n\t"
-      "blt        end_nc2_%=              \n\t"
-      "loop_nc2_%=:                       \n\t"
-
-      "vld1.32    {q4},     [%[c]]!       \n\t"
-      "vst1.32    {q4},     [%[C]]!       \n\t"
-
-      "subs       %[nc2],   %[nc2],   #1  \n\t"
-      "bge        loop_nc2_%=             \n\t"
-      "end_nc2_%=:                        \n\t"
-
-      "cmp        %[nc3],    #16          \n\t"
-      "beq        end_nc3_%=              \n\t"
-      "sub        %[c],     %[c],   %[nc3]    \n\t"
-      "sub        %[C],     %[C],   %[nc3]    \n\t"
-      "vld1.32    {q5},     [%[c]]!       \n\t"
-      "vst1.32    {q5},     [%[C]]!       \n\t"
-      "end_nc3_%=:                        \n\t"
-
-      :
-      : [C] "r"(C), [c] "r"(c), [nc1] "r"(nc1), [nc2] "r"(nc2), [nc3] "r"(nc3)
-      : "memory", "q0", "q1", "q2", "q3", "q4", "q5");
+  memcpy(C, c, n * sizeof(float));
 }
 
 // C = alpha * A * B + beta * C
