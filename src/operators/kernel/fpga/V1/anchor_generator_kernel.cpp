@@ -43,9 +43,11 @@ bool AnchorGeneratorKernel<FPGA, float>::Init(
   //  DLOG << "stride_height: " << stride_height;
 
   for (int h_idx = 0; h_idx < feature_height; ++h_idx) {
+    int offset0 = h_idx * feature_width * num_anchors * 4;
     for (int w_idx = 0; w_idx < feature_width; ++w_idx) {
-      int offset = h_idx * w_idx * num_anchors * 4;
+      int offset1 = w_idx * num_anchors * 4;
       for (int idx = 0; idx < num_anchors; idx++) {
+        int offset = offset0 + offset1 + idx * 4;
         anchor_ptr[offset + 0] =
             anchors_offset[idx * 4 + 0] + w_idx * stride_width;
         anchor_ptr[offset + 1] =

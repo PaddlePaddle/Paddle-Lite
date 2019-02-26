@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "framework/operator.h"
+#include <memory>
 #include "operators/op_param.h"
-
 namespace paddle_mobile {
 namespace framework {
 
@@ -70,7 +70,12 @@ void OperatorBase<Dtype>::Run() {
       auto vari = this->scope_->FindVar(var_vec_in[i]);
       if (vari->IsInitialized()) {
         const Tensor *tensor = vari->template Get<framework::LoDTensor>();
-        if (tensor) DLOG << type_ << " input- " << key << "=" << *tensor;
+        if (tensor) {
+          DLOG << type_ << " input- " << key << "=" << *tensor;
+#ifdef PADDLE_MOBILE_FPGA
+          DLOG << var_vec_in[i];
+#endif
+        }
       }
     }
   }
@@ -80,7 +85,12 @@ void OperatorBase<Dtype>::Run() {
       auto vari = scope_->FindVar(var_vec_out[i]);
       if (vari->IsInitialized()) {
         const Tensor *tensor = vari->template Get<framework::LoDTensor>();
-        if (tensor) DLOG << type_ << " output- " << key << "=" << *tensor;
+        if (tensor) {
+          DLOG << type_ << " output- " << key << "=" << *tensor;
+#ifdef PADDLE_MOBILE_FPGA
+          DLOG << var_vec_out[i];
+#endif
+        }
       }
     }
   }
