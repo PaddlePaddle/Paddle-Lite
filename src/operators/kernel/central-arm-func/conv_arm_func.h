@@ -35,6 +35,7 @@ inline void GemmConv(const ConvParam<CPU> &param) {
   Tensor filter = *param.Filter();
   Tensor *output = param.Output();
   output->mutable_data<Otype>();
+
   int groups = param.Groups();
   const std::vector<int> strides = param.Strides();
   const std::vector<int> paddings = param.Paddings();
@@ -90,8 +91,8 @@ inline void GemmConv(const ConvParam<CPU> &param) {
       Tensor in_slice = in_batch.Slice(g * in_step, (g + 1) * in_step);
 
       if (!is_expand) {
-        col.ShareDataWith(in_slice);
-        col_matrix.ShareDataWith(col);
+        // col_matrix.ShareDataWith(in_slice);
+        col_matrix = in_slice;
         col_matrix.Resize(col_matrix_shape);
       } else if (data_dim == 2U) {
         // im2col
@@ -107,6 +108,7 @@ inline void GemmConv(const ConvParam<CPU> &param) {
       // gemm
       Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
       Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
+
       math::MatMul<Itype, Otype>(filter_slice, false, col_matrix, false,
                                  static_cast<float>(1), &out_slice,
                                  static_cast<float>(0), false,
