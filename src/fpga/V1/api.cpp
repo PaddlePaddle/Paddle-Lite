@@ -30,9 +30,9 @@ void format_image(framework::Tensor *image_tensor) {
   auto data_ptr = image_tensor->data<float>();
   auto external_ptr = reinterpret_cast<float *>(image_tensor->external_data);
   float *p_data = external_ptr == nullptr ? data_ptr : external_ptr;
-  float *old_p = p_data;
+
   image::format_image(&p_data, channel, height, width);
-  if (old_p != p_data) {
+  if (p_data != data_ptr) {
     image_tensor->reset_data_ptr(p_data);
   }
 }
@@ -48,9 +48,9 @@ void format_fp16_ofm(framework::Tensor *ofm_tensor) {
   auto dims = ofm_tensor->dims();
   size_t memory_size = 0;
   if (dims.size() == 4) {
-    auto channel = dims[1], height = dims[2], width = dims[3];
-    memory_size =
-        height * align_to_x(channel * width, IMAGE_ALIGNMENT) * sizeof(half);
+    auto channel = dims[1], height = dims[2], width = dims[3], num = dims[0];
+    memory_size = num * height * align_to_x(channel * width, IMAGE_ALIGNMENT) *
+                  sizeof(half);
   } else if (dims.size() == 2) {
     memory_size = align_to_x(dims[1], IMAGE_ALIGNMENT) * sizeof(half);
   } else {
@@ -960,10 +960,10 @@ void fill_DWDeconv_arg(struct DWDeconvArgs *arg, framework::Tensor *input,
                     sizeof(int16_t));
     arg->dw_conv_args[i]->output.scale_address =
         static_cast<float *>(fpga_malloc(2 * sizeof(float)));
-    arg->vector_dw_conv_space.push_back(std::shared_ptr<char>(
+    arg->vector_dw_conv_space.push_back(std::shared_ptr<char>(  // NOLINT
         reinterpret_cast<char *>(arg->dw_conv_args[i]->output.address),
         deleter));
-    arg->vector_dw_conv_space.push_back(std::shared_ptr<char>(
+    arg->vector_dw_conv_space.push_back(std::shared_ptr<char>(  // NOLINT
         reinterpret_cast<char *>(arg->dw_conv_args[i]->output.scale_address),
         deleter));
   }
