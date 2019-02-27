@@ -43,7 +43,7 @@ bool ConvTransposeKernel<FPGA, float>::Init(ConvTransposeParam<FPGA> *param) {
 
   for (int i = 0; i < channel * sub_conv_n; i++) {
     bs_ptr[i + sub_conv_n * channel] = 1;
-    // bs_ptr[i] = bias_ptr[i % (channel)];
+    bs_ptr[i] = 0;  // bias_ptr[i % (channel)];
   }
 
   PADDLE_MOBILE_ENFORCE(param->Strides()[1] == param->Strides()[0],
