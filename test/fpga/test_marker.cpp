@@ -22,47 +22,43 @@ limitations under the License. */
 #ifdef PADDLE_MOBILE_FPGA_V2
 #include "fpga/V2/api.h"
 #endif
-#include <iostream>
 #include <string>
-
 
 void readStream(std::string filename, char *buf) {
   std::ifstream in;
-  in.open(filename, std::ios::in|std::ios::binary);
+  in.open(filename, std::ios::in | std::ios::binary);
   if (!in.is_open()) {
     std::cout << "open File Failed." << std::endl;
     return;
   }
 
-  in.seekg(0, std::ios::end);    // go to the end
-  auto length = in.tellg();           // report location (this is the length)
-  in.seekg(0, std::ios::beg);    // go back to the beginning
+  in.seekg(0, std::ios::end);  // go to the end
+  auto length = in.tellg();    // report location (this is the length)
+  in.seekg(0, std::ios::beg);  // go back to the beginning
   in.read(buf, length);
   DLOG << length;
   in.close();
 }
 
-void convert_to_chw(int16_t **data_in, int channel, int height, int width,int num,
-                    int16_t *data_tmp) {
+void convert_to_chw(int16_t **data_in, int channel, int height, int width,
+                    int num, int16_t *data_tmp) {
   int64_t amount_per_side = width * height;
-for(int n = 0; n < num; n++){
-  for (int h = 0; h < height; h++) {
-    for (int w = 0; w < width; w++) {
-      for (int c = 0; c < channel; c++) {
-        *(data_tmp + n* amount_per_side*channel +  c * amount_per_side + width * h + w) = *((*data_in)++);
+  for (int n = 0; n < num; n++) {
+    for (int h = 0; h < height; h++) {
+      for (int w = 0; w < width; w++) {
+        for (int c = 0; c < channel; c++) {
+          *(data_tmp + n * amount_per_side * channel + c * amount_per_side +
+            width * h + w) = *((*data_in)++);
+        }
       }
     }
   }
- }
 }
-
-
-
 
 void dump_stride_half(std::string filename, Tensor input_tensor,
                       const int dumpnum, bool use_chw) {
- // bool use_chw = true;
-  if(input_tensor.dims().size()!=4)return;
+  // bool use_chw = true;
+  if (input_tensor.dims().size() != 4) return;
   int c = (input_tensor.dims())[1];
   int h = (input_tensor.dims())[2];
   int w = (input_tensor.dims())[3];
@@ -70,10 +66,10 @@ void dump_stride_half(std::string filename, Tensor input_tensor,
   auto data_ptr = input_tensor.get_data();
   auto *data_ptr_16 = reinterpret_cast<half *>(data_ptr);
   auto data_tmp = data_ptr_16;
-  if (use_chw){
-  data_tmp =
-  reinterpret_cast<half *>(malloc(n * c * h * w * sizeof(int16_t)));
-  convert_to_chw(&data_ptr_16, c, h, w,n,  data_tmp);
+  if (use_chw) {
+    data_tmp =
+        reinterpret_cast<half *>(malloc(n * c * h * w * sizeof(int16_t)));
+    convert_to_chw(&data_ptr_16, c, h, w, n, data_tmp);
   }
   std::ofstream out(filename.c_str());
   float result = 0;
@@ -84,7 +80,9 @@ void dump_stride_half(std::string filename, Tensor input_tensor,
     out << result << std::endl;
   }
   out.close();
-  if(data_tmp!=data_ptr_16){free(data_tmp);}
+  if (data_tmp != data_ptr_16) {
+    free(data_tmp);
+  }
 }
 
 void dump_stride_float(std::string filename, Tensor input_tensor,
@@ -101,20 +99,18 @@ void dump_stride_float(std::string filename, Tensor input_tensor,
   out.close();
 }
 
-
-void dump_stride(std::string filename, Tensor input_tensor,
-                      const int dumpnum, bool use_chw) {
-  static int i=0;
+void dump_stride(std::string filename, Tensor input_tensor, const int dumpnum,
+                 bool use_chw) {
+  static int i = 0;
   if (input_tensor.numel() == 0) {
     return;
   }
-  if(input_tensor.type() == typeid(float)){
-    DLOG << "op: " <<i++ << ", float data  "<< input_tensor.numel(); ;
-    dump_stride_float(filename, input_tensor,dumpnum);
-  }
-  else{
-    DLOG << "op: " <<i++ << ", half data  "<< input_tensor.numel();;
-    dump_stride_half(filename, input_tensor,dumpnum, use_chw);
+  if (input_tensor.type() == typeid(float)) {
+    DLOG << "op: " << i++ << ", float data  " << input_tensor.numel();
+    dump_stride_float(filename, input_tensor, dumpnum);
+  } else {
+    DLOG << "op: " << i++ << ", half data  " << input_tensor.numel();
+    dump_stride_half(filename, input_tensor, dumpnum, use_chw);
   }
   DLOG << "dump input address: " << input_tensor.get_data();
 }
@@ -125,40 +121,44 @@ int main() {
   paddle_mobile::fpga::open_device();
   paddle_mobile::PaddleMobile<paddle_mobile::FPGA> paddle_mobile;
 
-  //if (paddle_mobile.Load(std::string(g_rfcn_combine) + "/model",
+  // if (paddle_mobile.Load(std::string(g_rfcn_combine) + "/model",
   //                       std::string(g_rfcn_combine) + "/params", true, false,
-    //                     1, true)) {
-    if(paddle_mobile.Load(std::string(g_marker_combine),true)){
+  //                     1, true)) {
+  if (paddle_mobile.Load(std::string(g_marker_combine), true)) {
     float img_info[3] = {720, 1280, 800.0f / 960.0f};
-    auto img = reinterpret_cast<float*>(fpga::fpga_malloc(720 * 1280 * 3 * sizeof(float)));
+    auto img = reinterpret_cast<float *>(
+        fpga::fpga_malloc(720 * 1280 * 3 * sizeof(float)));
     readStream(g_image_src_float, reinterpret_cast<char *>(img));
 
     std::vector<void *> v(3, nullptr);
-    paddle_mobile.FeedData({ img});
+    paddle_mobile.FeedData({img});
     paddle_mobile.Predict_To(-1);
 
     for (int i = 47; i < 52; i++) {
       auto tensor_ptr = paddle_mobile.FetchResult(i);
       std::string saveName = "marker_" + std::to_string(i);
-    //if(i != 58)
-	  paddle_mobile::fpga::fpga_invalidate((*tensor_ptr).get_data(),tensor_ptr->numel() * sizeof(float));
-        //                                   tensor_ptr->numel() * sizeof(float));
-	
-		dump_stride(saveName, (*tensor_ptr),tensor_ptr->numel(), true);//20);//tensor_ptr->numel());
+      // if(i != 58)
+      paddle_mobile::fpga::fpga_invalidate((*tensor_ptr).get_data(),
+                                           tensor_ptr->numel() * sizeof(float));
+      //                                   tensor_ptr->numel() * sizeof(float));
 
-/*	float result = 0;
-	std::string str = "softmax_input_data";
-	float* data = static_cast<float*>(fpga::fpga_malloc(tensor_ptr->numel() * sizeof(float)));
-	str = "softmax_output_data";
-	auto output_ptr = static_cast<half*>((*tensor_ptr).get_data());
-	for (int idx = 0; idx < tensor_ptr->numel(); ++idx)
-	{
-		data[idx] = fpga::fp16_2_fp32(output_ptr[idx]);
-	}
-	fpga::savefile<float>(str,data, tensor_ptr->numel(), result );   */
- }
+      dump_stride(saveName, (*tensor_ptr), tensor_ptr->numel(),
+                  true);  // 20);//tensor_ptr->numel());
 
- //   paddle_mobile.GetResults(&v);
+      /*    float result = 0;
+          std::string str = "softmax_input_data";
+          float* data =
+         static_cast<float*>(fpga::fpga_malloc(tensor_ptr->numel() *
+         sizeof(float))); str = "softmax_output_data"; auto output_ptr =
+         static_cast<half*>((*tensor_ptr).get_data()); for (int idx = 0; idx <
+         tensor_ptr->numel(); ++idx)
+          {
+              data[idx] = fpga::fp16_2_fp32(output_ptr[idx]);
+          }
+          fpga::savefile<float>(str,data, tensor_ptr->numel(), result );   */
+    }
+
+    //   paddle_mobile.GetResults(&v);
     DLOG << "Computation done";
     fpga::fpga_free(img);
   }
