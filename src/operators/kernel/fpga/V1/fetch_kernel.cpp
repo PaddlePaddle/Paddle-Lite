@@ -56,8 +56,9 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
     return;
   }
   fpga::BypassArgs args = param.fpga_bypass_args;
-  auto data = (input->mutable_data<half>());
-  args.image.address = static_cast<void *>(data);
+  auto input_address = (input->data<half>());
+  args.image.address = static_cast<void*>(input_address);
+
   fpga::PerformBypass(args);
   fpga::fpga_invalidate(param.fpga_bypass_args.output.address,
                         param.fpga_bypass_args.image.channels * sizeof(float));
