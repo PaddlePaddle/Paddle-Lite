@@ -1221,6 +1221,7 @@ class FetchParam : public OpParam {
   RType *input_x_;
   Tensor *out_;
 #ifdef PADDLE_MOBILE_FPGA
+
  public:
   fpga::BypassArgs fpga_bypass_args;
 
@@ -2415,6 +2416,120 @@ class FusionDeconvAddParam : public ConvTransposeParam<Dtype> {
 template <typename Dtype>
 using FusionDeconvAddReluParam = FusionDeconvAddParam<Dtype>;
 #endif
+#ifdef FUSION_DECONVADDBN_OP
+template <typename Dtype>
+class FusionDeconvAddBNParam : public ConvTransposeParam<Dtype> {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  FusionDeconvAddBNParam(const VariableNameMap &inputs,
+                         const VariableNameMap &outputs,
+                         const AttributeMap &attrs, const Scope &scope)
+      : ConvTransposeParam<Dtype>(inputs, outputs, attrs, scope) {
+    output_ = OpParam::OutFrom<GType>(outputs, scope);
+    input_bias_ = OpParam::InputBiasFrom<GType>(inputs, scope);
+    input_mean_ = OpParam::InputMeanFrom<GType>(inputs, scope);
+    input_scale_ = OpParam::InputScaleFrom<GType>(inputs, scope);
+    input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, scope);
+    epsilon_ = OpParam::GetAttr<float>("epsilon", attrs);
+    momentum_ = OpParam::GetAttr<float>("momentum", attrs);
+    //    is_test_ = OpParam::GetAttr<bool>("is_test", attrs);
+  }
+  RType *Output() const { return output_; }
+
+  const RType *InputBias() const { return input_bias_; }
+
+  const RType *InputMean() const { return input_mean_; }
+
+  const RType *InputScale() const { return input_scale_; }
+
+  const RType *InputVariance() const { return input_variance_; }
+
+  const float &Epsilon() const { return epsilon_; }
+
+  const float &Momentum() const { return momentum_; }
+
+  const bool &IsTest() const { return is_test_; }
+
+  void SetNewScale(RType *new_scale) { new_scale_ = new_scale; }
+
+  void SetNewBias(RType *new_bias) { new_bias_ = new_bias; }
+
+  const RType *NewScale() const { return new_scale_; }
+
+  const RType *NewBias() const { return new_bias_; }
+
+ protected:
+  RType *output_;
+  RType *input_bias_;
+  RType *input_mean_;
+  RType *input_scale_;
+  RType *input_variance_;
+  float epsilon_;
+  float momentum_;
+  bool is_test_;
+  RType *new_bias_;
+  RType *new_scale_;
+};
+#endif
+#ifdef FUSION_DECONVADDBNRELU_OP
+template <typename Dtype>
+class FusionDeconvAddBNReluParam : public ConvTransposeParam<Dtype> {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  FusionDeconvAddBNReluParam(const VariableNameMap &inputs,
+                             const VariableNameMap &outputs,
+                             const AttributeMap &attrs, const Scope &scope)
+      : ConvTransposeParam<Dtype>(inputs, outputs, attrs, scope) {
+    output_ = OpParam::OutFrom<GType>(outputs, scope);
+    input_bias_ = OpParam::InputBiasFrom<GType>(inputs, scope);
+    input_mean_ = OpParam::InputMeanFrom<GType>(inputs, scope);
+    input_scale_ = OpParam::InputScaleFrom<GType>(inputs, scope);
+    input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, scope);
+    epsilon_ = OpParam::GetAttr<float>("epsilon", attrs);
+    momentum_ = OpParam::GetAttr<float>("momentum", attrs);
+    //    is_test_ = OpParam::GetAttr<bool>("is_test", attrs);
+  }
+  RType *Output() const { return output_; }
+
+  const RType *InputBias() const { return input_bias_; }
+
+  const RType *InputMean() const { return input_mean_; }
+
+  const RType *InputScale() const { return input_scale_; }
+
+  const RType *InputVariance() const { return input_variance_; }
+
+  const float &Epsilon() const { return epsilon_; }
+
+  const float &Momentum() const { return momentum_; }
+
+  const bool &IsTest() const { return is_test_; }
+
+  void SetNewScale(RType *new_scale) { new_scale_ = new_scale; }
+
+  void SetNewBias(RType *new_bias) { new_bias_ = new_bias; }
+
+  const RType *NewScale() const { return new_scale_; }
+
+  const RType *NewBias() const { return new_bias_; }
+
+ protected:
+  RType *output_;
+  RType *input_bias_;
+  RType *input_mean_;
+  RType *input_scale_;
+  RType *input_variance_;
+  float epsilon_;
+  float momentum_;
+  bool is_test_;
+  RType *new_bias_;
+  RType *new_scale_;
+};
+#endif
 
 #ifdef FUSION_DECONVRELU_OP
 template <typename Dtype>
@@ -3114,6 +3229,26 @@ class IncrementParam : public OpParam {
   int step_;
 };
 #endif  // INCREMENT_OP
+#ifdef PAD2D_OP
+template <typename Dtype>
+class Pad2dParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  Pad2dParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
+             const AttributeMap &attrs, const Scope &scope) {
+    input_x_ = InputXFrom<GType>(inputs, scope);
+    out_ = OutFrom<GType>(outputs, scope);
+  }
+  const RType *InputX() const { return input_x_; }
+  RType *Out() const { return out_; }
+
+ private:
+  RType *input_x_;
+  RType *out_;
+};
+#endif
 
 }  // namespace operators
 }  // namespace paddle_mobile

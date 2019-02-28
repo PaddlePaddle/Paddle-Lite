@@ -21,15 +21,37 @@ namespace paddle_mobile {
 namespace fpga {
 namespace image {
 
-void convert_to_hwc(float **data_in, int channel, int height, int width) {
+void convert_to_hwc(float **data_in, int channel, int height, int width,
+                    int num) {
+  float *data_tmp = reinterpret_cast<float *>(
+      fpga_malloc(num * channel * height * width * sizeof(float)));
+  int64_t amount_per_row = width * channel;
+  for (int n = 0; n < num; n++) {
+    for (int c = 0; c < channel; c++) {
+      for (int h = 0; h < height; h++) {
+        int64_t offset_height = h * amount_per_row;
+        for (int w = 0; w < width; w++) {
+          *(data_tmp + n * channel * height * width + offset_height +
+            w * channel + c) = *((*data_in)++);
+        }
+      }
+    }
+  }
+  *data_in = data_tmp;
+}
+
+void convert_to_chw(float **data_in, int channel, int height, int width,
+                    int num) {
   float *data_tmp =
       (float *)fpga_malloc(channel * height * width * sizeof(float));  // NOLINT
-  int64_t amount_per_row = width * channel;
-  for (int c = 0; c < channel; c++) {
+  int64_t amount_per_side = width * height;
+  for (int n = 0; n < num; n++) {
     for (int h = 0; h < height; h++) {
-      int64_t offset_height = h * amount_per_row;
       for (int w = 0; w < width; w++) {
-        *(data_tmp + offset_height + w * channel + c) = *((*data_in)++);
+        for (int c = 0; c < channel; c++) {
+          *(data_tmp + n * height * width * channel + c * amount_per_side +
+            width * h + w) = *((*data_in)++);
+        }
       }
     }
   }
@@ -55,7 +77,7 @@ void align_element_conv(float **data_in, int height, int cw) {
 }
 
 void format_image(float **data_in, int channel, int height, int width) {
-  convert_to_hwc(data_in, channel, height, width);
+  // convert_to_hwc(data_in, channel, height, width);
   int cw = channel * width;
   int align_cw = align_to_x(cw, IMAGE_ALIGNMENT);
   if (align_cw != cw) {
@@ -132,8 +154,8 @@ void split_image(int16_t *image_in, const float *scale_in, void **images_out,
       for (int i = 0; i < image_num; i++) {
         des_offset = h * align_to_x(channel_nums[i] * width, IMAGE_ALIGNMENT) +
                      w * channel_nums[i];
-        memcpy((int16_t *)images_out[i] + des_offset, image_in + src_offset,
-               channel_nums[i] * sizeof(int16_t));
+        memcpy(reinterpret_cast<int16_t *>(images_out[i]) + des_offset,
+               image_in + src_offset, channel_nums[i] * sizeof(int16_t));
         src_offset += channel_nums[i];
       }
     }
