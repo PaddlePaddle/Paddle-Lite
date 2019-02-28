@@ -57,6 +57,8 @@ bool ConvKernel<CPU, float>::Init(ConvParam<CPU> *param) {
                param->Strides()[0] == 2 && param->Paddings()[0] == 1 &&
                param->Paddings()[0] == param->Paddings()[1]) {
       param->ExecMode() = ConvParam<CPU>::EXEC_DEPTHWISE3x3S2P1_FLOAT;
+    } else if (depth3x3) {
+      param->ExecMode() = ConvParam<CPU>::EXEC_DEPTHWISE3x3_FLOAT;
 #ifndef __aarch64__
     } else if (depth5x5 && param->Strides()[0] == param->Strides()[1] &&
                param->Strides()[0] == 1) {
@@ -105,6 +107,10 @@ void ConvKernel<CPU, float>::Compute(const ConvParam<CPU> &param) {
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3S2P0_FLOAT:
       math::DepthwiseConv3x3s2p0(param.Input(), param.Filter(), param.Output(),
                                  nullptr, false, false);
+      break;
+    case ConvParam<CPU>::EXEC_DEPTHWISE3x3_FLOAT:
+      math::DepthwiseConv3x3(param.Input(), param.Strides(), param.Paddings(),
+                             param.Filter(), nullptr, param.Output(), false);
       break;
 #ifndef __aarch64__
     case ConvParam<CPU>::EXEC_DEPTHWISE5x5_FLOAT:
