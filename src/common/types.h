@@ -199,6 +199,9 @@ extern const char *G_OP_TYPE_ANCHOR_GENERATOR;
 extern const char *G_OP_TYPE_GENERATE_PROPOSALS;
 extern const char *G_OP_TYPE_PSROI_POOL;
 extern const char *G_OP_TYPE_ROI_PERSPECTIVE;
+extern const char *G_OP_TYPE_PAD2D;
+extern const char *G_OP_TYPE_FUSION_DECONV_ADD_BN_RELU;
+extern const char *G_OP_TYPE_FUSION_DECONV_ADD_BN;
 
 extern std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
