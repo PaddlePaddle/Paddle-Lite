@@ -41,10 +41,12 @@ bool PaddleMobilePredictor<Device, T>::Init(const PaddleMobileConfig &config) {
                                        config.memory_pack.combined_params_buf);
   } else if (!config.model_dir.empty()) {
     paddle_mobile_->Load(config.model_dir, config.optimize,
-                         config.quantification, config.batch_size);
+                         config.quantification, config.batch_size,
+                         config.lod_mode);
   } else if (!config.prog_file.empty() && !config.param_file.empty()) {
     paddle_mobile_->Load(config.prog_file, config.param_file, config.optimize,
-                         config.quantification, config.batch_size);
+                         config.quantification, config.batch_size,
+                         config.lod_mode);
   } else {
     LOG(kLOG_ERROR) << "fail to load inference model!";
     return false;
