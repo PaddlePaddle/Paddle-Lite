@@ -30,9 +30,10 @@ void format_image(framework::Tensor *image_tensor) {
   auto data_ptr = image_tensor->data<float>();
   auto external_ptr = reinterpret_cast<float *>(image_tensor->external_data);
   float *p_data = external_ptr == nullptr ? data_ptr : external_ptr;
-  float *old_p = p_data;
+
   image::format_image(&p_data, channel, height, width);
-  if (old_p != p_data) {
+
+  if (p_data != data_ptr && external_ptr == nullptr) {
     image_tensor->reset_data_ptr(p_data);
   }
 }
@@ -48,9 +49,9 @@ void format_fp16_ofm(framework::Tensor *ofm_tensor) {
   auto dims = ofm_tensor->dims();
   size_t memory_size = 0;
   if (dims.size() == 4) {
-    auto channel = dims[1], height = dims[2], width = dims[3];
-    memory_size =
-        height * align_to_x(channel * width, IMAGE_ALIGNMENT) * sizeof(half);
+    auto channel = dims[1], height = dims[2], width = dims[3], num = dims[0];
+    memory_size = num * height * align_to_x(channel * width, IMAGE_ALIGNMENT) *
+                  sizeof(half);
   } else if (dims.size() == 2) {
     memory_size = align_to_x(dims[1], IMAGE_ALIGNMENT) * sizeof(half);
   } else {
@@ -713,7 +714,6 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
     }
 
     for (int j = 0; j < split_num; ++j) {
-      // arg->split_conv_args[i]->conv_arg[j].relu_enabled = relu_enabled;
       arg->split_conv_args[i]->conv_arg[j].output.activation.activation_type =
           activation_enable;
       arg->split_conv_args[i]
@@ -775,19 +775,6 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
       fpga_flush(arg->split_conv_args[i]->conv_arg[j].filter_address,
                  filter_size);
 
-      /*{
-      static int cnt = 0;
-      std::string str = "deconv_filter";
-      if(cnt <= 1){
-          cnt++;
-          str += std::to_string(cnt);
-          int8_t result = 0;
-          fpga::savefile<int8_t>(str,
-      arg->split_conv_args[i]->conv_arg[j].filter_address, filter_size, result);
-      }
-
-      }*/
-
       size_t bs_align_num = align_to_x(
           arg->split_conv_args[i]->conv_arg[j].filter_num, BS_NUM_ALIGNMENT);
       size_t bs_size = 2 * bs_align_num * sizeof(float);
@@ -802,20 +789,6 @@ void fill_deconv_arg(struct DeconvArgs *arg, framework::Tensor *input,
 
       memcpy(arg->split_conv_args[i]->conv_arg[j].sb_address, bs_head, bs_size);
       fpga_flush(arg->split_conv_args[i]->conv_arg[j].sb_address, bs_size);
-
-      /*  {
-            static int cnt = 0;
-            std::string str = "deconv_sb";
-            if(cnt <= 1){
-                cnt++;
-                str += std::to_string(cnt);
-                float result = 0;
-                fpga::savefile<float>(str,
-         arg->split_conv_args[i]->conv_arg[j].sb_address, 2 * bs_align_num,
-         result);
-            }
-
-            }*/
 
       if (split_num == 1) {
         arg->split_conv_args[i]->conv_arg[j].output.address =
@@ -863,10 +836,13 @@ void fill_dwconv_arg(struct DWconvArgs *arg, framework::Tensor *input,
                      int16_t leaky_relu_negative_slope, int stride_h,
                      int stride_w, int padding_h, int padding_w,
                      float *bias_ptr) {
+  auto deleter = [](void *p) { fpga_free(p); };
+  arg->vector_dwconv_space.push_back(
+      std::shared_ptr<char>(reinterpret_cast<char *>(bias_ptr), deleter));
+
   auto filter_ptr = filter->data<int16_t>();
   auto input_ptr = input->data<half>();
-  auto output_ptr = out->data<half>();
-
+  auto output_ptr = out->mutable_data<half>();
   arg->sub_conv_num = 1;
   // arg->relu_enabled = relu_enabled;
   arg->output.activation.activation_type = activation_enable;
