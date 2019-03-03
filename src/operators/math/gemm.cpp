@@ -3255,8 +3255,6 @@ void Gemm::Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
       paddle_mobile::memory::Alloc(sizeof(float) * KC * NC));
   packedC = static_cast<float *>(
       paddle_mobile::memory::Alloc(sizeof(float) * MC * NC));
-  zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
-  memset(static_cast<void *>(zero), 0, sizeof(float) * KC);
 
   int mc, nc;
   for (int j = 0; j < n; j += NC) {
@@ -3288,7 +3286,6 @@ void Gemm::Sgemm(int m, int n, int k, float alpha, const float *A, int lda,
   paddle_mobile::memory::Free(packedA);
   paddle_mobile::memory::Free(packedB);
   paddle_mobile::memory::Free(packedC);
-  paddle_mobile::memory::Free(zero);
 }
 
 void Gemm::SgemmWithBn(int m, int n, int k, float alpha, const float *A,
@@ -3328,8 +3325,6 @@ void Gemm::SgemmWithBn(int m, int n, int k, float alpha, const float *A,
       paddle_mobile::memory::Alloc(sizeof(float) * KC * NC));
   packedC = static_cast<float *>(
       paddle_mobile::memory::Alloc(sizeof(float) * MC * NC));
-  zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
-  memset(static_cast<void *>(zero), 0, sizeof(float) * KC);
 
   int mc, nc;
   for (int j = 0; j < n; j += NC) {
@@ -3362,7 +3357,6 @@ void Gemm::SgemmWithBn(int m, int n, int k, float alpha, const float *A,
   paddle_mobile::memory::Free(packedA);
   paddle_mobile::memory::Free(packedB);
   paddle_mobile::memory::Free(packedC);
-  paddle_mobile::memory::Free(zero);
 }
 
 void Gemm::SgemmWithPRelu(int m, int n, int k, const float *A, int lda,
@@ -3401,11 +3395,6 @@ void Gemm::SgemmWithPRelu(int m, int n, int k, const float *A, int lda,
       paddle_mobile::memory::Alloc(sizeof(float) * KC * NC));
   packedC = static_cast<float *>(
       paddle_mobile::memory::Alloc(sizeof(float) * MC * NC));
-  zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
-
-  for (int l = 0; l < KC; ++l) {
-    zero[l] = 0;
-  }
 
   int mc, nc;
   for (int j = 0; j < n; j += NC) {
@@ -3437,7 +3426,6 @@ void Gemm::SgemmWithPRelu(int m, int n, int k, const float *A, int lda,
   paddle_mobile::memory::Free(packedA);
   paddle_mobile::memory::Free(packedB);
   paddle_mobile::memory::Free(packedC);
-  paddle_mobile::memory::Free(zero);
 }
 
 // 32位 float 矩阵乘法
@@ -3459,8 +3447,6 @@ void Gemm::Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
   int L = (max_threads > 2) ? 64 : 32;
   int L1 = L / max_threads * 1024;
   KC = k;
-  zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
-  memset(static_cast<void *>(zero), 0, sizeof(float) * KC);
   if (m > n) {
     // 对 A 分块
     MC = L1 / (KC * sizeof(float));
@@ -3566,7 +3552,6 @@ void Gemm::Sgemm_omp(int m, int n, int k, float alpha, const float *A, int lda,
   paddle_mobile::memory::Free(packedA);
   paddle_mobile::memory::Free(packedB);
   paddle_mobile::memory::Free(packedC);
-  paddle_mobile::memory::Free(zero);
 }
 
 void Gemm::SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A,
@@ -3581,8 +3566,6 @@ void Gemm::SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A,
 
   int L1 = 64 / max_threads * 1024;
   KC = k;
-  zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
-  memset(static_cast<void *>(zero), 0, sizeof(float) * KC);
   if (m > n) {
     // 对 A 分块
     MC = L1 / (KC * sizeof(float));
@@ -3694,7 +3677,6 @@ void Gemm::SgemmWithBn_omp(int m, int n, int k, float alpha, const float *A,
   paddle_mobile::memory::Free(packedA);
   paddle_mobile::memory::Free(packedB);
   paddle_mobile::memory::Free(packedC);
-  paddle_mobile::memory::Free(zero);
 }
 
 void Gemm::SgemmWithPRelu_omp(int m, int n, int k, const float *A, int lda,
@@ -3709,8 +3691,6 @@ void Gemm::SgemmWithPRelu_omp(int m, int n, int k, const float *A, int lda,
 
   int L1 = 8 * 1024;
   KC = k;
-  zero = static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * KC));
-  memset(static_cast<void *>(zero), 0, sizeof(float) * KC);
   if (m > n) {
     // 对 A 分块
     MC = L1 / (KC * sizeof(float));
@@ -3820,7 +3800,6 @@ void Gemm::SgemmWithPRelu_omp(int m, int n, int k, const float *A, int lda,
   paddle_mobile::memory::Free(packedA);
   paddle_mobile::memory::Free(packedB);
   paddle_mobile::memory::Free(packedC);
-  paddle_mobile::memory::Free(zero);
 }
 
 }  // namespace math

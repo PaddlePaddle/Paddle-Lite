@@ -260,7 +260,6 @@ class Gemm {
   float *packedA;
   float *packedB;
   float *packedC;
-  float *zero;
 
   // 8 bits int
   int8_t *packedA_int8;

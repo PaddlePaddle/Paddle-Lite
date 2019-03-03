@@ -1753,18 +1753,15 @@ class FusionConvAddParam : public ConvParam<Dtype> {
       : ConvParam<Dtype>(inputs, outputs, attrs, scope) {
     bias_ = OpParam::InputYFrom<GType>(inputs, scope);
     axis_ = OpParam::GetAttr<int>("axis", attrs);
-    output_ = OpParam::OutFrom<GType>(outputs, scope);
+    this->output_ = OpParam::OutFrom<GType>(outputs, scope);
   }
   GType *Bias() const { return bias_; }
 
   const int &Axis() const { return axis_; }
 
-  GType *Output() const { return output_; }
-
  protected:
   GType *bias_;
   int axis_;
-  GType *output_;
 };
 
 template <typename Dtype>
@@ -1797,18 +1794,16 @@ class FusionConvAddPReluParam : public ConvParam<Dtype> {
     framework::DDim dims = alpha_->dims();
     bias_ = OpParam::InputYFrom<GType>(inputs, scope);
     axis_ = OpParam::GetAttr<int>("axis", attrs);
-    output_ = OpParam::OutFrom<GType>(outputs, scope);
+    this->output_ = OpParam::OutFrom<GType>(outputs, scope);
   }
   const GType *InputAlpha() const { return alpha_; }
   const std::string &Mode() const { return mode_; }
   GType *Bias() const { return bias_; }
   const int &Axis() const { return axis_; }
-  GType *Output() const { return output_; }
 
  protected:
   GType *bias_;
   int axis_;
-  GType *output_;
   GType *alpha_;
   std::string mode_;
 };
@@ -1830,7 +1825,6 @@ class FusionConvAddAddPReluParam : public ConvParam<Dtype> {
     mode_ = OpParam::GetStringAttr("mode", attrs);
     framework::DDim dims = alpha_->dims();
     bias_ = OpParam::InputYFrom<GType>(inputs, scope);
-    output_ = OpParam::OutFrom<GType>(outputs, scope);
     axis_ = OpParam::GetAttr<int>("axis", attrs);
     keyOutput_ = OpParam::getkey("addOut", inputs, 0);
     keyX1_ = OpParam::getkey("addX", inputs, 1);
@@ -1840,6 +1834,7 @@ class FusionConvAddAddPReluParam : public ConvParam<Dtype> {
     } else if (keyY1_ == keyOutput_) {
       bias1_ = OpParam::InputXFrom1<GType>(inputs, scope);
     }
+    this->output_ = OpParam::OutFrom<GType>(outputs, scope);
   }
   const GType *InputAlpha() const { return alpha_; }
   const std::string &Mode() const { return mode_; }
@@ -1848,12 +1843,10 @@ class FusionConvAddAddPReluParam : public ConvParam<Dtype> {
   GType *Bias() const { return bias_; }
 
   const int &Axis() const { return axis_; }
-  GType *Output() const { return output_; }
 
  protected:
   GType *bias_;
   int axis_;
-  GType *output_;
   GType *alpha_;
   std::string mode_;
   GType *bias1_;
@@ -1876,20 +1869,17 @@ class FusionConvAddBNReluParam : public ConvParam<Dtype> {
       : ConvParam<Dtype>(inputs, outputs, attrs, scope) {
     bias_ = OpParam::InputYFrom<GType>(inputs, scope);
     axis_ = OpParam::GetAttr<int>("axis", attrs);
-    output_ = OpParam::OutFrom<GType>(outputs, scope);
     input_bias_ = OpParam::InputBiasFrom<GType>(inputs, scope);
     input_mean_ = OpParam::InputMeanFrom<GType>(inputs, scope);
     input_scale_ = OpParam::InputScaleFrom<GType>(inputs, scope);
     input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, scope);
     epsilon_ = OpParam::GetAttr<float>("epsilon", attrs);
     momentum_ = OpParam::GetAttr<float>("momentum", attrs);
-    //    is_test_ = OpParam::GetAttr<bool>("is_test", attrs);
+    this->output_ = OpParam::OutFrom<GType>(outputs, scope);
   }
   GType *Bias() const { return bias_; }
 
   const int &Axis() const { return axis_; }
-
-  GType *Output() const { return output_; }
 
   const GType *InputBias() const { return input_bias_; }
 
@@ -1903,8 +1893,6 @@ class FusionConvAddBNReluParam : public ConvParam<Dtype> {
 
   const float &Momentum() const { return momentum_; }
 
-  const bool &IsTest() const { return is_test_; }
-
   void SetNewScale(GType *new_scale) { new_scale_ = new_scale; }
 
   void SetNewBias(GType *new_bias) { new_bias_ = new_bias; }
@@ -1916,14 +1904,12 @@ class FusionConvAddBNReluParam : public ConvParam<Dtype> {
  protected:
   GType *bias_;
   int axis_;
-  GType *output_;
   GType *input_bias_;
   GType *input_mean_;
   GType *input_scale_;
   GType *input_variance_;
   float epsilon_;
   float momentum_;
-  bool is_test_;
   GType *new_bias_;
   GType *new_scale_;
 };
@@ -1942,7 +1928,6 @@ class FusionConvBNAddReluParam : public ConvParam<Dtype> {
       : ConvParam<Dtype>(inputs, outputs, attrs, scope) {
     bias_ = OpParam::InputYFrom<GType>(inputs, scope);
     axis_ = OpParam::GetAttr<int>("axis", attrs);
-    output_ = OpParam::OutFrom<GType>(outputs, scope);
     input_bias_ = OpParam::InputBiasFrom<GType>(inputs, scope);
     input_mean_ = OpParam::InputMeanFrom<GType>(inputs, scope);
     input_scale_ = OpParam::InputScaleFrom<GType>(inputs, scope);
@@ -1957,13 +1942,11 @@ class FusionConvBNAddReluParam : public ConvParam<Dtype> {
     } else if (keyY_ == keyBNY_) {
       bias_ = OpParam::InputXFrom<GType>(inputs, scope);
     }
-    //    is_test_ = OpParam::GetAttr<bool>("is_test", attrs);
+    this->output_ = OpParam::OutFrom<GType>(outputs, scope);
   }
   GType *Bias() const { return bias_; }
 
   const int &Axis() const { return axis_; }
-
-  GType *Output() const { return output_; }
 
   const GType *InputBias() const { return input_bias_; }
 
@@ -1977,8 +1960,6 @@ class FusionConvBNAddReluParam : public ConvParam<Dtype> {
 
   const float &Momentum() const { return momentum_; }
 
-  const bool &IsTest() const { return is_test_; }
-
   void SetNewScale(GType *new_scale) { new_scale_ = new_scale; }
 
   void SetNewBias(GType *new_bias) { new_bias_ = new_bias; }
@@ -1990,14 +1971,12 @@ class FusionConvBNAddReluParam : public ConvParam<Dtype> {
  protected:
   GType *bias_;
   int axis_;
-  GType *output_;
   GType *input_bias_;
   GType *input_mean_;
   GType *input_scale_;
   GType *input_variance_;
   float epsilon_;
   float momentum_;
-  bool is_test_;
   GType *new_bias_;
   GType *new_scale_;
   std::string keyBNY_;
@@ -2017,16 +1996,14 @@ class FusionConvBNParam : public ConvParam<Dtype> {
                     const VariableNameMap &outputs, const AttributeMap &attrs,
                     const Scope &scope)
       : ConvParam<Dtype>(inputs, outputs, attrs, scope) {
-    output_y_ = OpParam::OutputYFrom<GType>(outputs, scope);
     input_bias_ = OpParam::InputBiasFrom<GType>(inputs, scope);
     input_mean_ = OpParam::InputMeanFrom<GType>(inputs, scope);
     input_scale_ = OpParam::InputScaleFrom<GType>(inputs, scope);
     input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, scope);
     epsilon_ = OpParam::GetAttr<float>("epsilon", attrs);
     momentum_ = OpParam::GetAttr<float>("momentum", attrs);
-    //    is_test_ = OpParam::GetAttr<bool>("is_test", attrs);
+    this->output_ = OpParam::OutputYFrom<GType>(outputs, scope);
   }
-  GType *Output() const { return output_y_; }
 
   const GType *InputBias() const { return input_bias_; }
 
@@ -2040,8 +2017,6 @@ class FusionConvBNParam : public ConvParam<Dtype> {
 
   const float &Momentum() const { return momentum_; }
 
-  const bool &IsTest() const { return is_test_; }
-
   void SetNewScale(GType *new_scale) { new_scale_ = new_scale; }
 
   void SetNewBias(GType *new_bias) { new_bias_ = new_bias; }
@@ -2051,14 +2026,12 @@ class FusionConvBNParam : public ConvParam<Dtype> {
   const GType *NewBias() const { return new_bias_; }
 
  protected:
-  GType *output_y_;
   GType *input_bias_;
   GType *input_mean_;
   GType *input_scale_;
   GType *input_variance_;
   float epsilon_;
   float momentum_;
-  bool is_test_;
   GType *new_bias_;
   GType *new_scale_;
 };
@@ -2077,20 +2050,17 @@ class FusionConvAddBNParam : public ConvParam<Dtype> {
       : ConvParam<Dtype>(inputs, outputs, attrs, scope) {
     bias_ = OpParam::InputYFrom<GType>(inputs, scope);
     axis_ = OpParam::GetAttr<int>("axis", attrs);
-    output_y_ = OpParam::OutputYFrom<GType>(outputs, scope);
     input_bias_ = OpParam::InputBiasFrom<GType>(inputs, scope);
     input_mean_ = OpParam::InputMeanFrom<GType>(inputs, scope);
     input_scale_ = OpParam::InputScaleFrom<GType>(inputs, scope);
     input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, scope);
     epsilon_ = OpParam::GetAttr<float>("epsilon", attrs);
     momentum_ = OpParam::GetAttr<float>("momentum", attrs);
-    //    is_test_ = OpParam::GetAttr<bool>("is_test", attrs);
+    this->output_ = OpParam::OutputYFrom<GType>(outputs, scope);
   }
   GType *Bias() const { return bias_; }
 
   const int &Axis() const { return axis_; }
-
-  GType *Output() const { return output_y_; }
 
   const GType *InputBias() const { return input_bias_; }
 
@@ -2104,8 +2074,6 @@ class FusionConvAddBNParam : public ConvParam<Dtype> {
 
   const float &Momentum() const { return momentum_; }
 
-  const bool &IsTest() const { return is_test_; }
-
   void SetNewScale(GType *new_scale) { new_scale_ = new_scale; }
 
   void SetNewBias(GType *new_bias) { new_bias_ = new_bias; }
@@ -2117,14 +2085,12 @@ class FusionConvAddBNParam : public ConvParam<Dtype> {
  protected:
   GType *bias_;
   int axis_;
-  GType *output_y_;
   GType *input_bias_;
   GType *input_mean_;
   GType *input_scale_;
   GType *input_variance_;
   float epsilon_;
   float momentum_;
-  bool is_test_;
   GType *new_bias_;
   GType *new_scale_;
 };
@@ -2141,16 +2107,14 @@ class FusionDWConvBNReluParam : public ConvParam<Dtype> {
                           const VariableNameMap &outputs,
                           const AttributeMap &attrs, const Scope &scope)
       : ConvParam<Dtype>(inputs, outputs, attrs, scope) {
-    output_ = OpParam::OutFrom<GType>(outputs, scope);
     input_bias_ = OpParam::InputBiasFrom<GType>(inputs, scope);
     input_mean_ = OpParam::InputMeanFrom<GType>(inputs, scope);
     input_scale_ = OpParam::InputScaleFrom<GType>(inputs, scope);
     input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, scope);
     epsilon_ = OpParam::GetAttr<float>("epsilon", attrs);
     momentum_ = OpParam::GetAttr<float>("momentum", attrs);
-    //    is_test_ = OpParam::GetAttr<bool>("is_test", attrs);
+    this->output_ = OpParam::OutFrom<GType>(outputs, scope);
   }
-  GType *Output() const { return output_; }
 
   const GType *InputBias() const { return input_bias_; }
 
@@ -2164,8 +2128,6 @@ class FusionDWConvBNReluParam : public ConvParam<Dtype> {
 
   const float &Momentum() const { return momentum_; }
 
-  const bool &IsTest() const { return is_test_; }
-
   void SetNewScale(GType *new_scale) { new_scale_ = new_scale; }
 
   void SetNewBias(GType *new_bias) { new_bias_ = new_bias; }
@@ -2175,14 +2137,12 @@ class FusionDWConvBNReluParam : public ConvParam<Dtype> {
   const GType *NewBias() const { return new_bias_; }
 
  protected:
-  GType *output_;
   GType *input_bias_;
   GType *input_mean_;
   GType *input_scale_;
   GType *input_variance_;
   float epsilon_;
   float momentum_;
-  bool is_test_;
   GType *new_bias_;
   GType *new_scale_;
 };
@@ -2200,16 +2160,14 @@ class FusionConvBNReluParam : public ConvParam<Dtype> {
                         const VariableNameMap &outputs,
                         const AttributeMap &attrs, const Scope &scope)
       : ConvParam<Dtype>(inputs, outputs, attrs, scope) {
-    output_ = OpParam::OutFrom<GType>(outputs, scope);
     input_bias_ = OpParam::InputBiasFrom<GType>(inputs, scope);
     input_mean_ = OpParam::InputMeanFrom<GType>(inputs, scope);
     input_scale_ = OpParam::InputScaleFrom<GType>(inputs, scope);
     input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, scope);
     epsilon_ = OpParam::GetAttr<float>("epsilon", attrs);
     momentum_ = OpParam::GetAttr<float>("momentum", attrs);
-    //    is_test_ = OpParam::GetAttr<bool>("is_test", attrs);
+    this->output_ = OpParam::OutFrom<GType>(outputs, scope);
   }
-  GType *Output() const { return output_; }
 
   const GType *InputBias() const { return input_bias_; }
 
@@ -2223,8 +2181,6 @@ class FusionConvBNReluParam : public ConvParam<Dtype> {
 
   const float &Momentum() const { return momentum_; }
 
-  const bool &IsTest() const { return is_test_; }
-
   void SetNewScale(GType *new_scale) { new_scale_ = new_scale; }
 
   void SetNewBias(GType *new_bias) { new_bias_ = new_bias; }
@@ -2234,14 +2190,12 @@ class FusionConvBNReluParam : public ConvParam<Dtype> {
   const GType *NewBias() const { return new_bias_; }
 
  protected:
-  GType *output_;
   GType *input_bias_;
   GType *input_mean_;
   GType *input_scale_;
   GType *input_variance_;
   float epsilon_;
   float momentum_;
-  bool is_test_;
   GType *new_bias_;
   GType *new_scale_;
 };
