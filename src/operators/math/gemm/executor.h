@@ -61,7 +61,7 @@ class GemmExecutor : public Executor {
         K_(K) {
     unsigned int L1_size = info->L1_cache;
     unsigned int L2_size = info->L2_cache;
-    // if (N_ > 10000) L1_size *= 2;
+    if (N_ > 30000 && K_ > 100) L1_size *= 2;
     if (num_threads_ >= 2) L1_size /= 2;
 
     rhs_tile_num_ = L1_size / (K * sizeof(Itype));
@@ -74,8 +74,8 @@ class GemmExecutor : public Executor {
       rhs_tile_num_ *= Strategy::out_width();
     }
 
-    //    lhs_tile_num_ = CeilDiv(M, Strategy::out_height()) *
-    //    Strategy::out_height();
+    //  lhs_tile_num_ = CeilDiv(M, Strategy::out_height()) *
+    //  Strategy::out_height();
     lhs_tile_num_ = L2_size / (K * sizeof(Itype));
     if (lhs_tile_num_ == 0) {
       lhs_tile_num_ = Strategy::out_height();
@@ -90,8 +90,8 @@ class GemmExecutor : public Executor {
   void operator()(const float alpha, const Itype *A, const int lda,
                   const Itype *B, const int ldb, const float beta, Otype *C,
                   const int ldc) {
-    //    struct timeval tv_begin, tv_end;
-    //    gettimeofday(&tv_begin,NULL);
+    //  struct timeval tv_begin, tv_end;
+    //  gettimeofday(&tv_begin,NULL);
 
     int mblock = CeilDiv(M_, Strategy::out_height()) * Strategy::out_height();
     lhs_worksize_ = sizeof(Itype) * mblock * K_;
@@ -107,9 +107,10 @@ class GemmExecutor : public Executor {
 
     strategy_.pack_lhs(M_, K_, A, lda, lhs_workspace_, true);
 
-    //    std::cout << "M: " << M_ << ", N: " << N_ << ", K: " << K_ <<
-    //    std::endl; std::cout << "rhs_block: " << CeilDiv(N_, rhs_tile_num_) <<
-    //    std::endl;
+    //  std::cout << "M: " << M_ << ", N: " << N_
+    //            << ", K: " << K_ << std::endl;
+    //  std::cout << "rhs_block: " << CeilDiv(N_, rhs_tile_num_)
+    //            << std::endl;
 
     #pragma omp parallel for if (N_ > 128)
     for (int rhs_block = 0; rhs_block < N_; rhs_block += rhs_tile_num_) {
@@ -145,11 +146,12 @@ class GemmExecutor : public Executor {
     paddle_mobile::memory::Free(rhs_workspace_);
     paddle_mobile::memory::Free(out_workspace_);
 
-    //    gettimeofday(&tv_end,NULL);
-    //    float elapsed = (tv_end.tv_sec - tv_begin.tv_sec) * 1000.f +
-    //    (tv_end.tv_usec - tv_begin.tv_usec) / 1000.f; std::cout << "elapsed: "
-    //    << elapsed << "ms, speed: " << (M_ * N_ * K_ / 1000.f / 1000.f) /
-    //    elapsed << " gflops" << std::endl;
+    //  gettimeofday(&tv_end,NULL);
+    //  float elapsed = (tv_end.tv_sec - tv_begin.tv_sec) * 1000.f +
+    //                  (tv_end.tv_usec - tv_begin.tv_usec) / 1000.f;
+    //  std::cout << "elapsed: " << elapsed << "ms, speed: "
+    //            << (M_ * N_ * K_ / 1000.f / 1000.f) / elapsed
+    //            << " gflops" << std::endl;
   }
 
   virtual ~GemmExecutor() {}
@@ -189,7 +191,7 @@ class GemvExecutor : public Executor {
 
   void operator()(const float alpha, const Itype *A, const int lda,
                   const Itype *B, const float beta, Otype *C) {
-    //    strategy_.kernel();
+    //  strategy_.kernel();
   }
 
   virtual ~GemvExecutor() {}
