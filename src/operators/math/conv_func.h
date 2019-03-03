@@ -14,12 +14,13 @@ limitations under the License. */
 
 #pragma once
 
+#include <vector>
 #ifdef __ARM_NEON
 #include <arm_neon.h>
 #endif
-
 #include "framework/ddim.h"
 #include "framework/tensor.h"
+#include "operators/math/activation.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -35,8 +36,8 @@ inline int ConvOutputSize(int input_size, int filter_size, int dilation,
   return output_size;
 }
 
-inline void expand_bias(Tensor &bias, int axis, const DDim &dDim) {
-  auto bias_ptr = bias.data<float>();
+inline void expand_bias(Tensor &bias, int axis, const DDim &dDim) {  // NOLINT
+  const auto bias_ptr = bias.data<float>();
   const DDim bias_ddim = bias.dims();
   PADDLE_MOBILE_ENFORCE(bias.dims().size() == 1,
                         "the bias tensor's dims size != 1")
@@ -96,6 +97,63 @@ inline bool IsExpand(const std::vector<int64_t> &filter_dim,
   }
 
   return !(filter_1 && strides_1 && padding_0 && dilation_1);
+}
+
+template <ActivationType Act>
+void ScaleAddChannelWise(const framework::Tensor *input,
+                         const framework::Tensor *scale,
+                         const framework::Tensor *bias,
+                         framework::Tensor *output) {
+  const float *input_ptr = input->data<float>();
+  const float *scale_ptr = scale->data<float>();
+  const float *bias_ptr = bias->data<float>();
+  float *output_ptr = output->mutable_data<float>();
+  // maybe check shape
+  int batch_size = input->dims()[0];
+  int channels = input->dims()[1];
+  size_t spatial_size = input->dims()[2] * input->dims()[3];
+
+  for (int batch = 0; batch < batch_size; ++batch) {
+    for (int channel = 0; channel < channels; ++channel) {
+      size_t offset = (batch * channels + channel) * spatial_size;
+      const float *x = input_ptr + offset;
+      float *y = output_ptr + offset;
+      float alpha = scale_ptr[channel];
+      float beta = bias_ptr[channel];
+      int j = 0;
+#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+      float32x4_t __scale = vdupq_n_f32(alpha);
+      float32x4_t __bias = vdupq_n_f32(beta);
+      for (; j < spatial_size - 15; j += 16, x += 16, y += 16) {
+        float32x4_t in0 = vld1q_f32(x);
+        float32x4_t in1 = vld1q_f32(x + 4);
+        float32x4_t in2 = vld1q_f32(x + 8);
+        float32x4_t in3 = vld1q_f32(x + 12);
+        in0 = vmlaq_f32(__bias, __scale, in0);
+        in1 = vmlaq_f32(__bias, __scale, in1);
+        in2 = vmlaq_f32(__bias, __scale, in2);
+        in3 = vmlaq_f32(__bias, __scale, in3);
+        in0 = math::vActiveq_f32<Act>(in0);
+        in1 = math::vActiveq_f32<Act>(in1);
+        in2 = math::vActiveq_f32<Act>(in2);
+        in3 = math::vActiveq_f32<Act>(in3);
+        vst1q_f32(y, in0);
+        vst1q_f32(y + 4, in1);
+        vst1q_f32(y + 8, in2);
+        vst1q_f32(y + 12, in3);
+      }
+      for (; j < spatial_size - 3; j += 4, x += 4, y += 4) {
+        float32x4_t in0 = vld1q_f32(x);
+        in0 = vmlaq_f32(__bias, __scale, in0);
+        in0 = math::vActiveq_f32<Act>(in0);
+        vst1q_f32(y, in0);
+      }
+#endif
+      for (; j < spatial_size; ++j, ++x, ++y) {
+        *y = math::Active<Act>(alpha * (*x) + beta);
+      }
+    }
+  }
 }
 
 }  // namespace math
