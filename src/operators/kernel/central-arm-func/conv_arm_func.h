@@ -213,6 +213,100 @@ inline void DepthwiseConv5x5(const ConvParam<CPU> &param) {
 #endif  // __aarch64__
 
 template <typename ParamType>
+void ConvAddReluBasic(const ParamType &param) {
+  const Tensor *input = param.Input();
+  Tensor filter = *param.Filter();
+  Tensor bias = *param.Bias();
+
+  Tensor *output = param.Output();
+  output->mutable_data<float>();
+
+  float alpha = 1.0f;
+  float beta = 1.0f;
+  int32_t groups = param.Groups();
+  int32_t axis = param.Axis();
+  std::vector<int32_t> strides = param.Strides();
+  std::vector<int32_t> paddings = param.Paddings();
+  std::vector<int32_t> dilations = param.Dilations();
+
+  const int32_t batch_size = static_cast<int32_t>(input->dims()[0]);
+
+  std::vector<int64_t> filter_shape_vec(framework::vectorize(filter.dims()));
+
+  std::vector<int64_t> output_shape_vec(framework::vectorize(output->dims()));
+  size_t data_dim = filter_shape_vec.size() - 2;
+  std::vector<int64_t> col_shape_vec(1 + 2 * data_dim);
+  col_shape_vec[0] = input->dims()[1] / groups;
+  for (size_t j = 0; j < data_dim; ++j) {
+    col_shape_vec[j + 1] = filter_shape_vec[j + 2];
+    col_shape_vec[j + 1 + data_dim] = output_shape_vec[j + 2];
+  }
+  framework::DDim col_shape(framework::make_ddim(col_shape_vec));
+
+  framework::DDim col_matrix_shape =
+      framework::flatten_to_2d(col_shape, data_dim + 1);
+
+  bool is_expand =
+      math::IsExpand(filter_shape_vec, strides, paddings, dilations);
+  Tensor col;
+  Tensor col_matrix;
+  if (is_expand) {
+    col.mutable_data<float>(col_shape);
+    col_matrix.ShareDataWith(col);
+    col_matrix.Resize(col_matrix_shape);
+  }
+
+  framework::DDim input_shape = framework::slice_ddim(
+      input->dims(), 1, static_cast<int32_t>(input->dims().size()));
+
+  framework::DDim filter_matrix_shape = {filter.dims()[0],
+                                         filter.numel() / filter.dims()[0]};
+  filter.Resize(filter_matrix_shape);
+  framework::DDim output_matrix_shape = {
+      output->dims()[1],
+      output->numel() / (output->dims()[0] * output->dims()[1])};
+
+  // convolution operator: im2col(or vol2col) + gemm
+  int32_t in_step = static_cast<int32_t>(input->dims()[1]) / groups;
+  int32_t out_step = static_cast<int32_t>(output->dims()[1]) / groups;
+
+  float *bias_data = bias.data<float>();
+
+  math::Vol2ColFunctor<CPU, float> vol2col;
+  math::Im2ColFunctor<math::ColFormat::kCFO, CPU, float> im2col;
+
+  for (int32_t i = 0; i < batch_size; i++) {
+    Tensor in_batch = input->Slice(i, i + 1).Resize(input_shape);
+    Tensor out_batch = output->Slice(i, i + 1).Resize(output_matrix_shape);
+
+    for (int32_t g = 0; g < groups; g++) {
+      Tensor in_slice = in_batch.Slice(g * in_step, (g + 1) * in_step);
+
+      if (!is_expand) {
+        col_matrix = in_slice;
+        col_matrix.Resize(col_matrix_shape);
+      } else if (data_dim == 2U) {
+        // im2col
+        im2col(in_slice, dilations, strides,
+               std::vector<int32_t>{paddings[0], paddings[1], paddings[0],
+                                    paddings[1]},
+               &col);
+      } else if (data_dim == 3U) {
+        // vol2col
+        vol2col(in_slice, dilations, strides, paddings, &col);
+      }
+
+      // gemm
+      Tensor out_slice = out_batch.Slice(g * out_step, (g + 1) * out_step);
+      Tensor filter_slice = filter.Slice(g * out_step, (g + 1) * out_step);
+
+      math::MatMul<float, float>(filter_slice, false, col_matrix, false, alpha,
+                                 &out_slice, beta, true, bias_data);
+    }
+  }
+}
+
+template <typename ParamType>
 void ConvBNReluBasic(const ParamType &param) {
   const Tensor *input = param.Input();
   Tensor filter = *param.Filter();
