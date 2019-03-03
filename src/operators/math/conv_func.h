@@ -100,6 +100,58 @@ inline bool IsExpand(const std::vector<int64_t> &filter_dim,
 }
 
 template <ActivationType Act>
+void AddChannelWise(const framework::Tensor *input,
+                    const framework::Tensor *bias, framework::Tensor *output) {
+  const float *input_ptr = input->data<float>();
+  const float *bias_ptr = bias->data<float>();
+  float *output_ptr = output->mutable_data<float>();
+  // maybe check shape
+  int batch_size = input->dims()[0];
+  int channels = input->dims()[1];
+  size_t spatial_size = input->dims()[2] * input->dims()[3];
+
+  for (int batch = 0; batch < batch_size; ++batch) {
+    for (int channel = 0; channel < channels; ++channel) {
+      size_t offset = (batch * channels + channel) * spatial_size;
+      const float *x = input_ptr + offset;
+      float *y = output_ptr + offset;
+      float beta = bias_ptr[channel];
+      int j = 0;
+#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+      float32x4_t __bias = vdupq_n_f32(beta);
+      for (; j < spatial_size - 15; j += 16, x += 16, y += 16) {
+        float32x4_t in0 = vld1q_f32(x);
+        float32x4_t in1 = vld1q_f32(x + 4);
+        float32x4_t in2 = vld1q_f32(x + 8);
+        float32x4_t in3 = vld1q_f32(x + 12);
+        in0 = vaddq_f32(__bias, in0);
+        in1 = vaddq_f32(__bias, in1);
+        in2 = vaddq_f32(__bias, in2);
+        in3 = vaddq_f32(__bias, in3);
+        in0 = math::vActiveq_f32<Act>(in0);
+        in1 = math::vActiveq_f32<Act>(in1);
+        in2 = math::vActiveq_f32<Act>(in2);
+        in3 = math::vActiveq_f32<Act>(in3);
+        vst1q_f32(y, in0);
+        vst1q_f32(y + 4, in1);
+        vst1q_f32(y + 8, in2);
+        vst1q_f32(y + 12, in3);
+      }
+      for (; j < spatial_size - 3; j += 4, x += 4, y += 4) {
+        float32x4_t in0 = vld1q_f32(x);
+        in0 = vaddq_f32(__bias, in0);
+        in0 = math::vActiveq_f32<Act>(in0);
+        vst1q_f32(y, in0);
+      }
+#endif
+      for (; j < spatial_size; ++j, ++x, ++y) {
+        *y = math::Active<Act>((*x) + beta);
+      }
+    }
+  }
+}
+
+template <ActivationType Act>
 void ScaleAddChannelWise(const framework::Tensor *input,
                          const framework::Tensor *scale,
                          const framework::Tensor *bias,
