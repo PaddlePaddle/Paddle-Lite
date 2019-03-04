@@ -145,7 +145,7 @@ void PaddleMobilePredictor<Device, T>::FeedPaddleTensors(
     tensors[i].init(typeid(float));
     ConvertPaddleTensors(inputs[i], &tensors[i]);
   }
-  paddle_mobile_->FeedData(tensors);
+  paddle_mobile_->FeedTensorData(tensors);
 }
 
 template <typename Device, typename T>
@@ -154,7 +154,7 @@ void PaddleMobilePredictor<Device, T>::FetchPaddleTensors(
   auto num = outputs->size();
   PADDLE_MOBILE_ENFORCE(num > 0, "0 output pointers is not permitted");
   std::vector<framework::Tensor *> tensors(num, nullptr);
-  paddle_mobile_->GetResults(&tensors);
+  paddle_mobile_->GetTensorResults(&tensors);
   for (int i = 0; i < num; i++) {
     ConvertTensors(*tensors[i], &(*outputs)[i]);
   }
