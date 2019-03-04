@@ -476,7 +476,7 @@ void Executor<Device, T>::FeedData(const std::vector<void *> &v) {
 }
 
 template <typename Device, typename T>
-void Executor<Device, T>::FeedData(const vector<framework::Tensor> &v) {
+void Executor<Device, T>::FeedTensorData(const vector<framework::Tensor> &v) {
   auto input_size = v.size();
   auto vars = program_.scope->VarContain("feed");
   PADDLE_MOBILE_ENFORCE(input_size == vars.size(),
@@ -503,7 +503,8 @@ void Executor<Device, T>::GetResults(std::vector<void *> *v) {
 }
 
 template <typename Device, typename T>
-void Executor<Device, T>::GetResults(std::vector<framework::Tensor *> *v) {
+void Executor<Device, T>::GetTensorResults(
+    std::vector<framework::Tensor *> *v) {
   auto output_size = v->size();
   PADDLE_MOBILE_ENFORCE(output_size > 0, "Empty output");
   auto vars = program_.scope->VarContain("fetch");
