@@ -39,23 +39,22 @@ struct SgemmStrategy {
   kernelFunc kernel;
   WriteFunc write;
 
-  static int out_width() { return 8; }
-
-  static int out_height() {
-#ifdef __aarch64__
-    return 12;
+  static int out_width() {
+#if __aarch64__
+    return 16;
 #else
-    return 6;
+    return 8;
 #endif
   }
 
+  static int out_height() { return 6; }
+
   SgemmStrategy() {
-#ifdef __aarch64__
-    pack_lhs = pack_lhs_12r;
-    pack_rhs = pack_rhs_8c;
-    kernel = sgemm_12x8;
-#else
     pack_lhs = pack_lhs_6r;
+#if __aarch64__
+    pack_rhs = pack_rhs_16c;
+    kernel = sgemm_6x16;
+#else
     pack_rhs = pack_rhs_8c;
     kernel = sgemm_6x8;
 #endif
@@ -74,7 +73,7 @@ struct I8o32gemmStrategy {
   static int out_width() { return 8; }
 
   static int out_height() {
-#ifdef __aarch64__
+#if __aarch64__
     return 12;
 #else
     return 6;
@@ -95,7 +94,7 @@ struct SgemvStrategy {
   static int out_width() { return 1; }
 
   static int out_height() {
-#ifdef __aarch64__
+#if __aarch64__
     return 12;
 #else
     return 6;
@@ -114,7 +113,7 @@ struct I8o32gemvStrategy {
   static int out_width() { return 1; }
 
   static int out_height() {
-#ifdef __aarch64__
+#if __aarch64__
     return 12;
 #else
     return 6;
