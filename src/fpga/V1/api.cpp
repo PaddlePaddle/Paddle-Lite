@@ -32,7 +32,6 @@ void format_image(framework::Tensor *image_tensor) {
   float *p_data = external_ptr == nullptr ? data_ptr : external_ptr;
 
   image::format_image(&p_data, channel, height, width);
-
   if (p_data != data_ptr && external_ptr == nullptr) {
     image_tensor->reset_data_ptr(p_data);
   }
@@ -61,6 +60,7 @@ void format_fp16_ofm(framework::Tensor *ofm_tensor) {
   memset(p, 0, memory_size);
   ofm_tensor->reset_data_ptr(p);
   ofm_tensor->set_type(typeid(half));
+  ofm_tensor->fpga_data_num = memory_size / sizeof(half);
 }
 
 void format_fp16_ofm(framework::Tensor *ofm_tensor, framework::DDim dims) {
@@ -79,7 +79,9 @@ void format_fp16_ofm(framework::Tensor *ofm_tensor, framework::DDim dims) {
   memset(p, 0, memory_size);
   ofm_tensor->reset_data_ptr(p);
   ofm_tensor->set_type(typeid(half));
+  ofm_tensor->fpga_data_num = memory_size / sizeof(half);
 }
+
 void format_fp32_ofm(framework::Tensor *ofm_tensor) {
   auto dims = ofm_tensor->dims();
   size_t memory_size = 0;
@@ -96,6 +98,7 @@ void format_fp32_ofm(framework::Tensor *ofm_tensor) {
   memset(p, 0, memory_size);
   ofm_tensor->reset_data_ptr(p);
   ofm_tensor->set_type(typeid(float));
+  ofm_tensor->fpga_data_num = memory_size / sizeof(float);
 }
 
 float filter_find_max(framework::Tensor *filter_tensor) {
