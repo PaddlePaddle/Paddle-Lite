@@ -90,8 +90,8 @@ inline void GemmConv(const ConvParam<CPU> &param) {
       Tensor in_slice = in_batch.Slice(g * in_step, (g + 1) * in_step);
 
       if (!is_expand) {
-        col.ShareDataWith(in_slice);
-        col_matrix.ShareDataWith(col);
+        // col_matrix.ShareDataWith(in_slice);
+        col_matrix = in_slice;
         col_matrix.Resize(col_matrix_shape);
       } else if (data_dim == 2U) {
         // im2col
