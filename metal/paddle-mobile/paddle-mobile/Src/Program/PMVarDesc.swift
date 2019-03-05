@@ -79,7 +79,7 @@ public class PMVarDesc {
 }
 
 extension PMVarDesc: CustomStringConvertible, CustomDebugStringConvertible {
-  public var description: String {
+    public var description: String {
         var str = ""
         str += "var name \(name): \n"
         if let inTensorDesc = tensorDesc {
@@ -93,7 +93,7 @@ extension PMVarDesc: CustomStringConvertible, CustomDebugStringConvertible {
         return str
     }
     
-  public var debugDescription: String {
+    public var debugDescription: String {
         return description
     }
 }

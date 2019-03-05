@@ -18,10 +18,10 @@
 using namespace metal;
 
 struct ReshapeParam {
-  int32_t idim[4];
-  int32_t itrans[4];
-  int32_t odim[4];
-  int32_t otrans[4];
+    int32_t idim[4];
+    int32_t itrans[4];
+    int32_t odim[4];
+    int32_t otrans[4];
 };
 
 #define P float

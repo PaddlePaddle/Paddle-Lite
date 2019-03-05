@@ -18,11 +18,11 @@
 using namespace metal;
 
 struct ConcatParam {
-  int32_t odim[4];
-  int32_t axis;
-  int32_t offset;
-  int32_t trans[4];
-  int32_t vdim[6];
+    int32_t odim[4];
+    int32_t axis;
+    int32_t offset;
+    int32_t trans[4];
+    int32_t vdim[6];
 };
 
 #define VNORMAL 1
@@ -41,129 +41,129 @@ struct ConcatParam {
 
 // ssd-ar: (R=3, N=5, V=x)
 #define V VX
-  #define R 3
-    #define N 5
-      #define P float
-        #include "ConcatKernel.inc.metal"
-      #undef P
-      #define P half
-        #include "ConcatKernel.inc.metal"
-      #undef P
-    #undef N
-  #undef R
+#define R 3
+#define N 5
+#define P float
+#include "ConcatKernel.inc.metal"
+#undef P
+#define P half
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
 #undef V
 
 // ssd-ar: (R=2, N=5, V=x)
 #define V VX
-  #define R 2
-    #define N 5
-      #define P float
-        #include "ConcatKernel.inc.metal"
-      #undef P
-      #define P half
-        #include "ConcatKernel.inc.metal"
-      #undef P
-    #undef N
-  #undef R
+#define R 2
+#define N 5
+#define P float
+#include "ConcatKernel.inc.metal"
+#undef P
+#define P half
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
 #undef V
 
 
 // ssd-ar: (R=3, N=2, V=y)
 #define V VY
-  #define R 3
-    #define N 2
-      #define P float
-        #include "ConcatKernel.inc.metal"
-      #undef P
-      #define P half
-        #include "ConcatKernel.inc.metal"
-      #undef P
-    #undef N
-  #undef R
+#define R 3
+#define N 2
+#define P float
+#include "ConcatKernel.inc.metal"
+#undef P
+#define P half
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
 #undef V
 
 // ssd-ar: (R=4, N=3, V=z)
 #define V VZ
-  #define R 4
-    #define N 3
-      #define P float
-        #include "ConcatKernel.inc.metal"
-      #undef P
-      #define P half
-        #include "ConcatKernel.inc.metal"
-      #undef P
-    #undef N
-  #undef R
+#define R 4
+#define N 3
+#define P float
+#include "ConcatKernel.inc.metal"
+#undef P
+#define P half
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
 #undef V
 
 
 // ssd: (R=2, N=6, V=y)
 #define V VY
-  #define R 2
-    #define N 6
-      #define P float
-        #include "ConcatKernel.inc.metal"
-      #undef P
-      #define P half
-        #include "ConcatKernel.inc.metal"
-      #undef P
-    #undef N
-  #undef R
+#define R 2
+#define N 6
+#define P float
+#include "ConcatKernel.inc.metal"
+#undef P
+#define P half
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
 #undef V
 
 // ssd: (R=3, N=6, V=y)
 #define V VY
-  #define R 3
-    #define N 6
-      #define P float
-        #include "ConcatKernel.inc.metal"
-      #undef P
-      #define P half
-        #include "ConcatKernel.inc.metal"
-      #undef P
-    #undef N
-  #undef R
+#define R 3
+#define N 6
+#define P float
+#include "ConcatKernel.inc.metal"
+#undef P
+#define P half
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
 #undef V
 
 #define V VNORMAL
-  #define R 4
-    #define N 2
-      #define P float
-        #include "ConcatKernel.inc.metal"
-      #undef P
-      #define P half
-        #include "ConcatKernel.inc.metal"
-      #undef P
-    #undef N
-  #undef R
+#define R 4
+#define N 2
+#define P float
+#include "ConcatKernel.inc.metal"
+#undef P
+#define P half
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
 #undef V
 
 
 #define V VY
-  #define R 2
-    #define N 2
-      #define P float
-        #include "ConcatKernel.inc.metal"
-      #undef P
-      #define P half
-        #include "ConcatKernel.inc.metal"
-      #undef P
-    #undef N
-  #undef R
+#define R 2
+#define N 2
+#define P float
+#include "ConcatKernel.inc.metal"
+#undef P
+#define P half
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
 #undef V
 
 
 #define V VY
-  #define R 2
-    #define N 5
-      #define P float
-        #include "ConcatKernel.inc.metal"
-      #undef P
-      #define P half
-        #include "ConcatKernel.inc.metal"
-      #undef P
-    #undef N
-  #undef R
+#define R 2
+#define N 5
+#define P float
+#include "ConcatKernel.inc.metal"
+#undef P
+#define P half
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
 #undef V
 
 

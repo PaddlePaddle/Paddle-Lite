@@ -6,15 +6,15 @@ import AVFoundation
 
 @available(iOS 10.0, *)
 @objc public protocol VideoCaptureDelegate: NSObjectProtocol {
-  @objc optional func videoCapture(_ capture: VideoCapture, didCaptureSampleBuffer sampleBuffer: CMSampleBuffer, timestamp: CMTime)
+    @objc optional func videoCapture(_ capture: VideoCapture, didCaptureSampleBuffer sampleBuffer: CMSampleBuffer, timestamp: CMTime)
     @objc optional func videoCapture(_ capture: VideoCapture, didCaptureVideoTexture texture: MTLTexture?, timestamp: CMTime)
     @objc optional func videoCapture(_ capture: VideoCapture, didCapturePhoto previewImage: UIImage?)
     @objc optional func videoCapture(_ capture: VideoCapture, didCapturePhotoTexture texture: MTLTexture?)
 }
 
 /**
-  Simple interface to the iPhone's camera.
-*/
+ Simple interface to the iPhone's camera.
+ */
 @available(iOS 10.0, *)
 public class VideoCapture: NSObject {
     public var previewLayer: AVCaptureVideoPreviewLayer?
@@ -35,9 +35,9 @@ public class VideoCapture: NSObject {
         self.cameraPosition = position
         super.init()
     }
-
+    
     public func setUp(sessionPreset: AVCaptureSession.Preset = .medium,
-                    completion: @escaping (Bool) -> Void) {
+                      completion: @escaping (Bool) -> Void) {
         queue.async {
             let success = self.setUpCamera(sessionPreset: sessionPreset)
             DispatchQueue.main.async {
@@ -45,7 +45,7 @@ public class VideoCapture: NSObject {
             }
         }
     }
-
+    
     func fontCamera() -> AVCaptureDevice? {
         let deveices = AVCaptureDevice.DiscoverySession.init(deviceTypes: [.builtInWideAngleCamera], mediaType: AVMediaType.video, position: .front).devices
         return deveices.first
@@ -62,7 +62,7 @@ public class VideoCapture: NSObject {
         
         captureSession.beginConfiguration()
         captureSession.sessionPreset = sessionPreset
-
+        
         var oCaptureDevice: AVCaptureDevice?
         switch cameraPosition {
         case .back:
@@ -79,56 +79,56 @@ public class VideoCapture: NSObject {
             print("Error: no video devices available")
             return false
         }
-
+        
         guard let videoInput = try? AVCaptureDeviceInput(device: captureDevice) else {
             print("Error: could not create AVCaptureDeviceInput")
             return false
         }
-
+        
         if captureSession.canAddInput(videoInput) {
             captureSession.addInput(videoInput)
         }
-
+        
         let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
         previewLayer.videoGravity = AVLayerVideoGravity.resizeAspect
         previewLayer.connection?.videoOrientation = self.videoOrientation
         self.previewLayer = previewLayer
-
+        
         let settings: [String : Any] = [
-        kCVPixelBufferPixelFormatTypeKey as String: NSNumber(value: kCVPixelFormatType_32BGRA)
+            kCVPixelBufferPixelFormatTypeKey as String: NSNumber(value: kCVPixelFormatType_32BGRA)
         ]
-
+        
         videoOutput.videoSettings = settings
         videoOutput.alwaysDiscardsLateVideoFrames = true
         videoOutput.setSampleBufferDelegate(self, queue: queue)
         if captureSession.canAddOutput(videoOutput) {
             captureSession.addOutput(videoOutput)
         }
-
+        
         // We want the buffers to be in portrait orientation otherwise they are
         // rotated by 90 degrees. Need to set this _after_ addOutput()!
         videoOutput.connection(with: AVMediaType.video)?.videoOrientation = self.videoOrientation
-
+        
         if captureSession.canAddOutput(photoOutput) {
             captureSession.addOutput(photoOutput)
         }
-
+        
         captureSession.commitConfiguration()
         return true
     }
-
+    
     public func start() {
         if !captureSession.isRunning {
             captureSession.startRunning()
         }
     }
-
+    
     public func stop() {
         if captureSession.isRunning {
             captureSession.stopRunning()
         }
     }
-
+    
     /* Captures a single frame of the camera input. */
     public func capturePhoto() {
         let settings = AVCapturePhotoSettings(format: [kCVPixelBufferPixelFormatTypeKey as String: NSNumber(value: kCVPixelFormatType_32BGRA)])
@@ -139,7 +139,7 @@ public class VideoCapture: NSObject {
         ]
         photoOutput.capturePhoto(with: settings, delegate: self)
     }
-
+    
     func convertToMTLTexture(sampleBuffer: CMSampleBuffer?) -> MTLTexture? {
         if let textureCache = textureCache, let sampleBuffer = sampleBuffer, let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) {
             let width = CVPixelBufferGetWidth(imageBuffer)
@@ -152,7 +152,7 @@ public class VideoCapture: NSObject {
         }
         return nil
     }
-
+    
     func convertToUIImage(sampleBuffer: CMSampleBuffer?) -> UIImage? {
         if let sampleBuffer = sampleBuffer,
             let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) {
@@ -172,47 +172,47 @@ public class VideoCapture: NSObject {
 
 @available(iOS 10.0, *)
 extension VideoCapture: AVCaptureVideoDataOutputSampleBufferDelegate {
-  public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-    // Because lowering the capture device's FPS looks ugly in the preview,
-    // we capture at full speed but only call the delegate at its desired
-    // framerate. If `fps` is -1, we run at the full framerate.
-    let timestamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
-    let deltaTime = timestamp - lastTimestamp
-    if fps == -1 || deltaTime >= CMTimeMake(1, Int32(fps)) {
-        lastTimestamp = timestamp
-        self.delegate?.videoCapture?(self, didCaptureSampleBuffer: sampleBuffer, timestamp: timestamp)
-        if self.delegate?.responds(to: #selector(VideoCaptureDelegate.videoCapture(_:didCaptureVideoTexture:timestamp:))) ?? false{
-            let texture = convertToMTLTexture(sampleBuffer: sampleBuffer)
-            delegate?.videoCapture?(self, didCaptureVideoTexture: texture, timestamp: timestamp)
+    public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        // Because lowering the capture device's FPS looks ugly in the preview,
+        // we capture at full speed but only call the delegate at its desired
+        // framerate. If `fps` is -1, we run at the full framerate.
+        let timestamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+        let deltaTime = timestamp - lastTimestamp
+        if fps == -1 || deltaTime >= CMTimeMake(1, Int32(fps)) {
+            lastTimestamp = timestamp
+            self.delegate?.videoCapture?(self, didCaptureSampleBuffer: sampleBuffer, timestamp: timestamp)
+            if self.delegate?.responds(to: #selector(VideoCaptureDelegate.videoCapture(_:didCaptureVideoTexture:timestamp:))) ?? false{
+                let texture = convertToMTLTexture(sampleBuffer: sampleBuffer)
+                delegate?.videoCapture?(self, didCaptureVideoTexture: texture, timestamp: timestamp)
+            }
         }
     }
-  }
-
-  public func captureOutput(_ output: AVCaptureOutput, didDrop sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-    print("dropped frame")
-  }
+    
+    public func captureOutput(_ output: AVCaptureOutput, didDrop sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        print("dropped frame")
+    }
 }
 
 @available(iOS 10.0, *)
 extension VideoCapture: AVCapturePhotoCaptureDelegate {
-  public func photoOutput(_ captureOutput: AVCapturePhotoOutput,
-                          didFinishProcessingPhoto photoSampleBuffer: CMSampleBuffer?,
-                          previewPhoto previewPhotoSampleBuffer: CMSampleBuffer?,
-                          resolvedSettings: AVCaptureResolvedPhotoSettings,
-                          bracketSettings: AVCaptureBracketedStillImageSettings?,
-                          error: Error?) {
-    var imageTexture: MTLTexture?
-    var previewImage: UIImage?
-    if error == nil {
-        if self.delegate?.responds(to: #selector(VideoCaptureDelegate.videoCapture(_:didCapturePhotoTexture:))) ?? false{
-            imageTexture = convertToMTLTexture(sampleBuffer: photoSampleBuffer)
-            self.delegate?.videoCapture?(self, didCapturePhotoTexture: imageTexture)
-        }
-        
-        if self.delegate?.responds(to: #selector(VideoCaptureDelegate.videoCapture(_:didCapturePhoto:))) ?? false{
-            previewImage = convertToUIImage(sampleBuffer: previewPhotoSampleBuffer)
-            self.delegate?.videoCapture?(self, didCapturePhoto: previewImage)
+    public func photoOutput(_ captureOutput: AVCapturePhotoOutput,
+                            didFinishProcessingPhoto photoSampleBuffer: CMSampleBuffer?,
+                            previewPhoto previewPhotoSampleBuffer: CMSampleBuffer?,
+                            resolvedSettings: AVCaptureResolvedPhotoSettings,
+                            bracketSettings: AVCaptureBracketedStillImageSettings?,
+                            error: Error?) {
+        var imageTexture: MTLTexture?
+        var previewImage: UIImage?
+        if error == nil {
+            if self.delegate?.responds(to: #selector(VideoCaptureDelegate.videoCapture(_:didCapturePhotoTexture:))) ?? false{
+                imageTexture = convertToMTLTexture(sampleBuffer: photoSampleBuffer)
+                self.delegate?.videoCapture?(self, didCapturePhotoTexture: imageTexture)
+            }
+            
+            if self.delegate?.responds(to: #selector(VideoCaptureDelegate.videoCapture(_:didCapturePhoto:))) ?? false{
+                previewImage = convertToUIImage(sampleBuffer: previewPhotoSampleBuffer)
+                self.delegate?.videoCapture?(self, didCapturePhoto: previewImage)
+            }
         }
     }
-  }
 }
