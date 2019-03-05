@@ -17,47 +17,47 @@
 using namespace metal;
 
 struct TransposeParam {
-  int iC;
-  int oC;
-  int axis[4];
+    int iC;
+    int oC;
+    int axis[4];
 };
 
 kernel void transpose_copy_float(texture2d_array<float, access::read> inTexture [[texture(0)]],
-                           texture2d_array<float, access::write> outTexture [[texture(1)]],
-                           constant TransposeParam &pm [[buffer(0)]],
-                           uint3 gid [[thread_position_in_grid]]) {
-  outTexture.write(inTexture.read(gid.xy, gid.z), gid.xy, gid.z);
+                                 texture2d_array<float, access::write> outTexture [[texture(1)]],
+                                 constant TransposeParam &pm [[buffer(0)]],
+                                 uint3 gid [[thread_position_in_grid]]) {
+    outTexture.write(inTexture.read(gid.xy, gid.z), gid.xy, gid.z);
 }
 kernel void transpose_copy_half(texture2d_array<half, access::read> inTexture [[texture(0)]],
-                           texture2d_array<half, access::write> outTexture [[texture(1)]],
-                           constant TransposeParam &pm [[buffer(0)]],
-                           uint3 gid [[thread_position_in_grid]]) {
-  outTexture.write(inTexture.read(gid.xy, gid.z), gid.xy, gid.z);
+                                texture2d_array<half, access::write> outTexture [[texture(1)]],
+                                constant TransposeParam &pm [[buffer(0)]],
+                                uint3 gid [[thread_position_in_grid]]) {
+    outTexture.write(inTexture.read(gid.xy, gid.z), gid.xy, gid.z);
 }
 
 #define R 4
-  #define P float
-    #include "TransposeKernel.inc.metal"
-  #undef P
-  #define P half
-    #include "TransposeKernel.inc.metal"
-  #undef P
+#define P float
+#include "TransposeKernel.inc.metal"
+#undef P
+#define P half
+#include "TransposeKernel.inc.metal"
+#undef P
 #undef R
 
 #define R 3
-  #define P float
-    #include "TransposeKernel.inc.metal"
-  #undef P
-  #define P half
-    #include "TransposeKernel.inc.metal"
-  #undef P
+#define P float
+#include "TransposeKernel.inc.metal"
+#undef P
+#define P half
+#include "TransposeKernel.inc.metal"
+#undef P
 #undef R
 
 #define R 2
-  #define P float
-    #include "TransposeKernel.inc.metal"
-  #undef P
-  #define P half
-    #include "TransposeKernel.inc.metal"
-  #undef P
+#define P float
+#include "TransposeKernel.inc.metal"
+#undef P
+#define P half
+#include "TransposeKernel.inc.metal"
+#undef P
 #undef R

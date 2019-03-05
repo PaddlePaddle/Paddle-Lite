@@ -15,12 +15,12 @@
 import Foundation
 
 class PMOpDesc {
-  let inputs: [String : [String]]
-  var paraInputs: [String : [String]]
-  var outputs: [String : [String]]
-  let unusedOutputs: [String : [String]]
-  var attrs: [String : Attr] = [:]
-  var type: String
+    let inputs: [String : [String]]
+    var paraInputs: [String : [String]]
+    var outputs: [String : [String]]
+    let unusedOutputs: [String : [String]]
+    var attrs: [String : Attr] = [:]
+    var type: String
     init(protoOpDesc: OpDesc) {
         type = protoOpDesc.type
         let creator = { (vars: [OpDesc_Var], canAdd: (String) -> Bool) -> [String : [String]] in
@@ -58,24 +58,24 @@ class PMOpDesc {
 }
 
 extension PMOpDesc: CustomStringConvertible, CustomDebugStringConvertible {
-  var description: String {
-    var str = ""
-    str += "op type: \(type): \n"
-    str += "    op inputs: \n"
-    str += "        \(inputs) \n"
-    str += "    op para inputs: \n"
-    str += "        \(paraInputs) \n"
-    str += "    op para outputs: \n"
-    str += "        \(outputs) \n"
-    str += "    op attrs: \n"
-    str += "        \(attrs) \n"
+    var description: String {
+        var str = ""
+        str += "op type: \(type): \n"
+        str += "    op inputs: \n"
+        str += "        \(inputs) \n"
+        str += "    op para inputs: \n"
+        str += "        \(paraInputs) \n"
+        str += "    op para outputs: \n"
+        str += "        \(outputs) \n"
+        str += "    op attrs: \n"
+        str += "        \(attrs) \n"
+        
+        return str
+    }
     
-    return str
-  }
-  
-  var debugDescription: String {
-    return description
-  }
-  
-  
+    var debugDescription: String {
+        return description
+    }
+    
+    
 }

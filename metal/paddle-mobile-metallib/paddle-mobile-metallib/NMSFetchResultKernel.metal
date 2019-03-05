@@ -16,65 +16,65 @@
 using namespace metal;
 
 kernel void nms_fetch_result(texture2d_array<float, access::read> inTexture [[texture(0)]],
-    device float *output [[buffer(0)]],
-    uint3 gid [[thread_position_in_grid]]) {
-  
-  if (gid.x >= inTexture.get_width() ||
-      gid.y >= inTexture.get_height() ||
-      gid.z >= inTexture.get_array_size()) {
-    return;
-  }
-  
-  int input_width = inTexture.get_width();
-  const float4 input = inTexture.read(gid.xy, gid.z);
-  output[gid.y * input_width + gid.x] = input.x;
-  
+                             device float *output [[buffer(0)]],
+                             uint3 gid [[thread_position_in_grid]]) {
+    
+    if (gid.x >= inTexture.get_width() ||
+        gid.y >= inTexture.get_height() ||
+        gid.z >= inTexture.get_array_size()) {
+        return;
+    }
+    
+    int input_width = inTexture.get_width();
+    const float4 input = inTexture.read(gid.xy, gid.z);
+    output[gid.y * input_width + gid.x] = input.x;
+    
 }
 
 
 kernel void nms_fetch_result_half(texture2d_array<half, access::read> inTexture [[texture(0)]],
-                             device float *output [[buffer(0)]],
-                             uint3 gid [[thread_position_in_grid]]) {
-  
-  if (gid.x >= inTexture.get_width() ||
-      gid.y >= inTexture.get_height() ||
-      gid.z >= inTexture.get_array_size()) {
-    return;
-  }
-  
-  int input_width = inTexture.get_width();
-  const half4 input = inTexture.read(gid.xy, gid.z);
-  output[gid.y * input_width + gid.x] = input.x;
+                                  device float *output [[buffer(0)]],
+                                  uint3 gid [[thread_position_in_grid]]) {
+    
+    if (gid.x >= inTexture.get_width() ||
+        gid.y >= inTexture.get_height() ||
+        gid.z >= inTexture.get_array_size()) {
+        return;
+    }
+    
+    int input_width = inTexture.get_width();
+    const half4 input = inTexture.read(gid.xy, gid.z);
+    output[gid.y * input_width + gid.x] = input.x;
 }
 
 kernel void nms_fetch_bbox(texture2d_array<float, access::read> inTexture [[texture(0)]],
-    device float4 *output [[buffer(0)]],
-    uint3 gid [[thread_position_in_grid]]) {
-  
-  if (gid.x >= inTexture.get_width() ||
-      gid.y >= inTexture.get_height() ||
-      gid.z >= inTexture.get_array_size()) {
-    return;
-  }
-  
-  int input_width = inTexture.get_width();
-//  int input_height = inTexture.get_height();
-  const float4 input = inTexture.read(gid.xy, gid.z);
-  output[gid.y * input_width + gid.x] = input;
+                           device float4 *output [[buffer(0)]],
+                           uint3 gid [[thread_position_in_grid]]) {
+    
+    if (gid.x >= inTexture.get_width() ||
+        gid.y >= inTexture.get_height() ||
+        gid.z >= inTexture.get_array_size()) {
+        return;
+    }
+    
+    int input_width = inTexture.get_width();
+    //  int input_height = inTexture.get_height();
+    const float4 input = inTexture.read(gid.xy, gid.z);
+    output[gid.y * input_width + gid.x] = input;
 }
 
 kernel void nms_fetch_bbox_half(texture2d_array<half, access::read> inTexture [[texture(0)]],
-                           device float4 *output [[buffer(0)]],
-                           uint3 gid [[thread_position_in_grid]]) {
-  if (gid.x >= inTexture.get_width() ||
-      gid.y >= inTexture.get_height() ||
-      gid.z >= inTexture.get_array_size()) {
-    return;
-  }
-  
-  int input_width = inTexture.get_width();
-//  int input_height = inTexture.get_height();
-  const half4 input = inTexture.read(gid.xy, gid.z);
-  output[gid.y * input_width + gid.x] = float4(input);
+                                device float4 *output [[buffer(0)]],
+                                uint3 gid [[thread_position_in_grid]]) {
+    if (gid.x >= inTexture.get_width() ||
+        gid.y >= inTexture.get_height() ||
+        gid.z >= inTexture.get_array_size()) {
+        return;
+    }
+    
+    int input_width = inTexture.get_width();
+    //  int input_height = inTexture.get_height();
+    const half4 input = inTexture.read(gid.xy, gid.z);
+    output[gid.y * input_width + gid.x] = float4(input);
 }
 
