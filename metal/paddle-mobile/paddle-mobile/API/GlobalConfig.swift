@@ -36,5 +36,5 @@ import Foundation
     @objc public var computePrecision: ComputePrecision = .Float16
     
     /// 是否开启 log
-    @objc public var debug: Bool = true;
+    @objc public var debug: Bool = false
 }
