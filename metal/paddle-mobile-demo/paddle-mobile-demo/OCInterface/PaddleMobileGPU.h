@@ -16,8 +16,8 @@
 #import <Foundation/Foundation.h>
 
 typedef enum : NSUInteger {
-  SuperResolutionNetType,
-  MobileNetSSDType
+    SuperResolutionNetType,
+    MobileNetSSDType
 } NetType;
 
 @interface PaddleMobileGPUResult: NSObject

@@ -18,14 +18,14 @@ import Foundation
 import paddle_mobile
 
 @objc public class MetalHelper: NSObject {
-  @objc let device: MTLDevice
-  @objc let queue: MTLCommandQueue
-  @objc let textureLoader: MTKTextureLoader
-  @objc static let shared: MetalHelper = MetalHelper.init()
-  private override init(){
-    device = MTLCreateSystemDefaultDevice()!
-    queue = device.makeCommandQueue()!
-    textureLoader = MTKTextureLoader.init(device: device)
-    super.init()
-  }
+    @objc let device: MTLDevice
+    @objc let queue: MTLCommandQueue
+    @objc let textureLoader: MTKTextureLoader
+    @objc static let shared: MetalHelper = MetalHelper.init()
+    private override init(){
+        device = MTLCreateSystemDefaultDevice()!
+        queue = device.makeCommandQueue()!
+        textureLoader = MTKTextureLoader.init(device: device)
+        super.init()
+    }
 }

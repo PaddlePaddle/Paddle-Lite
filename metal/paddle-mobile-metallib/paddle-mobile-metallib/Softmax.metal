@@ -16,8 +16,8 @@
 using namespace metal;
 
 struct SoftmaxParam {
-  int N;
-  int K;
+    int N;
+    int K;
 };
 
 #define P float

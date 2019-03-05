@@ -18,11 +18,11 @@
 using namespace metal;
 
 struct SplitParam {
-  int32_t idim[4];
-  int32_t axis;
-  int32_t offset;
-  int32_t trans[4];
-  int32_t vdim[4];
+    int32_t idim[4];
+    int32_t axis;
+    int32_t offset;
+    int32_t trans[4];
+    int32_t vdim[4];
 };
 
 #define VNORMAL 1
@@ -36,29 +36,29 @@ struct SplitParam {
 
 //// ssd-ar: (R=3, N=2, V=y)
 #define V VY
-  #define R 3
-    #define N 2
-      #define P float
-        #include "Split.inc.metal"
-      #undef P
-      #define P half
-        #include "Split.inc.metal"
-      #undef P
-    #undef N
-  #undef R
+#define R 3
+#define N 2
+#define P float
+#include "Split.inc.metal"
+#undef P
+#define P half
+#include "Split.inc.metal"
+#undef P
+#undef N
+#undef R
 #undef V
 
 
 //// ssd-ar: (R=2, N=2, V=y)
 #define V VY
-  #define R 2
-    #define N 2
-      #define P float
-        #include "Split.inc.metal"
-      #undef P
-      #define P half
-        #include "Split.inc.metal"
-      #undef P
-    #undef N
-  #undef R
+#define R 2
+#define N 2
+#define P float
+#include "Split.inc.metal"
+#undef P
+#define P half
+#include "Split.inc.metal"
+#undef P
+#undef N
+#undef R
 #undef V
