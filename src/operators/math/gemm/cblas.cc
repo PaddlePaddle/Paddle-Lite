@@ -27,9 +27,9 @@ void cblas_sgemm(const bool transA, const bool transB, const int M, const int N,
                  const int K, const float alpha, const float *A, const int lda,
                  const float *B, const int ldb, const float beta, float *C,
                  const int ldc) {
-  if (N == 1) {
-    return cblas_sgemv(transA, M, K, alpha, A, lda, B, beta, C);
-  }
+  //  if (N == 1) {
+  //    return cblas_sgemv(transA, M, K, alpha, A, lda, B, beta, C);
+  //  }
 
   CPUInfo *info = CPUInfo::Info();
   GemmExecutor<SgemmStrategy> exec(info, transA, transB, M, N, K);
