@@ -46,24 +46,39 @@ bool FetchKernel<FPGA, float>::Init(FetchParam<FPGA> *param) {
 
   return true;
 }
-
+void dealign(float *src, float *dst, int input_c, int input_h, int input_w) {
+  int alignCW = paddle_mobile::fpga::align_to_x(input_c * input_w, 16);
+  int dealignCW = input_c * input_w;
+  for (int h = 0; h < input_h; ++h) {
+    auto input_offset = h * alignCW;
+    auto output_offset = h * dealignCW;
+    memcpy((dst + output_offset), (src + input_offset),
+           dealignCW * sizeof(float));
+  }
+}
 template <>
 void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
-  auto input = const_cast<Tensor *>(param.InputX());
+  auto input = param.InputX();
   if (input->type() == typeid(float)) {
     auto output = param.Out();
     output->ShareDataWith(*input);
     return;
   }
-  fpga::BypassArgs args = param.fpga_bypass_args;
-  auto input_address = (input->data<half>());
-  args.image.address = static_cast<void *>(input_address);
-
-  fpga::PerformBypass(args);
+  fpga::PerformBypass(param.fpga_bypass_args);
+  auto outC = param.Out()->dims()[1];
+  auto outH = param.Out()->dims()[2];
+  auto outW = param.Out()->dims()[3];
   fpga::fpga_invalidate(param.fpga_bypass_args.output.address,
-                        param.fpga_bypass_args.image.channels * sizeof(float));
+                        outH *
+                            (paddle_mobile::fpga::align_to_x(outC * outW, 16)) *
+                            sizeof(float));
 
-  // TODO(zhangyang): DEalign: get rid of extra 0
+  float *outdata_ptr =
+      reinterpret_cast<float *>(param.fpga_bypass_args.output.address);
+  float *data_tmp =
+      reinterpret_cast<float *>(malloc(outC * outH * outW * sizeof(float)));
+  dealign(outdata_ptr, data_tmp, outC, outH, outW);
+  memcpy(outdata_ptr, data_tmp, outC * outH * outW * sizeof(float));
 }
 
 template class FetchKernel<FPGA, float>;
