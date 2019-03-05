@@ -35,7 +35,7 @@ class FillConstantOp : public framework::OperatorBase<DeviceType> {
                  std::shared_ptr<framework::Scope> scope)
       : framework::OperatorBase<DeviceType>(type, inputs, outputs, attrs,
                                             scope),
-        param_(inputs, outputs, attrs, *scope) {}
+        param_(inputs, outputs, attrs, scope.get()) {}
   void RunImpl() {
     auto data_type =
         static_cast<_PaddleMobile__Framework__Proto__VarType__Type>(
