@@ -18,45 +18,45 @@ using namespace metal;
 
 #define P float
 
-  #define PRELU_CHANNEL prelu_channel
-  #define PRELU_TYPE prelu_channel
-    #include "ConvAddPrelu.inc.metal"
-  #undef  PRELU_TYPE
-  #undef  PRELU_CHANNEL
+#define PRELU_CHANNEL prelu_channel
+#define PRELU_TYPE prelu_channel
+#include "ConvAddPrelu.inc.metal"
+#undef  PRELU_TYPE
+#undef  PRELU_CHANNEL
 
-  #define PRELU_ELEMENT prelu_element
-  #define PRELU_TYPE prelu_element
-    #include "ConvAddPrelu.inc.metal"
-  #undef  PRELU_TYPE
-  #undef  PRELU_ELEMENT
+#define PRELU_ELEMENT prelu_element
+#define PRELU_TYPE prelu_element
+#include "ConvAddPrelu.inc.metal"
+#undef  PRELU_TYPE
+#undef  PRELU_ELEMENT
 
-  #define PRELU_OTHER   prelu_other
-  #define PRELU_TYPE prelu_other
-    #include "ConvAddPrelu.inc.metal"
-  #undef  PRELU_TYPE
-  #undef  PRELU_OTHER
+#define PRELU_OTHER   prelu_other
+#define PRELU_TYPE prelu_other
+#include "ConvAddPrelu.inc.metal"
+#undef  PRELU_TYPE
+#undef  PRELU_OTHER
 
 #undef P
 
 #define P half
 
-  #define PRELU_CHANNEL prelu_channel
-  #define PRELU_TYPE prelu_channel
-    #include "ConvAddPrelu.inc.metal"
-  #undef  PRELU_TYPE
-  #undef  PRELU_CHANNEL
+#define PRELU_CHANNEL prelu_channel
+#define PRELU_TYPE prelu_channel
+#include "ConvAddPrelu.inc.metal"
+#undef  PRELU_TYPE
+#undef  PRELU_CHANNEL
 
-  #define PRELU_ELEMENT prelu_element
-  #define PRELU_TYPE prelu_element
-    #include "ConvAddPrelu.inc.metal"
-  #undef  PRELU_TYPE
-  #undef  PRELU_ELEMENT
+#define PRELU_ELEMENT prelu_element
+#define PRELU_TYPE prelu_element
+#include "ConvAddPrelu.inc.metal"
+#undef  PRELU_TYPE
+#undef  PRELU_ELEMENT
 
-  #define PRELU_OTHER   prelu_other
-  #define PRELU_TYPE prelu_other
-    #include "ConvAddPrelu.inc.metal"
-  #undef  PRELU_TYPE
-  #undef  PRELU_OTHER
+#define PRELU_OTHER   prelu_other
+#define PRELU_TYPE prelu_other
+#include "ConvAddPrelu.inc.metal"
+#undef  PRELU_TYPE
+#undef  PRELU_OTHER
 
 #undef P
 

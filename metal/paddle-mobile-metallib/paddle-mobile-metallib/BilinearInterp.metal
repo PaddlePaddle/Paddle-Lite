@@ -16,8 +16,8 @@
 using namespace metal;
 
 struct bilinear_interp_param {
-  float ratio_h;
-  float ratio_w;
+    float ratio_h;
+    float ratio_w;
 };
 
 #define P float

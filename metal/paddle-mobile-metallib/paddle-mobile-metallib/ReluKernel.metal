@@ -17,25 +17,25 @@ using namespace metal;
 
 
 kernel void relu_half(texture2d_array<half, access::sample> inTexture [[texture(0)]],
-                 texture2d_array<half, access::write> outTexture [[texture(1)]],
-                 uint3 gid [[thread_position_in_grid]]) {
-  if (gid.x >= outTexture.get_width() ||
-      gid.y >= outTexture.get_height() ||
-      gid.z >= outTexture.get_array_size()) return;
-  constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
-  const half4 input = inTexture.read(gid.xy, gid.z);
-  const float4 relu = fmax((float4)input, 0.0);
-  outTexture.write(half4(relu), gid.xy, gid.z);
+                      texture2d_array<half, access::write> outTexture [[texture(1)]],
+                      uint3 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() ||
+        gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size()) return;
+    constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
+    const half4 input = inTexture.read(gid.xy, gid.z);
+    const float4 relu = fmax((float4)input, 0.0);
+    outTexture.write(half4(relu), gid.xy, gid.z);
 }
 
 kernel void relu(texture2d_array<float, access::sample> inTexture [[texture(0)]],
-                      texture2d_array<float, access::write> outTexture [[texture(1)]],
-                      uint3 gid [[thread_position_in_grid]]) {
-  if (gid.x >= outTexture.get_width() ||
-      gid.y >= outTexture.get_height() ||
-      gid.z >= outTexture.get_array_size()) return;
-  constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
-  const float4 input = inTexture.read(gid.xy, gid.z);
-  const float4 relu = fmax((float4)input, 0.0);
-  outTexture.write(float4(relu), gid.xy, gid.z);
+                 texture2d_array<float, access::write> outTexture [[texture(1)]],
+                 uint3 gid [[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() ||
+        gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size()) return;
+    constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
+    const float4 input = inTexture.read(gid.xy, gid.z);
+    const float4 relu = fmax((float4)input, 0.0);
+    outTexture.write(float4(relu), gid.xy, gid.z);
 }

@@ -16,18 +16,18 @@ import Foundation
 import paddle_mobile
 
 public class MobileNetCombined: Net {
-  @objc public override init(device: MTLDevice) {
-    super.init(device: device)
-    except = 0
-    modelPath = Bundle.main.path(forResource: "combined_mobilenet_model", ofType: nil) ?! "model null"
-    paramPath = Bundle.main.path(forResource: "combined_mobilenet_params", ofType: nil) ?! "para null"
-    inputDim = Dim.init(inDim: [1, 224, 224, 3])
-    metalLoadMode = .LoadMetalInCustomMetalLib
-    metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
-  }
-  
-  override  public func resultStr(res: [ResultHolder]) -> String {
-    return " \(res[0].result[0]) ... "
-  }
-  
+    @objc public override init(device: MTLDevice) {
+        super.init(device: device)
+        except = 0
+        modelPath = Bundle.main.path(forResource: "combined_mobilenet_model", ofType: nil) ?! "model null"
+        paramPath = Bundle.main.path(forResource: "combined_mobilenet_params", ofType: nil) ?! "para null"
+        inputDim = Dim.init(inDim: [1, 224, 224, 3])
+        metalLoadMode = .LoadMetalInCustomMetalLib
+        metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
+    }
+    
+    override  public func resultStr(res: [ResultHolder]) -> String {
+        return " \(res[0].result[0]) ... "
+    }
+    
 }
