@@ -17,9 +17,9 @@ using namespace metal;
 
 
 kernel void mobilenet_preprocess(
-                       texture2d<float, access::read> inTexture [[texture(0)]],
-                       texture2d<float, access::write> outTexture [[texture(1)]],
-                       uint2 gid [[thread_position_in_grid]])
+                                 texture2d<float, access::read> inTexture [[texture(0)]],
+                                 texture2d<float, access::write> outTexture [[texture(1)]],
+                                 uint2 gid [[thread_position_in_grid]])
 {
     if (gid.x >= outTexture.get_width() ||
         gid.y >= outTexture.get_height()) {
@@ -31,9 +31,9 @@ kernel void mobilenet_preprocess(
 }
 
 kernel void mobilenet_preprocess_half(
-                       texture2d<half, access::read> inTexture [[texture(0)]],
-                       texture2d<half, access::write> outTexture [[texture(1)]],
-                       uint2 gid [[thread_position_in_grid]])
+                                      texture2d<half, access::read> inTexture [[texture(0)]],
+                                      texture2d<half, access::write> outTexture [[texture(1)]],
+                                      uint2 gid [[thread_position_in_grid]])
 {
     if (gid.x >= outTexture.get_width() ||
         gid.y >= outTexture.get_height()) {
@@ -45,9 +45,9 @@ kernel void mobilenet_preprocess_half(
 }
 
 kernel void mobilenet_ssd_preprocess(
-                       texture2d<float, access::read> inTexture [[texture(0)]],
-                       texture2d<float, access::write> outTexture [[texture(1)]],
-                       uint2 gid [[thread_position_in_grid]])
+                                     texture2d<float, access::read> inTexture [[texture(0)]],
+                                     texture2d<float, access::write> outTexture [[texture(1)]],
+                                     uint2 gid [[thread_position_in_grid]])
 {
     if (gid.x >= outTexture.get_width() ||
         gid.y >= outTexture.get_height()) {
@@ -59,9 +59,9 @@ kernel void mobilenet_ssd_preprocess(
 }
 
 kernel void mobilenet_ssd_preprocess_half(
-                            texture2d<half, access::read> inTexture [[texture(0)]],
-                            texture2d<half, access::write> outTexture [[texture(1)]],
-                            uint2 gid [[thread_position_in_grid]])
+                                          texture2d<half, access::read> inTexture [[texture(0)]],
+                                          texture2d<half, access::write> outTexture [[texture(1)]],
+                                          uint2 gid [[thread_position_in_grid]])
 {
     if (gid.x >= outTexture.get_width() ||
         gid.y >= outTexture.get_height()) {
@@ -74,44 +74,44 @@ kernel void mobilenet_ssd_preprocess_half(
 
 kernel void genet_preprocess(texture2d<float, access::read> inTexture [[texture(0)]], texture2d<float, access::write> outTexture [[texture(1)]], uint2 gid [[thread_position_in_grid]])
 {
-  if (gid.x >= outTexture.get_width() ||
-      gid.y >= outTexture.get_height()) {
-    return;
-  }
-  const auto means = float4(128.0f, 128.0f, 128.0f, 0.0f);
-  const float4 inColor = (inTexture.read(gid) * 255.0 - means) * 0.017;
-  outTexture.write(float4(inColor.z, inColor.y, inColor.x, 0.0f), gid);
+    if (gid.x >= outTexture.get_width() ||
+        gid.y >= outTexture.get_height()) {
+        return;
+    }
+    const auto means = float4(128.0f, 128.0f, 128.0f, 0.0f);
+    const float4 inColor = (inTexture.read(gid) * 255.0 - means) * 0.017;
+    outTexture.write(float4(inColor.z, inColor.y, inColor.x, 0.0f), gid);
 }
 
 kernel void genet_preprocess_half(texture2d<half, access::read> inTexture [[texture(0)]], texture2d<half, access::write> outTexture [[texture(1)]], uint2 gid [[thread_position_in_grid]])
 {
-  if (gid.x >= outTexture.get_width() ||
-      gid.y >= outTexture.get_height()) {
-    return;
-  }
-  const auto means = half4(128.0f, 128.0f, 128.0f, 0.0f);
-  const half4 inColor = (inTexture.read(gid) * 255.0 - means) * 0.017;
-  outTexture.write(half4(inColor.z, inColor.y, inColor.x, 0.0f), gid);
+    if (gid.x >= outTexture.get_width() ||
+        gid.y >= outTexture.get_height()) {
+        return;
+    }
+    const auto means = half4(128.0f, 128.0f, 128.0f, 0.0f);
+    const half4 inColor = (inTexture.read(gid) * 255.0 - means) * 0.017;
+    outTexture.write(half4(inColor.z, inColor.y, inColor.x, 0.0f), gid);
 }
 
 kernel void mobilent_ar_preprocess(texture2d<float, access::read> inTexture [[texture(0)]], texture2d<float, access::write> outTexture [[texture(1)]], uint2 gid [[thread_position_in_grid]])
 {
-  if (gid.x >= outTexture.get_width() ||
-      gid.y >= outTexture.get_height()) {
-    return;
-  }
-  const auto means = float4(128.0f, 128.0f, 128.0f, 0.0f);
-  const float4 inColor = (inTexture.read(gid) * 255.0 - means) * 0.017;
-  outTexture.write(float4(inColor.z, inColor.y, inColor.x, 0.0f), gid);
+    if (gid.x >= outTexture.get_width() ||
+        gid.y >= outTexture.get_height()) {
+        return;
+    }
+    const auto means = float4(128.0f, 128.0f, 128.0f, 0.0f);
+    const float4 inColor = (inTexture.read(gid) * 255.0 - means) * 0.017;
+    outTexture.write(float4(inColor.z, inColor.y, inColor.x, 0.0f), gid);
 }
 
 kernel void mobilent_ar_preprocess_half(texture2d<half, access::read> inTexture [[texture(0)]], texture2d<half, access::write> outTexture [[texture(1)]], uint2 gid [[thread_position_in_grid]])
 {
-  if (gid.x >= outTexture.get_width() ||
-      gid.y >= outTexture.get_height()) {
-    return;
-  }
-  const auto means = half4(128.0f, 128.0f, 128.0f, 0.0f);
-  const half4 inColor = (inTexture.read(gid) * 255.0 - means) * 0.017;
-  outTexture.write(half4(inColor.z, inColor.y, inColor.x, 0.0f), gid);
+    if (gid.x >= outTexture.get_width() ||
+        gid.y >= outTexture.get_height()) {
+        return;
+    }
+    const auto means = half4(128.0f, 128.0f, 128.0f, 0.0f);
+    const half4 inColor = (inTexture.read(gid) * 255.0 - means) * 0.017;
+    outTexture.write(half4(inColor.z, inColor.y, inColor.x, 0.0f), gid);
 }

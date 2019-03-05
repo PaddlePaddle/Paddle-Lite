@@ -18,13 +18,13 @@
 using namespace metal;
 
 struct PoolParam {
-  int ksizeX;
-  int ksizeY;
-  int strideX;
-  int strideY;
-  int paddingX;
-  int paddingY;
-  int poolType;
+    int ksizeX;
+    int ksizeY;
+    int strideX;
+    int strideY;
+    int paddingX;
+    int paddingY;
+    int poolType;
 };
 
 #define P half
