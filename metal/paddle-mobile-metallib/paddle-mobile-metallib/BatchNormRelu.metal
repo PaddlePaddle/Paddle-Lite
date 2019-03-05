@@ -15,10 +15,10 @@ struct MetalConvParam {
 };
 
 kernel void batch_norm_relu_3x3(texture2d_array<float, access::sample> inTexture [[texture(0)]],
-                                         texture2d_array<float, access::write> outTexture [[texture(1)]],
-                                         const device float4 *new_scale [[buffer(0)]],
-                                         const device float4 *new_biase [[buffer(1)]],
-                                         uint3 gid [[thread_position_in_grid]]) {
+                                texture2d_array<float, access::write> outTexture [[texture(1)]],
+                                const device float4 *new_scale [[buffer(0)]],
+                                const device float4 *new_biase [[buffer(1)]],
+                                uint3 gid [[thread_position_in_grid]]) {
     
     if (gid.x >= outTexture.get_width() ||
         gid.y >= outTexture.get_height() ||
@@ -32,5 +32,5 @@ kernel void batch_norm_relu_3x3(texture2d_array<float, access::sample> inTexture
     input = inTexture.sample(sample, gid.x, gid.y, gid.z);
     output = fmax(input * new_scale[gid.z] + new_biase[gid.z], 0.0);
     outTexture.write(output, gid.xy, gid.z);
-
+    
 }
