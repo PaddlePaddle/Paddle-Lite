@@ -2473,6 +2473,62 @@ class FusionDeconvAddBNParam : public ConvTransposeParam<Dtype> {
   RType *new_scale_;
 };
 #endif
+#ifdef FUSION_DECONVBNRELU_OP
+template <typename Dtype>
+class FusionDeconvBNReluParam : public ConvTransposeParam<Dtype> {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
+ public:
+  FusionDeconvBNReluParam(const VariableNameMap &inputs,
+                          const VariableNameMap &outputs,
+                          const AttributeMap &attrs, const Scope &scope)
+      : ConvTransposeParam<Dtype>(inputs, outputs, attrs, scope) {
+    output_ = OpParam::OutFrom<GType>(outputs, scope);
+    input_bias_ = OpParam::InputBiasFrom<GType>(inputs, scope);
+    input_mean_ = OpParam::InputMeanFrom<GType>(inputs, scope);
+    input_scale_ = OpParam::InputScaleFrom<GType>(inputs, scope);
+    input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, scope);
+    epsilon_ = OpParam::GetAttr<float>("epsilon", attrs);
+    momentum_ = OpParam::GetAttr<float>("momentum", attrs);
+  }
+  RType *Output() const { return output_; }
+
+  const RType *InputBias() const { return input_bias_; }
+
+  const RType *InputMean() const { return input_mean_; }
+
+  const RType *InputScale() const { return input_scale_; }
+
+  const RType *InputVariance() const { return input_variance_; }
+
+  const float &Epsilon() const { return epsilon_; }
+
+  const float &Momentum() const { return momentum_; }
+
+  const bool &IsTest() const { return is_test_; }
+
+  void SetNewScale(RType *new_scale) { new_scale_ = new_scale; }
+
+  void SetNewBias(RType *new_bias) { new_bias_ = new_bias; }
+
+  const RType *NewScale() const { return new_scale_; }
+
+  const RType *NewBias() const { return new_bias_; }
+
+ protected:
+  RType *output_;
+  RType *input_bias_;
+  RType *input_mean_;
+  RType *input_scale_;
+  RType *input_variance_;
+  float epsilon_;
+  float momentum_;
+  bool is_test_;
+  RType *new_bias_;
+  RType *new_scale_;
+};
+#endif
 #ifdef FUSION_DECONVADDBNRELU_OP
 template <typename Dtype>
 class FusionDeconvAddBNReluParam : public ConvTransposeParam<Dtype> {
