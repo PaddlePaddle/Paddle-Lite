@@ -103,7 +103,7 @@ class OperatorWithKernel : public OperatorBase<Dtype> {
                      const VariableNameMap &outputs, const AttributeMap &attrs,
                      std::shared_ptr<Scope> scope)
       : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope),
-        param_(inputs, outputs, attrs, *scope) {
+        param_(inputs, outputs, attrs, scope.get()) {
 #ifdef PADDLE_MOBILE_CL
     kernel_.InitCLHelper(scope->GetCLScpoe());
 #endif
