@@ -50,6 +50,7 @@
 		FCEBEC2C20E1391F00C0B14D /* paddle_mobile.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */; };
 		FCEBEC2D20E1391F00C0B14D /* paddle_mobile.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		FCF437E8214B6DDB00943429 /* MultiPredictViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF437E7214B6DDB00943429 /* MultiPredictViewController.swift */; };
+		FCFADE34222F63CC0037DCE8 /* test_big.JPG in Resources */ = {isa = PBXBuildFile; fileRef = FCFADE33222F63CB0037DCE8 /* test_big.JPG */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -118,6 +119,7 @@
 		FCCED60421D7646E00BE8D5F /* test_image_super */ = {isa = PBXFileReference; lastKnownFileType = file; path = test_image_super; sourceTree = "<group>"; };
 		FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = paddle_mobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		FCF437E7214B6DDB00943429 /* MultiPredictViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiPredictViewController.swift; sourceTree = "<group>"; };
+		FCFADE33222F63CB0037DCE8 /* test_big.JPG */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = test_big.JPG; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -196,6 +198,7 @@
 		FC203FA821CBFDBA00B37166 /* images */ = {
 			isa = PBXGroup;
 			children = (
+				FCFADE33222F63CB0037DCE8 /* test_big.JPG */,
 				FC2BFCBF21DF279900C262B2 /* classify-img-output.png */,
 				FC2BFCBD21DF15D900C262B2 /* 123.jpg */,
 				FC2BFCBB21DF0A8600C262B2 /* 00001.jpg */,
@@ -389,6 +392,7 @@
 				FC2BFCBE21DF15D900C262B2 /* 123.jpg in Resources */,
 				FC039B8920E11C560081E9F8 /* Assets.xcassets in Resources */,
 				FC9797C721D609FB00F2FD90 /* synset.txt in Resources */,
+				FCFADE34222F63CC0037DCE8 /* test_big.JPG in Resources */,
 				FC5E03B221DCE8D90016C137 /* mingren_input_data in Resources */,
 				FC704C1A21D2375300F98BAB /* super_model in Resources */,
 				FC039B8720E11C550081E9F8 /* Main.storyboard in Resources */,

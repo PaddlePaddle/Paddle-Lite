@@ -120,8 +120,6 @@ public class Executor<P: PrecisionType> {
              return
              */
             
-            
-            
             //输出 op 计算结果
             if GlobalConfig.shared.debug {
                 for i in 0..<SSelf.ops.count {
