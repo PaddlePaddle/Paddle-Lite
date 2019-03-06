@@ -11,9 +11,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-
 #include "operators/kernel/fetch_kernel.h"
-
 namespace paddle_mobile {
 namespace operators {
 
@@ -35,7 +33,7 @@ bool FetchKernel<FPGA, float>::Init(FetchParam<FPGA> *param) {
   args.input_layout_type = fpga::LAYOUT_CHW;
   args.output_layout_type = fpga::LAYOUT_HWC;
   args.image.address = input->data<half>();
-  args.image.channels = (uint32_t)product(input->dims());
+  args.image.channels = (uint32_t)(input->fpga_data_num);
   args.image.height = 1;
   args.image.width = 1;
   args.image.pad_height = 0;
@@ -68,13 +66,10 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
   auto outC = param.Out()->dims()[1];
   auto outH = param.Out()->dims()[2];
   auto outW = param.Out()->dims()[3];
-  fpga::fpga_invalidate(param.fpga_bypass_args.output.address,
-                        outH *
-                            (paddle_mobile::fpga::align_to_x(outC * outW, 16)) *
-                            sizeof(float));
-
   float *outdata_ptr =
       reinterpret_cast<float *>(param.fpga_bypass_args.output.address);
+  fpga::fpga_invalidate(param.fpga_bypass_args.output.address,
+                        param.Out()->fpga_data_num * sizeof(float));
   float *data_tmp =
       reinterpret_cast<float *>(malloc(outC * outH * outW * sizeof(float)));
   dealign(outdata_ptr, data_tmp, outC, outH, outW);
