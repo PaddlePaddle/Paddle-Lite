@@ -105,7 +105,10 @@ class ViewController: UIViewController {
                 //          self?.toPredictTexture = texture
                 //        }
                 
+                let beforeDate = Date.init()
                 runner.getTexture(image: selectImage!.cgImage!) { [weak self] (texture) in
+                    let timeUse = Date.init().timeIntervalSince(beforeDate)
+                    print("get texture time use: \(timeUse)")
                     self?.toPredictTexture = texture
                 }
             }
@@ -178,7 +181,7 @@ class ViewController: UIViewController {
         modelPickerView.dataSource = self
         threadPickerView.delegate = self
         threadPickerView.dataSource = self
-        if let image = UIImage.init(named: "00001.jpg") {
+        if let image = UIImage.init(named: "test.jpg") {
             selectImage = image
             selectImageView.image = image
         } else {
@@ -249,7 +252,6 @@ extension ViewController: VideoCaptureDelegate{
     func predictTexture(texture: MTLTexture){
         runner.scaleTexture(input: texture) { (scaledTexture) in
             self.runner.predict(texture: scaledTexture, completion: { (success, resultHolder) in
-                //        print(resultHolder!.result![0])
                 resultHolder?.first?.releasePointer()
             })
         }
