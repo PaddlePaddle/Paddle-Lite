@@ -155,7 +155,7 @@
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="paddle-mobile.png" translatesAutoresizingMaskIntoConstraints="NO" id="4ey-Xr-U4e">
+                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="paddle-mobile" translatesAutoresizingMaskIntoConstraints="NO" id="4ey-Xr-U4e">
                                 <rect key="frame" x="90" y="637" width="195" height="30"/>
                                 <constraints>
                                     <constraint firstAttribute="width" secondItem="4ey-Xr-U4e" secondAttribute="height" multiplier="6.5:1" id="8c5-FF-lB9"/>
@@ -320,6 +320,6 @@
         </scene>
     </scenes>
     <resources>
-        <image name="paddle-mobile.png" width="402" height="62"/>
+        <image name="paddle-mobile" width="402" height="62"/>
     </resources>
 </document>
