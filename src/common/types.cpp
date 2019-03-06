@@ -109,6 +109,7 @@ const char *G_OP_TYPE_SLICE = "slice";
 const char *G_OP_TYPE_ANCHOR_GENERATOR = "anchor_generator";
 const char *G_OP_TYPE_GENERATE_PROPOSALS = "generate_proposals";
 const char *G_OP_TYPE_PSROI_POOL = "psroi_pool";
+const char *G_OP_TYPE_ROIALIGN_POOL = "roialign_pool";
 const char *G_OP_TYPE_ROI_PERSPECTIVE = "roi_perspective_transform";
 const char *G_OP_TYPE_PAD2D = "pad2d";
 const char *G_OP_TYPE_FUSION_DECONV_ADD_BN_RELU = "fusion_deconv_add_bn_relu";
@@ -213,6 +214,7 @@ std::unordered_map<
          {{"Scores", "BboxDeltas", "ImInfo", "Anchors", "Variances"},
           {"RpnRois", "RpnRoiProbs"}}},
         {G_OP_TYPE_PSROI_POOL, {{"X", "ROIs"}, {"Out"}}},
+        {G_OP_TYPE_ROIALIGN_POOL, {{"X", "ROIs"}, {"Out"}}},
         {G_OP_TYPE_ROI_PERSPECTIVE, {{"X", "ROIs"}, {"Out"}}},
         {G_OP_TYPE_FUSION_DECONV_ADD_BN_RELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_FUSION_DECONV_ADD_BN, {{"Input"}, {"Out"}}},

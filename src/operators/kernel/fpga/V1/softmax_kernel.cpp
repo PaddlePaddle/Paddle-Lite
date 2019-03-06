@@ -105,6 +105,7 @@ void SoftmaxKernel<FPGA, float>::Compute(const SoftmaxParam<FPGA> &param) {
   } else {
     if (param.FpgaArgs().output.activation.activation_type != fpga::SOFTMAX) {
       Tensor *out = param.Out();
+	  out->Resize({in_x->dims()[0], out->dims()[1], out->dims()[2], out->dims()[3]});
       math::SoftmaxFuntor<CPU, float>()(in_x, out);
     }
   }

@@ -62,7 +62,10 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
     output->ShareDataWith(*input);
     return;
   }
-  fpga::PerformBypass(param.fpga_bypass_args);
+  fpga::BypassArgs args = param.fpga_bypass_args;
+  auto input_address = (input->data<half>());
+  args.image.address = static_cast<void *>(input_address);
+  fpga::PerformBypass(args);
   auto outC = param.Out()->dims()[1];
   auto outH = param.Out()->dims()[2];
   auto outW = param.Out()->dims()[3];
@@ -70,10 +73,15 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
       reinterpret_cast<float *>(param.fpga_bypass_args.output.address);
   fpga::fpga_invalidate(param.fpga_bypass_args.output.address,
                         param.Out()->fpga_data_num * sizeof(float));
-  float *data_tmp =
-      reinterpret_cast<float *>(malloc(outC * outH * outW * sizeof(float)));
-  dealign(outdata_ptr, data_tmp, outC, outH, outW);
-  memcpy(outdata_ptr, data_tmp, outC * outH * outW * sizeof(float));
+						
+  if(param.Out()->fpga_data_num != product(input->dims())){
+	  float *data_tmp =
+		  reinterpret_cast<float *>(malloc(outC * outH * outW * sizeof(float)));
+	  dealign(outdata_ptr, data_tmp, outC, outH, outW);
+	  memcpy(outdata_ptr, data_tmp, outC * outH * outW * sizeof(float));
+	  free(data_tmp);
+  }
+  
 }
 
 template class FetchKernel<FPGA, float>;
