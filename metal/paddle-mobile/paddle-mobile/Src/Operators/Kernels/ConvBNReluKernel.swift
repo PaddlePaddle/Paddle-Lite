@@ -37,7 +37,7 @@ struct ConvBNReluTestParam: TestParam {
     }
 }
 
-class ConvBNReluKernel<P: PrecisionType>: Kernel, Computable, Testable {
+class ConvBNReluKernel<P: PrecisionProtocol>: Kernel, Computable, Testable {
     required init(device: MTLDevice, testParam: ConvBNReluTestParam, initContext: InitContext) {
         if testParam.filterSize.width == 1 && testParam.filterSize.height == 1 {
             super.init(device: device, inFunctionName: "conv_batch_norm_relu_1x1", initContext: initContext)

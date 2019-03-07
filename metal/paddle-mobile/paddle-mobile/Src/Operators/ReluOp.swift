@@ -15,7 +15,7 @@
 
 import Foundation
 
-class ReluParam<P: PrecisionType>: OpParam {
+class ReluParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         do {
@@ -29,7 +29,7 @@ class ReluParam<P: PrecisionType>: OpParam {
     var output: Texture
 }
 
-class ReluOp<P: PrecisionType>: Operator<ReluKernel<P>, ReluParam<P>>, Runable, Creator, InferShaperable{
+class ReluOp<P: PrecisionProtocol>: Operator<ReluKernel<P>, ReluParam<P>>, Runable, Creator, InferShaperable{
     
     typealias OpType = ReluOp<P>
     

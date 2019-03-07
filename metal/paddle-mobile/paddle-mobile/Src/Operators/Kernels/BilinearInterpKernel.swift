@@ -19,7 +19,7 @@ struct BilinearInterpMetalParam {
     var ratio_w: Float32
 }
 
-class BilinearInterpKernel<P: PrecisionType>: Kernel, Computable{
+class BilinearInterpKernel<P: PrecisionProtocol>: Kernel, Computable{
     func compute(commandBuffer: MTLCommandBuffer, param: BilinearInterpParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
             throw PaddleMobileError.predictError(message: " encode is nil")

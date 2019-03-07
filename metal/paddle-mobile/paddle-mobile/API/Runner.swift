@@ -34,7 +34,7 @@ import Foundation
 
 @objc public class Runner: NSObject {
     var program: Program?
-    var executor: Executor<Float32>?
+    var executor: Executorable?
     var queue: MTLCommandQueue?
     var textureLoader: MTKTextureLoader?
     public let net: Net
@@ -68,7 +68,14 @@ import Foundation
             print(" paddle mobile gpu load error, need MTLCommandQueue")
             return false
         }
-        let loader = Loader<Float32>.init()
+        var loader: Loaderable
+        switch net.paramPrecision {
+        case .Float16:
+            loader = Loader<Float16>.init()
+        case .Float32:
+            loader = Loader<Float32>.init()
+        }
+        
         do {
             
             if let inParamPointer = net.paramPointer, let inModelPointer = net.modelPointer {
@@ -89,7 +96,13 @@ import Foundation
             initContext.metalLibPath = net.metalLibPath
             initContext.useMPS = net.useMPS
 
-            executor = try Executor<Float32>.init(inDevice: inDevice, inQueue: inQueue, inProgram: program!, initContext: initContext)
+            switch net.paramPrecision {
+            case .Float16:
+                executor = try Executor<Float16>.init(inDevice: inDevice, inQueue: inQueue, inProgram: program!, initContext: initContext)
+            case .Float32:
+                executor = try Executor<Float32>.init(inDevice: inDevice, inQueue: inQueue, inProgram: program!, initContext: initContext)
+            }
+            
             net.updateProgram(program: program!)
         } catch let error {
             print(error)
@@ -105,6 +118,7 @@ import Foundation
     ///   - completion: 结果回调， 当 success 为 true 时 result 不为 nil
     @objc public func predict(texture: MTLTexture, completion: @escaping ( _ success: Bool, _ result: [ResultHolder]?) -> Void) {
         do {
+            
             try self.executor?.predict(input: texture, dim: self.net.inputDim, completionHandle: { [weak self] (res) in
                 guard let SSelf = self else {
                     fatalError( " self nil " )
