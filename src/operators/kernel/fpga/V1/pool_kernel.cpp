@@ -73,9 +73,12 @@ void PoolKernel<FPGA, float>::Compute(const PoolParam<FPGA> &param) {
   if (input->type() == typeid(float)) {
     auto *output = param.Output();
     auto in = input->data<float>();
+    auto N = input->dims()[0];
+    output->Resize(
+        {N, output->dims()[1], output->dims()[2], output->dims()[3]});
     auto len = output->numel();
     auto out = output->mutable_data<float>();
-    int N = input->dims()[0], C = input->dims()[1], H = input->dims()[2],
+    int C = input->dims()[1], H = input->dims()[2],  // N = input->dims()[0],
         W = input->dims()[3];
     int HW = H * W, CHW = C * H * W, WC = W * C;
 
