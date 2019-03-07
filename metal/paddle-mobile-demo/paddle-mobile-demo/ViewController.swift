@@ -181,7 +181,7 @@ class ViewController: UIViewController {
         modelPickerView.dataSource = self
         threadPickerView.delegate = self
         threadPickerView.dataSource = self
-        if let image = UIImage.init(named: "test.jpg") {
+        if let image = UIImage.init(named: "00001.jpg") {
             selectImage = image
             selectImageView.image = image
         } else {
