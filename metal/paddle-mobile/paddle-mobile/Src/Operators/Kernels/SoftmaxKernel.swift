@@ -19,7 +19,7 @@ struct SoftmaxMetalParam {
     let K: Int32
 }
 
-class SoftmaxKernel<P: PrecisionType>: Kernel, Computable{
+class SoftmaxKernel<P: PrecisionProtocol>: Kernel, Computable{
     
     var metalParam: SoftmaxMetalParam
     required init(device: MTLDevice, param: SoftmaxParam<P>, initContext: InitContext) {

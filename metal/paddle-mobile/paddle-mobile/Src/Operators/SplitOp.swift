@@ -14,7 +14,7 @@
 
 import Foundation
 
-class SplitParam<P: PrecisionType>: OpParam {
+class SplitParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         do {
@@ -47,7 +47,7 @@ class SplitParam<P: PrecisionType>: OpParam {
     var sections: [Int32] = []
 }
 
-class SplitOp<P: PrecisionType>: Operator<SplitKernel<P>, SplitParam<P>>, Runable, Creator, InferShaperable{
+class SplitOp<P: PrecisionProtocol>: Operator<SplitKernel<P>, SplitParam<P>>, Runable, Creator, InferShaperable{
     
     typealias OpType = SplitOp<P>
     

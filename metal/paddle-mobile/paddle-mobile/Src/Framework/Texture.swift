@@ -96,7 +96,7 @@ public class Texture: Tensorial {
         return metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
     }
     
-    public func initTexture(device: MTLDevice, inTranspose: [Int] = [0, 1, 2, 3], computePrecision: ComputePrecision = .Float16) {
+    public func initTexture(device: MTLDevice, inTranspose: [Int] = [0, 1, 2, 3], computePrecision: Precision = .Float16) {
         transpose = inTranspose
         for i in 0..<(4 - tensorDim.cout()) {
             if i != inTranspose[i] {
@@ -196,7 +196,7 @@ extension Texture {
     public var debugDescription: String{
         var str = ""
         str += "Dim: \(dim) \n value:[ "
-        str += "\(metalTexture)"
+        str += "\(metalTexture.description)"
         str += " ]"
         return str
     }

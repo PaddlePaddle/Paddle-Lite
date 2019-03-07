@@ -14,7 +14,7 @@
 
 import Foundation
 
-class ConvParam<P: PrecisionType>: OpParam {
+class ConvParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         do {
@@ -40,7 +40,7 @@ class ConvParam<P: PrecisionType>: OpParam {
     let groups: Int
 }
 
-class ConvOp<P: PrecisionType>: Operator<ConvKernel<P>, ConvParam<P>>, Runable, Creator, InferShaperable {
+class ConvOp<P: PrecisionProtocol>: Operator<ConvKernel<P>, ConvParam<P>>, Runable, Creator, InferShaperable {
     typealias OpType = ConvOp<P>
     
     func inferShape() {

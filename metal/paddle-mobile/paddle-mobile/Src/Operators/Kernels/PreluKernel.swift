@@ -14,7 +14,7 @@
 
 import Foundation
 
-class PreluKernel<P: PrecisionType>: Kernel, Computable{
+class PreluKernel<P: PrecisionProtocol>: Kernel, Computable{
     required init(device: MTLDevice, param: PreluParam<P>, initContext: InitContext) {
         param.alpha.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
         param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)

@@ -15,7 +15,7 @@
 import Foundation
 import Metal
 
-class ElementwiseAddPreluParam<P: PrecisionType>: OpParam {
+class ElementwiseAddPreluParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         do {
@@ -65,7 +65,7 @@ class ElementwiseAddPreluParam<P: PrecisionType>: OpParam {
     var axis: Int
 }
 
-class ElementwiseAddPreluOp<P: PrecisionType>: Operator<ElementwiseAddPreluKernel<P>, ElementwiseAddPreluParam<P>>, Runable, Creator, InferShaperable, Fusion{
+class ElementwiseAddPreluOp<P: PrecisionProtocol>: Operator<ElementwiseAddPreluKernel<P>, ElementwiseAddPreluParam<P>>, Runable, Creator, InferShaperable, Fusion{
     static func fusionNode() -> Node {
         let beginNode = Node.init(inType: gElementwiseAddType)
         _ = beginNode

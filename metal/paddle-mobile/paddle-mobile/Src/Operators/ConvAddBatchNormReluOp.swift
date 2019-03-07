@@ -15,7 +15,7 @@
 import Foundation
 
 
-class ConvAddBatchNormReluParam<P: PrecisionType>: OpParam {
+class ConvAddBatchNormReluParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         do {
@@ -59,7 +59,7 @@ class ConvAddBatchNormReluParam<P: PrecisionType>: OpParam {
     let groups: Int
 }
 
-class ConvAddBatchNormReluOp<P: PrecisionType>: Operator<ConvAddBatchNormReluKernel<P>, ConvAddBatchNormReluParam<P>>, Runable, Creator, InferShaperable, Fusion{
+class ConvAddBatchNormReluOp<P: PrecisionProtocol>: Operator<ConvAddBatchNormReluKernel<P>, ConvAddBatchNormReluParam<P>>, Runable, Creator, InferShaperable, Fusion{
     
     typealias OpType = ConvAddBatchNormReluOp<P>
     

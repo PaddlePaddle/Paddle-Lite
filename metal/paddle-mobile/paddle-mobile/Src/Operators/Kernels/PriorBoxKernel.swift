@@ -29,7 +29,7 @@ struct PriorBoxMetalParam {
     let maxSizeSize: uint
 }
 
-class PriorBoxKernel<P: PrecisionType>: Kernel, Computable{
+class PriorBoxKernel<P: PrecisionProtocol>: Kernel, Computable{
     var metalParam: PriorBoxMetalParam!
     
     required init(device: MTLDevice, param: PriorBoxParam<P>, initContext: InitContext) {
