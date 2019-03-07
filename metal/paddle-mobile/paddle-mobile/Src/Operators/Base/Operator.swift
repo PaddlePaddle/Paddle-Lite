@@ -60,10 +60,16 @@ extension Runable where Self: OperatorProtocol{
 }
 
 public class InitContext {
+    
     /// metal 代码加载方式
     var metalLoadMode: MetalLoadMode = .LoadMetalInDefaultLib
+    
     /// 当 metalLoadMode 为 LoadMetalInCustomMetalLib 时， metal library 路径不能为空
     var metalLibPath: String? = nil
+    
+    /// 是否使用 MetalPerformanceShaders 进行运算
+    var useMPS: Bool = false
+    
     init() {
         metalLoadMode = .LoadMetalInDefaultLib
         metalLibPath = nil
