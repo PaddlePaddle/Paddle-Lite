@@ -181,7 +181,7 @@ extension Node: Equatable {
     
 }
 
-class ProgramOptimize<P: PrecisionType> {
+class ProgramOptimize<P: PrecisionProtocol> {
     // register fusion
     let fusionOps: [Fusion.Type] = [ConvAddBatchNormReluOp<P>.self,
                                     //                                  ConvAddAddPreluOp<P>.self,

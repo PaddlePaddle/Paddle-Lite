@@ -31,7 +31,7 @@ struct ConcatMetalParam {
     var vdim: (Int32, Int32, Int32, Int32, Int32, Int32) = (0, 0, 0, 0, 0, 0)
 }
 
-class ConcatKernel<P: PrecisionType>: Kernel, Computable{
+class ConcatKernel<P: PrecisionProtocol>: Kernel, Computable{
     var v = "normal"
     var pm = ConcatMetalParam.init()
     func compute(commandBuffer: MTLCommandBuffer, param: ConcatParam<P>) throws {

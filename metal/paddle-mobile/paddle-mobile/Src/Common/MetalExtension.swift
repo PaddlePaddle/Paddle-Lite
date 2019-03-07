@@ -254,7 +254,7 @@ extension MTLDevice {
         return tensor
     }
     
-    func tensor2texture<P>(value: [P], dim: [Int], transpose: [Int] = [0, 1, 2, 3], inComputePrecision: ComputePrecision = .Float32) -> MTLTexture {
+    func tensor2texture<P>(value: [P], dim: [Int], transpose: [Int] = [0, 1, 2, 3], inComputePrecision: Precision = .Float32) -> MTLTexture {
         if value.count > 0 {
             assert(value.count == dim.reduce(1) { $0 * $1 })
         }

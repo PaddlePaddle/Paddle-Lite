@@ -15,7 +15,7 @@
 import Foundation
 import Metal
 
-class ReshapeParam<P: PrecisionType>: OpParam {
+class ReshapeParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         do {
@@ -53,7 +53,7 @@ class ReshapeParam<P: PrecisionType>: OpParam {
     var output: Texture
 }
 
-class ReshapeOp<P: PrecisionType>: Operator<ReshapeKernel<P>, ReshapeParam<P>>, Runable, Creator, InferShaperable{
+class ReshapeOp<P: PrecisionProtocol>: Operator<ReshapeKernel<P>, ReshapeParam<P>>, Runable, Creator, InferShaperable{
     
     typealias OpType = ReshapeOp<P>
     

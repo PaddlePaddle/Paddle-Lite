@@ -14,7 +14,7 @@
 
 import Foundation
 
-class ShapeParam<P: PrecisionType>: OpParam {
+class ShapeParam<P: PrecisionProtocol>: OpParam {
     // typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         do {
@@ -28,7 +28,7 @@ class ShapeParam<P: PrecisionType>: OpParam {
     let input: Texture
 }
 
-class ShapeOp<P: PrecisionType>: Operator<ShapeKernel<P>, ShapeParam<P>>, Runable, Creator, InferShaperable{
+class ShapeOp<P: PrecisionProtocol>: Operator<ShapeKernel<P>, ShapeParam<P>>, Runable, Creator, InferShaperable{
     
     typealias OpType = ShapeOp<P>
     
