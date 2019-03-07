@@ -61,25 +61,15 @@ template <>
 void ConvAddBNReluKernel<CPU, float>::Compute(
     const FusionConvAddBNReluParam<CPU> &param) {
   switch (param.ExecMode()) {
-    case ConvParam<CPU>::EXEC_DEPTHWISE3x3S1P1_FLOAT:
-      math::DepthwiseConvAddBNRelu3x3s1p1(param.Input(), param.Filter(),
-                                          param.Output(), param.NewScale(),
-                                          param.NewBias(), true);
-      break;
-    case ConvParam<CPU>::EXEC_DEPTHWISE3x3S2P1_FLOAT:
-      math::DepthwiseConvAddBNRelu3x3s2p1v2(param.Input(), param.Filter(),
-                                            param.Output(), param.NewScale(),
-                                            param.NewBias(), true);
-      break;
-    case ConvParam<CPU>::EXEC_DEPTHWISE3x3S2P0_FLOAT:
-      math::DepthwiseConv3x3s2p0(param.Input(), param.Filter(), param.Output(),
-                                 nullptr, false, false);
+    case ConvParam<CPU>::EXEC_DEPTHWISE3x3S1_FLOAT:
+      math::DepthwiseConv3x3S1<float, float>(*param.Input(), *param.Filter(),
+                                             param.Paddings(), param.Output());
       math::ScaleAddChannelWise<RELU>(param.Output(), param.NewScale(),
                                       param.NewBias(), param.Output());
       break;
-    case ConvParam<CPU>::EXEC_DEPTHWISE3x3_FLOAT:
-      math::DepthwiseConv3x3(param.Input(), param.Strides(), param.Paddings(),
-                             param.Filter(), nullptr, param.Output(), false);
+    case ConvParam<CPU>::EXEC_DEPTHWISE3x3S2_FLOAT:
+      math::DepthwiseConv3x3S2<float, float>(*param.Input(), *param.Filter(),
+                                             param.Paddings(), param.Output());
       math::ScaleAddChannelWise<RELU>(param.Output(), param.NewScale(),
                                       param.NewBias(), param.Output());
       break;
