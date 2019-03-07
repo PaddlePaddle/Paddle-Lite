@@ -56,6 +56,8 @@ import Foundation
     /// 输入维度，按照 n h w c 方式传入
     @objc public var inputDim: Dim = Dim.init(inDim: [])
     
+    /// 是否使用 MetalPerformanceShaders 进行运算
+    @objc public var useMPS: Bool = false
     
     @objc public init(device: MTLDevice, inParamPointer: UnsafeMutableRawPointer, inParamSize:Int, inModelPointer: UnsafeMutableRawPointer, inModelSize: Int) {
         self.paramPointer = inParamPointer
