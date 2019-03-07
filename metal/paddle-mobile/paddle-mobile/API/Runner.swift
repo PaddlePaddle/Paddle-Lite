@@ -87,6 +87,8 @@ import Foundation
             let initContext: InitContext = InitContext.init()
             initContext.metalLoadMode = net.metalLoadMode
             initContext.metalLibPath = net.metalLibPath
+            initContext.useMPS = net.useMPS
+
             executor = try Executor<Float32>.init(inDevice: inDevice, inQueue: inQueue, inProgram: program!, initContext: initContext)
             net.updateProgram(program: program!)
         } catch let error {

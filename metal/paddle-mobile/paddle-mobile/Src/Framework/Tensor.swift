@@ -28,23 +28,80 @@ extension Tensorial {
     }
 }
 
+class DataConverter<P: PrecisionType> {
+    func convert(from: UnsafeMutablePointer<P>, to: UnsafeMutablePointer<P>, fromDim: Dim) {
+        fatalError(" need imp")
+    }
+    
+    func getToDim(fromDim: Dim, layout: DataLayout) -> (dim: Dim, layout: DataLayout) {
+        fatalError(" need imp")
+    }
+}
 
+/// [ outputChannels ][ inputChannels ][ kernelHeight ][ kernelWidth ] ->
+/// [ outputChannels ][ kernelHeight ][ kernelWidth ][ inputChannels ]
+class MPSPointerConverter<P: PrecisionType>: DataConverter<P>{
+    
+    /// [ outputChannels ][ inputChannels ][ kernelHeight ][ kernelWidth ] ->
+    /// [ outputChannels ][ kernelHeight ][ kernelWidth ][ inputChannels ]
+    /// - Parameters:
+    ///   - from: from pointer
+    ///   - to: to pointer
+    override func convert(from: UnsafeMutablePointer<P>, to: UnsafeMutablePointer<P>, fromDim: Dim) {
+        let outputChannels = fromDim[0]
+        let inputChannels = fromDim[1]
+        let kernelHeight = fromDim[2]
+        let kernelWidth = fromDim[3]
+        
+        for outChannel in 0..<outputChannels {
+            for kernelH in 0..<kernelHeight {
+                for kernelW in 0..<kernelWidth {
+                    for inChannel in 0..<inputChannels {
+                        to[outChannel * inputChannels * kernelHeight * kernelWidth + kernelH * kernelWidth * inputChannels + kernelW * inputChannels + inChannel] =
+                        from[outChannel * inputChannels * kernelHeight * kernelWidth + inChannel * kernelHeight * kernelWidth + kernelH * kernelWidth + kernelW]
+                    }
+                }
+            }
+        }
+    }
+    
+    override func getToDim(fromDim: Dim, layout: DataLayout) -> (dim: Dim, layout: DataLayout) {
+        
+        if layout != DataLayout.NCHW() {
+            fatalError("not support")
+        }
+        
+        let outputChannels = fromDim[0]
+        let inputChannels = fromDim[1]
+        let kernelHeight = fromDim[2]
+        let kernelWidth = fromDim[3]
+        let toDim = Dim.init(inDim: [outputChannels, kernelHeight, kernelWidth, inputChannels])
+        
+        return (dim: toDim, layout: DataLayout.NHWC())
+    }
+}
 
 class Tensor<P: PrecisionType>: Tensorial {
     
     var data: Data
     var dim: Dim
+    
+    /// 模型中的维度: 未经过转换 paddle 模型维度为 N C H W
+    var tensorDim: Dim
     var buffer: MTLBuffer!
     private(set) var layout: DataLayout
     
     class Data {
-        init(inSize: Int, inPointer: UnsafeMutablePointer<P>) {
-            size = inSize
+        private var released = false
+        let count: Int
+        let size: Int
+        init(inCount: Int, inPointer: UnsafeMutablePointer<P>) {
+            count = inCount
+            size = inCount * MemoryLayout<P>.size
             pointer = inPointer
         }
-        let size: Int
-        var pointer: UnsafeMutablePointer<P>
-        subscript(index: Int) -> P{
+        internal private(set) var pointer: UnsafeMutablePointer<P>
+        subscript(index: Int) -> P {
             get {
                 return pointer[index]
             }
@@ -53,20 +110,38 @@ class Tensor<P: PrecisionType>: Tensorial {
             }
         }
         func release() {
-            pointer.deinitialize(count: size)
-            pointer.deallocate()
+            if !released {
+                pointer.deinitialize(count: count)
+                pointer.deallocate()
+                released = true
+            }
         }
+        
         deinit {
-            //            release()
+            if !released {
+                pointer.deinitialize(count: count)
+                pointer.deallocate()
+                released = true
+            }
         }
     }
     
     init(inDim: Dim, inLayout: DataLayout = DataLayout.NCHW()) {
+        tensorDim = inDim
         dim = inDim
-        let size = inDim.numel() * MemoryLayout<P>.size
-        let pointer = UnsafeMutablePointer<P>.allocate(capacity: size)
-        data = Data.init(inSize: size, inPointer: pointer)
+        let pointer = UnsafeMutablePointer<P>.allocate(capacity: inDim.numel())
+        data = Data.init(inCount: inDim.numel(), inPointer: pointer)
         layout = inLayout
+    }
+    
+    func convert(converter: DataConverter<P>) -> UnsafeMutablePointer<P> {
+        let to = UnsafeMutablePointer<P>.allocate(capacity: numel())
+        converter.convert(from: data.pointer, to: to, fromDim: dim)
+        data = Data.init(inCount: numel(), inPointer: to)
+        let dimAndLayout = converter.getToDim(fromDim: dim, layout: layout)
+        dim = dimAndLayout.dim
+        layout = dimAndLayout.layout
+        return to
     }
     
     func convert(to: DataLayout) {
@@ -82,14 +157,15 @@ class Tensor<P: PrecisionType>: Tensorial {
             // other not support
             return
         }
-        let newPointer = UnsafeMutablePointer<P>.allocate(capacity: data.size)
+        
+        let newPointer = UnsafeMutablePointer<P>.allocate(capacity: numel())
         
         if layout == DataLayout.NCHW() {
             NCHW2NHWC(newPtr: newPointer)
         }
         
         data.release()
-        data.pointer = newPointer
+        data = Data.init(inCount: data.count, inPointer: newPointer)
         layout = to
     }
     
@@ -114,7 +190,7 @@ class Tensor<P: PrecisionType>: Tensorial {
             
             dim.swapeDimAt(index1: 0, index2: 3)
             data.release()
-            data.pointer = transposePointer
+            data = Data.init(inCount: data.count, inPointer: transposePointer)
         }
         
         guard let floatPointer = data.pointer as? UnsafeMutablePointer<Float32> else {
@@ -338,7 +414,7 @@ extension Tensor {
     func logDataPointer(header: String = "") {
         print(header)
         var str = ""
-        str += "data size: \(data.size) \n"
+        str += "data count: \(data.count) \n"
         str += "dim: \(dim) \n"
         for i in 0..<numel() {
             str += " \(data.pointer[i])"
