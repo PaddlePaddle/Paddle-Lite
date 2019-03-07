@@ -31,16 +31,14 @@ void cblas_sgemm(const bool transA, const bool transB, const int M, const int N,
   //    return cblas_sgemv(transA, M, K, alpha, A, lda, B, beta, C);
   //  }
 
-  CPUInfo *info = CPUInfo::Info();
-  GemmExecutor<SgemmStrategy> exec(info, transA, transB, M, N, K);
+  GemmExecutor<SgemmStrategy> exec(transA, transB, M, N, K);
   exec(alpha, A, lda, B, ldb, beta, C, ldc);
 }
 
 void cblas_sgemv(const bool trans, const int M, const int N, const float alpha,
                  const float *A, const int lda, const float *B,
                  const float beta, float *C) {
-  CPUInfo *info = CPUInfo::Info();
-  GemvExecutor<SgemvStrategy> exec(info, trans, M, N);
+  GemvExecutor<SgemvStrategy> exec(trans, M, N);
   exec(alpha, A, lda, B, beta, C);
 }
 
