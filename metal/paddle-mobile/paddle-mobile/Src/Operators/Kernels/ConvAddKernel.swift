@@ -13,11 +13,65 @@
  limitations under the License. */
 
 import Foundation
+import MetalPerformanceShaders
+
+@available(iOS 10.0, *)
+var convDic: [String : MPSCNNConvolution] = [:]
+@available(iOS 10.0, *)
+var imageDic: [String : MPSImage] = [:]
+
+/// 获取唯一字符串
+///
+/// - Returns: 唯一字符串
+func getUniqueKey() -> String {
+    return UUID.init().uuidString
+}
 
 class ConvAddKernel<P: PrecisionType>: Kernel, Computable {
     var metalParam: MetalConvParam!
+    
+    let identifyingKey: String = getUniqueKey()
+    
     required init(device: MTLDevice, param: ConvAddParam<P>, initContext: InitContext) {
+        
         param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1], computePrecision: GlobalConfig.shared.computePrecision)
+        
+        let offsetY = (Int(param.dilations[1]) * (param.filter.tensorDim[2] - 1) + 1)/2 - Int(param.paddings[1])
+        let offsetX = (Int(param.dilations[0]) * (param.filter.tensorDim[3] - 1) + 1)/2 - Int(param.paddings[0])
+        
+        let key = identifyingKey
+        if initContext.useMPS {
+            if #available(iOS 10.0, *) {
+                if !(param.filter.tensorDim[1] == 1 && param.filter.tensorDim[0] == param.input.tensorDim[1]) && param.input.tensorDim[1] > 4 && param.output.tensorDim[1] > 4 {
+                    
+                    let desc = MPSCNNConvolutionDescriptor(kernelWidth: param.filter.tensorDim[3],
+                                                           kernelHeight: param.filter.tensorDim[2],
+                                                           inputFeatureChannels: param.input.tensorDim[1],
+                                                           outputFeatureChannels: param.output.tensorDim[1],
+                                                           neuronFilter: nil)
+                    desc.strideInPixelsX = Int(param.stride[0])
+                    desc.strideInPixelsY = Int(param.stride[1])
+                    
+                    let tensorPointer = param.filter.convert(converter: MPSPointerConverter<P>.init())
+                    let yPointer = param.y.data.pointer
+                    
+                    tensorPointer.withMemoryRebound(to: Float.self, capacity: param.filter.numel()) { (weightPointer: UnsafeMutablePointer<Float>) in
+                        yPointer.withMemoryRebound(to: Float.self, capacity: param.y.numel(), { (biasePointer: UnsafeMutablePointer<Float>) in
+                            let conv = MPSCNNConvolution.init(device: device, convolutionDescriptor: desc, kernelWeights: weightPointer, biasTerms: biasePointer, flags: .none)
+                            conv.offset = MPSOffset.init(x: offsetX, y: offsetY, z: 0)
+                            conv.edgeMode = .zero
+                            convDic[key] = conv
+                        })
+                    }
+                    
+                    imageDic[identifyingKey + "_input"] = MPSImage.init(texture: param.input.metalTexture, featureChannels: param.input.tensorDim[1])
+                    imageDic[identifyingKey + "_output"] = MPSImage.init(texture: param.output.metalTexture, featureChannels: param.output.tensorDim[1])
+                    super.init(device: device, inFunctionName: "place_holder", initContext: initContext)
+                    return
+                }
+            }
+        }
+        
         let padWhenOneC = !(param.filter.channel == 1 && param.filter.n == param.input.tensorDim[1])
         param.filter.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision, padWhenOneC: padWhenOneC)
         param.y.initBuffer(device: device, precision: GlobalConfig.shared.computePrecision)
@@ -54,12 +108,6 @@ class ConvAddKernel<P: PrecisionType>: Kernel, Computable {
             fatalError()
         }
         
-        
-        
-        let offsetY = (Int(param.dilations[1]) * (param.filter.height - 1) + 1)/2 - Int(param.paddings[1])
-        
-        let offsetX = (Int(param.dilations[0]) * (param.filter.width - 1) + 1)/2 - Int(param.paddings[0])
-        
         //    print(" function: \(functionName)")
         //    print("offset x: \(offsetX)")
         //    print("offset y: \(offsetY)")
@@ -73,10 +121,16 @@ class ConvAddKernel<P: PrecisionType>: Kernel, Computable {
     }
     
     func compute(commandBuffer: MTLCommandBuffer, param: ConvAddParam<P>) throws {
+        if #available(iOS 10.0, *) {
+            if let conv = convDic[identifyingKey], let inputImage = imageDic[identifyingKey + "_input"], let outputImage = imageDic[identifyingKey + "_output"] {
+                conv.encode(commandBuffer: commandBuffer, sourceImage: inputImage, destinationImage: outputImage)
+                return;
+            }
+        }
+
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
             throw PaddleMobileError.predictError(message: " encode is nil")
         }
-        
         encoder.setTexture(param.input.metalTexture, index: 0)
         encoder.setTexture(param.output.metalTexture, index: 1)
         encoder.setBytes(&metalParam, length: MemoryLayout<MetalConvParam>.size, index: 0)
@@ -85,4 +139,13 @@ class ConvAddKernel<P: PrecisionType>: Kernel, Computable {
         encoder.dispatch(computePipline: pipline, outTexture: param.output.metalTexture)
         encoder.endEncoding()
     }
+    
+    deinit {
+        if #available(iOS 10.0, *) {
+            convDic.removeValue(forKey: identifyingKey)
+            imageDic.removeValue(forKey: identifyingKey + "_input")
+            imageDic.removeValue(forKey: identifyingKey + "_output")
+        }
+    }
 }
+
