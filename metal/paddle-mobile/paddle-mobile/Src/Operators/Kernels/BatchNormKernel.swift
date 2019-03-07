@@ -14,7 +14,7 @@
 
 import Foundation
 
-class BatchNormKernel<P: PrecisionType>: Kernel, Computable {
+class BatchNormKernel<P: PrecisionProtocol>: Kernel, Computable {
     required init(device: MTLDevice, param: BatchNormParam<P>, initContext: InitContext) {
         let count = param.variance.dim.numel()
         let varianceP = param.variance.data.pointer

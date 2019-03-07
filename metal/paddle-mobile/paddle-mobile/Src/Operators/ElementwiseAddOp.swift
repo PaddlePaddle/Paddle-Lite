@@ -15,7 +15,7 @@
 import Foundation
 import Metal
 
-class ElementwiseAddParam<P: PrecisionType>: OpParam {
+class ElementwiseAddParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         do {
@@ -61,7 +61,7 @@ class ElementwiseAddParam<P: PrecisionType>: OpParam {
     var axis: Int
 }
 
-class ElementwiseAddOp<P: PrecisionType>: Operator<ElementwiseAddKernel<P>, ElementwiseAddParam<P>>, Runable, Creator, InferShaperable{
+class ElementwiseAddOp<P: PrecisionProtocol>: Operator<ElementwiseAddKernel<P>, ElementwiseAddParam<P>>, Runable, Creator, InferShaperable{
     typealias OpType = ElementwiseAddOp<P>
     
     func inferShape() {

@@ -24,10 +24,10 @@ public struct MetalConvParam {
     let dilationY: UInt16
 }
 
-class ConvKernel<P: PrecisionType>: Kernel, Computable {
+class ConvKernel<P: PrecisionProtocol>: Kernel, Computable {
     var metalParam: MetalConvParam!
     required init(device: MTLDevice, param: ConvParam<P>, initContext: InitContext) {
-        param.filter.initBuffer(device: device, precision: ComputePrecision.Float32)
+        param.filter.initBuffer(device: device, precision: Precision.Float32)
         if param.filter.width == 1 && param.filter.height == 1 {
             super.init(device: device, inFunctionName: "conv_1x1", initContext: initContext)
         } else if param.filter.channel == 1 {

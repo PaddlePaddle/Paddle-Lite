@@ -20,12 +20,13 @@ public class YoloNet: Net {
     @objc public override init(device: MTLDevice) {
         super.init(device: device)
         except = 0
-        modelPath = Bundle.main.path(forResource: "yolo_model", ofType: nil) ?! "model null"
-        paramPath = Bundle.main.path(forResource: "yolo_params", ofType: nil) ?! "para null"
+        modelPath = Bundle.main.path(forResource: "yolo_16_model", ofType: nil) ?! "model null"
+        paramPath = Bundle.main.path(forResource: "yolo_16_param", ofType: nil) ?! "para null"
         inputDim = Dim.init(inDim: [1, 416, 416, 3])
         metalLoadMode = .LoadMetalInCustomMetalLib
         metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
-        useMPS = true
+        useMPS = false
+        paramPrecision = .Float16
     }
     
     override  public func resultStr(res: [ResultHolder]) -> String {

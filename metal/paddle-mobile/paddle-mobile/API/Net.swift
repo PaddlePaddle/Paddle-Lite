@@ -59,6 +59,9 @@ import Foundation
     /// 是否使用 MetalPerformanceShaders 进行运算
     @objc public var useMPS: Bool = false
     
+    /// 模型精度 - 当使用模型精度为 Float 16 时 不要开启 useMPS, 暂不支持
+    @objc public var paramPrecision: Precision = .Float32
+
     @objc public init(device: MTLDevice, inParamPointer: UnsafeMutableRawPointer, inParamSize:Int, inModelPointer: UnsafeMutableRawPointer, inModelSize: Int) {
         self.paramPointer = inParamPointer
         self.paramSize = inParamSize
