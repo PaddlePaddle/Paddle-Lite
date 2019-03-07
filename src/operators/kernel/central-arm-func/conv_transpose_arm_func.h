@@ -99,7 +99,6 @@ void ConvTransposeCompute(const ConvTransposeParam<CPU> &param) {
                std::vector<int>{paddings[0], paddings[1], paddings[0],
                                 paddings[1]},
                &out_slice);
-
       } else if (data_dim == 3U) {
         col2vol(col, dilations, strides, paddings, &out_slice);
       }

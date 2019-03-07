@@ -44,29 +44,25 @@ void InitBaseConvKernel(ConvParam<CPU> *param) {
 #endif  // __aarch64__
   } else {
     if (depth3x3 && param->Strides()[0] == param->Strides()[1] &&
-        param->Strides()[0] == 1 && param->Paddings()[0] == 1 &&
-        param->Paddings()[0] == param->Paddings()[1]) {
-      param->ExecMode() = ConvParam<CPU>::EXEC_DEPTHWISE3x3S1P1_FLOAT;
+        param->Strides()[0] == 1) {
+      param->ExecMode() = ConvParam<CPU>::EXEC_DEPTHWISE3x3S1_FLOAT;
     } else if (depth3x3 && param->Strides()[0] == param->Strides()[1] &&
-               param->Strides()[0] == 2 && param->Paddings()[0] == 0 &&
-               param->Paddings()[0] == param->Paddings()[1]) {
-      param->ExecMode() = ConvParam<CPU>::EXEC_DEPTHWISE3x3S2P0_FLOAT;
-    } else if (depth3x3 && param->Strides()[0] == param->Strides()[1] &&
-               param->Strides()[0] == 2 && param->Paddings()[0] == 1 &&
-               param->Paddings()[0] == param->Paddings()[1]) {
-      param->ExecMode() = ConvParam<CPU>::EXEC_DEPTHWISE3x3S2P1_FLOAT;
-    } else if (depth3x3) {
-      param->ExecMode() = ConvParam<CPU>::EXEC_DEPTHWISE3x3_FLOAT;
+               param->Strides()[0] == 2) {
+      param->ExecMode() = ConvParam<CPU>::EXEC_DEPTHWISE3x3S2_FLOAT;
 #ifndef __aarch64__
     } else if (depth5x5 && param->Strides()[0] == param->Strides()[1] &&
                param->Strides()[0] == 1) {
       param->ExecMode() = ConvParam<CPU>::EXEC_DEPTHWISE5x5_FLOAT;
-    } else if (conv3x3 && param->Strides()[0] == param->Strides()[1] &&
+    } else if (conv3x3 && !depth3x3 &&
+               param->Strides()[0] == param->Strides()[1] &&
                param->Dilations()[0] == param->Dilations()[1] &&
-               param->Strides()[0] == 1 && param->Dilations()[0] == 1 /* &&
-               param->Output()->dims()[1] >= 16 &&
+               param->Strides()[0] == 1 && param->Dilations()[0] == 1
+#if 0
+               && param->Output()->dims()[1] >= 16 &&
                param->Input()->dims()[1] >= 16 &&
-               param->Input()->dims()[2] <= 140 */ /* refered from ncnn */) {
+               param->Input()->dims()[2] <= 140 */ /* refered from ncnn */
+#endif
+    ) {
       param->ExecMode() = ConvParam<CPU>::EXEC_WINOGRAD3X3_FLOAT;
       // transform weight
       param->transformed_filter_ = new framework::LoDTensor;

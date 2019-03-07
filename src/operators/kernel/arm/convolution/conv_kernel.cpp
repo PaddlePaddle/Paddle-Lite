@@ -18,6 +18,8 @@ limitations under the License. */
 #include "operators/kernel/arm/convolution/conv_common.h"
 #include "operators/kernel/central-arm-func/conv_arm_func.h"
 
+#include <iostream>
+
 namespace paddle_mobile {
 namespace operators {
 
@@ -41,21 +43,13 @@ void ConvKernel<CPU, float>::Compute(const ConvParam<CPU> &param) {
       DepthwiseConv5x5<int8_t, int32_t>(param);
       break;
 #endif  // __aarch64__
-    case ConvParam<CPU>::EXEC_DEPTHWISE3x3S1P1_FLOAT:
-      math::DepthwiseConv3x3s1p1(param.Input(), param.Filter(), param.Output(),
-                                 nullptr, false, false);
+    case ConvParam<CPU>::EXEC_DEPTHWISE3x3S1_FLOAT:
+      math::DepthwiseConv3x3S1<float, float>(*param.Input(), *param.Filter(),
+                                             param.Paddings(), param.Output());
       break;
-    case ConvParam<CPU>::EXEC_DEPTHWISE3x3S2P1_FLOAT:
-      math::DepthwiseConv3x3s2p1v2(param.Input(), param.Filter(),
-                                   param.Output(), nullptr, false, false);
-      break;
-    case ConvParam<CPU>::EXEC_DEPTHWISE3x3S2P0_FLOAT:
-      math::DepthwiseConv3x3s2p0(param.Input(), param.Filter(), param.Output(),
-                                 nullptr, false, false);
-      break;
-    case ConvParam<CPU>::EXEC_DEPTHWISE3x3_FLOAT:
-      math::DepthwiseConv3x3(param.Input(), param.Strides(), param.Paddings(),
-                             param.Filter(), nullptr, param.Output(), false);
+    case ConvParam<CPU>::EXEC_DEPTHWISE3x3S2_FLOAT:
+      math::DepthwiseConv3x3S2<float, float>(*param.Input(), *param.Filter(),
+                                             param.Paddings(), param.Output());
       break;
 #ifndef __aarch64__
     case ConvParam<CPU>::EXEC_DEPTHWISE5x5_FLOAT:

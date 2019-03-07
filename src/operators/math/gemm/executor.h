@@ -19,7 +19,6 @@ limitations under the License. */
 #include <omp.h>
 #endif
 #include <sys/time.h>
-#include <iostream>
 #include "common/log.h"
 #include "memory/t_malloc.h"
 #include "operators/math/gemm/cpu_info.h"
@@ -28,6 +27,8 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 namespace math {
+
+static CPUInfo *info = CPUInfo::Info();
 
 int CeilDiv(const int &x, const int &y) { return (x + y - 1) / y; }
 unsigned int ResetL1Cache(const unsigned int L1_size, const int thread_num,
@@ -62,15 +63,9 @@ class GemmExecutor : public Executor {
   typedef typename Strategy::Otype Otype;
 
  public:
-  GemmExecutor(const CPUInfo *info, const bool transA, const bool transB,
-               const int M, const int N, const int K)
-      : Executor(),
-        info_(info),
-        transA_(transA),
-        transB_(transB),
-        M_(M),
-        N_(N),
-        K_(K) {
+  GemmExecutor(const bool transA, const bool transB, const int M, const int N,
+               const int K)
+      : Executor(), transA_(transA), transB_(transB), M_(M), N_(N), K_(K) {
     unsigned int L1_size = 0;
     unsigned int L2_size = 0;
     if (M_ > N_) {
@@ -212,8 +207,6 @@ class GemmExecutor : public Executor {
   virtual ~GemmExecutor() {}
 
  private:
-  const CPUInfo *info_;
-
   const unsigned int M_;
   const unsigned int N_;
   const unsigned int K_;
@@ -242,8 +235,8 @@ class GemvExecutor : public Executor {
   typedef typename Strategy::Otype Otype;
 
  public:
-  GemvExecutor(const CPUInfo *info, const bool transA, const int M, const int N)
-      : Executor(), info_(info), M_(M), N_(N) {}
+  GemvExecutor(const bool transA, const int M, const int N)
+      : Executor(), M_(M), N_(N) {}
 
   void operator()(const float alpha, const Itype *A, const int lda,
                   const Itype *B, const float beta, Otype *C) {
@@ -253,8 +246,6 @@ class GemvExecutor : public Executor {
   virtual ~GemvExecutor() {}
 
  private:
-  const CPUInfo *const info_;
-
   const unsigned int M_;
   const unsigned int N_;
 

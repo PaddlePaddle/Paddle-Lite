@@ -16,7 +16,8 @@ limitations under the License. */
 
 #include "operators/kernel/conv_bn_add_relu_kernel.h"
 #include <cmath>
-#include "operators/kernel/central-arm-func/conv_bn_add_relu_arm_func.h"
+#include "operators/kernel/arm/convolution/conv_common.h"
+#include "operators/kernel/central-arm-func/conv_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -51,13 +52,46 @@ bool ConvBNAddReluKernel<CPU, float>::Init(
   }
   param->SetNewScale(new_scale);
   param->SetNewBias(new_bias);
+
+  InitBaseConvKernel(param);
   return true;
 }
 
 template <>
 void ConvBNAddReluKernel<CPU, float>::Compute(
     const FusionConvBNAddReluParam<CPU> &param) {
-  ConvBNAddReluCompute<float>(param);
+  switch (param.ExecMode()) {
+    case ConvParam<CPU>::EXEC_DEPTHWISE3x3S1_FLOAT:
+      math::DepthwiseConv3x3S1<float, float>(*param.Input(), *param.Filter(),
+                                             param.Paddings(), param.Output());
+      math::ScaleAddChannelWise<RELU>(param.Output(), param.NewScale(),
+                                      param.NewBias(), param.Output());
+      break;
+    case ConvParam<CPU>::EXEC_DEPTHWISE3x3S2_FLOAT:
+      math::DepthwiseConv3x3S2<float, float>(*param.Input(), *param.Filter(),
+                                             param.Paddings(), param.Output());
+      math::ScaleAddChannelWise<RELU>(param.Output(), param.NewScale(),
+                                      param.NewBias(), param.Output());
+      break;
+#ifndef __aarch64__
+    case ConvParam<CPU>::EXEC_DEPTHWISE5x5_FLOAT:
+      DepthwiseConv5x5<float, float>(param);
+      math::ScaleAddChannelWise<RELU>(param.Output(), param.NewScale(),
+                                      param.NewBias(), param.Output());
+      break;
+    case ConvParam<CPU>::EXEC_WINOGRAD3X3_FLOAT:
+      WinogradConv3x3<8, 3>(param);
+      math::ScaleAddChannelWise<RELU>(param.Output(), param.NewScale(),
+                                      param.NewBias(), param.Output());
+      break;
+#endif  // __aarch64__
+    case ConvParam<CPU>::EXEC_GEMM_FLOAT:
+      ConvBNReluBasic<FusionConvBNAddReluParam<CPU>>(param);
+      break;
+    default:
+      PADDLE_MOBILE_THROW_EXCEPTION("Invalid convolution execute mode %d",
+                                    param.ExecMode());
+  }
 }
 template class ConvBNAddReluKernel<CPU, float>;
 
