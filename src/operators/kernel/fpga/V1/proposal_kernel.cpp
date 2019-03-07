@@ -65,13 +65,12 @@ bool ProposalKernel<FPGA, float>::Init(ProposalParam<FPGA> *param) {
   args.output.scale_address = param->float_score->scale;
   param->score_arg = args;
 
-  param->score_index_= std::make_shared<Tensor>();
+  param->score_index_ = std::make_shared<Tensor>();
   param->score_index_->mutable_data<int32_t>({input->numel()});
   auto score_index = param->score_index_->data<int32_t>();
-  for (int i = 0;  i < input->numel(); ++i){
-	score_index[i] = i; 
+  for (int i = 0; i < input->numel(); ++i) {
+    score_index[i] = i;
   }
-  
 
   return true;
 }
@@ -342,9 +341,8 @@ std::pair<Tensor, Tensor> ProposalForOneImage(
     const Tensor &im_info_slice, const Tensor &anchors, const Tensor &variances,
     const Tensor &bbox_deltas_slice,  // [M, 4]
     const Tensor &scores_slice,       // [N, 1]
-    const Tensor &score_index,
-    int pre_nms_top_n, int post_nms_top_n, float nms_thresh, float min_size,
-    float eta) {
+    const Tensor &score_index, int pre_nms_top_n, int post_nms_top_n,
+    float nms_thresh, float min_size, float eta) {
   auto *scores_data = scores_slice.data<T>();
 
   // Sort index
@@ -354,8 +352,9 @@ std::pair<Tensor, Tensor> ProposalForOneImage(
   /*for (int i = 0; i < scores_slice.numel(); ++i) {
     index[i] = i;
   }*/
-  std::memcpy(index,score_index.data<int32_t>(),scores_slice.numel()*sizeof(int)  );
-  
+  std::memcpy(index, score_index.data<int32_t>(),
+              scores_slice.numel() * sizeof(int));
+
   auto compare = [scores_data](const int64_t &i, const int64_t &j) {
     return scores_data[i] > scores_data[j];
   };
@@ -504,7 +503,7 @@ void ProposalKernel<FPGA, float>::Compute(const ProposalParam<FPGA> &param) {
   auto score_index = *(param.score_index_.get());
 
   int pre_nms_top_n = param.pre_nms_topn_;
-  int post_nms_top_n = 100;//param.post_nms_topn_;
+  int post_nms_top_n = 100;  // param.post_nms_topn_;
   float nms_thresh = param.nms_thresh_;
   float min_size = param.min_size_;
   float eta = param.eta_;
@@ -541,8 +540,8 @@ void ProposalKernel<FPGA, float>::Compute(const ProposalParam<FPGA> &param) {
     scores_slice.Resize({h_score * w_score * c_score, 1});
 
     std::pair<Tensor, Tensor> tensor_pair = ProposalForOneImage<float>(
-        im_info_slice, anchors, variances, bbox_deltas_slice, scores_slice,score_index,
-        pre_nms_top_n, post_nms_top_n, nms_thresh, min_size, eta);
+        im_info_slice, anchors, variances, bbox_deltas_slice, scores_slice,
+        score_index, pre_nms_top_n, post_nms_top_n, nms_thresh, min_size, eta);
     Tensor &proposals = tensor_pair.first;
     Tensor &scores = tensor_pair.second;
 
