@@ -14,6 +14,7 @@ limitations under the License. */
 
 #pragma once
 
+#include <memory>
 #include <vector>
 #include "framework/operator.h"
 #include "operators/op_param.h"
@@ -157,18 +158,20 @@ DECLARE_KERNEL(PSRoiPool, PSRoiPoolParam);
 template <typename Dtype>
 class RoiAlignPoolParam : public OpParam {
  public:
-  RoiAlignPoolParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-                 const AttributeMap &attrs, const Scope *scope)
-				 : OpParam(inputs, outputs, attrs, scope) {
+  RoiAlignPoolParam(const VariableNameMap &inputs,
+                    const VariableNameMap &outputs, const AttributeMap &attrs,
+                    Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
     input_x_ = OpParam::GetVarValue<framework::LoDTensor>("X", inputs, *scope);
     input_rois_ =
         OpParam::GetVarValue<framework::LoDTensor>("ROIs", inputs, *scope);
-    output_ = OpParam::GetVarValue<framework::LoDTensor>("Out", outputs, *scope);
+    output_ =
+        OpParam::GetVarValue<framework::LoDTensor>("Out", outputs, *scope);
 
     pooled_height_ = OpParam::GetAttr<int>("pooled_height", attrs);
     pooled_width_ = OpParam::GetAttr<int>("pooled_width", attrs);
     spatial_scale_ = OpParam::GetAttr<float>("spatial_scale", attrs);
-	sampling_ratio_ = OpParam::GetAttr<float>("sampling_ratio", attrs);
+    sampling_ratio_ = OpParam::GetAttr<float>("sampling_ratio", attrs);
   }
 
  public:
@@ -180,10 +183,9 @@ class RoiAlignPoolParam : public OpParam {
   float spatial_scale_;
   int sampling_ratio_;
 #ifdef PADDLE_MOBILE_FPGA
-	std::shared_ptr<Tensor> float_input, float_output;
-	fpga::BypassArgs input_arg, output_arg;
+  std::shared_ptr<Tensor> float_input, float_output;
+  fpga::BypassArgs input_arg, output_arg;
 #endif
-
 };
 
 DECLARE_KERNEL(RoiAlignPool, RoiAlignPoolParam);

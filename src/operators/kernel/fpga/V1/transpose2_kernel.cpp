@@ -44,8 +44,9 @@ void Transpose2Kernel<FPGA, float>::Compute(
   // Transpose2Compute<float>(param);
   auto input = param.InputX();
   auto output = param.Out();
-   
-  output->Resize({input->dims()[0], output->dims()[1], output->dims()[2], output->dims()[3]});
+
+  output->Resize({input->dims()[0], output->dims()[1], output->dims()[2],
+                  output->dims()[3]});
 }
 
 }  // namespace operators

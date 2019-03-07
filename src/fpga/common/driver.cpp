@@ -26,6 +26,7 @@ limitations under the License. */
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <utility>
 
 #include "common/enforce.h"
 #include "fpga/common/driver.h"
@@ -147,8 +148,6 @@ int fpga_regpoll(uint64_t reg, uint64_t val, int time) {
   }
 }
 
-
-
 void memory_release(struct fpga_memory *memory) {
   void *ptr = nullptr;
 
@@ -159,8 +158,6 @@ void memory_release(struct fpga_memory *memory) {
     fpga_free_driver(ptr);
   }
 }
-
-
 
 uint64_t vaddr_to_paddr_driver(void *address) {
   uint64_t paddr = 0;
@@ -209,14 +206,14 @@ void *fpga_malloc_driver(size_t size) {
   struct MemoryVM2PHYArgs args;
   struct MemoryCacheArgs args_c;
 
- // memory_request(g_fpgainfo.memory_info, size, &phy_addr);
+  // memory_request(g_fpgainfo.memory_info, size, &phy_addr);
 
   ret = mmap64(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED,
                g_fpgainfo.fd_mem, FPGA_MEM_PHY_ADDR);
   PADDLE_MOBILE_ENFORCE(ret != (void *)-1, "Should not be -1");
 
-  args.pVM= (void *)ret;
-  args.pPHY =(void *)0;
+  args.pVM = reinterpret_cast<void *>(ret);
+  args.pPHY = reinterpret_cast<void *>(0);
   do_ioctl(IOCTL_MEMORY_VM2PHY, &args);
   phy_addr = (uint64_t)args.pPHY;
 
@@ -237,9 +234,8 @@ void fpga_free_driver(void *ptr) {
     g_fpgainfo.fpga_addr2size_map.erase(iter);
     munmap(ptr, size);
 
-    p_addr = vaddr_to_paddr_driver(ptr);
-    pos = (p_addr - g_fpgainfo.memory_info->mem_start) / FPGA_PAGE_SIZE;
-
+    // p_addr = vaddr_to_paddr_driver(ptr);
+    // pos = (p_addr - g_fpgainfo.memory_info->mem_start) / FPGA_PAGE_SIZE;
 
     auto iter = g_fpgainfo.fpga_vaddr2paddr_map.find(ptr);
     if (iter != g_fpgainfo.fpga_vaddr2paddr_map.end()) {
@@ -299,7 +295,7 @@ int open_device_driver() {
 
   g_fpgainfo.FpgaRegVirAddr =
       (uint64_t *)fpga_reg_malloc(FPGA_REG_SIZE);  // NOLINT
-  //fpga_memory_add();
+  // fpga_memory_add();
 
   pl_init();
 
@@ -310,7 +306,7 @@ int close_device_driver() {
   pl_destroy();
   fpga_reg_free(g_fpgainfo.FpgaRegVirAddr);
   memory_release(g_fpgainfo.memory_info);
-  
+
   return 0;
 }
 

@@ -56,7 +56,7 @@ void dealign(float *src, float *dst, int input_c, int input_h, int input_w) {
 }
 template <>
 void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
-  auto input = param.InputX();
+  auto input = const_cast<Tensor *>(param.InputX());
   if (input->type() == typeid(float)) {
     auto output = param.Out();
     output->ShareDataWith(*input);
@@ -73,15 +73,14 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
       reinterpret_cast<float *>(param.fpga_bypass_args.output.address);
   fpga::fpga_invalidate(param.fpga_bypass_args.output.address,
                         param.Out()->fpga_data_num * sizeof(float));
-						
-  if(param.Out()->fpga_data_num != product(input->dims())){
-	  float *data_tmp =
-		  reinterpret_cast<float *>(malloc(outC * outH * outW * sizeof(float)));
-	  dealign(outdata_ptr, data_tmp, outC, outH, outW);
-	  memcpy(outdata_ptr, data_tmp, outC * outH * outW * sizeof(float));
-	  free(data_tmp);
+
+  if (param.Out()->fpga_data_num != product(input->dims())) {
+    float *data_tmp =
+        reinterpret_cast<float *>(malloc(outC * outH * outW * sizeof(float)));
+    dealign(outdata_ptr, data_tmp, outC, outH, outW);
+    memcpy(outdata_ptr, data_tmp, outC * outH * outW * sizeof(float));
+    free(data_tmp);
   }
-  
 }
 
 template class FetchKernel<FPGA, float>;
