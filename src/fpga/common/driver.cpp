@@ -26,9 +26,9 @@ limitations under the License. */
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <utility>
 
 #include "common/enforce.h"
-#include "fpga/common/bitmap.h"
 #include "fpga/common/driver.h"
 
 namespace paddle_mobile {
@@ -148,34 +148,6 @@ int fpga_regpoll(uint64_t reg, uint64_t val, int time) {
   }
 }
 
-/*内存管理*/
-int memory_request(struct fpga_memory *memory, size_t size, uint64_t *addr) {
-  uint64_t _nr = DIV_ROUND_UP(size, FPGA_PAGE_SIZE);
-  unsigned int nr = (unsigned int)_nr;
-  int ret = 0;
-  uint64_t a_size = FPGA_PAGE_SIZE * nr;
-
-  pthread_mutex_lock(&memory->mutex);
-
-  unsigned int pos = (unsigned int)fpga_bitmap::bitmap_find_next_zero_area(
-      memory->bitmap, memory->page_num, 0, nr, 0);
-  if (pos <= memory->page_num) {
-    uint64_t address_ofset =
-        memory->mem_start + ((uint64_t)pos) * FPGA_PAGE_SIZE;
-    fpga_bitmap::bitmap_set(memory->bitmap, pos, nr);
-    memory->nr[pos] = nr;
-
-    *addr = address_ofset;
-  } else {
-    DLOG << "memory request failed!";
-    ret = -ENOMEM;
-  }
-
-  pthread_mutex_unlock(&memory->mutex);
-
-  return ret;
-}
-
 void memory_release(struct fpga_memory *memory) {
   void *ptr = nullptr;
 
@@ -185,97 +157,6 @@ void memory_release(struct fpga_memory *memory) {
   for (iter = map.begin(); iter != map.end(); iter++) {
     fpga_free_driver(ptr);
   }
-}
-
-int create_fpga_memory_inner(struct fpga_memory *memory, size_t memory_size) {
-  int rc = 0;
-
-  uint64_t *bitmap = nullptr;
-  unsigned int *nr = nullptr;
-
-  // 不允许多份memory创建，所以创建memory结构体不存在互斥
-  // pthread_mutex_lock(&memory->mutex);
-  memory->page_num = (unsigned int)(memory_size / FPGA_PAGE_SIZE);
-  memory->page_num_long = DIV_ROUND_UP(memory->page_num, BITS_PER_LONG);
-
-  bitmap =
-      (uint64_t *)malloc(sizeof(int64_t) * memory->page_num_long);  // NOLINT
-  if (!bitmap) {
-    rc = -EFAULT;
-    return rc;
-  }
-  memory->bitmap = bitmap;
-
-  nr = (unsigned int *)calloc(memory->page_num, sizeof(unsigned int));
-  if (!nr) {
-    rc = -EFAULT;
-    free(bitmap);
-    return rc;
-  }
-  memory->nr = nr;
-
-  memory->mem_start = FPGA_MEM_PHY_ADDR;
-  memory->mem_end = FPGA_MEM_SIZE;
-  // pthread_mutex_unlock(memory->mutex);
-
-  return rc;
-}
-
-int create_fpga_memory(struct fpga_memory **memory_info) {
-  int rc = 0;
-
-  *memory_info = (struct fpga_memory *)malloc(sizeof(struct fpga_memory));
-  if (*memory_info == NULL) {
-    rc = -EFAULT;
-    return rc;
-  }
-  pthread_mutex_init(&((*memory_info)->mutex), nullptr);
-
-  rc = create_fpga_memory_inner(*memory_info, FPGA_MEM_SIZE);
-  if (rc) {
-    free(*memory_info);
-  }
-
-  return rc;
-}
-
-int init_fpga_memory(struct fpga_memory *memory) {
-  int rc = 0;
-
-  if (!memory) {
-    rc = -EFAULT;
-    return rc;
-  }
-
-  fpga_bitmap::bitmap_clear(memory->bitmap, 0, memory->page_num);
-  fpga_bitmap::bitmap_set(memory->bitmap, 0, 1);  // NOTE reserve fpga page 0.
-
-  return 0;
-}
-
-void destroy_fpga_memory(struct fpga_memory *memory) {
-  if (memory) {
-    free(memory->nr);
-    free(memory->bitmap);
-    free(memory);
-  }
-}
-
-int fpga_memory_add() {
-  int rc = 0;
-
-  rc = create_fpga_memory(&g_fpgainfo.memory_info);
-  if (rc) {
-    return rc;
-  }
-
-  rc = init_fpga_memory(g_fpgainfo.memory_info);
-  if (rc) {
-    destroy_fpga_memory(g_fpgainfo.memory_info);
-    return rc;
-  }
-
-  return 0;
 }
 
 uint64_t vaddr_to_paddr_driver(void *address) {
@@ -314,16 +195,27 @@ void *fpga_reg_free(void *ptr) {
   }
 }
 
+static inline int do_ioctl(int64_t req, const void *arg) {
+  return ioctl(g_fpgainfo.fd_mem, req, arg);
+}
+
 void *fpga_malloc_driver(size_t size) {
   void *ret = nullptr;
   uint64_t phy_addr = 0;
   int i = 0;
+  struct MemoryVM2PHYArgs args;
+  struct MemoryCacheArgs args_c;
 
-  memory_request(g_fpgainfo.memory_info, size, &phy_addr);
+  // memory_request(g_fpgainfo.memory_info, size, &phy_addr);
 
   ret = mmap64(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED,
-               g_fpgainfo.fd_mem, phy_addr);
+               g_fpgainfo.fd_mem, FPGA_MEM_PHY_ADDR);
   PADDLE_MOBILE_ENFORCE(ret != (void *)-1, "Should not be -1");
+
+  args.pVM = reinterpret_cast<void *>(ret);
+  args.pPHY = reinterpret_cast<void *>(0);
+  do_ioctl(IOCTL_MEMORY_VM2PHY, &args);
+  phy_addr = (uint64_t)args.pPHY;
 
   g_fpgainfo.fpga_vaddr2paddr_map.insert(std::make_pair(ret, phy_addr));
   g_fpgainfo.fpga_addr2size_map.insert(std::make_pair(ret, size));
@@ -342,14 +234,8 @@ void fpga_free_driver(void *ptr) {
     g_fpgainfo.fpga_addr2size_map.erase(iter);
     munmap(ptr, size);
 
-    p_addr = vaddr_to_paddr_driver(ptr);
-    pos = (p_addr - g_fpgainfo.memory_info->mem_start) / FPGA_PAGE_SIZE;
-
-    /*clear bitmap*/
-    pthread_mutex_lock(&g_fpgainfo.memory_info->mutex);
-    fpga_bitmap::bitmap_clear(g_fpgainfo.memory_info->bitmap, pos,
-                              g_fpgainfo.memory_info->nr[pos]);
-    pthread_mutex_unlock(&g_fpgainfo.memory_info->mutex);
+    // p_addr = vaddr_to_paddr_driver(ptr);
+    // pos = (p_addr - g_fpgainfo.memory_info->mem_start) / FPGA_PAGE_SIZE;
 
     auto iter = g_fpgainfo.fpga_vaddr2paddr_map.find(ptr);
     if (iter != g_fpgainfo.fpga_vaddr2paddr_map.end()) {
@@ -358,10 +244,6 @@ void fpga_free_driver(void *ptr) {
   } else {
     DLOG << "Invalid pointer" << ptr;
   }
-}
-
-static inline int do_ioctl(int64_t req, const void *arg) {
-  return ioctl(g_fpgainfo.fd_mem, req, arg);
 }
 
 int fpga_flush_driver(void *address, size_t size) {
@@ -413,7 +295,7 @@ int open_device_driver() {
 
   g_fpgainfo.FpgaRegVirAddr =
       (uint64_t *)fpga_reg_malloc(FPGA_REG_SIZE);  // NOLINT
-  fpga_memory_add();
+  // fpga_memory_add();
 
   pl_init();
 
@@ -424,7 +306,6 @@ int close_device_driver() {
   pl_destroy();
   fpga_reg_free(g_fpgainfo.FpgaRegVirAddr);
   memory_release(g_fpgainfo.memory_info);
-  destroy_fpga_memory(g_fpgainfo.memory_info);
 
   return 0;
 }
