@@ -14,7 +14,7 @@
 
 import Foundation
 
-class DwConvBNReluOp<P: PrecisionType>: Operator<ConvBNReluKernel<P>, ConvBNReluParam<P>>, Runable, Creator, InferShaperable, Fusion{
+class DwConvBNReluOp<P: PrecisionProtocol>: Operator<ConvBNReluKernel<P>, ConvBNReluParam<P>>, Runable, Creator, InferShaperable, Fusion{
     typealias OpType = ConvBNReluOp<P>
     
     func inferShape() {

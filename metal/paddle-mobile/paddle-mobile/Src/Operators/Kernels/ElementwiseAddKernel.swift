@@ -24,7 +24,7 @@ struct ElementwiseAddMetalParam {
     var ytrans: (Int32, Int32, Int32, Int32) = (0, 1, 2, 3)
 }
 
-class ElementwiseAddKernel<P: PrecisionType>: Kernel, Computable {
+class ElementwiseAddKernel<P: PrecisionProtocol>: Kernel, Computable {
     var metalParam: ElementwiseAddMetalParam
     required init(device: MTLDevice, param: ElementwiseAddParam<P>, initContext: InitContext) {
         param.output.initTexture(device: device, inTranspose: param.inputX.transpose, computePrecision: GlobalConfig.shared.computePrecision)

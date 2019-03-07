@@ -15,7 +15,7 @@
 import Foundation
 
 fileprivate var singletons : [String : Any] = [:]
-class OpCreator<P: PrecisionType> {
+class OpCreator<P: PrecisionProtocol> {
     static var shared : OpCreator<P> {
         let key = String(describing: P.self)
         if let singleton = singletons[key] {

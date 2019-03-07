@@ -17,7 +17,7 @@ import Foundation
 struct BoxcoderMetalParam {
 }
 
-class BoxcoderKernel<P: PrecisionType>: Kernel, Computable{
+class BoxcoderKernel<P: PrecisionProtocol>: Kernel, Computable{
     func compute(commandBuffer: MTLCommandBuffer, param: BoxcoderParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
             throw PaddleMobileError.predictError(message: " encode is nil")

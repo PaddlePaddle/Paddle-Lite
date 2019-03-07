@@ -15,7 +15,7 @@
 import Foundation
 import Metal
 
-class BatchNormParam<P: PrecisionType>: OpParam {
+class BatchNormParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         do {
@@ -44,7 +44,7 @@ class BatchNormParam<P: PrecisionType>: OpParam {
     let momentum: Float
 }
 
-class BatchNormOp<P: PrecisionType>: Operator<BatchNormKernel<P>, BatchNormParam<P>>, Runable, Creator, InferShaperable{
+class BatchNormOp<P: PrecisionProtocol>: Operator<BatchNormKernel<P>, BatchNormParam<P>>, Runable, Creator, InferShaperable{
     typealias OpType = BatchNormOp<P>
     
     func inferShape() {

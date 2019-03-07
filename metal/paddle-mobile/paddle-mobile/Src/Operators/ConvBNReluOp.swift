@@ -14,7 +14,7 @@
 
 import Foundation
 
-class ConvBNReluParam<P: PrecisionType>: OpParam {
+class ConvBNReluParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         do {
@@ -53,7 +53,7 @@ class ConvBNReluParam<P: PrecisionType>: OpParam {
     let groups: Int
 }
 
-class ConvBNReluOp<P: PrecisionType>: Operator<ConvBNReluKernel<P>, ConvBNReluParam<P>>, Runable, Creator, InferShaperable, Fusion{
+class ConvBNReluOp<P: PrecisionProtocol>: Operator<ConvBNReluKernel<P>, ConvBNReluParam<P>>, Runable, Creator, InferShaperable, Fusion{
     typealias OpType = ConvBNReluOp<P>
     
     func inputs() -> [Variant] {

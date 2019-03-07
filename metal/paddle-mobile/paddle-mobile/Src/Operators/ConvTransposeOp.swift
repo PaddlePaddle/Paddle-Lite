@@ -14,7 +14,7 @@
 
 import Foundation
 
-class ConvTransposeParam<P: PrecisionType>: ConvParam<P> {
+class ConvTransposeParam<P: PrecisionProtocol>: ConvParam<P> {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         do {
@@ -25,7 +25,7 @@ class ConvTransposeParam<P: PrecisionType>: ConvParam<P> {
     }
 }
 
-class ConvTransposeOp<P: PrecisionType>: Operator<ConvTransposeKernel<P>, ConvTransposeParam<P>>, Runable, Creator, InferShaperable{
+class ConvTransposeOp<P: PrecisionProtocol>: Operator<ConvTransposeKernel<P>, ConvTransposeParam<P>>, Runable, Creator, InferShaperable{
     
     typealias OpType = ConvTransposeOp<P>
     

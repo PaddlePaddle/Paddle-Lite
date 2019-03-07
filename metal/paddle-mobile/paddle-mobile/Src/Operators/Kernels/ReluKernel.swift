@@ -14,7 +14,7 @@
 
 import Foundation
 
-class ReluKernel<P: PrecisionType>: Kernel, Computable{
+class ReluKernel<P: PrecisionProtocol>: Kernel, Computable{
     func compute(commandBuffer: MTLCommandBuffer, param: ReluParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
             throw PaddleMobileError.predictError(message: " encode is nil")

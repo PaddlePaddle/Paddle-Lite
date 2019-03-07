@@ -15,7 +15,12 @@
 import Foundation
 //import SwiftProtobuf
 
-public class Loader<P: PrecisionType> {
+protocol Loaderable {
+    func load(device:MTLDevice, paramPointer: UnsafeMutableRawPointer, paramSize:Int, modePointer: UnsafeMutableRawPointer, modelSize: Int) throws -> Program
+    func load(device: MTLDevice, modelPath: String, paraPath: String) throws -> Program
+}
+
+public class Loader<P: PrecisionProtocol>: Loaderable{
     class ParaLoader {
         let file: UnsafeMutablePointer<FILE>
         let fileSize: Int
@@ -143,7 +148,7 @@ public class Loader<P: PrecisionType> {
         }
     }
     public init(){}
-    func loadModelandParam(_ device:MTLDevice,_ modelData:Data, _ paraLoaderPointer:ParaLoaderWithPointer?, _ paraLoader:ParaLoader?) throws -> Program {
+    private func loadModelandParam(_ device:MTLDevice,_ modelData:Data, _ paraLoaderPointer:ParaLoaderWithPointer?, _ paraLoader:ParaLoader?) throws -> Program {
         do {
             /// swift protobuf serialized Data to instance class
             //      let protoProgram = try PaddleMobile_Framework_Proto_ProgramDesc.init(
@@ -248,7 +253,7 @@ public class Loader<P: PrecisionType> {
         }
     }
     
-    public func load(device: MTLDevice, modelPath: String, paraPath: String) throws -> Program{
+    public func load(device: MTLDevice, modelPath: String, paraPath: String) throws -> Program {
         guard let modelData = try? Data.init(contentsOf: URL.init(fileURLWithPath: modelPath)) else {
             throw PaddleMobileError.loaderError(message: "load " + modelPath + " failed !")
         }

@@ -14,7 +14,7 @@
 
 import Foundation
 
-class PriorBoxParam<P: PrecisionType>: OpParam {
+class PriorBoxParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         do {
@@ -59,7 +59,7 @@ class PriorBoxParam<P: PrecisionType>: OpParam {
     let outputVariances: Texture
 }
 
-class PriorBoxOp<P: PrecisionType>: Operator<PriorBoxKernel<P>, PriorBoxParam<P>>, Runable, Creator, InferShaperable{
+class PriorBoxOp<P: PrecisionProtocol>: Operator<PriorBoxKernel<P>, PriorBoxParam<P>>, Runable, Creator, InferShaperable{
     
     typealias OpType = PriorBoxOp<P>
     

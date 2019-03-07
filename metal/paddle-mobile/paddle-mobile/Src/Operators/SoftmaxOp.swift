@@ -15,7 +15,7 @@
 import Foundation
 import Metal
 
-class SoftmaxParam<P: PrecisionType>: OpParam {
+class SoftmaxParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         do {
@@ -36,7 +36,7 @@ class SoftmaxParam<P: PrecisionType>: OpParam {
     var output: Texture
 }
 
-class SoftmaxOp<P: PrecisionType>: Operator<SoftmaxKernel<P>, SoftmaxParam<P>>, Runable, Creator, InferShaperable{
+class SoftmaxOp<P: PrecisionProtocol>: Operator<SoftmaxKernel<P>, SoftmaxParam<P>>, Runable, Creator, InferShaperable{
     typealias OpType = SoftmaxOp<P>
     
     func inferShape() {
