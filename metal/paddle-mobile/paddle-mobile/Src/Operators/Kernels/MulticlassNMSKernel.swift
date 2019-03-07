@@ -14,7 +14,7 @@
 
 import Foundation
 
-class MulticlassNMSKernel<P: PrecisionType>: Kernel, Computable{
+class MulticlassNMSKernel<P: PrecisionProtocol>: Kernel, Computable{
     let pipline1: MTLComputePipelineState
     
     required init(device: MTLDevice, param: MulticlassNMSParam<P>, initContext: InitContext) {

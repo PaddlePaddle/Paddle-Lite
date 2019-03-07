@@ -27,7 +27,7 @@ func getUniqueKey() -> String {
     return UUID.init().uuidString
 }
 
-class ConvAddKernel<P: PrecisionType>: Kernel, Computable {
+class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
     var metalParam: MetalConvParam!
     
     let identifyingKey: String = getUniqueKey()

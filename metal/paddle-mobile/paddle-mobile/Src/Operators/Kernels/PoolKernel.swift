@@ -24,7 +24,7 @@ struct PoolMetalParam {
     let poolType: Int32
 }
 
-class PoolKernel<P: PrecisionType>: Kernel, Computable{
+class PoolKernel<P: PrecisionProtocol>: Kernel, Computable{
     var metalParam: PoolMetalParam
     required init(device: MTLDevice, param: PoolParam<P>, initContext: InitContext) {
         param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)

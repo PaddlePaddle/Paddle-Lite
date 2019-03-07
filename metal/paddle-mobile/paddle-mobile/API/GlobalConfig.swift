@@ -21,7 +21,7 @@ import Foundation
     LoadMetalInCustomMetalLib = 3      // 使用 metal 库文件
 }
 
-@objc public enum ComputePrecision: Int {
+@objc public enum Precision: Int {
     case
     Float32 = 1,
     Float16 = 2
@@ -33,7 +33,7 @@ import Foundation
     @objc public static let shared: GlobalConfig = GlobalConfig.init()
     
     /// 运算精度， runner 生命周期中不可变
-    @objc public var computePrecision: ComputePrecision = .Float16
+    @objc public var computePrecision: Precision = .Float16
     
     /// 是否开启 log
     @objc public var debug: Bool = false

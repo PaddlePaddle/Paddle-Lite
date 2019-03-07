@@ -28,7 +28,7 @@ struct MetalConvTransposeParam {
     let dilationY: UInt16;
 }
 
-class ConvTransposeKernel<P: PrecisionType>: Kernel, Computable{
+class ConvTransposeKernel<P: PrecisionProtocol>: Kernel, Computable{
     var metalParam: MetalConvTransposeParam!
     required init(device: MTLDevice, param: ConvTransposeParam<P>, initContext: InitContext) {
         param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)

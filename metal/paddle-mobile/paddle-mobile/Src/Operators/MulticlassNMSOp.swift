@@ -14,7 +14,7 @@
 
 import Foundation
 
-class MulticlassNMSParam<P: PrecisionType>: OpParam {
+class MulticlassNMSParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         do {
@@ -36,7 +36,7 @@ class MulticlassNMSParam<P: PrecisionType>: OpParam {
     var output: Texture
 }
 
-class MulticlassNMSOp<P: PrecisionType>: Operator<MulticlassNMSKernel<P>, MulticlassNMSParam<P>>, Runable, Creator, InferShaperable{
+class MulticlassNMSOp<P: PrecisionProtocol>: Operator<MulticlassNMSKernel<P>, MulticlassNMSParam<P>>, Runable, Creator, InferShaperable{
     
     func inputVariant() -> [String : [MTLBuffer]] {
         guard let scoreBuffer = para.middleOutput.resultBuffer, let bboxBuffer = para.middleOutput.resultBuffer else {
@@ -48,8 +48,8 @@ class MulticlassNMSOp<P: PrecisionType>: Operator<MulticlassNMSKernel<P>, Multic
     func computeMiddleResult(device: MTLDevice, buffer: MTLCommandBuffer) {
         do {
             try kernel.compute(commandBuffer: buffer, param: para)
-        } catch let _ {
-            fatalError()
+        } catch let error {
+            fatalError("\(error)")
         }
     }
     

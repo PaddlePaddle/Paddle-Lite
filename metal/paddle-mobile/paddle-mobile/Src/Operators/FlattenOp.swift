@@ -14,7 +14,7 @@
 
 import Foundation
 
-class FlattenParam<P: PrecisionType>: OpParam {
+class FlattenParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         do {
@@ -31,7 +31,7 @@ class FlattenParam<P: PrecisionType>: OpParam {
 }
 
 
-class FlattenOp<P: PrecisionType>: Operator<FlattenKernel<P>, FlattenParam<P>>, Runable, Creator, InferShaperable{
+class FlattenOp<P: PrecisionProtocol>: Operator<FlattenKernel<P>, FlattenParam<P>>, Runable, Creator, InferShaperable{
     
     typealias OpType = FlattenOp<P>
     

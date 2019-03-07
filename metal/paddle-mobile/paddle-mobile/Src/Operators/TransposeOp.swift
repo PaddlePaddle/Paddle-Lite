@@ -15,7 +15,7 @@
 import Foundation
 import Metal
 
-class TransposeParam<P: PrecisionType>: OpParam {
+class TransposeParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         do {
@@ -31,7 +31,7 @@ class TransposeParam<P: PrecisionType>: OpParam {
     let axis: [Int32]
 }
 
-class TransposeOp<P: PrecisionType>: Operator<TransposeKernel<P>, TransposeParam<P>>, Runable, Creator, InferShaperable{
+class TransposeOp<P: PrecisionProtocol>: Operator<TransposeKernel<P>, TransposeParam<P>>, Runable, Creator, InferShaperable{
     
     typealias OpType = TransposeOp<P>
     

@@ -16,7 +16,7 @@ import Foundation
 import MetalKit
 import CoreMedia
 
-class FeedParam<P: PrecisionType>: OpParam{
+class FeedParam<P: PrecisionProtocol>: OpParam{
     var output: Texture
     var input: InputTexture {
         return scope.input() as! InputTexture
@@ -35,7 +35,7 @@ class FeedParam<P: PrecisionType>: OpParam{
     //typealias ParamPrecisionType = P
 }
 
-class FeedOp<P: PrecisionType>: Operator<Texture2DTo2DArrayKernel<P>, FeedParam<P>>, Runable, Creator, InferShaperable {
+class FeedOp<P: PrecisionProtocol>: Operator<Texture2DTo2DArrayKernel<P>, FeedParam<P>>, Runable, Creator, InferShaperable {
     typealias OpType = FeedOp<P>
     
     func inferShape() {

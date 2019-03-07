@@ -15,7 +15,7 @@
 import Foundation
 import Metal
 
-class BilinearInterpParam<P: PrecisionType>: OpParam {
+class BilinearInterpParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         do {
@@ -36,7 +36,7 @@ class BilinearInterpParam<P: PrecisionType>: OpParam {
     let out_w: Int
 }
 
-class BilinearInterpOp<P: PrecisionType>: Operator<BilinearInterpKernel<P>, BilinearInterpParam<P>>, Runable, Creator, InferShaperable{
+class BilinearInterpOp<P: PrecisionProtocol>: Operator<BilinearInterpKernel<P>, BilinearInterpParam<P>>, Runable, Creator, InferShaperable{
     
     typealias OpType = BilinearInterpOp<P>
     
