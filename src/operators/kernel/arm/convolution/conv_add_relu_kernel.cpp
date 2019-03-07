@@ -46,11 +46,11 @@ void ConvAddReluKernel<CPU, float>::Compute(
       DepthwiseConv5x5<float, float>(param);
       math::AddChannelWise<RELU>(param.Output(), param.Bias(), param.Output());
       break;
+#endif  // __aarch64__
     case ConvParam<CPU>::EXEC_WINOGRAD3X3_FLOAT:
       WinogradConv3x3<8, 3>(param);
       math::AddChannelWise<RELU>(param.Output(), param.Bias(), param.Output());
       break;
-#endif  // __aarch64__
     case ConvParam<CPU>::EXEC_GEMM_FLOAT:
       ConvAddReluBasic<FusionConvAddReluParam<CPU>>(param);
       break;

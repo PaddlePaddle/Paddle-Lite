@@ -53,6 +53,7 @@ void InitBaseConvKernel(ConvParam<CPU> *param) {
     } else if (depth5x5 && param->Strides()[0] == param->Strides()[1] &&
                param->Strides()[0] == 1) {
       param->ExecMode() = ConvParam<CPU>::EXEC_DEPTHWISE5x5_FLOAT;
+#endif
     } else if (conv3x3 && !depth3x3 &&
                param->Strides()[0] == param->Strides()[1] &&
                param->Dilations()[0] == param->Dilations()[1] &&
@@ -68,7 +69,6 @@ void InitBaseConvKernel(ConvParam<CPU> *param) {
       param->transformed_filter_ = new framework::LoDTensor;
       operators::math::winograd_transform_weight<8, 3>(
           *param->Filter(), param->transformed_filter_);
-#endif
     } else {
       param->ExecMode() = ConvParam<CPU>::EXEC_GEMM_FLOAT;
     }

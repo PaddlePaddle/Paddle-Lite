@@ -79,12 +79,12 @@ void ConvAddBNReluKernel<CPU, float>::Compute(
       math::ScaleAddChannelWise<RELU>(param.Output(), param.NewScale(),
                                       param.NewBias(), param.Output());
       break;
+#endif  // __aarch64__
     case ConvParam<CPU>::EXEC_WINOGRAD3X3_FLOAT:
       WinogradConv3x3<8, 3>(param);
       math::ScaleAddChannelWise<RELU>(param.Output(), param.NewScale(),
                                       param.NewBias(), param.Output());
       break;
-#endif  // __aarch64__
     case ConvParam<CPU>::EXEC_GEMM_FLOAT:
       ConvBNReluBasic<FusionConvAddBNReluParam<CPU>>(param);
       break;
