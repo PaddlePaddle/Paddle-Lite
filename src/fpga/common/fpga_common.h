@@ -25,6 +25,7 @@ limitations under the License. */
 #define FILTER_ELEMENT_ALIGNMENT (16)  // Filter element number aligned to 16
 #define BS_NUM_ALIGNMENT (8)
 #define BIAS_NUM_ALIGNMENT (16)
+#define ROW_PARALLEL_NUM (3)
 #endif
 
 namespace paddle_mobile {

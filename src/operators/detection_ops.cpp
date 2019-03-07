@@ -65,6 +65,23 @@ void PSRoiPoolOp<DeviceType, T>::InferShape() const {
 }
 #endif
 
+#ifdef ROIALIGN_POOL_OP
+template <typename DeviceType, typename T>
+void RoiAlignPoolOp<DeviceType, T>::InferShape() const {
+  const auto &rois_dims = this->param_.input_rois_->dims();
+  const int pooled_height = this->param_.pooled_height_;
+  const int pooled_width = this->param_.pooled_width_;
+
+  auto out_dims = this->param_.input_x_->dims();
+  out_dims[0] = rois_dims[0];
+  // out_dims[1] =
+  //     output_channels;  // input_dims[1] / (pooled_height * pooled_width);
+  out_dims[2] = pooled_height;
+  out_dims[3] = pooled_width;
+  this->param_.output_->Resize(out_dims);
+}
+#endif
+
 #ifdef ROI_PERSPECTIVE_OP
 template <typename DeviceType, typename T>
 void RoiPerspectiveOp<DeviceType, T>::InferShape() const {
@@ -110,4 +127,8 @@ REGISTER_OPERATOR_FPGA(generate_proposals, ops::ProposalOp);
 #ifdef PSROI_POOL_OP
 REGISTER_OPERATOR_FPGA(psroi_pool, ops::PSRoiPoolOp);
 #endif
+#ifdef ROIALIGN_POOL_OP
+REGISTER_OPERATOR_FPGA(roialign_pool, ops::RoiAlignPoolOp);
+#endif
+
 #endif
