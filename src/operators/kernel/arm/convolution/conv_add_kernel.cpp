@@ -11,11 +11,13 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
+
 #ifdef FUSION_CONVADD_OP
 
 #include "operators/kernel/conv_add_kernel.h"
 #include "operators/kernel/arm/convolution/conv_common.h"
 #include "operators/kernel/central-arm-func/conv_add_arm_func.h"
+#include "operators/kernel/central-arm-func/conv_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -47,12 +49,12 @@ void ConvAddKernel<CPU, float>::Compute(const FusionConvAddParam<CPU> &param) {
       math::AddChannelWise<IDENTITY>(param.Output(), param.Bias(),
                                      param.Output());
       break;
+#endif  // __aarch64__
     case ConvParam<CPU>::EXEC_WINOGRAD3X3_FLOAT:
       WinogradConv3x3<8, 3>(param);
       math::AddChannelWise<IDENTITY>(param.Output(), param.Bias(),
                                      param.Output());
       break;
-#endif  // __aarch64__
     case ConvParam<CPU>::EXEC_GEMM_FLOAT:
       ConvAddBasic(param);
       break;
