@@ -24,10 +24,8 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace operators {
 
-
 template <>
 bool RoiAlignPoolKernel<FPGA, float>::Init(RoiAlignPoolParam<FPGA>* param) {
-  
   auto dims = param->input_x_->dims();
   PADDLE_MOBILE_ENFORCE(dims[1] * dims[3] % IMAGE_ALIGNMENT == 0,
                         "data not aligned");
@@ -58,10 +56,8 @@ bool RoiAlignPoolKernel<FPGA, float>::Init(RoiAlignPoolParam<FPGA>* param) {
 
   param->output_->mutable_data<float>(dims_out_new);
 
-
   return true;
 }
-
 
 template <typename T>
 struct PreCalc {
@@ -77,30 +73,22 @@ struct PreCalc {
 
 template <typename T>
 void pre_calc_for_bilinear_interpolate(
-    const int height,
-    const int width,
-    const int pooled_height,
-    const int pooled_width,
-    const int iy_upper,
-    const int ix_upper,
-    T roi_start_h,
-    T roi_start_w,
-    T bin_size_h,
-    T bin_size_w,
-    int roi_bin_grid_h,
-    int roi_bin_grid_w,
-    std::vector<PreCalc<T>>& pre_calc) {
+    const int height, const int width, const int pooled_height,
+    const int pooled_width, const int iy_upper, const int ix_upper,
+    T roi_start_h, T roi_start_w, T bin_size_h, T bin_size_w,
+    int roi_bin_grid_h, int roi_bin_grid_w,
+    std::vector<PreCalc<T>>& pre_calc) {  // NOLINT
   int pre_calc_index = 0;
   for (int ph = 0; ph < pooled_height; ph++) {
     for (int pw = 0; pw < pooled_width; pw++) {
       for (int iy = 0; iy < iy_upper; iy++) {
         const T yy = roi_start_h + ph * bin_size_h +
-            static_cast<T>(iy + .5f) * bin_size_h /
-                static_cast<T>(roi_bin_grid_h); // e.g., 0.5, 1.5
+                     static_cast<T>(iy + .5f) * bin_size_h /
+                         static_cast<T>(roi_bin_grid_h);  // e.g., 0.5, 1.5
         for (int ix = 0; ix < ix_upper; ix++) {
           const T xx = roi_start_w + pw * bin_size_w +
-              static_cast<T>(ix + .5f) * bin_size_w /
-                  static_cast<T>(roi_bin_grid_w);
+                       static_cast<T>(ix + .5f) * bin_size_w /
+                           static_cast<T>(roi_bin_grid_w);
 
           T x = xx;
           T y = yy;
@@ -128,8 +116,8 @@ void pre_calc_for_bilinear_interpolate(
             x = 0;
           }
 
-          int y_low = (int)y;
-          int x_low = (int)x;
+          int y_low = static_cast<int>(y);
+          int x_low = static_cast<int>(x);
           int y_high;
           int x_high;
 
@@ -172,21 +160,12 @@ void pre_calc_for_bilinear_interpolate(
 }
 
 template <typename T>
-void ROIAlignForward(
-    const int nthreads,
-    const T* bottom_data,
-    const T& spatial_scale,
-    const int channels,
-    const int height,
-    const int width,
-    const int pooled_height,
-    const int pooled_width,
-    const int sampling_ratio,
-    const T* bottom_rois,
-    T* top_data) {
-
+void ROIAlignForward(const int nthreads, const T* bottom_data,
+                     const T& spatial_scale, const int channels,
+                     const int height, const int width, const int pooled_height,
+                     const int pooled_width, const int sampling_ratio,
+                     const T* bottom_rois, T* top_data) {
   int n_rois = nthreads / channels / pooled_width / pooled_height;
-
 
   for (int n = 0; n < n_rois; n++) {
     int index_n = n * channels * pooled_width * pooled_height;
@@ -195,8 +174,8 @@ void ROIAlignForward(
     const T* offset_bottom_rois = bottom_rois + n * 4;
     int roi_batch_ind = 0;
     // if (roi_cols == 5) {
-      // roi_batch_ind = offset_bottom_rois[0];
-      // offset_bottom_rois++;
+    // roi_batch_ind = offset_bottom_rois[0];
+    // offset_bottom_rois++;
     // }
 
     // Do not using rounding; this implementation detail is critical
@@ -217,70 +196,58 @@ void ROIAlignForward(
 
     // We use roi_bin_grid to sample the grid and mimic integral
     int roi_bin_grid_h = (sampling_ratio > 0)
-        ? sampling_ratio
-        : ceil(roi_height / pooled_height); // e.g., = 2
+                             ? sampling_ratio
+                             : ceil(roi_height / pooled_height);  // e.g., = 2
     int roi_bin_grid_w =
         (sampling_ratio > 0) ? sampling_ratio : ceil(roi_width / pooled_width);
 
     // We do average (integral) pooling inside a bin
-    const T count = roi_bin_grid_h * roi_bin_grid_w; // e.g. = 4
+    const T count = roi_bin_grid_h * roi_bin_grid_w;  // e.g. = 4
 
     // we want to precalculate indeces and weights shared by all chanels,
     // this is the key point of optimiation
-    std::vector<PreCalc<T>> pre_calc(
-        roi_bin_grid_h * roi_bin_grid_w * pooled_width * pooled_height);
+    std::vector<PreCalc<T>> pre_calc(roi_bin_grid_h * roi_bin_grid_w *
+                                     pooled_width * pooled_height);
     pre_calc_for_bilinear_interpolate(
-        height,
-        width,
-        pooled_height,
-        pooled_width,
-        roi_bin_grid_h,
-        roi_bin_grid_w,
-        roi_start_h,
-        roi_start_w,
-        bin_size_h,
-        bin_size_w,
-        roi_bin_grid_h,
-        roi_bin_grid_w,
-        pre_calc);
+        height, width, pooled_height, pooled_width, roi_bin_grid_h,
+        roi_bin_grid_w, roi_start_h, roi_start_w, bin_size_h, bin_size_w,
+        roi_bin_grid_h, roi_bin_grid_w, pre_calc);
 
-    
-      for (int c = 0; c < channels; c++) {
-        int index_n_c = index_n + c * pooled_width * pooled_height;
-        const T* offset_bottom_data =
-            bottom_data + (roi_batch_ind * channels + c) * height * width;
-        int pre_calc_index = 0;
+    for (int c = 0; c < channels; c++) {
+      int index_n_c = index_n + c * pooled_width * pooled_height;
+      const T* offset_bottom_data =
+          bottom_data + (roi_batch_ind * channels + c) * height * width;
+      int pre_calc_index = 0;
 
-        for (int ph = 0; ph < pooled_height; ph++) {
-          for (int pw = 0; pw < pooled_width; pw++) {
-            int index = index_n_c + ph * pooled_width + pw;
+      for (int ph = 0; ph < pooled_height; ph++) {
+        for (int pw = 0; pw < pooled_width; pw++) {
+          int index = index_n_c + ph * pooled_width + pw;
 
-            T output_val = 0.;
-            for (int iy = 0; iy < roi_bin_grid_h; iy++) {
-              for (int ix = 0; ix < roi_bin_grid_w; ix++) {
-                PreCalc<T> pc = pre_calc[pre_calc_index];
-                output_val += pc.w1 * offset_bottom_data[pc.pos1] +
-                    pc.w2 * offset_bottom_data[pc.pos2] +
-                    pc.w3 * offset_bottom_data[pc.pos3] +
-                    pc.w4 * offset_bottom_data[pc.pos4];
+          T output_val = 0.;
+          for (int iy = 0; iy < roi_bin_grid_h; iy++) {
+            for (int ix = 0; ix < roi_bin_grid_w; ix++) {
+              PreCalc<T> pc = pre_calc[pre_calc_index];
+              output_val += pc.w1 * offset_bottom_data[pc.pos1] +
+                            pc.w2 * offset_bottom_data[pc.pos2] +
+                            pc.w3 * offset_bottom_data[pc.pos3] +
+                            pc.w4 * offset_bottom_data[pc.pos4];
 
-                pre_calc_index += 1;
-              }
+              pre_calc_index += 1;
             }
-            output_val /= count;
+          }
+          output_val /= count;
 
-            top_data[index] = output_val;
-          } // for pw
-        } // for ph
-      } // for c
-  } // for n
+          top_data[index] = output_val;
+        }  // for pw
+      }    // for ph
+    }      // for c
+  }        // for n
 }
 
-
 template <>
-void RoiAlignPoolKernel<FPGA, float>::Compute(const RoiAlignPoolParam<FPGA>& param) {
- 
- auto input_tensor = param.float_input.get();
+void RoiAlignPoolKernel<FPGA, float>::Compute(
+    const RoiAlignPoolParam<FPGA>& param) {
+  auto input_tensor = param.float_input.get();
   fpga::PerformBypass(param.input_arg);
   fpga::fpga_invalidate(input_tensor->data<float>(),
                         input_tensor->numel() * sizeof(float));
@@ -308,23 +275,22 @@ void RoiAlignPoolKernel<FPGA, float>::Compute(const RoiAlignPoolParam<FPGA>& par
       {rois_num, (param.output_)->dims()[1], (((param.output_)->dims()[2])),
        (param.output_)->dims()[3]});
   (param.output_)->Resize(dims_out_new);
-	
+
   const int index = input_channels * pooled_height * pooled_width * rois_num;
   auto rois_data = rois->data<float>();
   auto top_data = param.output_->mutable_data<float>();
-  for (int i = 0;  i < index; ++i){
-	   ROIAlignForward<float>( index,data_nhwc,spatial_scale,input_channels,height,width,
-	   			pooled_height,pooled_width,sampe_ratio,rois_data,top_data);
+  for (int i = 0; i < index; ++i) {
+    ROIAlignForward<float>(index, data_nhwc, spatial_scale, input_channels,
+                           height, width, pooled_height, pooled_width,
+                           sampe_ratio, rois_data, top_data);
   }
 
-   fpga::image::convert_to_hwc(&top_data, input_channels, pooled_height,
+  fpga::image::convert_to_hwc(&top_data, input_channels, pooled_height,
                               pooled_width, rois_num);
-   out->reset_data_ptr(top_data);
-
+  out->reset_data_ptr(top_data);
 }
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
 #endif  // ROIALIGN_POOL_OP
-

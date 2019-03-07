@@ -74,14 +74,13 @@ void RoiAlignPoolOp<DeviceType, T>::InferShape() const {
 
   auto out_dims = this->param_.input_x_->dims();
   out_dims[0] = rois_dims[0];
- // out_dims[1] =
- //     output_channels;  // input_dims[1] / (pooled_height * pooled_width);
+  // out_dims[1] =
+  //     output_channels;  // input_dims[1] / (pooled_height * pooled_width);
   out_dims[2] = pooled_height;
   out_dims[3] = pooled_width;
   this->param_.output_->Resize(out_dims);
 }
 #endif
-
 
 #ifdef ROI_PERSPECTIVE_OP
 template <typename DeviceType, typename T>

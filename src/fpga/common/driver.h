@@ -53,15 +53,14 @@ struct MemoryCacheArgs {
 };
 
 struct MemoryVM2PHYArgs {
-    void*                   pVM;
-    void*                   pPHY;
+  void *pVM;
+  void *pPHY;
 };
 
 #define IOCTL_FPGA_MAGIC 'F'
 #define IOCTL_MEMCACHE_INVAL _IOW(IOCTL_FPGA_MAGIC, 12, struct MemoryCacheArgs)
 #define IOCTL_MEMCACHE_FLUSH _IOW(IOCTL_FPGA_MAGIC, 13, struct MemoryCacheArgs)
-#define IOCTL_MEMORY_VM2PHY     _IOWR(IOCTL_FPGA_MAGIC, 15, struct MemoryVM2PHYArgs) 
-
+#define IOCTL_MEMORY_VM2PHY _IOWR(IOCTL_FPGA_MAGIC, 15, struct MemoryVM2PHYArgs)
 
 struct fpga_pe {
   char type_name[MAX_TYPE_NAME_LENTH + 1];
