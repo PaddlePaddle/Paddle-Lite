@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "fpga/V1/api.h"
+#include <memory>
 #include "fpga/V1/bias_scale.h"
 #include "fpga/V1/deconv_filter.h"
 #include "fpga/V1/filter.h"
@@ -368,9 +369,10 @@ void expand_conv_arg(ConvArgs *arg) {
   auto filter_pad_width_mul_channel =
       args.image.pad_width * args.image.channels;
   auto image_amount_per_row_multi_win_first =
-      image_amount_per_row * (2 * args.kernel.stride_h - args.image.pad_height);
+      image_amount_per_row *
+      (ROW_PARALLEL_NUM * args.kernel.stride_h - args.image.pad_height);
   auto image_amount_per_row_multi_win =
-      image_amount_per_row * (2 * args.kernel.stride_h);
+      image_amount_per_row * (ROW_PARALLEL_NUM * args.kernel.stride_h);
 
   auto image_block_num = block_num;
   auto image_block_len =
