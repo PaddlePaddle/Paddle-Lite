@@ -201,16 +201,16 @@ inline void DepthwiseConv5x5(const ConvParam<CPU> &param) {
   Tensor *output = param.Output();
   output->mutable_data<Otype>();
 
-  if (strides[0] == 1) {
-    for (int i = 0; i < batch_size; i++) {
-      Tensor in_batch = input->Slice(i, i + 1);
-      Tensor out_batch = output->Slice(i, i + 1);
-      math::DepthwiseConv5x5S1<Itype, Otype>(in_batch, *filter, paddings,
-                                             &out_batch);
-    }
-  } else {
-    GemmConv<Itype, Otype>(param);
-  }
+  //  if (strides[0] == 1) {
+  //    for (int i = 0; i < batch_size; i++) {
+  //      Tensor in_batch = input->Slice(i, i + 1);
+  //      Tensor out_batch = output->Slice(i, i + 1);
+  //      math::DepthwiseConv5x5S1<Itype, Otype>(in_batch, *filter, paddings,
+  //                                             &out_batch);
+  //    }
+  //  } else {
+  GemmConv<Itype, Otype>(param);
+  //  }
 }
 
 template <typename ParamType>
