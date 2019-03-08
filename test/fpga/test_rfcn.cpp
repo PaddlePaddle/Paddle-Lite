@@ -133,39 +133,16 @@ int main() {
     readStream(g_image_src_float, reinterpret_cast<char *>(img));
 
     std::vector<void *> v(3, nullptr);
-    paddle_mobile.FeedData({img_info, img});
+    paddle_mobile.FeedData(std::vector<void *>({img_info, img}));
     paddle_mobile.Predict_To(-1);
 
-    for (int i = 55; i < 69; i++) {
+    for (int i = 65; i < 69; i++) {
       auto tensor_ptr = paddle_mobile.FetchResult(i);
       std::string saveName = "rfcn_" + std::to_string(i);
-      // if(i != 58)
       paddle_mobile::fpga::fpga_invalidate((*tensor_ptr).get_data(),
                                            tensor_ptr->numel() * sizeof(float));
-      //                                   tensor_ptr->numel() * sizeof(float));
-      if ((i == 48) || (i == 47)) {
-        dump_stride(saveName, (*tensor_ptr), 20,
-                    false);  // 20);//tensor_ptr->numel());
-      } else if (i == 55) {
-        dump_stride(saveName, (*tensor_ptr), tensor_ptr->numel(),
-                    true);  // 20);//tensor_ptr->numel());
-      } else {
-        dump_stride(saveName, (*tensor_ptr), tensor_ptr->numel(),
-                    true);  // 20);//tensor_ptr->numel());
-      }
-      /*    float result = 0;
-          std::string str = "softmax_input_data";
-          float* data =
-         static_cast<float*>(fpga::fpga_malloc(tensor_ptr->numel() *
-         sizeof(float))); str = "softmax_output_data"; auto output_ptr =
-         static_cast<half*>((*tensor_ptr).get_data()); for (int idx = 0; idx <
-         tensor_ptr->numel(); ++idx)
-          {
-              data[idx] = fpga::fp16_2_fp32(output_ptr[idx]);
-          }
-          fpga::savefile<float>(str,data, tensor_ptr->numel(), result );   */
+      dump_stride(saveName, (*tensor_ptr), tensor_ptr->numel(), true);
     }
-
     //   paddle_mobile.GetResults(&v);
     DLOG << "Computation done";
     fpga::fpga_free(img);
