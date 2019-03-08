@@ -343,6 +343,7 @@ static std::mutex shared_mutex;
   [cpuResult toSetDim: ocDim];
   [cpuResult toSetOutputSize: output_tensor->numel()];
 
+  free(output);
   CFRelease(cfData);
   cfData = NULL;
 
