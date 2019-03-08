@@ -14,7 +14,7 @@
 
 import Foundation
 
-class ConvAddAddPreluKernel<P: PrecisionType>: Kernel, Computable {
+class ConvAddAddPreluKernel<P: PrecisionProtocol>: Kernel, Computable {
     var metalParam: MetalConvParam!
     required init(device: MTLDevice, param: ConvAddAddPreluParam<P>, initContext: InitContext) {
         param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1], computePrecision: GlobalConfig.shared.computePrecision)

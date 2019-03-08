@@ -14,7 +14,7 @@
 
 import Foundation
 
-class ConvAddPreluParam<P: PrecisionType>: OpParam {
+class ConvAddPreluParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         do {
@@ -45,7 +45,7 @@ class ConvAddPreluParam<P: PrecisionType>: OpParam {
     let groups: Int
 }
 
-class ConvAddPreluOp<P: PrecisionType>: Operator<ConvAddPreluKernel<P>, ConvAddPreluParam<P>>, Runable, Creator, InferShaperable, Fusion{
+class ConvAddPreluOp<P: PrecisionProtocol>: Operator<ConvAddPreluKernel<P>, ConvAddPreluParam<P>>, Runable, Creator, InferShaperable, Fusion{
     typealias OpType = ConvAddPreluOp<P>
     
     static func fusionNode() -> Node {

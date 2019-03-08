@@ -15,7 +15,7 @@
 import Foundation
 import Metal
 
-class FetchParam<P: PrecisionType>: OpParam{
+class FetchParam<P: PrecisionProtocol>: OpParam{
     var output: FetchHolder
     let input: Texture
     let scope: Scope
@@ -33,7 +33,7 @@ class FetchParam<P: PrecisionType>: OpParam{
     //typealias ParamPrecisionType = P
 }
 
-class FetchOp<P: PrecisionType>: Operator< FetchKernel<P>, FetchParam<P>>, Runable, Creator, InferShaperable {
+class FetchOp<P: PrecisionProtocol>: Operator< FetchKernel<P>, FetchParam<P>>, Runable, Creator, InferShaperable {
     
     typealias OpType = FetchOp<P>
     

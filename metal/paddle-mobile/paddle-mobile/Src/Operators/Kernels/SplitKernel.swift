@@ -22,7 +22,7 @@ struct SplitMetalParam {
     var vdim: (Int32, Int32, Int32, Int32) = (0, 0, 0, 0)
 }
 
-class SplitKernel<P: PrecisionType>: Kernel, Computable{
+class SplitKernel<P: PrecisionProtocol>: Kernel, Computable{
     var smp: SplitMetalParam
     func compute(commandBuffer: MTLCommandBuffer, param: SplitParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
