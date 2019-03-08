@@ -164,6 +164,7 @@ inline void WinogradConv3x3(const ConvParam<CPU> &param) {
 }
 
 #ifndef __aarch64__
+// int8 DepthwiseConv3x3
 template <typename Itype, typename Otype>
 inline void DepthwiseConv3x3(const ConvParam<CPU> &param) {
   const Tensor *input = param.Input();
@@ -188,6 +189,7 @@ inline void DepthwiseConv3x3(const ConvParam<CPU> &param) {
     }
   }
 }
+#endif  // __aarch64__
 
 template <typename Itype, typename Otype>
 inline void DepthwiseConv5x5(const ConvParam<CPU> &param) {
@@ -210,7 +212,6 @@ inline void DepthwiseConv5x5(const ConvParam<CPU> &param) {
     GemmConv<Itype, Otype>(param);
   }
 }
-#endif  // __aarch64__
 
 template <typename ParamType>
 void ConvAddReluBasic(const ParamType &param) {
