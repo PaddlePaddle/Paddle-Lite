@@ -31,275 +31,345 @@ inline float32x4_t vandq_f32_u32(float32x4_t x, uint32x4_t mask) {
 
 void pack_lhs_6r(const int m, const int k, const float *A, const int lda,
                  float *output, const bool unroll) {
-  uint32_t mask[8] = {0, 1, 2, 3, 4, 5, 4, 5};
-  int remain_k = k & 0x3;
-  uint32x4_t vzero = vdupq_n_u32(0);
-  uint32x4_t vmask1 = vcltq_u32(vld1q_u32(mask), vdupq_n_u32(remain_k));
+  float *zero = new float[k];
+  memset(zero, 0, k * sizeof(float));
 
-  #pragma omp parallel for if (unroll)
-  for (int i = 0; i < m - 5; i += 6) {
+  const int m_tail = m % 6;
+  const int i_length = m - m_tail;
+  for (int i = 0; i < i_length; i += 6) {
     const float *a0 = A + i * lda;
     const float *a1 = A + (i + 1) * lda;
     const float *a2 = A + (i + 2) * lda;
     const float *a3 = A + (i + 3) * lda;
     const float *a4 = A + (i + 4) * lda;
     const float *a5 = A + (i + 5) * lda;
-    float *out_ptr = output + i * k;
-
-    int loops = k >> 2;
-    if (loops > 0) {
-#if __aarch64__
-      for (int l = 0; l < loops; ++l) {
-        float32x4_t _d0 = vld1q_f32(a0);
-        float32x4_t _d1 = vld1q_f32(a1);
-        float32x4_t _d2 = vld1q_f32(a2);
-        float32x4_t _d3 = vld1q_f32(a3);
-        float32x4_t _d4 = vld1q_f32(a4);
-        float32x4_t _d5 = vld1q_f32(a5);
-
-        float32x4x2_t _q0 = vtrnq_f32(_d0, _d1);
-        float32x4x2_t _q1 = vtrnq_f32(_d2, _d3);
-        float32x4x2_t _q3 = vtrnq_f32(_d4, _d5);
-        _d0 = vcombine_f32(vget_low_f32(_q0.val[0]), vget_low_f32(_q1.val[0]));
-        _d1 = vcombine_f32(vget_low_f32(_q0.val[1]), vget_low_f32(_q1.val[1]));
-        _d2 =
-            vcombine_f32(vget_high_f32(_q0.val[0]), vget_high_f32(_q1.val[0]));
-        _d3 =
-            vcombine_f32(vget_high_f32(_q0.val[1]), vget_high_f32(_q1.val[1]));
-
-        vst1q_f32(out_ptr, _d0);
-        vst1_f32(out_ptr + 4, vget_low_f32(_q3.val[0]));
-        vst1q_f32(out_ptr + 6, _d1);
-        vst1_f32(out_ptr + 10, vget_low_f32(_q3.val[1]));
-        vst1q_f32(out_ptr + 12, _d2);
-        vst1_f32(out_ptr + 16, vget_high_f32(_q3.val[0]));
-        vst1q_f32(out_ptr + 18, _d3);
-        vst1_f32(out_ptr + 22, vget_high_f32(_q3.val[1]));
-
-        a0 += 4;
-        a1 += 4;
-        a2 += 4;
-        a3 += 4;
-        a4 += 4;
-        a5 += 4;
-        out_ptr += 24;
-      }
-#else
-      asm volatile(
-          "loop_4k_%=:                        \n"
-          "vld1.32    {d0-d1}, [%[a0]]!       \n"
-          "vld1.32    {d2-d3}, [%[a1]]!       \n"
-          "vld1.32    {d4-d5}, [%[a2]]!       \n"
-          "vld1.32    {d6-d7}, [%[a3]]!       \n"
-          "vld1.32    {d8-d9}, [%[a4]]!       \n"
-          "vld1.32    {d10-d11}, [%[a5]]!     \n"
-          "vtrn.32    q0, q1                  \n"
-          "vtrn.32    q2, q3                  \n"
-          "vtrn.32    q4, q5                  \n"
-          "vswp.32    d1, d4                  \n"
-          "vswp.32    d3, d6                  \n"
-
-          "vst1.32    {q0}, [%[out]]!         \n"
-          "vst1.32    {d8}, [%[out]]!         \n"
-          "vst1.32    {q1}, [%[out]]!         \n"
-          "vst1.32    {d10}, [%[out]]!        \n"
-          "vst1.32    {q2}, [%[out]]!         \n"
-          "vst1.32    {d9}, [%[out]]!         \n"
-          "vst1.32    {q3}, [%[out]]!         \n"
-          "vst1.32    {d11}, [%[out]]!        \n"
-
-          "subs       %[loops], #1            \n"
-          "bne        loop_4k_%=              \n"
-          : [out] "+r"(out_ptr), [a0] "+r"(a0), [a1] "+r"(a1), [a2] "+r"(a2),
-            [a3] "+r"(a3), [a4] "+r"(a4), [a5] "+r"(a5), [loops] "+r"(loops)
-          :
-          : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5");
-#endif
-    }
-
-    if (remain_k > 0) {
-      float32x4_t _d0 = vld1q_f32(a0);
-      float32x4_t _d1 = vld1q_f32(a1);
-      float32x4_t _d2 = vld1q_f32(a2);
-      float32x4_t _d3 = vld1q_f32(a3);
-      float32x4_t _d4 = vld1q_f32(a4);
-      float32x4_t _d5 = vld1q_f32(a5);
-
-      _d0 = vandq_f32_u32(_d0, vmask1);
-      _d1 = vandq_f32_u32(_d1, vmask1);
-      _d2 = vandq_f32_u32(_d2, vmask1);
-      _d3 = vandq_f32_u32(_d3, vmask1);
-      _d4 = vandq_f32_u32(_d4, vmask1);
-      _d5 = vandq_f32_u32(_d5, vmask1);
-
-      float32x4x2_t _q0 = vtrnq_f32(_d0, _d1);
-      float32x4x2_t _q1 = vtrnq_f32(_d2, _d3);
-      float32x4x2_t _q3 = vtrnq_f32(_d4, _d5);
-      _d0 = vcombine_f32(vget_low_f32(_q0.val[0]), vget_low_f32(_q1.val[0]));
-      _d1 = vcombine_f32(vget_low_f32(_q0.val[1]), vget_low_f32(_q1.val[1]));
-      _d2 = vcombine_f32(vget_high_f32(_q0.val[0]), vget_high_f32(_q1.val[0]));
-
-      switch (remain_k) {
-        case 3:
-          vst1q_f32(out_ptr + 12, _d2);
-          vst1_f32(out_ptr + 16, vget_high_f32(_q3.val[0]));
-        case 2:
-          vst1q_f32(out_ptr + 6, _d1);
-          vst1_f32(out_ptr + 10, vget_low_f32(_q3.val[1]));
-        case 1:
-          vst1q_f32(out_ptr, _d0);
-          vst1_f32(out_ptr + 4, vget_low_f32(_q3.val[0]));
-        default:
-          break;
-      }
+    float *local_buffer = output + i * k;
+    for (int j = 0; j < k; ++j) {
+      *local_buffer++ = *a0++;
+      *local_buffer++ = *a1++;
+      *local_buffer++ = *a2++;
+      *local_buffer++ = *a3++;
+      *local_buffer++ = *a4++;
+      *local_buffer++ = *a5++;
     }
   }
-
-  int remain_m = m % 6;
-  if (remain_m) {
-    int remain_m_start = m - remain_m;
-    const float *a0 = A + remain_m_start * lda;
+  if (m_tail != 0) {
+    const float *a0 = A + i_length * lda;
     const float *a1 = a0 + lda;
     const float *a2 = a0 + 2 * lda;
     const float *a3 = a0 + 3 * lda;
     const float *a4 = a0 + 4 * lda;
     const float *a5 = a0 + 5 * lda;
-    float *out_ptr = output + remain_m_start * k;
-
-    uint32x4_t vmask2 = vcltq_u32(vld1q_u32(mask), vdupq_n_u32(remain_m));
-    uint32x4_t vmask3 = vcltq_u32(vld1q_u32(mask + 4), vdupq_n_u32(remain_m));
-
-    int loops = k >> 2;
-    if (loops > 0) {
-#if __aarch64__
-      for (int l = 0; l < loops; ++l) {
-        float32x4_t _d0 = vld1q_f32(a0);
-        float32x4_t _d1 = vld1q_f32(a1);
-        float32x4_t _d2 = vld1q_f32(a2);
-        float32x4_t _d3 = vld1q_f32(a3);
-        float32x4_t _d4 = vld1q_f32(a4);
-        float32x4_t _d5 = vld1q_f32(a5);
-
-        float32x4x2_t _q0 = vtrnq_f32(_d0, _d1);
-        float32x4x2_t _q1 = vtrnq_f32(_d2, _d3);
-        float32x4x2_t _q3 = vtrnq_f32(_d4, _d5);
-        _d0 = vcombine_f32(vget_low_f32(_q0.val[0]), vget_low_f32(_q1.val[0]));
-        _d1 = vcombine_f32(vget_low_f32(_q0.val[1]), vget_low_f32(_q1.val[1]));
-        _d2 =
-            vcombine_f32(vget_high_f32(_q0.val[0]), vget_high_f32(_q1.val[0]));
-        _d3 =
-            vcombine_f32(vget_high_f32(_q0.val[1]), vget_high_f32(_q1.val[1]));
-
-        _d0 = vandq_f32_u32(_d0, vmask2);
-        _d1 = vandq_f32_u32(_d1, vmask2);
-        _d2 = vandq_f32_u32(_d2, vmask2);
-        _d3 = vandq_f32_u32(_d3, vmask2);
-        _d4 = vandq_f32_u32(_q3.val[0], vmask3);
-        _d5 = vandq_f32_u32(_q3.val[1], vmask3);
-
-        vst1q_f32(out_ptr, _d0);
-        vst1_f32(out_ptr + 4, vget_low_f32(_d4));
-        vst1q_f32(out_ptr + 6, _d1);
-        vst1_f32(out_ptr + 10, vget_low_f32(_d5));
-        vst1q_f32(out_ptr + 12, _d2);
-        vst1_f32(out_ptr + 16, vget_high_f32(_d4));
-        vst1q_f32(out_ptr + 18, _d3);
-        vst1_f32(out_ptr + 22, vget_high_f32(_d5));
-
-        a0 += 4;
-        a1 += 4;
-        a2 += 4;
-        a3 += 4;
-        a4 += 4;
-        a5 += 4;
-        out_ptr += 24;
-      }
-#else
-      asm volatile(
-          "loop_4k_%=:                        \n"
-          "vld1.32    {d0-d1}, [%[a0]]!       \n"
-          "vld1.32    {d2-d3}, [%[a1]]!       \n"
-          "vld1.32    {d4-d5}, [%[a2]]!       \n"
-          "vld1.32    {d6-d7}, [%[a3]]!       \n"
-          "vld1.32    {d8-d9}, [%[a4]]!       \n"
-          "vld1.32    {d10-d11}, [%[a5]]!     \n"
-          "vtrn.32    q0, q1                  \n"
-          "vtrn.32    q2, q3                  \n"
-          "vtrn.32    q4, q5                  \n"
-          "vswp.32    d1, d4                  \n"
-          "vswp.32    d3, d6                  \n"
-
-          "vbif       q0, %q[vzero], %q[vmask2] \n"
-          "vbif       q1, %q[vzero], %q[vmask2] \n"
-          "vbif       q2, %q[vzero], %q[vmask2] \n"
-          "vbif       q3, %q[vzero], %q[vmask2] \n"
-          "vbif       q4, %q[vzero], %q[vmask3] \n"
-          "vbif       q5, %q[vzero], %q[vmask3] \n"
-
-          "vst1.32    {q0}, [%[out]]!         \n"
-          "vst1.32    {d8}, [%[out]]!         \n"
-          "vst1.32    {q1}, [%[out]]!         \n"
-          "vst1.32    {d10}, [%[out]]!        \n"
-          "vst1.32    {q2}, [%[out]]!         \n"
-          "vst1.32    {d9}, [%[out]]!         \n"
-          "vst1.32    {q3}, [%[out]]!         \n"
-          "vst1.32    {d11}, [%[out]]!        \n"
-
-          "subs       %[loops], #1            \n"
-          "bne        loop_4k_%=              \n"
-          : [out] "+r"(out_ptr), [a0] "+r"(a0), [a1] "+r"(a1), [a2] "+r"(a2),
-            [a3] "+r"(a3), [a4] "+r"(a4), [a5] "+r"(a5), [loops] "+r"(loops)
-          : [vmask2] "w"(vmask2), [vmask3] "w"(vmask3), [vzero] "w"(vzero)
-          : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5");
-#endif
+    float *local_buffer = output + i_length * k;
+    switch (m_tail) {
+      case 1:
+        a1 = zero;
+      case 2:
+        a2 = zero;
+      case 3:
+        a3 = zero;
+      case 4:
+        a4 = zero;
+      case 5:
+        a5 = zero;
+        break;
+      default:
+        break;
     }
-
-    if (remain_k > 0) {
-      float32x4_t _d0 = vld1q_f32(a0);
-      float32x4_t _d1 = vld1q_f32(a1);
-      float32x4_t _d2 = vld1q_f32(a2);
-      float32x4_t _d3 = vld1q_f32(a3);
-      float32x4_t _d4 = vld1q_f32(a4);
-      float32x4_t _d5 = vld1q_f32(a5);
-
-      _d0 = vandq_f32_u32(_d0, vmask1);
-      _d1 = vandq_f32_u32(_d1, vmask1);
-      _d2 = vandq_f32_u32(_d2, vmask1);
-      _d3 = vandq_f32_u32(_d3, vmask1);
-      _d4 = vandq_f32_u32(_d4, vmask1);
-      _d5 = vandq_f32_u32(_d5, vmask1);
-
-      float32x4x2_t _q0 = vtrnq_f32(_d0, _d1);
-      float32x4x2_t _q1 = vtrnq_f32(_d2, _d3);
-      float32x4x2_t _q3 = vtrnq_f32(_d4, _d5);
-      _d0 = vcombine_f32(vget_low_f32(_q0.val[0]), vget_low_f32(_q1.val[0]));
-      _d1 = vcombine_f32(vget_low_f32(_q0.val[1]), vget_low_f32(_q1.val[1]));
-      _d2 = vcombine_f32(vget_high_f32(_q0.val[0]), vget_high_f32(_q1.val[0]));
-      // _d3 = vcombine_f32(vget_high_f32(_q0.val[1]),
-      //                    vget_high_f32(_q1.val[1]));
-
-      _d0 = vandq_f32_u32(_d0, vmask2);
-      _d1 = vandq_f32_u32(_d1, vmask2);
-      _d2 = vandq_f32_u32(_d2, vmask2);
-      // _d3 = vandq_f32_u32(_d3, vmask2);
-      _d4 = vandq_f32_u32(_q3.val[0], vmask3);
-      _d5 = vandq_f32_u32(_q3.val[1], vmask3);
-
-      switch (remain_k) {
-        case 3:
-          vst1q_f32(out_ptr + 12, _d2);
-          vst1_f32(out_ptr + 16, vget_high_f32(_d4));
-        case 2:
-          vst1q_f32(out_ptr + 6, _d1);
-          vst1_f32(out_ptr + 10, vget_low_f32(_d5));
-        case 1:
-          vst1q_f32(out_ptr, _d0);
-          vst1_f32(out_ptr + 4, vget_low_f32(_d4));
-        default:
-          break;
-      }
+    for (int j = 0; j < k; ++j) {
+      *local_buffer++ = *a0++;
+      *local_buffer++ = *a1++;
+      *local_buffer++ = *a2++;
+      *local_buffer++ = *a3++;
+      *local_buffer++ = *a4++;
+      *local_buffer++ = *a5++;
     }
+    delete[] zero;
   }
+
+  //  uint32_t mask[8] = {0, 1, 2, 3, 4, 5, 4, 5};
+  //  int remain_k = k & 0x3;
+  //  uint32x4_t vzero = vdupq_n_u32(0);
+  //  uint32x4_t vmask1 = vcltq_u32(vld1q_u32(mask), vdupq_n_u32(remain_k));
+  //
+  //  std::cout << "m: " << m << ", k: " << k << std::endl;
+  //  #pragma omp parallel for if (unroll)
+  //  for (int i = 0; i < m - 5; i += 6) {
+  //    std::cout << "i: " << i << std::endl;
+  //    const float *a0 = A + i * lda;
+  //    const float *a1 = A + (i + 1) * lda;
+  //    const float *a2 = A + (i + 2) * lda;
+  //    const float *a3 = A + (i + 3) * lda;
+  //    const float *a4 = A + (i + 4) * lda;
+  //    const float *a5 = A + (i + 5) * lda;
+  //    float *out_ptr = output + i * k;
+  //
+  //    int loops = k >> 2;
+  //    if (loops > 0) {
+  // #if __aarch64__
+  //      for (int l = 0; l < loops; ++l) {
+  //        float32x4_t _d0 = vld1q_f32(a0);
+  //        float32x4_t _d1 = vld1q_f32(a1);
+  //        float32x4_t _d2 = vld1q_f32(a2);
+  //        float32x4_t _d3 = vld1q_f32(a3);
+  //        float32x4_t _d4 = vld1q_f32(a4);
+  //        float32x4_t _d5 = vld1q_f32(a5);
+  //
+  //        float32x4x2_t _q0 = vtrnq_f32(_d0, _d1);
+  //        float32x4x2_t _q1 = vtrnq_f32(_d2, _d3);
+  //        float32x4x2_t _q3 = vtrnq_f32(_d4, _d5);
+  //        _d0 = vcombine_f32(vget_low_f32(_q0.val[0]),
+  //        vget_low_f32(_q1.val[0])); _d1 =
+  //        vcombine_f32(vget_low_f32(_q0.val[1]), vget_low_f32(_q1.val[1]));
+  //        _d2 =
+  //            vcombine_f32(vget_high_f32(_q0.val[0]),
+  //            vget_high_f32(_q1.val[0]));
+  //        _d3 =
+  //            vcombine_f32(vget_high_f32(_q0.val[1]),
+  //            vget_high_f32(_q1.val[1]));
+  //
+  //        vst1q_f32(out_ptr, _d0);
+  //        vst1_f32(out_ptr + 4, vget_low_f32(_q3.val[0]));
+  //        vst1q_f32(out_ptr + 6, _d1);
+  //        vst1_f32(out_ptr + 10, vget_low_f32(_q3.val[1]));
+  //        vst1q_f32(out_ptr + 12, _d2);
+  //        vst1_f32(out_ptr + 16, vget_high_f32(_q3.val[0]));
+  //        vst1q_f32(out_ptr + 18, _d3);
+  //        vst1_f32(out_ptr + 22, vget_high_f32(_q3.val[1]));
+  //
+  //        a0 += 4;
+  //        a1 += 4;
+  //        a2 += 4;
+  //        a3 += 4;
+  //        a4 += 4;
+  //        a5 += 4;
+  //        out_ptr += 24;
+  //      }
+  // #else
+  //      asm volatile(
+  //          "loop_4k_%=:                        \n"
+  //          "vld1.32    {d0-d1}, [%[a0]]!       \n"
+  //          "vld1.32    {d2-d3}, [%[a1]]!       \n"
+  //          "vld1.32    {d4-d5}, [%[a2]]!       \n"
+  //          "vld1.32    {d6-d7}, [%[a3]]!       \n"
+  //          "vld1.32    {d8-d9}, [%[a4]]!       \n"
+  //          "vld1.32    {d10-d11}, [%[a5]]!     \n"
+  //          "vtrn.32    q0, q1                  \n"
+  //          "vtrn.32    q2, q3                  \n"
+  //          "vtrn.32    q4, q5                  \n"
+  //          "vswp.32    d1, d4                  \n"
+  //          "vswp.32    d3, d6                  \n"
+  //
+  //          "vst1.32    {q0}, [%[out]]!         \n"
+  //          "vst1.32    {d8}, [%[out]]!         \n"
+  //          "vst1.32    {q1}, [%[out]]!         \n"
+  //          "vst1.32    {d10}, [%[out]]!        \n"
+  //          "vst1.32    {q2}, [%[out]]!         \n"
+  //          "vst1.32    {d9}, [%[out]]!         \n"
+  //          "vst1.32    {q3}, [%[out]]!         \n"
+  //          "vst1.32    {d11}, [%[out]]!        \n"
+  //
+  //          "subs       %[loops], #1            \n"
+  //          "bne        loop_4k_%=              \n"
+  //          : [out] "+r"(out_ptr), [a0] "+r"(a0), [a1] "+r"(a1), [a2]
+  //          "+r"(a2),
+  //            [a3] "+r"(a3), [a4] "+r"(a4), [a5] "+r"(a5), [loops] "+r"(loops)
+  //          :
+  //          : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5");
+  // #endif
+  //    }
+  //
+  //    if (remain_k > 0) {
+  //      float32x4_t _d0 = vld1q_f32(a0);
+  //      float32x4_t _d1 = vld1q_f32(a1);
+  //      float32x4_t _d2 = vld1q_f32(a2);
+  //      float32x4_t _d3 = vld1q_f32(a3);
+  //      float32x4_t _d4 = vld1q_f32(a4);
+  //      float32x4_t _d5 = vld1q_f32(a5);
+  //
+  //      _d0 = vandq_f32_u32(_d0, vmask1);
+  //      _d1 = vandq_f32_u32(_d1, vmask1);
+  //      _d2 = vandq_f32_u32(_d2, vmask1);
+  //      _d3 = vandq_f32_u32(_d3, vmask1);
+  //      _d4 = vandq_f32_u32(_d4, vmask1);
+  //      _d5 = vandq_f32_u32(_d5, vmask1);
+  //
+  //      float32x4x2_t _q0 = vtrnq_f32(_d0, _d1);
+  //      float32x4x2_t _q1 = vtrnq_f32(_d2, _d3);
+  //      float32x4x2_t _q3 = vtrnq_f32(_d4, _d5);
+  //      _d0 = vcombine_f32(vget_low_f32(_q0.val[0]),
+  //      vget_low_f32(_q1.val[0])); _d1 =
+  //      vcombine_f32(vget_low_f32(_q0.val[1]), vget_low_f32(_q1.val[1])); _d2
+  //      = vcombine_f32(vget_high_f32(_q0.val[0]), vget_high_f32(_q1.val[0]));
+  //
+  //      switch (remain_k) {
+  //        case 3:
+  //          vst1q_f32(out_ptr + 12, _d2);
+  //          vst1_f32(out_ptr + 16, vget_high_f32(_q3.val[0]));
+  //        case 2:
+  //          vst1q_f32(out_ptr + 6, _d1);
+  //          vst1_f32(out_ptr + 10, vget_low_f32(_q3.val[1]));
+  //        case 1:
+  //          vst1q_f32(out_ptr, _d0);
+  //          vst1_f32(out_ptr + 4, vget_low_f32(_q3.val[0]));
+  //        default:
+  //          break;
+  //      }
+  //    }
+  //  }
+  //
+  //  int remain_m = m % 6;
+  //  if (remain_m) {
+  //    int remain_m_start = m - remain_m;
+  //    std::cout << "remain_m_start: " << remain_m_start << std::endl;
+  //    const float *a0 = A + remain_m_start * lda;
+  //    const float *a1 = a0 + lda;
+  //    const float *a2 = a0 + 2 * lda;
+  //    const float *a3 = a0 + 3 * lda;
+  //    const float *a4 = a0 + 4 * lda;
+  //    const float *a5 = a0 + 5 * lda;
+  //    float *out_ptr = output + remain_m_start * k;
+  //
+  //    uint32x4_t vmask2 = vcltq_u32(vld1q_u32(mask), vdupq_n_u32(remain_m));
+  //    uint32x4_t vmask3 = vcltq_u32(vld1q_u32(mask + 4),
+  //    vdupq_n_u32(remain_m));
+  //
+  //    int loops = k >> 2;
+  //    if (loops > 0) {
+  // #if __aarch64__
+  //      for (int l = 0; l < loops; ++l) {
+  //        float32x4_t _d0 = vld1q_f32(a0);
+  //        float32x4_t _d1 = vld1q_f32(a1);
+  //        float32x4_t _d2 = vld1q_f32(a2);
+  //        float32x4_t _d3 = vld1q_f32(a3);
+  //        float32x4_t _d4 = vld1q_f32(a4);
+  //        float32x4_t _d5 = vld1q_f32(a5);
+  //
+  //        float32x4x2_t _q0 = vtrnq_f32(_d0, _d1);
+  //        float32x4x2_t _q1 = vtrnq_f32(_d2, _d3);
+  //        float32x4x2_t _q3 = vtrnq_f32(_d4, _d5);
+  //        _d0 = vcombine_f32(vget_low_f32(_q0.val[0]),
+  //        vget_low_f32(_q1.val[0])); _d1 =
+  //        vcombine_f32(vget_low_f32(_q0.val[1]), vget_low_f32(_q1.val[1]));
+  //        _d2 =
+  //            vcombine_f32(vget_high_f32(_q0.val[0]),
+  //            vget_high_f32(_q1.val[0]));
+  //        _d3 =
+  //            vcombine_f32(vget_high_f32(_q0.val[1]),
+  //            vget_high_f32(_q1.val[1]));
+  //
+  //        _d0 = vandq_f32_u32(_d0, vmask2);
+  //        _d1 = vandq_f32_u32(_d1, vmask2);
+  //        _d2 = vandq_f32_u32(_d2, vmask2);
+  //        _d3 = vandq_f32_u32(_d3, vmask2);
+  //        _d4 = vandq_f32_u32(_q3.val[0], vmask3);
+  //        _d5 = vandq_f32_u32(_q3.val[1], vmask3);
+  //
+  //        vst1q_f32(out_ptr, _d0);
+  //        vst1_f32(out_ptr + 4, vget_low_f32(_d4));
+  //        vst1q_f32(out_ptr + 6, _d1);
+  //        vst1_f32(out_ptr + 10, vget_low_f32(_d5));
+  //        vst1q_f32(out_ptr + 12, _d2);
+  //        vst1_f32(out_ptr + 16, vget_high_f32(_d4));
+  //        vst1q_f32(out_ptr + 18, _d3);
+  //        vst1_f32(out_ptr + 22, vget_high_f32(_d5));
+  //
+  //        a0 += 4;
+  //        a1 += 4;
+  //        a2 += 4;
+  //        a3 += 4;
+  //        a4 += 4;
+  //        a5 += 4;
+  //        out_ptr += 24;
+  //      }
+  // #else
+  //      asm volatile(
+  //          "loop_4k_%=:                        \n"
+  //          "vld1.32    {d0-d1}, [%[a0]]!       \n"
+  //          "vld1.32    {d2-d3}, [%[a1]]!       \n"
+  //          "vld1.32    {d4-d5}, [%[a2]]!       \n"
+  //          "vld1.32    {d6-d7}, [%[a3]]!       \n"
+  //          "vld1.32    {d8-d9}, [%[a4]]!       \n"
+  //          "vld1.32    {d10-d11}, [%[a5]]!     \n"
+  //          "vtrn.32    q0, q1                  \n"
+  //          "vtrn.32    q2, q3                  \n"
+  //          "vtrn.32    q4, q5                  \n"
+  //          "vswp.32    d1, d4                  \n"
+  //          "vswp.32    d3, d6                  \n"
+  //
+  //          "vbif       q0, %q[vzero], %q[vmask2] \n"
+  //          "vbif       q1, %q[vzero], %q[vmask2] \n"
+  //          "vbif       q2, %q[vzero], %q[vmask2] \n"
+  //          "vbif       q3, %q[vzero], %q[vmask2] \n"
+  //          "vbif       q4, %q[vzero], %q[vmask3] \n"
+  //          "vbif       q5, %q[vzero], %q[vmask3] \n"
+  //
+  //          "vst1.32    {q0}, [%[out]]!         \n"
+  //          "vst1.32    {d8}, [%[out]]!         \n"
+  //          "vst1.32    {q1}, [%[out]]!         \n"
+  //          "vst1.32    {d10}, [%[out]]!        \n"
+  //          "vst1.32    {q2}, [%[out]]!         \n"
+  //          "vst1.32    {d9}, [%[out]]!         \n"
+  //          "vst1.32    {q3}, [%[out]]!         \n"
+  //          "vst1.32    {d11}, [%[out]]!        \n"
+  //
+  //          "subs       %[loops], #1            \n"
+  //          "bne        loop_4k_%=              \n"
+  //          : [out] "+r"(out_ptr), [a0] "+r"(a0), [a1] "+r"(a1), [a2]
+  //          "+r"(a2),
+  //            [a3] "+r"(a3), [a4] "+r"(a4), [a5] "+r"(a5), [loops] "+r"(loops)
+  //          : [vmask2] "w"(vmask2), [vmask3] "w"(vmask3), [vzero] "w"(vzero)
+  //          : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5");
+  // #endif
+  //    }
+  //
+  //    if (remain_k > 0) {
+  //      float32x4_t _d0 = vld1q_f32(a0);
+  //      float32x4_t _d1 = vld1q_f32(a1);
+  //      float32x4_t _d2 = vld1q_f32(a2);
+  //      float32x4_t _d3 = vld1q_f32(a3);
+  //      float32x4_t _d4 = vld1q_f32(a4);
+  //      float32x4_t _d5 = vld1q_f32(a5);
+  //
+  //      _d0 = vandq_f32_u32(_d0, vmask1);
+  //      _d1 = vandq_f32_u32(_d1, vmask1);
+  //      _d2 = vandq_f32_u32(_d2, vmask1);
+  //      _d3 = vandq_f32_u32(_d3, vmask1);
+  //      _d4 = vandq_f32_u32(_d4, vmask1);
+  //      _d5 = vandq_f32_u32(_d5, vmask1);
+  //
+  //      float32x4x2_t _q0 = vtrnq_f32(_d0, _d1);
+  //      float32x4x2_t _q1 = vtrnq_f32(_d2, _d3);
+  //      float32x4x2_t _q3 = vtrnq_f32(_d4, _d5);
+  //      _d0 = vcombine_f32(vget_low_f32(_q0.val[0]),
+  //      vget_low_f32(_q1.val[0])); _d1 =
+  //      vcombine_f32(vget_low_f32(_q0.val[1]), vget_low_f32(_q1.val[1])); _d2
+  //      = vcombine_f32(vget_high_f32(_q0.val[0]), vget_high_f32(_q1.val[0]));
+  //      // _d3 = vcombine_f32(vget_high_f32(_q0.val[1]),
+  //      //                    vget_high_f32(_q1.val[1]));
+  //
+  //      _d0 = vandq_f32_u32(_d0, vmask2);
+  //      _d1 = vandq_f32_u32(_d1, vmask2);
+  //      _d2 = vandq_f32_u32(_d2, vmask2);
+  //      // _d3 = vandq_f32_u32(_d3, vmask2);
+  //      _d4 = vandq_f32_u32(_q3.val[0], vmask3);
+  //      _d5 = vandq_f32_u32(_q3.val[1], vmask3);
+  //
+  //      switch (remain_k) {
+  //        case 3:
+  //          vst1q_f32(out_ptr + 12, _d2);
+  //          vst1_f32(out_ptr + 16, vget_high_f32(_d4));
+  //        case 2:
+  //          vst1q_f32(out_ptr + 6, _d1);
+  //          vst1_f32(out_ptr + 10, vget_low_f32(_d5));
+  //        case 1:
+  //          vst1q_f32(out_ptr, _d0);
+  //          vst1_f32(out_ptr + 4, vget_low_f32(_d4));
+  //        default:
+  //          break;
+  //      }
+  //    }
+  //  }
 }
 
 #if __aarch64__
@@ -575,9 +645,49 @@ void pack_rhs_8c(int k, int n, const float *B, int ldb, float *output,
 }
 #endif  // __aarch64__
 
+void write_back_alpha_beta(const int mc, const int nc, const float alpha,
+                           const float *c, const int ldc1, const float beta,
+                           float *C, const int ldc2) {
+  int nc1 = nc / 4;
+  int _nc1 = nc % 4;
+
+  float32x4_t _alpha = vdupq_n_f32(alpha);
+  float32x4_t _beta = vdupq_n_f32(beta);
+  float32x4_t cv, cv2;
+  for (int i = 0; i < mc; ++i) {
+    const float *c_ptr = c + i * ldc1;
+    float *C_ptr = C + i * ldc2;
+    for (int j = 0; j < nc1; ++j) {
+      cv = vld1q_f32(c_ptr);
+      cv = vmulq_f32(_alpha, cv);
+      cv2 = vld1q_f32(C_ptr);
+      cv = vmlaq_f32(cv, _beta, cv2);
+      vst1q_f32(C_ptr, cv);
+      c_ptr += 4;
+      C_ptr += 4;
+    }
+    if (_nc1 != 0) {
+      cv = vld1q_f32(c_ptr);
+      cv = vmulq_f32(_alpha, cv);
+      cv2 = vld1q_f32(C_ptr);
+      cv = vmlaq_f32(cv, _beta, cv2);
+      switch (_nc1) {
+        case 3:
+          vst1q_lane_f32(C_ptr + 2, cv, 2);
+        case 2:
+          vst1_f32(C_ptr, vget_low_f32(cv));
+          break;
+        case 1:
+          vst1q_lane_f32(C_ptr, cv, 0);
+          break;
+      }
+    }
+  }
+}
+
 #if __aarch64__
-void write_back(const int mc, const int nc, const float *c, const int ldc1,
-                float *C, const int ldc2) {
+void write_back_alpha1_beta0(const int mc, const int nc, const float *c,
+                             const int ldc1, float *C, const int ldc2) {
   int nc1 = nc / 4;
   int _nc1 = nc % 4;
 
@@ -595,23 +705,60 @@ void write_back(const int mc, const int nc, const float *c, const int ldc1,
     }
     if (_nc1 != 0) {
       cv = vld1q_f32(c_ptr);
-      if (_nc1 >= 1) {
-        vst1q_lane_f32(C_ptr, cv, 0);
-        C_ptr++;
-      }
-      if (_nc1 >= 2) {
-        vst1q_lane_f32(C_ptr, cv, 1);
-        C_ptr++;
-      }
-      if (_nc1 >= 3) {
-        vst1q_lane_f32(C_ptr, cv, 2);
+      switch (_nc1) {
+        case 3:
+          vst1q_lane_f32(C_ptr + 2, cv, 2);
+        case 2:
+          vst1_f32(C_ptr, vget_low_f32(cv));
+          break;
+        case 1:
+          vst1q_lane_f32(C_ptr, cv, 0);
+          break;
       }
     }
   }
 }
+
+void write_back_alpha1_beta1(const int mc, const int nc, const float *c,
+                             const int ldc1, float *C, const int ldc2) {
+  int nc1 = nc / 4;
+  int _nc1 = nc % 4;
+
+  const float *c_ptr;
+  float *C_ptr;
+  float32x4_t cv, cv2;
+  for (int i = 0; i < mc; ++i) {
+    c_ptr = c + i * ldc1;
+    C_ptr = C + i * ldc2;
+    for (int j = 0; j < nc1; ++j) {
+      cv = vld1q_f32(c_ptr);
+      cv2 = vld1q_f32(C_ptr);
+      cv = vaddq_f32(cv, cv2);
+      vst1q_f32(C_ptr, cv);
+      c_ptr += 4;
+      C_ptr += 4;
+    }
+    if (_nc1 != 0) {
+      cv = vld1q_f32(c_ptr);
+      cv2 = vld1q_f32(C_ptr);
+      cv = vaddq_f32(cv, cv2);
+      switch (_nc1) {
+        case 3:
+          vst1q_lane_f32(C_ptr + 2, cv, 2);
+        case 2:
+          vst1_f32(C_ptr, vget_low_f32(cv));
+          break;
+        case 1:
+          vst1q_lane_f32(C_ptr, cv, 0);
+          break;
+      }
+    }
+  }
+}
+
 #else
-void write_back(const int mc, const int nc, const float *c, const int ldc1,
-                float *C, const int ldc2) {
+void write_back_alpha1_beta0(const int mc, const int nc, const float *c,
+                             const int ldc1, float *C, const int ldc2) {
   int nc1 = nc / 16;
   int nc2 = nc % 16;
   int step1 = 4 * (ldc1 - 16 * nc1);
@@ -663,7 +810,78 @@ void write_back(const int mc, const int nc, const float *c, const int ldc1,
     }
   }
 }
-#endif
+
+void write_back_alpha1_beta1(const int mc, const int nc, const float *c,
+                             const int ldc1, float *C, const int ldc2) {
+  int nc1 = nc / 16;
+  int nc2 = nc % 16;
+  int step1 = 4 * (ldc1 - 16 * nc1);
+  int step2 = 4 * ldc2;
+  int volatile m = mc;
+
+  const float *volatile c_ptr = c;
+  float *volatile C_ptr = C;
+  if (nc1 > 0) {
+    asm volatile(
+        "subs       %[mc], %[mc], #1              \n\t"
+        "blt        end_mc_%=                     \n\t"
+        "loop_mc_%=:                              \n\t"
+
+        "mov        r6,   %[C_ptr]                \n\t"
+        "mov        r5,   %[nc1]                  \n\t"
+        "subs       r5,   r5,   #1                \n\t"
+        "blt        end_nc1_%=                    \n\t"
+        "loop_nc1_%=:                             \n\t"
+
+        "vld1.32    {q0, q1}, [%[c_ptr]]!         \n\t"
+        "vld1.32    {q2, q3}, [r6]                \n\t"
+        "vadd.f32   q0, q0, q2                    \n\t"
+        "vadd.f32   q1, q1, q3                    \n\t"
+        "vst1.32    {q0, q1}, [r6]!               \n\t"
+
+        "vld1.32    {q0, q1}, [%[c_ptr]]!         \n\t"
+        "vld1.32    {q2, q3}, [r6]                \n\t"
+        "vadd.f32   q0, q0, q2                    \n\t"
+        "vadd.f32   q1, q1, q3                    \n\t"
+        "vst1.32    {q0, q1}, [r6]!               \n\t"
+
+        "subs       r5,   r5,   #1                \n\t"
+        "bge        loop_nc1_%=                   \n\t"
+        "end_nc1_%=:                              \n\t"
+
+        "add        %[c_ptr], %[c_ptr], %[step1]  \n\t"
+        "add        %[C_ptr], %[C_ptr], %[step2]  \n\t"
+        "subs       %[mc], %[mc], #1              \n\t"
+        "bge        loop_mc_%=                    \n\t"
+        "end_mc_%=:                               \n\t"
+        :
+        : [C_ptr] "r"(C_ptr), [c_ptr] "r"(c_ptr), [mc] "r"(m), [nc1] "r"(nc1),
+          [step1] "r"(step1), [step2] "r"(step2)
+        : "memory", "r5", "r6", "q0", "q1", "q2", "q3");
+  }
+
+  if (nc2 != 0) {
+    for (int i = 0; i < mc; i++) {
+      const float *c0 = c_ptr + nc1 * 16 + i * ldc1;
+      float *C0 = C_ptr + nc1 * 16 + i * ldc2;
+      for (int j = 0; j < nc2; j++) {
+        *C0++ += *c0++;
+      }
+    }
+  }
+}
+#endif  // __aarch64__
+
+void write_back(const int mc, const int nc, const float alpha, const float *c,
+                const int ldc1, const float beta, float *C, const int ldc2) {
+  if (alpha == 1.f && beta == 0.f) {
+    write_back_alpha1_beta0(mc, nc, c, ldc1, C, ldc2);
+  } else if (alpha == 1.f && beta == 1.f) {
+    write_back_alpha1_beta1(mc, nc, c, ldc1, C, ldc2);
+  } else {
+    write_back_alpha_beta(mc, nc, alpha, c, ldc1, beta, C, ldc2);
+  }
+}
 
 }  // namespace math
 }  // namespace operators

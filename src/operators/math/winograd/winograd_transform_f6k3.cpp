@@ -803,9 +803,9 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
             "dup        v15.4s,    wzr                 \n"
 
             "cmp        %[inter], #0                       \n"
-            "ble        loop_1c_%=                         \n"
+            "ble        2f                                 \n"
             // loop 2 channels
-            "loop_2c_%=:                                   \n"
+            "1:                                            \n"
             "ld1        {v0.4s, v1.4s}, [%[w_ptr]], #32    \n"
             "ld1        {v2.4s, v3.4s}, [%[in_ptr]], #32   \n"
             "ld1        {v4.4s, v5.4s}, [%[in_ptr]], #32   \n"
@@ -829,12 +829,12 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
             "fmla       v15.4s, v5.4s, v1.s[3]             \n"
 
             "subs       %[inter], %[inter], #1             \n"
-            "bne        loop_2c_%=                         \n"
+            "bne        1b                                 \n"
 
             // loop 1 channel
-            "loop_1c_%=:                                   \n"
+            "2:                                            \n"
             "cmp        %[remain], #0                      \n"
-            "ble        store_res_%=                       \n"
+            "ble        3f                                 \n"
 
             "ld1        {v0.4s, v1.4s}, [%[w_ptr]], #32    \n"
             "ld1        {v2.4s, v3.4s}, [%[in_ptr]], #32   \n"
@@ -847,7 +847,7 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
             "fmla       v14.4s, v2.4s, v0.s[3]             \n"
             "fmla       v15.4s, v3.4s, v0.s[3]             \n"
 
-            "store_res_%=:                                 \n"
+            "3:                                            \n"
             "st1        {v8.4s, v9.4s, v10.4s, v11.4s}, [%[uv_ptr]], #64 \n"
             "st1        {v12.4s, v13.4s, v14.4s, v15.4s}, [%[uv_ptr]], #64 \n"
             : [w_ptr] "+r"(w_ptr), [in_ptr] "+r"(in_ptr), [uv_ptr] "+r"(uv_ptr),
