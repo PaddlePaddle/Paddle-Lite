@@ -151,14 +151,25 @@ void PaddleMobilePredictor<Device, T>::FeedPaddleTensors(
 template <typename Device, typename T>
 void PaddleMobilePredictor<Device, T>::FetchPaddleTensors(
     std::vector<PaddleTensor> *outputs) {
-  auto num = outputs->size();
-  PADDLE_MOBILE_ENFORCE(num > 0, "0 output pointers is not permitted");
-  std::vector<framework::Tensor *> tensors(num, nullptr);
+  //  auto num = outputs->size();
+  //  PADDLE_MOBILE_ENFORCE(num > 0, "0 output pointers is not permitted");
+  //  std::vector<framework::Tensor *> tensors(num, nullptr);
+  outputs->clear();
+  std::vector<framework::Tensor *> tensors;
   paddle_mobile_->GetTensorResults(&tensors);
+  auto num = tensors.size();
+  outputs->resize(num, PaddleTensor());
   for (int i = 0; i < num; i++) {
     ConvertTensors(*tensors[i], &(*outputs)[i]);
   }
 }
+
+template <typename Device, typename T>
+void PaddleMobilePredictor<Device, T>::GetPaddleTensor(const std::string &name,
+                                                       PaddleTensor *output) {
+  framework::Tensor *t = paddle_mobile_->GetTensorByName(name);
+  ConvertTensors(*t, output);
+};
 
 template <typename Device, typename T>
 void PaddleMobilePredictor<Device, T>::FeedData(
