@@ -250,6 +250,12 @@ void PaddleMobile<Device, T>::GetTensorResults(
 }
 
 template <typename Device, typename T>
+framework::Tensor *PaddleMobile<Device, T>::GetTensorByName(
+    const std::string &name) {
+  return executor_->GetTensorByName(name);
+};
+
+template <typename Device, typename T>
 std::shared_ptr<framework::Tensor> PaddleMobile<Device, T>::FetchResult(
     int id) {
   return executor_->FetchResult(id);

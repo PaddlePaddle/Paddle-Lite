@@ -95,6 +95,7 @@ class PaddleMobile {
 
   void GetResults(std::vector<void *> *v);
   void GetTensorResults(std::vector<framework::Tensor *> *v);
+  framework::Tensor *GetTensorByName(const std::string &name);
 
   std::shared_ptr<framework::Tensor> FetchResult(int id = -1);
   void Predict_From_To(int start = 0, int end = -1);
