@@ -27,8 +27,6 @@ limitations under the License. */
 #include <typeindex>
 #include <vector>
 
-// #define PADDLE_MOBILE_FPGA
-
 namespace paddle_mobile {
 
 #ifdef PADDLE_MOBILE_FPGA
@@ -133,6 +131,8 @@ class PaddlePredictor {
   virtual void Predict_From_To(int start, int end) = 0;
   virtual void FeedPaddleTensors(const std::vector<PaddleTensor>& inputs) = 0;
   virtual void FetchPaddleTensors(std::vector<PaddleTensor>* outputs) = 0;
+  virtual void GetPaddleTensor(const std::string& name,
+                               PaddleTensor* output) = 0;
 #endif
 
  protected:

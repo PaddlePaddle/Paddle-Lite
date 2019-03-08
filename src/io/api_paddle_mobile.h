@@ -37,6 +37,8 @@ class PaddleMobilePredictor : public PaddlePredictor {
   void Predict_From_To(int start, int end) override;
   void FeedPaddleTensors(const std::vector<PaddleTensor>& inputs) override;
   void FetchPaddleTensors(std::vector<PaddleTensor>* outputs) override;
+  void GetPaddleTensor(const std::string& name, PaddleTensor* output) override;
+
 #endif
 
   ~PaddleMobilePredictor() override;

@@ -505,17 +505,22 @@ void Executor<Device, T>::GetResults(std::vector<void *> *v) {
 template <typename Device, typename T>
 void Executor<Device, T>::GetTensorResults(
     std::vector<framework::Tensor *> *v) {
-  auto output_size = v->size();
-  PADDLE_MOBILE_ENFORCE(output_size > 0, "Empty output");
   auto vars = program_.scope->VarContain("fetch");
-  PADDLE_MOBILE_ENFORCE(output_size == vars.size(),
-                        "output data number not correct");
+  auto output_size = vars.size();
+
   for (int i = 0; i < output_size; i++) {
     auto var = program_.scope->Var("fetch", i);
     auto fetch_tensor = var->template GetMutable<LoDTensor>();
-    (*v)[i] = fetch_tensor;
+    v->push_back(fetch_tensor);
   }
 }
+
+template <typename Device, typename T>
+framework::Tensor *Executor<Device, T>::GetTensorByName(
+    const std::string &name) {
+  auto var = program_.scope->Var(name);
+  return var->template GetMutable<LoDTensor>();
+};
 
 template <typename Device, typename T>
 std::shared_ptr<Tensor> Executor<Device, T>::FetchResult(int id) {
