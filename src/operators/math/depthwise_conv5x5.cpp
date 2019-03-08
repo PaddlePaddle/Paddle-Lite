@@ -144,20 +144,21 @@ void DepthwiseConv5x5S1<float, float>(const framework::Tensor &input,
   const float *input_data = input.data<float>();
   const float *filter_data = filter.data<float>();
   float *out_data = output->mutable_data<float>();
-  int input_h = input.dims()[2];
-  int input_w = input.dims()[3];
-  int output_h = output->dims()[2];
-  int output_w = output->dims()[3];
-  int padding_h = paddings[0];
-  int padding_w = paddings[1];
-  int image_size = input_h * input_w;
-  int out_image_size = output_h * output_w;
-  int valid_h_start = padding_h;
-  int valid_h_end = output_h - valid_h_start;
-  int valid_h = valid_h_end - valid_h_start;
-  int valid_w_start = padding_w;
-  int valid_w_end = output_w - valid_w_start;
-  int valid_w = valid_w_end - valid_w_start;
+
+  const int input_h = input.dims()[2];
+  const int input_w = input.dims()[3];
+  const int output_h = output->dims()[2];
+  const int output_w = output->dims()[3];
+  const int padding_h = paddings[0];
+  const int padding_w = paddings[1];
+  const int image_size = input_h * input_w;
+  const int out_image_size = output_h * output_w;
+  const int valid_h_start = padding_h;
+  const int valid_h_end = output_h - valid_h_start;
+  const int valid_h = valid_h_end - valid_h_start;
+  const int valid_w_start = padding_w;
+  const int valid_w_end = output_w - valid_w_start;
+  const int valid_w = valid_w_end - valid_w_start;
 
   #pragma omp parallel for
   for (int g = 0; g < input.dims()[1]; ++g) {

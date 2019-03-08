@@ -18,7 +18,8 @@ limitations under the License. */
 #ifdef _OPENMP
 #include <omp.h>
 #endif
-#include <sys/time.h>
+// #include <sys/time.h>
+// #include <iostream>
 #include "common/log.h"
 #include "memory/t_malloc.h"
 #include "operators/math/gemm/cpu_info.h"
@@ -158,7 +159,8 @@ class GemmExecutor : public Executor {
             }
           }
         }
-        strategy_.write(lhs_range, N_, local_C, ldc_, C + lhs_block * ldc, ldc);
+        strategy_.write(lhs_range, N_, alpha, local_C, ldc_, beta,
+                        C + lhs_block * ldc, ldc);
       }
     } else {
       strategy_.pack_lhs(M_, K_, A, lda, lhs_workspace_, true);
@@ -188,7 +190,8 @@ class GemmExecutor : public Executor {
             }
           }
         }
-        strategy_.write(M_, rhs_range, local_C, ldc_, C + rhs_block, ldc);
+        strategy_.write(M_, rhs_range, alpha, local_C, ldc_, beta,
+                        C + rhs_block, ldc);
       }
     }
 

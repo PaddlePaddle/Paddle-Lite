@@ -31,8 +31,9 @@ struct SgemmStrategy {
                               Itype *, const bool);
   typedef void (*kernelFunc)(const Itype *, const Itype *, const int, Otype *,
                              const int);
-  typedef void (*WriteFunc)(const int, const int, const Otype *, const int,
-                            Otype *, const int);
+  typedef void (*WriteFunc)(const int, const int, const float alpha,
+                            const Otype *, const int, const float beta, Otype *,
+                            const int);
 
   packLhsFunc pack_lhs;
   packRhsFunc pack_rhs;
