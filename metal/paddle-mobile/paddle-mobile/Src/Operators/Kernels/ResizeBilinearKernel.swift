@@ -19,7 +19,7 @@ struct ResizeBilinearMetalParam {
     var ratio_w: Float32
 }
 
-class ResizeBilinearKernel<P: PrecisionType>: Kernel, Computable{
+class ResizeBilinearKernel<P: PrecisionProtocol>: Kernel, Computable{
     required init(device: MTLDevice, param: ResizeBilinearParam<P>, initContext: InitContext) {
         param.output.initTexture(device: device, inTranspose: param.input.transpose, computePrecision: GlobalConfig.shared.computePrecision)
         if GlobalConfig.shared.computePrecision == .Float32 {

@@ -14,7 +14,7 @@
 
 import Foundation
 
-class ResizeBilinearParam<P: PrecisionType>: OpParam {
+class ResizeBilinearParam<P: PrecisionProtocol>: OpParam {
     typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         do {
@@ -35,7 +35,7 @@ class ResizeBilinearParam<P: PrecisionType>: OpParam {
     let out_w: Int32
 }
 
-class ResizeBilinearOp<P: PrecisionType>: Operator<ResizeBilinearKernel<P>, ResizeBilinearParam<P>>, Runable, Creator, InferShaperable{
+class ResizeBilinearOp<P: PrecisionProtocol>: Operator<ResizeBilinearKernel<P>, ResizeBilinearParam<P>>, Runable, Creator, InferShaperable{
     
     typealias OpType = ResizeBilinearOp<P>
     

@@ -22,7 +22,7 @@ struct Texture2DTo2DArrayParam {
     let expectDim: Dim
 }
 
-class Texture2DTo2DArrayKernel<P: PrecisionType>: Kernel, Computable{
+class Texture2DTo2DArrayKernel<P: PrecisionProtocol>: Kernel, Computable{
     func compute(commandBuffer: MTLCommandBuffer, param: FeedParam<P>) throws {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
             throw PaddleMobileError.predictError(message: " encode is nil")

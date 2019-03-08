@@ -14,7 +14,7 @@
 
 import Foundation
 
-class PoolParam<P: PrecisionType>: OpParam {
+class PoolParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         do {
@@ -42,7 +42,7 @@ class PoolParam<P: PrecisionType>: OpParam {
     var globalPooling: Bool
 }
 
-class PoolOp<P: PrecisionType>: Operator<PoolKernel<P>, PoolParam<P>>, Runable, Creator, InferShaperable{
+class PoolOp<P: PrecisionProtocol>: Operator<PoolKernel<P>, PoolParam<P>>, Runable, Creator, InferShaperable{
     
     typealias OpType = PoolOp<P>
     

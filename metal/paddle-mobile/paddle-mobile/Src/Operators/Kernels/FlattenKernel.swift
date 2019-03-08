@@ -22,7 +22,7 @@ struct FlattenMetalParam {
 }
 
 
-class FlattenKernel<P: PrecisionType>: Kernel, Computable{
+class FlattenKernel<P: PrecisionProtocol>: Kernel, Computable{
     
     var metalParam: FlattenMetalParam
     

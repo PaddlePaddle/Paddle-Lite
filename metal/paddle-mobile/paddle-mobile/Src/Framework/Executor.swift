@@ -41,7 +41,12 @@ var isTest = false
     
 }
 
-public class Executor<P: PrecisionType> {
+protocol Executorable {
+    func predict(input: MTLTexture, dim: Dim, completionHandle: @escaping ([GPUResultHolder]) -> Void, preProcessKernle: CusomKernel?, except: Int) throws
+    func clear()
+}
+
+public class Executor<P: PrecisionProtocol>: Executorable{
     var ops: [Runable & InferShaperable] = []
     var preInputDim: Dim = Dim.init(inDim: [])
     let program: Program
