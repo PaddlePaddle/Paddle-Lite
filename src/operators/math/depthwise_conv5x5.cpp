@@ -244,10 +244,9 @@ void DepthwiseConv5x5S1<float, float>(const framework::Tensor &input,
         output_ptr1 += valid_w_start;
       }
         // valid
-// #if __aarch64__
-#if 0
+#if __aarch64__
       float32x4_t _q14, _q15;
-      for (int loop = 0; loop = output_w_tiles; ++loop) {
+      for (int loop = 0; loop < output_w_tiles; ++loop) {
         float32x4_t _q7 = vld1q_f32(input_ptr0);
         float32x4_t _q8 = vld1q_f32(input_ptr0 + 4);
         float32x4_t _q9 = vld1q_f32(input_ptr1);
@@ -759,10 +758,9 @@ void DepthwiseConv5x5S1<float, float>(const framework::Tensor &input,
         output_ptr0 += valid_w_start;
       }
         // valid
-// #if __aarch64__
-#if 0
+#if __aarch64__
       float32x4_t _q14;
-      for (int loop = 0; loop = output_w_tiles; ++loop) {
+      for (int loop = 0; loop < output_w_tiles; ++loop) {
         float32x4_t _q7 = vld1q_f32(input_ptr0);
         float32x4_t _q8 = vld1q_f32(input_ptr0 + 4);
         float32x4_t _q9 = vld1q_f32(input_ptr1);
