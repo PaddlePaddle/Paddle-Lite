@@ -71,34 +71,11 @@ void MatMul<float, float>(const framework::Tensor &matrix_a, bool trans_a,
         a[index++] = tmp[i * n + j];
       }
     }
-    if (M == 1) {
-#ifdef _OPENMP
-      gemm.Sgemm_omp(M, N, K, alpha, a, K, matrix_b.data<float>(), N, beta,
-                     matrix_out->data<float>(), N, relu, bias);
-#else
-      gemm.Sgemm(M, N, K, alpha, a, K, matrix_b.data<float>(), N, beta,
-                 matrix_out->data<float>(), N, relu, bias);
-#endif
-    } else {
-      cblas_sgemm(false, false, M, N, K, alpha, a, K, matrix_b.data<float>(), N,
-                  beta, matrix_out->data<float>(), N);
-    }
+    cblas_sgemm(false, false, M, N, K, alpha, a, K, matrix_b.data<float>(), N,
+                beta, matrix_out->data<float>(), N);
   } else {
-    if (M == 1) {
-#ifdef _OPENMP
-      gemm.Sgemm_omp(M, N, K, alpha, matrix_a.data<float>(), K,
-                     matrix_b.data<float>(), N, beta, matrix_out->data<float>(),
-                     N, relu, bias);
-#else
-      gemm.Sgemm(M, N, K, alpha, matrix_a.data<float>(), K,
-                 matrix_b.data<float>(), N, beta, matrix_out->data<float>(), N,
-                 relu, bias);
-#endif
-    } else {
-      cblas_sgemm(false, false, M, N, K, alpha, matrix_a.data<float>(), K,
-                  matrix_b.data<float>(), N, beta, matrix_out->data<float>(),
-                  N);
-    }
+    cblas_sgemm(false, false, M, N, K, alpha, matrix_a.data<float>(), K,
+                matrix_b.data<float>(), N, beta, matrix_out->data<float>(), N);
   }
 }
 
