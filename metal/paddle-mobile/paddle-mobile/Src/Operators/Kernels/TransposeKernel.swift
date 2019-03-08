@@ -20,7 +20,7 @@ struct TransposeMetalParam {
     var axis: (Int32, Int32, Int32, Int32) = (0, 1, 2, 3)
 }
 
-class TransposeKernel<P: PrecisionType>: Kernel, Computable {
+class TransposeKernel<P: PrecisionProtocol>: Kernel, Computable {
     var metalParam: TransposeMetalParam = TransposeMetalParam.init()
     required init(device: MTLDevice, param: TransposeParam<P>, initContext: InitContext) {
         param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)

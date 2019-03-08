@@ -14,7 +14,7 @@
 
 import Foundation
 
-class BoxcoderParam<P: PrecisionType>: OpParam {
+class BoxcoderParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         do {
@@ -45,7 +45,7 @@ class BoxcoderParam<P: PrecisionType>: OpParam {
     let boxNormalized: Bool
 }
 
-class BoxcoderOp<P: PrecisionType>: Operator<BoxcoderKernel<P>, BoxcoderParam<P>>, Runable, Creator, InferShaperable{
+class BoxcoderOp<P: PrecisionProtocol>: Operator<BoxcoderKernel<P>, BoxcoderParam<P>>, Runable, Creator, InferShaperable{
     
     typealias OpType = BoxcoderOp<P>
     

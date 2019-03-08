@@ -20,20 +20,28 @@ public protocol SummableMultipliable: Equatable {
     static func *(lhs: Self, rhs: Self) -> Self
     static func -(lhs: Self, rhs: Self) -> Self
 }
-public protocol PrecisionType: SummableMultipliable{
+
+public protocol PrecisionProtocol: SummableMultipliable{
     init(inFloat: Float32)
     init(inFloat16: Float16)
-    init<P: PrecisionType>(_ inP: P)
+    init<P: PrecisionProtocol>(_ inP: P)
     static var bitSize: UInt { get }
+    static func initializeValue() -> Self
+    static var precisionType: Precision { get }
 }
 
 public typealias Float16 = Int16
-extension Float16: PrecisionType {
-    public static func * (prefix: Float16, postfix: Float16) {
-        return prefix * postfix
+extension Float16: PrecisionProtocol {
+    
+    public static var precisionType: Precision {
+        return .Float16
     }
     
-    public init<P>(_ inP: P) where P : PrecisionType {
+    public static func initializeValue() -> Int16 {
+        return 0
+    }
+    
+    public init<P>(_ inP: P) where P : PrecisionProtocol {
         if P.bitSize == Float32.bitSize {
             self = Float16(inFloat: inP as! Float32)
         } else if P.bitSize == Float16.bitSize {
@@ -55,8 +63,17 @@ extension Float16: PrecisionType {
     }
 }
 
-extension Float32: PrecisionType {
-    public init<P>(_ inP: P) where P : PrecisionType {
+extension Float32: PrecisionProtocol {
+    
+    public static var precisionType: Precision {
+        return .Float32
+    }
+    
+    public static func initializeValue() -> Float {
+        return 0.0
+    }
+    
+    public init<P>(_ inP: P) where P : PrecisionProtocol {
         if P.bitSize == Float32.bitSize {
             self = inP as! Float32
         } else if P.bitSize == Float16.bitSize {
@@ -115,80 +132,6 @@ struct DataLayout {
     func count() -> Int {
         return layoutWithDim.count
     }
-    
-    var N: Int? {
-        get {
-            for layoutDim in layoutWithDim {
-                if layoutDim.0 == .N {
-                    return layoutDim.1
-                }
-            }
-            return nil
-        }
-        set {
-            var newN = (Layout.N, newValue)
-            if let index = layoutWithDim.index(where: { (layout: Layout, dim: Int) -> Bool in
-                return layout == .N
-            }) {
-                fatalError()
-            }
-        }
-    }
-    var C: Int? {
-        get {
-            for layoutDim in layoutWithDim {
-                if layoutDim.0 == .C {
-                    return layoutDim.1
-                }
-            }
-            return nil
-        }
-        set {
-            var newN = (Layout.C, newValue)
-            if let index = layoutWithDim.index(where: { (layout: Layout, dim: Int) -> Bool in
-                return layout == .N
-            }) {
-                fatalError()
-            }
-        }
-    }
-    var H: Int? {
-        get {
-            for layoutDim in layoutWithDim {
-                if layoutDim.0 == .H {
-                    return layoutDim.1
-                }
-            }
-            return nil
-        }
-        set {
-            var newN = (Layout.H, newValue)
-            if let index = layoutWithDim.index(where: { (layout: Layout, dim: Int) -> Bool in
-                return layout == .H
-            }) {
-                fatalError()
-            }
-        }
-    }
-    var W: Int? {
-        get {
-            for layoutDim in layoutWithDim {
-                if layoutDim.0 == .W {
-                    return layoutDim.1
-                }
-            }
-            return nil
-        }
-        set {
-            var newN = (Layout.W, newValue)
-            if let index = layoutWithDim.index(where: { (layout: Layout, dim: Int) -> Bool in
-                return layout == .W
-            }) {
-                fatalError()
-            }
-        }
-    }
-    
     
     init(_ inLayout: [(Layout, Int)]) {
         layoutWithDim = inLayout

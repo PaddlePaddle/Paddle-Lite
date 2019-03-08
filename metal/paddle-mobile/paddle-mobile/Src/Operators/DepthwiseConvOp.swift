@@ -14,7 +14,7 @@
 
 import Foundation
 
-class DepthConvOp<P: PrecisionType>: Operator<ConvKernel<P>, ConvParam<P>>, Runable, Creator, InferShaperable {
+class DepthConvOp<P: PrecisionProtocol>: Operator<ConvKernel<P>, ConvParam<P>>, Runable, Creator, InferShaperable {
     
     typealias OpType = DepthConvOp<P>
     

@@ -27,7 +27,7 @@ struct ReshapeTestParam: TestParam {
     let param: ReshapeMetalParam
 }
 
-class ReshapeKernel<P: PrecisionType>: Kernel, Computable{
+class ReshapeKernel<P: PrecisionProtocol>: Kernel, Computable{
     
     var metalParam: ReshapeMetalParam
     

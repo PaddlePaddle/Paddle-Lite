@@ -14,7 +14,7 @@
 
 import Foundation
 
-class FetchKernel<P: PrecisionType>: Kernel, Computable {
+class FetchKernel<P: PrecisionProtocol>: Kernel, Computable {
     
     required init(device: MTLDevice, param: FetchParam<P>, initContext: InitContext) {
         param.output.initBuffer(device: device)

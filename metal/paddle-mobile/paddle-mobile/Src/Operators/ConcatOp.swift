@@ -14,7 +14,7 @@
 
 import Foundation
 
-class ConcatParam<P: PrecisionType>: OpParam {
+class ConcatParam<P: PrecisionProtocol>: OpParam {
     //typealias ParamPrecisionType = P
     required init(opDesc: PMOpDesc, inScope: Scope) throws {
         do {
@@ -46,7 +46,7 @@ class ConcatParam<P: PrecisionType>: OpParam {
     let axis: Int
 }
 
-class ConcatOp<P: PrecisionType>: Operator<ConcatKernel<P>, ConcatParam<P>>, Runable, Creator, InferShaperable{
+class ConcatOp<P: PrecisionProtocol>: Operator<ConcatKernel<P>, ConcatParam<P>>, Runable, Creator, InferShaperable{
     
     typealias OpType = ConcatOp<P>
     
