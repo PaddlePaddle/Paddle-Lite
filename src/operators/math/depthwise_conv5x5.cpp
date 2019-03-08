@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#if defined(__ARM_NEON__) && !defined(__aarch64__)
+#if defined(__ARM_NEON__) || defined(__ARM_NEON)
 
 #include "operators/math/depthwise_conv5x5.h"
 #include <arm_neon.h>
@@ -243,7 +243,224 @@ void DepthwiseConv5x5S1<float, float>(const framework::Tensor &input,
         output_ptr0 += valid_w_start;
         output_ptr1 += valid_w_start;
       }
-      // valid
+        // valid
+// #if __aarch64__
+#if 0
+      float32x4_t _q14, _q15;
+      for (int loop = 0; loop = output_w_tiles; ++loop) {
+        float32x4_t _q7 = vld1q_f32(input_ptr0);
+        float32x4_t _q8 = vld1q_f32(input_ptr0 + 4);
+        float32x4_t _q9 = vld1q_f32(input_ptr1);
+        float32x4_t _q10 = vld1q_f32(input_ptr1 + 4);
+        float32x4_t _q11 = vld1q_f32(input_ptr2);
+        float32x4_t _q12 = vld1q_f32(input_ptr2 + 4);
+
+        _q14 = vmulq_lane_f32(_q7, vget_low_f32(_ker[5]), 0);
+        float32x4_t _q13 = vextq_f32(_q7, _q8, 1);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[0]), 0);
+        _q13 = vextq_f32(_q7, _q8, 2);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[0]), 1);
+        _q13 = vextq_f32(_q7, _q8, 3);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_high_f32(_ker[0]), 0);
+        _q14 = vmlaq_lane_f32(_q14, _q8, vget_high_f32(_ker[0]), 1);
+
+        _q14 = vmlaq_lane_f32(_q14, _q9, vget_low_f32(_ker[5]), 1);
+        _q15 = vmulq_lane_f32(_q9, vget_low_f32(_ker[5]), 0);
+        _q13 = vextq_f32(_q9, _q10, 1);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[1]), 0);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_low_f32(_ker[0]), 0);
+        _q13 = vextq_f32(_q9, _q10, 2);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[1]), 1);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_low_f32(_ker[0]), 1);
+        _q13 = vextq_f32(_q9, _q10, 3);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_high_f32(_ker[1]), 0);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_high_f32(_ker[0]), 0);
+        _q14 = vmlaq_lane_f32(_q14, _q10, vget_high_f32(_ker[1]), 1);
+        _q15 = vmlaq_lane_f32(_q15, _q10, vget_high_f32(_ker[0]), 1);
+
+        _q14 = vmlaq_lane_f32(_q14, _q11, vget_high_f32(_ker[5]), 0);
+        _q15 = vmlaq_lane_f32(_q15, _q11, vget_low_f32(_ker[5]), 1);
+        _q13 = vextq_f32(_q11, _q12, 1);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[2]), 0);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_low_f32(_ker[1]), 0);
+        _q13 = vextq_f32(_q11, _q12, 2);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[2]), 1);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_low_f32(_ker[1]), 1);
+        _q13 = vextq_f32(_q11, _q12, 3);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_high_f32(_ker[2]), 0);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_high_f32(_ker[1]), 0);
+        _q14 = vmlaq_lane_f32(_q14, _q12, vget_high_f32(_ker[2]), 1);
+        _q15 = vmlaq_lane_f32(_q15, _q12, vget_high_f32(_ker[1]), 1);
+
+        _q7 = vld1q_f32(input_ptr3);
+        _q8 = vld1q_f32(input_ptr3 + 4);
+        _q9 = vld1q_f32(input_ptr4);
+        _q10 = vld1q_f32(input_ptr4 + 4);
+        _q11 = vld1q_f32(input_ptr5);
+        _q12 = vld1q_f32(input_ptr5 + 4);
+
+        _q14 = vmlaq_lane_f32(_q14, _q7, vget_high_f32(_ker[5]), 1);
+        _q15 = vmlaq_lane_f32(_q15, _q7, vget_high_f32(_ker[5]), 0);
+        _q13 = vextq_f32(_q7, _q8, 1);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[3]), 0);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_low_f32(_ker[2]), 0);
+        _q13 = vextq_f32(_q7, _q8, 2);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[3]), 1);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_low_f32(_ker[2]), 1);
+        _q13 = vextq_f32(_q7, _q8, 3);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_high_f32(_ker[3]), 0);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_high_f32(_ker[2]), 0);
+        _q14 = vmlaq_lane_f32(_q14, _q8, vget_high_f32(_ker[3]), 1);
+        _q15 = vmlaq_lane_f32(_q15, _q8, vget_high_f32(_ker[2]), 1);
+
+        _q14 = vmlaq_lane_f32(_q14, _q9, vget_low_f32(_ker[6]), 0);
+        _q15 = vmlaq_lane_f32(_q15, _q9, vget_high_f32(_ker[5]), 1);
+        _q13 = vextq_f32(_q9, _q10, 1);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[4]), 0);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_low_f32(_ker[3]), 0);
+        _q13 = vextq_f32(_q9, _q10, 2);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[4]), 1);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_low_f32(_ker[3]), 1);
+        _q13 = vextq_f32(_q9, _q10, 3);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_high_f32(_ker[4]), 0);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_high_f32(_ker[3]), 0);
+        _q14 = vmlaq_lane_f32(_q14, _q10, vget_high_f32(_ker[4]), 1);
+        _q15 = vmlaq_lane_f32(_q15, _q10, vget_high_f32(_ker[3]), 1);
+
+        _q15 = vmlaq_lane_f32(_q15, _q11, vget_low_f32(_ker[6]), 0);
+        _q13 = vextq_f32(_q11, _q12, 1);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_low_f32(_ker[4]), 0);
+        _q13 = vextq_f32(_q11, _q12, 2);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_low_f32(_ker[4]), 1);
+        _q13 = vextq_f32(_q11, _q12, 3);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_high_f32(_ker[4]), 0);
+        _q15 = vmlaq_lane_f32(_q15, _q12, vget_high_f32(_ker[4]), 1);
+
+        vst1q_f32(output_ptr0, _q14);
+        vst1q_f32(output_ptr1, _q15);
+
+        input_ptr0 += 4;
+        input_ptr1 += 4;
+        input_ptr2 += 4;
+        input_ptr3 += 4;
+        input_ptr4 += 4;
+        input_ptr5 += 4;
+        output_ptr0 += 4;
+        output_ptr1 += 4;
+      }
+      // remain w
+      if (output_w_remain > 0) {
+        float32x4_t _q7 = vld1q_f32(input_ptr0);
+        float32x4_t _q8 = vld1q_f32(input_ptr0 + 4);
+        float32x4_t _q9 = vld1q_f32(input_ptr1);
+        float32x4_t _q10 = vld1q_f32(input_ptr1 + 4);
+        float32x4_t _q11 = vld1q_f32(input_ptr2);
+        float32x4_t _q12 = vld1q_f32(input_ptr2 + 4);
+
+        _q14 = vmulq_lane_f32(_q7, vget_low_f32(_ker[5]), 0);
+        float32x4_t _q13 = vextq_f32(_q7, _q8, 1);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[0]), 0);
+        _q13 = vextq_f32(_q7, _q8, 2);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[0]), 1);
+        _q13 = vextq_f32(_q7, _q8, 3);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_high_f32(_ker[0]), 0);
+        _q14 = vmlaq_lane_f32(_q14, _q8, vget_high_f32(_ker[0]), 1);
+
+        _q14 = vmlaq_lane_f32(_q14, _q9, vget_low_f32(_ker[5]), 1);
+        _q15 = vmulq_lane_f32(_q9, vget_low_f32(_ker[5]), 0);
+        _q13 = vextq_f32(_q9, _q10, 1);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[1]), 0);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_low_f32(_ker[0]), 0);
+        _q13 = vextq_f32(_q9, _q10, 2);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[1]), 1);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_low_f32(_ker[0]), 1);
+        _q13 = vextq_f32(_q9, _q10, 3);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_high_f32(_ker[1]), 0);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_high_f32(_ker[0]), 0);
+        _q14 = vmlaq_lane_f32(_q14, _q10, vget_high_f32(_ker[1]), 1);
+        _q15 = vmlaq_lane_f32(_q15, _q10, vget_high_f32(_ker[0]), 1);
+
+        _q14 = vmlaq_lane_f32(_q14, _q11, vget_high_f32(_ker[5]), 0);
+        _q15 = vmlaq_lane_f32(_q15, _q11, vget_low_f32(_ker[5]), 1);
+        _q13 = vextq_f32(_q11, _q12, 1);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[2]), 0);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_low_f32(_ker[1]), 0);
+        _q13 = vextq_f32(_q11, _q12, 2);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[2]), 1);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_low_f32(_ker[1]), 1);
+        _q13 = vextq_f32(_q11, _q12, 3);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_high_f32(_ker[2]), 0);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_high_f32(_ker[1]), 0);
+        _q14 = vmlaq_lane_f32(_q14, _q12, vget_high_f32(_ker[2]), 1);
+        _q15 = vmlaq_lane_f32(_q15, _q12, vget_high_f32(_ker[1]), 1);
+
+        _q7 = vld1q_f32(input_ptr3);
+        _q8 = vld1q_f32(input_ptr3 + 4);
+        _q9 = vld1q_f32(input_ptr4);
+        _q10 = vld1q_f32(input_ptr4 + 4);
+        _q11 = vld1q_f32(input_ptr5);
+        _q12 = vld1q_f32(input_ptr5 + 4);
+
+        _q14 = vmlaq_lane_f32(_q14, _q7, vget_high_f32(_ker[5]), 1);
+        _q15 = vmlaq_lane_f32(_q15, _q7, vget_high_f32(_ker[5]), 0);
+        _q13 = vextq_f32(_q7, _q8, 1);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[3]), 0);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_low_f32(_ker[2]), 0);
+        _q13 = vextq_f32(_q7, _q8, 2);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[3]), 1);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_low_f32(_ker[2]), 1);
+        _q13 = vextq_f32(_q7, _q8, 3);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_high_f32(_ker[3]), 0);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_high_f32(_ker[2]), 0);
+        _q14 = vmlaq_lane_f32(_q14, _q8, vget_high_f32(_ker[3]), 1);
+        _q15 = vmlaq_lane_f32(_q15, _q8, vget_high_f32(_ker[2]), 1);
+
+        _q14 = vmlaq_lane_f32(_q14, _q9, vget_low_f32(_ker[6]), 0);
+        _q15 = vmlaq_lane_f32(_q15, _q9, vget_high_f32(_ker[5]), 1);
+        _q13 = vextq_f32(_q9, _q10, 1);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[4]), 0);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_low_f32(_ker[3]), 0);
+        _q13 = vextq_f32(_q9, _q10, 2);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[4]), 1);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_low_f32(_ker[3]), 1);
+        _q13 = vextq_f32(_q9, _q10, 3);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_high_f32(_ker[4]), 0);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_high_f32(_ker[3]), 0);
+        _q14 = vmlaq_lane_f32(_q14, _q10, vget_high_f32(_ker[4]), 1);
+        _q15 = vmlaq_lane_f32(_q15, _q10, vget_high_f32(_ker[3]), 1);
+
+        _q15 = vmlaq_lane_f32(_q15, _q11, vget_low_f32(_ker[6]), 0);
+        _q13 = vextq_f32(_q11, _q12, 1);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_low_f32(_ker[4]), 0);
+        _q13 = vextq_f32(_q11, _q12, 2);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_low_f32(_ker[4]), 1);
+        _q13 = vextq_f32(_q11, _q12, 3);
+        _q15 = vmlaq_lane_f32(_q15, _q13, vget_high_f32(_ker[4]), 0);
+        _q15 = vmlaq_lane_f32(_q15, _q12, vget_high_f32(_ker[4]), 1);
+
+        switch (output_w_remain) {
+          case 3:
+            vst1q_lane_f32(output_ptr0 + 2, _q14, 2);
+            vst1q_lane_f32(output_ptr1 + 2, _q15, 2);
+          case 2:
+            vst1_f32(output_ptr0, vget_low_f32(_q14));
+            vst1_f32(output_ptr1, vget_low_f32(_q15));
+            break;
+          case 1:
+            vst1q_lane_f32(output_ptr0, _q14, 0);
+            vst1q_lane_f32(output_ptr1, _q15, 0);
+            break;
+        }
+        input_ptr0 += output_w_remain;
+        input_ptr1 += output_w_remain;
+        input_ptr2 += output_w_remain;
+        input_ptr3 += output_w_remain;
+        input_ptr4 += output_w_remain;
+        input_ptr5 += output_w_remain;
+        output_ptr0 += output_w_remain;
+        output_ptr1 += output_w_remain;
+      }
+#else
       int loop = output_w_tiles;
       asm volatile(
           "cmp        %[loop], #0                     \n"
@@ -443,6 +660,7 @@ void DepthwiseConv5x5S1<float, float>(const framework::Tensor &input,
             [kr4] "w"(_ker[4]), [ker0] "w"(_ker[5]), [ker1] "w"(_ker[6])
           : "cc", "memory", "q7", "q8", "q9", "q10", "q11", "q12", "q13", "q14",
             "q15", "r0");
+#endif  // __aarch64__
       // pad right
       if (padding_w) {
         float32x4_t row0 = vld1q_f32(input_ptr0);
@@ -540,7 +758,155 @@ void DepthwiseConv5x5S1<float, float>(const framework::Tensor &input,
         }
         output_ptr0 += valid_w_start;
       }
-      // valid
+        // valid
+// #if __aarch64__
+#if 0
+      float32x4_t _q14;
+      for (int loop = 0; loop = output_w_tiles; ++loop) {
+        float32x4_t _q7 = vld1q_f32(input_ptr0);
+        float32x4_t _q8 = vld1q_f32(input_ptr0 + 4);
+        float32x4_t _q9 = vld1q_f32(input_ptr1);
+        float32x4_t _q10 = vld1q_f32(input_ptr1 + 4);
+        float32x4_t _q11 = vld1q_f32(input_ptr2);
+        float32x4_t _q12 = vld1q_f32(input_ptr2 + 4);
+
+        _q14 = vmulq_lane_f32(_q7, vget_low_f32(_ker[5]), 0);
+        float32x4_t _q13 = vextq_f32(_q7, _q8, 1);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[0]), 0);
+        _q13 = vextq_f32(_q7, _q8, 2);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[0]), 1);
+        _q13 = vextq_f32(_q7, _q8, 3);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_high_f32(_ker[0]), 0);
+        _q14 = vmlaq_lane_f32(_q14, _q8, vget_high_f32(_ker[0]), 1);
+
+        _q14 = vmlaq_lane_f32(_q14, _q9, vget_low_f32(_ker[5]), 1);
+        _q13 = vextq_f32(_q9, _q10, 1);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[1]), 0);
+        _q13 = vextq_f32(_q9, _q10, 2);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[1]), 1);
+        _q13 = vextq_f32(_q9, _q10, 3);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_high_f32(_ker[1]), 0);
+        _q14 = vmlaq_lane_f32(_q14, _q10, vget_high_f32(_ker[1]), 1);
+
+        _q14 = vmlaq_lane_f32(_q14, _q11, vget_high_f32(_ker[5]), 0);
+        _q13 = vextq_f32(_q11, _q12, 1);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[2]), 0);
+        _q13 = vextq_f32(_q11, _q12, 2);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[2]), 1);
+        _q13 = vextq_f32(_q11, _q12, 3);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_high_f32(_ker[2]), 0);
+        _q14 = vmlaq_lane_f32(_q14, _q12, vget_high_f32(_ker[2]), 1);
+
+        _q7 = vld1q_f32(input_ptr3);
+        _q8 = vld1q_f32(input_ptr3 + 4);
+        _q9 = vld1q_f32(input_ptr4);
+        _q10 = vld1q_f32(input_ptr4 + 4);
+
+        _q14 = vmlaq_lane_f32(_q14, _q7, vget_high_f32(_ker[5]), 1);
+        _q13 = vextq_f32(_q7, _q8, 1);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[3]), 0);
+        _q13 = vextq_f32(_q7, _q8, 2);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[3]), 1);
+        _q13 = vextq_f32(_q7, _q8, 3);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_high_f32(_ker[3]), 0);
+        _q14 = vmlaq_lane_f32(_q14, _q8, vget_high_f32(_ker[3]), 1);
+
+        _q14 = vmlaq_lane_f32(_q14, _q9, vget_low_f32(_ker[6]), 0);
+        _q13 = vextq_f32(_q9, _q10, 1);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[4]), 0);
+        _q13 = vextq_f32(_q9, _q10, 2);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[4]), 1);
+        _q13 = vextq_f32(_q9, _q10, 3);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_high_f32(_ker[4]), 0);
+        _q14 = vmlaq_lane_f32(_q14, _q10, vget_high_f32(_ker[4]), 1);
+
+        vst1q_f32(output_ptr0, _q14);
+
+        input_ptr0 += 4;
+        input_ptr1 += 4;
+        input_ptr2 += 4;
+        input_ptr3 += 4;
+        input_ptr4 += 4;
+        output_ptr0 += 4;
+      }
+      // remain w
+      if (output_w_remain > 0) {
+        float32x4_t _q7 = vld1q_f32(input_ptr0);
+        float32x4_t _q8 = vld1q_f32(input_ptr0 + 4);
+        float32x4_t _q9 = vld1q_f32(input_ptr1);
+        float32x4_t _q10 = vld1q_f32(input_ptr1 + 4);
+        float32x4_t _q11 = vld1q_f32(input_ptr2);
+        float32x4_t _q12 = vld1q_f32(input_ptr2 + 4);
+
+        _q14 = vmulq_lane_f32(_q7, vget_low_f32(_ker[5]), 0);
+        float32x4_t _q13 = vextq_f32(_q7, _q8, 1);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[0]), 0);
+        _q13 = vextq_f32(_q7, _q8, 2);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[0]), 1);
+        _q13 = vextq_f32(_q7, _q8, 3);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_high_f32(_ker[0]), 0);
+        _q14 = vmlaq_lane_f32(_q14, _q8, vget_high_f32(_ker[0]), 1);
+
+        _q14 = vmlaq_lane_f32(_q14, _q9, vget_low_f32(_ker[5]), 1);
+        _q13 = vextq_f32(_q9, _q10, 1);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[1]), 0);
+        _q13 = vextq_f32(_q9, _q10, 2);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[1]), 1);
+        _q13 = vextq_f32(_q9, _q10, 3);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_high_f32(_ker[1]), 0);
+        _q14 = vmlaq_lane_f32(_q14, _q10, vget_high_f32(_ker[1]), 1);
+
+        _q14 = vmlaq_lane_f32(_q14, _q11, vget_high_f32(_ker[5]), 0);
+        _q13 = vextq_f32(_q11, _q12, 1);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[2]), 0);
+        _q13 = vextq_f32(_q11, _q12, 2);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[2]), 1);
+        _q13 = vextq_f32(_q11, _q12, 3);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_high_f32(_ker[2]), 0);
+        _q14 = vmlaq_lane_f32(_q14, _q12, vget_high_f32(_ker[2]), 1);
+
+        _q7 = vld1q_f32(input_ptr3);
+        _q8 = vld1q_f32(input_ptr3 + 4);
+        _q9 = vld1q_f32(input_ptr4);
+        _q10 = vld1q_f32(input_ptr4 + 4);
+
+        _q14 = vmlaq_lane_f32(_q14, _q7, vget_high_f32(_ker[5]), 1);
+        _q13 = vextq_f32(_q7, _q8, 1);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[3]), 0);
+        _q13 = vextq_f32(_q7, _q8, 2);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[3]), 1);
+        _q13 = vextq_f32(_q7, _q8, 3);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_high_f32(_ker[3]), 0);
+        _q14 = vmlaq_lane_f32(_q14, _q8, vget_high_f32(_ker[3]), 1);
+
+        _q14 = vmlaq_lane_f32(_q14, _q9, vget_low_f32(_ker[6]), 0);
+        _q13 = vextq_f32(_q9, _q10, 1);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[4]), 0);
+        _q13 = vextq_f32(_q9, _q10, 2);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_low_f32(_ker[4]), 1);
+        _q13 = vextq_f32(_q9, _q10, 3);
+        _q14 = vmlaq_lane_f32(_q14, _q13, vget_high_f32(_ker[4]), 0);
+        _q14 = vmlaq_lane_f32(_q14, _q10, vget_high_f32(_ker[4]), 1);
+
+        switch (output_w_remain) {
+          case 3:
+            vst1q_lane_f32(output_ptr0 + 2, _q14, 2);
+          case 2:
+            vst1_f32(output_ptr0, vget_low_f32(_q14));
+            break;
+          case 1:
+            vst1q_lane_f32(output_ptr0, _q14, 0);
+            break;
+        }
+
+        input_ptr0 += output_w_remain;
+        input_ptr1 += output_w_remain;
+        input_ptr2 += output_w_remain;
+        input_ptr3 += output_w_remain;
+        input_ptr4 += output_w_remain;
+        output_ptr0 += output_w_remain;
+      }
+#else
       int loop = output_w_tiles;
       asm volatile(
           "cmp        %[loop], #0                     \n"
@@ -676,6 +1042,7 @@ void DepthwiseConv5x5S1<float, float>(const framework::Tensor &input,
             [kr4] "w"(_ker[4]), [ker0] "w"(_ker[5]), [ker1] "w"(_ker[6])
           : "cc", "memory", "q7", "q8", "q9", "q10", "q11", "q12", "q13", "q14",
             "q15", "r0");
+#endif  // __aarch64__
       // pad right
       if (padding_w) {
         float32x4_t row0 = vld1q_f32(input_ptr0);

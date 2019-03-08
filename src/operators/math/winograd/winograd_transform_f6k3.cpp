@@ -544,12 +544,12 @@ void winograd_transform_input<8, 3>(const framework::Tensor &input,
         for (int l = 0; l < 2; ++l) {
           float32x4x2_t _q23, _q45, _q67, _q89;
           _q23.val[0] = vld1q_f32(ptr0);
-          _q23.val[0] = vld1q_f32(ptr0 + 4);
-          _q45.val[1] = vld1q_f32(ptr0 + 8);
+          _q23.val[1] = vld1q_f32(ptr0 + 4);
+          _q45.val[0] = vld1q_f32(ptr0 + 8);
           _q45.val[1] = vld1q_f32(ptr0 + 12);
           _q67.val[0] = vld1q_f32(ptr1);
-          _q67.val[0] = vld1q_f32(ptr1 + 4);
-          _q89.val[1] = vld1q_f32(ptr1 + 8);
+          _q67.val[1] = vld1q_f32(ptr1 + 4);
+          _q89.val[0] = vld1q_f32(ptr1 + 8);
           _q89.val[1] = vld1q_f32(ptr1 + 12);
           _q23 = vtrnq_f32(_q23.val[0], _q23.val[1]);
           _q45 = vtrnq_f32(_q45.val[0], _q45.val[1]);
@@ -1167,12 +1167,12 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
           float32x4_t _q0 = vld1q_f32(transform_matrix);
           float32x4x2_t _q23, _q45, _q67, _q89;
           _q23.val[0] = vld1q_f32(at_m_ptr0);
-          _q23.val[0] = vld1q_f32(at_m_ptr0 + 4);
-          _q45.val[1] = vld1q_f32(at_m_ptr0 + 8);
+          _q23.val[1] = vld1q_f32(at_m_ptr0 + 4);
+          _q45.val[0] = vld1q_f32(at_m_ptr0 + 8);
           _q45.val[1] = vld1q_f32(at_m_ptr0 + 12);
           _q67.val[0] = vld1q_f32(at_m_ptr1);
-          _q67.val[0] = vld1q_f32(at_m_ptr1 + 4);
-          _q89.val[1] = vld1q_f32(at_m_ptr1 + 8);
+          _q67.val[1] = vld1q_f32(at_m_ptr1 + 4);
+          _q89.val[0] = vld1q_f32(at_m_ptr1 + 8);
           _q89.val[1] = vld1q_f32(at_m_ptr1 + 12);
           _q23 = vtrnq_f32(_q23.val[0], _q23.val[1]);
           _q45 = vtrnq_f32(_q45.val[0], _q45.val[1]);
@@ -1231,6 +1231,7 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
           _q1 = vaddq_f32(_q9, _q7);
           _q1 = vmlaq_lane_f32(_q1, _q10, vget_high_f32(_q0), 1);
           _q2 = vaddq_f32(_q12, _q8);
+          _q2 = vaddq_f32(_q2, _q14);
           _q2 = vmlaq_lane_f32(_q2, _q6, vget_high_f32(_q0), 1);
           _q23 = vtrnq_f32(_q1, _q2);
           vst1_f32(out_ptr0 + 4, vget_low_f32(_q23.val[0]));
@@ -1287,8 +1288,8 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
           _d20 = vadd_f32(_d20, _d15);
           _d20 = vmla_lane_f32(_d20, _d16, vget_high_f32(_q0), 1);
           _d18d20 = vtrn_f32(_d18, _d20);
-          vst1_f32(out_ptr4 + 4, _d18);
-          vst1_f32(out_ptr5 + 4, _d20);
+          vst1_f32(out_ptr4 + 4, _d18d20.val[0]);
+          vst1_f32(out_ptr5 + 4, _d18d20.val[1]);
 #else
           asm volatile(
               "vld1.32    {d0-d1}, [%[tm_ptr]]          \n"
@@ -1428,12 +1429,12 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
           float32x4_t _q0 = vld1q_f32(transform_matrix);
           float32x4x2_t _q23, _q45, _q67, _q89;
           _q23.val[0] = vld1q_f32(at_m_ptr0);
-          _q23.val[0] = vld1q_f32(at_m_ptr0 + 4);
-          _q45.val[1] = vld1q_f32(at_m_ptr0 + 8);
+          _q23.val[1] = vld1q_f32(at_m_ptr0 + 4);
+          _q45.val[0] = vld1q_f32(at_m_ptr0 + 8);
           _q45.val[1] = vld1q_f32(at_m_ptr0 + 12);
           _q67.val[0] = vld1q_f32(at_m_ptr1);
-          _q67.val[0] = vld1q_f32(at_m_ptr1 + 4);
-          _q89.val[1] = vld1q_f32(at_m_ptr1 + 8);
+          _q67.val[1] = vld1q_f32(at_m_ptr1 + 4);
+          _q89.val[0] = vld1q_f32(at_m_ptr1 + 8);
           _q89.val[1] = vld1q_f32(at_m_ptr1 + 12);
           _q23 = vtrnq_f32(_q23.val[0], _q23.val[1]);
           _q45 = vtrnq_f32(_q45.val[0], _q45.val[1]);
@@ -1489,6 +1490,7 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
           _q1 = vaddq_f32(_q9, _q7);
           _q1 = vmlaq_lane_f32(_q1, _q10, vget_high_f32(_q0), 1);
           _q2 = vaddq_f32(_q12, _q8);
+          _q2 = vaddq_f32(_q2, _q14);
           _q2 = vmlaq_lane_f32(_q2, _q6, vget_high_f32(_q0), 1);
           _q23 = vtrnq_f32(_q1, _q2);
           vst1_f32(out_ptr0 + 4, vget_low_f32(_q23.val[0]));
@@ -1545,8 +1547,8 @@ void winograd_transform_output<8, 3>(const framework::Tensor &input,
           _d20 = vadd_f32(_d20, _d15);
           _d20 = vmla_lane_f32(_d20, _d16, vget_high_f32(_q0), 1);
           _d18d20 = vtrn_f32(_d18, _d20);
-          vst1_f32(out_ptr4 + 4, _d18);
-          vst1_f32(out_ptr5 + 4, _d20);
+          vst1_f32(out_ptr4 + 4, _d18d20.val[0]);
+          vst1_f32(out_ptr5 + 4, _d18d20.val[1]);
 #else
           asm volatile(
               "vld1.32    {d0-d1}, [%[tm_ptr]]          \n"
