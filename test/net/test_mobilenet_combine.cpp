@@ -20,14 +20,18 @@ int main() {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
   paddle_mobile.SetThreadNum(4);
   auto time1 = time();
-  if (paddle_mobile.Load(std::string(g_mobilenet_combined) + "/model",
-                         std::string(g_mobilenet_combined) + "/params", true)) {
+
+  if (paddle_mobile.Load(
+          std::string(g_mobilenet_vision) + "/vision_mobilenet_model",
+          std::string(g_mobilenet_vision) + "/vision_mobilenet_params", true)) {
     auto time2 = time();
     std::cout << "load cost :" << time_diff(time1, time1) << "ms" << std::endl;
 
     std::vector<float> input;
     std::vector<int64_t> dims{1, 3, 224, 224};
-    GetInput<float>(g_test_image_1x3x224x224_banana, &input, dims);
+
+    GetInput<float>(g_test_image_1x3x224x224_vision_mobilenet_input, &input,
+                    dims);
 
     auto vec_result = paddle_mobile.Predict(input, dims);
     std::vector<float>::iterator biggest =
@@ -39,8 +43,9 @@ int main() {
     for (int i = 0; i < 10; ++i) {
       auto vec_result = paddle_mobile.Predict(input, dims);
     }
+
     auto time3 = time();
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 1; ++i) {
       auto vec_result = paddle_mobile.Predict(input, dims);
     }
     auto time4 = time();
