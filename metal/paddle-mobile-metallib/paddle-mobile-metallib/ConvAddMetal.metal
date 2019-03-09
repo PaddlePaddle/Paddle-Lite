@@ -354,7 +354,7 @@ kernel void conv_add_3x3_half(texture2d_array<half, access::sample> inTexture [[
     uint input_arr_size = inTexture.get_array_size();
     uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
     
-    half4 output = biase[gid.z];
+    float4 output = float4(biase[gid.z]);
     
     ushort dilation_x = param.dilationX;
     ushort dilation_y = param.dilationY;
@@ -385,7 +385,7 @@ kernel void conv_add_3x3_half(texture2d_array<half, access::sample> inTexture [[
         }
     }
     //  output = output + float4(biase[gid.z]);
-    outTexture.write(output, gid.xy, gid.z);
+    outTexture.write(half4(output), gid.xy, gid.z);
 }
 
 kernel void depthwise_conv_add_3x3_half(texture2d_array<half, access::sample> inTexture [[texture(0)]],
@@ -406,7 +406,7 @@ kernel void depthwise_conv_add_3x3_half(texture2d_array<half, access::sample> in
     constexpr sampler sample(coord::pixel, filter::nearest, address::clamp_to_zero);
     const uint kernelHXW = 9;
     uint weithTo = gid.z * kernelHXW * 4;
-    half4 output = biase[gid.z];
+    float4 output = float4(biase[gid.z]);
     half4 inputs[9];
     inputs[0] = inTexture.sample(sample, float2(posInInput.x - 1,    posInInput.y - 1), output_slice);
     inputs[1] = inTexture.sample(sample, float2(posInInput.x,        posInInput.y - 1), output_slice);
@@ -419,13 +419,13 @@ kernel void depthwise_conv_add_3x3_half(texture2d_array<half, access::sample> in
     inputs[8] = inTexture.sample(sample, float2(posInInput.x + 1,    posInInput.y + 1), output_slice);
     for (int j = 0; j < 9; ++j) {
         half4 input = inputs[j];
-        output.x += input.x * weights[weithTo + 0 * kernelHXW + j];
-        output.y += input.y * weights[weithTo + 1 * kernelHXW + j];
-        output.z += input.z * weights[weithTo + 2 * kernelHXW + j];
-        output.w += input.w * weights[weithTo + 3 * kernelHXW + j];
+        output.x += float(input.x) * float(weights[weithTo + 0 * kernelHXW + j]);
+        output.y += float(input.y) * float(weights[weithTo + 1 * kernelHXW + j]);
+        output.z += float(input.z) * float(weights[weithTo + 2 * kernelHXW + j]);
+        output.w += float(input.w) * float(weights[weithTo + 3 * kernelHXW + j]);
     }
     //  output = output + float4(biase[gid.z]);
-    outTexture.write(output, gid.xy, gid.z);
+    outTexture.write(half4(output), gid.xy, gid.z);
 }
 
 
@@ -453,7 +453,7 @@ kernel void conv_add_5x1_half(texture2d_array<half, access::sample> inTexture [[
     
     uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
     
-    half4 output = biase[gid.z];
+    float4 output = float4(biase[gid.z]);
     
     ushort dilation_y = param.dilationY;
     half4 input[5];
@@ -471,20 +471,20 @@ kernel void conv_add_5x1_half(texture2d_array<half, access::sample> inTexture [[
         
         for (int j = 0; j < 5; ++j) {
             half4 weight_x = weights[weithTo + 0 * kernelHXW * input_arr_size + j * input_arr_size + i];
-            output.x += dot(input[j], weight_x);
+            output.x += dot(float4(input[j]), float4(weight_x));
             
             half4 weight_y = weights[weithTo + 1 * kernelHXW * input_arr_size + j * input_arr_size + i];
-            output.y += dot(input[j], weight_y);
+            output.y += dot(float4(input[j]), float4(weight_y));
             
             half4 weight_z = weights[weithTo + 2 * kernelHXW * input_arr_size + j * input_arr_size + i];
-            output.z += dot(input[j], weight_z);
+            output.z += dot(float4(input[j]), float4(weight_z));
             
             half4 weight_w = weights[weithTo + 3 * kernelHXW * input_arr_size + j * input_arr_size + i];
-            output.w += dot(input[j], weight_w);
+            output.w += dot(float4(input[j]), float4(weight_w));
         }
     }
     //  output = output + float4(biase[gid.z]);
-    outTexture.write(output, gid.xy, gid.z);
+    outTexture.write(half4(output), gid.xy, gid.z);
 }
 
 
@@ -512,7 +512,7 @@ kernel void conv_add_1x5_half(texture2d_array<half, access::sample> inTexture [[
     
     uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
     
-    half4 output = biase[gid.z];
+    float4 output = float4(biase[gid.z]);
     
     ushort dilation_x = param.dilationX;
     half4 input[5];
@@ -530,20 +530,20 @@ kernel void conv_add_1x5_half(texture2d_array<half, access::sample> inTexture [[
         
         for (int j = 0; j < 5; ++j) {
             half4 weight_x = weights[weithTo + 0 * kernelHXW * input_arr_size + j * input_arr_size + i];
-            output.x += dot(input[j], weight_x);
+            output.x += dot(float4(input[j]), float4(weight_x));
             
             half4 weight_y = weights[weithTo + 1 * kernelHXW * input_arr_size + j * input_arr_size + i];
-            output.y += dot(input[j], weight_y);
+            output.y += dot(float4(input[j]), float4(weight_y));
             
             half4 weight_z = weights[weithTo + 2 * kernelHXW * input_arr_size + j * input_arr_size + i];
-            output.z += dot(input[j], weight_z);
+            output.z += dot(float4(input[j]), float4(weight_z));
             
             half4 weight_w = weights[weithTo + 3 * kernelHXW * input_arr_size + j * input_arr_size + i];
-            output.w += dot(input[j], weight_w);
+            output.w += dot(float4(input[j]), float4(weight_w));
         }
     }
     //  output = output + float4(biase[gid.z]);
-    outTexture.write(output, gid.xy, gid.z);
+    outTexture.write(half4(output), gid.xy, gid.z);
 }
 
 
