@@ -51,6 +51,8 @@ static const char *g_yolo_combined = "../models/yolo_combined";
 static const char *g_yolo_mul = "../models/d";
 static const char *g_fluid_fssd_new = "../models/fluid_fssd_new";
 static const char *g_vgg16_ssd_combined = "../models/vgg16_ssd_combined";
+static const char *g_mobilenet_vision = "../models/vision_mobilenet";
+static const char *g_yolo_vision = "../models/vision_yolo";
 static const char *g_test_image_1x3x224x224 =
     "../images/test_image_1x3x224x224_float";
 static const char *g_test_image_1x3x224x224_banana =
@@ -65,10 +67,14 @@ static const char *g_img = "../images/img.bin";
 static const char *g_yolo_img = "../images/in_put_1_3_416_416_2";
 static const char *g_super_img = "../images/mingren_input_data";
 static const char *g_mobilenet_img = "../images/image";
+static const char *g_test_image_1x3x224x224_vision_mobilenet_input =
+    "../images/vision_mobilenet_input";
+static const char *g_test_image_1x3x416x416_vision_yolo_input =
+    "../images/yolo_input";
 
 using paddle_mobile::framework::DDim;
 using paddle_mobile::framework::Tensor;
-using namespace paddle_mobile;
+using namespace paddle_mobile;  // NOLINT
 
 template <typename T>
 void SetupTensor(paddle_mobile::framework::Tensor *input,
