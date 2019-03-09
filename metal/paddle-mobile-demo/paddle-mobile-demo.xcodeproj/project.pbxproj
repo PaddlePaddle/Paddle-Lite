@@ -33,8 +33,6 @@
 		FC5E03B221DCE8D90016C137 /* mingren_input_data in Resources */ = {isa = PBXBuildFile; fileRef = FC5E03B121DCE8D90016C137 /* mingren_input_data */; };
 		FC704C1921D2375300F98BAB /* super_params in Resources */ = {isa = PBXBuildFile; fileRef = FC704C1721D2375300F98BAB /* super_params */; };
 		FC704C1A21D2375300F98BAB /* super_model in Resources */ = {isa = PBXBuildFile; fileRef = FC704C1821D2375300F98BAB /* super_model */; };
-		FC704C2221D237FC00F98BAB /* combined_mobilenet_params in Resources */ = {isa = PBXBuildFile; fileRef = FC704C1D21D237FC00F98BAB /* combined_mobilenet_params */; };
-		FC704C2321D237FC00F98BAB /* combined_mobilenet_model in Resources */ = {isa = PBXBuildFile; fileRef = FC704C1E21D237FC00F98BAB /* combined_mobilenet_model */; };
 		FC704C2421D237FC00F98BAB /* yolo_params in Resources */ = {isa = PBXBuildFile; fileRef = FC704C2021D237FC00F98BAB /* yolo_params */; };
 		FC704C2521D237FC00F98BAB /* yolo_model in Resources */ = {isa = PBXBuildFile; fileRef = FC704C2121D237FC00F98BAB /* yolo_model */; };
 		FC803BCD214D27930094B8E5 /* FPSCounter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC803BCB214D27920094B8E5 /* FPSCounter.swift */; };
@@ -49,6 +47,9 @@
 		FCBCCC552122EF5500D94F7E /* MetalHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCBCCC542122EF5400D94F7E /* MetalHelper.swift */; };
 		FCC15E15221E716500DC3CB2 /* paddle-mobile-metallib.metallib in Resources */ = {isa = PBXBuildFile; fileRef = FCC15E14221E716400DC3CB2 /* paddle-mobile-metallib.metallib */; };
 		FCCED60521D7646E00BE8D5F /* test_image_super in Resources */ = {isa = PBXBuildFile; fileRef = FCCED60421D7646E00BE8D5F /* test_image_super */; };
+		FCE834AE2232A4AE0057BF43 /* combined_mobilenet_params in Resources */ = {isa = PBXBuildFile; fileRef = FCE834AC2232A4AE0057BF43 /* combined_mobilenet_params */; };
+		FCE834AF2232A4AE0057BF43 /* combined_mobilenet_model in Resources */ = {isa = PBXBuildFile; fileRef = FCE834AD2232A4AE0057BF43 /* combined_mobilenet_model */; };
+		FCE834B12232B6DC0057BF43 /* vision_synset.txt in Resources */ = {isa = PBXBuildFile; fileRef = FCE834B02232B6DC0057BF43 /* vision_synset.txt */; };
 		FCEBEC2C20E1391F00C0B14D /* paddle_mobile.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */; };
 		FCEBEC2D20E1391F00C0B14D /* paddle_mobile.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		FCF437E8214B6DDB00943429 /* MultiPredictViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCF437E7214B6DDB00943429 /* MultiPredictViewController.swift */; };
@@ -105,8 +106,6 @@
 		FC5E03B121DCE8D90016C137 /* mingren_input_data */ = {isa = PBXFileReference; lastKnownFileType = file; path = mingren_input_data; sourceTree = "<group>"; };
 		FC704C1721D2375300F98BAB /* super_params */ = {isa = PBXFileReference; lastKnownFileType = file; path = super_params; sourceTree = "<group>"; };
 		FC704C1821D2375300F98BAB /* super_model */ = {isa = PBXFileReference; lastKnownFileType = file; path = super_model; sourceTree = "<group>"; };
-		FC704C1D21D237FC00F98BAB /* combined_mobilenet_params */ = {isa = PBXFileReference; lastKnownFileType = file; path = combined_mobilenet_params; sourceTree = "<group>"; };
-		FC704C1E21D237FC00F98BAB /* combined_mobilenet_model */ = {isa = PBXFileReference; lastKnownFileType = file; path = combined_mobilenet_model; sourceTree = "<group>"; };
 		FC704C2021D237FC00F98BAB /* yolo_params */ = {isa = PBXFileReference; lastKnownFileType = file; path = yolo_params; sourceTree = "<group>"; };
 		FC704C2121D237FC00F98BAB /* yolo_model */ = {isa = PBXFileReference; lastKnownFileType = file; path = yolo_model; sourceTree = "<group>"; };
 		FC803BCB214D27920094B8E5 /* FPSCounter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FPSCounter.swift; sourceTree = "<group>"; };
@@ -121,6 +120,9 @@
 		FCBCCC542122EF5400D94F7E /* MetalHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalHelper.swift; sourceTree = "<group>"; };
 		FCC15E14221E716400DC3CB2 /* paddle-mobile-metallib.metallib */ = {isa = PBXFileReference; lastKnownFileType = "archive.metal-library"; name = "paddle-mobile-metallib.metallib"; path = "../../../../Library/Developer/Xcode/DerivedData/paddle-mobile-hdsimtkoxoondndnjczkbkchcwyh/Build/Products/Release-iphoneos/paddle-mobile-metallib.metallib"; sourceTree = "<group>"; };
 		FCCED60421D7646E00BE8D5F /* test_image_super */ = {isa = PBXFileReference; lastKnownFileType = file; path = test_image_super; sourceTree = "<group>"; };
+		FCE834AC2232A4AE0057BF43 /* combined_mobilenet_params */ = {isa = PBXFileReference; lastKnownFileType = file; path = combined_mobilenet_params; sourceTree = "<group>"; };
+		FCE834AD2232A4AE0057BF43 /* combined_mobilenet_model */ = {isa = PBXFileReference; lastKnownFileType = file; path = combined_mobilenet_model; sourceTree = "<group>"; };
+		FCE834B02232B6DC0057BF43 /* vision_synset.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = vision_synset.txt; sourceTree = "<group>"; };
 		FCEBEC2B20E1391F00C0B14D /* paddle_mobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = paddle_mobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		FCF437E7214B6DDB00943429 /* MultiPredictViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiPredictViewController.swift; sourceTree = "<group>"; };
 		FCFADE33222F63CB0037DCE8 /* test_big.JPG */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = test_big.JPG; sourceTree = "<group>"; };
@@ -267,20 +269,11 @@
 		FC704C1B21D237FC00F98BAB /* vision_model */ = {
 			isa = PBXGroup;
 			children = (
+				FCE834AB2232A4AE0057BF43 /* vision_mobilenet */,
 				FCAFD8482231614200496A36 /* yolo_16 */,
-				FC704C1C21D237FC00F98BAB /* mobilenet */,
 				FC704C1F21D237FC00F98BAB /* yolo */,
 			);
 			path = vision_model;
-			sourceTree = "<group>";
-		};
-		FC704C1C21D237FC00F98BAB /* mobilenet */ = {
-			isa = PBXGroup;
-			children = (
-				FC704C1D21D237FC00F98BAB /* combined_mobilenet_params */,
-				FC704C1E21D237FC00F98BAB /* combined_mobilenet_model */,
-			);
-			path = mobilenet;
 			sourceTree = "<group>";
 		};
 		FC704C1F21D237FC00F98BAB /* yolo */ = {
@@ -334,6 +327,16 @@
 				FCAFD84A2231614200496A36 /* yolo_16_model */,
 			);
 			path = yolo_16;
+			sourceTree = "<group>";
+		};
+		FCE834AB2232A4AE0057BF43 /* vision_mobilenet */ = {
+			isa = PBXGroup;
+			children = (
+				FCE834B02232B6DC0057BF43 /* vision_synset.txt */,
+				FCE834AC2232A4AE0057BF43 /* combined_mobilenet_params */,
+				FCE834AD2232A4AE0057BF43 /* combined_mobilenet_model */,
+			);
+			path = vision_mobilenet;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -401,8 +404,8 @@
 				FCCED60521D7646E00BE8D5F /* test_image_super in Resources */,
 				FC039B8C20E11C560081E9F8 /* LaunchScreen.storyboard in Resources */,
 				FC9797CF21D6506F00F2FD90 /* mingren.jpg in Resources */,
-				FC704C2221D237FC00F98BAB /* combined_mobilenet_params in Resources */,
 				FCAFD84B2231614200496A36 /* yolo_16_param in Resources */,
+				FCE834AF2232A4AE0057BF43 /* combined_mobilenet_model in Resources */,
 				FC704C1921D2375300F98BAB /* super_params in Resources */,
 				FC2BFCBE21DF15D900C262B2 /* 123.jpg in Resources */,
 				FC039B8920E11C560081E9F8 /* Assets.xcassets in Resources */,
@@ -411,14 +414,15 @@
 				FC5E03B221DCE8D90016C137 /* mingren_input_data in Resources */,
 				FC704C1A21D2375300F98BAB /* super_model in Resources */,
 				FC039B8720E11C550081E9F8 /* Main.storyboard in Resources */,
+				FCE834B12232B6DC0057BF43 /* vision_synset.txt in Resources */,
 				FC9797C221D608E000F2FD90 /* mobilenet_model in Resources */,
 				FCAFD84C2231614200496A36 /* yolo_16_model in Resources */,
 				FC2BFCC021DF279900C262B2 /* classify-img-output.png in Resources */,
 				FC203FB221CBFDBA00B37166 /* test.jpg in Resources */,
 				FCC15E15221E716500DC3CB2 /* paddle-mobile-metallib.metallib in Resources */,
-				FC704C2321D237FC00F98BAB /* combined_mobilenet_model in Resources */,
 				FC9797C321D608E000F2FD90 /* mobilenet_params in Resources */,
 				FC704C2421D237FC00F98BAB /* yolo_params in Resources */,
+				FCE834AE2232A4AE0057BF43 /* combined_mobilenet_params in Resources */,
 				FC2BFCBC21DF0A8600C262B2 /* 00001.jpg in Resources */,
 				FC9797BE21D6045B00F2FD90 /* banana.jpeg in Resources */,
 				FC704C2521D237FC00F98BAB /* yolo_model in Resources */,
