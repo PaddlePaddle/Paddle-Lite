@@ -24,10 +24,35 @@ public class MobileNetCombined: Net {
         inputDim = Dim.init(inDim: [1, 224, 224, 3])
         metalLoadMode = .LoadMetalInCustomMetalLib
         metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
+        useMPS = true
+    }
+    let labels = PreWords.init(fileName: "vision_synset")
+
+    class PreWords {
+        var contents: [String] = []
+        init(fileName: String, type: String = "txt", inBundle: Bundle = Bundle.main) {
+            if let filePath = inBundle.path(forResource: fileName, ofType: type) {
+                let string = try! String.init(contentsOfFile: filePath)
+                contents = string.components(separatedBy: CharacterSet.newlines).filter{$0.count > 10}.map{
+                    String($0[$0.index($0.startIndex, offsetBy: 10)...])
+                }
+            }else{
+                fatalError("no file call \(fileName)")
+            }
+        }
+        subscript(index: Int) -> String {
+            return contents[index]
+        }
     }
     
     override  public func resultStr(res: [ResultHolder]) -> String {
-        return " \(res[0].result[0]) ... "
+        let firstRes = res[0]
+        let resPointer = firstRes.result
+        var s: [String] = []
+        (0..<firstRes.capacity).map { resPointer[$0] }.top(r: 5).enumerated().forEach{
+            s.append(String(format: "%d: %@ (%3.2f%%)", $0 + 1, labels[$1.0], $1.1 * 100))
+        }
+        return s.joined(separator: "\n")
     }
     
 }
