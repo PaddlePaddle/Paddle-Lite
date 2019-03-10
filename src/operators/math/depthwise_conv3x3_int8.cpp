@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#if defined(__ARM_NEON__) && !defined(__aarch64__)
+#if defined(__ARM_NEON__) || defined(__ARM_NEON)
 
 #include <arm_neon.h>
 #include "operators/math/depthwise_conv3x3.h"
@@ -70,7 +70,6 @@ inline void DepthwiseConv3x3NormalRow(const int8_t *input, const int8_t *filter,
   DEPTHWISE_CONV_NORMAL_BORDER(0, valid_w_start)
   // middle
   int remain_start = valid_w_start;
-#ifdef __ARM_NEON__
   int output_tiles = (valid_w_end - valid_w_start) / 6;
   remain_start = valid_w_start + output_tiles * 6;
   int32x4_t _sum0, _sum1;
@@ -94,7 +93,6 @@ inline void DepthwiseConv3x3NormalRow(const int8_t *input, const int8_t *filter,
     vst1q_s32(output_ptr + output_offset, _sum0);
     vst1_s32(output_ptr + output_offset + 4, vget_low_s32(_sum1));
   }
-#endif  // __ARM_NEON__
   for (int w = remain_start; w < valid_w_end; ++w) {
     int32_t value = 0;
     int input_start = -padding_w + w * Stride_w;
@@ -215,6 +213,8 @@ void DepthwiseConv3x3S1<int8_t, int32_t>(const framework::Tensor &input,
         output_ptr2 += valid_w_start;
         output_ptr3 += valid_w_start;
       }
+#if __aarch64__
+#else
       // valid
       int loop = output_w_tiles;
       asm volatile(
@@ -525,6 +525,7 @@ void DepthwiseConv3x3S1<int8_t, int32_t>(const framework::Tensor &input,
           : [remain] "r"(output_w_remain), [ker0] "w"(_ker0), [ker1] "w"(_ker1)
           : "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11",
             "q12", "q13", "q14", "q15", "r0");
+#endif  // __aarch64__
       // pad right
       if (padding_w) {
         int16x4_t row0 = vget_low_s16(vmovl_s8(vld1_s8(input_ptr0 - 2)));
@@ -618,7 +619,9 @@ void DepthwiseConv3x3S1<int8_t, int32_t>(const framework::Tensor &input,
         output_ptr0 += valid_w_start;
         output_ptr1 += valid_w_start;
       }
-      // valid
+        // valid
+#if __aarch64__
+#else
       int loop = output_w_tiles;
       asm volatile(
           "cmp        %[loop], #0                  \n"
@@ -804,6 +807,7 @@ void DepthwiseConv3x3S1<int8_t, int32_t>(const framework::Tensor &input,
           : [remain] "r"(output_w_remain), [ker0] "w"(_ker0), [ker1] "w"(_ker1)
           : "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11",
             "q12", "q13", "q14", "q15", "r0");
+#endif  // __aarch64__
       // pad right
       if (padding_w) {
         int16x4_t row0 = vget_low_s16(vmovl_s8(vld1_s8(input_ptr0 - 2)));
@@ -869,7 +873,9 @@ void DepthwiseConv3x3S1<int8_t, int32_t>(const framework::Tensor &input,
         }
         output_ptr0 += valid_w_start;
       }
-      // valid
+        // valid
+#if __aarch64__
+#else
       int loop = output_w_tiles;
       asm volatile(
           "cmp        %[loop], #0                  \n"
@@ -993,6 +999,7 @@ void DepthwiseConv3x3S1<int8_t, int32_t>(const framework::Tensor &input,
           : [remain] "r"(output_w_remain), [ker0] "w"(_ker0), [ker1] "w"(_ker1)
           : "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11",
             "q12", "q13", "q14", "q15", "r0");
+#endif  // __aarch64__
       // pad right
       if (padding_w) {
         int16x4_t row0 = vget_low_s16(vmovl_s8(vld1_s8(input_ptr0 - 2)));
@@ -1152,7 +1159,9 @@ void DepthwiseConv3x3S2<int8_t, int32_t>(const framework::Tensor &input,
         output_ptr1 += valid_w_start;
         output_ptr2 += valid_w_start;
       }
-      // valid
+        // valid
+#if __aarch64__
+#else
       int loop = output_w_tiles;
       asm volatile(
           "cmp        %[loop], #0                     \n"
@@ -1411,6 +1420,7 @@ void DepthwiseConv3x3S2<int8_t, int32_t>(const framework::Tensor &input,
           : [remain] "r"(output_w_remain), [ker0] "w"(_ker0), [ker1] "w"(_ker1)
           : "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11",
             "q12", "q13", "q14", "q15", "r0");
+#endif  // __aarch64__
       // pad right
       if (padding_w > 0) {
         int16x4_t row0 = vget_low_s16(vmovl_s8(vld1_s8(input_ptr0)));
@@ -1490,7 +1500,9 @@ void DepthwiseConv3x3S2<int8_t, int32_t>(const framework::Tensor &input,
         input_ptr2 += valid_input_w_start;
         output_ptr0 += valid_w_start;
       }
-      // valid
+        // valid
+#if __aarch64__
+#else
       int loop = output_w_tiles;
       asm volatile(
           "cmp        %[loop], #0                      \n"
@@ -1608,6 +1620,7 @@ void DepthwiseConv3x3S2<int8_t, int32_t>(const framework::Tensor &input,
           : [remain] "r"(output_w_remain), [ker0] "w"(_ker0), [ker1] "w"(_ker1)
           : "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11",
             "q12", "q13", "q14", "q15", "r0");
+#endif  // __aarch64__
       // pad right
       if (padding_w > 0) {
         int16x4_t row0 = vget_low_s16(vmovl_s8(vld1_s8(input_ptr0)));
@@ -1645,4 +1658,4 @@ void DepthwiseConv3x3S2<int8_t, int32_t>(const framework::Tensor &input,
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#endif
+#endif  // __ARM_NEON__
