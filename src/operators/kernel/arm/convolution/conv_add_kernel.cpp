@@ -16,8 +16,8 @@ limitations under the License. */
 
 #include "operators/kernel/conv_add_kernel.h"
 #include "operators/kernel/arm/convolution/conv_common.h"
-#include "operators/kernel/central-arm-func/conv_add_arm_func.h"
 #include "operators/kernel/central-arm-func/conv_arm_func.h"
+#include "operators/math/channel_wise.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -32,34 +32,25 @@ template <>
 void ConvAddKernel<CPU, float>::Compute(const FusionConvAddParam<CPU> &param) {
   switch (param.ExecMode()) {
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3S1_FLOAT:
-      math::DepthwiseConv3x3S1<float, float>(*param.Input(), *param.Filter(),
-                                             param.Paddings(), param.Output());
-      math::AddChannelWise<IDENTITY>(param.Output(), param.Bias(),
-                                     param.Output());
       break;
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3S2_FLOAT:
       math::DepthwiseConv3x3S2<float, float>(*param.Input(), *param.Filter(),
                                              param.Paddings(), param.Output());
-      math::AddChannelWise<IDENTITY>(param.Output(), param.Bias(),
-                                     param.Output());
       break;
     case ConvParam<CPU>::EXEC_DEPTHWISE5x5_FLOAT:
       DepthwiseConv5x5<float, float>(param);
-      math::AddChannelWise<IDENTITY>(param.Output(), param.Bias(),
-                                     param.Output());
       break;
     case ConvParam<CPU>::EXEC_WINOGRAD3X3_FLOAT:
       WinogradConv3x3<8, 3>(param);
-      math::AddChannelWise<IDENTITY>(param.Output(), param.Bias(),
-                                     param.Output());
       break;
     case ConvParam<CPU>::EXEC_GEMM_FLOAT:
-      ConvAddBasic(param);
+      GemmConv<float, float>(param);
       break;
     default:
       PADDLE_MOBILE_THROW_EXCEPTION("Invalid convolution execute mode %d",
                                     param.ExecMode());
   }
+  math::AddChannelWise<IDENTITY>(param.Output(), param.Bias(), param.Output());
 }
 
 template class ConvAddKernel<CPU, float>;

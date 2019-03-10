@@ -15,7 +15,7 @@ limitations under the License. */
 #ifdef FUSION_CONVADD_OP
 
 #include "operators/fusion_conv_add_op.h"
-#include "operators/math/conv_func.h"
+#include "operators/kernel/central-arm-func/conv_arm_func.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -36,9 +36,9 @@ void FusionConvAddOp<Dtype, T>::InferShape() const {
 
   std::vector<int64_t> output_shape({in_dims[0], filter_dims[0]});
   for (size_t i = 0; i < strides.size(); ++i) {
-    output_shape.push_back(
-        math::ConvOutputSize(in_dims[i + 2], filter_dims[i + 2], dilations[i],
-                             paddings[i], strides[i]));
+    output_shape.push_back(ConvOutputSize(in_dims[i + 2], filter_dims[i + 2],
+                                          dilations[i], paddings[i],
+                                          strides[i]));
   }
 
   framework::DDim ddim = framework::make_ddim(output_shape);

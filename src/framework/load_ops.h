@@ -125,10 +125,6 @@ LOAD_OP1(prior_box, CPU);
 LOAD_OP2(fusion_conv_add_relu, CPU, FPGA);
 LOAD_FUSION_MATCHER(fusion_conv_add_relu);
 #endif
-#ifdef FUSION_CONVADDADDPRELU_OP
-LOAD_OP2(fusion_conv_add_add_prelu, CPU, FPGA);
-LOAD_FUSION_MATCHER(fusion_conv_add_add_prelu);
-#endif
 #ifdef FUSION_CONVADD_OP
 LOAD_OP2(fusion_conv_add, CPU, MALI_GPU);
 LOAD_FUSION_MATCHER(fusion_conv_add);
@@ -177,10 +173,6 @@ LOAD_FUSION_MATCHER(fusion_conv_add_bn);
 #endif
 #ifdef DROPOUT_OP
 LOAD_OP2(dropout, CPU, FPGA);
-#endif
-#ifdef FUSION_CONVADDPRELU_OP
-LOAD_OP2(fusion_conv_add_prelu, CPU, FPGA);
-LOAD_FUSION_MATCHER(fusion_conv_add_prelu);
 #endif
 #ifdef FUSION_DWCONVBNRELU_OP
 LOAD_OP1(fusion_dwconv_bn_relu, CPU);
