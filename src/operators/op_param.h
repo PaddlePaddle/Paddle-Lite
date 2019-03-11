@@ -2554,13 +2554,13 @@ class FusionDeconvBNReluParam : public ConvTransposeParam<Dtype> {
  public:
   FusionDeconvBNReluParam(const VariableNameMap &inputs,
                           const VariableNameMap &outputs,
-                          const AttributeMap &attrs, const Scope &scope)
+                          const AttributeMap &attrs, Scope *scope)
       : ConvTransposeParam<Dtype>(inputs, outputs, attrs, scope) {
-    output_ = OpParam::OutFrom<GType>(outputs, scope);
-    input_bias_ = OpParam::InputBiasFrom<GType>(inputs, scope);
-    input_mean_ = OpParam::InputMeanFrom<GType>(inputs, scope);
-    input_scale_ = OpParam::InputScaleFrom<GType>(inputs, scope);
-    input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, scope);
+    output_ = OpParam::OutFrom<GType>(outputs, *scope);
+    input_bias_ = OpParam::InputBiasFrom<GType>(inputs, *scope);
+    input_mean_ = OpParam::InputMeanFrom<GType>(inputs, *scope);
+    input_scale_ = OpParam::InputScaleFrom<GType>(inputs, *scope);
+    input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, *scope);
     epsilon_ = OpParam::GetAttr<float>("epsilon", attrs);
     momentum_ = OpParam::GetAttr<float>("momentum", attrs);
   }
