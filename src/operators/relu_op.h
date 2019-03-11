@@ -12,24 +12,37 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef ELEMENTWISEMUL_OP
+#ifdef RELU_OP
 
 #pragma once
 
+#include <string>
+
 #include "framework/operator.h"
+#include "operators/kernel/relu_kernel.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
 
+using paddle_mobile::framework::Tensor;
+
 template <typename DeviceType, typename T>
-class ElementwiseMulKernel
-    : public framework::OpKernelBase<DeviceType,
-                                     ElementwiseMulParam<DeviceType>> {
+class ReluOp : public framework::OperatorWithKernel<
+                   DeviceType, ReluParam<DeviceType>,
+                   operators::ReluKernel<DeviceType, T>> {
  public:
-  void Compute(const ElementwiseMulParam<DeviceType> &param);
-  bool Init(ElementwiseMulParam<DeviceType> *param);
+  ReluOp(const std::string &type, const VariableNameMap &inputs,
+         const VariableNameMap &outputs, const framework::AttributeMap &attrs,
+         std::shared_ptr<framework::Scope> scope)
+      : framework::OperatorWithKernel<DeviceType, ReluParam<DeviceType>,
+                                      operators::ReluKernel<DeviceType, T>>(
+            type, inputs, outputs, attrs, scope) {}
+  void InferShape() const override;
+
+ protected:
 };
+
 }  // namespace operators
 }  // namespace paddle_mobile
 

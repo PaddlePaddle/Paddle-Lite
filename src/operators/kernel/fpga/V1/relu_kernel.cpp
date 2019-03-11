@@ -12,31 +12,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef ELEMENTWISEMUL_OP
+#ifdef RELU_OP
 
-#include "operators/elementwise_mul_op.h"
+#include "operators/kernel/relu_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <typename Dtype, typename T>
-void ElementwiseMulOp<Dtype, T>::InferShape() const {
-  auto x_dim = this->param_.InputX()->dims();
-  this->param_.Out()->Resize(x_dim);
+template <>
+bool ReluKernel<FPGA, float>::Init(ReluParam<FPGA> *param) {
+  param->Out()->ShareDataWith(*param->InputX());
+  return true;
 }
 
+template <>
+void ReluKernel<FPGA, float>::Compute(const ReluParam<FPGA> &param) {}
 }  // namespace operators
 }  // namespace paddle_mobile
-
-namespace ops = paddle_mobile::operators;
-#ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(elementwise_mul, ops::ElementwiseMulOp);
-#endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-REGISTER_OPERATOR_MALI_GPU(elementwise_mul, ops::ElementwiseMulOp);
-#endif
-#ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(elementwise_mul, ops::ElementwiseMulOp);
-#endif
 
 #endif

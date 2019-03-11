@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "op_param.h"
+#include "operators/op_param.h"
 namespace paddle_mobile {
 namespace operators {
 
@@ -47,6 +47,9 @@ template class ConvParam<GPU_MALI>;
 template class ElementwiseAddParam<CPU>;
 template class ElementwiseAddParam<FPGA>;
 template class ElementwiseAddParam<GPU_MALI>;
+template class ElementwiseMulParam<CPU>;
+template class ElementwiseMulParam<FPGA>;
+template class ElementwiseMulParam<GPU_MALI>;
 
 #ifdef MUL_OP
 template class MulParam<CPU>;

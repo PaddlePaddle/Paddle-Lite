@@ -12,31 +12,34 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef ELEMENTWISEMUL_OP
+#ifdef RELU_OP
 
-#include "operators/elementwise_mul_op.h"
-
+#include "operators/relu_op.h"
 namespace paddle_mobile {
 namespace operators {
 
 template <typename Dtype, typename T>
-void ElementwiseMulOp<Dtype, T>::InferShape() const {
-  auto x_dim = this->param_.InputX()->dims();
-  this->param_.Out()->Resize(x_dim);
+void ReluOp<Dtype, T>::InferShape() const {
+  auto input_dims = this->param_.InputX()->dims();
+  this->param_.Out()->Resize(input_dims);
 }
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
+/*
+ * @b 每一个 op 都需要注册一下的,
+ *    USE_OP的参数 和 REGISTER_OPERATOR的第一个参数
+ * 都是需要和model中类型对应起来的
+ * */
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
-REGISTER_OPERATOR_CPU(elementwise_mul, ops::ElementwiseMulOp);
+REGISTER_OPERATOR_CPU(relu, ops::ReluOp);
 #endif
 #ifdef PADDLE_MOBILE_MALI_GPU
-REGISTER_OPERATOR_MALI_GPU(elementwise_mul, ops::ElementwiseMulOp);
+REGISTER_OPERATOR_MALI_GPU(relu, ops::ReluOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
-REGISTER_OPERATOR_FPGA(elementwise_mul, ops::ElementwiseMulOp);
+REGISTER_OPERATOR_FPGA(relu, ops::ReluOp);
 #endif
-
 #endif
