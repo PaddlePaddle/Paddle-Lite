@@ -14,7 +14,7 @@ limitations under the License. */
 
 #ifdef RELU_OP
 
-#include "operators/kernel/relu_kernel.h"
+#include "operators/kernel/activation_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
