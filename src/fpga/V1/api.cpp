@@ -28,13 +28,25 @@ namespace fpga {
 void format_image(framework::Tensor *image_tensor) {
   auto dims = image_tensor->dims();
   auto channel = dims[1], height = dims[2], width = dims[3];
-  auto data_ptr = image_tensor->data<float>();
-  auto external_ptr = reinterpret_cast<float *>(image_tensor->external_data);
-  float *p_data = external_ptr == nullptr ? data_ptr : external_ptr;
+  std::type_index input_type = image_tensor->type();
+  if (input_type == typeid(float)) {
+    auto data_ptr = image_tensor->data<float>();
+    auto external_ptr = reinterpret_cast<float *>(image_tensor->external_data);
+    float *p_data = external_ptr == nullptr ? data_ptr : external_ptr;
 
-  image::format_image(&p_data, channel, height, width);
-  if (p_data != data_ptr && external_ptr == nullptr) {
-    image_tensor->reset_data_ptr(p_data);
+    image::format_image<float>(&p_data, channel, height, width);
+    if (p_data != data_ptr && external_ptr == nullptr) {
+      image_tensor->reset_data_ptr(p_data);
+    }
+  } else {
+    auto data_ptr = image_tensor->data<int8_t>();
+    auto external_ptr = reinterpret_cast<int8_t *>(image_tensor->external_data);
+    int8_t *p_data = external_ptr == nullptr ? data_ptr : external_ptr;
+
+    image::format_image<int8_t>(&p_data, channel, height, width);
+    if (p_data != data_ptr && external_ptr == nullptr) {
+      image_tensor->reset_data_ptr(p_data);
+    }
   }
 }
 
