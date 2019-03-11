@@ -82,7 +82,9 @@ if (CON GREATER -1)
 
     ADD_EXECUTABLE(test-rfcn-api fpga/test_rfcn_api.cpp)
     target_link_libraries(test-rfcn-api paddle-mobile)
-
+    
+    ADD_EXECUTABLE(test-marker2 fpga/test_marker2.cpp test_helper.h test_include.h executor_for_test.h )
+    target_link_libraries(test-marker2 paddle-mobile)
 
     set(FOUND_MATCH ON)
 endif ()
