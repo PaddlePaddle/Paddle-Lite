@@ -117,10 +117,9 @@ public class Executor<P: PrecisionProtocol>: Executorable{
             
             //将输入写进文件
             /*
-             
              let inputArr = resInput.toTensor(dim: (n: dim[0], c: dim[3], h: dim[1], w: dim[2]))
              print(dim)
-             writeToLibrary(fileName: "yolo_input", array: inputArr)
+             writeToLibrary(fileName: "mobilenet_input", array: inputArr)
              print(" write done ")
              return
              */
