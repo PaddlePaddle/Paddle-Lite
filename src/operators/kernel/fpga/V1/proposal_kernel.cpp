@@ -503,8 +503,10 @@ void ProposalKernel<FPGA, float>::Compute(const ProposalParam<FPGA> &param) {
   auto score_index = *(param.score_index_.get());
 
   int pre_nms_top_n = param.pre_nms_topn_;
-  int post_nms_top_n = 100;  // param.post_nms_topn_;
-  float nms_thresh = param.nms_thresh_;
+  int post_nms_top_n = param.post_nms_topn_;
+  // DLOG << " param.post_nms_topn_ : " << param.post_nms_topn_;
+
+  float nms_thresh = param.nms_thresh_ / 2.0f;
   float min_size = param.min_size_;
   float eta = param.eta_;
 

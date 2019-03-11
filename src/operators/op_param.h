@@ -563,6 +563,10 @@ class ElementwiseAddParam : public OpParam {
  public:
   const fpga::EWAddArgs &FpgaArgs() const { return fpga_EW_add_args; }
   void SetFpgaArgs(const fpga::EWAddArgs &args) { fpga_EW_add_args = args; }
+
+ public:
+  Tensor float_input_x, float_out;
+
 #endif
 };
 
@@ -596,6 +600,12 @@ class ElementwiseMulParam : public OpParam {
   GType *input_y_;
   GType *out_;
   int axis_;
+#ifdef PADDLE_MOBILE_FPGA
+
+ public:
+  Tensor float_input_x, float_out;
+
+#endif
 };
 #endif
 
