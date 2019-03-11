@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include <iostream>
-#include <thread>
+#include <thread>  // NOLINT
 #include "../../src/common/types.h"
 #include "../../src/io/paddle_test_inference_api.h"
 #include "../test_helper.h"
@@ -31,8 +31,9 @@ void t1() {
   paddle_mobile_gpu.SetCLPath("/data/local/tmp/bin");
 #endif
   auto time1 = paddle_mobile::time();
-  auto isok = paddle_mobile_gpu.Load(std::string(g_yolo_mul) + "/model",
-                                     std::string(g_yolo_mul) + "/params", true);
+  auto isok =
+      paddle_mobile_gpu.Load(std::string(g_yolo_vision) + "/model",
+                             std::string(g_yolo_vision) + "/params", true);
 
   //  auto isok = paddle_mobile.Load(std::string(g_yolo_mul), true);
   if (isok) {
@@ -42,13 +43,13 @@ void t1() {
 
     std::vector<float> input;
     std::vector<int64_t> dims{1, 3, 416, 416};
-    GetInput<float>(g_yolo_img, &input, dims);
+    GetInput<float>(g_test_image_1x3x416x416_vision_yolo_input, &input, dims);
 
     std::vector<float> vec_result;
     //            = paddle_mobile.Predict(input, dims);
 
     auto time3 = paddle_mobile::time();
-    int max = 10;
+    int max = 1;
     for (int i = 0; i < max; ++i) {
       vec_result = paddle_mobile_gpu.Predict(input, dims);
     }
@@ -129,9 +130,9 @@ void t2() {
 void t3() {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
   //    paddle_mobile.SetThreadNum(4);
-  //#ifdef PADDLE_MOBILE_CL
+  // #ifdef PADDLE_MOBILE_CL
   //  paddle_mobile.SetCLPath("/data/local/tmp/bin");
-  //#endif
+  // #endif
   auto time1 = paddle_mobile::time();
   auto isok = paddle_mobile.Load(std::string(g_yolo_mul) + "/model",
                                  std::string(g_yolo_mul) + "/params", true);

@@ -25,7 +25,7 @@ public class YoloNet: Net {
         inputDim = Dim.init(inDim: [1, 416, 416, 3])
         metalLoadMode = .LoadMetalInCustomMetalLib
         metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
-        useMPS = false
+        useMPS = true
         paramPrecision = .Float16
     }
     
