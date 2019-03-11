@@ -62,15 +62,27 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
     output->ShareDataWith(*input);
     return;
   }
+
   fpga::BypassArgs args = param.fpga_bypass_args;
   auto input_address = (input->data<half>());
   args.image.address = static_cast<void *>(input_address);
+  float *outdata_ptr =
+      reinterpret_cast<float *>(param.fpga_bypass_args.output.address);
+  const int num_th = 32;
+  if ((param.Out()->fpga_data_num) < num_th) {
+    fpga::fpga_invalidate(input_address, (input->fpga_data_num) * sizeof(half));
+
+    for (int idx = 0; idx < product(input->dims()); ++idx) {
+      outdata_ptr[idx] = fpga::fp16_2_fp32(input_address[idx]);
+    }
+    return;
+  }
+
   fpga::PerformBypass(args);
   auto outC = param.Out()->dims()[1];
   auto outH = param.Out()->dims()[2];
   auto outW = param.Out()->dims()[3];
-  float *outdata_ptr =
-      reinterpret_cast<float *>(param.fpga_bypass_args.output.address);
+
   fpga::fpga_invalidate(param.fpga_bypass_args.output.address,
                         param.Out()->fpga_data_num * sizeof(float));
 
