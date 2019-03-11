@@ -31,6 +31,7 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace fpga {
 enum DataType {
+  DATA_TYPE_INT8 = 2,
   DATA_TYPE_FP32 = 1,
   DATA_TYPE_FP16 = 0,
 };
