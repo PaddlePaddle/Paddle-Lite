@@ -23,8 +23,11 @@ public class MobileNetCombined: Net {
         paramPath = Bundle.main.path(forResource: "combined_mobilenet_params", ofType: nil) ?! "para null"
         inputDim = Dim.init(inDim: [1, 224, 224, 3])
         metalLoadMode = .LoadMetalInCustomMetalLib
-        metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
+        let paddleMobileMetallib = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
+        metalLibPath = paddleMobileMetallib
         useMPS = true
+        preprocessKernel = ScaleKernel.init(device: device, shape: Shape.init(inWidth: 224, inHeight: 224, inChannel: 3), metalLoadMode: .LoadMetalInCustomMetalLib, metalLibPath: paddleMobileMetallib)
+        
     }
     let labels = PreWords.init(fileName: "vision_synset")
 
