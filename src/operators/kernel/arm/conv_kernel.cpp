@@ -75,6 +75,18 @@ bool ConvKernel<CPU, float>::Init(ConvParam<CPU> *param) {
       operators::math::winograd_transform_weight<8, 3>(
           *param->Filter(), param->transformed_filter_);
 #endif
+    } else if (conv3x3 && param->Strides()[0] == param->Strides()[1] &&
+               param->Dilations()[0] == param->Dilations()[1] &&
+               param->Strides()[0] == 1 && param->Dilations()[0] == 1 &&
+               param->Input()->dims()[2] >= 48 &&
+               param->Output()->dims()[1] <= 24) {
+      param->ExecMode() = ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S1_FLOAT;
+    } else if (conv3x3 && param->Strides()[0] == param->Strides()[1] &&
+               param->Dilations()[0] == param->Dilations()[1] &&
+               param->Strides()[0] == 2 && param->Dilations()[0] == 1 &&
+               param->Input()->dims()[2] >= 48 &&
+               param->Output()->dims()[1] <= 24) {
+      param->ExecMode() = ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S2_FLOAT;
     } else {
       param->ExecMode() = ConvParam<CPU>::EXEC_GEMM_FLOAT;
     }
@@ -111,6 +123,15 @@ void ConvKernel<CPU, float>::Compute(const ConvParam<CPU> &param) {
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3_FLOAT:
       math::DepthwiseConv3x3(param.Input(), param.Strides(), param.Paddings(),
                              param.Filter(), nullptr, param.Output(), false);
+    case ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S1_FLOAT:
+      math::SlidingwindowConv3x3s1(param.Input(), param.Filter(),
+                                   param.Paddings(), param.Output(), nullptr,
+                                   false, false);
+      break;
+    case ConvParam<CPU>::EXEC_SLIDINGWINDOW3x3S2_FLOAT:
+      math::SlidingwindowConv3x3s2_8channel(param.Input(), param.Filter(),
+                                            param.Paddings(), param.Output(),
+                                            nullptr, false, false);
       break;
 #ifndef __aarch64__
     case ConvParam<CPU>::EXEC_DEPTHWISE5x5_FLOAT:

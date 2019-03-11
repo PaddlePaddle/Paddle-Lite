@@ -20,6 +20,7 @@ limitations under the License. */
 #include "operators/math/depthwise_conv3x3.h"
 #include "operators/math/im2col.h"
 #include "operators/math/math_function.h"
+#include "operators/math/slidingwindow_conv3x3.h"
 #include "operators/math/vol2col.h"
 #include "operators/op_param.h"
 
@@ -140,6 +141,20 @@ void ConvAddCompute(const FusionConvAddParam<CPU> &param) {
       math::DepthwiseConv3x3s2p1v2(param.Input(), param.Filter(),
                                    param.Output(), param.Bias(), true, false);
     }
+  } else if (param.Groups() == 1 && param.Filter()->dims()[2] == 3 &&
+             param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
+             param.Strides()[0] == 1 && param.Input()->dims()[2] >= 48 &&
+             param.Output()->dims()[1] <= 24) {
+    math::SlidingwindowConv3x3s1(param.Input(), param.Filter(),
+                                 param.Paddings(), param.Output(), param.Bias(),
+                                 true, false);
+  } else if (param.Groups() == 1 && param.Filter()->dims()[2] == 3 &&
+             param.Filter()->dims()[2] == param.Filter()->dims()[3] &&
+             param.Strides()[0] == 2 && param.Input()->dims()[2] >= 48 &&
+             param.Output()->dims()[1] <= 24) {
+    math::SlidingwindowConv3x3s2_8channel(param.Input(), param.Filter(),
+                                          param.Paddings(), param.Output(),
+                                          param.Bias(), true, false);
   } else {
     ConvAddBasic(param);
   }

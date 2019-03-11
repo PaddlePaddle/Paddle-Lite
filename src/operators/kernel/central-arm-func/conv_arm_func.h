@@ -22,6 +22,7 @@ limitations under the License. */
 #include "operators/math/im2col.h"
 #include "operators/math/math_function.h"
 #include "operators/math/pad.h"
+#include "operators/math/slidingwindow_conv3x3.h"
 #include "operators/math/vol2col.h"
 #include "operators/math/winograd/winograd_transform.h"
 #include "operators/op_param.h"
