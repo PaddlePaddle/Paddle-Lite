@@ -126,6 +126,8 @@ std::vector<Variable *> Scope::VarContain(const std::string substring) {
   return v;
 }
 
+void Scope::InsertVar(const std::string str, Variable *var) {}
+
 void Scope::print_vars() {
   DLOG << "====================start to print variables=================";
   for (auto pair : vars_) {

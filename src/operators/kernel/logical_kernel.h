@@ -14,6 +14,8 @@ limitations under the License. */
 
 #pragma once
 
+#include <algorithm>
+
 #include "framework/operator.h"
 #include "operators/op_param.h"
 

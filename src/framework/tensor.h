@@ -31,6 +31,11 @@ limitations under the License. */
 namespace paddle_mobile {
 namespace framework {
 
+enum LayoutType {
+  LAYOUT_CHW = 1,
+  LAYOUT_HWC = 0,
+};
+
 class LoDTensor;
 
 class Tensor : public TensorBase {
@@ -224,6 +229,8 @@ class Tensor : public TensorBase {
 
   float scale[2];                 // scale[0]= MAX/127.0, scale[1]= 127.0/MAX
   void *external_data = nullptr;  // only used for Feed
+  LayoutType layout = LAYOUT_HWC;
+  int64_t fpga_data_num;
 #endif
 };
 

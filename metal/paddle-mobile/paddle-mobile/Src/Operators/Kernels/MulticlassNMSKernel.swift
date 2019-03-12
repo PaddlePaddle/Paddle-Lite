@@ -14,42 +14,42 @@
 
 import Foundation
 
-class MulticlassNMSKernel<P: PrecisionType>: Kernel, Computable{
-  let pipline1: MTLComputePipelineState
-
-  required init(device: MTLDevice, param: MulticlassNMSParam<P>, initContext: InitContext) {
+class MulticlassNMSKernel<P: PrecisionProtocol>: Kernel, Computable{
+    let pipline1: MTLComputePipelineState
     
-    param.middleOutput.initBuffer(device: device)
-    param.bboxOutput.initBuffer(device: device)
-    if GlobalConfig.shared.computePrecision == .Float32 {
-      pipline1 = device.pipeLine(funcName: "nms_fetch_bbox", metalLoadMode: initContext.metalLoadMode, metalLibPath: initContext.metalLibPath)
-      super.init(device: device, inFunctionName: "nms_fetch_result", initContext: initContext)
-    } else if GlobalConfig.shared.computePrecision == .Float16 {
-      pipline1 = device.pipeLine(funcName: "nms_fetch_bbox_half", metalLoadMode: initContext.metalLoadMode, metalLibPath: initContext.metalLibPath)
-      super.init(device: device, inFunctionName: "nms_fetch_result_half", initContext: initContext)
-    } else {
-      fatalError( " unsupport precision " )
+    required init(device: MTLDevice, param: MulticlassNMSParam<P>, initContext: InitContext) {
+        
+        param.middleOutput.initBuffer(device: device)
+        param.bboxOutput.initBuffer(device: device)
+        if GlobalConfig.shared.computePrecision == .Float32 {
+            pipline1 = device.pipeLine(funcName: "nms_fetch_bbox", metalLoadMode: initContext.metalLoadMode, metalLibPath: initContext.metalLibPath)
+            super.init(device: device, inFunctionName: "nms_fetch_result", initContext: initContext)
+        } else if GlobalConfig.shared.computePrecision == .Float16 {
+            pipline1 = device.pipeLine(funcName: "nms_fetch_bbox_half", metalLoadMode: initContext.metalLoadMode, metalLibPath: initContext.metalLibPath)
+            super.init(device: device, inFunctionName: "nms_fetch_result_half", initContext: initContext)
+        } else {
+            fatalError( " unsupport precision " )
+        }
+        
     }
     
-  }
-  
-  func compute(commandBuffer: MTLCommandBuffer, param: MulticlassNMSParam<P>) throws {
-    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-      throw PaddleMobileError.predictError(message: " encode is nil")
+    func compute(commandBuffer: MTLCommandBuffer, param: MulticlassNMSParam<P>) throws {
+        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+            throw PaddleMobileError.predictError(message: " encode is nil")
+        }
+        
+        encoder.setTexture(param.scores.metalTexture, index: 0)
+        encoder.setBuffer(param.middleOutput.resultBuffer!, offset: 0, index: 0)
+        encoder.dispatch(computePipline: pipline, outTexture: param.scores.metalTexture)
+        encoder.endEncoding()
+        
+        guard let encoderBox = commandBuffer.makeComputeCommandEncoder() else {
+            throw PaddleMobileError.predictError(message: " encode is nil")
+        }
+        
+        encoderBox.setTexture(param.bboxes.metalTexture, index: 0)
+        encoderBox.setBuffer(param.bboxOutput.resultBuffer!, offset: 0, index: 0)
+        encoderBox.dispatch(computePipline: pipline1, outTexture: param.bboxes.metalTexture)
+        encoderBox.endEncoding()
     }
-    
-    encoder.setTexture(param.scores.metalTexture, index: 0)
-    encoder.setBuffer(param.middleOutput.resultBuffer!, offset: 0, index: 0)
-    encoder.dispatch(computePipline: pipline, outTexture: param.scores.metalTexture)
-    encoder.endEncoding()
-    
-    guard let encoderBox = commandBuffer.makeComputeCommandEncoder() else {
-      throw PaddleMobileError.predictError(message: " encode is nil")
-    }
-    
-    encoderBox.setTexture(param.bboxes.metalTexture, index: 0)
-    encoderBox.setBuffer(param.bboxOutput.resultBuffer!, offset: 0, index: 0)
-    encoderBox.dispatch(computePipline: pipline1, outTexture: param.bboxes.metalTexture)
-    encoderBox.endEncoding()
-  }
 }

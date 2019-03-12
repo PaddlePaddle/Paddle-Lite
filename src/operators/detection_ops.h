@@ -34,6 +34,10 @@ DECLARE_OPERATOR(Proposal, ProposalParam, ProposalKernel);
 DECLARE_OPERATOR(PSRoiPool, PSRoiPoolParam, PSRoiPoolKernel);
 #endif
 
+#ifdef ROIALIGN_POOL_OP
+DECLARE_OPERATOR(RoiAlignPool, RoiAlignPoolParam, RoiAlignPoolKernel);
+#endif
+
 #ifdef ROI_PERSPECTIVE_OP
 DECLARE_OPERATOR(RoiPerspective, RoiPerspectiveParam, RoiPerspectiveKernel);
 #endif

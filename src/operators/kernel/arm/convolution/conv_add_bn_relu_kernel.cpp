@@ -43,8 +43,11 @@ bool ConvAddBNReluKernel<CPU, float>::Init(
     inv_std_ptr[i] =
         1 / static_cast<float>(pow((variance_ptr[i] + epsilon), 0.5));
   }
-  LoDTensor *new_scale = new LoDTensor();
-  LoDTensor *new_bias = new LoDTensor();
+  //  Tensor *new_scale = new Tensor();
+  //  Tensor *new_bias = new Tensor();
+  Tensor *new_scale = param->CreateNewScale<Tensor>();
+  Tensor *new_bias = param->CreateNewBiase<Tensor>();
+
   auto new_scale_ptr = new_scale->mutable_data<float>({C});
   auto new_bias_ptr = new_bias->mutable_data<float>({C});
   for (int i = 0; i < C; i++) {

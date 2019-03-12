@@ -36,6 +36,7 @@ REGISTER_OPERATOR_CPU(elementwise_mul, ops::ElementwiseMulOp);
 REGISTER_OPERATOR_MALI_GPU(elementwise_mul, ops::ElementwiseMulOp);
 #endif
 #ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(elementwise_mul, ops::ElementwiseMulOp);
 #endif
 
 #endif

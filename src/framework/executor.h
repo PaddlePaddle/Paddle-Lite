@@ -53,7 +53,12 @@ class Executor {
   void InjectVariable(const Tensor &t, std::string var_name);
   void FeedData(const Tensor &t);
   void FeedData(const std::vector<void *> &v);
+  void FeedTensorData(const std::vector<framework::Tensor> &v);
+
   void GetResults(std::vector<void *> *v);
+  void GetTensorResults(std::vector<framework::Tensor *> *v);
+  framework::Tensor *GetTensorByName(const std::string &name);
+
   std::shared_ptr<Tensor> FetchResult(int id = -1);
   void Predict_From_To(int start = 0, int end = -1);
   void Predict_From(int start);

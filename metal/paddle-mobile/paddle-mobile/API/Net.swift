@@ -17,71 +17,79 @@ import Foundation
 
 /// 网络的基类， 参数已经给了默认值，请在子类实现中修改需要改的参数
 @objc open class Net: NSObject {
+    
+    /// 默认为0， 如果指定个数， 后边 except 个op不使用 GPU 运算， 中间结果会通过 fetchResult 传参过来
+    @objc public var except: Int = 0
+    
+    /// 预处理 kernel， 如果输入图像需要预处理， 则指定预处理 kernel
+    @objc public var preprocessKernel: CusomKernel? = nil
+    
+    // 以下四个参数为从内存中读取模型时用到的参数
+    /// 模型在内存中的指针
+    @objc public var modelPointer: UnsafeMutableRawPointer? = nil
+    
+    /// 模型大小 单位： 字节
+    @objc public var modelSize: Int = 0
+    
+    /// 权重参数在内存中的指针
+    @objc public var paramPointer: UnsafeMutableRawPointer? = nil
+    
+    /// 权重大小 单位： 字节
+    @objc public var paramSize: Int = 0
+    
+    // 以下两个为从文件中读取模型时用到的参数
+    /// 模型文件路径
+    @objc public var modelPath: String? = nil
+    
+    /// 权重文件路径
+    @objc public var paramPath: String? = nil
+    
+    /// 代表着 GPU 处理器
+    @objc public let device: MTLDevice
+    
+    /// metal 代码加载方式 注意： 如果静态库只能使用 LoadMetalInDefaultLib LoadMetalInCustomMetalLib 进行 load metal 代码
+    @objc public var metalLoadMode: MetalLoadMode = .LoadMetalInPaddleMobile
+    
+    /// 当 metalLoadMode 为 LoadMetalInCustomMetalLib 时， metal library 路径不能为空
+    @objc public var metalLibPath: String? = nil
+    
+    /// 输入维度，按照 n h w c 方式传入
+    @objc public var inputDim: Dim = Dim.init(inDim: [])
+    
+    /// 是否使用 MetalPerformanceShaders 进行运算
+    @objc public var useMPS: Bool = false
+    
+    /// 模型精度 - 当使用模型精度为 Float 16 时 不要开启 useMPS, 暂不支持
+    @objc public var paramPrecision: Precision = .Float32
 
-  /// 默认为0， 如果指定个数， 后边 except 个op不使用 GPU 运算， 中间结果会通过 fetchResult 传参过来
-  @objc public var except: Int = 0
-      
-  /// 预处理 kernel， 如果输入图像需要预处理， 则指定预处理 kernel
-  @objc public var preprocessKernel: CusomKernel? = nil
-  
-  // 以下四个参数为从内存中读取模型时用到的参数
-  /// 模型在内存中的指针
-  @objc public var modelPointer: UnsafeMutableRawPointer? = nil
-  
-  /// 模型大小 单位： 字节
-  @objc public var modelSize: Int = 0
-  
-  /// 权重参数在内存中的指针
-  @objc public var paramPointer: UnsafeMutableRawPointer? = nil
-  
-  /// 权重大小 单位： 字节
-  @objc public var paramSize: Int = 0
-  
-  // 以下两个为从文件中读取模型时用到的参数
-  /// 模型文件路径
-  @objc public var modelPath: String? = nil
-  
-  /// 权重文件路径
-  @objc public var paramPath: String? = nil
-  
-  /// 代表着 GPU 处理器
-  @objc public let device: MTLDevice
-  
-  /// metal 代码加载方式 注意： 如果静态库只能使用 LoadMetalInDefaultLib LoadMetalInCustomMetalLib 进行 load metal 代码
-  @objc public var metalLoadMode: MetalLoadMode = .LoadMetalInPaddleMobile
-  
-  /// 当 metalLoadMode 为 LoadMetalInCustomMetalLib 时， metal library 路径不能为空
-  @objc public var metalLibPath: String? = nil
-  
-  /// 输入维度，按照 n h w c 方式传入
-  @objc public var inputDim: Dim = Dim.init(inDim: [])
-  
-  
-  @objc public init(device: MTLDevice, paramPointer: UnsafeMutableRawPointer, paramSize:Int, modePointer: UnsafeMutableRawPointer, modelSize: Int) {
-    self.paramPointer = paramPointer
-    self.paramSize = paramSize
-    self.modelPointer = modePointer
-    self.modelSize = modelSize
-    self.device = device
-    super.init()
-  }
-  
-  @objc public init(device: MTLDevice) {
-    self.device = device
-    super.init()
-  }
-  
-  @objc open func resultStr(res: ResultHolder) -> String {
-    fatalError()
-  }
-  
-  @objc open func fetchResult(paddleMobileRes: GPUResultHolder) -> ResultHolder {
-    guard let inResPointer = paddleMobileRes.resultPointer else {
-      fatalError()
+    @objc public init(device: MTLDevice, inParamPointer: UnsafeMutableRawPointer, inParamSize:Int, inModelPointer: UnsafeMutableRawPointer, inModelSize: Int) {
+        self.paramPointer = inParamPointer
+        self.paramSize = inParamSize
+        self.modelPointer = inModelPointer
+        self.modelSize = inModelSize
+        self.device = device
+        super.init()
     }
-    return ResultHolder.init(inResult: inResPointer, inCapacity: paddleMobileRes.capacity)
-  }
-  
-  open func updateProgram(program: Program) {
-  }
+    
+    @objc public init(device: MTLDevice) {
+        self.device = device
+        super.init()
+    }
+    
+    @objc open func resultStr(res: [ResultHolder]) -> String {
+        fatalError()
+    }
+    
+    @objc open func fetchResult(paddleMobileRes: [GPUResultHolder]) -> [ResultHolder] {
+        return paddleMobileRes.map { (gpuRes) -> ResultHolder in
+            guard let inResPointer = gpuRes.resultPointer else {
+                fatalError()
+            }
+            return ResultHolder.init(inResult: inResPointer, inCapacity: gpuRes.capacity, inDim: gpuRes.dim)
+        }
+    }
+    
+    open func updateProgram(program: Program) {
+    }
+    
 }

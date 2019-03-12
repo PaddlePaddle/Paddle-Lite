@@ -14,7 +14,7 @@
 
 import Foundation
 
-func writeToLibrary<P: PrecisionType>(fileName: String, array: [P]) {
+func writeToLibrary<P: PrecisionProtocol>(fileName: String, array: [P]) {
     let libraryPath = NSSearchPathForDirectoriesInDomains(.libraryDirectory, .userDomainMask, true).last ?! " library path get error "
     let filePath = libraryPath + "/" + fileName
     let fileManager = FileManager.init()

@@ -16,33 +16,37 @@ import Foundation
 import paddle_mobile
 
 public class Genet: Net {
-  @objc public override init(device: MTLDevice) {
-    super.init(device: device)
-    modelPath = Bundle.main.path(forResource: "genet_model", ofType: nil) ?! "model null"
-    paramPath = Bundle.main.path(forResource: "genet_params", ofType: nil) ?! "para null"
-    preprocessKernel = GenetPreProccess.init(device: device)
-    inputDim = Dim.init(inDim: [1, 128, 128, 3])
-  }
-  
-  @objc override public init(device: MTLDevice, paramPointer: UnsafeMutableRawPointer, paramSize:Int, modePointer: UnsafeMutableRawPointer, modelSize: Int) {
-    super.init(device: device,
-               paramPointer: paramPointer,
-               paramSize: paramSize,
-               modePointer: modePointer,
-               modelSize: modelSize)
-    preprocessKernel = GenetPreProccess.init(device: device)
-    inputDim = Dim.init(inDim: [1, 128, 128, 3])
-  }
-
-  class GenetPreProccess: CusomKernel {
-    init(device: MTLDevice) {
-      let s = Shape.init(inWidth: 128, inHeight: 128, inChannel: 3)
-      super.init(device: device, inFunctionName: "genet_preprocess", outputDim: s, metalLoadModel: .LoadMetalInDefaultLib, metalLibPath: nil)
+    @objc public override init(device: MTLDevice) {
+        super.init(device: device)
+        modelPath = Bundle.main.path(forResource: "genet_model", ofType: nil) ?! "model null"
+        paramPath = Bundle.main.path(forResource: "genet_params", ofType: nil) ?! "para null"
+        preprocessKernel = GenetPreProccess.init(device: device)
+        inputDim = Dim.init(inDim: [1, 128, 128, 3])
+        metalLoadMode = .LoadMetalInCustomMetalLib
+        metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
     }
-  }
-  
-  override  public func resultStr(res: ResultHolder) -> String {
-    return " \(res.result[0]) ... "
-  }
-  
+    
+    @objc override public init(device: MTLDevice, inParamPointer: UnsafeMutableRawPointer, inParamSize:Int, inModelPointer: UnsafeMutableRawPointer, inModelSize: Int) {
+        super.init(device: device,
+                   inParamPointer: inParamPointer,
+                   inParamSize: inParamSize,
+                   inModelPointer: inModelPointer,
+                   inModelSize: inModelSize)
+        metalLoadMode = .LoadMetalInCustomMetalLib
+        metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
+        preprocessKernel = GenetPreProccess.init(device: device)
+        inputDim = Dim.init(inDim: [1, 128, 128, 3])
+    }
+    
+    class GenetPreProccess: CusomKernel {
+        init(device: MTLDevice) {
+            let s = Shape.init(inWidth: 128, inHeight: 128, inChannel: 3)
+            super.init(device: device, inFunctionName: "genet_preprocess", outputDim: s, metalLoadModel: .LoadMetalInDefaultLib, metalLibPath: nil)
+        }
+    }
+    
+    override  public func resultStr(res: [ResultHolder]) -> String {
+        return " \(res[0].result[0]) ... "
+    }
+    
 }

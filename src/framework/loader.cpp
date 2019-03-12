@@ -241,6 +241,7 @@ const Program<Device, T> Loader<Device, T>::LoadProgram(
   FusionAndPrintInfos(optimize, can_add_split, &program, originProgramDesc);
 
   paddle_mobile__framework__proto__program_desc__free_unpacked(c_program, NULL);
+  free(buf);
   return program;
 }
 

@@ -15,9 +15,12 @@ limitations under the License. */
 #ifdef PSROI_POOL_OP
 
 #include <cmath>
+#include <memory>
 #include <vector>
 #include "operators/kernel/detection_kernel.h"
 
+#include "fpga/V1/api.h"
+#include "fpga/V1/image.h"
 namespace paddle_mobile {
 namespace operators {
 
@@ -29,8 +32,7 @@ bool PSRoiPoolKernel<FPGA, float>::Init(PSRoiPoolParam<FPGA>* param) {
 
   param->float_input = std::make_shared<Tensor>();
   param->float_input->mutable_data<float>(param->input_x_->dims());
-  param->float_output = std::make_shared<Tensor>();
-  param->float_output->mutable_data<float>(param->output_->dims());
+  // param->float_output = std::make_shared<Tensor>();
 
   auto input = param->input_x_;
   fpga::BypassArgs args = {fpga::DATA_TYPE_FP16};
@@ -46,20 +48,106 @@ bool PSRoiPoolKernel<FPGA, float>::Init(PSRoiPoolParam<FPGA>* param) {
   args.output.scale_address = param->float_input->scale;
   param->input_arg = args;
 
-  fpga::format_fp16_ofm(param->output_);
+  auto* rois = param->input_rois_;
+  int rois_num = rois->dims()[0];
+  framework::DDim dims_out_new = framework::make_ddim(
+      {rois_num, param->output_->dims()[1], param->output_->dims()[2],
+       param->output_->dims()[3]});
+  param->output_->Resize(dims_out_new);
+  // fpga::format_fp16_ofm(param->output_);
 
-  input = param->float_output.get();
-  args.input_data_type = fpga::DATA_TYPE_FP32;
-  args.output_data_type = fpga::DATA_TYPE_FP16;
-  args.image.address = input->data<float>();
-  args.image.height = (uint32_t)input->dims()[2];
-  args.image.width = (uint32_t)input->dims()[3];
-  args.image.channels = (uint32_t)input->dims()[1];
-  args.output.address = param->output_->mutable_data<half>();
-  args.output.scale_address = param->output_->scale;
-  param->input_arg = args;
+  param->output_->mutable_data<float>(dims_out_new);
+  //  auto output = param->float_output.get();
+  // param->output_ = output;
+  /* args.input_data_type = fpga::DATA_TYPE_FP32;
+   args.output_data_type = fpga::DATA_TYPE_FP16;
+   args.image.address = output->data<float>();
+   args.image.height = (uint32_t)output->dims()[2];
+   args.image.width = (uint32_t)output->dims()[3];
+   args.image.channels = (uint32_t)output->dims()[1]  ;
+   args.output.address = param->output_->mutable_data<half>();
+   args.output.scale_address = param->output_->scale;
+   param->output_arg = args;*/
 
   return true;
+}
+
+template <typename Dtype>
+void PSROIPooling(const Dtype* bottom_data, const int channels,
+                  const int height, const int width, const int pooled_height,
+                  const int pooled_width, const Dtype* bottom_rois,
+                  const int output_dim, const int group_size, Dtype* top_data,
+                  int index, int nid, const Dtype Bin_size_h,
+                  const Dtype Bin_size_w, const Dtype roi_start_h,
+                  const Dtype roi_start_w, const int ctop, const int ph,
+                  const int roi_batch_ind) {
+  int pw = index;
+  int hstart = floor(static_cast<Dtype>(ph) * Bin_size_h + roi_start_h);
+  int wstart = floor(static_cast<Dtype>(pw) * Bin_size_w + roi_start_w);
+  int hend = ceil(static_cast<Dtype>(ph + 1) * Bin_size_h + roi_start_h);
+  int wend = ceil(static_cast<Dtype>(pw + 1) * Bin_size_w + roi_start_w);
+
+  // Add roi offsets and clip to input boundaries
+  hstart = std::min(std::max(hstart, 0), height);
+  hend = std::min(std::max(hend, 0), height);
+  wstart = std::min(std::max(wstart, 0), width);
+  wend = std::min(std::max(wend, 0), width);
+  bool is_empty = (hend <= hstart) || (wend <= wstart);
+
+  int c = (ctop * group_size + ph) * group_size + pw;
+
+  Dtype bin_area = (hend - hstart) * (wend - wstart);
+  bottom_data += (roi_batch_ind * channels + c) * height * width;
+  Dtype out_sum = 0;
+  for (int h = hstart; h < hend; ++h) {
+    for (int w = wstart; w < wend; ++w) {
+      int bottom_index = h * width + w;
+      out_sum += bottom_data[bottom_index];
+    }
+  }
+
+  top_data[nid + index] = is_empty ? 0. : out_sum / bin_area;
+}
+
+void convert_to_chw(float** data_in, int channel, int height, int width,
+                    int num) {
+  float* data_in_tmp = *data_in;
+  float* data_tmp = reinterpret_cast<float*>(
+      fpga::fpga_malloc(channel * height * width * sizeof(float)));  // NOLINT
+  int64_t amount_per_side = width * height;
+  for (int n = 0; n < num; n++) {
+    for (int h = 0; h < height; h++) {
+      for (int w = 0; w < width; w++) {
+        for (int c = 0; c < channel; c++) {
+          *(data_tmp + n * height * width * channel + c * amount_per_side +
+            width * h + w) = *((*data_in)++);
+        }
+      }
+    }
+  }
+  *data_in = data_tmp;
+  fpga::fpga_free(data_in_tmp);
+}
+
+void convert_to_hwc(float** data_in, int channel, int height, int width,
+                    int num) {
+  float* data_in_tmp = *data_in;
+  float* data_tmp = reinterpret_cast<float*>(
+      fpga::fpga_malloc(num * channel * height * width * sizeof(float)));
+  int64_t amount_per_row = width * channel;
+  for (int n = 0; n < num; n++) {
+    for (int c = 0; c < channel; c++) {
+      for (int h = 0; h < height; h++) {
+        int64_t offset_height = h * amount_per_row;
+        for (int w = 0; w < width; w++) {
+          *(data_tmp + n * channel * height * width + offset_height +
+            w * channel + c) = *((*data_in)++);
+        }
+      }
+    }
+  }
+  *data_in = data_tmp;
+  fpga::fpga_free(data_in_tmp);
 }
 
 template <>
@@ -71,7 +159,7 @@ void PSRoiPoolKernel<FPGA, float>::Compute(const PSRoiPoolParam<FPGA>& param) {
 
   auto* in = input_tensor;
   auto* rois = param.input_rois_;
-  auto* out = param.float_output.get();
+  auto* out = param.output_;  // param.float_output.get();
 
   auto pooled_height = param.pooled_height_;
   auto pooled_width = param.pooled_width_;
@@ -85,18 +173,18 @@ void PSRoiPoolKernel<FPGA, float>::Compute(const PSRoiPoolParam<FPGA>& param) {
   int width = in_dims[3];
   int rois_num = rois->dims()[0];
 
-  // TODO   auto in_stride = framework::stride(in_dims);
-  // TODO   auto out_stride = framework::stride(out->dims());
-  auto in_stride =
-      framework::stride({batch_size, height, width, input_channels});
-  auto out_stride = framework::stride(
-      {out->dims()[0], out->dims()[2], out->dims()[3], out->dims()[1]});
+  auto data_nhwc = in->mutable_data<float>();
+  fpga::image::convert_to_chw(&data_nhwc, input_channels, height, width, 1);
+  framework::DDim dims_out_new = framework::make_ddim(
+      {rois_num, (param.output_)->dims()[1], (((param.output_)->dims()[2])),
+       (param.output_)->dims()[3]});
+  (param.output_)->Resize(dims_out_new);
 
-  const float* input_data = in->data<float>();
+  float* input_data = data_nhwc;  // in->data<float>();
+  // shared_ptr<float> input_data(data_nhwc);
   framework::Tensor rois_batch_id_list;
   rois_batch_id_list.Resize({rois_num});
   auto rois_batch_id_data = rois_batch_id_list.mutable_data<int>();
-  return;
 
   PADDLE_MOBILE_ENFORCE(rois->NumLevels() > 0, "ROIS should not be empty");
 
@@ -115,19 +203,16 @@ void PSRoiPoolKernel<FPGA, float>::Compute(const PSRoiPoolParam<FPGA>& param) {
       "output_channels x pooled_height x pooled_width");
 
   // calculate batch id index for each roi according to LoD
-  for (int n = 0; n < rois_batch_size; ++n) {
-    for (size_t i = rois_lod[n]; i < rois_lod[n + 1]; ++i) {
-      rois_batch_id_data[i] = n;
-    }
-  }
+  // for (int n = 0; n < rois_batch_size; ++n) {
+  // for (size_t i = rois_lod[n]; i < rois_lod[n + 1]; ++i) {
+  // rois_batch_id_data[i] = n;
+  // }
+  //}
   auto output_data = out->mutable_data<float>();
   auto input_rois = rois->data<float>();
 
   // calculate psroipooling, parallel processing can be implemented per ROI
   for (int n = 0; n < rois_num; ++n) {
-    // set roi batch id
-    int roi_batch_id = rois_batch_id_data[n];
-
     // [start, end) interval for spatial sampling
     auto offset_input_rois = input_rois + n * 4;
     auto roi_start_w =
@@ -146,56 +231,28 @@ void PSRoiPoolKernel<FPGA, float>::Compute(const PSRoiPoolParam<FPGA>& param) {
     // Compute bin size w and h at input feature map
     auto bin_size_h = roi_height / static_cast<float>(pooled_height);
     auto bin_size_w = roi_width / static_cast<float>(pooled_width);
-    DLOG << 3;
 
-    // calculate each pixel of the output feature map.
-    int out_roi_offset = n * out_stride[0];
+    int roi_batch_ind = 0;  // rois_batch_id_data[n];
+    // std::cout << "roi_batch_ind: " << roi_batch_ind << std::endl;
     for (int c = 0; c < output_channels; ++c) {
-      // per category
-      // int out_plane_offset = out_roi_offset + c * out_stride[1];
-      int out_plane_offset = out_roi_offset + c;
-      for (int ph = 0; ph < pooled_height; ++ph) {
-        // TODO         int out_row_offset = out_plane_offset + ph *
-        // out_stride[2];
-        int out_row_offset = out_plane_offset + ph * out_stride[1];
-        for (int pw = 0; pw < pooled_width; ++pw) {
-          // calculate w and h at input feature map
-          int hstart = floor(static_cast<float>(ph) * bin_size_h + roi_start_h);
-          int wstart = floor(static_cast<float>(pw) * bin_size_w + roi_start_w);
-          int hend =
-              ceil(static_cast<float>(ph + 1) * bin_size_h + roi_start_h);
-          int wend =
-              ceil(static_cast<float>(pw + 1) * bin_size_w + roi_start_w);
-          //  Add roi offsets and clip to input boundaries
-          hstart = std::min(std::max(hstart, 0), height);
-          wstart = std::min(std::max(wstart, 0), width);
-          hend = std::min(std::max(hend, 0), height);
-          wend = std::min(std::max(wend, 0), width);
-
-          // TODO           int output_index = out_row_offset + pw;
-          int output_index = out_row_offset + pw * output_channels;
-          int input_channel = (c * pooled_height + ph) * pooled_width + pw;
-          // TODO          int input_plane_offset =
-          // TODO           roi_batch_id * in_stride[0] + input_channel *
-          // in_stride[1];
-          int input_plane_offset = roi_batch_id * in_stride[0] + input_channel;
-          auto offset_input_data = input_data + input_plane_offset;
-          float out_sum = 0.;
-          bool is_empty = (hend <= hstart) || (wend <= wstart);
-          for (int ih = hstart; ih < hend; ++ih) {
-            for (int iw = wstart; iw < wend; ++iw) {
-              int input_index = ih * in_stride[1] + iw * input_channel;
-              out_sum += offset_input_data[input_index];
-            }
-          }
-          float bin_area = (hend - hstart) * (wend - wstart);
-          output_data[output_index] = is_empty ? 0. : out_sum / bin_area;
+      for (int ph = 0; ph < pooled_height; ph++) {
+        int index = pooled_width;
+        int nid = n * output_channels * pooled_height * pooled_width +
+                  c * pooled_width * pooled_height + ph * pooled_width;
+        for (int idx = 0; idx < index; idx++) {
+          PSROIPooling<float>(input_data, input_channels, height, width,
+                              pooled_height, pooled_width, input_rois,
+                              output_channels, pooled_height, output_data, idx,
+                              nid, bin_size_h, bin_size_w, roi_start_h,
+                              roi_start_w, c, ph, roi_batch_ind);
         }
       }
     }
   }
-  fpga::format_image(out);
-  fpga::PerformBypass(param.output_arg);
+  fpga::fpga_free(input_data);
+  fpga::image::convert_to_hwc(&output_data, output_channels, pooled_height,
+                              pooled_width, rois_num);
+  out->reset_data_ptr(output_data);
 }
 
 }  // namespace operators

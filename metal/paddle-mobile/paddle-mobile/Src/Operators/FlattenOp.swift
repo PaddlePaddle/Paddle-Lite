@@ -14,46 +14,46 @@
 
 import Foundation
 
-class FlattenParam<P: PrecisionType>: OpParam {
-  //typealias ParamPrecisionType = P
-  required init(opDesc: PMOpDesc, inScope: Scope) throws {
-    do {
-      input = try FlattenParam.inputX(inputs: opDesc.inputs, from: inScope)
-      output = try FlattenParam.outputOut(outputs: opDesc.outputs, from: inScope)
-      axis = try FlattenParam.getAttr(key: "axis", attrs: opDesc.attrs)
-    } catch let error {
-      throw error
+class FlattenParam<P: PrecisionProtocol>: OpParam {
+    //typealias ParamPrecisionType = P
+    required init(opDesc: PMOpDesc, inScope: Scope) throws {
+        do {
+            input = try FlattenParam.inputX(inputs: opDesc.inputs, from: inScope)
+            output = try FlattenParam.outputOut(outputs: opDesc.outputs, from: inScope)
+            axis = try FlattenParam.getAttr(key: "axis", attrs: opDesc.attrs)
+        } catch let error {
+            throw error
+        }
     }
-  }
-  let input: Texture
-  var output: Texture
-  let axis: Int
+    let input: Texture
+    var output: Texture
+    let axis: Int
 }
 
 
-class FlattenOp<P: PrecisionType>: Operator<FlattenKernel<P>, FlattenParam<P>>, Runable, Creator, InferShaperable{
-  
-  typealias OpType = FlattenOp<P>
-
-  func inferShape() {
-    //        para.output.dim = para.input.dim
-  }
-  
-  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-    do {
-      try kernel.compute(commandBuffer: buffer, param: para)
-    } catch let error {
-      throw error
+class FlattenOp<P: PrecisionProtocol>: Operator<FlattenKernel<P>, FlattenParam<P>>, Runable, Creator, InferShaperable{
+    
+    typealias OpType = FlattenOp<P>
+    
+    func inferShape() {
+        //        para.output.dim = para.input.dim
     }
-  }
-  
-  func delogOutput() {
-    print(" \(type) output: ")
-    let device = para.output.metalTexture!.device
-    let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
-    print(outputArray.strideArray())
-  }
-  
+    
+    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+        do {
+            try kernel.compute(commandBuffer: buffer, param: para)
+        } catch let error {
+            throw error
+        }
+    }
+    
+    func delogOutput() {
+        print(" \(type) output: ")
+        let device = para.output.metalTexture!.device
+        let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
+        print(outputArray.strideArray())
+    }
+    
 }
 
 

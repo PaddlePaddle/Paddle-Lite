@@ -15,7 +15,7 @@
 import Foundation
 
 fileprivate var singletons : [String : Any] = [:]
-class OpCreator<P: PrecisionType> {
+class OpCreator<P: PrecisionProtocol> {
     static var shared : OpCreator<P> {
         let key = String(describing: P.self)
         if let singleton = singletons[key] {
@@ -27,7 +27,7 @@ class OpCreator<P: PrecisionType> {
         }
     }
     
-  func creat(device: MTLDevice, opDesc: PMOpDesc, scope: Scope, initContext: InitContext) throws -> Runable & InferShaperable {
+    func creat(device: MTLDevice, opDesc: PMOpDesc, scope: Scope, initContext: InitContext) throws -> Runable & InferShaperable {
         guard let opCreator = opCreators[opDesc.type] else {
             throw PaddleMobileError.opError(message: "there is no " + opDesc.type + " yet")
         }
@@ -69,6 +69,6 @@ class OpCreator<P: PrecisionType> {
          gConvAddAddPreluType       :     ConvAddAddPreluOp<P>.creat,
          gElementwiseAddPreluType   :     ElementwiseAddPreluOp<P>.creat,
          gFusionConvAddType         :     ConvAddOp<P>.creat]
-  
+    
     private init(){}
 }

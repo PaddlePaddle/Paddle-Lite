@@ -14,6 +14,10 @@
 
 #import <UIKit/UIKit.h>
 
+
+/**
+ @b 从内存中加载模型 Demo, 可以在 main storyboard 中调整 Demo
+ */
 @interface LoadPointerViewController : UIViewController
 
 @end

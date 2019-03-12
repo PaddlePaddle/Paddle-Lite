@@ -45,13 +45,13 @@ public class PMBlockDesc {
 }
 
 extension PMBlockDesc: CustomStringConvertible, CustomDebugStringConvertible {
-  public var description: String {
+    public var description: String {
         var str = ""
         
         for i in 0..<ops.count {
-          str += " op \(i): "
-          let op = ops[i]
-          str += op.description
+            str += " op \(i): "
+            let op = ops[i]
+            str += op.description
         }
         
         for varDesc in vars {
@@ -61,7 +61,7 @@ extension PMBlockDesc: CustomStringConvertible, CustomDebugStringConvertible {
         return str
     }
     
-  public var debugDescription: String {
+    public var debugDescription: String {
         return description
     }
 }

@@ -15,41 +15,41 @@
 import Foundation
 
 @objc public class Dim: NSObject {
-  private(set) var dims: [Int]
-  
-  @objc public init(inDim: [Int]) {
-    dims = inDim
-  }
-  
-  public func cout() -> Int {
-    return dims.count
-  }
-  
-  public func numel() -> Int {
-    return dims.reduce(1) { $0 * $1 }
-  }
-  
-  public static func ==(left: Dim, right: Dim) -> Bool {
-    return left.dims == right.dims;
-  }
-  
-  public static func !=(left: Dim, right: Dim) -> Bool {
-    return left.dims != right.dims;
-  }
-  
-  public subscript(index: Int) -> Int {
-    return dims[index];
-  }
-  
-  public override var description: String {
-    return "\(dims)"
-  }
-  
-  func swapeDimAt(index1: Int, index2: Int) {
-    dims.swapAt(index1, index2)
-  }
-  
-  private override init(){
-    fatalError()
-  }
+    private(set) var dims: [Int]
+    
+    @objc public init(inDim: [Int]) {
+        dims = inDim
+    }
+    
+    public func cout() -> Int {
+        return dims.count
+    }
+    
+    public func numel() -> Int {
+        return dims.reduce(1) { $0 * $1 }
+    }
+    
+    public static func ==(left: Dim, right: Dim) -> Bool {
+        return left.dims == right.dims;
+    }
+    
+    public static func !=(left: Dim, right: Dim) -> Bool {
+        return left.dims != right.dims;
+    }
+    
+    public subscript(index: Int) -> Int {
+        return dims[index];
+    }
+    
+    public override var description: String {
+        return "\(dims)"
+    }
+    
+    func swapeDimAt(index1: Int, index2: Int) {
+        dims.swapAt(index1, index2)
+    }
+    
+    private override init(){
+        fatalError()
+    }
 }
