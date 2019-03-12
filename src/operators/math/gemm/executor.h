@@ -239,11 +239,11 @@ class GemvExecutor : public Executor {
 
  public:
   GemvExecutor(const bool transA, const int M, const int N)
-      : Executor(), M_(M), N_(N) {}
+      : Executor(), M_(M), N_(N), trans_(transA) {}
 
   void operator()(const float alpha, const Itype *A, const int lda,
                   const Itype *B, const float beta, Otype *C) {
-    //  strategy_.kernel();
+    strategy_.kernel(trans_, M_, N_, alpha, A, lda, B, beta, C);
   }
 
   virtual ~GemvExecutor() {}
@@ -251,6 +251,7 @@ class GemvExecutor : public Executor {
  private:
   const unsigned int M_;
   const unsigned int N_;
+  const bool trans_;
 
   Strategy strategy_;
 };

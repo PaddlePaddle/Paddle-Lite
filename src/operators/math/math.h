@@ -327,4 +327,16 @@ static inline float32x4_t pow_ps(float32x4_t a, float32x4_t b) {
   return exp_ps(vmulq_f32(b, log_ps(a)));
 }
 
+#ifndef __aarch64__
+inline float32x4_t vpaddq_f32(float32x4_t r0, float32x4_t r1) {
+  float32x2_t sum0 = vpadd_f32(vget_low_f32(r0), vget_high_f32(r0));
+  float32x2_t sum1 = vpadd_f32(vget_low_f32(r1), vget_high_f32(r1));
+  return vcombine_f32(sum0, sum1);
+}
+#endif
+
+inline float32x4_t vandq_f32_u32(float32x4_t x, uint32x4_t mask) {
+  return vreinterpretq_f32_u32(vandq_u32(vreinterpretq_u32_f32(x), mask));
+}
+
 #endif  // __ARM_NEON__

@@ -88,19 +88,12 @@ struct SgemvStrategy {
   typedef float Itype;
   typedef float Otype;
 
-  typedef void (*kern_type)(const Itype *, const Itype *, const int, Otype *,
-                            const int);
-  kern_type kernel;
+  typedef void (*kernelFunc)(const bool, const int, const int, const float,
+                             const Itype *, const int, const Itype *,
+                             const float, Otype *);
+  kernelFunc kernel;
 
-  static int out_width() { return 1; }
-
-  static int out_height() {
-#if __aarch64__
-    return 12;
-#else
-    return 6;
-#endif
-  }
+  SgemvStrategy() { kernel = sgemv_mx1; }
 };
 
 struct I8o32gemvStrategy {

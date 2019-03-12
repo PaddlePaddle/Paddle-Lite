@@ -20,14 +20,11 @@ limitations under the License. */
 #ifdef _OPENMP
 #include <omp.h>
 #endif
+#include "operators/math/math.h"
 
 namespace paddle_mobile {
 namespace operators {
 namespace math {
-
-inline float32x4_t vandq_f32_u32(float32x4_t x, uint32x4_t mask) {
-  return vreinterpretq_f32_u32(vandq_u32(vreinterpretq_u32_f32(x), mask));
-}
 
 void pack_lhs_6r(const int m, const int k, const float *A, const int lda,
                  float *output, const bool unroll) {
@@ -218,15 +215,21 @@ void pack_lhs_6r(const int m, const int k, const float *A, const int lda,
       vst1q_f32(out_ptr + 18, _d3);
       vst1_f32(out_ptr + 22, vget_high_f32(_d5));
 
+      a0 += 4;
+      a1 += 4;
+      a2 += 4;
+      a3 += 4;
+      a4 += 4;
+      a5 += 4;
       out_ptr += 24;
 #else
       asm volatile(
-          "vld1.32    {d0-d1}, [%[a0]]        \n"
-          "vld1.32    {d2-d3}, [%[a1]]        \n"
-          "vld1.32    {d4-d5}, [%[a2]]        \n"
-          "vld1.32    {d6-d7}, [%[a3]]        \n"
-          "vld1.32    {d8-d9}, [%[a4]]        \n"
-          "vld1.32    {d10-d11}, [%[a5]]      \n"
+          "vld1.32    {d0-d1}, [%[a0]]!       \n"
+          "vld1.32    {d2-d3}, [%[a1]]!       \n"
+          "vld1.32    {d4-d5}, [%[a2]]!       \n"
+          "vld1.32    {d6-d7}, [%[a3]]!       \n"
+          "vld1.32    {d8-d9}, [%[a4]]!       \n"
+          "vld1.32    {d10-d11}, [%[a5]]!     \n"
           "vtrn.32    q0, q1                  \n"
           "vtrn.32    q2, q3                  \n"
           "vtrn.32    q4, q5                  \n"
@@ -255,6 +258,20 @@ void pack_lhs_6r(const int m, const int k, const float *A, const int lda,
 #endif
     }
     // remain k
+    switch (remain_m) {
+      case 1:
+        a1 = zerobuff;
+      case 2:
+        a2 = zerobuff;
+      case 3:
+        a3 = zerobuff;
+      case 4:
+        a4 = zerobuff;
+      case 5:
+        a5 = zerobuff;
+      default:
+        break;
+    }
     for (; lk < k; ++lk) {
       *out_ptr++ = *a0++;
       *out_ptr++ = *a1++;
