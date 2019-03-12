@@ -31,71 +31,71 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                             const std::vector<int> &paddings,
                             framework::Tensor *output, framework::Tensor *bias,
                             bool if_bias, bool if_relu) {
-  const int batch_size = input->dims()[0];
-  const int input_channels = input->dims()[1];
-  const int input_height = input->dims()[2];
-  const int input_width = input->dims()[3];
-  const int output_channels = output->dims()[1];
-  const int output_height = output->dims()[2];
-  const int output_width = output->dims()[3];
-  const int padding_height = paddings[0];
-  const int padding_width = paddings[1];
+  const int batch = input->dims()[0];
+  const int input_ch = input->dims()[1];
+  const int input_h = input->dims()[2];
+  const int input_w = input->dims()[3];
+  const int output_ch = output->dims()[1];
+  const int output_h = output->dims()[2];
+  const int output_w = output->dims()[3];
+  const int padding_h = paddings[0];
+  const int padding_w = paddings[1];
 
   const float *input_data = input->data<float>();
   float *output_data = output->mutable_data<float>();
   const float *filter_data = filter->data<float>();
 
-  const int input_channel_stride = input_height * input_width;
-  const int input_batch_stride = input_channels * input_channel_stride;
-  const int output_channel_stride = output_height * output_width;
-  const int output_batch_stride = output_channels * output_channel_stride;
-  const int filter_channel_stride = 9;
-  const int ffilter_length = (2 * padding_height + 3) * (2 * padding_width + 3);
-  const int ffilter_start =
-      2 * padding_height * (2 * padding_width + 3) + 2 * padding_width;
-  const int ffilter_width = 3 + padding_width * 2;
+  const int in_ch_size = input_h * input_w;
+  const int in_batch_size = input_ch * in_ch_size;
+  const int out_ch_size = output_h * output_w;
+  const int out_batch_size = output_ch * out_ch_size;
+  const int filter_ch_size = 9;
+  const int pad_filter_ch_size = (2 * padding_h + 3) * (2 * padding_w + 3);
+  const int pad_filter_start =
+      2 * padding_h * (2 * padding_w + 3) + 2 * padding_w;
+  const int pad_filter_w = 3 + padding_w * 2;
   const float *bias_data;
-  bool isnopadding = false;
+  bool if_nopadding = false;
 
   if (if_bias) {
     bias_data = bias->data<float>();
   }
 #if __ARM_NEON
-  float *outptr = output_data;
-  for (int i = 0; i < output_channels; ++i) {
+  float *out_ptr = output_data;
+  for (int i = 0; i < output_ch; ++i) {
     float32x4_t _bias;
     if (if_bias) {
       _bias = vld1q_dup_f32(bias_data + i);
     } else {
       _bias = vdupq_n_f32(0.0);
     }
-    int dim4 = output_channel_stride >> 2;
-    int lef4 = output_channel_stride & 3;
+    int dim4 = out_ch_size >> 2;
+    int lef4 = out_ch_size & 3;
 
     for (int j = 0; j < dim4; ++j) {
-      vst1q_f32(outptr, _bias);
-      outptr += 4;
+      vst1q_f32(out_ptr, _bias);
+      out_ptr += 4;
     }
     if (lef4 != 0) {
       if (lef4 >= 1) {
-        vst1q_lane_f32(outptr, _bias, 0);
-        outptr++;
+        vst1q_lane_f32(out_ptr, _bias, 0);
+        out_ptr++;
       }
       if (lef4 >= 2) {
-        vst1q_lane_f32(outptr, _bias, 1);
-        outptr++;
+        vst1q_lane_f32(out_ptr, _bias, 1);
+        out_ptr++;
       }
       if (lef4 >= 3) {
-        vst1q_lane_f32(outptr, _bias, 2);
-        outptr++;
+        vst1q_lane_f32(out_ptr, _bias, 2);
+        out_ptr++;
       }
     }
   }
 #else
   int k = 0;
 #pragma omp parallel for
-  for (int i = 0; i < output_channels; ++i) {
-    for (int j = 0; j < output_channel_stride; ++j) {
+  for (int i = 0; i < output_ch; ++i) {
+    for (int j = 0; j < out_ch_size; ++j) {
       if (if_bias) {
         output_data[k++] = bias_data[i];
       } else {
@@ -104,26 +104,27 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
     }
   }
 #endif
-  if (padding_height == 0 && padding_width == 0) {
-    isnopadding = true;
+  if (padding_h == 0 && padding_w == 0) {
+    if_nopadding = true;
   }
 
-  for (int bs = 0; bs < batch_size; ++bs) {
-    int output_channels_d2 = output_channels >> 1;
+  for (int b = 0; b < batch; ++b) {
+    int output_ch_d2 = output_ch >> 1;
 
 #pragma omp parallel for
-    for (int oc2 = 0; oc2 < output_channels_d2; ++oc2) {
-      std::atomic<float> reluvalue{0};
+    for (int o_c2 = 0; o_c2 < output_ch_d2; ++o_c2) {
+      std::atomic<float> relu_value{0};
       const float *reluptr;
-      int oc = oc2 * 2;
+      int o_c = o_c2 * 2;
       bool issamefilter;
       const float *f1;
       const float *f1_2;
-      const float *inptr1, *inptr2, *inptr3, *inptr4;
-      const float *ffilter0, *ffilter1, *ffilter2, *ffilter3;
-      const float *ffilter0_2, *ffilter1_2, *ffilter2_2, *ffilter3_2;
-      float ffilterarray[ffilter_length] = {0};
-      float ffilterarray_2[ffilter_length] = {0};
+      const float *in_ptr1, *in_ptr2, *in_ptr3, *in_ptr4;
+      const float *pad_filter0, *pad_filter1, *pad_filter2, *pad_filter3;
+      const float *pad_filter0_2, *pad_filter1_2, *pad_filter2_2,
+          *pad_filter3_2;
+      float pad_filter_arr[pad_filter_ch_size] = {0};
+      float pad_filter_arr_2[pad_filter_ch_size] = {0};
 
       float *output_data_ch;
       float *output_data_ch_2;
@@ -131,82 +132,80 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
       const float *filter_data_ch;
       const float *filter_data_ch_2;
 
-      filter_data_ch =
-          filter_data + oc * filter_channel_stride * input_channels;
-      filter_data_ch_2 =
-          filter_data + (oc + 1) * filter_channel_stride * input_channels;
+      filter_data_ch = filter_data + o_c * filter_ch_size * input_ch;
+      filter_data_ch_2 = filter_data + (o_c + 1) * filter_ch_size * input_ch;
 
       input_data_ch = input_data;
-      output_data_ch = output_data + oc * output_channel_stride;
-      output_data_ch_2 = output_data + (oc + 1) * output_channel_stride;
+      output_data_ch = output_data + o_c * out_ch_size;
+      output_data_ch_2 = output_data + (o_c + 1) * out_ch_size;
 
-      for (int ic = 0; ic < input_channels; ++ic) {
-        float reluarr[4];
-        reluptr = reluarr;
-        if (if_relu && ic == input_channels - 1) {
-          reluvalue = 0;
+      for (int i_c = 0; i_c < input_ch; ++i_c) {
+        float relu_arr[4];
+        reluptr = relu_arr;
+        if (if_relu && i_c == input_ch - 1) {
+          relu_value = 0;
         } else {
-          reluvalue = -FLT_MAX;
+          relu_value = -FLT_MAX;
         }
-        reluarr[0] = reluvalue;
-        reluarr[1] = reluvalue;
-        reluarr[2] = reluvalue;
-        reluarr[3] = reluvalue;
+        relu_arr[0] = relu_value;
+        relu_arr[1] = relu_value;
+        relu_arr[2] = relu_value;
+        relu_arr[3] = relu_value;
         f1 = filter_data_ch;
         f1_2 = filter_data_ch_2;
 
-        if (!isnopadding) {
-          ffilterarray[ffilter_length] = {0};
+        if (!if_nopadding) {
+          pad_filter_arr[pad_filter_ch_size] = {0};
           for (int i = 0; i < 9; i++) {
-            int j = i / 3 * (2 * padding_width + 3) + i % 3 +
-                    padding_height * 3 +
-                    padding_width * (2 * padding_height + 1);
-            ffilterarray[j] = filter_data_ch[i];
-            ffilterarray_2[j] = filter_data_ch_2[i];
+            int j = i / 3 * (2 * padding_w + 3) + i % 3 + padding_h * 3 +
+                    padding_w * (2 * padding_h + 1);
+            pad_filter_arr[j] = filter_data_ch[i];
+            pad_filter_arr_2[j] = filter_data_ch_2[i];
           }
-          ffilter1 = ffilterarray;
-          ffilter1 += ffilter_start;
-          ffilter0 = ffilter1 - ffilter_width;
-          ffilter2 = ffilter1 + ffilter_width;
-          ffilter3 = ffilter2 + ffilter_width;
+          pad_filter1 = pad_filter_arr;
+          pad_filter1 += pad_filter_start;
+          pad_filter0 = pad_filter1 - pad_filter_w;
+          pad_filter2 = pad_filter1 + pad_filter_w;
+          pad_filter3 = pad_filter2 + pad_filter_w;
 
-          ffilter1_2 = ffilterarray_2;
-          ffilter1_2 += ffilter_start;
-          ffilter0_2 = ffilter1_2 - ffilter_width;
-          ffilter2_2 = ffilter1_2 + ffilter_width;
-          ffilter3_2 = ffilter2_2 + ffilter_width;
+          pad_filter1_2 = pad_filter_arr_2;
+          pad_filter1_2 += pad_filter_start;
+          pad_filter0_2 = pad_filter1_2 - pad_filter_w;
+          pad_filter2_2 = pad_filter1_2 + pad_filter_w;
+          pad_filter3_2 = pad_filter2_2 + pad_filter_w;
         } else {
-          ffilter1 = filter_data_ch;
-          ffilter2 = ffilter1 + 3;
-          ffilter3 = ffilter2 + 3;
+          pad_filter1 = filter_data_ch;
+          pad_filter2 = pad_filter1 + 3;
+          pad_filter3 = pad_filter2 + 3;
 
-          ffilter1_2 = filter_data_ch_2;
-          ffilter2_2 = ffilter1_2 + 3;
-          ffilter3_2 = ffilter2_2 + 3;
+          pad_filter1_2 = filter_data_ch_2;
+          pad_filter2_2 = pad_filter1_2 + 3;
+          pad_filter3_2 = pad_filter2_2 + 3;
         }
-        float *outptr1, *outptr2;
-        float *outptr1_2, *outptr2_2;
+        float *out_ptr1, *out_ptr2;
+        float *out_ptr1_2, *out_ptr2_2;
 
-        outptr1 = output_data_ch;
-        outptr2 = outptr1 + output_width;
-        outptr1_2 = output_data_ch_2;
-        outptr2_2 = outptr1_2 + output_width;
+        out_ptr1 = output_data_ch;
+        out_ptr2 = out_ptr1 + output_w;
+        out_ptr1_2 = output_data_ch_2;
+        out_ptr2_2 = out_ptr1_2 + output_w;
 
-        inptr1 = input_data_ch;
-        inptr2 = inptr1 + input_width;
-        inptr3 = inptr2 + input_width;
-        inptr4 = inptr3 + input_width;
+        in_ptr1 = input_data_ch;
+        in_ptr2 = in_ptr1 + input_w;
+        in_ptr3 = in_ptr2 + input_w;
+        in_ptr4 = in_ptr3 + input_w;
 
-        int oh = 0;
-        for (; oh < output_height - 1; oh = oh + 2) {
-          if (!isnopadding && (oh < padding_height ||
-                               oh > output_height - padding_height - 2)) {
+        int o_h = 0;
+        for (; o_h < output_h - 1; o_h = o_h + 2) {
+          if (!if_nopadding &&
+              (o_h < padding_h || o_h > output_h - padding_h - 2)) {
             issamefilter = false;
           } else {
             issamefilter = true;
           }
-          int ow = 0;
-          for (; ow < padding_width; ++ow) {
+          int o_w = 0;
+          // pad left
+          for (; o_w < padding_w; ++o_w) {
             float sum1 = 0;
             float sum2 = 0;
             float sum1_2 = 0;
@@ -214,31 +213,31 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
 
             if (issamefilter) {
 #if __ARM_NEON
-              float32x4_t _inptr1 = vld1q_f32(inptr1);
-              float32x4_t _ffilter1 = vld1q_f32(ffilter1);
-              float32x4_t _ffilter1_2 = vld1q_f32(ffilter1_2);
-              float32x4_t _sum1 = vmulq_f32(_inptr1, _ffilter1);
-              float32x4_t _sum1_2 = vmulq_f32(_inptr1, _ffilter1_2);
+              float32x4_t _in_ptr1 = vld1q_f32(in_ptr1);
+              float32x4_t _pad_filter1 = vld1q_f32(pad_filter1);
+              float32x4_t _pad_filter1_2 = vld1q_f32(pad_filter1_2);
+              float32x4_t _sum1 = vmulq_f32(_in_ptr1, _pad_filter1);
+              float32x4_t _sum1_2 = vmulq_f32(_in_ptr1, _pad_filter1_2);
 
-              float32x4_t _inptr2 = vld1q_f32(inptr2);
-              float32x4_t _ffilter2 = vld1q_f32(ffilter2);
-              float32x4_t _ffilter2_2 = vld1q_f32(ffilter2_2);
-              _sum1 = vmlaq_f32(_sum1, _inptr2, _ffilter2);
-              _sum1_2 = vmlaq_f32(_sum1_2, _inptr2, _ffilter2_2);
-              float32x4_t _sum2 = vmulq_f32(_inptr2, _ffilter1);
-              float32x4_t _sum2_2 = vmulq_f32(_inptr2, _ffilter1_2);
+              float32x4_t _in_ptr2 = vld1q_f32(in_ptr2);
+              float32x4_t _pad_filter2 = vld1q_f32(pad_filter2);
+              float32x4_t _pad_filter2_2 = vld1q_f32(pad_filter2_2);
+              _sum1 = vmlaq_f32(_sum1, _in_ptr2, _pad_filter2);
+              _sum1_2 = vmlaq_f32(_sum1_2, _in_ptr2, _pad_filter2_2);
+              float32x4_t _sum2 = vmulq_f32(_in_ptr2, _pad_filter1);
+              float32x4_t _sum2_2 = vmulq_f32(_in_ptr2, _pad_filter1_2);
 
-              float32x4_t _inptr3 = vld1q_f32(inptr3);
-              float32x4_t _ffilter3 = vld1q_f32(ffilter3);
-              float32x4_t _ffilter3_2 = vld1q_f32(ffilter3_2);
-              _sum1 = vmlaq_f32(_sum1, _inptr3, _ffilter3);
-              _sum1_2 = vmlaq_f32(_sum1_2, _inptr3, _ffilter3_2);
-              _sum2 = vmlaq_f32(_sum2, _inptr3, _ffilter2);
-              _sum2_2 = vmlaq_f32(_sum2_2, _inptr3, _ffilter2_2);
+              float32x4_t _in_ptr3 = vld1q_f32(in_ptr3);
+              float32x4_t _pad_filter3 = vld1q_f32(pad_filter3);
+              float32x4_t _pad_filter3_2 = vld1q_f32(pad_filter3_2);
+              _sum1 = vmlaq_f32(_sum1, _in_ptr3, _pad_filter3);
+              _sum1_2 = vmlaq_f32(_sum1_2, _in_ptr3, _pad_filter3_2);
+              _sum2 = vmlaq_f32(_sum2, _in_ptr3, _pad_filter2);
+              _sum2_2 = vmlaq_f32(_sum2_2, _in_ptr3, _pad_filter2_2);
 
-              float32x4_t _inptr4 = vld1q_f32(inptr4);
-              _sum2 = vmlaq_f32(_sum2, _inptr4, _ffilter3);
-              _sum2_2 = vmlaq_f32(_sum2_2, _inptr4, _ffilter3_2);
+              float32x4_t _in_ptr4 = vld1q_f32(in_ptr4);
+              _sum2 = vmlaq_f32(_sum2, _in_ptr4, _pad_filter3);
+              _sum2_2 = vmlaq_f32(_sum2_2, _in_ptr4, _pad_filter3_2);
 
               _sum1 = vsetq_lane_f32(sum1, _sum1, 3);
               _sum1_2 = vsetq_lane_f32(sum1_2, _sum1_2, 3);
@@ -261,76 +260,76 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
               sum2 += vget_lane_f32(_ssss1_ssss2, 1);
               sum2_2 += vget_lane_f32(_ssss1_2_ssss2_2, 1);
 #else
-              sum1 += inptr1[0] * ffilter1[0];
-              sum1 += inptr1[1] * ffilter1[1];
-              sum1 += inptr1[2] * ffilter1[2];
-              sum1 += inptr2[0] * ffilter2[0];
-              sum1 += inptr2[1] * ffilter2[1];
-              sum1 += inptr2[2] * ffilter2[2];
-              sum1 += inptr3[0] * ffilter3[0];
-              sum1 += inptr3[1] * ffilter3[1];
-              sum1 += inptr3[2] * ffilter3[2];
+              sum1 += in_ptr1[0] * pad_filter1[0];
+              sum1 += in_ptr1[1] * pad_filter1[1];
+              sum1 += in_ptr1[2] * pad_filter1[2];
+              sum1 += in_ptr2[0] * pad_filter2[0];
+              sum1 += in_ptr2[1] * pad_filter2[1];
+              sum1 += in_ptr2[2] * pad_filter2[2];
+              sum1 += in_ptr3[0] * pad_filter3[0];
+              sum1 += in_ptr3[1] * pad_filter3[1];
+              sum1 += in_ptr3[2] * pad_filter3[2];
 
-              sum2 += inptr2[0] * ffilter1[0];
-              sum2 += inptr2[1] * ffilter1[1];
-              sum2 += inptr2[2] * ffilter1[2];
-              sum2 += inptr3[0] * ffilter2[0];
-              sum2 += inptr3[1] * ffilter2[1];
-              sum2 += inptr3[2] * ffilter2[2];
-              sum2 += inptr4[0] * ffilter3[0];
-              sum2 += inptr4[1] * ffilter3[1];
-              sum2 += inptr4[2] * ffilter3[2];
+              sum2 += in_ptr2[0] * pad_filter1[0];
+              sum2 += in_ptr2[1] * pad_filter1[1];
+              sum2 += in_ptr2[2] * pad_filter1[2];
+              sum2 += in_ptr3[0] * pad_filter2[0];
+              sum2 += in_ptr3[1] * pad_filter2[1];
+              sum2 += in_ptr3[2] * pad_filter2[2];
+              sum2 += in_ptr4[0] * pad_filter3[0];
+              sum2 += in_ptr4[1] * pad_filter3[1];
+              sum2 += in_ptr4[2] * pad_filter3[2];
 
-              sum1_2 += inptr1[0] * ffilter1_2[0];
-              sum1_2 += inptr1[1] * ffilter1_2[1];
-              sum1_2 += inptr1[2] * ffilter1_2[2];
-              sum1_2 += inptr2[0] * ffilter2_2[0];
-              sum1_2 += inptr2[1] * ffilter2_2[1];
-              sum1_2 += inptr2[2] * ffilter2_2[2];
-              sum1_2 += inptr3[0] * ffilter3_2[0];
-              sum1_2 += inptr3[1] * ffilter3_2[1];
-              sum1_2 += inptr3[2] * ffilter3_2[2];
+              sum1_2 += in_ptr1[0] * pad_filter1_2[0];
+              sum1_2 += in_ptr1[1] * pad_filter1_2[1];
+              sum1_2 += in_ptr1[2] * pad_filter1_2[2];
+              sum1_2 += in_ptr2[0] * pad_filter2_2[0];
+              sum1_2 += in_ptr2[1] * pad_filter2_2[1];
+              sum1_2 += in_ptr2[2] * pad_filter2_2[2];
+              sum1_2 += in_ptr3[0] * pad_filter3_2[0];
+              sum1_2 += in_ptr3[1] * pad_filter3_2[1];
+              sum1_2 += in_ptr3[2] * pad_filter3_2[2];
 
-              sum2_2 += inptr2[0] * ffilter1_2[0];
-              sum2_2 += inptr2[1] * ffilter1_2[1];
-              sum2_2 += inptr2[2] * ffilter1_2[2];
-              sum2_2 += inptr3[0] * ffilter2_2[0];
-              sum2_2 += inptr3[1] * ffilter2_2[1];
-              sum2_2 += inptr3[2] * ffilter2_2[2];
-              sum2_2 += inptr4[0] * ffilter3_2[0];
-              sum2_2 += inptr4[1] * ffilter3_2[1];
-              sum2_2 += inptr4[2] * ffilter3_2[2];
+              sum2_2 += in_ptr2[0] * pad_filter1_2[0];
+              sum2_2 += in_ptr2[1] * pad_filter1_2[1];
+              sum2_2 += in_ptr2[2] * pad_filter1_2[2];
+              sum2_2 += in_ptr3[0] * pad_filter2_2[0];
+              sum2_2 += in_ptr3[1] * pad_filter2_2[1];
+              sum2_2 += in_ptr3[2] * pad_filter2_2[2];
+              sum2_2 += in_ptr4[0] * pad_filter3_2[0];
+              sum2_2 += in_ptr4[1] * pad_filter3_2[1];
+              sum2_2 += in_ptr4[2] * pad_filter3_2[2];
 #endif
             } else {
 #if __ARM_NEON
-              float32x4_t _inptr1 = vld1q_f32(inptr1);
-              float32x4_t _ffilter1 = vld1q_f32(ffilter1);
-              float32x4_t _ffilter1_2 = vld1q_f32(ffilter1_2);
-              float32x4_t _ffilter0 = vld1q_f32(ffilter0);
-              float32x4_t _ffilter0_2 = vld1q_f32(ffilter0_2);
+              float32x4_t _in_ptr1 = vld1q_f32(in_ptr1);
+              float32x4_t _pad_filter1 = vld1q_f32(pad_filter1);
+              float32x4_t _pad_filter1_2 = vld1q_f32(pad_filter1_2);
+              float32x4_t _pad_filter0 = vld1q_f32(pad_filter0);
+              float32x4_t _pad_filter0_2 = vld1q_f32(pad_filter0_2);
 
-              float32x4_t _sum1 = vmulq_f32(_inptr1, _ffilter1);
-              float32x4_t _sum1_2 = vmulq_f32(_inptr1, _ffilter1_2);
-              float32x4_t _sum2 = vmulq_f32(_inptr1, _ffilter0);
-              float32x4_t _sum2_2 = vmulq_f32(_inptr1, _ffilter0_2);
+              float32x4_t _sum1 = vmulq_f32(_in_ptr1, _pad_filter1);
+              float32x4_t _sum1_2 = vmulq_f32(_in_ptr1, _pad_filter1_2);
+              float32x4_t _sum2 = vmulq_f32(_in_ptr1, _pad_filter0);
+              float32x4_t _sum2_2 = vmulq_f32(_in_ptr1, _pad_filter0_2);
 
-              float32x4_t _inptr2 = vld1q_f32(inptr2);
-              float32x4_t _ffilter2 = vld1q_f32(ffilter2);
-              float32x4_t _ffilter2_2 = vld1q_f32(ffilter2_2);
+              float32x4_t _in_ptr2 = vld1q_f32(in_ptr2);
+              float32x4_t _pad_filter2 = vld1q_f32(pad_filter2);
+              float32x4_t _pad_filter2_2 = vld1q_f32(pad_filter2_2);
 
-              _sum1 = vmlaq_f32(_sum1, _inptr2, _ffilter2);
-              _sum1_2 = vmlaq_f32(_sum1_2, _inptr2, _ffilter2_2);
-              _sum2 = vmlaq_f32(_sum2, _inptr2, _ffilter1);
-              _sum2_2 = vmlaq_f32(_sum2_2, _inptr2, _ffilter1_2);
+              _sum1 = vmlaq_f32(_sum1, _in_ptr2, _pad_filter2);
+              _sum1_2 = vmlaq_f32(_sum1_2, _in_ptr2, _pad_filter2_2);
+              _sum2 = vmlaq_f32(_sum2, _in_ptr2, _pad_filter1);
+              _sum2_2 = vmlaq_f32(_sum2_2, _in_ptr2, _pad_filter1_2);
 
-              float32x4_t _inptr3 = vld1q_f32(inptr3);
-              float32x4_t _ffilter3 = vld1q_f32(ffilter3);
-              float32x4_t _ffilter3_2 = vld1q_f32(ffilter3_2);
+              float32x4_t _in_ptr3 = vld1q_f32(in_ptr3);
+              float32x4_t _pad_filter3 = vld1q_f32(pad_filter3);
+              float32x4_t _pad_filter3_2 = vld1q_f32(pad_filter3_2);
 
-              _sum1 = vmlaq_f32(_sum1, _inptr3, _ffilter3);
-              _sum1_2 = vmlaq_f32(_sum1_2, _inptr3, _ffilter3_2);
-              _sum2 = vmlaq_f32(_sum2, _inptr3, _ffilter2);
-              _sum2_2 = vmlaq_f32(_sum2_2, _inptr3, _ffilter2_2);
+              _sum1 = vmlaq_f32(_sum1, _in_ptr3, _pad_filter3);
+              _sum1_2 = vmlaq_f32(_sum1_2, _in_ptr3, _pad_filter3_2);
+              _sum2 = vmlaq_f32(_sum2, _in_ptr3, _pad_filter2);
+              _sum2_2 = vmlaq_f32(_sum2_2, _in_ptr3, _pad_filter2_2);
 
               _sum1 = vsetq_lane_f32(sum1, _sum1, 3);
               _sum1_2 = vsetq_lane_f32(sum1_2, _sum1_2, 3);
@@ -353,93 +352,94 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
               sum2 += vget_lane_f32(_ssss1_ssss2, 1);
               sum2_2 += vget_lane_f32(_ssss1_2_ssss2_2, 1);
 #else
-              sum1 += inptr1[0] * ffilter1[0];
-              sum1 += inptr1[1] * ffilter1[1];
-              sum1 += inptr1[2] * ffilter1[2];
-              sum1 += inptr2[0] * ffilter2[0];
-              sum1 += inptr2[1] * ffilter2[1];
-              sum1 += inptr2[2] * ffilter2[2];
-              sum1 += inptr3[0] * ffilter3[0];
-              sum1 += inptr3[1] * ffilter3[1];
-              sum1 += inptr3[2] * ffilter3[2];
+              sum1 += in_ptr1[0] * pad_filter1[0];
+              sum1 += in_ptr1[1] * pad_filter1[1];
+              sum1 += in_ptr1[2] * pad_filter1[2];
+              sum1 += in_ptr2[0] * pad_filter2[0];
+              sum1 += in_ptr2[1] * pad_filter2[1];
+              sum1 += in_ptr2[2] * pad_filter2[2];
+              sum1 += in_ptr3[0] * pad_filter3[0];
+              sum1 += in_ptr3[1] * pad_filter3[1];
+              sum1 += in_ptr3[2] * pad_filter3[2];
 
-              sum2 += inptr1[0] * ffilter0[0];
-              sum2 += inptr1[1] * ffilter0[1];
-              sum2 += inptr1[2] * ffilter0[2];
-              sum2 += inptr2[0] * ffilter1[0];
-              sum2 += inptr2[1] * ffilter1[1];
-              sum2 += inptr2[2] * ffilter1[2];
-              sum2 += inptr3[0] * ffilter2[0];
-              sum2 += inptr3[1] * ffilter2[1];
-              sum2 += inptr3[2] * ffilter2[2];
+              sum2 += in_ptr1[0] * pad_filter0[0];
+              sum2 += in_ptr1[1] * pad_filter0[1];
+              sum2 += in_ptr1[2] * pad_filter0[2];
+              sum2 += in_ptr2[0] * pad_filter1[0];
+              sum2 += in_ptr2[1] * pad_filter1[1];
+              sum2 += in_ptr2[2] * pad_filter1[2];
+              sum2 += in_ptr3[0] * pad_filter2[0];
+              sum2 += in_ptr3[1] * pad_filter2[1];
+              sum2 += in_ptr3[2] * pad_filter2[2];
 
-              sum1_2 += inptr1[0] * ffilter1_2[0];
-              sum1_2 += inptr1[1] * ffilter1_2[1];
-              sum1_2 += inptr1[2] * ffilter1_2[2];
-              sum1_2 += inptr2[0] * ffilter2_2[0];
-              sum1_2 += inptr2[1] * ffilter2_2[1];
-              sum1_2 += inptr2[2] * ffilter2_2[2];
-              sum1_2 += inptr3[0] * ffilter3_2[0];
-              sum1_2 += inptr3[1] * ffilter3_2[1];
-              sum1_2 += inptr3[2] * ffilter3_2[2];
+              sum1_2 += in_ptr1[0] * pad_filter1_2[0];
+              sum1_2 += in_ptr1[1] * pad_filter1_2[1];
+              sum1_2 += in_ptr1[2] * pad_filter1_2[2];
+              sum1_2 += in_ptr2[0] * pad_filter2_2[0];
+              sum1_2 += in_ptr2[1] * pad_filter2_2[1];
+              sum1_2 += in_ptr2[2] * pad_filter2_2[2];
+              sum1_2 += in_ptr3[0] * pad_filter3_2[0];
+              sum1_2 += in_ptr3[1] * pad_filter3_2[1];
+              sum1_2 += in_ptr3[2] * pad_filter3_2[2];
 
-              sum2_2 += inptr1[0] * ffilter0_2[0];
-              sum2_2 += inptr1[1] * ffilter0_2[1];
-              sum2_2 += inptr1[2] * ffilter0_2[2];
-              sum2_2 += inptr2[0] * ffilter1_2[0];
-              sum2_2 += inptr2[1] * ffilter1_2[1];
-              sum2_2 += inptr2[2] * ffilter1_2[2];
-              sum2_2 += inptr3[0] * ffilter2_2[0];
-              sum2_2 += inptr3[1] * ffilter2_2[1];
-              sum2_2 += inptr3[2] * ffilter2_2[2];
+              sum2_2 += in_ptr1[0] * pad_filter0_2[0];
+              sum2_2 += in_ptr1[1] * pad_filter0_2[1];
+              sum2_2 += in_ptr1[2] * pad_filter0_2[2];
+              sum2_2 += in_ptr2[0] * pad_filter1_2[0];
+              sum2_2 += in_ptr2[1] * pad_filter1_2[1];
+              sum2_2 += in_ptr2[2] * pad_filter1_2[2];
+              sum2_2 += in_ptr3[0] * pad_filter2_2[0];
+              sum2_2 += in_ptr3[1] * pad_filter2_2[1];
+              sum2_2 += in_ptr3[2] * pad_filter2_2[2];
 #endif
             }
-            if (!isnopadding &&
-                (ow < padding_width || ow > output_width - padding_width - 2)) {
-              ffilter0--;
-              ffilter1--;
-              ffilter2--;
-              ffilter3--;
+            if (!if_nopadding &&
+                (o_w < padding_w || o_w > output_w - padding_w - 2)) {
+              pad_filter0--;
+              pad_filter1--;
+              pad_filter2--;
+              pad_filter3--;
 
-              ffilter0_2--;
-              ffilter1_2--;
-              ffilter2_2--;
-              ffilter3_2--;
+              pad_filter0_2--;
+              pad_filter1_2--;
+              pad_filter2_2--;
+              pad_filter3_2--;
             } else {
-              inptr1++;
-              inptr2++;
-              inptr3++;
-              inptr4++;
+              in_ptr1++;
+              in_ptr2++;
+              in_ptr3++;
+              in_ptr4++;
             }
-            *outptr1 += sum1;
-            *outptr2 += sum2;
-            *outptr1_2 += sum1_2;
-            *outptr2_2 += sum2_2;
+            *out_ptr1 += sum1;
+            *out_ptr2 += sum2;
+            *out_ptr1_2 += sum1_2;
+            *out_ptr2_2 += sum2_2;
 
-            if (outptr1[0] < reluvalue) {
-              *outptr1 = reluvalue;
+            if (out_ptr1[0] < relu_value) {
+              *out_ptr1 = relu_value;
             }
-            if (outptr2[0] < reluvalue) {
-              *outptr2 = reluvalue;
+            if (out_ptr2[0] < relu_value) {
+              *out_ptr2 = relu_value;
             }
-            if (outptr1_2[0] < reluvalue) {
-              *outptr1_2 = reluvalue;
+            if (out_ptr1_2[0] < relu_value) {
+              *out_ptr1_2 = relu_value;
             }
-            if (outptr2_2[0] < reluvalue) {
-              *outptr2_2 = reluvalue;
+            if (out_ptr2_2[0] < relu_value) {
+              *out_ptr2_2 = relu_value;
             }
-            outptr1++;
-            outptr2++;
-            outptr1_2++;
-            outptr2_2++;
+            out_ptr1++;
+            out_ptr2++;
+            out_ptr1_2++;
+            out_ptr2_2++;
           }
+            // valid
 #if __ARM_NEON
 #if __aarch64__
           if (issamefilter) {
-            int ow_dim4 = (output_width - 2 * padding_width) >> 2;
-            ow += ow_dim4 * 4;
+            int o_w_dim4 = (output_w - 2 * padding_w) >> 2;
+            o_w += o_w_dim4 * 4;
 
-            if (ow_dim4 > 0) {
+            if (o_w_dim4 > 0) {
               asm volatile(
                   "prfm   pldl1keep, [%[f1], #256]          \n\t"
                   "prfm   pldl1keep, [%[f1_2], #256]        \n\t"
@@ -457,30 +457,30 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "ld1   {v4.s}[1], [%[f1_2]]               \n\t"
                   "sub        %[f1_2],%[f1_2], #32          \n\t"
 
-                  "prfm   pldl1keep, [%[inptr1], #192]      \n\t"
-                  "prfm   pldl1keep, [%[inptr4], #192]      \n\t"
+                  "prfm   pldl1keep, [%[in_ptr1], #192]     \n\t"
+                  "prfm   pldl1keep, [%[in_ptr4], #192]     \n\t"
 
-                  "ld1   {v5.4s, v6.4s}, [%[inptr1]]        \n\t"
-                  "add        %[inptr1],%[inptr1], #16      \n\t"
+                  "ld1   {v5.4s, v6.4s}, [%[in_ptr1]]       \n\t"
+                  "add        %[in_ptr1],%[in_ptr1], #16    \n\t"
 
-                  "ld1   {v6.d}[1], [%[inptr4]]             \n\t"
-                  "add        %[inptr4],%[inptr4], #8       \n\t"
-                  "ld1   {v7.4s}, [%[inptr4]]               \n\t"
-                  "add        %[inptr4],%[inptr4], #8       \n\t"
+                  "ld1   {v6.d}[1], [%[in_ptr4]]            \n\t"
+                  "add        %[in_ptr4],%[in_ptr4], #8     \n\t"
+                  "ld1   {v7.4s}, [%[in_ptr4]]              \n\t"
+                  "add        %[in_ptr4],%[in_ptr4], #8     \n\t"
 
                   "0:                                       \n\t"
-                  // load outptr
-                  "prfm   pldl1keep, [%[outptr1], #128]     \n\t"
-                  "prfm   pldl1keep, [%[outptr1_2], #128]   \n\t"
-                  "prfm   pldl1keep, [%[outptr2], #128]     \n\t"
-                  "prfm   pldl1keep, [%[outptr2_2], #128]   \n\t"
+                  // load out_ptr
+                  "prfm   pldl1keep, [%[out_ptr1], #128]    \n\t"
+                  "prfm   pldl1keep, [%[out_ptr1_2], #128]  \n\t"
+                  "prfm   pldl1keep, [%[out_ptr2], #128]    \n\t"
+                  "prfm   pldl1keep, [%[out_ptr2_2], #128]  \n\t"
 
-                  "ld1   {v12.4s}, [%[outptr1]]             \n\t"
-                  "ld1   {v13.4s}, [%[outptr1_2]]           \n\t"
-                  "ld1   {v14.4s}, [%[outptr2]]             \n\t"
-                  "ld1   {v15.4s}, [%[outptr2_2]]           \n\t"
+                  "ld1   {v12.4s}, [%[out_ptr1]]            \n\t"
+                  "ld1   {v13.4s}, [%[out_ptr1_2]]          \n\t"
+                  "ld1   {v14.4s}, [%[out_ptr2]]            \n\t"
+                  "ld1   {v15.4s}, [%[out_ptr2_2]]          \n\t"
 
-                  // inptr1 and inptr4 multiply
+                  // in_ptr1 and in_ptr4 multiply
                   "ext    v8.16b, v5.16b, v6.16b, #4        \n\t"
                   "fmla   v12.4s, v5.4s, v0.4s[0]           \n\t"
                   "fmla   v13.4s, v5.4s, v2.4s[0]           \n\t"
@@ -497,15 +497,15 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "fmla   v14.4s, v9.4s, v1.4s[2]           \n\t"
                   "fmla   v15.4s, v9.4s, v3.4s[2]           \n\t"
 
-                  "ld1   {v5.4s, v6.4s}, [%[inptr2]]        \n\t"
+                  "ld1   {v5.4s, v6.4s}, [%[in_ptr2]]       \n\t"
                   "fmla   v12.4s, v10.4s, v0.4s[2]          \n\t"
                   "fmla   v13.4s, v10.4s, v2.4s[2]          \n\t"
 
-                  "add        %[inptr2],%[inptr2], #16      \n\t"
+                  "add        %[in_ptr2],%[in_ptr2], #16    \n\t"
                   "fmla   v14.4s, v11.4s, v1.4s[3]          \n\t"
                   "fmla   v15.4s, v11.4s, v3.4s[3]          \n\t"
 
-                  // inptr2 multiply
+                  // in_ptr2 multiply
                   "ext    v8.16b,  v5.16b, v6.16b, #4       \n\t"
                   "fmla   v12.4s, v5.4s, v0.4s[3]           \n\t"
                   "fmla   v13.4s, v5.4s, v2.4s[3]           \n\t"
@@ -517,13 +517,13 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "fmla   v12.4s, v8.4s, v1.4s[0]           \n\t"
                   "fmla   v13.4s, v8.4s, v3.4s[0]           \n\t"
 
-                  "ld1   {v6.d}[1], [%[inptr3]]             \n\t"
-                  "add        %[inptr3],%[inptr3], #8       \n\t"
+                  "ld1   {v6.d}[1], [%[in_ptr3]]            \n\t"
+                  "add        %[in_ptr3],%[in_ptr3], #8     \n\t"
                   "fmla   v14.4s, v8.4s, v0.4s[1]           \n\t"
                   "fmla   v15.4s, v8.4s, v2.4s[1]           \n\t"
 
-                  "ld1   {v7.4s}, [%[inptr3]]               \n\t"
-                  "add        %[inptr3],%[inptr3], #8       \n\t"
+                  "ld1   {v7.4s}, [%[in_ptr3]]              \n\t"
+                  "add        %[in_ptr3],%[in_ptr3], #8     \n\t"
 
                   "fmla   v12.4s, v9.4s, v1.4s[1]           \n\t"
                   "fmla   v13.4s, v9.4s, v3.4s[1]           \n\t"
@@ -532,7 +532,7 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "fmla   v14.4s, v9.4s, v0.4s[2]           \n\t"
                   "fmla   v15.4s, v9.4s, v2.4s[2]           \n\t"
 
-                  // inptr3 multiply
+                  // in_ptr3 multiply
                   "fmla   v12.4s, v7.4s, v4.4s[0]           \n\t"
                   "fmla   v13.4s, v7.4s, v4.4s[1]           \n\t"
 
@@ -549,71 +549,70 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "fmla   v12.4s, v11.4s, v1.4s[3]          \n\t"
                   "fmla   v13.4s, v11.4s, v3.4s[3]          \n\t"
 
-                  "prfm   pldl1keep, [%[inptr1], #192]      \n\t"
+                  "prfm   pldl1keep, [%[in_ptr1], #192]     \n\t"
                   "fmla   v14.4s, v11.4s, v1.4s[0]          \n\t"
                   "fmla   v15.4s, v11.4s, v3.4s[0]          \n\t"
 
-                  // store outptr
-
-                  "prfm   pldl1keep, [%[inptr4], #192]      \n\t"
+                  // store out_ptr
+                  "prfm   pldl1keep, [%[in_ptr4], #192]     \n\t"
                   "fmax   v12.4s,v12.4s, v16.4s             \n\t"
                   "fmax   v13.4s,v13.4s, v16.4s             \n\t"
 
-                  "ld1   {v5.4s, v6.4s}, [%[inptr1]]        \n\t"
-                  "add        %[inptr1],%[inptr1], #16      \n\t"
+                  "ld1   {v5.4s, v6.4s}, [%[in_ptr1]]       \n\t"
+                  "add        %[in_ptr1],%[in_ptr1], #16    \n\t"
                   "fmax   v14.4s,v14.4s, v16.4s             \n\t"
                   "fmax   v15.4s,v15.4s, v16.4s             \n\t"
-                  "st1   {v12.4s}, [%[outptr1]], #16        \n\t"
+                  "st1   {v12.4s}, [%[out_ptr1]], #16       \n\t"
 
-                  "ld1   {v6.d}[1], [%[inptr4]]             \n\t"
-                  "add        %[inptr4],%[inptr4], #8       \n\t"
-                  "st1   {v13.4s}, [%[outptr1_2]], #16      \n\t"
+                  "ld1   {v6.d}[1], [%[in_ptr4]]            \n\t"
+                  "add        %[in_ptr4],%[in_ptr4], #8     \n\t"
+                  "st1   {v13.4s}, [%[out_ptr1_2]], #16     \n\t"
 
-                  "ld1   {v7.4s}, [%[inptr4]]               \n\t"
-                  "add        %[inptr4],%[inptr4], #8       \n\t"
-                  "st1   {v14.4s}, [%[outptr2]], #16        \n\t"
+                  "ld1   {v7.4s}, [%[in_ptr4]]              \n\t"
+                  "add        %[in_ptr4],%[in_ptr4], #8     \n\t"
+                  "st1   {v14.4s}, [%[out_ptr2]], #16       \n\t"
 
-                  "subs       %[ow_dim4],%[ow_dim4], #1     \n\t"
-                  "st1   {v15.4s}, [%[outptr2_2]], #16      \n\t"
+                  "subs       %[o_w_dim4],%[o_w_dim4], #1   \n\t"
+                  "st1   {v15.4s}, [%[out_ptr2_2]], #16     \n\t"
 
                   // cycle
                   "bne        0b                            \n\t"
-                  "sub       %[inptr1],%[inptr1], #16       \n\t"
-                  "sub       %[inptr4],%[inptr4], #16       \n\t"
+                  "sub       %[in_ptr1],%[in_ptr1], #16     \n\t"
+                  "sub       %[in_ptr4],%[in_ptr4], #16     \n\t"
 
-                  : [ow_dim4] "+r"(ow_dim4), [outptr1] "+r"(outptr1),
-                    [outptr2] "+r"(outptr2), [outptr1_2] "+r"(outptr1_2),
-                    [outptr2_2] "+r"(outptr2_2), [inptr1] "+r"(inptr1),
-                    [inptr2] "+r"(inptr2), [inptr3] "+r"(inptr3),
-                    [inptr4] "+r"(inptr4)
+                  : [o_w_dim4] "+r"(o_w_dim4), [out_ptr1] "+r"(out_ptr1),
+                    [out_ptr2] "+r"(out_ptr2), [out_ptr1_2] "+r"(out_ptr1_2),
+                    [out_ptr2_2] "+r"(out_ptr2_2), [in_ptr1] "+r"(in_ptr1),
+                    [in_ptr2] "+r"(in_ptr2), [in_ptr3] "+r"(in_ptr3),
+                    [in_ptr4] "+r"(in_ptr4)
                   : [f1] "r"(f1), [f1_2] "r"(f1_2), [reluptr] "r"(reluptr)
                   : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
                     "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
                     "v16");
             }
           }
-          if (!isnopadding && ow == output_width - padding_width) {
-            ffilter0--;
-            ffilter1--;
-            ffilter2--;
-            ffilter3--;
+          if (!if_nopadding && o_w == output_w - padding_w) {
+            pad_filter0--;
+            pad_filter1--;
+            pad_filter2--;
+            pad_filter3--;
 
-            ffilter0_2--;
-            ffilter1_2--;
-            ffilter2_2--;
-            ffilter3_2--;
+            pad_filter0_2--;
+            pad_filter1_2--;
+            pad_filter2_2--;
+            pad_filter3_2--;
 
-            inptr1--;
-            inptr2--;
-            inptr3--;
-            inptr4--;
+            in_ptr1--;
+            in_ptr2--;
+            in_ptr3--;
+            in_ptr4--;
           }
 #else
           if (issamefilter) {
-            int ow_dim4 = (output_width - 2 * padding_width) >> 2;
-            ow += ow_dim4 * 4;
+            int o_w_dim4 = (output_w - 2 * padding_w) >> 2;
+            o_w += o_w_dim4 * 4;
 
-            if (ow_dim4 > 0) {
+            if (o_w_dim4 > 0) {
               asm volatile(
                   "pld        [%[f1], #256]                 \n\t"
                   "pld        [%[f1_2], #256]               \n\t"
@@ -631,29 +630,28 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "vld1.32   {d8[1]}, [%[f1_2]]             \n\t"
                   "sub        %[f1_2], #32                  \n\t"
 
-                  "pld        [%[inptr1], #192]             \n\t"
-                  "pld        [%[inptr4], #192]             \n\t"
+                  "pld        [%[in_ptr1], #192]            \n\t"
+                  "pld        [%[in_ptr4], #192]            \n\t"
 
-                  "vld1.f32   {d10-d12}, [%[inptr1]]        \n\t"
-                  "add        %[inptr1], #16                \n\t"
+                  "vld1.f32   {d10-d12}, [%[in_ptr1]]       \n\t"
+                  "add        %[in_ptr1], #16               \n\t"
 
-                  "vld1.f32   {d13-d15}, [%[inptr4]]        \n\t"
-                  "add        %[inptr4], #16                \n\t"
+                  "vld1.f32   {d13-d15}, [%[in_ptr4]]       \n\t"
+                  "add        %[in_ptr4], #16               \n\t"
 
                   "0:                                       \n\t"
-                  // load outptr
-                  "pld        [%[outptr1], #128]            \n\t"
-                  "pld        [%[outptr1_2], #128]          \n\t"
-                  "pld        [%[outptr2], #128]            \n\t"
-                  "pld        [%[outptr2_2], #128]          \n\t"
+                  // load out_ptr
+                  "pld        [%[out_ptr1], #128]           \n\t"
+                  "pld        [%[out_ptr1_2], #128]         \n\t"
+                  "pld        [%[out_ptr2], #128]           \n\t"
+                  "pld        [%[out_ptr2_2], #128]         \n\t"
 
-                  "vld1.f32   {d24, d25}, [%[outptr1]]      \n\t"
-                  "vld1.f32   {d26, d27}, [%[outptr1_2]]    \n\t"
-                  "vld1.f32   {d28, d29}, [%[outptr2]]      \n\t"
-                  "vld1.f32   {d30, d31}, [%[outptr2_2]]    \n\t"
+                  "vld1.f32   {d24, d25}, [%[out_ptr1]]     \n\t"
+                  "vld1.f32   {d26, d27}, [%[out_ptr1_2]]   \n\t"
+                  "vld1.f32   {d28, d29}, [%[out_ptr2]]     \n\t"
+                  "vld1.f32   {d30, d31}, [%[out_ptr2_2]]   \n\t"
 
-                  // inptr1 + inptr4 multiply
-
+                  // in_ptr1 + in_ptr4 multiply
                   "vext.32    q8, q5, q6, #1                \n\t"
                   "vmla.f32   q12, q5, d0[0]                \n\t"
                   "vmla.f32   q13, q5, d4[0]                \n\t"
@@ -670,15 +668,15 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "vmla.f32   q14, q9, d3[0]                \n\t"
                   "vmla.f32   q15, q9, d7[0]                \n\t"
 
-                  "vld1.f32   {d10-d12}, [%[inptr2]]        \n\t"
-                  "add        %[inptr2], #16                \n\t"
+                  "vld1.f32   {d10-d12}, [%[in_ptr2]]       \n\t"
+                  "add        %[in_ptr2], #16               \n\t"
                   "vmla.f32   q12, q10, d1[0]               \n\t"
                   "vmla.f32   q13, q10, d5[0]               \n\t"
 
                   "vmla.f32   q14, q11, d3[1]               \n\t"
                   "vmla.f32   q15, q11, d7[1]               \n\t"
 
-                  // inptr2 multiply
+                  // in_ptr2 multiply
                   "vext.32    q8, q5, q6, #1                \n\t"
                   "vmla.f32   q12, q5, d1[1]                \n\t"
                   "vmla.f32   q13, q5, d5[1]                \n\t"
@@ -690,8 +688,8 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "vmla.f32   q12, q8, d2[0]                \n\t"
                   "vmla.f32   q13, q8, d6[0]                \n\t"
 
-                  "vld1.f32   {d13-d15}, [%[inptr3]]        \n\t"
-                  "add        %[inptr3], #16                \n\t"
+                  "vld1.f32   {d13-d15}, [%[in_ptr3]]       \n\t"
+                  "add        %[in_ptr3], #16               \n\t"
                   "vmla.f32   q14, q8, d0[1]                \n\t"
                   "vmla.f32   q15, q8, d4[1]                \n\t"
 
@@ -701,8 +699,7 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "vmla.f32   q14, q9, d1[0]                \n\t"
                   "vmla.f32   q15, q9, d5[0]                \n\t"
 
-                  // inptr3 multiply
-
+                  // in_ptr3 multiply
                   "vext.32    q10, q6, q7, #2               \n\t"
                   "vmla.f32   q12, q7, d8[0]                \n\t"
                   "vmla.f32   q13, q7, d8[1]                \n\t"
@@ -720,68 +717,69 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "vmla.f32   q14, q11, d2[0]               \n\t"
                   "vmla.f32   q15, q11, d6[0]               \n\t"
 
-                  // store outptr
+                  // store out_ptr
                   "vmax.f32   d24, d24, d9                  \n\t"
                   "vmax.f32   d25, d25, d9                  \n\t"
-                  "pld        [%[inptr1], #192]             \n\t"
+                  "pld        [%[in_ptr1], #192]            \n\t"
 
                   "vmax.f32   d26, d26, d9                  \n\t"
-                  "pld        [%[inptr4], #192]             \n\t"
+                  "pld        [%[in_ptr4], #192]            \n\t"
                   "vmax.f32   d27, d27, d9                  \n\t"
 
                   "vmax.f32   d28, d28, d9                  \n\t"
-                  "vld1.f32   {d10-d12}, [%[inptr1]]        \n\t"
+                  "vld1.f32   {d10-d12}, [%[in_ptr1]]       \n\t"
                   "vmax.f32   d29, d29, d9                  \n\t"
-                  "add        %[inptr1], #16                \n\t"
+                  "add        %[in_ptr1], #16               \n\t"
 
                   "vmax.f32   d30, d30, d9                  \n\t"
                   "vmax.f32   d31, d31, d9                  \n\t"
-                  "vst1.f32   {d24, d25}, [%[outptr1]]!     \n\t"
+                  "vst1.f32   {d24, d25}, [%[out_ptr1]]!    \n\t"
 
-                  "vst1.f32   {d26, d27}, [%[outptr1_2]]!   \n\t"
-                  "vld1.f32   {d13-d15}, [%[inptr4]]        \n\t"
+                  "vst1.f32   {d26, d27}, [%[out_ptr1_2]]!  \n\t"
+                  "vld1.f32   {d13-d15}, [%[in_ptr4]]       \n\t"
 
-                  "add        %[inptr4], #16                \n\t"
-                  "vst1.f32   {d28, d29}, [%[outptr2]]!     \n\t"
+                  "add        %[in_ptr4], #16               \n\t"
+                  "vst1.f32   {d28, d29}, [%[out_ptr2]]!    \n\t"
 
-                  "subs       %[ow_dim4], #1                \n\t"
-                  "vst1.f32   {d30, d31}, [%[outptr2_2]]!   \n\t"
+                  "subs       %[o_w_dim4], #1               \n\t"
+                  "vst1.f32   {d30, d31}, [%[out_ptr2_2]]!  \n\t"
 
                   // cycle
                   "bne        0b                            \n\t"
-                  "sub       %[inptr1], #16                 \n\t"
-                  "sub       %[inptr4], #16                 \n\t"
+                  "sub       %[in_ptr1], #16                \n\t"
+                  "sub       %[in_ptr4], #16                \n\t"
 
-                  : [ow_dim4] "+r"(ow_dim4), [outptr1] "+r"(outptr1),
-                    [outptr2] "+r"(outptr2), [outptr1_2] "+r"(outptr1_2),
-                    [outptr2_2] "+r"(outptr2_2), [inptr1] "+r"(inptr1),
-                    [inptr2] "+r"(inptr2), [inptr3] "+r"(inptr3),
-                    [inptr4] "+r"(inptr4)
+                  : [o_w_dim4] "+r"(o_w_dim4), [out_ptr1] "+r"(out_ptr1),
+                    [out_ptr2] "+r"(out_ptr2), [out_ptr1_2] "+r"(out_ptr1_2),
+                    [out_ptr2_2] "+r"(out_ptr2_2), [in_ptr1] "+r"(in_ptr1),
+                    [in_ptr2] "+r"(in_ptr2), [in_ptr3] "+r"(in_ptr3),
+                    [in_ptr4] "+r"(in_ptr4)
                   : [f1] "r"(f1), [f1_2] "r"(f1_2), [reluptr] "r"(reluptr)
                   : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
                     "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15");
             }
           }
-          if (!isnopadding && ow == output_width - padding_width) {
-            ffilter0--;
-            ffilter1--;
-            ffilter2--;
-            ffilter3--;
+          if (!if_nopadding && o_w == output_w - padding_w) {
+            pad_filter0--;
+            pad_filter1--;
+            pad_filter2--;
+            pad_filter3--;
 
-            ffilter0_2--;
-            ffilter1_2--;
-            ffilter2_2--;
-            ffilter3_2--;
+            pad_filter0_2--;
+            pad_filter1_2--;
+            pad_filter2_2--;
+            pad_filter3_2--;
 
-            inptr1--;
-            inptr2--;
-            inptr3--;
-            inptr4--;
+            in_ptr1--;
+            in_ptr2--;
+            in_ptr3--;
+            in_ptr4--;
           }
 #endif  //__aarch64__
 #endif  // __ARM_NEON
 
-          for (; ow < output_width; ++ow) {
+          // remain output_width
+          for (; o_w < output_w; ++o_w) {
             float sum1 = 0;
             float sum2 = 0;
             float sum1_2 = 0;
@@ -789,31 +787,31 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
 
             if (issamefilter) {
 #if __ARM_NEON
-              float32x4_t _inptr1 = vld1q_f32(inptr1);
-              float32x4_t _ffilter1 = vld1q_f32(ffilter1);
-              float32x4_t _ffilter1_2 = vld1q_f32(ffilter1_2);
-              float32x4_t _sum1 = vmulq_f32(_inptr1, _ffilter1);
-              float32x4_t _sum1_2 = vmulq_f32(_inptr1, _ffilter1_2);
+              float32x4_t _in_ptr1 = vld1q_f32(in_ptr1);
+              float32x4_t _pad_filter1 = vld1q_f32(pad_filter1);
+              float32x4_t _pad_filter1_2 = vld1q_f32(pad_filter1_2);
+              float32x4_t _sum1 = vmulq_f32(_in_ptr1, _pad_filter1);
+              float32x4_t _sum1_2 = vmulq_f32(_in_ptr1, _pad_filter1_2);
 
-              float32x4_t _inptr2 = vld1q_f32(inptr2);
-              float32x4_t _ffilter2 = vld1q_f32(ffilter2);
-              float32x4_t _ffilter2_2 = vld1q_f32(ffilter2_2);
-              _sum1 = vmlaq_f32(_sum1, _inptr2, _ffilter2);
-              _sum1_2 = vmlaq_f32(_sum1_2, _inptr2, _ffilter2_2);
-              float32x4_t _sum2 = vmulq_f32(_inptr2, _ffilter1);
-              float32x4_t _sum2_2 = vmulq_f32(_inptr2, _ffilter1_2);
+              float32x4_t _in_ptr2 = vld1q_f32(in_ptr2);
+              float32x4_t _pad_filter2 = vld1q_f32(pad_filter2);
+              float32x4_t _pad_filter2_2 = vld1q_f32(pad_filter2_2);
+              _sum1 = vmlaq_f32(_sum1, _in_ptr2, _pad_filter2);
+              _sum1_2 = vmlaq_f32(_sum1_2, _in_ptr2, _pad_filter2_2);
+              float32x4_t _sum2 = vmulq_f32(_in_ptr2, _pad_filter1);
+              float32x4_t _sum2_2 = vmulq_f32(_in_ptr2, _pad_filter1_2);
 
-              float32x4_t _inptr3 = vld1q_f32(inptr3);
-              float32x4_t _ffilter3 = vld1q_f32(ffilter3);
-              float32x4_t _ffilter3_2 = vld1q_f32(ffilter3_2);
-              _sum1 = vmlaq_f32(_sum1, _inptr3, _ffilter3);
-              _sum1_2 = vmlaq_f32(_sum1_2, _inptr3, _ffilter3_2);
-              _sum2 = vmlaq_f32(_sum2, _inptr3, _ffilter2);
-              _sum2_2 = vmlaq_f32(_sum2_2, _inptr3, _ffilter2_2);
+              float32x4_t _in_ptr3 = vld1q_f32(in_ptr3);
+              float32x4_t _pad_filter3 = vld1q_f32(pad_filter3);
+              float32x4_t _pad_filter3_2 = vld1q_f32(pad_filter3_2);
+              _sum1 = vmlaq_f32(_sum1, _in_ptr3, _pad_filter3);
+              _sum1_2 = vmlaq_f32(_sum1_2, _in_ptr3, _pad_filter3_2);
+              _sum2 = vmlaq_f32(_sum2, _in_ptr3, _pad_filter2);
+              _sum2_2 = vmlaq_f32(_sum2_2, _in_ptr3, _pad_filter2_2);
 
-              float32x4_t _inptr4 = vld1q_f32(inptr4);
-              _sum2 = vmlaq_f32(_sum2, _inptr4, _ffilter3);
-              _sum2_2 = vmlaq_f32(_sum2_2, _inptr4, _ffilter3_2);
+              float32x4_t _in_ptr4 = vld1q_f32(in_ptr4);
+              _sum2 = vmlaq_f32(_sum2, _in_ptr4, _pad_filter3);
+              _sum2_2 = vmlaq_f32(_sum2_2, _in_ptr4, _pad_filter3_2);
 
               _sum1 = vsetq_lane_f32(sum1, _sum1, 3);
               _sum1_2 = vsetq_lane_f32(sum1_2, _sum1_2, 3);
@@ -836,76 +834,76 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
               sum2 += vget_lane_f32(_ssss1_ssss2, 1);
               sum2_2 += vget_lane_f32(_ssss1_2_ssss2_2, 1);
 #else
-              sum1 += inptr1[0] * ffilter1[0];
-              sum1 += inptr1[1] * ffilter1[1];
-              sum1 += inptr1[2] * ffilter1[2];
-              sum1 += inptr2[0] * ffilter2[0];
-              sum1 += inptr2[1] * ffilter2[1];
-              sum1 += inptr2[2] * ffilter2[2];
-              sum1 += inptr3[0] * ffilter3[0];
-              sum1 += inptr3[1] * ffilter3[1];
-              sum1 += inptr3[2] * ffilter3[2];
+              sum1 += in_ptr1[0] * pad_filter1[0];
+              sum1 += in_ptr1[1] * pad_filter1[1];
+              sum1 += in_ptr1[2] * pad_filter1[2];
+              sum1 += in_ptr2[0] * pad_filter2[0];
+              sum1 += in_ptr2[1] * pad_filter2[1];
+              sum1 += in_ptr2[2] * pad_filter2[2];
+              sum1 += in_ptr3[0] * pad_filter3[0];
+              sum1 += in_ptr3[1] * pad_filter3[1];
+              sum1 += in_ptr3[2] * pad_filter3[2];
 
-              sum2 += inptr2[0] * ffilter1[0];
-              sum2 += inptr2[1] * ffilter1[1];
-              sum2 += inptr2[2] * ffilter1[2];
-              sum2 += inptr3[0] * ffilter2[0];
-              sum2 += inptr3[1] * ffilter2[1];
-              sum2 += inptr3[2] * ffilter2[2];
-              sum2 += inptr4[0] * ffilter3[0];
-              sum2 += inptr4[1] * ffilter3[1];
-              sum2 += inptr4[2] * ffilter3[2];
+              sum2 += in_ptr2[0] * pad_filter1[0];
+              sum2 += in_ptr2[1] * pad_filter1[1];
+              sum2 += in_ptr2[2] * pad_filter1[2];
+              sum2 += in_ptr3[0] * pad_filter2[0];
+              sum2 += in_ptr3[1] * pad_filter2[1];
+              sum2 += in_ptr3[2] * pad_filter2[2];
+              sum2 += in_ptr4[0] * pad_filter3[0];
+              sum2 += in_ptr4[1] * pad_filter3[1];
+              sum2 += in_ptr4[2] * pad_filter3[2];
 
-              sum1_2 += inptr1[0] * ffilter1_2[0];
-              sum1_2 += inptr1[1] * ffilter1_2[1];
-              sum1_2 += inptr1[2] * ffilter1_2[2];
-              sum1_2 += inptr2[0] * ffilter2_2[0];
-              sum1_2 += inptr2[1] * ffilter2_2[1];
-              sum1_2 += inptr2[2] * ffilter2_2[2];
-              sum1_2 += inptr3[0] * ffilter3_2[0];
-              sum1_2 += inptr3[1] * ffilter3_2[1];
-              sum1_2 += inptr3[2] * ffilter3_2[2];
+              sum1_2 += in_ptr1[0] * pad_filter1_2[0];
+              sum1_2 += in_ptr1[1] * pad_filter1_2[1];
+              sum1_2 += in_ptr1[2] * pad_filter1_2[2];
+              sum1_2 += in_ptr2[0] * pad_filter2_2[0];
+              sum1_2 += in_ptr2[1] * pad_filter2_2[1];
+              sum1_2 += in_ptr2[2] * pad_filter2_2[2];
+              sum1_2 += in_ptr3[0] * pad_filter3_2[0];
+              sum1_2 += in_ptr3[1] * pad_filter3_2[1];
+              sum1_2 += in_ptr3[2] * pad_filter3_2[2];
 
-              sum2_2 += inptr2[0] * ffilter1_2[0];
-              sum2_2 += inptr2[1] * ffilter1_2[1];
-              sum2_2 += inptr2[2] * ffilter1_2[2];
-              sum2_2 += inptr3[0] * ffilter2_2[0];
-              sum2_2 += inptr3[1] * ffilter2_2[1];
-              sum2_2 += inptr3[2] * ffilter2_2[2];
-              sum2_2 += inptr4[0] * ffilter3_2[0];
-              sum2_2 += inptr4[1] * ffilter3_2[1];
-              sum2_2 += inptr4[2] * ffilter3_2[2];
+              sum2_2 += in_ptr2[0] * pad_filter1_2[0];
+              sum2_2 += in_ptr2[1] * pad_filter1_2[1];
+              sum2_2 += in_ptr2[2] * pad_filter1_2[2];
+              sum2_2 += in_ptr3[0] * pad_filter2_2[0];
+              sum2_2 += in_ptr3[1] * pad_filter2_2[1];
+              sum2_2 += in_ptr3[2] * pad_filter2_2[2];
+              sum2_2 += in_ptr4[0] * pad_filter3_2[0];
+              sum2_2 += in_ptr4[1] * pad_filter3_2[1];
+              sum2_2 += in_ptr4[2] * pad_filter3_2[2];
 #endif
             } else {
 #if __ARM_NEON
-              float32x4_t _inptr1 = vld1q_f32(inptr1);
-              float32x4_t _ffilter1 = vld1q_f32(ffilter1);
-              float32x4_t _ffilter1_2 = vld1q_f32(ffilter1_2);
-              float32x4_t _ffilter0 = vld1q_f32(ffilter0);
-              float32x4_t _ffilter0_2 = vld1q_f32(ffilter0_2);
+              float32x4_t _in_ptr1 = vld1q_f32(in_ptr1);
+              float32x4_t _pad_filter1 = vld1q_f32(pad_filter1);
+              float32x4_t _pad_filter1_2 = vld1q_f32(pad_filter1_2);
+              float32x4_t _pad_filter0 = vld1q_f32(pad_filter0);
+              float32x4_t _pad_filter0_2 = vld1q_f32(pad_filter0_2);
 
-              float32x4_t _sum1 = vmulq_f32(_inptr1, _ffilter1);
-              float32x4_t _sum1_2 = vmulq_f32(_inptr1, _ffilter1_2);
-              float32x4_t _sum2 = vmulq_f32(_inptr1, _ffilter0);
-              float32x4_t _sum2_2 = vmulq_f32(_inptr1, _ffilter0_2);
+              float32x4_t _sum1 = vmulq_f32(_in_ptr1, _pad_filter1);
+              float32x4_t _sum1_2 = vmulq_f32(_in_ptr1, _pad_filter1_2);
+              float32x4_t _sum2 = vmulq_f32(_in_ptr1, _pad_filter0);
+              float32x4_t _sum2_2 = vmulq_f32(_in_ptr1, _pad_filter0_2);
 
-              float32x4_t _inptr2 = vld1q_f32(inptr2);
-              float32x4_t _ffilter2 = vld1q_f32(ffilter2);
-              float32x4_t _ffilter2_2 = vld1q_f32(ffilter2_2);
+              float32x4_t _in_ptr2 = vld1q_f32(in_ptr2);
+              float32x4_t _pad_filter2 = vld1q_f32(pad_filter2);
+              float32x4_t _pad_filter2_2 = vld1q_f32(pad_filter2_2);
 
-              _sum1 = vmlaq_f32(_sum1, _inptr2, _ffilter2);
-              _sum1_2 = vmlaq_f32(_sum1_2, _inptr2, _ffilter2_2);
-              _sum2 = vmlaq_f32(_sum2, _inptr2, _ffilter1);
-              _sum2_2 = vmlaq_f32(_sum2_2, _inptr2, _ffilter1_2);
+              _sum1 = vmlaq_f32(_sum1, _in_ptr2, _pad_filter2);
+              _sum1_2 = vmlaq_f32(_sum1_2, _in_ptr2, _pad_filter2_2);
+              _sum2 = vmlaq_f32(_sum2, _in_ptr2, _pad_filter1);
+              _sum2_2 = vmlaq_f32(_sum2_2, _in_ptr2, _pad_filter1_2);
 
-              float32x4_t _inptr3 = vld1q_f32(inptr3);
-              float32x4_t _ffilter3 = vld1q_f32(ffilter3);
-              float32x4_t _ffilter3_2 = vld1q_f32(ffilter3_2);
+              float32x4_t _in_ptr3 = vld1q_f32(in_ptr3);
+              float32x4_t _pad_filter3 = vld1q_f32(pad_filter3);
+              float32x4_t _pad_filter3_2 = vld1q_f32(pad_filter3_2);
 
-              _sum1 = vmlaq_f32(_sum1, _inptr3, _ffilter3);
-              _sum1_2 = vmlaq_f32(_sum1_2, _inptr3, _ffilter3_2);
-              _sum2 = vmlaq_f32(_sum2, _inptr3, _ffilter2);
-              _sum2_2 = vmlaq_f32(_sum2_2, _inptr3, _ffilter2_2);
+              _sum1 = vmlaq_f32(_sum1, _in_ptr3, _pad_filter3);
+              _sum1_2 = vmlaq_f32(_sum1_2, _in_ptr3, _pad_filter3_2);
+              _sum2 = vmlaq_f32(_sum2, _in_ptr3, _pad_filter2);
+              _sum2_2 = vmlaq_f32(_sum2_2, _in_ptr3, _pad_filter2_2);
 
               _sum1 = vsetq_lane_f32(sum1, _sum1, 3);
               _sum1_2 = vsetq_lane_f32(sum1_2, _sum1_2, 3);
@@ -928,167 +926,168 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
               sum2 += vget_lane_f32(_ssss1_ssss2, 1);
               sum2_2 += vget_lane_f32(_ssss1_2_ssss2_2, 1);
 #else
-              sum1 += inptr1[0] * ffilter1[0];
-              sum1 += inptr1[1] * ffilter1[1];
-              sum1 += inptr1[2] * ffilter1[2];
-              sum1 += inptr2[0] * ffilter2[0];
-              sum1 += inptr2[1] * ffilter2[1];
-              sum1 += inptr2[2] * ffilter2[2];
-              sum1 += inptr3[0] * ffilter3[0];
-              sum1 += inptr3[1] * ffilter3[1];
-              sum1 += inptr3[2] * ffilter3[2];
+              sum1 += in_ptr1[0] * pad_filter1[0];
+              sum1 += in_ptr1[1] * pad_filter1[1];
+              sum1 += in_ptr1[2] * pad_filter1[2];
+              sum1 += in_ptr2[0] * pad_filter2[0];
+              sum1 += in_ptr2[1] * pad_filter2[1];
+              sum1 += in_ptr2[2] * pad_filter2[2];
+              sum1 += in_ptr3[0] * pad_filter3[0];
+              sum1 += in_ptr3[1] * pad_filter3[1];
+              sum1 += in_ptr3[2] * pad_filter3[2];
 
-              sum2 += inptr1[0] * ffilter0[0];
-              sum2 += inptr1[1] * ffilter0[1];
-              sum2 += inptr1[2] * ffilter0[2];
-              sum2 += inptr2[0] * ffilter1[0];
-              sum2 += inptr2[1] * ffilter1[1];
-              sum2 += inptr2[2] * ffilter1[2];
-              sum2 += inptr3[0] * ffilter2[0];
-              sum2 += inptr3[1] * ffilter2[1];
-              sum2 += inptr3[2] * ffilter2[2];
+              sum2 += in_ptr1[0] * pad_filter0[0];
+              sum2 += in_ptr1[1] * pad_filter0[1];
+              sum2 += in_ptr1[2] * pad_filter0[2];
+              sum2 += in_ptr2[0] * pad_filter1[0];
+              sum2 += in_ptr2[1] * pad_filter1[1];
+              sum2 += in_ptr2[2] * pad_filter1[2];
+              sum2 += in_ptr3[0] * pad_filter2[0];
+              sum2 += in_ptr3[1] * pad_filter2[1];
+              sum2 += in_ptr3[2] * pad_filter2[2];
 
-              sum1_2 += inptr1[0] * ffilter1_2[0];
-              sum1_2 += inptr1[1] * ffilter1_2[1];
-              sum1_2 += inptr1[2] * ffilter1_2[2];
-              sum1_2 += inptr2[0] * ffilter2_2[0];
-              sum1_2 += inptr2[1] * ffilter2_2[1];
-              sum1_2 += inptr2[2] * ffilter2_2[2];
-              sum1_2 += inptr3[0] * ffilter3_2[0];
-              sum1_2 += inptr3[1] * ffilter3_2[1];
-              sum1_2 += inptr3[2] * ffilter3_2[2];
+              sum1_2 += in_ptr1[0] * pad_filter1_2[0];
+              sum1_2 += in_ptr1[1] * pad_filter1_2[1];
+              sum1_2 += in_ptr1[2] * pad_filter1_2[2];
+              sum1_2 += in_ptr2[0] * pad_filter2_2[0];
+              sum1_2 += in_ptr2[1] * pad_filter2_2[1];
+              sum1_2 += in_ptr2[2] * pad_filter2_2[2];
+              sum1_2 += in_ptr3[0] * pad_filter3_2[0];
+              sum1_2 += in_ptr3[1] * pad_filter3_2[1];
+              sum1_2 += in_ptr3[2] * pad_filter3_2[2];
 
-              sum2_2 += inptr1[0] * ffilter0_2[0];
-              sum2_2 += inptr1[1] * ffilter0_2[1];
-              sum2_2 += inptr1[2] * ffilter0_2[2];
-              sum2_2 += inptr2[0] * ffilter1_2[0];
-              sum2_2 += inptr2[1] * ffilter1_2[1];
-              sum2_2 += inptr2[2] * ffilter1_2[2];
-              sum2_2 += inptr3[0] * ffilter2_2[0];
-              sum2_2 += inptr3[1] * ffilter2_2[1];
-              sum2_2 += inptr3[2] * ffilter2_2[2];
+              sum2_2 += in_ptr1[0] * pad_filter0_2[0];
+              sum2_2 += in_ptr1[1] * pad_filter0_2[1];
+              sum2_2 += in_ptr1[2] * pad_filter0_2[2];
+              sum2_2 += in_ptr2[0] * pad_filter1_2[0];
+              sum2_2 += in_ptr2[1] * pad_filter1_2[1];
+              sum2_2 += in_ptr2[2] * pad_filter1_2[2];
+              sum2_2 += in_ptr3[0] * pad_filter2_2[0];
+              sum2_2 += in_ptr3[1] * pad_filter2_2[1];
+              sum2_2 += in_ptr3[2] * pad_filter2_2[2];
 #endif
             }
-            if (!isnopadding &&
-                (ow < padding_width || ow > output_width - padding_width - 2)) {
-              ffilter0--;
-              ffilter1--;
-              ffilter2--;
-              ffilter3--;
+            if (!if_nopadding &&
+                (o_w < padding_w || o_w > output_w - padding_w - 2)) {
+              pad_filter0--;
+              pad_filter1--;
+              pad_filter2--;
+              pad_filter3--;
 
-              ffilter0_2--;
-              ffilter1_2--;
-              ffilter2_2--;
-              ffilter3_2--;
+              pad_filter0_2--;
+              pad_filter1_2--;
+              pad_filter2_2--;
+              pad_filter3_2--;
             } else {
-              inptr1++;
-              inptr2++;
-              inptr3++;
-              inptr4++;
+              in_ptr1++;
+              in_ptr2++;
+              in_ptr3++;
+              in_ptr4++;
             }
-            *outptr1 += sum1;
-            *outptr2 += sum2;
-            *outptr1_2 += sum1_2;
-            *outptr2_2 += sum2_2;
-            if (outptr1[0] < reluvalue) {
-              *outptr1 = reluvalue;
+            *out_ptr1 += sum1;
+            *out_ptr2 += sum2;
+            *out_ptr1_2 += sum1_2;
+            *out_ptr2_2 += sum2_2;
+            if (out_ptr1[0] < relu_value) {
+              *out_ptr1 = relu_value;
             }
-            if (outptr2[0] < reluvalue) {
-              *outptr2 = reluvalue;
+            if (out_ptr2[0] < relu_value) {
+              *out_ptr2 = relu_value;
             }
-            if (outptr1_2[0] < reluvalue) {
-              *outptr1_2 = reluvalue;
+            if (out_ptr1_2[0] < relu_value) {
+              *out_ptr1_2 = relu_value;
             }
-            if (outptr2_2[0] < reluvalue) {
-              *outptr2_2 = reluvalue;
+            if (out_ptr2_2[0] < relu_value) {
+              *out_ptr2_2 = relu_value;
             }
-            outptr1++;
-            outptr2++;
-            outptr1_2++;
-            outptr2_2++;
+            out_ptr1++;
+            out_ptr2++;
+            out_ptr1_2++;
+            out_ptr2_2++;
           }
-          if (isnopadding) {
-            inptr1 += 2 + input_width;
-            inptr2 += 2 + input_width;
-            inptr3 += 2 + input_width;
-            inptr4 += 2 + input_width;
-          } else if (oh == padding_height - 1 ||
-                     oh == output_height - padding_height - 2) {
-            inptr1 += 3;
-            inptr2 += 3;
-            inptr3 += 3;
-            inptr4 += 3;
+          if (if_nopadding) {
+            in_ptr1 += 2 + input_w;
+            in_ptr2 += 2 + input_w;
+            in_ptr3 += 2 + input_w;
+            in_ptr4 += 2 + input_w;
+          } else if (o_h == padding_h - 1 || o_h == output_h - padding_h - 2) {
+            in_ptr1 += 3;
+            in_ptr2 += 3;
+            in_ptr3 += 3;
+            in_ptr4 += 3;
 
-            ffilter0 -= 2;
-            ffilter1 -= 2;
-            ffilter2 -= 2;
-            ffilter3 -= 2;
+            pad_filter0 -= 2;
+            pad_filter1 -= 2;
+            pad_filter2 -= 2;
+            pad_filter3 -= 2;
 
-            ffilter0_2 -= 2;
-            ffilter1_2 -= 2;
-            ffilter2_2 -= 2;
-            ffilter3_2 -= 2;
+            pad_filter0_2 -= 2;
+            pad_filter1_2 -= 2;
+            pad_filter2_2 -= 2;
+            pad_filter3_2 -= 2;
 
           } else if (issamefilter) {
-            inptr1 += 3 + input_width;
-            inptr2 += 3 + input_width;
-            inptr3 += 3 + input_width;
-            inptr4 += 3 + input_width;
+            in_ptr1 += 3 + input_w;
+            in_ptr2 += 3 + input_w;
+            in_ptr3 += 3 + input_w;
+            in_ptr4 += 3 + input_w;
 
-            ffilter0 += 2 * padding_width + 1;
-            ffilter1 += 2 * padding_width + 1;
-            ffilter2 += 2 * padding_width + 1;
-            ffilter3 += 2 * padding_width + 1;
+            pad_filter0 += 2 * padding_w + 1;
+            pad_filter1 += 2 * padding_w + 1;
+            pad_filter2 += 2 * padding_w + 1;
+            pad_filter3 += 2 * padding_w + 1;
 
-            ffilter0_2 += 2 * padding_width + 1;
-            ffilter1_2 += 2 * padding_width + 1;
-            ffilter2_2 += 2 * padding_width + 1;
-            ffilter3_2 += 2 * padding_width + 1;
+            pad_filter0_2 += 2 * padding_w + 1;
+            pad_filter1_2 += 2 * padding_w + 1;
+            pad_filter2_2 += 2 * padding_w + 1;
+            pad_filter3_2 += 2 * padding_w + 1;
 
           } else {
-            ffilter0 -= 3 + 2 * padding_width + 2;
-            ffilter1 -= 3 + 2 * padding_width + 2;
-            ffilter2 -= 3 + 2 * padding_width + 2;
-            ffilter3 -= 3 + 2 * padding_width + 2;
+            pad_filter0 -= 3 + 2 * padding_w + 2;
+            pad_filter1 -= 3 + 2 * padding_w + 2;
+            pad_filter2 -= 3 + 2 * padding_w + 2;
+            pad_filter3 -= 3 + 2 * padding_w + 2;
 
-            ffilter0_2 -= 3 + 2 * padding_width + 2;
-            ffilter1_2 -= 3 + 2 * padding_width + 2;
-            ffilter2_2 -= 3 + 2 * padding_width + 2;
-            ffilter3_2 -= 3 + 2 * padding_width + 2;
+            pad_filter0_2 -= 3 + 2 * padding_w + 2;
+            pad_filter1_2 -= 3 + 2 * padding_w + 2;
+            pad_filter2_2 -= 3 + 2 * padding_w + 2;
+            pad_filter3_2 -= 3 + 2 * padding_w + 2;
 
-            inptr1 -= input_width - 3;
-            inptr2 -= input_width - 3;
-            inptr3 -= input_width - 3;
-            inptr4 -= input_width - 3;
+            in_ptr1 -= input_w - 3;
+            in_ptr2 -= input_w - 3;
+            in_ptr3 -= input_w - 3;
+            in_ptr4 -= input_w - 3;
           }
-          outptr1 += output_width;
-          outptr2 += output_width;
-          outptr1_2 += output_width;
-          outptr2_2 += output_width;
+          out_ptr1 += output_w;
+          out_ptr2 += output_w;
+          out_ptr1_2 += output_w;
+          out_ptr2_2 += output_w;
         }
-        for (; oh < output_height; ++oh) {
-          int ow = 0;
-          for (; ow < padding_width; ++ow) {
+        // remain output_height
+        for (; o_h < output_h; ++o_h) {
+          int o_w = 0;
+          // pad left
+          for (; o_w < padding_w; ++o_w) {
             float sum1 = 0;
             float sum1_2 = 0;
 #if __ARM_NEON
-            float32x4_t _inptr1 = vld1q_f32(inptr1);
-            float32x4_t _ffilter1 = vld1q_f32(ffilter1);
-            float32x4_t _ffilter1_2 = vld1q_f32(ffilter1_2);
-            float32x4_t _sum1 = vmulq_f32(_inptr1, _ffilter1);
-            float32x4_t _sum1_2 = vmulq_f32(_inptr1, _ffilter1_2);
+            float32x4_t _in_ptr1 = vld1q_f32(in_ptr1);
+            float32x4_t _pad_filter1 = vld1q_f32(pad_filter1);
+            float32x4_t _pad_filter1_2 = vld1q_f32(pad_filter1_2);
+            float32x4_t _sum1 = vmulq_f32(_in_ptr1, _pad_filter1);
+            float32x4_t _sum1_2 = vmulq_f32(_in_ptr1, _pad_filter1_2);
 
-            float32x4_t _inptr2 = vld1q_f32(inptr2);
-            float32x4_t _ffilter2 = vld1q_f32(ffilter2);
-            float32x4_t _ffilter2_2 = vld1q_f32(ffilter2_2);
-            _sum1 = vmlaq_f32(_sum1, _inptr2, _ffilter2);
-            _sum1_2 = vmlaq_f32(_sum1_2, _inptr2, _ffilter2_2);
+            float32x4_t _in_ptr2 = vld1q_f32(in_ptr2);
+            float32x4_t _pad_filter2 = vld1q_f32(pad_filter2);
+            float32x4_t _pad_filter2_2 = vld1q_f32(pad_filter2_2);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr2, _pad_filter2);
+            _sum1_2 = vmlaq_f32(_sum1_2, _in_ptr2, _pad_filter2_2);
 
-            float32x4_t _inptr3 = vld1q_f32(inptr3);
-            float32x4_t _ffilter3 = vld1q_f32(ffilter3);
-            float32x4_t _ffilter3_2 = vld1q_f32(ffilter3_2);
-            _sum1 = vmlaq_f32(_sum1, _inptr3, _ffilter3);
-            _sum1_2 = vmlaq_f32(_sum1_2, _inptr3, _ffilter3_2);
+            float32x4_t _in_ptr3 = vld1q_f32(in_ptr3);
+            float32x4_t _pad_filter3 = vld1q_f32(pad_filter3);
+            float32x4_t _pad_filter3_2 = vld1q_f32(pad_filter3_2);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr3, _pad_filter3);
+            _sum1_2 = vmlaq_f32(_sum1_2, _in_ptr3, _pad_filter3_2);
 
             _sum1 = vsetq_lane_f32(sum1, _sum1, 3);
             _sum1_2 = vsetq_lane_f32(sum1_2, _sum1_2, 3);
@@ -1102,62 +1101,63 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
             sum1 += vget_lane_f32(_ssss1_ssss1_2, 0);
             sum1_2 += vget_lane_f32(_ssss1_ssss1_2, 1);
 #else
-            sum1 += inptr1[0] * ffilter1[0];
-            sum1 += inptr1[1] * ffilter1[1];
-            sum1 += inptr1[2] * ffilter1[2];
-            sum1 += inptr2[0] * ffilter2[0];
-            sum1 += inptr2[1] * ffilter2[1];
-            sum1 += inptr2[2] * ffilter2[2];
-            sum1 += inptr3[0] * ffilter3[0];
-            sum1 += inptr3[1] * ffilter3[1];
-            sum1 += inptr3[2] * ffilter3[2];
+            sum1 += in_ptr1[0] * pad_filter1[0];
+            sum1 += in_ptr1[1] * pad_filter1[1];
+            sum1 += in_ptr1[2] * pad_filter1[2];
+            sum1 += in_ptr2[0] * pad_filter2[0];
+            sum1 += in_ptr2[1] * pad_filter2[1];
+            sum1 += in_ptr2[2] * pad_filter2[2];
+            sum1 += in_ptr3[0] * pad_filter3[0];
+            sum1 += in_ptr3[1] * pad_filter3[1];
+            sum1 += in_ptr3[2] * pad_filter3[2];
 
-            sum1_2 += inptr1[0] * ffilter1_2[0];
-            sum1_2 += inptr1[1] * ffilter1_2[1];
-            sum1_2 += inptr1[2] * ffilter1_2[2];
-            sum1_2 += inptr2[0] * ffilter2_2[0];
-            sum1_2 += inptr2[1] * ffilter2_2[1];
-            sum1_2 += inptr2[2] * ffilter2_2[2];
-            sum1_2 += inptr3[0] * ffilter3_2[0];
-            sum1_2 += inptr3[1] * ffilter3_2[1];
-            sum1_2 += inptr3[2] * ffilter3_2[2];
+            sum1_2 += in_ptr1[0] * pad_filter1_2[0];
+            sum1_2 += in_ptr1[1] * pad_filter1_2[1];
+            sum1_2 += in_ptr1[2] * pad_filter1_2[2];
+            sum1_2 += in_ptr2[0] * pad_filter2_2[0];
+            sum1_2 += in_ptr2[1] * pad_filter2_2[1];
+            sum1_2 += in_ptr2[2] * pad_filter2_2[2];
+            sum1_2 += in_ptr3[0] * pad_filter3_2[0];
+            sum1_2 += in_ptr3[1] * pad_filter3_2[1];
+            sum1_2 += in_ptr3[2] * pad_filter3_2[2];
 #endif
-            if (!isnopadding &&
-                (ow < padding_width || ow > output_width - padding_width - 2)) {
-              ffilter0--;
-              ffilter1--;
-              ffilter2--;
-              ffilter3--;
+            if (!if_nopadding &&
+                (o_w < padding_w || o_w > output_w - padding_w - 2)) {
+              pad_filter0--;
+              pad_filter1--;
+              pad_filter2--;
+              pad_filter3--;
 
-              ffilter0_2--;
-              ffilter1_2--;
-              ffilter2_2--;
-              ffilter3_2--;
+              pad_filter0_2--;
+              pad_filter1_2--;
+              pad_filter2_2--;
+              pad_filter3_2--;
             } else {
-              inptr1++;
-              inptr2++;
-              inptr3++;
-              inptr4++;
+              in_ptr1++;
+              in_ptr2++;
+              in_ptr3++;
+              in_ptr4++;
             }
-            *outptr1 += sum1;
-            *outptr1_2 += sum1_2;
+            *out_ptr1 += sum1;
+            *out_ptr1_2 += sum1_2;
 
-            if (outptr1[0] < reluvalue) {
-              *outptr1 = reluvalue;
+            if (out_ptr1[0] < relu_value) {
+              *out_ptr1 = relu_value;
             }
-            if (outptr1_2[0] < reluvalue) {
-              *outptr1_2 = reluvalue;
+            if (out_ptr1_2[0] < relu_value) {
+              *out_ptr1_2 = relu_value;
             }
-            outptr1++;
-            outptr1_2++;
+            out_ptr1++;
+            out_ptr1_2++;
           }
+            // valid
 #if __ARM_NEON
 #if __aarch64__
-          if (isnopadding) {
-            int ow_dim4 = (output_width - 2 * padding_width) >> 2;
-            ow += ow_dim4 * 4;
+          if (if_nopadding) {
+            int o_w_dim4 = (output_w - 2 * padding_w) >> 2;
+            o_w += o_w_dim4 * 4;
 
-            if (ow_dim4 > 0) {
+            if (o_w_dim4 > 0) {
               asm volatile(
                   "prfm   pldl1keep, [%[f1], #256]          \n\t"
                   "prfm   pldl1keep, [%[f1_2], #256]        \n\t"
@@ -1176,17 +1176,17 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "sub        %[f1_2],%[f1_2], #32          \n\t"
 
                   "0:                                       \n\t"
-                  // load outptr
-                  "prfm   pldl1keep, [%[outptr1], #128]     \n\t"
-                  "prfm   pldl1keep, [%[outptr1_2], #128]   \n\t"
+                  // load out_ptr
+                  "prfm   pldl1keep, [%[out_ptr1], #128]    \n\t"
+                  "prfm   pldl1keep, [%[out_ptr1_2], #128]  \n\t"
 
-                  "ld1   {v12.4s}, [%[outptr1]]             \n\t"
-                  "ld1   {v13.4s}, [%[outptr1_2]]           \n\t"
+                  "ld1   {v12.4s}, [%[out_ptr1]]            \n\t"
+                  "ld1   {v13.4s}, [%[out_ptr1_2]]          \n\t"
 
-                  // inptr1 multiply
-                  "prfm   pldl1keep, [%[inptr1], #192]      \n\t"
-                  "ld1   {v5.4s, v6.4s}, [%[inptr1]]        \n\t"
-                  "add        %[inptr1],%[inptr1], #16      \n\t"
+                  // in_ptr1 multiply
+                  "prfm   pldl1keep, [%[in_ptr1], #192]     \n\t"
+                  "ld1   {v5.4s, v6.4s}, [%[in_ptr1]]       \n\t"
+                  "add        %[in_ptr1],%[in_ptr1], #16    \n\t"
 
                   "ext    v8.16b, v5.16b, v6.16b, #4        \n\t"
                   "fmla   v12.4s, v5.4s, v0.4s[0]           \n\t"
@@ -1196,12 +1196,12 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "fmla   v12.4s, v8.4s, v0.4s[1]           \n\t"
                   "fmla   v13.4s, v8.4s, v2.4s[1]           \n\t"
 
-                  "ld1   {v5.4s, v6.4s}, [%[inptr2]]        \n\t"
-                  "add        %[inptr2],%[inptr2], #16      \n\t"
+                  "ld1   {v5.4s, v6.4s}, [%[in_ptr2]]       \n\t"
+                  "add        %[in_ptr2],%[in_ptr2], #16    \n\t"
                   "fmla   v12.4s, v10.4s, v0.4s[2]          \n\t"
                   "fmla   v13.4s, v10.4s, v2.4s[2]          \n\t"
 
-                  // inptr2 multiply
+                  // in_ptr2 multiply
                   "ext    v8.16b,  v5.16b, v6.16b, #4       \n\t"
                   "fmla   v12.4s, v5.4s, v0.4s[3]           \n\t"
                   "fmla   v13.4s, v5.4s, v2.4s[3]           \n\t"
@@ -1210,15 +1210,15 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "fmla   v12.4s, v8.4s, v1.4s[0]           \n\t"
                   "fmla   v13.4s, v8.4s, v3.4s[0]           \n\t"
 
-                  "ld1   {v6.d}[1], [%[inptr3]]             \n\t"
-                  "add        %[inptr3],%[inptr3], #8       \n\t"
-                  "ld1   {v7.4s}, [%[inptr3]]               \n\t"
-                  "add        %[inptr3],%[inptr3], #8       \n\t"
+                  "ld1   {v6.d}[1], [%[in_ptr3]]            \n\t"
+                  "add        %[in_ptr3],%[in_ptr3], #8     \n\t"
+                  "ld1   {v7.4s}, [%[in_ptr3]]              \n\t"
+                  "add        %[in_ptr3],%[in_ptr3], #8     \n\t"
 
                   "fmla   v12.4s, v9.4s, v1.4s[1]           \n\t"
                   "fmla   v13.4s, v9.4s, v3.4s[1]           \n\t"
 
-                  // inptr3 multiply
+                  // in_ptr3 multiply
                   "ext    v10.16b, v6.16b, v7.16b, #8       \n\t"
                   "fmla   v12.4s, v7.4s, v4.4s[0]           \n\t"
                   "fmla   v13.4s, v7.4s, v4.4s[1]           \n\t"
@@ -1230,33 +1230,33 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "fmla   v12.4s, v11.4s, v1.4s[3]          \n\t"
                   "fmla   v13.4s, v11.4s, v3.4s[3]          \n\t"
 
-                  // store outptr
+                  // store out_ptr
                   "fmax   v12.4s,v12.4s, v16.4s             \n\t"
                   "fmax   v13.4s,v13.4s, v16.4s             \n\t"
 
-                  "st1   {v12.4s}, [%[outptr1]], #16        \n\t"
-                  "st1   {v13.4s}, [%[outptr1_2]], #16      \n\t"
+                  "st1   {v12.4s}, [%[out_ptr1]], #16       \n\t"
+                  "st1   {v13.4s}, [%[out_ptr1_2]], #16     \n\t"
 
                   // cycle
-                  "subs       %[ow_dim4],%[ow_dim4], #1     \n\t"
+                  "subs       %[o_w_dim4],%[o_w_dim4], #1   \n\t"
                   "bne        0b                            \n\t"
 
-                  : [ow_dim4] "+r"(ow_dim4), [outptr1] "+r"(outptr1),
-                    [outptr2] "+r"(outptr2), [outptr1_2] "+r"(outptr1_2),
-                    [outptr2_2] "+r"(outptr2_2), [inptr1] "+r"(inptr1),
-                    [inptr2] "+r"(inptr2), [inptr3] "+r"(inptr3),
-                    [inptr4] "+r"(inptr4)
+                  : [o_w_dim4] "+r"(o_w_dim4), [out_ptr1] "+r"(out_ptr1),
+                    [out_ptr2] "+r"(out_ptr2), [out_ptr1_2] "+r"(out_ptr1_2),
+                    [out_ptr2_2] "+r"(out_ptr2_2), [in_ptr1] "+r"(in_ptr1),
+                    [in_ptr2] "+r"(in_ptr2), [in_ptr3] "+r"(in_ptr3),
+                    [in_ptr4] "+r"(in_ptr4)
                   : [f1] "r"(f1), [f1_2] "r"(f1_2), [reluptr] "r"(reluptr)
                   : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
                     "v8", "v9", "v10", "v11", "v12", "v13", "v16");
             }
           }
 #else
-          if (isnopadding) {
-            int ow_dim4 = (output_width - 2 * padding_width) >> 2;
-            ow += ow_dim4 * 4;
+          if (if_nopadding) {
+            int o_w_dim4 = (output_w - 2 * padding_w) >> 2;
+            o_w += o_w_dim4 * 4;
 
-            if (ow_dim4 > 0) {
+            if (o_w_dim4 > 0) {
               asm volatile(
                   "pld        [%[f1], #256]                 \n\t"
                   "pld        [%[f1_2], #256]               \n\t"
@@ -1275,49 +1275,49 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "sub        %[f1_2], #32                  \n\t"
 
                   "0:                                       \n\t"
-                  // load outptr
-                  "pld        [%[outptr1], #128]            \n\t"
-                  "pld        [%[outptr1_2], #128]          \n\t"
+                  // load out_ptr
+                  "pld        [%[out_ptr1], #128]           \n\t"
+                  "pld        [%[out_ptr1_2], #128]         \n\t"
 
-                  "vld1.f32   {d24, d25}, [%[outptr1]]      \n\t"
-                  "vld1.f32   {d26, d27}, [%[outptr1_2]]    \n\t"
+                  "vld1.f32   {d24, d25}, [%[out_ptr1]]     \n\t"
+                  "vld1.f32   {d26, d27}, [%[out_ptr1_2]]   \n\t"
 
-                  // inptr1 multiply
-                  "pld        [%[inptr1], #128]             \n\t"
+                  // in_ptr1 multiply
+                  "pld        [%[in_ptr1], #128]            \n\t"
 
-                  "vld1.f32   {d10-d12}, [%[inptr1]]        \n\t"
-                  "add        %[inptr1], #16                \n\t"
+                  "vld1.f32   {d10-d12}, [%[in_ptr1]]       \n\t"
+                  "add        %[in_ptr1], #16               \n\t"
                   "vext.32    q8, q5, q6, #1                \n\t"
 
-                  "pld        [%[inptr2], #128]             \n\t"
+                  "pld        [%[in_ptr2], #128]            \n\t"
                   "vmla.f32   q12, q5, d0[0]                \n\t"
                   "vmla.f32   q13, q5, d4[0]                \n\t"
 
                   "vext.32    q10, q5, q6, #2               \n\t"
-                  "vld1.f32   {d10-d12}, [%[inptr2]]        \n\t"
-                  "add        %[inptr2], #16                \n\t"
+                  "vld1.f32   {d10-d12}, [%[in_ptr2]]       \n\t"
+                  "add        %[in_ptr2], #16               \n\t"
                   "vmla.f32   q12, q8, d0[1]                \n\t"
                   "vmla.f32   q13, q8, d4[1]                \n\t"
 
                   "vmla.f32   q12, q10, d1[0]               \n\t"
                   "vmla.f32   q13, q10, d5[0]               \n\t"
 
-                  // inptr2 multiply
+                  // in_ptr2 multiply
                   "vext.32    q8, q5, q6, #1                \n\t"
-                  "pld        [%[inptr3], #128]            \n\t"
+                  "pld        [%[in_ptr3], #128]            \n\t"
                   "vmla.f32   q12, q5, d1[1]                \n\t"
                   "vmla.f32   q13, q5, d5[1]                \n\t"
 
                   "vext.32    q9, q5, q6, #2                \n\t"
-                  "vld1.f32   {d13-d15}, [%[inptr3]]        \n\t"
-                  "add        %[inptr3], #16                \n\t"
+                  "vld1.f32   {d13-d15}, [%[in_ptr3]]       \n\t"
+                  "add        %[in_ptr3], #16               \n\t"
                   "vmla.f32   q12, q8, d2[0]                \n\t"
                   "vmla.f32   q13, q8, d6[0]                \n\t"
 
                   "vmla.f32   q12, q9, d2[1]                \n\t"
                   "vmla.f32   q13, q9, d6[1]                \n\t"
 
-                  // inptr3 multiply
+                  // in_ptr3 multiply
                   "vext.32    q10, q6, q7, #2               \n\t"
                   "vmla.f32   q12, q7, d8[0]                \n\t"
                   "vmla.f32   q13, q7, d8[1]                \n\t"
@@ -1329,25 +1329,25 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "vmla.f32   q12, q11, d3[1]               \n\t"
                   "vmla.f32   q13, q11, d7[1]               \n\t"
 
-                  // store outptr
+                  // store out_ptr
                   "vmax.f32   d24, d24, d9                  \n\t"
                   "vmax.f32   d25, d25, d9                  \n\t"
 
                   "vmax.f32   d26, d26, d9                  \n\t"
                   "vmax.f32   d27, d27, d9                  \n\t"
 
-                  "subs       %[ow_dim4], #1                \n\t"
-                  "vst1.f32   {d24, d25}, [%[outptr1]]!     \n\t"
-                  "vst1.f32   {d26, d27}, [%[outptr1_2]]!   \n\t"
+                  "subs       %[o_w_dim4], #1               \n\t"
+                  "vst1.f32   {d24, d25}, [%[out_ptr1]]!    \n\t"
+                  "vst1.f32   {d26, d27}, [%[out_ptr1_2]]!  \n\t"
 
                   // cycle
-                  "bne        0b                              \n\t"
+                  "bne        0b                            \n\t"
 
-                  : [ow_dim4] "+r"(ow_dim4), [outptr1] "+r"(outptr1),
-                    [outptr2] "+r"(outptr2), [outptr1_2] "+r"(outptr1_2),
-                    [outptr2_2] "+r"(outptr2_2), [inptr1] "+r"(inptr1),
-                    [inptr2] "+r"(inptr2), [inptr3] "+r"(inptr3),
-                    [inptr4] "+r"(inptr4)
+                  : [o_w_dim4] "+r"(o_w_dim4), [out_ptr1] "+r"(out_ptr1),
+                    [out_ptr2] "+r"(out_ptr2), [out_ptr1_2] "+r"(out_ptr1_2),
+                    [out_ptr2_2] "+r"(out_ptr2_2), [in_ptr1] "+r"(in_ptr1),
+                    [in_ptr2] "+r"(in_ptr2), [in_ptr3] "+r"(in_ptr3),
+                    [in_ptr4] "+r"(in_ptr4)
                   : [f1] "r"(f1), [f1_2] "r"(f1_2), [reluptr] "r"(reluptr)
                   : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
                     "q8", "q9", "q10", "q11", "q12", "q13");
@@ -1357,27 +1357,28 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
 #endif  //__aarch64__
 #endif  // __ARM_NEON
 
-          for (; ow < output_width; ++ow) {
+          // remain output_width
+          for (; o_w < output_w; ++o_w) {
             float sum1 = 0;
             float sum1_2 = 0;
 #if __ARM_NEON
-            float32x4_t _inptr1 = vld1q_f32(inptr1);
-            float32x4_t _ffilter1 = vld1q_f32(ffilter1);
-            float32x4_t _ffilter1_2 = vld1q_f32(ffilter1_2);
-            float32x4_t _sum1 = vmulq_f32(_inptr1, _ffilter1);
-            float32x4_t _sum1_2 = vmulq_f32(_inptr1, _ffilter1_2);
+            float32x4_t _in_ptr1 = vld1q_f32(in_ptr1);
+            float32x4_t _pad_filter1 = vld1q_f32(pad_filter1);
+            float32x4_t _pad_filter1_2 = vld1q_f32(pad_filter1_2);
+            float32x4_t _sum1 = vmulq_f32(_in_ptr1, _pad_filter1);
+            float32x4_t _sum1_2 = vmulq_f32(_in_ptr1, _pad_filter1_2);
 
-            float32x4_t _inptr2 = vld1q_f32(inptr2);
-            float32x4_t _ffilter2 = vld1q_f32(ffilter2);
-            float32x4_t _ffilter2_2 = vld1q_f32(ffilter2_2);
-            _sum1 = vmlaq_f32(_sum1, _inptr2, _ffilter2);
-            _sum1_2 = vmlaq_f32(_sum1_2, _inptr2, _ffilter2_2);
+            float32x4_t _in_ptr2 = vld1q_f32(in_ptr2);
+            float32x4_t _pad_filter2 = vld1q_f32(pad_filter2);
+            float32x4_t _pad_filter2_2 = vld1q_f32(pad_filter2_2);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr2, _pad_filter2);
+            _sum1_2 = vmlaq_f32(_sum1_2, _in_ptr2, _pad_filter2_2);
 
-            float32x4_t _inptr3 = vld1q_f32(inptr3);
-            float32x4_t _ffilter3 = vld1q_f32(ffilter3);
-            float32x4_t _ffilter3_2 = vld1q_f32(ffilter3_2);
-            _sum1 = vmlaq_f32(_sum1, _inptr3, _ffilter3);
-            _sum1_2 = vmlaq_f32(_sum1_2, _inptr3, _ffilter3_2);
+            float32x4_t _in_ptr3 = vld1q_f32(in_ptr3);
+            float32x4_t _pad_filter3 = vld1q_f32(pad_filter3);
+            float32x4_t _pad_filter3_2 = vld1q_f32(pad_filter3_2);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr3, _pad_filter3);
+            _sum1_2 = vmlaq_f32(_sum1_2, _in_ptr3, _pad_filter3_2);
 
             _sum1 = vsetq_lane_f32(sum1, _sum1, 3);
             _sum1_2 = vsetq_lane_f32(sum1_2, _sum1_2, 3);
@@ -1391,153 +1392,153 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
             sum1 += vget_lane_f32(_ssss1_ssss1_2, 0);
             sum1_2 += vget_lane_f32(_ssss1_ssss1_2, 1);
 #else
-            sum1 += inptr1[0] * ffilter1[0];
-            sum1 += inptr1[1] * ffilter1[1];
-            sum1 += inptr1[2] * ffilter1[2];
-            sum1 += inptr2[0] * ffilter2[0];
-            sum1 += inptr2[1] * ffilter2[1];
-            sum1 += inptr2[2] * ffilter2[2];
-            sum1 += inptr3[0] * ffilter3[0];
-            sum1 += inptr3[1] * ffilter3[1];
-            sum1 += inptr3[2] * ffilter3[2];
+            sum1 += in_ptr1[0] * pad_filter1[0];
+            sum1 += in_ptr1[1] * pad_filter1[1];
+            sum1 += in_ptr1[2] * pad_filter1[2];
+            sum1 += in_ptr2[0] * pad_filter2[0];
+            sum1 += in_ptr2[1] * pad_filter2[1];
+            sum1 += in_ptr2[2] * pad_filter2[2];
+            sum1 += in_ptr3[0] * pad_filter3[0];
+            sum1 += in_ptr3[1] * pad_filter3[1];
+            sum1 += in_ptr3[2] * pad_filter3[2];
 
-            sum1_2 += inptr1[0] * ffilter1_2[0];
-            sum1_2 += inptr1[1] * ffilter1_2[1];
-            sum1_2 += inptr1[2] * ffilter1_2[2];
-            sum1_2 += inptr2[0] * ffilter2_2[0];
-            sum1_2 += inptr2[1] * ffilter2_2[1];
-            sum1_2 += inptr2[2] * ffilter2_2[2];
-            sum1_2 += inptr3[0] * ffilter3_2[0];
-            sum1_2 += inptr3[1] * ffilter3_2[1];
-            sum1_2 += inptr3[2] * ffilter3_2[2];
+            sum1_2 += in_ptr1[0] * pad_filter1_2[0];
+            sum1_2 += in_ptr1[1] * pad_filter1_2[1];
+            sum1_2 += in_ptr1[2] * pad_filter1_2[2];
+            sum1_2 += in_ptr2[0] * pad_filter2_2[0];
+            sum1_2 += in_ptr2[1] * pad_filter2_2[1];
+            sum1_2 += in_ptr2[2] * pad_filter2_2[2];
+            sum1_2 += in_ptr3[0] * pad_filter3_2[0];
+            sum1_2 += in_ptr3[1] * pad_filter3_2[1];
+            sum1_2 += in_ptr3[2] * pad_filter3_2[2];
 #endif
-            if (!isnopadding &&
-                (ow < padding_width || ow > output_width - padding_width - 2)) {
-              ffilter0--;
-              ffilter1--;
-              ffilter2--;
-              ffilter3--;
+            if (!if_nopadding &&
+                (o_w < padding_w || o_w > output_w - padding_w - 2)) {
+              pad_filter0--;
+              pad_filter1--;
+              pad_filter2--;
+              pad_filter3--;
 
-              ffilter0_2--;
-              ffilter1_2--;
-              ffilter2_2--;
-              ffilter3_2--;
+              pad_filter0_2--;
+              pad_filter1_2--;
+              pad_filter2_2--;
+              pad_filter3_2--;
             } else {
-              inptr1++;
-              inptr2++;
-              inptr3++;
-              inptr4++;
+              in_ptr1++;
+              in_ptr2++;
+              in_ptr3++;
+              in_ptr4++;
             }
-            *outptr1 += sum1;
-            *outptr1_2 += sum1_2;
+            *out_ptr1 += sum1;
+            *out_ptr1_2 += sum1_2;
 
-            if (outptr1[0] < reluvalue) {
-              *outptr1 = reluvalue;
+            if (out_ptr1[0] < relu_value) {
+              *out_ptr1 = relu_value;
             }
-            if (outptr1_2[0] < reluvalue) {
-              *outptr1_2 = reluvalue;
+            if (out_ptr1_2[0] < relu_value) {
+              *out_ptr1_2 = relu_value;
             }
-            outptr1++;
-            outptr1_2++;
+            out_ptr1++;
+            out_ptr1_2++;
           }
-          outptr1 += output_width;
-          outptr1_2 += output_width;
+          out_ptr1 += output_w;
+          out_ptr1_2 += output_w;
         }
-        filter_data_ch += filter_channel_stride;
-        filter_data_ch_2 += filter_channel_stride;
-        input_data_ch += input_channel_stride;
+        filter_data_ch += filter_ch_size;
+        filter_data_ch_2 += filter_ch_size;
+        input_data_ch += in_ch_size;
       }
     }
-    int output_channels_left = output_channels_d2 * 2;
-    for (int oc = output_channels_left; oc < output_channels; ++oc) {
-      std::atomic<float> reluvalue{0};
+    int out_ch_remain = output_ch_d2 * 2;
+    // remain output_channel
+    for (int o_c = out_ch_remain; o_c < output_ch; ++o_c) {
+      std::atomic<float> relu_value{0};
       const float *reluptr;
       bool issamefilter;
-      const float *inptr1, *inptr2, *inptr3, *inptr4;
+      const float *in_ptr1, *in_ptr2, *in_ptr3, *in_ptr4;
       const float *f1;
-      const float *ffilter0, *ffilter1, *ffilter2, *ffilter3;
-      float ffilterarray[ffilter_length] = {0};
+      const float *pad_filter0, *pad_filter1, *pad_filter2, *pad_filter3;
+      float pad_filter_arr[pad_filter_ch_size] = {0};
       float *output_data_ch;
       const float *input_data_ch;
       const float *filter_data_ch;
 
       input_data_ch = input_data;
-      output_data_ch = output_data + oc * output_channel_stride;
-      filter_data_ch =
-          filter_data + oc * filter_channel_stride * input_channels;
+      output_data_ch = output_data + o_c * out_ch_size;
+      filter_data_ch = filter_data + o_c * filter_ch_size * input_ch;
 
-      for (int ic = 0; ic < input_channels; ++ic) {
-        float reluarr[4];
-        reluptr = reluarr;
-        if (if_relu && ic == input_channels - 1) {
-          reluvalue = 0;
+      for (int i_c = 0; i_c < input_ch; ++i_c) {
+        float relu_arr[4];
+        reluptr = relu_arr;
+        if (if_relu && i_c == input_ch - 1) {
+          relu_value = 0;
         } else {
-          reluvalue = -FLT_MAX;
+          relu_value = -FLT_MAX;
         }
-        reluarr[0] = reluvalue;
-        reluarr[1] = reluvalue;
-        reluarr[2] = reluvalue;
-        reluarr[3] = reluvalue;
+        relu_arr[0] = relu_value;
+        relu_arr[1] = relu_value;
+        relu_arr[2] = relu_value;
+        relu_arr[3] = relu_value;
         f1 = filter_data_ch;
-        if (!isnopadding) {
-          ffilterarray[ffilter_length] = {0};
+        if (!if_nopadding) {
+          pad_filter_arr[pad_filter_ch_size] = {0};
           for (int i = 0; i < 9; ++i) {
-            int j = i / 3 * (2 * padding_width + 3) + i % 3 +
-                    padding_height * 3 +
-                    padding_width * (2 * padding_height + 1);
-            ffilterarray[j] = filter_data_ch[i];
+            int j = i / 3 * (2 * padding_w + 3) + i % 3 + padding_h * 3 +
+                    padding_w * (2 * padding_h + 1);
+            pad_filter_arr[j] = filter_data_ch[i];
           }
-          ffilter1 = ffilterarray;
-          ffilter1 += ffilter_start;
-          ffilter0 = ffilter1 - ffilter_width;
-          ffilter2 = ffilter1 + ffilter_width;
-          ffilter3 = ffilter2 + ffilter_width;
+          pad_filter1 = pad_filter_arr;
+          pad_filter1 += pad_filter_start;
+          pad_filter0 = pad_filter1 - pad_filter_w;
+          pad_filter2 = pad_filter1 + pad_filter_w;
+          pad_filter3 = pad_filter2 + pad_filter_w;
 
         } else {
-          ffilter1 = filter_data_ch;
-          ffilter2 = ffilter1 + 3;
-          ffilter3 = ffilter2 + 3;
+          pad_filter1 = filter_data_ch;
+          pad_filter2 = pad_filter1 + 3;
+          pad_filter3 = pad_filter2 + 3;
         }
-        float *outptr1, *outptr2;
-        outptr1 = output_data_ch;
-        outptr2 = outptr1 + output_width;
+        float *out_ptr1, *out_ptr2;
+        out_ptr1 = output_data_ch;
+        out_ptr2 = out_ptr1 + output_w;
 
-        inptr1 = input_data_ch;
-        inptr2 = inptr1 + input_width;
-        inptr3 = inptr2 + input_width;
-        inptr4 = inptr3 + input_width;
+        in_ptr1 = input_data_ch;
+        in_ptr2 = in_ptr1 + input_w;
+        in_ptr3 = in_ptr2 + input_w;
+        in_ptr4 = in_ptr3 + input_w;
 
-        int oh = 0;
-        for (; oh < output_height - 1; oh = oh + 2) {
-          if (!isnopadding && (oh < padding_height ||
-                               oh > output_height - padding_height - 2)) {
+        int o_h = 0;
+        for (; o_h < output_h - 1; o_h = o_h + 2) {
+          if (!if_nopadding &&
+              (o_h < padding_h || o_h > output_h - padding_h - 2)) {
             issamefilter = false;
           } else {
             issamefilter = true;
           }
-          int ow = 0;
-          for (; ow < padding_width; ++ow) {
+          int o_w = 0;
+          // pad left
+          for (; o_w < padding_w; ++o_w) {
             float sum1 = 0;
             float sum2 = 0;
 
             if (issamefilter) {
 #if __ARM_NEON
-              float32x4_t _inptr1 = vld1q_f32(inptr1);
-              float32x4_t _ffilter1 = vld1q_f32(ffilter1);
-              float32x4_t _sum1 = vmulq_f32(_inptr1, _ffilter1);
+              float32x4_t _in_ptr1 = vld1q_f32(in_ptr1);
+              float32x4_t _pad_filter1 = vld1q_f32(pad_filter1);
+              float32x4_t _sum1 = vmulq_f32(_in_ptr1, _pad_filter1);
 
-              float32x4_t _inptr2 = vld1q_f32(inptr2);
-              float32x4_t _ffilter2 = vld1q_f32(ffilter2);
-              _sum1 = vmlaq_f32(_sum1, _inptr2, _ffilter2);
-              float32x4_t _sum2 = vmulq_f32(_inptr2, _ffilter1);
+              float32x4_t _in_ptr2 = vld1q_f32(in_ptr2);
+              float32x4_t _pad_filter2 = vld1q_f32(pad_filter2);
+              _sum1 = vmlaq_f32(_sum1, _in_ptr2, _pad_filter2);
+              float32x4_t _sum2 = vmulq_f32(_in_ptr2, _pad_filter1);
 
-              float32x4_t _inptr3 = vld1q_f32(inptr3);
-              float32x4_t _ffilter3 = vld1q_f32(ffilter3);
-              _sum1 = vmlaq_f32(_sum1, _inptr3, _ffilter3);
-              _sum2 = vmlaq_f32(_sum2, _inptr3, _ffilter2);
+              float32x4_t _in_ptr3 = vld1q_f32(in_ptr3);
+              float32x4_t _pad_filter3 = vld1q_f32(pad_filter3);
+              _sum1 = vmlaq_f32(_sum1, _in_ptr3, _pad_filter3);
+              _sum2 = vmlaq_f32(_sum2, _in_ptr3, _pad_filter2);
 
-              float32x4_t _inptr4 = vld1q_f32(inptr4);
-              _sum2 = vmlaq_f32(_sum2, _inptr4, _ffilter3);
+              float32x4_t _in_ptr4 = vld1q_f32(in_ptr4);
+              _sum2 = vmlaq_f32(_sum2, _in_ptr4, _pad_filter3);
 
               _sum1 = vsetq_lane_f32(sum1, _sum1, 3);
               _sum2 = vsetq_lane_f32(sum2, _sum2, 3);
@@ -1551,45 +1552,45 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
               sum1 += vget_lane_f32(_ssss1_ssss2, 0);
               sum2 += vget_lane_f32(_ssss1_ssss2, 1);
 #else
-              sum1 += inptr1[0] * ffilter1[0];
-              sum1 += inptr1[1] * ffilter1[1];
-              sum1 += inptr1[2] * ffilter1[2];
-              sum1 += inptr2[0] * ffilter2[0];
-              sum1 += inptr2[1] * ffilter2[1];
-              sum1 += inptr2[2] * ffilter2[2];
-              sum1 += inptr3[0] * ffilter3[0];
-              sum1 += inptr3[1] * ffilter3[1];
-              sum1 += inptr3[2] * ffilter3[2];
+              sum1 += in_ptr1[0] * pad_filter1[0];
+              sum1 += in_ptr1[1] * pad_filter1[1];
+              sum1 += in_ptr1[2] * pad_filter1[2];
+              sum1 += in_ptr2[0] * pad_filter2[0];
+              sum1 += in_ptr2[1] * pad_filter2[1];
+              sum1 += in_ptr2[2] * pad_filter2[2];
+              sum1 += in_ptr3[0] * pad_filter3[0];
+              sum1 += in_ptr3[1] * pad_filter3[1];
+              sum1 += in_ptr3[2] * pad_filter3[2];
 
-              sum2 += inptr2[0] * ffilter1[0];
-              sum2 += inptr2[1] * ffilter1[1];
-              sum2 += inptr2[2] * ffilter1[2];
-              sum2 += inptr3[0] * ffilter2[0];
-              sum2 += inptr3[1] * ffilter2[1];
-              sum2 += inptr3[2] * ffilter2[2];
-              sum2 += inptr4[0] * ffilter3[0];
-              sum2 += inptr4[1] * ffilter3[1];
-              sum2 += inptr4[2] * ffilter3[2];
+              sum2 += in_ptr2[0] * pad_filter1[0];
+              sum2 += in_ptr2[1] * pad_filter1[1];
+              sum2 += in_ptr2[2] * pad_filter1[2];
+              sum2 += in_ptr3[0] * pad_filter2[0];
+              sum2 += in_ptr3[1] * pad_filter2[1];
+              sum2 += in_ptr3[2] * pad_filter2[2];
+              sum2 += in_ptr4[0] * pad_filter3[0];
+              sum2 += in_ptr4[1] * pad_filter3[1];
+              sum2 += in_ptr4[2] * pad_filter3[2];
 #endif
             } else {
 #if __ARM_NEON
-              float32x4_t _inptr1 = vld1q_f32(inptr1);
-              float32x4_t _ffilter1 = vld1q_f32(ffilter1);
-              float32x4_t _ffilter0 = vld1q_f32(ffilter0);
+              float32x4_t _in_ptr1 = vld1q_f32(in_ptr1);
+              float32x4_t _pad_filter1 = vld1q_f32(pad_filter1);
+              float32x4_t _pad_filter0 = vld1q_f32(pad_filter0);
 
-              float32x4_t _sum1 = vmulq_f32(_inptr1, _ffilter1);
-              float32x4_t _sum2 = vmulq_f32(_inptr1, _ffilter0);
-              float32x4_t _inptr2 = vld1q_f32(inptr2);
-              float32x4_t _ffilter2 = vld1q_f32(ffilter2);
+              float32x4_t _sum1 = vmulq_f32(_in_ptr1, _pad_filter1);
+              float32x4_t _sum2 = vmulq_f32(_in_ptr1, _pad_filter0);
+              float32x4_t _in_ptr2 = vld1q_f32(in_ptr2);
+              float32x4_t _pad_filter2 = vld1q_f32(pad_filter2);
 
-              _sum1 = vmlaq_f32(_sum1, _inptr2, _ffilter2);
-              _sum2 = vmlaq_f32(_sum2, _inptr2, _ffilter1);
+              _sum1 = vmlaq_f32(_sum1, _in_ptr2, _pad_filter2);
+              _sum2 = vmlaq_f32(_sum2, _in_ptr2, _pad_filter1);
 
-              float32x4_t _inptr3 = vld1q_f32(inptr3);
-              float32x4_t _ffilter3 = vld1q_f32(ffilter3);
+              float32x4_t _in_ptr3 = vld1q_f32(in_ptr3);
+              float32x4_t _pad_filter3 = vld1q_f32(pad_filter3);
 
-              _sum1 = vmlaq_f32(_sum1, _inptr3, _ffilter3);
-              _sum2 = vmlaq_f32(_sum2, _inptr3, _ffilter2);
+              _sum1 = vmlaq_f32(_sum1, _in_ptr3, _pad_filter3);
+              _sum2 = vmlaq_f32(_sum2, _in_ptr3, _pad_filter2);
 
               _sum1 = vsetq_lane_f32(sum1, _sum1, 3);
               _sum2 = vsetq_lane_f32(sum2, _sum2, 3);
@@ -1603,58 +1604,59 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
               sum1 += vget_lane_f32(_ssss1_ssss2, 0);
               sum2 += vget_lane_f32(_ssss1_ssss2, 1);
 #else
-              sum1 += inptr1[0] * ffilter1[0];
-              sum1 += inptr1[1] * ffilter1[1];
-              sum1 += inptr1[2] * ffilter1[2];
-              sum1 += inptr2[0] * ffilter2[0];
-              sum1 += inptr2[1] * ffilter2[1];
-              sum1 += inptr2[2] * ffilter2[2];
-              sum1 += inptr3[0] * ffilter3[0];
-              sum1 += inptr3[1] * ffilter3[1];
-              sum1 += inptr3[2] * ffilter3[2];
+              sum1 += in_ptr1[0] * pad_filter1[0];
+              sum1 += in_ptr1[1] * pad_filter1[1];
+              sum1 += in_ptr1[2] * pad_filter1[2];
+              sum1 += in_ptr2[0] * pad_filter2[0];
+              sum1 += in_ptr2[1] * pad_filter2[1];
+              sum1 += in_ptr2[2] * pad_filter2[2];
+              sum1 += in_ptr3[0] * pad_filter3[0];
+              sum1 += in_ptr3[1] * pad_filter3[1];
+              sum1 += in_ptr3[2] * pad_filter3[2];
 
-              sum2 += inptr1[0] * ffilter0[0];
-              sum2 += inptr1[1] * ffilter0[1];
-              sum2 += inptr1[2] * ffilter0[2];
-              sum2 += inptr2[0] * ffilter1[0];
-              sum2 += inptr2[1] * ffilter1[1];
-              sum2 += inptr2[2] * ffilter1[2];
-              sum2 += inptr3[0] * ffilter2[0];
-              sum2 += inptr3[1] * ffilter2[1];
-              sum2 += inptr3[2] * ffilter2[2];
+              sum2 += in_ptr1[0] * pad_filter0[0];
+              sum2 += in_ptr1[1] * pad_filter0[1];
+              sum2 += in_ptr1[2] * pad_filter0[2];
+              sum2 += in_ptr2[0] * pad_filter1[0];
+              sum2 += in_ptr2[1] * pad_filter1[1];
+              sum2 += in_ptr2[2] * pad_filter1[2];
+              sum2 += in_ptr3[0] * pad_filter2[0];
+              sum2 += in_ptr3[1] * pad_filter2[1];
+              sum2 += in_ptr3[2] * pad_filter2[2];
 #endif
             }
-            if (!isnopadding &&
-                (ow < padding_width || ow > output_width - padding_width - 2)) {
-              ffilter0--;
-              ffilter1--;
-              ffilter2--;
-              ffilter3--;
+            if (!if_nopadding &&
+                (o_w < padding_w || o_w > output_w - padding_w - 2)) {
+              pad_filter0--;
+              pad_filter1--;
+              pad_filter2--;
+              pad_filter3--;
             } else {
-              inptr1++;
-              inptr2++;
-              inptr3++;
-              inptr4++;
+              in_ptr1++;
+              in_ptr2++;
+              in_ptr3++;
+              in_ptr4++;
             }
-            *outptr1 += sum1;
-            *outptr2 += sum2;
+            *out_ptr1 += sum1;
+            *out_ptr2 += sum2;
 
-            if (outptr1[0] < reluvalue) {
-              *outptr1 = reluvalue;
+            if (out_ptr1[0] < relu_value) {
+              *out_ptr1 = relu_value;
             }
-            if (outptr2[0] < reluvalue) {
-              *outptr2 = reluvalue;
+            if (out_ptr2[0] < relu_value) {
+              *out_ptr2 = relu_value;
             }
-            outptr1++;
-            outptr2++;
+            out_ptr1++;
+            out_ptr2++;
           }
+            // valid
 #if __ARM_NEON
 #if __aarch64__
           if (issamefilter) {
-            int ow_dim4 = (output_width - 2 * padding_width) >> 2;
-            ow += ow_dim4 * 4;
+            int o_w_dim4 = (output_w - 2 * padding_w) >> 2;
+            o_w += o_w_dim4 * 4;
 
-            if (ow_dim4 > 0) {
+            if (o_w_dim4 > 0) {
               asm volatile(
                   "prfm   pldl1keep, [%[f1], #256]          \n\t"
 
@@ -1667,24 +1669,24 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "sub        %[f1],%[f1], #32              \n\t"
 
                   "0:                                       \n\t"
-                  // load outptr
-                  "prfm   pldl1keep, [%[outptr1], #128]     \n\t"
-                  "prfm   pldl1keep, [%[outptr2], #128]     \n\t"
+                  // load out_ptr
+                  "prfm   pldl1keep, [%[out_ptr1], #128]    \n\t"
+                  "prfm   pldl1keep, [%[out_ptr2], #128]    \n\t"
 
-                  "ld1   {v12.4s}, [%[outptr1]]             \n\t"
-                  "ld1   {v14.4s}, [%[outptr2]]             \n\t"
+                  "ld1   {v12.4s}, [%[out_ptr1]]            \n\t"
+                  "ld1   {v14.4s}, [%[out_ptr2]]            \n\t"
 
-                  // inptr1 + inptr4 multiply
-                  "prfm   pldl1keep, [%[inptr1], #192]      \n\t"
-                  "prfm   pldl1keep, [%[inptr4], #192]      \n\t"
+                  // in_ptr1 + in_ptr4 multiply
+                  "prfm   pldl1keep, [%[in_ptr1], #192]     \n\t"
+                  "prfm   pldl1keep, [%[in_ptr4], #192]     \n\t"
 
-                  "ld1   {v5.4s, v6.4s}, [%[inptr1]]        \n\t"
-                  "add        %[inptr1],%[inptr1], #16      \n\t"
+                  "ld1   {v5.4s, v6.4s}, [%[in_ptr1]]       \n\t"
+                  "add        %[in_ptr1],%[in_ptr1], #16    \n\t"
 
-                  "ld1   {v6.d}[1], [%[inptr4]]             \n\t"
-                  "add        %[inptr4],%[inptr4], #8       \n\t"
-                  "ld1   {v7.4s}, [%[inptr4]]               \n\t"
-                  "add        %[inptr4],%[inptr4], #8       \n\t"
+                  "ld1   {v6.d}[1], [%[in_ptr4]]            \n\t"
+                  "add        %[in_ptr4],%[in_ptr4], #8     \n\t"
+                  "ld1   {v7.4s}, [%[in_ptr4]]              \n\t"
+                  "add        %[in_ptr4],%[in_ptr4], #8     \n\t"
 
                   "ext    v8.16b, v5.16b, v6.16b, #4        \n\t"
                   "fmla   v12.4s, v5.4s, v0.4s[0]           \n\t"
@@ -1698,13 +1700,13 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "ext    v11.16b, v6.16b, v7.16b, #12      \n\t"
                   "fmla   v14.4s, v9.4s, v1.4s[2]           \n\t"
 
-                  "ld1   {v5.4s, v6.4s}, [%[inptr2]]        \n\t"
-                  "add        %[inptr2],%[inptr2], #16      \n\t"
+                  "ld1   {v5.4s, v6.4s}, [%[in_ptr2]]       \n\t"
+                  "add        %[in_ptr2],%[in_ptr2], #16    \n\t"
 
                   "fmla   v12.4s, v10.4s, v0.4s[2]          \n\t"
                   "fmla   v14.4s, v11.4s, v1.4s[3]          \n\t"
 
-                  // inptr2 multiply
+                  // in_ptr2 multiply
                   "ext    v8.16b,  v5.16b, v6.16b, #4       \n\t"
                   "fmla   v12.4s, v5.4s, v0.4s[3]           \n\t"
                   "fmla   v14.4s, v5.4s, v0.4s[0]           \n\t"
@@ -1713,15 +1715,15 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "fmla   v12.4s, v8.4s, v1.4s[0]           \n\t"
                   "fmla   v14.4s, v8.4s, v0.4s[1]           \n\t"
 
-                  "ld1   {v6.d}[1], [%[inptr3]]             \n\t"
-                  "add        %[inptr3],%[inptr3], #8       \n\t"
-                  "ld1   {v7.4s}, [%[inptr3]]               \n\t"
+                  "ld1   {v6.d}[1], [%[in_ptr3]]            \n\t"
+                  "add        %[in_ptr3],%[in_ptr3], #8     \n\t"
+                  "ld1   {v7.4s}, [%[in_ptr3]]              \n\t"
 
-                  "add        %[inptr3],%[inptr3], #8       \n\t"
+                  "add        %[in_ptr3],%[in_ptr3], #8     \n\t"
                   "fmla   v12.4s, v9.4s, v1.4s[1]           \n\t"
                   "fmla   v14.4s, v9.4s, v0.4s[2]           \n\t"
 
-                  // inptr3 multiply
+                  // in_ptr3 multiply
                   "ext    v10.16b, v6.16b, v7.16b, #8       \n\t"
                   "fmla   v12.4s, v7.4s, v4.4s[0]           \n\t"
                   "fmla   v14.4s, v7.4s, v1.4s[1]           \n\t"
@@ -1733,43 +1735,43 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "fmla   v12.4s, v11.4s, v1.4s[3]          \n\t"
                   "fmla   v14.4s, v11.4s, v1.4s[0]          \n\t"
 
-                  // store outptr
+                  // store out_ptr
                   "fmax   v12.4s,v12.4s, v16.4s             \n\t"
                   "fmax   v14.4s,v14.4s, v16.4s             \n\t"
 
-                  "st1   {v12.4s}, [%[outptr1]], #16        \n\t"
-                  "st1   {v14.4s}, [%[outptr2]], #16        \n\t"
+                  "st1   {v12.4s}, [%[out_ptr1]], #16       \n\t"
+                  "st1   {v14.4s}, [%[out_ptr2]], #16       \n\t"
 
                   // cycle
-                  "subs       %[ow_dim4],%[ow_dim4], #1     \n\t"
+                  "subs       %[o_w_dim4],%[o_w_dim4], #1   \n\t"
                   "bne        0b                            \n\t"
 
-                  : [ow_dim4] "+r"(ow_dim4), [outptr1] "+r"(outptr1),
-                    [outptr2] "+r"(outptr2), [inptr1] "+r"(inptr1),
-                    [inptr2] "+r"(inptr2), [inptr3] "+r"(inptr3),
-                    [inptr4] "+r"(inptr4)
+                  : [o_w_dim4] "+r"(o_w_dim4), [out_ptr1] "+r"(out_ptr1),
+                    [out_ptr2] "+r"(out_ptr2), [in_ptr1] "+r"(in_ptr1),
+                    [in_ptr2] "+r"(in_ptr2), [in_ptr3] "+r"(in_ptr3),
+                    [in_ptr4] "+r"(in_ptr4)
                   : [f1] "r"(f1), [reluptr] "r"(reluptr)
                   : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
                     "v8", "v9", "v10", "v11", "v12", "v14", "v16");
             }
           }
-          if (!isnopadding && ow == output_width - padding_width) {
-            ffilter0--;
-            ffilter1--;
-            ffilter2--;
-            ffilter3--;
+          if (!if_nopadding && o_w == output_w - padding_w) {
+            pad_filter0--;
+            pad_filter1--;
+            pad_filter2--;
+            pad_filter3--;
 
-            inptr1--;
-            inptr2--;
-            inptr3--;
-            inptr4--;
+            in_ptr1--;
+            in_ptr2--;
+            in_ptr3--;
+            in_ptr4--;
           }
 #else
           if (issamefilter) {
-            int ow_dim4 = (output_width - 2 * padding_width) >> 2;
-            ow += ow_dim4 * 4;
+            int o_w_dim4 = (output_w - 2 * padding_w) >> 2;
+            o_w += o_w_dim4 * 4;
 
-            if (ow_dim4 > 0) {
+            if (o_w_dim4 > 0) {
               asm volatile(
                   "pld        [%[f1], #256]                 \n\t"
                   "vld1.32   {d0-d3}, [%[f1]]               \n\t"
@@ -1782,22 +1784,22 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "sub        %[f1], #32                    \n\t"
 
                   "0:                                       \n\t"
-                  // load outptr
-                  "pld        [%[outptr1], #128]            \n\t"
-                  "pld        [%[outptr2], #128]            \n\t"
+                  // load out_ptr
+                  "pld        [%[out_ptr1], #128]           \n\t"
+                  "pld        [%[out_ptr2], #128]           \n\t"
 
-                  "vld1.f32   {d24, d25}, [%[outptr1]]      \n\t"
-                  "vld1.f32   {d28, d29}, [%[outptr2]]      \n\t"
+                  "vld1.f32   {d24, d25}, [%[out_ptr1]]     \n\t"
+                  "vld1.f32   {d28, d29}, [%[out_ptr2]]     \n\t"
 
-                  // inptr1 + inptr4 multiply
-                  "pld        [%[inptr1], #192]             \n\t"
-                  "pld        [%[inptr4], #192]             \n\t"
+                  // in_ptr1 + in_ptr4 multiply
+                  "pld        [%[in_ptr1], #192]            \n\t"
+                  "pld        [%[in_ptr4], #192]            \n\t"
 
-                  "vld1.f32   {d10-d12}, [%[inptr1]]        \n\t"
-                  "add        %[inptr1], #16                \n\t"
+                  "vld1.f32   {d10-d12}, [%[in_ptr1]]       \n\t"
+                  "add        %[in_ptr1], #16               \n\t"
 
-                  "vld1.f32   {d13-d15}, [%[inptr4]]        \n\t"
-                  "add        %[inptr4], #16                \n\t"
+                  "vld1.f32   {d13-d15}, [%[in_ptr4]]       \n\t"
+                  "add        %[in_ptr4], #16               \n\t"
 
                   "vext.32    q8, q5, q6, #1                \n\t"
                   "vmla.f32   q12, q5, d0[0]                \n\t"
@@ -1811,13 +1813,13 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "vext.32    q11, q6, q7, #3               \n\t"
                   "vmla.f32   q14, q9, d3[0]                \n\t"
 
-                  "vld1.f32   {d10-d12}, [%[inptr2]]        \n\t"
-                  "add        %[inptr2], #16                \n\t"
+                  "vld1.f32   {d10-d12}, [%[in_ptr2]]       \n\t"
+                  "add        %[in_ptr2], #16               \n\t"
 
                   "vmla.f32   q12, q10, d1[0]               \n\t"
                   "vmla.f32   q14, q11, d3[1]               \n\t"
 
-                  // inptr2 multiply
+                  // in_ptr2 multiply
                   "vext.32    q8, q5, q6, #1                \n\t"
                   "vmla.f32   q12, q5, d1[1]                \n\t"
                   "vmla.f32   q14, q5, d0[0]                \n\t"
@@ -1826,13 +1828,13 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "vmla.f32   q12, q8, d2[0]                \n\t"
                   "vmla.f32   q14, q8, d0[1]                \n\t"
 
-                  "vld1.f32   {d13-d15}, [%[inptr3]]        \n\t"
-                  "add        %[inptr3], #16                \n\t"
+                  "vld1.f32   {d13-d15}, [%[in_ptr3]]       \n\t"
+                  "add        %[in_ptr3], #16               \n\t"
 
                   "vmla.f32   q12, q9, d2[1]                \n\t"
                   "vmla.f32   q14, q9, d1[0]                \n\t"
 
-                  // inptr3 multiply
+                  // in_ptr3 multiply
                   "vext.32    q10, q6, q7, #2               \n\t"
                   "vmla.f32   q12, q7, d8[0]                \n\t"
                   "vmla.f32   q14, q7, d2[1]                \n\t"
@@ -1844,65 +1846,66 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "vmla.f32   q12, q11, d3[1]               \n\t"
                   "vmla.f32   q14, q11, d2[0]               \n\t"
 
-                  // store outptr
+                  // store out_ptr
                   "vmax.f32   d24, d24, d9                  \n\t"
                   "vmax.f32   d25, d25, d9                  \n\t"
 
                   "vmax.f32   d28, d28, d9                  \n\t"
                   "vmax.f32   d29, d29, d9                  \n\t"
 
-                  "subs       %[ow_dim4], #1                \n\t"
-                  "vst1.f32   {d24, d25}, [%[outptr1]]!     \n\t"
-                  "vst1.f32   {d28, d29}, [%[outptr2]]!     \n\t"
+                  "subs       %[o_w_dim4], #1               \n\t"
+                  "vst1.f32   {d24, d25}, [%[out_ptr1]]!    \n\t"
+                  "vst1.f32   {d28, d29}, [%[out_ptr2]]!    \n\t"
 
                   // cycle
                   "bne        0b                            \n\t"
 
-                  : [ow_dim4] "+r"(ow_dim4), [outptr1] "+r"(outptr1),
-                    [outptr2] "+r"(outptr2), [inptr1] "+r"(inptr1),
-                    [inptr2] "+r"(inptr2), [inptr3] "+r"(inptr3),
-                    [inptr4] "+r"(inptr4)
+                  : [o_w_dim4] "+r"(o_w_dim4), [out_ptr1] "+r"(out_ptr1),
+                    [out_ptr2] "+r"(out_ptr2), [in_ptr1] "+r"(in_ptr1),
+                    [in_ptr2] "+r"(in_ptr2), [in_ptr3] "+r"(in_ptr3),
+                    [in_ptr4] "+r"(in_ptr4)
                   : [f1] "r"(f1), [reluptr] "r"(reluptr)
                   : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
                     "q8", "q9", "q10", "q11", "q12", "q14");
             }
           }
-          if (!isnopadding && ow == output_width - padding_width) {
-            ffilter0--;
-            ffilter1--;
-            ffilter2--;
-            ffilter3--;
+          if (!if_nopadding && o_w == output_w - padding_w) {
+            pad_filter0--;
+            pad_filter1--;
+            pad_filter2--;
+            pad_filter3--;
 
-            inptr1--;
-            inptr2--;
-            inptr3--;
-            inptr4--;
+            in_ptr1--;
+            in_ptr2--;
+            in_ptr3--;
+            in_ptr4--;
           }
 #endif  //__aarch64__
 #endif  // __ARM_NEON
 
-          for (; ow < output_width; ++ow) {
+          // remain output_width
+          for (; o_w < output_w; ++o_w) {
             float sum1 = 0;
             float sum2 = 0;
 
             if (issamefilter) {
 #if __ARM_NEON
-              float32x4_t _inptr1 = vld1q_f32(inptr1);
-              float32x4_t _ffilter1 = vld1q_f32(ffilter1);
-              float32x4_t _sum1 = vmulq_f32(_inptr1, _ffilter1);
+              float32x4_t _in_ptr1 = vld1q_f32(in_ptr1);
+              float32x4_t _pad_filter1 = vld1q_f32(pad_filter1);
+              float32x4_t _sum1 = vmulq_f32(_in_ptr1, _pad_filter1);
 
-              float32x4_t _inptr2 = vld1q_f32(inptr2);
-              float32x4_t _ffilter2 = vld1q_f32(ffilter2);
-              _sum1 = vmlaq_f32(_sum1, _inptr2, _ffilter2);
-              float32x4_t _sum2 = vmulq_f32(_inptr2, _ffilter1);
+              float32x4_t _in_ptr2 = vld1q_f32(in_ptr2);
+              float32x4_t _pad_filter2 = vld1q_f32(pad_filter2);
+              _sum1 = vmlaq_f32(_sum1, _in_ptr2, _pad_filter2);
+              float32x4_t _sum2 = vmulq_f32(_in_ptr2, _pad_filter1);
 
-              float32x4_t _inptr3 = vld1q_f32(inptr3);
-              float32x4_t _ffilter3 = vld1q_f32(ffilter3);
-              _sum1 = vmlaq_f32(_sum1, _inptr3, _ffilter3);
-              _sum2 = vmlaq_f32(_sum2, _inptr3, _ffilter2);
+              float32x4_t _in_ptr3 = vld1q_f32(in_ptr3);
+              float32x4_t _pad_filter3 = vld1q_f32(pad_filter3);
+              _sum1 = vmlaq_f32(_sum1, _in_ptr3, _pad_filter3);
+              _sum2 = vmlaq_f32(_sum2, _in_ptr3, _pad_filter2);
 
-              float32x4_t _inptr4 = vld1q_f32(inptr4);
-              _sum2 = vmlaq_f32(_sum2, _inptr4, _ffilter3);
+              float32x4_t _in_ptr4 = vld1q_f32(in_ptr4);
+              _sum2 = vmlaq_f32(_sum2, _in_ptr4, _pad_filter3);
 
               _sum1 = vsetq_lane_f32(sum1, _sum1, 3);
               _sum2 = vsetq_lane_f32(sum2, _sum2, 3);
@@ -1916,44 +1919,44 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
               sum1 += vget_lane_f32(_ssss1_ssss2, 0);
               sum2 += vget_lane_f32(_ssss1_ssss2, 1);
 #else
-              sum1 += inptr1[0] * ffilter1[0];
-              sum1 += inptr1[1] * ffilter1[1];
-              sum1 += inptr1[2] * ffilter1[2];
-              sum1 += inptr2[0] * ffilter2[0];
-              sum1 += inptr2[1] * ffilter2[1];
-              sum1 += inptr2[2] * ffilter2[2];
-              sum1 += inptr3[0] * ffilter3[0];
-              sum1 += inptr3[1] * ffilter3[1];
-              sum1 += inptr3[2] * ffilter3[2];
+              sum1 += in_ptr1[0] * pad_filter1[0];
+              sum1 += in_ptr1[1] * pad_filter1[1];
+              sum1 += in_ptr1[2] * pad_filter1[2];
+              sum1 += in_ptr2[0] * pad_filter2[0];
+              sum1 += in_ptr2[1] * pad_filter2[1];
+              sum1 += in_ptr2[2] * pad_filter2[2];
+              sum1 += in_ptr3[0] * pad_filter3[0];
+              sum1 += in_ptr3[1] * pad_filter3[1];
+              sum1 += in_ptr3[2] * pad_filter3[2];
 
-              sum2 += inptr2[0] * ffilter1[0];
-              sum2 += inptr2[1] * ffilter1[1];
-              sum2 += inptr2[2] * ffilter1[2];
-              sum2 += inptr3[0] * ffilter2[0];
-              sum2 += inptr3[1] * ffilter2[1];
-              sum2 += inptr3[2] * ffilter2[2];
-              sum2 += inptr4[0] * ffilter3[0];
-              sum2 += inptr4[1] * ffilter3[1];
-              sum2 += inptr4[2] * ffilter3[2];
+              sum2 += in_ptr2[0] * pad_filter1[0];
+              sum2 += in_ptr2[1] * pad_filter1[1];
+              sum2 += in_ptr2[2] * pad_filter1[2];
+              sum2 += in_ptr3[0] * pad_filter2[0];
+              sum2 += in_ptr3[1] * pad_filter2[1];
+              sum2 += in_ptr3[2] * pad_filter2[2];
+              sum2 += in_ptr4[0] * pad_filter3[0];
+              sum2 += in_ptr4[1] * pad_filter3[1];
+              sum2 += in_ptr4[2] * pad_filter3[2];
 #endif
             } else {
 #if __ARM_NEON
-              float32x4_t _inptr1 = vld1q_f32(inptr1);
-              float32x4_t _ffilter1 = vld1q_f32(ffilter1);
-              float32x4_t _ffilter0 = vld1q_f32(ffilter0);
+              float32x4_t _in_ptr1 = vld1q_f32(in_ptr1);
+              float32x4_t _pad_filter1 = vld1q_f32(pad_filter1);
+              float32x4_t _pad_filter0 = vld1q_f32(pad_filter0);
 
-              float32x4_t _sum1 = vmulq_f32(_inptr1, _ffilter1);
-              float32x4_t _sum2 = vmulq_f32(_inptr1, _ffilter0);
-              float32x4_t _inptr2 = vld1q_f32(inptr2);
-              float32x4_t _ffilter2 = vld1q_f32(ffilter2);
+              float32x4_t _sum1 = vmulq_f32(_in_ptr1, _pad_filter1);
+              float32x4_t _sum2 = vmulq_f32(_in_ptr1, _pad_filter0);
+              float32x4_t _in_ptr2 = vld1q_f32(in_ptr2);
+              float32x4_t _pad_filter2 = vld1q_f32(pad_filter2);
 
-              _sum1 = vmlaq_f32(_sum1, _inptr2, _ffilter2);
-              _sum2 = vmlaq_f32(_sum2, _inptr2, _ffilter1);
-              float32x4_t _inptr3 = vld1q_f32(inptr3);
-              float32x4_t _ffilter3 = vld1q_f32(ffilter3);
+              _sum1 = vmlaq_f32(_sum1, _in_ptr2, _pad_filter2);
+              _sum2 = vmlaq_f32(_sum2, _in_ptr2, _pad_filter1);
+              float32x4_t _in_ptr3 = vld1q_f32(in_ptr3);
+              float32x4_t _pad_filter3 = vld1q_f32(pad_filter3);
 
-              _sum1 = vmlaq_f32(_sum1, _inptr3, _ffilter3);
-              _sum2 = vmlaq_f32(_sum2, _inptr3, _ffilter2);
+              _sum1 = vmlaq_f32(_sum1, _in_ptr3, _pad_filter3);
+              _sum2 = vmlaq_f32(_sum2, _in_ptr3, _pad_filter2);
               _sum1 = vsetq_lane_f32(sum1, _sum1, 3);
               _sum2 = vsetq_lane_f32(sum2, _sum2, 3);
 
@@ -1966,110 +1969,111 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
               sum1 += vget_lane_f32(_ssss1_ssss2, 0);
               sum2 += vget_lane_f32(_ssss1_ssss2, 1);
 #else
-              sum1 += inptr1[0] * ffilter1[0];
-              sum1 += inptr1[1] * ffilter1[1];
-              sum1 += inptr1[2] * ffilter1[2];
-              sum1 += inptr2[0] * ffilter2[0];
-              sum1 += inptr2[1] * ffilter2[1];
-              sum1 += inptr2[2] * ffilter2[2];
-              sum1 += inptr3[0] * ffilter3[0];
-              sum1 += inptr3[1] * ffilter3[1];
-              sum1 += inptr3[2] * ffilter3[2];
+              sum1 += in_ptr1[0] * pad_filter1[0];
+              sum1 += in_ptr1[1] * pad_filter1[1];
+              sum1 += in_ptr1[2] * pad_filter1[2];
+              sum1 += in_ptr2[0] * pad_filter2[0];
+              sum1 += in_ptr2[1] * pad_filter2[1];
+              sum1 += in_ptr2[2] * pad_filter2[2];
+              sum1 += in_ptr3[0] * pad_filter3[0];
+              sum1 += in_ptr3[1] * pad_filter3[1];
+              sum1 += in_ptr3[2] * pad_filter3[2];
 
-              sum2 += inptr1[0] * ffilter0[0];
-              sum2 += inptr1[1] * ffilter0[1];
-              sum2 += inptr1[2] * ffilter0[2];
-              sum2 += inptr2[0] * ffilter1[0];
-              sum2 += inptr2[1] * ffilter1[1];
-              sum2 += inptr2[2] * ffilter1[2];
-              sum2 += inptr3[0] * ffilter2[0];
-              sum2 += inptr3[1] * ffilter2[1];
-              sum2 += inptr3[2] * ffilter2[2];
+              sum2 += in_ptr1[0] * pad_filter0[0];
+              sum2 += in_ptr1[1] * pad_filter0[1];
+              sum2 += in_ptr1[2] * pad_filter0[2];
+              sum2 += in_ptr2[0] * pad_filter1[0];
+              sum2 += in_ptr2[1] * pad_filter1[1];
+              sum2 += in_ptr2[2] * pad_filter1[2];
+              sum2 += in_ptr3[0] * pad_filter2[0];
+              sum2 += in_ptr3[1] * pad_filter2[1];
+              sum2 += in_ptr3[2] * pad_filter2[2];
 #endif
             }
-            if (!isnopadding &&
-                (ow < padding_width || ow > output_width - padding_width - 2)) {
-              ffilter0--;
-              ffilter1--;
-              ffilter2--;
-              ffilter3--;
+            if (!if_nopadding &&
+                (o_w < padding_w || o_w > output_w - padding_w - 2)) {
+              pad_filter0--;
+              pad_filter1--;
+              pad_filter2--;
+              pad_filter3--;
             } else {
-              inptr1++;
-              inptr2++;
-              inptr3++;
-              inptr4++;
+              in_ptr1++;
+              in_ptr2++;
+              in_ptr3++;
+              in_ptr4++;
             }
-            *outptr1 += sum1;
-            *outptr2 += sum2;
+            *out_ptr1 += sum1;
+            *out_ptr2 += sum2;
 
-            if (outptr1[0] < reluvalue) {
-              *outptr1 = reluvalue;
+            if (out_ptr1[0] < relu_value) {
+              *out_ptr1 = relu_value;
             }
-            if (outptr2[0] < reluvalue) {
-              *outptr2 = reluvalue;
+            if (out_ptr2[0] < relu_value) {
+              *out_ptr2 = relu_value;
             }
-            outptr1++;
-            outptr2++;
+            out_ptr1++;
+            out_ptr2++;
           }
-          if (isnopadding) {
-            inptr1 += 2 + input_width;
-            inptr2 += 2 + input_width;
-            inptr3 += 2 + input_width;
-            inptr4 += 2 + input_width;
-          } else if (oh == padding_height - 1 ||
-                     oh == output_height - padding_height - 2) {
-            inptr1 += 3;
-            inptr2 += 3;
-            inptr3 += 3;
-            inptr4 += 3;
+          if (if_nopadding) {
+            in_ptr1 += 2 + input_w;
+            in_ptr2 += 2 + input_w;
+            in_ptr3 += 2 + input_w;
+            in_ptr4 += 2 + input_w;
+          } else if (o_h == padding_h - 1 || o_h == output_h - padding_h - 2) {
+            in_ptr1 += 3;
+            in_ptr2 += 3;
+            in_ptr3 += 3;
+            in_ptr4 += 3;
 
-            ffilter0 -= 2;
-            ffilter1 -= 2;
-            ffilter2 -= 2;
-            ffilter3 -= 2;
+            pad_filter0 -= 2;
+            pad_filter1 -= 2;
+            pad_filter2 -= 2;
+            pad_filter3 -= 2;
 
           } else if (issamefilter) {
-            inptr1 += 3 + input_width;
-            inptr2 += 3 + input_width;
-            inptr3 += 3 + input_width;
-            inptr4 += 3 + input_width;
+            in_ptr1 += 3 + input_w;
+            in_ptr2 += 3 + input_w;
+            in_ptr3 += 3 + input_w;
+            in_ptr4 += 3 + input_w;
 
-            ffilter0 += 2 * padding_width + 1;
-            ffilter1 += 2 * padding_width + 1;
-            ffilter2 += 2 * padding_width + 1;
-            ffilter3 += 2 * padding_width + 1;
+            pad_filter0 += 2 * padding_w + 1;
+            pad_filter1 += 2 * padding_w + 1;
+            pad_filter2 += 2 * padding_w + 1;
+            pad_filter3 += 2 * padding_w + 1;
 
           } else {
-            ffilter0 -= 3 + 2 * padding_width + 2;
-            ffilter1 -= 3 + 2 * padding_width + 2;
-            ffilter2 -= 3 + 2 * padding_width + 2;
-            ffilter3 -= 3 + 2 * padding_width + 2;
+            pad_filter0 -= 3 + 2 * padding_w + 2;
+            pad_filter1 -= 3 + 2 * padding_w + 2;
+            pad_filter2 -= 3 + 2 * padding_w + 2;
+            pad_filter3 -= 3 + 2 * padding_w + 2;
 
-            inptr1 -= input_width - 3;
-            inptr2 -= input_width - 3;
-            inptr3 -= input_width - 3;
-            inptr4 -= input_width - 3;
+            in_ptr1 -= input_w - 3;
+            in_ptr2 -= input_w - 3;
+            in_ptr3 -= input_w - 3;
+            in_ptr4 -= input_w - 3;
           }
-          outptr1 += output_width;
-          outptr2 += output_width;
+          out_ptr1 += output_w;
+          out_ptr2 += output_w;
         }
 
-        for (; oh < output_height; ++oh) {
-          int ow = 0;
-          for (; ow < padding_width; ++ow) {
+        // remain output_height
+        for (; o_h < output_h; ++o_h) {
+          int o_w = 0;
+          // pad left
+          for (; o_w < padding_w; ++o_w) {
             float sum1 = 0;
 #if __ARM_NEON
-            float32x4_t _inptr1 = vld1q_f32(inptr1);
-            float32x4_t _ffilter1 = vld1q_f32(ffilter1);
-            float32x4_t _sum1 = vmulq_f32(_inptr1, _ffilter1);
+            float32x4_t _in_ptr1 = vld1q_f32(in_ptr1);
+            float32x4_t _pad_filter1 = vld1q_f32(pad_filter1);
+            float32x4_t _sum1 = vmulq_f32(_in_ptr1, _pad_filter1);
 
-            float32x4_t _inptr2 = vld1q_f32(inptr2);
-            float32x4_t _ffilter2 = vld1q_f32(ffilter2);
-            _sum1 = vmlaq_f32(_sum1, _inptr2, _ffilter2);
+            float32x4_t _in_ptr2 = vld1q_f32(in_ptr2);
+            float32x4_t _pad_filter2 = vld1q_f32(pad_filter2);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr2, _pad_filter2);
 
-            float32x4_t _inptr3 = vld1q_f32(inptr3);
-            float32x4_t _ffilter3 = vld1q_f32(ffilter3);
-            _sum1 = vmlaq_f32(_sum1, _inptr3, _ffilter3);
+            float32x4_t _in_ptr3 = vld1q_f32(in_ptr3);
+            float32x4_t _pad_filter3 = vld1q_f32(pad_filter3);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr3, _pad_filter3);
             _sum1 = vsetq_lane_f32(sum1, _sum1, 3);
 
             float32x2_t _ss1 =
@@ -2077,44 +2081,44 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
             float32x2_t _ssss1_ssss1 = vpadd_f32(_ss1, _ss1);
             sum1 += vget_lane_f32(_ssss1_ssss1, 0);
 #else
-            sum1 += inptr1[0] * ffilter1[0];
-            sum1 += inptr1[1] * ffilter1[1];
-            sum1 += inptr1[2] * ffilter1[2];
-            sum1 += inptr2[0] * ffilter2[0];
-            sum1 += inptr2[1] * ffilter2[1];
-            sum1 += inptr2[2] * ffilter2[2];
-            sum1 += inptr3[0] * ffilter3[0];
-            sum1 += inptr3[1] * ffilter3[1];
-            sum1 += inptr3[2] * ffilter3[2];
+            sum1 += in_ptr1[0] * pad_filter1[0];
+            sum1 += in_ptr1[1] * pad_filter1[1];
+            sum1 += in_ptr1[2] * pad_filter1[2];
+            sum1 += in_ptr2[0] * pad_filter2[0];
+            sum1 += in_ptr2[1] * pad_filter2[1];
+            sum1 += in_ptr2[2] * pad_filter2[2];
+            sum1 += in_ptr3[0] * pad_filter3[0];
+            sum1 += in_ptr3[1] * pad_filter3[1];
+            sum1 += in_ptr3[2] * pad_filter3[2];
 #endif
-            if (!isnopadding &&
-                (ow < padding_width || ow > output_width - padding_width - 2)) {
-              ffilter0--;
-              ffilter1--;
-              ffilter2--;
-              ffilter3--;
+            if (!if_nopadding &&
+                (o_w < padding_w || o_w > output_w - padding_w - 2)) {
+              pad_filter0--;
+              pad_filter1--;
+              pad_filter2--;
+              pad_filter3--;
 
             } else {
-              inptr1++;
-              inptr2++;
-              inptr3++;
-              inptr4++;
+              in_ptr1++;
+              in_ptr2++;
+              in_ptr3++;
+              in_ptr4++;
             }
-            *outptr1 += sum1;
+            *out_ptr1 += sum1;
 
-            if (outptr1[0] < reluvalue) {
-              *outptr1 = reluvalue;
+            if (out_ptr1[0] < relu_value) {
+              *out_ptr1 = relu_value;
             }
-            outptr1++;
+            out_ptr1++;
           }
-
+            // valid
 #if __ARM_NEON
 #if __aarch64__
-          if (isnopadding) {
-            int ow_dim4 = (output_width - 2 * padding_width) >> 2;
-            ow += ow_dim4 * 4;
+          if (if_nopadding) {
+            int o_w_dim4 = (output_w - 2 * padding_w) >> 2;
+            o_w += o_w_dim4 * 4;
 
-            if (ow_dim4 > 0) {
+            if (o_w_dim4 > 0) {
               asm volatile(
                   "prfm   pldl1keep, [%[f1], #256]          \n\t"
 
@@ -2127,14 +2131,14 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "sub        %[f1],%[f1], #32              \n\t"
 
                   "0:                                       \n\t"
-                  // load outptr
-                  "prfm   pldl1keep, [%[outptr1], #128]     \n\t"
-                  "ld1   {v12.4s}, [%[outptr1]]             \n\t"
+                  // load out_ptr
+                  "prfm   pldl1keep, [%[out_ptr1], #128]    \n\t"
+                  "ld1   {v12.4s}, [%[out_ptr1]]            \n\t"
 
-                  // inptr1 multiply
-                  "prfm   pldl1keep, [%[inptr1], #192]      \n\t"
-                  "ld1   {v5.4s, v6.4s}, [%[inptr1]]        \n\t"
-                  "add        %[inptr1],%[inptr1], #16      \n\t"
+                  // in_ptr1 multiply
+                  "prfm   pldl1keep, [%[in_ptr1], #192]     \n\t"
+                  "ld1   {v5.4s, v6.4s}, [%[in_ptr1]]       \n\t"
+                  "add        %[in_ptr1],%[in_ptr1], #16    \n\t"
 
                   "ext    v8.16b, v5.16b, v6.16b, #4        \n\t"
                   "fmla   v12.4s, v5.4s, v0.4s[0]           \n\t"
@@ -2142,24 +2146,24 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "ext    v10.16b, v5.16b, v6.16b, #8       \n\t"
                   "fmul   v13.4s, v8.4s, v0.4s[1]           \n\t"
 
-                  "ld1   {v5.4s, v6.4s}, [%[inptr2]]        \n\t"
-                  "add        %[inptr2],%[inptr2], #16      \n\t"
+                  "ld1   {v5.4s, v6.4s}, [%[in_ptr2]]       \n\t"
+                  "add        %[in_ptr2],%[in_ptr2], #16    \n\t"
                   "fmla   v12.4s, v10.4s, v0.4s[2]          \n\t"
 
-                  // inptr2 multiply
+                  // in_ptr2 multiply
                   "ext    v8.16b,  v5.16b, v6.16b, #4       \n\t"
                   "fmla   v13.4s, v5.4s, v0.4s[3]           \n\t"
 
                   "ext    v9.16b,  v5.16b, v6.16b, #8       \n\t"
                   "fmla   v12.4s, v8.4s, v1.4s[0]           \n\t"
 
-                  "ld1   {v6.d}[1], [%[inptr3]]             \n\t"
-                  "add        %[inptr3],%[inptr3], #8       \n\t"
-                  "ld1   {v7.4s}, [%[inptr3]]               \n\t"
-                  "add        %[inptr3],%[inptr3], #8       \n\t"
+                  "ld1   {v6.d}[1], [%[in_ptr3]]            \n\t"
+                  "add        %[in_ptr3],%[in_ptr3], #8     \n\t"
+                  "ld1   {v7.4s}, [%[in_ptr3]]              \n\t"
+                  "add        %[in_ptr3],%[in_ptr3], #8     \n\t"
                   "fmla   v13.4s, v9.4s, v1.4s[1]           \n\t"
 
-                  // inptr3 multiply
+                  // in_ptr3 multiply
                   "ext    v10.16b, v6.16b, v7.16b, #8       \n\t"
                   "fmla   v12.4s, v7.4s, v4.4s[0]           \n\t"
 
@@ -2167,29 +2171,29 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "fmla   v13.4s, v10.4s, v1.4s[2]          \n\t"
                   "fmla   v12.4s, v11.4s, v1.4s[3]          \n\t"
 
-                  // store outptr
+                  // store out_ptr
                   "fadd   v12.4s, v13.4s, v12.4s            \n\t"
-                  "fmax   v12.4s, v12.4s, v16.4s             \n\t"
-                  "st1   {v12.4s}, [%[outptr1]], #16        \n\t"
+                  "fmax   v12.4s, v12.4s, v16.4s            \n\t"
+                  "st1   {v12.4s}, [%[out_ptr1]], #16       \n\t"
 
                   // cycle
-                  "subs       %[ow_dim4],%[ow_dim4], #1     \n\t"
+                  "subs       %[o_w_dim4],%[o_w_dim4], #1     \n\t"
                   "bne        0b                            \n\t"
 
-                  : [ow_dim4] "+r"(ow_dim4), [outptr1] "+r"(outptr1),
-                    [inptr1] "+r"(inptr1), [inptr2] "+r"(inptr2),
-                    [inptr3] "+r"(inptr3)
+                  : [o_w_dim4] "+r"(o_w_dim4), [out_ptr1] "+r"(out_ptr1),
+                    [in_ptr1] "+r"(in_ptr1), [in_ptr2] "+r"(in_ptr2),
+                    [in_ptr3] "+r"(in_ptr3)
                   : [f1] "r"(f1), [reluptr] "r"(reluptr)
                   : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
                     "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v16");
             }
           }
 #else
-          if (isnopadding) {
-            int ow_dim4 = (output_width - 2 * padding_width) >> 2;
-            ow += ow_dim4 * 4;
+          if (if_nopadding) {
+            int o_w_dim4 = (output_w - 2 * padding_w) >> 2;
+            o_w += o_w_dim4 * 4;
 
-            if (ow_dim4 > 0) {
+            if (o_w_dim4 > 0) {
               asm volatile(
                   "pld        [%[f1], #256]                 \n\t"
                   "vld1.32   {d0-d3}, [%[f1]]               \n\t"
@@ -2202,14 +2206,14 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "sub        %[f1], #32                    \n\t"
 
                   "0:                                       \n\t"
-                  // load outptr
-                  "pld        [%[outptr1], #128]            \n\t"
-                  "vld1.f32   {d24, d25}, [%[outptr1]]      \n\t"
+                  // load out_ptr
+                  "pld        [%[out_ptr1], #128]           \n\t"
+                  "vld1.f32   {d24, d25}, [%[out_ptr1]]     \n\t"
 
-                  // inptr1 multiply
-                  "pld        [%[inptr1], #128]             \n\t"
-                  "vld1.f32   {d10-d12}, [%[inptr1]]        \n\t"
-                  "add        %[inptr1], #16                \n\t"
+                  // in_ptr1 multiply
+                  "pld        [%[in_ptr1], #128]            \n\t"
+                  "vld1.f32   {d10-d12}, [%[in_ptr1]]       \n\t"
+                  "add        %[in_ptr1], #16               \n\t"
 
                   "vext.32    q8, q5, q6, #1                \n\t"
                   "vmla.f32   q12, q5, d0[0]                \n\t"
@@ -2217,26 +2221,26 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "vext.32    q9, q6, q7, #2                \n\t"
                   "vext.32    q10, q5, q6, #2               \n\t"
                   "vmul.f32   q13, q8, d0[1]                \n\t"
-                  "pld        [%[inptr2], #128]             \n\t"
+                  "pld        [%[in_ptr2], #128]            \n\t"
 
                   "vext.32    q11, q6, q7, #3               \n\t"
-                  "vld1.f32   {d10-d12}, [%[inptr2]]        \n\t"
-                  "add        %[inptr2], #16                \n\t"
+                  "vld1.f32   {d10-d12}, [%[in_ptr2]]       \n\t"
+                  "add        %[in_ptr2], #16               \n\t"
                   "vmla.f32   q12, q10, d1[0]               \n\t"
 
-                  // inptr2 multiply
+                  // in_ptr2 multiply
                   "vext.32    q8, q5, q6, #1                \n\t"
                   "vmla.f32   q13, q5, d1[1]                \n\t"
 
-                  "pld        [%[inptr3], #128]             \n\t"
+                  "pld        [%[in_ptr3], #128]            \n\t"
                   "vext.32    q9, q5, q6, #2                \n\t"
                   "vmla.f32   q12, q8, d2[0]                \n\t"
 
-                  "vld1.f32   {d13-d15}, [%[inptr3]]        \n\t"
-                  "add        %[inptr3], #16                \n\t"
+                  "vld1.f32   {d13-d15}, [%[in_ptr3]]       \n\t"
+                  "add        %[in_ptr3], #16               \n\t"
                   "vmla.f32   q13, q9, d2[1]                \n\t"
 
-                  // inptr3 multiply
+                  // in_ptr3 multiply
                   "vext.32    q10, q6, q7, #2               \n\t"
                   "vmla.f32   q12, q7, d8[0]                \n\t"
 
@@ -2245,19 +2249,19 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
 
                   "vmla.f32   q12, q11, d3[1]               \n\t"
 
-                  // store outptr
+                  // store out_ptr
                   "vadd.f32   q12, q12, q13                 \n\t"
                   "vmax.f32   q12, q12, q2                  \n\t"
-                  "vst1.f32   {d24, d25}, [%[outptr1]]!     \n\t"
+                  "vst1.f32   {d24, d25}, [%[out_ptr1]]!    \n\t"
 
                   // cycle
-                  "subs       %[ow_dim4], #1                \n\t"
+                  "subs       %[o_w_dim4], #1               \n\t"
                   "bne        0b                            \n\t"
 
-                  : [ow_dim4] "+r"(ow_dim4), [outptr1] "+r"(outptr1),
-                    [outptr2] "+r"(outptr2), [inptr1] "+r"(inptr1),
-                    [inptr2] "+r"(inptr2), [inptr3] "+r"(inptr3),
-                    [inptr4] "+r"(inptr4)
+                  : [o_w_dim4] "+r"(o_w_dim4), [out_ptr1] "+r"(out_ptr1),
+                    [out_ptr2] "+r"(out_ptr2), [in_ptr1] "+r"(in_ptr1),
+                    [in_ptr2] "+r"(in_ptr2), [in_ptr3] "+r"(in_ptr3),
+                    [in_ptr4] "+r"(in_ptr4)
                   : [f1] "r"(f1), [reluptr] "r"(reluptr)
                   : "memory", "q0", "q1", "q2", "q4", "q5", "q6", "q7", "q8",
                     "q9", "q10", "q11", "q12", "q13");
@@ -2265,20 +2269,21 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
           }
 #endif  //__aarch64__
 #endif  // __ARM_NEON
-          for (; ow < output_width; ++ow) {
+        // remain output_width
+          for (; o_w < output_w; ++o_w) {
             float sum1 = 0;
 #if __ARM_NEON
-            float32x4_t _inptr1 = vld1q_f32(inptr1);
-            float32x4_t _ffilter1 = vld1q_f32(ffilter1);
-            float32x4_t _sum1 = vmulq_f32(_inptr1, _ffilter1);
+            float32x4_t _in_ptr1 = vld1q_f32(in_ptr1);
+            float32x4_t _pad_filter1 = vld1q_f32(pad_filter1);
+            float32x4_t _sum1 = vmulq_f32(_in_ptr1, _pad_filter1);
 
-            float32x4_t _inptr2 = vld1q_f32(inptr2);
-            float32x4_t _ffilter2 = vld1q_f32(ffilter2);
-            _sum1 = vmlaq_f32(_sum1, _inptr2, _ffilter2);
+            float32x4_t _in_ptr2 = vld1q_f32(in_ptr2);
+            float32x4_t _pad_filter2 = vld1q_f32(pad_filter2);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr2, _pad_filter2);
 
-            float32x4_t _inptr3 = vld1q_f32(inptr3);
-            float32x4_t _ffilter3 = vld1q_f32(ffilter3);
-            _sum1 = vmlaq_f32(_sum1, _inptr3, _ffilter3);
+            float32x4_t _in_ptr3 = vld1q_f32(in_ptr3);
+            float32x4_t _pad_filter3 = vld1q_f32(pad_filter3);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr3, _pad_filter3);
             _sum1 = vsetq_lane_f32(sum1, _sum1, 3);
 
             float32x2_t _ss1 =
@@ -2286,44 +2291,44 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
             float32x2_t _ssss1_ssss1 = vpadd_f32(_ss1, _ss1);
             sum1 += vget_lane_f32(_ssss1_ssss1, 0);
 #else
-            sum1 += inptr1[0] * ffilter1[0];
-            sum1 += inptr1[1] * ffilter1[1];
-            sum1 += inptr1[2] * ffilter1[2];
-            sum1 += inptr2[0] * ffilter2[0];
-            sum1 += inptr2[1] * ffilter2[1];
-            sum1 += inptr2[2] * ffilter2[2];
-            sum1 += inptr3[0] * ffilter3[0];
-            sum1 += inptr3[1] * ffilter3[1];
-            sum1 += inptr3[2] * ffilter3[2];
+            sum1 += in_ptr1[0] * pad_filter1[0];
+            sum1 += in_ptr1[1] * pad_filter1[1];
+            sum1 += in_ptr1[2] * pad_filter1[2];
+            sum1 += in_ptr2[0] * pad_filter2[0];
+            sum1 += in_ptr2[1] * pad_filter2[1];
+            sum1 += in_ptr2[2] * pad_filter2[2];
+            sum1 += in_ptr3[0] * pad_filter3[0];
+            sum1 += in_ptr3[1] * pad_filter3[1];
+            sum1 += in_ptr3[2] * pad_filter3[2];
 #endif
-            if (!isnopadding &&
-                (ow < padding_width || ow > output_width - padding_width - 2)) {
-              ffilter0--;
-              ffilter1--;
-              ffilter2--;
-              ffilter3--;
+            if (!if_nopadding &&
+                (o_w < padding_w || o_w > output_w - padding_w - 2)) {
+              pad_filter0--;
+              pad_filter1--;
+              pad_filter2--;
+              pad_filter3--;
 
             } else {
-              inptr1++;
-              inptr2++;
-              inptr3++;
-              inptr4++;
+              in_ptr1++;
+              in_ptr2++;
+              in_ptr3++;
+              in_ptr4++;
             }
-            *outptr1 += sum1;
+            *out_ptr1 += sum1;
 
-            if (outptr1[0] < reluvalue) {
-              *outptr1 = reluvalue;
+            if (out_ptr1[0] < relu_value) {
+              *out_ptr1 = relu_value;
             }
-            outptr1++;
+            out_ptr1++;
           }
-          outptr1 += output_width;
+          out_ptr1 += output_w;
         }
-        filter_data_ch += filter_channel_stride;
-        input_data_ch += input_channel_stride;
+        filter_data_ch += filter_ch_size;
+        input_data_ch += in_ch_size;
       }
     }
-    input_data += input_batch_stride;
-    output_data += output_batch_stride;
+    input_data += in_batch_size;
+    output_data += out_batch_size;
   }
 }
 
@@ -2332,81 +2337,81 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
                             const std::vector<int> &paddings,
                             framework::Tensor *output, framework::Tensor *bias,
                             bool if_bias, bool if_relu) {
-  const int batch_size = input->dims()[0];
-  const int input_channels = input->dims()[1];
-  const int input_height = input->dims()[2];
-  const int input_width = input->dims()[3];
-  const int output_channels = output->dims()[1];
-  const int output_height = output->dims()[2];
-  const int output_width = output->dims()[3];
-  const int padding_height = paddings[0];
-  const int padding_width = paddings[1];
+  const int batch = input->dims()[0];
+  const int input_ch = input->dims()[1];
+  const int input_h = input->dims()[2];
+  const int input_w = input->dims()[3];
+  const int output_ch = output->dims()[1];
+  const int output_h = output->dims()[2];
+  const int output_w = output->dims()[3];
+  const int padding_h = paddings[0];
+  const int padding_w = paddings[1];
 
   const float *input_data = input->data<float>();
   float *output_data = output->mutable_data<float>();
   const float *filter_data = filter->data<float>();
 
-  const int input_channel_stride = input_height * input_width;
-  const int input_batch_stride = input_channels * input_channel_stride;
-  const int output_channel_stride = output_height * output_width;
-  const int output_batch_stride = output_channels * output_channel_stride;
-  const int filter_channel_stride = 9;
-  const int ffilter_length = (2 * padding_height + 3) * (2 * padding_width + 3);
-  const int ffilter_start =
-      2 * padding_height * (2 * padding_width + 3) + 2 * padding_width;
-  const int ffilter_width = 3 + padding_width * 2;
+  const int in_ch_size = input_h * input_w;
+  const int in_batch_size = input_ch * in_ch_size;
+  const int out_ch_size = output_h * output_w;
+  const int out_batch_size = output_ch * out_ch_size;
+  const int filter_ch_size = 9;
+  const int pad_filter_ch_size = (2 * padding_h + 3) * (2 * padding_w + 3);
+  const int pad_filter_start =
+      2 * padding_h * (2 * padding_w + 3) + 2 * padding_w;
+  const int pad_filter_w = 3 + padding_w * 2;
   const float *bias_data;
-  bool isnopadding = false;
+  bool if_nopadding = false;
 
-  const bool useallInput_w = (input_width + 2 * padding_width - 3) % 2 == 0;
-  const bool useallInput_h = (input_height + 2 * padding_height - 3) % 2 == 0;
-  const bool isoddpadding_w = padding_width % 2 == 1;
-  const bool isoddpadding_h = padding_height % 2 == 1;
-  int position_w1 = padding_width >> 1;
-  int position_h1 = padding_height >> 1;
-  int position_w2 = output_width - position_w1 - 2;
-  int position_h2 = output_height - position_h1 - 2;
-  const int left_stride = input_width + 2 * padding_width - 2 * output_width;
+  const bool if_exact_in_w = (input_w + 2 * padding_w - 3) % 2 == 0;
+  const bool if_exact_in_h = (input_h + 2 * padding_h - 3) % 2 == 0;
+  const bool if_odd_pad_w = padding_w % 2 == 1;
+  const bool if_odd_pad_h = padding_h % 2 == 1;
+  int valid_w_start = padding_w >> 1;
+  int valid_h_start = padding_h >> 1;
+  int valid_w_end = output_w - valid_w_start - 2;
+  int valid_h_end = output_h - valid_h_start - 2;
+  const int remain_stride_w = input_w + 2 * padding_w - 2 * output_w;
 
   if (if_bias) {
     bias_data = bias->data<float>();
   }
 #if __ARM_NEON
-  float *outptr = output_data;
-  for (int i = 0; i < output_channels; ++i) {
+  float *out_ptr = output_data;
+  for (int i = 0; i < output_ch; ++i) {
     float32x4_t _bias;
     if (if_bias) {
       _bias = vld1q_dup_f32(bias_data + i);
     } else {
       _bias = vdupq_n_f32(0.0);
     }
-    int dim4 = output_channel_stride >> 2;
-    int lef4 = output_channel_stride & 3;
+    int dim4 = out_ch_size >> 2;
+    int lef4 = out_ch_size & 3;
 
     for (int j = 0; j < dim4; ++j) {
-      vst1q_f32(outptr, _bias);
-      outptr += 4;
+      vst1q_f32(out_ptr, _bias);
+      out_ptr += 4;
     }
     if (lef4 != 0) {
       if (lef4 >= 1) {
-        vst1q_lane_f32(outptr, _bias, 0);
-        outptr++;
+        vst1q_lane_f32(out_ptr, _bias, 0);
+        out_ptr++;
       }
       if (lef4 >= 2) {
-        vst1q_lane_f32(outptr, _bias, 1);
-        outptr++;
+        vst1q_lane_f32(out_ptr, _bias, 1);
+        out_ptr++;
       }
       if (lef4 >= 3) {
-        vst1q_lane_f32(outptr, _bias, 2);
-        outptr++;
+        vst1q_lane_f32(out_ptr, _bias, 2);
+        out_ptr++;
       }
     }
   }
 #else
   int k = 0;
 #pragma omp parallel for
-  for (int i = 0; i < output_channels; ++i) {
-    for (int j = 0; j < output_channel_stride; ++j) {
+  for (int i = 0; i < output_ch; ++i) {
+    for (int j = 0; j < out_ch_size; ++j) {
       if (if_bias) {
         output_data[k++] = bias_data[i];
       } else {
@@ -2415,29 +2420,29 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
     }
   }
 #endif
-  if (padding_height == 0 && padding_width == 0) {
-    isnopadding = true;
-    position_w1 = 0;
-    position_h1 = 0;
-    position_w2 = output_width;
-    position_h2 = output_height;
+  if (padding_h == 0 && padding_w == 0) {
+    if_nopadding = true;
+    valid_w_start = 0;
+    valid_h_start = 0;
+    valid_w_end = output_w;
+    valid_h_end = output_h;
   }
-  for (int bs = 0; bs < batch_size; ++bs) {
-    int output_channels_d2 = output_channels >> 1;
+  for (int b = 0; b < batch; ++b) {
+    int output_ch_d2 = output_ch >> 1;
 
 #pragma omp parallel for
-    for (int oc2 = 0; oc2 < output_channels_d2; ++oc2) {
-      std::atomic<float> reluvalue{0};
+    for (int o_c2 = 0; o_c2 < output_ch_d2; ++o_c2) {
+      std::atomic<float> relu_value{0};
       const float *reluptr;
-      int oc = oc2 * 2;
+      int o_c = o_c2 * 2;
 
       const float *f1, *f9;
       const float *f1_2, *f9_2;
-      const float *inptr1, *inptr2, *inptr3;
-      const float *ffilter1, *ffilter2, *ffilter3;
-      const float *ffilter1_2, *ffilter2_2, *ffilter3_2;
-      float ffilterarray[ffilter_length] = {0};
-      float ffilterarray_2[ffilter_length] = {0};
+      const float *in_ptr1, *in_ptr2, *in_ptr3;
+      const float *pad_filter1, *pad_filter2, *pad_filter3;
+      const float *pad_filter1_2, *pad_filter2_2, *pad_filter3_2;
+      float pad_filter_arr[pad_filter_ch_size] = {0};
+      float pad_filter_arr_2[pad_filter_ch_size] = {0};
 
       float *output_data_ch;
       float *output_data_ch_2;
@@ -2445,95 +2450,93 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
       const float *filter_data_ch;
       const float *filter_data_ch_2;
 
-      filter_data_ch =
-          filter_data + oc * filter_channel_stride * input_channels;
-      filter_data_ch_2 =
-          filter_data + (oc + 1) * filter_channel_stride * input_channels;
+      filter_data_ch = filter_data + o_c * filter_ch_size * input_ch;
+      filter_data_ch_2 = filter_data + (o_c + 1) * filter_ch_size * input_ch;
 
       input_data_ch = input_data;
-      output_data_ch = output_data + oc * output_channel_stride;
-      output_data_ch_2 = output_data + (oc + 1) * output_channel_stride;
+      output_data_ch = output_data + o_c * out_ch_size;
+      output_data_ch_2 = output_data + (o_c + 1) * out_ch_size;
 
-      for (int ic = 0; ic < input_channels; ++ic) {
-        float reluarr[4];
-        reluptr = reluarr;
-        if (if_relu && ic == input_channels - 1) {
-          reluvalue = 0;
+      for (int i_c = 0; i_c < input_ch; ++i_c) {
+        float relu_arr[4];
+        reluptr = relu_arr;
+        if (if_relu && i_c == input_ch - 1) {
+          relu_value = 0;
         } else {
-          reluvalue = -FLT_MAX;
+          relu_value = -FLT_MAX;
         }
-        reluarr[0] = reluvalue;
-        reluarr[1] = reluvalue;
-        reluarr[2] = reluvalue;
-        reluarr[3] = reluvalue;
+        relu_arr[0] = relu_value;
+        relu_arr[1] = relu_value;
+        relu_arr[2] = relu_value;
+        relu_arr[3] = relu_value;
 
         f1 = filter_data_ch;
         f9 = filter_data_ch + 8;
         f1_2 = filter_data_ch_2;
         f9_2 = filter_data_ch_2 + 8;
 
-        if (!isnopadding) {
-          ffilterarray[ffilter_length] = {0};
+        if (!if_nopadding) {
+          pad_filter_arr[pad_filter_ch_size] = {0};
           for (int i = 0; i < 9; ++i) {
-            int j = i / 3 * (2 * padding_width + 3) + i % 3 +
-                    padding_height * 3 +
-                    padding_width * (2 * padding_height + 1);
-            ffilterarray[j] = filter_data_ch[i];
-            ffilterarray_2[j] = filter_data_ch_2[i];
+            int j = i / 3 * (2 * padding_w + 3) + i % 3 + padding_h * 3 +
+                    padding_w * (2 * padding_h + 1);
+            pad_filter_arr[j] = filter_data_ch[i];
+            pad_filter_arr_2[j] = filter_data_ch_2[i];
           }
-          ffilter1 = ffilterarray;
-          ffilter1 += ffilter_start;
-          ffilter2 = ffilter1 + ffilter_width;
-          ffilter3 = ffilter2 + ffilter_width;
+          pad_filter1 = pad_filter_arr;
+          pad_filter1 += pad_filter_start;
+          pad_filter2 = pad_filter1 + pad_filter_w;
+          pad_filter3 = pad_filter2 + pad_filter_w;
 
-          ffilter1_2 = ffilterarray_2;
-          ffilter1_2 += ffilter_start;
-          ffilter2_2 = ffilter1_2 + ffilter_width;
-          ffilter3_2 = ffilter2_2 + ffilter_width;
+          pad_filter1_2 = pad_filter_arr_2;
+          pad_filter1_2 += pad_filter_start;
+          pad_filter2_2 = pad_filter1_2 + pad_filter_w;
+          pad_filter3_2 = pad_filter2_2 + pad_filter_w;
         } else {
-          ffilter1 = filter_data_ch;
-          ffilter2 = ffilter1 + 3;
-          ffilter3 = ffilter2 + 3;
+          pad_filter1 = filter_data_ch;
+          pad_filter2 = pad_filter1 + 3;
+          pad_filter3 = pad_filter2 + 3;
 
-          ffilter1_2 = filter_data_ch_2;
-          ffilter2_2 = ffilter1_2 + 3;
-          ffilter3_2 = ffilter2_2 + 3;
+          pad_filter1_2 = filter_data_ch_2;
+          pad_filter2_2 = pad_filter1_2 + 3;
+          pad_filter3_2 = pad_filter2_2 + 3;
         }
 
-        float *outptr1;
-        float *outptr1_2;
-        outptr1 = output_data_ch;
-        outptr1_2 = output_data_ch_2;
+        float *out_ptr1;
+        float *out_ptr1_2;
+        out_ptr1 = output_data_ch;
+        out_ptr1_2 = output_data_ch_2;
 
-        inptr1 = input_data_ch;
-        inptr2 = inptr1 + input_width;
-        inptr3 = inptr2 + input_width;
+        in_ptr1 = input_data_ch;
+        in_ptr2 = in_ptr1 + input_w;
+        in_ptr3 = in_ptr2 + input_w;
 
-        int oh = 0;
-        for (; oh < output_height; ++oh) {
-          int ow = 0;
+        int o_h = 0;
+        for (; o_h < output_h; ++o_h) {
+          int o_w = 0;
 
-          for (; ow <= position_w1; ++ow) {
+          // pad left
+          for (; o_w <= valid_w_start; ++o_w) {
             float sum1 = 0;
             float sum1_2 = 0;
 #if __ARM_NEON
-            float32x4_t _inptr1 = vld1q_f32(inptr1);
-            float32x4_t _ffilter1 = vld1q_f32(ffilter1);
-            float32x4_t _ffilter1_2 = vld1q_f32(ffilter1_2);
-            float32x4_t _sum1 = vmulq_f32(_inptr1, _ffilter1);
-            float32x4_t _sum1_2 = vmulq_f32(_inptr1, _ffilter1_2);
+            float32x4_t _in_ptr1 = vld1q_f32(in_ptr1);
+            float32x4_t _pad_filter1 = vld1q_f32(pad_filter1);
+            float32x4_t _pad_filter1_2 = vld1q_f32(pad_filter1_2);
+            float32x4_t _sum1 = vmulq_f32(_in_ptr1, _pad_filter1);
+            float32x4_t _sum1_2 = vmulq_f32(_in_ptr1, _pad_filter1_2);
 
-            float32x4_t _inptr2 = vld1q_f32(inptr2);
-            float32x4_t _ffilter2 = vld1q_f32(ffilter2);
-            float32x4_t _ffilter2_2 = vld1q_f32(ffilter2_2);
-            _sum1 = vmlaq_f32(_sum1, _inptr2, _ffilter2);
-            _sum1_2 = vmlaq_f32(_sum1_2, _inptr2, _ffilter2_2);
+            float32x4_t _in_ptr2 = vld1q_f32(in_ptr2);
+            float32x4_t _pad_filter2 = vld1q_f32(pad_filter2);
+            float32x4_t _pad_filter2_2 = vld1q_f32(pad_filter2_2);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr2, _pad_filter2);
+            _sum1_2 = vmlaq_f32(_sum1_2, _in_ptr2, _pad_filter2_2);
 
-            float32x4_t _inptr3 = vld1q_f32(inptr3);
-            float32x4_t _ffilter3 = vld1q_f32(ffilter3);
-            float32x4_t _ffilter3_2 = vld1q_f32(ffilter3_2);
-            _sum1 = vmlaq_f32(_sum1, _inptr3, _ffilter3);
-            _sum1_2 = vmlaq_f32(_sum1_2, _inptr3, _ffilter3_2);
+            float32x4_t _in_ptr3 = vld1q_f32(in_ptr3);
+            float32x4_t _pad_filter3 = vld1q_f32(pad_filter3);
+            float32x4_t _pad_filter3_2 = vld1q_f32(pad_filter3_2);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr3, _pad_filter3);
+            _sum1_2 = vmlaq_f32(_sum1_2, _in_ptr3, _pad_filter3_2);
 
             _sum1 = vsetq_lane_f32(sum1, _sum1, 3);
             _sum1_2 = vsetq_lane_f32(sum1_2, _sum1_2, 3);
@@ -2547,79 +2550,80 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
             sum1 += vget_lane_f32(_ssss1_ssss1_2, 0);
             sum1_2 += vget_lane_f32(_ssss1_ssss1_2, 1);
 #else
-            sum1 += inptr1[0] * ffilter1[0];
-            sum1 += inptr1[1] * ffilter1[1];
-            sum1 += inptr1[2] * ffilter1[2];
-            sum1 += inptr2[0] * ffilter2[0];
-            sum1 += inptr2[1] * ffilter2[1];
-            sum1 += inptr2[2] * ffilter2[2];
-            sum1 += inptr3[0] * ffilter3[0];
-            sum1 += inptr3[1] * ffilter3[1];
-            sum1 += inptr3[2] * ffilter3[2];
+            sum1 += in_ptr1[0] * pad_filter1[0];
+            sum1 += in_ptr1[1] * pad_filter1[1];
+            sum1 += in_ptr1[2] * pad_filter1[2];
+            sum1 += in_ptr2[0] * pad_filter2[0];
+            sum1 += in_ptr2[1] * pad_filter2[1];
+            sum1 += in_ptr2[2] * pad_filter2[2];
+            sum1 += in_ptr3[0] * pad_filter3[0];
+            sum1 += in_ptr3[1] * pad_filter3[1];
+            sum1 += in_ptr3[2] * pad_filter3[2];
 
-            sum1_2 += inptr1[0] * ffilter1_2[0];
-            sum1_2 += inptr1[1] * ffilter1_2[1];
-            sum1_2 += inptr1[2] * ffilter1_2[2];
-            sum1_2 += inptr2[0] * ffilter2_2[0];
-            sum1_2 += inptr2[1] * ffilter2_2[1];
-            sum1_2 += inptr2[2] * ffilter2_2[2];
-            sum1_2 += inptr3[0] * ffilter3_2[0];
-            sum1_2 += inptr3[1] * ffilter3_2[1];
-            sum1_2 += inptr3[2] * ffilter3_2[2];
+            sum1_2 += in_ptr1[0] * pad_filter1_2[0];
+            sum1_2 += in_ptr1[1] * pad_filter1_2[1];
+            sum1_2 += in_ptr1[2] * pad_filter1_2[2];
+            sum1_2 += in_ptr2[0] * pad_filter2_2[0];
+            sum1_2 += in_ptr2[1] * pad_filter2_2[1];
+            sum1_2 += in_ptr2[2] * pad_filter2_2[2];
+            sum1_2 += in_ptr3[0] * pad_filter3_2[0];
+            sum1_2 += in_ptr3[1] * pad_filter3_2[1];
+            sum1_2 += in_ptr3[2] * pad_filter3_2[2];
 #endif
-            if (isnopadding) {
-              inptr1 += 2;
-              inptr2 += 2;
-              inptr3 += 2;
+            if (if_nopadding) {
+              in_ptr1 += 2;
+              in_ptr2 += 2;
+              in_ptr3 += 2;
 
-            } else if (isoddpadding_w && ow == position_w1 ||
-                       ow == position_w2 && isoddpadding_w && useallInput_w ||
-                       ow == position_w2 + 1 && !isoddpadding_w &&
-                           !useallInput_w) {
-              ffilter1--;
-              ffilter2--;
-              ffilter3--;
-              ffilter1_2--;
-              ffilter2_2--;
-              ffilter3_2--;
+            } else if (if_odd_pad_w && o_w == valid_w_start ||
+                       o_w == valid_w_end && if_odd_pad_w && if_exact_in_w ||
+                       o_w == valid_w_end + 1 && !if_odd_pad_w &&
+                           !if_exact_in_w) {
+              pad_filter1--;
+              pad_filter2--;
+              pad_filter3--;
+              pad_filter1_2--;
+              pad_filter2_2--;
+              pad_filter3_2--;
 
-              inptr1++;
-              inptr2++;
-              inptr3++;
+              in_ptr1++;
+              in_ptr2++;
+              in_ptr3++;
 
-            } else if (ow < position_w1 || ow > position_w2) {
-              ffilter1 -= 2;
-              ffilter2 -= 2;
-              ffilter3 -= 2;
-              ffilter1_2 -= 2;
-              ffilter2_2 -= 2;
-              ffilter3_2 -= 2;
+            } else if (o_w < valid_w_start || o_w > valid_w_end) {
+              pad_filter1 -= 2;
+              pad_filter2 -= 2;
+              pad_filter3 -= 2;
+              pad_filter1_2 -= 2;
+              pad_filter2_2 -= 2;
+              pad_filter3_2 -= 2;
 
             } else {
-              inptr1 += 2;
-              inptr2 += 2;
-              inptr3 += 2;
+              in_ptr1 += 2;
+              in_ptr2 += 2;
+              in_ptr3 += 2;
             }
-            *outptr1 += sum1;
-            *outptr1_2 += sum1_2;
+            *out_ptr1 += sum1;
+            *out_ptr1_2 += sum1_2;
 
-            if (outptr1[0] < reluvalue) {
-              *outptr1 = reluvalue;
+            if (out_ptr1[0] < relu_value) {
+              *out_ptr1 = relu_value;
             }
 
-            if (outptr1_2[0] < reluvalue) {
-              *outptr1_2 = reluvalue;
+            if (out_ptr1_2[0] < relu_value) {
+              *out_ptr1_2 = relu_value;
             }
-            outptr1++;
-            outptr1_2++;
+            out_ptr1++;
+            out_ptr1_2++;
           }
+            // valid
 #if __ARM_NEON
 #if __aarch64__
-          if (oh > position_h1 && oh <= position_h2) {
-            int ow_dim4 = (position_w2 - position_w1 - 1) >> 2;
-            ow += ow_dim4 * 4;
+          if (o_h > valid_h_start && o_h <= valid_h_end) {
+            int o_w_dim4 = (valid_w_end - valid_w_start - 1) >> 2;
+            o_w += o_w_dim4 * 4;
 
-            if (ow_dim4 > 0) {
+            if (o_w_dim4 > 0) {
               asm volatile(
                   "prfm   pldl1keep, [%[f1], #256]          \n\t"
                   "prfm   pldl1keep, [%[f9], #256]          \n\t"
@@ -2633,19 +2637,19 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
                   "ld1   {v4.s}[1], [%[f9_2]]               \n\t"
                   "ld1   {v16.4s}, [%[reluptr]]             \n\t"
 
-                  "prfm   pldl1keep, [%[inptr1], #256]      \n\t"
-                  "ld2   {v5.4s, v6.4s}, [%[inptr1]], #32   \n\t"
-                  "ld2   {v7.4s, v8.4s}, [%[inptr1]]        \n\t"
+                  "prfm   pldl1keep, [%[in_ptr1], #256]     \n\t"
+                  "ld2   {v5.4s, v6.4s}, [%[in_ptr1]], #32  \n\t"
+                  "ld2   {v7.4s, v8.4s}, [%[in_ptr1]]       \n\t"
 
                   "0:                                       \n\t"
-                  // load outptr
-                  "prfm    pldl1keep, [%[outptr1], #128]    \n\t"
-                  "prfm    pldl1keep, [%[outptr1_2], #128]  \n\t"
+                  // load out_ptr
+                  "prfm    pldl1keep, [%[out_ptr1], #128]   \n\t"
+                  "prfm    pldl1keep, [%[out_ptr1_2], #128] \n\t"
 
-                  "ld1   {v12.4s}, [%[outptr1]]             \n\t"
-                  "ld1   {v14.4s}, [%[outptr1_2]]           \n\t"
+                  "ld1   {v12.4s}, [%[out_ptr1]]            \n\t"
+                  "ld1   {v14.4s}, [%[out_ptr1_2]]          \n\t"
 
-                  // inptr1
+                  // in_ptr1
 
                   "fmla   v12.4s, v5.4s, v0.4s[0]           \n\t"
                   "fmla   v14.4s, v5.4s, v2.4s[0]           \n\t"
@@ -2654,12 +2658,12 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
                   "fmul   v13.4s, v6.4s, v0.4s[1]           \n\t"
                   "fmul   v15.4s, v6.4s, v2.4s[1]           \n\t"
 
-                  "ld2   {v5.4s, v6.4s}, [%[inptr2]], #32   \n\t"
+                  "ld2   {v5.4s, v6.4s}, [%[in_ptr2]], #32  \n\t"
                   "fmla   v12.4s, v8.4s, v0.4s[2]           \n\t"
                   "fmla   v14.4s, v8.4s, v2.4s[2]           \n\t"
 
-                  "ld2   {v7.4s, v8.4s}, [%[inptr2]]        \n\t"
-                  // inptr2
+                  "ld2   {v7.4s, v8.4s}, [%[in_ptr2]]       \n\t"
+                  // in_ptr2
 
                   "fmla   v13.4s, v5.4s, v0.4s[3]           \n\t"
                   "fmla   v15.4s, v5.4s, v2.4s[3]           \n\t"
@@ -2668,13 +2672,12 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
                   "fmla   v12.4s, v6.4s, v1.4s[0]           \n\t"
                   "fmla   v14.4s, v6.4s, v3.4s[0]           \n\t"
 
-                  "ld2   {v5.4s, v6.4s}, [%[inptr3]], #32   \n\t"
+                  "ld2   {v5.4s, v6.4s}, [%[in_ptr3]], #32  \n\t"
                   "fmla   v13.4s, v8.4s, v1.4s[1]           \n\t"
                   "fmla   v15.4s, v8.4s, v3.4s[1]           \n\t"
 
-                  "ld2   {v7.4s, v8.4s}, [%[inptr3]]        \n\t"
-                  // inptr3
-
+                  // in_ptr3
+                  "ld2   {v7.4s, v8.4s}, [%[in_ptr3]]       \n\t"
                   "fmla   v12.4s, v5.4s, v1.4s[2]           \n\t"
                   "fmla   v14.4s, v5.4s, v3.4s[2]           \n\t"
 
@@ -2686,27 +2689,26 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
                   "fmla   v14.4s, v8.4s, v4.4s[1]           \n\t"
 
                   // store
-
-                  "prfm   pldl1keep, [%[inptr1], #256]      \n\t"
-                  "ld2   {v5.4s, v6.4s}, [%[inptr1]], #32   \n\t"
+                  "prfm   pldl1keep, [%[in_ptr1], #256]     \n\t"
+                  "ld2   {v5.4s, v6.4s}, [%[in_ptr1]], #32  \n\t"
                   "fadd   v12.4s, v12.4s, v13.4s            \n\t"
                   "fadd   v14.4s, v14.4s, v15.4s            \n\t"
 
-                  "ld2   {v7.4s, v8.4s}, [%[inptr1]]        \n\t"
+                  "ld2   {v7.4s, v8.4s}, [%[in_ptr1]]       \n\t"
                   "fmax   v12.4s, v12.4s, v16.4s            \n\t"
                   "fmax   v14.4s, v14.4s, v16.4s            \n\t"
 
-                  "subs       %[ow_dim4], %[ow_dim4], #1    \n\t"
-                  "st1   {v12.4s}, [%[outptr1]], #16        \n\t"
-                  "st1   {v14.4s}, [%[outptr1_2]], #16      \n\t"
+                  "subs       %[o_w_dim4], %[o_w_dim4], #1  \n\t"
+                  "st1   {v12.4s}, [%[out_ptr1]], #16       \n\t"
+                  "st1   {v14.4s}, [%[out_ptr1_2]], #16     \n\t"
 
                   // cycle
                   "bne        0b                            \n\t"
-                  "sub        %[inptr1], %[inptr1], #32      \n\t"
+                  "sub        %[in_ptr1], %[in_ptr1], #32   \n\t"
 
-                  : [ow_dim4] "+r"(ow_dim4), [outptr1] "+r"(outptr1),
-                    [outptr1_2] "+r"(outptr1_2), [inptr1] "+r"(inptr1),
-                    [inptr2] "+r"(inptr2), [inptr3] "+r"(inptr3)
+                  : [o_w_dim4] "+r"(o_w_dim4), [out_ptr1] "+r"(out_ptr1),
+                    [out_ptr1_2] "+r"(out_ptr1_2), [in_ptr1] "+r"(in_ptr1),
+                    [in_ptr2] "+r"(in_ptr2), [in_ptr3] "+r"(in_ptr3)
                   : [f1] "r"(f1), [f1_2] "r"(f1_2), [f9] "r"(f9),
                     [f9_2] "r"(f9_2), [reluptr] "r"(reluptr)
                   : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
@@ -2715,11 +2717,11 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
           }
 
 #else
-          if (oh > position_h1 && oh <= position_h2) {
-            int ow_dim4 = (position_w2 - position_w1 - 1) >> 2;
-            ow += ow_dim4 * 4;
+          if (o_h > valid_h_start && o_h <= valid_h_end) {
+            int o_w_dim4 = (valid_w_end - valid_w_start - 1) >> 2;
+            o_w += o_w_dim4 * 4;
 
-            if (ow_dim4 > 0) {
+            if (o_w_dim4 > 0) {
               asm volatile(
                   "pld        [%[f1], #256]                 \n\t"
                   "pld        [%[f9], #256]                 \n\t"
@@ -2733,17 +2735,17 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
                   "vld1.32   {d8[1]}, [%[f9_2]]             \n\t"
                   "vld1.32   {d18, d19}, [%[reluptr]]       \n\t"
 
-                  "vld2.f32   {d10-d13}, [%[inptr1]]!       \n\t"
-                  "vld2.f32   {d14, d15}, [%[inptr1]]       \n\t"
+                  "vld2.f32   {d10-d13}, [%[in_ptr1]]!      \n\t"
+                  "vld2.f32   {d14, d15}, [%[in_ptr1]]      \n\t"
 
                   "0:                                       \n\t"
-                  // load outptr
-                  "pld        [%[outptr1], #128]            \n\t"
-                  "pld        [%[outptr1_2], #128]          \n\t"
-                  "vld1.f32   {d24, d25}, [%[outptr1]]      \n\t"
-                  "vld1.f32   {d28, d29}, [%[outptr1_2]]    \n\t"
+                  // load out_ptr
+                  "pld        [%[out_ptr1], #128]           \n\t"
+                  "pld        [%[out_ptr1_2], #128]         \n\t"
+                  "vld1.f32   {d24, d25}, [%[out_ptr1]]     \n\t"
+                  "vld1.f32   {d28, d29}, [%[out_ptr1_2]]   \n\t"
 
-                  // inptr1 multiply
+                  // in_ptr1 multiply
                   "vmla.f32   q12, q5, d0[0]                \n\t"
                   "vmla.f32   q14, q5, d4[0]                \n\t"
 
@@ -2751,12 +2753,12 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
                   "vmul.f32   q13, q6, d0[1]                \n\t"
                   "vmul.f32   q15, q6, d4[1]                \n\t"
 
-                  "vld2.f32   {d10-d13}, [%[inptr2]]!       \n\t"
+                  "vld2.f32   {d10-d13}, [%[in_ptr2]]!      \n\t"
                   "vmla.f32   q12, q8, d1[0]                \n\t"
-                  "vld2.f32   {d14, d15}, [%[inptr2]]       \n\t"
+                  "vld2.f32   {d14, d15}, [%[in_ptr2]]      \n\t"
                   "vmla.f32   q14, q8, d5[0]                \n\t"
 
-                  // inptr2 multiply
+                  // in_ptr2 multiply
                   "vmla.f32   q13, q5, d1[1]                \n\t"
                   "vmla.f32   q15, q5, d5[1]                \n\t"
 
@@ -2764,12 +2766,12 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
                   "vmla.f32   q12, q6, d2[0]                \n\t"
                   "vmla.f32   q14, q6, d6[0]                \n\t"
 
-                  "vld2.f32   {d10-d13}, [%[inptr3]]!       \n\t"
+                  "vld2.f32   {d10-d13}, [%[in_ptr3]]!      \n\t"
                   "vmla.f32   q13, q8, d2[1]                \n\t"
-                  "vld2.f32   {d14, d15}, [%[inptr3]]       \n\t"
+                  "vld2.f32   {d14, d15}, [%[in_ptr3]]      \n\t"
                   "vmla.f32   q15, q8, d6[1]                \n\t"
 
-                  // inptr3 multiply
+                  // in_ptr3 multiply
                   "vmla.f32   q12, q5, d3[0]                \n\t"
                   "vmla.f32   q14, q5, d7[0]                \n\t"
 
@@ -2781,24 +2783,24 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
                   "vmla.f32   q14, q8, d8[1]                \n\t"
 
                   // store
-                  "vld2.f32   {d10-d13}, [%[inptr1]]!       \n\t"
+                  "vld2.f32   {d10-d13}, [%[in_ptr1]]!      \n\t"
                   "vadd.f32   q12, q12, q13                 \n\t"
                   "vadd.f32   q14, q14, q15                 \n\t"
                   "vmax.f32   q12, q12, q9                  \n\t"
                   "vmax.f32   q14, q14, q9                  \n\t"
 
-                  "vld2.f32   {d14, d15}, [%[inptr1]]       \n\t"
-                  "vst1.f32   {d24, d25}, [%[outptr1]]!     \n\t"
-                  "vst1.f32   {d28, d29}, [%[outptr1_2]]!   \n\t"
+                  "vld2.f32   {d14, d15}, [%[in_ptr1]]      \n\t"
+                  "vst1.f32   {d24, d25}, [%[out_ptr1]]!    \n\t"
+                  "vst1.f32   {d28, d29}, [%[out_ptr1_2]]!  \n\t"
 
                   // cycle
-                  "subs       %[ow_dim4], #1                \n\t"
+                  "subs       %[o_w_dim4], #1               \n\t"
                   "bne        0b                            \n\t"
-                  "sub       %[inptr1], %[inptr1], #32      \n\t"
+                  "sub       %[in_ptr1], %[in_ptr1], #32    \n\t"
 
-                  : [ow_dim4] "+r"(ow_dim4), [outptr1] "+r"(outptr1),
-                    [outptr1_2] "+r"(outptr1_2), [inptr1] "+r"(inptr1),
-                    [inptr2] "+r"(inptr2), [inptr3] "+r"(inptr3)
+                  : [o_w_dim4] "+r"(o_w_dim4), [out_ptr1] "+r"(out_ptr1),
+                    [out_ptr1_2] "+r"(out_ptr1_2), [in_ptr1] "+r"(in_ptr1),
+                    [in_ptr2] "+r"(in_ptr2), [in_ptr3] "+r"(in_ptr3)
                   : [f1] "r"(f1), [f1_2] "r"(f1_2), [f9] "r"(f9),
                     [f9_2] "r"(f9_2), [reluptr] "r"(reluptr)
                   : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
@@ -2807,28 +2809,28 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
           }
 #endif  //__aarch64__
 #endif  // __ARM_NEON
-
-          for (; ow < output_width; ++ow) {
+        // remain output_width
+          for (; o_w < output_w; ++o_w) {
             float sum1 = 0;
             float sum1_2 = 0;
 #if __ARM_NEON
-            float32x4_t _inptr1 = vld1q_f32(inptr1);
-            float32x4_t _ffilter1 = vld1q_f32(ffilter1);
-            float32x4_t _ffilter1_2 = vld1q_f32(ffilter1_2);
-            float32x4_t _sum1 = vmulq_f32(_inptr1, _ffilter1);
-            float32x4_t _sum1_2 = vmulq_f32(_inptr1, _ffilter1_2);
+            float32x4_t _in_ptr1 = vld1q_f32(in_ptr1);
+            float32x4_t _pad_filter1 = vld1q_f32(pad_filter1);
+            float32x4_t _pad_filter1_2 = vld1q_f32(pad_filter1_2);
+            float32x4_t _sum1 = vmulq_f32(_in_ptr1, _pad_filter1);
+            float32x4_t _sum1_2 = vmulq_f32(_in_ptr1, _pad_filter1_2);
 
-            float32x4_t _inptr2 = vld1q_f32(inptr2);
-            float32x4_t _ffilter2 = vld1q_f32(ffilter2);
-            float32x4_t _ffilter2_2 = vld1q_f32(ffilter2_2);
-            _sum1 = vmlaq_f32(_sum1, _inptr2, _ffilter2);
-            _sum1_2 = vmlaq_f32(_sum1_2, _inptr2, _ffilter2_2);
+            float32x4_t _in_ptr2 = vld1q_f32(in_ptr2);
+            float32x4_t _pad_filter2 = vld1q_f32(pad_filter2);
+            float32x4_t _pad_filter2_2 = vld1q_f32(pad_filter2_2);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr2, _pad_filter2);
+            _sum1_2 = vmlaq_f32(_sum1_2, _in_ptr2, _pad_filter2_2);
 
-            float32x4_t _inptr3 = vld1q_f32(inptr3);
-            float32x4_t _ffilter3 = vld1q_f32(ffilter3);
-            float32x4_t _ffilter3_2 = vld1q_f32(ffilter3_2);
-            _sum1 = vmlaq_f32(_sum1, _inptr3, _ffilter3);
-            _sum1_2 = vmlaq_f32(_sum1_2, _inptr3, _ffilter3_2);
+            float32x4_t _in_ptr3 = vld1q_f32(in_ptr3);
+            float32x4_t _pad_filter3 = vld1q_f32(pad_filter3);
+            float32x4_t _pad_filter3_2 = vld1q_f32(pad_filter3_2);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr3, _pad_filter3);
+            _sum1_2 = vmlaq_f32(_sum1_2, _in_ptr3, _pad_filter3_2);
 
             _sum1 = vsetq_lane_f32(sum1, _sum1, 3);
             _sum1_2 = vsetq_lane_f32(sum1_2, _sum1_2, 3);
@@ -2842,198 +2844,198 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
             sum1 += vget_lane_f32(_ssss1_ssss1_2, 0);
             sum1_2 += vget_lane_f32(_ssss1_ssss1_2, 1);
 #else
-            sum1 += inptr1[0] * ffilter1[0];
-            sum1 += inptr1[1] * ffilter1[1];
-            sum1 += inptr1[2] * ffilter1[2];
-            sum1 += inptr2[0] * ffilter2[0];
-            sum1 += inptr2[1] * ffilter2[1];
-            sum1 += inptr2[2] * ffilter2[2];
-            sum1 += inptr3[0] * ffilter3[0];
-            sum1 += inptr3[1] * ffilter3[1];
-            sum1 += inptr3[2] * ffilter3[2];
+            sum1 += in_ptr1[0] * pad_filter1[0];
+            sum1 += in_ptr1[1] * pad_filter1[1];
+            sum1 += in_ptr1[2] * pad_filter1[2];
+            sum1 += in_ptr2[0] * pad_filter2[0];
+            sum1 += in_ptr2[1] * pad_filter2[1];
+            sum1 += in_ptr2[2] * pad_filter2[2];
+            sum1 += in_ptr3[0] * pad_filter3[0];
+            sum1 += in_ptr3[1] * pad_filter3[1];
+            sum1 += in_ptr3[2] * pad_filter3[2];
 
-            sum1_2 += inptr1[0] * ffilter1_2[0];
-            sum1_2 += inptr1[1] * ffilter1_2[1];
-            sum1_2 += inptr1[2] * ffilter1_2[2];
-            sum1_2 += inptr2[0] * ffilter2_2[0];
-            sum1_2 += inptr2[1] * ffilter2_2[1];
-            sum1_2 += inptr2[2] * ffilter2_2[2];
-            sum1_2 += inptr3[0] * ffilter3_2[0];
-            sum1_2 += inptr3[1] * ffilter3_2[1];
-            sum1_2 += inptr3[2] * ffilter3_2[2];
+            sum1_2 += in_ptr1[0] * pad_filter1_2[0];
+            sum1_2 += in_ptr1[1] * pad_filter1_2[1];
+            sum1_2 += in_ptr1[2] * pad_filter1_2[2];
+            sum1_2 += in_ptr2[0] * pad_filter2_2[0];
+            sum1_2 += in_ptr2[1] * pad_filter2_2[1];
+            sum1_2 += in_ptr2[2] * pad_filter2_2[2];
+            sum1_2 += in_ptr3[0] * pad_filter3_2[0];
+            sum1_2 += in_ptr3[1] * pad_filter3_2[1];
+            sum1_2 += in_ptr3[2] * pad_filter3_2[2];
 #endif
-            if (isnopadding) {
-              inptr1 += 2;
-              inptr2 += 2;
-              inptr3 += 2;
+            if (if_nopadding) {
+              in_ptr1 += 2;
+              in_ptr2 += 2;
+              in_ptr3 += 2;
 
-            } else if (isoddpadding_w && ow == position_w1 ||
-                       ow == position_w2 && isoddpadding_w && useallInput_w ||
-                       ow == position_w2 + 1 && !isoddpadding_w &&
-                           !useallInput_w) {
-              ffilter1--;
-              ffilter2--;
-              ffilter3--;
+            } else if (if_odd_pad_w && o_w == valid_w_start ||
+                       o_w == valid_w_end && if_odd_pad_w && if_exact_in_w ||
+                       o_w == valid_w_end + 1 && !if_odd_pad_w &&
+                           !if_exact_in_w) {
+              pad_filter1--;
+              pad_filter2--;
+              pad_filter3--;
 
-              ffilter1_2--;
-              ffilter2_2--;
-              ffilter3_2--;
+              pad_filter1_2--;
+              pad_filter2_2--;
+              pad_filter3_2--;
 
-              inptr1++;
-              inptr2++;
-              inptr3++;
+              in_ptr1++;
+              in_ptr2++;
+              in_ptr3++;
 
-            } else if (ow < position_w1 || ow > position_w2) {
-              ffilter1 -= 2;
-              ffilter2 -= 2;
-              ffilter3 -= 2;
-              ffilter1_2 -= 2;
-              ffilter2_2 -= 2;
-              ffilter3_2 -= 2;
+            } else if (o_w < valid_w_start || o_w > valid_w_end) {
+              pad_filter1 -= 2;
+              pad_filter2 -= 2;
+              pad_filter3 -= 2;
+              pad_filter1_2 -= 2;
+              pad_filter2_2 -= 2;
+              pad_filter3_2 -= 2;
             } else {
-              inptr1 += 2;
-              inptr2 += 2;
-              inptr3 += 2;
+              in_ptr1 += 2;
+              in_ptr2 += 2;
+              in_ptr3 += 2;
             }
-            *outptr1 += sum1;
-            *outptr1_2 += sum1_2;
+            *out_ptr1 += sum1;
+            *out_ptr1_2 += sum1_2;
 
-            if (outptr1[0] < reluvalue) {
-              *outptr1 = reluvalue;
+            if (out_ptr1[0] < relu_value) {
+              *out_ptr1 = relu_value;
             }
 
-            if (outptr1_2[0] < reluvalue) {
-              *outptr1_2 = reluvalue;
+            if (out_ptr1_2[0] < relu_value) {
+              *out_ptr1_2 = relu_value;
             }
-            outptr1++;
-            outptr1_2++;
+            out_ptr1++;
+            out_ptr1_2++;
           }
-          if (isnopadding) {
-            inptr1 += left_stride + input_width;
-            inptr2 += left_stride + input_width;
-            inptr3 += left_stride + input_width;
+          if (if_nopadding) {
+            in_ptr1 += remain_stride_w + input_w;
+            in_ptr2 += remain_stride_w + input_w;
+            in_ptr3 += remain_stride_w + input_w;
 
-          } else if (isoddpadding_h && oh == position_h1 ||
-                     oh == position_h2 && isoddpadding_h && useallInput_h ||
-                     oh == position_h2 + 1 && !isoddpadding_h &&
-                         !useallInput_h) {
-            inptr1 += 3;
-            inptr2 += 3;
-            inptr3 += 3;
+          } else if (if_odd_pad_h && o_h == valid_h_start ||
+                     o_h == valid_h_end && if_odd_pad_h && if_exact_in_h ||
+                     o_h == valid_h_end + 1 && !if_odd_pad_h &&
+                         !if_exact_in_h) {
+            in_ptr1 += 3;
+            in_ptr2 += 3;
+            in_ptr3 += 3;
 
-            ffilter1 -= left_stride;
-            ffilter2 -= left_stride;
-            ffilter3 -= left_stride;
+            pad_filter1 -= remain_stride_w;
+            pad_filter2 -= remain_stride_w;
+            pad_filter3 -= remain_stride_w;
 
-            ffilter1_2 -= left_stride;
-            ffilter2_2 -= left_stride;
-            ffilter3_2 -= left_stride;
-          } else if (oh < position_h1 || oh > position_h2) {
-            inptr1 -= input_width - 3;
-            inptr2 -= input_width - 3;
-            inptr3 -= input_width - 3;
+            pad_filter1_2 -= remain_stride_w;
+            pad_filter2_2 -= remain_stride_w;
+            pad_filter3_2 -= remain_stride_w;
+          } else if (o_h < valid_h_start || o_h > valid_h_end) {
+            in_ptr1 -= input_w - 3;
+            in_ptr2 -= input_w - 3;
+            in_ptr3 -= input_w - 3;
 
-            ffilter1 -= 3 + 2 * padding_width + left_stride;
-            ffilter2 -= 3 + 2 * padding_width + left_stride;
-            ffilter3 -= 3 + 2 * padding_width + left_stride;
+            pad_filter1 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter2 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter3 -= 3 + 2 * padding_w + remain_stride_w;
 
-            ffilter1_2 -= 3 + 2 * padding_width + left_stride;
-            ffilter2_2 -= 3 + 2 * padding_width + left_stride;
-            ffilter3_2 -= 3 + 2 * padding_width + left_stride;
+            pad_filter1_2 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter2_2 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter3_2 -= 3 + 2 * padding_w + remain_stride_w;
           } else {
-            ffilter1 += 3 + 2 * padding_width - left_stride;
-            ffilter2 += 3 + 2 * padding_width - left_stride;
-            ffilter3 += 3 + 2 * padding_width - left_stride;
+            pad_filter1 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter2 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter3 += 3 + 2 * padding_w - remain_stride_w;
 
-            ffilter1_2 += 3 + 2 * padding_width - left_stride;
-            ffilter2_2 += 3 + 2 * padding_width - left_stride;
-            ffilter3_2 += 3 + 2 * padding_width - left_stride;
+            pad_filter1_2 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter2_2 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter3_2 += 3 + 2 * padding_w - remain_stride_w;
 
-            inptr1 += input_width + 3;
-            inptr2 += input_width + 3;
-            inptr3 += input_width + 3;
+            in_ptr1 += input_w + 3;
+            in_ptr2 += input_w + 3;
+            in_ptr3 += input_w + 3;
           }
         }
-        filter_data_ch += filter_channel_stride;
-        filter_data_ch_2 += filter_channel_stride;
-        input_data_ch += input_channel_stride;
+        filter_data_ch += filter_ch_size;
+        filter_data_ch_2 += filter_ch_size;
+        input_data_ch += in_ch_size;
       }
     }
 
-    int output_channels_left = output_channels_d2 * 2;
-    for (int oc = output_channels_left; oc < output_channels; ++oc) {
-      std::atomic<float> reluvalue{0};
+    int out_ch_remain = output_ch_d2 * 2;
+    // remain channel
+    for (int o_c = out_ch_remain; o_c < output_ch; ++o_c) {
+      std::atomic<float> relu_value{0};
       const float *reluptr;
       const float *f1, *f9;
-      const float *inptr1, *inptr2, *inptr3;
-      const float *ffilter1, *ffilter2, *ffilter3;
-      float ffilterarray[ffilter_length] = {0};
+      const float *in_ptr1, *in_ptr2, *in_ptr3;
+      const float *pad_filter1, *pad_filter2, *pad_filter3;
+      float pad_filter_arr[pad_filter_ch_size] = {0};
 
       float *output_data_ch;
       const float *input_data_ch;
       const float *filter_data_ch;
 
-      filter_data_ch =
-          filter_data + oc * filter_channel_stride * input_channels;
+      filter_data_ch = filter_data + o_c * filter_ch_size * input_ch;
       input_data_ch = input_data;
-      output_data_ch = output_data + oc * output_channel_stride;
+      output_data_ch = output_data + o_c * out_ch_size;
 
-      for (int ic = 0; ic < input_channels; ++ic) {
-        float reluarr[4];
-        reluptr = reluarr;
-        if (if_relu && ic == input_channels - 1) {
-          reluvalue = 0;
+      for (int i_c = 0; i_c < input_ch; ++i_c) {
+        float relu_arr[4];
+        reluptr = relu_arr;
+        if (if_relu && i_c == input_ch - 1) {
+          relu_value = 0;
         } else {
-          reluvalue = -FLT_MAX;
+          relu_value = -FLT_MAX;
         }
-        reluarr[0] = reluvalue;
-        reluarr[1] = reluvalue;
-        reluarr[2] = reluvalue;
-        reluarr[3] = reluvalue;
+        relu_arr[0] = relu_value;
+        relu_arr[1] = relu_value;
+        relu_arr[2] = relu_value;
+        relu_arr[3] = relu_value;
         f1 = filter_data_ch;
         f9 = filter_data_ch + 8;
 
-        if (!isnopadding) {
-          ffilterarray[ffilter_length] = {0};
+        if (!if_nopadding) {
+          pad_filter_arr[pad_filter_ch_size] = {0};
           for (int i = 0; i < 9; ++i) {
-            int j = i / 3 * (2 * padding_width + 3) + i % 3 +
-                    padding_height * 3 +
-                    padding_width * (2 * padding_height + 1);
-            ffilterarray[j] = filter_data_ch[i];
+            int j = i / 3 * (2 * padding_w + 3) + i % 3 + padding_h * 3 +
+                    padding_w * (2 * padding_h + 1);
+            pad_filter_arr[j] = filter_data_ch[i];
           }
-          ffilter1 = ffilterarray;
-          ffilter1 += ffilter_start;
-          ffilter2 = ffilter1 + ffilter_width;
-          ffilter3 = ffilter2 + ffilter_width;
+          pad_filter1 = pad_filter_arr;
+          pad_filter1 += pad_filter_start;
+          pad_filter2 = pad_filter1 + pad_filter_w;
+          pad_filter3 = pad_filter2 + pad_filter_w;
 
         } else {
-          ffilter1 = filter_data_ch;
-          ffilter2 = ffilter1 + 3;
-          ffilter3 = ffilter2 + 3;
+          pad_filter1 = filter_data_ch;
+          pad_filter2 = pad_filter1 + 3;
+          pad_filter3 = pad_filter2 + 3;
         }
-        float *outptr1;
-        outptr1 = output_data_ch;
-        inptr1 = input_data_ch;
-        inptr2 = inptr1 + input_width;
-        inptr3 = inptr2 + input_width;
+        float *out_ptr1;
+        out_ptr1 = output_data_ch;
+        in_ptr1 = input_data_ch;
+        in_ptr2 = in_ptr1 + input_w;
+        in_ptr3 = in_ptr2 + input_w;
 
-        int oh = 0;
-        for (; oh < output_height; ++oh) {
-          int ow = 0;
-          for (; ow <= position_w1; ++ow) {
+        int o_h = 0;
+        for (; o_h < output_h; ++o_h) {
+          int o_w = 0;
+          // pad left
+          for (; o_w <= valid_w_start; ++o_w) {
             float sum1 = 0;
 #if __ARM_NEON
-            float32x4_t _inptr1 = vld1q_f32(inptr1);
-            float32x4_t _ffilter1 = vld1q_f32(ffilter1);
-            float32x4_t _sum1 = vmulq_f32(_inptr1, _ffilter1);
+            float32x4_t _in_ptr1 = vld1q_f32(in_ptr1);
+            float32x4_t _pad_filter1 = vld1q_f32(pad_filter1);
+            float32x4_t _sum1 = vmulq_f32(_in_ptr1, _pad_filter1);
 
-            float32x4_t _inptr2 = vld1q_f32(inptr2);
-            float32x4_t _ffilter2 = vld1q_f32(ffilter2);
-            _sum1 = vmlaq_f32(_sum1, _inptr2, _ffilter2);
+            float32x4_t _in_ptr2 = vld1q_f32(in_ptr2);
+            float32x4_t _pad_filter2 = vld1q_f32(pad_filter2);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr2, _pad_filter2);
 
-            float32x4_t _inptr3 = vld1q_f32(inptr3);
-            float32x4_t _ffilter3 = vld1q_f32(ffilter3);
-            _sum1 = vmlaq_f32(_sum1, _inptr3, _ffilter3);
+            float32x4_t _in_ptr3 = vld1q_f32(in_ptr3);
+            float32x4_t _pad_filter3 = vld1q_f32(pad_filter3);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr3, _pad_filter3);
             _sum1 = vsetq_lane_f32(sum1, _sum1, 3);
 
             float32x2_t _ss1 =
@@ -3041,58 +3043,59 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
             float32x2_t _ssss1_ssss1 = vpadd_f32(_ss1, _ss1);
             sum1 += vget_lane_f32(_ssss1_ssss1, 0);
 #else
-            sum1 += inptr1[0] * ffilter1[0];
-            sum1 += inptr1[1] * ffilter1[1];
-            sum1 += inptr1[2] * ffilter1[2];
-            sum1 += inptr2[0] * ffilter2[0];
-            sum1 += inptr2[1] * ffilter2[1];
-            sum1 += inptr2[2] * ffilter2[2];
-            sum1 += inptr3[0] * ffilter3[0];
-            sum1 += inptr3[1] * ffilter3[1];
-            sum1 += inptr3[2] * ffilter3[2];
+            sum1 += in_ptr1[0] * pad_filter1[0];
+            sum1 += in_ptr1[1] * pad_filter1[1];
+            sum1 += in_ptr1[2] * pad_filter1[2];
+            sum1 += in_ptr2[0] * pad_filter2[0];
+            sum1 += in_ptr2[1] * pad_filter2[1];
+            sum1 += in_ptr2[2] * pad_filter2[2];
+            sum1 += in_ptr3[0] * pad_filter3[0];
+            sum1 += in_ptr3[1] * pad_filter3[1];
+            sum1 += in_ptr3[2] * pad_filter3[2];
 #endif
-            if (isnopadding) {
-              inptr1 += 2;
-              inptr2 += 2;
-              inptr3 += 2;
+            if (if_nopadding) {
+              in_ptr1 += 2;
+              in_ptr2 += 2;
+              in_ptr3 += 2;
 
-            } else if (isoddpadding_w && ow == position_w1 ||
-                       ow == position_w2 && isoddpadding_w && useallInput_w ||
-                       ow == position_w2 + 1 && !isoddpadding_w &&
-                           !useallInput_w) {
-              ffilter1--;
-              ffilter2--;
-              ffilter3--;
+            } else if (if_odd_pad_w && o_w == valid_w_start ||
+                       o_w == valid_w_end && if_odd_pad_w && if_exact_in_w ||
+                       o_w == valid_w_end + 1 && !if_odd_pad_w &&
+                           !if_exact_in_w) {
+              pad_filter1--;
+              pad_filter2--;
+              pad_filter3--;
 
-              inptr1++;
-              inptr2++;
-              inptr3++;
+              in_ptr1++;
+              in_ptr2++;
+              in_ptr3++;
 
-            } else if (ow < position_w1 || ow > position_w2) {
-              ffilter1 -= 2;
-              ffilter2 -= 2;
-              ffilter3 -= 2;
+            } else if (o_w < valid_w_start || o_w > valid_w_end) {
+              pad_filter1 -= 2;
+              pad_filter2 -= 2;
+              pad_filter3 -= 2;
 
             } else {
-              inptr1 += 2;
-              inptr2 += 2;
-              inptr3 += 2;
+              in_ptr1 += 2;
+              in_ptr2 += 2;
+              in_ptr3 += 2;
             }
-            *outptr1 += sum1;
+            *out_ptr1 += sum1;
 
-            if (outptr1[0] < reluvalue) {
-              *outptr1 = reluvalue;
+            if (out_ptr1[0] < relu_value) {
+              *out_ptr1 = relu_value;
             }
-            outptr1++;
+            out_ptr1++;
           }
 
+            // valid
 #if __ARM_NEON
 #if __aarch64__
-          if (oh > position_h1 && oh <= position_h2) {
-            int ow_dim4 = (position_w2 - position_w1 - 1) >> 2;
-            ow += ow_dim4 * 4;
+          if (o_h > valid_h_start && o_h <= valid_h_end) {
+            int o_w_dim4 = (valid_w_end - valid_w_start - 1) >> 2;
+            o_w += o_w_dim4 * 4;
 
-            if (ow_dim4 > 0) {
+            if (o_w_dim4 > 0) {
               asm volatile(
                   "prfm   pldl1keep, [%[f1], #256]          \n\t"
                   "prfm   pldl1keep, [%[f9], #256]          \n\t"
@@ -3103,14 +3106,14 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
                   "ld1   {v16.4s}, [%[reluptr]]             \n\t"
 
                   "0:                                       \n\t"
-                  // load outptr
-                  "prfm   pldl1keep, [%[outptr1], #128]     \n\t"
-                  "ld1   {v12.4s}, [%[outptr1]]             \n\t"
+                  // load out_ptr
+                  "prfm   pldl1keep, [%[out_ptr1], #128]    \n\t"
+                  "ld1   {v12.4s}, [%[out_ptr1]]            \n\t"
 
-                  // inptr1 multiply
-                  "prfm   pldl1keep, [%[inptr1], #256]      \n\t"
-                  "ld2   {v5.4s, v6.4s}, [%[inptr1]], #32   \n\t"
-                  "ld2   {v7.4s, v8.4s}, [%[inptr1]]        \n\t"
+                  // in_ptr1 multiply
+                  "prfm   pldl1keep, [%[in_ptr1], #256]     \n\t"
+                  "ld2   {v5.4s, v6.4s}, [%[in_ptr1]], #32  \n\t"
+                  "ld2   {v7.4s, v8.4s}, [%[in_ptr1]]       \n\t"
 
                   "fmla   v12.4s, v5.4s, v0.4s[0]           \n\t"
                   "fmla   v14.4s, v5.4s, v2.4s[0]           \n\t"
@@ -3119,47 +3122,47 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
                   "fmul   v13.4s, v6.4s, v0.4s[1]           \n\t"
 
                   "fmla   v12.4s, v8.4s, v0.4s[2]           \n\t"
-                  "ld2   {v5.4s, v6.4s}, [%[inptr2]], #32   \n\t"
-                  "ld2   {v7.4s, v8.4s}, [%[inptr2]]        \n\t"
+                  "ld2   {v5.4s, v6.4s}, [%[in_ptr2]], #32  \n\t"
+                  "ld2   {v7.4s, v8.4s}, [%[in_ptr2]]       \n\t"
 
-                  // inptr2 multiply
+                  // in_ptr2 multiply
                   "fmla   v13.4s, v5.4s, v0.4s[3]           \n\t"
                   "ext    v8.16b, v5.16b, v7.16b, #4        \n\t"
                   "fmla   v12.4s, v6.4s, v1.4s[0]           \n\t"
 
                   "fmla   v13.4s, v8.4s, v1.4s[1]           \n\t"
-                  "ld2   {v5.4s, v6.4s}, [%[inptr3]], #32   \n\t"
-                  "ld2   {v7.4s, v8.4s}, [%[inptr3]]        \n\t"
+                  "ld2   {v5.4s, v6.4s}, [%[in_ptr3]], #32  \n\t"
+                  "ld2   {v7.4s, v8.4s}, [%[in_ptr3]]       \n\t"
 
-                  // inptr3 multiply
+                  // in_ptr3 multiply
                   "fmla   v12.4s, v5.4s, v1.4s[2]           \n\t"
                   "ext    v8.16b, v5.16b, v7.16b, #4        \n\t"
                   "fmla   v13.4s, v6.4s, v1.4s[3]           \n\t"
                   "fmla   v12.4s, v8.4s, v4.4s[0]           \n\t"
 
-                  // store outptr
+                  // store out_ptr
                   "fadd   v12.4s, v12.4s, v13.4s            \n\t"
                   "fmax   v12.4s, v12.4s, v16.4s            \n\t"
-                  "st1   {v12.4s}, [%[outptr1]], #16        \n\t"
+                  "st1   {v12.4s}, [%[out_ptr1]], #16       \n\t"
 
                   // cycle
-                  "subs       %[ow_dim4], %[ow_dim4], #1    \n\t"
+                  "subs       %[o_w_dim4], %[o_w_dim4], #1  \n\t"
                   "bne        0b                            \n\t"
 
-                  : [ow_dim4] "+r"(ow_dim4), [outptr1] "+r"(outptr1),
-                    [inptr1] "+r"(inptr1), [inptr2] "+r"(inptr2),
-                    [inptr3] "+r"(inptr3)
+                  : [o_w_dim4] "+r"(o_w_dim4), [out_ptr1] "+r"(out_ptr1),
+                    [in_ptr1] "+r"(in_ptr1), [in_ptr2] "+r"(in_ptr2),
+                    [in_ptr3] "+r"(in_ptr3)
                   : [f1] "r"(f1), [f9] "r"(f9), [reluptr] "r"(reluptr)
                   : "memory", "v0", "v1", "v4", "v5", "v6", "v7", "v8", "v9",
                     "v12", "v13", "v16");
             }
           }
 #else
-          if (oh > position_h1 && oh <= position_h2) {
-            int ow_dim4 = (position_w2 - position_w1 - 1) >> 2;
-            ow += ow_dim4 * 4;
+          if (o_h > valid_h_start && o_h <= valid_h_end) {
+            int o_w_dim4 = (valid_w_end - valid_w_start - 1) >> 2;
+            o_w += o_w_dim4 * 4;
 
-            if (ow_dim4 > 0) {
+            if (o_w_dim4 > 0) {
               asm volatile(
                   "pld        [%[f1], #256]                 \n\t"
                   "pld        [%[f9], #256]                 \n\t"
@@ -3170,49 +3173,49 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
                   "vld1.32   {d18, d19}, [%[reluptr]]       \n\t"
 
                   "0:                                       \n\t"
-                  // load outptr
-                  "pld        [%[outptr1], #128]            \n\t"
-                  "vld1.f32   {d24, d25}, [%[outptr1]]      \n\t"
+                  // load out_ptr
+                  "pld        [%[out_ptr1], #128]           \n\t"
+                  "vld1.f32   {d24, d25}, [%[out_ptr1]]     \n\t"
 
-                  // inptr1 multiply
-                  "vld2.f32   {d10-d13}, [%[inptr1]]!       \n\t"
-                  "vld2.f32   {d14, d15}, [%[inptr1]]       \n\t"
+                  // in_ptr1 multiply
+                  "vld2.f32   {d10-d13}, [%[in_ptr1]]!      \n\t"
+                  "vld2.f32   {d14, d15}, [%[in_ptr1]]      \n\t"
 
                   "vmla.f32   q12, q5, d0[0]                \n\t"
                   "vext.32    q8, q5, q7, #1                \n\t"
                   "vmul.f32   q13, q6, d0[1]                \n\t"
 
-                  "vld2.f32   {d10-d13}, [%[inptr2]]!       \n\t"
-                  "vld2.f32   {d14, d15}, [%[inptr2]]       \n\t"
+                  "vld2.f32   {d10-d13}, [%[in_ptr2]]!      \n\t"
+                  "vld2.f32   {d14, d15}, [%[in_ptr2]]      \n\t"
                   "vmla.f32   q12, q8, d1[0]                \n\t"
 
-                  // inptr2 multiply
+                  // in_ptr2 multiply
                   "vmla.f32   q13, q5, d1[1]                \n\t"
                   "vext.32    q8, q5, q7, #1                \n\t"
                   "vmla.f32   q12, q6, d2[0]                \n\t"
 
-                  "vld2.f32   {d10-d13}, [%[inptr3]]!       \n\t"
-                  "vld2.f32   {d14, d15}, [%[inptr3]]       \n\t"
+                  "vld2.f32   {d10-d13}, [%[in_ptr3]]!      \n\t"
+                  "vld2.f32   {d14, d15}, [%[in_ptr3]]      \n\t"
                   "vmla.f32   q13, q8, d2[1]                \n\t"
 
-                  // inptr3 multiply
+                  // in_ptr3 multiply
                   "vmla.f32   q12, q5, d3[0]                \n\t"
                   "vext.32    q8, q5, q7, #1                \n\t"
                   "vmla.f32   q13, q6, d3[1]                \n\t"
                   "vmla.f32   q12, q8, d8[0]                \n\t"
 
-                  // store outptr
+                  // store out_ptr
                   "vadd.f32   q12, q12, q13                 \n\t"
                   "vmax.f32   q12, q12, q9                  \n\t"
-                  "vst1.f32   {d24, d25}, [%[outptr1]]!     \n\t"
+                  "vst1.f32   {d24, d25}, [%[out_ptr1]]!    \n\t"
 
                   // cycle
-                  "subs       %[ow_dim4], #1                \n\t"
+                  "subs       %[o_w_dim4], #1               \n\t"
                   "bne        0b                            \n\t"
 
-                  : [ow_dim4] "+r"(ow_dim4), [outptr1] "+r"(outptr1),
-                    [inptr1] "+r"(inptr1), [inptr2] "+r"(inptr2),
-                    [inptr3] "+r"(inptr3)
+                  : [o_w_dim4] "+r"(o_w_dim4), [out_ptr1] "+r"(out_ptr1),
+                    [in_ptr1] "+r"(in_ptr1), [in_ptr2] "+r"(in_ptr2),
+                    [in_ptr3] "+r"(in_ptr3)
                   : [f1] "r"(f1), [f9] "r"(f9), [reluptr] "r"(reluptr)
                   : "memory", "q0", "q1", "q4", "q5", "q6", "q7", "q8", "q9",
                     "q12", "q13");
@@ -3220,20 +3223,21 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
           }
 #endif  //__aarch64__
 #endif  // __ARM_NEON
-          for (; ow < output_width; ++ow) {
+        // remain output_width
+          for (; o_w < output_w; ++o_w) {
             float sum1 = 0;
 #if __ARM_NEON
-            float32x4_t _inptr1 = vld1q_f32(inptr1);
-            float32x4_t _ffilter1 = vld1q_f32(ffilter1);
-            float32x4_t _sum1 = vmulq_f32(_inptr1, _ffilter1);
+            float32x4_t _in_ptr1 = vld1q_f32(in_ptr1);
+            float32x4_t _pad_filter1 = vld1q_f32(pad_filter1);
+            float32x4_t _sum1 = vmulq_f32(_in_ptr1, _pad_filter1);
 
-            float32x4_t _inptr2 = vld1q_f32(inptr2);
-            float32x4_t _ffilter2 = vld1q_f32(ffilter2);
-            _sum1 = vmlaq_f32(_sum1, _inptr2, _ffilter2);
+            float32x4_t _in_ptr2 = vld1q_f32(in_ptr2);
+            float32x4_t _pad_filter2 = vld1q_f32(pad_filter2);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr2, _pad_filter2);
 
-            float32x4_t _inptr3 = vld1q_f32(inptr3);
-            float32x4_t _ffilter3 = vld1q_f32(ffilter3);
-            _sum1 = vmlaq_f32(_sum1, _inptr3, _ffilter3);
+            float32x4_t _in_ptr3 = vld1q_f32(in_ptr3);
+            float32x4_t _pad_filter3 = vld1q_f32(pad_filter3);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr3, _pad_filter3);
             _sum1 = vsetq_lane_f32(sum1, _sum1, 3);
 
             float32x2_t _ss1 =
@@ -3241,90 +3245,90 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
             float32x2_t _ssss1_ssss1 = vpadd_f32(_ss1, _ss1);
             sum1 += vget_lane_f32(_ssss1_ssss1, 0);
 #else
-            sum1 += inptr1[0] * ffilter1[0];
-            sum1 += inptr1[1] * ffilter1[1];
-            sum1 += inptr1[2] * ffilter1[2];
-            sum1 += inptr2[0] * ffilter2[0];
-            sum1 += inptr2[1] * ffilter2[1];
-            sum1 += inptr2[2] * ffilter2[2];
-            sum1 += inptr3[0] * ffilter3[0];
-            sum1 += inptr3[1] * ffilter3[1];
-            sum1 += inptr3[2] * ffilter3[2];
+            sum1 += in_ptr1[0] * pad_filter1[0];
+            sum1 += in_ptr1[1] * pad_filter1[1];
+            sum1 += in_ptr1[2] * pad_filter1[2];
+            sum1 += in_ptr2[0] * pad_filter2[0];
+            sum1 += in_ptr2[1] * pad_filter2[1];
+            sum1 += in_ptr2[2] * pad_filter2[2];
+            sum1 += in_ptr3[0] * pad_filter3[0];
+            sum1 += in_ptr3[1] * pad_filter3[1];
+            sum1 += in_ptr3[2] * pad_filter3[2];
 #endif
-            if (isnopadding) {
-              inptr1 += 2;
-              inptr2 += 2;
-              inptr3 += 2;
+            if (if_nopadding) {
+              in_ptr1 += 2;
+              in_ptr2 += 2;
+              in_ptr3 += 2;
 
-            } else if (isoddpadding_w && ow == position_w1 ||
-                       ow == position_w2 && isoddpadding_w && useallInput_w ||
-                       ow == position_w2 + 1 && !isoddpadding_w &&
-                           !useallInput_w) {
-              ffilter1--;
-              ffilter2--;
-              ffilter3--;
+            } else if (if_odd_pad_w && o_w == valid_w_start ||
+                       o_w == valid_w_end && if_odd_pad_w && if_exact_in_w ||
+                       o_w == valid_w_end + 1 && !if_odd_pad_w &&
+                           !if_exact_in_w) {
+              pad_filter1--;
+              pad_filter2--;
+              pad_filter3--;
 
-              inptr1++;
-              inptr2++;
-              inptr3++;
+              in_ptr1++;
+              in_ptr2++;
+              in_ptr3++;
 
-            } else if (ow < position_w1 || ow > position_w2) {
-              ffilter1 -= 2;
-              ffilter2 -= 2;
-              ffilter3 -= 2;
+            } else if (o_w < valid_w_start || o_w > valid_w_end) {
+              pad_filter1 -= 2;
+              pad_filter2 -= 2;
+              pad_filter3 -= 2;
 
             } else {
-              inptr1 += 2;
-              inptr2 += 2;
-              inptr3 += 2;
+              in_ptr1 += 2;
+              in_ptr2 += 2;
+              in_ptr3 += 2;
             }
-            *outptr1 += sum1;
+            *out_ptr1 += sum1;
 
-            if (outptr1[0] < reluvalue) {
-              *outptr1 = reluvalue;
+            if (out_ptr1[0] < relu_value) {
+              *out_ptr1 = relu_value;
             }
-            outptr1++;
+            out_ptr1++;
           }
-          if (isnopadding) {
-            inptr1 += left_stride + input_width;
-            inptr2 += left_stride + input_width;
-            inptr3 += left_stride + input_width;
-          } else if (isoddpadding_h && oh == position_h1 ||
-                     oh == position_h2 && isoddpadding_h && useallInput_h ||
-                     oh == position_h2 + 1 && !isoddpadding_h &&
-                         !useallInput_h) {
-            inptr1 += 3;
-            inptr2 += 3;
-            inptr3 += 3;
+          if (if_nopadding) {
+            in_ptr1 += remain_stride_w + input_w;
+            in_ptr2 += remain_stride_w + input_w;
+            in_ptr3 += remain_stride_w + input_w;
+          } else if (if_odd_pad_h && o_h == valid_h_start ||
+                     o_h == valid_h_end && if_odd_pad_h && if_exact_in_h ||
+                     o_h == valid_h_end + 1 && !if_odd_pad_h &&
+                         !if_exact_in_h) {
+            in_ptr1 += 3;
+            in_ptr2 += 3;
+            in_ptr3 += 3;
 
-            ffilter1 -= left_stride;
-            ffilter2 -= left_stride;
-            ffilter3 -= left_stride;
+            pad_filter1 -= remain_stride_w;
+            pad_filter2 -= remain_stride_w;
+            pad_filter3 -= remain_stride_w;
 
-          } else if (oh < position_h1 || oh > position_h2) {
-            inptr1 -= input_width - 3;
-            inptr2 -= input_width - 3;
-            inptr3 -= input_width - 3;
+          } else if (o_h < valid_h_start || o_h > valid_h_end) {
+            in_ptr1 -= input_w - 3;
+            in_ptr2 -= input_w - 3;
+            in_ptr3 -= input_w - 3;
 
-            ffilter1 -= 3 + 2 * padding_width + left_stride;
-            ffilter2 -= 3 + 2 * padding_width + left_stride;
-            ffilter3 -= 3 + 2 * padding_width + left_stride;
+            pad_filter1 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter2 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter3 -= 3 + 2 * padding_w + remain_stride_w;
           } else {
-            ffilter1 += 3 + 2 * padding_width - left_stride;
-            ffilter2 += 3 + 2 * padding_width - left_stride;
-            ffilter3 += 3 + 2 * padding_width - left_stride;
+            pad_filter1 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter2 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter3 += 3 + 2 * padding_w - remain_stride_w;
 
-            inptr1 += input_width + 3;
-            inptr2 += input_width + 3;
-            inptr3 += input_width + 3;
+            in_ptr1 += input_w + 3;
+            in_ptr2 += input_w + 3;
+            in_ptr3 += input_w + 3;
           }
         }
-        filter_data_ch += filter_channel_stride;
-        input_data_ch += input_channel_stride;
+        filter_data_ch += filter_ch_size;
+        input_data_ch += in_ch_size;
       }
     }
-    input_data += input_batch_stride;
-    output_data += output_batch_stride;
+    input_data += in_batch_size;
+    output_data += out_batch_size;
   }
 }
 
@@ -3334,82 +3338,82 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                                      framework::Tensor *output,
                                      framework::Tensor *bias, bool if_bias,
                                      bool if_relu) {
-  const int batch_size = input->dims()[0];
-  const int input_channels = input->dims()[1];
-  const int input_height = input->dims()[2];
-  const int input_width = input->dims()[3];
-  const int output_channels = output->dims()[1];
-  const int output_height = output->dims()[2];
-  const int output_width = output->dims()[3];
-  const int padding_height = paddings[0];
-  const int padding_width = paddings[1];
+  const int batch = input->dims()[0];
+  const int input_ch = input->dims()[1];
+  const int input_h = input->dims()[2];
+  const int input_w = input->dims()[3];
+  const int output_ch = output->dims()[1];
+  const int output_h = output->dims()[2];
+  const int output_w = output->dims()[3];
+  const int padding_h = paddings[0];
+  const int padding_w = paddings[1];
 
   const float *input_data = input->data<float>();
   float *output_data = output->mutable_data<float>();
   const float *filter_data = filter->data<float>();
 
-  const int input_channel_stride = input_height * input_width;
-  const int input_batch_stride = input_channels * input_channel_stride;
-  const int output_channel_stride = output_height * output_width;
-  const int output_batch_stride = output_channels * output_channel_stride;
-  const int filter_channel_stride = 9;
-  const int ffilter_length = (2 * padding_height + 3) * (2 * padding_width + 3);
-  const int ffilter_start =
-      2 * padding_height * (2 * padding_width + 3) + 2 * padding_width;
-  const int ffilter_width = 3 + padding_width * 2;
+  const int in_ch_size = input_h * input_w;
+  const int in_batch_size = input_ch * in_ch_size;
+  const int out_ch_size = output_h * output_w;
+  const int out_batch_size = output_ch * out_ch_size;
+  const int filter_ch_size = 9;
+  const int pad_filter_ch_size = (2 * padding_h + 3) * (2 * padding_w + 3);
+  const int pad_filter_start =
+      2 * padding_h * (2 * padding_w + 3) + 2 * padding_w;
+  const int pad_filter_w = 3 + padding_w * 2;
 
   const float *bias_data;
-  bool isnopadding = false;
-  const bool useallInput_w = (input_width + 2 * padding_width - 3) % 2 == 0;
-  const bool useallInput_h = (input_height + 2 * padding_height - 3) % 2 == 0;
-  const bool isoddpadding_w = padding_width % 2 == 1;
-  const bool isoddpadding_h = padding_height % 2 == 1;
+  bool if_nopadding = false;
+  const bool if_exact_in_w = (input_w + 2 * padding_w - 3) % 2 == 0;
+  const bool if_exact_in_h = (input_h + 2 * padding_h - 3) % 2 == 0;
+  const bool if_odd_pad_w = padding_w % 2 == 1;
+  const bool if_odd_pad_h = padding_h % 2 == 1;
 
-  int position_w1 = padding_width >> 1;
-  int position_h1 = padding_height >> 1;
-  int position_w2 = output_width - position_w1 - 2;
-  int position_h2 = output_height - position_h1 - 2;
-  const int left_stride = input_width + 2 * padding_width - 2 * output_width;
+  int valid_w_start = padding_w >> 1;
+  int valid_h_start = padding_h >> 1;
+  int valid_w_end = output_w - valid_w_start - 2;
+  int valid_h_end = output_h - valid_h_start - 2;
+  const int remain_stride_w = input_w + 2 * padding_w - 2 * output_w;
 
   if (if_bias) {
     bias_data = bias->data<float>();
   }
 #if __ARM_NEON
-  float *outptr = output_data;
-  for (int i = 0; i < output_channels; ++i) {
+  float *out_ptr = output_data;
+  for (int i = 0; i < output_ch; ++i) {
     float32x4_t _bias;
     if (if_bias) {
       _bias = vld1q_dup_f32(bias_data + i);
     } else {
       _bias = vdupq_n_f32(0.0);
     }
-    int dim4 = output_channel_stride >> 2;
-    int lef4 = output_channel_stride & 3;
+    int dim4 = out_ch_size >> 2;
+    int lef4 = out_ch_size & 3;
 
     for (int j = 0; j < dim4; ++j) {
-      vst1q_f32(outptr, _bias);
-      outptr += 4;
+      vst1q_f32(out_ptr, _bias);
+      out_ptr += 4;
     }
     if (lef4 != 0) {
       if (lef4 >= 1) {
-        vst1q_lane_f32(outptr, _bias, 0);
-        outptr++;
+        vst1q_lane_f32(out_ptr, _bias, 0);
+        out_ptr++;
       }
       if (lef4 >= 2) {
-        vst1q_lane_f32(outptr, _bias, 1);
-        outptr++;
+        vst1q_lane_f32(out_ptr, _bias, 1);
+        out_ptr++;
       }
       if (lef4 >= 3) {
-        vst1q_lane_f32(outptr, _bias, 2);
-        outptr++;
+        vst1q_lane_f32(out_ptr, _bias, 2);
+        out_ptr++;
       }
     }
   }
 #else
   int k = 0;
 #pragma omp parallel for
-  for (int i = 0; i < output_channels; ++i) {
-    for (int j = 0; j < output_channel_stride; ++j) {
+  for (int i = 0; i < output_ch; ++i) {
+    for (int j = 0; j < out_ch_size; ++j) {
       if (if_bias) {
         output_data[k++] = bias_data[i];
       } else {
@@ -3419,41 +3423,41 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
   }
 #endif
 
-  if (padding_height == 0 && padding_width == 0) {
-    isnopadding = true;
-    position_w1 = -1;
-    position_h1 = -1;
-    position_w2 = output_width;
-    position_h2 = output_height;
+  if (padding_h == 0 && padding_w == 0) {
+    if_nopadding = true;
+    valid_w_start = -1;
+    valid_h_start = -1;
+    valid_w_end = output_w;
+    valid_h_end = output_h;
   }
 
-  for (int bs = 0; bs < batch_size; ++bs) {
-    int output_channels_d8 = output_channels >> 3;
+  for (int b = 0; b < batch; ++b) {
+    int output_ch_d8 = output_ch >> 3;
 
 #pragma omp parallel for
-    for (int oc2 = 0; oc2 < output_channels_d8; ++oc2) {
-      std::atomic<float> reluvalue{0};
-      int oc = oc2 * 8;
+    for (int o_c8 = 0; o_c8 < output_ch_d8; ++o_c8) {
+      std::atomic<float> relu_value{0};
+      int o_c = o_c8 * 8;
       const float *f1;
-      const float *inptr1, *inptr2, *inptr3;
-      const float *ffilter1, *ffilter2, *ffilter3;
-      const float *ffilter1_2, *ffilter2_2, *ffilter3_2;
-      const float *ffilter1_3, *ffilter2_3, *ffilter3_3;
-      const float *ffilter1_4, *ffilter2_4, *ffilter3_4;
-      const float *ffilter1_5, *ffilter2_5, *ffilter3_5;
-      const float *ffilter1_6, *ffilter2_6, *ffilter3_6;
-      const float *ffilter1_7, *ffilter2_7, *ffilter3_7;
-      const float *ffilter1_8, *ffilter2_8, *ffilter3_8;
+      const float *in_ptr1, *in_ptr2, *in_ptr3;
+      const float *pad_filter1, *pad_filter2, *pad_filter3;
+      const float *pad_filter1_2, *pad_filter2_2, *pad_filter3_2;
+      const float *pad_filter1_3, *pad_filter2_3, *pad_filter3_3;
+      const float *pad_filter1_4, *pad_filter2_4, *pad_filter3_4;
+      const float *pad_filter1_5, *pad_filter2_5, *pad_filter3_5;
+      const float *pad_filter1_6, *pad_filter2_6, *pad_filter3_6;
+      const float *pad_filter1_7, *pad_filter2_7, *pad_filter3_7;
+      const float *pad_filter1_8, *pad_filter2_8, *pad_filter3_8;
 
-      float reformedfilter_arr[76] = {0};
-      float ffilterarray[ffilter_length] = {0};
-      float ffilterarray_2[ffilter_length] = {0};
-      float ffilterarray_3[ffilter_length] = {0};
-      float ffilterarray_4[ffilter_length] = {0};
-      float ffilterarray_5[ffilter_length] = {0};
-      float ffilterarray_6[ffilter_length] = {0};
-      float ffilterarray_7[ffilter_length] = {0};
-      float ffilterarray_8[ffilter_length] = {0};
+      float reform_filter_arr[76] = {0};
+      float pad_filter_arr[pad_filter_ch_size] = {0};
+      float pad_filter_arr_2[pad_filter_ch_size] = {0};
+      float pad_filter_arr_3[pad_filter_ch_size] = {0};
+      float pad_filter_arr_4[pad_filter_ch_size] = {0};
+      float pad_filter_arr_5[pad_filter_ch_size] = {0};
+      float pad_filter_arr_6[pad_filter_ch_size] = {0};
+      float pad_filter_arr_7[pad_filter_ch_size] = {0};
+      float pad_filter_arr_8[pad_filter_ch_size] = {0};
 
       float *output_data_ch;
       float *output_data_ch_2;
@@ -3474,171 +3478,162 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
       const float *filter_data_ch_7;
       const float *filter_data_ch_8;
 
-      filter_data_ch =
-          filter_data + oc * filter_channel_stride * input_channels;
-      filter_data_ch_2 =
-          filter_data + (oc + 1) * filter_channel_stride * input_channels;
-      filter_data_ch_3 =
-          filter_data + (oc + 2) * filter_channel_stride * input_channels;
-      filter_data_ch_4 =
-          filter_data + (oc + 3) * filter_channel_stride * input_channels;
-      filter_data_ch_5 =
-          filter_data + (oc + 4) * filter_channel_stride * input_channels;
-      filter_data_ch_6 =
-          filter_data + (oc + 5) * filter_channel_stride * input_channels;
-      filter_data_ch_7 =
-          filter_data + (oc + 6) * filter_channel_stride * input_channels;
-      filter_data_ch_8 =
-          filter_data + (oc + 7) * filter_channel_stride * input_channels;
+      filter_data_ch = filter_data + o_c * filter_ch_size * input_ch;
+      filter_data_ch_2 = filter_data + (o_c + 1) * filter_ch_size * input_ch;
+      filter_data_ch_3 = filter_data + (o_c + 2) * filter_ch_size * input_ch;
+      filter_data_ch_4 = filter_data + (o_c + 3) * filter_ch_size * input_ch;
+      filter_data_ch_5 = filter_data + (o_c + 4) * filter_ch_size * input_ch;
+      filter_data_ch_6 = filter_data + (o_c + 5) * filter_ch_size * input_ch;
+      filter_data_ch_7 = filter_data + (o_c + 6) * filter_ch_size * input_ch;
+      filter_data_ch_8 = filter_data + (o_c + 7) * filter_ch_size * input_ch;
 
       input_data_ch = input_data;
-      output_data_ch = output_data + oc * output_channel_stride;
-      output_data_ch_2 = output_data + (oc + 1) * output_channel_stride;
-      output_data_ch_3 = output_data + (oc + 2) * output_channel_stride;
-      output_data_ch_4 = output_data + (oc + 3) * output_channel_stride;
-      output_data_ch_5 = output_data + (oc + 4) * output_channel_stride;
-      output_data_ch_6 = output_data + (oc + 5) * output_channel_stride;
-      output_data_ch_7 = output_data + (oc + 6) * output_channel_stride;
-      output_data_ch_8 = output_data + (oc + 7) * output_channel_stride;
+      output_data_ch = output_data + o_c * out_ch_size;
+      output_data_ch_2 = output_data + (o_c + 1) * out_ch_size;
+      output_data_ch_3 = output_data + (o_c + 2) * out_ch_size;
+      output_data_ch_4 = output_data + (o_c + 3) * out_ch_size;
+      output_data_ch_5 = output_data + (o_c + 4) * out_ch_size;
+      output_data_ch_6 = output_data + (o_c + 5) * out_ch_size;
+      output_data_ch_7 = output_data + (o_c + 6) * out_ch_size;
+      output_data_ch_8 = output_data + (o_c + 7) * out_ch_size;
 
-      for (int ic = 0; ic < input_channels; ++ic) {
+      for (int i_c = 0; i_c < input_ch; ++i_c) {
         int k = 0;
         for (int i = 0; i < 9; ++i) {
           for (int j = 0; j < 8; ++j) {
-            reformedfilter_arr[k++] =
-                filter_data_ch[i + input_channels * 9 * j];
+            reform_filter_arr[k++] = filter_data_ch[i + input_ch * 9 * j];
           }
         }
 
-        if (if_relu && ic == input_channels - 1) {
-          reluvalue = 0;
+        if (if_relu && i_c == input_ch - 1) {
+          relu_value = 0;
         } else {
-          reluvalue = -FLT_MAX;
+          relu_value = -FLT_MAX;
         }
-        reformedfilter_arr[72] = reluvalue;
-        reformedfilter_arr[73] = reluvalue;
-        reformedfilter_arr[74] = reluvalue;
-        reformedfilter_arr[75] = reluvalue;
+        reform_filter_arr[72] = relu_value;
+        reform_filter_arr[73] = relu_value;
+        reform_filter_arr[74] = relu_value;
+        reform_filter_arr[75] = relu_value;
 
-        f1 = reformedfilter_arr;
+        f1 = reform_filter_arr;
 
-        if (!isnopadding) {
-          ffilterarray[ffilter_length] = {0};
+        if (!if_nopadding) {
+          pad_filter_arr[pad_filter_ch_size] = {0};
 
           for (int i = 0; i < 9; ++i) {
-            int j = i / 3 * (2 * padding_width + 3) + i % 3 +
-                    padding_height * 3 +
-                    padding_width * (2 * padding_height + 1);
-            ffilterarray[j] = filter_data_ch[i];
-            ffilterarray_2[j] = filter_data_ch_2[i];
-            ffilterarray_3[j] = filter_data_ch_3[i];
-            ffilterarray_4[j] = filter_data_ch_4[i];
-            ffilterarray_5[j] = filter_data_ch_5[i];
-            ffilterarray_6[j] = filter_data_ch_6[i];
-            ffilterarray_7[j] = filter_data_ch_7[i];
-            ffilterarray_8[j] = filter_data_ch_8[i];
+            int j = i / 3 * (2 * padding_w + 3) + i % 3 + padding_h * 3 +
+                    padding_w * (2 * padding_h + 1);
+            pad_filter_arr[j] = filter_data_ch[i];
+            pad_filter_arr_2[j] = filter_data_ch_2[i];
+            pad_filter_arr_3[j] = filter_data_ch_3[i];
+            pad_filter_arr_4[j] = filter_data_ch_4[i];
+            pad_filter_arr_5[j] = filter_data_ch_5[i];
+            pad_filter_arr_6[j] = filter_data_ch_6[i];
+            pad_filter_arr_7[j] = filter_data_ch_7[i];
+            pad_filter_arr_8[j] = filter_data_ch_8[i];
           }
 
-          ffilter1 = ffilterarray;
-          ffilter1 += ffilter_start;
-          ffilter2 = ffilter1 + ffilter_width;
-          ffilter3 = ffilter2 + ffilter_width;
+          pad_filter1 = pad_filter_arr;
+          pad_filter1 += pad_filter_start;
+          pad_filter2 = pad_filter1 + pad_filter_w;
+          pad_filter3 = pad_filter2 + pad_filter_w;
 
-          ffilter1_2 = ffilterarray_2;
-          ffilter1_2 += ffilter_start;
-          ffilter2_2 = ffilter1_2 + ffilter_width;
-          ffilter3_2 = ffilter2_2 + ffilter_width;
+          pad_filter1_2 = pad_filter_arr_2;
+          pad_filter1_2 += pad_filter_start;
+          pad_filter2_2 = pad_filter1_2 + pad_filter_w;
+          pad_filter3_2 = pad_filter2_2 + pad_filter_w;
 
-          ffilter1_3 = ffilterarray_3;
-          ffilter1_3 += ffilter_start;
-          ffilter2_3 = ffilter1_3 + ffilter_width;
-          ffilter3_3 = ffilter2_3 + ffilter_width;
+          pad_filter1_3 = pad_filter_arr_3;
+          pad_filter1_3 += pad_filter_start;
+          pad_filter2_3 = pad_filter1_3 + pad_filter_w;
+          pad_filter3_3 = pad_filter2_3 + pad_filter_w;
 
-          ffilter1_4 = ffilterarray_4;
-          ffilter1_4 += ffilter_start;
-          ffilter2_4 = ffilter1_4 + ffilter_width;
-          ffilter3_4 = ffilter2_4 + ffilter_width;
+          pad_filter1_4 = pad_filter_arr_4;
+          pad_filter1_4 += pad_filter_start;
+          pad_filter2_4 = pad_filter1_4 + pad_filter_w;
+          pad_filter3_4 = pad_filter2_4 + pad_filter_w;
 
-          ffilter1_5 = ffilterarray_5;
-          ffilter1_5 += ffilter_start;
-          ffilter2_5 = ffilter1_5 + ffilter_width;
-          ffilter3_5 = ffilter2_5 + ffilter_width;
+          pad_filter1_5 = pad_filter_arr_5;
+          pad_filter1_5 += pad_filter_start;
+          pad_filter2_5 = pad_filter1_5 + pad_filter_w;
+          pad_filter3_5 = pad_filter2_5 + pad_filter_w;
 
-          ffilter1_6 = ffilterarray_6;
-          ffilter1_6 += ffilter_start;
-          ffilter2_6 = ffilter1_6 + ffilter_width;
-          ffilter3_6 = ffilter2_6 + ffilter_width;
+          pad_filter1_6 = pad_filter_arr_6;
+          pad_filter1_6 += pad_filter_start;
+          pad_filter2_6 = pad_filter1_6 + pad_filter_w;
+          pad_filter3_6 = pad_filter2_6 + pad_filter_w;
 
-          ffilter1_7 = ffilterarray_7;
-          ffilter1_7 += ffilter_start;
-          ffilter2_7 = ffilter1_7 + ffilter_width;
-          ffilter3_7 = ffilter2_7 + ffilter_width;
+          pad_filter1_7 = pad_filter_arr_7;
+          pad_filter1_7 += pad_filter_start;
+          pad_filter2_7 = pad_filter1_7 + pad_filter_w;
+          pad_filter3_7 = pad_filter2_7 + pad_filter_w;
 
-          ffilter1_8 = ffilterarray_8;
-          ffilter1_8 += ffilter_start;
-          ffilter2_8 = ffilter1_8 + ffilter_width;
-          ffilter3_8 = ffilter2_8 + ffilter_width;
+          pad_filter1_8 = pad_filter_arr_8;
+          pad_filter1_8 += pad_filter_start;
+          pad_filter2_8 = pad_filter1_8 + pad_filter_w;
+          pad_filter3_8 = pad_filter2_8 + pad_filter_w;
         } else {
-          ffilter1 = filter_data_ch;
-          ffilter2 = ffilter1 + 3;
-          ffilter3 = ffilter2 + 3;
+          pad_filter1 = filter_data_ch;
+          pad_filter2 = pad_filter1 + 3;
+          pad_filter3 = pad_filter2 + 3;
 
-          ffilter1_2 = filter_data_ch_2;
-          ffilter2_2 = ffilter1_2 + 3;
-          ffilter3_2 = ffilter2_2 + 3;
+          pad_filter1_2 = filter_data_ch_2;
+          pad_filter2_2 = pad_filter1_2 + 3;
+          pad_filter3_2 = pad_filter2_2 + 3;
 
-          ffilter1_3 = filter_data_ch_3;
-          ffilter2_3 = ffilter1_3 + 3;
-          ffilter3_3 = ffilter2_3 + 3;
+          pad_filter1_3 = filter_data_ch_3;
+          pad_filter2_3 = pad_filter1_3 + 3;
+          pad_filter3_3 = pad_filter2_3 + 3;
 
-          ffilter1_4 = filter_data_ch_4;
-          ffilter2_4 = ffilter1_4 + 3;
-          ffilter3_4 = ffilter2_4 + 3;
+          pad_filter1_4 = filter_data_ch_4;
+          pad_filter2_4 = pad_filter1_4 + 3;
+          pad_filter3_4 = pad_filter2_4 + 3;
 
-          ffilter1_5 = filter_data_ch_5;
-          ffilter2_5 = ffilter1_5 + 3;
-          ffilter3_5 = ffilter2_5 + 3;
+          pad_filter1_5 = filter_data_ch_5;
+          pad_filter2_5 = pad_filter1_5 + 3;
+          pad_filter3_5 = pad_filter2_5 + 3;
 
-          ffilter1_6 = filter_data_ch_6;
-          ffilter2_6 = ffilter1_6 + 3;
-          ffilter3_6 = ffilter2_6 + 3;
+          pad_filter1_6 = filter_data_ch_6;
+          pad_filter2_6 = pad_filter1_6 + 3;
+          pad_filter3_6 = pad_filter2_6 + 3;
 
-          ffilter1_7 = filter_data_ch_7;
-          ffilter2_7 = ffilter1_7 + 3;
-          ffilter3_7 = ffilter2_7 + 3;
+          pad_filter1_7 = filter_data_ch_7;
+          pad_filter2_7 = pad_filter1_7 + 3;
+          pad_filter3_7 = pad_filter2_7 + 3;
 
-          ffilter1_8 = filter_data_ch_8;
-          ffilter2_8 = ffilter1_8 + 3;
-          ffilter3_8 = ffilter2_8 + 3;
+          pad_filter1_8 = filter_data_ch_8;
+          pad_filter2_8 = pad_filter1_8 + 3;
+          pad_filter3_8 = pad_filter2_8 + 3;
         }
-        float *outptr1;
-        float *outptr1_2;
-        float *outptr1_3;
-        float *outptr1_4;
-        float *outptr1_5;
-        float *outptr1_6;
-        float *outptr1_7;
-        float *outptr1_8;
+        float *out_ptr1;
+        float *out_ptr1_2;
+        float *out_ptr1_3;
+        float *out_ptr1_4;
+        float *out_ptr1_5;
+        float *out_ptr1_6;
+        float *out_ptr1_7;
+        float *out_ptr1_8;
 
-        outptr1 = output_data_ch;
-        outptr1_2 = output_data_ch_2;
-        outptr1_3 = output_data_ch_3;
-        outptr1_4 = output_data_ch_4;
-        outptr1_5 = output_data_ch_5;
-        outptr1_6 = output_data_ch_6;
-        outptr1_7 = output_data_ch_7;
-        outptr1_8 = output_data_ch_8;
+        out_ptr1 = output_data_ch;
+        out_ptr1_2 = output_data_ch_2;
+        out_ptr1_3 = output_data_ch_3;
+        out_ptr1_4 = output_data_ch_4;
+        out_ptr1_5 = output_data_ch_5;
+        out_ptr1_6 = output_data_ch_6;
+        out_ptr1_7 = output_data_ch_7;
+        out_ptr1_8 = output_data_ch_8;
 
-        inptr1 = input_data_ch;
-        inptr2 = inptr1 + input_width;
-        inptr3 = inptr2 + input_width;
+        in_ptr1 = input_data_ch;
+        in_ptr2 = in_ptr1 + input_w;
+        in_ptr3 = in_ptr2 + input_w;
 
-        int oh = 0;
+        int o_h = 0;
 
-        for (; oh < output_height; ++oh) {
-          int ow = 0;
+        for (; o_h < output_h; ++o_h) {
+          int o_w = 0;
 
-          for (; ow <= position_w1; ++ow) {
+          // pad left
+          for (; o_w <= valid_w_start; ++o_w) {
             float sum1 = 0;
             float sum1_2 = 0;
             float sum1_3 = 0;
@@ -3648,62 +3643,62 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
             float sum1_7 = 0;
             float sum1_8 = 0;
 #if __ARM_NEON
-            float32x4_t _inptr1 = vld1q_f32(inptr1);
-            float32x4_t _ffilter1 = vld1q_f32(ffilter1);
-            float32x4_t _ffilter1_2 = vld1q_f32(ffilter1_2);
-            float32x4_t _ffilter1_3 = vld1q_f32(ffilter1_3);
-            float32x4_t _ffilter1_4 = vld1q_f32(ffilter1_4);
-            float32x4_t _ffilter1_5 = vld1q_f32(ffilter1_5);
-            float32x4_t _ffilter1_6 = vld1q_f32(ffilter1_6);
-            float32x4_t _ffilter1_7 = vld1q_f32(ffilter1_7);
-            float32x4_t _ffilter1_8 = vld1q_f32(ffilter1_8);
+            float32x4_t _in_ptr1 = vld1q_f32(in_ptr1);
+            float32x4_t _pad_filter1 = vld1q_f32(pad_filter1);
+            float32x4_t _pad_filter1_2 = vld1q_f32(pad_filter1_2);
+            float32x4_t _pad_filter1_3 = vld1q_f32(pad_filter1_3);
+            float32x4_t _pad_filter1_4 = vld1q_f32(pad_filter1_4);
+            float32x4_t _pad_filter1_5 = vld1q_f32(pad_filter1_5);
+            float32x4_t _pad_filter1_6 = vld1q_f32(pad_filter1_6);
+            float32x4_t _pad_filter1_7 = vld1q_f32(pad_filter1_7);
+            float32x4_t _pad_filter1_8 = vld1q_f32(pad_filter1_8);
 
-            float32x4_t _sum1 = vmulq_f32(_inptr1, _ffilter1);
-            float32x4_t _sum1_2 = vmulq_f32(_inptr1, _ffilter1_2);
-            float32x4_t _sum1_3 = vmulq_f32(_inptr1, _ffilter1_3);
-            float32x4_t _sum1_4 = vmulq_f32(_inptr1, _ffilter1_4);
-            float32x4_t _sum1_5 = vmulq_f32(_inptr1, _ffilter1_5);
-            float32x4_t _sum1_6 = vmulq_f32(_inptr1, _ffilter1_6);
-            float32x4_t _sum1_7 = vmulq_f32(_inptr1, _ffilter1_7);
-            float32x4_t _sum1_8 = vmulq_f32(_inptr1, _ffilter1_8);
+            float32x4_t _sum1 = vmulq_f32(_in_ptr1, _pad_filter1);
+            float32x4_t _sum1_2 = vmulq_f32(_in_ptr1, _pad_filter1_2);
+            float32x4_t _sum1_3 = vmulq_f32(_in_ptr1, _pad_filter1_3);
+            float32x4_t _sum1_4 = vmulq_f32(_in_ptr1, _pad_filter1_4);
+            float32x4_t _sum1_5 = vmulq_f32(_in_ptr1, _pad_filter1_5);
+            float32x4_t _sum1_6 = vmulq_f32(_in_ptr1, _pad_filter1_6);
+            float32x4_t _sum1_7 = vmulq_f32(_in_ptr1, _pad_filter1_7);
+            float32x4_t _sum1_8 = vmulq_f32(_in_ptr1, _pad_filter1_8);
 
-            float32x4_t _inptr2 = vld1q_f32(inptr2);
-            float32x4_t _ffilter2 = vld1q_f32(ffilter2);
-            float32x4_t _ffilter2_2 = vld1q_f32(ffilter2_2);
-            float32x4_t _ffilter2_3 = vld1q_f32(ffilter2_3);
-            float32x4_t _ffilter2_4 = vld1q_f32(ffilter2_4);
-            float32x4_t _ffilter2_5 = vld1q_f32(ffilter2_5);
-            float32x4_t _ffilter2_6 = vld1q_f32(ffilter2_6);
-            float32x4_t _ffilter2_7 = vld1q_f32(ffilter2_7);
-            float32x4_t _ffilter2_8 = vld1q_f32(ffilter2_8);
+            float32x4_t _in_ptr2 = vld1q_f32(in_ptr2);
+            float32x4_t _pad_filter2 = vld1q_f32(pad_filter2);
+            float32x4_t _pad_filter2_2 = vld1q_f32(pad_filter2_2);
+            float32x4_t _pad_filter2_3 = vld1q_f32(pad_filter2_3);
+            float32x4_t _pad_filter2_4 = vld1q_f32(pad_filter2_4);
+            float32x4_t _pad_filter2_5 = vld1q_f32(pad_filter2_5);
+            float32x4_t _pad_filter2_6 = vld1q_f32(pad_filter2_6);
+            float32x4_t _pad_filter2_7 = vld1q_f32(pad_filter2_7);
+            float32x4_t _pad_filter2_8 = vld1q_f32(pad_filter2_8);
 
-            _sum1 = vmlaq_f32(_sum1, _inptr2, _ffilter2);
-            _sum1_2 = vmlaq_f32(_sum1_2, _inptr2, _ffilter2_2);
-            _sum1_3 = vmlaq_f32(_sum1_3, _inptr2, _ffilter2_3);
-            _sum1_4 = vmlaq_f32(_sum1_4, _inptr2, _ffilter2_4);
-            _sum1_5 = vmlaq_f32(_sum1_5, _inptr2, _ffilter2_5);
-            _sum1_6 = vmlaq_f32(_sum1_6, _inptr2, _ffilter2_6);
-            _sum1_7 = vmlaq_f32(_sum1_7, _inptr2, _ffilter2_7);
-            _sum1_8 = vmlaq_f32(_sum1_8, _inptr2, _ffilter2_8);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr2, _pad_filter2);
+            _sum1_2 = vmlaq_f32(_sum1_2, _in_ptr2, _pad_filter2_2);
+            _sum1_3 = vmlaq_f32(_sum1_3, _in_ptr2, _pad_filter2_3);
+            _sum1_4 = vmlaq_f32(_sum1_4, _in_ptr2, _pad_filter2_4);
+            _sum1_5 = vmlaq_f32(_sum1_5, _in_ptr2, _pad_filter2_5);
+            _sum1_6 = vmlaq_f32(_sum1_6, _in_ptr2, _pad_filter2_6);
+            _sum1_7 = vmlaq_f32(_sum1_7, _in_ptr2, _pad_filter2_7);
+            _sum1_8 = vmlaq_f32(_sum1_8, _in_ptr2, _pad_filter2_8);
 
-            float32x4_t _inptr3 = vld1q_f32(inptr3);
-            float32x4_t _ffilter3 = vld1q_f32(ffilter3);
-            float32x4_t _ffilter3_2 = vld1q_f32(ffilter3_2);
-            float32x4_t _ffilter3_3 = vld1q_f32(ffilter3_3);
-            float32x4_t _ffilter3_4 = vld1q_f32(ffilter3_4);
-            float32x4_t _ffilter3_5 = vld1q_f32(ffilter3_5);
-            float32x4_t _ffilter3_6 = vld1q_f32(ffilter3_6);
-            float32x4_t _ffilter3_7 = vld1q_f32(ffilter3_7);
-            float32x4_t _ffilter3_8 = vld1q_f32(ffilter3_8);
+            float32x4_t _in_ptr3 = vld1q_f32(in_ptr3);
+            float32x4_t _pad_filter3 = vld1q_f32(pad_filter3);
+            float32x4_t _pad_filter3_2 = vld1q_f32(pad_filter3_2);
+            float32x4_t _pad_filter3_3 = vld1q_f32(pad_filter3_3);
+            float32x4_t _pad_filter3_4 = vld1q_f32(pad_filter3_4);
+            float32x4_t _pad_filter3_5 = vld1q_f32(pad_filter3_5);
+            float32x4_t _pad_filter3_6 = vld1q_f32(pad_filter3_6);
+            float32x4_t _pad_filter3_7 = vld1q_f32(pad_filter3_7);
+            float32x4_t _pad_filter3_8 = vld1q_f32(pad_filter3_8);
 
-            _sum1 = vmlaq_f32(_sum1, _inptr3, _ffilter3);
-            _sum1_2 = vmlaq_f32(_sum1_2, _inptr3, _ffilter3_2);
-            _sum1_3 = vmlaq_f32(_sum1_3, _inptr3, _ffilter3_3);
-            _sum1_4 = vmlaq_f32(_sum1_4, _inptr3, _ffilter3_4);
-            _sum1_5 = vmlaq_f32(_sum1_5, _inptr3, _ffilter3_5);
-            _sum1_6 = vmlaq_f32(_sum1_6, _inptr3, _ffilter3_6);
-            _sum1_7 = vmlaq_f32(_sum1_7, _inptr3, _ffilter3_7);
-            _sum1_8 = vmlaq_f32(_sum1_8, _inptr3, _ffilter3_8);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr3, _pad_filter3);
+            _sum1_2 = vmlaq_f32(_sum1_2, _in_ptr3, _pad_filter3_2);
+            _sum1_3 = vmlaq_f32(_sum1_3, _in_ptr3, _pad_filter3_3);
+            _sum1_4 = vmlaq_f32(_sum1_4, _in_ptr3, _pad_filter3_4);
+            _sum1_5 = vmlaq_f32(_sum1_5, _in_ptr3, _pad_filter3_5);
+            _sum1_6 = vmlaq_f32(_sum1_6, _in_ptr3, _pad_filter3_6);
+            _sum1_7 = vmlaq_f32(_sum1_7, _in_ptr3, _pad_filter3_7);
+            _sum1_8 = vmlaq_f32(_sum1_8, _in_ptr3, _pad_filter3_8);
 
             _sum1 = vsetq_lane_f32(sum1, _sum1, 3);
             _sum1_2 = vsetq_lane_f32(sum1_2, _sum1_2, 3);
@@ -3745,242 +3740,242 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
             sum1_7 += vget_lane_f32(_ssss1_7_ssss1_8, 0);
             sum1_8 += vget_lane_f32(_ssss1_7_ssss1_8, 1);
 #else
-            sum1 += inptr1[0] * ffilter1[0];
-            sum1 += inptr1[1] * ffilter1[1];
-            sum1 += inptr1[2] * ffilter1[2];
-            sum1 += inptr2[0] * ffilter2[0];
-            sum1 += inptr2[1] * ffilter2[1];
-            sum1 += inptr2[2] * ffilter2[2];
-            sum1 += inptr3[0] * ffilter3[0];
-            sum1 += inptr3[1] * ffilter3[1];
-            sum1 += inptr3[2] * ffilter3[2];
+            sum1 += in_ptr1[0] * pad_filter1[0];
+            sum1 += in_ptr1[1] * pad_filter1[1];
+            sum1 += in_ptr1[2] * pad_filter1[2];
+            sum1 += in_ptr2[0] * pad_filter2[0];
+            sum1 += in_ptr2[1] * pad_filter2[1];
+            sum1 += in_ptr2[2] * pad_filter2[2];
+            sum1 += in_ptr3[0] * pad_filter3[0];
+            sum1 += in_ptr3[1] * pad_filter3[1];
+            sum1 += in_ptr3[2] * pad_filter3[2];
 
-            sum1_2 += inptr1[0] * ffilter1_2[0];
-            sum1_2 += inptr1[1] * ffilter1_2[1];
-            sum1_2 += inptr1[2] * ffilter1_2[2];
-            sum1_2 += inptr2[0] * ffilter2_2[0];
-            sum1_2 += inptr2[1] * ffilter2_2[1];
-            sum1_2 += inptr2[2] * ffilter2_2[2];
-            sum1_2 += inptr3[0] * ffilter3_2[0];
-            sum1_2 += inptr3[1] * ffilter3_2[1];
-            sum1_2 += inptr3[2] * ffilter3_2[2];
+            sum1_2 += in_ptr1[0] * pad_filter1_2[0];
+            sum1_2 += in_ptr1[1] * pad_filter1_2[1];
+            sum1_2 += in_ptr1[2] * pad_filter1_2[2];
+            sum1_2 += in_ptr2[0] * pad_filter2_2[0];
+            sum1_2 += in_ptr2[1] * pad_filter2_2[1];
+            sum1_2 += in_ptr2[2] * pad_filter2_2[2];
+            sum1_2 += in_ptr3[0] * pad_filter3_2[0];
+            sum1_2 += in_ptr3[1] * pad_filter3_2[1];
+            sum1_2 += in_ptr3[2] * pad_filter3_2[2];
 
-            sum1_3 += inptr1[0] * ffilter1_3[0];
-            sum1_3 += inptr1[1] * ffilter1_3[1];
-            sum1_3 += inptr1[2] * ffilter1_3[2];
-            sum1_3 += inptr2[0] * ffilter2_3[0];
-            sum1_3 += inptr2[1] * ffilter2_3[1];
-            sum1_3 += inptr2[2] * ffilter2_3[2];
-            sum1_3 += inptr3[0] * ffilter3_3[0];
-            sum1_3 += inptr3[1] * ffilter3_3[1];
-            sum1_3 += inptr3[2] * ffilter3_3[2];
+            sum1_3 += in_ptr1[0] * pad_filter1_3[0];
+            sum1_3 += in_ptr1[1] * pad_filter1_3[1];
+            sum1_3 += in_ptr1[2] * pad_filter1_3[2];
+            sum1_3 += in_ptr2[0] * pad_filter2_3[0];
+            sum1_3 += in_ptr2[1] * pad_filter2_3[1];
+            sum1_3 += in_ptr2[2] * pad_filter2_3[2];
+            sum1_3 += in_ptr3[0] * pad_filter3_3[0];
+            sum1_3 += in_ptr3[1] * pad_filter3_3[1];
+            sum1_3 += in_ptr3[2] * pad_filter3_3[2];
 
-            sum1_4 += inptr1[0] * ffilter1_4[0];
-            sum1_4 += inptr1[1] * ffilter1_4[1];
-            sum1_4 += inptr1[2] * ffilter1_4[2];
-            sum1_4 += inptr2[0] * ffilter2_4[0];
-            sum1_4 += inptr2[1] * ffilter2_4[1];
-            sum1_4 += inptr2[2] * ffilter2_4[2];
-            sum1_4 += inptr3[0] * ffilter3_4[0];
-            sum1_4 += inptr3[1] * ffilter3_4[1];
-            sum1_4 += inptr3[2] * ffilter3_4[2];
+            sum1_4 += in_ptr1[0] * pad_filter1_4[0];
+            sum1_4 += in_ptr1[1] * pad_filter1_4[1];
+            sum1_4 += in_ptr1[2] * pad_filter1_4[2];
+            sum1_4 += in_ptr2[0] * pad_filter2_4[0];
+            sum1_4 += in_ptr2[1] * pad_filter2_4[1];
+            sum1_4 += in_ptr2[2] * pad_filter2_4[2];
+            sum1_4 += in_ptr3[0] * pad_filter3_4[0];
+            sum1_4 += in_ptr3[1] * pad_filter3_4[1];
+            sum1_4 += in_ptr3[2] * pad_filter3_4[2];
 
-            sum1_5 += inptr1[0] * ffilter1_5[0];
-            sum1_5 += inptr1[1] * ffilter1_5[1];
-            sum1_5 += inptr1[2] * ffilter1_5[2];
-            sum1_5 += inptr2[0] * ffilter2_5[0];
-            sum1_5 += inptr2[1] * ffilter2_5[1];
-            sum1_5 += inptr2[2] * ffilter2_5[2];
-            sum1_5 += inptr3[0] * ffilter3_5[0];
-            sum1_5 += inptr3[1] * ffilter3_5[1];
-            sum1_5 += inptr3[2] * ffilter3_5[2];
+            sum1_5 += in_ptr1[0] * pad_filter1_5[0];
+            sum1_5 += in_ptr1[1] * pad_filter1_5[1];
+            sum1_5 += in_ptr1[2] * pad_filter1_5[2];
+            sum1_5 += in_ptr2[0] * pad_filter2_5[0];
+            sum1_5 += in_ptr2[1] * pad_filter2_5[1];
+            sum1_5 += in_ptr2[2] * pad_filter2_5[2];
+            sum1_5 += in_ptr3[0] * pad_filter3_5[0];
+            sum1_5 += in_ptr3[1] * pad_filter3_5[1];
+            sum1_5 += in_ptr3[2] * pad_filter3_5[2];
 
-            sum1_6 += inptr1[0] * ffilter1_6[0];
-            sum1_6 += inptr1[1] * ffilter1_6[1];
-            sum1_6 += inptr1[2] * ffilter1_6[2];
-            sum1_6 += inptr2[0] * ffilter2_6[0];
-            sum1_6 += inptr2[1] * ffilter2_6[1];
-            sum1_6 += inptr2[2] * ffilter2_6[2];
-            sum1_6 += inptr3[0] * ffilter3_6[0];
-            sum1_6 += inptr3[1] * ffilter3_6[1];
-            sum1_6 += inptr3[2] * ffilter3_6[2];
+            sum1_6 += in_ptr1[0] * pad_filter1_6[0];
+            sum1_6 += in_ptr1[1] * pad_filter1_6[1];
+            sum1_6 += in_ptr1[2] * pad_filter1_6[2];
+            sum1_6 += in_ptr2[0] * pad_filter2_6[0];
+            sum1_6 += in_ptr2[1] * pad_filter2_6[1];
+            sum1_6 += in_ptr2[2] * pad_filter2_6[2];
+            sum1_6 += in_ptr3[0] * pad_filter3_6[0];
+            sum1_6 += in_ptr3[1] * pad_filter3_6[1];
+            sum1_6 += in_ptr3[2] * pad_filter3_6[2];
 
-            sum1_7 += inptr1[0] * ffilter1_7[0];
-            sum1_7 += inptr1[1] * ffilter1_7[1];
-            sum1_7 += inptr1[2] * ffilter1_7[2];
-            sum1_7 += inptr2[0] * ffilter2_7[0];
-            sum1_7 += inptr2[1] * ffilter2_7[1];
-            sum1_7 += inptr2[2] * ffilter2_7[2];
-            sum1_7 += inptr3[0] * ffilter3_7[0];
-            sum1_7 += inptr3[1] * ffilter3_7[1];
-            sum1_7 += inptr3[2] * ffilter3_7[2];
+            sum1_7 += in_ptr1[0] * pad_filter1_7[0];
+            sum1_7 += in_ptr1[1] * pad_filter1_7[1];
+            sum1_7 += in_ptr1[2] * pad_filter1_7[2];
+            sum1_7 += in_ptr2[0] * pad_filter2_7[0];
+            sum1_7 += in_ptr2[1] * pad_filter2_7[1];
+            sum1_7 += in_ptr2[2] * pad_filter2_7[2];
+            sum1_7 += in_ptr3[0] * pad_filter3_7[0];
+            sum1_7 += in_ptr3[1] * pad_filter3_7[1];
+            sum1_7 += in_ptr3[2] * pad_filter3_7[2];
 
-            sum1_8 += inptr1[0] * ffilter1_8[0];
-            sum1_8 += inptr1[1] * ffilter1_8[1];
-            sum1_8 += inptr1[2] * ffilter1_8[2];
-            sum1_8 += inptr2[0] * ffilter2_8[0];
-            sum1_8 += inptr2[1] * ffilter2_8[1];
-            sum1_8 += inptr2[2] * ffilter2_8[2];
-            sum1_8 += inptr3[0] * ffilter3_8[0];
-            sum1_8 += inptr3[1] * ffilter3_8[1];
-            sum1_8 += inptr3[2] * ffilter3_8[2];
+            sum1_8 += in_ptr1[0] * pad_filter1_8[0];
+            sum1_8 += in_ptr1[1] * pad_filter1_8[1];
+            sum1_8 += in_ptr1[2] * pad_filter1_8[2];
+            sum1_8 += in_ptr2[0] * pad_filter2_8[0];
+            sum1_8 += in_ptr2[1] * pad_filter2_8[1];
+            sum1_8 += in_ptr2[2] * pad_filter2_8[2];
+            sum1_8 += in_ptr3[0] * pad_filter3_8[0];
+            sum1_8 += in_ptr3[1] * pad_filter3_8[1];
+            sum1_8 += in_ptr3[2] * pad_filter3_8[2];
 #endif
-            if (isnopadding) {
-              inptr1 += 2;
-              inptr2 += 2;
-              inptr3 += 2;
+            if (if_nopadding) {
+              in_ptr1 += 2;
+              in_ptr2 += 2;
+              in_ptr3 += 2;
 
-            } else if (input_width > 3 &&
-                       (isoddpadding_w && ow == position_w1 ||
-                        ow == position_w2 && isoddpadding_w && useallInput_w ||
-                        ow == position_w2 + 1 && !isoddpadding_w &&
-                            !useallInput_w)) {
-              ffilter1--;
-              ffilter2--;
-              ffilter3--;
-              ffilter1_2--;
-              ffilter2_2--;
-              ffilter3_2--;
+            } else if (input_w > 3 &&
+                       (if_odd_pad_w && o_w == valid_w_start ||
+                        o_w == valid_w_end && if_odd_pad_w && if_exact_in_w ||
+                        o_w == valid_w_end + 1 && !if_odd_pad_w &&
+                            !if_exact_in_w)) {
+              pad_filter1--;
+              pad_filter2--;
+              pad_filter3--;
+              pad_filter1_2--;
+              pad_filter2_2--;
+              pad_filter3_2--;
 
-              ffilter1_3--;
-              ffilter2_3--;
-              ffilter3_3--;
-              ffilter1_4--;
-              ffilter2_4--;
-              ffilter3_4--;
+              pad_filter1_3--;
+              pad_filter2_3--;
+              pad_filter3_3--;
+              pad_filter1_4--;
+              pad_filter2_4--;
+              pad_filter3_4--;
 
-              ffilter1_5--;
-              ffilter2_5--;
-              ffilter3_5--;
-              ffilter1_6--;
-              ffilter2_6--;
-              ffilter3_6--;
+              pad_filter1_5--;
+              pad_filter2_5--;
+              pad_filter3_5--;
+              pad_filter1_6--;
+              pad_filter2_6--;
+              pad_filter3_6--;
 
-              ffilter1_7--;
-              ffilter2_7--;
-              ffilter3_7--;
-              ffilter1_8--;
-              ffilter2_8--;
-              ffilter3_8--;
+              pad_filter1_7--;
+              pad_filter2_7--;
+              pad_filter3_7--;
+              pad_filter1_8--;
+              pad_filter2_8--;
+              pad_filter3_8--;
 
-              inptr1++;
-              inptr2++;
-              inptr3++;
+              in_ptr1++;
+              in_ptr2++;
+              in_ptr3++;
 
-            } else if (input_width <= 3 || ow < position_w1 ||
-                       ow > position_w2) {
-              ffilter1 -= 2;
-              ffilter2 -= 2;
-              ffilter3 -= 2;
-              ffilter1_2 -= 2;
-              ffilter2_2 -= 2;
-              ffilter3_2 -= 2;
+            } else if (input_w <= 3 || o_w < valid_w_start ||
+                       o_w > valid_w_end) {
+              pad_filter1 -= 2;
+              pad_filter2 -= 2;
+              pad_filter3 -= 2;
+              pad_filter1_2 -= 2;
+              pad_filter2_2 -= 2;
+              pad_filter3_2 -= 2;
 
-              ffilter1_3 -= 2;
-              ffilter2_3 -= 2;
-              ffilter3_3 -= 2;
-              ffilter1_4 -= 2;
-              ffilter2_4 -= 2;
-              ffilter3_4 -= 2;
+              pad_filter1_3 -= 2;
+              pad_filter2_3 -= 2;
+              pad_filter3_3 -= 2;
+              pad_filter1_4 -= 2;
+              pad_filter2_4 -= 2;
+              pad_filter3_4 -= 2;
 
-              ffilter1_5 -= 2;
-              ffilter2_5 -= 2;
-              ffilter3_5 -= 2;
-              ffilter1_6 -= 2;
-              ffilter2_6 -= 2;
-              ffilter3_6 -= 2;
+              pad_filter1_5 -= 2;
+              pad_filter2_5 -= 2;
+              pad_filter3_5 -= 2;
+              pad_filter1_6 -= 2;
+              pad_filter2_6 -= 2;
+              pad_filter3_6 -= 2;
 
-              ffilter1_7 -= 2;
-              ffilter2_7 -= 2;
-              ffilter3_7 -= 2;
-              ffilter1_8 -= 2;
-              ffilter2_8 -= 2;
-              ffilter3_8 -= 2;
+              pad_filter1_7 -= 2;
+              pad_filter2_7 -= 2;
+              pad_filter3_7 -= 2;
+              pad_filter1_8 -= 2;
+              pad_filter2_8 -= 2;
+              pad_filter3_8 -= 2;
             } else {
-              inptr1 += 2;
-              inptr2 += 2;
-              inptr3 += 2;
+              in_ptr1 += 2;
+              in_ptr2 += 2;
+              in_ptr3 += 2;
             }
-            *outptr1 += sum1;
-            *outptr1_2 += sum1_2;
-            *outptr1_3 += sum1_3;
-            *outptr1_4 += sum1_4;
-            *outptr1_5 += sum1_5;
-            *outptr1_6 += sum1_6;
-            *outptr1_7 += sum1_7;
-            *outptr1_8 += sum1_8;
+            *out_ptr1 += sum1;
+            *out_ptr1_2 += sum1_2;
+            *out_ptr1_3 += sum1_3;
+            *out_ptr1_4 += sum1_4;
+            *out_ptr1_5 += sum1_5;
+            *out_ptr1_6 += sum1_6;
+            *out_ptr1_7 += sum1_7;
+            *out_ptr1_8 += sum1_8;
 
-            if (outptr1[0] < reluvalue) {
-              *outptr1 = reluvalue;
+            if (out_ptr1[0] < relu_value) {
+              *out_ptr1 = relu_value;
             }
-            if (outptr1_2[0] < reluvalue) {
-              *outptr1_2 = reluvalue;
+            if (out_ptr1_2[0] < relu_value) {
+              *out_ptr1_2 = relu_value;
             }
-            if (outptr1_3[0] < reluvalue) {
-              *outptr1_3 = reluvalue;
+            if (out_ptr1_3[0] < relu_value) {
+              *out_ptr1_3 = relu_value;
             }
-            if (outptr1_4[0] < reluvalue) {
-              *outptr1_4 = reluvalue;
+            if (out_ptr1_4[0] < relu_value) {
+              *out_ptr1_4 = relu_value;
             }
-            if (outptr1_5[0] < reluvalue) {
-              *outptr1_5 = reluvalue;
+            if (out_ptr1_5[0] < relu_value) {
+              *out_ptr1_5 = relu_value;
             }
-            if (outptr1_6[0] < reluvalue) {
-              *outptr1_6 = reluvalue;
+            if (out_ptr1_6[0] < relu_value) {
+              *out_ptr1_6 = relu_value;
             }
-            if (outptr1_7[0] < reluvalue) {
-              *outptr1_7 = reluvalue;
+            if (out_ptr1_7[0] < relu_value) {
+              *out_ptr1_7 = relu_value;
             }
-            if (outptr1_8[0] < reluvalue) {
-              *outptr1_8 = reluvalue;
+            if (out_ptr1_8[0] < relu_value) {
+              *out_ptr1_8 = relu_value;
             }
 
-            outptr1++;
-            outptr1_2++;
-            outptr1_3++;
-            outptr1_4++;
-            outptr1_5++;
-            outptr1_6++;
-            outptr1_7++;
-            outptr1_8++;
+            out_ptr1++;
+            out_ptr1_2++;
+            out_ptr1_3++;
+            out_ptr1_4++;
+            out_ptr1_5++;
+            out_ptr1_6++;
+            out_ptr1_7++;
+            out_ptr1_8++;
           }
-
+            // valid
 #if __ARM_NEON
 #if __aarch64__
-          if (oh > position_h1 && oh <= position_h2) {
-            int ow_dim4 = (position_w2 - position_w1 - 1) >> 2;
-            ow += ow_dim4 * 4;
+          if (o_h > valid_h_start && o_h <= valid_h_end) {
+            int o_w_dim4 = (valid_w_end - valid_w_start - 1) >> 2;
+            o_w += o_w_dim4 * 4;
 
-            if (ow_dim4 > 0) {
+            if (o_w_dim4 > 0) {
               asm volatile(
 
                   "prfm  pldl1keep, [%[f1], #256]             \n\t"
-                  "prfm  pldl1keep, [%[inptr1], #288]         \n\t"
+                  "prfm  pldl1keep, [%[in_ptr1], #288]        \n\t"
 
                   "ld1  {v0.4s, v1.4s}, [%[f1]], #32          \n\t"
-                  "ld2   {v4.4s, v5.4s}, [%[inptr1]], #32     \n\t"
-                  "ld2   {v6.4s, v7.4s}, [%[inptr1]]          \n\t"
+                  "ld2   {v4.4s, v5.4s}, [%[in_ptr1]], #32    \n\t"
+                  "ld2   {v6.4s, v7.4s}, [%[in_ptr1]]         \n\t"
                   "0:                                         \n\t"
-                  // load outptr
-                  "prfm  pldl1keep, [%[outptr1], #128]        \n\t"
-                  "prfm  pldl1keep, [%[outptr1_2], #128]      \n\t"
-                  "prfm  pldl1keep, [%[outptr1_3], #128]      \n\t"
-                  "prfm  pldl1keep, [%[outptr1_4], #128]      \n\t"
-                  "prfm  pldl1keep, [%[outptr1_5], #128]      \n\t"
-                  "prfm  pldl1keep, [%[outptr1_6], #128]      \n\t"
-                  "prfm  pldl1keep, [%[outptr1_7], #128]      \n\t"
-                  "prfm  pldl1keep, [%[outptr1_8], #128]      \n\t"
+                  // load out_ptr
+                  "prfm  pldl1keep, [%[out_ptr1], #128]       \n\t"
+                  "prfm  pldl1keep, [%[out_ptr1_2], #128]     \n\t"
+                  "prfm  pldl1keep, [%[out_ptr1_3], #128]     \n\t"
+                  "prfm  pldl1keep, [%[out_ptr1_4], #128]     \n\t"
+                  "prfm  pldl1keep, [%[out_ptr1_5], #128]     \n\t"
+                  "prfm  pldl1keep, [%[out_ptr1_6], #128]     \n\t"
+                  "prfm  pldl1keep, [%[out_ptr1_7], #128]     \n\t"
+                  "prfm  pldl1keep, [%[out_ptr1_8], #128]     \n\t"
 
-                  "ld1   {v8.4s}, [%[outptr1]]                \n\t"
-                  "ld1   {v9.4s}, [%[outptr1_2]]              \n\t"
-                  "ld1   {v10.4s}, [%[outptr1_3]]             \n\t"
-                  "ld1   {v11.4s}, [%[outptr1_4]]             \n\t"
-                  "ld1   {v12.4s}, [%[outptr1_5]]             \n\t"
-                  "ld1   {v13.4s}, [%[outptr1_6]]             \n\t"
-                  "ld1   {v14.4s}, [%[outptr1_7]]             \n\t"
-                  "ld1   {v15.4s}, [%[outptr1_8]]             \n\t"
+                  "ld1   {v8.4s}, [%[out_ptr1]]               \n\t"
+                  "ld1   {v9.4s}, [%[out_ptr1_2]]             \n\t"
+                  "ld1   {v10.4s}, [%[out_ptr1_3]]            \n\t"
+                  "ld1   {v11.4s}, [%[out_ptr1_4]]            \n\t"
+                  "ld1   {v12.4s}, [%[out_ptr1_5]]            \n\t"
+                  "ld1   {v13.4s}, [%[out_ptr1_6]]            \n\t"
+                  "ld1   {v14.4s}, [%[out_ptr1_7]]            \n\t"
+                  "ld1   {v15.4s}, [%[out_ptr1_8]]            \n\t"
 
-                  // inptr1 multiply
+                  // in_ptr1 multiply
                   "prfm  pldl1keep, [%[f1], #256]             \n\t"
                   "ld1   {v2.4s, v3.4s}, [%[f1]], #32         \n\t"
                   "fmla    v8.4s, v4.4s, v0.4s[0]             \n\t"
@@ -4006,8 +4001,8 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "fmla   v14.4s, v5.4s, v3.4s[2]             \n\t"
                   "fmla   v15.4s, v5.4s, v3.4s[3]             \n\t"
 
-                  "prfm  pldl1keep, [%[inptr2], #288]         \n\t"
-                  "ld2    {v4.4s, v5.4s}, [%[inptr2]], #32    \n\t"
+                  "prfm  pldl1keep, [%[in_ptr2], #288]        \n\t"
+                  "ld2    {v4.4s, v5.4s}, [%[in_ptr2]], #32   \n\t"
                   "fmla    v8.4s, v7.4s, v0.4s[0]             \n\t"
                   "fmla    v9.4s, v7.4s, v0.4s[1]             \n\t"
                   "fmla   v10.4s, v7.4s, v0.4s[2]             \n\t"
@@ -4021,9 +4016,8 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "fmla   v14.4s, v7.4s, v1.4s[2]             \n\t"
                   "fmla   v15.4s, v7.4s, v1.4s[3]             \n\t"
 
-                  // inptr2 multiply
-
-                  "ld2    {v6.4s, v7.4s}, [%[inptr2]]         \n\t"
+                  // in_ptr2 multiply
+                  "ld2    {v6.4s, v7.4s}, [%[in_ptr2]]        \n\t"
                   "fmla    v8.4s, v4.4s, v2.4s[0]             \n\t"
                   "fmla    v9.4s, v4.4s, v2.4s[1]             \n\t"
                   "fmla   v10.4s, v4.4s, v2.4s[2]             \n\t"
@@ -4048,12 +4042,12 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "fmla   v13.4s, v5.4s, v1.4s[1]             \n\t"
 
                   "prfm  pldl1keep, [%[f1], #256]             \n\t"
-                  "prfm  pldl1keep, [%[inptr3], #288]         \n\t"
+                  "prfm  pldl1keep, [%[in_ptr3], #288]        \n\t"
                   "fmla   v14.4s, v5.4s, v1.4s[2]             \n\t"
                   "fmla   v15.4s, v5.4s, v1.4s[3]             \n\t"
 
                   "ld1  {v0.4s, v1.4s}, [%[f1]], #32          \n\t"
-                  "ld2   {v4.4s, v5.4s}, [%[inptr3]], #32     \n\t"
+                  "ld2   {v4.4s, v5.4s}, [%[in_ptr3]], #32    \n\t"
                   "fmla    v8.4s, v7.4s, v2.4s[0]             \n\t"
                   "fmla    v9.4s, v7.4s, v2.4s[1]             \n\t"
                   "fmla   v10.4s, v7.4s, v2.4s[2]             \n\t"
@@ -4064,8 +4058,8 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "fmla   v14.4s, v7.4s, v3.4s[2]             \n\t"
                   "fmla   v15.4s, v7.4s, v3.4s[3]             \n\t"
 
-                  // inptr3 multiply
-                  "ld2   {v6.4s, v7.4s}, [%[inptr3]]          \n\t"
+                  // in_ptr3 multiply
+                  "ld2   {v6.4s, v7.4s}, [%[in_ptr3]]         \n\t"
                   "fmla    v8.4s, v4.4s, v0.4s[0]             \n\t"
                   "fmla    v9.4s, v4.4s, v0.4s[1]             \n\t"
                   "fmla   v10.4s, v4.4s, v0.4s[2]             \n\t"
@@ -4104,87 +4098,88 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "fmla   v14.4s, v7.4s, v1.4s[2]             \n\t"
                   "fmla   v15.4s, v7.4s, v1.4s[3]             \n\t"
 
-                  // store outptr
+                  // store out_ptr
                   "prfm  pldl1keep, [%[f1], #256]             \n\t"
                   "fmax    v8.4s,  v8.4s, v2.4s               \n\t"
-                  "prfm  pldl1keep, [%[inptr1], #288]         \n\t"
+                  "prfm  pldl1keep, [%[in_ptr1], #288]        \n\t"
                   "fmax    v9.4s,  v9.4s, v2.4s               \n\t"
 
                   "ld1  {v0.4s, v1.4s}, [%[f1]], #32          \n\t"
                   "fmax   v10.4s, v10.4s, v2.4s               \n\t"
 
-                  "ld2   {v4.4s, v5.4s}, [%[inptr1]], #32     \n\t"
-                  "st1   {v8.4s}, [%[outptr1]], #16           \n\t"
+                  "ld2   {v4.4s, v5.4s}, [%[in_ptr1]], #32    \n\t"
+                  "st1   {v8.4s}, [%[out_ptr1]], #16          \n\t"
                   "fmax   v11.4s, v11.4s, v2.4s               \n\t"
-                  "st1   {v9.4s}, [%[outptr1_2]], #16         \n\t"
+                  "st1   {v9.4s}, [%[out_ptr1_2]], #16        \n\t"
 
                   "fmax   v12.4s, v12.4s, v2.4s               \n\t"
-                  "st1   {v10.4s}, [%[outptr1_3]], #16        \n\t"
+                  "st1   {v10.4s}, [%[out_ptr1_3]], #16       \n\t"
                   "fmax   v13.4s, v13.4s, v2.4s               \n\t"
-                  "st1   {v11.4s}, [%[outptr1_4]], #16        \n\t"
+                  "st1   {v11.4s}, [%[out_ptr1_4]], #16       \n\t"
 
                   "fmax   v14.4s, v14.4s, v2.4s               \n\t"
-                  "st1   {v12.4s}, [%[outptr1_5]], #16        \n\t"
+                  "st1   {v12.4s}, [%[out_ptr1_5]], #16       \n\t"
                   "fmax   v15.4s, v15.4s, v2.4s               \n\t"
-                  "st1   {v13.4s}, [%[outptr1_6]], #16        \n\t"
+                  "st1   {v13.4s}, [%[out_ptr1_6]], #16       \n\t"
 
-                  "ld2   {v6.4s, v7.4s}, [%[inptr1]]          \n\t"
-                  "st1   {v14.4s}, [%[outptr1_7]], #16        \n\t"
-                  "subs       %[ow_dim4], %[ow_dim4], #1      \n\t"
-                  "st1   {v15.4s}, [%[outptr1_8]], #16        \n\t"
+                  "ld2   {v6.4s, v7.4s}, [%[in_ptr1]]         \n\t"
+                  "st1   {v14.4s}, [%[out_ptr1_7]], #16       \n\t"
+                  "subs       %[o_w_dim4], %[o_w_dim4], #1    \n\t"
+                  "st1   {v15.4s}, [%[out_ptr1_8]], #16       \n\t"
 
                   // cycle
                   "bne        0b                              \n\t"
-                  "sub       %[f1], %[inptr1], #32            \n\t"
-                  "sub       %[inptr1], %[inptr1], #32        \n\t"
+                  "sub       %[f1], %[in_ptr1], #32           \n\t"
+                  "sub       %[in_ptr1], %[in_ptr1], #32      \n\t"
 
-                  : [ow_dim4] "+r"(ow_dim4), [outptr1] "+r"(outptr1),
-                    [outptr1_2] "+r"(outptr1_2), [outptr1_3] "+r"(outptr1_3),
-                    [outptr1_4] "+r"(outptr1_4), [outptr1_5] "+r"(outptr1_5),
-                    [outptr1_6] "+r"(outptr1_6), [outptr1_7] "+r"(outptr1_7),
-                    [outptr1_8] "+r"(outptr1_8), [inptr1] "+r"(inptr1),
-                    [inptr2] "+r"(inptr2), [inptr3] "+r"(inptr3)
+                  :
+                  [o_w_dim4] "+r"(o_w_dim4), [out_ptr1] "+r"(out_ptr1),
+                  [out_ptr1_2] "+r"(out_ptr1_2), [out_ptr1_3] "+r"(out_ptr1_3),
+                  [out_ptr1_4] "+r"(out_ptr1_4), [out_ptr1_5] "+r"(out_ptr1_5),
+                  [out_ptr1_6] "+r"(out_ptr1_6), [out_ptr1_7] "+r"(out_ptr1_7),
+                  [out_ptr1_8] "+r"(out_ptr1_8), [in_ptr1] "+r"(in_ptr1),
+                  [in_ptr2] "+r"(in_ptr2), [in_ptr3] "+r"(in_ptr3)
                   : [f1] "r"(f1)
                   : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
                     "v8", "v9", "v12", "v13", "v14", "v15");
             }
           }
 #else
-          if (oh > position_h1 && oh <= position_h2) {
-            int ow_dim4 = (position_w2 - position_w1 - 1) >> 2;
-            ow += ow_dim4 * 4;
+          if (o_h > valid_h_start && o_h <= valid_h_end) {
+            int o_w_dim4 = (valid_w_end - valid_w_start - 1) >> 2;
+            o_w += o_w_dim4 * 4;
 
-            if (ow_dim4 > 0) {
+            if (o_w_dim4 > 0) {
               asm volatile(
 
                   "pld        [%[f1], #256]                   \n\t"
-                  "pld        [%[inptr1], #288]               \n\t"
+                  "pld        [%[in_ptr1], #288]              \n\t"
 
                   "vld1.32   {d0-d3}, [%[f1]]!                \n\t"
-                  "vld2.f32   {d8-d11}, [%[inptr1]]!          \n\t"
-                  "vld2.f32   {d12, d13}, [%[inptr1]]         \n\t"
+                  "vld2.f32   {d8-d11}, [%[in_ptr1]]!         \n\t"
+                  "vld2.f32   {d12, d13}, [%[in_ptr1]]        \n\t"
 
                   "0:                                         \n\t"
-                  // load outptr
-                  "pld        [%[outptr1], #128]              \n\t"
-                  "pld        [%[outptr1_2], #128]            \n\t"
-                  "pld        [%[outptr1_3], #128]            \n\t"
-                  "pld        [%[outptr1_4], #128]            \n\t"
-                  "pld        [%[outptr1_5], #128]            \n\t"
-                  "pld        [%[outptr1_6], #128]            \n\t"
-                  "pld        [%[outptr1_7], #128]            \n\t"
-                  "pld        [%[outptr1_8], #128]            \n\t"
+                  // load out_ptr
+                  "pld        [%[out_ptr1], #128]             \n\t"
+                  "pld        [%[out_ptr1_2], #128]           \n\t"
+                  "pld        [%[out_ptr1_3], #128]           \n\t"
+                  "pld        [%[out_ptr1_4], #128]           \n\t"
+                  "pld        [%[out_ptr1_5], #128]           \n\t"
+                  "pld        [%[out_ptr1_6], #128]           \n\t"
+                  "pld        [%[out_ptr1_7], #128]           \n\t"
+                  "pld        [%[out_ptr1_8], #128]           \n\t"
 
-                  "vld1.f32   {d16, d17}, [%[outptr1]]        \n\t"
-                  "vld1.f32   {d18, d19}, [%[outptr1_2]]      \n\t"
-                  "vld1.f32   {d20, d21}, [%[outptr1_3]]      \n\t"
-                  "vld1.f32   {d22, d23}, [%[outptr1_4]]      \n\t"
-                  "vld1.f32   {d24, d25}, [%[outptr1_5]]      \n\t"
-                  "vld1.f32   {d26, d27}, [%[outptr1_6]]      \n\t"
-                  "vld1.f32   {d28, d29}, [%[outptr1_7]]      \n\t"
-                  "vld1.f32   {d30, d31}, [%[outptr1_8]]      \n\t"
+                  "vld1.f32   {d16, d17}, [%[out_ptr1]]       \n\t"
+                  "vld1.f32   {d18, d19}, [%[out_ptr1_2]]     \n\t"
+                  "vld1.f32   {d20, d21}, [%[out_ptr1_3]]     \n\t"
+                  "vld1.f32   {d22, d23}, [%[out_ptr1_4]]     \n\t"
+                  "vld1.f32   {d24, d25}, [%[out_ptr1_5]]     \n\t"
+                  "vld1.f32   {d26, d27}, [%[out_ptr1_6]]     \n\t"
+                  "vld1.f32   {d28, d29}, [%[out_ptr1_7]]     \n\t"
+                  "vld1.f32   {d30, d31}, [%[out_ptr1_8]]     \n\t"
 
-                  // inptr1 multiply
+                  // in_ptr1 multiply
                   "pld        [%[f1], #256]                   \n\t"
                   "vld1.32   {d4-d7}, [%[f1]]!                \n\t"
                   "vmla.f32   q8, q4, d0[0]                   \n\t"
@@ -4204,18 +4199,18 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "vmla.f32   q8, q5, d4[0]                   \n\t"
                   "vmla.f32   q9, q5, d4[1]                   \n\t"
 
-                  "vext.32    q7, q4, q6, #1                 \n\t"
+                  "vext.32    q7, q4, q6, #1                  \n\t"
                   "vmla.f32   q10, q5, d5[0]                  \n\t"
                   "vmla.f32   q11, q5, d5[1]                  \n\t"
 
                   "vmla.f32   q12, q5, d6[0]                  \n\t"
                   "vmla.f32   q13, q5, d6[1]                  \n\t"
 
-                  "pld        [%[inptr2], #288]               \n\t"
+                  "pld        [%[in_ptr2], #288]              \n\t"
                   "vmla.f32   q14, q5, d7[0]                  \n\t"
                   "vmla.f32   q15, q5, d7[1]                  \n\t"
 
-                  "vld2.f32   {d8-d11}, [%[inptr2]]!          \n\t"
+                  "vld2.f32   {d8-d11}, [%[in_ptr2]]!         \n\t"
                   "vmla.f32   q8, q7, d0[0]                   \n\t"
                   "vmla.f32   q9, q7, d0[1]                   \n\t"
 
@@ -4224,7 +4219,7 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "vmla.f32   q10, q7, d1[0]                  \n\t"
                   "vmla.f32   q11, q7, d1[1]                  \n\t"
 
-                  "vld2.f32   {d12, d13}, [%[inptr2]]         \n\t"
+                  "vld2.f32   {d12, d13}, [%[in_ptr2]]        \n\t"
                   "vmla.f32   q12, q7, d2[0]                  \n\t"
                   "vmla.f32   q13, q7, d2[1]                  \n\t"
 
@@ -4232,7 +4227,7 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "vmla.f32   q14, q7, d3[0]                  \n\t"
                   "vmla.f32   q15, q7, d3[1]                  \n\t"
 
-                  // inptr2 multiply
+                  // in_ptr2 multiply
                   "vld1.32   {d0-d3}, [%[f1]]!                \n\t"
                   "vmla.f32   q8, q4, d4[0]                   \n\t"
                   "vmla.f32   q9, q4, d4[1]                   \n\t"
@@ -4258,11 +4253,11 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "vmla.f32   q12, q5, d2[0]                  \n\t"
                   "vmla.f32   q13, q5, d2[1]                  \n\t"
 
-                  "pld        [%[inptr3], #288]               \n\t"
+                  "pld        [%[in_ptr3], #288]              \n\t"
                   "vmla.f32   q14, q5, d3[0]                  \n\t"
                   "vmla.f32   q15, q5, d3[1]                  \n\t"
 
-                  "vld2.f32   {d8-d11}, [%[inptr3]]!          \n\t"
+                  "vld2.f32   {d8-d11}, [%[in_ptr3]]!         \n\t"
                   "vmla.f32   q8, q7, d4[0]                   \n\t"
                   "vmla.f32   q9, q7, d4[1]                   \n\t"
 
@@ -4271,7 +4266,7 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "vmla.f32   q10, q7, d5[0]                  \n\t"
                   "vmla.f32   q11, q7, d5[1]                  \n\t"
 
-                  "vld2.f32   {d12, d13}, [%[inptr3]]         \n\t"
+                  "vld2.f32   {d12, d13}, [%[in_ptr3]]        \n\t"
                   "vmla.f32   q12, q7, d6[0]                  \n\t"
                   "vmla.f32   q13, q7, d6[1]                  \n\t"
 
@@ -4279,7 +4274,7 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "vmla.f32   q14, q7, d7[0]                  \n\t"
                   "vmla.f32   q15, q7, d7[1]                  \n\t"
 
-                  // inptr3 multiply
+                  // in_ptr3 multiply
                   "vld1.32   {d4-d7}, [%[f1]]!                \n\t"
                   "vmla.f32   q8, q4, d0[0]                   \n\t"
                   "vmla.f32   q9, q4, d0[1]                   \n\t"
@@ -4323,7 +4318,7 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "vmla.f32   q14, q7, d3[0]                  \n\t"
                   "vmla.f32   q15, q7, d3[1]                  \n\t"
 
-                  // store outptr
+                  // store out_ptr
                   "vmax.f32   q8, q8, q2                      \n\t"
                   "vmax.f32   q9, q9, q2                      \n\t"
 
@@ -4331,42 +4326,43 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "pld        [%[f1], #256]                   \n\t"
                   "vld1.32   {d0-d3}, [%[f1]]!                \n\t"
 
-                  "pld        [%[inptr1], #288]               \n\t"
-                  "vld2.f32   {d8-d11}, [%[inptr1]]!          \n\t"
-                  "vst1.f32   {d16, d17}, [%[outptr1]]!       \n\t"
+                  "pld        [%[in_ptr1], #288]              \n\t"
+                  "vld2.f32   {d8-d11}, [%[in_ptr1]]!         \n\t"
+                  "vst1.f32   {d16, d17}, [%[out_ptr1]]!      \n\t"
 
                   "vmax.f32   q11, q11, q2                    \n\t"
-                  "vst1.f32   {d18, d19}, [%[outptr1_2]]!     \n\t"
+                  "vst1.f32   {d18, d19}, [%[out_ptr1_2]]!    \n\t"
 
                   "vmax.f32   q12, q12, q2                    \n\t"
-                  "vst1.f32   {d20, d21}, [%[outptr1_3]]!     \n\t"
+                  "vst1.f32   {d20, d21}, [%[out_ptr1_3]]!    \n\t"
 
                   "vmax.f32   q13, q13, q2                    \n\t"
-                  "vst1.f32   {d22, d23}, [%[outptr1_4]]!     \n\t"
+                  "vst1.f32   {d22, d23}, [%[out_ptr1_4]]!    \n\t"
 
                   "vmax.f32   q14, q14, q2                    \n\t"
-                  "vst1.f32   {d24, d25}, [%[outptr1_5]]!     \n\t"
+                  "vst1.f32   {d24, d25}, [%[out_ptr1_5]]!    \n\t"
 
                   "vmax.f32   q15, q15, q2                    \n\t"
-                  "vst1.f32   {d26, d27}, [%[outptr1_6]]!     \n\t"
+                  "vst1.f32   {d26, d27}, [%[out_ptr1_6]]!    \n\t"
 
-                  "vld2.f32   {d12, d13}, [%[inptr1]]         \n\t"
-                  "vst1.f32   {d28, d29}, [%[outptr1_7]]!     \n\t"
+                  "vld2.f32   {d12, d13}, [%[in_ptr1]]        \n\t"
+                  "vst1.f32   {d28, d29}, [%[out_ptr1_7]]!    \n\t"
 
-                  "subs       %[ow_dim4], #1                  \n\t"
-                  "vst1.f32   {d30, d31}, [%[outptr1_8]]!     \n\t"
+                  "subs       %[o_w_dim4], #1                 \n\t"
+                  "vst1.f32   {d30, d31}, [%[out_ptr1_8]]!    \n\t"
 
                   // cycle
                   "bne        0b                              \n\t"
                   "sub        %[f1], %[f1], #32               \n\t"
-                  "sub        %[inptr1], %[inptr1], #32       \n\t"
+                  "sub        %[in_ptr1], %[in_ptr1], #32     \n\t"
 
-                  : [ow_dim4] "+r"(ow_dim4), [outptr1] "+r"(outptr1),
-                    [outptr1_2] "+r"(outptr1_2), [outptr1_3] "+r"(outptr1_3),
-                    [outptr1_4] "+r"(outptr1_4), [outptr1_5] "+r"(outptr1_5),
-                    [outptr1_6] "+r"(outptr1_6), [outptr1_7] "+r"(outptr1_7),
-                    [outptr1_8] "+r"(outptr1_8), [inptr1] "+r"(inptr1),
-                    [inptr2] "+r"(inptr2), [inptr3] "+r"(inptr3)
+                  :
+                  [o_w_dim4] "+r"(o_w_dim4), [out_ptr1] "+r"(out_ptr1),
+                  [out_ptr1_2] "+r"(out_ptr1_2), [out_ptr1_3] "+r"(out_ptr1_3),
+                  [out_ptr1_4] "+r"(out_ptr1_4), [out_ptr1_5] "+r"(out_ptr1_5),
+                  [out_ptr1_6] "+r"(out_ptr1_6), [out_ptr1_7] "+r"(out_ptr1_7),
+                  [out_ptr1_8] "+r"(out_ptr1_8), [in_ptr1] "+r"(in_ptr1),
+                  [in_ptr2] "+r"(in_ptr2), [in_ptr3] "+r"(in_ptr3)
                   : [f1] "r"(f1)
                   : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
                     "q8", "q9", "q12", "q13", "q14", "q15");
@@ -4375,7 +4371,8 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
 #endif  //__aarch64__
 #endif  // __ARM_NEON
 
-          for (; ow < output_width; ++ow) {
+          // remain output_width
+          for (; o_w < output_w; ++o_w) {
             float sum1 = 0;
             float sum1_2 = 0;
             float sum1_3 = 0;
@@ -4385,62 +4382,62 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
             float sum1_7 = 0;
             float sum1_8 = 0;
 #if __ARM_NEON
-            float32x4_t _inptr1 = vld1q_f32(inptr1);
-            float32x4_t _ffilter1 = vld1q_f32(ffilter1);
-            float32x4_t _ffilter1_2 = vld1q_f32(ffilter1_2);
-            float32x4_t _ffilter1_3 = vld1q_f32(ffilter1_3);
-            float32x4_t _ffilter1_4 = vld1q_f32(ffilter1_4);
-            float32x4_t _ffilter1_5 = vld1q_f32(ffilter1_5);
-            float32x4_t _ffilter1_6 = vld1q_f32(ffilter1_6);
-            float32x4_t _ffilter1_7 = vld1q_f32(ffilter1_7);
-            float32x4_t _ffilter1_8 = vld1q_f32(ffilter1_8);
+            float32x4_t _in_ptr1 = vld1q_f32(in_ptr1);
+            float32x4_t _pad_filter1 = vld1q_f32(pad_filter1);
+            float32x4_t _pad_filter1_2 = vld1q_f32(pad_filter1_2);
+            float32x4_t _pad_filter1_3 = vld1q_f32(pad_filter1_3);
+            float32x4_t _pad_filter1_4 = vld1q_f32(pad_filter1_4);
+            float32x4_t _pad_filter1_5 = vld1q_f32(pad_filter1_5);
+            float32x4_t _pad_filter1_6 = vld1q_f32(pad_filter1_6);
+            float32x4_t _pad_filter1_7 = vld1q_f32(pad_filter1_7);
+            float32x4_t _pad_filter1_8 = vld1q_f32(pad_filter1_8);
 
-            float32x4_t _sum1 = vmulq_f32(_inptr1, _ffilter1);
-            float32x4_t _sum1_2 = vmulq_f32(_inptr1, _ffilter1_2);
-            float32x4_t _sum1_3 = vmulq_f32(_inptr1, _ffilter1_3);
-            float32x4_t _sum1_4 = vmulq_f32(_inptr1, _ffilter1_4);
-            float32x4_t _sum1_5 = vmulq_f32(_inptr1, _ffilter1_5);
-            float32x4_t _sum1_6 = vmulq_f32(_inptr1, _ffilter1_6);
-            float32x4_t _sum1_7 = vmulq_f32(_inptr1, _ffilter1_7);
-            float32x4_t _sum1_8 = vmulq_f32(_inptr1, _ffilter1_8);
+            float32x4_t _sum1 = vmulq_f32(_in_ptr1, _pad_filter1);
+            float32x4_t _sum1_2 = vmulq_f32(_in_ptr1, _pad_filter1_2);
+            float32x4_t _sum1_3 = vmulq_f32(_in_ptr1, _pad_filter1_3);
+            float32x4_t _sum1_4 = vmulq_f32(_in_ptr1, _pad_filter1_4);
+            float32x4_t _sum1_5 = vmulq_f32(_in_ptr1, _pad_filter1_5);
+            float32x4_t _sum1_6 = vmulq_f32(_in_ptr1, _pad_filter1_6);
+            float32x4_t _sum1_7 = vmulq_f32(_in_ptr1, _pad_filter1_7);
+            float32x4_t _sum1_8 = vmulq_f32(_in_ptr1, _pad_filter1_8);
 
-            float32x4_t _inptr2 = vld1q_f32(inptr2);
-            float32x4_t _ffilter2 = vld1q_f32(ffilter2);
-            float32x4_t _ffilter2_2 = vld1q_f32(ffilter2_2);
-            float32x4_t _ffilter2_3 = vld1q_f32(ffilter2_3);
-            float32x4_t _ffilter2_4 = vld1q_f32(ffilter2_4);
-            float32x4_t _ffilter2_5 = vld1q_f32(ffilter2_5);
-            float32x4_t _ffilter2_6 = vld1q_f32(ffilter2_6);
-            float32x4_t _ffilter2_7 = vld1q_f32(ffilter2_7);
-            float32x4_t _ffilter2_8 = vld1q_f32(ffilter2_8);
+            float32x4_t _in_ptr2 = vld1q_f32(in_ptr2);
+            float32x4_t _pad_filter2 = vld1q_f32(pad_filter2);
+            float32x4_t _pad_filter2_2 = vld1q_f32(pad_filter2_2);
+            float32x4_t _pad_filter2_3 = vld1q_f32(pad_filter2_3);
+            float32x4_t _pad_filter2_4 = vld1q_f32(pad_filter2_4);
+            float32x4_t _pad_filter2_5 = vld1q_f32(pad_filter2_5);
+            float32x4_t _pad_filter2_6 = vld1q_f32(pad_filter2_6);
+            float32x4_t _pad_filter2_7 = vld1q_f32(pad_filter2_7);
+            float32x4_t _pad_filter2_8 = vld1q_f32(pad_filter2_8);
 
-            _sum1 = vmlaq_f32(_sum1, _inptr2, _ffilter2);
-            _sum1_2 = vmlaq_f32(_sum1_2, _inptr2, _ffilter2_2);
-            _sum1_3 = vmlaq_f32(_sum1_3, _inptr2, _ffilter2_3);
-            _sum1_4 = vmlaq_f32(_sum1_4, _inptr2, _ffilter2_4);
-            _sum1_5 = vmlaq_f32(_sum1_5, _inptr2, _ffilter2_5);
-            _sum1_6 = vmlaq_f32(_sum1_6, _inptr2, _ffilter2_6);
-            _sum1_7 = vmlaq_f32(_sum1_7, _inptr2, _ffilter2_7);
-            _sum1_8 = vmlaq_f32(_sum1_8, _inptr2, _ffilter2_8);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr2, _pad_filter2);
+            _sum1_2 = vmlaq_f32(_sum1_2, _in_ptr2, _pad_filter2_2);
+            _sum1_3 = vmlaq_f32(_sum1_3, _in_ptr2, _pad_filter2_3);
+            _sum1_4 = vmlaq_f32(_sum1_4, _in_ptr2, _pad_filter2_4);
+            _sum1_5 = vmlaq_f32(_sum1_5, _in_ptr2, _pad_filter2_5);
+            _sum1_6 = vmlaq_f32(_sum1_6, _in_ptr2, _pad_filter2_6);
+            _sum1_7 = vmlaq_f32(_sum1_7, _in_ptr2, _pad_filter2_7);
+            _sum1_8 = vmlaq_f32(_sum1_8, _in_ptr2, _pad_filter2_8);
 
-            float32x4_t _inptr3 = vld1q_f32(inptr3);
-            float32x4_t _ffilter3 = vld1q_f32(ffilter3);
-            float32x4_t _ffilter3_2 = vld1q_f32(ffilter3_2);
-            float32x4_t _ffilter3_3 = vld1q_f32(ffilter3_3);
-            float32x4_t _ffilter3_4 = vld1q_f32(ffilter3_4);
-            float32x4_t _ffilter3_5 = vld1q_f32(ffilter3_5);
-            float32x4_t _ffilter3_6 = vld1q_f32(ffilter3_6);
-            float32x4_t _ffilter3_7 = vld1q_f32(ffilter3_7);
-            float32x4_t _ffilter3_8 = vld1q_f32(ffilter3_8);
+            float32x4_t _in_ptr3 = vld1q_f32(in_ptr3);
+            float32x4_t _pad_filter3 = vld1q_f32(pad_filter3);
+            float32x4_t _pad_filter3_2 = vld1q_f32(pad_filter3_2);
+            float32x4_t _pad_filter3_3 = vld1q_f32(pad_filter3_3);
+            float32x4_t _pad_filter3_4 = vld1q_f32(pad_filter3_4);
+            float32x4_t _pad_filter3_5 = vld1q_f32(pad_filter3_5);
+            float32x4_t _pad_filter3_6 = vld1q_f32(pad_filter3_6);
+            float32x4_t _pad_filter3_7 = vld1q_f32(pad_filter3_7);
+            float32x4_t _pad_filter3_8 = vld1q_f32(pad_filter3_8);
 
-            _sum1 = vmlaq_f32(_sum1, _inptr3, _ffilter3);
-            _sum1_2 = vmlaq_f32(_sum1_2, _inptr3, _ffilter3_2);
-            _sum1_3 = vmlaq_f32(_sum1_3, _inptr3, _ffilter3_3);
-            _sum1_4 = vmlaq_f32(_sum1_4, _inptr3, _ffilter3_4);
-            _sum1_5 = vmlaq_f32(_sum1_5, _inptr3, _ffilter3_5);
-            _sum1_6 = vmlaq_f32(_sum1_6, _inptr3, _ffilter3_6);
-            _sum1_7 = vmlaq_f32(_sum1_7, _inptr3, _ffilter3_7);
-            _sum1_8 = vmlaq_f32(_sum1_8, _inptr3, _ffilter3_8);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr3, _pad_filter3);
+            _sum1_2 = vmlaq_f32(_sum1_2, _in_ptr3, _pad_filter3_2);
+            _sum1_3 = vmlaq_f32(_sum1_3, _in_ptr3, _pad_filter3_3);
+            _sum1_4 = vmlaq_f32(_sum1_4, _in_ptr3, _pad_filter3_4);
+            _sum1_5 = vmlaq_f32(_sum1_5, _in_ptr3, _pad_filter3_5);
+            _sum1_6 = vmlaq_f32(_sum1_6, _in_ptr3, _pad_filter3_6);
+            _sum1_7 = vmlaq_f32(_sum1_7, _in_ptr3, _pad_filter3_7);
+            _sum1_8 = vmlaq_f32(_sum1_8, _in_ptr3, _pad_filter3_8);
 
             _sum1 = vsetq_lane_f32(sum1, _sum1, 3);
             _sum1_2 = vsetq_lane_f32(sum1_2, _sum1_2, 3);
@@ -4482,401 +4479,400 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
             sum1_7 += vget_lane_f32(_ssss1_7_ssss1_8, 0);
             sum1_8 += vget_lane_f32(_ssss1_7_ssss1_8, 1);
 #else
-            sum1 += inptr1[0] * ffilter1[0];
-            sum1 += inptr1[1] * ffilter1[1];
-            sum1 += inptr1[2] * ffilter1[2];
-            sum1 += inptr2[0] * ffilter2[0];
-            sum1 += inptr2[1] * ffilter2[1];
-            sum1 += inptr2[2] * ffilter2[2];
-            sum1 += inptr3[0] * ffilter3[0];
-            sum1 += inptr3[1] * ffilter3[1];
-            sum1 += inptr3[2] * ffilter3[2];
+            sum1 += in_ptr1[0] * pad_filter1[0];
+            sum1 += in_ptr1[1] * pad_filter1[1];
+            sum1 += in_ptr1[2] * pad_filter1[2];
+            sum1 += in_ptr2[0] * pad_filter2[0];
+            sum1 += in_ptr2[1] * pad_filter2[1];
+            sum1 += in_ptr2[2] * pad_filter2[2];
+            sum1 += in_ptr3[0] * pad_filter3[0];
+            sum1 += in_ptr3[1] * pad_filter3[1];
+            sum1 += in_ptr3[2] * pad_filter3[2];
 
-            sum1_2 += inptr1[0] * ffilter1_2[0];
-            sum1_2 += inptr1[1] * ffilter1_2[1];
-            sum1_2 += inptr1[2] * ffilter1_2[2];
-            sum1_2 += inptr2[0] * ffilter2_2[0];
-            sum1_2 += inptr2[1] * ffilter2_2[1];
-            sum1_2 += inptr2[2] * ffilter2_2[2];
-            sum1_2 += inptr3[0] * ffilter3_2[0];
-            sum1_2 += inptr3[1] * ffilter3_2[1];
-            sum1_2 += inptr3[2] * ffilter3_2[2];
+            sum1_2 += in_ptr1[0] * pad_filter1_2[0];
+            sum1_2 += in_ptr1[1] * pad_filter1_2[1];
+            sum1_2 += in_ptr1[2] * pad_filter1_2[2];
+            sum1_2 += in_ptr2[0] * pad_filter2_2[0];
+            sum1_2 += in_ptr2[1] * pad_filter2_2[1];
+            sum1_2 += in_ptr2[2] * pad_filter2_2[2];
+            sum1_2 += in_ptr3[0] * pad_filter3_2[0];
+            sum1_2 += in_ptr3[1] * pad_filter3_2[1];
+            sum1_2 += in_ptr3[2] * pad_filter3_2[2];
 
-            sum1_3 += inptr1[0] * ffilter1_3[0];
-            sum1_3 += inptr1[1] * ffilter1_3[1];
-            sum1_3 += inptr1[2] * ffilter1_3[2];
-            sum1_3 += inptr2[0] * ffilter2_3[0];
-            sum1_3 += inptr2[1] * ffilter2_3[1];
-            sum1_3 += inptr2[2] * ffilter2_3[2];
-            sum1_3 += inptr3[0] * ffilter3_3[0];
-            sum1_3 += inptr3[1] * ffilter3_3[1];
-            sum1_3 += inptr3[2] * ffilter3_3[2];
+            sum1_3 += in_ptr1[0] * pad_filter1_3[0];
+            sum1_3 += in_ptr1[1] * pad_filter1_3[1];
+            sum1_3 += in_ptr1[2] * pad_filter1_3[2];
+            sum1_3 += in_ptr2[0] * pad_filter2_3[0];
+            sum1_3 += in_ptr2[1] * pad_filter2_3[1];
+            sum1_3 += in_ptr2[2] * pad_filter2_3[2];
+            sum1_3 += in_ptr3[0] * pad_filter3_3[0];
+            sum1_3 += in_ptr3[1] * pad_filter3_3[1];
+            sum1_3 += in_ptr3[2] * pad_filter3_3[2];
 
-            sum1_4 += inptr1[0] * ffilter1_4[0];
-            sum1_4 += inptr1[1] * ffilter1_4[1];
-            sum1_4 += inptr1[2] * ffilter1_4[2];
-            sum1_4 += inptr2[0] * ffilter2_4[0];
-            sum1_4 += inptr2[1] * ffilter2_4[1];
-            sum1_4 += inptr2[2] * ffilter2_4[2];
-            sum1_4 += inptr3[0] * ffilter3_4[0];
-            sum1_4 += inptr3[1] * ffilter3_4[1];
-            sum1_4 += inptr3[2] * ffilter3_4[2];
+            sum1_4 += in_ptr1[0] * pad_filter1_4[0];
+            sum1_4 += in_ptr1[1] * pad_filter1_4[1];
+            sum1_4 += in_ptr1[2] * pad_filter1_4[2];
+            sum1_4 += in_ptr2[0] * pad_filter2_4[0];
+            sum1_4 += in_ptr2[1] * pad_filter2_4[1];
+            sum1_4 += in_ptr2[2] * pad_filter2_4[2];
+            sum1_4 += in_ptr3[0] * pad_filter3_4[0];
+            sum1_4 += in_ptr3[1] * pad_filter3_4[1];
+            sum1_4 += in_ptr3[2] * pad_filter3_4[2];
 
-            sum1_5 += inptr1[0] * ffilter1_5[0];
-            sum1_5 += inptr1[1] * ffilter1_5[1];
-            sum1_5 += inptr1[2] * ffilter1_5[2];
-            sum1_5 += inptr2[0] * ffilter2_5[0];
-            sum1_5 += inptr2[1] * ffilter2_5[1];
-            sum1_5 += inptr2[2] * ffilter2_5[2];
-            sum1_5 += inptr3[0] * ffilter3_5[0];
-            sum1_5 += inptr3[1] * ffilter3_5[1];
-            sum1_5 += inptr3[2] * ffilter3_5[2];
+            sum1_5 += in_ptr1[0] * pad_filter1_5[0];
+            sum1_5 += in_ptr1[1] * pad_filter1_5[1];
+            sum1_5 += in_ptr1[2] * pad_filter1_5[2];
+            sum1_5 += in_ptr2[0] * pad_filter2_5[0];
+            sum1_5 += in_ptr2[1] * pad_filter2_5[1];
+            sum1_5 += in_ptr2[2] * pad_filter2_5[2];
+            sum1_5 += in_ptr3[0] * pad_filter3_5[0];
+            sum1_5 += in_ptr3[1] * pad_filter3_5[1];
+            sum1_5 += in_ptr3[2] * pad_filter3_5[2];
 
-            sum1_6 += inptr1[0] * ffilter1_6[0];
-            sum1_6 += inptr1[1] * ffilter1_6[1];
-            sum1_6 += inptr1[2] * ffilter1_6[2];
-            sum1_6 += inptr2[0] * ffilter2_6[0];
-            sum1_6 += inptr2[1] * ffilter2_6[1];
-            sum1_6 += inptr2[2] * ffilter2_6[2];
-            sum1_6 += inptr3[0] * ffilter3_6[0];
-            sum1_6 += inptr3[1] * ffilter3_6[1];
-            sum1_6 += inptr3[2] * ffilter3_6[2];
+            sum1_6 += in_ptr1[0] * pad_filter1_6[0];
+            sum1_6 += in_ptr1[1] * pad_filter1_6[1];
+            sum1_6 += in_ptr1[2] * pad_filter1_6[2];
+            sum1_6 += in_ptr2[0] * pad_filter2_6[0];
+            sum1_6 += in_ptr2[1] * pad_filter2_6[1];
+            sum1_6 += in_ptr2[2] * pad_filter2_6[2];
+            sum1_6 += in_ptr3[0] * pad_filter3_6[0];
+            sum1_6 += in_ptr3[1] * pad_filter3_6[1];
+            sum1_6 += in_ptr3[2] * pad_filter3_6[2];
 
-            sum1_7 += inptr1[0] * ffilter1_7[0];
-            sum1_7 += inptr1[1] * ffilter1_7[1];
-            sum1_7 += inptr1[2] * ffilter1_7[2];
-            sum1_7 += inptr2[0] * ffilter2_7[0];
-            sum1_7 += inptr2[1] * ffilter2_7[1];
-            sum1_7 += inptr2[2] * ffilter2_7[2];
-            sum1_7 += inptr3[0] * ffilter3_7[0];
-            sum1_7 += inptr3[1] * ffilter3_7[1];
-            sum1_7 += inptr3[2] * ffilter3_7[2];
+            sum1_7 += in_ptr1[0] * pad_filter1_7[0];
+            sum1_7 += in_ptr1[1] * pad_filter1_7[1];
+            sum1_7 += in_ptr1[2] * pad_filter1_7[2];
+            sum1_7 += in_ptr2[0] * pad_filter2_7[0];
+            sum1_7 += in_ptr2[1] * pad_filter2_7[1];
+            sum1_7 += in_ptr2[2] * pad_filter2_7[2];
+            sum1_7 += in_ptr3[0] * pad_filter3_7[0];
+            sum1_7 += in_ptr3[1] * pad_filter3_7[1];
+            sum1_7 += in_ptr3[2] * pad_filter3_7[2];
 
-            sum1_8 += inptr1[0] * ffilter1_8[0];
-            sum1_8 += inptr1[1] * ffilter1_8[1];
-            sum1_8 += inptr1[2] * ffilter1_8[2];
-            sum1_8 += inptr2[0] * ffilter2_8[0];
-            sum1_8 += inptr2[1] * ffilter2_8[1];
-            sum1_8 += inptr2[2] * ffilter2_8[2];
-            sum1_8 += inptr3[0] * ffilter3_8[0];
-            sum1_8 += inptr3[1] * ffilter3_8[1];
-            sum1_8 += inptr3[2] * ffilter3_8[2];
+            sum1_8 += in_ptr1[0] * pad_filter1_8[0];
+            sum1_8 += in_ptr1[1] * pad_filter1_8[1];
+            sum1_8 += in_ptr1[2] * pad_filter1_8[2];
+            sum1_8 += in_ptr2[0] * pad_filter2_8[0];
+            sum1_8 += in_ptr2[1] * pad_filter2_8[1];
+            sum1_8 += in_ptr2[2] * pad_filter2_8[2];
+            sum1_8 += in_ptr3[0] * pad_filter3_8[0];
+            sum1_8 += in_ptr3[1] * pad_filter3_8[1];
+            sum1_8 += in_ptr3[2] * pad_filter3_8[2];
 #endif
-            if (isnopadding) {
-              inptr1 += 2;
-              inptr2 += 2;
-              inptr3 += 2;
-            } else if (input_width > 3 &&
-                       (isoddpadding_w && ow == position_w1 ||
-                        ow == position_w2 && isoddpadding_w && useallInput_w ||
-                        ow == position_w2 + 1 && !isoddpadding_w &&
-                            !useallInput_w)) {
-              ffilter1--;
-              ffilter2--;
-              ffilter3--;
-              ffilter1_2--;
-              ffilter2_2--;
-              ffilter3_2--;
+            if (if_nopadding) {
+              in_ptr1 += 2;
+              in_ptr2 += 2;
+              in_ptr3 += 2;
+            } else if (input_w > 3 &&
+                       (if_odd_pad_w && o_w == valid_w_start ||
+                        o_w == valid_w_end && if_odd_pad_w && if_exact_in_w ||
+                        o_w == valid_w_end + 1 && !if_odd_pad_w &&
+                            !if_exact_in_w)) {
+              pad_filter1--;
+              pad_filter2--;
+              pad_filter3--;
+              pad_filter1_2--;
+              pad_filter2_2--;
+              pad_filter3_2--;
 
-              ffilter1_3--;
-              ffilter2_3--;
-              ffilter3_3--;
-              ffilter1_4--;
-              ffilter2_4--;
-              ffilter3_4--;
+              pad_filter1_3--;
+              pad_filter2_3--;
+              pad_filter3_3--;
+              pad_filter1_4--;
+              pad_filter2_4--;
+              pad_filter3_4--;
 
-              ffilter1_5--;
-              ffilter2_5--;
-              ffilter3_5--;
-              ffilter1_6--;
-              ffilter2_6--;
-              ffilter3_6--;
+              pad_filter1_5--;
+              pad_filter2_5--;
+              pad_filter3_5--;
+              pad_filter1_6--;
+              pad_filter2_6--;
+              pad_filter3_6--;
 
-              ffilter1_7--;
-              ffilter2_7--;
-              ffilter3_7--;
-              ffilter1_8--;
-              ffilter2_8--;
-              ffilter3_8--;
+              pad_filter1_7--;
+              pad_filter2_7--;
+              pad_filter3_7--;
+              pad_filter1_8--;
+              pad_filter2_8--;
+              pad_filter3_8--;
 
-              inptr1++;
-              inptr2++;
-              inptr3++;
-            } else if (input_width <= 3 || ow < position_w1 ||
-                       ow > position_w2) {
-              ffilter1 -= 2;
-              ffilter2 -= 2;
-              ffilter3 -= 2;
-              ffilter1_2 -= 2;
-              ffilter2_2 -= 2;
-              ffilter3_2 -= 2;
+              in_ptr1++;
+              in_ptr2++;
+              in_ptr3++;
+            } else if (input_w <= 3 || o_w < valid_w_start ||
+                       o_w > valid_w_end) {
+              pad_filter1 -= 2;
+              pad_filter2 -= 2;
+              pad_filter3 -= 2;
+              pad_filter1_2 -= 2;
+              pad_filter2_2 -= 2;
+              pad_filter3_2 -= 2;
 
-              ffilter1_3 -= 2;
-              ffilter2_3 -= 2;
-              ffilter3_3 -= 2;
-              ffilter1_4 -= 2;
-              ffilter2_4 -= 2;
-              ffilter3_4 -= 2;
+              pad_filter1_3 -= 2;
+              pad_filter2_3 -= 2;
+              pad_filter3_3 -= 2;
+              pad_filter1_4 -= 2;
+              pad_filter2_4 -= 2;
+              pad_filter3_4 -= 2;
 
-              ffilter1_5 -= 2;
-              ffilter2_5 -= 2;
-              ffilter3_5 -= 2;
-              ffilter1_6 -= 2;
-              ffilter2_6 -= 2;
-              ffilter3_6 -= 2;
+              pad_filter1_5 -= 2;
+              pad_filter2_5 -= 2;
+              pad_filter3_5 -= 2;
+              pad_filter1_6 -= 2;
+              pad_filter2_6 -= 2;
+              pad_filter3_6 -= 2;
 
-              ffilter1_7 -= 2;
-              ffilter2_7 -= 2;
-              ffilter3_7 -= 2;
-              ffilter1_8 -= 2;
-              ffilter2_8 -= 2;
-              ffilter3_8 -= 2;
+              pad_filter1_7 -= 2;
+              pad_filter2_7 -= 2;
+              pad_filter3_7 -= 2;
+              pad_filter1_8 -= 2;
+              pad_filter2_8 -= 2;
+              pad_filter3_8 -= 2;
             } else {
-              inptr1 += 2;
-              inptr2 += 2;
-              inptr3 += 2;
+              in_ptr1 += 2;
+              in_ptr2 += 2;
+              in_ptr3 += 2;
             }
-            *outptr1 += sum1;
-            *outptr1_2 += sum1_2;
-            *outptr1_3 += sum1_3;
-            *outptr1_4 += sum1_4;
-            *outptr1_5 += sum1_5;
-            *outptr1_6 += sum1_6;
-            *outptr1_7 += sum1_7;
-            *outptr1_8 += sum1_8;
+            *out_ptr1 += sum1;
+            *out_ptr1_2 += sum1_2;
+            *out_ptr1_3 += sum1_3;
+            *out_ptr1_4 += sum1_4;
+            *out_ptr1_5 += sum1_5;
+            *out_ptr1_6 += sum1_6;
+            *out_ptr1_7 += sum1_7;
+            *out_ptr1_8 += sum1_8;
 
-            if (outptr1[0] < reluvalue) {
-              *outptr1 = reluvalue;
+            if (out_ptr1[0] < relu_value) {
+              *out_ptr1 = relu_value;
             }
-            if (outptr1_2[0] < reluvalue) {
-              *outptr1_2 = reluvalue;
+            if (out_ptr1_2[0] < relu_value) {
+              *out_ptr1_2 = relu_value;
             }
-            if (outptr1_3[0] < reluvalue) {
-              *outptr1_3 = reluvalue;
+            if (out_ptr1_3[0] < relu_value) {
+              *out_ptr1_3 = relu_value;
             }
-            if (outptr1_4[0] < reluvalue) {
-              *outptr1_4 = reluvalue;
+            if (out_ptr1_4[0] < relu_value) {
+              *out_ptr1_4 = relu_value;
             }
-            if (outptr1_5[0] < reluvalue) {
-              *outptr1_5 = reluvalue;
+            if (out_ptr1_5[0] < relu_value) {
+              *out_ptr1_5 = relu_value;
             }
-            if (outptr1_6[0] < reluvalue) {
-              *outptr1_6 = reluvalue;
+            if (out_ptr1_6[0] < relu_value) {
+              *out_ptr1_6 = relu_value;
             }
-            if (outptr1_7[0] < reluvalue) {
-              *outptr1_7 = reluvalue;
+            if (out_ptr1_7[0] < relu_value) {
+              *out_ptr1_7 = relu_value;
             }
-            if (outptr1_8[0] < reluvalue) {
-              *outptr1_8 = reluvalue;
+            if (out_ptr1_8[0] < relu_value) {
+              *out_ptr1_8 = relu_value;
             }
-            outptr1++;
-            outptr1_2++;
-            outptr1_3++;
-            outptr1_4++;
-            outptr1_5++;
-            outptr1_6++;
-            outptr1_7++;
-            outptr1_8++;
+            out_ptr1++;
+            out_ptr1_2++;
+            out_ptr1_3++;
+            out_ptr1_4++;
+            out_ptr1_5++;
+            out_ptr1_6++;
+            out_ptr1_7++;
+            out_ptr1_8++;
           }
-          if (isnopadding) {
-            inptr1 += left_stride + input_width;
-            inptr2 += left_stride + input_width;
-            inptr3 += left_stride + input_width;
+          if (if_nopadding) {
+            in_ptr1 += remain_stride_w + input_w;
+            in_ptr2 += remain_stride_w + input_w;
+            in_ptr3 += remain_stride_w + input_w;
 
-          } else if (input_height > 3 &&
-                     (isoddpadding_h && oh == position_h1 ||
-                      oh == position_h2 && isoddpadding_h && useallInput_h ||
-                      oh == position_h2 + 1 && !isoddpadding_h &&
-                          !useallInput_h)) {
-            inptr1 += 3;
-            inptr2 += 3;
-            inptr3 += 3;
+          } else if (input_h > 3 &&
+                     (if_odd_pad_h && o_h == valid_h_start ||
+                      o_h == valid_h_end && if_odd_pad_h && if_exact_in_h ||
+                      o_h == valid_h_end + 1 && !if_odd_pad_h &&
+                          !if_exact_in_h)) {
+            in_ptr1 += 3;
+            in_ptr2 += 3;
+            in_ptr3 += 3;
 
-            ffilter1 -= left_stride;
-            ffilter2 -= left_stride;
-            ffilter3 -= left_stride;
-            ffilter1_2 -= left_stride;
-            ffilter2_2 -= left_stride;
-            ffilter3_2 -= left_stride;
+            pad_filter1 -= remain_stride_w;
+            pad_filter2 -= remain_stride_w;
+            pad_filter3 -= remain_stride_w;
+            pad_filter1_2 -= remain_stride_w;
+            pad_filter2_2 -= remain_stride_w;
+            pad_filter3_2 -= remain_stride_w;
 
-            ffilter1_3 -= left_stride;
-            ffilter2_3 -= left_stride;
-            ffilter3_3 -= left_stride;
-            ffilter1_4 -= left_stride;
-            ffilter2_4 -= left_stride;
-            ffilter3_4 -= left_stride;
+            pad_filter1_3 -= remain_stride_w;
+            pad_filter2_3 -= remain_stride_w;
+            pad_filter3_3 -= remain_stride_w;
+            pad_filter1_4 -= remain_stride_w;
+            pad_filter2_4 -= remain_stride_w;
+            pad_filter3_4 -= remain_stride_w;
 
-            ffilter1_5 -= left_stride;
-            ffilter2_5 -= left_stride;
-            ffilter3_5 -= left_stride;
-            ffilter1_6 -= left_stride;
-            ffilter2_6 -= left_stride;
-            ffilter3_6 -= left_stride;
+            pad_filter1_5 -= remain_stride_w;
+            pad_filter2_5 -= remain_stride_w;
+            pad_filter3_5 -= remain_stride_w;
+            pad_filter1_6 -= remain_stride_w;
+            pad_filter2_6 -= remain_stride_w;
+            pad_filter3_6 -= remain_stride_w;
 
-            ffilter1_7 -= left_stride;
-            ffilter2_7 -= left_stride;
-            ffilter3_7 -= left_stride;
-            ffilter1_8 -= left_stride;
-            ffilter2_8 -= left_stride;
-            ffilter3_8 -= left_stride;
-          } else if (input_height <= 3 || oh < position_h1 ||
-                     oh > position_h2) {
-            inptr1 -= input_width - 3;
-            inptr2 -= input_width - 3;
-            inptr3 -= input_width - 3;
+            pad_filter1_7 -= remain_stride_w;
+            pad_filter2_7 -= remain_stride_w;
+            pad_filter3_7 -= remain_stride_w;
+            pad_filter1_8 -= remain_stride_w;
+            pad_filter2_8 -= remain_stride_w;
+            pad_filter3_8 -= remain_stride_w;
+          } else if (input_h <= 3 || o_h < valid_h_start || o_h > valid_h_end) {
+            in_ptr1 -= input_w - 3;
+            in_ptr2 -= input_w - 3;
+            in_ptr3 -= input_w - 3;
 
-            ffilter1 -= 3 + 2 * padding_width + left_stride;
-            ffilter2 -= 3 + 2 * padding_width + left_stride;
-            ffilter3 -= 3 + 2 * padding_width + left_stride;
-            ffilter1_2 -= 3 + 2 * padding_width + left_stride;
-            ffilter2_2 -= 3 + 2 * padding_width + left_stride;
-            ffilter3_2 -= 3 + 2 * padding_width + left_stride;
+            pad_filter1 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter2 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter3 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter1_2 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter2_2 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter3_2 -= 3 + 2 * padding_w + remain_stride_w;
 
-            ffilter1_3 -= 3 + 2 * padding_width + left_stride;
-            ffilter2_3 -= 3 + 2 * padding_width + left_stride;
-            ffilter3_3 -= 3 + 2 * padding_width + left_stride;
-            ffilter1_4 -= 3 + 2 * padding_width + left_stride;
-            ffilter2_4 -= 3 + 2 * padding_width + left_stride;
-            ffilter3_4 -= 3 + 2 * padding_width + left_stride;
+            pad_filter1_3 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter2_3 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter3_3 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter1_4 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter2_4 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter3_4 -= 3 + 2 * padding_w + remain_stride_w;
 
-            ffilter1_5 -= 3 + 2 * padding_width + left_stride;
-            ffilter2_5 -= 3 + 2 * padding_width + left_stride;
-            ffilter3_5 -= 3 + 2 * padding_width + left_stride;
-            ffilter1_6 -= 3 + 2 * padding_width + left_stride;
-            ffilter2_6 -= 3 + 2 * padding_width + left_stride;
-            ffilter3_6 -= 3 + 2 * padding_width + left_stride;
+            pad_filter1_5 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter2_5 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter3_5 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter1_6 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter2_6 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter3_6 -= 3 + 2 * padding_w + remain_stride_w;
 
-            ffilter1_7 -= 3 + 2 * padding_width + left_stride;
-            ffilter2_7 -= 3 + 2 * padding_width + left_stride;
-            ffilter3_7 -= 3 + 2 * padding_width + left_stride;
-            ffilter1_8 -= 3 + 2 * padding_width + left_stride;
-            ffilter2_8 -= 3 + 2 * padding_width + left_stride;
-            ffilter3_8 -= 3 + 2 * padding_width + left_stride;
+            pad_filter1_7 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter2_7 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter3_7 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter1_8 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter2_8 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter3_8 -= 3 + 2 * padding_w + remain_stride_w;
           } else {
-            ffilter1 += 3 + 2 * padding_width - left_stride;
-            ffilter2 += 3 + 2 * padding_width - left_stride;
-            ffilter3 += 3 + 2 * padding_width - left_stride;
-            ffilter1_2 += 3 + 2 * padding_width - left_stride;
-            ffilter2_2 += 3 + 2 * padding_width - left_stride;
-            ffilter3_2 += 3 + 2 * padding_width - left_stride;
+            pad_filter1 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter2 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter3 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter1_2 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter2_2 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter3_2 += 3 + 2 * padding_w - remain_stride_w;
 
-            ffilter1_3 += 3 + 2 * padding_width - left_stride;
-            ffilter2_3 += 3 + 2 * padding_width - left_stride;
-            ffilter3_3 += 3 + 2 * padding_width - left_stride;
-            ffilter1_4 += 3 + 2 * padding_width - left_stride;
-            ffilter2_4 += 3 + 2 * padding_width - left_stride;
-            ffilter3_4 += 3 + 2 * padding_width - left_stride;
+            pad_filter1_3 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter2_3 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter3_3 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter1_4 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter2_4 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter3_4 += 3 + 2 * padding_w - remain_stride_w;
 
-            ffilter1_5 += 3 + 2 * padding_width - left_stride;
-            ffilter2_5 += 3 + 2 * padding_width - left_stride;
-            ffilter3_5 += 3 + 2 * padding_width - left_stride;
-            ffilter1_6 += 3 + 2 * padding_width - left_stride;
-            ffilter2_6 += 3 + 2 * padding_width - left_stride;
-            ffilter3_6 += 3 + 2 * padding_width - left_stride;
+            pad_filter1_5 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter2_5 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter3_5 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter1_6 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter2_6 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter3_6 += 3 + 2 * padding_w - remain_stride_w;
 
-            ffilter1_7 += 3 + 2 * padding_width - left_stride;
-            ffilter2_7 += 3 + 2 * padding_width - left_stride;
-            ffilter3_7 += 3 + 2 * padding_width - left_stride;
-            ffilter1_8 += 3 + 2 * padding_width - left_stride;
-            ffilter2_8 += 3 + 2 * padding_width - left_stride;
-            ffilter3_8 += 3 + 2 * padding_width - left_stride;
+            pad_filter1_7 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter2_7 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter3_7 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter1_8 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter2_8 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter3_8 += 3 + 2 * padding_w - remain_stride_w;
 
-            inptr1 += input_width + 3;
-            inptr2 += input_width + 3;
-            inptr3 += input_width + 3;
+            in_ptr1 += input_w + 3;
+            in_ptr2 += input_w + 3;
+            in_ptr3 += input_w + 3;
           }
         }
 
-        filter_data_ch += filter_channel_stride;
-        filter_data_ch_2 += filter_channel_stride;
-        filter_data_ch_3 += filter_channel_stride;
-        filter_data_ch_4 += filter_channel_stride;
-        filter_data_ch_5 += filter_channel_stride;
-        filter_data_ch_6 += filter_channel_stride;
-        filter_data_ch_7 += filter_channel_stride;
-        filter_data_ch_8 += filter_channel_stride;
-        input_data_ch += input_channel_stride;
+        filter_data_ch += filter_ch_size;
+        filter_data_ch_2 += filter_ch_size;
+        filter_data_ch_3 += filter_ch_size;
+        filter_data_ch_4 += filter_ch_size;
+        filter_data_ch_5 += filter_ch_size;
+        filter_data_ch_6 += filter_ch_size;
+        filter_data_ch_7 += filter_ch_size;
+        filter_data_ch_8 += filter_ch_size;
+        input_data_ch += in_ch_size;
       }
     }
 
-    int output_channels_left = output_channels_d8 * 8;
+    int out_ch_remain = output_ch_d8 * 8;
 
+    // remain output_channel
 #pragma omp parallel for
-    for (int oc = output_channels_left; oc < output_channels; ++oc) {
-      std::atomic<float> reluvalue{0};
+    for (int o_c = out_ch_remain; o_c < output_ch; ++o_c) {
+      std::atomic<float> relu_value{0};
 
       const float *reluptr;
       const float *f1, *f9;
-      const float *inptr1, *inptr2, *inptr3;
-      const float *ffilter1, *ffilter2, *ffilter3;
-      float ffilterarray[ffilter_length] = {0};
+      const float *in_ptr1, *in_ptr2, *in_ptr3;
+      const float *pad_filter1, *pad_filter2, *pad_filter3;
+      float pad_filter_arr[pad_filter_ch_size] = {0};
       float *output_data_ch;
       const float *input_data_ch;
       const float *filter_data_ch;
 
-      filter_data_ch =
-          filter_data + oc * filter_channel_stride * input_channels;
+      filter_data_ch = filter_data + o_c * filter_ch_size * input_ch;
       input_data_ch = input_data;
-      output_data_ch = output_data + oc * output_channel_stride;
+      output_data_ch = output_data + o_c * out_ch_size;
 
-      for (int ic = 0; ic < input_channels; ++ic) {
-        float reluarr[4];
-        reluptr = reluarr;
-        if (if_relu && ic == input_channels - 1) {
-          reluvalue = 0;
+      for (int i_c = 0; i_c < input_ch; ++i_c) {
+        float relu_arr[4];
+        reluptr = relu_arr;
+        if (if_relu && i_c == input_ch - 1) {
+          relu_value = 0;
         } else {
-          reluvalue = -FLT_MAX;
+          relu_value = -FLT_MAX;
         }
-        reluarr[0] = reluvalue;
-        reluarr[1] = reluvalue;
-        reluarr[2] = reluvalue;
-        reluarr[3] = reluvalue;
+        relu_arr[0] = relu_value;
+        relu_arr[1] = relu_value;
+        relu_arr[2] = relu_value;
+        relu_arr[3] = relu_value;
 
         f1 = filter_data_ch;
         f9 = f1 + 8;
 
-        if (!isnopadding) {
-          ffilterarray[ffilter_length] = {0};
+        if (!if_nopadding) {
+          pad_filter_arr[pad_filter_ch_size] = {0};
           for (int i = 0; i < 9; ++i) {
-            int j = i / 3 * (2 * padding_width + 3) + i % 3 +
-                    padding_height * 3 +
-                    padding_width * (2 * padding_height + 1);
-            ffilterarray[j] = filter_data_ch[i];
+            int j = i / 3 * (2 * padding_w + 3) + i % 3 + padding_h * 3 +
+                    padding_w * (2 * padding_h + 1);
+            pad_filter_arr[j] = filter_data_ch[i];
           }
-          ffilter1 = ffilterarray;
-          ffilter1 += ffilter_start;
-          ffilter2 = ffilter1 + ffilter_width;
-          ffilter3 = ffilter2 + ffilter_width;
+          pad_filter1 = pad_filter_arr;
+          pad_filter1 += pad_filter_start;
+          pad_filter2 = pad_filter1 + pad_filter_w;
+          pad_filter3 = pad_filter2 + pad_filter_w;
         } else {
-          ffilter1 = filter_data_ch;
-          ffilter2 = ffilter1 + 3;
-          ffilter3 = ffilter2 + 3;
+          pad_filter1 = filter_data_ch;
+          pad_filter2 = pad_filter1 + 3;
+          pad_filter3 = pad_filter2 + 3;
         }
 
-        float *outptr1;
-        outptr1 = output_data_ch;
-        inptr1 = input_data_ch;
-        inptr2 = inptr1 + input_width;
-        inptr3 = inptr2 + input_width;
+        float *out_ptr1;
+        out_ptr1 = output_data_ch;
+        in_ptr1 = input_data_ch;
+        in_ptr2 = in_ptr1 + input_w;
+        in_ptr3 = in_ptr2 + input_w;
 
-        int oh = 0;
-        for (; oh < output_height; ++oh) {
-          int ow = 0;
+        int o_h = 0;
+        for (; o_h < output_h; ++o_h) {
+          int o_w = 0;
 
-          for (; ow <= position_w1; ++ow) {
+          // pad left
+          for (; o_w <= valid_w_start; ++o_w) {
             float sum1 = 0;
 #if __ARM_NEON
-            float32x4_t _inptr1 = vld1q_f32(inptr1);
-            float32x4_t _ffilter1 = vld1q_f32(ffilter1);
-            float32x4_t _sum1 = vmulq_f32(_inptr1, _ffilter1);
+            float32x4_t _in_ptr1 = vld1q_f32(in_ptr1);
+            float32x4_t _pad_filter1 = vld1q_f32(pad_filter1);
+            float32x4_t _sum1 = vmulq_f32(_in_ptr1, _pad_filter1);
 
-            float32x4_t _inptr2 = vld1q_f32(inptr2);
-            float32x4_t _ffilter2 = vld1q_f32(ffilter2);
-            _sum1 = vmlaq_f32(_sum1, _inptr2, _ffilter2);
+            float32x4_t _in_ptr2 = vld1q_f32(in_ptr2);
+            float32x4_t _pad_filter2 = vld1q_f32(pad_filter2);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr2, _pad_filter2);
 
-            float32x4_t _inptr3 = vld1q_f32(inptr3);
-            float32x4_t _ffilter3 = vld1q_f32(ffilter3);
-            _sum1 = vmlaq_f32(_sum1, _inptr3, _ffilter3);
+            float32x4_t _in_ptr3 = vld1q_f32(in_ptr3);
+            float32x4_t _pad_filter3 = vld1q_f32(pad_filter3);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr3, _pad_filter3);
 
             _sum1 = vsetq_lane_f32(sum1, _sum1, 3);
             float32x2_t _ss1 =
@@ -4884,56 +4880,57 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
             float32x2_t _ssss1_ssss1 = vpadd_f32(_ss1, _ss1);
             sum1 += vget_lane_f32(_ssss1_ssss1, 0);
 #else
-            sum1 += inptr1[0] * ffilter1[0];
-            sum1 += inptr1[1] * ffilter1[1];
-            sum1 += inptr1[2] * ffilter1[2];
-            sum1 += inptr2[0] * ffilter2[0];
-            sum1 += inptr2[1] * ffilter2[1];
-            sum1 += inptr2[2] * ffilter2[2];
-            sum1 += inptr3[0] * ffilter3[0];
-            sum1 += inptr3[1] * ffilter3[1];
-            sum1 += inptr3[2] * ffilter3[2];
+            sum1 += in_ptr1[0] * pad_filter1[0];
+            sum1 += in_ptr1[1] * pad_filter1[1];
+            sum1 += in_ptr1[2] * pad_filter1[2];
+            sum1 += in_ptr2[0] * pad_filter2[0];
+            sum1 += in_ptr2[1] * pad_filter2[1];
+            sum1 += in_ptr2[2] * pad_filter2[2];
+            sum1 += in_ptr3[0] * pad_filter3[0];
+            sum1 += in_ptr3[1] * pad_filter3[1];
+            sum1 += in_ptr3[2] * pad_filter3[2];
 #endif
-            if (isnopadding) {
-              inptr1 += 2;
-              inptr2 += 2;
-              inptr3 += 2;
-            } else if (input_width > 3 &&
-                       (isoddpadding_w && ow == position_w1 ||
-                        ow == position_w2 && isoddpadding_w && useallInput_w ||
-                        ow == position_w2 + 1 && !isoddpadding_w &&
-                            !useallInput_w)) {
-              ffilter1--;
-              ffilter2--;
-              ffilter3--;
-              inptr1++;
-              inptr2++;
-              inptr3++;
+            if (if_nopadding) {
+              in_ptr1 += 2;
+              in_ptr2 += 2;
+              in_ptr3 += 2;
+            } else if (input_w > 3 &&
+                       (if_odd_pad_w && o_w == valid_w_start ||
+                        o_w == valid_w_end && if_odd_pad_w && if_exact_in_w ||
+                        o_w == valid_w_end + 1 && !if_odd_pad_w &&
+                            !if_exact_in_w)) {
+              pad_filter1--;
+              pad_filter2--;
+              pad_filter3--;
+              in_ptr1++;
+              in_ptr2++;
+              in_ptr3++;
 
-            } else if (input_width <= 3 || ow < position_w1 ||
-                       ow > position_w2) {
-              ffilter1 -= 2;
-              ffilter2 -= 2;
-              ffilter3 -= 2;
+            } else if (input_w <= 3 || o_w < valid_w_start ||
+                       o_w > valid_w_end) {
+              pad_filter1 -= 2;
+              pad_filter2 -= 2;
+              pad_filter3 -= 2;
             } else {
-              inptr1 += 2;
-              inptr2 += 2;
-              inptr3 += 2;
+              in_ptr1 += 2;
+              in_ptr2 += 2;
+              in_ptr3 += 2;
             }
-            *outptr1 += sum1;
+            *out_ptr1 += sum1;
 
-            if (outptr1[0] < reluvalue) {
-              *outptr1 = reluvalue;
+            if (out_ptr1[0] < relu_value) {
+              *out_ptr1 = relu_value;
             }
-            outptr1++;
+            out_ptr1++;
           }
+            // valid
 #if __ARM_NEON
 #if __aarch64__
-          if (oh > position_h1 && oh < position_h2) {
-            int ow_dim4 = (position_w2 - position_w1 - 1) >> 2;
-            ow += ow_dim4 * 4;
+          if (o_h > valid_h_start && o_h < valid_h_end) {
+            int o_w_dim4 = (valid_w_end - valid_w_start - 1) >> 2;
+            o_w += o_w_dim4 * 4;
 
-            if (ow_dim4 > 0) {
+            if (o_w_dim4 > 0) {
               asm volatile(
                   "prfm   pldl1keep, [%[f1], #256]            \n\t"
                   "prfm   pldl1keep, [%[f9], #256]            \n\t"
@@ -4944,14 +4941,14 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "ld1   {v16.4s}, [%[reluptr]]               \n\t"
 
                   "0:                                         \n\t"
-                  // load outptr
-                  "prfm   pldl1keep, [%[outptr1], #128]       \n\t"
-                  "ld1   {v12.4s}, [%[outptr1]]               \n\t"
+                  // load out_ptr
+                  "prfm   pldl1keep, [%[out_ptr1], #128]      \n\t"
+                  "ld1   {v12.4s}, [%[out_ptr1]]              \n\t"
 
-                  // inptr1 multiply
-                  "prfm   pldl1keep, [%[inptr1], #256]        \n\t"
-                  "ld2   {v5.4s, v6.4s}, [%[inptr1]], #32     \n\t"
-                  "ld2   {v7.4s, v8.4s}, [%[inptr1]]          \n\t"
+                  // in_ptr1 multiply
+                  "prfm   pldl1keep, [%[in_ptr1], #256]       \n\t"
+                  "ld2   {v5.4s, v6.4s}, [%[in_ptr1]], #32    \n\t"
+                  "ld2   {v7.4s, v8.4s}, [%[in_ptr1]]         \n\t"
 
                   "fmla   v12.4s, v5.4s, v0.4s[0]             \n\t"
                   "fmla   v14.4s, v5.4s, v2.4s[0]             \n\t"
@@ -4960,48 +4957,48 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "fmul   v13.4s, v6.4s, v0.4s[1]             \n\t"
                   "fmla   v12.4s, v8.4s, v0.4s[2]             \n\t"
 
-                  "ld2   {v5.4s, v6.4s}, [%[inptr2]], #32     \n\t"
-                  "ld2   {v7.4s, v8.4s}, [%[inptr2]]          \n\t"
+                  "ld2   {v5.4s, v6.4s}, [%[in_ptr2]], #32    \n\t"
+                  "ld2   {v7.4s, v8.4s}, [%[in_ptr2]]         \n\t"
 
-                  // inptr2 multiply
+                  // in_ptr2 multiply
                   "fmla   v13.4s, v5.4s, v0.4s[3]             \n\t"
                   "ext    v8.16b, v5.16b, v7.16b, #4          \n\t"
                   "fmla   v12.4s, v6.4s, v1.4s[0]             \n\t"
 
                   "fmla   v13.4s, v8.4s, v1.4s[1]             \n\t"
-                  "ld2   {v5.4s, v6.4s}, [%[inptr3]], #32     \n\t"
-                  "ld2   {v7.4s, v8.4s}, [%[inptr3]]          \n\t"
+                  "ld2   {v5.4s, v6.4s}, [%[in_ptr3]], #32    \n\t"
+                  "ld2   {v7.4s, v8.4s}, [%[in_ptr3]]         \n\t"
 
-                  // inptr3 multiply
+                  // in_ptr3 multiply
                   "fmla   v12.4s, v5.4s, v1.4s[2]             \n\t"
                   "ext    v8.16b, v5.16b, v7.16b, #4          \n\t"
 
                   "fmla   v13.4s, v6.4s, v1.4s[3]             \n\t"
                   "fmla   v12.4s, v8.4s, v4.4s[0]             \n\t"
 
-                  // store outptr
+                  // store out_ptr
                   "fadd   v12.4s, v12.4s, v13.4s              \n\t"
                   "fmax   v12.4s, v12.4s, v16.4s              \n\t"
-                  "st1   {v12.4s}, [%[outptr1]], #16          \n\t"
+                  "st1   {v12.4s}, [%[out_ptr1]], #16         \n\t"
 
                   // cycle
-                  "subs       %[ow_dim4], %[ow_dim4], #1      \n\t"
+                  "subs       %[o_w_dim4], %[o_w_dim4], #1      \n\t"
                   "bne        0b                              \n\t"
 
-                  : [ow_dim4] "+r"(ow_dim4), [outptr1] "+r"(outptr1),
-                    [inptr1] "+r"(inptr1), [inptr2] "+r"(inptr2),
-                    [inptr3] "+r"(inptr3)
+                  : [o_w_dim4] "+r"(o_w_dim4), [out_ptr1] "+r"(out_ptr1),
+                    [in_ptr1] "+r"(in_ptr1), [in_ptr2] "+r"(in_ptr2),
+                    [in_ptr3] "+r"(in_ptr3)
                   : [f1] "r"(f1), [f9] "r"(f9), [reluptr] "r"(reluptr)
                   : "memory", "v0", "v1", "v4", "v5", "v6", "v7", "v8", "v9",
                     "v12", "v13", "v16");
             }
           }
 #else
-          if (oh > position_h1 && oh < position_h2) {
-            int ow_dim4 = (position_w2 - position_w1 - 1) >> 2;
-            ow += ow_dim4 * 4;
+          if (o_h > valid_h_start && o_h < valid_h_end) {
+            int o_w_dim4 = (valid_w_end - valid_w_start - 1) >> 2;
+            o_w += o_w_dim4 * 4;
 
-            if (ow_dim4 > 0) {
+            if (o_w_dim4 > 0) {
               asm volatile(
                   "pld        [%[f1], #256]                   \n\t"
                   "pld        [%[f9], #256]                   \n\t"
@@ -5011,66 +5008,64 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "vld1.32   {d8[0]}, [%[f9]]                 \n\t"
                   "vld1.32   {d18, d19}, [%[reluptr]]         \n\t"
 
-                  "pld        [%[inptr1], #256]               \n\t"
-                  "vld2.f32   {d10-d13}, [%[inptr1]]!         \n\t"
-                  "vld2.f32   {d14, d15}, [%[inptr1]]         \n\t"
+                  "pld        [%[in_ptr1], #256]              \n\t"
+                  "vld2.f32   {d10-d13}, [%[in_ptr1]]!        \n\t"
+                  "vld2.f32   {d14, d15}, [%[in_ptr1]]        \n\t"
 
                   "0:                                         \n\t"
-                  // load outptr
-                  "pld        [%[outptr1], #128]              \n\t"
-                  "vld1.f32   {d24, d25}, [%[outptr1]]        \n\t"
+                  // load out_ptr
+                  "pld        [%[out_ptr1], #128]             \n\t"
+                  "vld1.f32   {d24, d25}, [%[out_ptr1]]       \n\t"
 
-                  // inptr1 multiply
-                  "pld        [%[inptr2], #256]               \n\t"
-
-                  "vld2.f32   {d4-d7}, [%[inptr2]]!           \n\t"
+                  // in_ptr1 multiply
+                  "pld        [%[in_ptr2], #256]              \n\t"
+                  "vld2.f32   {d4-d7}, [%[in_ptr2]]!          \n\t"
 
                   "vmla.f32   q12, q5, d0[0]                  \n\t"
-                  "vld2.f32   {d20, d21}, [%[inptr2]]         \n\t"
+                  "vld2.f32   {d20, d21}, [%[in_ptr2]]        \n\t"
                   "vext.32    q8, q5, q7, #1                  \n\t"
 
-                  "pld        [%[inptr3], #256]               \n\t"
+                  "pld        [%[in_ptr3], #256]              \n\t"
                   "vmul.f32   q13, q6, d0[1]                  \n\t"
 
-                  "vld2.f32   {d10-d13}, [%[inptr3]]!         \n\t"
-
+                  "vld2.f32   {d10-d13}, [%[in_ptr3]]!        \n\t"
                   "vmul.f32   q14, q8, d1[0]                  \n\t"
-                  "vld2.f32   {d14, d15}, [%[inptr3]]         \n\t"
+                  "vld2.f32   {d14, d15}, [%[in_ptr3]]        \n\t"
 
-                  // inptr2 multiply
+                  // in_ptr2 multiply
                   "vmul.f32   q15, q2, d1[1]                  \n\t"
                   "vext.32    q8, q2, q10, #1                 \n\t"
 
                   "vmla.f32   q12, q3, d2[0]                  \n\t"
                   "vmla.f32   q13, q8, d2[1]                  \n\t"
 
-                  // inptr3 multiply
+                  // in_ptr3 multiply
                   "vmla.f32   q14, q5, d3[0]                  \n\t"
                   "vext.32    q8, q5, q7, #1                  \n\t"
 
-                  "pld        [%[inptr1], #256]               \n\t"
+                  "pld        [%[in_ptr1], #256]              \n\t"
                   "vmla.f32   q15, q6, d3[1]                  \n\t"
 
-                  "vld2.f32   {d10-d13}, [%[inptr1]]!         \n\t"
+                  "vld2.f32   {d10-d13}, [%[in_ptr1]]!        \n\t"
                   "vmla.f32   q13, q8, d8[0]                  \n\t"
 
-                  // store outptr
-                  "vld2.f32   {d14, d15}, [%[inptr1]]         \n\t"
+                  // store out_ptr
+                  "vld2.f32   {d14, d15}, [%[in_ptr1]]        \n\t"
                   "vadd.f32   q12, q12, q13                   \n\t"
-                  "subs       %[ow_dim4], #1                  \n\t"
+                  "subs       %[o_w_dim4], #1                 \n\t"
 
                   "vadd.f32   q14, q14, q15                   \n\t"
                   "vadd.f32   q12, q12, q14                   \n\t"
                   "vmax.f32   q12, q12, q9                    \n\t"
-                  "vst1.f32   {d24, d25}, [%[outptr1]]!       \n\t"
+                  "vst1.f32   {d24, d25}, [%[out_ptr1]]!      \n\t"
 
                   // cycle
                   "bne        0b                              \n\t"
-                  "subs       %[inptr1], %[inptr1], #32       \n\t"
+                  "subs       %[in_ptr1], %[in_ptr1], #32     \n\t"
 
-                  : [ow_dim4] "+r"(ow_dim4), [outptr1] "+r"(outptr1),
-                    [inptr1] "+r"(inptr1), [inptr2] "+r"(inptr2),
-                    [inptr3] "+r"(inptr3)
+                  : [o_w_dim4] "+r"(o_w_dim4), [out_ptr1] "+r"(out_ptr1),
+                    [in_ptr1] "+r"(in_ptr1), [in_ptr2] "+r"(in_ptr2),
+                    [in_ptr3] "+r"(in_ptr3)
                   : [f1] "r"(f1), [f9] "r"(f9), [reluptr] "r"(reluptr)
                   : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
                     "q8", "q9", "q10", "q12", "q13", "q14", "q15");
@@ -5078,23 +5073,24 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
           }
 #endif  //__aarch64__
 #endif  // __ARM_NEON
-          outptr1 -= 4;
-          outptr1 += 4;
+          out_ptr1 -= 4;
+          out_ptr1 += 4;
 
-          for (; ow < output_width; ++ow) {
+          // remain output_width
+          for (; o_w < output_w; ++o_w) {
             float sum1 = 0;
 #if __ARM_NEON
-            float32x4_t _inptr1 = vld1q_f32(inptr1);
-            float32x4_t _ffilter1 = vld1q_f32(ffilter1);
-            float32x4_t _sum1 = vmulq_f32(_inptr1, _ffilter1);
+            float32x4_t _in_ptr1 = vld1q_f32(in_ptr1);
+            float32x4_t _pad_filter1 = vld1q_f32(pad_filter1);
+            float32x4_t _sum1 = vmulq_f32(_in_ptr1, _pad_filter1);
 
-            float32x4_t _inptr2 = vld1q_f32(inptr2);
-            float32x4_t _ffilter2 = vld1q_f32(ffilter2);
-            _sum1 = vmlaq_f32(_sum1, _inptr2, _ffilter2);
+            float32x4_t _in_ptr2 = vld1q_f32(in_ptr2);
+            float32x4_t _pad_filter2 = vld1q_f32(pad_filter2);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr2, _pad_filter2);
 
-            float32x4_t _inptr3 = vld1q_f32(inptr3);
-            float32x4_t _ffilter3 = vld1q_f32(ffilter3);
-            _sum1 = vmlaq_f32(_sum1, _inptr3, _ffilter3);
+            float32x4_t _in_ptr3 = vld1q_f32(in_ptr3);
+            float32x4_t _pad_filter3 = vld1q_f32(pad_filter3);
+            _sum1 = vmlaq_f32(_sum1, _in_ptr3, _pad_filter3);
 
             _sum1 = vsetq_lane_f32(sum1, _sum1, 3);
             float32x2_t _ss1 =
@@ -5102,92 +5098,91 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
             float32x2_t _ssss1_ssss1 = vpadd_f32(_ss1, _ss1);
             sum1 += vget_lane_f32(_ssss1_ssss1, 0);
 #else
-            sum1 += inptr1[0] * ffilter1[0];
-            sum1 += inptr1[1] * ffilter1[1];
-            sum1 += inptr1[2] * ffilter1[2];
-            sum1 += inptr2[0] * ffilter2[0];
-            sum1 += inptr2[1] * ffilter2[1];
-            sum1 += inptr2[2] * ffilter2[2];
-            sum1 += inptr3[0] * ffilter3[0];
-            sum1 += inptr3[1] * ffilter3[1];
-            sum1 += inptr3[2] * ffilter3[2];
+            sum1 += in_ptr1[0] * pad_filter1[0];
+            sum1 += in_ptr1[1] * pad_filter1[1];
+            sum1 += in_ptr1[2] * pad_filter1[2];
+            sum1 += in_ptr2[0] * pad_filter2[0];
+            sum1 += in_ptr2[1] * pad_filter2[1];
+            sum1 += in_ptr2[2] * pad_filter2[2];
+            sum1 += in_ptr3[0] * pad_filter3[0];
+            sum1 += in_ptr3[1] * pad_filter3[1];
+            sum1 += in_ptr3[2] * pad_filter3[2];
 #endif
-            if (isnopadding) {
-              inptr1 += 2;
-              inptr2 += 2;
-              inptr3 += 2;
-            } else if (input_width > 3 &&
-                       (isoddpadding_w && ow == position_w1 ||
-                        ow == position_w2 && isoddpadding_w && useallInput_w ||
-                        ow == position_w2 + 1 && !isoddpadding_w &&
-                            !useallInput_w)) {
-              ffilter1--;
-              ffilter2--;
-              ffilter3--;
+            if (if_nopadding) {
+              in_ptr1 += 2;
+              in_ptr2 += 2;
+              in_ptr3 += 2;
+            } else if (input_w > 3 &&
+                       (if_odd_pad_w && o_w == valid_w_start ||
+                        o_w == valid_w_end && if_odd_pad_w && if_exact_in_w ||
+                        o_w == valid_w_end + 1 && !if_odd_pad_w &&
+                            !if_exact_in_w)) {
+              pad_filter1--;
+              pad_filter2--;
+              pad_filter3--;
 
-              inptr1++;
-              inptr2++;
-              inptr3++;
+              in_ptr1++;
+              in_ptr2++;
+              in_ptr3++;
 
-            } else if (input_width <= 3 || ow < position_w1 ||
-                       ow > position_w2) {
-              ffilter1 -= 2;
-              ffilter2 -= 2;
-              ffilter3 -= 2;
+            } else if (input_w <= 3 || o_w < valid_w_start ||
+                       o_w > valid_w_end) {
+              pad_filter1 -= 2;
+              pad_filter2 -= 2;
+              pad_filter3 -= 2;
             } else {
-              inptr1 += 2;
-              inptr2 += 2;
-              inptr3 += 2;
+              in_ptr1 += 2;
+              in_ptr2 += 2;
+              in_ptr3 += 2;
             }
-            *outptr1 += sum1;
+            *out_ptr1 += sum1;
 
-            if (outptr1[0] < reluvalue) {
-              *outptr1 = reluvalue;
+            if (out_ptr1[0] < relu_value) {
+              *out_ptr1 = relu_value;
             }
-            outptr1++;
+            out_ptr1++;
           }
-          if (isnopadding) {
-            inptr1 += left_stride + input_width;
-            inptr2 += left_stride + input_width;
-            inptr3 += left_stride + input_width;
-          } else if (input_height > 3 &&
-                     (isoddpadding_h && oh == position_h1 ||
-                      oh == position_h2 && isoddpadding_h && useallInput_h ||
-                      oh == position_h2 + 1 && !isoddpadding_h &&
-                          !useallInput_h)) {
-            inptr1 += 3;
-            inptr2 += 3;
-            inptr3 += 3;
+          if (if_nopadding) {
+            in_ptr1 += remain_stride_w + input_w;
+            in_ptr2 += remain_stride_w + input_w;
+            in_ptr3 += remain_stride_w + input_w;
+          } else if (input_h > 3 &&
+                     (if_odd_pad_h && o_h == valid_h_start ||
+                      o_h == valid_h_end && if_odd_pad_h && if_exact_in_h ||
+                      o_h == valid_h_end + 1 && !if_odd_pad_h &&
+                          !if_exact_in_h)) {
+            in_ptr1 += 3;
+            in_ptr2 += 3;
+            in_ptr3 += 3;
 
-            ffilter1 -= left_stride;
-            ffilter2 -= left_stride;
-            ffilter3 -= left_stride;
+            pad_filter1 -= remain_stride_w;
+            pad_filter2 -= remain_stride_w;
+            pad_filter3 -= remain_stride_w;
 
-          } else if (input_height <= 3 || oh < position_h1 ||
-                     oh > position_h2) {
-            inptr1 -= input_width - 3;
-            inptr2 -= input_width - 3;
-            inptr3 -= input_width - 3;
+          } else if (input_h <= 3 || o_h < valid_h_start || o_h > valid_h_end) {
+            in_ptr1 -= input_w - 3;
+            in_ptr2 -= input_w - 3;
+            in_ptr3 -= input_w - 3;
 
-            ffilter1 -= 3 + 2 * padding_width + left_stride;
-            ffilter2 -= 3 + 2 * padding_width + left_stride;
-            ffilter3 -= 3 + 2 * padding_width + left_stride;
+            pad_filter1 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter2 -= 3 + 2 * padding_w + remain_stride_w;
+            pad_filter3 -= 3 + 2 * padding_w + remain_stride_w;
           } else {
-            ffilter1 += 3 + 2 * padding_width - left_stride;
-            ffilter2 += 3 + 2 * padding_width - left_stride;
-            ffilter3 += 3 + 2 * padding_width - left_stride;
+            pad_filter1 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter2 += 3 + 2 * padding_w - remain_stride_w;
+            pad_filter3 += 3 + 2 * padding_w - remain_stride_w;
 
-            inptr1 += input_width + 3;
-            inptr2 += input_width + 3;
-            inptr3 += input_width + 3;
+            in_ptr1 += input_w + 3;
+            in_ptr2 += input_w + 3;
+            in_ptr3 += input_w + 3;
           }
         }
-        filter_data_ch += filter_channel_stride;
-        input_data_ch += input_channel_stride;
+        filter_data_ch += filter_ch_size;
+        input_data_ch += in_ch_size;
       }
     }
-    input_data += input_batch_stride;
-    output_data += output_batch_stride;
+    input_data += in_batch_size;
+    output_data += out_batch_size;
   }
 }
 
