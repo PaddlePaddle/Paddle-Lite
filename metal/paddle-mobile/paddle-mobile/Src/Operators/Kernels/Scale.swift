@@ -13,9 +13,12 @@
  limitations under the License. */
 
 import Foundation
+import MetalPerformanceShaders
 
 public class ScaleKernel: CusomKernel {
+    var lanczos: MPSImageLanczosScale!
     public init(device: MTLDevice, shape: Shape, metalLoadMode: MetalLoadMode, metalLibPath: String?) {
+        lanczos = MPSImageLanczosScale(device: device)        
         if GlobalConfig.shared.computePrecision == .Float32 {
             super.init(device: device, inFunctionName: "scale", outputDim: shape, metalLoadModel: metalLoadMode, metalLibPath: metalLibPath)
         } else if GlobalConfig.shared.computePrecision == .Float16 {
@@ -24,5 +27,10 @@ public class ScaleKernel: CusomKernel {
             fatalError(" unsupport ")
         }
     }
+    
+    public override func compute(inputTexuture: MTLTexture, commandBuffer: MTLCommandBuffer) throws {
+        lanczos.encode(commandBuffer: commandBuffer, sourceTexture: inputTexuture, destinationTexture: outputTexture)
+    }
+    
 }
 
