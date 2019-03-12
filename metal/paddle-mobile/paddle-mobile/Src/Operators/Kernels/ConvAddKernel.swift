@@ -145,7 +145,7 @@ class ConvAddKernel<P: PrecisionProtocol>: Kernel, Computable {
                     convDic[key] = conv
                     imageDic[identifyingKey + "_input"] = MPSImage.init(texture: param.input.metalTexture, featureChannels: param.input.tensorDim[1])
                     imageDic[identifyingKey + "_output"] = MPSImage.init(texture: param.output.metalTexture, featureChannels: param.output.tensorDim[1])
-                    super.init(device: device, inFunctionName: "place_holder", initContext: initContext)
+                    super.init(device: device, inFunctionName: nil, initContext: initContext)
                     return
                 }
             }

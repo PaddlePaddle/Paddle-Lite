@@ -23,15 +23,6 @@ struct Texture2DTo2DArrayParam {
 }
 
 class Texture2DTo2DArrayKernel<P: PrecisionProtocol>: Kernel, Computable{
-    func compute(commandBuffer: MTLCommandBuffer, param: FeedParam<P>) throws {
-        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PaddleMobileError.predictError(message: " encode is nil")
-        }
-        encoder.setTexture(param.input.mtlTexture, index: 0)
-        encoder.setTexture(param.output.metalTexture, index: 1)
-        encoder.dispatch(computePipline: pipline, outTexture: param.input.mtlTexture)
-        encoder.endEncoding()
-    }
     
     required init(device: MTLDevice, param: FeedParam<P>, initContext: InitContext) {
         param.output.initTexture(device: device, inTranspose: [0, 2, 3, 1], computePrecision: GlobalConfig.shared.computePrecision)
@@ -42,6 +33,15 @@ class Texture2DTo2DArrayKernel<P: PrecisionProtocol>: Kernel, Computable{
         } else {
             fatalError()
         }
-        
+    }
+    
+    func compute(commandBuffer: MTLCommandBuffer, param: FeedParam<P>) throws {
+        guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+            throw PaddleMobileError.predictError(message: " encode is nil")
+        }
+        encoder.setTexture(param.input.mtlTexture, index: 0)
+        encoder.setTexture(param.output.metalTexture, index: 1)
+        encoder.dispatch(computePipline: pipline, outTexture: param.input.mtlTexture)
+        encoder.endEncoding()
     }
 }
