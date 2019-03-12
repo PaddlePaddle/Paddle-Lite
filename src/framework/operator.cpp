@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "framework/operator.h"
+#include <memory>
 #include "operators/op_param.h"
-
 namespace paddle_mobile {
 namespace framework {
 

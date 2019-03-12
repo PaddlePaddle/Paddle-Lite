@@ -24,21 +24,29 @@ limitations under the License. */
 #include <cassert>
 #include <memory>
 #include <string>
+#include <typeindex>
 #include <vector>
-
-// #define PADDLE_MOBILE_FPGA
 
 namespace paddle_mobile {
 
 #ifdef PADDLE_MOBILE_FPGA
 namespace fpga {
 int open_device();
-}
+void* fpga_malloc(size_t size);
+void fpga_free(void* ptr);
+}  // namespace fpga
 #endif
 
 enum PaddleDType {
   FLOAT32,
+  FLOAT16,
   INT64,
+  INT8,
+};
+
+enum LayoutType {
+  LAYOUT_CHW = 1,
+  LAYOUT_HWC = 0,
 };
 
 class PaddleBuf {
@@ -78,6 +86,8 @@ struct PaddleTensor {
   // TODO(Superjomn) for LoD support, add a vector<vector<int>> field if needed.
   PaddleBuf data;  // blob of data.
   PaddleDType dtype;
+  std::type_index dtypeid = typeid(float);
+  LayoutType layout;
 };
 
 enum class PaddleEngineKind {
@@ -116,12 +126,13 @@ class PaddlePredictor {
     std::string param_file;
   };
 #ifdef PADDLE_MOBILE_FPGA
-  virtual bool Run(const std::vector<PaddleTensor>& inputs,
-                   std::vector<PaddleTensor>* output_data,
-                   std::vector<int>* index_data, int batch_size = -1) = 0;
   virtual void FeedData(const std::vector<void*>& inputs) = 0;
   virtual void GetResults(std::vector<void*>* outputs) = 0;
-  virtual void Predict_From_To(int start = 0, int end = -1) = 0;
+  virtual void Predict_From_To(int start, int end) = 0;
+  virtual void FeedPaddleTensors(const std::vector<PaddleTensor>& inputs) = 0;
+  virtual void FetchPaddleTensors(std::vector<PaddleTensor>* outputs) = 0;
+  virtual void GetPaddleTensor(const std::string& name,
+                               PaddleTensor* output) = 0;
 #endif
 
  protected:

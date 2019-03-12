@@ -155,7 +155,7 @@
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="paddle-mobile.png" translatesAutoresizingMaskIntoConstraints="NO" id="4ey-Xr-U4e">
+                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="paddle-mobile" translatesAutoresizingMaskIntoConstraints="NO" id="4ey-Xr-U4e">
                                 <rect key="frame" x="90" y="637" width="195" height="30"/>
                                 <constraints>
                                     <constraint firstAttribute="width" secondItem="4ey-Xr-U4e" secondAttribute="height" multiplier="6.5:1" id="8c5-FF-lB9"/>
@@ -246,10 +246,6 @@
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2p5-S3-M4T">
-                                <rect key="frame" x="16" y="63" width="240" height="128"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                            </imageView>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="37q-nm-0H7">
                                 <rect key="frame" x="38" y="610" width="42" height="30"/>
                                 <constraints>
@@ -287,7 +283,16 @@
                                     <constraint firstAttribute="height" constant="30" id="eAt-Uc-BxX"/>
                                 </constraints>
                                 <state key="normal" title="clear"/>
+                                <connections>
+                                    <action selector="clear:" destination="4MS-jc-i6A" eventType="touchUpInside" id="yW8-Dq-qwU"/>
+                                </connections>
                             </button>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="2p5-S3-M4T">
+                                <rect key="frame" x="0.0" y="20" width="375" height="211"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" secondItem="2p5-S3-M4T" secondAttribute="height" multiplier="16:9" id="9Gh-8L-t3g"/>
+                                </constraints>
+                            </imageView>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
@@ -295,20 +300,26 @@
                             <constraint firstItem="DZa-sd-lY7" firstAttribute="leading" secondItem="pdS-6e-Pd1" secondAttribute="trailing" constant="45" id="8dB-uI-cs9"/>
                             <constraint firstItem="fAg-ai-yaA" firstAttribute="leading" secondItem="37q-nm-0H7" secondAttribute="trailing" constant="39" id="EAV-Oq-jeD"/>
                             <constraint firstItem="vsb-FH-h7h" firstAttribute="bottom" secondItem="fAg-ai-yaA" secondAttribute="bottom" constant="27" id="Px0-A9-Eql"/>
+                            <constraint firstItem="2p5-S3-M4T" firstAttribute="leading" secondItem="vsb-FH-h7h" secondAttribute="leading" id="RNx-6D-oix"/>
                             <constraint firstItem="pdS-6e-Pd1" firstAttribute="leading" secondItem="fAg-ai-yaA" secondAttribute="trailing" constant="32" id="ZUR-Nv-aNb"/>
+                            <constraint firstItem="2p5-S3-M4T" firstAttribute="top" secondItem="vsb-FH-h7h" secondAttribute="top" id="atk-ma-aSA"/>
                             <constraint firstItem="vsb-FH-h7h" firstAttribute="bottom" secondItem="pdS-6e-Pd1" secondAttribute="bottom" constant="27" id="kPx-mt-ab9"/>
+                            <constraint firstItem="2p5-S3-M4T" firstAttribute="trailing" secondItem="vsb-FH-h7h" secondAttribute="trailing" id="mwX-bu-jJY"/>
                             <constraint firstItem="37q-nm-0H7" firstAttribute="leading" secondItem="vsb-FH-h7h" secondAttribute="leading" constant="38" id="trH-Fq-sSv"/>
                             <constraint firstItem="vsb-FH-h7h" firstAttribute="bottom" secondItem="DZa-sd-lY7" secondAttribute="bottom" constant="27" id="yNJ-hq-2Qg"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="vsb-FH-h7h"/>
                     </view>
+                    <connections>
+                        <outlet property="imageView" destination="2p5-S3-M4T" id="ePO-1L-eb4"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="hGb-Pb-icS" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-721" y="-427"/>
+            <point key="canvasLocation" x="-135.19999999999999" y="-218.1409295352324"/>
         </scene>
     </scenes>
     <resources>
-        <image name="paddle-mobile.png" width="402" height="62"/>
+        <image name="paddle-mobile" width="402" height="62"/>
     </resources>
 </document>

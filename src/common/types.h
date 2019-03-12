@@ -198,7 +198,12 @@ extern const char *G_OP_TYPE_SLICE;
 extern const char *G_OP_TYPE_ANCHOR_GENERATOR;
 extern const char *G_OP_TYPE_GENERATE_PROPOSALS;
 extern const char *G_OP_TYPE_PSROI_POOL;
+extern const char *G_OP_TYPE_ROIALIGN_POOL;
 extern const char *G_OP_TYPE_ROI_PERSPECTIVE;
+extern const char *G_OP_TYPE_PAD2D;
+extern const char *G_OP_TYPE_FUSION_DECONV_ADD_BN_RELU;
+extern const char *G_OP_TYPE_FUSION_DECONV_ADD_BN;
+extern const char *G_OP_TYPE_FUSION_DECONV_BN_RELU;
 
 extern const char *G_OP_TYPE_PAD2D;
 

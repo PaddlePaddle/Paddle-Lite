@@ -105,12 +105,16 @@ const char *G_OP_TYPE_FUSION_DECONV_ADD_RELU = "fusion_deconv_add_relu";
 const char *G_OP_TYPE_SEQUENCE_EXPAND = "sequence_expand";
 const char *G_OP_TYPE_SEQUENCE_POOL = "sequence_pool";
 const char *G_OP_TYPE_SEQUENCE_SOFTMAX = "sequence_softmax";
-
 const char *G_OP_TYPE_SLICE = "slice";
 const char *G_OP_TYPE_ANCHOR_GENERATOR = "anchor_generator";
 const char *G_OP_TYPE_GENERATE_PROPOSALS = "generate_proposals";
 const char *G_OP_TYPE_PSROI_POOL = "psroi_pool";
+const char *G_OP_TYPE_ROIALIGN_POOL = "roialign_pool";
 const char *G_OP_TYPE_ROI_PERSPECTIVE = "roi_perspective_transform";
+const char *G_OP_TYPE_PAD2D = "pad2d";
+const char *G_OP_TYPE_FUSION_DECONV_ADD_BN_RELU = "fusion_deconv_add_bn_relu";
+const char *G_OP_TYPE_FUSION_DECONV_ADD_BN = "fusion_deconv_add_bn";
+const char *G_OP_TYPE_FUSION_DECONV_BN_RELU = "fusion_deconv_bn_relu";
 
 const char *G_OP_TYPE_PAD2D = "pad2d";
 
@@ -212,6 +216,10 @@ std::unordered_map<
          {{"Scores", "BboxDeltas", "ImInfo", "Anchors", "Variances"},
           {"RpnRois", "RpnRoiProbs"}}},
         {G_OP_TYPE_PSROI_POOL, {{"X", "ROIs"}, {"Out"}}},
+        {G_OP_TYPE_ROIALIGN_POOL, {{"X", "ROIs"}, {"Out"}}},
         {G_OP_TYPE_ROI_PERSPECTIVE, {{"X", "ROIs"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_DECONV_ADD_BN_RELU, {{"Input"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_DECONV_ADD_BN, {{"Input"}, {"Out"}}},
+        {G_OP_TYPE_FUSION_DECONV_BN_RELU, {{"Input"}, {"Out"}}},
         {G_OP_TYPE_PAD2D, {{"X"}, {"Out"}}}};
 }  // namespace paddle_mobile

@@ -15,51 +15,51 @@
 import Foundation
 import Metal
 
-class BilinearInterpParam<P: PrecisionType>: OpParam {
-  //typealias ParamPrecisionType = P
-  required init(opDesc: PMOpDesc, inScope: Scope) throws {
-    do {
-      input = try BilinearInterpParam.inputX(inputs: opDesc.inputs, from: inScope)
-      output = try BilinearInterpParam.outputOut(outputs: opDesc.outputs, from: inScope)
-      out_h = try BilinearInterpParam.getAttr(key: "out_h", attrs: opDesc.attrs)
-      out_w = try BilinearInterpParam.getAttr(key: "out_w", attrs: opDesc.attrs)
-    } catch let error {
-      throw error
+class BilinearInterpParam<P: PrecisionProtocol>: OpParam {
+    //typealias ParamPrecisionType = P
+    required init(opDesc: PMOpDesc, inScope: Scope) throws {
+        do {
+            input = try BilinearInterpParam.inputX(inputs: opDesc.inputs, from: inScope)
+            output = try BilinearInterpParam.outputOut(outputs: opDesc.outputs, from: inScope)
+            out_h = try BilinearInterpParam.getAttr(key: "out_h", attrs: opDesc.attrs)
+            out_w = try BilinearInterpParam.getAttr(key: "out_w", attrs: opDesc.attrs)
+        } catch let error {
+            throw error
+        }
+        if (input.transpose != [0, 2, 3, 1]) || (input.tensorDim.cout() != 4) {
+            fatalError()
+        }
     }
-    if (input.transpose != [0, 2, 3, 1]) || (input.tensorDim.cout() != 4) {
-      fatalError()
-    }
-  }
-  let input: Texture
-  var output: Texture
-  let out_h: Int
-  let out_w: Int
+    let input: Texture
+    var output: Texture
+    let out_h: Int
+    let out_w: Int
 }
 
-class BilinearInterpOp<P: PrecisionType>: Operator<BilinearInterpKernel<P>, BilinearInterpParam<P>>, Runable, Creator, InferShaperable{
-  
-  typealias OpType = BilinearInterpOp<P>
-
-  func inferShape() {
-    //        para.output.dim = para.input.dim
-  }
-  
-  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-    do {
-      try kernel.compute(commandBuffer: buffer, param: para)
-    } catch let error {
-      throw error
+class BilinearInterpOp<P: PrecisionProtocol>: Operator<BilinearInterpKernel<P>, BilinearInterpParam<P>>, Runable, Creator, InferShaperable{
+    
+    typealias OpType = BilinearInterpOp<P>
+    
+    func inferShape() {
+        //        para.output.dim = para.input.dim
     }
-  }
-  
-  func delogOutput() {
-    print(" \(type) output: ")
-    let device = para.output.metalTexture!.device
-    let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
-//    print(outputArray)
-    print(outputArray.strideArray())
-  }
-  
+    
+    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+        do {
+            try kernel.compute(commandBuffer: buffer, param: para)
+        } catch let error {
+            throw error
+        }
+    }
+    
+    func delogOutput() {
+        print(" \(type) output: ")
+        let device = para.output.metalTexture!.device
+        let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
+        //    print(outputArray)
+        print(outputArray.strideArray())
+    }
+    
 }
 
 

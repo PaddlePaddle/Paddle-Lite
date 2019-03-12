@@ -18,25 +18,25 @@ import Foundation
 struct ShapeMetalParam {
 }
 
-class ShapeKernel<P: PrecisionType>: Kernel, Computable{
-  func compute(commandBuffer: MTLCommandBuffer, param: ShapeParam<P>) throws {
-//    print("shape compute")
-//    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
-//      throw PaddleMobileError.predictError(message: " encode is nil")
-//    }
-//    encoder.setTexture(param.output.metalTexture, index: 0)
-//    encoder.endEncoding()
-  }
-  
-  required init(device: MTLDevice, param: ShapeParam<P>, initContext: InitContext) {
-    param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
-    if GlobalConfig.shared.computePrecision == .Float32 {
-      super.init(device: device, inFunctionName: "shape", initContext: initContext)
-    } else if GlobalConfig.shared.computePrecision == .Float16 {
-      super.init(device: device, inFunctionName: "shape_half", initContext: initContext)
-    } else {
-      fatalError()
+class ShapeKernel<P: PrecisionProtocol>: Kernel, Computable{
+    func compute(commandBuffer: MTLCommandBuffer, param: ShapeParam<P>) throws {
+        //    print("shape compute")
+        //    guard let encoder = commandBuffer.makeComputeCommandEncoder() else {
+        //      throw PaddleMobileError.predictError(message: " encode is nil")
+        //    }
+        //    encoder.setTexture(param.output.metalTexture, index: 0)
+        //    encoder.endEncoding()
     }
-  }
-  
+    
+    required init(device: MTLDevice, param: ShapeParam<P>, initContext: InitContext) {
+        param.output.initTexture(device: device, computePrecision: GlobalConfig.shared.computePrecision)
+        if GlobalConfig.shared.computePrecision == .Float32 {
+            super.init(device: device, inFunctionName: "shape", initContext: initContext)
+        } else if GlobalConfig.shared.computePrecision == .Float16 {
+            super.init(device: device, inFunctionName: "shape_half", initContext: initContext)
+        } else {
+            fatalError()
+        }
+    }
+    
 }

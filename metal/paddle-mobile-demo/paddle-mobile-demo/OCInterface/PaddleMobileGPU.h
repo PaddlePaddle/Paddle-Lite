@@ -16,8 +16,8 @@
 #import <Foundation/Foundation.h>
 
 typedef enum : NSUInteger {
-  SuperResolutionNetType,
-  MobileNetSSDType
+    SuperResolutionNetType,
+    MobileNetSSDType
 } NetType;
 
 @interface PaddleMobileGPUResult: NSObject
@@ -25,6 +25,8 @@ typedef enum : NSUInteger {
 @property (assign, nonatomic) float *output;
 
 @property (assign, nonatomic) int outputSize;
+
+@property (strong, nonatomic) NSArray <NSNumber *>*dim;
 
 -(void)releaseOutput;
 
@@ -88,13 +90,13 @@ typedef enum : NSUInteger {
  * texture:     需要进行预测的图像转换的 texture
  * completion:  预测完成回调
  */
--(void)predict:(id<MTLTexture>)texture withCompletion:(void (^)(BOOL, NSArray<NSNumber *> *))completion;
+-(void)predict:(id<MTLTexture>)texture withCompletion:(void (^)(BOOL, NSArray<NSArray <NSNumber *>*> *))completion;
 
 /*
  * texture:     需要进行预测的图像转换的 texture
  * completion:  预测完成回调
  */
--(void)predict:(id<MTLTexture>)texture withResultCompletion:(void (^)(BOOL, PaddleMobileGPUResult *))completion;
+-(void)predict:(id<MTLTexture>)texture withResultCompletion:(void (^)(BOOL, NSArray <PaddleMobileGPUResult *> *))completion;
 
 /*
  * 清理内存

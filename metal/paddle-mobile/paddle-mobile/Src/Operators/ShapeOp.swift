@@ -14,40 +14,40 @@
 
 import Foundation
 
-class ShapeParam<P: PrecisionType>: OpParam {
- // typealias ParamPrecisionType = P
-  required init(opDesc: PMOpDesc, inScope: Scope) throws {
-    do {
-      input = try ShapeParam.input(inputs: opDesc.inputs, from: inScope)
-      output = try ShapeParam.outputOut(outputs: opDesc.outputs, from: inScope)
-    } catch let error {
-      throw error
+class ShapeParam<P: PrecisionProtocol>: OpParam {
+    // typealias ParamPrecisionType = P
+    required init(opDesc: PMOpDesc, inScope: Scope) throws {
+        do {
+            input = try ShapeParam.input(inputs: opDesc.inputs, from: inScope)
+            output = try ShapeParam.outputOut(outputs: opDesc.outputs, from: inScope)
+        } catch let error {
+            throw error
+        }
     }
-  }
-  var output: Texture
-  let input: Texture
+    var output: Texture
+    let input: Texture
 }
 
-class ShapeOp<P: PrecisionType>: Operator<ShapeKernel<P>, ShapeParam<P>>, Runable, Creator, InferShaperable{
-  
-  typealias OpType = ShapeOp<P>
-
-  func inferShape() {
-    //        para.output.dim = para.input.dim
-  }
-  
-  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-    do {
-      try kernel.compute(commandBuffer: buffer, param: para)
-    } catch let error {
-      throw error
+class ShapeOp<P: PrecisionProtocol>: Operator<ShapeKernel<P>, ShapeParam<P>>, Runable, Creator, InferShaperable{
+    
+    typealias OpType = ShapeOp<P>
+    
+    func inferShape() {
+        //        para.output.dim = para.input.dim
     }
-  }
-  
-  func delogOutput() {
-    print(" \(type) output: ")
-  }
-  
+    
+    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+        do {
+            try kernel.compute(commandBuffer: buffer, param: para)
+        } catch let error {
+            throw error
+        }
+    }
+    
+    func delogOutput() {
+        print(" \(type) output: ")
+    }
+    
 }
 
 

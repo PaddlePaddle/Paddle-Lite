@@ -97,7 +97,7 @@ void dump_stride_float(std::string filename, Tensor input_tensor,
   out.close();
 }
 static const char *g_resnet50 = "../models/resnet50";
-const std::string g_image_src_float = "../images/image_src_float";
+const std::string g_image_src_float = "../images/image_src_float";  // NOLINT
 int main() {
   paddle_mobile::fpga::open_device();
   paddle_mobile::PaddleMobile<paddle_mobile::FPGA> paddle_mobile;
@@ -114,14 +114,14 @@ int main() {
       std::string saveName = "resnet50_result_" + std::to_string(i);
       paddle_mobile::fpga::fpga_invalidate((*tensor_ptr).get_data(),
                                            tensor_ptr->numel() * sizeof(half));
-      dump_stride_half(saveName, (*tensor_ptr), 20);
+      // dump_stride_half(saveName, (*tensor_ptr), 20);
       // dump(saveName, (*tensor_ptr));
     }
 
     auto tensor_ptr = paddle_mobile.FetchResult(73);
-    dump_stride_float("resnet50_result_73", (*tensor_ptr), 20);
+    // dump_stride_float("resnet50_result_73", (*tensor_ptr), 20);
     tensor_ptr = paddle_mobile.FetchResult(74);
-    dump_stride_float("resnet50_result_74", (*tensor_ptr), 9999);
+    // dump_stride_float("resnet50_result_74", (*tensor_ptr), 9999);
 
     float max = 0;
     auto data_ptr = tensor_ptr->data<float>();

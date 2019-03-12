@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "io/api_paddle_mobile.h"
+#include <string>
 #include <vector>
 #include "common/enforce.h"
 #include "framework/tensor.h"
@@ -41,10 +42,12 @@ bool PaddleMobilePredictor<Device, T>::Init(const PaddleMobileConfig &config) {
                                        config.memory_pack.combined_params_buf);
   } else if (!config.model_dir.empty()) {
     paddle_mobile_->Load(config.model_dir, config.optimize,
-                         config.quantification, config.batch_size);
+                         config.quantification, config.batch_size,
+                         config.lod_mode);
   } else if (!config.prog_file.empty() && !config.param_file.empty()) {
     paddle_mobile_->Load(config.prog_file, config.param_file, config.optimize,
-                         config.quantification, config.batch_size);
+                         config.quantification, config.batch_size,
+                         config.lod_mode);
   } else {
     LOG(kLOG_ERROR) << "fail to load inference model!";
     return false;
@@ -111,72 +114,64 @@ bool PaddleMobilePredictor<Device, T>::Run(
 }
 
 #ifdef PADDLE_MOBILE_FPGA
-template <typename Device, typename T>
-bool PaddleMobilePredictor<Device, T>::Run(
-    const std::vector<PaddleTensor> &inputs,
-    std::vector<PaddleTensor> *output_data, std::vector<int> *index_data,
-    int batch_size) {
-  if (inputs.empty()) {
-    LOG(kLOG_ERROR) << "At least one output should be set with tensors' names.";
-    return false;
-  }
-  auto input = inputs[0];
-
-  if (input.shape.size() != 4) {
-    LOG(kLOG_ERROR) << "input shape not equal to 4!";
-    return false;
-  }
-  std::vector<int64_t> dims;
-  for (auto d : input.shape) {
-    dims.push_back(static_cast<int64_t>(d));
-  }
-
-  // use tensor
-  framework::DDim ddim =
-      framework::make_ddim({dims[0], dims[1], dims[2], dims[3]});
-
-  framework::Tensor input_tensor;
-  input_tensor.Resize(ddim);
-  int input_length = framework::product(ddim);
-  auto input_ptr = input_tensor.mutable_data<T>();
-
-  memcpy(input_ptr, static_cast<T *>(input.data.data()),
-         input_length * sizeof(T));
-  paddle_mobile_->Predict(input_tensor);
-  auto num_result = index_data->size();
-  if (output_data->size() != num_result) {
-    LOG(kLOG_ERROR) << "index and output number don't match";
-    return false;
-  }
-
-  for (int i = 0; i < num_result; i++) {
-    auto output_tensor = paddle_mobile_->FetchResult((*index_data)[i]);
-
-    if (output_data->empty()) {
-      LOG(kLOG_ERROR)
-          << "At least one output should be set with tensors' names.";
-      return false;
-    }
-
-    auto &output = (*output_data)[i];
-    int output_length = output_tensor->numel();
-    std::vector<int64_t> tensor_shape =
-        framework::vectorize(output_tensor->dims());
-
-    for (auto d : tensor_shape) {
-      output.shape.push_back(static_cast<int>(d));
-    }
-
-    if (output.data.length() < output_length * sizeof(T)) {
-      output.data.Resize(output_length * sizeof(T));
-    }
-
-    memcpy(output.data.data(), output_tensor->template data<T>(),
-           output_length * sizeof(T));
-  }
-
-  return true;
+void ConvertPaddleTensors(const PaddleTensor &src, framework::Tensor *des) {
+  des->Resize(framework::make_ddim(src.shape));
+  des->external_data = src.data.data();
+  des->set_type(src.dtypeid);
+  des->layout =
+      src.layout == LAYOUT_HWC ? framework::LAYOUT_HWC : framework::LAYOUT_CHW;
 }
+
+void ConvertTensors(const framework::Tensor &src, PaddleTensor *des) {
+  des->shape = framework::vectorize2int(src.dims());
+  des->dtypeid = src.type();
+  des->layout = src.layout == framework::LAYOUT_HWC ? LAYOUT_HWC : LAYOUT_CHW;
+
+  auto num = src.numel();
+  if (src.type() == typeid(float)) {
+    des->data.Reset(const_cast<float *>(src.data<float>()),
+                    num * sizeof(float));
+  } else {
+    des->data.Reset(const_cast<int16_t *>(src.data<int16_t>()),
+                    num * sizeof(int16_t));
+  }
+}
+
+template <typename Device, typename T>
+void PaddleMobilePredictor<Device, T>::FeedPaddleTensors(
+    const std::vector<PaddleTensor> &inputs) {
+  auto num = inputs.size();
+  std::vector<framework::Tensor> tensors(num, framework::Tensor());
+  for (int i = 0; i < num; i++) {
+    tensors[i].init(typeid(float));
+    ConvertPaddleTensors(inputs[i], &tensors[i]);
+  }
+  paddle_mobile_->FeedTensorData(tensors);
+}
+
+template <typename Device, typename T>
+void PaddleMobilePredictor<Device, T>::FetchPaddleTensors(
+    std::vector<PaddleTensor> *outputs) {
+  //  auto num = outputs->size();
+  //  PADDLE_MOBILE_ENFORCE(num > 0, "0 output pointers is not permitted");
+  //  std::vector<framework::Tensor *> tensors(num, nullptr);
+  outputs->clear();
+  std::vector<framework::Tensor *> tensors;
+  paddle_mobile_->GetTensorResults(&tensors);
+  auto num = tensors.size();
+  outputs->resize(num, PaddleTensor());
+  for (int i = 0; i < num; i++) {
+    ConvertTensors(*tensors[i], &(*outputs)[i]);
+  }
+}
+
+template <typename Device, typename T>
+void PaddleMobilePredictor<Device, T>::GetPaddleTensor(const std::string &name,
+                                                       PaddleTensor *output) {
+  framework::Tensor *t = paddle_mobile_->GetTensorByName(name);
+  ConvertTensors(*t, output);
+}
+
 template <typename Device, typename T>
 void PaddleMobilePredictor<Device, T>::FeedData(
     const std::vector<void *> &inputs) {
