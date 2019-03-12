@@ -16,6 +16,7 @@ import UIKit
 import MetalKit
 import CoreMedia
 import paddle_mobile
+import paddle_mobile_demo
 import MetalPerformanceShaders
 
 class FileReader {
@@ -75,8 +76,10 @@ class ViewController: UIViewController {
     @IBOutlet weak var modelPickerView: UIPickerView!
     @IBOutlet weak var threadPickerView: UIPickerView!
     @IBOutlet weak var videoView: UIView!
+    var inputImageSize: CGSize = CGSize.init(width: 0, height: 0)
     //  var videoCapture: VideoCapture!
     
+    var textureCache: CVMetalTextureCache?
     var selectImage: UIImage?
     var inputPointer: UnsafeMutablePointer<Float32>?
     var modelType: SupportModel = SupportModel.supportedModels()[0]
@@ -102,7 +105,9 @@ class ViewController: UIViewController {
             if self.toPredictTexture == nil {
                 let beforeDate = Date.init()
                 if modelType == .mobilenet_combined || modelType == .yolo {
-                    self.toPredictTexture = try! MetalHelper.shared.textureLoader.newTexture(cgImage: selectImage!.cgImage!, options: nil)
+                    let buffer = ImageTool.image(toRGBPixelBuffer: selectImage!)
+                    let texture = convertToMTLTexture(imageBuffer: buffer.takeRetainedValue())
+                    self.toPredictTexture = texture
                 } else {
                     runner.getTexture(image: selectImage!.cgImage!) { [weak self] (texture) in
                         let timeUse = Date.init().timeIntervalSince(beforeDate)
@@ -150,6 +155,8 @@ class ViewController: UIViewController {
                     }
                     
                     if success, let inResultHolderArr = resultHolder {
+//                        writeToLibrary(fileName: "00001_result_32_new_new", buffer: UnsafeBufferPointer<Float32>.init(start: inResultHolderArr[0].result, count: inResultHolderArr[0].capacity))
+
                         let inResultHolder = inResultHolderArr[0]
                         if i == max - 1 {
                             let time = Date.init().timeIntervalSince(startDate)
@@ -173,6 +180,8 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        CVMetalTextureCacheCreate(kCFAllocatorDefault, nil, MetalHelper.shared.device, nil, &textureCache)
+
         GlobalConfig.shared.computePrecision = .Float16
         GlobalConfig.shared.debug = false
         
@@ -258,6 +267,29 @@ extension ViewController: VideoCaptureDelegate{
     
 }
 
+
+extension ViewController {
+    private func convertToMTLTexture(imageBuffer: CVPixelBuffer?) -> MTLTexture? {
+        if let textureCache = textureCache, let imageBuffer = imageBuffer {
+            CVPixelBufferLockBaseAddress(imageBuffer, CVPixelBufferLockFlags(rawValue: 0))
+            let width = CVPixelBufferGetWidth(imageBuffer)
+            let height = CVPixelBufferGetHeight(imageBuffer)
+            inputImageSize = CGSize(width: width, height: height);
+            let pixelFormat: MTLPixelFormat = .bgra8Unorm
+            var texture: CVMetalTexture?
+            
+            CVMetalTextureCacheCreateTextureFromImage(kCFAllocatorDefault, textureCache,
+                                                      imageBuffer, nil, pixelFormat, width, height, 0, &texture)
+            
+            CVPixelBufferUnlockBaseAddress(imageBuffer, CVPixelBufferLockFlags(rawValue: 0))
+            
+            if let texture = texture {
+                return CVMetalTextureGetTexture(texture)
+            }
+        }
+        return nil
+    }
+}
 
 
 
