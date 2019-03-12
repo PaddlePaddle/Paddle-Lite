@@ -28,9 +28,11 @@ template <typename Dtype>
 class Pad2DParam : public OpParam {
  public:
   Pad2DParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-             const AttributeMap &attrs, const Scope &scope) {
-    input_ = OpParam::GetVarValue<framework::LoDTensor>("X", inputs, scope);
-    output_ = OpParam::GetVarValue<framework::LoDTensor>("Out", outputs, scope);
+             const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_ = OpParam::GetVarValue<framework::LoDTensor>("X", inputs, *scope);
+    output_ =
+        OpParam::GetVarValue<framework::LoDTensor>("Out", outputs, *scope);
     paddings_ = OpParam::GetAttr<std::vector<int>>("paddings", attrs);
     pad_value_ = OpParam::GetAttr<float>("pad_value", attrs);
     mode_ = OpParam::GetStringAttr("mode", attrs);

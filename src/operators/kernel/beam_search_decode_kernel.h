@@ -27,15 +27,16 @@ class BeamSearchDecodeParam : public OpParam {
  public:
   BeamSearchDecodeParam(const VariableNameMap &inputs,
                         const VariableNameMap &outputs,
-                        const AttributeMap &attrs, const Scope &scope) {
+                        const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
     ids_ =
-        OpParam::GetVarValue<framework::LoDTensorArray>("Ids", inputs, scope);
+        OpParam::GetVarValue<framework::LoDTensorArray>("Ids", inputs, *scope);
     scores_ = OpParam::GetVarValue<framework::LoDTensorArray>("Scores", inputs,
-                                                              scope);
+                                                              *scope);
     sentence_ids_ = OpParam::GetVarValue<framework::LoDTensor>("SentenceIds",
-                                                               outputs, scope);
+                                                               outputs, *scope);
     sentence_scores_ = OpParam::GetVarValue<framework::LoDTensor>(
-        "SentenceScores", outputs, scope);
+        "SentenceScores", outputs, *scope);
     beam_size_ = OpParam::GetAttr<int>("beam_size", attrs);
     end_id_ = OpParam::GetAttr<int>("end_id", attrs);
   }
