@@ -14,8 +14,8 @@
 
 import Foundation
 
-class ScaleKernel: CusomKernel {
-    init(device: MTLDevice, shape: Shape, metalLoadMode: MetalLoadMode, metalLibPath: String?) {
+public class ScaleKernel: CusomKernel {
+    public init(device: MTLDevice, shape: Shape, metalLoadMode: MetalLoadMode, metalLibPath: String?) {
         if GlobalConfig.shared.computePrecision == .Float32 {
             super.init(device: device, inFunctionName: "scale", outputDim: shape, metalLoadModel: metalLoadMode, metalLibPath: metalLibPath)
         } else if GlobalConfig.shared.computePrecision == .Float16 {
