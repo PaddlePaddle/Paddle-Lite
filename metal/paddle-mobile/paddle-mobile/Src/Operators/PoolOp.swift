@@ -14,61 +14,61 @@
 
 import Foundation
 
-class PoolParam<P: PrecisionType>: OpParam {
-  //typealias ParamPrecisionType = P
-  required init(opDesc: PMOpDesc, inScope: Scope) throws {
-    do {
-      input = try PoolParam.inputX(inputs: opDesc.inputs, from: inScope)
-      output = try PoolParam.outputOut(outputs: opDesc.outputs, from: inScope)
-      poolType = try PoolParam.getAttr(key: "pooling_type", attrs: opDesc.attrs)
-      ksize = try PoolParam.getAttr(key: "ksize", attrs: opDesc.attrs)
-      stride = try PoolParam.getAttr(key: "strides", attrs: opDesc.attrs)
-      padding = try PoolParam.getAttr(key: "paddings", attrs: opDesc.attrs)
-      ceilMode = try PoolParam.getAttr(key: "ceil_mode", attrs: opDesc.attrs)
-      globalPooling = try PoolParam.getAttr(key: "global_pooling", attrs: opDesc.attrs)
-      assert(input.transpose == [0, 2, 3, 1])
-    } catch let error {
-      throw error
+class PoolParam<P: PrecisionProtocol>: OpParam {
+    //typealias ParamPrecisionType = P
+    required init(opDesc: PMOpDesc, inScope: Scope) throws {
+        do {
+            input = try PoolParam.inputX(inputs: opDesc.inputs, from: inScope)
+            output = try PoolParam.outputOut(outputs: opDesc.outputs, from: inScope)
+            poolType = try PoolParam.getAttr(key: "pooling_type", attrs: opDesc.attrs)
+            ksize = try PoolParam.getAttr(key: "ksize", attrs: opDesc.attrs)
+            stride = try PoolParam.getAttr(key: "strides", attrs: opDesc.attrs)
+            padding = try PoolParam.getAttr(key: "paddings", attrs: opDesc.attrs)
+            ceilMode = try PoolParam.getAttr(key: "ceil_mode", attrs: opDesc.attrs)
+            globalPooling = try PoolParam.getAttr(key: "global_pooling", attrs: opDesc.attrs)
+            assert(input.transpose == [0, 2, 3, 1])
+        } catch let error {
+            throw error
+        }
+        //        let buffer = input.metalTexture.buffer.contents().assumingMemoryBound(to: P.self)
     }
-    //        let buffer = input.metalTexture.buffer.contents().assumingMemoryBound(to: P.self)
-  }
-  let input: Texture
-  var output: Texture
-  var ksize: [Int32]
-  var stride: [Int32]
-  var padding: [Int32]
-  var poolType: String
-  var ceilMode: Bool
-  var globalPooling: Bool
+    let input: Texture
+    var output: Texture
+    var ksize: [Int32]
+    var stride: [Int32]
+    var padding: [Int32]
+    var poolType: String
+    var ceilMode: Bool
+    var globalPooling: Bool
 }
 
-class PoolOp<P: PrecisionType>: Operator<PoolKernel<P>, PoolParam<P>>, Runable, Creator, InferShaperable{
-  
-  typealias OpType = PoolOp<P>
-
-  func inferShape() {
-    // para.output.dim = para.input.dim
-  }
-  
-  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-    do {
-      try kernel.compute(commandBuffer: buffer, param: para)
-    } catch let error {
-      throw error
-    }
-  }
-  
-  func delogOutput() {
-    print(" \(type) output: ")
-    print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
-
+class PoolOp<P: PrecisionProtocol>: Operator<PoolKernel<P>, PoolParam<P>>, Runable, Creator, InferShaperable{
     
-//    print("pool2d delog")
-//    let _: P? = para.input.metalTexture.logDesc(header: "pool2d input: ", stridable: true)
-//    print(para.ksize)
-//    print(para.stride)
-//    print(para.padding)
-//    print(para.poolType)
-//    let _: P? = para.output.metalTexture.logDesc(header: "pool2d output: ", stridable: true)
-  }
+    typealias OpType = PoolOp<P>
+    
+    func inferShape() {
+        // para.output.dim = para.input.dim
+    }
+    
+    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+        do {
+            try kernel.compute(commandBuffer: buffer, param: para)
+        } catch let error {
+            throw error
+        }
+    }
+    
+    func delogOutput() {
+        print(" \(type) output: ")
+        print(para.output.metalTexture.toTensor(dim: (n: para.output.tensorDim[0], c: para.output.tensorDim[1], h: para.output.tensorDim[2], w: para.output.tensorDim[3])).strideArray())
+        
+        
+        //    print("pool2d delog")
+        //    let _: P? = para.input.metalTexture.logDesc(header: "pool2d input: ", stridable: true)
+        //    print(para.ksize)
+        //    print(para.stride)
+        //    print(para.padding)
+        //    print(para.poolType)
+        //    let _: P? = para.output.metalTexture.logDesc(header: "pool2d output: ", stridable: true)
+    }
 }

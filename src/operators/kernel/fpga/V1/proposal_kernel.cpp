@@ -67,7 +67,38 @@ bool ProposalKernel<FPGA, float>::Init(ProposalParam<FPGA> *param) {
   args.output.scale_address = param->float_score->scale;
   param->score_arg = args;
 
+  param->score_index_ = std::make_shared<Tensor>();
+  param->score_index_->mutable_data<int32_t>({input->numel()});
+  auto score_index = param->score_index_->data<int32_t>();
+  for (int i = 0; i < input->numel(); ++i) {
+    score_index[i] = i;
+  }
+
   return true;
+}
+template <typename T>
+void CPUGather(const Tensor &src, const Tensor &index, Tensor *output) {
+  PADDLE_MOBILE_ENFORCE(index.dims().size() == 1 ||
+                            (index.dims().size() == 2 && index.dims()[1] == 1),
+                        "Dim not correct");
+  int64_t index_size = index.dims()[0];
+
+  auto src_dims = src.dims();
+
+  const T *p_src = src.data<T>();
+  const int *p_index = index.data<int>();
+  T *p_output = output->data<T>();
+
+  // slice size
+  int slice_size = 1;
+  for (int i = 1; i < src_dims.size(); ++i) slice_size *= src_dims[i];
+
+  const size_t slice_bytes = slice_size * sizeof(T);
+
+  for (int64_t i = 0; i < index_size; ++i) {
+    int index_ = p_index[i];
+    memcpy(p_output + i * slice_size, p_src + index_ * slice_size, slice_bytes);
+  }
 }
 
 void AppendProposals(Tensor *dst, int64_t offset, const Tensor &src) {
@@ -105,38 +136,49 @@ static inline void BoxCoder(Tensor *all_anchors, Tensor *bbox_deltas,
     T bbox_center_x = 0, bbox_center_y = 0;
     T bbox_width = 0, bbox_height = 0;
 
-    if (variances) {
-      bbox_center_x =
-          variances_data[i * len] * bbox_deltas_data[i * len] * anchor_width +
-          anchor_center_x;
-      bbox_center_y = variances_data[i * len + 1] *
-                          bbox_deltas_data[i * len + 1] * anchor_height +
-                      anchor_center_y;
-      bbox_width = std::exp(std::min<T>(variances_data[i * len + 2] *
-                                            bbox_deltas_data[i * len + 2],
-                                        kBBoxClipDefault)) *
-                   anchor_width;
-      bbox_height = std::exp(std::min<T>(variances_data[i * len + 3] *
-                                             bbox_deltas_data[i * len + 3],
-                                         kBBoxClipDefault)) *
-                    anchor_height;
-    } else {
-      bbox_center_x =
-          bbox_deltas_data[i * len] * anchor_width + anchor_center_x;
-      bbox_center_y =
-          bbox_deltas_data[i * len + 1] * anchor_height + anchor_center_y;
-      bbox_width = std::exp(std::min<T>(bbox_deltas_data[i * len + 2],
-                                        kBBoxClipDefault)) *
-                   anchor_width;
-      bbox_height = std::exp(std::min<T>(bbox_deltas_data[i * len + 3],
-                                         kBBoxClipDefault)) *
-                    anchor_height;
-    }
+    /*
+        if (variances) {
+          bbox_center_x =
+              variances_data[i * len] * bbox_deltas_data[i * len] * anchor_width
+       + anchor_center_x; bbox_center_y = variances_data[i * len + 1] *
+                              bbox_deltas_data[i * len + 1] * anchor_height +
+                          anchor_center_y;
+          bbox_width = std::exp(std::min<T>(variances_data[i * len + 2] *
+                                                bbox_deltas_data[i * len + 2],
+                                            kBBoxClipDefault)) *
+                       anchor_width;
+          bbox_height = std::exp(std::min<T>(variances_data[i * len + 3] *
+                                                 bbox_deltas_data[i * len + 3],
+                                             kBBoxClipDefault)) *
+                        anchor_height;
+        } else {
+    */
+    bbox_center_x = bbox_deltas_data[i * len] * anchor_width + anchor_center_x;
+    bbox_center_y =
+        bbox_deltas_data[i * len + 1] * anchor_height + anchor_center_y;
+
+    /*
+          bbox_width = std::exp(std::min<T>(bbox_deltas_data[i * len + 2],
+                                            kBBoxClipDefault)) *
+                       anchor_width;
+          bbox_height = std::exp(std::min<T>(bbox_deltas_data[i * len + 3],
+                                             kBBoxClipDefault)) *
+                        anchor_height;
+    */
+    bbox_width = std::exp(bbox_deltas_data[i * len + 2]) * anchor_width;
+    bbox_height = std::exp(bbox_deltas_data[i * len + 3]) * anchor_height;
+    //    }
 
     proposals_data[i * len] = bbox_center_x - bbox_width / 2;
     proposals_data[i * len + 1] = bbox_center_y - bbox_height / 2;
-    proposals_data[i * len + 2] = bbox_center_x + bbox_width / 2 - 1;
-    proposals_data[i * len + 3] = bbox_center_y + bbox_height / 2 - 1;
+    /*
+        //wong
+        proposals_data[i * len + 2] = bbox_center_x + bbox_width / 2 - 1;
+        proposals_data[i * len + 3] = bbox_center_y + bbox_height / 2 - 1;
+        //wong
+    */
+    proposals_data[i * len + 2] = bbox_center_x + bbox_width / 2;
+    proposals_data[i * len + 3] = bbox_center_y + bbox_height / 2;
   }
   // return proposals;
 }
@@ -301,17 +343,20 @@ std::pair<Tensor, Tensor> ProposalForOneImage(
     const Tensor &im_info_slice, const Tensor &anchors, const Tensor &variances,
     const Tensor &bbox_deltas_slice,  // [M, 4]
     const Tensor &scores_slice,       // [N, 1]
-    int pre_nms_top_n, int post_nms_top_n, float nms_thresh, float min_size,
-    float eta) {
+    const Tensor &score_index, int pre_nms_top_n, int post_nms_top_n,
+    float nms_thresh, float min_size, float eta) {
   auto *scores_data = scores_slice.data<T>();
 
   // Sort index
   Tensor index_t;
   index_t.Resize({scores_slice.numel()});
   int *index = index_t.mutable_data<int>();
-  for (int i = 0; i < scores_slice.numel(); ++i) {
+  /*for (int i = 0; i < scores_slice.numel(); ++i) {
     index[i] = i;
-  }
+  }*/
+  std::memcpy(index, score_index.data<int32_t>(),
+              scores_slice.numel() * sizeof(int));
+
   auto compare = [scores_data](const int64_t &i, const int64_t &j) {
     return scores_data[i] > scores_data[j];
   };
@@ -330,9 +375,12 @@ std::pair<Tensor, Tensor> ProposalForOneImage(
   anchor_sel.mutable_data<T>({index_t.numel(), 4});
   var_sel.mutable_data<T>({index_t.numel(), 4});
 
+  CPUGather<T>(scores_slice, index_t, &scores_sel);
+  CPUGather<T>(bbox_deltas_slice, index_t, &bbox_sel);
+  CPUGather<T>(anchors, index_t, &anchor_sel);
   Tensor proposals;
   proposals.mutable_data<T>({index_t.numel(), 4});
-  BoxCoder<T>(&anchor_sel, &bbox_sel, &var_sel, &proposals);
+  BoxCoder<T>(&anchor_sel, &bbox_sel, nullptr, &proposals);
 
   ClipTiledBoxes<T>(im_info_slice, &proposals);
 
@@ -343,6 +391,8 @@ std::pair<Tensor, Tensor> ProposalForOneImage(
   bbox_sel.mutable_data<T>({keep.numel(), 4});
   scores_filter.mutable_data<T>({keep.numel(), 1});
 
+  CPUGather<T>(proposals, keep, &bbox_sel);
+  CPUGather<T>(scores_sel, keep, &scores_filter);
   if (nms_thresh <= 0) {
     return std::make_pair(bbox_sel, scores_filter);
   }
@@ -353,14 +403,86 @@ std::pair<Tensor, Tensor> ProposalForOneImage(
     keep_nms.Resize({post_nms_top_n});
   }
 
-  proposals.mutable_data<T>({keep_nms.numel(), 4});
-  scores_sel.mutable_data<T>({keep_nms.numel(), 1});
+  // proposals.mutable_data<T>({keep_nms.numel(), 4});//original
+  // scores_sel.mutable_data<T>({keep_nms.numel(), 1});//original
 
+  proposals.mutable_data<T>({post_nms_top_n, 4});   // wong
+  scores_sel.mutable_data<T>({post_nms_top_n, 1});  // wong
+  CPUGather<T>(bbox_sel, keep_nms, &proposals);
+  CPUGather<T>(scores_filter, keep_nms, &scores_sel);
   return std::make_pair(proposals, scores_sel);
 }
 
 template <>
 void ProposalKernel<FPGA, float>::Compute(const ProposalParam<FPGA> &param) {
+  auto input_score = param.scores_;
+  auto input_score_data = input_score->data<half>();
+  auto input_score_data_tmp = input_score->data<half>();
+  uint32_t score_n, score_height, score_width, score_channels;
+
+  auto input_bbox = param.bbox_deltas_;
+  auto input_bbox_data = input_bbox->data<half>();
+  auto input_bbox_data_tmp = input_bbox->data<half>();
+  uint32_t bbox_n, bbox_height, bbox_width, bbox_channels;
+
+  score_n = (uint32_t)(input_score->dims()[0]);
+  score_channels = (uint32_t)(input_score->dims()[1]);
+  score_height = (uint32_t)(input_score->dims()[2]);
+  score_width = (uint32_t)(input_score->dims()[3]);
+
+  bbox_n = (uint32_t)(input_bbox->dims()[0]);
+  bbox_channels = (uint32_t)(input_bbox->dims()[1]);
+  bbox_height = (uint32_t)(input_bbox->dims()[2]);
+  bbox_width = (uint32_t)(input_bbox->dims()[3]);
+
+  // score_tmp->init(typeid(half));
+  std::shared_ptr<Tensor> score_tmp = std::make_shared<Tensor>();
+  score_tmp->Resize(param.scores_->dims());
+  score_tmp->mutable_data<half>();
+
+  std::shared_ptr<Tensor> bbox_tmp = std::make_shared<Tensor>();
+  bbox_tmp->Resize(param.bbox_deltas_->dims());
+  bbox_tmp->mutable_data<half>();
+
+  auto score_tmp_data = score_tmp->data<half>();
+  auto bbox_tmp_data = bbox_tmp->data<half>();
+  int64_t amount_per_side = score_width * score_height;
+  int idx = 0;
+  fpga::fpga_invalidate(
+      input_score_data_tmp,
+      score_height * score_width * score_channels * sizeof(half));
+  for (int h = 0; h < score_height; h++) {
+    for (int w = 0; w < score_width; w++) {
+      for (int c = 0; c < score_channels; c++) {
+        idx++;
+        // DLOG  << "wong input_score: "<<
+        // paddle_mobile::fpga::fp16_2_fp32(input_score_data[idx]);
+        *(score_tmp_data + c * amount_per_side + score_width * h + w) =
+            (*(input_score_data_tmp++));
+      }
+    }
+  }
+  amount_per_side = bbox_width * bbox_height;
+  fpga::fpga_invalidate(input_bbox_data_tmp, bbox_height * bbox_width *
+                                                 bbox_channels * sizeof(half));
+  for (int h = 0; h < bbox_height; h++) {
+    for (int w = 0; w < bbox_width; w++) {
+      for (int c = 0; c < bbox_channels; c++) {
+        idx++;
+        // DLOG  << "wong input_score: "<<
+        // paddle_mobile::fpga::fp16_2_fp32(input_score_data[idx]);
+        *(bbox_tmp_data + c * amount_per_side + bbox_width * h + w) =
+            (*(input_bbox_data_tmp++));
+      }
+    }
+  }
+  struct paddle_mobile::fpga::BypassArgs temp_score_arg;
+  struct paddle_mobile::fpga::BypassArgs temp_bbox_arg;
+  temp_score_arg = param.score_arg;
+  temp_score_arg.image.address = score_tmp->data<half>();
+
+  temp_bbox_arg = param.bbox_arg;
+  temp_bbox_arg.image.address = bbox_tmp->data<half>();
   auto score_tensor = param.float_score.get();
   fpga::PerformBypass(param.score_arg);
   fpga::fpga_invalidate(score_tensor->data<float>(),
@@ -380,9 +502,13 @@ void ProposalKernel<FPGA, float>::Compute(const ProposalParam<FPGA> &param) {
   auto *rpn_rois = param.rpn_rois_;
   auto *rpn_roi_probs = param.rpn_probs_;
 
+  auto score_index = *(param.score_index_.get());
+
   int pre_nms_top_n = param.pre_nms_topn_;
   int post_nms_top_n = param.post_nms_topn_;
-  float nms_thresh = param.nms_thresh_;
+  // DLOG << " param.post_nms_topn_ : " << param.post_nms_topn_;
+
+  float nms_thresh = param.nms_thresh_ / 2.0f;
   float min_size = param.min_size_;
   float eta = param.eta_;
 
@@ -398,28 +524,28 @@ void ProposalKernel<FPGA, float>::Compute(const ProposalParam<FPGA> &param) {
   int64_t w_bbox = bbox_dim[3];
 
   //
-  Tensor bbox_deltas_swap, scores_swap;
-  bbox_deltas_swap.mutable_data<float>({num, h_bbox, w_bbox, c_bbox});
-  scores_swap.mutable_data<float>({num, h_score, w_score, c_score});
+  rpn_rois->mutable_data<float>({bbox_deltas->numel(), 4});
+  rpn_roi_probs->mutable_data<float>({scores->numel(), 1});
 
   framework::LoD lod;
   lod.resize(1);
   auto &lod0 = lod[0];
   lod0.push_back(0);
-  anchors.Resize({anchors.numel() / 4, 4});
+  anchors.Resize({anchors.numel(), 4});
+  variances.Resize({variances.numel(), 4});
 
   int64_t num_proposals = 0;
   for (int64_t i = 0; i < num; ++i) {
     Tensor im_info_slice = im_info->Slice(i, i + 1);
-    Tensor bbox_deltas_slice = bbox_deltas_swap.Slice(i, i + 1);
-    Tensor scores_slice = scores_swap.Slice(i, i + 1);
+    Tensor bbox_deltas_slice = (*bbox_tensor).Slice(i, i + 1);
+    Tensor scores_slice = (*score_tensor).Slice(i, i + 1);
 
-    bbox_deltas_slice.Resize({h_bbox * w_bbox * c_bbox / 4, 4});
+    bbox_deltas_slice.Resize({h_bbox * w_bbox * c_bbox, 4});
     scores_slice.Resize({h_score * w_score * c_score, 1});
 
     std::pair<Tensor, Tensor> tensor_pair = ProposalForOneImage<float>(
         im_info_slice, anchors, variances, bbox_deltas_slice, scores_slice,
-        pre_nms_top_n, post_nms_top_n, nms_thresh, min_size, eta);
+        score_index, pre_nms_top_n, post_nms_top_n, nms_thresh, min_size, eta);
     Tensor &proposals = tensor_pair.first;
     Tensor &scores = tensor_pair.second;
 

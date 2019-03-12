@@ -15,49 +15,49 @@
 import Foundation
 import Metal
 
-class SoftmaxParam<P: PrecisionType>: OpParam {
-  //typealias ParamPrecisionType = P
-  required init(opDesc: PMOpDesc, inScope: Scope) throws {
-    do {
-      input = try SoftmaxParam.inputX(inputs: opDesc.inputs, from: inScope)
-      output = try SoftmaxParam.outputOut(outputs: opDesc.outputs, from: inScope)
-      
-      //assert(input.tensorDim.dims.count == 2)
-      //assert(input.transpose == [0, 1, 2, 3])
-      
-      output.dim = input.dim
-      output.tensorDim = input.tensorDim
-      output.padToFourDim = input.padToFourDim
-    } catch let error {
-      throw error
+class SoftmaxParam<P: PrecisionProtocol>: OpParam {
+    //typealias ParamPrecisionType = P
+    required init(opDesc: PMOpDesc, inScope: Scope) throws {
+        do {
+            input = try SoftmaxParam.inputX(inputs: opDesc.inputs, from: inScope)
+            output = try SoftmaxParam.outputOut(outputs: opDesc.outputs, from: inScope)
+            
+            //assert(input.tensorDim.dims.count == 2)
+            //assert(input.transpose == [0, 1, 2, 3])
+            
+            output.dim = input.dim
+            output.tensorDim = input.tensorDim
+            output.padToFourDim = input.padToFourDim
+        } catch let error {
+            throw error
+        }
     }
-  }
-  let input: Texture
-  var output: Texture
+    let input: Texture
+    var output: Texture
 }
 
-class SoftmaxOp<P: PrecisionType>: Operator<SoftmaxKernel<P>, SoftmaxParam<P>>, Runable, Creator, InferShaperable{
-  typealias OpType = SoftmaxOp<P>
-
-  func inferShape() {
-    // para.output.dim = para.input.dim
-  }
-  
-  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-    do {
-      try kernel.compute(commandBuffer: buffer, param: para)
-    } catch let error {
-      throw error
-    }
-  }
-  
-  func delogOutput() {
-    print("softmax delog")
-    print(para.input)
+class SoftmaxOp<P: PrecisionProtocol>: Operator<SoftmaxKernel<P>, SoftmaxParam<P>>, Runable, Creator, InferShaperable{
+    typealias OpType = SoftmaxOp<P>
     
-    print(para.output)
-    let padToFourDim = para.output.padToFourDim
-    let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
-    print(outputArray.strideArray())
-  }
+    func inferShape() {
+        // para.output.dim = para.input.dim
+    }
+    
+    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+        do {
+            try kernel.compute(commandBuffer: buffer, param: para)
+        } catch let error {
+            throw error
+        }
+    }
+    
+    func delogOutput() {
+        print("softmax delog")
+        print(para.input)
+        
+        print(para.output)
+        let padToFourDim = para.output.padToFourDim
+        let outputArray: [Float32] = para.output.metalTexture.realNHWC(dim: (n: padToFourDim[0], h: padToFourDim[1], w: padToFourDim[2], c: padToFourDim[3]))
+        print(outputArray.strideArray())
+    }
 }

@@ -33,13 +33,18 @@ bool SliceKernel<FPGA, float>::Init(SliceParam<FPGA>* param) {
 template <>
 void SliceKernel<FPGA, float>::Compute(const SliceParam<FPGA>& param) {
   // Only support slicing in channel dimension
+  // Only support half data
+  // W must be aligned to 16
 
   auto input = param.input_;
-  DLOG << input;
+  auto output = param.output_;
   int HW = input->dims()[2] * input->dims()[3];
   int channel = input->dims()[1];
   auto input_ptr = input->data<half>();
-  auto output_ptr = param.output_->data<half>();
+  auto output_ptr = output->data<half>();
+
+  output->scale[0] = input->scale[0];
+  output->scale[1] = input->scale[1];
 
   int start = param.starts_[0], end = param.ends_[0];
   start = start < 0 ? start + channel : start;
@@ -47,9 +52,10 @@ void SliceKernel<FPGA, float>::Compute(const SliceParam<FPGA>& param) {
   start = start > channel ? channel : start;
   end = end > channel ? channel : end;
   int len = end - start;
+  size_t size = len * sizeof(half);
 
   for (int i = 0; i < HW; i++) {
-    memcpy(output_ptr + len * i, input_ptr + i * channel + start, len);
+    memcpy(output_ptr + len * i, input_ptr + i * channel + start, size);
   }
 }
 }  // namespace operators

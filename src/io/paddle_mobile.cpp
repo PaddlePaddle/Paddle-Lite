@@ -239,6 +239,18 @@ void PaddleMobile<Device, T>::GetResults(std::vector<void *> *v) {
 }
 
 template <typename Device, typename T>
+void PaddleMobile<Device, T>::GetTensorResults(
+    std::vector<framework::Tensor *> *v) {
+  executor_->GetTensorResults(v);
+}
+
+template <typename Device, typename T>
+framework::Tensor *PaddleMobile<Device, T>::GetTensorByName(
+    const std::string &name) {
+  return executor_->GetTensorByName(name);
+}
+
+template <typename Device, typename T>
 std::shared_ptr<framework::Tensor> PaddleMobile<Device, T>::FetchResult(
     int id) {
   return executor_->FetchResult(id);

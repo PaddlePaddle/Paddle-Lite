@@ -15,44 +15,44 @@
 import Foundation
 import Metal
 
-class FetchParam<P: PrecisionType>: OpParam{
-  var output: FetchHolder
-  let input: Texture
-  let scope: Scope
-  required init(opDesc: PMOpDesc, inScope: Scope) throws {
-    scope = inScope
-    do {
-      input = try FetchParam.inputX(inputs: opDesc.inputs, from: inScope)
-      output = FetchHolder.init(inPaddedCapacity: input.elementCount(), inDim: input.tensorDim)
-      scope.setOutput(output: output)
-    } catch let error {
-      throw error
+class FetchParam<P: PrecisionProtocol>: OpParam{
+    var output: FetchHolder
+    let input: Texture
+    let scope: Scope
+    required init(opDesc: PMOpDesc, inScope: Scope) throws {
+        scope = inScope
+        do {
+            input = try FetchParam.inputX(inputs: opDesc.inputs, from: inScope)
+            output = FetchHolder.init(inPaddedCapacity: input.elementCount(), inDim: input.tensorDim)
+            scope.setOutput(output: output)
+        } catch let error {
+            throw error
+        }
     }
-  }
-  
-  //typealias ParamPrecisionType = P
+    
+    //typealias ParamPrecisionType = P
 }
 
-class FetchOp<P: PrecisionType>: Operator< FetchKernel<P>, FetchParam<P>>, Runable, Creator, InferShaperable {
-  
-  typealias OpType = FetchOp<P>
-
-  func inferShape() {
-    print(para.input.dim)
-  }
-  
-  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-    do {
-      try kernel.compute(commandBuffer: buffer, param: para)
-    } catch let error {
-      throw error
+class FetchOp<P: PrecisionProtocol>: Operator< FetchKernel<P>, FetchParam<P>>, Runable, Creator, InferShaperable {
+    
+    typealias OpType = FetchOp<P>
+    
+    func inferShape() {
+        print(para.input.dim)
     }
-  }
-  
-  func delogOutput() {
-    print("fetch output: ")
-    let resArr = self.para.output.result.floatArr(count: self.para.output.capacity)
-    print(resArr.strideArray())
-  }
+    
+    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+        do {
+            try kernel.compute(commandBuffer: buffer, param: para)
+        } catch let error {
+            throw error
+        }
+    }
+    
+    func delogOutput() {
+        print("fetch output: ")
+        let resArr = self.para.output.result.floatArr(count: self.para.output.capacity)
+        print(resArr.strideArray())
+    }
 }
 

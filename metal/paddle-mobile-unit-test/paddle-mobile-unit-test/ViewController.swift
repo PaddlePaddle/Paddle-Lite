@@ -27,8 +27,8 @@ class ViewController: UIViewController {
             inQueue: queue
         )
         test.testConcat()
-//        test.testReshape()
-//        test.testTranspose()
+        //        test.testReshape()
+        //        test.testTranspose()
         print(" done ")
     }
 

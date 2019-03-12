@@ -38,10 +38,12 @@ using namespace std;     // NOLINT
 #define CMD_FP16_TO_FP32 1
 #define CMD_FP32_TO_FP16 2
 #define CMD_FP32_TO_FP32 3
+#define CMD_INT8_TO_FP16 4
 
 // bypass macro
 #define SIZE_FP16 2
 #define SIZE_FP32 4
+#define SIZE_INT8 1
 
 #define PE_IRQ_TIMEOUT 1000000
 
@@ -607,6 +609,16 @@ int PerformBypass(const struct BypassArgs &args) {
       }
     } break;
 
+    case DATA_TYPE_INT8: {
+      if (args.output_data_type != DATA_TYPE_FP16) {
+        DLOG << "error:Output Datetype error,not DATA_TYPE_FP16: "
+             << args.output_data_type;
+      }
+      data_cell_in = SIZE_INT8;
+      data_cell_out = SIZE_FP16;
+      cmd = CMD_INT8_TO_FP16;
+    } break;
+
     case DATA_TYPE_FP32: {
       switch (args.output_data_type) {
         case DATA_TYPE_FP16:
@@ -630,10 +642,13 @@ int PerformBypass(const struct BypassArgs &args) {
       break;
   }
   if (cmd != CMD_FP16_TO_FP16 && cmd != CMD_FP16_TO_FP32 &&
-      cmd != CMD_FP32_TO_FP16 && cmd != CMD_FP32_TO_FP32) {
+      cmd != CMD_FP32_TO_FP16 && cmd != CMD_FP32_TO_FP32 &&
+      cmd != CMD_INT8_TO_FP16) {
+    //   std::cout<< " err back Error1!" <<std::endl;
     return -EFAULT;
   }
-  if ((data_cell_in != SIZE_FP16 && data_cell_in != SIZE_FP32) ||
+  if ((data_cell_in != SIZE_FP16 && data_cell_in != SIZE_FP32 &&
+       data_cell_in != SIZE_INT8) ||
       (data_cell_out != SIZE_FP16 && data_cell_out != SIZE_FP32)) {
     return -EFAULT;
   }

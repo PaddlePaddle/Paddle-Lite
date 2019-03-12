@@ -48,7 +48,7 @@ public class Scope {
         }
         
     }
-
+    
     func clear(){
         vars.removeAll()
     }

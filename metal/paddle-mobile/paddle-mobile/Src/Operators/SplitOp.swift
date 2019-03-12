@@ -14,64 +14,64 @@
 
 import Foundation
 
-class SplitParam<P: PrecisionType>: OpParam {
-  //typealias ParamPrecisionType = P
-  required init(opDesc: PMOpDesc, inScope: Scope) throws {
-    do {
-      input = try SplitParam.inputX(inputs: opDesc.inputs, from: inScope)
-      output = Texture.init(device: input.metalTexture!.device, inDim: input.dim)
-      axis = try SplitParam.getAttr(key: "axis", attrs: opDesc.attrs)
-      sections = try SplitParam.getAttr(key: "sections", attrs: opDesc.attrs)
-      if axis < 0 {
-        axis = input.tensorDim.cout() + axis
-      }
-      guard let outlist = opDesc.outputs["Out"] else {
-        fatalError()
-      }
-      for out in outlist {
-        guard let variant = inScope[out], let v = variant as? Texture else {
-          fatalError()
+class SplitParam<P: PrecisionProtocol>: OpParam {
+    //typealias ParamPrecisionType = P
+    required init(opDesc: PMOpDesc, inScope: Scope) throws {
+        do {
+            input = try SplitParam.inputX(inputs: opDesc.inputs, from: inScope)
+            output = Texture.init(device: input.metalTexture!.device, inDim: input.dim)
+            axis = try SplitParam.getAttr(key: "axis", attrs: opDesc.attrs)
+            sections = try SplitParam.getAttr(key: "sections", attrs: opDesc.attrs)
+            if axis < 0 {
+                axis = input.tensorDim.cout() + axis
+            }
+            guard let outlist = opDesc.outputs["Out"] else {
+                fatalError()
+            }
+            for out in outlist {
+                guard let variant = inScope[out], let v = variant as? Texture else {
+                    fatalError()
+                }
+                outputList.append(v)
+                sections.append(Int32(v.tensorDim.dims[axis]))
+            }
+        } catch let error {
+            throw error
         }
-        outputList.append(v)
-        sections.append(Int32(v.tensorDim.dims[axis]))
-      }
-    } catch let error {
-      throw error
     }
-  }
-  
-  var axis: Int
-  let input: Texture
-  var output: Texture
-  var outputList: [Texture] = []
-  var sections: [Int32] = []
+    
+    var axis: Int
+    let input: Texture
+    var output: Texture
+    var outputList: [Texture] = []
+    var sections: [Int32] = []
 }
 
-class SplitOp<P: PrecisionType>: Operator<SplitKernel<P>, SplitParam<P>>, Runable, Creator, InferShaperable{
-  
-  typealias OpType = SplitOp<P>
-
-  func inferShape() {
-    //        para.output.dim = para.input.dim
-  }
-  
-  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-    do {
-      try kernel.compute(commandBuffer: buffer, param: para)
-    } catch let error {
-      throw error
+class SplitOp<P: PrecisionProtocol>: Operator<SplitKernel<P>, SplitParam<P>>, Runable, Creator, InferShaperable{
+    
+    typealias OpType = SplitOp<P>
+    
+    func inferShape() {
+        //        para.output.dim = para.input.dim
     }
-  }
-  
-  func delogOutput() {
-    print(" \(type) output: ")
-    let device = para.input.metalTexture!.device
-    for out in para.outputList {
-      let arr: [Float32] = device.texture2tensor(texture: out.metalTexture, dim: out.tensorDim.dims, transpose: out.transpose)
-      print(arr.strideArray())
+    
+    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+        do {
+            try kernel.compute(commandBuffer: buffer, param: para)
+        } catch let error {
+            throw error
+        }
     }
-  }
-  
+    
+    func delogOutput() {
+        print(" \(type) output: ")
+        let device = para.input.metalTexture!.device
+        for out in para.outputList {
+            let arr: [Float32] = device.texture2tensor(texture: out.metalTexture, dim: out.tensorDim.dims, transpose: out.transpose)
+            print(arr.strideArray())
+        }
+    }
+    
 }
 
 

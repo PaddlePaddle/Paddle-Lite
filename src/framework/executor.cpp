@@ -524,9 +524,22 @@ void Executor<Device, T>::FeedData(const std::vector<void *> &v) {
   PADDLE_MOBILE_ENFORCE(input_size == vars.size(),
                         "input data number not correct");
   for (int i = 0; i < input_size; i++) {
-    auto var = program_.scope->Var("feed", i);
+    auto var = vars[i];
     auto feed_tensor = var->template GetMutable<LoDTensor>();
     feed_tensor->external_data = v[i];
+  }
+}
+
+template <typename Device, typename T>
+void Executor<Device, T>::FeedTensorData(const vector<framework::Tensor> &v) {
+  auto input_size = v.size();
+  auto vars = program_.scope->VarContain("feed");
+  PADDLE_MOBILE_ENFORCE(input_size == vars.size(),
+                        "input data number not correct");
+  for (int i = 0; i < input_size; i++) {
+    auto var = vars[i];
+    auto feed_tensor = var->template GetMutable<LoDTensor>();
+    feed_tensor->ShareDataWith(v[i]);
   }
 }
 
@@ -537,11 +550,32 @@ void Executor<Device, T>::GetResults(std::vector<void *> *v) {
   auto vars = program_.scope->VarContain("fetch");
   PADDLE_MOBILE_ENFORCE(output_size == vars.size(),
                         "output data number not correct");
+
   for (int i = 0; i < output_size; i++) {
-    auto var = program_.scope->Var("fetch", i);
+    auto var = vars[i];
     auto fetch_tensor = var->template GetMutable<LoDTensor>();
     (*v)[i] = fetch_tensor->template data<float>();
   }
+}
+
+template <typename Device, typename T>
+void Executor<Device, T>::GetTensorResults(
+    std::vector<framework::Tensor *> *v) {
+  auto vars = program_.scope->VarContain("fetch");
+  auto output_size = vars.size();
+
+  for (int i = 0; i < output_size; i++) {
+    auto var = vars[i];
+    auto fetch_tensor = var->template GetMutable<LoDTensor>();
+    v->push_back(fetch_tensor);
+  }
+}
+
+template <typename Device, typename T>
+framework::Tensor *Executor<Device, T>::GetTensorByName(
+    const std::string &name) {
+  auto var = program_.scope->Var(name);
+  return var->template GetMutable<LoDTensor>();
 }
 
 template <typename Device, typename T>

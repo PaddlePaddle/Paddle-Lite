@@ -14,6 +14,7 @@ limitations under the License. */
 
 #pragma once
 
+#include <memory>
 #include <vector>
 #include "framework/operator.h"
 #include "operators/op_param.h"
@@ -27,12 +28,14 @@ class AnchorGeneratorParam : public OpParam {
  public:
   AnchorGeneratorParam(const VariableNameMap &inputs,
                        const VariableNameMap &outputs,
-                       const AttributeMap &attrs, const Scope &scope) {
-    input_ = OpParam::GetVarValue<framework::LoDTensor>("Input", inputs, scope);
+                       const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_ =
+        OpParam::GetVarValue<framework::LoDTensor>("Input", inputs, *scope);
     output_anchors_ =
-        OpParam::GetVarValue<framework::LoDTensor>("Anchors", outputs, scope);
-    output_variances_ =
-        OpParam::GetVarValue<framework::LoDTensor>("Variances", outputs, scope);
+        OpParam::GetVarValue<framework::LoDTensor>("Anchors", outputs, *scope);
+    output_variances_ = OpParam::GetVarValue<framework::LoDTensor>(
+        "Variances", outputs, *scope);
 
     anchor_sizes_ = OpParam::GetAttr<std::vector<float>>("anchor_sizes", attrs);
     aspect_ratios_ =
@@ -64,22 +67,23 @@ template <typename Dtype>
 class ProposalParam : public OpParam {
  public:
   ProposalParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-                const AttributeMap &attrs, const Scope &scope) {
+                const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
     scores_ =
-        OpParam::GetVarValue<framework::LoDTensor>("Scores", inputs, scope);
-    bbox_deltas_ =
-        OpParam::GetVarValue<framework::LoDTensor>("BboxDeltas", inputs, scope);
+        OpParam::GetVarValue<framework::LoDTensor>("Scores", inputs, *scope);
+    bbox_deltas_ = OpParam::GetVarValue<framework::LoDTensor>("BboxDeltas",
+                                                              inputs, *scope);
     im_info_ =
-        OpParam::GetVarValue<framework::LoDTensor>("ImInfo", inputs, scope);
+        OpParam::GetVarValue<framework::LoDTensor>("ImInfo", inputs, *scope);
     anchors_ =
-        OpParam::GetVarValue<framework::LoDTensor>("Anchors", inputs, scope);
+        OpParam::GetVarValue<framework::LoDTensor>("Anchors", inputs, *scope);
     variances_ =
-        OpParam::GetVarValue<framework::LoDTensor>("Variances", inputs, scope);
+        OpParam::GetVarValue<framework::LoDTensor>("Variances", inputs, *scope);
 
     rpn_rois_ =
-        OpParam::GetVarValue<framework::LoDTensor>("RpnRois", outputs, scope);
+        OpParam::GetVarValue<framework::LoDTensor>("RpnRois", outputs, *scope);
     rpn_probs_ = OpParam::GetVarValue<framework::LoDTensor>("RpnRoiProbs",
-                                                            outputs, scope);
+                                                            outputs, *scope);
 
     pre_nms_topn_ = OpParam::GetAttr<int>("pre_nms_topN", attrs);
     post_nms_topn_ = OpParam::GetAttr<int>("post_nms_topN", attrs);
@@ -94,6 +98,8 @@ class ProposalParam : public OpParam {
   framework::Tensor *im_info_;
   framework::Tensor *anchors_;
   framework::Tensor *variances_;
+
+  std::shared_ptr<Tensor> score_index_;
 
   framework::LoDTensor *rpn_rois_;
   framework::LoDTensor *rpn_probs_;
@@ -117,11 +123,13 @@ template <typename Dtype>
 class PSRoiPoolParam : public OpParam {
  public:
   PSRoiPoolParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-                 const AttributeMap &attrs, const Scope &scope) {
-    input_x_ = OpParam::GetVarValue<framework::LoDTensor>("X", inputs, scope);
+                 const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = OpParam::GetVarValue<framework::LoDTensor>("X", inputs, *scope);
     input_rois_ =
-        OpParam::GetVarValue<framework::LoDTensor>("ROIs", inputs, scope);
-    output_ = OpParam::GetVarValue<framework::LoDTensor>("Out", outputs, scope);
+        OpParam::GetVarValue<framework::LoDTensor>("ROIs", inputs, *scope);
+    output_ =
+        OpParam::GetVarValue<framework::LoDTensor>("Out", outputs, *scope);
 
     output_channels_ = OpParam::GetAttr<int>("output_channels", attrs);
     pooled_height_ = OpParam::GetAttr<int>("pooled_height", attrs);
@@ -146,17 +154,56 @@ class PSRoiPoolParam : public OpParam {
 DECLARE_KERNEL(PSRoiPool, PSRoiPoolParam);
 #endif
 
+#ifdef ROIALIGN_POOL_OP
+template <typename Dtype>
+class RoiAlignPoolParam : public OpParam {
+ public:
+  RoiAlignPoolParam(const VariableNameMap &inputs,
+                    const VariableNameMap &outputs, const AttributeMap &attrs,
+                    Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = OpParam::GetVarValue<framework::LoDTensor>("X", inputs, *scope);
+    input_rois_ =
+        OpParam::GetVarValue<framework::LoDTensor>("ROIs", inputs, *scope);
+    output_ =
+        OpParam::GetVarValue<framework::LoDTensor>("Out", outputs, *scope);
+
+    pooled_height_ = OpParam::GetAttr<int>("pooled_height", attrs);
+    pooled_width_ = OpParam::GetAttr<int>("pooled_width", attrs);
+    spatial_scale_ = OpParam::GetAttr<float>("spatial_scale", attrs);
+    sampling_ratio_ = OpParam::GetAttr<float>("sampling_ratio", attrs);
+  }
+
+ public:
+  framework::Tensor *input_x_;
+  framework::LoDTensor *input_rois_;
+  framework::Tensor *output_;
+  int pooled_height_;
+  int pooled_width_;
+  float spatial_scale_;
+  int sampling_ratio_;
+#ifdef PADDLE_MOBILE_FPGA
+  std::shared_ptr<Tensor> float_input, float_output;
+  fpga::BypassArgs input_arg, output_arg;
+#endif
+};
+
+DECLARE_KERNEL(RoiAlignPool, RoiAlignPoolParam);
+#endif
+
 #ifdef ROI_PERSPECTIVE_OP
 template <typename Dtype>
 class RoiPerspectiveParam : public OpParam {
  public:
   RoiPerspectiveParam(const VariableNameMap &inputs,
                       const VariableNameMap &outputs, const AttributeMap &attrs,
-                      const Scope &scope) {
-    input_x_ = OpParam::GetVarValue<framework::LoDTensor>("X", inputs, scope);
+                      Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_x_ = OpParam::GetVarValue<framework::LoDTensor>("X", inputs, *scope);
     input_rois_ =
-        OpParam::GetVarValue<framework::LoDTensor>("ROIs", inputs, scope);
-    output_ = OpParam::GetVarValue<framework::LoDTensor>("Out", outputs, scope);
+        OpParam::GetVarValue<framework::LoDTensor>("ROIs", inputs, *scope);
+    output_ =
+        OpParam::GetVarValue<framework::LoDTensor>("Out", outputs, *scope);
 
     spatial_scale_ = OpParam::GetAttr<float>("spatial_scale", attrs);
     transformed_height_ = OpParam::GetAttr<int>("transformed_height", attrs);

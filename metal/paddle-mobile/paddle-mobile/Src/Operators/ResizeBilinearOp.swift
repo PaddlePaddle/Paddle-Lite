@@ -14,51 +14,45 @@
 
 import Foundation
 
-class ResizeBilinearParam<P: PrecisionType>: OpParam {
-  typealias ParamPrecisionType = P
-  required init(opDesc: PMOpDesc, inScope: Scope) throws {
-    do {
-      input = try ResizeBilinearParam.inputX(inputs: opDesc.inputs, from: inScope)
-//      if (input.transpose != [0, 2, 3, 1]) || (input.tensorDim.cout() != 4) {
-//        fatalError()
-//      }
-      output = try ResizeBilinearParam.outputOut(outputs: opDesc.outputs, from: inScope)
-      out_h = try ResizeBilinearParam.getAttr(key: "out_h", attrs: opDesc.attrs)
-      out_w = try ResizeBilinearParam.getAttr(key: "out_w", attrs: opDesc.attrs)
-    } catch let error {
-      throw error
+class ResizeBilinearParam<P: PrecisionProtocol>: OpParam {
+    typealias ParamPrecisionType = P
+    required init(opDesc: PMOpDesc, inScope: Scope) throws {
+        do {
+            input = try ResizeBilinearParam.inputX(inputs: opDesc.inputs, from: inScope)
+            //      if (input.transpose != [0, 2, 3, 1]) || (input.tensorDim.cout() != 4) {
+            //        fatalError()
+            //      }
+            output = try ResizeBilinearParam.outputOut(outputs: opDesc.outputs, from: inScope)
+            out_h = try ResizeBilinearParam.getAttr(key: "out_h", attrs: opDesc.attrs)
+            out_w = try ResizeBilinearParam.getAttr(key: "out_w", attrs: opDesc.attrs)
+        } catch let error {
+            throw error
+        }
     }
-  }
-  let input: Texture
-  var output: Texture
-  let out_h: Int32
-  let out_w: Int32
+    let input: Texture
+    var output: Texture
+    let out_h: Int32
+    let out_w: Int32
 }
 
-class ResizeBilinearOp<P: PrecisionType>: Operator<ResizeBilinearKernel<P>, ResizeBilinearParam<P>>, Runable, Creator, InferShaperable{
-  
-  typealias OpType = ResizeBilinearOp<P>
-
-  func inferShape() {
-    //        para.output.dim = para.input.dim
-  }
-  
-  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-    do {
-      try kernel.compute(commandBuffer: buffer, param: para)
-    } catch let error {
-      throw error
+class ResizeBilinearOp<P: PrecisionProtocol>: Operator<ResizeBilinearKernel<P>, ResizeBilinearParam<P>>, Runable, Creator, InferShaperable{
+    
+    typealias OpType = ResizeBilinearOp<P>
+    
+    func inferShape() {
+        //        para.output.dim = para.input.dim
     }
-  }
-  
-  func delogOutput() {
-    print(" \(type) output: ")
-  }
-  
+    
+    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+        do {
+            try kernel.compute(commandBuffer: buffer, param: para)
+        } catch let error {
+            throw error
+        }
+    }
+    
+    func delogOutput() {
+        print(" \(type) output: ")
+    }
+    
 }
-
-
-
-
-
-

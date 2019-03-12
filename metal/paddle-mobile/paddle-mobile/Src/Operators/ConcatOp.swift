@@ -14,63 +14,63 @@
 
 import Foundation
 
-class ConcatParam<P: PrecisionType>: OpParam {
-  //typealias ParamPrecisionType = P
-  required init(opDesc: PMOpDesc, inScope: Scope) throws {
-    do {
-      guard let xlist = opDesc.inputs["X"] else {
-        fatalError()
-      }
-      for x in xlist {
-        guard let variant = inScope[x], let v = variant as? Texture else {
-          fatalError()
+class ConcatParam<P: PrecisionProtocol>: OpParam {
+    //typealias ParamPrecisionType = P
+    required init(opDesc: PMOpDesc, inScope: Scope) throws {
+        do {
+            guard let xlist = opDesc.inputs["X"] else {
+                fatalError()
+            }
+            for x in xlist {
+                guard let variant = inScope[x], let v = variant as? Texture else {
+                    fatalError()
+                }
+                if transpose.count == 0 {
+                    transpose = v.transpose
+                }
+                if v.transpose != transpose {
+                    fatalError()
+                }
+                
+                input.append(v)
+            }
+            axis = try ConcatParam.getAttr(key: "axis", attrs: opDesc.attrs)
+            output = try ConcatParam.outputOut(outputs: opDesc.outputs, from: inScope)
+        } catch let error {
+            throw error
         }
-        if transpose.count == 0 {
-          transpose = v.transpose
-        }
-        if v.transpose != transpose {
-          fatalError()
-        }
-       
-        input.append(v)
-      }
-      axis = try ConcatParam.getAttr(key: "axis", attrs: opDesc.attrs)
-      output = try ConcatParam.outputOut(outputs: opDesc.outputs, from: inScope)
-    } catch let error {
-      throw error
     }
-  }
-  var input: [Texture] = []
-  var output: Texture
-  var transpose: [Int] = []
-  let axis: Int
+    var input: [Texture] = []
+    var output: Texture
+    var transpose: [Int] = []
+    let axis: Int
 }
 
-class ConcatOp<P: PrecisionType>: Operator<ConcatKernel<P>, ConcatParam<P>>, Runable, Creator, InferShaperable{
-  
-  typealias OpType = ConcatOp<P>
-
-  func inferShape() {
-    //        let dim = para.input.reduce([0, 0]) {[$0[0] + $1.dim[0], $1.dim[1]]}
-    //        para.output.dim = Dim.init(inDim: dim)
-  }
-  
-  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-    do {
-      try kernel.compute(commandBuffer: buffer, param: para)
-    } catch let error {
-      throw error
-    }
-  }
-  
-  func delogOutput() {
-    print(" \(type) output: ")
+class ConcatOp<P: PrecisionProtocol>: Operator<ConcatKernel<P>, ConcatParam<P>>, Runable, Creator, InferShaperable{
     
-    let device = para.output.metalTexture!.device
-    let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
-    print(outputArray.strideArray())
-  }
-  
+    typealias OpType = ConcatOp<P>
+    
+    func inferShape() {
+        //        let dim = para.input.reduce([0, 0]) {[$0[0] + $1.dim[0], $1.dim[1]]}
+        //        para.output.dim = Dim.init(inDim: dim)
+    }
+    
+    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+        do {
+            try kernel.compute(commandBuffer: buffer, param: para)
+        } catch let error {
+            throw error
+        }
+    }
+    
+    func delogOutput() {
+        print(" \(type) output: ")
+        
+        let device = para.output.metalTexture!.device
+        let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
+        print(outputArray.strideArray())
+    }
+    
 }
 
 

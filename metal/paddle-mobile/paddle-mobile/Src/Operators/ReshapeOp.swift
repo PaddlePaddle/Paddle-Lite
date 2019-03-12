@@ -15,64 +15,64 @@
 import Foundation
 import Metal
 
-class ReshapeParam<P: PrecisionType>: OpParam {
-  //typealias ParamPrecisionType = P
-  required init(opDesc: PMOpDesc, inScope: Scope) throws {
-    do {
-      input = try ReshapeParam.inputX(inputs: opDesc.inputs, from: inScope)
-      output = try ReshapeParam.outputOut(outputs: opDesc.outputs, from: inScope)
-      shape = try ReshapeParam.getAttr(key: "shape", attrs: opDesc.attrs)
-        
-      var s: [Int] = shape.map { Int($0) }
-      
-      var di = -1
-      var ml = 1
-      for i in 0..<s.count {
-        if s[i] == -1 {
-          di = i
-          continue
+class ReshapeParam<P: PrecisionProtocol>: OpParam {
+    //typealias ParamPrecisionType = P
+    required init(opDesc: PMOpDesc, inScope: Scope) throws {
+        do {
+            input = try ReshapeParam.inputX(inputs: opDesc.inputs, from: inScope)
+            output = try ReshapeParam.outputOut(outputs: opDesc.outputs, from: inScope)
+            shape = try ReshapeParam.getAttr(key: "shape", attrs: opDesc.attrs)
+            
+            var s: [Int] = shape.map { Int($0) }
+            
+            var di = -1
+            var ml = 1
+            for i in 0..<s.count {
+                if s[i] == -1 {
+                    di = i
+                    continue
+                }
+                ml *= s[i]
+            }
+            if di >= 0 {
+                s[di] = input.dim.numel() / ml
+            }
+            output.tensorDim = Dim.init(inDim: s)
+            var dim: [Int] = [1, 1, 1, 1]
+            for i in 0..<s.count {
+                dim[4-s.count+i] = s[i]
+            }
+            output.padToFourDim = Dim.init(inDim: dim)
+            output.dim = output.padToFourDim
+        } catch let error {
+            throw error
         }
-        ml *= s[i]
-      }
-      if di >= 0 {
-        s[di] = input.dim.numel() / ml
-      }
-      output.tensorDim = Dim.init(inDim: s)
-      var dim: [Int] = [1, 1, 1, 1]
-      for i in 0..<s.count {
-        dim[4-s.count+i] = s[i]
-      }
-      output.padToFourDim = Dim.init(inDim: dim)
-      output.dim = output.padToFourDim
-    } catch let error {
-      throw error
     }
-  }
-  let input: Texture
-  let shape: [Int32]
-  var output: Texture
+    let input: Texture
+    let shape: [Int32]
+    var output: Texture
 }
 
-class ReshapeOp<P: PrecisionType>: Operator<ReshapeKernel<P>, ReshapeParam<P>>, Runable, Creator, InferShaperable{
-  
-  typealias OpType = ReshapeOp<P>
-
-  func inferShape() {
-    // para.output.dim = para.input.dim
-  }
-  
-  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-    do {
-      try kernel.compute(commandBuffer: buffer, param: para)
-    } catch let error {
-      throw error
+class ReshapeOp<P: PrecisionProtocol>: Operator<ReshapeKernel<P>, ReshapeParam<P>>, Runable, Creator, InferShaperable{
+    
+    typealias OpType = ReshapeOp<P>
+    
+    func inferShape() {
+        // para.output.dim = para.input.dim
     }
-  }
-  func delogOutput() {
-    print("reshape delog")
-    let device = para.output.metalTexture!.device
-    let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
-    print(outputArray.strideArray())
-//    print(outputArray)
-  }
+    
+    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+        do {
+            try kernel.compute(commandBuffer: buffer, param: para)
+        } catch let error {
+            throw error
+        }
+    }
+    func delogOutput() {
+        print("reshape delog")
+        let device = para.output.metalTexture!.device
+        let outputArray: [Float32] = device.texture2tensor(texture: para.output.metalTexture, dim: para.output.tensorDim.dims, transpose: para.output.transpose)
+        print(outputArray.strideArray())
+        //    print(outputArray)
+    }
 }

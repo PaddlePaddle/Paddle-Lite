@@ -14,68 +14,68 @@
 
 import Foundation
 
-class ConvParam<P: PrecisionType>: OpParam {
-  //typealias ParamPrecisionType = P
-  required init(opDesc: PMOpDesc, inScope: Scope) throws {
-    do {
-      filter = try ConvParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
-      input = try ConvParam.input(inputs: opDesc.inputs, from: inScope)
-      output = try ConvParam.output(outputs: opDesc.outputs, from: inScope)
-      stride = try ConvParam.getAttr(key: "strides", attrs: opDesc.attrs)
-      paddings = try ConvParam.getAttr(key: "paddings", attrs: opDesc.attrs)
-      dilations = try ConvParam.getAttr(key: "dilations", attrs: opDesc.attrs)
-      groups = try ConvParam.getAttr(key: "groups", attrs: opDesc.attrs)
-      
-    } catch let error {
-      throw error
+class ConvParam<P: PrecisionProtocol>: OpParam {
+    //typealias ParamPrecisionType = P
+    required init(opDesc: PMOpDesc, inScope: Scope) throws {
+        do {
+            filter = try ConvParam.inputFilter(paraInputs: opDesc.paraInputs, from: inScope)
+            input = try ConvParam.input(inputs: opDesc.inputs, from: inScope)
+            output = try ConvParam.output(outputs: opDesc.outputs, from: inScope)
+            stride = try ConvParam.getAttr(key: "strides", attrs: opDesc.attrs)
+            paddings = try ConvParam.getAttr(key: "paddings", attrs: opDesc.attrs)
+            dilations = try ConvParam.getAttr(key: "dilations", attrs: opDesc.attrs)
+            groups = try ConvParam.getAttr(key: "groups", attrs: opDesc.attrs)
+            
+        } catch let error {
+            throw error
+        }
     }
-  }
-  
-  let input: Texture
-  let filter: Tensor<P>
-  var output: Texture
-  let stride: [Int32]
-  let paddings: [Int32]
-  let dilations: [Int32]
-  let groups: Int
+    
+    let input: Texture
+    let filter: Tensor<P>
+    var output: Texture
+    let stride: [Int32]
+    let paddings: [Int32]
+    let dilations: [Int32]
+    let groups: Int
 }
 
-class ConvOp<P: PrecisionType>: Operator<ConvKernel<P>, ConvParam<P>>, Runable, Creator, InferShaperable {
-  typealias OpType = ConvOp<P>
-
-  func inferShape() {
-    let inDims = para.input.dim
-    let filterDim = para.filter.dim
-    let strides = para.stride
-    let paddings = para.paddings
-    let dilations = para.dilations
+class ConvOp<P: PrecisionProtocol>: Operator<ConvKernel<P>, ConvParam<P>>, Runable, Creator, InferShaperable {
+    typealias OpType = ConvOp<P>
     
-    var outDim = [inDims[0]]
-    for i in 0..<strides.count {
-      let dilation: Int = Int(dilations[i])
-      let filterSize: Int = filterDim[i + 1]
-      let inputSize: Int = inDims[i + 1]
-      let padding: Int = Int(paddings[i])
-      let stride: Int = Int(strides[i])
-      let dKernel = dilation * (filterSize - 1) + 1
-      let outputSize = (inputSize + 2 * padding - dKernel) / stride + 1
-      outDim.append(outputSize)
+    func inferShape() {
+        let inDims = para.input.dim
+        let filterDim = para.filter.dim
+        let strides = para.stride
+        let paddings = para.paddings
+        let dilations = para.dilations
+        
+        var outDim = [inDims[0]]
+        for i in 0..<strides.count {
+            let dilation: Int = Int(dilations[i])
+            let filterSize: Int = filterDim[i + 1]
+            let inputSize: Int = inDims[i + 1]
+            let padding: Int = Int(paddings[i])
+            let stride: Int = Int(strides[i])
+            let dKernel = dilation * (filterSize - 1) + 1
+            let outputSize = (inputSize + 2 * padding - dKernel) / stride + 1
+            outDim.append(outputSize)
+        }
+        outDim.append(filterDim[0])
+        para.output.dim = Dim.init(inDim: outDim)
     }
-    outDim.append(filterDim[0])
-    para.output.dim = Dim.init(inDim: outDim)
-  }
-  
-  func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
-    do {
-      try kernel.compute(commandBuffer: buffer, param: para)
-    } catch let error {
-      throw error
+    
+    func runImpl(device: MTLDevice, buffer: MTLCommandBuffer) throws {
+        do {
+            try kernel.compute(commandBuffer: buffer, param: para)
+        } catch let error {
+            throw error
+        }
     }
-  }
-  
-  func delogOutput() {
-    print("conv output : ")
-    print(para.output.toTensor().strideArray())
-    //        let _: Float16? = para.output.metalTexture.logDesc()
-  }
+    
+    func delogOutput() {
+        print("conv output : ")
+        print(para.output.toTensor().strideArray())
+        //        let _: Float16? = para.output.metalTexture.logDesc()
+    }
 }
