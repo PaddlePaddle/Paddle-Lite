@@ -17,6 +17,7 @@ limitations under the License. */
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
 
 #include <arm_neon.h>
+#include "operators/math/math.h"
 
 namespace paddle_mobile {
 namespace operators {
@@ -324,6 +325,199 @@ void sgemm_6x8(const float *lhs, const float *rhs, const int k, float *output,
         "q7", "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15");
 }
 #endif  // __aarch64__
+
+void sgemv_notrans_mx1(const int M, const int N, const float alpha,
+                       const float *A, const int lda, const float *B,
+                       const float beta, float *C) {
+  uint32_t mask[4] = {0, 1, 2, 3};
+  int remain_n = N & 0x3;
+  uint32x4_t vmask = vcltq_u32(vld1q_u32(mask), vdupq_n_u32(remain_n));
+  float32x4_t _sum0, _sum1, _sum2, _sum3;
+  float32x4_t _valpha = vdupq_n_f32(alpha);
+
+  #pragma omp parallel for
+  for (int m = 0; m < M - 3; m += 4) {
+    const float *in0 = A + m * lda;
+    const float *in1 = in0 + lda;
+    const float *in2 = in1 + lda;
+    const float *in3 = in2 + lda;
+    float *output = C + m;
+    _sum0 = vdupq_n_f32(0.f);
+    _sum1 = vdupq_n_f32(0.f);
+    _sum2 = vdupq_n_f32(0.f);
+    _sum3 = vdupq_n_f32(0.f);
+
+    int n = 0;
+    for (; n < N - 3; n += 4) {
+      float32x4_t _r0 = vld1q_f32(in0 + n);
+      float32x4_t _r1 = vld1q_f32(in1 + n);
+      float32x4_t _r2 = vld1q_f32(in2 + n);
+      float32x4_t _r3 = vld1q_f32(in3 + n);
+      float32x4_t _b = vld1q_f32(B + n);
+      _sum0 = vmlaq_f32(_sum0, _r0, _b);
+      _sum1 = vmlaq_f32(_sum1, _r1, _b);
+      _sum2 = vmlaq_f32(_sum2, _r2, _b);
+      _sum3 = vmlaq_f32(_sum3, _r3, _b);
+    }
+    if (n < N) {
+      float32x4_t _r0 = vld1q_f32(in0 + n);
+      float32x4_t _r1 = vld1q_f32(in1 + n);
+      float32x4_t _r2 = vld1q_f32(in2 + n);
+      float32x4_t _r3 = vld1q_f32(in3 + n);
+      float32x4_t _b = vld1q_f32(B + n);
+      _r0 = vandq_f32_u32(_r0, vmask);
+      _r1 = vandq_f32_u32(_r1, vmask);
+      _r2 = vandq_f32_u32(_r2, vmask);
+      _r3 = vandq_f32_u32(_r3, vmask);
+      _b = vandq_f32_u32(_b, vmask);
+      _sum0 = vmlaq_f32(_sum0, _r0, _b);
+      _sum1 = vmlaq_f32(_sum1, _r1, _b);
+      _sum2 = vmlaq_f32(_sum2, _r2, _b);
+      _sum3 = vmlaq_f32(_sum3, _r3, _b);
+    }
+    _sum0 = vpaddq_f32(_sum0, _sum1);
+    _sum2 = vpaddq_f32(_sum2, _sum3);
+    _sum0 = vpaddq_f32(_sum0, _sum2);
+    _sum0 = vmulq_f32(_sum0, _valpha);
+    if (beta != 0.f) {
+      _sum2 = vmulq_n_f32(vld1q_f32(output), beta);
+      _sum0 = vaddq_f32(_sum0, _sum2);
+    }
+    // restore
+    vst1q_f32(output, _sum0);
+  }
+  // remain m
+  for (int m = (M & 0xfffc); m < M; ++m) {
+    const float *in0 = A + m * lda;
+    float *output = C + m;
+    _sum0 = vdupq_n_f32(0.f);
+
+    int n = 0;
+    for (; n < N - 3; n += 4) {
+      float32x4_t _r0 = vld1q_f32(in0 + n);
+      float32x4_t _b = vld1q_f32(B + n);
+      _sum0 = vmlaq_f32(_sum0, _r0, _b);
+    }
+    if (n < N) {
+      float32x4_t _r0 = vld1q_f32(in0 + n);
+      float32x4_t _b = vld1q_f32(B + n);
+      _r0 = vandq_f32_u32(_r0, vmask);
+      _b = vandq_f32_u32(_b, vmask);
+      _sum0 = vmlaq_f32(_sum0, _r0, _b);
+    }
+    _sum0 = vpaddq_f32(_sum0, _sum0);
+    _sum0 = vmulq_f32(_sum0, _valpha);
+    if (beta != 0.f) {
+      _sum2 = vmulq_n_f32(vld1q_f32(output), beta);
+      _sum0 = vpaddq_f32(_sum0, _sum2);
+    }
+    // restore
+    *output = vgetq_lane_f32(_sum0, 0) + vgetq_lane_f32(_sum0, 1);
+  }
+}
+
+void sgemv_trans_mx1(const int M, const int N, const float alpha,
+                     const float *A, const int lda, const float *B,
+                     const float beta, float *C) {
+  float32x4_t _valpha = vdupq_n_f32(alpha);
+  if (beta == 0.f) {
+    float32x4_t vzero = vdupq_n_f32(0.f);
+    for (int m = 0; m < M - 3; m += 4) {
+      vst1q_f32(C + m, vzero);
+    }
+    for (int m = (M & 0xfffc); m < M; ++m) {
+      C[m] = 0.f;
+    }
+  } else {
+    float32x4_t vbeta = vdupq_n_f32(beta);
+    for (int m = 0; m < M - 3; m += 4) {
+      float32x4_t _vc = vld1q_f32(C + m);
+      _vc = vmulq_f32(_vc, vbeta);
+      vst1q_f32(C + m, _vc);
+    }
+    for (int m = (M & 0xfffc); m < M; ++m) {
+      C[m] *= beta;
+    }
+  }
+
+  #pragma omp parallel for
+  for (int n = 0; n < N - 3; n += 4) {
+    const float *in0 = A + n * lda;
+    const float *in1 = in0 + lda;
+    const float *in2 = in1 + lda;
+    const float *in3 = in2 + lda;
+    float32x4_t _b = vld1q_f32(B + n);
+    float32x4_t _sum0;
+    int m = 0;
+    for (; m < M - 3; m += 4) {
+      float32x4_t _r0 = vld1q_f32(in0 + m);
+      float32x4_t _r1 = vld1q_f32(in1 + m);
+      float32x4_t _r2 = vld1q_f32(in2 + m);
+      float32x4_t _r3 = vld1q_f32(in3 + m);
+      float32x4_t _vc = vld1q_f32(C + m);
+
+      _sum0 = vmulq_lane_f32(_r0, vget_low_f32(_b), 0);
+      _sum0 = vmlaq_lane_f32(_sum0, _r1, vget_low_f32(_b), 1);
+      _sum0 = vmlaq_lane_f32(_sum0, _r2, vget_high_f32(_b), 0);
+      _sum0 = vmlaq_lane_f32(_sum0, _r3, vget_high_f32(_b), 1);
+      _sum0 = vmulq_f32(_sum0, _valpha);
+      _sum0 = vaddq_f32(_sum0, _vc);
+      vst1q_f32(C + m, _sum0);
+    }
+    if (m < M) {
+      float32x4_t _r0 = vld1q_f32(in0 + m);
+      float32x4_t _r1 = vld1q_f32(in1 + m);
+      float32x4_t _r2 = vld1q_f32(in2 + m);
+      float32x4_t _r3 = vld1q_f32(in3 + m);
+      float32x4_t _vc = vld1q_f32(C + m);
+
+      _sum0 = vmulq_lane_f32(_r0, vget_low_f32(_b), 0);
+      _sum0 = vmlaq_lane_f32(_sum0, _r1, vget_low_f32(_b), 1);
+      _sum0 = vmlaq_lane_f32(_sum0, _r2, vget_high_f32(_b), 0);
+      _sum0 = vmlaq_lane_f32(_sum0, _r3, vget_high_f32(_b), 1);
+      _sum0 = vmulq_f32(_sum0, _valpha);
+      _sum0 = vaddq_f32(_sum0, _vc);
+      switch (M - m) {
+        case 3:
+          vst1q_lane_f32(C + m + 2, _sum0, 2);
+        case 2:
+          vst1_f32(C + m, vget_low_f32(_sum0));
+          break;
+        case 1:
+          vst1q_lane_f32(C + m, _sum0, 0);
+          break;
+      }
+    }
+  }
+  // remain n
+  for (int n = (N & 0xfffc); n < N; ++n) {
+    const float *in0 = A + n * lda;
+    float32x4_t _b = vld1q_dup_f32(B + n);
+    float32x4_t _sum0;
+    int m = 0;
+    for (; m < M - 3; m += 4) {
+      float32x4_t _r0 = vld1q_f32(in0 + m);
+      _sum0 = vld1q_f32(C + m);
+      _r0 = vmulq_f32(_r0, _b);
+      _r0 = vmulq_f32(_valpha, _r0);
+      _sum0 = vaddq_f32(_sum0, _r0);
+      vst1q_f32(C + m, _sum0);
+    }
+    for (; m < M; ++m) {
+      C[m] += alpha * (in0[m] * B[n]);
+    }
+  }
+}
+
+void sgemv_mx1(const bool trans, const int M, const int N, const float alpha,
+               const float *A, const int lda, const float *B, const float beta,
+               float *C) {
+  if (trans) {
+    sgemv_trans_mx1(M, N, alpha, A, lda, B, beta, C);
+  } else {
+    sgemv_notrans_mx1(M, N, alpha, A, lda, B, beta, C);
+  }
+}
 
 }  // namespace math
 }  // namespace operators

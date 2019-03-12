@@ -65,14 +65,12 @@ void DWConvBNReluKernel<CPU, float>::Compute(
     case ConvParam<CPU>::EXEC_DEPTHWISE3x3S2_FLOAT:
       DepthwiseConv3x3<float, float>(param);
       break;
-#ifndef __aarch64__
     case ConvParam<CPU>::EXEC_DEPTHWISE5x5_FLOAT:
       DepthwiseConv5x5<float, float>(param);
       break;
     case ConvParam<CPU>::EXEC_WINOGRAD3X3_FLOAT:
       WinogradConv3x3<8, 3>(param);
       break;
-#endif  // __aarch64__
     case ConvParam<CPU>::EXEC_GEMM_FLOAT:
       GemmConv<float, float>(param);
       break;
