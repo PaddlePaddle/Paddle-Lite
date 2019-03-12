@@ -15,7 +15,6 @@ limitations under the License. */
 #pragma once
 
 #include <map>
-#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -81,7 +80,6 @@ class OperatorBase {
   }
 #ifdef PADDLE_MOBILE_FPGA
   void InsertTensors();
-  void ChangeNameMap(string key, std::vector<string> value);
 #endif
 
  protected:
@@ -98,35 +96,15 @@ class OperatorBase {
 template <typename Dtype, typename ParamType, typename KernelType>
 class OperatorWithKernel : public OperatorBase<Dtype> {
  public:
-#ifndef PADDLE_MOBILE_FPGA1
   OperatorWithKernel(const std::string &type, const VariableNameMap &inputs,
                      const VariableNameMap &outputs, const AttributeMap &attrs,
                      framework::Scope *scope)
       : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope),
-        param_(inputs, outputs, attrs, scope.get()) {
+        param_(inputs, outputs, attrs, scope) {
 #ifdef PADDLE_MOBILE_CL
     kernel_.InitCLHelper(scope->GetCLScpoe());
 #endif
   }
-#else
-  OperatorWithKernel(const std::string &type, const VariableNameMap inputs,
-                     const VariableNameMap &outputs, const AttributeMap &attrs,
-                     std::shared_ptr<Scope> scope)
-      : OperatorBase<Dtype>(type, inputs, outputs, attrs, scope) {
-    static int feed_num = 0;
-    static int fetch_num = 0;
-    if (type == "feed") {
-      auto new_name = string("feed") + std::to_string(feed_num++);
-      auto var = scope->Var(new_name);
-      (const_cast<VariableNameMap &>(inputs)).at("X") = {string(new_name)};
-    } else if (type == "fetch") {
-      auto new_name = string("fetch") + std::to_string(fetch_num++);
-      auto var = scope->Var(new_name);
-      (const_cast<VariableNameMap &>(outputs)).at("Out") = {string(new_name)};
-    }
-    param_ = ParamType(inputs, outputs, attrs, *scope);
-  }
-#endif
   virtual void RunImpl() { this->kernel_.Compute(this->param_); }
 
   virtual void InferShape() const = 0;

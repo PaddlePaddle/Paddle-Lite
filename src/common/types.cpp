@@ -116,8 +116,6 @@ const char *G_OP_TYPE_FUSION_DECONV_ADD_BN_RELU = "fusion_deconv_add_bn_relu";
 const char *G_OP_TYPE_FUSION_DECONV_ADD_BN = "fusion_deconv_add_bn";
 const char *G_OP_TYPE_FUSION_DECONV_BN_RELU = "fusion_deconv_bn_relu";
 
-const char *G_OP_TYPE_PAD2D = "pad2d";
-
 std::unordered_map<
     std::string, std::pair<std::vector<std::string>, std::vector<std::string>>>
     op_input_output_key = {

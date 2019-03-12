@@ -26,13 +26,10 @@ class WhileParam : public OpParam {
  public:
   WhileParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
              const AttributeMap &attrs, Scope *scope)
-      : inputs_(inputs),
-        outputs_(outputs),
-        scope_(*scope),
-        OpParam(inputs, outputs, attrs, scope) {
+      : scope_(scope), OpParam(inputs, outputs, attrs, scope) {
     cond_ =
         OpParam::GetVarValue<framework::LoDTensor>("Condition", inputs, *scope);
-    sub_block_ = OpParam::GetAttr<int>("sub_block", attrs);
+    sub_block_ = OpParam::GetAttr<framework::BlockDesc *>("sub_block", attrs);
   }
 
  public:

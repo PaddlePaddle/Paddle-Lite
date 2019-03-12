@@ -1222,12 +1222,12 @@ class FeedParam : public OpParam {
 
  public:
   FeedParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-            const AttributeMap &attrs, const Scope &scope)
+            const AttributeMap &attrs, Scope *scope)
       : OpParam(inputs, outputs, attrs, scope) {
-    input_x_ = InputXFrom<framework::LoDTensorArray>(inputs, scope);
-    out_ = OutFrom<GType>(outputs, scope);
+    input_x_ = InputXFrom<framework::LoDTensorArray>(inputs, *scope);
+    out_ = OutFrom<GType>(outputs, *scope);
     col_ = GetAttr<int>("col", attrs);
-    auto var = scope.FindVar("batch_size");
+    auto var = scope->FindVar("batch_size");
     batch_size = var->GetValue<int>();
   }
   const framework::LoDTensorArray *InputX() const { return input_x_; }
@@ -1249,10 +1249,10 @@ class FetchParam : public OpParam {
 
  public:
   FetchParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-             const AttributeMap &attrs, const Scope &scope)
+             const AttributeMap &attrs, Scope *scope)
       : OpParam(inputs, outputs, attrs, scope) {
-    input_x_ = InputXFrom<framework::LoDTensor>(inputs, scope);
-    out_ = OutFrom<framework::LoDTensorArray>(outputs, scope);
+    input_x_ = InputXFrom<framework::LoDTensor>(inputs, *scope);
+    out_ = OutFrom<framework::LoDTensorArray>(outputs, *scope);
     col_ = GetAttr<int>("col", attrs);
   }
 
@@ -1821,7 +1821,7 @@ class FusionConvAddParam : public ConvParam<Dtype> {
       : ConvParam<Dtype>(inputs, outputs, attrs, scope) {
     bias_ = OpParam::InputYFrom<GType>(inputs, *scope);
     axis_ = OpParam::GetAttr<int>("axis", attrs);
-    this->output_ = OpParam::OutFrom<GType>(outputs, scope);
+    this->output_ = OpParam::OutFrom<GType>(outputs, *scope);
   }
   GType *Bias() const { return bias_; }
 
@@ -1862,7 +1862,7 @@ class FusionConvAddPReluParam : public ConvParam<Dtype> {
     framework::DDim dims = alpha_->dims();
     bias_ = OpParam::InputYFrom<GType>(inputs, *scope);
     axis_ = OpParam::GetAttr<int>("axis", attrs);
-    this->output_ = OpParam::OutFrom<GType>(outputs, scope);
+    this->output_ = OpParam::OutFrom<GType>(outputs, *scope);
   }
   const GType *InputAlpha() const { return alpha_; }
   const std::string &Mode() const { return mode_; }
@@ -1892,7 +1892,7 @@ class FusionConvAddAddPReluParam : public ConvParam<Dtype> {
     alpha_ = OpParam::InputAlphaFrom<GType>(inputs, *scope);
     mode_ = OpParam::GetStringAttr("mode", attrs);
     framework::DDim dims = alpha_->dims();
-    bias_ = OpParam::InputYFrom<GType>(inputs, scope);
+    bias_ = OpParam::InputYFrom<GType>(inputs, *scope);
     axis_ = OpParam::GetAttr<int>("axis", attrs);
     keyOutput_ = OpParam::Getkey("addOut", inputs, 0);
     keyX1_ = OpParam::Getkey("addX", inputs, 1);
@@ -1902,7 +1902,7 @@ class FusionConvAddAddPReluParam : public ConvParam<Dtype> {
     } else if (keyY1_ == keyOutput_) {
       bias1_ = OpParam::InputXFrom1<GType>(inputs, *scope);
     }
-    this->output_ = OpParam::OutFrom<GType>(outputs, scope);
+    this->output_ = OpParam::OutFrom<GType>(outputs, *scope);
   }
   const GType *InputAlpha() const { return alpha_; }
   const std::string &Mode() const { return mode_; }
@@ -1937,13 +1937,13 @@ class FusionConvAddBNReluParam : public ConvParam<Dtype> {
       : ConvParam<Dtype>(inputs, outputs, attrs, scope) {
     bias_ = OpParam::InputYFrom<GType>(inputs, *scope);
     axis_ = OpParam::GetAttr<int>("axis", attrs);
-    input_bias_ = OpParam::InputBiasFrom<GType>(inputs, scope);
-    input_mean_ = OpParam::InputMeanFrom<GType>(inputs, scope);
-    input_scale_ = OpParam::InputScaleFrom<GType>(inputs, scope);
-    input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, scope);
+    input_bias_ = OpParam::InputBiasFrom<GType>(inputs, *scope);
+    input_mean_ = OpParam::InputMeanFrom<GType>(inputs, *scope);
+    input_scale_ = OpParam::InputScaleFrom<GType>(inputs, *scope);
+    input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, *scope);
     epsilon_ = OpParam::GetAttr<float>("epsilon", attrs);
     momentum_ = OpParam::GetAttr<float>("momentum", attrs);
-    this->output_ = OpParam::OutFrom<GType>(outputs, scope);
+    this->output_ = OpParam::OutFrom<GType>(outputs, *scope);
   }
   GType *Bias() const { return bias_; }
 
@@ -1996,10 +1996,10 @@ class FusionConvBNAddReluParam : public ConvParam<Dtype> {
       : ConvParam<Dtype>(inputs, outputs, attrs, scope) {
     bias_ = OpParam::InputYFrom<GType>(inputs, *scope);
     axis_ = OpParam::GetAttr<int>("axis", attrs);
-    input_bias_ = OpParam::InputBiasFrom<GType>(inputs, scope);
-    input_mean_ = OpParam::InputMeanFrom<GType>(inputs, scope);
-    input_scale_ = OpParam::InputScaleFrom<GType>(inputs, scope);
-    input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, scope);
+    input_bias_ = OpParam::InputBiasFrom<GType>(inputs, *scope);
+    input_mean_ = OpParam::InputMeanFrom<GType>(inputs, *scope);
+    input_scale_ = OpParam::InputScaleFrom<GType>(inputs, *scope);
+    input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, *scope);
     epsilon_ = OpParam::GetAttr<float>("epsilon", attrs);
     momentum_ = OpParam::GetAttr<float>("momentum", attrs);
     keyBNY_ = OpParam::Getkey("BNY", inputs, 0);
@@ -2010,7 +2010,7 @@ class FusionConvBNAddReluParam : public ConvParam<Dtype> {
     } else if (keyY_ == keyBNY_) {
       bias_ = OpParam::InputXFrom<GType>(inputs, *scope);
     }
-    this->output_ = OpParam::OutFrom<GType>(outputs, scope);
+    this->output_ = OpParam::OutFrom<GType>(outputs, *scope);
   }
   GType *Bias() const { return bias_; }
 
@@ -2064,13 +2064,13 @@ class FusionConvBNParam : public ConvParam<Dtype> {
                     const VariableNameMap &outputs, const AttributeMap &attrs,
                     Scope *scope)
       : ConvParam<Dtype>(inputs, outputs, attrs, scope) {
-    input_bias_ = OpParam::InputBiasFrom<GType>(inputs, scope);
-    input_mean_ = OpParam::InputMeanFrom<GType>(inputs, scope);
-    input_scale_ = OpParam::InputScaleFrom<GType>(inputs, scope);
-    input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, scope);
+    input_bias_ = OpParam::InputBiasFrom<GType>(inputs, *scope);
+    input_mean_ = OpParam::InputMeanFrom<GType>(inputs, *scope);
+    input_scale_ = OpParam::InputScaleFrom<GType>(inputs, *scope);
+    input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, *scope);
     epsilon_ = OpParam::GetAttr<float>("epsilon", attrs);
     momentum_ = OpParam::GetAttr<float>("momentum", attrs);
-    this->output_ = OpParam::OutputYFrom<GType>(outputs, scope);
+    this->output_ = OpParam::OutputYFrom<GType>(outputs, *scope);
   }
 
   const GType *InputBias() const { return input_bias_; }
@@ -2118,13 +2118,13 @@ class FusionConvAddBNParam : public ConvParam<Dtype> {
       : ConvParam<Dtype>(inputs, outputs, attrs, scope) {
     bias_ = OpParam::InputYFrom<GType>(inputs, *scope);
     axis_ = OpParam::GetAttr<int>("axis", attrs);
-    input_bias_ = OpParam::InputBiasFrom<GType>(inputs, scope);
-    input_mean_ = OpParam::InputMeanFrom<GType>(inputs, scope);
-    input_scale_ = OpParam::InputScaleFrom<GType>(inputs, scope);
-    input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, scope);
+    input_bias_ = OpParam::InputBiasFrom<GType>(inputs, *scope);
+    input_mean_ = OpParam::InputMeanFrom<GType>(inputs, *scope);
+    input_scale_ = OpParam::InputScaleFrom<GType>(inputs, *scope);
+    input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, *scope);
     epsilon_ = OpParam::GetAttr<float>("epsilon", attrs);
     momentum_ = OpParam::GetAttr<float>("momentum", attrs);
-    this->output_ = OpParam::OutputYFrom<GType>(outputs, scope);
+    this->output_ = OpParam::OutputYFrom<GType>(outputs, *scope);
   }
   GType *Bias() const { return bias_; }
 
@@ -2175,13 +2175,13 @@ class FusionDWConvBNReluParam : public ConvParam<Dtype> {
                           const VariableNameMap &outputs,
                           const AttributeMap &attrs, Scope *scope)
       : ConvParam<Dtype>(inputs, outputs, attrs, scope) {
-    input_bias_ = OpParam::InputBiasFrom<GType>(inputs, scope);
-    input_mean_ = OpParam::InputMeanFrom<GType>(inputs, scope);
-    input_scale_ = OpParam::InputScaleFrom<GType>(inputs, scope);
-    input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, scope);
+    input_bias_ = OpParam::InputBiasFrom<GType>(inputs, *scope);
+    input_mean_ = OpParam::InputMeanFrom<GType>(inputs, *scope);
+    input_scale_ = OpParam::InputScaleFrom<GType>(inputs, *scope);
+    input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, *scope);
     epsilon_ = OpParam::GetAttr<float>("epsilon", attrs);
     momentum_ = OpParam::GetAttr<float>("momentum", attrs);
-    this->output_ = OpParam::OutFrom<GType>(outputs, scope);
+    this->output_ = OpParam::OutFrom<GType>(outputs, *scope);
   }
 
   const GType *InputBias() const { return input_bias_; }
@@ -2228,13 +2228,13 @@ class FusionConvBNReluParam : public ConvParam<Dtype> {
                         const VariableNameMap &outputs,
                         const AttributeMap &attrs, Scope *scope)
       : ConvParam<Dtype>(inputs, outputs, attrs, scope) {
-    input_bias_ = OpParam::InputBiasFrom<GType>(inputs, scope);
-    input_mean_ = OpParam::InputMeanFrom<GType>(inputs, scope);
-    input_scale_ = OpParam::InputScaleFrom<GType>(inputs, scope);
-    input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, scope);
+    input_bias_ = OpParam::InputBiasFrom<GType>(inputs, *scope);
+    input_mean_ = OpParam::InputMeanFrom<GType>(inputs, *scope);
+    input_scale_ = OpParam::InputScaleFrom<GType>(inputs, *scope);
+    input_variance_ = OpParam::InputVarianceFrom<GType>(inputs, *scope);
     epsilon_ = OpParam::GetAttr<float>("epsilon", attrs);
     momentum_ = OpParam::GetAttr<float>("momentum", attrs);
-    this->output_ = OpParam::OutFrom<GType>(outputs, scope);
+    this->output_ = OpParam::OutFrom<GType>(outputs, *scope);
   }
 
   const GType *InputBias() const { return input_bias_; }
@@ -3285,10 +3285,10 @@ class IncrementParam : public OpParam {
 
  public:
   IncrementParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-                 const AttributeMap &attrs, const Scope &scope)
+                 const AttributeMap &attrs, Scope *scope)
       : OpParam(inputs, outputs, attrs, scope) {
-    input_x_ = InputXFrom<GType>(inputs, scope);
-    output_ = OutFrom<GType>(outputs, scope);
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    output_ = OutFrom<GType>(outputs, *scope);
     step_ = OpParam::GetAttr<float>("step", attrs);
   }
 

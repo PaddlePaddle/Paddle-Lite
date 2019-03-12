@@ -29,16 +29,18 @@ template <typename Dtype>
 class BeamSearchParam : public OpParam {
  public:
   BeamSearchParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-                  const AttributeMap &attrs, const Scope &scope) {
-    pre_ids_ = GET_VAR_AS_LOD_TENSOR("pre_ids", inputs, scope);
-    pre_scores_ = GET_VAR_AS_LOD_TENSOR("pre_scores", inputs, scope);
-    ids_ = GET_VAR_AS_LOD_TENSOR("ids", inputs, scope);
-    scores_ = GET_VAR_AS_LOD_TENSOR("scores", inputs, scope);
+                  const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    pre_ids_ = GET_VAR_AS_LOD_TENSOR("pre_ids", inputs, *scope);
+    pre_scores_ = GET_VAR_AS_LOD_TENSOR("pre_scores", inputs, *scope);
+    ids_ = GET_VAR_AS_LOD_TENSOR("ids", inputs, *scope);
+    scores_ = GET_VAR_AS_LOD_TENSOR("scores", inputs, *scope);
 
-    selected_ids_ = GET_VAR_AS_LOD_TENSOR("selected_ids", outputs, scope);
-    selected_scores_ = GET_VAR_AS_LOD_TENSOR("selected_scores", outputs, scope);
+    selected_ids_ = GET_VAR_AS_LOD_TENSOR("selected_ids", outputs, *scope);
+    selected_scores_ =
+        GET_VAR_AS_LOD_TENSOR("selected_scores", outputs, *scope);
     if (outputs.count("parent_idx")) {
-      parent_idx_ = GET_VAR_AS_LOD_TENSOR("parent_idx", outputs, scope);
+      parent_idx_ = GET_VAR_AS_LOD_TENSOR("parent_idx", outputs, *scope);
     } else {
       parent_idx_ = new framework::Tensor();
     }
