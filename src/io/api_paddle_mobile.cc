@@ -172,18 +172,6 @@ void PaddleMobilePredictor<Device, T>::GetPaddleTensor(const std::string &name,
 };
 
 template <typename Device, typename T>
-void PaddleMobilePredictor<Device, T>::FeedData(
-    const std::vector<void *> &inputs) {
-  paddle_mobile_->FeedData(inputs);
-}
-
-template <typename Device, typename T>
-void PaddleMobilePredictor<Device, T>::GetResults(
-    std::vector<void *> *outputs) {
-  paddle_mobile_->GetResults(outputs);
-}
-
-template <typename Device, typename T>
 void PaddleMobilePredictor<Device, T>::Predict_From_To(int start, int end) {
   paddle_mobile_->Predict_From_To(start, end);
 }
