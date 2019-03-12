@@ -100,16 +100,15 @@ class ViewController: UIViewController {
             
             
             if self.toPredictTexture == nil {
-                
-                //        runner.getTexture(inBuffer: buffer!) { [weak self] (texture) in
-                //          self?.toPredictTexture = texture
-                //        }
-                
                 let beforeDate = Date.init()
-                runner.getTexture(image: selectImage!.cgImage!) { [weak self] (texture) in
-                    let timeUse = Date.init().timeIntervalSince(beforeDate)
-                    print("get texture time use: \(timeUse)")
-                    self?.toPredictTexture = texture
+                if modelType == .mobilenet_combined || modelType == .yolo {
+                    self.toPredictTexture = try! MetalHelper.shared.textureLoader.newTexture(cgImage: selectImage!.cgImage!, options: nil)
+                } else {
+                    runner.getTexture(image: selectImage!.cgImage!) { [weak self] (texture) in
+                        let timeUse = Date.init().timeIntervalSince(beforeDate)
+                        print("get texture time use: \(timeUse)")
+                        self?.toPredictTexture = texture
+                    }
                 }
             }
         } else {
