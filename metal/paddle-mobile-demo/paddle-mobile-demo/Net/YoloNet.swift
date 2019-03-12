@@ -27,6 +27,8 @@ public class YoloNet: Net {
         metalLibPath = Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib")
         useMPS = true
         paramPrecision = .Float16
+        preprocessKernel = ScaleKernel.init(device: device, shape: Shape.init(inWidth: 416, inHeight: 416, inChannel: 3), metalLoadMode: .LoadMetalInCustomMetalLib, metalLibPath: Bundle.main.path(forResource: "paddle-mobile-metallib", ofType: "metallib"))
+        
     }
     
     override  public func resultStr(res: [ResultHolder]) -> String {
