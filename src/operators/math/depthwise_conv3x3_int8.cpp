@@ -69,9 +69,8 @@ inline void DepthwiseConv3x3NormalRow(const int8_t *input, const int8_t *filter,
   // border left
   DEPTHWISE_CONV_NORMAL_BORDER(0, valid_w_start)
   // middle
-  int remain_start = valid_w_start;
   int output_tiles = (valid_w_end - valid_w_start) / 6;
-  remain_start = valid_w_start + output_tiles * 6;
+  int remain_start = valid_w_start + output_tiles * 6;
   int32x4_t _sum0, _sum1;
   int16x8_t _y[3];
   for (int w = 0; w < output_tiles * 6; w += 6) {

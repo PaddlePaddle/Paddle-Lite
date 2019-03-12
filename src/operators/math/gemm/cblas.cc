@@ -27,12 +27,14 @@ void cblas_sgemm(const bool transA, const bool transB, const int M, const int N,
                  const int K, const float alpha, const float *A, const int lda,
                  const float *B, const int ldb, const float beta, float *C,
                  const int ldc) {
-  //  if (N == 1) {
-  //    return cblas_sgemv(transA, M, K, alpha, A, lda, B, beta, C);
-  //  }
-
-  GemmExecutor<SgemmStrategy> exec(transA, transB, M, N, K);
-  exec(alpha, A, lda, B, ldb, beta, C, ldc);
+  if (N == 1) {
+    return cblas_sgemv(transA, M, K, alpha, A, lda, B, beta, C);
+  } else if (M == 1) {
+    return cblas_sgemv(!transB, N, K, alpha, B, ldb, A, beta, C);
+  } else {
+    GemmExecutor<SgemmStrategy> exec(transA, transB, M, N, K);
+    exec(alpha, A, lda, B, ldb, beta, C, ldc);
+  }
 }
 
 void cblas_sgemv(const bool trans, const int M, const int N, const float alpha,

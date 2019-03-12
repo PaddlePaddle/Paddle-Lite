@@ -16,6 +16,7 @@ limitations under the License. */
 
 #include "operators/math/depthwise_conv5x5.h"
 #include <arm_neon.h>
+#include <iostream>
 
 namespace paddle_mobile {
 namespace operators {
@@ -48,7 +49,7 @@ inline void Depth5x5NormalRowLoadInput<2>(const float *input, float32x4_t *y) {
   y[4] = vextq_f32(y[0], y[0], 2);
 }
 
-#define DEPTHWISE_CONV_NORMAL_BORDER(start, end)                         \
+#define DEPTHWISE_CONV5X5_NORMAL_BORDER(start, end)                      \
   for (int w = start; w < end; ++w) {                                    \
     const int w_in_start = -padding_w + w * Stride_w;                    \
     const int w_in_end = w_in_start + 5;                                 \
@@ -77,10 +78,14 @@ inline void DepthwiseConv5x5NormalRow(const float *input, const float *filter,
   const int h_end = h_in_end < input_h ? h_in_end : input_h;
 
   int valid_w_start = (padding_w + Stride_w - 1) / Stride_w;
-  int valid_w_end = output_w - valid_w_start;
+  int valid_w_end = (input_w + padding_w - 5) / Stride_w + 1;
+  if (valid_w_end < valid_w_start) {
+    valid_w_end = valid_w_start;
+  }
   float *output_ptr = output + h_output * output_w;
+
   // border left
-  DEPTHWISE_CONV_NORMAL_BORDER(0, valid_w_start)
+  DEPTHWISE_CONV5X5_NORMAL_BORDER(0, valid_w_start)
   // middle
   int output_tiles = (valid_w_end - valid_w_start) >> 2;
   float32x4_t _sum, _x[5];
@@ -120,20 +125,18 @@ inline void DepthwiseConv5x5NormalRow(const float *input, const float *filter,
       _sum = vmlaq_lane_f32(_sum, _x[4], vget_high_f32(ker[index]), 1);
     }
     switch (remain) {
-      case 1:
-        vst1_lane_f32(output_ptr0, vget_low_f32(_sum), 0);
-        break;
+      case 3:
+        vst1q_lane_f32(output_ptr0 + 2, _sum, 2);
       case 2:
         vst1_f32(output_ptr0, vget_low_f32(_sum));
         break;
-      case 3:
-        vst1_f32(output_ptr0, vget_low_f32(_sum));
-        vst1_lane_f32(output_ptr0 + 2, vget_high_f32(_sum), 0);
+      case 1:
+        vst1q_lane_f32(output_ptr0, _sum, 0);
         break;
     }
   }
   // border right
-  DEPTHWISE_CONV_NORMAL_BORDER(valid_w_end, output_w)
+  DEPTHWISE_CONV5X5_NORMAL_BORDER(valid_w_end, output_w)
 }
 
 template <>
@@ -161,7 +164,7 @@ void DepthwiseConv5x5S1<float, float>(const framework::Tensor &input,
   const int valid_w = valid_w_end - valid_w_start;
 
   #pragma omp parallel for
-  for (int g = 0; g < input.dims()[1]; ++g) {
+  for (int g = 0; g < output->dims()[1]; ++g) {
     const float *input_ptr = input_data + g * image_size;
     const float *filter_ptr = filter_data + g * 25;
     float *output_ptr = out_data + g * out_image_size;
