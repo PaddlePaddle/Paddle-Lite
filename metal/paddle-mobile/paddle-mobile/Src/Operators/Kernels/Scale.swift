@@ -20,9 +20,9 @@ public class ScaleKernel: CusomKernel {
     public init(device: MTLDevice, shape: Shape, metalLoadMode: MetalLoadMode, metalLibPath: String?) {
         lanczos = MPSImageLanczosScale(device: device)        
         if GlobalConfig.shared.computePrecision == .Float32 {
-            super.init(device: device, inFunctionName: "scale", outputDim: shape, metalLoadModel: metalLoadMode, metalLibPath: metalLibPath)
+            super.init(device: device, inFunctionName: nil, outputDim: shape, metalLoadModel: metalLoadMode, metalLibPath: metalLibPath)
         } else if GlobalConfig.shared.computePrecision == .Float16 {
-            super.init(device: device, inFunctionName: "scale_half", outputDim: shape, metalLoadModel: metalLoadMode, metalLibPath: metalLibPath)
+            super.init(device: device, inFunctionName: nil, outputDim: shape, metalLoadModel: metalLoadMode, metalLibPath: metalLibPath)
         } else {
             fatalError(" unsupport ")
         }
