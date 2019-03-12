@@ -13,9 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "fpga/V1/image.h"
-#include <memory.h>
-#include <algorithm>
-#include "fpga/common/fpga_common.h"
 
 namespace paddle_mobile {
 namespace fpga {
@@ -56,37 +53,6 @@ void convert_to_chw(float **data_in, int channel, int height, int width,
     }
   }
   *data_in = data_tmp;
-}
-
-void align_element_conv(float **data_in, int height, int cw) {
-  int h = 0;
-  int align_cw = align_to_x(cw, IMAGE_ALIGNMENT);
-
-  float *data_tmp =
-      (float *)fpga_malloc(height * align_cw * sizeof(float));  // NOLINT
-
-  memset(data_tmp, 0, height * align_cw * sizeof(float));
-
-  for (h = 0; h < height; h++) {
-    memcpy((void *)(data_tmp + h * align_cw),  // NOLINT
-           (void *)(*data_in + h * cw),        // NOLINT
-           cw * sizeof(float));
-  }
-
-  *data_in = data_tmp;
-}
-
-void format_image(float **data_in, int channel, int height, int width) {
-  // convert_to_hwc(data_in, channel, height, width);
-  int cw = channel * width;
-  int align_cw = align_to_x(cw, IMAGE_ALIGNMENT);
-  if (align_cw != cw) {
-    float *hwc_temp = *data_in;
-    align_element_conv(data_in, height, channel * width);
-    fpga_free(hwc_temp);
-  }
-  fpga_flush(*data_in, align_to_x(channel * width, IMAGE_ALIGNMENT) * height *
-                           sizeof(float));
 }
 
 void concat_images(int16_t **images_in, float **scales_in, void *image_out,
