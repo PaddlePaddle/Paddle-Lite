@@ -29,9 +29,10 @@ template <typename Dtype>
 class OnehotParam : public OpParam {
  public:
   OnehotParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
-              const AttributeMap &attrs, const Scope &scope) {
-    input_ = GET_VAR_AS_LOD_TENSOR("X", inputs, scope);
-    output_ = GET_VAR_AS_LOD_TENSOR("Out", outputs, scope);
+              const AttributeMap &attrs, Scope *scope)
+      : OpParam(inputs, outputs, attrs, scope) {
+    input_ = GET_VAR_AS_LOD_TENSOR("X", inputs, *scope);
+    output_ = GET_VAR_AS_LOD_TENSOR("Out", outputs, *scope);
 
     depth_ = OpParam::GetAttr<int>("depth", attrs);
     dtype_ = OpParam::GetAttr<int>("dtype", attrs);

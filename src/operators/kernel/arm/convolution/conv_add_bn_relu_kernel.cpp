@@ -45,8 +45,8 @@ bool ConvAddBNReluKernel<CPU, float>::Init(
   }
   //  Tensor *new_scale = new Tensor();
   //  Tensor *new_bias = new Tensor();
-  Tensor *new_scale = param->CreateNewScale<Tensor>();
-  Tensor *new_bias = param->CreateNewBiase<Tensor>();
+  auto *new_scale = param->CreateNewScale<framework::LoDTensor>();
+  auto *new_bias = param->CreateNewBiase<framework::LoDTensor>();
 
   auto new_scale_ptr = new_scale->mutable_data<float>({C});
   auto new_bias_ptr = new_bias->mutable_data<float>({C});
