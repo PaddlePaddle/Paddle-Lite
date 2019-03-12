@@ -3,3 +3,4 @@
 //
 
 #import <paddle_mobile/paddle_mobile.h>
+#import "ImageTool.h"
