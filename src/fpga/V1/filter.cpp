@@ -316,7 +316,7 @@ void align_element_n(int16_t **data_in, int num, int height, int width) {
     }
 
     *data_in = data_tmp;
-    free(tmp);
+    fpga_free(tmp);
   }
 }
 void quantize_to_fp16(float **data_in, int num, int height, int width,
