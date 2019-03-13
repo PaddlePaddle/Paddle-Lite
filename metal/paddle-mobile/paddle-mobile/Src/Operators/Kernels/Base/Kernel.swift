@@ -38,11 +38,21 @@ protocol KernelProtocol {
 }
 
 @objc open class Kernel: NSObject{
-    let pipline: MTLComputePipelineState
-    let functionName: String
-    public init(device: MTLDevice, inFunctionName: String, usePaddleMobileLib: Bool = false, initContext: InitContext) {
-        pipline = device.pipeLine(funcName: inFunctionName, metalLoadMode: initContext.metalLoadMode, metalLibPath: initContext.metalLibPath)
+    
+    private var _pipline: MTLComputePipelineState? = nil
+    
+    var pipline: MTLComputePipelineState {
+        get {
+            return _pipline ?! " pipeline can't be nil "
+        }
+    }
+    
+    let functionName: String?
+    public init(device: MTLDevice, inFunctionName: String?, usePaddleMobileLib: Bool = false, initContext: InitContext) {
         functionName = inFunctionName
+        if let funcName = inFunctionName {
+            _pipline = device.pipeLine(funcName: funcName, metalLoadMode: initContext.metalLoadMode, metalLibPath: initContext.metalLibPath)
+        }
     }
 }
 
@@ -104,7 +114,7 @@ open class BufferToTextureKernel: Kernel {
 @objc open class CusomKernel: Kernel {
     
     public let outputTexture: MTLTexture
-    public init(device: MTLDevice, inFunctionName: String, outputDim: Shape, metalLoadModel: MetalLoadMode, metalLibPath: String?) {
+    public init(device: MTLDevice, inFunctionName: String?, outputDim: Shape, metalLoadModel: MetalLoadMode, metalLibPath: String?) {
         let textureDesc = MTLTextureDescriptor.init()
         textureDesc.textureType = .type2D
         textureDesc.width = outputDim.width
