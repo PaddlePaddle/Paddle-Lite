@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
     paddle_mobile::framework::DDim in_shape =
         paddle_mobile::framework::make_ddim(dims);
     SetupTensor<float>(&input, in_shape, 0.f, 255.f);
-    //    // warmup
+    // warmup
     for (int i = 0; i < 2; ++i) {
       paddle_mobile.Predict(input);
     }
