@@ -114,7 +114,7 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
 #pragma omp parallel for
     for (int o_c2 = 0; o_c2 < output_ch_d2; ++o_c2) {
       std::atomic<float> relu_value{0};
-      const float *reluptr;
+      const float *relu_ptr;
       int o_c = o_c2 * 2;
       bool issamefilter;
       const float *f1;
@@ -141,7 +141,7 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
 
       for (int i_c = 0; i_c < input_ch; ++i_c) {
         float relu_arr[4];
-        reluptr = relu_arr;
+        relu_ptr = relu_arr;
         if (if_relu && i_c == input_ch - 1) {
           relu_value = 0;
         } else {
@@ -444,13 +444,11 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "prfm   pldl1keep, [%[f1], #256]          \n\t"
                   "prfm   pldl1keep, [%[f1_2], #256]        \n\t"
 
-                  "ld1   {v0.4s, v1.4s}, [%[f1]]            \n\t"
-                  "add        %[f1], %[f1], #32             \n\t"
-                  "ld1   {v2.4s, v3.4s}, [%[f1_2]]          \n\t"
-                  "add        %[f1_2], %[f1_2], #32         \n\t"
+                  "ld1   {v0.4s, v1.4s}, [%[f1]], #32       \n\t"
+                  "ld1   {v2.4s, v3.4s}, [%[f1_2]], #32     \n\t"
 
-                  "prfm   pldl1keep, [%[reluptr], #64]      \n\t"
-                  "ld1   {v16.4s}, [%[reluptr]]             \n\t"
+                  "prfm   pldl1keep, [%[relu_ptr], #64]     \n\t"
+                  "ld1   {v16.4s}, [%[relu_ptr]]            \n\t"
                   "ld1   {v4.s}[0], [%[f1]]                 \n\t"
 
                   "sub        %[f1],%[f1], #32              \n\t"
@@ -585,7 +583,7 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                     [out_ptr2_2] "+r"(out_ptr2_2), [in_ptr1] "+r"(in_ptr1),
                     [in_ptr2] "+r"(in_ptr2), [in_ptr3] "+r"(in_ptr3),
                     [in_ptr4] "+r"(in_ptr4)
-                  : [f1] "r"(f1), [f1_2] "r"(f1_2), [reluptr] "r"(reluptr)
+                  : [f1] "r"(f1), [f1_2] "r"(f1_2), [relu_ptr] "r"(relu_ptr)
                   : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
                     "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
                     "v16");
@@ -617,17 +615,17 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "pld        [%[f1], #256]                 \n\t"
                   "pld        [%[f1_2], #256]               \n\t"
 
-                  "vld1.32   {d0-d3}, [%[f1]]               \n\t"
+                  "vld1.f32   {d0-d3}, [%[f1]]               \n\t"
                   "add        %[f1], #32                    \n\t"
-                  "vld1.32   {d4-d7}, [%[f1_2]]             \n\t"
+                  "vld1.f32   {d4-d7}, [%[f1_2]]             \n\t"
                   "add        %[f1_2], #32                  \n\t"
 
-                  "pld        [%[reluptr], #64]             \n\t"
-                  "vld1.32   {d9}, [%[reluptr]]             \n\t"
+                  "pld        [%[relu_ptr], #64]            \n\t"
+                  "vld1.f32   {d9}, [%[relu_ptr]]            \n\t"
 
-                  "vld1.32   {d8[0]}, [%[f1]]               \n\t"
+                  "vld1.f32   {d8[0]}, [%[f1]]              \n\t"
                   "sub        %[f1], #32                    \n\t"
-                  "vld1.32   {d8[1]}, [%[f1_2]]             \n\t"
+                  "vld1.f32   {d8[1]}, [%[f1_2]]             \n\t"
                   "sub        %[f1_2], #32                  \n\t"
 
                   "pld        [%[in_ptr1], #192]            \n\t"
@@ -754,7 +752,7 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                     [out_ptr2_2] "+r"(out_ptr2_2), [in_ptr1] "+r"(in_ptr1),
                     [in_ptr2] "+r"(in_ptr2), [in_ptr3] "+r"(in_ptr3),
                     [in_ptr4] "+r"(in_ptr4)
-                  : [f1] "r"(f1), [f1_2] "r"(f1_2), [reluptr] "r"(reluptr)
+                  : [f1] "r"(f1), [f1_2] "r"(f1_2), [relu_ptr] "r"(relu_ptr)
                   : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
                     "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15");
             }
@@ -1167,9 +1165,8 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "ld1   {v2.4s, v3.4s}, [%[f1_2]]          \n\t"
                   "add        %[f1_2], %[f1_2], #32         \n\t"
 
-                  "prfm   pldl1keep, [%[reluptr], #64]      \n\t"
-                  "ld1   {v16.4s}, [%[reluptr]]             \n\t"
-
+                  "prfm   pldl1keep, [%[relu_ptr], #64]      \n\t"
+                  "ld1   {v16.4s}, [%[relu_ptr]]             \n\t"
                   "ld1   {v4.s}[0], [%[f1]]                 \n\t"
                   "sub        %[f1],%[f1], #32              \n\t"
                   "ld1   {v4.s}[1], [%[f1_2]]               \n\t"
@@ -1246,7 +1243,7 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                     [out_ptr2_2] "+r"(out_ptr2_2), [in_ptr1] "+r"(in_ptr1),
                     [in_ptr2] "+r"(in_ptr2), [in_ptr3] "+r"(in_ptr3),
                     [in_ptr4] "+r"(in_ptr4)
-                  : [f1] "r"(f1), [f1_2] "r"(f1_2), [reluptr] "r"(reluptr)
+                  : [f1] "r"(f1), [f1_2] "r"(f1_2), [relu_ptr] "r"(relu_ptr)
                   : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
                     "v8", "v9", "v10", "v11", "v12", "v13", "v16");
             }
@@ -1261,17 +1258,17 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   "pld        [%[f1], #256]                 \n\t"
                   "pld        [%[f1_2], #256]               \n\t"
 
-                  "vld1.32   {d0-d3}, [%[f1]]               \n\t"
+                  "vld1.f32   {d0-d3}, [%[f1]]              \n\t"
                   "add        %[f1], #32                    \n\t"
-                  "vld1.32   {d4-d7}, [%[f1_2]]             \n\t"
+                  "vld1.f32   {d4-d7}, [%[f1_2]]            \n\t"
                   "add        %[f1_2], #32                  \n\t"
 
-                  "pld        [%[reluptr], #64]             \n\t"
-                  "vld1.32   {d9}, [%[reluptr]]             \n\t"
+                  "pld        [%[relu_ptr], #64]             \n\t"
+                  "vld1.f32   {d9}, [%[relu_ptr]]            \n\t"
 
-                  "vld1.32   {d8[0]}, [%[f1]]               \n\t"
+                  "vld1.f32   {d8[0]}, [%[f1]]              \n\t"
                   "sub        %[f1], #32                    \n\t"
-                  "vld1.32   {d8[1]}, [%[f1_2]]             \n\t"
+                  "vld1.f32   {d8[1]}, [%[f1_2]]            \n\t"
                   "sub        %[f1_2], #32                  \n\t"
 
                   "0:                                       \n\t"
@@ -1348,7 +1345,7 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                     [out_ptr2_2] "+r"(out_ptr2_2), [in_ptr1] "+r"(in_ptr1),
                     [in_ptr2] "+r"(in_ptr2), [in_ptr3] "+r"(in_ptr3),
                     [in_ptr4] "+r"(in_ptr4)
-                  : [f1] "r"(f1), [f1_2] "r"(f1_2), [reluptr] "r"(reluptr)
+                  : [f1] "r"(f1), [f1_2] "r"(f1_2), [relu_ptr] "r"(relu_ptr)
                   : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
                     "q8", "q9", "q10", "q11", "q12", "q13");
             }
@@ -1453,7 +1450,7 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
     // remain output_channel
     for (int o_c = out_ch_remain; o_c < output_ch; ++o_c) {
       std::atomic<float> relu_value{0};
-      const float *reluptr;
+      const float *relu_ptr;
       bool issamefilter;
       const float *in_ptr1, *in_ptr2, *in_ptr3, *in_ptr4;
       const float *f1;
@@ -1469,7 +1466,7 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
 
       for (int i_c = 0; i_c < input_ch; ++i_c) {
         float relu_arr[4];
-        reluptr = relu_arr;
+        relu_ptr = relu_arr;
         if (if_relu && i_c == input_ch - 1) {
           relu_value = 0;
         } else {
@@ -1662,8 +1659,8 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
 
                   "ld1   {v0.4s, v1.4s}, [%[f1]]            \n\t"
                   "add        %[f1], %[f1], #32             \n\t"
-                  "prfm   pldl1keep, [%[reluptr], #64]      \n\t"
-                  "ld1   {v16.4s}, [%[reluptr]]             \n\t"
+                  "prfm   pldl1keep, [%[relu_ptr], #64]     \n\t"
+                  "ld1   {v16.4s}, [%[relu_ptr]]            \n\t"
 
                   "ld1   {v4.s}[0], [%[f1]]                 \n\t"
                   "sub        %[f1],%[f1], #32              \n\t"
@@ -1750,9 +1747,9 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                     [out_ptr2] "+r"(out_ptr2), [in_ptr1] "+r"(in_ptr1),
                     [in_ptr2] "+r"(in_ptr2), [in_ptr3] "+r"(in_ptr3),
                     [in_ptr4] "+r"(in_ptr4)
-                  : [f1] "r"(f1), [reluptr] "r"(reluptr)
-                  : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
-                    "v8", "v9", "v10", "v11", "v12", "v14", "v16");
+                  : [f1] "r"(f1), [relu_ptr] "r"(relu_ptr)
+                  : "memory", "v0", "v1", "v4", "v5", "v6", "v7", "v8", "v9",
+                    "v10", "v11", "v12", "v14", "v16");
             }
           }
           if (!if_nopadding && o_w == output_w - padding_w) {
@@ -1774,13 +1771,13 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
             if (o_w_dim4 > 0) {
               asm volatile(
                   "pld        [%[f1], #256]                 \n\t"
-                  "vld1.32   {d0-d3}, [%[f1]]               \n\t"
+                  "vld1.f32   {d0-d3}, [%[f1]]               \n\t"
                   "add        %[f1], #32                    \n\t"
 
-                  "pld        [%[reluptr], #64]             \n\t"
-                  "vld1.32   {d9}, [%[reluptr]]             \n\t"
+                  "pld        [%[relu_ptr], #64]            \n\t"
+                  "vld1.f32   {d9}, [%[relu_ptr]]            \n\t"
 
-                  "vld1.32   {d8[0]}, [%[f1]]               \n\t"
+                  "vld1.f32   {d8[0]}, [%[f1]]               \n\t"
                   "sub        %[f1], #32                    \n\t"
 
                   "0:                                       \n\t"
@@ -1864,9 +1861,9 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                     [out_ptr2] "+r"(out_ptr2), [in_ptr1] "+r"(in_ptr1),
                     [in_ptr2] "+r"(in_ptr2), [in_ptr3] "+r"(in_ptr3),
                     [in_ptr4] "+r"(in_ptr4)
-                  : [f1] "r"(f1), [reluptr] "r"(reluptr)
-                  : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
-                    "q8", "q9", "q10", "q11", "q12", "q14");
+                  : [f1] "r"(f1), [relu_ptr] "r"(relu_ptr)
+                  : "memory", "q0", "q1", "q4", "q5", "q6", "q7", "q8", "q9",
+                    "q10", "q11", "q12", "q14");
             }
           }
           if (!if_nopadding && o_w == output_w - padding_w) {
@@ -2124,8 +2121,8 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
 
                   "ld1   {v0.4s, v1.4s}, [%[f1]]            \n\t"
                   "add        %[f1], %[f1], #32             \n\t"
-                  "prfm   pldl1keep, [%[reluptr], #64]      \n\t"
-                  "ld1   {v16.4s}, [%[reluptr]]             \n\t"
+                  "prfm   pldl1keep, [%[relu_ptr], #64]      \n\t"
+                  "ld1   {v16.4s}, [%[relu_ptr]]             \n\t"
 
                   "ld1   {v4.s}[0], [%[f1]]                 \n\t"
                   "sub        %[f1],%[f1], #32              \n\t"
@@ -2183,9 +2180,9 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                   : [o_w_dim4] "+r"(o_w_dim4), [out_ptr1] "+r"(out_ptr1),
                     [in_ptr1] "+r"(in_ptr1), [in_ptr2] "+r"(in_ptr2),
                     [in_ptr3] "+r"(in_ptr3)
-                  : [f1] "r"(f1), [reluptr] "r"(reluptr)
-                  : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
-                    "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v16");
+                  : [f1] "r"(f1), [relu_ptr] "r"(relu_ptr)
+                  : "memory", "v0", "v1", "v4", "v5", "v6", "v7", "v8", "v9",
+                    "v10", "v11", "v12", "v13", "v14", "v16");
             }
           }
 #else
@@ -2196,13 +2193,13 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
             if (o_w_dim4 > 0) {
               asm volatile(
                   "pld        [%[f1], #256]                 \n\t"
-                  "vld1.32   {d0-d3}, [%[f1]]               \n\t"
+                  "vld1.f32   {d0-d3}, [%[f1]]               \n\t"
                   "add        %[f1], #32                    \n\t"
 
-                  "pld        [%[reluptr], #64]             \n\t"
-                  "vld1.32   {q2}, [%[reluptr]]             \n\t"
+                  "pld        [%[relu_ptr], #64]            \n\t"
+                  "vld1.f32   {q2}, [%[relu_ptr]]            \n\t"
 
-                  "vld1.32   {d8[0]}, [%[f1]]               \n\t"
+                  "vld1.f32   {d8[0]}, [%[f1]]               \n\t"
                   "sub        %[f1], #32                    \n\t"
 
                   "0:                                       \n\t"
@@ -2262,7 +2259,7 @@ void SlidingwindowConv3x3s1(const framework::Tensor *input,
                     [out_ptr2] "+r"(out_ptr2), [in_ptr1] "+r"(in_ptr1),
                     [in_ptr2] "+r"(in_ptr2), [in_ptr3] "+r"(in_ptr3),
                     [in_ptr4] "+r"(in_ptr4)
-                  : [f1] "r"(f1), [reluptr] "r"(reluptr)
+                  : [f1] "r"(f1), [relu_ptr] "r"(relu_ptr)
                   : "memory", "q0", "q1", "q2", "q4", "q5", "q6", "q7", "q8",
                     "q9", "q10", "q11", "q12", "q13");
             }
@@ -2433,7 +2430,7 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
 #pragma omp parallel for
     for (int o_c2 = 0; o_c2 < output_ch_d2; ++o_c2) {
       std::atomic<float> relu_value{0};
-      const float *reluptr;
+      const float *relu_ptr;
       int o_c = o_c2 * 2;
 
       const float *f1, *f9;
@@ -2459,7 +2456,7 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
 
       for (int i_c = 0; i_c < input_ch; ++i_c) {
         float relu_arr[4];
-        reluptr = relu_arr;
+        relu_ptr = relu_arr;
         if (if_relu && i_c == input_ch - 1) {
           relu_value = 0;
         } else {
@@ -2629,13 +2626,13 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
                   "prfm   pldl1keep, [%[f9], #256]          \n\t"
                   "prfm   pldl1keep, [%[f1_2], #256]        \n\t"
                   "prfm   pldl1keep, [%[f9_2], #256]        \n\t"
-                  "prfm   pldl1keep, [%[reluptr], #256]     \n\t"
+                  "prfm   pldl1keep, [%[relu_ptr], #256]     \n\t"
 
                   "ld1   {v0.4s, v1.4s}, [%[f1]]            \n\t"
                   "ld1   {v4.s}[0], [%[f9]]                 \n\t"
                   "ld1   {v2.4s, v3.4s}, [%[f1_2]]          \n\t"
                   "ld1   {v4.s}[1], [%[f9_2]]               \n\t"
-                  "ld1   {v16.4s}, [%[reluptr]]             \n\t"
+                  "ld1   {v16.4s}, [%[relu_ptr]]             \n\t"
 
                   "prfm   pldl1keep, [%[in_ptr1], #256]     \n\t"
                   "ld2   {v5.4s, v6.4s}, [%[in_ptr1]], #32  \n\t"
@@ -2710,9 +2707,9 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
                     [out_ptr1_2] "+r"(out_ptr1_2), [in_ptr1] "+r"(in_ptr1),
                     [in_ptr2] "+r"(in_ptr2), [in_ptr3] "+r"(in_ptr3)
                   : [f1] "r"(f1), [f1_2] "r"(f1_2), [f9] "r"(f9),
-                    [f9_2] "r"(f9_2), [reluptr] "r"(reluptr)
+                    [f9_2] "r"(f9_2), [relu_ptr] "r"(relu_ptr)
                   : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
-                    "v8", "v9", "v12", "v13", "v14", "v15", "v16");
+                    "v8", "v12", "v13", "v14", "v15", "v16");
             }
           }
 
@@ -2727,13 +2724,13 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
                   "pld        [%[f9], #256]                 \n\t"
                   "pld        [%[f1_2], #256]               \n\t"
                   "pld        [%[f9_2], #256]               \n\t"
-                  "pld        [%[reluptr], #128]            \n\t"
+                  "pld        [%[relu_ptr], #128]           \n\t"
 
-                  "vld1.32   {d0-d3}, [%[f1]]               \n\t"
-                  "vld1.32   {d8[0]}, [%[f9]]               \n\t"
-                  "vld1.32   {d4-d7}, [%[f1_2]]             \n\t"
-                  "vld1.32   {d8[1]}, [%[f9_2]]             \n\t"
-                  "vld1.32   {d18, d19}, [%[reluptr]]       \n\t"
+                  "vld1.f32   {d0-d3}, [%[f1]]              \n\t"
+                  "vld1.f32   {d8[0]}, [%[f9]]              \n\t"
+                  "vld1.f32   {d4-d7}, [%[f1_2]]            \n\t"
+                  "vld1.f32   {d8[1]}, [%[f9_2]]            \n\t"
+                  "vld1.f32   {d18, d19}, [%[relu_ptr]]     \n\t"
 
                   "vld2.f32   {d10-d13}, [%[in_ptr1]]!      \n\t"
                   "vld2.f32   {d14, d15}, [%[in_ptr1]]      \n\t"
@@ -2802,7 +2799,7 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
                     [out_ptr1_2] "+r"(out_ptr1_2), [in_ptr1] "+r"(in_ptr1),
                     [in_ptr2] "+r"(in_ptr2), [in_ptr3] "+r"(in_ptr3)
                   : [f1] "r"(f1), [f1_2] "r"(f1_2), [f9] "r"(f9),
-                    [f9_2] "r"(f9_2), [reluptr] "r"(reluptr)
+                    [f9_2] "r"(f9_2), [relu_ptr] "r"(relu_ptr)
                   : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
                     "q8", "q9", "q12", "q13", "q14", "q15");
             }
@@ -2966,7 +2963,7 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
     // remain channel
     for (int o_c = out_ch_remain; o_c < output_ch; ++o_c) {
       std::atomic<float> relu_value{0};
-      const float *reluptr;
+      const float *relu_ptr;
       const float *f1, *f9;
       const float *in_ptr1, *in_ptr2, *in_ptr3;
       const float *pad_filter1, *pad_filter2, *pad_filter3;
@@ -2982,7 +2979,7 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
 
       for (int i_c = 0; i_c < input_ch; ++i_c) {
         float relu_arr[4];
-        reluptr = relu_arr;
+        relu_ptr = relu_arr;
         if (if_relu && i_c == input_ch - 1) {
           relu_value = 0;
         } else {
@@ -3099,11 +3096,11 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
               asm volatile(
                   "prfm   pldl1keep, [%[f1], #256]          \n\t"
                   "prfm   pldl1keep, [%[f9], #256]          \n\t"
-                  "prfm   pldl1keep, [%[reluptr], #256]     \n\t"
+                  "prfm   pldl1keep, [%[relu_ptr], #256]    \n\t"
 
                   "ld1   {v0.4s, v1.4s}, [%[f1]]            \n\t"
                   "ld1   {v4.s}[0], [%[f9]]                 \n\t"
-                  "ld1   {v16.4s}, [%[reluptr]]             \n\t"
+                  "ld1   {v16.4s}, [%[relu_ptr]]            \n\t"
 
                   "0:                                       \n\t"
                   // load out_ptr
@@ -3116,8 +3113,6 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
                   "ld2   {v7.4s, v8.4s}, [%[in_ptr1]]       \n\t"
 
                   "fmla   v12.4s, v5.4s, v0.4s[0]           \n\t"
-                  "fmla   v14.4s, v5.4s, v2.4s[0]           \n\t"
-
                   "ext    v8.16b, v5.16b, v7.16b, #4        \n\t"
                   "fmul   v13.4s, v6.4s, v0.4s[1]           \n\t"
 
@@ -3152,9 +3147,9 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
                   : [o_w_dim4] "+r"(o_w_dim4), [out_ptr1] "+r"(out_ptr1),
                     [in_ptr1] "+r"(in_ptr1), [in_ptr2] "+r"(in_ptr2),
                     [in_ptr3] "+r"(in_ptr3)
-                  : [f1] "r"(f1), [f9] "r"(f9), [reluptr] "r"(reluptr)
-                  : "memory", "v0", "v1", "v4", "v5", "v6", "v7", "v8", "v9",
-                    "v12", "v13", "v16");
+                  : [f1] "r"(f1), [f9] "r"(f9), [relu_ptr] "r"(relu_ptr)
+                  : "memory", "v0", "v1", "v4", "v5", "v6", "v7", "v8", "v12",
+                    "v13", "v16");
             }
           }
 #else
@@ -3166,11 +3161,11 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
               asm volatile(
                   "pld        [%[f1], #256]                 \n\t"
                   "pld        [%[f9], #256]                 \n\t"
-                  "pld        [%[reluptr], #128]            \n\t"
+                  "pld        [%[relu_ptr], #128]           \n\t"
 
-                  "vld1.32   {d0-d3}, [%[f1]]               \n\t"
-                  "vld1.32   {d8[0]}, [%[f9]]               \n\t"
-                  "vld1.32   {d18, d19}, [%[reluptr]]       \n\t"
+                  "vld1.f32   {d0-d3}, [%[f1]]              \n\t"
+                  "vld1.f32   {d8[0]}, [%[f9]]              \n\t"
+                  "vld1.f32   {d18, d19}, [%[relu_ptr]]     \n\t"
 
                   "0:                                       \n\t"
                   // load out_ptr
@@ -3216,7 +3211,7 @@ void SlidingwindowConv3x3s2(const framework::Tensor *input,
                   : [o_w_dim4] "+r"(o_w_dim4), [out_ptr1] "+r"(out_ptr1),
                     [in_ptr1] "+r"(in_ptr1), [in_ptr2] "+r"(in_ptr2),
                     [in_ptr3] "+r"(in_ptr3)
-                  : [f1] "r"(f1), [f9] "r"(f9), [reluptr] "r"(reluptr)
+                  : [f1] "r"(f1), [f9] "r"(f9), [relu_ptr] "r"(relu_ptr)
                   : "memory", "q0", "q1", "q4", "q5", "q6", "q7", "q8", "q9",
                     "q12", "q13");
             }
@@ -4141,7 +4136,7 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   [in_ptr2] "+r"(in_ptr2), [in_ptr3] "+r"(in_ptr3)
                   : [f1] "r"(f1)
                   : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
-                    "v8", "v9", "v12", "v13", "v14", "v15");
+                    "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15");
             }
           }
 #else
@@ -4155,7 +4150,7 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "pld        [%[f1], #256]                   \n\t"
                   "pld        [%[in_ptr1], #288]              \n\t"
 
-                  "vld1.32   {d0-d3}, [%[f1]]!                \n\t"
+                  "vld1.f32   {d0-d3}, [%[f1]]!                \n\t"
                   "vld2.f32   {d8-d11}, [%[in_ptr1]]!         \n\t"
                   "vld2.f32   {d12, d13}, [%[in_ptr1]]        \n\t"
 
@@ -4181,7 +4176,7 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
 
                   // in_ptr1 multiply
                   "pld        [%[f1], #256]                   \n\t"
-                  "vld1.32   {d4-d7}, [%[f1]]!                \n\t"
+                  "vld1.f32   {d4-d7}, [%[f1]]!                \n\t"
                   "vmla.f32   q8, q4, d0[0]                   \n\t"
                   "vmla.f32   q9, q4, d0[1]                   \n\t"
 
@@ -4195,7 +4190,7 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "vmla.f32   q14, q4, d3[0]                  \n\t"
                   "vmla.f32   q15, q4, d3[1]                  \n\t"
 
-                  "vld1.32   {d0-d3}, [%[f1]]!                \n\t"
+                  "vld1.f32   {d0-d3}, [%[f1]]!                \n\t"
                   "vmla.f32   q8, q5, d4[0]                   \n\t"
                   "vmla.f32   q9, q5, d4[1]                   \n\t"
 
@@ -4215,7 +4210,7 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "vmla.f32   q9, q7, d0[1]                   \n\t"
 
                   "pld        [%[f1], #256]                   \n\t"
-                  "vld1.32   {d4-d7}, [%[f1]]!                \n\t"
+                  "vld1.f32   {d4-d7}, [%[f1]]!                \n\t"
                   "vmla.f32   q10, q7, d1[0]                  \n\t"
                   "vmla.f32   q11, q7, d1[1]                  \n\t"
 
@@ -4228,7 +4223,7 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "vmla.f32   q15, q7, d3[1]                  \n\t"
 
                   // in_ptr2 multiply
-                  "vld1.32   {d0-d3}, [%[f1]]!                \n\t"
+                  "vld1.f32   {d0-d3}, [%[f1]]!                \n\t"
                   "vmla.f32   q8, q4, d4[0]                   \n\t"
                   "vmla.f32   q9, q4, d4[1]                   \n\t"
 
@@ -4242,7 +4237,7 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "vmla.f32   q14, q4, d7[0]                  \n\t"
                   "vmla.f32   q15, q4, d7[1]                  \n\t"
 
-                  "vld1.32   {d4-d7}, [%[f1]]!                \n\t"
+                  "vld1.f32   {d4-d7}, [%[f1]]!                \n\t"
                   "vmla.f32   q8, q5, d0[0]                   \n\t"
                   "vmla.f32   q9, q5, d0[1]                   \n\t"
 
@@ -4262,7 +4257,7 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "vmla.f32   q9, q7, d4[1]                   \n\t"
 
                   "pld        [%[f1], #256]                   \n\t"
-                  "vld1.32   {d0-d3}, [%[f1]]!                \n\t"
+                  "vld1.f32   {d0-d3}, [%[f1]]!                \n\t"
                   "vmla.f32   q10, q7, d5[0]                  \n\t"
                   "vmla.f32   q11, q7, d5[1]                  \n\t"
 
@@ -4275,7 +4270,7 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "vmla.f32   q15, q7, d7[1]                  \n\t"
 
                   // in_ptr3 multiply
-                  "vld1.32   {d4-d7}, [%[f1]]!                \n\t"
+                  "vld1.f32   {d4-d7}, [%[f1]]!                \n\t"
                   "vmla.f32   q8, q4, d0[0]                   \n\t"
                   "vmla.f32   q9, q4, d0[1]                   \n\t"
 
@@ -4289,7 +4284,7 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "vmla.f32   q14, q4, d3[0]                  \n\t"
                   "vmla.f32   q15, q4, d3[1]                  \n\t"
 
-                  "vld1.32   {d0-d3}, [%[f1]]!                \n\t"
+                  "vld1.f32   {d0-d3}, [%[f1]]!                \n\t"
                   "vmla.f32   q8, q5, d4[0]                   \n\t"
                   "vmla.f32   q9, q5, d4[1]                   \n\t"
 
@@ -4304,7 +4299,7 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   "vmla.f32   q14, q5, d7[0]                  \n\t"
                   "vmla.f32   q15, q5, d7[1]                  \n\t"
 
-                  "vld1.32   {d4, d5}, [%[f1]]                \n\t"
+                  "vld1.f32   {d4, d5}, [%[f1]]                \n\t"
                   "sub        %[f1], %[f1], #288              \n\t"
                   "vmla.f32   q8, q7, d0[0]                   \n\t"
                   "vmla.f32   q9, q7, d0[1]                   \n\t"
@@ -4324,7 +4319,7 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
 
                   "vmax.f32   q10, q10, q2                    \n\t"
                   "pld        [%[f1], #256]                   \n\t"
-                  "vld1.32   {d0-d3}, [%[f1]]!                \n\t"
+                  "vld1.f32   {d0-d3}, [%[f1]]!                \n\t"
 
                   "pld        [%[in_ptr1], #288]              \n\t"
                   "vld2.f32   {d8-d11}, [%[in_ptr1]]!         \n\t"
@@ -4365,7 +4360,7 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   [in_ptr2] "+r"(in_ptr2), [in_ptr3] "+r"(in_ptr3)
                   : [f1] "r"(f1)
                   : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
-                    "q8", "q9", "q12", "q13", "q14", "q15");
+                    "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15");
             }
           }
 #endif  //__aarch64__
@@ -4802,7 +4797,7 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
     for (int o_c = out_ch_remain; o_c < output_ch; ++o_c) {
       std::atomic<float> relu_value{0};
 
-      const float *reluptr;
+      const float *relu_ptr;
       const float *f1, *f9;
       const float *in_ptr1, *in_ptr2, *in_ptr3;
       const float *pad_filter1, *pad_filter2, *pad_filter3;
@@ -4817,7 +4812,7 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
 
       for (int i_c = 0; i_c < input_ch; ++i_c) {
         float relu_arr[4];
-        reluptr = relu_arr;
+        relu_ptr = relu_arr;
         if (if_relu && i_c == input_ch - 1) {
           relu_value = 0;
         } else {
@@ -4934,11 +4929,11 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
               asm volatile(
                   "prfm   pldl1keep, [%[f1], #256]            \n\t"
                   "prfm   pldl1keep, [%[f9], #256]            \n\t"
-                  "prfm   pldl1keep, [%[reluptr], #256]       \n\t"
+                  "prfm   pldl1keep, [%[relu_ptr], #256]      \n\t"
 
                   "ld1   {v0.4s, v1.4s}, [%[f1]]              \n\t"
                   "ld1   {v4.s}[0], [%[f9]]                   \n\t"
-                  "ld1   {v16.4s}, [%[reluptr]]               \n\t"
+                  "ld1   {v16.4s}, [%[relu_ptr]]              \n\t"
 
                   "0:                                         \n\t"
                   // load out_ptr
@@ -4988,9 +4983,9 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   : [o_w_dim4] "+r"(o_w_dim4), [out_ptr1] "+r"(out_ptr1),
                     [in_ptr1] "+r"(in_ptr1), [in_ptr2] "+r"(in_ptr2),
                     [in_ptr3] "+r"(in_ptr3)
-                  : [f1] "r"(f1), [f9] "r"(f9), [reluptr] "r"(reluptr)
-                  : "memory", "v0", "v1", "v4", "v5", "v6", "v7", "v8", "v9",
-                    "v12", "v13", "v16");
+                  : [f1] "r"(f1), [f9] "r"(f9), [relu_ptr] "r"(relu_ptr)
+                  : "memory", "v0", "v1", "v4", "v5", "v6", "v7", "v8", "v12",
+                    "v13", "v16");
             }
           }
 #else
@@ -5002,11 +4997,11 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
               asm volatile(
                   "pld        [%[f1], #256]                   \n\t"
                   "pld        [%[f9], #256]                   \n\t"
-                  "pld        [%[reluptr], #128]              \n\t"
+                  "pld        [%[relu_ptr], #128]             \n\t"
 
-                  "vld1.32   {d0-d3}, [%[f1]]                 \n\t"
-                  "vld1.32   {d8[0]}, [%[f9]]                 \n\t"
-                  "vld1.32   {d18, d19}, [%[reluptr]]         \n\t"
+                  "vld1.f32   {d0-d3}, [%[f1]]                 \n\t"
+                  "vld1.f32   {d8[0]}, [%[f9]]                 \n\t"
+                  "vld1.f32   {d18, d19}, [%[relu_ptr]]        \n\t"
 
                   "pld        [%[in_ptr1], #256]              \n\t"
                   "vld2.f32   {d10-d13}, [%[in_ptr1]]!        \n\t"
@@ -5066,7 +5061,7 @@ void SlidingwindowConv3x3s2_8channel(const framework::Tensor *input,
                   : [o_w_dim4] "+r"(o_w_dim4), [out_ptr1] "+r"(out_ptr1),
                     [in_ptr1] "+r"(in_ptr1), [in_ptr2] "+r"(in_ptr2),
                     [in_ptr3] "+r"(in_ptr3)
-                  : [f1] "r"(f1), [f9] "r"(f9), [reluptr] "r"(reluptr)
+                  : [f1] "r"(f1), [f9] "r"(f9), [relu_ptr] "r"(relu_ptr)
                   : "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
                     "q8", "q9", "q10", "q12", "q13", "q14", "q15");
             }
