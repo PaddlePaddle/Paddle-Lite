@@ -91,7 +91,6 @@ class PaddleMobile {
   void InjectVariable(const framework::Tensor &t, std::string var_name);
   void FeedData(const framework::Tensor &t);
   void FeedData(const std::vector<void *> &v);
-  void FeedTensorData(const std::vector<framework::Tensor> &v);
 
   void GetResults(std::vector<void *> *v);
   void GetTensorResults(std::vector<framework::Tensor *> *v);
