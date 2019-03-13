@@ -25,3 +25,22 @@ func writeToLibrary<P: PrecisionProtocol>(fileName: String, array: [P]) {
     fileHandler.closeFile()
 }
 
+public func writeToLibrary<P: PrecisionProtocol>(fileName: String, buffer: UnsafeBufferPointer<P>) {
+    let libraryPath = NSSearchPathForDirectoriesInDomains(.libraryDirectory, .userDomainMask, true).last ?! " library path get error "
+    let filePath = libraryPath + "/" + fileName
+    let fileManager = FileManager.init()
+    fileManager.createFile(atPath: filePath, contents: nil, attributes: nil)
+    let fileHandler = FileHandle.init(forWritingAtPath: filePath) ?! " file handler nil "
+    let data = Data.init(buffer: buffer)
+    fileHandler.write(data)
+    fileHandler.closeFile()
+}
+
+func createFile(fileName: String) -> String {
+    let libraryPath = NSSearchPathForDirectoriesInDomains(.libraryDirectory, .userDomainMask, true).last ?! " library path get error "
+    let filePath = libraryPath + "/" + fileName
+    let fileManager = FileManager.init()
+    fileManager.createFile(atPath: filePath, contents: nil, attributes: nil)
+    return filePath
+}
+
