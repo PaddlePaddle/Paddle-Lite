@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+
 #pragma once
 
 #include "operators/math/gemm/cblas.h"
@@ -47,3 +49,5 @@ void cblas_sgemv(const bool trans, const int M, const int N, const float alpha,
 }  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile
+
+#endif

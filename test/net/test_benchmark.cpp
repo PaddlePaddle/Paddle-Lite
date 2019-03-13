@@ -36,7 +36,10 @@ int main(int argc, char* argv[]) {
   paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
   paddle_mobile.SetThreadNum(thread_num);
   auto time1 = time();
-  if (paddle_mobile.Load(fluid_model, optimize)) {
+  //  if (paddle_mobile.Load(fluid_model, optimize, false, 1, true)) {
+  if (paddle_mobile.Load(std::string(fluid_model) + "/model",
+                         std::string(fluid_model) + "/params", optimize, false,
+                         1, true)) {
     auto time2 = time();
     std::cout << "load cost :" << time_diff(time1, time2) << "ms\n";
     paddle_mobile::framework::Tensor input;
@@ -51,14 +54,15 @@ int main(int argc, char* argv[]) {
     paddle_mobile::framework::DDim in_shape =
         paddle_mobile::framework::make_ddim(dims);
     SetupTensor<float>(&input, in_shape, 0.f, 255.f);
-    // warmup
-    for (int i = 0; i < 10; ++i) {
+    //    // warmup
+    for (int i = 0; i < 2; ++i) {
       paddle_mobile.Predict(input);
     }
     auto time3 = time();
     for (int i = 0; i < 10; ++i) {
       paddle_mobile.Predict(input);
     }
+
     auto time4 = time();
     std::cout << "predict cost :" << time_diff(time3, time4) / 10 << "ms\n";
     std::ostringstream os("output tensor size: ");
@@ -68,7 +72,7 @@ int main(int argc, char* argv[]) {
       os << ", " << output->data<float>()[i];
     }
     std::string output_str = os.str();
-    std::cout << output_str << std::endl;
+    //    std::cout << output_str << std::endl;
   }
   return 0;
 }
