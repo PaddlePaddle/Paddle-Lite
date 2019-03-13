@@ -465,11 +465,12 @@ void Executor<Device, T>::FeedData(const Tensor &t) {
 template <typename Device, typename T>
 void Executor<Device, T>::FeedData(const std::vector<void *> &v) {
   auto input_size = v.size();
-  auto vars = program_.scope->VarContain("feed");
+  int index = 0;
+  auto vars = program_.scope->VarContain("feed", &index);
   PADDLE_MOBILE_ENFORCE(input_size == vars.size(),
                         "input data number not correct");
   for (int i = 0; i < input_size; i++) {
-    auto var = vars[i];
+    auto var = program_.scope->Var("feed", i + index);
     auto feed_tensor = var->template GetMutable<LoDTensor>();
     feed_tensor->external_data = v[i];
   }
@@ -478,11 +479,12 @@ void Executor<Device, T>::FeedData(const std::vector<void *> &v) {
 template <typename Device, typename T>
 void Executor<Device, T>::FeedTensorData(const vector<framework::Tensor> &v) {
   auto input_size = v.size();
-  auto vars = program_.scope->VarContain("feed");
+  int index = 0;
+  auto vars = program_.scope->VarContain("feed", &index);
   PADDLE_MOBILE_ENFORCE(input_size == vars.size(),
                         "input data number not correct");
   for (int i = 0; i < input_size; i++) {
-    auto var = vars[i];
+    auto var = program_.scope->Var("feed", i + index);
     auto feed_tensor = var->template GetMutable<LoDTensor>();
     feed_tensor->ShareDataWith(v[i]);
   }
@@ -492,12 +494,13 @@ template <typename Device, typename T>
 void Executor<Device, T>::GetResults(std::vector<void *> *v) {
   auto output_size = v->size();
   PADDLE_MOBILE_ENFORCE(output_size > 0, "Empty output");
-  auto vars = program_.scope->VarContain("fetch");
+  int index = 0;
+  auto vars = program_.scope->VarContain("fetch", &index);
   PADDLE_MOBILE_ENFORCE(output_size == vars.size(),
                         "output data number not correct");
 
   for (int i = 0; i < output_size; i++) {
-    auto var = vars[i];
+    auto var = program_.scope->Var("fetch", i + index);
     auto fetch_tensor = var->template GetMutable<LoDTensor>();
     (*v)[i] = fetch_tensor->template data<float>();
   }
@@ -506,11 +509,11 @@ void Executor<Device, T>::GetResults(std::vector<void *> *v) {
 template <typename Device, typename T>
 void Executor<Device, T>::GetTensorResults(
     std::vector<framework::Tensor *> *v) {
-  auto vars = program_.scope->VarContain("fetch");
+  int index = 0;
+  auto vars = program_.scope->VarContain("fetch", &index);
   auto output_size = vars.size();
-
   for (int i = 0; i < output_size; i++) {
-    auto var = vars[i];
+    auto var = program_.scope->Var("fetch", i + index);
     auto fetch_tensor = var->template GetMutable<LoDTensor>();
     v->push_back(fetch_tensor);
   }
