@@ -33,7 +33,7 @@ void AddChannelWise(const framework::Tensor *input,
   // maybe check shape
   int batch_size = input->dims()[0];
   int channels = input->dims()[1];
-  size_t spatial_size = input->dims()[2] * input->dims()[3];
+  int spatial_size = input->dims()[2] * input->dims()[3];
 
   for (int batch = 0; batch < batch_size; ++batch) {
     for (int channel = 0; channel < channels; ++channel) {
@@ -88,7 +88,7 @@ void ScaleAddChannelWise(const framework::Tensor *input,
   // maybe check shape
   int batch_size = input->dims()[0];
   int channels = input->dims()[1];
-  size_t spatial_size = input->dims()[2] * input->dims()[3];
+  int spatial_size = input->dims()[2] * input->dims()[3];
 
   for (int batch = 0; batch < batch_size; ++batch) {
     for (int channel = 0; channel < channels; ++channel) {
