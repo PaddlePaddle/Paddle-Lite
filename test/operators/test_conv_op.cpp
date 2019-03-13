@@ -210,7 +210,7 @@ int TestConvOp(int in_channels, int in_height, int in_width, int out_channels,
     //    PADDLE_MOBILE_ENFORCE(std::abs(gap / (output_data[i] + 1e-5)) < 1e-3,
     //                          "output[%d] = %d, output_cmp[%d] = %d", i,
     //                          output_data[i], i, output_cmp_data[i]);
-    if (gap > 1e-2 && abs(gap / (output_data[i] + 1e-5)) > 1e-3) {
+    if (gap > 1e-2 && (gap / (abs(output_data[i]) + 1e-5) > 1e-2)) {
       std::cerr << "output_data[" << i << "] = " << output_data[i]
                 << ", output_cmp_data[" << i << "] = " << output_cmp_data[i]
                 << std::endl;
