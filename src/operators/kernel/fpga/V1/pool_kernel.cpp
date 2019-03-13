@@ -68,7 +68,7 @@ bool PoolKernel<FPGA, float>::Init(PoolParam<FPGA> *param) {
 
 template <>
 void PoolKernel<FPGA, float>::Compute(const PoolParam<FPGA> &param) {
-  auto *input = const_cast<Tensor *>(param.Input());
+  auto *input = const_cast<LoDTensor *>(param.Input());
 
   if (input->type() == typeid(float)) {
     auto *output = param.Output();

@@ -57,7 +57,7 @@ class FusionDeconvAddBNOp : public framework::OperatorWithKernel<
   FusionDeconvAddBNOp(const string &type, const VariableNameMap &inputs,
                       const VariableNameMap &outputs,
                       const framework::AttributeMap &attrs,
-                      std::shared_ptr<framework::Scope> scope)
+                      framework::Scope *scope)
       : framework::OperatorWithKernel<
             DeviceType, FusionDeconvAddBNParam<DeviceType>,
             operators::DeconvAddBNKernel<DeviceType, T>>(type, inputs, outputs,

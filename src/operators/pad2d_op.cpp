@@ -37,5 +37,8 @@ namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(pad2d, ops::Pad2DOp);
 #endif
+#ifdef PADDLE_MOBILE_FPGA
+REGISTER_OPERATOR_FPGA(pad2d, ops::Pad2DOp);
+#endif
 
 #endif  // PAD2D_OP

@@ -39,8 +39,6 @@ using framework::Tensor;
 using paddle_mobile::CPU;
 using std::string;
 
-const char *ANDROID_LOG_TAG =
-    "paddle_mobile LOG built on " __DATE__ " " __TIME__;
 paddle_mobile::PaddleMobile<paddle_mobile::CPU> paddle_mobile;
 static std::mutex shared_mutex;
 
