@@ -116,17 +116,25 @@ Variable *Scope::Var(const std::string &name, const int id) {
   return Var(name + std::to_string(id));
 }
 
-std::vector<Variable *> Scope::VarContain(const std::string substring) {
+std::vector<Variable *> Scope::VarContain(const std::string substring,
+                                          int *min) {
   std::vector<Variable *> v;
+
+  int temp = 9999;
+  auto len0 = substring.length();
   for (auto pair : vars_) {
     if (pair.first.find(substring) == 0) {
       v.push_back(pair.second);
+      auto len1 = pair.first.length();
+      int index = std::stoi(pair.first.substr(len0, len1));
+      if (index < temp) {
+        temp = index;
+      }
     }
   }
+  *min = temp;
   return v;
 }
-
-void Scope::InsertVar(const std::string str, Variable *var) {}
 
 void Scope::print_vars() {
   DLOG << "====================start to print variables=================";
