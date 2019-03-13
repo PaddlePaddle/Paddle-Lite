@@ -57,13 +57,9 @@ void dealign(float *src, float *dst, int input_c, int input_h, int input_w) {
 }
 template <>
 void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
-  auto input = const_cast<Tensor *>(param.InputX());
-  if (input->type() == typeid(float)) {
-    int col = param.Col();
-    auto output = &(param.Out()->at(col));
-    output->ShareDataWith(*input);
-    return;
-  }
+  auto input = const_cast<LoDTensor *>(param.InputX());
+  int col = param.Col();
+  LoDTensor *out = &param.Out()->at(col);
 
   fpga::BypassArgs args = param.fpga_bypass_args;
   auto input_address = (input->data<half>());
@@ -71,7 +67,7 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
   float *outdata_ptr =
       reinterpret_cast<float *>(param.fpga_bypass_args.output.address);
   const int num_th = 32;
-  if ((param.Out()->fpga_data_num) < num_th) {
+  if ((out->fpga_data_num) < num_th) {
     fpga::fpga_invalidate(input_address, (input->fpga_data_num) * sizeof(half));
 
     for (int idx = 0; idx < product(input->dims()); ++idx) {
@@ -81,14 +77,14 @@ void FetchKernel<FPGA, float>::Compute(const FetchParam<FPGA> &param) {
   }
 
   fpga::PerformBypass(args);
-  auto outC = param.Out()->dims()[1];
-  auto outH = param.Out()->dims()[2];
-  auto outW = param.Out()->dims()[3];
+  auto outC = out->dims()[1];
+  auto outH = out->dims()[2];
+  auto outW = out->dims()[3];
 
   fpga::fpga_invalidate(param.fpga_bypass_args.output.address,
-                        param.Out()->fpga_data_num * sizeof(float));
+                        out->fpga_data_num * sizeof(float));
 
-  if (param.Out()->fpga_data_num != product(input->dims())) {
+  if (out->fpga_data_num != product(input->dims())) {
     float *data_tmp =
         reinterpret_cast<float *>(malloc(outC * outH * outW * sizeof(float)));
     dealign(outdata_ptr, data_tmp, outC, outH, outW);
