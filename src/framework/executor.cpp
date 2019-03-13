@@ -532,20 +532,6 @@ void Executor<Device, T>::FeedData(const std::vector<void *> &v) {
 }
 
 template <typename Device, typename T>
-void Executor<Device, T>::FeedTensorData(const vector<framework::Tensor> &v) {
-  auto input_size = v.size();
-  int index = 0;
-  auto vars = program_.scope->VarContain("feed", &index);
-  PADDLE_MOBILE_ENFORCE(input_size == vars.size(),
-                        "input data number not correct");
-  for (int i = 0; i < input_size; i++) {
-    auto var = program_.scope->Var("feed", i + index);
-    auto feed_tensor = var->template GetMutable<LoDTensor>();
-    feed_tensor->ShareDataWith(v[i]);
-  }
-}
-
-template <typename Device, typename T>
 void Executor<Device, T>::GetResults(std::vector<void *> *v) {
   auto output_size = v->size();
   PADDLE_MOBILE_ENFORCE(output_size > 0, "Empty output");
