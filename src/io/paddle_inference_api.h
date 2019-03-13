@@ -113,6 +113,7 @@ class PaddlePredictor {
   // `inputs`. `inputs` should be available until Run returns. Caller should be
   // responsible for the output tensor's buffer, either allocated or passed from
   // outside.
+
   virtual bool Run(const std::vector<PaddleTensor>& inputs,
                    std::vector<PaddleTensor>* output_data,
                    int batch_size = -1) = 0;
@@ -126,8 +127,6 @@ class PaddlePredictor {
     std::string param_file;
   };
 #ifdef PADDLE_MOBILE_FPGA
-  virtual void FeedData(const std::vector<void*>& inputs) = 0;
-  virtual void GetResults(std::vector<void*>* outputs) = 0;
   virtual void Predict_From_To(int start, int end) = 0;
   virtual void FeedPaddleTensors(const std::vector<PaddleTensor>& inputs) = 0;
   virtual void FetchPaddleTensors(std::vector<PaddleTensor>* outputs) = 0;
