@@ -34,7 +34,5 @@ namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(shape, ops::ShapeOp);
 #endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-#endif
 
 #endif
