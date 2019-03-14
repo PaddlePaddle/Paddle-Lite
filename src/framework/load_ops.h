@@ -23,15 +23,6 @@ limitations under the License. */
 #define LOAD_CPU_OP(op_type)
 #endif
 
-#ifdef PADDLE_MOBILE_MALI_GPU
-#define LOAD_MALI_GPU_OP(op_type)                                           \
-  extern int TouchOpRegistrar_##op_type##_##mali_gpu();                     \
-  static int use_op_itself_##op_type##_##mali_gpu __attribute__((unused)) = \
-      TouchOpRegistrar_##op_type##_##mali_gpu()
-#else
-#define LOAD_MALI_GPU_OP(op_type)
-#endif
-
 #ifdef PADDLE_MOBILE_FPGA
 #define LOAD_FPGA_OP(op_type)                                           \
   extern int TouchOpRegistrar_##op_type##_##fpga();                     \
@@ -46,9 +37,8 @@ limitations under the License. */
   static int use_fusion_matcher_itself_##op_type __attribute__((unused)) = \
       TouchFusionMatcherRegistrar_##op_type();
 
-#define LOAD_OP(op_type)     \
-  LOAD_CPU_OP(op_type);      \
-  LOAD_MALI_GPU_OP(op_type); \
+#define LOAD_OP(op_type) \
+  LOAD_CPU_OP(op_type);  \
   LOAD_FPGA_OP(op_type);
 
 #define LOAD_OP1(op_type, device_type) LOAD_##device_type##_OP(op_type);
@@ -68,7 +58,7 @@ LOAD_OP(fetch)
 LOAD_OP(fill_constant)
 #endif
 #ifdef BATCHNORM_OP
-LOAD_OP2(batch_norm, CPU, MALI_GPU);
+LOAD_OP1(batch_norm, CPU);
 #endif
 #ifdef BILINEAR_INTERP_OP
 LOAD_OP1(bilinear_interp, CPU);
@@ -77,40 +67,40 @@ LOAD_OP1(bilinear_interp, CPU);
 LOAD_OP1(box_coder, CPU);
 #endif
 #ifdef CONCAT_OP
-LOAD_OP3(concat, CPU, MALI_GPU, FPGA);
+LOAD_OP2(concat, CPU, FPGA);
 #endif
 #ifdef CONV_OP
-LOAD_OP3(conv2d, CPU, MALI_GPU, FPGA);
+LOAD_OP2(conv2d, CPU, FPGA);
 #endif
 #ifdef LRN_OP
-LOAD_OP2(lrn, CPU, MALI_GPU);
+LOAD_OP1(lrn, CPU);
 #endif
 #ifdef SIGMOID_OP
 LOAD_OP1(sigmoid, CPU);
 #endif
 #ifdef FUSION_FC_RELU_OP
-LOAD_OP3(fusion_fc_relu, CPU, MALI_GPU, FPGA);
+LOAD_OP3(fusion_fc_relu, CPU, FPGA);
 LOAD_FUSION_MATCHER(fusion_fc_relu);
 #endif
 #ifdef FUSION_ELEMENTWISEADDRELU_OP
-LOAD_OP3(fusion_elementwise_add_relu, CPU, MALI_GPU, FPGA);
+LOAD_OP3(fusion_elementwise_add_relu, CPU, FPGA);
 LOAD_FUSION_MATCHER(fusion_elementwise_add_relu);
 #endif
 #ifdef SPLIT_OP
 LOAD_OP1(split, CPU);
 #endif
 #ifdef RESIZE_OP
-LOAD_OP2(resize, CPU, MALI_GPU);
+LOAD_OP1(resize, CPU);
 #endif
 #ifdef FUSION_CONVADDBNRELU_OP
 LOAD_OP2(fusion_conv_add_bn_relu, CPU, FPGA);
 LOAD_FUSION_MATCHER(fusion_conv_add_bn_relu);
 #endif
 #ifdef RESHAPE_OP
-LOAD_OP2(reshape, CPU, MALI_GPU);
+LOAD_OP1(reshape, CPU);
 #endif
 #ifdef RESHAPE2_OP
-LOAD_OP2(reshape2, CPU, MALI_GPU);
+LOAD_OP1(reshape2, CPU);
 #endif
 #ifdef TRANSPOSE_OP
 LOAD_OP1(transpose, CPU);
@@ -126,11 +116,11 @@ LOAD_OP2(fusion_conv_add_relu, CPU, FPGA);
 LOAD_FUSION_MATCHER(fusion_conv_add_relu);
 #endif
 #ifdef FUSION_CONVADD_OP
-LOAD_OP2(fusion_conv_add, CPU, MALI_GPU);
+LOAD_OP1(fusion_conv_add, CPU);
 LOAD_FUSION_MATCHER(fusion_conv_add);
 #endif
 #ifdef SOFTMAX_OP
-LOAD_OP2(softmax, CPU, MALI_GPU);
+LOAD_OP1(softmax, CPU);
 #endif
 #ifdef SHAPE_OP
 LOAD_OP1(shape, CPU);
@@ -142,13 +132,13 @@ LOAD_OP1(depthwise_conv2d, CPU);
 LOAD_OP1(conv2d_transpose, CPU);
 #endif
 #ifdef SCALE_OP
-LOAD_OP2(scale, CPU, MALI_GPU);
+LOAD_OP1(scale, CPU);
 #endif
 #ifdef ELEMENTWISEADD_OP
-LOAD_OP2(elementwise_add, CPU, MALI_GPU);
+LOAD_OP1(elementwise_add, CPU);
 #endif
 #ifdef PRELU_OP
-LOAD_OP2(prelu, CPU, MALI_GPU);
+LOAD_OP1(prelu, CPU);
 #endif
 #ifdef FLATTEN_OP
 LOAD_OP1(flatten, CPU);
@@ -182,13 +172,13 @@ LOAD_FUSION_MATCHER(fusion_dwconv_bn_relu);
 LOAD_OP1(crf_decoding, CPU);
 #endif
 #ifdef MUL_OP
-LOAD_OP2(mul, CPU, MALI_GPU);
+LOAD_OP1(mul, CPU);
 #endif
 #ifdef NORM_OP
 LOAD_OP1(norm, CPU);
 #endif
 #ifdef RELU_OP
-LOAD_OP2(relu, CPU, MALI_GPU);
+LOAD_OP1(relu, CPU);
 LOAD_OP1(relu6, CPU);
 #endif
 #ifdef IM2SEQUENCE_OP
@@ -198,11 +188,11 @@ LOAD_OP1(im2sequence, CPU);
 LOAD_OP1(lookup_table, CPU);
 #endif
 #ifdef FUSION_FC_OP
-LOAD_OP3(fusion_fc, CPU, MALI_GPU, FPGA);
+LOAD_OP2(fusion_fc, CPU, FPGA);
 LOAD_FUSION_MATCHER(fusion_fc);
 #endif
 #ifdef POOL_OP
-LOAD_OP3(pool2d, CPU, MALI_GPU, FPGA);
+LOAD_OP2(pool2d, CPU, FPGA);
 #endif
 #ifdef MULTICLASSNMS_OP
 LOAD_OP1(multiclass_nms, CPU);
@@ -217,7 +207,7 @@ LOAD_OP1(sum, CPU);
 LOAD_OP1(elementwise_mul, CPU);
 #endif
 #ifdef SLICE_OP
-LOAD_OP2(slice, CPU, MALI_GPU);
+LOAD_OP1(slice, CPU);
 #endif
 #ifdef FUSION_CONVBN_OP
 LOAD_OP2(fusion_conv_bn, CPU, FPGA);

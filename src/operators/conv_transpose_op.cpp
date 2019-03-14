@@ -24,8 +24,7 @@ namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(conv2d_transpose, ops::ConvOpTranspose);
 #endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-#endif
+
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(conv2d_transpose, ops::ConvOpTranspose);
 #endif
