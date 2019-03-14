@@ -57,12 +57,12 @@ void sgemm_6x16(const float *lhs, const float *rhs, const int k, float *output,
       "dup      v28.4s,    wzr     \n\t"
       "dup      v29.4s,    wzr     \n\t"
 
-      "subs       %[kc1], %[kc1], #1    \n\t"
-      "blt        2f                    \n\t"
-      "1:                               \n\t"
+      "subs     %[kc1], %[kc1], #1          \n\t"
+      "blt      2f                          \n\t"
+      "1:                                   \n\t"
 
-      "prfm   pldl1keep,  [%[lhs],  #24]  \n\t"
-      "prfm   pldl1keep,  [%[rhs],  #64]  \n\t"
+      "prfm     pldl1keep,  [%[lhs],  #32]  \n\t"
+      "prfm     pldl1keep,  [%[rhs],  #64]  \n\t"
 
       "ld1      {v0.4s, v1.4s},  [%[lhs]],    %[step1]      \n\t"
       "ld1      {v2.4s, v3.4s, v4.4s, v5.4s}, [%[rhs]], #64 \n\t"
@@ -109,9 +109,10 @@ void sgemm_6x16(const float *lhs, const float *rhs, const int k, float *output,
       "st1      {v26.4s, v27.4s, v28.4s, v29.4s},   [%[c]],   %[step]   \n\t"
       : [lhs] "+r"(lhs), [rhs] "+r"(rhs), [c] "+r"(output), [kc1] "+r"(kc1)
       : [step] "r"(step), [step1] "r"(step1)
-      : "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
-        "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19",
-        "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29");
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8",
+        "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18",
+        "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28",
+        "v29");
 }
 #else
 void sgemm_6x8(const float *lhs, const float *rhs, const int k, float *output,
