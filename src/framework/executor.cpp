@@ -56,8 +56,11 @@ Executor<Device, T>::Executor(const Program<Device> &program,
       use_optimize_ ? program_.optimizeProgram : program_.originProgram;
   PADDLE_MOBILE_ENFORCE(program_desc_ != nullptr,
                         "program_desc_ should not be nullptr");
-  const auto &blocks = program_desc_->Blocks();
+  // resize feed and fetch list
+  // should init feed and fetch variables before infer shape
+  InitFeedFetchList();
 
+  const auto &blocks = program_desc_->Blocks();
   std::shared_ptr<BlockDesc> block_desc = blocks[0];
   std::vector<std::shared_ptr<OpDesc>> ops = block_desc->Ops();
   for (int j = 0; j < ops.size(); ++j) {
@@ -79,8 +82,6 @@ Executor<Device, T>::Executor(const Program<Device> &program,
   } else {
     InitMemory();
   }
-  // resize feed and fetch list
-  InitFeedFetchList();
 
 #ifdef PADDLE_MOBILE_FPGA
   program_.scope->EraseVars({"feed", "fetch"});
