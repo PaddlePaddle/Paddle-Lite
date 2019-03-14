@@ -65,7 +65,7 @@ limitations under the License. */
 LOAD_OP(feed)
 LOAD_OP(fetch)
 #ifdef FILL_CONSTANT_OP
-LOAD_OP(fill_constant)
+LOAD_OP2(fill_constant, CPU, FPGA)
 #endif
 #ifdef BATCHNORM_OP
 LOAD_OP2(batch_norm, CPU, GPU_CL);
@@ -185,7 +185,7 @@ LOAD_OP1(crf_decoding, CPU);
 LOAD_OP2(mul, CPU, GPU_CL);
 #endif
 #ifdef NORM_OP
-LOAD_OP2(norm, CPU, GPU_CL);
+LOAD_OP1(norm, CPU);
 #endif
 #ifdef RELU_OP
 LOAD_OP2(relu, CPU, GPU_CL);
