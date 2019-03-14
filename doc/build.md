@@ -46,7 +46,6 @@ root@5affd29d4fc5:/ # ccmake .
  DEBUGING                         ON
  FPGA                             OFF
  LOG_PROFILE                      ON
- MALI_GPU                         OFF
  NET                              googlenet
  USE_EXCEPTION                    ON
  USE_OPENMP                       OFF
