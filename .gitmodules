@@ -1,3 +1,0 @@
-[submodule "src/operators/kernel/mali/ACL_Android"]
-	path = src/operators/kernel/mali/ACL_Android
-	url = https://github.com/halsay/ACL_Android.git

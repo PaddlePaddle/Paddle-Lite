@@ -63,9 +63,6 @@ REGISTER_OPERATOR_CPU(fusion_fc, ops::FusionFcOp);
 #ifdef PADDLE_MOBILE_CL
 REGISTER_OPERATOR_CL(fusion_fc, ops::FusionFcOp);
 #endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-REGISTER_OPERATOR_MALI_GPU(fusion_fc, ops::FusionFcOp);
-#endif
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(fusion_fc, ops::FusionFcOp);
 #endif
