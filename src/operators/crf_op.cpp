@@ -48,8 +48,7 @@ namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(crf_decoding, ops::CrfOp);
 #endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-#endif
+
 #ifdef PADDLE_MOBILE_FPGA
 #endif
 

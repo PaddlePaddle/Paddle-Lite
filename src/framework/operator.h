@@ -130,13 +130,6 @@ class OpKernelBase {
   }
 #endif
 
-#ifdef PADDLE_McOBILE_MALI_GPU
-  OpKernelBase() { acl_op_ = nullptr; }
-  void *GetAclOp() const { return acl_op_; }
-  void SetAclOp(void *op, void *ob) const {
-    reinterpret_cast<OpKernelBase<Dtype, P> *>(ob)->acl_op_ = op;
-  }
-#endif
   virtual void Compute(const P &para) = 0;
   virtual bool Init(P *para) { return true; }
   virtual ~OpKernelBase() = default;
@@ -147,9 +140,6 @@ class OpKernelBase {
 #endif
 
  private:
-#ifdef PADDLE_MOBILE_MALI_GPU
-  void *acl_op_;
-#endif
 };
 
 class FusionOpMatcher {
