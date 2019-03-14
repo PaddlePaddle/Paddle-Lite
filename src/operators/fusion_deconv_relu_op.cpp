@@ -23,8 +23,7 @@ namespace operators {}
 namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 #endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-#endif
+
 #ifdef PADDLE_MOBILE_FPGA
 REGISTER_OPERATOR_FPGA(fusion_deconv_relu, ops::FusionDeconvReluOp);
 #endif
