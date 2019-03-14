@@ -33,9 +33,6 @@ namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(elementwise_add, ops::ElementwiseAddOp);
 #endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-REGISTER_OPERATOR_MALI_GPU(elementwise_add, ops::ElementwiseAddOp);
-#endif
 
 #ifdef PADDLE_MOBILE_CL
 REGISTER_OPERATOR_CL(elementwise_add, ops::ElementwiseAddOp);

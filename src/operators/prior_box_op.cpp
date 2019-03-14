@@ -52,8 +52,6 @@ namespace ops = paddle_mobile::operators;
 #ifdef PADDLE_MOBILE_CPU
 REGISTER_OPERATOR_CPU(prior_box, ops::PriorBoxOp);
 #endif
-#ifdef PADDLE_MOBILE_MALI_GPU
-#endif
 #ifdef PADDLE_MOBILE_CL
 REGISTER_OPERATOR_CL(prior_box, ops::PriorBoxOp);
 #endif

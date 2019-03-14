@@ -115,9 +115,6 @@ class OpRegistry {
 #define REGISTER_OPERATOR_CPU(op_type, op_class) \
   REGISTER_OPERATOR(op_type, op_class, cpu, paddle_mobile::CPU);
 
-#define REGISTER_OPERATOR_MALI_GPU(op_type, op_class) \
-  REGISTER_OPERATOR(op_type, op_class, mali_gpu, paddle_mobile::GPU_MALI);
-
 #define REGISTER_OPERATOR_FPGA(op_type, op_class) \
   REGISTER_OPERATOR(op_type, op_class, fpga, paddle_mobile::FPGA);
 
