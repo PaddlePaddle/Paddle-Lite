@@ -1224,19 +1224,19 @@ class FeedParam : public OpParam {
   FeedParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
             const AttributeMap &attrs, Scope *scope)
       : OpParam(inputs, outputs, attrs, scope) {
-    input_x_ = InputXFrom<framework::LoDTensorArray>(inputs, *scope);
+    input_x_ = InputXFrom<std::vector<LoDTensor>>(inputs, *scope);
     out_ = OutFrom<GType>(outputs, *scope);
     col_ = GetAttr<int>("col", attrs);
     auto var = scope->FindVar("batch_size");
     batch_size = var->GetValue<int>();
   }
-  const framework::LoDTensorArray *InputX() const { return input_x_; }
+  const std::vector<LoDTensor> *InputX() const { return input_x_; }
   GType *Out() const { return out_; }
   const int Col() const { return col_; }
   const int BatchSize() const { return batch_size; }
 
  private:
-  framework::LoDTensorArray *input_x_;
+  std::vector<LoDTensor> *input_x_;
   GType *out_;
   int col_;
   int batch_size;
@@ -1251,18 +1251,18 @@ class FetchParam : public OpParam {
   FetchParam(const VariableNameMap &inputs, const VariableNameMap &outputs,
              const AttributeMap &attrs, Scope *scope)
       : OpParam(inputs, outputs, attrs, scope) {
-    input_x_ = InputXFrom<framework::LoDTensor>(inputs, *scope);
-    out_ = OutFrom<framework::LoDTensorArray>(outputs, *scope);
+    input_x_ = InputXFrom<GType>(inputs, *scope);
+    out_ = OutFrom<std::vector<LoDTensor>>(outputs, *scope);
     col_ = GetAttr<int>("col", attrs);
   }
 
-  const framework::LoDTensor *InputX() const { return input_x_; }
-  framework::LoDTensorArray *Out() const { return out_; }
+  const GType *InputX() const { return input_x_; }
+  std::vector<LoDTensor> *Out() const { return out_; }
   const int Col() const { return col_; }
 
  private:
-  framework::LoDTensor *input_x_;
-  framework::LoDTensorArray *out_;
+  GType *input_x_;
+  std::vector<LoDTensor> *out_;
   int col_;
 #ifdef PADDLE_MOBILE_FPGA
 
@@ -2371,6 +2371,15 @@ class ConvTransposeParam : public OpParam {
 
   const int &Groups() const { return groups; }
 
+  enum ExecMode {
+    EXEC_INVALID = 0,
+    EXEC_GEMM_FLOAT,
+    EXEC_DECONV3X3_FLOAT,
+    EXEC_DECONV4X4_FLOAT,
+  };
+
+  ExecMode &ExecMode() const { return exec_mode_; }
+
  private:
   GType *input_;
   GType *output_;
@@ -2379,6 +2388,7 @@ class ConvTransposeParam : public OpParam {
   vector<int> paddings_;
   vector<int> dilations_;
   int groups;
+  mutable enum ExecMode exec_mode_;
 
 #ifdef PADDLE_MOBILE_FPGA
 
@@ -3214,43 +3224,46 @@ class LogicalUnaryParam : public OpParam {
 #ifdef WRITE_TO_ARRAY_OP
 template <typename Dtype>
 class WriteToArrayParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   WriteToArrayParam(const VariableNameMap &inputs,
                     const VariableNameMap &outputs, const AttributeMap &attrs,
                     Scope *scope)
       : OpParam(inputs, outputs, attrs, scope) {
-    input_ = OpParam::GetVarValue<framework::LoDTensor>("X", inputs, *scope);
-    index_ = OpParam::GetVarValue<framework::LoDTensor>("I", inputs, *scope);
-    output_ =
-        OpParam::GetVarValue<framework::LoDTensorArray>("Out", outputs, *scope);
+    input_ = OpParam::GetVarValue<GType>("X", inputs, *scope);
+    index_ = OpParam::GetVarValue<GType>("I", inputs, *scope);
+    output_ = OpParam::GetVarValue<std::vector<GType>>("Out", outputs, *scope);
   }
 
  public:
-  framework::LoDTensor *input_;
-  framework::LoDTensor *index_;
-  framework::LoDTensorArray *output_;
+  GType *input_;
+  GType *index_;
+  std::vector<GType> *output_;
 };
 #endif
 
 #ifdef READ_FROM_ARRAY_OP
 template <typename Dtype>
 class ReadFromArrayParam : public OpParam {
+  typedef typename DtypeTensorTrait<Dtype>::gtype GType;
+  typedef typename DtypeTensorTrait<Dtype>::rtype RType;
+
  public:
   ReadFromArrayParam(const VariableNameMap &inputs,
                      const VariableNameMap &outputs, const AttributeMap &attrs,
                      Scope *scope)
       : OpParam(inputs, outputs, attrs, scope) {
-    input_ =
-        OpParam::GetVarValue<framework::LoDTensorArray>("X", inputs, *scope);
-    index_ = OpParam::GetVarValue<framework::LoDTensor>("I", inputs, *scope);
-    output_ =
-        OpParam::GetVarValue<framework::LoDTensor>("Out", outputs, *scope);
+    input_ = OpParam::GetVarValue<std::vector<GType>>("X", inputs, *scope);
+    index_ = OpParam::GetVarValue<GType>("I", inputs, *scope);
+    output_ = OpParam::GetVarValue<GType>("Out", outputs, *scope);
   }
 
  public:
-  framework::LoDTensorArray *input_;
-  framework::LoDTensor *index_;
-  framework::LoDTensor *output_;
+  std::vector<GType> *input_;
+  GType *index_;
+  GType *output_;
 };
 #endif
 

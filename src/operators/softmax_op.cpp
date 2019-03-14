@@ -21,7 +21,6 @@ namespace operators {
 template <typename DeviceType, typename T>
 void SoftmaxOp<DeviceType, T>::InferShape() const {
   this->param_.Out()->Resize(this->param_.InputX()->dims());
-  this->param_.Out()->set_lod(this->param_.InputX()->lod());
 }
 
 }  // namespace operators

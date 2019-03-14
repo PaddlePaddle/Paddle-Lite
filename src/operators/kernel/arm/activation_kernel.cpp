@@ -71,9 +71,10 @@ bool ReluKernel<CPU, float>::Init(ReluParam<CPU> *param) {
 
 template <>
 void ReluKernel<CPU, float>::Compute(const ReluParam<CPU> &param) {
-  const Tensor *input = param.InputX();
-  Tensor *output = param.Out();
+  const LoDTensor *input = param.InputX();
+  LoDTensor *output = param.Out();
   ActivationCompute<float, RELU>()(input, output);
+  output->set_lod(input->lod());
 }
 
 template <>
@@ -83,9 +84,10 @@ bool Relu6Kernel<CPU, float>::Init(ReluParam<CPU> *param) {
 
 template <>
 void Relu6Kernel<CPU, float>::Compute(const ReluParam<CPU> &param) {
-  const Tensor *input = param.InputX();
-  Tensor *output = param.Out();
+  const LoDTensor *input = param.InputX();
+  LoDTensor *output = param.Out();
   ActivationCompute<float, RELU6>()(input, output);
+  output->set_lod(input->lod());
 }
 #endif
 
@@ -97,9 +99,10 @@ bool SigmoidKernel<CPU, float>::Init(SigmoidParam<CPU> *param) {
 
 template <>
 void SigmoidKernel<CPU, float>::Compute(const SigmoidParam<CPU> &param) {
-  const Tensor *input = param.InputX();
-  Tensor *output = param.Out();
+  const LoDTensor *input = param.InputX();
+  LoDTensor *output = param.Out();
   ActivationCompute<float, SIGMOID>()(input, output);
+  output->set_lod(input->lod());
 }
 #endif
 
@@ -111,9 +114,10 @@ bool TanhKernel<CPU, float>::Init(TanhParam<CPU> *param) {
 
 template <>
 void TanhKernel<CPU, float>::Compute(const TanhParam<CPU> &param) {
-  const Tensor *input = param.InputX();
-  Tensor *output = param.Out();
+  const LoDTensor *input = param.InputX();
+  LoDTensor *output = param.Out();
   ActivationCompute<float, TANH>()(input, output);
+  output->set_lod(input->lod());
 }
 #endif
 
@@ -125,9 +129,10 @@ bool LogKernel<CPU, float>::Init(ReluParam<CPU> *param) {
 
 template <>
 void LogKernel<CPU, float>::Compute(const ReluParam<CPU> &param) {
-  const Tensor *input = param.InputX();
-  Tensor *output = param.Out();
+  const LoDTensor *input = param.InputX();
+  LoDTensor *output = param.Out();
   ActivationCompute<float, LOG>()(input, output);
+  output->set_lod(input->lod());
 }
 #endif
 
