@@ -18,7 +18,7 @@ limitations under the License. */
 #include "../test_helper.h"
 #include "common/log.h"
 #include "memory/t_malloc.h"
-#include "operators/math/gemm.h"
+#include "operators/math/gemm/cblas.h"
 
 #define a(i, j) a[(i)*lda + (j)]
 #define b(i, j) b[(i)*ldb + (j)]
@@ -36,10 +36,12 @@ void print_matrix(int m, int n, int ldc, float *c) {
   std::cout << std::endl;
 }
 
-int do_sgemm(int m, int n, int k, bool relu, int t1, int t2, int pr) {
-  int lda = k;
-  int ldb = n;
-  int ldc = n;
+int do_sgemm(int m, int n, int k, int pr) {
+  const float alpha = 1.f;
+  const float beta = 0.f;
+  const int lda = k;
+  const int ldb = n;
+  const int ldc = n;
 
   float *a =
       static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m * k));
@@ -49,24 +51,19 @@ int do_sgemm(int m, int n, int k, bool relu, int t1, int t2, int pr) {
       static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m * n));
   float *c1 =
       static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m * n));
-  float *scale =
-      static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m));
-  float *bias =
-      static_cast<float *>(paddle_mobile::memory::Alloc(sizeof(float) * m));
 
-  srand(unsigned(time(0)));
+  std::mt19937 rng(111);
+  std::uniform_real_distribution<double> uniform_dist(0, 1);
+  const float lower = -10.f;
+  const float upper = 10.f;
+
   for (int i = 0; i < m * k; ++i) {
-    a[i] = t1 + rand() % t2;
+    a[i] = static_cast<float>(uniform_dist(rng) * (upper - lower) + lower);
   }
   for (int i = 0; i < k * n; ++i) {
-    b[i] = t1 + rand() % t2;
+    b[i] = static_cast<float>(uniform_dist(rng) * (upper - lower) + lower);
   }
-  for (int i = 0; i < m; ++i) {
-    scale[i] = t1 + rand() % t2;
-  }
-  for (int i = 0; i < m; ++i) {
-    bias[i] = t1 + rand() % t2;
-  }
+  memcpy(c, c1, sizeof(float) * m * n);
 
   for (int i = 0; i < m; ++i) {
     for (int j = 0; j < n; ++j) {
@@ -74,25 +71,20 @@ int do_sgemm(int m, int n, int k, bool relu, int t1, int t2, int pr) {
       for (int p = 0; p < k; p++) {
         r += a(i, p) * b(p, j);
       }
-      r *= scale[i];
-      r += bias[i];
-      if (relu && (r < 0)) {
-        r = 0;
-      }
-      c1(i, j) = r;
+      c1(i, j) = alpha * r;
     }
   }
 
-  paddle_mobile::operators::math::Gemm gemm;
-  gemm.SgemmWithBn(m, n, k, 1, a, lda, b, ldb, 0.3, c, ldc, relu, scale, bias,
-                   nullptr);
-  int eq = 0;
-  int neq = 0;
+  std::cout << "run cblas_sgemm..." << std::endl;
+  paddle_mobile::operators::math::cblas_sgemm(false, false, m, n, k, alpha, a,
+                                              lda, b, ldb, 0.f, c, ldc);
+
+  std::cout << "compare results..." << std::endl;
   for (int i = 0; i < m * n; ++i) {
-    if (static_cast<int>(c[i]) == static_cast<int>(c1[i])) {
-      ++eq;
-    } else {
-      ++neq;
+    if (abs(c[i] - c1[i]) >= 1e-2) {
+      std::cout << "c[" << i << "] != c1[" << i << "]: " << c[i] << " vs "
+                << c1[i] << std::endl;
+      exit(1);
     }
   }
 
@@ -107,33 +99,36 @@ int do_sgemm(int m, int n, int k, bool relu, int t1, int t2, int pr) {
     print_matrix(m, n, ldc, c1);
   }
 
-  std::cout << "mnk=" << m << " " << n << " " << k << " relu=" << relu
-            << "   eq=" << eq << " neq=" << neq << std::endl;
-
-  PADDLE_MOBILE_ENFORCE(neq == 0, "The execution of do_sgemm is failed!");
-
   paddle_mobile::memory::Free(a);
   paddle_mobile::memory::Free(b);
   paddle_mobile::memory::Free(c);
   paddle_mobile::memory::Free(c1);
-  paddle_mobile::memory::Free(scale);
-  paddle_mobile::memory::Free(bias);
 
   return 0;
 }
 
-int main() {
-  do_sgemm(9, 9, 9, true, 10, 10, 10);
-  do_sgemm(10, 6, 12, false, 10, 10, 0);
-  do_sgemm(512, 256, 384, false, 10, 10, 0);
-  do_sgemm(1366, 768, 256, false, 10, 10, 0);
-  do_sgemm(1255, 755, 333, false, 10, 10, 0);
-  do_sgemm(555, 777, 999, false, 10, 10, 0);
+int main(int argc, char *argv[]) {
+  do_sgemm(1, 1, 1, 1);
 
-  do_sgemm(10, 6, 12, true, -4, 10, 0);
-  do_sgemm(512, 256, 384, true, -4, 10, 0);
-  do_sgemm(1366, 768, 256, true, -4, 10, 0);
-  do_sgemm(1255, 755, 333, true, -4, 10, 0);
-  do_sgemm(555, 777, 999, true, -4, 10, 0);
+  do_sgemm(9, 9, 1, 1);
+  do_sgemm(999, 99, 1, 0);
+  do_sgemm(999, 1, 1, 0);
+  do_sgemm(1, 9, 9, 1);
+  do_sgemm(1, 99, 999, 0);
+  do_sgemm(1, 1, 999, 0);
+
+  do_sgemm(9, 9, 9, 1);
+  do_sgemm(10, 6, 12, 1);
+  do_sgemm(512, 256, 384, 0);
+  do_sgemm(1366, 768, 256, 0);
+  do_sgemm(1255, 755, 333, 0);
+  do_sgemm(555, 777, 999, 0);
+
+  do_sgemm(10, 6, 12, 1);
+  do_sgemm(512, 256, 384, 0);
+  do_sgemm(1366, 768, 256, 0);
+  do_sgemm(1255, 755, 333, 0);
+  do_sgemm(555, 777, 999, 0);
+
   return 0;
 }

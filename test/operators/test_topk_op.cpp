@@ -71,8 +71,8 @@ int TestTopKOp(const std::vector<int> input_shape, const int K) {
 
   framework::AttributeMap attrs;
   attrs["k"].Set<int>(K);
-  auto *op =
-      new operators::TopKOp<CPU, float>("top_k", inputs, outputs, attrs, scope);
+  auto *op = new operators::TopKOp<CPU, float>("top_k", inputs, outputs, attrs,
+                                               scope.get());
   op->InferShape();
   op->Init();
   op->Run();

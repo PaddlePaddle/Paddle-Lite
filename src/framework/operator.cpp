@@ -43,7 +43,7 @@ OperatorBase<Dtype>::OperatorBase(const std::string &type,
                                   const VariableNameMap &inputs,
                                   const VariableNameMap &outputs,
                                   const AttributeMap &attrs,
-                                  std::shared_ptr<Scope> scope)
+                                  framework::Scope *scope)
     : type_(type),
       inputs_(inputs),
       outputs_(outputs),
@@ -67,30 +67,22 @@ void OperatorBase<Dtype>::Run() {
   for (const auto key : input_keys) {
     auto var_vec_in = inputs_.at(key);
     for (int i = 0; i < var_vec_in.size(); ++i) {
-      auto vari = this->scope_->FindVar(var_vec_in[i]);
-      if (vari->IsInitialized()) {
-        const Tensor *tensor = vari->template Get<framework::LoDTensor>();
-        if (tensor) {
-          DLOG << type_ << " input- " << key << "=" << *tensor;
-#ifdef PADDLE_MOBILE_FPGA
-          DLOG << var_vec_in[i];
-#endif
-        }
+      auto var = this->scope_->FindVar(var_vec_in[i]);
+      if (var->IsInitialized() &&
+          var->template IsType<framework::LoDTensor>()) {
+        const Tensor *tensor = var->template Get<framework::LoDTensor>();
+        if (tensor) DLOG << type_ << " input- " << key << "=" << *tensor;
       }
     }
   }
   for (const auto key : GetOutKeys()) {
     auto var_vec_out = outputs_.at(key);
     for (int i = 0; i < var_vec_out.size(); ++i) {
-      auto vari = scope_->FindVar(var_vec_out[i]);
-      if (vari->IsInitialized()) {
-        const Tensor *tensor = vari->template Get<framework::LoDTensor>();
-        if (tensor) {
-          DLOG << type_ << " output- " << key << "=" << *tensor;
-#ifdef PADDLE_MOBILE_FPGA
-          DLOG << var_vec_out[i];
-#endif
-        }
+      auto var = scope_->FindVar(var_vec_out[i]);
+      if (var->IsInitialized() &&
+          var->template IsType<framework::LoDTensor>()) {
+        const Tensor *tensor = var->template Get<framework::LoDTensor>();
+        if (tensor) DLOG << type_ << " output- " << key << "=" << *tensor;
       }
     }
   }

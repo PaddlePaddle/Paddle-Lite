@@ -12,27 +12,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVADDRELU_OP
+#ifdef BEAM_SEARCH_OP
 
-#include "operators/kernel/conv_add_relu_kernel.h"
-#include "operators/kernel/central-arm-func/conv_add_relu_arm_func.h"
+#pragma once
+
+#include "operators/beam_search_op.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-template <>
-bool ConvAddReluKernel<CPU, float>::Init(FusionConvAddReluParam<CPU> *param) {
-  return true;
-}
-
-template <>
-void ConvAddReluKernel<CPU, float>::Compute(
-    const FusionConvAddReluParam<CPU> &param) {
-  ConvAddReluCompute<float, float>(param);
-}
-template class ConvAddReluKernel<CPU, float>;
+template <typename Dtype, typename T>
+void BeamSearchOp<Dtype, T>::InferShape() const {}
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
+namespace ops = paddle_mobile::operators;
+
+#ifdef PADDLE_MOBILE_CPU
+REGISTER_OPERATOR_CPU(beam_search, ops::BeamSearchOp);
 #endif
+
+#endif  // BEAM_SEARCH_OP

@@ -12,18 +12,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#ifdef FUSION_CONVBNADDRELU_OP
+#ifdef FUSION_DWCONVBNRELU_OP
 
-#include "operators/kernel/conv_bn_add_relu_kernel.h"
+#include "operators/kernel/dwconv_bn_relu_kernel.h"
 #include <cmath>
-#include "operators/kernel/central-arm-func/conv_bn_add_relu_arm_func.h"
+#include "operators/kernel/arm/convolution/conv_common.h"
+#include "operators/kernel/central-arm-func/conv_arm_func.h"
+#include "operators/math/channel_wise.h"
 
 namespace paddle_mobile {
 namespace operators {
 
 template <>
-bool ConvBNAddReluKernel<CPU, float>::Init(
-    FusionConvBNAddReluParam<CPU> *param) {
+bool DWConvBNReluKernel<CPU, float>::Init(FusionDWConvBNReluParam<CPU> *param) {
   const Tensor *mean = param->InputMean();
   const Tensor *variance = param->InputVariance();
   const Tensor *scale = param->InputScale();
@@ -41,8 +42,8 @@ bool ConvBNAddReluKernel<CPU, float>::Init(
     inv_std_ptr[i] =
         1 / static_cast<float>(pow((variance_ptr[i] + epsilon), 0.5));
   }
-  Tensor *new_scale = new Tensor();
-  Tensor *new_bias = new Tensor();
+  LoDTensor *new_scale = new LoDTensor();
+  LoDTensor *new_bias = new LoDTensor();
   auto new_scale_ptr = new_scale->mutable_data<float>({C});
   auto new_bias_ptr = new_bias->mutable_data<float>({C});
   for (int i = 0; i < C; i++) {
@@ -51,15 +52,37 @@ bool ConvBNAddReluKernel<CPU, float>::Init(
   }
   param->SetNewScale(new_scale);
   param->SetNewBias(new_bias);
+
+  InitBaseConvKernel(param);
   return true;
 }
 
 template <>
-void ConvBNAddReluKernel<CPU, float>::Compute(
-    const FusionConvBNAddReluParam<CPU> &param) {
-  ConvBNAddReluCompute<float>(param);
+void DWConvBNReluKernel<CPU, float>::Compute(
+    const FusionDWConvBNReluParam<CPU> &param) {
+  switch (param.ExecMode()) {
+    case ConvParam<CPU>::EXEC_DEPTHWISE3x3S1_FLOAT:
+    case ConvParam<CPU>::EXEC_DEPTHWISE3x3S2_FLOAT:
+      DepthwiseConv3x3<float, float>(param);
+      break;
+    case ConvParam<CPU>::EXEC_DEPTHWISE5x5_FLOAT:
+      DepthwiseConv5x5<float, float>(param);
+      break;
+    case ConvParam<CPU>::EXEC_WINOGRAD3X3_FLOAT:
+      WinogradConv3x3<8, 3>(param);
+      break;
+    case ConvParam<CPU>::EXEC_GEMM_FLOAT:
+      GemmConv<float, float>(param);
+      break;
+    default:
+      PADDLE_MOBILE_THROW_EXCEPTION("Invalid convolution execute mode %d",
+                                    param.ExecMode());
+  }
+  math::ScaleAddChannelWise<RELU>(param.Output(), param.NewScale(),
+                                  param.NewBias(), param.Output());
 }
-template class ConvBNAddReluKernel<CPU, float>;
+
+template class DWConvBNReluKernel<CPU, float>;
 
 }  // namespace operators
 }  // namespace paddle_mobile

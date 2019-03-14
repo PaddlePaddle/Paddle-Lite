@@ -19,7 +19,7 @@ limitations under the License. */
 #include <algorithm>
 #include <limits>
 #include "common/types.h"
-#include "operators/math/math_func_neon.h"
+#include "operators/math/math.h"
 
 namespace paddle_mobile {
 namespace operators {

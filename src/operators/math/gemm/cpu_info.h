@@ -14,32 +14,42 @@ limitations under the License. */
 
 #pragma once
 
-#ifdef FUSION_CONVADDADDPRELU_OP
-
-#include <vector>
-#include "framework/ddim.h"
-#include "framework/operator.h"
-#include "operators/math/conv_func.h"
-#include "operators/math/im2col.h"
-#include "operators/math/math_function.h"
-#include "operators/math/vol2col.h"
-#include "operators/op_param.h"
+#define MOBILE_MAX_CPU_NUM 8
 
 namespace paddle_mobile {
 namespace operators {
+namespace math {
 
-using framework::DDim;
-using framework::OpKernelBase;
+struct CPUInfo {
+ private:
+  CPUInfo() {
+    // TODO(hjchen2)
+    num_cpus = 4;
+    for (int i = 0; i < num_cpus; ++i) {
+      cpu_frequency[i] = 2400;      // 2400 MHz
+      max_cpu_frequency[i] = 2400;  // 2400 MHz
+    }
+    //    L1_cache = 32000;    // 32K
+    L1_cache = 32 * 1024;
+    L2_cache = 2000000;  // 2M
+                         //    L2_cache = 512000;
+  }
+  virtual ~CPUInfo() {}
 
-template <typename DeviceType, typename T>
-class ConvAddAddPReluKernel
-    : public OpKernelBase<DeviceType, FusionConvAddAddPReluParam<DeviceType>> {
  public:
-  void Compute(const FusionConvAddAddPReluParam<DeviceType> &param);
-  bool Init(FusionConvAddAddPReluParam<DeviceType> *param);
+  static CPUInfo* Info() {
+    static CPUInfo* ctx = new CPUInfo;
+    return ctx;
+  }
+
+  int num_cpus;
+  int cpu_frequency[MOBILE_MAX_CPU_NUM];
+  int max_cpu_frequency[MOBILE_MAX_CPU_NUM];
+
+  int L1_cache;
+  int L2_cache;
 };
 
+}  // namespace math
 }  // namespace operators
 }  // namespace paddle_mobile
-
-#endif

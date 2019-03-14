@@ -14,6 +14,7 @@ limitations under the License. */
 
 #pragma once
 
+#include <string>
 #include <vector>
 #include "common/types.h"
 #include "io/paddle_inference_api.h"

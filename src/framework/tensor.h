@@ -209,8 +209,9 @@ class Tensor : public TensorBase {
   }
   inline void set_type(std::type_index type) { holder_->set_type(type); }
   inline void *get_data() {
-    return (void *)(((PlaceholderImpl *)(holder_.get()))->ptr_.get());
-  }  // NOLINT
+    return (
+        void *)(((PlaceholderImpl *)(holder_.get()))->ptr_.get());  // NOLINT
+  }
 
   inline void *init(std::type_index type) {
     if (holder_ != nullptr) {
