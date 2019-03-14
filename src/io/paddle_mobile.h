@@ -46,7 +46,7 @@ class PaddleMobile {
     PADDLE_MOBILE_ENFORCE(!is_gpu, "Please recompile with GPU_CL is on");
 #endif
   }
-  ~PaddleMobile() {}
+  virtual ~PaddleMobile() { Clear(); }
 
   PMStatus Load(const std::string &dirname, const bool optimize = false,
                 const bool quantification = false, const int batch_size = 1,
