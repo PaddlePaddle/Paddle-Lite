@@ -20,7 +20,7 @@ namespace paddle_mobile {
 namespace operators {
 template <>
 bool SplitKernel<FPGA, float>::Init(SplitParam<FPGA> *param) {
-  auto *in = const_cast<Tensor *>(param->InputX());
+  auto *in = const_cast<LoDTensor *>(param->InputX());
   auto outs = param->Outs();
   auto sections = param->Sections();
   int axis = param->Axis();

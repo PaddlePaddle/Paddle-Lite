@@ -152,14 +152,14 @@ PMStatus PaddleMobile<Device, T>::Predict() {
 }
 
 template <typename Device, typename T>
-void PaddleMobile<Device, T>::Feed(const framework::Tensor &input,
-                                   const std::string &var_name) {
+void PaddleMobile<Device, T>::Feed(const std::string &var_name,
+                                   const framework::Tensor &input) {
   executor_->SetInput(input, var_name);
 }
 
 template <typename Device, typename T>
-void PaddleMobile<Device, T>::Feed(const framework::LoDTensor &input,
-                                   const std::string &var_name) {
+void PaddleMobile<Device, T>::Feed(const std::string &var_name,
+                                   const framework::LoDTensor &input) {
   executor_->SetInput(input, var_name);
 }
 
@@ -227,16 +227,11 @@ template <typename Device, typename T>
 void PaddleMobile<Device, T>::FeedData(const framework::Tensor &t) {
   executor_->FeedData(t);
 }
+
 template <typename Device, typename T>
 void PaddleMobile<Device, T>::FeedData(const std::vector<void *> &v) {
   executor_->FeedData(v);
-};
-
-template <typename Device, typename T>
-void PaddleMobile<Device, T>::FeedTensorData(
-    const std::vector<framework::Tensor> &v) {
-  executor_->FeedTensorData(v);
-};
+}
 
 template <typename Device, typename T>
 void PaddleMobile<Device, T>::GetResults(std::vector<void *> *v) {
@@ -253,7 +248,7 @@ template <typename Device, typename T>
 framework::Tensor *PaddleMobile<Device, T>::GetTensorByName(
     const std::string &name) {
   return executor_->GetTensorByName(name);
-};
+}
 
 template <typename Device, typename T>
 std::shared_ptr<framework::Tensor> PaddleMobile<Device, T>::FetchResult(

@@ -115,7 +115,7 @@ int TestQuqntizeOp(const int batch_size, const int channel, const int height,
 
   framework::AttributeMap attrs;
   auto *op = new operators::QuantizeOp<CPU, float>("quantize", inputs, outputs,
-                                                   attrs, scope);
+                                                   attrs, scope.get());
   op->InferShape();
   op->Run();
 

@@ -221,6 +221,8 @@ inline Print &operator<<(Print &printer, const LoDTensor &tensor) {
       printer << static_cast<int>(tensor.data<int8_t>()[i]) << " ";
     } else if (tensor.type() == typeid(int32_t)) {
       printer << tensor.data<int32_t>()[i] << " ";
+    } else if (tensor.type() == typeid(bool)) {
+      printer << tensor.data<bool>()[i] << " ";
     }
   }
 #endif  // PADDLE_MOBILE_FPGA

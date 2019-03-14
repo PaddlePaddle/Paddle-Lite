@@ -17,33 +17,16 @@ limitations under the License. */
 #pragma once
 
 #include <string>
-
 #include "framework/operator.h"
 #include "operators/kernel/pad2d_kernel.h"
 #include "operators/op_param.h"
 
 namespace paddle_mobile {
 namespace operators {
-using framework::AttributeMap;
-using framework::OperatorWithKernel;
-using framework::Scope;
-using std::string;
-template <typename DeviceType, typename T>
-class Pad2dOp
-    : public OperatorWithKernel<DeviceType, Pad2dParam<DeviceType>,
-                                operators::Pad2dKernel<DeviceType, T>> {
- public:
-  Pad2dOp(const string &type, const VariableNameMap &inputs,
-          const VariableNameMap &outputs, const AttributeMap &attrs,
-          std::shared_ptr<Scope> scope)
-      : OperatorWithKernel<DeviceType, Pad2dParam<DeviceType>,
-                           operators::Pad2dKernel<DeviceType, T>>(
-            type, inputs, outputs, attrs, scope) {}
-  void InferShape() const override;
 
- private:
-};
+DECLARE_OPERATOR(Pad2D, Pad2DParam, Pad2DKernel);
+
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#endif
+#endif  // PAD2D_OP

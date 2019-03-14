@@ -25,11 +25,11 @@ template <typename P>
 void IncrementCompute(const IncrementParam<CPU> &param) {
   const framework::Tensor *input = param.InputX();
   framework::Tensor *out = param.Out();
-  int step = param.Step();
+  float step = param.Step();
 
-  out->mutable_data<P>();
-  const P *input_data = input->data<P>();
-  P *out_data = out->data<P>();
+  out->mutable_data<int64_t>();
+  const int64_t *input_data = input->data<int64_t>();
+  int64_t *out_data = out->data<int64_t>();
   *out_data = *input_data + step;
 }
 

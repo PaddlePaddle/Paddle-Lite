@@ -125,10 +125,6 @@ LOAD_OP1(prior_box, CPU);
 LOAD_OP2(fusion_conv_add_relu, CPU, FPGA);
 LOAD_FUSION_MATCHER(fusion_conv_add_relu);
 #endif
-#ifdef FUSION_CONVADDADDPRELU_OP
-LOAD_OP2(fusion_conv_add_add_prelu, CPU, FPGA);
-LOAD_FUSION_MATCHER(fusion_conv_add_add_prelu);
-#endif
 #ifdef FUSION_CONVADD_OP
 LOAD_OP2(fusion_conv_add, CPU, MALI_GPU);
 LOAD_FUSION_MATCHER(fusion_conv_add);
@@ -177,10 +173,6 @@ LOAD_FUSION_MATCHER(fusion_conv_add_bn);
 #endif
 #ifdef DROPOUT_OP
 LOAD_OP2(dropout, CPU, FPGA);
-#endif
-#ifdef FUSION_CONVADDPRELU_OP
-LOAD_OP2(fusion_conv_add_prelu, CPU, FPGA);
-LOAD_FUSION_MATCHER(fusion_conv_add_prelu);
 #endif
 #ifdef FUSION_DWCONVBNRELU_OP
 LOAD_OP1(fusion_dwconv_bn_relu, CPU);
@@ -323,4 +315,16 @@ LOAD_OP1(psroi_pool, CPU);
 #endif
 #ifdef ROI_PERSPECTIVE_OP
 LOAD_OP1(roi_perspective_transform, CPU);
+#endif
+#ifdef BEAM_SEARCH_OP
+LOAD_OP1(beam_search, CPU);
+#endif
+#ifdef BEAM_SEARCH_DECODE_OP
+LOAD_OP1(beam_search_decode, CPU);
+#endif
+#ifdef PAD2D_OP
+LOAD_OP1(pad2d, CPU);
+#endif
+#ifdef ONE_HOT_OP
+LOAD_OP1(one_hot, CPU);
 #endif
