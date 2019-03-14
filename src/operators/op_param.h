@@ -1533,36 +1533,24 @@ class ScaleParam : public OpParam {
              const AttributeMap &attrs, Scope *scope)
       : OpParam(inputs, outputs, attrs, scope) {
     input_x_ = InputXFrom<GType>(inputs, *scope);
-    input_bias_ = InputBiasFrom<GType>(inputs, *scope);
     out_ = OutFrom<GType>(outputs, *scope);
-    inplace_ = GetAttr<bool>("inplace", attrs);
-    has_bias_ = GetAttr<bool>("has_bias", attrs);
-    scales_ = GetAttr<vector<float>>("scales", attrs);
-    biases_ = GetAttr<vector<float>>("biases", attrs);
+    scale_ = GetAttr<float>("scale", attrs);
+    bias_ = GetAttr<float>("bias", attrs);
   }
 
   const GType *InputX() const { return input_x_; }
 
-  const GType *InputBias() const { return input_bias_; }
-
   GType *Out() const { return out_; }
 
-  const bool &Inplace() const { return inplace_; }
+  const float Scale() const { return scale_; }
 
-  const bool &HasBias() const { return has_bias_; }
-
-  const vector<float> &Scales() const { return scales_; }
-
-  const vector<float> &Biases() const { return biases_; }
+  const float Bias() const { return bias_; }
 
  private:
   GType *input_x_;
-  GType *input_bias_;
   GType *out_;
-  bool inplace_;
-  bool has_bias_;
-  vector<float> scales_;
-  vector<float> biases_;
+  float scale_;
+  float bias_;
 };
 #endif
 
@@ -2933,8 +2921,8 @@ class QuantizeParam : public OpParam {
   // if offine scale or not
   bool offline_ = false;
   // round method type
-  RoundType round_type_ = ROUND_NEAREST_AWAY_ZERO;
-  // RoundType round_type_ = ROUND_NEAREST_TOWARDS_ZERO;
+  // RoundType round_type_ = ROUND_NEAREST_AWAY_ZERO;
+  RoundType round_type_ = ROUND_NEAREST_TOWARDS_ZERO;
 };
 #endif
 
