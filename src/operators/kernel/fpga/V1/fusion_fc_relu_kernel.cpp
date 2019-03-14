@@ -25,7 +25,7 @@ bool FusionFcReluKernel<FPGA, float>::Init(FusionFcReluParam<FPGA> *param) {
       paddle_mobile::fpga::LEAKYRELU;
   int16_t leaky_relu_negative_slope = 0;
   auto input_x = const_cast<LoDTensor *>(param->InputX());
-  auto filter = const_cast<Tensor *>(param->InputY());
+  auto filter = const_cast<LoDTensor *>(param->InputY());
   const Tensor *input_z = param->InputZ();
   auto input_z_ptr = input_z->data<float>();
   auto out = param->Out();

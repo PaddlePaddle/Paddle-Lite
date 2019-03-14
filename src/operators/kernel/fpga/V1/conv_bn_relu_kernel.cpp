@@ -23,8 +23,8 @@ bool ConvBNReluKernel<FPGA, float>::Init(FusionConvBNReluParam<FPGA> *param) {
   paddle_mobile::fpga::ActivationType activation_enable =
       paddle_mobile::fpga::LEAKYRELU;
   int16_t leaky_relu_negative_slope = 0;
-  auto input = const_cast<Tensor *>(param->Input());
-  auto filter = const_cast<Tensor *>(param->Filter());
+  auto input = const_cast<LoDTensor *>(param->Input());
+  auto filter = const_cast<LoDTensor *>(param->Filter());
   auto out = param->Output();
   auto bn_mean_ptr = param->InputMean()->data<float>();
   auto bn_var_ptr = param->InputVariance()->data<float>();

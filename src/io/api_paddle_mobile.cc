@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "io/api_paddle_mobile.h"
+#include <string>
 #include <vector>
 #include "common/enforce.h"
 #include "framework/tensor.h"
@@ -145,7 +146,7 @@ void PaddleMobilePredictor<Device, T>::FeedPaddleTensors(
     tensors[i].init(typeid(float));
     ConvertPaddleTensors(inputs[i], &tensors[i]);
   }
-  paddle_mobile_->FeedTensorData(tensors);
+  // paddle_mobile_->FeedTensorData(tensors);
 }
 
 template <typename Device, typename T>
@@ -169,7 +170,7 @@ void PaddleMobilePredictor<Device, T>::GetPaddleTensor(const std::string &name,
                                                        PaddleTensor *output) {
   framework::Tensor *t = paddle_mobile_->GetTensorByName(name);
   ConvertTensors(*t, output);
-};
+}
 
 template <typename Device, typename T>
 void PaddleMobilePredictor<Device, T>::Predict_From_To(int start, int end) {

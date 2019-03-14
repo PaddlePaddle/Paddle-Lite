@@ -33,7 +33,7 @@ namespace paddle_mobile {
 template <typename Device, typename T = float>
 class PaddleMobile {
  public:
-  PaddleMobile(PaddleMobileConfigInternal config) : config_(config) {
+  explicit PaddleMobile(PaddleMobileConfigInternal config) : config_(config) {
 #ifndef PADDLE_MOBILE_CL
     bool is_gpu = std::is_same<DeviceType<kGPU_CL>, Device>::value;
     PADDLE_MOBILE_ENFORCE(!is_gpu, "Please recompile with GPU_CL is on");
@@ -69,8 +69,8 @@ class PaddleMobile {
                          const std::vector<int64_t> &dims);
   PMStatus Predict();
 
-  void Feed(const framework::LoDTensor &input, const std::string &var_name);
-  void Feed(const framework::Tensor &input, const std::string &var_name);
+  void Feed(const std::string &var_name, const framework::LoDTensor &input);
+  void Feed(const std::string &var_name, const framework::Tensor &input);
 
   typedef std::shared_ptr<framework::LoDTensor> LoDTensorPtr;
   LoDTensorPtr Fetch(const std::string &var_name);
@@ -91,7 +91,6 @@ class PaddleMobile {
   void InjectVariable(const framework::Tensor &t, std::string var_name);
   void FeedData(const framework::Tensor &t);
   void FeedData(const std::vector<void *> &v);
-  void FeedTensorData(const std::vector<framework::Tensor> &v);
 
   void GetResults(std::vector<void *> *v);
   void GetTensorResults(std::vector<framework::Tensor *> *v);

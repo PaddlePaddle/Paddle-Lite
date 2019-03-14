@@ -15,11 +15,13 @@ limitations under the License. */
 #ifdef PROPOSAL_OP
 
 #include <algorithm>
+#include <cmath>
 #include <vector>
 #include "operators/kernel/detection_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
+
 static const double kBBoxClipDefault = std::log(1000.0 / 16.0);
 
 template <>

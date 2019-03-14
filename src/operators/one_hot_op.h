@@ -12,34 +12,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#ifdef ONE_HOT_OP
+
 #pragma once
 
-#ifdef FUSION_CONVADDPRELU_OP
-
-#include <vector>
-#include "framework/ddim.h"
+#include <string>
 #include "framework/operator.h"
-#include "operators/math/conv_func.h"
-#include "operators/math/im2col.h"
-#include "operators/math/math_function.h"
-#include "operators/math/vol2col.h"
-#include "operators/op_param.h"
+#include "operators/kernel/one_hot_kernel.h"
 
 namespace paddle_mobile {
 namespace operators {
 
-using framework::DDim;
-using framework::OpKernelBase;
-
-template <typename DeviceType, typename T>
-class ConvAddPReluKernel
-    : public OpKernelBase<DeviceType, FusionConvAddPReluParam<DeviceType>> {
- public:
-  void Compute(const FusionConvAddPReluParam<DeviceType> &param);
-  bool Init(FusionConvAddPReluParam<DeviceType> *param);
-};
+DECLARE_OPERATOR(Onehot, OnehotParam, OnehotKernel);
 
 }  // namespace operators
 }  // namespace paddle_mobile
 
-#endif
+#endif  // ONE_HOT_OP

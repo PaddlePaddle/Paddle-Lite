@@ -17,6 +17,7 @@ limitations under the License. */
 #pragma once
 
 #include <string>
+#include <vector>
 #include "framework/operator.h"
 #include "framework/program/program-optimize/fusion_op_register.h"
 #include "operators/kernel/elementwise_add_relu_kernel.h"
@@ -50,7 +51,7 @@ class FusionElementwiseAddReluOp
   FusionElementwiseAddReluOp(const string &type, const VariableNameMap &inputs,
                              const VariableNameMap &outputs,
                              const framework::AttributeMap &attrs,
-                             std::shared_ptr<framework::Scope> scope)
+                             framework::Scope *scope)
       : framework::OperatorWithKernel<
             DeviceType, ElementwiseAddReluParam<DeviceType>,
             operators::ElementwiseAddReluKernel<DeviceType, T>>(

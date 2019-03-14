@@ -29,17 +29,25 @@ class OpDesc {
   friend class ProgramOptimize;
   friend class FusionOpMatcher;
   friend class Node;
+
   explicit OpDesc(PaddleMobile__Framework__Proto__OpDesc *op_desc);
   OpDesc(const OpDesc &op_desc) : type_(op_desc.type_) {
     this->inputs_ = op_desc.inputs_;
     this->outputs_ = op_desc.outputs_;
     this->attrs_ = op_desc.attrs_;
+    this->proto_attrs_ = op_desc.proto_attrs_;
   }
 
   OpDesc() {}
   const std::vector<std::string> &Input(const std::string &name) const;
   const std::vector<std::string> &Output(const std::string &name) const;
   Attribute GetAttr(const std::string &name) const;
+
+  const std::vector<PaddleMobile__Framework__Proto__OpDesc__Attr>
+      &GetProtoAttr() const;
+
+  void SetBlockAttr(const std::string &name, BlockDesc *block);
+  void SetBlocksAttr(const std::string &name, std::vector<BlockDesc *> block);
 
   VariableNameMap &GetInputs() { return inputs_; }
 
@@ -60,6 +68,7 @@ class OpDesc {
   VariableNameMap inputs_;
   VariableNameMap outputs_;
   AttributeMap attrs_;
+  std::vector<PaddleMobile__Framework__Proto__OpDesc__Attr> proto_attrs_;
 };
 
 Print &operator<<(Print &printer, const OpDesc &op_desc);

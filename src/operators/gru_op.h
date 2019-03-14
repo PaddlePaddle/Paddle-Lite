@@ -33,7 +33,7 @@ class GruOp : public framework::OperatorWithKernel<
  public:
   GruOp(const std::string &type, const VariableNameMap &inputs,
         const VariableNameMap &outputs, const framework::AttributeMap &attrs,
-        std::shared_ptr<framework::Scope> scope)
+        framework::Scope *scope)
       : framework::OperatorWithKernel<DeviceType, GruParam<DeviceType>,
                                       operators::GruKernel<DeviceType, T>>(
             type, inputs, outputs, attrs, scope) {}

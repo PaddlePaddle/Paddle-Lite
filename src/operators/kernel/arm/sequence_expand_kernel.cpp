@@ -100,8 +100,8 @@ class SequenceExpandKernel<CPU, T>
           out_lod.push_back(out_lod.back() + x_seq_len);
         }
       }
+      output->set_lod({out_lod});
     }
-    output->set_lod({out_lod});
     SequenceExpandImpl<T>(*input_x, y_lod[ref_level], output);
   }
 };
