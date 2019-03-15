@@ -68,7 +68,7 @@ struct CPUContext {
 };
 
 inline void set_global_num_threads(int threads) {
-  CPUContext::Context()->num_threads = threads;
+  CPUContext::Context()->set_num_threads(threads);
 }
 
 inline int get_global_num_threads() {
