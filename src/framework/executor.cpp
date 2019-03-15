@@ -18,6 +18,7 @@ limitations under the License. */
 #include <vector>
 #include "common/enforce.h"
 #include "common/log.h"
+#include "framework/context.h"
 #include "framework/framework.pb-c.h"
 #include "framework/lod_tensor.h"
 #include "framework/operator.h"
@@ -36,6 +37,11 @@ namespace paddle_mobile {
 namespace framework {
 
 #pragma mark - executor
+
+template <typename Device, typename T>
+void Executor<Device, T>::SetThreadNum(int threads) {
+  set_global_num_threads(threads);
+}
 
 template <typename Device, typename T>
 Executor<Device, T>::Executor(const Program<Device> &program,
@@ -444,6 +450,9 @@ std::shared_ptr<LoDTensor> Executor<Device, T>::GetOutput(
 
 template <typename Device, typename T>
 PMStatus Executor<Device, T>::Predict() {
+#if _OPENMP
+  omp_set_num_threads(get_global_num_threads());
+#endif
 #ifdef PADDLE_MOBILE_PROFILE
   std::vector<ProfInfo> profile(ops_of_block0_.size());
   struct timespec ts;
