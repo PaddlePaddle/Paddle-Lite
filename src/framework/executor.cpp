@@ -663,14 +663,18 @@ void Executor<GPU_CL, float>::InitNoPersistableMemory(
   output->Resize(input_tensor.dims());
   output->mutable_data<float>();
 }
+
 template <>
 void Executor<GPU_CL, float>::SetInput(const Tensor &input,
                                        const std::string &var_name) {
-  auto *target_var = program_.scope->FindVar(var_name);
-  PADDLE_MOBILE_ENFORCE(target_var != nullptr, "Variable %s is not exist",
-                        var_name.c_str());
+  int index = 0;
+  if (feed_indices_.find(var_name) != feed_indices_.end()) {
+    index = feed_indices_.find(var_name)->second;
+  }
+  auto *feed_var = program_.scope->Var("feed");
+  framework::LoDTensor *target_tensor =
+      &(feed_var->template GetMutable<framework::LoDTensorArray>()->at(index));
 
-  auto *target_tensor = target_var->template GetMutable<LoDTensor>();
   DLOG << "config_.load_when_predict   " << config_.load_when_predict;
   DLOG << "target_tensor->IsInitialized() " << target_tensor->IsInitialized();
   DLOG << "target_tensor->dims()   " << target_tensor->dims();
@@ -781,7 +785,7 @@ void Executor<GPU_CL, float>::InitMemory() {
       if (var_desc->Persistable()) {
         CLImage *cl_image = nullptr;
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
-          var->template GetMutable<LoDTensor>();
+          var->template GetMutable<framework::LoDTensorArray>();
           continue;
         } else {
           cl_image = var->template GetMutable<CLImage>();
@@ -849,7 +853,7 @@ void Executor<GPU_CL, float>::InitCombineMemory() {
       if (var_desc->Persistable()) {
         CLImage *cl_image = nullptr;
         if (var_desc->Name() == "feed" || var_desc->Name() == "fetch") {
-          var->template GetMutable<LoDTensor>();
+          var->template GetMutable<framework::LoDTensorArray>();
           continue;
         } else {
           cl_image = var->template GetMutable<CLImage>();
