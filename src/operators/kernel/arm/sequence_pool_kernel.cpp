@@ -21,7 +21,7 @@ limitations under the License. */
 #include "common/types.h"
 #include "operators/kernel/sequence_kernels.h"
 #include "operators/math/pooling.h"
-#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+#ifdef __ARM_NEON__
 #include <arm_neon.h>
 #endif  // __ARM_NEON__
 
@@ -44,7 +44,7 @@ void SequencePoolImpl(const framework::LoDTensor &input,
     if (width == 1) {
       float max = -std::numeric_limits<float>::max();
       int remain_h = height;
-#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+#ifdef __ARM_NEON__
       int loop = remain_h >> 2;
       remain_h = remain_h & 0x3;
       float32x4_t __max4 = math::vPoolInitq_f32<MAX>();
@@ -67,11 +67,11 @@ void SequencePoolImpl(const framework::LoDTensor &input,
       in_ptr += width;
       int remain_h = height - 1;
       int remain_w_start = 0;
-#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+#ifdef __ARM_NEON__
       remain_w_start = width & 0xfffc;
 #endif  // __ARM_NEON__
       for (int h = 0; h < remain_h; ++h) {
-#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+#ifdef __ARM_NEON__
         for (int w = 0; w < width; w += 4) {
           float32x4_t __in = vld1q_f32(in_ptr + w);
           float32x4_t __out = vld1q_f32(out_ptr + w);
@@ -104,7 +104,7 @@ void SequencePoolImpl<SUM, float>(const framework::LoDTensor &input,
     if (width == 1) {
       float sum = 0.f;
       int remain_h = height;
-#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+#ifdef __ARM_NEON__
       int loop = remain_h >> 2;
       remain_h = remain_h & 0x3;
       float32x4_t __sum4 = vdupq_n_f32(0.f);
@@ -126,12 +126,12 @@ void SequencePoolImpl<SUM, float>(const framework::LoDTensor &input,
       in_ptr += width;
       int remain_h = height - 1;
       int remain_w_start = 0;
-#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+#ifdef __ARM_NEON__
       int loop_w = width >> 2;
       remain_w_start = width & 0xfffc;
 #endif  // __ARM_NEON__
       for (int h = 0; h < remain_h; ++h) {
-#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+#ifdef __ARM_NEON__
         for (int w = 0; w < width - 3; w += 4) {
           float32x4_t __in = vld1q_f32(in_ptr + w);
           float32x4_t __out = vld1q_f32(out_ptr + w);
